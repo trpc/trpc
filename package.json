@@ -1,0 +1,57 @@
+{
+  "name": "zod-rpc",
+  "version": "0.0.1",
+  "description": "Toolkit for building typesafe RPC APIs",
+  "main": "./lib/src/index.js",
+  "types": "./lib/src/index.d.ts",
+  "files": [
+    "lib"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/vriad/zod-rpc"
+  },
+  "author": "Colin McDonnell <colin@vriad.com>",
+  "license": "MIT",
+  "sideEffects": false,
+  "bugs": {
+    "url": "https://github.com/vriad/zod-rpc/issues"
+  },
+  "homepage": "https://github.com/vriad/zod-rpc",
+  "dependencies": {
+    "typescript-tuple": "^2.2.1"
+  },
+  "tags": [],
+  "keywords": [],
+  "include": [
+    "src"
+  ],
+  "exclude": [
+    "node_modules",
+    "**/__tests__/*"
+  ],
+  "scripts": {
+    "clean": "rm -rf lib/*",
+    "build": "yarn run clean && tsc --p tsconfig.package.json",
+    "format": "prettier --write \"src/**/*.ts\" \"src/**/*.js\"",
+    "lint": "tslint -p tsconfig.json",
+    "test": "jest --config jestconfig.json --coverage",
+    "testone": "jest --config jestconfig.json",
+    "prepublishOnly": "npm run build",
+    "play": "nodemon -e ts -w . -x ts-node src/playground.ts"
+  },
+  "devDependencies": {
+    "@types/jest": "^25.1.4",
+    "jest": "^25.1.0",
+    "nodemon": "^2.0.2",
+    "prettier": "2",
+    "tozod": "^0.0.1",
+    "ts-jest": "^25.2.1",
+    "typescript": "^4.0.0-dev.20200717",
+    "zod": "^1.9.1"
+  },
+  "peerDependencies": {
+    "tozod": "^0.0.1",
+    "zod": "^1.9.1"
+  }
+}
