@@ -18,9 +18,7 @@
     "url": "https://github.com/vriad/zod-rpc/issues"
   },
   "homepage": "https://github.com/vriad/zod-rpc",
-  "dependencies": {
-    "typescript-tuple": "^2.2.1"
-  },
+  "dependencies": {},
   "tags": [],
   "keywords": [],
   "include": [
