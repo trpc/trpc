@@ -1,1 +1,3 @@
-export * from './external';
+import * as zrpc from './external';
+
+export { zrpc };

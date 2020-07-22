@@ -1,5 +1,4 @@
 <div align="center">
-  <img src="./logo/nostroke_3.png" height="200px" />
   <h1 align="center">ZodRPC</h1>
 </div>
 

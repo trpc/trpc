@@ -1,8 +1,8 @@
-import { zodrpc } from '.';
+import { zrpc } from '.';
 import * as z from 'zod';
 // import { rpc } from './external';
 
-const testFunc = zodrpc
+const testFunc = zrpc
   .endpoint()
   .args(z.string())
   .returns(z.boolean())

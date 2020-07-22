@@ -1,7 +1,7 @@
 import { ZodRPCApi, ZodRPCEndpoint, ZodRPCRouter } from './internal';
 
-export const zodrpc = {
-  api: ZodRPCApi.create,
-  router: ZodRPCRouter.create,
-  endpoint: ZodRPCEndpoint.create,
-};
+export const api = ZodRPCApi.create;
+export const router = ZodRPCRouter.create;
+export const endpoint = ZodRPCEndpoint.create;
+
+export { ZodRPCApi as Api, ZodRPCRouter as Router, ZodRPCEndpoint as Endpoint };
