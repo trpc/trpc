@@ -4,6 +4,16 @@ import * as z from 'zod';
 /////   ENDPOINT DEF   /////
 ////////////////////////////
 
+// export const and = <T extends (...callbacks: any[]) => any>(...callbacks: T[]) => async (
+//   ..._args: Parameters<T>
+// ): Promise<ReturnType<T>> => {
+//   const values = await Promise.all(callbacks);
+//   for (const v of values) {
+//     if (!v) return false as any;
+//   }
+//   return true as any;
+// };
+
 export type EndpointDef<T extends z.ZodFunction<any, any> = z.ZodFunction<any, any>> = {
   function: T;
   implementation: T['_type'];
@@ -48,7 +58,7 @@ export class ZodRPCEndpoint<D extends EndpointDef = EndpointDef> {
     this._def = def;
   }
 
-  args = <Inputs extends [z.ZodType<any, any>, ...z.ZodType<any, any>[]]>(
+  args = <Inputs extends [z.Schema<any, any>, ...z.Schema<any, any>[]]>(
     ...inputs: Inputs
   ): ZodRPCEndpoint<
     Omit<D, 'function'> & { function: z.ZodFunction<z.ZodTuple<Inputs>, ReturnType<D['function']['_type']>> }

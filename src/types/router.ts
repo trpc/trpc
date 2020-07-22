@@ -1,3 +1,4 @@
+import * as z from 'zod';
 import { ZodRPCEndpoint, ZodRPCErrorCode, ZodRPCError } from '../internal';
 
 export type RouterDef = {
@@ -60,16 +61,33 @@ export class ZodRPCRouter<D extends RouterDef = RouterDef> {
 
   handle: (payload: { endpoint: string[]; args: any[] }) => any = async (payload) => {
     //  const payload: { endpoint: string[]; args: any[] } = req.body;
+
+    if (!payload) {
+      throw new ZodRPCError(
+        500,
+        ZodRPCErrorCode.InvalidEndpoint,
+        `No body received in post request.\nMake sure you've configured a body parser middleware.`,
+      );
+    }
+
     const { endpoint, args } = payload;
 
+    if (!Array.isArray(endpoint) || !endpoint.every((x) => typeof x === 'string')) {
+      throw new ZodRPCError(400, ZodRPCErrorCode.InvalidEndpoint, 'body.endpoint should be array of strings.');
+    }
+
+    if (!Array.isArray(args)) {
+      throw new ZodRPCError(400, ZodRPCErrorCode.InvalidArguments, 'body.args should be an array.');
+    }
+
     if (!endpoint || endpoint.length === 0)
-      throw new ZodRPCError(400, ZodRPCErrorCode.InvalidPayload, 'InvalidEndpoint');
+      throw new ZodRPCError(400, ZodRPCErrorCode.InvalidEndpoint, 'InvalidEndpoint');
 
     const segment = endpoint[0];
     if (typeof segment !== 'string')
       throw new ZodRPCError(
         400,
-        ZodRPCErrorCode.InvalidPayload,
+        ZodRPCErrorCode.InvalidEndpoint,
         `Endpoint segment is of non-string type: ${typeof segment}`,
       );
 
@@ -111,7 +129,20 @@ export class ZodRPCRouter<D extends RouterDef = RouterDef> {
       throw new ZodRPCError(403, ZodRPCErrorCode.NotAuthorized, 'Access denied.');
     }
 
-    const value = await handler._def.implementation(...args);
-    return value;
+    try {
+      const value = await handler._def.implementation(...args);
+      return value;
+    } catch (err) {
+      const zerr: z.ZodError = err;
+      if (zerr.errors[0].code === z.ZodErrorCode.invalid_arguments) {
+        throw new ZodRPCError(500, ZodRPCErrorCode.InvalidArguments, 'Invalid arguments');
+      }
+      if (zerr.errors[0].code === z.ZodErrorCode.invalid_return_type) {
+        throw new ZodRPCError(500, ZodRPCErrorCode.InvalidReturnType, 'Invalid arguments');
+      }
+      throw new ZodRPCError(500, ZodRPCErrorCode.UnknownError, err.message);
+    }
+    // const value = await handler._def.implementation(...args);
+    // return value;
   };
 }

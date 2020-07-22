@@ -1,9 +1,9 @@
 import * as z from 'zod';
-import { zodrpc } from '..';
+import { zrpc } from '..';
 import { Post } from '../userpost';
 
 test('router creation', () => {
-  const api = zodrpc.api({
+  const api = zrpc.api({
     uri: 'http://localhost:5000/rpc',
     // getContext: async (_params) => {
     //   return { userId: 'qweqewr' };
@@ -12,7 +12,7 @@ test('router creation', () => {
 
   // type Meta = typeof api['META'];
 
-  const getUserById = zodrpc
+  const getUserById = zrpc
     .endpoint()
     .args(z.object({ id: z.string() }), z.object({ userId: z.string() }))
     .returns(z.promise(z.boolean()))
@@ -25,11 +25,11 @@ test('router creation', () => {
 
   type getUserById = typeof getUserById;
 
-  const userRouter = zodrpc.router();
+  const userRouter = zrpc.router();
   userRouter.endpoint('getById', getUserById);
   userRouter.endpoint(
     'modGetById',
-    zodrpc
+    zrpc
       .endpoint()
       .args(z.object({ id: z.string() }), z.object({ userId: z.string() }))
       .returns(z.promise(z.boolean()))
@@ -41,14 +41,14 @@ test('router creation', () => {
       }),
   );
 
-  // const qwer = zodrpc
+  // const qwer = zrpc
   //   .newendpoint([PostStruct.omit({ timestamp: true })], z.promise(PostStruct.omit({ timestamp: true })))
   //   .implement(async (post) => {
   //     return post;
   //   });
   userRouter.endpoint(
     'newEndpoint',
-    zodrpc
+    zrpc
       .endpoint()
       .args(Post.omit({ content: true }))
       .returns(z.promise(Post.omit({ content: true })))

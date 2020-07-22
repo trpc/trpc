@@ -54,31 +54,7 @@ export class ZodRPCApi<D extends ApiDef = ApiDef> {
           throw new ZodRPCError(400, ZodRPCErrorCode.InvalidMethod, 'Skii RPC APIs only accept post requests');
         }
 
-        if (!request.body) {
-          throw new ZodRPCError(
-            500,
-            ZodRPCErrorCode.InvalidPayload,
-            `No body received in post request.\nMake sure you've configured a body parser middleware.`,
-          );
-        }
-
-        const payload: { endpoint: string[]; args: any[] } = request.body;
-        const { endpoint, args } = payload;
-        if (!Array.isArray(endpoint)) {
-          throw new ZodRPCError(400, ZodRPCErrorCode.InvalidPayload, 'body.endpoint should be array of strings.');
-        }
-
-        if (!Array.isArray(args)) {
-          throw new ZodRPCError(400, ZodRPCErrorCode.InvalidPayload, 'body.args should be an array.');
-        }
-
-        // const getContext = this._def.getContext;
-        // const context = getContext ? await getContext({ request, response, next }) : null;
-        // console.log(JSON.stringify(context, null, 2));
-
-        const result = await this._def.router.handle(payload).catch((err: any) => {
-          throw err;
-        });
+        const result = await this._def.router.handle(request.body);
         response.status(200).send(result);
         next();
       } catch (_err) {

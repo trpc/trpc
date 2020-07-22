@@ -4,12 +4,15 @@
 export const ZodRPCErrorCode = {
   InvalidEndpoint: 'InvalidEndpoint',
   InvalidMethod: 'InvalidMethod',
-  InvalidPayload: 'InvalidPayload',
+  // InvalidPayload: 'InvalidPayload',
+  InvalidArguments: 'InvalidArguments',
+  InvalidReturnType: 'InvalidReturnType',
   InvalidPath: 'InvalidPath',
   EndpointNotFound: 'EndpointNotFound',
   NotAuthorized: 'NotAuthorized',
   AuthorizationError: 'AuthorizationError',
   NameConflict: 'NameConflict',
+  UnknownError: 'UnknownError',
 } as const;
 
 export type ZodRPCErrorCode = typeof ZodRPCErrorCode[keyof typeof ZodRPCErrorCode];

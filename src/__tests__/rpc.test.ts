@@ -1,9 +1,9 @@
 import * as z from 'zod';
-import { zodrpc } from '..';
-// import { ZodRPCApi, ZodRPCEndpoint } from "../internal";
+import { zrpc } from '..';
+// import { zrpcApi, zrpcEndpoint } from "../internal";
 
 export const makeApi = () => {
-  const myApi = zodrpc.api({
+  const myApi = zrpc.api({
     uri: 'http://localhost:3000/rpc',
     // getContext: async (_params) => {
     //   return { userId: 'asdf' };
@@ -12,11 +12,11 @@ export const makeApi = () => {
 
   // myApi.root.endpoint(
   //     'getUserById',
-  //     zodrpc.endpoint().args(z.string()).returns(z.boolean()).wrap((args)=> args.length > 15));
+  //     zrpc.endpoint().args(z.string()).returns(z.boolean()).wrap((args)=> args.length > 15));
 
   myApi.root.endpoint(
     'getUserById',
-    zodrpc
+    zrpc
       .endpoint()
       .args(z.object({ id: z.string() }), z.object({ userId: z.string() }))
       .returns(z.boolean())
