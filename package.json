@@ -1,6 +1,6 @@
 {
   "name": "zod-rpc",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "Toolkit for building typesafe RPC APIs",
   "main": "./lib/src/index.js",
   "types": "./lib/src/index.d.ts",
