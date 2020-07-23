@@ -1,7 +1,14 @@
 import { zrpc } from '.';
 import * as z from 'zod';
 
-const testFunc = zrpc
+const sdkparams = {
+  url: 'http:localhost',
+  handler: (..._x: any) => {
+    return 'asdf' as any;
+  },
+};
+
+const testEndpoint = zrpc
   .endpoint()
   .args(z.string())
   .returns(z.boolean())
@@ -10,5 +17,18 @@ const testFunc = zrpc
     // return 'asdfasdfasdf' as any;
   });
 
-const asdf = testFunc.call('asdf');
-console.log(asdf);
+const innerRouter = zrpc.router().endpoint('innerEndpoint', testEndpoint);
+const outerRouter = zrpc
+  .router()
+  // .endpoint('outerEndpoint', testEndpoint)
+  .compose('innerRouter', innerRouter);
+
+const myApi = zrpc.api(outerRouter);
+const sdk = myApi.to.sdk(sdkparams);
+
+const run = async () => {
+  const res = await Promise.resolve(sdk.innerRouter.innerEndpoint('asdfasdf'));
+  console.log(res);
+};
+
+run();

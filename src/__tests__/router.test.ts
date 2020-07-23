@@ -3,12 +3,12 @@ import { zrpc } from '..';
 import { Post } from '../userpost';
 
 test('router creation', () => {
-  const api = zrpc.api({
-    uri: 'http://localhost:5000/rpc',
-    // getContext: async (_params) => {
-    //   return { userId: 'qweqewr' };
-    // },
-  });
+  // const api = zrpc.api({
+  // uri: 'http://localhost:5000/rpc',
+  // getContext: async (_params) => {
+  //   return { userId: 'qweqewr' };
+  // },
+  // });
 
   // type Meta = typeof api['META'];
 
@@ -41,6 +41,8 @@ test('router creation', () => {
       }),
   );
 
+  const api = zrpc.api(userRouter);
+
   // const qwer = zrpc
   //   .newendpoint([PostStruct.omit({ timestamp: true })], z.promise(PostStruct.omit({ timestamp: true })))
   //   .implement(async (post) => {
@@ -58,8 +60,8 @@ test('router creation', () => {
   );
 
   console.log('creating userApi');
-  api.root.compose('user', userRouter);
+  api.router.compose('user', userRouter);
 
   api.to.express();
-  api.to.sdk();
+  api.to.sdkFile();
 });

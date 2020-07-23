@@ -1,4 +1,6 @@
 import * as z from 'zod';
+import { SDKParams } from './api';
+import { promisify } from '../util/tsutil';
 
 ////////////////////////////
 /////   ENDPOINT DEF   /////
@@ -110,6 +112,13 @@ export class ZodRPCEndpoint<D extends EndpointDef = EndpointDef> {
   test = (f: ((x: string) => boolean) & ThisType<{ asdf: string }>) => {
     console.log(f);
     return this;
+  };
+
+  _sdk: (params: SDKParams, path: string[]) => promisify<this['_def']['function']['_type']> = (params, path) => {
+    return (async (...args: any) => {
+      const result = await params.handler(params.url, { endpoint: path, args });
+      return result as any;
+    }) as any;
   };
 
   static create = (): ZodRPCEndpoint<EndpointDefDefault> => {

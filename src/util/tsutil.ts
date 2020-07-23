@@ -77,6 +77,9 @@ export type setKey<T extends object, Key extends string, Value extends any> = fl
     { [k in Key]: Value }
 >;
 
+export type promisify<T extends (...args: any[]) => any> = (
+  ...args: Parameters<T>
+) => ReturnType<T> extends Promise<any> ? ReturnType<T> : Promise<ReturnType<T>>;
 //////////////////////////
 //// Object Wrangling ////
 //////////////////////////

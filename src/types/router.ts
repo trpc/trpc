@@ -1,5 +1,7 @@
 import * as z from 'zod';
 import { ZodRPCEndpoint, ZodRPCErrorCode, ZodRPCError } from '../internal';
+import { SDKParams } from './api';
+import { format } from '../util/tsutil';
 
 export type RouterDef = {
   children: { [k: string]: ZodRPCRouter };
@@ -16,15 +18,25 @@ export type RouterDef = {
 //   children: D['children'] & { [k in Path]: Child };
 // };
 
-export class ZodRPCRouter<D extends RouterDef = RouterDef> {
-  readonly _def!: D;
-
-  constructor(def: D) {
+export class ZodRPCRouter<
+  Children extends { [k: string]: ZodRPCRouter<any, any> } = {},
+  Endpoints extends { [k: string]: ZodRPCEndpoint<any> } = {}
+> {
+  readonly _def: { children: Children; endpoints: Endpoints };
+  constructor(def: { children: Children; endpoints: Endpoints }) {
     this._def = def;
   }
 
-  static create = (): ZodRPCRouter<{ endpoints: {}; children: {} }> => {
-    return new ZodRPCRouter({ endpoints: {}, children: {} });
+  endpoint: <Path extends string, Endpoint extends ZodRPCEndpoint<any>>(
+    path: Path,
+    endpt: Endpoint,
+  ) => ZodRPCRouter<Children, format<Endpoints & { [k in Path]: Endpoint }>> = (path, endpt) => {
+    if (this._def.children[path] || this._def.endpoints[path])
+      throw new ZodRPCError(500, ZodRPCErrorCode.NameConflict, `Name conflict: "${path}" already in use`);
+    return new ZodRPCRouter({
+      children: this._def.children,
+      endpoints: { ...this._def.endpoints, [path]: endpt },
+    });
   };
 
   // compose = <Path extends string, Child extends ZodRPCRouter>(
@@ -34,25 +46,17 @@ export class ZodRPCRouter<D extends RouterDef = RouterDef> {
   //   this._def.children[path] = child;
   //   return this as any;
   // };
-  compose = (path: string, child: ZodRPCRouter) => {
+  compose: <Path extends string, Child extends ZodRPCRouter>(
+    path: Path,
+    child: Child,
+  ) => ZodRPCRouter<format<Children & { [k in Path]: Child }>, Endpoints> = (path, child) => {
     if (this._def.children[path] || this._def.endpoints[path])
       throw new ZodRPCError(500, ZodRPCErrorCode.NameConflict, `Name conflict: "${path}" already in use`);
-    this._def.children[path] = child;
-    return this;
-  };
 
-  // endpoint = <Path extends string, Endpoint extends (ctx: any) => ZodRPCEndpoint>(
-  //   path: Path,
-  //   def: Endpoint,
-  // ): ZodRPCRouter<addEndpoint<D, Path, Endpoint>> => {
-  //   this._def.endpoints[path] = def;
-  //   return this as any;
-  // };
-  endpoint = (path: string, endpt: ZodRPCEndpoint) => {
-    if (this._def.children[path] || this._def.endpoints[path])
-      throw new ZodRPCError(500, ZodRPCErrorCode.NameConflict, `Name conflict: "${path}" already in use`);
-    this._def.endpoints[path] = endpt;
-    return this;
+    return new ZodRPCRouter({
+      children: { ...this._def.children, [path]: child },
+      endpoints: this._def.endpoints,
+    });
   };
 
   // test = (arg: { asdf: string } & ThisType<{ asdf: string }>) => {
@@ -144,5 +148,27 @@ export class ZodRPCRouter<D extends RouterDef = RouterDef> {
     }
     // const value = await handler._def.implementation(...args);
     // return value;
+  };
+
+  static create = (): ZodRPCRouter => {
+    return new ZodRPCRouter({ endpoints: {}, children: {} });
+  };
+
+  _sdk: (
+    params: SDKParams,
+    path?: string[],
+  ) => format<
+    { [k in keyof Children]: ReturnType<Children[k]['_sdk']> } &
+      { [k in keyof Endpoints]: ReturnType<Endpoints[k]['_sdk']> }
+  > = (params, path = []) => {
+    const sdkObject: any = {};
+
+    for (const name in this._def.children) {
+      sdkObject[name] = this._def.children[name]._sdk(params, [...path, name]);
+    }
+    for (const name in this._def.endpoints) {
+      sdkObject[name] = this._def.endpoints[name]._sdk(params, [...path, name]);
+    }
+    return sdkObject;
   };
 }

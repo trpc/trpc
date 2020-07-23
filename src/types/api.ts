@@ -6,12 +6,12 @@ import { generateSDK } from './sdk';
 // /////////////////////
 
 export type ApiDef = {
-  uri: string;
+  // uri: string;
   router: ZodRPCRouter;
 };
 
 export type ApiDefInput = {
-  uri: string;
+  // uri: string;
   router?: ZodRPCRouter;
 };
 
@@ -23,23 +23,23 @@ export type ApiDefInput = {
 
 // type ApiDefInput = Omit<ApiDef, 'router'>;
 
-export class ZodRPCApi<D extends ApiDef = ApiDef> {
-  readonly _def!: D;
-  // readonly META!: { ctx: GetContextType<D> };
+export type SDKHandler = (url: string, payload: { endpoint: string[]; args: unknown[] }) => Promise<unknown>;
+export type SDKParams = { url: string; handler: SDKHandler };
 
-  constructor(def: ApiDefInput) {
-    this._def = { ...def, router: def.router || ZodRPCRouter.create() } as any;
+export class ZodRPCApi<Router extends ZodRPCRouter<any, any>> {
+  readonly router: Router;
+
+  constructor(router: Router) {
+    this.router = router;
   }
 
-  static create = <D extends ApiDefInput>(
-    def: D,
-  ): ZodRPCApi<D & { router: ZodRPCRouter<{ children: {}; endpoints: {} }> }> => {
-    return new ZodRPCApi(def);
+  static create = <R extends ZodRPCRouter<any, any>>(router: R): ZodRPCApi<R> => {
+    return new ZodRPCApi(router);
   };
 
-  get root() {
-    return this._def.router;
-  }
+  // get root() {
+  //   return this._def.router;
+  // }
 
   // endpoint = this.root.endpoint
 
@@ -54,7 +54,7 @@ export class ZodRPCApi<D extends ApiDef = ApiDef> {
           throw new ZodRPCError(400, ZodRPCErrorCode.InvalidMethod, 'Skii RPC APIs only accept post requests');
         }
 
-        const result = await this._def.router.handle(request.body);
+        const result = await this.router.handle(request.body);
         response.status(200).send(result);
         next();
       } catch (_err) {
@@ -65,11 +65,29 @@ export class ZodRPCApi<D extends ApiDef = ApiDef> {
         return response.status(err.code || 500).send(`${err.message}`);
       }
     },
+    sdk: (params: SDKParams): ReturnType<Router['_sdk']> => this.router._sdk(params) as any,
+    //  sdk: (params: SDKParams):ReturnType<Router['_sdk']> => {
+    //    return this.router._sdk(params,[]) as any;
+    //  const rootRouter = this.router;
 
-    sdk: async () => {
+    //  class ZodSDK<Router extends ZodRPCRouter<any, any>> {
+    //    params: SDKParams;
+    //    readonly _router!: Router;
+
+    //    constructor(_router: Router, params: SDKParams) {
+
+    //      this.params = params;
+    //    }
+
+    //    get call(): ReturnType<Router['_sdk']> {return rootRouter._sdk(params) as any;};
+    //  }
+
+    //  return new ZodSDK(rootRouter, params);
+    //  },
+    sdkFile: async () => {
       // const fs = await import('fs');
       // console.log(location);
-      const generatedSDK = generateSDK(this);
+      const generatedSDK = generateSDK(this, 'http://localhost:3000/rpc');
       return generatedSDK;
       // fs.writeFileSync(`${location}`, generatedSDK, 'utf8');
     },

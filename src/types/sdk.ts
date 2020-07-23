@@ -8,18 +8,18 @@ type GenParams = {
   routers: { name: string; definition: string; router: ZodRPCRouter }[];
 };
 
-export const generateSDK = (api: ZodRPCApi) => {
+export const generateSDK = (api: ZodRPCApi<any>, _uri: string) => {
   const generator = z.codegen();
   const initialParams: GenParams = { path: [], routers: [], generator };
-  const rootDef = generateSDKObjectFromRouter(api._def.router, initialParams);
+  const rootDef = generateSDKObjectFromRouter(api.router, initialParams);
 
   //${initialParams.routers.map((router) => `class ${router.name} ${router.definition}`).join('\n\n')}
   return `
 ${generator.dump()}
 
 type Handler =  (url: string, payload:{endpoint: string[], args: unknown[]}) => Promise<unknown>;
-export class SkiiClient {
-  private _url = "${api._def.uri}";
+export class ZodSDK {
+  private _url: string;
   private _handler: Handler;
   private readonly _defaultHandler: Handler = async (url, payload)=>{
     // console.log("fetching: "+url);
@@ -36,15 +36,12 @@ export class SkiiClient {
   }
   private _router = ${rootDef.definition};
 
-  constructor(handler?:Handler){
-    if(handler){
-      this._handler = handler;
-    }else{
-      this._handler = this._defaultHandler;
-    }
+  constructor(url:string, handler?:Handler = _defaultHandler){
+    this._handler = handler;
+    this._url = url;
   }
 
-  ${[...Object.keys(api._def.router._def.endpoints), ...Object.keys(api._def.router._def.children)]
+  ${[...Object.keys(api.router._def.endpoints), ...Object.keys(api.router._def.children)]
     .map((k) => {
       return `${k} = this._router.${k};`;
     })
@@ -53,7 +50,10 @@ export class SkiiClient {
 `;
 };
 
-const generateSDKObjectFromRouter = (router: ZodRPCRouter, params: GenParams): { name: string; definition: string } => {
+const generateSDKObjectFromRouter = (
+  router: ZodRPCRouter<any, any>,
+  params: GenParams,
+): { name: string; definition: string } => {
   const { endpoints, children } = router._def;
   const subrouterLines: string[] = [];
   const endpointLines: string[] = [];
