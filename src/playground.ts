@@ -1,34 +1,40 @@
 import { zrpc } from '.';
 import * as z from 'zod';
 
-const sdkparams = {
-  url: 'http:localhost',
-  handler: (..._x: any) => {
-    return 'asdf' as any;
-  },
-};
+// const sdkparams = {
+//   url: 'http:localhost',
+//   handler: (..._x: any) => {
+//     return 'asdf' as any;
+//   },
+// };
 
-const testEndpoint = zrpc
+const User = z.object({
+  id: z.string().uuid(),
+  name: z.string(),
+  points: z.number(),
+});
+
+const getUserById = zrpc
   .endpoint()
-  .args(z.string())
-  .returns(z.boolean())
-  .implement((_asdf) => {
-    return _asdf.length < 1234;
-    // return 'asdfasdfasdf' as any;
+  .args(z.string().uuid())
+  .returns(z.promise(User))
+  .implement(async (_id) => {
+    // const user = await getUserById(id);
+    // return user;
+    return 'asdf' as any;
   });
 
-const innerRouter = zrpc.router().endpoint('innerEndpoint', testEndpoint);
-const outerRouter = zrpc
-  .router()
-  // .endpoint('outerEndpoint', testEndpoint)
-  .compose('innerRouter', innerRouter);
+const userRouter = zrpc.router().endpoint('getById', getUserById);
 
-const myApi = zrpc.api(outerRouter);
-const sdk = myApi.to.sdk(sdkparams);
+const rootRouter = zrpc.router().compose('user', userRouter);
 
-const run = async () => {
-  const res = await Promise.resolve(sdk.innerRouter.innerEndpoint('asdfasdf'));
-  console.log(res);
-};
+export const myApi = zrpc.api(rootRouter);
+// myApi.router.
+// // const sdk = myApi.to.sdk(sdkparams);
 
-run();
+// const run = async () => {
+//   const res = await Promise.resolve(sdk.innerRouter.innerEndpoint('asdfasdf'));
+//   console.log(res);
+// };
+
+// run();
