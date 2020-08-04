@@ -1,19 +1,18 @@
-import { ZodRPCApi, ZodRPCRouter } from '../internal';
+import { TRPCApi, TRPCRouter } from '../internal';
 import * as z from 'zod';
 
 const capitalize = (arg: string) => arg.charAt(0).toUpperCase() + arg.slice(1);
 type GenParams = {
   path: string[];
   generator: z.ZodCodeGenerator;
-  routers: { name: string; definition: string; router: ZodRPCRouter }[];
+  routers: { name: string; definition: string; router: TRPCRouter }[];
 };
 
-export const generateSDK = (api: ZodRPCApi<any>, _uri: string) => {
+export const generateSDK = (api: TRPCApi<any>, _uri: string) => {
   const generator = z.codegen();
   const initialParams: GenParams = { path: [], routers: [], generator };
   const rootDef = generateSDKObjectFromRouter(api.router, initialParams);
 
-  //${initialParams.routers.map((router) => `class ${router.name} ${router.definition}`).join('\n\n')}
   return `
 ${generator.dump()}
 
@@ -22,8 +21,6 @@ export class ZodSDK {
   private _url: string;
   private _handler: Handler;
   private readonly _defaultHandler: Handler = async (url, payload)=>{
-    // console.log("fetching: "+url);
-    // console.log(JSON.stringify(payload, null, 2));
     const response = await fetch(url, {
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
@@ -31,7 +28,6 @@ export class ZodSDK {
     })
 
     const result = await response.json();
-    // console.log("fetched "+JSON.stringify(result, null, 2));
     return result;
   }
   private _router = ${rootDef.definition};
@@ -51,7 +47,7 @@ export class ZodSDK {
 };
 
 const generateSDKObjectFromRouter = (
-  router: ZodRPCRouter<any, any>,
+  router: TRPCRouter<any, any>,
   params: GenParams,
 ): { name: string; definition: string } => {
   const { endpoints, children } = router._def;

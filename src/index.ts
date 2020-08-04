@@ -1,3 +1,4 @@
-import * as zrpc from './external';
+import * as trpc from './external';
 
-export { zrpc };
+export * from './external';
+export { trpc };

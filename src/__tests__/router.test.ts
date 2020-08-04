@@ -1,9 +1,8 @@
 import * as z from 'zod';
-import { zrpc } from '..';
-import { Post } from '../userpost';
+import { trpc } from '..';
 
 test('router creation', () => {
-  // const api = zrpc.api({
+  // const api = trpc.api({
   // uri: 'http://localhost:5000/rpc',
   // getContext: async (_params) => {
   //   return { userId: 'qweqewr' };
@@ -12,52 +11,43 @@ test('router creation', () => {
 
   // type Meta = typeof api['META'];
 
-  const getUserById = zrpc
-    .endpoint()
-    .args(z.object({ id: z.string() }), z.object({ userId: z.string() }))
-    .returns(z.promise(z.boolean()))
-    .implement(async (arg, params) => {
-      return arg.id === params.userId;
-    })
+  const getUserById = trpc
+    .endpoint(
+      z
+        .function()
+        .args(z.object({ id: z.string() }), z.object({ userId: z.string() }))
+        .returns(z.promise(z.boolean()))
+        .implement(async (arg, params) => {
+          return arg.id === params.userId;
+        }),
+    )
+
     .authorize((args) => {
       return Promise.resolve(args[0].id.length === 4);
     });
 
   type getUserById = typeof getUserById;
 
-  const userRouter = zrpc.router();
+  const userRouter = trpc.router();
   userRouter.endpoint('getById', getUserById);
   userRouter.endpoint(
     'modGetById',
-    zrpc
-      .endpoint()
-      .args(z.object({ id: z.string() }), z.object({ userId: z.string() }))
-      .returns(z.promise(z.boolean()))
-      .implement(async (arg, params) => {
-        return arg.id === params.userId;
-      })
+    trpc
+      .endpoint(
+        z
+          .function()
+          .args(z.object({ id: z.string() }), z.object({ userId: z.string() }))
+          .returns(z.promise(z.boolean()))
+          .implement(async (arg, params) => {
+            return arg.id === params.userId;
+          }),
+      )
       .authorize((args) => {
         return Promise.resolve(args[0].id.length === 4);
       }),
   );
 
-  const api = zrpc.api(userRouter);
-
-  // const qwer = zrpc
-  //   .newendpoint([PostStruct.omit({ timestamp: true })], z.promise(PostStruct.omit({ timestamp: true })))
-  //   .implement(async (post) => {
-  //     return post;
-  //   });
-  userRouter.endpoint(
-    'newEndpoint',
-    zrpc
-      .endpoint()
-      .args(Post.omit({ content: true }))
-      .returns(z.promise(Post.omit({ content: true })))
-      .implement(async (post) => {
-        return post;
-      }),
-  );
+  const api = trpc.api(userRouter);
 
   console.log('creating userApi');
   api.router.compose('user', userRouter);

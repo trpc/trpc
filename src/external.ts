@@ -1,7 +1,6 @@
-import { ZodRPCApi, ZodRPCEndpoint, ZodRPCRouter } from './internal';
+import { TRPCApi, TRPCEndpoint, TRPCRouter } from './internal';
 
-export const api = ZodRPCApi.create;
-export const router = ZodRPCRouter.create;
-export const endpoint = ZodRPCEndpoint.create;
-
-export { ZodRPCApi as Api, ZodRPCRouter as Router, ZodRPCEndpoint as Endpoint };
+export { TRPCApi, TRPCRouter, TRPCEndpoint };
+export const api = TRPCApi.create;
+export const router = TRPCRouter.create;
+export const endpoint = TRPCEndpoint.create;

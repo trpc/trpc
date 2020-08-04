@@ -1,10 +1,10 @@
 ///////////////////////
 /////  ERROR DEF  /////
 ///////////////////////
-export const ZodRPCErrorCode = {
+export const TRPCErrorCode = {
   InvalidEndpoint: 'InvalidEndpoint',
   InvalidMethod: 'InvalidMethod',
-  // InvalidPayload: 'InvalidPayload',
+
   InvalidArguments: 'InvalidArguments',
   InvalidReturnType: 'InvalidReturnType',
   InvalidPath: 'InvalidPath',
@@ -15,13 +15,13 @@ export const ZodRPCErrorCode = {
   UnknownError: 'UnknownError',
 } as const;
 
-export type ZodRPCErrorCode = typeof ZodRPCErrorCode[keyof typeof ZodRPCErrorCode];
+export type TRPCErrorCode = typeof TRPCErrorCode[keyof typeof TRPCErrorCode];
 
-export class ZodRPCError extends Error {
+export class TRPCError extends Error {
   code: number;
-  type: ZodRPCErrorCode;
+  type: TRPCErrorCode;
 
-  constructor(code: number, type: ZodRPCErrorCode, message: string) {
+  constructor(code: number, type: TRPCErrorCode, message: string) {
     super(message);
     this.code = code;
     this.type = type;

@@ -2904,10 +2904,10 @@ prepend-http@^1.0.1:
   resolved "https://registry.yarnpkg.com/prepend-http/-/prepend-http-1.0.4.tgz#d4f4562b0ce3696e41ac52d0e002e57a635dc6dc"
   integrity sha1-1PRWKwzjaW5BrFLQ4ALlemNdxtw=
 
-prettier@2:
-  version "2.0.2"
-  resolved "https://registry.yarnpkg.com/prettier/-/prettier-2.0.2.tgz#1ba8f3eb92231e769b7fcd7cb73ae1b6b74ade08"
-  integrity sha512-5xJQIPT8BraI7ZnaDwSbu5zLrB6vvi8hVV58yHQ+QK64qrY40dULy0HSRlQ2/2IdzeBpjhDkqdcFBnFeDEMVdg==
+prettier@^2.0.5:
+  version "2.0.5"
+  resolved "https://registry.yarnpkg.com/prettier/-/prettier-2.0.5.tgz#d6d56282455243f2f92cc1716692c08aa31522d4"
+  integrity sha512-7PtVymN48hGcO4fGjybyBSIWDsLU4H4XlvOHfq91pz9kkGlonzwTfYkaIEwiRg/dAJF9YlbsduBAgtYLi+8cFg==
 
 pretty-format@^25.1.0:
   version "25.1.0"
@@ -3573,11 +3573,6 @@ tough-cookie@^3.0.1:
     psl "^1.1.28"
     punycode "^2.1.1"
 
-tozod@^0.0.1:
-  version "0.0.1"
-  resolved "https://registry.yarnpkg.com/tozod/-/tozod-0.0.1.tgz#797c4d0b81e280a052f5ff8d77539813d20dae61"
-  integrity sha512-ox1AY5/VvxktVpZWHsZZnhUT2fUa4KsQwPHzI/YJh9CkvESLbqX5Nstp0imuPnWj1KZ8c31kTJoSNwT2tHEwCw==
-
 tr46@^1.0.1:
   version "1.0.1"
   resolved "https://registry.yarnpkg.com/tr46/-/tr46-1.0.1.tgz#a8b13fd6bfd2489519674ccde55ba3693b706d09"
@@ -3928,7 +3923,7 @@ yargs@^15.0.0:
     y18n "^4.0.0"
     yargs-parser "^18.1.0"
 
-zod@^1.9.1:
-  version "1.9.1"
-  resolved "https://registry.yarnpkg.com/zod/-/zod-1.9.1.tgz#fe839dcd955b769cf0bfdbfd8624c7b21fcf2670"
-  integrity sha512-nyL0a3IUCfjjFHcYYzWJhcohdvqAFkZK0rMKSTtFxc4cFfo5cJc+cLznTs07RtbswNQfOfJYz53dOUmHtKpmcg==
+zod@^1.10.1:
+  version "1.10.1"
+  resolved "https://registry.yarnpkg.com/zod/-/zod-1.10.1.tgz#dce69b7574a87f86b9672af018d75652085eb1c2"
+  integrity sha512-EW+91y/Tl3atue4ancfbf09zC4lcv1QIiwW9ortV1+R/ccW6sOiMkAqGBxCcAyUP0ecnsJKWGHSYOPGJivX/1A==

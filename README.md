@@ -1,5 +1,5 @@
 <div align="center">
-  <h1 align="center">ZodRPC</h1>
+  <h1 align="center">trpc</h1>
 </div>
 
 <!-- Place this tag where you want the button to render. -->
@@ -10,7 +10,7 @@
 
 # Motivation
 
-ZodRPC is a toolkit for creating typesafe backends powered by [Zod](https://github.com/vriad/zod).
+trpc is a toolkit for creating typesafe backends. You can think of it as a way of building RPC APIs, or you can think of it as a way to avoid APIs.
 
 # Usage
 
@@ -29,7 +29,7 @@ const User = z.object({
 ## Define your endpoints
 
 Method: `zrpc.endpoint()`
-Returns: instance of `ZodRPCEndpoint`
+Returns: instance of `trpcEndpoint`
 
 Think of an endpoint as a function; it has some set of arguments and a return type. By default, endpoints accept zero arguments and return `void`. You can use the `.args()` and `.returns()` methods to change that:
 
@@ -73,7 +73,7 @@ const myApi = zrpc.api(rootRouter);
 
 ## Integrate into your server
 
-Out of the box, ZodRPC APIs can act as an express middleware.
+Out of the box, trpc APIs can act as an express middleware.
 
 ```ts
 import express from 'express';
@@ -117,7 +117,7 @@ const result = await response.json();
 
 ## Generating an SDK
 
-`ZodRPCAPI.to.sdk`You can generate an SDK from your API instance using the `.to.sdk()` method. It accepts a single argument of type:
+`trpcAPI.to.sdk`You can generate an SDK from your API instance using the `.to.sdk()` method. It accepts a single argument of type:
 
 ```ts
 type ToSDKParams = {
