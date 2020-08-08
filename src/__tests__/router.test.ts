@@ -52,6 +52,9 @@ test('router creation', () => {
   console.log('creating userApi');
   api.router.compose('user', userRouter);
 
-  api.to.express();
-  api.to.sdkFile();
+  api.toExpress();
+  api.toSDK({
+    url: 'http://localhost',
+    handler,
+  });
 });

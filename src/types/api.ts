@@ -1,5 +1,4 @@
 import { TRPCRouter, TRPCError, TRPCErrorCode } from '../internal';
-import { generateSDK } from './sdk';
 
 export type ApiDef = {
   router: TRPCRouter;
@@ -23,28 +22,23 @@ export class TRPCApi<R extends TRPCRouter<any, any>> {
     return new TRPCApi(router);
   };
 
-  to = {
-    express: () => async (request: any, response: any, next: any) => {
-      try {
-        if (request.method !== 'POST') {
-          throw new TRPCError(400, TRPCErrorCode.InvalidMethod, 'Skii RPC APIs only accept post requests');
-        }
-
-        const result = await this.router.handle(request.body);
-        response.status(200).send(result);
-        next();
-      } catch (_err) {
-        const err: TRPCError = _err;
-        console.log(`Caught error`);
-        console.log(err.message);
-        console.log(err);
-        return response.status(err.code || 500).send(`${err.message}`);
+  toExpress = () => async (request: any, response: any, next: any) => {
+    try {
+      if (request.method !== 'POST') {
+        throw new TRPCError(400, TRPCErrorCode.InvalidMethod, 'Skii RPC APIs only accept post requests');
       }
-    },
-    sdk: (params: SDKParams): ReturnType<R['_sdk']> => this.router._sdk(params) as any,
-    sdkFile: async () => {
-      const generatedSDK = generateSDK(this, 'http://localhost:3000/rpc');
-      return generatedSDK;
-    },
+
+      const result = await this.router.handle(request.body);
+      response.status(200).send(result);
+      next();
+    } catch (_err) {
+      const err: TRPCError = _err;
+      console.log(`Caught error`);
+      console.log(err.message);
+      console.log(err);
+      return response.status(err.code || 500).send(`${err.message}`);
+    }
   };
+
+  makeSDK = (params: SDKParams): ReturnType<R['_sdk']> => this.router._sdk(params) as any;
 }
