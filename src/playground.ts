@@ -31,7 +31,7 @@ export const mySDK = myApi.makeSDK({
   },
 });
 
-const qer: (arg: [string, number]) => any = ([a, b]) => {
-  console.log(a);
-  console.log(b);
-};
+// const qer: (arg: [string, number]) => any = ([a, b]) => {
+//   console.log(a);
+//   console.log(b);
+// };
