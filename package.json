@@ -35,6 +35,7 @@
     "lint": "tslint -p tsconfig.json",
     "test": "jest --config jestconfig.json --coverage",
     "testone": "jest --config jestconfig.json",
+    "dryrun": "nodemon -e ts -w . -x ts-node src/dryrun.ts",
     "prepublishOnly": "npm run build",
     "play": "nodemon -e ts -w . -x ts-node src/playground.ts"
   },

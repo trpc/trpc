@@ -29,7 +29,7 @@ export class TRPCApi<R extends TRPCRouter<any, any>> {
       }
 
       const result = await this.router.handle(request.body);
-      response.status(200).send(result);
+      response.status(200).send(`${result}`);
       next();
     } catch (_err) {
       const err: TRPCError = _err;
