@@ -2,6 +2,7 @@ import { TRPCEndpoint, TRPCErrorCode, TRPCError } from '../internal';
 import { SDKParams } from './api';
 import { tsutil } from '../util/tsutil';
 
+export type TRPCPayload = { endpoint: string[]; args: any[]; context: { [k: string]: unknown } };
 export class TRPCRouter<
   Children extends { [k: string]: TRPCRouter<any, any> } = {},
   Endpoints extends { [k: string]: TRPCEndpoint<any> } = {}
@@ -36,7 +37,7 @@ export class TRPCRouter<
     });
   };
 
-  handle: (payload: { endpoint: string[]; args: any[] }) => any = async (payload) => {
+  handle: (payload: TRPCPayload) => any = async (payload) => {
     if (!payload) {
       throw new TRPCError(
         500,
@@ -45,7 +46,7 @@ export class TRPCRouter<
       );
     }
 
-    const { endpoint, args } = payload;
+    const { endpoint, args, context } = payload;
 
     if (!Array.isArray(endpoint) || !endpoint.every((x) => typeof x === 'string')) {
       throw new TRPCError(400, TRPCErrorCode.InvalidEndpoint, 'body.endpoint should be array of strings.');
@@ -85,7 +86,7 @@ export class TRPCRouter<
           `Endpoint path must terminate with an endpoint, not a child router`,
         );
       }
-      return await maybeChild.handle({ endpoint: endpoint.slice(1), args: args });
+      return await maybeChild.handle({ endpoint: endpoint.slice(1), args, context });
     }
 
     const handler = maybeEndpoint;
@@ -95,7 +96,7 @@ export class TRPCRouter<
 
     let isAuthorized;
     try {
-      isAuthorized = await handler._def.authorization(args, {});
+      isAuthorized = await handler._def.authorization(args, context);
     } catch (err) {
       throw new TRPCError(500, TRPCErrorCode.AuthorizationError, err.message);
     }
