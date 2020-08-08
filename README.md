@@ -14,76 +14,75 @@ trpc is a toolkit for creating typesafe backends. You can think of it as a way o
 
 # Usage
 
-## Define your types with Zod
-
-```ts
-import * as z from 'zod';
-
-const User = z.object({
-  id: z.string().uuid(),
-  name: z.string(),
-  points: z.number(),
-});
-```
-
 ## Define your endpoints
 
-Method: `zrpc.endpoint()`
-Returns: instance of `trpcEndpoint`
+`trpc.endpoint`: `<T>(func: Function)=>TRPCEndpoint`
 
-Think of an endpoint as a function; it has some set of arguments and a return type. By default, endpoints accept zero arguments and return `void`. You can use the `.args()` and `.returns()` methods to change that:
-
-```ts
-const getUserById = zrpc.endpoint().args(z.string().uuid()).returns(z.promise(User));
-```
-
-This endpoint is now of type `(id:string)=>Promise<User>`. You can implement the endpoint logic with `.implement()`:
+An endpoint is just a function. Pass any function into `trpc.endpoint()` and `trpc` will automatically infer the input and output types.
 
 ```ts
-const getUserById = zrpc
-  .endpoint()
-  .args(z.string().uuid())
-  .returns(z.promise(User))
-  .implement(async (id) => {
-    return await fetchUser(id);
-  });
+const getUserById = trpc.endpoint((id: string) => {
+  return await db.getUser({ id });
+});
 ```
 
 ## Define your router(s)
 
-You can compose endpoints into routers.
+`trpc.router()=>TRPCRouter`
+
+Routers are collections of endpoints. You create on with `trpc.router()` (no arguments):
 
 ```ts
-const userRouter = zrpc.router().endpoint('getById', getUserById);
+const userRouter = trpc.router();
 ```
 
-And compose routers into hierarchies.
+Add endpoints to it like this:
 
 ```ts
-const rootRouter = zrpc.router().compose('user', userRouter);
+userRouter.endpoint('getById', getUserById).endpoint('search', searchUsers);
+```
+
+Note that you _must_ chain together multiple calls to `.endpoint()`. If you're used to Express you may be tempted to try this:
+
+```ts
+// DONT DO THIS
+const userRouter = trpc.router();
+
+userRouter.endpoint('getById', getUserById);
+userRouter.endpoint('search', searchUsers);
+```
+
+In `trpc` routers are _immutable_. The `.endpoint` function returns an entirely new router. It doesn't mutate `userRouter`.
+
+You can also compose routers into hierarchies.
+
+```ts
+const rootRouter = trpc.router().compose('user', userRouter);
 ```
 
 ## Define your API
 
-Once you've fully implemented your root router, pass it into `zrpc.api()`:
+`trpc.router(root: TRPCRouter)=>TRPCApi`
+
+Once you've fully implemented your root router, pass it into `trpc.api()`.
 
 ```ts
-const myApi = zrpc.api(rootRouter);
+const myApi = trpc.api(rootRouter);
 ```
 
 ## Integrate into your server
 
-Out of the box, trpc APIs can act as an express middleware.
+Out of the box, trpc APIs can act as an Express middleware.
 
 ```ts
 import express from 'express';
-
 import bodyParser from 'body-parser';
-export const app = express();
 
+export const app = express();
 app.use(bodyParser.json());
 
-app.post('/rpc', api.to.express());
+// serve requests
+app.post('/rpc', api.toExpress());
 ```
 
 Similar to GraphQL, your entire API is exposed over a single endpoint (in this case `/rpc`). To call an endpoint, POST to this endpoint with a payload of the following type:
@@ -92,10 +91,11 @@ Similar to GraphQL, your entire API is exposed over a single endpoint (in this c
 type RequestBody = {
   endpoint: string[];
   args: any[]; // the arguments to your endpoint
+  context: any;
 };
 ```
 
-### An example with fetch
+### A working example
 
 ```ts
 // server
@@ -117,7 +117,9 @@ const result = await response.json();
 
 ## Generating an SDK
 
-`trpcAPI.to.sdk`You can generate an SDK from your API instance using the `.to.sdk()` method. It accepts a single argument of type:
+`trpcAPI.makeSDK`
+
+You can generate an SDK from your API instance using the `.makeSDK()` method. It accepts a single argument of type:
 
 ```ts
 type ToSDKParams = {
@@ -127,20 +129,22 @@ type ToSDKParams = {
 ```
 
 ```ts
-const mySDK = myApi.to.sdk({
+const mySDK = myApi.makeSDK({
   url: 'http:localhost:3000',
-  handler: async (url, body: any) => {
+  handler: async (url, payload) => {
+    const context = 'whatever';
     const result = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: payload,
+      body: { ...payload, context },
     });
+
     return result.json();
   },
 });
 ```
 
-You can use Lerna or Yarn Workspaces to share this SDK instance with your client. The SDK does not contain or expose _any_ of your endpoint implementation code! You can use it like this:
+You can use Lerna or Yarn Workspaces to share this SDK instance with your client. The SDK does not contain or expose _any_ of your endpoint implementation code! So you can share it directly with the client without worrying about exposing your server code. You can use it like this:
 
 ```ts
 export const myFunction = async () => {
