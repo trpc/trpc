@@ -37,7 +37,11 @@ export class TRPCApi<R extends TRPCRouter<any, any>> {
       next();
     } catch (_err) {
       const err: TRPCError = _err;
-      return response.status(err.code || 500).send(`${err.type}: ${err.message}`);
+      return response.status(err.code || 500).json({
+        code: err.code,
+        message: err.message,
+        type: err.type,
+      });
     }
   };
 
