@@ -33,13 +33,11 @@ export class TRPCApi<R extends TRPCRouter<any, any>> {
       next();
     } catch (_err) {
       const err: TRPCError = _err;
-      console.log(`Caught error`);
-      console.log(err.message);
-      console.log(err);
-      return response.status(err.code || 500).send(`${err.message}`);
+      return response.status(err.code || 500).send(`${err.type}: ${err.message}`);
     }
   };
 
   toClientSDK = (params: SDKParams): ReturnType<R['_toClientSDK']> => this.router._toClientSDK(params) as any;
   toServerSDK = (): ReturnType<R['_toServerSDK']> => this.router._toServerSDK() as any;
+  handle = this.router.handle;
 }
