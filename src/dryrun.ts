@@ -9,10 +9,11 @@ import axios from 'axios';
 import { trpc } from '.';
 
 export const testEndpoint = trpc
-  .endpoint((id: string) => {
+  .endpoint((ctx: any) => (id: string) => {
+    console.log(JSON.stringify(ctx, null, 2));
     return id.length;
   })
-  .authorize(async (_args) => true);
+  .authorize(() => true);
 const userRouter = trpc.router().endpoint('testEndpoint', testEndpoint);
 const rootRouter = trpc.router().compose('user', userRouter);
 const api = trpc.api(rootRouter);

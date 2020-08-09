@@ -17,7 +17,7 @@ import { tsutil } from '../util/tsutil';
 type AnyFunc = (...args: any[]) => any;
 
 export type TRPCEndpointDef<Func extends AnyFunc> = {
-  function: Func;
+  functionGetter: (ctx: any) => Func;
   authorization: (args: Parameters<Func>, ctx: unknown) => boolean | Promise<boolean>;
 };
 
@@ -28,12 +28,12 @@ export class TRPCEndpoint<Func extends AnyFunc> {
     this._def = def;
   }
 
-  static create = <F extends AnyFunc>(func: F) => {
-    return new TRPCEndpoint({ function: func, authorization: () => false });
+  static create = <F extends AnyFunc>(func: (ctx: any) => F): TRPCEndpoint<F> => {
+    return new TRPCEndpoint({ functionGetter: func, authorization: () => false });
   };
 
-  call = (...args: Parameters<Func>): ReturnType<Func> => {
-    return this._def.function(...args);
+  call = (context: any, ...args: Parameters<Func>): ReturnType<Func> => {
+    return this._def.functionGetter(context)(...args);
   };
 
   authorize = (authorization: (args: Parameters<Func>, ctx: any) => boolean | Promise<boolean>): this => {
@@ -48,8 +48,8 @@ export class TRPCEndpoint<Func extends AnyFunc> {
   };
 
   _toServerSDK: () => tsutil.promisify<Func> = () => {
-    return (async (...args: any) => {
-      const result = await this.call(...args);
+    return (async (context: any, ...args: any) => {
+      const result = await this.call(context, ...args);
       return result as any;
     }) as any;
   };

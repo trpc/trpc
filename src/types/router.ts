@@ -14,7 +14,7 @@ export class TRPCRouter<
 
   endpoint: <P extends string, E extends TRPCEndpoint<any>>(
     path: P,
-    endpt: E,
+    endpt: E & ThisType<{ context: any }>,
   ) => TRPCRouter<Children, tsutil.format<Endpoints & { [k in P]: E }>> = (path, endpt) => {
     if (this._def.children[path] || this._def.endpoints[path])
       throw new TRPCError(500, TRPCErrorCode.NameConflict, `Name conflict: "${path}" already in use`);
@@ -105,7 +105,7 @@ export class TRPCRouter<
     }
 
     try {
-      const value = await handler._def.function(...args);
+      const value = await handler.call(context, ...args);
       return value;
     } catch (err) {
       throw new TRPCError(500, TRPCErrorCode.UnknownError, err.message);

@@ -8,7 +8,7 @@ const User = z.object({
   points: z.number(),
 });
 
-const getUserById = trpc.endpoint(
+const getUserById = trpc.endpoint(() =>
   z
     .function()
     .args(z.string().uuid())
