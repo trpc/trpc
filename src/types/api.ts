@@ -18,6 +18,10 @@ export class TRPCApi<R extends TRPCRouter<any, any>> {
     this.router = router;
   }
 
+  get handle() {
+    return this.router.handle;
+  }
+
   static create = <R extends TRPCRouter<any, any>>(router: R): TRPCApi<R> => {
     return new TRPCApi(router);
   };
@@ -39,5 +43,4 @@ export class TRPCApi<R extends TRPCRouter<any, any>> {
 
   toClientSDK = (params: SDKParams): ReturnType<R['_toClientSDK']> => this.router._toClientSDK(params) as any;
   toServerSDK = (): ReturnType<R['_toServerSDK']> => this.router._toServerSDK() as any;
-  handle = this.router.handle;
 }
