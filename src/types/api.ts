@@ -33,19 +33,11 @@ export class TRPCApi<R extends TRPCRouter<any, any>> {
       }
 
       const result = await this.router.handle(request.body);
-      console.log('returning results');
-      console.log(result);
       response.status(200).json(result);
       if (next) next();
     } catch (_err) {
-      console.log('caught errors');
       const err: TRPCError = _err;
       return response.status(err.code || 500).send(`${err.type}: ${err.message}`);
-      // return response.status(err.code || 500).json({
-      //   code: err.code,
-      //   message: err.message,
-      //   type: err.type,
-      // });
     }
   };
 

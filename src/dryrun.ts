@@ -10,7 +10,6 @@ import { trpc } from '.';
 
 export const testEndpoint = trpc
   .endpoint((_ctx, id: string) => {
-    console.log(JSON.stringify(_ctx, null, 2));
     return id.length;
   })
   .authorize((id) => {
