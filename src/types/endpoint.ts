@@ -17,9 +17,11 @@ import { tsutil } from '../util/tsutil';
 type AnyFunc = (...args: any[]) => any;
 
 export type TRPCEndpointDef<Func extends AnyFunc> = {
-  functionGetter: (ctx: any) => Func;
-  authorization: (args: Parameters<Func>, ctx: unknown) => boolean | Promise<boolean>;
+  implement: Func;
+  authorize: (args: Parameters<Func>) => boolean | Promise<boolean>;
 };
+
+// type Authorize<Func extends AnyFunc> = (args: Parameters<Func>, ctx: unknown) => boolean | Promise<boolean>;
 
 export class TRPCEndpoint<Func extends AnyFunc> {
   readonly _def!: TRPCEndpointDef<Func>;
@@ -28,19 +30,25 @@ export class TRPCEndpoint<Func extends AnyFunc> {
     this._def = def;
   }
 
-  static create = <F extends AnyFunc>(func: (ctx: any) => F): TRPCEndpoint<F> => {
-    return new TRPCEndpoint({ functionGetter: func, authorization: () => false });
+  static create = <F extends AnyFunc>(func: F): TRPCEndpoint<F> => {
+    return new TRPCEndpoint({ implement: func, authorize: () => false });
   };
 
-  call = (context: any, ...args: Parameters<Func>): ReturnType<Func> => {
-    return this._def.functionGetter(context)(...args);
+  call = (...args: Parameters<Func>): ReturnType<Func> => {
+    return this._def.implement(...args);
   };
 
-  authorize = (authorization: (args: Parameters<Func>, ctx: any) => boolean | Promise<boolean>): this => {
-    return new TRPCEndpoint({ ...this._def, authorization }) as any;
+  authorize = (func: (args: Parameters<Func>) => boolean | Promise<boolean>): this => {
+    return new TRPCEndpoint({ ...this._def, authorize: func }) as any;
   };
 
-  _toClientSDK: (params: SDKParams, path: string[]) => tsutil.promisify<Func> = (params, path) => {
+  _toClientSDK: (
+    params: SDKParams,
+    path: string[],
+  ) => Func extends (a: any, ...b: infer U) => any ? tsutil.promisify<(...args: U) => ReturnType<Func>> : never = (
+    params,
+    path,
+  ) => {
     return (async (...args: any) => {
       const result = await params.handler(params.url, { endpoint: path, args });
       return result as any;
@@ -48,8 +56,8 @@ export class TRPCEndpoint<Func extends AnyFunc> {
   };
 
   _toServerSDK: () => tsutil.promisify<Func> = () => {
-    return (async (context: any, ...args: any) => {
-      const result = await this.call(context, ...args);
+    return (async (...args: any) => {
+      const result = await this.call(...args);
       return result as any;
     }) as any;
   };

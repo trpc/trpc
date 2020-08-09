@@ -136,7 +136,7 @@ const mySDK = myApi.makeSDK({
     const result = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: { ...payload, context },
+      body: { ...payload, args: [context, ...payload.args] },
     });
 
     return result.json();

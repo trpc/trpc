@@ -9,11 +9,14 @@ import axios from 'axios';
 import { trpc } from '.';
 
 export const testEndpoint = trpc
-  .endpoint((ctx: any) => (id: string) => {
-    console.log(JSON.stringify(ctx, null, 2));
+  .endpoint((_ctx, id: string) => {
+    console.log(JSON.stringify(_ctx, null, 2));
     return id.length;
   })
-  .authorize(() => true);
+  .authorize((id) => {
+    return id.length < 12;
+  });
+
 const userRouter = trpc.router().endpoint('testEndpoint', testEndpoint);
 const rootRouter = trpc.router().compose('user', userRouter);
 const api = trpc.api(rootRouter);
@@ -42,8 +45,8 @@ app.listen(5000, async () => {
     url: 'http://localhost:5000/rpc',
     handler: async (url, payload) => {
       const result = await axios.post(url, {
-        ...payload,
-        context: { test: 'hello there' },
+        endpoint: payload.endpoint,
+        args: [{ test: 'hello there' }, ...payload.args],
       });
       return result.data;
     },

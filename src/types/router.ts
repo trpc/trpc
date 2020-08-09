@@ -2,7 +2,7 @@ import { TRPCEndpoint, TRPCErrorCode, TRPCError } from '../internal';
 import { SDKParams } from './api';
 import { tsutil } from '../util/tsutil';
 
-export type TRPCPayload = { endpoint: string[]; args: any[]; context: { [k: string]: unknown } };
+export type TRPCPayload = { endpoint: string[]; args: any[] };
 export class TRPCRouter<
   Children extends { [k: string]: TRPCRouter<any, any> } = {},
   Endpoints extends { [k: string]: TRPCEndpoint<any> } = {}
@@ -14,7 +14,7 @@ export class TRPCRouter<
 
   endpoint: <P extends string, E extends TRPCEndpoint<any>>(
     path: P,
-    endpt: E & ThisType<{ context: any }>,
+    endpt: E,
   ) => TRPCRouter<Children, tsutil.format<Endpoints & { [k in P]: E }>> = (path, endpt) => {
     if (this._def.children[path] || this._def.endpoints[path])
       throw new TRPCError(500, TRPCErrorCode.NameConflict, `Name conflict: "${path}" already in use`);
@@ -46,7 +46,7 @@ export class TRPCRouter<
       );
     }
 
-    const { endpoint, args, context } = payload;
+    const { endpoint, args } = payload;
 
     if (!Array.isArray(endpoint) || !endpoint.every((x) => typeof x === 'string')) {
       throw new TRPCError(400, TRPCErrorCode.InvalidEndpoint, 'body.endpoint should be array of strings.');
@@ -86,7 +86,7 @@ export class TRPCRouter<
           `Endpoint path must terminate with an endpoint, not a child router`,
         );
       }
-      return await maybeChild.handle({ endpoint: endpoint.slice(1), args, context });
+      return await maybeChild.handle({ endpoint: endpoint.slice(1), args });
     }
 
     const handler = maybeEndpoint;
@@ -96,7 +96,7 @@ export class TRPCRouter<
 
     let isAuthorized;
     try {
-      isAuthorized = await handler._def.authorization(args, context);
+      isAuthorized = await handler._def.authorize(args);
     } catch (err) {
       throw new TRPCError(500, TRPCErrorCode.AuthorizationError, err.message);
     }
@@ -105,7 +105,7 @@ export class TRPCRouter<
     }
 
     try {
-      const value = await handler.call(context, ...args);
+      const value = await handler.call(...args);
       return value;
     } catch (err) {
       throw new TRPCError(500, TRPCErrorCode.UnknownError, err.message);
