@@ -22,7 +22,7 @@ const userRouter = trpc.router().endpoint('getById', getUserById);
 const rootRouter = trpc.router().compose('user', userRouter);
 export const myApi = trpc.api(rootRouter);
 
-export const mySDK = myApi.makeSDK({
+export const mySDK = myApi.toClientSDK({
   url: 'http://localhost',
   handler: async (url, payload) => {
     return axios.post(url, {

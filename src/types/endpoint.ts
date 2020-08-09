@@ -40,9 +40,16 @@ export class TRPCEndpoint<Func extends AnyFunc> {
     return new TRPCEndpoint({ ...this._def, authorization }) as any;
   };
 
-  _sdk: (params: SDKParams, path: string[]) => tsutil.promisify<Func> = (params, path) => {
+  _toClientSDK: (params: SDKParams, path: string[]) => tsutil.promisify<Func> = (params, path) => {
     return (async (...args: any) => {
       const result = await params.handler(params.url, { endpoint: path, args });
+      return result as any;
+    }) as any;
+  };
+
+  _toServerSDK: () => tsutil.promisify<Func> = () => {
+    return (async (...args: any) => {
+      const result = await this.call(...args);
       return result as any;
     }) as any;
   };

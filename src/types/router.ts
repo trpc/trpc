@@ -116,20 +116,35 @@ export class TRPCRouter<
     return new TRPCRouter({ endpoints: {}, children: {} });
   };
 
-  _sdk: (
+  _toClientSDK: (
     params: SDKParams,
     path?: string[],
   ) => tsutil.format<
-    { [k in keyof Children]: ReturnType<Children[k]['_sdk']> } &
-      { [k in keyof Endpoints]: ReturnType<Endpoints[k]['_sdk']> }
+    { [k in keyof Children]: ReturnType<Children[k]['_toClientSDK']> } &
+      { [k in keyof Endpoints]: ReturnType<Endpoints[k]['_toClientSDK']> }
   > = (params, path = []) => {
     const sdkObject: any = {};
 
     for (const name in this._def.children) {
-      sdkObject[name] = this._def.children[name]._sdk(params, [...path, name]);
+      sdkObject[name] = this._def.children[name]._toClientSDK(params, [...path, name]);
     }
     for (const name in this._def.endpoints) {
-      sdkObject[name] = this._def.endpoints[name]._sdk(params, [...path, name]);
+      sdkObject[name] = this._def.endpoints[name]._toClientSDK(params, [...path, name]);
+    }
+    return sdkObject;
+  };
+
+  _toServerSDK: () => tsutil.format<
+    { [k in keyof Children]: ReturnType<Children[k]['_toServerSDK']> } &
+      { [k in keyof Endpoints]: ReturnType<Endpoints[k]['_toServerSDK']> }
+  > = () => {
+    const sdkObject: any = {};
+
+    for (const name in this._def.children) {
+      sdkObject[name] = this._def.children[name]._toServerSDK();
+    }
+    for (const name in this._def.endpoints) {
+      sdkObject[name] = this._def.endpoints[name]._toServerSDK();
     }
     return sdkObject;
   };

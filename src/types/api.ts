@@ -40,5 +40,6 @@ export class TRPCApi<R extends TRPCRouter<any, any>> {
     }
   };
 
-  makeSDK = (params: SDKParams): ReturnType<R['_sdk']> => this.router._sdk(params) as any;
+  toClientSDK = (params: SDKParams): ReturnType<R['_toClientSDK']> => this.router._toClientSDK(params) as any;
+  toServerSDK = (): ReturnType<R['_toServerSDK']> => this.router._toServerSDK() as any;
 }
