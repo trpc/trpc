@@ -117,7 +117,7 @@ Similar to GraphQL, your entire API is exposed over a single endpoint (in this c
 
 tRPC automatically keeps track of the structure of your router hierarchy and the input/output types of your endpoint. This means we can do some extremely exciting things.
 
-### Generate a server SDK
+### On the server
 
 tRPC can autogenerate an "server SDK" from any router like so:
 
@@ -130,7 +130,7 @@ serverSDK.stringRouter.toLowerCase('Hi Mom!'); // "hi mom!"
 
 This is useful for server environments. It provides a standard way to "call your own APIs" without any code duplication. Plus it automatically bypasses all endpoint authorizations. Do not accidentally make this available to any client side code!
 
-### Generate a client SDK
+### On the client
 
 You can also generate a client SDK that you can safely pass to your client-side code. You're able to provide entirely custom HTTP logic; tRPC is strictly BYOL: bring-your-own-library.
 
