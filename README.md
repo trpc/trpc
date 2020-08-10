@@ -1,6 +1,5 @@
 <div align="center">
   <h1 align="center">tRPC</h1>
-  <br/>
   <p>a toolkit for building a typesafe data layer</p>
 </div>
 
