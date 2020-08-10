@@ -1,4 +1,4 @@
-import { SDKParams } from './api';
+import { ToClientSDKParams } from './router';
 import { tsutil } from '../util/tsutil';
 
 ////////////////////////////
@@ -43,14 +43,15 @@ export class TRPCEndpoint<Func extends AnyFunc> {
   };
 
   _toClientSDK: (
-    params: SDKParams,
+    params: ToClientSDKParams,
     path: string[],
   ) => Func extends (a: any, ...b: infer U) => any ? tsutil.promisify<(...args: U) => ReturnType<Func>> : never = (
     params,
     path,
   ) => {
     return (async (...args: any) => {
-      const result = await params.handler(params.url, { endpoint: path, args });
+      const context = await params.getContext();
+      const result = await params.handler(params.url, { endpoint: path, args: [context, ...args] });
       return result as any;
     }) as any;
   };

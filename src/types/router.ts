@@ -1,8 +1,10 @@
 import { TRPCEndpoint, TRPCErrorCode, TRPCError } from '../internal';
-import { SDKParams } from './api';
 import { tsutil } from '../util/tsutil';
 
 export type TRPCPayload = { path: string[]; args: any[] };
+export type ClientSDKHandler = (url: string, payload: { endpoint: string[]; args: unknown[] }) => Promise<unknown>;
+export type ToClientSDKParams = { url: string; getContext: () => Promise<any>; handler: ClientSDKHandler };
+
 export class TRPCRouter<
   Children extends { [k: string]: TRPCRouter<any, any> } = {},
   Endpoints extends { [k: string]: TRPCEndpoint<any> } = {}
@@ -132,7 +134,7 @@ export class TRPCRouter<
   };
 
   toClientSDK: (
-    params: SDKParams,
+    params: ToClientSDKParams,
     path?: string[],
   ) => tsutil.format<
     { [k in keyof Children]: ReturnType<Children[k]['toClientSDK']> } &
