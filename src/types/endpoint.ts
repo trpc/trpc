@@ -51,7 +51,7 @@ export class TRPCEndpoint<Func extends AnyFunc> {
   ) => {
     return (async (...args: any) => {
       const context = await params.getContext();
-      const result = await params.handler(params.url, { endpoint: path, args: [context, ...args] });
+      const result = await params.handler(params.url, { path, args: [context, ...args] });
       return result as any;
     }) as any;
   };

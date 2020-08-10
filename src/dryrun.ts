@@ -18,7 +18,7 @@ export const testEndpoint = trpc
 
 const userRouter = trpc.router().endpoint('testEndpoint', testEndpoint);
 const rootRouter = trpc.router().compose('user', userRouter);
-const api = trpc.api(rootRouter);
+// const api = trpc.api(rootRouter);
 
 export const checkLocal = (host: string): boolean => {
   return host.includes('localhost') || host.includes('127.0.0.1');
@@ -36,17 +36,17 @@ app.use(
     parameterLimit: 50000,
   }),
 );
-app.post('/rpc', api.toExpress());
+app.post('/rpc', rootRouter.toExpress());
 
 app.listen(5000, async () => {
   console.log(`listening on port 5000...`);
-  const mySDK = api.toClientSDK({
+  const mySDK = rootRouter.toClientSDK({
     url: 'http://localhost:5000/rpc',
+    getContext: async () => {
+      return { test: 'hello there' };
+    },
     handler: async (url, payload) => {
-      const result = await axios.post(url, {
-        endpoint: payload.endpoint,
-        args: [{ test: 'hello there' }, ...payload.args],
-      });
+      const result = await axios.post(url, payload);
       return result.data;
     },
   });

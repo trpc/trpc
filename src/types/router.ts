@@ -2,7 +2,7 @@ import { TRPCEndpoint, TRPCErrorCode, TRPCError } from '../internal';
 import { tsutil } from '../util/tsutil';
 
 export type TRPCPayload = { path: string[]; args: any[] };
-export type ClientSDKHandler = (url: string, payload: { endpoint: string[]; args: unknown[] }) => Promise<unknown>;
+export type ClientSDKHandler = (url: string, payload: { path: string[]; args: unknown[] }) => Promise<unknown>;
 export type ToClientSDKParams = { url: string; getContext: () => Promise<any>; handler: ClientSDKHandler };
 
 export class TRPCRouter<
@@ -128,7 +128,9 @@ export class TRPCRouter<
       response.status(200).json(result);
       if (next) next();
     } catch (_err) {
+      console.log(_err);
       const err: TRPCError = _err;
+
       return response.status(err.code || 500).send(`${err.type}: ${err.message}`);
     }
   };
