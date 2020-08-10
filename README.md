@@ -1,78 +1,104 @@
 <div align="center">
-  <h1 align="center">trpc</h1>
+  <h1 align="center">tRPC</h1>
+  <br/>
+  <p>a toolkit for building a typesafe data layer</p>
 </div>
-
-<!-- Place this tag where you want the button to render. -->
-
-<!-- Created by [@vriad](https://twitter.com/vriad), maintained by  -->
-
-<!-- ### Table of contents -->
 
 # Motivation
 
-trpc is a toolkit for creating typesafe backends. You can think of it as a way of building RPC APIs, or you can think of it as a way to avoid APIs.
+You can think of tRPC as a way to build a strongly typed RPC API with TypeScript. Or you can think of it as a way to avoid APIs altogether.
 
 # Usage
 
 ## Define your endpoints
 
-`trpc.endpoint`: `<T>(func: Function)=>TRPCEndpoint`
+`trpc.endpoint(func: Function)=>TRPCEndpoint`
 
-An endpoint is just a function. Pass any function into `trpc.endpoint()` and `trpc` will automatically infer the input and output types.
+Instantiate an endpoint by passing any function into `trpc.endpoint()`. tRPC will detect the input and output types.
+
+By convention the first argument should be a _context input_. You'll see why later. If you don't care about context, you still need to include it. Name it `_ctx` will prevent TypeScript from complaining about unused variables.
 
 ```ts
-const getUserById = trpc.endpoint((id: string) => {
-  return await db.getUser({ id });
+const computeLength = trpc.endpoint((_ctx, data: string) => {
+  return data.length;
 });
+
+const toLowerCase = trpc.endpoint((_ctx, data: string) => {
+  return data.toLowerCase();
+});
+```
+
+## Implement authorization
+
+Every endpoint has an `.authorize` method where you decide whether to allow or disallow an incoming request. It can be async.
+
+```ts
+const computeLength = trpc
+  .endpoint((ctx: {}, data: string) => {
+    return data.length;
+  })
+  .authorize(async (ctx, data) => {
+    if (!ctx.token) return false;
+    if (data.length > 1000) return false;
+    return true;
+  });
 ```
 
 ## Define your router(s)
 
 `trpc.router()=>TRPCRouter`
 
-Routers are collections of endpoints. You create on with `trpc.router()` (no arguments):
+Routers are collections of endpoints. Here's how to create one and add the `getUserById` endpoint we created above.
 
 ```ts
-const userRouter = trpc.router();
+const stringRouter = trpc.router().endpoint('computeLength', computeLength).endpoint('toLowerCase', toLowerCase);
 ```
 
-Add endpoints to it like this:
-
-```ts
-userRouter.endpoint('getById', getUserById).endpoint('search', searchUsers);
-```
-
-Note that you _must_ chain together multiple calls to `.endpoint()`. If you're used to Express you may be tempted to try this:
+You _must_ fluently chain multiple calls to `.endpoint()`. If you're familiar with Express you may be tempted to try this:
 
 ```ts
 // DONT DO THIS
-const userRouter = trpc.router();
+const stringRouter = trpc.router();
 
-userRouter.endpoint('getById', getUserById);
-userRouter.endpoint('search', searchUsers);
+stringRouter.endpoint('getById', getUserById);
+stringRouter.endpoint('otherEndpoint', otherEndpoint);
 ```
 
-In `trpc` routers are _immutable_. The `.endpoint` function returns an entirely new router. It doesn't mutate `userRouter`.
+This won't work. In `trpc` routers are _immutable_. The `.endpoint()` method returns an entirely new router, so you must chain the calls.
 
-You can also compose routers into hierarchies.
+## Compose multiple routers
+
+You can compose routers into hierarchies.
 
 ```ts
-const rootRouter = trpc.router().compose('user', userRouter);
+const rootRouter = trpc.router().compose('stringRouter', stringRouter);
 ```
 
-## Define your API
+## Handle requests
 
-`trpc.router(root: TRPCRouter)=>TRPCApi`
+`router.handle(payload: { path: string[], args: any[] })=>any`
 
-Once you've fully implemented your root router, pass it into `trpc.api()`.
+Routers can handle "requests" using the `.handle` method.
 
 ```ts
-const myApi = trpc.api(rootRouter);
+rootRouter.handle({
+  endpoint: ['stringRouter', 'computeLength'],
+  args: [{}, '12characters'], // first arg is context
+}); // => 12
 ```
 
-## Integrate into your server
+This method accepts an input of type:
 
-Out of the box, trpc APIs can act as an Express middleware.
+```ts
+{
+  endpoint: string[]; // the path to the appropriate endpoint
+  args: any[]; // the arguments to the endpoint function
+};
+```
+
+### Express
+
+There is a convenience function for generating an Express middleware from your router.
 
 ```ts
 import express from 'express';
@@ -82,74 +108,74 @@ export const app = express();
 app.use(bodyParser.json());
 
 // serve requests
-app.post('/rpc', api.toExpress());
+app.post('/rpc', rootRouter.toExpress());
 ```
 
-Similar to GraphQL, your entire API is exposed over a single endpoint (in this case `/rpc`). To call an endpoint, POST to this endpoint with a payload of the following type:
+Similar to GraphQL, your entire API is exposed over a single endpoint (in this case `/rpc`). All incoming requests should POST to this endpoint with a payload of the following type:
+
+## Generating SDKs
+
+tRPC automatically keeps track of the structure of your router hierarchy and the input/output types of your endpoint. This means we can do some extremely exciting things.
+
+### Generate a server SDK
+
+tRPC can autogenerate an "server SDK" from any router like so:
 
 ```ts
-type RequestBody = {
-  endpoint: string[];
-  args: any[]; // the arguments to your endpoint
-  context: any;
-};
+const serverSDK = rootRouter.toServerSDK();
+
+serverSDK.stringRouter.computeLength('asdf'); // 4
+serverSDK.stringRouter.toLowerCase('Hi Mom!'); // "hi mom!"
 ```
 
-### A working example
+This is useful for server environments. It provides a standard way to "call your own APIs" without any code duplication. Plus it automatically bypasses all endpoint authorizations. Do not accidentally make this available to any client side code!
+
+### Generate a client SDK
+
+You can also generate a client SDK that you can safely pass to your client-side code. You're able to provide entirely custom HTTP logic; tRPC is strictly BYOL: bring-your-own-library.
+
+> It's easier than ever to share code using tools like [Yarn Workspaces](https://classic.yarnpkg.com/en/docs/workspaces/) or [Lerna](https://github.com/lerna/lerna), or you can use an integrated framework like [Next.js](https://nextjs.org/). The days of auto-generating an SDK from OpenAPI specifications — and GraphQL definition files 🙄 — is over.
 
 ```ts
-// server
-app.listen(3000); // listening on localhost:3000
+// server.ts
+const rootRouter = /* define router here */;
+export const makeClientSDK = rootRouter.toClientSDK;
 
-// client
-const response = await fetch(`http://localhost:3000`, {
-  method: 'POST',
-  headers: { 'Content-Type': 'application/json' },
-  body: {
-    endpoint: ['user', 'getById'],
-    args: ['82de972f-04f7-4b88-92ec-6d1f92bc7883'],
-  },
-});
+// client.tsx
+import { makeClientSDK } from "./server";
 
-const result = await response.json();
-// => { id: '82de972f-04f7-4b88-92ec-6d1f92bc7883', name: 'Ninja', points: 127 }
-```
-
-## Generating an SDK
-
-`trpcAPI.makeSDK`
-
-You can generate an SDK from your API instance using the `.makeSDK()` method. It accepts a single argument of type:
-
-```ts
-type ToSDKParams = {
-  url: string;
-  handler: (url: string, body: { endpoint: string[]; args: any[] }) => Promise<any>;
-};
-```
-
-```ts
-const mySDK = myApi.makeSDK({
+const clientSDK = makeClientSDK({
   url: 'http:localhost:3000',
+  getContext: async ()=>{
+    const token = await getTokenFromCookies();
+    return { token };
+  },
   handler: async (url, payload) => {
-    const context = 'whatever';
+    const context = /* get context */;
     const result = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: { ...payload, args: [context, ...payload.args] },
+      body: payload
     });
 
     return result.json();
   },
-});
+})
 ```
 
-You can use Lerna or Yarn Workspaces to share this SDK instance with your client. The SDK does not contain or expose _any_ of your endpoint implementation code! So you can share it directly with the client without worrying about exposing your server code. You can use it like this:
+As you can see, `.toClientSDK` accepts a configuration object with the following keys:
+
+- `url`: the URL of your tRPC endpoint, e.g. `http://localhost:3000/rpc`
+- `getContext`: a (potentially async) function for gathering/computing/fetching the `context` of the request. This is where you will get and cookies/tokens you'd like to pass with the request. The value returned by this function will be passed as the _first input_ to your endpoint functions.
+- `handler`: the function that handles all HTTP requests. You can use any HTTP library you like (fetch, axios, etc.) and implement custom error handling logic. This function accepts two inputs: `url` and `payload`. _You should never modify `payload`!_
+
+Now that you've configured your client SDK you can use it like so:
 
 ```ts
-export const myFunction = async () => {
-  // autocomplete! type checking!
-  const myUser = await mySDK.user.getById('82de972f-04f7-4b88-92ec-6d1f92bc7883');
-  // => User
-};
+clientSDK.stringRouter.computeLength('asdf'); // => Promise<4>
+clientSDK.stringRouter.toLowerCase('Hi Mom!'); // => Promise<"hi mom!">
 ```
+
+As you can see, the client SDK always returns a Promise, even if the server-side logic in synchronous. This is because the request still makes a round-trip between your client and your server.
+
+## Recipes

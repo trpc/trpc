@@ -2,7 +2,7 @@ import { TRPCEndpoint, TRPCErrorCode, TRPCError } from '../internal';
 import { SDKParams } from './api';
 import { tsutil } from '../util/tsutil';
 
-export type TRPCPayload = { endpoint: string[]; args: any[] };
+export type TRPCPayload = { path: string[]; args: any[] };
 export class TRPCRouter<
   Children extends { [k: string]: TRPCRouter<any, any> } = {},
   Endpoints extends { [k: string]: TRPCEndpoint<any> } = {}
@@ -46,9 +46,9 @@ export class TRPCRouter<
       );
     }
 
-    const { endpoint, args } = payload;
+    const { path, args } = payload;
 
-    if (!Array.isArray(endpoint) || !endpoint.every((x) => typeof x === 'string')) {
+    if (!Array.isArray(path) || !path.every((x) => typeof x === 'string')) {
       throw new TRPCError(400, TRPCErrorCode.InvalidEndpoint, 'body.endpoint should be array of strings.');
     }
 
@@ -56,9 +56,9 @@ export class TRPCRouter<
       throw new TRPCError(400, TRPCErrorCode.InvalidArguments, 'body.args should be an array.');
     }
 
-    if (!endpoint || endpoint.length === 0) throw new TRPCError(400, TRPCErrorCode.InvalidEndpoint, 'InvalidEndpoint');
+    if (!path || path.length === 0) throw new TRPCError(400, TRPCErrorCode.InvalidEndpoint, 'InvalidEndpoint');
 
-    const segment = endpoint[0];
+    const segment = path[0];
     if (typeof segment !== 'string')
       throw new TRPCError(
         400,
@@ -79,14 +79,14 @@ export class TRPCRouter<
       throw new TRPCError(501, TRPCErrorCode.EndpointNotFound, `Endpoint not found: "${segment}"`);
 
     if (maybeChild) {
-      if (endpoint.length < 2) {
+      if (path.length < 2) {
         throw new TRPCError(
           501,
           TRPCErrorCode.InvalidPath,
           `Endpoint path must terminate with an endpoint, not a child router`,
         );
       }
-      return await maybeChild.handle({ endpoint: endpoint.slice(1), args });
+      return await maybeChild.handle({ path: path.slice(1), args });
     }
 
     const handler = maybeEndpoint;
@@ -116,17 +116,32 @@ export class TRPCRouter<
     return new TRPCRouter({ endpoints: {}, children: {} });
   };
 
-  _toClientSDK: (
+  toExpress = () => async (request: any, response: any, next: any) => {
+    try {
+      if (request.method !== 'POST') {
+        throw new TRPCError(400, TRPCErrorCode.InvalidMethod, 'Skii RPC APIs only accept post requests');
+      }
+
+      const result = await this.handle(request.body);
+      response.status(200).json(result);
+      if (next) next();
+    } catch (_err) {
+      const err: TRPCError = _err;
+      return response.status(err.code || 500).send(`${err.type}: ${err.message}`);
+    }
+  };
+
+  toClientSDK: (
     params: SDKParams,
     path?: string[],
   ) => tsutil.format<
-    { [k in keyof Children]: ReturnType<Children[k]['_toClientSDK']> } &
+    { [k in keyof Children]: ReturnType<Children[k]['toClientSDK']> } &
       { [k in keyof Endpoints]: ReturnType<Endpoints[k]['_toClientSDK']> }
   > = (params, path = []) => {
     const sdkObject: any = {};
 
     for (const name in this._def.children) {
-      sdkObject[name] = this._def.children[name]._toClientSDK(params, [...path, name]);
+      sdkObject[name] = this._def.children[name].toClientSDK(params, [...path, name]);
     }
     for (const name in this._def.endpoints) {
       sdkObject[name] = this._def.endpoints[name]._toClientSDK(params, [...path, name]);
@@ -134,14 +149,14 @@ export class TRPCRouter<
     return sdkObject;
   };
 
-  _toServerSDK: () => tsutil.format<
-    { [k in keyof Children]: ReturnType<Children[k]['_toServerSDK']> } &
+  toServerSDK: () => tsutil.format<
+    { [k in keyof Children]: ReturnType<Children[k]['toServerSDK']> } &
       { [k in keyof Endpoints]: ReturnType<Endpoints[k]['_toServerSDK']> }
   > = () => {
     const sdkObject: any = {};
 
     for (const name in this._def.children) {
-      sdkObject[name] = this._def.children[name]._toServerSDK();
+      sdkObject[name] = this._def.children[name].toServerSDK();
     }
     for (const name in this._def.endpoints) {
       sdkObject[name] = this._def.endpoints[name]._toServerSDK();
