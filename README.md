@@ -180,3 +180,9 @@ A few things to notice:
 
 - The `.toClientSDK` method strips off the first (context) input from each of your endpoints. This lets tRPC provide a cleaner version of the SDK: `computeLength('asdf')` instead of `computeLength(getContext(), 'asdf')`. It makes it easy to separately provide the context and the "real inputs".
 - The client SDK always returns a Promise, even if the server-side logic in synchronous. This is because the request still makes a round-trip between your client and your server.
+
+## Recipes
+
+- TODO: React Hook
+- TODO: Normi
+- TODO: Next.js/SWR
