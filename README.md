@@ -5,6 +5,8 @@
 
 # Motivation
 
+⚠️ This is just a proof of concept, no guarantees of maintainence, support, yadda, yadda 🤙
+
 You can think of tRPC as a way to build a strongly typed RPC API with TypeScript. Or you can think of it as a way to avoid APIs altogether.
 
 # Usage
