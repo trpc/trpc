@@ -11,6 +11,18 @@ You can think of tRPC as a way to build a strongly typed RPC API with TypeScript
 
 # Usage
 
+## Installation
+
+`npm add --save trpc`;
+
+`yarn add trpc`;
+
+## Importing
+
+```ts
+import { trpc } from 'trpc';
+```
+
 ## Define your endpoints
 
 `trpc.endpoint(func: Function)=>TRPCEndpoint`
