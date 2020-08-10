@@ -5,15 +5,15 @@
 
 # Motivation
 
-⚠️ This is just a proof of concept, no guarantees of maintainence, support, yadda, yadda 🤙
+⚠️ This is just a proof of concept. Not recommended for use in production. 🤙
 
-You can think of tRPC as a way to build a strongly typed RPC API with TypeScript. Or you can think of it as a way to avoid APIs altogether.
+tRPC is a framework for building strongly typed RPC APIs with TypeScript. Alternatively, you can think of it as a way to avoid APIs altogether.
 
 # Usage
 
 ## Installation
 
-`npm add --save trpc`;
+`npm install --save trpc`;
 
 `yarn add trpc`;
 
@@ -27,16 +27,16 @@ import { trpc } from 'trpc';
 
 `trpc.endpoint(func: Function)=>TRPCEndpoint`
 
-Instantiate an endpoint by passing any function into `trpc.endpoint()`. tRPC will detect the input and output types.
+Instantiate an endpoint by passing any function into `trpc.endpoint()`. tRPC will detect the input and output types. It can be async.
 
-By convention the first argument should be a _context input_. You'll see why later. If you don't care about context, you still need to include it. Name it `_ctx` will prevent TypeScript from complaining about unused variables.
+By convention the first argument should be `ctx`. Even if you don't use it, you should include it. You'll see why later. Naming the variable `_ctx` will prevent TypeScript from complaining about unused variables.
 
 ```ts
 const computeLength = trpc.endpoint((_ctx, data: string) => {
   return data.length;
 });
 
-const toLowerCase = trpc.endpoint((_ctx, data: string) => {
+const toLowerCase = trpc.endpoint(async (_ctx, data: string) => {
   return data.toLowerCase();
 });
 ```
@@ -137,9 +137,11 @@ tRPC can autogenerate an "server SDK" from any router like so:
 ```ts
 const serverSDK = rootRouter.toServerSDK();
 
-serverSDK.stringRouter.computeLength('asdf'); // 4
-serverSDK.stringRouter.toLowerCase('Hi Mom!'); // "hi mom!"
+serverSDK.stringRouter.computeLength({}, 'asdf'); // 4
+serverSDK.stringRouter.toLowerCase({}, 'Hi Mom!'); // Promise<"hi mom!">
 ```
+
+The first argument is the context. Just pass an empty object if it isn't used by your endpoint.
 
 This is useful for server environments. It provides a standard way to "call your own APIs" without any code duplication. Plus it automatically bypasses all endpoint authorizations. Do not accidentally make this available to any client side code!
 
@@ -194,8 +196,7 @@ A few things to notice:
 - The `.toClientSDK` method strips off the first (context) input from each of your endpoints. This lets tRPC provide a cleaner version of the SDK: `computeLength('asdf')` instead of `computeLength(getContext(), 'asdf')`. It makes it easy to separately provide the context and the "real inputs".
 - The client SDK always returns a Promise, even if the server-side logic in synchronous. This is because the request still makes a round-trip between your client and your server.
 
-## Recipes
+## Usage with React
 
 - TODO: React Hook
-- TODO: Normi
 - TODO: Next.js/SWR
