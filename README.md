@@ -5,7 +5,7 @@
 
 # Motivation
 
-⚠️ This is just a proof of concept. Not recommended for use in production. 🤙
+⚠️ This library is undergoing rapid development and should be considered experimental. Not recommended for use in production. 🤙
 
 tRPC is a framework for building strongly typed RPC APIs with TypeScript. Alternatively, you can think of it as a way to avoid APIs altogether.
 
