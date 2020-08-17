@@ -9,10 +9,10 @@ import axios from 'axios';
 import { trpc } from '.';
 
 export const testEndpoint = trpc
-  .endpoint((_ctx, id: string) => {
+  .endpoint((_ctx) => (id: string) => {
     return id.length;
   })
-  .authorize((id) => {
+  .authorize((_ctx) => (id) => {
     return id.length < 12;
   });
 

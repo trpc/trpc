@@ -15,10 +15,11 @@ import { tsutil } from '../util/tsutil';
 //   return true as any;
 // };
 type AnyFunc = (...args: any[]) => any;
+type WrappedFunc = (ctx: any) => (...args: any[]) => any;
 
-export type TRPCEndpointDef<Func extends AnyFunc> = {
+export type TRPCEndpointDef<Func extends WrappedFunc> = {
   implement: Func;
-  authorize: (args: Parameters<Func>) => boolean | Promise<boolean>;
+  authorize: (ctx: any) => (args: Parameters<ReturnType<Func>>) => boolean | Promise<boolean>;
 };
 
 // type Authorize<Func extends AnyFunc> = (args: Parameters<Func>, ctx: unknown) => boolean | Promise<boolean>;
@@ -30,22 +31,22 @@ export class TRPCEndpoint<Func extends AnyFunc> {
     this._def = def;
   }
 
-  static create = <F extends AnyFunc>(func: F): TRPCEndpoint<F> => {
-    return new TRPCEndpoint({ implement: func, authorize: () => false });
+  static create = <F extends WrappedFunc>(func: F): TRPCEndpoint<F> => {
+    return new TRPCEndpoint({ implement: func, authorize: () => () => false });
   };
 
   call = (...args: Parameters<Func>): ReturnType<Func> => {
     return this._def.implement(...args);
   };
 
-  authorize = (func: (args: Parameters<Func>) => boolean | Promise<boolean>): this => {
+  authorize = (func: (ctx: any) => (args: Parameters<Func>) => boolean | Promise<boolean>): this => {
     return new TRPCEndpoint({ ...this._def, authorize: func }) as any;
   };
 
   _toClientSDK: (
     params: ToClientSDKParams,
     path: string[],
-  ) => Func extends (a: any, ...b: infer U) => any ? tsutil.promisify<(...args: U) => ReturnType<Func>> : never = (
+  ) => Func extends (ctx: any) => (...args: infer U) => infer V ? (...args: U) => tsutil.promisify<V> : never = (
     params,
     path,
   ) => {

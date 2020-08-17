@@ -68,10 +68,11 @@ export namespace tsutil {
       { [k in Key]: Value }
   >;
 
-  export type promisify<T extends (...args: any[]) => any> = (
+  export type promisify<T> = T extends Promise<any> ? T : Promise<T>;
+
+  export type returnPromisify<T extends (...args: any[]) => any> = (
     ...args: Parameters<T>
   ) => ReturnType<T> extends Promise<any> ? ReturnType<T> : Promise<ReturnType<T>>;
-
   //////////////////////////
   //// Object Wrangling ////
   //////////////////////////

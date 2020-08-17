@@ -13,7 +13,7 @@ tRPC is a framework for building strongly typed RPC APIs with TypeScript. Altern
 
 ## Installation
 
-`npm install --save trpc`;
+`npm install trpc`
 
 `yarn add trpc`;
 
@@ -126,11 +126,9 @@ app.post('/rpc', rootRouter.toExpress());
 
 Similar to GraphQL, your entire API is exposed over a single endpoint (in this case `/rpc`). All incoming requests should POST to this endpoint with a payload of the following type:
 
-## Generating SDKs
+## Generating a server SDK
 
 tRPC automatically keeps track of the structure of your router hierarchy and the input/output types of your endpoint. This means we can do some extremely exciting things.
-
-### On the server
 
 tRPC can autogenerate an "server SDK" from any router like so:
 
@@ -145,7 +143,7 @@ The first argument is the context. Just pass an empty object if it isn't used by
 
 This is useful for server environments. It provides a standard way to "call your own APIs" without any code duplication. Plus it automatically bypasses all endpoint authorizations. Do not accidentally make this available to any client side code!
 
-### On the client
+## Generating a client SDK
 
 You can also generate a client SDK that you can safely pass to your client-side code. You're able to provide entirely custom HTTP logic; tRPC is strictly BYOL: bring-your-own-library.
 
@@ -195,6 +193,8 @@ A few things to notice:
 
 - The `.toClientSDK` method strips off the first (context) input from each of your endpoints. This lets tRPC provide a cleaner version of the SDK: `computeLength('asdf')` instead of `computeLength(getContext(), 'asdf')`. It makes it easy to separately provide the context and the "real inputs".
 - The client SDK always returns a Promise, even if the server-side logic in synchronous. This is because the request still makes a round-trip between your client and your server.
+
+## Runtime validation with Zod
 
 ## Usage with React
 
