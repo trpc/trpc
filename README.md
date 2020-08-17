@@ -126,6 +126,13 @@ app.post('/rpc', rootRouter.toExpress());
 
 Similar to GraphQL, your entire API is exposed over a single endpoint (in this case `/rpc`). All incoming requests should POST to this endpoint with a payload of the following type:
 
+```ts
+{
+  path: string[];
+  args: unknown[];
+}
+```
+
 ## Generating SDKs
 
 tRPC automatically keeps track of the structure of your router hierarchy and the input/output types of your endpoint. This means we can do some extremely exciting things.
