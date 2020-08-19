@@ -178,8 +178,7 @@ const clientSDK = makeClientSDK({
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: payload
-    });
-
+    });f
     return result.json();
   },
 })
