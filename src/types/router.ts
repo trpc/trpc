@@ -2,14 +2,18 @@ import { TRPCEndpoint, TRPCErrorCode, TRPCError } from '../internal';
 import { tsutil } from '../util/tsutil';
 
 export type TRPCPayload = { path: string[]; args: any[] };
-export type ClientSDKHandler = (url: string, payload: { path: string[]; args: unknown[] }) => Promise<unknown>;
-export type ToClientSDKParams = { url: string; getContext: () => Promise<any>; handler: ClientSDKHandler };
+// export type ClientSDKHandler = (url: string, payload: { path: string[]; args: unknown[] }) => Promise<unknown>;
+// export type ToClientSDKParams = { url: string; getContext: () => Promise<any>; handler: ClientSDKHandler };
 
 export class TRPCRouter<
   Children extends { [k: string]: TRPCRouter<any, any> } = {},
   Endpoints extends { [k: string]: TRPCEndpoint<any> } = {}
 > {
   readonly _def: { children: Children; endpoints: Endpoints };
+  readonly _sdk!: tsutil.format<
+    { [k in keyof Children]: Children[k]['_sdk'] } & { [k in keyof Endpoints]: Endpoints[k]['_sdk'] }
+  >;
+
   constructor(def: { children: Children; endpoints: Endpoints }) {
     this._def = def;
   }
@@ -23,7 +27,7 @@ export class TRPCRouter<
     return new TRPCRouter({
       children: this._def.children,
       endpoints: { ...this._def.endpoints, [path]: endpt },
-    });
+    }) as any;
   };
 
   compose: <P extends string, R extends TRPCRouter>(
@@ -36,7 +40,7 @@ export class TRPCRouter<
     return new TRPCRouter({
       children: { ...this._def.children, [path]: child },
       endpoints: this._def.endpoints,
-    });
+    }) as any;
   };
 
   handle: (payload: TRPCPayload) => any = async (payload) => {
@@ -58,7 +62,7 @@ export class TRPCRouter<
       throw new TRPCError(400, TRPCErrorCode.InvalidArguments, 'body.args should be an array.');
     }
 
-    if (!path || path.length === 0) throw new TRPCError(400, TRPCErrorCode.InvalidEndpoint, 'InvalidEndpoint');
+    if (!path || path.length === 0) throw new TRPCError(400, TRPCErrorCode.InvalidEndpoint, 'Path is empty');
 
     const segment = path[0];
     if (typeof segment !== 'string')
@@ -98,7 +102,7 @@ export class TRPCRouter<
 
     let isAuthorized;
     try {
-      isAuthorized = await handler._def.authorize(args);
+      isAuthorized = await handler._def.authorize({}, ...args);
     } catch (err) {
       throw new TRPCError(500, TRPCErrorCode.AuthorizationError, err.message);
     }
@@ -128,29 +132,12 @@ export class TRPCRouter<
       response.status(200).json(result);
       if (next) next();
     } catch (_err) {
-      console.log(_err);
       const err: TRPCError = _err;
-
+      console.log(err.code);
+      console.log(err.type);
+      console.log(err.message);
       return response.status(err.code || 500).send(`${err.type}: ${err.message}`);
     }
-  };
-
-  toClientSDK: (
-    params: ToClientSDKParams,
-    path?: string[],
-  ) => tsutil.format<
-    { [k in keyof Children]: ReturnType<Children[k]['toClientSDK']> } &
-      { [k in keyof Endpoints]: ReturnType<Endpoints[k]['_toClientSDK']> }
-  > = (params, path = []) => {
-    const sdkObject: any = {};
-
-    for (const name in this._def.children) {
-      sdkObject[name] = this._def.children[name].toClientSDK(params, [...path, name]);
-    }
-    for (const name in this._def.endpoints) {
-      sdkObject[name] = this._def.endpoints[name]._toClientSDK(params, [...path, name]);
-    }
-    return sdkObject;
   };
 
   toServerSDK: () => tsutil.format<

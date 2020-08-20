@@ -1,21 +1,20 @@
 ///////////////////////
 /////  ERROR DEF  /////
 ///////////////////////
-export const TRPCErrorCode = {
-  InvalidEndpoint: 'InvalidEndpoint',
-  InvalidMethod: 'InvalidMethod',
+export enum TRPCErrorCode {
+  InvalidEndpoint = 'InvalidEndpoint',
+  InvalidMethod = 'InvalidMethod',
+  InvalidArguments = 'InvalidArguments',
+  InvalidReturnType = 'InvalidReturnType',
+  InvalidPath = 'InvalidPath',
+  EndpointNotFound = 'EndpointNotFound',
+  NotAuthorized = 'NotAuthorized',
+  AuthorizationError = 'AuthorizationError',
+  NameConflict = 'NameConflict',
+  UnknownError = 'UnknownError',
+}
 
-  InvalidArguments: 'InvalidArguments',
-  InvalidReturnType: 'InvalidReturnType',
-  InvalidPath: 'InvalidPath',
-  EndpointNotFound: 'EndpointNotFound',
-  NotAuthorized: 'NotAuthorized',
-  AuthorizationError: 'AuthorizationError',
-  NameConflict: 'NameConflict',
-  UnknownError: 'UnknownError',
-} as const;
-
-export type TRPCErrorCode = typeof TRPCErrorCode[keyof typeof TRPCErrorCode];
+// export type TRPCErrorCode = typeof TRPCErrorCode[keyof typeof TRPCErrorCode];
 
 export class TRPCError extends Error {
   code: number;
