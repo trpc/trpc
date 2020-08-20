@@ -15,7 +15,7 @@ tRPC is a framework for building strongly typed RPC APIs with TypeScript. Altern
 
 `npm install trpc`
 
-`yarn add trpc`;
+`yarn add trpc`
 
 ## Importing
 
@@ -25,34 +25,58 @@ import { trpc } from 'trpc';
 
 ## Define your endpoints
 
-`trpc.endpoint(func: Function)=>TRPCEndpoint`
+`trpc.endpoint(func: (ctx: any) => (...args: any[]) => any)=>TRPCEndpoint`
 
-Instantiate an endpoint by passing any function into `trpc.endpoint()`. tRPC will detect the input and output types. It can be async.
-
-By convention the first argument should be `ctx`. Even if you don't use it, you should include it. You'll see why later. Naming the variable `_ctx` will prevent TypeScript from complaining about unused variables.
+Instantiate an endpoint with `trpc.endpoint()`. This function takes a _function that returns a function_.
 
 ```ts
-const computeLength = trpc.endpoint((_ctx, data: string) => {
+const computeLength = trpc.endpoint(() => (data: string) => {
   return data.length;
 });
+```
 
-const toLowerCase = trpc.endpoint(async (_ctx, data: string) => {
-  return data.toLowerCase();
+The outer function can (optionally) accept a single `ctx` argument. This is how tRPC makes the `ctx` of your RPC calls avaiable to your endpoint logic.
+
+<!-- If you don't need context, you should include it. You'll see why later. Naming the variable `_ctx` will prevent TypeScript from complaining about unused variables. -->
+
+```ts
+type Ctx = { token: string };
+
+const getUsername = trpc.endpoint((ctx: Ctx) => () => {
+  const user = await getUserFromToken(ctx.token);
+  return user.username;
+});
+```
+
+That is a simple endpoint that actually accept any inputs. Here's a more complex example that posts new "tweets" to the user's account.
+
+```ts
+type Ctx = { token: string };
+
+const postTweet = trpc.endpoint((ctx: Ctx) => (data: { content: string }) => {
+  const user = await getUserFromToken(ctx.token);
+  const newTweet = await createTweet({
+    content: data.content,
+    userId: user.id,
+  });
+  return newTweet;
 });
 ```
 
 ## Implement authorization
 
-Every endpoint has an `.authorize` method where you decide whether to allow or disallow an incoming request. It can be async.
+tRPC provides a built-in way to add authorization logic to your endpoints using the `.authorize` method. **By default all incoming requests are rejected!**
+
+`.authorize` accepts a _function that returns a function_, just like `trpc.endpoint`. It must return a boolean. You can use `ctx` or the endpoint's arguments to determine whether to allow the request.
 
 ```ts
-const computeLength = trpc
-  .endpoint((ctx: {}, data: string) => {
-    return data.length;
+const getUsername = trpc
+  .endpoint((ctx: Ctx) => async () => {
+    const user = await getUserFromToken(ctx.token);
+    return user.username;
   })
-  .authorize(async (ctx, data) => {
+  .authorize((ctx) => async (data) => {
     if (!ctx.token) return false;
-    if (data.length > 1000) return false;
     return true;
   });
 ```
@@ -61,13 +85,22 @@ const computeLength = trpc
 
 `trpc.router()=>TRPCRouter`
 
-Routers are collections of endpoints. Here's how to create one and add the `getUserById` endpoint we created above.
+Routers are collections of endpoints. Here's how to create a router and add the `getUsername` endpoint we created above.
 
 ```ts
-const stringRouter = trpc.router().endpoint('computeLength', computeLength).endpoint('toLowerCase', toLowerCase);
+const userRouter = trpc.router().endpoint('getUsername', getUsername);
 ```
 
-You _must_ fluently chain multiple calls to `.endpoint()`. If you're familiar with Express you may be tempted to try this:
+To add multiple endpoints, you _must chain_ the calls to `.endpoint()`.
+
+```ts
+const userRouter = trpc
+  .router()
+  .endpoint('getUsername', getUsername)
+  .endpoint('postTweet', postTweet);
+```
+
+If you're used to Express you may be tempted to try this:
 
 ```ts
 // DONT DO THIS
@@ -81,32 +114,43 @@ This won't work. In `trpc` routers are _immutable_. The `.endpoint()` method ret
 
 ## Compose multiple routers
 
-You can compose routers into hierarchies.
+You can compose routers into hierarchies. Below we create a `rootRouter` with one endpoint (`computeLength`, defined above) and one child router (`userRouter`, defined above, aliased to `user`). This will be important later.
 
 ```ts
-const rootRouter = trpc.router().compose('stringRouter', stringRouter);
+const rootRouter = trpc
+  .router()
+  .endpoint('computeLength', computeLength)
+  .compose('user', userRouter);
 ```
 
 ## Handle requests
 
-`router.handle(payload: { path: string[], args: any[] })=>any`
+`router.handle(payload: Payload)=>any`
+
+The `Payload` type is:
+
+```ts
+type Payload = {
+  path: string[];
+  context: any;
+  args: any[];
+};
+```
 
 Routers can handle "requests" using the `.handle` method.
 
 ```ts
 rootRouter.handle({
-  endpoint: ['stringRouter', 'computeLength'],
-  args: [{}, '12characters'], // first arg is context
-}); // => 12
-```
+  endpoint: ['computeLength'],
+  context: {},
+  args: ['this is a sample string'],
+}); // => Promise<23>
 
-This method accepts an input of type:
-
-```ts
-{
-  endpoint: string[]; // the path to the appropriate endpoint
-  args: any[]; // the arguments to the endpoint function
-};
+rootRouter.handle({
+  endpoint: ['user', 'postTweet'],
+  context: { token: `SAMPLE_TOKEN` },
+  args: [{ content: 'just setting up my twttr' }],
+}); // => Promise<{ /* new Tweet object */ }>
 ```
 
 ### Express
@@ -124,79 +168,111 @@ app.use(bodyParser.json());
 app.post('/rpc', rootRouter.toExpress());
 ```
 
-Similar to GraphQL, your entire API is exposed over a single endpoint (in this case `/rpc`). All incoming requests should POST to this endpoint with a payload of the following type:
+Similar to GraphQL, your entire API is exposed over a single endpoint (in this case `/rpc`). All incoming requests should POST to this endpoint with a body of type `Payload` (defined above).
 
 ## Generating a server SDK
 
-tRPC automatically keeps track of the structure of your router hierarchy and the input/output types of your endpoint. This means we can do some extremely exciting things.
+tRPC automatically tracks the structure of your router hierarchy and the input/output types of your endpoint. This means we can do some exciting things.
 
 tRPC can autogenerate an "server SDK" from any router like so:
 
 ```ts
 const serverSDK = rootRouter.toServerSDK();
 
-serverSDK.stringRouter.computeLength({}, 'asdf'); // 4
-serverSDK.stringRouter.toLowerCase({}, 'Hi Mom!'); // Promise<"hi mom!">
+// synchronous
+const asdfLength = serverSDK.computeLength({}, 'asdf'); // => 4
+
+const username = await serverSDK.user.getUsername({ token: 'SAMPLE_TOKEN' });
+// Promise<"username">
+
+const newTweet = await serverSDK.user.postTweet(
+  { token: 'SAMPLE_TOKEN' },
+  {
+    content: 'just setting up my twttr',
+  },
+);
+// Promise<"username">
 ```
 
-The first argument is the context. Just pass an empty object if it isn't used by your endpoint.
+The first argument to _all_ server SDK calls is the context. Just pass an empty object if your endpoint doesn't use context.
 
-This is useful for server environments. It provides a standard way to "call your own APIs" without any code duplication. Plus it automatically bypasses all endpoint authorizations. Do not accidentally make this available to any client side code!
+This is useful for server environments. It provides a standard way to call your own APIs without any code duplication. Plus it **automatically bypasses all authorization checks**. Do not accidentally make this available to any client side code!
 
 ## Generating a client SDK
 
-You can also generate a client SDK that you can safely pass to your client-side code. You're able to provide entirely custom HTTP logic; tRPC is strictly BYOL: bring-your-own-library.
+⚠️ Follow the instructions below very carefully! Otherwise you may accidentally expose your server code to the client.
 
-> It's easier than ever to share code using tools like [Yarn Workspaces](https://classic.yarnpkg.com/en/docs/workspaces/) or [Lerna](https://github.com/lerna/lerna), or you can use an integrated framework like [Next.js](https://nextjs.org/). The days of auto-generating an SDK from OpenAPI specifications — and GraphQL definition files 🙄 — is over.
+It's easier than ever to share code between your client and server. The example code below assumes you have a way to do this, either using a tool like [Yarn Workspaces](https://classic.yarnpkg.com/en/docs/workspaces/)/[Lerna](https://github.com/lerna/lerna) or a framework like [Next.js](https://nextjs.org/).
+
+<!-- The days of auto-generating an SDK from OpenAPI specifications — and GraphQL definition files 🙄 — is over. -->
 
 ```ts
 // server.ts
-const rootRouter = /* define router here */;
-export const makeClientSDK = rootRouter.toClientSDK;
 
+export const rootRouter = /* define router here */;
+```
+
+```ts
 // client.tsx
-import { makeClientSDK } from "./server";
 
-const clientSDK = makeClientSDK({
+import { trpc } from 'trpc';
+
+// only import the TypeScript type of your router!
+// this uses dynamic imports
+type RootRouter = typeof import('../path/to/server.ts').rootRouter;
+
+// pass in your router type
+// as a generic parameter to trpc.sdk
+const clientSDK = trpc.sdk<RootRouter>({
   url: 'http:localhost:3000',
-  getContext: async ()=>{
+  getContext: async () => {
+    const token = await getTokenFromCookies();
+    return { token };
+  },
+});
+```
+
+As you can see, `trpc.sdk()` accepts a params object with the following keys:
+
+- `url: string` — the URL of your tRPC endpoint, e.g. `http://localhost:3000/rpc`
+- `getContext: ()=>Promise<any>` — an async function for gathering/computing/fetching any `context` data for the request. This is where you should return the cookies/tokens you'd like to pass with the request. The returned value will be provided to your endpoints in the `ctx` argument.
+
+```ts
+await clientSDK.computeLength('asdf'); // => Promise<4>
+await clientSDK.user.getUsername(); // => Promise<"username">
+await clientSDK.user.postTweet({ content: 'hello world' });
+```
+
+The client SDK always returns a Promise, even if the server-side logic in synchronous, since the SDK is making a round-trip HTTP request under the hood.
+
+There's no need to pass a context object as the first input (as with the server SDK) because the context object is produced by the `getContext` function you passed into `trpc.sdk`.
+
+### Custom request handler
+
+By default tRPC uses Axios to send requests to the `url` you specify in the SDK params. Optionally you can provide an entirely custom HTTP request handler using with `handler`:
+
+```ts
+const clientSDK = trpc.sdk<RootRouter>({
+  url: 'http:localhost:3000',
+  getContext: async () => {
     const token = await getTokenFromCookies();
     return { token };
   },
   handler: async (url, payload) => {
-    const context = /* get context */;
     const result = await fetch(url, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: payload
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: payload,
     });
-
     return result.json();
   },
-})
+});
 ```
 
-As you can see, `.toClientSDK` accepts a configuration object with the following keys:
+## Usage patterns
 
-- `url`: the URL of your tRPC endpoint, e.g. `http://localhost:3000/rpc`
-- `getContext`: a (potentially async) function for gathering/computing/fetching the `context` of the request. This is where you will get and cookies/tokens you'd like to pass with the request. The value returned by this function will be passed as the _first input_ to your endpoint functions.
-- `handler`: the function that handles all HTTP requests. You can use any HTTP library you like (fetch, axios, etc.) and implement custom error handling logic. This function accepts two inputs: `url` and `payload`. _You should never modify `payload`!_
-
-Now that you've configured your client SDK you can use it like so:
-
-```ts
-clientSDK.stringRouter.computeLength('asdf'); // => Promise<4>
-clientSDK.stringRouter.toLowerCase('Hi Mom!'); // => Promise<"hi mom!">
-```
-
-A few things to notice:
-
-- The `.toClientSDK` method strips off the first (context) input from each of your endpoints. This lets tRPC provide a cleaner version of the SDK: `computeLength('asdf')` instead of `computeLength(getContext(), 'asdf')`. It makes it easy to separately provide the context and the "real inputs".
-- The client SDK always returns a Promise, even if the server-side logic in synchronous. This is because the request still makes a round-trip between your client and your server.
-
-## Runtime validation with Zod
-
-## Usage with React
-
+- TODO: runtime validation with Zod
 - TODO: React Hook
 - TODO: Next.js/SWR

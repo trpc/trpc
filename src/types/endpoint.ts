@@ -1,4 +1,4 @@
-import { ToClientSDKParams } from './router';
+// import { ToClientSDKParams } from './router';
 import { tsutil } from '../util/tsutil';
 
 ////////////////////////////
@@ -19,13 +19,18 @@ type WrappedFunc = (ctx: any) => (...args: any[]) => any;
 
 export type TRPCEndpointDef<Func extends WrappedFunc> = {
   implement: Func;
-  authorize: (ctx: any) => (args: Parameters<ReturnType<Func>>) => boolean | Promise<boolean>;
+  authorize: (
+    ctx: any,
+  ) => (...args: Parameters<ReturnType<Func>>) => boolean | Promise<boolean>;
 };
 
 // type Authorize<Func extends AnyFunc> = (args: Parameters<Func>, ctx: unknown) => boolean | Promise<boolean>;
 
 export class TRPCEndpoint<Func extends AnyFunc> {
   readonly _def!: TRPCEndpointDef<Func>;
+  readonly _sdk!: Func extends (ctx: any) => (...args: infer U) => any
+    ? tsutil.returnPromisify<(...args: U) => ReturnType<ReturnType<Func>>>
+    : never;
 
   constructor(def: TRPCEndpointDef<Func>) {
     this._def = def;
@@ -35,32 +40,20 @@ export class TRPCEndpoint<Func extends AnyFunc> {
     return new TRPCEndpoint({ implement: func, authorize: () => () => false });
   };
 
-  call = (...args: Parameters<Func>): ReturnType<Func> => {
-    return this._def.implement(...args);
+  call = (
+    ctx: Parameters<Func>[0],
+    ...args: Parameters<ReturnType<Func>>
+  ): ReturnType<ReturnType<Func>> => {
+    return this._def.implement(ctx)(...args);
   };
 
-  authorize = (func: (ctx: any) => (args: Parameters<Func>) => boolean | Promise<boolean>): this => {
+  authorize = (
+    func: (
+      ctx: Parameters<Func>[0],
+    ) => (...args: Parameters<ReturnType<Func>>) => boolean | Promise<boolean>,
+  ): this => {
     return new TRPCEndpoint({ ...this._def, authorize: func }) as any;
   };
 
-  _toClientSDK: (
-    params: ToClientSDKParams,
-    path: string[],
-  ) => Func extends (ctx: any) => (...args: infer U) => infer V ? (...args: U) => tsutil.promisify<V> : never = (
-    params,
-    path,
-  ) => {
-    return (async (...args: any) => {
-      const context = await params.getContext();
-      const result = await params.handler(params.url, { path, args: [context, ...args] });
-      return result as any;
-    }) as any;
-  };
-
-  _toServerSDK: () => tsutil.promisify<Func> = () => {
-    return (async (...args: any) => {
-      const result = await this.call(...args);
-      return result as any;
-    }) as any;
-  };
+  _toServerSDK = () => this.call;
 }
