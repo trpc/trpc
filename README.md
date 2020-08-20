@@ -57,7 +57,7 @@ const getUsername = trpc.endpoint((ctx: Ctx) => () => {
 });
 ```
 
-That is a simple endpoint that actually accept any inputs. Here's a more complex example that posts new "tweets" to the user's account.
+That is a simple endpoint that doesn't actually accept any inputs. Here's a more complex example that posts new "tweets" to the user's account.
 
 ```ts
 type Ctx = { token: string };
