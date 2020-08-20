@@ -1,7 +1,10 @@
 <div align="center">
   <h1 align="center">tRPC</h1>
-  <p>a toolkit for building a typesafe data layer</p>
+  <p>a toolkit for building end-to-end TypeScript data layers</p>
 </div>
+
+<br/>
+<br/>
 
 # Motivation
 
@@ -11,21 +14,23 @@ tRPC is a framework for building strongly typed RPC APIs with TypeScript. Altern
 
 # Usage
 
-## Installation
+### Installation
 
 `npm install trpc`
 
 `yarn add trpc`
 
-## Compatibility
-
-tRPC depends on the Proxy API and dynamic imports, both of which are [not supported in IE11 and earlier](https://caniuse.com/#feat=proxy).
-
-## Importing
+### Importing
 
 ```ts
 import { trpc } from 'trpc';
 ```
+
+### Compatibility
+
+tRPC depends on the Proxy API and dynamic imports, both of which are [not supported in IE11 and earlier](https://caniuse.com/#feat=proxy).
+
+Compatible with TypeScript 3.2+.
 
 ## Define your endpoints
 
@@ -174,7 +179,7 @@ app.post('/rpc', rootRouter.toExpress());
 
 Similar to GraphQL, your entire API is exposed over a single endpoint (in this case `/rpc`). All incoming requests should POST to this endpoint with a body of type `Payload` (defined above).
 
-## Generating a server SDK
+## Creating a server SDK
 
 tRPC automatically tracks the structure of your router hierarchy and the input/output types of your endpoint. This means we can do some exciting things.
 
@@ -202,7 +207,7 @@ The first argument to _all_ server SDK calls is the context. Just pass an empty 
 
 This is useful for server environments. It provides a standard way to call your own APIs without any code duplication. Plus it **automatically bypasses all authorization checks**. Do not accidentally make this available to any client side code!
 
-## Generating a client SDK
+## Creating a client SDK
 
 ⚠️ Follow the instructions below very carefully! Otherwise you may accidentally expose your server code to the client.
 
