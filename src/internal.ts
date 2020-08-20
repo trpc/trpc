@@ -1,4 +1,4 @@
-import { TRPCRouter } from './types/router';
-import { TRPCEndpoint } from './types/endpoint';
-import { TRPCError, TRPCErrorCode } from './types/error';
+import { TRPCRouter } from './router';
+import { TRPCEndpoint } from './endpoint';
+import { TRPCError, TRPCErrorCode } from './error';
 export { TRPCRouter, TRPCEndpoint, TRPCError, TRPCErrorCode };

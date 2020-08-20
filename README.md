@@ -17,6 +17,10 @@ tRPC is a framework for building strongly typed RPC APIs with TypeScript. Altern
 
 `yarn add trpc`
 
+## Compatibility
+
+tRPC depends on the Proxy API and dynamic imports, both of which are [not supported in IE11 and earlier](https://caniuse.com/#feat=proxy).
+
 ## Importing
 
 ```ts
