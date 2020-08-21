@@ -16,7 +16,7 @@ const defaultHandler = async (url: string, data: any) => {
   return result.data;
 };
 
-export const makeSDK = <T extends TRPCRouter<any>>(
+export const makeSDK = <T extends TRPCRouter<any, any>>(
   params: ToClientSDKParams,
 ): T['_sdk'] => {
   const handler: ClientSDKHandler = params.handler || defaultHandler;
