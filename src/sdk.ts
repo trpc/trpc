@@ -48,7 +48,7 @@ export const makeSDK = <T extends TRPCRouter<any, any>>(
           return obj;
         },
         apply: async function (_target, _this, argumentsList) {
-          return handle(argumentsList);
+          return handle(...argumentsList);
         },
       },
     );
