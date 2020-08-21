@@ -31,27 +31,24 @@ export const makeSDK = <T extends TRPCRouter<any, any>>(
       });
     };
 
-    return new Proxy(
-      {},
-      {
-        get(obj, name: string) {
-          if (name === 'apply') {
-            return (...args: any) => handle(...args[1]);
-          }
-          if (name === 'call') {
-            return (...args: any) => handle(...args.slice(1));
-          }
-          if (typeof name === 'string' && name !== 'constructor') {
-            return makeSubSDK([...path, name]);
-          }
+    return new Proxy(function () {}, {
+      get(obj, name: string) {
+        if (name === 'apply') {
+          return (...args: any) => handle(...args[1]);
+        }
+        if (name === 'call') {
+          return (...args: any) => handle(...args.slice(1));
+        }
+        if (typeof name === 'string' && name !== 'constructor') {
+          return makeSubSDK([...path, name]);
+        }
 
-          return obj;
-        },
-        apply: async function (_target, _this, argumentsList) {
-          return handle(...argumentsList);
-        },
+        return obj;
       },
-    );
+      apply: async function (_target, _this, argumentsList) {
+        return handle(...argumentsList);
+      },
+    });
   }
   return makeSubSDK([]);
 };
