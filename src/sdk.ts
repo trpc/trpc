@@ -20,23 +20,38 @@ export const makeSDK = <T extends TRPCRouter<any>>(
   params: ToClientSDKParams,
 ): T['_sdk'] => {
   const handler: ClientSDKHandler = params.handler || defaultHandler;
+
   function makeSubSDK(path: string[]): any {
-    return new Proxy(function () {}, {
-      get(obj, name: string) {
-        if (typeof name === 'string' && name !== 'constructor') {
-          return makeSubSDK([...path, name]);
-        }
-        return obj;
+    const handle = async function (...args: any[]) {
+      const context = await params.getContext();
+      return handler(params.url, {
+        path,
+        args,
+        context,
+      });
+    };
+
+    return new Proxy(
+      {},
+      {
+        get(obj, name: string) {
+          if (name === 'apply') {
+            return (...args: any) => handle(...args[1]);
+          }
+          if (name === 'call') {
+            return (...args: any) => handle(...args.slice(1));
+          }
+          if (typeof name === 'string' && name !== 'constructor') {
+            return makeSubSDK([...path, name]);
+          }
+
+          return obj;
+        },
+        apply: async function (_target, _this, argumentsList) {
+          return handle(argumentsList);
+        },
       },
-      apply: async function (_target, _this, argumentsList) {
-        const context = await params.getContext();
-        return handler(params.url, {
-          path,
-          args: argumentsList,
-          context,
-        });
-      },
-    });
+    );
   }
   return makeSubSDK([]);
 };
