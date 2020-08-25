@@ -59,7 +59,6 @@ export class TRPCRouter<
   };
 
   handle: (payload: TRPCPayload) => any = async (payload) => {
-    console.log(JSON.stringify(payload, null, 2));
     if (!payload) {
       throw new TRPCError(
         500,
@@ -170,9 +169,6 @@ export class TRPCRouter<
       if (next) next();
     } catch (_err) {
       const err: TRPCError = _err;
-      console.log(err.code);
-      console.log(err.type);
-      console.log(err.message);
       return response
         .status(err.code || 500)
         .send(`${err.type}: ${err.message}`);
