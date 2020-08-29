@@ -227,7 +227,11 @@ export class TRPCRouter<
       if (err instanceof TRPCError) {
         return response.status(err.code || 500).json(err.data);
       }
-      return response.status(500).send(`Unexpected error occurred.`);
+      try {
+        return response.status(500).json(err);
+      } catch (err) {
+        return response.status(500).send(`Unexpected error occurred.`);
+      }
     }
   };
 
