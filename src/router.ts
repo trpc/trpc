@@ -1,4 +1,8 @@
-import { TRPCEndpoint, TRPCErrorCode, TRPCError } from '.';
+import {
+  TRPCEndpoint,
+  // TRPCErrorCode,
+  TRPCError,
+} from '.';
 import { tsutil } from './tsutil';
 
 export type TRPCPayload = { path: string[]; args: any[]; context: any };
@@ -27,9 +31,13 @@ export class TRPCRouter<
     endpt,
   ) => {
     if (this._def.children[path] || this._def.endpoints[path])
-      throw new TRPCError(500, TRPCErrorCode.NameConflict, {
-        message: `Name conflict: "${path}" already in use`,
-      });
+      throw new TRPCError(
+        500,
+        // TRPCErrorCode.NameConflict,
+        {
+          message: `Name conflict: "${path}" already in use`,
+        },
+      );
     return new TRPCRouter({
       children: this._def.children,
       endpoints: { ...this._def.endpoints, [path]: endpt },
@@ -44,9 +52,13 @@ export class TRPCRouter<
     child,
   ) => {
     if (this._def.children[path] || this._def.endpoints[path])
-      throw new TRPCError(500, TRPCErrorCode.NameConflict, {
-        message: `Name conflict: "${path}" already in use`,
-      });
+      throw new TRPCError(
+        500,
+        // TRPCErrorCode.NameConflict,
+        {
+          message: `Name conflict: "${path}" already in use`,
+        },
+      );
 
     return new TRPCRouter({
       children: { ...this._def.children, [path]: child },
@@ -56,62 +68,98 @@ export class TRPCRouter<
 
   handle: (payload: TRPCPayload) => any = async (payload) => {
     if (!payload) {
-      throw new TRPCError(500, TRPCErrorCode.InvalidEndpoint, {
-        message: `No body received in post request.\nMake sure you've configured a body parser middleware.`,
-      });
+      throw new TRPCError(
+        500,
+        // TRPCErrorCode.InvalidEndpoint,
+        {
+          message: `No body received in post request.\nMake sure you've configured a body parser middleware.`,
+        },
+      );
     }
 
     const { path, args, context } = payload;
 
     if (!Array.isArray(path) || !path.every((x) => typeof x === 'string')) {
-      throw new TRPCError(400, TRPCErrorCode.InvalidEndpoint, {
-        message: 'body.endpoint should be array of strings.',
-      });
+      throw new TRPCError(
+        400,
+        // TRPCErrorCode.InvalidEndpoint,
+        {
+          message: 'body.endpoint should be array of strings.',
+        },
+      );
     }
 
     if (!Array.isArray(args)) {
-      throw new TRPCError(400, TRPCErrorCode.InvalidArguments, {
-        message: 'body.args should be an array.',
-      });
+      throw new TRPCError(
+        400,
+        // TRPCErrorCode.InvalidArguments,
+        {
+          message: 'body.args should be an array.',
+        },
+      );
     }
 
     if (!path || path.length === 0)
-      throw new TRPCError(400, TRPCErrorCode.InvalidEndpoint, {
-        message: 'Path is empty',
-      });
+      throw new TRPCError(
+        400,
+        // TRPCErrorCode.InvalidEndpoint,
+        {
+          message: 'Path is empty',
+        },
+      );
 
     const segment = path[0];
     if (typeof segment !== 'string')
-      throw new TRPCError(400, TRPCErrorCode.InvalidEndpoint, {
-        message: `Endpoint segment is of non-string type: ${typeof segment}`,
-      });
+      throw new TRPCError(
+        400,
+        // TRPCErrorCode.InvalidEndpoint,
+        {
+          message: `Endpoint segment is of non-string type: ${typeof segment}`,
+        },
+      );
 
     const maybeEndpoint = this._def.endpoints[segment];
     const maybeChild = this._def.children[segment];
     if (maybeEndpoint && maybeChild)
-      throw new TRPCError(500, TRPCErrorCode.NameConflict, {
-        message: `Naming conflict. Endpoint and subrouter share path "${segment}"`,
-      });
+      throw new TRPCError(
+        500,
+        // TRPCErrorCode.NameConflict,
+        {
+          message: `Naming conflict. Endpoint and subrouter share path "${segment}"`,
+        },
+      );
 
     if (!maybeEndpoint && !maybeChild)
-      throw new TRPCError(501, TRPCErrorCode.EndpointNotFound, {
-        message: `Endpoint not found: "${segment}"`,
-      });
+      throw new TRPCError(
+        501,
+        // TRPCErrorCode.EndpointNotFound,
+        {
+          message: `Endpoint not found: "${segment}"`,
+        },
+      );
 
     if (maybeChild) {
       if (path.length < 2) {
-        throw new TRPCError(501, TRPCErrorCode.InvalidPath, {
-          message: `Endpoint path must terminate with an endpoint, not a child router`,
-        });
+        throw new TRPCError(
+          501,
+          // TRPCErrorCode.InvalidPath,
+          {
+            message: `Endpoint path must terminate with an endpoint, not a child router`,
+          },
+        );
       }
       return await maybeChild.handle({ path: path.slice(1), args, context });
     }
 
     const handler = maybeEndpoint;
     if (!(handler instanceof TRPCEndpoint)) {
-      throw new TRPCError(500, TRPCErrorCode.InvalidEndpoint, {
-        message: `Invalid endpoint at "${segment}".`,
-      });
+      throw new TRPCError(
+        500,
+        // TRPCErrorCode.InvalidEndpoint,
+        {
+          message: `Invalid endpoint at "${segment}".`,
+        },
+      );
     }
 
     let isAuthorized;
@@ -121,12 +169,20 @@ export class TRPCRouter<
       if (err instanceof TRPCError) {
         throw err;
       }
-      throw new TRPCError(500, TRPCErrorCode.AuthorizationError, err.message);
+      throw new TRPCError(
+        500,
+        // TRPCErrorCode.AuthorizationError,
+        err.message,
+      );
     }
     if (!isAuthorized) {
-      throw new TRPCError(403, TRPCErrorCode.NotAuthorized, {
-        message: 'Access denied.',
-      });
+      throw new TRPCError(
+        403,
+        // TRPCErrorCode.NotAuthorized,
+        {
+          message: 'Access denied.',
+        },
+      );
     }
 
     try {
@@ -137,10 +193,14 @@ export class TRPCRouter<
         throw error;
       }
 
-      throw new TRPCError(500, TRPCErrorCode.UnknownError, {
-        message: error.message,
-        error,
-      });
+      throw new TRPCError(
+        500,
+        // TRPCErrorCode.UnknownError,
+        {
+          message: error.message,
+          error,
+        },
+      );
     }
   };
 
@@ -151,9 +211,13 @@ export class TRPCRouter<
   toExpress = () => async (request: any, response: any, next: any) => {
     try {
       if (request.method !== 'POST') {
-        throw new TRPCError(400, TRPCErrorCode.InvalidMethod, {
-          message: 'Skii RPC APIs only accept post requests',
-        });
+        throw new TRPCError(
+          400,
+          // TRPCErrorCode.InvalidMethod,
+          {
+            message: 'Skii RPC APIs only accept post requests',
+          },
+        );
       }
 
       const result = await this.handle(request.body);
@@ -161,9 +225,7 @@ export class TRPCRouter<
       if (next) next();
     } catch (err) {
       if (err instanceof TRPCError) {
-        return response
-          .status(err.code || 500)
-          .send(`${err.type}: ${err.message}`);
+        return response.status(err.code || 500).json(err.data);
       }
       return response.status(500).send(`Unexpected error occurred.`);
     }
