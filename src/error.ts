@@ -20,8 +20,12 @@ export class TRPCError extends Error {
   code: number;
   type: TRPCErrorCode;
 
-  constructor(code: number, type: TRPCErrorCode, message: string) {
-    super(message);
+  constructor(
+    code: number,
+    type: TRPCErrorCode,
+    data: { message: string; [k: string]: any },
+  ) {
+    super(data.message);
     this.code = code;
     this.type = type;
   }
