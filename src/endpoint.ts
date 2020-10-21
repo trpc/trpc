@@ -1,5 +1,6 @@
 // import { ToClientSDKParams } from './router';
 import { tsutil } from './tsutil';
+import { TRPCPayload } from './router';
 
 ////////////////////////////
 /////   ENDPOINT DEF   /////
@@ -14,6 +15,12 @@ import { tsutil } from './tsutil';
 //   }
 //   return true as any;
 // };
+// const infer = <T extends tsutil.fun>(arg: T): T => {
+//   return arg;
+// };
+
+// const inferT = infer(<T>(arg: T): T => arg);
+
 type AnyFunc = (...args: any[]) => any;
 type WrappedFunc = (ctx: any) => (...args: any[]) => any;
 
@@ -27,9 +34,15 @@ export type TRPCEndpointDef<Func extends WrappedFunc> = {
 // type Authorize<Func extends AnyFunc> = (args: Parameters<Func>, ctx: unknown) => boolean | Promise<boolean>;
 
 export class TRPCEndpoint<Func extends AnyFunc> {
+  readonly _func!: Func;
   readonly _def!: TRPCEndpointDef<Func>;
   readonly _sdk!: Func extends (ctx: any) => (...args: infer U) => any
-    ? tsutil.returnPromisify<(...args: U) => ReturnType<ReturnType<Func>>>
+    ? (
+        ...args: U
+      ) => {
+        run: () => tsutil.promisify<ReturnType<ReturnType<Func>>>;
+        payload: TRPCPayload;
+      }
     : never;
 
   constructor(def: TRPCEndpointDef<Func>) {
@@ -37,7 +50,10 @@ export class TRPCEndpoint<Func extends AnyFunc> {
   }
 
   static create = <F extends WrappedFunc>(func: F): TRPCEndpoint<F> => {
-    return new TRPCEndpoint({ implement: func, authorize: () => () => false });
+    return new TRPCEndpoint({
+      implement: func,
+      authorize: () => () => false,
+    });
   };
 
   call = (

@@ -4,4 +4,4 @@ import { makeSDK } from './sdk';
 export { TRPCRouter, TRPCEndpoint, TRPCError, TRPCErrorCode };
 export const router = TRPCRouter.create;
 export const endpoint = TRPCEndpoint.create;
-export const sdk = makeSDK;
+export { makeSDK as sdk };

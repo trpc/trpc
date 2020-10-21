@@ -1,13 +1,16 @@
 import Axios from 'axios';
-import { TRPCRouter } from './internal';
+import { TRPCRouter, TRPCEndpoint } from './internal';
+import { tsutil } from './tsutil';
+import { TRPCPayload } from './router';
 
 export type ClientSDKHandler = (
   url: string,
-  payload: { path: string[]; args: unknown[]; context: any },
+  payload: { path: string[]; args: unknown[]; context: unknown },
 ) => Promise<unknown>;
-export type ToClientSDKParams = {
+
+export type ToClientSDKParams<Ctx> = {
   url: string;
-  getContext: () => Promise<any>;
+  getContext: () => Ctx;
   handler?: ClientSDKHandler;
 };
 
@@ -16,19 +19,49 @@ const defaultHandler = async (url: string, data: any) => {
   return result.data;
 };
 
-export const makeSDK = <T extends TRPCRouter<any, any>>(
-  params: ToClientSDKParams,
-): T['_sdk'] => {
+type EndpointToSDK<T extends TRPCEndpoint<any>, Ctx> = T['_func'] extends (
+  ctx: any,
+) => (...args: infer U) => any
+  ? (
+      ...args: U
+    ) => {
+      run: () => tsutil.promisify<ReturnType<ReturnType<T['_func']>>>;
+      payload: TRPCPayload<Ctx>;
+    }
+  : never;
+type RouterToSDK<T extends TRPCRouter<any, any>, Ctx> = tsutil.format<
+  {
+    [k in keyof T['_def']['children']]: T['_def']['children'][k] extends TRPCRouter<
+      any
+    >
+      ? RouterToSDK<T['_def']['children'][k], Ctx>
+      : never;
+  } &
+    {
+      [k in keyof T['_def']['endpoints']]: EndpointToSDK<
+        T['_def']['endpoints'][k],
+        Ctx
+      >;
+    }
+>;
+
+export const makeSDK: <T extends TRPCRouter<any, any>, Ctx = unknown>(
+  params: ToClientSDKParams<Ctx>,
+) => RouterToSDK<T, Ctx> = (params) => {
   const handler: ClientSDKHandler = params.handler || defaultHandler;
 
   function makeSubSDK(path: string[]): any {
-    const handle = async function (...args: any[]) {
-      const context = await params.getContext();
-      return handler(params.url, {
+    const handle = function (...args: any[]) {
+      const context = params.getContext();
+      const payload = {
         path,
         args,
         context,
-      });
+      };
+      return {
+        run: () => handler(params.url, payload),
+        payload,
+      };
     };
 
     return new Proxy(function () {}, {
@@ -45,7 +78,7 @@ export const makeSDK = <T extends TRPCRouter<any, any>>(
 
         return obj;
       },
-      apply: async function (_target, _this, argumentsList) {
+      apply: function (_target, _this, argumentsList) {
         return handle(...argumentsList);
       },
     });

@@ -5,7 +5,11 @@ import {
 } from '.';
 import { tsutil } from './tsutil';
 
-export type TRPCPayload = { path: string[]; args: any[]; context: any };
+export type TRPCPayload<Ctx = any> = {
+  path: string[];
+  args: any[];
+  context: Ctx;
+};
 // export type ClientSDKHandler = (url: string, payload: { path: string[]; args: unknown[] }) => Promise<unknown>;
 // export type ToClientSDKParams = { url: string; getContext: () => Promise<any>; handler: ClientSDKHandler };
 

@@ -6,7 +6,7 @@ const run = async () => {
   await new Promise((res) => setTimeout(res, 1000));
   const mySDK = trpc.sdk<RootRouter>({
     url: 'http://localhost:5000/rpc',
-    getContext: async () => {
+    getContext: () => {
       return { token: 'hello there' };
     },
     handler: async (url, payload) => {
@@ -14,17 +14,17 @@ const run = async () => {
         const result = await Axios.post(url, payload);
         return result.data;
       } catch (err) {
-        console.log(err);
+        // con sole.log(err);
         const resp = err.response;
         console.log(`${resp.status} ${resp.data}`);
+        console.log(resp.data);
       }
     },
   });
 
-  console.log(await mySDK.user.testEndpoint('thisisanid'));
-  console.log(await mySDK.user.testEndpoint('thisisanid'));
-  console.log(await mySDK.getContext());
-  console.log(await mySDK.user.createPost('This is my post!'));
+  console.log(await mySDK.user.testEndpoint('thisisanid').run());
+  console.log(await mySDK.getContext().run());
+  console.log(await mySDK.user.createPost('This is my post!').run());
 };
 
 run();
