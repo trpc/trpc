@@ -321,10 +321,58 @@ const clientSDK = trpc.sdk<RootRouter>({
 
 ### Usage with Hooks
 
-`tRPC` is designed to be as minimal as possible, so it doesn't ship with any React hooks out of the box. Instead you are encouraged to build your own, using tRPC as a building block, or use a hook built by the community. As a starting point, here is a basic hok
+`tRPC` is designed to be as minimal as possible, so it doesn't ship with any React hooks out of the box. Instead you are encouraged to build your own, using tRPC as a building block, or use a hook built by the community. As a starting point, here is a fully functional example of a `useSDK` hook built with tRPC:
 
-#### A simple hook
+```ts
+import { useState, useEffect } from 'react';
+import { trpc, TRPCRequest } from 'trpc';
 
-- TODO: runtime validation with Zod
-- TODO: React Hook
-- TODO: Next.js/SWR
+type RootRouter = typeof import('../api/api').rootRouter;
+
+const SDK = trpc.sdk<RootRouter>({
+  url: 'http://localhost:3000/api/rpc',
+  getContext: () => {
+    const token = getTokenFromCookies();
+    if (!token) return null;
+    return { token };
+  },
+});
+
+export type SDK = typeof SDK;
+
+export type UseSDKResult<T> = {
+  loading: boolean;
+  error: string | null;
+  data: T | null;
+};
+
+export const useSDK = <T>(
+  fetcher: (sdk: SDK) => TRPCRequest<T>,
+): UseSDKResult<T> => {
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+  const [data, setData] = useState<T | null>(null);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const data = await fetcher(SDK).run();
+        setData(data);
+      } catch (err) {
+        console.log(err);
+        setError(err.message);
+      }
+      setLoading(false);
+      return;
+    };
+    setLoading(true);
+    fetchData();
+  }, []);
+
+  return { data, loading, error };
+};
+```
+
+It is possible to build other hooks that integrate with popular data fetching libraries like [`react-query`](https://github.com/tannerlinsley/react-query) or [`swr`](https://swr.vercel.app/). If you do so, submit a PR and we'll include that code in the README!
+
+©2020 Colin McDonnell [@vriad](https://twitter.com/vriad)
