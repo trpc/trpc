@@ -8,7 +8,7 @@
 
 # Motivation
 
-⚠️ This library is undergoing rapid development and should be considered experimental. Not recommended for use in production. 🤙
+> This library is undergoing rapid development and should be considered experimental. 🤙
 
 tRPC is a framework for building strongly typed RPC APIs with TypeScript. Alternatively, you can think of it as a way to avoid APIs altogether.
 
@@ -189,6 +189,7 @@ tRPC can autogenerate an "server SDK" from any router like so:
 const serverSDK = rootRouter.toServerSDK();
 
 // synchronous
+// first argument is context
 const asdfLength = serverSDK.computeLength({}, 'asdf'); // => 4
 
 const username = await serverSDK.user.getUsername({ token: 'SAMPLE_TOKEN' });
@@ -234,8 +235,8 @@ type RootRouter = typeof import('../path/to/server.ts').rootRouter;
 // as a generic parameter to trpc.sdk
 const clientSDK = trpc.sdk<RootRouter>({
   url: 'http:localhost:3000',
-  getContext: async () => {
-    const token = await getTokenFromCookies();
+  getContext: () => {
+    const token = getTokenFromCookies();
     return { token };
   },
 });
@@ -244,7 +245,43 @@ const clientSDK = trpc.sdk<RootRouter>({
 As you can see, `trpc.sdk()` accepts a params object with the following keys:
 
 - `url: string` — the URL of your tRPC endpoint, e.g. `http://localhost:3000/rpc`
-- `getContext: ()=>Promise<any>` — an async function for gathering/computing/fetching any `context` data for the request. This is where you should return the cookies/tokens you'd like to pass with the request. The returned value will be provided to your endpoints in the `ctx` argument.
+- `getContext: ()=>any` — a _synchronous_ function for gathering/computing/fetching any `context` data for the request. This is where you should return the cookies/tokens you'd like to pass with the request. The returned value will be provided to your endpoints in the `ctx` argument.
+
+### Using the SDK
+
+```ts
+const trySDK = async () => {
+  const query = clientSDK.computeLength('asdf');
+};
+```
+
+The above SDK call _synchronously_ returns a result of type `TRPCResult<number>`. `TRPCResult<T>` is defined here:
+
+```ts
+type TRPCResult<T> = {
+  run: () => Promise<T>;
+  payload: {
+    path: string[];
+    args: unknown[];
+    context: unknown;
+  };
+};
+```
+
+Here is how to retreive data from the server:
+
+```ts
+const trySDK = async () => {
+  const query = clientSDK.computeLength('asdf');
+  const result = await query.run();
+};
+```
+
+This may seem redundant; why bother including the extra step of calling `.run()`?
+
+Answer: to make it easier to implement a caching layer on top of TRPC. When you create a new "query" (e.g. `const query = clientSDK.computeLength('asdf');`) you immediately have access to a _serializable_ representation of that query in the `payload` parameter. This object _uniquely identifies_ the query you are making! So you can take `query.payload`, serialize it however you like (`JSON.stringify` would work fine), and use it to cache the request!
+
+This also makes it much easier to integrate with tools like [SWR](https://swr.vercel.app/) which require a unique "key" for each request.
 
 ```ts
 await clientSDK.computeLength('asdf'); // => Promise<4>
@@ -263,8 +300,8 @@ By default tRPC uses Axios to send requests to the `url` you specify in the SDK 
 ```ts
 const clientSDK = trpc.sdk<RootRouter>({
   url: 'http:localhost:3000',
-  getContext: async () => {
-    const token = await getTokenFromCookies();
+  getContext: () => {
+    const token = getTokenFromCookies();
     return { token };
   },
   handler: async (url, payload) => {
@@ -280,7 +317,13 @@ const clientSDK = trpc.sdk<RootRouter>({
 });
 ```
 
-## Usage patterns
+## Recipes
+
+### Usage with Hooks
+
+`tRPC` is designed to be as minimal as possible, so it doesn't ship with any React hooks out of the box. Instead you are encouraged to build your own, using tRPC as a building block, or use a hook built by the community. As a starting point, here is a basic hok
+
+#### A simple hook
 
 - TODO: runtime validation with Zod
 - TODO: React Hook

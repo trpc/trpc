@@ -1,4 +1,13 @@
-import { TRPCRouter } from './router';
+import { TRPCPayload, TRPCRouter } from './router';
 import { TRPCEndpoint } from './endpoint';
 import { TRPCError, TRPCErrorCode } from './error';
-export { TRPCRouter, TRPCEndpoint, TRPCError, TRPCErrorCode };
+import { TRPCRequest } from './sdk';
+
+export {
+  TRPCRouter,
+  TRPCEndpoint,
+  TRPCError,
+  TRPCErrorCode,
+  TRPCPayload,
+  TRPCRequest,
+};

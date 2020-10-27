@@ -14,6 +14,11 @@ export type ToClientSDKParams<Ctx> = {
   handler?: ClientSDKHandler;
 };
 
+export type TRPCRequest<T> = {
+  run: () => Promise<T>;
+  context: TRPCPayload;
+};
+
 const defaultHandler = async (url: string, data: any) => {
   const result = await Axios.post(url, data);
   return result.data;
@@ -29,6 +34,7 @@ type EndpointToSDK<T extends TRPCEndpoint<any>, Ctx> = T['_func'] extends (
       payload: TRPCPayload<Ctx>;
     }
   : never;
+
 type RouterToSDK<T extends TRPCRouter<any, any>, Ctx> = tsutil.format<
   {
     [k in keyof T['_def']['children']]: T['_def']['children'][k] extends TRPCRouter<
