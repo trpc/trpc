@@ -16,7 +16,7 @@ export type ToClientSDKParams<Ctx> = {
 
 export type TRPCRequest<T> = {
   run: () => Promise<T>;
-  context: TRPCPayload;
+  payload: TRPCPayload;
 };
 
 const defaultHandler = async (url: string, data: any) => {

@@ -5,9 +5,9 @@ import {
 } from '.';
 import { tsutil } from './tsutil';
 
-export type TRPCPayload<Ctx = any> = {
+export type TRPCPayload<Ctx = unknown> = {
   path: string[];
-  args: any[];
+  args: unknown[];
   context: Ctx;
 };
 // export type ClientSDKHandler = (url: string, payload: { path: string[]; args: unknown[] }) => Promise<unknown>;
