@@ -1,12 +1,6 @@
 {
   "compilerOptions": {
-    "lib": [
-      "es5",
-      "es6",
-      "es7",
-      "esnext",
-      "dom"
-    ],
+    "lib": ["es5", "es6", "es7", "esnext", "dom"],
     "target": "es5",
     "module": "commonjs",
     "declaration": true,
@@ -30,15 +24,11 @@
     "noUnusedLocals": true /* Report errors on unused locals. */,
     "noUnusedParameters": true /* Report errors on unused parameters. */,
     "noImplicitReturns": true /* Report error when not all code paths in function return a value. */,
-    "noFallthroughCasesInSwitch": true /* Report errors for fallthrough cases in switch statement. */,
+    "noFallthroughCasesInSwitch": true /* Report errors for fallthrough cases in switch statement. */
   },
-  "include": [
-    "src",
-    "tsconfig.package.json",
-    "internal.ts"
-  ],
+  "include": ["src", "tsconfig.package.json"],
   "exclude": [
-    "node_modules",
+    "node_modules"
     // "**/__tests__/"
   ]
 }
