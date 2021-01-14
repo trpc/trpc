@@ -1,12 +1,17 @@
-import { ResolverFn, Prefixer, DropFirst } from './types';
+import { Prefixer, DropFirst } from './types';
+
+type ResolverFn<TContext, TData, TArgs extends any[]> = (
+  ctx: TContext,
+  ...args: TArgs
+) => Promise<TData> | TData;
 
 export class Router<
   TContext extends {},
   TEndpoints extends Record<string, ResolverFn<TContext, any, any>> = {}> {
   readonly endpoints: TEndpoints;
 
-  constructor(endpoints: TEndpoints) {
-    this.endpoints = endpoints;
+  constructor(endpoints?: TEndpoints) {
+    this.endpoints = endpoints ?? {} as TEndpoints;
   }
 
   public endpoint<TData, TArgs extends any[], TPath extends string>(

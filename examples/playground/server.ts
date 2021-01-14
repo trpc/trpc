@@ -20,7 +20,7 @@ type Context = {
 };
 
 function createRouter() {
-  return new Router<Context>({});
+  return new Router<Context>();
 }
 
 async function createContext(req: express.Request): Promise<Context> {

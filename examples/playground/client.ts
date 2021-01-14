@@ -56,6 +56,12 @@ async function main() {
       const res = await client.get('posts/list');
       console.log('client res', res);
     }
+    {
+      console.log('⚠️ enforcing an error');
+
+      const res = await client.post('posts/create', 0 as any);
+      console.log('client res', res);
+    }
   }
 }
 
