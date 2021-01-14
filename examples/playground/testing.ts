@@ -8,8 +8,8 @@ type Prefixer<TObj extends Record<string, any>, TPrefix extends string> = {
 
 
 type ResolverFn<TContext, TData, TInput> = (
-  input: TInput,
   ctx: TContext,
+  input: TInput,
 ) => Promise<TData> | TData;
 
 class Router<
@@ -54,10 +54,10 @@ class Router<
 
   public async handle<
     TPath extends keyof TEndpoints,
-    TInput extends Parameters<TResolver>[0],
+    TInput extends Parameters<TResolver>[1],
     TResolver extends TEndpoints[TPath]
-  >(path: TPath, input: TInput, ctx: TContext) {
-    return this.endpoints[path](input, ctx);
+  >(ctx: TContext, path: TPath, input: TInput) {
+    return this.endpoints[path](ctx, input);
   }
 }
 
@@ -77,7 +77,7 @@ function createRouter() {
 
 // create router for users
 const users = createRouter()
-  .endpoint('create', (input: { name: string }) => {
+  .endpoint('create', (_, input: { name: string }) => {
     return {
       ...input,
     }
@@ -87,7 +87,7 @@ const users = createRouter()
   });
 
 // create router for posts
-const posts = createRouter().endpoint('create', (input: {
+const posts = createRouter().endpoint('create', (_, input: {
   title: string
 }) => {
   return {
@@ -97,8 +97,8 @@ const posts = createRouter().endpoint('create', (input: {
 
 // root router to call
 const rootRouter = createRouter()
-  .endpoint('hello', (input: string, ctx) => {
-    return `hello ${input || ctx.user.name || 'world'}`
+  .endpoint('hello', (ctx, input?: string) => {
+    return `hello ${input ?? ctx.user.name ?? 'world'}`
   })
   .compose('posts', posts)
   .compose('users', users)
@@ -112,8 +112,8 @@ async function main() {
   }
   // the handle method is completely type-safe
   // using string literals to create "paths"
-  console.log(await rootRouter.handle('hello', 'Collin', ctx))
-  console.log(await rootRouter.handle('posts/create', {title: 'my first post'}, ctx))
+  console.log(await rootRouter.handle(ctx, 'hello', 'Collin'))
+  console.log(await rootRouter.handle(ctx, 'posts/create', {title: 'my first post'}))
   
 }
 
