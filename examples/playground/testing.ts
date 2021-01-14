@@ -7,10 +7,13 @@ type Prefixer<TObj extends Record<string, any>, TPrefix extends string> = {
 };
 
 
-type ResolverFn<TContext, TData, TInput> = (
+type ResolverFn<TContext, TData, TArgs extends any[]> = (
   ctx: TContext,
-  input: TInput,
+  ...args: TArgs
 ) => Promise<TData> | TData;
+
+type DropFirst<T extends readonly unknown[]> = T extends readonly [any?, ...infer U] ? U : [...T];
+
 
 class Router<
   TContext extends {},
@@ -22,9 +25,9 @@ class Router<
     this.endpoints = endpoints;
   }
 
-  public endpoint<TData, TInput, TPath extends string>(
+  public endpoint<TData, TArgs extends any[], TPath extends string>(
     path: TPath,
-    resolver: ResolverFn<TContext, TData, TInput>,
+    resolver: ResolverFn<TContext, TData, TArgs>,
   ) {
     const route = {
       [path]: resolver,
@@ -52,20 +55,13 @@ class Router<
     return Object.keys(this.endpoints) as Extract<keyof TEndpoints, string>[];
   }
 
-  public handle<
-    TPath extends keyof TEndpoints,
-    TInput extends Parameters<TResolver>[1],
-    TResolver extends TEndpoints[TPath]
-  >(ctx: TContext, path: TPath, input: TInput): ReturnType<TResolver> {
-    return this.endpoints[path](ctx, input);
-  }
   public handler(ctx: TContext) {
     return <
       TPath extends keyof TEndpoints,
-      TInput extends Parameters<TResolver>[1],
+      TArgs extends DropFirst<Parameters<TResolver>>,
       TResolver extends TEndpoints[TPath]
-    >(path: TPath, input: TInput): ReturnType<TResolver> => {
-      return this.endpoints[path](ctx, input);
+    >(path: TPath, ...args: TArgs): ReturnType<TResolver> => {
+      return this.endpoints[path](ctx, ...args);
     }
   }
 }
@@ -109,7 +105,7 @@ const posts = createRouter().endpoint('create', (_, input: {
 
 // root router to call
 const rootRouter = createRouter()
-  .endpoint('hello', (ctx, input: string) => {
+  .endpoint('hello', (ctx, input?: string) => {
     return `hello ${input ?? ctx.user.name ?? 'world'}`
   })
   .compose('posts', posts)
@@ -129,25 +125,17 @@ async function main() {
     console.log(res)
   }
   {
-    const res = await handle('hello', undefined)
+    const res = await handle('hello')
     console.log(res)
   }
   {
-    const res = await handle('users/list', undefined)
+    const res = await handle('users/list')
     console.log(res)
   }
   {
     const res = await handle('posts/create', {
       title: 'test'
     })
-    console.log(res)
-  }
-  {
-    const res = await rootRouter.handle(ctx, 'hello', 'Collin')
-    console.log(res)
-  }
-  {
-    const res = await rootRouter.handle(ctx, 'posts/create', {title: 'my first post'})
     console.log(res)
   }
   
