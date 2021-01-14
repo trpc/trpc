@@ -52,12 +52,21 @@ class Router<
     return Object.keys(this.endpoints) as Extract<keyof TEndpoints, string>[];
   }
 
-  public async handle<
+  public handle<
     TPath extends keyof TEndpoints,
     TInput extends Parameters<TResolver>[1],
     TResolver extends TEndpoints[TPath]
-  >(ctx: TContext, path: TPath, input: TInput) {
+  >(ctx: TContext, path: TPath, input: TInput): ReturnType<TResolver> {
     return this.endpoints[path](ctx, input);
+  }
+  public handler(ctx: TContext) {
+    return <
+      TPath extends keyof TEndpoints,
+      TInput extends Parameters<TResolver>[1],
+      TResolver extends TEndpoints[TPath]
+    >(path: TPath, input: TInput): ReturnType<TResolver> => {
+      return this.endpoints[path](ctx, input);
+    }
   }
 }
 
@@ -82,8 +91,11 @@ const users = createRouter()
       ...input,
     }
   })
-  .endpoint('list', (_, ctx) => {
-    return []
+  .endpoint('list', () => {
+    return [{
+      id: '1',
+      name: 'test',
+    }]
   });
 
 // create router for posts
@@ -97,7 +109,7 @@ const posts = createRouter().endpoint('create', (_, input: {
 
 // root router to call
 const rootRouter = createRouter()
-  .endpoint('hello', (ctx, input?: string) => {
+  .endpoint('hello', (ctx, input: string) => {
     return `hello ${input ?? ctx.user.name ?? 'world'}`
   })
   .compose('posts', posts)
@@ -110,10 +122,34 @@ async function main() {
       name: 'Alex',
     }
   }
-  // the handle method is completely type-safe
-  // using string literals to create "paths"
-  console.log(await rootRouter.handle(ctx, 'hello', 'Collin'))
-  console.log(await rootRouter.handle(ctx, 'posts/create', {title: 'my first post'}))
+  const handle = rootRouter.handler(ctx)
+
+  {
+    const res = await handle('hello', 'test')
+    console.log(res)
+  }
+  {
+    const res = await handle('hello', undefined)
+    console.log(res)
+  }
+  {
+    const res = await handle('users/list', undefined)
+    console.log(res)
+  }
+  {
+    const res = await handle('posts/create', {
+      title: 'test'
+    })
+    console.log(res)
+  }
+  {
+    const res = await rootRouter.handle(ctx, 'hello', 'Collin')
+    console.log(res)
+  }
+  {
+    const res = await rootRouter.handle(ctx, 'posts/create', {title: 'my first post'})
+    console.log(res)
+  }
   
 }
 
