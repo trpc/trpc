@@ -85,23 +85,31 @@ const users = createRouter()
   .endpoint('create', (_, input: { name: string }) => {
     return {
       ...input,
-    }
+    };
   })
   .endpoint('list', () => {
-    return [{
-      id: '1',
-      name: 'test',
-    }]
+    return [
+      {
+        id: '1',
+        name: 'test',
+      },
+    ];
   });
 
 // create router for posts
-const posts = createRouter().endpoint('create', (_, input: {
-  title: string
-}) => {
-  return {
-    ...input,
-  }
-})
+const posts = createRouter().endpoint(
+  'create',
+  (
+    _,
+    input: {
+      title: string;
+    },
+  ) => {
+    return {
+      ...input,
+    };
+  },
+);
 
 // root router to call
 const rootRouter = createRouter()
