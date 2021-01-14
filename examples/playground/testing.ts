@@ -1,3 +1,4 @@
+// --------------- "Library code" ---------------
 
 type Prefix<K extends string, T extends string> = `${K}${T}`;
 
@@ -61,16 +62,18 @@ class Router<
 }
 
 
-// implementation
+// --------------- Implementation -------------------
 
 type Context = {
   req: {};
 };
 
+
 function createRouter() {
   return new Router<Context>({});
 }
 
+// create router for users
 const users = createRouter()
   .endpoint('create', (input: { name: string }) => {
     return {
@@ -81,6 +84,7 @@ const users = createRouter()
     return []
   });
 
+// create router for posts
 const posts = createRouter().endpoint('create', (input: {
   title: string
 }) => {
@@ -89,6 +93,7 @@ const posts = createRouter().endpoint('create', (input: {
   }
 })
 
+// root router to call
 const rootRouter = createRouter()
   .endpoint('hello', (input?: string) => {
     return `hello ${input ?? 'world'}`
@@ -101,6 +106,8 @@ async function main() {
   const ctx: Context = {
     req: {}
   }
+  // the handle method is completely type-safe
+  // using string literals to create "paths"
   console.log(await rootRouter.handle('hello', 'Alex', ctx))
   console.log(await rootRouter.handle('posts/create', {title: 'my first post'}, ctx))
   
