@@ -65,7 +65,9 @@ class Router<
 // --------------- Implementation -------------------
 
 type Context = {
-  req: {};
+  user?: {
+    name: String,
+  }
 };
 
 
@@ -95,8 +97,8 @@ const posts = createRouter().endpoint('create', (input: {
 
 // root router to call
 const rootRouter = createRouter()
-  .endpoint('hello', (input?: string) => {
-    return `hello ${input ?? 'world'}`
+  .endpoint('hello', (input: string, ctx) => {
+    return `hello ${input || ctx.user.name || 'world'}`
   })
   .compose('posts', posts)
   .compose('users', users)
@@ -104,11 +106,13 @@ const rootRouter = createRouter()
 
 async function main() {
   const ctx: Context = {
-    req: {}
+    user: {
+      name: 'Alex',
+    }
   }
   // the handle method is completely type-safe
   // using string literals to create "paths"
-  console.log(await rootRouter.handle('hello', 'Alex', ctx))
+  console.log(await rootRouter.handle('hello', 'Collin', ctx))
   console.log(await rootRouter.handle('posts/create', {title: 'my first post'}, ctx))
   
 }
