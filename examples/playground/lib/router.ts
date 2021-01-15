@@ -1,6 +1,6 @@
 import { Prefixer, DropFirst } from './types';
 
-type ResolverFn<TContext, TData, TArgs extends any[]> = (
+export type ResolverFn<TContext, TData, TArgs extends any[]> = (
   ctx: TContext,
   ...args: TArgs
 ) => Promise<TData> | TData;
@@ -8,10 +8,10 @@ type ResolverFn<TContext, TData, TArgs extends any[]> = (
 export class Router<
   TContext extends {},
   TEndpoints extends Record<string, ResolverFn<TContext, any, any>> = {}> {
-  readonly endpoints: TEndpoints;
+  readonly _endpoints: TEndpoints;
 
   constructor(endpoints?: TEndpoints) {
-    this.endpoints = endpoints ?? {} as TEndpoints;
+    this._endpoints = endpoints ?? {} as TEndpoints;
   }
 
   public endpoint<TData, TArgs extends any[], TPath extends string>(
@@ -23,7 +23,7 @@ export class Router<
     } as Record<TPath, typeof resolver>;
 
     return new Router<TContext, TEndpoints & typeof route>({
-      ...this.endpoints,
+      ...this._endpoints,
       ...route,
     });
   }
@@ -34,9 +34,9 @@ export class Router<
   >(
     path: TPath,
     router: TChildRouter
-  ): Router<TContext, TEndpoints & Prefixer<TChildRouter['endpoints'], `${TPath}/`>> {
-    return Object.keys(router.endpoints).reduce((r, key) => {
-      return r.endpoint(`${path}/${key}`, router.endpoints[key]);
+  ): Router<TContext, TEndpoints & Prefixer<TChildRouter['_endpoints'], `${TPath}/`>> {
+    return Object.keys(router._endpoints).reduce((r, key) => {
+      return r.endpoint(`${path}/${key}`, router._endpoints[key]);
     }, this as any as Router<TContext, any>);
   }
 
@@ -46,11 +46,11 @@ export class Router<
       TArgs extends DropFirst<Parameters<TResolver>>,
       TResolver extends TEndpoints[TPath]
     >(path: TPath, ...args: TArgs): Promise<ReturnType<TResolver>> => {
-      return this.endpoints[path](ctx, ...args);
+      return this._endpoints[path](ctx, ...args);
     };
   }
 
   public has(path: string) {
-    return !!this.endpoints[path]
+    return !!this._endpoints[path]
   }
 }
