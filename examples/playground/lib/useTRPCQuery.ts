@@ -5,6 +5,7 @@ import {
   UseMutationOptions,
 } from 'react-query';
 import { RootRouter } from '../server';
+import { HTTPClientError } from './createHttpClient';
 import { HTTPResponseEnvelope } from './http';
 import type {
   inferEndpointArgs,
@@ -34,13 +35,13 @@ function createHooks<TRouter extends Router<any, any>>({
     pathAndArgs: [TPath, ...inferEndpointArgs<TRouter, TPath>],
     opts?: UseQueryOptions<
       inferEndpointData<TRouter, TPath>,
-      unknown,
+      HTTPClientError,
       inferEndpointArgs<TRouter, TPath>
     >,
   ) {
     return useQuery<
       inferEndpointData<TRouter, TPath>,
-      unknown,
+      HTTPClientError,
       inferEndpointArgs<TRouter, TPath>
     >(
       pathAndArgs,

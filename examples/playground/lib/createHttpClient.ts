@@ -1,19 +1,15 @@
-import {
-  HTTPErrorResponseEnvelope,
-  HTTPResponseEnvelope,
-  HTTPSuccessResponseEnvelope,
-} from './http';
+import { HTTPResponseEnvelope, HTTPSuccessResponseEnvelope } from './http';
 import { Router } from './router';
+import { Maybe } from './types';
 
 export type HTTPSdk<TRouter extends Router> = {
   get: ReturnType<TRouter['handler']>;
   post: ReturnType<TRouter['handler']>;
 };
-
 export class HTTPClientError extends Error {
-  public readonly json?: HTTPErrorResponseEnvelope;
-  public readonly res?: Response;
-  public readonly originalError?: Error;
+  public readonly json?: Maybe<HTTPResponseEnvelope<unknown>>;
+  public readonly res?: Maybe<Response>;
+  public readonly originalError?: Maybe<Error>;
 
   constructor(
     message: string,
@@ -22,9 +18,9 @@ export class HTTPClientError extends Error {
       json,
       originalError,
     }: {
-      res?: Response;
-      json?: HTTPErrorResponseEnvelope;
-      originalError?: Error;
+      res?: Maybe<Response>;
+      json?: Maybe<HTTPResponseEnvelope<unknown>>;
+      originalError?: Maybe<Error>;
     },
   ) {
     super(message);
@@ -50,20 +46,25 @@ export function createHttpClient<TRouter extends Router>(
   const { fetch: _fetch = fetch, url } = opts;
 
   async function handleResponse(promise: Promise<Response>) {
-    let res: Response;
+    let res: Maybe<Response> = null;
+    let json: Maybe<HTTPResponseEnvelope<unknown>> = null;
     try {
       res = await promise;
-      const json: HTTPResponseEnvelope<unknown> = await res.json();
+      json = (await res.json()) as HTTPResponseEnvelope<unknown>;
 
       if (json.ok === true) {
-        opts.onSuccess && opts.onSuccess(json);
-        return json.data as any;
+        opts.onSuccess && opts.onSuccess(json!);
+        return json!.data as any;
       }
       throw new HTTPClientError(json.error.message, { json, res });
     } catch (originalError) {
       let err: HTTPClientError = originalError;
       if (!(err instanceof HTTPClientError)) {
-        err = new HTTPClientError(originalError.message, { originalError });
+        err = new HTTPClientError(originalError.message, {
+          originalError,
+          res,
+          json,
+        });
       }
       opts.onError && opts.onError(err);
       throw err;
@@ -97,8 +98,8 @@ export function createHttpClient<TRouter extends Router>(
 
     return handleResponse(promise);
   };
-  return ({
+  return {
     post,
     get,
-  } as any) as HTTPSdk<TRouter>;
+  } as HTTPSdk<TRouter>;
 }
