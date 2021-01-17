@@ -19,7 +19,8 @@
   },
   "homepage": "https://github.com/vriad/trpc",
   "dependencies": {
-    "axios": "^0.19.2"
+    "axios": "^0.19.2",
+    "react-query": "^3.5.16"
   },
   "tags": [],
   "keywords": [],
