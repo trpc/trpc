@@ -122,3 +122,21 @@ export function router<TContext extends {} = {}>() {
   return new Router<TContext>()
 }
 
+type ThenArg<T> = T extends PromiseLike<infer U> ? ThenArg<U> : T;
+
+export type inferReturnType<TFunction extends () => any> = ThenArg<
+  ReturnType<TFunction>
+>;
+
+export type inferEndpointData<
+  TRouter extends Router<any, Record<TPath, any>>,
+  TPath extends string & keyof TRouter['_endpoints'],
+> = inferReturnType<TRouter['_endpoints'][TPath]>
+
+
+export type inferEndpointArgs<
+  TRouter extends Router<any, Record<TPath, any>>,
+  TPath extends string & keyof TRouter['_endpoints'],
+> = DropFirst<Parameters<TRouter['_endpoints'][TPath]>>
+
+

@@ -1,7 +1,13 @@
 import fetch, { Response } from 'node-fetch';
-import { HTTPResponseEnvelope } from './lib';
+import {
+  HTTPResponseEnvelope,
+  // inferEndpointArgs,
+  // inferEndpointData,
+} from './lib';
 import type { RootRouter } from './server';
 
+// type D = inferEndpointData<RootRouter, 'admin/secret'>;
+// type Args = inferEndpointArgs<RootRouter, 'posts/create'>;
 const sleep = () => new Promise((resolve) => setTimeout(resolve, 100));
 function createHttpClient(opts: {
   baseUrl: `http://localhost:2021/trpc`;
