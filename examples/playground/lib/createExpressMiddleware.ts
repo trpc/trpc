@@ -20,7 +20,7 @@ export type CreateExpressContextFn<TContext> = (
 function getArgs(req: express.Request): unknown[] {
   let args: unknown[] = [];
   if (req.method === 'POST') {
-    args = req.body.args;
+    args = req.body.args ?? [];
   } else if (req.method === 'GET') {
     try {
       const queryArg = req.query.args as string;
@@ -32,9 +32,6 @@ function getArgs(req: express.Request): unknown[] {
     }
   } else {
     throw httpError.badRequest(`Unacceptable method "${req.method}"`);
-  }
-  if (args === null || args === undefined) {
-    args = [];
   }
   if (!Array.isArray(args)) {
     throw httpError.badRequest('Expected args to be an array');
