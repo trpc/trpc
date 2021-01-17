@@ -48,7 +48,6 @@ function createHttpClient(opts: {
     post,
   };
 }
-
 async function main() {
   {
     const baseUrl = `http://localhost:2021/trpc`;

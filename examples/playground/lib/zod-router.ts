@@ -1,11 +1,11 @@
-import { ResolverFn, Router } from './router';
+import { RouterResolverFn, Router } from './router';
 import { ZodRawShape } from 'zod/lib/src/types/base';
 import * as z from 'zod';
 import { assertNotBrowser } from './assertNotBrowser';
 assertNotBrowser();
 export class ZodRouter<
   TContext extends {},
-  TEndpoints extends Record<string, ResolverFn<TContext, any, any>> = {}
+  TEndpoints extends Record<string, RouterResolverFn<TContext, any, any>> = {}
 > extends Router<TContext, TEndpoints> {
   public safepoint<
     TData,
@@ -19,7 +19,7 @@ export class ZodRouter<
       resolve,
     }: {
       schema: TSchema;
-      resolve: ResolverFn<TContext, TData, [z.infer<TSchema>]>;
+      resolve: RouterResolverFn<TContext, TData, [z.infer<TSchema>]>;
     },
   ) {
     return this.endpoint(path, (ctx, input: z.infer<TSchema>) => {

@@ -41,27 +41,25 @@ type ThenArg<T> = T extends PromiseLike<infer U> ? ThenArg<U> : T;
 type Context = ThenArg<ReturnType<typeof createContext>>;
 
 // create router for posts
-const posts = createRouter()
-  .endpoint(
-    'create',
-    (
-      ctx,
-      input: {
-        title: string;
-      },
-    ) => {
-      const post = {
-        id: ++id,
-        ...input,
-      };
-      db.posts.push(post);
-      ctx.res.status(201);
-      return {
-        post,
-      };
+const posts = createRouter().endpoints({
+  create: (
+    ctx,
+    input: {
+      title: string;
     },
-  )
-  .endpoint('list', () => db.posts);
+  ) => {
+    const post = {
+      id: ++id,
+      ...input,
+    };
+    db.posts.push(post);
+    ctx.res.status(201);
+    return {
+      post,
+    };
+  },
+  list: () => db.posts,
+});
 
 // root router to call
 const rootRouter = createRouter()

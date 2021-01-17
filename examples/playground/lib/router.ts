@@ -2,23 +2,34 @@ import { assertNotBrowser } from './assertNotBrowser';
 import { Prefixer, DropFirst } from './types';
 assertNotBrowser();
 
-export type ResolverFn<TContext, TData, TArgs extends any[]> = (
+export type RouterResolverFn<TContext, TData, TArgs extends any[]> = (
   ctx: TContext,
   ...args: TArgs
 ) => Promise<TData> | TData;
 
+
+export type RouterEndpoints<TContext extends {}> = Record<
+  string,
+  RouterResolverFn<TContext, any, any>
+>;
+
 export class Router<
   TContext extends {} = {},
-  TEndpoints extends Record<string, ResolverFn<TContext, any, any>> = {}> {
+  TEndpoints extends RouterEndpoints<TContext> = {}> {
   readonly _endpoints: TEndpoints;
 
   constructor(endpoints?: TEndpoints) {
     this._endpoints = endpoints ?? {} as TEndpoints;
   }
 
+  /**
+   * Add endpoint and return router
+   * @param path 
+   * @param resolver 
+   */
   public endpoint<TData, TArgs extends any[], TPath extends string>(
     path: TPath,
-    resolver: ResolverFn<TContext, TData, TArgs>
+    resolver: RouterResolverFn<TContext, TData, TArgs>
   ) {
     if (this.has(path)) {
       throw new Error(`Duplicate endpoint "${path}"`)
@@ -30,6 +41,23 @@ export class Router<
     return new Router<TContext, TEndpoints & typeof route>({
       ...this._endpoints,
       ...route,
+    });
+  }
+  /**
+   * Add new endpoints and return router
+   * @param endpoints 
+   */
+  public endpoints<TNewEndpoints extends RouterEndpoints<TContext>>(
+    endpoints: TNewEndpoints,
+  ) {
+    for (const path in endpoints) {
+      if (this.has(path)) {
+        throw new Error(`Duplicate endpoint "${path}"`)
+      }
+    }
+    return new Router<TContext, TEndpoints & TNewEndpoints>({
+      ...this._endpoints,
+      ...endpoints,
     });
   }
 
