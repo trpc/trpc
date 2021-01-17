@@ -32,10 +32,10 @@ export class Router<
     resolver: RouterResolverFn<TContext, TData, TArgs>
   ) {
     if (this.has(path)) {
-      throw new Error(`Duplicate endpoint "${path}"`)
+      throw new Error(`Duplicate endpoint "${path}" - note that the internal storage is case insenstive`)
     }
     const route = {
-      [path]: resolver,
+      [path.toLowerCase()]: resolver,
     } as Record<TPath, typeof resolver>;
 
     return new Router<TContext, TEndpoints & typeof route>({
@@ -49,16 +49,11 @@ export class Router<
    */
   public endpoints<TNewEndpoints extends RouterEndpoints<TContext>>(
     endpoints: TNewEndpoints,
-  ) {
-    for (const path in endpoints) {
-      if (this.has(path)) {
-        throw new Error(`Duplicate endpoint "${path}"`)
-      }
-    }
-    return new Router<TContext, TEndpoints & TNewEndpoints>({
-      ...this._endpoints,
-      ...endpoints,
-    });
+  ): Router<TContext, TEndpoints & TNewEndpoints> {
+
+    return Object.keys(endpoints).reduce((r, key) => {
+      return r.endpoint(key, endpoints[key]);
+    }, this as any as Router<TContext, any>);
   }
 
   /**
@@ -109,12 +104,13 @@ export class Router<
       TArgs extends DropFirst<Parameters<TResolver>>,
       TResolver extends TEndpoints[TPath]
     >(path: TPath, ...args: TArgs): Promise<ReturnType<TResolver>> => {
-      return this._endpoints[path](ctx, ...args);
+      const key = (path as string).toLowerCase()
+      return this._endpoints[key](ctx, ...args);
     };
   }
 
   public has(path: string) {
-    return !!this._endpoints[path]
+    return !!this._endpoints[path.toLowerCase()]
   }
 };
 
@@ -130,13 +126,14 @@ export type inferReturnType<TFunction extends () => any> = ThenArg<
 
 export type inferEndpointData<
   TRouter extends Router<any, Record<TPath, any>>,
-  TPath extends string & keyof TRouter['_endpoints'],
+  TPath extends keyof TRouter['_endpoints'],
 > = inferReturnType<TRouter['_endpoints'][TPath]>
 
 
 export type inferEndpointArgs<
   TRouter extends Router<any, Record<TPath, any>>,
-  TPath extends string & keyof TRouter['_endpoints'],
+  TPath extends keyof TRouter['_endpoints'],
 > = DropFirst<Parameters<TRouter['_endpoints'][TPath]>>
 
-
+export type inferHandler<TRouter extends Router> = 
+  ReturnType<TRouter['handler']>
