@@ -45,7 +45,7 @@ const posts = createRouter()
   .endpoint(
     'create',
     (
-      _,
+      ctx,
       input: {
         title: string;
       },
@@ -55,6 +55,7 @@ const posts = createRouter()
         ...input,
       };
       db.posts.push(post);
+      ctx.res.status(201);
       return {
         post,
       };

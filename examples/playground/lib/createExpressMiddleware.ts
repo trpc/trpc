@@ -1,5 +1,10 @@
 import express from 'express';
-import { HTTPErrorResponse, HTTPSuccessResponse, notFoundError } from './http';
+import {
+  badRequestError,
+  HTTPErrorResponse,
+  HTTPSuccessResponse,
+  notFoundError,
+} from './http';
 import { Router } from './router';
 
 export type HTTPResponseEnvelope<TData> =
@@ -25,6 +30,28 @@ export type CreateExpressContextFn<TContext> = (
   opts: CreateExpressContextOptions,
 ) => Promise<TContext> | TContext;
 
+function getArgs(req: express.Request): unknown[] {
+  let args: unknown[];
+  if (req.method === 'POST') {
+    args = req.body.args;
+  } else if (req.method === 'GET') {
+    try {
+      args = JSON.parse(req.query.args as string);
+    } catch (_err) {
+      throw badRequestError('Unable to parse args query paramater');
+    }
+  } else {
+    throw badRequestError(`Unacceptable method "${req.method}"`);
+  }
+  if (args === null || args === undefined) {
+    args = [];
+  }
+  if (!Array.isArray(args)) {
+    throw badRequestError('Expected args to be an array');
+  }
+  return args;
+}
+
 export function createExpressMiddleware<TContext>({
   router,
   createContext,
@@ -36,9 +63,9 @@ export function createExpressMiddleware<TContext>({
     try {
       const endpoint = req.path.substr(1);
       if (!router.has(endpoint)) {
-        throw notFoundError(`No endpoint "${endpoint}"`);
+        throw notFoundError(`No such endpoint "${endpoint}"`);
       }
-      let args = req.body?.args ?? JSON.parse(req.query.args as string) ?? [];
+      let args = getArgs(req);
 
       const ctx = await createContext({ req, res });
       console.log('⬅️ ', req.method, endpoint, {
@@ -64,7 +91,7 @@ export function createExpressMiddleware<TContext>({
           : 'Internal Server Error';
 
       const stack: string | undefined =
-        process.env.NODE_ENV !== 'production' && typeof err.stack === 'string'
+        process.env.NODE_ENV !== 'production' && typeof err?.stack === 'string'
           ? err.stack
           : undefined;
 

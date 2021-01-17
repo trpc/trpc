@@ -22,7 +22,7 @@ function createHttpClient(opts: {
 
     const json = await res.json();
 
-    console.log('➡️ ', path, 'res:', json);
+    console.log('➡️ ', res.status, path, 'res:', json);
 
     return json;
   };
@@ -37,7 +37,7 @@ function createHttpClient(opts: {
 
     const json = await res.json();
 
-    console.log('➡️ ', path, 'res:', json);
+    console.log('➡️ ', res.status, path, 'res:', json);
     return json;
   };
   return {
