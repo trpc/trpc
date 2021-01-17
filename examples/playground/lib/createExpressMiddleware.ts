@@ -9,20 +9,6 @@ import { Router } from './router';
 import { assertNotBrowser } from './assertNotBrowser';
 
 assertNotBrowser();
-export type HTTPResponseEnvelope<TData> =
-  | {
-      ok: true;
-      statusCode: number;
-      data: TData;
-    }
-  | {
-      ok: false;
-      statusCode: number;
-      error: {
-        message: string;
-        stack?: string | undefined;
-      };
-    };
 
 export type CreateExpressContextOptions = {
   req: express.Request;
@@ -70,10 +56,6 @@ export function createExpressMiddleware<TContext>({
       let args = getArgs(req);
 
       const ctx = await createContext({ req, res });
-      console.log('⬅️ ', req.method, endpoint, {
-        args,
-        auth: req.headers.authorization,
-      });
       const handle = router.handler(ctx);
 
       const data = await handle(endpoint, args);

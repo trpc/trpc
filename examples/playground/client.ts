@@ -1,6 +1,7 @@
 import fetch from 'node-fetch';
 import type { RootRouter } from './server';
 
+const sleep = () => new Promise((resolve) => setTimeout(resolve, 100));
 function createHttpClient(opts: {
   baseUrl: `http://localhost:2021/trpc`;
   headers?: Record<string, string>;
@@ -11,6 +12,7 @@ function createHttpClient(opts: {
     ...(opts.headers ?? {}),
   };
   const get: Handler = async (path, ...args) => {
+    await sleep();
     const res = await fetch(
       `${opts.baseUrl}/${path}?args=${encodeURIComponent(
         JSON.stringify(args as any),
@@ -27,6 +29,7 @@ function createHttpClient(opts: {
     return json;
   };
   const post: Handler = async (path, ...args) => {
+    await sleep();
     const res = await fetch(`${opts.baseUrl}/${path}`, {
       method: 'post',
       body: JSON.stringify({

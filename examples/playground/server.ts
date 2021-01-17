@@ -92,6 +92,13 @@ async function main() {
   const app = express();
   app.use(bodyParser.json());
 
+  app.use((req, _res, next) => {
+    // request logger
+    console.log('⬅️ ', req.method, req.path, req.body ?? req.query);
+
+    next();
+  });
+
   app.use(
     '/trpc',
     createExpressMiddleware({
