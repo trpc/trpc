@@ -1,12 +1,7 @@
 import express from 'express';
-import {
-  badRequestError,
-  HTTPErrorResponse,
-  HTTPSuccessResponse,
-  notFoundError,
-} from './http';
-import { Router } from './router';
 import { assertNotBrowser } from './assertNotBrowser';
+import { httpError, HTTPErrorResponse, HTTPSuccessResponse } from './http';
+import { Router } from './router';
 
 assertNotBrowser();
 
@@ -26,16 +21,16 @@ function getArgs(req: express.Request): unknown[] {
     try {
       args = JSON.parse(req.query.args as string);
     } catch (_err) {
-      throw badRequestError('Unable to parse args query paramater');
+      throw httpError.badRequest('Unable to parse args query paramater');
     }
   } else {
-    throw badRequestError(`Unacceptable method "${req.method}"`);
+    throw httpError.badRequest(`Unacceptable method "${req.method}"`);
   }
   if (args === null || args === undefined) {
     args = [];
   }
   if (!Array.isArray(args)) {
-    throw badRequestError('Expected args to be an array');
+    throw httpError.badRequest('Expected args to be an array');
   }
   return args;
 }
@@ -51,7 +46,7 @@ export function createExpressMiddleware<TContext>({
     try {
       const endpoint = req.path.substr(1);
       if (!router.has(endpoint)) {
-        throw notFoundError(`No such endpoint "${endpoint}"`);
+        throw httpError.badRequest(`No such endpoint "${endpoint}"`);
       }
       let args = getArgs(req);
 

@@ -1,11 +1,10 @@
 import bodyParser from 'body-parser';
 import express from 'express';
+import * as trpc from './lib';
 import {
   CreateExpressContextOptions,
   createExpressMiddleware,
 } from './lib/createExpressMiddleware';
-import { forbiddenError, unauthorizedError } from './lib/http';
-import { Router } from './lib/router';
 
 let id = 0;
 
@@ -19,7 +18,7 @@ const db = {
 };
 
 function createRouter() {
-  return new Router<Context>();
+  return trpc.router<Context>();
 }
 
 const createContext = ({ req, res }: CreateExpressContextOptions) => {
@@ -38,7 +37,8 @@ const createContext = ({ req, res }: CreateExpressContextOptions) => {
     user: getUser(),
   };
 };
-type Context = ReturnType<typeof createContext>;
+type ThenArg<T> = T extends PromiseLike<infer U> ? ThenArg<U> : T;
+type Context = ThenArg<ReturnType<typeof createContext>>;
 
 // create router for posts
 const posts = createRouter()
@@ -73,10 +73,10 @@ const rootRouter = createRouter()
     'admin/',
     createRouter().endpoint('secret', (ctx) => {
       if (!ctx.user) {
-        throw unauthorizedError();
+        throw trpc.httpError.unauthorized();
       }
       if (ctx.user?.name !== 'alex') {
-        throw forbiddenError();
+        throw trpc.httpError.forbidden();
       }
       return {
         secret: 'sauce',

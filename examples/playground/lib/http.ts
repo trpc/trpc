@@ -9,15 +9,14 @@ export class HTTPError extends Error {
   }
 }
 
-export const forbiddenError = (message?: string) =>
-  new HTTPError(403, message ?? 'Forbidden');
-export const unauthorizedError = (message?: string) =>
-  new HTTPError(401, message ?? 'Unauthorized');
-export const badRequestError = (message?: string) =>
-  new HTTPError(400, message ?? 'Bad Request');
-export const notFoundError = (message?: string) =>
-  new HTTPError(404, message ?? 'Not found');
-
+export const httpError = {
+  forbidden: (message?: string) => new HTTPError(403, message ?? 'Forbidden'),
+  unauthorized: (message?: string) =>
+    new HTTPError(401, message ?? 'Unauthorized'),
+  badRequest: (message?: string) =>
+    new HTTPError(400, message ?? 'Bad Request'),
+  notFound: (message?: string) => new HTTPError(404, message ?? 'Not found'),
+};
 export type HTTPSuccessResponse<TData> = {
   ok: true;
   statusCode: number;

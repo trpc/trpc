@@ -8,7 +8,7 @@ export type ResolverFn<TContext, TData, TArgs extends any[]> = (
 ) => Promise<TData> | TData;
 
 export class Router<
-  TContext extends {},
+  TContext extends {} = {},
   TEndpoints extends Record<string, ResolverFn<TContext, any, any>> = {}> {
   readonly _endpoints: TEndpoints;
 
@@ -56,15 +56,15 @@ export class Router<
     router: TChildRouter
   ): Router<TContext, TEndpoints & Prefixer<TChildRouter['_endpoints'], `${TPath}`>>;
 
-  public merge(pathOrRouter: unknown, maybeRouter?: unknown) {
+  public merge(prefixOrRouter: unknown, maybeRouter?: unknown) {
     let prefix = ''
     let router: Router<any, any>;
     
-    if (typeof pathOrRouter === 'string' && maybeRouter instanceof Router) {
-      prefix = pathOrRouter
+    if (typeof prefixOrRouter === 'string' && maybeRouter instanceof Router) {
+      prefix = prefixOrRouter
       router = maybeRouter
-    } else if (pathOrRouter instanceof Router) {
-      router = pathOrRouter
+    } else if (prefixOrRouter instanceof Router) {
+      router = prefixOrRouter
     } else {
       throw new Error('Invalid args')
     }
@@ -88,4 +88,8 @@ export class Router<
   public has(path: string) {
     return !!this._endpoints[path]
   }
+};
+
+export function router<TContext extends {} = {}>() {
+  return new Router<TContext>()
 }
