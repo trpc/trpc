@@ -2,7 +2,7 @@ import fetch from 'node-fetch';
 import {
   createHttpClient,
   CreateHttpClientOptions,
-} from './lib/createHttpClient';
+} from './lib/client/createHttpClient';
 import type { RootRouter } from './server';
 
 const sleep = () => new Promise((resolve) => setTimeout(resolve, 100));

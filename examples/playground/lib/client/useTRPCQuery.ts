@@ -4,16 +4,16 @@ import {
   UseQueryOptions,
   UseMutationOptions,
 } from 'react-query';
-import { RootRouter } from '../server';
-import { HTTPClientError } from './createHttpClient';
-import { HTTPResponseEnvelope } from './http';
+import type { RootRouter } from '../../server';
+import type { HTTPClientError } from './createHttpClient';
+import type { HTTPResponseEnvelope } from '../http';
 import type {
   inferEndpointArgs,
   inferEndpointData,
   Router,
   RouterResolverFn,
-} from './router';
-import { DropFirst } from './types';
+} from '../router';
+import { DropFirst } from '../types';
 
 function createHooks<TRouter extends Router<any, any>>({
   baseUrl,

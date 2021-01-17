@@ -1,6 +1,9 @@
-import { HTTPResponseEnvelope, HTTPSuccessResponseEnvelope } from './http';
-import { Router } from './router';
-import { Maybe } from './types';
+import type {
+  HTTPResponseEnvelope,
+  HTTPSuccessResponseEnvelope,
+} from '../http';
+import type { Router } from '../router';
+import type { Maybe } from '../types';
 
 export type HTTPSdk<TRouter extends Router> = {
   get: ReturnType<TRouter['handler']>;
