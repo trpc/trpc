@@ -18,6 +18,9 @@ export class Router<
     path: TPath,
     resolver: ResolverFn<TContext, TData, TArgs>
   ) {
+    if (this.has(path)) {
+      throw new Error(`Duplicate endpoint "${path}"`)
+    }
     const route = {
       [path]: resolver,
     } as Record<TPath, typeof resolver>;

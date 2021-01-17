@@ -1,6 +1,11 @@
-import { Router } from './lib/router';
-import express from 'express';
 import bodyParser from 'body-parser';
+import express from 'express';
+import {
+  CreateExpressContextOptions,
+  createExpressMiddleware,
+} from './lib/createExpressMiddleware';
+import { forbiddenError, unauthorizedError } from './lib/http';
+import { Router } from './lib/router';
 
 let id = 0;
 
@@ -13,25 +18,27 @@ const db = {
   ],
 };
 
-type Context = {
-  user?: {
-    name: String;
-  };
-};
-
 function createRouter() {
   return new Router<Context>();
 }
 
-async function createContext(req: express.Request): Promise<Context> {
-  let ctx: Context = {};
-  if (typeof req.headers.name === 'string') {
-    ctx.user = {
-      name: req.headers.name,
+const createContext = ({ req, res }: CreateExpressContextOptions) => {
+  const getUser = () => {
+    if (req.headers.authorization !== 'secret') {
+      return null;
+    }
+    return {
+      name: 'alex',
     };
-  }
-  return ctx;
-}
+  };
+
+  return {
+    req,
+    res,
+    user: getUser(),
+  };
+};
+type Context = ReturnType<typeof createContext>;
 
 // create router for posts
 const posts = createRouter()
@@ -60,7 +67,21 @@ const rootRouter = createRouter()
   .endpoint('hello', (ctx, input?: string) => {
     return `hello ${input ?? ctx.user?.name ?? 'world'}`;
   })
-  .merge('posts/', posts);
+  .merge('posts/', posts)
+  .merge(
+    'admin/',
+    createRouter().endpoint('secret', (ctx) => {
+      if (!ctx.user) {
+        throw unauthorizedError();
+      }
+      if (ctx.user?.name !== 'alex') {
+        throw forbiddenError();
+      }
+      return {
+        secret: 'sauce',
+      };
+    }),
+  );
 
 export type RootRouter = typeof rootRouter;
 export type RootRouterRoutes = keyof RootRouter['_endpoints'];
@@ -70,26 +91,13 @@ async function main() {
   const app = express();
   app.use(bodyParser.json());
 
-  app.use('/trpc', async (req, res, next) => {
-    try {
-      const endpoint = req.path.substr(1);
-      if (!rootRouter.has(endpoint)) {
-        console.log(`❌ couldn't find endpoint "${endpoint}"`);
-        console.log('routes:', Object.keys(rootRouter._endpoints).sort());
-        next();
-        return;
-      }
-      let args = req.body?.args ?? JSON.parse(req.query.args as string);
-      console.log('⬅️ ', req.method, endpoint, 'args:', args);
-      const ctx = await createContext(req);
-      const handle = rootRouter.handler(ctx);
-
-      const json = await handle(endpoint as any, ...args);
-      res.json(json);
-    } catch (err) {
-      next(err);
-    }
-  });
+  app.use(
+    '/trpc',
+    createExpressMiddleware({
+      router: rootRouter,
+      createContext,
+    }),
+  );
   app.listen(2021, () => {
     console.log('listening on port 2021');
   });

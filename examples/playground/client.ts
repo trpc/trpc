@@ -1,14 +1,23 @@
 import fetch from 'node-fetch';
 import type { RootRouter } from './server';
 
-function createHttpClient(opts: { baseUrl: `http://localhost:2021/trpc` }) {
+function createHttpClient(opts: {
+  baseUrl: `http://localhost:2021/trpc`;
+  headers?: Record<string, string>;
+}) {
   type Handler = ReturnType<RootRouter['handler']>;
-
+  const headers = {
+    'content-type': 'application/json',
+    ...(opts.headers ?? {}),
+  };
   const get: Handler = async (path, ...args) => {
     const res = await fetch(
       `${opts.baseUrl}/${path}?args=${encodeURIComponent(
         JSON.stringify(args as any),
       )}`,
+      {
+        headers,
+      },
     );
 
     const json = await res.json();
@@ -23,9 +32,7 @@ function createHttpClient(opts: { baseUrl: `http://localhost:2021/trpc` }) {
       body: JSON.stringify({
         args,
       }),
-      headers: {
-        'content-type': 'application/json',
-      },
+      headers,
     });
 
     const json = await res.json();
@@ -49,6 +56,16 @@ async function main() {
       title: 'hello client',
     });
     await client.get('posts/list');
+    await client.get('admin/secret');
+
+    const authedClient = createHttpClient({
+      baseUrl,
+      headers: {
+        authorization: 'secret',
+      },
+    });
+
+    await authedClient.get('admin/secret');
   }
 }
 
