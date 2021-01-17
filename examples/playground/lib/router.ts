@@ -28,18 +28,6 @@ export class Router<
     });
   }
 
-  public compose<
-    TPath extends string,
-    TChildRouter extends Router<TContext, any>
-  >(
-    path: TPath,
-    router: TChildRouter
-  ): Router<TContext, TEndpoints & Prefixer<TChildRouter['_endpoints'], `${TPath}/`>> {
-    return Object.keys(router._endpoints).reduce((r, key) => {
-      return r.endpoint(`${path}/${key}`, router._endpoints[key]);
-    }, this as any as Router<TContext, any>);
-  }
-
   /**
    * Merge router with other router
    * @param router
