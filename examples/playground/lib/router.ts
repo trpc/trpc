@@ -61,14 +61,14 @@ export class Router<
   >(
     prefix: TPath,
     router: TChildRouter
-  ): Router<TContext, TEndpoints & Prefixer<TChildRouter['_endpoints'], `${TPath}/`>>;
+  ): Router<TContext, TEndpoints & Prefixer<TChildRouter['_endpoints'], `${TPath}`>>;
 
   public merge(pathOrRouter: unknown, maybeRouter?: unknown) {
     let prefix = ''
     let router: Router<any, any>;
     
     if (typeof pathOrRouter === 'string' && maybeRouter instanceof Router) {
-      prefix = pathOrRouter + '/';
+      prefix = pathOrRouter
       router = maybeRouter
     } else if (pathOrRouter instanceof Router) {
       router = pathOrRouter

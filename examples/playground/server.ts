@@ -60,7 +60,7 @@ const rootRouter = createRouter()
   .endpoint('hello', (ctx, input?: string) => {
     return `hello ${input ?? ctx.user?.name ?? 'world'}`;
   })
-  .merge('posts', posts);
+  .merge('posts/', posts);
 
 export type RootRouter = typeof rootRouter;
 export type RootRouterRoutes = keyof RootRouter['_endpoints'];
