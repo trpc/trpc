@@ -17,13 +17,13 @@ export const httpError = {
     new HTTPError(400, message ?? 'Bad Request'),
   notFound: (message?: string) => new HTTPError(404, message ?? 'Not found'),
 };
-export type HTTPSuccessResponse<TData> = {
+export type HTTPSuccessResponseEnvelope<TData> = {
   ok: true;
   statusCode: number;
   data: TData;
 };
 
-export type HTTPErrorResponse = {
+export type HTTPErrorResponseEnvelope = {
   ok: false;
   statusCode: number;
   error: {
@@ -32,6 +32,6 @@ export type HTTPErrorResponse = {
   };
 };
 
-export type HTTPResponse<TData> =
-  | HTTPSuccessResponse<TData>
-  | HTTPErrorResponse;
+export type HTTPResponseEnvelope<TData> =
+  | HTTPSuccessResponseEnvelope<TData>
+  | HTTPErrorResponseEnvelope;

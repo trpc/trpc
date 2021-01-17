@@ -1,6 +1,10 @@
 import express from 'express';
 import { assertNotBrowser } from './assertNotBrowser';
-import { httpError, HTTPErrorResponse, HTTPSuccessResponse } from './http';
+import {
+  httpError,
+  HTTPErrorResponseEnvelope,
+  HTTPSuccessResponseEnvelope,
+} from './http';
 import { Router } from './router';
 
 assertNotBrowser();
@@ -55,7 +59,7 @@ export function createExpressMiddleware<TContext>({
 
       const data = await handle(endpoint, args);
 
-      const json: HTTPSuccessResponse<unknown> = {
+      const json: HTTPSuccessResponseEnvelope<unknown> = {
         ok: true,
         statusCode: res.statusCode ?? 200,
         data,
@@ -74,7 +78,7 @@ export function createExpressMiddleware<TContext>({
           ? err.stack
           : undefined;
 
-      const json: HTTPErrorResponse = {
+      const json: HTTPErrorResponseEnvelope = {
         ok: false,
         statusCode,
         error: {
