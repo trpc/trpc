@@ -18,12 +18,15 @@ export type CreateExpressContextFn<TContext> = (
 ) => Promise<TContext> | TContext;
 
 function getArgs(req: express.Request): unknown[] {
-  let args: unknown[];
+  let args: unknown[] = [];
   if (req.method === 'POST') {
     args = req.body.args;
   } else if (req.method === 'GET') {
     try {
-      args = JSON.parse(req.query.args as string);
+      const queryArg = req.query.args as string;
+      if (queryArg) {
+        args = JSON.parse(queryArg);
+      }
     } catch (_err) {
       throw httpError.badRequest('Unable to parse args query paramater');
     }
