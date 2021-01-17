@@ -1,18 +1,19 @@
 import fetch from 'node-fetch';
 import type { RootRouter } from './server';
-import querystring from 'querystring';
 
 function createHttpClient(opts: { baseUrl: `http://localhost:2021/trpc` }) {
   type Handler = ReturnType<RootRouter['handler']>;
 
   const get: Handler = async (path, ...args) => {
     const res = await fetch(
-      `${opts.baseUrl}/${path}?${querystring.encode({
-        args: args as any,
-      })}`,
+      `${opts.baseUrl}/${path}?args=${encodeURIComponent(
+        JSON.stringify(args as any),
+      )}`,
     );
 
     const json = await res.json();
+
+    console.log('➡️ ', path, 'res:', json);
 
     return json;
   };
@@ -29,6 +30,7 @@ function createHttpClient(opts: { baseUrl: `http://localhost:2021/trpc` }) {
 
     const json = await res.json();
 
+    console.log('➡️ ', path, 'res:', json);
     return json;
   };
   return {
@@ -42,20 +44,11 @@ async function main() {
     const baseUrl = `http://localhost:2021/trpc`;
     const client = createHttpClient({ baseUrl });
 
-    {
-      const res = await client.get('hello', 'client');
-      console.log('client result:', res);
-    }
-    {
-      const res = await client.post('posts/create', {
-        title: 'hello client',
-      });
-      console.log('client res', res);
-    }
-    {
-      const res = await client.get('posts/list');
-      console.log('client res', res);
-    }
+    await client.get('hello', 'client');
+    await client.post('posts/create', {
+      title: 'hello client',
+    });
+    await client.get('posts/list');
   }
 }
 

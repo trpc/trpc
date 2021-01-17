@@ -60,35 +60,13 @@ const rootRouter = createRouter()
   .endpoint('hello', (ctx, input?: string) => {
     return `hello ${input ?? ctx.user?.name ?? 'world'}`;
   })
-  .compose('posts', posts);
+  .merge('posts', posts);
 
 export type RootRouter = typeof rootRouter;
+export type RootRouterRoutes = keyof RootRouter['_endpoints'];
 
 async function main() {
-  // const ctx: Context = {
-  //   user: {
-  //     name: 'Alex',
-  //   },
-  // };
-
-  // const handle = rootRouter.handler(ctx);
-
-  // // testing playground
-  // {
-  //   const res = await handle('hello', 'test');
-  //   console.log(res);
-  // }
-  // {
-  //   const res = await handle('hello');
-  //   console.log(res);
-  // }
-  // {
-  //   const res = await handle('posts/create', {
-  //     title: 'test',
-  //   });
-  //   console.log(res);
-  // }
-  // // express implementation
+  // express implementation
   const app = express();
   app.use(bodyParser.json());
 
@@ -97,13 +75,11 @@ async function main() {
       const endpoint = req.path.substr(1);
       if (!rootRouter.has(endpoint)) {
         console.log(`❌ couldn't find endpoint "${endpoint}"`);
+        console.log('routes:', Object.keys(rootRouter._endpoints).sort());
         next();
         return;
       }
-      let args = req.body?.args ?? req.query.args;
-      if (!Array.isArray(args)) {
-        args = [args];
-      }
+      let args = req.body?.args ?? JSON.parse(req.query.args as string);
       console.log('⬅️ ', req.method, endpoint, 'args:', args);
       const ctx = await createContext(req);
       const handle = rootRouter.handler(ctx);

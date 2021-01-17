@@ -40,6 +40,48 @@ export class Router<
     }, this as any as Router<TContext, any>);
   }
 
+  /**
+   * Merge router with other router
+   * @param router
+   */
+  public merge<
+    TChildRouter extends Router<TContext, any>
+  >(
+    router: TChildRouter
+  ): Router<TContext, TEndpoints & TChildRouter['_endpoints']>;
+
+  /**
+   * Merge router with other router
+   * @param prefix Prefix that this router should live under
+   * @param router
+   */
+  public merge<
+    TPath extends string,
+    TChildRouter extends Router<TContext, any>
+  >(
+    prefix: TPath,
+    router: TChildRouter
+  ): Router<TContext, TEndpoints & Prefixer<TChildRouter['_endpoints'], `${TPath}/`>>;
+
+  public merge(pathOrRouter: unknown, maybeRouter?: unknown) {
+    let prefix = ''
+    let router: Router<any, any>;
+    
+    if (typeof pathOrRouter === 'string' && maybeRouter instanceof Router) {
+      prefix = pathOrRouter + '/';
+      router = maybeRouter
+    } else if (pathOrRouter instanceof Router) {
+      router = pathOrRouter
+    } else {
+      throw new Error('Invalid args')
+    }
+
+    return Object.keys(router._endpoints).reduce((r, key) => {
+      return r.endpoint(prefix + key, router._endpoints[key]);
+    }, this as any as Router<TContext, any>);
+  }
+
+
   public handler(ctx: TContext) {
     return async <
       TPath extends keyof TEndpoints,
