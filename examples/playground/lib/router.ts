@@ -121,3 +121,4 @@ export class Router<
 export function router<TContext extends {} = {}>() {
   return new Router<TContext>()
 }
+

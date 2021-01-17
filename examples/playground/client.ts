@@ -1,4 +1,5 @@
-import fetch from 'node-fetch';
+import fetch, { Response } from 'node-fetch';
+import { HTTPResponseEnvelope } from './lib';
 import type { RootRouter } from './server';
 
 const sleep = () => new Promise((resolve) => setTimeout(resolve, 100));
@@ -11,8 +12,18 @@ function createHttpClient(opts: {
     'content-type': 'application/json',
     ...(opts.headers ?? {}),
   };
+  async function handleResponse(res: Response) {
+    const json: HTTPResponseEnvelope<unknown> = await res.json();
+
+    await sleep(); // simulate some loading
+    console.log('➡️ ', res.status, 'res:', json);
+
+    if (json.ok === true) {
+      return json.data as any;
+    }
+    throw new Error(json.error.message);
+  }
   const get: Handler = async (path, ...args) => {
-    await sleep();
     const res = await fetch(
       `${opts.baseUrl}/${path}?args=${encodeURIComponent(
         JSON.stringify(args as any),
@@ -22,14 +33,9 @@ function createHttpClient(opts: {
       },
     );
 
-    const json = await res.json();
-
-    console.log('➡️ ', res.status, path, 'res:', json);
-
-    return json;
+    return handleResponse(res);
   };
   const post: Handler = async (path, ...args) => {
-    await sleep();
     const res = await fetch(`${opts.baseUrl}/${path}`, {
       method: 'post',
       body: JSON.stringify({
@@ -38,10 +44,7 @@ function createHttpClient(opts: {
       headers,
     });
 
-    const json = await res.json();
-
-    console.log('➡️ ', res.status, path, 'res:', json);
-    return json;
+    return handleResponse(res);
   };
   return {
     get,
