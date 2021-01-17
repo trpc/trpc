@@ -6,7 +6,9 @@ import {
   notFoundError,
 } from './http';
 import { Router } from './router';
+import { assertNotBrowser } from './assertNotBrowser';
 
+assertNotBrowser();
 export type HTTPResponseEnvelope<TData> =
   | {
       ok: true;

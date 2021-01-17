@@ -1,4 +1,6 @@
+import { assertNotBrowser } from './assertNotBrowser';
 import { Prefixer, DropFirst } from './types';
+assertNotBrowser();
 
 export type ResolverFn<TContext, TData, TArgs extends any[]> = (
   ctx: TContext,

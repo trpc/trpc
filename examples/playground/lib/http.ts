@@ -1,3 +1,6 @@
+import { assertNotBrowser } from './assertNotBrowser';
+
+assertNotBrowser();
 export class HTTPError extends Error {
   public readonly statusCode: number;
   constructor(statusCode: number, message: string) {

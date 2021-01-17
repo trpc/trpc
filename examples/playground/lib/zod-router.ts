@@ -1,7 +1,8 @@
 import { ResolverFn, Router } from './router';
 import { ZodRawShape } from 'zod/lib/src/types/base';
 import * as z from 'zod';
-
+import { assertNotBrowser } from './assertNotBrowser';
+assertNotBrowser();
 export class ZodRouter<
   TContext extends {},
   TEndpoints extends Record<string, ResolverFn<TContext, any, any>> = {}
