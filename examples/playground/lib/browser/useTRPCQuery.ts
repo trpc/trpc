@@ -4,12 +4,14 @@ import {
   useQuery,
   UseQueryOptions,
 } from 'react-query';
-import type { RootRouter } from '../../server';
-import type { HTTPResponseEnvelope } from '../http';
-import type { inferEndpointArgs, inferEndpointData, Router } from '../router';
-import { createHttpClient, HTTPClientError, HTTPSdk } from './createHttpClient';
+import type {
+  inferEndpointArgs,
+  inferEndpointData,
+  Router,
+} from '../server/router';
+import { HTTPClientError, HTTPSdk } from './createHttpClient';
 
-function createHooks<TRouter extends Router<any, any, any>>({
+export function createHooks<TRouter extends Router<any, any, any>>({
   client,
 }: {
   client: HTTPSdk<TRouter>;
@@ -50,34 +52,4 @@ function createHooks<TRouter extends Router<any, any, any>>({
     useQuery: _useQuery,
     useMutation: _useMutation,
   };
-}
-
-const client = createHttpClient({
-  url: '...',
-});
-const hooks = createHooks<RootRouter>({
-  client,
-});
-
-{
-  const { data } = hooks.useQuery(['admin/secret']);
-
-  console.log(data);
-}
-{
-  const { data } = hooks.useQuery(['posts/list']);
-
-  console.log(data);
-}
-{
-  const { data } = hooks.useQuery(['hello', 'world']);
-
-  console.log(data);
-}
-{
-  const { data, mutateAsync } = hooks.useMutation('posts/create');
-  mutateAsync([{ title: 'hej' }]).then((res) => {
-    console.log(res);
-  });
-  console.log('data', data);
 }

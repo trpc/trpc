@@ -1,11 +1,11 @@
 import bodyParser from 'body-parser';
 import express from 'express';
-import * as trpc from './lib';
-import { inferAsyncReturnType } from './lib';
+import * as trpc from './lib/server';
+import { inferAsyncReturnType } from './lib/server';
 import {
   CreateExpressContextOptions,
   createExpressMiddleware,
-} from './lib/createExpressMiddleware';
+} from './lib/server/createExpressMiddleware';
 
 let id = 0;
 

@@ -1,9 +1,9 @@
 import type {
   HTTPResponseEnvelope,
   HTTPSuccessResponseEnvelope,
-} from '../http';
-import type { inferHandler, Router } from '../router';
-import type { Maybe } from '../types';
+} from '../server/http';
+import type { inferHandler, Router } from '../server/router';
+import type { Maybe } from '../server/types';
 
 export type HTTPSdk<TRouter extends Router> = {
   query: inferHandler<TRouter['_queries']>;
