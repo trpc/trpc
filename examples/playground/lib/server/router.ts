@@ -2,31 +2,28 @@ import { assertNotBrowser } from './assertNotBrowser';
 import { Prefixer, DropFirst, ThenArg } from './types';
 assertNotBrowser();
 
-export type RouterResolverFn<TContext = any, TData = any, TArgs extends any[] = any[]> = (
-  ctx: TContext,
-  ...args: TArgs
-) => Promise<TData> | TData;
-
+export type RouterResolverFn<
+  TContext = any,
+  TData = any,
+  TArgs extends any[] = any[]
+> = (ctx: TContext, ...args: TArgs) => Promise<TData> | TData;
 
 export type RouterEndpoints<TContext = any> = Record<
   string,
   RouterResolverFn<TContext, any, any>
 >;
 
-
-export type inferAsyncReturnType<TFunction extends (...args: any) => any> = ThenArg<
-  ReturnType<TFunction>
->;
-
+export type inferAsyncReturnType<
+  TFunction extends (...args: any) => any
+> = ThenArg<ReturnType<TFunction>>;
 
 export type inferEndpointData<
-  TEndpoint extends RouterResolverFn,
-> = inferAsyncReturnType<TEndpoint>
+  TEndpoint extends RouterResolverFn
+> = inferAsyncReturnType<TEndpoint>;
 
-export type inferEndpointArgs<
-  TEndpoint extends RouterResolverFn,
-> = DropFirst<Parameters<TEndpoint>>
-
+export type inferEndpointArgs<TEndpoint extends RouterResolverFn> = DropFirst<
+  Parameters<TEndpoint>
+>;
 
 export type inferHandler<TEndpoints extends RouterEndpoints> = <
   TArgs extends DropFirst<Parameters<TResolver>>,
