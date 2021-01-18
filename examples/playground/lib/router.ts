@@ -14,14 +14,14 @@ export type RouterEndpoints<TContext = any> = Record<
 >;
 
 
-export type inferAsyncFunction<TFunction extends (...args: any) => any> = ThenArg<
+export type inferAsyncReturnType<TFunction extends (...args: any) => any> = ThenArg<
   ReturnType<TFunction>
 >;
 
 
 export type inferEndpointData<
   TEndpoint extends RouterResolverFn,
-> = inferAsyncFunction<TEndpoint>
+> = inferAsyncReturnType<TEndpoint>
 
 export type inferEndpointArgs<
   TEndpoint extends RouterResolverFn,

@@ -1,7 +1,7 @@
 import bodyParser from 'body-parser';
 import express from 'express';
 import * as trpc from './lib';
-import { inferAsyncFunction } from './lib';
+import { inferAsyncReturnType } from './lib';
 import {
   CreateExpressContextOptions,
   createExpressMiddleware,
@@ -38,7 +38,7 @@ const createContext = ({ req, res }: CreateExpressContextOptions) => {
     user: getUser(),
   };
 };
-type Context = inferAsyncFunction<typeof createContext>;
+type Context = inferAsyncReturnType<typeof createContext>;
 
 // create router for posts
 const posts = createRouter()
