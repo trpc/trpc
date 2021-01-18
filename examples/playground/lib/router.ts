@@ -28,19 +28,7 @@ export type inferEndpointArgs<
 > = DropFirst<Parameters<TEndpoint>>
 
 
-function prefixEndpoints<
-  TEndpoints extends RouterEndpoints,
-  TPrefix extends string
->(
-  endpoints: TEndpoints,
-  prefix: TPrefix,
-): TEndpoints & Prefixer<TEndpoints, TPrefix> {
-  return Object.keys(endpoints).reduce((eps, key) => {
-    const newKey = `${prefix}${key}`.toLowerCase()
-    eps[newKey] = endpoints[key];
-    return eps;
-  }, {} as RouterEndpoints<any>) as any;
-}
+// export type QueryHandler<TRouter extends Router> = {}
 
 export class Router<
   TContext = any,
@@ -55,6 +43,20 @@ export class Router<
     this._mutations = opts.mutations ?? {} as TMutations;
   }
 
+  private static prefixEndpoints<
+    TEndpoints extends RouterEndpoints,
+    TPrefix extends string
+  >(
+    endpoints: TEndpoints,
+    prefix: TPrefix,
+  ): TEndpoints & Prefixer<TEndpoints, TPrefix> {
+    return Object.keys(endpoints).reduce((eps, key) => {
+      const newKey = `${prefix}${key}`
+      eps[newKey] = endpoints[key];
+      return eps;
+    }, {} as RouterEndpoints<any>) as any;
+  }
+  
   /**
    * Add new queries and return router
    * @param queries 
@@ -132,11 +134,11 @@ export class Router<
     return new Router<TContext>({
       queries: {
         ...this._queries,
-        ...prefixEndpoints(router._queries, prefix),
+        ...Router.prefixEndpoints(router._queries, prefix),
       },
       mutations: {
         ...this._mutations,
-        ...prefixEndpoints(router._mutations, prefix),
+        ...Router.prefixEndpoints(router._mutations, prefix),
       }
     })
   }
@@ -147,8 +149,7 @@ export class Router<
       TArgs extends DropFirst<Parameters<TResolver>>,
       TResolver extends TQueries[TPath]
     >(path: TPath, ...args: TArgs): Promise<ReturnType<TResolver>> => {
-      const key = (path as string).toLowerCase()
-      return this._queries[key](ctx, ...args);
+      return this._queries[path](ctx, ...args);
     };
   }
 
@@ -158,16 +159,15 @@ export class Router<
       TArgs extends DropFirst<Parameters<TResolver>>,
       TResolver extends TMutations[TPath]
     >(path: TPath, ...args: TArgs): Promise<ReturnType<TResolver>> => {
-      const key = (path as string).toLowerCase()
-      return this._mutations[key](ctx, ...args);
+      return this._mutations[path](ctx, ...args);
     };
   }
 
   public hasMutation(path: string) {
-    return !!this._mutations[path.toLowerCase()]
+    return !!this._mutations[path]
   }
   public hasQuery(path: string) {
-    return !!this._queries[path.toLowerCase()]
+    return !!this._queries[path]
   }
 };
 
