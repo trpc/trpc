@@ -42,12 +42,16 @@ export class Router<
   TQueries extends RouterEndpoints<TContext> = {},
   TMutations extends RouterEndpoints<TContext> = {},
   > {
-  readonly _queries: TQueries;
-  readonly _mutations: TMutations;
+  readonly _def: {
+    queries: TQueries;
+    mutations: TMutations;
+  }
 
-  constructor(opts: {queries?: TQueries, mutations?: TMutations} = {}) {
-    this._queries = opts.queries ?? {} as TQueries;
-    this._mutations = opts.mutations ?? {} as TMutations;
+  constructor(def?: {queries: TQueries, mutations: TMutations}) {
+    this._def = def ?? {
+      queries: {} as TQueries,
+      mutations: {} as TMutations,
+    };
   }
 
   private static prefixEndpoints<
@@ -61,7 +65,7 @@ export class Router<
       const newKey = `${prefix}${key}`
       eps[newKey] = endpoints[key];
       return eps;
-    }, {} as RouterEndpoints<any>) as any;
+    }, {} as RouterEndpoints) as any;
   }
   
   /**
@@ -71,7 +75,7 @@ export class Router<
   public queries<TNewEndpoints extends RouterEndpoints<TContext>>(
     endpoints: TNewEndpoints,
   ): Router<TContext, TQueries & TNewEndpoints, TMutations> {
-    const router = new Router<TContext, TNewEndpoints>({ queries: endpoints })
+    const router = new Router<TContext, TNewEndpoints>({ queries: endpoints, mutations: {} })
     return this.merge(router)
   }
 
@@ -82,7 +86,7 @@ export class Router<
   public mutations<TNewEndpoints extends RouterEndpoints<TContext>>(
     endpoints: TNewEndpoints,
   ): Router<TContext, TQueries, TMutations & TNewEndpoints> {
-    const router = new Router<TContext, {}, TNewEndpoints>({ mutations: endpoints });
+    const router = new Router<TContext, {}, TNewEndpoints>({ mutations: endpoints, queries: {} });
 
     return this.merge(router)
   }
@@ -97,8 +101,8 @@ export class Router<
     router: TChildRouter
   ): Router<
       TContext, 
-      TQueries & TChildRouter['_queries'], 
-      TMutations & TChildRouter['_mutations']
+      TQueries & TChildRouter['_def']['queries'], 
+      TMutations & TChildRouter['_def']['mutations']
     >;
 
   /**
@@ -114,13 +118,13 @@ export class Router<
     router: TChildRouter
   ): Router<
       TContext, 
-      TQueries & Prefixer<TChildRouter['_queries'], `${TPath}`>, 
-      TMutations & Prefixer<TChildRouter['_mutations'], `${TPath}`>
+      TQueries & Prefixer<TChildRouter['_def']['queries'], `${TPath}`>, 
+      TMutations & Prefixer<TChildRouter['_def']['mutations'], `${TPath}`>
     >;
 
   public merge(prefixOrRouter: unknown, maybeRouter?: unknown) {
     let prefix = ''
-    let router: Router<any, any>;
+    let router: Router;
     
     if (typeof prefixOrRouter === 'string' && maybeRouter instanceof Router) {
       prefix = prefixOrRouter
@@ -131,8 +135,8 @@ export class Router<
       throw new Error('Invalid args')
     }
 
-    const duplicateQueries = Object.keys(router._queries).filter((key) => this.hasQuery(key))
-    const duplicateMutations = Object.keys(router._mutations).filter((key) => this.hasMutation(key))
+    const duplicateQueries = Object.keys(router._def.queries).filter((key) => this.hasQuery(key))
+    const duplicateMutations = Object.keys(router._def.mutations).filter((key) => this.hasMutation(key))
     const duplicates = [...duplicateQueries, ...duplicateMutations]
     if (duplicates.length) {
       throw new Error(`Duplicate endpoint(s): ${duplicates.join(', ')}`)
@@ -140,12 +144,12 @@ export class Router<
     
     return new Router<TContext>({
       queries: {
-        ...this._queries,
-        ...Router.prefixEndpoints(router._queries, prefix),
+        ...this._def.queries,
+        ...Router.prefixEndpoints(router._def.queries, prefix),
       },
       mutations: {
-        ...this._mutations,
-        ...Router.prefixEndpoints(router._mutations, prefix),
+        ...this._def.mutations,
+        ...Router.prefixEndpoints(router._def.mutations, prefix),
       }
     })
   }
@@ -164,18 +168,18 @@ export class Router<
   //   return opts.target[opts.path](opts.ctx, ...opts.args)
   // }
 
-  public createMutationHandler(ctx: TContext): inferHandler<this['_mutations']> {
-    return (path, ...args) => this._mutations[path](ctx, ...args);
+  public createMutationHandler(ctx: TContext): inferHandler<this['_def']['mutations']> {
+    return (path, ...args) => this._def.mutations[path](ctx, ...args);
   }
-  public createQueryHandler(ctx: TContext): inferHandler<this['_queries']> {
-    return (path, ...args) => this._queries[path](ctx, ...args);
+  public createQueryHandler(ctx: TContext): inferHandler<this['_def']['queries']> {
+    return (path, ...args) => this._def.queries[path](ctx, ...args);
   }
 
   public hasMutation(path: string) {
-    return !!this._mutations[path]
+    return !!this._def.mutations[path]
   }
   public hasQuery(path: string) {
-    return !!this._queries[path]
+    return !!this._def.queries[path]
   }
 };
 

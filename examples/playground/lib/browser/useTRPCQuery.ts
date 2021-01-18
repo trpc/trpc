@@ -16,8 +16,8 @@ export function createHooks<TRouter extends Router<any, any, any>>({
 }: {
   client: HTTPSdk<TRouter>;
 }) {
-  type TQueries = TRouter['_queries'];
-  type TMutations = TRouter['_mutations'];
+  type TQueries = TRouter['_def']['queries'];
+  type TMutations = TRouter['_def']['mutations'];
 
   function _useQuery<TPath extends keyof TQueries & string>(
     pathAndArgs: [TPath, ...inferEndpointArgs<TQueries[TPath]>],

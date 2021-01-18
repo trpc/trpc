@@ -6,8 +6,8 @@ import type { inferHandler, Router } from '../server/router';
 import type { Maybe } from '../server/types';
 
 export type HTTPSdk<TRouter extends Router> = {
-  query: inferHandler<TRouter['_queries']>;
-  mutate: inferHandler<TRouter['_mutations']>;
+  query: inferHandler<TRouter['_def']['queries']>;
+  mutate: inferHandler<TRouter['_def']['mutations']>;
 };
 export class HTTPClientError extends Error {
   public readonly json?: Maybe<HTTPResponseEnvelope<unknown>>;
@@ -79,7 +79,7 @@ export function createHttpClient<TRouter extends Router>(
       'content-type': 'application/json',
     };
   }
-  const query: inferHandler<TRouter['_queries']> = async (
+  const query: inferHandler<TRouter['_def']['queries']> = async (
     path: string,
     ...args: unknown[]
   ) => {
@@ -93,7 +93,10 @@ export function createHttpClient<TRouter extends Router>(
 
     return handleResponse(promise);
   };
-  const mutate: inferHandler<TRouter['_mutations']> = async (path, ...args) => {
+  const mutate: inferHandler<TRouter['_def']['mutations']> = async (
+    path,
+    ...args
+  ) => {
     const promise = _fetch(`${url}/${path}`, {
       method: 'post',
       body: JSON.stringify({

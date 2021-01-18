@@ -34,7 +34,9 @@ function getQueryArgs(req: express.Request) {
   }
 
   if (!Array.isArray(args)) {
-    throw httpError.badRequest('Expected query.args to be a JSON-array');
+    throw httpError.badRequest(
+      'Expected query.args to be parsed as an JSON-array',
+    );
   }
   return args;
 }
