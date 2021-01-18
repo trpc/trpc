@@ -1,8 +1,8 @@
 import express from 'express';
 import { assertNotBrowser } from './assertNotBrowser';
 import {
+  getErrorResponseEnvelope,
   httpError,
-  HTTPErrorResponseEnvelope,
   HTTPSuccessResponseEnvelope,
 } from './http';
 import { Router } from './router';
@@ -55,6 +55,9 @@ export function createExpressMiddleware<
 
       let data: unknown;
       if (req.method === 'POST') {
+        if (!router.hasMutation(endpoint)) {
+          throw httpError.notFound(`Unknown mutation "${endpoint}"`);
+        }
         const handle = router.createMutationHandler(ctx);
         const args = req.body.args ?? [];
         if (!Array.isArray(args)) {
@@ -63,6 +66,9 @@ export function createExpressMiddleware<
 
         data = await handle(endpoint as any, ...(args as any));
       } else if (req.method === 'GET') {
+        if (!router.hasQuery(endpoint)) {
+          throw httpError.notFound(`Unknown query "${endpoint}"`);
+        }
         const handle = router.createQueryHandler(ctx);
         const args = getQueryArgs(req);
 
@@ -78,26 +84,8 @@ export function createExpressMiddleware<
       };
       res.status(json.statusCode).json(json);
     } catch (err) {
-      const statusCode: number =
-        typeof err?.statusCode === 'number' ? err.statusCode : 500;
-      const message: string =
-        typeof err?.message === 'string'
-          ? err.message
-          : 'Internal Server Error';
+      const json = getErrorResponseEnvelope(err);
 
-      const stack: string | undefined =
-        process.env.NODE_ENV !== 'production' && typeof err?.stack === 'string'
-          ? err.stack
-          : undefined;
-
-      const json: HTTPErrorResponseEnvelope = {
-        ok: false,
-        statusCode,
-        error: {
-          message,
-          stack,
-        },
-      };
       res.status(json.statusCode).json(json);
     }
   };

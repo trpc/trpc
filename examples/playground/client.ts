@@ -14,11 +14,11 @@ async function main() {
       url,
       fetch: fetch as any,
       onSuccess(envelope) {
-        console.log('✅ ', envelope);
+        console.log('✅ ', envelope.statusCode, envelope);
       },
 
       onError(err) {
-        console.log('❌ ', err);
+        console.log('❌ ', err.res?.status, err);
       },
     };
     const client = createHttpClient<RootRouter>(opts);

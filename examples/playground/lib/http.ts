@@ -36,3 +36,26 @@ export type HTTPErrorResponseEnvelope = {
 export type HTTPResponseEnvelope<TData> =
   | HTTPSuccessResponseEnvelope<TData>
   | HTTPErrorResponseEnvelope;
+
+export function getErrorResponseEnvelope(err?: Partial<HTTPError>) {
+  const statusCode: number =
+    typeof err?.statusCode === 'number' ? err.statusCode : 500;
+  const message: string =
+    typeof err?.message === 'string' ? err.message : 'Internal Server Error';
+
+  const stack: string | undefined =
+    process.env.NODE_ENV !== 'production' && typeof err?.stack === 'string'
+      ? err.stack
+      : undefined;
+
+  const json: HTTPErrorResponseEnvelope = {
+    ok: false,
+    statusCode,
+    error: {
+      message,
+      stack,
+    },
+  };
+
+  return json;
+}
