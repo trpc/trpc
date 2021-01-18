@@ -13,47 +13,36 @@ export type RouterEndpoints<TContext extends {}> = Record<
   RouterResolverFn<TContext, any, any>
 >;
 
+function lowerCaseEndpoints<TEndpoints extends RouterEndpoints<any>>(endpoints: TEndpoints): TEndpoints {
+  return Object.keys(endpoints).reduce((eps, key) => {
+    eps[key.toLowerCase()] = endpoints[key]
+    return eps;
+  }, {} as Record<string, any>) as any;
+}
 export class Router<
   TContext extends {} = {},
-  TEndpoints extends RouterEndpoints<TContext> = {}> {
-  readonly _endpoints: TEndpoints;
+  TQueries extends RouterEndpoints<TContext> = {}> {
+  readonly _endpoints: TQueries;
 
-  constructor(endpoints?: TEndpoints) {
-    this._endpoints = endpoints ?? {} as TEndpoints;
+  constructor(endpoints?: TQueries) {
+    this._endpoints = endpoints ?? {} as TQueries;
   }
 
-  /**
-   * Add endpoint and return router
-   * @param path 
-   * @param resolver 
-   */
-  public endpoint<TData, TArgs extends any[], TPath extends string>(
-    path: TPath,
-    resolver: RouterResolverFn<TContext, TData, TArgs>
-  ) {
-    if (this.has(path)) {
-      throw new Error(`Duplicate endpoint "${path}" - note that the internal storage is case insenstive`)
-    }
-    const route = {
-      [path.toLowerCase()]: resolver,
-    } as Record<TPath, typeof resolver>;
-
-    return new Router<TContext, TEndpoints & typeof route>({
-      ...this._endpoints,
-      ...route,
-    });
-  }
   /**
    * Add new endpoints and return router
    * @param endpoints 
    */
   public endpoints<TNewEndpoints extends RouterEndpoints<TContext>>(
     endpoints: TNewEndpoints,
-  ): Router<TContext, TEndpoints & TNewEndpoints> {
-
-    return Object.keys(endpoints).reduce((r, key) => {
-      return r.endpoint(key, endpoints[key]);
-    }, this as any as Router<TContext, any>);
+  ): Router<TContext, TQueries & TNewEndpoints> {
+    const duplicates = Object.keys(endpoints).filter((key) => this.has(key))
+    if (duplicates.length) {
+      throw new Error(`Duplicate endpoint(s): ${duplicates.join(', ')}`)
+    }
+    return new Router({
+      ...this._endpoints,
+      ...lowerCaseEndpoints(endpoints),
+    })
   }
 
   /**
@@ -64,7 +53,7 @@ export class Router<
     TChildRouter extends Router<TContext, any>
   >(
     router: TChildRouter
-  ): Router<TContext, TEndpoints & TChildRouter['_endpoints']>;
+  ): Router<TContext, TQueries & TChildRouter['_endpoints']>;
 
   /**
    * Merge router with other router
@@ -77,7 +66,7 @@ export class Router<
   >(
     prefix: TPath,
     router: TChildRouter
-  ): Router<TContext, TEndpoints & Prefixer<TChildRouter['_endpoints'], `${TPath}`>>;
+  ): Router<TContext, TQueries & Prefixer<TChildRouter['_endpoints'], `${TPath}`>>;
 
   public merge(prefixOrRouter: unknown, maybeRouter?: unknown) {
     let prefix = ''
@@ -93,16 +82,16 @@ export class Router<
     }
 
     return Object.keys(router._endpoints).reduce((r, key) => {
-      return r.endpoint(prefix + key, router._endpoints[key]);
+      return r.endpoints({[prefix + key]: router._endpoints[key]});
     }, this as any as Router<TContext, any>);
   }
 
 
   public handler(ctx: TContext) {
     return async <
-      TPath extends keyof TEndpoints,
+      TPath extends keyof TQueries,
       TArgs extends DropFirst<Parameters<TResolver>>,
-      TResolver extends TEndpoints[TPath]
+      TResolver extends TQueries[TPath]
     >(path: TPath, ...args: TArgs): Promise<ReturnType<TResolver>> => {
       const key = (path as string).toLowerCase()
       return this._endpoints[key](ctx, ...args);

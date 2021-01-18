@@ -63,22 +63,26 @@ const posts = createRouter().endpoints({
 
 // root router to call
 const rootRouter = createRouter()
-  .endpoint('hello', (ctx, input?: string) => {
-    return `hello ${input ?? ctx.user?.name ?? 'world'}`;
+  .endpoints({
+    hello: (ctx, input?: string) => {
+      return `hello ${input ?? ctx.user?.name ?? 'world'}`;
+    },
   })
   .merge('posts/', posts)
   .merge(
     'admin/',
-    createRouter().endpoint('secret', (ctx) => {
-      if (!ctx.user) {
-        throw trpc.httpError.unauthorized();
-      }
-      if (ctx.user?.name !== 'alex') {
-        throw trpc.httpError.forbidden();
-      }
-      return {
-        secret: 'sauce',
-      };
+    createRouter().endpoints({
+      secret: (ctx) => {
+        if (!ctx.user) {
+          throw trpc.httpError.unauthorized();
+        }
+        if (ctx.user?.name !== 'alex') {
+          throw trpc.httpError.forbidden();
+        }
+        return {
+          secret: 'sauce',
+        };
+      },
     }),
   );
 

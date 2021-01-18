@@ -22,10 +22,12 @@ export class ZodRouter<
       resolve: RouterResolverFn<TContext, TData, [z.infer<TSchema>]>;
     },
   ) {
-    return this.endpoint(path, (ctx, input: z.infer<TSchema>) => {
-      const parsed = schema.parse(input);
+    return this.endpoints({
+      [path]: (ctx, input: z.infer<TSchema>) => {
+        const parsed = schema.parse(input);
 
-      return resolve(ctx, parsed);
+        return resolve(ctx, parsed);
+      },
     });
   }
 }
