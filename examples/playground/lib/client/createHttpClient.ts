@@ -41,7 +41,7 @@ export interface CreateHttpClientOptions {
   fetch?: typeof fetch;
   getHeaders?: () => Record<string, string | undefined>;
   onSuccess?: (data: HTTPSuccessResponseEnvelope<unknown>) => void;
-  onError?: (error: Error) => void;
+  onError?: (error: HTTPClientError) => void;
 }
 export function createHttpClient<TRouter extends Router>(
   opts: CreateHttpClientOptions,
