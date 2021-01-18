@@ -34,6 +34,17 @@ export type inferHandler<TEndpoints extends RouterEndpoints> = <
   ...args: TArgs
 ) => Promise<ReturnType<TResolver>>;
 
+
+export type inferEndpointsWithArgs<TEndpoints extends RouterEndpoints> = {
+  [Key in keyof TEndpoints]: inferEndpointArgs<TEndpoints[Key]> extends ([any])
+    ? Key
+    : never;
+}[keyof TEndpoints];
+
+export type inferEndpointsWithoutArgs<
+  TEndpoints extends RouterEndpoints
+> = keyof Omit<TEndpoints, inferEndpointsWithArgs<TEndpoints>>;
+
 export class Router<
   TContext = any,
   TQueries extends RouterEndpoints<TContext> = {},

@@ -7,9 +7,12 @@ import { rootRouter } from './server'; // this is only imported to show-case ssr
 const client = createHttpClient<RootRouter>({
   url: '...',
 });
-const { useQuery, useMutation, queryClient } = createReactQueryHooks<
-  RootRouter
->({
+const {
+  useQuery,
+  useMutation,
+  useQueryNoArgs,
+  queryClient,
+} = createReactQueryHooks<RootRouter>({
   client,
 });
 
@@ -24,7 +27,17 @@ const { useQuery, useMutation, queryClient } = createReactQueryHooks<
   console.log(data);
 }
 {
-  const { data } = useQuery(['hello', 'world']);
+  const { data } = useQuery(['hello']);
+
+  console.log(data);
+}
+{
+  const { data } = useQueryNoArgs('hello');
+
+  console.log(data);
+}
+{
+  const { data } = useQuery(['posts/list']);
 
   console.log(data);
 }

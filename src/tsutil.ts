@@ -36,18 +36,6 @@ export namespace tsutil {
       : false
     : false;
 
-  type ResolverFn<TContext, TData, TArgs extends any[]> = (
-    ctx: TContext,
-    ...args: TArgs
-  ) => Promise<TData> | TData;
-
-  type DropFirst<T extends readonly unknown[]> = T extends readonly [
-    any?,
-    ...(infer U)
-  ]
-    ? U
-    : [...T];
-
   export type stripNull<T> = T extends null ? never : T;
   export type stripUndefined<T> = T extends undefined ? never : T;
   export type flattenArray<T> = T extends (infer U)[]
