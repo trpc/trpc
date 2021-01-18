@@ -13,13 +13,6 @@ export type RouterEndpoints<TContext extends {}> = Record<
   RouterResolverFn<TContext, any, any>
 >;
 
-function lowerCaseEndpoints<TEndpoints extends RouterEndpoints<any>>(endpoints: TEndpoints): TEndpoints {
-  return Object.keys(endpoints).reduce((eps, key) => {
-    eps[key.toLowerCase()] = endpoints[key]
-    return eps;
-  }, {} as Record<string, any>) as any;
-}
-
 function prefixEndpoints<
   TEndpoints extends RouterEndpoints<any>,
   TPrefix extends string
@@ -28,10 +21,12 @@ function prefixEndpoints<
   prefix: TPrefix,
 ): TEndpoints & Prefixer<TEndpoints, TPrefix> {
   return Object.keys(endpoints).reduce((eps, key) => {
-    eps[prefix + key] = endpoints[key];
+    const newKey = `${prefix}${key}`.toLowerCase()
+    eps[newKey] = endpoints[key];
     return eps;
-  }, {} as Record<string, any>) as any;
+  }, {} as RouterEndpoints<any>) as any;
 }
+
 export class Router<
   TContext extends {} = {},
   TQueries extends RouterEndpoints<TContext> = {},
@@ -52,18 +47,8 @@ export class Router<
   public queries<TNewEndpoints extends RouterEndpoints<TContext>>(
     endpoints: TNewEndpoints,
   ): Router<TContext, TQueries & TNewEndpoints, TMutations> {
-    const duplicates = Object.keys(endpoints).filter((key) => this.hasQuery(key))
-    if (duplicates.length) {
-      throw new Error(`Duplicate endpoint(s): ${duplicates.join(', ')}`)
-    }
-
-    return new Router({
-      queries: {
-        ...this._queries,
-        ...lowerCaseEndpoints(endpoints),
-      },
-      mutations: this._mutations,
-    })
+    const router = new Router<TContext, TNewEndpoints>({ queries: endpoints })
+    return this.merge(router)
   }
 
   /**
@@ -73,18 +58,9 @@ export class Router<
   public mutations<TNewEndpoints extends RouterEndpoints<TContext>>(
     endpoints: TNewEndpoints,
   ): Router<TContext, TQueries, TMutations & TNewEndpoints> {
-    const duplicates = Object.keys(endpoints).filter((key) => this.hasMutation(key))
-    if (duplicates.length) {
-      throw new Error(`Duplicate endpoint(s): ${duplicates.join(', ')}`)
-    }
+    const router = new Router<TContext, {}, TNewEndpoints>({ mutations: endpoints });
 
-    return new Router({
-      mutations: {
-        ...this._mutations,
-        ...lowerCaseEndpoints(endpoints),
-      },
-      queries: this._queries,
-    })
+    return this.merge(router)
   }
 
   /**
@@ -92,10 +68,14 @@ export class Router<
    * @param router
    */
   public merge<
-    TChildRouter extends Router<TContext, any>
+    TChildRouter extends Router<TContext, any, any>
   >(
     router: TChildRouter
-  ): Router<TContext, TQueries & TChildRouter['_queries']>;
+  ): Router<
+      TContext, 
+      TQueries & TChildRouter['_queries'], 
+      TMutations & TChildRouter['_mutations']
+    >;
 
   /**
    * Merge router with other router
@@ -127,6 +107,13 @@ export class Router<
       throw new Error('Invalid args')
     }
 
+    const duplicateQueries = Object.keys(router._queries).filter((key) => this.hasQuery(key))
+    const duplicateMutations = Object.keys(router._mutations).filter((key) => this.hasMutation(key))
+    const duplicates = [...duplicateQueries, ...duplicateMutations]
+    if (duplicates.length) {
+      throw new Error(`Duplicate endpoint(s): ${duplicates.join(', ')}`)
+    }
+    
     return new Router<TContext>({
       queries: {
         ...this._queries,
