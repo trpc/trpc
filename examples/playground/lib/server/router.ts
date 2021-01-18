@@ -42,10 +42,10 @@ export class Router<
   TQueries extends RouterEndpoints<TContext> = {},
   TMutations extends RouterEndpoints<TContext> = {},
   > {
-  readonly _def: {
-    queries: TQueries;
-    mutations: TMutations;
-  }
+  readonly _def: Readonly<{
+    queries: Readonly<TQueries>;
+    mutations: Readonly<TMutations>;
+  }>
 
   constructor(def?: {queries: TQueries, mutations: TMutations}) {
     this._def = def ?? {
