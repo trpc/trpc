@@ -23,16 +23,16 @@ async function main() {
     };
     const client = createHttpClient<RootRouter>(opts);
 
-    await client.get('hello', 'client');
+    await client.query('hello', 'client');
     await sleep();
-    await client.post('posts/create', {
+    await client.mutate('posts/create', {
       title: 'hello client',
     });
     await sleep();
-    await client.get('posts/list');
+    await client.query('posts/list');
     await sleep();
     try {
-      await client.get('admin/secret');
+      await client.query('admin/secret');
     } catch (err) {
       // will fail
     }
@@ -44,7 +44,7 @@ async function main() {
       }),
     });
 
-    await authedClient.get('admin/secret');
+    await authedClient.query('admin/secret');
   }
 }
 

@@ -19,29 +19,71 @@ function lowerCaseEndpoints<TEndpoints extends RouterEndpoints<any>>(endpoints: 
     return eps;
   }, {} as Record<string, any>) as any;
 }
+
+function prefixEndpoints<
+  TEndpoints extends RouterEndpoints<any>,
+  TPrefix extends string
+>(
+  endpoints: TEndpoints,
+  prefix: TPrefix,
+): TEndpoints & Prefixer<TEndpoints, TPrefix> {
+  return Object.keys(endpoints).reduce((eps, key) => {
+    eps[prefix + key] = endpoints[key];
+    return eps;
+  }, {} as Record<string, any>) as any;
+}
 export class Router<
   TContext extends {} = {},
-  TQueries extends RouterEndpoints<TContext> = {}> {
-  readonly _endpoints: TQueries;
+  TQueries extends RouterEndpoints<TContext> = {},
+  TMutations extends RouterEndpoints<TContext> = {},
+  > {
+  readonly _queries: TQueries;
+  readonly _mutations: TMutations;
 
-  constructor(endpoints?: TQueries) {
-    this._endpoints = endpoints ?? {} as TQueries;
+  constructor(opts: {queries?: TQueries, mutations?: TMutations} = {}) {
+    this._queries = opts.queries ?? {} as TQueries;
+    this._mutations = opts.mutations ?? {} as TMutations;
   }
 
   /**
-   * Add new endpoints and return router
-   * @param endpoints 
+   * Add new queries and return router
+   * @param queries 
    */
-  public endpoints<TNewEndpoints extends RouterEndpoints<TContext>>(
+  public queries<TNewEndpoints extends RouterEndpoints<TContext>>(
     endpoints: TNewEndpoints,
-  ): Router<TContext, TQueries & TNewEndpoints> {
-    const duplicates = Object.keys(endpoints).filter((key) => this.has(key))
+  ): Router<TContext, TQueries & TNewEndpoints, TMutations> {
+    const duplicates = Object.keys(endpoints).filter((key) => this.hasQuery(key))
     if (duplicates.length) {
       throw new Error(`Duplicate endpoint(s): ${duplicates.join(', ')}`)
     }
+
     return new Router({
-      ...this._endpoints,
-      ...lowerCaseEndpoints(endpoints),
+      queries: {
+        ...this._queries,
+        ...lowerCaseEndpoints(endpoints),
+      },
+      mutations: this._mutations,
+    })
+  }
+
+  /**
+   * Add new queries and return router
+   * @param queries 
+   */
+  public mutations<TNewEndpoints extends RouterEndpoints<TContext>>(
+    endpoints: TNewEndpoints,
+  ): Router<TContext, TQueries, TMutations & TNewEndpoints> {
+    const duplicates = Object.keys(endpoints).filter((key) => this.hasMutation(key))
+    if (duplicates.length) {
+      throw new Error(`Duplicate endpoint(s): ${duplicates.join(', ')}`)
+    }
+
+    return new Router({
+      mutations: {
+        ...this._mutations,
+        ...lowerCaseEndpoints(endpoints),
+      },
+      queries: this._queries,
     })
   }
 
@@ -53,7 +95,7 @@ export class Router<
     TChildRouter extends Router<TContext, any>
   >(
     router: TChildRouter
-  ): Router<TContext, TQueries & TChildRouter['_endpoints']>;
+  ): Router<TContext, TQueries & TChildRouter['_queries']>;
 
   /**
    * Merge router with other router
@@ -62,11 +104,15 @@ export class Router<
    */
   public merge<
     TPath extends string,
-    TChildRouter extends Router<TContext, any>
+    TChildRouter extends Router<TContext, any, any>
   >(
     prefix: TPath,
     router: TChildRouter
-  ): Router<TContext, TQueries & Prefixer<TChildRouter['_endpoints'], `${TPath}`>>;
+  ): Router<
+      TContext, 
+      TQueries & Prefixer<TChildRouter['_queries'], `${TPath}`>, 
+      TMutations & Prefixer<TChildRouter['_mutations'], `${TPath}`>
+    >;
 
   public merge(prefixOrRouter: unknown, maybeRouter?: unknown) {
     let prefix = ''
@@ -81,25 +127,45 @@ export class Router<
       throw new Error('Invalid args')
     }
 
-    return Object.keys(router._endpoints).reduce((r, key) => {
-      return r.endpoints({[prefix + key]: router._endpoints[key]});
-    }, this as any as Router<TContext, any>);
+    return new Router<TContext>({
+      queries: {
+        ...this._queries,
+        ...prefixEndpoints(router._queries, prefix),
+      },
+      mutations: {
+        ...this._mutations,
+        ...prefixEndpoints(router._mutations, prefix),
+      }
+    })
   }
 
-
-  public handler(ctx: TContext) {
+  public createQueryHandler(ctx: TContext) {
     return async <
       TPath extends keyof TQueries,
       TArgs extends DropFirst<Parameters<TResolver>>,
       TResolver extends TQueries[TPath]
     >(path: TPath, ...args: TArgs): Promise<ReturnType<TResolver>> => {
       const key = (path as string).toLowerCase()
-      return this._endpoints[key](ctx, ...args);
+      return this._queries[key](ctx, ...args);
     };
   }
 
-  public has(path: string) {
-    return !!this._endpoints[path.toLowerCase()]
+  public createMutationHandler(ctx: TContext) {
+    return async <
+      TPath extends keyof TMutations,
+      TArgs extends DropFirst<Parameters<TResolver>>,
+      TResolver extends TMutations[TPath]
+    >(path: TPath, ...args: TArgs): Promise<ReturnType<TResolver>> => {
+      const key = (path as string).toLowerCase()
+      return this._mutations[key](ctx, ...args);
+    };
+  }
+
+  public hasMutation(path: string) {
+    return !!this._mutations[path.toLowerCase()]
+  }
+  public hasQuery(path: string) {
+    return !!this._queries[path.toLowerCase()]
   }
 };
 
@@ -113,16 +179,25 @@ export type inferReturnType<TFunction extends () => any> = ThenArg<
   ReturnType<TFunction>
 >;
 
-export type inferEndpointData<
-  TRouter extends Router<any, Record<TPath, any>>,
-  TPath extends keyof TRouter['_endpoints'],
-> = inferReturnType<TRouter['_endpoints'][TPath]>
+export type inferQueryData<
+  TRouter extends Router<any, Record<TPath, any>, any>,
+  TPath extends keyof TRouter['_queries'],
+> = inferReturnType<TRouter['_queries'][TPath]>
 
+export type inferQueryArgs<
+  TRouter extends Router<any, Record<TPath, any>, any>,
+  TPath extends keyof TRouter['_queries'],
+> = DropFirst<Parameters<TRouter['_queries'][TPath]>>
 
-export type inferEndpointArgs<
-  TRouter extends Router<any, Record<TPath, any>>,
-  TPath extends keyof TRouter['_endpoints'],
-> = DropFirst<Parameters<TRouter['_endpoints'][TPath]>>
+export type inferMutationData<
+  TRouter extends Router<any, any, Record<TPath, any>>,
+  TPath extends keyof TRouter['_mutations'],
+> = inferReturnType<TRouter['_mutations'][TPath]>
+
+export type inferMutationArgs<
+  TRouter extends Router<any, any, Record<TPath, any>>,
+  TPath extends keyof TRouter['_mutations'],
+> = DropFirst<Parameters<TRouter['_mutations'][TPath]>>
 
 export type inferHandler<TRouter extends Router> = 
-  ReturnType<TRouter['handler']>
+  ReturnType<TRouter['createQueryHandler']>

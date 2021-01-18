@@ -43,21 +43,33 @@ export function createExpressMiddleware<TContext>({
   router,
   createContext,
 }: {
-  router: Router<TContext, any>;
+  router: Router<TContext, any, any>;
   createContext: CreateExpressContextFn<TContext>;
 }): express.Handler {
   return async (req, res) => {
     try {
       const endpoint = req.path.substr(1);
-      if (!router.has(endpoint)) {
-        throw httpError.badRequest(`No such endpoint "${endpoint}"`);
+      if (req.method !== 'POST' && req.method !== 'GET') {
+        throw httpError.badRequest(`Forbidden method '${req.method}'`);
       }
-      let args = getArgs(req);
+      if (req.method === 'POST' && !router.hasMutation(endpoint)) {
+        throw httpError.badRequest(`No such mutation "${endpoint}"`);
+      } else if (req.method === 'GET' && !router.hasQuery(endpoint)) {
+        throw httpError.badRequest(`No such query "${endpoint}"`);
+      }
+
+      const args = getArgs(req);
 
       const ctx = await createContext({ req, res });
-      const handle = router.handler(ctx);
 
-      const data = await handle(endpoint, args);
+      let data: unknown;
+      if (req.method === 'GET') {
+        const handle = router.createQueryHandler(ctx);
+        data = await handle(endpoint, ...args);
+      } else {
+        const handle = router.createMutationHandler(ctx);
+        data = await handle(endpoint, ...args);
+      }
 
       const json: HTTPSuccessResponseEnvelope<unknown> = {
         ok: true,

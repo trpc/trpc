@@ -8,19 +8,21 @@ import type { RootRouter } from '../../server';
 import type { HTTPClientError } from './createHttpClient';
 import type { HTTPResponseEnvelope } from '../http';
 import type {
-  inferEndpointArgs,
-  inferEndpointData,
+  inferMutationData,
+  inferQueryArgs,
+  inferQueryData,
   Router,
   RouterResolverFn,
 } from '../router';
 import { DropFirst } from '../types';
 
-function createHooks<TRouter extends Router<any, any>>({
+function createHooks<TRouter extends Router<any, any, any>>({
   baseUrl,
 }: {
   baseUrl: string;
 }) {
-  type TEndpoints = TRouter['_endpoints'];
+  type TQueries = TRouter['_queries'];
+  type TMutations = TRouter['_mutations'];
 
   async function handleResponse(res: Response) {
     const json: HTTPResponseEnvelope<unknown> = await res.json();
@@ -31,18 +33,18 @@ function createHooks<TRouter extends Router<any, any>>({
     throw new Error(json.error.message);
   }
 
-  function _useQuery<TPath extends keyof TEndpoints>(
-    pathAndArgs: [TPath, ...inferEndpointArgs<TRouter, TPath>],
+  function _useQuery<TPath extends keyof TQueries>(
+    pathAndArgs: [TPath, ...inferQueryArgs<TRouter, TPath>],
     opts?: UseQueryOptions<
-      inferEndpointData<TRouter, TPath>,
+      inferQueryData<TRouter, TPath>,
       HTTPClientError,
-      inferEndpointArgs<TRouter, TPath>
+      inferQueryArgs<TRouter, TPath>
     >,
   ) {
     return useQuery<
-      inferEndpointData<TRouter, TPath>,
+      inferQueryData<TRouter, TPath>,
       HTTPClientError,
-      inferEndpointArgs<TRouter, TPath>
+      inferQueryArgs<TRouter, TPath>
     >(
       pathAndArgs,
       async () => {
@@ -66,18 +68,18 @@ function createHooks<TRouter extends Router<any, any>>({
   }
 
   function _useMutation<
-    TPath extends keyof TEndpoints,
+    TPath extends keyof TMutations,
     TArgs extends DropFirst<Parameters<TResolver>>,
     TResolver extends RouterResolverFn<any, any, any>
   >(
     path: TPath,
     opts?: UseMutationOptions<
-      inferEndpointData<TRouter, TPath>,
+      inferMutationData<TRouter, TPath>,
       unknown,
       TArgs
     >,
   ) {
-    return useMutation<inferEndpointData<TRouter, TPath>, unknown, TArgs>(
+    return useMutation<inferMutationData<TRouter, TPath>, unknown, TArgs>(
       async (args) => {
         const headers = {
           'content-type': 'application/json',

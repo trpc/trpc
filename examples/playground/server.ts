@@ -41,29 +41,32 @@ type ThenArg<T> = T extends PromiseLike<infer U> ? ThenArg<U> : T;
 type Context = ThenArg<ReturnType<typeof createContext>>;
 
 // create router for posts
-const posts = createRouter().endpoints({
-  create: (
-    ctx,
-    input: {
-      title: string;
+const posts = createRouter()
+  .mutations({
+    create: (
+      ctx,
+      input: {
+        title: string;
+      },
+    ) => {
+      const post = {
+        id: ++id,
+        ...input,
+      };
+      db.posts.push(post);
+      ctx.res.status(201);
+      return {
+        post,
+      };
     },
-  ) => {
-    const post = {
-      id: ++id,
-      ...input,
-    };
-    db.posts.push(post);
-    ctx.res.status(201);
-    return {
-      post,
-    };
-  },
-  list: () => db.posts,
-});
+  })
+  .queries({
+    list: () => db.posts,
+  });
 
 // root router to call
 const rootRouter = createRouter()
-  .endpoints({
+  .queries({
     hello: (ctx, input?: string) => {
       return `hello ${input ?? ctx.user?.name ?? 'world'}`;
     },
@@ -71,7 +74,7 @@ const rootRouter = createRouter()
   .merge('posts/', posts)
   .merge(
     'admin/',
-    createRouter().endpoints({
+    createRouter().queries({
       secret: (ctx) => {
         if (!ctx.user) {
           throw trpc.httpError.unauthorized();
@@ -87,7 +90,6 @@ const rootRouter = createRouter()
   );
 
 export type RootRouter = typeof rootRouter;
-export type RootRouterRoutes = keyof RootRouter['_endpoints'];
 
 async function main() {
   // express implementation
