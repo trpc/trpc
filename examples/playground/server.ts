@@ -63,7 +63,7 @@ const posts = createRouter()
   });
 
 // root router to call
-const rootRouter = createRouter()
+export const rootRouter = createRouter()
   .queries({
     hello: (ctx, input?: string) => {
       return `hello ${input ?? ctx.user?.name ?? 'world'}`;

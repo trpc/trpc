@@ -3,10 +3,13 @@ import {
   UseMutationOptions,
   useQuery,
   UseQueryOptions,
+  QueryClient,
+  FetchQueryOptions,
 } from 'react-query';
 import type {
   inferEndpointArgs,
   inferEndpointData,
+  inferHandler,
   Router,
 } from '../server/router';
 import { HTTPClientError, HTTPSdk } from './createHttpClient';
@@ -18,6 +21,15 @@ export function createReactQueryHooks<TRouter extends Router<any, any, any>>({
 }) {
   type TQueries = TRouter['_def']['queries'];
   type TMutations = TRouter['_def']['mutations'];
+  type TQueryClient = Omit<QueryClient, 'prefetchQuery'> & {
+    prefetchQuery: <TPath extends keyof TQueries & string>(
+      args: [TPath, ...inferEndpointArgs<TQueries[TPath]>],
+      handler: inferHandler<TQueries>,
+      options?: FetchQueryOptions,
+    ) => Promise<inferEndpointData<TQueries[TPath]>>;
+  };
+
+  const queryClient = new QueryClient();
 
   function _useQuery<TPath extends keyof TQueries & string>(
     pathAndArgs: [TPath, ...inferEndpointArgs<TQueries[TPath]>],
@@ -51,5 +63,6 @@ export function createReactQueryHooks<TRouter extends Router<any, any, any>>({
   return {
     useQuery: _useQuery,
     useMutation: _useMutation,
+    queryClient: (queryClient as any) as TQueryClient,
   };
 }
