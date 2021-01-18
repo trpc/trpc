@@ -60,12 +60,12 @@ export class Router<
   >(
     endpoints: TEndpoints,
     prefix: TPrefix,
-  ): TEndpoints & Prefixer<TEndpoints, TPrefix> {
-    return Object.keys(endpoints).reduce((eps, key) => {
-      const newKey = `${prefix}${key}`
-      eps[newKey] = endpoints[key];
-      return eps;
-    }, {} as RouterEndpoints) as any;
+  ): Prefixer<TEndpoints, TPrefix> {
+    let eps: RouterEndpoints = {}
+    for (const key in endpoints) {
+      eps[prefix + key] = endpoints[key]
+    }
+    return eps as any;
   }
   
   /**
