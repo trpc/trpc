@@ -76,8 +76,8 @@ export class Router<
   }
 
   /**
-   * Add new queries and return router
-   * @param queries 
+   * Add new mutations and return router
+   * @param mutations 
    */
   public mutations<TNewEndpoints extends RouterEndpoints<TContext>>(
     endpoints: TNewEndpoints,
