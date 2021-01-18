@@ -10,9 +10,6 @@ export type TRPCPayload<Ctx = unknown> = {
   args: unknown[];
   context: Ctx;
 };
-// export type ClientSDKHandler = (url: string, payload: { path: string[]; args: unknown[] }) => Promise<unknown>;
-// export type ToClientSDKParams = { url: string; getContext: () => Promise<any>; handler: ClientSDKHandler };
-
 export class TRPCRouter<
   Children extends { [k: string]: TRPCRouter<any, any> } = {},
   Endpoints extends { [k: string]: TRPCEndpoint<any> } = {}

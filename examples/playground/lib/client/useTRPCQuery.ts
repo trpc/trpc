@@ -17,7 +17,7 @@ function createHooks<TRouter extends Router<any, any, any>>({
   type TQueries = TRouter['_queries'];
   type TMutations = TRouter['_mutations'];
 
-  function _useQuery<TPath extends keyof TQueries>(
+  function _useQuery<TPath extends keyof TQueries & string>(
     pathAndArgs: [TPath, ...inferEndpointArgs<TQueries[TPath]>],
     opts?: UseQueryOptions<
       inferEndpointArgs<TQueries[TPath]>,
@@ -32,7 +32,7 @@ function createHooks<TRouter extends Router<any, any, any>>({
     >(pathAndArgs, () => client.query(...pathAndArgs) as any, opts);
   }
 
-  function _useMutation<TPath extends keyof TMutations>(
+  function _useMutation<TPath extends keyof TMutations & string>(
     path: TPath,
     opts?: UseMutationOptions<
       inferEndpointData<TMutations[TPath]>,
@@ -75,7 +75,9 @@ const hooks = createHooks<RootRouter>({
   console.log(data);
 }
 {
-  const m = hooks.useMutation('posts/create');
-  m.mutate([{ title: 'hej' }]);
-  console.log('data', m.data);
+  const { data, mutateAsync } = hooks.useMutation('posts/create');
+  mutateAsync([{ title: 'hej' }]).then((res) => {
+    console.log(res);
+  });
+  console.log('data', data);
 }

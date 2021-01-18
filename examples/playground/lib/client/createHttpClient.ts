@@ -2,12 +2,12 @@ import type {
   HTTPResponseEnvelope,
   HTTPSuccessResponseEnvelope,
 } from '../http';
-import type { Router } from '../router';
+import type { inferHandler, Router } from '../router';
 import type { Maybe } from '../types';
 
 export type HTTPSdk<TRouter extends Router> = {
-  query: ReturnType<TRouter['createQueryHandler']>;
-  mutate: ReturnType<TRouter['createMutationHandler']>;
+  query: inferHandler<TRouter['_queries']>;
+  mutate: inferHandler<TRouter['_mutations']>;
 };
 export class HTTPClientError extends Error {
   public readonly json?: Maybe<HTTPResponseEnvelope<unknown>>;
@@ -79,7 +79,10 @@ export function createHttpClient<TRouter extends Router>(
       'content-type': 'application/json',
     };
   }
-  const query = async (path: string, ...args: unknown[]) => {
+  const query: inferHandler<TRouter['_queries']> = async (
+    path: string,
+    ...args: unknown[]
+  ) => {
     let target = `${url}/${path}`;
     if (args?.length) {
       target += `?args=${encodeURIComponent(JSON.stringify(args as any))}`;
@@ -90,7 +93,7 @@ export function createHttpClient<TRouter extends Router>(
 
     return handleResponse(promise);
   };
-  const mutate = async (path: string, ...args: unknown[]) => {
+  const mutate: inferHandler<TRouter['_mutations']> = async (path, ...args) => {
     const promise = _fetch(`${url}/${path}`, {
       method: 'post',
       body: JSON.stringify({
@@ -104,5 +107,5 @@ export function createHttpClient<TRouter extends Router>(
   return {
     mutate,
     query,
-  } as HTTPSdk<TRouter>;
+  };
 }

@@ -28,7 +28,14 @@ export type inferEndpointArgs<
 > = DropFirst<Parameters<TEndpoint>>
 
 
-// export type QueryHandler<TRouter extends Router> = {}
+export type inferHandler<TEndpoints extends RouterEndpoints> = <
+  TArgs extends DropFirst<Parameters<TResolver>>,
+  TPath extends keyof TEndpoints & string,
+  TResolver extends TEndpoints[TPath]
+>(
+  path: TPath,
+  ...args: TArgs
+) => Promise<ReturnType<TResolver>>;
 
 export class Router<
   TContext = any,
