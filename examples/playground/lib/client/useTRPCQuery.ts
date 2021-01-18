@@ -29,15 +29,15 @@ function createHooks<TRouter extends Router<any, any, any>>({
   function _useQuery<TPath extends keyof TQueries>(
     pathAndArgs: [TPath, ...inferEndpointArgs<TQueries[TPath]>],
     opts?: UseQueryOptions<
-      inferEndpointData<TQueries[TPath]>,
+      inferEndpointArgs<TQueries[TPath]>,
       HTTPClientError,
-      inferEndpointArgs<TQueries[TPath]>
+      inferEndpointData<TQueries[TPath]>
     >,
   ) {
     return useQuery<
-      inferEndpointData<TQueries[TPath]>,
+      inferEndpointArgs<TQueries[TPath]>,
       HTTPClientError,
-      inferEndpointArgs<TQueries[TPath]>
+      inferEndpointData<TQueries[TPath]>
     >(
       pathAndArgs,
       async () => {
@@ -64,13 +64,13 @@ function createHooks<TRouter extends Router<any, any, any>>({
     path: TPath,
     opts?: UseMutationOptions<
       inferEndpointData<TMutations[TPath]>,
-      unknown,
+      HTTPClientError,
       inferEndpointArgs<TMutations[TPath]>
     >,
   ) {
     return useMutation<
       inferEndpointData<TMutations[TPath]>,
-      unknown,
+      HTTPClientError,
       inferEndpointArgs<TMutations[TPath]>
     >(async (args) => {
       const headers = {
@@ -99,6 +99,11 @@ const hooks = createHooks<RootRouter>({
 
 {
   const { data } = hooks.useQuery(['admin/secret']);
+
+  console.log(data);
+}
+{
+  const { data } = hooks.useQuery(['posts/list']);
 
   console.log(data);
 }
