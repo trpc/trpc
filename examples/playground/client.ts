@@ -25,11 +25,13 @@ async function main() {
 
     await client.query('hello', 'client');
     await sleep();
-    await client.mutate('posts/create', {
+    const postCreate = await client.mutate('posts/create', {
       title: 'hello client',
     });
+    console.log('created post', postCreate.title);
     await sleep();
-    await client.query('posts/list');
+    const postList = await client.query('posts/list');
+    console.log('has posts', postList, 'first:', postList[0].title);
     await sleep();
     try {
       await client.query('admin/secret');

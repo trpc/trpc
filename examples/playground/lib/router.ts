@@ -1,20 +1,35 @@
 import { assertNotBrowser } from './assertNotBrowser';
-import { Prefixer, DropFirst } from './types';
+import { Prefixer, DropFirst, ThenArg } from './types';
 assertNotBrowser();
 
-export type RouterResolverFn<TContext, TData, TArgs extends any[]> = (
+export type RouterResolverFn<TContext = any, TData = any, TArgs extends any[] = any[]> = (
   ctx: TContext,
   ...args: TArgs
 ) => Promise<TData> | TData;
 
 
-export type RouterEndpoints<TContext extends {}> = Record<
+export type RouterEndpoints<TContext = any> = Record<
   string,
   RouterResolverFn<TContext, any, any>
 >;
 
+
+export type inferAsyncFunction<TFunction extends (...args: any) => any> = ThenArg<
+  ReturnType<TFunction>
+>;
+
+
+export type inferEndpointData<
+  TEndpoint extends RouterResolverFn,
+> = inferAsyncFunction<TEndpoint>
+
+export type inferEndpointArgs<
+  TEndpoint extends RouterResolverFn,
+> = DropFirst<Parameters<TEndpoint>>
+
+
 function prefixEndpoints<
-  TEndpoints extends RouterEndpoints<any>,
+  TEndpoints extends RouterEndpoints,
   TPrefix extends string
 >(
   endpoints: TEndpoints,
@@ -28,7 +43,7 @@ function prefixEndpoints<
 }
 
 export class Router<
-  TContext extends {} = {},
+  TContext = any,
   TQueries extends RouterEndpoints<TContext> = {},
   TMutations extends RouterEndpoints<TContext> = {},
   > {
@@ -156,35 +171,6 @@ export class Router<
   }
 };
 
-export function router<TContext extends {} = {}>() {
+export function router<TContext>() {
   return new Router<TContext>()
 }
-
-type ThenArg<T> = T extends PromiseLike<infer U> ? ThenArg<U> : T;
-
-export type inferReturnType<TFunction extends () => any> = ThenArg<
-  ReturnType<TFunction>
->;
-
-export type inferQueryData<
-  TRouter extends Router<any, Record<TPath, any>, any>,
-  TPath extends keyof TRouter['_queries'],
-> = inferReturnType<TRouter['_queries'][TPath]>
-
-export type inferQueryArgs<
-  TRouter extends Router<any, Record<TPath, any>, any>,
-  TPath extends keyof TRouter['_queries'],
-> = DropFirst<Parameters<TRouter['_queries'][TPath]>>
-
-export type inferMutationData<
-  TRouter extends Router<any, any, Record<TPath, any>>,
-  TPath extends keyof TRouter['_mutations'],
-> = inferReturnType<TRouter['_mutations'][TPath]>
-
-export type inferMutationArgs<
-  TRouter extends Router<any, any, Record<TPath, any>>,
-  TPath extends keyof TRouter['_mutations'],
-> = DropFirst<Parameters<TRouter['_mutations'][TPath]>>
-
-export type inferHandler<TRouter extends Router> = 
-  ReturnType<TRouter['createQueryHandler']>

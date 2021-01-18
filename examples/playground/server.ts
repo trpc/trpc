@@ -1,6 +1,7 @@
 import bodyParser from 'body-parser';
 import express from 'express';
 import * as trpc from './lib';
+import { inferAsyncFunction } from './lib';
 import {
   CreateExpressContextOptions,
   createExpressMiddleware,
@@ -37,8 +38,7 @@ const createContext = ({ req, res }: CreateExpressContextOptions) => {
     user: getUser(),
   };
 };
-type ThenArg<T> = T extends PromiseLike<infer U> ? ThenArg<U> : T;
-type Context = ThenArg<ReturnType<typeof createContext>>;
+type Context = inferAsyncFunction<typeof createContext>;
 
 // create router for posts
 const posts = createRouter()
@@ -55,9 +55,7 @@ const posts = createRouter()
       };
       db.posts.push(post);
       ctx.res.status(201);
-      return {
-        post,
-      };
+      return post;
     },
   })
   .queries({

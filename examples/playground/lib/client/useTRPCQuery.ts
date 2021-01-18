@@ -1,20 +1,13 @@
 import {
-  useQuery,
   useMutation,
-  UseQueryOptions,
   UseMutationOptions,
+  useQuery,
+  UseQueryOptions,
 } from 'react-query';
 import type { RootRouter } from '../../server';
-import type { HTTPClientError } from './createHttpClient';
 import type { HTTPResponseEnvelope } from '../http';
-import type {
-  inferMutationData,
-  inferQueryArgs,
-  inferQueryData,
-  Router,
-  RouterResolverFn,
-} from '../router';
-import { DropFirst } from '../types';
+import type { inferEndpointArgs, inferEndpointData, Router } from '../router';
+import type { HTTPClientError } from './createHttpClient';
 
 function createHooks<TRouter extends Router<any, any, any>>({
   baseUrl,
@@ -34,17 +27,17 @@ function createHooks<TRouter extends Router<any, any, any>>({
   }
 
   function _useQuery<TPath extends keyof TQueries>(
-    pathAndArgs: [TPath, ...inferQueryArgs<TRouter, TPath>],
+    pathAndArgs: [TPath, ...inferEndpointArgs<TQueries[TPath]>],
     opts?: UseQueryOptions<
-      inferQueryData<TRouter, TPath>,
+      inferEndpointData<TQueries[TPath]>,
       HTTPClientError,
-      inferQueryArgs<TRouter, TPath>
+      inferEndpointArgs<TQueries[TPath]>
     >,
   ) {
     return useQuery<
-      inferQueryData<TRouter, TPath>,
+      inferEndpointData<TQueries[TPath]>,
       HTTPClientError,
-      inferQueryArgs<TRouter, TPath>
+      inferEndpointArgs<TQueries[TPath]>
     >(
       pathAndArgs,
       async () => {
@@ -67,35 +60,32 @@ function createHooks<TRouter extends Router<any, any, any>>({
     );
   }
 
-  function _useMutation<
-    TPath extends keyof TMutations,
-    TArgs extends DropFirst<Parameters<TResolver>>,
-    TResolver extends RouterResolverFn<any, any, any>
-  >(
+  function _useMutation<TPath extends keyof TMutations>(
     path: TPath,
     opts?: UseMutationOptions<
-      inferMutationData<TRouter, TPath>,
+      inferEndpointData<TMutations[TPath]>,
       unknown,
-      TArgs
+      inferEndpointArgs<TMutations[TPath]>
     >,
   ) {
-    return useMutation<inferMutationData<TRouter, TPath>, unknown, TArgs>(
-      async (args) => {
-        const headers = {
-          'content-type': 'application/json',
-        };
-        const res = await fetch(`${baseUrl}/${path}`, {
-          method: 'post',
-          body: JSON.stringify({
-            args,
-          }),
-          headers,
-        });
+    return useMutation<
+      inferEndpointData<TMutations[TPath]>,
+      unknown,
+      inferEndpointArgs<TMutations[TPath]>
+    >(async (args) => {
+      const headers = {
+        'content-type': 'application/json',
+      };
+      const res = await fetch(`${baseUrl}/${path}`, {
+        method: 'post',
+        body: JSON.stringify({
+          args,
+        }),
+        headers,
+      });
 
-        return handleResponse(res);
-      },
-      opts,
-    );
+      return handleResponse(res);
+    }, opts);
   }
   return {
     useQuery: _useQuery,
@@ -120,4 +110,5 @@ const hooks = createHooks<RootRouter>({
 {
   const m = hooks.useMutation('posts/create');
   m.mutate([{ title: 'hej' }]);
+  console.log('data', m.data);
 }

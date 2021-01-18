@@ -7,3 +7,6 @@ export type Prefixer<TObj extends Record<string, any>, TPrefix extends string> =
 export type DropFirst<T extends readonly unknown[]> = T extends readonly [any?, ...infer U] ? U : [...T];
 
 export type Maybe<T> = T | undefined | null;
+
+export type ThenArg<T> = T extends PromiseLike<infer U> ? ThenArg<U> : T;
+
