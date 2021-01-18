@@ -11,7 +11,7 @@ import type {
 } from '../server/router';
 import { HTTPClientError, HTTPSdk } from './createHttpClient';
 
-export function createHooks<TRouter extends Router<any, any, any>>({
+export function createReactQueryHooks<TRouter extends Router<any, any, any>>({
   client,
 }: {
   client: HTTPSdk<TRouter>;

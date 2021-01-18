@@ -1,13 +1,13 @@
 // testing react-query helpers
 
 import { createHttpClient } from './lib/browser/createHttpClient';
-import { createHooks } from './lib/browser/useTRPCQuery';
+import { createReactQueryHooks } from './lib/browser/createReactQueryHooks';
 import type { RootRouter } from './server';
 
-const client = createHttpClient({
+const client = createHttpClient<RootRouter>({
   url: '...',
 });
-const { useQuery, useMutation } = createHooks<RootRouter>({
+const { useQuery, useMutation } = createReactQueryHooks<RootRouter>({
   client,
 });
 
