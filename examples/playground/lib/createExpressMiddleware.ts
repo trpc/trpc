@@ -17,58 +17,58 @@ export type CreateExpressContextFn<TContext> = (
   opts: CreateExpressContextOptions,
 ) => Promise<TContext> | TContext;
 
-function getArgs(req: express.Request): unknown[] {
+function getQueryArgs(req: express.Request) {
   let args: unknown[] = [];
-  if (req.method === 'POST') {
-    args = req.body.args ?? [];
-  } else if (req.method === 'GET') {
-    try {
-      const queryArg = req.query.args as string;
-      if (queryArg) {
-        args = JSON.parse(queryArg);
-      }
-    } catch (_err) {
-      throw httpError.badRequest('Unable to parse args query paramater');
-    }
-  } else {
-    throw httpError.badRequest(`Unacceptable method "${req.method}"`);
+
+  const queryArgs = req.query.args;
+  if (!queryArgs) {
+    return args;
   }
+  if (typeof queryArgs !== 'string') {
+    throw httpError.badRequest('Expected query.args to be a JSON string');
+  }
+  try {
+    args = JSON.parse(queryArgs);
+  } catch (err) {
+    throw httpError.badRequest('Expected query.args to be a JSON string');
+  }
+
   if (!Array.isArray(args)) {
-    throw httpError.badRequest('Expected args to be an array');
+    throw httpError.badRequest('Expected query.args to be a JSON-array');
   }
   return args;
 }
-
-export function createExpressMiddleware<TContext>({
+export function createExpressMiddleware<
+  TContext,
+  TRouter extends Router<TContext>
+>({
   router,
   createContext,
 }: {
-  router: Router<TContext, any, any>;
+  router: TRouter;
   createContext: CreateExpressContextFn<TContext>;
 }): express.Handler {
   return async (req, res) => {
     try {
       const endpoint = req.path.substr(1);
-      if (req.method !== 'POST' && req.method !== 'GET') {
-        throw httpError.badRequest(`Forbidden method '${req.method}'`);
-      }
-      if (req.method === 'POST' && !router.hasMutation(endpoint)) {
-        throw httpError.badRequest(`No such mutation "${endpoint}"`);
-      } else if (req.method === 'GET' && !router.hasQuery(endpoint)) {
-        throw httpError.badRequest(`No such query "${endpoint}"`);
-      }
-
-      const args = getArgs(req);
-
       const ctx = await createContext({ req, res });
 
       let data: unknown;
-      if (req.method === 'GET') {
-        const handle = router.createQueryHandler(ctx);
-        data = await handle(endpoint, ...args);
-      } else {
+      if (req.method === 'POST') {
         const handle = router.createMutationHandler(ctx);
-        data = await handle(endpoint, ...args);
+        const args = req.body.args ?? [];
+        if (!Array.isArray(args)) {
+          throw httpError.badRequest('Expected body.args to be an array');
+        }
+
+        data = await handle(endpoint as any, ...(args as any));
+      } else if (req.method === 'GET') {
+        const handle = router.createQueryHandler(ctx);
+        const args = getQueryArgs(req);
+
+        data = await handle(endpoint as any, ...(args as any));
+      } else {
+        throw httpError.badRequest(`Unexpected request method ${req.method}`);
       }
 
       const json: HTTPSuccessResponseEnvelope<unknown> = {

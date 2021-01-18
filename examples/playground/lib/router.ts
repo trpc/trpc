@@ -150,24 +150,25 @@ export class Router<
     })
   }
 
-  public createQueryHandler(ctx: TContext) {
-    return async <
-      TPath extends keyof TQueries,
-      TArgs extends DropFirst<Parameters<TResolver>>,
-      TResolver extends TQueries[TPath]
-    >(path: TPath, ...args: TArgs): Promise<ReturnType<TResolver>> => {
-      return this._queries[path](ctx, ...args);
-    };
-  }
+  // public invoke<
+  //   TEndpoints extends RouterEndpoints, 
+  //   TPath extends keyof TEndpoints,
+  //   TArgs extends Parameters<TResolver>,
+  //   TResolver extends TEndpoints[TPath]
+  // >(opts: {
+  //   target: TEndpoints,
+  //   path: TPath,
+  //   ctx: TContext,
+  //   args: TArgs,
+  // }): Promise<ReturnType<TResolver>> {
+  //   return opts.target[opts.path](opts.ctx, ...opts.args)
+  // }
 
-  public createMutationHandler(ctx: TContext) {
-    return async <
-      TPath extends keyof TMutations,
-      TArgs extends DropFirst<Parameters<TResolver>>,
-      TResolver extends TMutations[TPath]
-    >(path: TPath, ...args: TArgs): Promise<ReturnType<TResolver>> => {
-      return this._mutations[path](ctx, ...args);
-    };
+  public createMutationHandler(ctx: TContext): inferHandler<this['_mutations']> {
+    return (path, ...args) => this._mutations[path](ctx, ...args);
+  }
+  public createQueryHandler(ctx: TContext): inferHandler<this['_queries']> {
+    return (path, ...args) => this._queries[path](ctx, ...args);
   }
 
   public hasMutation(path: string) {

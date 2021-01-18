@@ -90,6 +90,8 @@ const rootRouter = createRouter()
 export type RootRouter = typeof rootRouter;
 
 async function main() {
+  const handler = rootRouter.createQueryHandler({} as any);
+  console.log(await handler('hello', 'world'));
   // express implementation
   const app = express();
   app.use(bodyParser.json());
