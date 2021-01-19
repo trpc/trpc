@@ -1,5 +1,6 @@
 import { assertNotBrowser } from './assertNotBrowser';
-import { Prefixer, DropFirst, ThenArg } from './types';
+import { inferSubscriptionData, Subscription } from './subscription';
+import { Prefixer, DropFirst, ThenArg, format } from './types';
 assertNotBrowser();
 
 export type RouterResolverFn<
@@ -8,9 +9,10 @@ export type RouterResolverFn<
   TArgs extends any[] = any[]
 > = (ctx: TContext, ...args: TArgs) => Promise<TData> | TData;
 
-export type RouterEndpoints<TContext = any> = Record<
+
+export type RouterEndpoints<TContext = any, TData = any> = Record<
   string,
-  RouterResolverFn<TContext, any, any>
+  RouterResolverFn<TContext, TData>
 >;
 
 export type inferAsyncReturnType<
@@ -24,6 +26,14 @@ export type inferEndpointData<
 export type inferEndpointArgs<TEndpoint extends RouterResolverFn> = DropFirst<
   Parameters<TEndpoint>
 >;
+
+export type inferRouterSubscriptionEndpointData<
+  TRouter extends AnyRouter,
+  TPath extends keyof TRouter['_def']['subscriptions'],
+> = inferSubscriptionData<
+  inferAsyncReturnType<TRouter['_def']['subscriptions'][TPath]>
+>;
+
 
 export type inferHandler<TEndpoints extends RouterEndpoints> = <
   TArgs extends DropFirst<Parameters<TResolver>>,
@@ -45,20 +55,25 @@ export type inferEndpointsWithoutArgs<
   TEndpoints extends RouterEndpoints
 > = keyof Omit<TEndpoints, inferEndpointsWithArgs<TEndpoints>>;
 
+
+export type AnyRouter = Router<any, any, any, any>
 export class Router<
-  TContext = any,
-  TQueries extends RouterEndpoints<TContext> = {},
-  TMutations extends RouterEndpoints<TContext> = {},
+  TContext,
+  TQueries extends RouterEndpoints<TContext>,
+  TMutations extends RouterEndpoints<TContext>,
+  TSubscriptions extends RouterEndpoints<TContext, Subscription<any>>,
   > {
   readonly _def: Readonly<{
     queries: Readonly<TQueries>;
     mutations: Readonly<TMutations>;
+    subscriptions: Readonly<TSubscriptions>;
   }>
 
-  constructor(def?: {queries: TQueries, mutations: TMutations}) {
+  constructor(def?: {queries: TQueries, mutations: TMutations, subscriptions: TSubscriptions}) {
     this._def = def ?? {
       queries: {} as TQueries,
       mutations: {} as TMutations,
+      subscriptions: {} as TSubscriptions,
     };
   }
 
@@ -76,25 +91,25 @@ export class Router<
     return eps as any;
   }
   
-  /**
-   * Add new queries and return router
-   * @param queries 
-   */
   public queries<TNewEndpoints extends RouterEndpoints<TContext>>(
     endpoints: TNewEndpoints,
-  ): Router<TContext, TQueries & TNewEndpoints, TMutations> {
-    const router = new Router<TContext, TNewEndpoints>({ queries: endpoints, mutations: {} })
+  ): Router<TContext, format<TQueries & TNewEndpoints>, TMutations, TSubscriptions> {
+    const router = new Router<TContext, format<TNewEndpoints>, {}, {}>({ queries: endpoints, mutations: {}, subscriptions: {} })
     return this.merge(router)
   }
 
-  /**
-   * Add new mutations and return router
-   * @param mutations 
-   */
   public mutations<TNewEndpoints extends RouterEndpoints<TContext>>(
     endpoints: TNewEndpoints,
-  ): Router<TContext, TQueries, TMutations & TNewEndpoints> {
-    const router = new Router<TContext, {}, TNewEndpoints>({ mutations: endpoints, queries: {} });
+  ): Router<TContext, TQueries, format<TMutations & TNewEndpoints>, TSubscriptions> {
+    const router = new Router<TContext, {}, TNewEndpoints, {}>({ mutations: endpoints, queries: {}, subscriptions: {} });
+
+    return this.merge(router)
+  }
+
+  public subscriptions<TNewEndpoints extends RouterEndpoints<TContext, Subscription>>(
+    endpoints: TNewEndpoints,
+  ): Router<TContext, TQueries, TMutations, format<TSubscriptions & TNewEndpoints>> {
+    const router = new Router<TContext, {}, {}, TNewEndpoints>({ subscriptions: endpoints, queries: {}, mutations: {} });
 
     return this.merge(router)
   }
@@ -104,13 +119,14 @@ export class Router<
    * @param router
    */
   public merge<
-    TChildRouter extends Router<TContext, any, any>
+    TChildRouter extends Router<TContext, any, any, any>
   >(
     router: TChildRouter
   ): Router<
       TContext, 
-      TQueries & TChildRouter['_def']['queries'], 
-      TMutations & TChildRouter['_def']['mutations']
+      format<TQueries & TChildRouter['_def']['queries']>, 
+      format<TMutations & TChildRouter['_def']['mutations']>, 
+      format<TSubscriptions & TChildRouter['_def']['subscriptions']>
     >;
 
   /**
@@ -120,19 +136,20 @@ export class Router<
    */
   public merge<
     TPath extends string,
-    TChildRouter extends Router<TContext, any, any>
+    TChildRouter extends Router<TContext, any, any, any>
   >(
     prefix: TPath,
     router: TChildRouter
   ): Router<
       TContext, 
-      TQueries & Prefixer<TChildRouter['_def']['queries'], `${TPath}`>, 
-      TMutations & Prefixer<TChildRouter['_def']['mutations'], `${TPath}`>
+      format<TQueries & Prefixer<TChildRouter['_def']['queries'], `${TPath}`>>,
+      format<TMutations & Prefixer<TChildRouter['_def']['mutations'], `${TPath}`>>,
+      format<TSubscriptions & Prefixer<TChildRouter['_def']['subscriptions'], `${TPath}`>>
     >;
 
   public merge(prefixOrRouter: unknown, maybeRouter?: unknown) {
     let prefix = ''
-    let router: Router;
+    let router: AnyRouter;
     
     if (typeof prefixOrRouter === 'string' && maybeRouter instanceof Router) {
       prefix = prefixOrRouter
@@ -143,14 +160,16 @@ export class Router<
       throw new Error('Invalid args')
     }
 
-    const duplicateQueries = Object.keys(router._def.queries).filter((key) => this.hasQuery(key))
-    const duplicateMutations = Object.keys(router._def.mutations).filter((key) => this.hasMutation(key))
-    const duplicates = [...duplicateQueries, ...duplicateMutations]
+    const duplicateQueries = Object.keys(router._def.queries).filter((key) => this.has('queries', key))
+    const duplicateMutations = Object.keys(router._def.mutations).filter((key) => this.has('mutations', key))
+    const duplicateSubscriptions = Object.keys(router._def.subscriptions).filter((key) => this.has('subscriptions', key))
+    
+    const duplicates = [...duplicateQueries, ...duplicateMutations, ...duplicateSubscriptions]
     if (duplicates.length) {
       throw new Error(`Duplicate endpoint(s): ${duplicates.join(', ')}`)
     }
-    
-    return new Router<TContext>({
+
+    return new Router<TContext, any, any, any>({
       queries: {
         ...this._def.queries,
         ...Router.prefixEndpoints(router._def.queries, prefix),
@@ -158,7 +177,11 @@ export class Router<
       mutations: {
         ...this._def.mutations,
         ...Router.prefixEndpoints(router._def.mutations, prefix),
-      }
+      },
+      subscriptions: {
+        ...this._def.subscriptions,
+        ...Router.prefixEndpoints(router._def.subscriptions, prefix),
+      },
     })
   }
 
@@ -182,15 +205,17 @@ export class Router<
   public createQueryHandler(ctx: TContext): inferHandler<this['_def']['queries']> {
     return (path, ...args) => this._def.queries[path](ctx, ...args);
   }
-
-  public hasMutation(path: string) {
-    return !!this._def.mutations[path]
+  public createSubscriptionHandler(ctx: TContext): inferHandler<this['_def']['subscriptions']> {
+    return (path, ...args) => {
+      return (this._def.subscriptions[path] as any)(ctx, ...args)
+    }
   }
-  public hasQuery(path: string) {
-    return !!this._def.queries[path]
+
+  public has(what:'subscriptions' | 'mutations' | 'queries', path:string) {
+    return !!this._def[what][path]
   }
 };
 
 export function router<TContext>() {
-  return new Router<TContext>()
+  return new Router<TContext, {}, {}, {}>()
 }

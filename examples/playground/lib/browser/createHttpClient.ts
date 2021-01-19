@@ -1,13 +1,38 @@
 import type {
+  HTTPErrorResponseEnvelope,
   HTTPResponseEnvelope,
   HTTPSuccessResponseEnvelope,
 } from '../server/http';
-import type { inferHandler, Router } from '../server/router';
+import type {
+  AnyRouter,
+  inferAsyncReturnType,
+  inferEndpointArgs,
+  inferHandler,
+} from '../server/router';
+import type { inferSubscriptionData } from '../server/subscription';
 import type { Maybe } from '../server/types';
 
-export type HTTPSdk<TRouter extends Router> = {
+type UnsubscribeFn = () => void;
+
+type inferSubscriptionFn<TRouter extends AnyRouter> = <
+  TPath extends keyof TRouter['_def']['subscriptions'],
+  TArgs extends inferEndpointArgs<TRouter['_def']['subscriptions'][TPath]>,
+  TData extends inferSubscriptionData<
+    inferAsyncReturnType<TRouter['_def']['subscriptions'][TPath]>
+  >
+>(
+  pathAndArgs: [TPath, ...TArgs],
+  opts: {
+    onSuccess?: (data: TData) => void;
+    onError?: (envelope: HTTPErrorResponseEnvelope) => void;
+    getNextArgs?: (data: TData) => TArgs;
+  },
+) => UnsubscribeFn;
+
+export type HTTPSdk<TRouter extends AnyRouter> = {
   query: inferHandler<TRouter['_def']['queries']>;
   mutate: inferHandler<TRouter['_def']['mutations']>;
+  subscription: inferSubscriptionFn<TRouter>;
 };
 export class HTTPClientError extends Error {
   public readonly json?: Maybe<HTTPResponseEnvelope<unknown>>;
@@ -43,7 +68,7 @@ export interface CreateHttpClientOptions {
   onSuccess?: (data: HTTPSuccessResponseEnvelope<unknown>) => void;
   onError?: (error: HTTPClientError) => void;
 }
-export function createHttpClient<TRouter extends Router>(
+export function createHttpClient<TRouter extends AnyRouter>(
   opts: CreateHttpClientOptions,
 ): HTTPSdk<TRouter> {
   const { fetch: _fetch = fetch, url } = opts;
@@ -107,8 +132,42 @@ export function createHttpClient<TRouter extends Router>(
 
     return handleResponse(promise);
   };
+  const subscription: inferSubscriptionFn<TRouter> = (
+    [path, ...args],
+    opts,
+  ) => {
+    let stopped = false;
+    const exec = async (...thisArgs: typeof args) => {
+      const promise = _fetch(`${url}/${path}`, {
+        method: 'patch',
+        body: JSON.stringify({
+          args: thisArgs,
+        }),
+        headers: getHeaders(),
+      });
+      try {
+        console.log('⏲️ waiting for', path);
+        const data = await handleResponse(promise);
+        if (stopped) {
+          return;
+        }
+        opts.onSuccess && opts.onSuccess(data);
+        const nextArgs = opts.getNextArgs ? opts.getNextArgs(data) : thisArgs;
+        console.log('nextArgs', nextArgs);
+
+        exec(...nextArgs);
+      } catch (err) {
+        console.log('❌ subscription failed :(', err);
+      }
+    };
+    exec(...args);
+    return () => {
+      stopped = true;
+    };
+  };
   return {
     mutate,
     query,
+    subscription,
   };
 }

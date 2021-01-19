@@ -1,4 +1,5 @@
 import bodyParser from 'body-parser';
+import { EventEmitter } from 'events';
 import express from 'express';
 import * as trpc from './lib/server';
 import { inferAsyncReturnType } from './lib/server';
@@ -6,8 +7,11 @@ import {
   CreateExpressContextOptions,
   createExpressMiddleware,
 } from './lib/server/createExpressMiddleware';
+import { Subscription } from './lib/server/subscription';
 
 let id = 0;
+
+const ee = new EventEmitter();
 
 const db = {
   posts: [
@@ -16,7 +20,25 @@ const db = {
       title: 'hello',
     },
   ],
+  messages: [createMessage('initial message')],
 };
+async function getMessagesAfter(timestamp: number) {
+  const msgs = db.messages.filter(
+    (msg) => msg.updatedAt > timestamp || msg.createdAt > timestamp,
+  );
+
+  return msgs;
+}
+function createMessage(text: string) {
+  const msg = {
+    id: ++id,
+    text,
+    createdAt: Date.now(),
+    updatedAt: Date.now(),
+  };
+  ee.emit('newMessage', msg);
+  return msg;
+}
 
 function createRouter() {
   return trpc.router<Context>();
@@ -62,6 +84,41 @@ const posts = createRouter()
     list: () => db.posts,
   });
 
+const messages = createRouter()
+  .queries({
+    list: () => db.messages,
+  })
+  .mutations({
+    add: async (_ctx, text: string) => {
+      const msg = createMessage(text);
+
+      db.messages.push(msg);
+
+      return msg;
+    },
+  })
+  .subscriptions({
+    newMessages: (_ctx, { timestamp }: { timestamp: number }) => {
+      type Message = typeof db['messages'][number];
+      return new Subscription<Message[]>({
+        async start(sub) {
+          const onMessage = (data: Message) => {
+            sub.events.emit('data', [data]);
+          };
+
+          const sinceLast = await getMessagesAfter(timestamp);
+          if (sinceLast.length) {
+            sub.events.emit('data', sinceLast);
+          }
+          sub.attachEvents({
+            on: () => ee.on('newMessage', onMessage),
+            off: () => ee.off('newMessage', onMessage),
+          });
+        },
+      });
+    },
+  });
+
 // root router to call
 export const rootRouter = createRouter()
   .queries({
@@ -85,13 +142,28 @@ export const rootRouter = createRouter()
         };
       },
     }),
-  );
+  )
+  .merge('messages/', messages);
 
 export type RootRouter = typeof rootRouter;
 
 async function main() {
   const handler = rootRouter.createQueryHandler({} as any);
   console.log(await handler('hello', 'world'));
+
+  // message testing
+  // {
+  //   const subs = rootRouter.createSubscriptionHandler({} as any);
+  //   const sub = await subs('messages/newMessages');
+  //   setTimeout(() => {
+  //     rootRouter.createMutationHandler({} as any)(
+  //       'messages/add',
+  //       'hello there',
+  //     );
+  //   }, 10);
+  //   console.log('awaitng message');
+  //   console.log('messages', await sub.onceDataAndStop());
+  // }
   // express implementation
   const app = express();
   app.use(bodyParser.json());

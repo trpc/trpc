@@ -6,6 +6,7 @@ import {
   HTTPSuccessResponseEnvelope,
 } from './http';
 import { Router } from './router';
+import { Subscription } from './subscription';
 
 assertNotBrowser();
 
@@ -42,7 +43,7 @@ function getQueryArgs(req: express.Request) {
 }
 export function createExpressMiddleware<
   TContext,
-  TRouter extends Router<TContext>
+  TRouter extends Router<TContext, any, any, any>
 >({
   router,
   createContext,
@@ -57,7 +58,7 @@ export function createExpressMiddleware<
 
       let data: unknown;
       if (req.method === 'POST') {
-        if (!router.hasMutation(endpoint)) {
+        if (!router.has('mutations', endpoint)) {
           throw httpError.notFound(`Unknown mutation "${endpoint}"`);
         }
         const handle = router.createMutationHandler(ctx);
@@ -68,13 +69,28 @@ export function createExpressMiddleware<
 
         data = await handle(endpoint as any, ...(args as any));
       } else if (req.method === 'GET') {
-        if (!router.hasQuery(endpoint)) {
+        if (!router.has('queries', endpoint)) {
           throw httpError.notFound(`Unknown query "${endpoint}"`);
         }
         const handle = router.createQueryHandler(ctx);
         const args = getQueryArgs(req);
 
         data = await handle(endpoint as any, ...(args as any));
+      } else if (req.method === 'PATCH') {
+        if (!router.has('subscriptions', endpoint)) {
+          throw httpError.notFound(`Unknown subscription "${endpoint}"`);
+        }
+        const handle = router.createSubscriptionHandler(ctx);
+        const args = req.body.args ?? [];
+        if (!Array.isArray(args)) {
+          throw httpError.badRequest('Expected body.args to be an array');
+        }
+
+        const sub: Subscription = await handle(
+          endpoint as any,
+          ...(args as any),
+        );
+        data = await sub.onceDataAndStop();
       } else {
         throw httpError.badRequest(`Unexpected request method ${req.method}`);
       }
