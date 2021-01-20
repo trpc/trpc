@@ -144,7 +144,11 @@ export function createHttpClient<TRouter extends AnyRouter>(
     let controller: AbortController | null = null;
 
     const exec = async (...thisArgs: typeof args) => {
-      const controller = new _AbortController();
+      if (stopped) {
+        console.log('subscriptions have stopped');
+        return;
+      }
+      controller = new _AbortController();
       const signal = controller!.signal;
       const promise = _fetch(`${url}/${path}`, {
         method: 'patch',

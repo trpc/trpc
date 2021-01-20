@@ -108,7 +108,7 @@ export function createExpressMiddleware<
         // - request got prematurely closed
         // - request timed out
         res.once('close', onClose);
-        const timeout = subscriptions?.timeout ?? 5000;
+        const timeout = subscriptions?.timeout ?? 9000; // 10s is vercel's api timeout
         const timer = setTimeout(() => {
           sub.destroy('timeout');
         }, timeout);

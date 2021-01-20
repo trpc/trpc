@@ -6,7 +6,7 @@ import {
 } from './lib/browser/createHttpClient';
 import type { RootRouter } from './server';
 
-const sleep = () => new Promise((resolve) => setTimeout(resolve, 100));
+const sleep = (ms = 100) => new Promise((resolve) => setTimeout(resolve, ms));
 
 async function main() {
   const url = `http://localhost:2021/trpc`;
@@ -64,7 +64,7 @@ async function main() {
     client.mutate('messages/add', `test message${i++}`),
   ]);
   await sleep();
-  client.subscription(
+  const unsub = client.subscription(
     ['messages/newMessages', { timestamp: getTimestamp(msgs) }],
     {
       onSuccess(data) {
@@ -93,6 +93,10 @@ async function main() {
     client.mutate('messages/add', `test message${i++}`),
     client.mutate('messages/add', `test message${i++}`),
   ]);
+
+  await sleep(10e3);
+  console.log('should be a clean exit if everything is working right');
+  unsub();
 }
 
 main();
