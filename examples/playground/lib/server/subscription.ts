@@ -19,7 +19,6 @@ interface SubscriptionEvents<TData> {
   data: (data: TData) => void;
   destroy: (reason: SubscriptionDestroyReason) => void;
   error: (error: Error) => void;
-  starting: () => void;
   started: () => void;
 }
 declare interface SubscriptionEventEmitter<TData> {
@@ -45,8 +44,7 @@ class SubscriptionEventEmitter<TData> extends EventEmitter {
 }
 
 export interface SubscriptionOptions<TData> {
-  start(self: Subscription<TData>): void | Promise<void>;
-  // shouldEmit?: (data: TData) => boolean;
+  getInitialData?: () => Promise<TData | null> | (TData | null);
 }
 export class Subscription<TData = unknown> {
   public readonly events: SubscriptionEventEmitter<TData>;
@@ -62,7 +60,10 @@ export class Subscription<TData = unknown> {
     this._isRunning = false;
     this.isDestroyed = false;
     this.events = new SubscriptionEventEmitter<TData>();
-    this.opts = opts;
+    this.opts = {
+      getInitialData: () => null,
+      ...opts,
+    };
     debug('Subscription.constructor()');
   }
 
@@ -75,16 +76,6 @@ export class Subscription<TData = unknown> {
     this.isDestroyed = true;
     this.events.emit('destroy', reason);
     this.events.removeAllListeners();
-
-    // Object.assign(this, {
-    //   get events() {
-    //     const err = new Error(
-    //       'Tried to access .events on a destroyed Subscription',
-    //     );
-    //     console.log('stack', err.stack);
-    //     return err;
-    //   },
-    // });
   }
 
   public async start() {
@@ -92,11 +83,13 @@ export class Subscription<TData = unknown> {
     if (this._isRunning) {
       return;
     }
+    this._isRunning = true;
+    this.events.emit('started');
     try {
-      this.events.emit('starting');
-      this._isRunning = true;
-      await this.opts.start(this);
-      this.events.emit('started');
+      const initialData = await this.opts.getInitialData();
+      if (initialData !== null) {
+        this.events.emit('data', initialData);
+      }
     } catch (err) {
       this._isRunning = false;
       this.events.emit(err);
@@ -143,37 +136,37 @@ export class Subscription<TData = unknown> {
   }
 }
 
-export function subscriptionPullFatory<TData>(opts: {
-  interval: number;
-  pull(): TData | Promise<TData>;
-  shouldEmit?: (data: TData) => boolean;
-}) {
-  let timer: NodeJS.Timeout;
-  const { shouldEmit = () => true } = opts;
+// export function subscriptionPullFatory<TData>(opts: {
+//   interval: number;
+//   pull(): TData | Promise<TData>;
+//   shouldEmit?: (data: TData) => boolean;
+// }) {
+//   let timer: NodeJS.Timeout;
+//   const { shouldEmit = () => true } = opts;
 
-  return new Subscription<TData>({
-    start(sub) {
-      async function pull() {
-        try {
-          const data = await opts.pull();
-          if (shouldEmit(data)) {
-            sub.events.emit('data', data);
-          }
-        } catch (err) {
-          sub.events.emit('error', err);
-        }
+//   return new Subscription<TData>({
+//     start(sub) {
+//       async function pull() {
+//         try {
+//           const data = await opts.pull();
+//           if (shouldEmit(data)) {
+//             sub.events.emit('data', data);
+//           }
+//         } catch (err) {
+//           sub.events.emit('error', err);
+//         }
 
-        if (sub.isRunning) {
-          timer = setTimeout(pull, opts.interval);
-        }
-      }
-      sub.events.once('destroy', () => {
-        clearTimeout(timer);
-      });
-      return pull();
-    },
-  });
-}
+//         if (sub.isRunning) {
+//           timer = setTimeout(pull, opts.interval);
+//         }
+//       }
+//       sub.events.once('destroy', () => {
+//         clearTimeout(timer);
+//       });
+//       return pull();
+//     },
+//   });
+// }
 
 export type inferSubscriptionData<
   TSubscription extends Subscription<any>

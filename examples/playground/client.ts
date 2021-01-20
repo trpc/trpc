@@ -22,30 +22,31 @@ async function main() {
   };
   const client = createHttpClient<RootRouter>(opts);
   await sleep();
-  // await client.query('hello', 'client');
-  // await sleep();
-  // const postCreate = await client.mutate('posts/create', {
-  //   title: 'hello client',
-  // });
-  // console.log('created post', postCreate.title);
-  // await sleep();
-  // const postList = await client.query('posts/list');
-  // console.log('has posts', postList, 'first:', postList[0].title);
-  // await sleep();
-  // try {
-  //   await client.query('admin/secret');
-  // } catch (err) {
-  //   // will fail
-  // }
-  // await sleep();
-  // const authedClient = createHttpClient<RootRouter>({
-  //   ...opts,
-  //   getHeaders: () => ({
-  //     authorization: 'secret',
-  //   }),
-  // });
+  await client.query('hello', 'client');
+  await sleep();
+  const postCreate = await client.mutate('posts/create', {
+    title: 'hello client',
+  });
+  console.log('created post', postCreate.title);
+  await sleep();
+  const postList = await client.query('posts/list');
+  console.log('has posts', postList, 'first:', postList[0].title);
+  await sleep();
+  try {
+    await client.query('admin/secret');
+  } catch (err) {
+    // will fail
+  }
+  await sleep();
+  const authedClient = createHttpClient<RootRouter>({
+    ...opts,
+    getHeaders: () => ({
+      authorization: 'secret',
+    }),
+  });
 
-  // await authedClient.query('admin/secret');
+  await authedClient.query('admin/secret');
+
   let msgs = await client.query('messages/list');
   const getTimestamp = (m: typeof msgs) => {
     return m.reduce((ts, msg) => {
@@ -83,6 +84,13 @@ async function main() {
   await sleep();
 
   await client.mutate('messages/add', `test message${i++}`);
+
+  await Promise.all([
+    client.mutate('messages/add', `test message${i++}`),
+    client.mutate('messages/add', `test message${i++}`),
+    client.mutate('messages/add', `test message${i++}`),
+    client.mutate('messages/add', `test message${i++}`),
+  ]);
 }
 
 main();
