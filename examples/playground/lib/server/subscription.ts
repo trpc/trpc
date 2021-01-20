@@ -44,7 +44,7 @@ class SubscriptionEventEmitter<TData> extends EventEmitter {
 }
 
 export interface SubscriptionOptions<TData> {
-  getInitialData?: () => Promise<TData | null> | (TData | null);
+  getInitialData?: (emit: (data: TData) => void) => void | Promise<void>;
 }
 export class Subscription<TData = unknown> {
   public readonly events: SubscriptionEventEmitter<TData>;
@@ -86,12 +86,10 @@ export class Subscription<TData = unknown> {
     this._isRunning = true;
     this.events.emit('started');
     try {
-      const initialData = await this.opts.getInitialData();
-      if (initialData !== null) {
-        this.events.emit('data', initialData);
-      }
+      await this.opts.getInitialData((data) => {
+        this.events.emit('data', data);
+      });
     } catch (err) {
-      this._isRunning = false;
       this.events.emit(err);
     }
   }

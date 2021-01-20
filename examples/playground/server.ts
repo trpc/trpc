@@ -101,9 +101,11 @@ const messages = createRouter()
     newMessages: (_ctx, { timestamp }: { timestamp: number }) => {
       type Message = typeof db['messages'][number];
       const sub = new Subscription<Message[]>({
-        async getInitialData() {
+        async getInitialData(emit) {
           const sinceLast = await getMessagesAfter(timestamp);
-          return sinceLast.length ? sinceLast : null;
+          if (sinceLast.length) {
+            emit(sinceLast);
+          }
         },
       });
 
