@@ -148,9 +148,8 @@ export const rootRouter = createRouter()
 export type RootRouter = typeof rootRouter;
 
 async function main() {
-  const handler = rootRouter.createQueryHandler({} as any);
-  console.log(await handler('hello', 'world'));
-
+  const greeting = await rootRouter.invokeQuery({} as any)('hello', 'world');
+  console.log(greeting);
   // message testing
   // {
   //   const subs = rootRouter.createSubscriptionHandler({} as any);

@@ -61,32 +61,33 @@ export function createExpressMiddleware<
         if (!router.has('mutations', endpoint)) {
           throw httpError.notFound(`Unknown mutation "${endpoint}"`);
         }
-        const handle = router.createMutationHandler(ctx);
+
         const args = req.body.args ?? [];
         if (!Array.isArray(args)) {
           throw httpError.badRequest('Expected body.args to be an array');
         }
 
-        data = await handle(endpoint as any, ...(args as any));
+        data = await router.invokeMutation(ctx)(
+          endpoint as any,
+          ...(args as any),
+        );
       } else if (req.method === 'GET') {
         if (!router.has('queries', endpoint)) {
           throw httpError.notFound(`Unknown query "${endpoint}"`);
         }
-        const handle = router.createQueryHandler(ctx);
         const args = getQueryArgs(req);
 
-        data = await handle(endpoint as any, ...(args as any));
+        data = await router.invokeQuery(ctx)(endpoint as any, ...(args as any));
       } else if (req.method === 'PATCH') {
         if (!router.has('subscriptions', endpoint)) {
           throw httpError.notFound(`Unknown subscription "${endpoint}"`);
         }
-        const handle = router.createSubscriptionHandler(ctx);
         const args = req.body.args ?? [];
         if (!Array.isArray(args)) {
           throw httpError.badRequest('Expected body.args to be an array');
         }
 
-        const sub: Subscription = await handle(
+        const sub: Subscription = await router.invokeSubscription(ctx)(
           endpoint as any,
           ...(args as any),
         );

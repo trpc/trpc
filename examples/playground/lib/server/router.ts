@@ -185,27 +185,13 @@ export class Router<
     })
   }
 
-  // public invoke<
-  //   TEndpoints extends RouterEndpoints, 
-  //   TPath extends keyof TEndpoints,
-  //   TArgs extends Parameters<TResolver>,
-  //   TResolver extends TEndpoints[TPath]
-  // >(opts: {
-  //   target: TEndpoints,
-  //   path: TPath,
-  //   ctx: TContext,
-  //   args: TArgs,
-  // }): Promise<ReturnType<TResolver>> {
-  //   return opts.target[opts.path](opts.ctx, ...opts.args)
-  // }
-
-  public createMutationHandler(ctx: TContext): inferHandler<this['_def']['mutations']> {
+  public invokeMutation(ctx: TContext): inferHandler<this['_def']['mutations']> {
     return (path, ...args) => this._def.mutations[path](ctx, ...args);
   }
-  public createQueryHandler(ctx: TContext): inferHandler<this['_def']['queries']> {
+  public invokeQuery(ctx: TContext): inferHandler<this['_def']['queries']> {
     return (path, ...args) => this._def.queries[path](ctx, ...args);
   }
-  public createSubscriptionHandler(ctx: TContext): inferHandler<this['_def']['subscriptions']> {
+  public invokeSubscription(ctx: TContext): inferHandler<this['_def']['subscriptions']> {
     return (path, ...args) => {
       return (this._def.subscriptions[path] as any)(ctx, ...args)
     }
