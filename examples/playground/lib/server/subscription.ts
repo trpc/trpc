@@ -90,7 +90,7 @@ export class Subscription<TData = unknown> {
       throw new Error('Called start() on a destroyed subscription');
     }
     try {
-      const emitFn = (data: TData) => {
+      const emitFn: EmitFn<TData> = (data: TData) => {
         this.events.emit('data', data);
       };
       this.opts.start(emitFn);
@@ -105,14 +105,23 @@ export class Subscription<TData = unknown> {
     return new Promise<TData>(async (resolve, reject) => {
       const onDestroy = (reason: SubscriptionDestroyReason) => {
         reject(new SubscriptionDestroyError(reason));
+        cleanup();
       };
       const onData = (data: TData) => {
         resolve(data);
+        cleanup();
         this.destroy('stopped');
       };
       const onError = (err: Error) => {
         reject(err);
+        cleanup();
         this.destroy('stopped');
+      };
+
+      const cleanup = () => {
+        this.events.off('data', onData);
+        this.events.off('destroy', onDestroy);
+        this.events.off('error', onError);
       };
 
       this.events.once('data', onData);
