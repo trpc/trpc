@@ -1,7 +1,7 @@
 // testing react-query helpers
 
-import { createHttpClient } from './lib/browser/createHttpClient';
-import { createReactQueryHooks } from './lib/browser/createReactQueryHooks';
+import { createHttpClient } from '../lib/browser/createHttpClient';
+import { createReactQueryHooks } from '../lib/browser/createReactQueryHooks';
 import type { RootRouter } from './server';
 import { rootRouter } from './server'; // this is only imported to show-case ssr `prefetchQuery`
 const client = createHttpClient<RootRouter>({

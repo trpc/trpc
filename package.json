@@ -43,8 +43,8 @@
     "serve": "nodemon -e ts -w . -x ts-node src/serve.ts",
     "prepublishOnly": "npm run build",
     "play": "nodemon -e ts -w . -x ts-node src/playground.ts",
-    "playground:server": "nodemon -e ts -w . -x ts-node examples/playground/server.ts",
-    "playground:client": "nodemon -e ts -w . -x 'wait-on tcp:2021 && ts-node examples/playground/client.ts'",
+    "playground:server": "nodemon -e ts -w . -x ts-node v2/playground/server.ts",
+    "playground:client": "nodemon -e ts -w . -x 'wait-on tcp:2021 && ts-node v2/playground/client.ts'",
     "playground": "run-p playground:* --print-label"
   },
   "devDependencies": {

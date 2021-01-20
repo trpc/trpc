@@ -1,13 +1,13 @@
 import bodyParser from 'body-parser';
 import { EventEmitter } from 'events';
 import express from 'express';
-import * as trpc from './lib/server';
-import { inferAsyncReturnType } from './lib/server';
+import * as trpc from '../lib/server';
+import { inferAsyncReturnType } from '../lib/server';
 import {
   CreateExpressContextOptions,
   createExpressMiddleware,
-} from './lib/server/createExpressMiddleware';
-import { Subscription } from './lib/server/subscription';
+} from '../lib/server/createExpressMiddleware';
+import { Subscription } from '../lib/server/subscription';
 
 let id = 0;
 

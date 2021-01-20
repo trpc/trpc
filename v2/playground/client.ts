@@ -3,7 +3,7 @@ import AbortController from 'abort-controller';
 import {
   createHttpClient,
   CreateHttpClientOptions,
-} from './lib/browser/createHttpClient';
+} from '../lib/browser/createHttpClient';
 import type { RootRouter } from './server';
 
 const sleep = (ms = 100) => new Promise((resolve) => setTimeout(resolve, ms));
