@@ -47,7 +47,7 @@ export interface SubscriptionOptions<TData> {
   getInitialData?: (emit: (data: TData) => void) => void | Promise<void>;
 }
 export class Subscription<TData = unknown> {
-  public readonly events: SubscriptionEventEmitter<TData>;
+  private readonly events: SubscriptionEventEmitter<TData>;
   private opts: Required<SubscriptionOptions<TData>>;
   private _isRunning: boolean;
   private isDestroyed: boolean;
@@ -61,7 +61,7 @@ export class Subscription<TData = unknown> {
     this.isDestroyed = false;
     this.events = new SubscriptionEventEmitter<TData>();
     this.opts = {
-      getInitialData: () => null,
+      getInitialData: () => {},
       ...opts,
     };
     debug('Subscription.constructor()');
@@ -76,6 +76,14 @@ export class Subscription<TData = unknown> {
     this.isDestroyed = true;
     this.events.emit('destroy', reason);
     this.events.removeAllListeners();
+
+    // Object.assign(this.events, {
+    //   get on() {
+    //     throw new Error(
+    //       'Tried to access events.on on a destroyed Subscription',
+    //     );
+    //   },
+    // });
   }
 
   public async start() {
@@ -131,6 +139,10 @@ export class Subscription<TData = unknown> {
     this.events.once('destroy', () => {
       opts.off();
     });
+  }
+
+  emitData(data: TData) {
+    this.events.emit('data', data);
   }
 }
 

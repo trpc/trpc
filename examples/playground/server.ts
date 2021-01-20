@@ -110,7 +110,7 @@ const messages = createRouter()
       });
 
       const onMessage = (data: Message) => {
-        sub.events.emit('data', [data]);
+        sub.emitData([data]);
       };
       sub.attachEvents({
         on: () => ee.on('newMessage', onMessage),
