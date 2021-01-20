@@ -1,4 +1,5 @@
 import fetch from 'node-fetch';
+import AbortController from 'abort-controller';
 import {
   createHttpClient,
   CreateHttpClientOptions,
@@ -12,12 +13,13 @@ async function main() {
   const opts: CreateHttpClientOptions = {
     url,
     fetch: fetch as any,
+    AbortController,
     onSuccess(envelope) {
       console.log('✅ ', envelope.statusCode);
     },
 
     onError(err) {
-      console.log('❌ ', err.res?.status, err);
+      console.log('❌ ', err.res?.status, err.message);
     },
   };
   const client = createHttpClient<RootRouter>(opts);
@@ -69,8 +71,8 @@ async function main() {
         console.log(`✉️  ${data.length} new messages`);
         msgs.push(...data);
       },
-      onError(data) {
-        console.error('❌ message fail', data);
+      onError(err) {
+        console.error('❌ message fail', err.res?.status);
       },
       getNextArgs(data) {
         return [

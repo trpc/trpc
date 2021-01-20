@@ -3,7 +3,11 @@ import { inferAsyncReturnType } from './router';
 
 const debug = (...args: any[]) => console.log(...args);
 
-type SubscriptionDestroyReason = 'timeout' | 'stopped' | 'startError';
+type SubscriptionDestroyReason =
+  | 'timeout'
+  | 'stopped'
+  | 'startError'
+  | 'closed';
 
 export class SubscriptionDestroyError extends Error {
   public readonly reason: SubscriptionDestroyReason;
@@ -19,7 +23,6 @@ interface SubscriptionEvents<TData> {
   data: (data: TData) => void;
   destroy: (reason: SubscriptionDestroyReason) => void;
   error: (error: Error) => void;
-  started: () => void;
 }
 declare interface SubscriptionEventEmitter<TData> {
   on<U extends keyof SubscriptionEvents<TData>>(
@@ -43,21 +46,18 @@ class SubscriptionEventEmitter<TData> extends EventEmitter {
   }
 }
 
+type UnsubscribeFn = () => void;
+type EmitFn<TData> = (data: TData) => void;
 export interface SubscriptionOptions<TData> {
-  getInitialData?: (emit: (data: TData) => void) => void | Promise<void>;
+  getInitialData?: (emit: EmitFn<TData>) => void | Promise<void>;
+  start: (emit: EmitFn<TData>) => UnsubscribeFn;
 }
 export class Subscription<TData = unknown> {
   private readonly events: SubscriptionEventEmitter<TData>;
   private opts: Required<SubscriptionOptions<TData>>;
-  private _isRunning: boolean;
   private isDestroyed: boolean;
 
-  public get isRunning() {
-    return this._isRunning;
-  }
-
   constructor(opts: SubscriptionOptions<TData>) {
-    this._isRunning = false;
     this.isDestroyed = false;
     this.events = new SubscriptionEventEmitter<TData>();
     this.opts = {
@@ -72,7 +72,6 @@ export class Subscription<TData = unknown> {
       return;
     }
     debug('Subscription.destroy()', reason);
-    this._isRunning = false;
     this.isDestroyed = true;
     this.events.emit('destroy', reason);
     this.events.removeAllListeners();
@@ -87,16 +86,15 @@ export class Subscription<TData = unknown> {
   }
 
   public async start() {
-    debug('Subscription.start() - running:', this._isRunning);
-    if (this._isRunning) {
-      return;
+    if (this.isDestroyed) {
+      throw new Error('Called start() on a destroyed subscription');
     }
-    this._isRunning = true;
-    this.events.emit('started');
     try {
-      await this.opts.getInitialData((data) => {
+      const emitFn = (data: TData) => {
         this.events.emit('data', data);
-      });
+      };
+      this.opts.start(emitFn);
+      await this.opts.getInitialData(emitFn);
     } catch (err) {
       this.events.emit(err);
     }
@@ -124,20 +122,6 @@ export class Subscription<TData = unknown> {
       this.start().catch(() => {
         // is handled through event
       });
-    });
-  }
-  attachEvents(opts: { on: () => void; off: () => void }) {
-    if (this.isDestroyed) {
-      return;
-    }
-    let onStart = () => {
-      if (!this.isDestroyed) {
-        opts.on();
-      }
-    };
-    this.events.on('started', onStart);
-    this.events.once('destroy', () => {
-      opts.off();
     });
   }
 

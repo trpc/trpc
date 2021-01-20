@@ -2,11 +2,12 @@ import express from 'express';
 import { assertNotBrowser } from './assertNotBrowser';
 import {
   getErrorResponseEnvelope,
+  HTTPError,
   httpError,
   HTTPSuccessResponseEnvelope,
 } from './http';
 import { Router } from './router';
-import { Subscription } from './subscription';
+import { Subscription, SubscriptionDestroyError } from './subscription';
 
 assertNotBrowser();
 
@@ -47,9 +48,13 @@ export function createExpressMiddleware<
 >({
   router,
   createContext,
+  subscriptions,
 }: {
   router: TRouter;
   createContext: CreateExpressContextFn<TContext>;
+  subscriptions?: {
+    timeout?: number;
+  };
 }): express.Handler {
   return async (req, res) => {
     try {
@@ -91,7 +96,39 @@ export function createExpressMiddleware<
           endpoint as any,
           ...(args as any),
         );
-        data = await sub.onceDataAndStop();
+        const onClose = () => {
+          sub.destroy('closed');
+        };
+
+        // FIXME - refactor
+        //  this is a bit complex
+        // needs to handle a few cases:
+        // - ok subscription
+        // - error subscription
+        // - request got prematurely closed
+        // - request timed out
+        res.once('close', onClose);
+        const timeout = subscriptions?.timeout ?? 5000;
+        const timer = setTimeout(() => {
+          sub.destroy('timeout');
+        }, timeout);
+        try {
+          data = await sub.onceDataAndStop();
+          res.off('close', onClose);
+        } catch (err) {
+          res.off('close', onClose);
+          clearTimeout(timer);
+          if (
+            err instanceof SubscriptionDestroyError &&
+            err.reason === 'timeout'
+          ) {
+            throw new HTTPError(
+              408,
+              `Subscription exceeded ${timeout}ms - please reconnect.`,
+            );
+          }
+          throw err;
+        }
       } else {
         throw httpError.badRequest(`Unexpected request method ${req.method}`);
       }

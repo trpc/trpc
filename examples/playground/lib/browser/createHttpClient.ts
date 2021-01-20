@@ -1,5 +1,4 @@
 import type {
-  HTTPErrorResponseEnvelope,
   HTTPResponseEnvelope,
   HTTPSuccessResponseEnvelope,
 } from '../server/http';
@@ -24,7 +23,7 @@ type inferSubscriptionFn<TRouter extends AnyRouter> = <
   pathAndArgs: [TPath, ...TArgs],
   opts: {
     onSuccess?: (data: TData) => void;
-    onError?: (envelope: HTTPErrorResponseEnvelope) => void;
+    onError?: (error: HTTPClientError) => void;
     getNextArgs?: (data: TData) => TArgs;
   },
 ) => UnsubscribeFn;
@@ -64,6 +63,7 @@ export class HTTPClientError extends Error {
 export interface CreateHttpClientOptions {
   url: string;
   fetch?: typeof fetch;
+  AbortController?: typeof AbortController;
   getHeaders?: () => Record<string, string | undefined>;
   onSuccess?: (data: HTTPSuccessResponseEnvelope<unknown>) => void;
   onError?: (error: HTTPClientError) => void;
@@ -71,7 +71,11 @@ export interface CreateHttpClientOptions {
 export function createHttpClient<TRouter extends AnyRouter>(
   opts: CreateHttpClientOptions,
 ): HTTPSdk<TRouter> {
-  const { fetch: _fetch = fetch, url } = opts;
+  const {
+    fetch: _fetch = fetch,
+    url,
+    AbortController: _AbortController = AbortController,
+  } = opts;
 
   async function handleResponse(promise: Promise<Response>) {
     let res: Maybe<Response> = null;
@@ -137,13 +141,18 @@ export function createHttpClient<TRouter extends AnyRouter>(
     opts,
   ) => {
     let stopped = false;
+    let controller: AbortController | null = null;
+
     const exec = async (...thisArgs: typeof args) => {
+      const controller = new _AbortController();
+      const signal = controller!.signal;
       const promise = _fetch(`${url}/${path}`, {
         method: 'patch',
         body: JSON.stringify({
           args: thisArgs,
         }),
         headers: getHeaders(),
+        signal,
       });
       try {
         console.log('⏲️ waiting for', path);
@@ -156,13 +165,16 @@ export function createHttpClient<TRouter extends AnyRouter>(
         console.log('nextArgs', nextArgs);
 
         exec(...nextArgs);
-      } catch (err) {
-        console.log('❌ subscription failed :(', err);
+      } catch (_err) {
+        const err: HTTPClientError = _err;
+        console.log('❌ subscription failed :(', err.message);
+        exec(...thisArgs);
       }
     };
     exec(...args);
     return () => {
       stopped = true;
+      controller?.abort();
     };
   };
   return {

@@ -19,6 +19,7 @@
   },
   "homepage": "https://github.com/vriad/trpc",
   "dependencies": {
+    "abort-controller": "^3.0.0",
     "axios": "^0.19.2",
     "react-query": "^3.5.16"
   },

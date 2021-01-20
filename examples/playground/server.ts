@@ -100,6 +100,7 @@ const messages = createRouter()
   .subscriptions({
     newMessages: (_ctx, { timestamp }: { timestamp: number }) => {
       type Message = typeof db['messages'][number];
+
       const sub = new Subscription<Message[]>({
         async getInitialData(emit) {
           const sinceLast = await getMessagesAfter(timestamp);
@@ -107,14 +108,16 @@ const messages = createRouter()
             emit(sinceLast);
           }
         },
-      });
+        start() {
+          const onMessage = (data: Message) => {
+            sub.emitData([data]);
+          };
 
-      const onMessage = (data: Message) => {
-        sub.emitData([data]);
-      };
-      sub.attachEvents({
-        on: () => ee.on('newMessage', onMessage),
-        off: () => ee.off('newMessage', onMessage),
+          ee.on('newMessage', onMessage);
+          return () => {
+            ee.off('newMessage', onMessage);
+          };
+        },
       });
 
       return sub;
