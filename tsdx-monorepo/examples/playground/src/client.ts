@@ -1,7 +1,7 @@
 import fetch from 'node-fetch';
 import AbortController from 'abort-controller';
 import type { RootRouter } from './server';
-import { createTRPCClient, CreateTRPCClientOptions } from '../../../packages/client/dist';
+import { createTRPCClient, CreateTRPCClientOptions } from 'trpc-client';
 
 const sleep = (ms = 100) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -9,8 +9,10 @@ async function main() {
   const url = `http://localhost:2021/trpc`;
   const opts: CreateTRPCClientOptions = {
     url,
-    fetch: fetch as any,
-    AbortController,
+    fetchOpts: {
+      AbortController: AbortController as any,
+      fetch: fetch as any,
+    },
     onSuccess(envelope) {
       console.log('✅ ', envelope.statusCode);
     },
@@ -19,6 +21,7 @@ async function main() {
       console.log('❌ ', err.res?.status, err.message);
     },
   };
+
   const client = createTRPCClient<RootRouter>(opts);
   await sleep();
   await client.query('hello', 'client');
@@ -78,7 +81,7 @@ async function main() {
           },
         ];
       },
-    },
+    }
   );
   await sleep();
 
@@ -92,7 +95,7 @@ async function main() {
   ]);
 
   await sleep(10e3);
-  console.log('should be a clean exit if everything is working right');
+  console.log('👌 should be a clean exit if everything is working right');
   unsub();
 }
 

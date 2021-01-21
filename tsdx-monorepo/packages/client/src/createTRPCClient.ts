@@ -59,10 +59,14 @@ export class TRPCClientError extends Error {
   }
 }
 
+export interface FetchOptions {
+  fetch: typeof fetch;
+  AbortController: typeof AbortController;
+}
+
 export interface CreateTRPCClientOptions {
   url: string;
-  fetch?: typeof fetch;
-  AbortController?: typeof AbortController;
+  fetchOpts?: FetchOptions;
   getHeaders?: () => Record<string, string | undefined>;
   onSuccess?: (data: HTTPSuccessResponseEnvelope<unknown>) => void;
   onError?: (error: TRPCClientError) => void;
@@ -71,9 +75,11 @@ export function createTRPCClient<TRouter extends AnyRouter>(
   opts: CreateTRPCClientOptions
 ): TRPCClient<TRouter> {
   const {
-    fetch: _fetch = fetch,
+    fetchOpts = {
+      fetch,
+      AbortController,
+    },
     url,
-    AbortController: _AbortController = AbortController,
   } = opts;
 
   async function handleResponse(promise: Promise<Response>) {
@@ -115,7 +121,7 @@ export function createTRPCClient<TRouter extends AnyRouter>(
     if (args?.length) {
       target += `?args=${encodeURIComponent(JSON.stringify(args as any))}`;
     }
-    const promise = _fetch(target, {
+    const promise = fetchOpts.fetch(target, {
       headers: getHeaders(),
     });
 
@@ -125,7 +131,7 @@ export function createTRPCClient<TRouter extends AnyRouter>(
     path,
     ...args
   ) => {
-    const promise = _fetch(`${url}/${path}`, {
+    const promise = fetchOpts.fetch(`${url}/${path}`, {
       method: 'post',
       body: JSON.stringify({
         args,
@@ -147,9 +153,9 @@ export function createTRPCClient<TRouter extends AnyRouter>(
         console.log('subscriptions have stopped');
         return;
       }
-      controller = new _AbortController();
+      controller = new fetchOpts.AbortController();
       const signal = controller!.signal;
-      const promise = _fetch(`${url}/${path}`, {
+      const promise = fetchOpts.fetch(`${url}/${path}`, {
         method: 'patch',
         body: JSON.stringify({
           args: thisArgs,
@@ -158,7 +164,7 @@ export function createTRPCClient<TRouter extends AnyRouter>(
         signal,
       });
       try {
-        console.log('⏲️  waiting for', path);
+        console.log('⏳  waiting for', path);
         const data = await handleResponse(promise);
         if (stopped) {
           return;
