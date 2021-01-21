@@ -8,6 +8,7 @@
     "@types/react-dom": "^17.0.0",
     "cypress": "^6.3.0",
     "lerna": "^3.22.1",
+    "prettier": "^2.2.1",
     "react": "^17.0.1",
     "react-dom": "^17.0.1",
     "tsdx": "^0.14.1",

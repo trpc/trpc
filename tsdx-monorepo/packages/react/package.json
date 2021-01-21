@@ -31,6 +31,7 @@
     "tslib": "^2.0.0"
   },
   "devDependencies": {
+    "react-query": "^3.5.16",
     "trpc-server": "^0.0.1"
   },
   "publishConfig": {

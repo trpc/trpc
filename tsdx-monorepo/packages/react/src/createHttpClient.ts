@@ -1,15 +1,13 @@
 import type {
+  AnyRouter,
   HTTPResponseEnvelope,
   HTTPSuccessResponseEnvelope,
-} from '../server/http';
-import type {
-  AnyRouter,
   inferAsyncReturnType,
   inferEndpointArgs,
   inferHandler,
-} from '../server/router';
-import type { inferSubscriptionData } from '../server/subscription';
-import type { Maybe } from '../server/types';
+  inferSubscriptionData,
+  Maybe,
+} from 'trpc-server';
 
 type UnsubscribeFn = () => void;
 
@@ -25,7 +23,7 @@ type inferSubscriptionFn<TRouter extends AnyRouter> = <
     onSuccess?: (data: TData) => void;
     onError?: (error: HTTPClientError) => void;
     getNextArgs?: (data: TData) => TArgs;
-  },
+  }
 ) => UnsubscribeFn;
 
 export type HTTPSdk<TRouter extends AnyRouter> = {
@@ -48,7 +46,7 @@ export class HTTPClientError extends Error {
       res?: Maybe<Response>;
       json?: Maybe<HTTPResponseEnvelope<unknown>>;
       originalError?: Maybe<Error>;
-    },
+    }
   ) {
     super(message);
     this.message = message;
@@ -69,7 +67,7 @@ export interface CreateHttpClientOptions {
   onError?: (error: HTTPClientError) => void;
 }
 export function createHttpClient<TRouter extends AnyRouter>(
-  opts: CreateHttpClientOptions,
+  opts: CreateHttpClientOptions
 ): HTTPSdk<TRouter> {
   const {
     fetch: _fetch = fetch,
@@ -138,7 +136,7 @@ export function createHttpClient<TRouter extends AnyRouter>(
   };
   const subscription: inferSubscriptionFn<TRouter> = (
     [path, ...args],
-    opts,
+    opts
   ) => {
     let stopped = false;
     let controller: AbortController | null = null;

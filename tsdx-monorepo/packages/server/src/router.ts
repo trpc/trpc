@@ -34,7 +34,7 @@ export type inferRouterSubscriptionEndpointData<
 >;
 
 export type inferHandler<TEndpoints extends RouterEndpoints> = <
-  TArgs extends DropFirst<Parameters<TResolver>> & [],
+  TArgs extends DropFirst<Parameters<TResolver>> & any[],
   TPath extends keyof TEndpoints & string,
   TResolver extends TEndpoints[TPath]
 >(

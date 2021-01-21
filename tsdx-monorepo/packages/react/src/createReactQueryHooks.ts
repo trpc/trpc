@@ -1,22 +1,21 @@
 import {
+  FetchQueryOptions,
+  QueryClient,
   useMutation,
   UseMutationOptions,
   useQuery,
   UseQueryOptions,
-  UseQueryResult,
-  QueryClient,
-  FetchQueryOptions,
 } from 'react-query';
 import type {
   inferEndpointArgs,
   inferEndpointData,
   inferEndpointsWithoutArgs,
   inferHandler,
-  Router,
-} from '../server/router';
+  AnyRouter,
+} from 'trpc-server';
 import { HTTPClientError, HTTPSdk } from './createHttpClient';
 
-export function createReactQueryHooks<TRouter extends Router<any, any, any>>({
+export function createReactQueryHooks<TRouter extends AnyRouter>({
   client,
 }: {
   client: HTTPSdk<TRouter>;
@@ -27,7 +26,7 @@ export function createReactQueryHooks<TRouter extends Router<any, any, any>>({
     prefetchQuery: <TPath extends keyof TQueries & string>(
       args: [TPath, ...inferEndpointArgs<TQueries[TPath]>],
       handler: inferHandler<TQueries>,
-      options?: FetchQueryOptions,
+      options?: FetchQueryOptions
     ) => Promise<inferEndpointData<TQueries[TPath]>>;
   };
 
@@ -39,7 +38,7 @@ export function createReactQueryHooks<TRouter extends Router<any, any, any>>({
       inferEndpointArgs<TQueries[TPath]>,
       HTTPClientError,
       inferEndpointData<TQueries[TPath]>
-    >,
+    >
   ) {
     return useQuery<
       inferEndpointArgs<TQueries[TPath]>,
@@ -60,12 +59,12 @@ export function createReactQueryHooks<TRouter extends Router<any, any, any>>({
       never,
       HTTPClientError,
       inferEndpointData<TQueries[TPath]>
-    >,
+    >
   ) {
     return useQuery<never, HTTPClientError, inferEndpointData<TQueries[TPath]>>(
       path,
       () => (client.query as any)(path) as any,
-      opts,
+      opts
     );
   }
   function _useMutation<TPath extends keyof TMutations & string>(
@@ -74,7 +73,7 @@ export function createReactQueryHooks<TRouter extends Router<any, any, any>>({
       inferEndpointData<TMutations[TPath]>,
       HTTPClientError,
       inferEndpointArgs<TMutations[TPath]>
-    >,
+    >
   ) {
     return useMutation<
       inferEndpointData<TMutations[TPath]>,
