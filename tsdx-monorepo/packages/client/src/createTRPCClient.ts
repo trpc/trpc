@@ -158,7 +158,7 @@ export function createTRPCClient<TRouter extends AnyRouter>(
         signal,
       });
       try {
-        console.log('⏲️ waiting for', path);
+        console.log('⏲️  waiting for', path);
         const data = await handleResponse(promise);
         if (stopped) {
           return;

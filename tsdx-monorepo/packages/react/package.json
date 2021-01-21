@@ -3,6 +3,7 @@
   "version": "0.0.1",
   "description": "TRPC React lib",
   "author": "KATT",
+  "license": "MIT",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/colinhacks/trpc.git",
@@ -25,7 +26,8 @@
   "peerDependencies": {
     "react": ">=16.8.0",
     "react-dom": ">=16.8.0",
-    "react-query": ">=3"
+    "react-query": ">=3",
+    "trpc-client": ">=0.0.1"
   },
   "dependencies": {
     "tslib": "^2.0.0"

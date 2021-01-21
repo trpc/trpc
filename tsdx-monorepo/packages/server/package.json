@@ -3,6 +3,7 @@
   "version": "0.0.1",
   "description": "TRPC Server",
   "author": "KATT",
+  "license": "MIT",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/colinhacks/trpc.git",

@@ -6,6 +6,7 @@ import {
   useQuery,
   UseQueryOptions,
 } from 'react-query';
+import { TRPCClient, TRPCClientError } from 'trpc-client';
 import type {
   inferEndpointArgs,
   inferEndpointData,
@@ -13,12 +14,11 @@ import type {
   inferHandler,
   AnyRouter,
 } from 'trpc-server';
-import { HTTPClientError, HTTPSdk } from './createHttpClient';
 
 export function createReactQueryHooks<TRouter extends AnyRouter>({
   client,
 }: {
-  client: HTTPSdk<TRouter>;
+  client: TRPCClient<TRouter>;
 }) {
   type TQueries = TRouter['_def']['queries'];
   type TMutations = TRouter['_def']['mutations'];
@@ -36,13 +36,13 @@ export function createReactQueryHooks<TRouter extends AnyRouter>({
     pathAndArgs: [TPath, ...inferEndpointArgs<TQueries[TPath]>],
     opts?: UseQueryOptions<
       inferEndpointArgs<TQueries[TPath]>,
-      HTTPClientError,
+      TRPCClientError,
       inferEndpointData<TQueries[TPath]>
     >
   ) {
     return useQuery<
       inferEndpointArgs<TQueries[TPath]>,
-      HTTPClientError,
+      TRPCClientError,
       inferEndpointData<TQueries[TPath]>
     >(pathAndArgs, () => client.query(...pathAndArgs) as any, opts);
   }
@@ -57,11 +57,11 @@ export function createReactQueryHooks<TRouter extends AnyRouter>({
     path: TPath,
     opts?: UseQueryOptions<
       never,
-      HTTPClientError,
+      TRPCClientError,
       inferEndpointData<TQueries[TPath]>
     >
   ) {
-    return useQuery<never, HTTPClientError, inferEndpointData<TQueries[TPath]>>(
+    return useQuery<never, TRPCClientError, inferEndpointData<TQueries[TPath]>>(
       path,
       () => (client.query as any)(path) as any,
       opts
@@ -71,13 +71,13 @@ export function createReactQueryHooks<TRouter extends AnyRouter>({
     path: TPath,
     opts?: UseMutationOptions<
       inferEndpointData<TMutations[TPath]>,
-      HTTPClientError,
+      TRPCClientError,
       inferEndpointArgs<TMutations[TPath]>
     >
   ) {
     return useMutation<
       inferEndpointData<TMutations[TPath]>,
-      HTTPClientError,
+      TRPCClientError,
       inferEndpointArgs<TMutations[TPath]>
     >((args) => client.mutate(path, ...args) as any, opts);
   }
