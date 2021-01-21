@@ -1,0 +1,39 @@
+{
+  "name": "trpc-react",
+  "version": "0.0.2",
+  "description": "Official React library for @thefakeorg",
+  "author": "Jared Palmer",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mono/mono.git",
+    "directory": "packages/react"
+  },
+  "scripts": {
+    "start": "tsdx watch --tsconfig tsconfig.build.json --verbose --noClean",
+    "build": "tsdx build --tsconfig tsconfig.build.json",
+    "test": "tsdx test",
+    "lint": "tsdx lint",
+    "prepublish": "npm run build"
+  },
+  "main": "dist/index.js",
+  "module": "dist/react.esm.js",
+  "typings": "dist/index.d.ts",
+  "files": [
+    "README.md",
+    "dist"
+  ],
+  "peerDependencies": {
+    "react": "^16.8.0",
+    "react-dom": "^16.8.0"
+  },
+  "dependencies": {
+    "@thefakeorg/utils": "^0.0.1",
+    "tslib": "^2.0.0"
+  },
+  "devDependencies": {
+    "trpc-server": "^0.0.1"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

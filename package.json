@@ -52,6 +52,7 @@
     "@types/cors": "^2.8.7",
     "@types/express": "^4.17.7",
     "@types/jest": "^25.1.4",
+    "@types/next": "^9.0.0",
     "@types/node-fetch": "^2.5.7",
     "@vercel/node": "^1.9.0",
     "compression": "^1.7.4",

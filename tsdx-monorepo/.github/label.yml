@@ -1,0 +1,18 @@
+examples:
+  - example/*
+  - example/**/*
+
+react:
+  - packages/react/*
+  - packages/react/**/*
+
+utils:
+  - packages/utils/*
+  - packages/utils/**/*
+
+cypress:
+  - cypress/*
+  - cypress/**/*
+
+repo:
+  - ./*
