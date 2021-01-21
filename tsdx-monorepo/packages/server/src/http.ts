@@ -1,9 +1,8 @@
-import * as express from 'express';
-import { NextApiRequest, NextApiResponse } from 'next';
+import type { EventEmitter } from 'events';
+import type qs from 'qs';
 import { assertNotBrowser } from './assertNotBrowser';
 import { Router } from './router';
 import { Subscription, SubscriptionDestroyError } from './subscription';
-
 assertNotBrowser();
 export class HTTPError extends Error {
   public readonly statusCode: number;
@@ -64,7 +63,7 @@ export function getErrorResponseEnvelope(err?: Partial<HTTPError>) {
   return json;
 }
 
-export function getQueryArgs(req: express.Request | NextApiRequest) {
+export function getQueryArgs<TRequest extends BaseRequest>(req: TRequest) {
   let args: unknown[] = [];
 
   const queryArgs = req.query.args;
@@ -88,33 +87,56 @@ export function getQueryArgs(req: express.Request | NextApiRequest) {
   return args;
 }
 
-// type CreateContextFn<TContext> = () => TContext | Promise<TContext>;
+export type CreateContextFnOptions<TRequest, TResponse> = {
+  req: TRequest;
+  res: TResponse;
+};
+export type CreateContextFn<TContext, TRequest, TResponse> = (opts: {
+  req: TRequest;
+  res: TResponse;
+}) => TContext | Promise<TContext>;
 
-interface HTTPHandlerBaseOptions {
+interface BaseRequest {
+  method?: string;
+  query: qs.ParsedQs;
+  body?: any;
+}
+interface BaseResponse extends EventEmitter {
+  status: (code: number) => BaseResponse;
+  json: (data: unknown) => any;
+  statusCode?: number;
+}
+
+export interface BaseOptions {
   subscriptions?: {
     timeout?: number;
   };
 }
 export async function requestHandler<
   TContext,
-  TRouter extends Router<TContext, any, any, any>
+  TRouter extends Router<TContext, any, any, any>,
+  TCreateContextFn extends CreateContextFn<TContext, TRequest, TResponse>,
+  TRequest extends BaseRequest,
+  TResponse extends BaseResponse
 >({
   req,
   res,
   router,
-  ctx,
   endpoint,
   subscriptions,
-}: HTTPHandlerBaseOptions & {
-  req: express.Request | NextApiRequest;
-  res: express.Response | NextApiResponse;
+  createContext,
+}: {
+  req: TRequest;
+  res: TResponse;
   endpoint: string;
   router: TRouter;
-  ctx: TContext;
-}) {
+  createContext: TCreateContextFn;
+} & BaseOptions) {
   try {
     let data: unknown;
-    if (req.method === 'POST') {
+    const ctx = await createContext({ req, res });
+    const method = req.method ?? 'GET';
+    if (method === 'POST') {
       if (!router.has('mutations', endpoint)) {
         throw httpError.notFound(`Unknown mutation "${endpoint}"`);
       }
@@ -128,14 +150,14 @@ export async function requestHandler<
         endpoint as any,
         ...(args as any)
       );
-    } else if (req.method === 'GET') {
+    } else if (method === 'GET') {
       if (!router.has('queries', endpoint)) {
         throw httpError.notFound(`Unknown query "${endpoint}"`);
       }
       const args = getQueryArgs(req);
 
       data = await router.invokeQuery(ctx)(endpoint as any, ...(args as any));
-    } else if (req.method === 'PATCH') {
+    } else if (method === 'PATCH') {
       if (!router.has('subscriptions', endpoint)) {
         throw httpError.notFound(`Unknown subscription "${endpoint}"`);
       }
@@ -182,7 +204,7 @@ export async function requestHandler<
         throw err;
       }
     } else {
-      throw httpError.badRequest(`Unexpected request method ${req.method}`);
+      throw httpError.badRequest(`Unexpected request method ${method}`);
     }
 
     const json: HTTPSuccessResponseEnvelope<unknown> = {

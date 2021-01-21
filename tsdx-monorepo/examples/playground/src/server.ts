@@ -3,6 +3,31 @@ import { EventEmitter } from 'events';
 import express from 'express';
 import * as trpc from '@trpc/server';
 
+// ---------- create context
+const createContext = ({ req, res }: trpc.CreateExpressContextOptions) => {
+  const getUser = () => {
+    if (req.headers.authorization !== 'secret') {
+      return null;
+    }
+    return {
+      name: 'alex',
+    };
+  };
+
+  return {
+    req,
+    res,
+    user: getUser(),
+  };
+};
+type Context = trpc.inferAsyncReturnType<typeof createContext>;
+
+function createRouter() {
+  return trpc.router<Context>();
+}
+
+// --------- create routes etc
+
 let id = 0;
 
 const ee = new EventEmitter();
@@ -33,30 +58,6 @@ function createMessage(text: string) {
   ee.emit('newMessage', msg);
   return msg;
 }
-
-function createRouter() {
-  return trpc.router<Context>();
-}
-
-const createContext = ({ req, res }: trpc.CreateExpressContextOptions) => {
-  const getUser = () => {
-    if (req.headers.authorization !== 'secret') {
-      return null;
-    }
-    return {
-      name: 'alex',
-    };
-  };
-
-  return {
-    req,
-    res,
-    user: getUser(),
-  };
-};
-type Context = trpc.inferAsyncReturnType<typeof createContext>;
-
-// create router for posts
 const posts = createRouter()
   .mutations({
     create: (

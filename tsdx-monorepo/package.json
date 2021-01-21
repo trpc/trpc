@@ -27,7 +27,7 @@
   },
   "scripts": {
     "lerna": "lerna",
-    "start": "lerna run start --stream --parallel",
+    "start": "lerna run start --scope @trpc/* --stream --parallel",
     "dev": "yarn start",
     "test": "lerna run test --stream --",
     "lint": "lerna run lint --stream --",
