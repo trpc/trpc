@@ -1,6 +1,5 @@
 // testing react-query helpers
-import { createTRPCClient } from '@trpc/client';
-import { createReactQueryHooks } from '@trpc/react';
+import { createReactQueryHooks, createTRPCClient } from '@trpc/react';
 import type { RootRouter } from './server';
 import { rootRouter } from './server'; // this is only imported to show-case ssr `prefetchQuery`
 const client = createTRPCClient<RootRouter>({
