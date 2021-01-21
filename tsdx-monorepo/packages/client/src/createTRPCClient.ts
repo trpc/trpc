@@ -60,8 +60,35 @@ export class TRPCClientError extends Error {
 }
 
 export interface FetchOptions {
-  fetch: typeof fetch;
-  AbortController: typeof AbortController;
+  fetch?: typeof fetch;
+  AbortController?: typeof AbortController;
+}
+function getAbortController(
+  ac?: typeof AbortController
+): Maybe<typeof AbortController> {
+  if (ac) {
+    return ac;
+  }
+  if (typeof window !== 'undefined' && window.AbortController) {
+    return window.AbortController;
+  }
+  if (typeof global !== 'undefined' && global.AbortController) {
+    return global.AbortController;
+  }
+  return null;
+}
+function getFetch(f?: typeof fetch): typeof fetch {
+  if (f) {
+    return f;
+  }
+  if (typeof window !== 'undefined' && window.fetch) {
+    return window.fetch;
+  }
+  if (typeof global !== 'undefined' && global.fetch) {
+    return global.fetch;
+  }
+
+  throw new Error('No fetch implementation found');
 }
 
 export interface CreateTRPCClientOptions {
@@ -74,13 +101,9 @@ export interface CreateTRPCClientOptions {
 export function createTRPCClient<TRouter extends AnyRouter>(
   opts: CreateTRPCClientOptions
 ): TRPCClient<TRouter> {
-  const {
-    fetchOpts = {
-      fetch,
-      AbortController,
-    },
-    url,
-  } = opts;
+  const { fetchOpts, url } = opts;
+  const _fetch = getFetch(fetchOpts?.fetch);
+  const AC = getAbortController(fetchOpts?.AbortController);
 
   async function handleResponse(promise: Promise<Response>) {
     let res: Maybe<Response> = null;
@@ -121,7 +144,7 @@ export function createTRPCClient<TRouter extends AnyRouter>(
     if (args?.length) {
       target += `?args=${encodeURIComponent(JSON.stringify(args as any))}`;
     }
-    const promise = fetchOpts.fetch(target, {
+    const promise = _fetch(target, {
       headers: getHeaders(),
     });
 
@@ -131,7 +154,7 @@ export function createTRPCClient<TRouter extends AnyRouter>(
     path,
     ...args
   ) => {
-    const promise = fetchOpts.fetch(`${url}/${path}`, {
+    const promise = _fetch(`${url}/${path}`, {
       method: 'post',
       body: JSON.stringify({
         args,
@@ -153,9 +176,9 @@ export function createTRPCClient<TRouter extends AnyRouter>(
         console.log('subscriptions have stopped');
         return;
       }
-      controller = new fetchOpts.AbortController();
-      const signal = controller!.signal;
-      const promise = fetchOpts.fetch(`${url}/${path}`, {
+      controller = AC ? new AC() : null;
+      const signal = controller?.signal;
+      const promise = _fetch(`${url}/${path}`, {
         method: 'patch',
         body: JSON.stringify({
           args: thisArgs,

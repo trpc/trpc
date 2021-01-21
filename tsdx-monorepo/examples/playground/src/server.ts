@@ -100,12 +100,12 @@ const messages = createRouter()
         async getInitialData(emit) {
           const sinceLast = await getMessagesAfter(timestamp);
           if (sinceLast.length) {
-            emit(sinceLast);
+            emit.data(sinceLast);
           }
         },
         start(emit) {
           const onMessage = (data: Message) => {
-            emit([data]);
+            emit.data([data]);
           };
 
           ee.on('newMessage', onMessage);

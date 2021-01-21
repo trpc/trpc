@@ -27,12 +27,12 @@ interface SubscriptionEvents<TData> {
 declare interface SubscriptionEventEmitter<TData> {
   on<U extends keyof SubscriptionEvents<TData>>(
     event: U,
-    listener: SubscriptionEvents<TData>[U],
+    listener: SubscriptionEvents<TData>[U]
   ): this;
 
   once<U extends keyof SubscriptionEvents<TData>>(
     event: U,
-    listener: SubscriptionEvents<TData>[U],
+    listener: SubscriptionEvents<TData>[U]
   ): this;
 
   emit<U extends keyof SubscriptionEvents<TData>>(
@@ -48,9 +48,14 @@ class SubscriptionEventEmitter<TData> extends EventEmitter {
 
 type UnsubscribeFn = () => void;
 type EmitFn<TData> = (data: TData) => void;
+
+export type SubscriptionEmit<TData> = {
+  data: EmitFn<TData>;
+  error: EmitFn<Error>;
+};
 export interface SubscriptionOptions<TData> {
-  getInitialData?: (emit: EmitFn<TData>) => void | Promise<void>;
-  start: (emit: EmitFn<TData>) => UnsubscribeFn;
+  getInitialData?: (emit: SubscriptionEmit<TData>) => void | Promise<void>;
+  start: (emit: SubscriptionEmit<TData>) => UnsubscribeFn;
 }
 export class Subscription<TData = unknown> {
   private readonly events: SubscriptionEventEmitter<TData>;
@@ -90,11 +95,12 @@ export class Subscription<TData = unknown> {
       throw new Error('Called start() on a destroyed subscription');
     }
     try {
-      const emitFn: EmitFn<TData> = (data: TData) => {
-        this.events.emit('data', data);
+      const emit: SubscriptionEmit<TData> = {
+        error: (err) => this.events.emit('error', err),
+        data: (data) => this.events.emit('data', data),
       };
-      await this.opts.getInitialData(emitFn);
-      this.opts.start(emitFn);
+      await this.opts.getInitialData(emit);
+      this.opts.start(emit);
     } catch (err) {
       this.events.emit(err);
     }
@@ -136,6 +142,9 @@ export class Subscription<TData = unknown> {
 
   emitData(data: TData) {
     this.events.emit('data', data);
+  }
+  emitError(err: Error) {
+    this.events.emit('error', err);
   }
 }
 

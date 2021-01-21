@@ -1,34 +1,26 @@
+import { TRPCClient, TRPCClientError } from '@trpc/client';
+import type {
+  DropFirst,
+  inferEndpointArgs,
+  inferEndpointData,
+  inferEndpointsWithoutArgs,
+  Router,
+  RouterResolverFn,
+} from '@trpc/server';
 import {
-  FetchQueryOptions,
   QueryClient,
   useMutation,
   UseMutationOptions,
   useQuery,
   UseQueryOptions,
 } from 'react-query';
-import { TRPCClient, TRPCClientError } from '@trpc/client';
-import type {
-  inferEndpointArgs,
-  inferEndpointData,
-  inferEndpointsWithoutArgs,
-  inferHandler,
-  AnyRouter,
-} from '@trpc/server';
 
-export function createReactQueryHooks<TRouter extends AnyRouter>({
-  client,
-}: {
-  client: TRPCClient<TRouter>;
-}) {
+export function createReactQueryHooks<
+  TRouter extends Router<TContext, any, any, any>,
+  TContext
+>({ client }: { client: TRPCClient<TRouter> }) {
   type TQueries = TRouter['_def']['queries'];
   type TMutations = TRouter['_def']['mutations'];
-  type TQueryClient = Omit<QueryClient, 'prefetchQuery'> & {
-    prefetchQuery: <TPath extends keyof TQueries & string>(
-      args: [TPath, ...inferEndpointArgs<TQueries[TPath]>],
-      handler: inferHandler<TQueries>,
-      options?: FetchQueryOptions
-    ) => Promise<inferEndpointData<TQueries[TPath]>>;
-  };
 
   const queryClient = new QueryClient();
 
@@ -81,10 +73,28 @@ export function createReactQueryHooks<TRouter extends AnyRouter>({
       inferEndpointArgs<TMutations[TPath]>
     >((args) => client.mutate(path, ...args) as any, opts);
   }
+
+  const ssr = async <
+    TEndpoints extends TRouter['_def']['queries'],
+    TResolver extends TEndpoints & RouterResolverFn,
+    TArgs extends DropFirst<Parameters<TResolver>>,
+    TPath extends keyof TEndpoints & string
+  >(
+    router: TRouter,
+    path: TPath,
+    ctx: TContext,
+    ...args: TArgs
+  ) => {
+    console.log('cache', [path, ...args]);
+    return queryClient.prefetchQuery([path, ...args], () =>
+      router['_def']['queries'][path](ctx, ...args)
+    );
+  };
   return {
     useQuery: _useQuery,
     useMutation: _useMutation,
     useQueryNoArgs,
-    queryClient: (queryClient as any) as TQueryClient,
+    queryClient,
+    ssr,
   };
 }
