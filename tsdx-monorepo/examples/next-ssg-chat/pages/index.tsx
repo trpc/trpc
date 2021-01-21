@@ -1,10 +1,21 @@
 import Head from 'next/head';
+import { useEffect, useState } from 'react';
 import { dehydrate } from 'react-query/hydration';
 import { chatRouter } from './api/trpc/[...trpc]';
-import { hooks } from './_app';
+import { hooks, client } from './_app';
 
 export default function Home() {
   const qqq = hooks.useQuery(['messages/list']);
+
+  const [msgs, setMessages] = useState(() => qqq.data);
+  useEffect(() => {
+    return client.subscription(['messages/newMessages'], {
+      onSuccess(data) {
+        console.log('new messages', data);
+        setMessages([...msgs, ...data]);
+      },
+    });
+  }, []);
 
   return (
     <div>
@@ -17,7 +28,7 @@ export default function Home() {
 
       <h2>Message</h2>
       <ul>
-        {qqq.data.map((m) => (
+        {msgs.map((m) => (
           <li key={m.id}>
             <pre>{JSON.stringify(m, null, 4)}</pre>
           </li>

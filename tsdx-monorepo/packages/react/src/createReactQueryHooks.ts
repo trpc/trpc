@@ -85,7 +85,6 @@ export function createReactQueryHooks<
     ctx: TContext,
     ...args: TArgs
   ) => {
-    console.log('cache', [path, ...args]);
     return queryClient.prefetchQuery([path, ...args], () =>
       router['_def']['queries'][path](ctx, ...args)
     );

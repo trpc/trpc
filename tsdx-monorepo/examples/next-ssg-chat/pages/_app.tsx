@@ -4,7 +4,7 @@ import { QueryClientProvider } from 'react-query';
 import { ChatRouter } from './api/trpc/[...trpc]';
 import { Hydrate } from 'react-query/hydration';
 
-const client = createTRPCClient<ChatRouter>({
+export const client = createTRPCClient<ChatRouter>({
   url: '/api/trpc',
 });
 
