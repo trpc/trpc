@@ -1,5 +1,5 @@
 {
-  "name": "trpc-server",
+  "name": "@trpc/server",
   "version": "0.0.1",
   "description": "TRPC Server",
   "author": "KATT",

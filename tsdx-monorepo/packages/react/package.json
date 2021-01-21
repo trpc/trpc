@@ -1,5 +1,5 @@
 {
-  "name": "trpc-react",
+  "name": "@trpc/react",
   "version": "0.0.1",
   "description": "TRPC React lib",
   "author": "KATT",
@@ -27,15 +27,15 @@
     "react": ">=16.8.0",
     "react-dom": ">=16.8.0",
     "react-query": ">=3",
-    "trpc-client": ">=0.0.1"
+    "@trpc/client": ">=0.0.1"
   },
   "dependencies": {
     "tslib": "^2.0.0"
   },
   "devDependencies": {
     "react-query": "^3.5.16",
-    "trpc-server": "^0.0.1",
-    "trpc-client": "^0.0.1"
+    "@trpc/server": "^0.0.1",
+    "@trpc/client": "^0.0.1"
   },
   "publishConfig": {
     "access": "public"

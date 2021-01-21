@@ -1,1 +1,1 @@
-# trpc-server
+# @trpc/server

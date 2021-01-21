@@ -1,7 +1,7 @@
 import bodyParser from 'body-parser';
 import { EventEmitter } from 'events';
 import express from 'express';
-import * as trpc from 'trpc-server';
+import * as trpc from '@trpc/server';
 
 let id = 0;
 

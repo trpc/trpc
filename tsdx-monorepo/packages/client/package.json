@@ -1,5 +1,5 @@
 {
-  "name": "trpc-client",
+  "name": "@trpc/client",
   "version": "0.0.1",
   "description": "TRPC Client lib",
   "author": "KATT",
@@ -29,7 +29,7 @@
   },
   "devDependencies": {
     "react-query": "^3.5.16",
-    "trpc-server": "^0.0.1"
+    "@trpc/server": "^0.0.1"
   },
   "publishConfig": {
     "access": "public"

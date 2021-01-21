@@ -6,14 +6,14 @@ import {
   useQuery,
   UseQueryOptions,
 } from 'react-query';
-import { TRPCClient, TRPCClientError } from 'trpc-client';
+import { TRPCClient, TRPCClientError } from '@trpc/client';
 import type {
   inferEndpointArgs,
   inferEndpointData,
   inferEndpointsWithoutArgs,
   inferHandler,
   AnyRouter,
-} from 'trpc-server';
+} from '@trpc/server';
 
 export function createReactQueryHooks<TRouter extends AnyRouter>({
   client,

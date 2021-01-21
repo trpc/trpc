@@ -1,2 +1,2 @@
-# `trpc-react`
+# `@trpc/react`
 
