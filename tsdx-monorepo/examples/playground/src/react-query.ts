@@ -1,10 +1,9 @@
 // testing react-query helpers
-
-import { createHttpClient } from '../lib/browser/createHttpClient';
-import { createReactQueryHooks } from '../lib/browser/createReactQueryHooks';
+import { createTRPCClient } from '@trpc/client';
+import { createReactQueryHooks } from '@trpc/react';
 import type { RootRouter } from './server';
 import { rootRouter } from './server'; // this is only imported to show-case ssr `prefetchQuery`
-const client = createHttpClient<RootRouter>({
+const client = createTRPCClient<RootRouter>({
   url: '...',
 });
 const {
@@ -52,7 +51,7 @@ const {
 {
   // ssr prefetch testing
   // https://react-query.tanstack.com/guides/ssr
-  const handler = rootRouter.createQueryHandler({} as any);
+  const handler = rootRouter.invokeQuery({} as any);
   queryClient.prefetchQuery(['hello'], handler).then((data) => {
     console.log('data', data);
   });
