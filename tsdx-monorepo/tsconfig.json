@@ -8,6 +8,7 @@
     "paths": {
       "trpc-server": ["packages/server/src"],
       "trpc-react": ["packages/react/src"],
+      "trpc-client": ["packages/client/src"],
       "$test/*": ["test/*"]
     }
   }

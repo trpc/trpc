@@ -27,10 +27,10 @@
   "scripts": {
     "lerna": "lerna",
     "start": "lerna run start --stream --parallel",
-    "test": "lerna run test --",
+    "test": "lerna run test --stream --",
     "lint": "lerna run lint -- --fix",
-    "build": "lerna run build",
-    "prepublish": "lerna run prepublish",
+    "build": "lerna run build --stream",
+    "prepublish": "lerna run prepublish --stream",
     "start:playground": "yarn run build && yarn --cwd examples/playground && yarn --cwd examples/playground start",
     "cypress": "cypress run",
     "cypress:open": "cypress open",
