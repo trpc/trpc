@@ -5,7 +5,7 @@
   "author": "KATT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/mono/mono.git",
+    "url": "git+https://github.com/colinhacks/trpc.git",
     "directory": "packages/react"
   },
   "scripts": {
