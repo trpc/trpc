@@ -6,7 +6,6 @@ import { hooks } from './_app';
 export default function Home() {
   const qqq = hooks.useQuery(['messages/list']);
 
-  console.log('data', qqq.data, qqq.status);
   return (
     <div>
       <Head>
@@ -18,7 +17,7 @@ export default function Home() {
 
       <h2>Message</h2>
       <ul>
-        {qqq.data?.map((m) => (
+        {qqq.data.map((m) => (
           <li key={m.id}>
             <pre>{JSON.stringify(m, null, 4)}</pre>
           </li>
