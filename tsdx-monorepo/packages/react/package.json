@@ -23,12 +23,11 @@
     "dist"
   ],
   "peerDependencies": {
-    "react": "^16.8.0",
-    "react-dom": "^16.8.0",
-    "react-query": "^3.5.16"
+    "react": ">=16.8.0",
+    "react-dom": ">=16.8.0",
+    "react-query": ">=3"
   },
   "dependencies": {
-    "@thefakeorg/utils": "^0.0.1",
     "tslib": "^2.0.0"
   },
   "devDependencies": {

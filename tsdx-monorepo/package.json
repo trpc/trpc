@@ -1,5 +1,5 @@
 {
-  "name": "mono",
+  "name": "trpcroot",
   "private": true,
   "devDependencies": {
     "@changesets/changelog-github": "^0.2.8",
@@ -15,7 +15,8 @@
     "typescript": "^4.1.3"
   },
   "workspaces": [
-    "packages/*"
+    "packages/*",
+    "examples/*"
   ],
   "resolutions": {
     "**/@typescript-eslint/eslint-plugin": "^4.11.1",
@@ -27,11 +28,12 @@
   "scripts": {
     "lerna": "lerna",
     "start": "lerna run start --stream --parallel",
+    "dev": "yarn start",
     "test": "lerna run test --stream --",
     "lint": "lerna run lint -- --fix",
     "build": "lerna run build --stream",
     "prepublish": "lerna run prepublish --stream",
-    "start:playground": "yarn run build && yarn --cwd examples/playground && yarn --cwd examples/playground start",
+    "playground": "yarn --cwd examples/playground && yarn --cwd examples/playground dev",
     "cypress": "cypress run",
     "cypress:open": "cypress open",
     "changeset": "changeset",

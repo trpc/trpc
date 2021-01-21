@@ -1,13 +1,7 @@
 import bodyParser from 'body-parser';
 import { EventEmitter } from 'events';
 import express from 'express';
-import * as trpc from '../../packages/trpc/src/server';
-import { inferAsyncReturnType } from '../../packages/trpc/src/server';
-import {
-  CreateExpressContextOptions,
-  createExpressMiddleware,
-} from '../../packages/trpc/src/server/createExpressMiddleware';
-import { Subscription } from '../../packages/trpc/src/server/subscription';
+import * as trpc from 'trpc-server';
 
 let id = 0;
 
@@ -24,7 +18,7 @@ const db = {
 };
 async function getMessagesAfter(timestamp: number) {
   const msgs = db.messages.filter(
-    (msg) => msg.updatedAt > timestamp || msg.createdAt > timestamp,
+    (msg) => msg.updatedAt > timestamp || msg.createdAt > timestamp
   );
 
   return msgs;
@@ -44,7 +38,7 @@ function createRouter() {
   return trpc.router<Context>();
 }
 
-const createContext = ({ req, res }: CreateExpressContextOptions) => {
+const createContext = ({ req, res }: trpc.CreateExpressContextOptions) => {
   const getUser = () => {
     if (req.headers.authorization !== 'secret') {
       return null;
@@ -60,7 +54,7 @@ const createContext = ({ req, res }: CreateExpressContextOptions) => {
     user: getUser(),
   };
 };
-type Context = inferAsyncReturnType<typeof createContext>;
+type Context = trpc.inferAsyncReturnType<typeof createContext>;
 
 // create router for posts
 const posts = createRouter()
@@ -69,7 +63,7 @@ const posts = createRouter()
       ctx,
       input: {
         title: string;
-      },
+      }
     ) => {
       const post = {
         id: ++id,
@@ -101,7 +95,7 @@ const messages = createRouter()
     newMessages: (_ctx, { timestamp }: { timestamp: number }) => {
       type Message = typeof db['messages'][number];
 
-      return new Subscription<Message[]>({
+      return new trpc.Subscription<Message[]>({
         async getInitialData(emit) {
           const sinceLast = await getMessagesAfter(timestamp);
           if (sinceLast.length) {
@@ -144,7 +138,7 @@ export const rootRouter = createRouter()
           secret: 'sauce',
         };
       },
-    }),
+    })
   )
   .merge('messages/', messages);
 
@@ -179,10 +173,10 @@ async function main() {
 
   app.use(
     '/trpc',
-    createExpressMiddleware({
+    trpc.createExpressMiddleware({
       router: rootRouter,
       createContext,
-    }),
+    })
   );
   app.listen(2021, () => {
     console.log('listening on port 2021');

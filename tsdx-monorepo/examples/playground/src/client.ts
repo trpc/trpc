@@ -1,16 +1,13 @@
 import fetch from 'node-fetch';
 import AbortController from 'abort-controller';
-import {
-  createHttpClient,
-  CreateHttpClientOptions,
-} from '../../packages/trpc/src/browser/createHttpClient';
 import type { RootRouter } from './server';
+import { createTRPCClient, CreateTRPCClientOptions } from '../../../packages/client/dist';
 
 const sleep = (ms = 100) => new Promise((resolve) => setTimeout(resolve, ms));
 
 async function main() {
   const url = `http://localhost:2021/trpc`;
-  const opts: CreateHttpClientOptions = {
+  const opts: CreateTRPCClientOptions = {
     url,
     fetch: fetch as any,
     AbortController,
@@ -22,7 +19,7 @@ async function main() {
       console.log('❌ ', err.res?.status, err.message);
     },
   };
-  const client = createHttpClient<RootRouter>(opts);
+  const client = createTRPCClient<RootRouter>(opts);
   await sleep();
   await client.query('hello', 'client');
   await sleep();
@@ -40,7 +37,7 @@ async function main() {
     // will fail
   }
   await sleep();
-  const authedClient = createHttpClient<RootRouter>({
+  const authedClient = createTRPCClient<RootRouter>({
     ...opts,
     getHeaders: () => ({
       authorization: 'secret',
