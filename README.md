@@ -36,6 +36,12 @@ This will install all dependencies in each project, build them, and symlink them
 
 ## Development workflow
 
+```bash
+git clone git@github.com:KATT/trpc.git
+cd trpc
+yarn
+```
+
 In one terminal, run tsdx watch in parallel:
 
 ```sh
