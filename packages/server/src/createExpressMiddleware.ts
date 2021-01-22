@@ -18,7 +18,7 @@ export type CreateExpressContextFn<TContext> = (
 
 export function createExpressMiddleware<
   TContext,
-  TRouter extends Router<TContext, never, never, never>
+  TRouter extends Router<TContext, any, any, any>
 >(
   opts: {
     router: TRouter;
