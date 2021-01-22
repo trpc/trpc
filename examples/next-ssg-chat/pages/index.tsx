@@ -1,28 +1,35 @@
-import { inferAsyncReturnType, inferSubscriptionData } from '@katt/trpc-server';
+import { Message } from '@prisma/client';
 import Head from 'next/head';
 import { useEffect, useState } from 'react';
 import { dehydrate } from 'react-query/hydration';
 import { chatRouter } from './api/trpc/[...trpc]';
-import { hooks, client } from './_app';
-import type { ChatRouter } from './api/trpc/[...trpc]';
+import { client, hooks } from './_app';
 
-type Messages = inferSubscriptionData<
-  inferAsyncReturnType<
-    ChatRouter['_def']['subscriptions']['messages.newMessages']
-  >
->;
-type Message = Messages[number];
-const getTimestamp = (m: Messages) => {
+function maxDate(dates: Date[]) {
+  let max = dates[0];
+
+  for (const date of dates) {
+    if (date.getTime() > max.getTime()) {
+      max = date;
+    }
+  }
+
+  return max ?? null;
+}
+const getTimestamp = (m: Message[]) => {
   return m.reduce((ts, msg) => {
-    return Math.max(ts, msg.updatedAt, msg.createdAt);
-  }, 0);
+    if (msg.updatedAt.getTime() > ts.getTime()) {
+      return msg.updatedAt;
+    }
+    return maxDate([ts, msg.updatedAt, msg.createdAt]);
+  }, new Date(0));
 };
 
 export default function Home() {
   const qqq = hooks.useQuery(['messages.list']);
 
   const [msgs, setMessages] = useState(() => qqq.data);
-  const addMessages = (newMessages: Messages) => {
+  const addMessages = (newMessages: Message[]) => {
     setMessages((nowMessages) => {
       const map: Record<Message['id'], Message> = {};
       for (const msg of nowMessages) {

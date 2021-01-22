@@ -2,7 +2,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { assertNotBrowser } from './assertNotBrowser';
 import { inferSubscriptionData, Subscription } from './subscription';
-import { Prefixer, DropFirst, ThenArg, format } from './types';
+import { DropFirst, format, Prefixer, ThenArg } from './types';
 assertNotBrowser();
 
 export type RouterResolverFn<
@@ -54,6 +54,11 @@ export type inferEndpointsWithoutArgs<
   TEndpoints extends RouterEndpoints
 > = keyof Omit<TEndpoints, inferEndpointsWithArgs<TEndpoints>>;
 
+export type DataTransformer = {
+  serialize(object: any): any;
+  deserialize(object: any): any;
+};
+
 export type AnyRouter = Router<any, any, any, any>;
 export class Router<
   TContext,
@@ -65,17 +70,20 @@ export class Router<
     queries: Readonly<TQueries>;
     mutations: Readonly<TMutations>;
     subscriptions: Readonly<TSubscriptions>;
+    transformers: DataTransformer[];
   }>;
 
   constructor(def?: {
     queries: TQueries;
     mutations: TMutations;
     subscriptions: TSubscriptions;
+    transformers: DataTransformer[];
   }) {
     this._def = def ?? {
       queries: {} as TQueries,
       mutations: {} as TMutations,
       subscriptions: {} as TSubscriptions,
+      transformers: [] as DataTransformer[],
     };
   }
 
@@ -90,6 +98,11 @@ export class Router<
     return eps as any;
   }
 
+  public transformer(transformer: DataTransformer) {
+    this._def.transformers.push(transformer);
+    return this;
+  }
+
   public queries<TNewEndpoints extends RouterEndpoints<TContext>>(
     endpoints: TNewEndpoints,
   ): Router<
@@ -102,6 +115,7 @@ export class Router<
       queries: endpoints,
       mutations: {},
       subscriptions: {},
+      transformers: [],
     });
     return this.merge(router);
   }
@@ -118,6 +132,7 @@ export class Router<
       mutations: endpoints,
       queries: {},
       subscriptions: {},
+      transformers: [],
     });
 
     return this.merge(router);
@@ -137,6 +152,7 @@ export class Router<
       subscriptions: endpoints,
       queries: {},
       mutations: {},
+      transformers: [],
     });
 
     return this.merge(router);
@@ -218,22 +234,51 @@ export class Router<
         ...this._def.subscriptions,
         ...Router.prefixEndpoints(router._def.subscriptions, prefix),
       },
+      transformers: [...this._def.transformers, ...router._def.transformers],
     });
+  }
+
+  private async serializeData<TData>(promise: TData | Promise<TData>) {
+    const data = await promise;
+    return this._def.transformers.reduce(
+      (prev, transformer) => transformer.serialize(prev),
+      data,
+    );
+  }
+
+  private deserializeArgs(args: unknown[]) {
+    return args.map((arg) =>
+      this._def.transformers.reduce(
+        (prev, transformer) => transformer.serialize(prev),
+        arg,
+      ),
+    );
   }
 
   public invokeMutation(
     ctx: TContext,
   ): inferHandler<this['_def']['mutations']> {
-    return (path, ...args) => (this._def.mutations[path] as any)(ctx, ...args);
+    return (path, ...args) =>
+      this.serializeData(
+        (this._def.mutations[path] as any)(ctx, ...this.deserializeArgs(args)),
+      );
   }
   public invokeQuery(ctx: TContext): inferHandler<this['_def']['queries']> {
-    return (path, ...args) => (this._def.queries[path] as any)(ctx, ...args);
+    return (path, ...args) =>
+      this.serializeData(
+        (this._def.queries[path] as any)(ctx, ...this.deserializeArgs(args)),
+      );
   }
   public invokeSubscription(
     ctx: TContext,
   ): inferHandler<this['_def']['subscriptions']> {
     return (path, ...args) => {
-      return (this._def.subscriptions[path] as any)(ctx, ...args);
+      return this.serializeData(
+        (this._def.subscriptions[path] as any)(
+          ctx,
+          ...this.deserializeArgs(args),
+        ),
+      );
     };
   }
 

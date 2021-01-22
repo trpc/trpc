@@ -113,6 +113,7 @@ export interface BaseOptions {
     timeout?: number;
   };
 }
+
 export async function requestHandler<
   TContext,
   TRouter extends Router<TContext, any, any, any>,

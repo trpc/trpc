@@ -8,6 +8,7 @@ import type {
   inferHandler,
   inferSubscriptionData,
   Maybe,
+  DataTransformer,
 } from '@katt/trpc-server';
 
 type UnsubscribeFn = () => void;
@@ -101,6 +102,7 @@ export interface CreateTRPCClientOptions {
   getHeaders?: () => Record<string, string | undefined>;
   onSuccess?: (data: HTTPSuccessResponseEnvelope<unknown>) => void;
   onError?: (error: TRPCClientError) => void;
+  transformers?: DataTransformer[];
 }
 export function createTRPCClient<TRouter extends AnyRouter>(
   opts: CreateTRPCClientOptions,
@@ -108,7 +110,16 @@ export function createTRPCClient<TRouter extends AnyRouter>(
   const { fetchOpts, url } = opts;
   const _fetch = getFetch(fetchOpts?.fetch);
   const AC = getAbortController(fetchOpts?.AbortController);
+  const transformers = opts.transformers ?? [];
 
+  function getArgs(args: unknown[]) {
+    return args.map((arg) =>
+      transformers.reduce(
+        (prev, transformer) => transformer.serialize(prev),
+        arg,
+      ),
+    );
+  }
   async function handleResponse(promise: Promise<Response>) {
     let res: Maybe<Response> = null;
     let json: Maybe<HTTPResponseEnvelope<unknown>> = null;
@@ -117,6 +128,11 @@ export function createTRPCClient<TRouter extends AnyRouter>(
       json = (await res.json()) as HTTPResponseEnvelope<unknown>;
 
       if (json.ok) {
+        const data = transformers.reduce(
+          (prev, transformer) => transformer.deserialize(prev),
+          json.data,
+        );
+        json.data = data;
         opts.onSuccess && opts.onSuccess(json);
         return json.data as any;
       }
@@ -146,7 +162,9 @@ export function createTRPCClient<TRouter extends AnyRouter>(
   ) => {
     let target = `${url}/${path}`;
     if (args?.length) {
-      target += `?args=${encodeURIComponent(JSON.stringify(args as any))}`;
+      target += `?args=${encodeURIComponent(
+        JSON.stringify(getArgs(args) as any),
+      )}`;
     }
     const promise = _fetch(target, {
       headers: getHeaders(),
@@ -161,7 +179,7 @@ export function createTRPCClient<TRouter extends AnyRouter>(
     const promise = _fetch(`${url}/${path}`, {
       method: 'POST',
       body: JSON.stringify({
-        args,
+        args: getArgs(args),
       }),
       headers: getHeaders(),
     });
@@ -186,7 +204,7 @@ export function createTRPCClient<TRouter extends AnyRouter>(
       const promise = _fetch(`${url}/${path}`, {
         method: 'PATCH',
         body: JSON.stringify({
-          args: thisArgs,
+          args: getArgs(thisArgs),
         }),
         headers: getHeaders(),
         signal,

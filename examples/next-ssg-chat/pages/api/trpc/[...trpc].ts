@@ -1,27 +1,39 @@
 import * as trpc from '@katt/trpc-server';
 import { Subscription, SubscriptionEmit } from '@katt/trpc-server';
+import { Message, PrismaClient } from '@prisma/client';
+import superjson from 'superjson';
 
-// db
-let id = 0;
-const db = {
-  messages: [createMessage('initial message')],
-};
-function createMessage(text: string) {
-  const msg = {
-    id: ++id,
-    text,
-    createdAt: Date.now(),
-    updatedAt: Date.now(),
-  };
+const prisma = new PrismaClient();
+
+async function createMessage(text: string) {
+  const msg = await prisma.message.create({
+    data: {
+      text,
+    },
+  });
   return msg;
 }
 
-async function getMessagesAfter(timestamp: number) {
-  const msgs = db.messages.filter(
-    (msg) => msg.updatedAt > timestamp || msg.createdAt > timestamp,
-  );
-
-  return msgs;
+async function getMessagesAfter(timestamp: Date) {
+  return prisma.message.findMany({
+    orderBy: {
+      createdAt: 'asc',
+    },
+    where: {
+      OR: [
+        {
+          createdAt: {
+            gt: timestamp,
+          },
+        },
+        {
+          updatedAt: {
+            gt: timestamp,
+          },
+        },
+      ],
+    },
+  });
 }
 
 // ctx
@@ -66,6 +78,8 @@ export function subscriptionPullFatory<TData>(opts: {
   });
 }
 const router = createRouter()
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  .transformer(superjson)
   .queries({
     hello(ctx, input?: string) {
       return `hello ${input ?? 'world'}`;
@@ -76,20 +90,21 @@ const router = createRouter()
     createRouter()
       .queries({
         list: async () => {
-          return db.messages;
+          return prisma.message.findMany({
+            orderBy: {
+              createdAt: 'asc',
+            },
+          });
         },
       })
       .mutations({
         create: async (_ctx, text: string) => {
-          const msg = createMessage(text);
-          db.messages.push(msg);
+          const msg = await createMessage(text);
           return msg;
         },
       })
       .subscriptions({
-        newMessages: (_ctx, { timestamp }: { timestamp: number }) => {
-          type Message = typeof db['messages'][number];
-
+        newMessages: (_ctx, { timestamp }: { timestamp: Date }) => {
           return subscriptionPullFatory<Message[]>({
             interval: 500,
             async pull(emit) {
