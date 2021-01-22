@@ -1,6 +1,6 @@
 {
   "name": "@katt/trpc-react",
-  "version": "1.0.0-alpha.3",
+  "version": "1.0.0-alpha.4",
   "description": "TRPC React lib",
   "author": "KATT",
   "license": "MIT",
