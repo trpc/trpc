@@ -27,8 +27,8 @@
     "tslib": "^2.0.0"
   },
   "devDependencies": {
-    "react-query": "^3.5.16",
-    "@katt/trpc-server": "^0.0.1"
+    "@katt/trpc-server": "^0.0.1",
+    "react-query": "^3.5.16"
   },
   "publishConfig": {
     "access": "public"
