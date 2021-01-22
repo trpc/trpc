@@ -1,6 +1,6 @@
 {
   "name": "@examples/chat",
-  "version": "0.1.0",
+  "version": "1.0.0-alpha.0",
   "private": true,
   "scripts": {
     "dev": "next dev",
@@ -8,12 +8,12 @@
     "start": "next start"
   },
   "dependencies": {
+    "@katt/trpc-client": "^1.0.0-alpha.0",
+    "@katt/trpc-react": "^1.0.0-alpha.0",
+    "@katt/trpc-server": "^1.0.0-alpha.0",
     "next": "10.0.4",
     "react": "17.0.1",
-    "react-dom": "17.0.1",
-    "@katt/trpc-client": "0.0.1",
-    "@katt/trpc-react": "0.0.1",
-    "@katt/trpc-server": "0.0.1"
+    "react-dom": "17.0.1"
   },
   "devDependencies": {
     "@types/node": "^14.14.17",
