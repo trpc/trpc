@@ -49,7 +49,7 @@ async function main() {
 
   await authedClient.query('admin/secret');
 
-  let msgs = await client.query('messages/list');
+  const msgs = await client.query('messages/list');
   const getTimestamp = (m: typeof msgs) => {
     return m.reduce((ts, msg) => {
       return Math.max(ts, msg.updatedAt, msg.createdAt);
@@ -81,7 +81,7 @@ async function main() {
           },
         ];
       },
-    }
+    },
   );
   await sleep();
 

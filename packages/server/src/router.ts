@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/ban-types */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { assertNotBrowser } from './assertNotBrowser';
 import { inferSubscriptionData, Subscription } from './subscription';
 import { Prefixer, DropFirst, ThenArg, format } from './types';
@@ -81,7 +83,7 @@ export class Router<
     TEndpoints extends RouterEndpoints,
     TPrefix extends string
   >(endpoints: TEndpoints, prefix: TPrefix): Prefixer<TEndpoints, TPrefix> {
-    let eps: RouterEndpoints = {};
+    const eps: RouterEndpoints = {};
     for (const key in endpoints) {
       eps[prefix + key] = endpoints[key];
     }
@@ -89,7 +91,7 @@ export class Router<
   }
 
   public queries<TNewEndpoints extends RouterEndpoints<TContext>>(
-    endpoints: TNewEndpoints
+    endpoints: TNewEndpoints,
   ): Router<
     TContext,
     format<TQueries & TNewEndpoints>,
@@ -105,7 +107,7 @@ export class Router<
   }
 
   public mutations<TNewEndpoints extends RouterEndpoints<TContext>>(
-    endpoints: TNewEndpoints
+    endpoints: TNewEndpoints,
   ): Router<
     TContext,
     TQueries,
@@ -124,7 +126,7 @@ export class Router<
   public subscriptions<
     TNewEndpoints extends RouterEndpoints<TContext, Subscription>
   >(
-    endpoints: TNewEndpoints
+    endpoints: TNewEndpoints,
   ): Router<
     TContext,
     TQueries,
@@ -145,7 +147,7 @@ export class Router<
    * @param router
    */
   public merge<TChildRouter extends Router<TContext, any, any, any>>(
-    router: TChildRouter
+    router: TChildRouter,
   ): Router<
     TContext,
     TQueries & TChildRouter['_def']['queries'],
@@ -163,7 +165,7 @@ export class Router<
     TChildRouter extends Router<TContext, any, any, any>
   >(
     prefix: TPath,
-    router: TChildRouter
+    router: TChildRouter,
   ): Router<
     TContext,
     TQueries & Prefixer<TChildRouter['_def']['queries'], `${TPath}`>,
@@ -185,13 +187,13 @@ export class Router<
     }
 
     const duplicateQueries = Object.keys(router._def.queries).filter((key) =>
-      this.has('queries', key)
+      this.has('queries', key),
     );
     const duplicateMutations = Object.keys(
-      router._def.mutations
+      router._def.mutations,
     ).filter((key) => this.has('mutations', key));
     const duplicateSubscriptions = Object.keys(
-      router._def.subscriptions
+      router._def.subscriptions,
     ).filter((key) => this.has('subscriptions', key));
 
     const duplicates = [
@@ -220,7 +222,7 @@ export class Router<
   }
 
   public invokeMutation(
-    ctx: TContext
+    ctx: TContext,
   ): inferHandler<this['_def']['mutations']> {
     return (path, ...args) => (this._def.mutations[path] as any)(ctx, ...args);
   }
@@ -228,7 +230,7 @@ export class Router<
     return (path, ...args) => (this._def.queries[path] as any)(ctx, ...args);
   }
   public invokeSubscription(
-    ctx: TContext
+    ctx: TContext,
   ): inferHandler<this['_def']['subscriptions']> {
     return (path, ...args) => {
       return (this._def.subscriptions[path] as any)(ctx, ...args);

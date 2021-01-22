@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import type { NextApiHandler, NextApiRequest, NextApiResponse } from 'next';
 import {
   BaseOptions,
@@ -13,7 +14,7 @@ export type CreateNextContextOptions = CreateContextFnOptions<
 >;
 
 export type CreateNextContextFn<TContext> = (
-  opts: CreateNextContextOptions
+  opts: CreateNextContextOptions,
 ) => Promise<TContext> | TContext;
 
 export function createNextApiHandler<
@@ -23,7 +24,7 @@ export function createNextApiHandler<
   opts: {
     router: TRouter;
     createContext: CreateNextContextFn<TContext>;
-  } & BaseOptions
+  } & BaseOptions,
 ): NextApiHandler {
   return async (req, res) => {
     const endpoint = Array.isArray(req.query.trpc)
@@ -32,7 +33,7 @@ export function createNextApiHandler<
 
     if (endpoint === null) {
       const json = getErrorResponseEnvelope(
-        new Error('Query "trpc" not found - is the file named [...trpc].ts?')
+        new Error('Query "trpc" not found - is the file named [...trpc].ts?'),
       );
       res.status(json.statusCode).json(json);
       return;

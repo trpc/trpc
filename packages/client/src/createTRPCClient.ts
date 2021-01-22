@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import type {
   AnyRouter,
   HTTPResponseEnvelope,
@@ -27,7 +28,7 @@ type inferSubscriptionFn<TRouter extends AnyRouter> = <
     onSuccess?: (data: TData) => void;
     onError?: (error: TRPCClientError) => void;
     getNextArgs?: (data: TData) => TArgs;
-  }
+  },
 ) => UnsubscribeFn;
 
 export type TRPCClient<TRouter extends AnyRouter> = {
@@ -50,7 +51,7 @@ export class TRPCClientError extends Error {
       res?: Maybe<Response>;
       json?: Maybe<HTTPResponseEnvelope<unknown>>;
       originalError?: Maybe<Error>;
-    }
+    },
   ) {
     super(message);
     this.message = message;
@@ -67,7 +68,7 @@ export interface FetchOptions {
   AbortController?: typeof AbortController;
 }
 function getAbortController(
-  ac?: typeof AbortController
+  ac?: typeof AbortController,
 ): Maybe<typeof AbortController> {
   if (ac) {
     return ac;
@@ -102,7 +103,7 @@ export interface CreateTRPCClientOptions {
   onError?: (error: TRPCClientError) => void;
 }
 export function createTRPCClient<TRouter extends AnyRouter>(
-  opts: CreateTRPCClientOptions
+  opts: CreateTRPCClientOptions,
 ): TRPCClient<TRouter> {
   const { fetchOpts, url } = opts;
   const _fetch = getFetch(fetchOpts?.fetch);
@@ -115,9 +116,9 @@ export function createTRPCClient<TRouter extends AnyRouter>(
       res = await promise;
       json = (await res.json()) as HTTPResponseEnvelope<unknown>;
 
-      if (json.ok === true) {
-        opts.onSuccess && opts.onSuccess(json!);
-        return json!.data as any;
+      if (json.ok) {
+        opts.onSuccess && opts.onSuccess(json);
+        return json.data as any;
       }
       throw new TRPCClientError(json.error.message, { json, res });
     } catch (originalError) {
@@ -169,12 +170,12 @@ export function createTRPCClient<TRouter extends AnyRouter>(
   };
   const subscription: inferSubscriptionFn<TRouter> = (
     [path, ...args],
-    opts
+    opts,
   ) => {
     let stopped = false;
     let controller: AbortController | null = null;
     let nextTry: NodeJS.Timeout;
-    let attemptIndex: number = 0;
+    let attemptIndex = 0;
     const exec = async (...thisArgs: typeof args) => {
       if (stopped) {
         console.log('subscriptions have stopped');

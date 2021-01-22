@@ -1,7 +1,7 @@
 import { EventEmitter } from 'events';
 import { inferAsyncReturnType } from './router';
 
-const debug = (...args: any[]) => console.log(...args);
+const debug = (...args: unknown[]) => console.log(...args);
 
 type SubscriptionDestroyReason =
   | 'timeout'
@@ -27,12 +27,12 @@ interface SubscriptionEvents<TData> {
 declare interface SubscriptionEventEmitter<TData> {
   on<U extends keyof SubscriptionEvents<TData>>(
     event: U,
-    listener: SubscriptionEvents<TData>[U]
+    listener: SubscriptionEvents<TData>[U],
   ): this;
 
   once<U extends keyof SubscriptionEvents<TData>>(
     event: U,
-    listener: SubscriptionEvents<TData>[U]
+    listener: SubscriptionEvents<TData>[U],
   ): this;
 
   emit<U extends keyof SubscriptionEvents<TData>>(
@@ -40,11 +40,8 @@ declare interface SubscriptionEventEmitter<TData> {
     ...args: Parameters<SubscriptionEvents<TData>[U]>
   ): boolean;
 }
-class SubscriptionEventEmitter<TData> extends EventEmitter {
-  constructor() {
-    super();
-  }
-}
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+class SubscriptionEventEmitter<TData> extends EventEmitter {}
 
 type UnsubscribeFn = () => void;
 type EmitFn<TData> = (data: TData) => void;
@@ -66,7 +63,9 @@ export class Subscription<TData = unknown> {
     this.isDestroyed = false;
     this.events = new SubscriptionEventEmitter<TData>();
     this.opts = {
-      getInitialData: () => {},
+      getInitialData: () => {
+        // no-op
+      },
       ...opts,
     };
     debug('Subscription.constructor()');
@@ -148,40 +147,8 @@ export class Subscription<TData = unknown> {
   }
 }
 
-// export function subscriptionPullFatory<TData>(opts: {
-//   interval: number;
-//   pull(): TData | Promise<TData>;
-//   shouldEmit?: (data: TData) => boolean;
-// }) {
-//   let timer: NodeJS.Timeout;
-//   const { shouldEmit = () => true } = opts;
-
-//   return new Subscription<TData>({
-//     start(sub) {
-//       async function pull() {
-//         try {
-//           const data = await opts.pull();
-//           if (shouldEmit(data)) {
-//             sub.events.emit('data', data);
-//           }
-//         } catch (err) {
-//           sub.events.emit('error', err);
-//         }
-
-//         if (sub.isRunning) {
-//           timer = setTimeout(pull, opts.interval);
-//         }
-//       }
-//       sub.events.once('destroy', () => {
-//         clearTimeout(timer);
-//       });
-//       return pull();
-//     },
-//   });
-// }
-
 export type inferSubscriptionData<
-  TSubscription extends Subscription<any>
+  TSubscription extends Subscription
 > = inferAsyncReturnType<TSubscription['onceDataAndStop']>;
 
 // async function main() {

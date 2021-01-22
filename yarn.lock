@@ -2581,13 +2581,6 @@
   dependencies:
     defer-to-connect "^1.0.1"
 
-"@thefakeorg/utils@^0.0.1":
-  version "0.0.1"
-  resolved "https://registry.npmjs.org/@thefakeorg/utils/-/utils-0.0.1.tgz#0744df6b3f48c770322a363a937e30aa2030f1f3"
-  integrity sha512-5N1Vo+w5gjVSwQIb7ZbWeCPgoLBPV5UP3xBkcLq4a4xi8ULXIdQqP/hWNDqF3S6pL4lfcCybcf/SF4oKdvNu0Q==
-  dependencies:
-    tslib "^2.0.0"
-
 "@types/babel__core@^7.0.0":
   version "7.1.12"
   resolved "https://registry.npmjs.org/@types/babel__core/-/babel__core-7.1.12.tgz#4d8e9e51eb265552a7e4f1ff2219ab6133bdfb2d"
@@ -5957,6 +5950,13 @@ eslint-plugin-prettier@^3.1.0:
   version "3.1.4"
   resolved "https://registry.yarnpkg.com/eslint-plugin-prettier/-/eslint-plugin-prettier-3.1.4.tgz#168ab43154e2ea57db992a2cd097c828171f75c2"
   integrity sha512-jZDa8z76klRqo+TdGDTFJSavwbnWK2ZpqGKNZ+VvweMW516pDUMmQ2koXvxEE4JhzNvTv+radye/bWGBmA6jmg==
+  dependencies:
+    prettier-linter-helpers "^1.0.0"
+
+eslint-plugin-prettier@^3.3.1:
+  version "3.3.1"
+  resolved "https://registry.npmjs.org/eslint-plugin-prettier/-/eslint-plugin-prettier-3.3.1.tgz#7079cfa2497078905011e6f82e8dd8453d1371b7"
+  integrity sha512-Rq3jkcFY8RYeQLgk2cCwuc0P7SEFwDravPhsJZOQ5N4YI4DSg50NyqJ/9gdZHzQlHf8MvafSesbNJCcP/FF6pQ==
   dependencies:
     prettier-linter-helpers "^1.0.0"
 

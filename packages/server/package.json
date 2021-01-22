@@ -9,6 +9,11 @@
     "url": "git+https://github.com/KATT/trpc.git",
     "directory": "packages/server"
   },
+  "eslintConfig": {
+    "rules": {
+      "explicit-module-boundary-types": "off"
+    }
+  },
   "scripts": {
     "start": "tsdx watch --tsconfig tsconfig.build.json --verbose --noClean",
     "build": "tsdx build --tsconfig tsconfig.build.json",

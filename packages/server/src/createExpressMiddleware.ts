@@ -13,17 +13,17 @@ export type CreateExpressContextOptions = CreateContextFnOptions<
 >;
 
 export type CreateExpressContextFn<TContext> = (
-  opts: CreateExpressContextOptions
+  opts: CreateExpressContextOptions,
 ) => Promise<TContext> | TContext;
 
 export function createExpressMiddleware<
   TContext,
-  TRouter extends Router<TContext, any, any, any>
+  TRouter extends Router<TContext, never, never, never>
 >(
   opts: {
     router: TRouter;
     createContext: CreateContextFn<TContext, express.Request, express.Response>;
-  } & BaseOptions
+  } & BaseOptions,
 ): express.Handler {
   return async (req, res) => {
     const endpoint = req.path.substr(1);

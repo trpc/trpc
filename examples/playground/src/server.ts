@@ -43,7 +43,7 @@ const db = {
 };
 async function getMessagesAfter(timestamp: number) {
   const msgs = db.messages.filter(
-    (msg) => msg.updatedAt > timestamp || msg.createdAt > timestamp
+    (msg) => msg.updatedAt > timestamp || msg.createdAt > timestamp,
   );
 
   return msgs;
@@ -61,17 +61,16 @@ function createMessage(text: string) {
 const posts = createRouter()
   .mutations({
     create: (
-      ctx,
+      _ctx,
       input: {
         title: string;
-      }
+      },
     ) => {
       const post = {
         id: ++id,
         ...input,
       };
       db.posts.push(post);
-      ctx.res.status(201);
       return post;
     },
   })
@@ -139,7 +138,7 @@ export const rootRouter = createRouter()
           secret: 'sauce',
         };
       },
-    })
+    }),
   )
   .merge('messages/', messages);
 
@@ -148,19 +147,6 @@ export type RootRouter = typeof rootRouter;
 async function main() {
   const greeting = await rootRouter.invokeQuery({} as any)('hello', 'world');
   console.log(greeting);
-  // message testing
-  // {
-  //   const subs = rootRouter.createSubscriptionHandler({} as any);
-  //   const sub = await subs('messages/newMessages');
-  //   setTimeout(() => {
-  //     rootRouter.createMutationHandler({} as any)(
-  //       'messages/add',
-  //       'hello there',
-  //     );
-  //   }, 10);
-  //   console.log('awaitng message');
-  //   console.log('messages', await sub.onceDataAndStop());
-  // }
   // express implementation
   const app = express();
   app.use(bodyParser.json());
@@ -177,7 +163,7 @@ async function main() {
     trpc.createExpressMiddleware({
       router: rootRouter,
       createContext,
-    })
+    }),
   );
   app.listen(2021, () => {
     console.log('listening on port 2021');

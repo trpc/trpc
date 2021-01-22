@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import type { EventEmitter } from 'events';
 import type qs from 'qs';
 import { assertNotBrowser } from './assertNotBrowser';
@@ -81,7 +82,7 @@ export function getQueryArgs<TRequest extends BaseRequest>(req: TRequest) {
 
   if (!Array.isArray(args)) {
     throw httpError.badRequest(
-      'Expected query.args to be parsed as an JSON-array'
+      'Expected query.args to be parsed as an JSON-array',
     );
   }
   return args;
@@ -148,7 +149,7 @@ export async function requestHandler<
 
       data = await router.invokeMutation(ctx)(
         endpoint as any,
-        ...(args as any)
+        ...(args as any),
       );
     } else if (method === 'GET') {
       if (!router.has('queries', endpoint)) {
@@ -168,7 +169,7 @@ export async function requestHandler<
 
       const sub: Subscription = await router.invokeSubscription(ctx)(
         endpoint as any,
-        ...(args as any)
+        ...(args as any),
       );
       const onClose = () => {
         sub.destroy('closed');
@@ -198,7 +199,7 @@ export async function requestHandler<
         ) {
           throw new HTTPError(
             408,
-            `Subscription exceeded ${timeout}ms - please reconnect.`
+            `Subscription exceeded ${timeout}ms - please reconnect.`,
           );
         }
         throw err;

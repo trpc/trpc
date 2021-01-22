@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { TRPCClient, TRPCClientError } from '@trpc/client';
 import type {
   DropFirst,
@@ -30,7 +31,7 @@ export function createReactQueryHooks<
       inferEndpointArgs<TQueries[TPath]>,
       TRPCClientError,
       inferEndpointData<TQueries[TPath]>
-    >
+    >,
   ) {
     return useQuery<
       inferEndpointArgs<TQueries[TPath]>,
@@ -51,12 +52,12 @@ export function createReactQueryHooks<
       never,
       TRPCClientError,
       inferEndpointData<TQueries[TPath]>
-    >
+    >,
   ) {
     return useQuery<never, TRPCClientError, inferEndpointData<TQueries[TPath]>>(
       path,
       () => (client.query as any)(path) as any,
-      opts
+      opts,
     );
   }
   function _useMutation<TPath extends keyof TMutations & string>(
@@ -65,7 +66,7 @@ export function createReactQueryHooks<
       inferEndpointData<TMutations[TPath]>,
       TRPCClientError,
       inferEndpointArgs<TMutations[TPath]>
-    >
+    >,
   ) {
     return useMutation<
       inferEndpointData<TMutations[TPath]>,
@@ -86,7 +87,7 @@ export function createReactQueryHooks<
     ...args: TArgs
   ) => {
     return queryClient.prefetchQuery([path, ...args], () =>
-      router['_def']['queries'][path](ctx, ...args)
+      router['_def']['queries'][path](ctx, ...args),
     );
   };
   return {
