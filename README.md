@@ -16,6 +16,16 @@ tRPC is a framework for building strongly typed RPC APIs with TypeScript. Altern
 
 TODO - see examples
 
+
+### HTTP Methods <-> endpoint type mapping
+
+| HTTP Method | Mapping            | Notes                                                    |
+| ----------- | ------------------ | -------------------------------------------------------- |
+| `GET`       | `.queries()`       | Args in query string                                     |
+| `POST`      | `.mutations()`     | Args in post body                                        |
+| `PATCH`     | `.subscriptions()` | Experimental. Uses long-pulling. Should prob not be used |
+
+
 # Development
 
 ```sh
@@ -34,7 +44,7 @@ yarn dev
 
 This builds each package to `<packages>/<package>/dist` and runs the project in watch mode so any edits you save inside `<packages>/<package>/src` cause a rebuild to `<packages>/<package>/dist`. The results will stream to to the terminal.
 
-### Using the example/playground
+### Using the examples/playground
 
 You can play with local examples:
 
