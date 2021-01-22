@@ -38,7 +38,7 @@ export function createNextApiHandler<
       return;
     }
 
-    requestHandler({
+    await requestHandler({
       ...opts,
       req,
       res,

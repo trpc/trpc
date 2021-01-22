@@ -11,6 +11,9 @@ import type {
 
 type UnsubscribeFn = () => void;
 
+const retryDelay = (attemptIndex: number) =>
+  attemptIndex === 0 ? 0 : Math.min(1000 * 2 ** attemptIndex, 30000);
+
 type inferSubscriptionFn<TRouter extends AnyRouter> = <
   TPath extends keyof TRouter['_def']['subscriptions'],
   TArgs extends inferEndpointArgs<TRouter['_def']['subscriptions'][TPath]> &
@@ -155,7 +158,7 @@ export function createTRPCClient<TRouter extends AnyRouter>(
     ...args
   ) => {
     const promise = _fetch(`${url}/${path}`, {
-      method: 'post',
+      method: 'POST',
       body: JSON.stringify({
         args,
       }),
@@ -170,7 +173,8 @@ export function createTRPCClient<TRouter extends AnyRouter>(
   ) => {
     let stopped = false;
     let controller: AbortController | null = null;
-
+    let nextTry: NodeJS.Timeout;
+    let attemptIndex: number = 0;
     const exec = async (...thisArgs: typeof args) => {
       if (stopped) {
         console.log('subscriptions have stopped');
@@ -179,7 +183,7 @@ export function createTRPCClient<TRouter extends AnyRouter>(
       controller = AC ? new AC() : null;
       const signal = controller?.signal;
       const promise = _fetch(`${url}/${path}`, {
-        method: 'patch',
+        method: 'PATCH',
         body: JSON.stringify({
           args: thisArgs,
         }),
@@ -187,7 +191,7 @@ export function createTRPCClient<TRouter extends AnyRouter>(
         signal,
       });
       try {
-        console.log('⏳  waiting for', path);
+        console.log('⏳  waiting for', path, thisArgs);
         const data = await handleResponse(promise);
         if (stopped) {
           return;
@@ -195,17 +199,33 @@ export function createTRPCClient<TRouter extends AnyRouter>(
         opts.onSuccess && opts.onSuccess(data);
         const nextArgs = opts.getNextArgs ? opts.getNextArgs(data) : thisArgs;
         console.log('nextArgs', nextArgs);
+        attemptIndex = 0;
 
         exec(...nextArgs);
       } catch (_err) {
+        if (stopped) {
+          console.log('sub stopped');
+          return;
+        }
         const err: TRPCClientError = _err;
         console.log('❌ subscription failed :(', err.message);
-        exec(...thisArgs);
+        if (err.json?.statusCode === 408) {
+          attemptIndex = 0;
+        } else {
+          attemptIndex++;
+        }
+        const delay = retryDelay(attemptIndex);
+        console.log('trying again in', delay, 'ms');
+        nextTry = setTimeout(() => {
+          exec(...thisArgs);
+        }, delay);
       }
     };
+    console.log('argds', args);
     exec(...args);
     return () => {
       stopped = true;
+      clearTimeout(nextTry);
       controller?.abort();
     };
   };

@@ -53,7 +53,7 @@ export function subscriptionPullFatory<TData>(opts: {
       emit.error(err);
     }
     if (!stopped) {
-      setTimeout(_pull, opts.interval);
+      timer = setTimeout(() => _pull(emit), opts.interval);
     }
   }
 
@@ -86,6 +86,7 @@ const router = createRouter()
       .mutations({
         create: async (_ctx, text: string) => {
           const msg = createMessage(text);
+          db.messages.push(msg);
           return msg;
         },
       })
