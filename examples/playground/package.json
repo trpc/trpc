@@ -1,6 +1,6 @@
 {
   "name": "@examples/playground",
-  "version": "1.0.0-alpha.4",
+  "version": "1.0.0-alpha.5",
   "private": true,
   "scripts": {
     "dev:server": "nodemon -e ts -w . -x ts-node ./src/server.ts",
@@ -8,9 +8,9 @@
     "dev": "run-p dev:* --print-label"
   },
   "dependencies": {
-    "@katt/trpc-client": "^1.0.0-alpha.3",
-    "@katt/trpc-react": "^1.0.0-alpha.4",
-    "@katt/trpc-server": "^1.0.0-alpha.3",
+    "@katt/trpc-client": "^1.0.0-alpha.5",
+    "@katt/trpc-react": "^1.0.0-alpha.5",
+    "@katt/trpc-server": "^1.0.0-alpha.5",
     "@types/node-fetch": "^2.5.8",
     "abort-controller": "^3.0.0",
     "body-parser": "^1.19.0",

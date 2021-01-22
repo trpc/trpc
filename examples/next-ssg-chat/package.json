@@ -1,6 +1,6 @@
 {
   "name": "@examples/chat",
-  "version": "1.0.0-alpha.4",
+  "version": "1.0.0-alpha.5",
   "private": true,
   "scripts": {
     "dev:next": "next dev",
@@ -12,9 +12,9 @@
     "migrate": "prisma migrate dev --preview-feature"
   },
   "dependencies": {
-    "@katt/trpc-client": "^1.0.0-alpha.3",
-    "@katt/trpc-react": "^1.0.0-alpha.4",
-    "@katt/trpc-server": "^1.0.0-alpha.3",
+    "@katt/trpc-client": "^1.0.0-alpha.5",
+    "@katt/trpc-react": "^1.0.0-alpha.5",
+    "@katt/trpc-server": "^1.0.0-alpha.5",
     "@prisma/client": "^2.15.0",
     "next": "10.0.4",
     "react": "17.0.1",
