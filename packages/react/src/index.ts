@@ -1,2 +1,2 @@
-export * from '@trpc/client';
+export * from '@katt/trpc-client';
 export * from './createReactQueryHooks';

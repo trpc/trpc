@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { TRPCClient, TRPCClientError } from '@trpc/client';
+import { TRPCClient, TRPCClientError } from '@katt/trpc-client';
 import type {
   DropFirst,
   inferEndpointArgs,
@@ -7,7 +7,7 @@ import type {
   inferEndpointsWithoutArgs,
   Router,
   RouterResolverFn,
-} from '@trpc/server';
+} from '@katt/trpc-server';
 import {
   QueryClient,
   useMutation,

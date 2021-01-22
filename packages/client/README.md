@@ -1,2 +1,2 @@
-# `@trpc/client`
+# `@katt/trpc-client`
 

@@ -1,5 +1,5 @@
-import * as trpc from '@trpc/server';
-import { Subscription, SubscriptionEmit } from '@trpc/server';
+import * as trpc from '@katt/trpc-server';
+import { Subscription, SubscriptionEmit } from '@katt/trpc-server';
 
 // db
 let id = 0;
@@ -18,7 +18,7 @@ function createMessage(text: string) {
 
 async function getMessagesAfter(timestamp: number) {
   const msgs = db.messages.filter(
-    (msg) => msg.updatedAt > timestamp || msg.createdAt > timestamp
+    (msg) => msg.updatedAt > timestamp || msg.createdAt > timestamp,
   );
 
   return msgs;
@@ -100,7 +100,7 @@ const router = createRouter()
             },
           });
         },
-      })
+      }),
   );
 
 export const chatRouter = router;

@@ -1,4 +1,4 @@
-import { inferAsyncReturnType, inferSubscriptionData } from '@trpc/server';
+import { inferAsyncReturnType, inferSubscriptionData } from '@katt/trpc-server';
 import Head from 'next/head';
 import { useEffect, useState } from 'react';
 import { dehydrate } from 'react-query/hydration';
@@ -53,7 +53,7 @@ export default function Home() {
             },
           ];
         },
-      }
+      },
     );
   }, []);
   let m = hooks.useMutation('messages.create');

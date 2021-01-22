@@ -1,7 +1,7 @@
 import fetch from 'node-fetch';
 import AbortController from 'abort-controller';
 import type { RootRouter } from './server';
-import { createTRPCClient, CreateTRPCClientOptions } from '@trpc/client';
+import { createTRPCClient, CreateTRPCClientOptions } from '@katt/trpc-client';
 
 const sleep = (ms = 100) => new Promise((resolve) => setTimeout(resolve, ms));
 

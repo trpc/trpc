@@ -1,4 +1,4 @@
-import { createReactQueryHooks, createTRPCClient } from '@trpc/react';
+import { createReactQueryHooks, createTRPCClient } from '@katt/trpc-react';
 import type { AppProps /*, AppContext */ } from 'next/app';
 import { QueryClientProvider } from 'react-query';
 import { ChatRouter } from './api/trpc/[...trpc]';

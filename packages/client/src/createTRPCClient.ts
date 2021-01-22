@@ -8,7 +8,7 @@ import type {
   inferHandler,
   inferSubscriptionData,
   Maybe,
-} from '@trpc/server';
+} from '@katt/trpc-server';
 
 type UnsubscribeFn = () => void;
 

@@ -11,9 +11,9 @@
     "next": "10.0.4",
     "react": "17.0.1",
     "react-dom": "17.0.1",
-    "@trpc/client": "0.0.1",
-    "@trpc/react": "0.0.1",
-    "@trpc/server": "0.0.1"
+    "@katt/trpc-client": "0.0.1",
+    "@katt/trpc-react": "0.0.1",
+    "@katt/trpc-server": "0.0.1"
   },
   "devDependencies": {
     "@types/node": "^14.14.17",
