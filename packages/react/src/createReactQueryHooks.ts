@@ -18,12 +18,17 @@ import {
 
 export function createReactQueryHooks<
   TRouter extends Router<TContext, any, any, any>,
-  TContext
->({ client }: { client: TRPCClient<TRouter> }) {
+  TContext,
+  TQueryClient extends QueryClient
+>({
+  client,
+  queryClient,
+}: {
+  client: TRPCClient<TRouter>;
+  queryClient: TQueryClient;
+}) {
   type TQueries = TRouter['_def']['queries'];
   type TMutations = TRouter['_def']['mutations'];
-
-  const queryClient = new QueryClient();
 
   function _useQuery<TPath extends keyof TQueries & string>(
     pathAndArgs: [TPath, ...inferEndpointArgs<TQueries[TPath]>],
