@@ -111,6 +111,7 @@ export async function getStaticProps() {
   return {
     props: {
       dehydratedState: dehydrate(hooks.queryClient),
+      revalidate: 1,
     },
   };
 }
