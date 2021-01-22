@@ -1,6 +1,6 @@
 {
   "name": "@katt/trpc-client",
-  "version": "1.0.0-alpha.2",
+  "version": "1.0.0-alpha.3",
   "description": "TRPC Client lib",
   "author": "KATT",
   "license": "MIT",
@@ -27,7 +27,7 @@
     "tslib": "^2.0.0"
   },
   "devDependencies": {
-    "@katt/trpc-server": "^1.0.0-alpha.2",
+    "@katt/trpc-server": "^1.0.0-alpha.3",
     "react-query": "^3.5.16"
   },
   "publishConfig": {
