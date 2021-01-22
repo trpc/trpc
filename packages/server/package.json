@@ -16,7 +16,7 @@
   },
   "scripts": {
     "start": "tsdx watch --tsconfig tsconfig.build.json --verbose --noClean",
-    "build": "tsdx build --tsconfig tsconfig.build.json",
+    "build": "yarn tsdx build --tsconfig tsconfig.build.json",
     "test": "tsdx test",
     "lint": "tsdx lint",
     "prepublish": "npm run build"
@@ -38,5 +38,6 @@
     "@types/express": "^4.17.11",
     "express": "^4.17.1",
     "next": "^10.0.5"
-  }
+  },
+  "gitHead": "82bf01f8759b04f2ade69c9047e28f74f889d547"
 }
