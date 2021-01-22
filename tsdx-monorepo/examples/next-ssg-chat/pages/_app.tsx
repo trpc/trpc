@@ -13,7 +13,7 @@ export const hooks = createReactQueryHooks({ client });
 function MyApp({ Component, pageProps }: AppProps) {
   return (
     <>
-      <QueryClientProvider client={hooks.queryClient as any}>
+      <QueryClientProvider client={hooks.queryClient}>
         <Hydrate state={pageProps.dehydratedState}>
           <Component {...pageProps} />
         </Hydrate>

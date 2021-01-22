@@ -8,7 +8,7 @@ import type { ChatRouter } from './api/trpc/[...trpc]';
 
 type Messages = inferSubscriptionData<
   inferAsyncReturnType<
-    ChatRouter['_def']['subscriptions']['messages/newMessages']
+    ChatRouter['_def']['subscriptions']['messages.newMessages']
   >
 >;
 type Message = Messages[number];
@@ -19,7 +19,7 @@ const getTimestamp = (m: Messages) => {
 };
 
 export default function Home() {
-  const qqq = hooks.useQuery(['messages/list']);
+  const qqq = hooks.useQuery(['messages.list']);
 
   const [msgs, setMessages] = useState(() => qqq.data);
   const addMessages = (newMessages: Messages) => {
@@ -37,7 +37,7 @@ export default function Home() {
   useEffect(() => {
     return client.subscription(
       [
-        'messages/newMessages',
+        'messages.newMessages',
         {
           timestamp: getTimestamp(msgs),
         },
@@ -56,7 +56,7 @@ export default function Home() {
       }
     );
   }, []);
-  let m = hooks.useMutation('messages/create');
+  let m = hooks.useMutation('messages.create');
   // useEffect(() => {
   //   let timer = setInterval(() => {
   //     m.mutate(['some msg' + Math.random()]);
@@ -101,13 +101,13 @@ export default function Home() {
         }}
       >
         <input name="text" type="text" />
-        <input type="submit" />
+        <input type="submit" disabled={m.isLoading} />
       </form>
     </div>
   );
 }
 export async function getStaticProps() {
-  await hooks.ssr(chatRouter, 'messages/list', {});
+  await hooks.ssr(chatRouter, 'messages.list', {});
   return {
     props: {
       dehydratedState: dehydrate(hooks.queryClient),

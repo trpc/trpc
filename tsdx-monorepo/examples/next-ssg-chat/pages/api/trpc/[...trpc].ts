@@ -1,9 +1,5 @@
 import * as trpc from '@trpc/server';
-import {
-  createNextApiHandler,
-  Subscription,
-  SubscriptionEmit,
-} from '@trpc/server';
+import { Subscription, SubscriptionEmit } from '@trpc/server';
 
 // db
 let id = 0;
@@ -76,7 +72,7 @@ const router = createRouter()
     },
   })
   .merge(
-    'messages/',
+    'messages.',
     createRouter()
       .queries({
         list: async () => {
