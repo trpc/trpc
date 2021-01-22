@@ -11,6 +11,7 @@ type Messages = inferSubscriptionData<
     ChatRouter['_def']['subscriptions']['messages/newMessages']
   >
 >;
+type Message = Messages[number];
 const getTimestamp = (m: Messages) => {
   return m.reduce((ts, msg) => {
     return Math.max(ts, msg.updatedAt, msg.createdAt);
@@ -21,6 +22,18 @@ export default function Home() {
   const qqq = hooks.useQuery(['messages/list']);
 
   const [msgs, setMessages] = useState(() => qqq.data);
+  const addMessages = (newMessages: Messages) => {
+    setMessages((nowMessages) => {
+      const map: Record<Message['id'], Message> = {};
+      for (const msg of nowMessages) {
+        map[msg.id] = msg;
+      }
+      for (const msg of newMessages) {
+        map[msg.id] = msg;
+      }
+      return Object.values(map);
+    });
+  };
   useEffect(() => {
     return client.subscription(
       [
@@ -31,8 +44,7 @@ export default function Home() {
       ],
       {
         onSuccess(data) {
-          console.log('new messages', data);
-          setMessages((m) => [...m, ...data]);
+          addMessages(data);
         },
         getNextArgs(data) {
           return [
@@ -45,14 +57,14 @@ export default function Home() {
     );
   }, []);
   let m = hooks.useMutation('messages/create');
-  useEffect(() => {
-    let timer = setInterval(() => {
-      m.mutate(['some msg' + Math.random()]);
-    }, 5000);
-    return () => {
-      clearTimeout(timer);
-    };
-  }, []);
+  // useEffect(() => {
+  //   let timer = setInterval(() => {
+  //     m.mutate(['some msg' + Math.random()]);
+  //   }, 5000);
+  //   return () => {
+  //     clearTimeout(timer);
+  //   };
+  // }, []);
 
   return (
     <div>
@@ -72,6 +84,25 @@ export default function Home() {
         ))}
       </ul>
       <h3>Add message</h3>
+
+      <form
+        onSubmit={async (e) => {
+          e.preventDefault();
+          const $text: HTMLInputElement = (e as any).target.elements.text;
+          const data = {
+            text: $text.value,
+          };
+
+          try {
+            const res = await m.mutateAsync([data.text]);
+            $text.value = '';
+            addMessages([res]);
+          } catch (err) {}
+        }}
+      >
+        <input name="text" type="text" />
+        <input type="submit" />
+      </form>
     </div>
   );
 }
