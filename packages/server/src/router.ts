@@ -313,13 +313,7 @@ export class Router<
   public has(what: 'subscriptions' | 'mutations' | 'queries', path: string) {
     return !!this._def[what][path];
   }
-  public static routerDef<
-    TRouter extends Router<TContext, any, any, any>,
-    TContext,
-    TInput,
-    TData
-  >(
-    router: TRouter,
+  public static routerDef<TContext, TInput, TData>(
     def: RouteDef<TContext, TInput, TData>,
   ): RouterResolverFn<TContext, TData, [TInput]> {
     return async (ctx, input: inferRouteInput<typeof def>) => {
@@ -339,7 +333,7 @@ export class Router<
     path: TPath,
     def: RouteDef<TContext, TInput, TData>,
   ) {
-    const resolver = Router.routerDef(this, def);
+    const resolver = Router.routerDef(def);
     return this.queries({
       [path]: resolver,
     } as Record<TPath, typeof resolver>);
@@ -348,7 +342,7 @@ export class Router<
     path: TPath,
     def: RouteDef<TContext, TInput, TData>,
   ) {
-    const resolver = Router.routerDef(this, def);
+    const resolver = Router.routerDef(def);
     return this.mutations({
       [path]: resolver,
     } as Record<TPath, typeof resolver>);
@@ -357,7 +351,7 @@ export class Router<
     path: TPath,
     def: RouteDef<TContext, TInput, TData>,
   ) {
-    const resolver = Router.routerDef(this, def);
+    const resolver = Router.routerDef(def);
     return this.subscriptions({
       [path]: resolver,
     } as Record<TPath, typeof resolver>);
@@ -367,26 +361,26 @@ export class Router<
    * FIXME
    * the input argument will be `unknown`, not inferred properly
    */
-  public __fixme_queriesv2<
-    TEndpoints extends RouteDefRecord<TContext, TInput, TData>,
-    TInput,
-    TData
-  >(endpoints: TEndpoints) {
-    const keys = Object.keys(endpoints) as (keyof TEndpoints)[];
-    const objs = keys.reduce((sum, key) => {
-      const resolver = Router.routerDef(this, endpoints[key]);
-      const obj = {
-        [key]: resolver,
-      } as Record<typeof key, typeof resolver>;
+  // public __fixme_queriesv2<
+  //   TEndpoints extends RouteDefRecord<TContext, TInput, TData>,
+  //   TInput,
+  //   TData
+  // >(endpoints: TEndpoints) {
+  //   const keys = Object.keys(endpoints) as (keyof TEndpoints)[];
+  //   const objs = keys.reduce((sum, key) => {
+  //     const resolver = Router.routerDef(endpoints[key]);
+  //     const obj = {
+  //       [key]: resolver,
+  //     } as Record<typeof key, typeof resolver>;
 
-      return {
-        ...sum,
-        ...obj,
-      };
-    }, ({} as unknown) as RouteDefRecordToEndpoint<TEndpoints, TContext, TInput, TData>);
+  //     return {
+  //       ...sum,
+  //       ...obj,
+  //     };
+  //   }, ({} as unknown) as RouteDefRecordToEndpoint<TEndpoints, TContext, TInput, TData>);
 
-    return this.queries(objs);
-  }
+  //   return this.queries(objs);
+  // }
 }
 
 export function router<TContext>() {
