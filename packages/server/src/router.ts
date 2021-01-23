@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/ban-types */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { assertNotBrowser } from './assertNotBrowser';
-import { InputValidationError } from './errors';
+// import { InputValidationError } from './errors';
 import { inferSubscriptionData, Subscription } from './subscription';
 import { DropFirst, format, Prefixer, ThenArg } from './types';
 assertNotBrowser();
@@ -313,49 +313,49 @@ export class Router<
   public has(what: 'subscriptions' | 'mutations' | 'queries', path: string) {
     return !!this._def[what][path];
   }
-  public static routerDef<TContext, TInput, TData>(
-    def: RouteDef<TContext, TInput, TData>,
-  ): RouterResolverFn<TContext, TData, [TInput]> {
-    return async (ctx, input: inferRouteInput<typeof def>) => {
-      let parsed: TInput;
-      try {
-        parsed = def.input.parse(input);
-      } catch (_err) {
-        const err = new InputValidationError(_err);
-        throw err;
-      }
-      const data = await def.resolve({ ctx, input: parsed });
-      return data;
-    };
-  }
+  // public static routerDef<TContext, TInput, TData>(
+  //   def: RouteDef<TContext, TInput, TData>,
+  // ): RouterResolverFn<TContext, TData, [TInput]> {
+  //   return async (ctx, input: inferRouteInput<typeof def>) => {
+  //     let parsed: TInput;
+  //     try {
+  //       parsed = def.input.parse(input);
+  //     } catch (_err) {
+  //       const err = new InputValidationError(_err);
+  //       throw err;
+  //     }
+  //     const data = await def.resolve({ ctx, input: parsed });
+  //     return data;
+  //   };
+  // }
 
-  public query<TPath extends string, TInput, TData>(
-    path: TPath,
-    def: RouteDef<TContext, TInput, TData>,
-  ) {
-    const resolver = Router.routerDef(def);
-    return this.queries({
-      [path]: resolver,
-    } as Record<TPath, typeof resolver>);
-  }
-  public mutation<TPath extends string, TInput, TData>(
-    path: TPath,
-    def: RouteDef<TContext, TInput, TData>,
-  ) {
-    const resolver = Router.routerDef(def);
-    return this.mutations({
-      [path]: resolver,
-    } as Record<TPath, typeof resolver>);
-  }
-  public subscription<TPath extends string, TInput, TData extends Subscription>(
-    path: TPath,
-    def: RouteDef<TContext, TInput, TData>,
-  ) {
-    const resolver = Router.routerDef(def);
-    return this.subscriptions({
-      [path]: resolver,
-    } as Record<TPath, typeof resolver>);
-  }
+  // public query<TPath extends string, TInput, TData>(
+  //   path: TPath,
+  //   def: RouteDef<TContext, TInput, TData>,
+  // ) {
+  //   const resolver = Router.routerDef(def);
+  //   return this.queries({
+  //     [path]: resolver,
+  //   } as Record<TPath, typeof resolver>);
+  // }
+  // public mutation<TPath extends string, TInput, TData>(
+  //   path: TPath,
+  //   def: RouteDef<TContext, TInput, TData>,
+  // ) {
+  //   const resolver = Router.routerDef(def);
+  //   return this.mutations({
+  //     [path]: resolver,
+  //   } as Record<TPath, typeof resolver>);
+  // }
+  // public subscription<TPath extends string, TInput, TData extends Subscription>(
+  //   path: TPath,
+  //   def: RouteDef<TContext, TInput, TData>,
+  // ) {
+  //   const resolver = Router.routerDef(def);
+  //   return this.subscriptions({
+  //     [path]: resolver,
+  //   } as Record<TPath, typeof resolver>);
+  // }
 
   /**
    * FIXME

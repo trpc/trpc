@@ -92,10 +92,9 @@ export type CreateContextFnOptions<TRequest, TResponse> = {
   req: TRequest;
   res: TResponse;
 };
-export type CreateContextFn<TContext, TRequest, TResponse> = (opts: {
-  req: TRequest;
-  res: TResponse;
-}) => TContext | Promise<TContext>;
+export type CreateContextFn<TContext, TRequest, TResponse> = (
+  opts: CreateContextFnOptions<TRequest, TResponse>,
+) => TContext | Promise<TContext>;
 
 interface BaseRequest {
   method?: string;

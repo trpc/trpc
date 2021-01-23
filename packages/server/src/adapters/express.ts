@@ -1,5 +1,10 @@
 import type * as express from 'express';
-import { BaseOptions, CreateContextFnOptions, requestHandler } from '../http';
+import {
+  BaseOptions,
+  CreateContextFn,
+  CreateContextFnOptions,
+  requestHandler,
+} from '../http';
 import type { Router } from '../router';
 
 export type CreateExpressContextOptions = CreateContextFnOptions<
@@ -7,9 +12,11 @@ export type CreateExpressContextOptions = CreateContextFnOptions<
   express.Response
 >;
 
-export type CreateExpressContextFn<TContext> = (
-  opts: CreateExpressContextOptions,
-) => Promise<TContext> | TContext;
+export type CreateExpressContextFn<TContext> = CreateContextFn<
+  TContext,
+  express.Request,
+  express.Response
+>;
 
 export function createExpressMiddleware<
   TContext,
