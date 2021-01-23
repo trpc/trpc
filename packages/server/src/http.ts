@@ -112,6 +112,7 @@ export interface BaseOptions {
   subscriptions?: {
     timeout?: number;
   };
+  teardown?: () => Promise<void>;
 }
 
 export async function requestHandler<
@@ -127,6 +128,7 @@ export async function requestHandler<
   endpoint,
   subscriptions,
   createContext,
+  teardown,
 }: {
   req: TRequest;
   res: TResponse;
@@ -219,5 +221,11 @@ export async function requestHandler<
     const json = getErrorResponseEnvelope(err);
 
     res.status(json.statusCode).json(json);
+  }
+  try {
+    teardown && (await teardown());
+  } catch (err) {
+    console.error('Teardown failed');
+    throw err;
   }
 }
