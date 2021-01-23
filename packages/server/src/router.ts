@@ -238,7 +238,7 @@ export class Router<
     });
   }
 
-  private async serializeData<TData>(promise: TData | Promise<TData>) {
+  public async serializeData<TData>(promise: TData | Promise<TData>) {
     const data = await promise;
     return this._def.transformers.reduce(
       (prev, transformer) => transformer.serialize(prev),
@@ -249,7 +249,7 @@ export class Router<
   private deserializeArgs(args: unknown[]) {
     return args.map((arg) =>
       this._def.transformers.reduce(
-        (prev, transformer) => transformer.serialize(prev),
+        (prev, transformer) => transformer.deserialize(prev),
         arg,
       ),
     );
@@ -273,11 +273,9 @@ export class Router<
     ctx: TContext,
   ): inferHandler<this['_def']['subscriptions']> {
     return (path, ...args) => {
-      return this.serializeData(
-        (this._def.subscriptions[path] as any)(
-          ctx,
-          ...this.deserializeArgs(args),
-        ),
+      return (this._def.subscriptions[path] as any)(
+        ctx,
+        ...this.deserializeArgs(args),
       );
     };
   }

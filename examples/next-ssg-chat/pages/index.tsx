@@ -18,9 +18,6 @@ function maxDate(dates: Date[]) {
 }
 const getTimestamp = (m: Message[]) => {
   return m.reduce((ts, msg) => {
-    if (msg.updatedAt.getTime() > ts.getTime()) {
-      return msg.updatedAt;
-    }
     return maxDate([ts, msg.updatedAt, msg.createdAt]);
   }, new Date(0));
 };
@@ -54,16 +51,18 @@ export default function Home() {
           addMessages(data);
         },
         getNextArgs(data) {
-          return [
+          console.log('data', data);
+          const args = [
             {
               timestamp: getTimestamp(data),
             },
           ];
+          return args;
         },
       },
     );
   }, []);
-  let m = hooks.useMutation('messages.create');
+  const addMessage = hooks.useMutation('messages.create');
   // useEffect(() => {
   //   let timer = setInterval(() => {
   //     m.mutate(['some msg' + Math.random()]);
@@ -72,6 +71,7 @@ export default function Home() {
   //     clearTimeout(timer);
   //   };
   // }, []);
+  console.log(msgs);
 
   return (
     <div>
@@ -101,14 +101,14 @@ export default function Home() {
           };
 
           try {
-            const res = await m.mutateAsync([data.text]);
+            const res = await addMessage.mutateAsync([data.text]);
             $text.value = '';
             addMessages([res]);
           } catch (err) {}
         }}
       >
         <input name="text" type="text" />
-        <input type="submit" disabled={m.isLoading} />
+        <input type="submit" disabled={addMessage.isLoading} />
       </form>
     </div>
   );

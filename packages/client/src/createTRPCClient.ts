@@ -36,6 +36,7 @@ export type TRPCClient<TRouter extends AnyRouter> = {
   query: inferHandler<TRouter['_def']['queries']>;
   mutate: inferHandler<TRouter['_def']['mutations']>;
   subscription: inferSubscriptionFn<TRouter>;
+  transformers: DataTransformer[];
 };
 export class TRPCClientError extends Error {
   public readonly json?: Maybe<HTTPResponseEnvelope<unknown>>;
@@ -104,6 +105,25 @@ export interface CreateTRPCClientOptions {
   onError?: (error: TRPCClientError) => void;
   transformers?: DataTransformer[];
 }
+
+export function transformArgs(
+  transformers: DataTransformer[],
+  args: unknown[],
+) {
+  return args.map((arg) =>
+    transformers.reduce(
+      (prev, transformer) => transformer.serialize(prev),
+      arg,
+    ),
+  );
+}
+export function transformData(transformers: DataTransformer[], data: unknown) {
+  return transformers.reduce(
+    (prev, transformer) => transformer.deserialize(prev),
+    data,
+  );
+}
+
 export function createTRPCClient<TRouter extends AnyRouter>(
   opts: CreateTRPCClientOptions,
 ): TRPCClient<TRouter> {
@@ -112,14 +132,6 @@ export function createTRPCClient<TRouter extends AnyRouter>(
   const AC = getAbortController(fetchOpts?.AbortController);
   const transformers = opts.transformers ?? [];
 
-  function getArgs(args: unknown[]) {
-    return args.map((arg) =>
-      transformers.reduce(
-        (prev, transformer) => transformer.serialize(prev),
-        arg,
-      ),
-    );
-  }
   async function handleResponse(promise: Promise<Response>) {
     let res: Maybe<Response> = null;
     let json: Maybe<HTTPResponseEnvelope<unknown>> = null;
@@ -128,11 +140,6 @@ export function createTRPCClient<TRouter extends AnyRouter>(
       json = (await res.json()) as HTTPResponseEnvelope<unknown>;
 
       if (json.ok) {
-        const data = transformers.reduce(
-          (prev, transformer) => transformer.deserialize(prev),
-          json.data,
-        );
-        json.data = data;
         opts.onSuccess && opts.onSuccess(json);
         return json.data as any;
       }
@@ -163,7 +170,7 @@ export function createTRPCClient<TRouter extends AnyRouter>(
     let target = `${url}/${path}`;
     if (args?.length) {
       target += `?args=${encodeURIComponent(
-        JSON.stringify(getArgs(args) as any),
+        JSON.stringify(transformArgs(transformers, args) as any),
       )}`;
     }
     const promise = _fetch(target, {
@@ -179,7 +186,7 @@ export function createTRPCClient<TRouter extends AnyRouter>(
     const promise = _fetch(`${url}/${path}`, {
       method: 'POST',
       body: JSON.stringify({
-        args: getArgs(args),
+        args: transformArgs(transformers, args),
       }),
       headers: getHeaders(),
     });
@@ -195,6 +202,7 @@ export function createTRPCClient<TRouter extends AnyRouter>(
     let nextTry: NodeJS.Timeout;
     let attemptIndex = 0;
     const exec = async (...thisArgs: typeof args) => {
+      console.log('args', args);
       if (stopped) {
         console.log('subscriptions have stopped');
         return;
@@ -204,14 +212,17 @@ export function createTRPCClient<TRouter extends AnyRouter>(
       const promise = _fetch(`${url}/${path}`, {
         method: 'PATCH',
         body: JSON.stringify({
-          args: getArgs(thisArgs),
+          args: transformArgs(transformers, thisArgs),
         }),
         headers: getHeaders(),
         signal,
       });
       try {
         console.log('⏳  waiting for', path, thisArgs);
-        const data = await handleResponse(promise);
+        const data = transformData(
+          transformers,
+          await handleResponse(promise),
+        ) as any;
         if (stopped) {
           return;
         }
@@ -252,5 +263,6 @@ export function createTRPCClient<TRouter extends AnyRouter>(
     mutate,
     query,
     subscription,
+    transformers,
   };
 }

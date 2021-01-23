@@ -15,6 +15,7 @@ export const hooks = createReactQueryHooks({
 });
 
 function MyApp({ Component, pageProps }: AppProps) {
+  console.log('qq', hooks.queryClient);
   return (
     <>
       <QueryClientProvider client={hooks.queryClient}>

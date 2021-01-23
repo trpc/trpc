@@ -1,5 +1,5 @@
 import { EventEmitter } from 'events';
-import { inferAsyncReturnType } from './router';
+import { AnyRouter, inferAsyncReturnType } from './router';
 
 const debug = (...args: unknown[]) => console.log(...args);
 
@@ -53,6 +53,7 @@ export type SubscriptionEmit<TData> = {
 export interface SubscriptionOptions<TData> {
   getInitialData?: (emit: SubscriptionEmit<TData>) => void | Promise<void>;
   start: (emit: SubscriptionEmit<TData>) => UnsubscribeFn;
+  router: AnyRouter;
 }
 export class Subscription<TData = unknown> {
   private readonly events: SubscriptionEventEmitter<TData>;

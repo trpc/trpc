@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { TRPCClient, TRPCClientError } from '@katt/trpc-client';
+import { transformData, TRPCClient, TRPCClientError } from '@katt/trpc-client';
 import type {
   DropFirst,
   inferEndpointArgs,
@@ -8,6 +8,7 @@ import type {
   Router,
   RouterResolverFn,
 } from '@katt/trpc-server';
+import { useCallback, useMemo } from 'react';
 import {
   QueryClient,
   useMutation,
@@ -38,11 +39,19 @@ export function createReactQueryHooks<
       inferEndpointData<TQueries[TPath]>
     >,
   ) {
-    return useQuery<
+    const hook = useQuery<
       inferEndpointArgs<TQueries[TPath]>,
       TRPCClientError,
       inferEndpointData<TQueries[TPath]>
     >(pathAndArgs, () => client.query(...pathAndArgs) as any, opts);
+
+    const data = useMemo(() => transformData(client.transformers, hook.data), [
+      hook.data,
+    ]);
+    return {
+      ...hook,
+      data,
+    };
   }
 
   /**
@@ -73,11 +82,24 @@ export function createReactQueryHooks<
       inferEndpointArgs<TMutations[TPath]>
     >,
   ) {
-    return useMutation<
+    const mutation = useMutation<
       inferEndpointData<TMutations[TPath]>,
       TRPCClientError,
       inferEndpointArgs<TMutations[TPath]>
     >((args) => client.mutate(path, ...args) as any, opts);
+
+    const mutateAsync: typeof mutation['mutateAsync'] = useCallback(
+      async (...args) => {
+        const orig = await mutation.mutateAsync(...args);
+
+        return transformData(client.transformers, orig) as any;
+      },
+      [],
+    );
+    return {
+      ...mutation,
+      mutateAsync,
+    };
   }
 
   const ssr = async <
@@ -92,7 +114,7 @@ export function createReactQueryHooks<
     ...args: TArgs
   ) => {
     return queryClient.prefetchQuery([path, ...args], () =>
-      router['_def']['queries'][path](ctx, ...args),
+      router.invokeQuery(ctx)(path, ...args),
     );
   };
   return {
