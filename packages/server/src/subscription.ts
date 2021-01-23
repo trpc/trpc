@@ -140,9 +140,15 @@ export class Subscription<TData = unknown> {
     });
   }
 
+  /**
+   * Emit data
+   */
   emitData(data: TData) {
     this.events.emit('data', this.opts.router.serializeData(data) as any);
   }
+  /**
+   * Emit error
+   */
   emitError(err: Error) {
     this.events.emit('error', err);
   }
