@@ -96,8 +96,8 @@ export class Subscription<TData = unknown> {
     }
     try {
       const emit: SubscriptionEmit<TData> = {
-        error: (err) => this.emitError(err),
-        data: (data) => this.emitData(data),
+        error: err => this.emitError(err),
+        data: data => this.emitData(data),
       };
       await this.opts.getInitialData(emit);
       this.opts.start(emit);

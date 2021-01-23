@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/ban-types */
 import { router } from '../src';
+import * as z from 'zod';
 
 test('types', async () => {
   const r = router<{}>().queries({
@@ -9,7 +10,6 @@ test('types', async () => {
       };
     },
   });
-  expect(true).toBe(true);
 
   {
     const res = await r.invokeQuery({})('test');
@@ -22,4 +22,45 @@ test('types', async () => {
     } = await r.invokeQuery({})('test');
     expect(res.hello).toBe('test');
   }
+});
+
+describe('input validation', () => {
+  test('basic', async () => {
+    type Context = {
+      user?: {
+        name: string;
+      };
+    };
+    const r = router<Context>().zpooint('test', {
+      input: z
+        .object({
+          who: z.string(),
+        })
+        .optional(),
+      resolve({ ctx, input }) {
+        return { text: `hello ${input?.who ?? ctx.user?.name ?? 'world'}` };
+      },
+    });
+
+    {
+      const res = await r.invokeQuery({})('test', undefined);
+
+      expect(res.text).toBe('hello world');
+    }
+
+    {
+      const res = await r.invokeQuery({})('test', { who: 'katt' });
+
+      expect(res.text).toBe('hello katt');
+    }
+    {
+      const res = await r.invokeQuery({
+        user: {
+          name: 'katt',
+        },
+      })('test', undefined);
+
+      expect(res.text).toBe('hello katt');
+    }
+  });
 });

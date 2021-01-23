@@ -283,6 +283,30 @@ export class Router<
   public has(what: 'subscriptions' | 'mutations' | 'queries', path: string) {
     return !!this._def[what][path];
   }
+
+  /**
+   * WIP
+   */
+  public zpooint<TPath extends string, TInput, TData>(
+    path: TPath,
+    opts: {
+      input: {
+        parse: (input: unknown) => TInput;
+      };
+      resolve: (opts: {
+        ctx: TContext;
+        input: TInput;
+      }) => Promise<TData> | TData;
+    },
+  ) {
+    return this.queries({
+      [path]: (ctx, input: TInput) => {
+        const parsed = opts.input.parse(input);
+
+        return opts.resolve({ ctx, input: parsed });
+      },
+    });
+  }
 }
 
 export function router<TContext>() {
