@@ -2,20 +2,19 @@ import { createReactQueryHooks, createTRPCClient } from '@katt/trpc-react';
 import type { AppProps /*, AppContext */ } from 'next/app';
 import { QueryClient, QueryClientProvider } from 'react-query';
 import { Hydrate } from 'react-query/hydration';
-import superjson from 'superjson';
-import { ChatRouter } from './api/trpc/[...trpc]';
+import { sj } from '../utils/serializer';
+import type { ChatRouter } from './api/trpc/[...trpc]';
 export const client = createTRPCClient<ChatRouter>({
   url: '/api/trpc',
-  transformers: [superjson],
+  transformers: [sj],
 });
 
-export const hooks = createReactQueryHooks({
+export const hooks = createReactQueryHooks<ChatRouter>({
   client,
   queryClient: new QueryClient() as any,
 });
 
 function MyApp({ Component, pageProps }: AppProps) {
-  console.log('qq', hooks.queryClient);
   return (
     <>
       <QueryClientProvider client={hooks.queryClient}>

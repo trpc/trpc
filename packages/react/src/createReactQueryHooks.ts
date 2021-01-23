@@ -112,10 +112,13 @@ export function createReactQueryHooks<
     path: TPath,
     ctx: TContext,
     ...args: TArgs
-  ) => {
-    return queryClient.prefetchQuery([path, ...args], () =>
-      router.invokeQuery(ctx)(path, ...args),
-    );
+  ): Promise<void> => {
+    console.log('invoking', { ctx, path, router });
+    return queryClient.prefetchQuery([path, ...args], async () => {
+      const data = await router.invokeQuery(ctx)(path, ...args);
+      console.log('data', data);
+      return data;
+    });
   };
   return {
     useQuery: _useQuery,

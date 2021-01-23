@@ -3,9 +3,10 @@
   "version": "1.0.0-alpha.5",
   "private": true,
   "scripts": {
-    "dev:next": "next dev",
-    "dev:prisma-studio": "prisma studio",
-    "dev": "run-p dev:* --print-label",
+    "dx:next": "next dev",
+    "dx:prisma-studio": "prisma studio",
+    "dx": "run-p dx:* --print-label",
+    "dev": "next dev",
     "build": "next build",
     "start": "next start",
     "studio": "prisma studio",

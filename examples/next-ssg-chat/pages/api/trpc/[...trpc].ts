@@ -1,7 +1,7 @@
 import * as trpc from '@katt/trpc-server';
 import { Subscription, SubscriptionEmit } from '@katt/trpc-server';
 import { Message, PrismaClient } from '@prisma/client';
-import superjson from 'superjson';
+import { sj } from '../../../utils/serializer';
 
 const prisma = new PrismaClient();
 
@@ -66,6 +66,7 @@ export function subscriptionPullFatory<TData>(opts: {
   }
 
   return new Subscription<TData>({
+    router,
     async getInitialData(emit) {
       await _pull(emit);
     },
@@ -79,7 +80,7 @@ export function subscriptionPullFatory<TData>(opts: {
 }
 const router = createRouter()
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  .transformer(superjson)
+  .transformer(sj)
   .queries({
     hello(ctx, input?: string) {
       return `hello ${input ?? 'world'}`;
@@ -90,11 +91,14 @@ const router = createRouter()
     createRouter()
       .queries({
         list: async () => {
-          return prisma.message.findMany({
+          const items = await prisma.message.findMany({
             orderBy: {
               createdAt: 'asc',
             },
           });
+          return {
+            items,
+          };
         },
       })
       .mutations({

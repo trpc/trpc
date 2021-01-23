@@ -25,7 +25,7 @@ const getTimestamp = (m: Message[]) => {
 export default function Home() {
   const qqq = hooks.useQuery(['messages.list']);
 
-  const [msgs, setMessages] = useState(() => qqq.data);
+  const [msgs, setMessages] = useState(() => qqq.data.items);
   const addMessages = (newMessages: Message[]) => {
     setMessages((nowMessages) => {
       const map: Record<Message['id'], Message> = {};
