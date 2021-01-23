@@ -62,30 +62,29 @@ export type DataTransformer = {
 
 export type AnyRouter = Router<any, any, any, any>;
 
-export type RouteDef<TContext = unknown, TInput = unknown, TData = unknown> = {
+export type RouteDef<TContext = any, TInput = any, TData = any> = {
   input: {
     parse: (input: unknown) => TInput;
   };
   resolve: (opts: { ctx: TContext; input: TInput }) => Promise<TData> | TData;
 };
-export type RouteDefRecord<
-  TContext = unknown,
-  TInput = unknown,
-  TData = unknown
-> = Record<string, RouteDef<TContext, TInput, TData>>;
+export type RouteDefRecord<TContext = any, TInput = any, TData = any> = Record<
+  string,
+  RouteDef<TContext, TInput, TData>
+>;
 
-export type RouteDefRecordToEndpoint<
-  TRouteDefs extends RouteDefRecord<TContext, TInput, TData>,
-  TContext = unknown,
-  TInput = unknown,
-  TData = unknown
-> = {
-  [TKey in keyof TRouteDefs]: RouterResolverFn<
-    TContext,
-    inferAsyncReturnType<TRouteDefs[TKey]['resolve']>,
-    [ReturnType<TRouteDefs[TKey]['input']['parse']>]
-  >;
-};
+// export type RouteDefRecordToEndpoint<
+//   TRouteDefs extends RouteDefRecord<TContext, TInput, TData>,
+//   TContext = unknown,
+//   TInput = unknown,
+//   TData = unknown
+// > = {
+//   [TKey in keyof TRouteDefs]: RouterResolverFn<
+//     TContext,
+//     inferAsyncReturnType<TRouteDefs[TKey]['resolve']>,
+//     [ReturnType<TRouteDefs[TKey]['input']['parse']>]
+//   >;
+// };
 
 export type inferRouteInput<TDef extends RouteDef<any, any, any>> = ReturnType<
   TDef['input']['parse']
@@ -314,7 +313,13 @@ export class Router<
   public has(what: 'subscriptions' | 'mutations' | 'queries', path: string) {
     return !!this._def[what][path];
   }
-  private routerDef<TInput, TData>(
+  public static routerDef<
+    TRouter extends Router<TContext, any, any, any>,
+    TContext,
+    TInput,
+    TData
+  >(
+    router: TRouter,
     def: RouteDef<TContext, TInput, TData>,
   ): RouterResolverFn<TContext, TData, [TInput]> {
     return async (ctx, input: inferRouteInput<typeof def>) => {
@@ -334,7 +339,7 @@ export class Router<
     path: TPath,
     def: RouteDef<TContext, TInput, TData>,
   ) {
-    const resolver = this.routerDef(def);
+    const resolver = Router.routerDef(this, def);
     return this.queries({
       [path]: resolver,
     } as Record<TPath, typeof resolver>);
@@ -343,7 +348,7 @@ export class Router<
     path: TPath,
     def: RouteDef<TContext, TInput, TData>,
   ) {
-    const resolver = this.routerDef(def);
+    const resolver = Router.routerDef(this, def);
     return this.mutations({
       [path]: resolver,
     } as Record<TPath, typeof resolver>);
@@ -352,7 +357,7 @@ export class Router<
     path: TPath,
     def: RouteDef<TContext, TInput, TData>,
   ) {
-    const resolver = this.routerDef(def);
+    const resolver = Router.routerDef(this, def);
     return this.subscriptions({
       [path]: resolver,
     } as Record<TPath, typeof resolver>);
@@ -369,7 +374,7 @@ export class Router<
   >(endpoints: TEndpoints) {
     const keys = Object.keys(endpoints) as (keyof TEndpoints)[];
     const objs = keys.reduce((sum, key) => {
-      const resolver = this.routerDef(endpoints[key]);
+      const resolver = Router.routerDef(this, endpoints[key]);
       const obj = {
         [key]: resolver,
       } as Record<typeof key, typeof resolver>;
