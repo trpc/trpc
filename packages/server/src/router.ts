@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/ban-types */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { assertNotBrowser } from './assertNotBrowser';
+import { InputValidationError } from './errors';
 import { inferSubscriptionData, Subscription } from './subscription';
 import { DropFirst, format, Prefixer, ThenArg } from './types';
 assertNotBrowser();
@@ -71,6 +72,7 @@ export type RouteDef<TContext = unknown, TInput = unknown, TData = unknown> = {
 export type inferRouteInput<TDef extends RouteDef<any, any, any>> = ReturnType<
   TDef['input']['parse']
 >;
+
 export class Router<
   TContext,
   TQueries extends RouterEndpoints<TContext>,
@@ -294,18 +296,32 @@ export class Router<
   public has(what: 'subscriptions' | 'mutations' | 'queries', path: string) {
     return !!this._def[what][path];
   }
+  private routerDef<TInput, TData>({
+    def,
+  }: {
+    def: RouteDef<TContext, TInput, TData>;
+  }) {
+    return async (ctx: TContext, input: inferRouteInput<typeof def>) => {
+      let parsed: TInput;
+      try {
+        parsed = def.input.parse(input);
+      } catch (_err) {
+        const err = new InputValidationError(_err);
+        throw err;
+      }
+      const data = await def.resolve({ ctx, input: parsed });
+      return data;
+    };
+  }
 
   public query<TPath extends string, TInput, TData>(
     path: TPath,
     def: RouteDef<TContext, TInput, TData>,
   ) {
+    const resolver = this.routerDef({ def });
     return this.queries({
-      [path]: (ctx, input: inferRouteInput<typeof def>) => {
-        const parsed = def.input.parse(input);
-
-        return def.resolve({ ctx, input: parsed });
-      },
-    });
+      [path]: this.routerDef({ def }),
+    } as Record<TPath, typeof resolver>);
   }
 }
 
