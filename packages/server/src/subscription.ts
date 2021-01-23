@@ -1,5 +1,5 @@
 import { EventEmitter } from 'events';
-import { AnyRouter, inferAsyncReturnType } from './router';
+import { inferAsyncReturnType } from './router';
 
 const debug = (...args: unknown[]) => console.log(...args);
 
@@ -53,7 +53,6 @@ export type SubscriptionEmit<TData> = {
 export interface SubscriptionOptions<TData> {
   getInitialData?: (emit: SubscriptionEmit<TData>) => void | Promise<void>;
   start: (emit: SubscriptionEmit<TData>) => UnsubscribeFn;
-  router: AnyRouter;
 }
 export class Subscription<TData = unknown> {
   private readonly events: SubscriptionEventEmitter<TData>;
@@ -96,8 +95,8 @@ export class Subscription<TData = unknown> {
     }
     try {
       const emit: SubscriptionEmit<TData> = {
-        error: err => this.emitError(err),
-        data: data => this.emitData(data),
+        error: (err) => this.emitError(err),
+        data: (data) => this.emitData(data),
       };
       await this.opts.getInitialData(emit);
       this.opts.start(emit);
@@ -144,7 +143,7 @@ export class Subscription<TData = unknown> {
    * Emit data
    */
   emitData(data: TData) {
-    this.events.emit('data', this.opts.router.serializeData(data) as any);
+    this.events.emit('data', data);
   }
   /**
    * Emit error
@@ -157,20 +156,3 @@ export class Subscription<TData = unknown> {
 export type inferSubscriptionData<
   TSubscription extends Subscription
 > = inferAsyncReturnType<TSubscription['onceDataAndStop']>;
-
-// async function main() {
-//   const startTime = Date.now();
-//   async function pull() {
-//     return (Date.now() - startTime) / 1000;
-//   }
-//   const sub = subscriptionPullFatory({
-//     pull,
-//     shouldEmit(d) {
-//       return d > 2;
-//     },
-//     interval: 1000,
-//   });
-//   console.log('yay', await sub.onceDataAndStop());
-// }
-
-// main();

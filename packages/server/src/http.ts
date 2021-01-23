@@ -1,7 +1,9 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import type { EventEmitter } from 'events';
 import type qs from 'qs';
+import { DataTransformer } from '../dist';
 import { assertNotBrowser } from './assertNotBrowser';
+import { InputValidationError } from './errors';
 import { Router } from './router';
 import { Subscription, SubscriptionDestroyError } from './subscription';
 assertNotBrowser();
@@ -41,7 +43,13 @@ export type HTTPResponseEnvelope<TData> =
   | HTTPSuccessResponseEnvelope<TData>
   | HTTPErrorResponseEnvelope;
 
-export function getErrorResponseEnvelope(err?: Partial<HTTPError>) {
+export function getErrorResponseEnvelope(
+  _err?: Partial<HTTPError> | InputValidationError<Error>,
+) {
+  let err = _err;
+  if (err instanceof InputValidationError) {
+    err = httpError.badRequest(err.message);
+  }
   const statusCode: number =
     typeof err?.statusCode === 'number' ? err.statusCode : 500;
   const message: string =
@@ -112,6 +120,10 @@ export interface BaseOptions {
     timeout?: number;
   };
   teardown?: () => Promise<void>;
+  /**
+   * Optional transformer too serialize/deserialize input args + data
+   */
+  transformer?: DataTransformer;
 }
 
 export async function requestHandler<
@@ -128,6 +140,10 @@ export async function requestHandler<
   subscriptions,
   createContext,
   teardown,
+  transformer = {
+    serialize: (data) => data,
+    deserialize: (data) => data,
+  },
 }: {
   req: TRequest;
   res: TResponse;
@@ -151,7 +167,7 @@ export async function requestHandler<
 
       data = await router.invokeMutation(ctx)(
         endpoint as any,
-        ...(args as any),
+        ...(args.map(transformer.deserialize) as any),
       );
     } else if (method === 'GET') {
       if (!router.has('queries', endpoint)) {
@@ -159,7 +175,10 @@ export async function requestHandler<
       }
       const args = getQueryArgs(req);
 
-      data = await router.invokeQuery(ctx)(endpoint as any, ...(args as any));
+      data = await router.invokeQuery(ctx)(
+        endpoint as any,
+        ...(args.map(transformer.deserialize) as any),
+      );
     } else if (method === 'PATCH') {
       if (!router.has('subscriptions', endpoint)) {
         throw httpError.notFound(`Unknown subscription "${endpoint}"`);
@@ -171,7 +190,7 @@ export async function requestHandler<
 
       const sub: Subscription = await router.invokeSubscription(ctx)(
         endpoint as any,
-        ...(args as any),
+        ...(args.map(transformer.deserialize) as any),
       );
       const onClose = () => {
         sub.destroy('closed');
@@ -191,6 +210,7 @@ export async function requestHandler<
       }, timeout);
       try {
         data = await sub.onceDataAndStop();
+
         res.off('close', onClose);
       } catch (err) {
         res.off('close', onClose);
@@ -213,7 +233,7 @@ export async function requestHandler<
     const json: HTTPSuccessResponseEnvelope<unknown> = {
       ok: true,
       statusCode: res.statusCode ?? 200,
-      data,
+      data: transformer.serialize(data),
     };
     res.status(json.statusCode).json(json);
   } catch (err) {

@@ -7,7 +7,7 @@ import type { ChatRouter, Context } from './api/trpc/[...trpc]';
 
 export const client = createTRPCClient<ChatRouter>({
   url: '/api/trpc',
-  transformers: [sj],
+  transformer: sj,
 });
 
 const queryClient = new QueryClient();

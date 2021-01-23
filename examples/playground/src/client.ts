@@ -75,6 +75,7 @@ async function main() {
         console.error('❌ message fail', err.res?.status);
       },
       getNextArgs(data) {
+        console.log('data', data);
         return [
           {
             timestamp: getTimestamp(data),

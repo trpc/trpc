@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/ban-types */
 import { router } from '../src';
 import * as z from 'zod';
@@ -74,27 +75,27 @@ describe('input validation', () => {
     }
   });
 
-  test('fixme: next generation', async () => {
-    type Context = {};
-    const r = router<Context>().__fixme_queriesv2({
-      str: {
-        input: z.string(),
-        resolve({ input, ctx }) {
-          // `input` is untyped :(
+  // test('fixme: next generation', async () => {
+  //   type Context = {};
+  //   const r = router<Context>().__fixme_queriesv2({
+  //     str: {
+  //       input: z.string(),
+  //       resolve({ input, ctx }) {
+  //         // `input` is untyped :(
 
-          console.log({ input, ctx });
-          return 'hello';
-        },
-      },
-      num: {
-        input: z.number(),
-        resolve({ input, ctx }) {
-          console.log({ input, ctx });
-          return 1;
-        },
-      },
-    });
-    const res = await r.invokeQuery({})('str', 'hello');
-    const res2 = await r.invokeQuery({})('num', 0);
-  });
+  //         console.log({ input, ctx });
+  //         return 'hello';
+  //       },
+  //     },
+  //     num: {
+  //       input: z.number(),
+  //       resolve({ input, ctx }) {
+  //         console.log({ input, ctx });
+  //         return 1;
+  //       },
+  //     },
+  //   });
+  //   const res = await r.invokeQuery({})('str', 'hello');
+  //   const res2 = await r.invokeQuery({})('num', 0);
+  // });
 });

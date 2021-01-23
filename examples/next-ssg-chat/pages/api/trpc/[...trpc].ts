@@ -66,7 +66,6 @@ export function subscriptionPullFatory<TData>(opts: {
   }
 
   return new Subscription<TData>({
-    router,
     async getInitialData(emit) {
       await _pull(emit);
     },
@@ -79,7 +78,6 @@ export function subscriptionPullFatory<TData>(opts: {
   });
 }
 const router = createRouter()
-  .transformer(sj)
   .queries({
     hello(ctx, input?: string) {
       return `hello ${input ?? 'world'}`;
@@ -112,7 +110,6 @@ const router = createRouter()
             interval: 500,
             async pull(emit) {
               const msgs = await getMessagesAfter(timestamp);
-              console.log('msgs', msgs, timestamp);
               if (msgs.length > 0) {
                 emit.data(msgs);
               }
@@ -129,4 +126,5 @@ export default trpc.createNextApiHandler({
   router,
   createContext,
   teardown: () => prisma.$disconnect(),
+  transformer: sj,
 });

@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { transformData, TRPCClient, TRPCClientError } from '@katt/trpc-client';
+import { TRPCClient, TRPCClientError } from '@katt/trpc-client';
 import type {
   DropFirst,
   inferEndpointArgs,
@@ -44,8 +44,8 @@ export function createReactQueryHooks<
       TRPCClientError,
       inferEndpointData<TQueries[TPath]>
     >(pathAndArgs, () => client.query(...pathAndArgs) as any, opts);
-
-    const data = useMemo(() => transformData(client.transformers, hook.data), [
+    console.log('hook.data', hook.data);
+    const data = useMemo(() => client.transformer.deserialize(hook.data), [
       hook.data,
     ]) as inferEndpointData<TQueries[TPath]>;
     return {
@@ -68,11 +68,19 @@ export function createReactQueryHooks<
       inferEndpointData<TQueries[TPath]>
     >,
   ) {
-    return useQuery<never, TRPCClientError, inferEndpointData<TQueries[TPath]>>(
-      path,
-      () => (client.query as any)(path) as any,
-      opts,
-    );
+    const hook = useQuery<
+      never,
+      TRPCClientError,
+      inferEndpointData<TQueries[TPath]>
+    >(path, () => (client.query as any)(path) as any, opts);
+    const data = useMemo(() => client.transformer.deserialize(hook.data), [
+      hook.data,
+    ]) as inferEndpointData<TQueries[TPath]>;
+
+    return {
+      ...hook,
+      data,
+    };
   }
   function _useMutation<TPath extends keyof TMutations & string>(
     path: TPath,
@@ -92,7 +100,7 @@ export function createReactQueryHooks<
       async (...args) => {
         const orig = await mutation.mutateAsync(...args);
 
-        return transformData(client.transformers, orig) as any;
+        return client.transformer.deserialize(orig) as any;
       },
       [],
     );
@@ -117,7 +125,7 @@ export function createReactQueryHooks<
     return queryClient.prefetchQuery([path, ...args], async () => {
       const data = await router.invokeQuery(ctx)(path, ...args);
       // console.log('data', data);
-      return data;
+      return client.transformer.serialize(data);
     });
   };
   return {

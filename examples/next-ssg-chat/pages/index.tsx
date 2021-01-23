@@ -27,7 +27,7 @@ export default function Home() {
 
   const [msgs, setMessages] = useState(() => query.data.items);
   const addMessages = (newMessages: Message[]) => {
-    setMessages(nowMessages => {
+    setMessages((nowMessages) => {
       const map: Record<Message['id'], Message> = {};
       for (const msg of nowMessages) {
         map[msg.id] = msg;
@@ -40,22 +40,22 @@ export default function Home() {
   };
   const timestamp = useMemo(() => getTimestamp(msgs), [msgs]);
   console.log({ timestamp });
-  useEffect(() => {
-    return client.subscription(
-      [
-        'messages.newMessages',
-        {
-          timestamp,
-        },
-      ],
-      {
-        onSuccess(data) {
-          console.log('new data', data);
-          addMessages(data);
-        },
-      },
-    );
-  }, [timestamp]);
+  // useEffect(() => {
+  //   return client.subscription(
+  //     [
+  //       'messages.newMessages',
+  //       {
+  //         timestamp,
+  //       },
+  //     ],
+  //     {
+  //       onSuccess(data) {
+  //         console.log('new data', data);
+  //         addMessages(data);
+  //       },
+  //     },
+  //   );
+  // }, [timestamp]);
   const addMessage = hooks.useMutation('messages.create');
   // useEffect(() => {
   //   let timer = setInterval(() => {
@@ -78,7 +78,7 @@ export default function Home() {
 
       <h2>Message</h2>
       <ul>
-        {msgs.map(m => (
+        {msgs.map((m) => (
           <li key={m.id}>
             <pre>{JSON.stringify(m, null, 4)}</pre>
           </li>
@@ -87,7 +87,7 @@ export default function Home() {
       <h3>Add message</h3>
 
       <form
-        onSubmit={async e => {
+        onSubmit={async (e) => {
           e.preventDefault();
           const $text: HTMLInputElement = (e as any).target.elements.text;
           const data = {
