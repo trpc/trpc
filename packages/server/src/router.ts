@@ -60,6 +60,17 @@ export type DataTransformer = {
 };
 
 export type AnyRouter = Router<any, any, any, any>;
+
+export type RouteDef<TContext = unknown, TInput = unknown, TData = unknown> = {
+  input: {
+    parse: (input: unknown) => TInput;
+  };
+  resolve: (opts: { ctx: TContext; input: TInput }) => Promise<TData> | TData;
+};
+
+export type inferRouteInput<TDef extends RouteDef<any, any, any>> = ReturnType<
+  TDef['input']['parse']
+>;
 export class Router<
   TContext,
   TQueries extends RouterEndpoints<TContext>,
@@ -284,26 +295,15 @@ export class Router<
     return !!this._def[what][path];
   }
 
-  /**
-   * WIP
-   */
-  public zpooint<TPath extends string, TInput, TData>(
+  public query<TPath extends string, TInput, TData>(
     path: TPath,
-    opts: {
-      input: {
-        parse: (input: unknown) => TInput;
-      };
-      resolve: (opts: {
-        ctx: TContext;
-        input: TInput;
-      }) => Promise<TData> | TData;
-    },
+    def: RouteDef<TContext, TInput, TData>,
   ) {
     return this.queries({
-      [path]: (ctx, input: TInput) => {
-        const parsed = opts.input.parse(input);
+      [path]: (ctx, input: inferRouteInput<typeof def>) => {
+        const parsed = def.input.parse(input);
 
-        return opts.resolve({ ctx, input: parsed });
+        return def.resolve({ ctx, input: parsed });
       },
     });
   }

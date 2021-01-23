@@ -31,7 +31,7 @@ describe('input validation', () => {
         name: string;
       };
     };
-    const r = router<Context>().zpooint('test', {
+    const r = router<Context>().query('test', {
       input: z
         .object({
           who: z.string(),
