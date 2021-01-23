@@ -2,21 +2,23 @@
 import type { NextApiHandler, NextApiRequest, NextApiResponse } from 'next';
 import {
   BaseOptions,
+  CreateContextFn,
   CreateContextFnOptions,
   getErrorResponseEnvelope,
   requestHandler,
-} from './http';
-import type { Router } from './router';
+} from '../http';
+import type { Router } from '../router';
 
 export type CreateNextContextOptions = CreateContextFnOptions<
   NextApiRequest,
   NextApiResponse
 >;
 
-export type CreateNextContextFn<TContext> = (
-  opts: CreateNextContextOptions,
-) => Promise<TContext> | TContext;
-
+export type CreateNextContextFn<TContext> = CreateContextFn<
+  TContext,
+  NextApiRequest,
+  NextApiResponse
+>;
 export function createNextApiHandler<
   TContext,
   TRouter extends Router<TContext, any, any, any>

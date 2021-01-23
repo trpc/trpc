@@ -1,10 +1,9 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { transformData, TRPCClient, TRPCClientError } from '@katt/trpc-client';
+import { TRPCClient, TRPCClientError } from '@katt/trpc-client';
 import type {
   DropFirst,
   inferEndpointArgs,
   inferEndpointData,
-  inferEndpointsWithoutArgs,
   Router,
   RouterResolverFn,
 } from '@katt/trpc-server';
@@ -44,8 +43,7 @@ export function createReactQueryHooks<
       TRPCClientError,
       inferEndpointData<TQueries[TPath]>
     >(pathAndArgs, () => client.query(...pathAndArgs) as any, opts);
-
-    const data = useMemo(() => transformData(client.transformers, hook.data), [
+    const data = useMemo(() => client.transformer.deserialize(hook.data), [
       hook.data,
     ]) as inferEndpointData<TQueries[TPath]>;
     return {
@@ -54,26 +52,34 @@ export function createReactQueryHooks<
     };
   }
 
-  /**
-   * use a query that doesn't require args
-   * @deprecated **🚧 WIP** should be combined with `useQuery`
-   */
-  function useQueryNoArgs<
-    TPath extends inferEndpointsWithoutArgs<TQueries> & string & keyof TQueries
-  >(
-    path: TPath,
-    opts?: UseQueryOptions<
-      never,
-      TRPCClientError,
-      inferEndpointData<TQueries[TPath]>
-    >,
-  ) {
-    return useQuery<never, TRPCClientError, inferEndpointData<TQueries[TPath]>>(
-      path,
-      () => (client.query as any)(path) as any,
-      opts,
-    );
-  }
+  // /**
+  //  * use a query that doesn't require args
+  //  * @deprecated **🚧 WIP** should be combined with `useQuery`
+  //  */
+  // function useQueryNoArgs<
+  //   TPath extends inferEndpointsWithoutArgs<TQueries> & string & keyof TQueries
+  // >(
+  //   path: TPath,
+  //   opts?: UseQueryOptions<
+  //     never,
+  //     TRPCClientError,
+  //     inferEndpointData<TQueries[TPath]>
+  //   >,
+  // ) {
+  //   const hook = useQuery<
+  //     never,
+  //     TRPCClientError,
+  //     inferEndpointData<TQueries[TPath]>
+  //   >(path, () => (client.query as any)(path) as any, opts);
+  //   const data = useMemo(() => client.transformer.deserialize(hook.data), [
+  //     hook.data,
+  //   ]) as inferEndpointData<TQueries[TPath]>;
+
+  //   return {
+  //     ...hook,
+  //     data,
+  //   };
+  // }
   function _useMutation<TPath extends keyof TMutations & string>(
     path: TPath,
     opts?: UseMutationOptions<
@@ -92,7 +98,7 @@ export function createReactQueryHooks<
       async (...args) => {
         const orig = await mutation.mutateAsync(...args);
 
-        return transformData(client.transformers, orig) as any;
+        return client.transformer.deserialize(orig) as any;
       },
       [],
     );
@@ -117,13 +123,13 @@ export function createReactQueryHooks<
     return queryClient.prefetchQuery([path, ...args], async () => {
       const data = await router.invokeQuery(ctx)(path, ...args);
       // console.log('data', data);
-      return data;
+      return client.transformer.serialize(data);
     });
   };
   return {
     useQuery: _useQuery,
     useMutation: _useMutation,
-    useQueryNoArgs,
+    // useQueryNoArgs,
     queryClient,
     ssr,
   };

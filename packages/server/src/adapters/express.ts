@@ -1,20 +1,23 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import type * as express from 'express';
 import {
   BaseOptions,
   CreateContextFn,
   CreateContextFnOptions,
   requestHandler,
-} from './http';
-import type { Router } from './router';
+} from '../http';
+import type { Router } from '../router';
 
 export type CreateExpressContextOptions = CreateContextFnOptions<
   express.Request,
   express.Response
 >;
 
-export type CreateExpressContextFn<TContext> = (
-  opts: CreateExpressContextOptions,
-) => Promise<TContext> | TContext;
+export type CreateExpressContextFn<TContext> = CreateContextFn<
+  TContext,
+  express.Request,
+  express.Response
+>;
 
 export function createExpressMiddleware<
   TContext,
@@ -22,10 +25,10 @@ export function createExpressMiddleware<
 >(
   opts: {
     router: TRouter;
-    createContext: CreateContextFn<TContext, express.Request, express.Response>;
+    createContext: CreateExpressContextFn<TContext>;
   } & BaseOptions,
 ): express.Handler {
-  return async (req, res) => {
+  return (req, res) => {
     const endpoint = req.path.substr(1);
 
     requestHandler({

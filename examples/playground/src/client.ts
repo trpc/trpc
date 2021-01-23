@@ -50,11 +50,12 @@ async function main() {
   await authedClient.query('admin/secret');
 
   const msgs = await client.query('messages/list');
-  const getTimestamp = (m: typeof msgs) => {
-    return m.reduce((ts, msg) => {
-      return Math.max(ts, msg.updatedAt, msg.createdAt);
-    }, 0);
-  };
+  console.log('msgs', msgs);
+  // const getTimestamp = (m: typeof msgs) => {
+  //   return m.reduce((ts, msg) => {
+  //     return Math.max(ts, msg.updatedAt, msg.createdAt);
+  //   }, 0);
+  // };
 
   let i = 0;
   await Promise.all([
@@ -64,25 +65,31 @@ async function main() {
     client.mutate('messages/add', `test message${i++}`),
   ]);
   await sleep();
-  const unsub = client.subscription(
-    ['messages/newMessages', { timestamp: getTimestamp(msgs) }],
-    {
-      onSuccess(data) {
-        console.log(`✉️  ${data.length} new messages`);
-        msgs.push(...data);
-      },
-      onError(err) {
-        console.error('❌ message fail', err.res?.status);
-      },
-      getNextArgs(data) {
-        return [
-          {
-            timestamp: getTimestamp(data),
-          },
-        ];
-      },
-    },
-  );
+  // let index = 0;
+  // const unsub = client.subscription(
+  //   ['messages/newMessages', { timestamp: getTimestamp(msgs) }],
+  //   {
+  //     onSuccess(data) {
+  //       console.log(`✉️  ${data.length} new messages`);
+  //       msgs.push(...data);
+  //     },
+  //     onError(err) {
+  //       console.error('❌ message fail', err.res?.status);
+  //     },
+  //     getNextArgs(data) {
+  //       console.log('data', data, getTimestamp(data));
+  //       index++;
+  //       if (index > 5) {
+  //         process.exit(1);
+  //       }
+  //       return [
+  //         {
+  //           timestamp: getTimestamp(data),
+  //         },
+  //       ];
+  //     },
+  //   },
+  // );
   await sleep();
 
   await client.mutate('messages/add', `test message${i++}`);
@@ -96,7 +103,7 @@ async function main() {
 
   await sleep(10e3);
   console.log('👌 should be a clean exit if everything is working right');
-  unsub();
+  // unsub();
 }
 
 main();

@@ -51,7 +51,9 @@ export function subscriptionPullFatory<TData>(opts: {
 }): Subscription<TData> {
   let timer: NodeJS.Timeout;
   let stopped = false;
+  const id = Math.random();
   async function _pull(emit: SubscriptionEmit<TData>) {
+    console.log('pull', id);
     if (stopped) {
       return;
     }
@@ -66,20 +68,18 @@ export function subscriptionPullFatory<TData>(opts: {
   }
 
   return new Subscription<TData>({
-    router,
-    async getInitialData(emit) {
-      await _pull(emit);
-    },
-    start() {
+    start(emit) {
+      console.log('start', id);
+      _pull(emit);
       return () => {
+        console.log('cancelled', id);
         clearTimeout(timer);
-        stopped = false;
+        stopped = true;
       };
     },
   });
 }
 const router = createRouter()
-  .transformer(sj)
   .queries({
     hello(ctx, input?: string) {
       return `hello ${input ?? 'world'}`;
@@ -109,10 +109,10 @@ const router = createRouter()
       .subscriptions({
         newMessages: (_ctx, { timestamp }: { timestamp: Date }) => {
           return subscriptionPullFatory<Message[]>({
-            interval: 500,
+            interval: 1000,
             async pull(emit) {
               const msgs = await getMessagesAfter(timestamp);
-              console.log('msgs', msgs, timestamp);
+              // console.log('messages after', timestamp, msgs.length);
               if (msgs.length > 0) {
                 emit.data(msgs);
               }
@@ -129,4 +129,5 @@ export default trpc.createNextApiHandler({
   router,
   createContext,
   teardown: () => prisma.$disconnect(),
+  transformer: sj,
 });

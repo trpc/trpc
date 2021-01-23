@@ -1,7 +1,7 @@
 import { EventEmitter } from 'events';
-import { AnyRouter, inferAsyncReturnType } from './router';
+import { inferAsyncReturnType } from './router';
 
-const debug = (...args: unknown[]) => console.log(...args);
+// const debug = (...args: unknown[]) => console.log(...args);
 
 type SubscriptionDestroyReason =
   | 'timeout'
@@ -53,7 +53,6 @@ export type SubscriptionEmit<TData> = {
 export interface SubscriptionOptions<TData> {
   getInitialData?: (emit: SubscriptionEmit<TData>) => void | Promise<void>;
   start: (emit: SubscriptionEmit<TData>) => UnsubscribeFn;
-  router: AnyRouter;
 }
 export class Subscription<TData = unknown> {
   private readonly events: SubscriptionEventEmitter<TData>;
@@ -69,14 +68,14 @@ export class Subscription<TData = unknown> {
       },
       ...opts,
     };
-    debug('Subscription.constructor()');
+    // debug('Subscription.constructor()');
   }
 
   public destroy(reason: SubscriptionDestroyReason) {
     if (this.isDestroyed) {
       return;
     }
-    debug('Subscription.destroy()', reason);
+    // debug('Subscription.destroy()', reason);
     this.isDestroyed = true;
     this.events.emit('destroy', reason);
     this.events.removeAllListeners();
@@ -100,14 +99,17 @@ export class Subscription<TData = unknown> {
         data: (data) => this.emitData(data),
       };
       await this.opts.getInitialData(emit);
-      this.opts.start(emit);
+      const cancel = this.opts.start(emit);
+      this.events.on('destroy', () => {
+        cancel();
+      });
     } catch (err) {
       this.emitError(err);
     }
   }
 
   public async onceDataAndStop(): Promise<TData> {
-    debug('Subscription.onceDataAsync()');
+    // debug('Subscription.onceDataAsync()');
     return new Promise<TData>(async (resolve, reject) => {
       const onDestroy = (reason: SubscriptionDestroyReason) => {
         reject(new SubscriptionDestroyError(reason));
@@ -144,7 +146,7 @@ export class Subscription<TData = unknown> {
    * Emit data
    */
   emitData(data: TData) {
-    this.events.emit('data', this.opts.router.serializeData(data) as any);
+    this.events.emit('data', data);
   }
   /**
    * Emit error
@@ -157,20 +159,3 @@ export class Subscription<TData = unknown> {
 export type inferSubscriptionData<
   TSubscription extends Subscription
 > = inferAsyncReturnType<TSubscription['onceDataAndStop']>;
-
-// async function main() {
-//   const startTime = Date.now();
-//   async function pull() {
-//     return (Date.now() - startTime) / 1000;
-//   }
-//   const sub = subscriptionPullFatory({
-//     pull,
-//     shouldEmit(d) {
-//       return d > 2;
-//     },
-//     interval: 1000,
-//   });
-//   console.log('yay', await sub.onceDataAndStop());
-// }
-
-// main();
