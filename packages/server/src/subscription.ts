@@ -99,7 +99,10 @@ export class Subscription<TData = unknown> {
         data: (data) => this.emitData(data),
       };
       await this.opts.getInitialData(emit);
-      this.opts.start(emit);
+      const cancel = this.opts.start(emit);
+      this.events.on('destroy', () => {
+        cancel();
+      });
     } catch (err) {
       this.emitError(err);
     }

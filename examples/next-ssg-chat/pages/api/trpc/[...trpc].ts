@@ -51,7 +51,9 @@ export function subscriptionPullFatory<TData>(opts: {
 }): Subscription<TData> {
   let timer: NodeJS.Timeout;
   let stopped = false;
+  const id = Math.random();
   async function _pull(emit: SubscriptionEmit<TData>) {
+    console.log('pull', id);
     if (stopped) {
       return;
     }
@@ -66,13 +68,13 @@ export function subscriptionPullFatory<TData>(opts: {
   }
 
   return new Subscription<TData>({
-    async getInitialData(emit) {
-      await _pull(emit);
-    },
-    start() {
+    start(emit) {
+      console.log('start', id);
+      _pull(emit);
       return () => {
+        console.log('cancelled', id);
         clearTimeout(timer);
-        stopped = false;
+        stopped = true;
       };
     },
   });
