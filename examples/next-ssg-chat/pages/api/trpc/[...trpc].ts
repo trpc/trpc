@@ -112,6 +112,7 @@ const router = createRouter()
             interval: 500,
             async pull(emit) {
               const msgs = await getMessagesAfter(timestamp);
+              console.log('msgs', msgs, timestamp)
               if (msgs.length > 0) {
                 emit.data(msgs);
               }

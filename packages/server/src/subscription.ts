@@ -96,13 +96,13 @@ export class Subscription<TData = unknown> {
     }
     try {
       const emit: SubscriptionEmit<TData> = {
-        error: (err) => this.events.emit('error', err),
-        data: (data) => this.events.emit('data', data),
+        error: (err) => this.emitError(err),
+        data: (data) => this.emitData(data),
       };
       await this.opts.getInitialData(emit);
       this.opts.start(emit);
     } catch (err) {
-      this.events.emit(err);
+      this.emitError(err);
     }
   }
 
@@ -141,7 +141,7 @@ export class Subscription<TData = unknown> {
   }
 
   emitData(data: TData) {
-    this.events.emit('data', data);
+    this.events.emit('data', this.opts.router.serializeData(data) as any);
   }
   emitError(err: Error) {
     this.events.emit('error', err);

@@ -39,6 +39,7 @@ export default function Home() {
     });
   };
   const timestamp = useMemo(() => getTimestamp(msgs), [msgs]);
+  console.log({ timestamp });
   useEffect(() => {
     return client.subscription(
       [
@@ -49,6 +50,7 @@ export default function Home() {
       ],
       {
         onSuccess(data) {
+          console.log('new data', data);
           addMessages(data);
         },
       },
