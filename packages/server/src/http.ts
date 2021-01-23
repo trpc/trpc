@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import type { EventEmitter } from 'events';
 import type qs from 'qs';
-import { DataTransformer } from '../dist';
+import { DataTransformer } from './transformer';
 import { assertNotBrowser } from './assertNotBrowser';
 import { InputValidationError } from './errors';
 import { Router } from './router';
