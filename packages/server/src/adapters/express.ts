@@ -1,11 +1,6 @@
 import type * as express from 'express';
-import {
-  BaseOptions,
-  CreateContextFn,
-  CreateContextFnOptions,
-  requestHandler,
-} from './http';
-import type { Router } from './router';
+import { BaseOptions, CreateContextFnOptions, requestHandler } from '../http';
+import type { Router } from '../router';
 
 export type CreateExpressContextOptions = CreateContextFnOptions<
   express.Request,
@@ -22,7 +17,7 @@ export function createExpressMiddleware<
 >(
   opts: {
     router: TRouter;
-    createContext: CreateContextFn<TContext, express.Request, express.Response>;
+    createContext: CreateExpressContextFn<TContext>;
   } & BaseOptions,
 ): express.Handler {
   return async (req, res) => {

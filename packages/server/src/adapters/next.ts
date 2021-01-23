@@ -5,8 +5,8 @@ import {
   CreateContextFnOptions,
   getErrorResponseEnvelope,
   requestHandler,
-} from './http';
-import type { Router } from './router';
+} from '../http';
+import type { Router } from '../router';
 
 export type CreateNextContextOptions = CreateContextFnOptions<
   NextApiRequest,
