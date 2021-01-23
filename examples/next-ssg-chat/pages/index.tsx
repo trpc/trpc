@@ -27,7 +27,7 @@ export default function Home() {
 
   const [msgs, setMessages] = useState(() => query.data.items);
   const addMessages = (newMessages: Message[]) => {
-    setMessages((nowMessages) => {
+    setMessages(nowMessages => {
       const map: Record<Message['id'], Message> = {};
       for (const msg of nowMessages) {
         map[msg.id] = msg;
@@ -53,7 +53,7 @@ export default function Home() {
         },
       },
     );
-  }, []);
+  }, [timestamp]);
   const addMessage = hooks.useMutation('messages.create');
   // useEffect(() => {
   //   let timer = setInterval(() => {
@@ -76,7 +76,7 @@ export default function Home() {
 
       <h2>Message</h2>
       <ul>
-        {msgs.map((m) => (
+        {msgs.map(m => (
           <li key={m.id}>
             <pre>{JSON.stringify(m, null, 4)}</pre>
           </li>
@@ -85,7 +85,7 @@ export default function Home() {
       <h3>Add message</h3>
 
       <form
-        onSubmit={async (e) => {
+        onSubmit={async e => {
           e.preventDefault();
           const $text: HTMLInputElement = (e as any).target.elements.text;
           const data = {
@@ -110,7 +110,7 @@ export async function getStaticProps() {
   return {
     props: {
       dehydratedState: dehydrate(hooks.queryClient),
-      revalidate: 1,
     },
+    revalidate: 1,
   };
 }

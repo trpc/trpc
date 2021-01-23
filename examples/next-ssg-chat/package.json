@@ -7,10 +7,11 @@
     "dx:prisma-studio": "prisma studio",
     "dx": "run-p dx:* --print-label",
     "dev": "next dev",
-    "build": "next build",
+    "build": "yarn migrate && next build",
     "start": "next start",
     "studio": "prisma studio",
-    "migrate": "prisma migrate dev --preview-feature"
+    "migrate-dev": "prisma migrate dev --preview-feature",
+    "migrate": "prisma migrate deploy --preview-feature"
   },
   "dependencies": {
     "@katt/trpc-client": "^1.0.0-alpha.6",
