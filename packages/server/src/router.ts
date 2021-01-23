@@ -73,18 +73,18 @@ export type RouteDefRecord<TContext = any, TInput = any, TData = any> = Record<
   RouteDef<TContext, TInput, TData>
 >;
 
-// export type RouteDefRecordToEndpoint<
-//   TRouteDefs extends RouteDefRecord<TContext, TInput, TData>,
-//   TContext = unknown,
-//   TInput = unknown,
-//   TData = unknown
-// > = {
-//   [TKey in keyof TRouteDefs]: RouterResolverFn<
-//     TContext,
-//     inferAsyncReturnType<TRouteDefs[TKey]['resolve']>,
-//     [ReturnType<TRouteDefs[TKey]['input']['parse']>]
-//   >;
-// };
+export type RouteDefRecordToEndpoint<
+  TRouteDefs extends RouteDefRecord<TContext, TInput, TData>,
+  TContext = unknown,
+  TInput = unknown,
+  TData = unknown
+> = {
+  [TKey in keyof TRouteDefs]: RouterResolverFn<
+    TContext,
+    inferAsyncReturnType<TRouteDefs[TKey]['resolve']>,
+    [ReturnType<TRouteDefs[TKey]['input']['parse']>]
+  >;
+};
 
 export type inferRouteInput<TDef extends RouteDef<any, any, any>> = ReturnType<
   TDef['input']['parse']
