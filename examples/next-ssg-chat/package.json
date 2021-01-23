@@ -1,6 +1,6 @@
 {
   "name": "@examples/chat",
-  "version": "1.0.0-alpha.11",
+  "version": "1.0.0-alpha.12",
   "private": true,
   "scripts": {
     "dx:next": "next dev",
