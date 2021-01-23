@@ -20,7 +20,7 @@ export function createExpressMiddleware<
     createContext: CreateExpressContextFn<TContext>;
   } & BaseOptions,
 ): express.Handler {
-  return async (req, res) => {
+  return (req, res) => {
     const endpoint = req.path.substr(1);
 
     requestHandler({
