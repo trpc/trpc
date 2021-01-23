@@ -1,6 +1,6 @@
 import { Message } from '@prisma/client';
 import Head from 'next/head';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { dehydrate } from 'react-query/hydration';
 import { chatRouter } from './api/trpc/[...trpc]';
 import { client, hooks } from './_app';
@@ -23,9 +23,9 @@ const getTimestamp = (m: Message[]) => {
 };
 
 export default function Home() {
-  const qqq = hooks.useQuery(['messages.list']);
+  const query = hooks.useQuery(['messages.list']);
 
-  const [msgs, setMessages] = useState(() => qqq.data.items);
+  const [msgs, setMessages] = useState(() => query.data.items);
   const addMessages = (newMessages: Message[]) => {
     setMessages((nowMessages) => {
       const map: Record<Message['id'], Message> = {};
@@ -38,26 +38,18 @@ export default function Home() {
       return Object.values(map);
     });
   };
+  const timestamp = useMemo(() => getTimestamp(msgs), [msgs]);
   useEffect(() => {
     return client.subscription(
       [
         'messages.newMessages',
         {
-          timestamp: getTimestamp(msgs),
+          timestamp,
         },
       ],
       {
         onSuccess(data) {
           addMessages(data);
-        },
-        getNextArgs(data) {
-          console.log('data', data);
-          const args = [
-            {
-              timestamp: getTimestamp(data),
-            },
-          ];
-          return args;
         },
       },
     );

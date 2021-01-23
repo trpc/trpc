@@ -40,7 +40,7 @@ async function getMessagesAfter(timestamp: Date) {
 const createContext = ({ req, res }: trpc.CreateNextContextOptions) => {
   return {};
 };
-type Context = trpc.inferAsyncReturnType<typeof createContext>;
+export type Context = trpc.inferAsyncReturnType<typeof createContext>;
 
 function createRouter() {
   return trpc.router<Context>();
@@ -48,7 +48,7 @@ function createRouter() {
 export function subscriptionPullFatory<TData>(opts: {
   interval: number;
   pull(emit: SubscriptionEmit<TData>): void | Promise<void>;
-}) {
+}): Subscription<TData> {
   let timer: NodeJS.Timeout;
   let stopped = false;
   async function _pull(emit: SubscriptionEmit<TData>) {
@@ -79,7 +79,6 @@ export function subscriptionPullFatory<TData>(opts: {
   });
 }
 const router = createRouter()
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   .transformer(sj)
   .queries({
     hello(ctx, input?: string) {

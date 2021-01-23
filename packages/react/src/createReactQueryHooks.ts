@@ -20,7 +20,7 @@ import {
 export function createReactQueryHooks<
   TRouter extends Router<TContext, any, any, any>,
   TContext,
-  TQueryClient extends QueryClient
+  TQueryClient extends QueryClient = any
 >({
   client,
   queryClient,
@@ -47,7 +47,7 @@ export function createReactQueryHooks<
 
     const data = useMemo(() => transformData(client.transformers, hook.data), [
       hook.data,
-    ]);
+    ]) as inferEndpointData<TQueries[TPath]>;
     return {
       ...hook,
       data,
@@ -113,10 +113,10 @@ export function createReactQueryHooks<
     ctx: TContext,
     ...args: TArgs
   ): Promise<void> => {
-    console.log('invoking', { ctx, path, router });
+    // console.log('invoking', { ctx, path, router });
     return queryClient.prefetchQuery([path, ...args], async () => {
       const data = await router.invokeQuery(ctx)(path, ...args);
-      console.log('data', data);
+      // console.log('data', data);
       return data;
     });
   };
