@@ -1,7 +1,7 @@
 import { EventEmitter } from 'events';
 import { inferAsyncReturnType } from './router';
 
-const debug = (...args: unknown[]) => console.log(...args);
+// const debug = (...args: unknown[]) => console.log(...args);
 
 type SubscriptionDestroyReason =
   | 'timeout'
@@ -68,14 +68,14 @@ export class Subscription<TData = unknown> {
       },
       ...opts,
     };
-    debug('Subscription.constructor()');
+    // debug('Subscription.constructor()');
   }
 
   public destroy(reason: SubscriptionDestroyReason) {
     if (this.isDestroyed) {
       return;
     }
-    debug('Subscription.destroy()', reason);
+    // debug('Subscription.destroy()', reason);
     this.isDestroyed = true;
     this.events.emit('destroy', reason);
     this.events.removeAllListeners();
@@ -106,7 +106,7 @@ export class Subscription<TData = unknown> {
   }
 
   public async onceDataAndStop(): Promise<TData> {
-    debug('Subscription.onceDataAsync()');
+    // debug('Subscription.onceDataAsync()');
     return new Promise<TData>(async (resolve, reject) => {
       const onDestroy = (reason: SubscriptionDestroyReason) => {
         reject(new SubscriptionDestroyError(reason));

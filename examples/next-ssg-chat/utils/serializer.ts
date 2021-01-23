@@ -1,19 +1,19 @@
 import { DataTransformer } from '@katt/trpc-server';
 import superjson from 'superjson';
 
-// https://github.com/blitz-js/superjson/pull/95
 export const sj: DataTransformer = {
   deserialize: (data) => {
     const res = superjson.deserialize(data);
-    console.log('deserializing', { data, res });
+    // console.log('deserializing', { data, res });
     return res;
   },
   serialize: (input) => {
     const res = superjson.serialize(input);
     if (!res.meta) {
+      // https://github.com/blitz-js/superjson/pull/95
       delete res.meta;
     }
-    console.log('deserializing', { input, res });
+    // console.log('deserializing', { input, res });
     return res;
   },
 };

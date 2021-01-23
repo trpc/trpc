@@ -4,7 +4,6 @@ import type {
   DropFirst,
   inferEndpointArgs,
   inferEndpointData,
-  inferEndpointsWithoutArgs,
   Router,
   RouterResolverFn,
 } from '@katt/trpc-server';
@@ -44,7 +43,6 @@ export function createReactQueryHooks<
       TRPCClientError,
       inferEndpointData<TQueries[TPath]>
     >(pathAndArgs, () => client.query(...pathAndArgs) as any, opts);
-    console.log('hook.data', hook.data);
     const data = useMemo(() => client.transformer.deserialize(hook.data), [
       hook.data,
     ]) as inferEndpointData<TQueries[TPath]>;

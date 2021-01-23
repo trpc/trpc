@@ -107,9 +107,10 @@ const router = createRouter()
       .subscriptions({
         newMessages: (_ctx, { timestamp }: { timestamp: Date }) => {
           return subscriptionPullFatory<Message[]>({
-            interval: 500,
+            interval: 1000,
             async pull(emit) {
               const msgs = await getMessagesAfter(timestamp);
+              console.log('messages after', timestamp, msgs.length);
               if (msgs.length > 0) {
                 emit.data(msgs);
               }

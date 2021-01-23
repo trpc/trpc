@@ -35,27 +35,30 @@ export default function Home() {
       for (const msg of newMessages) {
         map[msg.id] = msg;
       }
-      return Object.values(map);
+      return Object.values(map).sort(
+        (a, b) => a.createdAt.getTime() - b.createdAt.getTime(),
+      );
     });
   };
   const timestamp = useMemo(() => getTimestamp(msgs), [msgs]);
   console.log({ timestamp });
-  // useEffect(() => {
-  //   return client.subscription(
-  //     [
-  //       'messages.newMessages',
-  //       {
-  //         timestamp,
-  //       },
-  //     ],
-  //     {
-  //       onSuccess(data) {
-  //         console.log('new data', data);
-  //         addMessages(data);
-  //       },
-  //     },
-  //   );
-  // }, [timestamp]);
+  useEffect(() => {
+    return client.subscription(
+      [
+        'messages.newMessages',
+        {
+          timestamp,
+        },
+      ],
+      {
+        onSuccess(data) {
+          // console.log('new data', data);
+          addMessages(data);
+        },
+      },
+    );
+  }, [timestamp]);
+
   const addMessage = hooks.useMutation('messages.create');
   // useEffect(() => {
   //   let timer = setInterval(() => {
@@ -65,7 +68,7 @@ export default function Home() {
   //     clearTimeout(timer);
   //   };
   // }, []);
-  console.log(msgs);
+  // console.log(msgs);
 
   return (
     <div>
