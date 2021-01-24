@@ -146,6 +146,7 @@ export type RootRouter = typeof rootRouter;
 
 async function main() {
   const greeting = await rootRouter.invokeQuery({} as any)('hello', 'world');
+
   console.log(greeting);
   // express implementation
   const app = express();
