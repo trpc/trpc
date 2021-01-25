@@ -6,13 +6,13 @@ import type {
   inferEndpointArgs,
   inferEndpointData,
   inferSubscriptionData,
-  Maybe,
   Router,
   RouterResolverFn,
 } from '@trpcdev/server';
 import { useCallback, useMemo } from 'react';
 import {
   QueryClient,
+  QueryObserverResult,
   useMutation,
   UseMutationOptions,
   useQuery,
@@ -68,12 +68,13 @@ export function createReactQueryHooks<
       inferEndpointData<TQueries[TPath]>
     >,
   ) {
+    type TData = inferEndpointData<TQueries[TPath]>;
     const [path, ...args] = pathAndArgs;
 
     const hook = useQuery<
       inferEndpointArgs<TQueries[TPath]>,
       TRPCClientError,
-      inferEndpointData<TQueries[TPath]>
+      TData
     >(
       pathAndArgs,
       () =>
@@ -85,13 +86,16 @@ export function createReactQueryHooks<
       opts,
     );
     const data = useMemo(
-      () => (hook.data ? transformer.deserialize(hook.data) : hook.data),
+      () =>
+        typeof hook.data !== 'undefined'
+          ? (transformer.deserialize(hook.data) as TData)
+          : hook.data,
       [hook.data],
-    ) as inferEndpointData<TQueries[TPath]> | undefined;
+    );
     return {
       ...hook,
       data,
-    };
+    } as QueryObserverResult<TData, TRPCClientError>;
   }
 
   // /**
@@ -166,6 +170,8 @@ export function createReactQueryHooks<
       inferSubscriptionData<TSubscriptions[TPath]>
     >,
   ) {
+    type TData = inferSubscriptionData<TSubscriptions[TPath]>;
+
     const [path, ...args] = pathAndArgs;
 
     const hook = useQuery<
@@ -179,13 +185,16 @@ export function createReactQueryHooks<
     );
 
     const data = useMemo(
-      () => (hook.data ? transformer.deserialize(hook.data) : hook.data),
+      () =>
+        typeof hook.data !== 'undefined'
+          ? (transformer.deserialize(hook.data) as TData)
+          : hook.data,
       [hook.data],
-    ) as inferSubscriptionData<TSubscriptions[TPath]> | undefined;
+    );
     return {
       ...hook,
       data,
-    };
+    } as QueryObserverResult<TData, TRPCClientError>;
   }
 
   const ssr = async <
