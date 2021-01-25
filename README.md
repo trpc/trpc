@@ -14,7 +14,7 @@ tRPC is a framework for building strongly typed RPC APIs with TypeScript. Altern
 
 ## Usage
 
-> :construction: Under construction, for now see [`./examples`](./examples)
+> :construction:  Under construction, for now see [`./examples`](./examples)
 
 
 ### Data transformers
