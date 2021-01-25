@@ -10,26 +10,8 @@ import type {
   Maybe,
 } from '@trpcdev/server';
 
-type UnsubscribeFn = () => void;
-
 const retryDelay = (attemptIndex: number) =>
   attemptIndex === 0 ? 0 : Math.min(1000 * 2 ** attemptIndex, 30000);
-
-type inferSubscriptionFn<TRouter extends AnyRouter> = <
-  TPath extends keyof TRouter['_def']['subscriptions'],
-  TArgs extends inferEndpointArgs<TRouter['_def']['subscriptions'][TPath]> &
-    any[],
-  TData extends inferSubscriptionData<
-    inferAsyncReturnType<TRouter['_def']['subscriptions'][TPath]>
-  >
->(
-  pathAndArgs: [TPath, ...TArgs],
-  opts: {
-    onSuccess?: (data: TData) => void;
-    onError?: (error: TRPCClientError) => void;
-    getNextArgs?: (data: TData) => TArgs;
-  },
-) => UnsubscribeFn;
 
 type CancelFn = () => void;
 type CancellablePromise<T = unknown> = Promise<T> & {
@@ -281,76 +263,10 @@ export function createTRPCClient<TRouter extends AnyRouter>(
     return promise;
   }
 
-  const subscription: inferSubscriptionFn<TRouter> = (
-    [path, ...args],
-    opts,
-  ) => {
-    let stopped = false;
-    let controller: AbortController | null = null;
-    let nextTry: NodeJS.Timeout;
-    let attemptIndex = 0;
-    const exec = async (...thisArgs: typeof args) => {
-      // console.log('args', args);
-      if (stopped) {
-        // console.log('subscriptions have stopped');
-        return;
-      }
-      controller = AC ? new AC() : null;
-      const signal = controller?.signal;
-      const promise = _fetch(`${url}/${path}`, {
-        method: 'PATCH',
-        body: JSON.stringify({
-          args: args,
-        }),
-        headers: getHeaders(),
-        signal,
-      });
-      try {
-        // console.log('⏳  waiting for', path, thisArgs);
-        const data = await handleResponse(promise);
-
-        if (stopped) {
-          return;
-        }
-        opts.onSuccess && opts.onSuccess(data);
-
-        const nextArgs = opts.getNextArgs ? opts.getNextArgs(data) : thisArgs;
-        // console.log('nextArgs', nextArgs);
-        attemptIndex = 0;
-
-        exec(...nextArgs);
-      } catch (_err) {
-        if (stopped) {
-          console.log('sub stopped');
-          return;
-        }
-        const err: TRPCClientError = _err;
-        // console.log('❌ subscription failed :(', err.message);
-        if (err.json?.statusCode === 408) {
-          attemptIndex = 0;
-        } else {
-          attemptIndex++;
-        }
-        const delay = retryDelay(attemptIndex);
-        // console.log('trying again in', delay, 'ms');
-        nextTry = setTimeout(() => {
-          exec(...thisArgs);
-        }, delay);
-      }
-    };
-    // console.log('argds', args);
-    exec(...args);
-    return () => {
-      stopped = true;
-      clearTimeout(nextTry);
-      controller?.abort();
-    };
-  };
   return {
     request,
     query,
     mutate,
-    subscription,
     subscriptionOnce,
   };
 }
