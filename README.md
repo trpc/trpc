@@ -14,17 +14,7 @@ tRPC is a framework for building strongly typed RPC APIs with TypeScript. Altern
 
 ## Usage
 
-TODO - see examples
-
-
-### HTTP Methods <-> endpoint type mapping
-
-| HTTP Method | Mapping            | Notes                                                                             |
-| ----------- | ------------------ | --------------------------------------------------------------------------------- |
-| `GET`       | `.queries()`       | Args in query string                                                              |
-| `POST`      | `.mutations()`     | Args in post body                                                                 |
-| `PATCH`     | `.subscriptions()` | Experimental API using long-pulling. Implementation details are likely to change. |
-
+> :construction: Under construction, for now see [`./examples`](./examples)
 
 
 ### Data transformers
@@ -35,6 +25,18 @@ Data transformers currently live on the edges - in client-specific implementatio
 
 - `createNextApiHandler()` in [`./examples/next-ssg-chat/[...trpc.ts]`](./examples/next-ssg-chat/pages/api/trpc/%5B...trpc%5D.ts), and
 - `createReactQueryHooks` in [`./examples/next-ssg-chat/pages/_app.tsx`](./examples/next-ssg-chat/pages/_app.tsx)
+
+## Internals
+
+### HTTP Methods <-> endpoint type mapping
+
+| HTTP Method | Mapping            | Notes                                                                             |
+| ----------- | ------------------ | --------------------------------------------------------------------------------- |
+| `GET`       | `.queries()`       | Args in query string                                                              |
+| `POST`      | `.mutations()`     | Args in post body                                                                 |
+| `PATCH`     | `.subscriptions()` | Experimental API using long-pulling. Implementation details are likely to change. |
+
+
 # Development
 
 ```sh
