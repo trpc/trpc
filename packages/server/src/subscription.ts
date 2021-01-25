@@ -95,7 +95,7 @@ export class Subscription<TOutput = unknown> {
     try {
       const emit: SubscriptionEmit<TOutput> = {
         error: (err) => this.emitError(err),
-        data: (data) => this.emiTOutput(data),
+        data: (data) => this.emitOutput(data),
       };
       await this.opts.getInitialOutput(emit);
       const cancel = this.opts.start(emit);
@@ -144,7 +144,7 @@ export class Subscription<TOutput = unknown> {
   /**
    * Emit data
    */
-  emiTOutput(data: TOutput) {
+  emitOutput(data: TOutput) {
     this.events.emit('data', data);
   }
   /**
