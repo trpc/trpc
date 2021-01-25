@@ -2,7 +2,7 @@ import * as trpc from '@trpcdev/server';
 import { Subscription, SubscriptionEmit } from '@trpcdev/server';
 import { Message, PrismaClient } from '@prisma/client';
 import { sj } from '../../../utils/serializer';
-
+import * as z from 'zod';
 const prisma = new PrismaClient();
 
 async function createMessage(text: string) {
@@ -80,16 +80,22 @@ export function subscriptionPullFatory<TData>(opts: {
   });
 }
 const router = createRouter()
-  .queries({
-    hello(ctx, input?: string) {
-      return `hello ${input ?? 'world'}`;
+  .query('hello', {
+    input: z
+      .object({
+        text: z.string().optional(),
+      })
+      .optional(),
+    resolve({ input }) {
+      return `hello ${input?.text ?? 'world'}`;
     },
   })
   .merge(
     'messages.',
     createRouter()
-      .queries({
-        list: async () => {
+      .query('list', {
+        input: z.any(),
+        resolve: async () => {
           const items = await prisma.message.findMany({
             orderBy: {
               createdAt: 'asc',
@@ -100,14 +106,21 @@ const router = createRouter()
           };
         },
       })
-      .mutations({
-        create: async (_ctx, text: string) => {
-          const msg = await createMessage(text);
+      .mutation('create', {
+        input: z.object({
+          text: z.string().min(2),
+        }),
+        resolve: async ({ input }) => {
+          const msg = await createMessage(input.text);
           return msg;
         },
       })
-      .subscriptions({
-        newMessages: (_ctx, { timestamp }: { timestamp: Date }) => {
+      .subscription('newMessages', {
+        input: z.object({
+          timestamp: z.date(),
+        }),
+        resolve: ({ input }) => {
+          const { timestamp } = input;
           return subscriptionPullFatory<Message[]>({
             interval: 1000,
             async pull(emit) {

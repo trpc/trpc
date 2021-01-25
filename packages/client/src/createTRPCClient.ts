@@ -31,6 +31,10 @@ type inferSubscriptionFn<TRouter extends AnyRouter> = <
   },
 ) => UnsubscribeFn;
 
+type CancelFn = () => void;
+type CancellablePromise<T = unknown> = Promise<T> & {
+  cancel: CancelFn;
+};
 export class TRPCClientError extends Error {
   public readonly json?: Maybe<HTTPResponseEnvelope<unknown>>;
   public readonly res?: Maybe<Response>;
@@ -136,38 +140,147 @@ export function createTRPCClient<TRouter extends AnyRouter>(
   }
   function getHeaders() {
     return {
-      ...(opts.getHeaders ? opts.getHeaders() : {}),
       'content-type': 'application/json',
+      ...(opts.getHeaders ? opts.getHeaders() : {}),
     };
   }
+  type TRPCType = 'subscription' | 'query' | 'mutation';
+  function request({
+    type,
+    args,
+    path,
+  }: {
+    type: TRPCType;
+    args: unknown[];
+    path: string;
+  }) {
+    type ReqOpts = {
+      method: string;
+      body?: string;
+      url: string;
+    };
+    const reqOptsMap: Record<TRPCType, () => ReqOpts> = {
+      subscription: () => ({
+        method: 'PATCH',
+        body: JSON.stringify({ args }),
+        url: `${url}/${path}`,
+      }),
+      mutation: () => ({
+        method: 'POST',
+        body: JSON.stringify({ args }),
+        url: `${url}/${path}`,
+      }),
+      query: () => ({
+        method: 'GET',
+        url:
+          `${url}/${path}` +
+          (args.length
+            ? `?args=${encodeURIComponent(JSON.stringify(args))}`
+            : ''),
+      }),
+    };
+
+    const reqOptsFn = reqOptsMap[type];
+    if (!reqOptsFn) {
+      throw new Error(`Unhandled type "${type}"`);
+    }
+    const ac = AC ? new AC() : null;
+
+    const { url: reqUrl, ...rest } = reqOptsFn();
+    const reqOpts = {
+      ...rest,
+      signal: ac?.signal,
+      headers: getHeaders(),
+    };
+
+    const promise: CancellablePromise<any> & {
+      cancel(): void;
+    } = handleResponse(fetch(reqUrl, reqOpts)) as any;
+    promise.cancel = () => {
+      ac?.abort();
+    };
+
+    return promise;
+  }
+
   const query: inferHandler<TRouter['_def']['queries']> = async (
     path: string,
     ...args: unknown[]
   ) => {
-    let target = `${url}/${path}`;
-    if (args?.length) {
-      target += `?args=${encodeURIComponent(JSON.stringify(args as any))}`;
-    }
-    const promise = _fetch(target, {
-      headers: getHeaders(),
+    return request({
+      type: 'query',
+      path,
+      args,
     });
-
-    return handleResponse(promise);
   };
+
   const mutate: inferHandler<TRouter['_def']['mutations']> = async (
     path,
     ...args
   ) => {
-    const promise = _fetch(`${url}/${path}`, {
-      method: 'POST',
-      body: JSON.stringify({
-        args: args,
-      }),
-      headers: getHeaders(),
+    return request({
+      type: 'mutation',
+      path,
+      args,
     });
-
-    return handleResponse(promise);
   };
+
+  function subscriptionOnce<
+    TPath extends keyof TRouter['_def']['subscriptions'] & string,
+    TArgs extends inferEndpointArgs<TRouter['_def']['subscriptions'][TPath]> &
+      any[]
+  >(path: TPath, ...args: TArgs) {
+    type TData = inferSubscriptionData<
+      inferAsyncReturnType<TRouter['_def']['subscriptions'][TPath]>
+    >;
+    let stopped = false;
+    let nextTry: NodeJS.Timeout;
+    let currentRequest: ReturnType<typeof request> | null = null;
+    let attemptIndex = 0;
+
+    console.log('subscriptioonOnce', { path, args });
+    const promise = new Promise<TData>((resolve, reject) => {
+      async function exec() {
+        if (stopped) {
+          return;
+        }
+        try {
+          currentRequest = request({
+            type: 'subscription',
+            args,
+            path,
+          });
+          const data = await currentRequest;
+          console.log('response', { path, args, data });
+          resolve(data);
+          attemptIndex = 0;
+        } catch (_err) {
+          if (stopped) {
+            reject(_err);
+            return;
+          }
+          const err: TRPCClientError = _err;
+          // console.log('❌ subscription failed :(', err.message);
+          if (err.json?.statusCode === 408) {
+            attemptIndex = 0;
+          } else {
+            attemptIndex++;
+          }
+          const delay = retryDelay(attemptIndex);
+          nextTry = setTimeout(exec, delay);
+        }
+      }
+      exec();
+    }) as CancellablePromise<TData>;
+    promise.cancel = () => {
+      stopped = true;
+      clearTimeout(nextTry);
+      currentRequest?.cancel && currentRequest.cancel();
+    };
+
+    return promise;
+  }
+
   const subscription: inferSubscriptionFn<TRouter> = (
     [path, ...args],
     opts,
@@ -234,9 +347,11 @@ export function createTRPCClient<TRouter extends AnyRouter>(
     };
   };
   return {
-    mutate,
+    request,
     query,
+    mutate,
     subscription,
+    subscriptionOnce,
   };
 }
 

@@ -155,6 +155,10 @@ export async function requestHandler<
     let data: unknown;
     const ctx = await createContext({ req, res });
     const method = req.method ?? 'GET';
+
+    const deserializeArgs = (args: unknown[]): any =>
+      args.map((arg) => transformer.deserialize(arg));
+
     if (method === 'POST') {
       if (!router.has('mutations', endpoint)) {
         throw httpError.notFound(`Unknown mutation "${endpoint}"`);
@@ -167,7 +171,7 @@ export async function requestHandler<
 
       data = await router.invokeMutation(ctx)(
         endpoint as any,
-        ...(args.map(transformer.deserialize) as any),
+        ...deserializeArgs(args),
       );
     } else if (method === 'GET') {
       if (!router.has('queries', endpoint)) {
@@ -177,7 +181,7 @@ export async function requestHandler<
 
       data = await router.invokeQuery(ctx)(
         endpoint as any,
-        ...(args.map(transformer.deserialize) as any),
+        ...deserializeArgs(args),
       );
     } else if (method === 'PATCH') {
       if (!router.has('subscriptions', endpoint)) {
@@ -190,7 +194,7 @@ export async function requestHandler<
 
       const sub: Subscription = await router.invokeSubscription(ctx)(
         endpoint as any,
-        ...(args.map(transformer.deserialize) as any),
+        ...deserializeArgs(args),
       );
       const onClose = () => {
         sub.destroy('closed');
