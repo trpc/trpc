@@ -23,7 +23,7 @@ const getTimestamp = (m: Message[]) => {
 };
 
 export default function Home() {
-  const query = hooks.useQuery(['messages.list']);
+  const query = hooks.useQuery(['messages.list', '']);
 
   const [msgs, setMessages] = useState(() => query.data.items);
   const addMessages = (newMessages?: Message[]) => {
@@ -99,7 +99,7 @@ export default function Home() {
   );
 }
 export async function getStaticProps() {
-  await hooks.ssr(chatRouter, 'messages.list', {});
+  await hooks.ssr(chatRouter, 'messages.list', {}, '');
   return {
     props: {
       dehydratedState: dehydrate(hooks.queryClient),
