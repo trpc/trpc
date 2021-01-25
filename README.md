@@ -19,7 +19,7 @@ tRPC is a framework for building strongly typed RPC APIs with TypeScript. Altern
 
 ### Data transformers
 
-You are able to serialize the output data (in order to be able to transparently use e.g. standard `Date`s). The transformers need to be added both to the server and the client.
+You are able to serialize the output data & input args (in order to be able to transparently use e.g. standard `Date`s). The transformers need to be added both to the server and the client.
 
 Data transformers currently live on the edges - in client-specific implementation & in the API response adapters. See a reference of how superjson is attached to ..
 

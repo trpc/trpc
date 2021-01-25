@@ -18,51 +18,51 @@ export class SubscriptionDestroyError extends Error {
   }
 }
 
-interface SubscriptionEvents<TData> {
-  data: (data: TData) => void;
+interface SubscriptionEvents<TOutput> {
+  data: (data: TOutput) => void;
   destroy: (reason: SubscriptionDestroyReason) => void;
   error: (error: Error) => void;
 }
-declare interface SubscriptionEventEmitter<TData> {
-  on<U extends keyof SubscriptionEvents<TData>>(
+declare interface SubscriptionEventEmitter<TOutput> {
+  on<U extends keyof SubscriptionEvents<TOutput>>(
     event: U,
-    listener: SubscriptionEvents<TData>[U],
+    listener: SubscriptionEvents<TOutput>[U],
   ): this;
 
-  once<U extends keyof SubscriptionEvents<TData>>(
+  once<U extends keyof SubscriptionEvents<TOutput>>(
     event: U,
-    listener: SubscriptionEvents<TData>[U],
+    listener: SubscriptionEvents<TOutput>[U],
   ): this;
 
-  emit<U extends keyof SubscriptionEvents<TData>>(
+  emit<U extends keyof SubscriptionEvents<TOutput>>(
     event: U,
-    ...args: Parameters<SubscriptionEvents<TData>[U]>
+    ...args: Parameters<SubscriptionEvents<TOutput>[U]>
   ): boolean;
 }
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-class SubscriptionEventEmitter<TData> extends EventEmitter {}
+class SubscriptionEventEmitter<TOutput> extends EventEmitter {}
 
 type UnsubscribeFn = () => void;
-type EmitFn<TData> = (data: TData) => void;
+type EmitFn<TOutput> = (data: TOutput) => void;
 
-export type SubscriptionEmit<TData> = {
-  data: EmitFn<TData>;
+export type SubscriptionEmit<TOutput> = {
+  data: EmitFn<TOutput>;
   error: EmitFn<Error>;
 };
-export interface SubscriptionOptions<TData> {
-  getInitialData?: (emit: SubscriptionEmit<TData>) => void | Promise<void>;
-  start: (emit: SubscriptionEmit<TData>) => UnsubscribeFn;
+export interface SubscriptionOptions<TOutput> {
+  getInitialOutput?: (emit: SubscriptionEmit<TOutput>) => void | Promise<void>;
+  start: (emit: SubscriptionEmit<TOutput>) => UnsubscribeFn;
 }
-export class Subscription<TData = unknown> {
-  private readonly events: SubscriptionEventEmitter<TData>;
-  private opts: Required<SubscriptionOptions<TData>>;
+export class Subscription<TOutput = unknown> {
+  private readonly events: SubscriptionEventEmitter<TOutput>;
+  private opts: Required<SubscriptionOptions<TOutput>>;
   private isDestroyed: boolean;
 
-  constructor(opts: SubscriptionOptions<TData>) {
+  constructor(opts: SubscriptionOptions<TOutput>) {
     this.isDestroyed = false;
-    this.events = new SubscriptionEventEmitter<TData>();
+    this.events = new SubscriptionEventEmitter<TOutput>();
     this.opts = {
-      getInitialData: () => {
+      getInitialOutput: () => {
         // no-op
       },
       ...opts,
@@ -93,11 +93,11 @@ export class Subscription<TData = unknown> {
       throw new Error('Called start() on a destroyed subscription');
     }
     try {
-      const emit: SubscriptionEmit<TData> = {
+      const emit: SubscriptionEmit<TOutput> = {
         error: (err) => this.emitError(err),
-        data: (data) => this.emitData(data),
+        data: (data) => this.emitOutput(data),
       };
-      await this.opts.getInitialData(emit);
+      await this.opts.getInitialOutput(emit);
       const cancel = this.opts.start(emit);
       this.events.on('destroy', () => {
         cancel();
@@ -107,14 +107,14 @@ export class Subscription<TData = unknown> {
     }
   }
 
-  public async onceDataAndStop(): Promise<TData> {
-    // debug('Subscription.onceDataAsync()');
-    return new Promise<TData>(async (resolve, reject) => {
+  public async onceOutputAndStop(): Promise<TOutput> {
+    // debug('Subscription.onceOutputAsync()');
+    return new Promise<TOutput>(async (resolve, reject) => {
       const onDestroy = (reason: SubscriptionDestroyReason) => {
         reject(new SubscriptionDestroyError(reason));
         cleanup();
       };
-      const onData = (data: TData) => {
+      const onOutput = (data: TOutput) => {
         resolve(data);
         cleanup();
         this.destroy('stopped');
@@ -126,12 +126,12 @@ export class Subscription<TData = unknown> {
       };
 
       const cleanup = () => {
-        this.events.off('data', onData);
+        this.events.off('data', onOutput);
         this.events.off('destroy', onDestroy);
         this.events.off('error', onError);
       };
 
-      this.events.once('data', onData);
+      this.events.once('data', onOutput);
       this.events.once('destroy', onDestroy);
       this.events.once('error', onError);
 
@@ -144,7 +144,7 @@ export class Subscription<TData = unknown> {
   /**
    * Emit data
    */
-  emitData(data: TData) {
+  emitOutput(data: TOutput) {
     this.events.emit('data', data);
   }
   /**
@@ -155,14 +155,14 @@ export class Subscription<TData = unknown> {
   }
 }
 
-export function subscriptionPullFatory<TData>(opts: {
+export function subscriptionPullFatory<TOutput>(opts: {
   interval: number;
-  pull(emit: SubscriptionEmit<TData>): void | Promise<void>;
-}): Subscription<TData> {
+  pull(emit: SubscriptionEmit<TOutput>): void | Promise<void>;
+}): Subscription<TOutput> {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let timer: any;
   let stopped = false;
-  async function _pull(emit: SubscriptionEmit<TData>) {
+  async function _pull(emit: SubscriptionEmit<TOutput>) {
     if (stopped) {
       return;
     }
@@ -176,7 +176,7 @@ export function subscriptionPullFatory<TData>(opts: {
     }
   }
 
-  return new Subscription<TData>({
+  return new Subscription<TOutput>({
     start(emit) {
       _pull(emit);
       return () => {

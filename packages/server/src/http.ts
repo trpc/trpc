@@ -24,10 +24,10 @@ export const httpError = {
     new HTTPError(400, message ?? 'Bad Request'),
   notFound: (message?: string) => new HTTPError(404, message ?? 'Not found'),
 };
-export type HTTPSuccessResponseEnvelope<TData> = {
+export type HTTPSuccessResponseEnvelope<TOutput> = {
   ok: true;
   statusCode: number;
-  data: TData;
+  data: TOutput;
 };
 
 export type HTTPErrorResponseEnvelope = {
@@ -39,8 +39,8 @@ export type HTTPErrorResponseEnvelope = {
   };
 };
 
-export type HTTPResponseEnvelope<TData> =
-  | HTTPSuccessResponseEnvelope<TData>
+export type HTTPResponseEnvelope<TOutput> =
+  | HTTPSuccessResponseEnvelope<TOutput>
   | HTTPErrorResponseEnvelope;
 
 export function getErrorResponseEnvelope(
@@ -213,7 +213,7 @@ export async function requestHandler<
         sub.destroy('timeout');
       }, timeout);
       try {
-        data = await sub.onceDataAndStop();
+        data = await sub.onceOutputAndStop();
 
         res.off('close', onClose);
       } catch (err) {
