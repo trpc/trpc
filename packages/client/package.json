@@ -6,7 +6,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/KATT/trpc.git",
+    "url": "git+https://github.com/@trpcdev/trpc.git",
     "directory": "packages/client"
   },
   "scripts": {
