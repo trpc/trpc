@@ -80,16 +80,22 @@ export function subscriptionPullFatory<TData>(opts: {
   });
 }
 const router = createRouter()
-  .queries({
-    hello(ctx, input?: string) {
-      return `hello ${input ?? 'world'}`;
+  .query('hello', {
+    input: z
+      .object({
+        text: z.string().optional(),
+      })
+      .optional(),
+    resolve({ input }) {
+      return `hello ${input?.text ?? 'world'}`;
     },
   })
   .merge(
     'messages.',
     createRouter()
-      .queries({
-        list: async () => {
+      .query('list', {
+        input: z.any(),
+        resolve: async () => {
           const items = await prisma.message.findMany({
             orderBy: {
               createdAt: 'asc',

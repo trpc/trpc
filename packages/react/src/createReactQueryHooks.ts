@@ -182,7 +182,7 @@ export function createReactQueryHooks<
     const data = useMemo(
       () => (hook.data ? transformer.deserialize(hook.data) : hook.data),
       [hook.data],
-    ) as Maybe<inferEndpointData<TSubscriptions[TPath]>>;
+    ) as Maybe<inferSubscriptionData<TSubscriptions[TPath]>>;
     return {
       ...hook,
       data,
