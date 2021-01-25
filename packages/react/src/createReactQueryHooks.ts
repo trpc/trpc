@@ -84,11 +84,10 @@ export function createReactQueryHooks<
         }) as any,
       opts,
     );
-
     const data = useMemo(
       () => (hook.data ? transformer.deserialize(hook.data) : hook.data),
       [hook.data],
-    ) as Maybe<inferEndpointData<TQueries[TPath]>>;
+    ) as inferEndpointData<TQueries[TPath]> | undefined;
     return {
       ...hook,
       data,
@@ -182,7 +181,7 @@ export function createReactQueryHooks<
     const data = useMemo(
       () => (hook.data ? transformer.deserialize(hook.data) : hook.data),
       [hook.data],
-    ) as Maybe<inferSubscriptionData<TSubscriptions[TPath]>>;
+    ) as inferSubscriptionData<TSubscriptions[TPath]> | undefined;
     return {
       ...hook,
       data,

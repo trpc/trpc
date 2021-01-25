@@ -51,7 +51,7 @@ export default function Home() {
     'messages.newMessages',
     { timestamp },
   ]);
-  // merge messages when query gives new data
+  // merge messages on subscription.data
   useEffect(() => addMessages(subscription.data), [subscription.data]);
 
   console.log({ timestamp });
