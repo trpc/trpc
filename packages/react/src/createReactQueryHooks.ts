@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { TRPCClient, TRPCClientError } from '@trpc/client';
 import type {
-  OutputTransformer,
+  DataTransformer,
   DropFirst,
   inferEndpointArgs,
   inferEndpoinTOutput,
@@ -33,7 +33,7 @@ export function createReactQueryHooks<
 }: {
   client: TRPCClient;
   queryClient: TQueryClient;
-  transformer?: OutputTransformer;
+  transformer?: DataTransformer;
 }) {
   type TQueries = TRouter['_def']['queries'];
   type TMutations = TRouter['_def']['mutations'];

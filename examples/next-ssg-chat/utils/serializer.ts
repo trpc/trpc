@@ -1,7 +1,7 @@
-import { OutputTransformer } from '@trpc/server';
+import { DataTransformer } from '@trpc/server';
 import superjson from 'superjson';
 
-export const sj: OutputTransformer = {
+export const sj: DataTransformer = {
   deserialize: (data) => {
     const res = superjson.deserialize(data);
     // console.log('deserializing', { data, res });

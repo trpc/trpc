@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import type { EventEmitter } from 'events';
 import type qs from 'qs';
-import { OutputTransformer } from './transformer';
+import { DataTransformer } from './transformer';
 import { assertNotBrowser } from './assertNotBrowser';
 import { InputValidationError } from './errors';
 import { Router } from './router';
@@ -123,7 +123,7 @@ export interface BaseOptions {
   /**
    * Optional transformer too serialize/deserialize input args + data
    */
-  transformer?: OutputTransformer;
+  transformer?: DataTransformer;
 }
 
 export async function requestHandler<
