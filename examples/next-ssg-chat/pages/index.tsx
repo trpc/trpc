@@ -42,22 +42,22 @@ export default function Home() {
   };
   const timestamp = useMemo(() => getTimestamp(msgs), [msgs]);
   console.log({ timestamp });
-  useEffect(() => {
-    return client.subscription(
-      [
-        'messages.newMessages',
-        {
-          timestamp,
-        },
-      ],
-      {
-        onSuccess(data) {
-          // console.log('new data', data);
-          addMessages(data);
-        },
-      },
-    );
-  }, [timestamp]);
+  // useEffect(() => {
+  //   return client.subscription(
+  //     [
+  //       'messages.newMessages',
+  //       {
+  //         timestamp,
+  //       },
+  //     ],
+  //     {
+  //       onSuccess(data) {
+  //         // console.log('new data', data);
+  //         addMessages(data);
+  //       },
+  //     },
+  //   );
+  // }, [timestamp]);
 
   const addMessage = hooks.useMutation('messages.create');
   // useEffect(() => {

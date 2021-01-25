@@ -1,7 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import type {
   AnyRouter,
-  DataTransformer,
   HTTPResponseEnvelope,
   HTTPSuccessResponseEnvelope,
   inferAsyncReturnType,
@@ -9,7 +8,7 @@ import type {
   inferHandler,
   inferSubscriptionData,
   Maybe,
-} from '@katt/trpc-server';
+} from '@trpcdev/server';
 
 type UnsubscribeFn = () => void;
 
@@ -32,12 +31,6 @@ type inferSubscriptionFn<TRouter extends AnyRouter> = <
   },
 ) => UnsubscribeFn;
 
-export type TRPCClient<TRouter extends AnyRouter> = {
-  query: inferHandler<TRouter['_def']['queries']>;
-  mutate: inferHandler<TRouter['_def']['mutations']>;
-  subscription: inferSubscriptionFn<TRouter>;
-  transformer: DataTransformer;
-};
 export class TRPCClientError extends Error {
   public readonly json?: Maybe<HTTPResponseEnvelope<unknown>>;
   public readonly res?: Maybe<Response>;
@@ -103,19 +96,14 @@ export interface CreateTRPCClientOptions {
   getHeaders?: () => Record<string, string | undefined>;
   onSuccess?: (data: HTTPSuccessResponseEnvelope<unknown>) => void;
   onError?: (error: TRPCClientError) => void;
-  transformer?: DataTransformer;
 }
 
 export function createTRPCClient<TRouter extends AnyRouter>(
   opts: CreateTRPCClientOptions,
-): TRPCClient<TRouter> {
+) {
   const { fetchOpts, url } = opts;
   const _fetch = getFetch(fetchOpts?.fetch);
   const AC = getAbortController(fetchOpts?.AbortController);
-  const transformer = opts.transformer ?? {
-    serialize: (data) => data,
-    deserialize: (data) => data,
-  };
 
   async function handleResponse(promise: Promise<Response>) {
     let res: Maybe<Response> = null;
@@ -128,7 +116,7 @@ export function createTRPCClient<TRouter extends AnyRouter>(
         opts.onSuccess &&
           opts.onSuccess({
             ...json,
-            data: transformer.deserialize(json.data),
+            data: json.data,
           });
         return json.data as any;
       }
@@ -158,9 +146,7 @@ export function createTRPCClient<TRouter extends AnyRouter>(
   ) => {
     let target = `${url}/${path}`;
     if (args?.length) {
-      target += `?args=${encodeURIComponent(
-        JSON.stringify(args.map(transformer.serialize) as any),
-      )}`;
+      target += `?args=${encodeURIComponent(JSON.stringify(args as any))}`;
     }
     const promise = _fetch(target, {
       headers: getHeaders(),
@@ -175,7 +161,7 @@ export function createTRPCClient<TRouter extends AnyRouter>(
     const promise = _fetch(`${url}/${path}`, {
       method: 'POST',
       body: JSON.stringify({
-        args: args.map(transformer.serialize),
+        args: args,
       }),
       headers: getHeaders(),
     });
@@ -201,14 +187,14 @@ export function createTRPCClient<TRouter extends AnyRouter>(
       const promise = _fetch(`${url}/${path}`, {
         method: 'PATCH',
         body: JSON.stringify({
-          args: args.map(transformer.serialize),
+          args: args,
         }),
         headers: getHeaders(),
         signal,
       });
       try {
         // console.log('⏳  waiting for', path, thisArgs);
-        const data = transformer.deserialize(await handleResponse(promise));
+        const data = await handleResponse(promise);
 
         if (stopped) {
           return;
@@ -251,6 +237,7 @@ export function createTRPCClient<TRouter extends AnyRouter>(
     mutate,
     query,
     subscription,
-    transformer,
   };
 }
+
+export type TRPCClient = ReturnType<typeof createTRPCClient>;

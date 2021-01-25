@@ -1,3 +1,3 @@
-# @katt/trpc-server
+# @trpcdev/server
 
 https://github.com/KATT/trpc

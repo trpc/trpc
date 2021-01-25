@@ -1,3 +1,3 @@
-# `@katt/trpc-client`
+# `@trpcdev/client`
 
 https://github.com/KATT/trpc

@@ -1,7 +1,7 @@
 import bodyParser from 'body-parser';
 import { EventEmitter } from 'events';
 import express from 'express';
-import * as trpc from '@katt/trpc-server';
+import * as trpc from '@trpcdev/server';
 
 // ---------- create context
 const createContext = ({ req, res }: trpc.CreateExpressContextOptions) => {
