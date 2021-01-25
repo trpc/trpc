@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { TRPCClient, TRPCClientError } from '@trpcdev/client';
+import { TRPCClient, TRPCClientError } from '@trpc/client';
 import type {
   DataTransformer,
   DropFirst,
@@ -8,7 +8,7 @@ import type {
   inferSubscriptionData,
   Router,
   RouterResolverFn,
-} from '@trpcdev/server';
+} from '@trpc/server';
 import { useCallback, useMemo } from 'react';
 import {
   QueryClient,

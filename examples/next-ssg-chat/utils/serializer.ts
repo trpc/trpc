@@ -1,4 +1,4 @@
-import { DataTransformer } from '@trpcdev/server';
+import { DataTransformer } from '@trpc/server';
 import superjson from 'superjson';
 
 export const sj: DataTransformer = {

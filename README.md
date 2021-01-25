@@ -48,7 +48,7 @@ This will install all dependencies in each project, build them, and symlink them
 ## Development workflow
 
 ```bash
-git clone git@github.com:@trpcdev/trpc.git
+git clone git@github.com:@trpc/trpc.git
 cd trpc
 yarn
 ```
