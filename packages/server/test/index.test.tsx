@@ -63,16 +63,15 @@ describe('input validation', () => {
 
       expect(res.text).toBe('hello katt');
     }
-    {
-      await expect(() => r.invokeQuery({})('test', { who: false as any }))
-        .rejects.toMatchInlineSnapshot(`
+
+    await expect(() => r.invokeQuery({})('test', { who: false as any })).rejects
+      .toMatchInlineSnapshot(`
               [Error: 1 validation issue(s)
 
                 Issue #0: invalid_union at 
                 Invalid input
               ]
             `);
-    }
   });
 
   // test('fixme: next generation', async () => {

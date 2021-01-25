@@ -23,16 +23,16 @@ const getTimestamp = (m: Message[]) => {
 };
 
 export default function Home() {
-  const query = hooks.useQuery(['messages.list']);
+  const query = hooks.useQuery(['messages.list', '']);
 
-  const [msgs, setMessages] = useState(() => query.data.items);
-  const addMessages = (newMessages: Message[]) => {
+  const [msgs, setMessages] = useState(() => query.data?.items ?? []);
+  const addMessages = (newMessages?: Message[]) => {
     setMessages((nowMessages) => {
       const map: Record<Message['id'], Message> = {};
       for (const msg of nowMessages) {
         map[msg.id] = msg;
       }
-      for (const msg of newMessages) {
+      for (const msg of newMessages ?? []) {
         map[msg.id] = msg;
       }
       return Object.values(map).sort(
@@ -40,35 +40,23 @@ export default function Home() {
       );
     });
   };
+  // get latest timestamp
   const timestamp = useMemo(() => getTimestamp(msgs), [msgs]);
+
+  // merge messages when `query.data` updates
+  useEffect(() => addMessages(query.data.items), [query.data]);
+
+  // ---subscriptions
+  const subscription = hooks.useSubscription([
+    'messages.newMessages',
+    { timestamp },
+  ]);
+  // merge messages on subscription.data
+  useEffect(() => addMessages(subscription.data), [subscription.data]);
+
   console.log({ timestamp });
-  // useEffect(() => {
-  //   return client.subscription(
-  //     [
-  //       'messages.newMessages',
-  //       {
-  //         timestamp,
-  //       },
-  //     ],
-  //     {
-  //       onSuccess(data) {
-  //         // console.log('new data', data);
-  //         addMessages(data);
-  //       },
-  //     },
-  //   );
-  // }, [timestamp]);
 
   const addMessage = hooks.useMutation('messages.create');
-  // useEffect(() => {
-  //   let timer = setInterval(() => {
-  //     m.mutate(['some msg' + Math.random()]);
-  //   }, 5000);
-  //   return () => {
-  //     clearTimeout(timer);
-  //   };
-  // }, []);
-  // console.log(msgs);
 
   return (
     <div>
@@ -83,7 +71,8 @@ export default function Home() {
       <ul>
         {msgs.map((m) => (
           <li key={m.id}>
-            <pre>{JSON.stringify(m, null, 4)}</pre>
+            {m.createdAt.toDateString()} {m.createdAt.toLocaleTimeString()}:{' '}
+            {m.text}
           </li>
         ))}
       </ul>
@@ -98,7 +87,7 @@ export default function Home() {
           };
 
           try {
-            const res = await addMessage.mutateAsync([data.text]);
+            const res = await addMessage.mutateAsync([data]);
             $text.value = '';
             addMessages([res]);
           } catch (err) {}
@@ -111,7 +100,7 @@ export default function Home() {
   );
 }
 export async function getStaticProps() {
-  await hooks.ssr(chatRouter, 'messages.list', {});
+  await hooks.ssr(chatRouter, 'messages.list', {}, '');
   return {
     props: {
       dehydratedState: dehydrate(hooks.queryClient),
