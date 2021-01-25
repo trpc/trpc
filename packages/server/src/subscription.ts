@@ -1,5 +1,4 @@
 import { EventEmitter } from 'events';
-import { inferAsyncReturnType } from './router';
 
 // const debug = (...args: unknown[]) => console.log(...args);
 
@@ -156,15 +155,12 @@ export class Subscription<TData = unknown> {
   }
 }
 
-export type inferSubscriptionData<
-  TSubscription extends Subscription
-> = inferAsyncReturnType<TSubscription['onceDataAndStop']>;
-
 export function subscriptionPullFatory<TData>(opts: {
   interval: number;
   pull(emit: SubscriptionEmit<TData>): void | Promise<void>;
 }): Subscription<TData> {
-  let timer: NodeJS.Timeout;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let timer: any;
   let stopped = false;
   async function _pull(emit: SubscriptionEmit<TData>) {
     if (stopped) {

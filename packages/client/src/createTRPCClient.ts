@@ -3,7 +3,6 @@ import type {
   AnyRouter,
   HTTPResponseEnvelope,
   HTTPSuccessResponseEnvelope,
-  inferAsyncReturnType,
   inferEndpointArgs,
   inferHandler,
   inferSubscriptionData,
@@ -209,9 +208,7 @@ export function createTRPCClient<TRouter extends AnyRouter>(
     TArgs extends inferEndpointArgs<TRouter['_def']['subscriptions'][TPath]> &
       any[]
   >(path: TPath, ...args: TArgs) {
-    type TData = inferSubscriptionData<
-      inferAsyncReturnType<TRouter['_def']['subscriptions'][TPath]>
-    >;
+    type TData = inferSubscriptionData<TRouter, TPath>;
     let stopped = false;
     let nextTry: any; // setting as `NodeJS.Timeout` causes compat issues, can probably be solved
     let currentRequest: ReturnType<typeof request> | null = null;

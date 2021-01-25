@@ -19,24 +19,6 @@ import {
   UseQueryOptions,
 } from 'react-query';
 
-// type UnsubscribeFn = () => void;
-
-// type inferSubscriptionFn<TRouter extends AnyRouter> = <
-//   TPath extends keyof TRouter['_def']['subscriptions'],
-//   TArgs extends inferEndpointArgs<TRouter['_def']['subscriptions'][TPath]> &
-//     any[],
-//   TData extends inferSubscriptionData<
-//     inferAsyncReturnType<TRouter['_def']['subscriptions'][TPath]>
-//   >
-// >(
-//   pathAndArgs: [TPath, ...TArgs],
-//   opts: {
-//     onSuccess?: (data: TData) => void;
-//     onError?: (error: TRPCClientError) => void;
-//     getNextArgs?: (data: TData) => TArgs;
-//   },
-// ) => UnsubscribeFn;
-
 export function createReactQueryHooks<
   TRouter extends Router<TContext, any, any, any>,
   TContext,
@@ -167,17 +149,17 @@ export function createReactQueryHooks<
     opts?: UseQueryOptions<
       inferEndpointArgs<TSubscriptions[TPath]>,
       TRPCClientError,
-      inferSubscriptionData<TSubscriptions[TPath]>
+      inferSubscriptionData<TRouter, TPath>
     >,
   ) {
-    type TData = inferSubscriptionData<TSubscriptions[TPath]>;
+    type TData = inferSubscriptionData<TRouter, TPath>;
 
     const [path, ...args] = pathAndArgs;
 
     const hook = useQuery<
       inferEndpointArgs<TSubscriptions[TPath]>,
       TRPCClientError,
-      inferSubscriptionData<TSubscriptions[TPath]>
+      TData
     >(
       pathAndArgs,
       () => client.subscriptionOnce(path, ...serializeArgs(args)) as any,
