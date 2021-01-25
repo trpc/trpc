@@ -1,6 +1,6 @@
 {
   "name": "@trpc/react",
-  "version": "1.0.0-alpha.16",
+  "version": "1.0.0-alpha.17",
   "description": "TRPC React lib",
   "author": "KATT",
   "license": "MIT",
@@ -33,8 +33,8 @@
     "tslib": "^2.0.0"
   },
   "devDependencies": {
-    "@trpc/client": "^1.0.0-alpha.16",
-    "@trpc/server": "^1.0.0-alpha.16",
+    "@trpc/client": "^1.0.0-alpha.17",
+    "@trpc/server": "^1.0.0-alpha.17",
     "react-query": "^3.6.0"
   },
   "publishConfig": {
