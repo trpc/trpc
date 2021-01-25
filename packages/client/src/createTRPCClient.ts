@@ -10,9 +10,6 @@ import type {
   Maybe,
 } from '@trpcdev/server';
 
-const retryDelay = (attemptIndex: number) =>
-  attemptIndex === 0 ? 0 : Math.min(1000 * 2 ** attemptIndex, 30000);
-
 type CancelFn = () => void;
 type CancellablePromise<T = unknown> = Promise<T> & {
   cancel: CancelFn;
@@ -235,21 +232,15 @@ export function createTRPCClient<TRouter extends AnyRouter>(
           const data = await currentRequest;
           console.log('response', { path, args, data });
           resolve(data);
-          attemptIndex = 0;
         } catch (_err) {
-          if (stopped) {
-            reject(_err);
-            return;
-          }
           const err: TRPCClientError = _err;
-          // console.log('❌ subscription failed :(', err.message);
+
           if (err.json?.statusCode === 408) {
-            attemptIndex = 0;
+            // server told us to reconnect
+            exec();
           } else {
-            attemptIndex++;
+            reject(err);
           }
-          const delay = retryDelay(attemptIndex);
-          nextTry = setTimeout(exec, delay);
         }
       }
       exec();
