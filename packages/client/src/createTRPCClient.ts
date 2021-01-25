@@ -5,7 +5,6 @@ import type {
   HTTPSuccessResponseEnvelope,
   inferAsyncReturnType,
   inferEndpointArgs,
-  inferHandler,
   inferSubscriptionData,
   Maybe,
 } from '@trpcdev/server';
@@ -140,34 +139,64 @@ export function createTRPCClient<TRouter extends AnyRouter>(
       'content-type': 'application/json',
     };
   }
-  const query: inferHandler<TRouter['_def']['queries']> = async (
-    path: string,
-    ...args: unknown[]
-  ) => {
-    let target = `${url}/${path}`;
-    if (args?.length) {
-      target += `?args=${encodeURIComponent(JSON.stringify(args as any))}`;
-    }
-    const promise = _fetch(target, {
-      headers: getHeaders(),
-    });
-
-    return handleResponse(promise);
-  };
-  const mutate: inferHandler<TRouter['_def']['mutations']> = async (
+  type TRPCType = 'subscription' | 'query' | 'mutation';
+  function request({
+    type,
+    args,
     path,
-    ...args
-  ) => {
-    const promise = _fetch(`${url}/${path}`, {
-      method: 'POST',
-      body: JSON.stringify({
-        args: args,
+  }: {
+    type: TRPCType;
+    args: unknown[];
+    path: string;
+  }) {
+    type ReqOpts = {
+      method: string;
+      body?: string;
+      url: string;
+    };
+    const reqOptsMap: Record<TRPCType, () => ReqOpts> = {
+      subscription: () => ({
+        method: 'PATCH',
+        body: JSON.stringify({ args }),
+        url: `${url}/${path}`,
       }),
-      headers: getHeaders(),
-    });
+      mutation: () => ({
+        method: 'POST',
+        body: JSON.stringify({ args }),
+        url: `${url}/${path}`,
+      }),
+      query: () => ({
+        method: 'POST',
+        body: JSON.stringify({ args }),
+        url:
+          `${url}/${path}` +
+          (args.length
+            ? `?args=${encodeURIComponent(JSON.stringify(args))}`
+            : ''),
+      }),
+    };
 
-    return handleResponse(promise);
-  };
+    const reqOptsFn = reqOptsMap[type];
+    if (!reqOptsFn) {
+      throw new Error(`Unhandled type "${type}"`);
+    }
+    const ac = AC ? new AC() : null;
+
+    const { url: reqUrl, ...rest } = reqOptsFn();
+    const reqOpts = {
+      ...rest,
+      signal: ac?.signal,
+    };
+
+    const promise: Promise<any> & {
+      cancel(): void;
+    } = handleResponse(fetch(reqUrl, reqOpts)) as any;
+    promise.cancel = () => {
+      ac?.abort();
+    };
+
+    return promise;
+  }
   const subscription: inferSubscriptionFn<TRouter> = (
     [path, ...args],
     opts,
@@ -234,9 +263,8 @@ export function createTRPCClient<TRouter extends AnyRouter>(
     };
   };
   return {
-    mutate,
-    query,
     subscription,
+    request,
   };
 }
 

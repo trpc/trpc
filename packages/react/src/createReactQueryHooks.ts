@@ -54,7 +54,12 @@ export function createReactQueryHooks<
       inferEndpointData<TQueries[TPath]>
     >(
       pathAndArgs,
-      () => client.query(path, ...serializeArgs(args)) as any,
+      () =>
+        client.request({
+          type: 'query',
+          path,
+          args: serializeArgs(args),
+        }) as any,
       opts,
     );
 
@@ -107,7 +112,15 @@ export function createReactQueryHooks<
       inferEndpointData<TMutations[TPath]>,
       TRPCClientError,
       inferEndpointArgs<TMutations[TPath]>
-    >((args) => client.mutate(path, ...serializeArgs(args)) as any, opts);
+    >(
+      (args) =>
+        client.request({
+          type: 'mutation',
+          path,
+          args: serializeArgs(args),
+        }) as any,
+      opts,
+    );
 
     const mutateAsync: typeof mutation['mutateAsync'] = useCallback(
       async (...args) => {
@@ -115,7 +128,7 @@ export function createReactQueryHooks<
 
         return transformer.deserialize(orig) as any;
       },
-      [],
+      [mutation.mutateAsync],
     );
     return {
       ...mutation,
@@ -144,6 +157,7 @@ export function createReactQueryHooks<
       return transformer.serialize(data);
     });
   };
+
   return {
     useQuery: _useQuery,
     useMutation: _useMutation,
