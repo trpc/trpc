@@ -3,7 +3,7 @@
 import { assertNotBrowser } from './assertNotBrowser';
 import { InputValidationError } from './errors';
 import { inferSubscriptionData, Subscription } from './subscription';
-import { DropFirst, format, Prefixer, ThenArg } from './types';
+import { DropFirst, flatten, format, Prefixer, ThenArg } from './types';
 assertNotBrowser();
 
 export type RouterResolverFn<
@@ -55,7 +55,12 @@ export type inferEndpointsWithoutArgs<
   TEndpoints extends RouterEndpoints
 > = keyof Omit<TEndpoints, inferEndpointsWithArgs<TEndpoints>>;
 
-export type AnyRouter = Router<any, any, any, any>;
+export type AnyRouter<Context = any> = Router<
+  Context,
+  RouterEndpoints<any>,
+  RouterEndpoints<any>,
+  RouterEndpoints<any, Subscription<any>>
+>;
 
 export type RouteDef<TContext = any, TInput = any, TData = any> = {
   input: {
@@ -124,7 +129,7 @@ export class Router<
     endpoints: TNewEndpoints,
   ): Router<
     TContext,
-    format<TQueries & TNewEndpoints>,
+    flatten<TQueries, TNewEndpoints>,
     TMutations,
     TSubscriptions
   > {
@@ -133,7 +138,7 @@ export class Router<
       mutations: {},
       subscriptions: {},
     });
-    return this.merge(router);
+    return this.merge(router) as any;
   }
 
   public mutations<TNewEndpoints extends RouterEndpoints<TContext>>(
@@ -141,7 +146,7 @@ export class Router<
   ): Router<
     TContext,
     TQueries,
-    format<TMutations & TNewEndpoints>,
+    flatten<TMutations, TNewEndpoints>,
     TSubscriptions
   > {
     const router = new Router<TContext, {}, TNewEndpoints, {}>({
@@ -150,7 +155,7 @@ export class Router<
       subscriptions: {},
     });
 
-    return this.merge(router);
+    return this.merge(router) as any;
   }
 
   public subscriptions<
@@ -161,7 +166,7 @@ export class Router<
     TContext,
     TQueries,
     TMutations,
-    format<TSubscriptions & TNewEndpoints>
+    flatten<TSubscriptions, TNewEndpoints>
   > {
     const router = new Router<TContext, {}, {}, TNewEndpoints>({
       subscriptions: endpoints,
@@ -169,20 +174,20 @@ export class Router<
       mutations: {},
     });
 
-    return this.merge(router);
+    return this.merge(router) as any;
   }
 
   /**
    * Merge router with other router
    * @param router
    */
-  public merge<TChildRouter extends Router<TContext, any, any, any>>(
+  public merge<TChildRouter extends AnyRouter<TContext>>(
     router: TChildRouter,
   ): Router<
     TContext,
-    TQueries & TChildRouter['_def']['queries'],
-    TMutations & TChildRouter['_def']['mutations'],
-    TSubscriptions & TChildRouter['_def']['subscriptions']
+    flatten<TQueries, TChildRouter['_def']['queries']>,
+    flatten<TMutations, TChildRouter['_def']['mutations']>,
+    flatten<TSubscriptions, TChildRouter['_def']['subscriptions']>
   >;
 
   /**
@@ -190,17 +195,20 @@ export class Router<
    * @param prefix Prefix that this router should live under
    * @param router
    */
-  public merge<
-    TPath extends string,
-    TChildRouter extends Router<TContext, any, any, any>
-  >(
+  public merge<TPath extends string, TChildRouter extends AnyRouter<TContext>>(
     prefix: TPath,
     router: TChildRouter,
   ): Router<
     TContext,
-    TQueries & Prefixer<TChildRouter['_def']['queries'], `${TPath}`>,
-    TMutations & Prefixer<TChildRouter['_def']['mutations'], `${TPath}`>,
-    TSubscriptions & Prefixer<TChildRouter['_def']['subscriptions'], `${TPath}`>
+    flatten<TQueries, Prefixer<TChildRouter['_def']['queries'], `${TPath}`>>,
+    flatten<
+      TMutations,
+      Prefixer<TChildRouter['_def']['mutations'], `${TPath}`>
+    >,
+    flatten<
+      TSubscriptions,
+      Prefixer<TChildRouter['_def']['subscriptions'], `${TPath}`>
+    >
   >;
 
   public merge(prefixOrRouter: unknown, maybeRouter?: unknown) {

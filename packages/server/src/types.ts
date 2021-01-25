@@ -3,7 +3,18 @@
 export type Prefix<K extends string, T extends string> = `${K}${T}`;
 
 export type identity<T> = T;
-export type format<T extends object> = identity<{ [k in keyof T]: T[k] }>;
+export type format<T> = {
+  [k in keyof T]: T[k];
+};
+export type flatten<T, Q> = identity<
+  {
+    [k in keyof T | keyof Q]: k extends keyof T
+      ? T[k]
+      : k extends keyof Q
+      ? Q[k]
+      : never;
+  }
+>;
 export type EmptyObject = Record<string, never>;
 
 export type Prefixer<
