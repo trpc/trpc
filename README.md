@@ -14,16 +14,27 @@ tRPC is a framework for building strongly typed RPC APIs with TypeScript. Altern
 
 ## Usage
 
-TODO - see examples
+> :construction:  Under construction, for now see [`./examples`](./examples)
 
+
+### Data transformers
+
+You are able to serialize the output data (in order to be able to transparently use e.g. standard `Date`s). The transformers need to be added both to the server and the client.
+
+Data transformers currently live on the edges - in client-specific implementation & in the API response adapters. See a reference of how superjson is attached to ..
+
+- `createNextApiHandler()` in [`./examples/next-ssg-chat/[...trpc.ts]`](./examples/next-ssg-chat/pages/api/trpc/%5B...trpc%5D.ts), and
+- `createReactQueryHooks` in [`./examples/next-ssg-chat/pages/_app.tsx`](./examples/next-ssg-chat/pages/_app.tsx)
+
+## Internals
 
 ### HTTP Methods <-> endpoint type mapping
 
-| HTTP Method | Mapping            | Notes                                                    |
-| ----------- | ------------------ | -------------------------------------------------------- |
-| `GET`       | `.queries()`       | Args in query string                                     |
-| `POST`      | `.mutations()`     | Args in post body                                        |
-| `PATCH`     | `.subscriptions()` | Experimental. Uses long-pulling. Should prob not be used |
+| HTTP Method | Mapping            | Notes                                                                             |
+| ----------- | ------------------ | --------------------------------------------------------------------------------- |
+| `GET`       | `.queries()`       | Args in query string                                                              |
+| `POST`      | `.mutations()`     | Args in post body                                                                 |
+| `PATCH`     | `.subscriptions()` | Experimental API using long-pulling. Implementation details are likely to change. |
 
 
 # Development
@@ -57,13 +68,6 @@ You can play with local examples:
 - `yarn playground` - runs `examples/playground`
 - `cd examples next-ssg-chat && yarn dev`
 
-```sh
-yarn start:app
-```
-
-This will start the example/playground on `localhost:1234`. If you have lerna running watch in parallel mode in one terminal, and then you run parcel, your playground will hot reload when you make changes to any imported module whose source is inside of `packages/*/src/*`. Note that to accomplish this, each package's `start` command passes TDSX the `--noClean` flag. This prevents Parcel from exploding between rebuilds because of File Not Found errors.
-
-Important Safety Tip: When adding/altering packages in the playground, use `alias` object in package.json. This will tell Parcel to resolve them to the filesystem instead of trying to install the package from NPM. It also fixes duplicate React errors you may run into.
 
 ### Running Cypress
 

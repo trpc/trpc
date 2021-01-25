@@ -1,2 +1,2 @@
-# `@katt/trpc-server`
+# `@trpcdev/server`
 

@@ -1,5 +1,5 @@
-import * as trpc from '@katt/trpc-server';
-import { Subscription, SubscriptionEmit } from '@katt/trpc-server';
+import * as trpc from '@trpcdev/server';
+import { Subscription, SubscriptionEmit } from '@trpcdev/server';
 import { Message, PrismaClient } from '@prisma/client';
 import { sj } from '../../../utils/serializer';
 

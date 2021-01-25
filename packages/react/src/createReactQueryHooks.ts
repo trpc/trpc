@@ -1,12 +1,13 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { TRPCClient, TRPCClientError } from '@katt/trpc-client';
+import { TRPCClient, TRPCClientError } from '@trpcdev/client';
 import type {
+  DataTransformer,
   DropFirst,
   inferEndpointArgs,
   inferEndpointData,
   Router,
   RouterResolverFn,
-} from '@katt/trpc-server';
+} from '@trpcdev/server';
 import { useCallback, useMemo } from 'react';
 import {
   QueryClient,
@@ -23,12 +24,19 @@ export function createReactQueryHooks<
 >({
   client,
   queryClient,
+  transformer = {
+    serialize: (data) => data,
+    deserialize: (data) => data,
+  },
 }: {
-  client: TRPCClient<TRouter>;
+  client: TRPCClient;
   queryClient: TQueryClient;
+  transformer?: DataTransformer;
 }) {
   type TQueries = TRouter['_def']['queries'];
   type TMutations = TRouter['_def']['mutations'];
+  const serializeArgs = (args: unknown[]): unknown[] =>
+    args.map((arg) => transformer.serialize(arg));
 
   function _useQuery<TPath extends keyof TQueries & string>(
     pathAndArgs: [TPath, ...inferEndpointArgs<TQueries[TPath]>],
@@ -38,12 +46,19 @@ export function createReactQueryHooks<
       inferEndpointData<TQueries[TPath]>
     >,
   ) {
+    const [path, ...args] = pathAndArgs;
+
     const hook = useQuery<
       inferEndpointArgs<TQueries[TPath]>,
       TRPCClientError,
       inferEndpointData<TQueries[TPath]>
-    >(pathAndArgs, () => client.query(...pathAndArgs) as any, opts);
-    const data = useMemo(() => client.transformer.deserialize(hook.data), [
+    >(
+      pathAndArgs,
+      () => client.query(path, ...serializeArgs(args)) as any,
+      opts,
+    );
+
+    const data = useMemo(() => transformer.deserialize(hook.data), [
       hook.data,
     ]) as inferEndpointData<TQueries[TPath]>;
     return {
@@ -92,13 +107,13 @@ export function createReactQueryHooks<
       inferEndpointData<TMutations[TPath]>,
       TRPCClientError,
       inferEndpointArgs<TMutations[TPath]>
-    >((args) => client.mutate(path, ...args) as any, opts);
+    >((args) => client.mutate(path, ...serializeArgs(args)) as any, opts);
 
     const mutateAsync: typeof mutation['mutateAsync'] = useCallback(
       async (...args) => {
         const orig = await mutation.mutateAsync(...args);
 
-        return client.transformer.deserialize(orig) as any;
+        return transformer.deserialize(orig) as any;
       },
       [],
     );
@@ -121,9 +136,12 @@ export function createReactQueryHooks<
   ): Promise<void> => {
     // console.log('invoking', { ctx, path, router });
     return queryClient.prefetchQuery([path, ...args], async () => {
-      const data = await router.invokeQuery(ctx)(path, ...args);
+      const data = await router.invokeQuery(ctx)(
+        path,
+        ...(serializeArgs(args) as any),
+      );
       // console.log('data', data);
-      return client.transformer.serialize(data);
+      return transformer.serialize(data);
     });
   };
   return {
