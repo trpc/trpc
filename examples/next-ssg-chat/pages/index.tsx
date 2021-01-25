@@ -71,7 +71,8 @@ export default function Home() {
       <ul>
         {msgs.map((m) => (
           <li key={m.id}>
-            <pre>{JSON.stringify(m, null, 4)}</pre>
+            {m.createdAt.toDateString()} {m.createdAt.toLocaleTimeString()}:{' '}
+            {m.text}
           </li>
         ))}
       </ul>
