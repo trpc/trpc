@@ -176,7 +176,7 @@ export function subscriptionPullFatory<TData>(opts: {
       emit.error(err);
     }
     if (!stopped) {
-      timer = setTimeout(() => _pull(emit), opts.interval) as NodeJS.Timeout;
+      timer = setTimeout(() => _pull(emit), opts.interval);
     }
   }
 
