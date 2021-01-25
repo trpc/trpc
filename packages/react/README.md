@@ -1,3 +1,3 @@
-# `@trpcdev/react`
+# `@trpc/react`
 
-https://github.com/@trpcdev/trpc
+https://github.com/trpcio/trpc

@@ -1,5 +1,5 @@
 import { Message, PrismaClient } from '@prisma/client';
-import * as trpc from '@trpcdev/server';
+import * as trpc from '@trpc/server';
 import * as z from 'zod';
 import { sj } from '../../../utils/serializer';
 const prisma = new PrismaClient();

@@ -1,3 +1,3 @@
-# `@trpcdev/client`
+# `@trpc/client`
 
-https://github.com/@trpcdev/trpc
+https://github.com/trpcio/trpc

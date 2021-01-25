@@ -1,12 +1,12 @@
 {
-  "name": "@trpcdev/server",
+  "name": "@trpc/server",
   "version": "1.0.0-alpha.15",
   "description": "TRPC Server",
   "author": "KATT",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/@trpcdev/trpc.git",
+    "url": "git+https://github.com/trpcio/trpc.git",
     "directory": "packages/server"
   },
   "eslintConfig": {

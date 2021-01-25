@@ -1,12 +1,12 @@
 {
-  "name": "@trpcdev/react",
+  "name": "@trpc/react",
   "version": "1.0.0-alpha.15",
   "description": "TRPC React lib",
   "author": "KATT",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/@trpcdev/trpc.git",
+    "url": "git+https://github.com/trpcio/trpc.git",
     "directory": "packages/react"
   },
   "scripts": {
@@ -24,7 +24,7 @@
     "dist"
   ],
   "peerDependencies": {
-    "@trpcdev/client": ">=0.0.1",
+    "@trpc/client": ">=0.0.1",
     "react": ">=16.8.0",
     "react-dom": ">=16.8.0",
     "react-query": ">=3"
@@ -33,8 +33,8 @@
     "tslib": "^2.0.0"
   },
   "devDependencies": {
-    "@trpcdev/client": "^1.0.0-alpha.15",
-    "@trpcdev/server": "^1.0.0-alpha.15",
+    "@trpc/client": "^1.0.0-alpha.15",
+    "@trpc/server": "^1.0.0-alpha.15",
     "react-query": "^3.6.0"
   },
   "publishConfig": {

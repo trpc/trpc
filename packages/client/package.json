@@ -1,12 +1,12 @@
 {
-  "name": "@trpcdev/client",
+  "name": "@trpc/client",
   "version": "1.0.0-alpha.15",
   "description": "TRPC Client lib",
   "author": "KATT",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/@trpcdev/trpc.git",
+    "url": "git+https://github.com/trpcio/trpc.git",
     "directory": "packages/client"
   },
   "scripts": {
@@ -27,7 +27,7 @@
     "tslib": "^2.0.0"
   },
   "devDependencies": {
-    "@trpcdev/server": "^1.0.0-alpha.15"
+    "@trpc/server": "^1.0.0-alpha.15"
   },
   "publishConfig": {
     "access": "public"

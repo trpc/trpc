@@ -7,7 +7,7 @@ import type {
   inferHandler,
   inferSubscriptionData,
   Maybe,
-} from '@trpcdev/server';
+} from '@trpc/server';
 
 type CancelFn = () => void;
 type CancellablePromise<T = unknown> = Promise<T> & {

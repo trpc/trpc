@@ -1,2 +1,2 @@
-# `@trpcdev/server`
+# `@trpc/server`
 

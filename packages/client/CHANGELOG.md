@@ -1,1 +1,1 @@
-# `@trpcdev/client`
+# `@trpc/client`

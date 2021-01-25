@@ -8,9 +8,9 @@
     "dev": "run-p dev:* --print-label"
   },
   "dependencies": {
-    "@trpcdev/client": "^1.0.0-alpha.15",
-    "@trpcdev/react": "^1.0.0-alpha.15",
-    "@trpcdev/server": "^1.0.0-alpha.15",
+    "@trpc/client": "^1.0.0-alpha.15",
+    "@trpc/react": "^1.0.0-alpha.15",
+    "@trpc/server": "^1.0.0-alpha.15",
     "@types/node-fetch": "^2.5.8",
     "abort-controller": "^3.0.0",
     "body-parser": "^1.19.0",
