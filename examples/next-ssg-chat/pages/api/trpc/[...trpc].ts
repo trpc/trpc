@@ -2,7 +2,7 @@ import * as trpc from '@trpcdev/server';
 import { Subscription, SubscriptionEmit } from '@trpcdev/server';
 import { Message, PrismaClient } from '@prisma/client';
 import { sj } from '../../../utils/serializer';
-import * as z from 'zod'
+import * as z from 'zod';
 const prisma = new PrismaClient();
 
 async function createMessage(text: string) {
@@ -101,9 +101,11 @@ const router = createRouter()
         },
       })
       .mutation('create', {
-        input: z.string(),
-        resolve: async ({input}) => {
-          const msg = await createMessage(input);
+        input: z.object({
+          text: z.string().min(2),
+        }),
+        resolve: async ({ input }) => {
+          const msg = await createMessage(input.text);
           return msg;
         },
       })
@@ -111,8 +113,8 @@ const router = createRouter()
         input: z.object({
           timestamp: z.date(),
         }),
-        resolve: ({input}) => {
-          const {timestamp} = input
+        resolve: ({ input }) => {
+          const { timestamp } = input;
           return subscriptionPullFatory<Message[]>({
             interval: 1000,
             async pull(emit) {

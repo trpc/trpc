@@ -5,6 +5,8 @@ import type {
   DropFirst,
   inferEndpointArgs,
   inferEndpointData,
+  inferSubscriptionData,
+  Maybe,
   Router,
   RouterResolverFn,
 } from '@trpcdev/server';
@@ -16,6 +18,24 @@ import {
   useQuery,
   UseQueryOptions,
 } from 'react-query';
+
+// type UnsubscribeFn = () => void;
+
+// type inferSubscriptionFn<TRouter extends AnyRouter> = <
+//   TPath extends keyof TRouter['_def']['subscriptions'],
+//   TArgs extends inferEndpointArgs<TRouter['_def']['subscriptions'][TPath]> &
+//     any[],
+//   TData extends inferSubscriptionData<
+//     inferAsyncReturnType<TRouter['_def']['subscriptions'][TPath]>
+//   >
+// >(
+//   pathAndArgs: [TPath, ...TArgs],
+//   opts: {
+//     onSuccess?: (data: TData) => void;
+//     onError?: (error: TRPCClientError) => void;
+//     getNextArgs?: (data: TData) => TArgs;
+//   },
+// ) => UnsubscribeFn;
 
 export function createReactQueryHooks<
   TRouter extends Router<TContext, any, any, any>,
@@ -35,6 +55,8 @@ export function createReactQueryHooks<
 }) {
   type TQueries = TRouter['_def']['queries'];
   type TMutations = TRouter['_def']['mutations'];
+  type TSubscriptions = TRouter['_def']['subscriptions'];
+
   const serializeArgs = (args: unknown[]): unknown[] =>
     args.map((arg) => transformer.serialize(arg));
 
@@ -63,9 +85,10 @@ export function createReactQueryHooks<
       opts,
     );
 
-    const data = useMemo(() => transformer.deserialize(hook.data), [
-      hook.data,
-    ]) as inferEndpointData<TQueries[TPath]>;
+    const data = useMemo(
+      () => (hook.data ? transformer.deserialize(hook.data) : hook.data),
+      [hook.data],
+    ) as Maybe<inferEndpointData<TQueries[TPath]>>;
     return {
       ...hook,
       data,
@@ -136,6 +159,36 @@ export function createReactQueryHooks<
     };
   }
 
+  function useSubscription<TPath extends keyof TSubscriptions & string>(
+    pathAndArgs: [TPath, ...inferEndpointArgs<TSubscriptions[TPath]>],
+    opts?: UseQueryOptions<
+      inferEndpointArgs<TSubscriptions[TPath]>,
+      TRPCClientError,
+      inferSubscriptionData<TSubscriptions[TPath]>
+    >,
+  ) {
+    const [path, ...args] = pathAndArgs;
+
+    const hook = useQuery<
+      inferEndpointArgs<TSubscriptions[TPath]>,
+      TRPCClientError,
+      inferSubscriptionData<TSubscriptions[TPath]>
+    >(
+      pathAndArgs,
+      () => client.subscriptionOnce(path, ...serializeArgs(args)) as any,
+      opts,
+    );
+
+    const data = useMemo(
+      () => (hook.data ? transformer.deserialize(hook.data) : hook.data),
+      [hook.data],
+    ) as Maybe<inferEndpointData<TSubscriptions[TPath]>>;
+    return {
+      ...hook,
+      data,
+    };
+  }
+
   const ssr = async <
     TEndpoints extends TRouter['_def']['queries'],
     TResolver extends TEndpoints & RouterResolverFn,
@@ -161,7 +214,7 @@ export function createReactQueryHooks<
   return {
     useQuery: _useQuery,
     useMutation: _useMutation,
-    // useQueryNoArgs,
+    useSubscription,
     queryClient,
     ssr,
   };
