@@ -19,11 +19,11 @@ TODO - see examples
 
 ### HTTP Methods <-> endpoint type mapping
 
-| HTTP Method | Mapping            | Notes                                                    |
-| ----------- | ------------------ | -------------------------------------------------------- |
-| `GET`       | `.queries()`       | Args in query string                                     |
-| `POST`      | `.mutations()`     | Args in post body                                        |
-| `PATCH`     | `.subscriptions()` | Experimental. Uses long-pulling. Should prob not be used |
+| HTTP Method | Mapping            | Notes                                                                             |
+| ----------- | ------------------ | --------------------------------------------------------------------------------- |
+| `GET`       | `.queries()`       | Args in query string                                                              |
+| `POST`      | `.mutations()`     | Args in post body                                                                 |
+| `PATCH`     | `.subscriptions()` | Experimental API using long-pulling. Implementation details are likely to change. |
 
 
 
@@ -33,8 +33,8 @@ You are able to serialize the output data (in order to be able to transparently 
 
 Data transformers currently live on the edges - in client-specific implementation & in the API response adapters. See a reference of how superjson is attached to ..
 
-- `createNextApiHandler()` in [`./examples/next-ssg-chat/[...trpc.ts]`](./examples/next-ssg-chat/pages/api/trpc/%5B...trpc%5D.ts), &
-- `createReactQueryHooks` in [`./examples/next-ssg-chat/pages/_app.tsx`](./examples/next-ssg-chat/pages/_app.tsx), &
+- `createNextApiHandler()` in [`./examples/next-ssg-chat/[...trpc.ts]`](./examples/next-ssg-chat/pages/api/trpc/%5B...trpc%5D.ts), and
+- `createReactQueryHooks` in [`./examples/next-ssg-chat/pages/_app.tsx`](./examples/next-ssg-chat/pages/_app.tsx)
 # Development
 
 ```sh
