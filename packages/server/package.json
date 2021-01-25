@@ -1,5 +1,5 @@
 {
-  "name": "@katt/trpc-server",
+  "name": "@trpcdev/server",
   "version": "1.0.0-alpha.14",
   "description": "TRPC Server",
   "author": "KATT",

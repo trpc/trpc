@@ -1,4 +1,4 @@
-import { createReactQueryHooks, createTRPCClient } from '@katt/trpc-react';
+import { createReactQueryHooks, createTRPCClient } from '@trpcdev/react';
 import type { AppProps /*, AppContext */ } from 'next/app';
 import { QueryClient, QueryClientProvider } from 'react-query';
 import { Hydrate } from 'react-query/hydration';
