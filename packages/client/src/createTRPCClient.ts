@@ -166,8 +166,7 @@ export function createTRPCClient<TRouter extends AnyRouter>(
         url: `${url}/${path}`,
       }),
       query: () => ({
-        method: 'POST',
-        body: JSON.stringify({ args }),
+        method: 'GET',
         url:
           `${url}/${path}` +
           (args.length
