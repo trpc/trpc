@@ -7,13 +7,13 @@ import type { ChatRouter, Context } from './api/trpc/[...trpc]';
 
 export const client = createTRPCClient<ChatRouter>({
   url: '/api/trpc',
-  transformer: sj,
 });
 
 const queryClient = new QueryClient();
 export const hooks = createReactQueryHooks<ChatRouter, Context>({
   client,
   queryClient,
+  transformer: sj,
 });
 
 function MyApp({ Component, pageProps }: AppProps) {
