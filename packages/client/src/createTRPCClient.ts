@@ -215,7 +215,6 @@ export function createTRPCClient<TRouter extends AnyRouter>(
     let stopped = false;
     let nextTry: NodeJS.Timeout;
     let currentRequest: ReturnType<typeof request> | null = null;
-    let attemptIndex = 0;
 
     console.log('subscriptioonOnce', { path, args });
     const promise = new Promise<TData>((resolve, reject) => {
