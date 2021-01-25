@@ -4,7 +4,7 @@ import type {
   DataTransformer,
   DropFirst,
   inferEndpointArgs,
-  inferEndpoinTOutput,
+  inferEndpointOutput,
   inferSubscriptionOutput,
   Router,
   RouterResolverFn,
@@ -47,10 +47,10 @@ export function createReactQueryHooks<
     opts?: UseQueryOptions<
       inferEndpointArgs<TQueries[TPath]>,
       TRPCClientError,
-      inferEndpoinTOutput<TQueries[TPath]>
+      inferEndpointOutput<TQueries[TPath]>
     >,
   ) {
-    type TOutput = inferEndpoinTOutput<TQueries[TPath]>;
+    type TOutput = inferEndpointOutput<TQueries[TPath]>;
     const [path, ...args] = pathAndArgs;
 
     const hook = useQuery<
@@ -91,17 +91,17 @@ export function createReactQueryHooks<
   //   opts?: UseQueryOptions<
   //     never,
   //     TRPCClientError,
-  //     inferEndpoinTOutput<TQueries[TPath]>
+  //     inferEndpointOutput<TQueries[TPath]>
   //   >,
   // ) {
   //   const hook = useQuery<
   //     never,
   //     TRPCClientError,
-  //     inferEndpoinTOutput<TQueries[TPath]>
+  //     inferEndpointOutput<TQueries[TPath]>
   //   >(path, () => (client.query as any)(path) as any, opts);
   //   const data = useMemo(() => client.transformer.deserialize(hook.data), [
   //     hook.data,
-  //   ]) as inferEndpoinTOutput<TQueries[TPath]>;
+  //   ]) as inferEndpointOutput<TQueries[TPath]>;
 
   //   return {
   //     ...hook,
@@ -111,13 +111,13 @@ export function createReactQueryHooks<
   function _useMutation<TPath extends keyof TMutations & string>(
     path: TPath,
     opts?: UseMutationOptions<
-      inferEndpoinTOutput<TMutations[TPath]>,
+      inferEndpointOutput<TMutations[TPath]>,
       TRPCClientError,
       inferEndpointArgs<TMutations[TPath]>
     >,
   ) {
     const mutation = useMutation<
-      inferEndpoinTOutput<TMutations[TPath]>,
+      inferEndpointOutput<TMutations[TPath]>,
       TRPCClientError,
       inferEndpointArgs<TMutations[TPath]>
     >(

@@ -21,7 +21,7 @@ export type inferAsyncReturnType<
   TFunction extends (...args: any) => any
 > = ThenArg<ReturnType<TFunction>>;
 
-export type inferEndpoinTOutput<
+export type inferEndpointOutput<
   TEndpoint extends RouterResolverFn
 > = inferAsyncReturnType<TEndpoint>;
 
