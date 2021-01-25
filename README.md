@@ -17,11 +17,11 @@ tRPC is a framework for building strongly typed RPC APIs with TypeScript. Altern
 > :construction:  Under construction, for now see [`./examples`](./examples)
 
 
-### Data transformers
+### Output transformers
 
 You are able to serialize the output data (in order to be able to transparently use e.g. standard `Date`s). The transformers need to be added both to the server and the client.
 
-Data transformers currently live on the edges - in client-specific implementation & in the API response adapters. See a reference of how superjson is attached to ..
+Output transformers currently live on the edges - in client-specific implementation & in the API response adapters. See a reference of how superjson is attached to ..
 
 - `createNextApiHandler()` in [`./examples/next-ssg-chat/[...trpc.ts]`](./examples/next-ssg-chat/pages/api/trpc/%5B...trpc%5D.ts), and
 - `createReactQueryHooks` in [`./examples/next-ssg-chat/pages/_app.tsx`](./examples/next-ssg-chat/pages/_app.tsx)

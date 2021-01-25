@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import type { EventEmitter } from 'events';
 import type qs from 'qs';
-import { DataTransformer } from './transformer';
+import { OutputTransformer } from './transformer';
 import { assertNotBrowser } from './assertNotBrowser';
 import { InputValidationError } from './errors';
 import { Router } from './router';
@@ -24,10 +24,10 @@ export const httpError = {
     new HTTPError(400, message ?? 'Bad Request'),
   notFound: (message?: string) => new HTTPError(404, message ?? 'Not found'),
 };
-export type HTTPSuccessResponseEnvelope<TData> = {
+export type HTTPSuccessResponseEnvelope<TOutput> = {
   ok: true;
   statusCode: number;
-  data: TData;
+  data: TOutput;
 };
 
 export type HTTPErrorResponseEnvelope = {
@@ -39,8 +39,8 @@ export type HTTPErrorResponseEnvelope = {
   };
 };
 
-export type HTTPResponseEnvelope<TData> =
-  | HTTPSuccessResponseEnvelope<TData>
+export type HTTPResponseEnvelope<TOutput> =
+  | HTTPSuccessResponseEnvelope<TOutput>
   | HTTPErrorResponseEnvelope;
 
 export function getErrorResponseEnvelope(
@@ -123,7 +123,7 @@ export interface BaseOptions {
   /**
    * Optional transformer too serialize/deserialize input args + data
    */
-  transformer?: DataTransformer;
+  transformer?: OutputTransformer;
 }
 
 export async function requestHandler<
@@ -213,7 +213,7 @@ export async function requestHandler<
         sub.destroy('timeout');
       }, timeout);
       try {
-        data = await sub.onceDataAndStop();
+        data = await sub.onceOutputAndStop();
 
         res.off('close', onClose);
       } catch (err) {
