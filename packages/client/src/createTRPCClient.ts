@@ -213,10 +213,9 @@ export function createTRPCClient<TRouter extends AnyRouter>(
       inferAsyncReturnType<TRouter['_def']['subscriptions'][TPath]>
     >;
     let stopped = false;
-    let nextTry: NodeJS.Timeout;
+    let nextTry: any; // setting as `NodeJS.Timeout` causes compat issues, can probably be solved
     let currentRequest: ReturnType<typeof request> | null = null;
 
-    console.log('subscriptioonOnce', { path, args });
     const promise = new Promise<TData>((resolve, reject) => {
       async function exec() {
         if (stopped) {
