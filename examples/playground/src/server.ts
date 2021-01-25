@@ -41,13 +41,6 @@ const db = {
   ],
   messages: [createMessage('initial message')],
 };
-async function getMessagesAfter(timestamp: number) {
-  const msgs = db.messages.filter(
-    (msg) => msg.updatedAt > timestamp || msg.createdAt > timestamp,
-  );
-
-  return msgs;
-}
 function createMessage(text: string) {
   const msg = {
     id: ++id,
@@ -89,30 +82,6 @@ const messages = createRouter()
       db.messages.push(msg);
 
       return msg;
-    },
-  })
-  .subscriptions({
-    newMessages: (_ctx, { timestamp }: { timestamp: number }) => {
-      type Message = typeof db['messages'][number];
-
-      return new trpc.Subscription<Message[]>({
-        async getInitialData(emit) {
-          const sinceLast = await getMessagesAfter(timestamp);
-          if (sinceLast.length) {
-            emit.data(sinceLast);
-          }
-        },
-        start(emit) {
-          const onMessage = (data: Message) => {
-            emit.data([data]);
-          };
-
-          ee.on('newMessage', onMessage);
-          return () => {
-            ee.off('newMessage', onMessage);
-          };
-        },
-      });
     },
   });
 

@@ -2,7 +2,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { assertNotBrowser } from './assertNotBrowser';
 import { InputValidationError } from './errors';
-import { inferSubscriptionData, Subscription } from './subscription';
+import { Subscription } from './subscription';
 import { DropFirst, flatten, format, Prefixer, ThenArg } from './types';
 assertNotBrowser();
 
@@ -27,13 +27,6 @@ export type inferEndpointData<
 
 export type inferEndpointArgs<TEndpoint extends RouterResolverFn> = DropFirst<
   Parameters<TEndpoint>
->;
-
-export type inferRouterSubscriptionEndpointData<
-  TRouter extends AnyRouter,
-  TPath extends keyof TRouter['_def']['subscriptions']
-> = inferSubscriptionData<
-  inferAsyncReturnType<TRouter['_def']['subscriptions'][TPath]>
 >;
 
 export type inferHandler<TEndpoints extends RouterEndpoints> = <
@@ -88,6 +81,15 @@ export type RouteDefRecordToEndpoint<
 
 export type inferRouteInput<TDef extends RouteDef<any, any, any>> = ReturnType<
   TDef['input']['parse']
+>;
+
+export type inferSubscriptionData<
+  TRouter extends AnyRouter,
+  TPath extends keyof TRouter['_def']['subscriptions']
+> = inferAsyncReturnType<
+  inferAsyncReturnType<
+    TRouter['_def']['subscriptions'][TPath]
+  >['onceDataAndStop']
 >;
 
 export class Router<
