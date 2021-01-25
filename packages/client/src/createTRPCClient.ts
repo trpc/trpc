@@ -195,7 +195,7 @@ export function createTRPCClient<TRouter extends AnyRouter>(
 
     const promise: CancellablePromise<any> & {
       cancel(): void;
-    } = handleResponse(fetch(reqUrl, reqOpts)) as any;
+    } = handleResponse(_fetch(reqUrl, reqOpts)) as any;
     promise.cancel = () => {
       ac?.abort();
     };
