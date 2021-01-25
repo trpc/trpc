@@ -159,3 +159,34 @@ export class Subscription<TData = unknown> {
 export type inferSubscriptionData<
   TSubscription extends Subscription
 > = inferAsyncReturnType<TSubscription['onceDataAndStop']>;
+
+export function subscriptionPullFatory<TData>(opts: {
+  interval: number;
+  pull(emit: SubscriptionEmit<TData>): void | Promise<void>;
+}): Subscription<TData> {
+  let timer: NodeJS.Timeout;
+  let stopped = false;
+  async function _pull(emit: SubscriptionEmit<TData>) {
+    if (stopped) {
+      return;
+    }
+    try {
+      await opts.pull(emit);
+    } catch (err) {
+      emit.error(err);
+    }
+    if (!stopped) {
+      timer = setTimeout(() => _pull(emit), opts.interval);
+    }
+  }
+
+  return new Subscription<TData>({
+    start(emit) {
+      _pull(emit);
+      return () => {
+        clearTimeout(timer);
+        stopped = true;
+      };
+    },
+  });
+}
