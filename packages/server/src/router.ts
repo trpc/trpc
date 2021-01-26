@@ -14,16 +14,50 @@ export type RouteDefResolver<
   TContext = unknown,
   TInput = unknown,
   TOutput = unknown
-> = (opts: { ctx: TContext; input: TInput }) => Promise<TOutput> | TOutput;
+> = (ctx: TContext, input: TInput) => Promise<TOutput> | TOutput;
 
-export type RouteDef<
+export type RouteDefWithInput<
   TContext = unknown,
   TInput = unknown,
   TOutput = unknown
 > = {
-  input?: RouteDefInput<TInput>;
+  input: RouteDefInput<TInput>;
   resolve: RouteDefResolver<TContext, TInput, TOutput>;
 };
+
+export type RouteDefWithoutInput<
+  TContext = unknown,
+  TInput = unknown,
+  TOutput = unknown
+> = {
+  resolve: RouteDefResolver<TContext, TInput, TOutput>;
+};
+export type RouteDef<TContext = unknown, TInput = unknown, TOutput = unknown> =
+  | RouteDefWithInput<TContext, TInput, TOutput>
+  | RouteDefWithoutInput<TContext, TInput, TOutput>;
+
+export type inferRouteInput<
+  TRoute extends RouteDef<any, any, any>
+> = TRoute extends RouteDef<any, infer Input, any> ? Input : never;
+
+// export type RouteDefInput<TInput = unknown> = {
+//   parse: (input: unknown) => TInput;
+// };
+
+// export type RouteDefResolver<
+//   TContext = unknown,
+//   TInput = unknown,
+//   TOutput = unknown
+// > = (opts: { ctx: TContext; input: TInput }) => Promise<TOutput> | TOutput;
+
+// export type RouteDef<
+//   TContext = unknown,
+//   TInput = unknown,
+//   TOutput = unknown
+// > = {
+//   input?: RouteDefInput<TInput>;
+//   resolve: RouteDefResolver<TContext, TInput, TOutput>;
+// };
 
 export type RouteDefRecord<
   TContext = unknown,
@@ -46,11 +80,11 @@ export type AnyRouter<TContext = any> = Router<
   RouteDefRecord<TContext, any, Subscription<any>>
 >;
 
-export type inferRouteInput<
-  TRoute extends RouteDef<any, any, any>
-> = TRoute['input'] extends RouteDefInput<any>
-  ? ReturnType<TRoute['input']['parse']>
-  : undefined;
+// export type inferRouteInput<
+//   TRoute extends RouteDef<any, any, any>
+// > = TRoute['input'] extends RouteDefInput<any>
+//   ? ReturnType<TRoute['input']['parse']>
+//   : undefined;
 
 export class Router<
   TContext,
@@ -89,13 +123,23 @@ export class Router<
 
   public query<TPath extends string, TInput, TOutput>(
     path: TPath,
-    route: RouteDef<TContext, TInput, TOutput>,
+    route: RouteDefWithInput<TContext, TInput, TOutput>,
   ): Router<
     TContext,
     TQueries & Record<TPath, typeof route>,
     TMutations,
     TSubscriptions
-  > {
+  >;
+  public query<TPath extends string, TInput, TOutput>(
+    path: TPath,
+    route: RouteDefWithoutInput<TContext, TInput, TOutput>,
+  ): Router<
+    TContext,
+    TQueries & Record<TPath, typeof route>,
+    TMutations,
+    TSubscriptions
+  >;
+  public query(path: any, route: any) {
     const router = new Router({
       queries: {
         [path]: route,
@@ -230,18 +274,18 @@ export class Router<
     path: TPath;
     input: inferRouteInput<TQueries[TPath]>;
   }): Promise<inferAsyncReturnType<TQueries[TPath]['resolve']>> {
-    const route = this._def.queries[opts.path];
+    const route: any = this._def.queries[opts.path];
 
     if (route.input) {
       try {
         const parsed = route.input.parse(opts.input);
-        return route.resolve({ ctx: opts.ctx, input: parsed }) as any;
+        return route.resolve(opts.ctx, parsed) as any;
       } catch (_err) {
         const err = new InputValidationError(_err);
         throw err;
       }
     }
-    return route.resolve({ ctx: opts.ctx, input: undefined }) as any;
+    return route.resolve(opts.ctx, undefined) as any;
   }
 
   // public invokeMutation(
@@ -337,3 +381,16 @@ export class Router<
 export function router<TContext>() {
   return new Router<TContext, {}, {}, {}>();
 }
+
+const testRouter = router<string>()
+  .query('test', {
+    resolve: (_ctx, input: number) => {
+      return { output: input };
+    },
+  })
+  .query('test', {
+    input: { parse: () => 1235 },
+    resolve: (_ctx, input) => {
+      return { output: input };
+    },
+  });
