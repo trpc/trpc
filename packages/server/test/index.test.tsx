@@ -8,7 +8,7 @@ test('hello world', async () => {
     name: string;
   };
   const r = router<Context>().query('test', {
-    input: null,
+    // input: null,
     resolve({ ctx }) {
       return {
         hello: 'test' + ctx.name,

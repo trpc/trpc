@@ -16,17 +16,12 @@ export type RouteDefResolver<
   TOutput = unknown
 > = (opts: { ctx: TContext; input: TInput }) => Promise<TOutput> | TOutput;
 
-export type RouteDefNoInput<TContext = unknown, TOutput = unknown> = {
-  input?: undefined;
-  resolve: RouteDefResolver<TContext, undefined, TOutput>;
-};
-
 export type RouteDef<
   TContext = unknown,
   TInput = unknown,
   TOutput = unknown
 > = {
-  input: RouteDefInput<TInput> | null;
+  input?: RouteDefInput<TInput>;
   resolve: RouteDefResolver<TContext, TInput, TOutput>;
 };
 
@@ -52,8 +47,8 @@ export type AnyRouter<TContext = any> = Router<
 >;
 
 export type inferRouteInput<
-  TRoute extends RouteDef
-> = TRoute['input'] extends RouteDefInput
+  TRoute extends RouteDef<any, any, any>
+> = TRoute['input'] extends RouteDefInput<any>
   ? ReturnType<TRoute['input']['parse']>
   : undefined;
 
@@ -230,15 +225,10 @@ export class Router<
     });
   }
 
-  public async invokeQuery<
-    TPath extends keyof TQueries,
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    _TRoute extends RouteDef<TContext, TInput>,
-    TInput
-  >(opts: {
+  public async invokeQuery<TPath extends keyof TQueries>(opts: {
     ctx: TContext;
     path: TPath;
-    input: TInput;
+    input: inferRouteInput<TQueries[TPath]>;
   }): Promise<inferAsyncReturnType<TQueries[TPath]['resolve']>> {
     const route = this._def.queries[opts.path];
 
