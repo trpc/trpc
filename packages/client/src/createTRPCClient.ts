@@ -3,7 +3,7 @@ import type {
   AnyRouter,
   HTTPResponseEnvelope,
   HTTPSuccessResponseEnvelope,
-  inferEndpointArgs,
+  inferEndpointInput,
   inferHandler,
   inferSubscriptionOutput,
   Maybe,
@@ -205,7 +205,7 @@ export function createTRPCClient<TRouter extends AnyRouter>(
 
   function subscriptionOnce<
     TPath extends keyof TRouter['_def']['subscriptions'] & string,
-    TArgs extends inferEndpointArgs<TRouter['_def']['subscriptions'][TPath]> &
+    TArgs extends inferEndpointInput<TRouter['_def']['subscriptions'][TPath]> &
       any[]
   >(path: TPath, ...args: TArgs) {
     type TOutput = inferSubscriptionOutput<TRouter, TPath>;

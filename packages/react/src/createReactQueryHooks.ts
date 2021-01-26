@@ -3,7 +3,7 @@ import { TRPCClient, TRPCClientError } from '@trpc/client';
 import type {
   DataTransformer,
   DropFirst,
-  inferEndpointArgs,
+  inferEndpointInput,
   inferEndpointOutput,
   inferSubscriptionOutput,
   Router,
@@ -43,9 +43,9 @@ export function createReactQueryHooks<
     args.map((arg) => transformer.serialize(arg));
 
   function _useQuery<TPath extends keyof TQueries & string>(
-    pathAndArgs: [TPath, ...inferEndpointArgs<TQueries[TPath]>],
+    pathAndArgs: [TPath, ...inferEndpointInput<TQueries[TPath]>],
     opts?: UseQueryOptions<
-      inferEndpointArgs<TQueries[TPath]>,
+      inferEndpointInput<TQueries[TPath]>,
       TRPCClientError,
       inferEndpointOutput<TQueries[TPath]>
     >,
@@ -54,7 +54,7 @@ export function createReactQueryHooks<
     const [path, ...args] = pathAndArgs;
 
     const hook = useQuery<
-      inferEndpointArgs<TQueries[TPath]>,
+      inferEndpointInput<TQueries[TPath]>,
       TRPCClientError,
       TOutput
     >(
@@ -113,13 +113,13 @@ export function createReactQueryHooks<
     opts?: UseMutationOptions<
       inferEndpointOutput<TMutations[TPath]>,
       TRPCClientError,
-      inferEndpointArgs<TMutations[TPath]>
+      inferEndpointInput<TMutations[TPath]>
     >,
   ) {
     const mutation = useMutation<
       inferEndpointOutput<TMutations[TPath]>,
       TRPCClientError,
-      inferEndpointArgs<TMutations[TPath]>
+      inferEndpointInput<TMutations[TPath]>
     >(
       (args) =>
         client.request({
@@ -145,9 +145,9 @@ export function createReactQueryHooks<
   }
 
   function useSubscription<TPath extends keyof TSubscriptions & string>(
-    pathAndArgs: [TPath, ...inferEndpointArgs<TSubscriptions[TPath]>],
+    pathAndArgs: [TPath, ...inferEndpointInput<TSubscriptions[TPath]>],
     opts?: UseQueryOptions<
-      inferEndpointArgs<TSubscriptions[TPath]>,
+      inferEndpointInput<TSubscriptions[TPath]>,
       TRPCClientError,
       inferSubscriptionOutput<TRouter, TPath>
     >,
@@ -157,7 +157,7 @@ export function createReactQueryHooks<
     const [path, ...args] = pathAndArgs;
 
     const hook = useQuery<
-      inferEndpointArgs<TSubscriptions[TPath]>,
+      inferEndpointInput<TSubscriptions[TPath]>,
       TRPCClientError,
       TOutput
     >(

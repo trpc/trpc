@@ -3,104 +3,65 @@
 import { assertNotBrowser } from './assertNotBrowser';
 import { InputValidationError } from './errors';
 import { Subscription } from './subscription';
-import { DropFirst, flatten, format, Prefixer, ThenArg } from './types';
+import { flatten, Prefixer, ThenArg } from './types';
 assertNotBrowser();
 
-export type RouterResolverFn<
-  TContext = any,
-  TOutput = any,
-  TArgs extends any[] = any[]
-> = (ctx: TContext, ...args: TArgs) => Promise<TOutput> | TOutput;
+export type RouteDefInput<TInput = unknown> = {
+  parse: (input: unknown) => TInput;
+};
 
-export type RouterEndpoints<TContext = any, TOutput = any> = Record<
-  string,
-  RouterResolverFn<TContext, TOutput>
->;
+export type RouteDefResolver<
+  TContext = unknown,
+  TInput = unknown,
+  TOutput = unknown
+> = (opts: { ctx: TContext; input: TInput }) => Promise<TOutput> | TOutput;
+
+export type RouteDefNoInput<TContext = unknown, TOutput = unknown> = {
+  input?: undefined;
+  resolve: RouteDefResolver<TContext, undefined, TOutput>;
+};
+
+export type RouteDef<
+  TContext = unknown,
+  TInput = unknown,
+  TOutput = unknown
+> = {
+  input: RouteDefInput<TInput> | null;
+  resolve: RouteDefResolver<TContext, TInput, TOutput>;
+};
+
+export type RouteDefRecord<
+  TContext = unknown,
+  TInput = unknown,
+  TOutput = unknown
+> = Record<string, RouteDef<TContext, TInput, TOutput>>;
 
 export type inferAsyncReturnType<
   TFunction extends (...args: any) => any
 > = ThenArg<ReturnType<TFunction>>;
 
-export type inferEndpointOutput<
-  TEndpoint extends RouterResolverFn
-> = inferAsyncReturnType<TEndpoint>;
-
-export type inferEndpointArgs<TEndpoint extends RouterResolverFn> = DropFirst<
-  Parameters<TEndpoint>
+export type inferRouteOutput<TRoute extends RouteDef> = inferAsyncReturnType<
+  TRoute['resolve']
 >;
 
-export type inferHandler<TEndpoints extends RouterEndpoints> = <
-  TArgs extends DropFirst<Parameters<TResolver>> & any[],
-  TPath extends keyof TEndpoints & string,
-  TResolver extends TEndpoints[TPath]
->(
-  path: TPath,
-  ...args: TArgs
-) => Promise<ReturnType<TResolver>>;
-
-export type inferEndpointsWithArgs<TEndpoints extends RouterEndpoints> = {
-  [Key in keyof TEndpoints]: inferEndpointArgs<TEndpoints[Key]> extends [any]
-    ? Key
-    : never;
-}[keyof TEndpoints];
-
-export type inferEndpointsWithoutArgs<
-  TEndpoints extends RouterEndpoints
-> = keyof Omit<TEndpoints, inferEndpointsWithArgs<TEndpoints>>;
-
-export type AnyRouter<Context = any> = Router<
-  Context,
-  RouterEndpoints<any>,
-  RouterEndpoints<any>,
-  RouterEndpoints<any, Subscription<any>>
+export type AnyRouter<TContext = any> = Router<
+  TContext,
+  RouteDefRecord<TContext>,
+  RouteDefRecord<TContext>,
+  RouteDefRecord<TContext, any, Subscription<any>>
 >;
 
-export type RouteDef<TContext = any, TInput = any, TOutput = any> = {
-  input: {
-    parse: (input: unknown) => TInput;
-  };
-  resolve: (opts: {
-    ctx: TContext;
-    input: TInput;
-  }) => Promise<TOutput> | TOutput;
-};
-export type RouteDefRecord<
-  TContext = any,
-  TInput = any,
-  TOutput = any
-> = Record<string, RouteDef<TContext, TInput, TOutput>>;
-
-export type RouteDefRecordToEndpoint<
-  TRouteDefs extends RouteDefRecord<TContext, TInput, TOutput>,
-  TContext = unknown,
-  TInput = unknown,
-  TOutput = unknown
-> = {
-  [TKey in keyof TRouteDefs]: RouterResolverFn<
-    TContext,
-    inferAsyncReturnType<TRouteDefs[TKey]['resolve']>,
-    [ReturnType<TRouteDefs[TKey]['input']['parse']>]
-  >;
-};
-
-export type inferRouteInput<TDef extends RouteDef<any, any, any>> = ReturnType<
-  TDef['input']['parse']
->;
-
-export type inferSubscriptionOutput<
-  TRouter extends AnyRouter,
-  TPath extends keyof TRouter['_def']['subscriptions']
-> = inferAsyncReturnType<
-  inferAsyncReturnType<
-    TRouter['_def']['subscriptions'][TPath]
-  >['onceOutputAndStop']
->;
+export type inferRouteInput<
+  TRoute extends RouteDef
+> = TRoute['input'] extends RouteDefInput
+  ? ReturnType<TRoute['input']['parse']>
+  : undefined;
 
 export class Router<
   TContext,
-  TQueries extends RouterEndpoints<TContext>,
-  TMutations extends RouterEndpoints<TContext>,
-  TSubscriptions extends RouterEndpoints<TContext, Subscription<any>>
+  TQueries extends RouteDefRecord<TContext>,
+  TMutations extends RouteDefRecord<TContext>,
+  TSubscriptions extends RouteDefRecord<TContext, any, Subscription<any>>
 > {
   readonly _def: Readonly<{
     queries: Readonly<TQueries>;
@@ -120,68 +81,72 @@ export class Router<
     };
   }
 
-  private static prefixEndpoints<
-    TEndpoints extends RouterEndpoints,
+  private static prefixroutes<
+    TRoutes extends RouteDefRecord,
     TPrefix extends string
-  >(endpoints: TEndpoints, prefix: TPrefix): Prefixer<TEndpoints, TPrefix> {
-    const eps: RouterEndpoints = {};
-    for (const key in endpoints) {
-      eps[prefix + key] = endpoints[key];
+  >(routes: TRoutes, prefix: TPrefix): Prefixer<TRoutes, TPrefix> {
+    const eps: RouteDefRecord = {};
+    for (const key in routes) {
+      eps[prefix + key] = routes[key];
     }
     return eps as any;
   }
 
-  public queries<TNewEndpoints extends RouterEndpoints<TContext>>(
-    endpoints: TNewEndpoints,
+  public query<TPath extends string, TInput, TOutput>(
+    path: TPath,
+    route: RouteDef<TContext, TInput, TOutput>,
   ): Router<
     TContext,
-    flatten<TQueries, TNewEndpoints>,
+    TQueries & Record<TPath, typeof route>,
     TMutations,
     TSubscriptions
   > {
-    const router = new Router<TContext, format<TNewEndpoints>, {}, {}>({
-      queries: endpoints,
+    const router = new Router({
+      queries: {
+        [path]: route,
+      } as any,
       mutations: {},
       subscriptions: {},
     });
-    return this.merge(router) as any;
-  }
-
-  public mutations<TNewEndpoints extends RouterEndpoints<TContext>>(
-    endpoints: TNewEndpoints,
-  ): Router<
-    TContext,
-    TQueries,
-    flatten<TMutations, TNewEndpoints>,
-    TSubscriptions
-  > {
-    const router = new Router<TContext, {}, TNewEndpoints, {}>({
-      mutations: endpoints,
-      queries: {},
-      subscriptions: {},
-    });
 
     return this.merge(router) as any;
   }
 
-  public subscriptions<
-    TNewEndpoints extends RouterEndpoints<TContext, Subscription>
-  >(
-    endpoints: TNewEndpoints,
-  ): Router<
-    TContext,
-    TQueries,
-    TMutations,
-    flatten<TSubscriptions, TNewEndpoints>
-  > {
-    const router = new Router<TContext, {}, {}, TNewEndpoints>({
-      subscriptions: endpoints,
-      queries: {},
-      mutations: {},
-    });
+  // public mutations<TNewRoutes extends RouteDefRecord<TContext>>(
+  //   routes: TNewRoutes,
+  // ): Router<
+  //   TContext,
+  //   TQueries,
+  //   flatten<TMutations, TNewRoutes>,
+  //   TSubscriptions
+  // > {
+  //   const router = new Router<TContext, {}, TNewRoutes, {}>({
+  //     mutations: routes,
+  //     queries: {},
+  //     subscriptions: {},
+  //   });
 
-    return this.merge(router) as any;
-  }
+  //   return this.merge(router) as any;
+  // }
+
+  // public subscriptions<
+  //   TNewRoutes extends RouteDefRecord<TContext, Subscription>
+  // >(
+  //   routes: TNewRoutes,
+  // ): Router<
+  //   TContext,
+  //   TQueries,
+  //   TMutations,
+  //   flatten<TSubscriptions, TNewRoutes>
+  // > {
+  //   const router = new Router<TContext, {}, {}, TNewRoutes>({
+  //     subscriptions: routes,
+  //     queries: {},
+  //     mutations: {},
+  //   });
+
+  //   return this.merge(router) as any;
+  // }
 
   /**
    * Merge router with other router
@@ -252,107 +217,131 @@ export class Router<
     return new Router<TContext, any, any, any>({
       queries: {
         ...this._def.queries,
-        ...Router.prefixEndpoints(router._def.queries, prefix),
+        ...Router.prefixroutes(router._def.queries, prefix),
       },
       mutations: {
         ...this._def.mutations,
-        ...Router.prefixEndpoints(router._def.mutations, prefix),
+        ...Router.prefixroutes(router._def.mutations, prefix),
       },
       subscriptions: {
         ...this._def.subscriptions,
-        ...Router.prefixEndpoints(router._def.subscriptions, prefix),
+        ...Router.prefixroutes(router._def.subscriptions, prefix),
       },
     });
   }
 
-  public invokeMutation(
-    ctx: TContext,
-  ): inferHandler<this['_def']['mutations']> {
-    return (path, ...args) => (this._def.mutations[path] as any)(ctx, ...args);
-  }
-  public invokeQuery(ctx: TContext): inferHandler<this['_def']['queries']> {
-    return (path, ...args) => (this._def.queries[path] as any)(ctx, ...args);
-  }
-  public invokeSubscription(
-    ctx: TContext,
-  ): inferHandler<this['_def']['subscriptions']> {
-    return (path, ...args) => {
-      return (this._def.subscriptions[path] as any)(ctx, ...args);
-    };
-  }
+  public async invokeQuery<
+    TPath extends keyof TQueries,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    _TRoute extends RouteDef<TContext, TInput>,
+    TInput
+  >(opts: {
+    ctx: TContext;
+    path: TPath;
+    input: TInput;
+  }): Promise<inferAsyncReturnType<TQueries[TPath]['resolve']>> {
+    const route = this._def.queries[opts.path];
 
-  public has(what: 'subscriptions' | 'mutations' | 'queries', path: string) {
-    return !!this._def[what][path];
-  }
-  public static routerDef<TContext, TInput, TOutput>(
-    def: RouteDef<TContext, TInput, TOutput>,
-  ): RouterResolverFn<TContext, TOutput, [TInput]> {
-    return async (ctx, input: inferRouteInput<typeof def>) => {
-      let parsed: TInput;
+    if (route.input) {
       try {
-        parsed = def.input.parse(input);
+        const parsed = route.input.parse(opts.input);
+        return route.resolve({ ctx: opts.ctx, input: parsed }) as any;
       } catch (_err) {
         const err = new InputValidationError(_err);
         throw err;
       }
-      const data = await def.resolve({ ctx, input: parsed });
-      return data;
-    };
+    }
+    return route.resolve({ ctx: opts.ctx, input: undefined }) as any;
   }
 
-  public query<TPath extends string, TInput, TOutput>(
-    path: TPath,
-    def: RouteDef<TContext, TInput, TOutput>,
-  ) {
-    const resolver = Router.routerDef(def);
-    return this.queries({
-      [path]: resolver,
-    } as Record<TPath, typeof resolver>);
-  }
-  public mutation<TPath extends string, TInput, TOutput>(
-    path: TPath,
-    def: RouteDef<TContext, TInput, TOutput>,
-  ) {
-    const resolver = Router.routerDef(def);
-    return this.mutations({
-      [path]: resolver,
-    } as Record<TPath, typeof resolver>);
-  }
-  public subscription<
-    TPath extends string,
-    TInput,
-    TOutput extends Subscription
-  >(path: TPath, def: RouteDef<TContext, TInput, TOutput>) {
-    const resolver = Router.routerDef(def);
-    return this.subscriptions({
-      [path]: resolver,
-    } as Record<TPath, typeof resolver>);
-  }
+  // public invokeMutation(
+  //   ctx: TContext,
+  // ): inferHandler<this['_def']['mutations']> {
+  //   return (path, ...args) => (this._def.mutations[path] as any)(ctx, ...args);
+  // }
+  // public invokeQuery(ctx: TContext): inferHandler<this['_def']['queries']> {
+  //   return (path, ...args) => (this._def.queries[path] as any)(ctx, ...args);
+  // }
+  // public invokeSubscription(
+  //   ctx: TContext,
+  // ): inferHandler<this['_def']['subscriptions']> {
+  //   return (path, ...args) => {
+  //     return (this._def.subscriptions[path] as any)(ctx, ...args);
+  //   };
+  // }
 
-  /**
-   * FIXME
-   * the input argument will be `unknown`, not inferred properly
-   */
-  public __fixme_queriesv2<
-    TEndpoints extends RouteDefRecord<TContext, TInput, TOutput>,
-    TInput,
-    TOutput
-  >(endpoints: TEndpoints) {
-    const keys = Object.keys(endpoints) as (keyof TEndpoints)[];
-    const objs = keys.reduce((sum, key) => {
-      const resolver = Router.routerDef(endpoints[key]);
-      const obj = {
-        [key]: resolver,
-      } as Record<typeof key, typeof resolver>;
-
-      return {
-        ...sum,
-        ...obj,
-      };
-    }, ({} as unknown) as RouteDefRecordToEndpoint<TEndpoints, TContext, TInput, TOutput>);
-
-    return this.queries(objs);
+  public has(what: 'subscriptions' | 'mutations' | 'queries', path: string) {
+    return !!this._def[what][path];
   }
+  // public static routerDef<TContext, TInput, TOutput>(
+  //   def: RouteDef<TContext, TInput, TOutput>,
+  // ): RouterResolverFn<TContext, TOutput, [TInput]> {
+  //   return async (ctx, input: inferRouteInput<typeof def>) => {
+  //     let parsed: TInput;
+  //     try {
+  //       parsed = def.input.parse(input);
+  //     } catch (_err) {
+  //       const err = new InputValidationError(_err);
+  //       throw err;
+  //     }
+  //     const data = await def.resolve({ ctx, input: parsed });
+  //     return data;
+  //   };
+  // }
+
+  // public query<TPath extends string, TInput, TOutput>(
+  //   path: TPath,
+  //   def: RouteDef<TContext, TInput, TOutput>,
+  // ) {
+  //   const resolver = Router.routerDef(def);
+  //   return this.queries({
+  //     [path]: resolver,
+  //   } as Record<TPath, typeof resolver>);
+  // }
+  // public mutation<TPath extends string, TInput, TOutput>(
+  //   path: TPath,
+  //   def: RouteDef<TContext, TInput, TOutput>,
+  // ) {
+  //   const resolver = Router.routerDef(def);
+  //   return this.mutations({
+  //     [path]: resolver,
+  //   } as Record<TPath, typeof resolver>);
+  // }
+  // public subscription<
+  //   TPath extends string,
+  //   TInput,
+  //   TOutput extends Subscription
+  // >(path: TPath, def: RouteDef<TContext, TInput, TOutput>) {
+  //   const resolver = Router.routerDef(def);
+  //   return this.subscriptions({
+  //     [path]: resolver,
+  //   } as Record<TPath, typeof resolver>);
+  // }
+
+  // /**
+  //  * FIXME
+  //  * the input argument will be `unknown`, not inferred properly
+  //  */
+  // public __fixme_queriesv2<
+  //   TRoutes extends RouteDefRecord<TContext, TInput, TOutput>,
+  //   TInput,
+  //   TOutput
+  // >(routes: TRoutes) {
+  //   const keys = Object.keys(routes) as (keyof TRoutes)[];
+  //   const objs = keys.reduce((sum, key) => {
+  //     const resolver = Router.routerDef(routes[key]);
+  //     const obj = {
+  //       [key]: resolver,
+  //     } as Record<typeof key, typeof resolver>;
+
+  //     return {
+  //       ...sum,
+  //       ...obj,
+  //     };
+  //   }, ({} as unknown) as RouteDefRecordToEndpoint<TRoutes, TContext, TInput, TOutput>);
+
+  //   return this.queries(objs);
+  // }
 }
 
 export function router<TContext>() {
