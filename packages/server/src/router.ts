@@ -1,9 +1,9 @@
-/* eslint-disable @typescript-eslint/ban-types */
 /* eslint-disable @typescript-eslint/no-explicit-any */
+
 import { assertNotBrowser } from './assertNotBrowser';
 import { InputValidationError } from './errors';
 import { Subscription } from './subscription';
-import { flatten, Prefixer, ThenArg } from './types';
+import { EmptyObject, flatten, Prefixer, ThenArg } from './types';
 assertNotBrowser();
 
 export type RouteInputParser<TInput = unknown> = {
@@ -37,15 +37,15 @@ export type Route<TContext = unknown, TInput = unknown, TOutput = unknown> =
   | RouteWithInput<TContext, TInput, TOutput>
   | RouteWithoutInput<TContext, TInput, TOutput>;
 
-export type inferRouteInput<
-  TRoute extends Route<any, any, any>
-> = TRoute extends Route<any, infer Input, any> ? Input : never;
-
 export type RouteRecord<
   TContext = unknown,
   TInput = unknown,
   TOutput = unknown
 > = Record<string, Route<TContext, TInput, TOutput>>;
+
+export type inferRouteInput<
+  TRoute extends Route<any, any, any>
+> = TRoute extends Route<any, infer Input, any> ? Input : never;
 
 export type inferAsyncReturnType<
   TFunction extends (...args: any) => any
@@ -106,7 +106,7 @@ export class Router<
     TMutations,
     TSubscriptions
   > {
-    const router = new Router({
+    const router = new Router<TContext, any, EmptyObject, EmptyObject>({
       queries: {
         [path]: route,
       } as any,
@@ -236,8 +236,8 @@ export class Router<
   }
 
   public async invokeQuery<TPath extends keyof TQueries>(opts: {
-    ctx: TContext;
     path: TPath;
+    ctx: TContext;
     input: inferRouteInput<TQueries[TPath]>;
   }): Promise<inferAsyncReturnType<TQueries[TPath]['resolve']>> {
     const route = this._def.queries[opts.path];
@@ -345,5 +345,5 @@ export class Router<
 }
 
 export function router<TContext>() {
-  return new Router<TContext, {}, {}, {}>();
+  return new Router<TContext, EmptyObject, EmptyObject, EmptyObject>();
 }
