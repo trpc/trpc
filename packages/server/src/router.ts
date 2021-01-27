@@ -66,7 +66,7 @@ export class Router<
   TContext,
   TQueries extends RouteRecord<TContext>,
   TMutations extends RouteRecord<TContext>,
-  TSubscriptions extends RouteRecord<TContext, any, Subscription<any>>
+  TSubscriptions extends RouteRecord<TContext, unknown, Subscription<unknown>>
 > {
   readonly _def: Readonly<{
     queries: Readonly<TQueries>;
@@ -99,23 +99,13 @@ export class Router<
 
   public query<TPath extends string, TInput, TOutput>(
     path: TPath,
-    route: RouteWithInput<TContext, TInput, TOutput>,
+    route: Route<TContext, TInput, TOutput>,
   ): Router<
     TContext,
     TQueries & Record<TPath, typeof route>,
     TMutations,
     TSubscriptions
-  >;
-  public query<TPath extends string, TInput, TOutput>(
-    path: TPath,
-    route: RouteWithoutInput<TContext, TInput, TOutput>,
-  ): Router<
-    TContext,
-    TQueries & Record<TPath, typeof route>,
-    TMutations,
-    TSubscriptions
-  >;
-  public query(path: any, route: any) {
+  > {
     const router = new Router({
       queries: {
         [path]: route,
