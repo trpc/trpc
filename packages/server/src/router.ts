@@ -6,7 +6,7 @@ import { Subscription } from './subscription';
 import { flatten, Prefixer, ThenArg } from './types';
 assertNotBrowser();
 
-export type RouteInput<TInput = unknown> = {
+export type RouteInputParser<TInput = unknown> = {
   parse: (input: unknown) => TInput;
 };
 
@@ -21,7 +21,7 @@ export type RouteWithInput<
   TInput = unknown,
   TOutput = unknown
 > = {
-  input: RouteInput<TInput>;
+  input: RouteInputParser<TInput>;
   resolve: RouteResolver<TContext, TInput, TOutput>;
 };
 
