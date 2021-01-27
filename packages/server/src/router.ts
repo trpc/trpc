@@ -41,25 +41,6 @@ export type inferRouteInput<
   TRoute extends Route<any, any, any>
 > = TRoute extends Route<any, infer Input, any> ? Input : never;
 
-// export type RouteInput<TInput = unknown> = {
-//   parse: (input: unknown) => TInput;
-// };
-
-// export type RouteResolver<
-//   TContext = unknown,
-//   TInput = unknown,
-//   TOutput = unknown
-// > = (opts: { ctx: TContext; input: TInput }) => Promise<TOutput> | TOutput;
-
-// export type Route<
-//   TContext = unknown,
-//   TInput = unknown,
-//   TOutput = unknown
-// > = {
-//   input?: RouteInput<TInput>;
-//   resolve: RouteResolver<TContext, TInput, TOutput>;
-// };
-
 export type RouteRecord<
   TContext = unknown,
   TInput = unknown,
@@ -80,12 +61,6 @@ export type AnyRouter<TContext = any> = Router<
   RouteRecord<TContext>,
   RouteRecord<TContext, any, Subscription<any>>
 >;
-
-// export type inferRouteInput<
-//   TRoute extends Route<any, any, any>
-// > = TRoute['input'] extends RouteInput<any>
-//   ? ReturnType<TRoute['input']['parse']>
-//   : undefined;
 
 export class Router<
   TContext,
