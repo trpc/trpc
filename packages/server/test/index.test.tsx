@@ -48,7 +48,7 @@ test('basic zod', async () => {
       name: 'fest',
     },
     input: {
-      foo: 'str',
+      foo: 'bar',
     },
   });
 

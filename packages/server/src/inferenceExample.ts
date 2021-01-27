@@ -1,53 +1,53 @@
-export type RouteDefInput<TInput = unknown> = {
+export type RouteInput<TInput = unknown> = {
   parse: (input: unknown) => TInput;
 };
-export type RouteDefResolver<
+export type RouteResolver<
   TContext = unknown,
   TInput = unknown,
   TOutput = unknown
 > = (ctx: TContext, input: TInput) => Promise<TOutput> | TOutput;
 
-// export type RouteDef<
+// export type Route<
 //   TContext = unknown,
 //   TInput = unknown,
 //   TOutput = unknown
 // > = {
-//   input?: RouteDefInput<TInput>;
-//   resolve: RouteDefResolver<TContext, TInput, TOutput>;
+//   input?: RouteInput<TInput>;
+//   resolve: RouteResolver<TContext, TInput, TOutput>;
 // };
 
-export type RouteDefWithInput<
+export type RouteWithInput<
   TContext = unknown,
   TInput = unknown,
   TOutput = unknown
 > = {
-  input: RouteDefInput<TInput>;
-  resolve: RouteDefResolver<TContext, TInput, TOutput>;
+  input: RouteInput<TInput>;
+  resolve: RouteResolver<TContext, TInput, TOutput>;
 };
 
-export type RouteDefWithoutInput<
+export type RouteWithoutInput<
   TContext = unknown,
   TInput = unknown,
   TOutput = unknown
 > = {
-  resolve: RouteDefResolver<TContext, TInput, TOutput>;
+  resolve: RouteResolver<TContext, TInput, TOutput>;
 };
-export type RouteDef<TContext = unknown, TInput = unknown, TOutput = unknown> =
-  | RouteDefWithInput<TContext, TInput, TOutput>
-  | RouteDefWithoutInput<TContext, TInput, TOutput>;
+export type Route<TContext = unknown, TInput = unknown, TOutput = unknown> =
+  | RouteWithInput<TContext, TInput, TOutput>
+  | RouteWithoutInput<TContext, TInput, TOutput>;
 
 export type inferRouteInput<
-  TRoute extends RouteDef<any, any, any>
-> = TRoute extends RouteDef<any, infer Input, any> ? Input : never;
+  TRoute extends Route<any, any, any>
+> = TRoute extends Route<any, infer Input, any> ? Input : never;
 
 const context = {};
 
 function createRoute<TInput, TOutput>(
-  route: RouteDefWithInput<typeof context, TInput, TOutput>,
-): RouteDefWithInput<typeof context, TInput, TOutput>;
+  route: RouteWithInput<typeof context, TInput, TOutput>,
+): RouteWithInput<typeof context, TInput, TOutput>;
 function createRoute<TInput, TOutput>(
-  route: RouteDefWithoutInput<typeof context, TInput, TOutput>,
-): RouteDefWithoutInput<typeof context, TInput, TOutput>;
+  route: RouteWithoutInput<typeof context, TInput, TOutput>,
+): RouteWithoutInput<typeof context, TInput, TOutput>;
 function createRoute(route: any) {
   return route;
 }

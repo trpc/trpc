@@ -6,91 +6,92 @@ import { Subscription } from './subscription';
 import { flatten, Prefixer, ThenArg } from './types';
 assertNotBrowser();
 
-export type RouteDefInput<TInput = unknown> = {
+export type RouteInput<TInput = unknown> = {
   parse: (input: unknown) => TInput;
 };
 
-export type RouteDefResolver<
+export type RouteResolver<
   TContext = unknown,
   TInput = unknown,
   TOutput = unknown
-> = (ctx: TContext, input: TInput) => Promise<TOutput> | TOutput;
+> = (opts: { ctx: TContext; input: TInput }) => Promise<TOutput> | TOutput;
 
-export type RouteDefWithInput<
+export type RouteWithInput<
   TContext = unknown,
   TInput = unknown,
   TOutput = unknown
 > = {
-  input: RouteDefInput<TInput>;
-  resolve: RouteDefResolver<TContext, TInput, TOutput>;
+  input: RouteInput<TInput>;
+  resolve: RouteResolver<TContext, TInput, TOutput>;
 };
 
-export type RouteDefWithoutInput<
+export type RouteWithoutInput<
   TContext = unknown,
   TInput = unknown,
   TOutput = unknown
 > = {
-  resolve: RouteDefResolver<TContext, TInput, TOutput>;
+  input?: undefined;
+  resolve: RouteResolver<TContext, TInput, TOutput>;
 };
-export type RouteDef<TContext = unknown, TInput = unknown, TOutput = unknown> =
-  | RouteDefWithInput<TContext, TInput, TOutput>
-  | RouteDefWithoutInput<TContext, TInput, TOutput>;
+export type Route<TContext = unknown, TInput = unknown, TOutput = unknown> =
+  | RouteWithInput<TContext, TInput, TOutput>
+  | RouteWithoutInput<TContext, TInput, TOutput>;
 
 export type inferRouteInput<
-  TRoute extends RouteDef<any, any, any>
-> = TRoute extends RouteDef<any, infer Input, any> ? Input : never;
+  TRoute extends Route<any, any, any>
+> = TRoute extends Route<any, infer Input, any> ? Input : never;
 
-// export type RouteDefInput<TInput = unknown> = {
+// export type RouteInput<TInput = unknown> = {
 //   parse: (input: unknown) => TInput;
 // };
 
-// export type RouteDefResolver<
+// export type RouteResolver<
 //   TContext = unknown,
 //   TInput = unknown,
 //   TOutput = unknown
 // > = (opts: { ctx: TContext; input: TInput }) => Promise<TOutput> | TOutput;
 
-// export type RouteDef<
+// export type Route<
 //   TContext = unknown,
 //   TInput = unknown,
 //   TOutput = unknown
 // > = {
-//   input?: RouteDefInput<TInput>;
-//   resolve: RouteDefResolver<TContext, TInput, TOutput>;
+//   input?: RouteInput<TInput>;
+//   resolve: RouteResolver<TContext, TInput, TOutput>;
 // };
 
-export type RouteDefRecord<
+export type RouteRecord<
   TContext = unknown,
   TInput = unknown,
   TOutput = unknown
-> = Record<string, RouteDef<TContext, TInput, TOutput>>;
+> = Record<string, Route<TContext, TInput, TOutput>>;
 
 export type inferAsyncReturnType<
   TFunction extends (...args: any) => any
 > = ThenArg<ReturnType<TFunction>>;
 
-export type inferRouteOutput<TRoute extends RouteDef> = inferAsyncReturnType<
+export type inferRouteOutput<TRoute extends Route> = inferAsyncReturnType<
   TRoute['resolve']
 >;
 
 export type AnyRouter<TContext = any> = Router<
   TContext,
-  RouteDefRecord<TContext>,
-  RouteDefRecord<TContext>,
-  RouteDefRecord<TContext, any, Subscription<any>>
+  RouteRecord<TContext>,
+  RouteRecord<TContext>,
+  RouteRecord<TContext, any, Subscription<any>>
 >;
 
 // export type inferRouteInput<
-//   TRoute extends RouteDef<any, any, any>
-// > = TRoute['input'] extends RouteDefInput<any>
+//   TRoute extends Route<any, any, any>
+// > = TRoute['input'] extends RouteInput<any>
 //   ? ReturnType<TRoute['input']['parse']>
 //   : undefined;
 
 export class Router<
   TContext,
-  TQueries extends RouteDefRecord<TContext>,
-  TMutations extends RouteDefRecord<TContext>,
-  TSubscriptions extends RouteDefRecord<TContext, any, Subscription<any>>
+  TQueries extends RouteRecord<TContext>,
+  TMutations extends RouteRecord<TContext>,
+  TSubscriptions extends RouteRecord<TContext, any, Subscription<any>>
 > {
   readonly _def: Readonly<{
     queries: Readonly<TQueries>;
@@ -110,11 +111,11 @@ export class Router<
     };
   }
 
-  private static prefixroutes<
-    TRoutes extends RouteDefRecord,
+  private static prefixRoutes<
+    TRoutes extends RouteRecord,
     TPrefix extends string
   >(routes: TRoutes, prefix: TPrefix): Prefixer<TRoutes, TPrefix> {
-    const eps: RouteDefRecord = {};
+    const eps: RouteRecord = {};
     for (const key in routes) {
       eps[prefix + key] = routes[key];
     }
@@ -123,7 +124,7 @@ export class Router<
 
   public query<TPath extends string, TInput, TOutput>(
     path: TPath,
-    route: RouteDefWithInput<TContext, TInput, TOutput>,
+    route: RouteWithInput<TContext, TInput, TOutput>,
   ): Router<
     TContext,
     TQueries & Record<TPath, typeof route>,
@@ -132,7 +133,7 @@ export class Router<
   >;
   public query<TPath extends string, TInput, TOutput>(
     path: TPath,
-    route: RouteDefWithoutInput<TContext, TInput, TOutput>,
+    route: RouteWithoutInput<TContext, TInput, TOutput>,
   ): Router<
     TContext,
     TQueries & Record<TPath, typeof route>,
@@ -151,7 +152,7 @@ export class Router<
     return this.merge(router) as any;
   }
 
-  // public mutations<TNewRoutes extends RouteDefRecord<TContext>>(
+  // public mutations<TNewRoutes extends RouteRecord<TContext>>(
   //   routes: TNewRoutes,
   // ): Router<
   //   TContext,
@@ -169,7 +170,7 @@ export class Router<
   // }
 
   // public subscriptions<
-  //   TNewRoutes extends RouteDefRecord<TContext, Subscription>
+  //   TNewRoutes extends RouteRecord<TContext, Subscription>
   // >(
   //   routes: TNewRoutes,
   // ): Router<
@@ -256,15 +257,15 @@ export class Router<
     return new Router<TContext, any, any, any>({
       queries: {
         ...this._def.queries,
-        ...Router.prefixroutes(router._def.queries, prefix),
+        ...Router.prefixRoutes(router._def.queries, prefix),
       },
       mutations: {
         ...this._def.mutations,
-        ...Router.prefixroutes(router._def.mutations, prefix),
+        ...Router.prefixRoutes(router._def.mutations, prefix),
       },
       subscriptions: {
         ...this._def.subscriptions,
-        ...Router.prefixroutes(router._def.subscriptions, prefix),
+        ...Router.prefixRoutes(router._def.subscriptions, prefix),
       },
     });
   }
@@ -274,18 +275,18 @@ export class Router<
     path: TPath;
     input: inferRouteInput<TQueries[TPath]>;
   }): Promise<inferAsyncReturnType<TQueries[TPath]['resolve']>> {
-    const route: any = this._def.queries[opts.path];
+    const route = this._def.queries[opts.path];
 
     if (route.input) {
       try {
         const parsed = route.input.parse(opts.input);
-        return route.resolve(opts.ctx, parsed) as any;
+        return route.resolve({ ctx: opts.ctx, input: parsed }) as any;
       } catch (_err) {
         const err = new InputValidationError(_err);
         throw err;
       }
     }
-    return route.resolve(opts.ctx, undefined) as any;
+    return route.resolve({ ctx: opts.ctx, input: undefined }) as any;
   }
 
   // public invokeMutation(
@@ -308,7 +309,7 @@ export class Router<
     return !!this._def[what][path];
   }
   // public static routerDef<TContext, TInput, TOutput>(
-  //   def: RouteDef<TContext, TInput, TOutput>,
+  //   def: Route<TContext, TInput, TOutput>,
   // ): RouterResolverFn<TContext, TOutput, [TInput]> {
   //   return async (ctx, input: inferRouteInput<typeof def>) => {
   //     let parsed: TInput;
@@ -325,7 +326,7 @@ export class Router<
 
   // public query<TPath extends string, TInput, TOutput>(
   //   path: TPath,
-  //   def: RouteDef<TContext, TInput, TOutput>,
+  //   def: Route<TContext, TInput, TOutput>,
   // ) {
   //   const resolver = Router.routerDef(def);
   //   return this.queries({
@@ -334,7 +335,7 @@ export class Router<
   // }
   // public mutation<TPath extends string, TInput, TOutput>(
   //   path: TPath,
-  //   def: RouteDef<TContext, TInput, TOutput>,
+  //   def: Route<TContext, TInput, TOutput>,
   // ) {
   //   const resolver = Router.routerDef(def);
   //   return this.mutations({
@@ -345,7 +346,7 @@ export class Router<
   //   TPath extends string,
   //   TInput,
   //   TOutput extends Subscription
-  // >(path: TPath, def: RouteDef<TContext, TInput, TOutput>) {
+  // >(path: TPath, def: Route<TContext, TInput, TOutput>) {
   //   const resolver = Router.routerDef(def);
   //   return this.subscriptions({
   //     [path]: resolver,
@@ -357,7 +358,7 @@ export class Router<
   //  * the input argument will be `unknown`, not inferred properly
   //  */
   // public __fixme_queriesv2<
-  //   TRoutes extends RouteDefRecord<TContext, TInput, TOutput>,
+  //   TRoutes extends RouteRecord<TContext, TInput, TOutput>,
   //   TInput,
   //   TOutput
   // >(routes: TRoutes) {
@@ -372,7 +373,7 @@ export class Router<
   //       ...sum,
   //       ...obj,
   //     };
-  //   }, ({} as unknown) as RouteDefRecordToEndpoint<TRoutes, TContext, TInput, TOutput>);
+  //   }, ({} as unknown) as RouteRecordToEndpoint<TRoutes, TContext, TInput, TOutput>);
 
   //   return this.queries(objs);
   // }
@@ -381,16 +382,3 @@ export class Router<
 export function router<TContext>() {
   return new Router<TContext, {}, {}, {}>();
 }
-
-const testRouter = router<string>()
-  .query('test', {
-    resolve: (_ctx, input: number) => {
-      return { output: input };
-    },
-  })
-  .query('test', {
-    input: { parse: () => 1235 },
-    resolve: (_ctx, input) => {
-      return { output: input };
-    },
-  });
