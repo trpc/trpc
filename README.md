@@ -217,11 +217,6 @@ yarn dev
 
 This builds each package to `<packages>/<package>/dist` and runs the project in watch mode so any edits you save inside `<packages>/<package>/src` cause a rebuild to `<packages>/<package>/dist`. The results will stream to to the terminal.
 
-### Using the examples/playground
+---
 
-
-### Running Cypress
-
-(todo)
-
-(In a third terminal) you can run Cypress and it will run your integration tests against the playground/example. If you want to keep integration tests and examples seperate you can copy the example folder to another folder called like `app` or whatever. Cypress will look for `localhost:1234` by default. If you change ports, also make sure to update [`.github/integration.yaml`](.github/integration.yml) as well.
+Created by [@alexdotjs](https://twitter.com/alexdotjs) in 2021. Original idea and proof of concept created by [colinhacks](https://twitter.com/colinhacks).
