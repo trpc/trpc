@@ -6,22 +6,29 @@
 <br/>
 <br/>
 
+- [Motivation](#motivation)
+- [Getting started](#getting-started)
+  - [Next.js](#nextjs)
+    - [0. Install deps](#0-install-deps)
+    - [1. Create an API handler](#1-create-an-api-handler)
+    - [2. Create trpc client](#2-create-trpc-client)
+    - [3. Configure `_app.tsx`](#3-configure-_apptsx)
+    - [4. Start consuming your data!](#4-start-consuming-your-data)
+  - [Merging routes](#merging-routes)
+  - [Data transformers](#data-transformers)
+  - [Internals](#internals)
+    - [HTTP Methods <-> endpoint type mapping](#http-methods---endpoint-type-mapping)
+- [Development](#development)
+  - [Development workflow](#development-workflow)
 # Motivation
 
 tRPC is a framework for building strongly typed RPC APIs with TypeScript. Alternatively, you can think of it as a way to avoid APIs altogether.
 
-Simply put, it turns this:
-
-
-
-
-
-- 🤯  Simply write data on backend & use it in the frontend.
 - 🔐  Type-safety on everything - on the API-routes, the input data & router output.
-- 🐎  No runtime bloat. TRPC has direct no deps and has tiny client-side footprint.
+- 🐎  No runtime bloat. The magic is all in the TypeScript compiler. tRPC has direct no deps and has tiny client-side footprint.
 - 😌  No double-declaration of types. Actually you don't have to declare types at all, as they are inferred.
 - 🔋  Batteries included with a React-library but not tied to React (wanna make one for Svelte or Vue? [Contact me](https://twitter.com/alexdotjs))
-- 🧑‍🎨  Works great with React + React Native. And all the other front-end frameworks.
+- 🧑‍🎨  Works great with React + React Native. And probably with all the other front-end frameworks.
 
 # Getting started
 
@@ -34,7 +41,7 @@ You can play with local examples:
 ## Next.js
 
 The code here is taken from [`./examples/next-hello-world`](./examples/next-hello-world).
-### 3. Install deps
+### 0. Install deps
 
 ```bash
 yarn add @trpc/client @trpc/server @trpc/react zod react-query
@@ -43,7 +50,7 @@ yarn add @trpc/client @trpc/server @trpc/react zod react-query
 - tRPC wraps a tiny layer of sugar around [react-query](https://react-query.tanstack.com/overview) when using React which gives you type safety and auto completion of your routes
 - Zod is recommended but not required, any validation lib is easy to integrate. Only included on the server as default, so does not affect bundle size.
 
-### 3. Create an API handler
+### 1. Create an API handler
 
 Create a file at `./pages/api/trpc/[...trpc].ts`
 
@@ -75,7 +82,7 @@ const router = createRouter()
       })
       .optional(),
     resolve({ input }) {
-      // the `input` here is type checked and inferred
+      // the `input` here is parsed by the parser passed in `input` the type inferred
       return {
         greeting: `hello ${input?.text ?? 'world'}`,
       };
@@ -94,7 +101,7 @@ export default trpc.createNextApiHandler({
 
 ```
 
-### 3. Create trpc client
+### 2. Create trpc client
 
 
 Create `./utils/trpc.ts`
@@ -177,11 +184,48 @@ export default function Home() {
 }
 ```
 
-### Merging routes
+## Merging routes
 
-Writing all API-code in your
+Writing all API-code in your code in the same file is a bad idea. It's easy to merge routes with other routes. Thanks to TypeScript 4.1 template literal types we can also prefix the routes without breaking type safety.
 
-### Data transformers
+
+```ts
+const posts = createRouter()
+  .mutation('create', {
+    input: z.object({
+      title: z.string(),
+    }),
+    resolve: ({ input }) => {
+      // ..
+      return {
+        id: 'xxxx',
+        ...input,
+      }
+    },
+  })
+  .query('list', {
+    resolve() {
+      // ..
+      return []
+    }
+  });
+
+const users = createRouter()
+  .query('list', {
+    resolve() {
+      // ..
+      return []
+    }
+  });
+
+
+const appRouter = createRouter()
+  .merge('users.', users) // prefix user routes with "users."
+  .merge('posts.', posts) // prefix poosts routes with "posts."
+  ;
+```
+
+## Data transformers
 
 You are able to serialize the output data & input args (in order to be able to transparently use e.g. standard `Date`s). The transformers need to be added both to the server and the client.
 
