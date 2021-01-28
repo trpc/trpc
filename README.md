@@ -301,4 +301,8 @@ This builds each package to `<packages>/<package>/dist` and runs the project in 
 
 ---
 
+Sponsored by [Vercel OSS](https://vercel.com/?utm_source=trpc&utm_campaign=oss)
+
+---
+
 `1.x` created by [@alexdotjs](https://twitter.com/alexdotjs) in 2021. Original version created by [colinhacks](https://twitter.com/colinhacks).
