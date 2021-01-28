@@ -20,7 +20,6 @@ Simply put, it turns this:
 - 🔐  Type-safety on everything - on the API-routes, the input data & router output.
 - 🐎  No runtime bloat. TRPC has direct no deps and has tiny client-side footprint.
 - 😌  No double-declaration of types. Actually you don't have to declare types at all, as they are inferred.
-- 📖  No documentation to be kept up-to-date.
 - 🔋  Batteries included with a React-library but not tied to React (wanna make one for Svelte or Vue? [Contact me](https://twitter.com/alexdotjs))
 - 🧑‍🎨  Works great with React + React Native. And all the other front-end frameworks.
 
