@@ -131,6 +131,23 @@ export class Router<
     return this.merge(router) as any;
   }
 
+  /**
+   * FIXME
+   * Would like to get `queries()`, etc, in place instead of `query()`
+   * Does not infer `input` in the resolver fn, needs some love
+   */
+  // public queries(
+  //   routes: RouteRecord<TContext, any, any>,
+  // ): Router<TContext, TQueries & typeof routes, TMutations, TSubscriptions> {
+  //   const router = new Router({
+  //     queries: routes as any,
+  //     mutations: {},
+  //     subscriptions: {},
+  //   });
+
+  //   return this.merge(router);
+  // }
+
   public mutation<TPath extends string, TInput, TOutput>(
     path: TPath,
     route: Route<TContext, TInput, TOutput>,
