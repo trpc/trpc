@@ -238,13 +238,14 @@ Data transformers currently live on the edges - in client-specific implementatio
 
 ## Server-side rendering (SSR / SSG)
 
-See the chat example for a working example.
+See the [chat example](./examples/next-ssg-chat) for a working example.
 
 In `getStaticProps`:
 
 ```tsx
 import { trpc } from '../utils/trpc'
 import { appRouter } from './api/trpc/[...trpc]'; // Important - only ever import & use this in the SSR-methods
+import { dehydrate } from 'react-query/hydration';
 
 export async function getStaticProps() {
   await trpc.prefetchQuery(appRouter, {
