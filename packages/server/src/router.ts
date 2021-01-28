@@ -303,7 +303,7 @@ export class Router<
     input?: unknown;
   }): Promise<unknown> {
     if (!this.has(opts.target, opts.path)) {
-      throw new RouteNotFoundError(`No such path "${opts.path}"`);
+      throw new RouteNotFoundError(`No such route "${opts.path}"`);
     }
     const target = this._def[opts.target];
     const route: Route<TContext> = target[opts.path as any];
