@@ -31,7 +31,7 @@ export type RouteWithoutInput<
   TInput = unknown,
   TOutput = unknown
 > = {
-  input?: undefined;
+  input?: undefined | null;
   resolve: RouteResolver<TContext, TInput, TOutput>;
 };
 export type Route<TContext = unknown, TInput = unknown, TOutput = unknown> =
@@ -46,7 +46,7 @@ export type RouteRecord<
 
 export type inferRouteInput<
   TRoute extends Route<any, any, any>
-> = TRoute extends RouteWithInput<any, infer Input, any> ? Input : undefined;
+> = TRoute extends RouteWithInput<any, infer Input, any> ? Input : null;
 
 export type inferAsyncReturnType<
   TFunction extends (...args: any) => any

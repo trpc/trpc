@@ -22,10 +22,10 @@ describe('query()', () => {
       ctx: {
         name: 'fest',
       },
-      input: undefined,
+      input: null,
     });
 
-    expect(res.hello).toBe('test' + 'fest');
+    expect(res.hello).toBe('testfest');
   });
 
   test('basic zod', async () => {
@@ -82,7 +82,7 @@ test('mix', async () => {
     await r.invokeUntyped({
       target: 'queries',
       path: 'q1',
-      input: undefined,
+      input: null,
       ctx: {},
     }),
   ).toMatchInlineSnapshot(`"q1res"`);
@@ -102,13 +102,13 @@ test('mix', async () => {
     await r.invokeUntyped({
       target: 'mutations',
       path: 'm1',
-      input: undefined,
+      input: null,
       ctx: {},
     }),
   ).toMatchInlineSnapshot(`"m1res"`);
 });
 
-test('merge', () => {
+test('merge', async () => {
   type Context = {};
   const root = router<Context>().query('helloo', {
     // input: null,
@@ -126,4 +126,19 @@ test('merge', () => {
         return { text: input };
       },
     });
+
+  const r = root.merge('posts.', posts);
+  expect(
+    await r.invokeQuery({
+      path: 'posts.list',
+      input: null,
+      ctx: {},
+    }),
+  ).toMatchInlineSnapshot(`
+    Array [
+      Object {
+        "text": "initial",
+      },
+    ]
+  `);
 });
