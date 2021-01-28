@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { assertNotBrowser } from './assertNotBrowser';
-import { InputValidationError } from './errors';
+import { InputValidationError, RouteNotFoundError } from './errors';
 import { Subscription } from './subscription';
 import { EmptyObject, flatten, Prefixer, ThenArg } from './types';
 assertNotBrowser();
@@ -45,7 +45,7 @@ export type RouteRecord<
 
 export type inferRouteInput<
   TRoute extends Route<any, any, any>
-> = TRoute extends Route<any, infer Input, any> ? Input : never;
+> = TRoute extends RouteWithInput<any, infer Input, any> ? Input : undefined;
 
 export type inferAsyncReturnType<
   TFunction extends (...args: any) => any
@@ -117,41 +117,49 @@ export class Router<
     return this.merge(router) as any;
   }
 
-  // public mutations<TNewRoutes extends RouteRecord<TContext>>(
-  //   routes: TNewRoutes,
-  // ): Router<
-  //   TContext,
-  //   TQueries,
-  //   flatten<TMutations, TNewRoutes>,
-  //   TSubscriptions
-  // > {
-  //   const router = new Router<TContext, {}, TNewRoutes, {}>({
-  //     mutations: routes,
-  //     queries: {},
-  //     subscriptions: {},
-  //   });
+  public mutation<TPath extends string, TInput, TOutput>(
+    path: TPath,
+    route: Route<TContext, TInput, TOutput>,
+  ): Router<
+    TContext,
+    TQueries,
+    TMutations & Record<TPath, typeof route>,
+    TSubscriptions
+  > {
+    const router = new Router({
+      queries: {},
+      mutations: {
+        [path]: route,
+      } as any,
+      subscriptions: {},
+    });
 
-  //   return this.merge(router) as any;
-  // }
+    return this.merge(router) as any;
+  }
 
-  // public subscriptions<
-  //   TNewRoutes extends RouteRecord<TContext, Subscription>
-  // >(
-  //   routes: TNewRoutes,
-  // ): Router<
-  //   TContext,
-  //   TQueries,
-  //   TMutations,
-  //   flatten<TSubscriptions, TNewRoutes>
-  // > {
-  //   const router = new Router<TContext, {}, {}, TNewRoutes>({
-  //     subscriptions: routes,
-  //     queries: {},
-  //     mutations: {},
-  //   });
+  public subscription<
+    TPath extends string,
+    TInput,
+    TOutput extends Subscription
+  >(
+    path: TPath,
+    route: Route<TContext, TInput, TOutput>,
+  ): Router<
+    TContext,
+    TQueries,
+    TMutations,
+    TSubscriptions & Record<TPath, typeof route>
+  > {
+    const router = new Router({
+      queries: {},
+      mutations: {},
+      subscriptions: {
+        [path]: route,
+      } as any,
+    });
 
-  //   return this.merge(router) as any;
-  // }
+    return this.merge(router) as any;
+  }
 
   /**
    * Merge router with other router
@@ -235,113 +243,55 @@ export class Router<
     });
   }
 
+  private static getInput<TRoute extends Route<any, any, any>>(
+    route: TRoute,
+    rawInput: unknown,
+  ): inferRouteInput<TRoute> {
+    if (!route.input) {
+      return undefined as inferRouteInput<TRoute>;
+    }
+
+    try {
+      return route.input.parse(rawInput) as inferRouteInput<TRoute>;
+    } catch (_err) {
+      const err = new InputValidationError(_err);
+      throw err;
+    }
+  }
+
   public async invokeQuery<TPath extends keyof TQueries>(opts: {
     path: TPath;
     ctx: TContext;
     input: inferRouteInput<TQueries[TPath]>;
   }): Promise<inferAsyncReturnType<TQueries[TPath]['resolve']>> {
     const route = this._def.queries[opts.path];
+    const input = Router.getInput(route, opts.input);
+    const { ctx } = opts;
 
-    if (route.input) {
-      try {
-        const parsed = route.input.parse(opts.input);
-        return route.resolve({ ctx: opts.ctx, input: parsed }) as any;
-      } catch (_err) {
-        const err = new InputValidationError(_err);
-        throw err;
-      }
-    }
-    return route.resolve({ ctx: opts.ctx, input: undefined }) as any;
+    return route.resolve({ ctx, input }) as any;
   }
 
-  // public invokeMutation(
-  //   ctx: TContext,
-  // ): inferHandler<this['_def']['mutations']> {
-  //   return (path, ...args) => (this._def.mutations[path] as any)(ctx, ...args);
-  // }
-  // public invokeQuery(ctx: TContext): inferHandler<this['_def']['queries']> {
-  //   return (path, ...args) => (this._def.queries[path] as any)(ctx, ...args);
-  // }
-  // public invokeSubscription(
-  //   ctx: TContext,
-  // ): inferHandler<this['_def']['subscriptions']> {
-  //   return (path, ...args) => {
-  //     return (this._def.subscriptions[path] as any)(ctx, ...args);
-  //   };
-  // }
+  public async invokeUntyped(opts: {
+    target: 'queries' | 'subscriptions' | 'mutations';
+    ctx: TContext;
+    path: string;
+    input: unknown;
+  }): Promise<unknown> {
+    if (!this.has(opts.target, opts.path)) {
+      throw new RouteNotFoundError(`No such path "${opts.path}"`);
+    }
+    const target = this._def[opts.target];
+    const route: Route<TContext> = target[opts.path as any];
+
+    const input = Router.getInput(route, opts.input);
+    const { ctx } = opts;
+
+    return route.resolve({ ctx, input });
+  }
 
   public has(what: 'subscriptions' | 'mutations' | 'queries', path: string) {
     return !!this._def[what][path];
   }
-  // public static routerDef<TContext, TInput, TOutput>(
-  //   def: Route<TContext, TInput, TOutput>,
-  // ): RouterResolverFn<TContext, TOutput, [TInput]> {
-  //   return async (ctx, input: inferRouteInput<typeof def>) => {
-  //     let parsed: TInput;
-  //     try {
-  //       parsed = def.input.parse(input);
-  //     } catch (_err) {
-  //       const err = new InputValidationError(_err);
-  //       throw err;
-  //     }
-  //     const data = await def.resolve({ ctx, input: parsed });
-  //     return data;
-  //   };
-  // }
-
-  // public query<TPath extends string, TInput, TOutput>(
-  //   path: TPath,
-  //   def: Route<TContext, TInput, TOutput>,
-  // ) {
-  //   const resolver = Router.routerDef(def);
-  //   return this.queries({
-  //     [path]: resolver,
-  //   } as Record<TPath, typeof resolver>);
-  // }
-  // public mutation<TPath extends string, TInput, TOutput>(
-  //   path: TPath,
-  //   def: Route<TContext, TInput, TOutput>,
-  // ) {
-  //   const resolver = Router.routerDef(def);
-  //   return this.mutations({
-  //     [path]: resolver,
-  //   } as Record<TPath, typeof resolver>);
-  // }
-  // public subscription<
-  //   TPath extends string,
-  //   TInput,
-  //   TOutput extends Subscription
-  // >(path: TPath, def: Route<TContext, TInput, TOutput>) {
-  //   const resolver = Router.routerDef(def);
-  //   return this.subscriptions({
-  //     [path]: resolver,
-  //   } as Record<TPath, typeof resolver>);
-  // }
-
-  // /**
-  //  * FIXME
-  //  * the input argument will be `unknown`, not inferred properly
-  //  */
-  // public __fixme_queriesv2<
-  //   TRoutes extends RouteRecord<TContext, TInput, TOutput>,
-  //   TInput,
-  //   TOutput
-  // >(routes: TRoutes) {
-  //   const keys = Object.keys(routes) as (keyof TRoutes)[];
-  //   const objs = keys.reduce((sum, key) => {
-  //     const resolver = Router.routerDef(routes[key]);
-  //     const obj = {
-  //       [key]: resolver,
-  //     } as Record<typeof key, typeof resolver>;
-
-  //     return {
-  //       ...sum,
-  //       ...obj,
-  //     };
-  //   }, ({} as unknown) as RouteRecordToEndpoint<TRoutes, TContext, TInput, TOutput>);
-
-  //   return this.queries(objs);
-  // }
 }
 
 export function router<TContext>() {

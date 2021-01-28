@@ -3,54 +3,104 @@
 import { router } from '../src';
 import * as z from 'zod';
 
-test('hello world', async () => {
-  type Context = {
-    name: string;
-  };
-  const r = router<Context>().query('test', {
-    // input: null,
-    resolve({ ctx }) {
-      return {
-        hello: 'test' + ctx.name,
-      };
-    },
+describe('query()', () => {
+  test('hello world', async () => {
+    type Context = {
+      name: string;
+    };
+    const r = router<Context>().query('test', {
+      // input: null,
+      resolve({ ctx }) {
+        return {
+          hello: 'test' + ctx.name,
+        };
+      },
+    });
+
+    const res = await r.invokeQuery({
+      path: 'test',
+      ctx: {
+        name: 'fest',
+      },
+      input: undefined,
+    });
+
+    expect(res.hello).toBe('test' + 'fest');
   });
 
-  const res = await r.invokeQuery({
-    path: 'test',
-    ctx: {
-      name: 'fest',
-    },
-    input: undefined,
-  });
+  test('basic zod', async () => {
+    type Context = {
+      name: string;
+    };
+    const r = router<Context>().query('test', {
+      input: z.object({
+        foo: z.string(),
+      }),
+      resolve({ input }) {
+        return {
+          foo: input.foo,
+        };
+      },
+    });
 
-  expect(res.hello).toBe('test' + 'fest');
+    const res = await r.invokeQuery({
+      path: 'test',
+      ctx: {
+        name: 'fest',
+      },
+      input: {
+        foo: 'bar',
+      },
+    });
+
+    expect(res.foo).toBe('bar');
+  });
 });
 
-test('basic zod', async () => {
-  type Context = {
-    name: string;
-  };
-  const r = router<Context>().query('test', {
-    input: z.object({
-      foo: z.string(),
+test('mix', async () => {
+  type Context = {};
+  const r = router<Context>()
+    .query('q1', {
+      // input: null,
+      resolve() {
+        return 'q1res';
+      },
+    })
+    .query('q2', {
+      resolve() {
+        return 'q2res';
+      },
+    })
+    .mutation('m1', {
+      resolve() {
+        return 'm1res';
+      },
+    });
+
+  expect(
+    await r.invokeUntyped({
+      target: 'queries',
+      path: 'q1',
+      input: undefined,
+      ctx: {},
     }),
-    resolve({ input }) {
-      return {
-        foo: input.foo,
-      };
-    },
-  });
+  ).toMatchInlineSnapshot(`"q1res"`);
 
-  const res = await r.invokeQuery({
-    path: 'test',
-    ctx: {
-      name: 'fest',
-    },
-    input: {
-      foo: 'bar',
-    },
-  });
+  expect(
+    await r.invokeUntyped({
+      target: 'queries',
+      path: 'q2',
+      input: undefined,
+      ctx: {},
+    }),
+  ).toMatchInlineSnapshot(`"q2res"`);
 
-  expect(res.foo).toBe('bar');
+  expect(
+    await r.invokeUntyped({
+      target: 'mutations',
+      path: 'm1',
+      input: undefined,
+      ctx: {},
+    }),
+  ).toMatchInlineSnapshot(`"m1res"`);
 });
