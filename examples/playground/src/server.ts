@@ -2,6 +2,7 @@ import bodyParser from 'body-parser';
 import { EventEmitter } from 'events';
 import express from 'express';
 import * as trpc from '@trpc/server';
+import * as z from 'zod';
 
 // ---------- create context
 const createContext = ({ req, res }: trpc.CreateExpressContextOptions) => {
@@ -52,13 +53,11 @@ function createMessage(text: string) {
   return msg;
 }
 const posts = createRouter()
-  .mutations({
-    create: (
-      _ctx,
-      input: {
-        title: string;
-      },
-    ) => {
+  .mutation('create', {
+    input: z.object({
+      title: z.string(),
+    }),
+    resolve: ({ input }) => {
       const post = {
         id: ++id,
         ...input,
@@ -67,17 +66,18 @@ const posts = createRouter()
       return post;
     },
   })
-  .queries({
-    list: () => db.posts,
+  .query('list', {
+    resolve: () => db.posts,
   });
 
 const messages = createRouter()
-  .queries({
-    list: () => db.messages,
+  .query('list', {
+    resolve: () => db.messages,
   })
-  .mutations({
-    add: async (_ctx, text: string) => {
-      const msg = createMessage(text);
+  .mutation('add', {
+    input: z.string(),
+    resolve: async ({ input }) => {
+      const msg = createMessage(input);
 
       db.messages.push(msg);
 
@@ -87,16 +87,17 @@ const messages = createRouter()
 
 // root router to call
 export const rootRouter = createRouter()
-  .queries({
-    hello: (ctx, input?: string) => {
+  .query('hello', {
+    input: z.string().optional(),
+    resolve: ({ input, ctx }) => {
       return `hello ${input ?? ctx.user?.name ?? 'world'}`;
     },
   })
   .merge('posts/', posts)
   .merge(
     'admin/',
-    createRouter().queries({
-      secret: (ctx) => {
+    createRouter().query('secret', {
+      resolve: ({ ctx }) => {
         if (!ctx.user) {
           throw trpc.httpError.unauthorized();
         }
@@ -114,9 +115,6 @@ export const rootRouter = createRouter()
 export type RootRouter = typeof rootRouter;
 
 async function main() {
-  const greeting = await rootRouter.invokeQuery({} as any)('hello', 'world');
-
-  console.log(greeting);
   // express implementation
   const app = express();
   app.use(bodyParser.json());

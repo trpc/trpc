@@ -54,6 +54,22 @@ export type inferAsyncReturnType<
 export type inferRouteOutput<TRoute extends Route> = inferAsyncReturnType<
   TRoute['resolve']
 >;
+export type inferSubscriptionOutput<
+  TRouter extends AnyRouter,
+  TPath extends keyof TRouter['_def']['subscriptions']
+> = inferAsyncReturnType<
+  inferAsyncReturnType<
+    TRouter['_def']['subscriptions'][TPath]['resolve']
+  >['onceOutputAndStop']
+>;
+
+export type inferHandlerFn<TRoutes extends RouteRecord> = <
+  TPath extends keyof TRoutes & string,
+  TInput extends inferRouteInput<TRoutes[TPath]>
+>(
+  path: TPath,
+  // ...args: TInput extends undefined ? [] : [TInput]
+) => Promise<inferRouteOutput<TRoutes[TPath]>>;
 
 export type AnyRouter<TContext = any> = Router<
   TContext,
