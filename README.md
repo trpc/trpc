@@ -16,8 +16,9 @@
     - [4. Start consuming your data!](#4-start-consuming-your-data)
   - [Merging routes](#merging-routes)
   - [Data transformers](#data-transformers)
-  - [Internals](#internals)
-    - [HTTP Methods <-> endpoint type mapping](#http-methods---endpoint-type-mapping)
+  - [Server-side rendering (SSR / SSG)](#server-side-rendering-ssr--ssg)
+- [Internals](#internals)
+  - [HTTP Methods <-> endpoint type mapping](#http-methods---endpoint-type-mapping)
 - [Development](#development)
   - [Development workflow](#development-workflow)
 # Motivation
@@ -234,9 +235,35 @@ Data transformers currently live on the edges - in client-specific implementatio
 - `createNextApiHandler()` in [`./examples/next-ssg-chat/[...trpc.ts]`](./examples/next-ssg-chat/pages/api/trpc/%5B...trpc%5D.ts), and
 - `createReactQueryHooks` in [`./examples/next-ssg-chat/pages/_app.tsx`](./examples/next-ssg-chat/pages/_app.tsx)
 
-## Internals
+## Server-side rendering (SSR / SSG)
 
-### HTTP Methods <-> endpoint type mapping
+See the chat example for a working example.
+
+In `getStaticProps`:
+
+```tsx
+import {trpc} from '../utils/trpc'
+
+export async function getStaticProps() {
+  await trpc.prefetchQuery(chatRouter, {
+    path: 'messages.list',
+    input: null,
+    ctx: {} as any,
+  });
+  return {
+    props: {
+      dehydratedState: dehydrate(trpc.queryClient),
+    },
+    revalidate: 1,
+  };
+}
+```
+
+This will cache the `messages.list` so it's instant when a user visits the page.
+
+# Internals
+
+## HTTP Methods <-> endpoint type mapping
 
 | HTTP Method | Mapping           | Notes                                                                             |
 | ----------- | ----------------- | --------------------------------------------------------------------------------- |
