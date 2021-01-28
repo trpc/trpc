@@ -1,6 +1,6 @@
 {
   "name": "@examples/hello-world",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "private": true,
   "scripts": {
     "dev": "next dev",
@@ -9,7 +9,7 @@
   },
   "dependencies": {
     "@trpc/client": "^1.0.0",
-    "@trpc/react": "^1.0.0",
+    "@trpc/react": "^1.0.1",
     "@trpc/server": "^1.0.0",
     "next": "10.0.4",
     "react": "17.0.1",
