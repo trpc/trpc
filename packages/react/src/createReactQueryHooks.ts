@@ -178,6 +178,12 @@ export function createReactQueryHooks<
     },
   ): Promise<void> => {
     // console.log('invoking', { ctx, path, router });
+    if (typeof input === 'undefined') {
+      console.warn('You cant use `undefined` input in ssr as it can\'t be serialized - treating it as null')
+      if (__DEV__) {
+        throw new Error('See above message');
+      }
+    }
     return queryClient.prefetchQuery([path, input], async () => {
       const data = await router.invokeUntyped({
         target: 'queries',
