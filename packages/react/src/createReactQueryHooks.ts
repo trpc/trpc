@@ -6,6 +6,7 @@ import type {
   inferRouteOutput,
   inferSubscriptionOutput,
   Router,
+  RouteWithInput,
 } from '@trpc/server';
 import { useCallback, useMemo } from 'react';
 import {
@@ -51,22 +52,31 @@ export function createReactQueryHooks<
 
   function _useQuery<
     // TODO exclude all with mandatory input from TPath
-    TPath extends keyof TQueries,
+    TPath extends keyof TQueries & string,
     TOutput extends inferRouteOutput<TQueries[TPath]>
   >(
     path: TPath,
     opts?: UseQueryOptions<unknown, TRPCClientError, TOutput>,
   ): UseQueryResult<TOutput, TRPCClientError>;
   function _useQuery<
-    TPath extends keyof TQueries & string,
-    TInput extends inferRouteInput<TQueries[TPath]>,
-    TOutput extends inferRouteOutput<TQueries[TPath]>
+    TPath extends keyof TQueries,
+    TRoute extends TQueries[TPath],
+    TOutput extends inferRouteOutput<TRoute>
   >(
-    pathAndArgs: [TPath, TInput],
-    opts?: UseQueryOptions<TInput, TRPCClientError, TOutput>,
+    pathAndArgs: [
+      path: TPath,
+      ...args: TRoute extends RouteWithInput<any, any, any>
+        ? [inferRouteInput<TRoute>]
+        : [undefined?]
+    ],
+    opts?: UseQueryOptions<
+      inferRouteInput<TQueries[TPath]>,
+      TRPCClientError,
+      TOutput
+    >,
   ): UseQueryResult<TOutput, TRPCClientError>;
   function _useQuery(
-    pathAndArgs: string | [string, string],
+    pathAndArgs: [string, unknown?],
     opts?: UseQueryOptions<any, any, any>,
   ): UseQueryResult {
     let input: unknown = null;

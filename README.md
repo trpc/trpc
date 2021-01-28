@@ -154,7 +154,7 @@ import { trpc } from '../utils/trpc';
 
 export default function Home() {
   // try typing here to see that you get autocompletioon & type safety on the route name
-  const helloNoArgs = trpc.useQuery('hello');
+  const helloNoArgs = trpc.useQuery(['hello']);
   const helloWithArgs = trpc.useQuery(['hello', { text: 'client' }]);
 
   // try to uncomment next line to show type checking:

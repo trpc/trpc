@@ -137,7 +137,7 @@ describe('integration', () => {
       queryClient,
     });
     function MyComponent() {
-      const helloNoArgs = useQuery('hello');
+      const helloNoArgs = useQuery(['hello']);
       const helloArgs = useQuery(['hello', { who: 'render' }]);
 
       return (
