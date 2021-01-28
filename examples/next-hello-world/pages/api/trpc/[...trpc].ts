@@ -13,6 +13,7 @@ const createContext = ({
 function createRouter() {
   return trpc.router<Context>();
 }
+// Important: only use this export with SSR/SSG
 export const appRouter = createRouter()
   // Create route at path 'hello'
   .query('hello', {
