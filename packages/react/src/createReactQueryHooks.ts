@@ -42,12 +42,10 @@ export function createReactQueryHooks<
   const serializeInput = (input: unknown): unknown[] =>
     typeof input !== 'undefined' ? transformer.serialize(input) : input;
 
-  const useDeserializedData = <TOutput = unknown>(data: unknown) =>
+  const useDeserializedData = (data: unknown) =>
     useMemo(
       () =>
-        typeof data !== 'undefined'
-          ? (transformer.deserialize(data) as TOutput)
-          : data,
+        typeof data !== 'undefined' ? transformer.deserialize(data) : data,
       [data],
     );
 
@@ -124,15 +122,16 @@ export function createReactQueryHooks<
       opts,
     );
 
+    const hookMutateAsync = hook.mutateAsync;
     const mutateAsync: typeof hook['mutateAsync'] = useCallback(
       async (...args) => {
-        const orig = await hook.mutateAsync(...args);
+        const orig = await hookMutateAsync(...args);
 
         return transformer.deserialize(orig) as any;
       },
-      [hook.mutateAsync],
+      [hookMutateAsync],
     );
-    const data = useDeserializedData<TOutput>(hook.data);
+    const data = useDeserializedData(hook.data);
     return {
       ...hook,
       mutateAsync,
