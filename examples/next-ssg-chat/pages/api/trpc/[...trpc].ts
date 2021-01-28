@@ -99,8 +99,8 @@ const router = createRouter()
       }),
   );
 
-export const chatRouter = router;
-export type ChatRouter = typeof router;
+export const appRouter = router;
+export type AppRouter = typeof router;
 
 export default trpc.createNextApiHandler({
   router,

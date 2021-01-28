@@ -22,7 +22,7 @@
     "react": "17.0.1",
     "react-dom": "17.0.1",
     "react-query": "^3.6.0",
-    "superjson": "^1.5.0",
+    "superjson": "^1.5.2",
     "zod": "^1.11.11"
   },
   "devDependencies": {

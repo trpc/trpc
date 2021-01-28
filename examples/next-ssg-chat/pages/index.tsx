@@ -2,7 +2,7 @@ import { Message } from '@prisma/client';
 import Head from 'next/head';
 import { useEffect, useMemo, useState } from 'react';
 import { dehydrate } from 'react-query/hydration';
-import { chatRouter } from './api/trpc/[...trpc]';
+import { appRouter } from './api/trpc/[...trpc]';
 import { hooks } from './_app';
 
 function maxDate(dates: Date[]) {
@@ -101,7 +101,7 @@ export default function Home() {
   );
 }
 export async function getStaticProps() {
-  await hooks.prefetchQuery(chatRouter, {
+  await hooks.prefetchQuery(appRouter, {
     path: 'messages.list',
     input: null,
     ctx: {} as any,
