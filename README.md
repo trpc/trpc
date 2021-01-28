@@ -8,18 +8,17 @@
 
 # Motivation
 
-> This library is undergoing rapid development and should be considered experimental. 🤙
-
 tRPC is a framework for building strongly typed RPC APIs with TypeScript. Alternatively, you can think of it as a way to avoid APIs altogether.
 
 - No code generation. Simply write route in the backend and use on the frontend and get all the types inferred both on input and output.
-- No runtime bloat. TRPC has direct no deps and has tiny client-side footprint).
-- No double-declaration of types. Actually you don't have to declare types, as they are inferred.
-- No documentation to be kept up-to-date
-- Type guarantee in resolvers - input are parsed by the validation schema
-- Got React-library but not tied to React (wanna make one for Svelte or Vue? [Contact me](https://twitter.com/alexdotjs))
+- No runtime bloat. TRPC has direct no deps and has tiny client-side footprint.
+- No double-declaration of types. Actually you don't have to declare types at all, as they are inferred.
+- No documentation to be kept up-to-date.
+- Type guarantee in resolvers - inputs are parsed by the validation schema.
+- Batteries included with a React-library but not tied to React (wanna make one for Svelte or Vue? [Contact me](https://twitter.com/alexdotjs))
+- Works great with React + React Native.
 
-## Getting started
+# Getting started
 
 You can play with local examples:
 
@@ -27,10 +26,10 @@ You can play with local examples:
 - `yarn example:chat` - runs a real-time chat example with SSG & Prisma as a data store
 - `yarn example:hello` runs a minimal Next.js example 
 
-### Next.js
+## Next.js
 
 The code here is taken from [`./examples/next-hello-world`](./examples/next-hello-world).
-#### 0. Install deps
+### 3. Install deps
 
 ```bash
 yarn add @trpc/client @trpc/server @trpc/react zod react-query
@@ -39,7 +38,7 @@ yarn add @trpc/client @trpc/server @trpc/react zod react-query
 - tRPC wraps a tiny layer of sugar around [react-query](https://react-query.tanstack.com/overview) when using React which gives you type safety and auto completion of your routes
 - Zod is recommended but not required, any validation lib is easy to integrate. Only included on the server as default, so does not affect bundle size.
 
-#### 1. Create an API handler
+### 3. Create an API handler
 
 Create a file at `./pages/api/trpc/[...trpc].ts`
 
@@ -90,7 +89,7 @@ export default trpc.createNextApiHandler({
 
 ```
 
-#### 2. Create trpc client
+### 3. Create trpc client
 
 
 Create `./utils/trpc.ts`
@@ -112,7 +111,7 @@ export const trpc = createReactQueryHooks<AppRouter, Context>({
 });
 ```
 
-#### 2. Configure `_app.tsx` 
+### 3. Configure `_app.tsx` 
 
 ```tsx
 import type { AppProps } from 'next/app';
@@ -133,7 +132,7 @@ export default MyApp;
 ```
 
 
-#### 3. Start consuming your API!
+### 4. Start consuming your data!
 
 
 ```tsx
@@ -172,6 +171,10 @@ export default function Home() {
   );
 }
 ```
+
+### Merging routes
+
+Writing all API-code in your
 
 ### Data transformers
 
