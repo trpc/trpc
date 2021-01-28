@@ -21,6 +21,7 @@
   - [HTTP Methods <-> endpoint type mapping](#http-methods---endpoint-type-mapping)
 - [Development](#development)
   - [Development workflow](#development-workflow)
+- [Credits](#credits)
 # Motivation
 
 tRPC is a framework for building strongly typed RPC APIs with TypeScript. Alternatively, you can think of it as a way to avoid APIs altogether.
@@ -301,8 +302,7 @@ This builds each package to `<packages>/<package>/dist` and runs the project in 
 
 ---
 
-Sponsored by [Vercel OSS](https://vercel.com/?utm_source=trpc&utm_campaign=oss)
+# Credits
 
----
-
-`1.x` created by [@alexdotjs](https://twitter.com/alexdotjs) in 2021. Original version created by [colinhacks](https://twitter.com/colinhacks).
+- Hosting provided by [Vercel](https://vercel.com/?utm_source=trpc&utm_campaign=oss)
+- `1.x` created by [@alexdotjs](https://twitter.com/alexdotjs) in 2021. Original version created by [@colinhacks](https://twitter.com/colinhacks).
