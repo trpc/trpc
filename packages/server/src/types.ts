@@ -15,7 +15,6 @@ export type flatten<T, Q> = identity<
       : never;
   }
 >;
-export type EmptyObject = Record<string, never>;
 
 export type Prefixer<
   TObj extends Record<string, any>,
@@ -25,13 +24,6 @@ export type Prefixer<
     [P in keyof TObj as Prefix<TPrefix, string & P>]: TObj[P];
   }
 >;
-
-export type DropFirst<T extends readonly unknown[]> = T extends readonly [
-  any?,
-  ...infer U
-]
-  ? U
-  : [...T];
 
 export type Maybe<T> = T | undefined | null;
 

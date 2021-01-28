@@ -3,8 +3,8 @@ import type {
   AnyRouter,
   HTTPResponseEnvelope,
   HTTPSuccessResponseEnvelope,
-  inferEndpointArgs,
-  inferHandler,
+  inferHandlerFn,
+  inferRouteInput,
   inferSubscriptionOutput,
   Maybe,
 } from '@trpc/server';
@@ -86,6 +86,9 @@ export function createTRPCClient<TRouter extends AnyRouter>(
   const { fetchOpts, url } = opts;
   const _fetch = getFetch(fetchOpts?.fetch);
   const AC = getAbortController(fetchOpts?.AbortController);
+  type TQueries = TRouter['_def']['queries'];
+  type TMutations = TRouter['_def']['mutations'];
+  type TSubscriptions = TRouter['_def']['subscriptions'];
 
   async function handleResponse(promise: Promise<Response>) {
     let res: Maybe<Response> = null;
@@ -125,11 +128,11 @@ export function createTRPCClient<TRouter extends AnyRouter>(
   type TRPCType = 'subscription' | 'query' | 'mutation';
   function request({
     type,
-    args,
+    input,
     path,
   }: {
     type: TRPCType;
-    args: unknown[];
+    input: unknown;
     path: string;
   }) {
     type ReqOpts = {
@@ -140,20 +143,20 @@ export function createTRPCClient<TRouter extends AnyRouter>(
     const reqOptsMap: Record<TRPCType, () => ReqOpts> = {
       subscription: () => ({
         method: 'PATCH',
-        body: JSON.stringify({ args }),
+        body: JSON.stringify({ input }),
         url: `${url}/${path}`,
       }),
       mutation: () => ({
         method: 'POST',
-        body: JSON.stringify({ args }),
+        body: JSON.stringify({ input }),
         url: `${url}/${path}`,
       }),
       query: () => ({
         method: 'GET',
         url:
           `${url}/${path}` +
-          (args.length
-            ? `?args=${encodeURIComponent(JSON.stringify(args))}`
+          (input != null
+            ? `?input=${encodeURIComponent(JSON.stringify(input))}`
             : ''),
       }),
     };
@@ -170,7 +173,7 @@ export function createTRPCClient<TRouter extends AnyRouter>(
       signal: ac?.signal,
       headers: getHeaders(),
     };
-
+    // console.log('reqOpts', {reqUrl, reqOpts, type, input})
     const promise: CancellablePromise<any> & {
       cancel(): void;
     } = handleResponse(_fetch(reqUrl, reqOpts)) as any;
@@ -181,33 +184,25 @@ export function createTRPCClient<TRouter extends AnyRouter>(
     return promise;
   }
 
-  const query: inferHandler<TRouter['_def']['queries']> = async (
-    path: string,
-    ...args: unknown[]
-  ) => {
+  const query: inferHandlerFn<TQueries> = async (path, ...args) => {
     return request({
       type: 'query',
       path,
-      args,
+      input: args[0],
     });
   };
-
-  const mutate: inferHandler<TRouter['_def']['mutations']> = async (
-    path,
-    ...args
-  ) => {
+  const mutate: inferHandlerFn<TMutations> = async (path, ...args) => {
     return request({
       type: 'mutation',
       path,
-      args,
+      input: args[0],
     });
   };
 
   function subscriptionOnce<
-    TPath extends keyof TRouter['_def']['subscriptions'] & string,
-    TArgs extends inferEndpointArgs<TRouter['_def']['subscriptions'][TPath]> &
-      any[]
-  >(path: TPath, ...args: TArgs) {
+    TPath extends keyof TSubscriptions & string,
+    TInput extends inferRouteInput<TSubscriptions[TPath]>
+  >(path: TPath, input: TInput) {
     type TOutput = inferSubscriptionOutput<TRouter, TPath>;
     let stopped = false;
     let nextTry: any; // setting as `NodeJS.Timeout` causes compat issues, can probably be solved
@@ -221,11 +216,11 @@ export function createTRPCClient<TRouter extends AnyRouter>(
         try {
           currentRequest = request({
             type: 'subscription',
-            args,
+            input,
             path,
           });
           const data = await currentRequest;
-          console.log('response', { path, args, data });
+          // console.log('response', { path, input, data });
           resolve(data);
         } catch (_err) {
           const err: TRPCClientError = _err;

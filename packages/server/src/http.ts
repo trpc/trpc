@@ -72,28 +72,24 @@ export function getErrorResponseEnvelope(
   return json;
 }
 
-export function getQueryArgs<TRequest extends BaseRequest>(req: TRequest) {
-  let args: unknown[] = [];
+export function getQueryInput<TRequest extends BaseRequest>(req: TRequest) {
+  let input: unknown = undefined;
 
-  const queryArgs = req.query.args;
-  if (!queryArgs) {
-    return args;
+  const queryInput = req.query.input;
+  if (!queryInput) {
+    return input;
   }
-  if (typeof queryArgs !== 'string') {
-    throw httpError.badRequest('Expected query.args to be a JSON string');
+  // console.log('query', queryInput);
+  if (typeof queryInput !== 'string') {
+    throw httpError.badRequest('Expected query.input to be a JSON string');
   }
   try {
-    args = JSON.parse(queryArgs);
+    input = JSON.parse(queryInput);
   } catch (err) {
-    throw httpError.badRequest('Expected query.args to be a JSON string');
+    throw httpError.badRequest('Expected query.input to be a JSON string');
   }
 
-  if (!Array.isArray(args)) {
-    throw httpError.badRequest(
-      'Expected query.args to be parsed as an JSON-array',
-    );
-  }
-  return args;
+  return input;
 }
 
 export type CreateContextFnOptions<TRequest, TResponse> = {
@@ -152,50 +148,38 @@ export async function requestHandler<
   createContext: TCreateContextFn;
 } & BaseOptions) {
   try {
-    let data: unknown;
+    let output: unknown;
     const ctx = await createContext({ req, res });
     const method = req.method ?? 'GET';
 
-    const deserializeArgs = (args: unknown[]): any =>
-      args.map((arg) => transformer.deserialize(arg));
+    const deserializeInput = (input: unknown) =>
+      input ? transformer.deserialize(input) : input;
 
     if (method === 'POST') {
-      if (!router.has('mutations', endpoint)) {
-        throw httpError.notFound(`Unknown mutation "${endpoint}"`);
-      }
-
-      const args = req.body.args ?? [];
-      if (!Array.isArray(args)) {
-        throw httpError.badRequest('Expected body.args to be an array');
-      }
-
-      data = await router.invokeMutation(ctx)(
-        endpoint as any,
-        ...deserializeArgs(args),
-      );
+      const input = deserializeInput(req.body.input);
+      output = await router.invokeUntyped({
+        target: 'mutations',
+        input,
+        ctx,
+        path: endpoint,
+      });
     } else if (method === 'GET') {
-      if (!router.has('queries', endpoint)) {
-        throw httpError.notFound(`Unknown query "${endpoint}"`);
-      }
-      const args = getQueryArgs(req);
-
-      data = await router.invokeQuery(ctx)(
-        endpoint as any,
-        ...deserializeArgs(args),
-      );
+      const input = deserializeInput(getQueryInput(req));
+      output = await router.invokeUntyped({
+        target: 'queries',
+        input,
+        ctx,
+        path: endpoint,
+      });
     } else if (method === 'PATCH') {
-      if (!router.has('subscriptions', endpoint)) {
-        throw httpError.notFound(`Unknown subscription "${endpoint}"`);
-      }
-      const args = req.body.args ?? [];
-      if (!Array.isArray(args)) {
-        throw httpError.badRequest('Expected body.args to be an array');
-      }
+      const input = deserializeInput(req.body.input);
 
-      const sub: Subscription = await router.invokeSubscription(ctx)(
-        endpoint as any,
-        ...deserializeArgs(args),
-      );
+      const sub = (await router.invokeUntyped({
+        target: 'subscriptions',
+        input,
+        ctx,
+        path: endpoint,
+      })) as Subscription;
       const onClose = () => {
         sub.destroy('closed');
       };
@@ -213,7 +197,7 @@ export async function requestHandler<
         sub.destroy('timeout');
       }, timeout);
       try {
-        data = await sub.onceOutputAndStop();
+        output = await sub.onceOutputAndStop();
 
         res.off('close', onClose);
       } catch (err) {
@@ -237,7 +221,7 @@ export async function requestHandler<
     const json: HTTPSuccessResponseEnvelope<unknown> = {
       ok: true,
       statusCode: res.statusCode ?? 200,
-      data: transformer.serialize(data),
+      data: transformer.serialize(output),
     };
     res.status(json.statusCode).json(json);
   } catch (err) {

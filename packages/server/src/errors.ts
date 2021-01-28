@@ -8,3 +8,11 @@ export class InputValidationError<TError extends Error> extends Error {
     Object.setPrototypeOf(this, InputValidationError.prototype);
   }
 }
+
+export class RouteNotFoundError extends Error {
+  constructor(message: string) {
+    super(message);
+
+    Object.setPrototypeOf(this, RouteNotFoundError.prototype);
+  }
+}

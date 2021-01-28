@@ -1,100 +1,144 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/ban-types */
-import { router } from '../src';
 import * as z from 'zod';
+import { router } from '../src';
 
-test('types', async () => {
-  const r = router<{}>().queries({
-    test: () => {
-      return {
-        hello: 'test',
-      };
-    },
-  });
-
-  {
-    const res = await r.invokeQuery({})('test');
-
-    expect(res.hello).toBe('test');
-  }
-  {
-    const res: {
-      hello: string;
-    } = await r.invokeQuery({})('test');
-    expect(res.hello).toBe('test');
-  }
-});
-
-describe('input validation', () => {
-  test('basic', async () => {
+describe('query()', () => {
+  test('hello world', async () => {
     type Context = {
-      user?: {
-        name: string;
-      };
+      name: string;
     };
     const r = router<Context>().query('test', {
-      input: z
-        .object({
-          who: z.string(),
-        })
-        .optional(),
-      resolve({ ctx, input }) {
-        return { text: `hello ${input?.who ?? ctx.user?.name ?? 'world'}` };
+      // input: null,
+      resolve({ ctx }) {
+        return {
+          hello: 'test' + ctx.name,
+        };
       },
     });
 
-    {
-      const res = await r.invokeQuery({})('test', undefined);
+    const res = await r.invokeQuery({
+      path: 'test',
+      ctx: {
+        name: 'fest',
+      },
+      input: null,
+    });
 
-      expect(res.text).toBe('hello world');
-    }
-
-    {
-      const res = await r.invokeQuery({})('test', { who: 'katt' });
-
-      expect(res.text).toBe('hello katt');
-    }
-    {
-      const res = await r.invokeQuery({
-        user: {
-          name: 'katt',
-        },
-      })('test', undefined);
-
-      expect(res.text).toBe('hello katt');
-    }
-
-    await expect(() => r.invokeQuery({})('test', { who: false as any })).rejects
-      .toMatchInlineSnapshot(`
-              [Error: 1 validation issue(s)
-
-                Issue #0: invalid_union at 
-                Invalid input
-              ]
-            `);
+    expect(res.hello).toBe('testfest');
   });
 
-  // test('fixme: next generation', async () => {
-  //   type Context = {};
-  //   const r = router<Context>().__fixme_queriesv2({
-  //     str: {
-  //       input: z.string(),
-  //       resolve({ input, ctx }) {
-  //         // `input` is untyped :(
+  test('basic zod', async () => {
+    type Context = {
+      name: string;
+    };
+    const r = router<Context>().query('test', {
+      input: z.object({
+        foo: z.string(),
+      }),
+      resolve({ input }) {
+        return {
+          foo: input.foo,
+        };
+      },
+    });
 
-  //         console.log({ input, ctx });
-  //         return 'hello';
-  //       },
-  //     },
-  //     num: {
-  //       input: z.number(),
-  //       resolve({ input, ctx }) {
-  //         console.log({ input, ctx });
-  //         return 1;
-  //       },
-  //     },
-  //   });
-  //   const res = await r.invokeQuery({})('str', 'hello');
-  //   const res2 = await r.invokeQuery({})('num', 0);
-  // });
+    const res = await r.invokeQuery({
+      path: 'test',
+      ctx: {
+        name: 'fest',
+      },
+      input: {
+        foo: 'bar',
+      },
+    });
+
+    expect(res.foo).toBe('bar');
+  });
+});
+
+test('mix', async () => {
+  type Context = {};
+  const r = router<Context>()
+    .query('q1', {
+      // input: null,
+      resolve() {
+        return 'q1res';
+      },
+    })
+    .query('q2', {
+      input: z.object({ q2: z.string() }),
+      resolve() {
+        return 'q2res';
+      },
+    })
+    .mutation('m1', {
+      resolve() {
+        return 'm1res';
+      },
+    });
+
+  expect(
+    await r.invokeUntyped({
+      target: 'queries',
+      path: 'q1',
+      input: null,
+      ctx: {},
+    }),
+  ).toMatchInlineSnapshot(`"q1res"`);
+
+  expect(
+    await r.invokeUntyped({
+      target: 'queries',
+      path: 'q2',
+      input: {
+        q2: 'hey',
+      },
+      ctx: {},
+    }),
+  ).toMatchInlineSnapshot(`"q2res"`);
+
+  expect(
+    await r.invokeUntyped({
+      target: 'mutations',
+      path: 'm1',
+      input: null,
+      ctx: {},
+    }),
+  ).toMatchInlineSnapshot(`"m1res"`);
+});
+
+test('merge', async () => {
+  type Context = {};
+  const root = router<Context>().query('helloo', {
+    // input: null,
+    resolve() {
+      return 'world';
+    },
+  });
+  const posts = router<Context>()
+    .query('list', {
+      resolve: () => [{ text: 'initial' }],
+    })
+    .mutation('create', {
+      input: z.string(),
+      resolve({ input }) {
+        return { text: input };
+      },
+    });
+
+  const r = root.merge('posts.', posts);
+  expect(
+    await r.invokeQuery({
+      path: 'posts.list',
+      input: null,
+      ctx: {},
+    }),
+  ).toMatchInlineSnapshot(`
+    Array [
+      Object {
+        "text": "initial",
+      },
+    ]
+  `);
 });

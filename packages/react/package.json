@@ -33,9 +33,15 @@
     "tslib": "^2.0.0"
   },
   "devDependencies": {
+    "@testing-library/jest-dom": "^5.11.9",
+    "@testing-library/react": "^11.2.3",
     "@trpc/client": "^1.0.0-alpha.17",
     "@trpc/server": "^1.0.0-alpha.17",
-    "react-query": "^3.6.0"
+    "@types/express": "^4.17.11",
+    "body-parser": "^1.19.0",
+    "express": "^4.17.1",
+    "react-query": "^3.6.0",
+    "zod": "^1.11.11"
   },
   "publishConfig": {
     "access": "public"

@@ -2,12 +2,10 @@
 import { TRPCClient, TRPCClientError } from '@trpc/client';
 import type {
   DataTransformer,
-  DropFirst,
-  inferEndpointArgs,
-  inferEndpointOutput,
+  inferRouteInput,
+  inferRouteOutput,
   inferSubscriptionOutput,
   Router,
-  RouterResolverFn,
 } from '@trpc/server';
 import { useCallback, useMemo } from 'react';
 import {
@@ -15,8 +13,10 @@ import {
   QueryObserverResult,
   useMutation,
   UseMutationOptions,
+  UseMutationResult,
   useQuery,
   UseQueryOptions,
+  UseQueryResult,
 } from 'react-query';
 
 export function createReactQueryHooks<
@@ -39,164 +39,142 @@ export function createReactQueryHooks<
   type TMutations = TRouter['_def']['mutations'];
   type TSubscriptions = TRouter['_def']['subscriptions'];
 
-  const serializeArgs = (args: unknown[]): unknown[] =>
-    args.map((arg) => transformer.serialize(arg));
+  const serializeInput = (input: unknown): unknown =>
+    typeof input !== 'undefined' ? transformer.serialize(input) : input;
 
-  function _useQuery<TPath extends keyof TQueries & string>(
-    pathAndArgs: [TPath, ...inferEndpointArgs<TQueries[TPath]>],
-    opts?: UseQueryOptions<
-      inferEndpointArgs<TQueries[TPath]>,
-      TRPCClientError,
-      inferEndpointOutput<TQueries[TPath]>
-    >,
-  ) {
-    type TOutput = inferEndpointOutput<TQueries[TPath]>;
-    const [path, ...args] = pathAndArgs;
+  const useDeserializedData = (data: unknown) =>
+    useMemo(
+      () =>
+        typeof data !== 'undefined' ? transformer.deserialize(data) : data,
+      [data],
+    );
 
-    const hook = useQuery<
-      inferEndpointArgs<TQueries[TPath]>,
-      TRPCClientError,
-      TOutput
-    >(
-      pathAndArgs,
+  function _useQuery<
+    // TODO exclude all with mandatory input from TPath
+    TPath extends keyof TQueries,
+    TOutput extends inferRouteOutput<TQueries[TPath]>
+  >(
+    path: TPath,
+    opts?: UseQueryOptions<unknown, TRPCClientError, TOutput>,
+  ): UseQueryResult<TOutput, TRPCClientError>;
+  function _useQuery<
+    TPath extends keyof TQueries & string,
+    TInput extends inferRouteInput<TQueries[TPath]>,
+    TOutput extends inferRouteOutput<TQueries[TPath]>
+  >(
+    pathAndArgs: [TPath, TInput],
+    opts?: UseQueryOptions<TInput, TRPCClientError, TOutput>,
+  ): UseQueryResult<TOutput, TRPCClientError>;
+  function _useQuery(
+    pathAndArgs: string | [string, string],
+    opts?: UseQueryOptions<any, any, any>,
+  ): UseQueryResult {
+    let input: unknown = null;
+    let path: string;
+    if (Array.isArray(pathAndArgs)) {
+      path = pathAndArgs[0];
+      input = pathAndArgs[1] ?? null;
+    } else {
+      path = pathAndArgs;
+    }
+    const cacheKey = [path, input];
+
+    const hook = useQuery(
+      cacheKey,
       () =>
         client.request({
           type: 'query',
           path,
-          args: serializeArgs(args),
-        }) as any,
+          input: serializeInput(input),
+        }),
       opts,
     );
-    const data = useMemo(
-      () =>
-        typeof hook.data !== 'undefined'
-          ? (transformer.deserialize(hook.data) as TOutput)
-          : hook.data,
-      [hook.data],
-    );
+    const data = useDeserializedData(hook.data);
     return {
       ...hook,
       data,
-    } as QueryObserverResult<TOutput, TRPCClientError>;
+    } as any;
   }
 
-  // /**
-  //  * use a query that doesn't require args
-  //  * @deprecated **🚧 WIP** should be combined with `useQuery`
-  //  */
-  // function useQueryNoArgs<
-  //   TPath extends inferEndpointsWithoutArgs<TQueries> & string & keyof TQueries
-  // >(
-  //   path: TPath,
-  //   opts?: UseQueryOptions<
-  //     never,
-  //     TRPCClientError,
-  //     inferEndpointOutput<TQueries[TPath]>
-  //   >,
-  // ) {
-  //   const hook = useQuery<
-  //     never,
-  //     TRPCClientError,
-  //     inferEndpointOutput<TQueries[TPath]>
-  //   >(path, () => (client.query as any)(path) as any, opts);
-  //   const data = useMemo(() => client.transformer.deserialize(hook.data), [
-  //     hook.data,
-  //   ]) as inferEndpointOutput<TQueries[TPath]>;
-
-  //   return {
-  //     ...hook,
-  //     data,
-  //   };
-  // }
-  function _useMutation<TPath extends keyof TMutations & string>(
+  function _useMutation<
+    TPath extends keyof TMutations & string,
+    TInput extends inferRouteInput<TMutations[TPath]>,
+    TOutput extends inferRouteOutput<TMutations[TPath]>
+  >(
     path: TPath,
-    opts?: UseMutationOptions<
-      inferEndpointOutput<TMutations[TPath]>,
-      TRPCClientError,
-      inferEndpointArgs<TMutations[TPath]>
-    >,
-  ) {
-    const mutation = useMutation<
-      inferEndpointOutput<TMutations[TPath]>,
-      TRPCClientError,
-      inferEndpointArgs<TMutations[TPath]>
-    >(
-      (args) =>
+    opts?: UseMutationOptions<TOutput, TRPCClientError, TInput>,
+  ): UseMutationResult<TOutput, TRPCClientError, TInput> {
+    const hook = useMutation<TOutput, TRPCClientError, TInput>(
+      (input) =>
         client.request({
           type: 'mutation',
           path,
-          args: serializeArgs(args),
-        }) as any,
+          input: serializeInput(input),
+        }),
       opts,
     );
 
-    const mutateAsync: typeof mutation['mutateAsync'] = useCallback(
+    const hookMutateAsync = hook.mutateAsync;
+    const mutateAsync: typeof hook['mutateAsync'] = useCallback(
       async (...args) => {
-        const orig = await mutation.mutateAsync(...args);
+        const orig = await hookMutateAsync(...args);
 
         return transformer.deserialize(orig) as any;
       },
-      [mutation.mutateAsync],
+      [hookMutateAsync],
     );
+    const data = useDeserializedData(hook.data);
     return {
-      ...mutation,
+      ...hook,
       mutateAsync,
+      data,
     };
   }
 
-  function useSubscription<TPath extends keyof TSubscriptions & string>(
-    pathAndArgs: [TPath, ...inferEndpointArgs<TSubscriptions[TPath]>],
-    opts?: UseQueryOptions<
-      inferEndpointArgs<TSubscriptions[TPath]>,
-      TRPCClientError,
-      inferSubscriptionOutput<TRouter, TPath>
-    >,
+  function useSubscription<
+    TPath extends keyof TSubscriptions & string,
+    TInput extends inferRouteInput<TSubscriptions[TPath]>,
+    TOutput extends inferSubscriptionOutput<TRouter, TPath>
+  >(
+    pathAndArgs: [TPath, TInput],
+    opts?: UseQueryOptions<TInput, TRPCClientError, TOutput>,
   ) {
-    type TOutput = inferSubscriptionOutput<TRouter, TPath>;
+    const [path, input] = pathAndArgs;
 
-    const [path, ...args] = pathAndArgs;
-
-    const hook = useQuery<
-      inferEndpointArgs<TSubscriptions[TPath]>,
-      TRPCClientError,
-      TOutput
-    >(
+    const hook = useQuery<TInput, TRPCClientError, TOutput>(
       pathAndArgs,
-      () => client.subscriptionOnce(path, ...serializeArgs(args)) as any,
+      () => client.subscriptionOnce(path, serializeInput(input)),
       opts,
     );
-
-    const data = useMemo(
-      () =>
-        typeof hook.data !== 'undefined'
-          ? (transformer.deserialize(hook.data) as TOutput)
-          : hook.data,
-      [hook.data],
-    );
+    const data = useDeserializedData(hook.data);
     return {
       ...hook,
       data,
     } as QueryObserverResult<TOutput, TRPCClientError>;
   }
 
-  const ssr = async <
-    TEndpoints extends TRouter['_def']['queries'],
-    TResolver extends TEndpoints & RouterResolverFn,
-    TArgs extends DropFirst<Parameters<TResolver>>,
-    TPath extends keyof TEndpoints & string
+  const prefetchQuery = async <
+    TPath extends keyof TQueries & string,
+    TInput extends inferRouteInput<TQueries[TPath]>
   >(
     router: TRouter,
-    path: TPath,
-    ctx: TContext,
-    ...args: TArgs
+    opts: {
+      path: TPath;
+      ctx: TContext;
+      input: TInput;
+    },
   ): Promise<void> => {
-    // console.log('invoking', { ctx, path, router });
-    return queryClient.prefetchQuery([path, ...args], async () => {
-      const data = await router.invokeQuery(ctx)(
+    const input = opts.input ?? null;
+    const { path, ctx } = opts;
+    const cacheKey = [path, input];
+
+    return queryClient.prefetchQuery(cacheKey, async () => {
+      const data = await router.invokeUntyped({
+        target: 'queries',
+        ctx,
         path,
-        ...(serializeArgs(args) as any),
-      );
-      // console.log('data', data);
+        input,
+      });
       return transformer.serialize(data);
     });
   };
@@ -206,6 +184,6 @@ export function createReactQueryHooks<
     useMutation: _useMutation,
     useSubscription,
     queryClient,
-    ssr,
+    prefetchQuery,
   };
 }

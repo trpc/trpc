@@ -3,7 +3,7 @@ import Head from 'next/head';
 import { useEffect, useMemo, useState } from 'react';
 import { dehydrate } from 'react-query/hydration';
 import { chatRouter } from './api/trpc/[...trpc]';
-import { client, hooks } from './_app';
+import { hooks } from './_app';
 
 function maxDate(dates: Date[]) {
   let max = dates[0];
@@ -23,9 +23,9 @@ const getTimestamp = (m: Message[]) => {
 };
 
 export default function Home() {
-  const query = hooks.useQuery(['messages.list', '']);
+  const query = hooks.useQuery('messages.list');
 
-  const [msgs, setMessages] = useState(() => query.data?.items ?? []);
+  const [msgs, setMessages] = useState(() => query.data.items ?? []);
   const addMessages = (newMessages?: Message[]) => {
     setMessages((nowMessages) => {
       const map: Record<Message['id'], Message> = {};
@@ -44,13 +44,14 @@ export default function Home() {
   const timestamp = useMemo(() => getTimestamp(msgs), [msgs]);
 
   // merge messages when `query.data` updates
-  useEffect(() => addMessages(query.data.items), [query.data]);
+  useEffect(() => addMessages(query.data?.items), [query.data]);
 
   // ---subscriptions
   const subscription = hooks.useSubscription([
     'messages.newMessages',
     { timestamp },
   ]);
+
   // merge messages on subscription.data
   useEffect(() => addMessages(subscription.data), [subscription.data]);
 
@@ -82,12 +83,12 @@ export default function Home() {
         onSubmit={async (e) => {
           e.preventDefault();
           const $text: HTMLInputElement = (e as any).target.elements.text;
-          const data = {
+          const input = {
             text: $text.value,
           };
 
           try {
-            const res = await addMessage.mutateAsync([data]);
+            const res = await addMessage.mutateAsync(input);
             $text.value = '';
             addMessages([res]);
           } catch (err) {}
@@ -100,7 +101,11 @@ export default function Home() {
   );
 }
 export async function getStaticProps() {
-  await hooks.ssr(chatRouter, 'messages.list', {}, '');
+  await hooks.prefetchQuery(chatRouter, {
+    path: 'messages.list',
+    input: null,
+    ctx: {} as any,
+  });
   return {
     props: {
       dehydratedState: dehydrate(hooks.queryClient),
