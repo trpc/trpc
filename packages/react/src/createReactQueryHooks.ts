@@ -39,7 +39,7 @@ export function createReactQueryHooks<
   type TMutations = TRouter['_def']['mutations'];
   type TSubscriptions = TRouter['_def']['subscriptions'];
 
-  const serializeInput = (input: unknown): unknown[] =>
+  const serializeInput = (input: unknown): unknown =>
     typeof input !== 'undefined' ? transformer.serialize(input) : input;
 
   const useDeserializedData = (data: unknown) =>
@@ -79,7 +79,6 @@ export function createReactQueryHooks<
     }
     const cacheKey = [path, input];
 
-    console.log('cacheKey2', cacheKey);
     const hook = useQuery(
       cacheKey,
       () =>
@@ -168,7 +167,6 @@ export function createReactQueryHooks<
     const input = opts.input ?? null;
     const { path, ctx } = opts;
     const cacheKey = [path, input];
-    console.log('cacheKey', cacheKey);
 
     return queryClient.prefetchQuery(cacheKey, async () => {
       const data = await router.invokeUntyped({

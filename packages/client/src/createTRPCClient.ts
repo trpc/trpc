@@ -155,7 +155,7 @@ export function createTRPCClient<TRouter extends AnyRouter>(
         method: 'GET',
         url:
           `${url}/${path}` +
-          (typeof input != null
+          (input != null
             ? `?input=${encodeURIComponent(JSON.stringify(input))}`
             : ''),
       }),
@@ -173,7 +173,7 @@ export function createTRPCClient<TRouter extends AnyRouter>(
       signal: ac?.signal,
       headers: getHeaders(),
     };
-
+    // console.log('reqOpts', {reqUrl, reqOpts, type, input})
     const promise: CancellablePromise<any> & {
       cancel(): void;
     } = handleResponse(_fetch(reqUrl, reqOpts)) as any;

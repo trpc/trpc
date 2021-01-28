@@ -79,6 +79,7 @@ export function getQueryInput<TRequest extends BaseRequest>(req: TRequest) {
   if (!queryInput) {
     return input;
   }
+  // console.log('query', queryInput);
   if (typeof queryInput !== 'string') {
     throw httpError.badRequest('Expected query.input to be a JSON string');
   }
