@@ -222,4 +222,4 @@ This builds each package to `<packages>/<package>/dist` and runs the project in 
 
 ---
 
-Created by [@alexdotjs](https://twitter.com/alexdotjs) in 2021. Original idea and proof of concept created by [colinhacks](https://twitter.com/colinhacks).
+`1.x` created by [@alexdotjs](https://twitter.com/alexdotjs) in 2021. Original version created by [colinhacks](https://twitter.com/colinhacks).
