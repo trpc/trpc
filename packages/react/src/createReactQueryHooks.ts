@@ -179,7 +179,7 @@ export function createReactQueryHooks<
     const cacheKey = [path, input];
 
     return queryClient.prefetchQuery(cacheKey, async () => {
-      const data = await router.invokeUntyped({
+      const data = await router.invoke({
         target: 'queries',
         ctx,
         path,

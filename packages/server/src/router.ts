@@ -284,19 +284,7 @@ export class Router<
     }
   }
 
-  public async invokeQuery<TPath extends keyof TQueries>(opts: {
-    path: TPath;
-    ctx: TContext;
-    input: inferRouteInput<TQueries[TPath]>;
-  }): Promise<inferAsyncReturnType<TQueries[TPath]['resolve']>> {
-    const route = this._def.queries[opts.path];
-    const input = Router.getInput(route, opts.input);
-    const { ctx } = opts;
-
-    return route.resolve({ ctx, input }) as any;
-  }
-
-  public async invokeUntyped(opts: {
+  public async invoke(opts: {
     target: 'queries' | 'subscriptions' | 'mutations';
     ctx: TContext;
     path: string;
