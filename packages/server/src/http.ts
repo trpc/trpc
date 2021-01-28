@@ -3,7 +3,7 @@ import type { EventEmitter } from 'events';
 import type qs from 'qs';
 import { DataTransformer } from './transformer';
 import { assertNotBrowser } from './assertNotBrowser';
-import { InputValidationError } from './errors';
+import { InputValidationError, RouteNotFoundError } from './errors';
 import { Router } from './router';
 import { Subscription, SubscriptionDestroyError } from './subscription';
 assertNotBrowser();
@@ -49,6 +49,8 @@ export function getErrorResponseEnvelope(
   let err = _err;
   if (err instanceof InputValidationError) {
     err = httpError.badRequest(err.message);
+  } else if (err instanceof RouteNotFoundError) {
+    err = httpError.notFound(err.message);
   }
   const statusCode: number =
     typeof err?.statusCode === 'number' ? err.statusCode : 500;
