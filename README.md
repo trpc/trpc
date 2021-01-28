@@ -305,4 +305,4 @@ This builds each package to `<packages>/<package>/dist` and runs the project in 
 # Credits
 
 - Hosting provided by [Vercel](https://vercel.com/?utm_source=trpc&utm_campaign=oss)
-- `1.x` created by [@alexdotjs](https://twitter.com/alexdotjs) in 2021. Original version created by [@colinhacks](https://twitter.com/colinhacks).
+- `1.x` created by [@alexdotjs](https://twitter.com/alexdotjs) in 2021. [Original version](https://github.com/trpc/trpc/tree/v0.x) created by [@colinhacks](https://twitter.com/colinhacks).
