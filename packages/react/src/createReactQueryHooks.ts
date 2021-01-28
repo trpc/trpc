@@ -179,7 +179,9 @@ export function createReactQueryHooks<
   ): Promise<void> => {
     // console.log('invoking', { ctx, path, router });
     if (typeof input === 'undefined') {
-      console.warn('You cant use `undefined` input in ssr as it can\'t be serialized - treating it as null')
+      console.warn(
+        "You cant use `undefined` input in ssr as it can't be serialized - treating it as null",
+      );
       if (__DEV__) {
         throw new Error('See above message');
       }
@@ -191,7 +193,6 @@ export function createReactQueryHooks<
         path,
         input,
       });
-      console.log({data, path, input})
       return transformer.serialize(data);
     });
   };

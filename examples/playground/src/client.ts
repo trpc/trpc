@@ -24,6 +24,7 @@ async function main() {
 
   const client = createTRPCClient<RootRouter>(opts);
   await sleep();
+  await client.query('hello');
   await client.query('hello', 'client');
   await sleep();
   const postCreate = await client.mutate('posts/create', {
