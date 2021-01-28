@@ -243,11 +243,11 @@ See the chat example for a working example.
 In `getStaticProps`:
 
 ```tsx
-import {trpc} from '../utils/trpc'
-import { appRouter } from './api/trpc/[...trpc]';
+import { trpc } from '../utils/trpc'
+import { appRouter } from './api/trpc/[...trpc]'; // Important - only ever import & use this in the SSR-methods
 
 export async function getStaticProps() {
-  await trpc.prefetchQuery(chatRouter, {
+  await trpc.prefetchQuery(appRouter, {
     path: 'messages.list',
     input: null,
     ctx: {} as any,
