@@ -1,71 +1,16 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/ban-types */
 import '@testing-library/jest-dom';
-import { createTRPCClient } from '@trpc/client';
+import { createTRPCClient, TRPCClientError } from '@trpc/client';
 import AbortController from 'abort-controller';
 import bodyParser from 'body-parser';
 import express from 'express';
 import http from 'http';
 import fetch from 'node-fetch';
-import { TRPCClientError } from '@trpc/client';
 import * as z from 'zod';
 import * as trpc from '../src';
 
-describe('query()', () => {
-  test('hello world', async () => {
-    type Context = {
-      name: string;
-    };
-    const r = trpc.router<Context>().query('test', {
-      // input: null,
-      resolve({ ctx }) {
-        return {
-          hello: 'test' + ctx.name,
-        };
-      },
-    });
-
-    const res = await r.invokeQuery({
-      path: 'test',
-      ctx: {
-        name: 'fest',
-      },
-      input: null,
-    });
-
-    expect(res.hello).toBe('testfest');
-  });
-
-  test('basic zod', async () => {
-    type Context = {
-      name: string;
-    };
-    const r = trpc.router<Context>().query('test', {
-      input: z.object({
-        foo: z.string(),
-      }),
-      resolve({ input }) {
-        return {
-          foo: input.foo,
-        };
-      },
-    });
-
-    const res = await r.invokeQuery({
-      path: 'test',
-      ctx: {
-        name: 'fest',
-      },
-      input: {
-        foo: 'bar',
-      },
-    });
-
-    expect(res.foo).toBe('bar');
-  });
-});
-
-test('mix', async () => {
+test('mix query and mutation', async () => {
   type Context = {};
   const r = trpc
     .router<Context>()
@@ -88,7 +33,7 @@ test('mix', async () => {
     });
 
   expect(
-    await r.invokeUntyped({
+    await r.invoke({
       target: 'queries',
       path: 'q1',
       input: null,
@@ -97,7 +42,7 @@ test('mix', async () => {
   ).toMatchInlineSnapshot(`"q1res"`);
 
   expect(
-    await r.invokeUntyped({
+    await r.invoke({
       target: 'queries',
       path: 'q2',
       input: {
@@ -108,7 +53,7 @@ test('mix', async () => {
   ).toMatchInlineSnapshot(`"q2res"`);
 
   expect(
-    await r.invokeUntyped({
+    await r.invoke({
       target: 'mutations',
       path: 'm1',
       input: null,
@@ -139,7 +84,8 @@ test('merge', async () => {
 
   const r = root.merge('posts.', posts);
   expect(
-    await r.invokeQuery({
+    await r.invoke({
+      target: 'queries',
       path: 'posts.list',
       input: null,
       ctx: {},

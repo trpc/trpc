@@ -159,7 +159,7 @@ export async function requestHandler<
 
     if (method === 'POST') {
       const input = deserializeInput(req.body.input);
-      output = await router.invokeUntyped({
+      output = await router.invoke({
         target: 'mutations',
         input,
         ctx,
@@ -167,7 +167,7 @@ export async function requestHandler<
       });
     } else if (method === 'GET') {
       const input = deserializeInput(getQueryInput(req));
-      output = await router.invokeUntyped({
+      output = await router.invoke({
         target: 'queries',
         input,
         ctx,
@@ -176,7 +176,7 @@ export async function requestHandler<
     } else if (method === 'PATCH') {
       const input = deserializeInput(req.body.input);
 
-      const sub = (await router.invokeUntyped({
+      const sub = (await router.invoke({
         target: 'subscriptions',
         input,
         ctx,
