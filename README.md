@@ -10,13 +10,13 @@
 
 tRPC is a framework for building strongly typed RPC APIs with TypeScript. Alternatively, you can think of it as a way to avoid APIs altogether.
 
-- No code generation. Simply write route in the backend and use on the frontend and get all the types inferred both on input and output.
-- No runtime bloat. TRPC has direct no deps and has tiny client-side footprint.
-- No double-declaration of types. Actually you don't have to declare types at all, as they are inferred.
-- No documentation to be kept up-to-date.
-- Type guarantee in resolvers - inputs are parsed by the validation schema.
-- Batteries included with a React-library but not tied to React (wanna make one for Svelte or Vue? [Contact me](https://twitter.com/alexdotjs))
-- Works great with React + React Native.
+- 🤯 Simply write data on backend & use it in the frontend.
+- 🔐 Type-safety on everything - on the API-routes, the input data & router output.
+- 🐎 No runtime bloat. TRPC has direct no deps and has tiny client-side footprint.
+- 😌 No double-declaration of types. Actually you don't have to declare types at all, as they are inferred.
+- 📖 No documentation to be kept up-to-date.
+- 🔋 Batteries included with a React-library but not tied to React (wanna make one for Svelte or Vue? [Contact me](https://twitter.com/alexdotjs))
+- 🧑‍🎨 Works great with React + React Native. And all the other front-end frameworks.
 
 # Getting started
 
