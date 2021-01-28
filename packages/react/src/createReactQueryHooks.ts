@@ -50,17 +50,38 @@ export function createReactQueryHooks<
     );
 
   function _useQuery<
+    // TODO exclude all with mandatory input from TPath
+    TPath extends keyof TQueries,
+    TOutput extends inferRouteOutput<TQueries[TPath]>
+  >(
+    path: TPath,
+    opts?: UseQueryOptions<unknown, TRPCClientError, TOutput>,
+  ): UseQueryResult<TOutput, TRPCClientError>;
+  function _useQuery<
     TPath extends keyof TQueries & string,
     TInput extends inferRouteInput<TQueries[TPath]>,
     TOutput extends inferRouteOutput<TQueries[TPath]>
   >(
     pathAndArgs: [TPath, TInput],
     opts?: UseQueryOptions<TInput, TRPCClientError, TOutput>,
-  ): UseQueryResult<TOutput, TRPCClientError> {
-    const [path, input] = pathAndArgs;
+  ): UseQueryResult<TOutput, TRPCClientError>;
+  function _useQuery(
+    pathAndArgs: string | [string, string],
+    opts?: UseQueryOptions<any, any, any>,
+  ): UseQueryResult {
+    let input: unknown = null;
+    let path: string;
+    if (Array.isArray(pathAndArgs)) {
+      path = pathAndArgs[0];
+      input = pathAndArgs[1] ?? null;
+    } else {
+      path = pathAndArgs;
+    }
+    const cacheKey = [path, input];
 
-    const hook = useQuery<TInput, TRPCClientError, TOutput>(
-      pathAndArgs,
+    console.log('cacheKey2', cacheKey);
+    const hook = useQuery(
+      cacheKey,
       () =>
         client.request({
           type: 'query',
@@ -76,34 +97,6 @@ export function createReactQueryHooks<
     } as any;
   }
 
-  // /**
-  //  * use a query that doesn't require args
-  //  * @deprecated **🚧 WIP** should be combined with `useQuery`
-  //  */
-  // function useQueryNoArgs<
-  //   TPath extends inferEndpointsWithoutArgs<TQueries> & string & keyof TQueries
-  // >(
-  //   path: TPath,
-  //   opts?: UseQueryOptions<
-  //     never,
-  //     TRPCClientError,
-  //     inferRouteOutput<TQueries[TPath]>
-  //   >,
-  // ) {
-  //   const hook = useQuery<
-  //     never,
-  //     TRPCClientError,
-  //     inferRouteOutput<TQueries[TPath]>
-  //   >(path, () => (client.query as any)(path) as any, opts);
-  //   const data = useMemo(() => client.transformer.deserialize(hook.data), [
-  //     hook.data,
-  //   ]) as inferRouteOutput<TQueries[TPath]>;
-
-  //   return {
-  //     ...hook,
-  //     data,
-  //   };
-  // }
   function _useMutation<
     TPath extends keyof TMutations & string,
     TInput extends inferRouteInput<TMutations[TPath]>,
@@ -166,26 +159,18 @@ export function createReactQueryHooks<
     TInput extends inferRouteInput<TQueries[TPath]>
   >(
     router: TRouter,
-    {
-      path,
-      ctx,
-      input,
-    }: {
+    opts: {
       path: TPath;
       ctx: TContext;
       input: TInput;
     },
   ): Promise<void> => {
-    // console.log('invoking', { ctx, path, router });
-    if (typeof input === 'undefined') {
-      console.warn(
-        "You cant use `undefined` input in ssr as it can't be serialized - treating it as null",
-      );
-      if (__DEV__) {
-        throw new Error('See above message');
-      }
-    }
-    return queryClient.prefetchQuery([path, input], async () => {
+    const input = opts.input ?? null;
+    const { path, ctx } = opts;
+    const cacheKey = [path, input];
+    console.log('cacheKey', cacheKey);
+
+    return queryClient.prefetchQuery(cacheKey, async () => {
       const data = await router.invokeUntyped({
         target: 'queries',
         ctx,

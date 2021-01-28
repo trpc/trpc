@@ -155,7 +155,7 @@ export function createTRPCClient<TRouter extends AnyRouter>(
         method: 'GET',
         url:
           `${url}/${path}` +
-          (typeof input !== 'undefined'
+          (typeof input != null
             ? `?input=${encodeURIComponent(JSON.stringify(input))}`
             : ''),
       }),
@@ -220,7 +220,7 @@ export function createTRPCClient<TRouter extends AnyRouter>(
             path,
           });
           const data = await currentRequest;
-          console.log('response', { path, input, data });
+          // console.log('response', { path, input, data });
           resolve(data);
         } catch (_err) {
           const err: TRPCClientError = _err;

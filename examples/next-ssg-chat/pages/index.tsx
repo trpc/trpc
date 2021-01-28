@@ -23,7 +23,7 @@ const getTimestamp = (m: Message[]) => {
 };
 
 export default function Home() {
-  const query = hooks.useQuery(['messages.list', null]);
+  const query = hooks.useQuery('messages.list');
 
   const [msgs, setMessages] = useState(() => query.data.items ?? []);
   const addMessages = (newMessages?: Message[]) => {
@@ -51,6 +51,7 @@ export default function Home() {
     'messages.newMessages',
     { timestamp },
   ]);
+
   // merge messages on subscription.data
   useEffect(() => addMessages(subscription.data), [subscription.data]);
 

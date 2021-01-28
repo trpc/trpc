@@ -46,7 +46,7 @@ export type RouteRecord<
 
 export type inferRouteInput<
   TRoute extends Route<any, any, any>
-> = TRoute extends RouteWithInput<any, infer Input, any> ? Input : null;
+> = TRoute extends RouteWithInput<any, infer Input, any> ? Input : never;
 
 export type inferAsyncReturnType<
   TFunction extends (...args: any) => any
@@ -300,7 +300,7 @@ export class Router<
     target: 'queries' | 'subscriptions' | 'mutations';
     ctx: TContext;
     path: string;
-    input: unknown;
+    input?: unknown;
   }): Promise<unknown> {
     if (!this.has(opts.target, opts.path)) {
       throw new RouteNotFoundError(`No such path "${opts.path}"`);
