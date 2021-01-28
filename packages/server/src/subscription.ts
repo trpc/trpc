@@ -67,7 +67,6 @@ export class Subscription<TOutput = unknown> {
       },
       ...opts,
     };
-    // debug('Subscription.constructor()');
   }
 
   public destroy(reason: SubscriptionDestroyReason) {
@@ -78,14 +77,6 @@ export class Subscription<TOutput = unknown> {
     this.isDestroyed = true;
     this.events.emit('destroy', reason);
     this.events.removeAllListeners();
-
-    // Object.assign(this.events, {
-    //   get on() {
-    //     throw new Error(
-    //       'Tried to access events.on on a destroyed Subscription',
-    //     );
-    //   },
-    // });
   }
 
   public async start() {
