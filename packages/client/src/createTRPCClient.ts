@@ -155,7 +155,7 @@ export function createTRPCClient<TRouter extends AnyRouter>(
         method: 'GET',
         url:
           `${url}/${path}` +
-          (typeof input !== undefined
+          (typeof input !== 'undefined'
             ? `?input=${encodeURIComponent(JSON.stringify(input))}`
             : ''),
       }),
@@ -184,18 +184,18 @@ export function createTRPCClient<TRouter extends AnyRouter>(
     return promise;
   }
 
-  const query: inferHandlerFn<TQueries> = async (path, input) => {
+  const query: inferHandlerFn<TQueries> = async (path, ...args) => {
     return request({
       type: 'query',
       path,
-      input,
+      input: args[0],
     });
   };
-  const mutate: inferHandlerFn<TMutations> = async (path, input) => {
+  const mutate: inferHandlerFn<TMutations> = async (path, ...args) => {
     return request({
       type: 'mutation',
       path,
-      input,
+      input: args[0],
     });
   };
 

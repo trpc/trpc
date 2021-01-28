@@ -15,7 +15,6 @@ export type flatten<T, Q> = identity<
       : never;
   }
 >;
-export type EmptyObject = Record<string, never>;
 
 export type Prefixer<
   TObj extends Record<string, any>,

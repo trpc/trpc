@@ -1,9 +1,10 @@
+/* eslint-disable @typescript-eslint/ban-types */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { assertNotBrowser } from './assertNotBrowser';
 import { InputValidationError, RouteNotFoundError } from './errors';
 import { Subscription } from './subscription';
-import { EmptyObject, flatten, Prefixer, ThenArg } from './types';
+import { Prefixer, ThenArg } from './types';
 assertNotBrowser();
 
 export type RouteInputParser<TInput = unknown> = {
@@ -63,20 +64,17 @@ export type inferSubscriptionOutput<
   >['onceOutputAndStop']
 >;
 
-export type inferHandlerFn<TRoutes extends RouteRecord> = <
+export type inferHandlerFn<TRoutes extends RouteRecord<any, any, any>> = <
   TPath extends keyof TRoutes & string,
-  TInput extends inferRouteInput<TRoutes[TPath]>
+  TRoute extends TRoutes[TPath]
 >(
   path: TPath,
-  // ...args: TInput extends undefined ? [] : [TInput]
+  ...args: TRoute extends RouteWithInput<any, any, any>
+    ? [inferRouteInput<TRoute>]
+    : [undefined?]
 ) => Promise<inferRouteOutput<TRoutes[TPath]>>;
 
-export type AnyRouter<TContext = any> = Router<
-  TContext,
-  RouteRecord<TContext>,
-  RouteRecord<TContext>,
-  RouteRecord<TContext, any, Subscription<any>>
->;
+export type AnyRouter<TContext = any> = Router<TContext, any, any, any>;
 
 export class Router<
   TContext,
@@ -122,7 +120,7 @@ export class Router<
     TMutations,
     TSubscriptions
   > {
-    const router = new Router<TContext, any, EmptyObject, EmptyObject>({
+    const router = new Router<TContext, any, {}, {}>({
       queries: {
         [path]: route,
       } as any,
@@ -185,9 +183,9 @@ export class Router<
     router: TChildRouter,
   ): Router<
     TContext,
-    flatten<TQueries, TChildRouter['_def']['queries']>,
-    flatten<TMutations, TChildRouter['_def']['mutations']>,
-    flatten<TSubscriptions, TChildRouter['_def']['subscriptions']>
+    TQueries & TChildRouter['_def']['queries'],
+    TMutations & TChildRouter['_def']['mutations'],
+    TSubscriptions & TChildRouter['_def']['subscriptions']
   >;
 
   /**
@@ -200,15 +198,9 @@ export class Router<
     router: TChildRouter,
   ): Router<
     TContext,
-    flatten<TQueries, Prefixer<TChildRouter['_def']['queries'], `${TPath}`>>,
-    flatten<
-      TMutations,
-      Prefixer<TChildRouter['_def']['mutations'], `${TPath}`>
-    >,
-    flatten<
-      TSubscriptions,
-      Prefixer<TChildRouter['_def']['subscriptions'], `${TPath}`>
-    >
+    TQueries & Prefixer<TChildRouter['_def']['queries'], `${TPath}`>,
+    TMutations & Prefixer<TChildRouter['_def']['mutations'], `${TPath}`>,
+    TSubscriptions & Prefixer<TChildRouter['_def']['subscriptions'], `${TPath}`>
   >;
 
   public merge(prefixOrRouter: unknown, maybeRouter?: unknown) {
@@ -311,5 +303,5 @@ export class Router<
 }
 
 export function router<TContext>() {
-  return new Router<TContext, EmptyObject, EmptyObject, EmptyObject>();
+  return new Router<TContext, {}, {}, {}>();
 }

@@ -80,12 +80,12 @@ export function getQueryInput<TRequest extends BaseRequest>(req: TRequest) {
     return input;
   }
   if (typeof queryInput !== 'string') {
-    throw httpError.badRequest('Expected query.args to be a JSON string');
+    throw httpError.badRequest('Expected query.input to be a JSON string');
   }
   try {
     input = JSON.parse(queryInput);
   } catch (err) {
-    throw httpError.badRequest('Expected query.args to be a JSON string');
+    throw httpError.badRequest('Expected query.input to be a JSON string');
   }
 
   return input;

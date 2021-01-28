@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/ban-types */
-import { router } from '../src';
 import * as z from 'zod';
+import { router } from '../src';
 
 describe('query()', () => {
   test('hello world', async () => {
@@ -67,6 +67,7 @@ test('mix', async () => {
       },
     })
     .query('q2', {
+      input: z.object({ q2: z.string() }),
       resolve() {
         return 'q2res';
       },
@@ -90,7 +91,9 @@ test('mix', async () => {
     await r.invokeUntyped({
       target: 'queries',
       path: 'q2',
-      input: undefined,
+      input: {
+        q2: 'hey',
+      },
       ctx: {},
     }),
   ).toMatchInlineSnapshot(`"q2res"`);
@@ -103,4 +106,24 @@ test('mix', async () => {
       ctx: {},
     }),
   ).toMatchInlineSnapshot(`"m1res"`);
+});
+
+test('merge', () => {
+  type Context = {};
+  const root = router<Context>().query('helloo', {
+    // input: null,
+    resolve() {
+      return 'world';
+    },
+  });
+  const posts = router<Context>()
+    .query('list', {
+      resolve: () => [{ text: 'initial' }],
+    })
+    .mutation('create', {
+      input: z.string(),
+      resolve({ input }) {
+        return { text: input };
+      },
+    });
 });
