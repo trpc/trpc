@@ -2,8 +2,8 @@ import { Message } from '@prisma/client';
 import Head from 'next/head';
 import { useEffect, useMemo, useState } from 'react';
 import { dehydrate } from 'react-query/hydration';
-import { chatRouter } from './api/trpc/[...trpc]';
-import { hooks } from './_app';
+import { trpc } from '../utils/trpc';
+import { appRouter } from './api/trpc/[...trpc]';
 
 function maxDate(dates: Date[]) {
   let max = dates[0];
@@ -23,7 +23,7 @@ const getTimestamp = (m: Message[]) => {
 };
 
 export default function Home() {
-  const query = hooks.useQuery(['messages.list']);
+  const query = trpc.useQuery(['messages.list']);
 
   const [msgs, setMessages] = useState(() => query.data.items ?? []);
   const addMessages = (newMessages?: Message[]) => {
@@ -47,7 +47,7 @@ export default function Home() {
   useEffect(() => addMessages(query.data?.items), [query.data]);
 
   // ---subscriptions
-  const subscription = hooks.useSubscription([
+  const subscription = trpc.useSubscription([
     'messages.newMessages',
     { timestamp },
   ]);
@@ -57,7 +57,7 @@ export default function Home() {
 
   console.log({ timestamp });
 
-  const addMessage = hooks.useMutation('messages.create');
+  const addMessage = trpc.useMutation('messages.create');
 
   return (
     <div>
@@ -101,14 +101,14 @@ export default function Home() {
   );
 }
 export async function getStaticProps() {
-  await hooks.prefetchQuery(chatRouter, {
+  await trpc.prefetchQuery(appRouter, {
     path: 'messages.list',
     input: null,
     ctx: {} as any,
   });
   return {
     props: {
-      dehydratedState: dehydrate(hooks.queryClient),
+      dehydratedState: dehydrate(trpc.queryClient),
     },
     revalidate: 1,
   };

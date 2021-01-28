@@ -13,7 +13,8 @@ const createContext = ({
 function createRouter() {
   return trpc.router<Context>();
 }
-const router = createRouter()
+// Important: only use this export with SSR/SSG
+export const appRouter = createRouter()
   // Create route at path 'hello'
   .query('hello', {
     // using zod schema to validate and infer input values
@@ -39,10 +40,10 @@ const router = createRouter()
 
 // Exporting type _type_ AppRouter only exposes types that can be used for inference
 // https://www.typescriptlang.org/docs/handbook/release-notes/typescript-3-8.html#type-only-imports-and-export
-export type AppRouter = typeof router;
+export type AppRouter = typeof appRouter;
 
 // export API handler
 export default trpc.createNextApiHandler({
-  router,
+  router: appRouter,
   createContext,
 });

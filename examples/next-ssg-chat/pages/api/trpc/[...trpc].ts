@@ -1,7 +1,7 @@
 import { Message, PrismaClient } from '@prisma/client';
 import * as trpc from '@trpc/server';
 import * as z from 'zod';
-import { sj } from '../../../utils/serializer';
+import superjson from 'superjson';
 const prisma = new PrismaClient();
 
 async function createMessage(text: string) {
@@ -99,12 +99,12 @@ const router = createRouter()
       }),
   );
 
-export const chatRouter = router;
-export type ChatRouter = typeof router;
+export const appRouter = router;
+export type AppRouter = typeof router;
 
 export default trpc.createNextApiHandler({
   router,
   createContext,
   teardown: () => prisma.$disconnect(),
-  transformer: sj,
+  transformer: superjson,
 });

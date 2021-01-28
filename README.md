@@ -21,6 +21,7 @@
   - [HTTP Methods <-> endpoint type mapping](#http-methods---endpoint-type-mapping)
 - [Development](#development)
   - [Development workflow](#development-workflow)
+- [Credits](#credits)
 # Motivation
 
 tRPC is a framework for building strongly typed RPC APIs with TypeScript. Alternatively, you can think of it as a way to avoid APIs altogether.
@@ -73,7 +74,8 @@ const createContext = ({
 function createRouter() {
   return trpc.router<Context>();
 }
-const router = createRouter()
+// Important: only use this export with SSR/SSG
+export const appRouter = createRouter()
   // Create route at path 'hello'
   .query('hello', {
     // using zod schema to validate and infer input values
@@ -92,7 +94,7 @@ const router = createRouter()
 
 // Exporting type _type_ AppRouter only exposes types that can be used for inference
 // https://www.typescriptlang.org/docs/handbook/release-notes/typescript-3-8.html#type-only-imports-and-export
-export type AppRouter = typeof router;
+export type AppRouter = typeof appRouter;
 
 // export API handler
 export default trpc.createNextApiHandler({
@@ -237,15 +239,17 @@ Data transformers currently live on the edges - in client-specific implementatio
 
 ## Server-side rendering (SSR / SSG)
 
-See the chat example for a working example.
+See the [chat example](./examples/next-ssg-chat) for a working example.
 
 In `getStaticProps`:
 
 ```tsx
-import {trpc} from '../utils/trpc'
+import { trpc } from '../utils/trpc'
+import { appRouter } from './api/trpc/[...trpc]'; // Important - only ever import & use this in the SSR-methods
+import { dehydrate } from 'react-query/hydration';
 
 export async function getStaticProps() {
-  await trpc.prefetchQuery(chatRouter, {
+  await trpc.prefetchQuery(appRouter, {
     path: 'messages.list',
     input: null,
     ctx: {} as any,
@@ -298,4 +302,7 @@ This builds each package to `<packages>/<package>/dist` and runs the project in 
 
 ---
 
-`1.x` created by [@alexdotjs](https://twitter.com/alexdotjs) in 2021. Original version created by [colinhacks](https://twitter.com/colinhacks).
+# Credits
+
+- Hosting provided by [Vercel](https://vercel.com/?utm_source=trpc&utm_campaign=oss)
+- `1.x` created by [@alexdotjs](https://twitter.com/alexdotjs) in 2021. [Original version](https://github.com/trpc/trpc/tree/v0.x) created by [@colinhacks](https://twitter.com/colinhacks).

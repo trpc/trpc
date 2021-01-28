@@ -8920,11 +8920,6 @@ locate-path@^6.0.0:
   dependencies:
     p-locate "^5.0.0"
 
-lodash-es@^4.17.15:
-  version "4.17.20"
-  resolved "https://registry.npmjs.org/lodash-es/-/lodash-es-4.17.20.tgz#29f6332eefc60e849f869c264bc71126ad61e8f7"
-  integrity sha512-JD1COMZsq8maT6mnuz1UMV0jvYD0E0aUsSOdrr1/nAG3dhqQXwRRgeW0cSqH1U43INKcqxaiVIQNOUDld7gRDA==
-
 lodash._reinterpolate@^3.0.0:
   version "3.0.0"
   resolved "https://registry.yarnpkg.com/lodash._reinterpolate/-/lodash._reinterpolate-3.0.0.tgz#0ccf2d89166af03b3663c796538b75ac6e114d9d"
@@ -12687,13 +12682,10 @@ stylis@3.5.4:
   resolved "https://registry.npmjs.org/stylis/-/stylis-3.5.4.tgz#f665f25f5e299cf3d64654ab949a57c768b73fbe"
   integrity sha512-8/3pSmthWM7lsPBKv7NXkzn2Uc9W7NotcwGNpJaa3k7WMM1XDCA4MgT5k/8BIexd5ydZdboXtU90XH9Ec4Bv/Q==
 
-superjson@^1.5.0:
-  version "1.5.0"
-  resolved "https://registry.npmjs.org/superjson/-/superjson-1.5.0.tgz#88c8ead3afa8d2ef47e7bdbee85c645d1653957f"
-  integrity sha512-unM/AG3zy0NbKV4bkNQrxCPZVEJNoCuAihKpNMKqZUCTf30XV4nkJjnKdRTa2G1xJgkoxUxJAoUJ64+wuRQJjw==
-  dependencies:
-    lodash "^4.17.20"
-    lodash-es "^4.17.15"
+superjson@^1.5.2:
+  version "1.5.2"
+  resolved "https://registry.npmjs.org/superjson/-/superjson-1.5.2.tgz#bf8620adcc35dc77834d3fc69b2c929cb152f236"
+  integrity sha512-ko6wjKha8KwUdl6K9NwnRcRTsylW8bt3E7bp0ixIiO8nVJP+qzHzwLLZ1WARIxPmrqkxvEB79w4xLtis1QlT3g==
 
 supports-color@^2.0.0:
   version "2.0.0"
