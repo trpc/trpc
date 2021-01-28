@@ -12,7 +12,7 @@
   "scripts": {
     "start": "tsdx watch --tsconfig tsconfig.build.json --verbose --noClean",
     "build": "yarn tsdx build --tsconfig tsconfig.build.json",
-    "test": "tsdx test --runInBand",
+    "test": "tsdx test",
     "lint": "tsdx lint",
     "prepublish": "npm run build"
   },
