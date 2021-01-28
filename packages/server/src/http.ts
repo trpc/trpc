@@ -155,23 +155,27 @@ export async function requestHandler<
       input ? transformer.deserialize(input) : input;
 
     if (method === 'POST') {
+      const input = deserializeInput(req.body.input);
       output = await router.invokeUntyped({
         target: 'mutations',
-        input: deserializeInput(req.body.input),
+        input,
         ctx,
         path: endpoint,
       });
     } else if (method === 'GET') {
+      const input = deserializeInput(getQueryInput(req));
       output = await router.invokeUntyped({
         target: 'queries',
-        input: deserializeInput(getQueryInput(req)),
+        input,
         ctx,
         path: endpoint,
       });
     } else if (method === 'PATCH') {
+      const input = deserializeInput(req.body.input);
+
       const sub = (await router.invokeUntyped({
         target: 'subscriptions',
-        input: deserializeInput(getQueryInput(req)),
+        input,
         ctx,
         path: endpoint,
       })) as Subscription;

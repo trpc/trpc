@@ -13,8 +13,10 @@ import {
   QueryObserverResult,
   useMutation,
   UseMutationOptions,
+  UseMutationResult,
   useQuery,
   UseQueryOptions,
+  UseQueryResult,
 } from 'react-query';
 
 export function createReactQueryHooks<
@@ -40,6 +42,15 @@ export function createReactQueryHooks<
   const serializeInput = (input: unknown): unknown[] =>
     typeof input !== 'undefined' ? transformer.serialize(input) : input;
 
+  const useDeserializedData = <TOutput = unknown>(data: unknown) =>
+    useMemo(
+      () =>
+        typeof data !== 'undefined'
+          ? (transformer.deserialize(data) as TOutput)
+          : data,
+      [data],
+    );
+
   function _useQuery<
     TPath extends keyof TQueries & string,
     TInput extends inferRouteInput<TQueries[TPath]>,
@@ -47,7 +58,7 @@ export function createReactQueryHooks<
   >(
     pathAndArgs: [TPath, TInput],
     opts?: UseQueryOptions<TInput, TRPCClientError, TOutput>,
-  ) {
+  ): UseQueryResult<TOutput, TRPCClientError> {
     const [path, input] = pathAndArgs;
 
     const hook = useQuery<TInput, TRPCClientError, TOutput>(
@@ -60,17 +71,11 @@ export function createReactQueryHooks<
         }),
       opts,
     );
-    const data = useMemo(
-      () =>
-        typeof hook.data !== 'undefined'
-          ? (transformer.deserialize(hook.data) as TOutput)
-          : hook.data,
-      [hook.data],
-    );
+    const data = useDeserializedData(hook.data);
     return {
       ...hook,
       data,
-    } as QueryObserverResult<TOutput, TRPCClientError>;
+    } as any;
   }
 
   // /**
@@ -105,8 +110,11 @@ export function createReactQueryHooks<
     TPath extends keyof TMutations & string,
     TInput extends inferRouteInput<TMutations[TPath]>,
     TOutput extends inferRouteOutput<TMutations[TPath]>
-  >(path: TPath, opts?: UseMutationOptions<TOutput, TRPCClientError, TInput>) {
-    const mutation = useMutation<TOutput, TRPCClientError, TInput>(
+  >(
+    path: TPath,
+    opts?: UseMutationOptions<TOutput, TRPCClientError, TInput>,
+  ): UseMutationResult<TOutput, TRPCClientError, TInput> {
+    const hook = useMutation<TOutput, TRPCClientError, TInput>(
       (input) =>
         client.request({
           type: 'mutation',
@@ -116,17 +124,19 @@ export function createReactQueryHooks<
       opts,
     );
 
-    const mutateAsync: typeof mutation['mutateAsync'] = useCallback(
+    const mutateAsync: typeof hook['mutateAsync'] = useCallback(
       async (...args) => {
-        const orig = await mutation.mutateAsync(...args);
+        const orig = await hook.mutateAsync(...args);
 
         return transformer.deserialize(orig) as any;
       },
-      [mutation.mutateAsync],
+      [hook.mutateAsync],
     );
+    const data = useDeserializedData<TOutput>(hook.data);
     return {
-      ...mutation,
+      ...hook,
       mutateAsync,
+      data,
     };
   }
 
@@ -145,14 +155,7 @@ export function createReactQueryHooks<
       () => client.subscriptionOnce(path, serializeInput(input)),
       opts,
     );
-
-    const data = useMemo(
-      () =>
-        typeof hook.data !== 'undefined'
-          ? (transformer.deserialize(hook.data) as TOutput)
-          : hook.data,
-      [hook.data],
-    );
+    const data = useDeserializedData(hook.data);
     return {
       ...hook,
       data,
@@ -182,6 +185,7 @@ export function createReactQueryHooks<
         path,
         input,
       });
+      console.log({data, path, input})
       return transformer.serialize(data);
     });
   };

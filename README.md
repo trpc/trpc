@@ -30,11 +30,11 @@ Data transformers currently live on the edges - in client-specific implementatio
 
 ### HTTP Methods <-> endpoint type mapping
 
-| HTTP Method | Mapping            | Notes                                                                             |
-| ----------- | ------------------ | --------------------------------------------------------------------------------- |
-| `GET`       | `.queries()`       | Args in query string                                                              |
-| `POST`      | `.mutations()`     | Args in post body                                                                 |
-| `PATCH`     | `.subscriptions()` | Experimental API using long-pulling. Implementation details are likely to change. |
+| HTTP Method | Mapping           | Notes                                                                             |
+| ----------- | ----------------- | --------------------------------------------------------------------------------- |
+| `GET`       | `.query()`        | Input in query string                                                             |
+| `POST`      | `.mutation()`     | Input in post body                                                                |
+| `PATCH`     | `.subscription()` | Experimental API using long-pulling. Implementation details are likely to change. |
 
 
 # Development
