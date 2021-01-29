@@ -1,9 +1,11 @@
-import { Message } from '@prisma/client';
 import Head from 'next/head';
 import { useEffect, useMemo, useState } from 'react';
 import { dehydrate } from 'react-query/hydration';
-import { trpc } from '../utils/trpc';
+import { inferQueryOutput, trpc } from '../utils/trpc';
 import { appRouter } from './api/trpc/[...trpc]';
+
+type MessagesOutput = inferQueryOutput<'messages.list'>;
+type Message = MessagesOutput['items'][number];
 
 function maxDate(dates: Date[]) {
   let max = dates[0];
