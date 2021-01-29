@@ -249,7 +249,7 @@ import { appRouter } from './api/trpc/[...trpc]'; // Important - only ever impor
 import { dehydrate } from 'react-query/hydration';
 
 export async function getStaticProps() {
-  await trpc.prefetchQuery(appRouter, {
+  await trpc.prefetchQueryOnServer(appRouter, {
     path: 'messages.list',
     input: null,
     ctx: {} as any,
