@@ -163,7 +163,7 @@ export function createReactQueryHooks<
     } as QueryObserverResult<TOutput, TRPCClientError>;
   }
 
-  const prefetchQuery = async <
+  const prefetchQueryOnServer = async <
     TPath extends keyof TQueries & string,
     TInput extends inferRouteInput<TQueries[TPath]>
   >(
@@ -194,6 +194,10 @@ export function createReactQueryHooks<
     useMutation: _useMutation,
     useSubscription,
     queryClient,
-    prefetchQuery,
+    prefetchQueryOnServer,
+    /**
+     * @deprecated renamed to `prefetchQueryOnServer`
+     */
+    prefetchQuery: prefetchQueryOnServer,
   };
 }
