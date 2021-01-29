@@ -12,7 +12,7 @@ export default function Home() {
   console.log(helloNoArgs.data); // <-- hover over this object to see it's type inferred
 
   return (
-    <div>
+    <>
       <Head>
         <title>Hello tRPC</title>
         <link rel="icon" href="/favicon.ico" />
@@ -29,6 +29,18 @@ export default function Home() {
           <pre>{JSON.stringify(helloWithArgs.data, null, 2)}</pre>
         </li>
       </ul>
-    </div>
+      <div style={{ marginTop: '100px' }}>
+        <a
+          href="https://vercel.com/?utm_source=trpc&utm_campaign=oss"
+          target="_blank"
+        >
+          <img
+            src="/powered-by-vercel.svg"
+            alt="Powered by Vercel"
+            height={25}
+          />
+        </a>
+      </div>
+    </>
   );
 }

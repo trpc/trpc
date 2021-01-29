@@ -3,6 +3,8 @@ import { useEffect, useMemo, useState } from 'react';
 import { dehydrate } from 'react-query/hydration';
 import { inferQueryOutput, trpc } from '../utils/trpc';
 import { appRouter } from './api/trpc/[...trpc]';
+import Image from 'next/image';
+import VercelIcon from './powered-by-vercel.svg';
 
 type MessagesOutput = inferQueryOutput<'messages.list'>;
 type Message = MessagesOutput['items'][number];
@@ -62,7 +64,7 @@ export default function Home() {
   const addMessage = trpc.useMutation('messages.create');
 
   return (
-    <div>
+    <>
       <Head>
         <title>Chat</title>
         <link rel="icon" href="/favicon.ico" />
@@ -99,7 +101,20 @@ export default function Home() {
         <input name="text" type="text" />
         <input type="submit" disabled={addMessage.isLoading} />
       </form>
-    </div>
+
+      <div style={{ marginTop: '100px' }}>
+        <a
+          href="https://vercel.com/?utm_source=trpc&amp;utm_campaign=oss"
+          target="_blank"
+        >
+          <img
+            src="/powered-by-vercel.svg"
+            alt="Powered by Vercel"
+            height="25"
+          />
+        </a>
+      </div>
+    </>
   );
 }
 export async function getStaticProps() {
