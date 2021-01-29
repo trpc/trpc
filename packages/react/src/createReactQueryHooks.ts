@@ -189,17 +189,15 @@ export function createReactQueryHooks<
     });
   };
 
-  /**
-   * @deprecated renamed to `prefetchQueryOnServer`
-   */
-  const prefetchQuery = prefetchQueryOnServer;
-
   return {
     useQuery: _useQuery,
     useMutation: _useMutation,
     useSubscription,
     queryClient,
     prefetchQueryOnServer,
-    prefetchQuery,
+    /**
+     * @deprecated renamed to `prefetchQueryOnServer`
+     */
+    prefetchQuery: prefetchQueryOnServer,
   };
 }
