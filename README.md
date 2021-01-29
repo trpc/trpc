@@ -22,6 +22,7 @@
 - [Development](#development)
   - [Development workflow](#development-workflow)
 - [Credits](#credits)
+- [Contributors ✨](#contributors-)
 # Motivation
 
 tRPC is a framework for building strongly typed RPC APIs with TypeScript. Alternatively, you can think of it as a way to avoid APIs altogether.
@@ -306,3 +307,17 @@ This builds each package to `<packages>/<package>/dist` and runs the project in 
 
 - Hosting provided by [Vercel](https://vercel.com/?utm_source=trpc&utm_campaign=oss)
 - `1.x` created by [@alexdotjs](https://twitter.com/alexdotjs) in 2021. [Original version](https://github.com/trpc/trpc/tree/v0.x) created by [@colinhacks](https://twitter.com/colinhacks).
+
+# Contributors ✨
+
+Thanks goes to these wonderful people ([emoji key](https://allcontributors.org/docs/en/emoji-key)):
+
+<!-- ALL-CONTRIBUTORS-LIST:START - Do not remove or modify this section -->
+<!-- prettier-ignore-start -->
+<!-- markdownlint-disable -->
+<!-- markdownlint-restore -->
+<!-- prettier-ignore-end -->
+<!-- ALL-CONTRIBUTORS-LIST:END -->
+
+This project follows the [all-contributors](https://github.com/all-contributors/all-contributors) specification. Contributions of any kind welcome!
+
