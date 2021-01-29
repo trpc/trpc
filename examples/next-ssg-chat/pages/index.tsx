@@ -103,7 +103,7 @@ export default function Home() {
   );
 }
 export async function getStaticProps() {
-  await trpc.prefetchQuery(appRouter, {
+  await trpc.prefetchQueryOnServer(appRouter, {
     path: 'messages.list',
     input: null,
     ctx: {} as any,
