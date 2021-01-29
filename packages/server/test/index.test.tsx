@@ -99,7 +99,7 @@ test('merge', async () => {
   `);
 });
 
-describe('errors', () => {
+describe('integration tests', () => {
   type Context = {
     user: {
       name: string;
@@ -123,18 +123,33 @@ describe('errors', () => {
       };
     };
 
-    const router = trpc.router<Context>().query('hello', {
-      input: z
-        .object({
-          who: z.string(),
-        })
-        .optional(),
-      resolve({ input, ctx }) {
-        return {
-          text: `hello ${input?.who ?? ctx.user?.name ?? 'world'}`,
-        };
-      },
-    });
+    const router = trpc
+      .router<Context>()
+      .query('hello', {
+        input: z
+          .object({
+            who: z.string(),
+          })
+          .optional(),
+        resolve({ input, ctx }) {
+          return {
+            text: `hello ${input?.who ?? ctx.user?.name ?? 'world'}`,
+          };
+        },
+      })
+      .queries({
+        simonSays: {
+          input: z.object({
+            what: z.string(),
+          }),
+          resolve({ input }) {
+            //  🙋‍♂️ ^^^^^^ `input` here is `any`, it should be `{ what: string }`
+            return {
+              text: input.what,
+            };
+          },
+        },
+      });
 
     // express implementation
     const app = express();
@@ -212,5 +227,11 @@ describe('errors', () => {
       }
       expect(err.res?.status).toBe(400);
     }
+  });
+
+  test.only('queries()', async () => {
+    // 🙋‍♂️ `res` is `any` her
+    const res = await t.client.query('simonSays', { what: 'alex is a c***' });
+    expect(res.text).toBe('alex is a c***');
   });
 });
