@@ -190,7 +190,7 @@ export function createReactQueryHooks<
   };
 
   /**
-   * @deprecated replaced by `prefetchQueryOnServer`
+   * @deprecated renamed to `prefetchQueryOnServer`
    */
   const prefetchQuery = prefetchQueryOnServer;
 
