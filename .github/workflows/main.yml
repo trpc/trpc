@@ -48,5 +48,5 @@ jobs:
       - name: Build trpc
         run: yarn build
 
-      - name: Build examples
-        run: yarn build-examples
+      - name: Build next-hello-world
+        run: yarn build --cwd examples/next-hello-world
