@@ -1,0 +1,41 @@
+{
+  "projectName": "trpc",
+  "projectOwner": "trpc",
+  "repoType": "github",
+  "repoHost": "https://github.com",
+  "files": [
+    "README.md"
+  ],
+  "imageSize": 100,
+  "commit": false,
+  "commitConvention": "none",
+  "contributors": [
+    {
+      "login": "KATT",
+      "name": "Alex Johansson",
+      "avatar_url": "https://avatars.githubusercontent.com/u/459267?v=4",
+      "profile": "https://twitter.com/alexdotjs",
+      "contributions": [
+        "ideas",
+        "code",
+        "test",
+        "doc",
+        "example",
+        "maintenance"
+      ]
+    },
+    {
+      "login": "colinhacks",
+      "name": "Colin McDonnell",
+      "avatar_url": "https://avatars.githubusercontent.com/u/3084745?v=4",
+      "profile": "https://colinhacks.com/",
+      "contributions": [
+        "ideas",
+        "code",
+        "test",
+        "doc"
+      ]
+    }
+  ],
+  "contributorsPerLine": 7
+}
