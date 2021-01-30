@@ -1,14 +1,10 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/ban-types */
 import '@testing-library/jest-dom';
-import { createTRPCClient, TRPCClientError } from '@trpc/client';
-import AbortController from 'abort-controller';
-import bodyParser from 'body-parser';
-import express from 'express';
-import http from 'http';
-import fetch from 'node-fetch';
+import { TRPCClientError } from '@trpc/client';
 import * as z from 'zod';
 import * as trpc from '../src';
+import { routerToServerAndClient } from './_testHelpers';
 
 test('mix query and mutation', async () => {
   type Context = {};
@@ -100,112 +96,25 @@ test('merge', async () => {
 });
 
 describe('integration tests', () => {
-  type Context = {
-    user: {
-      name: string;
-    } | null;
-  };
-  async function startServer() {
-    const createContext = (
-      _opts: trpc.CreateExpressContextOptions,
-    ): Context => {
-      const getUser = () => {
-        if (_opts.req.headers.authorization === 'meow') {
-          return {
-            name: 'KATT',
-          };
-        }
-        return null;
-      };
-
-      return {
-        user: getUser(),
-      };
-    };
-
-    const router = trpc
-      .router<Context>()
-      .query('hello', {
-        input: z
-          .object({
-            who: z.string(),
-          })
-          .optional(),
-        resolve({ input, ctx }) {
-          return {
-            text: `hello ${input?.who ?? ctx.user?.name ?? 'world'}`,
-          };
-        },
-      })
-      .queries({
-        simonSays: {
-          input: z.object({
-            what: z.string(),
-          }),
-          resolve({ input }) {
-            //  🙋‍♂️ ^^^^^^ `input` here is `any`, it should be `{ what: string }`
-            return {
-              text: input.what,
-            };
-          },
-        },
-      });
-
-    // express implementation
-    const app = express();
-    app.use(bodyParser.json());
-
-    app.use(
-      '/trpc',
-      trpc.createExpressMiddleware({
-        router,
-        createContext,
-      }),
-    );
-    const { server, port } = await new Promise<{
-      server: http.Server;
-      port: number;
-    }>((resolve) => {
-      const server = app.listen(0, () => {
-        resolve({
-          server,
-          port: (server.address() as any).port,
-        });
-      });
-    });
-
-    const client = createTRPCClient<typeof router>({
-      url: `http://localhost:${port}/trpc`,
-
-      fetchOpts: {
-        AbortController: AbortController as any,
-        fetch: fetch as any,
-      },
-    });
-    return {
-      close: () =>
-        new Promise<void>((resolve, reject) =>
-          server.close((err) => {
-            err ? reject(err) : resolve();
-          }),
-        ),
-      port,
-      router,
-      client,
-    };
-  }
-
-  let t: trpc.inferAsyncReturnType<typeof startServer>;
-  beforeAll(async () => {
-    t = await startServer();
-  });
-  afterAll(async () => {
-    await t.close();
-  });
 
   test('not found route', async () => {
+    const {client, close} = routerToServerAndClient(
+      trpc
+        .router()
+        .query('hello', {
+          input: z
+            .object({
+              who: z.string(),
+            })
+            .optional(),
+          resolve({ input }) {
+            return {
+              text: `hello ${input?.who ?? 'world'}`,
+            };
+          },
+        }))
     try {
-      await t.client.query('notFound' as any);
+      await client.query('notFound' as any);
       throw new Error('Did not fail');
     } catch (err) {
       if (!(err instanceof TRPCClientError)) {
@@ -216,10 +125,27 @@ describe('integration tests', () => {
       );
       expect(err.res?.status).toBe(404);
     }
+    close()
   });
   test('invalid args', async () => {
+
+    const {client, close} = routerToServerAndClient(
+      trpc
+        .router()
+        .query('hello', {
+          input: z
+            .object({
+              who: z.string(),
+            })
+            .optional(),
+          resolve({ input }) {
+            return {
+              text: `hello ${input?.who ?? 'world'}`,
+            };
+          },
+        }))
     try {
-      await t.client.query('hello', { who: 123 as any });
+      await client.query('hello', { who: 123 as any });
       throw new Error('Did not fail');
     } catch (err) {
       if (!(err instanceof TRPCClientError)) {
@@ -227,11 +153,27 @@ describe('integration tests', () => {
       }
       expect(err.res?.status).toBe(400);
     }
+    close()
   });
 
-  test.only('queries()', async () => {
-    // 🙋‍♂️ `res` is `any` her
-    const res = await t.client.query('simonSays', { what: 'alex is a c***' });
-    expect(res.text).toBe('alex is a c***');
+  test('queries()', async () => {
+    const {client, close} = routerToServerAndClient(
+      trpc
+        .router()
+        .queries({'simonSays': {
+          input: z.object({
+            what: z.string(),
+          }),
+          resolve({ input }) {
+            // ^^^^^^ input is "any" here
+            return {
+              text: input.what,
+            };
+          },
+        }}))
+    // 🙋‍♂️ `res.text` is `any` here
+    const res = await client.query('simonSays', { what: 'alex is a ****' });
+    expect(res.text).toBe('alex is a ****');
+    close()
   });
 });
