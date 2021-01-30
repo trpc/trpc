@@ -183,7 +183,7 @@ export async function requestHandler<
 } & BaseOptions) {
   try {
     let output: unknown;
-    const ctx = await createContext({ req, res });
+    const ctx = createContext && (await createContext({ req, res }));
     const method = req.method ?? 'GET';
 
     const deserializeInput = (input: unknown) =>
