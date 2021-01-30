@@ -36,17 +36,14 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-${{ runner.node_version}}-yarn-
 
-      - name: Install
+      - name: Install & build
         run: |
-          yarn --silent
+          yarn
         env:
           CI: true
 
       - name: Test
         run: yarn test --ci --coverage --maxWorkers=2
-
-      - name: Build trpc
-        run: yarn build
 
       - name: Build next-hello-world
         run: yarn build --cwd examples/next-hello-world
