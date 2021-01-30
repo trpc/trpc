@@ -302,7 +302,7 @@ This builds each package to `<packages>/<package>/dist` and runs the project in 
 
 # Contributors ✨
 
-Original idea developed by [colinhacks]()
+Original [`0.x`](https://github.com/trpc/trpc/tree/v0.x)-version created by [colinhacks](https://github.com/colinhacks).
 
 <!-- ALL-CONTRIBUTORS-LIST:START - Do not remove or modify this section -->
 <!-- prettier-ignore-start -->
