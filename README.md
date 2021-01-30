@@ -50,7 +50,7 @@ yarn add @trpc/client @trpc/server @trpc/react zod react-query
 ```
 
 - tRPC wraps a tiny layer of sugar around [react-query](https://react-query.tanstack.com/overview) when using React which gives you type safety and auto completion of your routes
-- Zod is a great validation lib that works out of the box, but tRPC also works out-of-the-box with yup/myzod/ts-json-validator - [see test suite](./packages/server/test/validators.test.ts)
+- Zod is a great validation lib that works well, but tRPC also works out-of-the-box with yup/myzod/ts-json-validator - [see test suite](./packages/server/test/validators.test.ts)
 
 ### 1. Create an API handler
 
