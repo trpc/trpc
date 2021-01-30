@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import '@testing-library/jest-dom';
 import { createTRPCClient } from '@trpc/client';
 import AbortController from 'abort-controller';
