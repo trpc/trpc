@@ -1,11 +1,12 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import type { EventEmitter } from 'events';
-import type qs from 'qs';
-import { DataTransformer } from './transformer';
+import http from 'http';
+import qs from 'qs';
 import { assertNotBrowser } from './assertNotBrowser';
 import { InputValidationError, RouteNotFoundError } from './errors';
 import { Router } from './router';
 import { Subscription, SubscriptionDestroyError } from './subscription';
+import { DataTransformer } from './transformer';
+import url from 'url';
 assertNotBrowser();
 export class HTTPError extends Error {
   public readonly statusCode: number;
@@ -23,6 +24,8 @@ export const httpError = {
   badRequest: (message?: string) =>
     new HTTPError(400, message ?? 'Bad Request'),
   notFound: (message?: string) => new HTTPError(404, message ?? 'Not found'),
+  payloadTooLarge: (message?: string) =>
+    new HTTPError(413, message ?? 'Payload Too Large'),
 };
 export type HTTPSuccessResponseEnvelope<TOutput> = {
   ok: true;
@@ -74,10 +77,10 @@ export function getErrorResponseEnvelope(
   return json;
 }
 
-export function getQueryInput<TRequest extends BaseRequest>(req: TRequest) {
+export function getQueryInput(query: qs.ParsedQs) {
   let input: unknown = undefined;
 
-  const queryInput = req.query.input;
+  const queryInput = query.input;
   if (!queryInput) {
     return input;
   }
@@ -102,16 +105,12 @@ export type CreateContextFn<TContext, TRequest, TResponse> = (
   opts: CreateContextFnOptions<TRequest, TResponse>,
 ) => TContext | Promise<TContext>;
 
-interface BaseRequest {
+export type BaseRequest = http.IncomingMessage & {
   method?: string;
-  query: qs.ParsedQs;
+  query?: qs.ParsedQs;
   body?: any;
-}
-interface BaseResponse extends EventEmitter {
-  status: (code: number) => BaseResponse;
-  json: (data: unknown) => any;
-  statusCode?: number;
-}
+};
+export type BaseResponse = http.ServerResponse;
 
 export interface BaseOptions {
   subscriptions?: {
@@ -122,6 +121,38 @@ export interface BaseOptions {
    * Optional transformer too serialize/deserialize input args + data
    */
   transformer?: DataTransformer;
+  maxBodySize?: number;
+}
+
+async function getPostBody({
+  req,
+  maxBodySize,
+}: {
+  req: BaseRequest;
+  maxBodySize?: number;
+}) {
+  return new Promise<any>((resolve, reject) => {
+    if (req.body) {
+      resolve(req.body);
+      return;
+    }
+    let body = '';
+    req.on('data', function (data) {
+      body += data;
+      if (typeof maxBodySize === 'number' && body.length > maxBodySize) {
+        reject(httpError.payloadTooLarge());
+        req.connection.destroy();
+      }
+    });
+    req.on('end', () => {
+      try {
+        const json = JSON.parse(body);
+        resolve(json);
+      } catch (err) {
+        reject(httpError.badRequest("Body couldn't be parsed as json"));
+      }
+    });
+  });
 }
 
 export async function requestHandler<
@@ -142,6 +173,7 @@ export async function requestHandler<
     serialize: (data) => data,
     deserialize: (data) => data,
   },
+  maxBodySize,
 }: {
   req: TRequest;
   res: TResponse;
@@ -151,14 +183,15 @@ export async function requestHandler<
 } & BaseOptions) {
   try {
     let output: unknown;
-    const ctx = await createContext({ req, res });
+    const ctx = createContext && (await createContext({ req, res }));
     const method = req.method ?? 'GET';
 
     const deserializeInput = (input: unknown) =>
       input ? transformer.deserialize(input) : input;
 
     if (method === 'POST') {
-      const input = deserializeInput(req.body.input);
+      const body = await getPostBody({ req, maxBodySize });
+      const input = deserializeInput(body.input);
       output = await router.invoke({
         target: 'mutations',
         input,
@@ -166,7 +199,9 @@ export async function requestHandler<
         path: endpoint,
       });
     } else if (method === 'GET') {
-      const input = deserializeInput(getQueryInput(req));
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      const query = req.query ? req.query : url.parse(req.url!, true).query;
+      const input = deserializeInput(getQueryInput(query));
       output = await router.invoke({
         target: 'queries',
         input,
@@ -174,7 +209,8 @@ export async function requestHandler<
         path: endpoint,
       });
     } else if (method === 'PATCH') {
-      const input = deserializeInput(req.body.input);
+      const body = await getPostBody({ req, maxBodySize });
+      const input = deserializeInput(body.input);
 
       const sub = (await router.invoke({
         target: 'subscriptions',
@@ -225,11 +261,15 @@ export async function requestHandler<
       statusCode: res.statusCode ?? 200,
       data: transformer.serialize(output),
     };
-    res.status(json.statusCode).json(json);
+    res.statusCode = json.statusCode;
+    res.setHeader('Content-Type', 'application/json');
+    res.end(JSON.stringify(json));
   } catch (err) {
     const json = getErrorResponseEnvelope(err);
 
-    res.status(json.statusCode).json(json);
+    res.statusCode = json.statusCode;
+    res.setHeader('Content-Type', 'application/json');
+    res.end(JSON.stringify(json));
   }
   try {
     teardown && (await teardown());
