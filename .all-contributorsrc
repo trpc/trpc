@@ -14,12 +14,12 @@
       "login": "KATT",
       "name": "Alex Johansson",
       "avatar_url": "https://avatars.githubusercontent.com/u/459267?v=4",
-      "profile": "https://github.com/KATT",
+      "profile": "https://twitter.com/alexdotjs",
       "contributions": [
+        "ideas",
         "code",
-        "doc",
         "test",
-        "ideas"
+        "doc"
       ]
     },
     {
@@ -29,7 +29,9 @@
       "profile": "https://colinhacks.com/",
       "contributions": [
         "ideas",
-        "code"
+        "code",
+        "test",
+        "doc"
       ]
     }
   ],
