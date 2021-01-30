@@ -32,9 +32,9 @@ jobs:
             /home/runner/.cache/Cypress
             C:\Users\runneradmin\AppData\Local\Cypress\Cache
             **/.next/cache
-          key: ${{ runner.os }}-${{ runner.node_version}}-yarn-typescript-example-v4-${{ hashFiles('yarn.lock') }}
+          key: ${{ runner.os }}-${{ runner.node_version}}-yarn-${{ hashFiles('yarn.lock') }}
           restore-keys: |
-            ${{ runner.os }}-${{ runner.node_version}}-yarn-typescript-example-v4-
+            ${{ runner.os }}-${{ runner.node_version}}-yarn-
 
       - name: Install
         run: |
