@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import http from 'http';
-import type qs from 'qs';
+import qs from 'qs';
 import { assertNotBrowser } from './assertNotBrowser';
 import { InputValidationError, RouteNotFoundError } from './errors';
 import { Router } from './router';

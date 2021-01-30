@@ -8,14 +8,29 @@ import { Prefixer, ThenArg } from './types';
 assertNotBrowser();
 
 export type RouteInputParserZodEsque<TInput = unknown> = {
-  parse: (input: unknown) => TInput;
+  parse: (input: any) => TInput;
 };
+
+export type RouteInputParserCustomValidatorEsque<TInput = unknown> = (
+  input: unknown,
+) => TInput;
 
 export type RouteInputParserYupEsque<TInput = unknown> = {
   validateSync: (input: unknown) => TInput;
 };
+export type RouteInputParserJoiEsque<TInput = unknown> = {
+  validate: (
+    input: unknown,
+  ) => {
+    value: TInput;
+  };
+};
 
-export type RouteInputParser<TInput = unknown> = RouteInputParserZodEsque<TInput> | RouteInputParserYupEsque<TInput>
+export type RouteInputParser<TInput = unknown> =
+  | RouteInputParserZodEsque<TInput>
+  | RouteInputParserYupEsque<TInput>
+  | RouteInputParserCustomValidatorEsque<TInput>
+  | RouteInputParserJoiEsque<TInput>;
 
 export type RouteResolver<
   TContext = unknown,
@@ -283,16 +298,19 @@ export class Router<
     }
 
     try {
-      let anyInput: any = route.input;
+      const anyInput: any = route.input;
       if (typeof anyInput.parse === 'function') {
-        return anyInput.parse(rawInput)
+        return anyInput.parse(rawInput);
       }
 
-      if (typeof anyInput.validateSync === 'function') {
-        return anyInput.validateSync(rawInput)
+      if (typeof anyInput === 'function') {
+        return anyInput(rawInput);
       }
-      
-      throw new Error('Could not find a validator fn')
+      if (typeof anyInput.validateSync === 'function') {
+        return anyInput.validateSync(rawInput);
+      }
+
+      throw new Error('Could not find a validator fn');
     } catch (_err) {
       const err = new InputValidationError(_err);
       throw err;

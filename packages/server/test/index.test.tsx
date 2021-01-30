@@ -9,9 +9,7 @@ import http from 'http';
 import fetch from 'node-fetch';
 import * as z from 'zod';
 import * as trpc from '../src';
-import { AnyRouter } from '../src';
-import { createHttpServer } from '../src/adapters/standalone';
-import * as yup from 'yup'
+
 test('mix query and mutation', async () => {
   type Context = {};
   const r = trpc
@@ -214,69 +212,5 @@ describe('errors', () => {
       }
       expect(err.res?.status).toBe(400);
     }
-  });
-});
-
-describe('different validators', () => {
-  function routerToServerAndClient<TRouter extends AnyRouter>(router: TRouter) {
-    const server = createHttpServer({
-      router,
-      createContext: () => ({}),
-    });
-    const { port } = server.listen(0);
-
-    const client = createTRPCClient<typeof router>({
-      url: `http://localhost:${port}`,
-      fetchOpts: {
-        AbortController: AbortController as any,
-        fetch: fetch as any,
-      },
-    });
-
-    return {
-      client,
-      close: () => server.server.close(),
-    };
-  }
-  test('no validator', async () => {
-    const router = trpc.router().query('hello', {
-      resolve() {
-        return 'test';
-      },
-    });
-    const { client, close } = routerToServerAndClient(router);
-    const res = await client.query('hello');
-    expect(res).toBe('test');
-    close();
-  });
-
-  test('zod', async () => {
-    const router = trpc.router().query('num', {
-      input: z.number(),
-      resolve({ input }) {
-        return {
-          input,
-        };
-      },
-    });
-    const { client, close } = routerToServerAndClient(router);
-    const res = await client.query('num', 123);
-    expect(res.input).toBe(123);
-    close();
-  });
-
-  test('yup', async () => {
-    const router = trpc.router().query('num', {
-      input: yup.number().required(),
-      resolve({ input }) {
-        return {
-          input,
-        };
-      },
-    });
-    const { client, close } = routerToServerAndClient(router);
-    const res = await client.query('num', 123);
-    expect(res.input).toBe(123);
-    close();
   });
 });
