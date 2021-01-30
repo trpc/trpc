@@ -249,4 +249,19 @@ describe('different validators', () => {
     expect(res).toBe('test');
     close();
   });
+
+  test('zod', async () => {
+    const router = trpc.router().query('num', {
+      input: z.number(),
+      resolve({ input }) {
+        return {
+          input,
+        };
+      },
+    });
+    const { client, close } = routerToServerAndClient(router);
+    const res = await client.query('num', 123);
+    expect(res.input).toBe(123);
+    close();
+  });
 });
