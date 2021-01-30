@@ -7,8 +7,10 @@
 <br/>
 
 - [Motivation](#motivation)
-- [Getting started](#getting-started)
-  - [Next.js](#nextjs)
+- [Usage](#usage)
+  - [Basic example](#basic-example)
+    - [1. Create a trpc router](#1-create-a-trpc-router)
+  - [Getting started with Next.js](#getting-started-with-nextjs)
     - [0. Install deps](#0-install-deps)
     - [1. Create an API handler](#1-create-an-api-handler)
     - [2. Create trpc client](#2-create-trpc-client)
@@ -17,8 +19,10 @@
   - [Merging routes](#merging-routes)
   - [Data transformers](#data-transformers)
   - [Server-side rendering (SSR / SSG)](#server-side-rendering-ssr--ssg)
-- [Internals](#internals)
-  - [HTTP Methods <-> endpoint type mapping](#http-methods---endpoint-type-mapping)
+- [Further reading](#further-reading)
+  - [HTTP Methods ↔️ endpoint type mapping](#http-methods-️-endpoint-type-mapping)
+  - [Relationship to GraphQL](#relationship-to-graphql)
+  - [Alternative projects](#alternative-projects)
 - [Development](#development)
   - [Development workflow](#development-workflow)
 - [Contributors ✨](#contributors-)
@@ -32,15 +36,27 @@ tRPC is a framework for building strongly typed RPC APIs with TypeScript. Altern
 - 🔋  Batteries included with a React-library but not tRPC is in no way tied to React (wanna make one for Svelte or Vue? [Contact us](https://twitter.com/trpcio))
 - 🧑‍🎨  Works great with React + React Native. And probably with all the other front-end frameworks.
 
-# Getting started
+# Usage
 
-You can play with local examples:
+You can play clone this project, run `yarn`, and play with local examples:
 
-- `yarn example:playground`
+- `yarn example:playground` - node.js
 - `yarn example:chat` - runs a real-time chat example with SSG & Prisma as a data store
 - `yarn example:hello` runs a minimal Next.js example 
 
-## Next.js
+## Basic example
+
+> This example is show-casing using the vanilla client, but we also provide `@trpc/react` with hooks using [react-query]().
+> If you want to get a feel for the autocompletion and type safety, you can use the `yarn example:playground` example.
+
+### 1. Create a trpc router
+
+```tsx
+import * as trpc from '@trpc/server';
+
+
+```
+## Getting started with Next.js
 
 The code here is taken from [`./examples/next-hello-world`](./examples/next-hello-world).
 ### 0. Install deps
@@ -187,6 +203,7 @@ export default function Home() {
 }
 ```
 
+
 ## Merging routes
 
 Writing all API-code in your code in the same file is a bad idea. It's easy to merge routes with other routes. Thanks to TypeScript 4.1 template literal types we can also prefix the routes without breaking type safety.
@@ -265,15 +282,32 @@ export async function getStaticProps() {
 
 This will cache the `messages.list` so it's instant when a user visits the page.
 
-# Internals
+# Further reading
 
-## HTTP Methods <-> endpoint type mapping
+## HTTP Methods ↔️ endpoint type mapping
 
 | HTTP Method | Mapping           | Notes                                                                             |
 | ----------- | ----------------- | --------------------------------------------------------------------------------- |
 | `GET`       | `.query()`        | Input in query string                                                             |
 | `POST`      | `.mutation()`     | Input in post body                                                                |
 | `PATCH`     | `.subscription()` | Experimental API using long-pulling. Implementation details are likely to change. |
+
+## Relationship to GraphQL
+
+GraphQL is amazing, I'm a massive fan, & have made many GraphQL-servers and the ecosystem around it is mature with things like Apollo & Relay. It's amazing to be able to make a flexible API where each consumer can pick just the data needed for it. If you are already have a custom GraphQL-server for your project, you're probably in no need for tRPC.
+
+The thing is, GraphQL isn't that easy to get right - ACL is needed to be solved on a per-type basis, complexity analysis, and performance are non-trivial things to get right. 
+
+We've taken a lot of inspiration from GraphQL & if you've made GraphQL-servers before you'll be familiar with the concept of input types and resolvers.
+
+tRPC is targeted towards monolithic TypeScript (or JS) repositories where you couple your API layer and your apps. Once your team grows you might want to
+
+
+## Alternative projects
+
+frameworks - blitzjs, redwood, ???
+
+....
 
 
 # Development
