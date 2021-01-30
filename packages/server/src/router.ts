@@ -18,19 +18,10 @@ export type RouteInputParserCustomValidatorEsque<TInput = unknown> = (
 export type RouteInputParserYupEsque<TInput = unknown> = {
   validateSync: (input: unknown) => TInput;
 };
-export type RouteInputParserJoiEsque<TInput = unknown> = {
-  validate: (
-    input: unknown,
-  ) => {
-    value: TInput;
-  };
-};
-
 export type RouteInputParser<TInput = unknown> =
   | RouteInputParserZodEsque<TInput>
   | RouteInputParserYupEsque<TInput>
-  | RouteInputParserCustomValidatorEsque<TInput>
-  | RouteInputParserJoiEsque<TInput>;
+  | RouteInputParserCustomValidatorEsque<TInput>;
 
 export type RouteResolver<
   TContext = unknown,
