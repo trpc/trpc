@@ -39,8 +39,6 @@ jobs:
       - name: Install & build
         run: |
           yarn
-        env:
-          CI: true
 
       - name: Test
         run: yarn test --ci --coverage --maxWorkers=2
