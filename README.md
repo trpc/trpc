@@ -302,7 +302,7 @@ This builds each package to `<packages>/<package>/dist` and runs the project in 
 
 # Contributors ✨
 
-> Original [`0.x`](https://github.com/trpc/trpc/tree/v0.x)-version created by [colinhacks](https://github.com/colinhacks) and `>1.x` developed by [KATT](https://twitter.com/alexdotjs)
+Original [`0.x`](https://github.com/trpc/trpc/tree/v0.x)-version was created by [colinhacks](https://github.com/colinhacks) and `>1.x` was created by [KATT](https://twitter.com/alexdotjs).
 
 <!-- ALL-CONTRIBUTORS-LIST:START - Do not remove or modify this section -->
 <!-- prettier-ignore-start -->
