@@ -29,7 +29,7 @@ tRPC is a framework for building strongly typed RPC APIs with TypeScript. Altern
 - 🔐  Type-safety on everything - on the API-routes, the input data & router output.
 - 🐎  No run-time bloat or slow code generation. The magic is all in the TypeScript compiler. tRPC itself has no deps and a tiny client-side footprint.
 - 😌  No double-declaration of types. Actually you don't have to declare types at all, as they are inferred.
-- 🔋  Batteries included with a React-library but not tied to React (wanna make one for Svelte or Vue? [Contact me](https://twitter.com/alexdotjs))
+- 🔋  Batteries included with a React-library but not tRPC is in no way tied to React (wanna make one for Svelte or Vue? [Contact us](https://twitter.com/trpcio))
 - 🧑‍🎨  Works great with React + React Native. And probably with all the other front-end frameworks.
 
 # Getting started
