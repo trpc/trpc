@@ -17,7 +17,7 @@ async function expectError<TPromise extends Promise<any>>(promise: TPromise) {
     await promise;
     throw new Error('Did not throw');
   } catch (err) {
-    return err as Error;
+    return err;
   }
 }
 function routerToServerAndClient<TRouter extends AnyRouter>(router: TRouter) {
@@ -89,8 +89,10 @@ test('yup', async () => {
   const res = await client.query('num', 123);
 
   expect(
-    await expectError(client.query('num', '123' as any)),
-  ).toMatchInlineSnapshot(`[Error: Did not throw]`);
+    await expectError(client.query('num', 'asd' as any)),
+  ).toMatchInlineSnapshot(
+    `[Error: this must be a \`number\` type, but the final value was: \`NaN\` (cast from the value \`"asd"\`).]`,
+  );
   expect(res.input).toBe(123);
   close();
 });
