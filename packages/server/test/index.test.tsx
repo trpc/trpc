@@ -11,7 +11,7 @@ import * as z from 'zod';
 import * as trpc from '../src';
 import { AnyRouter } from '../src';
 import { createHttpServer } from '../src/adapters/standalone';
-
+import * as yup from 'yup'
 test('mix query and mutation', async () => {
   type Context = {};
   const r = trpc
@@ -253,6 +253,21 @@ describe('different validators', () => {
   test('zod', async () => {
     const router = trpc.router().query('num', {
       input: z.number(),
+      resolve({ input }) {
+        return {
+          input,
+        };
+      },
+    });
+    const { client, close } = routerToServerAndClient(router);
+    const res = await client.query('num', 123);
+    expect(res.input).toBe(123);
+    close();
+  });
+
+  test('yup', async () => {
+    const router = trpc.router().query('num', {
+      input: yup.number().required(),
       resolve({ input }) {
         return {
           input,
