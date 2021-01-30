@@ -44,4 +44,4 @@ jobs:
         run: yarn test --ci --coverage --maxWorkers=2
 
       - name: Build next-hello-world
-        run: yarn build --cwd examples/next-hello-world
+        run: cd examples/next-hello-world && yarn build
