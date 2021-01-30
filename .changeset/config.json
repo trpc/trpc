@@ -1,6 +1,6 @@
 {
   "$schema": "https://unpkg.com/@changesets/config@1.3.0/schema.json",
-  "changelog": ["@changesets/changelog-github", { "repo": "@trpc/trpc" }],
+  "changelog": ["@changesets/changelog-github", { "repo": "trpc/trpc" }],
   "commit": false,
   "linked": [],
   "access": "public",

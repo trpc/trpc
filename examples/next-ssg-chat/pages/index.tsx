@@ -62,7 +62,7 @@ export default function Home() {
   const addMessage = trpc.useMutation('messages.create');
 
   return (
-    <div>
+    <>
       <Head>
         <title>Chat</title>
         <link rel="icon" href="/favicon.ico" />
@@ -99,11 +99,24 @@ export default function Home() {
         <input name="text" type="text" />
         <input type="submit" disabled={addMessage.isLoading} />
       </form>
-    </div>
+
+      <div style={{ marginTop: '100px' }}>
+        <a
+          href="https://vercel.com/?utm_source=trpc&amp;utm_campaign=oss"
+          target="_blank"
+        >
+          <img
+            src="/powered-by-vercel.svg"
+            alt="Powered by Vercel"
+            height="25"
+          />
+        </a>
+      </div>
+    </>
   );
 }
 export async function getStaticProps() {
-  await trpc.prefetchQuery(appRouter, {
+  await trpc.prefetchQueryOnServer(appRouter, {
     path: 'messages.list',
     input: null,
     ctx: {} as any,
