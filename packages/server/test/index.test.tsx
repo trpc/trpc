@@ -96,23 +96,21 @@ test('merge', async () => {
 });
 
 describe('integration tests', () => {
-
   test('not found route', async () => {
-    const {client, close} = routerToServerAndClient(
-      trpc
-        .router()
-        .query('hello', {
-          input: z
-            .object({
-              who: z.string(),
-            })
-            .optional(),
-          resolve({ input }) {
-            return {
-              text: `hello ${input?.who ?? 'world'}`,
-            };
-          },
-        }))
+    const { client, close } = routerToServerAndClient(
+      trpc.router().query('hello', {
+        input: z
+          .object({
+            who: z.string(),
+          })
+          .optional(),
+        resolve({ input }) {
+          return {
+            text: `hello ${input?.who ?? 'world'}`,
+          };
+        },
+      }),
+    );
     try {
       await client.query('notFound' as any);
       throw new Error('Did not fail');
@@ -125,25 +123,23 @@ describe('integration tests', () => {
       );
       expect(err.res?.status).toBe(404);
     }
-    close()
+    close();
   });
   test('invalid args', async () => {
-
-    const {client, close} = routerToServerAndClient(
-      trpc
-        .router()
-        .query('hello', {
-          input: z
-            .object({
-              who: z.string(),
-            })
-            .optional(),
-          resolve({ input }) {
-            return {
-              text: `hello ${input?.who ?? 'world'}`,
-            };
-          },
-        }))
+    const { client, close } = routerToServerAndClient(
+      trpc.router().query('hello', {
+        input: z
+          .object({
+            who: z.string(),
+          })
+          .optional(),
+        resolve({ input }) {
+          return {
+            text: `hello ${input?.who ?? 'world'}`,
+          };
+        },
+      }),
+    );
     try {
       await client.query('hello', { who: 123 as any });
       throw new Error('Did not fail');
@@ -153,27 +149,40 @@ describe('integration tests', () => {
       }
       expect(err.res?.status).toBe(400);
     }
-    close()
+    close();
   });
 
   test('queries()', async () => {
-    const {client, close} = routerToServerAndClient(
-      trpc
-        .router()
-        .queries({'simonSays': {
-          input: z.object({
-            what: z.string(),
-          }),
-          resolve({ input }) {
-            // ^^^^^^ input is "any" here
-            return {
-              text: input.what,
-            };
-          },
-        }}))
+    const router = trpc.router().queries({
+      dogSays: {
+        input: z.object({
+          dogNoise: z.string(),
+        }),
+        resolve({ input }) {
+          // ^^^^^^ input is "any" here
+          return {
+            text: input.dogNoise,
+          };
+        },
+      },
+      kattSays: {
+        input: z.object({
+          catNoise: z.string(),
+        }),
+        resolve({ input }) {
+          // ^^^^^^ input is "any" here
+          return {
+            text: input.catNoise,
+          };
+        },
+      },
+    });
+    const { client, close } = routerToServerAndClient(router);
     // 🙋‍♂️ `res.text` is `any` here
-    const res = await client.query('simonSays', { what: 'alex is a ****' });
-    expect(res.text).toBe('alex is a ****');
-    close()
+    const res1 = await client.query('dogSays', { dogNoise: 'woff' });
+    expect(res1.text).toBe('woff');
+    const res2 = await client.query('kattSays', { catNoise: 'meow' });
+    expect(res2.text).toBe('meow');
+    close();
   });
 });
