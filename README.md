@@ -65,8 +65,6 @@ yarn add @trpc/client @trpc/server @trpc/react zod react-query
 - tRPC wraps a tiny layer of sugar around [react-query](https://react-query.tanstack.com/overview) when using React which gives you type safety and auto completion of your routes
 - Zod is recommended but not required, any validation lib is easy to integrate. Only included on the server as default, so does not affect bundle size.
 </details>
-
-
 <details><summary>1. Create an API handler</summary>
 
 Create a file at `./pages/api/trpc/[...trpc].ts`
@@ -119,8 +117,6 @@ export default trpc.createNextApiHandler({
 
 ```
 </details>
-
-
 <details><summary>2. Create trpc client</summary>
 
 
@@ -143,8 +139,6 @@ export const trpc = createReactQueryHooks<AppRouter, Context>({
 });
 ```
 </details>
-
-
 <details><summary>3. Configure `_app.tsx`</summary>
 
 
@@ -166,9 +160,6 @@ function MyApp({ Component, pageProps }: AppProps) {
 export default MyApp;
 ```
 </details>
-
-
-
 <details><summary>4. Start consuming your data!</summary>
 
 
