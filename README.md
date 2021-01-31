@@ -386,7 +386,7 @@ frameworks - blitzjs, redwood, ???
 
 # Development
 
-```sh
+```bash
 yarn install
 ```
 
@@ -402,7 +402,7 @@ yarn
 
 In one terminal, run tsdx watch in parallel:
 
-```sh
+```bash
 yarn dev
 ```
 
