@@ -208,10 +208,12 @@ export default function Home() {
 
 Defining routes is the same for queries, mutations, and subscription with the exception that subscriptions needs to return a `Subscription`-instance.
 
-**Example query without input argument:**
+<details><summary>Example query without input argument</summary>
 
 ```tsx
-myRouter
+import * as trpc from '@trpc/server';
+
+export const appRouter = trpc.router()
   // Create route at path 'hello'
   .query('hello', {
     resolve({ ctx }) {
@@ -220,14 +222,19 @@ myRouter
       };
     },
   });
+
+export type AppRouter = typeof appRouter;
 ```
 
-**Example query with input argument:**
+</details>
+<details><summary>Example query with input argument</summary>
 
 ```tsx
-myRouter
+import * as trpc from '@trpc/server';
+import * as z from 'zod';
+
+export const appRouter = trpc.router()
   .query('hello', {
-    // using zod schema to validate and infer input values
     input: z
       .object({
         text: z.string().optional(),
@@ -239,9 +246,36 @@ myRouter
       };
     },
   });
+
+export type AppRouter = typeof appRouter;
 ```
 
+</details>
+<details><summary>To add multiple endpoints, you must chain the calls</summary>
 
+```tsx
+import * as trpc from '@trpc/server';
+
+export const appRouter = trpc.router()
+  .query('hello', {
+    resolve({ ctx }) {
+      return {
+        text: `hello world`,
+      };
+    },
+  })
+  .query('bye', {
+    resolve({ ctx }) {
+      return {
+        text: `goodbye`,
+      };
+    },
+  });
+
+export type AppRouter = typeof appRouter;
+```
+
+</details>
 
 ## Merging routes
 
