@@ -281,6 +281,7 @@ export type AppRouter = typeof appRouter;
 
 Writing all API-code in your code in the same file is a bad idea. It's easy to merge routes with other routes. Thanks to TypeScript 4.1 template literal types we can also prefix the routes without breaking type safety.
 
+<details><summary>Example code</summary>
 
 ```ts
 const posts = createRouter()
@@ -317,6 +318,8 @@ const appRouter = createRouter()
   .merge('posts.', posts) // prefix poosts routes with "posts."
   ;
 ```
+
+</details>
 
 ## Data transformers
 
