@@ -11,11 +11,6 @@
   - [Basic example](#basic-example)
     - [1. Create a trpc router](#1-create-a-trpc-router)
   - [Getting started with Next.js](#getting-started-with-nextjs)
-    - [0. Install deps](#0-install-deps)
-    - [1. Create an API handler](#1-create-an-api-handler)
-    - [2. Create trpc client](#2-create-trpc-client)
-    - [3. Configure `_app.tsx`](#3-configure-_apptsx)
-    - [4. Start consuming your data!](#4-start-consuming-your-data)
   - [Defining routes](#defining-routes)
   - [Merging routes](#merging-routes)
   - [Data transformers](#data-transformers)
@@ -60,7 +55,8 @@ import * as trpc from '@trpc/server';
 ## Getting started with Next.js
 
 The code here is taken from [`./examples/next-hello-world`](./examples/next-hello-world).
-### 0. Install deps
+
+<details><summary>0. Install deps</summary>
 
 ```bash
 yarn add @trpc/client @trpc/server @trpc/react zod react-query
@@ -68,8 +64,10 @@ yarn add @trpc/client @trpc/server @trpc/react zod react-query
 
 - tRPC wraps a tiny layer of sugar around [react-query](https://react-query.tanstack.com/overview) when using React which gives you type safety and auto completion of your routes
 - Zod is recommended but not required, any validation lib is easy to integrate. Only included on the server as default, so does not affect bundle size.
+</details>
 
-### 1. Create an API handler
+
+<details><summary>1. Create an API handler</summary>
 
 Create a file at `./pages/api/trpc/[...trpc].ts`
 
@@ -120,8 +118,10 @@ export default trpc.createNextApiHandler({
 });
 
 ```
+</details>
 
-### 2. Create trpc client
+
+<details><summary>2. Create trpc client</summary>
 
 
 Create `./utils/trpc.ts`
@@ -142,8 +142,11 @@ export const trpc = createReactQueryHooks<AppRouter, Context>({
   queryClient: new QueryClient(),
 });
 ```
+</details>
 
-### 3. Configure `_app.tsx` 
+
+<details><summary>3. Configure `_app.tsx`</summary>
+
 
 ```tsx
 import type { AppProps } from 'next/app';
@@ -162,9 +165,11 @@ function MyApp({ Component, pageProps }: AppProps) {
 }
 export default MyApp;
 ```
+</details>
 
 
-### 4. Start consuming your data!
+
+<details><summary>4. Start consuming your data!</summary>
 
 
 ```tsx
@@ -203,6 +208,8 @@ export default function Home() {
   );
 }
 ```
+</details>
+
 
 ## Defining routes
 
