@@ -16,6 +16,7 @@
     - [2. Create trpc client](#2-create-trpc-client)
     - [3. Configure `_app.tsx`](#3-configure-_apptsx)
     - [4. Start consuming your data!](#4-start-consuming-your-data)
+  - [Defining routes](#defining-routes)
   - [Merging routes](#merging-routes)
   - [Data transformers](#data-transformers)
   - [Server-side rendering (SSR / SSG)](#server-side-rendering-ssr--ssg)
@@ -202,6 +203,44 @@ export default function Home() {
   );
 }
 ```
+
+## Defining routes
+
+Defining routes is the same for queries, mutations, and subscription with the exception that subscriptions needs to return a `Subscription`-instance.
+
+**Example query without input argument:**
+
+```tsx
+myRouter
+  // Create route at path 'hello'
+  .query('hello', {
+    resolve({ ctx }) {
+      return {
+        greeting: `hello world`,
+      };
+    },
+  });
+```
+
+**Example query with input argument:**
+
+```tsx
+myRouter
+  .query('hello', {
+    // using zod schema to validate and infer input values
+    input: z
+      .object({
+        text: z.string().optional(),
+      })
+      .optional(),
+    resolve({ input }) {
+      return {
+        greeting: `hello ${input?.text ?? 'world'}`,
+      };
+    },
+  });
+```
+
 
 
 ## Merging routes
