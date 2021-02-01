@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev:server": "nodemon -e ts -w . -x ts-node ./src/server.ts",
-    "dev:client": "nodemon -e ts -w . -x 'wait-on tcp:2021 && ts-node ./src/client.ts'",
+    "dev:client": "nodemon -e ts -w . -x 'wait-on tcp:2022 && ts-node ./src/client.ts'",
     "dev": "run-p dev:* --print-label"
   },
   "dependencies": {
