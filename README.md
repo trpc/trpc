@@ -8,6 +8,7 @@
 
 - [Motivation](#motivation)
 - [Usage](#usage)
+  - [Example apps](#example-apps)
   - [Getting started with Next.js](#getting-started-with-nextjs)
   - [Defining routes](#defining-routes)
   - [Merging routes](#merging-routes)
@@ -32,7 +33,9 @@ tRPC is a framework for building strongly typed RPC APIs with TypeScript. Altern
 
 # Usage
 
-<details><summary>You can play clone this project, run `yarn`, and play with local examples</summary>
+## Example apps
+
+<details><summary>You can play clone this project and play with local examples</summary>
 
 ```bash
 git clone git@github.com:@trpc/trpc.git
