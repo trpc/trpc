@@ -5,9 +5,7 @@ import * as z from 'zod';
 type Context = {};
 
 export const appRouter = trpc
-  // create router
   .router<Context>()
-  // add query `hello`
   .query('hello', {
     input: z.object({
       text: z.string(),
