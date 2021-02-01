@@ -7,6 +7,7 @@ import type {
   Router,
   RouteWithInput,
 } from '@trpc/server';
+import { useMemo } from 'react';
 import {
   QueryClient,
   useMutation,
@@ -16,6 +17,11 @@ import {
   UseQueryOptions,
   UseQueryResult,
 } from 'react-query';
+import {
+  dehydrate,
+  DehydratedState,
+  DehydrateOptions,
+} from 'react-query/hydration';
 
 export function createReactQueryHooks<
   TRouter extends Router<TContext, any, any, any>,
@@ -133,15 +139,53 @@ export function createReactQueryHooks<
     const { path, ctx } = opts;
     const cacheKey = [path, input];
 
-    await queryClient.prefetchQuery(cacheKey, () => {
-      return router.invoke({
+    await queryClient.prefetchQuery(cacheKey, async () => {
+      const data = await router.invoke({
         target: 'queries',
         ctx,
         path,
         input,
       });
+
+      const transformed = client.transformer.serialize(data);
+
+      return transformed;
     });
   };
+
+  function _dehydrate(opts?: DehydrateOptions) {
+    return dehydrate(queryClient, opts);
+  }
+  function deserializeHydratedState<
+    TObj extends {
+      state: {
+        data: unknown;
+      };
+    }
+  >(arr: TObj[]): TObj[] {
+    return arr.map((obj) => ({
+      ...obj,
+      state: {
+        ...obj.state,
+        data: client.transformer.deserialize(obj.state.data),
+      },
+    }));
+  }
+
+  function useDehydratedState(dehydratedState?: DehydratedState) {
+    const transformed: DehydratedState | undefined = useMemo(() => {
+      if (!dehydratedState) {
+        return dehydratedState;
+      }
+
+      return {
+        queries: deserializeHydratedState(dehydratedState.queries),
+        mutations: deserializeHydratedState(dehydratedState.mutations),
+      };
+    }, [dehydratedState]);
+    console.log(JSON.stringify({ dehydratedState, transformed }, null, 4));
+    return transformed;
+  }
 
   return {
     useQuery: _useQuery,
@@ -153,5 +197,7 @@ export function createReactQueryHooks<
      * @deprecated renamed to `prefetchQueryOnServer`
      */
     prefetchQuery: prefetchQueryOnServer,
+    dehydrate: _dehydrate,
+    useDehydratedState,
   };
 }

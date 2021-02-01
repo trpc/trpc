@@ -106,11 +106,11 @@ export function createTRPCClient<TRouter extends AnyRouter>(
     let json: Maybe<HTTPResponseEnvelope<unknown>> = null;
     try {
       res = await promise;
-      json = transformer.deserialize(
-        await res.json(),
-      ) as HTTPResponseEnvelope<unknown>;
+      const rawJson = await res.json();
+      json = transformer.deserialize(rawJson) as HTTPResponseEnvelope<unknown>;
 
       if (json.ok) {
+        console.log('ok', json.data);
         opts.onSuccess && opts.onSuccess(json);
         return json.data as any;
       }

@@ -239,12 +239,12 @@ You are able to serialize the response data & input args (in order to be able to
 
 See the [chat example](./examples/next-ssg-chat) for a working example.
 
-In `getStaticProps`:
+
+<details><summary>In `getStaticProps`</summary>
 
 ```tsx
 import { trpc } from '../utils/trpc'
 import { appRouter } from './api/trpc/[...trpc]'; // Important - only ever import & use this in the SSR-methods
-import { dehydrate } from 'react-query/hydration';
 
 export async function getStaticProps() {
   await trpc.prefetchQueryOnServer(appRouter, {
@@ -254,12 +254,33 @@ export async function getStaticProps() {
   });
   return {
     props: {
-      dehydratedState: dehydrate(trpc.queryClient),
+      dehydratedState: trpc.dehydrate(),
     },
     revalidate: 1,
   };
 }
 ```
+</details>
+<details><summary>In _app.tsx</summary>
+
+```tsx
+import type { AppProps /*, AppContext */ } from 'next/app';
+import { QueryClientProvider } from 'react-query';
+import { Hydrate } from 'react-query/hydration';
+import { trpc } from '../utils/trpc';
+
+function MyApp({ Component, pageProps }: AppProps) {
+  return (
+    <QueryClientProvider client={trpc.queryClient}>
+      <Hydrate state={trpc.useDehydratedState(pageProps.dehydratedState)}>
+        <Component {...pageProps} />
+      </Hydrate>
+    </QueryClientProvider>
+  );
+}
+export default MyApp;
+```
+</details>
 
 This will cache the `messages.list` so it's instant when a user visits the page.
 

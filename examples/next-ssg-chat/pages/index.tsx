@@ -1,6 +1,5 @@
 import Head from 'next/head';
 import { useEffect, useMemo, useState } from 'react';
-import { dehydrate } from 'react-query/hydration';
 import { inferQueryOutput, trpc } from '../utils/trpc';
 import { appRouter } from './api/trpc/[...trpc]';
 
@@ -116,14 +115,14 @@ export default function Home() {
   );
 }
 export async function getStaticProps() {
-  // await trpc.prefetchQueryOnServer(appRouter, {
-  //   path: 'messages.list',
-  //   input: null,
-  //   ctx: {} as any,
-  // });
+  await trpc.prefetchQueryOnServer(appRouter, {
+    path: 'messages.list',
+    input: null,
+    ctx: {} as any,
+  });
   return {
     props: {
-      dehydratedState: dehydrate(trpc.queryClient),
+      dehydratedState: trpc.dehydrate(),
     },
     revalidate: 1,
   };
