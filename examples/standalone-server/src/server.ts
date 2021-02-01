@@ -1,11 +1,8 @@
+/* eslint-disable @typescript-eslint/ban-types */
+
 import * as trpc from '@trpc/server';
 import * as z from 'zod';
-
-type Context = {
-  user?: {
-    id: string;
-  };
-};
+type Context = {};
 
 export const appRouter = trpc
   // create router
