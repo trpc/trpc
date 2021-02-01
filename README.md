@@ -32,7 +32,13 @@ tRPC is a framework for building strongly typed RPC APIs with TypeScript. Altern
 
 # Usage
 
-You can play clone this project, run `yarn`, and play with local examples:
+<details><summary>You can play clone this project, run `yarn`, and play with local examples</summary>
+
+```bash
+git clone git@github.com:@trpc/trpc.git
+cd trpc
+yarn
+```
 
 | Command                   | Example path                                                   | Description                                                     |
 | ------------------------- | -------------------------------------------------------------- | --------------------------------------------------------------- |
@@ -40,6 +46,7 @@ You can play clone this project, run `yarn`, and play with local examples:
 | `yarn example:hello`      | [`./examples/next-hello-world`](./examples/next-hello-world)   | Minimal Next.js example                                         |
 | `yarn example:standalone` | [`./examples/standalone-server`](./examples/standalone-server) | Standalone TRPC server + node client                            |
 | `yarn example:playground` | [`./examples/playground`](./examples/playground)               | Express server + node client                                    |
+</details>
 
 ## Getting started with Next.js
 
