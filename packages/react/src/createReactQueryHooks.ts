@@ -147,29 +147,12 @@ export function createReactQueryHooks<
         input,
       });
 
-      const transformed = client.transformer.serialize(data);
-
-      return transformed;
+      return data;
     });
   };
 
   function _dehydrate(opts?: DehydrateOptions) {
-    return dehydrate(queryClient, opts);
-  }
-  function deserializeHydratedState<
-    TObj extends {
-      state: {
-        data: unknown;
-      };
-    }
-  >(arr: TObj[]): TObj[] {
-    return arr.map((obj) => ({
-      ...obj,
-      state: {
-        ...obj.state,
-        data: client.transformer.deserialize(obj.state.data),
-      },
-    }));
+    return client.transformer.serialize(dehydrate(queryClient, opts));
   }
 
   function useDehydratedState(dehydratedState?: DehydratedState) {
@@ -178,12 +161,8 @@ export function createReactQueryHooks<
         return dehydratedState;
       }
 
-      return {
-        queries: deserializeHydratedState(dehydratedState.queries),
-        mutations: deserializeHydratedState(dehydratedState.mutations),
-      };
+      return client.transformer.deserialize(dehydratedState);
     }, [dehydratedState]);
-    console.log(JSON.stringify({ dehydratedState, transformed }, null, 4));
     return transformed;
   }
 
