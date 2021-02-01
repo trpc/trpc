@@ -15,7 +15,7 @@ async function main() {
   });
 
   const res = await client.query('hello', {
-    text: 'world',
+    name: 'world',
   });
 
   console.log('res', res);
