@@ -1,10 +1,8 @@
 <div align="center">
   <h1 align="center">tRPC</h1>
   <p>a toolkit for building end-to-end TypeScript data layers</p>
+  <p><img src="https://storage.googleapis.com/trpc/trpcgif.gif" alt="Server/client example"></p>
 </div>
-
-<br/>
-<br/>
 
 - [Motivation](#motivation)
 - [Usage](#usage)
