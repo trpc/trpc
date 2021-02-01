@@ -259,17 +259,17 @@ export async function requestHandler<
     const json: HTTPSuccessResponseEnvelope<unknown> = {
       ok: true,
       statusCode: res.statusCode ?? 200,
-      data: transformer.serialize(output),
+      data: output,
     };
     res.statusCode = json.statusCode;
     res.setHeader('Content-Type', 'application/json');
-    res.end(JSON.stringify(json));
+    res.end(JSON.stringify(transformer.serialize(json)));
   } catch (err) {
     const json = getErrorResponseEnvelope(err);
 
     res.statusCode = json.statusCode;
     res.setHeader('Content-Type', 'application/json');
-    res.end(JSON.stringify(json));
+    res.end(JSON.stringify(transformer.serialize(json)));
   }
   try {
     teardown && (await teardown());

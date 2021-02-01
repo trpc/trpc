@@ -1,6 +1,5 @@
 import Head from 'next/head';
 import { useEffect, useMemo, useState } from 'react';
-import { dehydrate } from 'react-query/hydration';
 import { inferQueryOutput, trpc } from '../utils/trpc';
 import { appRouter } from './api/trpc/[...trpc]';
 
@@ -27,7 +26,7 @@ const getTimestamp = (m: Message[]) => {
 export default function Home() {
   const query = trpc.useQuery(['messages.list']);
 
-  const [msgs, setMessages] = useState(() => query.data.items ?? []);
+  const [msgs, setMessages] = useState(() => query.data?.items ?? []);
   const addMessages = (newMessages?: Message[]) => {
     setMessages((nowMessages) => {
       const map: Record<Message['id'], Message> = {};
@@ -56,8 +55,6 @@ export default function Home() {
 
   // merge messages on subscription.data
   useEffect(() => addMessages(subscription.data), [subscription.data]);
-
-  console.log({ timestamp });
 
   const addMessage = trpc.useMutation('messages.create');
 
@@ -123,7 +120,7 @@ export async function getStaticProps() {
   });
   return {
     props: {
-      dehydratedState: dehydrate(trpc.queryClient),
+      dehydratedState: trpc.dehydrate(),
     },
     revalidate: 1,
   };
