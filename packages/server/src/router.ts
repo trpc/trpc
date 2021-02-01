@@ -83,7 +83,7 @@ export type inferHandlerFn<TRoutes extends RouteRecord<any, any, any>> = <
   path: TPath,
   ...args: TRoute extends RouteWithInput<any, any, any>
     ? [inferRouteInput<TRoute>]
-    : [undefined?]
+    : never
 ) => Promise<inferRouteOutput<TRoutes[TPath]>>;
 
 export type AnyRouter<TContext = any> = Router<TContext, any, any, any>;

@@ -99,7 +99,7 @@ test('merge', async () => {
   `);
 });
 
-describe('errors', () => {
+describe('errors + optional', () => {
   type Context = {
     user: {
       name: string;
@@ -123,18 +123,32 @@ describe('errors', () => {
       };
     };
 
-    const router = trpc.router<Context>().query('hello', {
-      input: z
-        .object({
-          who: z.string(),
-        })
-        .optional(),
-      resolve({ input, ctx }) {
-        return {
-          text: `hello ${input?.who ?? ctx.user?.name ?? 'world'}`,
-        };
-      },
-    });
+    const router = trpc
+      .router<Context>()
+      .query('hello', {
+        input: z
+          .object({
+            who: z.string(),
+          })
+          .optional(),
+        resolve({ input, ctx }) {
+          return {
+            text: `hello ${input?.who ?? ctx.user?.name ?? 'world'}`,
+          };
+        },
+      })
+      .query('routeWithNonOptional', {
+        input: z.string(),
+        resolve({ input }) {
+          return `hi ${input}`;
+        },
+      })
+      .query('routeWithOptional', {
+        input: z.string().optional(),
+        resolve({ input }) {
+          return `hi ${input ?? 'there'}`;
+        },
+      });
 
     // express implementation
     const app = express();
@@ -190,7 +204,7 @@ describe('errors', () => {
 
   test('not found route', async () => {
     try {
-      await t.client.query('notFound' as any);
+      await (t.client.query as any)('notFound');
       throw new Error('Did not fail');
     } catch (err) {
       if (!(err instanceof TRPCClientError)) {
@@ -212,5 +226,14 @@ describe('errors', () => {
       }
       expect(err.res?.status).toBe(400);
     }
+
+    // test('optional', async () => {
+    //   t.client.query('routeWithOptional');
+    //   expect(await t.client);
+    // });
+
+    // test('this should fail and is commented as it gives a type error', async () => {
+    //   await t.client.query('routeWithNonOptional');
+    // });
   });
 });
