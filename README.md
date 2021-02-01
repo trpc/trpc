@@ -9,7 +9,6 @@
 - [Motivation](#motivation)
 - [Usage](#usage)
   - [Basic example](#basic-example)
-    - [1. Create a trpc router](#1-create-a-trpc-router)
   - [Getting started with Next.js](#getting-started-with-nextjs)
   - [Defining routes](#defining-routes)
   - [Merging routes](#merging-routes)
@@ -45,12 +44,11 @@ You can play clone this project, run `yarn`, and play with local examples:
 > This example is show-casing using the vanilla client, but we also provide `@trpc/react` with hooks using [react-query]().
 > If you want to get a feel for the autocompletion and type safety, you can use the `yarn example:playground` example.
 
-### 1. Create a trpc router
+<details><summary>Create a TRPC-server</summary>
+</details>
 
 ```tsx
 import * as trpc from '@trpc/server';
-
-
 ```
 ## Getting started with Next.js
 
@@ -63,7 +61,8 @@ yarn add @trpc/client @trpc/server @trpc/react zod react-query
 ```
 
 - tRPC wraps a tiny layer of sugar around [react-query](https://react-query.tanstack.com/overview) when using React which gives you type safety and auto completion of your routes
-- Zod is recommended but not required, any validation lib is easy to integrate. Only included on the server as default, so does not affect bundle size.
+- Zod is a great validation lib that works well, but tRPC also works out-of-the-box with yup/myzod/ts-json-validator/[..] - [see test suite](./packages/server/test/validators.test.ts)
+
 </details>
 <details><summary>1. Create an API handler</summary>
 
@@ -321,23 +320,21 @@ const appRouter = createRouter()
 
 ## Data transformers
 
-You are able to serialize the output data & input args (in order to be able to transparently use e.g. standard `Date`s). The transformers need to be added both to the server and the client.
-
-Data transformers currently live on the edges - in client-specific implementation & in the API response adapters. See a reference of how superjson is attached to ..
+You are able to serialize the response data & input args (in order to be able to transparently use e.g. standard `Date`s). The transformers need to be added both to the server and the client.
 
 - `createNextApiHandler()` in [`./examples/next-ssg-chat/[...trpc.ts]`](./examples/next-ssg-chat/pages/api/trpc/%5B...trpc%5D.ts), and
-- `createReactQueryHooks` in [`./examples/next-ssg-chat/pages/_app.tsx`](./examples/next-ssg-chat/pages/_app.tsx)
+- `createTRPCClient` in [`./examples/next-ssg-chat/pages/_app.tsx`](./examples/next-ssg-chat/pages/_app.tsx)
 
 ## Server-side rendering (SSR / SSG)
 
 See the [chat example](./examples/next-ssg-chat) for a working example.
 
-In `getStaticProps`:
+
+<details><summary>In `getStaticProps`</summary>
 
 ```tsx
 import { trpc } from '../utils/trpc'
 import { appRouter } from './api/trpc/[...trpc]'; // Important - only ever import & use this in the SSR-methods
-import { dehydrate } from 'react-query/hydration';
 
 export async function getStaticProps() {
   await trpc.prefetchQueryOnServer(appRouter, {
@@ -347,12 +344,33 @@ export async function getStaticProps() {
   });
   return {
     props: {
-      dehydratedState: dehydrate(trpc.queryClient),
+      dehydratedState: trpc.dehydrate(),
     },
     revalidate: 1,
   };
 }
 ```
+</details>
+<details><summary>In _app.tsx</summary>
+
+```tsx
+import type { AppProps /*, AppContext */ } from 'next/app';
+import { QueryClientProvider } from 'react-query';
+import { Hydrate } from 'react-query/hydration';
+import { trpc } from '../utils/trpc';
+
+function MyApp({ Component, pageProps }: AppProps) {
+  return (
+    <QueryClientProvider client={trpc.queryClient}>
+      <Hydrate state={trpc.useDehydratedState(pageProps.dehydratedState)}>
+        <Component {...pageProps} />
+      </Hydrate>
+    </QueryClientProvider>
+  );
+}
+export default MyApp;
+```
+</details>
 
 This will cache the `messages.list` so it's instant when a user visits the page.
 

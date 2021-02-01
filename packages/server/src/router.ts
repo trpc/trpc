@@ -7,9 +7,21 @@ import { Subscription } from './subscription';
 import { Prefixer, ThenArg } from './types';
 assertNotBrowser();
 
-export type RouteInputParser<TInput = unknown> = {
-  parse: (input: unknown) => TInput;
+export type RouteInputParserZodEsque<TInput = unknown> = {
+  parse: (input: any) => TInput;
 };
+
+export type RouteInputParserCustomValidatorEsque<TInput = unknown> = (
+  input: unknown,
+) => TInput;
+
+export type RouteInputParserYupEsque<TInput = unknown> = {
+  validateSync: (input: unknown) => TInput;
+};
+export type RouteInputParser<TInput = unknown> =
+  | RouteInputParserZodEsque<TInput>
+  | RouteInputParserYupEsque<TInput>
+  | RouteInputParserCustomValidatorEsque<TInput>;
 
 export type RouteResolver<
   TContext = unknown,
@@ -277,7 +289,19 @@ export class Router<
     }
 
     try {
-      return route.input.parse(rawInput) as inferRouteInput<TRoute>;
+      const anyInput: any = route.input;
+      if (typeof anyInput.parse === 'function') {
+        return anyInput.parse(rawInput);
+      }
+
+      if (typeof anyInput === 'function') {
+        return anyInput(rawInput);
+      }
+      if (typeof anyInput.validateSync === 'function') {
+        return anyInput.validateSync(rawInput);
+      }
+
+      throw new Error('Could not find a validator fn');
     } catch (_err) {
       const err = new InputValidationError(_err);
       throw err;

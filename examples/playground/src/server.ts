@@ -1,11 +1,9 @@
-import bodyParser from 'body-parser';
-import { EventEmitter } from 'events';
-import express from 'express';
 import * as trpc from '@trpc/server';
+import { EventEmitter } from 'events';
 import * as z from 'zod';
 
 // ---------- create context
-const createContext = ({ req, res }: trpc.CreateExpressContextOptions) => {
+const createContext = ({ req, res }: trpc.CreateHttpContextOptions) => {
   const getUser = () => {
     if (req.headers.authorization !== 'secret') {
       return null;
@@ -115,27 +113,11 @@ export const rootRouter = createRouter()
 export type RootRouter = typeof rootRouter;
 
 async function main() {
-  // express implementation
-  const app = express();
-  app.use(bodyParser.json());
-
-  app.use((req, _res, next) => {
-    // request logger
-    console.log('⬅️ ', req.method, req.path, req.body ?? req.query);
-
-    next();
+  const server = trpc.createHttpServer({
+    router: rootRouter,
+    createContext,
   });
-
-  app.use(
-    '/trpc',
-    trpc.createExpressMiddleware({
-      router: rootRouter,
-      createContext,
-    }),
-  );
-  app.listen(2021, () => {
-    console.log('listening on port 2021');
-  });
+  server.listen(2021);
 }
 
 main();

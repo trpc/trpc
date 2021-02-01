@@ -6,7 +6,7 @@ import { trpc } from '../utils/trpc';
 function MyApp({ Component, pageProps }: AppProps) {
   return (
     <QueryClientProvider client={trpc.queryClient}>
-      <Hydrate state={pageProps.dehydratedState}>
+      <Hydrate state={trpc.useDehydratedState(pageProps.dehydratedState)}>
         <Component {...pageProps} />
       </Hydrate>
     </QueryClientProvider>

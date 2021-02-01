@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import type { NextApiHandler, NextApiRequest, NextApiResponse } from 'next';
+import { NextApiHandler, NextApiRequest, NextApiResponse } from 'next';
 import {
   BaseOptions,
   CreateContextFn,
@@ -7,7 +7,7 @@ import {
   getErrorResponseEnvelope,
   requestHandler,
 } from '../http';
-import type { Router } from '../router';
+import { Router } from '../router';
 
 export type CreateNextContextOptions = CreateContextFnOptions<
   NextApiRequest,
