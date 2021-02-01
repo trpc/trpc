@@ -4,24 +4,7 @@ import express from 'express';
 import * as trpc from '@trpc/server';
 import * as z from 'zod';
 
-// ---------- create context
-const createContext = ({ req, res }: trpc.CreateExpressContextOptions) => {
-  const getUser = () => {
-    if (req.headers.authorization !== 'secret') {
-      return null;
-    }
-    return {
-      name: 'alex',
-    };
-  };
-
-  return {
-    req,
-    res,
-    user: getUser(),
-  };
-};
-type Context = trpc.inferAsyncReturnType<typeof createContext>;
+type Context = {};
 
 function createRouter() {
   return trpc.router<Context>();
@@ -32,7 +15,7 @@ function createRouter() {
 let id = 0;
 
 const ee = new EventEmitter();
-
+const randomId = () => Math.random().toString(36).substring(2, 15);
 const db = {
   posts: [
     {
@@ -52,6 +35,7 @@ function createMessage(text: string) {
   ee.emit('newMessage', msg);
   return msg;
 }
+
 const posts = createRouter()
   .mutation('create', {
     input: z.object({
@@ -86,7 +70,7 @@ const messages = createRouter()
   });
 
 // root router to call
-export const rootRouter = createRouter()
+export const appRouter = createRouter()
   .query('hello', {
     input: z.string().optional(),
     resolve: ({ input, ctx }) => {
@@ -112,7 +96,7 @@ export const rootRouter = createRouter()
   )
   .merge('messages/', messages);
 
-export type RootRouter = typeof rootRouter;
+export type AppRouter = typeof appRouter;
 
 async function main() {
   // express implementation
@@ -129,7 +113,7 @@ async function main() {
   app.use(
     '/trpc',
     trpc.createExpressMiddleware({
-      router: rootRouter,
+      router: appRouter,
       createContext,
     }),
   );

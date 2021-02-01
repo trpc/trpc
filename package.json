@@ -39,6 +39,7 @@
     "example:playground": "yarn --cwd examples/playground dev",
     "example:chat": "yarn --cwd examples/next-ssg-chat dev",
     "example:hello": "yarn --cwd examples/next-hello-world dev",
+    "example:standalone": "yarn --cwd examples/standalone-server dev",
     "cypress": "cypress run",
     "cypress:open": "cypress open",
     "changeset": "changeset",

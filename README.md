@@ -35,9 +35,12 @@ tRPC is a framework for building strongly typed RPC APIs with TypeScript. Altern
 
 You can play clone this project, run `yarn`, and play with local examples:
 
-- `yarn example:playground` - node.js
-- `yarn example:chat` - runs a real-time chat example with SSG & Prisma as a data store
-- `yarn example:hello` runs a minimal Next.js example 
+| Command                   | Example path                                                   | Description                                                     |
+| ------------------------- | -------------------------------------------------------------- | --------------------------------------------------------------- |
+| `yarn example:chat`       | [`./examples/next-ssg-chat`](./examples/next-ssg-chat)         | Runs a real-time chat example with SSG & Prisma as a data store |
+| `yarn example:hello`      | [`./examples/next-hello-world`](./examples/next-hello-world)   | Minimal Next.js example                                         |
+| `yarn example:standalone` | [`./examples/standalone-server`](./examples/standalone-server) | Standalone TRPC server + node client                            |
+| `yarn example:playground` | [`./examples/playground`](./examples/playground)               | Express server + node client                                    |
 
 ## Basic example
 

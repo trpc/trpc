@@ -1,7 +1,7 @@
 import { createTRPCClient, CreateTRPCClientOptions } from '@trpc/client';
 import AbortController from 'abort-controller';
 import fetch from 'node-fetch';
-import type { RootRouter } from './server';
+import type { AppRouter } from './server';
 
 // polyfill
 global.AbortController = AbortController;
@@ -22,7 +22,7 @@ async function main() {
     },
   };
 
-  const client = createTRPCClient<RootRouter>(opts);
+  const client = createTRPCClient<AppRouter>(opts);
   await sleep();
   await client.query('hello');
   await client.query('hello', 'client');
@@ -41,7 +41,7 @@ async function main() {
     // will fail
   }
   await sleep();
-  const authedClient = createTRPCClient<RootRouter>({
+  const authedClient = createTRPCClient<AppRouter>({
     ...opts,
     getHeaders: () => ({
       authorization: 'secret',
