@@ -13,11 +13,11 @@ export const appRouter = trpc
   // add query `hello`
   .query('hello', {
     input: z.object({
-      name: z.string(),
+      text: z.string(),
     }),
     resolve: ({ input }) => {
       return {
-        text: `hello ${input.name}`,
+        text: `hello ${input.text}`,
       };
     },
   });
