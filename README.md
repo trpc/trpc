@@ -8,7 +8,6 @@
 
 - [Motivation](#motivation)
 - [Usage](#usage)
-  - [Basic example](#basic-example)
   - [Getting started with Next.js](#getting-started-with-nextjs)
   - [Defining routes](#defining-routes)
   - [Merging routes](#merging-routes)
@@ -42,17 +41,6 @@ You can play clone this project, run `yarn`, and play with local examples:
 | `yarn example:standalone` | [`./examples/standalone-server`](./examples/standalone-server) | Standalone TRPC server + node client                            |
 | `yarn example:playground` | [`./examples/playground`](./examples/playground)               | Express server + node client                                    |
 
-## Basic example
-
-> This example is show-casing using the vanilla client, but we also provide `@trpc/react` with hooks using [react-query]().
-> If you want to get a feel for the autocompletion and type safety, you can use the `yarn example:playground` example.
-
-<details><summary>Create a TRPC-server</summary>
-</details>
-
-```tsx
-import * as trpc from '@trpc/server';
-```
 ## Getting started with Next.js
 
 The code here is taken from [`./examples/next-hello-world`](./examples/next-hello-world).
@@ -119,7 +107,7 @@ export default trpc.createNextApiHandler({
 
 ```
 </details>
-<details><summary>2. Create trpc client</summary>
+<details><summary>2. Create a trpc client</summary>
 
 
 Create `./utils/trpc.ts`
@@ -145,7 +133,7 @@ export const trpc = createReactQueryHooks<AppRouter, Context>({
 
 
 ```tsx
-import type { AppProps } from 'next/app';
+import type { AppProps /*, AppContext */ } from 'next/app';
 import { QueryClientProvider } from 'react-query';
 import { Hydrate } from 'react-query/hydration';
 import { trpc } from '../utils/trpc';
@@ -153,7 +141,7 @@ import { trpc } from '../utils/trpc';
 function MyApp({ Component, pageProps }: AppProps) {
   return (
     <QueryClientProvider client={trpc.queryClient}>
-      <Hydrate state={pageProps.dehydratedState}>
+      <Hydrate state={trpc.useDehydratedState(pageProps.dehydratedState)}>
         <Component {...pageProps} />
       </Hydrate>
     </QueryClientProvider>
