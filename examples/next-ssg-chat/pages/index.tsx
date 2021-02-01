@@ -27,7 +27,7 @@ const getTimestamp = (m: Message[]) => {
 export default function Home() {
   const query = trpc.useQuery(['messages.list']);
 
-  const [msgs, setMessages] = useState(() => query.data.items ?? []);
+  const [msgs, setMessages] = useState(() => query.data?.items ?? []);
   const addMessages = (newMessages?: Message[]) => {
     setMessages((nowMessages) => {
       const map: Record<Message['id'], Message> = {};
@@ -116,11 +116,11 @@ export default function Home() {
   );
 }
 export async function getStaticProps() {
-  await trpc.prefetchQueryOnServer(appRouter, {
-    path: 'messages.list',
-    input: null,
-    ctx: {} as any,
-  });
+  // await trpc.prefetchQueryOnServer(appRouter, {
+  //   path: 'messages.list',
+  //   input: null,
+  //   ctx: {} as any,
+  // });
   return {
     props: {
       dehydratedState: dehydrate(trpc.queryClient),

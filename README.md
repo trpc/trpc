@@ -15,7 +15,7 @@
     - [3. Configure `_app.tsx`](#3-configure-_apptsx)
     - [4. Start consuming your data!](#4-start-consuming-your-data)
   - [Merging routes](#merging-routes)
-  - [Data transformers](#data-transformers)
+  - [Response transformers](#response-transformers)
   - [Server-side rendering (SSR / SSG)](#server-side-rendering-ssr--ssg)
 - [Internals](#internals)
   - [HTTP Methods <-> endpoint type mapping](#http-methods---endpoint-type-mapping)
@@ -228,14 +228,12 @@ const appRouter = createRouter()
   ;
 ```
 
-## Data transformers
+## Response transformers
 
-You are able to serialize the output data & input args (in order to be able to transparently use e.g. standard `Date`s). The transformers need to be added both to the server and the client.
-
-Data transformers currently live on the edges - in client-specific implementation & in the API response adapters. See a reference of how superjson is attached to ..
+You are able to serialize the response data & input args (in order to be able to transparently use e.g. standard `Date`s). The transformers need to be added both to the server and the client.
 
 - `createNextApiHandler()` in [`./examples/next-ssg-chat/[...trpc.ts]`](./examples/next-ssg-chat/pages/api/trpc/%5B...trpc%5D.ts), and
-- `createReactQueryHooks` in [`./examples/next-ssg-chat/pages/_app.tsx`](./examples/next-ssg-chat/pages/_app.tsx)
+- `createTRPCClient` in [`./examples/next-ssg-chat/pages/_app.tsx`](./examples/next-ssg-chat/pages/_app.tsx)
 
 ## Server-side rendering (SSR / SSG)
 
