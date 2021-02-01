@@ -386,7 +386,7 @@ This will cache the `messages.list` so it's instant when a user visits the page.
 
 > 🚧  Docs in progress
 
-GraphQL is amazing, I'm a massive fan, & have made many GraphQL-servers and the ecosystem around it is mature with things like Apollo & Relay. It's amazing to be able to make a flexible API where each consumer can pick just the data needed for it. If you are already have a custom GraphQL-server for your project, you're probably in no need for tRPC.
+GraphQL is amazing; I'm a massive fan & have made many GraphQL-servers and the ecosystem around it is mature with things like Apollo & Relay. It's amazing to be able to make a flexible API where each consumer can pick just the data needed for it. If you are already have a custom GraphQL-server for your project, you're probably in no need for tRPC.
 
 The thing is, GraphQL isn't that easy to get right - ACL is needed to be solved on a per-type basis, complexity analysis, and performance are non-trivial things to get right. 
 
