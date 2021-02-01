@@ -377,18 +377,20 @@ This will cache the `messages.list` so it's instant when a user visits the page.
 
 ## Relationship to GraphQL
 
+> 🚧  Docs in progress
+
 GraphQL is amazing, I'm a massive fan, & have made many GraphQL-servers and the ecosystem around it is mature with things like Apollo & Relay. It's amazing to be able to make a flexible API where each consumer can pick just the data needed for it. If you are already have a custom GraphQL-server for your project, you're probably in no need for tRPC.
 
 The thing is, GraphQL isn't that easy to get right - ACL is needed to be solved on a per-type basis, complexity analysis, and performance are non-trivial things to get right. 
 
 We've taken a lot of inspiration from GraphQL & if you've made GraphQL-servers before you'll be familiar with the concept of input types and resolvers.
 
-tRPC is targeted towards monolithic TypeScript (or JS) repositories where you couple your API layer and your apps. Once your team grows you might want to
-
-
 ## Alternative projects
 
-frameworks - blitzjs, redwood, ???
+> 🚧  Docs in progress
+
+frameworks - blitzjs, redwood, [...] 
+
 
 ....
 
