@@ -5,7 +5,7 @@ import { assertNotBrowser } from './assertNotBrowser';
 import { InputValidationError, RouteNotFoundError } from './errors';
 import { Router } from './router';
 import { Subscription, SubscriptionDestroyError } from './subscription';
-import { DataTransformer } from './transformer';
+import { ResponseTransformer } from './transformer';
 import url from 'url';
 assertNotBrowser();
 export class HTTPError extends Error {
@@ -120,7 +120,7 @@ export interface BaseOptions {
   /**
    * Optional transformer too serialize/deserialize input args + data
    */
-  transformer?: DataTransformer;
+  transformer?: ResponseTransformer;
   maxBodySize?: number;
 }
 

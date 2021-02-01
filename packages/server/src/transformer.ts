@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-export type DataTransformer = {
+export type ResponseTransformer = {
   serialize(object: any): any;
   deserialize(object: any): any;
 };
