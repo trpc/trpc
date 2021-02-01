@@ -53,7 +53,8 @@ export function createHttpServer<TContext, TRouter extends AnyRouter<TContext>>(
     server,
     listen(port?: number) {
       server.listen(port);
-      const actualPort = (server.address() as any).port as number;
+      const actualPort =
+        port === 0 ? ((server.address() as any).port as number) : port;
 
       return {
         port: actualPort,
