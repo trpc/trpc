@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import type {
   AnyRouter,
-  ResponseTransformer,
+  DataTransformer,
   HTTPResponseEnvelope,
   HTTPSuccessResponseEnvelope,
   inferHandlerFn,
@@ -79,7 +79,7 @@ export interface CreateTRPCClientOptions {
   getHeaders?: () => Record<string, string | undefined>;
   onSuccess?: (data: HTTPSuccessResponseEnvelope<unknown>) => void;
   onError?: (error: TRPCClientError) => void;
-  transformer?: ResponseTransformer;
+  transformer?: DataTransformer;
 }
 
 export function createTRPCClient<TRouter extends AnyRouter>(
