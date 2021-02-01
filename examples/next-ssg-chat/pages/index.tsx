@@ -25,7 +25,6 @@ const getTimestamp = (m: Message[]) => {
 
 export default function Home() {
   const query = trpc.useQuery(['messages.list']);
-  console.log('query data', query.data);
 
   const [msgs, setMessages] = useState(() => query.data?.items ?? []);
   const addMessages = (newMessages?: Message[]) => {
@@ -56,8 +55,6 @@ export default function Home() {
 
   // merge messages on subscription.data
   useEffect(() => addMessages(subscription.data), [subscription.data]);
-
-  console.log({ timestamp });
 
   const addMessage = trpc.useMutation('messages.create');
 
