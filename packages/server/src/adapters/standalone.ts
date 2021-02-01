@@ -21,7 +21,7 @@ export type CreateHttpContextFn<TContext> = CreateContextFn<
   http.ServerResponse
 >;
 
-interface CreateHttpHandlerOptions<
+export interface CreateHttpHandlerOptions<
   TRouter extends AnyRouter<TContext>,
   TContext
 > extends BaseOptions {
