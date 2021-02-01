@@ -4,10 +4,6 @@
   <p><img src="https://storage.googleapis.com/trpc/trpcgif.gif" alt="Server/client example"></p>
 </div>
 
-<br/>
-<br/>
-
-
 - [Motivation](#motivation)
 - [Usage](#usage)
   - [Example apps](#example-apps)
