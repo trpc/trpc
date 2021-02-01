@@ -6,7 +6,7 @@ import { createTRPCClient, CreateTRPCClientOptions } from '@trpc/client';
 const sleep = (ms = 100) => new Promise((resolve) => setTimeout(resolve, ms));
 
 async function main() {
-  const url = `http://localhost:2021`;
+  const url = `http://localhost:2021/trpc`;
   const opts: CreateTRPCClientOptions = {
     url,
     fetchOpts: {
