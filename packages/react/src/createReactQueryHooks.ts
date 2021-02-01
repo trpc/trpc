@@ -1,17 +1,14 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { TRPCClient, TRPCClientError } from '@trpc/client';
 import type {
-  DataTransformer,
   inferRouteInput,
   inferRouteOutput,
   inferSubscriptionOutput,
   Router,
   RouteWithInput,
 } from '@trpc/server';
-import { useCallback, useMemo } from 'react';
 import {
   QueryClient,
-  QueryObserverResult,
   useMutation,
   UseMutationOptions,
   UseMutationResult,
@@ -24,31 +21,10 @@ export function createReactQueryHooks<
   TRouter extends Router<TContext, any, any, any>,
   TContext,
   TQueryClient extends QueryClient = any
->({
-  client,
-  queryClient,
-  transformer = {
-    serialize: (data) => data,
-    deserialize: (data) => data,
-  },
-}: {
-  client: TRPCClient;
-  queryClient: TQueryClient;
-  transformer?: DataTransformer;
-}) {
+>({ client, queryClient }: { client: TRPCClient; queryClient: TQueryClient }) {
   type TQueries = TRouter['_def']['queries'];
   type TMutations = TRouter['_def']['mutations'];
   type TSubscriptions = TRouter['_def']['subscriptions'];
-
-  const serializeInput = (input: unknown): unknown =>
-    typeof input !== 'undefined' ? transformer.serialize(input) : input;
-
-  const useDeserializedData = (data: unknown) =>
-    useMemo(
-      () =>
-        typeof data !== 'undefined' ? transformer.deserialize(data) : data,
-      [data],
-    );
 
   function _useQuery<
     // TODO exclude all with mandatory input from TPath
@@ -95,15 +71,11 @@ export function createReactQueryHooks<
         client.request({
           type: 'query',
           path,
-          input: serializeInput(input),
+          input,
         }),
       opts,
     );
-    const data = useDeserializedData(hook.data);
-    return {
-      ...hook,
-      data,
-    } as any;
+    return hook;
   }
 
   function _useMutation<
@@ -119,26 +91,12 @@ export function createReactQueryHooks<
         client.request({
           type: 'mutation',
           path,
-          input: serializeInput(input),
+          input,
         }),
       opts,
     );
 
-    const hookMutateAsync = hook.mutateAsync;
-    const mutateAsync: typeof hook['mutateAsync'] = useCallback(
-      async (...args) => {
-        const orig = await hookMutateAsync(...args);
-
-        return transformer.deserialize(orig) as any;
-      },
-      [hookMutateAsync],
-    );
-    const data = useDeserializedData(hook.data);
-    return {
-      ...hook,
-      mutateAsync,
-      data,
-    };
+    return hook;
   }
 
   function useSubscription<
@@ -153,14 +111,11 @@ export function createReactQueryHooks<
 
     const hook = useQuery<TInput, TRPCClientError, TOutput>(
       pathAndArgs,
-      () => client.subscriptionOnce(path, serializeInput(input)),
+      () => client.subscriptionOnce(path, input),
       opts,
     );
-    const data = useDeserializedData(hook.data);
-    return {
-      ...hook,
-      data,
-    } as QueryObserverResult<TOutput, TRPCClientError>;
+
+    return hook;
   }
 
   const prefetchQueryOnServer = async <
@@ -178,14 +133,13 @@ export function createReactQueryHooks<
     const { path, ctx } = opts;
     const cacheKey = [path, input];
 
-    await queryClient.prefetchQuery(cacheKey, async () => {
-      const data = await router.invoke({
+    await queryClient.prefetchQuery(cacheKey, () => {
+      return router.invoke({
         target: 'queries',
         ctx,
         path,
         input,
       });
-      return transformer.serialize(data);
     });
   };
 
