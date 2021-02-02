@@ -41,12 +41,12 @@ cd trpc
 yarn
 ```
 
-| Command                   | Example path                                                   | Description                                                     |
-| ------------------------- | -------------------------------------------------------------- | --------------------------------------------------------------- |
-| `yarn example:chat`       | [`./examples/next-ssg-chat`](./examples/next-ssg-chat)         | Runs a real-time chat example with SSG & Prisma as a data store |
-| `yarn example:hello`      | [`./examples/next-hello-world`](./examples/next-hello-world)   | Minimal Next.js example                                         |
-| `yarn example:standalone` | [`./examples/standalone-server`](./examples/standalone-server) | Standalone TRPC server + node client                            |
-| `yarn example:playground` | [`./examples/playground`](./examples/playground)               | Express server + node client                                    |
+| Command                   | Live URL            | Example path                                                   | Description                                                     |
+| ------------------------- | ------------------- | -------------------------------------------------------------- | --------------------------------------------------------------- |
+| `yarn example:chat`       | chat.trpc.io        | [`./examples/next-ssg-chat`](./examples/next-ssg-chat)         | Runs a real-time chat example with SSG & Prisma as a data store |
+| `yarn example:hello`      | hello-world.trpc.io | [`./examples/next-hello-world`](./examples/next-hello-world)   | Minimal Next.js example                                         |
+| `yarn example:standalone` | _n/a_               | [`./examples/standalone-server`](./examples/standalone-server) | Standalone TRPC server + node client                            |
+| `yarn example:playground` | _n/a_               | [`./examples/playground`](./examples/playground)               | Express server + node client                                    |
 </details>
 
 ## Getting started with Next.js
