@@ -1,6 +1,6 @@
 ## Hello Next
 
-Live at hello-world.trpc.io
+Live at [hello-world.trpc.io](https://hello-world.trpc.io)
 
 ---
 
