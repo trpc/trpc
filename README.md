@@ -33,21 +33,24 @@ tRPC is a framework for building strongly typed RPC APIs with TypeScript. Altern
 
 ## Example apps
 
-<details><summary>You can play clone this project and play with local examples</summary>
+You can play clone this project and play with local examples
 
 ```bash
 git clone git@github.com:@trpc/trpc.git
 cd trpc
 yarn
+
+yarn example:hello
 ```
 
-| Command                   | Example path                                                   | Description                                                     |
-| ------------------------- | -------------------------------------------------------------- | --------------------------------------------------------------- |
-| `yarn example:chat`       | [`./examples/next-ssg-chat`](./examples/next-ssg-chat)         | Runs a real-time chat example with SSG & Prisma as a data store |
-| `yarn example:hello`      | [`./examples/next-hello-world`](./examples/next-hello-world)   | Minimal Next.js example                                         |
-| `yarn example:standalone` | [`./examples/standalone-server`](./examples/standalone-server) | Standalone TRPC server + node client                            |
-| `yarn example:playground` | [`./examples/playground`](./examples/playground)               | Express server + node client                                    |
-</details>
+Here's all the example apps:
+
+| Command                   | Live URL                                           | Example path                                                   | Description                                      |
+| ------------------------- | -------------------------------------------------- | -------------------------------------------------------------- | ------------------------------------------------ |
+| `yarn example:chat`       | [chat.trpc.io](https://chat.trpc.io)               | [`./examples/next-ssg-chat`](./examples/next-ssg-chat)         | Next.js real-time chat example with SSG & Prisma |
+| `yarn example:hello`      | [hello-world.trpc.io](https://hello-world.trpc.io) | [`./examples/next-hello-world`](./examples/next-hello-world)   | Minimal Next.js example                          |
+| `yarn example:standalone` | _n/a_                                              | [`./examples/standalone-server`](./examples/standalone-server) | Standalone TRPC server + node client             |
+| `yarn example:playground` | _n/a_                                              | [`./examples/playground`](./examples/playground)               | Express server + node client                     |
 
 ## Getting started with Next.js
 
