@@ -24,7 +24,7 @@ const getTimestamp = (m: Message[]) => {
   }, new Date(0));
 };
 
-const Message = observer(({ m }: { m: Message }) => {
+const MessageListItem = observer(({ m }: { m: Message }) => {
   return (
     <li
       onClick={async () => {
@@ -89,7 +89,7 @@ export default function Home() {
       <h2>Message</h2>
       <ul>
         {msgs.map((m) => (
-          <Message key={m.id} m={m} />
+          <MessageListItem key={m.id} m={m} />
         ))}
       </ul>
       <h3>Add message</h3>
