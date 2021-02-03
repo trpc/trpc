@@ -1,6 +1,6 @@
 import Head from 'next/head';
 import { useEffect, useMemo, useState } from 'react';
-import { inferQueryOutput, trpc, client, normi } from '../utils/trpc';
+import { inferQueryOutput, trpc, client } from '../utils/trpc';
 import { appRouter } from './api/trpc/[...trpc]';
 import { observer } from 'mobx-react'; // Or "mobx-react".
 
@@ -25,7 +25,6 @@ const getTimestamp = (m: Message[]) => {
 };
 
 const Message = observer(({ m }) => {
-  console.log('render', m.id);
   return (
     <li
       onClick={async () => {
@@ -34,7 +33,6 @@ const Message = observer(({ m }) => {
           id: m.id,
           text,
         });
-        console.log(normi);
       }}
     >
       {m.createdAt.toDateString()} {m.createdAt.toLocaleTimeString()}: {m.text}
