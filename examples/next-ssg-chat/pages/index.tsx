@@ -25,7 +25,7 @@ const getTimestamp = (m: Message[]) => {
 };
 
 const Message = observer(({ m }) => {
-  console.log({ m });
+  console.log('render', m.id);
   return (
     <li
       onClick={async () => {
