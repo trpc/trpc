@@ -9985,9 +9985,10 @@ normalize-url@^4.1.0:
   resolved "https://registry.npmjs.org/normalize-url/-/normalize-url-4.5.0.tgz#453354087e6ca96957bd8f5baf753f5982142129"
   integrity sha512-2s47yzUxdexf1OhyRi4Em83iQk0aPvwTddtFz4hnSSw9dCEsLEGf6SwIO8ss/19S9iBb5sJaOuTvTGDeZI00BQ==
 
-normi@colinhacks/normi#feature/broken-build:
-  version "0.5.0"
-  resolved "https://codeload.github.com/colinhacks/normi/tar.gz/dd05bbba81ce1e06ffbfbbb168f5a2580dcd65aa"
+normi@^0.6.1:
+  version "0.6.1"
+  resolved "https://registry.npmjs.org/normi/-/normi-0.6.1.tgz#0ee2f5c747c3c0438b29e914d26e8531afc0ba8a"
+  integrity sha512-JJ4zGXkhbp6XRGnjNKucChAb+pNTxloi8bNobB8pm8jgbzTJ/NZqyhZywX9tJNryEQ/Nm7S0UA9IONYdzzc4Jw==
   dependencies:
     mobx "^6.0.4"
 
