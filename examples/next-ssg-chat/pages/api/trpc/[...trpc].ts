@@ -81,19 +81,22 @@ const router = createRouter()
         },
       })
       .mutation('edit', {
-        input: z.object({ 
+        input: z.object({
           id: z.string(),
           text: z.string().min(2),
         }),
         async resolve({ input }) {
-          const {id, ...update} = input
+          const { id, ...update } = input;
           const newData = await prisma.message.update({
             where: {
               id: input.id,
             },
-            data: update,
-          })
-          return newData
+            data: {
+              ...update,
+              updatedAt: new Date(),
+            },
+          });
+          return newData;
         },
       })
       .subscription('newMessages', {

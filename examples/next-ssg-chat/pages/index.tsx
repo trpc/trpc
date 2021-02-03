@@ -1,6 +1,6 @@
 import { observer } from 'mobx-react'; // Or "mobx-react".
 import Head from 'next/head';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { mutate, inferQueryOutput, trpc } from '../utils/trpc';
 import { appRouter } from './api/trpc/[...trpc]';
 
@@ -65,15 +65,15 @@ export default function Home() {
   useEffect(() => addMessages(query.data?.items), [query.data]);
 
   // get latest timestamp
-  // const timestamp = useMemo(() => getTimestamp(msgs), [msgs]);
-  // // ---subscriptions
-  // const subscription = trpc.useSubscription([
-  //   'messages.newMessages',
-  //   { timestamp },
-  // ]);
+  const timestamp = useMemo(() => getTimestamp(msgs), [msgs]);
+  // ---subscriptions
+  const subscription = trpc.useSubscription([
+    'messages.newMessages',
+    { timestamp },
+  ]);
 
-  // // merge messages on subscription.data
-  // useEffect(() => addMessages(subscription.data), [subscription.data]);
+  // merge messages on subscription.data
+  useEffect(() => addMessages(subscription.data), [subscription.data]);
 
   const addMessage = trpc.useMutation('messages.create');
 
