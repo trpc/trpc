@@ -23,7 +23,7 @@ const transformer: DataTransformer = {
   },
 };
 // create helper methods for queries, mutations, and subscriptionos
-export const client = createTRPCClient<AppRouter>({
+const client = createTRPCClient<AppRouter>({
   url: '/api/trpc',
   transformer,
 });
@@ -41,3 +41,5 @@ export const trpc = createReactQueryHooks<AppRouter, Context>({
 export type inferQueryOutput<
   TRouteKey extends keyof AppRouter['_def']['queries']
 > = inferRouteOutput<AppRouter['_def']['queries'][TRouteKey]>;
+
+export const mutate = client.mutate;

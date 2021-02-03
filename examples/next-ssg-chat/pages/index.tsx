@@ -1,8 +1,8 @@
-import Head from 'next/head';
-import { useEffect, useMemo, useState } from 'react';
-import { inferQueryOutput, trpc, client } from '../utils/trpc';
-import { appRouter } from './api/trpc/[...trpc]';
 import { observer } from 'mobx-react'; // Or "mobx-react".
+import Head from 'next/head';
+import { useEffect, useState } from 'react';
+import { mutate, inferQueryOutput, trpc } from '../utils/trpc';
+import { appRouter } from './api/trpc/[...trpc]';
 
 type MessagesOutput = inferQueryOutput<'messages.list'>;
 type Message = MessagesOutput['items'][number];
@@ -24,12 +24,12 @@ const getTimestamp = (m: Message[]) => {
   }, new Date(0));
 };
 
-const Message = observer(({ m }) => {
+const Message = observer(({ m }: { m: Message }) => {
   return (
     <li
       onClick={async () => {
         const text = prompt('text');
-        await client.mutate('messages.edit', {
+        await mutate('messages.edit', {
           id: m.id,
           text,
         });
