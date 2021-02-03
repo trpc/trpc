@@ -16,10 +16,16 @@
     "tsdx": "^0.14.1",
     "typescript": "^4.1.3"
   },
-  "workspaces": [
-    "packages/*",
-    "examples/*"
-  ],
+  "workspaces": {
+    "packages": [
+      "packages/*",
+      "examples/*"
+    ],
+    "nohoist": [
+      "**/@prisma",
+      "**/@prisma/**"
+    ]
+  },
   "resolutions": {
     "**/@typescript-eslint/eslint-plugin": "^4.11.1",
     "**/@typescript-eslint/parser": "^4.11.1",
