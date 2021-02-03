@@ -23,6 +23,15 @@ const getTimestamp = (m: Message[]) => {
   }, new Date(0));
 };
 
+function Message({m}) {
+  return (
+    <li>
+      {m.createdAt.toDateString()} {m.createdAt.toLocaleTimeString()}:{' '}
+      {m.text}
+    </li>
+  )
+}
+
 export default function Home() {
   const query = trpc.useQuery(['messages.list']);
 
@@ -70,10 +79,7 @@ export default function Home() {
       <h2>Message</h2>
       <ul>
         {msgs.map((m) => (
-          <li key={m.id}>
-            {m.createdAt.toDateString()} {m.createdAt.toLocaleTimeString()}:{' '}
-            {m.text}
-          </li>
+          <Message key={m.id} m={m} />
         ))}
       </ul>
       <h3>Add message</h3>

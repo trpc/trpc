@@ -80,6 +80,22 @@ const router = createRouter()
           return msg;
         },
       })
+      .mutation('edit', {
+        input: z.object({ 
+          id: z.string(),
+          text: z.string().min(2),
+        }),
+        async resolve({ input }) {
+          const {id, ...update} = input
+          const newData = await prisma.message.update({
+            where: {
+              id: input.id,
+            },
+            data: update,
+          })
+          return newData
+        },
+      })
       .subscription('newMessages', {
         input: z.object({
           timestamp: z.date(),
