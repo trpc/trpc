@@ -112,7 +112,7 @@ export type AppRouter = typeof appRouter;
 
 // export API handler
 export default trpc.createNextApiHandler({
-  router,
+  router: appRouter,
   createContext,
 });
 
