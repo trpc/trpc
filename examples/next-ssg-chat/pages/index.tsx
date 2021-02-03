@@ -1,7 +1,8 @@
 import Head from 'next/head';
 import { useEffect, useMemo, useState } from 'react';
-import { inferQueryOutput, trpc } from '../utils/trpc';
+import { inferQueryOutput, trpc, client, normi } from '../utils/trpc';
 import { appRouter } from './api/trpc/[...trpc]';
+import { observer } from "mobx-react" // Or "mobx-react".
 
 type MessagesOutput = inferQueryOutput<'messages.list'>;
 type Message = MessagesOutput['items'][number];
@@ -23,17 +24,26 @@ const getTimestamp = (m: Message[]) => {
   }, new Date(0));
 };
 
-function Message({m}) {
+const Message = observer(({ m }) => {
   return (
-    <li>
-      {m.createdAt.toDateString()} {m.createdAt.toLocaleTimeString()}:{' '}
-      {m.text}
+    <li
+      onClick={async () => {
+        const text = prompt('text');
+        await client.mutate('messages.edit', {
+          id: m.id,
+          text,
+        });
+      }}
+    >
+      {m.createdAt.toDateString()} {m.createdAt.toLocaleTimeString()}: {m.text}
     </li>
-  )
-}
+  );
+});
 
 export default function Home() {
-  const query = trpc.useQuery(['messages.list']);
+  const query = trpc.useQuery(['messages.list'], {
+    refetchOnWindowFocus: false,
+  });
 
   const [msgs, setMessages] = useState(() => query.data?.items ?? []);
   const addMessages = (newMessages?: Message[]) => {
@@ -50,20 +60,20 @@ export default function Home() {
       );
     });
   };
-  // get latest timestamp
-  const timestamp = useMemo(() => getTimestamp(msgs), [msgs]);
 
   // merge messages when `query.data` updates
   useEffect(() => addMessages(query.data?.items), [query.data]);
 
-  // ---subscriptions
-  const subscription = trpc.useSubscription([
-    'messages.newMessages',
-    { timestamp },
-  ]);
+  // get latest timestamp
+  // const timestamp = useMemo(() => getTimestamp(msgs), [msgs]);
+  // // ---subscriptions
+  // const subscription = trpc.useSubscription([
+  //   'messages.newMessages',
+  //   { timestamp },
+  // ]);
 
-  // merge messages on subscription.data
-  useEffect(() => addMessages(subscription.data), [subscription.data]);
+  // // merge messages on subscription.data
+  // useEffect(() => addMessages(subscription.data), [subscription.data]);
 
   const addMessage = trpc.useMutation('messages.create');
 

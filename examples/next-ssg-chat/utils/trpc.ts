@@ -7,7 +7,7 @@ import { Normi } from 'normi';
 // https://www.typescriptlang.org/docs/handbook/release-notes/typescript-3-8.html#type-only-imports-and-export
 import type { AppRouter, Context } from '../pages/api/trpc/[...trpc]';
 
-const normi = process.browser ? new Normi() : null;
+export const normi = process.browser ? new Normi() : null;
 
 const transformer: DataTransformer = {
   serialize: superjson.serialize,
@@ -15,6 +15,7 @@ const transformer: DataTransformer = {
     const d = superjson.deserialize(data);
     if (normi) {
       const n = normi.merge(d);
+      
       return n.value;
     }
 
