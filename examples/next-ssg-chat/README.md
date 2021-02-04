@@ -1,5 +1,7 @@
 ## Chat (:construction: Work in progress)
 
+Live example at [chat.trpc.io](https://chat.trpc.io)
+
 ### Setup
 
 - Get postgres running
@@ -10,7 +12,7 @@
 ### Useful commands
 
 ```bash
-npx prisma studio
+yarn dx # runs prisma studio + next
 ```
 
 ---

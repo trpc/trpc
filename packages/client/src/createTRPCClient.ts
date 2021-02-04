@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import type {
   AnyRouter,
+  DataTransformer,
   HTTPResponseEnvelope,
   HTTPSuccessResponseEnvelope,
   inferHandlerFn,
@@ -78,6 +79,7 @@ export interface CreateTRPCClientOptions {
   getHeaders?: () => Record<string, string | undefined>;
   onSuccess?: (data: HTTPSuccessResponseEnvelope<unknown>) => void;
   onError?: (error: TRPCClientError) => void;
+  transformer?: DataTransformer;
 }
 
 export function createTRPCClient<TRouter extends AnyRouter>(
@@ -89,20 +91,26 @@ export function createTRPCClient<TRouter extends AnyRouter>(
   type TQueries = TRouter['_def']['queries'];
   type TMutations = TRouter['_def']['mutations'];
   type TSubscriptions = TRouter['_def']['subscriptions'];
+  const {
+    transformer = {
+      serialize: (data) => data,
+      deserialize: (data) => data,
+    },
+  } = opts;
+
+  const serializeInput = (input: unknown): unknown =>
+    typeof input !== 'undefined' ? transformer.serialize(input) : input;
 
   async function handleResponse(promise: Promise<Response>) {
     let res: Maybe<Response> = null;
     let json: Maybe<HTTPResponseEnvelope<unknown>> = null;
     try {
       res = await promise;
-      json = (await res.json()) as HTTPResponseEnvelope<unknown>;
+      const rawJson = await res.json();
+      json = transformer.deserialize(rawJson) as HTTPResponseEnvelope<unknown>;
 
       if (json.ok) {
-        opts.onSuccess &&
-          opts.onSuccess({
-            ...json,
-            data: json.data,
-          });
+        opts.onSuccess && opts.onSuccess(json);
         return json.data as any;
       }
       throw new TRPCClientError(json.error.message, { json, res });
@@ -143,12 +151,12 @@ export function createTRPCClient<TRouter extends AnyRouter>(
     const reqOptsMap: Record<TRPCType, () => ReqOpts> = {
       subscription: () => ({
         method: 'PATCH',
-        body: JSON.stringify({ input }),
+        body: JSON.stringify({ input: serializeInput(input) }),
         url: `${url}/${path}`,
       }),
       mutation: () => ({
         method: 'POST',
-        body: JSON.stringify({ input }),
+        body: JSON.stringify({ input: serializeInput(input) }),
         url: `${url}/${path}`,
       }),
       query: () => ({
@@ -156,7 +164,9 @@ export function createTRPCClient<TRouter extends AnyRouter>(
         url:
           `${url}/${path}` +
           (input != null
-            ? `?input=${encodeURIComponent(JSON.stringify(input))}`
+            ? `?input=${encodeURIComponent(
+                JSON.stringify(serializeInput(input)),
+              )}`
             : ''),
       }),
     };
@@ -249,6 +259,7 @@ export function createTRPCClient<TRouter extends AnyRouter>(
     query,
     mutate,
     subscriptionOnce,
+    transformer,
   };
 }
 
