@@ -38,7 +38,7 @@
     "lerna": "lerna",
     "start": "lerna run start --scope @trpc/* --stream --parallel",
     "dev": "yarn start",
-    "test": "lerna run test --stream --",
+    "test": "lerna run test --scope @trpc/* --stream --",
     "lint": "lerna run lint --stream --",
     "build": "lerna run build --scope @trpc/* --stream",
     "build-examples": "lerna run build --scope @examples/* --stream",
