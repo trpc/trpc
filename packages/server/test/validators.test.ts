@@ -1,45 +1,13 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/ban-types */
 import '@testing-library/jest-dom';
-import { createTRPCClient } from '@trpc/client';
-import AbortController from 'abort-controller';
 import myzod from 'myzod';
-import fetch from 'node-fetch';
+import { createSchema as tsJsonSchema, TsjsonParser } from 'ts-json-validator';
 import * as yup from 'yup';
 import * as z from 'zod';
 import * as trpc from '../src';
-import { AnyRouter } from '../src';
-import { createHttpServer } from '../src/adapters/standalone';
-import { createSchema as tsJsonSchema, TsjsonParser } from 'ts-json-validator';
+import { expectError, routerToServerAndClient } from './_testHelpers';
 
-async function expectError<TPromise extends Promise<any>>(promise: TPromise) {
-  try {
-    await promise;
-    throw new Error('Did not throw');
-  } catch (err) {
-    return err;
-  }
-}
-function routerToServerAndClient<TRouter extends AnyRouter>(router: TRouter) {
-  const server = createHttpServer({
-    router,
-    createContext: () => ({}),
-  });
-  const { port } = server.listen(0);
-
-  const client = createTRPCClient<typeof router>({
-    url: `http://localhost:${port}`,
-    fetchOpts: {
-      AbortController: AbortController as any,
-      fetch: fetch as any,
-    },
-  });
-
-  return {
-    client,
-    close: () => server.server.close(),
-  };
-}
 test('no validator', async () => {
   const router = trpc.router().query('hello', {
     resolve() {

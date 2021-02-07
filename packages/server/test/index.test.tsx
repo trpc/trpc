@@ -1,14 +1,11 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/ban-types */
 import '@testing-library/jest-dom';
-import { createTRPCClient, TRPCClientError } from '@trpc/client';
-import AbortController from 'abort-controller';
-import bodyParser from 'body-parser';
-import express from 'express';
-import http from 'http';
-import fetch from 'node-fetch';
+import { TRPCClientError } from '@trpc/client';
 import * as z from 'zod';
 import * as trpc from '../src';
+import { routerToServerAndClient } from './_testHelpers';
+import { expectTypeOf } from 'expect-type';
 
 test('mix query and mutation', async () => {
   type Context = {};
@@ -99,98 +96,24 @@ test('merge', async () => {
   `);
 });
 
-describe('errors', () => {
-  type Context = {
-    user: {
-      name: string;
-    } | null;
-  };
-  async function startServer() {
-    const createContext = (
-      _opts: trpc.CreateExpressContextOptions,
-    ): Context => {
-      const getUser = () => {
-        if (_opts.req.headers.authorization === 'meow') {
+describe('integration tests', () => {
+  test('not found route', async () => {
+    const { client, close } = routerToServerAndClient(
+      trpc.router().query('hello', {
+        input: z
+          .object({
+            who: z.string(),
+          })
+          .optional(),
+        resolve({ input }) {
           return {
-            name: 'KATT',
+            text: `hello ${input?.who ?? 'world'}`,
           };
-        }
-        return null;
-      };
-
-      return {
-        user: getUser(),
-      };
-    };
-
-    const router = trpc.router<Context>().query('hello', {
-      input: z
-        .object({
-          who: z.string(),
-        })
-        .optional(),
-      resolve({ input, ctx }) {
-        return {
-          text: `hello ${input?.who ?? ctx.user?.name ?? 'world'}`,
-        };
-      },
-    });
-
-    // express implementation
-    const app = express();
-    app.use(bodyParser.json());
-
-    app.use(
-      '/trpc',
-      trpc.createExpressMiddleware({
-        router,
-        createContext,
+        },
       }),
     );
-    const { server, port } = await new Promise<{
-      server: http.Server;
-      port: number;
-    }>((resolve) => {
-      const server = app.listen(0, () => {
-        resolve({
-          server,
-          port: (server.address() as any).port,
-        });
-      });
-    });
-
-    const client = createTRPCClient<typeof router>({
-      url: `http://localhost:${port}/trpc`,
-
-      fetchOpts: {
-        AbortController: AbortController as any,
-        fetch: fetch as any,
-      },
-    });
-    return {
-      close: () =>
-        new Promise<void>((resolve, reject) =>
-          server.close((err) => {
-            err ? reject(err) : resolve();
-          }),
-        ),
-      port,
-      router,
-      client,
-    };
-  }
-
-  let t: trpc.inferAsyncReturnType<typeof startServer>;
-  beforeAll(async () => {
-    t = await startServer();
-  });
-  afterAll(async () => {
-    await t.close();
-  });
-
-  test('not found route', async () => {
     try {
-      await t.client.query('notFound' as any);
+      await client.query('notFound' as any);
       throw new Error('Did not fail');
     } catch (err) {
       if (!(err instanceof TRPCClientError)) {
@@ -201,10 +124,54 @@ describe('errors', () => {
       );
       expect(err.res?.status).toBe(404);
     }
+    close();
+  });
+
+  test('types', async () => {
+    type Input = { who: string };
+    const { client, close } = routerToServerAndClient(
+      trpc.router().query('hello', {
+        input: z.object({
+          who: z.string(),
+        }),
+        resolve({ input }) {
+          expectTypeOf(input).not.toBeAny();
+          expectTypeOf(input).toMatchTypeOf<{ who: string }>();
+
+          return {
+            text: `hello ${input?.who ?? 'world'}`,
+            input,
+          };
+        },
+      }),
+    );
+
+    const res = await client.query('hello', { who: 'katt' });
+    expectTypeOf(res.input).toMatchTypeOf<Input>();
+    expectTypeOf(res.input).not.toBeAny();
+
+    expectTypeOf(res).toMatchTypeOf<{ input: Input; text: string }>();
+
+    close();
   });
   test('invalid args', async () => {
+    const { client, close } = routerToServerAndClient(
+      trpc.router().query('hello', {
+        input: z
+          .object({
+            who: z.string(),
+          })
+          .optional(),
+        resolve({ input }) {
+          expectTypeOf(input).toMatchTypeOf<{ who: string } | undefined>();
+          return {
+            text: `hello ${input?.who ?? 'world'}`,
+          };
+        },
+      }),
+    );
     try {
-      await t.client.query('hello', { who: 123 as any });
+      await client.query('hello', { who: 123 as any });
       throw new Error('Did not fail');
     } catch (err) {
       if (!(err instanceof TRPCClientError)) {
@@ -212,5 +179,6 @@ describe('errors', () => {
       }
       expect(err.res?.status).toBe(400);
     }
+    close();
   });
 });
