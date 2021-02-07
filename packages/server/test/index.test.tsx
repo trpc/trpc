@@ -2,10 +2,10 @@
 /* eslint-disable @typescript-eslint/ban-types */
 import '@testing-library/jest-dom';
 import { TRPCClientError } from '@trpc/client';
+import { expectTypeOf } from 'expect-type';
 import * as z from 'zod';
 import * as trpc from '../src';
 import { routerToServerAndClient } from './_testHelpers';
-import { expectTypeOf } from 'expect-type';
 
 test('mix query and mutation', async () => {
   type Context = {};
