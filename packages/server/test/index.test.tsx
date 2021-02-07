@@ -127,33 +127,6 @@ describe('integration tests', () => {
     close();
   });
 
-  test('types', async () => {
-    type Input = { who: string };
-    const { client, close } = routerToServerAndClient(
-      trpc.router().query('hello', {
-        input: z.object({
-          who: z.string(),
-        }),
-        resolve({ input }) {
-          expectTypeOf(input).not.toBeAny();
-          expectTypeOf(input).toMatchTypeOf<{ who: string }>();
-
-          return {
-            text: `hello ${input?.who ?? 'world'}`,
-            input,
-          };
-        },
-      }),
-    );
-
-    const res = await client.query('hello', { who: 'katt' });
-    expectTypeOf(res.input).toMatchTypeOf<Input>();
-    expectTypeOf(res.input).not.toBeAny();
-
-    expectTypeOf(res).toMatchTypeOf<{ input: Input; text: string }>();
-
-    close();
-  });
   test('invalid args', async () => {
     const { client, close } = routerToServerAndClient(
       trpc.router().query('hello', {
@@ -180,5 +153,65 @@ describe('integration tests', () => {
       expect(err.res?.status).toBe(400);
     }
     close();
+  });
+
+  describe('type testing', () => {
+    test('basic', async () => {
+      type Input = { who: string };
+      const { client, close } = routerToServerAndClient(
+        trpc.router().query('hello', {
+          input: z.object({
+            who: z.string(),
+          }),
+          resolve({ input }) {
+            expectTypeOf(input).not.toBeAny();
+            expectTypeOf(input).toMatchTypeOf<{ who: string }>();
+
+            return {
+              text: `hello ${input?.who ?? 'world'}`,
+              input,
+            };
+          },
+        }),
+      );
+      const res = await client.query('hello', { who: 'katt' });
+      expectTypeOf(res.input).toMatchTypeOf<Input>();
+      expectTypeOf(res.input).not.toBeAny();
+
+      expectTypeOf(res).toMatchTypeOf<{ input: Input; text: string }>();
+
+      close();
+    });
+
+    test('mixed response', async () => {
+      const { client, close } = routerToServerAndClient(
+        trpc.router().query('postById', {
+          input: z.number(),
+          resolve({ input }) {
+            if (input === 1) {
+              return {
+                id: 1,
+                title: 'helloo',
+              };
+            }
+            if (input === 2) {
+              return {
+                id: 2,
+                title: 'test',
+              };
+            }
+            return null;
+          },
+        }),
+      );
+      const res = await client.query('postById', 1);
+      expectTypeOf(res).toMatchTypeOf<null | { id: number; title: string }>();
+      expect(res).toEqual({
+        id: 1,
+        title: 'helloo',
+      });
+
+      close();
+    });
   });
 });
