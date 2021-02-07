@@ -1,4 +1,7 @@
 module.exports = {
-  preset: 'ts-jest',
-  testEnvironment: 'node',
-};
+  verbose: true,
+  preset: 'jest-playwright-preset',
+  transform: {
+    '^.+\\.ts$': 'ts-jest',
+  },
+}
