@@ -38,5 +38,6 @@ jobs:
         run: |
           yarn --frozen-lockfile
 
-      - name: Build
-        run: yarn --cwd examples/next-hello-world build
+      - run: yarn --cwd examples/next-hello-world test-dev
+      - run: yarn --cwd examples/next-hello-world build
+      - run: yarn --cwd examples/next-hello-world test-start
