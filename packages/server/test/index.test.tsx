@@ -5,6 +5,7 @@ import { TRPCClientError } from '@trpc/client';
 import * as z from 'zod';
 import * as trpc from '../src';
 import { routerToServerAndClient } from './_testHelpers';
+import {expectTypeOf} from 'expect-type'
 
 test('mix query and mutation', async () => {
   type Context = {};
@@ -171,6 +172,7 @@ describe('integration tests', () => {
         }),
         resolve({ input }) {
           // ^^^^^^ input is "any" here
+          expectTypeOf(input).not.toBeAny();
           return {
             text: input.catNoise,
           };
