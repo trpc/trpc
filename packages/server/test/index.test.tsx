@@ -126,6 +126,34 @@ describe('integration tests', () => {
     }
     close();
   });
+
+  test('types', async () => {
+    type Input = { who: string };
+    const { client, close } = routerToServerAndClient(
+      trpc.router().query('hello', {
+        input: z.object({
+          who: z.string(),
+        }),
+        resolve({ input }) {
+          expectTypeOf(input).not.toBeAny();
+          expectTypeOf(input).toMatchTypeOf<{ who: string }>();
+
+          return {
+            text: `hello ${input?.who ?? 'world'}`,
+            input,
+          };
+        },
+      }),
+    );
+
+    const res = await client.query('hello', { who: 'katt' });
+    expectTypeOf(res.input).toMatchTypeOf<Input>();
+    expectTypeOf(res.input).not.toBeAny();
+
+    expectTypeOf(res).toMatchTypeOf<{ input: Input; text: string }>();
+
+    close();
+  });
   test('invalid args', async () => {
     const { client, close } = routerToServerAndClient(
       trpc.router().query('hello', {
