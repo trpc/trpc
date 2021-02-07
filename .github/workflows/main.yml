@@ -84,7 +84,7 @@ jobs:
 
       - name: Install
         run: |
-          yarn --silent --frozen-lockfile
+          yarn
         env:
           CI: true
 
