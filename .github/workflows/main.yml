@@ -46,7 +46,7 @@ jobs:
       - name: Build next-hello-world
         run: cd examples/next-hello-world && yarn build
 
-  examples/next-hello-world:
+  'examples/next-hello-world':
     defaults:
       run:
         working-directory: examples/next-hello-world
