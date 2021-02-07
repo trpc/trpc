@@ -12,6 +12,8 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v2
 
+      - uses: microsoft/playwright-github-action@v1
+
       - name: Use Node ${{ matrix.node }}
         uses: actions/setup-node@v1
         with:
