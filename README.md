@@ -18,6 +18,7 @@
   - [Alternative projects](#alternative-projects)
 - [Development](#development)
   - [Development workflow](#development-workflow)
+  - [Testing](#testing)
 - [Contributors ✨](#contributors-)
 # Motivation
 
@@ -429,6 +430,10 @@ yarn dev
 ```
 
 This builds each package to `<packages>/<package>/dist` and runs the project in watch mode so any edits you save inside `<packages>/<package>/src` cause a rebuild to `<packages>/<package>/dist`. The results will stream to to the terminal.
+
+## Testing
+
+Testing is currently coalesced in [./packages/server/test](./packages/server/test) - we import the different libs from here, this makes it easier for us to do integration testing + getting test coverage on the whole codebase.
 
 # Contributors ✨
 

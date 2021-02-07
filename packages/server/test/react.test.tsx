@@ -1,7 +1,7 @@
 import '@testing-library/jest-dom';
 import { render, waitFor } from '@testing-library/react';
-import { createTRPCClient } from '@trpc/client';
-import * as trpc from '@trpc/server';
+import { createTRPCClient } from '../../client/src';
+import * as trpc from '../src';
 import AbortController from 'abort-controller';
 import bodyParser from 'body-parser';
 import express from 'express';
@@ -10,7 +10,7 @@ import fetch from 'node-fetch';
 import React from 'react';
 import { QueryClient, QueryClientProvider } from 'react-query';
 import * as z from 'zod';
-import { createReactQueryHooks } from '../src';
+import { createReactQueryHooks } from '../../react/src';
 
 type Context = {
   user: {

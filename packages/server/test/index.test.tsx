@@ -1,7 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/ban-types */
-import '@testing-library/jest-dom';
-import { TRPCClientError } from '@trpc/client';
+import { TRPCClientError } from '../../client/src';
 import * as z from 'zod';
 import * as trpc from '../src';
 import { routerToServerAndClient } from './_testHelpers';

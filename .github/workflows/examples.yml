@@ -1,13 +1,11 @@
-name: Build & Test
+name: Examples
 on: [push]
 jobs:
-  test:
-    name: Build and test on Node ${{ matrix.node }} and ${{ matrix.os }}
-
+  next-hello-world:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        node: ['12.x', '14.x']
+        node: ['14.x']
         os: [ubuntu-latest]
 
     steps:
@@ -40,8 +38,5 @@ jobs:
         run: |
           yarn --frozen-lockfile
 
-      - name: Test
-        run: yarn test --ci --coverage --maxWorkers=2
-
-      - name: Build next-hello-world
-        run: cd examples/next-hello-world && yarn build
+      - name: Build
+        run: yarn --cwd examples/next-hello-world build
