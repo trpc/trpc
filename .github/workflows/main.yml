@@ -47,9 +47,6 @@ jobs:
         run: cd examples/next-hello-world && yarn build
 
   next-hello-world:
-    defaults:
-      run:
-        working-directory: examples/next-hello-world
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -89,4 +86,4 @@ jobs:
           CI: true
 
       - name: Build
-        run: yarn build
+        run: yarn --cwd examples/next-hello-world build
