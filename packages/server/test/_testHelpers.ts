@@ -1,10 +1,14 @@
+/* eslint-disable @typescript-eslint/ban-types */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import '@testing-library/jest-dom';
-import { createTRPCClient } from '@trpc/client';
+import { createTRPCClient, CreateTRPCClientOptions } from '@trpc/client';
 import AbortController from 'abort-controller';
 import fetch from 'node-fetch';
 import { AnyRouter } from '../src';
-import { createHttpServer } from '../src/adapters/standalone';
+import {
+  CreateHttpContextFn,
+  createHttpServer,
+} from '../src/adapters/standalone';
 
 export async function expectError<TPromise extends Promise<any>>(
   promise: TPromise,
@@ -16,12 +20,19 @@ export async function expectError<TPromise extends Promise<any>>(
     return err;
   }
 }
-export function routerToServerAndClient<TRouter extends AnyRouter>(
+export function routerToServerAndClient<
+  TRouter extends AnyRouter,
+  TContext = {}
+>(
   router: TRouter,
+  opts?: {
+    createContext?: CreateHttpContextFn<TContext>;
+    getHeaders?: CreateTRPCClientOptions['getHeaders'];
+  },
 ) {
   const server = createHttpServer({
     router,
-    createContext: () => ({}),
+    createContext: opts?.createContext ?? (() => ({})),
   });
   const { port } = server.listen(0);
 
@@ -31,6 +42,7 @@ export function routerToServerAndClient<TRouter extends AnyRouter>(
       AbortController: AbortController as any,
       fetch: fetch as any,
     },
+    getHeaders: opts?.getHeaders,
   });
 
   return {
