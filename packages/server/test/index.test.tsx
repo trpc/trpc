@@ -5,7 +5,7 @@ import { TRPCClientError } from '@trpc/client';
 import * as z from 'zod';
 import * as trpc from '../src';
 import { routerToServerAndClient } from './_testHelpers';
-import {expectTypeOf} from 'expect-type'
+import { expectTypeOf } from 'expect-type';
 
 test('mix query and mutation', async () => {
   type Context = {};
@@ -135,7 +135,7 @@ describe('integration tests', () => {
           })
           .optional(),
         resolve({ input }) {
-          expectTypeOf(input).toMatchTypeOf<{who: string} | undefined>()
+          expectTypeOf(input).toMatchTypeOf<{ who: string } | undefined>();
           return {
             text: `hello ${input?.who ?? 'world'}`,
           };
@@ -151,40 +151,6 @@ describe('integration tests', () => {
       }
       expect(err.res?.status).toBe(400);
     }
-    close();
-  });
-
-  test('queries()', async () => {
-    const router = trpc.router().queries({
-      dogSays: {
-        input: z.object({
-          dogNoise: z.string(),
-        }),
-        resolve({ input }) {
-          expectTypeOf(input).not.toBeAny();
-          return {
-            text: input.dogNoise,
-          };
-        },
-      },
-      kattSays: {
-        input: z.object({
-          catNoise: z.string(),
-        }),
-        resolve({ input }) {
-          expectTypeOf(input).not.toBeAny();
-          return {
-            text: input.catNoise,
-          };
-        },
-      },
-    });
-    const { client, close } = routerToServerAndClient(router);
-    // 🙋‍♂️ `res.text` is `any` here
-    const res1 = await client.query('dogSays', { dogNoise: 'woff' });
-    expect(res1.text).toBe('woff');
-    const res2 = await client.query('kattSays', { catNoise: 'meow' });
-    expect(res2.text).toBe('meow');
     close();
   });
 });
