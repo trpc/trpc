@@ -46,10 +46,10 @@ jobs:
       - name: Build next-hello-world
         run: cd examples/next-hello-world && yarn build
 
-  examples--hello-world:
+  examples/next-hello-world:
     defaults:
       run:
-        working-directory: examples/hello-world
+        working-directory: examples/next-hello-world
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
