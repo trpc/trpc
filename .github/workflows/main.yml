@@ -38,10 +38,55 @@ jobs:
 
       - name: Install & build
         run: |
-          yarn
+          yarn --silent --frozen-lockfile
 
       - name: Test
         run: yarn test --ci --coverage --maxWorkers=2
 
       - name: Build next-hello-world
         run: cd examples/next-hello-world && yarn build
+
+  examples--hello-world:
+    defaults:
+      run:
+        working-directory: examples/hello-world
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        node: ['14.x']
+        os: [ubuntu-latest]
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v2
+
+      - name: Use Node ${{ matrix.node }}
+        uses: actions/setup-node@v1
+        with:
+          node-version: ${{ matrix.node }}
+
+      - name: Get yarn cache directory path
+        id: yarn-cache-dir-path
+        run: echo "::set-output name=dir::$(yarn cache dir)"
+      - name: Cache node_modules
+        id: yarn-cache
+        uses: actions/cache@v2
+        with:
+          path: |
+            ${{ steps.yarn-cache-dir-path.outputs.dir }}
+            **/node_modules
+            /home/runner/.cache/Cypress
+            C:\Users\runneradmin\AppData\Local\Cypress\Cache
+            **/.next/cache
+          key: ${{ runner.os }}-${{ runner.node_version}}-yarn-${{ hashFiles('yarn.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-${{ runner.node_version}}-yarn-
+
+      - name: Install
+        run: |
+          yarn --silent --frozen-lockfile
+        env:
+          CI: true
+
+      - name: Build
+        run: yarn build
