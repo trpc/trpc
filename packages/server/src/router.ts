@@ -143,17 +143,17 @@ export class Router<
     return this.merge(router) as any;
   }
 
-  public queries<TRoutes extends RouteRecord<TContext, any, any>>(
-    routes: TRoutes,
-  ): Router<TContext, TQueries & TRoutes, TMutations, TSubscriptions> {
-    const router = new Router<TContext, any, {}, {}>({
-      queries: routes,
-      mutations: {},
-      subscriptions: {},
-    });
+  // public queries<TRoutes extends RouteRecord<TContext, any, any>>(
+  //   routes: TRoutes,
+  // ): Router<TContext, TQueries & TRoutes, TMutations, TSubscriptions> {
+  //   const router = new Router<TContext, any, {}, {}>({
+  //     queries: routes,
+  //     mutations: {},
+  //     subscriptions: {},
+  //   });
 
-    return this.merge(router) as any;
-  }
+  //   return this.merge(router) as any;
+  // }
 
   public mutation<TPath extends string, TInput, TOutput>(
     path: TPath,
