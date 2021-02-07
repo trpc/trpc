@@ -10,3 +10,5 @@ yarn.lock
 
 .yalc
 yalc.lock
+
+coverage/
