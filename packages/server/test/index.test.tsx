@@ -6,6 +6,7 @@ import * as z from 'zod';
 import * as trpc from '../src';
 import { routerToServerAndClient } from './_testHelpers';
 import { expectTypeOf } from 'expect-type';
+import { CreateHttpContextOptions, httpError } from '../src';
 
 test('mix query and mutation', async () => {
   type Context = {};
@@ -187,7 +188,7 @@ describe('integration tests', () => {
       const { client, close } = routerToServerAndClient(
         trpc.router().query('postById', {
           input: z.number(),
-          resolve({ input }) {
+          async resolve({ input }) {
             if (input === 1) {
               return {
                 id: 1,
@@ -210,6 +211,69 @@ describe('integration tests', () => {
         id: 1,
         title: 'helloo',
       });
+
+      close();
+    });
+
+    test('propagate ctx', async () => {
+      type Context = {
+        user?: {
+          id: number;
+          name: string;
+        };
+      };
+      // eslint-disable-next-line prefer-const
+      let headers: Record<string, string | undefined> = {};
+      function createContext({ req }: CreateHttpContextOptions): Context {
+        if (req.headers.authorization !== 'kattsecret') {
+          return {};
+        }
+        return {
+          user: {
+            id: 1,
+            name: 'KATT',
+          },
+        };
+      }
+      const { client, close } = routerToServerAndClient(
+        trpc.router<Context>().query('whoami', {
+          async resolve({ ctx }) {
+            if (!ctx.user) {
+              throw httpError.unauthorized();
+            }
+            return ctx.user;
+          },
+        }),
+        {
+          createContext,
+          getHeaders: () => headers,
+        },
+      );
+
+      // no auth, should fail
+      {
+        let threw = false;
+        try {
+          const res = await client.query('whoami');
+          expectTypeOf(res).toMatchTypeOf<{ id: number; name: string }>();
+        } catch (err) {
+          threw = true;
+          expect(err.res.status).toBe(401);
+        }
+        if (!threw) {
+          throw new Error("Didn't throw");
+        }
+      }
+      // auth, should work
+      {
+        headers.authorization = 'kattsecret';
+        const res = await client.query('whoami');
+        expectTypeOf(res).toMatchTypeOf<{ id: number; name: string }>();
+        expect(res).toEqual({
+          id: 1,
+          name: 'KATT',
+        });
+      }
 
       close();
     });
