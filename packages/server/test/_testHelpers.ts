@@ -1,6 +1,5 @@
 /* eslint-disable @typescript-eslint/ban-types */
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import '@testing-library/jest-dom';
 import { createTRPCClient, CreateTRPCClientOptions } from '../../client/src';
 import AbortController from 'abort-controller';
 import fetch from 'node-fetch';
