@@ -143,6 +143,7 @@ export class Router<
     return this.merge(router) as any;
   }
 
+  // TODO / help: https://github.com/trpc/trpc/pull/37
   // public queries<TRoutes extends RouteRecord<TContext, any, any>>(
   //   routes: TRoutes,
   // ): Router<TContext, TQueries & TRoutes, TMutations, TSubscriptions> {
