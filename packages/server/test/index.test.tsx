@@ -135,6 +135,7 @@ describe('integration tests', () => {
           })
           .optional(),
         resolve({ input }) {
+          expectTypeOf(input).toMatchTypeOf<{who: string} | undefined>()
           return {
             text: `hello ${input?.who ?? 'world'}`,
           };
@@ -160,7 +161,7 @@ describe('integration tests', () => {
           dogNoise: z.string(),
         }),
         resolve({ input }) {
-          // ^^^^^^ input is "any" here
+          expectTypeOf(input).not.toBeAny();
           return {
             text: input.dogNoise,
           };
@@ -171,7 +172,6 @@ describe('integration tests', () => {
           catNoise: z.string(),
         }),
         resolve({ input }) {
-          // ^^^^^^ input is "any" here
           expectTypeOf(input).not.toBeAny();
           return {
             text: input.catNoise,
