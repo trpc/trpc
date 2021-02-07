@@ -38,7 +38,7 @@ jobs:
 
       - name: Install & build
         run: |
-          yarn --silent --frozen-lockfile
+          yarn --frozen-lockfile
 
       - name: Test
         run: yarn test --ci --coverage --maxWorkers=2
@@ -79,11 +79,9 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-${{ runner.node_version}}-yarn-
 
-      - name: Install
+      - name: Install & build
         run: |
-          yarn
-        env:
-          CI: true
+          yarn --frozen-lockfile
 
       - name: Build
         run: yarn --cwd examples/next-hello-world build
