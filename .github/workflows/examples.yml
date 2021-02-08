@@ -16,7 +16,6 @@ jobs:
           POSTGRES_USER: postgres
           POSTGRES_DB: chat
         ports:
-          # will assign a random free host port
           - 5432:5432
     steps:
       - name: Checkout repo
@@ -46,7 +45,6 @@ jobs:
           POSTGRES_USER: postgres
           POSTGRES_DB: chat
         ports:
-          # will assign a random free host port
           - 5432:5432
     steps:
       - name: Checkout repo
