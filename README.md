@@ -18,6 +18,7 @@
   - [Alternative projects](#alternative-projects)
 - [Development](#development)
   - [Development workflow](#development-workflow)
+  - [Testing](#testing)
 - [Contributors ✨](#contributors-)
 # Motivation
 
@@ -45,12 +46,12 @@ yarn example:hello
 
 Here's all the example apps:
 
-| Command                   | Live URL                                           | Example path                                                   | Description                                      |
-| ------------------------- | -------------------------------------------------- | -------------------------------------------------------------- | ------------------------------------------------ |
-| `yarn example:chat`       | [chat.trpc.io](https://chat.trpc.io)               | [`./examples/next-ssg-chat`](./examples/next-ssg-chat)         | Next.js real-time chat example with SSG & Prisma |
-| `yarn example:hello`      | [hello-world.trpc.io](https://hello-world.trpc.io) | [`./examples/next-hello-world`](./examples/next-hello-world)   | Minimal Next.js example                          |
-| `yarn example:standalone` | _n/a_                                              | [`./examples/standalone-server`](./examples/standalone-server) | Standalone TRPC server + node client             |
-| `yarn example:playground` | _n/a_                                              | [`./examples/playground`](./examples/playground)               | Express server + node client                     |
+| Command                   | Live URL                                           | Example path                                                   | Description                                                                         |
+| ------------------------- | -------------------------------------------------- | -------------------------------------------------------------- | ----------------------------------------------------------------------------------- |
+| `yarn example:chat`       | [chat.trpc.io](https://chat.trpc.io)               | [`./examples/next-ssg-chat`](./examples/next-ssg-chat)         | Next.js real-time chat example with SSG & Prisma                                    |
+| `yarn example:hello`      | [hello-world.trpc.io](https://hello-world.trpc.io) | [`./examples/next-hello-world`](./examples/next-hello-world)   | Minimal Next.js example + uses [Playwright](https://playwright.dev) for E2E-testing |
+| `yarn example:standalone` | _n/a_                                              | [`./examples/standalone-server`](./examples/standalone-server) | Standalone TRPC server + node client                                                |
+| `yarn example:playground` | _n/a_                                              | [`./examples/playground`](./examples/playground)               | Express server + node client                                                        |
 
 ## Getting started with Next.js
 
@@ -112,7 +113,7 @@ export type AppRouter = typeof appRouter;
 
 // export API handler
 export default trpc.createNextApiHandler({
-  router,
+  router: appRouter,
   createContext,
 });
 
@@ -429,6 +430,10 @@ yarn dev
 ```
 
 This builds each package to `<packages>/<package>/dist` and runs the project in watch mode so any edits you save inside `<packages>/<package>/src` cause a rebuild to `<packages>/<package>/dist`. The results will stream to to the terminal.
+
+## Testing
+
+Testing is currently coalesced in [./packages/server/test](./packages/server/test) - we import the different libs from here, this makes it easier for us to do integration testing + getting test coverage on the whole codebase.
 
 # Contributors ✨
 

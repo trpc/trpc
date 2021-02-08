@@ -143,21 +143,17 @@ export class Router<
     return this.merge(router) as any;
   }
 
-  /**
-   * FIXME
-   * Would like to get `queries()`, etc, in place instead of `query()`
-   * Does not infer `input` in the resolver fn, needs some love
-   */
-  // public queries(
-  //   routes: RouteRecord<TContext, any, any>,
-  // ): Router<TContext, TQueries & typeof routes, TMutations, TSubscriptions> {
-  //   const router = new Router({
-  //     queries: routes as any,
+  // TODO / help: https://github.com/trpc/trpc/pull/37
+  // public queries<TRoutes extends RouteRecord<TContext, any, any>>(
+  //   routes: TRoutes,
+  // ): Router<TContext, TQueries & TRoutes, TMutations, TSubscriptions> {
+  //   const router = new Router<TContext, any, {}, {}>({
+  //     queries: routes,
   //     mutations: {},
   //     subscriptions: {},
   //   });
 
-  //   return this.merge(router);
+  //   return this.merge(router) as any;
   // }
 
   public mutation<TPath extends string, TInput, TOutput>(

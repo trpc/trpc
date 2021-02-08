@@ -86,7 +86,7 @@ export default function Home() {
 
       <h1>Chat</h1>
 
-      <h2>Message</h2>
+      <h2>Messages</h2>
       <ul>
         {msgs.map((m) => (
           <MessageListItem key={m.id} m={m} />

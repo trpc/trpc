@@ -12,7 +12,7 @@
   "scripts": {
     "start": "tsdx watch --tsconfig tsconfig.build.json --verbose --noClean",
     "build": "yarn tsdx build --tsconfig tsconfig.build.json",
-    "test": "tsdx test",
+    "test": "tsdx test --passWithNoTests",
     "lint": "tsdx lint",
     "prepublish": "npm run build"
   },
@@ -24,10 +24,10 @@
     "dist"
   ],
   "peerDependencies": {
-    "@trpc/client": ">=1.1.1",
+    "@trpc/client": "^1.1.1",
     "react": ">=16.8.0",
     "react-dom": ">=16.8.0",
-    "react-query": ">=3"
+    "react-query": "^3.0.0"
   },
   "dependencies": {
     "tslib": "^2.0.0"
