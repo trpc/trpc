@@ -14,25 +14,8 @@ jobs:
 
       - uses: microsoft/playwright-github-action@v1
 
-      - name: Use Node ${{ matrix.node }}
-        uses: actions/setup-node@v1
-        with:
-          node-version: ${{ matrix.node }}
-
-      - name: Get yarn cache directory path
-        id: yarn-cache-dir-path
-        run: echo "::set-output name=dir::$(yarn cache dir)"
-      - name: Cache node_modules
-        id: yarn-cache
-        uses: actions/cache@v2
-        with:
-          path: |
-            ${{ steps.yarn-cache-dir-path.outputs.dir }}
-            **/node_modules
-            **/.next/cache
-          key: ${{ runner.os }}-${{ runner.node_version}}-yarn-next-hello-world-${{ hashFiles('yarn.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-${{ runner.node_version}}-yarn-next-hello-world-
+      - name: Install deps and build (with cache)
+        uses: bahmutov/npm-install@v1
 
       - name: Install & build
         run: |
@@ -69,25 +52,13 @@ jobs:
         with:
           node-version: ${{ matrix.node }}
 
-      - name: Get yarn cache directory path
-        id: yarn-cache-dir-path
-        run: echo "::set-output name=dir::$(yarn cache dir)"
-      - name: Cache node_modules
-        id: yarn-cache
-        uses: actions/cache@v2
-        with:
-          path: |
-            ${{ steps.yarn-cache-dir-path.outputs.dir }}
-            **/node_modules
-            **/.next/cache
-          key: ${{ runner.os }}-${{ runner.node_version}}-yarn-next-ssg-chat-${{ hashFiles('yarn.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-${{ runner.node_version}}-yarn-next-ssg-chat-
+      - name: Install deps and build (with cache)
+        uses: bahmutov/npm-install@v1
 
       - name: Install & build
         run: |
           yarn --frozen-lockfile
-
+      - run: yarn add playwright --dev
       # - run: yarn --cwd examples/next-ssg-chat test-dev
       - run: yarn --cwd examples/next-ssg-chat build
       - run: yarn --cwd examples/next-ssg-chat test-start
