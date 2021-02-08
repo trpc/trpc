@@ -22,10 +22,6 @@ jobs:
       - name: Install deps and build (with cache)
         uses: bahmutov/npm-install@v1
 
-      - name: Install & build
-        run: |
-          yarn --frozen-lockfile
-
       - name: Test
         run: yarn test --ci --coverage --maxWorkers=2
 

@@ -17,10 +17,6 @@ jobs:
       - name: Install deps and build (with cache)
         uses: bahmutov/npm-install@v1
 
-      - name: Install & build
-        run: |
-          yarn --frozen-lockfile
-
       # - run: yarn --cwd examples/next-hello-world test-dev
       - run: yarn --cwd examples/next-hello-world build
       - run: yarn --cwd examples/next-hello-world test-start
