@@ -17,9 +17,9 @@ jobs:
       - name: Install deps and build (with cache)
         uses: bahmutov/npm-install@v1
 
-      # - run: yarn --cwd examples/next-hello-world test-dev
       - run: yarn --cwd examples/next-hello-world build
       - run: yarn --cwd examples/next-hello-world test-start
+      - run: yarn --cwd examples/next-hello-world test-dev
 
   next-ssg-chat:
     services:
@@ -51,6 +51,6 @@ jobs:
       - name: Install deps and build (with cache)
         uses: bahmutov/npm-install@v1
 
-      # - run: yarn --cwd examples/next-ssg-chat test-dev
       - run: yarn --cwd examples/next-ssg-chat build
       - run: yarn --cwd examples/next-ssg-chat test-start
+      - run: yarn --cwd examples/next-ssg-chat test-dev
