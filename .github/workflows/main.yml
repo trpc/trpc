@@ -7,7 +7,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        node: ['12.x', '14.x']
+        node: ['14.x']
         os: [ubuntu-latest]
 
     steps:
@@ -19,26 +19,8 @@ jobs:
         with:
           node-version: ${{ matrix.node }}
 
-      - name: Get yarn cache directory path
-        id: yarn-cache-dir-path
-        run: echo "::set-output name=dir::$(yarn cache dir)"
-      - name: Cache node_modules
-        id: yarn-cache
-        uses: actions/cache@v2
-        with:
-          path: |
-            ${{ steps.yarn-cache-dir-path.outputs.dir }}
-            **/node_modules
-            /home/runner/.cache/Cypress
-            C:\Users\runneradmin\AppData\Local\Cypress\Cache
-            **/.next/cache
-          key: ${{ runner.os }}-${{ runner.node_version}}-yarn-${{ hashFiles('yarn.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-${{ runner.node_version}}-yarn-
-
-      - name: Install & build
-        run: |
-          yarn --frozen-lockfile
+      - name: Install deps and build (with cache)
+        uses: bahmutov/npm-install@v1
 
       - name: Test
         run: yarn test --ci --coverage --maxWorkers=2

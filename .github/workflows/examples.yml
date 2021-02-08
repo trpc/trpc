@@ -1,42 +1,30 @@
-name: Examples
+name: Examples E2E
 on: [push]
 jobs:
-  next-hello-world:
+  e2e:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
+        dir: [next-ssg-chat, next-hello-world]
         node: ['14.x']
         os: [ubuntu-latest]
-
+    services:
+      postgres:
+        image: postgres:12.1
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_DB: chat
+        ports:
+          - 5432:5432
     steps:
       - name: Checkout repo
         uses: actions/checkout@v2
 
-      - name: Use Node ${{ matrix.node }}
-        uses: actions/setup-node@v1
-        with:
-          node-version: ${{ matrix.node }}
+      - uses: microsoft/playwright-github-action@v1
 
-      - name: Get yarn cache directory path
-        id: yarn-cache-dir-path
-        run: echo "::set-output name=dir::$(yarn cache dir)"
-      - name: Cache node_modules
-        id: yarn-cache
-        uses: actions/cache@v2
-        with:
-          path: |
-            ${{ steps.yarn-cache-dir-path.outputs.dir }}
-            **/node_modules
-            /home/runner/.cache/Cypress
-            C:\Users\runneradmin\AppData\Local\Cypress\Cache
-            **/.next/cache
-          key: ${{ runner.os }}-${{ runner.node_version}}-yarn-${{ hashFiles('yarn.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-${{ runner.node_version}}-yarn-
+      - name: Install deps and build (with cache)
+        uses: bahmutov/npm-install@v1
 
-      - name: Install & build
-        run: |
-          yarn --frozen-lockfile
-
-      - name: Build
-        run: yarn --cwd examples/next-hello-world build
+      - run: yarn --cwd examples/${{ matrix.dir }} build
+      - run: yarn --cwd examples/${{ matrix.dir }} test-start
+      - run: yarn --cwd examples/${{ matrix.dir }} test-dev
