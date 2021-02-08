@@ -1,27 +1,14 @@
 name: Examples
 on: [push]
 jobs:
-  next-hello-world:
+  build:
+    name: E2E tests
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
         node: ['14.x']
         os: [ubuntu-latest]
-
-    steps:
-      - name: Checkout repo
-        uses: actions/checkout@v2
-
-      - uses: microsoft/playwright-github-action@v1
-
-      - name: Install deps and build (with cache)
-        uses: bahmutov/npm-install@v1
-
-      - run: yarn --cwd examples/next-hello-world build
-      - run: yarn --cwd examples/next-hello-world test-start
-      - run: yarn --cwd examples/next-hello-world test-dev
-
-  next-ssg-chat:
+        dir: [next-ssg-chat, next-hello-world]
     services:
       postgres:
         image: postgres:12.1
@@ -31,26 +18,15 @@ jobs:
         ports:
           # will assign a random free host port
           - 5432:5432
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        node: ['14.x']
-        os: [ubuntu-latest]
-
     steps:
       - name: Checkout repo
         uses: actions/checkout@v2
 
       - uses: microsoft/playwright-github-action@v1
 
-      - name: Use Node ${{ matrix.node }}
-        uses: actions/setup-node@v1
-        with:
-          node-version: ${{ matrix.node }}
-
       - name: Install deps and build (with cache)
         uses: bahmutov/npm-install@v1
 
-      - run: yarn --cwd examples/next-ssg-chat build
-      - run: yarn --cwd examples/next-ssg-chat test-start
-      - run: yarn --cwd examples/next-ssg-chat test-dev
+      - run: yarn --cwd examples/${{ matrix.dir }} build
+      - run: yarn --cwd examples/${{ matrix.dir }} test-start
+      - run: yarn --cwd examples/${{ matrix.dir }} test-dev
