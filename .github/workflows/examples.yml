@@ -41,3 +41,53 @@ jobs:
       # - run: yarn --cwd examples/next-hello-world test-dev
       - run: yarn --cwd examples/next-hello-world build
       - run: yarn --cwd examples/next-hello-world test-start
+
+  next-ssg-chat:
+    services:
+      postgres:
+        image: postgres:12.1
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_DB: chat
+        ports:
+          # will assign a random free host port
+          - 5432:5432
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        node: ['12.x']
+        os: [ubuntu-latest]
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v2
+
+      - uses: microsoft/playwright-github-action@v1
+
+      - name: Use Node ${{ matrix.node }}
+        uses: actions/setup-node@v1
+        with:
+          node-version: ${{ matrix.node }}
+
+      - name: Get yarn cache directory path
+        id: yarn-cache-dir-path
+        run: echo "::set-output name=dir::$(yarn cache dir)"
+      - name: Cache node_modules
+        id: yarn-cache
+        uses: actions/cache@v2
+        with:
+          path: |
+            ${{ steps.yarn-cache-dir-path.outputs.dir }}
+            **/node_modules
+            **/.next/cache
+          key: ${{ runner.os }}-${{ runner.node_version}}-yarn-next-ssg-chat-${{ hashFiles('yarn.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-${{ runner.node_version}}-yarn-next-ssg-chat-
+
+      - name: Install & build
+        run: |
+          yarn --frozen-lockfile
+
+      # - run: yarn --cwd examples/next-ssg-chat test-dev
+      - run: yarn --cwd examples/next-ssg-chat build
+      - run: yarn --cwd examples/next-ssg-chat test-start
