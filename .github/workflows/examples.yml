@@ -51,10 +51,6 @@ jobs:
       - name: Install deps and build (with cache)
         uses: bahmutov/npm-install@v1
 
-      - name: Install & build
-        run: |
-          yarn --frozen-lockfile
-      - run: yarn add playwright --dev
       # - run: yarn --cwd examples/next-ssg-chat test-dev
       - run: yarn --cwd examples/next-ssg-chat build
       - run: yarn --cwd examples/next-ssg-chat test-start
