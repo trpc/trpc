@@ -54,10 +54,7 @@ jobs:
 
       - uses: microsoft/playwright-github-action@v1
 
-      - name: Install deps
-        uses: bahmutov/npm-install@v1
-        with:
-          working-directory: examples/${{ matrix.dir }}
+      - run: yarn
 
       - run: yarn --cwd examples/${{ matrix.dir }} build
       - run: yarn --cwd examples/${{ matrix.dir }} test-start
