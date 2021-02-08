@@ -7,7 +7,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        node: ['12.x']
+        node: ['14.x']
         os: [ubuntu-latest]
 
     steps:
