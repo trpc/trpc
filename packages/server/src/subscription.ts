@@ -32,7 +32,6 @@ export type SubscriptionEmit<TOutput> = {
   error: EmitFn<Error>;
 };
 export interface SubscriptionOptions<TOutput> {
-  getInitialOutput?: (emit: SubscriptionEmit<TOutput>) => void | Promise<void>;
   start: (
     emit: SubscriptionEmit<TOutput>,
   ) => UnsubscribeFn | Promise<UnsubscribeFn>;
@@ -46,9 +45,6 @@ export class Subscription<TOutput = unknown> {
     this.isDestroyed = false;
     this.events = new SubscriptionEventEmitter<TOutput>();
     this.opts = {
-      getInitialOutput: () => {
-        // no-op
-      },
       ...opts,
     };
   }
@@ -108,7 +104,7 @@ export class Subscription<TOutput = unknown> {
   }
 }
 
-export function subscriptionPullFatory<TOutput>(opts: {
+export function subscriptionPullFactory<TOutput>(opts: {
   interval: number;
   pull(emit: SubscriptionEmit<TOutput>): void | Promise<void>;
 }): Subscription<TOutput> {
