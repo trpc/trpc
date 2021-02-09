@@ -54,7 +54,9 @@ export default function Home() {
   ]);
 
   // merge messages on subscription.data
-  useEffect(() => addMessages(subscription.data), [subscription.data]);
+  useEffect(() => subscription.data && addMessages(subscription.data), [
+    subscription.data,
+  ]);
 
   const addMessage = trpc.useMutation('messages.create');
 

@@ -86,12 +86,12 @@ const router = createRouter()
         }),
         resolve: ({ input }) => {
           const { timestamp } = input;
-          return trpc.subscriptionPullFatory<Message[]>({
-            interval: 500,
+          return trpc.subscriptionPullFactory<Message>({
+            intervalMs: 500,
             async pull(emit) {
               const msgs = await getMessagesAfter(timestamp);
-              if (msgs.length > 0) {
-                emit.data(msgs);
+              for (const msg of msgs) {
+                emit.data(msg);
               }
             },
           });
