@@ -54,6 +54,24 @@ async function main() {
   console.log('msgs', msgs);
 
   let i = 0;
+
+  const unsubscribe = client.subscription('posts/newMessage', {
+    initialInput: {
+      timestamp: msgs.reduce((max, msg) => Math.max(max, msg.createdAt), 0),
+    },
+    onData(buffer) {
+      console.log('<- subscription received', buffer.flat().length, 'messages');
+      buffer.flat().forEach((msg) => {
+        msgs.push(msg);
+      });
+    },
+    nextInput() {
+      return {
+        timestamp: msgs.reduce((max, msg) => Math.max(max, msg.createdAt), 0),
+      };
+    },
+  });
+
   await Promise.all([
     client.mutate('messages/add', `test message${i++}`),
     client.mutate('messages/add', `test message${i++}`),
@@ -67,10 +85,9 @@ async function main() {
   await Promise.all([
     client.mutate('messages/add', `test message${i++}`),
     client.mutate('messages/add', `test message${i++}`),
-    client.mutate('messages/add', `test message${i++}`),
-    client.mutate('messages/add', `test message${i++}`),
   ]);
 
+  unsubscribe();
   console.log('👌 should be a clean exit if everything is working right');
 }
 

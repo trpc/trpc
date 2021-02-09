@@ -178,5 +178,6 @@ export function createReactQueryHooks<
     prefetchQuery: prefetchQueryOnServer,
     dehydrate: _dehydrate,
     useDehydratedState,
+    client,
   };
 }
