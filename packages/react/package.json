@@ -1,6 +1,6 @@
 {
   "name": "@trpc/react",
-  "version": "1.4.1",
+  "version": "1.4.2",
   "description": "TRPC React lib",
   "author": "KATT",
   "license": "MIT",
