@@ -172,7 +172,7 @@ export async function requestHandler<
   req,
   res,
   router,
-  endpoint,
+  path,
   subscriptions,
   createContext,
   teardown,
@@ -184,7 +184,7 @@ export async function requestHandler<
 }: {
   req: TRequest;
   res: TResponse;
-  endpoint: string;
+  path: string;
   router: TRouter;
   createContext: TCreateContextFn;
 } & BaseOptions) {
@@ -203,7 +203,7 @@ export async function requestHandler<
         target: 'mutations',
         input,
         ctx,
-        path: endpoint,
+        path: path,
       });
     } else if (method === 'GET') {
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
@@ -213,7 +213,7 @@ export async function requestHandler<
         target: 'queries',
         input,
         ctx,
-        path: endpoint,
+        path: path,
       });
     } else if (method === 'PATCH') {
       const body = await getPostBody({ req, maxBodySize });
@@ -223,7 +223,7 @@ export async function requestHandler<
         target: 'subscriptions',
         input,
         ctx,
-        path: endpoint,
+        path: path,
       })) as Subscription;
 
       output = await new Promise((resolve, reject) => {

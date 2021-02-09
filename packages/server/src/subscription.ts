@@ -105,7 +105,10 @@ export class Subscription<TOutput = unknown> {
 }
 
 export function subscriptionPullFactory<TOutput>(opts: {
-  interval: number;
+  /**
+   * The interval of how often the function should run
+   */
+  intervalMs: number;
   pull(emit: SubscriptionEmit<TOutput>): void | Promise<void>;
 }): Subscription<TOutput> {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -121,7 +124,7 @@ export function subscriptionPullFactory<TOutput>(opts: {
       emit.error(err);
     }
     if (!stopped) {
-      timer = setTimeout(() => _pull(emit), opts.interval);
+      timer = setTimeout(() => _pull(emit), opts.intervalMs);
     }
   }
 
