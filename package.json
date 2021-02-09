@@ -53,7 +53,6 @@
     "changeset": "changeset",
     "release": "changeset publish",
     "version:canary": "changeset version --snapshot canary",
-    "release:canary": "changeset publish --tag canary",
-    "postinstall": "cd node_modules/normi && yarn"
+    "release:canary": "changeset publish --tag canary"
   }
 }
