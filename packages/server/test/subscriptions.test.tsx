@@ -17,14 +17,14 @@ test('subscriptionOnce() + type safety + backpressure', async () => {
     trpc.router().subscription('onMessage', {
       input: z.string().optional(),
       resolve() {
-        ee.emit('connect');
+        ee.emit('server:connect');
         return new trpc.Subscription<Message>({
           start(emit) {
             const onMessage = (data: Message) => {
               emit.data(data);
             };
-            ee.on('msg', onMessage);
-            return () => ee.off('msg', onMessage);
+            ee.on('server:msg', onMessage);
+            return () => ee.off('server:msg', onMessage);
           },
         });
       },
@@ -35,13 +35,13 @@ test('subscriptionOnce() + type safety + backpressure', async () => {
       },
     },
   );
-  ee.once('connect', () => {
+  ee.once('server:connect', () => {
     setImmediate(() => {
-      ee.emit('msg', {
+      ee.emit('server:msg', {
         id: '1',
         text: 'hi',
       });
-      ee.emit('msg', {
+      ee.emit('server:msg', {
         id: '2',
         text: 'there',
       });
@@ -63,5 +63,84 @@ test('subscriptionOnce() + type safety + backpressure', async () => {
     ]
   `);
 
+  close();
+});
+
+test('subscriptions()', async () => {
+  const ee = new EventEmitter();
+  type Message = {
+    id: string;
+    text: string;
+  };
+
+  const onConnect = jest.fn(() => {
+    ee.emit('server:connect');
+  });
+  const { client, close } = routerToServerAndClient(
+    trpc.router().subscription('onMessage', {
+      input: z.string().optional(),
+      resolve() {
+        onConnect();
+        return new trpc.Subscription<Message>({
+          start(emit) {
+            const onMessage = (data: Message) => {
+              emit.data(data);
+            };
+            ee.on('server:msg', onMessage);
+            return () => ee.off('server:msg', onMessage);
+          },
+        });
+      },
+    }),
+    {
+      subscriptions: {
+        backpressureMs: 10,
+      },
+    },
+  );
+  ee.once('server:connect', () => {
+    setTimeout(() => {
+      ee.emit('server:msg', {
+        id: '1',
+        text: 'hi',
+      });
+      ee.emit('server:msg', {
+        id: '2',
+        text: 'there',
+      });
+    }, 1);
+  });
+
+  const allResponses: unknown[] = [];
+  const unsub = client.subscription('onMessage', {
+    initialInput: undefined,
+    onData(res) {
+      ee.emit('client:response');
+      allResponses.push(res);
+    },
+    nextInput(msgs) {
+      expectTypeOf(msgs).toMatchTypeOf<Message[]>();
+      return {
+        input: msgs[msgs.length - 1].id,
+      };
+    },
+  });
+
+  await new Promise((resolve) => ee.on('client:response', resolve));
+
+  ee.once('server:connect', () => {
+    setTimeout(() => {
+      ee.emit('server:msg', {
+        id: '3',
+        text: 'again',
+      });
+    }, 1);
+  });
+
+  await new Promise((resolve) => ee.on('client:response', resolve));
+
+  expect(onConnect).toHaveBeenCalledTimes(2);
+
+  unsub();
   close();
 });
