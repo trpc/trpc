@@ -1,10 +1,10 @@
 <div align="center">
-  <h1 align="center">tRPC</h1>
-  <p>a toolkit for building end-to-end TypeScript data layers</p>
+  <h1 align="center">TRPC</h1>
+  <p>a toolkit for building end-to-end typesafe data layers</p>
   <p><img src="https://storage.googleapis.com/trpc/trpcgif.gif" alt="Server/client example"></p>
 </div>
 
-- [Motivation](#motivation)
+- [Intro](#intro)
 - [Usage](#usage)
   - [Example apps](#example-apps)
   - [Getting started with Next.js](#getting-started-with-nextjs)
@@ -13,22 +13,27 @@
   - [Data transformers](#data-transformers)
   - [Server-side rendering (SSR / SSG)](#server-side-rendering-ssr--ssg)
 - [Further reading](#further-reading)
-  - [HTTP Methods ↔️ endpoint type mapping](#http-methods-️-endpoint-type-mapping)
+  - [Who is this for?](#who-is-this-for)
+  - [HTTP Methods <-> Type mapping](#http-methods---type-mapping)
   - [Relationship to GraphQL](#relationship-to-graphql)
   - [Alternative projects](#alternative-projects)
 - [Development](#development)
   - [Development workflow](#development-workflow)
   - [Testing](#testing)
 - [Contributors ✨](#contributors-)
-# Motivation
 
-tRPC is a framework for building strongly typed RPC APIs with TypeScript. Alternatively, you can think of it as a way to avoid APIs altogether.
+# Intro
 
-- 🔐  Type-safety on everything - on the API-routes, the input data & router output.
-- 🐎  No run-time bloat or slow code generation. The magic is all in the TypeScript compiler. tRPC itself has no deps and a tiny client-side footprint.
-- 😌  No double-declaration of types. Actually you don't have to declare types at all, as they are inferred.
-- 🔋  Batteries included with a React-library but not tRPC is in no way tied to React (wanna make one for Svelte or Vue? [Contact us](https://twitter.com/trpcio))
-- 🧑‍🎨  Works great with React + React Native. And probably with all the other front-end frameworks.
+TRPC is a framework for building strongly typed RPC APIs with TypeScript. Alternatively, you can think of it as a way to avoid APIs altogether. 
+
+- 🧙‍♂️&nbsp; Automagic type-safety on your API-paths, their input data, & outputs. Inferred or declared, up to you.
+- 🐎&nbsp; No slow code generation, run-time bloat, or build pipeline. The magic is all in the TypeScript compiler. 
+- 🍃&nbsp; Light. TRPC has zero deps and a small client-side footprint.
+- 🐻&nbsp; Easy to add to your existing brownfield project.
+- 😌&nbsp; No double-declaration of types on server or client.
+- 🔋&nbsp; Batteries included. React-library + Next.js/Express adapters. _(But not tRPC is in no way tied to React - [chat to me](https://twitter.com/alexdotjs) if you want to make a Svelte/Vue/... lib)_
+- 🥃&nbsp; Simple to use APIs for queries, mutations, & subscriptions.
+- 👀&nbsp; Quite a few examples in the [./examples](./examples)-folder
 
 # Usage
 
@@ -37,7 +42,7 @@ tRPC is a framework for building strongly typed RPC APIs with TypeScript. Altern
 You can play clone this project and play with local examples
 
 ```bash
-git clone git@github.com:@trpc/trpc.git
+git clone git@github.com:trpc/trpc.git
 cd trpc
 yarn
 
@@ -46,12 +51,12 @@ yarn example:hello
 
 Here's all the example apps:
 
-| Command                   | Live URL                                           | Example path                                                   | Description                                                                         |
-| ------------------------- | -------------------------------------------------- | -------------------------------------------------------------- | ----------------------------------------------------------------------------------- |
-| `yarn example:chat`       | [chat.trpc.io](https://chat.trpc.io)               | [`./examples/next-ssg-chat`](./examples/next-ssg-chat)         | Next.js real-time chat example with SSG & Prisma                                    |
-| `yarn example:hello`      | [hello-world.trpc.io](https://hello-world.trpc.io) | [`./examples/next-hello-world`](./examples/next-hello-world)   | Minimal Next.js example + uses [Playwright](https://playwright.dev) for E2E-testing |
-| `yarn example:standalone` | _n/a_                                              | [`./examples/standalone-server`](./examples/standalone-server) | Standalone TRPC server + node client                                                |
-| `yarn example:playground` | _n/a_                                              | [`./examples/playground`](./examples/playground)               | Express server + node client                                                        |
+| Command                   | Live URL                                           | Example path                                                   | Description                                                                                            |
+| ------------------------- | -------------------------------------------------- | -------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------ |
+| `yarn example:chat`       | [chat.trpc.io](https://chat.trpc.io)               | [`./examples/next-ssg-chat`](./examples/next-ssg-chat)         | Next.js real-time chat example with SSG & Prisma. [Playwright](https://playwright.dev) for E2E-testing |
+| `yarn example:hello`      | [hello-world.trpc.io](https://hello-world.trpc.io) | [`./examples/next-hello-world`](./examples/next-hello-world)   | Minimal Next.js example. [Playwright](https://playwright.dev) for E2E-testing                          |
+| `yarn example:standalone` | _n/a_                                              | [`./examples/standalone-server`](./examples/standalone-server) | Standalone TRPC server + node client                                                                   |
+| `yarn example:playground` | _n/a_                                              | [`./examples/playground`](./examples/playground)               | Express server + node client                                                                           |
 
 ## Getting started with Next.js
 
@@ -379,30 +384,34 @@ This will cache the `messages.list` so it's instant when a user visits the page.
 
 # Further reading
 
-## HTTP Methods ↔️ endpoint type mapping
+## Who is this for?
 
-| HTTP Method | Mapping           | Notes                                                                             |
-| ----------- | ----------------- | --------------------------------------------------------------------------------- |
-| `GET`       | `.query()`        | Input in query string                                                             |
-| `POST`      | `.mutation()`     | Input in post body                                                                |
-| `PATCH`     | `.subscription()` | Experimental API using long-pulling. Implementation details are likely to change. |
+- TRPC is for full-stack javascripters. It makes it dead easy to write "endpoints" which you safely use in your app.
+- It's designed for monorepos as you need to export/import the type definitions from/to your server
+- If you're already in a team where you're mixing languages or have third party consumers that you have no control of, you're better off with making a [GraphQL](https://graphql.org/)-API which is language-agnostic.
+
+## HTTP Methods <-> Type mapping
+
+| HTTP Method | Mapping           | Notes                                                                        |
+| ----------- | ----------------- | ---------------------------------------------------------------------------- |
+| `GET`       | `.query()`        | Input JSON-stringified in query param, e.g. `?input=${JSON.stringify(input)` |
+| `POST`      | `.mutation()`     | Input in post body.                                                          |
+| `PATCH`     | `.subscription()` | Input in post body. Experimental API using HTTP long-pulling.                |
 
 ## Relationship to GraphQL
 
-> 🚧  Docs in progress
+If you are already have a custom GraphQL-server for your project; don't use TRPC. GraphQL is amazing; it's amazing to be able to make a flexible API where each consumer can pick just the data needed for it. 
 
-GraphQL is amazing; I'm a massive fan & have made many GraphQL-servers and the ecosystem around it is mature with things like Apollo & Relay. It's amazing to be able to make a flexible API where each consumer can pick just the data needed for it. If you are already have a custom GraphQL-server for your project, you're probably in no need for tRPC.
-
-The thing is, GraphQL isn't that easy to get right - ACL is needed to be solved on a per-type basis, complexity analysis, and performance are non-trivial things to get right. 
+The thing is, GraphQL isn't that easy to get right - ACL is needed to be solved on a per-type basis, complexity analysis, and performance are all non-trivial things.
 
 We've taken a lot of inspiration from GraphQL & if you've made GraphQL-servers before you'll be familiar with the concept of input types and resolvers.
 
+TRPC is a lot simpler and couples your server & app (for good and for bad). It makes it easy to move quickly, do changes without updating a schema & there's no of thinking about the ever-traversable graph.
+
 ## Alternative projects
 
-> 🚧  Docs in progress
-
-frameworks - blitzjs, redwood, [...] 
-
+- [Blitz.js](https://blitzjs.com) is a full-stack framework. TRPC is just the data layer, but the philosophy of their _"Zero-API data layer"_ is very close to TRPC, but TRPC doesn't require a build pipeline nor is it tied to Next.js or even React.
+- ...
 
 ....
 
@@ -418,7 +427,7 @@ This will install all dependencies in each project, build them, and symlink them
 ## Development workflow
 
 ```bash
-git clone git@github.com:@trpc/trpc.git
+git clone git@github.com:trpc/trpc.git
 cd trpc
 yarn
 ```
