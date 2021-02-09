@@ -54,7 +54,7 @@ export default function Home() {
   ]);
 
   // merge messages on subscription.data
-  useEffect(() => subscription.data && addMessages(subscription.data.flat()), [
+  useEffect(() => subscription.data && addMessages(subscription.data), [
     subscription.data,
   ]);
 
