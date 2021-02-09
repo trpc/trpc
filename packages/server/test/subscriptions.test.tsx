@@ -124,7 +124,7 @@ test('subscriptions()', async () => {
       expectTypeOf(msgs).not.toBeNever();
       expectTypeOf(msgs).not.toBeAny();
       expectTypeOf(msgs).toMatchTypeOf<Message[]>();
-      return (msgs[msgs.length - 1] as any).id;
+      return msgs[msgs.length - 1].id;
     },
   });
 
