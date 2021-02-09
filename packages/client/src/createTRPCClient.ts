@@ -319,7 +319,9 @@ export function createTRPCClient<TRouter extends AnyRouter>(
         }
         opts.onError && opts.onError(err);
         attemptIndex++;
-        setTimeout(exec, retryDelay(attemptIndex));
+        setTimeout(() => {
+          exec(input);
+        }, retryDelay(attemptIndex));
       }
     }
     exec(opts.initialInput);
