@@ -9,7 +9,7 @@
   - [Example apps](#example-apps)
   - [Getting started with Next.js](#getting-started-with-nextjs)
   - [Defining routes](#defining-routes)
-  - [Merging routes](#merging-routes)
+  - [Merging routers](#merging-routers)
   - [Data transformers](#data-transformers)
   - [Server-side rendering (SSR / SSG)](#server-side-rendering-ssr--ssg)
 - [Further reading](#further-reading)
@@ -282,7 +282,7 @@ export type AppRouter = typeof appRouter;
 
 </details>
 
-## Merging routes
+## Merging routers
 
 Writing all API-code in your code in the same file is a bad idea. It's easy to merge routes with other routes. Thanks to TypeScript 4.1 template literal types we can also prefix the routes without breaking type safety.
 
