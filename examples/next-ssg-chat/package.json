@@ -26,6 +26,7 @@
     "jest-playwright-preset": "^1.4.5",
     "mobx": "^6.1.5",
     "mobx-react": "^7.1.0",
+    "next": "^10.0.4",
     "normi": "^0.6.1",
     "playwright": "^1.8.0",
     "react": "17.0.1",
