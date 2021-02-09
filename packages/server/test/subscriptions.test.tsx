@@ -10,7 +10,6 @@ test('subscriptionOnce() + type safety + backpressure', async () => {
   const ee = new EventEmitter();
   type Message = {
     id: string;
-    text: string;
   };
 
   const { client, close } = routerToServerAndClient(
@@ -39,11 +38,9 @@ test('subscriptionOnce() + type safety + backpressure', async () => {
     setImmediate(() => {
       ee.emit('server:msg', {
         id: '1',
-        text: 'hi',
       });
       ee.emit('server:msg', {
         id: '2',
-        text: 'there',
       });
     });
   });
@@ -67,13 +64,13 @@ test('subscriptionOnce() + type safety + backpressure', async () => {
 });
 
 test('subscriptions()', async () => {
+  const TIMEOUT_MS = 100;
   const ee = new EventEmitter();
   type Message = {
     id: string;
-    text: string;
   };
 
-  let allInputs: unknown[] = [];
+  const allInputs: unknown[] = [];
   const onConnect = jest.fn(() => {
     ee.emit('server:connect');
   });
@@ -81,14 +78,15 @@ test('subscriptions()', async () => {
     trpc.router().subscription('onMessage', {
       input: z.string().optional(),
       resolve({ input }) {
-        onConnect();
         allInputs.push(input);
+        onConnect();
         return new trpc.Subscription<Message>({
           start(emit) {
             const onMessage = (data: Message) => {
               emit.data(data);
             };
             ee.on('server:msg', onMessage);
+
             return () => ee.off('server:msg', onMessage);
           },
         });
@@ -97,6 +95,7 @@ test('subscriptions()', async () => {
     {
       subscriptions: {
         backpressureMs: 10,
+        requestTimeoutMs: TIMEOUT_MS,
       },
     },
   );
@@ -104,11 +103,9 @@ test('subscriptions()', async () => {
     setTimeout(() => {
       ee.emit('server:msg', {
         id: '1',
-        text: 'hi',
       });
       ee.emit('server:msg', {
         id: '2',
-        text: 'there',
       });
     }, 1);
   });
@@ -124,7 +121,7 @@ test('subscriptions()', async () => {
       expectTypeOf(msgs).not.toBeNever();
       expectTypeOf(msgs).not.toBeAny();
       expectTypeOf(msgs).toMatchTypeOf<Message[]>();
-      return msgs[msgs.length - 1].id;
+      return (msgs[msgs.length - 1] as any).id;
     },
   });
 
@@ -134,7 +131,6 @@ test('subscriptions()', async () => {
     setTimeout(() => {
       ee.emit('server:msg', {
         id: '3',
-        text: 'again',
       });
     }, 1);
   });
@@ -143,33 +139,50 @@ test('subscriptions()', async () => {
 
   expect(onConnect).toHaveBeenCalledTimes(2);
 
-  expect(allInputs).toMatchInlineSnapshot(`
-    Array [
-      undefined,
-      "2",
-    ]
-  `);
+  // let request timeout
+  await new Promise((resolve) => setTimeout(resolve, TIMEOUT_MS + 1));
+
+  ee.once('server:connect', () => {
+    setTimeout(() => {
+      ee.emit('server:msg', {
+        id: '4',
+      });
+    }, 1);
+  });
+
+  await new Promise((resolve) => ee.once('client:response', resolve));
+  await new Promise((resolve) => ee.once('server:connect', resolve));
+
+  expect(allInputs).toEqual([
+    undefined,
+    '2',
+    '3',
+    '3', // <-- this is because of the reconnect
+    '4',
+  ]);
+
   expect(allResponses).toMatchInlineSnapshot(`
     Array [
       Array [
         Object {
           "id": "1",
-          "text": "hi",
         },
         Object {
           "id": "2",
-          "text": "there",
         },
       ],
       Array [
         Object {
           "id": "3",
-          "text": "again",
+        },
+      ],
+      Array [
+        Object {
+          "id": "4",
         },
       ],
     ]
   `);
-
   unsub();
   close();
 });
