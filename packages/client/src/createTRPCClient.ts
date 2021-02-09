@@ -14,6 +14,10 @@ type CancelFn = () => void;
 type CancellablePromise<T = unknown> = Promise<T> & {
   cancel: CancelFn;
 };
+
+const retryDelay = (attemptIndex: number) =>
+  attemptIndex === 0 ? 0 : Math.min(1000 * 2 ** attemptIndex, 30000);
+
 export class TRPCClientError extends Error {
   public readonly json?: Maybe<HTTPResponseEnvelope<unknown>>;
   public readonly res?: Maybe<Response>;
@@ -38,6 +42,19 @@ export class TRPCClientError extends Error {
     this.originalError = originalError;
 
     Object.setPrototypeOf(this, TRPCClientError.prototype);
+  }
+}
+
+export class NextInputError extends Error {
+  public readonly originalError: Error;
+
+  constructor(originalError: Error) {
+    super(
+      `nextInput() threw an error - subscription is stopped: ${originalError.message}`,
+    );
+    this.originalError = originalError;
+
+    Object.setPrototypeOf(this, NextInputError.prototype);
   }
 }
 
@@ -254,11 +271,67 @@ export function createTRPCClient<TRouter extends AnyRouter>(
     return promise;
   }
 
+  function subscription<
+    TPath extends keyof TSubscriptions & string,
+    TInput extends inferRouteInput<TSubscriptions[TPath]>
+  >(
+    path: TPath,
+    opts: {
+      initialInput: TInput;
+      onError?: (err: NextInputError | TRPCClientError) => void;
+      onData?: (data: inferSubscriptionOutput<TRouter, TPath>[]) => void;
+      /**
+       * Input cursor for next call to subscription endpoint
+       */
+      nextInput: (data: inferSubscriptionOutput<TRouter, TPath>[]) => TInput;
+    },
+  ) {
+    type TOutput = inferSubscriptionOutput<TRouter, TPath>[];
+    let stopped = false;
+    // let nextTry: any; // setting as `NodeJS.Timeout` causes compat issues, can probably be solved
+    let currentPromise: CancellablePromise<TOutput> | null = null;
+
+    let attemptIndex = 0;
+    const unsubscribe: CancelFn = () => {
+      stopped = true;
+      currentPromise?.cancel();
+      currentPromise = null;
+    };
+    async function exec(input: TInput) {
+      try {
+        currentPromise = subscriptionOnce(path, input);
+        const res = await currentPromise;
+        attemptIndex = 0;
+        opts.onData && opts.onData(res);
+
+        try {
+          const nextInput = opts.nextInput(res);
+          exec(nextInput);
+        } catch (_err) {
+          const err = new NextInputError(_err);
+          opts.onError && opts.onError(err);
+          unsubscribe();
+          return;
+        }
+      } catch (err) {
+        if (stopped) {
+          return;
+        }
+        opts.onError && opts.onError(err);
+        attemptIndex++;
+        setTimeout(exec, retryDelay(attemptIndex));
+      }
+    }
+    exec(opts.initialInput);
+    return unsubscribe;
+  }
+
   return {
     request,
     query,
     mutate,
     subscriptionOnce,
+    subscription,
     transformer,
   };
 }

@@ -4,7 +4,23 @@ import express from 'express';
 import * as trpc from '@trpc/server';
 import * as z from 'zod';
 
-type Context = {};
+const createContext = ({ req, res }: trpc.CreateExpressContextOptions) => {
+  const getUser = () => {
+    if (req.headers.authorization !== 'secret') {
+      return null;
+    }
+    return {
+      name: 'alex',
+    };
+  };
+
+  return {
+    req,
+    res,
+    user: getUser(),
+  };
+};
+type Context = trpc.inferAsyncReturnType<typeof createContext>;
 
 function createRouter() {
   return trpc.router<Context>();
@@ -15,7 +31,6 @@ function createRouter() {
 let id = 0;
 
 const ee = new EventEmitter();
-const randomId = () => Math.random().toString(36).substring(2, 15);
 const db = {
   posts: [
     {
@@ -35,6 +50,7 @@ function createMessage(text: string) {
   ee.emit('newMessage', msg);
   return msg;
 }
+type Message = ReturnType<typeof createMessage>;
 
 const posts = createRouter()
   .mutation('create', {
@@ -52,6 +68,30 @@ const posts = createRouter()
   })
   .query('list', {
     resolve: () => db.posts,
+  })
+  .subscription('newMessage', {
+    input: z.object({
+      timestamp: z.number(),
+    }),
+    resolve({ input }) {
+      return new trpc.Subscription<Message>({
+        start(emit) {
+          // messages added since last check
+          db.messages
+            .filter((m) => m.createdAt > input.timestamp)
+            .forEach((msg) => emit.data(msg));
+          const onMessage = (msg: Message) => {
+            emit.data(msg);
+          };
+          // event emitter to send new messages coming in
+          ee.on('newMessage', onMessage);
+
+          return () => {
+            ee.off('newMessage', onMessage);
+          };
+        },
+      });
+    },
   });
 
 const messages = createRouter()
@@ -115,6 +155,10 @@ async function main() {
     trpc.createExpressMiddleware({
       router: appRouter,
       createContext,
+      subscriptions: {
+        requestTimeoutMs: 2000,
+        backpressureMs: 50,
+      },
     }),
   );
   app.listen(2021, () => {
