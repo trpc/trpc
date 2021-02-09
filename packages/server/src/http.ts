@@ -256,7 +256,7 @@ export async function requestHandler<
             cleanup();
             resolve(buffer);
           };
-          if (requestTimeLeft >= backpressureMs) {
+          if (requestTimeLeft <= backpressureMs) {
             // will timeout before next backpressure tick
             success();
             return;
