@@ -6,7 +6,7 @@ import * as z from 'zod';
 import * as trpc from '../src';
 import { routerToServerAndClient } from './_testHelpers';
 
-test('subscriptionOnce', async () => {
+test('subscriptionOnce() + type safety + backpressure', async () => {
   const ee = new EventEmitter();
   type Message = {
     id: string;
@@ -29,18 +29,39 @@ test('subscriptionOnce', async () => {
         });
       },
     }),
+    {
+      subscriptions: {
+        backpressureMs: 10,
+      },
+    },
   );
-  const msg: Message = {
-    id: '1',
-    text: 'hi',
-  };
   ee.once('connect', () => {
-    setImmediate(() => ee.emit('msg', msg));
+    setImmediate(() => {
+      ee.emit('msg', {
+        id: '1',
+        text: 'hi',
+      });
+      ee.emit('msg', {
+        id: '2',
+        text: 'there',
+      });
+    });
   });
-  const [receivedMsg] = await client.subscriptionOnce('onMessage', '');
+  const msgs = await client.subscriptionOnce('onMessage', '');
 
-  expect(receivedMsg).toEqual(msg);
-  expectTypeOf(receivedMsg).toMatchTypeOf<Message>();
+  expectTypeOf(msgs).toMatchTypeOf<Message[]>();
+  expect(msgs).toMatchInlineSnapshot(`
+    Array [
+      Object {
+        "id": "1",
+        "text": "hi",
+      },
+      Object {
+        "id": "2",
+        "text": "there",
+      },
+    ]
+  `);
 
   close();
 });

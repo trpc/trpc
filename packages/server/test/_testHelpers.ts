@@ -3,7 +3,7 @@
 import { createTRPCClient, CreateTRPCClientOptions } from '../../client/src';
 import AbortController from 'abort-controller';
 import fetch from 'node-fetch';
-import { AnyRouter } from '../src';
+import { AnyRouter, CreateHttpHandlerOptions } from '../src';
 import {
   CreateHttpContextFn,
   createHttpServer,
@@ -27,11 +27,13 @@ export function routerToServerAndClient<
   opts?: {
     createContext?: CreateHttpContextFn<TContext>;
     getHeaders?: CreateTRPCClientOptions['getHeaders'];
+    subscriptions?: CreateHttpHandlerOptions<any, any>['subscriptions'];
   },
 ) {
   const server = createHttpServer({
     router,
     createContext: opts?.createContext ?? (() => ({})),
+    subscriptions: opts?.subscriptions,
   });
   const { port } = server.listen(0);
 
