@@ -17,6 +17,7 @@ TRPC is a framework for building strongly typed RPC APIs with TypeScript. Altern
 - 🥃&nbsp; Simple to use APIs for queries, mutations, & subscriptions.
 - 👀&nbsp; Quite a few examples in the [./examples](./examples)-folder
 
+---
 
 - [Intro](#intro)
 - [Usage](#usage)
