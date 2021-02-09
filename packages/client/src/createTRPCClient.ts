@@ -213,7 +213,7 @@ export function createTRPCClient<TRouter extends AnyRouter>(
     TPath extends keyof TSubscriptions & string,
     TInput extends inferRouteInput<TSubscriptions[TPath]>
   >(path: TPath, input: TInput) {
-    type TOutput = inferSubscriptionOutput<TRouter, TPath>;
+    type TOutput = inferSubscriptionOutput<TRouter, TPath>[];
     let stopped = false;
     let nextTry: any; // setting as `NodeJS.Timeout` causes compat issues, can probably be solved
     let currentRequest: ReturnType<typeof request> | null = null;
