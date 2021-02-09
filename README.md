@@ -4,6 +4,21 @@
   <p><img src="https://storage.googleapis.com/trpc/trpcgif.gif" alt="Server/client example"></p>
 </div>
 
+# Intro
+
+TRPC is a framework for building strongly typed RPC APIs with TypeScript. Alternatively, you can think of it as a way to avoid APIs altogether. 
+
+- 🧙‍♂️&nbsp; Automagic type-safety on your API-paths, their input data, & outputs. Inferred or declared, up to you.
+- 🐎&nbsp; No slow code generation, run-time bloat, or build pipeline. The magic is all in the TypeScript compiler. 
+- 🍃&nbsp; Light. TRPC has zero deps and a small client-side footprint.
+- 🐻&nbsp; Easy to add to your existing brownfield project.
+- 😌&nbsp; No double-declaration of types on server or client.
+- 🔋&nbsp; Batteries included. React-library + Next.js/Express adapters. _(But tRPC not tied to React - [chat to me](https://twitter.com/alexdotjs) if you want to make a Svelte/Vue/... lib)_
+- 🥃&nbsp; Simple to use APIs for queries, mutations, & subscriptions.
+- 👀&nbsp; Quite a few examples in the [./examples](./examples)-folder
+
+---
+
 - [Intro](#intro)
 - [Usage](#usage)
   - [Example apps](#example-apps)
@@ -22,18 +37,6 @@
   - [Testing](#testing)
 - [Contributors ✨](#contributors-)
 
-# Intro
-
-TRPC is a framework for building strongly typed RPC APIs with TypeScript. Alternatively, you can think of it as a way to avoid APIs altogether. 
-
-- 🧙‍♂️&nbsp; Automagic type-safety on your API-paths, their input data, & outputs. Inferred or declared, up to you.
-- 🐎&nbsp; No slow code generation, run-time bloat, or build pipeline. The magic is all in the TypeScript compiler. 
-- 🍃&nbsp; Light. TRPC has zero deps and a small client-side footprint.
-- 🐻&nbsp; Easy to add to your existing brownfield project.
-- 😌&nbsp; No double-declaration of types on server or client.
-- 🔋&nbsp; Batteries included. React-library + Next.js/Express adapters. _(But not tRPC is in no way tied to React - [chat to me](https://twitter.com/alexdotjs) if you want to make a Svelte/Vue/... lib)_
-- 🥃&nbsp; Simple to use APIs for queries, mutations, & subscriptions.
-- 👀&nbsp; Quite a few examples in the [./examples](./examples)-folder
 
 # Usage
 
