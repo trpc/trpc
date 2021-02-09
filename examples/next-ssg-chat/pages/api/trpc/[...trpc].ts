@@ -90,7 +90,9 @@ const router = createRouter()
             intervalMs: 500,
             async pull(emit) {
               const msgs = await getMessagesAfter(timestamp);
-              msgs.forEach(emit.data);
+              for (const msg of msgs) {
+                emit.data(msg);
+              }
             },
           });
         },
