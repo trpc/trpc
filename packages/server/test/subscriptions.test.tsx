@@ -73,14 +73,16 @@ test('subscriptions()', async () => {
     text: string;
   };
 
+  let allInputs: unknown[] = [];
   const onConnect = jest.fn(() => {
     ee.emit('server:connect');
   });
   const { client, close } = routerToServerAndClient(
     trpc.router().subscription('onMessage', {
       input: z.string().optional(),
-      resolve() {
+      resolve({ input }) {
         onConnect();
+        allInputs.push(input);
         return new trpc.Subscription<Message>({
           start(emit) {
             const onMessage = (data: Message) => {
@@ -119,14 +121,14 @@ test('subscriptions()', async () => {
       allResponses.push(res);
     },
     nextInput(msgs) {
+      expectTypeOf(msgs).not.toBeNever();
+      expectTypeOf(msgs).not.toBeAny();
       expectTypeOf(msgs).toMatchTypeOf<Message[]>();
-      return {
-        input: msgs[msgs.length - 1].id,
-      };
+      return (msgs[msgs.length - 1] as any).id;
     },
   });
 
-  await new Promise((resolve) => ee.on('client:response', resolve));
+  await new Promise((resolve) => ee.once('client:response', resolve));
 
   ee.once('server:connect', () => {
     setTimeout(() => {
@@ -137,9 +139,36 @@ test('subscriptions()', async () => {
     }, 1);
   });
 
-  await new Promise((resolve) => ee.on('client:response', resolve));
+  await new Promise((resolve) => ee.once('client:response', resolve));
 
   expect(onConnect).toHaveBeenCalledTimes(2);
+
+  expect(allInputs).toMatchInlineSnapshot(`
+    Array [
+      undefined,
+      "2",
+    ]
+  `);
+  expect(allResponses).toMatchInlineSnapshot(`
+    Array [
+      Array [
+        Object {
+          "id": "1",
+          "text": "hi",
+        },
+        Object {
+          "id": "2",
+          "text": "there",
+        },
+      ],
+      Array [
+        Object {
+          "id": "3",
+          "text": "again",
+        },
+      ],
+    ]
+  `);
 
   unsub();
   close();
