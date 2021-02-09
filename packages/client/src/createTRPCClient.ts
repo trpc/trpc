@@ -228,14 +228,14 @@ export function createTRPCClient<TRouter extends AnyRouter>(
 
   function subscriptionOnce<
     TPath extends keyof TSubscriptions & string,
-    TInput extends inferRouteInput<TSubscriptions[TPath]>
-  >(path: TPath, input: TInput) {
-    type TOutput = inferSubscriptionOutput<TRouter, TPath>[];
+    TInput extends inferRouteInput<TSubscriptions[TPath]>,
+    TOutput extends inferSubscriptionOutput<TRouter, TPath>
+  >(path: TPath, input: TInput): CancellablePromise<TOutput[]> {
     let stopped = false;
     let nextTry: any; // setting as `NodeJS.Timeout` causes compat issues, can probably be solved
     let currentRequest: ReturnType<typeof request> | null = null;
 
-    const promise = new Promise<TOutput>((resolve, reject) => {
+    const promise = new Promise<TOutput[]>((resolve, reject) => {
       async function exec() {
         if (stopped) {
           return;
@@ -261,7 +261,7 @@ export function createTRPCClient<TRouter extends AnyRouter>(
         }
       }
       exec();
-    }) as CancellablePromise<TOutput>;
+    }) as CancellablePromise<TOutput[]>;
     promise.cancel = () => {
       stopped = true;
       clearTimeout(nextTry);
