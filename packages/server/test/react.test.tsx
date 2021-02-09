@@ -50,19 +50,6 @@ async function startServer() {
   const app = express();
   app.use(bodyParser.json());
 
-  app.use((req, _res, next) => {
-    // request logger
-    console.log(
-      '⬅️ ',
-      req.method,
-      req.path,
-      'INPUT',
-      req.body?.input ?? req.query.input ?? 'n/a',
-    );
-
-    next();
-  });
-
   app.use(
     '/trpc',
     trpc.createExpressMiddleware({
@@ -90,6 +77,7 @@ async function startServer() {
       fetch: fetch as any,
     },
   });
+
   return {
     close: () =>
       new Promise<void>((resolve, reject) =>

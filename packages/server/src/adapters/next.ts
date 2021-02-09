@@ -45,7 +45,7 @@ export function createNextApiHandler<
       ...opts,
       req,
       res,
-      endpoint,
+      path: endpoint,
     });
   };
 }

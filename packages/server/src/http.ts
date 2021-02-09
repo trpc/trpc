@@ -1,12 +1,12 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import http from 'http';
 import qs from 'qs';
+import url from 'url';
 import { assertNotBrowser } from './assertNotBrowser';
 import { InputValidationError, RouteNotFoundError } from './errors';
 import { Router } from './router';
-import { Subscription, SubscriptionDestroyError } from './subscription';
+import { Subscription } from './subscription';
 import { DataTransformer } from './transformer';
-import url from 'url';
 assertNotBrowser();
 export class HTTPError extends Error {
   public readonly statusCode: number;
@@ -114,7 +114,14 @@ export type BaseResponse = http.ServerResponse;
 
 export interface BaseOptions {
   subscriptions?: {
-    timeout?: number;
+    /**
+     * Time in milliseconds before `408` is sent
+     */
+    requestTimeoutMs?: number;
+    /**
+     * Allow for some backpressure and batch send events every X ms
+     */
+    backpressureMs?: number;
   };
   teardown?: () => Promise<void>;
   /**
@@ -165,7 +172,7 @@ export async function requestHandler<
   req,
   res,
   router,
-  endpoint,
+  path,
   subscriptions,
   createContext,
   teardown,
@@ -177,7 +184,7 @@ export async function requestHandler<
 }: {
   req: TRequest;
   res: TResponse;
-  endpoint: string;
+  path: string;
   router: TRouter;
   createContext: TCreateContextFn;
 } & BaseOptions) {
@@ -196,7 +203,7 @@ export async function requestHandler<
         target: 'mutations',
         input,
         ctx,
-        path: endpoint,
+        path: path,
       });
     } else if (method === 'GET') {
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
@@ -206,7 +213,7 @@ export async function requestHandler<
         target: 'queries',
         input,
         ctx,
-        path: endpoint,
+        path: path,
       });
     } else if (method === 'PATCH') {
       const body = await getPostBody({ req, maxBodySize });
@@ -216,46 +223,83 @@ export async function requestHandler<
         target: 'subscriptions',
         input,
         ctx,
-        path: endpoint,
+        path: path,
       })) as Subscription;
-      const onClose = () => {
-        sub.destroy('closed');
-      };
 
-      // FIXME - refactor
-      //  this is a bit complex
-      // needs to handle a few cases:
-      // - ok subscription
-      // - error subscription
-      // - request got prematurely closed
-      // - request timed out
-      res.once('close', onClose);
-      const timeout = subscriptions?.timeout ?? 9000; // 10s is vercel's api timeout
-      const timer = setTimeout(() => {
-        sub.destroy('timeout');
-      }, timeout);
-      try {
-        output = await sub.onceOutputAndStop();
+      output = await new Promise((resolve, reject) => {
+        const startTime = Date.now();
 
-        res.off('close', onClose);
-      } catch (err) {
-        res.off('close', onClose);
-        clearTimeout(timer);
-        if (
-          err instanceof SubscriptionDestroyError &&
-          err.reason === 'timeout'
-        ) {
-          throw new HTTPError(
-            408,
-            `Subscription exceeded ${timeout}ms - please reconnect.`,
+        const buffer: unknown[] = [];
+
+        const requestTimeoutMs = subscriptions?.requestTimeoutMs ?? 9000; // 10s is vercel's api timeout
+        const backpressureMs = subscriptions?.backpressureMs ?? 0;
+
+        // timers
+        let backpressureTimer: any = null;
+        let requestTimeoutTimer: any = null;
+
+        function cleanup() {
+          sub.off('data', onData);
+          sub.off('error', onError);
+          sub.off('destroy', onDestroy);
+          req.off('close', onClose);
+          clearTimeout(requestTimeoutTimer);
+          clearTimeout(backpressureTimer);
+          sub.destroy();
+        }
+        function onData(data: unknown) {
+          buffer.push(data);
+
+          const requestTimeLeft = requestTimeoutMs - (Date.now() - startTime);
+
+          const success = () => {
+            cleanup();
+            resolve(buffer);
+          };
+          if (requestTimeLeft >= backpressureMs) {
+            // will timeout before next backpressure tick
+            success();
+            return;
+          }
+          if (!backpressureTimer) {
+            backpressureTimer = setTimeout(success, backpressureMs);
+            return;
+          }
+        }
+        function onError(err: Error) {
+          cleanup();
+          // maybe if `buffer` has length here we should just return instead?
+          reject(err);
+        }
+        function onClose() {
+          cleanup();
+          reject(new HTTPError(499, `Client Closed Request`));
+        }
+        function onRequestTimeout() {
+          cleanup();
+          reject(
+            new HTTPError(
+              408,
+              `Subscription exceeded ${requestTimeoutMs}ms - please reconnect.`,
+            ),
           );
         }
-        throw err;
-      }
+
+        function onDestroy() {
+          reject(new HTTPError(500, `Subscription was destroyed prematurely`));
+          cleanup();
+        }
+
+        sub.on('data', onData);
+        sub.on('error', onError);
+        sub.on('destroy', onDestroy);
+        req.once('close', onClose);
+        requestTimeoutTimer = setTimeout(onRequestTimeout, requestTimeoutMs);
+        sub.start();
+      });
     } else {
       throw httpError.badRequest(`Unexpected request method ${method}`);
     }
-
     const json: HTTPSuccessResponseEnvelope<unknown> = {
       ok: true,
       statusCode: res.statusCode ?? 200,

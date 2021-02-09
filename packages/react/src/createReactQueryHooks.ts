@@ -108,7 +108,7 @@ export function createReactQueryHooks<
   function useSubscription<
     TPath extends keyof TSubscriptions & string,
     TInput extends inferRouteInput<TSubscriptions[TPath]>,
-    TOutput extends inferSubscriptionOutput<TRouter, TPath>
+    TOutput extends inferSubscriptionOutput<TRouter, TPath>[]
   >(
     pathAndArgs: [TPath, TInput],
     opts?: UseQueryOptions<TInput, TRPCClientError, TOutput>,
@@ -117,7 +117,7 @@ export function createReactQueryHooks<
 
     const hook = useQuery<TInput, TRPCClientError, TOutput>(
       pathAndArgs,
-      () => client.subscriptionOnce(path, input),
+      () => client.subscriptionOnce(path, input) as any,
       opts,
     );
 

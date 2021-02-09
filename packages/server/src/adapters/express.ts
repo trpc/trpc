@@ -35,7 +35,7 @@ export function createExpressMiddleware<
       ...opts,
       req,
       res,
-      endpoint,
+      path: endpoint,
     });
   };
 }
