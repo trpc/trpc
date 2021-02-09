@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/ban-types */
 import { EventEmitter } from 'events';
+import { expectTypeOf } from 'expect-type';
 import * as z from 'zod';
 import * as trpc from '../src';
 import { routerToServerAndClient } from './_testHelpers';
@@ -39,6 +40,7 @@ test('subscriptionOnce', async () => {
   const [receivedMsg] = await client.subscriptionOnce('onMessage', '');
 
   expect(receivedMsg).toEqual(msg);
+  expectTypeOf(receivedMsg).toMatchTypeOf<Message>();
 
   close();
 });
