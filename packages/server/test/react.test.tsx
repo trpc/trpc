@@ -23,7 +23,7 @@ function createAppRouter() {
   } = {
     posts: [{ id: '1', title: 'first post', createdAt: Date.now() }],
   };
-  return trpc
+  const appRouter = trpc
     .router<Context>()
     .query('allPosts', {
       resolve() {
@@ -53,28 +53,39 @@ function createAppRouter() {
         })
       }
     })
-}
-let appRouter: ReturnType<typeof createAppRouter>;
-beforeEach(() => {
-  appRouter = createAppRouter();
-});
-test('basic query', async () => {
+
   const { client, close } = routerToServerAndClient(appRouter);
 
   const queryClient = new QueryClient();
-  const { useQuery } = createReactQueryHooks<typeof appRouter, Context>({
+  const hooks = createReactQueryHooks<typeof appRouter, Context>({
     client: client,
     queryClient,
   });
+
+  return {
+    hooks,
+    close,
+  }
+}
+let factory: ReturnType<typeof createAppRouter>;
+beforeEach(() => {
+  factory = createAppRouter();
+});
+afterEach(() => {
+  factory.close()
+})
+
+test('basic query', async () => {
+  const {hooks} = factory
   function MyComponent() {
-    const allPostsQuery = useQuery('allPosts');
+    const allPostsQuery = hooks.useQuery('allPosts');
     expectTypeOf(allPostsQuery.data!).toMatchTypeOf<Post[]>();
 
     return <pre>{JSON.stringify(allPostsQuery.data ?? 'n/a', null, 4)}</pre>;
   }
   function App() {
     return (
-      <QueryClientProvider client={queryClient}>
+      <QueryClientProvider client={hooks.queryClient}>
         <MyComponent />
       </QueryClientProvider>
     );
@@ -85,17 +96,10 @@ test('basic query', async () => {
     expect(utils.container).toHaveTextContent('first post');
   });
 
-  close();
 });
 
 test('mutation on mount + subscribe for it',async  () => {
-  const { client, close } = routerToServerAndClient(appRouter);
-
-  const queryClient = new QueryClient();
-  const t = createReactQueryHooks<typeof appRouter, Context>({
-    client: client,
-    queryClient,
-  });
+  const {hooks} = factory
   function MyComponent() {
     const [posts, setPosts] = useState<Post[]>([]);
 
@@ -113,10 +117,10 @@ test('mutation on mount + subscribe for it',async  () => {
     };
     const input = posts.reduce((num, post) => Math.max(num, post.createdAt), 0)
     
-    const sub = t.useSubscription(['newPosts', input])
+    const sub = hooks.useSubscription(['newPosts', input])
     useEffect(() => addPosts(sub.data), [sub.data])
 
-    const mutation = t.useMutation('addPost')
+    const mutation = hooks.useMutation('addPost')
     useEffect(() => {
       if (posts.length === 1) {
         mutation.mutate({title: 'second post'})
@@ -127,7 +131,7 @@ test('mutation on mount + subscribe for it',async  () => {
   }
   function App() {
     return (
-      <QueryClientProvider client={queryClient}>
+      <QueryClientProvider client={hooks.queryClient}>
         <MyComponent />
       </QueryClientProvider>
     );
@@ -140,7 +144,5 @@ test('mutation on mount + subscribe for it',async  () => {
   await waitFor(() => {
     expect(utils.container).toHaveTextContent('second post');
   });
-
-  close();
-  
 });
+
