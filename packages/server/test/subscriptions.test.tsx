@@ -63,8 +63,8 @@ test('subscriptionOnce() + type safety + backpressure', async () => {
   close();
 });
 
-test('subscriptions()', async () => {
-  const TIMEOUT_MS = 100;
+test('subscriptions() with timeout', async () => {
+  const TIMEOUT_MS = 50;
   const ee = new EventEmitter();
   type Message = {
     id: string;
