@@ -1,6 +1,6 @@
 {
   "name": "@trpc/next",
-  "version": "1.4.4-alpha.4",
+  "version": "1.5.0-alpha.0",
   "description": "TRPC next",
   "author": "KATT",
   "license": "MIT",
@@ -36,11 +36,11 @@
     "access": "public"
   },
   "peerDependencies": {
-    "next": "*",
-    "@trpc/server": "*"
+    "@trpc/server": "*",
+    "next": "*"
   },
   "devDependencies": {
-    "@trpc/server": "^1.4.4-alpha.4",
+    "@trpc/server": "^1.5.0-alpha.0",
     "@types/next": "^4.17.11",
     "next": "^10.0.5"
   },
