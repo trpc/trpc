@@ -39,20 +39,20 @@ function createAppRouter() {
           id: `${Math.random()}`,
           createdAt: Date.now(),
           title: input.title,
-        })
+        });
       },
-    }).subscription('newPosts', {
+    })
+    .subscription('newPosts', {
       input: z.number(),
-      resolve({input}) {
+      resolve({ input }) {
         return trpc.subscriptionPullFactory<Post>({
           intervalMs: 1,
           pull(emit) {
-            db.posts.filter(p => p.createdAt > input).forEach(emit.data)
-          }
-
-        })
-      }
-    })
+            db.posts.filter(p => p.createdAt > input).forEach(emit.data);
+          },
+        });
+      },
+    });
 
   const { client, close } = routerToServerAndClient(appRouter);
 
@@ -63,20 +63,22 @@ function createAppRouter() {
   });
 
   return {
+    appRouter,
     hooks,
     close,
-  }
+    db,
+  };
 }
 let factory: ReturnType<typeof createAppRouter>;
 beforeEach(() => {
   factory = createAppRouter();
 });
 afterEach(() => {
-  factory.close()
-})
+  factory.close();
+});
 
 test('basic query', async () => {
-  const {hooks} = factory
+  const { hooks } = factory;
   function MyComponent() {
     const allPostsQuery = hooks.useQuery('allPosts');
     expectTypeOf(allPostsQuery.data!).toMatchTypeOf<Post[]>();
@@ -95,16 +97,15 @@ test('basic query', async () => {
   await waitFor(() => {
     expect(utils.container).toHaveTextContent('first post');
   });
-
 });
 
-test('mutation on mount + subscribe for it',async  () => {
-  const {hooks} = factory
+test('mutation on mount + subscribe for it', async () => {
+  const { hooks } = factory;
   function MyComponent() {
     const [posts, setPosts] = useState<Post[]>([]);
 
     const addPosts = (newPosts?: Post[]) => {
-      setPosts((nowPosts) => {
+      setPosts(nowPosts => {
         const map: Record<Post['id'], Post> = {};
         for (const msg of nowPosts ?? []) {
           map[msg.id] = msg;
@@ -115,18 +116,18 @@ test('mutation on mount + subscribe for it',async  () => {
         return Object.values(map);
       });
     };
-    const input = posts.reduce((num, post) => Math.max(num, post.createdAt), 0)
-    
-    const sub = hooks.useSubscription(['newPosts', input])
-    useEffect(() => addPosts(sub.data), [sub.data])
+    const input = posts.reduce((num, post) => Math.max(num, post.createdAt), 0);
 
-    const mutation = hooks.useMutation('addPost')
+    const sub = hooks.useSubscription(['newPosts', input]);
+    useEffect(() => addPosts(sub.data), [sub.data]);
+
+    const mutation = hooks.useMutation('addPost');
     useEffect(() => {
       if (posts.length === 1) {
-        mutation.mutate({title: 'second post'})
+        mutation.mutate({ title: 'second post' });
       }
-    }, [posts.length])
-    
+    }, [posts.length]);
+
     return <pre>{JSON.stringify(posts, null, 4)}</pre>;
   }
   function App() {
@@ -146,3 +147,25 @@ test('mutation on mount + subscribe for it',async  () => {
   });
 });
 
+test('dehydrate', async () => {
+  const { hooks, appRouter,db } = factory;
+
+  await hooks.prefetchQueryOnServer(appRouter, {
+    path: 'allPosts',
+    ctx: {},
+    input: undefined,
+  });
+
+  const dehydrated = hooks.dehydrate(hooks.queryClient).queries;
+  expect(dehydrated).toHaveLength(1);
+
+  const [cache] = dehydrated;
+  expect(cache.queryHash).toMatchInlineSnapshot(`"[\\"allPosts\\",null]"`);
+  expect(cache.queryKey).toMatchInlineSnapshot(`
+    Array [
+      "allPosts",
+      null,
+    ]
+  `);
+  expect(cache.state.data).toEqual(db.posts)
+});
