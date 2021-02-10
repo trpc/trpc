@@ -4,10 +4,7 @@ import { createTRPCClient, CreateTRPCClientOptions } from '../../client/src';
 import AbortController from 'abort-controller';
 import fetch from 'node-fetch';
 import { AnyRouter, CreateHttpHandlerOptions } from '../src';
-import {
-  CreateHttpContextFn,
-  createHttpServer,
-} from '../src/adapters/standalone';
+import { CreateHttpContextFn, createHttpServer } from '../src/standalone';
 
 export function routerToServerAndClient<
   TRouter extends AnyRouter,
