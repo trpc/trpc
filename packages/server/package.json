@@ -29,6 +29,8 @@
     "dist"
   ],
   "dependencies": {
+    "@types/express": "^4.17.11",
+    "@types/next": "^9.0.0",
     "tslib": "^2.1.0"
   },
   "publishConfig": {
