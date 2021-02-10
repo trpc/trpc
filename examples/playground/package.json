@@ -1,6 +1,6 @@
 {
   "name": "@examples/playground",
-  "version": "1.4.2",
+  "version": "1.4.3",
   "private": true,
   "scripts": {
     "dev:server": "nodemon -e ts -w . -x ts-node ./src/server.ts",
@@ -8,9 +8,9 @@
     "dev": "run-p dev:* --print-label"
   },
   "dependencies": {
-    "@trpc/client": "^1.4.1",
-    "@trpc/react": "^1.4.2",
-    "@trpc/server": "^1.4.1",
+    "@trpc/client": "^1.4.3",
+    "@trpc/react": "^1.4.3",
+    "@trpc/server": "^1.4.3",
     "@types/node-fetch": "^2.5.8",
     "abort-controller": "^3.0.0",
     "body-parser": "^1.19.0",
