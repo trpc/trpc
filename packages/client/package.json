@@ -13,7 +13,7 @@
     "start": "tsdx watch --tsconfig tsconfig.build.json --verbose --noClean",
     "build": "yarn tsdx build --tsconfig tsconfig.build.json",
     "test": "tsdx test --passWithNoTests",
-    "lint": "tsdx lint",
+    "lint": "tsdx lint src",
     "prepublish": "npm run build"
   },
   "main": "dist/index.js",
