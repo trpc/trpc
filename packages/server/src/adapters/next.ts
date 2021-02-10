@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import type { NextApiHandler, NextApiRequest, NextApiResponse } from 'next';
+import type * as Next from 'next';
 import {
   BaseOptions,
   CreateContextFn,
@@ -10,14 +10,14 @@ import {
 import { Router } from '../router';
 
 export type CreateNextContextOptions = CreateContextFnOptions<
-  NextApiRequest,
-  NextApiResponse
+  Next.NextApiRequest,
+  Next.NextApiResponse
 >;
 
 export type CreateNextContextFn<TContext> = CreateContextFn<
   TContext,
-  NextApiRequest,
-  NextApiResponse
+  Next.NextApiRequest,
+  Next.NextApiResponse
 >;
 export function createNextApiHandler<
   TContext,
@@ -27,7 +27,7 @@ export function createNextApiHandler<
     router: TRouter;
     createContext: CreateNextContextFn<TContext>;
   } & BaseOptions,
-): NextApiHandler {
+): Next.NextApiHandler {
   return async (req, res) => {
     const endpoint = Array.isArray(req.query.trpc)
       ? req.query.trpc.join('/')
