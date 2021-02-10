@@ -65,8 +65,8 @@ export class Subscription<TOutput = unknown> {
     }
     try {
       const emit: SubscriptionEmit<TOutput> = {
-        error: err => this.emitError(err),
-        data: data => this.emitOutput(data),
+        error: (err) => this.emitError(err),
+        data: (data) => this.emitOutput(data),
       };
       const cancel = await this.opts.start(emit);
       if (this.isDestroyed) {

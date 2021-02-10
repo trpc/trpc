@@ -56,7 +56,7 @@ async function startServer() {
   const { server, port } = await new Promise<{
     server: http.Server;
     port: number;
-  }>(resolve => {
+  }>((resolve) => {
     const server = app.listen(0, () => {
       resolve({
         server,
@@ -77,7 +77,7 @@ async function startServer() {
   return {
     close: () =>
       new Promise<void>((resolve, reject) =>
-        server.close(err => {
+        server.close((err) => {
           err ? reject(err) : resolve();
         }),
       ),

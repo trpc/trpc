@@ -48,7 +48,7 @@ function createAppRouter() {
         return trpc.subscriptionPullFactory<Post>({
           intervalMs: 1,
           pull(emit) {
-            db.posts.filter(p => p.createdAt > input).forEach(emit.data);
+            db.posts.filter((p) => p.createdAt > input).forEach(emit.data);
           },
         });
       },
@@ -105,7 +105,7 @@ test('mutation on mount + subscribe for it', async () => {
     const [posts, setPosts] = useState<Post[]>([]);
 
     const addPosts = (newPosts?: Post[]) => {
-      setPosts(nowPosts => {
+      setPosts((nowPosts) => {
         const map: Record<Post['id'], Post> = {};
         for (const msg of nowPosts ?? []) {
           map[msg.id] = msg;

@@ -142,7 +142,7 @@ async function getPostBody({
       return;
     }
     let body = '';
-    req.on('data', function(data) {
+    req.on('data', function (data) {
       body += data;
       if (typeof maxBodySize === 'number' && body.length > maxBodySize) {
         reject(new HTTPError(413, 'Payload Too Large'));
@@ -175,8 +175,8 @@ export async function requestHandler<
   createContext,
   teardown,
   transformer = {
-    serialize: data => data,
-    deserialize: data => data,
+    serialize: (data) => data,
+    deserialize: (data) => data,
   },
   maxBodySize,
 }: {

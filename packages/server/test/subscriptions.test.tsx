@@ -123,7 +123,7 @@ test('subscriptions() with timeout', async () => {
     },
   });
 
-  await new Promise(resolve => ee.once('client:response', resolve));
+  await new Promise((resolve) => ee.once('client:response', resolve));
 
   ee.once('server:connect', () => {
     setTimeout(() => {
@@ -133,12 +133,12 @@ test('subscriptions() with timeout', async () => {
     }, 1);
   });
 
-  await new Promise(resolve => ee.once('client:response', resolve));
+  await new Promise((resolve) => ee.once('client:response', resolve));
 
   expect(onConnect).toHaveBeenCalledTimes(2);
 
   // let request timeout
-  await new Promise(resolve => setTimeout(resolve, TIMEOUT_MS + 1));
+  await new Promise((resolve) => setTimeout(resolve, TIMEOUT_MS + 1));
 
   ee.once('server:connect', () => {
     setTimeout(() => {
@@ -148,8 +148,8 @@ test('subscriptions() with timeout', async () => {
     }, 1);
   });
 
-  await new Promise(resolve => ee.once('client:response', resolve));
-  await new Promise(resolve => ee.once('server:connect', resolve));
+  await new Promise((resolve) => ee.once('client:response', resolve));
+  await new Promise((resolve) => ee.once('server:connect', resolve));
 
   expect(allInputs).toEqual([
     undefined,
