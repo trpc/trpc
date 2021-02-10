@@ -6,7 +6,7 @@ import { createSchema as tsJsonSchema, TsjsonParser } from 'ts-json-validator';
 import * as yup from 'yup';
 import * as z from 'zod';
 import * as trpc from '../src';
-import { expectError, routerToServerAndClient } from './_testHelpers';
+import { routerToServerAndClient } from './_testHelpers';
 
 test('no validator', async () => {
   const router = trpc.router().query('hello', {
@@ -32,7 +32,7 @@ test('zod', async () => {
   const { client, close } = routerToServerAndClient(router);
   const res = await client.query('num', 123);
 
-  expect(await expectError(client.query('num', '123' as any)))
+  await expect(client.query('num', '123' as any)).rejects
     .toMatchInlineSnapshot(`
       [Error: 1 validation issue(s)
 
@@ -56,9 +56,7 @@ test('yup', async () => {
   const { client, close } = routerToServerAndClient(router);
   const res = await client.query('num', 123);
 
-  expect(
-    await expectError(client.query('num', 'asd' as any)),
-  ).toMatchInlineSnapshot(
+  await expect(client.query('num', 'asd' as any)).rejects.toMatchInlineSnapshot(
     `[Error: this must be a \`number\` type, but the final value was: \`NaN\` (cast from the value \`"asd"\`).]`,
   );
   expect(res.input).toBe(123);
@@ -76,9 +74,9 @@ test('myzod', async () => {
   });
   const { client, close } = routerToServerAndClient(router);
   const res = await client.query('num', 123);
-  expect(
-    await expectError(client.query('num', '123' as any)),
-  ).toMatchInlineSnapshot(`[Error: expected type to be number but got string]`);
+  await expect(client.query('num', '123' as any)).rejects.toMatchInlineSnapshot(
+    `[Error: expected type to be number but got string]`,
+  );
   expect(res.input).toBe(123);
   close();
 });
@@ -98,9 +96,11 @@ test('ts-json-validator', async () => {
   });
   const { client, close } = routerToServerAndClient(router);
   const res = await client.query('num', 123);
-  expect(
-    await expectError(client.query('num', 'asdasd' as any)),
-  ).toMatchInlineSnapshot(`[Error: Unexpected token a in JSON at position 0]`);
+  await expect(
+    client.query('num', 'asdasd' as any),
+  ).rejects.toMatchInlineSnapshot(
+    `[Error: Unexpected token a in JSON at position 0]`,
+  );
   expect(res.input).toBe(123);
   close();
 });
@@ -122,9 +122,9 @@ test('validator fn', async () => {
   });
   const { client, close } = routerToServerAndClient(router);
   const res = await client.query('num', 123);
-  expect(
-    await expectError(client.query('num', '123' as any)),
-  ).toMatchInlineSnapshot(`[Error: Not a number]`);
+  await expect(client.query('num', '123' as any)).rejects.toMatchInlineSnapshot(
+    `[Error: Not a number]`,
+  );
   expect(res.input).toBe(123);
   close();
 });

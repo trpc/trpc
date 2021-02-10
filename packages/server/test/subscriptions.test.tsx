@@ -184,3 +184,58 @@ test('subscriptions() with timeout', async () => {
   unsub();
   close();
 });
+
+test('err subscription', async () => {
+  const ee = new EventEmitter();
+  type Message = {
+    id: string;
+  };
+
+  const { client, close } = routerToServerAndClient(
+    trpc.router().subscription('onMessage', {
+      input: z.string().optional(),
+      resolve() {
+        ee.emit('server:connect');
+        return new trpc.Subscription<Message>({
+          start(emit) {
+            const onMessage = (data: Message) => {
+              emit.data(data);
+            };
+            ee.on('server:msg', onMessage);
+            return () => ee.off('server:msg', onMessage);
+          },
+        });
+      },
+    }),
+    {
+      subscriptions: {
+        backpressureMs: 10,
+      },
+    },
+  );
+  ee.once('server:connect', () => {
+    setImmediate(() => {
+      ee.emit('server:msg', {
+        id: '1',
+      });
+      ee.emit('server:msg', {
+        id: '2',
+      });
+    });
+  });
+  const msgs = await client.subscriptionOnce('onMessage', '');
+
+  expectTypeOf(msgs).toMatchTypeOf<Message[]>();
+  expect(msgs).toMatchInlineSnapshot(`
+    Array [
+      Object {
+        "id": "1",
+      },
+      Object {
+        "id": "2",
+      },
+    ]
+  `);
+
+  close();
+});

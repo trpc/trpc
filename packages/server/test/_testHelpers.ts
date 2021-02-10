@@ -9,16 +9,6 @@ import {
   createHttpServer,
 } from '../src/adapters/standalone';
 
-export async function expectError<TPromise extends Promise<any>>(
-  promise: TPromise,
-) {
-  try {
-    await promise;
-    throw new Error('Did not throw');
-  } catch (err) {
-    return err;
-  }
-}
 export function routerToServerAndClient<
   TRouter extends AnyRouter,
   TContext = {}
