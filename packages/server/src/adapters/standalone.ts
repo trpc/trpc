@@ -7,8 +7,8 @@ import {
   CreateContextFn,
   CreateContextFnOptions,
   requestHandler,
-} from '../index';
-import { AnyRouter } from '../index';
+} from '../http';
+import { AnyRouter } from '../router';
 
 export type CreateHttpContextOptions = CreateContextFnOptions<
   http.IncomingMessage,
