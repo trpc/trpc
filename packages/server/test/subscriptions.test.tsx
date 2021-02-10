@@ -183,6 +183,10 @@ test('subscriptions() with timeout', async () => {
   `);
   unsub();
   close();
+
+
+  expect(ee.listenerCount('server:msg')).toBe(0)
+  expect(ee.listenerCount('server:error')).toBe(0)
 });
 
 test('err subscription', async () => {
@@ -237,5 +241,57 @@ test('err subscription', async () => {
     ]
   `);
 
+  close();
+
+  expect(ee.listenerCount('server:msg')).toBe(0)
+  expect(ee.listenerCount('server:error')).toBe(0)
+});
+
+test('error emit', async () => {
+  const ee = new EventEmitter();
+  type Message = {
+    id: string;
+  };
+
+  const { client, close } = routerToServerAndClient(
+    trpc.router().subscription('onMessage', {
+      input: z.string().optional(),
+      resolve() {
+        ee.emit('server:connect');
+        return new trpc.Subscription<Message>({
+          async start(emit) {
+            const onMessage = (data: Message) => {
+              emit.data(data);
+            };
+            ee.on('server:msg', onMessage);
+            const onError = (err: Error) => {
+              emit.error(err);
+            };
+            ee.on('server:error', onError);
+            return () => {
+              ee.off('server:msg', onMessage);
+              ee.off('server:error', onError);
+            };
+          },
+        });
+      },
+    }),
+    {
+      subscriptions: {
+        backpressureMs: 10,
+      },
+    },
+  );
+  ee.once('server:connect', () => {
+    setImmediate(() => {
+      ee.emit('server:error', new Error('Random error'));
+    });
+  });
+  await expect(
+    client.subscriptionOnce('onMessage', ''),
+  ).rejects.toMatchInlineSnapshot(`[Error: Random error]`);
+
+  expect(ee.listenerCount('server:msg')).toBe(0)
+  expect(ee.listenerCount('server:error')).toBe(0)
   close();
 });
