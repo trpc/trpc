@@ -70,10 +70,10 @@ export type inferRouteOutput<TRoute extends Route> = inferAsyncReturnType<
 export type inferSubscriptionOutput<
   TRouter extends AnyRouter,
   TPath extends keyof TRouter['_def']['subscriptions']
-> = inferAsyncReturnType<
+> = ReturnType<
   inferAsyncReturnType<
     TRouter['_def']['subscriptions'][TPath]['resolve']
-  >['onceOutputAndStop']
+  >['output']
 >;
 
 export type inferHandlerFn<TRoutes extends RouteRecord<any, any, any>> = <

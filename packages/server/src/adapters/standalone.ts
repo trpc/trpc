@@ -38,7 +38,7 @@ export function createHttpHandler<
       ...opts,
       req,
       res,
-      endpoint,
+      path: endpoint,
     });
   };
 }

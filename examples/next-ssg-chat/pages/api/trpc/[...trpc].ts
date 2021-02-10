@@ -1,5 +1,6 @@
 import { Message, PrismaClient } from '@prisma/client';
 import * as trpc from '@trpc/server';
+import * as trpcNext from '@trpc/server/dist/adapters/next';
 import * as z from 'zod';
 import superjson from 'superjson';
 const prisma = new PrismaClient();
@@ -36,7 +37,7 @@ async function getMessagesAfter(timestamp: Date) {
 }
 
 // ctx
-const createContext = ({ req, res }: trpc.CreateNextContextOptions) => {
+const createContext = ({ req, res }: trpcNext.CreateNextContextOptions) => {
   return {};
 };
 export type Context = trpc.inferAsyncReturnType<typeof createContext>;
@@ -86,12 +87,12 @@ const router = createRouter()
         }),
         resolve: ({ input }) => {
           const { timestamp } = input;
-          return trpc.subscriptionPullFatory<Message[]>({
-            interval: 500,
+          return trpc.subscriptionPullFactory<Message>({
+            intervalMs: 500,
             async pull(emit) {
               const msgs = await getMessagesAfter(timestamp);
-              if (msgs.length > 0) {
-                emit.data(msgs);
+              for (const msg of msgs) {
+                emit.data(msg);
               }
             },
           });
@@ -102,7 +103,7 @@ const router = createRouter()
 export const appRouter = router;
 export type AppRouter = typeof router;
 
-export default trpc.createNextApiHandler({
+export default trpcNext.createNextApiHandler({
   router,
   createContext,
   teardown: () => prisma.$disconnect(),

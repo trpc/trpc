@@ -1,5 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { NextApiHandler, NextApiRequest, NextApiResponse } from 'next';
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+import type { NextApiHandler, NextApiRequest, NextApiResponse } from 'next';
+
 import {
   BaseOptions,
   CreateContextFn,
@@ -45,7 +47,7 @@ export function createNextApiHandler<
       ...opts,
       req,
       res,
-      endpoint,
+      path: endpoint,
     });
   };
 }

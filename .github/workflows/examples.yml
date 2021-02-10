@@ -1,0 +1,30 @@
+name: Examples E2E
+on: [push]
+jobs:
+  e2e:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        dir: [next-ssg-chat, next-hello-world]
+        node: ['14.x']
+        os: [ubuntu-latest]
+    services:
+      postgres:
+        image: postgres:12.1
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_DB: chat
+        ports:
+          - 5432:5432
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v2
+
+      - uses: microsoft/playwright-github-action@v1
+
+      - name: Install deps and build (with cache)
+        uses: bahmutov/npm-install@v1
+
+      - run: yarn --cwd examples/${{ matrix.dir }} build
+      - run: yarn --cwd examples/${{ matrix.dir }} test-start
+      - run: yarn --cwd examples/${{ matrix.dir }} test-dev
