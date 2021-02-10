@@ -1,12 +1,12 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import type * as express from 'express';
+import * as express from 'express';
 import {
   BaseOptions,
   CreateContextFn,
   CreateContextFnOptions,
   requestHandler,
-} from '../http';
-import { Router } from '../router';
+} from '../index';
+import { Router } from '../index';
 
 export type CreateExpressContextOptions = CreateContextFnOptions<
   express.Request,
