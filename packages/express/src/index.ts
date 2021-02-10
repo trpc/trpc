@@ -5,8 +5,8 @@ import {
   CreateContextFn,
   CreateContextFnOptions,
   requestHandler,
-} from '../http';
-import { Router } from '../router';
+  Router,
+} from '@trpc/server';
 
 export type CreateExpressContextOptions = CreateContextFnOptions<
   express.Request,

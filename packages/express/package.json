@@ -1,0 +1,47 @@
+{
+  "name": "@trpc/express",
+  "version": "1.4.4-alpha.3",
+  "description": "TRPC express",
+  "author": "KATT",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/trpcio/trpc.git",
+    "directory": "packages/express"
+  },
+  "eslintConfig": {
+    "rules": {
+      "explicit-module-boundary-types": "off"
+    }
+  },
+  "scripts": {
+    "start": "tsdx watch --tsconfig tsconfig.build.json --verbose --noClean",
+    "build": "yarn tsdx build --tsconfig tsconfig.build.json",
+    "test": "tsdx test",
+    "lint": "tsdx lint",
+    "prepublish": "npm run build"
+  },
+  "main": "dist/index.js",
+  "module": "dist/utils.esm.js",
+  "typings": "dist/index.d.ts",
+  "files": [
+    "README.md",
+    "dist"
+  ],
+  "dependencies": {
+    "@types/express": "^4.17.11",
+    "tslib": "^2.1.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "peerDependencies": {
+    "express": "*"
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.11",
+    "express": "^4.17.1",
+    "@trpc/server": "^1.4.4-alpha.3"
+  },
+  "gitHead": "5a5d989e68d8e93b7f1c6e0c5606d79c8acdd0a4"
+}
