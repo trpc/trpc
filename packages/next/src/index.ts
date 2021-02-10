@@ -6,8 +6,8 @@ import {
   CreateContextFnOptions,
   getErrorResponseEnvelope,
   requestHandler,
-} from '../http';
-import { Router } from '../router';
+  Router,
+} from '@trpc/server';
 
 export type CreateNextContextOptions = CreateContextFnOptions<
   Next.NextApiRequest,

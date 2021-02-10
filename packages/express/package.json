@@ -15,8 +15,8 @@
     }
   },
   "scripts": {
-    "start": "tsdx watch --tsconfig tsconfig.build.json --verbose --noClean",
-    "build": "yarn tsdx build --tsconfig tsconfig.build.json",
+    "start": "tsdx watch --tsconfig tsconfig.build.json --verbose --noClean --target node",
+    "build": "yarn tsdx build --tsconfig tsconfig.build.json --target node",
     "test": "tsdx test",
     "lint": "tsdx lint",
     "prepublish": "npm run build"
@@ -36,7 +36,8 @@
     "access": "public"
   },
   "peerDependencies": {
-    "express": "*"
+    "express": "*",
+    "@trpc/server": "*"
   },
   "devDependencies": {
     "@trpc/server": "^1.4.4-alpha.4",

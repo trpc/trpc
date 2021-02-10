@@ -1,2 +1,2 @@
-See [`../../express/test`](../../express/test) - we test this lib there too
+See [`../../server/test`](../../server/test) - we test this lib there too
 
