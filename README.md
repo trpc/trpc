@@ -13,7 +13,7 @@ TRPC is a framework for building strongly typed RPC APIs with TypeScript. Altern
 - 🍃&nbsp; Light. TRPC has zero deps and a small client-side footprint.
 - 🐻&nbsp; Easy to add to your existing brownfield project.
 - 😌&nbsp; No double-declaration of types on server or client.
-- 🔋&nbsp; Batteries included. React-library + Next.js/Express adapters. _(But tRPC not tied to React - [chat to me](https://twitter.com/alexdotjs) if you want to make a Svelte/Vue/... lib)_
+- 🔋&nbsp; Batteries included. React-library + Next.js/Express adapters. _(But tRPC is not tied to React - [reach out](https://twitter.com/alexdotjs) if you want to make a Svelte/Vue/... lib)_
 - 🥃&nbsp; Simple to use APIs for queries, mutations, & subscriptions.
 - 👀&nbsp; Quite a few examples in the [./examples](./examples)-folder
 
@@ -83,6 +83,7 @@ Paste the following code:
 
 ```ts
 import * as trpc from '@trpc/server';
+import * as trpcNext from '@trpc/server/dist/adapters/next';
 import * as z from 'zod';
 
 // The app's context - is typically generated for each request
@@ -90,7 +91,7 @@ export type Context = {};
 const createContext = ({
   req,
   res,
-}: trpc.CreateNextContextOptions): Context => {
+}: trpcNext.CreateNextContextOptions): Context => {
   return {};
 };
 
@@ -120,7 +121,7 @@ export const appRouter = createRouter()
 export type AppRouter = typeof appRouter;
 
 // export API handler
-export default trpc.createNextApiHandler({
+export default trpcNext.createNextApiHandler({
   router: appRouter,
   createContext,
 });
@@ -444,6 +445,8 @@ yarn dev
 This builds each package to `<packages>/<package>/dist` and runs the project in watch mode so any edits you save inside `<packages>/<package>/src` cause a rebuild to `<packages>/<package>/dist`. The results will stream to to the terminal.
 
 ## Testing
+
+[![codecov](https://codecov.io/gh/trpc/trpc/branch/main/graph/badge.svg?token=KPPS918B0G)](https://codecov.io/gh/trpc/trpc) _(this could be improved, although we have some E2E-tests that aren't included)_
 
 Testing is currently coalesced in [./packages/server/test](./packages/server/test) - we import the different libs from here, this makes it easier for us to do integration testing + getting test coverage on the whole codebase.
 

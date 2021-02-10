@@ -24,8 +24,6 @@ export const httpError = {
   badRequest: (message?: string) =>
     new HTTPError(400, message ?? 'Bad Request'),
   notFound: (message?: string) => new HTTPError(404, message ?? 'Not found'),
-  payloadTooLarge: (message?: string) =>
-    new HTTPError(413, message ?? 'Payload Too Large'),
 };
 export type HTTPSuccessResponseEnvelope<TOutput> = {
   ok: true;
@@ -147,7 +145,7 @@ async function getPostBody({
     req.on('data', function (data) {
       body += data;
       if (typeof maxBodySize === 'number' && body.length > maxBodySize) {
-        reject(httpError.payloadTooLarge());
+        reject(new HTTPError(413, 'Payload Too Large'));
         req.connection.destroy();
       }
     });

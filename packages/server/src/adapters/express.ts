@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import * as express from 'express';
+import type * as express from 'express';
 import {
   BaseOptions,
   CreateContextFn,

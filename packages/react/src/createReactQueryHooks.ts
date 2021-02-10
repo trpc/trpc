@@ -151,7 +151,7 @@ export function createReactQueryHooks<
     });
   };
 
-  function _dehydrate(opts?: DehydrateOptions) {
+  function _dehydrate(opts?: DehydrateOptions): DehydratedState {
     return client.transformer.serialize(dehydrate(queryClient, opts));
   }
 
