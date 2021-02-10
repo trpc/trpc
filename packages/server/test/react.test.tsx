@@ -115,6 +115,13 @@ test('mutation on mount + subscribe for it',async  () => {
     
     const sub = t.useSubscription(['newPosts', input])
     useEffect(() => addPosts(sub.data), [sub.data])
+
+    const mutation = t.useMutation('addPost')
+    useEffect(() => {
+      if (posts.length === 1) {
+        mutation.mutate({title: 'second post'})
+      }
+    }, [posts.length])
     
     return <pre>{JSON.stringify(posts, null, 4)}</pre>;
   }
@@ -129,6 +136,9 @@ test('mutation on mount + subscribe for it',async  () => {
   const utils = render(<App />);
   await waitFor(() => {
     expect(utils.container).toHaveTextContent('first post');
+  });
+  await waitFor(() => {
+    expect(utils.container).toHaveTextContent('second post');
   });
 
   close();
