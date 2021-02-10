@@ -1,5 +1,4 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-// @ts-ignore
 import type * as express from 'express';
 import {
   BaseOptions,
