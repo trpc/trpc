@@ -7,6 +7,7 @@ import fetch from 'node-fetch';
 import * as z from 'zod';
 import { createTRPCClient } from '../../client/src';
 import * as trpc from '../src';
+import * as trpcExpress from '../src/adapters/express';
 
 type Context = {
   user: {
@@ -14,7 +15,9 @@ type Context = {
   } | null;
 };
 async function startServer() {
-  const createContext = (_opts: trpc.CreateExpressContextOptions): Context => {
+  const createContext = (
+    _opts: trpcExpress.CreateExpressContextOptions,
+  ): Context => {
     const getUser = () => {
       if (_opts.req.headers.authorization === 'meow') {
         return {
@@ -48,7 +51,7 @@ async function startServer() {
 
   app.use(
     '/trpc',
-    trpc.createExpressMiddleware({
+    trpcExpress.createExpressMiddleware({
       router,
       createContext,
     }),

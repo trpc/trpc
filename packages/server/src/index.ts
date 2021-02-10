@@ -6,6 +6,4 @@ export * from './types';
 export * from './subscription';
 export * from './transformer';
 
-export * from './adapters/express';
-export * from './adapters/next';
 export * from './adapters/standalone';

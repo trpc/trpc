@@ -1,4 +1,18 @@
 {
-  "extends": "../../tsconfig.build.json",
-  "include": ["src", "types", "../../types"]
+  "compilerOptions": {
+    "target": "es5",
+    "module": "commonjs",
+    "lib": ["es5", "es6", "dom", "dom.iterable"],
+    "importHelpers": true,
+    "allowJs": false,
+    "outDir": "dist",
+    "rootDir": "src",
+    "strict": true,
+    "noImplicitAny": true,
+    "esModuleInterop": true,
+    "resolveJsonModule": true,
+    "declaration": true,
+    "skipLibCheck": true
+  },
+  "include": ["src"]
 }
