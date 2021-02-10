@@ -51,11 +51,9 @@ test('subscriptionOnce() + type safety + backpressure', async () => {
     Array [
       Object {
         "id": "1",
-        "text": "hi",
       },
       Object {
         "id": "2",
-        "text": "there",
       },
     ]
   `);
