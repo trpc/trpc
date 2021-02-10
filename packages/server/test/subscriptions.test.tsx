@@ -184,9 +184,8 @@ test('subscriptions() with timeout', async () => {
   unsub();
   close();
 
-
-  expect(ee.listenerCount('server:msg')).toBe(0)
-  expect(ee.listenerCount('server:error')).toBe(0)
+  expect(ee.listenerCount('server:msg')).toBe(0);
+  expect(ee.listenerCount('server:error')).toBe(0);
 });
 
 test('err subscription', async () => {
@@ -243,8 +242,8 @@ test('err subscription', async () => {
 
   close();
 
-  expect(ee.listenerCount('server:msg')).toBe(0)
-  expect(ee.listenerCount('server:error')).toBe(0)
+  expect(ee.listenerCount('server:msg')).toBe(0);
+  expect(ee.listenerCount('server:error')).toBe(0);
 });
 
 test('error emit', async () => {
@@ -291,7 +290,7 @@ test('error emit', async () => {
     client.subscriptionOnce('onMessage', ''),
   ).rejects.toMatchInlineSnapshot(`[Error: Random error]`);
 
-  expect(ee.listenerCount('server:msg')).toBe(0)
-  expect(ee.listenerCount('server:error')).toBe(0)
+  expect(ee.listenerCount('server:msg')).toBe(0);
+  expect(ee.listenerCount('server:error')).toBe(0);
   close();
 });

@@ -148,7 +148,7 @@ test('mutation on mount + subscribe for it', async () => {
 });
 
 test('dehydrate', async () => {
-  const { hooks, appRouter,db } = factory;
+  const { hooks, appRouter, db } = factory;
 
   await hooks.prefetchQueryOnServer(appRouter, {
     path: 'allPosts',
@@ -167,5 +167,5 @@ test('dehydrate', async () => {
       null,
     ]
   `);
-  expect(cache.state.data).toEqual(db.posts)
+  expect(cache.state.data).toEqual(db.posts);
 });
