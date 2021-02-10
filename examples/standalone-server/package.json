@@ -1,6 +1,6 @@
 {
   "name": "@examples/standalone-server",
-  "version": "1.4.3",
+  "version": "2.0.0-alpha.0",
   "private": true,
   "scripts": {
     "dev:server": "nodemon -e ts -w . -x ts-node ./src/server.ts",
@@ -8,9 +8,9 @@
     "dev": "run-p dev:* --print-label"
   },
   "dependencies": {
-    "@trpc/client": "^1.4.3",
-    "@trpc/react": "^1.4.3",
-    "@trpc/server": "^1.4.3",
+    "@trpc/client": "^2.0.0-alpha.0",
+    "@trpc/react": "^2.0.0-alpha.0",
+    "@trpc/server": "^2.0.0-alpha.0",
     "@types/node-fetch": "^2.5.8",
     "abort-controller": "^3.0.0",
     "node-fetch": "^2.6.1",
