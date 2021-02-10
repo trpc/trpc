@@ -4,8 +4,6 @@
   "compilerOptions": {
     "allowJs": false,
     "baseUrl": ".",
-    "importHelpers": true,
-    "declaration": true,
     "typeRoots": ["./node_modules/@types", "./types"],
     "paths": {
       "@trpc/server": ["packages/server/src"],
