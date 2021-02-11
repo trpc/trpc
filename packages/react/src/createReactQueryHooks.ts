@@ -7,7 +7,7 @@ import type {
   Router,
   RouteWithInput,
 } from '@trpc/server';
-import { useMemo } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import {
   QueryClient,
   useMutation,
@@ -23,6 +23,10 @@ import {
   DehydrateOptions,
 } from 'react-query/hydration';
 
+export type OutputWithCursor<TData, TCursor extends any = any> = {
+  cursor: TCursor | null;
+  data: TData;
+};
 export function createReactQueryHooks<
   TRouter extends Router<TContext, any, any, any>,
   TContext,
@@ -105,6 +109,11 @@ export function createReactQueryHooks<
     return hook;
   }
 
+  /**
+   * ⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️
+   *  **Experimental.** API might change without major version bump
+   * ⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠
+   */
   function useSubscription<
     TPath extends keyof TSubscriptions & string,
     TInput extends inferRouteInput<TSubscriptions[TPath]>,
@@ -122,6 +131,54 @@ export function createReactQueryHooks<
     );
 
     return hook;
+  }
+
+  /**
+   * ⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️
+   *  **Experimental.** API might change without major version bump
+   * ⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠
+   */
+  function useLiveQuery<
+    TPath extends keyof TSubscriptions & string,
+    TInput extends inferRouteInput<TSubscriptions[TPath]> & { cursor: any },
+    TOutput extends (inferSubscriptionOutput<TRouter, TPath> &
+      OutputWithCursor<TData>)[],
+    TData
+  >(
+    pathAndArgs: [TPath, Omit<TInput, 'cursor'>],
+    opts?: Omit<UseQueryOptions<TInput, TRPCClientError, TOutput>, 'select'>,
+  ) {
+    const [path, userInput] = pathAndArgs;
+
+    const currentCursor = useRef<any>(null);
+
+    const hook = useQuery<TInput, TRPCClientError, TOutput>(
+      pathAndArgs,
+      () =>
+        client.subscriptionOnce(path, {
+          ...userInput,
+          cursor: currentCursor.current,
+        }) as any,
+      opts,
+    );
+    const lastItem = useMemo(() => {
+      const raw = hook.data;
+      if (typeof raw === 'undefined') {
+        return undefined;
+      }
+      const last = raw[raw.length - 1];
+      return last;
+    }, [hook.data]);
+
+    const data: TOutput[number]['data'] | undefined = lastItem?.data;
+    const lastCursor = lastItem?.cursor;
+
+    useEffect(() => {
+      currentCursor.current = lastCursor;
+      hook.refetch();
+    }, [lastCursor]);
+
+    return { ...hook, data };
   }
 
   const prefetchQueryOnServer = async <
@@ -172,12 +229,9 @@ export function createReactQueryHooks<
     useSubscription,
     queryClient,
     prefetchQueryOnServer,
-    /**
-     * @deprecated renamed to `prefetchQueryOnServer`
-     */
-    prefetchQuery: prefetchQueryOnServer,
     dehydrate: _dehydrate,
     useDehydratedState,
     client,
+    useLiveQuery,
   };
 }

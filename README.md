@@ -14,8 +14,10 @@ TRPC is a framework for building strongly typed RPC APIs with TypeScript. Altern
 - 🐻&nbsp; Easy to add to your existing brownfield project.
 - 😌&nbsp; No double-declaration of types on server or client.
 - 🔋&nbsp; Batteries included. React-library + Next.js/Express adapters. _(But tRPC is not tied to React - [reach out](https://twitter.com/alexdotjs) if you want to make a Svelte/Vue/... lib)_
-- 🥃&nbsp; Simple to use APIs for queries, mutations, & subscriptions.
+- 🥃&nbsp; Simple to use APIs for queries & mutations + experimental subscriptions support.
 - 👀&nbsp; Quite a few examples in the [./examples](./examples)-folder
+
+> _TRPC requires TypeScript > 4.1 because of [Template Literal Types](https://www.typescriptlang.org/docs/handbook/2/template-literal-types.html), but you can get some benefits with autocompletion etc even if you use raw JS._
 
 ---
 
@@ -396,15 +398,15 @@ This will cache the `messages.list` so it's instant when a user visits the page.
 
 ## HTTP Methods <-> Type mapping
 
-| HTTP Method | Mapping           | Notes                                                                        |
-| ----------- | ----------------- | ---------------------------------------------------------------------------- |
-| `GET`       | `.query()`        | Input JSON-stringified in query param, e.g. `?input=${JSON.stringify(input)` |
-| `POST`      | `.mutation()`     | Input in post body.                                                          |
-| `PATCH`     | `.subscription()` | Input in post body. Experimental API using HTTP long-pulling.                |
+| HTTP Method | Mapping           | Notes                                                                                        |
+| ----------- | ----------------- | -------------------------------------------------------------------------------------------- |
+| `GET`       | `.query()`        | Input JSON-stringified in query param.<br/>_e.g._ `?input=${JSON.stringify(input)`           |
+| `POST`      | `.mutation()`     | Input in post body.                                                                          |
+| `PATCH`     | `.subscription()` | Input in post body.<br/>:warning: Experimental. API might change without major version bump. |
 
 ## Relationship to GraphQL
 
-If you are already have a custom GraphQL-server for your project; don't use TRPC. GraphQL is amazing; it's amazing to be able to make a flexible API where each consumer can pick just the data needed for it. 
+If you are already have a custom GraphQL-server for your project; don't use TRPC. GraphQL is amazing; it's great to be able to make a flexible API where each consumer can pick just the data needed for it. 
 
 The thing is, GraphQL isn't that easy to get right - ACL is needed to be solved on a per-type basis, complexity analysis, and performance are all non-trivial things.
 
