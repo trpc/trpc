@@ -66,7 +66,7 @@ export default function Home() {
   const subscription = trpc.useSubscription(
     ['messages.newMessages', { timestamp }],
     {
-      enabled: timestamp.getTime() === 0 ? false : true,
+      enabled: msgs.length > 0,
     },
   );
 
