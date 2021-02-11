@@ -49,10 +49,10 @@ function createAppRouter() {
     })
     .query('paginatedPosts', {
       input: z.object({
-        limit: z.number().min(1).max(100),
+        limit: z.number().min(1).max(100).optional(),
         cursor: z.number().optional(),
       }),
-      resolve({ input: { limit, cursor } }) {
+      resolve({ input: { limit = 50, cursor } }) {
         const items: typeof db.posts = [];
         let nextCursor: typeof cursor | undefined = undefined;
         for (let index = 0; index < db.posts.length; index++) {
@@ -220,7 +220,7 @@ test('mutation on mount + subscribe for it', async () => {
   });
 });
 
-test('useLiveQuery', async () => {
+test('useLiveQuery()', async () => {
   const { hooks, db, postLiveInputs } = factory;
   function MyComponent() {
     const postsQuery = hooks.useLiveQuery(['postsLive', {}]);
@@ -323,7 +323,7 @@ test('prefetchQuery', async () => {
   });
 });
 
-test('useInfiniteQuery', async () => {
+test('useInfiniteQuery()', async () => {
   const { hooks } = factory;
   function MyComponent() {
     const {
@@ -389,4 +389,20 @@ test('useInfiniteQuery', async () => {
   expect(utils.container.innerHTML).toMatchInlineSnapshot(
     `"<button data-testid=\\"loadMore\\" disabled=\\"\\">Nothing more to load</button>{\\"pages\\":[{\\"items\\":[{\\"id\\":\\"1\\",\\"title\\":\\"first post\\",\\"createdAt\\":0}],\\"nextCursor\\":1},{\\"items\\":[{\\"id\\":\\"2\\",\\"title\\":\\"second post\\",\\"createdAt\\":1}]}],\\"pageParams\\":[null,1]}"`,
   );
+});
+
+test('useInfiniteQueryOnServer()', async () => {
+  const { hooks, appRouter } = factory;
+
+  await hooks.prefetchInfiniteQueryOnServer(appRouter, {
+    path: 'paginatedPosts',
+    input: {
+      limit: 1,
+    },
+    ctx: {},
+  });
+
+  const data = JSON.stringify(hooks.dehydrate());
+  expect(data).toContain('first post');
+  expect(data).not.toContain('second post');
 });
