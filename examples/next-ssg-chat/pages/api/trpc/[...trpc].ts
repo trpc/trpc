@@ -60,15 +60,27 @@ const router = createRouter()
     'messages.',
     createRouter()
       .query('list', {
-        input: z.any(),
-        resolve: async () => {
+        input: z.object({
+          cursor: z.date().optional(),
+          take: z.number().min(1).max(50).optional(),
+        }),
+        resolve: async ({ input: { take, cursor } }) => {
           const items = await prisma.message.findMany({
             orderBy: {
-              createdAt: 'asc',
+              createdAt: 'desc',
             },
+            cursor: cursor
+              ? {
+                  createdAt: cursor,
+                }
+              : undefined,
+            take: take ?? 10,
+            skip: cursor ? 1 : 0,
           });
+          const reversed = items.reverse();
           return {
             items,
+            prevCursor: reversed[0]?.createdAt,
           };
         },
       })

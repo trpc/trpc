@@ -24,9 +24,17 @@ const getTimestamp = (m: Message[]) => {
 };
 
 export default function Home() {
-  const query = trpc.useQuery(['messages.list']);
-
-  const [msgs, setMessages] = useState(() => query.data?.items ?? []);
+  const {
+    data,
+    hasPreviousPage,
+    isFetchingPreviousPage,
+    fetchPreviousPage,
+  } = trpc.useInfiniteQuery(['messages.list', {}], {
+    getPreviousPageParam: (d) => (d as any).prevCursor,
+  });
+  const [msgs, setMessages] = useState(
+    () => data?.pages.map((p) => p.items).flat() ?? [],
+  );
   const addMessages = (newMessages?: Message[]) => {
     setMessages((nowMessages) => {
       const map: Record<Message['id'], Message> = {};
@@ -45,13 +53,22 @@ export default function Home() {
   const timestamp = useMemo(() => getTimestamp(msgs), [msgs]);
 
   // merge messages when `query.data` updates
-  useEffect(() => addMessages(query.data?.items), [query.data]);
+  useEffect(() => {
+    if (!data) {
+      return;
+    }
+    console.log('data', data);
+    const items = data.pages.map((page) => page.items).flat();
+    addMessages(items);
+  }, [data]);
 
   // ---subscriptions
-  const subscription = trpc.useSubscription([
-    'messages.newMessages',
-    { timestamp },
-  ]);
+  const subscription = trpc.useSubscription(
+    ['messages.newMessages', { timestamp }],
+    {
+      enabled: timestamp.getTime() === 0 ? false : true,
+    },
+  );
 
   // merge messages on subscription.data
   useEffect(() => subscription.data && addMessages(subscription.data), [
@@ -70,6 +87,18 @@ export default function Home() {
       <h1>Chat</h1>
 
       <h2>Messages</h2>
+
+      <button
+        data-testid="loadMore"
+        onClick={() => fetchPreviousPage()}
+        disabled={!hasPreviousPage || isFetchingPreviousPage}
+      >
+        {isFetchingPreviousPage
+          ? 'Loading more...'
+          : hasPreviousPage
+          ? 'Load More'
+          : 'Nothing more to load'}
+      </button>
       <ul>
         {msgs.map((m) => (
           <li key={m.id}>
@@ -115,11 +144,11 @@ export default function Home() {
   );
 }
 export async function getStaticProps() {
-  await trpc.prefetchQueryOnServer(appRouter, {
-    path: 'messages.list',
-    input: null,
-    ctx: {} as any,
-  });
+  // await trpc.prefetchInfiniteQueryOnServer(appRouter, {
+  //   path: 'messages.list',
+  //   input: {},
+  //   ctx: {} as any,
+  // });
   return {
     props: {
       dehydratedState: trpc.dehydrate(),

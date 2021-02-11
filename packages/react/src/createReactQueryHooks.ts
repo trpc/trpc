@@ -202,6 +202,33 @@ export function createReactQueryHooks<
     });
   };
 
+  const prefetchInfiniteQueryOnServer = async <
+    TPath extends keyof TQueries & string,
+    TInput extends inferRouteInput<TQueries[TPath]>
+  >(
+    router: TRouter,
+    opts: {
+      path: TPath;
+      ctx: TContext;
+      input: TInput;
+    },
+  ): Promise<void> => {
+    const input = opts.input ?? null;
+    const { path, ctx } = opts;
+    const cacheKey = [path, input];
+
+    await queryClient.prefetchInfiniteQuery(cacheKey, async () => {
+      const data = await router.invoke({
+        target: 'queries',
+        ctx,
+        path,
+        input,
+      });
+
+      return data;
+    });
+  };
+
   function prefetchQuery<
     TPath extends keyof TQueries & string,
     TInput extends inferRouteInput<TQueries[TPath]>,
@@ -263,6 +290,7 @@ export function createReactQueryHooks<
     dehydrate: _dehydrate,
     prefetchQuery,
     prefetchQueryOnServer,
+    prefetchInfiniteQueryOnServer,
     queryClient,
     useDehydratedState,
     useInfiniteQuery: _useInfiniteQuery,
