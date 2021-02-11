@@ -1,6 +1,7 @@
-jest.setTimeout(60e3);
+jest.setTimeout(30e3);
 
 test('send message', async () => {
+  await new Promise((resolve) => setTimeout(resolve, 1e3));
   await page.goto('http://localhost:3000');
 
   const viewer = await browser.newPage();
