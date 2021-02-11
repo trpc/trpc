@@ -57,7 +57,6 @@ export default function Home() {
     if (!data) {
       return;
     }
-    console.log('data', data);
     const items = data.pages.map((page) => page.items).flat();
     addMessages(items);
   }, [data]);
