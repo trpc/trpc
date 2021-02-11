@@ -49,7 +49,7 @@ function createAppRouter() {
         return trpc.subscriptionPullFactory<Post>({
           intervalMs: 1,
           pull(emit) {
-            db.posts.filter(p => p.createdAt > input).forEach(emit.data);
+            db.posts.filter((p) => p.createdAt > input).forEach(emit.data);
           },
         });
       },
@@ -124,7 +124,7 @@ test('mutation on mount + subscribe for it', async () => {
     const [posts, setPosts] = useState<Post[]>([]);
 
     const addPosts = (newPosts?: Post[]) => {
-      setPosts(nowPosts => {
+      setPosts((nowPosts) => {
         const map: Record<Post['id'], Post> = {};
         for (const msg of nowPosts ?? []) {
           map[msg.id] = msg;
@@ -141,11 +141,12 @@ test('mutation on mount + subscribe for it', async () => {
     useEffect(() => addPosts(sub.data), [sub.data]);
 
     const mutation = hooks.useMutation('addPost');
+    const mutate = mutation.mutate;
     useEffect(() => {
       if (posts.length === 1) {
-        mutation.mutate({ title: 'second post' });
+        mutate({ title: 'second post' });
       }
-    }, [posts.length]);
+    }, [posts.length, mutate]);
 
     return <pre>{JSON.stringify(posts, null, 4)}</pre>;
   }
@@ -186,13 +187,14 @@ test('useLiveQuery', async () => {
     expect(utils.container).toHaveTextContent('first post');
   });
 
+  const title = `a new post${Math.random()}`
   db.posts.push({
     id: `${Math.random()}`,
     createdAt: Date.now(),
-    title: 'a new post',
-  })
+    title,
+  });
   await waitFor(() => {
-    expect(utils.container).toHaveTextContent('a new post');
+    expect(utils.container).toHaveTextContent(title);
   });
 
   expect(utils.container.innerHTML).not.toContain('cursor');

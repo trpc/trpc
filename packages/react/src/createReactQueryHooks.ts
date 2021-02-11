@@ -5,7 +5,7 @@ import type {
   inferRouteOutput,
   inferSubscriptionOutput,
   Router,
-  RouteWithInput
+  RouteWithInput,
 } from '@trpc/server';
 import { useEffect, useMemo, useState } from 'react';
 import {
@@ -15,18 +15,18 @@ import {
   UseMutationResult,
   useQuery,
   UseQueryOptions,
-  UseQueryResult
+  UseQueryResult,
 } from 'react-query';
 import {
   dehydrate,
   DehydratedState,
-  DehydrateOptions
+  DehydrateOptions,
 } from 'react-query/hydration';
 
 export type OutputWithCursor<TData, TCursor extends any = any> = {
   cursor: TCursor | null;
   data: TData;
-}
+};
 export function createReactQueryHooks<
   TRouter extends Router<TContext, any, any, any>,
   TContext,
@@ -130,34 +130,37 @@ export function createReactQueryHooks<
 
   function useLiveQuery<
     TPath extends keyof TSubscriptions & string,
-    TInput extends inferRouteInput<TSubscriptions[TPath]> & {cursor: any},
-    TOutput extends inferSubscriptionOutput<TRouter, TPath> & OutputWithCursor<TData>,
-    TData,
+    TInput extends inferRouteInput<TSubscriptions[TPath]> & { cursor: any },
+    TOutput extends inferSubscriptionOutput<TRouter, TPath> &
+      OutputWithCursor<TData>,
+    TData
   >(
     pathAndArgs: [TPath, Omit<TInput, 'cursor'>],
     opts?: Omit<UseQueryOptions<TInput, TRPCClientError, TOutput>, 'select'>,
   ) {
     const [path, userInput] = pathAndArgs;
 
-    const [cursor, setCursor] = useState<any>(null)
+    const [cursor, setCursor] = useState<any>(null);
 
     const hook = useQuery<TInput, TRPCClientError, TOutput['data']>(
       pathAndArgs,
-      () => client.subscriptionOnce(path, ({...(userInput ?? {}), cursor})) as any,
+      () =>
+        client.subscriptionOnce(path, { ...(userInput ?? {}), cursor }) as any,
       {
         ...(opts ?? {}),
         select(_res) {
-          const res = _res as any as TOutput
-          const last = res[res.length - 1]
-          setCursor(last?.cursor ?? null)
+          const res = (_res as any) as TOutput;
+          const last = res[res.length - 1];
+          setCursor(last?.cursor ?? null);
           return last.data;
         },
       },
     );
 
     useEffect(() => {
-      hook.refetch()
-    }, [cursor])
+      hook.refetch();
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [cursor]);
 
     return hook;
   }
