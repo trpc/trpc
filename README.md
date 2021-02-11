@@ -404,7 +404,7 @@ This will cache the `messages.list` so it's instant when a user visits the page.
 
 ## Relationship to GraphQL
 
-If you are already have a custom GraphQL-server for your project; don't use TRPC. GraphQL is amazing; it's amazing to be able to make a flexible API where each consumer can pick just the data needed for it. 
+If you are already have a custom GraphQL-server for your project; don't use TRPC. GraphQL is amazing; it's great to be able to make a flexible API where each consumer can pick just the data needed for it. 
 
 The thing is, GraphQL isn't that easy to get right - ACL is needed to be solved on a per-type basis, complexity analysis, and performance are all non-trivial things.
 
