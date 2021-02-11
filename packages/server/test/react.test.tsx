@@ -62,7 +62,7 @@ function createAppRouter() {
         const { cursor } = input;
 
         return trpc.subscriptionPullFactory<OutputWithCursor<Post[]>>({
-          intervalMs: 1,
+          intervalMs: 10,
           pull(emit) {
             const newCursor = hash(db.posts);
             if (newCursor !== cursor) {
