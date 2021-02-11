@@ -17,6 +17,9 @@ import {
   useQuery,
   UseQueryOptions,
   UseQueryResult,
+  useInfiniteQuery,
+  UseInfiniteQueryOptions,
+  UseInfiniteQueryResult,
 } from 'react-query';
 import {
   dehydrate,
@@ -61,10 +64,11 @@ export function createReactQueryHooks<
       TOutput
     >,
   ): UseQueryResult<TOutput, TRPCClientError>;
+
   function _useQuery(
     pathAndArgs: [string, unknown?],
     opts?: UseQueryOptions<any, any, any>,
-  ): UseQueryResult {
+  ) {
     let input: unknown = null;
     let path: string;
     if (Array.isArray(pathAndArgs)) {
@@ -75,17 +79,7 @@ export function createReactQueryHooks<
     }
     const cacheKey = [path, input];
 
-    const hook = useQuery(
-      cacheKey,
-      () =>
-        client.request({
-          type: 'query',
-          path,
-          input,
-        }),
-      opts,
-    );
-    return hook;
+    return useQuery(cacheKey, () => (client.query as any)(...cacheKey), opts);
   }
 
   function _useMutation<
@@ -245,6 +239,25 @@ export function createReactQueryHooks<
     return transformed;
   }
 
+  function _useInfiniteQuery<
+    TPath extends keyof TQueries & string,
+    TInput extends inferRouteInput<TQueries[TPath]> & { cursor: any },
+    TOutput extends inferRouteOutput<TQueries[TPath]>
+  >(
+    pathAndArgs: [TPath, Omit<TInput, 'cursor'>],
+    opts?: UseInfiniteQueryOptions<TInput, TRPCClientError, TOutput>,
+  ): UseInfiniteQueryResult<TOutput, TRPCClientError> {
+    const [path, input] = pathAndArgs;
+    return useInfiniteQuery<TInput, TRPCClientError, TOutput>(
+      pathAndArgs,
+      ({ pageParam }) => {
+        const actualInput = { ...input, cursor: pageParam };
+        return client.query(path, actualInput);
+      },
+      opts,
+    );
+  }
+
   return {
     client,
     dehydrate: _dehydrate,
@@ -252,6 +265,7 @@ export function createReactQueryHooks<
     prefetchQueryOnServer,
     queryClient,
     useDehydratedState,
+    useInfiniteQuery: _useInfiniteQuery,
     useLiveQuery,
     useMutation: _useMutation,
     useQuery: _useQuery,
