@@ -4,13 +4,13 @@
 import '@testing-library/jest-dom';
 import { render, waitFor } from '@testing-library/react';
 import { expectTypeOf } from 'expect-type';
+import hash from 'hash-sum';
 import React, { useEffect, useState } from 'react';
 import { QueryClient, QueryClientProvider } from 'react-query';
 import * as z from 'zod';
 import { createReactQueryHooks, OutputWithCursor } from '../../react/src';
 import * as trpc from '../src';
 import { routerToServerAndClient } from './_testHelpers';
-import hash from 'hash-sum';
 
 type Context = {};
 type Post = {
@@ -23,8 +23,9 @@ function createAppRouter() {
   const db: {
     posts: Post[];
   } = {
-    posts: [{ id: '1', title: 'first post', createdAt: Date.now() }],
+    posts: [{ id: '1', title: 'first post', createdAt: 0 }],
   };
+  const postLiveInputs: unknown[] = [];
   const appRouter = trpc
     .router<Context>()
     .query('allPosts', {
@@ -61,6 +62,7 @@ function createAppRouter() {
       }),
       resolve({ input }) {
         const { cursor } = input;
+        postLiveInputs.push(input);
 
         return trpc.subscriptionPullFactory<OutputWithCursor<Post[]>>({
           intervalMs: 10,
@@ -87,6 +89,7 @@ function createAppRouter() {
     hooks,
     close,
     db,
+    postLiveInputs,
   };
 }
 let factory: ReturnType<typeof createAppRouter>;
@@ -136,7 +139,10 @@ test('mutation on mount + subscribe for it', async () => {
         return Object.values(map);
       });
     };
-    const input = posts.reduce((num, post) => Math.max(num, post.createdAt), 0);
+    const input = posts.reduce(
+      (num, post) => Math.max(num, post.createdAt),
+      -1,
+    );
 
     const sub = hooks.useSubscription(['newPosts', input]);
     useEffect(() => addPosts(sub.data), [sub.data]);
@@ -169,7 +175,7 @@ test('mutation on mount + subscribe for it', async () => {
 });
 
 test('useLiveQuery', async () => {
-  const { hooks, db } = factory;
+  const { hooks, db, postLiveInputs } = factory;
   function MyComponent() {
     const postsQuery = hooks.useLiveQuery(['postsLive', {}]);
 
@@ -188,17 +194,36 @@ test('useLiveQuery', async () => {
     expect(utils.container).toHaveTextContent('first post');
   });
 
-  const title = `a new post${Math.random()}`;
-  db.posts.push({
-    id: `${Math.random()}`,
-    createdAt: Date.now(),
-    title,
-  });
-  await waitFor(() => {
-    expect(utils.container).toHaveTextContent(title);
-  });
+  for (let index = 0; index < 3; index++) {
+    const title = `a new post index:${index}`;
+    db.posts.push({
+      id: `r${index}`,
+      createdAt: 0,
+      title,
+    });
+
+    await waitFor(() => {
+      expect(utils.container).toHaveTextContent(title);
+    });
+  }
 
   expect(utils.container.innerHTML).not.toContain('cursor');
+  expect(postLiveInputs).toMatchInlineSnapshot(`
+    Array [
+      Object {
+        "cursor": null,
+      },
+      Object {
+        "cursor": "26e57a36",
+      },
+      Object {
+        "cursor": "29bac818",
+      },
+      Object {
+        "cursor": "f8b75db0",
+      },
+    ]
+  `);
 });
 
 test('dehydrate', async () => {
