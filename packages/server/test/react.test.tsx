@@ -40,7 +40,7 @@ function createAppRouter() {
     .query('postById', {
       input: z.string(),
       resolve({ input }) {
-        const post = db.posts.find(p => p.id === input);
+        const post = db.posts.find((p) => p.id === input);
         if (!post) {
           throw trpc.httpError.notFound();
         }
@@ -49,10 +49,7 @@ function createAppRouter() {
     })
     .query('paginatedPosts', {
       input: z.object({
-        limit: z
-          .number()
-          .min(1)
-          .max(100),
+        limit: z.number().min(1).max(100),
         cursor: z.number().optional(),
       }),
       resolve({ input: { limit, cursor } }) {
@@ -69,7 +66,7 @@ function createAppRouter() {
           }
         }
         const last = items[items.length - 1];
-        const nextIndex = db.posts.findIndex(item => item === last) + 1;
+        const nextIndex = db.posts.findIndex((item) => item === last) + 1;
         if (db.posts[nextIndex]) {
           nextCursor = db.posts[nextIndex].createdAt;
         }
@@ -97,7 +94,7 @@ function createAppRouter() {
         return trpc.subscriptionPullFactory<Post>({
           intervalMs: 1,
           pull(emit) {
-            db.posts.filter(p => p.createdAt > input).forEach(emit.data);
+            db.posts.filter((p) => p.createdAt > input).forEach(emit.data);
           },
         });
       },
@@ -174,7 +171,7 @@ test('mutation on mount + subscribe for it', async () => {
     const [posts, setPosts] = useState<Post[]>([]);
 
     const addPosts = (newPosts?: Post[]) => {
-      setPosts(nowPosts => {
+      setPosts((nowPosts) => {
         const map: Record<Post['id'], Post> = {};
         for (const msg of nowPosts ?? []) {
           map[msg.id] = msg;
@@ -339,7 +336,7 @@ test('useInfiniteQuery', async () => {
         },
       ],
       {
-        getNextPageParam: lastPage => (lastPage as any).nextCursor,
+        getNextPageParam: (lastPage) => (lastPage as any).nextCursor,
       },
     );
 
