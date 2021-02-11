@@ -64,7 +64,7 @@ export default function Home() {
 
   // ---subscriptions
   trpc.useSubscription(['messages.newMessages', { timestamp }], {
-    enabled: msgs.length > 0,
+    enabled: !!data,
     onBatch(newMsgs) {
       addMessages(newMsgs);
     },
