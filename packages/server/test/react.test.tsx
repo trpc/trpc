@@ -11,7 +11,6 @@ import * as z from 'zod';
 import { createReactQueryHooks, OutputWithCursor } from '../../react/src';
 import * as trpc from '../src';
 import { routerToServerAndClient } from './_testHelpers';
-
 type Context = {};
 type Post = {
   id: string;
@@ -31,6 +30,16 @@ function createAppRouter() {
     .query('allPosts', {
       resolve() {
         return db.posts;
+      },
+    })
+    .query('postById', {
+      input: z.string(),
+      resolve({ input }) {
+        const post = db.posts.find((p) => p.id === input);
+        if (!post) {
+          throw trpc.httpError.notFound();
+        }
+        return post;
       },
     })
     .mutation('addPost', {
@@ -235,7 +244,7 @@ test('dehydrate', async () => {
     input: undefined,
   });
 
-  const dehydrated = hooks.dehydrate(hooks.queryClient).queries;
+  const dehydrated = hooks.dehydrate().queries;
   expect(dehydrated).toHaveLength(1);
 
   const [cache] = dehydrated;
@@ -247,4 +256,32 @@ test('dehydrate', async () => {
     ]
   `);
   expect(cache.state.data).toEqual(db.posts);
+});
+
+test('prefetchQuery', async () => {
+  const { hooks } = factory;
+  function MyComponent() {
+    const [state, setState] = useState<string>('nope');
+    useEffect(() => {
+      async function prefetch() {
+        await hooks.prefetchQuery(['postById', '1']);
+        setState(JSON.stringify(hooks.dehydrate()));
+      }
+      prefetch();
+    }, []);
+
+    return <>{JSON.stringify(state)}</>;
+  }
+  function App() {
+    return (
+      <QueryClientProvider client={hooks.queryClient}>
+        <MyComponent />
+      </QueryClientProvider>
+    );
+  }
+
+  const utils = render(<App />);
+  await waitFor(() => {
+    expect(utils.container).toHaveTextContent('first post');
+  });
 });
