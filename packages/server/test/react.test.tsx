@@ -187,8 +187,11 @@ test('mutation on mount + subscribe for it', async () => {
       -1,
     );
 
-    const sub = hooks.useSubscription(['newPosts', input]);
-    useEffect(() => addPosts(sub.data), [sub.data]);
+    hooks.useSubscription(['newPosts', input], {
+      onBatch(posts) {
+        addPosts(posts);
+      },
+    });
 
     const mutation = hooks.useMutation('addPost');
     const mutate = mutation.mutate;

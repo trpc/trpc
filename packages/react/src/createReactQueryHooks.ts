@@ -20,6 +20,7 @@ import {
   useInfiniteQuery,
   UseInfiniteQueryOptions,
   UseInfiniteQueryResult,
+  hashQueryKey,
 } from 'react-query';
 import {
   dehydrate,
@@ -111,20 +112,43 @@ export function createReactQueryHooks<
   function useSubscription<
     TPath extends keyof TSubscriptions & string,
     TInput extends inferRouteInput<TSubscriptions[TPath]>,
-    TOutput extends inferSubscriptionOutput<TRouter, TPath>[]
+    TOutput extends inferSubscriptionOutput<TRouter, TPath>
   >(
     pathAndArgs: [TPath, TInput],
-    opts?: UseQueryOptions<TInput, TRPCClientError, TOutput>,
+    opts?: {
+      enabled?: boolean;
+      onError?: (err: TRPCClientError) => void;
+      onBatch?: (data: TOutput[]) => void;
+    },
   ) {
-    const [path, input] = pathAndArgs;
+    const enabled = opts?.enabled ?? true;
+    const queryKey = hashQueryKey(pathAndArgs);
 
-    const hook = useQuery<TInput, TRPCClientError, TOutput>(
-      pathAndArgs,
-      () => client.subscriptionOnce(path, input) as any,
-      opts,
-    );
-
-    return hook;
+    return useEffect(() => {
+      if (!enabled) {
+        return;
+      }
+      let stopped = false;
+      const [path, input] = pathAndArgs;
+      const promise = client.subscriptionOnce(path, input);
+      promise
+        .then((data) => {
+          if (stopped) {
+            return;
+          }
+          opts?.onBatch && opts.onBatch(data);
+        })
+        .catch((err) => {
+          if (stopped) {
+            return;
+          }
+          opts?.onError && opts.onError(err);
+        });
+      return () => {
+        stopped = true;
+        promise.cancel();
+      };
+    }, [queryKey]);
   }
 
   /**

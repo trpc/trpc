@@ -65,6 +65,8 @@ const router = createRouter()
           take: z.number().min(1).max(50).optional(),
         }),
         resolve: async ({ input: { take, cursor } }) => {
+          // `cursor` is of type `Date | undefined`
+          // `take` is of type `number | undefined`
           const items = await prisma.message.findMany({
             orderBy: {
               createdAt: 'desc',

@@ -63,17 +63,12 @@ export default function Home() {
   }, [data]);
 
   // ---subscriptions
-  const subscription = trpc.useSubscription(
-    ['messages.newMessages', { timestamp }],
-    {
-      enabled: msgs.length > 0,
+  trpc.useSubscription(['messages.newMessages', { timestamp }], {
+    enabled: msgs.length > 0,
+    onBatch(newMsgs) {
+      addMessages(newMsgs);
     },
-  );
-
-  // merge messages on subscription.data
-  useEffect(() => subscription.data && addMessages(subscription.data), [
-    subscription.data,
-  ]);
+  });
 
   const addMessage = trpc.useMutation('messages.create');
 
