@@ -17,7 +17,7 @@ TRPC is a framework for building strongly typed RPC APIs with TypeScript. Altern
 - 🥃&nbsp; Simple to use APIs for queries, mutations, & subscriptions.
 - 👀&nbsp; Quite a few examples in the [./examples](./examples)-folder
 
-> TRPC requires TypeScript > 4.1 because of [Template Literal Types](https://www.typescriptlang.org/docs/handbook/2/template-literal-types.html), but you can get some benefits with autocompletion etc even if you only use JS.
+> _TRPC requires TypeScript > 4.1 because of [Template Literal Types](https://www.typescriptlang.org/docs/handbook/2/template-literal-types.html), but you can get some benefits with autocompletion etc even if you use raw JS._
 
 ---
 
