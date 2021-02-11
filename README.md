@@ -396,11 +396,11 @@ This will cache the `messages.list` so it's instant when a user visits the page.
 
 ## HTTP Methods <-> Type mapping
 
-| HTTP Method | Mapping           | Notes                                                                                                                         |
-| ----------- | ----------------- | ----------------------------------------------------------------------------------------------------------------------------- |
-| `GET`       | `.query()`        | Input JSON-stringified in query param, e.g. `?input=${JSON.stringify(input)`                                                  |
-| `POST`      | `.mutation()`     | Input in post body.                                                                                                           |
-| `PATCH`     | `.subscription()` | Input in post body.<br/> Experimental API using HTTP long-pulling.<br/>:warning: API might change without major version bump. |
+| HTTP Method | Mapping           | Notes                                                                                         |
+| ----------- | ----------------- | --------------------------------------------------------------------------------------------- |
+| `GET`       | `.query()`        | Input JSON-stringified in query param, e.g. `?input=${JSON.stringify(input)`                  |
+| `POST`      | `.mutation()`     | Input in post. body.                                                                          |
+| `PATCH`     | `.subscription()` | Input in post body.<br/>:warning: Experimental & API might change without major version bump. |
 
 ## Relationship to GraphQL
 
