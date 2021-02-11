@@ -398,8 +398,8 @@ This will cache the `messages.list` so it's instant when a user visits the page.
 
 | HTTP Method | Mapping           | Notes                                                                                        |
 | ----------- | ----------------- | -------------------------------------------------------------------------------------------- |
-| `GET`       | `.query()`        | Input JSON-stringified in query param<br/>_e.g._ `?input=${JSON.stringify(input)`            |
-| `POST`      | `.mutation()`     | Input in post. body.                                                                         |
+| `GET`       | `.query()`        | Input JSON-stringified in query param.<br/>_e.g._ `?input=${JSON.stringify(input)`           |
+| `POST`      | `.mutation()`     | Input in post body.                                                                          |
 | `PATCH`     | `.subscription()` | Input in post body.<br/>:warning: Experimental. API might change without major version bump. |
 
 ## Relationship to GraphQL
