@@ -1,4 +1,4 @@
-jest.setTimeout(30e3);
+jest.setTimeout(60e3);
 
 test('send message', async () => {
   await page.goto('http://localhost:3000');
