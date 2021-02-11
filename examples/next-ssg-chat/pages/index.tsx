@@ -49,10 +49,8 @@ export default function Home() {
       );
     });
   };
-  //----- get latest timestamp
-  const timestamp = useMemo(() => getTimestamp(msgs), [msgs]);
 
-  //----- merge messages when `query.data` updates
+  // ----- merge messages when `query.data` updates
   useEffect(() => {
     if (!data) {
       return;
@@ -61,7 +59,9 @@ export default function Home() {
     addMessages(items);
   }, [data]);
 
-  //--- subscriptions
+  // ---- subscriptions
+  // latest timestamp
+  const timestamp = useMemo(() => getTimestamp(msgs), [msgs]);
   trpc.useSubscription(['messages.newMessages', { timestamp }], {
     enabled: !!data, // only subscribe if data has loaded
     onBatch(newMsgs) {
