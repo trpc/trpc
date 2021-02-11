@@ -149,8 +149,8 @@ export function createReactQueryHooks<
         select(_res) {
           const res = _res as any as TOutput
           const last = res[res.length - 1]
-          setCursor(last.cursor)
-          return last.data;
+          setCursor(last?.cursor ?? null)
+          return last?.data;
         },
       },
     );
