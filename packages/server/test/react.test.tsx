@@ -7,9 +7,10 @@ import { expectTypeOf } from 'expect-type';
 import React, { useEffect, useState } from 'react';
 import { QueryClient, QueryClientProvider } from 'react-query';
 import * as z from 'zod';
-import { createReactQueryHooks } from '../../react/src';
+import { createReactQueryHooks, OutputWithCursor } from '../../react/src';
 import * as trpc from '../src';
 import { routerToServerAndClient } from './_testHelpers';
+import hash from 'object-hash';
 
 type Context = {};
 type Post = {
@@ -48,7 +49,25 @@ function createAppRouter() {
         return trpc.subscriptionPullFactory<Post>({
           intervalMs: 1,
           pull(emit) {
-            db.posts.filter((p) => p.createdAt > input).forEach(emit.data);
+            db.posts.filter(p => p.createdAt > input).forEach(emit.data);
+          },
+        });
+      },
+    })
+    .subscription('postsLive', {
+      input: z.object({
+        cursor: z.string().nullable(),
+      }),
+      resolve({ input }) {
+        const { cursor } = input;
+
+        return trpc.subscriptionPullFactory<OutputWithCursor<Post[]>>({
+          intervalMs: 1,
+          pull(emit) {
+            const newCursor = hash(db.posts);
+            if (newCursor !== cursor) {
+              emit.data({ data: db.posts, cursor: newCursor });
+            }
           },
         });
       },
@@ -105,7 +124,7 @@ test('mutation on mount + subscribe for it', async () => {
     const [posts, setPosts] = useState<Post[]>([]);
 
     const addPosts = (newPosts?: Post[]) => {
-      setPosts((nowPosts) => {
+      setPosts(nowPosts => {
         const map: Record<Post['id'], Post> = {};
         for (const msg of nowPosts ?? []) {
           map[msg.id] = msg;
@@ -145,6 +164,38 @@ test('mutation on mount + subscribe for it', async () => {
   await waitFor(() => {
     expect(utils.container).toHaveTextContent('second post');
   });
+});
+
+test('useLiveQuery', async () => {
+  const { hooks, db } = factory;
+  function MyComponent() {
+    const postsQuery = hooks.useLiveQuery(['postsLive', {}]);
+
+    return <pre>{JSON.stringify(postsQuery.data ?? null, null, 4)}</pre>;
+  }
+  function App() {
+    return (
+      <QueryClientProvider client={hooks.queryClient}>
+        <MyComponent />
+      </QueryClientProvider>
+    );
+  }
+
+  const utils = render(<App />);
+  await waitFor(() => {
+    expect(utils.container).toHaveTextContent('first post');
+  });
+
+  db.posts.push({
+    id: `${Math.random()}`,
+    createdAt: Date.now(),
+    title: 'a new post',
+  })
+  await waitFor(() => {
+    expect(utils.container).toHaveTextContent('a new post');
+  });
+
+  expect(utils.container.innerHTML).not.toContain('cursor');
 });
 
 test('dehydrate', async () => {
