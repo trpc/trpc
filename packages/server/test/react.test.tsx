@@ -10,7 +10,7 @@ import * as z from 'zod';
 import { createReactQueryHooks, OutputWithCursor } from '../../react/src';
 import * as trpc from '../src';
 import { routerToServerAndClient } from './_testHelpers';
-import hash from 'object-hash';
+import hash from 'hash-sum';
 
 type Context = {};
 type Post = {
@@ -18,6 +18,7 @@ type Post = {
   title: string;
   createdAt: number;
 };
+
 function createAppRouter() {
   const db: {
     posts: Post[];
