@@ -187,7 +187,7 @@ test('useLiveQuery', async () => {
     expect(utils.container).toHaveTextContent('first post');
   });
 
-  const title = `a new post${Math.random()}`
+  const title = `a new post${Math.random()}`;
   db.posts.push({
     id: `${Math.random()}`,
     createdAt: Date.now(),
