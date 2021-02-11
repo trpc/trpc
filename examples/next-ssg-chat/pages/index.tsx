@@ -17,7 +17,7 @@ function maxDate(dates: Date[]) {
 
   return max ?? null;
 }
-const getTimestamp = (m: Message[]) => {
+const getLatestTimestamp = (m: Message[]) => {
   return m.reduce((ts, msg) => {
     return maxDate([ts, msg.updatedAt, msg.createdAt]);
   }, new Date(0));
@@ -61,7 +61,7 @@ export default function Home() {
 
   // ---- subscriptions
   // latest timestamp
-  const timestamp = useMemo(() => getTimestamp(msgs), [msgs]);
+  const timestamp = useMemo(() => getLatestTimestamp(msgs), [msgs]);
   trpc.useSubscription(['messages.newMessages', { timestamp }], {
     enabled: !!data, // only subscribe if data has loaded
     onBatch(newMsgs) {
