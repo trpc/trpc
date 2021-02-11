@@ -17,16 +17,24 @@ function maxDate(dates: Date[]) {
 
   return max ?? null;
 }
-const getTimestamp = (m: Message[]) => {
+const getLatestTimestamp = (m: Message[]) => {
   return m.reduce((ts, msg) => {
     return maxDate([ts, msg.updatedAt, msg.createdAt]);
   }, new Date(0));
 };
 
 export default function Home() {
-  const query = trpc.useQuery(['messages.list']);
-
-  const [msgs, setMessages] = useState(() => query.data?.items ?? []);
+  const {
+    data,
+    hasPreviousPage,
+    isFetchingPreviousPage,
+    fetchPreviousPage,
+  } = trpc.useInfiniteQuery(['messages.list', {}], {
+    getPreviousPageParam: (d) => (d as any).prevCursor,
+  });
+  const [msgs, setMessages] = useState(
+    () => data?.pages.map((p) => p.items).flat() ?? [],
+  );
   const addMessages = (newMessages?: Message[]) => {
     setMessages((nowMessages) => {
       const map: Record<Message['id'], Message> = {};
@@ -41,22 +49,25 @@ export default function Home() {
       );
     });
   };
-  // get latest timestamp
-  const timestamp = useMemo(() => getTimestamp(msgs), [msgs]);
 
-  // merge messages when `query.data` updates
-  useEffect(() => addMessages(query.data?.items), [query.data]);
+  // ----- merge messages when `query.data` updates
+  useEffect(() => {
+    if (!data) {
+      return;
+    }
+    const items = data.pages.map((page) => page.items).flat();
+    addMessages(items);
+  }, [data]);
 
-  // ---subscriptions
-  const subscription = trpc.useSubscription([
-    'messages.newMessages',
-    { timestamp },
-  ]);
-
-  // merge messages on subscription.data
-  useEffect(() => subscription.data && addMessages(subscription.data), [
-    subscription.data,
-  ]);
+  // ---- subscriptions
+  // latest timestamp
+  const timestamp = useMemo(() => getLatestTimestamp(msgs), [msgs]);
+  trpc.useSubscription(['messages.newMessages', { timestamp }], {
+    enabled: !!data, // only subscribe if data has loaded
+    onBatch(newMsgs) {
+      addMessages(newMsgs);
+    },
+  });
 
   const addMessage = trpc.useMutation('messages.create');
 
@@ -70,6 +81,18 @@ export default function Home() {
       <h1>Chat</h1>
 
       <h2>Messages</h2>
+
+      <button
+        data-testid="loadMore"
+        onClick={() => fetchPreviousPage()}
+        disabled={!hasPreviousPage || isFetchingPreviousPage}
+      >
+        {isFetchingPreviousPage
+          ? 'Loading more...'
+          : hasPreviousPage
+          ? 'Load More'
+          : 'Nothing more to load'}
+      </button>
       <ul>
         {msgs.map((m) => (
           <li key={m.id}>
@@ -115,9 +138,9 @@ export default function Home() {
   );
 }
 export async function getStaticProps() {
-  await trpc.prefetchQueryOnServer(appRouter, {
+  await trpc.prefetchInfiniteQueryOnServer(appRouter, {
     path: 'messages.list',
-    input: null,
+    input: {},
     ctx: {} as any,
   });
   return {

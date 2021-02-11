@@ -13,7 +13,6 @@ generator client {
 model Message {
   id        String   @id @default(cuid())
   text      String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @default(now())
-
+  createdAt DateTime @unique @default(now())
+  updatedAt DateTime @unique @default(now())
 }
