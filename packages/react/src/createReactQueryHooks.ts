@@ -9,6 +9,7 @@ import type {
 } from '@trpc/server';
 import { useEffect, useMemo, useRef } from 'react';
 import {
+  FetchQueryOptions,
   QueryClient,
   useMutation,
   UseMutationOptions,
@@ -29,9 +30,8 @@ export type OutputWithCursor<TData, TCursor extends any = any> = {
 };
 export function createReactQueryHooks<
   TRouter extends Router<TContext, any, any, any>,
-  TContext,
-  TQueryClient extends QueryClient = any
->({ client, queryClient }: { client: TRPCClient; queryClient: TQueryClient }) {
+  TContext
+>({ client, queryClient }: { client: TRPCClient; queryClient: QueryClient }) {
   type TQueries = TRouter['_def']['queries'];
   type TMutations = TRouter['_def']['mutations'];
   type TSubscriptions = TRouter['_def']['subscriptions'];
@@ -208,6 +208,28 @@ export function createReactQueryHooks<
     });
   };
 
+  function prefetchQuery<
+    TPath extends keyof TQueries & string,
+    TInput extends inferRouteInput<TQueries[TPath]>,
+    TOutput extends inferRouteOutput<TQueries[TPath]>
+  >(
+    pathAndArgs: [TPath, TInput],
+    opts?: FetchQueryOptions<TInput, TRPCClientError, TOutput>,
+  ) {
+    const [path, input] = pathAndArgs;
+
+    return queryClient.prefetchQuery(
+      pathAndArgs,
+      () =>
+        client.request({
+          type: 'query',
+          path,
+          input,
+        }) as any,
+      opts as any,
+    );
+  }
+
   function _dehydrate(opts?: DehydrateOptions): DehydratedState {
     return client.transformer.serialize(dehydrate(queryClient, opts));
   }
@@ -224,14 +246,15 @@ export function createReactQueryHooks<
   }
 
   return {
-    useQuery: _useQuery,
-    useMutation: _useMutation,
-    useSubscription,
-    queryClient,
-    prefetchQueryOnServer,
-    dehydrate: _dehydrate,
-    useDehydratedState,
     client,
+    dehydrate: _dehydrate,
+    prefetchQuery,
+    prefetchQueryOnServer,
+    queryClient,
+    useDehydratedState,
     useLiveQuery,
+    useMutation: _useMutation,
+    useQuery: _useQuery,
+    useSubscription,
   };
 }
