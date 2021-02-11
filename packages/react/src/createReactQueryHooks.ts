@@ -192,10 +192,11 @@ export function createReactQueryHooks<
     const data: TOutput[number]['data'] | undefined = lastItem?.data;
     const lastCursor = lastItem?.cursor;
 
+    const hookRefetch = hook.refetch;
     useEffect(() => {
       currentCursor.current = lastCursor;
-      hook.refetch();
-    }, [lastCursor]);
+      hookRefetch();
+    }, [lastCursor, hookRefetch]);
 
     return { ...hook, data };
   }
