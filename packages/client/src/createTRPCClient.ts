@@ -9,7 +9,6 @@ import type {
   inferRouteOutput,
   inferSubscriptionOutput,
   Maybe,
-  Router,
 } from '@trpc/server';
 
 type CancelFn = () => void;
