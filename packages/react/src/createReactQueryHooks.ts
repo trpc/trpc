@@ -1,10 +1,10 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { TRPCClient, TRPCClientError } from '@trpc/client';
 import type {
+  AnyRouter,
   inferRouteInput,
   inferRouteOutput,
   inferSubscriptionOutput,
-  Router,
   RouteWithInput,
 } from '@trpc/server';
 import { useEffect, useMemo, useRef } from 'react';
@@ -32,10 +32,15 @@ export type OutputWithCursor<TData, TCursor extends any = any> = {
   data: TData;
 };
 export function createReactQueryHooks<
-  TRouter extends Router<TContext, any, any, any>,
-  TContext,
-  TClient extends TRPCClient = TRPCClient
->({ client, queryClient }: { client: TClient; queryClient: QueryClient }) {
+  TRouter extends AnyRouter<TContext>,
+  TContext
+>({
+  client,
+  queryClient,
+}: {
+  client: TRPCClient<TRouter>;
+  queryClient: QueryClient;
+}) {
   type TQueries = TRouter['_def']['queries'];
   type TMutations = TRouter['_def']['mutations'];
   type TSubscriptions = TRouter['_def']['subscriptions'];
@@ -173,7 +178,7 @@ export function createReactQueryHooks<
     const hook = useQuery<TInput, TRPCClientError, TOutput>(
       pathAndArgs,
       () =>
-        client.subscriptionOnce(path, {
+        (client.subscriptionOnce as any)(path, {
           ...userInput,
           cursor: currentCursor.current,
         }) as any,
@@ -303,7 +308,7 @@ export function createReactQueryHooks<
       pathAndArgs,
       ({ pageParam }) => {
         const actualInput = { ...input, cursor: pageParam };
-        return client.query(path, actualInput);
+        return (client.query as any)(path, actualInput);
       },
       opts,
     );

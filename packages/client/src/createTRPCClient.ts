@@ -9,6 +9,7 @@ import type {
   inferRouteOutput,
   inferSubscriptionOutput,
   Maybe,
+  Router,
 } from '@trpc/server';
 
 type CancelFn = () => void;
@@ -104,7 +105,7 @@ type TRPCType = 'subscription' | 'query' | 'mutation';
 export class TRPCClient<TRouter extends AnyRouter> {
   private fetch: typeof fetch;
   private AC: ReturnType<typeof getAbortController>;
-  private transformer: DataTransformer;
+  public readonly transformer: DataTransformer;
   private opts: CreateTRPCClientOptions;
 
   constructor(opts: CreateTRPCClientOptions) {
@@ -220,10 +221,10 @@ export class TRPCClient<TRouter extends AnyRouter> {
   }
   public query<
     TQueries extends TRouter['_def']['queries'],
-    TPath extends string & TQueries
+    TPath extends string & keyof TQueries
   >(
     path: TPath,
-    ...args: inferHandlerInput<TQueries, TPath>
+    ...args: inferHandlerInput<TQueries[TPath]>
   ): CancellablePromise<inferRouteOutput<TQueries[TPath]>> {
     return this.request({
       type: 'query',
@@ -234,10 +235,10 @@ export class TRPCClient<TRouter extends AnyRouter> {
 
   public mutation<
     TMutations extends TRouter['_def']['mutations'],
-    TPath extends string & TMutations
+    TPath extends string & keyof TMutations
   >(
     path: TPath,
-    ...args: inferHandlerInput<TMutations, TPath>
+    ...args: inferHandlerInput<TMutations[TPath]>
   ): CancellablePromise<inferRouteOutput<TMutations[TPath]>> {
     return this.request({
       type: 'mutation',
@@ -248,7 +249,7 @@ export class TRPCClient<TRouter extends AnyRouter> {
 
   public subscriptionOnce<
     TSubscriptions extends TRouter['_def']['subscriptions'],
-    TPath extends string & TSubscriptions,
+    TPath extends string & keyof TSubscriptions,
     TOutput extends inferSubscriptionOutput<TRouter, TPath>,
     TInput extends inferRouteInput<TSubscriptions[TPath]>
   >(path: TPath, input: TInput): CancellablePromise<TOutput[]> {

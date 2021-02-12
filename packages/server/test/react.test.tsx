@@ -121,12 +121,10 @@ function createAppRouter() {
 
   const { client, close } = routerToServerAndClient(appRouter);
   const queryClient = new QueryClient();
-  const hooks = createReactQueryHooks<typeof appRouter, Context, typeof client>(
-    {
-      client,
-      queryClient,
-    },
-  );
+  const hooks = createReactQueryHooks({
+    client,
+    queryClient,
+  });
 
   return {
     appRouter,
