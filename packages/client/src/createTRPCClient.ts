@@ -4,7 +4,6 @@ import type {
   DataTransformer,
   HTTPResponseEnvelope,
   HTTPSuccessResponseEnvelope,
-  inferHandlerFn,
   inferHandlerInput,
   inferRouteInput,
   inferRouteOutput,
@@ -102,7 +101,7 @@ export interface CreateTRPCClientOptions {
 }
 type TRPCType = 'subscription' | 'query' | 'mutation';
 
-export class TRPCClient2<TRouter extends AnyRouter<TContext>> {
+export class TRPCClient<TRouter extends AnyRouter> {
   private fetch: typeof fetch;
   private AC: ReturnType<typeof getAbortController>;
   private transformer: DataTransformer;
@@ -250,12 +249,9 @@ export class TRPCClient2<TRouter extends AnyRouter<TContext>> {
   public subscriptionOnce<
     TSubscriptions extends TRouter['_def']['subscriptions'],
     TPath extends string & TSubscriptions,
-    TOutput extends inferSubscriptionOutput<TRouter, TPath>
-  >(
-    path: TPath,
-    ...args: inferHandlerInput<TSubscriptions, TPath>
-  ): CancellablePromise<TOutput[]> {
-    const [input] = args;
+    TOutput extends inferSubscriptionOutput<TRouter, TPath>,
+    TInput extends inferRouteInput<TSubscriptions[TPath]>
+  >(path: TPath, input: TInput): CancellablePromise<TOutput[]> {
     let stopped = false;
     let nextTry: any; // setting as `NodeJS.Timeout` causes compat issues, can probably be solved
     let currentRequest: CancellablePromise<TOutput[]> | null = null;
@@ -295,226 +291,12 @@ export class TRPCClient2<TRouter extends AnyRouter<TContext>> {
 
     return (promise as any) as CancellablePromise<TOutput[]>;
   }
-}
-// export type TRPCClient2<
-//   TRouter extends Router<TContext, TQueries, TMutations, TSubscriptions>,
-//   TContext,
-//   TQueries extends TRouter['_def']['queries'] = TRouter['_def']['queries'],
-//   TMutations extends TRouter['_def']['mutations'] = TRouter['_def']['mutations'],
-//   TSubscriptions extends TRouter['_def']['subscriptions'] = TRouter['_def']['subscriptions']
-// > = (
-//   opts: CreateTRPCClientOptions,
-// ) => {
-//   request: (opts: {
-//     type: TRPCType;
-//     input: unknown;
-//     path: string;
-//   }) => CancellablePromise<any>;
-//   mutation: inferHandlerFn<TMutations>;
-//   query: inferHandlerFn<TMutations>;
-//   subscriptionOnce<
-//     TPath extends keyof TSubscriptions & string,
-//     TInput extends inferRouteInput<TSubscriptions[TPath]>,
-//     TOutput extends inferSubscriptionOutput<TRouter, TPath>
-//   >(
-//     path: TPath,
-//     input: TInput,
-//   ): CancellablePromise<TOutput[]>;
-//   subscription: <
-//     TPath extends keyof TSubscriptions & string,
-//     TInput extends inferRouteInput<TSubscriptions[TPath]>,
-//     TOutput extends inferSubscriptionOutput<TRouter, TPath>
-//   >(
-//     path: TPath,
-//     opts: {
-//       initialInput: TInput;
-//       onError?: (err: NextInputError | TRPCClientError) => void;
-//       onData?: (data: TOutput[]) => void;
-//       /**
-//        * Input cursor for next call to subscription endpoint
-//        */
-//       nextInput: (data: TOutput[]) => TInput;
-//     },
-//   ) => CancelFn;
-//   transformer: DataTransformer;
-// };
 
-export function createTRPCClient<TRouter extends AnyRouter>(
-  opts: CreateTRPCClientOptions,
-) {
-  const { fetchOpts, url } = opts;
-  const _fetch = getFetch(fetchOpts?.fetch);
-  const AC = getAbortController(fetchOpts?.AbortController);
-  type TQueries = TRouter['_def']['queries'];
-  type TMutations = TRouter['_def']['mutations'];
-  type TSubscriptions = TRouter['_def']['subscriptions'];
-  const {
-    transformer = {
-      serialize: (data) => data,
-      deserialize: (data) => data,
-    },
-  } = opts;
-
-  const serializeInput = (input: unknown): unknown =>
-    typeof input !== 'undefined' ? transformer.serialize(input) : input;
-
-  async function handleResponse(promise: Promise<Response>) {
-    let res: Maybe<Response> = null;
-    let json: Maybe<HTTPResponseEnvelope<unknown>> = null;
-    try {
-      res = await promise;
-      const rawJson = await res.json();
-      json = transformer.deserialize(rawJson) as HTTPResponseEnvelope<unknown>;
-
-      if (json.ok) {
-        opts.onSuccess && opts.onSuccess(json);
-        return json.data as any;
-      }
-      throw new TRPCClientError(json.error.message, { json, res });
-    } catch (originalError) {
-      let err: TRPCClientError = originalError;
-      if (!(err instanceof TRPCClientError)) {
-        err = new TRPCClientError(originalError.message, {
-          originalError,
-          res,
-          json,
-        });
-      }
-      opts.onError && opts.onError(err);
-      throw err;
-    }
-  }
-  function getHeaders() {
-    return {
-      'content-type': 'application/json',
-      ...(opts.getHeaders ? opts.getHeaders() : {}),
-    };
-  }
-
-  function request({
-    type,
-    input,
-    path,
-  }: {
-    type: TRPCType;
-    input: unknown;
-    path: string;
-  }) {
-    type ReqOpts = {
-      method: string;
-      body?: string;
-      url: string;
-    };
-    const reqOptsMap: Record<TRPCType, () => ReqOpts> = {
-      subscription: () => ({
-        method: 'PATCH',
-        body: JSON.stringify({ input: serializeInput(input) }),
-        url: `${url}/${path}`,
-      }),
-      mutation: () => ({
-        method: 'POST',
-        body: JSON.stringify({ input: serializeInput(input) }),
-        url: `${url}/${path}`,
-      }),
-      query: () => ({
-        method: 'GET',
-        url:
-          `${url}/${path}` +
-          (input != null
-            ? `?input=${encodeURIComponent(
-                JSON.stringify(serializeInput(input)),
-              )}`
-            : ''),
-      }),
-    };
-
-    const reqOptsFn = reqOptsMap[type];
-    if (!reqOptsFn) {
-      throw new Error(`Unhandled type "${type}"`);
-    }
-    const ac = AC ? new AC() : null;
-
-    const { url: reqUrl, ...rest } = reqOptsFn();
-    const reqOpts = {
-      ...rest,
-      signal: ac?.signal,
-      headers: getHeaders(),
-    };
-    // console.log('reqOpts', {reqUrl, reqOpts, type, input})
-    const promise: CancellablePromise<any> & {
-      cancel(): void;
-    } = handleResponse(_fetch(reqUrl, reqOpts)) as any;
-    promise.cancel = () => {
-      ac?.abort();
-    };
-
-    return promise;
-  }
-
-  const query: inferHandlerFn<TQueries> = async (path, ...args) => {
-    return request({
-      type: 'query',
-      path,
-      input: args[0],
-    });
-  };
-  const mutate: inferHandlerFn<TMutations> = async (path, ...args) => {
-    return request({
-      type: 'mutation',
-      path,
-      input: args[0],
-    });
-  };
-
-  function subscriptionOnce<
-    TPath extends keyof TSubscriptions & string,
-    TInput extends inferRouteInput<TSubscriptions[TPath]>,
-    TOutput extends inferSubscriptionOutput<TRouter, TPath>
-  >(path: TPath, input: TInput): CancellablePromise<TOutput[]> {
-    let stopped = false;
-    let nextTry: any; // setting as `NodeJS.Timeout` causes compat issues, can probably be solved
-    let currentRequest: ReturnType<typeof request> | null = null;
-
-    const promise = new Promise<TOutput[]>((resolve, reject) => {
-      async function exec() {
-        if (stopped) {
-          return;
-        }
-        try {
-          currentRequest = request({
-            type: 'subscription',
-            input,
-            path,
-          });
-          const data = await currentRequest;
-          // console.log('response', { path, input, data });
-          resolve(data);
-        } catch (_err) {
-          const err: TRPCClientError = _err;
-
-          if (err.json?.statusCode === 408) {
-            // server told us to reconnect
-            exec();
-          } else {
-            reject(err);
-          }
-        }
-      }
-      exec();
-    }) as CancellablePromise<TOutput[]>;
-    promise.cancel = () => {
-      stopped = true;
-      clearTimeout(nextTry);
-      currentRequest?.cancel && currentRequest.cancel();
-    };
-
-    return promise;
-  }
-
-  function subscription<
-    TPath extends keyof TSubscriptions & string,
-    TInput extends inferRouteInput<TSubscriptions[TPath]>,
-    TOutput extends inferSubscriptionOutput<TRouter, TPath>
+  public subscription<
+    TSubscriptions extends TRouter['_def']['subscriptions'],
+    TPath extends string & TSubscriptions,
+    TOutput extends inferSubscriptionOutput<TRouter, TPath>,
+    TInput extends inferRouteInput<TSubscriptions[TPath]>
   >(
     path: TPath,
     opts: {
@@ -526,7 +308,7 @@ export function createTRPCClient<TRouter extends AnyRouter>(
        */
       nextInput: (data: TOutput[]) => TInput;
     },
-  ) {
+  ): CancelFn {
     let stopped = false;
     // let nextTry: any; // setting as `NodeJS.Timeout` causes compat issues, can probably be solved
     let currentPromise: CancellablePromise<TOutput[]> | null = null;
@@ -537,9 +319,9 @@ export function createTRPCClient<TRouter extends AnyRouter>(
       currentPromise?.cancel();
       currentPromise = null;
     };
-    async function exec(input: TInput) {
+    const exec = async (input: TInput) => {
       try {
-        currentPromise = subscriptionOnce(path, input);
+        currentPromise = this.subscriptionOnce(path, input);
         const res = await currentPromise;
         attemptIndex = 0;
         opts.onData && opts.onData(res);
@@ -563,19 +345,14 @@ export function createTRPCClient<TRouter extends AnyRouter>(
           exec(input);
         }, retryDelay(attemptIndex));
       }
-    }
+    };
     exec(opts.initialInput);
     return unsubscribe;
   }
-
-  return {
-    request,
-    query,
-    mutate,
-    subscriptionOnce,
-    subscription,
-    transformer,
-  };
 }
 
-export type TRPCClient = ReturnType<typeof createTRPCClient>;
+export function createTRPCClient<TRouter extends AnyRouter>(
+  opts: CreateTRPCClientOptions,
+) {
+  return new TRPCClient<TRouter>(opts);
+}

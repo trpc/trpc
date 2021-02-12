@@ -3,19 +3,15 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import '@testing-library/jest-dom';
 import { render, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { expectTypeOf } from 'expect-type';
 import hash from 'hash-sum';
 import React, { useEffect, useState } from 'react';
-import {
-  QueryClient,
-  QueryClientProvider,
-  useInfiniteQuery,
-} from 'react-query';
+import { QueryClient, QueryClientProvider } from 'react-query';
 import * as z from 'zod';
 import { createReactQueryHooks, OutputWithCursor } from '../../react/src';
 import * as trpc from '../src';
 import { routerToServerAndClient } from './_testHelpers';
-import userEvent from '@testing-library/user-event';
 
 type Context = {};
 type Post = {
