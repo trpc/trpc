@@ -31,6 +31,9 @@ export type OutputWithCursor<TData, TCursor extends any = any> = {
   cursor: TCursor | null;
   data: TData;
 };
+
+const CACHE_PREFIX_INFINITE_QUERIES = 'INFINITE_QUERY';
+const CACHE_PREFIX_LIVE_QUERY = 'LIVE_QUERY';
 export function createReactQueryHooks<
   TRouter extends AnyRouter<TContext>,
   TContext
@@ -45,14 +48,15 @@ export function createReactQueryHooks<
   type TMutations = TRouter['_def']['mutations'];
   type TSubscriptions = TRouter['_def']['subscriptions'];
 
-  function _useQuery<
-    // TODO exclude all with mandatory input from TPath
-    TPath extends keyof TQueries & string,
-    TOutput extends inferRouteOutput<TQueries[TPath]>
-  >(
-    path: TPath,
-    opts?: UseQueryOptions<unknown, TRPCClientError, TOutput>,
-  ): UseQueryResult<TOutput, TRPCClientError>;
+  // this breaks autocompletion for some reason
+  // function _useQuery<
+  //   // TODO exclude all with mandatory input from TPath
+  //   TPath extends keyof TQueries & string,
+  //   TOutput extends inferRouteOutput<TQueries[TPath]>
+  // >(
+  //   path: TPath,
+  //   opts?: UseQueryOptions<unknown, TRPCClientError, TOutput>,
+  // ): UseQueryResult<TOutput, TRPCClientError>;
   function _useQuery<
     TPath extends keyof TQueries,
     TRoute extends TQueries[TPath],
@@ -176,7 +180,7 @@ export function createReactQueryHooks<
     const currentCursor = useRef<any>(null);
 
     const hook = useQuery<TInput, TRPCClientError, TOutput>(
-      pathAndArgs,
+      [CACHE_PREFIX_LIVE_QUERY, path, userInput],
       () =>
         (client.subscriptionOnce as any)(path, {
           ...userInput,
@@ -297,15 +301,17 @@ export function createReactQueryHooks<
 
   function _useInfiniteQuery<
     TPath extends keyof TQueries & string,
-    TInput extends inferRouteInput<TQueries[TPath]> & { cursor: any },
-    TOutput extends inferRouteOutput<TQueries[TPath]>
+    TInput extends inferRouteInput<TQueries[TPath]> & { cursor: TCursor },
+    TOutput extends inferRouteOutput<TQueries[TPath]>,
+    TCursor extends any
   >(
     pathAndArgs: [TPath, Omit<TInput, 'cursor'>],
-    opts?: UseInfiniteQueryOptions<TOutput, TRPCClientError, TInput>,
+    // FIXME: this typing is wrong but it works
+    opts?: UseInfiniteQueryOptions<TOutput, TRPCClientError, TOutput, TOutput>,
   ) {
     const [path, input] = pathAndArgs;
-    return useInfiniteQuery<TOutput, TRPCClientError, TInput>(
-      pathAndArgs,
+    return useInfiniteQuery(
+      [CACHE_PREFIX_INFINITE_QUERIES, path, input],
       ({ pageParam }) => {
         const actualInput = { ...input, cursor: pageParam };
         return (client.query as any)(path, actualInput);
