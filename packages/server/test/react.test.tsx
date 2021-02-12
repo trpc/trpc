@@ -6,7 +6,11 @@ import { render, waitFor } from '@testing-library/react';
 import { expectTypeOf } from 'expect-type';
 import hash from 'hash-sum';
 import React, { useEffect, useState } from 'react';
-import { QueryClient, QueryClientProvider } from 'react-query';
+import {
+  QueryClient,
+  QueryClientProvider,
+  useInfiniteQuery,
+} from 'react-query';
 import * as z from 'zod';
 import { createReactQueryHooks, OutputWithCursor } from '../../react/src';
 import * as trpc from '../src';
@@ -120,12 +124,13 @@ function createAppRouter() {
     });
 
   const { client, close } = routerToServerAndClient(appRouter);
-
   const queryClient = new QueryClient();
-  const hooks = createReactQueryHooks<typeof appRouter, Context>({
-    client: client,
-    queryClient,
-  });
+  const hooks = createReactQueryHooks<typeof appRouter, Context, typeof client>(
+    {
+      client,
+      queryClient,
+    },
+  );
 
   return {
     appRouter,
@@ -325,6 +330,7 @@ test('prefetchQuery', async () => {
 
 test('useInfiniteQuery()', async () => {
   const { hooks } = factory;
+
   function MyComponent() {
     const {
       data,
@@ -339,7 +345,7 @@ test('useInfiniteQuery()', async () => {
         },
       ],
       {
-        getNextPageParam: (lastPage) => (lastPage as any).nextCursor,
+        getNextPageParam: (lastPage) => lastPage.nextCursor,
       },
     );
 

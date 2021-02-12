@@ -10,17 +10,16 @@ import type {
 import { useEffect, useMemo, useRef } from 'react';
 import {
   FetchQueryOptions,
+  hashQueryKey,
   QueryClient,
+  useInfiniteQuery,
+  UseInfiniteQueryOptions,
   useMutation,
   UseMutationOptions,
   UseMutationResult,
   useQuery,
   UseQueryOptions,
   UseQueryResult,
-  useInfiniteQuery,
-  UseInfiniteQueryOptions,
-  UseInfiniteQueryResult,
-  hashQueryKey,
 } from 'react-query';
 import {
   dehydrate,
@@ -34,8 +33,9 @@ export type OutputWithCursor<TData, TCursor extends any = any> = {
 };
 export function createReactQueryHooks<
   TRouter extends Router<TContext, any, any, any>,
-  TContext
->({ client, queryClient }: { client: TRPCClient; queryClient: QueryClient }) {
+  TContext,
+  TClient extends TRPCClient = TRPCClient
+>({ client, queryClient }: { client: TClient; queryClient: QueryClient }) {
   type TQueries = TRouter['_def']['queries'];
   type TMutations = TRouter['_def']['mutations'];
   type TSubscriptions = TRouter['_def']['subscriptions'];
@@ -296,10 +296,10 @@ export function createReactQueryHooks<
     TOutput extends inferRouteOutput<TQueries[TPath]>
   >(
     pathAndArgs: [TPath, Omit<TInput, 'cursor'>],
-    opts?: UseInfiniteQueryOptions<TInput, TRPCClientError, TOutput>,
-  ): UseInfiniteQueryResult<TOutput, TRPCClientError> {
+    opts?: UseInfiniteQueryOptions<TOutput, TRPCClientError, TInput>,
+  ) {
     const [path, input] = pathAndArgs;
-    return useInfiniteQuery<TInput, TRPCClientError, TOutput>(
+    return useInfiniteQuery<TOutput, TRPCClientError, TInput>(
       pathAndArgs,
       ({ pageParam }) => {
         const actualInput = { ...input, cursor: pageParam };
