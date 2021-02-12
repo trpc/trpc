@@ -76,14 +76,18 @@ export type inferSubscriptionOutput<
   >['output']
 >;
 
+export type inferHandlerInput<
+  TRoutes extends RouteRecord<any, any, any>,
+  TPath extends keyof TRoutes & string
+> = TRoutes[TPath] extends RouteWithInput<any, any, any>
+  ? [inferRouteInput<TRoutes[TPath]>]
+  : [undefined?];
+
 export type inferHandlerFn<TRoutes extends RouteRecord<any, any, any>> = <
-  TPath extends keyof TRoutes & string,
-  TRoute extends TRoutes[TPath]
+  TPath extends keyof TRoutes & string
 >(
   path: TPath,
-  ...args: TRoute extends RouteWithInput<any, any, any>
-    ? [inferRouteInput<TRoute>]
-    : [undefined?]
+  ...args: inferHandlerInput<TRoutes, TPath>
 ) => Promise<inferRouteOutput<TRoutes[TPath]>>;
 
 export type AnyRouter<TContext = any> = Router<TContext, any, any, any>;
