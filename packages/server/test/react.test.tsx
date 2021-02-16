@@ -3,15 +3,15 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import '@testing-library/jest-dom';
 import { render, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { expectTypeOf } from 'expect-type';
 import hash from 'hash-sum';
-import React, { useEffect, useState } from 'react';
+import React, { Fragment, useEffect, useState } from 'react';
 import { QueryClient, QueryClientProvider } from 'react-query';
 import * as z from 'zod';
 import { createReactQueryHooks, OutputWithCursor } from '../../react/src';
 import * as trpc from '../src';
 import { routerToServerAndClient } from './_testHelpers';
-import userEvent from '@testing-library/user-event';
 
 type Context = {};
 type Post = {
@@ -120,10 +120,9 @@ function createAppRouter() {
     });
 
   const { client, close } = routerToServerAndClient(appRouter);
-
   const queryClient = new QueryClient();
-  const hooks = createReactQueryHooks<typeof appRouter, Context>({
-    client: client,
+  const hooks = createReactQueryHooks({
+    client,
     queryClient,
   });
 
@@ -146,7 +145,7 @@ afterEach(() => {
 test('basic query', async () => {
   const { hooks } = factory;
   function MyComponent() {
-    const allPostsQuery = hooks.useQuery('allPosts');
+    const allPostsQuery = hooks.useQuery(['allPosts']);
     expectTypeOf(allPostsQuery.data!).toMatchTypeOf<Post[]>();
 
     return <pre>{JSON.stringify(allPostsQuery.data ?? 'n/a', null, 4)}</pre>;
@@ -325,13 +324,9 @@ test('prefetchQuery', async () => {
 
 test('useInfiniteQuery()', async () => {
   const { hooks } = factory;
+
   function MyComponent() {
-    const {
-      data,
-      hasNextPage,
-      isFetchingNextPage,
-      fetchNextPage,
-    } = hooks.useInfiniteQuery(
+    const q = hooks.useInfiniteQuery(
       [
         'paginatedPosts',
         {
@@ -339,24 +334,59 @@ test('useInfiniteQuery()', async () => {
         },
       ],
       {
-        getNextPageParam: (lastPage) => (lastPage as any).nextCursor,
+        getNextPageParam: (lastPage) => lastPage.nextCursor,
       },
     );
+    expectTypeOf(q.data?.pages[0].items).toMatchTypeOf<undefined | Post[]>();
 
-    return (
+    // const ra = useInfiniteQuery(
+    //   [
+    //     'paginatedPosts',
+    //     {
+    //       limit: 1,
+    //     },
+    //   ],
+    //   ({ pageParam = undefined }) =>
+    //     hooks.client.query('paginatedPosts', {
+    //       limit: 1,
+    //       cursor: pageParam,
+    //     }),
+    //   {
+    //     getNextPageParam: (lastPage) => lastPage.nextCursor,
+    //   },
+    // );
+
+    return q.status === 'loading' ? (
+      <p>Loading...</p>
+    ) : q.status === 'error' ? (
+      <p>Error: {q.error.message}</p>
+    ) : (
       <>
-        <button
-          data-testid="loadMore"
-          onClick={() => fetchNextPage()}
-          disabled={!hasNextPage || isFetchingNextPage}
-        >
-          {isFetchingNextPage
-            ? 'Loading more...'
-            : hasNextPage
-            ? 'Load More'
-            : 'Nothing more to load'}
-        </button>
-        {JSON.stringify(data ?? null)}
+        {q.data?.pages.map((group, i) => (
+          <Fragment key={i}>
+            {group.items.map((msg) => (
+              <Fragment key={msg.id}>
+                <div>{msg.title}</div>
+              </Fragment>
+            ))}
+          </Fragment>
+        ))}
+        <div>
+          <button
+            onClick={() => q.fetchNextPage()}
+            disabled={!q.hasNextPage || q.isFetchingNextPage}
+            data-testid="loadMore"
+          >
+            {q.isFetchingNextPage
+              ? 'Loading more...'
+              : q.hasNextPage
+              ? 'Load More'
+              : 'Nothing more to load'}
+          </button>
+        </div>
+        <div>
+          {q.isFetching && !q.isFetchingNextPage ? 'Fetching...' : null}
+        </div>
       </>
     );
   }
@@ -374,6 +404,7 @@ test('useInfiniteQuery()', async () => {
   });
   await waitFor(() => {
     expect(utils.container).toHaveTextContent('first post');
+    expect(utils.container).not.toHaveTextContent('second post');
     expect(utils.container).toHaveTextContent('Load More');
   });
   userEvent.click(utils.getByTestId('loadMore'));
@@ -386,9 +417,25 @@ test('useInfiniteQuery()', async () => {
     expect(utils.container).toHaveTextContent('Nothing more to load');
   });
 
-  expect(utils.container.innerHTML).toMatchInlineSnapshot(
-    `"<button data-testid=\\"loadMore\\" disabled=\\"\\">Nothing more to load</button>{\\"pages\\":[{\\"items\\":[{\\"id\\":\\"1\\",\\"title\\":\\"first post\\",\\"createdAt\\":0}],\\"nextCursor\\":1},{\\"items\\":[{\\"id\\":\\"2\\",\\"title\\":\\"second post\\",\\"createdAt\\":1}]}],\\"pageParams\\":[null,1]}"`,
-  );
+  expect(utils.container).toMatchInlineSnapshot(`
+    <div>
+      <div>
+        first post
+      </div>
+      <div>
+        second post
+      </div>
+      <div>
+        <button
+          data-testid="loadMore"
+          disabled=""
+        >
+          Nothing more to load
+        </button>
+      </div>
+      <div />
+    </div>
+  `);
 });
 
 test('useInfiniteQueryOnServer()', async () => {
