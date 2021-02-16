@@ -295,7 +295,7 @@ export class TRPCClient<TRouter extends AnyRouter> {
 
   public subscription<
     TSubscriptions extends TRouter['_def']['subscriptions'],
-    TPath extends string & TSubscriptions,
+    TPath extends string & keyof TSubscriptions,
     TOutput extends inferSubscriptionOutput<TRouter, TPath>,
     TInput extends inferRouteInput<TSubscriptions[TPath]>
   >(
