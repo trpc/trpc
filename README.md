@@ -146,7 +146,7 @@ export const client = createTRPCClient<AppRouter>({
   url: '/api/trpc',
 });
 
-export const trpc = createReactQueryHooks<AppRouter, Context>({
+export const trpc = createReactQueryHooks({
   client,
   queryClient: new QueryClient(),
 });
