@@ -179,9 +179,10 @@ export function createReactQueryHooks<
     const [path, userInput] = pathAndArgs;
 
     const currentCursor = useRef<any>(null);
+    const cacheKey = [CACHE_PREFIX_LIVE_QUERY, path, userInput];
 
     const hook = useQuery<TInput, TRPCClientError, TOutput>(
-      [CACHE_PREFIX_LIVE_QUERY, path, userInput],
+      cacheKey,
       () =>
         (client.subscriptionOnce as any)(path, {
           ...userInput,
