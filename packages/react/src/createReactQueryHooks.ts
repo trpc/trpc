@@ -1,26 +1,25 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { TRPCClient, TRPCClientError } from '@trpc/client';
 import type {
+  AnyRouter,
   inferRouteInput,
   inferRouteOutput,
   inferSubscriptionOutput,
-  Router,
   RouteWithInput,
 } from '@trpc/server';
 import { useEffect, useMemo, useRef } from 'react';
 import {
   FetchQueryOptions,
+  hashQueryKey,
   QueryClient,
+  useInfiniteQuery,
+  UseInfiniteQueryOptions,
   useMutation,
   UseMutationOptions,
   UseMutationResult,
   useQuery,
   UseQueryOptions,
   UseQueryResult,
-  useInfiniteQuery,
-  UseInfiniteQueryOptions,
-  UseInfiniteQueryResult,
-  hashQueryKey,
 } from 'react-query';
 import {
   dehydrate,
@@ -32,22 +31,32 @@ export type OutputWithCursor<TData, TCursor extends any = any> = {
   cursor: TCursor | null;
   data: TData;
 };
+
+const CACHE_PREFIX_INFINITE_QUERIES = 'INFINITE_QUERY';
+const CACHE_PREFIX_LIVE_QUERY = 'LIVE_QUERY';
 export function createReactQueryHooks<
-  TRouter extends Router<TContext, any, any, any>,
+  TRouter extends AnyRouter<TContext>,
   TContext
->({ client, queryClient }: { client: TRPCClient; queryClient: QueryClient }) {
+>({
+  client,
+  queryClient,
+}: {
+  client: TRPCClient<TRouter>;
+  queryClient: QueryClient;
+}) {
   type TQueries = TRouter['_def']['queries'];
   type TMutations = TRouter['_def']['mutations'];
   type TSubscriptions = TRouter['_def']['subscriptions'];
 
-  function _useQuery<
-    // TODO exclude all with mandatory input from TPath
-    TPath extends keyof TQueries & string,
-    TOutput extends inferRouteOutput<TQueries[TPath]>
-  >(
-    path: TPath,
-    opts?: UseQueryOptions<unknown, TRPCClientError, TOutput>,
-  ): UseQueryResult<TOutput, TRPCClientError>;
+  // this breaks autocompletion for some reason
+  // function _useQuery<
+  //   // TODO exclude all with mandatory input from TPath
+  //   TPath extends keyof TQueries & string,
+  //   TOutput extends inferRouteOutput<TQueries[TPath]>
+  // >(
+  //   path: TPath,
+  //   opts?: UseQueryOptions<unknown, TRPCClientError, TOutput>,
+  // ): UseQueryResult<TOutput, TRPCClientError>;
   function _useQuery<
     TPath extends keyof TQueries,
     TRoute extends TQueries[TPath],
@@ -148,7 +157,8 @@ export function createReactQueryHooks<
         stopped = true;
         promise.cancel();
       };
-    }, [queryKey]);
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [queryKey, enabled]);
   }
 
   /**
@@ -169,11 +179,12 @@ export function createReactQueryHooks<
     const [path, userInput] = pathAndArgs;
 
     const currentCursor = useRef<any>(null);
+    const cacheKey = [CACHE_PREFIX_LIVE_QUERY, path, userInput];
 
     const hook = useQuery<TInput, TRPCClientError, TOutput>(
-      pathAndArgs,
+      cacheKey,
       () =>
-        client.subscriptionOnce(path, {
+        (client.subscriptionOnce as any)(path, {
           ...userInput,
           cursor: currentCursor.current,
         }) as any,
@@ -194,6 +205,7 @@ export function createReactQueryHooks<
     useEffect(() => {
       currentCursor.current = lastCursor;
       hook.refetch();
+      // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [lastCursor]);
 
     return { ...hook, data };
@@ -239,7 +251,7 @@ export function createReactQueryHooks<
   ): Promise<void> => {
     const input = opts.input ?? null;
     const { path, ctx } = opts;
-    const cacheKey = [path, input];
+    const cacheKey = [CACHE_PREFIX_INFINITE_QUERIES, path, input];
 
     await queryClient.prefetchInfiniteQuery(cacheKey, async () => {
       const data = await router.invoke({
@@ -292,18 +304,20 @@ export function createReactQueryHooks<
 
   function _useInfiniteQuery<
     TPath extends keyof TQueries & string,
-    TInput extends inferRouteInput<TQueries[TPath]> & { cursor: any },
-    TOutput extends inferRouteOutput<TQueries[TPath]>
+    TInput extends inferRouteInput<TQueries[TPath]> & { cursor: TCursor },
+    TOutput extends inferRouteOutput<TQueries[TPath]>,
+    TCursor extends any
   >(
     pathAndArgs: [TPath, Omit<TInput, 'cursor'>],
-    opts?: UseInfiniteQueryOptions<TInput, TRPCClientError, TOutput>,
-  ): UseInfiniteQueryResult<TOutput, TRPCClientError> {
+    // FIXME: this typing is wrong but it works
+    opts?: UseInfiniteQueryOptions<TOutput, TRPCClientError, TOutput, TOutput>,
+  ) {
     const [path, input] = pathAndArgs;
-    return useInfiniteQuery<TInput, TRPCClientError, TOutput>(
-      pathAndArgs,
+    return useInfiniteQuery(
+      [CACHE_PREFIX_INFINITE_QUERIES, path, input],
       ({ pageParam }) => {
         const actualInput = { ...input, cursor: pageParam };
-        return client.query(path, actualInput);
+        return (client.query as any)(path, actualInput);
       },
       opts,
     );

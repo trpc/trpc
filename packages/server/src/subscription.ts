@@ -81,6 +81,7 @@ export class Subscription<TOutput = unknown> {
 
   /**
    * This method is just here to help with `inferSubscriptionOutput` which I can't get working without it
+   * @deprecated
    */
   protected output(): TOutput {
     throw new Error('Legacy');

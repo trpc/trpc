@@ -30,7 +30,7 @@ export default function Home() {
     isFetchingPreviousPage,
     fetchPreviousPage,
   } = trpc.useInfiniteQuery(['messages.list', {}], {
-    getPreviousPageParam: (d) => (d as any).prevCursor,
+    getPreviousPageParam: (d) => d.prevCursor,
   });
   const [msgs, setMessages] = useState(
     () => data?.pages.map((p) => p.items).flat() ?? [],
