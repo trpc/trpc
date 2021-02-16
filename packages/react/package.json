@@ -23,6 +23,11 @@
     "README.md",
     "dist"
   ],
+  "eslintConfig": {
+    "rules": {
+      "react-hooks/exhaustive-deps": "error"
+    }
+  },
   "peerDependencies": {
     "@trpc/client": "^1.4.1",
     "react": ">=16.8.0",

@@ -157,7 +157,8 @@ export function createReactQueryHooks<
         stopped = true;
         promise.cancel();
       };
-    }, [queryKey]);
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [queryKey, enabled]);
   }
 
   /**
@@ -203,6 +204,7 @@ export function createReactQueryHooks<
     useEffect(() => {
       currentCursor.current = lastCursor;
       hook.refetch();
+      // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [lastCursor]);
 
     return { ...hook, data };
