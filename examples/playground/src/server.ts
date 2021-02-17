@@ -3,8 +3,12 @@ import { EventEmitter } from 'events';
 import express from 'express';
 import * as trpc from '@trpc/server';
 import * as z from 'zod';
+import * as trpcExpress from '@trpc/server/dist/adapters/express';
 
-const createContext = ({ req, res }: trpc.CreateExpressContextOptions) => {
+const createContext = ({
+  req,
+  res,
+}: trpcExpress.CreateExpressContextOptions) => {
   const getUser = () => {
     if (req.headers.authorization !== 'secret') {
       return null;
@@ -152,7 +156,7 @@ async function main() {
 
   app.use(
     '/trpc',
-    trpc.createExpressMiddleware({
+    trpcExpress.createExpressMiddleware({
       router: appRouter,
       createContext,
       subscriptions: {
