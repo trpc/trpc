@@ -27,7 +27,7 @@ async function main() {
   await client.query('hello');
   await client.query('hello', 'client');
   await sleep();
-  const postCreate = await client.mutate('posts/create', {
+  const postCreate = await client.mutation('posts/create', {
     title: 'hello client',
   });
   console.log('created post', postCreate.title);
@@ -73,18 +73,18 @@ async function main() {
   });
 
   await Promise.all([
-    client.mutate('messages/add', `test message${i++}`),
-    client.mutate('messages/add', `test message${i++}`),
-    client.mutate('messages/add', `test message${i++}`),
-    client.mutate('messages/add', `test message${i++}`),
+    client.mutation('messages/add', `test message${i++}`),
+    client.mutation('messages/add', `test message${i++}`),
+    client.mutation('messages/add', `test message${i++}`),
+    client.mutation('messages/add', `test message${i++}`),
   ]);
   await sleep();
 
-  await client.mutate('messages/add', `test message${i++}`);
+  await client.mutation('messages/add', `test message${i++}`);
 
   await Promise.all([
-    client.mutate('messages/add', `test message${i++}`),
-    client.mutate('messages/add', `test message${i++}`),
+    client.mutation('messages/add', `test message${i++}`),
+    client.mutation('messages/add', `test message${i++}`),
   ]);
 
   unsubscribe();
