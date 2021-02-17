@@ -1,0 +1,9 @@
+{
+  "redirects": [
+    {
+      "source": "(.*)",
+      "destination": "https://github.com/trpc/trpc$1",
+      "permanent": false
+    }
+  ]
+}
