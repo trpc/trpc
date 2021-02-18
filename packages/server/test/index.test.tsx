@@ -310,7 +310,7 @@ describe('call()', () => {
     });
 
   test('query()', async () => {
-    const data = await router.createCall({}).query();
+    const data = await router.createCaller({}).query('q', 1);
     expectTypeOf(data).toMatchTypeOf<{ input: number }>();
   });
 });

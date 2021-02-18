@@ -336,6 +336,23 @@ export class Router<
   public has(what: 'subscriptions' | 'mutations' | 'queries', path: string) {
     return !!this._def[what][path];
   }
+
+  public createCaller(
+    ctx: TContext,
+  ): {
+    query: inferHandlerFn<TQueries>;
+  } {
+    return {
+      query: (path, ...args) => {
+        return this.invoke({
+          target: 'queries',
+          ctx,
+          path,
+          input: args[0],
+        }) as any;
+      },
+    };
+  }
 }
 
 export function router<TContext>() {
