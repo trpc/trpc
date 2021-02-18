@@ -1,7 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 import type { NextApiHandler, NextApiRequest, NextApiResponse } from 'next';
-
 import {
   BaseOptions,
   CreateContextFn,
@@ -9,7 +8,7 @@ import {
   getErrorResponseEnvelope,
   requestHandler,
 } from '../http';
-import { Router } from '../router';
+import { AnyRouter } from '../router';
 
 export type CreateNextContextOptions = CreateContextFnOptions<
   NextApiRequest,
@@ -23,7 +22,7 @@ export type CreateNextContextFn<TContext> = CreateContextFn<
 >;
 export function createNextApiHandler<
   TContext,
-  TRouter extends Router<TContext, any, any, any>
+  TRouter extends AnyRouter<TContext>
 >(
   opts: {
     router: TRouter;
