@@ -384,7 +384,7 @@ export class Router<
 
   /**
    * Function to be called before any route is invoked
-   * Can be async or not async
+   * Can be async or sync
    */
   preHook(fn: TPreHook) {
     this._def.preHooks.push(fn);
