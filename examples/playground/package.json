@@ -7,11 +7,9 @@
     "dev:client": "nodemon -e ts -w . -x 'wait-on tcp:2021 && ts-node ./src/client.ts'",
     "dev": "run-p dev:* --print-label",
     "build": "tsc",
-    "start:server": "node dist/server",
-    "start:client": "wait-on tcp:2021 && node dist/client",
     "start": "run-p start:* --print-label",
-    "test-dev": "start-server-and-test dev:server 2021 dev:client",
-    "test-start": "start-server-and-test start:server 2021 start:client"
+    "test-dev": "start-server-and-test 'ts-node ./src/server.ts' 2021 'ts-node ./src/client.ts'",
+    "test-start": "start-server-and-test 'node dist/server' 2021 'node dist/client'"
   },
   "dependencies": {
     "@trpc/client": "^2.1.0",
