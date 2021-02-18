@@ -341,11 +341,29 @@ export class Router<
     ctx: TContext,
   ): {
     query: inferHandlerFn<TQueries>;
+    mutation: inferHandlerFn<TMutations>;
+    subscription: inferHandlerFn<TSubscriptions>;
   } {
     return {
       query: (path, ...args) => {
         return this.invoke({
           target: 'queries',
+          ctx,
+          path,
+          input: args[0],
+        }) as any;
+      },
+      mutation: (path, ...args) => {
+        return this.invoke({
+          target: 'queries',
+          ctx,
+          path,
+          input: args[0],
+        }) as any;
+      },
+      subscription: (path, ...args) => {
+        return this.invoke({
+          target: 'subscriptions',
           ctx,
           path,
           input: args[0],

@@ -313,4 +313,13 @@ describe('call()', () => {
     const data = await router.createCaller({}).query('q', 1);
     expectTypeOf(data).toMatchTypeOf<{ input: number }>();
   });
+  test('mutation()', async () => {
+    const data = await router.createCaller({}).mutation('m', 1);
+    expectTypeOf(data).toMatchTypeOf<{ input: number }>();
+  });
+  test('subscription()', async () => {
+    // TODO
+    // const data = await router.createCaller({}).mutation('m', 1);
+    // expectTypeOf(data).toMatchTypeOf<{ input: number }>();
+  });
 });
