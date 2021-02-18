@@ -23,11 +23,15 @@ export type RouteInputParser<TInput = unknown> =
   | RouteInputParserYupEsque<TInput>
   | RouteInputParserCustomValidatorEsque<TInput>;
 
+type RouteResolverOpts<TContext = unknown, TInput = unknown> = {
+  ctx: TContext;
+  input: TInput;
+};
 export type RouteResolver<
   TContext = unknown,
   TInput = unknown,
   TOutput = unknown
-> = (opts: { ctx: TContext; input: TInput }) => Promise<TOutput> | TOutput;
+> = (opts: RouteResolverOpts<TContext, TInput>) => Promise<TOutput> | TOutput;
 
 export type RouteWithInput<
   TContext = unknown,
@@ -46,9 +50,12 @@ export type RouteWithoutInput<
   input?: undefined | null;
   resolve: RouteResolver<TContext, TInput, TOutput>;
 };
-export type Route<TContext = unknown, TInput = unknown, TOutput = unknown> =
+export type Route<TContext = unknown, TInput = unknown, TOutput = unknown> = (
   | RouteWithInput<TContext, TInput, TOutput>
-  | RouteWithoutInput<TContext, TInput, TOutput>;
+  | RouteWithoutInput<TContext, TInput, TOutput>
+) & {
+  _preHooks?: PreHookFunction<TContext>[];
+};
 
 export type RouteRecord<
   TContext = unknown,
@@ -94,6 +101,9 @@ export type inferHandlerFn<TRoutes extends RouteRecord<any, any, any>> = <
 
 export type AnyRouter<TContext = any> = Router<TContext, any, any, any>;
 
+export type PreHookFunction<TContext = unknown> = (opts: {
+  ctx: TContext;
+}) => Promise<void> | void;
 export class Router<
   TContext,
   TQueries extends RouteRecord<TContext>,
@@ -104,17 +114,20 @@ export class Router<
     queries: Readonly<TQueries>;
     mutations: Readonly<TMutations>;
     subscriptions: Readonly<TSubscriptions>;
+    preHooks: PreHookFunction<TContext>[];
   }>;
 
   constructor(def?: {
     queries: TQueries;
     mutations: TMutations;
     subscriptions: TSubscriptions;
+    preHooks: PreHookFunction<TContext>[];
   }) {
     this._def = def ?? {
       queries: {} as TQueries,
       mutations: {} as TMutations,
       subscriptions: {} as TSubscriptions,
+      preHooks: [],
     };
   }
 
@@ -144,9 +157,10 @@ export class Router<
       } as any,
       mutations: {},
       subscriptions: {},
-    });
+      preHooks: [],
+    }) as AnyRouter;
 
-    return this.merge(router) as any;
+    return this.merge(router);
   }
 
   // TODO / help: https://github.com/trpc/trpc/pull/37
@@ -177,9 +191,10 @@ export class Router<
         [path]: route,
       } as any,
       subscriptions: {},
-    });
+      preHooks: [],
+    }) as AnyRouter;
 
-    return this.merge(router) as any;
+    return this.merge(router);
   }
 
   /**
@@ -206,9 +221,10 @@ export class Router<
       subscriptions: {
         [path]: route,
       } as any,
-    });
+      preHooks: [],
+    }) as AnyRouter;
 
-    return this.merge(router) as any;
+    return this.merge(router);
   }
 
   /**
@@ -271,19 +287,31 @@ export class Router<
       throw new Error(`Duplicate endpoint(s): ${duplicates.join(', ')}`);
     }
 
+    const addPreHooks = <TRoutes extends RouteRecord>(routes: TRoutes) => {
+      const newRoutes = {} as TRoutes;
+      for (const key in routes) {
+        const route = routes[key];
+        newRoutes[key] = {
+          ...route,
+          _preHooks: [...(route._preHooks ?? []), ...this._def.preHooks],
+        };
+      }
+      return newRoutes;
+    };
     return new Router<TContext, any, any, any>({
       queries: {
         ...this._def.queries,
-        ...Router.prefixRoutes(router._def.queries, prefix),
+        ...addPreHooks(Router.prefixRoutes(router._def.queries, prefix)),
       },
       mutations: {
         ...this._def.mutations,
-        ...Router.prefixRoutes(router._def.mutations, prefix),
+        ...addPreHooks(Router.prefixRoutes(router._def.mutations, prefix)),
       },
       subscriptions: {
         ...this._def.subscriptions,
-        ...Router.prefixRoutes(router._def.subscriptions, prefix),
+        ...addPreHooks(Router.prefixRoutes(router._def.subscriptions, prefix)),
       },
+      preHooks: this._def.preHooks,
     });
   }
 
@@ -326,15 +354,27 @@ export class Router<
     }
     const target = this._def[opts.target];
     const route: Route<TContext> = target[opts.path as any];
-
-    const input = Router.getInput(route, opts.input);
     const { ctx } = opts;
+    for (const fn of route._preHooks ?? []) {
+      await fn({ ctx });
+    }
+    const input = Router.getInput(route, opts.input);
 
     return route.resolve({ ctx, input });
   }
 
   public has(what: 'subscriptions' | 'mutations' | 'queries', path: string) {
     return !!this._def[what][path];
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  /**
+   * Function to be called before any route is invoked
+   * Can be async or not async
+   */
+  preHook(fn: PreHookFunction<TContext>) {
+    this._def.preHooks.push(fn);
+    return this;
   }
 }
 
