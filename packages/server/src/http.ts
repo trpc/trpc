@@ -161,11 +161,11 @@ async function getPostBody({
 }
 
 export async function requestHandler<
+  TContext,
   TRouter extends AnyRouter<TContext>,
   TCreateContextFn extends CreateContextFn<TContext, TRequest, TResponse>,
   TRequest extends BaseRequest,
-  TResponse extends BaseResponse,
-  TContext = any
+  TResponse extends BaseResponse
 >({
   req,
   res,

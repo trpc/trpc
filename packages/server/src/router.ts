@@ -4,7 +4,7 @@
 import { assertNotBrowser } from './assertNotBrowser';
 import { InputValidationError, RouteNotFoundError } from './errors';
 import { Subscription } from './subscription';
-import { Prefixer, ThenArg } from './types';
+import { format, Prefixer, ThenArg } from './types';
 assertNotBrowser();
 
 export type RouteInputParserZodEsque<TInput = unknown> = {
@@ -36,6 +36,7 @@ export type RouteWithInput<
 > = {
   input: RouteInputParser<TInput>;
   resolve: RouteResolver<TContext, TInput, TOutput>;
+  _preHooks?: PreHookFunction<TContext>[];
 };
 
 export type RouteWithoutInput<
@@ -46,12 +47,11 @@ export type RouteWithoutInput<
   input?: undefined | null;
   resolve: RouteResolver<TContext, TInput, TOutput>;
 };
-export type Route<TContext = unknown, TInput = unknown, TOutput = unknown> = (
+export type Route<TContext = unknown, TInput = unknown, TOutput = unknown> =
   | RouteWithInput<TContext, TInput, TOutput>
-  | RouteWithoutInput<TContext, TInput, TOutput>
-) & {
-  _preHooks?: PreHookFunction<TContext>[];
-};
+  | (RouteWithoutInput<TContext, TInput, TOutput> & {
+      _preHooks?: PreHookFunction<TContext>[];
+    });
 
 export type RouteRecord<
   TContext = unknown,
@@ -95,7 +95,7 @@ export type inferHandlerFn<TRoutes extends RouteRecord<any, any, any>> = <
     : [undefined?]
 ) => Promise<inferRouteOutput<TRoutes[TPath]>>;
 
-export type AnyRouter<TContext = any> = Router<TContext, any, any, any>;
+export type AnyRouter<TContext = any> = Router<TContext, any, any, any, any>;
 
 export type PreHookFunction<TContext> = (opts: {
   ctx: TContext;
@@ -104,20 +104,21 @@ export class Router<
   TContext,
   TQueries extends RouteRecord<TContext>,
   TMutations extends RouteRecord<TContext>,
-  TSubscriptions extends RouteRecord<TContext, unknown, Subscription<unknown>>
+  TSubscriptions extends RouteRecord<TContext, unknown, Subscription<unknown>>,
+  TPreHook extends PreHookFunction<TContext>
 > {
   readonly _def: Readonly<{
     queries: Readonly<TQueries>;
     mutations: Readonly<TMutations>;
     subscriptions: Readonly<TSubscriptions>;
-    preHooks: PreHookFunction<TContext>[];
+    preHooks: TPreHook[];
   }>;
 
   constructor(def?: {
     queries: TQueries;
     mutations: TMutations;
     subscriptions: TSubscriptions;
-    preHooks: PreHookFunction<TContext>[];
+    preHooks: TPreHook[];
   }) {
     this._def = def ?? {
       queries: {} as TQueries,
@@ -143,11 +144,12 @@ export class Router<
     route: Route<TContext, TInput, TOutput>,
   ): Router<
     TContext,
-    TQueries & Record<TPath, typeof route>,
+    format<TQueries & Record<TPath, typeof route>>,
     TMutations,
-    TSubscriptions
+    TSubscriptions,
+    TPreHook
   > {
-    const router = new Router<TContext, any, {}, {}>({
+    const router = new Router<TContext, any, {}, {}, any>({
       queries: {
         [path]: route,
       } as any,
@@ -178,8 +180,9 @@ export class Router<
   ): Router<
     TContext,
     TQueries,
-    TMutations & Record<TPath, typeof route>,
-    TSubscriptions
+    format<TMutations & Record<TPath, typeof route>>,
+    TSubscriptions,
+    TPreHook
   > {
     const router = new Router({
       queries: {},
@@ -209,7 +212,8 @@ export class Router<
     TContext,
     TQueries,
     TMutations,
-    TSubscriptions & Record<TPath, typeof route>
+    format<TSubscriptions & Record<TPath, typeof route>>,
+    TPreHook
   > {
     const router = new Router({
       queries: {},
@@ -231,9 +235,10 @@ export class Router<
     router: TChildRouter,
   ): Router<
     TContext,
-    TQueries & TChildRouter['_def']['queries'],
-    TMutations & TChildRouter['_def']['mutations'],
-    TSubscriptions & TChildRouter['_def']['subscriptions']
+    format<TQueries & TChildRouter['_def']['queries']>,
+    format<TMutations & TChildRouter['_def']['mutations']>,
+    format<TSubscriptions & TChildRouter['_def']['subscriptions']>,
+    TPreHook
   >;
 
   /**
@@ -248,7 +253,9 @@ export class Router<
     TContext,
     TQueries & Prefixer<TChildRouter['_def']['queries'], `${TPath}`>,
     TMutations & Prefixer<TChildRouter['_def']['mutations'], `${TPath}`>,
-    TSubscriptions & Prefixer<TChildRouter['_def']['subscriptions'], `${TPath}`>
+    TSubscriptions &
+      Prefixer<TChildRouter['_def']['subscriptions'], `${TPath}`>,
+    TPreHook
   >;
 
   public merge(prefixOrRouter: unknown, maybeRouter?: unknown) {
@@ -283,7 +290,7 @@ export class Router<
       throw new Error(`Duplicate endpoint(s): ${duplicates.join(', ')}`);
     }
 
-    return new Router<TContext, any, any, any>({
+    return new Router<TContext, any, any, any, any>({
       queries: {
         ...this._def.queries,
         ...this.inhertPreHooks(
@@ -379,12 +386,12 @@ export class Router<
    * Function to be called before any route is invoked
    * Can be async or not async
    */
-  preHook(fn: PreHookFunction<TContext>) {
+  preHook(fn: TPreHook) {
     this._def.preHooks.push(fn);
     return this;
   }
 }
 
 export function router<TContext>() {
-  return new Router<TContext, {}, {}, {}>();
+  return new Router<TContext, {}, {}, {}, PreHookFunction<TContext>>();
 }
