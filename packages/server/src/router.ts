@@ -36,7 +36,6 @@ export type RouteWithInput<
 > = {
   input: RouteInputParser<TInput>;
   resolve: RouteResolver<TContext, TInput, TOutput>;
-  _preHooks?: PreHookFunction<TContext>[];
 };
 
 export type RouteWithoutInput<
@@ -47,11 +46,12 @@ export type RouteWithoutInput<
   input?: undefined | null;
   resolve: RouteResolver<TContext, TInput, TOutput>;
 };
-export type Route<TContext = unknown, TInput = unknown, TOutput = unknown> =
+export type Route<TContext = unknown, TInput = unknown, TOutput = unknown> = (
   | RouteWithInput<TContext, TInput, TOutput>
-  | (RouteWithoutInput<TContext, TInput, TOutput> & {
-      _preHooks?: PreHookFunction<TContext>[];
-    });
+  | RouteWithoutInput<TContext, TInput, TOutput>
+) & {
+  _preHooks?: PreHookFunction<TContext>[];
+};
 
 export type RouteRecord<
   TContext = unknown,
