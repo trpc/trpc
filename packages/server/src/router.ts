@@ -283,34 +283,42 @@ export class Router<
       throw new Error(`Duplicate endpoint(s): ${duplicates.join(', ')}`);
     }
 
-    const addPreHooks = <TRoutes extends RouteRecord>(routes: TRoutes) => {
-      const newRoutes = {} as TRoutes;
-      for (const key in routes) {
-        const route = routes[key];
-        newRoutes[key] = {
-          ...route,
-          _preHooks: [...(route._preHooks ?? []), ...this._def.preHooks],
-        };
-      }
-      return newRoutes;
-    };
     return new Router<TContext, any, any, any>({
       queries: {
         ...this._def.queries,
-        ...addPreHooks(Router.prefixRoutes(router._def.queries, prefix)),
+        ...this.inhertPreHooks(
+          Router.prefixRoutes(router._def.queries, prefix),
+        ),
       },
       mutations: {
         ...this._def.mutations,
-        ...addPreHooks(Router.prefixRoutes(router._def.mutations, prefix)),
+        ...this.inhertPreHooks(
+          Router.prefixRoutes(router._def.mutations, prefix),
+        ),
       },
       subscriptions: {
         ...this._def.subscriptions,
-        ...addPreHooks(Router.prefixRoutes(router._def.subscriptions, prefix)),
+        ...this.inhertPreHooks(
+          Router.prefixRoutes(router._def.subscriptions, prefix),
+        ),
       },
       preHooks: this._def.preHooks,
     });
   }
 
+  private inhertPreHooks<TRoutes extends RouteRecord<TCtx>, TCtx>(
+    routes: TRoutes,
+  ): TRoutes {
+    const newRoutes = {} as TRoutes;
+    for (const key in routes) {
+      const route = routes[key];
+      newRoutes[key] = {
+        ...route,
+        _preHooks: [...(route._preHooks ?? []), ...this._def.preHooks],
+      };
+    }
+    return newRoutes;
+  }
   private static getInput<TRoute extends Route<any, any, any>>(
     route: TRoute,
     rawInput: unknown,
@@ -363,7 +371,6 @@ export class Router<
     return !!this._def[what][path];
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   /**
    * Function to be called before any route is invoked
    * Can be async or not async
