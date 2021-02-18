@@ -44,33 +44,6 @@ test('is not called if def last', async () => {
   close();
 });
 
-test('affects child routers', async () => {
-  const preHook = jest.fn();
-  const { client, close } = routerToServerAndClient(
-    trpc
-      .router()
-      .preHook(preHook)
-      .query('foo1', {
-        resolve() {
-          return 'bar1';
-        },
-      })
-      .merge(
-        'child.',
-        trpc.router().query('foo2', {
-          resolve() {
-            return 'bar2';
-          },
-        }),
-      ),
-  );
-
-  expect(await client.query('foo1')).toBe('bar1');
-  expect(await client.query('child.foo2')).toBe('bar2');
-  expect(preHook).toHaveBeenCalledTimes(2);
-  close();
-});
-
 test('allows you to throw an error (e.g. auth)', async () => {
   type Context = {
     user?: {
@@ -133,5 +106,62 @@ test('allows you to throw an error (e.g. auth)', async () => {
   headers.authorization = 'meow';
   expect(await client.query('admin.secretPlace')).toBe('a key');
   expect(resolverMock).toHaveBeenCalledTimes(1);
+  close();
+});
+
+test('child routers + hook call order', async () => {
+  const preHookInParent = jest.fn();
+  const preHookInChild = jest.fn();
+  const preHookInGrandChild = jest.fn();
+  const { client, close } = routerToServerAndClient(
+    trpc
+      .router()
+      .preHook(preHookInParent)
+      .query('name', {
+        resolve() {
+          return 'GrandPa';
+        },
+      })
+      .merge(
+        'child.',
+        trpc
+          .router()
+          .preHook(preHookInChild)
+          .query('name', {
+            resolve() {
+              return 'Parent';
+            },
+          })
+          .merge(
+            'child.',
+            trpc
+              .router()
+              .preHook(preHookInGrandChild)
+              .query('name', {
+                resolve() {
+                  return 'GrandChild';
+                },
+              }),
+          ),
+      ),
+  );
+
+  expect(await client.query('child.child.name')).toBe('GrandChild');
+  expect(preHookInParent).toHaveBeenCalledTimes(1);
+  expect(preHookInChild).toHaveBeenCalledTimes(1);
+  expect(preHookInGrandChild).toHaveBeenCalledTimes(1);
+
+  // check call order
+  expect(preHookInParent.mock.invocationCallOrder[0]).toBeLessThan(
+    preHookInChild.mock.invocationCallOrder[0],
+  );
+  expect(preHookInChild.mock.invocationCallOrder[0]).toBeLessThan(
+    preHookInGrandChild.mock.invocationCallOrder[0],
+  );
+
+  expect(await client.query('name')).toBe('GrandPa');
+  expect(await client.query('child.name')).toBe('Parent');
+  expect(await client.query('child.child.name')).toBe('GrandChild');
+
   close();
 });

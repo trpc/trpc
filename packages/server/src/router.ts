@@ -97,7 +97,7 @@ export type inferHandlerFn<TRoutes extends RouteRecord<any, any, any>> = <
 
 export type AnyRouter<TContext = any> = Router<TContext, any, any, any>;
 
-export type PreHookFunction<TContext = unknown> = (opts: {
+export type PreHookFunction<TContext> = (opts: {
   ctx: TContext;
 }) => Promise<void> | void;
 export class Router<
@@ -265,14 +265,14 @@ export class Router<
     }
 
     const duplicateQueries = Object.keys(router._def.queries).filter((key) =>
-      this.has('queries', key),
+      this.has('queries', prefix + key),
     );
     const duplicateMutations = Object.keys(
       router._def.mutations,
-    ).filter((key) => this.has('mutations', key));
+    ).filter((key) => this.has('mutations', prefix + key));
     const duplicateSubscriptions = Object.keys(
       router._def.subscriptions,
-    ).filter((key) => this.has('subscriptions', key));
+    ).filter((key) => this.has('subscriptions', prefix + key));
 
     const duplicates = [
       ...duplicateQueries,
@@ -314,7 +314,11 @@ export class Router<
       const route = routes[key];
       newRoutes[key] = {
         ...route,
-        _preHooks: [...(route._preHooks ?? []), ...this._def.preHooks],
+        _preHooks: [
+          //
+          ...this._def.preHooks,
+          ...(route._preHooks ?? []),
+        ],
       };
     }
     return newRoutes;
