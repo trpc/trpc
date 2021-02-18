@@ -23,15 +23,11 @@ export type RouteInputParser<TInput = unknown> =
   | RouteInputParserYupEsque<TInput>
   | RouteInputParserCustomValidatorEsque<TInput>;
 
-type RouteResolverOpts<TContext = unknown, TInput = unknown> = {
-  ctx: TContext;
-  input: TInput;
-};
 export type RouteResolver<
   TContext = unknown,
   TInput = unknown,
   TOutput = unknown
-> = (opts: RouteResolverOpts<TContext, TInput>) => Promise<TOutput> | TOutput;
+> = (opts: { ctx: TContext; input: TInput }) => Promise<TOutput> | TOutput;
 
 export type RouteWithInput<
   TContext = unknown,
