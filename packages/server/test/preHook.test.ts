@@ -119,7 +119,7 @@ test('child routers + hook call order', async () => {
       .preHook(preHookInParent)
       .query('name', {
         resolve() {
-          return 'GrandPa';
+          return 'Child';
         },
       })
       .merge(
@@ -129,7 +129,7 @@ test('child routers + hook call order', async () => {
           .preHook(preHookInChild)
           .query('name', {
             resolve() {
-              return 'Parent';
+              return 'Child';
             },
           })
           .merge(
@@ -159,9 +159,63 @@ test('child routers + hook call order', async () => {
     preHookInGrandChild.mock.invocationCallOrder[0],
   );
 
-  expect(await client.query('name')).toBe('GrandPa');
-  expect(await client.query('child.name')).toBe('Parent');
+  expect(await client.query('name')).toBe('Child');
+  expect(await client.query('child.name')).toBe('Child');
   expect(await client.query('child.child.name')).toBe('GrandChild');
 
   close();
+});
+
+test('equiv', () => {
+  type Context = {
+    user?: {
+      id: number;
+      name: string;
+      isAdmin: boolean;
+    };
+  };
+  trpc
+    .router()
+    .query('foo', {
+      resolve() {
+        return 'bar';
+      },
+    })
+    .merge(
+      'admin.',
+      trpc
+        .router<Context>()
+        .preHook(({ ctx }) => {
+          if (!ctx.user?.isAdmin) {
+            throw httpError.unauthorized();
+          }
+        })
+        .query('secretPlace', {
+          resolve() {
+            return 'a key';
+          },
+        }),
+    );
+
+  trpc
+    .router()
+    .query('foo', {
+      resolve() {
+        return 'bar';
+      },
+    })
+    .merge(
+      trpc
+        .router<Context>()
+        .preHook(({ ctx }) => {
+          if (!ctx.user?.isAdmin) {
+            throw httpError.unauthorized();
+          }
+        })
+        .query('admin.secretPlace', {
+          resolve() {
+            return 'a key';
+          },
+        }),
+    );
 });
