@@ -278,3 +278,39 @@ describe('integration tests', () => {
     });
   });
 });
+
+describe('call()', () => {
+  type Context = {};
+  const router = trpc
+    .router<Context>()
+    .query('q', {
+      input: z.number(),
+      async resolve({ input }) {
+        return { input };
+      },
+    })
+    .mutation('m', {
+      input: z.number(),
+      async resolve({ input }) {
+        return { input };
+      },
+    })
+    .subscription('sub', {
+      input: z.number(),
+      async resolve({ input }) {
+        return new trpc.Subscription<{ input: typeof input }>({
+          start(emit) {
+            emit.data({ input });
+            return () => {
+              // noop
+            };
+          },
+        });
+      },
+    });
+
+  test('query()', async () => {
+    const data = await router.createCall({}).query();
+    expectTypeOf(data).toMatchTypeOf<{ input: number }>();
+  });
+});
