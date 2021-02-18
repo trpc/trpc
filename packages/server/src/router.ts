@@ -355,7 +355,7 @@ export class Router<
       },
       mutation: (path, ...args) => {
         return this.invoke({
-          target: 'queries',
+          target: 'mutations',
           ctx,
           path,
           input: args[0],
