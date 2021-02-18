@@ -5,7 +5,7 @@
     "module": "commonjs",
     "declaration": true,
     // "moduleResolution": "node",
-    "outDir": "./lib",
+    "outDir": "./dist",
     "allowUnreachableCode": false,
     "allowUnusedLabels": false,
     "esModuleInterop": true,

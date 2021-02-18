@@ -7,8 +7,8 @@
     "build": "next build",
     "start": "next start",
     "test": "jest",
-    "test-dev": "start-server-and-test dev http://localhost:3000 test",
-    "test-start": "start-server-and-test start http://localhost:3000 test"
+    "test-dev": "start-server-and-test dev 3000 test",
+    "test-start": "start-server-and-test start 3000 test"
   },
   "dependencies": {
     "@trpc/client": "^2.1.0",
