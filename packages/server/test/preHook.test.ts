@@ -2,22 +2,6 @@ import { routerToServerAndClient } from './_testHelpers';
 import * as trpc from '../src';
 import { httpError } from '../src';
 
-test('does not crash', async () => {
-  const { client, close } = routerToServerAndClient(
-    trpc
-      .router()
-      .query('foo', {
-        resolve() {
-          return 'bar';
-        },
-      })
-      .preHook(() => {}),
-  );
-
-  expect(await client.query('foo')).toBe('bar');
-
-  close();
-});
 test('is called if def first', async () => {
   const preHook = jest.fn();
   const { client, close } = routerToServerAndClient(
