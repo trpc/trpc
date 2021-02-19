@@ -193,7 +193,11 @@ export async function requestHandler<
 
     const deserializeInput = (input: unknown) =>
       input ? transformer.deserialize(input) : input;
-
+    if (method === 'HEAD') {
+      res.statusCode = 204;
+      res.end();
+      return;
+    }
     if (method === 'POST') {
       const body = await getPostBody({ req, maxBodySize });
       const input = deserializeInput(body.input);
