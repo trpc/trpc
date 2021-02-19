@@ -30,6 +30,8 @@ TRPC is a framework for building strongly typed RPC APIs with TypeScript. Altern
   - [Router middlewares](#router-middlewares)
   - [Data transformers](#data-transformers)
   - [Server-side rendering (SSR / SSG)](#server-side-rendering-ssr--ssg)
+    - [Using `prefetchOnServer()` (recommended)](#using-prefetchonserver-recommended)
+    - [Invoking route directly](#invoking-route-directly)
 - [Further reading](#further-reading)
   - [Who is this for?](#who-is-this-for)
   - [HTTP Methods <-> Type mapping](#http-methods---type-mapping)
@@ -384,6 +386,7 @@ You are able to serialize the response data & input args (in order to be able to
 
 See the [chat example](./examples/next-ssg-chat) for a working example.
 
+### Using `prefetchOnServer()` (recommended)
 
 <details><summary>In `getStaticProps`</summary>
 
@@ -428,6 +431,30 @@ export default MyApp;
 </details>
 
 This will cache the `messages.list` so it's instant when a user visits the page.
+
+
+### Invoking route directly
+
+You can also invoke a route directly and pass the data as props.
+
+
+<details><summary>In `getStaticProps`</summary>
+
+```tsx
+import { appRouter } from './api/trpc/[...trpc]'; // Important - only ever import & use this in the SSR-methods
+
+export async function getStaticProps() {
+  const allPosts = await appRouter.createCaller({}).query('allPosts', { limit: 100 })
+
+  return {
+    props: {
+      allPosts: trpc.dehydrate(),
+    },
+    revalidate: 1,
+  };
+}
+```
+</details>
 
 # Further reading
 
