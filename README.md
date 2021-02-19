@@ -14,8 +14,10 @@ TRPC is a framework for building strongly typed RPC APIs with TypeScript. Altern
 - 🐻&nbsp; Easy to add to your existing brownfield project.
 - 😌&nbsp; No double-declaration of types on server or client.
 - 🔋&nbsp; Batteries included. React-library + Next.js/Express adapters. _(But tRPC is not tied to React - [reach out](https://twitter.com/alexdotjs) if you want to make a Svelte/Vue/... lib)_
-- 🥃&nbsp; Simple to use APIs for queries, mutations, & subscriptions.
+- 🥃&nbsp; Simple to use APIs for queries & mutations + experimental subscriptions support.
 - 👀&nbsp; Quite a few examples in the [./examples](./examples)-folder
+
+> _TRPC requires TypeScript > 4.1 because of [Template Literal Types](https://www.typescriptlang.org/docs/handbook/2/template-literal-types.html), but you can get some benefits with autocompletion etc even if you use raw JS._
 
 ---
 
@@ -25,6 +27,7 @@ TRPC is a framework for building strongly typed RPC APIs with TypeScript. Altern
   - [Getting started with Next.js](#getting-started-with-nextjs)
   - [Defining routes](#defining-routes)
   - [Merging routers](#merging-routers)
+  - [Router middlewares](#router-middlewares)
   - [Data transformers](#data-transformers)
   - [Server-side rendering (SSR / SSG)](#server-side-rendering-ssr--ssg)
 - [Further reading](#further-reading)
@@ -138,13 +141,13 @@ import { createReactQueryHooks, createTRPCClient } from '@trpc/react';
 import { QueryClient } from 'react-query';
 // Type-only import:
 // https://www.typescriptlang.org/docs/handbook/release-notes/typescript-3-8.html#type-only-imports-and-export
-import type { AppRouter, Context } from '../pages/api/trpc/[...trpc]';
+import type { AppRouter } from '../pages/api/trpc/[...trpc]';
 
 export const client = createTRPCClient<AppRouter>({
   url: '/api/trpc',
 });
 
-export const trpc = createReactQueryHooks<AppRouter, Context>({
+export const trpc = createReactQueryHooks({
   client,
   queryClient: new QueryClient(),
 });
@@ -286,6 +289,7 @@ export type AppRouter = typeof appRouter;
 
 </details>
 
+
 ## Merging routers
 
 Writing all API-code in your code in the same file is a bad idea. It's easy to merge routes with other routes. Thanks to TypeScript 4.1 template literal types we can also prefix the routes without breaking type safety.
@@ -329,6 +333,45 @@ const appRouter = createRouter()
 ```
 
 </details>
+
+## Router middlewares
+
+You can are able to add middlewares to a whole router with the `middleware()` method. The middleware(s) will be run before any of the routes defined after are invoked & can be async or sync.
+
+Example, from [the tests](./packages/server/test/middleware.test.ts):
+<details><summary>Code</summary>
+
+```ts
+trpc
+  .router<Context>()
+  .query('foo', {
+    resolve() {
+      return 'bar';
+    },
+  })
+  .merge(
+    'admin.',
+    trpc
+      .router<Context>()
+      .middleware(async ({ ctx }) => {
+        if (!ctx.user?.isAdmin) {
+          throw httpError.unauthorized();
+        }
+      })
+      .query('secretPlace', {
+        resolve() {
+          resolverMock();
+
+          return 'a key';
+        },
+      }),
+  )
+```
+</details>
+
+In the example above any call to `admin.*` will ensure that the user is an "admin" before executing any query or mutation.
+
+
 
 ## Data transformers
 
@@ -396,15 +439,15 @@ This will cache the `messages.list` so it's instant when a user visits the page.
 
 ## HTTP Methods <-> Type mapping
 
-| HTTP Method | Mapping           | Notes                                                                        |
-| ----------- | ----------------- | ---------------------------------------------------------------------------- |
-| `GET`       | `.query()`        | Input JSON-stringified in query param, e.g. `?input=${JSON.stringify(input)` |
-| `POST`      | `.mutation()`     | Input in post body.                                                          |
-| `PATCH`     | `.subscription()` | Input in post body. Experimental API using HTTP long-pulling.                |
+| HTTP Method | Mapping           | Notes                                                                                        |
+| ----------- | ----------------- | -------------------------------------------------------------------------------------------- |
+| `GET`       | `.query()`        | Input JSON-stringified in query param.<br/>_e.g._ `?input=${JSON.stringify(input)`           |
+| `POST`      | `.mutation()`     | Input in post body.                                                                          |
+| `PATCH`     | `.subscription()` | Input in post body.<br/>:warning: Experimental. API might change without major version bump. |
 
 ## Relationship to GraphQL
 
-If you are already have a custom GraphQL-server for your project; don't use TRPC. GraphQL is amazing; it's amazing to be able to make a flexible API where each consumer can pick just the data needed for it. 
+If you are already have a custom GraphQL-server for your project; don't use TRPC. GraphQL is amazing; it's great to be able to make a flexible API where each consumer can pick just the data needed for it. 
 
 The thing is, GraphQL isn't that easy to get right - ACL is needed to be solved on a per-type basis, complexity analysis, and performance are all non-trivial things.
 

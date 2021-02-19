@@ -4,7 +4,7 @@ import qs from 'qs';
 import url from 'url';
 import { assertNotBrowser } from './assertNotBrowser';
 import { InputValidationError, RouteNotFoundError } from './errors';
-import { Router } from './router';
+import { AnyRouter } from './router';
 import { Subscription } from './subscription';
 import { DataTransformer } from './transformer';
 assertNotBrowser();
@@ -162,7 +162,7 @@ async function getPostBody({
 
 export async function requestHandler<
   TContext,
-  TRouter extends Router<TContext, any, any, any>,
+  TRouter extends AnyRouter<TContext>,
   TCreateContextFn extends CreateContextFn<TContext, TRequest, TResponse>,
   TRequest extends BaseRequest,
   TResponse extends BaseResponse
@@ -193,7 +193,11 @@ export async function requestHandler<
 
     const deserializeInput = (input: unknown) =>
       input ? transformer.deserialize(input) : input;
-
+    if (method === 'HEAD') {
+      res.statusCode = 204;
+      res.end();
+      return;
+    }
     if (method === 'POST') {
       const body = await getPostBody({ req, maxBodySize });
       const input = deserializeInput(body.input);

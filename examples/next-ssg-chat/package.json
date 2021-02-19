@@ -1,6 +1,6 @@
 {
   "name": "@examples/chat",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "private": true,
   "scripts": {
     "dx:next": "prisma generate && next dev",
@@ -13,14 +13,14 @@
     "migrate-dev": "prisma migrate dev --preview-feature",
     "migrate": "prisma migrate deploy --preview-feature",
     "test": "jest",
-    "test-dev": "start-server-and-test dev http://localhost:3000 test",
-    "test-start": "start-server-and-test start http://localhost:3000 test"
+    "test-dev": "start-server-and-test dev 3000 test",
+    "test-start": "start-server-and-test start 3000 test"
   },
   "dependencies": {
     "@prisma/client": "^2.16.0",
-    "@trpc/client": "^2.0.0",
-    "@trpc/react": "^2.0.0",
-    "@trpc/server": "^2.0.0",
+    "@trpc/client": "^2.1.0",
+    "@trpc/react": "^2.1.0",
+    "@trpc/server": "^2.1.0",
     "jest": "^26.6.3",
     "jest-playwright": "^0.0.1",
     "jest-playwright-preset": "^1.4.5",
