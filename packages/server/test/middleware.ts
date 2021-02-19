@@ -3,11 +3,11 @@ import * as trpc from '../src';
 import { httpError } from '../src';
 
 test('is called if def first', async () => {
-  const preHook = jest.fn();
+  const middleware = jest.fn();
   const { client, close } = routerToServerAndClient(
     trpc
       .router()
-      .preHook(preHook)
+      .middleware(middleware)
       .query('foo1', {
         resolve() {
           return 'bar1';
@@ -22,12 +22,12 @@ test('is called if def first', async () => {
 
   expect(await client.query('foo1')).toBe('bar1');
   expect(await client.query('foo2')).toBe('bar2');
-  expect(preHook).toHaveBeenCalledTimes(2);
+  expect(middleware).toHaveBeenCalledTimes(2);
   close();
 });
 
 test('is not called if def last', async () => {
-  const preHook = jest.fn();
+  const middleware = jest.fn();
   const { client, close } = routerToServerAndClient(
     trpc
       .router()
@@ -36,11 +36,11 @@ test('is not called if def last', async () => {
           return 'bar';
         },
       })
-      .preHook(preHook),
+      .middleware(middleware),
   );
 
   expect(await client.query('foo')).toBe('bar');
-  expect(preHook).toHaveBeenCalledTimes(0);
+  expect(middleware).toHaveBeenCalledTimes(0);
   close();
 });
 
@@ -68,7 +68,7 @@ test('allows you to throw an error (e.g. auth)', async () => {
         'admin.',
         trpc
           .router<Context>()
-          .preHook(({ ctx }) => {
+          .middleware(({ ctx }) => {
             if (!ctx.user?.isAdmin) {
               throw httpError.unauthorized();
             }
@@ -110,13 +110,13 @@ test('allows you to throw an error (e.g. auth)', async () => {
 });
 
 test('child routers + hook call order', async () => {
-  const preHookInParent = jest.fn();
-  const preHookInChild = jest.fn();
-  const preHookInGrandChild = jest.fn();
+  const middlewareInParent = jest.fn();
+  const middlewareInChild = jest.fn();
+  const middlewareInGrandChild = jest.fn();
   const { client, close } = routerToServerAndClient(
     trpc
       .router()
-      .preHook(preHookInParent)
+      .middleware(middlewareInParent)
       .query('name', {
         resolve() {
           return 'Child';
@@ -126,7 +126,7 @@ test('child routers + hook call order', async () => {
         'child.',
         trpc
           .router()
-          .preHook(preHookInChild)
+          .middleware(middlewareInChild)
           .query('name', {
             resolve() {
               return 'Child';
@@ -136,7 +136,7 @@ test('child routers + hook call order', async () => {
             'child.',
             trpc
               .router()
-              .preHook(preHookInGrandChild)
+              .middleware(middlewareInGrandChild)
               .query('name', {
                 resolve() {
                   return 'GrandChild';
@@ -147,16 +147,16 @@ test('child routers + hook call order', async () => {
   );
 
   expect(await client.query('child.child.name')).toBe('GrandChild');
-  expect(preHookInParent).toHaveBeenCalledTimes(1);
-  expect(preHookInChild).toHaveBeenCalledTimes(1);
-  expect(preHookInGrandChild).toHaveBeenCalledTimes(1);
+  expect(middlewareInParent).toHaveBeenCalledTimes(1);
+  expect(middlewareInChild).toHaveBeenCalledTimes(1);
+  expect(middlewareInGrandChild).toHaveBeenCalledTimes(1);
 
   // check call order
-  expect(preHookInParent.mock.invocationCallOrder[0]).toBeLessThan(
-    preHookInChild.mock.invocationCallOrder[0],
+  expect(middlewareInParent.mock.invocationCallOrder[0]).toBeLessThan(
+    middlewareInChild.mock.invocationCallOrder[0],
   );
-  expect(preHookInChild.mock.invocationCallOrder[0]).toBeLessThan(
-    preHookInGrandChild.mock.invocationCallOrder[0],
+  expect(middlewareInChild.mock.invocationCallOrder[0]).toBeLessThan(
+    middlewareInGrandChild.mock.invocationCallOrder[0],
   );
 
   expect(await client.query('name')).toBe('Child');
@@ -185,7 +185,7 @@ test('equiv', () => {
       'admin.',
       trpc
         .router<Context>()
-        .preHook(({ ctx }) => {
+        .middleware(({ ctx }) => {
           if (!ctx.user?.isAdmin) {
             throw httpError.unauthorized();
           }
@@ -207,7 +207,7 @@ test('equiv', () => {
     .merge(
       trpc
         .router<Context>()
-        .preHook(({ ctx }) => {
+        .middleware(({ ctx }) => {
           if (!ctx.user?.isAdmin) {
             throw httpError.unauthorized();
           }

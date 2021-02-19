@@ -27,7 +27,7 @@ TRPC is a framework for building strongly typed RPC APIs with TypeScript. Altern
   - [Getting started with Next.js](#getting-started-with-nextjs)
   - [Defining routes](#defining-routes)
   - [Merging routers](#merging-routers)
-  - [Router middlewares, `preHook()`](#router-middlewares-prehook)
+  - [Router middlewares](#router-middlewares)
   - [Data transformers](#data-transformers)
   - [Server-side rendering (SSR / SSG)](#server-side-rendering-ssr--ssg)
 - [Further reading](#further-reading)
@@ -334,11 +334,11 @@ const appRouter = createRouter()
 
 </details>
 
-## Router middlewares, `preHook()`
+## Router middlewares
 
-You can are able to add middleware to a whole router with the `preHook()` method. The prehook(s) will be run before any of the routes defined after are invoked.
+You can are able to add middlewares to a whole router with the `middleware()` method. The middleware(s) will be run before any of the routes defined after are invoked & can be async or sync.
 
-Example, from [the tests](./packages/server/test/preHook.test.ts):
+Example, from [the tests](./packages/server/test/middleware.test.ts):
 <details><summary>Code</summary>
 
 ```ts
@@ -353,7 +353,7 @@ trpc
     'admin.',
     trpc
       .router<Context>()
-      .preHook(async ({ ctx }) => {
+      .middleware(async ({ ctx }) => {
         if (!ctx.user?.isAdmin) {
           throw httpError.unauthorized();
         }

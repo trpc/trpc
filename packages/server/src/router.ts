@@ -50,7 +50,7 @@ export type Route<TContext = unknown, TInput = unknown, TOutput = unknown> = (
   | RouteWithInput<TContext, TInput, TOutput>
   | RouteWithoutInput<TContext, TInput, TOutput>
 ) & {
-  _preHooks?: PreHookFunction<TContext>[];
+  _middlewares?: MiddlewareFunction<TContext>[];
 };
 
 export type RouteRecord<
@@ -97,7 +97,7 @@ export type inferHandlerFn<TRoutes extends RouteRecord<any, any, any>> = <
 
 export type AnyRouter<TContext = any> = Router<TContext, any, any, any, any>;
 
-export type PreHookFunction<TContext> = (opts: {
+export type MiddlewareFunction<TContext> = (opts: {
   ctx: TContext;
 }) => Promise<void> | void;
 export class Router<
@@ -105,26 +105,26 @@ export class Router<
   TQueries extends RouteRecord<TContext>,
   TMutations extends RouteRecord<TContext>,
   TSubscriptions extends RouteRecord<TContext, unknown, Subscription<unknown>>,
-  TPreHook extends PreHookFunction<TContext>
+  TMiddleware extends MiddlewareFunction<TContext>
 > {
   readonly _def: Readonly<{
     queries: Readonly<TQueries>;
     mutations: Readonly<TMutations>;
     subscriptions: Readonly<TSubscriptions>;
-    preHooks: TPreHook[];
+    middlewares: TMiddleware[];
   }>;
 
   constructor(def?: {
     queries: TQueries;
     mutations: TMutations;
     subscriptions: TSubscriptions;
-    preHooks: TPreHook[];
+    middlewares: TMiddleware[];
   }) {
     this._def = def ?? {
       queries: {} as TQueries,
       mutations: {} as TMutations,
       subscriptions: {} as TSubscriptions,
-      preHooks: [],
+      middlewares: [],
     };
   }
 
@@ -147,7 +147,7 @@ export class Router<
     format<TQueries & Record<TPath, typeof route>>,
     TMutations,
     TSubscriptions,
-    TPreHook
+    TMiddleware
   > {
     const router = new Router<TContext, any, {}, {}, any>({
       queries: {
@@ -155,7 +155,7 @@ export class Router<
       } as any,
       mutations: {},
       subscriptions: {},
-      preHooks: [],
+      middlewares: [],
     }) as AnyRouter;
 
     return this.merge(router);
@@ -182,7 +182,7 @@ export class Router<
     TQueries,
     format<TMutations & Record<TPath, typeof route>>,
     TSubscriptions,
-    TPreHook
+    TMiddleware
   > {
     const router = new Router({
       queries: {},
@@ -190,7 +190,7 @@ export class Router<
         [path]: route,
       } as any,
       subscriptions: {},
-      preHooks: [],
+      middlewares: [],
     }) as AnyRouter;
 
     return this.merge(router);
@@ -213,7 +213,7 @@ export class Router<
     TQueries,
     TMutations,
     format<TSubscriptions & Record<TPath, typeof route>>,
-    TPreHook
+    TMiddleware
   > {
     const router = new Router({
       queries: {},
@@ -221,7 +221,7 @@ export class Router<
       subscriptions: {
         [path]: route,
       } as any,
-      preHooks: [],
+      middlewares: [],
     }) as AnyRouter;
 
     return this.merge(router);
@@ -238,7 +238,7 @@ export class Router<
     format<TQueries & TChildRouter['_def']['queries']>,
     format<TMutations & TChildRouter['_def']['mutations']>,
     format<TSubscriptions & TChildRouter['_def']['subscriptions']>,
-    TPreHook
+    TMiddleware
   >;
 
   /**
@@ -255,7 +255,7 @@ export class Router<
     TMutations & Prefixer<TChildRouter['_def']['mutations'], `${TPath}`>,
     TSubscriptions &
       Prefixer<TChildRouter['_def']['subscriptions'], `${TPath}`>,
-    TPreHook
+    TMiddleware
   >;
 
   public merge(prefixOrRouter: unknown, maybeRouter?: unknown) {
@@ -293,27 +293,27 @@ export class Router<
     return new Router<TContext, any, any, any, any>({
       queries: {
         ...this._def.queries,
-        ...this.inhertPreHooks(
+        ...this.inhertMiddlewares(
           Router.prefixRoutes(router._def.queries, prefix),
         ),
       },
       mutations: {
         ...this._def.mutations,
-        ...this.inhertPreHooks(
+        ...this.inhertMiddlewares(
           Router.prefixRoutes(router._def.mutations, prefix),
         ),
       },
       subscriptions: {
         ...this._def.subscriptions,
-        ...this.inhertPreHooks(
+        ...this.inhertMiddlewares(
           Router.prefixRoutes(router._def.subscriptions, prefix),
         ),
       },
-      preHooks: this._def.preHooks,
+      middlewares: this._def.middlewares,
     });
   }
 
-  private inhertPreHooks<TRoutes extends RouteRecord<TCtx>, TCtx>(
+  private inhertMiddlewares<TRoutes extends RouteRecord<TCtx>, TCtx>(
     routes: TRoutes,
   ): TRoutes {
     const newRoutes = {} as TRoutes;
@@ -321,10 +321,10 @@ export class Router<
       const route = routes[key];
       newRoutes[key] = {
         ...route,
-        _preHooks: [
+        _middlewares: [
           //
-          ...this._def.preHooks,
-          ...(route._preHooks ?? []),
+          ...this._def.middlewares,
+          ...(route._middlewares ?? []),
         ],
       };
     }
@@ -370,7 +370,7 @@ export class Router<
     const target = this._def[opts.target];
     const route: Route<TContext> = target[opts.path as any];
     const { ctx } = opts;
-    for (const fn of route._preHooks ?? []) {
+    for (const fn of route._middlewares ?? []) {
       await fn({ ctx });
     }
     const input = Router.getInput(route, opts.input);
@@ -386,12 +386,12 @@ export class Router<
    * Function to be called before any route is invoked
    * Can be async or sync
    */
-  preHook(fn: TPreHook) {
-    this._def.preHooks.push(fn);
+  middleware(fn: TMiddleware) {
+    this._def.middlewares.push(fn);
     return this;
   }
 }
 
 export function router<TContext>() {
-  return new Router<TContext, {}, {}, {}, PreHookFunction<TContext>>();
+  return new Router<TContext, {}, {}, {}, MiddlewareFunction<TContext>>();
 }
