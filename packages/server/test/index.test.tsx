@@ -279,7 +279,7 @@ describe('integration tests', () => {
   });
 });
 
-describe('call()', () => {
+describe('createCall()', () => {
   type Context = {};
   const router = trpc
     .router<Context>()
@@ -312,14 +312,21 @@ describe('call()', () => {
   test('query()', async () => {
     const data = await router.createCaller({}).query('q', 1);
     expectTypeOf(data).toMatchTypeOf<{ input: number }>();
+    expect(data).toEqual({ input: 1 });
   });
   test('mutation()', async () => {
-    const data = await router.createCaller({}).mutation('m', 1);
+    const data = await router.createCaller({}).mutation('m', 2);
     expectTypeOf(data).toMatchTypeOf<{ input: number }>();
+    expect(data).toEqual({ input: 2 });
   });
-  test('subscription()', async () => {
-    // TODO
-    // const data = await router.createCaller({}).mutation('m', 1);
-    // expectTypeOf(data).toMatchTypeOf<{ input: number }>();
-  });
+  // test('subscription()', async (done) => {
+  //   const sub = await router.createCaller({}).subscription('sub', 3);
+
+  //   sub.on('data', (data) => {
+  //     expect(obj).toEqual({ input: 3 });
+  //     expectTypeOf(data).toMatchTypeOf<{ input: number }>();
+  //     done();
+  //   });
+  //   sub.start();
+  // });
 });
