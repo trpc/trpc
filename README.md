@@ -27,6 +27,7 @@ TRPC is a framework for building strongly typed RPC APIs with TypeScript. Altern
   - [Getting started with Next.js](#getting-started-with-nextjs)
   - [Defining routes](#defining-routes)
   - [Merging routers](#merging-routers)
+  - [Router middlewares](#router-middlewares)
   - [Data transformers](#data-transformers)
   - [Server-side rendering (SSR / SSG)](#server-side-rendering-ssr--ssg)
 - [Further reading](#further-reading)
@@ -288,6 +289,7 @@ export type AppRouter = typeof appRouter;
 
 </details>
 
+
 ## Merging routers
 
 Writing all API-code in your code in the same file is a bad idea. It's easy to merge routes with other routes. Thanks to TypeScript 4.1 template literal types we can also prefix the routes without breaking type safety.
@@ -331,6 +333,45 @@ const appRouter = createRouter()
 ```
 
 </details>
+
+## Router middlewares
+
+You can are able to add middlewares to a whole router with the `middleware()` method. The middleware(s) will be run before any of the routes defined after are invoked & can be async or sync.
+
+Example, from [the tests](./packages/server/test/middleware.test.ts):
+<details><summary>Code</summary>
+
+```ts
+trpc
+  .router<Context>()
+  .query('foo', {
+    resolve() {
+      return 'bar';
+    },
+  })
+  .merge(
+    'admin.',
+    trpc
+      .router<Context>()
+      .middleware(async ({ ctx }) => {
+        if (!ctx.user?.isAdmin) {
+          throw httpError.unauthorized();
+        }
+      })
+      .query('secretPlace', {
+        resolve() {
+          resolverMock();
+
+          return 'a key';
+        },
+      }),
+  )
+```
+</details>
+
+In the example above any call to `admin.*` will ensure that the user is an "admin" before executing any query or mutation.
+
+
 
 ## Data transformers
 
