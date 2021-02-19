@@ -6,7 +6,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/trpcio/trpc.git",
+    "url": "git+https://github.com/trpc/trpc.git",
     "directory": "packages/react"
   },
   "scripts": {
