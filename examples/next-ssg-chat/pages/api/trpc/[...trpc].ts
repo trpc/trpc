@@ -64,10 +64,10 @@ const router = createRouter()
           cursor: z.date().optional(),
           take: z.number().min(1).max(50).optional(),
         }),
-        resolve: async ({ input: { take, cursor } }) => {
+        resolve: async ({ input: { take = 10, cursor } }) => {
           // `cursor` is of type `Date | undefined`
           // `take` is of type `number | undefined`
-          const items = await prisma.message.findMany({
+          const page = await prisma.message.findMany({
             orderBy: {
               createdAt: 'desc',
             },
@@ -76,13 +76,18 @@ const router = createRouter()
                   createdAt: cursor,
                 }
               : undefined,
-            take: take ?? 10,
-            skip: cursor ? 1 : 0,
+            take: take + 1,
+            skip: 0,
           });
-          const reversed = items.reverse();
+          const items = page.reverse();
+          let prevCursor: null | typeof cursor = null;
+          if (items.length > take) {
+            const prev = items.shift();
+            prevCursor = prev.createdAt;
+          }
           return {
             items,
-            prevCursor: reversed[0]?.createdAt,
+            prevCursor,
           };
         },
       })

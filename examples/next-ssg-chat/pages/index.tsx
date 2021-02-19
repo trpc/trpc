@@ -1,7 +1,7 @@
 import { observer } from 'mobx-react'; // Or "mobx-react".
 import Head from 'next/head';
 import { useEffect, useMemo, useState } from 'react';
-import { mutate, inferQueryOutput, trpc } from '../utils/trpc';
+import { inferQueryOutput, trpc } from '../utils/trpc';
 import { appRouter } from './api/trpc/[...trpc]';
 
 type MessagesOutput = inferQueryOutput<'messages.list'>;
@@ -29,7 +29,7 @@ const MessageListItem = observer(({ m }: { m: Message }) => {
     <li
       onClick={async () => {
         const text = prompt('text');
-        await mutate('messages.edit', {
+        await trpc.client.mutation('messages.edit', {
           id: m.id,
           text,
         });

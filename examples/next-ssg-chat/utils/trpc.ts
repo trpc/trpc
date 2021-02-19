@@ -41,5 +41,3 @@ export const trpc = createReactQueryHooks({
 export type inferQueryOutput<
   TRouteKey extends keyof AppRouter['_def']['queries']
 > = inferRouteOutput<AppRouter['_def']['queries'][TRouteKey]>;
-
-export const mutate = client.mutation;
