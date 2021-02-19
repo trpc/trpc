@@ -295,6 +295,10 @@ export async function requestHandler<
         requestTimeoutTimer = setTimeout(onRequestTimeout, requestTimeoutMs);
         sub.start();
       });
+    } else if (method === 'HEAD') {
+      res.statusCode = 204;
+      res.end();
+      return;
     } else {
       throw httpError.badRequest(`Unexpected request method ${method}`);
     }
