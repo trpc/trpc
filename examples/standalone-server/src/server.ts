@@ -6,12 +6,14 @@ import * as z from 'zod';
 type Context = {};
 
 export const appRouter = trpc.router<Context>().query('hello', {
-  input: z.object({
-    name: z.string(),
-  }),
+  input: z
+    .object({
+      name: z.string(),
+    })
+    .optional(),
   resolve: ({ input }) => {
     return {
-      text: `hello ${input.name}`,
+      text: `hello ${input?.name ?? 'world'}`,
     };
   },
 });
