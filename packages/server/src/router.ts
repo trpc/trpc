@@ -4,7 +4,7 @@
 import { assertNotBrowser } from './assertNotBrowser';
 import { InputValidationError, RouteNotFoundError } from './errors';
 import { Subscription } from './subscription';
-import { format, Prefixer, ThenArg } from './types';
+import { format, flatten, Prefixer, ThenArg } from './types';
 assertNotBrowser();
 
 export type RouteInputParserZodEsque<TInput = unknown> = {
@@ -149,16 +149,16 @@ export class Router<
     TSubscriptions,
     TMiddleware
   > {
-    const router = new Router<TContext, any, {}, {}, any>({
+    const router = new Router({
       queries: {
         [path]: route,
       } as any,
       mutations: {},
       subscriptions: {},
       middlewares: [],
-    }) as AnyRouter;
+    });
 
-    return this.merge(router);
+    return this.merge(router) as any;
   }
 
   // TODO / help: https://github.com/trpc/trpc/pull/37
@@ -191,9 +191,9 @@ export class Router<
       } as any,
       subscriptions: {},
       middlewares: [],
-    }) as AnyRouter;
+    });
 
-    return this.merge(router);
+    return this.merge(router) as any;
   }
 
   /**
@@ -222,9 +222,9 @@ export class Router<
         [path]: route,
       } as any,
       middlewares: [],
-    }) as AnyRouter;
+    });
 
-    return this.merge(router);
+    return this.merge(router) as any;
   }
 
   /**
@@ -235,9 +235,9 @@ export class Router<
     router: TChildRouter,
   ): Router<
     TContext,
-    format<TQueries & TChildRouter['_def']['queries']>,
-    format<TMutations & TChildRouter['_def']['mutations']>,
-    format<TSubscriptions & TChildRouter['_def']['subscriptions']>,
+    flatten<TQueries, TChildRouter['_def']['queries']>,
+    flatten<TMutations, TChildRouter['_def']['mutations']>,
+    flatten<TSubscriptions, TChildRouter['_def']['subscriptions']>,
     TMiddleware
   >;
 
@@ -251,10 +251,15 @@ export class Router<
     router: TChildRouter,
   ): Router<
     TContext,
-    TQueries & Prefixer<TChildRouter['_def']['queries'], `${TPath}`>,
-    TMutations & Prefixer<TChildRouter['_def']['mutations'], `${TPath}`>,
-    TSubscriptions &
-      Prefixer<TChildRouter['_def']['subscriptions'], `${TPath}`>,
+    flatten<TQueries, Prefixer<TChildRouter['_def']['queries'], `${TPath}`>>,
+    flatten<
+      TMutations,
+      Prefixer<TChildRouter['_def']['mutations'], `${TPath}`>
+    >,
+    flatten<
+      TSubscriptions,
+      Prefixer<TChildRouter['_def']['subscriptions'], `${TPath}`>
+    >,
     TMiddleware
   >;
 
