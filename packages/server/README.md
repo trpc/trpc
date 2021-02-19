@@ -1,3 +1,3 @@
 # @trpc/server
 
-https://github.com/trpcio/trpc
+https://github.com/trpc/trpc
