@@ -6,7 +6,7 @@ import {
   CreateContextFnOptions,
   requestHandler,
 } from '../http';
-import { Router } from '../router';
+import { AnyRouter } from '../router';
 
 export type CreateExpressContextOptions = CreateContextFnOptions<
   express.Request,
@@ -21,7 +21,7 @@ export type CreateExpressContextFn<TContext> = CreateContextFn<
 
 export function createExpressMiddleware<
   TContext,
-  TRouter extends Router<TContext, any, any, any>
+  TRouter extends AnyRouter<TContext>
 >(
   opts: {
     router: TRouter;

@@ -4,7 +4,7 @@
 import { assertNotBrowser } from './assertNotBrowser';
 import { InputValidationError, RouteNotFoundError } from './errors';
 import { Subscription } from './subscription';
-import { Prefixer, ThenArg } from './types';
+import { format, Prefixer, ThenArg } from './types';
 assertNotBrowser();
 
 export type RouteInputParserZodEsque<TInput = unknown> = {
@@ -46,9 +46,12 @@ export type RouteWithoutInput<
   input?: undefined | null;
   resolve: RouteResolver<TContext, TInput, TOutput>;
 };
-export type Route<TContext = unknown, TInput = unknown, TOutput = unknown> =
+export type Route<TContext = unknown, TInput = unknown, TOutput = unknown> = (
   | RouteWithInput<TContext, TInput, TOutput>
-  | RouteWithoutInput<TContext, TInput, TOutput>;
+  | RouteWithoutInput<TContext, TInput, TOutput>
+) & {
+  _middlewares?: MiddlewareFunction<TContext>[];
+};
 
 export type RouteRecord<
   TContext = unknown,
@@ -92,29 +95,36 @@ export type inferHandlerFn<TRoutes extends RouteRecord<any, any, any>> = <
     : [undefined?]
 ) => Promise<inferRouteOutput<TRoutes[TPath]>>;
 
-export type AnyRouter<TContext = any> = Router<TContext, any, any, any>;
+export type AnyRouter<TContext = any> = Router<TContext, any, any, any, any>;
 
+export type MiddlewareFunction<TContext> = (opts: {
+  ctx: TContext;
+}) => Promise<void> | void;
 export class Router<
   TContext,
   TQueries extends RouteRecord<TContext>,
   TMutations extends RouteRecord<TContext>,
-  TSubscriptions extends RouteRecord<TContext, unknown, Subscription<unknown>>
+  TSubscriptions extends RouteRecord<TContext, unknown, Subscription<unknown>>,
+  TMiddleware extends MiddlewareFunction<TContext>
 > {
   readonly _def: Readonly<{
     queries: Readonly<TQueries>;
     mutations: Readonly<TMutations>;
     subscriptions: Readonly<TSubscriptions>;
+    middlewares: TMiddleware[];
   }>;
 
   constructor(def?: {
     queries: TQueries;
     mutations: TMutations;
     subscriptions: TSubscriptions;
+    middlewares: TMiddleware[];
   }) {
     this._def = def ?? {
       queries: {} as TQueries,
       mutations: {} as TMutations,
       subscriptions: {} as TSubscriptions,
+      middlewares: [],
     };
   }
 
@@ -134,19 +144,21 @@ export class Router<
     route: Route<TContext, TInput, TOutput>,
   ): Router<
     TContext,
-    TQueries & Record<TPath, typeof route>,
+    format<TQueries & Record<TPath, typeof route>>,
     TMutations,
-    TSubscriptions
+    TSubscriptions,
+    TMiddleware
   > {
-    const router = new Router<TContext, any, {}, {}>({
+    const router = new Router<TContext, any, {}, {}, any>({
       queries: {
         [path]: route,
       } as any,
       mutations: {},
       subscriptions: {},
-    });
+      middlewares: [],
+    }) as AnyRouter;
 
-    return this.merge(router) as any;
+    return this.merge(router);
   }
 
   // TODO / help: https://github.com/trpc/trpc/pull/37
@@ -168,8 +180,9 @@ export class Router<
   ): Router<
     TContext,
     TQueries,
-    TMutations & Record<TPath, typeof route>,
-    TSubscriptions
+    format<TMutations & Record<TPath, typeof route>>,
+    TSubscriptions,
+    TMiddleware
   > {
     const router = new Router({
       queries: {},
@@ -177,9 +190,10 @@ export class Router<
         [path]: route,
       } as any,
       subscriptions: {},
-    });
+      middlewares: [],
+    }) as AnyRouter;
 
-    return this.merge(router) as any;
+    return this.merge(router);
   }
 
   /**
@@ -198,7 +212,8 @@ export class Router<
     TContext,
     TQueries,
     TMutations,
-    TSubscriptions & Record<TPath, typeof route>
+    format<TSubscriptions & Record<TPath, typeof route>>,
+    TMiddleware
   > {
     const router = new Router({
       queries: {},
@@ -206,9 +221,10 @@ export class Router<
       subscriptions: {
         [path]: route,
       } as any,
-    });
+      middlewares: [],
+    }) as AnyRouter;
 
-    return this.merge(router) as any;
+    return this.merge(router);
   }
 
   /**
@@ -219,9 +235,10 @@ export class Router<
     router: TChildRouter,
   ): Router<
     TContext,
-    TQueries & TChildRouter['_def']['queries'],
-    TMutations & TChildRouter['_def']['mutations'],
-    TSubscriptions & TChildRouter['_def']['subscriptions']
+    format<TQueries & TChildRouter['_def']['queries']>,
+    format<TMutations & TChildRouter['_def']['mutations']>,
+    format<TSubscriptions & TChildRouter['_def']['subscriptions']>,
+    TMiddleware
   >;
 
   /**
@@ -236,7 +253,9 @@ export class Router<
     TContext,
     TQueries & Prefixer<TChildRouter['_def']['queries'], `${TPath}`>,
     TMutations & Prefixer<TChildRouter['_def']['mutations'], `${TPath}`>,
-    TSubscriptions & Prefixer<TChildRouter['_def']['subscriptions'], `${TPath}`>
+    TSubscriptions &
+      Prefixer<TChildRouter['_def']['subscriptions'], `${TPath}`>,
+    TMiddleware
   >;
 
   public merge(prefixOrRouter: unknown, maybeRouter?: unknown) {
@@ -253,14 +272,14 @@ export class Router<
     }
 
     const duplicateQueries = Object.keys(router._def.queries).filter((key) =>
-      this.has('queries', key),
+      this.has('queries', prefix + key),
     );
     const duplicateMutations = Object.keys(
       router._def.mutations,
-    ).filter((key) => this.has('mutations', key));
+    ).filter((key) => this.has('mutations', prefix + key));
     const duplicateSubscriptions = Object.keys(
       router._def.subscriptions,
-    ).filter((key) => this.has('subscriptions', key));
+    ).filter((key) => this.has('subscriptions', prefix + key));
 
     const duplicates = [
       ...duplicateQueries,
@@ -271,22 +290,46 @@ export class Router<
       throw new Error(`Duplicate endpoint(s): ${duplicates.join(', ')}`);
     }
 
-    return new Router<TContext, any, any, any>({
+    return new Router<TContext, any, any, any, any>({
       queries: {
         ...this._def.queries,
-        ...Router.prefixRoutes(router._def.queries, prefix),
+        ...this.inhertMiddlewares(
+          Router.prefixRoutes(router._def.queries, prefix),
+        ),
       },
       mutations: {
         ...this._def.mutations,
-        ...Router.prefixRoutes(router._def.mutations, prefix),
+        ...this.inhertMiddlewares(
+          Router.prefixRoutes(router._def.mutations, prefix),
+        ),
       },
       subscriptions: {
         ...this._def.subscriptions,
-        ...Router.prefixRoutes(router._def.subscriptions, prefix),
+        ...this.inhertMiddlewares(
+          Router.prefixRoutes(router._def.subscriptions, prefix),
+        ),
       },
+      middlewares: this._def.middlewares,
     });
   }
 
+  private inhertMiddlewares<TRoutes extends RouteRecord<TCtx>, TCtx>(
+    routes: TRoutes,
+  ): TRoutes {
+    const newRoutes = {} as TRoutes;
+    for (const key in routes) {
+      const route = routes[key];
+      newRoutes[key] = {
+        ...route,
+        _middlewares: [
+          //
+          ...this._def.middlewares,
+          ...(route._middlewares ?? []),
+        ],
+      };
+    }
+    return newRoutes;
+  }
   private static getInput<TRoute extends Route<any, any, any>>(
     route: TRoute,
     rawInput: unknown,
@@ -326,9 +369,11 @@ export class Router<
     }
     const target = this._def[opts.target];
     const route: Route<TContext> = target[opts.path as any];
-
-    const input = Router.getInput(route, opts.input);
     const { ctx } = opts;
+    for (const fn of route._middlewares ?? []) {
+      await fn({ ctx });
+    }
+    const input = Router.getInput(route, opts.input);
 
     return route.resolve({ ctx, input });
   }
@@ -336,8 +381,17 @@ export class Router<
   public has(what: 'subscriptions' | 'mutations' | 'queries', path: string) {
     return !!this._def[what][path];
   }
+
+  /**
+   * Function to be called before any route is invoked
+   * Can be async or sync
+   */
+  middleware(fn: TMiddleware) {
+    this._def.middlewares.push(fn);
+    return this;
+  }
 }
 
 export function router<TContext>() {
-  return new Router<TContext, {}, {}, {}>();
+  return new Router<TContext, {}, {}, {}, MiddlewareFunction<TContext>>();
 }
