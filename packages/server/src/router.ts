@@ -143,10 +143,10 @@ export class Router<
   private static prefixProcedures<
     TProcedures extends ProcedureRecord,
     TPrefix extends string
-  >(routes: TProcedures, prefix: TPrefix): Prefixer<TProcedures, TPrefix> {
+  >(procedures: TProcedures, prefix: TPrefix): Prefixer<TProcedures, TPrefix> {
     const eps: ProcedureRecord = {};
-    for (const key in routes) {
-      eps[prefix + key] = routes[key];
+    for (const key in procedures) {
+      eps[prefix + key] = procedures[key];
     }
     return eps as any;
   }
@@ -175,10 +175,10 @@ export class Router<
 
   // TODO / help: https://github.com/trpc/trpc/pull/37
   // public queries<TProcedures extends ProcedureRecord<TContext, any, any>>(
-  //   routes: TProcedures,
+  //   procedures: TProcedures,
   // ): Router<TContext, TQueries & TProcedures, TMutations, TSubscriptions> {
   //   const router = new Router<TContext, any, {}, {}>({
-  //     queries: routes,
+  //     queries: procedures,
   //     mutations: {},
   //     subscriptions: {},
   //   });
@@ -326,21 +326,21 @@ export class Router<
   }
 
   private inheritMiddlewares<TProcedures extends ProcedureRecord<TCtx>, TCtx>(
-    routes: TProcedures,
+    procedures: TProcedures,
   ): TProcedures {
-    const newRoutes = {} as TProcedures;
-    for (const key in routes) {
-      const route = routes[key];
-      newRoutes[key] = {
-        ...route,
+    const newProcedures = {} as TProcedures;
+    for (const key in procedures) {
+      const procedure = procedures[key];
+      newProcedures[key] = {
+        ...procedure,
         _middlewares: [
           //
           ...this._def.middlewares,
-          ...(route._middlewares ?? []),
+          ...(procedure._middlewares ?? []),
         ],
       };
     }
-    return newRoutes;
+    return newProcedures;
   }
   private static getInput<TProcedure extends Procedure<any, any, any>>(
     route: TProcedure,
@@ -377,7 +377,7 @@ export class Router<
     input?: unknown;
   }): Promise<unknown> {
     if (!this.has(opts.target, opts.path)) {
-      throw new RouteNotFoundError(`No such route "${opts.path}"`);
+      throw new RouteNotFoundError(`No such procedure "${opts.path}"`);
     }
     const target = this._def[opts.target];
     const route: Procedure<TContext> = target[opts.path as any];
@@ -395,7 +395,7 @@ export class Router<
   }
 
   /**
-   * Function to be called before any route is invoked
+   * Function to be called before any procedure is invoked
    * Can be async or sync
    */
   middleware(fn: TMiddleware) {

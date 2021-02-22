@@ -2,7 +2,7 @@ import Head from 'next/head';
 import { trpc } from '../utils/trpc';
 
 export default function Home() {
-  // try typing here to see that you get autocompletioon & type safety on the route name
+  // try typing here to see that you get autocompletion & type safety on the procedure's name
   const helloNoArgs = trpc.useQuery(['hello']);
   const helloWithArgs = trpc.useQuery(['hello', { text: 'client' }]);
 
