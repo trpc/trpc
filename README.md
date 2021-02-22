@@ -218,7 +218,7 @@ export default function Home() {
 
 ## Defining procedures (_endpoints / routes_)
 
-> - A procedure can be seen as the REST-equivalent of an endpoint.
+> - A procedure can be viewed as the equivalent of a REST-endpoint.
 > - There's no internal difference between queries and mutations apart from semantics.
 
 Defining procedures is the same for queries, mutations, and subscription with the exception that subscriptions need to return a `Subscription`-instance.
