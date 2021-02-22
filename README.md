@@ -25,7 +25,7 @@ TRPC is a framework for building strongly typed RPC APIs with TypeScript. Altern
 - [Usage](#usage)
   - [Example apps](#example-apps)
   - [Getting started with Next.js](#getting-started-with-nextjs)
-  - [Defining procedures](#defining-procedures)
+  - [Defining procedures (_endpoints / routes_)](#defining-procedures-endpoints--routes)
   - [Merging routers](#merging-routers)
   - [Router middlewares](#router-middlewares)
   - [Data transformers](#data-transformers)
@@ -216,9 +216,14 @@ export default function Home() {
 </details>
 
 
-## Defining procedures
+## Defining procedures (_endpoints / routes_)
 
-Defining procedures is the same for queries, mutations, and subscription with the exception that subscriptions needs to return a `Subscription`-instance.
+> - A procedure can be seen as the REST-equivalent of an endpoint.
+> - There's no internal difference between queries and mutations apart from semantics.
+
+Defining procedures is the same for queries, mutations, and subscription with the exception that subscriptions need to return a `Subscription`-instance.
+
+
 
 <details><summary>Example query without input argument</summary>
 
