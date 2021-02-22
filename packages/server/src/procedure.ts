@@ -134,6 +134,9 @@ export function createProcedure<TContext, TOutput>(
 ): ProcedureWithoutInput<TContext, TOutput>;
 export function createProcedure<TContext, TInput, TOutput>(
   opts: CreateProcedureOptions<TContext, TInput, TOutput>,
+): Procedure<TContext, TInput, TOutput>;
+export function createProcedure<TContext, TInput, TOutput>(
+  opts: CreateProcedureOptions<TContext, TInput, TOutput>,
 ) {
   if (opts.input) {
     return new ProcedureWithInput({
@@ -164,3 +167,12 @@ export type inferProcedureFromOptions<
     >
   ? ProcedureWithoutInput<TContext, TOutput>
   : Procedure<unknown, unknown>;
+
+// type Proc = inferProcedureFromOptions<{
+//   resolve(): { text: 'hey' };
+// }>;
+
+// type Proc2 = inferProcedureFromOptions<{
+//   input(): { id: number };
+//   resolve(): { text: 'hey' };
+// }>;

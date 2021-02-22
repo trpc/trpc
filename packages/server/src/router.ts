@@ -4,6 +4,7 @@
 import { assertNotBrowser } from './assertNotBrowser';
 import { RouteNotFoundError } from './errors';
 import {
+  createProcedure,
   CreateProcedureOptions,
   inferProcedureFromOptions,
   Procedure,
@@ -115,16 +116,14 @@ export class Router<
     procedure: TProcedureOptions,
   ): Router<
     TContext,
-    format<
-      TQueries & Record<TPath, inferProcedureFromOptions<TProcedureOptions>>
-    >,
+    TQueries & Record<TPath, inferProcedureFromOptions<TProcedureOptions>>,
     TMutations,
     TSubscriptions,
     TMiddleware
   > {
     const router = new Router<TContext, any, {}, {}, any>({
       queries: {
-        [path]: procedure,
+        [path]: createProcedure(procedure),
       } as any,
       mutations: {},
       subscriptions: {},
@@ -147,20 +146,23 @@ export class Router<
   //   return this.merge(router) as any;
   // }
 
-  public mutation<TPath extends string, TInput, TOutput>(
+  public mutation<
+    TPath extends string,
+    TProcedureOptions extends CreateProcedureOptions<TContext, any, any>
+  >(
     path: TPath,
-    procedure: Procedure<TContext, TInput, TOutput>,
+    procedure: TProcedureOptions,
   ): Router<
     TContext,
     TQueries,
-    format<TMutations & Record<TPath, typeof procedure>>,
+    TMutations & Record<TPath, inferProcedureFromOptions<TProcedureOptions>>,
     TSubscriptions,
     TMiddleware
   > {
     const router = new Router({
       queries: {},
       mutations: {
-        [path]: procedure,
+        [path]: createProcedure(procedure),
       } as any,
       subscriptions: {},
       middlewares: [],
@@ -176,23 +178,27 @@ export class Router<
    */
   public subscription<
     TPath extends string,
-    TInput,
-    TOutput extends Subscription
+    TProcedureOptions extends CreateProcedureOptions<
+      TContext,
+      any,
+      Subscription<any>
+    >
   >(
     path: TPath,
-    procedure: Procedure<TContext, TInput, TOutput>,
+    procedure: TProcedureOptions,
   ): Router<
     TContext,
     TQueries,
     TMutations,
-    format<TSubscriptions & Record<TPath, typeof procedure>>,
+    TSubscriptions &
+      Record<TPath, inferProcedureFromOptions<TProcedureOptions>>,
     TMiddleware
   > {
     const router = new Router({
       queries: {},
       mutations: {},
       subscriptions: {
-        [path]: procedure,
+        [path]: createProcedure(procedure),
       } as any,
       middlewares: [],
     }) as AnyRouter;
