@@ -97,7 +97,7 @@ test('merge', async () => {
 });
 
 describe('integration tests', () => {
-  test('not found route', async () => {
+  test('not found procedure', async () => {
     const { client, close } = routerToServerAndClient(
       trpc.router().query('hello', {
         input: z

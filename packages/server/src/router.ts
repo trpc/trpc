@@ -2,60 +2,16 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { assertNotBrowser } from './assertNotBrowser';
-import { InputValidationError, RouteNotFoundError } from './errors';
+import { RouteNotFoundError } from './errors';
+import {
+  CreateProcedureOptions,
+  inferProcedureFromOptions,
+  Procedure,
+  ProcedureWithInput,
+} from './procedure';
 import { Subscription } from './subscription';
 import { format, Prefixer, ThenArg } from './types';
 assertNotBrowser();
-
-export type ProcedureInputParserZodEsque<TInput = unknown> = {
-  parse: (input: any) => TInput;
-};
-
-export type ProcedureInputParserCustomValidatorEsque<TInput = unknown> = (
-  input: unknown,
-) => TInput;
-
-export type ProcedureInputParserYupEsque<TInput = unknown> = {
-  validateSync: (input: unknown) => TInput;
-};
-export type ProcedureInputParser<TInput = unknown> =
-  | ProcedureInputParserZodEsque<TInput>
-  | ProcedureInputParserYupEsque<TInput>
-  | ProcedureInputParserCustomValidatorEsque<TInput>;
-
-export type ProcedureResolver<
-  TContext = unknown,
-  TInput = unknown,
-  TOutput = unknown
-> = (opts: { ctx: TContext; input: TInput }) => Promise<TOutput> | TOutput;
-
-export type ProcedureWithInput<
-  TContext = unknown,
-  TInput = unknown,
-  TOutput = unknown
-> = {
-  input: ProcedureInputParser<TInput>;
-  resolve: ProcedureResolver<TContext, TInput, TOutput>;
-};
-
-export type ProcedureWithoutInput<
-  TContext = unknown,
-  TInput = unknown,
-  TOutput = unknown
-> = {
-  input?: undefined | null;
-  resolve: ProcedureResolver<TContext, TInput, TOutput>;
-};
-export type Procedure<
-  TContext = unknown,
-  TInput = unknown,
-  TOutput = unknown
-> = (
-  | ProcedureWithInput<TContext, TInput, TOutput>
-  | ProcedureWithoutInput<TContext, TInput, TOutput>
-) & {
-  _middlewares?: MiddlewareFunction<TContext>[];
-};
 
 export type ProcedureRecord<
   TContext = unknown,
@@ -75,13 +31,13 @@ export type inferAsyncReturnType<
 
 export type inferProcedureOutput<
   TProcedure extends Procedure
-> = inferAsyncReturnType<TProcedure['resolve']>;
+> = inferAsyncReturnType<TProcedure['call']>;
 export type inferSubscriptionOutput<
   TRouter extends AnyRouter,
   TPath extends keyof TRouter['_def']['subscriptions']
 > = ReturnType<
   inferAsyncReturnType<
-    TRouter['_def']['subscriptions'][TPath]['resolve']
+    TRouter['_def']['subscriptions'][TPath]['call']
   >['output']
 >;
 
@@ -151,19 +107,24 @@ export class Router<
     return eps as any;
   }
 
-  public query<TPath extends string, TInput, TOutput>(
+  public query<
+    TPath extends string,
+    TProcedureOptions extends CreateProcedureOptions<TContext, any, any>
+  >(
     path: TPath,
-    route: Procedure<TContext, TInput, TOutput>,
+    procedure: TProcedureOptions,
   ): Router<
     TContext,
-    format<TQueries & Record<TPath, typeof route>>,
+    format<
+      TQueries & Record<TPath, inferProcedureFromOptions<TProcedureOptions>>
+    >,
     TMutations,
     TSubscriptions,
     TMiddleware
   > {
     const router = new Router<TContext, any, {}, {}, any>({
       queries: {
-        [path]: route,
+        [path]: procedure,
       } as any,
       mutations: {},
       subscriptions: {},
@@ -188,18 +149,18 @@ export class Router<
 
   public mutation<TPath extends string, TInput, TOutput>(
     path: TPath,
-    route: Procedure<TContext, TInput, TOutput>,
+    procedure: Procedure<TContext, TInput, TOutput>,
   ): Router<
     TContext,
     TQueries,
-    format<TMutations & Record<TPath, typeof route>>,
+    format<TMutations & Record<TPath, typeof procedure>>,
     TSubscriptions,
     TMiddleware
   > {
     const router = new Router({
       queries: {},
       mutations: {
-        [path]: route,
+        [path]: procedure,
       } as any,
       subscriptions: {},
       middlewares: [],
@@ -219,19 +180,19 @@ export class Router<
     TOutput extends Subscription
   >(
     path: TPath,
-    route: Procedure<TContext, TInput, TOutput>,
+    procedure: Procedure<TContext, TInput, TOutput>,
   ): Router<
     TContext,
     TQueries,
     TMutations,
-    format<TSubscriptions & Record<TPath, typeof route>>,
+    format<TSubscriptions & Record<TPath, typeof procedure>>,
     TMiddleware
   > {
     const router = new Router({
       queries: {},
       mutations: {},
       subscriptions: {
-        [path]: route,
+        [path]: procedure,
       } as any,
       middlewares: [],
     }) as AnyRouter;
@@ -272,25 +233,25 @@ export class Router<
 
   public merge(prefixOrRouter: unknown, maybeRouter?: unknown) {
     let prefix = '';
-    let router: AnyRouter;
+    let childRouter: AnyRouter;
 
     if (typeof prefixOrRouter === 'string' && maybeRouter instanceof Router) {
       prefix = prefixOrRouter;
-      router = maybeRouter;
+      childRouter = maybeRouter;
     } else if (prefixOrRouter instanceof Router) {
-      router = prefixOrRouter;
+      childRouter = prefixOrRouter;
     } else {
       throw new Error('Invalid args');
     }
 
-    const duplicateQueries = Object.keys(router._def.queries).filter((key) =>
-      this.has('queries', prefix + key),
-    );
+    const duplicateQueries = Object.keys(
+      childRouter._def.queries,
+    ).filter((key) => this.has('queries', prefix + key));
     const duplicateMutations = Object.keys(
-      router._def.mutations,
+      childRouter._def.mutations,
     ).filter((key) => this.has('mutations', prefix + key));
     const duplicateSubscriptions = Object.keys(
-      router._def.subscriptions,
+      childRouter._def.subscriptions,
     ).filter((key) => this.has('subscriptions', prefix + key));
 
     const duplicates = [
@@ -302,71 +263,31 @@ export class Router<
       throw new Error(`Duplicate endpoint(s): ${duplicates.join(', ')}`);
     }
 
+    // a bit ugly, could be refactored
+    const mergeProcedures = (defs: ProcedureRecord<any>) => {
+      const newDefs = {} as typeof defs;
+      for (const key in defs) {
+        newDefs[key] = defs[key].inheritMiddlewares(this._def.middlewares);
+      }
+
+      return Router.prefixProcedures(newDefs, prefix);
+    };
+
     return new Router<TContext, any, any, any, any>({
       queries: {
         ...this._def.queries,
-        ...this.inheritMiddlewares(
-          Router.prefixProcedures(router._def.queries, prefix),
-        ),
+        ...mergeProcedures(childRouter._def.queries),
       },
       mutations: {
         ...this._def.mutations,
-        ...this.inheritMiddlewares(
-          Router.prefixProcedures(router._def.mutations, prefix),
-        ),
+        ...mergeProcedures(childRouter._def.mutations),
       },
       subscriptions: {
         ...this._def.subscriptions,
-        ...this.inheritMiddlewares(
-          Router.prefixProcedures(router._def.subscriptions, prefix),
-        ),
+        ...mergeProcedures(childRouter._def.subscriptions),
       },
       middlewares: this._def.middlewares,
     });
-  }
-
-  private inheritMiddlewares<TProcedures extends ProcedureRecord<TContext>>(
-    procedures: TProcedures,
-  ): TProcedures {
-    const newProcedures = {} as TProcedures;
-    for (const key in procedures) {
-      const procedure = procedures[key];
-      newProcedures[key] = {
-        ...procedure,
-        _middlewares: [
-          ...this._def.middlewares,
-          ...(procedure._middlewares ?? []),
-        ],
-      };
-    }
-    return newProcedures;
-  }
-  private static getInput<TProcedure extends Procedure<any, any, any>>(
-    route: TProcedure,
-    rawInput: unknown,
-  ): inferProcedureInput<TProcedure> {
-    if (!route.input) {
-      return undefined as inferProcedureInput<TProcedure>;
-    }
-
-    try {
-      const anyInput: any = route.input;
-      if (typeof anyInput.parse === 'function') {
-        return anyInput.parse(rawInput);
-      }
-
-      if (typeof anyInput === 'function') {
-        return anyInput(rawInput);
-      }
-      if (typeof anyInput.validateSync === 'function') {
-        return anyInput.validateSync(rawInput);
-      }
-
-      throw new Error('Could not find a validator fn');
-    } catch (_err) {
-      const err = new InputValidationError(_err);
-      throw err;
-    }
   }
 
   public async invoke(opts: {
@@ -379,14 +300,13 @@ export class Router<
       throw new RouteNotFoundError(`No such procedure "${opts.path}"`);
     }
     const target = this._def[opts.target];
-    const route: Procedure<TContext> = target[opts.path as any];
-    const { ctx } = opts;
-    for (const fn of route._middlewares ?? []) {
+    const procedure: Procedure<TContext> = target[opts.path as any];
+    const { ctx, input } = opts;
+    for (const fn of procedure.middlewares) {
       await fn({ ctx });
     }
-    const input = Router.getInput(route, opts.input);
 
-    return route.resolve({ ctx, input });
+    return procedure.call({ ctx, input });
   }
 
   public has(what: 'subscriptions' | 'mutations' | 'queries', path: string) {
