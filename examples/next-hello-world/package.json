@@ -1,6 +1,6 @@
 {
   "name": "@examples/hello-world",
-  "version": "2.2.1-alpha.1",
+  "version": "2.2.1-alpha.2",
   "private": true,
   "scripts": {
     "dev": "next dev",
