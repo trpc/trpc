@@ -121,7 +121,11 @@ export type CreateProcedureWithoutInput<TContext, TOutput> = {
   resolve: ProcedureResolver<TContext, undefined, TOutput>;
 };
 
-export type CreateProcedureOptions<TContext, TInput, TOutput> =
+export type CreateProcedureOptions<
+  TContext = unknown,
+  TInput = unknown,
+  TOutput = unknown
+> =
   | CreateProcedureWithInput<TContext, TInput, TOutput>
   | CreateProcedureWithoutInput<TContext, TOutput>;
 

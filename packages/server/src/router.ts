@@ -194,10 +194,11 @@ export class Router<
     TSubscriptions & Record<TPath, inferProcedureFromOptions<typeof procedure>>,
     TMiddleware
   >;
-  public subscription<TPath extends string, TInput, TOutput>(
-    path: TPath,
-    procedure: CreateProcedureOptions<TContext, TInput, TOutput>,
-  ) {
+  public subscription<
+    TPath extends string,
+    TInput,
+    TOutput extends Subscription<any>
+  >(path: TPath, procedure: CreateProcedureOptions<TContext, TInput, TOutput>) {
     const router = new Router<TContext, any, {}, {}, any>({
       queries: {},
       mutations: {},
