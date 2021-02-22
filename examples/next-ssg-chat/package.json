@@ -1,6 +1,6 @@
 {
   "name": "@examples/chat",
-  "version": "2.2.1-alpha.0",
+  "version": "2.2.1-alpha.1",
   "private": true,
   "scripts": {
     "dx:next": "prisma generate && next dev",
@@ -18,9 +18,9 @@
   },
   "dependencies": {
     "@prisma/client": "^2.16.0",
-    "@trpc/client": "^2.2.1-alpha.0",
-    "@trpc/react": "^2.2.1-alpha.0",
-    "@trpc/server": "^2.2.1-alpha.0",
+    "@trpc/client": "^2.2.1-alpha.1",
+    "@trpc/react": "^2.2.1-alpha.1",
+    "@trpc/server": "^2.2.1-alpha.1",
     "next": "10.0.4",
     "react": "17.0.1",
     "react-dom": "17.0.1",
