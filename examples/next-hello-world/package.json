@@ -1,6 +1,6 @@
 {
   "name": "@examples/hello-world",
-  "version": "2.2.1-alpha.3",
+  "version": "2.2.1-alpha.4",
   "private": true,
   "scripts": {
     "dev": "next dev",
@@ -11,9 +11,9 @@
     "test-start": "start-server-and-test start 3000 test"
   },
   "dependencies": {
-    "@trpc/client": "^2.2.1-alpha.3",
-    "@trpc/react": "^2.2.1-alpha.3",
-    "@trpc/server": "^2.2.1-alpha.3",
+    "@trpc/client": "^2.2.1-alpha.4",
+    "@trpc/react": "^2.2.1-alpha.4",
+    "@trpc/server": "^2.2.1-alpha.4",
     "next": "10.0.4",
     "react": "17.0.1",
     "react-dom": "17.0.1",
