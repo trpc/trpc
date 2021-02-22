@@ -5,8 +5,8 @@ import type {
   HTTPResponseEnvelope,
   HTTPSuccessResponseEnvelope,
   inferHandlerInput,
-  inferRouteInput,
-  inferRouteOutput,
+  inferProcedureInput,
+  inferProcedureOutput,
   inferSubscriptionOutput,
   Maybe,
 } from '@trpc/server';
@@ -225,7 +225,7 @@ export class TRPCClient<TRouter extends AnyRouter> {
   >(
     path: TPath,
     ...args: inferHandlerInput<TQueries[TPath]>
-  ): CancellablePromise<inferRouteOutput<TQueries[TPath]>> {
+  ): CancellablePromise<inferProcedureOutput<TQueries[TPath]>> {
     return this.request({
       type: 'query',
       path,
@@ -239,7 +239,7 @@ export class TRPCClient<TRouter extends AnyRouter> {
   >(
     path: TPath,
     ...args: inferHandlerInput<TMutations[TPath]>
-  ): CancellablePromise<inferRouteOutput<TMutations[TPath]>> {
+  ): CancellablePromise<inferProcedureOutput<TMutations[TPath]>> {
     return this.request({
       type: 'mutation',
       path,
@@ -251,7 +251,7 @@ export class TRPCClient<TRouter extends AnyRouter> {
     TSubscriptions extends TRouter['_def']['subscriptions'],
     TPath extends string & keyof TSubscriptions,
     TOutput extends inferSubscriptionOutput<TRouter, TPath>,
-    TInput extends inferRouteInput<TSubscriptions[TPath]>
+    TInput extends inferProcedureInput<TSubscriptions[TPath]>
   >(path: TPath, input: TInput): CancellablePromise<TOutput[]> {
     let stopped = false;
     let nextTry: any; // setting as `NodeJS.Timeout` causes compat issues, can probably be solved
@@ -297,7 +297,7 @@ export class TRPCClient<TRouter extends AnyRouter> {
     TSubscriptions extends TRouter['_def']['subscriptions'],
     TPath extends string & keyof TSubscriptions,
     TOutput extends inferSubscriptionOutput<TRouter, TPath>,
-    TInput extends inferRouteInput<TSubscriptions[TPath]>
+    TInput extends inferProcedureInput<TSubscriptions[TPath]>
   >(
     path: TPath,
     opts: {
