@@ -58,7 +58,7 @@ export function createReactQueryHooks<
   //   opts?: UseQueryOptions<unknown, TRPCClientError, TOutput>,
   // ): UseQueryResult<TOutput, TRPCClientError>;
   function _useQuery<
-    TPath extends keyof TQueries,
+    TPath extends keyof TQueries & string,
     TProcedure extends TQueries[TPath],
     TOutput extends inferProcedureOutput<TProcedure>
   >(
