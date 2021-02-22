@@ -123,15 +123,7 @@ export class ProcedureWithInput<TContext, TInput, TOutput> extends Procedure<
   TContext,
   TInput,
   TOutput
-> {
-  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-  // @ts-ignore
-  private isProcedureWithInput: true;
-  constructor(opts: ProcedureOptions<TContext, TInput, TOutput>) {
-    super(opts);
-    this.isProcedureWithInput = true;
-  }
-}
+> {}
 
 export type CreateProcedureWithInput<TContext, TInput, TOutput> = {
   input: ProcedureInputParser<TInput>;
