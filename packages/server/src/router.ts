@@ -26,7 +26,7 @@ export type inferProcedureInput<
   TProcedure extends Procedure<any, any, any>
 > = TProcedure extends ProcedureWithInput<any, infer Input, any>
   ? Input
-  : never;
+  : undefined;
 
 export type inferAsyncReturnType<
   TFunction extends (...args: any) => any

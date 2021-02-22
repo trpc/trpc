@@ -90,7 +90,6 @@ test('myzod', async () => {
 //       type: 'number',
 //     }),
 //   );
-//   const v = parser.parse('test')
 //   const router = trpc.router().query('num', {
 //     input: parser,
 //     resolve({ input }) {
