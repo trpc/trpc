@@ -1,5 +1,4 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { any } from 'zod';
 import { assertNotBrowser } from './assertNotBrowser';
 import { InputValidationError } from './errors';
 import { MiddlewareFunction } from './router';
@@ -119,7 +118,7 @@ export type CreateProcedureWithInput<TContext, TInput, TOutput> = {
   resolve: ProcedureResolver<TContext, TInput, TOutput>;
 };
 export type CreateProcedureWithoutInput<TContext, TOutput> = {
-  // input?: null | undefined;
+  input?: null | undefined;
   resolve: ProcedureResolver<TContext, undefined, TOutput>;
 };
 
@@ -186,12 +185,14 @@ export type inferProcedureFromOptions<
 //   resolve(): { text: 'hey' };
 // }>;
 
-createProcedure({
-  input: {
-    parse() {
-      return { foo: 'bar' } as const;
-    },
-  },
+function numParser(input: unknown) {
+  if (typeof input !== 'number') {
+    throw new Error('Not a number');
+  }
+  return input;
+}
+const proc = createProcedure({
+  input: numParser,
   resolve({ input }) {
     return 'hello' + input;
   },
