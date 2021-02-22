@@ -278,7 +278,6 @@ export class Router<
       throw new Error(`Duplicate endpoint(s): ${duplicates.join(', ')}`);
     }
 
-    // a bit ugly, could be refactored
     const mergeProcedures = (defs: ProcedureRecord<any>) => {
       const newDefs = {} as typeof defs;
       for (const key in defs) {
