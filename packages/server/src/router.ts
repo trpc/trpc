@@ -35,6 +35,7 @@ export type inferAsyncReturnType<
 export type inferProcedureOutput<
   TProcedure extends Procedure
 > = inferAsyncReturnType<TProcedure['call']>;
+
 export type inferSubscriptionOutput<
   TRouter extends AnyRouter,
   TPath extends keyof TRouter['_def']['subscriptions']
