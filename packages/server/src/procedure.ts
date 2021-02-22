@@ -128,8 +128,12 @@ export class ProcedureWithInput<TContext, TInput, TOutput> extends Procedure<
   TInput,
   TOutput
 > {
+  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+  // @ts-ignore
+  private isProcedureWithInput: true;
   constructor(opts: ProcedureOptions<TContext, TInput, TOutput>) {
     super(opts);
+    this.isProcedureWithInput = true;
   }
 }
 
