@@ -1,5 +1,5 @@
 import { createReactQueryHooks, createTRPCClient } from '@trpc/react';
-import type { inferRouteOutput } from '@trpc/server';
+import type { inferProcedureOutput } from '@trpc/server';
 import { QueryClient } from 'react-query';
 import superjson from 'superjson';
 // ℹ️ Type-only import:
@@ -24,4 +24,4 @@ export const trpc = createReactQueryHooks({
  */
 export type inferQueryOutput<
   TRouteKey extends keyof AppRouter['_def']['queries']
-> = inferRouteOutput<AppRouter['_def']['queries'][TRouteKey]>;
+> = inferProcedureOutput<AppRouter['_def']['queries'][TRouteKey]>;

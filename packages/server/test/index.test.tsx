@@ -120,7 +120,7 @@ describe('integration tests', () => {
         throw new Error('Not TRPCClientError');
       }
       expect(err.message).toMatchInlineSnapshot(
-        `"No such route \\"notFound\\""`,
+        `"No such procedure \\"notFound\\""`,
       );
       expect(err.res?.status).toBe(404);
     }

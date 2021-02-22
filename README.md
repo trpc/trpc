@@ -25,7 +25,7 @@ TRPC is a framework for building strongly typed RPC APIs with TypeScript. Altern
 - [Usage](#usage)
   - [Example apps](#example-apps)
   - [Getting started with Next.js](#getting-started-with-nextjs)
-  - [Defining routes](#defining-routes)
+  - [Defining procedures (_endpoints / routes_)](#defining-procedures-endpoints--routes)
   - [Merging routers](#merging-routers)
   - [Router middlewares](#router-middlewares)
   - [Data transformers](#data-transformers)
@@ -74,7 +74,7 @@ The code here is taken from [`./examples/next-hello-world`](./examples/next-hell
 yarn add @trpc/client @trpc/server @trpc/react zod react-query
 ```
 
-- tRPC wraps a tiny layer of sugar around [react-query](https://react-query.tanstack.com/overview) when using React which gives you type safety and auto completion of your routes
+- tRPC wraps a tiny layer of sugar around [react-query](https://react-query.tanstack.com/overview) when using React which gives you type safety and auto completion of your procedures
 - Zod is a great validation lib that works well, but tRPC also works out-of-the-box with yup/myzod/ts-json-validator/[..] - [see test suite](./packages/server/test/validators.test.ts)
 
 </details>
@@ -103,7 +103,7 @@ function createRouter() {
 }
 // Important: only use this export with SSR/SSG
 export const appRouter = createRouter()
-  // Create route at path 'hello'
+  // Create procedure at path 'hello'
   .query('hello', {
     // using zod schema to validate and infer input values
     input: z
@@ -182,7 +182,7 @@ import Head from 'next/head';
 import { trpc } from '../utils/trpc';
 
 export default function Home() {
-  // try typing here to see that you get autocompletioon & type safety on the route name
+  // try typing here to see that you get autocompletion & type safety on the procedure's name
   const helloNoArgs = trpc.useQuery(['hello']);
   const helloWithArgs = trpc.useQuery(['hello', { text: 'client' }]);
 
@@ -216,9 +216,14 @@ export default function Home() {
 </details>
 
 
-## Defining routes
+## Defining procedures (_endpoints / routes_)
 
-Defining routes is the same for queries, mutations, and subscription with the exception that subscriptions needs to return a `Subscription`-instance.
+> - A procedure can be viewed as the equivalent of a REST-endpoint.
+> - There's no internal difference between queries and mutations apart from semantics.
+
+Defining procedures is the same for queries, mutations, and subscription with the exception that subscriptions need to return a `Subscription`-instance.
+
+
 
 <details><summary>Example query without input argument</summary>
 
@@ -226,7 +231,7 @@ Defining routes is the same for queries, mutations, and subscription with the ex
 import * as trpc from '@trpc/server';
 
 export const appRouter = trpc.router()
-  // Create route at path 'hello'
+  // Create procedure at path 'hello'
   .query('hello', {
     resolve({ ctx }) {
       return {
@@ -292,7 +297,7 @@ export type AppRouter = typeof appRouter;
 
 ## Merging routers
 
-Writing all API-code in your code in the same file is a bad idea. It's easy to merge routes with other routes. Thanks to TypeScript 4.1 template literal types we can also prefix the routes without breaking type safety.
+Writing all API-code in your code in the same file is a bad idea. It's easy to merge procedures with other procedures. Thanks to TypeScript 4.1 template literal types we can also prefix the procedures without breaking type safety.
 
 <details><summary>Example code</summary>
 
@@ -327,8 +332,8 @@ const users = createRouter()
 
 
 const appRouter = createRouter()
-  .merge('users.', users) // prefix user routes with "users."
-  .merge('posts.', posts) // prefix poosts routes with "posts."
+  .merge('users.', users) // prefix user procedures with "users."
+  .merge('posts.', posts) // prefix poosts procedures with "posts."
   ;
 ```
 
@@ -336,7 +341,7 @@ const appRouter = createRouter()
 
 ## Router middlewares
 
-You can are able to add middlewares to a whole router with the `middleware()` method. The middleware(s) will be run before any of the routes defined after are invoked & can be async or sync.
+You can are able to add middlewares to a whole router with the `middleware()` method. The middleware(s) will be run before any of the procedures defined after are invoked & can be async or sync.
 
 Example, from [the tests](./packages/server/test/middleware.test.ts):
 <details><summary>Code</summary>
