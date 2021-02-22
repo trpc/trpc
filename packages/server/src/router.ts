@@ -50,18 +50,6 @@ export type inferHandlerInput<
   ? [inferProcedureInput<TProcedure>]
   : [undefined?];
 
-export type inferHandlerFn<
-  TProcedures extends ProcedureRecord<any, any, any>
-> = <
-  TProcedure extends TProcedures[TPath],
-  TPath extends keyof TProcedures & string
->(
-  path: TPath,
-  ...args: TProcedure extends ProcedureWithInput<any, any, any>
-    ? [inferProcedureInput<TProcedure>]
-    : [undefined?]
-) => Promise<inferProcedureOutput<TProcedures[TPath]>>;
-
 export type AnyRouter<TContext = any> = Router<TContext, any, any, any, any>;
 
 export type MiddlewareFunction<TContext> = (opts: {
@@ -193,10 +181,7 @@ export class Router<
     TContext,
     TQueries,
     TMutations,
-    format<
-      TSubscriptions &
-        Record<TPath, inferProcedureFromOptions<typeof procedure>>
-    >,
+    TSubscriptions & Record<TPath, inferProcedureFromOptions<typeof procedure>>,
     TMiddleware
   >;
   public subscription<TPath extends string, TOutput extends Subscription<any>>(
@@ -206,10 +191,7 @@ export class Router<
     TContext,
     TQueries,
     TMutations,
-    format<
-      TSubscriptions &
-        Record<TPath, inferProcedureFromOptions<typeof procedure>>
-    >,
+    TSubscriptions & Record<TPath, inferProcedureFromOptions<typeof procedure>>,
     TMiddleware
   >;
   public subscription<TPath extends string, TInput, TOutput>(
