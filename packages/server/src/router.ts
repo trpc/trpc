@@ -282,7 +282,11 @@ export class Router<
     const mergeProcedures = (defs: ProcedureRecord<any>) => {
       const newDefs = {} as typeof defs;
       for (const key in defs) {
-        newDefs[key] = defs[key].inheritMiddlewares(this._def.middlewares);
+        const procedure = defs[key];
+        const newProcedure = procedure.inheritMiddlewares(
+          this._def.middlewares,
+        );
+        newDefs[key] = newProcedure;
       }
 
       return Router.prefixProcedures(newDefs, prefix);
