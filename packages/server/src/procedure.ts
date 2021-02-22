@@ -105,20 +105,27 @@ export class ProcedureWithoutInput<TContext, TOutput> extends Procedure<
   TContext,
   undefined,
   TOutput
-> {}
+> {
+  constructor(opts: ProcedureOptions<TContext, undefined, TOutput>) {
+    super(opts);
+  }
+}
 
 export class ProcedureWithInput<TContext, TInput, TOutput> extends Procedure<
   TContext,
   TInput,
   TOutput
-> {}
+> {
+  constructor(opts: ProcedureOptions<TContext, TInput, TOutput>) {
+    super(opts);
+  }
+}
 
 export type CreateProcedureWithInput<TContext, TInput, TOutput> = {
   input: ProcedureInputParser<TInput>;
   resolve: ProcedureResolver<TContext, TInput, TOutput>;
 };
 export type CreateProcedureWithoutInput<TContext, TOutput> = {
-  input?: null | undefined;
   resolve: ProcedureResolver<TContext, undefined, TOutput>;
 };
 
@@ -126,13 +133,10 @@ export type CreateProcedureOptions<TContext, TInput, TOutput> =
   | CreateProcedureWithInput<TContext, TInput, TOutput>
   | CreateProcedureWithoutInput<TContext, TOutput>;
 
-function isWithInput<TContext, TInput, TOutput>(
+function isProcedureWithInput<TContext, TInput, TOutput>(
   opts: any,
 ): opts is CreateProcedureWithInput<TContext, TInput, TOutput> {
-  if ((opts as any).input) {
-    return true;
-  }
-  return false;
+  return !!opts.input;
 }
 export function createProcedure<TContext, TInput, TOutput>(
   opts: CreateProcedureWithInput<TContext, TInput, TOutput>,
@@ -146,7 +150,7 @@ export function createProcedure<TContext, TInput, TOutput>(
 export function createProcedure<TContext, TInput, TOutput>(
   opts: CreateProcedureOptions<TContext, TInput, TOutput>,
 ) {
-  if (isWithInput<TContext, TInput, TOutput>(opts)) {
+  if (isProcedureWithInput<TContext, TInput, TOutput>(opts)) {
     return new ProcedureWithInput({
       inputParser: opts.input,
       resolver: opts.resolve,
@@ -175,25 +179,3 @@ export type inferProcedureFromOptions<
     >
   ? ProcedureWithoutInput<TContext, TOutput>
   : Procedure<unknown, unknown>;
-
-// type Proc = inferProcedureFromOptions<{
-//   resolve(): { text: 'hey' };
-// }>;
-
-// type Proc2 = inferProcedureFromOptions<{
-//   input(): { id: number };
-//   resolve(): { text: 'hey' };
-// }>;
-
-function numParser(input: unknown) {
-  if (typeof input !== 'number') {
-    throw new Error('Not a number');
-  }
-  return input;
-}
-const proc = createProcedure({
-  input: numParser,
-  resolve({ input }) {
-    return 'hello' + input;
-  },
-});
