@@ -45,7 +45,7 @@
     "build-examples": "lerna run build --scope @examples/* --stream",
     "lockfile-examples": "lerna exec --scope @examples/* --stream -- npm install --package-lock-only",
     "prepublish": "lerna run prepublish --stream",
-    "postpublish": "yarn lockfile-examples && git add examples/*/package-lock.json && git commit -m bump && git push",
+    "postpublish": "yarn lockfile-examples && git add examples/*/package-lock.json && git commit -m bump",
     "example:playground": "yarn --cwd examples/playground dev",
     "example:chat": "yarn --cwd examples/next-ssg-chat dev",
     "example:hello": "yarn --cwd examples/next-hello-world dev",
