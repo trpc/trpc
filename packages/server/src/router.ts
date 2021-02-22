@@ -11,6 +11,7 @@ import {
   inferProcedureFromOptions,
   Procedure,
   ProcedureWithInput,
+  ProcedureWithoutInput,
 } from './procedure';
 import { Subscription } from './subscription';
 import { format, Prefixer, ThenArg } from './types';
@@ -47,9 +48,9 @@ export type inferSubscriptionOutput<
 
 export type inferHandlerInput<
   TProcedure extends Procedure<any, any, any>
-> = TProcedure extends ProcedureWithInput<any, any, any>
-  ? [inferProcedureInput<TProcedure>]
-  : [];
+> = TProcedure extends ProcedureWithoutInput<any, any>
+  ? []
+  : [inferProcedureInput<TProcedure>];
 
 export type AnyRouter<TContext = any> = Router<TContext, any, any, any, any>;
 
