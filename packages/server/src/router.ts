@@ -305,19 +305,19 @@ export class Router<
     return new Router<TContext, any, any, any, any>({
       queries: {
         ...this._def.queries,
-        ...this.inhertMiddlewares(
+        ...this.inheritMiddlewares(
           Router.prefixProcedures(router._def.queries, prefix),
         ),
       },
       mutations: {
         ...this._def.mutations,
-        ...this.inhertMiddlewares(
+        ...this.inheritMiddlewares(
           Router.prefixProcedures(router._def.mutations, prefix),
         ),
       },
       subscriptions: {
         ...this._def.subscriptions,
-        ...this.inhertMiddlewares(
+        ...this.inheritMiddlewares(
           Router.prefixProcedures(router._def.subscriptions, prefix),
         ),
       },
@@ -325,7 +325,7 @@ export class Router<
     });
   }
 
-  private inhertMiddlewares<TProcedures extends ProcedureRecord<TCtx>, TCtx>(
+  private inheritMiddlewares<TProcedures extends ProcedureRecord<TCtx>, TCtx>(
     routes: TProcedures,
   ): TProcedures {
     const newRoutes = {} as TProcedures;
