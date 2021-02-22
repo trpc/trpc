@@ -152,8 +152,8 @@ export class Router<
   ): Router<
     TContext,
     TQueries,
-    TMutations,
-    TSubscriptions & Record<TPath, inferProcedureFromOptions<typeof procedure>>,
+    TMutations & Record<TPath, inferProcedureFromOptions<typeof procedure>>,
+    TSubscriptions,
     TMiddleware
   >;
   public mutation<TPath extends string, TOutput>(
@@ -162,8 +162,8 @@ export class Router<
   ): Router<
     TContext,
     TQueries,
-    TMutations,
-    TSubscriptions & Record<TPath, inferProcedureFromOptions<typeof procedure>>,
+    TMutations & Record<TPath, inferProcedureFromOptions<typeof procedure>>,
+    TSubscriptions,
     TMiddleware
   >;
   public mutation<TPath extends string, TInput, TOutput>(
@@ -193,7 +193,10 @@ export class Router<
     TContext,
     TQueries,
     TMutations,
-    TSubscriptions & Record<TPath, inferProcedureFromOptions<typeof procedure>>,
+    format<
+      TSubscriptions &
+        Record<TPath, inferProcedureFromOptions<typeof procedure>>
+    >,
     TMiddleware
   >;
   public subscription<TPath extends string, TOutput extends Subscription<any>>(
@@ -203,7 +206,10 @@ export class Router<
     TContext,
     TQueries,
     TMutations,
-    TSubscriptions & Record<TPath, inferProcedureFromOptions<typeof procedure>>,
+    format<
+      TSubscriptions &
+        Record<TPath, inferProcedureFromOptions<typeof procedure>>
+    >,
     TMiddleware
   >;
   public subscription<TPath extends string, TInput, TOutput>(
