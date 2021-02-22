@@ -16,7 +16,7 @@ function createRouter() {
 }
 // Important: only use this export with SSR/SSG
 export const appRouter = createRouter()
-  // Create route at path 'hello'
+  // Create procedure at path 'hello'
   .query('hello', {
     // using zod schema to validate and infer input values
     input: z

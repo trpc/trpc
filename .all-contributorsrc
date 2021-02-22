@@ -35,7 +35,17 @@
         "test",
         "doc"
       ]
+    },
+    {
+      "login": "cyrus-za",
+      "name": "Pieter Venter",
+      "avatar_url": "https://avatars.githubusercontent.com/u/1845861?v=4",
+      "profile": "https://pieter.venter.pro",
+      "contributions": [
+        "ideas"
+      ]
     }
   ],
-  "contributorsPerLine": 7
+  "contributorsPerLine": 7,
+  "skipCi": true
 }
