@@ -43,7 +43,7 @@ export abstract class Procedure<
 > {
   public readonly middlewares: Readonly<MiddlewareFunction<TContext>[]>;
   protected resolver: ProcedureResolver<TContext, TInput, TOutput>;
-  private inputParser: ProcedureInputParser<TInput>;
+  protected inputParser: ProcedureInputParser<TInput>;
 
   constructor(opts: ProcedureOptions<TContext, TInput, TOutput>) {
     this.middlewares = opts.middlewares;
