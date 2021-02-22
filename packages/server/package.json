@@ -1,6 +1,6 @@
 {
   "name": "@trpc/server",
-  "version": "2.2.1-alpha.5",
+  "version": "3.0.0-alpha.2",
   "description": "TRPC Server",
   "author": "KATT",
   "license": "MIT",
@@ -49,5 +49,5 @@
     "yup": "^0.32.8",
     "zod": "^1.11.11"
   },
-  "gitHead": "44c8027a6120a2a05a81fc91293c06c77c9577e4"
+  "gitHead": "82bf01f8759b04f2ade69c9047e28f74f889d547"
 }

@@ -2,10 +2,10 @@
 import { TRPCClient, TRPCClientError } from '@trpc/client';
 import type {
   AnyRouter,
-  inferRouteInput,
-  inferRouteOutput,
+  inferProcedureInput,
+  inferProcedureOutput,
   inferSubscriptionOutput,
-  RouteWithInput,
+  ProcedureWithInput,
 } from '@trpc/server';
 import { useEffect, useMemo, useRef } from 'react';
 import {
@@ -52,24 +52,24 @@ export function createReactQueryHooks<
   // function _useQuery<
   //   // TODO exclude all with mandatory input from TPath
   //   TPath extends keyof TQueries & string,
-  //   TOutput extends inferRouteOutput<TQueries[TPath]>
+  //   TOutput extends inferProcedureOutput<TQueries[TPath]>
   // >(
   //   path: TPath,
   //   opts?: UseQueryOptions<unknown, TRPCClientError, TOutput>,
   // ): UseQueryResult<TOutput, TRPCClientError>;
   function _useQuery<
     TPath extends keyof TQueries,
-    TRoute extends TQueries[TPath],
-    TOutput extends inferRouteOutput<TRoute>
+    TProcedure extends TQueries[TPath],
+    TOutput extends inferProcedureOutput<TProcedure>
   >(
     pathAndArgs: [
       path: TPath,
-      ...args: TRoute extends RouteWithInput<any, any, any>
-        ? [inferRouteInput<TRoute>]
+      ...args: TProcedure extends ProcedureWithInput<any, any, any>
+        ? [inferProcedureInput<TProcedure>]
         : [undefined?]
     ],
     opts?: UseQueryOptions<
-      inferRouteInput<TQueries[TPath]>,
+      inferProcedureInput<TQueries[TPath]>,
       TRPCClientError,
       TOutput
     >,
@@ -94,8 +94,8 @@ export function createReactQueryHooks<
 
   function _useMutation<
     TPath extends keyof TMutations & string,
-    TInput extends inferRouteInput<TMutations[TPath]>,
-    TOutput extends inferRouteOutput<TMutations[TPath]>
+    TInput extends inferProcedureInput<TMutations[TPath]>,
+    TOutput extends inferProcedureOutput<TMutations[TPath]>
   >(
     path: TPath,
     opts?: UseMutationOptions<TOutput, TRPCClientError, TInput>,
@@ -120,7 +120,7 @@ export function createReactQueryHooks<
    */
   function useSubscription<
     TPath extends keyof TSubscriptions & string,
-    TInput extends inferRouteInput<TSubscriptions[TPath]>,
+    TInput extends inferProcedureInput<TSubscriptions[TPath]>,
     TOutput extends inferSubscriptionOutput<TRouter, TPath>
   >(
     pathAndArgs: [TPath, TInput],
@@ -168,7 +168,7 @@ export function createReactQueryHooks<
    */
   function useLiveQuery<
     TPath extends keyof TSubscriptions & string,
-    TInput extends inferRouteInput<TSubscriptions[TPath]> & { cursor: any },
+    TInput extends inferProcedureInput<TSubscriptions[TPath]> & { cursor: any },
     TOutput extends (inferSubscriptionOutput<TRouter, TPath> &
       OutputWithCursor<TData>)[],
     TData
@@ -213,7 +213,7 @@ export function createReactQueryHooks<
 
   const prefetchQueryOnServer = async <
     TPath extends keyof TQueries & string,
-    TInput extends inferRouteInput<TQueries[TPath]>
+    TInput extends inferProcedureInput<TQueries[TPath]>
   >(
     router: TRouter,
     opts: {
@@ -240,7 +240,7 @@ export function createReactQueryHooks<
 
   const prefetchInfiniteQueryOnServer = async <
     TPath extends keyof TQueries & string,
-    TInput extends inferRouteInput<TQueries[TPath]>
+    TInput extends inferProcedureInput<TQueries[TPath]>
   >(
     router: TRouter,
     opts: {
@@ -267,8 +267,8 @@ export function createReactQueryHooks<
 
   function prefetchQuery<
     TPath extends keyof TQueries & string,
-    TInput extends inferRouteInput<TQueries[TPath]>,
-    TOutput extends inferRouteOutput<TQueries[TPath]>
+    TInput extends inferProcedureInput<TQueries[TPath]>,
+    TOutput extends inferProcedureOutput<TQueries[TPath]>
   >(
     pathAndArgs: [TPath, TInput],
     opts?: FetchQueryOptions<TInput, TRPCClientError, TOutput>,
@@ -304,8 +304,8 @@ export function createReactQueryHooks<
 
   function _useInfiniteQuery<
     TPath extends keyof TQueries & string,
-    TInput extends inferRouteInput<TQueries[TPath]> & { cursor: TCursor },
-    TOutput extends inferRouteOutput<TQueries[TPath]>,
+    TInput extends inferProcedureInput<TQueries[TPath]> & { cursor: TCursor },
+    TOutput extends inferProcedureOutput<TQueries[TPath]>,
     TCursor extends any
   >(
     pathAndArgs: [TPath, Omit<TInput, 'cursor'>],
