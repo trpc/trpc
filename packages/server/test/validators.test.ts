@@ -3,7 +3,6 @@
 import '@testing-library/jest-dom';
 import { expectTypeOf } from 'expect-type';
 import myzod from 'myzod';
-// import { createSchema as tsJsonSchema, TsjsonParser } from 'ts-json-validator';
 import * as yup from 'yup';
 import * as z from 'zod';
 import * as trpc from '../src';
@@ -83,31 +82,6 @@ test('myzod', async () => {
   expect(res.input).toBe(123);
   close();
 });
-
-// test('ts-json-validator', async () => {
-//   const parser = new TsjsonParser(
-//     tsJsonSchema({
-//       type: 'number',
-//     }),
-//   );
-//   const router = trpc.router().query('num', {
-//     input: parser,
-//     resolve({ input }) {
-//       return {
-//         input,
-//       };
-//     },
-//   });
-//   const { client, close } = routerToServerAndClient(router);
-//   const res = await client.query('num', 123);
-//   await expect(
-//     client.query('num', 'asdasd' as any),
-//   ).rejects.toMatchInlineSnapshot(
-//     `[Error: Unexpected token a in JSON at position 0]`,
-//   );
-//   expect(res.input).toBe(123);
-//   close();
-// });
 
 test('validator fn', async () => {
   function numParser(input: unknown) {
