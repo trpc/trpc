@@ -11,7 +11,6 @@ import {
   inferProcedureFromOptions,
   Procedure,
   ProcedureWithInput,
-  ProcedureWithoutInput,
 } from './procedure';
 import { Subscription } from './subscription';
 import { format, Prefixer, ThenArg } from './types';
