@@ -51,7 +51,11 @@ export abstract class Procedure<
     this.inputParser = opts.inputParser;
   }
 
-  public parseInput(rawInput: unknown): TInput {
+  /**
+   *
+   * @throws InputValidationError
+   */
+  private parseInput(rawInput: unknown): TInput {
     try {
       const parser: any = this.inputParser;
 
@@ -73,7 +77,11 @@ export abstract class Procedure<
     }
   }
 
-  async call({
+  /**
+   * Parse raw input & call resolver
+   * @throws InputValidationError
+   */
+  public async call({
     ctx,
     input: rawInput,
   }: ProcedureCallOptions<TContext>): Promise<TOutput> {
@@ -82,6 +90,10 @@ export abstract class Procedure<
     return output;
   }
 
+  /**
+   * Create new procedure with passed middlewares
+   * @param middlewares
+   */
   public inheritMiddlewares(middlewares: MiddlewareFunction<TContext>[]): this {
     const Constructor: {
       new (opts: ProcedureOptions<TContext, TInput, TOutput>): Procedure<

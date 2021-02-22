@@ -174,7 +174,7 @@ export class Router<
   public subscription<
     TPath extends string,
     TInput,
-    TOutput extends Subscription<any>
+    TOutput extends Subscription<unknown>
   >(
     path: TPath,
     procedure: CreateProcedureWithInput<TContext, TInput, TOutput>,
@@ -185,7 +185,10 @@ export class Router<
     TSubscriptions & Record<TPath, inferProcedureFromOptions<typeof procedure>>,
     TMiddleware
   >;
-  public subscription<TPath extends string, TOutput extends Subscription<any>>(
+  public subscription<
+    TPath extends string,
+    TOutput extends Subscription<unknown>
+  >(
     path: TPath,
     procedure: CreateProcedureWithoutInput<TContext, TOutput>,
   ): Router<
@@ -198,7 +201,7 @@ export class Router<
   public subscription<
     TPath extends string,
     TInput,
-    TOutput extends Subscription<any>
+    TOutput extends Subscription<unknown>
   >(path: TPath, procedure: CreateProcedureOptions<TContext, TInput, TOutput>) {
     const router = new Router<TContext, any, {}, {}, any>({
       queries: {},
@@ -302,6 +305,12 @@ export class Router<
     });
   }
 
+  /**
+   * Invoke procedure. Only for internal use within library.
+   *
+   * @throws RouteNotFoundError
+   * @throws InputValidationError
+   */
   public async invoke(opts: {
     target: 'queries' | 'subscriptions' | 'mutations';
     ctx: TContext;
