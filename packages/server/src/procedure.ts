@@ -117,13 +117,21 @@ export class ProcedureWithoutInput<TContext, TOutput> extends Procedure<
   TContext,
   undefined,
   TOutput
-> {}
+> {
+  constructor(opts: ProcedureOptions<TContext, undefined, TOutput>) {
+    super(opts);
+  }
+}
 
 export class ProcedureWithInput<TContext, TInput, TOutput> extends Procedure<
   TContext,
   TInput,
   TOutput
-> {}
+> {
+  constructor(opts: ProcedureOptions<TContext, TInput, TOutput>) {
+    super(opts);
+  }
+}
 
 export type CreateProcedureWithInput<TContext, TInput, TOutput> = {
   input: ProcedureInputParser<TInput>;
