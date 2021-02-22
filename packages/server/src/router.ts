@@ -148,7 +148,9 @@ export class Router<
 
   public mutation<
     TPath extends string,
-    TProcedureOptions extends CreateProcedureOptions<TContext, any, any>
+    TProcedureOptions extends CreateProcedureOptions<TContext, TInput, TOutput>,
+    TInput,
+    TOutput
   >(
     path: TPath,
     procedure: TProcedureOptions,

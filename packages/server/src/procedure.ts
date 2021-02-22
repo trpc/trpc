@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import { any } from 'zod';
 import { assertNotBrowser } from './assertNotBrowser';
 import { InputValidationError } from './errors';
 import { MiddlewareFunction } from './router';
@@ -118,7 +119,7 @@ export type CreateProcedureWithInput<TContext, TInput, TOutput> = {
   resolve: ProcedureResolver<TContext, TInput, TOutput>;
 };
 export type CreateProcedureWithoutInput<TContext, TOutput> = {
-  input?: null | undefined;
+  // input?: null | undefined;
   resolve: ProcedureResolver<TContext, undefined, TOutput>;
 };
 
@@ -126,6 +127,14 @@ export type CreateProcedureOptions<TContext, TInput, TOutput> =
   | CreateProcedureWithInput<TContext, TInput, TOutput>
   | CreateProcedureWithoutInput<TContext, TOutput>;
 
+function isWithInput<TContext, TInput, TOutput>(
+  opts: any,
+): opts is CreateProcedureWithInput<TContext, TInput, TOutput> {
+  if ((opts as any).input) {
+    return true;
+  }
+  return false;
+}
 export function createProcedure<TContext, TInput, TOutput>(
   opts: CreateProcedureWithInput<TContext, TInput, TOutput>,
 ): ProcedureWithInput<TContext, TInput, TOutput>;
@@ -138,7 +147,7 @@ export function createProcedure<TContext, TInput, TOutput>(
 export function createProcedure<TContext, TInput, TOutput>(
   opts: CreateProcedureOptions<TContext, TInput, TOutput>,
 ) {
-  if (opts.input) {
+  if (isWithInput<TContext, TInput, TOutput>(opts)) {
     return new ProcedureWithInput({
       inputParser: opts.input,
       resolver: opts.resolve,
@@ -176,3 +185,14 @@ export type inferProcedureFromOptions<
 //   input(): { id: number };
 //   resolve(): { text: 'hey' };
 // }>;
+
+createProcedure({
+  input: {
+    parse() {
+      return { foo: 'bar' } as const;
+    },
+  },
+  resolve({ input }) {
+    return 'hello' + input;
+  },
+});
