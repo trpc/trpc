@@ -48,9 +48,7 @@ export type inferSubscriptionOutput<
 export type inferHandlerInput<
   TProcedure extends Procedure<any, any, any>
 > = TProcedure extends ProcedureWithInput<any, infer TInput, any>
-  ? TInput extends undefined
-    ? []
-    : [TInput]
+  ? [TInput]
   : [];
 
 export type AnyRouter<TContext = any> = Router<TContext, any, any, any, any>;
