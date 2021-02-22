@@ -325,7 +325,7 @@ export class Router<
     });
   }
 
-  private inheritMiddlewares<TProcedures extends ProcedureRecord<TCtx>, TCtx>(
+  private inheritMiddlewares<TProcedures extends ProcedureRecord<TContext>>(
     procedures: TProcedures,
   ): TProcedures {
     const newProcedures = {} as TProcedures;
@@ -334,7 +334,6 @@ export class Router<
       newProcedures[key] = {
         ...procedure,
         _middlewares: [
-          //
           ...this._def.middlewares,
           ...(procedure._middlewares ?? []),
         ],
