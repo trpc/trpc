@@ -337,14 +337,11 @@ export class Router<
     const target = this._def[opts.target];
     const procedure: Procedure<TContext> = target[opts.path as any];
     const { ctx, input } = opts;
-    for (const fn of procedure.middlewares) {
-      await fn({ ctx });
-    }
 
     return procedure.call({ ctx, input });
   }
 
-  public has(what: 'subscriptions' | 'mutations' | 'queries', path: string) {
+  private has(what: 'subscriptions' | 'mutations' | 'queries', path: string) {
     return !!this._def[what][path];
   }
 
@@ -352,7 +349,7 @@ export class Router<
    * Function to be called before any procedure is invoked
    * Can be async or sync
    */
-  middleware(fn: TMiddleware) {
+  public middleware(fn: TMiddleware) {
     this._def.middlewares.push(fn);
     return this;
   }

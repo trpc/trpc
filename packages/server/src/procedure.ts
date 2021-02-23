@@ -32,7 +32,7 @@ interface ProcedureOptions<TContext, TInput, TOutput> {
   inputParser: ProcedureInputParser<TInput>;
 }
 
-interface ProcedureCallOptions<TContext> {
+export interface ProcedureCallOptions<TContext> {
   ctx: TContext;
   input: unknown;
 }
@@ -41,9 +41,9 @@ export abstract class Procedure<
   TInput = unknown,
   TOutput = unknown
 > {
-  public readonly middlewares: Readonly<MiddlewareFunction<TContext>[]>;
-  protected resolver: ProcedureResolver<TContext, TInput, TOutput>;
-  protected inputParser: ProcedureInputParser<TInput>;
+  private middlewares: Readonly<MiddlewareFunction<TContext>[]>;
+  private resolver: ProcedureResolver<TContext, TInput, TOutput>;
+  private inputParser: ProcedureInputParser<TInput>;
 
   constructor(opts: ProcedureOptions<TContext, TInput, TOutput>) {
     this.middlewares = opts.middlewares;
@@ -78,13 +78,16 @@ export abstract class Procedure<
   }
 
   /**
-   * Parse raw input & call resolver
+   * Trigger middlewares in order, parse raw input & call resolver
    * @throws InputValidationError
    */
   public async call({
     ctx,
     input: rawInput,
   }: ProcedureCallOptions<TContext>): Promise<TOutput> {
+    for (const middleware of this.middlewares) {
+      await middleware({ ctx });
+    }
     const input = this.parseInput(rawInput);
     const output = await this.resolver({ ctx, input });
     return output;
