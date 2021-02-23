@@ -423,16 +423,17 @@ This will cache the `messages.list` so it's instant when `useQuery('message.list
 
 ### Invoking directly
 
-You can also invoke a procedure directly and get the data in a promise
-
+You can also invoke a procedure directly and get the data in a promise.
 
 <details><summary>In `getStaticProps`</summary>
 
 ```tsx
-import { appRouter } from './api/trpc/[...trpc]'; // Important - only ever import & use this in the SSR-methods
+// Important - only ever import & use this in the SSR-methods
+import { appRouter } from './api/trpc/[...trpc]'; 
 import { trpc } from '../utils/trpc'
 
 export async function getStaticProps() {
+  // Create SSR helpers with your app's router and context object
   const ssr = trpc.ssr(appRouter, {});
 
   const allPosts = await ssr.caller.query('allPosts', { limit: 100 })
