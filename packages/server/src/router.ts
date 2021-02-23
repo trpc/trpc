@@ -341,7 +341,7 @@ export class Router<
     return procedure.call({ ctx, input });
   }
 
-  public has(what: 'subscriptions' | 'mutations' | 'queries', path: string) {
+  private has(what: 'subscriptions' | 'mutations' | 'queries', path: string) {
     return !!this._def[what][path];
   }
 
@@ -349,7 +349,7 @@ export class Router<
    * Function to be called before any procedure is invoked
    * Can be async or sync
    */
-  middleware(fn: TMiddleware) {
+  public middleware(fn: TMiddleware) {
     this._def.middlewares.push(fn);
     return this;
   }
