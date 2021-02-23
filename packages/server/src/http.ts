@@ -234,6 +234,7 @@ export async function requestHandler<
           sub.off('error', onError);
           sub.off('destroy', onDestroy);
           req.off('close', onClose);
+          res.off('close', onClose);
           clearTimeout(requestTimeoutTimer);
           clearTimeout(backpressureTimer);
           sub.destroy();
@@ -285,6 +286,7 @@ export async function requestHandler<
         sub.on('error', onError);
         sub.on('destroy', onDestroy);
         req.once('close', onClose);
+        res.once('close', onClose);
         requestTimeoutTimer = setTimeout(onRequestTimeout, requestTimeoutMs);
         sub.start();
       });
