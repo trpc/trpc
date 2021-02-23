@@ -1,8 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/ban-types */
 import '@testing-library/jest-dom';
+import { expectTypeOf } from 'expect-type';
 import myzod from 'myzod';
-import { createSchema as tsJsonSchema, TsjsonParser } from 'ts-json-validator';
 import * as yup from 'yup';
 import * as z from 'zod';
 import * as trpc from '../src';
@@ -48,6 +48,7 @@ test('yup', async () => {
   const router = trpc.router().query('num', {
     input: yup.number().required(),
     resolve({ input }) {
+      expectTypeOf(input).toMatchTypeOf<number>();
       return {
         input,
       };
@@ -67,6 +68,7 @@ test('myzod', async () => {
   const router = trpc.router().query('num', {
     input: myzod.number(),
     resolve({ input }) {
+      expectTypeOf(input).toMatchTypeOf<number>();
       return {
         input,
       };
@@ -76,30 +78,6 @@ test('myzod', async () => {
   const res = await client.query('num', 123);
   await expect(client.query('num', '123' as any)).rejects.toMatchInlineSnapshot(
     `[Error: expected type to be number but got string]`,
-  );
-  expect(res.input).toBe(123);
-  close();
-});
-
-test('ts-json-validator', async () => {
-  const router = trpc.router().query('num', {
-    input: new TsjsonParser(
-      tsJsonSchema({
-        type: 'number',
-      }),
-    ),
-    resolve({ input }) {
-      return {
-        input,
-      };
-    },
-  });
-  const { client, close } = routerToServerAndClient(router);
-  const res = await client.query('num', 123);
-  await expect(
-    client.query('num', 'asdasd' as any),
-  ).rejects.toMatchInlineSnapshot(
-    `[Error: Unexpected token a in JSON at position 0]`,
   );
   expect(res.input).toBe(123);
   close();
