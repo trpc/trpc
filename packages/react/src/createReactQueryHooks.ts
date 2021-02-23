@@ -64,7 +64,7 @@ export function createReactQueryHooks<
     const input = pathAndArgs[1];
     const cacheKey = [path, input ?? null];
 
-    return useQuery(cacheKey, () => (client.query as any)(...cacheKey), opts);
+    return useQuery(cacheKey, () => client.query(...pathAndArgs) as any, opts);
   }
 
   function _useMutation<
@@ -76,12 +76,7 @@ export function createReactQueryHooks<
     opts?: UseMutationOptions<TOutput, TRPCClientError, TInput>,
   ): UseMutationResult<TOutput, TRPCClientError, TInput> {
     const hook = useMutation<TOutput, TRPCClientError, TInput>(
-      (input) =>
-        client.request({
-          type: 'mutation',
-          path,
-          input,
-        }),
+      (input) => (client.mutation as any)(path, input),
       opts,
     );
 
