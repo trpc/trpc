@@ -78,7 +78,7 @@ export abstract class Procedure<
   }
 
   /**
-   * Parse raw input & call resolver
+   * Trigger middlewares in order, parse raw input & call resolver
    * @throws InputValidationError
    */
   public async call({
