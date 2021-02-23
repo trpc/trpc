@@ -13,13 +13,13 @@ import {
   ProcedureWithInput,
 } from './procedure';
 import { Subscription } from './subscription';
-import { format, Prefixer, ThenArg } from './types';
+import { flatten, Prefixer, ThenArg } from './types';
 assertNotBrowser();
 
 export type ProcedureRecord<
-  TContext = unknown,
-  TInput = unknown,
-  TOutput = unknown
+  TContext = any,
+  TInput = any,
+  TOutput = any
 > = Record<string, Procedure<TContext, TInput, TOutput>>;
 
 export type inferProcedureInput<
@@ -106,7 +106,10 @@ export class Router<
     procedure: CreateProcedureWithInput<TContext, TInput, TOutput>,
   ): Router<
     TContext,
-    TQueries & Record<TPath, inferProcedureFromOptions<typeof procedure>>,
+    flatten<
+      TQueries,
+      Record<TPath, inferProcedureFromOptions<typeof procedure>>
+    >,
     TMutations,
     TSubscriptions,
     TMiddleware
@@ -116,7 +119,10 @@ export class Router<
     procedure: CreateProcedureWithoutInput<TContext, TOutput>,
   ): Router<
     TContext,
-    TQueries & Record<TPath, inferProcedureFromOptions<typeof procedure>>,
+    flatten<
+      TQueries,
+      Record<TPath, inferProcedureFromOptions<typeof procedure>>
+    >,
     TMutations,
     TSubscriptions,
     TMiddleware
@@ -125,16 +131,16 @@ export class Router<
     path: TPath,
     procedure: CreateProcedureOptions<TContext, TInput, TOutput>,
   ) {
-    const router = new Router<TContext, any, {}, {}, any>({
+    const router = new Router<TContext, any, {}, {}, TMiddleware>({
       queries: {
         [path]: createProcedure(procedure),
-      } as any,
+      },
       mutations: {},
       subscriptions: {},
       middlewares: [],
-    }) as AnyRouter;
+    });
 
-    return this.merge(router);
+    return this.merge(router) as any;
   }
 
   public mutation<TPath extends string, TInput, TOutput>(
@@ -143,7 +149,10 @@ export class Router<
   ): Router<
     TContext,
     TQueries,
-    TMutations & Record<TPath, inferProcedureFromOptions<typeof procedure>>,
+    flatten<
+      TMutations,
+      Record<TPath, inferProcedureFromOptions<typeof procedure>>
+    >,
     TSubscriptions,
     TMiddleware
   >;
@@ -153,7 +162,10 @@ export class Router<
   ): Router<
     TContext,
     TQueries,
-    TMutations & Record<TPath, inferProcedureFromOptions<typeof procedure>>,
+    flatten<
+      TMutations,
+      Record<TPath, inferProcedureFromOptions<typeof procedure>>
+    >,
     TSubscriptions,
     TMiddleware
   >;
@@ -161,16 +173,16 @@ export class Router<
     path: TPath,
     procedure: CreateProcedureOptions<TContext, TInput, TOutput>,
   ) {
-    const router = new Router<TContext, any, {}, {}, any>({
+    const router = new Router<TContext, {}, any, {}, TMiddleware>({
       queries: {},
       mutations: {
         [path]: createProcedure(procedure),
-      } as any,
+      },
       subscriptions: {},
       middlewares: [],
-    }) as AnyRouter;
+    });
 
-    return this.merge(router);
+    return this.merge(router) as any;
   }
   /**
    * ⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️
@@ -214,16 +226,16 @@ export class Router<
     TInput,
     TOutput extends Subscription<unknown>
   >(path: TPath, procedure: CreateProcedureOptions<TContext, TInput, TOutput>) {
-    const router = new Router<TContext, any, {}, {}, any>({
+    const router = new Router<TContext, {}, {}, any, TMiddleware>({
       queries: {},
       mutations: {},
       subscriptions: {
         [path]: createProcedure(procedure),
       },
       middlewares: [],
-    }) as AnyRouter;
+    });
 
-    return this.merge(router);
+    return this.merge(router) as any;
   }
 
   /**
@@ -234,9 +246,9 @@ export class Router<
     router: TChildRouter,
   ): Router<
     TContext,
-    format<TQueries & TChildRouter['_def']['queries']>,
-    format<TMutations & TChildRouter['_def']['mutations']>,
-    format<TSubscriptions & TChildRouter['_def']['subscriptions']>,
+    flatten<TQueries, TChildRouter['_def']['queries']>,
+    flatten<TMutations, TChildRouter['_def']['mutations']>,
+    flatten<TSubscriptions, TChildRouter['_def']['subscriptions']>,
     TMiddleware
   >;
 
@@ -250,10 +262,15 @@ export class Router<
     router: TChildRouter,
   ): Router<
     TContext,
-    TQueries & Prefixer<TChildRouter['_def']['queries'], `${TPath}`>,
-    TMutations & Prefixer<TChildRouter['_def']['mutations'], `${TPath}`>,
-    TSubscriptions &
-      Prefixer<TChildRouter['_def']['subscriptions'], `${TPath}`>,
+    flatten<TQueries, Prefixer<TChildRouter['_def']['queries'], `${TPath}`>>,
+    flatten<
+      TMutations,
+      Prefixer<TChildRouter['_def']['mutations'], `${TPath}`>
+    >,
+    flatten<
+      TSubscriptions,
+      Prefixer<TChildRouter['_def']['subscriptions'], `${TPath}`>
+    >,
     TMiddleware
   >;
 
