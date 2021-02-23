@@ -139,7 +139,9 @@ export default function Home() {
 }
 export async function getStaticProps() {
   const ssr = trpc.ssr(appRouter, {});
+
   await ssr.prefetchInfiniteQuery('messages.list', {});
+
   return {
     props: {
       dehydratedState: trpc.dehydrate(),

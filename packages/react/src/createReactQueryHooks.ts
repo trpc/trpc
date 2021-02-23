@@ -206,6 +206,11 @@ export function createReactQueryHooks<
     return { ...hook, data };
   }
 
+  /**
+   * Create functions you can use for server-side rendering / static generation
+   * @param router Your app's router
+   * @param ctx Context used in the calls
+   */
   function ssr(router: TRouter, ctx: TContext) {
     const caller = router.createCaller(ctx);
 
@@ -224,6 +229,7 @@ export function createReactQueryHooks<
         return data;
       });
     };
+
     const prefetchInfiniteQuery = async <
       TPath extends keyof TQueries & string,
       TProcedure extends TQueries[TPath]

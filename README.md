@@ -30,7 +30,7 @@ TRPC is a framework for building strongly typed RPC APIs with TypeScript. Altern
   - [Router middlewares](#router-middlewares)
   - [Data transformers](#data-transformers)
   - [Server-side rendering (SSR / SSG)](#server-side-rendering-ssr--ssg)
-    - [Using `prefetchOnServer()` (recommended)](#using-prefetchonserver-recommended)
+    - [Using `ssr.prefetchOnServer()` (recommended)](#using-ssrprefetchonserver-recommended)
     - [Invoking route directly](#invoking-route-directly)
 - [Further reading](#further-reading)
   - [Who is this for?](#who-is-this-for)
@@ -391,7 +391,9 @@ You are able to serialize the response data & input args (in order to be able to
 
 See the [chat example](./examples/next-ssg-chat) for a working example.
 
-### Using `prefetchOnServer()` (recommended)
+First, create a co
+
+### Using `ssr.prefetchOnServer()` (recommended)
 
 <details><summary>In `getStaticProps`</summary>
 
@@ -400,11 +402,11 @@ import { trpc } from '../utils/trpc'
 import { appRouter } from './api/trpc/[...trpc]'; // Important - only ever import & use this in the SSR-methods
 
 export async function getStaticProps() {
-  await trpc.prefetchQueryOnServer(appRouter, {
-    path: 'messages.list',
-    input: null,
-    ctx: {} as any,
-  });
+  // Creates ssr helpers with the app's router + the context object used for the calls
+  const ssr = trpc.ssr(appRouter, {});
+
+  await ssr.prefetchInfiniteQuery('messages.list', {});
+
   return {
     props: {
       dehydratedState: trpc.dehydrate(),
@@ -449,11 +451,13 @@ You can also invoke a route directly and pass the data as props.
 import { appRouter } from './api/trpc/[...trpc]'; // Important - only ever import & use this in the SSR-methods
 
 export async function getStaticProps() {
-  const allPosts = await appRouter.createCaller({}).query('allPosts', { limit: 100 })
+  const ssr = trpc.ssr(appRouter, {});
+
+  const allPosts = await ssr.caller.query('allPosts', { limit: 100 })
 
   return {
     props: {
-      allPosts: trpc.dehydrate(),
+      allPosts,
     },
     revalidate: 1,
   };
