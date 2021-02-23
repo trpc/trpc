@@ -287,6 +287,34 @@ describe('integration tests', () => {
 
       close();
     });
+
+    test('optional input', async () => {
+      type Input = { who: string } | undefined;
+      const { client, close } = routerToServerAndClient(
+        trpc.router().mutation('hello', {
+          input: z
+            .object({
+              who: z.string(),
+            })
+            .optional(),
+          resolve({ input }) {
+            expectTypeOf(input).not.toBeAny();
+            expectTypeOf(input).toMatchTypeOf<Input>();
+
+            return {
+              text: `hello ${input?.who ?? 'world'}`,
+              input,
+            };
+          },
+        }),
+      );
+      const res = await client.mutation('hello', { who: 'katt' });
+      expectTypeOf(res.input).toMatchTypeOf<Input>();
+      expectTypeOf(res.input).not.toBeAny();
+      expectTypeOf(res).toMatchTypeOf<{ input: Input; text: string }>();
+      expect(res.text).toBe('hello katt');
+      close();
+    });
   });
 });
 
