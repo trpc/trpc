@@ -145,18 +145,21 @@ export class Router<
   }
 
   public queries<
-    TRoutes extends Record<string, CreateProcedureWithInput<TContext, any, any>>
+    TProcedures extends Record<
+      string,
+      CreateProcedureWithInput<TContext, unknown, unknown>
+    >
   >(
-    routes: TRoutes,
+    procedures: TProcedures,
   ): Router<
     TContext,
-    flatten<TQueries, inferProcedureFromOptionsRecord<typeof routes>>,
+    flatten<TQueries, inferProcedureFromOptionsRecord<TProcedures>>,
     TMutations,
     TSubscriptions,
     TMiddlewareFn
   > {
     const router = new Router<TContext, any, {}, {}, TMiddlewareFn>({
-      queries: routes,
+      queries: procedures,
       mutations: {},
       subscriptions: {},
       middlewares: [],

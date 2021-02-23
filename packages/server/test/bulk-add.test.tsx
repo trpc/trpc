@@ -15,6 +15,7 @@ describe('bulk add', () => {
         }),
         resolve({ input }) {
           expectTypeOf(input).not.toBeAny();
+          expectTypeOf(input).toMatchTypeOf<{ dogNoise: string }>();
           return {
             text: input.dogNoise,
           };
@@ -26,6 +27,7 @@ describe('bulk add', () => {
         }),
         resolve({ input }) {
           expectTypeOf(input).not.toBeAny();
+          expectTypeOf(input).toMatchTypeOf<{ catNoise: string }>();
           return {
             text: input.catNoise,
           };

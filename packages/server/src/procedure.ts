@@ -192,7 +192,13 @@ export type inferProcedureFromOptions<
   : Procedure<unknown, unknown>;
 
 export type inferProcedureFromOptionsRecord<
-  TRecord extends Record<string, CreateProcedureOptions<any, any, any>>
+  TRecord extends Record<string, CreateProcedureWithInput<any, any, any>>
 > = {
-  [TKey in keyof TRecord]: inferProcedureFromOptions<TRecord[TKey]>;
+  [TKey in keyof TRecord]: TRecord[TKey] extends CreateProcedureWithInput<
+    infer TContext,
+    infer TInput,
+    infer TOutput
+  >
+    ? ProcedureWithInput<TContext, TInput, TOutput>
+    : never;
 };
