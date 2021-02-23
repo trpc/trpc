@@ -273,12 +273,9 @@ test('useLiveQuery()', async () => {
 
 test('dehydrate', async () => {
   const { hooks, appRouter, db } = factory;
+  const ssr = hooks.ssr(appRouter, {});
 
-  await hooks.prefetchQueryOnServer(appRouter, {
-    path: 'allPosts',
-    ctx: {},
-    input: undefined,
-  });
+  await ssr.prefetchQuery('allPosts');
 
   const dehydrated = hooks.dehydrate().queries;
   expect(dehydrated).toHaveLength(1);
@@ -440,14 +437,9 @@ test('useInfiniteQuery()', async () => {
 
 test('useInfiniteQueryOnServer()', async () => {
   const { hooks, appRouter } = factory;
+  const ssr = hooks.ssr(appRouter, {});
 
-  await hooks.prefetchInfiniteQueryOnServer(appRouter, {
-    path: 'paginatedPosts',
-    input: {
-      limit: 1,
-    },
-    ctx: {},
-  });
+  await ssr.prefetchInfiniteQuery('paginatedPosts', { limit: 1 });
 
   const data = JSON.stringify(hooks.dehydrate());
   expect(data).toContain('first post');

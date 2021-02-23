@@ -206,59 +206,46 @@ export function createReactQueryHooks<
     return { ...hook, data };
   }
 
-  const prefetchQueryOnServer = async <
-    TPath extends keyof TQueries & string,
-    TInput extends inferProcedureInput<TQueries[TPath]>
-  >(
-    router: TRouter,
-    opts: {
-      path: TPath;
-      ctx: TContext;
-      input: TInput;
-    },
-  ): Promise<void> => {
-    const input = opts.input ?? null;
-    const { path, ctx } = opts;
-    const cacheKey = [path, input];
+  function ssr(router: TRouter, ctx: TContext) {
+    const caller = router.createCaller(ctx);
 
-    await queryClient.prefetchQuery(cacheKey, async () => {
-      const data = await router.invoke({
-        target: 'queries',
-        ctx,
-        path,
-        input,
+    const prefetchQuery = async <
+      TPath extends keyof TQueries & string,
+      TProcedure extends TQueries[TPath]
+    >(
+      ...pathAndArgs: [path: TPath, ...args: inferHandlerInput<TProcedure>]
+    ): Promise<void> => {
+      const [path, input] = pathAndArgs;
+      const cacheKey = [path, input ?? null];
+
+      await queryClient.prefetchQuery(cacheKey, async () => {
+        const data = await caller.query(...pathAndArgs);
+
+        return data;
       });
+    };
+    const prefetchInfiniteQuery = async <
+      TPath extends keyof TQueries & string,
+      TProcedure extends TQueries[TPath]
+    >(
+      ...pathAndArgs: [path: TPath, ...args: inferHandlerInput<TProcedure>]
+    ): Promise<void> => {
+      const [path, input] = pathAndArgs;
+      const cacheKey = [CACHE_PREFIX_INFINITE_QUERIES, path, input ?? null];
 
-      return data;
-    });
-  };
+      await queryClient.prefetchQuery(cacheKey, async () => {
+        const data = await caller.query(...pathAndArgs);
 
-  const prefetchInfiniteQueryOnServer = async <
-    TPath extends keyof TQueries & string,
-    TInput extends inferProcedureInput<TQueries[TPath]>
-  >(
-    router: TRouter,
-    opts: {
-      path: TPath;
-      ctx: TContext;
-      input: TInput;
-    },
-  ): Promise<void> => {
-    const input = opts.input ?? null;
-    const { path, ctx } = opts;
-    const cacheKey = [CACHE_PREFIX_INFINITE_QUERIES, path, input];
-
-    await queryClient.prefetchInfiniteQuery(cacheKey, async () => {
-      const data = await router.invoke({
-        target: 'queries',
-        ctx,
-        path,
-        input,
+        return data;
       });
+    };
 
-      return data;
-    });
-  };
+    return {
+      caller,
+      prefetchQuery,
+      prefetchInfiniteQuery,
+    };
+  }
 
   function prefetchQuery<
     TPath extends keyof TQueries & string,
@@ -322,8 +309,6 @@ export function createReactQueryHooks<
     client,
     dehydrate: _dehydrate,
     prefetchQuery,
-    prefetchQueryOnServer,
-    prefetchInfiniteQueryOnServer,
     queryClient,
     useDehydratedState,
     useInfiniteQuery: _useInfiniteQuery,
@@ -331,5 +316,6 @@ export function createReactQueryHooks<
     useMutation: _useMutation,
     useQuery: _useQuery,
     useSubscription,
+    ssr,
   };
 }

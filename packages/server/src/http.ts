@@ -198,35 +198,24 @@ export async function requestHandler<
       res.end();
       return;
     }
+    const caller = router.createCaller(ctx);
     if (method === 'POST') {
       const body = await getPostBody({ req, maxBodySize });
       const input = deserializeInput(body.input);
-      output = await router.invoke({
-        target: 'mutations',
-        input,
-        ctx,
-        path: path,
-      });
+      output = await caller.mutation(path, input);
     } else if (method === 'GET') {
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       const query = req.query ? req.query : url.parse(req.url!, true).query;
       const input = deserializeInput(getQueryInput(query));
-      output = await router.invoke({
-        target: 'queries',
-        input,
-        ctx,
-        path: path,
-      });
+      output = await caller.query(path, input);
     } else if (method === 'PATCH') {
       const body = await getPostBody({ req, maxBodySize });
       const input = deserializeInput(body.input);
 
-      const sub = (await router.invoke({
-        target: 'subscriptions',
+      const sub = (output = await caller.subscription(
+        path,
         input,
-        ctx,
-        path: path,
-      })) as Subscription;
+      )) as Subscription;
 
       output = await new Promise((resolve, reject) => {
         const startTime = Date.now();

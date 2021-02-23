@@ -29,34 +29,14 @@ test('mix query and mutation', async () => {
       },
     });
 
-  expect(
-    await r.invoke({
-      target: 'queries',
-      path: 'q1',
-      input: null,
-      ctx: {},
-    }),
-  ).toMatchInlineSnapshot(`"q1res"`);
+  const caller = r.createCaller({});
+  expect(await caller.query('q1')).toMatchInlineSnapshot(`"q1res"`);
 
-  expect(
-    await r.invoke({
-      target: 'queries',
-      path: 'q2',
-      input: {
-        q2: 'hey',
-      },
-      ctx: {},
-    }),
-  ).toMatchInlineSnapshot(`"q2res"`);
+  expect(await caller.query('q2', { q2: 'hey' })).toMatchInlineSnapshot(
+    `"q2res"`,
+  );
 
-  expect(
-    await r.invoke({
-      target: 'mutations',
-      path: 'm1',
-      input: null,
-      ctx: {},
-    }),
-  ).toMatchInlineSnapshot(`"m1res"`);
+  expect(await caller.mutation('m1')).toMatchInlineSnapshot(`"m1res"`);
 });
 
 test('merge', async () => {
@@ -80,14 +60,8 @@ test('merge', async () => {
     });
 
   const r = root.merge('posts.', posts);
-  expect(
-    await r.invoke({
-      target: 'queries',
-      path: 'posts.list',
-      input: null,
-      ctx: {},
-    }),
-  ).toMatchInlineSnapshot(`
+  const caller = r.createCaller({});
+  expect(await caller.query('posts.list')).toMatchInlineSnapshot(`
     Array [
       Object {
         "text": "initial",

@@ -350,7 +350,7 @@ export class Router<
    * @throws RouteNotFoundError
    * @throws InputValidationError
    */
-  public async invoke(opts: {
+  private async invoke(opts: {
     target: 'queries' | 'subscriptions' | 'mutations';
     ctx: TContext;
     path: string;
@@ -377,9 +377,11 @@ export class Router<
     mutation: inferHandlerFn<TMutations>;
     subscription: inferHandlerFn<TSubscriptions>;
   } {
+    // eslint-disable-next-line @typescript-eslint/no-this-alias
+    const self = this;
     return {
       query: (path, ...args) => {
-        return this.invoke({
+        return self.invoke({
           target: 'queries',
           ctx,
           path,
@@ -387,7 +389,7 @@ export class Router<
         }) as any;
       },
       mutation: (path, ...args) => {
-        return this.invoke({
+        return self.invoke({
           target: 'mutations',
           ctx,
           path,
@@ -395,7 +397,7 @@ export class Router<
         }) as any;
       },
       subscription: (path, ...args) => {
-        return this.invoke({
+        return self.invoke({
           target: 'subscriptions',
           ctx,
           path,
