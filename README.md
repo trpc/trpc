@@ -400,10 +400,11 @@ You are able to serialize the response data & input args (in order to be able to
 
 ```tsx
 import { trpc } from '../utils/trpc'
-import { appRouter } from './api/trpc/[...trpc]'; // Important - only ever import & use this in the SSR-methods
+ // Important - only ever import & use your `appRouter` in the SSR-methods
+import { appRouter } from './api/trpc/[...trpc]';
 
 export async function getStaticProps() {
-  // Creates ssr helpers with the app's router + the context object used for the calls
+  // Create SSR helpers with your app's router and context object
   const ssr = trpc.ssr(appRouter, {});
 
   await ssr.prefetchInfiniteQuery('messages.list', { limit: 100 });
@@ -428,7 +429,7 @@ You can also invoke a procedure directly and get the data in a promise.
 <details><summary>In `getStaticProps`</summary>
 
 ```tsx
-// Important - only ever import & use this in the SSR-methods
+// Important - only ever import & use your `appRouter` in the SSR-methods
 import { appRouter } from './api/trpc/[...trpc]'; 
 import { trpc } from '../utils/trpc'
 
