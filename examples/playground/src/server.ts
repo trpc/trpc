@@ -30,7 +30,7 @@ function createRouter() {
   return trpc.router<Context>();
 }
 
-// --------- create routes etc
+// --------- create procedures etc
 
 let id = 0;
 
@@ -165,7 +165,7 @@ async function main() {
       },
     }),
   );
-  app.get('/', (_req, res) => res.send('hello'))
+  app.get('/', (_req, res) => res.send('hello'));
   app.listen(2021, () => {
     console.log('listening on port 2021');
   });
