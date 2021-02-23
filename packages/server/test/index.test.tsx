@@ -288,7 +288,7 @@ describe('integration tests', () => {
       close();
     });
 
-    test('optional input', async () => {
+    test('mutation', async () => {
       type Input = { who: string } | undefined;
       const { client, close } = routerToServerAndClient(
         trpc.router().mutation('hello', {
@@ -315,6 +315,59 @@ describe('integration tests', () => {
       expect(res.text).toBe('hello katt');
       close();
     });
+  });
+
+  test('onError(), onSuccess()', async () => {
+    const onError = jest.fn();
+    const onSuccess = jest.fn();
+    const { client, close } = routerToServerAndClient(
+      trpc.router().mutation('hello', {
+        input: z.number(),
+        resolve({ input }) {
+          return {
+            input,
+          };
+        },
+      }),
+      {
+        onError,
+        onSuccess,
+      },
+    );
+    await client.mutation('hello', 1);
+    await expect(client.mutation('hello', 'not-a-number' as any)).rejects
+      .toMatchInlineSnapshot(`
+            [Error: 1 validation issue(s)
+
+              Issue #0: invalid_type at 
+              Expected number, received string
+            ]
+          `);
+
+    expect(onError.mock.calls[0]).toMatchInlineSnapshot(`
+      Array [
+        [Error: 1 validation issue(s)
+
+        Issue #0: invalid_type at 
+        Expected number, received string
+      ],
+      ]
+    `);
+    expect(onSuccess.mock.calls[0]).toMatchInlineSnapshot(`
+      Array [
+        Object {
+          "data": Object {
+            "input": 1,
+          },
+          "ok": true,
+          "statusCode": 200,
+        },
+      ]
+    `);
+
+    expect(onSuccess).toHaveBeenCalledTimes(1);
+    expect(onError).toHaveBeenCalledTimes(1);
+    close();
   });
 });
 
