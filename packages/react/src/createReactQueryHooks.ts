@@ -2,10 +2,10 @@
 import { TRPCClient, TRPCClientError } from '@trpc/client';
 import type {
   AnyRouter,
+  inferHandlerInput,
   inferProcedureInput,
   inferProcedureOutput,
   inferSubscriptionOutput,
-  ProcedureWithInput,
 } from '@trpc/server';
 import { useEffect, useMemo, useRef } from 'react';
 import {
@@ -58,16 +58,11 @@ export function createReactQueryHooks<
   //   opts?: UseQueryOptions<unknown, TRPCClientError, TOutput>,
   // ): UseQueryResult<TOutput, TRPCClientError>;
   function _useQuery<
-    TPath extends keyof TQueries,
+    TPath extends keyof TQueries & string,
     TProcedure extends TQueries[TPath],
     TOutput extends inferProcedureOutput<TProcedure>
   >(
-    pathAndArgs: [
-      path: TPath,
-      ...args: TProcedure extends ProcedureWithInput<any, any, any>
-        ? [inferProcedureInput<TProcedure>]
-        : [undefined?]
-    ],
+    pathAndArgs: [path: TPath, ...args: inferHandlerInput<TProcedure>],
     opts?: UseQueryOptions<
       inferProcedureInput<TQueries[TPath]>,
       TRPCClientError,

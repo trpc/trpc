@@ -97,7 +97,7 @@ test('merge', async () => {
 });
 
 describe('integration tests', () => {
-  test('not found route', async () => {
+  test('not found procedure', async () => {
     const { client, close } = routerToServerAndClient(
       trpc.router().query('hello', {
         input: z
@@ -272,6 +272,42 @@ describe('integration tests', () => {
           id: 1,
           name: 'KATT',
         });
+      }
+
+      close();
+    });
+
+    test('optional input', async () => {
+      type Input = { who: string } | undefined;
+      const { client, close } = routerToServerAndClient(
+        trpc.router().query('hello', {
+          input: z
+            .object({
+              who: z.string(),
+            })
+            .optional(),
+          resolve({ input }) {
+            expectTypeOf(input).not.toBeAny();
+            expectTypeOf(input).toMatchTypeOf<Input>();
+
+            return {
+              text: `hello ${input?.who ?? 'world'}`,
+              input,
+            };
+          },
+        }),
+      );
+      {
+        const res = await client.query('hello', { who: 'katt' });
+        expectTypeOf(res.input).toMatchTypeOf<Input>();
+        expectTypeOf(res.input).not.toBeAny();
+        expectTypeOf(res).toMatchTypeOf<{ input: Input; text: string }>();
+      }
+      {
+        const res = await client.query('hello');
+        expectTypeOf(res.input).toMatchTypeOf<Input>();
+        expectTypeOf(res.input).not.toBeAny();
+        expectTypeOf(res).toMatchTypeOf<{ input: Input; text: string }>();
       }
 
       close();
