@@ -17,6 +17,7 @@ type CancellablePromise<T = unknown> = Promise<T> & {
   cancel: CancelFn;
 };
 
+/* istanbul ignore next */
 const retryDelay = (attemptIndex: number) =>
   attemptIndex === 0 ? 0 : Math.min(1000 * 2 ** attemptIndex, 30000);
 
@@ -47,6 +48,7 @@ export class TRPCClientError extends Error {
   }
 }
 
+/* istanbul ignore next */
 export class NextInputError extends Error {
   public readonly originalError: Error;
 
@@ -220,7 +222,7 @@ export class TRPCClient<TRouter extends AnyRouter> {
       input: args[0],
     });
   }
-
+  /* istanbul ignore next */
   public subscriptionOnce<
     TSubscriptions extends TRouter['_def']['subscriptions'],
     TPath extends string & keyof TSubscriptions,
@@ -266,7 +268,7 @@ export class TRPCClient<TRouter extends AnyRouter> {
 
     return (promise as any) as CancellablePromise<TOutput[]>;
   }
-
+  /* istanbul ignore next */
   public subscription<
     TSubscriptions extends TRouter['_def']['subscriptions'],
     TPath extends string & keyof TSubscriptions,
