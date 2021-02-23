@@ -10,6 +10,7 @@ import type {
   inferSubscriptionOutput,
   Maybe,
 } from '@trpc/server';
+import { getAbortController, getFetch } from './helpers';
 
 type CancelFn = () => void;
 type CancellablePromise<T = unknown> = Promise<T> & {
@@ -62,33 +63,6 @@ export class NextInputError extends Error {
 export interface FetchOptions {
   fetch?: typeof fetch;
   AbortController?: typeof AbortController;
-}
-function getAbortController(
-  ac?: typeof AbortController,
-): Maybe<typeof AbortController> {
-  if (ac) {
-    return ac;
-  }
-  if (typeof window !== 'undefined' && window.AbortController) {
-    return window.AbortController;
-  }
-  if (typeof global !== 'undefined' && global.AbortController) {
-    return global.AbortController;
-  }
-  return null;
-}
-function getFetch(f?: typeof fetch): typeof fetch {
-  if (f) {
-    return f;
-  }
-  if (typeof window !== 'undefined' && window.fetch) {
-    return window.fetch;
-  }
-  if (typeof global !== 'undefined' && global.fetch) {
-    return global.fetch;
-  }
-
-  throw new Error('No fetch implementation found');
 }
 
 export interface CreateTRPCClientOptions {
