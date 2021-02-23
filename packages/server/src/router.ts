@@ -46,12 +46,20 @@ export type inferSubscriptionOutput<
 >;
 
 export type inferHandlerInput<
-  TProcedure extends Procedure<any, any, any>
+  TProcedure extends Procedure
 > = TProcedure extends ProcedureWithInput<any, infer TInput, any>
   ? undefined extends TInput
     ? [TInput?]
     : [TInput]
   : [undefined?];
+
+type inferHandlerFn<TProcedures extends ProcedureRecord> = <
+  TProcedure extends TProcedures[TPath],
+  TPath extends keyof TProcedures & string
+>(
+  path: TPath,
+  ...args: inferHandlerInput<TProcedure>
+) => Promise<inferProcedureOutput<TProcedures[TPath]>>;
 
 export type AnyRouter<TContext = any> = Router<TContext, any, any, any, any>;
 
