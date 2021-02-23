@@ -406,8 +406,8 @@ export async function getStaticProps() {
   // Creates ssr helpers with the app's router + the context object used for the calls
   const ssr = trpc.ssr(appRouter, {});
 
-  await ssr.prefetchInfiniteQuery('messages.list', {});
-  // or `await ssr.prefetchQuery('messages.list', {});`
+  await ssr.prefetchInfiniteQuery('messages.list', { limit: 100 });
+  // or `await ssr.prefetchQuery('messages.list', { limit: 100 });`
 
   return {
     props: {
@@ -418,7 +418,7 @@ export async function getStaticProps() {
 ```
 </details>
 
-This will cache the `messages.list` so it's instant when `useQuery('message.list')` gets called.
+This will cache the `messages.list` so it's instant when `useQuery('message.list', { limit: 100 })` gets called.
 
 
 ### Invoking directly
