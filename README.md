@@ -422,7 +422,7 @@ export async function getStaticProps() {
 This will cache the `messages.list` so it's instant when `useQuery('message.list')` gets called.
 
 
-### Invoking directly / pass as props
+### Invoking directly
 
 You can also invoke a procedure directly and pass the data as props.
 
