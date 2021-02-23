@@ -9,14 +9,8 @@ function getWindow() {
 export function getAbortController(
   ac?: typeof AbortController,
 ): Maybe<typeof AbortController> {
-  if (ac) {
-    return ac;
-  }
   const win = getWindow();
-  if (win.AbortController) {
-    return win.AbortController;
-  }
-  return null;
+  return ac || win.AbortController || null;
 }
 export function getFetch(f?: typeof fetch): typeof fetch {
   if (f) {
