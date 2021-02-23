@@ -85,8 +85,8 @@ export abstract class Procedure<
     ctx,
     input: rawInput,
   }: ProcedureCallOptions<TContext>): Promise<TOutput> {
-    for (const fn of this.middlewares) {
-      await fn({ ctx });
+    for (const middleware of this.middlewares) {
+      await middleware({ ctx });
     }
     const input = this.parseInput(rawInput);
     const output = await this.resolver({ ctx, input });
