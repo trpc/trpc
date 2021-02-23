@@ -67,20 +67,20 @@ export class Router<
     unknown,
     Subscription<unknown>
   >,
-  TMiddleware extends MiddlewareFunction<TContext>
+  TMiddlewareFn extends MiddlewareFunction<TContext>
 > {
   readonly _def: Readonly<{
     queries: Readonly<TQueries>;
     mutations: Readonly<TMutations>;
     subscriptions: Readonly<TSubscriptions>;
-    middlewares: TMiddleware[];
+    middlewares: TMiddlewareFn[];
   }>;
 
   constructor(def?: {
     queries: TQueries;
     mutations: TMutations;
     subscriptions: TSubscriptions;
-    middlewares: TMiddleware[];
+    middlewares: TMiddlewareFn[];
   }) {
     this._def = def ?? {
       queries: {} as TQueries,
@@ -112,7 +112,7 @@ export class Router<
     >,
     TMutations,
     TSubscriptions,
-    TMiddleware
+    TMiddlewareFn
   >;
   public query<TPath extends string, TOutput>(
     path: TPath,
@@ -125,13 +125,13 @@ export class Router<
     >,
     TMutations,
     TSubscriptions,
-    TMiddleware
+    TMiddlewareFn
   >;
   public query<TPath extends string, TInput, TOutput>(
     path: TPath,
     procedure: CreateProcedureOptions<TContext, TInput, TOutput>,
   ) {
-    const router = new Router<TContext, any, {}, {}, TMiddleware>({
+    const router = new Router<TContext, any, {}, {}, TMiddlewareFn>({
       queries: {
         [path]: createProcedure(procedure),
       },
@@ -154,7 +154,7 @@ export class Router<
       Record<TPath, inferProcedureFromOptions<typeof procedure>>
     >,
     TSubscriptions,
-    TMiddleware
+    TMiddlewareFn
   >;
   public mutation<TPath extends string, TOutput>(
     path: TPath,
@@ -167,13 +167,13 @@ export class Router<
       Record<TPath, inferProcedureFromOptions<typeof procedure>>
     >,
     TSubscriptions,
-    TMiddleware
+    TMiddlewareFn
   >;
   public mutation<TPath extends string, TInput, TOutput>(
     path: TPath,
     procedure: CreateProcedureOptions<TContext, TInput, TOutput>,
   ) {
-    const router = new Router<TContext, {}, any, {}, TMiddleware>({
+    const router = new Router<TContext, {}, any, {}, TMiddlewareFn>({
       queries: {},
       mutations: {
         [path]: createProcedure(procedure),
@@ -201,7 +201,7 @@ export class Router<
     TQueries,
     TMutations,
     TSubscriptions & Record<TPath, inferProcedureFromOptions<typeof procedure>>,
-    TMiddleware
+    TMiddlewareFn
   >;
   /**
    * ⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️
@@ -219,14 +219,14 @@ export class Router<
     TQueries,
     TMutations,
     TSubscriptions & Record<TPath, inferProcedureFromOptions<typeof procedure>>,
-    TMiddleware
+    TMiddlewareFn
   >;
   public subscription<
     TPath extends string,
     TInput,
     TOutput extends Subscription<unknown>
   >(path: TPath, procedure: CreateProcedureOptions<TContext, TInput, TOutput>) {
-    const router = new Router<TContext, {}, {}, any, TMiddleware>({
+    const router = new Router<TContext, {}, {}, any, TMiddlewareFn>({
       queries: {},
       mutations: {},
       subscriptions: {
@@ -249,7 +249,7 @@ export class Router<
     flatten<TQueries, TChildRouter['_def']['queries']>,
     flatten<TMutations, TChildRouter['_def']['mutations']>,
     flatten<TSubscriptions, TChildRouter['_def']['subscriptions']>,
-    TMiddleware
+    TMiddlewareFn
   >;
 
   /**
@@ -271,7 +271,7 @@ export class Router<
       TSubscriptions,
       Prefixer<TChildRouter['_def']['subscriptions'], `${TPath}`>
     >,
-    TMiddleware
+    TMiddlewareFn
   >;
 
   public merge(prefixOrRouter: unknown, maybeRouter?: unknown) {
@@ -366,9 +366,17 @@ export class Router<
    * Function to be called before any procedure is invoked
    * Can be async or sync
    */
-  public middleware(fn: TMiddleware) {
-    this._def.middlewares.push(fn);
-    return this;
+  public middleware(middleware: TMiddlewareFn) {
+    return new Router<
+      TContext,
+      TQueries,
+      TMutations,
+      TSubscriptions,
+      TMiddlewareFn
+    >({
+      ...this._def,
+      middlewares: [...this._def.middlewares, middleware],
+    });
   }
 }
 
