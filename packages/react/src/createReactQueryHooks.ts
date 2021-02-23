@@ -239,7 +239,7 @@ export function createReactQueryHooks<
       const [path, input] = pathAndArgs;
       const cacheKey = [CACHE_PREFIX_INFINITE_QUERIES, path, input ?? null];
 
-      await queryClient.prefetchQuery(cacheKey, async () => {
+      await queryClient.prefetchInfiniteQuery(cacheKey, async () => {
         const data = await caller.query(...pathAndArgs);
 
         return data;

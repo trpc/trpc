@@ -378,10 +378,9 @@ export class Router<
     subscription: inferHandlerFn<TSubscriptions>;
   } {
     // eslint-disable-next-line @typescript-eslint/no-this-alias
-    const self = this;
     return {
       query: (path, ...args) => {
-        return self.invoke({
+        return this.invoke({
           target: 'queries',
           ctx,
           path,
@@ -389,7 +388,7 @@ export class Router<
         }) as any;
       },
       mutation: (path, ...args) => {
-        return self.invoke({
+        return this.invoke({
           target: 'mutations',
           ctx,
           path,
@@ -397,7 +396,7 @@ export class Router<
         }) as any;
       },
       subscription: (path, ...args) => {
-        return self.invoke({
+        return this.invoke({
           target: 'subscriptions',
           ctx,
           path,
