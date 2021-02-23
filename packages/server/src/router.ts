@@ -375,6 +375,7 @@ export class Router<
   ): {
     query: inferHandlerFn<TQueries>;
     mutation: inferHandlerFn<TMutations>;
+    subscription: inferHandlerFn<TSubscriptions>;
   } {
     return {
       query: (path, ...args) => {
@@ -388,6 +389,14 @@ export class Router<
       mutation: (path, ...args) => {
         return this.invoke({
           target: 'mutations',
+          ctx,
+          path,
+          input: args[0],
+        }) as any;
+      },
+      subscription: (path, ...args) => {
+        return this.invoke({
+          target: 'subscriptions',
           ctx,
           path,
           input: args[0],

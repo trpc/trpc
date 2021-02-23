@@ -355,14 +355,14 @@ describe('createCall()', () => {
     expectTypeOf(data).toMatchTypeOf<{ input: number }>();
     expect(data).toEqual({ input: 2 });
   });
-  // test('subscription()', async (done) => {
-  //   const sub = await router.createCaller({}).subscription('sub', 3);
+  test('subscription()', async (done) => {
+    const sub = await router.createCaller({}).subscription('sub', 3);
 
-  //   sub.on('data', (data) => {
-  //     expect(obj).toEqual({ input: 3 });
-  //     expectTypeOf(data).toMatchTypeOf<{ input: number }>();
-  //     done();
-  //   });
-  //   sub.start();
-  // });
+    sub.on('data', (data: { input: number }) => {
+      expect(data).toEqual({ input: 3 });
+      expectTypeOf(data).toMatchTypeOf<{ input: number }>();
+      done();
+    });
+    sub.start();
+  });
 });
