@@ -32,7 +32,7 @@ interface ProcedureOptions<TContext, TInput, TOutput> {
   inputParser: ProcedureInputParser<TInput>;
 }
 
-interface ProcedureCallOptions<TContext> {
+export interface ProcedureCallOptions<TContext> {
   ctx: TContext;
   input: unknown;
 }
