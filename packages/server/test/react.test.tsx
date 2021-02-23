@@ -435,7 +435,7 @@ test('useInfiniteQuery()', async () => {
   `);
 });
 
-test('useInfiniteQueryOnServer()', async () => {
+test('prefetchInfiniteQuery()', async () => {
   const { hooks, appRouter } = factory;
   const ssr = hooks.ssr(appRouter, {});
 

@@ -101,7 +101,7 @@ describe('integration tests', () => {
     close();
   });
 
-  test('invalid args', async () => {
+  test('invalid input', async () => {
     const { client, close } = routerToServerAndClient(
       trpc.router().query('hello', {
         input: z
@@ -151,8 +151,9 @@ describe('integration tests', () => {
       const res = await client.query('hello', { who: 'katt' });
       expectTypeOf(res.input).toMatchTypeOf<Input>();
       expectTypeOf(res.input).not.toBeAny();
-
       expectTypeOf(res).toMatchTypeOf<{ input: Input; text: string }>();
+
+      expect(res.text).toEqual('hello katt');
 
       close();
     });
