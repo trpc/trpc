@@ -349,9 +349,17 @@ export class Router<
    * Function to be called before any procedure is invoked
    * Can be async or sync
    */
-  public middleware(fn: TMiddleware) {
-    this._def.middlewares.push(fn);
-    return this;
+  public middleware(middleware: TMiddleware) {
+    return new Router<
+      TContext,
+      TQueries,
+      TMutations,
+      TSubscriptions,
+      TMiddleware
+    >({
+      ...this._def,
+      middlewares: [...this._def.middlewares, middleware],
+    });
   }
 }
 
