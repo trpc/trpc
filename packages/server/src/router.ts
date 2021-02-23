@@ -377,7 +377,6 @@ export class Router<
     mutation: inferHandlerFn<TMutations>;
     subscription: inferHandlerFn<TSubscriptions>;
   } {
-    // eslint-disable-next-line @typescript-eslint/no-this-alias
     return {
       query: (path, ...args) => {
         return this.invoke({
