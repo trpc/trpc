@@ -74,15 +74,15 @@ export function createReactQueryHooks<
     pathAndArgs: [string, unknown?],
     opts?: UseQueryOptions<any, any, any>,
   ) {
-    let input: unknown = null;
+    let input: unknown;
     let path: string;
     if (Array.isArray(pathAndArgs)) {
       path = pathAndArgs[0];
-      input = pathAndArgs[1] ?? null;
+      input = pathAndArgs[1];
     } else {
       path = pathAndArgs;
     }
-    const cacheKey = [path, input];
+    const cacheKey = [path, input ?? null];
 
     return useQuery(cacheKey, () => (client.query as any)(...cacheKey), opts);
   }
