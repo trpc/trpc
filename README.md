@@ -418,7 +418,7 @@ export async function getStaticProps() {
 ```
 </details>
 
-This will cache the `messages.list` so it's instant when `useQuery('message.list', { limit: 100 })` gets called.
+This will cache the `messages.list` so it's instant when `useQuery(['message.list', { limit: 100 }])` gets called.
 
 
 ### Invoking directly
