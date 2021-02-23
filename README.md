@@ -31,7 +31,7 @@ TRPC is a framework for building strongly typed RPC APIs with TypeScript. Altern
   - [Data transformers](#data-transformers)
   - [Server-side rendering (SSR / SSG)](#server-side-rendering-ssr--ssg)
     - [Using `ssr.prefetchOnServer()` (recommended)](#using-ssrprefetchonserver-recommended)
-    - [Invoking directly / pass as props](#invoking-directly--pass-as-props)
+    - [Invoking directly](#invoking-directly)
 - [Further reading](#further-reading)
   - [Who is this for?](#who-is-this-for)
   - [HTTP Methods <-> Type mapping](#http-methods---type-mapping)
@@ -413,7 +413,6 @@ export async function getStaticProps() {
     props: {
       dehydratedState: trpc.dehydrate(),
     },
-    // revalidate: 1,
   };
 }
 ```
@@ -442,7 +441,6 @@ export async function getStaticProps() {
     props: {
       allPosts,
     },
-    // revalidate: 1,
   };
 }
 ```
