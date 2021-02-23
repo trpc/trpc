@@ -16,7 +16,7 @@ export class HTTPError extends Error {
     Object.setPrototypeOf(this, HTTPError.prototype);
   }
 }
-
+/* istanbul ignore next */
 export const httpError = {
   forbidden: (message?: string) => new HTTPError(403, message ?? 'Forbidden'),
   unauthorized: (message?: string) =>
@@ -76,23 +76,15 @@ export function getErrorResponseEnvelope(
 }
 
 export function getQueryInput(query: qs.ParsedQs) {
-  let input: unknown = undefined;
-
   const queryInput = query.input;
   if (!queryInput) {
-    return input;
-  }
-  // console.log('query', queryInput);
-  if (typeof queryInput !== 'string') {
-    throw httpError.badRequest('Expected query.input to be a JSON string');
+    return undefined;
   }
   try {
-    input = JSON.parse(queryInput);
+    return JSON.parse(queryInput as string);
   } catch (err) {
     throw httpError.badRequest('Expected query.input to be a JSON string');
   }
-
-  return input;
 }
 
 export type CreateContextFnOptions<TRequest, TResponse> = {
@@ -208,6 +200,7 @@ export async function requestHandler<
       const query = req.query ? req.query : url.parse(req.url!, true).query;
       const input = deserializeInput(getQueryInput(query));
       output = await caller.query(path, input);
+      /* istanbul ignore next */
     } else if (method === 'PATCH') {
       const body = await getPostBody({ req, maxBodySize });
       const input = deserializeInput(body.input);
