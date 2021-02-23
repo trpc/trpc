@@ -48,15 +48,6 @@ export function createReactQueryHooks<
   type TMutations = TRouter['_def']['mutations'];
   type TSubscriptions = TRouter['_def']['subscriptions'];
 
-  // this breaks autocompletion for some reason
-  // function _useQuery<
-  //   // TODO exclude all with mandatory input from TPath
-  //   TPath extends keyof TQueries & string,
-  //   TOutput extends inferProcedureOutput<TQueries[TPath]>
-  // >(
-  //   path: TPath,
-  //   opts?: UseQueryOptions<unknown, TRPCClientError, TOutput>,
-  // ): UseQueryResult<TOutput, TRPCClientError>;
   function _useQuery<
     TPath extends keyof TQueries & string,
     TProcedure extends TQueries[TPath],
@@ -68,20 +59,9 @@ export function createReactQueryHooks<
       TRPCClientError,
       TOutput
     >,
-  ): UseQueryResult<TOutput, TRPCClientError>;
-
-  function _useQuery(
-    pathAndArgs: [string, unknown?],
-    opts?: UseQueryOptions<any, any, any>,
-  ) {
-    let input: unknown;
-    let path: string;
-    if (Array.isArray(pathAndArgs)) {
-      path = pathAndArgs[0];
-      input = pathAndArgs[1];
-    } else {
-      path = pathAndArgs;
-    }
+  ): UseQueryResult<TOutput, TRPCClientError> {
+    const path = pathAndArgs[0];
+    const input = pathAndArgs[1];
     const cacheKey = [path, input ?? null];
 
     return useQuery(cacheKey, () => (client.query as any)(...cacheKey), opts);
