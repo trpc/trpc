@@ -41,9 +41,9 @@ export abstract class Procedure<
   TInput = unknown,
   TOutput = unknown
 > {
-  public readonly middlewares: Readonly<MiddlewareFunction<TContext>[]>;
-  protected resolver: ProcedureResolver<TContext, TInput, TOutput>;
-  protected inputParser: ProcedureInputParser<TInput>;
+  private middlewares: Readonly<MiddlewareFunction<TContext>[]>;
+  private resolver: ProcedureResolver<TContext, TInput, TOutput>;
+  private inputParser: ProcedureInputParser<TInput>;
 
   constructor(opts: ProcedureOptions<TContext, TInput, TOutput>) {
     this.middlewares = opts.middlewares;
@@ -85,6 +85,9 @@ export abstract class Procedure<
     ctx,
     input: rawInput,
   }: ProcedureCallOptions<TContext>): Promise<TOutput> {
+    for (const fn of this.middlewares) {
+      await fn({ ctx });
+    }
     const input = this.parseInput(rawInput);
     const output = await this.resolver({ ctx, input });
     return output;

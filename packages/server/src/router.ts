@@ -337,9 +337,6 @@ export class Router<
     const target = this._def[opts.target];
     const procedure: Procedure<TContext> = target[opts.path as any];
     const { ctx, input } = opts;
-    for (const fn of procedure.middlewares) {
-      await fn({ ctx });
-    }
 
     return procedure.call({ ctx, input });
   }
