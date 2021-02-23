@@ -219,11 +219,11 @@ export function createReactQueryHooks<
       TProcedure extends TQueries[TPath]
     >(
       ...pathAndArgs: [path: TPath, ...args: inferHandlerInput<TProcedure>]
-    ): Promise<void> => {
+    ) => {
       const [path, input] = pathAndArgs;
       const cacheKey = [path, input ?? null];
 
-      await queryClient.prefetchQuery(cacheKey, async () => {
+      return queryClient.prefetchQuery(cacheKey, async () => {
         const data = await caller.query(...pathAndArgs);
 
         return data;
@@ -235,11 +235,11 @@ export function createReactQueryHooks<
       TProcedure extends TQueries[TPath]
     >(
       ...pathAndArgs: [path: TPath, ...args: inferHandlerInput<TProcedure>]
-    ): Promise<void> => {
+    ) => {
       const [path, input] = pathAndArgs;
       const cacheKey = [CACHE_PREFIX_INFINITE_QUERIES, path, input ?? null];
 
-      await queryClient.prefetchInfiniteQuery(cacheKey, async () => {
+      return queryClient.prefetchInfiniteQuery(cacheKey, async () => {
         const data = await caller.query(...pathAndArgs);
 
         return data;
