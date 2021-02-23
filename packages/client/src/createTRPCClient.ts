@@ -174,6 +174,7 @@ export class TRPCClient<TRouter extends AnyRouter> {
     };
 
     const reqOptsFn = reqOptsMap[type];
+    /* istanbul ignore next */
     if (!reqOptsFn) {
       throw new Error(`Unhandled type "${type}"`);
     }
