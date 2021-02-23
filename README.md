@@ -31,7 +31,7 @@ TRPC is a framework for building strongly typed RPC APIs with TypeScript. Altern
   - [Data transformers](#data-transformers)
   - [Server-side rendering (SSR / SSG)](#server-side-rendering-ssr--ssg)
     - [Using `ssr.prefetchOnServer()` (recommended)](#using-ssrprefetchonserver-recommended)
-    - [Invoking directly](#invoking-directly)
+    - [Invoking directly / pass as props](#invoking-directly--pass-as-props)
 - [Further reading](#further-reading)
   - [Who is this for?](#who-is-this-for)
   - [HTTP Methods <-> Type mapping](#http-methods---type-mapping)
@@ -389,9 +389,12 @@ You are able to serialize the response data & input args (in order to be able to
 
 ## Server-side rendering (SSR / SSG)
 
-See the [chat example](./examples/next-ssg-chat) for a working example.
+> - See the [chat example](./examples/next-ssg-chat) for a working example.
+> - Follow [Getting started with Next.js](#getting-started-with-nextjs) before doing the below
 
 ### Using `ssr.prefetchOnServer()` (recommended)
+
+
 
 <details><summary>In `getStaticProps`</summary>
 
@@ -404,6 +407,7 @@ export async function getStaticProps() {
   const ssr = trpc.ssr(appRouter, {});
 
   await ssr.prefetchInfiniteQuery('messages.list', {});
+  // or `await ssr.prefetchQuery('messages.list', {});`
 
   return {
     props: {
@@ -414,31 +418,11 @@ export async function getStaticProps() {
 }
 ```
 </details>
-<details><summary>In _app.tsx</summary>
-
-```tsx
-import type { AppProps /*, AppContext */ } from 'next/app';
-import { QueryClientProvider } from 'react-query';
-import { Hydrate } from 'react-query/hydration';
-import { trpc } from '../utils/trpc';
-
-function MyApp({ Component, pageProps }: AppProps) {
-  return (
-    <QueryClientProvider client={trpc.queryClient}>
-      <Hydrate state={trpc.useDehydratedState(pageProps.dehydratedState)}>
-        <Component {...pageProps} />
-      </Hydrate>
-    </QueryClientProvider>
-  );
-}
-export default MyApp;
-```
-</details>
 
 This will cache the `messages.list` so it's instant when a user visits the page.
 
 
-### Invoking directly
+### Invoking directly / pass as props
 
 You can also invoke a procedure directly and pass the data as props.
 
@@ -447,6 +431,7 @@ You can also invoke a procedure directly and pass the data as props.
 
 ```tsx
 import { appRouter } from './api/trpc/[...trpc]'; // Important - only ever import & use this in the SSR-methods
+import { trpc } from '../utils/trpc'
 
 export async function getStaticProps() {
   const ssr = trpc.ssr(appRouter, {});
