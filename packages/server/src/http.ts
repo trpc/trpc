@@ -138,7 +138,7 @@ async function getPostBody({
       body += data;
       if (typeof maxBodySize === 'number' && body.length > maxBodySize) {
         reject(new HTTPError(413, 'Payload Too Large'));
-        req.connection.destroy();
+        req.socket.destroy();
       }
     });
     req.on('end', () => {

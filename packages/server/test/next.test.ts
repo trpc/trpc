@@ -5,13 +5,24 @@ import * as trpcNext from '../src/adapters/next';
 import { EventEmitter } from 'events';
 import { HTTPErrorResponseEnvelope, HTTPSuccessResponseEnvelope } from '../src';
 
-function mockReq(query: Record<string, any>) {
+function mockReq({
+  query,
+  method = 'GET',
+}: {
+  query: Record<string, any>;
+  method?: 'GET' | 'POST';
+}) {
   const req = new EventEmitter() as any;
 
-  req.method = 'GET';
+  req.method = method;
   req.query = query;
 
-  return { req };
+  const socket = {
+    destroy: jest.fn(),
+  };
+  req.socket = socket;
+
+  return { req, socket };
 }
 function mockRes() {
   const res = new EventEmitter() as any;
@@ -37,7 +48,7 @@ test('bad setup', async () => {
     createContext() {},
   });
 
-  const { req } = mockReq({});
+  const { req } = mockReq({ query: {} });
   const { res, status, json } = mockRes();
 
   await handler(req, res);
@@ -63,7 +74,9 @@ test('ok request', async () => {
   });
 
   const { req } = mockReq({
-    trpc: ['hello'],
+    query: {
+      trpc: ['hello'],
+    },
   });
   const { res, end } = mockRes();
 
@@ -93,7 +106,9 @@ test('404', async () => {
   });
 
   const { req } = mockReq({
-    trpc: ['not-found-path'],
+    query: {
+      trpc: ['not-found-path'],
+    },
   });
   const { res, end } = mockRes();
 
@@ -107,4 +122,37 @@ test('404', async () => {
   expect(json.error.message).toMatchInlineSnapshot(
     `"No such procedure \\"not-found-path\\""`,
   );
+});
+
+test('payload too large', async () => {
+  const router = trpc.router().mutation('hello', {
+    resolve: () => 'world',
+  });
+
+  const handler = trpcNext.createNextApiHandler({
+    router,
+    createContext() {},
+    maxBodySize: 1,
+  });
+
+  const { req } = mockReq({
+    query: {
+      trpc: ['hello'],
+    },
+    method: 'POST',
+  });
+  const { res, end } = mockRes();
+
+  setImmediate(() => {
+    req.emit('data', JSON.stringify('123456789'));
+    req.emit('end');
+  });
+  await handler(req, res);
+
+  expect(res.statusCode).toBe(413);
+  const json: HTTPErrorResponseEnvelope = JSON.parse(
+    (end.mock.calls[0] as any)[0],
+  );
+  expect(json.statusCode).toBe(413);
+  expect(json.error.message).toMatchInlineSnapshot(`"Payload Too Large"`);
 });
