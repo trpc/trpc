@@ -31,7 +31,7 @@ TRPC is a framework for building strongly typed RPC APIs with TypeScript. Altern
   - [Data transformers](#data-transformers)
   - [Server-side rendering (SSR / SSG)](#server-side-rendering-ssr--ssg)
     - [Using `ssr.prefetchOnServer()` (recommended)](#using-ssrprefetchonserver-recommended)
-    - [Invoking route directly](#invoking-route-directly)
+    - [Invoking directly](#invoking-directly)
 - [Further reading](#further-reading)
   - [Who is this for?](#who-is-this-for)
   - [HTTP Methods <-> Type mapping](#http-methods---type-mapping)
@@ -391,8 +391,6 @@ You are able to serialize the response data & input args (in order to be able to
 
 See the [chat example](./examples/next-ssg-chat) for a working example.
 
-First, create a co
-
 ### Using `ssr.prefetchOnServer()` (recommended)
 
 <details><summary>In `getStaticProps`</summary>
@@ -440,9 +438,9 @@ export default MyApp;
 This will cache the `messages.list` so it's instant when a user visits the page.
 
 
-### Invoking route directly
+### Invoking directly
 
-You can also invoke a route directly and pass the data as props.
+You can also invoke a procedure directly and pass the data as props.
 
 
 <details><summary>In `getStaticProps`</summary>
