@@ -289,7 +289,7 @@ describe('integration tests', () => {
   });
 });
 
-describe('createCall()', () => {
+describe('createCaller()', () => {
   type Context = {};
   const router = trpc
     .router<Context>()
