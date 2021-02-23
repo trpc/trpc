@@ -424,7 +424,7 @@ This will cache the `messages.list` so it's instant when `useQuery('message.list
 
 ### Invoking directly
 
-You can also invoke a procedure directly and pass the data as props.
+You can also invoke a procedure directly and get the data in a promise
 
 
 <details><summary>In `getStaticProps`</summary>
