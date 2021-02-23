@@ -413,7 +413,7 @@ export async function getStaticProps() {
     props: {
       dehydratedState: trpc.dehydrate(),
     },
-    revalidate: 1,
+    // revalidate: 1,
   };
 }
 ```
@@ -442,7 +442,7 @@ export async function getStaticProps() {
     props: {
       allPosts,
     },
-    revalidate: 1,
+    // revalidate: 1,
   };
 }
 ```
