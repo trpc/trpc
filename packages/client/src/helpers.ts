@@ -1,16 +1,20 @@
 import type { Maybe } from '@trpc/server';
 
+function getWindow() {
+  if (typeof window !== 'undefined') {
+    return window;
+  }
+  return global;
+}
 export function getAbortController(
   ac?: typeof AbortController,
 ): Maybe<typeof AbortController> {
   if (ac) {
     return ac;
   }
-  if (typeof window !== 'undefined' && window.AbortController) {
-    return window.AbortController;
-  }
-  if (typeof global !== 'undefined' && global.AbortController) {
-    return global.AbortController;
+  const win = getWindow();
+  if (win.AbortController) {
+    return win.AbortController;
   }
   return null;
 }
@@ -18,11 +22,9 @@ export function getFetch(f?: typeof fetch): typeof fetch {
   if (f) {
     return f;
   }
-  if (typeof window !== 'undefined' && window.fetch) {
-    return window.fetch;
-  }
-  if (typeof global !== 'undefined' && global.fetch) {
-    return global.fetch;
+  const win = getWindow();
+  if (win.fetch) {
+    return win.fetch;
   }
 
   throw new Error('No fetch implementation found');

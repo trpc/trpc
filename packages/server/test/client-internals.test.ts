@@ -10,14 +10,15 @@ describe('getAbortController() from..', () => {
     const sym: any = Symbol('test');
 
     (global as any).AbortController = undefined;
-    (global as any).window.AbortController = sym;
+    (global as any).window = {};
+    (global as any).window = AbortController = sym;
     expect(getAbortController()).toBe(sym);
   });
   test('global', () => {
     const sym: any = Symbol('test');
 
     (global as any).AbortController = sym;
-    (global as any).window = undefined;
+    delete (global as any).window;
     expect(getAbortController()).toBe(sym);
   });
   test('neither', () => {
@@ -36,6 +37,7 @@ describe('getFetch() from...', () => {
     const sym: any = Symbol('test');
 
     (global as any).fetch = undefined;
+    (global as any).window = {};
     (global as any).window.fetch = sym;
     expect(getFetch()).toBe(sym);
   });
@@ -43,7 +45,7 @@ describe('getFetch() from...', () => {
     const sym: any = Symbol('test');
 
     (global as any).fetch = sym;
-    (global as any).window = undefined;
+    delete (global as any).window;
     expect(getFetch()).toBe(sym);
   });
   test('neither -> throws', () => {
