@@ -419,7 +419,7 @@ export async function getStaticProps() {
 ```
 </details>
 
-This will cache the `messages.list` so it's instant when a user visits the page.
+This will cache the `messages.list` so it's instant when `useQuery('message.list')` gets called.
 
 
 ### Invoking directly / pass as props
