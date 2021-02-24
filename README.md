@@ -508,7 +508,9 @@ This builds each package to `<packages>/<package>/dist` and runs the project in 
 
 ## Testing
 
-[![codecov](https://codecov.io/gh/trpc/trpc/branch/main/graph/badge.svg?token=KPPS918B0G)](https://codecov.io/gh/trpc/trpc) _(this could be improved, although we have some E2E-tests that aren't included)_
+> [![codecov](https://codecov.io/gh/trpc/trpc/branch/main/graph/badge.svg?token=KPPS918B0G)](https://codecov.io/gh/trpc/trpc) 
+> 
+> Some things regarding subscriptions is excluded in the coverage as it's an experimental feature
 
 Testing is currently coalesced in [./packages/server/test](./packages/server/test) - we import the different libs from here, this makes it easier for us to do integration testing + getting test coverage on the whole codebase.
 

@@ -1,3 +1,5 @@
+/* istanbul ignore file */
+
 import { EventEmitter } from 'events';
 
 interface SubscriptionEvents<TOutput> {
