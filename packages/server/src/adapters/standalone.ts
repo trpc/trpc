@@ -27,13 +27,18 @@ export interface CreateHttpHandlerOptions<
 > extends BaseOptions {
   createContext: CreateHttpContextFn<TContext>;
   router: TRouter;
+  path?: string;
 }
 export function createHttpHandler<
   TContext,
   TRouter extends AnyRouter<TContext>
 >(opts: CreateHttpHandlerOptions<TRouter, TContext>) {
   return async (req: http.IncomingMessage, res: http.ServerResponse) => {
-    const endpoint = url.parse(req.url!).pathname!.substr(1);
+    const path = opts.path ?? '';
+    const endpoint = url
+      .parse(req.url!)
+      .pathname!.substr(1)
+      .substr(path.length);
     await requestHandler({
       ...opts,
       req,
