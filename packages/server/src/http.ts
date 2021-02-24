@@ -181,26 +181,26 @@ export async function requestHandler<
   try {
     let output: unknown;
     const ctx = createContext && (await createContext({ req, res }));
-    const method = req.method ?? 'GET';
+    const method = req.method;
 
     const deserializeInput = (input: unknown) =>
       input ? transformer.deserialize(input) : input;
+
+    const caller = router.createCaller(ctx);
+
     if (method === 'HEAD') {
       res.statusCode = 204;
       res.end();
       return;
-    }
-    const caller = router.createCaller(ctx);
-    if (method === 'POST') {
-      const body = await getPostBody({ req, maxBodySize });
-      const input = deserializeInput(body.input);
-      output = await caller.mutation(path, input);
     } else if (method === 'GET') {
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       const query = req.query ? req.query : url.parse(req.url!, true).query;
       const input = deserializeInput(getQueryInput(query));
       output = await caller.query(path, input);
-      /* istanbul ignore next */
+    } else if (method === 'POST') {
+      const body = await getPostBody({ req, maxBodySize });
+      const input = deserializeInput(body.input);
+      output = await caller.mutation(path, input);
     } else if (method === 'PATCH') {
       const body = await getPostBody({ req, maxBodySize });
       const input = deserializeInput(body.input);
