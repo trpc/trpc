@@ -46,12 +46,20 @@ export type inferSubscriptionOutput<
 >;
 
 export type inferHandlerInput<
-  TProcedure extends Procedure<any, any, any>
+  TProcedure extends Procedure
 > = TProcedure extends ProcedureWithInput<any, infer TInput, any>
   ? undefined extends TInput
     ? [TInput?]
     : [TInput]
   : [undefined?];
+
+type inferHandlerFn<TProcedures extends ProcedureRecord> = <
+  TProcedure extends TProcedures[TPath],
+  TPath extends keyof TProcedures & string
+>(
+  path: TPath,
+  ...args: inferHandlerInput<TProcedure>
+) => Promise<inferProcedureOutput<TProcedures[TPath]>>;
 
 export type AnyRouter<TContext = any> = Router<TContext, any, any, any, any>;
 
@@ -342,7 +350,7 @@ export class Router<
    * @throws RouteNotFoundError
    * @throws InputValidationError
    */
-  public async invoke(opts: {
+  private async invoke(opts: {
     target: 'queries' | 'subscriptions' | 'mutations';
     ctx: TContext;
     path: string;
@@ -362,6 +370,40 @@ export class Router<
     return !!this._def[what][path];
   }
 
+  public createCaller(
+    ctx: TContext,
+  ): {
+    query: inferHandlerFn<TQueries>;
+    mutation: inferHandlerFn<TMutations>;
+    subscription: inferHandlerFn<TSubscriptions>;
+  } {
+    return {
+      query: (path, ...args) => {
+        return this.invoke({
+          target: 'queries',
+          ctx,
+          path,
+          input: args[0],
+        }) as any;
+      },
+      mutation: (path, ...args) => {
+        return this.invoke({
+          target: 'mutations',
+          ctx,
+          path,
+          input: args[0],
+        }) as any;
+      },
+      subscription: (path, ...args) => {
+        return this.invoke({
+          target: 'subscriptions',
+          ctx,
+          path,
+          input: args[0],
+        }) as any;
+      },
+    };
+  }
   /**
    * Function to be called before any procedure is invoked
    * Can be async or sync

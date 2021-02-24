@@ -30,6 +30,8 @@ TRPC is a framework for building strongly typed RPC APIs with TypeScript. Altern
   - [Router middlewares](#router-middlewares)
   - [Data transformers](#data-transformers)
   - [Server-side rendering (SSR / SSG)](#server-side-rendering-ssr--ssg)
+    - [Using `ssr.prefetchOnServer()` (recommended)](#using-ssrprefetchonserver-recommended)
+    - [Invoking directly](#invoking-directly)
 - [Further reading](#further-reading)
   - [Who is this for?](#who-is-this-for)
   - [HTTP Methods <-> Type mapping](#http-methods---type-mapping)
@@ -387,52 +389,64 @@ You are able to serialize the response data & input args (in order to be able to
 
 ## Server-side rendering (SSR / SSG)
 
-See the [chat example](./examples/next-ssg-chat) for a working example.
+> - See the [chat example](./examples/next-ssg-chat) for a working example.
+> - Follow [Getting started with Next.js](#getting-started-with-nextjs) before doing the below
+
+### Using `ssr.prefetchOnServer()` (recommended)
+
 
 
 <details><summary>In `getStaticProps`</summary>
 
 ```tsx
 import { trpc } from '../utils/trpc'
-import { appRouter } from './api/trpc/[...trpc]'; // Important - only ever import & use this in the SSR-methods
+ // Important - only ever import & use your `appRouter` in the SSR-methods
+import { appRouter } from './api/trpc/[...trpc]';
 
 export async function getStaticProps() {
-  await trpc.prefetchQueryOnServer(appRouter, {
-    path: 'messages.list',
-    input: null,
-    ctx: {} as any,
-  });
+  // Create SSR helpers with your app's router and context object
+  const ssr = trpc.ssr(appRouter, {});
+
+  await ssr.prefetchInfiniteQuery('messages.list', { limit: 100 });
+  // or `await ssr.prefetchQuery('messages.list', { limit: 100 });`
+
   return {
     props: {
       dehydratedState: trpc.dehydrate(),
     },
-    revalidate: 1,
   };
 }
 ```
 </details>
-<details><summary>In _app.tsx</summary>
+
+This will cache the `messages.list` so it's instant when `useQuery(['message.list', { limit: 100 }])` gets called.
+
+
+### Invoking directly
+
+You can also invoke a procedure directly and get the data in a promise.
+
+<details><summary>In `getStaticProps`</summary>
 
 ```tsx
-import type { AppProps /*, AppContext */ } from 'next/app';
-import { QueryClientProvider } from 'react-query';
-import { Hydrate } from 'react-query/hydration';
-import { trpc } from '../utils/trpc';
+// Important - only ever import & use your `appRouter` in the SSR-methods
+import { appRouter } from './api/trpc/[...trpc]'; 
+import { trpc } from '../utils/trpc'
 
-function MyApp({ Component, pageProps }: AppProps) {
-  return (
-    <QueryClientProvider client={trpc.queryClient}>
-      <Hydrate state={trpc.useDehydratedState(pageProps.dehydratedState)}>
-        <Component {...pageProps} />
-      </Hydrate>
-    </QueryClientProvider>
-  );
+export async function getStaticProps() {
+  // Create SSR helpers with your app's router and context object
+  const ssr = trpc.ssr(appRouter, {});
+
+  const allPosts = await ssr.caller.query('allPosts', { limit: 100 })
+
+  return {
+    props: {
+      allPosts,
+    },
+  };
 }
-export default MyApp;
 ```
 </details>
-
-This will cache the `messages.list` so it's instant when a user visits the page.
 
 # Further reading
 

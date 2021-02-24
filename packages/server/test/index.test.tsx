@@ -29,34 +29,14 @@ test('mix query and mutation', async () => {
       },
     });
 
-  expect(
-    await r.invoke({
-      target: 'queries',
-      path: 'q1',
-      input: null,
-      ctx: {},
-    }),
-  ).toMatchInlineSnapshot(`"q1res"`);
+  const caller = r.createCaller({});
+  expect(await caller.query('q1')).toMatchInlineSnapshot(`"q1res"`);
 
-  expect(
-    await r.invoke({
-      target: 'queries',
-      path: 'q2',
-      input: {
-        q2: 'hey',
-      },
-      ctx: {},
-    }),
-  ).toMatchInlineSnapshot(`"q2res"`);
+  expect(await caller.query('q2', { q2: 'hey' })).toMatchInlineSnapshot(
+    `"q2res"`,
+  );
 
-  expect(
-    await r.invoke({
-      target: 'mutations',
-      path: 'm1',
-      input: null,
-      ctx: {},
-    }),
-  ).toMatchInlineSnapshot(`"m1res"`);
+  expect(await caller.mutation('m1')).toMatchInlineSnapshot(`"m1res"`);
 });
 
 test('merge', async () => {
@@ -80,14 +60,8 @@ test('merge', async () => {
     });
 
   const r = root.merge('posts.', posts);
-  expect(
-    await r.invoke({
-      target: 'queries',
-      path: 'posts.list',
-      input: null,
-      ctx: {},
-    }),
-  ).toMatchInlineSnapshot(`
+  const caller = r.createCaller({});
+  expect(await caller.query('posts.list')).toMatchInlineSnapshot(`
     Array [
       Object {
         "text": "initial",
@@ -127,7 +101,7 @@ describe('integration tests', () => {
     close();
   });
 
-  test('invalid args', async () => {
+  test('invalid input', async () => {
     const { client, close } = routerToServerAndClient(
       trpc.router().query('hello', {
         input: z
@@ -177,8 +151,9 @@ describe('integration tests', () => {
       const res = await client.query('hello', { who: 'katt' });
       expectTypeOf(res.input).toMatchTypeOf<Input>();
       expectTypeOf(res.input).not.toBeAny();
-
       expectTypeOf(res).toMatchTypeOf<{ input: Input; text: string }>();
+
+      expect(res.text).toEqual('hello katt');
 
       close();
     });
@@ -312,5 +287,57 @@ describe('integration tests', () => {
 
       close();
     });
+  });
+});
+
+describe('createCaller()', () => {
+  type Context = {};
+  const router = trpc
+    .router<Context>()
+    .query('q', {
+      input: z.number(),
+      async resolve({ input }) {
+        return { input };
+      },
+    })
+    .mutation('m', {
+      input: z.number(),
+      async resolve({ input }) {
+        return { input };
+      },
+    })
+    .subscription('sub', {
+      input: z.number(),
+      async resolve({ input }) {
+        return new trpc.Subscription<{ input: typeof input }>({
+          start(emit) {
+            emit.data({ input });
+            return () => {
+              // noop
+            };
+          },
+        });
+      },
+    });
+
+  test('query()', async () => {
+    const data = await router.createCaller({}).query('q', 1);
+    expectTypeOf(data).toMatchTypeOf<{ input: number }>();
+    expect(data).toEqual({ input: 1 });
+  });
+  test('mutation()', async () => {
+    const data = await router.createCaller({}).mutation('m', 2);
+    expectTypeOf(data).toMatchTypeOf<{ input: number }>();
+    expect(data).toEqual({ input: 2 });
+  });
+  test('subscription()', async (done) => {
+    const sub = await router.createCaller({}).subscription('sub', 3);
+
+    sub.on('data', (data: { input: number }) => {
+      expect(data).toEqual({ input: 3 });
+      expectTypeOf(data).toMatchTypeOf<{ input: number }>();
+      done();
+    });
+    sub.start();
   });
 });

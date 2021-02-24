@@ -138,11 +138,10 @@ export default function Home() {
   );
 }
 export async function getStaticProps() {
-  await trpc.prefetchInfiniteQueryOnServer(appRouter, {
-    path: 'messages.list',
-    input: {},
-    ctx: {} as any,
-  });
+  const ssr = trpc.ssr(appRouter, {});
+
+  await ssr.prefetchInfiniteQuery('messages.list', {});
+
   return {
     props: {
       dehydratedState: trpc.dehydrate(),
