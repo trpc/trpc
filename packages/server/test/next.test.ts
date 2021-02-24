@@ -10,7 +10,7 @@ function mockReq({
   method = 'GET',
 }: {
   query: Record<string, any>;
-  method?: 'GET' | 'POST';
+  method?: 'GET' | 'POST' | 'HEAD';
 }) {
   const req = new EventEmitter() as any;
 
@@ -155,4 +155,27 @@ test('payload too large', async () => {
   );
   expect(json.statusCode).toBe(413);
   expect(json.error.message).toMatchInlineSnapshot(`"Payload Too Large"`);
+});
+
+test('HEAD request', async () => {
+  const router = trpc.router().query('hello', {
+    resolve: () => 'world',
+  });
+
+  const handler = trpcNext.createNextApiHandler({
+    router,
+    createContext() {},
+  });
+
+  const { req } = mockReq({
+    query: {
+      trpc: [],
+    },
+    method: 'HEAD',
+  });
+  const { res } = mockRes();
+
+  await handler(req, res);
+
+  expect(res.statusCode).toBe(204);
 });
