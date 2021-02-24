@@ -142,25 +142,49 @@ afterEach(() => {
   factory.close();
 });
 
-test('basic query', async () => {
-  const { hooks } = factory;
-  function MyComponent() {
-    const allPostsQuery = hooks.useQuery(['allPosts']);
-    expectTypeOf(allPostsQuery.data!).toMatchTypeOf<Post[]>();
+describe('useQuery()', () => {
+  test('no input', async () => {
+    const { hooks } = factory;
+    function MyComponent() {
+      const allPostsQuery = hooks.useQuery(['allPosts']);
+      expectTypeOf(allPostsQuery.data!).toMatchTypeOf<Post[]>();
 
-    return <pre>{JSON.stringify(allPostsQuery.data ?? 'n/a', null, 4)}</pre>;
-  }
-  function App() {
-    return (
-      <QueryClientProvider client={hooks.queryClient}>
-        <MyComponent />
-      </QueryClientProvider>
-    );
-  }
+      return <pre>{JSON.stringify(allPostsQuery.data ?? 'n/a', null, 4)}</pre>;
+    }
+    function App() {
+      return (
+        <QueryClientProvider client={hooks.queryClient}>
+          <MyComponent />
+        </QueryClientProvider>
+      );
+    }
 
-  const utils = render(<App />);
-  await waitFor(() => {
-    expect(utils.container).toHaveTextContent('first post');
+    const utils = render(<App />);
+    await waitFor(() => {
+      expect(utils.container).toHaveTextContent('first post');
+    });
+  });
+
+  test('with input', async () => {
+    const { hooks } = factory;
+    function MyComponent() {
+      const allPostsQuery = hooks.useQuery(['paginatedPosts', { limit: 1 }]);
+
+      return <pre>{JSON.stringify(allPostsQuery.data ?? 'n/a', null, 4)}</pre>;
+    }
+    function App() {
+      return (
+        <QueryClientProvider client={hooks.queryClient}>
+          <MyComponent />
+        </QueryClientProvider>
+      );
+    }
+
+    const utils = render(<App />);
+    await waitFor(() => {
+      expect(utils.container).toHaveTextContent('first post');
+    });
+    expect(utils.container).not.toHaveTextContent('second post');
   });
 });
 
@@ -335,23 +359,6 @@ test('useInfiniteQuery()', async () => {
       },
     );
     expectTypeOf(q.data?.pages[0].items).toMatchTypeOf<undefined | Post[]>();
-
-    // const ra = useInfiniteQuery(
-    //   [
-    //     'paginatedPosts',
-    //     {
-    //       limit: 1,
-    //     },
-    //   ],
-    //   ({ pageParam = undefined }) =>
-    //     hooks.client.query('paginatedPosts', {
-    //       limit: 1,
-    //       cursor: pageParam,
-    //     }),
-    //   {
-    //     getNextPageParam: (lastPage) => lastPage.nextCursor,
-    //   },
-    // );
 
     return q.status === 'loading' ? (
       <p>Loading...</p>
