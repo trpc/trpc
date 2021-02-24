@@ -422,3 +422,55 @@ describe('createCaller()', () => {
     sub.start();
   });
 });
+
+describe('createCaller()', () => {
+  type Context = {};
+  const router = trpc
+    .router<Context>()
+    .query('q', {
+      input: z.number(),
+      async resolve({ input }) {
+        return { input };
+      },
+    })
+    .mutation('m', {
+      input: z.number(),
+      async resolve({ input }) {
+        return { input };
+      },
+    })
+    .subscription('sub', {
+      input: z.number(),
+      async resolve({ input }) {
+        return new trpc.Subscription<{ input: typeof input }>({
+          start(emit) {
+            emit.data({ input });
+            return () => {
+              // noop
+            };
+          },
+        });
+      },
+    });
+
+  test('query()', async () => {
+    const data = await router.createCaller({}).query('q', 1);
+    expectTypeOf(data).toMatchTypeOf<{ input: number }>();
+    expect(data).toEqual({ input: 1 });
+  });
+  test('mutation()', async () => {
+    const data = await router.createCaller({}).mutation('m', 2);
+    expectTypeOf(data).toMatchTypeOf<{ input: number }>();
+    expect(data).toEqual({ input: 2 });
+  });
+  test('subscription()', async (done) => {
+    const sub = await router.createCaller({}).subscription('sub', 3);
+
+    sub.on('data', (data: { input: number }) => {
+      expect(data).toEqual({ input: 3 });
+      expectTypeOf(data).toMatchTypeOf<{ input: number }>();
+      done();
+    });
+    sub.start();
+  });
+});
