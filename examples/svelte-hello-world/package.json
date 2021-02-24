@@ -1,12 +1,13 @@
 {
-  "name": "TODO",
+  "name": "@examples/svelte-hello-world",
   "description": "TODO",
   "version": "0.0.1",
   "scripts": {
     "dev": "sapper dev",
     "build": "sapper build --legacy",
     "export": "sapper export --legacy",
-    "start": "node __sapper__/build"
+    "start": "node __sapper__/build",
+    "validate": "svelte-check --ignore src/node_modules/@sapper"
   },
   "dependencies": {
     "compression": "^1.7.1",
@@ -28,6 +29,15 @@
     "@rollup/plugin-url": "^5.0.0",
     "rollup": "^2.3.4",
     "rollup-plugin-svelte": "^7.0.0",
-    "rollup-plugin-terser": "^7.0.0"
+    "rollup-plugin-terser": "^7.0.0",
+    "@rollup/plugin-typescript": "^6.0.0",
+    "@tsconfig/svelte": "^1.0.10",
+    "@types/compression": "^1.7.0",
+    "@types/node": "^14.11.1",
+    "@types/polka": "^0.5.1",
+    "svelte-check": "^1.0.46",
+    "svelte-preprocess": "^4.3.0",
+    "tslib": "^2.0.1",
+    "typescript": "^4.0.3"
   }
 }
