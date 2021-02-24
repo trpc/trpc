@@ -64,12 +64,13 @@ yarn example:hello
 
 Here's all the example apps:
 
-| Command                   | Live URL                                           | Example path                                                   | Description                                                                                            |
-| ------------------------- | -------------------------------------------------- | -------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------ |
-| `yarn example:chat`       | [chat.trpc.io](https://chat.trpc.io)               | [`./examples/next-ssg-chat`](./examples/next-ssg-chat)         | Next.js real-time chat example with SSG & Prisma. [Playwright](https://playwright.dev) for E2E-testing |
-| `yarn example:hello`      | [hello-world.trpc.io](https://hello-world.trpc.io) | [`./examples/next-hello-world`](./examples/next-hello-world)   | Minimal Next.js example. [Playwright](https://playwright.dev) for E2E-testing                          |
-| `yarn example:standalone` | _n/a_                                              | [`./examples/standalone-server`](./examples/standalone-server) | Standalone TRPC server + node client                                                                   |
-| `yarn example:playground` | _n/a_                                              | [`./examples/playground`](./examples/playground)               | Express server + node client                                                                           |
+| Command                     | Live URL                                                  | Example path                                                   | Description                                                                                            |
+| --------------------------- | --------------------------------------------------------- | -------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------ |
+| `yarn example:chat`         | [chat.trpc.io](https://chat.trpc.io)                      | [`./examples/next-ssg-chat`](./examples/next-ssg-chat)         | Next.js real-time chat example with SSG & Prisma. [Playwright](https://playwright.dev) for E2E-testing |
+| `yarn example:next-hello`   | [hello-world.trpc.io](https://hello-world.trpc.io)        | [`./examples/next-hello-world`](./examples/next-hello-world)   | Minimal Next.js example. [Playwright](https://playwright.dev) for E2E-testing                          |
+| `yarn example:svelte-hello` | [hello-world-svelte.trpc.io](https://hello-world.trpc.io) | [`./examples/svelte-hello-world`](./examples/                  |
+| `yarn example:standalone`   | _n/a_                                                     | [`./examples/standalone-server`](./examples/standalone-server) | Standalone TRPC server + node client                                                                   |
+| `yarn example:playground`   | _n/a_                                                     | [`./examples/playground`](./examples/playground)               | Express server + node client                                                                           |
 
 ## Getting started with Next.js
 
