@@ -48,15 +48,6 @@ export function createReactQueryHooks<
   type TMutations = TRouter['_def']['mutations'];
   type TSubscriptions = TRouter['_def']['subscriptions'];
 
-  // this breaks autocompletion for some reason
-  // function _useQuery<
-  //   // TODO exclude all with mandatory input from TPath
-  //   TPath extends keyof TQueries & string,
-  //   TOutput extends inferProcedureOutput<TQueries[TPath]>
-  // >(
-  //   path: TPath,
-  //   opts?: UseQueryOptions<unknown, TRPCClientError, TOutput>,
-  // ): UseQueryResult<TOutput, TRPCClientError>;
   function _useQuery<
     TPath extends keyof TQueries & string,
     TProcedure extends TQueries[TPath],
@@ -68,23 +59,12 @@ export function createReactQueryHooks<
       TRPCClientError,
       TOutput
     >,
-  ): UseQueryResult<TOutput, TRPCClientError>;
-
-  function _useQuery(
-    pathAndArgs: [string, unknown?],
-    opts?: UseQueryOptions<any, any, any>,
-  ) {
-    let input: unknown;
-    let path: string;
-    if (Array.isArray(pathAndArgs)) {
-      path = pathAndArgs[0];
-      input = pathAndArgs[1];
-    } else {
-      path = pathAndArgs;
-    }
+  ): UseQueryResult<TOutput, TRPCClientError> {
+    const path = pathAndArgs[0];
+    const input = pathAndArgs[1];
     const cacheKey = [path, input ?? null];
 
-    return useQuery(cacheKey, () => (client.query as any)(...cacheKey), opts);
+    return useQuery(cacheKey, () => client.query(...pathAndArgs) as any, opts);
   }
 
   function _useMutation<
@@ -96,18 +76,13 @@ export function createReactQueryHooks<
     opts?: UseMutationOptions<TOutput, TRPCClientError, TInput>,
   ): UseMutationResult<TOutput, TRPCClientError, TInput> {
     const hook = useMutation<TOutput, TRPCClientError, TInput>(
-      (input) =>
-        client.request({
-          type: 'mutation',
-          path,
-          input,
-        }),
+      (input) => (client.mutation as any)(path, input),
       opts,
     );
 
     return hook;
   }
-
+  /* istanbul ignore next */
   /**
    * ⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️
    *  **Experimental.** API might change without major version bump
@@ -155,7 +130,7 @@ export function createReactQueryHooks<
       // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [queryKey, enabled]);
   }
-
+  /* istanbul ignore next */
   /**
    * ⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️
    *  **Experimental.** API might change without major version bump

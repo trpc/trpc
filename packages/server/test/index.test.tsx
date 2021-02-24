@@ -287,6 +287,139 @@ describe('integration tests', () => {
 
       close();
     });
+
+    test('mutation', async () => {
+      type Input = { who: string } | undefined;
+      const { client, close } = routerToServerAndClient(
+        trpc.router().mutation('hello', {
+          input: z
+            .object({
+              who: z.string(),
+            })
+            .optional(),
+          resolve({ input }) {
+            expectTypeOf(input).not.toBeAny();
+            expectTypeOf(input).toMatchTypeOf<Input>();
+
+            return {
+              text: `hello ${input?.who ?? 'world'}`,
+              input,
+            };
+          },
+        }),
+      );
+      const res = await client.mutation('hello', { who: 'katt' });
+      expectTypeOf(res.input).toMatchTypeOf<Input>();
+      expectTypeOf(res.input).not.toBeAny();
+      expectTypeOf(res).toMatchTypeOf<{ input: Input; text: string }>();
+      expect(res.text).toBe('hello katt');
+      close();
+    });
+  });
+
+  test('onError(), onSuccess()', async () => {
+    const onError = jest.fn();
+    const onSuccess = jest.fn();
+    const { client, close } = routerToServerAndClient(
+      trpc.router().mutation('hello', {
+        input: z.number(),
+        resolve({ input }) {
+          return {
+            input,
+          };
+        },
+      }),
+      {
+        onError,
+        onSuccess,
+      },
+    );
+    await client.mutation('hello', 1);
+    await expect(client.mutation('hello', 'not-a-number' as any)).rejects
+      .toMatchInlineSnapshot(`
+            [Error: 1 validation issue(s)
+
+              Issue #0: invalid_type at 
+              Expected number, received string
+            ]
+          `);
+
+    expect(onError.mock.calls[0]).toMatchInlineSnapshot(`
+      Array [
+        [Error: 1 validation issue(s)
+
+        Issue #0: invalid_type at 
+        Expected number, received string
+      ],
+      ]
+    `);
+    expect(onSuccess.mock.calls[0]).toMatchInlineSnapshot(`
+      Array [
+        Object {
+          "data": Object {
+            "input": 1,
+          },
+          "ok": true,
+          "statusCode": 200,
+        },
+      ]
+    `);
+
+    expect(onSuccess).toHaveBeenCalledTimes(1);
+    expect(onError).toHaveBeenCalledTimes(1);
+    close();
+  });
+});
+
+describe('createCaller()', () => {
+  type Context = {};
+  const router = trpc
+    .router<Context>()
+    .query('q', {
+      input: z.number(),
+      async resolve({ input }) {
+        return { input };
+      },
+    })
+    .mutation('m', {
+      input: z.number(),
+      async resolve({ input }) {
+        return { input };
+      },
+    })
+    .subscription('sub', {
+      input: z.number(),
+      async resolve({ input }) {
+        return new trpc.Subscription<{ input: typeof input }>({
+          start(emit) {
+            emit.data({ input });
+            return () => {
+              // noop
+            };
+          },
+        });
+      },
+    });
+
+  test('query()', async () => {
+    const data = await router.createCaller({}).query('q', 1);
+    expectTypeOf(data).toMatchTypeOf<{ input: number }>();
+    expect(data).toEqual({ input: 1 });
+  });
+  test('mutation()', async () => {
+    const data = await router.createCaller({}).mutation('m', 2);
+    expectTypeOf(data).toMatchTypeOf<{ input: number }>();
+    expect(data).toEqual({ input: 2 });
+  });
+  test('subscription()', async (done) => {
+    const sub = await router.createCaller({}).subscription('sub', 3);
+
+    sub.on('data', (data: { input: number }) => {
+      expect(data).toEqual({ input: 3 });
+      expectTypeOf(data).toMatchTypeOf<{ input: number }>();
+      done();
+    });
+    sub.start();
   });
 });
 

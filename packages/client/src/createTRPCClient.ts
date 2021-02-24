@@ -10,12 +10,14 @@ import type {
   inferSubscriptionOutput,
   Maybe,
 } from '@trpc/server';
+import { getAbortController, getFetch } from './helpers';
 
 type CancelFn = () => void;
 type CancellablePromise<T = unknown> = Promise<T> & {
   cancel: CancelFn;
 };
 
+/* istanbul ignore next */
 const retryDelay = (attemptIndex: number) =>
   attemptIndex === 0 ? 0 : Math.min(1000 * 2 ** attemptIndex, 30000);
 
@@ -46,6 +48,7 @@ export class TRPCClientError extends Error {
   }
 }
 
+/* istanbul ignore next */
 export class NextInputError extends Error {
   public readonly originalError: Error;
 
@@ -62,33 +65,6 @@ export class NextInputError extends Error {
 export interface FetchOptions {
   fetch?: typeof fetch;
   AbortController?: typeof AbortController;
-}
-function getAbortController(
-  ac?: typeof AbortController,
-): Maybe<typeof AbortController> {
-  if (ac) {
-    return ac;
-  }
-  if (typeof window !== 'undefined' && window.AbortController) {
-    return window.AbortController;
-  }
-  if (typeof global !== 'undefined' && global.AbortController) {
-    return global.AbortController;
-  }
-  return null;
-}
-function getFetch(f?: typeof fetch): typeof fetch {
-  if (f) {
-    return f;
-  }
-  if (typeof window !== 'undefined' && window.fetch) {
-    return window.fetch;
-  }
-  if (typeof global !== 'undefined' && global.fetch) {
-    return global.fetch;
-  }
-
-  throw new Error('No fetch implementation found');
 }
 
 export interface CreateTRPCClientOptions {
@@ -198,6 +174,7 @@ export class TRPCClient<TRouter extends AnyRouter> {
     };
 
     const reqOptsFn = reqOptsMap[type];
+    /* istanbul ignore next */
     if (!reqOptsFn) {
       throw new Error(`Unhandled type "${type}"`);
     }
@@ -246,7 +223,7 @@ export class TRPCClient<TRouter extends AnyRouter> {
       input: args[0],
     });
   }
-
+  /* istanbul ignore next */
   public subscriptionOnce<
     TSubscriptions extends TRouter['_def']['subscriptions'],
     TPath extends string & keyof TSubscriptions,
@@ -292,7 +269,7 @@ export class TRPCClient<TRouter extends AnyRouter> {
 
     return (promise as any) as CancellablePromise<TOutput[]>;
   }
-
+  /* istanbul ignore next */
   public subscription<
     TSubscriptions extends TRouter['_def']['subscriptions'],
     TPath extends string & keyof TSubscriptions,

@@ -1,3 +1,5 @@
+/* istanbul ignore file */
+
 export function assertNotBrowser() {
   if (
     typeof window !== 'undefined' &&

@@ -16,7 +16,7 @@ export class HTTPError extends Error {
     Object.setPrototypeOf(this, HTTPError.prototype);
   }
 }
-
+/* istanbul ignore next */
 export const httpError = {
   forbidden: (message?: string) => new HTTPError(403, message ?? 'Forbidden'),
   unauthorized: (message?: string) =>
@@ -76,23 +76,15 @@ export function getErrorResponseEnvelope(
 }
 
 export function getQueryInput(query: qs.ParsedQs) {
-  let input: unknown = undefined;
-
   const queryInput = query.input;
   if (!queryInput) {
-    return input;
-  }
-  // console.log('query', queryInput);
-  if (typeof queryInput !== 'string') {
-    throw httpError.badRequest('Expected query.input to be a JSON string');
+    return undefined;
   }
   try {
-    input = JSON.parse(queryInput);
+    return JSON.parse(queryInput as string);
   } catch (err) {
     throw httpError.badRequest('Expected query.input to be a JSON string');
   }
-
-  return input;
 }
 
 export type CreateContextFnOptions<TRequest, TResponse> = {
@@ -146,7 +138,7 @@ async function getPostBody({
       body += data;
       if (typeof maxBodySize === 'number' && body.length > maxBodySize) {
         reject(new HTTPError(413, 'Payload Too Large'));
-        req.connection.destroy();
+        req.socket.destroy();
       }
     });
     req.on('end', () => {
@@ -189,26 +181,33 @@ export async function requestHandler<
   try {
     let output: unknown;
     const ctx = createContext && (await createContext({ req, res }));
-    const method = req.method ?? 'GET';
+    const method = req.method;
 
     const deserializeInput = (input: unknown) =>
       input ? transformer.deserialize(input) : input;
+
+    const caller = router.createCaller(ctx);
+
     if (method === 'HEAD') {
       res.statusCode = 204;
       res.end();
       return;
-    }
-    const caller = router.createCaller(ctx);
-    if (method === 'POST') {
-      const body = await getPostBody({ req, maxBodySize });
-      const input = deserializeInput(body.input);
-      output = await caller.mutation(path, input);
     } else if (method === 'GET') {
+      // queries
+
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       const query = req.query ? req.query : url.parse(req.url!, true).query;
       const input = deserializeInput(getQueryInput(query));
       output = await caller.query(path, input);
+    } else if (method === 'POST') {
+      // mutations
+
+      const body = await getPostBody({ req, maxBodySize });
+      const input = deserializeInput(body.input);
+      output = await caller.mutation(path, input);
     } else if (method === 'PATCH') {
+      // subscriptions
+
       const body = await getPostBody({ req, maxBodySize });
       const input = deserializeInput(body.input);
 
@@ -234,6 +233,7 @@ export async function requestHandler<
           sub.off('error', onError);
           sub.off('destroy', onDestroy);
           req.off('close', onClose);
+          res.off('close', onClose);
           clearTimeout(requestTimeoutTimer);
           clearTimeout(backpressureTimer);
           sub.destroy();
@@ -285,11 +285,12 @@ export async function requestHandler<
         sub.on('error', onError);
         sub.on('destroy', onDestroy);
         req.once('close', onClose);
+        res.once('close', onClose);
         requestTimeoutTimer = setTimeout(onRequestTimeout, requestTimeoutMs);
         sub.start();
       });
     } else {
-      throw httpError.badRequest(`Unexpected request method ${method}`);
+      throw new HTTPError(405, `Unexpected request method ${method}`);
     }
     const json: HTTPSuccessResponseEnvelope<unknown> = {
       ok: true,
