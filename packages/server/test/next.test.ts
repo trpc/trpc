@@ -10,7 +10,15 @@ function mockReq({
   method = 'GET',
 }: {
   query: Record<string, any>;
-  method?: 'GET' | 'POST' | 'HEAD';
+  method?:
+    | 'CONNECT'
+    | 'DELETE'
+    | 'GET'
+    | 'HEAD'
+    | 'OPTIONS'
+    | 'POST'
+    | 'PUT'
+    | 'TRACE';
 }) {
   const req = new EventEmitter() as any;
 
@@ -178,4 +186,27 @@ test('HEAD request', async () => {
   await handler(req, res);
 
   expect(res.statusCode).toBe(204);
+});
+
+test('PUT request (fails)', async () => {
+  const router = trpc.router().query('hello', {
+    resolve: () => 'world',
+  });
+
+  const handler = trpcNext.createNextApiHandler({
+    router,
+    createContext() {},
+  });
+
+  const { req } = mockReq({
+    query: {
+      trpc: [],
+    },
+    method: 'PUT',
+  });
+  const { res } = mockRes();
+
+  await handler(req, res);
+
+  expect(res.statusCode).toBe(405);
 });
