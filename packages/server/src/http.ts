@@ -193,15 +193,21 @@ export async function requestHandler<
       res.end();
       return;
     } else if (method === 'GET') {
+      // queries
+
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       const query = req.query ? req.query : url.parse(req.url!, true).query;
       const input = deserializeInput(getQueryInput(query));
       output = await caller.query(path, input);
     } else if (method === 'POST') {
+      // mutations
+
       const body = await getPostBody({ req, maxBodySize });
       const input = deserializeInput(body.input);
       output = await caller.mutation(path, input);
     } else if (method === 'PATCH') {
+      // subscriptions
+
       const body = await getPostBody({ req, maxBodySize });
       const input = deserializeInput(body.input);
 
@@ -284,7 +290,7 @@ export async function requestHandler<
         sub.start();
       });
     } else {
-      throw httpError.badRequest(`Unexpected request method ${method}`);
+      throw new HTTPError(405, `Unexpected request method ${method}`);
     }
     const json: HTTPSuccessResponseEnvelope<unknown> = {
       ok: true,
