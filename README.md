@@ -15,20 +15,24 @@ tRPC is a framework for building strongly typed RPC APIs with TypeScript. Altern
 
 - 🧙‍♂️&nbsp; Automagic type-safety on your API-paths, their input data, & outputs. Inferred or declared, up to you.
 - 🐎&nbsp; No slow code generation, run-time bloat, or build pipeline. The magic is all in the TypeScript compiler. 
-- 🍃&nbsp; Light. tRPC has zero deps[^1] and a small client-side footprint.
+- 🍃&nbsp; Light. tRPC has zero<sup>1</sup> and a small client-side footprint.
 - 🐻&nbsp; Easy to add to your existing brownfield project.
 - 😌&nbsp; No double-declaration of types on server or client.
 - 🔋&nbsp; Batteries included. React-library + Next.js/Express adapters. _(But tRPC is not tied to React - [reach out](https://twitter.com/alexdotjs) if you want to make a Svelte/Vue/... lib)_
 - 🥃&nbsp; Simple to use APIs for queries & mutations + experimental subscriptions support.
 - 👀&nbsp; Quite a few examples in the [./examples](./examples)-folder
 
-> _TRPC requires TypeScript > 4.1 because of [Template Literal Types](https://www.typescriptlang.org/docs/handbook/2/template-literal-types.html), but you can get some benefits with autocompletion etc even if you use raw JS._
+<sup>1)</sup> `@trpc/react` depends on [react-query](https://react-query.tanstack.com/) for fetching.
 
-[^1]: `@trpc/react` depends on [react-query](https://react-query.tanstack.com/).
+### Requirements
+
+- TRPC requires TypeScript > 4.1 because of [Template Literal Types](https://www.typescriptlang.org/docs/handbook/2/template-literal-types.html), but you can get some benefits with autocompletion etc even if you use raw JS.
+- The `@trpc/client` should work in any environment but requires a `fetch()` poly-/ponyfill
 
 ---
 
 - [Intro](#intro)
+    - [Requirements](#requirements)
 - [Usage](#usage)
   - [Example apps](#example-apps)
   - [Next.js](#nextjs)
@@ -56,7 +60,7 @@ tRPC is a framework for building strongly typed RPC APIs with TypeScript. Altern
 
 ## Example apps
 
-You can play clone this project and play with local examples
+You can play clone this project and play with local examples or try them on CodeSandbox.
 
 ```bash
 git clone git@github.com:trpc/trpc.git
@@ -68,12 +72,12 @@ yarn example:hello
 
 Here's all the example apps:
 
-| Command                   | Live URL                                           | Example path                                                   | Description                                                                                            |
-| ------------------------- | -------------------------------------------------- | -------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------ |
-| `yarn example:chat`       | [chat.trpc.io](https://chat.trpc.io)               | [`./examples/next-ssg-chat`](./examples/next-ssg-chat)         | Next.js real-time chat example with SSG & Prisma. [Playwright](https://playwright.dev) for E2E-testing |
-| `yarn example:hello`      | [hello-world.trpc.io](https://hello-world.trpc.io) | [`./examples/next-hello-world`](./examples/next-hello-world)   | Minimal Next.js example. [Playwright](https://playwright.dev) for E2E-testing                          |
-| `yarn example:standalone` | _n/a_                                              | [`./examples/standalone-server`](./examples/standalone-server) | Standalone tRPC server + node client                                                                   |
-| `yarn example:playground` | _n/a_                                              | [`./examples/playground`](./examples/playground)               | Express server + node client                                                                           |
+| Command                                                        | Try it out!                                                                                                       | Live URL                                           | Description                                                                                            |
+| -------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- | -------------------------------------------------- | ------------------------------------------------------------------------------------------------------ |
+| [`./examples/next-ssg-chat`](./examples/next-ssg-chat)         | [CodeSandbox](https://githubbox.com/trpc/trpc/tree/main/examples/next-ssg-chat)<br/>`yarn example:chat`           | [chat.trpc.io](https://chat.trpc.io)               | Next.js real-time chat example with SSG & Prisma. [Playwright](https://playwright.dev) for E2E-testing |
+| [`./examples/next-hello-world`](./examples/next-hello-world)   | [CodeSandbox](https://githubbox.com/trpc/trpc/tree/main/examples/next-hello-world)<br/>`yarn example:hello`       | [hello-world.trpc.io](https://hello-world.trpc.io) | Minimal Next.js example. [Playwright](https://playwright.dev) for E2E-testing                          |
+| [`./examples/standalone-server`](./examples/standalone-server) | [CodeSandbox](https://githubbox.com/trpc/trpc/tree/main/examples/standalone-server)<br/>`yarn example:standalone` | _n/a_                                              | Standalone tRPC server + node client                                                                   |
+| [`./examples/playground`](./examples/playground)               | [CodeSandbox](https://githubbox.com/trpc/trpc/tree/main/examples/playground)<br/>`yarn example:playground`        | _n/a_                                              | Express server + node client                                                                           |
 
 ## Next.js
 
