@@ -1,7 +1,7 @@
 {
   "name": "@trpc/react",
   "version": "3.0.1",
-  "description": "TRPC React lib",
+  "description": "tRPC React lib",
   "author": "KATT",
   "license": "MIT",
   "repository": {

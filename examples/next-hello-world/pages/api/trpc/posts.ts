@@ -9,7 +9,7 @@ const randomId = () => Math.random().toString(36).substr(2, 9);
 const db = [
   {
     id: 'ot4ysggjl',
-    title: 'Hello TRPC',
+    title: 'Hello tRPC',
     text: 'An example entry',
   },
 ];
