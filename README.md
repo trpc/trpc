@@ -26,8 +26,8 @@ tRPC is a framework for building strongly typed RPC APIs with TypeScript. Altern
 
 ### Requirements
 
-- TRPC requires TypeScript > 4.1 because of [Template Literal Types](https://www.typescriptlang.org/docs/handbook/2/template-literal-types.html), but you can get some benefits with autocompletion etc even if you use raw JS.
-- The `@trpc/client` should work in any environment but requires a `fetch()` poly-/ponyfill
+- TypeScript > 4.1 because of [Template Literal Types](https://www.typescriptlang.org/docs/handbook/2/template-literal-types.html), but you can get some benefits with autocompletion etc even if you use raw JS.
+- The `@trpc/client` should work in any browser but requires a `fetch()` polyfill or ponyfill for browsers that don't natively support fetch.
 
 ---
 
