@@ -1,19 +1,37 @@
 import * as trpc from '@trpc/server';
 import * as z from 'zod';
 import * as trpcNext from '@trpc/server/dist/adapters/next';
+import { inferAsyncReturnType } from '@trpc/server';
+import { postsRouter } from './posts';
 
 // The app's context - is typically generated for each request
-export type Context = {};
-const createContext = ({
+export async function createContext({
   req,
   res,
-}: trpcNext.CreateNextContextOptions): Context => {
-  return {};
-};
+}: trpcNext.CreateNextContextOptions) {
+  // Create your context based on the request object
+  // Will be available as `ctx` in all your resolvers
 
-function createRouter() {
+  // This is just an example of something you'd might want to do in your ctx fn
+  async function getUserFromHeader() {
+    if (req.headers.authorization) {
+      // const user = await decodeJwtToken(req.headers.authorization.split(' ')[1])
+      // return user;
+    }
+    return null;
+  }
+  const user = await getUserFromHeader();
+
+  return {
+    user,
+  };
+}
+type Context = inferAsyncReturnType<typeof createContext>;
+
+export function createRouter() {
   return trpc.router<Context>();
 }
+
 // Important: only use this export with SSR/SSG
 export const appRouter = createRouter()
   // Create procedure at path 'hello'
@@ -30,14 +48,7 @@ export const appRouter = createRouter()
       };
     },
   })
-  .mutation('foo', {
-    input: z.object({ bar: z.literal('bar') }),
-    async resolve({ input }) {
-      // do something with your db
-
-      return {};
-    },
-  });
+  .merge('posts.', postsRouter);
 
 // Exporting type _type_ AppRouter only exposes types that can be used for inference
 // https://www.typescriptlang.org/docs/handbook/release-notes/typescript-3-8.html#type-only-imports-and-export
