@@ -30,7 +30,7 @@ export default function Home() {
       <h1>Posts query (statically rendered)</h1>
 
       <h2>Posts</h2>
-      {postsQuery.data.map((post) => (
+      {postsQuery.data?.map((post) => (
         <pre key={post.id}>{JSON.stringify(post, null, 2)}</pre>
       ))}
 
