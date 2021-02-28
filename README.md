@@ -29,7 +29,9 @@ TRPC is a framework for building strongly typed RPC APIs with TypeScript. Altern
 - [Intro](#intro)
 - [Usage](#usage)
   - [Example apps](#example-apps)
-  - [Getting started with Next.js](#getting-started-with-nextjs)
+  - [Next.js](#nextjs)
+    - [New project](#new-project)
+    - [Existing project](#existing-project)
   - [Defining procedures (_endpoints / routes_)](#defining-procedures-endpoints--routes)
   - [Merging routers](#merging-routers)
   - [Router middlewares](#router-middlewares)
@@ -71,7 +73,20 @@ Here's all the example apps:
 | `yarn example:standalone` | _n/a_                                              | [`./examples/standalone-server`](./examples/standalone-server) | Standalone TRPC server + node client                                                                   |
 | `yarn example:playground` | _n/a_                                              | [`./examples/playground`](./examples/playground)               | Express server + node client                                                                           |
 
-## Getting started with Next.js
+## Next.js
+
+### New project
+
+Execute [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app) to bootstrap one of the examples:
+
+```bash
+# Simple starter app:
+npx create-next-app --example https://github.com/trpc/trpc --example-path examples/next-hello-world my-app
+# Example app with Prisma:
+npx create-next-app --example https://github.com/trpc/trpc --example-path examples/next-ssg-chat my-chat-app
+```
+
+### Existing project
 
 The code here is taken from [`./examples/next-hello-world`](./examples/next-hello-world).
 
