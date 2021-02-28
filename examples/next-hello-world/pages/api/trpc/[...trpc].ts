@@ -11,7 +11,20 @@ export async function createContext({
 }: trpcNext.CreateNextContextOptions) {
   // Create your context based on the request object
   // Will be available as `ctx` in all your resolvers
-  return {};
+
+  // This is just an example of something you'd might want to do in your ctx fn
+  async function getUserFromHeader() {
+    if (req.headers.authorization) {
+      // const user = await decodeJwtToken(req.headers.authorization.split(' ')[1])
+      // return user;
+    }
+    return null;
+  }
+  const user = await getUserFromHeader();
+
+  return {
+    user,
+  };
 }
 type Context = inferAsyncReturnType<typeof createContext>;
 
