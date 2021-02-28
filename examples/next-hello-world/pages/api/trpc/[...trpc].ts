@@ -2,6 +2,7 @@ import * as trpc from '@trpc/server';
 import * as z from 'zod';
 import * as trpcNext from '@trpc/server/dist/adapters/next';
 import { inferAsyncReturnType } from '@trpc/server';
+import { postsRouter } from './posts';
 
 // The app's context - is typically generated for each request
 export async function createContext({
@@ -14,7 +15,7 @@ export async function createContext({
 }
 type Context = inferAsyncReturnType<typeof createContext>;
 
-function createRouter() {
+export function createRouter() {
   return trpc.router<Context>();
 }
 
@@ -34,14 +35,7 @@ export const appRouter = createRouter()
       };
     },
   })
-  .mutation('foo', {
-    input: z.object({ bar: z.literal('bar') }),
-    async resolve({ input }) {
-      // do something with your db
-
-      return {};
-    },
-  });
+  .merge('posts.', postsRouter);
 
 // Exporting type _type_ AppRouter only exposes types that can be used for inference
 // https://www.typescriptlang.org/docs/handbook/release-notes/typescript-3-8.html#type-only-imports-and-export
