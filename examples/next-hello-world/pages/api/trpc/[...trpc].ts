@@ -1,19 +1,23 @@
 import * as trpc from '@trpc/server';
 import * as z from 'zod';
 import * as trpcNext from '@trpc/server/dist/adapters/next';
+import { inferAsyncReturnType } from '@trpc/server';
 
 // The app's context - is typically generated for each request
-export type Context = {};
-const createContext = ({
+export async function createContext({
   req,
   res,
-}: trpcNext.CreateNextContextOptions): Context => {
+}: trpcNext.CreateNextContextOptions) {
+  // Create your context based on the request object
+  // Will be available as `ctx` in all your resolvers
   return {};
-};
+}
+type Context = inferAsyncReturnType<typeof createContext>;
 
 function createRouter() {
   return trpc.router<Context>();
 }
+
 // Important: only use this export with SSR/SSG
 export const appRouter = createRouter()
   // Create procedure at path 'hello'
