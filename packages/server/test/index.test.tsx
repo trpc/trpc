@@ -129,6 +129,47 @@ describe('integration tests', () => {
     close();
   });
 
+  test('passing input to input w/o input', async () => {
+    const { client, close } = routerToServerAndClient(
+      trpc
+        .router()
+        .query('q', {
+          resolve() {
+            return {
+              text: `hello `,
+            };
+          },
+        })
+        .mutation('m', {
+          resolve() {
+            return {
+              text: `hello `,
+            };
+          },
+        }),
+    );
+
+    await client.query('q');
+    await client.query('q', undefined);
+    await client.query('q', null as any); // treat null as undefined
+    await expect(
+      client.query('q', 'not-nullish' as any),
+    ).rejects.toThrowErrorMatchingInlineSnapshot(
+      `"ProcedureWithoutInput-procedure should not receive input"`,
+    );
+
+    await client.mutation('m');
+    await client.mutation('m', undefined);
+    await client.mutation('m', null as any); // treat null as undefined
+    await expect(
+      client.mutation('m', 'not-nullish' as any),
+    ).rejects.toThrowErrorMatchingInlineSnapshot(
+      `"ProcedureWithoutInput-procedure should not receive input"`,
+    );
+
+    close();
+  });
+
   describe('type testing', () => {
     test('basic', async () => {
       type Input = { who: string };
