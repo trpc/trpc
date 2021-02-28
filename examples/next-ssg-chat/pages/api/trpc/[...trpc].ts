@@ -83,7 +83,7 @@ const router = createRouter()
           let prevCursor: null | typeof cursor = null;
           if (items.length > take) {
             const prev = items.shift();
-            prevCursor = prev.createdAt;
+            prevCursor = prev!.createdAt;
           }
           return {
             items,
