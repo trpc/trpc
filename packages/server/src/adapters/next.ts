@@ -43,7 +43,9 @@ export function createNextApiHandler<
 
     if (path === null) {
       const json = getErrorResponseEnvelope(
-        new Error('Query "trpc" not found - is the file named [...trpc].ts?'),
+        new Error(
+          'Query "trpc" not found - is the file named `[trpc]`.ts or `[...trpc].ts`?',
+        ),
       );
       res.status(json.statusCode).json(json);
       return;

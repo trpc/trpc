@@ -66,7 +66,7 @@ test('bad setup', async () => {
     .calls[0] as any)[0];
   expect(responseJson.ok).toMatchInlineSnapshot(`false`);
   expect(responseJson.error.message).toMatchInlineSnapshot(
-    `"Query \\"trpc\\" not found - is the file named [...trpc].ts?"`,
+    `"Query \\"trpc\\" not found - is the file named \`[trpc]\`.ts or \`[...trpc].ts\`?"`,
   );
   expect(responseJson.statusCode).toMatchInlineSnapshot(`500`);
 });

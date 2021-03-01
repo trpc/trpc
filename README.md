@@ -102,7 +102,7 @@ yarn add @trpc/client @trpc/server @trpc/react zod react-query
 </details>
 <details><summary>1. Create an API handler</summary>
 
-Create a file at `./pages/api/trpc/[...trpc].ts`
+Create a file at `./pages/api/trpc/[trpc].ts`
 
 Paste the following code:
 
@@ -163,7 +163,7 @@ import { createReactQueryHooks, createTRPCClient } from '@trpc/react';
 import { QueryClient } from 'react-query';
 // Type-only import:
 // https://www.typescriptlang.org/docs/handbook/release-notes/typescript-3-8.html#type-only-imports-and-export
-import type { AppRouter } from '../pages/api/trpc/[...trpc]';
+import type { AppRouter } from '../pages/api/trpc/[trpc]';
 
 export const client = createTRPCClient<AppRouter>({
   url: '/api/trpc',
@@ -404,7 +404,7 @@ In the example above any call to `admin.*` will ensure that the user is an "admi
 
 You are able to serialize the response data & input args (in order to be able to transparently use e.g. standard `Date`s). The transformers need to be added both to the server and the client.
 
-- `createNextApiHandler()` in [`./examples/next-ssg-chat/[...trpc.ts]`](./examples/next-ssg-chat/pages/api/trpc/%5B...trpc%5D.ts), and
+- `createNextApiHandler()` in [`./examples/next-ssg-chat/[trpc.ts]`](./examples/next-ssg-chat/pages/api/trpc/%5Btrpc%5D.ts), and
 - `createTRPCClient` in [`./examples/next-ssg-chat/pages/_app.tsx`](./examples/next-ssg-chat/pages/_app.tsx)
 
 ## Server-side rendering (SSR / SSG)
@@ -421,7 +421,7 @@ You are able to serialize the response data & input args (in order to be able to
 ```tsx
 import { trpc } from '../utils/trpc'
  // Important - only ever import & use your `appRouter` in the SSR-methods
-import { appRouter } from './api/trpc/[...trpc]';
+import { appRouter } from './api/trpc/[trpc]';
 
 export async function getStaticProps() {
   // Create SSR helpers with your app's router and context object
@@ -450,7 +450,7 @@ You can also invoke a procedure directly and get the data in a promise.
 
 ```tsx
 // Important - only ever import & use your `appRouter` in the SSR-methods
-import { appRouter } from './api/trpc/[...trpc]'; 
+import { appRouter } from './api/trpc/[trpc]'; 
 import { trpc } from '../utils/trpc'
 
 export async function getStaticProps() {
