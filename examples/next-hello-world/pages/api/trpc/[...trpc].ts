@@ -4,7 +4,7 @@ import * as trpcNext from '@trpc/server/dist/adapters/next';
 import { inferAsyncReturnType } from '@trpc/server';
 import { postsRouter } from './posts';
 
-// The app's context - is typically generated for each request
+// The app's context - is generated for each incoming request
 export async function createContext({
   req,
   res,
