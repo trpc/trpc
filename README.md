@@ -36,6 +36,7 @@ tRPC is a framework for building strongly typed RPC APIs with TypeScript. Altern
   - [Merging routers](#merging-routers)
   - [Router middlewares](#router-middlewares)
   - [Data transformers](#data-transformers)
+  - [Authorization](#authorization)
   - [Server-side rendering (SSR / SSG)](#server-side-rendering-ssr--ssg)
     - [Using `ssr.prefetchOnServer()` (recommended)](#using-ssrprefetchonserver-recommended)
     - [Invoking directly](#invoking-directly)
@@ -111,7 +112,7 @@ import * as trpc from '@trpc/server';
 import * as trpcNext from '@trpc/server/dist/adapters/next';
 import * as z from 'zod';
 
-// The app's context - is typically generated for each request
+// The app's context - is generated for each incoming request
 export type Context = {};
 const createContext = ({
   req,
@@ -406,6 +407,108 @@ You are able to serialize the response data & input args (in order to be able to
 
 - `createNextApiHandler()` in [`./examples/next-ssg-chat/[...trpc.ts]`](./examples/next-ssg-chat/pages/api/trpc/%5B...trpc%5D.ts), and
 - `createTRPCClient` in [`./examples/next-ssg-chat/pages/_app.tsx`](./examples/next-ssg-chat/pages/_app.tsx)
+
+## Authorization
+
+The `createContext`-function is called for each incoming request so here you can add contextual information about the calling user from the request object.
+
+<details><summary>Create context from request headers</summary>
+
+```ts
+import * as trpc from '@trpc/server';
+import { inferAsyncReturnType } from '@trpc/server';
+import { decodeAndVerifyJwtToken } from './somewhere/in/your/app/utils';
+
+export async function createContext({
+  req,
+  res,
+}: trpcNext.CreateNextContextOptions) {
+  // Create your context based on the request object
+  // Will be available as `ctx` in all your resolvers
+
+  // This is just an example of something you'd might want to do in your ctx fn
+  async function getUserFromHeader() {
+    if (req.headers.authorization) {
+      const user = await decodeAndVerifyJwtToken(req.headers.authorization.split(' ')[1])
+      return user;
+    }
+    return null;
+  }
+  const user = await getUserFromHeader();
+
+  return {
+    user,
+  };
+}
+type Context = inferAsyncReturnType<typeof createContext>;
+
+// [..] Define API handler and app router
+```
+</details>
+<details><summary>Authorize using resolver</summary>
+
+```ts
+import * as trpc from '@trpc/server';
+import { createRouter } from './[...trpc]';
+
+export const appRouter = createRouter()
+  // open for anyone
+  .query('hello', {
+    input: z.string().optional(),
+    resolve: ({ input, ctx }) => {
+      return `hello ${input ?? ctx.user?.name ?? 'world'}`;
+    },
+  })
+  // checked in resolver
+  .query('secret', {
+    resolve: ({ ctx }) => {
+      if (!ctx.user) {
+        throw trpc.httpError.unauthorized();
+      }
+      if (ctx.user?.name !== 'KATT') {
+        throw trpc.httpError.forbidden();
+      }
+      return {
+        secret: 'sauce',
+      };
+    },
+  }),
+  );
+```
+</details>
+<details><summary>Authorize using middleware</summary>
+
+```ts
+import * as trpc from '@trpc/server';
+import { createRouter } from './[...trpc]';
+
+export const appRouter = createRouter()
+  // this is accessible for everyone
+  .query('hello', {
+    input: z.string().optional(),
+    resolve: ({ input, ctx }) => {
+      return `hello ${input ?? ctx.user?.name ?? 'world'}`;
+    },
+  })
+  .merge(
+    'admin.',
+    createRouter()
+      // this protectes all procedures defined after in this router
+      .middleware(async ({ ctx }) => {
+        if (!ctx.user?.isAdmin) {
+          throw httpError.unauthorized();
+        }
+      })
+      .query('secret', {
+        resolve: ({ ctx }) => {
+          return {
+            secret: 'sauce',
+          }
+        },
+    }),
+  )
+```
+</details>
 
 ## Server-side rendering (SSR / SSG)
 

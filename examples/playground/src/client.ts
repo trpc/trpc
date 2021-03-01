@@ -27,16 +27,16 @@ async function main() {
   await client.query('hello');
   await client.query('hello', 'client');
   await sleep();
-  const postCreate = await client.mutation('posts/create', {
+  const postCreate = await client.mutation('posts.create', {
     title: 'hello client',
   });
   console.log('created post', postCreate.title);
   await sleep();
-  const postList = await client.query('posts/list');
+  const postList = await client.query('posts.list');
   console.log('has posts', postList, 'first:', postList[0].title);
   await sleep();
   try {
-    await client.query('admin/secret');
+    await client.query('admin.secret');
   } catch (err) {
     // will fail
   }
@@ -48,14 +48,14 @@ async function main() {
     }),
   });
 
-  await authedClient.query('admin/secret');
+  await authedClient.query('admin.secret');
 
-  const msgs = await client.query('messages/list');
+  const msgs = await client.query('messages.list');
   console.log('msgs', msgs);
 
   let i = 0;
 
-  const unsubscribe = client.subscription('posts/newMessage', {
+  const unsubscribe = client.subscription('posts.newMessage', {
     initialInput: {
       timestamp: msgs.reduce((max, msg) => Math.max(max, msg.createdAt), 0),
     },
@@ -73,18 +73,18 @@ async function main() {
   });
 
   await Promise.all([
-    client.mutation('messages/add', `test message${i++}`),
-    client.mutation('messages/add', `test message${i++}`),
-    client.mutation('messages/add', `test message${i++}`),
-    client.mutation('messages/add', `test message${i++}`),
+    client.mutation('messages.add', `test message${i++}`),
+    client.mutation('messages.add', `test message${i++}`),
+    client.mutation('messages.add', `test message${i++}`),
+    client.mutation('messages.add', `test message${i++}`),
   ]);
   await sleep();
 
-  await client.mutation('messages/add', `test message${i++}`);
+  await client.mutation('messages.add', `test message${i++}`);
 
   await Promise.all([
-    client.mutation('messages/add', `test message${i++}`),
-    client.mutation('messages/add', `test message${i++}`),
+    client.mutation('messages.add', `test message${i++}`),
+    client.mutation('messages.add', `test message${i++}`),
   ]);
 
   unsubscribe();
