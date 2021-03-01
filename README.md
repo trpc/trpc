@@ -444,7 +444,7 @@ type Context = inferAsyncReturnType<typeof createContext>;
 // [..] Define API handler and app router
 ```
 </details>
-<details><summary>Authorize access to procedure in resolver</summary>
+<details><summary>Auth using resolver</summary>
 
 ```ts
 import * as trpc from '@trpc/server';
@@ -459,14 +459,14 @@ export const appRouter = createRouter()
     },
   })
   .merge(
-    'admin/',
+    'admin.',
     createRouter()
       .query('secret', {
         resolve: ({ ctx }) => {
           if (!ctx.user) {
             throw trpc.httpError.unauthorized();
           }
-          if (ctx.user?.name !== 'alex') {
+          if (ctx.user?.name !== 'KATT') {
             throw trpc.httpError.forbidden();
           }
           return {
