@@ -34,7 +34,7 @@ export type OutputWithCursor<TData, TCursor extends any = any> = {
 
 const CACHE_KEY_INFINITE_QUERY = 'TRPC_INFINITE_QUERY';
 const CACHE_KEY_LIVE_QUERY = 'TRPC_LIVE_QUERY';
-const CACHE_KEY_STANDARD_QUERY = 'TRPC_QUERY';
+const CACHE_KEY_QUERY = 'TRPC_QUERY';
 
 export function createReactQueryHooks<
   TRouter extends AnyRouter<TContext>,
@@ -64,7 +64,7 @@ export function createReactQueryHooks<
   ): UseQueryResult<TOutput, TRPCClientError> {
     const path = pathAndArgs[0];
     const input = pathAndArgs[1];
-    const cacheKey = [path, input ?? null, CACHE_KEY_STANDARD_QUERY];
+    const cacheKey = [path, input ?? null, CACHE_KEY_QUERY];
 
     return useQuery(cacheKey, () => client.query(...pathAndArgs) as any, opts);
   }
@@ -198,7 +198,7 @@ export function createReactQueryHooks<
       ...pathAndArgs: [path: TPath, ...args: inferHandlerInput<TProcedure>]
     ) => {
       const [path, input] = pathAndArgs;
-      const cacheKey = [path, input ?? null, CACHE_KEY_STANDARD_QUERY];
+      const cacheKey = [path, input ?? null, CACHE_KEY_QUERY];
 
       return queryClient.prefetchQuery(cacheKey, async () => {
         const data = await caller.query(...pathAndArgs);
