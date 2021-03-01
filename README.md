@@ -476,7 +476,7 @@ export const appRouter = createRouter()
   );
 ```
 </details>
-<details><summary>Authorize access to procedure in a middleware</summary>
+<details><summary>Authorize using middleware</summary>
 
 ```ts
 import * as trpc from '@trpc/server';
