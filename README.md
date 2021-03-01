@@ -450,7 +450,7 @@ type Context = inferAsyncReturnType<typeof createContext>;
 
 ```ts
 import * as trpc from '@trpc/server';
-import { createRouter } from './[...trpc]';
+import { createRouter } from './[trpc]';
 
 export const appRouter = createRouter()
   // open for anyone
@@ -480,7 +480,7 @@ export const appRouter = createRouter()
 
 ```ts
 import * as trpc from '@trpc/server';
-import { createRouter } from './[...trpc]';
+import { createRouter } from './[trpc]';
 
 export const appRouter = createRouter()
   // this is accessible for everyone

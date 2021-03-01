@@ -1,6 +1,6 @@
 import Head from 'next/head';
 import { trpc } from '../utils/trpc';
-import { appRouter } from './api/trpc/[...trpc]';
+import { appRouter } from './api/trpc/[trpc]';
 
 export default function Home() {
   // try typing here to see that you get autocompletion & type safety on the procedure's name
