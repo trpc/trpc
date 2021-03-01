@@ -417,6 +417,7 @@ The `createContext`-function is called for each incoming request so here you can
 ```ts
 import * as trpc from '@trpc/server';
 import { inferAsyncReturnType } from '@trpc/server';
+import { decodeAndVerifyJwtToken } from './somewhere/in/your/app/utils';
 
 export async function createContext({
   req,
@@ -428,7 +429,7 @@ export async function createContext({
   // This is just an example of something you'd might want to do in your ctx fn
   async function getUserFromHeader() {
     if (req.headers.authorization) {
-      const user = await decodeJwtToken(req.headers.authorization.split(' ')[1])
+      const user = await decodeAndVerifyJwtToken(req.headers.authorization.split(' ')[1])
       return user;
     }
     return null;
