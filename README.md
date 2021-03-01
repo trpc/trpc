@@ -445,7 +445,7 @@ type Context = inferAsyncReturnType<typeof createContext>;
 // [..] Define API handler and app router
 ```
 </details>
-<details><summary>Auth using resolver</summary>
+<details><summary>Authorize using resolver</summary>
 
 ```ts
 import * as trpc from '@trpc/server';
@@ -459,22 +459,20 @@ export const appRouter = createRouter()
       return `hello ${input ?? ctx.user?.name ?? 'world'}`;
     },
   })
-  .merge(
-    'admin.',
-    createRouter()
-      .query('secret', {
-        resolve: ({ ctx }) => {
-          if (!ctx.user) {
-            throw trpc.httpError.unauthorized();
-          }
-          if (ctx.user?.name !== 'KATT') {
-            throw trpc.httpError.forbidden();
-          }
-          return {
-            secret: 'sauce',
-          };
-        },
-      }),
+  // checked in resolver
+  .query('secret', {
+    resolve: ({ ctx }) => {
+      if (!ctx.user) {
+        throw trpc.httpError.unauthorized();
+      }
+      if (ctx.user?.name !== 'KATT') {
+        throw trpc.httpError.forbidden();
+      }
+      return {
+        secret: 'sauce',
+      };
+    },
+  }),
   );
 ```
 </details>
@@ -503,7 +501,9 @@ export const appRouter = createRouter()
       })
       .query('secret', {
         resolve: ({ ctx }) => {
-          // do something
+          return {
+            secret: 'sauce',
+          }
         },
     }),
   )
