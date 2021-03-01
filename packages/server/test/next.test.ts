@@ -66,12 +66,12 @@ test('bad setup', async () => {
     .calls[0] as any)[0];
   expect(responseJson.ok).toMatchInlineSnapshot(`false`);
   expect(responseJson.error.message).toMatchInlineSnapshot(
-    `"Query \\"trpc\\" not found - is the file named [...trpc].ts?"`,
+    `"Query \\"trpc\\" not found - is the file named \`[trpc]\`.ts or \`[...trpc].ts\`?"`,
   );
   expect(responseJson.statusCode).toMatchInlineSnapshot(`500`);
 });
 
-test('ok request', async () => {
+describe('ok request', () => {
   const router = trpc.router().query('hello', {
     resolve: () => 'world',
   });
@@ -80,27 +80,51 @@ test('ok request', async () => {
     router,
     createContext() {},
   });
+  test('[...trpc].ts', async () => {
+    const { req } = mockReq({
+      query: {
+        trpc: ['hello'],
+      },
+    });
+    const { res, end } = mockRes();
 
-  const { req } = mockReq({
-    query: {
-      trpc: ['hello'],
-    },
+    await handler(req, res);
+    expect(res.statusCode).toBe(200);
+
+    const json: HTTPSuccessResponseEnvelope<string> = JSON.parse(
+      (end.mock.calls[0] as any)[0],
+    );
+    expect(json).toMatchInlineSnapshot(`
+      Object {
+        "data": "world",
+        "ok": true,
+        "statusCode": 200,
+      }
+    `);
   });
-  const { res, end } = mockRes();
 
-  await handler(req, res);
-  expect(res.statusCode).toBe(200);
+  test('[trpc].ts', async () => {
+    const { req } = mockReq({
+      query: {
+        trpc: 'hello',
+      },
+    });
+    const { res, end } = mockRes();
 
-  const json: HTTPSuccessResponseEnvelope<string> = JSON.parse(
-    (end.mock.calls[0] as any)[0],
-  );
-  expect(json).toMatchInlineSnapshot(`
-    Object {
-      "data": "world",
-      "ok": true,
-      "statusCode": 200,
-    }
-  `);
+    await handler(req, res);
+    expect(res.statusCode).toBe(200);
+
+    const json: HTTPSuccessResponseEnvelope<string> = JSON.parse(
+      (end.mock.calls[0] as any)[0],
+    );
+    expect(json).toMatchInlineSnapshot(`
+      Object {
+        "data": "world",
+        "ok": true,
+        "statusCode": 200,
+      }
+    `);
+  });
 });
 
 test('404', async () => {

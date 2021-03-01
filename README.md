@@ -28,10 +28,10 @@ tRPC is a framework for building strongly typed RPC APIs with TypeScript. Altern
 
 - [Intro](#intro)
 - [Usage](#usage)
-  - [Example apps](#example-apps)
   - [Next.js](#nextjs)
     - [New project](#new-project)
     - [Existing project](#existing-project)
+  - [Example apps](#example-apps)
   - [Defining procedures (_endpoints / routes_)](#defining-procedures-endpoints--routes)
   - [Merging routers](#merging-routers)
   - [Router middlewares](#router-middlewares)
@@ -53,26 +53,6 @@ tRPC is a framework for building strongly typed RPC APIs with TypeScript. Altern
 
 # Usage
 
-## Example apps
-
-You can play clone this project and play with local examples
-
-```bash
-git clone git@github.com:trpc/trpc.git
-cd trpc
-yarn
-
-yarn example:hello
-```
-
-Here's all the example apps:
-
-| Command                   | Live URL                                           | Example path                                                   | Description                                                                                            |
-| ------------------------- | -------------------------------------------------- | -------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------ |
-| `yarn example:chat`       | [chat.trpc.io](https://chat.trpc.io)               | [`./examples/next-ssg-chat`](./examples/next-ssg-chat)         | Next.js real-time chat example with SSG & Prisma. [Playwright](https://playwright.dev) for E2E-testing |
-| `yarn example:hello`      | [hello-world.trpc.io](https://hello-world.trpc.io) | [`./examples/next-hello-world`](./examples/next-hello-world)   | Minimal Next.js example. [Playwright](https://playwright.dev) for E2E-testing                          |
-| `yarn example:standalone` | _n/a_                                              | [`./examples/standalone-server`](./examples/standalone-server) | Standalone tRPC server + node client                                                                   |
-| `yarn example:playground` | _n/a_                                              | [`./examples/playground`](./examples/playground)               | Express server + node client                                                                           |
 
 ## Next.js
 
@@ -103,7 +83,7 @@ yarn add @trpc/client @trpc/server @trpc/react zod react-query
 </details>
 <details><summary>1. Create an API handler</summary>
 
-Create a file at `./pages/api/trpc/[...trpc].ts`
+Create a file at `./pages/api/trpc/[trpc].ts`
 
 Paste the following code:
 
@@ -164,7 +144,7 @@ import { createReactQueryHooks, createTRPCClient } from '@trpc/react';
 import { QueryClient } from 'react-query';
 // Type-only import:
 // https://www.typescriptlang.org/docs/handbook/release-notes/typescript-3-8.html#type-only-imports-and-export
-import type { AppRouter } from '../pages/api/trpc/[...trpc]';
+import type { AppRouter } from '../pages/api/trpc/[trpc]';
 
 export const client = createTRPCClient<AppRouter>({
   url: '/api/trpc',
@@ -238,6 +218,27 @@ export default function Home() {
 ```
 </details>
 
+
+## Example apps
+
+You can play clone this project and play with local examples
+
+```bash
+git clone git@github.com:trpc/trpc.git
+cd trpc
+yarn
+
+yarn example:hello
+```
+
+Here's all the example apps:
+
+| Command                   | Live URL                                           | Example path                                                   | Description                                                                                            |
+| ------------------------- | -------------------------------------------------- | -------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------ |
+| `yarn example:chat`       | [chat.trpc.io](https://chat.trpc.io)               | [`./examples/next-ssg-chat`](./examples/next-ssg-chat)         | Next.js real-time chat example with SSG & Prisma. [Playwright](https://playwright.dev) for E2E-testing |
+| `yarn example:hello`      | [hello-world.trpc.io](https://hello-world.trpc.io) | [`./examples/next-hello-world`](./examples/next-hello-world)   | Minimal Next.js example. [Playwright](https://playwright.dev) for E2E-testing                          |
+| `yarn example:standalone` | _n/a_                                              | [`./examples/standalone-server`](./examples/standalone-server) | Standalone tRPC server + node client                                                                   |
+| `yarn example:playground` | _n/a_                                              | [`./examples/playground`](./examples/playground)               | Express server + node client                                                                           |
 
 ## Defining procedures (_endpoints / routes_)
 
@@ -405,7 +406,7 @@ In the example above any call to `admin.*` will ensure that the user is an "admi
 
 You are able to serialize the response data & input args (in order to be able to transparently use e.g. standard `Date`s). The transformers need to be added both to the server and the client.
 
-- `createNextApiHandler()` in [`./examples/next-ssg-chat/[...trpc.ts]`](./examples/next-ssg-chat/pages/api/trpc/%5B...trpc%5D.ts), and
+- `createNextApiHandler()` in [`./examples/next-ssg-chat/[trpc.ts]`](./examples/next-ssg-chat/pages/api/trpc/%5Btrpc%5D.ts), and
 - `createTRPCClient` in [`./examples/next-ssg-chat/pages/_app.tsx`](./examples/next-ssg-chat/pages/_app.tsx)
 
 ## Authorization
@@ -523,7 +524,7 @@ export const appRouter = createRouter()
 ```tsx
 import { trpc } from '../utils/trpc'
  // Important - only ever import & use your `appRouter` in the SSR-methods
-import { appRouter } from './api/trpc/[...trpc]';
+import { appRouter } from './api/trpc/[trpc]';
 
 export async function getStaticProps() {
   // Create SSR helpers with your app's router and context object
@@ -552,7 +553,7 @@ You can also invoke a procedure directly and get the data in a promise.
 
 ```tsx
 // Important - only ever import & use your `appRouter` in the SSR-methods
-import { appRouter } from './api/trpc/[...trpc]'; 
+import { appRouter } from './api/trpc/[trpc]'; 
 import { trpc } from '../utils/trpc'
 
 export async function getStaticProps() {
