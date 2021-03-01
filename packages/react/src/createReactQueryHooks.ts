@@ -32,8 +32,10 @@ export type OutputWithCursor<TData, TCursor extends any = any> = {
   data: TData;
 };
 
-const CACHE_PREFIX_INFINITE_QUERIES = 'INFINITE_QUERY';
-const CACHE_PREFIX_LIVE_QUERY = 'LIVE_QUERY';
+const CACHE_KEY_INFINITE_QUERY = 'TRPC_INFINITE_QUERY';
+const CACHE_KEY_LIVE_QUERY = 'TRPC_LIVE_QUERY';
+const CACHE_KEY_STANDARD_QUERY = 'TRPC_QUERY';
+
 export function createReactQueryHooks<
   TRouter extends AnyRouter<TContext>,
   TContext
@@ -62,7 +64,7 @@ export function createReactQueryHooks<
   ): UseQueryResult<TOutput, TRPCClientError> {
     const path = pathAndArgs[0];
     const input = pathAndArgs[1];
-    const cacheKey = [path, input ?? null];
+    const cacheKey = [path, input ?? null, CACHE_KEY_STANDARD_QUERY];
 
     return useQuery(cacheKey, () => client.query(...pathAndArgs) as any, opts);
   }
@@ -149,7 +151,7 @@ export function createReactQueryHooks<
     const [path, userInput] = pathAndArgs;
 
     const currentCursor = useRef<any>(null);
-    const cacheKey = [path, CACHE_PREFIX_LIVE_QUERY, userInput];
+    const cacheKey = [path, userInput ?? null, CACHE_KEY_LIVE_QUERY];
 
     const hook = useQuery<TInput, TRPCClientError, TOutput>(
       cacheKey,
@@ -196,7 +198,7 @@ export function createReactQueryHooks<
       ...pathAndArgs: [path: TPath, ...args: inferHandlerInput<TProcedure>]
     ) => {
       const [path, input] = pathAndArgs;
-      const cacheKey = [path, input ?? null];
+      const cacheKey = [path, input ?? null, CACHE_KEY_STANDARD_QUERY];
 
       return queryClient.prefetchQuery(cacheKey, async () => {
         const data = await caller.query(...pathAndArgs);
@@ -212,7 +214,7 @@ export function createReactQueryHooks<
       ...pathAndArgs: [path: TPath, ...args: inferHandlerInput<TProcedure>]
     ) => {
       const [path, input] = pathAndArgs;
-      const cacheKey = [path, CACHE_PREFIX_INFINITE_QUERIES, input ?? null];
+      const cacheKey = [path, input ?? null, CACHE_KEY_INFINITE_QUERY];
 
       return queryClient.prefetchInfiniteQuery(cacheKey, async () => {
         const data = await caller.query(...pathAndArgs);
@@ -277,7 +279,7 @@ export function createReactQueryHooks<
   ) {
     const [path, input] = pathAndArgs;
     return useInfiniteQuery(
-      [path, CACHE_PREFIX_INFINITE_QUERIES, input],
+      [path, CACHE_KEY_INFINITE_QUERY, input],
       ({ pageParam }) => {
         const actualInput = { ...input, cursor: pageParam };
         return (client.query as any)(path, actualInput);
