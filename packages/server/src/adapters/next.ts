@@ -30,11 +30,18 @@ export function createNextApiHandler<
   } & BaseOptions,
 ): NextApiHandler {
   return async (req, res) => {
-    const endpoint = Array.isArray(req.query.trpc)
-      ? req.query.trpc.join('/')
-      : null;
+    function getPath(): string | null {
+      if (typeof req.query.trpc === 'string') {
+        return req.query.trpc;
+      }
+      if (Array.isArray(req.query.trpc)) {
+        return req.query.trpc.join('/');
+      }
+      return null;
+    }
+    const path = getPath();
 
-    if (endpoint === null) {
+    if (path === null) {
       const json = getErrorResponseEnvelope(
         new Error('Query "trpc" not found - is the file named [...trpc].ts?'),
       );
@@ -46,7 +53,7 @@ export function createNextApiHandler<
       ...opts,
       req,
       res,
-      path: endpoint,
+      path,
     });
   };
 }
