@@ -32,9 +32,9 @@ export type OutputWithCursor<TData, TCursor extends any = any> = {
   data: TData;
 };
 
-const CACHE_KEY_INFINITE_QUERY = 'TRPC_INFINITE_QUERY';
-const CACHE_KEY_LIVE_QUERY = 'TRPC_LIVE_QUERY';
-const CACHE_KEY_QUERY = 'TRPC_QUERY';
+const CACHE_KEY_INFINITE_QUERY = 'TRPC_INFINITE_QUERY' as const;
+const CACHE_KEY_LIVE_QUERY = 'TRPC_LIVE_QUERY' as const;
+const CACHE_KEY_QUERY = 'TRPC_QUERY' as const;
 
 export function createReactQueryHooks<
   TRouter extends AnyRouter<TContext>,
