@@ -80,7 +80,7 @@ describe('ok request', () => {
     router,
     createContext() {},
   });
-  test('[...trpc]', async () => {
+  test('[...trpc].ts', async () => {
     const { req } = mockReq({
       query: {
         trpc: ['hello'],
@@ -103,7 +103,7 @@ describe('ok request', () => {
     `);
   });
 
-  test('[trpc]', async () => {
+  test('[trpc].ts', async () => {
     const { req } = mockReq({
       query: {
         trpc: 'hello',
