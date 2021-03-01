@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { assertNotBrowser } from './assertNotBrowser';
-import { InputValidationError } from './errors';
+import { InputValidationError, NoInputExpectedError } from './errors';
 import { MiddlewareFunction } from './router';
 assertNotBrowser();
 
@@ -171,7 +171,12 @@ export function createProcedure<TContext, TInput, TOutput>(
   return new ProcedureWithoutInput({
     resolver: opts.resolve,
     middlewares: [],
-    inputParser: () => undefined,
+    inputParser(input: unknown) {
+      if (input != null) {
+        throw new NoInputExpectedError('No input expected');
+      }
+      return undefined;
+    },
   });
 }
 

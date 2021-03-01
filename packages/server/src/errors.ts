@@ -16,3 +16,10 @@ export class RouteNotFoundError extends Error {
     Object.setPrototypeOf(this, RouteNotFoundError.prototype);
   }
 }
+export class NoInputExpectedError extends Error {
+  constructor(message: string) {
+    super(message);
+
+    Object.setPrototypeOf(this, NoInputExpectedError.prototype);
+  }
+}
