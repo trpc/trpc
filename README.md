@@ -493,7 +493,7 @@ export const appRouter = createRouter()
   .merge(
     'admin.',
     createRouter()
-      // this protectes all procedures defined after
+      // this protectes all procedures defined after in this router
       .middleware(async ({ ctx }) => {
         if (!ctx.user?.isAdmin) {
           throw httpError.unauthorized();
