@@ -441,10 +441,7 @@ export async function createContext({
 }
 type Context = inferAsyncReturnType<typeof createContext>;
 
-
-export function createRouter() {
-  return trpc.router<Context>();
-}
+// [..] Define API handler and app router
 ```
 </details>
 <details><summary>Authorize access to procedure in resolver</summary>
