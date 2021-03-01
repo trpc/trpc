@@ -472,8 +472,7 @@ export const appRouter = createRouter()
         secret: 'sauce',
       };
     },
-  }),
-  );
+  });
 ```
 </details>
 <details><summary>Authorize using middleware</summary>
@@ -506,7 +505,7 @@ export const appRouter = createRouter()
           }
         },
     }),
-  )
+  );
 ```
 </details>
 
