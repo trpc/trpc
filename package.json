@@ -24,7 +24,7 @@
     "dev": "yarn start",
     "test": "lerna run test --scope @trpc/* --stream --",
     "lint": "lerna run lint --stream --",
-    "postlint": "manpkg check",
+    "postlint": "manypkg check",
     "build": "lerna run build --scope @trpc/* --stream",
     "build-examples": "lerna run build --scope @examples/* --stream",
     "prepublish": "lerna run prepublish --stream",
