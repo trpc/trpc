@@ -468,8 +468,12 @@ test('prefetchInfiniteQuery()', async () => {
 test('invalidateQueries()', async () => {
   const { hooks, resolvers } = factory;
   function MyComponent() {
-    const allPostsQuery = hooks.useQuery(['allPosts']);
-    const postByIdQuery = hooks.useQuery(['postById', '1']);
+    const allPostsQuery = hooks.useQuery(['allPosts'], {
+      staleTime: Infinity,
+    });
+    const postByIdQuery = hooks.useQuery(['postById', '1'], {
+      staleTime: Infinity,
+    });
 
     return (
       <>
@@ -504,6 +508,9 @@ test('invalidateQueries()', async () => {
   await waitFor(() => {
     expect(utils.container).toHaveTextContent('postByIdQuery:success');
     expect(utils.container).toHaveTextContent('allPostsQuery:success');
+
+    expect(utils.container).toHaveTextContent('postByIdQuery:not-stale');
+    expect(utils.container).toHaveTextContent('allPostsQuery:not-stale');
   });
 
   expect(resolvers.allPosts).toHaveBeenCalledTimes(1);
