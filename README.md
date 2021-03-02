@@ -1,11 +1,20 @@
 <div align="center">
   <h1 align="center">tRPC</h1>
   <p>a toolkit for building end-to-end typesafe data layers</p>
-  <p><img src="https://storage.googleapis.com/trpc/trpcgif.gif" alt="Server/client example"></p>
   <p>
     <a href="https://codecov.io/gh/trpc/trpc">
       <img src="https://codecov.io/gh/trpc/trpc/branch/main/graph/badge.svg?token=KPPS918B0G" alt="codecov">
     </a>
+  </p>
+  <p>
+    <figure>
+      <img src="https://storage.googleapis.com/trpc/trpcgif.gif" alt="Server/client example">
+      <figcaption>
+        The client above is <strong>not</strong> importing any code from the server, only it's type declarations.
+        <br/>
+        <sub><sup><em><a href="https://www.typescriptlang.org/docs/handbook/release-notes/typescript-3-8.html#type-only-imports-and-export">Import type only imports declarations to be used for type annotations and declarations. It always gets fully erased, so there’s no remnant of it at runtime.</a></em></sup></sub>
+      </figcaption>
+    </figure>
   </p>
 </div>
 
