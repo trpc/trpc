@@ -288,6 +288,18 @@ export function createReactQueryHooks<
     );
   }
 
+  function invalidateQuery<
+    TPath extends keyof TQueries & string,
+    TInput extends inferProcedureInput<TQueries[TPath]>
+  >(pathAndArgs: [TPath, TInput?]): void;
+  function invalidateQuery<
+    TPath extends keyof TSubscriptions & string,
+    TInput extends inferProcedureInput<TSubscriptions[TPath]>
+  >(pathAndArgs: [TPath, TInput?]): void;
+  function invalidateQuery(pathAndArgs: [string, unknown?] | string) {
+    queryClient.invalidateQueries(pathAndArgs);
+  }
+
   return {
     client,
     dehydrate: _dehydrate,
@@ -300,5 +312,6 @@ export function createReactQueryHooks<
     useQuery: _useQuery,
     useSubscription,
     ssr,
+    invalidateQuery,
   };
 }

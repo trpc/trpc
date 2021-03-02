@@ -464,8 +464,9 @@ test('prefetchInfiniteQuery()', async () => {
   expect(data).toContain('first post');
   expect(data).not.toContain('second post');
 });
-describe.only('invalidateQueries()', async () => {
-  test('from queryClient', async () => {
+
+describe('invalidate queries', () => {
+  test('queryClient.invalidateQueries()', async () => {
     const { hooks, resolvers } = factory;
     function MyComponent() {
       const allPostsQuery = hooks.useQuery(['allPosts'], {
@@ -488,8 +489,74 @@ describe.only('invalidateQueries()', async () => {
           <button
             data-testid="refetch"
             onClick={() => {
-              hooks.queryClient.invalidateQueries('allPosts');
-              hooks.queryClient.invalidateQueries('postById');
+              hooks.queryClient.invalidateQueries(['allPosts']);
+              hooks.queryClient.invalidateQueries(['postById']);
+            }}
+          />
+        </>
+      );
+    }
+    function App() {
+      return (
+        <QueryClientProvider client={hooks.queryClient}>
+          <MyComponent />
+        </QueryClientProvider>
+      );
+    }
+
+    const utils = render(<App />);
+
+    await waitFor(() => {
+      expect(utils.container).toHaveTextContent('postByIdQuery:success');
+      expect(utils.container).toHaveTextContent('allPostsQuery:success');
+
+      expect(utils.container).toHaveTextContent('postByIdQuery:not-stale');
+      expect(utils.container).toHaveTextContent('allPostsQuery:not-stale');
+    });
+
+    expect(resolvers.allPosts).toHaveBeenCalledTimes(1);
+    expect(resolvers.postById).toHaveBeenCalledTimes(1);
+
+    utils.getByTestId('refetch').click();
+
+    await waitFor(() => {
+      expect(utils.container).toHaveTextContent('postByIdQuery:stale');
+      expect(utils.container).toHaveTextContent('allPostsQuery:stale');
+    });
+    await waitFor(() => {
+      expect(utils.container).toHaveTextContent('postByIdQuery:not-stale');
+      expect(utils.container).toHaveTextContent('allPostsQuery:not-stale');
+    });
+
+    expect(resolvers.allPosts).toHaveBeenCalledTimes(2);
+    expect(resolvers.postById).toHaveBeenCalledTimes(2);
+  });
+
+  test('invalidateQuery()', async () => {
+    const { hooks, resolvers } = factory;
+    function MyComponent() {
+      const allPostsQuery = hooks.useQuery(['allPosts'], {
+        staleTime: Infinity,
+      });
+      const postByIdQuery = hooks.useQuery(['postById', '1'], {
+        staleTime: Infinity,
+      });
+
+      return (
+        <>
+          <pre>
+            allPostsQuery:{allPostsQuery.status} allPostsQuery:
+            {allPostsQuery.isStale ? 'stale' : 'not-stale'}{' '}
+          </pre>
+          <pre>
+            postByIdQuery:{postByIdQuery.status} postByIdQuery:
+            {postByIdQuery.isStale ? 'stale' : 'not-stale'}
+          </pre>
+          <button
+            data-testid="refetch"
+            onClick={() => {
+              hooks.invalidateQuery(['allPosts']);
+              hooks.invalidateQuery(['postById', '1']);
             }}
           />
         </>
