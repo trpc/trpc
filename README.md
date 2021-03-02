@@ -569,9 +569,9 @@ import { trpc } from '../utils/trpc';
 function MyComponent() {
   const myQuery = trpc.useInfiniteQuery(
     [
-      'paginatedPosts',
+      'infinitePosts',
       {
-        limit: 1,
+        limit: 10,
       },
     ],
     {
