@@ -5,9 +5,11 @@
   <h1 align="center">tRPC</h1>
   <p>a toolkit for building end-to-end typesafe data layers</p>
   <p>
+    <figure>
     <img src="https://storage.googleapis.com/trpc/trpcgif.gif" alt="Server/client example">
-    <br/>
-    <em>The client above does <strong>not</strong> import any code from the server, it just imports it's type declaration. <a href="https://www.typescriptlang.org/docs/handbook/release-notes/typescript-3-8.html#type-only-imports-and-export">Import type only imports declarations to be used for type annotations and declarations. It always gets fully erased, so there’s no remnant of it at runtime.</a></em>
+    <figcaption>The client above does <strong>not</strong> import any code from the server. <a href="https://www.typescriptlang.org/docs/handbook/release-notes/typescript-3-8.html#type-only-imports-and-export">Import type only imports declarations to be used for type annotations and declarations. It always gets fully erased, so there’s no remnant of it at runtime.</a></figcaption>
+    </figure>
+    <em></em>
   </p>
   <p>
     <a href="https://codecov.io/gh/trpc/trpc">
