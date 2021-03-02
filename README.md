@@ -593,9 +593,9 @@ A type safe wrapper around calling `queryClient.invalidateQueries()`, all it doe
 import { trpc } from '../utils/trpc'
 
 const mutation = trpc.useMutation('editPost', {
-  onSuccess: () => {
+  onSuccess(input) {
     queryClient.invalidateQuery(['allPosts']);
-    queryClient.invalidateQuery(['postById', postId]);
+    queryClient.invalidateQuery(['postById', input.id]);
   },
 })
 ```
