@@ -62,8 +62,7 @@ export function createReactQueryHooks<
       TOutput
     >,
   ): UseQueryResult<TOutput, TRPCClientError> {
-    const path = pathAndArgs[0];
-    const input = pathAndArgs[1];
+    const [path, input] = pathAndArgs;
     const cacheKey = [path, input ?? null, CACHE_KEY_QUERY];
 
     return useQuery(cacheKey, () => client.query(...pathAndArgs) as any, opts);
@@ -232,22 +231,19 @@ export function createReactQueryHooks<
 
   function prefetchQuery<
     TPath extends keyof TQueries & string,
-    TInput extends inferProcedureInput<TQueries[TPath]>,
-    TOutput extends inferProcedureOutput<TQueries[TPath]>
+    TProcedure extends TQueries[TPath],
+    TOutput extends inferProcedureOutput<TProcedure>,
+    TInput extends inferProcedureInput<TProcedure>
   >(
-    pathAndArgs: [TPath, TInput],
+    pathAndArgs: [path: TPath, ...args: inferHandlerInput<TProcedure>],
     opts?: FetchQueryOptions<TInput, TRPCClientError, TOutput>,
   ) {
     const [path, input] = pathAndArgs;
+    const cacheKey = [path, input ?? null, CACHE_KEY_QUERY];
 
     return queryClient.prefetchQuery(
-      pathAndArgs,
-      () =>
-        client.request({
-          type: 'query',
-          path,
-          input,
-        }) as any,
+      cacheKey,
+      () => client.query(...pathAndArgs) as any,
       opts as any,
     );
   }
