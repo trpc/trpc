@@ -515,13 +515,13 @@ export const appRouter = createRouter()
 
 ## React-specific helpers (`@trpc/react`)
 
-_Docs relevant to `@trpc/react`. Follow [Next.js-guide](#nextjs) before doing the below._
+> _Docs relevant to `@trpc/react`. Follow [Next.js-guide](#nextjs) before doing the below._
 
 ### `useInfiniteQuery()`
 
-- Your procedure needs to accept a `cursor` input of `any` type
-- For more details read the [react-query docs](https://react-query.tanstack.com/reference/useInfiniteQuery)
-- Example here is using Prisma - see their docs on [cursor-based pagination](https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination)
+> - Your procedure needs to accept a `cursor` input of `any` type
+> - For more details read the [react-query docs](https://react-query.tanstack.com/reference/useInfiniteQuery)
+> - Example here is using Prisma - see their docs on [cursor-based pagination](https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination)
 
 <details><summary>Example procedure (dummy code)</summary>
 
