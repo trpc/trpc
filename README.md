@@ -585,7 +585,7 @@ function MyComponent() {
 
 ### `invalidateQuery()`
 
-Helper for invalidating a specific query. Simply a type safe wrapper around calling `queryClient.invalidateQueries()` [See react-query docs](https://react-query.tanstack.com/guides/query-invalidation).
+A type safe wrapper around calling `queryClient.invalidateQueries()`, all it does is to call `queryClient.invalidateQueries()` with the passed args. [See react-query docs](https://react-query.tanstack.com/guides/query-invalidation) if you want more fine-grained control.
 
 <details>
 
