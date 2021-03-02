@@ -1,23 +1,6 @@
 {
   "name": "trpcroot",
   "private": true,
-  "devDependencies": {
-    "@changesets/changelog-github": "^0.2.8",
-    "@changesets/cli": "^2.13.1",
-    "@types/react": "^17.0.0",
-    "@types/react-dom": "^17.0.0",
-    "cypress": "^6.3.0",
-    "eslint-plugin-prettier": "^3.3.1",
-    "expect-type": "^0.11.0",
-    "lerna": "^3.22.1",
-    "playwright": "^1.8.0",
-    "prettier": "^2.2.1",
-    "react": "^17.0.1",
-    "react-dom": "^17.0.1",
-    "ts-jest": "^26.4.4",
-    "tsdx": "^0.14.1",
-    "typescript": "^4.1.3"
-  },
   "workspaces": {
     "packages": [
       "packages/*",
@@ -41,6 +24,8 @@
     "dev": "yarn start",
     "test": "lerna run test --scope @trpc/* --stream --",
     "lint": "lerna run lint --stream --",
+    "lint-fix": "lerna run lint --stream -- --fix && manypkg fix",
+    "postlint": "manypkg check",
     "build": "lerna run build --scope @trpc/* --stream",
     "build-examples": "lerna run build --scope @examples/* --stream",
     "prepublish": "lerna run prepublish --stream",
@@ -54,5 +39,23 @@
     "release": "changeset publish",
     "version:canary": "changeset version --snapshot canary",
     "release:canary": "changeset publish --tag canary"
+  },
+  "dependencies": {
+    "@changesets/changelog-github": "^0.2.8",
+    "@changesets/cli": "^2.13.1",
+    "@manypkg/cli": "^0.17.0",
+    "@types/react": "^17.0.0",
+    "@types/react-dom": "^17.0.0",
+    "cypress": "^6.3.0",
+    "eslint-plugin-prettier": "^3.3.1",
+    "expect-type": "^0.11.0",
+    "lerna": "^3.22.1",
+    "playwright": "^1.8.0",
+    "prettier": "^2.2.1",
+    "react": "^17.0.1",
+    "react-dom": "^17.0.1",
+    "ts-jest": "^26.5.0",
+    "tsdx": "^0.14.1",
+    "typescript": "^4.1.4"
   }
 }

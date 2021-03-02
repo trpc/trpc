@@ -24,7 +24,7 @@
     "dist"
   ],
   "dependencies": {
-    "tslib": "^2.0.0"
+    "tslib": "^2.1.0"
   },
   "devDependencies": {
     "@trpc/server": "^3.2.0"
