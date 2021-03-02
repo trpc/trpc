@@ -1,11 +1,20 @@
 <div align="center">
   <h1 align="center">tRPC</h1>
   <p>a toolkit for building end-to-end typesafe data layers</p>
-  <p><img src="https://storage.googleapis.com/trpc/trpcgif.gif" alt="Server/client example"></p>
   <p>
     <a href="https://codecov.io/gh/trpc/trpc">
       <img src="https://codecov.io/gh/trpc/trpc/branch/main/graph/badge.svg?token=KPPS918B0G" alt="codecov">
     </a>
+  </p>
+  <p>
+    <figure>
+      <img src="https://storage.googleapis.com/trpc/trpcgif.gif" alt="Server/client example">
+      <figcaption>
+        The client above is <strong>not</strong> importing any code from the server, only it's type declarations.
+        <br/>
+        <sub><sup><em><a href="https://www.typescriptlang.org/docs/handbook/release-notes/typescript-3-8.html#type-only-imports-and-export">Import type only imports declarations to be used for type annotations and declarations. It always gets fully erased, so there’s no remnant of it at runtime.</a></em></sup></sub>
+      </figcaption>
+    </figure>
   </p>
 </div>
 
@@ -13,11 +22,10 @@
 
 tRPC is a framework for building strongly typed RPC APIs with TypeScript. Alternatively, you can think of it as a way to avoid APIs altogether. 
 
-- 🧙‍♂️&nbsp; Automagic type-safety on your API-paths, their input data, & outputs. Inferred or declared, up to you.
-- 🐎&nbsp; No slow code generation, run-time bloat, or build pipeline. The magic is all in the TypeScript compiler. 
-- 🍃&nbsp; Light. tRPC has zero deps and a small client-side footprint.
+- 🧙‍♂️&nbsp; Automatic type-safety & autocompletion inferred from your API-paths, their input data, & outputs.
+- 🐎&nbsp; Snappy DX. No code generation, run-time bloat, or build pipeline.
+- 🍃&nbsp; Light. tRPC has zero deps and a tiny client-side footprint.
 - 🐻&nbsp; Easy to add to your existing brownfield project.
-- 😌&nbsp; No double-declaration of types on server or client.
 - 🔋&nbsp; Batteries included. React-library + Next.js/Express adapters. _(But tRPC is not tied to React - [reach out](https://twitter.com/alexdotjs) if you want to make a Svelte/Vue/... lib)_
 - 🥃&nbsp; Simple to use APIs for queries & mutations + experimental subscriptions support.
 - 👀&nbsp; Quite a few examples in the [./examples](./examples)-folder
