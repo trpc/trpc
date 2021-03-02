@@ -1,4 +1,7 @@
 <div align="center">
+  <a href="https://codecov.io/gh/trpc/trpc">
+    <img src="https://codecov.io/gh/trpc/trpc/branch/main/graph/badge.svg?token=KPPS918B0G" alt="codecov">
+  </a>
   <h1 align="center">tRPC</h1>
   <p>a toolkit for building end-to-end typesafe data layers</p>
   <p>
