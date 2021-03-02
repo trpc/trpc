@@ -578,6 +578,7 @@ function MyComponent() {
       getNextPageParam: (lastPage) => lastPage.nextCursor,
     },
   );
+  // [...]
 }
 
 ```
