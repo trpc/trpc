@@ -278,8 +278,9 @@ export function createReactQueryHooks<
     opts?: UseInfiniteQueryOptions<TOutput, TRPCClientError, TOutput, TOutput>,
   ) {
     const [path, input] = pathAndArgs;
+    const cacheKey = [path, input ?? null, CACHE_KEY_INFINITE_QUERY];
     return useInfiniteQuery(
-      [path, CACHE_KEY_INFINITE_QUERY, input],
+      cacheKey,
       ({ pageParam }) => {
         const actualInput = { ...input, cursor: pageParam };
         return (client.query as any)(path, actualInput);
