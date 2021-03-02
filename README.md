@@ -11,9 +11,8 @@
     <img src="https://storage.googleapis.com/trpc/trpcgif.gif" alt="Server/client example">
     <figcaption>The client above does <strong>not</strong> import any code from the server.
     <br/>
-    <a href="https://www.typescriptlang.org/docs/handbook/release-notes/typescript-3-8.html#type-only-imports-and-export">Import type only imports declarations to be used for type annotations and declarations. It always gets fully erased, so there’s no remnant of it at runtime.</a></em></figcaption>
+    <small><a href="https://www.typescriptlang.org/docs/handbook/release-notes/typescript-3-8.html#type-only-imports-and-export">Import type only imports declarations to be used for type annotations and declarations. It always gets fully erased, so there’s no remnant of it at runtime.</a></small></figcaption>
     </figure>
-    <em></em>
   </p>
 </div>
 
