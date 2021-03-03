@@ -5,6 +5,29 @@ sidebar_label: Getting Started with Next.js
 slug: /nextjs
 ---
 
+## File Structure when using tRPC + Next.js
+
+```
+├── pages
+│   ├── _app.tsx # <-- needs to initialize
+│   ├── api
+│   │   └── trpc
+│   │       ├── [trpc].ts # <-- tRPC response handler
+│   │       └── [...] # <-- sub-routers
+│   └── [...]
+├── prisma # <-- (optional) if prisma is added
+│   ├── migrations
+│   │   └── [...] 
+│   └── schema.prisma
+├── public
+│   └── [...]
+├── test  # <-- (optional) E2E-test helpers
+│   └── playwright.test.ts
+├── utils
+│   └── trpc.ts # <-- initialize tRPC client
+└── [...]
+```
+
 ## 🌟 New project
 
 
