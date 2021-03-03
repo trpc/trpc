@@ -38,14 +38,6 @@ tRPC is a framework for building strongly typed RPC APIs with TypeScript. Altern
 
 - [Intro](#intro)
 - [Usage](#usage)
-  - [Router middlewares](#router-middlewares)
-  - [Authorization](#authorization)
-  - [React-specific helpers (`@trpc/react`)](#react-specific-helpers-trpcreact)
-    - [`useInfiniteQuery()`](#useinfinitequery)
-    - [`invalidateQuery()`](#invalidatequery)
-    - [`ssr()`: Server-side rendering (SSR / SSG)](#ssr-server-side-rendering-ssr--ssg)
-      - [Using `ssr.prefetchOnServer()` (recommended)](#using-ssrprefetchonserver-recommended)
-      - [Invoking directly](#invoking-directly)
 - [Further reading](#further-reading)
   - [Who is this for?](#who-is-this-for)
   - [HTTP Methods <-> Type mapping](#http-methods---type-mapping)
@@ -59,106 +51,11 @@ tRPC is a framework for building strongly typed RPC APIs with TypeScript. Altern
 
 # Usage
 
-                                                                 |
-
-## Router middlewares
-
-
-
-
-
-## Authorization
-
-
-## React-specific helpers (`@trpc/react`)
-
-> _Docs relevant to `@trpc/react`. Follow [Next.js-guide](#nextjs) before doing the below._
-
-### `useInfiniteQuery()`
-
-> - Your procedure needs to accept a `cursor` input of `any` type
-> - For more details read the [react-query docs](https://react-query.tanstack.com/reference/useInfiniteQuery)
-> - Example here is using Prisma - see their docs on [cursor-based pagination](https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination)
-
-
-### `invalidateQuery()`
-
-A type safe wrapper around calling `queryClient.invalidateQueries()`, all it does is to call `queryClient.invalidateQueries()` with the passed args. [See react-query docs](https://react-query.tanstack.com/guides/query-invalidation) if you want more fine-grained control.
-
-<details>
-
-```tsx
-import { trpc } from '../utils/trpc'
-
-const mutation = trpc.useMutation('editPost', {
-  onSuccess(input) {
-    queryClient.invalidateQuery(['allPosts']);
-    queryClient.invalidateQuery(['postById', input.id]);
-  },
-})
+```bash
+npx create-next-app --example https://github.com/trpc/trpc --example-path examples/next-hello-world my-app
 ```
-</details>
 
-### `ssr()`: Server-side rendering (SSR / SSG)
-
-> - See the [chat example](./examples/next-ssg-chat) for a working example.
-> - Follow [Next.js-guide](#nextjs) before doing the below
-
-#### Using `ssr.prefetchOnServer()` (recommended)
-
-
-
-<details><summary>In `getStaticProps`</summary>
-
-```tsx
-import { trpc } from '../utils/trpc'
- // Important - only ever import & use your `appRouter` in the SSR-methods
-import { appRouter } from './api/trpc/[trpc]';
-
-export async function getStaticProps() {
-  // Create SSR helpers with your app's router and context object
-  const ssr = trpc.ssr(appRouter, {});
-
-  await ssr.prefetchInfiniteQuery('messages.list', { limit: 100 });
-  // or `await ssr.prefetchQuery('messages.list', { limit: 100 });`
-
-  return {
-    props: {
-      dehydratedState: trpc.dehydrate(),
-    },
-  };
-}
-```
-</details>
-
-This will cache the `messages.list` so it's instant when `useQuery(['message.list', { limit: 100 }])` gets called.
-
-
-#### Invoking directly
-
-You can also invoke a procedure directly and get the data in a promise.
-
-<details><summary>In `getStaticProps`</summary>
-
-```tsx
-// Important - only ever import & use your `appRouter` in the SSR-methods
-import { appRouter } from './api/trpc/[trpc]'; 
-import { trpc } from '../utils/trpc'
-
-export async function getStaticProps() {
-  // Create SSR helpers with your app's router and context object
-  const ssr = trpc.ssr(appRouter, {});
-
-  const allPosts = await ssr.caller.query('allPosts', { limit: 100 })
-
-  return {
-    props: {
-      allPosts,
-    },
-  };
-}
-```
-</details>
+**See further documentatioon on [trpc.io](https://trpc.io).**
 
 # Further reading
 
