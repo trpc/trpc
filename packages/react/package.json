@@ -4,6 +4,7 @@
   "description": "tRPC React lib",
   "author": "KATT",
   "license": "MIT",
+  "homepage": "https://trpc.io",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/trpc/trpc.git",
