@@ -10,7 +10,7 @@ author_image_url: https://avatars1.githubusercontent.com/u/459267?s=460&v=4
 
 
 <div align="center">
-  <img src="../../static/img/logo-text.png" alt="tRPC" height="150" />
+  <img src="/img/logo-text.png" alt="tRPC" height="150" />
   <p>a toolkit for building end-to-end typesafe data layers</p>
   <p>
     <a href="https://codecov.io/gh/trpc/trpc">
