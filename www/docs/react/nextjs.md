@@ -5,12 +5,37 @@ sidebar_label: Getting Started with Next.js
 slug: /nextjs
 ---
 
-## 🌟 New project
+## tRPC + Next.js File Structure
+
+Recommended but not enforced file structure. This is what you get when starting from the examples.
+
+```txt
+├── pages
+│   ├── _app.tsx # <-- add `react-query` provider here
+│   ├── api
+│   │   └── trpc
+│   │       ├── [trpc].ts # <-- tRPC response handler
+│   │       └── [...] # <-- potential sub-routers
+│   └── [...]
+├── prisma # <-- (optional) if prisma is added
+│   ├── migrations
+│   │   └── [...] 
+│   └── schema.prisma
+├── public
+│   └── [...]
+├── test  # <-- (optional) E2E-test helpers
+│   └── playwright.test.ts
+├── utils
+│   └── trpc.ts # <-- initialize tRPC client
+└── [...]
+```
+
+## 🌟 Start from scratch
 
 
 Execute [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app) to bootstrap one of the examples:
 
-### Simple Starter
+### Simple Starter (no db)
 
 ```bash
 npx create-next-app --example https://github.com/trpc/trpc --example-path examples/next-hello-world my-app
@@ -22,7 +47,7 @@ npx create-next-app --example https://github.com/trpc/trpc --example-path exampl
 npx create-next-app --example https://github.com/trpc/trpc --example-path examples/next-ssg-chat my-chat-app
 ```
 
-## 🐻 Existing project
+## 🐻 Add to existing project
 
 The code here is taken from [`./examples/next-hello-world`](https://github.com/trpc/trpc/tree/main/examples/next-hello-world).
 
