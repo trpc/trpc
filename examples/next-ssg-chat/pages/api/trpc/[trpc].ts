@@ -64,7 +64,7 @@ const router = createRouter()
           cursor: z.date().optional(),
           take: z.number().min(1).max(50).optional(),
         }),
-        resolve: async ({ input: { take = 10, cursor } }) => {
+        async resolve({ input: { take = 10, cursor } }) {
           // `cursor` is of type `Date | undefined`
           // `take` is of type `number | undefined`
           const page = await prisma.message.findMany({
