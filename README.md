@@ -1,5 +1,7 @@
 <div align="center">
-  <h1 align="center">tRPC</h1>
+  <h1 align="center">
+    <img src="./www/static/img/logo.png" alt="tRPC">
+  </h1>
   <p>a toolkit for building end-to-end typesafe data layers</p>
   <p>
     <a href="https://codecov.io/gh/trpc/trpc">
