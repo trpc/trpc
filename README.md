@@ -38,7 +38,6 @@ tRPC is a framework for building strongly typed RPC APIs with TypeScript. Altern
 
 - [Intro](#intro)
 - [Usage](#usage)
-  - [Merging routers](#merging-routers)
   - [Router middlewares](#router-middlewares)
   - [Data transformers](#data-transformers)
   - [Authorization](#authorization)
@@ -63,86 +62,7 @@ tRPC is a framework for building strongly typed RPC APIs with TypeScript. Altern
 
                                                                  |
 
-## Merging routers
-
-Writing all API-code in your code in the same file is a bad idea. It's easy to merge procedures with other procedures. Thanks to TypeScript 4.1 template literal types we can also prefix the procedures without breaking type safety.
-
-<details><summary>Example code</summary>
-
-```ts
-const posts = createRouter()
-  .mutation('create', {
-    input: z.object({
-      title: z.string(),
-    }),
-    resolve: ({ input }) => {
-      // ..
-      return {
-        id: 'xxxx',
-        ...input,
-      }
-    },
-  })
-  .query('list', {
-    resolve() {
-      // ..
-      return []
-    }
-  });
-
-const users = createRouter()
-  .query('list', {
-    resolve() {
-      // ..
-      return []
-    }
-  });
-
-
-const appRouter = createRouter()
-  .merge('users.', users) // prefix user procedures with "users."
-  .merge('posts.', posts) // prefix poosts procedures with "posts."
-  ;
-```
-
-</details>
-
 ## Router middlewares
-
-You can are able to add middlewares to a whole router with the `middleware()` method. The middleware(s) will be run before any of the procedures defined after are invoked & can be async or sync.
-
-Example, from [the tests](./packages/server/test/middleware.test.ts):
-<details><summary>Code</summary>
-
-```ts
-trpc
-  .router<Context>()
-  .query('foo', {
-    resolve() {
-      return 'bar';
-    },
-  })
-  .merge(
-    'admin.',
-    trpc
-      .router<Context>()
-      .middleware(async ({ ctx }) => {
-        if (!ctx.user?.isAdmin) {
-          throw httpError.unauthorized();
-        }
-      })
-      .query('secretPlace', {
-        resolve() {
-          resolverMock();
-
-          return 'a key';
-        },
-      }),
-  )
-```
-</details>
-
-In the example above any call to `admin.*` will ensure that the user is an "admin" before executing any query or mutation.
 
 
 

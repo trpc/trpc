@@ -6,10 +6,20 @@ module.exports = {
       collapsed: false,
       items: [
         'main/introduction',
-        'main/nextjs',
+        'usage/nextjs',
         'main/example-apps',
-        'main/procedures',
-        // 'main/contributing',
+        'main/contributing',
+      ],
+    },
+    {
+      type: 'category',
+      label: 'Usage',
+      collapsed: false,
+      items: [
+        'usage/nextjs',
+        'usage/procedures',
+        'usage/merging-routers',
+        'usage/middlewares',
       ],
     },
   ],
