@@ -10,7 +10,7 @@ slug: /ssr
 - Working examples:
   - [examples/next-ssg-chat](https://github.com/trpc/trpc/tree/main/examples/next-ssg-chat)
   - [examples/next-hello-world](https://github.com/trpc/trpc/tree/main/examples/next-hello-world)
-- Follow [Next.js-guide](./docs/nextjs) before doing the below
+- Follow [Next.js-guide](nextjs) before doing the below
 
 :::
 
