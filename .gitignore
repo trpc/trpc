@@ -5,8 +5,6 @@ dist
 
 node_modules
 package-lock.json
-yarn.lock
-!/yarn.lock
 
 .yalc
 yalc.lock
