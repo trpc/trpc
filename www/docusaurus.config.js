@@ -23,12 +23,6 @@ module.exports = {
           label: 'Docs',
           position: 'left',
         },
-        // { to: 'blog', label: 'Blog', position: 'left' },
-        {
-          href: 'https://twitter.com/alexdotjs',
-          label: '@alexdotjs on Twitter',
-          position: 'right',
-        },
         {
           href: 'https://github.com/trpc/trpc',
           label: 'GitHub',
