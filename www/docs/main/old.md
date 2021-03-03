@@ -1,13 +1,20 @@
 ---
-id: doc1
-title: Style Guide
-sidebar_label: Style Guide
-slug: /
+id: introduction
+title: tRPC
+sidebar_label: Introduction
+slug: /introduction/
 ---
 
-You can write content using [GitHub-flavored Markdown syntax](https://github.github.com/gfm/).
+<a href="https://codecov.io/gh/trpc/trpc">
+  <img src="https://codecov.io/gh/trpc/trpc/branch/main/graph/badge.svg?token=KPPS918B0G" alt="codecov" />
+</a>
+<a href="https://github.com/trpc/trpc">
+  <img src="https://img.shields.io/github/license/trpc/trpc.svg?label=license&style=flat" alt="GitHub License"/>
+</a>
 
-## Markdown Syntax
+> A toolkit for building end-to-end typesafe data layers
+
+## Introoduction
 
 To serve as an example page when styling markdown based Docusaurus sites.
 
@@ -90,7 +97,7 @@ Reference-style: ![alt text][logo]
 
 Images from any folder can be used by providing path to file. Path should be relative to markdown file.
 
-![img](../static/img/logo-no-text.png)
+![img](../../static/img/logo-no-text.png)
 
 ---
 
