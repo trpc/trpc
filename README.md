@@ -1,6 +1,6 @@
 <div align="center">
   <h1 align="center">
-    <img src="../../static/img/logo-text.png" alt="tRPC" height="150" />
+    <img src="./www/static/img/logo-text.png" alt="tRPC" height="150" />
   </h1>
   <p>a toolkit for building end-to-end typesafe data layers</p>
   <p>
@@ -51,11 +51,15 @@ tRPC is a framework for building strongly typed RPC APIs with TypeScript. Altern
 
 # Usage
 
+**👉 See documentation on [trpc.io](https://trpc.io/docs).**
+
+
+Quick start:
+
 ```bash
 npx create-next-app --example https://github.com/trpc/trpc --example-path examples/next-hello-world my-app
 ```
 
-**See further documentatioon on [trpc.io](https://trpc.io).**
 
 # Further reading
 
