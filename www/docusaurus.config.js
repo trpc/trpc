@@ -13,7 +13,7 @@ module.exports = {
       title: 'tRPC',
       logo: {
         alt: 'tRPC logo',
-        src: 'img/logo.png',
+        src: 'img/logo-no-text.png',
       },
       items: [
         {
@@ -22,7 +22,7 @@ module.exports = {
           label: 'Docs',
           position: 'left',
         },
-        { to: 'blog', label: 'Blog', position: 'left' },
+        // { to: 'blog', label: 'Blog', position: 'left' },
         {
           href: 'https://github.com/facebook/docusaurus',
           label: 'GitHub',
