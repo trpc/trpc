@@ -40,5 +40,6 @@ module.exports = {
         },
       ],
     },
+    'further/further-reading'
   ],
 };
