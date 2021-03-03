@@ -1,8 +1,8 @@
 ---
-id: getting-started
+id: getting-started-with-nextjs
 title: Getting Started with Next.js
 sidebar_label: Getting Started with Next.js
-slug: /nextjs/
+slug: /main/nextjs/
 ---
 
 ## 🌟 New project

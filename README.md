@@ -38,7 +38,6 @@ tRPC is a framework for building strongly typed RPC APIs with TypeScript. Altern
 
 - [Intro](#intro)
 - [Usage](#usage)
-  - [Example apps](#example-apps)
   - [Defining procedures (_endpoints / routes_)](#defining-procedures-endpoints--routes)
   - [Merging routers](#merging-routers)
   - [Router middlewares](#router-middlewares)
@@ -63,27 +62,7 @@ tRPC is a framework for building strongly typed RPC APIs with TypeScript. Altern
 
 # Usage
 
-
-## Example apps
-
-You can play clone this project and play with local examples
-
-```bash
-git clone git@github.com:trpc/trpc.git
-cd trpc
-yarn
-
-yarn example:hello
-```
-
-Here's all the example apps:
-
-| Command                   | Live URL                                           | Example path                                                   | Description                                                                                            |
-| ------------------------- | -------------------------------------------------- | -------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------ |
-| `yarn example:chat`       | [chat.trpc.io](https://chat.trpc.io)               | [`./examples/next-ssg-chat`](./examples/next-ssg-chat)         | Next.js real-time chat example with SSG & Prisma. [Playwright](https://playwright.dev) for E2E-testing |
-| `yarn example:hello`      | [hello-world.trpc.io](https://hello-world.trpc.io) | [`./examples/next-hello-world`](./examples/next-hello-world)   | Minimal Next.js example. [Playwright](https://playwright.dev) for E2E-testing                          |
-| `yarn example:standalone` | _n/a_                                              | [`./examples/standalone-server`](./examples/standalone-server) | Standalone tRPC server + node client                                                                   |
-| `yarn example:playground` | _n/a_                                              | [`./examples/playground`](./examples/playground)               | Express server + node client                                                                           |
+                                                                 |
 
 ## Defining procedures (_endpoints / routes_)
 
