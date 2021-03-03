@@ -1,6 +1,6 @@
 <div align="center">
   <h1 align="center">
-    <img src="./www/static/img/logo.png" alt="tRPC">
+    <img src="../../static/img/logo-text.png" alt="tRPC" height="150" />
   </h1>
   <p>a toolkit for building end-to-end typesafe data layers</p>
   <p>
