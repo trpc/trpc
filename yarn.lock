@@ -2333,10 +2333,10 @@
   resolved "https://registry.npmjs.org/@prisma/engines-version/-/engines-version-2.17.0-35.3c463ebd78b1d21d8fdacdd27899e280cf686223.tgz#9ae6ed4467a0febff8afaf216c1bb67225f51b84"
   integrity sha512-9idv5blqPUlvUPVT48eVi3T0RS/NBklUcjrla3jWyV8AYfB2BdaG/Zci7H5ajyYLnfZZHG9tBpP0LcveQCFH8A==
 
-"@prisma/engines@2.17.0-35.3c463ebd78b1d21d8fdacdd27899e280cf686223":
-  version "2.17.0-35.3c463ebd78b1d21d8fdacdd27899e280cf686223"
-  resolved "https://registry.npmjs.org/@prisma/engines/-/engines-2.17.0-35.3c463ebd78b1d21d8fdacdd27899e280cf686223.tgz#08bc3633fd27fb1935805ef16c37802ed713db5b"
-  integrity sha512-FKjVD6NYbGiQhwas3hA2uMpNchz+Mf3tv5qA8Ci9cAkKHGqt3jWjjUAK9juVBqeOcv4OPimQYMrkRX6SvaxBjg==
+"@prisma/engines@2.18.0-34.da6fafb57b24e0b61ca20960c64e2d41f9e8cff1":
+  version "2.18.0-34.da6fafb57b24e0b61ca20960c64e2d41f9e8cff1"
+  resolved "https://registry.yarnpkg.com/@prisma/engines/-/engines-2.18.0-34.da6fafb57b24e0b61ca20960c64e2d41f9e8cff1.tgz#647a7e2735b08fe28425be135120bb54ea408256"
+  integrity sha512-Q5q5mQePRFSSGbd/14Ogq1RNkebbbwskiTbWsvrSq14t9Us0rC9Xsecd4mr4rEAy8Yd6sXEJW4czZ/88DGzz2w==
 
 "@rollup/plugin-babel@^5.1.0":
   version "5.3.0"
@@ -10024,11 +10024,11 @@ pretty-format@^26.0.0, pretty-format@^26.6.2:
     react-is "^17.0.1"
 
 prisma@^2.16.0:
-  version "2.17.0"
-  resolved "https://registry.npmjs.org/prisma/-/prisma-2.17.0.tgz#686469914ed13d4b0926ee5f17efb7a9ab741e8a"
-  integrity sha512-NypJI7OCXCfDkRKubbVb3nmPeRJ1SjQfg6QAwK06KsreBZl1F96rFz2iB2bl4kIrhLAbIySBjwUJlG87Jsxt7g==
+  version "2.18.0"
+  resolved "https://registry.yarnpkg.com/prisma/-/prisma-2.18.0.tgz#b19a2d4a487b8b62759777be55506567af41f6ae"
+  integrity sha512-03po/kFW3/oGHtnANgZiKYz22KEx6NpdaIP2r4eievmVam9f2+0PdP4x/KSFdMCT6B6VHh+3ILTi2z3bYosCgA==
   dependencies:
-    "@prisma/engines" "2.17.0-35.3c463ebd78b1d21d8fdacdd27899e280cf686223"
+    "@prisma/engines" "2.18.0-34.da6fafb57b24e0b61ca20960c64e2d41f9e8cff1"
 
 process-nextick-args@~2.0.0:
   version "2.0.1"
