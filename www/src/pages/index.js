@@ -8,38 +8,35 @@ import styles from './styles.module.css';
 
 const features = [
   {
-    title: 'Easy to Use',
-    imageUrl: 'img/undraw_docusaurus_mountain.svg',
+    title: <>🧙‍♂️&nbsp; Automatic type-safety</>,
+    // imageUrl: 'img/undraw_docusaurus_mountain.svg',
     description: (
       <>
-        Docusaurus was designed from the ground up to be easily installed and
-        used to get your website up and running quickly.
+        Automatic type-safety & autocompletion inferred from your API-paths, their input&nbsp;data, &amp;&nbsp;outputs.
       </>
     ),
   },
   {
-    title: 'Focus on What Matters',
-    imageUrl: 'img/undraw_docusaurus_tree.svg',
+    title: <>🍃&nbsp;  Light &amp; Snappy DX</>,
+    // imageUrl: 'img/undraw_docusaurus_react.svg',
     description: (
       <>
-        Docusaurus lets you focus on your docs, and we&apos;ll do the chores. Go
-        ahead and move your docs into the <code>docs</code> directory.
+        No code generation, run-time bloat, or build pipeline. <a href="#zero" aria-describedby="footnote-label" id="footnotes-ref">Zero dependencies</a> &amp; a tiny client-side footprint.
       </>
     ),
   },
   {
-    title: 'Powered by React',
-    imageUrl: 'img/undraw_docusaurus_react.svg',
+    title: <>🐻&nbsp; Add to existing brownfield project</>,
+    // imageUrl: 'img/undraw_docusaurus_tree.svg',
     description: (
       <>
-        Extend or customize your website layout by reusing React. Docusaurus can
-        be extended while reusing the same header and footer.
+        Easy to add to your existing brownfield project with adapters for Connect/Express/Next.js.
       </>
     ),
   },
 ];
 
-function Feature({imageUrl, title, description}) {
+function Feature({ imageUrl, title, description }) {
   const imgUrl = useBaseUrl(imageUrl);
   return (
     <div className={clsx('col col--4', styles.feature)}>
@@ -56,7 +53,7 @@ function Feature({imageUrl, title, description}) {
 
 function Home() {
   const context = useDocusaurusContext();
-  const {siteConfig = {}} = context;
+  const { siteConfig = {} } = context;
   return (
     <Layout
       title={`Hello from ${siteConfig.title}`}
@@ -65,6 +62,16 @@ function Home() {
         <div className="container">
           <h1 className="hero__title">{siteConfig.title}</h1>
           <p className="hero__subtitle">{siteConfig.tagline}</p>
+          <p>
+            <figure>
+              <img src="https://storage.googleapis.com/trpc/trpcgif.gif" alt="Server/client example" />
+              <figcaption>
+                The client above is <strong>not</strong> importing any code from the server, only it's type declarations.
+                <br />
+                <a href="https://www.typescriptlang.org/docs/handbook/release-notes/typescript-3-8.html#type-only-imports-and-export">Import type only imports declarations to be used for type annotations and declarations. It always gets fully erased, so there’s no remnant of it at runtime.</a>
+              </figcaption>
+            </figure>
+          </p>
           <div className={styles.buttons}>
             <Link
               className={clsx(
@@ -79,17 +86,25 @@ function Home() {
       </header>
       <main>
         {features && features.length > 0 && (
-          <section className={styles.features}>
-            <div className="container">
-              <div className="row">
-                {features.map((props, idx) => (
-                  <Feature key={idx} {...props} />
-                ))}
+          <>
+            <section className={styles.features}>
+              <div className="container">
+                <div className="row">
+                  {features.map((props, idx) => (
+                    <Feature key={idx} {...props} />
+                  ))}
+                </div>
               </div>
-            </div>
-          </section>
+            </section>
+
+          </>
         )}
       </main>
+      <footer className="container">
+        <ol className="footnotes">
+          <li id="zero"><code>@trpc/client</code> only requires that a <code>fetch()</code> polyfill/ponyfill is used if the browser doesn't support it. <code>@trpc/react</code> is built on top of <a href="https://react-query.tanstack.com/">react-query</a>.</li>
+        </ol>
+      </footer>
     </Layout>
   );
 }

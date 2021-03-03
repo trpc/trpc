@@ -10,7 +10,7 @@
   </p>
   <p>
     <figure>
-      <img src="https://storage.googleapis.com/trpc/trpcgif.gif" alt="Server/client example">
+      <img src="https://storage.googleapis.com/trpc/trpcgif.gif" alt="Server/client example" />
       <figcaption>
         The client above is <strong>not</strong> importing any code from the server, only it's type declarations.
         <br/>

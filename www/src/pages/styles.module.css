@@ -11,6 +11,11 @@
   position: relative;
   overflow: hidden;
 }
+.heroBanner figcaption a {
+  color: var(--ifm-font-color-base);
+  font-size: 0.8rem;
+  font-style: italic;
+}
 
 @media screen and (max-width: 966px) {
   .heroBanner {
