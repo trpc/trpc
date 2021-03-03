@@ -1,8 +1,8 @@
 ---
-id: getting-started
-title: Getting Started with Next.js
-sidebar_label: Getting Started with Next.js
-slug: /main/example-apps
+id: example-apps
+title: Example Apps
+sidebar_label: Example Apps
+slug: /example-apps
 ---
 
 

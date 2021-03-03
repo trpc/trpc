@@ -2,7 +2,7 @@
 id: introduction
 title: tRPC
 sidebar_label: Introduction
-slug: /introduction/
+slug: /
 author: Alex / KATT 🐱
 author_url: https://twitter.com/alexdotjs
 author_image_url: https://avatars1.githubusercontent.com/u/459267?s=460&v=4

@@ -37,12 +37,12 @@ module.exports = {
           title: 'Docs',
           items: [
             {
-              label: 'Style Guide',
-              to: 'docs/introduction',
+              label: 'Docs',
+              to: 'docs',
             },
             {
-              label: 'Second Doc',
-              to: 'docs/doc2/',
+              label: 'Getting Started with Next.js',
+              to: 'docs/nextjs',
             },
           ],
         },

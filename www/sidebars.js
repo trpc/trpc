@@ -6,8 +6,9 @@ module.exports = {
       collapsed: false,
       items: [
         'main/introduction',
-        'main/getting-started',
-        // 'main/style-guide',
+        'main/nextjs',
+        'main/example-apps',
+        'main/procedures',
         // 'main/contributing',
       ],
     },
