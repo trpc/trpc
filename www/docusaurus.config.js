@@ -9,6 +9,7 @@ module.exports = {
   organizationName: 'facebook', // Usually your GitHub org/user name.
   projectName: 'docusaurus', // Usually your repo name.
   themeConfig: {
+    sidebarCollapsible: false,
     navbar: {
       title: 'tRPC',
       logo: {
@@ -24,7 +25,12 @@ module.exports = {
         },
         // { to: 'blog', label: 'Blog', position: 'left' },
         {
-          href: 'https://github.com/facebook/docusaurus',
+          href: 'https://twitter.com/alexdotjs',
+          label: '@alexdotjs on Twitter',
+          position: 'right',
+        },
+        {
+          href: 'https://github.com/trpc/trpc',
           label: 'GitHub',
           position: 'right',
         },

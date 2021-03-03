@@ -6,7 +6,7 @@ module.exports = {
       collapsed: false,
       items: [
         'main/introduction',
-        'usage/nextjs',
+        'react/nextjs',
         'main/example-apps',
         'main/contributing',
       ],
@@ -16,12 +16,28 @@ module.exports = {
       label: 'Usage',
       collapsed: false,
       items: [
-        'usage/nextjs',
-        'usage/procedures',
-        'usage/merging-routers',
-        'usage/middlewares',
-        'usage/data-transformers',
-        'usage/authorization',
+        {
+          type: 'category',
+          label: 'Server',
+          collapsed: false,
+          items: [
+            'server/procedures',
+            'server/merging-routers',
+            'server/middlewares',
+            'server/data-transformers',
+          ]
+        },
+        {
+          type: 'category',
+          label: '@trpc/react',
+          collapsed: false,
+          items: [
+            'react/nextjs',
+            'react/useInfiniteQuery',
+            'react/invalidateQuery',
+            'react/ssr',
+          ],
+        },
       ],
     },
   ],

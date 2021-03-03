@@ -80,66 +80,6 @@ tRPC is a framework for building strongly typed RPC APIs with TypeScript. Altern
 > - For more details read the [react-query docs](https://react-query.tanstack.com/reference/useInfiniteQuery)
 > - Example here is using Prisma - see their docs on [cursor-based pagination](https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination)
 
-<details><summary>Example procedure (dummy code)</summary>
-
-```tsx
-import * as trpc from '@trpc/server';
-import { Context } from './[trpc]';
-
-trpc.router<Context>()
-  .query('infinitePosts', {
-    input: z.object({
-      limit: z.number().min(1).max(100).optional(),
-      cursor: z.number().optional(), // <-- "cursor" needs to exist, but can be any type
-    }),
-    async resolve({ input: { limit = 50, cursor } }) {
-      const items = await prisma.post.findMany({
-        take: limit + 1, // get an extra item at the end which we'll use as next cursor
-        where: {
-          title: {
-            contains: 'Prisma' /* Optional filter */,
-          },
-        },
-        cursor: cursor ? { myCursor: cursor } : undefined,
-        orderBy: {
-          myCursor: 'asc',
-        },
-      })
-      let nextCursor: typeof cursor | null = null;
-      if (items.length > limit) {
-        const nextItem = items.pop()
-        nextCursor = nextItem!.myCursor;
-      }
-
-      return {
-        items,
-        nextCursor,
-      };
-    })
-```
-</details>
-<details><summary>Example component</summary>
-
-```tsx
-import { trpc } from '../utils/trpc';
-
-function MyComponent() {
-  const myQuery = trpc.useInfiniteQuery(
-    [
-      'infinitePosts',
-      {
-        limit: 10,
-      },
-    ],
-    {
-      getNextPageParam: (lastPage) => lastPage.nextCursor,
-    },
-  );
-  // [...]
-}
-
-```
-</details>
 
 ### `invalidateQuery()`
 
