@@ -10,9 +10,5 @@ utils:
   - packages/utils/*
   - packages/utils/**/*
 
-cypress:
-  - cypress/*
-  - cypress/**/*
-
 repo:
   - ./*
