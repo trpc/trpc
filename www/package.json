@@ -18,7 +18,8 @@
     "@mdx-js/react": "^1.6.21",
     "clsx": "^1.1.1",
     "react": "^16.8.4",
-    "react-dom": "^16.8.4"
+    "react-dom": "^16.8.4",
+    "react-github-btn": "^1.2.0"
   },
   "browserslist": {
     "production": [

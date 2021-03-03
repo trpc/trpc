@@ -5,6 +5,7 @@ import Link from '@docusaurus/Link';
 import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
 import useBaseUrl from '@docusaurus/useBaseUrl';
 import styles from './styles.module.css';
+import GitHubButton from 'react-github-btn'
 
 const features = [
   {
@@ -72,7 +73,7 @@ function Home() {
               </figcaption>
             </figure>
           </p>
-          <div className={styles.buttons}>
+          <p>
             <Link
               className={clsx(
                 'button button--outline button--secondary button--lg',
@@ -81,7 +82,10 @@ function Home() {
               to={useBaseUrl('docs/')}>
               Get Started
             </Link>
-          </div>
+          </p>
+          <p>
+            <GitHubButton href="https://github.com/trpc/trpc" data-icon="octicon-star" data-size="large" data-show-count="true" aria-label="Star trpc/trpc on GitHub">Star</GitHubButton>
+          </p>
         </div>
       </header>
       <main>
