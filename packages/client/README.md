@@ -1,3 +1,3 @@
 # `@trpc/client`
 
-https://github.com/trpc/trpc
+https://trpc.io
