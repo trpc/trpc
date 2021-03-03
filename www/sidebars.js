@@ -20,6 +20,8 @@ module.exports = {
         'usage/procedures',
         'usage/merging-routers',
         'usage/middlewares',
+        'usage/data-transformers',
+        'usage/authorization',
       ],
     },
   ],
