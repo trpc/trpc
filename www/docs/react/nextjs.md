@@ -15,7 +15,7 @@ Recommended but not enforced file structure. This is what you get when starting 
 │   ├── api
 │   │   └── trpc
 │   │       ├── [trpc].ts # <-- tRPC response handler
-│   │       └── [...] # <-- potentially sub-routers
+│   │       └── [...] # <-- potential sub-routers
 │   └── [...]
 ├── prisma # <-- (optional) if prisma is added
 │   ├── migrations
