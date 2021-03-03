@@ -51,7 +51,7 @@ tRPC is a framework for building strongly typed RPC APIs with TypeScript. Altern
 
 # Usage
 
-> **👉  See documentation on [trpc.io](https://trpc.io/docs).**
+> **👉  See documentation on [trpc.io](https://trpc.io/docs). 👈**
 
 
 **Quick start:**
