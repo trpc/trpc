@@ -1,7 +1,7 @@
 ---
 slug: hello-trpc
 title: Hello tRPC
-author: Alex / "KATT"
+author: Alex / KATT 🐱
 author_title: Co-creator of tRPC
 author_url: https://twitter.com/alexdotjs
 author_image_url: https://avatars1.githubusercontent.com/u/459267?s=460&v=4
