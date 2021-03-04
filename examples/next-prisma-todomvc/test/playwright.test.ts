@@ -9,6 +9,7 @@ test('add todo', async () => {
     .substr(0, 6);
   await page.type('.new-todo', nonce);
   await page.keyboard.press('Enter');
+  await page.waitForResponse('**/trpc/**');
   await page.reload();
 
   await page.waitForSelector(`text=${nonce}`);
