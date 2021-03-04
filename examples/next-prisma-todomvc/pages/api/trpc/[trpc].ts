@@ -5,10 +5,7 @@ import superjson from 'superjson';
 import { todoRouter } from './todoRouter';
 const prisma = new PrismaClient();
 
-process.on('beforeExit', () => {
-  prisma.$disconnect();
-});
-process.on('SIGTERM', () => {
+process.on('exit', () => {
   prisma.$disconnect();
 });
 // ctx
