@@ -35,6 +35,16 @@ const CACHE_KEY_INFINITE_QUERY = 'TRPC_INFINITE_QUERY' as const;
 const CACHE_KEY_LIVE_QUERY = 'TRPC_LIVE_QUERY' as const;
 const CACHE_KEY_QUERY = 'TRPC_QUERY' as const;
 
+function getCacheKey(
+  [path, ...input]: [string, ...unknown[]],
+  extras?: string,
+) {
+  const cacheKey = [path, ...input.map((i) => i ?? null)];
+  if (extras) {
+    cacheKey.push(extras);
+  }
+  return cacheKey;
+}
 export function createReactQueryHooks<TRouter extends AnyRouter>({
   client,
   queryClient,
@@ -59,8 +69,7 @@ export function createReactQueryHooks<TRouter extends AnyRouter>({
       TOutput
     >,
   ): UseQueryResult<TOutput, TRPCClientError> {
-    const [path, input] = pathAndArgs;
-    const cacheKey = [path, input ?? null, CACHE_KEY_QUERY];
+    const cacheKey = getCacheKey(pathAndArgs, CACHE_KEY_QUERY);
 
     return useQuery(cacheKey, () => client.query(...pathAndArgs) as any, opts);
   }
@@ -144,7 +153,7 @@ export function createReactQueryHooks<TRouter extends AnyRouter>({
     const [path, userInput] = pathAndArgs;
 
     const currentCursor = useRef<any>(null);
-    const cacheKey = [path, userInput ?? null, CACHE_KEY_LIVE_QUERY];
+    const cacheKey = getCacheKey(pathAndArgs, CACHE_KEY_LIVE_QUERY);
 
     const hook = useQuery<TInput, TRPCClientError, TOutput>(
       cacheKey,
@@ -206,8 +215,7 @@ export function createReactQueryHooks<TRouter extends AnyRouter>({
     >(
       ...pathAndArgs: [path: TPath, ...args: inferHandlerInput<TProcedure>]
     ) => {
-      const [path, input] = pathAndArgs;
-      const cacheKey = [path, input ?? null, CACHE_KEY_INFINITE_QUERY];
+      const cacheKey = getCacheKey(pathAndArgs, CACHE_KEY_INFINITE_QUERY);
 
       return queryClient.prefetchInfiniteQuery(cacheKey, async () => {
         const data = await caller.query(...pathAndArgs);
@@ -232,8 +240,7 @@ export function createReactQueryHooks<TRouter extends AnyRouter>({
     pathAndArgs: [path: TPath, ...args: inferHandlerInput<TProcedure>],
     opts?: FetchQueryOptions<TInput, TRPCClientError, TOutput>,
   ) {
-    const [path, input] = pathAndArgs;
-    const cacheKey = [path, input ?? null, CACHE_KEY_QUERY];
+    const cacheKey = getCacheKey(pathAndArgs, CACHE_KEY_QUERY);
 
     return queryClient.prefetchQuery(
       cacheKey,
@@ -267,8 +274,8 @@ export function createReactQueryHooks<TRouter extends AnyRouter>({
     // FIXME: this typing is wrong but it works
     opts?: UseInfiniteQueryOptions<TOutput, TRPCClientError, TOutput, TOutput>,
   ) {
+    const cacheKey = getCacheKey(pathAndArgs, CACHE_KEY_INFINITE_QUERY);
     const [path, input] = pathAndArgs;
-    const cacheKey = [path, input ?? null, CACHE_KEY_INFINITE_QUERY];
     return useInfiniteQuery(
       cacheKey,
       ({ pageParam }) => {
@@ -282,8 +289,7 @@ export function createReactQueryHooks<TRouter extends AnyRouter>({
     TPath extends keyof TQueries & string,
     TInput extends inferProcedureInput<TQueries[TPath]>
   >(pathAndArgs: [TPath, TInput?]) {
-    const [path, input] = pathAndArgs;
-    const cacheKey = [path, input ?? null];
+    const cacheKey = getCacheKey(pathAndArgs);
     return queryClient.invalidateQueries(cacheKey);
   }
 
@@ -291,8 +297,7 @@ export function createReactQueryHooks<TRouter extends AnyRouter>({
     TPath extends keyof TQueries & string,
     TInput extends inferProcedureInput<TQueries[TPath]>
   >(pathAndArgs: [TPath, TInput?]) {
-    const [path, input] = pathAndArgs;
-    const cacheKey = [path, input ?? null];
+    const cacheKey = getCacheKey(pathAndArgs, CACHE_KEY_INFINITE_QUERY);
     return queryClient.cancelQueries(cacheKey);
   }
 
@@ -301,8 +306,7 @@ export function createReactQueryHooks<TRouter extends AnyRouter>({
     TInput extends inferProcedureInput<TQueries[TPath]>,
     TOutput extends inferProcedureOutput<TQueries[TPath]>
   >(pathAndArgs: [TPath, TInput?], output: TOutput) {
-    const [path, input] = pathAndArgs;
-    const cacheKey = [path, input ?? null];
+    const cacheKey = getCacheKey(pathAndArgs);
     queryClient.setQueryData([...cacheKey, CACHE_KEY_QUERY], output);
     queryClient.setQueryData([...cacheKey, CACHE_KEY_INFINITE_QUERY], output);
   }
