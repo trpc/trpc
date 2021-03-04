@@ -38,6 +38,7 @@ tRPC is a framework for building strongly typed RPC APIs with TypeScript. Altern
 
 - [Intro](#intro)
 - [Usage](#usage)
+- [Example apps](#example-apps)
 - [Development workflow](#development-workflow)
   - [Testing](#testing)
 - [Contributors ✨](#contributors-)
@@ -53,6 +54,17 @@ tRPC is a framework for building strongly typed RPC APIs with TypeScript. Altern
 ```bash
 npx create-next-app --example https://github.com/trpc/trpc --example-path examples/next-hello-world my-app
 ```
+
+# Example apps
+
+| URL                                                | Command                   | Path                                                               | Description                                                                                            |
+| -------------------------------------------------- | ------------------------- | ------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------ |
+| [todomvc.trpc.io](https://todomvc.trpc.io)         | `yarn example:todomvc`    | [`./examples/next-prisma-todomvc`](./examples/next-prisma-todomvc) | TodoMVC-example with SSG & Prisma. [Playwright](https://playwright.dev) for E2E-testing                |
+| [chat.trpc.io](https://chat.trpc.io)               | `yarn example:chat`       | [`./examples/next-ssg-chat`](./examples/next-ssg-chat)             | Next.js real-time chat example with SSG & Prisma. [Playwright](https://playwright.dev) for E2E-testing |
+| [hello-world.trpc.io](https://hello-world.trpc.io) | `yarn example:hello`      | [`./examples/next-hello-world`](./examples/next-hello-world)       | Minimal Next.js example. [Playwright](https://playwright.dev) for E2E-testing                          |
+| _n/a_                                              | `yarn example:standalone` | [`./examples/standalone-server`](./examples/standalone-server)     | Standalone tRPC server + node client                                                                   |
+| _n/a_                                              | `yarn example:playground` | [`./examples/playground`](./examples/playground)                   | Express server + node client                                                                           |
+
 
 # Development workflow
 
