@@ -6,13 +6,10 @@ import { todoRouter } from './todoRouter';
 const prisma = new PrismaClient();
 
 // ctx
-export const createContext = async ({
-  req,
-  res,
-}: trpcNext.CreateNextContextOptions) => {
-  console.log('tasks', await prisma.task.findMany());
+export const createContext = async (
+  opts?: trpcNext.CreateNextContextOptions,
+) => {
   return {
-    prisma,
     task: prisma.task,
   };
 };

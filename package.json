@@ -5,6 +5,7 @@
     "packages": [
       "packages/*",
       "examples/*",
+      "!examples/expo-prisma-nextjs",
       "examples/expo-prisma-nextjs/*"
     ],
     "nohoist": [

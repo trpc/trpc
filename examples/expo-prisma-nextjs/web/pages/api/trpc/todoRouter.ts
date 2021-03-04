@@ -4,8 +4,7 @@ import { createRouter } from './[trpc]';
 export const todoRouter = createRouter()
   .query('all', {
     async resolve({ ctx }) {
-      console.log('ctx', ctx);
-      return ctx.prisma.task.findMany();
+      return ctx.task.findMany();
     },
   })
   .mutation('edit', {
@@ -33,8 +32,8 @@ export const todoRouter = createRouter()
     },
   })
   .mutation('clearCompleted', {
-    async resolve({ input: id, ctx }) {
-      await ctx.task.delete({ where: { completed: true } });
+    async resolve({ ctx }) {
+      await ctx.task.deleteMany({ where: { completed: true } });
 
       return ctx.task.findMany();
     },

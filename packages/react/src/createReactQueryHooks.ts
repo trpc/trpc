@@ -282,17 +282,31 @@ export function createReactQueryHooks<TRouter extends AnyRouter>({
       opts,
     );
   }
+  // function invalidateQuery<
+  //   TPath extends keyof TSubscriptions & string,
+  //   TInput extends inferProcedureInput<TSubscriptions[TPath]>
+  // >(pathAndArgs: [TPath, TInput?]): void;
 
   function invalidateQuery<
     TPath extends keyof TQueries & string,
     TInput extends inferProcedureInput<TQueries[TPath]>
-  >(pathAndArgs: [TPath, TInput?]): void;
-  function invalidateQuery<
-    TPath extends keyof TSubscriptions & string,
-    TInput extends inferProcedureInput<TSubscriptions[TPath]>
-  >(pathAndArgs: [TPath, TInput?]): void;
-  function invalidateQuery(pathAndArgs: [string, unknown?] | string) {
-    queryClient.invalidateQueries(pathAndArgs);
+  >(pathAndArgs: [TPath, TInput?]) {
+    return queryClient.invalidateQueries(pathAndArgs);
+  }
+
+  function cancelQuery<
+    TPath extends keyof TQueries & string,
+    TInput extends inferProcedureInput<TQueries[TPath]>
+  >(pathAndArgs: [TPath, TInput?]) {
+    return queryClient.cancelQueries(pathAndArgs);
+  }
+
+  function setQueryData<
+    TPath extends keyof TQueries & string,
+    TInput extends inferProcedureInput<TQueries[TPath]>,
+    TOutput extends inferProcedureOutput<TQueries[TPath]>
+  >(pathAndArgs: [TPath, TInput?], output: TOutput) {
+    return queryClient.setQueryData(pathAndArgs, output);
   }
 
   return {
@@ -308,5 +322,7 @@ export function createReactQueryHooks<TRouter extends AnyRouter>({
     useSubscription,
     ssr,
     invalidateQuery,
+    cancelQuery,
+    setQueryData,
   };
 }

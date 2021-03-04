@@ -180,6 +180,7 @@ export async function requestHandler<
 } & BaseOptions) {
   try {
     let output: unknown;
+
     const ctx = createContext && (await createContext({ req, res }));
     const method = req.method;
 

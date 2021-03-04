@@ -1,5 +1,6 @@
 {
   "main": "index.js",
+  "name": "@examples/todo-app",
   "scripts": {
     "android": "react-native run-android",
     "ios": "react-native run-ios",
