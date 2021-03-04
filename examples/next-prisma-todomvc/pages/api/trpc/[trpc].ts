@@ -5,9 +5,6 @@ import superjson from 'superjson';
 import { todoRouter } from './todoRouter';
 const prisma = new PrismaClient();
 
-process.on('exit', () => {
-  prisma.$disconnect();
-});
 // ctx
 export const createContext = async (
   opts?: trpcNext.CreateNextContextOptions,
@@ -30,5 +27,6 @@ export type AppRouter = typeof router;
 export default trpcNext.createNextApiHandler({
   router,
   createContext,
+  teardown: () => prisma.$disconnect(),
   transformer: superjson,
 });
