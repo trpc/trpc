@@ -36,10 +36,7 @@ const CACHE_KEY_INFINITE_QUERY = 'TRPC_INFINITE_QUERY' as const;
 const CACHE_KEY_LIVE_QUERY = 'TRPC_LIVE_QUERY' as const;
 const CACHE_KEY_QUERY = 'TRPC_QUERY' as const;
 
-export function createReactQueryHooks<
-  TRouter extends AnyRouter<TContext>,
-  TContext
->({
+export function createReactQueryHooks<TRouter extends AnyRouter>({
   client,
   queryClient,
 }: {
@@ -49,6 +46,7 @@ export function createReactQueryHooks<
   type TQueries = TRouter['_def']['queries'];
   type TMutations = TRouter['_def']['mutations'];
   type TSubscriptions = TRouter['_def']['subscriptions'];
+  type TContext = Parameters<TRouter['createCaller']>[0];
 
   function _useQuery<
     TPath extends keyof TQueries & string,
