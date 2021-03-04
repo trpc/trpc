@@ -319,7 +319,6 @@ export async function getStaticProps() {
 
   await ssr.prefetchQuery('todos.all');
 
-  await ctx.prisma.$disconnect();
   return {
     props: {
       dehydratedState: trpc.dehydrate(),
