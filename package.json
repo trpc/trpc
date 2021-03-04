@@ -4,7 +4,8 @@
   "workspaces": {
     "packages": [
       "packages/*",
-      "examples/*"
+      "examples/*",
+      "examples/expo-prisma-nextjs/*"
     ],
     "nohoist": [
       "**/@prisma",
