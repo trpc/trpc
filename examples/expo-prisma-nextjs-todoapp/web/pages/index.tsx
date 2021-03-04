@@ -118,10 +118,12 @@ function ListItem({ task, allTasks }: { task: Task; allTasks: Task[] }) {
               data: { completed: checked },
             });
           }}
+          autoFocus={editing}
         />
         <label
-          onDoubleClick={() => {
+          onDoubleClick={(e) => {
             setEditing(true);
+            e.currentTarget.focus();
           }}
         >
           {text}
@@ -135,7 +137,7 @@ function ListItem({ task, allTasks }: { task: Task; allTasks: Task[] }) {
       </div>
       <input
         className="edit"
-        defaultValue={text}
+        value={text}
         ref={inputRef}
         onChange={(e) => {
           const newText = e.currentTarget.value;
@@ -156,7 +158,9 @@ function ListItem({ task, allTasks }: { task: Task; allTasks: Task[] }) {
 }
 
 export default function Home() {
-  const allTasks = trpc.useQuery(['todos.all']);
+  const allTasks = trpc.useQuery(['todos.all'], {
+    staleTime: 3000,
+  });
   const addTask = trpc.useMutation('todos.add', {
     async onMutate({ text }) {
       await trpc.cancelQuery(['todos.all']);
