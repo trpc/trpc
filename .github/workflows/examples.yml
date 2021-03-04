@@ -20,7 +20,7 @@ jobs:
         image: postgres:12.1
         env:
           POSTGRES_USER: postgres
-          POSTGRES_DB: chat
+          POSTGRES_DB: trpcdb
         ports:
           - 5432:5432
     steps:
