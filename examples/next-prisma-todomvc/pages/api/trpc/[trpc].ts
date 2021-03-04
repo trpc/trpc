@@ -33,6 +33,5 @@ export type AppRouter = typeof router;
 export default trpcNext.createNextApiHandler({
   router,
   createContext,
-  teardown: () => prisma.$disconnect(),
   transformer: superjson,
 });
