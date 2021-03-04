@@ -50,6 +50,12 @@ function ListItem({ task }: { task: Task }) {
       setEditing(false);
     },
   });
+
+  const mutation = trpc.useMutation('todos.edit', {
+    async onMutate({ id, data }) {
+      await trpc.cancelQuery(['todos.all']);
+    },
+  });
   return (
     <li
       key={task.id}
