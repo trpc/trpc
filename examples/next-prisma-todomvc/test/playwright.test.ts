@@ -11,8 +11,6 @@ test('add todo', async () => {
   await page.keyboard.press('Enter');
   await page.waitForResponse('**/trpc/**');
   await page.waitForSelector(`text=${nonce}`);
-  await page.reload();
-  await page.waitForSelector(`text=${nonce}`);
 });
 
 export {};
