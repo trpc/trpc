@@ -2,7 +2,7 @@ import { observer } from 'mobx-react'; // Or "mobx-react".
 import Head from 'next/head';
 import { useEffect, useMemo, useState } from 'react';
 import { inferQueryOutput, trpc } from '../utils/trpc';
-import { appRouter } from './api/trpc/[...trpc]';
+import { appRouter } from './api/trpc/[trpc]';
 
 type MessagesOutput = inferQueryOutput<'messages.list'>;
 type Message = MessagesOutput['items'][number];
@@ -49,8 +49,8 @@ export default function Home() {
   } = trpc.useInfiniteQuery(['messages.list', {}], {
     getPreviousPageParam: (d) => d.prevCursor,
   });
-  const [msgs, setMessages] = useState(
-    () => data?.pages.map((p) => p.items).flat() ?? [],
+  const [msgs, setMessages] = useState(() =>
+    data ? data.pages.map((p) => p.items).flat() : [],
   );
   const addMessages = (newMessages?: Message[]) => {
     setMessages((nowMessages) => {
@@ -152,11 +152,10 @@ export default function Home() {
   );
 }
 export async function getStaticProps() {
-  await trpc.prefetchInfiniteQueryOnServer(appRouter, {
-    path: 'messages.list',
-    input: {},
-    ctx: {} as any,
-  });
+  const ssr = trpc.ssr(appRouter, {});
+
+  await ssr.prefetchInfiniteQuery('messages.list', {});
+
   return {
     props: {
       dehydratedState: trpc.dehydrate(),

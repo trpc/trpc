@@ -16,7 +16,6 @@ import {
   UseInfiniteQueryOptions,
   useMutation,
   UseMutationOptions,
-  UseMutationResult,
   useQuery,
   UseQueryOptions,
   UseQueryResult,
@@ -32,12 +31,21 @@ export type OutputWithCursor<TData, TCursor extends any = any> = {
   data: TData;
 };
 
-const CACHE_PREFIX_INFINITE_QUERIES = 'INFINITE_QUERY';
-const CACHE_PREFIX_LIVE_QUERY = 'LIVE_QUERY';
-export function createReactQueryHooks<
-  TRouter extends AnyRouter<TContext>,
-  TContext
->({
+const CACHE_KEY_INFINITE_QUERY = 'TRPC_INFINITE_QUERY' as const;
+const CACHE_KEY_LIVE_QUERY = 'TRPC_LIVE_QUERY' as const;
+const CACHE_KEY_QUERY = 'TRPC_QUERY' as const;
+
+function getCacheKey<TTuple extends [string, ...unknown[]]>(
+  [path, input]: TTuple,
+  extras?: string,
+) {
+  const cacheKey = [path, input ?? null];
+  if (extras) {
+    cacheKey.push(extras);
+  }
+  return cacheKey;
+}
+export function createReactQueryHooks<TRouter extends AnyRouter>({
   client,
   queryClient,
 }: {
@@ -47,16 +55,8 @@ export function createReactQueryHooks<
   type TQueries = TRouter['_def']['queries'];
   type TMutations = TRouter['_def']['mutations'];
   type TSubscriptions = TRouter['_def']['subscriptions'];
+  type TContext = Parameters<TRouter['createCaller']>[0];
 
-  // this breaks autocompletion for some reason
-  // function _useQuery<
-  //   // TODO exclude all with mandatory input from TPath
-  //   TPath extends keyof TQueries & string,
-  //   TOutput extends inferProcedureOutput<TQueries[TPath]>
-  // >(
-  //   path: TPath,
-  //   opts?: UseQueryOptions<unknown, TRPCClientError, TOutput>,
-  // ): UseQueryResult<TOutput, TRPCClientError>;
   function _useQuery<
     TPath extends keyof TQueries & string,
     TProcedure extends TQueries[TPath],
@@ -68,46 +68,25 @@ export function createReactQueryHooks<
       TRPCClientError,
       TOutput
     >,
-  ): UseQueryResult<TOutput, TRPCClientError>;
+  ): UseQueryResult<TOutput, TRPCClientError> {
+    const cacheKey = getCacheKey(pathAndArgs, CACHE_KEY_QUERY);
 
-  function _useQuery(
-    pathAndArgs: [string, unknown?],
-    opts?: UseQueryOptions<any, any, any>,
-  ) {
-    let input: unknown = null;
-    let path: string;
-    if (Array.isArray(pathAndArgs)) {
-      path = pathAndArgs[0];
-      input = pathAndArgs[1] ?? null;
-    } else {
-      path = pathAndArgs;
-    }
-    const cacheKey = [path, input];
-
-    return useQuery(cacheKey, () => (client.query as any)(...cacheKey), opts);
+    return useQuery(cacheKey, () => client.query(...pathAndArgs) as any, opts);
   }
 
   function _useMutation<
     TPath extends keyof TMutations & string,
     TInput extends inferProcedureInput<TMutations[TPath]>,
     TOutput extends inferProcedureOutput<TMutations[TPath]>
-  >(
-    path: TPath,
-    opts?: UseMutationOptions<TOutput, TRPCClientError, TInput>,
-  ): UseMutationResult<TOutput, TRPCClientError, TInput> {
+  >(path: TPath, opts?: UseMutationOptions<TOutput, TRPCClientError, TInput>) {
     const hook = useMutation<TOutput, TRPCClientError, TInput>(
-      (input) =>
-        client.request({
-          type: 'mutation',
-          path,
-          input,
-        }),
+      (input) => (client.mutation as any)(path, input),
       opts,
     );
 
     return hook;
   }
-
+  /* istanbul ignore next */
   /**
    * ⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️
    *  **Experimental.** API might change without major version bump
@@ -155,7 +134,7 @@ export function createReactQueryHooks<
       // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [queryKey, enabled]);
   }
-
+  /* istanbul ignore next */
   /**
    * ⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️
    *  **Experimental.** API might change without major version bump
@@ -174,7 +153,7 @@ export function createReactQueryHooks<
     const [path, userInput] = pathAndArgs;
 
     const currentCursor = useRef<any>(null);
-    const cacheKey = [CACHE_PREFIX_LIVE_QUERY, path, userInput];
+    const cacheKey = getCacheKey(pathAndArgs, CACHE_KEY_LIVE_QUERY);
 
     const hook = useQuery<TInput, TRPCClientError, TOutput>(
       cacheKey,
@@ -206,78 +185,66 @@ export function createReactQueryHooks<
     return { ...hook, data };
   }
 
-  const prefetchQueryOnServer = async <
-    TPath extends keyof TQueries & string,
-    TInput extends inferProcedureInput<TQueries[TPath]>
-  >(
-    router: TRouter,
-    opts: {
-      path: TPath;
-      ctx: TContext;
-      input: TInput;
-    },
-  ): Promise<void> => {
-    const input = opts.input ?? null;
-    const { path, ctx } = opts;
-    const cacheKey = [path, input];
+  /**
+   * Create functions you can use for server-side rendering / static generation
+   * @param router Your app's router
+   * @param ctx Context used in the calls
+   */
+  function ssr(router: TRouter, ctx: TContext) {
+    const caller = router.createCaller(ctx);
 
-    await queryClient.prefetchQuery(cacheKey, async () => {
-      const data = await router.invoke({
-        target: 'queries',
-        ctx,
-        path,
-        input,
+    const prefetchQuery = async <
+      TPath extends keyof TQueries & string,
+      TProcedure extends TQueries[TPath]
+    >(
+      ...pathAndArgs: [path: TPath, ...args: inferHandlerInput<TProcedure>]
+    ) => {
+      const [path, input] = pathAndArgs;
+      const cacheKey = [path, input ?? null, CACHE_KEY_QUERY];
+
+      return queryClient.prefetchQuery(cacheKey, async () => {
+        const data = await caller.query(...pathAndArgs);
+
+        return data;
       });
+    };
 
-      return data;
-    });
-  };
+    const prefetchInfiniteQuery = async <
+      TPath extends keyof TQueries & string,
+      TProcedure extends TQueries[TPath]
+    >(
+      ...pathAndArgs: [path: TPath, ...args: inferHandlerInput<TProcedure>]
+    ) => {
+      const cacheKey = getCacheKey(pathAndArgs, CACHE_KEY_INFINITE_QUERY);
 
-  const prefetchInfiniteQueryOnServer = async <
-    TPath extends keyof TQueries & string,
-    TInput extends inferProcedureInput<TQueries[TPath]>
-  >(
-    router: TRouter,
-    opts: {
-      path: TPath;
-      ctx: TContext;
-      input: TInput;
-    },
-  ): Promise<void> => {
-    const input = opts.input ?? null;
-    const { path, ctx } = opts;
-    const cacheKey = [CACHE_PREFIX_INFINITE_QUERIES, path, input];
+      return queryClient.prefetchInfiniteQuery(cacheKey, async () => {
+        const data = await caller.query(...pathAndArgs);
 
-    await queryClient.prefetchInfiniteQuery(cacheKey, async () => {
-      const data = await router.invoke({
-        target: 'queries',
-        ctx,
-        path,
-        input,
+        return data;
       });
+    };
 
-      return data;
-    });
-  };
+    return {
+      caller,
+      prefetchQuery,
+      prefetchInfiniteQuery,
+    };
+  }
 
   function prefetchQuery<
     TPath extends keyof TQueries & string,
-    TInput extends inferProcedureInput<TQueries[TPath]>,
-    TOutput extends inferProcedureOutput<TQueries[TPath]>
+    TProcedure extends TQueries[TPath],
+    TOutput extends inferProcedureOutput<TProcedure>,
+    TInput extends inferProcedureInput<TProcedure>
   >(
-    pathAndArgs: [TPath, TInput],
+    pathAndArgs: [path: TPath, ...args: inferHandlerInput<TProcedure>],
     opts?: FetchQueryOptions<TInput, TRPCClientError, TOutput>,
   ) {
-    const [path, input] = pathAndArgs;
+    const cacheKey = getCacheKey(pathAndArgs, CACHE_KEY_QUERY);
 
     return queryClient.prefetchQuery(
-      pathAndArgs,
-      () =>
-        client.request({
-          type: 'query',
-          path,
-          input,
-        }) as any,
+      cacheKey,
+      () => client.query(...pathAndArgs) as any,
       opts as any,
     );
   }
@@ -307,9 +274,10 @@ export function createReactQueryHooks<
     // FIXME: this typing is wrong but it works
     opts?: UseInfiniteQueryOptions<TOutput, TRPCClientError, TOutput, TOutput>,
   ) {
+    const cacheKey = getCacheKey(pathAndArgs, CACHE_KEY_INFINITE_QUERY);
     const [path, input] = pathAndArgs;
     return useInfiniteQuery(
-      [CACHE_PREFIX_INFINITE_QUERIES, path, input],
+      cacheKey,
       ({ pageParam }) => {
         const actualInput = { ...input, cursor: pageParam };
         return (client.query as any)(path, actualInput);
@@ -317,13 +285,36 @@ export function createReactQueryHooks<
       opts,
     );
   }
+  function invalidateQuery<
+    TPath extends keyof TQueries & string,
+    TInput extends inferProcedureInput<TQueries[TPath]>
+  >(pathAndArgs: [TPath, TInput?]) {
+    const cacheKey = getCacheKey(pathAndArgs);
+    return queryClient.invalidateQueries(cacheKey);
+  }
+
+  function cancelQuery<
+    TPath extends keyof TQueries & string,
+    TInput extends inferProcedureInput<TQueries[TPath]>
+  >(pathAndArgs: [TPath, TInput?]) {
+    const cacheKey = getCacheKey(pathAndArgs);
+    return queryClient.cancelQueries(cacheKey);
+  }
+
+  function setQueryData<
+    TPath extends keyof TQueries & string,
+    TInput extends inferProcedureInput<TQueries[TPath]>,
+    TOutput extends inferProcedureOutput<TQueries[TPath]>
+  >(pathAndArgs: [TPath, TInput?], output: TOutput) {
+    const cacheKey = getCacheKey(pathAndArgs);
+    queryClient.setQueryData([...cacheKey, CACHE_KEY_QUERY], output);
+    queryClient.setQueryData([...cacheKey, CACHE_KEY_INFINITE_QUERY], output);
+  }
 
   return {
     client,
     dehydrate: _dehydrate,
     prefetchQuery,
-    prefetchQueryOnServer,
-    prefetchInfiniteQueryOnServer,
     queryClient,
     useDehydratedState,
     useInfiniteQuery: _useInfiniteQuery,
@@ -331,5 +322,9 @@ export function createReactQueryHooks<
     useMutation: _useMutation,
     useQuery: _useQuery,
     useSubscription,
+    ssr,
+    invalidateQuery,
+    cancelQuery,
+    setQueryData,
   };
 }
