@@ -303,7 +303,7 @@ export default function Home() {
         </p>
         {/* Change this out with your name and url ↓ */}
         <p>
-          Created by <a href="http://todomvc.com">you</a>
+          Created with <a href="http://trpc.io">tRPC</a>
         </p>
         <p>
           Part of <a href="http://todomvc.com">TodoMVC</a>
