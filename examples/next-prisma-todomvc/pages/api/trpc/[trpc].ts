@@ -5,7 +5,8 @@ import superjson from 'superjson';
 import { todoRouter } from './todoRouter';
 const prisma = new PrismaClient();
 
-// ctx
+// create context based of incoming request
+// set as optional here so it can also be re-used for `getStaticProps()`
 export const createContext = async (
   opts?: trpcNext.CreateNextContextOptions,
 ) => {
