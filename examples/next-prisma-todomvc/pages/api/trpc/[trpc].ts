@@ -5,6 +5,12 @@ import superjson from 'superjson';
 import { todoRouter } from './todoRouter';
 const prisma = new PrismaClient();
 
+process.on('beforeExit', () => {
+  prisma.$disconnect();
+});
+process.on('SIGTERM', () => {
+  prisma.$disconnect();
+});
 // ctx
 export const createContext = async (
   opts?: trpcNext.CreateNextContextOptions,
