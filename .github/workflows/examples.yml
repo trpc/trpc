@@ -5,7 +5,14 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        dir: [next-ssg-chat, next-hello-world, playground, standalone-server]
+        dir:
+          [
+            next-hello-world,
+            next-prisma-todomvc,
+            next-ssg-chat,
+            playground,
+            standalone-server,
+          ]
         node: ['14.x']
         os: [ubuntu-latest]
     services:
