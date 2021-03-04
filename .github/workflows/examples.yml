@@ -5,7 +5,14 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        dir: [next-ssg-chat, next-hello-world, playground, standalone-server]
+        dir:
+          [
+            next-hello-world,
+            next-prisma-todomvc,
+            next-ssg-chat,
+            playground,
+            standalone-server,
+          ]
         node: ['14.x']
         os: [ubuntu-latest]
     services:
@@ -13,7 +20,7 @@ jobs:
         image: postgres:12.1
         env:
           POSTGRES_USER: postgres
-          POSTGRES_DB: chat
+          POSTGRES_DB: trpcdb
         ports:
           - 5432:5432
     steps:
@@ -26,5 +33,11 @@ jobs:
         uses: bahmutov/npm-install@v1
 
       - run: yarn --cwd examples/${{ matrix.dir }} build
+        env:
+          DATABASE_URL: postgresql://postgres:@localhost:5432/trpcdb
       - run: yarn --cwd examples/${{ matrix.dir }} test-start
+        env:
+          DATABASE_URL: postgresql://postgres:@localhost:5432/trpcdb
       - run: yarn --cwd examples/${{ matrix.dir }} test-dev
+        env:
+          DATABASE_URL: postgresql://postgres:@localhost:5432/trpcdb
