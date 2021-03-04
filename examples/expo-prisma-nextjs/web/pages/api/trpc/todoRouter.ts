@@ -4,7 +4,22 @@ import { createRouter } from './[trpc]';
 export const todoRouter = createRouter()
   .query('all', {
     async resolve({ ctx }) {
-      return ctx.task.findMany();
+      return ctx.task.findMany({
+        orderBy: {
+          createdAt: 'asc',
+        },
+      });
+    },
+  })
+  .mutation('add', {
+    input: z.object({
+      text: z.string().min(1),
+    }),
+    async resolve({ ctx, input }) {
+      const todo = await ctx.task.create({
+        data: input,
+      });
+      return todo;
     },
   })
   .mutation('edit', {
@@ -12,7 +27,7 @@ export const todoRouter = createRouter()
       id: z.string().uuid(),
       data: z.object({
         completed: z.boolean().optional(),
-        text: z.string().optional(),
+        text: z.string().min(1).optional(),
       }),
     }),
     async resolve({ ctx, input }) {

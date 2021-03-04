@@ -16,7 +16,6 @@ import {
   UseInfiniteQueryOptions,
   useMutation,
   UseMutationOptions,
-  UseMutationResult,
   useQuery,
   UseQueryOptions,
   UseQueryResult,
@@ -70,10 +69,7 @@ export function createReactQueryHooks<TRouter extends AnyRouter>({
     TPath extends keyof TMutations & string,
     TInput extends inferProcedureInput<TMutations[TPath]>,
     TOutput extends inferProcedureOutput<TMutations[TPath]>
-  >(
-    path: TPath,
-    opts?: UseMutationOptions<TOutput, TRPCClientError, TInput>,
-  ): UseMutationResult<TOutput, TRPCClientError, TInput> {
+  >(path: TPath, opts?: UseMutationOptions<TOutput, TRPCClientError, TInput>) {
     const hook = useMutation<TOutput, TRPCClientError, TInput>(
       (input) => (client.mutation as any)(path, input),
       opts,
@@ -282,23 +278,22 @@ export function createReactQueryHooks<TRouter extends AnyRouter>({
       opts,
     );
   }
-  // function invalidateQuery<
-  //   TPath extends keyof TSubscriptions & string,
-  //   TInput extends inferProcedureInput<TSubscriptions[TPath]>
-  // >(pathAndArgs: [TPath, TInput?]): void;
-
   function invalidateQuery<
     TPath extends keyof TQueries & string,
     TInput extends inferProcedureInput<TQueries[TPath]>
   >(pathAndArgs: [TPath, TInput?]) {
-    return queryClient.invalidateQueries(pathAndArgs);
+    const [path, input] = pathAndArgs;
+    const cacheKey = [path, input ?? null];
+    return queryClient.invalidateQueries(cacheKey);
   }
 
   function cancelQuery<
     TPath extends keyof TQueries & string,
     TInput extends inferProcedureInput<TQueries[TPath]>
   >(pathAndArgs: [TPath, TInput?]) {
-    return queryClient.cancelQueries(pathAndArgs);
+    const [path, input] = pathAndArgs;
+    const cacheKey = [path, input ?? null];
+    return queryClient.cancelQueries(cacheKey);
   }
 
   function setQueryData<
@@ -306,7 +301,10 @@ export function createReactQueryHooks<TRouter extends AnyRouter>({
     TInput extends inferProcedureInput<TQueries[TPath]>,
     TOutput extends inferProcedureOutput<TQueries[TPath]>
   >(pathAndArgs: [TPath, TInput?], output: TOutput) {
-    return queryClient.setQueryData(pathAndArgs, output);
+    const [path, input] = pathAndArgs;
+    const cacheKey = [path, input ?? null];
+    queryClient.setQueryData([...cacheKey, CACHE_KEY_QUERY], output);
+    queryClient.setQueryData([...cacheKey, CACHE_KEY_INFINITE_QUERY], output);
   }
 
   return {

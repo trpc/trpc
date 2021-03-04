@@ -4,6 +4,10 @@ import 'todomvc-app-css/index.css';
 import 'todomvc-common/base.css';
 import { inferQueryOutput, trpc } from '../utils/trpc';
 import { appRouter, createContext } from './api/trpc/[trpc]';
+import { ReactQueryDevtools } from 'react-query/devtools';
+import clsx from 'clsx';
+import { useRouter } from 'next/dist/client/router';
+import Link from 'next/link';
 
 type Task = inferQueryOutput<'todos.all'>[number];
 
@@ -38,51 +42,111 @@ function useOutsideAlerter({
     };
   }, [ref, enabled]);
 }
-function ListItem({ task }: { task: Task }) {
+function ListItem({ task, allTasks }: { task: Task; allTasks: Task[] }) {
   const [editing, setEditing] = useState(false);
   const wrapperRef = useRef(null);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  const [text, setText] = useState(task.text);
+  const [completed, setCompleted] = useState(task.completed);
+  useEffect(() => {
+    setText(task.text);
+  }, [task.text]);
+  useEffect(() => {
+    setCompleted(task.completed);
+  }, [task.completed]);
+
+  const editTask = trpc.useMutation('todos.edit', {
+    async onMutate({ id, data }) {
+      await trpc.cancelQuery(['todos.all']);
+      trpc.setQueryData(
+        ['todos.all'],
+        allTasks.map((t) =>
+          t.id === id
+            ? {
+                ...t,
+                ...data,
+              }
+            : t,
+        ),
+      );
+    },
+    onSettled: () => {
+      trpc.invalidateQuery(['todos.all']);
+    },
+  });
+  const deleteTask = trpc.useMutation('todos.delete', {
+    async onMutate() {
+      await trpc.cancelQuery(['todos.all']);
+      trpc.setQueryData(
+        ['todos.all'],
+        allTasks.filter((t) => t.id != task.id),
+      );
+    },
+    onSettled: () => {
+      trpc.invalidateQuery(['todos.all']);
+    },
+  });
 
   useOutsideAlerter({
     ref: wrapperRef,
     enabled: editing,
     callback() {
+      editTask.mutate({
+        id: task.id,
+        data: { text },
+      });
       setEditing(false);
-    },
-  });
-
-  const mutation = trpc.useMutation('todos.edit', {
-    async onMutate({ id, data }) {
-      await trpc.cancelQuery(['todos.all']);
     },
   });
   return (
     <li
       key={task.id}
-      className={editing ? 'editing' : undefined}
+      className={clsx(editing && 'editing', completed && 'completed')}
       ref={wrapperRef}
     >
       <div className="view">
         <input
           className="toggle"
           type="checkbox"
-          defaultChecked={task.completed}
+          checked={task.completed}
+          onChange={(e) => {
+            const checked = e.currentTarget.checked;
+            setCompleted(checked);
+            editTask.mutate({
+              id: task.id,
+              data: { completed: checked },
+            });
+          }}
         />
         <label
           onDoubleClick={() => {
             setEditing(true);
           }}
         >
-          {task.text}
+          {text}
         </label>
-        <button className="destroy" />
+        <button
+          className="destroy"
+          onClick={() => {
+            deleteTask.mutate(task.id);
+          }}
+        />
       </div>
       <input
         className="edit"
-        defaultValue={task.text}
+        defaultValue={text}
         ref={inputRef}
+        onChange={(e) => {
+          const newText = e.currentTarget.value;
+          setText(newText);
+        }}
         onKeyPress={(e) => {
           if (e.key === 'Enter') {
+            editTask.mutate({
+              id: task.id,
+              data: { text },
+            });
             setEditing(false);
           }
         }}
@@ -93,6 +157,43 @@ function ListItem({ task }: { task: Task }) {
 
 export default function Home() {
   const allTasks = trpc.useQuery(['todos.all']);
+  const addTask = trpc.useMutation('todos.add', {
+    async onMutate({ text }) {
+      await trpc.cancelQuery(['todos.all']);
+      const tasks = allTasks.data ?? [];
+      trpc.setQueryData(
+        ['todos.all'],
+        [
+          ...tasks,
+          {
+            id: `${Math.random()}`,
+            completed: false,
+            text,
+            createdAt: new Date(),
+          },
+        ],
+      );
+    },
+    onSettled: () => {
+      trpc.invalidateQuery(['todos.all']);
+    },
+  });
+
+  const clearCompleted = trpc.useMutation('todos.clearCompleted', {
+    async onMutate() {
+      await trpc.cancelQuery(['todos.all']);
+      const tasks = allTasks.data ?? [];
+      trpc.setQueryData(
+        ['todos.all'],
+        tasks.filter((t) => !t.completed),
+      );
+    },
+    onSettled: () => {
+      trpc.invalidateQuery(['todos.all']);
+    },
+  });
+  const router = useRouter();
+  const { filter } = router.query;
   return (
     <>
       <Head>
@@ -107,6 +208,13 @@ export default function Home() {
             className="new-todo"
             placeholder="What needs to be done?"
             autoFocus
+            onKeyDown={(e) => {
+              const text = e.currentTarget.value.trim();
+              if (e.key === 'Enter' && text) {
+                addTask.mutate({ text });
+                e.currentTarget.value = '';
+              }
+            }}
           />
         </header>
         {/* This section should be hidden by default and shown when there are todos */}
@@ -116,28 +224,19 @@ export default function Home() {
           <ul className="todo-list">
             {/* These are here just to show the structure of the list items */}
             {/* List items should get the class `editing` when editing and `completed` when marked as completed */}
-            <li className="completed">
-              <div className="view">
-                <input className="toggle" type="checkbox" defaultChecked />
-                <label>Taste JavaScript</label>
-                <button className="destroy" />
-              </div>
-              <input
-                className="edit"
-                defaultValue="Create a TodoMVC template"
-              />
-            </li>
-            <li>
-              <div className="view">
-                <input className="toggle" type="checkbox" />
-                <label>Buy a unicorn</label>
-                <button className="destroy" />
-              </div>
-              <input className="edit" defaultValue="Rule the web" />
-            </li>
-            {allTasks.data?.map((task) => (
-              <ListItem key={task.id} task={task} />
-            ))}
+            {allTasks.data
+              ?.filter((task) => {
+                if (filter === 'active') {
+                  return !task.completed;
+                }
+                if (filter === 'completed') {
+                  return task.completed;
+                }
+                return true;
+              })
+              .map((task) => (
+                <ListItem key={task.id} task={task} allTasks={allTasks.data} />
+              ))}
           </ul>
         </section>
         {/* This footer should be hidden by default and shown when there are todos */}
@@ -146,7 +245,7 @@ export default function Home() {
           <span className="todo-count">
             <strong>
               {allTasks.data?.reduce(
-                (sum, task) => (task.completed ? sum + 1 : sum),
+                (sum, task) => (!task.completed ? sum + 1 : sum),
                 0,
               )}
             </strong>{' '}
@@ -155,19 +254,41 @@ export default function Home() {
           {/* Remove this if you don't implement routing */}
           <ul className="filters">
             <li>
-              <a className="selected" href="#/">
-                All
-              </a>
+              <Link href={{ query: { filter: undefined } }}>
+                <a
+                  className={clsx(
+                    !['active', 'completed'].includes(filter as string) &&
+                      'selected',
+                  )}
+                >
+                  All
+                </a>
+              </Link>
             </li>
             <li>
-              <a href="#/active">Active</a>
+              <Link href={{ query: { filter: 'active' } }}>
+                <a className={clsx(filter === 'active' && 'selected')}>
+                  Active
+                </a>
+              </Link>
             </li>
             <li>
-              <a href="#/completed">Completed</a>
+              <Link href={{ query: { filter: 'completed' } }}>
+                <a className={clsx(filter === 'completed' && 'selected')}>
+                  Completed
+                </a>
+              </Link>
             </li>
           </ul>
           {/* Hidden if no completed items are left ↓ */}
-          <button className="clear-completed">Clear completed</button>
+          <button
+            className="clear-completed"
+            onClick={() => {
+              clearCompleted.mutate(null);
+            }}
+          >
+            Clear completed
+          </button>
         </footer>
       </section>
       <footer className="info">
@@ -184,6 +305,7 @@ export default function Home() {
           Part of <a href="http://todomvc.com">TodoMVC</a>
         </p>
       </footer>
+      <ReactQueryDevtools initialIsOpen={false} />
     </>
   );
 }

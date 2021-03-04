@@ -15,6 +15,6 @@ model Task {
   text      String
   completed Boolean @default(value: "false")
 
-  // createdAt DateTime @unique @default(now())
+  createdAt DateTime @unique @default(now())
   // updatedAt DateTime @unique @default(now())
 }
