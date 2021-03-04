@@ -297,7 +297,7 @@ export function createReactQueryHooks<TRouter extends AnyRouter>({
     TPath extends keyof TQueries & string,
     TInput extends inferProcedureInput<TQueries[TPath]>
   >(pathAndArgs: [TPath, TInput?]) {
-    const cacheKey = getCacheKey(pathAndArgs, CACHE_KEY_INFINITE_QUERY);
+    const cacheKey = getCacheKey(pathAndArgs);
     return queryClient.cancelQueries(cacheKey);
   }
 
