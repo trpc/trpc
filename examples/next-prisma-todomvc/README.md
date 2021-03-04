@@ -1,4 +1,6 @@
-## Chat (:construction: Work in progress)
+## TodoMVC
+
+- [TodoMVC](https://todomvc.com/) implemented with tRPC + [Prisma](https://prisma.io)
 
 ### Setup
 

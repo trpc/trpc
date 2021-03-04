@@ -41,6 +41,13 @@ Execute [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packag
 npx create-next-app --example https://github.com/trpc/trpc --example-path examples/next-hello-world my-app
 ```
 
+### TodoMVC with [Prisma](https://www.prisma.io/)
+
+```bash
+npx create-next-app --example https://github.com/trpc/trpc --example-path examples/next-prisma-todomvc trpc-todo
+```
+
+
 ### With [Prisma](https://www.prisma.io/)
 
 ```bash

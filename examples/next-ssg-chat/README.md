@@ -6,7 +6,7 @@ Live example at [chat.trpc.io](https://chat.trpc.io)
 
 - Get postgres running
 - `CREATE DATABASE chat`
-- Possibly tweak `.env.dev` with your pg user
+- Possibly tweak `.env` with your pg user
 
 
 ### Useful commands
