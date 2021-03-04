@@ -10,6 +10,7 @@ export const createContext = async (
   opts?: trpcNext.CreateNextContextOptions,
 ) => {
   return {
+    prisma,
     task: prisma.task,
   };
 };
