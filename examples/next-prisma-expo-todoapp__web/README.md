@@ -1,12 +1,10 @@
 ## Chat (:construction: Work in progress)
 
-Live example at [chat.trpc.io](https://chat.trpc.io)
-
 ### Setup
 
 - Get postgres running
-- `CREATE DATABASE chat`
-- Possibly tweak `.env.dev` with your pg user
+- `CREATE DATABASE todo`
+- Possibly tweak `.env` with your pg user
 
 
 ### Useful commands
