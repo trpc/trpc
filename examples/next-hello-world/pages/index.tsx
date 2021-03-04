@@ -99,7 +99,7 @@ export default function Home() {
 }
 
 export async function getStaticProps() {
-  const ssr = trpc.ssr(appRouter, {});
+  const ssr = trpc.ssr(appRouter, { user: null });
 
   await ssr.prefetchQuery('posts.list');
 
