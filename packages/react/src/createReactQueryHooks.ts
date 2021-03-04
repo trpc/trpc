@@ -35,11 +35,11 @@ const CACHE_KEY_INFINITE_QUERY = 'TRPC_INFINITE_QUERY' as const;
 const CACHE_KEY_LIVE_QUERY = 'TRPC_LIVE_QUERY' as const;
 const CACHE_KEY_QUERY = 'TRPC_QUERY' as const;
 
-function getCacheKey(
-  [path, ...input]: [string, ...unknown[]],
+function getCacheKey<TTuple extends [string, ...unknown[]]>(
+  [path, input]: TTuple,
   extras?: string,
 ) {
-  const cacheKey = [path, ...input.map((i) => i ?? null)];
+  const cacheKey = [path, input ?? null];
   if (extras) {
     cacheKey.push(extras);
   }
