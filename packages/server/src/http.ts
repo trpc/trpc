@@ -119,6 +119,7 @@ export interface BaseOptions {
    */
   transformer?: DataTransformer;
   maxBodySize?: number;
+  onError?: (err: HTTPError) => void;
 }
 
 async function getPostBody({

@@ -412,6 +412,39 @@ describe('integration tests', () => {
     expect(onError).toHaveBeenCalledTimes(1);
     close();
   });
+
+  test('onError', async () => {
+    class MyError extends Error {
+      constructor(message: string) {
+        super(message);
+        Object.setPrototypeOf(this, MyError.prototype);
+      }
+    }
+    const onError = jest.fn();
+    const { client } = routerToServerAndClient(
+      trpc.router().query('err', {
+        resolve() {
+          throw new MyError('woop');
+        },
+      }),
+      {
+        server: {
+          onError,
+        },
+      },
+    );
+
+    let err: Error | null = null;
+    try {
+      await client.query('err');
+    } catch (_err) {
+      err = _err;
+    }
+    if (!err) {
+      throw new Error('Did not throw');
+    }
+    expect(onError).toHaveBeenCalledTimes(1);
+  });
 });
 
 describe('createCaller()', () => {
