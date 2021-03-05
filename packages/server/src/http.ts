@@ -251,6 +251,7 @@ export async function requestHandler<
   router: TRouter;
   createContext: TCreateContextFn;
 } & BaseOptions) {
+  let procedureType: 'unknown' | ProcedureType = 'unknown';
   try {
     let output: unknown;
 
@@ -261,8 +262,6 @@ export async function requestHandler<
       input ? transformer.deserialize(input) : input;
 
     const caller = router.createCaller(ctx);
-
-    let procedureType: 'unknown' | ProcedureType = 'unknown';
 
     if (method === 'HEAD') {
       res.statusCode = 204;
