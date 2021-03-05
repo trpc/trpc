@@ -444,6 +444,8 @@ describe('integration tests', () => {
       throw new Error('Did not throw');
     }
     expect(onError).toHaveBeenCalledTimes(1);
+    const args = onError.mock.calls[0];
+    expect(args).toMatchInlineSnapshot();
   });
 });
 

@@ -7,6 +7,7 @@ import {
   CreateContextFnOptions,
   getErrorResponseEnvelope,
   requestHandler,
+  TRPCResponseError,
 } from '../http';
 import { AnyRouter } from '../router';
 
@@ -43,9 +44,13 @@ export function createNextApiHandler<
 
     if (path === null) {
       const json = getErrorResponseEnvelope(
-        new Error(
-          'Query "trpc" not found - is the file named `[trpc]`.ts or `[...trpc].ts`?',
-        ),
+        new TRPCResponseError({
+          statusCode: 500,
+          message:
+            'Query "trpc" not found - is the file named `[trpc]`.ts or `[...trpc].ts`?',
+          path: '',
+          originalError: null,
+        }),
       );
       res.status(json.statusCode).json(json);
       return;

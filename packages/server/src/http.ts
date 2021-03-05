@@ -16,6 +16,29 @@ export class HTTPError extends Error {
     Object.setPrototypeOf(this, HTTPError.prototype);
   }
 }
+
+export class TRPCResponseError extends HTTPError {
+  public readonly statusCode: number;
+  public readonly path: string;
+  public readonly originalError: unknown;
+  constructor({
+    statusCode,
+    message,
+    path,
+    originalError,
+  }: {
+    statusCode: number;
+    message: string;
+    path: string;
+    originalError: unknown;
+  }) {
+    super(statusCode, message);
+    this.statusCode = statusCode;
+    this.path = path;
+    this.originalError = originalError;
+    Object.setPrototypeOf(this, HTTPError.prototype);
+  }
+}
 /* istanbul ignore next */
 export const httpError = {
   forbidden: (message?: string) => new HTTPError(403, message ?? 'Forbidden'),
@@ -44,33 +67,71 @@ export type HTTPResponseEnvelope<TOutput> =
   | HTTPSuccessResponseEnvelope<TOutput>
   | HTTPErrorResponseEnvelope;
 
-export function getErrorResponseEnvelope(
-  _err?: Partial<HTTPError> | InputValidationError<Error>,
-) {
-  let err = _err;
-  if (err instanceof InputValidationError) {
-    err = httpError.badRequest(err.message);
-  } else if (err instanceof RouteNotFoundError) {
-    err = httpError.notFound(err.message);
+function getMessageFromUnkown(err: any) {
+  if (typeof err === 'string') {
+    return err;
   }
+  if (typeof err?.message === 'string') {
+    return err.message;
+  }
+  return `${err}`;
+}
+export function getErrorFromUnknown(
+  err: unknown,
+  path: string,
+): TRPCResponseError {
+  if (err instanceof InputValidationError) {
+    return new TRPCResponseError({
+      statusCode: 400,
+      message: err.message,
+      originalError: err.originalError,
+      path,
+    });
+  }
+  if (err instanceof RouteNotFoundError) {
+    return new TRPCResponseError({
+      statusCode: 404,
+      message: err.message,
+      originalError: err,
+      path,
+    });
+  }
+  if (!(err instanceof Error)) {
+    return new TRPCResponseError({
+      statusCode: 500,
+      message: getMessageFromUnkown(err),
+      originalError: err,
+      path,
+    });
+  }
+
+  const _err = err as typeof err & {
+    statusCode?: unknown;
+  };
   const statusCode: number =
-    typeof err?.statusCode === 'number' ? err.statusCode : 500;
+    typeof _err.statusCode === 'number' ? _err.statusCode : 500;
   const message: string =
-    typeof err?.message === 'string' ? err.message : 'Internal Server Error';
+    typeof err.message === 'string' ? err.message : 'Internal Server Error';
 
-  const stack: string | undefined =
-    process.env.NODE_ENV !== 'production' && typeof err?.stack === 'string'
-      ? err.stack
-      : undefined;
+  return new TRPCResponseError({
+    statusCode,
+    message,
+    originalError: err,
+    path,
+  });
+}
 
+export function getErrorResponseEnvelope(err: TRPCResponseError) {
   const json: HTTPErrorResponseEnvelope = {
     ok: false,
-    statusCode,
+    statusCode: err.statusCode,
     error: {
-      message,
-      stack,
+      message: err.message,
     },
   };
+  if (process.env.NODE_ENV !== 'production' && typeof err.stack === 'string') {
+    json.error.stack = err.stack;
+  }
 
   return json;
 }
@@ -302,7 +363,8 @@ export async function requestHandler<
     res.statusCode = json.statusCode;
     res.setHeader('Content-Type', 'application/json');
     res.end(JSON.stringify(transformer.serialize(json)));
-  } catch (err) {
+  } catch (_err) {
+    const err = getErrorFromUnknown(_err);
     const json = getErrorResponseEnvelope(err);
 
     res.statusCode = json.statusCode;
