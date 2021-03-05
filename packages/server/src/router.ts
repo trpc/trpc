@@ -2,7 +2,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { assertNotBrowser } from './assertNotBrowser';
-import { RouteNotFoundError } from './errors';
+import { NotFoundError } from './errors';
 import {
   createProcedure,
   CreateProcedureOptions,
@@ -376,7 +376,7 @@ export class Router<
     const target = this._def[defTarget][path];
 
     if (!target) {
-      throw new RouteNotFoundError(`No such ${type} procedure "${path}"`);
+      throw new NotFoundError(`No such ${type} procedure "${path}"`);
     }
     const procedure: Procedure<TContext> = target;
 

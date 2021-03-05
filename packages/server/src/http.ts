@@ -5,17 +5,83 @@ import qs from 'qs';
 import url from 'url';
 import { assertNotBrowser } from './assertNotBrowser';
 import {
-  HTTPError,
-  httpError,
-  TRPCResponseError,
-  HTTPSuccessResponseEnvelope,
-  getErrorResponseEnvelope,
+  TRPCError,
   getErrorFromUnknown,
+  InputValidationError,
+  PayloadTooLargeError,
 } from './errors';
 import { AnyRouter, ProcedureType } from './router';
 import { Subscription } from './subscription';
 import { DataTransformer } from './transformer';
+import { Dict } from './types';
 assertNotBrowser();
+
+export type HTTPSuccessResponseEnvelope<TOutput> = {
+  ok: true;
+  statusCode: number;
+  data: TOutput;
+};
+
+export type HTTPErrorResponseEnvelope = {
+  ok: false;
+  statusCode: number;
+  error: {
+    message: string;
+    code: string;
+    stack?: string | undefined;
+  };
+};
+
+export type HTTPResponseEnvelope<TOutput> =
+  | HTTPSuccessResponseEnvelope<TOutput>
+  | HTTPErrorResponseEnvelope;
+
+const STATUS_CODE_MAP: Dict<number> = {
+  BAD_USER_INPUT: 400,
+  INTERAL_SERVER_ERROR: 500,
+  NOT_FOUND: 404,
+  UNAUTHENTICATED: 401,
+  FORBIDDEN: 403,
+};
+
+export class HttpError extends TRPCError<'HTTP_ERROR'> {
+  public readonly statusCode: number;
+
+  constructor(statusCode: number, message: string) {
+    super(message, 'HTTP_ERROR');
+    this.statusCode = statusCode;
+
+    Object.setPrototypeOf(this, HttpError.prototype);
+  }
+}
+
+export function getStatusCodeFromError(err: TRPCError): number {
+  const statusCode = STATUS_CODE_MAP[err.code];
+  if (statusCode) {
+    return statusCode;
+  }
+  const statusCodeFromError = (err as any)?.statusCode;
+  if (typeof statusCodeFromError === 'number') {
+    return statusCodeFromError;
+  }
+  return 500;
+}
+
+export function getErrorResponseEnvelope(err: TRPCError) {
+  const json: HTTPErrorResponseEnvelope = {
+    ok: false,
+    statusCode: getStatusCodeFromError(err),
+    error: {
+      message: err.message,
+      code: err.code,
+    },
+  };
+  if (process.env.NODE_ENV !== 'production' && typeof err.stack === 'string') {
+    json.error.stack = err.stack;
+  }
+
+  return json;
+}
 
 export function getQueryInput(query: qs.ParsedQs) {
   const queryInput = query.input;
@@ -25,7 +91,7 @@ export function getQueryInput(query: qs.ParsedQs) {
   try {
     return JSON.parse(queryInput as string);
   } catch (err) {
-    throw new HTTPError(400, 'Expected query.input to be a JSON string');
+    throw new InputValidationError('Expected query.input to be a JSON string');
   }
 }
 
@@ -61,7 +127,7 @@ export interface BaseOptions {
    */
   transformer?: DataTransformer;
   maxBodySize?: number;
-  onError?: (err: TRPCResponseError) => void;
+  onError?: (opts: { err: TRPCError }) => void;
 }
 
 async function getPostBody({
@@ -80,7 +146,7 @@ async function getPostBody({
     req.on('data', function (data) {
       body += data;
       if (typeof maxBodySize === 'number' && body.length > maxBodySize) {
-        reject(new HTTPError(413, 'Payload Too Large'));
+        reject(new HttpError(413, 'Payload Too Large'));
         req.socket.destroy();
       }
     });
@@ -89,7 +155,7 @@ async function getPostBody({
         const json = JSON.parse(body);
         resolve(json);
       } catch (err) {
-        reject(httpError.badRequest("Body couldn't be parsed as json"));
+        reject(new HttpError(400, "Body couldn't be parsed as json"));
       }
     });
   });
@@ -221,12 +287,12 @@ export async function requestHandler<
         }
         function onClose() {
           cleanup();
-          reject(new HTTPError(499, `Client Closed Request`));
+          reject(new HttpError(499, `Client Closed Request`));
         }
         function onRequestTimeout() {
           cleanup();
           reject(
-            new HTTPError(
+            new HttpError(
               408,
               `Subscription exceeded ${requestTimeoutMs}ms - please reconnect.`,
             ),
@@ -234,7 +300,7 @@ export async function requestHandler<
         }
 
         function onDestroy() {
-          reject(new HTTPError(500, `Subscription was destroyed prematurely`));
+          reject(new HttpError(500, `Subscription was destroyed prematurely`));
           cleanup();
         }
 
@@ -247,7 +313,7 @@ export async function requestHandler<
         sub.start();
       });
     } else {
-      throw new HTTPError(405, `Unexpected request method ${method}`);
+      throw new HttpError(405, `Unexpected request method ${method}`);
     }
     const json: HTTPSuccessResponseEnvelope<unknown> = {
       ok: true,
@@ -258,14 +324,14 @@ export async function requestHandler<
     res.setHeader('Content-Type', 'application/json');
     res.end(JSON.stringify(transformer.serialize(json)));
   } catch (_err) {
-    const err = getErrorFromUnknown(_err, path, procedureType);
+    const err = getErrorFromUnknown(_err);
 
     const json = getErrorResponseEnvelope(err);
 
     res.statusCode = json.statusCode;
     res.setHeader('Content-Type', 'application/json');
     res.end(JSON.stringify(transformer.serialize(json)));
-    onError && onError(err);
+    onError && onError({ err });
   }
   try {
     teardown && (await teardown());

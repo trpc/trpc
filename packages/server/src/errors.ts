@@ -1,169 +1,88 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { ProcedureType } from './router';
 
-export class InputValidationError<TError extends Error> extends Error {
-  public readonly originalError: TError;
+export abstract class TRPCError<TCode extends string = string> extends Error {
+  public readonly code;
+  // public readonly statusCode?: number;
+  constructor(message: string, code: TCode) {
+    super(message);
+    this.code = code;
+    Object.setPrototypeOf(this, TRPCError.prototype);
+  }
+}
 
-  constructor(originalError: TError) {
-    super(originalError.message);
+export class InputValidationError extends TRPCError<'BAD_USER_INPUT'> {
+  public readonly originalError?: unknown;
+
+  constructor(message: string, originalError?: unknown) {
+    super(message, 'BAD_USER_INPUT');
     this.originalError = originalError;
 
     Object.setPrototypeOf(this, InputValidationError.prototype);
   }
 }
 
-export class RouteNotFoundError extends Error {
+export class NotFoundError extends TRPCError<'NOT_FOUND'> {
   constructor(message: string) {
-    super(message);
+    super(message, 'NOT_FOUND');
 
-    Object.setPrototypeOf(this, RouteNotFoundError.prototype);
-  }
-}
-export class NoInputExpectedError extends Error {
-  constructor(message: string) {
-    super(message);
-
-    Object.setPrototypeOf(this, NoInputExpectedError.prototype);
+    Object.setPrototypeOf(this, NotFoundError.prototype);
   }
 }
 
-export class HTTPError extends Error {
-  public readonly statusCode: number;
-  constructor(statusCode: number, message: string) {
-    super(message);
-    this.statusCode = statusCode;
-    Object.setPrototypeOf(this, HTTPError.prototype);
-  }
-}
-
-export class TRPCResponseError extends HTTPError {
-  public readonly statusCode: number;
-  public readonly path: string;
+export class InternalServerError extends TRPCError<'INTERNAL_SERVER_ERROR'> {
   public readonly originalError: unknown;
-  public readonly procedureType: ProcedureType | 'unknown';
-  public readonly input?: unknown;
-  constructor({
-    statusCode,
-    message,
-    path,
-    originalError,
-    procedureType,
-    input,
-  }: {
-    statusCode: number;
-    message: string;
-    path: string;
-    originalError: unknown;
-    procedureType: ProcedureType | 'unknown';
-    input?: unknown;
-  }) {
-    super(statusCode, message);
-    this.statusCode = statusCode;
-    this.path = path;
-    this.originalError = originalError;
-    this.procedureType = procedureType;
 
-    Object.setPrototypeOf(this, TRPCResponseError.prototype);
+  constructor(originalError: unknown) {
+    const message = getMessageFromUnkownError(
+      originalError,
+      'INTERNAL_SERVER_ERROR',
+    );
+    super(message, 'INTERNAL_SERVER_ERROR');
+    this.originalError = originalError;
+
+    Object.setPrototypeOf(this, InternalServerError.prototype);
   }
 }
-/* istanbul ignore next */
-export const httpError = {
-  forbidden: (message?: string) => new HTTPError(403, message ?? 'Forbidden'),
-  unauthorized: (message?: string) =>
-    new HTTPError(401, message ?? 'Unauthorized'),
-  badRequest: (message?: string) =>
-    new HTTPError(400, message ?? 'Bad Request'),
-  notFound: (message?: string) => new HTTPError(404, message ?? 'Not found'),
-};
-export type HTTPSuccessResponseEnvelope<TOutput> = {
-  ok: true;
-  statusCode: number;
-  data: TOutput;
-};
 
-export type HTTPErrorResponseEnvelope = {
-  ok: false;
-  statusCode: number;
-  error: {
-    message: string;
-    stack?: string | undefined;
-  };
-};
+export class ForbiddenError extends TRPCError<'FORBIDDEN'> {
+  constructor(message: string) {
+    super(message, 'FORBIDDEN');
 
-export type HTTPResponseEnvelope<TOutput> =
-  | HTTPSuccessResponseEnvelope<TOutput>
-  | HTTPErrorResponseEnvelope;
+    Object.setPrototypeOf(this, ForbiddenError.prototype);
+  }
+}
+export class UnauthenticatedError extends TRPCError<'UNAUTHENTICATED'> {
+  constructor(message: string) {
+    super(message, 'UNAUTHENTICATED');
 
-export function getMessageFromUnkown(err: unknown): string {
+    Object.setPrototypeOf(this, UnauthenticatedError.prototype);
+  }
+}
+
+export class PayloadTooLargeError extends TRPCError<'PAYLOAD_TOO_LARGE'> {
+  constructor(message: string) {
+    super(message, 'PAYLOAD_TOO_LARGE');
+
+    Object.setPrototypeOf(this, PayloadTooLargeError.prototype);
+  }
+}
+
+export function getMessageFromUnkownError(
+  err: unknown,
+  fallback: string,
+): string {
   if (typeof err === 'string') {
     return err;
   }
-  if (typeof (err as any)?.message === 'string') {
-    return (err as any).message;
+  const message = (err as any)?.message;
+  if (message === 'string') {
+    return message;
   }
-  return `${err}`;
+  return fallback;
 }
-export function getErrorFromUnknown(
-  err: unknown,
-  path: string,
-  procedureType: ProcedureType | 'unknown',
-): TRPCResponseError {
-  if (err instanceof InputValidationError) {
-    return new TRPCResponseError({
-      statusCode: 400,
-      message: err.message,
-      originalError: err.originalError,
-      path,
-      procedureType,
-    });
+export function getErrorFromUnknown(err: unknown): TRPCError {
+  if (err instanceof TRPCError) {
+    return err;
   }
-  if (err instanceof RouteNotFoundError) {
-    return new TRPCResponseError({
-      statusCode: 404,
-      message: err.message,
-      originalError: err,
-      path,
-      procedureType,
-    });
-  }
-  if (!(err instanceof Error)) {
-    return new TRPCResponseError({
-      statusCode: 500,
-      message: getMessageFromUnkown(err),
-      originalError: err,
-      path,
-      procedureType,
-    });
-  }
-
-  const _err = err as typeof err & {
-    statusCode?: unknown;
-  };
-  const statusCode: number =
-    typeof _err.statusCode === 'number' ? _err.statusCode : 500;
-  const message: string =
-    typeof err.message === 'string' ? err.message : 'Internal Server Error';
-
-  return new TRPCResponseError({
-    statusCode,
-    message,
-    originalError: err,
-    path,
-    procedureType,
-  });
-}
-
-export function getErrorResponseEnvelope(err: TRPCResponseError) {
-  const json: HTTPErrorResponseEnvelope = {
-    ok: false,
-    statusCode: err.statusCode,
-    error: {
-      message: err.message,
-    },
-  };
-  if (process.env.NODE_ENV !== 'production' && typeof err.stack === 'string') {
-    json.error.stack = err.stack;
-  }
-
-  return json;
+  return new InternalServerError(err);
 }

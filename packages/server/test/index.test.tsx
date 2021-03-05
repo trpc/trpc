@@ -1,13 +1,12 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/ban-types */
-import { TRPCClientError } from '../../client/src';
-import * as z from 'zod';
-import * as trpc from '../src';
-import { routerToServerAndClient } from './_testHelpers';
 import { expectTypeOf } from 'expect-type';
+import * as z from 'zod';
+import { TRPCClientError } from '../../client/src';
+import * as trpc from '../src';
 import { CreateHttpContextOptions } from '../src';
-import { ZodError } from 'zod';
-import { httpError, TRPCResponseError } from '../src/errors';
+import { httpError } from '../src/errors';
+import { routerToServerAndClient } from './_testHelpers';
 
 test('mix query and mutation', async () => {
   type Context = {};
@@ -413,89 +412,6 @@ describe('integration tests', () => {
     expect(onSuccess).toHaveBeenCalledTimes(1);
     expect(onError).toHaveBeenCalledTimes(1);
     close();
-  });
-
-  describe('http handler onError()', () => {
-    test('basic', async () => {
-      class MyError extends Error {
-        constructor(message: string) {
-          super(message);
-          Object.setPrototypeOf(this, MyError.prototype);
-        }
-      }
-      const onError = jest.fn();
-      const { client, close } = routerToServerAndClient(
-        trpc.router().query('err', {
-          resolve() {
-            throw new MyError('woop');
-          },
-        }),
-        {
-          server: {
-            onError,
-          },
-        },
-      );
-      {
-        let err: Error | null = null;
-        try {
-          await client.query('err');
-        } catch (_err) {
-          err = _err;
-        }
-        if (!err) {
-          throw new Error('Did not throw');
-        }
-      }
-      expect(onError).toHaveBeenCalledTimes(1);
-      const err = onError.mock.calls[0][0] as TRPCResponseError;
-      expect(err.statusCode).toBe(500);
-      expect(err.originalError).toBeInstanceOf(MyError);
-      expect(err.path).toBe('err');
-      expect(err.procedureType).toBe('query');
-
-      close();
-    });
-
-    test('input error', async () => {
-      const onError = jest.fn();
-      const { client, close } = routerToServerAndClient(
-        trpc.router().mutation('err', {
-          input: z.string(),
-          resolve() {
-            return null;
-          },
-        }),
-        {
-          server: {
-            onError,
-          },
-        },
-      );
-      {
-        let err: Error | null = null;
-        try {
-          await client.mutation('err', (1 as any) as string);
-        } catch (_err) {
-          err = _err;
-        }
-        if (!err) {
-          throw new Error('Did not throw');
-        }
-      }
-      expect(onError).toHaveBeenCalledTimes(1);
-      const err = onError.mock.calls[0][0];
-      expect(err).toBeInstanceOf(TRPCResponseError);
-      if (!(err instanceof TRPCResponseError)) {
-        throw new Error('Wrong type');
-      }
-      expect(err.statusCode).toBe(400);
-      expect(err.originalError).toBeInstanceOf(ZodError);
-      expect(err.path).toBe('err');
-      expect(err.procedureType).toBe('mutation');
-
-      close();
-    });
   });
 });
 
