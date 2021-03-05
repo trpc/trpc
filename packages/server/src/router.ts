@@ -376,7 +376,7 @@ export class Router<
     const target = this._def[defTarget][path];
 
     if (!target) {
-      throw new RouteNotFoundError(`No ${type} procedure "${path}"`);
+      throw new RouteNotFoundError(`No such ${type} procedure "${path}"`);
     }
     const procedure: Procedure<TContext> = target;
 
