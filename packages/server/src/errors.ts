@@ -41,18 +41,21 @@ export class TRPCResponseError extends HTTPError {
   public readonly path: string;
   public readonly originalError: unknown;
   public readonly procedureType: ProcedureType | 'unknown';
+  public readonly input?: unknown;
   constructor({
     statusCode,
     message,
     path,
     originalError,
     procedureType,
+    input,
   }: {
     statusCode: number;
     message: string;
     path: string;
     originalError: unknown;
     procedureType: ProcedureType | 'unknown';
+    input?: unknown;
   }) {
     super(statusCode, message);
     this.statusCode = statusCode;

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-non-null-assertion */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import http from 'http';
 import qs from 'qs';
@@ -94,6 +95,15 @@ async function getPostBody({
   });
 }
 
+const HTTP_METHOD_PROCEDURE_TYPE_MAP: Record<
+  string,
+  ProcedureType | undefined
+> = {
+  GET: 'query',
+  POST: 'mutation',
+  PATCH: 'subscription',
+};
+
 export async function requestHandler<
   TContext,
   TRouter extends AnyRouter<TContext>,
@@ -122,6 +132,7 @@ export async function requestHandler<
   createContext: TCreateContextFn;
 } & BaseOptions) {
   let procedureType: 'unknown' | ProcedureType = 'unknown';
+  let input: unknown = undefined;
   try {
     let output: unknown;
 
@@ -132,33 +143,31 @@ export async function requestHandler<
       input ? transformer.deserialize(input) : input;
 
     const caller = router.createCaller(ctx);
+    procedureType = HTTP_METHOD_PROCEDURE_TYPE_MAP[req.method!] ?? 'unknown';
+    const getInput = async () => {
+      if (procedureType === 'query') {
+        const query = req.query ? req.query : url.parse(req.url!, true).query;
+        const input = getQueryInput(query);
+        return deserializeInput(input);
+      }
+      if (procedureType === 'mutation' || procedureType === 'subscription') {
+        const body = await getPostBody({ req, maxBodySize });
+        const input = deserializeInput(body.input);
+        return input;
+      }
+      return undefined;
+    };
+    input = await getInput();
 
     if (method === 'HEAD') {
       res.statusCode = 204;
       res.end();
       return;
-    } else if (method === 'GET') {
-      procedureType = 'query';
-      // queries
-
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      const query = req.query ? req.query : url.parse(req.url!, true).query;
-      const input = deserializeInput(getQueryInput(query));
+    } else if (procedureType === 'query') {
       output = await caller.query(path, input);
-    } else if (method === 'POST') {
-      procedureType = 'mutation';
-      // mutations
-
-      const body = await getPostBody({ req, maxBodySize });
-      const input = deserializeInput(body.input);
+    } else if (procedureType === 'mutation') {
       output = await caller.mutation(path, input);
-    } else if (method === 'PATCH') {
-      procedureType = 'subscription';
-      // subscriptions
-
-      const body = await getPostBody({ req, maxBodySize });
-      const input = deserializeInput(body.input);
-
+    } else if (procedureType === 'subscription') {
       const sub = (output = await caller.subscription(
         path,
         input,
