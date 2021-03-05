@@ -256,8 +256,12 @@ describe('integration tests', () => {
           },
         }),
         {
-          createContext,
-          getHeaders: () => headers,
+          server: {
+            createContext,
+          },
+          client: {
+            getHeaders: () => headers,
+          },
         },
       );
 

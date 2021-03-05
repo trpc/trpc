@@ -82,19 +82,23 @@ test('allows you to throw an error (e.g. auth)', async () => {
           }),
       ),
     {
-      createContext({ req }) {
-        if (req.headers.authorization === 'meow') {
-          return {
-            user: {
-              id: 1,
-              name: 'KATT',
-              isAdmin: true,
-            },
-          };
-        }
-        return {};
+      server: {
+        createContext({ req }) {
+          if (req.headers.authorization === 'meow') {
+            return {
+              user: {
+                id: 1,
+                name: 'KATT',
+                isAdmin: true,
+              },
+            };
+          }
+          return {};
+        },
       },
-      getHeaders: () => headers,
+      client: {
+        getHeaders: () => headers,
+      },
     },
   );
 
