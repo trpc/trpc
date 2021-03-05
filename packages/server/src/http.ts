@@ -4,7 +4,7 @@ import qs from 'qs';
 import url from 'url';
 import { assertNotBrowser } from './assertNotBrowser';
 import { InputValidationError, RouteNotFoundError } from './errors';
-import { AnyRouter } from './router';
+import { AnyRouter, ProcedureType } from './router';
 import { Subscription } from './subscription';
 import { DataTransformer } from './transformer';
 assertNotBrowser();
@@ -21,21 +21,26 @@ export class TRPCResponseError extends HTTPError {
   public readonly statusCode: number;
   public readonly path: string;
   public readonly originalError: unknown;
+  public readonly procedureType: ProcedureType | 'unknown';
   constructor({
     statusCode,
     message,
     path,
     originalError,
+    procedureType,
   }: {
     statusCode: number;
     message: string;
     path: string;
     originalError: unknown;
+    procedureType: ProcedureType | 'unknown';
   }) {
     super(statusCode, message);
     this.statusCode = statusCode;
     this.path = path;
     this.originalError = originalError;
+    this.procedureType = procedureType;
+
     Object.setPrototypeOf(this, HTTPError.prototype);
   }
 }
@@ -79,6 +84,7 @@ function getMessageFromUnkown(err: any) {
 export function getErrorFromUnknown(
   err: unknown,
   path: string,
+  procedureType: ProcedureType | 'unknown',
 ): TRPCResponseError {
   if (err instanceof InputValidationError) {
     return new TRPCResponseError({
@@ -86,6 +92,7 @@ export function getErrorFromUnknown(
       message: err.message,
       originalError: err.originalError,
       path,
+      procedureType,
     });
   }
   if (err instanceof RouteNotFoundError) {
@@ -94,6 +101,7 @@ export function getErrorFromUnknown(
       message: err.message,
       originalError: err,
       path,
+      procedureType,
     });
   }
   if (!(err instanceof Error)) {
@@ -102,6 +110,7 @@ export function getErrorFromUnknown(
       message: getMessageFromUnkown(err),
       originalError: err,
       path,
+      procedureType,
     });
   }
 
@@ -118,6 +127,7 @@ export function getErrorFromUnknown(
     message,
     originalError: err,
     path,
+    procedureType,
   });
 }
 
@@ -252,11 +262,14 @@ export async function requestHandler<
 
     const caller = router.createCaller(ctx);
 
+    let procedureType: 'unknown' | ProcedureType = 'unknown';
+
     if (method === 'HEAD') {
       res.statusCode = 204;
       res.end();
       return;
     } else if (method === 'GET') {
+      procedureType = 'query';
       // queries
 
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
@@ -264,12 +277,14 @@ export async function requestHandler<
       const input = deserializeInput(getQueryInput(query));
       output = await caller.query(path, input);
     } else if (method === 'POST') {
+      procedureType = 'mutation';
       // mutations
 
       const body = await getPostBody({ req, maxBodySize });
       const input = deserializeInput(body.input);
       output = await caller.mutation(path, input);
     } else if (method === 'PATCH') {
+      procedureType = 'subscription';
       // subscriptions
 
       const body = await getPostBody({ req, maxBodySize });
@@ -365,7 +380,7 @@ export async function requestHandler<
     res.setHeader('Content-Type', 'application/json');
     res.end(JSON.stringify(transformer.serialize(json)));
   } catch (_err) {
-    const err = getErrorFromUnknown(_err, path);
+    const err = getErrorFromUnknown(_err, path, procedureType);
 
     const json = getErrorResponseEnvelope(err);
 

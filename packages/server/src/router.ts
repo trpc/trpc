@@ -16,6 +16,7 @@ import { Subscription } from './subscription';
 import { flatten, Prefixer, ThenArg } from './types';
 assertNotBrowser();
 
+export type ProcedureType = 'query' | 'mutation' | 'subscription';
 export type ProcedureRecord<
   TContext = any,
   TInput = any,

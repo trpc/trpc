@@ -449,6 +449,7 @@ describe('integration tests', () => {
     expect(err.statusCode).toBe(500);
     expect(err.originalError).toBeInstanceOf(MyError);
     expect(err.path).toBe('err');
+    expect(err.procedureType).toBe('query');
   });
 });
 
