@@ -270,6 +270,6 @@ export async function requestHandler<
   try {
     teardown && (await teardown());
   } catch (err) {
-    console.error('Teardown failed', err);
+    throw new Error('Teardown failed ' + err?.message);
   }
 }
