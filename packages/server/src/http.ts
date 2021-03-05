@@ -180,7 +180,7 @@ export interface BaseOptions {
    */
   transformer?: DataTransformer;
   maxBodySize?: number;
-  onError?: (err: HTTPError) => void;
+  onError?: (err: TRPCResponseError) => void;
 }
 
 async function getPostBody({
@@ -233,6 +233,7 @@ export async function requestHandler<
     deserialize: (data) => data,
   },
   maxBodySize,
+  onError,
 }: {
   req: TRequest;
   res: TResponse;
@@ -364,12 +365,14 @@ export async function requestHandler<
     res.setHeader('Content-Type', 'application/json');
     res.end(JSON.stringify(transformer.serialize(json)));
   } catch (_err) {
-    const err = getErrorFromUnknown(_err);
+    const err = getErrorFromUnknown(_err, path);
+
     const json = getErrorResponseEnvelope(err);
 
     res.statusCode = json.statusCode;
     res.setHeader('Content-Type', 'application/json');
     res.end(JSON.stringify(transformer.serialize(json)));
+    onError && onError(err);
   }
   try {
     teardown && (await teardown());

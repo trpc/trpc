@@ -5,7 +5,7 @@ import * as z from 'zod';
 import * as trpc from '../src';
 import { routerToServerAndClient } from './_testHelpers';
 import { expectTypeOf } from 'expect-type';
-import { CreateHttpContextOptions, httpError } from '../src';
+import { CreateHttpContextOptions, httpError, TRPCResponseError } from '../src';
 
 test('mix query and mutation', async () => {
   type Context = {};
@@ -433,19 +433,22 @@ describe('integration tests', () => {
         },
       },
     );
-
-    let err: Error | null = null;
-    try {
-      await client.query('err');
-    } catch (_err) {
-      err = _err;
-    }
-    if (!err) {
-      throw new Error('Did not throw');
+    {
+      let err: Error | null = null;
+      try {
+        await client.query('err');
+      } catch (_err) {
+        err = _err;
+      }
+      if (!err) {
+        throw new Error('Did not throw');
+      }
     }
     expect(onError).toHaveBeenCalledTimes(1);
-    const args = onError.mock.calls[0];
-    expect(args).toMatchInlineSnapshot();
+    const err = onError.mock.calls[0][0] as TRPCResponseError;
+    expect(err.statusCode).toBe(500);
+    expect(err.originalError).toBeInstanceOf(MyError);
+    expect(err.path).toBe('err');
   });
 });
 
