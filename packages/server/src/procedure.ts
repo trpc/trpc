@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { assertNotBrowser } from './assertNotBrowser';
 import { InputValidationError, NoInputExpectedError } from './errors';
-import { MiddlewareFunction } from './router';
+import { MiddlewareFunction, ProcedureType } from './router';
 assertNotBrowser();
 
 export type ProcedureInputParserZodEsque<TInput = unknown> = {
@@ -24,7 +24,11 @@ export type ProcedureResolver<
   TContext = unknown,
   TInput = unknown,
   TOutput = unknown
-> = (opts: { ctx: TContext; input: TInput }) => Promise<TOutput> | TOutput;
+> = (opts: {
+  ctx: TContext;
+  input: TInput;
+  type: ProcedureType;
+}) => Promise<TOutput> | TOutput;
 
 interface ProcedureOptions<TContext, TInput, TOutput> {
   middlewares: MiddlewareFunction<TContext>[];
@@ -35,6 +39,7 @@ interface ProcedureOptions<TContext, TInput, TOutput> {
 export interface ProcedureCallOptions<TContext> {
   ctx: TContext;
   input: unknown;
+  type: ProcedureType;
 }
 export abstract class Procedure<
   TContext = unknown,
@@ -84,12 +89,13 @@ export abstract class Procedure<
   public async call({
     ctx,
     input: rawInput,
+    type,
   }: ProcedureCallOptions<TContext>): Promise<TOutput> {
     for (const middleware of this.middlewares) {
-      await middleware({ ctx });
+      await middleware({ ctx, type });
     }
     const input = this.parseInput(rawInput);
-    const output = await this.resolver({ ctx, input });
+    const output = await this.resolver({ ctx, input, type });
     return output;
   }
 

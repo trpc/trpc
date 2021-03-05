@@ -155,7 +155,7 @@ test('404', async () => {
   );
   expect(json.statusCode).toBe(404);
   expect(json.error.message).toMatchInlineSnapshot(
-    `"No such procedure \\"not-found-path\\""`,
+    `"No query procedure \\"not-found-path\\""`,
   );
 });
 

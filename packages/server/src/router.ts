@@ -64,8 +64,18 @@ type inferHandlerFn<TProcedures extends ProcedureRecord> = <
 
 export type AnyRouter<TContext = any> = Router<TContext, any, any, any, any>;
 
+const PROCEDURE_DEFINITION_MAP: Record<
+  ProcedureType,
+  'queries' | 'mutations' | 'subscriptions'
+> = {
+  query: 'queries',
+  mutation: 'mutations',
+  subscription: 'subscriptions',
+};
+
 export type MiddlewareFunction<TContext> = (opts: {
   ctx: TContext;
+  type: ProcedureType;
 }) => Promise<void> | void;
 export class Router<
   TContext,
@@ -296,15 +306,15 @@ export class Router<
       throw new Error('Invalid args');
     }
 
-    const duplicateQueries = Object.keys(
-      childRouter._def.queries,
-    ).filter((key) => this.has('queries', prefix + key));
-    const duplicateMutations = Object.keys(
-      childRouter._def.mutations,
-    ).filter((key) => this.has('mutations', prefix + key));
+    const duplicateQueries = Object.keys(childRouter._def.queries).filter(
+      (key) => !!this._def['queries'][prefix + key],
+    );
+    const duplicateMutations = Object.keys(childRouter._def.mutations).filter(
+      (key) => !!this._def['mutations'][prefix + key],
+    );
     const duplicateSubscriptions = Object.keys(
       childRouter._def.subscriptions,
-    ).filter((key) => this.has('subscriptions', prefix + key));
+    ).filter((key) => !!this._def['subscriptions'][prefix + key]);
 
     const duplicates = [
       ...duplicateQueries,
@@ -351,24 +361,26 @@ export class Router<
    * @throws RouteNotFoundError
    * @throws InputValidationError
    */
-  private async invoke(opts: {
-    target: 'queries' | 'subscriptions' | 'mutations';
+  private async invoke({
+    type,
+    path,
+    ctx,
+    input,
+  }: {
+    type: ProcedureType;
     ctx: TContext;
     path: string;
     input?: unknown;
   }): Promise<unknown> {
-    if (!this.has(opts.target, opts.path)) {
-      throw new RouteNotFoundError(`No such procedure "${opts.path}"`);
+    const defTarget = PROCEDURE_DEFINITION_MAP[type];
+    const target = this._def[defTarget][path];
+
+    if (!target) {
+      throw new RouteNotFoundError(`No ${type} procedure "${path}"`);
     }
-    const target = this._def[opts.target];
-    const procedure: Procedure<TContext> = target[opts.path as any];
-    const { ctx, input } = opts;
+    const procedure: Procedure<TContext> = target;
 
-    return procedure.call({ ctx, input });
-  }
-
-  private has(what: 'subscriptions' | 'mutations' | 'queries', path: string) {
-    return !!this._def[what][path];
+    return procedure.call({ ctx, input, type });
   }
 
   public createCaller(
@@ -381,7 +393,7 @@ export class Router<
     return {
       query: (path, ...args) => {
         return this.invoke({
-          target: 'queries',
+          type: 'query',
           ctx,
           path,
           input: args[0],
@@ -389,7 +401,7 @@ export class Router<
       },
       mutation: (path, ...args) => {
         return this.invoke({
-          target: 'mutations',
+          type: 'mutation',
           ctx,
           path,
           input: args[0],
@@ -397,7 +409,7 @@ export class Router<
       },
       subscription: (path, ...args) => {
         return this.invoke({
-          target: 'subscriptions',
+          type: 'subscription',
           ctx,
           path,
           input: args[0],
