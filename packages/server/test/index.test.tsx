@@ -483,7 +483,11 @@ describe('integration tests', () => {
         }
       }
       expect(onError).toHaveBeenCalledTimes(1);
-      const err = onError.mock.calls[0][0] as TRPCResponseError;
+      const err = onError.mock.calls[0][0];
+      expect(err).toBeInstanceOf(TRPCResponseError);
+      if (!(err instanceof TRPCResponseError)) {
+        throw new Error('Wrong type');
+      }
       expect(err.statusCode).toBe(400);
       expect(err.originalError).toBeInstanceOf(ZodError);
       expect(err.path).toBe('err');
