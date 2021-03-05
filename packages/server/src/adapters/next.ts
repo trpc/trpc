@@ -50,6 +50,7 @@ export function createNextApiHandler<
             'Query "trpc" not found - is the file named `[trpc]`.ts or `[...trpc].ts`?',
           path: '',
           originalError: null,
+          procedureType: 'unknown',
         }),
       );
       res.status(json.statusCode).json(json);
