@@ -60,7 +60,7 @@ export class TRPCResponseError extends HTTPError {
     this.originalError = originalError;
     this.procedureType = procedureType;
 
-    // Object.setPrototypeOf(this, HTTPError.prototype);
+    Object.setPrototypeOf(this, TRPCResponseError.prototype);
   }
 }
 /* istanbul ignore next */
