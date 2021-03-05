@@ -35,25 +35,33 @@ Recommended but not enforced file structure. This is what you get when starting 
 
 Execute [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app) to bootstrap one of the examples:
 
-### Simple Starter (no db)
-
->Simple starter project with a mock in-memory db.
-
-```bash
-npx create-next-app --example https://github.com/trpc/trpc --example-path examples/next-hello-world my-app
-```
 
 ### TodoMVC with [Prisma](https://www.prisma.io/)
 
-> [TodoMVC](https://todomvc.com/)-app implemented with tRPC.
+> TodoMVC-app implemented with tRPC.
+> 
+> Live demo at [todomvc.trpc.io](https://todomvc.trpc.io)
+
 
 ```bash
 npx create-next-app --example https://github.com/trpc/trpc --example-path examples/next-prisma-todomvc trpc-todo
 ```
 
+### Simple Starter (no db)
+
+> Simple starter project with a mock in-memory db.
+> 
+> Live demo at [hello-world.trpc.io](https://hello-world.trpc.io) _(note that data isn't persisted on Vercel as it's running in lambda functions)_
+
+```bash
+npx create-next-app --example https://github.com/trpc/trpc --example-path examples/next-hello-world my-app
+```
+
 ### Real-time chat with [Prisma](https://www.prisma.io/)
 
 > Using experimental subscription support.
+> 
+> Live demo at [chat.trpc.io](https://chat.trpc.io)
 
 ```bash
 npx create-next-app --example https://github.com/trpc/trpc --example-path examples/next-ssg-chat my-chat-app
