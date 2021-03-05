@@ -18,8 +18,10 @@ export function routerToServerAndClient<
     createContext?: CreateHttpContextFn<TContext>;
     getHeaders?: CreateTRPCClientOptions['getHeaders'];
     subscriptions?: CreateHttpHandlerOptions<any, any>['subscriptions'];
-    onError?: CreateTRPCClientOptions['onError'];
-    onSuccess?: CreateTRPCClientOptions['onSuccess'];
+    client?: {
+      onError?: CreateTRPCClientOptions['onError'];
+      onSuccess?: CreateTRPCClientOptions['onSuccess'];
+    };
   },
 ) {
   const server = createHttpServer({
@@ -36,8 +38,8 @@ export function routerToServerAndClient<
       fetch: fetch as any,
     },
     getHeaders: opts?.getHeaders,
-    onError: opts?.onError,
-    onSuccess: opts?.onSuccess,
+    onError: opts?.client?.onError,
+    onSuccess: opts?.client?.onSuccess,
   });
 
   return {

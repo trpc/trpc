@@ -367,8 +367,10 @@ describe('integration tests', () => {
         },
       }),
       {
-        onError,
-        onSuccess,
+        client: {
+          onError,
+          onSuccess,
+        },
       },
     );
     await client.mutation('hello', 1);
