@@ -421,7 +421,7 @@ describe('integration tests', () => {
       }
     }
     const onError = jest.fn();
-    const { client } = routerToServerAndClient(
+    const { client, close } = routerToServerAndClient(
       trpc.router().query('err', {
         resolve() {
           throw new MyError('woop');
@@ -450,6 +450,8 @@ describe('integration tests', () => {
     expect(err.originalError).toBeInstanceOf(MyError);
     expect(err.path).toBe('err');
     expect(err.procedureType).toBe('query');
+
+    close();
   });
 });
 
