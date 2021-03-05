@@ -1,6 +1,6 @@
 import { routerToServerAndClient } from './_testHelpers';
 import * as trpc from '../src';
-import { httpError } from '../src';
+import { httpError } from '../src/errors';
 
 test('is called if def first', async () => {
   const middleware = jest.fn();

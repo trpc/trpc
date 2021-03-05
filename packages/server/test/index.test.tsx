@@ -5,8 +5,9 @@ import * as z from 'zod';
 import * as trpc from '../src';
 import { routerToServerAndClient } from './_testHelpers';
 import { expectTypeOf } from 'expect-type';
-import { CreateHttpContextOptions, httpError, TRPCResponseError } from '../src';
+import { CreateHttpContextOptions } from '../src';
 import { ZodError } from 'zod';
+import { httpError, TRPCResponseError } from '../src/errors';
 
 test('mix query and mutation', async () => {
   type Context = {};

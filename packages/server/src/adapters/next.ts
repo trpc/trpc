@@ -1,13 +1,12 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 import type { NextApiHandler, NextApiRequest, NextApiResponse } from 'next';
+import { getErrorResponseEnvelope, TRPCResponseError } from '../errors';
 import {
   BaseOptions,
   CreateContextFn,
   CreateContextFnOptions,
-  getErrorResponseEnvelope,
   requestHandler,
-  TRPCResponseError,
 } from '../http';
 import { AnyRouter } from '../router';
 
