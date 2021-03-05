@@ -39,7 +39,8 @@ Execute [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packag
 ### TodoMVC with [Prisma](https://www.prisma.io/)
 
 > TodoMVC-app implemented with tRPC.
-> Live example at todomvc.trpc.io
+> 
+> Live demo at [todomvc.trpc.io](https://todomvc.trpc.io)
 
 
 ```bash
@@ -49,7 +50,8 @@ npx create-next-app --example https://github.com/trpc/trpc --example-path exampl
 ### Simple Starter (no db)
 
 > Simple starter project with a mock in-memory db.
-> Live example at hello-world.trpc.io _(note that data isn't persisted on Vercel as it's running in lambda functions)_
+> 
+> Live demo at [hello-world.trpc.io](https://hello-world.trpc.io) _(note that data isn't persisted on Vercel as it's running in lambda functions)_
 
 ```bash
 npx create-next-app --example https://github.com/trpc/trpc --example-path examples/next-hello-world my-app
@@ -58,7 +60,8 @@ npx create-next-app --example https://github.com/trpc/trpc --example-path exampl
 ### Real-time chat with [Prisma](https://www.prisma.io/)
 
 > Using experimental subscription support.
-> Live example at chat.trpc.io
+> 
+> Live demo at [chat.trpc.io](https://chat.trpc.io)
 
 ```bash
 npx create-next-app --example https://github.com/trpc/trpc --example-path examples/next-ssg-chat my-chat-app
