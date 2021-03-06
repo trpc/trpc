@@ -132,7 +132,9 @@ test('httpError.unauthorized()', async () => {
   expect(clientError.json?.error.message).toMatchInlineSnapshot(
     `"Unauthorized"`,
   );
-  expect(clientError.json?.error.code).toMatchInlineSnapshot(`"HTTP_ERROR"`);
+  expect(clientError.json?.error.code).toMatchInlineSnapshot(
+    `"UNAUTHENTICATED"`,
+  );
   expect(onError).toHaveBeenCalledTimes(1);
   const serverError = onError.mock.calls[0][0].error;
 

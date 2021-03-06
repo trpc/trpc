@@ -5,7 +5,7 @@ sidebar_label: Error Handling
 slug: /error-handling
 ---
 
-If a procedure fails we trigger an `onError()`-function with information about the procedure & ctx;
+If a procedure fails we trigger a function with information about the procedure & ctx;
 
 ## Example with Next.js
 
@@ -37,12 +37,13 @@ export default trpcNext.createNextApiHandler({
 ## Built-in error codes
 
 
-| Code                    | HTTP Status | Description                                             |
-| ----------------------- | ----------- | ------------------------------------------------------- |
-| `BAD_USER_INPUT`        | 400         | Input validation failed                                 |
-| `NOT_FOUND`             | 404         | Procedure path not found                                |
-| `INTERNAL_SERVER_ERROR` | 500         | Something in the resolver threw an error                |
-| `HTTP_ERROR`            | mixed       | `HTTPError` thrown, will grab statusCode from the error |
+| Code                    | HTTP Status   | Description                                                |
+| ----------------------- | ------------- | ---------------------------------------------------------- |
+| `BAD_USER_INPUT`        | `400` / `413` | Input validation failed. 413 if data exceeds `maxBodySize` |
+| `NOT_FOUND`             | `404`         | Procedure path not found                                   |
+| `UNAUTHENTICATED`       | `401`         | Unauthorized request                                       |
+| `FORBIDDEN`             | `403`         | Forbidden request                                          |
+| `INTERNAL_SERVER_ERROR` | `500`         | Something in the resolver threw an error                   |
 
 
 ## Accessing original error

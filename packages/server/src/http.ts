@@ -42,14 +42,16 @@ const STATUS_CODE_MAP: Dict<number> = {
   INTERAL_SERVER_ERROR: 500,
   NOT_FOUND: 404,
 };
-export interface HttpErrorOptions extends TRPCErrorOptions {
+export interface HttpErrorOptions<TCode extends string>
+  extends TRPCErrorOptions {
+  code: TCode;
   statusCode: number;
 }
-export class HTTPError extends TRPCError<'HTTP_ERROR'> {
+export class HTTPError<TCode extends string> extends TRPCError<TCode> {
   public readonly statusCode: number;
 
-  constructor(message: string, opts: HttpErrorOptions) {
-    super({ message, code: 'HTTP_ERROR', ...opts });
+  constructor(message: string, opts: HttpErrorOptions<TCode>) {
+    super({ message, ...opts });
     this.statusCode = opts.statusCode;
 
     // this is set to TRPCError as `instanceof TRPCError` doesn't seem to work on error sub-classes
@@ -59,13 +61,25 @@ export class HTTPError extends TRPCError<'HTTP_ERROR'> {
 /* istanbul ignore next */
 export const httpError = {
   forbidden: (message?: string) =>
-    new HTTPError(message ?? 'Forbidden', { statusCode: 403 }),
+    new HTTPError(message ?? 'Forbidden', {
+      statusCode: 403,
+      code: 'FORBIDDEN',
+    }),
   unauthorized: (message?: string) =>
-    new HTTPError(message ?? 'Unauthorized', { statusCode: 401 }),
+    new HTTPError(message ?? 'Unauthorized', {
+      statusCode: 401,
+      code: 'UNAUTHENTICATED',
+    }),
   badRequest: (message?: string) =>
-    new HTTPError(message ?? 'Bad Request', { statusCode: 400 }),
+    new HTTPError(message ?? 'Bad Request', {
+      statusCode: 400,
+      code: 'BAD_USER_INPUT',
+    }),
   notFound: (message?: string) =>
-    new HTTPError(message ?? 'Not found', { statusCode: 404 }),
+    new HTTPError(message ?? 'Not found', {
+      statusCode: 404,
+      code: 'NOT_FOUND',
+    }),
 };
 
 export function getStatusCodeFromError(err: TRPCError): number {
@@ -172,7 +186,12 @@ async function getPostBody({
     req.on('data', function (data) {
       body += data;
       if (typeof maxBodySize === 'number' && body.length > maxBodySize) {
-        reject(new HTTPError('Payload Too Large', { statusCode: 413 }));
+        reject(
+          new HTTPError('Payload Too Large', {
+            statusCode: 413,
+            code: 'BAD_USER_INPUT',
+          }),
+        );
         req.socket.destroy();
       }
     });
@@ -182,7 +201,10 @@ async function getPostBody({
         resolve(json);
       } catch (err) {
         reject(
-          new HTTPError("Body couldn't be parsed as json", { statusCode: 400 }),
+          new HTTPError("Body couldn't be parsed as json", {
+            statusCode: 400,
+            code: 'BAD_USER_INPUT',
+          }),
         );
       }
     });
