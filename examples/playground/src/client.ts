@@ -41,7 +41,14 @@ async function main() {
   }
   await sleep();
   const authedClient = createTRPCClient<AppRouter>({
-    ...opts,
+    url,
+    onSuccess(envelope) {
+      console.log('✅ ', envelope.statusCode);
+    },
+
+    onError(err) {
+      console.log('❌ ', err.res?.status, err.message);
+    },
     getHeaders: () => ({
       authorization: 'secret',
     }),
