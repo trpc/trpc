@@ -112,7 +112,10 @@ export type BaseRequest = http.IncomingMessage & {
 };
 export type BaseResponse = http.ServerResponse;
 
-export interface BaseOptions<TRouter extends AnyRouter> {
+export interface BaseOptions<
+  TRouter extends AnyRouter,
+  TRequest extends BaseRequest
+> {
   subscriptions?: {
     /**
      * Time in milliseconds before `408` is sent
@@ -133,7 +136,7 @@ export interface BaseOptions<TRouter extends AnyRouter> {
     error: TRPCError;
     type: ProcedureType | 'unknown';
     path: string | undefined;
-    req: BaseRequest;
+    req: TRequest;
     input: unknown;
     ctx: undefined | inferRouterContext<TRouter>;
   }) => void;
