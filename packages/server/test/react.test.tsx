@@ -618,7 +618,7 @@ test('formatError() react types test', async () => {
 
     useEffect(() => {
       mutation.mutate({ title: 123 as any });
-    }, []);
+    }, [mutation]);
 
     if (mutation.error && mutation.error.json && mutation.error.shape) {
       expectTypeOf(mutation.error.json.error).toMatchTypeOf<
