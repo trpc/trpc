@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { assertNotBrowser } from './assertNotBrowser';
-import { InputValidationError, NoInputExpectedError } from './errors';
+import { getMessageFromUnkownError, inputValidationError } from './errors';
 import { MiddlewareFunction, ProcedureType } from './router';
 assertNotBrowser();
 
@@ -76,9 +76,14 @@ export abstract class Procedure<
       }
 
       throw new Error('Could not find a validator fn');
-    } catch (_err) {
-      const err = new InputValidationError(_err);
-      throw err;
+    } catch (originalError) {
+      const message = getMessageFromUnkownError(
+        originalError,
+        'Input Validation Error',
+      );
+      throw inputValidationError(message, {
+        originalError,
+      });
     }
   }
 
@@ -179,7 +184,7 @@ export function createProcedure<TContext, TInput, TOutput>(
     middlewares: [],
     inputParser(input: unknown) {
       if (input != null) {
-        throw new NoInputExpectedError('No input expected');
+        throw inputValidationError('No input expected');
       }
       return undefined;
     },

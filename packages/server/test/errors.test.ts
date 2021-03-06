@@ -1,7 +1,10 @@
-import { ZodError } from 'zod';
-import { routerToServerAndClient } from './_testHelpers';
-import * as trpc from '../src';
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import * as z from 'zod';
+import { ZodError } from 'zod';
+import { TRPCClientError } from '../../client/src';
+import * as trpc from '../src';
+import { TRPCError } from '../src/errors';
+import { routerToServerAndClient } from './_testHelpers';
 
 test('basic', async () => {
   class MyError extends Error {
@@ -23,23 +26,28 @@ test('basic', async () => {
       },
     },
   );
-  {
-    let err: Error | null = null;
-    try {
-      await client.query('err');
-    } catch (_err) {
-      err = _err;
-    }
-    if (!err) {
-      throw new Error('Did not throw');
-    }
+  let clientError: Error | null = null;
+  try {
+    await client.query('err');
+  } catch (_err) {
+    clientError = _err;
   }
+  if (!(clientError instanceof TRPCClientError)) {
+    throw new Error('Did not throw');
+  }
+  expect(clientError.res?.status).toBe(500);
+  expect(clientError.json?.error.message).toMatchInlineSnapshot(`"woop"`);
+  expect(clientError.json?.error.code).toMatchInlineSnapshot(
+    `"INTERNAL_SERVER_ERROR"`,
+  );
   expect(onError).toHaveBeenCalledTimes(1);
-  const err = onError.mock.calls[0][0];
-  expect(err.statusCode).toBe(500);
-  expect(err.originalError).toBeInstanceOf(MyError);
-  expect(err.path).toBe('err');
-  expect(err.procedureType).toBe('query');
+  const serverError = onError.mock.calls[0][0].err;
+
+  expect(serverError).toBeInstanceOf(TRPCError);
+  if (!(serverError instanceof TRPCError)) {
+    throw new Error('Wrong error');
+  }
+  expect(serverError.originalError).toBeInstanceOf(MyError);
 
   close();
 });
@@ -59,23 +67,34 @@ test('input error', async () => {
       },
     },
   );
-  {
-    let err: Error | null = null;
-    try {
-      await client.mutation('err', (1 as any) as string);
-    } catch (_err) {
-      err = _err;
-    }
-    if (!err) {
-      throw new Error('Did not throw');
-    }
+  let clientError: Error | null = null;
+  try {
+    await client.mutation('err', 1 as any);
+  } catch (_err) {
+    clientError = _err;
   }
+  if (!(clientError instanceof TRPCClientError)) {
+    throw new Error('Did not throw');
+  }
+  expect(clientError.res?.status).toBe(400);
+  expect(clientError.json?.error.message).toMatchInlineSnapshot(`
+    "1 validation issue(s)
+
+      Issue #0: invalid_type at 
+      Expected string, received number
+    "
+  `);
+  expect(clientError.json?.error.code).toMatchInlineSnapshot(
+    `"BAD_USER_INPUT"`,
+  );
   expect(onError).toHaveBeenCalledTimes(1);
-  const err = onError.mock.calls[0][0];
-  expect(err.statusCode).toBe(400);
-  expect(err.originalError).toBeInstanceOf(ZodError);
-  expect(err.path).toBe('err');
-  expect(err.procedureType).toBe('mutation');
+  const serverError = onError.mock.calls[0][0].err;
+
+  // if (!(serverError instanceof TRPCError)) {
+  //   console.log('err', serverError);
+  //   throw new Error('Wrong error');
+  // }
+  expect(serverError.originalError).toBeInstanceOf(ZodError);
 
   close();
 });

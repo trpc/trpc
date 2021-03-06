@@ -2,6 +2,7 @@
 import type {
   AnyRouter,
   DataTransformer,
+  HTTPErrorResponseEnvelope,
   HTTPResponseEnvelope,
   HTTPSuccessResponseEnvelope,
   inferHandlerInput,
@@ -22,7 +23,7 @@ const retryDelay = (attemptIndex: number) =>
   attemptIndex === 0 ? 0 : Math.min(1000 * 2 ** attemptIndex, 30000);
 
 export class TRPCClientError extends Error {
-  public readonly json?: Maybe<HTTPResponseEnvelope<unknown>>;
+  public readonly json?: Maybe<HTTPErrorResponseEnvelope>;
   public readonly res?: Maybe<Response>;
   public readonly originalError?: Maybe<Error>;
 
@@ -34,7 +35,7 @@ export class TRPCClientError extends Error {
       originalError,
     }: {
       res?: Maybe<Response>;
-      json?: Maybe<HTTPResponseEnvelope<unknown>>;
+      json?: Maybe<HTTPErrorResponseEnvelope>;
       originalError?: Maybe<Error>;
     },
   ) {

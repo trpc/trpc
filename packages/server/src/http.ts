@@ -5,10 +5,10 @@ import qs from 'qs';
 import url from 'url';
 import { assertNotBrowser } from './assertNotBrowser';
 import {
-  TRPCError,
   getErrorFromUnknown,
-  InputValidationError,
-  PayloadTooLargeError,
+  inputValidationError,
+  TRPCError,
+  TRPCErrorOptions,
 } from './errors';
 import { AnyRouter, ProcedureType } from './router';
 import { Subscription } from './subscription';
@@ -43,28 +43,37 @@ const STATUS_CODE_MAP: Dict<number> = {
   UNAUTHENTICATED: 401,
   FORBIDDEN: 403,
 };
-
-export class HttpError extends TRPCError<'HTTP_ERROR'> {
+export interface HttpErrorOptions extends TRPCErrorOptions {
+  statusCode: number;
+}
+export class HTTPError extends TRPCError<'HTTP_ERROR'> {
   public readonly statusCode: number;
 
-  constructor(statusCode: number, message: string) {
-    super(message, 'HTTP_ERROR');
-    this.statusCode = statusCode;
+  constructor(message: string, opts: HttpErrorOptions) {
+    super({ message, code: 'HTTP_ERROR', ...opts });
+    this.statusCode = opts.statusCode;
 
-    Object.setPrototypeOf(this, HttpError.prototype);
+    Object.setPrototypeOf(this, TRPCError.prototype);
   }
 }
+/* istanbul ignore next */
+export const httpError = {
+  forbidden: (message?: string) =>
+    new HTTPError(message ?? 'Forbidden', { statusCode: 403 }),
+  unauthorized: (message?: string) =>
+    new HTTPError(message ?? 'Unauthorized', { statusCode: 401 }),
+  badRequest: (message?: string) =>
+    new HTTPError(message ?? 'Bad Request', { statusCode: 400 }),
+  notFound: (message?: string) =>
+    new HTTPError(message ?? 'Not found', { statusCode: 404 }),
+};
 
 export function getStatusCodeFromError(err: TRPCError): number {
-  const statusCode = STATUS_CODE_MAP[err.code];
-  if (statusCode) {
-    return statusCode;
-  }
   const statusCodeFromError = (err as any)?.statusCode;
   if (typeof statusCodeFromError === 'number') {
     return statusCodeFromError;
   }
-  return 500;
+  return STATUS_CODE_MAP[err.code] ?? 500;
 }
 
 export function getErrorResponseEnvelope(err: TRPCError) {
@@ -91,7 +100,7 @@ export function getQueryInput(query: qs.ParsedQs) {
   try {
     return JSON.parse(queryInput as string);
   } catch (err) {
-    throw new InputValidationError('Expected query.input to be a JSON string');
+    throw inputValidationError('Expected query.input to be a JSON string');
   }
 }
 
@@ -146,7 +155,7 @@ async function getPostBody({
     req.on('data', function (data) {
       body += data;
       if (typeof maxBodySize === 'number' && body.length > maxBodySize) {
-        reject(new HttpError(413, 'Payload Too Large'));
+        reject(new HTTPError('Payload Too Large', { statusCode: 413 }));
         req.socket.destroy();
       }
     });
@@ -155,7 +164,9 @@ async function getPostBody({
         const json = JSON.parse(body);
         resolve(json);
       } catch (err) {
-        reject(new HttpError(400, "Body couldn't be parsed as json"));
+        reject(
+          new HTTPError("Body couldn't be parsed as json", { statusCode: 400 }),
+        );
       }
     });
   });
@@ -287,20 +298,24 @@ export async function requestHandler<
         }
         function onClose() {
           cleanup();
-          reject(new HttpError(499, `Client Closed Request`));
+          reject(new HTTPError(`Client Closed Request`, { statusCode: 499 }));
         }
         function onRequestTimeout() {
           cleanup();
           reject(
-            new HttpError(
-              408,
+            new HTTPError(
               `Subscription exceeded ${requestTimeoutMs}ms - please reconnect.`,
+              { statusCode: 408 },
             ),
           );
         }
 
         function onDestroy() {
-          reject(new HttpError(500, `Subscription was destroyed prematurely`));
+          reject(
+            new HTTPError(`Subscription was destroyed prematurely`, {
+              statusCode: 500,
+            }),
+          );
           cleanup();
         }
 
@@ -313,7 +328,9 @@ export async function requestHandler<
         sub.start();
       });
     } else {
-      throw new HttpError(405, `Unexpected request method ${method}`);
+      throw new HTTPError(`Unexpected request method ${method}`, {
+        statusCode: 405,
+      });
     }
     const json: HTTPSuccessResponseEnvelope<unknown> = {
       ok: true,
@@ -325,7 +342,6 @@ export async function requestHandler<
     res.end(JSON.stringify(transformer.serialize(json)));
   } catch (_err) {
     const err = getErrorFromUnknown(_err);
-
     const json = getErrorResponseEnvelope(err);
 
     res.statusCode = json.statusCode;

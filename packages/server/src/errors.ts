@@ -1,71 +1,54 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-
-export abstract class TRPCError<TCode extends string = string> extends Error {
+export class TRPCError<TCode extends string = string> extends Error {
+  public readonly originalError?: unknown;
   public readonly code;
   // public readonly statusCode?: number;
-  constructor(message: string, code: TCode) {
+  constructor({
+    message,
+    code,
+    originalError,
+  }: {
+    message: string;
+    code: TCode;
+    originalError?: unknown;
+  }) {
     super(message);
     this.code = code;
+    this.originalError = originalError;
+
     Object.setPrototypeOf(this, TRPCError.prototype);
   }
 }
-
-export class InputValidationError extends TRPCError<'BAD_USER_INPUT'> {
-  public readonly originalError?: unknown;
-
-  constructor(message: string, originalError?: unknown) {
-    super(message, 'BAD_USER_INPUT');
-    this.originalError = originalError;
-
-    Object.setPrototypeOf(this, InputValidationError.prototype);
-  }
+export interface TRPCErrorOptions {
+  originalError?: unknown;
 }
 
-export class NotFoundError extends TRPCError<'NOT_FOUND'> {
-  constructor(message: string) {
-    super(message, 'NOT_FOUND');
+export const inputValidationError = (
+  message: string,
+  opts: TRPCErrorOptions = {},
+) => new TRPCError({ message, code: 'BAD_USER_INPUT', ...opts });
 
-    Object.setPrototypeOf(this, NotFoundError.prototype);
-  }
-}
+export const notFoundError = (message: string, opts: TRPCErrorOptions = {}) =>
+  new TRPCError({ message, code: 'NOT_FOUND', ...opts });
 
-export class InternalServerError extends TRPCError<'INTERNAL_SERVER_ERROR'> {
-  public readonly originalError: unknown;
+export const forbiddenError = (message: string, opts: TRPCErrorOptions = {}) =>
+  new TRPCError({ message, code: 'FORBIDDEN', ...opts });
 
-  constructor(originalError: unknown) {
-    const message = getMessageFromUnkownError(
-      originalError,
-      'INTERNAL_SERVER_ERROR',
-    );
-    super(message, 'INTERNAL_SERVER_ERROR');
-    this.originalError = originalError;
+export const unauthenticatedError = (
+  message: string,
+  opts: TRPCErrorOptions = {},
+) => new TRPCError({ message, code: 'UNAUTHENTICATED', ...opts });
 
-    Object.setPrototypeOf(this, InternalServerError.prototype);
-  }
-}
-
-export class ForbiddenError extends TRPCError<'FORBIDDEN'> {
-  constructor(message: string) {
-    super(message, 'FORBIDDEN');
-
-    Object.setPrototypeOf(this, ForbiddenError.prototype);
-  }
-}
-export class UnauthenticatedError extends TRPCError<'UNAUTHENTICATED'> {
-  constructor(message: string) {
-    super(message, 'UNAUTHENTICATED');
-
-    Object.setPrototypeOf(this, UnauthenticatedError.prototype);
-  }
-}
-
-export class PayloadTooLargeError extends TRPCError<'PAYLOAD_TOO_LARGE'> {
-  constructor(message: string) {
-    super(message, 'PAYLOAD_TOO_LARGE');
-
-    Object.setPrototypeOf(this, PayloadTooLargeError.prototype);
-  }
-}
+export const internalServerError = (originalError: unknown) => {
+  const message = getMessageFromUnkownError(
+    originalError,
+    'Internal Server Error',
+  );
+  return new TRPCError({
+    message,
+    code: 'INTERNAL_SERVER_ERROR',
+    originalError,
+  });
+};
 
 export function getMessageFromUnkownError(
   err: unknown,
@@ -74,15 +57,17 @@ export function getMessageFromUnkownError(
   if (typeof err === 'string') {
     return err;
   }
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const message = (err as any)?.message;
-  if (message === 'string') {
+  if (typeof message === 'string') {
     return message;
   }
   return fallback;
 }
+
 export function getErrorFromUnknown(err: unknown): TRPCError {
   if (err instanceof TRPCError) {
     return err;
   }
-  return new InternalServerError(err);
+  return internalServerError(err);
 }

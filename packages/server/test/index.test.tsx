@@ -5,7 +5,6 @@ import * as z from 'zod';
 import { TRPCClientError } from '../../client/src';
 import * as trpc from '../src';
 import { CreateHttpContextOptions } from '../src';
-import { httpError } from '../src/errors';
 import { routerToServerAndClient } from './_testHelpers';
 
 test('mix query and mutation', async () => {
@@ -251,7 +250,7 @@ describe('integration tests', () => {
         trpc.router<Context>().query('whoami', {
           async resolve({ ctx }) {
             if (!ctx.user) {
-              throw httpError.unauthorized();
+              throw trpc.httpError.unauthorized();
             }
             return ctx.user;
           },

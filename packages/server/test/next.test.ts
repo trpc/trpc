@@ -3,10 +3,7 @@
 import * as trpc from '../src';
 import * as trpcNext from '../src/adapters/next';
 import { EventEmitter } from 'events';
-import {
-  HTTPErrorResponseEnvelope,
-  HTTPSuccessResponseEnvelope,
-} from '../src/errors';
+import { HTTPErrorResponseEnvelope, HTTPSuccessResponseEnvelope } from '../src';
 
 function mockReq({
   query,
