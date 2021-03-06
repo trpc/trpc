@@ -53,7 +53,8 @@ export class HTTPError extends TRPCError<'HTTP_ERROR'> {
     super({ message, code: 'HTTP_ERROR', ...opts });
     this.statusCode = opts.statusCode;
 
-    Object.setPrototypeOf(this, TRPCError.prototype);
+    // this is set to TRPCError as `instanceof TRPCError` doesn't seem to work on error sub-classes
+    Object.setPrototypeOf(this, HTTPError.prototype);
   }
 }
 /* istanbul ignore next */

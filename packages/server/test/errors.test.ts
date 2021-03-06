@@ -98,3 +98,40 @@ test('input error', async () => {
 
   close();
 });
+
+test('basic', async () => {
+  const onError = jest.fn();
+  const { client, close } = routerToServerAndClient(
+    trpc.router().query('err', {
+      resolve() {
+        throw trpc.httpError.unauthorized();
+      },
+    }),
+    {
+      server: {
+        onError,
+      },
+    },
+  );
+  let clientError: Error | null = null;
+  try {
+    await client.query('err');
+  } catch (_err) {
+    clientError = _err;
+  }
+  if (!(clientError instanceof TRPCClientError)) {
+    throw new Error('Did not throw');
+  }
+  expect(clientError.res?.status).toBe(401);
+  expect(clientError.json?.error.message).toMatchInlineSnapshot(
+    `"Unauthorized"`,
+  );
+  expect(clientError.json?.error.code).toMatchInlineSnapshot(`"HTTP_ERROR"`);
+  expect(onError).toHaveBeenCalledTimes(1);
+  const serverError = onError.mock.calls[0][0].err;
+
+  expect(serverError).toBeInstanceOf(TRPCError);
+  expect(serverError).toBeInstanceOf(trpc.HTTPError);
+
+  close();
+});
