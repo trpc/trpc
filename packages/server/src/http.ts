@@ -162,7 +162,7 @@ export interface BaseOptions<TRouter extends AnyRouter> {
   maxBodySize?: number;
   onError?: (opts: {
     error: TRPCError;
-    procedureType: ProcedureType | 'unknown';
+    type: ProcedureType | 'unknown';
     path: string | undefined;
     req: BaseRequest;
     input: unknown;
@@ -246,7 +246,7 @@ export async function requestHandler<
   router: TRouter;
   createContext: TCreateContextFn;
 } & BaseOptions<TRouter>) {
-  let procedureType: 'unknown' | ProcedureType = 'unknown';
+  let type: 'unknown' | ProcedureType = 'unknown';
   let input: unknown = undefined;
   let ctx: inferRouterContext<TRouter> | undefined = undefined;
   try {
@@ -259,14 +259,14 @@ export async function requestHandler<
       input ? transformer.deserialize(input) : input;
 
     const caller = router.createCaller(ctx);
-    procedureType = HTTP_METHOD_PROCEDURE_TYPE_MAP[req.method!] ?? 'unknown';
+    type = HTTP_METHOD_PROCEDURE_TYPE_MAP[req.method!] ?? 'unknown';
     const getInput = async () => {
-      if (procedureType === 'query') {
+      if (type === 'query') {
         const query = req.query ? req.query : url.parse(req.url!, true).query;
         const input = getQueryInput(query);
         return deserializeInput(input);
       }
-      if (procedureType === 'mutation' || procedureType === 'subscription') {
+      if (type === 'mutation' || type === 'subscription') {
         const body = await getPostBody({ req, maxBodySize });
         const input = deserializeInput(body.input);
         return input;
@@ -279,11 +279,11 @@ export async function requestHandler<
       res.statusCode = 204;
       res.end();
       return;
-    } else if (procedureType === 'query') {
+    } else if (type === 'query') {
       output = await caller.query(path, input);
-    } else if (procedureType === 'mutation') {
+    } else if (type === 'mutation') {
       output = await caller.mutation(path, input);
-    } else if (procedureType === 'subscription') {
+    } else if (type === 'subscription') {
       const sub = (output = await caller.subscription(
         path,
         input,
@@ -388,7 +388,7 @@ export async function requestHandler<
     res.statusCode = json.statusCode;
     res.setHeader('Content-Type', 'application/json');
     res.end(JSON.stringify(transformer.serialize(json)));
-    onError && onError({ error, path, input, ctx, procedureType, req });
+    onError && onError({ error, path, input, ctx, type: type, req });
   }
   try {
     teardown && (await teardown());
