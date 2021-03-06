@@ -10,7 +10,7 @@ import {
   TRPCError,
   TRPCErrorOptions,
 } from './errors';
-import { AnyRouter, ProcedureType } from './router';
+import { AnyRouter, inferRouterContext, ProcedureType } from './router';
 import { Subscription } from './subscription';
 import { DataTransformer } from './transformer';
 import { Dict } from './types';
@@ -120,9 +120,9 @@ export type CreateContextFnOptions<TRequest, TResponse> = {
   req: TRequest;
   res: TResponse;
 };
-export type CreateContextFn<TContext, TRequest, TResponse> = (
+export type CreateContextFn<TRouter extends AnyRouter, TRequest, TResponse> = (
   opts: CreateContextFnOptions<TRequest, TResponse>,
-) => TContext | Promise<TContext>;
+) => inferRouterContext<TRouter> | Promise<inferRouterContext<TRouter>>;
 
 export type BaseRequest = http.IncomingMessage & {
   method?: string;
@@ -201,9 +201,8 @@ const HTTP_METHOD_PROCEDURE_TYPE_MAP: Record<
 };
 
 export async function requestHandler<
-  TContext,
-  TRouter extends AnyRouter<TContext>,
-  TCreateContextFn extends CreateContextFn<TContext, TRequest, TResponse>,
+  TRouter extends AnyRouter,
+  TCreateContextFn extends CreateContextFn<TRouter, TRequest, TResponse>,
   TRequest extends BaseRequest,
   TResponse extends BaseResponse
 >({
@@ -229,7 +228,7 @@ export async function requestHandler<
 } & BaseOptions) {
   let procedureType: 'unknown' | ProcedureType = 'unknown';
   let input: unknown = undefined;
-  let ctx: TContext | undefined = undefined;
+  let ctx: inferRouterContext<TRouter> | undefined = undefined;
   try {
     let output: unknown;
 

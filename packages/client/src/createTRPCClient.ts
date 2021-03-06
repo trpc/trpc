@@ -122,7 +122,7 @@ export class TRPCClient<TRouter extends AnyRouter> {
         err = new TRPCClientError(originalError.message, {
           originalError,
           res,
-          json,
+          json: json?.ok ? null : json,
         });
       }
       this.opts.onError && this.opts.onError(err);

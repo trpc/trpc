@@ -13,19 +13,16 @@ export type CreateExpressContextOptions = CreateContextFnOptions<
   express.Response
 >;
 
-export type CreateExpressContextFn<TContext> = CreateContextFn<
-  TContext,
+export type CreateExpressContextFn<TRouter extends AnyRouter> = CreateContextFn<
+  TRouter,
   express.Request,
   express.Response
 >;
 
-export function createExpressMiddleware<
-  TRouter extends AnyRouter,
-  TContext extends Parameters<TRouter['createCaller']>[0]
->(
+export function createExpressMiddleware<TRouter extends AnyRouter>(
   opts: {
     router: TRouter;
-    createContext: CreateExpressContextFn<TContext>;
+    createContext: CreateExpressContextFn<TRouter>;
   } & BaseOptions,
 ): express.Handler {
   return (req, res) => {

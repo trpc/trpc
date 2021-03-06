@@ -9,25 +9,22 @@ import {
   requestHandler,
   getErrorResponseEnvelope,
 } from '../';
-import { AnyRouter } from '../router';
+import { AnyRouter, inferRouterContext } from '../router';
 
 export type CreateNextContextOptions = CreateContextFnOptions<
   NextApiRequest,
   NextApiResponse
 >;
 
-export type CreateNextContextFn<TContext> = CreateContextFn<
-  TContext,
+export type CreateNextContextFn<TRouter extends AnyRouter> = CreateContextFn<
+  TRouter,
   NextApiRequest,
   NextApiResponse
 >;
-export function createNextApiHandler<
-  TRouter extends AnyRouter,
-  TContext extends Parameters<TRouter['createCaller']>[0]
->(
+export function createNextApiHandler<TRouter extends AnyRouter>(
   opts: {
     router: TRouter;
-    createContext: CreateNextContextFn<TContext>;
+    createContext: CreateNextContextFn<TRouter>;
   } & BaseOptions,
 ): NextApiHandler {
   return async (req, res) => {

@@ -62,6 +62,10 @@ type inferHandlerFn<TProcedures extends ProcedureRecord> = <
   ...args: inferHandlerInput<TProcedure>
 ) => Promise<inferProcedureOutput<TProcedures[TPath]>>;
 
+export type inferRouterContext<TRouter extends AnyRouter> = Parameters<
+  TRouter['createCaller']
+>[0];
+
 export type AnyRouter<TContext = any> = Router<TContext, any, any, any>;
 
 const PROCEDURE_DEFINITION_MAP: Record<
