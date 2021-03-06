@@ -3,12 +3,7 @@ import * as z from 'zod';
 import { ZodError } from 'zod';
 import { TRPCClientError } from '../../client/src';
 import * as trpc from '../src';
-import {
-  forbiddenError,
-  getMessageFromUnkownError,
-  TRPCError,
-  unauthenticatedError,
-} from '../src/errors';
+import { getMessageFromUnkownError, TRPCError } from '../src/errors';
 import { routerToServerAndClient } from './_testHelpers';
 
 test('basic', async () => {

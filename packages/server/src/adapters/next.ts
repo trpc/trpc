@@ -45,6 +45,7 @@ export function createNextApiHandler<TRouter extends AnyRouter>(
           'Query "trpc" not found - is the file named `[trpc]`.ts or `[...trpc].ts`?',
           {
             statusCode: 500,
+            code: 'INTERNAL_SERVER_ERROR',
           },
         ),
         path: undefined,

@@ -337,24 +337,25 @@ export async function requestHandler<
         }
         function onClose() {
           cleanup();
-          reject(new HTTPError(`Client Closed Request`, { statusCode: 499 }));
+          reject(
+            new HTTPError(`Client Closed Request`, {
+              statusCode: 499,
+              code: 'BAD_USER_INPUT',
+            }),
+          );
         }
         function onRequestTimeout() {
           cleanup();
           reject(
             new HTTPError(
               `Subscription exceeded ${requestTimeoutMs}ms - please reconnect.`,
-              { statusCode: 408 },
+              { statusCode: 408, code: 'TIMEOUT' },
             ),
           );
         }
 
         function onDestroy() {
-          reject(
-            new HTTPError(`Subscription was destroyed prematurely`, {
-              statusCode: 500,
-            }),
-          );
+          reject(new Error(`Subscription was destroyed prematurely`));
           cleanup();
         }
 
@@ -369,6 +370,7 @@ export async function requestHandler<
     } else {
       throw new HTTPError(`Unexpected request method ${method}`, {
         statusCode: 405,
+        code: 'BAD_USER_INPUT',
       });
     }
     const json: HTTPSuccessResponseEnvelope<unknown> = {

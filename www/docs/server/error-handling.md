@@ -44,6 +44,7 @@ export default trpcNext.createNextApiHandler({
 | `UNAUTHENTICATED`       | `401`         | Unauthorized request                                       |
 | `FORBIDDEN`             | `403`         | Forbidden request                                          |
 | `INTERNAL_SERVER_ERROR` | `500`         | Something in the resolver threw an error                   |
+| `TIMEOUT`               | `408`         | Used in subscriptions to tell client to reconnect          |
 
 
 ## Accessing original error
