@@ -25,7 +25,7 @@ export function createNextApiHandler<TRouter extends AnyRouter>(
   opts: {
     router: TRouter;
     createContext: CreateNextContextFn<TRouter>;
-  } & BaseOptions,
+  } & BaseOptions<TRouter>,
 ): NextApiHandler {
   return async (req, res) => {
     function getPath(): string | null {

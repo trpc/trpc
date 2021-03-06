@@ -131,7 +131,7 @@ export type BaseRequest = http.IncomingMessage & {
 };
 export type BaseResponse = http.ServerResponse;
 
-export interface BaseOptions {
+export interface BaseOptions<TRouter extends AnyRouter> {
   subscriptions?: {
     /**
      * Time in milliseconds before `408` is sent
@@ -154,7 +154,7 @@ export interface BaseOptions {
     path: string | undefined;
     req: BaseRequest;
     input: unknown;
-    ctx: unknown;
+    ctx: undefined | inferRouterContext<TRouter>;
   }) => void;
 }
 
@@ -225,7 +225,7 @@ export async function requestHandler<
   path: string;
   router: TRouter;
   createContext: TCreateContextFn;
-} & BaseOptions) {
+} & BaseOptions<TRouter>) {
   let procedureType: 'unknown' | ProcedureType = 'unknown';
   let input: unknown = undefined;
   let ctx: inferRouterContext<TRouter> | undefined = undefined;

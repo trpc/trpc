@@ -23,7 +23,7 @@ export function createExpressMiddleware<TRouter extends AnyRouter>(
   opts: {
     router: TRouter;
     createContext: CreateExpressContextFn<TRouter>;
-  } & BaseOptions,
+  } & BaseOptions<TRouter>,
 ): express.Handler {
   return (req, res) => {
     const endpoint = req.path.substr(1);
