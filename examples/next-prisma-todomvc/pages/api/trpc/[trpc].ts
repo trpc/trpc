@@ -2,7 +2,6 @@ import { PrismaClient } from '@prisma/client';
 import * as trpc from '@trpc/server';
 import * as trpcNext from '@trpc/server/dist/adapters/next';
 import superjson from 'superjson';
-import { ZodError } from 'zod';
 import { todoRouter } from './todoRouter';
 const prisma = new PrismaClient();
 
@@ -22,16 +21,16 @@ export function createRouter() {
   return trpc.router<Context>();
 }
 const router = createRouter()
-  .formatError(({ defaultShape, error }) => {
-    return {
-      ...defaultShape,
-      zodError:
-        error.code === 'BAD_USER_INPUT' &&
-        error.originalError instanceof ZodError
-          ? error.originalError.flatten()
-          : null,
-    };
-  })
+  // .formatError(({ defaultShape, error }) => {
+  //   return {
+  //     ...defaultShape,
+  //     zodError:
+  //       error.code === 'BAD_USER_INPUT' &&
+  //       error.originalError instanceof ZodError
+  //         ? error.originalError.flatten()
+  //         : null,
+  //   };
+  // })
   .merge('todos.', todoRouter);
 
 export const appRouter = router;
