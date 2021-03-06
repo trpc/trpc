@@ -20,8 +20,8 @@ export type CreateExpressContextFn<TContext> = CreateContextFn<
 >;
 
 export function createExpressMiddleware<
-  TContext,
-  TRouter extends AnyRouter<TContext>
+  TRouter extends AnyRouter,
+  TContext extends Parameters<TRouter['createCaller']>[0]
 >(
   opts: {
     router: TRouter;

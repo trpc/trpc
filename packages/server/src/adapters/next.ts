@@ -22,8 +22,8 @@ export type CreateNextContextFn<TContext> = CreateContextFn<
   NextApiResponse
 >;
 export function createNextApiHandler<
-  TContext,
-  TRouter extends AnyRouter<TContext>
+  TRouter extends AnyRouter,
+  TContext extends Parameters<TRouter['createCaller']>[0]
 >(
   opts: {
     router: TRouter;

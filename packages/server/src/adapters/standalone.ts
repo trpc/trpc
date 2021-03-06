@@ -29,8 +29,8 @@ export interface CreateHttpHandlerOptions<
   router: TRouter;
 }
 export function createHttpHandler<
-  TContext,
-  TRouter extends AnyRouter<TContext>
+  TRouter extends AnyRouter,
+  TContext extends Parameters<TRouter['createCaller']>[0]
 >(opts: CreateHttpHandlerOptions<TRouter, TContext>) {
   return async (req: http.IncomingMessage, res: http.ServerResponse) => {
     const endpoint = url.parse(req.url!).pathname!.substr(1);
@@ -43,9 +43,10 @@ export function createHttpHandler<
   };
 }
 
-export function createHttpServer<TContext, TRouter extends AnyRouter<TContext>>(
-  opts: CreateHttpHandlerOptions<TRouter, TContext>,
-) {
+export function createHttpServer<
+  TRouter extends AnyRouter,
+  TContext extends Parameters<TRouter['createCaller']>[0]
+>(opts: CreateHttpHandlerOptions<TRouter, TContext>) {
   const handler = createHttpHandler(opts);
   const server = http.createServer((req, res) => handler(req, res));
 
