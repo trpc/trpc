@@ -26,7 +26,7 @@ export default trpcNext.createNextApiHandler({
 ```ts
 {
   error: TRPCError;
-  type: 'query' | 'mutation' 'subscription' | 'unknown';
+  type: 'query' | 'mutation' | 'subscription' | 'unknown';
   path: string | undefined; // path of the procedure that was triggered
   req: BaseRequest; // request object
   input: unknown;
