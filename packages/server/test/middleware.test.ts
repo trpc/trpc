@@ -185,7 +185,7 @@ test('equiv', () => {
     };
   };
   trpc
-    .router()
+    .router<Context>()
     .query('foo', {
       resolve() {
         return 'bar';
@@ -208,7 +208,7 @@ test('equiv', () => {
     );
 
   trpc
-    .router()
+    .router<Context>()
     .query('foo', {
       resolve() {
         return 'bar';
