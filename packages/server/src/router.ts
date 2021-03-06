@@ -62,7 +62,7 @@ type inferHandlerFn<TProcedures extends ProcedureRecord> = <
   ...args: inferHandlerInput<TProcedure>
 ) => Promise<inferProcedureOutput<TProcedures[TPath]>>;
 
-export type AnyRouter<TContext = any> = Router<TContext, any, any, any, any>;
+export type AnyRouter<TContext = any> = Router<TContext, any, any, any>;
 
 const PROCEDURE_DEFINITION_MAP: Record<
   ProcedureType,
@@ -85,21 +85,20 @@ export class Router<
     TContext,
     unknown,
     Subscription<unknown>
-  >,
-  TMiddlewareFn extends MiddlewareFunction<TContext>
+  >
 > {
   readonly _def: Readonly<{
     queries: Readonly<TQueries>;
     mutations: Readonly<TMutations>;
     subscriptions: Readonly<TSubscriptions>;
-    middlewares: TMiddlewareFn[];
+    middlewares: MiddlewareFunction<TContext>[];
   }>;
 
   constructor(def?: {
     queries: TQueries;
     mutations: TMutations;
     subscriptions: TSubscriptions;
-    middlewares: TMiddlewareFn[];
+    middlewares: MiddlewareFunction<TContext>[];
   }) {
     this._def = def ?? {
       queries: {} as TQueries,
@@ -130,8 +129,7 @@ export class Router<
       Record<TPath, inferProcedureFromOptions<typeof procedure>>
     >,
     TMutations,
-    TSubscriptions,
-    TMiddlewareFn
+    TSubscriptions
   >;
   public query<TPath extends string, TOutput>(
     path: TPath,
@@ -143,14 +141,13 @@ export class Router<
       Record<TPath, inferProcedureFromOptions<typeof procedure>>
     >,
     TMutations,
-    TSubscriptions,
-    TMiddlewareFn
+    TSubscriptions
   >;
   public query<TPath extends string, TInput, TOutput>(
     path: TPath,
     procedure: CreateProcedureOptions<TContext, TInput, TOutput>,
   ) {
-    const router = new Router<TContext, any, {}, {}, TMiddlewareFn>({
+    const router = new Router<TContext, any, {}, {}>({
       queries: {
         [path]: createProcedure(procedure),
       },
@@ -172,8 +169,7 @@ export class Router<
       TMutations,
       Record<TPath, inferProcedureFromOptions<typeof procedure>>
     >,
-    TSubscriptions,
-    TMiddlewareFn
+    TSubscriptions
   >;
   public mutation<TPath extends string, TOutput>(
     path: TPath,
@@ -185,14 +181,13 @@ export class Router<
       TMutations,
       Record<TPath, inferProcedureFromOptions<typeof procedure>>
     >,
-    TSubscriptions,
-    TMiddlewareFn
+    TSubscriptions
   >;
   public mutation<TPath extends string, TInput, TOutput>(
     path: TPath,
     procedure: CreateProcedureOptions<TContext, TInput, TOutput>,
   ) {
-    const router = new Router<TContext, {}, any, {}, TMiddlewareFn>({
+    const router = new Router<TContext, {}, any, {}>({
       queries: {},
       mutations: {
         [path]: createProcedure(procedure),
@@ -219,8 +214,7 @@ export class Router<
     TContext,
     TQueries,
     TMutations,
-    TSubscriptions & Record<TPath, inferProcedureFromOptions<typeof procedure>>,
-    TMiddlewareFn
+    TSubscriptions & Record<TPath, inferProcedureFromOptions<typeof procedure>>
   >;
   /**
    * ⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️
@@ -237,15 +231,14 @@ export class Router<
     TContext,
     TQueries,
     TMutations,
-    TSubscriptions & Record<TPath, inferProcedureFromOptions<typeof procedure>>,
-    TMiddlewareFn
+    TSubscriptions & Record<TPath, inferProcedureFromOptions<typeof procedure>>
   >;
   public subscription<
     TPath extends string,
     TInput,
     TOutput extends Subscription<unknown>
   >(path: TPath, procedure: CreateProcedureOptions<TContext, TInput, TOutput>) {
-    const router = new Router<TContext, {}, {}, any, TMiddlewareFn>({
+    const router = new Router<TContext, {}, {}, any>({
       queries: {},
       mutations: {},
       subscriptions: {
@@ -267,8 +260,7 @@ export class Router<
     TContext,
     flatten<TQueries, TChildRouter['_def']['queries']>,
     flatten<TMutations, TChildRouter['_def']['mutations']>,
-    flatten<TSubscriptions, TChildRouter['_def']['subscriptions']>,
-    TMiddlewareFn
+    flatten<TSubscriptions, TChildRouter['_def']['subscriptions']>
   >;
 
   /**
@@ -289,8 +281,7 @@ export class Router<
     flatten<
       TSubscriptions,
       Prefixer<TChildRouter['_def']['subscriptions'], `${TPath}`>
-    >,
-    TMiddlewareFn
+    >
   >;
 
   public merge(prefixOrRouter: unknown, maybeRouter?: unknown) {
@@ -338,7 +329,7 @@ export class Router<
       return Router.prefixProcedures(newDefs, prefix);
     };
 
-    return new Router<TContext, any, any, any, any>({
+    return new Router<TContext, any, any, any>({
       queries: {
         ...this._def.queries,
         ...mergeProcedures(childRouter._def.queries),
@@ -421,14 +412,8 @@ export class Router<
    * Function to be called before any procedure is invoked
    * Can be async or sync
    */
-  public middleware(middleware: TMiddlewareFn) {
-    return new Router<
-      TContext,
-      TQueries,
-      TMutations,
-      TSubscriptions,
-      TMiddlewareFn
-    >({
+  public middleware(middleware: MiddlewareFunction<TContext>) {
+    return new Router<TContext, TQueries, TMutations, TSubscriptions>({
       ...this._def,
       middlewares: [...this._def.middlewares, middleware],
     });
@@ -436,5 +421,5 @@ export class Router<
 }
 
 export function router<TContext>() {
-  return new Router<TContext, {}, {}, {}, MiddlewareFunction<TContext>>();
+  return new Router<TContext, {}, {}, {}>();
 }
