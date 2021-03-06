@@ -16,13 +16,16 @@ You are able to serialize the response data & input args (in order to be able to
 - `createNextApiHandler()` in [`./examples/next-ssg-chat/[trpc.ts]`](https://github.com/trpc/trpc/tree/main//examples/next-ssg-chat/pages/api/trpc/%5Btrpc%5D.ts), and
 - `createTRPCClient` in [`./examples/next-ssg-chat/utils/trpc.ts`](https://github.com/trpc/trpc/tree/main//examples/next-ssg-chat/utils/trpc.ts)
 
-### Adding it
+### How to add
+
+
+#### 0. Install
 
 ```bash
 yarn add superjson
 ```
 
-#### Add to `createTRPCCLient()`
+#### 1. Add to `createTRPCCLient()`
 
 
 ```ts
@@ -37,22 +40,7 @@ export const client = createTRPCClient<AppRouter>({
 });
 ```
 
-
-#### Add to `createTRPCCLient()`
-
-
-```ts
-import superjson from 'superjson';
-
-// [...]
-
-export const client = createTRPCClient<AppRouter>({
-  url: '/api/trpc',
-  transformer: superjson,
-});
-```
-
-### Add to API handler
+### 2. Add to API handler
 
 ```ts
 import superjson from 'superjson';
