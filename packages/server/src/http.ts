@@ -217,7 +217,7 @@ export async function requestHandler<
   path: string;
   router: TRouter;
   createContext: TCreateContextFn;
-} & BaseOptions<TRouter>) {
+} & BaseOptions<TRouter, TRequest>) {
   let type: 'unknown' | ProcedureType = 'unknown';
   let input: unknown = undefined;
   let ctx: inferRouterContext<TRouter> | undefined = undefined;
