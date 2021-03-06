@@ -43,14 +43,15 @@ export function createNextApiHandler<
     const path = getPath();
 
     if (path === null) {
-      const json = getErrorResponseEnvelope(
-        new HTTPError(
+      const json = getErrorResponseEnvelope({
+        error: new HTTPError(
           'Query "trpc" not found - is the file named `[trpc]`.ts or `[...trpc].ts`?',
           {
             statusCode: 500,
           },
         ),
-      );
+        path: undefined,
+      });
       res.status(json.statusCode).json(json);
       return;
     }

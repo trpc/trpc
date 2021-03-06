@@ -41,7 +41,7 @@ test('basic', async () => {
     `"INTERNAL_SERVER_ERROR"`,
   );
   expect(onError).toHaveBeenCalledTimes(1);
-  const serverError = onError.mock.calls[0][0].err;
+  const serverError = onError.mock.calls[0][0].error;
 
   expect(serverError).toBeInstanceOf(TRPCError);
   if (!(serverError instanceof TRPCError)) {
@@ -87,8 +87,9 @@ test('input error', async () => {
   expect(clientError.json?.error.code).toMatchInlineSnapshot(
     `"BAD_USER_INPUT"`,
   );
+  expect(clientError.json?.error.path).toBe('err');
   expect(onError).toHaveBeenCalledTimes(1);
-  const serverError = onError.mock.calls[0][0].err;
+  const serverError = onError.mock.calls[0][0].error;
 
   // if (!(serverError instanceof TRPCError)) {
   //   console.log('err', serverError);
@@ -99,7 +100,7 @@ test('input error', async () => {
   close();
 });
 
-test('basic', async () => {
+test('httpError.unauthorized()', async () => {
   const onError = jest.fn();
   const { client, close } = routerToServerAndClient(
     trpc.router().query('err', {
@@ -128,7 +129,7 @@ test('basic', async () => {
   );
   expect(clientError.json?.error.code).toMatchInlineSnapshot(`"HTTP_ERROR"`);
   expect(onError).toHaveBeenCalledTimes(1);
-  const serverError = onError.mock.calls[0][0].err;
+  const serverError = onError.mock.calls[0][0].error;
 
   expect(serverError).toBeInstanceOf(TRPCError);
   expect(serverError).toBeInstanceOf(trpc.HTTPError);

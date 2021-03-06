@@ -26,6 +26,7 @@ export type HTTPErrorResponseEnvelope = {
   ok: false;
   statusCode: number;
   error: {
+    path?: string;
     message: string;
     code: string;
     stack?: string | undefined;
@@ -77,17 +78,27 @@ export function getStatusCodeFromError(err: TRPCError): number {
   return STATUS_CODE_MAP[err.code] ?? 500;
 }
 
-export function getErrorResponseEnvelope(err: TRPCError) {
+export function getErrorResponseEnvelope({
+  error,
+  path,
+}: {
+  error: TRPCError;
+  path: undefined | string;
+}) {
   const json: HTTPErrorResponseEnvelope = {
     ok: false,
-    statusCode: getStatusCodeFromError(err),
+    statusCode: getStatusCodeFromError(error),
     error: {
-      message: err.message,
-      code: err.code,
+      message: error.message,
+      code: error.code,
+      path,
     },
   };
-  if (process.env.NODE_ENV !== 'production' && typeof err.stack === 'string') {
-    json.error.stack = err.stack;
+  if (
+    process.env.NODE_ENV !== 'production' &&
+    typeof error.stack === 'string'
+  ) {
+    json.error.stack = error.stack;
   }
 
   return json;
@@ -137,7 +148,14 @@ export interface BaseOptions {
    */
   transformer?: DataTransformer;
   maxBodySize?: number;
-  onError?: (opts: { err: TRPCError }) => void;
+  onError?: (opts: {
+    error: TRPCError;
+    procedureType: ProcedureType | 'unknown';
+    path: string | undefined;
+    req: BaseRequest;
+    input: unknown;
+    ctx: unknown;
+  }) => void;
 }
 
 async function getPostBody({
@@ -211,10 +229,11 @@ export async function requestHandler<
 } & BaseOptions) {
   let procedureType: 'unknown' | ProcedureType = 'unknown';
   let input: unknown = undefined;
+  let ctx: TContext | undefined = undefined;
   try {
     let output: unknown;
 
-    const ctx = createContext && (await createContext({ req, res }));
+    ctx = createContext && (await createContext({ req, res }));
     const method = req.method;
 
     const deserializeInput = (input: unknown) =>
@@ -342,13 +361,13 @@ export async function requestHandler<
     res.setHeader('Content-Type', 'application/json');
     res.end(JSON.stringify(transformer.serialize(json)));
   } catch (_err) {
-    const err = getErrorFromUnknown(_err);
-    const json = getErrorResponseEnvelope(err);
+    const error = getErrorFromUnknown(_err);
+    const json = getErrorResponseEnvelope({ error, path });
 
     res.statusCode = json.statusCode;
     res.setHeader('Content-Type', 'application/json');
     res.end(JSON.stringify(transformer.serialize(json)));
-    onError && onError({ err });
+    onError && onError({ error, path, input, ctx, procedureType, req });
   }
   try {
     teardown && (await teardown());
