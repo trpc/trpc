@@ -48,7 +48,7 @@ export type DefaultErrorShape = {
 };
 ```
 
-## Using in React
+## Usage in React
 
 ```tsx
 
