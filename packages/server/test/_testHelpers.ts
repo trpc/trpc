@@ -6,13 +6,10 @@ import { createTRPCClient, CreateTRPCClientOptions } from '../../client/src';
 import { AnyRouter, CreateHttpHandlerOptions } from '../src';
 import { createHttpServer } from '../src/adapters/standalone';
 
-export function routerToServerAndClient<
-  TRouter extends AnyRouter,
-  TContext = {}
->(
+export function routerToServerAndClient<TRouter extends AnyRouter>(
   router: TRouter,
   opts?: {
-    server?: Partial<CreateHttpHandlerOptions<TRouter, TContext>>;
+    server?: Partial<CreateHttpHandlerOptions<TRouter>>;
     client?: Partial<CreateTRPCClientOptions>;
   },
 ) {
