@@ -182,7 +182,7 @@ test('formatError()', async () => {
   function assertIt(
     err: unknown,
   ): asserts err is TRPCClientError<typeof router> {
-    if (!(clientError instanceof TRPCClientError)) {
+    if (!(err instanceof TRPCClientError)) {
       throw new Error('Did not throw');
     }
   }
