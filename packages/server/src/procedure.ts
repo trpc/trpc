@@ -56,10 +56,6 @@ export abstract class Procedure<
     this.inputParser = opts.inputParser;
   }
 
-  /**
-   *
-   * @throws InputValidationError
-   */
   private parseInput(rawInput: unknown): TInput {
     try {
       const parser: any = this.inputParser;
@@ -89,7 +85,6 @@ export abstract class Procedure<
 
   /**
    * Trigger middlewares in order, parse raw input & call resolver
-   * @throws InputValidationError
    */
   public async call({
     ctx,

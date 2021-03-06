@@ -5,9 +5,9 @@ import {
   BaseOptions,
   CreateContextFn,
   CreateContextFnOptions,
-  getErrorResponseEnvelope,
   HTTPError,
   requestHandler,
+  HTTPErrorResponseEnvelope,
 } from '../';
 import { AnyRouter } from '../router';
 
@@ -40,7 +40,7 @@ export function createNextApiHandler<TRouter extends AnyRouter>(
     const path = getPath();
 
     if (path === null) {
-      const json = getErrorResponseEnvelope({
+      const error = opts.router.getErrorShape({
         error: new HTTPError(
           'Query "trpc" not found - is the file named `[trpc]`.ts or `[...trpc].ts`?',
           {
@@ -48,8 +48,16 @@ export function createNextApiHandler<TRouter extends AnyRouter>(
             code: 'INTERNAL_SERVER_ERROR',
           },
         ),
+        type: 'unknown',
+        ctx: undefined,
         path: undefined,
+        input: undefined,
       });
+      const json: HTTPErrorResponseEnvelope<TRouter> = {
+        ok: false,
+        statusCode: 500,
+        error,
+      };
       res.status(json.statusCode).json(json);
       return;
     }

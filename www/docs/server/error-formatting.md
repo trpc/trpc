@@ -1,0 +1,72 @@
+---
+id: error-formatting
+title: Error formatting
+sidebar_label: Error formatting
+slug: /error-formatting
+---
+
+You can do custom error formatting in your router and the returned object will be inferred all the way to your client (& React components)
+
+## Adding custom formatting
+
+```ts
+
+const router = trpc.router<Context>()
+  .formatError(({ defaultShape, error }) => {
+    return {
+      ...defaultShape,
+      zodError:
+        error.code === 'BAD_USER_INPUT' &&
+        error.originalError instanceof ZodError
+          ? error.originalError.flatten()
+          : null,
+    };
+  })
+```
+
+## All properties sent to `formatError()`
+
+```ts
+{
+  error: TRPCError;
+  type: ProcedureType | 'unknown';
+  path: string | undefined;
+  input: unknown;
+  ctx: undefined | TContext;
+  defaultShape: DefaultErrorShape; // the default error shape
+}
+```
+
+**`DefaultErrorShape`:**
+
+```ts
+export type DefaultErrorShape = {
+  path?: string;
+  message: string;
+  code: string;
+  stack?: string | undefined; // will be set if `process.env.NODE_ENV !== 'production'`
+};
+```
+
+## Using in React
+
+```tsx
+
+function MyComponent() {
+  const mutation = hooks.useMutation('addPost');
+
+  useEffect(() => {
+    mutation.mutate({ title: 123 as any });
+  }, []);
+
+  if (mutation.error && mutation.error.json && mutation.error.shape.zodError) {
+    // zodError will be inferred
+    return (
+      <pre data-testid="err">
+        {JSON.stringify(mutation.error.shape.zodError, null, 2)}
+      </pre>
+    );
+  }
+  return <>[...]</>;
+}
+```

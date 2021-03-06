@@ -10,7 +10,7 @@ export function routerToServerAndClient<TRouter extends AnyRouter>(
   router: TRouter,
   opts?: {
     server?: Partial<CreateHttpHandlerOptions<TRouter>>;
-    client?: Partial<CreateTRPCClientOptions>;
+    client?: Partial<CreateTRPCClientOptions<TRouter>>;
   },
 ) {
   const server = createHttpServer({
@@ -32,5 +32,6 @@ export function routerToServerAndClient<TRouter extends AnyRouter>(
   return {
     client,
     close: () => server.server.close(),
+    router,
   };
 }

@@ -1,10 +1,15 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import { expectTypeOf } from 'expect-type';
 import * as z from 'zod';
 import { ZodError } from 'zod';
 import { TRPCClientError } from '../../client/src';
 import * as trpc from '../src';
 import { getMessageFromUnkownError, TRPCError } from '../src/errors';
 import { routerToServerAndClient } from './_testHelpers';
+import '@testing-library/jest-dom';
+import { render, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import { expectTypeOf } from 'expect-type';
 
 test('basic', async () => {
   class MyError extends Error {
@@ -143,4 +148,69 @@ test('getMessageFromUnkownError()', () => {
   expect(getMessageFromUnkownError('test', 'nope')).toBe('test');
   expect(getMessageFromUnkownError(1, 'test')).toBe('test');
   expect(getMessageFromUnkownError({}, 'test')).toBe('test');
+});
+
+test('formatError()', async () => {
+  const onError = jest.fn();
+  const { client, close, router } = routerToServerAndClient(
+    trpc
+      .router()
+      .formatError(({ error }) => {
+        if (error.originalError instanceof ZodError) {
+          return {
+            type: 'zod' as const,
+            errors: error.originalError.errors,
+          };
+        }
+        return {
+          type: 'standard' as const,
+        };
+      })
+      .mutation('err', {
+        input: z.string(),
+        resolve() {
+          return null;
+        },
+      }),
+    {
+      server: {
+        onError,
+      },
+    },
+  );
+  let clientError: Error | null = null;
+  try {
+    await client.mutation('err', 1 as any);
+  } catch (_err) {
+    clientError = _err;
+  }
+  function assertIt(
+    err: unknown,
+  ): asserts err is TRPCClientError<typeof router> {
+    if (!(clientError instanceof TRPCClientError)) {
+      throw new Error('Did not throw');
+    }
+  }
+  assertIt(clientError);
+  expect(clientError.res?.status).toBe(400);
+  expect(clientError.json?.error).toMatchInlineSnapshot(`
+    Object {
+      "errors": Array [
+        Object {
+          "code": "invalid_type",
+          "expected": "string",
+          "message": "Expected string, received number",
+          "path": Array [],
+          "received": "number",
+        },
+      ],
+      "type": "zod",
+    }
+  `);
+  expect(onError).toHaveBeenCalledTimes(1);
+  const serverError = onError.mock.calls[0][0].error;
+
+  expect(serverError.originalError).toBeInstanceOf(ZodError);
+
+  close();
 });

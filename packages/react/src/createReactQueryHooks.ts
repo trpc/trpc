@@ -56,6 +56,7 @@ export function createReactQueryHooks<TRouter extends AnyRouter>({
   type TMutations = TRouter['_def']['mutations'];
   type TSubscriptions = TRouter['_def']['subscriptions'];
   type TContext = Parameters<TRouter['createCaller']>[0];
+  type TError = TRPCClientError<TRouter>;
 
   function _useQuery<
     TPath extends keyof TQueries & string,
@@ -65,10 +66,10 @@ export function createReactQueryHooks<TRouter extends AnyRouter>({
     pathAndArgs: [path: TPath, ...args: inferHandlerInput<TProcedure>],
     opts?: UseQueryOptions<
       inferProcedureInput<TQueries[TPath]>,
-      TRPCClientError,
+      TError,
       TOutput
     >,
-  ): UseQueryResult<TOutput, TRPCClientError> {
+  ): UseQueryResult<TOutput, TError> {
     const cacheKey = getCacheKey(pathAndArgs, CACHE_KEY_QUERY);
 
     return useQuery(cacheKey, () => client.query(...pathAndArgs) as any, opts);
@@ -78,8 +79,8 @@ export function createReactQueryHooks<TRouter extends AnyRouter>({
     TPath extends keyof TMutations & string,
     TInput extends inferProcedureInput<TMutations[TPath]>,
     TOutput extends inferProcedureOutput<TMutations[TPath]>
-  >(path: TPath, opts?: UseMutationOptions<TOutput, TRPCClientError, TInput>) {
-    const hook = useMutation<TOutput, TRPCClientError, TInput>(
+  >(path: TPath, opts?: UseMutationOptions<TOutput, TError, TInput>) {
+    const hook = useMutation<TOutput, TError, TInput>(
       (input) => (client.mutation as any)(path, input),
       opts,
     );
@@ -100,7 +101,7 @@ export function createReactQueryHooks<TRouter extends AnyRouter>({
     pathAndArgs: [TPath, TInput],
     opts?: {
       enabled?: boolean;
-      onError?: (err: TRPCClientError) => void;
+      onError?: (err: TError) => void;
       onBatch?: (data: TOutput[]) => void;
     },
   ) {
@@ -148,14 +149,14 @@ export function createReactQueryHooks<TRouter extends AnyRouter>({
     TData
   >(
     pathAndArgs: [TPath, Omit<TInput, 'cursor'>],
-    opts?: Omit<UseQueryOptions<TInput, TRPCClientError, TOutput>, 'select'>,
+    opts?: Omit<UseQueryOptions<TInput, TError, TOutput>, 'select'>,
   ) {
     const [path, userInput] = pathAndArgs;
 
     const currentCursor = useRef<any>(null);
     const cacheKey = getCacheKey(pathAndArgs, CACHE_KEY_LIVE_QUERY);
 
-    const hook = useQuery<TInput, TRPCClientError, TOutput>(
+    const hook = useQuery<TInput, TError, TOutput>(
       cacheKey,
       () =>
         (client.subscriptionOnce as any)(path, {
@@ -238,7 +239,7 @@ export function createReactQueryHooks<TRouter extends AnyRouter>({
     TInput extends inferProcedureInput<TProcedure>
   >(
     pathAndArgs: [path: TPath, ...args: inferHandlerInput<TProcedure>],
-    opts?: FetchQueryOptions<TInput, TRPCClientError, TOutput>,
+    opts?: FetchQueryOptions<TInput, TError, TOutput>,
   ) {
     const cacheKey = getCacheKey(pathAndArgs, CACHE_KEY_QUERY);
 
@@ -272,7 +273,7 @@ export function createReactQueryHooks<TRouter extends AnyRouter>({
   >(
     pathAndArgs: [TPath, Omit<TInput, 'cursor'>],
     // FIXME: this typing is wrong but it works
-    opts?: UseInfiniteQueryOptions<TOutput, TRPCClientError, TOutput, TOutput>,
+    opts?: UseInfiniteQueryOptions<TOutput, TError, TOutput, TOutput>,
   ) {
     const cacheKey = getCacheKey(pathAndArgs, CACHE_KEY_INFINITE_QUERY);
     const [path, input] = pathAndArgs;

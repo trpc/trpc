@@ -26,6 +26,7 @@ module.exports = {
             'server/middlewares',
             'server/data-transformers',
             'server/error-handling',
+            'server/error-formatting',
           ]
         },
         {

@@ -22,20 +22,15 @@ export type HTTPSuccessResponseEnvelope<TOutput> = {
   data: TOutput;
 };
 
-export type HTTPErrorResponseEnvelope = {
+export type HTTPErrorResponseEnvelope<TRouter extends AnyRouter> = {
   ok: false;
   statusCode: number;
-  error: {
-    path?: string;
-    message: string;
-    code: string;
-    stack?: string | undefined;
-  };
+  error: ReturnType<TRouter['_def']['errorFormatter']>;
 };
 
-export type HTTPResponseEnvelope<TOutput> =
+export type HTTPResponseEnvelope<TOutput, TRouter extends AnyRouter> =
   | HTTPSuccessResponseEnvelope<TOutput>
-  | HTTPErrorResponseEnvelope;
+  | HTTPErrorResponseEnvelope<TRouter>;
 
 const STATUS_CODE_MAP: Dict<number> = {
   BAD_USER_INPUT: 400,
@@ -88,32 +83,6 @@ export function getStatusCodeFromError(err: TRPCError): number {
     return statusCodeFromError;
   }
   return STATUS_CODE_MAP[err.code] ?? 500;
-}
-
-export function getErrorResponseEnvelope({
-  error,
-  path,
-}: {
-  error: TRPCError;
-  path: undefined | string;
-}) {
-  const json: HTTPErrorResponseEnvelope = {
-    ok: false,
-    statusCode: getStatusCodeFromError(error),
-    error: {
-      message: error.message,
-      code: error.code,
-      path,
-    },
-  };
-  if (
-    process.env.NODE_ENV !== 'production' &&
-    typeof error.stack === 'string'
-  ) {
-    json.error.stack = error.stack;
-  }
-
-  return json;
 }
 
 export function getQueryInput(query: qs.ParsedQs) {
@@ -383,8 +352,12 @@ export async function requestHandler<
     res.end(JSON.stringify(transformer.serialize(json)));
   } catch (_err) {
     const error = getErrorFromUnknown(_err);
-    const json = getErrorResponseEnvelope({ error, path });
 
+    const json: HTTPErrorResponseEnvelope<TRouter> = {
+      ok: false,
+      statusCode: getStatusCodeFromError(error),
+      error: router.getErrorShape({ error, type, path, input, ctx }),
+    };
     res.statusCode = json.statusCode;
     res.setHeader('Content-Type', 'application/json');
     res.end(JSON.stringify(transformer.serialize(json)));
