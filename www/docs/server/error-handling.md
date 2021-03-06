@@ -37,13 +37,14 @@ export default trpcNext.createNextApiHandler({
 ## Built-in error codes
 
 
-| Code                    | HTTP Status | Description                              |
-| ----------------------- | ----------- | ---------------------------------------- |
-| `BAD_USER_INPUT`        | 400         | Input validation failed                  |
-| `NOT_FOUND`             | 404         | Procedure path not found                 |
-| `UNAUTHENTICATED`       | 401         | Unauthorized request                     |
-| `FORBIDDEN`             | 403         | Forbidden request                        |
-| `INTERNAL_SERVER_ERROR` | 500         | Something in the resolver threw an error |
+| Code                    | HTTP Status | Description                                             |
+| ----------------------- | ----------- | ------------------------------------------------------- |
+| `BAD_USER_INPUT`        | 400         | Input validation failed                                 |
+| `NOT_FOUND`             | 404         | Procedure path not found                                |
+| `UNAUTHENTICATED`       | 401         | Unauthorized request                                    |
+| `FORBIDDEN`             | 403         | Forbidden request                                       |
+| `INTERNAL_SERVER_ERROR` | 500         | Something in the resolver threw an error                |
+| `HTTP_ERROR`            | mixed       | `HTTPError` thrown, will grab statusCode from the error |
 
 
 ## Accessing original error
@@ -59,4 +60,17 @@ export default trpcNext.createNextApiHandler({
     }
   },
 });
+```
+
+
+## Error helpers
+
+```ts
+import * as trpc from '@trpc/server';
+
+// in your resolver:
+throw trpc.httpError.unauthorized('Optional message') // --> 401
+throw trpc.httpError.forbidden('Optional message')    // --> 403
+throw trpc.httpError.badRequest('Optional message')   // --> 400
+throw trpc.httpError.notFound('Optional message')     // --> 404
 ```

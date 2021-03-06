@@ -142,13 +142,6 @@ test('httpError.unauthorized()', async () => {
   close();
 });
 
-test('error factories', () => {
-  expect(forbiddenError('Forbidden').code).toBe('FORBIDDEN');
-  expect(unauthenticatedError('unauthenticatedError').code).toBe(
-    'UNAUTHENTICATED',
-  );
-});
-
 test('getMessageFromUnkownError()', () => {
   expect(getMessageFromUnkownError('test', 'nope')).toBe('test');
   expect(getMessageFromUnkownError(1, 'test')).toBe('test');

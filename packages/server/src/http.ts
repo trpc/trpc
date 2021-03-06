@@ -41,8 +41,6 @@ const STATUS_CODE_MAP: Dict<number> = {
   BAD_USER_INPUT: 400,
   INTERAL_SERVER_ERROR: 500,
   NOT_FOUND: 404,
-  UNAUTHENTICATED: 401,
-  FORBIDDEN: 403,
 };
 export interface HttpErrorOptions extends TRPCErrorOptions {
   statusCode: number;

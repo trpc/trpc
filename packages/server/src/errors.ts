@@ -30,14 +30,6 @@ export const inputValidationError = (
 export const notFoundError = (message: string, opts: TRPCErrorOptions = {}) =>
   new TRPCError({ message, code: 'NOT_FOUND', ...opts });
 
-export const forbiddenError = (message: string, opts: TRPCErrorOptions = {}) =>
-  new TRPCError({ message, code: 'FORBIDDEN', ...opts });
-
-export const unauthenticatedError = (
-  message: string,
-  opts: TRPCErrorOptions = {},
-) => new TRPCError({ message, code: 'UNAUTHENTICATED', ...opts });
-
 export const internalServerError = (originalError: unknown) => {
   const message = getMessageFromUnkownError(
     originalError,
