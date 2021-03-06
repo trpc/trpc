@@ -1,4 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable no-native-reassign */
+
 import { getAbortController, getFetch } from '../../client/src/helpers';
 
 describe('getAbortController() from..', () => {
