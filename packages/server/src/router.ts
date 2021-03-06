@@ -90,10 +90,10 @@ export type ErrorFormatter<TContext, TOutput extends {}> = ({
 export type ErrorShape = {};
 
 export type DefaultErrorShape = {
-  path?: string;
   message: string;
   code: string;
-  stack?: string | undefined;
+  path?: string;
+  stack?: string;
 };
 
 export type MiddlewareFunction<TContext> = (opts: {

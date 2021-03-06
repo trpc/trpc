@@ -41,10 +41,10 @@ const router = trpc.router<Context>()
 
 ```ts
 export type DefaultErrorShape = {
-  path?: string;
   message: string;
   code: string;
-  stack?: string | undefined; // will be set if `process.env.NODE_ENV !== 'production'`
+  path?: string;
+  stack?: string; // will be set if `process.env.NODE_ENV !== 'production'`
 };
 ```
 
