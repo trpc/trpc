@@ -3,7 +3,12 @@ import * as z from 'zod';
 import { ZodError } from 'zod';
 import { TRPCClientError } from '../../client/src';
 import * as trpc from '../src';
-import { TRPCError } from '../src/errors';
+import {
+  forbiddenError,
+  getMessageFromUnkownError,
+  TRPCError,
+  unauthenticatedError,
+} from '../src/errors';
 import { routerToServerAndClient } from './_testHelpers';
 
 test('basic', async () => {
@@ -135,4 +140,17 @@ test('httpError.unauthorized()', async () => {
   expect(serverError).toBeInstanceOf(trpc.HTTPError);
 
   close();
+});
+
+test('error factories', () => {
+  expect(forbiddenError('Forbidden').code).toBe('FORBIDDEN');
+  expect(unauthenticatedError('unauthenticatedError').code).toBe(
+    'UNAUTHENTICATED',
+  );
+});
+
+test('getMessageFromUnkownError()', () => {
+  expect(getMessageFromUnkownError('test', 'nope')).toBe('test');
+  expect(getMessageFromUnkownError(1, 'test')).toBe('test');
+  expect(getMessageFromUnkownError({}, 'test')).toBe('test');
 });
