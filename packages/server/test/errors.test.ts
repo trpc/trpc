@@ -1,15 +1,10 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { expectTypeOf } from 'expect-type';
 import * as z from 'zod';
 import { ZodError } from 'zod';
 import { TRPCClientError } from '../../client/src';
 import * as trpc from '../src';
 import { getMessageFromUnkownError, TRPCError } from '../src/errors';
 import { routerToServerAndClient } from './_testHelpers';
-import '@testing-library/jest-dom';
-import { render, waitFor } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
-import { expectTypeOf } from 'expect-type';
 
 test('basic', async () => {
   class MyError extends Error {
