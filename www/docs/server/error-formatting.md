@@ -1,7 +1,7 @@
 ---
 id: error-formatting
-title: Error formatting
-sidebar_label: Error formatting
+title: Error Formatting
+sidebar_label: Error Formatting
 slug: /error-formatting
 ---
 
