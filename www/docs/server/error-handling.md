@@ -41,8 +41,6 @@ export default trpcNext.createNextApiHandler({
 | ----------------------- | ----------- | ------------------------------------------------------- |
 | `BAD_USER_INPUT`        | 400         | Input validation failed                                 |
 | `NOT_FOUND`             | 404         | Procedure path not found                                |
-| `UNAUTHENTICATED`       | 401         | Unauthorized request                                    |
-| `FORBIDDEN`             | 403         | Forbidden request                                       |
 | `INTERNAL_SERVER_ERROR` | 500         | Something in the resolver threw an error                |
 | `HTTP_ERROR`            | mixed       | `HTTPError` thrown, will grab statusCode from the error |
 
