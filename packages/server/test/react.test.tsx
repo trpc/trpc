@@ -618,7 +618,8 @@ test('formatError() react types test', async () => {
 
     useEffect(() => {
       mutation.mutate({ title: 123 as any });
-    }, [mutation]);
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
 
     if (mutation.error && mutation.error.json && mutation.error.shape) {
       expectTypeOf(mutation.error.json.error).toMatchTypeOf<
