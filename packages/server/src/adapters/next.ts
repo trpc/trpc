@@ -5,11 +5,11 @@ import {
   BaseOptions,
   CreateContextFn,
   CreateContextFnOptions,
+  getErrorResponseEnvelope,
   HTTPError,
   requestHandler,
-  getErrorResponseEnvelope,
 } from '../';
-import { AnyRouter, inferRouterContext } from '../router';
+import { AnyRouter } from '../router';
 
 export type CreateNextContextOptions = CreateContextFnOptions<
   NextApiRequest,
