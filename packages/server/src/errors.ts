@@ -1,7 +1,7 @@
 export class TRPCError<TCode extends string = string> extends Error {
   public readonly originalError?: unknown;
   public readonly code;
-  // public readonly statusCode?: number;
+
   constructor({
     message,
     code,
