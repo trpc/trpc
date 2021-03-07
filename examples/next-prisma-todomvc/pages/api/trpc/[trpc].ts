@@ -20,18 +20,7 @@ export type Context = trpc.inferAsyncReturnType<typeof createContext>;
 export function createRouter() {
   return trpc.router<Context>();
 }
-const router = createRouter()
-  // .formatError(({ defaultShape, error }) => {
-  //   return {
-  //     ...defaultShape,
-  //     zodError:
-  //       error.code === 'BAD_USER_INPUT' &&
-  //       error.originalError instanceof ZodError
-  //         ? error.originalError.flatten()
-  //         : null,
-  //   };
-  // })
-  .merge('todos.', todoRouter);
+const router = createRouter().merge('todos.', todoRouter);
 
 export const appRouter = router;
 export type AppRouter = typeof router;
@@ -41,4 +30,9 @@ export default trpcNext.createNextApiHandler({
   createContext,
   teardown: () => prisma.$disconnect(),
   transformer: superjson,
+  onError({ error }) {
+    if (error.code === 'INTERNAL_SERVER_ERROR') {
+      // send to bug reporting
+    }
+  },
 });

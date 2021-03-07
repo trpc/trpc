@@ -34,6 +34,16 @@ export function createRouter() {
 
 // Important: only use this export with SSR/SSG
 export const appRouter = createRouter()
+  .formatError(({ defaultShape, error }) => {
+    return {
+      ...defaultShape,
+      zodError:
+        error.code === 'BAD_USER_INPUT' &&
+        error.originalError instanceof z.ZodError
+          ? error.originalError.flatten()
+          : null,
+    };
+  })
   // Create procedure at path 'hello'
   .query('hello', {
     // using zod schema to validate and infer input values
@@ -58,4 +68,9 @@ export type AppRouter = typeof appRouter;
 export default trpcNext.createNextApiHandler({
   router: appRouter,
   createContext,
+  onError({ error }) {
+    if (error.code === 'INTERNAL_SERVER_ERROR') {
+      // send to bug reporting
+    }
+  },
 });

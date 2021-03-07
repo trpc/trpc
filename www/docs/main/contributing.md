@@ -5,6 +5,8 @@ sidebar_label: Contributing
 slug: /contributing
 ---
 
-Please contribute! Easiest way to get started is to look at any of the [open issues](https://github.com/trpc/trpc/issues).
+Please contribute!
 
-Feel free to contact [@alexdotjs on Twitter](https://twitter.com/alexdotjs) if you need help or want to give feedback.
+Feel free to contact [**@alexdotjs** on Twitter](https://twitter.com/alexdotjs) if you need help or want to give feedback.
+
+Anyone welcome. Any contribution very welcome, big or small.
