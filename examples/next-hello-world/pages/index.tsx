@@ -65,7 +65,7 @@ export default function Home() {
         <br />
         <label htmlFor="text">Text:</label>
         <br />
-        <textarea name="text" disabled={addPost.isLoading} />
+        <textarea id="text" name="text" disabled={addPost.isLoading} />
         {fieldErrors.text && <div className="error">{fieldErrors.text}</div>}
         <br />
         <input type="submit" disabled={addPost.isLoading} />
