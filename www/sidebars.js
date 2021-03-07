@@ -26,6 +26,7 @@ module.exports = {
             'server/middlewares',
             'server/data-transformers',
             'server/context',
+            'server/caching',
           ]
         },
         {
