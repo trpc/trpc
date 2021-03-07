@@ -25,6 +25,7 @@ module.exports = {
             'server/merging-routers',
             'server/middlewares',
             'server/data-transformers',
+            'server/context',
           ]
         },
         {
