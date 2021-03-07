@@ -1,7 +1,7 @@
 import * as trpc from '@trpc/server';
 import { inferAsyncReturnType } from '@trpc/server';
 import * as trpcNext from '@trpc/server/dist/adapters/next';
-
+import * as z from 'zod';
 // The app's context - is generated for each incoming request
 export async function createContext(opts?: trpcNext.CreateNextContextOptions) {
   return {
@@ -21,21 +21,29 @@ const waitFor = async (ms: number) =>
 // Important: only use this export with SSR/SSG
 export const appRouter = createRouter()
   .query('slow-query-cached', {
-    async resolve({ ctx }) {
+    input: z.object({
+      id: z.string(),
+    }),
+    async resolve({ ctx, input }) {
       ctx.res?.setHeader('Cache-Control', 's-maxage=1, stale-while-revalidate');
 
       await waitFor(3000); // wait for 5s
 
       return {
+        input,
         lastUpdated: new Date().toJSON(),
       };
     },
   })
   .query('slow-query-uncached', {
-    async resolve() {
+    input: z.object({
+      id: z.string(),
+    }),
+    async resolve({ input }) {
       await waitFor(3000); // wait for 5s
 
       return {
+        input,
         lastUpdated: new Date().toJSON(),
       };
     },

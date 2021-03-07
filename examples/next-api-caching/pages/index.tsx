@@ -2,10 +2,10 @@ import Head from 'next/head';
 import { trpc } from '../utils/trpc';
 
 export default function Home() {
-  const uncachedQuery = trpc.useQuery(['slow-query-uncached'], {
+  const uncachedQuery = trpc.useQuery(['slow-query-uncached', { id: 'myId' }], {
     refetchInterval: 3000, // refetch data every 5s
   });
-  const cachedQuery = trpc.useQuery(['slow-query-cached'], {
+  const cachedQuery = trpc.useQuery(['slow-query-cached', { id: 'myId' }], {
     refetchInterval: 3000, // refetch data every 5s
   });
   return (
