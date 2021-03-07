@@ -1,19 +1,17 @@
-import Head from 'next/head';
-import { RefObject, useEffect, useRef, useState } from 'react';
-import 'todomvc-app-css/index.css';
-import 'todomvc-common/base.css';
-import { inferQueryOutput, trpc } from '../../utils/trpc';
-import { appRouter, createContext } from '../api/trpc/[trpc]';
-import { ReactQueryDevtools } from 'react-query/devtools';
 import clsx from 'clsx';
-import { useRouter } from 'next/dist/client/router';
-import Link from 'next/link';
 import {
   GetStaticPaths,
-  GetStaticProps,
   GetStaticPropsContext,
   InferGetStaticPropsType,
 } from 'next';
+import Head from 'next/head';
+import Link from 'next/link';
+import { RefObject, useEffect, useRef, useState } from 'react';
+import { ReactQueryDevtools } from 'react-query/devtools';
+import 'todomvc-app-css/index.css';
+import 'todomvc-common/base.css';
+import { inferQueryOutput, trpc } from '../utils/trpc';
+import { appRouter, createContext } from './api/trpc/[trpc]';
 
 type Task = inferQueryOutput<'todos.all'>[number];
 
@@ -207,7 +205,6 @@ export default function TodosPage({
       trpc.invalidateQuery(['todos.all']);
     },
   });
-  const router = useRouter();
   return (
     <>
       <Head>
@@ -268,7 +265,7 @@ export default function TodosPage({
           {/* Remove this if you don't implement routing */}
           <ul className="filters">
             <li>
-              <Link href="/todos/all">
+              <Link href="/all">
                 <a
                   className={clsx(
                     !['active', 'completed'].includes(filter as string) &&
@@ -280,14 +277,14 @@ export default function TodosPage({
               </Link>
             </li>
             <li>
-              <Link href="/todos/active">
+              <Link href="/active">
                 <a className={clsx(filter === 'active' && 'selected')}>
                   Active
                 </a>
               </Link>
             </li>
             <li>
-              <Link href="/todos/completed">
+              <Link href="/completed">
                 <a className={clsx(filter === 'completed' && 'selected')}>
                   Completed
                 </a>

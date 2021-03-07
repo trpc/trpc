@@ -1,11 +1,11 @@
 export default function Home() {
-  return <></>;
+  return <div />;
 }
 
 export async function getStaticProps() {
   return {
     redirect: {
-      destination: '/todos/all',
+      destination: '/all',
       permanent: false,
     },
   };
