@@ -18,7 +18,11 @@ export default function Home() {
       <p>
         Below are two identical queries that takes 5s to load; one without any
         cache headers &amp; one with{' '}
-        <code>Cache-Control: s-maxage=1, stale-while-revalidate</code>
+        <code>Cache-Control: s-maxage=1, stale-while-revalidate</code>.
+      </p>
+      <p>
+        If they were both slow initially (because each Vercel deployment purges
+        the cache) try doing a reload and see the difference.
       </p>
       <h2>cachedQuery</h2>
       <p>status: {cachedQuery.status}</p>
