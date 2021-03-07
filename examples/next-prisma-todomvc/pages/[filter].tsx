@@ -1,17 +1,24 @@
+import clsx from 'clsx';
+import {
+  GetStaticPaths,
+  GetStaticPropsContext,
+  InferGetStaticPropsType,
+} from 'next';
 import Head from 'next/head';
+import Link from 'next/link';
 import { RefObject, useEffect, useRef, useState } from 'react';
+import { ReactQueryDevtools } from 'react-query/devtools';
 import 'todomvc-app-css/index.css';
 import 'todomvc-common/base.css';
 import { inferQueryOutput, trpc } from '../utils/trpc';
 import { appRouter, createContext } from './api/trpc/[trpc]';
-import { ReactQueryDevtools } from 'react-query/devtools';
-import clsx from 'clsx';
-import { useRouter } from 'next/dist/client/router';
-import Link from 'next/link';
 
 type Task = inferQueryOutput<'todos.all'>[number];
 
-function useOutsideAlerter({
+/**
+ * Hook for checking when the user clicks outside the passed ref
+ */
+function useClickOutside({
   ref,
   callback,
   enabled,
@@ -88,7 +95,7 @@ function ListItem({ task, allTasks }: { task: Task; allTasks: Task[] }) {
     },
   });
 
-  useOutsideAlerter({
+  useClickOutside({
     ref: wrapperRef,
     enabled: editing,
     callback() {
@@ -157,7 +164,9 @@ function ListItem({ task, allTasks }: { task: Task; allTasks: Task[] }) {
   );
 }
 
-export default function Home() {
+export default function TodosPage({
+  filter,
+}: InferGetStaticPropsType<typeof getStaticProps>) {
   const allTasks = trpc.useQuery(['todos.all'], {
     staleTime: 3000,
   });
@@ -196,8 +205,6 @@ export default function Home() {
       trpc.invalidateQuery(['todos.all']);
     },
   });
-  const router = useRouter();
-  const { filter } = router.query;
   return (
     <>
       <Head>
@@ -258,7 +265,7 @@ export default function Home() {
           {/* Remove this if you don't implement routing */}
           <ul className="filters">
             <li>
-              <Link href={{ query: { filter: undefined } }}>
+              <Link href="/all">
                 <a
                   className={clsx(
                     !['active', 'completed'].includes(filter as string) &&
@@ -270,14 +277,14 @@ export default function Home() {
               </Link>
             </li>
             <li>
-              <Link href={{ query: { filter: 'active' } }}>
+              <Link href="/active">
                 <a className={clsx(filter === 'active' && 'selected')}>
                   Active
                 </a>
               </Link>
             </li>
             <li>
-              <Link href={{ query: { filter: 'completed' } }}>
+              <Link href="/completed">
                 <a className={clsx(filter === 'completed' && 'selected')}>
                   Completed
                 </a>
@@ -285,14 +292,16 @@ export default function Home() {
             </li>
           </ul>
           {/* Hidden if no completed items are left ↓ */}
-          <button
-            className="clear-completed"
-            onClick={() => {
-              clearCompleted.mutate(null);
-            }}
-          >
-            Clear completed
-          </button>
+          {allTasks.data?.some((task) => task.completed) && (
+            <button
+              className="clear-completed"
+              onClick={() => {
+                clearCompleted.mutate(null);
+              }}
+            >
+              Clear completed
+            </button>
+          )}
         </footer>
       </section>
       <footer className="info">
@@ -313,7 +322,20 @@ export default function Home() {
     </>
   );
 }
-export async function getStaticProps() {
+
+export const getStaticPaths: GetStaticPaths = async () => {
+  return {
+    paths: ['active', 'completed', 'all'].map((filter) => ({
+      params: { filter },
+    })),
+
+    fallback: false,
+  };
+};
+
+export const getStaticProps = async (
+  context: GetStaticPropsContext<{ filter: string }>,
+) => {
   const ctx = await createContext();
   const ssr = trpc.ssr(appRouter, ctx);
 
@@ -322,7 +344,8 @@ export async function getStaticProps() {
   return {
     props: {
       dehydratedState: trpc.dehydrate(),
+      filter: context.params?.filter ?? 'all',
     },
     revalidate: 1,
   };
-}
+};
