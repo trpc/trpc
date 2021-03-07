@@ -34,6 +34,7 @@ export default function Home() {
         <pre key={post.id}>{JSON.stringify(post, null, 2)}</pre>
       ))}
 
+      <h2>Add post</h2>
       <form
         onSubmit={async (e) => {
           e.preventDefault();
@@ -93,7 +94,6 @@ export default function Home() {
           />
         </a>
       </div>
-      <h2>Add post</h2>
     </>
   );
 }
