@@ -51,20 +51,6 @@ export class TRPCClientError<TRouter extends AnyRouter> extends Error {
   }
 }
 
-/* istanbul ignore next */
-export class NextInputError extends Error {
-  public readonly originalError: Error;
-
-  constructor(originalError: Error) {
-    super(
-      `nextInput() threw an error - subscription is stopped: ${originalError.message}`,
-    );
-    this.originalError = originalError;
-
-    Object.setPrototypeOf(this, NextInputError.prototype);
-  }
-}
-
 export interface FetchOptions {
   fetch?: typeof fetch;
   AbortController?: typeof AbortController;
@@ -283,7 +269,7 @@ export class TRPCClient<TRouter extends AnyRouter> {
     path: TPath,
     opts: {
       initialInput: TInput;
-      onError?: (err: NextInputError | TRPCClientError<TRouter>) => void;
+      onError?: (err: TRPCClientError<TRouter>) => void;
       onData?: (data: TOutput[]) => void;
       /**
        * Input cursor for next call to subscription endpoint
@@ -308,15 +294,8 @@ export class TRPCClient<TRouter extends AnyRouter> {
         attemptIndex = 0;
         opts.onData && opts.onData(res);
 
-        try {
-          const nextInput = opts.nextInput(res);
-          exec(nextInput);
-        } catch (_err) {
-          const err = new NextInputError(_err);
-          opts.onError && opts.onError(err);
-          unsubscribe();
-          return;
-        }
+        const nextInput = opts.nextInput(res);
+        exec(nextInput);
       } catch (err) {
         if (stopped) {
           return;
