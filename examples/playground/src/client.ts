@@ -1,4 +1,4 @@
-import { createTRPCClient, CreateTRPCClientOptions } from '@trpc/client';
+import { createTRPCClient } from '@trpc/client';
 import AbortController from 'abort-controller';
 import fetch from 'node-fetch';
 import type { AppRouter } from './server';
@@ -11,7 +11,8 @@ const sleep = (ms = 100) => new Promise((resolve) => setTimeout(resolve, ms));
 
 async function main() {
   const url = `http://localhost:2021/trpc`;
-  const opts: CreateTRPCClientOptions = {
+
+  const client = createTRPCClient<AppRouter>({
     url,
     onSuccess(envelope) {
       console.log('✅ ', envelope.statusCode);
@@ -20,42 +21,47 @@ async function main() {
     onError(err) {
       console.log('❌ ', err.res?.status, err.message);
     },
-  };
-
-  const client = createTRPCClient<AppRouter>(opts);
+  });
   await sleep();
   await client.query('hello');
   await client.query('hello', 'client');
   await sleep();
-  const postCreate = await client.mutation('posts/create', {
+  const postCreate = await client.mutation('posts.create', {
     title: 'hello client',
   });
   console.log('created post', postCreate.title);
   await sleep();
-  const postList = await client.query('posts/list');
+  const postList = await client.query('posts.list');
   console.log('has posts', postList, 'first:', postList[0].title);
   await sleep();
   try {
-    await client.query('admin/secret');
+    await client.query('admin.secret');
   } catch (err) {
     // will fail
   }
   await sleep();
   const authedClient = createTRPCClient<AppRouter>({
-    ...opts,
+    url,
+    onSuccess(envelope) {
+      console.log('✅ ', envelope.statusCode);
+    },
+
+    onError(err) {
+      console.log('❌ ', err.res?.status, err.message);
+    },
     getHeaders: () => ({
       authorization: 'secret',
     }),
   });
 
-  await authedClient.query('admin/secret');
+  await authedClient.query('admin.secret');
 
-  const msgs = await client.query('messages/list');
+  const msgs = await client.query('messages.list');
   console.log('msgs', msgs);
 
   let i = 0;
 
-  const unsubscribe = client.subscription('posts/newMessage', {
+  const unsubscribe = client.subscription('posts.newMessage', {
     initialInput: {
       timestamp: msgs.reduce((max, msg) => Math.max(max, msg.createdAt), 0),
     },
@@ -73,18 +79,18 @@ async function main() {
   });
 
   await Promise.all([
-    client.mutation('messages/add', `test message${i++}`),
-    client.mutation('messages/add', `test message${i++}`),
-    client.mutation('messages/add', `test message${i++}`),
-    client.mutation('messages/add', `test message${i++}`),
+    client.mutation('messages.add', `test message${i++}`),
+    client.mutation('messages.add', `test message${i++}`),
+    client.mutation('messages.add', `test message${i++}`),
+    client.mutation('messages.add', `test message${i++}`),
   ]);
   await sleep();
 
-  await client.mutation('messages/add', `test message${i++}`);
+  await client.mutation('messages.add', `test message${i++}`);
 
   await Promise.all([
-    client.mutation('messages/add', `test message${i++}`),
-    client.mutation('messages/add', `test message${i++}`),
+    client.mutation('messages.add', `test message${i++}`),
+    client.mutation('messages.add', `test message${i++}`),
   ]);
 
   unsubscribe();

@@ -9,8 +9,10 @@ import hash from 'hash-sum';
 import React, { Fragment, useEffect, useState } from 'react';
 import { QueryClient, QueryClientProvider } from 'react-query';
 import * as z from 'zod';
+import { ZodError } from 'zod';
 import { createReactQueryHooks, OutputWithCursor } from '../../react/src';
 import * as trpc from '../src';
+import { DefaultErrorShape } from '../src';
 import { routerToServerAndClient } from './_testHelpers';
 
 type Context = {};
@@ -30,16 +32,31 @@ function createAppRouter() {
     ],
   };
   const postLiveInputs: unknown[] = [];
+
+  const allPosts = jest.fn();
+  const postById = jest.fn();
   const appRouter = trpc
     .router<Context>()
+    .formatError(({ defaultShape, error }) => {
+      return {
+        $test: 'formatted',
+        zodError:
+          error.originalError instanceof ZodError
+            ? error.originalError.flatten()
+            : null,
+        ...defaultShape,
+      };
+    })
     .query('allPosts', {
       resolve() {
+        allPosts();
         return db.posts;
       },
     })
     .query('postById', {
       input: z.string(),
       resolve({ input }) {
+        postById(input);
         const post = db.posts.find((p) => p.id === input);
         if (!post) {
           throw trpc.httpError.notFound();
@@ -132,6 +149,10 @@ function createAppRouter() {
     close,
     db,
     postLiveInputs,
+    resolvers: {
+      postById,
+      allPosts,
+    },
   };
 }
 let factory: ReturnType<typeof createAppRouter>;
@@ -305,11 +326,14 @@ test('dehydrate', async () => {
   expect(dehydrated).toHaveLength(1);
 
   const [cache] = dehydrated;
-  expect(cache.queryHash).toMatchInlineSnapshot(`"[\\"allPosts\\",null]"`);
+  expect(cache.queryHash).toMatchInlineSnapshot(
+    `"[\\"allPosts\\",null,\\"TRPC_QUERY\\"]"`,
+  );
   expect(cache.queryKey).toMatchInlineSnapshot(`
     Array [
       "allPosts",
       null,
+      "TRPC_QUERY",
     ]
   `);
   expect(cache.state.data).toEqual(db.posts);
@@ -451,4 +475,184 @@ test('prefetchInfiniteQuery()', async () => {
   const data = JSON.stringify(hooks.dehydrate());
   expect(data).toContain('first post');
   expect(data).not.toContain('second post');
+});
+
+describe('invalidate queries', () => {
+  test('queryClient.invalidateQueries()', async () => {
+    const { hooks, resolvers } = factory;
+    function MyComponent() {
+      const allPostsQuery = hooks.useQuery(['allPosts'], {
+        staleTime: Infinity,
+      });
+      const postByIdQuery = hooks.useQuery(['postById', '1'], {
+        staleTime: Infinity,
+      });
+
+      return (
+        <>
+          <pre>
+            allPostsQuery:{allPostsQuery.status} allPostsQuery:
+            {allPostsQuery.isStale ? 'stale' : 'not-stale'}{' '}
+          </pre>
+          <pre>
+            postByIdQuery:{postByIdQuery.status} postByIdQuery:
+            {postByIdQuery.isStale ? 'stale' : 'not-stale'}
+          </pre>
+          <button
+            data-testid="refetch"
+            onClick={() => {
+              hooks.queryClient.invalidateQueries(['allPosts']);
+              hooks.queryClient.invalidateQueries(['postById']);
+            }}
+          />
+        </>
+      );
+    }
+    function App() {
+      return (
+        <QueryClientProvider client={hooks.queryClient}>
+          <MyComponent />
+        </QueryClientProvider>
+      );
+    }
+
+    const utils = render(<App />);
+
+    await waitFor(() => {
+      expect(utils.container).toHaveTextContent('postByIdQuery:success');
+      expect(utils.container).toHaveTextContent('allPostsQuery:success');
+
+      expect(utils.container).toHaveTextContent('postByIdQuery:not-stale');
+      expect(utils.container).toHaveTextContent('allPostsQuery:not-stale');
+    });
+
+    expect(resolvers.allPosts).toHaveBeenCalledTimes(1);
+    expect(resolvers.postById).toHaveBeenCalledTimes(1);
+
+    utils.getByTestId('refetch').click();
+
+    await waitFor(() => {
+      expect(utils.container).toHaveTextContent('postByIdQuery:stale');
+      expect(utils.container).toHaveTextContent('allPostsQuery:stale');
+    });
+    await waitFor(() => {
+      expect(utils.container).toHaveTextContent('postByIdQuery:not-stale');
+      expect(utils.container).toHaveTextContent('allPostsQuery:not-stale');
+    });
+
+    expect(resolvers.allPosts).toHaveBeenCalledTimes(2);
+    expect(resolvers.postById).toHaveBeenCalledTimes(2);
+  });
+
+  test('invalidateQuery()', async () => {
+    const { hooks, resolvers } = factory;
+    function MyComponent() {
+      const allPostsQuery = hooks.useQuery(['allPosts'], {
+        staleTime: Infinity,
+      });
+      const postByIdQuery = hooks.useQuery(['postById', '1'], {
+        staleTime: Infinity,
+      });
+
+      return (
+        <>
+          <pre>
+            allPostsQuery:{allPostsQuery.status} allPostsQuery:
+            {allPostsQuery.isStale ? 'stale' : 'not-stale'}{' '}
+          </pre>
+          <pre>
+            postByIdQuery:{postByIdQuery.status} postByIdQuery:
+            {postByIdQuery.isStale ? 'stale' : 'not-stale'}
+          </pre>
+          <button
+            data-testid="refetch"
+            onClick={() => {
+              hooks.invalidateQuery(['allPosts']);
+              hooks.invalidateQuery(['postById', '1']);
+            }}
+          />
+        </>
+      );
+    }
+    function App() {
+      return (
+        <QueryClientProvider client={hooks.queryClient}>
+          <MyComponent />
+        </QueryClientProvider>
+      );
+    }
+
+    const utils = render(<App />);
+
+    await waitFor(() => {
+      expect(utils.container).toHaveTextContent('postByIdQuery:success');
+      expect(utils.container).toHaveTextContent('allPostsQuery:success');
+
+      expect(utils.container).toHaveTextContent('postByIdQuery:not-stale');
+      expect(utils.container).toHaveTextContent('allPostsQuery:not-stale');
+    });
+
+    expect(resolvers.allPosts).toHaveBeenCalledTimes(1);
+    expect(resolvers.postById).toHaveBeenCalledTimes(1);
+
+    utils.getByTestId('refetch').click();
+
+    await waitFor(() => {
+      expect(utils.container).toHaveTextContent('postByIdQuery:stale');
+      expect(utils.container).toHaveTextContent('allPostsQuery:stale');
+    });
+    await waitFor(() => {
+      expect(utils.container).toHaveTextContent('postByIdQuery:not-stale');
+      expect(utils.container).toHaveTextContent('allPostsQuery:not-stale');
+    });
+
+    expect(resolvers.allPosts).toHaveBeenCalledTimes(2);
+    expect(resolvers.postById).toHaveBeenCalledTimes(2);
+  });
+});
+
+test('formatError() react types test', async () => {
+  const { hooks } = factory;
+  function MyComponent() {
+    const mutation = hooks.useMutation('addPost');
+
+    useEffect(() => {
+      mutation.mutate({ title: 123 as any });
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
+
+    if (mutation.error && mutation.error.json && mutation.error.shape) {
+      expectTypeOf(mutation.error.json.error).toMatchTypeOf<
+        DefaultErrorShape & {
+          $test: string;
+        }
+      >();
+      expectTypeOf(mutation.error.shape).toMatchTypeOf<
+        DefaultErrorShape & {
+          $test: string;
+        }
+      >();
+      return (
+        <pre data-testid="err">
+          {JSON.stringify(mutation.error.shape.zodError, null, 2)}
+        </pre>
+      );
+    }
+    return <></>;
+  }
+  function App() {
+    return (
+      <QueryClientProvider client={hooks.queryClient}>
+        <MyComponent />
+      </QueryClientProvider>
+    );
+  }
+
+  const utils = render(<App />);
+  await waitFor(() => {
+    expect(utils.container).toHaveTextContent('fieldErrors');
+    expect(utils.getByTestId('err').innerText).toMatchInlineSnapshot(
+      `undefined`,
+    );
+  });
 });

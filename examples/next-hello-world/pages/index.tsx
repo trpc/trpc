@@ -1,6 +1,6 @@
 import Head from 'next/head';
 import { trpc } from '../utils/trpc';
-import { appRouter } from './api/trpc/[...trpc]';
+import { appRouter } from './api/trpc/[trpc]';
 
 export default function Home() {
   // try typing here to see that you get autocompletion & type safety on the procedure's name
@@ -34,6 +34,7 @@ export default function Home() {
         <pre key={post.id}>{JSON.stringify(post, null, 2)}</pre>
       ))}
 
+      <h2>Add post</h2>
       <form
         onSubmit={async (e) => {
           e.preventDefault();
@@ -93,13 +94,12 @@ export default function Home() {
           />
         </a>
       </div>
-      <h2>Add post</h2>
     </>
   );
 }
 
 export async function getStaticProps() {
-  const ssr = trpc.ssr(appRouter, {});
+  const ssr = trpc.ssr(appRouter, { user: null });
 
   await ssr.prefetchQuery('posts.list');
 

@@ -1,9 +1,10 @@
 {
   "name": "@trpc/client",
-  "version": "3.0.0",
+  "version": "3.5.0",
   "description": "tRPC Client lib",
   "author": "KATT",
   "license": "MIT",
+  "homepage": "https://trpc.io",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/trpc/trpc.git",
@@ -24,10 +25,10 @@
     "dist"
   ],
   "dependencies": {
-    "tslib": "^2.0.0"
+    "tslib": "^2.1.0"
   },
   "devDependencies": {
-    "@trpc/server": "^3.0.0"
+    "@trpc/server": "^3.5.0"
   },
   "publishConfig": {
     "access": "public"

@@ -121,9 +121,9 @@ export const appRouter = createRouter()
       return `hello ${input ?? ctx.user?.name ?? 'world'}`;
     },
   })
-  .merge('posts/', posts)
+  .merge('posts.', posts)
   .merge(
-    'admin/',
+    'admin.',
     createRouter().query('secret', {
       resolve: ({ ctx }) => {
         if (!ctx.user) {
@@ -138,7 +138,7 @@ export const appRouter = createRouter()
       },
     }),
   )
-  .merge('messages/', messages);
+  .merge('messages.', messages);
 
 export type AppRouter = typeof appRouter;
 

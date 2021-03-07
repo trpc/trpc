@@ -1,7 +1,7 @@
 import Head from 'next/head';
 import { useEffect, useMemo, useState } from 'react';
 import { inferQueryOutput, trpc } from '../utils/trpc';
-import { appRouter } from './api/trpc/[...trpc]';
+import { appRouter } from './api/trpc/[trpc]';
 
 type MessagesOutput = inferQueryOutput<'messages.list'>;
 type Message = MessagesOutput['items'][number];

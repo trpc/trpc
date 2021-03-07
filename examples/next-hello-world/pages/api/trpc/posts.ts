@@ -3,7 +3,7 @@
  */
 
 import * as z from 'zod';
-import { createRouter } from './[...trpc]';
+import { createRouter } from './[trpc]';
 const randomId = () => Math.random().toString(36).substr(2, 9);
 // example db
 const db = [

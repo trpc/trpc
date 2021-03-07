@@ -28,3 +28,5 @@ export type Prefixer<
 export type Maybe<T> = T | undefined | null;
 
 export type ThenArg<T> = T extends PromiseLike<infer U> ? ThenArg<U> : T;
+
+export type Dict<T> = Record<string, T>;

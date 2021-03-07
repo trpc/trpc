@@ -13,7 +13,7 @@ test('is called if def first', async () => {
           return 'bar1';
         },
       })
-      .query('foo2', {
+      .mutation('foo2', {
         resolve() {
           return 'bar2';
         },
@@ -21,7 +21,13 @@ test('is called if def first', async () => {
   );
 
   expect(await client.query('foo1')).toBe('bar1');
-  expect(await client.query('foo2')).toBe('bar2');
+  const calls = middleware.mock.calls;
+  expect(calls[0][0]).toHaveProperty('type');
+  expect(calls[0][0]).toHaveProperty('ctx');
+  expect(calls[0][0].type).toBe('query');
+  expect(await client.mutation('foo2')).toBe('bar2');
+  expect(calls[1][0].type).toBe('mutation');
+
   expect(middleware).toHaveBeenCalledTimes(2);
   close();
 });
@@ -82,19 +88,23 @@ test('allows you to throw an error (e.g. auth)', async () => {
           }),
       ),
     {
-      createContext({ req }) {
-        if (req.headers.authorization === 'meow') {
-          return {
-            user: {
-              id: 1,
-              name: 'KATT',
-              isAdmin: true,
-            },
-          };
-        }
-        return {};
+      server: {
+        createContext({ req }) {
+          if (req.headers.authorization === 'meow') {
+            return {
+              user: {
+                id: 1,
+                name: 'KATT',
+                isAdmin: true,
+              },
+            };
+          }
+          return {};
+        },
       },
-      getHeaders: () => headers,
+      client: {
+        getHeaders: () => headers,
+      },
     },
   );
 
@@ -175,7 +185,7 @@ test('equiv', () => {
     };
   };
   trpc
-    .router()
+    .router<Context>()
     .query('foo', {
       resolve() {
         return 'bar';
@@ -198,7 +208,7 @@ test('equiv', () => {
     );
 
   trpc
-    .router()
+    .router<Context>()
     .query('foo', {
       resolve() {
         return 'bar';
