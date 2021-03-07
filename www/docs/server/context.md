@@ -31,6 +31,7 @@ export async function createContext(opts?: trpcNext.CreateNextContextOptions) {
 }
 type Context = inferAsyncReturnType<typeof createContext>;
 
+// Helper function to create a router with your app's context
 export function createRouter() {
   return trpc.router<Context>();
 }
