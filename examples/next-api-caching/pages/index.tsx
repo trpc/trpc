@@ -3,10 +3,10 @@ import { trpc } from '../utils/trpc';
 
 export default function Home() {
   const uncachedQuery = trpc.useQuery(['slow-query-uncached'], {
-    refetchInterval: 5e3, // refetch data every 5s
+    refetchInterval: 5000, // refetch data every 5s
   });
   const cachedQuery = trpc.useQuery(['slow-query-cached'], {
-    refetchInterval: 5e3, // refetch data every 5s
+    refetchInterval: 5000, // refetch data every 5s
   });
   return (
     <>
