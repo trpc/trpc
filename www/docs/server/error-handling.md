@@ -5,7 +5,7 @@ sidebar_label: Error Handling
 slug: /error-handling
 ---
 
-If a procedure fails we trigger a function with information about the procedure & ctx;
+If a procedure fails we trigger a function with information about the procedure & ctx.
 
 ## Example with Next.js
 
