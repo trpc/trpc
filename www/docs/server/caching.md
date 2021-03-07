@@ -7,7 +7,7 @@ slug: /caching
 
 Since all queries are normal HTTP `GET`s we can use normal HTTP headers to cache responses, make the responses snappy, give your database a rest, and easier scale your API to gazillions of users.
 
-The below examples uses [Vercel's edge caching](https://vercel.com/docs/serverless-functions/edge-caching).
+The below examples uses [Vercel's edge caching](https://vercel.com/docs/serverless-functions/edge-caching) to serve data to your users as fast as possible.
 
 ## Example project
 
