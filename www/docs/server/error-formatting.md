@@ -59,7 +59,7 @@ function MyComponent() {
     mutation.mutate({ title: 123 as any });
   }, []);
 
-  if (mutation.error mutation.error.shape.zodError) {
+  if (mutation.error?.shape?.zodError) {
     // zodError will be inferred
     return (
       <pre>Error: {JSON.stringify(mutation.error.shape.zodError, null, 2)}</pre>
