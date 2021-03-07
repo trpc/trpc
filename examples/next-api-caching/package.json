@@ -1,6 +1,6 @@
 {
   "name": "@examples/next-api-caching",
-  "version": "3.4.2",
+  "version": "3.5.0",
   "private": true,
   "scripts": {
     "dev": "next dev",
@@ -11,9 +11,9 @@
     "test-start": "start-server-and-test start 3000 test"
   },
   "dependencies": {
-    "@trpc/client": "^3.4.0",
-    "@trpc/react": "^3.4.2",
-    "@trpc/server": "^3.4.0",
+    "@trpc/client": "^3.5.0",
+    "@trpc/react": "^3.5.0",
+    "@trpc/server": "^3.5.0",
     "next": "^10.0.5",
     "react": "^17.0.1",
     "react-dom": "^17.0.1",
