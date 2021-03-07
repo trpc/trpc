@@ -7,14 +7,14 @@ slug: /error-formatting
 
 You can do custom error formatting in your router and the returned object will be inferred all the way to your client (& React components)
 
-## Example code
 
-
-### Working example
+## Working example
 
 - Code at [/examples/next-hello-world/pages/api/trpc/\[trpc\].ts](https://github.com/trpc/trpc/blob/main/examples/next-hello-world/pages/api/trpc/%5Btrpc%5D.ts)
 - Live at [hello-world.trpc.io](https://hello-world.trpc.io) (try submitting the form without filling in the input)
 
+
+## Usage example highlighted
 
 ### Adding custom formatting
 

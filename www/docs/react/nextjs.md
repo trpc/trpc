@@ -38,7 +38,8 @@ Execute [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packag
 
 ### TodoMVC with [Prisma](https://www.prisma.io/)
 
-> TodoMVC-app implemented with tRPC.
+
+> TodoMVC-app implemented with tRPC. Uses [superjson](https://github.com/blitz-js/superjson) to transparently use `Date`s over the wire.
 > 
 > Live demo at [todomvc.trpc.io](https://todomvc.trpc.io)
 
@@ -47,7 +48,7 @@ Execute [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packag
 npx create-next-app --example https://github.com/trpc/trpc --example-path examples/next-prisma-todomvc trpc-todo
 ```
 
-### Simple Starter (no db)
+### Simple Starter without database
 
 > Simple starter project with a mock in-memory db.
 > 
