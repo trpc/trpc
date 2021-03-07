@@ -14,6 +14,12 @@ export default function Home() {
         <title>Cached query demo</title>
         <link rel="icon" href="/favicon.ico" />
       </Head>
+      <h1>Cached query demo</h1>
+      <p>
+        Below are two identical queries that takes 5s to load; one without any
+        cache headers &amp; one with{' '}
+        <code>Cache-Control: s-maxage=1, stale-while-revalidate</code>
+      </p>
       <h2>cachedQuery</h2>
       <p>status: {cachedQuery.status}</p>
       <p>
