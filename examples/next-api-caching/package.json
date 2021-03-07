@@ -1,5 +1,5 @@
 {
-  "name": "@examples/api-response-caching",
+  "name": "@examples/next-api-caching",
   "version": "3.4.2",
   "private": true,
   "scripts": {
