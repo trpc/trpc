@@ -9,7 +9,7 @@ You are able to serialize the response data & input args. The transformers need 
 
 ## Using [superjson](https://github.com/blitz-js/superjson)
 
-SuperJSON allows us to able to transparently use e.g. standard `Date`/`Map`/`Set`s over the wire between the server and client.
+SuperJSON allows us to able to transparently use e.g. standard `Date`/`Map`/`Set`s over the wire between the server and client. That means you can return any of these types in your API-resolver and use them in the client without recreating the objects from JSON.
 
 ### Working Example
 
