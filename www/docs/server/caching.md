@@ -5,9 +5,9 @@ sidebar_label: API Response Caching
 slug: /caching
 ---
 
-Since all queries are normal HTTP `GET`s we can use normal HTTP headers to cache responses, give your database a rest and easier scale your API.
+Since all queries are normal HTTP `GET`s we can use normal HTTP headers to cache responses, make the responses snappy, give your database a rest, and easier scale your API to gazillions of users.
 
-## Example project:
+## Example project
 
 - https://github.com/trpc/trpc/tree/main/examples/next-api-caching
 - Live at [next-api-caching.trpc.io](https://next-api-caching.trpc.io)
