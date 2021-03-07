@@ -42,6 +42,7 @@ tRPC is a framework for building strongly typed RPC APIs with TypeScript. Altern
 - 🔋&nbsp; Batteries included. React-library + Next.js/Express adapters. _(But tRPC is not tied to React - [reach out](https://twitter.com/alexdotjs) if you want to make a Svelte/Vue/... lib)_
 - 🥃&nbsp; Simple to use APIs for queries & mutations + experimental subscriptions support.
 - 👀&nbsp; Quite a few examples in the [./examples](https://github.com/trpc/trpc/tree/main/examples)-folder
+- ✅&nbsp; Well-tested & running in production.
 
 
 ### Requirements
