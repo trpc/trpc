@@ -1,5 +1,5 @@
 {
-  "name": "@examples/hello-world",
+  "name": "@examples/api-response-caching",
   "version": "3.4.2",
   "private": true,
   "scripts": {
