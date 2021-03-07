@@ -24,7 +24,7 @@ export const appRouter = createRouter()
     async resolve({ ctx }) {
       ctx.res?.setHeader('Cache-Control', 's-maxage=1, stale-while-revalidate');
 
-      await waitFor(5000); // wait for 5s
+      await waitFor(3000); // wait for 5s
 
       return {
         lastUpdated: new Date().toJSON(),
@@ -33,7 +33,7 @@ export const appRouter = createRouter()
   })
   .query('slow-query-uncached', {
     async resolve() {
-      await waitFor(5000); // wait for 5s
+      await waitFor(3000); // wait for 5s
 
       return {
         lastUpdated: new Date().toJSON(),

@@ -3,10 +3,10 @@ import { trpc } from '../utils/trpc';
 
 export default function Home() {
   const uncachedQuery = trpc.useQuery(['slow-query-uncached'], {
-    refetchInterval: 5000, // refetch data every 5s
+    refetchInterval: 3000, // refetch data every 5s
   });
   const cachedQuery = trpc.useQuery(['slow-query-cached'], {
-    refetchInterval: 5000, // refetch data every 5s
+    refetchInterval: 3000, // refetch data every 5s
   });
   return (
     <>
@@ -16,7 +16,7 @@ export default function Home() {
       </Head>
       <h1>Cached query demo</h1>
       <p>
-        Below are two identical queries that takes 5s to load; one without any
+        Below are two identical queries that takes 3s to load; one without any
         cache headers &amp; one with{' '}
         <code>Cache-Control: s-maxage=1, stale-while-revalidate</code>.
       </p>
