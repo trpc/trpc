@@ -37,12 +37,11 @@ const router = trpc.router<Context>()
 ### Usage in React
 
 ```tsx
-
 function MyComponent() {
-  const mutation = hooks.useMutation('addPost');
+  const mutation = trpc.useMutation('addPost');
 
   useEffect(() => {
-    mutation.mutate({ title: 123 as any });
+    mutation.mutate({ title: 'example' });
   }, []);
 
   if (mutation.error?.shape?.zodError) {
