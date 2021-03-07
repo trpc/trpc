@@ -1,4 +1,4 @@
-import { createTRPCClient, CreateTRPCClientOptions } from '@trpc/client';
+import { createTRPCClient } from '@trpc/client';
 import AbortController from 'abort-controller';
 import fetch from 'node-fetch';
 import type { AppRouter } from './server';
@@ -11,7 +11,8 @@ const sleep = (ms = 100) => new Promise((resolve) => setTimeout(resolve, ms));
 
 async function main() {
   const url = `http://localhost:2021/trpc`;
-  const opts: CreateTRPCClientOptions = {
+
+  const client = createTRPCClient<AppRouter>({
     url,
     onSuccess(envelope) {
       console.log('✅ ', envelope.statusCode);
@@ -20,9 +21,7 @@ async function main() {
     onError(err) {
       console.log('❌ ', err.res?.status, err.message);
     },
-  };
-
-  const client = createTRPCClient<AppRouter>(opts);
+  });
   await sleep();
   await client.query('hello');
   await client.query('hello', 'client');
@@ -42,7 +41,14 @@ async function main() {
   }
   await sleep();
   const authedClient = createTRPCClient<AppRouter>({
-    ...opts,
+    url,
+    onSuccess(envelope) {
+      console.log('✅ ', envelope.statusCode);
+    },
+
+    onError(err) {
+      console.log('❌ ', err.res?.status, err.message);
+    },
     getHeaders: () => ({
       authorization: 'secret',
     }),

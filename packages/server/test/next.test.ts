@@ -62,7 +62,7 @@ test('bad setup', async () => {
   await handler(req, res);
   expect(status).toHaveBeenCalledWith(500);
 
-  const responseJson: HTTPErrorResponseEnvelope = (json.mock
+  const responseJson: HTTPErrorResponseEnvelope<typeof router> = (json.mock
     .calls[0] as any)[0];
   expect(responseJson.ok).toMatchInlineSnapshot(`false`);
   expect(responseJson.error.message).toMatchInlineSnapshot(
@@ -147,12 +147,12 @@ test('404', async () => {
   await handler(req, res);
 
   expect(res.statusCode).toBe(404);
-  const json: HTTPErrorResponseEnvelope = JSON.parse(
+  const json: HTTPErrorResponseEnvelope<typeof router> = JSON.parse(
     (end.mock.calls[0] as any)[0],
   );
   expect(json.statusCode).toBe(404);
   expect(json.error.message).toMatchInlineSnapshot(
-    `"No such procedure \\"not-found-path\\""`,
+    `"No such query procedure \\"not-found-path\\""`,
   );
 });
 
@@ -182,7 +182,7 @@ test('payload too large', async () => {
   await handler(req, res);
 
   expect(res.statusCode).toBe(413);
-  const json: HTTPErrorResponseEnvelope = JSON.parse(
+  const json: HTTPErrorResponseEnvelope<typeof router> = JSON.parse(
     (end.mock.calls[0] as any)[0],
   );
   expect(json.statusCode).toBe(413);

@@ -1,31 +1,22 @@
 /* eslint-disable @typescript-eslint/ban-types */
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { createTRPCClient, CreateTRPCClientOptions } from '../../client/src';
 import AbortController from 'abort-controller';
 import fetch from 'node-fetch';
+import { createTRPCClient, CreateTRPCClientOptions } from '../../client/src';
 import { AnyRouter, CreateHttpHandlerOptions } from '../src';
-import {
-  CreateHttpContextFn,
-  createHttpServer,
-} from '../src/adapters/standalone';
+import { createHttpServer } from '../src/adapters/standalone';
 
-export function routerToServerAndClient<
-  TRouter extends AnyRouter,
-  TContext = {}
->(
+export function routerToServerAndClient<TRouter extends AnyRouter>(
   router: TRouter,
   opts?: {
-    createContext?: CreateHttpContextFn<TContext>;
-    getHeaders?: CreateTRPCClientOptions['getHeaders'];
-    subscriptions?: CreateHttpHandlerOptions<any, any>['subscriptions'];
-    onError?: CreateTRPCClientOptions['onError'];
-    onSuccess?: CreateTRPCClientOptions['onSuccess'];
+    server?: Partial<CreateHttpHandlerOptions<TRouter>>;
+    client?: Partial<CreateTRPCClientOptions<TRouter>>;
   },
 ) {
   const server = createHttpServer({
     router,
-    createContext: opts?.createContext ?? (() => ({})),
-    subscriptions: opts?.subscriptions,
+    createContext: () => ({}),
+    ...(opts?.server ?? {}),
   });
   const { port } = server.listen(0);
 
@@ -35,13 +26,12 @@ export function routerToServerAndClient<
       AbortController: AbortController as any,
       fetch: fetch as any,
     },
-    getHeaders: opts?.getHeaders,
-    onError: opts?.onError,
-    onSuccess: opts?.onSuccess,
+    ...(opts?.client ?? {}),
   });
 
   return {
     client,
     close: () => server.server.close(),
+    router,
   };
 }

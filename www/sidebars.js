@@ -22,10 +22,12 @@ module.exports = {
           collapsed: false,
           items: [
             'server/procedures',
+            'server/context',
             'server/merging-routers',
             'server/middlewares',
+            'server/error-handling',
+            'server/error-formatting',
             'server/data-transformers',
-            'server/context',
             'server/caching',
           ]
         },

@@ -1,78 +1,88 @@
+/* eslint-disable @typescript-eslint/no-non-null-assertion */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import http from 'http';
 import qs from 'qs';
 import url from 'url';
 import { assertNotBrowser } from './assertNotBrowser';
-import { InputValidationError, RouteNotFoundError } from './errors';
-import { AnyRouter } from './router';
+import {
+  getErrorFromUnknown,
+  inputValidationError,
+  TRPCError,
+  TRPCErrorOptions,
+} from './errors';
+import { AnyRouter, inferRouterContext, ProcedureType } from './router';
 import { Subscription } from './subscription';
 import { DataTransformer } from './transformer';
+import { Dict } from './types';
 assertNotBrowser();
-export class HTTPError extends Error {
-  public readonly statusCode: number;
-  constructor(statusCode: number, message: string) {
-    super(message);
-    this.statusCode = statusCode;
-    Object.setPrototypeOf(this, HTTPError.prototype);
-  }
-}
-/* istanbul ignore next */
-export const httpError = {
-  forbidden: (message?: string) => new HTTPError(403, message ?? 'Forbidden'),
-  unauthorized: (message?: string) =>
-    new HTTPError(401, message ?? 'Unauthorized'),
-  badRequest: (message?: string) =>
-    new HTTPError(400, message ?? 'Bad Request'),
-  notFound: (message?: string) => new HTTPError(404, message ?? 'Not found'),
-};
+
 export type HTTPSuccessResponseEnvelope<TOutput> = {
   ok: true;
   statusCode: number;
   data: TOutput;
 };
 
-export type HTTPErrorResponseEnvelope = {
+export type HTTPErrorResponseEnvelope<TRouter extends AnyRouter> = {
   ok: false;
   statusCode: number;
-  error: {
-    message: string;
-    stack?: string | undefined;
-  };
+  error: ReturnType<TRouter['_def']['errorFormatter']>;
 };
 
-export type HTTPResponseEnvelope<TOutput> =
+export type HTTPResponseEnvelope<TOutput, TRouter extends AnyRouter> =
   | HTTPSuccessResponseEnvelope<TOutput>
-  | HTTPErrorResponseEnvelope;
+  | HTTPErrorResponseEnvelope<TRouter>;
 
-export function getErrorResponseEnvelope(
-  _err?: Partial<HTTPError> | InputValidationError<Error>,
-) {
-  let err = _err;
-  if (err instanceof InputValidationError) {
-    err = httpError.badRequest(err.message);
-  } else if (err instanceof RouteNotFoundError) {
-    err = httpError.notFound(err.message);
+const STATUS_CODE_MAP: Dict<number> = {
+  BAD_USER_INPUT: 400,
+  INTERAL_SERVER_ERROR: 500,
+  NOT_FOUND: 404,
+};
+export interface HttpErrorOptions<TCode extends string>
+  extends TRPCErrorOptions {
+  code: TCode;
+  statusCode: number;
+}
+export class HTTPError<TCode extends string> extends TRPCError<TCode> {
+  public readonly statusCode: number;
+
+  constructor(message: string, opts: HttpErrorOptions<TCode>) {
+    super({ message, ...opts });
+    this.statusCode = opts.statusCode;
+
+    // this is set to TRPCError as `instanceof TRPCError` doesn't seem to work on error sub-classes
+    Object.setPrototypeOf(this, HTTPError.prototype);
   }
-  const statusCode: number =
-    typeof err?.statusCode === 'number' ? err.statusCode : 500;
-  const message: string =
-    typeof err?.message === 'string' ? err.message : 'Internal Server Error';
+}
+/* istanbul ignore next */
+export const httpError = {
+  forbidden: (message?: string) =>
+    new HTTPError(message ?? 'Forbidden', {
+      statusCode: 403,
+      code: 'FORBIDDEN',
+    }),
+  unauthorized: (message?: string) =>
+    new HTTPError(message ?? 'Unauthorized', {
+      statusCode: 401,
+      code: 'UNAUTHENTICATED',
+    }),
+  badRequest: (message?: string) =>
+    new HTTPError(message ?? 'Bad Request', {
+      statusCode: 400,
+      code: 'BAD_USER_INPUT',
+    }),
+  notFound: (message?: string) =>
+    new HTTPError(message ?? 'Not found', {
+      statusCode: 404,
+      code: 'NOT_FOUND',
+    }),
+};
 
-  const stack: string | undefined =
-    process.env.NODE_ENV !== 'production' && typeof err?.stack === 'string'
-      ? err.stack
-      : undefined;
-
-  const json: HTTPErrorResponseEnvelope = {
-    ok: false,
-    statusCode,
-    error: {
-      message,
-      stack,
-    },
-  };
-
-  return json;
+export function getStatusCodeFromError(err: TRPCError): number {
+  const statusCodeFromError = (err as any)?.statusCode;
+  if (typeof statusCodeFromError === 'number') {
+    return statusCodeFromError;
+  }
+  return STATUS_CODE_MAP[err.code] ?? 500;
 }
 
 export function getQueryInput(query: qs.ParsedQs) {
@@ -83,7 +93,7 @@ export function getQueryInput(query: qs.ParsedQs) {
   try {
     return JSON.parse(queryInput as string);
   } catch (err) {
-    throw httpError.badRequest('Expected query.input to be a JSON string');
+    throw inputValidationError('Expected query.input to be a JSON string');
   }
 }
 
@@ -91,9 +101,9 @@ export type CreateContextFnOptions<TRequest, TResponse> = {
   req: TRequest;
   res: TResponse;
 };
-export type CreateContextFn<TContext, TRequest, TResponse> = (
+export type CreateContextFn<TRouter extends AnyRouter, TRequest, TResponse> = (
   opts: CreateContextFnOptions<TRequest, TResponse>,
-) => TContext | Promise<TContext>;
+) => inferRouterContext<TRouter> | Promise<inferRouterContext<TRouter>>;
 
 export type BaseRequest = http.IncomingMessage & {
   method?: string;
@@ -102,7 +112,10 @@ export type BaseRequest = http.IncomingMessage & {
 };
 export type BaseResponse = http.ServerResponse;
 
-export interface BaseOptions {
+export interface BaseOptions<
+  TRouter extends AnyRouter,
+  TRequest extends BaseRequest
+> {
   subscriptions?: {
     /**
      * Time in milliseconds before `408` is sent
@@ -119,6 +132,14 @@ export interface BaseOptions {
    */
   transformer?: DataTransformer;
   maxBodySize?: number;
+  onError?: (opts: {
+    error: TRPCError;
+    type: ProcedureType | 'unknown';
+    path: string | undefined;
+    req: TRequest;
+    input: unknown;
+    ctx: undefined | inferRouterContext<TRouter>;
+  }) => void;
 }
 
 async function getPostBody({
@@ -137,7 +158,12 @@ async function getPostBody({
     req.on('data', function (data) {
       body += data;
       if (typeof maxBodySize === 'number' && body.length > maxBodySize) {
-        reject(new HTTPError(413, 'Payload Too Large'));
+        reject(
+          new HTTPError('Payload Too Large', {
+            statusCode: 413,
+            code: 'BAD_USER_INPUT',
+          }),
+        );
         req.socket.destroy();
       }
     });
@@ -146,16 +172,29 @@ async function getPostBody({
         const json = JSON.parse(body);
         resolve(json);
       } catch (err) {
-        reject(httpError.badRequest("Body couldn't be parsed as json"));
+        reject(
+          new HTTPError("Body couldn't be parsed as json", {
+            statusCode: 400,
+            code: 'BAD_USER_INPUT',
+          }),
+        );
       }
     });
   });
 }
 
+const HTTP_METHOD_PROCEDURE_TYPE_MAP: Record<
+  string,
+  ProcedureType | undefined
+> = {
+  GET: 'query',
+  POST: 'mutation',
+  PATCH: 'subscription',
+};
+
 export async function requestHandler<
-  TContext,
-  TRouter extends AnyRouter<TContext>,
-  TCreateContextFn extends CreateContextFn<TContext, TRequest, TResponse>,
+  TRouter extends AnyRouter,
+  TCreateContextFn extends CreateContextFn<TRouter, TRequest, TResponse>,
   TRequest extends BaseRequest,
   TResponse extends BaseResponse
 >({
@@ -171,47 +210,52 @@ export async function requestHandler<
     deserialize: (data) => data,
   },
   maxBodySize,
+  onError,
 }: {
   req: TRequest;
   res: TResponse;
   path: string;
   router: TRouter;
   createContext: TCreateContextFn;
-} & BaseOptions) {
+} & BaseOptions<TRouter, TRequest>) {
+  let type: 'unknown' | ProcedureType = 'unknown';
+  let input: unknown = undefined;
+  let ctx: inferRouterContext<TRouter> | undefined = undefined;
   try {
     let output: unknown;
 
-    const ctx = createContext && (await createContext({ req, res }));
+    ctx = createContext && (await createContext({ req, res }));
     const method = req.method;
 
     const deserializeInput = (input: unknown) =>
       input ? transformer.deserialize(input) : input;
 
     const caller = router.createCaller(ctx);
+    type = HTTP_METHOD_PROCEDURE_TYPE_MAP[req.method!] ?? 'unknown';
+    const getInput = async () => {
+      if (type === 'query') {
+        const query = req.query ? req.query : url.parse(req.url!, true).query;
+        const input = getQueryInput(query);
+        return deserializeInput(input);
+      }
+      if (type === 'mutation' || type === 'subscription') {
+        const body = await getPostBody({ req, maxBodySize });
+        const input = deserializeInput(body.input);
+        return input;
+      }
+      return undefined;
+    };
+    input = await getInput();
 
     if (method === 'HEAD') {
       res.statusCode = 204;
       res.end();
       return;
-    } else if (method === 'GET') {
-      // queries
-
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      const query = req.query ? req.query : url.parse(req.url!, true).query;
-      const input = deserializeInput(getQueryInput(query));
+    } else if (type === 'query') {
       output = await caller.query(path, input);
-    } else if (method === 'POST') {
-      // mutations
-
-      const body = await getPostBody({ req, maxBodySize });
-      const input = deserializeInput(body.input);
+    } else if (type === 'mutation') {
       output = await caller.mutation(path, input);
-    } else if (method === 'PATCH') {
-      // subscriptions
-
-      const body = await getPostBody({ req, maxBodySize });
-      const input = deserializeInput(body.input);
-
+    } else if (type === 'subscription') {
       const sub = (output = await caller.subscription(
         path,
         input,
@@ -265,20 +309,25 @@ export async function requestHandler<
         }
         function onClose() {
           cleanup();
-          reject(new HTTPError(499, `Client Closed Request`));
+          reject(
+            new HTTPError(`Client Closed Request`, {
+              statusCode: 499,
+              code: 'BAD_USER_INPUT',
+            }),
+          );
         }
         function onRequestTimeout() {
           cleanup();
           reject(
             new HTTPError(
-              408,
               `Subscription exceeded ${requestTimeoutMs}ms - please reconnect.`,
+              { statusCode: 408, code: 'TIMEOUT' },
             ),
           );
         }
 
         function onDestroy() {
-          reject(new HTTPError(500, `Subscription was destroyed prematurely`));
+          reject(new Error(`Subscription was destroyed prematurely`));
           cleanup();
         }
 
@@ -291,7 +340,10 @@ export async function requestHandler<
         sub.start();
       });
     } else {
-      throw new HTTPError(405, `Unexpected request method ${method}`);
+      throw new HTTPError(`Unexpected request method ${method}`, {
+        statusCode: 405,
+        code: 'BAD_USER_INPUT',
+      });
     }
     const json: HTTPSuccessResponseEnvelope<unknown> = {
       ok: true,
@@ -301,16 +353,22 @@ export async function requestHandler<
     res.statusCode = json.statusCode;
     res.setHeader('Content-Type', 'application/json');
     res.end(JSON.stringify(transformer.serialize(json)));
-  } catch (err) {
-    const json = getErrorResponseEnvelope(err);
+  } catch (_err) {
+    const error = getErrorFromUnknown(_err);
 
+    const json: HTTPErrorResponseEnvelope<TRouter> = {
+      ok: false,
+      statusCode: getStatusCodeFromError(error),
+      error: router.getErrorShape({ error, type, path, input, ctx }),
+    };
     res.statusCode = json.statusCode;
     res.setHeader('Content-Type', 'application/json');
     res.end(JSON.stringify(transformer.serialize(json)));
+    onError && onError({ error, path, input, ctx, type: type, req });
   }
   try {
     teardown && (await teardown());
   } catch (err) {
-    console.error('Teardown failed', err);
+    throw new Error('Teardown failed ' + err?.message);
   }
 }

@@ -15,23 +15,20 @@ export type CreateHttpContextOptions = CreateContextFnOptions<
   http.ServerResponse
 >;
 
-export type CreateHttpContextFn<TContext> = CreateContextFn<
-  TContext,
+export type CreateHttpContextFn<TRouter extends AnyRouter> = CreateContextFn<
+  TRouter,
   http.IncomingMessage,
   http.ServerResponse
 >;
 
-export interface CreateHttpHandlerOptions<
-  TRouter extends AnyRouter<TContext>,
-  TContext
-> extends BaseOptions {
-  createContext: CreateHttpContextFn<TContext>;
+export interface CreateHttpHandlerOptions<TRouter extends AnyRouter>
+  extends BaseOptions<TRouter, http.IncomingMessage> {
+  createContext: CreateHttpContextFn<TRouter>;
   router: TRouter;
 }
-export function createHttpHandler<
-  TContext,
-  TRouter extends AnyRouter<TContext>
->(opts: CreateHttpHandlerOptions<TRouter, TContext>) {
+export function createHttpHandler<TRouter extends AnyRouter>(
+  opts: CreateHttpHandlerOptions<TRouter>,
+) {
   return async (req: http.IncomingMessage, res: http.ServerResponse) => {
     const endpoint = url.parse(req.url!).pathname!.substr(1);
     await requestHandler({
@@ -43,8 +40,8 @@ export function createHttpHandler<
   };
 }
 
-export function createHttpServer<TContext, TRouter extends AnyRouter<TContext>>(
-  opts: CreateHttpHandlerOptions<TRouter, TContext>,
+export function createHttpServer<TRouter extends AnyRouter>(
+  opts: CreateHttpHandlerOptions<TRouter>,
 ) {
   const handler = createHttpHandler(opts);
   const server = http.createServer((req, res) => handler(req, res));

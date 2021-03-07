@@ -127,4 +127,7 @@ export default trpcNext.createNextApiHandler({
   createContext,
   teardown: () => prisma.$disconnect(),
   transformer: superjson,
+  // onError({ error }) {
+  //   console.error('Error:', error);
+  // },
 });

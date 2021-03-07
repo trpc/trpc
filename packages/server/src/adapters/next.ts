@@ -5,9 +5,10 @@ import {
   BaseOptions,
   CreateContextFn,
   CreateContextFnOptions,
-  getErrorResponseEnvelope,
+  HTTPError,
   requestHandler,
-} from '../http';
+  HTTPErrorResponseEnvelope,
+} from '../';
 import { AnyRouter } from '../router';
 
 export type CreateNextContextOptions = CreateContextFnOptions<
@@ -15,19 +16,16 @@ export type CreateNextContextOptions = CreateContextFnOptions<
   NextApiResponse
 >;
 
-export type CreateNextContextFn<TContext> = CreateContextFn<
-  TContext,
+export type CreateNextContextFn<TRouter extends AnyRouter> = CreateContextFn<
+  TRouter,
   NextApiRequest,
   NextApiResponse
 >;
-export function createNextApiHandler<
-  TContext,
-  TRouter extends AnyRouter<TContext>
->(
+export function createNextApiHandler<TRouter extends AnyRouter>(
   opts: {
     router: TRouter;
-    createContext: CreateNextContextFn<TContext>;
-  } & BaseOptions,
+    createContext: CreateNextContextFn<TRouter>;
+  } & BaseOptions<TRouter, NextApiRequest>,
 ): NextApiHandler {
   return async (req, res) => {
     function getPath(): string | null {
@@ -42,11 +40,24 @@ export function createNextApiHandler<
     const path = getPath();
 
     if (path === null) {
-      const json = getErrorResponseEnvelope(
-        new Error(
+      const error = opts.router.getErrorShape({
+        error: new HTTPError(
           'Query "trpc" not found - is the file named `[trpc]`.ts or `[...trpc].ts`?',
+          {
+            statusCode: 500,
+            code: 'INTERNAL_SERVER_ERROR',
+          },
         ),
-      );
+        type: 'unknown',
+        ctx: undefined,
+        path: undefined,
+        input: undefined,
+      });
+      const json: HTTPErrorResponseEnvelope<TRouter> = {
+        ok: false,
+        statusCode: 500,
+        error,
+      };
       res.status(json.statusCode).json(json);
       return;
     }

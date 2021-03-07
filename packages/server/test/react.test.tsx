@@ -9,8 +9,10 @@ import hash from 'hash-sum';
 import React, { Fragment, useEffect, useState } from 'react';
 import { QueryClient, QueryClientProvider } from 'react-query';
 import * as z from 'zod';
+import { ZodError } from 'zod';
 import { createReactQueryHooks, OutputWithCursor } from '../../react/src';
 import * as trpc from '../src';
+import { DefaultErrorShape } from '../src';
 import { routerToServerAndClient } from './_testHelpers';
 
 type Context = {};
@@ -35,6 +37,16 @@ function createAppRouter() {
   const postById = jest.fn();
   const appRouter = trpc
     .router<Context>()
+    .formatError(({ defaultShape, error }) => {
+      return {
+        $test: 'formatted',
+        zodError:
+          error.originalError instanceof ZodError
+            ? error.originalError.flatten()
+            : null,
+        ...defaultShape,
+      };
+    })
     .query('allPosts', {
       resolve() {
         allPosts();
@@ -596,5 +608,51 @@ describe('invalidate queries', () => {
 
     expect(resolvers.allPosts).toHaveBeenCalledTimes(2);
     expect(resolvers.postById).toHaveBeenCalledTimes(2);
+  });
+});
+
+test('formatError() react types test', async () => {
+  const { hooks } = factory;
+  function MyComponent() {
+    const mutation = hooks.useMutation('addPost');
+
+    useEffect(() => {
+      mutation.mutate({ title: 123 as any });
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
+
+    if (mutation.error && mutation.error.json && mutation.error.shape) {
+      expectTypeOf(mutation.error.json.error).toMatchTypeOf<
+        DefaultErrorShape & {
+          $test: string;
+        }
+      >();
+      expectTypeOf(mutation.error.shape).toMatchTypeOf<
+        DefaultErrorShape & {
+          $test: string;
+        }
+      >();
+      return (
+        <pre data-testid="err">
+          {JSON.stringify(mutation.error.shape.zodError, null, 2)}
+        </pre>
+      );
+    }
+    return <></>;
+  }
+  function App() {
+    return (
+      <QueryClientProvider client={hooks.queryClient}>
+        <MyComponent />
+      </QueryClientProvider>
+    );
+  }
+
+  const utils = render(<App />);
+  await waitFor(() => {
+    expect(utils.container).toHaveTextContent('fieldErrors');
+    expect(utils.getByTestId('err').innerText).toMatchInlineSnapshot(
+      `undefined`,
+    );
   });
 });

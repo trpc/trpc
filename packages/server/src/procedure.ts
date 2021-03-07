@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { assertNotBrowser } from './assertNotBrowser';
-import { InputValidationError, NoInputExpectedError } from './errors';
-import { MiddlewareFunction } from './router';
+import { getMessageFromUnkownError, inputValidationError } from './errors';
+import { MiddlewareFunction, ProcedureType } from './router';
 assertNotBrowser();
 
 export type ProcedureInputParserZodEsque<TInput = unknown> = {
@@ -24,7 +24,11 @@ export type ProcedureResolver<
   TContext = unknown,
   TInput = unknown,
   TOutput = unknown
-> = (opts: { ctx: TContext; input: TInput }) => Promise<TOutput> | TOutput;
+> = (opts: {
+  ctx: TContext;
+  input: TInput;
+  type: ProcedureType;
+}) => Promise<TOutput> | TOutput;
 
 interface ProcedureOptions<TContext, TInput, TOutput> {
   middlewares: MiddlewareFunction<TContext>[];
@@ -35,6 +39,7 @@ interface ProcedureOptions<TContext, TInput, TOutput> {
 export interface ProcedureCallOptions<TContext> {
   ctx: TContext;
   input: unknown;
+  type: ProcedureType;
 }
 export abstract class Procedure<
   TContext = unknown,
@@ -51,10 +56,6 @@ export abstract class Procedure<
     this.inputParser = opts.inputParser;
   }
 
-  /**
-   *
-   * @throws InputValidationError
-   */
   private parseInput(rawInput: unknown): TInput {
     try {
       const parser: any = this.inputParser;
@@ -71,25 +72,30 @@ export abstract class Procedure<
       }
 
       throw new Error('Could not find a validator fn');
-    } catch (_err) {
-      const err = new InputValidationError(_err);
-      throw err;
+    } catch (originalError) {
+      const message = getMessageFromUnkownError(
+        originalError,
+        'Input Validation Error',
+      );
+      throw inputValidationError(message, {
+        originalError,
+      });
     }
   }
 
   /**
    * Trigger middlewares in order, parse raw input & call resolver
-   * @throws InputValidationError
    */
   public async call({
     ctx,
     input: rawInput,
+    type,
   }: ProcedureCallOptions<TContext>): Promise<TOutput> {
     for (const middleware of this.middlewares) {
-      await middleware({ ctx });
+      await middleware({ ctx, type });
     }
     const input = this.parseInput(rawInput);
-    const output = await this.resolver({ ctx, input });
+    const output = await this.resolver({ ctx, input, type });
     return output;
   }
 
@@ -173,7 +179,7 @@ export function createProcedure<TContext, TInput, TOutput>(
     middlewares: [],
     inputParser(input: unknown) {
       if (input != null) {
-        throw new NoInputExpectedError('No input expected');
+        throw inputValidationError('No input expected');
       }
       return undefined;
     },

@@ -2,6 +2,7 @@
 import type {
   AnyRouter,
   DataTransformer,
+  HTTPErrorResponseEnvelope,
   HTTPResponseEnvelope,
   HTTPSuccessResponseEnvelope,
   inferHandlerInput,
@@ -21,10 +22,11 @@ type CancellablePromise<T = unknown> = Promise<T> & {
 const retryDelay = (attemptIndex: number) =>
   attemptIndex === 0 ? 0 : Math.min(1000 * 2 ** attemptIndex, 30000);
 
-export class TRPCClientError extends Error {
-  public readonly json?: Maybe<HTTPResponseEnvelope<unknown>>;
+export class TRPCClientError<TRouter extends AnyRouter> extends Error {
+  public readonly json?: Maybe<HTTPErrorResponseEnvelope<TRouter>>;
   public readonly res?: Maybe<Response>;
   public readonly originalError?: Maybe<Error>;
+  public readonly shape?: HTTPErrorResponseEnvelope<TRouter>['error'];
 
   constructor(
     message: string,
@@ -34,7 +36,7 @@ export class TRPCClientError extends Error {
       originalError,
     }: {
       res?: Maybe<Response>;
-      json?: Maybe<HTTPResponseEnvelope<unknown>>;
+      json?: Maybe<HTTPErrorResponseEnvelope<TRouter>>;
       originalError?: Maybe<Error>;
     },
   ) {
@@ -43,22 +45,9 @@ export class TRPCClientError extends Error {
     this.res = res;
     this.json = json;
     this.originalError = originalError;
+    this.shape = this.json?.error;
 
     Object.setPrototypeOf(this, TRPCClientError.prototype);
-  }
-}
-
-/* istanbul ignore next */
-export class NextInputError extends Error {
-  public readonly originalError: Error;
-
-  constructor(originalError: Error) {
-    super(
-      `nextInput() threw an error - subscription is stopped: ${originalError.message}`,
-    );
-    this.originalError = originalError;
-
-    Object.setPrototypeOf(this, NextInputError.prototype);
   }
 }
 
@@ -67,12 +56,12 @@ export interface FetchOptions {
   AbortController?: typeof AbortController;
 }
 
-export interface CreateTRPCClientOptions {
+export interface CreateTRPCClientOptions<TRouter extends AnyRouter> {
   url: string;
   fetchOpts?: FetchOptions;
   getHeaders?: () => Record<string, string | undefined>;
   onSuccess?: (data: HTTPSuccessResponseEnvelope<unknown>) => void;
-  onError?: (error: TRPCClientError) => void;
+  onError?: (error: TRPCClientError<TRouter>) => void;
   transformer?: DataTransformer;
 }
 type TRPCType = 'subscription' | 'query' | 'mutation';
@@ -81,9 +70,9 @@ export class TRPCClient<TRouter extends AnyRouter> {
   private fetch: typeof fetch;
   private AC: ReturnType<typeof getAbortController>;
   public readonly transformer: DataTransformer;
-  private opts: CreateTRPCClientOptions;
+  private opts: CreateTRPCClientOptions<TRouter>;
 
-  constructor(opts: CreateTRPCClientOptions) {
+  constructor(opts: CreateTRPCClientOptions<TRouter>) {
     const { fetchOpts } = opts;
     this.opts = opts;
     const _fetch = getFetch(fetchOpts?.fetch);
@@ -102,13 +91,14 @@ export class TRPCClient<TRouter extends AnyRouter> {
   }
   private async handleResponse(promise: Promise<Response>) {
     let res: Maybe<Response> = null;
-    let json: Maybe<HTTPResponseEnvelope<unknown>> = null;
+    let json: Maybe<HTTPResponseEnvelope<unknown, TRouter>> = null;
     try {
       res = await promise;
       const rawJson = await res.json();
-      json = this.transformer.deserialize(
-        rawJson,
-      ) as HTTPResponseEnvelope<unknown>;
+      json = this.transformer.deserialize(rawJson) as HTTPResponseEnvelope<
+        unknown,
+        TRouter
+      >;
 
       if (json.ok) {
         this.opts.onSuccess && this.opts.onSuccess(json);
@@ -116,12 +106,12 @@ export class TRPCClient<TRouter extends AnyRouter> {
       }
       throw new TRPCClientError(json.error.message, { json, res });
     } catch (originalError) {
-      let err: TRPCClientError = originalError;
+      let err: TRPCClientError<TRouter> = originalError;
       if (!(err instanceof TRPCClientError)) {
         err = new TRPCClientError(originalError.message, {
           originalError,
           res,
-          json,
+          json: json?.ok ? null : json,
         });
       }
       this.opts.onError && this.opts.onError(err);
@@ -249,7 +239,7 @@ export class TRPCClient<TRouter extends AnyRouter> {
           // console.log('response', { path, input, data });
           resolve(data);
         } catch (_err) {
-          const err: TRPCClientError = _err;
+          const err: TRPCClientError<TRouter> = _err;
 
           if (err.json?.statusCode === 408) {
             // server told us to reconnect
@@ -279,7 +269,7 @@ export class TRPCClient<TRouter extends AnyRouter> {
     path: TPath,
     opts: {
       initialInput: TInput;
-      onError?: (err: NextInputError | TRPCClientError) => void;
+      onError?: (err: TRPCClientError<TRouter>) => void;
       onData?: (data: TOutput[]) => void;
       /**
        * Input cursor for next call to subscription endpoint
@@ -304,15 +294,8 @@ export class TRPCClient<TRouter extends AnyRouter> {
         attemptIndex = 0;
         opts.onData && opts.onData(res);
 
-        try {
-          const nextInput = opts.nextInput(res);
-          exec(nextInput);
-        } catch (_err) {
-          const err = new NextInputError(_err);
-          opts.onError && opts.onError(err);
-          unsubscribe();
-          return;
-        }
+        const nextInput = opts.nextInput(res);
+        exec(nextInput);
       } catch (err) {
         if (stopped) {
           return;
@@ -330,7 +313,7 @@ export class TRPCClient<TRouter extends AnyRouter> {
 }
 
 export function createTRPCClient<TRouter extends AnyRouter>(
-  opts: CreateTRPCClientOptions,
+  opts: CreateTRPCClientOptions<TRouter>,
 ) {
   return new TRPCClient<TRouter>(opts);
 }

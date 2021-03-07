@@ -29,8 +29,10 @@ test('subscriptionOnce() + type safety + backpressure', async () => {
       },
     }),
     {
-      subscriptions: {
-        backpressureMs: 10,
+      server: {
+        subscriptions: {
+          backpressureMs: 10,
+        },
       },
     },
   );
@@ -91,9 +93,11 @@ test('subscriptions() with timeout', async () => {
       },
     }),
     {
-      subscriptions: {
-        backpressureMs: 10,
-        requestTimeoutMs: TIMEOUT_MS,
+      server: {
+        subscriptions: {
+          backpressureMs: 10,
+          requestTimeoutMs: TIMEOUT_MS,
+        },
       },
     },
   );
@@ -211,8 +215,10 @@ test('err subscription', async () => {
       },
     }),
     {
-      subscriptions: {
-        backpressureMs: 10,
+      server: {
+        subscriptions: {
+          backpressureMs: 10,
+        },
       },
     },
   );
@@ -276,8 +282,10 @@ test('error emit', async () => {
       },
     }),
     {
-      subscriptions: {
-        backpressureMs: 10,
+      server: {
+        subscriptions: {
+          backpressureMs: 10,
+        },
       },
     },
   );

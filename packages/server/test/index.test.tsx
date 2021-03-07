@@ -1,11 +1,11 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/ban-types */
-import { TRPCClientError } from '../../client/src';
-import * as z from 'zod';
-import * as trpc from '../src';
-import { routerToServerAndClient } from './_testHelpers';
 import { expectTypeOf } from 'expect-type';
-import { CreateHttpContextOptions, httpError } from '../src';
+import * as z from 'zod';
+import { TRPCClientError } from '../../client/src';
+import * as trpc from '../src';
+import { CreateHttpContextOptions } from '../src';
+import { routerToServerAndClient } from './_testHelpers';
 
 test('mix query and mutation', async () => {
   type Context = {};
@@ -94,7 +94,7 @@ describe('integration tests', () => {
         throw new Error('Not TRPCClientError');
       }
       expect(err.message).toMatchInlineSnapshot(
-        `"No such procedure \\"notFound\\""`,
+        `"No such query procedure \\"notFound\\""`,
       );
       expect(err.res?.status).toBe(404);
     }
@@ -250,14 +250,18 @@ describe('integration tests', () => {
         trpc.router<Context>().query('whoami', {
           async resolve({ ctx }) {
             if (!ctx.user) {
-              throw httpError.unauthorized();
+              throw trpc.httpError.unauthorized();
             }
             return ctx.user;
           },
         }),
         {
-          createContext,
-          getHeaders: () => headers,
+          server: {
+            createContext,
+          },
+          client: {
+            getHeaders: () => headers,
+          },
         },
       );
 
@@ -354,7 +358,7 @@ describe('integration tests', () => {
     });
   });
 
-  test('onError(), onSuccess()', async () => {
+  test('client onError(), onSuccess()', async () => {
     const onError = jest.fn();
     const onSuccess = jest.fn();
     const { client, close } = routerToServerAndClient(
@@ -367,8 +371,10 @@ describe('integration tests', () => {
         },
       }),
       {
-        onError,
-        onSuccess,
+        client: {
+          onError,
+          onSuccess,
+        },
       },
     );
     await client.mutation('hello', 1);
