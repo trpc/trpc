@@ -17,6 +17,8 @@ author_image_url: https://avatars1.githubusercontent.com/u/459267?s=460&v=4
       <img src="https://codecov.io/gh/trpc/trpc/branch/main/graph/badge.svg?token=KPPS918B0G" alt="codecov" />
     </a> <a href="https://github.com/trpc/trpc">
       <img src="https://img.shields.io/github/license/trpc/trpc.svg?label=license&style=flat" alt="GitHub License"/>
+    </a> <a href="https://github.com/trpc/trpc">
+      <img src="https://img.shields.io/github/stars/trpc/trpc.svg?label=🌟%20stars&style=flat" alt="GitHub Stars"/>
     </a>
   </p>
   <p>
