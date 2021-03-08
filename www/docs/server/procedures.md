@@ -19,7 +19,7 @@ slug: /procedures
 tRPC works out-of-the-box with yup/zod/myzod/custom validators/[..] - [see test suite](https://github.com/trpc/trpc/packages/server/test/validators.test.ts)
 
 
-### Example query without input argument
+### Example without input
 
 ```tsx
 import * as trpc from '@trpc/server';
@@ -37,7 +37,7 @@ export const appRouter = trpc.router<Context>()
   });
 ```
 
-### Example query with input argument (zod)
+### With [zod](https://github.com/colinhacks/zod)
 
 ```tsx
 import * as trpc from '@trpc/server';
@@ -63,7 +63,7 @@ export type AppRouter = typeof appRouter;
 ```
 
 
-### Example query with input argument (yup)
+### With [yup](https://github.com/jquense/yup)
 
 ```tsx
 import * as trpc from '@trpc/server';
