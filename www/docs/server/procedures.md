@@ -16,7 +16,7 @@ slug: /procedures
 
 ## Input validation
 
-tRPC works out-of-the-box with yup/zod/myzod/custom validators/[..] - [see test suite](https://github.com/trpc/trpc/packages/server/test/validators.test.ts)
+tRPC works out-of-the-box with yup/zod/myzod/custom validators/[..] - [see test suite](https://github.com/trpc/trpc/blob/main/packages/server/test/validators.test.ts)
 
 
 ### Example without input
