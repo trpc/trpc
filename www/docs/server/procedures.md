@@ -16,6 +16,9 @@ slug: /procedures
 
 ## Input validation
 
+tRPC works out-of-the-box with yup/zod/myzod/custom validators/[..] - [see test suite](https://github.com/trpc/trpc/packages/server/test/validators.test.ts)
+
+
 ### Example query without input argument
 
 ```tsx
@@ -66,7 +69,7 @@ export type AppRouter = typeof appRouter;
 import * as trpc from '@trpc/server';
 import * as yup from 'yup';
 
-// [..]
+// [...]
 
 export const appRouter = trpc.router<Context>()
   .query('hello', {
@@ -89,16 +92,18 @@ export type AppRouter = typeof appRouter;
 ```tsx
 import * as trpc from '@trpc/server';
 
-export const appRouter = trpc.router()
+// [...]
+
+export const appRouter = trpc.router<Context>()
   .query('hello', {
-    resolve({ ctx }) {
+    resolve() {
       return {
         text: `hello world`,
       };
     },
   })
   .query('bye', {
-    resolve({ ctx }) {
+    resolve() {
       return {
         text: `goodbye`,
       };
