@@ -47,8 +47,8 @@ export default function Home() {
             await addPost.mutateAsync(input);
             $title.value = '';
             $text.value = '';
-          } catch (err) {
-            console.log('an error!');
+          } catch {
+            // handled by hook
           }
         }}
       >
