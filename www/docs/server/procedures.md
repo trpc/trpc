@@ -14,9 +14,9 @@ slug: /procedures
 :::
 
 
+## Input validation
 
-
-## Example query without input argument
+### Example query without input argument
 
 ```tsx
 import * as trpc from '@trpc/server';
@@ -34,7 +34,7 @@ export const appRouter = trpc.router()
 export type AppRouter = typeof appRouter;
 ```
 
-## Example query with input argument
+### Example query with input argument (zod)
 
 ```tsx
 import * as trpc from '@trpc/server';
@@ -47,6 +47,29 @@ export const appRouter = trpc.router()
         text: z.string().optional(),
       })
       .optional(),
+    resolve({ input }) {
+      return {
+        greeting: `hello ${input?.text ?? 'world'}`,
+      };
+    },
+  });
+
+export type AppRouter = typeof appRouter;
+```
+
+
+### Example query with input argument (yup)
+
+```tsx
+import * as trpc from '@trpc/server';
+import * as yup from 'yup';
+
+export const appRouter = trpc.router()
+  .query('hello', {
+    input: yup
+      .object({
+        text: yup.string().required(),
+      }),
     resolve({ input }) {
       return {
         greeting: `hello ${input?.text ?? 'world'}`,
