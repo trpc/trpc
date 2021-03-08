@@ -142,7 +142,7 @@ export class TRPCClient<TRouter extends AnyRouter> {
     };
   }
 
-  private request({
+  private initRequest({
     type,
     input,
     path,
@@ -156,7 +156,7 @@ export class TRPCClient<TRouter extends AnyRouter> {
       body?: string;
       url: string;
     };
-    const requestId = requestCounter++;
+    const requestId = ++requestCounter;
     const { url } = this.opts;
     const reqOptsMap: Record<ProcedureType, () => ReqOpts> = {
       query: () => ({
@@ -232,8 +232,8 @@ export class TRPCClient<TRouter extends AnyRouter> {
         `;
         const parts = [
           '%c',
+          'ID: %i',
           direction === 'in' ? '<<' : '>>',
-          '[%i]',
           emoji,
           type,
           `%c${path}%c`,
@@ -266,6 +266,14 @@ export class TRPCClient<TRouter extends AnyRouter> {
 
     return responsePromise;
   }
+
+  /**
+   * @deprecated use `query()`/`mutation()` instead
+   */
+  public request(opts: { type: ProcedureType; input: unknown; path: string }) {
+    return this.initRequest(opts);
+  }
+
   public query<
     TQueries extends TRouter['_def']['queries'],
     TPath extends string & keyof TQueries
@@ -273,7 +281,7 @@ export class TRPCClient<TRouter extends AnyRouter> {
     path: TPath,
     ...args: inferHandlerInput<TQueries[TPath]>
   ): CancellablePromise<inferProcedureOutput<TQueries[TPath]>> {
-    return this.request({
+    return this.initRequest({
       type: 'query',
       path,
       input: args[0],
@@ -287,7 +295,7 @@ export class TRPCClient<TRouter extends AnyRouter> {
     path: TPath,
     ...args: inferHandlerInput<TMutations[TPath]>
   ): CancellablePromise<inferProcedureOutput<TMutations[TPath]>> {
-    return this.request({
+    return this.initRequest({
       type: 'mutation',
       path,
       input: args[0],
@@ -310,7 +318,7 @@ export class TRPCClient<TRouter extends AnyRouter> {
           return;
         }
         try {
-          currentRequest = this.request({
+          currentRequest = this.initRequest({
             type: 'subscription',
             input,
             path,
