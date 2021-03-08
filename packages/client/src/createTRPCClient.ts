@@ -42,7 +42,7 @@ export class TRPCClientError<TRouter extends AnyRouter> extends Error {
     },
   ) {
     super(message);
-    this.message = message;
+
     this.res = res;
     this.json = json;
     this.originalError = originalError;
@@ -97,58 +97,43 @@ export class TRPCClient<TRouter extends AnyRouter> {
       ? this.transformer.serialize(input)
       : input;
   }
-  private executeRequest(
-    url: string,
-    opts: RequestInit,
-  ): Promise<
-    | {
-        ok: true;
-        data: any;
-      }
-    | {
-        ok: false;
-        error: TRPCClientError<TRouter>;
-      }
-  > {
+  private async executeRequest(url: string, opts: RequestInit) {
     let res: Maybe<Response> = null;
     let json: Maybe<HTTPResponseEnvelope<unknown, TRouter>> = null;
-    return this.fetch(url, opts)
-      .then((_res) => {
-        res = _res;
-        return res.json();
-      })
-      .then((rawJson) => {
-        json = this.transformer.deserialize(rawJson) as HTTPResponseEnvelope<
-          unknown,
-          TRouter
-        >;
+    try {
+      res = await this.fetch(url, opts);
+      const rawJson = await res.json();
+      json = this.transformer.deserialize(rawJson) as HTTPResponseEnvelope<
+        unknown,
+        TRouter
+      >;
 
-        if (json.ok) {
-          return {
-            ok: true as const,
-            data: json.data,
-          };
-        }
-        debugger;
+      if (json.ok) {
         return {
-          ok: false as const,
-          error: new TRPCClientError(json.error.message, { json, res }),
+          ok: true as const,
+          data: json.data,
+          json,
+          res,
         };
-      })
-      .catch((originalError) => {
-        let error: TRPCClientError<TRouter> = originalError;
-        if (!(error instanceof TRPCClientError)) {
-          error = new TRPCClientError(originalError.message, {
-            originalError,
-            res,
-            json: json?.ok ? null : json,
-          });
-        }
-        return {
-          ok: false as const,
-          error,
-        };
-      });
+      }
+      return {
+        ok: false as const,
+        error: new TRPCClientError(json.error.message, { json, res }),
+      };
+    } catch (originalError) {
+      let error: TRPCClientError<TRouter> = originalError;
+      if (!(error instanceof TRPCClientError)) {
+        error = new TRPCClientError(originalError.message, {
+          originalError,
+          json: json?.ok ? null : json,
+          res,
+        });
+      }
+      return {
+        ok: false as const,
+        error,
+      };
+    }
   }
   private getHeaders() {
     return {
@@ -171,7 +156,7 @@ export class TRPCClient<TRouter extends AnyRouter> {
       body?: string;
       url: string;
     };
-    requestCounter++;
+    const requestId = requestCounter++;
     const { url } = this.opts;
     const reqOptsMap: Record<ProcedureType, () => ReqOpts> = {
       query: () => ({
@@ -216,8 +201,8 @@ export class TRPCClient<TRouter extends AnyRouter> {
       this.executeRequest(reqUrl, reqOpts).then((res) => {
         settled = true;
         if (res.ok) {
-          this.opts.onSuccess && this.opts.onSuccess(res.data);
-          resolve(res.data);
+          this.opts.onSuccess && this.opts.onSuccess(res.json);
+          resolve(res.json.data);
         } else {
           this.opts.onError && this.opts.onError(res.error);
           reject(res.error);
@@ -232,33 +217,49 @@ export class TRPCClient<TRouter extends AnyRouter> {
     };
 
     if (this.logRequests) {
-      {
-        const parts = ['->', type, `${path}`, 'ID: %i', 'input: %O'];
-        console.log(parts.join(' '), requestCounter, input);
-      }
-      responsePromise.catch((err) => {
+      const palette = {
+        query: ['72e3ff', '3fb0d8'],
+        mutation: ['c5a3fc', '904dfc'],
+        subscription: ['ff49e1', 'd83fbe'],
+      };
+      const [light, dark] = palette[type];
+      const print = (direction: 'in' | 'out', emoji: string, meta: any) => {
+        const css = `
+          background-color: #${direction === 'in' ? dark : light}; 
+          color: ${direction === 'in' ? 'white' : 'black'};
+          padding: 2px;
+        `;
         const parts = [
-          '<-',
-          '❌ ' + aborted ? ' (aborted)' : '',
+          '%c',
+          direction === 'in' ? '<<' : '>>',
+          '[%i]',
+          emoji,
           type,
-          `${path}`,
-          'ID: %i',
-          'input: %O',
-          'error: %O',
+          `%c${path}%c`,
+          '%O',
         ];
-        console.log(parts, err);
+        console.log(
+          parts.join(' '),
+          css,
+          requestId,
+          `${css} font-weight: bold;`,
+          `${css} font-weight: normal;`,
+          meta,
+        );
+      };
+      print('out', '⏳', {
+        input,
+        reqOpts,
+      });
+      responsePromise.catch((err) => {
+        print('in', '❌' + (aborted ? ' (aborted) ' : ''), {
+          err,
+          input,
+          reqOpts,
+        });
       });
       responsePromise.then((output) => {
-        const parts = [
-          '<-',
-          '✅',
-          type,
-          `${path}`,
-          'ID: %i',
-          'input: %O',
-          'output: %O',
-        ];
-        console.log(parts.join(' '), requestCounter, input, output);
+        print('in', '✅', { input, output, reqOpts });
       });
     }
 
