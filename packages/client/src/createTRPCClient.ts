@@ -59,6 +59,9 @@ export interface FetchOptions {
 }
 
 export type LoggerOptions<TRouter extends AnyRouter> = {
+  /**
+   * Incremental id for requests
+   */
   requestId: number;
   path: string;
   input: unknown;
@@ -71,10 +74,12 @@ export type LoggerOptions<TRouter extends AnyRouter> = {
   | {
       event: 'success';
       data?: unknown;
+      elapsedMs: number;
     }
   | {
       event: 'error';
       error: TRPCClientError<TRouter>;
+      elapsedMs: number;
     }
 );
 
@@ -86,10 +91,10 @@ export interface CreateTRPCClientOptions<TRouter extends AnyRouter> {
   onError?: (error: TRPCClientError<TRouter>) => void;
   transformer?: DataTransformer;
   /**
-   * If you want to log procedure calls. Defaults to `true` in development & `false` in production.
+   * Request logger, default behaviour is that it logs requests in development, but not production.
+   * Override with custom logger / set to `null` to disable
    */
-  log?: boolean;
-  logger?: (opts: LoggerOptions<TRouter>) => void;
+  logger?: null | ((opts: LoggerOptions<TRouter>) => void);
 }
 
 let requestCounter = 0;
@@ -99,7 +104,7 @@ export class TRPCClient<TRouter extends AnyRouter> {
   private AC: ReturnType<typeof getAbortController>;
   public readonly transformer: DataTransformer;
   private opts: CreateTRPCClientOptions<TRouter>;
-  private logger: NonNullable<CreateTRPCClientOptions<TRouter>['logger']>;
+  private logger: Maybe<CreateTRPCClientOptions<TRouter>['logger']>;
 
   constructor(opts: CreateTRPCClientOptions<TRouter>) {
     const { fetchOpts } = opts;
@@ -111,13 +116,14 @@ export class TRPCClient<TRouter extends AnyRouter> {
       serialize: (data) => data,
       deserialize: (data) => data,
     };
-    this.logger =
-      opts.logger ??
-      (process.env.NODE_ENV !== 'production' && process.env.NODE_ENV !== 'test')
-        ? TRPCClient.defaultLogger
-        : () => {
-            // nothing
-          };
+    if ('logger' in opts) {
+      this.logger = opts.logger;
+    } else if (
+      process.env.NODE_ENV !== 'production' &&
+      process.env.NODE_ENV !== 'test'
+    ) {
+      this.logger = TRPCClient.defaultLogger;
+    }
   }
 
   private static defaultLogger(opts: LoggerOptions<any>) {
@@ -142,24 +148,22 @@ export class TRPCClient<TRouter extends AnyRouter> {
 
     const parts = [
       '%c',
-      event === 'init' ? '>>' : '<<',
-      'tRPC ' + type,
-      'ID: %i',
       emojiMap[event],
+      event === 'init' ? '>>' : '<<',
       type,
+      `#${requestId}`,
       `%c${path}%c`,
       '%O',
     ];
     const args: any[] = [
       css,
-      requestId,
-      `${css} font-weight: bold;`,
-      `${css} font-weight: normal;`,
+      `${css}; font-weight: bold;`,
+      `${css}; font-weight: normal;`,
     ];
     if (opts.event === 'error') {
-      args.push({ input, error: opts.error });
+      args.push({ input, error: opts.error, elapsedMs: opts.elapsedMs });
     } else if (opts.event === 'success') {
-      args.push({ input, output: opts.data });
+      args.push({ input, output: opts.data, elapsedMs: opts.elapsedMs });
     } else if (opts.event === 'init') {
       args.push({ input });
     }
@@ -231,6 +235,7 @@ export class TRPCClient<TRouter extends AnyRouter> {
       url: string;
     };
     const requestId = ++requestCounter;
+    const requestStartTime = Date.now();
     const { url } = this.opts;
     const reqOptsMap: Record<ProcedureType, () => ReqOpts> = {
       query: () => ({
@@ -269,41 +274,46 @@ export class TRPCClient<TRouter extends AnyRouter> {
       signal: ac?.signal,
       headers,
     };
-
     const responsePromise = new Promise((resolve, reject) => {
-      this.logger({
-        event: 'init',
-        path,
-        input,
-        requestId,
-        type,
-        headers,
-      });
+      this.logger &&
+        this.logger({
+          event: 'init',
+          path,
+          input,
+          requestId,
+          type,
+          headers,
+        });
       this.executeRequest(reqUrl, reqOpts).then((res) => {
+        const elapsedMs = Date.now() - requestStartTime;
         if (res.ok) {
           this.opts.onSuccess && this.opts.onSuccess(res.json);
-          this.logger({
-            event: 'success',
-            path,
-            input,
-            requestId,
-            type,
-            headers,
-            data: res.data,
-          });
+          this.logger &&
+            this.logger({
+              event: 'success',
+              path,
+              input,
+              requestId,
+              type,
+              headers,
+              elapsedMs,
+              data: res.data,
+            });
           resolve(res.json.data);
         } else {
           this.opts.onError && this.opts.onError(res.error);
 
-          this.logger({
-            event: 'error',
-            path,
-            input,
-            requestId,
-            type,
-            headers,
-            error: res.error,
-          });
+          this.logger &&
+            this.logger({
+              event: 'error',
+              path,
+              input,
+              requestId,
+              type,
+              headers,
+              elapsedMs,
+              error: res.error,
+            });
           reject(res.error);
         }
       });
