@@ -7,15 +7,13 @@ export default function Home() {
   const helloNoArgs = trpc.useQuery(['hello']);
   const helloWithArgs = trpc.useQuery(['hello', { text: 'client' }]);
 
-  // try to uncomment next line to show type checking:
-  // const helloWithInvalidArgs = trpc.useQuery(['hello', { text: false }]);
-
-  console.log(helloNoArgs.data); // <-- hover over this object to see it's type inferred
-
   const postsQuery = trpc.useQuery(['posts.list']);
   const addPost = trpc.useMutation('posts.add', {
     onSuccess() {
       trpc.queryClient.invalidateQueries('posts.list');
+    },
+    onError(err) {
+      console.log('err', err);
     },
   });
   const fieldErrors = addPost.error?.shape?.zodError?.fieldErrors ?? {};
@@ -49,7 +47,7 @@ export default function Home() {
             await addPost.mutateAsync(input);
             $title.value = '';
             $text.value = '';
-          } catch {}
+          } catch (err) {}
         }}
       >
         <label htmlFor="title">Title:</label>

@@ -97,7 +97,19 @@ export class TRPCClient<TRouter extends AnyRouter> {
       ? this.transformer.serialize(input)
       : input;
   }
-  private async executeRequest(url: string, opts: RequestInit) {
+  private async executeRequest(
+    url: string,
+    opts: RequestInit,
+  ): Promise<
+    | {
+        ok: true;
+        data: any;
+      }
+    | {
+        ok: false;
+        error: TRPCClientError<TRouter>;
+      }
+  > {
     let res: Maybe<Response> = null;
     let json: Maybe<HTTPResponseEnvelope<unknown, TRouter>> = null;
     try {
@@ -110,21 +122,29 @@ export class TRPCClient<TRouter extends AnyRouter> {
 
       if (json.ok) {
         this.opts.onSuccess && this.opts.onSuccess(json);
-        return json.data as any;
+        return {
+          ok: true,
+          data: json.data,
+        };
       }
-      throw new TRPCClientError(json.error.message, { json, res });
+      return {
+        ok: false,
+        error: new TRPCClientError(json.error.message, { json, res }),
+      };
     } catch (originalError) {
-      debugger;
-      let err: TRPCClientError<TRouter> = originalError;
-      if (!(err instanceof TRPCClientError)) {
-        err = new TRPCClientError(originalError.message, {
+      let error: TRPCClientError<TRouter> = originalError;
+      if (!(error instanceof TRPCClientError)) {
+        error = new TRPCClientError(originalError.message, {
           originalError,
           res,
           json: json?.ok ? null : json,
         });
       }
-      this.opts.onError && this.opts.onError(err);
-      throw err;
+      this.opts.onError && this.opts.onError(error);
+      return {
+        ok: false,
+        error,
+      };
     }
   }
   private getHeaders() {
@@ -188,17 +208,25 @@ export class TRPCClient<TRouter extends AnyRouter> {
     };
     // console.log('reqOpts', {reqUrl, reqOpts, type, input})
     let aborted = false;
+    let settled = false;
     const responsePromise = new Promise((resolve, reject) => {
-      this.executeRequest(reqUrl, reqOpts).then(resolve).catch(reject);
+      this.executeRequest(reqUrl, reqOpts).then((res) => {
+        settled = true;
+        res.ok ? resolve(res.data) : reject(res.error);
+      });
     }) as CancellablePromise<any>;
     responsePromise.cancel = () => {
-      aborted = true;
-      // ac?.abort();
+      if (!settled) {
+        aborted = true;
+        ac?.abort();
+      }
     };
 
     if (this.logRequests) {
-      const parts = ['aa->', type, `${path}`, 'ID: %i', 'input: %O'];
-      console.log(parts.join(' '), requestCounter, input);
+      {
+        const parts = ['->', type, `${path}`, 'ID: %i', 'input: %O'];
+        console.log(parts.join(' '), requestCounter, input);
+      }
       responsePromise.catch((err) => {
         const parts = [
           '<-',
@@ -209,7 +237,7 @@ export class TRPCClient<TRouter extends AnyRouter> {
           'input: %O',
           'error: %O',
         ];
-        console.log(parts.join(' '), requestCounter, input, err);
+        console.log(parts, err);
       });
       responsePromise.then((output) => {
         const parts = [
