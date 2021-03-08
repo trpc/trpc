@@ -16,12 +16,17 @@ slug: /procedures
 
 ## Input validation
 
-### Example query without input argument
+tRPC works out-of-the-box with yup/zod/myzod/custom validators/[..] - [see test suite](https://github.com/trpc/trpc/blob/main/packages/server/test/validators.test.ts)
+
+
+### Example without input
 
 ```tsx
 import * as trpc from '@trpc/server';
 
-export const appRouter = trpc.router()
+// [...]
+
+export const appRouter = trpc.router<Context>()
   // Create procedure at path 'hello'
   .query('hello', {
     resolve({ ctx }) {
@@ -30,17 +35,17 @@ export const appRouter = trpc.router()
       };
     },
   });
-
-export type AppRouter = typeof appRouter;
 ```
 
-### Example query with input argument (zod)
+### With [zod](https://github.com/colinhacks/zod)
 
 ```tsx
 import * as trpc from '@trpc/server';
 import * as z from 'zod';
 
-export const appRouter = trpc.router()
+// [...]
+
+export const appRouter = trpc.router<Context>()
   .query('hello', {
     input: z
       .object({
@@ -58,13 +63,15 @@ export type AppRouter = typeof appRouter;
 ```
 
 
-### Example query with input argument (yup)
+### With [yup](https://github.com/jquense/yup)
 
 ```tsx
 import * as trpc from '@trpc/server';
 import * as yup from 'yup';
 
-export const appRouter = trpc.router()
+// [...]
+
+export const appRouter = trpc.router<Context>()
   .query('hello', {
     input: yup
       .object({
@@ -85,16 +92,18 @@ export type AppRouter = typeof appRouter;
 ```tsx
 import * as trpc from '@trpc/server';
 
-export const appRouter = trpc.router()
+// [...]
+
+export const appRouter = trpc.router<Context>()
   .query('hello', {
-    resolve({ ctx }) {
+    resolve() {
       return {
         text: `hello world`,
       };
     },
   })
   .query('bye', {
-    resolve({ ctx }) {
+    resolve() {
       return {
         text: `goodbye`,
       };
