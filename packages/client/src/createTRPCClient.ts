@@ -10,6 +10,7 @@ import type {
   inferProcedureOutput,
   inferSubscriptionOutput,
   Maybe,
+  ProcedureType,
 } from '@trpc/server';
 import { getAbortController, getFetch } from './helpers';
 
@@ -63,14 +64,20 @@ export interface CreateTRPCClientOptions<TRouter extends AnyRouter> {
   onSuccess?: (data: HTTPSuccessResponseEnvelope<unknown>) => void;
   onError?: (error: TRPCClientError<TRouter>) => void;
   transformer?: DataTransformer;
+  /**
+   * If you want to log procedure calls. Defaults to `true` in development & `false` in production.
+   */
+  log?: boolean;
 }
-type TRPCType = 'subscription' | 'query' | 'mutation';
+
+let requestCounter = 0;
 
 export class TRPCClient<TRouter extends AnyRouter> {
   private fetch: typeof fetch;
   private AC: ReturnType<typeof getAbortController>;
   public readonly transformer: DataTransformer;
   private opts: CreateTRPCClientOptions<TRouter>;
+  private logRequests: boolean;
 
   constructor(opts: CreateTRPCClientOptions<TRouter>) {
     const { fetchOpts } = opts;
@@ -82,6 +89,7 @@ export class TRPCClient<TRouter extends AnyRouter> {
       serialize: (data) => data,
       deserialize: (data) => data,
     };
+    this.logRequests = opts.log ?? __DEV__;
   }
 
   private serializeInput(input: unknown) {
@@ -89,11 +97,11 @@ export class TRPCClient<TRouter extends AnyRouter> {
       ? this.transformer.serialize(input)
       : input;
   }
-  private async handleResponse(promise: Promise<Response>) {
+  private async executeRequest(url: string, opts: RequestInit) {
     let res: Maybe<Response> = null;
     let json: Maybe<HTTPResponseEnvelope<unknown, TRouter>> = null;
     try {
-      res = await promise;
+      res = await this.fetch(url, opts);
       const rawJson = await res.json();
       json = this.transformer.deserialize(rawJson) as HTTPResponseEnvelope<
         unknown,
@@ -106,6 +114,7 @@ export class TRPCClient<TRouter extends AnyRouter> {
       }
       throw new TRPCClientError(json.error.message, { json, res });
     } catch (originalError) {
+      debugger;
       let err: TRPCClientError<TRouter> = originalError;
       if (!(err instanceof TRPCClientError)) {
         err = new TRPCClientError(originalError.message, {
@@ -125,12 +134,12 @@ export class TRPCClient<TRouter extends AnyRouter> {
     };
   }
 
-  public request({
+  private request({
     type,
     input,
     path,
   }: {
-    type: TRPCType;
+    type: ProcedureType;
     input: unknown;
     path: string;
   }) {
@@ -139,18 +148,9 @@ export class TRPCClient<TRouter extends AnyRouter> {
       body?: string;
       url: string;
     };
+    requestCounter++;
     const { url } = this.opts;
-    const reqOptsMap: Record<TRPCType, () => ReqOpts> = {
-      subscription: () => ({
-        method: 'PATCH',
-        body: JSON.stringify({ input: this.serializeInput(input) }),
-        url: `${url}/${path}`,
-      }),
-      mutation: () => ({
-        method: 'POST',
-        body: JSON.stringify({ input: this.serializeInput(input) }),
-        url: `${url}/${path}`,
-      }),
+    const reqOptsMap: Record<ProcedureType, () => ReqOpts> = {
       query: () => ({
         method: 'GET',
         url:
@@ -160,6 +160,16 @@ export class TRPCClient<TRouter extends AnyRouter> {
                 JSON.stringify(this.serializeInput(input)),
               )}`
             : ''),
+      }),
+      mutation: () => ({
+        method: 'POST',
+        body: JSON.stringify({ input: this.serializeInput(input) }),
+        url: `${url}/${path}`,
+      }),
+      subscription: () => ({
+        method: 'PATCH',
+        body: JSON.stringify({ input: this.serializeInput(input) }),
+        url: `${url}/${path}`,
       }),
     };
 
@@ -177,14 +187,45 @@ export class TRPCClient<TRouter extends AnyRouter> {
       headers: this.getHeaders(),
     };
     // console.log('reqOpts', {reqUrl, reqOpts, type, input})
-    const promise: CancellablePromise<any> & {
-      cancel(): void;
-    } = this.handleResponse(this.fetch(reqUrl, reqOpts)) as any;
-    promise.cancel = () => {
-      ac?.abort();
+    let aborted = false;
+    const responsePromise = new Promise((resolve, reject) => {
+      this.executeRequest(reqUrl, reqOpts).then(resolve).catch(reject);
+    }) as CancellablePromise<any>;
+    responsePromise.cancel = () => {
+      aborted = true;
+      // ac?.abort();
     };
 
-    return promise;
+    if (this.logRequests) {
+      const parts = ['aa->', type, `${path}`, 'ID: %i', 'input: %O'];
+      console.log(parts.join(' '), requestCounter, input);
+      responsePromise.catch((err) => {
+        const parts = [
+          '<-',
+          '❌ ' + aborted ? ' (aborted)' : '',
+          type,
+          `${path}`,
+          'ID: %i',
+          'input: %O',
+          'error: %O',
+        ];
+        console.log(parts.join(' '), requestCounter, input, err);
+      });
+      responsePromise.then((output) => {
+        const parts = [
+          '<-',
+          '✅',
+          type,
+          `${path}`,
+          'ID: %i',
+          'input: %O',
+          'output: %O',
+        ];
+        console.log(parts.join(' '), requestCounter, input, output);
+      });
+    }
+
+    return responsePromise;
   }
   public query<
     TQueries extends TRouter['_def']['queries'],
