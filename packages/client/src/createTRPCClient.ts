@@ -127,7 +127,7 @@ export class TRPCClient<TRouter extends AnyRouter> {
   }
 
   private static defaultLogger(opts: LoggerOptions<any>) {
-    const { event, type, path, requestId, input } = opts;
+    const { event, type, path, requestId, input, headers } = opts;
     const palette = {
       query: ['72e3ff', '3fb0d8'],
       mutation: ['c5a3fc', '904dfc'],
@@ -161,11 +161,21 @@ export class TRPCClient<TRouter extends AnyRouter> {
       `${css}; font-weight: normal;`,
     ];
     if (opts.event === 'error') {
-      args.push({ input, error: opts.error, elapsedMs: opts.elapsedMs });
+      args.push({
+        input,
+        error: opts.error,
+        headers,
+        elapsedMs: opts.elapsedMs,
+      });
     } else if (opts.event === 'success') {
-      args.push({ input, output: opts.data, elapsedMs: opts.elapsedMs });
+      args.push({
+        input,
+        output: opts.data,
+        headers,
+        elapsedMs: opts.elapsedMs,
+      });
     } else if (opts.event === 'init') {
-      args.push({ input });
+      args.push({ input, headers });
     }
 
     console.log(parts.join(' '), ...args);
