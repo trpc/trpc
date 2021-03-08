@@ -75,7 +75,6 @@ export type LoggerOptions<TRouter extends AnyRouter> = {
   | {
       event: 'error';
       error: TRPCClientError<TRouter>;
-      aborted: boolean;
     }
 );
 
@@ -115,13 +114,13 @@ export class TRPCClient<TRouter extends AnyRouter> {
     this.logger =
       opts.logger ??
       (process.env.NODE_ENV !== 'production' && process.env.NODE_ENV !== 'test')
-        ? this.defaultLogger
+        ? TRPCClient.defaultLogger
         : () => {
             // nothing
           };
   }
 
-  private defaultLogger(opts: LoggerOptions<TRouter>) {
+  private static defaultLogger(opts: LoggerOptions<any>) {
     const { event, type, path, requestId, input } = opts;
     const palette = {
       query: ['72e3ff', '3fb0d8'],
@@ -143,8 +142,9 @@ export class TRPCClient<TRouter extends AnyRouter> {
 
     const parts = [
       '%c',
-      'ID: %i',
       event === 'init' ? '>>' : '<<',
+      'tRPC ' + type,
+      'ID: %i',
       emojiMap[event],
       type,
       `%c${path}%c`,
@@ -270,8 +270,6 @@ export class TRPCClient<TRouter extends AnyRouter> {
       headers,
     };
 
-    let settled = false;
-    let aborted = false;
     const responsePromise = new Promise((resolve, reject) => {
       this.logger({
         event: 'init',
@@ -282,7 +280,6 @@ export class TRPCClient<TRouter extends AnyRouter> {
         headers,
       });
       this.executeRequest(reqUrl, reqOpts).then((res) => {
-        settled = true;
         if (res.ok) {
           this.opts.onSuccess && this.opts.onSuccess(res.json);
           this.logger({
@@ -306,17 +303,12 @@ export class TRPCClient<TRouter extends AnyRouter> {
             type,
             headers,
             error: res.error,
-            aborted,
           });
           reject(res.error);
         }
       });
     }) as CancellablePromise<any>;
     responsePromise.cancel = () => {
-      if (settled) {
-        return;
-      }
-      aborted = true;
       return ac?.abort();
     };
 
