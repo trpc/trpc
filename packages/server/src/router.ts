@@ -82,7 +82,7 @@ export type ErrorFormatter<TContext, TOutput extends {}> = ({
   error: TRPCError;
   type: ProcedureType | 'unknown';
   path: string | undefined;
-  input: unknown;
+  inputs: unknown[];
   ctx: undefined | TContext;
   defaultShape: DefaultErrorShape;
 }) => TOutput;
@@ -489,7 +489,7 @@ export class Router<
     error: TRPCError;
     type: ProcedureType | 'unknown';
     path: string | undefined;
-    input: unknown;
+    inputs: unknown[];
     ctx: undefined | TContext;
   }): TErrorShape {
     const defaultShape: DefaultErrorShape = {

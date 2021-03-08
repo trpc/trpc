@@ -17,15 +17,26 @@ import { Dict } from './types';
 assertNotBrowser();
 
 export type HTTPSuccessResponseEnvelope<TOutput> = {
+  batch?: false;
   ok: true;
   statusCode: number;
   data: TOutput;
 };
 
 export type HTTPErrorResponseEnvelope<TRouter extends AnyRouter> = {
+  batch?: false;
   ok: false;
   statusCode: number;
   error: ReturnType<TRouter['_def']['errorFormatter']>;
+};
+
+export type HTTPBatchResponseEnvelope<TRouter extends AnyRouter> = {
+  batch: true;
+  statusCode: number;
+  data: (
+    | HTTPSuccessResponseEnvelope<unknown>
+    | HTTPErrorResponseEnvelope<TRouter>
+  )[];
 };
 
 export type HTTPResponseEnvelope<TOutput, TRouter extends AnyRouter> =
@@ -85,13 +96,18 @@ export function getStatusCodeFromError(err: TRPCError): number {
   return STATUS_CODE_MAP[err.code] ?? 500;
 }
 
-export function getQueryInput(query: qs.ParsedQs) {
-  const queryInput = query.input;
-  if (!queryInput) {
+export function getQueryInput(query: qs.ParsedQs, index: number) {
+  const inputs = query.inputs
+    ? Array.isArray(query.inputs)
+      ? query.inputs
+      : [query.inputs]
+    : [query.input as string];
+  const raw = inputs[index];
+  if (!raw) {
     return undefined;
   }
   try {
-    return JSON.parse(queryInput as string);
+    return JSON.parse(raw as string);
   } catch (err) {
     throw inputValidationError('Expected query.input to be a JSON string');
   }
@@ -137,7 +153,7 @@ export interface BaseOptions<
     type: ProcedureType | 'unknown';
     path: string | undefined;
     req: TRequest;
-    input: unknown;
+    inputs: unknown[];
     ctx: undefined | inferRouterContext<TRouter>;
   }) => void;
 }
@@ -219,10 +235,10 @@ export async function requestHandler<
   createContext: TCreateContextFn;
 } & BaseOptions<TRouter, TRequest>) {
   let type: 'unknown' | ProcedureType = 'unknown';
-  let input: unknown = undefined;
   let ctx: inferRouterContext<TRouter> | undefined = undefined;
+  let inputs: unknown[] | undefined = undefined;
   try {
-    let output: unknown;
+    const paths = path.split(',');
 
     ctx = createContext && (await createContext({ req, res }));
     const method = req.method;
@@ -232,123 +248,172 @@ export async function requestHandler<
 
     const caller = router.createCaller(ctx);
     type = HTTP_METHOD_PROCEDURE_TYPE_MAP[req.method!] ?? 'unknown';
-    const getInput = async () => {
+
+    const getRawInputs = async () => {
       if (type === 'query') {
         const query = req.query ? req.query : url.parse(req.url!, true).query;
-        const input = getQueryInput(query);
-        return deserializeInput(input);
+        return query;
       }
       if (type === 'mutation' || type === 'subscription') {
         const body = await getPostBody({ req, maxBodySize });
-        const input = deserializeInput(body.input);
-        return input;
+        return body.inputs ? body.inputs : [body.input];
       }
-      return undefined;
+      return null;
     };
-    input = await getInput();
+    inputs = await getRawInputs();
 
-    if (method === 'HEAD') {
-      res.statusCode = 204;
-      res.end();
-      return;
-    } else if (type === 'query') {
-      output = await caller.query(path, input);
-    } else if (type === 'mutation') {
-      output = await caller.mutation(path, input);
-    } else if (type === 'subscription') {
-      const sub = (output = await caller.subscription(
-        path,
-        input,
-      )) as Subscription;
+    const result = await Promise.allSettled(
+      paths.map(async (path, index) => {
+        const input = deserializeInput(inputs[index]);
+        let output: unknown;
+        if (method === 'HEAD') {
+          res.statusCode = 204;
+          res.end();
+          return;
+        } else if (type === 'query') {
+          output = await caller.query(path, input);
+        } else if (type === 'mutation') {
+          output = await caller.mutation(path, input);
+        } else if (type === 'subscription') {
+          const sub = (output = await caller.subscription(
+            path,
+            input,
+          )) as Subscription;
 
-      output = await new Promise((resolve, reject) => {
-        const startTime = Date.now();
+          output = await new Promise((resolve, reject) => {
+            const startTime = Date.now();
 
-        const buffer: unknown[] = [];
+            const buffer: unknown[] = [];
 
-        const requestTimeoutMs = subscriptions?.requestTimeoutMs ?? 9000; // 10s is vercel's api timeout
-        const backpressureMs = subscriptions?.backpressureMs ?? 0;
+            const requestTimeoutMs = subscriptions?.requestTimeoutMs ?? 9000; // 10s is vercel's api timeout
+            const backpressureMs = subscriptions?.backpressureMs ?? 0;
 
-        // timers
-        let backpressureTimer: any = null;
-        let requestTimeoutTimer: any = null;
+            // timers
+            let backpressureTimer: any = null;
+            let requestTimeoutTimer: any = null;
 
-        function cleanup() {
-          sub.off('data', onData);
-          sub.off('error', onError);
-          sub.off('destroy', onDestroy);
-          req.off('close', onClose);
-          res.off('close', onClose);
-          clearTimeout(requestTimeoutTimer);
-          clearTimeout(backpressureTimer);
-          sub.destroy();
+            function cleanup() {
+              sub.off('data', onData);
+              sub.off('error', onError);
+              sub.off('destroy', onDestroy);
+              req.off('close', onClose);
+              res.off('close', onClose);
+              clearTimeout(requestTimeoutTimer);
+              clearTimeout(backpressureTimer);
+              sub.destroy();
+            }
+            function onData(data: unknown) {
+              buffer.push(data);
+
+              const requestTimeLeft =
+                requestTimeoutMs - (Date.now() - startTime);
+
+              const success = () => {
+                cleanup();
+                resolve(buffer);
+              };
+              if (requestTimeLeft <= backpressureMs) {
+                // will timeout before next backpressure tick
+                success();
+                return;
+              }
+              if (!backpressureTimer) {
+                backpressureTimer = setTimeout(success, backpressureMs);
+                return;
+              }
+            }
+            function onError(err: Error) {
+              cleanup();
+              // maybe if `buffer` has length here we should just return instead?
+              reject(err);
+            }
+            function onClose() {
+              cleanup();
+              reject(
+                new HTTPError(`Client Closed Request`, {
+                  statusCode: 499,
+                  code: 'BAD_USER_INPUT',
+                }),
+              );
+            }
+            function onRequestTimeout() {
+              cleanup();
+              reject(
+                new HTTPError(
+                  `Subscription exceeded ${requestTimeoutMs}ms - please reconnect.`,
+                  { statusCode: 408, code: 'TIMEOUT' },
+                ),
+              );
+            }
+
+            function onDestroy() {
+              reject(new Error(`Subscription was destroyed prematurely`));
+              cleanup();
+            }
+
+            sub.on('data', onData);
+            sub.on('error', onError);
+            sub.on('destroy', onDestroy);
+            req.once('close', onClose);
+            res.once('close', onClose);
+            requestTimeoutTimer = setTimeout(
+              onRequestTimeout,
+              requestTimeoutMs,
+            );
+            sub.start();
+          });
+        } else {
+          throw new HTTPError(`Unexpected request method ${method}`, {
+            statusCode: 405,
+            code: 'BAD_USER_INPUT',
+          });
         }
-        function onData(data: unknown) {
-          buffer.push(data);
+        return output;
+      }),
+    );
 
-          const requestTimeLeft = requestTimeoutMs - (Date.now() - startTime);
-
-          const success = () => {
-            cleanup();
-            resolve(buffer);
-          };
-          if (requestTimeLeft <= backpressureMs) {
-            // will timeout before next backpressure tick
-            success();
-            return;
-          }
-          if (!backpressureTimer) {
-            backpressureTimer = setTimeout(success, backpressureMs);
-            return;
-          }
-        }
-        function onError(err: Error) {
-          cleanup();
-          // maybe if `buffer` has length here we should just return instead?
-          reject(err);
-        }
-        function onClose() {
-          cleanup();
-          reject(
-            new HTTPError(`Client Closed Request`, {
-              statusCode: 499,
-              code: 'BAD_USER_INPUT',
-            }),
-          );
-        }
-        function onRequestTimeout() {
-          cleanup();
-          reject(
-            new HTTPError(
-              `Subscription exceeded ${requestTimeoutMs}ms - please reconnect.`,
-              { statusCode: 408, code: 'TIMEOUT' },
-            ),
-          );
-        }
-
-        function onDestroy() {
-          reject(new Error(`Subscription was destroyed prematurely`));
-          cleanup();
-        }
-
-        sub.on('data', onData);
-        sub.on('error', onError);
-        sub.on('destroy', onDestroy);
-        req.once('close', onClose);
-        res.once('close', onClose);
-        requestTimeoutTimer = setTimeout(onRequestTimeout, requestTimeoutMs);
-        sub.start();
-      });
-    } else {
-      throw new HTTPError(`Unexpected request method ${method}`, {
-        statusCode: 405,
-        code: 'BAD_USER_INPUT',
-      });
-    }
-    const json: HTTPSuccessResponseEnvelope<unknown> = {
-      ok: true,
-      statusCode: res.statusCode ?? 200,
-      data: output,
+    const parsedResult = result.map((r) => {
+      if (r.status === 'fulfilled') {
+        return {
+          ok: true as const,
+          data: r.value,
+        };
+      }
+      return {
+        ok: false as const,
+        error: getErrorFromUnknown(r.reason),
+      };
+    });
+    const statusCodes = Array.from(
+      new Set(
+        parsedResult.map((r) => {
+          return r.ok ? 200 : getStatusCodeFromError(r.error);
+        }),
+      ),
+    );
+    const statusCode: number = statusCodes.length === 1 ? statusCodes[0] : 207;
+    const json: HTTPBatchResponseEnvelope<any> = {
+      batch: true,
+      statusCode,
+      data: parsedResult.map((r) =>
+        r.ok
+          ? {
+              ok: true,
+              statusCode: res.statusCode ?? 200,
+              data: r.data,
+            }
+          : {
+              ok: false,
+              statusCode: getStatusCodeFromError(r.error),
+              error: router.getErrorShape({
+                error: r.error,
+                type,
+                path,
+                inputs,
+                ctx,
+              }),
+            },
+      ),
     };
     res.statusCode = json.statusCode;
     res.setHeader('Content-Type', 'application/json');
@@ -359,12 +424,12 @@ export async function requestHandler<
     const json: HTTPErrorResponseEnvelope<TRouter> = {
       ok: false,
       statusCode: getStatusCodeFromError(error),
-      error: router.getErrorShape({ error, type, path, input, ctx }),
+      error: router.getErrorShape({ error, type, path, inputs, ctx }),
     };
     res.statusCode = json.statusCode;
     res.setHeader('Content-Type', 'application/json');
     res.end(JSON.stringify(transformer.serialize(json)));
-    onError && onError({ error, path, input, ctx, type: type, req });
+    onError && onError({ error, path, inputs, ctx, type: type, req });
   }
   try {
     teardown && (await teardown());
