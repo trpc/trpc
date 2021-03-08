@@ -89,7 +89,10 @@ export class TRPCClient<TRouter extends AnyRouter> {
       serialize: (data) => data,
       deserialize: (data) => data,
     };
-    this.logRequests = opts.log ?? __DEV__;
+    this.logRequests =
+      opts.log ??
+      (process.env.NODE_ENV !== 'production' &&
+        process.env.NODE_ENV !== 'test');
   }
 
   private serializeInput(input: unknown) {
@@ -194,7 +197,7 @@ export class TRPCClient<TRouter extends AnyRouter> {
       signal: ac?.signal,
       headers: this.getHeaders(),
     };
-    // console.log('reqOpts', {reqUrl, reqOpts, type, input})
+
     let aborted = false;
     let settled = false;
     const responsePromise = new Promise((resolve, reject) => {
@@ -324,7 +327,7 @@ export class TRPCClient<TRouter extends AnyRouter> {
             path,
           });
           const data = await currentRequest;
-          // console.log('response', { path, input, data });
+
           resolve(data);
         } catch (_err) {
           const err: TRPCClientError<TRouter> = _err;
