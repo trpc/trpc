@@ -2,6 +2,7 @@
 import type {
   AnyRouter,
   DataTransformer,
+  Dict,
   HTTPErrorResponseEnvelope,
   HTTPResponseEnvelope,
   HTTPSuccessResponseEnvelope,
@@ -57,10 +58,31 @@ export interface FetchOptions {
   AbortController?: typeof AbortController;
 }
 
+export type LoggerOptions<TRouter extends AnyRouter> = {
+  requestId: number;
+  path: string;
+  input: unknown;
+  type: ProcedureType;
+  headers: Dict<string>;
+} & (
+  | {
+      event: 'init';
+    }
+  | {
+      event: 'success';
+      data?: unknown;
+    }
+  | {
+      event: 'error';
+      error: TRPCClientError<TRouter>;
+      aborted: boolean;
+    }
+);
+
 export interface CreateTRPCClientOptions<TRouter extends AnyRouter> {
   url: string;
   fetchOpts?: FetchOptions;
-  getHeaders?: () => Record<string, string | undefined>;
+  getHeaders?: () => Dict<string>;
   onSuccess?: (data: HTTPSuccessResponseEnvelope<unknown>) => void;
   onError?: (error: TRPCClientError<TRouter>) => void;
   transformer?: DataTransformer;
@@ -68,6 +90,7 @@ export interface CreateTRPCClientOptions<TRouter extends AnyRouter> {
    * If you want to log procedure calls. Defaults to `true` in development & `false` in production.
    */
   log?: boolean;
+  logger?: (opts: LoggerOptions<TRouter>) => void;
 }
 
 let requestCounter = 0;
@@ -77,7 +100,7 @@ export class TRPCClient<TRouter extends AnyRouter> {
   private AC: ReturnType<typeof getAbortController>;
   public readonly transformer: DataTransformer;
   private opts: CreateTRPCClientOptions<TRouter>;
-  private logRequests: boolean;
+  private logger: NonNullable<CreateTRPCClientOptions<TRouter>['logger']>;
 
   constructor(opts: CreateTRPCClientOptions<TRouter>) {
     const { fetchOpts } = opts;
@@ -89,12 +112,60 @@ export class TRPCClient<TRouter extends AnyRouter> {
       serialize: (data) => data,
       deserialize: (data) => data,
     };
-    this.logRequests =
-      opts.log ??
-      (process.env.NODE_ENV !== 'production' &&
-        process.env.NODE_ENV !== 'test');
+    this.logger =
+      opts.logger ??
+      (process.env.NODE_ENV !== 'production' && process.env.NODE_ENV !== 'test')
+        ? this.defaultLogger
+        : () => {
+            // nothing
+          };
   }
 
+  private defaultLogger(opts: LoggerOptions<TRouter>) {
+    const { event, type, path, requestId, input } = opts;
+    const palette = {
+      query: ['72e3ff', '3fb0d8'],
+      mutation: ['c5a3fc', '904dfc'],
+      subscription: ['ff49e1', 'd83fbe'],
+    };
+    const [light, dark] = palette[type];
+
+    const css = `
+      background-color: #${event === 'init' ? light : dark}; 
+      color: ${event === 'init' ? 'black' : 'white'};
+      padding: 2px;
+    `;
+    const emojiMap = {
+      init: '⏳',
+      success: '✅',
+      error: '❌',
+    };
+
+    const parts = [
+      '%c',
+      'ID: %i',
+      event === 'init' ? '>>' : '<<',
+      emojiMap[event],
+      type,
+      `%c${path}%c`,
+      '%O',
+    ];
+    const args: any[] = [
+      css,
+      requestId,
+      `${css} font-weight: bold;`,
+      `${css} font-weight: normal;`,
+    ];
+    if (opts.event === 'error') {
+      args.push({ input, error: opts.error });
+    } else if (opts.event === 'success') {
+      args.push({ input, output: opts.data });
+    } else if (opts.event === 'init') {
+      args.push({ input });
+    }
+
+    console.log(parts.join(' '), ...args);
+  }
   private serializeInput(input: unknown) {
     return typeof input !== 'undefined'
       ? this.transformer.serialize(input)
@@ -192,22 +263,51 @@ export class TRPCClient<TRouter extends AnyRouter> {
     const ac = this.AC ? new this.AC() : null;
 
     const { url: reqUrl, ...rest } = reqOptsFn();
+    const headers = this.getHeaders();
     const reqOpts = {
       ...rest,
       signal: ac?.signal,
-      headers: this.getHeaders(),
+      headers,
     };
 
-    let aborted = false;
     let settled = false;
+    let aborted = false;
     const responsePromise = new Promise((resolve, reject) => {
+      this.logger({
+        event: 'init',
+        path,
+        input,
+        requestId,
+        type,
+        headers,
+      });
       this.executeRequest(reqUrl, reqOpts).then((res) => {
         settled = true;
         if (res.ok) {
           this.opts.onSuccess && this.opts.onSuccess(res.json);
+          this.logger({
+            event: 'success',
+            path,
+            input,
+            requestId,
+            type,
+            headers,
+            data: res.data,
+          });
           resolve(res.json.data);
         } else {
           this.opts.onError && this.opts.onError(res.error);
+
+          this.logger({
+            event: 'error',
+            path,
+            input,
+            requestId,
+            type,
+            headers,
+            error: res.error,
+            aborted,
+          });
           reject(res.error);
         }
       });
@@ -219,53 +319,6 @@ export class TRPCClient<TRouter extends AnyRouter> {
       aborted = true;
       return ac?.abort();
     };
-
-    if (this.logRequests) {
-      const palette = {
-        query: ['72e3ff', '3fb0d8'],
-        mutation: ['c5a3fc', '904dfc'],
-        subscription: ['ff49e1', 'd83fbe'],
-      };
-      const [light, dark] = palette[type];
-      const print = (direction: 'in' | 'out', emoji: string, meta: any) => {
-        const css = `
-          background-color: #${direction === 'in' ? dark : light}; 
-          color: ${direction === 'in' ? 'white' : 'black'};
-          padding: 2px;
-        `;
-        const parts = [
-          '%c',
-          'ID: %i',
-          direction === 'in' ? '<<' : '>>',
-          emoji,
-          type,
-          `%c${path}%c`,
-          '%O',
-        ];
-        console.log(
-          parts.join(' '),
-          css,
-          requestId,
-          `${css} font-weight: bold;`,
-          `${css} font-weight: normal;`,
-          meta,
-        );
-      };
-      print('out', '⏳', {
-        input,
-        reqOpts,
-      });
-      responsePromise.catch((err) => {
-        print('in', '❌' + (aborted ? ' (aborted) ' : ''), {
-          err,
-          input,
-          reqOpts,
-        });
-      });
-      responsePromise.then((output) => {
-        print('in', '✅', { input, output, reqOpts });
-      });
-    }
 
     return responsePromise;
   }
