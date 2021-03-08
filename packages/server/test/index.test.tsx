@@ -4,7 +4,7 @@ import { expectTypeOf } from 'expect-type';
 import * as z from 'zod';
 import { TRPCClientError } from '../../client/src';
 import * as trpc from '../src';
-import { CreateHttpContextOptions } from '../src';
+import { CreateHttpContextOptions, Dict } from '../src';
 import { routerToServerAndClient } from './_testHelpers';
 
 test('mix query and mutation', async () => {
@@ -234,7 +234,7 @@ describe('integration tests', () => {
         };
       };
       // eslint-disable-next-line prefer-const
-      let headers: Record<string, string | undefined> = {};
+      let headers: Dict<string> = {};
       function createContext({ req }: CreateHttpContextOptions): Context {
         if (req.headers.authorization !== 'kattsecret') {
           return {};
