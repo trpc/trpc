@@ -210,9 +210,10 @@ export class TRPCClient<TRouter extends AnyRouter> {
       });
     }) as CancellablePromise<any>;
     responsePromise.cancel = () => {
-      if (!settled) {
-        aborted = true;
+      if (settled) {
+        return;
       }
+      aborted = true;
       return ac?.abort();
     };
 
