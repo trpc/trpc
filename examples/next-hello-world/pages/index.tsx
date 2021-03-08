@@ -44,10 +44,12 @@ export default function Home() {
             text: $text.value,
           };
           try {
-            await addPost.mutateAsync(input);
+            addPost.mutate(input);
             $title.value = '';
             $text.value = '';
-          } catch (err) {}
+          } catch (err) {
+            console.log('an error!');
+          }
         }}
       >
         <label htmlFor="title">Title:</label>
