@@ -1,6 +1,6 @@
 {
   "name": "@examples/playground",
-  "version": "3.5.0",
+  "version": "3.5.1",
   "private": true,
   "scripts": {
     "dev:server": "nodemon -e ts -w . -x ts-node ./src/server.ts",
@@ -12,8 +12,8 @@
     "test-start": "start-server-and-test 'node dist/server' 2021 'node dist/client'"
   },
   "dependencies": {
-    "@trpc/client": "^3.5.0",
-    "@trpc/react": "^3.5.0",
+    "@trpc/client": "^3.5.1",
+    "@trpc/react": "^3.5.1",
     "@trpc/server": "^3.5.0",
     "@types/node-fetch": "^2.5.8",
     "abort-controller": "^3.0.0",
