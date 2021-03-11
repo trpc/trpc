@@ -25,11 +25,10 @@
     "dist"
   ],
   "dependencies": {
+    "@trpc/server": "^3.5.0",
     "tslib": "^2.1.0"
   },
-  "devDependencies": {
-    "@trpc/server": "^3.5.0"
-  },
+  "devDependencies": {},
   "publishConfig": {
     "access": "public"
   },
