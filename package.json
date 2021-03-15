@@ -33,7 +33,7 @@
     "postinstall": "preconstruct dev && preconstruct build",
     "build": "preconstruct build",
     "build-examples": "lerna run build --scope @examples/* --stream",
-    "prepublish": "lerna run prepublish --stream",
+    "prepublish": "yarn build",
     "example:playground": "yarn --cwd examples/playground dev",
     "example:todomvc": "yarn --cwd examples/next-prisma-todomvc dev",
     "example:chat": "yarn --cwd examples/next-ssg-chat dev",
