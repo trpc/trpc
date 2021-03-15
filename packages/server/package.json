@@ -33,10 +33,7 @@
     "dist",
     "adapters"
   ],
-  "dependencies": {
-    "ts-jest": "^26.5.3",
-    "tslib": "^2.1.0"
-  },
+  "dependencies": {},
   "publishConfig": {
     "access": "public"
   },

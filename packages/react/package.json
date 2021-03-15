@@ -29,8 +29,7 @@
   },
   "dependencies": {
     "@trpc/client": "^3.5.1",
-    "@trpc/server": "^3.5.0",
-    "tslib": "^2.1.0"
+    "@trpc/server": "^3.5.0"
   },
   "devDependencies": {
     "@types/express": "^4.17.11",

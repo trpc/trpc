@@ -75,7 +75,7 @@ cd trpc
 yarn
 ```
 
-In one terminal, run tsdx watch in parallel:
+In one terminal, run `prconstruct watch` in parallel:
 
 ```bash
 yarn dev

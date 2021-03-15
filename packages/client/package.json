@@ -18,8 +18,7 @@
     "dist"
   ],
   "dependencies": {
-    "@trpc/server": "^3.5.0",
-    "tslib": "^2.1.0"
+    "@trpc/server": "^3.5.0"
   },
   "publishConfig": {
     "access": "public"
