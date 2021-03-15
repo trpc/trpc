@@ -1124,12 +1124,12 @@
     "@manypkg/get-packages" "^1.0.1"
     semver "^5.4.1"
 
-"@changesets/changelog-github@^0.2.8":
-  version "0.2.8"
-  resolved "https://registry.npmjs.org/@changesets/changelog-github/-/changelog-github-0.2.8.tgz#b17569205e5e8da65cc9a3ceb16e2c78f0463236"
-  integrity sha512-XO/6J/EvndQ+SOhRLvWUun5DLnuTmukpjhtFbHbQSNzzGvRUIyQ2//v6R5sgcazDGLoJixP7MaATEhYeppf+Cg==
+"@changesets/changelog-github@^0.3.0":
+  version "0.3.0"
+  resolved "https://registry.yarnpkg.com/@changesets/changelog-github/-/changelog-github-0.3.0.tgz#b9c00e1f859d8390dfdb4992f4a633d5772b42f8"
+  integrity sha512-b+/QeTtJnn+s/rhZtS3dDg4tgNiiKmQlfZU7onLfFkn7HhINVoBsVSjWJh0fsVRv+OfKhSErv0i15/3kvyhTpg==
   dependencies:
-    "@changesets/get-github-info" "^0.4.5"
+    "@changesets/get-github-info" "^0.5.0"
     "@changesets/types" "^3.0.0"
     dotenv "^8.1.0"
 
@@ -1200,10 +1200,10 @@
     fs-extra "^7.0.1"
     semver "^5.4.1"
 
-"@changesets/get-github-info@^0.4.5":
-  version "0.4.5"
-  resolved "https://registry.npmjs.org/@changesets/get-github-info/-/get-github-info-0.4.5.tgz#53d46e03f7794cd439e6530dce1029cc149cd313"
-  integrity sha512-tknjYi9ti3AIbGrDHfeJ1bBbXJi/FdV6AWH0oA4JFrCRe2IoczAJo2MeU+3banQx5TlL1fOTeUOM1YAK+sJB2g==
+"@changesets/get-github-info@^0.5.0":
+  version "0.5.0"
+  resolved "https://registry.yarnpkg.com/@changesets/get-github-info/-/get-github-info-0.5.0.tgz#b91ceb2d82edef78ae1598ea9fc335a012250295"
+  integrity sha512-vm5VgHwrxkMkUjFyn3UVNKLbDp9YMHd3vMf1IyJoa/7B+6VpqmtAaXyDS0zBLfN5bhzVCHrRnj4GcZXXcqrFTw==
   dependencies:
     dataloader "^1.4.0"
     node-fetch "^2.5.0"
@@ -2765,9 +2765,9 @@
     "@testing-library/dom" "^7.28.1"
 
 "@testing-library/user-event@^12.7.0":
-  version "12.8.1"
-  resolved "https://registry.yarnpkg.com/@testing-library/user-event/-/user-event-12.8.1.tgz#aa897d6e7f0cf2208385abc2da2ac3f5844bbd00"
-  integrity sha512-u521YhkCKip0DQNDpfj9V97PU7UlCTkW5jURUD4JipuVe/xDJ32dJSIHlT2pqAs/I91OFB8p6LtqaLZpOu8BWQ==
+  version "12.8.3"
+  resolved "https://registry.yarnpkg.com/@testing-library/user-event/-/user-event-12.8.3.tgz#1aa3ed4b9f79340a1e1836bc7f57c501e838704a"
+  integrity sha512-IR0iWbFkgd56Bu5ZI/ej8yQwrkCv8Qydx6RzwbKz9faXazR/+5tvYKsZQgyXJiwgpcva127YO6JcWy7YlCfofQ==
   dependencies:
     "@babel/runtime" "^7.12.5"
 
@@ -3000,9 +3000,9 @@
   integrity sha512-ewFXqrQHlFsgc09MK5jP5iR7vumV/BYayNC6PgJO2LPe8vrnNFyjQjSppfEngITi0qvfKtzFvgKymGheFM9UOA==
 
 "@types/react-dom@^17.0.0":
-  version "17.0.1"
-  resolved "https://registry.npmjs.org/@types/react-dom/-/react-dom-17.0.1.tgz#d92d77d020bfb083e07cc8e0ac9f933599a4d56a"
-  integrity sha512-yIVyopxQb8IDZ7SOHeTovurFq+fXiPICa+GV3gp0Xedsl+MwQlMLKmvrnEjFbQxjliH5YVAEWFh975eVNmKj7Q==
+  version "17.0.2"
+  resolved "https://registry.yarnpkg.com/@types/react-dom/-/react-dom-17.0.2.tgz#35654cf6c49ae162d5bc90843d5437dc38008d43"
+  integrity sha512-Icd9KEgdnFfJs39KyRyr0jQ7EKhq8U6CcHRMGAS45fp5qgUvxL3ujUCfWFttUK2UErqZNj97t9gsVPNAqcwoCg==
   dependencies:
     "@types/react" "*"
 
@@ -10225,9 +10225,9 @@ playwright-core@>=1.2.0:
     ws "^7.3.1"
 
 playwright@^1.8.0:
-  version "1.9.1"
-  resolved "https://registry.yarnpkg.com/playwright/-/playwright-1.9.1.tgz#b4db35f69076b2dc91e347e58d81f2f391d1ed49"
-  integrity sha512-bZXnks4UGJZoqja6TqVEUG0IQ2liqYFcO1R4lT43aO4oDVTQtawEJjS+EqLYsAuniRFWVE87Cemus4fRQbyXMg==
+  version "1.9.2"
+  resolved "https://registry.yarnpkg.com/playwright/-/playwright-1.9.2.tgz#294910950b76ec4c3dfed6a1e9d28e9b8560b0f4"
+  integrity sha512-Hsgfk3GZO+hgewRNW9xl9/tHjdZvVwxTseHagbiNpDf90PXICEh8UHXy/2eykeIXrZFMA6W6petEtRWNPi3gfQ==
   dependencies:
     commander "^6.1.0"
     debug "^4.1.1"
@@ -13181,9 +13181,9 @@ write@1.0.3:
     mkdirp "^0.5.1"
 
 ws@^7.2.3, ws@^7.3.1:
-  version "7.4.3"
-  resolved "https://registry.npmjs.org/ws/-/ws-7.4.3.tgz#1f9643de34a543b8edb124bdcbc457ae55a6e5cd"
-  integrity sha512-hr6vCR76GsossIRsr8OLR9acVVm1jyfEWvhbNjtgPOrfvAlKzvyeg/P6r8RuDjRyrcQoPQT7K0DGEPc7Ae6jzA==
+  version "7.4.4"
+  resolved "https://registry.yarnpkg.com/ws/-/ws-7.4.4.tgz#383bc9742cb202292c9077ceab6f6047b17f2d59"
+  integrity sha512-Qm8k8ojNQIMx7S+Zp8u/uHOx7Qazv3Yv4q68MiWWWOJhiwG5W3x7iqmRtJo8xxrciZUY4vRxUTJCKuRnF28ZZw==
 
 ws@^7.4.4:
   version "7.4.4"
