@@ -40,7 +40,7 @@
     "release:canary": "changeset publish --tag canary"
   },
   "dependencies": {
-    "@changesets/changelog-github": "^0.2.8",
+    "@changesets/changelog-github": "^0.3.0",
     "@changesets/cli": "^2.13.1",
     "@manypkg/cli": "^0.17.0",
     "@types/react": "^17.0.0",
