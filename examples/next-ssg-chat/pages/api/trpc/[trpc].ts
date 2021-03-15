@@ -1,6 +1,6 @@
 import { Message, PrismaClient } from '@prisma/client';
 import * as trpc from '@trpc/server';
-import * as trpcNext from '@trpc/server/dist/adapters/next';
+import * as trpcNext from '@trpc/server/adapters/next';
 import * as z from 'zod';
 import superjson from 'superjson';
 const prisma = new PrismaClient();

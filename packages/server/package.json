@@ -27,12 +27,11 @@
   },
   "main": "dist/trpc-server.cjs.js",
   "module": "dist/trpc-server.esm.js",
-  "typings": "dist/index.d.ts",
+  "typings": "dist/trpc-server.cjs.d.ts",
   "files": [
     "README.md",
     "dist",
-    "adapters",
-    "src"
+    "adapters"
   ],
   "dependencies": {
     "ts-jest": "^26.5.3",

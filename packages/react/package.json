@@ -12,7 +12,7 @@
   },
   "scripts": {},
   "main": "dist/trpc-react.cjs.js",
-  "typings": "dist/index.d.ts",
+  "typings": "dist/trpc-react.cjs.d.ts",
   "files": [
     "README.md",
     "dist"
