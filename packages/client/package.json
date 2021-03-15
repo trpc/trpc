@@ -10,15 +10,9 @@
     "url": "git+https://github.com/trpc/trpc.git",
     "directory": "packages/client"
   },
-  "scripts": {
-    "start": "tsdx watch --tsconfig tsconfig.build.json --verbose --noClean",
-    "build": "yarn tsdx build --tsconfig tsconfig.build.json",
-    "test": "tsdx test --passWithNoTests",
-    "lint": "tsdx lint src",
-    "prepublish": "npm run build"
-  },
-  "main": "dist/index.js",
-  "module": "dist/react.esm.js",
+  "scripts": {},
+  "main": "dist/trpc-client.cjs.js",
+  "module": "dist/trpc-client.esm.js",
   "typings": "dist/index.d.ts",
   "files": [
     "README.md",
