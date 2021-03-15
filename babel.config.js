@@ -3,15 +3,10 @@ module.exports = {
     "@babel/preset-typescript",
     "@babel/preset-react",
     [
-      '@babel/preset-env',
+      "@babel/preset-env",
       {
-        modules: false,
-        loose: true,
-        exclude: [
-          "@babel/plugin-transform-async-to-generator",
-          "@babel/plugin-transform-regenerator",
-        ],
-      },
+        "useBuiltIns": "entry"
+      }
     ],
   ],
   plugins: [
