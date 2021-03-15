@@ -26,6 +26,7 @@
     "test": "jest"
   },
   "main": "dist/trpc-server.cjs.js",
+  "module": "dist/trpc-server.esm.js",
   "typings": "dist/index.d.ts",
   "files": [
     "README.md",
