@@ -105,7 +105,7 @@ function Home() {
       </main>
       <footer className="container">
         <ol className="footnotes">
-          <li id="zero"><code>@trpc/client</code> only requires that a <code>fetch()</code> polyfill/ponyfill is used if the browser doesn&apos;t support it. <code>@trpc/react</code> is built on top of <a href="https://react-query.tanstack.com/">react-query</a>.</li>
+          <li id="zero"><code>@trpc/client</code> depends on some babel runtime helpers + that a <code>fetch()</code> polyfill/ponyfill is used if the browser doesn&apos;t support it. <code>@trpc/react</code> is built on top of <a href="https://react-query.tanstack.com/">react-query</a>.</li>
         </ol>
       </footer>
     </Layout>
