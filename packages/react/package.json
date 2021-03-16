@@ -28,6 +28,7 @@
     "react-query": "^3.0.0"
   },
   "dependencies": {
+    "@babel/runtime": "^7.13.10",
     "@trpc/client": "^4.0.0-alpha.0",
     "@trpc/server": "^4.0.0-alpha.0"
   },

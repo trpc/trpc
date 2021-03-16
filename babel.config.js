@@ -10,6 +10,7 @@ module.exports = {
     ],
   ],
   plugins: [
+    "@babel/transform-runtime",
     "babel-plugin-annotate-pure-calls",
     "babel-plugin-dev-expression",
     ["@babel/plugin-proposal-class-properties", { loose: true }],
