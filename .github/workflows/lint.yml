@@ -20,4 +20,4 @@ jobs:
       - name: Lint
         run: yarn lint
       
-      - run: manypkg check
+      - run: yarn manypkg check
