@@ -1,6 +1,6 @@
 {
   "name": "@trpc/client",
-  "version": "4.0.0-alpha.1",
+  "version": "4.0.0-alpha.2",
   "description": "tRPC Client lib",
   "author": "KATT",
   "license": "MIT",
