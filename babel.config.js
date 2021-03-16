@@ -5,12 +5,7 @@ module.exports = {
     [
       '@babel/preset-env',
       {
-        modules: false,
-        loose: true,
-        exclude: [
-          "@babel/plugin-transform-async-to-generator",
-          "@babel/plugin-transform-regenerator",
-        ],
+        "targets": "> 0.25%, not dead",
       },
     ],
   ],
