@@ -30,7 +30,7 @@
     "test": "lerna run test --scope @trpc/* --stream --",
     "lint": "eslint --ext \".js,.ts,.tsx\" --ignore-path .gitignore .",
     "lint-fix": "yarn lint --fix && manypkg fix",
-    "postinstall": "preconstruct dev && preconstruct build",
+    "postinstall": "preconstruct dev",
     "build": "preconstruct build",
     "build-examples": "lerna run build --scope @examples/* --stream",
     "prepublish": "yarn build",
