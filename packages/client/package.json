@@ -1,6 +1,6 @@
 {
   "name": "@trpc/client",
-  "version": "3.5.1",
+  "version": "4.0.0-alpha.2",
   "description": "tRPC Client lib",
   "author": "KATT",
   "license": "MIT",
@@ -10,23 +10,16 @@
     "url": "git+https://github.com/trpc/trpc.git",
     "directory": "packages/client"
   },
-  "scripts": {
-    "start": "tsdx watch --tsconfig tsconfig.build.json --verbose --noClean",
-    "build": "yarn tsdx build --tsconfig tsconfig.build.json",
-    "test": "tsdx test --passWithNoTests",
-    "lint": "tsdx lint src",
-    "prepublish": "npm run build"
-  },
-  "main": "dist/index.js",
-  "module": "dist/react.esm.js",
-  "typings": "dist/index.d.ts",
+  "scripts": {},
+  "main": "dist/trpc-client.cjs.js",
+  "typings": "dist/trpc-client.cjs.d.ts",
   "files": [
     "README.md",
     "dist"
   ],
   "dependencies": {
-    "@trpc/server": "^3.5.0",
-    "tslib": "^2.1.0"
+    "@babel/runtime": "^7.9.0",
+    "@trpc/server": "^4.0.0-alpha.1"
   },
   "publishConfig": {
     "access": "public"

@@ -67,7 +67,7 @@ function Home() {
             <figure>
               <img src="https://storage.googleapis.com/trpc/trpcgif.gif" alt="Server/client example" />
               <figcaption>
-                The client above is <strong>not</strong> importing any code from the server, only it's type declarations.
+                The client above is <strong>not</strong> importing any code from the server, only it&apos;s type declarations.
                 <br />
                 <a href="https://www.typescriptlang.org/docs/handbook/release-notes/typescript-3-8.html#type-only-imports-and-export">Import type only imports declarations to be used for type annotations and declarations. It always gets fully erased, so there’s no remnant of it at runtime.</a>
               </figcaption>
@@ -105,7 +105,7 @@ function Home() {
       </main>
       <footer className="container">
         <ol className="footnotes">
-          <li id="zero"><code>@trpc/client</code> only requires that a <code>fetch()</code> polyfill/ponyfill is used if the browser doesn't support it. <code>@trpc/react</code> is built on top of <a href="https://react-query.tanstack.com/">react-query</a>.</li>
+          <li id="zero"><code>@trpc/client</code> depends on some babel runtime helpers + that a <code>fetch()</code> polyfill/ponyfill is used if the browser doesn&apos;t support it. <code>@trpc/react</code> is built on top of <a href="https://react-query.tanstack.com/">react-query</a>.</li>
         </ol>
       </footer>
     </Layout>

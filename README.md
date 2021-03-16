@@ -41,6 +41,7 @@ tRPC is a framework for building strongly typed RPC APIs with TypeScript. Altern
 - [Usage](#usage)
 - [Example apps](#example-apps)
 - [Development workflow](#development-workflow)
+  - [Hacking around with it](#hacking-around-with-it)
   - [Testing](#testing)
 - [Contributors ✨](#contributors-)
 
@@ -75,15 +76,24 @@ cd trpc
 yarn
 ```
 
-In one terminal, run tsdx watch in parallel:
+## Hacking around with it
+
+
+In one terminal, will run `preconstruct watch` in parallel which builds all `packages/*` on change:
 
 ```bash
 yarn dev
 ```
 
-This builds each package to `<packages>/<package>/dist` and runs the project in watch mode so any edits you save inside `<packages>/<package>/src` cause a rebuild to `<packages>/<package>/dist`. The results will stream to to the terminal.
+In another terminal, you can for instance navigate to `examples/next-hello-world` and run `yarn dev` & it will update whenever code is changed in the packages.
+
 
 ## Testing
+
+```bash
+cd packages/server
+yarn test --watch
+```
 
 > [![codecov](https://codecov.io/gh/trpc/trpc/branch/main/graph/badge.svg?token=KPPS918B0G)](https://codecov.io/gh/trpc/trpc) 
 > 

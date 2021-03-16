@@ -1,6 +1,6 @@
 {
   "name": "@examples/next-api-caching",
-  "version": "3.5.1",
+  "version": "4.0.0-alpha.2",
   "private": true,
   "scripts": {
     "dev": "next dev",
@@ -11,9 +11,9 @@
     "test-start": "start-server-and-test start 3000 test"
   },
   "dependencies": {
-    "@trpc/client": "^3.5.1",
-    "@trpc/react": "^3.5.1",
-    "@trpc/server": "^3.5.0",
+    "@trpc/client": "^4.0.0-alpha.2",
+    "@trpc/react": "^4.0.0-alpha.2",
+    "@trpc/server": "^4.0.0-alpha.1",
     "next": "^10.0.5",
     "react": "^17.0.1",
     "react-dom": "^17.0.1",
@@ -29,8 +29,8 @@
     "jest-playwright-preset": "^1.4.5",
     "playwright": "^1.8.0",
     "start-server-and-test": "^1.12.0",
-    "ts-jest": "^26.5.0",
-    "typescript": "^4.1.4"
+    "ts-jest": "^26.5.3",
+    "typescript": "^4.2.3"
   },
   "publishConfig": {
     "access": "restricted"

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-empty-function */
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 /* eslint-disable @typescript-eslint/ban-types */
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -7,13 +8,19 @@ import userEvent from '@testing-library/user-event';
 import { expectTypeOf } from 'expect-type';
 import hash from 'hash-sum';
 import React, { Fragment, useEffect, useState } from 'react';
-import { QueryClient, QueryClientProvider } from 'react-query';
+import { QueryClient, QueryClientProvider, setLogger } from 'react-query';
 import * as z from 'zod';
 import { ZodError } from 'zod';
 import { createReactQueryHooks, OutputWithCursor } from '../../react/src';
 import * as trpc from '../src';
 import { DefaultErrorShape } from '../src';
 import { routerToServerAndClient } from './_testHelpers';
+
+setLogger({
+  log() {},
+  warn() {},
+  error() {},
+});
 
 type Context = {};
 type Post = {

@@ -1,6 +1,6 @@
 {
   "name": "@examples/playground",
-  "version": "3.5.1",
+  "version": "4.0.0-alpha.2",
   "private": true,
   "scripts": {
     "dev:server": "nodemon -e ts -w . -x ts-node ./src/server.ts",
@@ -12,15 +12,15 @@
     "test-start": "start-server-and-test 'node dist/server' 2021 'node dist/client'"
   },
   "dependencies": {
-    "@trpc/client": "^3.5.1",
-    "@trpc/react": "^3.5.1",
-    "@trpc/server": "^3.5.0",
+    "@trpc/client": "^4.0.0-alpha.2",
+    "@trpc/react": "^4.0.0-alpha.2",
+    "@trpc/server": "^4.0.0-alpha.1",
     "@types/node-fetch": "^2.5.8",
     "abort-controller": "^3.0.0",
     "body-parser": "^1.19.0",
     "express": "^4.17.1",
     "node-fetch": "^2.6.1",
-    "typescript": "^4.1.4",
+    "typescript": "^4.2.3",
     "zod": "^1.11.11"
   },
   "alias": {
