@@ -51,5 +51,8 @@
     "yup": "^0.32.8",
     "zod": "^1.11.11"
   },
-  "gitHead": "82bf01f8759b04f2ade69c9047e28f74f889d547"
+  "gitHead": "82bf01f8759b04f2ade69c9047e28f74f889d547",
+  "dependencies": {
+    "tslib": "^2.1.0"
+  }
 }

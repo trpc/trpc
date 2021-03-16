@@ -6,4 +6,5 @@ module.exports = {
   collectCoverageFrom: [
     '../*/src/**/*.{ts,tsx,js,jsx}'
   ],
+  setupFiles: ['core-js', 'regenerator-runtime/runtime'],
 };
