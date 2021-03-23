@@ -4,6 +4,7 @@ version = 1
 [approve]
 auto_approve_usernames = ["dependabot", "KATT"]
 
+
 [merge]
 method = "squash"
 automerge_label = ["🚀 merge", "⬆️ dependencies"]
@@ -12,6 +13,7 @@ automerge_label = ["🚀 merge", "⬆️ dependencies"]
 # only auto merge "minor" and "patch" version upgrades.
 versions = ["minor", "patch"]
 usernames = ["dependabot"]
+
 
 [update]
 # dependabot handles auto updating itself
