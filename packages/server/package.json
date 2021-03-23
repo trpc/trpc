@@ -39,7 +39,7 @@
   "devDependencies": {
     "@testing-library/jest-dom": "^5.11.9",
     "@testing-library/react": "^11.2.5",
-    "@testing-library/user-event": "^12.8.3",
+    "@testing-library/user-event": "^13.0.7",
     "@types/express": "^4.17.11",
     "@types/hash-sum": "^1.0.0",
     "express": "^4.17.1",
