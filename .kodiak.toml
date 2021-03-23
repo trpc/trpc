@@ -3,7 +3,7 @@ version = 1
 
 [merge]
 method = "squash"
-automerge_label = "🚀 merge"
+automerge_label = ["🚀 merge", "⬆️ dependencies"]
 
 [approve]
 auto_approve_usernames = ["dependabot", "KATT"]
