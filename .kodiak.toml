@@ -3,6 +3,7 @@ version = 1
 
 [merge]
 method = "squash"
+automerge_label = "🚀 merge"
 
 [approve]
 auto_approve_usernames = ["dependabot", "KATT"]
@@ -11,3 +12,7 @@ auto_approve_usernames = ["dependabot", "KATT"]
 # only auto merge "minor" and "patch" version upgrades.
 versions = ["minor", "patch"]
 usernames = ["dependabot"]
+
+[update]
+# dependabot handles auto updating itself
+ignored_usernames = ["dependabot"]
