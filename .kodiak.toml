@@ -1,0 +1,13 @@
+# .kodiak.toml
+version = 1
+
+[merge]
+method = "squash"
+
+[approve]
+auto_approve_usernames = ["dependabot", "KATT"]
+
+[merge.automerge_dependencies]
+# only auto merge "minor" and "patch" version upgrades.
+versions = ["minor", "patch"]
+usernames = ["dependabot"]
