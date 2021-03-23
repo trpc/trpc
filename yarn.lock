@@ -11343,9 +11343,9 @@ stylis@3.5.4:
   integrity sha512-8/3pSmthWM7lsPBKv7NXkzn2Uc9W7NotcwGNpJaa3k7WMM1XDCA4MgT5k/8BIexd5ydZdboXtU90XH9Ec4Bv/Q==
 
 superjson@^1.5.2:
-  version "1.7.2"
-  resolved "https://registry.yarnpkg.com/superjson/-/superjson-1.7.2.tgz#81f531829fee8bdab5593f57c145be25d2ed54c4"
-  integrity sha512-KwMBfX2c5Mq4EcvGivXH3JBYqYFoZQbA3aMhwXIdpkyVInEkxIGaoSDk+E8y/gMe5RH3mjBU3xRpvKsjZktphw==
+  version "1.7.3"
+  resolved "https://registry.yarnpkg.com/superjson/-/superjson-1.7.3.tgz#2544f7fab70f4251b02bb646c5c519b7131e9db9"
+  integrity sha512-9BmEeJubbs9dUxWxn1I7+VLgdFv895q7BlCGh948IdD/5/RpDjQ6M0tNJJn88Sp/wswJGGuMrG5ii+ZQhoKzwQ==
   dependencies:
     debug "^4.3.1"
 
