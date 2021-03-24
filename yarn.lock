@@ -5505,10 +5505,10 @@ expand-tilde@^1.2.2:
   dependencies:
     os-homedir "^1.0.1"
 
-expect-playwright@^0.3.2:
-  version "0.3.2"
-  resolved "https://registry.npmjs.org/expect-playwright/-/expect-playwright-0.3.2.tgz#2b2ebbdb9c57eefcbeed87bbe3af569f85b502e9"
-  integrity sha512-UnHrnrrYL1GHaX/rHkC+X4RwaTzxwgvZ39Wv/q9AMCk/8646vsW58heQQYEaev1yFtWynW5fQFn8IaXGrG8C6w==
+expect-playwright@^0.3.3:
+  version "0.3.3"
+  resolved "https://registry.yarnpkg.com/expect-playwright/-/expect-playwright-0.3.3.tgz#575438cb221fb46ade1404b10e8e643974b731e7"
+  integrity sha512-uoeyx2D5LawJdziMdweOp6cnZzFOOPT9VvPG6gOh6YC7N9pU0k2KpVlRiz/Vc/fFBiGUNNeJq2Aq+9GJ65Nfrw==
 
 expect-type@^0.11.0:
   version "0.11.0"
@@ -7359,11 +7359,11 @@ jest-mock@^26.6.2:
     "@types/node" "*"
 
 jest-playwright-preset@^1.4.5:
-  version "1.4.7"
-  resolved "https://registry.npmjs.org/jest-playwright-preset/-/jest-playwright-preset-1.4.7.tgz#ca654591904d7606a284909b85594e4bd3cf7279"
-  integrity sha512-UKhhoCB6Eimzg9+agDmrdGkFthKt8/VD6xAWxCxX1Pu+aA3EiMp4QbduBAFfampSQflBrk2fTo566A3gZUqVnw==
+  version "1.5.1"
+  resolved "https://registry.yarnpkg.com/jest-playwright-preset/-/jest-playwright-preset-1.5.1.tgz#d74a338ea99b8dd6cafce59471a27803c5b331d7"
+  integrity sha512-zsFAe61V72vSLkd1fCcf7YbHmbdAB82SLBdUuCUF43aODIojshQEDF88KdWL9P+4JQ+DvEABT+6sFX4sY0rR2w==
   dependencies:
-    expect-playwright "^0.3.2"
+    expect-playwright "^0.3.3"
     jest-circus "^26.6.3"
     jest-environment-node "^26.6.2"
     jest-process-manager "^0.2.9"
@@ -8541,9 +8541,9 @@ mute-stream@0.0.8, mute-stream@~0.0.4:
   integrity sha512-nnbWWOkoWyUsTjKrhgD0dcz22mdkSnpYqbEjIm2nhwhuxlSkpywJmBo8h0ZqJdkp73mb90SssHkN4rsRaBAfAA==
 
 myzod@^1.3.1:
-  version "1.5.3"
-  resolved "https://registry.yarnpkg.com/myzod/-/myzod-1.5.3.tgz#d3c4301afd0ec811f4e1b0a827506fe03ec041ee"
-  integrity sha512-0TpvMGUR4F6SDokkky5e7FNT0QUB5i7jSD4WD/3T/JCDbNiLTYno/sNFaydU1GyfWLbk877cUKremEK44hkLlg==
+  version "1.6.1"
+  resolved "https://registry.yarnpkg.com/myzod/-/myzod-1.6.1.tgz#9f63599caa3b03ab3d86266de65678d65dd17199"
+  integrity sha512-69Nz0/4L/54xsi89naa9B4QhratNXQOAN1eKH4H5jwhOGs5LxlyNxHvvyS6D59BQLZACoVqllhXhjsXdIJoFtA==
 
 nano-time@1.0.0:
   version "1.0.0"
