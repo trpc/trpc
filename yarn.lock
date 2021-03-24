@@ -8541,9 +8541,9 @@ mute-stream@0.0.8, mute-stream@~0.0.4:
   integrity sha512-nnbWWOkoWyUsTjKrhgD0dcz22mdkSnpYqbEjIm2nhwhuxlSkpywJmBo8h0ZqJdkp73mb90SssHkN4rsRaBAfAA==
 
 myzod@^1.3.1:
-  version "1.5.3"
-  resolved "https://registry.yarnpkg.com/myzod/-/myzod-1.5.3.tgz#d3c4301afd0ec811f4e1b0a827506fe03ec041ee"
-  integrity sha512-0TpvMGUR4F6SDokkky5e7FNT0QUB5i7jSD4WD/3T/JCDbNiLTYno/sNFaydU1GyfWLbk877cUKremEK44hkLlg==
+  version "1.6.1"
+  resolved "https://registry.yarnpkg.com/myzod/-/myzod-1.6.1.tgz#9f63599caa3b03ab3d86266de65678d65dd17199"
+  integrity sha512-69Nz0/4L/54xsi89naa9B4QhratNXQOAN1eKH4H5jwhOGs5LxlyNxHvvyS6D59BQLZACoVqllhXhjsXdIJoFtA==
 
 nano-time@1.0.0:
   version "1.0.0"
