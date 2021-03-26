@@ -317,3 +317,5 @@ export function createTRPCClient<TRouter extends AnyRouter>(
 ) {
   return new TRPCClient<TRouter>(opts);
 }
+
+export { createTRPCClient as createClient };
