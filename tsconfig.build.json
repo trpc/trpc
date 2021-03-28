@@ -1,8 +1,14 @@
 {
   "compilerOptions": {
     "module": "esnext",
-    "lib": ["es5", "es6", "dom", "dom.iterable"],
+    "lib": [
+      "es5",
+      "es6",
+      "dom",
+      "dom.iterable"
+    ],
     "importHelpers": true,
+    "downlevelIteration": true,
     "declaration": true,
     "sourceMap": true,
     "strict": true,

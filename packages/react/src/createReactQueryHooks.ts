@@ -26,6 +26,53 @@ import {
   DehydrateOptions,
 } from 'react-query/hydration';
 
+const useQueryOptionKeys = {
+  enabled: true,
+  staleTime: true,
+  refetchInterval: true,
+  refetchIntervalInBackground: true,
+  refetchOnWindowFocus: true,
+  refetchOnReconnect: true,
+  refetchOnMount: true,
+  retryOnMount: true,
+  notifyOnChangeProps: true,
+  notifyOnChangePropsExclusions: true,
+  onSuccess: true,
+  onError: true,
+  onSettled: true,
+  useErrorBoundary: true,
+  select: true,
+  suspense: true,
+  keepPreviousData: true,
+  placeholderData: true,
+  optimisticResults: true,
+  retry: true,
+  retryDelay: true,
+  cacheTime: true,
+  isDataEqual: true,
+  queryFn: true,
+  queryHash: true,
+  queryKey: true,
+  queryKeyHashFn: true,
+  initialData: true,
+  initialDataUpdatedAt: true,
+  behavior: true,
+  structuralSharing: true,
+  getPreviousPageParam: true,
+  getNextPageParam: true,
+  _defaulted: true,
+};
+
+// const useMutationOptionKeys = {
+//   mutationKey: true,
+//   onMutate: true,
+//   onSuccess: true,
+//   onError: true,
+//   onSettled: true,
+//   retry: true,
+//   retryDelay: true,
+//   useErrorBoundary: true,
+// };
 export type OutputWithCursor<TData, TCursor extends any = any> = {
   cursor: TCursor | null;
   data: TData;
@@ -61,6 +108,21 @@ export function createReactQueryHooks<TRouter extends AnyRouter>({
   function _useQuery<
     TPath extends keyof TQueries & string,
     TProcedure extends TQueries[TPath],
+    TOutput extends inferProcedureOutput<TProcedure>,
+    TOpts extends UseQueryOptions<
+      inferProcedureInput<TQueries[TPath]>,
+      TError,
+      TOutput
+    >
+  >(
+    path: TPath,
+    ...rest: inferProcedureInput<TProcedure> extends undefined
+      ? [TOpts?, never?]
+      : [...inferHandlerInput<TProcedure>, TOpts?]
+  ): UseQueryResult<TOutput, TError>;
+  function _useQuery<
+    TPath extends keyof TQueries & string,
+    TProcedure extends TQueries[TPath],
     TOutput extends inferProcedureOutput<TProcedure>
   >(
     pathAndArgs: [path: TPath, ...args: inferHandlerInput<TProcedure>],
@@ -69,10 +131,41 @@ export function createReactQueryHooks<TRouter extends AnyRouter>({
       TError,
       TOutput
     >,
-  ): UseQueryResult<TOutput, TError> {
+  ): UseQueryResult<TOutput, TError>;
+  function _useQuery(first: unknown, second?: unknown, third?: unknown) {
+    let pathAndArgs: any;
+
+    let opts: any;
+
+    if (Array.isArray(first)) {
+      pathAndArgs = first as any;
+      opts = second;
+    } else if (typeof second === 'undefined' && typeof third === 'undefined') {
+      pathAndArgs = [first];
+      opts = opts;
+    } else {
+      const secondIsOpts =
+        typeof second === 'object' &&
+        typeof third === 'undefined' &&
+        Object.keys(second as any).every(
+          (key: string) => !!(useQueryOptionKeys as any)[key],
+        );
+      if (secondIsOpts) {
+        pathAndArgs = [first];
+        opts = second;
+      } else {
+        pathAndArgs = [first, second];
+        opts = third;
+      }
+    }
+
     const cacheKey = getCacheKey(pathAndArgs, CACHE_KEY_QUERY);
 
-    return useQuery(cacheKey, () => client.query(...pathAndArgs) as any, opts);
+    return useQuery(
+      cacheKey,
+      () => (client.query as any)(...pathAndArgs),
+      opts,
+    );
   }
 
   function _useMutation<

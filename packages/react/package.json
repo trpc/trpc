@@ -30,7 +30,8 @@
   "dependencies": {
     "@babel/runtime": "^7.9.0",
     "@trpc/client": "^4.0.0",
-    "@trpc/server": "^4.0.0"
+    "@trpc/server": "^4.0.0",
+    "tslib": "^2.1.0"
   },
   "devDependencies": {
     "@types/express": "^4.17.11",

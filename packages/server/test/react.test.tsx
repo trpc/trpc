@@ -171,7 +171,7 @@ afterEach(() => {
 });
 
 describe('useQuery()', () => {
-  test('no input', async () => {
+  test('pathAndArgs: no input', async () => {
     const { hooks } = factory;
     function MyComponent() {
       const allPostsQuery = hooks.useQuery(['allPosts']);
@@ -193,10 +193,58 @@ describe('useQuery()', () => {
     });
   });
 
-  test('with input', async () => {
+  test('pathAndArgs: with input', async () => {
     const { hooks } = factory;
     function MyComponent() {
       const allPostsQuery = hooks.useQuery(['paginatedPosts', { limit: 1 }]);
+
+      return <pre>{JSON.stringify(allPostsQuery.data ?? 'n/a', null, 4)}</pre>;
+    }
+    function App() {
+      return (
+        <QueryClientProvider client={hooks.queryClient}>
+          <MyComponent />
+        </QueryClientProvider>
+      );
+    }
+
+    const utils = render(<App />);
+    await waitFor(() => {
+      expect(utils.container).toHaveTextContent('first post');
+    });
+    expect(utils.container).not.toHaveTextContent('second post');
+  });
+
+  test('path, opts: no input', async () => {
+    const { hooks } = factory;
+    function MyComponent() {
+      const allPostsQuery = hooks.useQuery('allPosts', { retry: false });
+      expectTypeOf(allPostsQuery.data!).toMatchTypeOf<Post[]>();
+
+      return <pre>{JSON.stringify(allPostsQuery.data ?? 'n/a', null, 4)}</pre>;
+    }
+    function App() {
+      return (
+        <QueryClientProvider client={hooks.queryClient}>
+          <MyComponent />
+        </QueryClientProvider>
+      );
+    }
+
+    const utils = render(<App />);
+    await waitFor(() => {
+      expect(utils.container).toHaveTextContent('first post');
+    });
+  });
+
+  test('path, args, opts: with input', async () => {
+    const { hooks } = factory;
+    function MyComponent() {
+      const allPostsQuery = hooks.useQuery(
+        'paginatedPosts',
+        { limit: 1 },
+        { retry: false },
+      );
 
       return <pre>{JSON.stringify(allPostsQuery.data ?? 'n/a', null, 4)}</pre>;
     }
