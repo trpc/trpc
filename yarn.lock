@@ -9733,9 +9733,9 @@ pretty-format@^26.0.0, pretty-format@^26.6.2:
     react-is "^17.0.1"
 
 prisma@^2.18.0:
-  version "2.20.0"
-  resolved "https://registry.yarnpkg.com/prisma/-/prisma-2.20.0.tgz#3b7562326f764b4785e92bc83741b91ff2264be7"
-  integrity sha512-z8zCFxOA4rVy49GHzxx886dDMTmM3oh6GPRvatujshTqJeD+znJS4sxekVfjmTp0zX1aO92wBd3J6yon5DE1jg==
+  version "2.20.1"
+  resolved "https://registry.yarnpkg.com/prisma/-/prisma-2.20.1.tgz#28c52135523e0853258cd4ca7e883e9e4b5a9d40"
+  integrity sha512-zyPvJSUfJrmciP2D/4aUrsyIefiH8AIJUeuq1a0X1df1AFw9QQ+ata/7VQdoP+RIQHnCb6Kln9kqfUw/fieljw==
   dependencies:
     "@prisma/engines" "2.20.0-26.60ba6551f29b17d7d6ce479e5733c70d9c00860e"
 
