@@ -663,3 +663,11 @@ test('formatError() react types test', async () => {
     );
   });
 });
+
+test('"caller" is of correct type', async () => {
+  const { appRouter, hooks } = factory;
+  const ssr = hooks.ssr(appRouter, {});
+  const data = await ssr.caller.query('allPosts');
+
+  expectTypeOf(data).toMatchTypeOf<Post[]>();
+});
