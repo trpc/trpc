@@ -1,6 +1,6 @@
 {
   "name": "@examples/standalone-server",
-  "version": "4.0.0",
+  "version": "4.0.1",
   "private": true,
   "scripts": {
     "dev:server": "nodemon -e ts -w . -x ts-node ./src/server.ts",
@@ -11,9 +11,9 @@
     "test-start": "start-server-and-test 'node dist/server' 2022 'node dist/client'"
   },
   "dependencies": {
-    "@trpc/client": "^4.0.0",
-    "@trpc/react": "^4.0.0",
-    "@trpc/server": "^4.0.0",
+    "@trpc/client": "^4.0.1",
+    "@trpc/react": "^4.0.1",
+    "@trpc/server": "^4.0.1",
     "@types/node-fetch": "^2.5.8",
     "abort-controller": "^3.0.0",
     "node-fetch": "^2.6.1",
