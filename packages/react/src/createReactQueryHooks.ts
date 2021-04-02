@@ -192,7 +192,9 @@ export function createReactQueryHooks<TRouter extends AnyRouter>({
    * @param ctx Context used in the calls
    */
   function ssr(router: TRouter, ctx: TContext) {
-    const caller = router.createCaller(ctx);
+    const caller = router.createCaller(ctx) as ReturnType<
+      TRouter['createCaller']
+    >;
 
     const prefetchQuery = async <
       TPath extends keyof TQueries & string,
