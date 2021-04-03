@@ -45,12 +45,22 @@ function getCacheKey<TTuple extends [string, ...unknown[]]>(
   }
   return cacheKey;
 }
+
+/**
+ * Takes a function that returns an instance which is stored as a ref exactly once
+ */
+export function useInstance<T>(obj: () => T): T {
+  const ref = useRef<T>();
+  if (!ref.current) {
+    ref.current = obj();
+  }
+  return ref.current;
+}
+
 export function createReactQueryHooks<TRouter extends AnyRouter>({
   client,
-  queryClient,
 }: {
   client: TRPCClient<TRouter>;
-  queryClient: QueryClient;
 }) {
   type TQueries = TRouter['_def']['queries'];
   type TMutations = TRouter['_def']['mutations'];
@@ -191,7 +201,11 @@ export function createReactQueryHooks<TRouter extends AnyRouter>({
    * @param router Your app's router
    * @param ctx Context used in the calls
    */
-  function ssr(router: TRouter, ctx: TContext) {
+  function ssr(
+    router: TRouter,
+    ctx: TContext,
+    queryClient = new QueryClient(),
+  ) {
     const caller = router.createCaller(ctx) as ReturnType<
       TRouter['createCaller']
     >;
@@ -226,11 +240,15 @@ export function createReactQueryHooks<TRouter extends AnyRouter>({
         return data;
       });
     };
+    function _dehydrate(opts?: DehydrateOptions): DehydratedState {
+      return client.transformer.serialize(dehydrate(queryClient, opts));
+    }
 
     return {
       caller,
       prefetchQuery,
       prefetchInfiniteQuery,
+      dehydrate: _dehydrate,
     };
   }
 
@@ -240,6 +258,7 @@ export function createReactQueryHooks<TRouter extends AnyRouter>({
     TOutput extends inferProcedureOutput<TProcedure>,
     TInput extends inferProcedureInput<TProcedure>
   >(
+    queryClient: QueryClient,
     pathAndArgs: [path: TPath, ...args: inferHandlerInput<TProcedure>],
     opts?: FetchQueryOptions<TInput, TError, TOutput>,
   ) {
@@ -250,10 +269,6 @@ export function createReactQueryHooks<TRouter extends AnyRouter>({
       () => client.query(...pathAndArgs) as any,
       opts as any,
     );
-  }
-
-  function _dehydrate(opts?: DehydrateOptions): DehydratedState {
-    return client.transformer.serialize(dehydrate(queryClient, opts));
   }
 
   function useDehydratedState(dehydratedState?: DehydratedState) {
@@ -291,7 +306,7 @@ export function createReactQueryHooks<TRouter extends AnyRouter>({
   function invalidateQuery<
     TPath extends keyof TQueries & string,
     TInput extends inferProcedureInput<TQueries[TPath]>
-  >(pathAndArgs: [TPath, TInput?]) {
+  >(queryClient: QueryClient, pathAndArgs: [TPath, TInput?]) {
     const cacheKey = getCacheKey(pathAndArgs);
     return queryClient.invalidateQueries(cacheKey);
   }
@@ -299,7 +314,7 @@ export function createReactQueryHooks<TRouter extends AnyRouter>({
   function cancelQuery<
     TPath extends keyof TQueries & string,
     TInput extends inferProcedureInput<TQueries[TPath]>
-  >(pathAndArgs: [TPath, TInput?]) {
+  >(queryClient: QueryClient, pathAndArgs: [TPath, TInput?]) {
     const cacheKey = getCacheKey(pathAndArgs);
     return queryClient.cancelQueries(cacheKey);
   }
@@ -308,17 +323,18 @@ export function createReactQueryHooks<TRouter extends AnyRouter>({
     TPath extends keyof TQueries & string,
     TInput extends inferProcedureInput<TQueries[TPath]>,
     TOutput extends inferProcedureOutput<TQueries[TPath]>
-  >(pathAndArgs: [TPath, TInput?], output: TOutput) {
+  >(queryClient: QueryClient, pathAndArgs: [TPath, TInput?], output: TOutput) {
     const cacheKey = getCacheKey(pathAndArgs);
-    queryClient.setQueryData([...cacheKey, CACHE_KEY_QUERY], output);
-    queryClient.setQueryData([...cacheKey, CACHE_KEY_INFINITE_QUERY], output);
+    queryClient.setQueryData(cacheKey.concat([CACHE_KEY_QUERY]), output);
+    queryClient.setQueryData(
+      cacheKey.concat([CACHE_KEY_INFINITE_QUERY]),
+      output,
+    );
   }
 
   return {
     client,
-    dehydrate: _dehydrate,
     prefetchQuery,
-    queryClient,
     useDehydratedState,
     useInfiniteQuery: _useInfiniteQuery,
     useLiveQuery,

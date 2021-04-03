@@ -8,10 +8,20 @@ import userEvent from '@testing-library/user-event';
 import { expectTypeOf } from 'expect-type';
 import hash from 'hash-sum';
 import React, { Fragment, useEffect, useState } from 'react';
-import { QueryClient, QueryClientProvider, setLogger } from 'react-query';
+import {
+  QueryClient,
+  QueryClientProvider,
+  setLogger,
+  useQueryClient,
+} from 'react-query';
+import { dehydrate } from 'react-query/hydration';
 import * as z from 'zod';
 import { ZodError } from 'zod';
-import { createReactQueryHooks, OutputWithCursor } from '../../react/src';
+import {
+  createReactQueryHooks,
+  OutputWithCursor,
+  useInstance,
+} from '../../react/src';
 import * as trpc from '../src';
 import { DefaultErrorShape } from '../src';
 import { routerToServerAndClient } from './_testHelpers';
@@ -147,7 +157,6 @@ function createAppRouter() {
   const queryClient = new QueryClient();
   const hooks = createReactQueryHooks({
     client,
-    queryClient,
   });
 
   return {
@@ -160,6 +169,7 @@ function createAppRouter() {
       postById,
       allPosts,
     },
+    queryClient,
   };
 }
 let factory: ReturnType<typeof createAppRouter>;
@@ -180,8 +190,9 @@ describe('useQuery()', () => {
       return <pre>{JSON.stringify(allPostsQuery.data ?? 'n/a', null, 4)}</pre>;
     }
     function App() {
+      const queryClient = useInstance(() => new QueryClient());
       return (
-        <QueryClientProvider client={hooks.queryClient}>
+        <QueryClientProvider client={queryClient}>
           <MyComponent />
         </QueryClientProvider>
       );
@@ -201,8 +212,9 @@ describe('useQuery()', () => {
       return <pre>{JSON.stringify(allPostsQuery.data ?? 'n/a', null, 4)}</pre>;
     }
     function App() {
+      const queryClient = useInstance(() => new QueryClient());
       return (
-        <QueryClientProvider client={hooks.queryClient}>
+        <QueryClientProvider client={queryClient}>
           <MyComponent />
         </QueryClientProvider>
       );
@@ -255,8 +267,9 @@ test('mutation on mount + subscribe for it', async () => {
     return <pre>{JSON.stringify(posts, null, 4)}</pre>;
   }
   function App() {
+    const queryClient = useInstance(() => new QueryClient());
     return (
-      <QueryClientProvider client={hooks.queryClient}>
+      <QueryClientProvider client={queryClient}>
         <MyComponent />
       </QueryClientProvider>
     );
@@ -279,8 +292,9 @@ test('useLiveQuery()', async () => {
     return <pre>{JSON.stringify(postsQuery.data ?? null, null, 4)}</pre>;
   }
   function App() {
+    const queryClient = useInstance(() => new QueryClient());
     return (
-      <QueryClientProvider client={hooks.queryClient}>
+      <QueryClientProvider client={queryClient}>
         <MyComponent />
       </QueryClientProvider>
     );
@@ -329,7 +343,7 @@ test('dehydrate', async () => {
 
   await ssr.prefetchQuery('allPosts');
 
-  const dehydrated = hooks.dehydrate().queries;
+  const dehydrated = ssr.dehydrate().queries;
   expect(dehydrated).toHaveLength(1);
 
   const [cache] = dehydrated;
@@ -350,19 +364,22 @@ test('prefetchQuery', async () => {
   const { hooks } = factory;
   function MyComponent() {
     const [state, setState] = useState<string>('nope');
+    const queryClient = useQueryClient();
+
     useEffect(() => {
       async function prefetch() {
-        await hooks.prefetchQuery(['postById', '1']);
-        setState(JSON.stringify(hooks.dehydrate()));
+        await hooks.prefetchQuery(queryClient, ['postById', '1']);
+        setState(JSON.stringify(dehydrate(queryClient)));
       }
       prefetch();
-    }, []);
+    }, [queryClient]);
 
     return <>{JSON.stringify(state)}</>;
   }
   function App() {
+    const queryClient = useInstance(() => new QueryClient());
     return (
-      <QueryClientProvider client={hooks.queryClient}>
+      <QueryClientProvider client={queryClient}>
         <MyComponent />
       </QueryClientProvider>
     );
@@ -426,8 +443,9 @@ test('useInfiniteQuery()', async () => {
     );
   }
   function App() {
+    const queryClient = useInstance(() => new QueryClient());
     return (
-      <QueryClientProvider client={hooks.queryClient}>
+      <QueryClientProvider client={queryClient}>
         <MyComponent />
       </QueryClientProvider>
     );
@@ -479,7 +497,7 @@ test('prefetchInfiniteQuery()', async () => {
 
   await ssr.prefetchInfiniteQuery('paginatedPosts', { limit: 1 });
 
-  const data = JSON.stringify(hooks.dehydrate());
+  const data = JSON.stringify(ssr.dehydrate());
   expect(data).toContain('first post');
   expect(data).not.toContain('second post');
 });
@@ -494,6 +512,7 @@ describe('invalidate queries', () => {
       const postByIdQuery = hooks.useQuery(['postById', '1'], {
         staleTime: Infinity,
       });
+      const queryClient = useQueryClient();
 
       return (
         <>
@@ -508,16 +527,17 @@ describe('invalidate queries', () => {
           <button
             data-testid="refetch"
             onClick={() => {
-              hooks.queryClient.invalidateQueries(['allPosts']);
-              hooks.queryClient.invalidateQueries(['postById']);
+              queryClient.invalidateQueries(['allPosts']);
+              queryClient.invalidateQueries(['postById']);
             }}
           />
         </>
       );
     }
     function App() {
+      const queryClient = useInstance(() => new QueryClient());
       return (
-        <QueryClientProvider client={hooks.queryClient}>
+        <QueryClientProvider client={queryClient}>
           <MyComponent />
         </QueryClientProvider>
       );
@@ -560,7 +580,7 @@ describe('invalidate queries', () => {
       const postByIdQuery = hooks.useQuery(['postById', '1'], {
         staleTime: Infinity,
       });
-
+      const queryClient = useQueryClient();
       return (
         <>
           <pre>
@@ -574,16 +594,17 @@ describe('invalidate queries', () => {
           <button
             data-testid="refetch"
             onClick={() => {
-              hooks.invalidateQuery(['allPosts']);
-              hooks.invalidateQuery(['postById', '1']);
+              hooks.invalidateQuery(queryClient, ['allPosts']);
+              hooks.invalidateQuery(queryClient, ['postById', '1']);
             }}
           />
         </>
       );
     }
     function App() {
+      const queryClient = useInstance(() => new QueryClient());
       return (
-        <QueryClientProvider client={hooks.queryClient}>
+        <QueryClientProvider client={queryClient}>
           <MyComponent />
         </QueryClientProvider>
       );
@@ -648,8 +669,9 @@ test('formatError() react types test', async () => {
     return <></>;
   }
   function App() {
+    const queryClient = useInstance(() => new QueryClient());
     return (
-      <QueryClientProvider client={hooks.queryClient}>
+      <QueryClientProvider client={queryClient}>
         <MyComponent />
       </QueryClientProvider>
     );
