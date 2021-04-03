@@ -13,11 +13,11 @@ export default function Home() {
 
   console.log(helloNoArgs.data); // <-- hover over this object to see it's type inferred
 
-  const queryClient = useQueryClient();
+  const utils = trpc.useQueryUtils();
   const postsQuery = trpc.useQuery(['posts.list']);
   const addPost = trpc.useMutation('posts.add', {
     onSuccess() {
-      trpc.invalidateQuery(queryClient, ['posts.list']);
+      utils.invalidateQuery(['posts.list']);
     },
   });
   const fieldErrors = addPost.error?.shape?.zodError?.fieldErrors ?? {};

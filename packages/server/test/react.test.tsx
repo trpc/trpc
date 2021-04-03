@@ -364,15 +364,16 @@ test('prefetchQuery', async () => {
   const { hooks } = factory;
   function MyComponent() {
     const [state, setState] = useState<string>('nope');
+    const utils = hooks.useQueryUtils();
     const queryClient = useQueryClient();
 
     useEffect(() => {
       async function prefetch() {
-        await hooks.prefetchQuery(queryClient, ['postById', '1']);
+        await utils.prefetchQuery(['postById', '1']);
         setState(JSON.stringify(dehydrate(queryClient)));
       }
       prefetch();
-    }, [queryClient]);
+    }, [queryClient, utils]);
 
     return <>{JSON.stringify(state)}</>;
   }
@@ -580,7 +581,7 @@ describe('invalidate queries', () => {
       const postByIdQuery = hooks.useQuery(['postById', '1'], {
         staleTime: Infinity,
       });
-      const queryClient = useQueryClient();
+      const utils = hooks.useQueryUtils();
       return (
         <>
           <pre>
@@ -594,8 +595,8 @@ describe('invalidate queries', () => {
           <button
             data-testid="refetch"
             onClick={() => {
-              hooks.invalidateQuery(queryClient, ['allPosts']);
-              hooks.invalidateQuery(queryClient, ['postById', '1']);
+              utils.invalidateQuery(['allPosts']);
+              utils.invalidateQuery(['postById', '1']);
             }}
           />
         </>

@@ -17,6 +17,7 @@ import {
   useMutation,
   UseMutationOptions,
   useQuery,
+  useQueryClient,
   UseQueryOptions,
   UseQueryResult,
 } from 'react-query';
@@ -252,25 +253,6 @@ export function createReactQueryHooks<TRouter extends AnyRouter>({
     };
   }
 
-  function prefetchQuery<
-    TPath extends keyof TQueries & string,
-    TProcedure extends TQueries[TPath],
-    TOutput extends inferProcedureOutput<TProcedure>,
-    TInput extends inferProcedureInput<TProcedure>
-  >(
-    queryClient: QueryClient,
-    pathAndArgs: [path: TPath, ...args: inferHandlerInput<TProcedure>],
-    opts?: FetchQueryOptions<TInput, TError, TOutput>,
-  ) {
-    const cacheKey = getCacheKey(pathAndArgs, CACHE_KEY_QUERY);
-
-    return queryClient.prefetchQuery(
-      cacheKey,
-      () => client.query(...pathAndArgs) as any,
-      opts as any,
-    );
-  }
-
   function useDehydratedState(dehydratedState?: DehydratedState) {
     const transformed: DehydratedState | undefined = useMemo(() => {
       if (!dehydratedState) {
@@ -303,38 +285,68 @@ export function createReactQueryHooks<TRouter extends AnyRouter>({
       opts,
     );
   }
-  function invalidateQuery<
-    TPath extends keyof TQueries & string,
-    TInput extends inferProcedureInput<TQueries[TPath]>
-  >(queryClient: QueryClient, pathAndArgs: [TPath, TInput?]) {
-    const cacheKey = getCacheKey(pathAndArgs);
-    return queryClient.invalidateQueries(cacheKey);
-  }
 
-  function cancelQuery<
-    TPath extends keyof TQueries & string,
-    TInput extends inferProcedureInput<TQueries[TPath]>
-  >(queryClient: QueryClient, pathAndArgs: [TPath, TInput?]) {
-    const cacheKey = getCacheKey(pathAndArgs);
-    return queryClient.cancelQueries(cacheKey);
-  }
+  function useQueryUtils() {
+    const queryClient = useQueryClient();
 
-  function setQueryData<
-    TPath extends keyof TQueries & string,
-    TInput extends inferProcedureInput<TQueries[TPath]>,
-    TOutput extends inferProcedureOutput<TQueries[TPath]>
-  >(queryClient: QueryClient, pathAndArgs: [TPath, TInput?], output: TOutput) {
-    const cacheKey = getCacheKey(pathAndArgs);
-    queryClient.setQueryData(cacheKey.concat([CACHE_KEY_QUERY]), output);
-    queryClient.setQueryData(
-      cacheKey.concat([CACHE_KEY_INFINITE_QUERY]),
-      output,
-    );
+    return useMemo(() => {
+      function prefetchQuery<
+        TPath extends keyof TQueries & string,
+        TProcedure extends TQueries[TPath],
+        TOutput extends inferProcedureOutput<TProcedure>,
+        TInput extends inferProcedureInput<TProcedure>
+      >(
+        pathAndArgs: [path: TPath, ...args: inferHandlerInput<TProcedure>],
+        opts?: FetchQueryOptions<TInput, TError, TOutput>,
+      ) {
+        const cacheKey = getCacheKey(pathAndArgs, CACHE_KEY_QUERY);
+
+        return queryClient.prefetchQuery(
+          cacheKey,
+          () => client.query(...pathAndArgs) as any,
+          opts as any,
+        );
+      }
+      function invalidateQuery<
+        TPath extends keyof TQueries & string,
+        TInput extends inferProcedureInput<TQueries[TPath]>
+      >(pathAndArgs: [TPath, TInput?]) {
+        const cacheKey = getCacheKey(pathAndArgs);
+        return queryClient.invalidateQueries(cacheKey);
+      }
+
+      function cancelQuery<
+        TPath extends keyof TQueries & string,
+        TInput extends inferProcedureInput<TQueries[TPath]>
+      >(pathAndArgs: [TPath, TInput?]) {
+        const cacheKey = getCacheKey(pathAndArgs);
+        return queryClient.cancelQueries(cacheKey);
+      }
+
+      function setQueryData<
+        TPath extends keyof TQueries & string,
+        TInput extends inferProcedureInput<TQueries[TPath]>,
+        TOutput extends inferProcedureOutput<TQueries[TPath]>
+      >(pathAndArgs: [TPath, TInput?], output: TOutput) {
+        const cacheKey = getCacheKey(pathAndArgs);
+        queryClient.setQueryData(cacheKey.concat([CACHE_KEY_QUERY]), output);
+        queryClient.setQueryData(
+          cacheKey.concat([CACHE_KEY_INFINITE_QUERY]),
+          output,
+        );
+      }
+      return {
+        //
+        cancelQuery,
+        invalidateQuery,
+        setQueryData,
+        prefetchQuery,
+      };
+    }, [queryClient]);
   }
 
   return {
     client,
-    prefetchQuery,
     useDehydratedState,
     useInfiniteQuery: _useInfiniteQuery,
     useLiveQuery,
@@ -342,8 +354,6 @@ export function createReactQueryHooks<TRouter extends AnyRouter>({
     useQuery: _useQuery,
     useSubscription,
     ssr,
-    invalidateQuery,
-    cancelQuery,
-    setQueryData,
+    useQueryUtils,
   };
 }
