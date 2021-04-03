@@ -336,13 +336,13 @@ export function createReactQueryHooks<TRouter extends AnyRouter>({
 
   return {
     client,
+    ssr,
     useDehydratedState,
     useInfiniteQuery: _useInfiniteQuery,
     useLiveQuery,
     useMutation: _useMutation,
     useQuery: _useQuery,
-    useSubscription,
-    ssr,
     useQueryUtils,
+    useSubscription,
   };
 }
