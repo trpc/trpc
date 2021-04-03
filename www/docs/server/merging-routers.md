@@ -6,9 +6,18 @@ slug: /merging-routers
 ---
 
 
-Writing all API-code in your code in the same file is a bad idea. It's easy to merge routers with other routers. 
+Writing all API-code in your code in the same file is not a great idea. It's easy to merge routers with other routers. 
 
 Thanks to TypeScript 4.1 template literal types we can also prefix the procedures without breaking type safety.
+
+## Working example
+
+- Code at [/examples/next-hello-world/pages/api/trpc](https://github.com/trpc/trpc/blob/main/examples/next-hello-world/pages/api/trpc)
+- All code for posts living in a separate router and namespaced with `posts.`
+- Live at [hello-world.trpc.io](https://hello-world.trpc.io)
+
+
+## Example code
 
 
 ```ts

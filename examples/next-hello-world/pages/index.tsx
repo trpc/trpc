@@ -18,6 +18,7 @@ export default function Home() {
       trpc.queryClient.invalidateQueries('posts.list');
     },
   });
+  const fieldErrors = addPost.error?.shape?.zodError?.fieldErrors ?? {};
   return (
     <>
       <Head>
@@ -51,23 +52,24 @@ export default function Home() {
           } catch {}
         }}
       >
-        <label>
-          Title:
-          <br />
-          <input name="title" type="text" disabled={addPost.isLoading} />
-        </label>
+        <label htmlFor="title">Title:</label>
+        <br />
+        <input
+          id="title"
+          name="title"
+          type="text"
+          disabled={addPost.isLoading}
+        />
+        {fieldErrors.title && <div className="error">{fieldErrors.title}</div>}
 
         <br />
-        <label>
-          Text:
-          <br />
-          <textarea name="text" disabled={addPost.isLoading} />
-        </label>
+        <label htmlFor="text">Text:</label>
+        <br />
+        <textarea id="text" name="text" disabled={addPost.isLoading} />
+        {fieldErrors.text && <div className="error">{fieldErrors.text}</div>}
         <br />
         <input type="submit" disabled={addPost.isLoading} />
-        {addPost.error && (
-          <p style={{ color: 'red' }}>{addPost.error.message}</p>
-        )}
+        {addPost.error && <p className="error">{addPost.error.message}</p>}
       </form>
       <hr />
       <h2>Hello World queries</h2>
@@ -86,6 +88,7 @@ export default function Home() {
         <a
           href="https://vercel.com/?utm_source=trpc&utm_campaign=oss"
           target="_blank"
+          rel="noreferrer"
         >
           <img
             src="/powered-by-vercel.svg"
@@ -94,6 +97,11 @@ export default function Home() {
           />
         </a>
       </div>
+      <style jsx>{`
+        .error {
+          color: red;
+        }
+      `}</style>
     </>
   );
 }

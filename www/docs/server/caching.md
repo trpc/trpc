@@ -19,7 +19,7 @@ The below examples uses [Vercel's edge caching](https://vercel.com/docs/serverle
 ```ts
 import * as trpc from '@trpc/server';
 import { inferAsyncReturnType } from '@trpc/server';
-import * as trpcNext from '@trpc/server/dist/adapters/next';
+import * as trpcNext from '@trpc/server/adapters/next';
 
 // The app's context - is generated for each incoming request
 export async function createContext(opts?: trpcNext.CreateNextContextOptions) {

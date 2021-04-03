@@ -1,0 +1,4 @@
+{
+  "main": "dist/trpc-server-adapters-express.cjs.js",
+  "module": "dist/trpc-server-adapters-express.esm.js"
+}

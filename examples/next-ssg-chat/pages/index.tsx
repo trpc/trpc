@@ -126,6 +126,7 @@ export default function Home() {
         <a
           href="https://vercel.com/?utm_source=trpc&amp;utm_campaign=oss"
           target="_blank"
+          rel="noreferrer"
         >
           <img
             src="/powered-by-vercel.svg"
