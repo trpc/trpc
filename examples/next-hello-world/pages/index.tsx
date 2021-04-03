@@ -113,7 +113,7 @@ export async function getStaticProps() {
 
   return {
     props: {
-      dehydratedState: trpc.dehydrate(),
+      dehydratedState: ssr.dehydrate(),
     },
     revalidate: 1,
   };

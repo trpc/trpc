@@ -343,7 +343,7 @@ export const getStaticProps = async (
 
   return {
     props: {
-      dehydratedState: trpc.dehydrate(),
+      dehydratedState: ssr.dehydrate(),
       filter: context.params?.filter ?? 'all',
     },
     revalidate: 1,
