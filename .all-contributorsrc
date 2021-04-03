@@ -45,6 +45,15 @@
         "ideas",
         "review"
       ]
+    },
+    {
+      "login": "Sendouc",
+      "name": "Kalle",
+      "avatar_url": "https://avatars.githubusercontent.com/u/38327916?v=4",
+      "profile": "https://sendou.cc/",
+      "contributions": [
+        "bug"
+      ]
     }
   ],
   "contributorsPerLine": 7,
