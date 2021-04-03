@@ -7,6 +7,7 @@ import {
 import Head from 'next/head';
 import Link from 'next/link';
 import { RefObject, useEffect, useRef, useState } from 'react';
+import { useQueryClient } from 'react-query';
 import { ReactQueryDevtools } from 'react-query/devtools';
 import 'todomvc-app-css/index.css';
 import 'todomvc-common/base.css';
@@ -54,6 +55,7 @@ function ListItem({ task, allTasks }: { task: Task; allTasks: Task[] }) {
   const wrapperRef = useRef(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
+  const queryClient = useQueryClient();
   const [text, setText] = useState(task.text);
   const [completed, setCompleted] = useState(task.completed);
   useEffect(() => {
@@ -65,8 +67,9 @@ function ListItem({ task, allTasks }: { task: Task; allTasks: Task[] }) {
 
   const editTask = trpc.useMutation('todos.edit', {
     async onMutate({ id, data }) {
-      await trpc.cancelQuery(['todos.all']);
+      await trpc.cancelQuery(queryClient, ['todos.all']);
       trpc.setQueryData(
+        queryClient,
         ['todos.all'],
         allTasks.map((t) =>
           t.id === id
@@ -79,19 +82,20 @@ function ListItem({ task, allTasks }: { task: Task; allTasks: Task[] }) {
       );
     },
     onSettled: () => {
-      trpc.invalidateQuery(['todos.all']);
+      trpc.invalidateQuery(queryClient, ['todos.all']);
     },
   });
   const deleteTask = trpc.useMutation('todos.delete', {
     async onMutate() {
-      await trpc.cancelQuery(['todos.all']);
+      await trpc.cancelQuery(queryClient, ['todos.all']);
       trpc.setQueryData(
+        queryClient,
         ['todos.all'],
         allTasks.filter((t) => t.id != task.id),
       );
     },
     onSettled: () => {
-      trpc.invalidateQuery(['todos.all']);
+      trpc.invalidateQuery(queryClient, ['todos.all']);
     },
   });
 
@@ -170,11 +174,13 @@ export default function TodosPage({
   const allTasks = trpc.useQuery(['todos.all'], {
     staleTime: 3000,
   });
+  const queryClient = useQueryClient();
   const addTask = trpc.useMutation('todos.add', {
     async onMutate({ text }) {
-      await trpc.cancelQuery(['todos.all']);
+      await trpc.cancelQuery(queryClient, ['todos.all']);
       const tasks = allTasks.data ?? [];
       trpc.setQueryData(
+        queryClient,
         ['todos.all'],
         [
           ...tasks,
@@ -188,21 +194,22 @@ export default function TodosPage({
       );
     },
     onSettled: () => {
-      trpc.invalidateQuery(['todos.all']);
+      trpc.invalidateQuery(queryClient, ['todos.all']);
     },
   });
 
   const clearCompleted = trpc.useMutation('todos.clearCompleted', {
     async onMutate() {
-      await trpc.cancelQuery(['todos.all']);
+      await trpc.cancelQuery(queryClient, ['todos.all']);
       const tasks = allTasks.data ?? [];
       trpc.setQueryData(
+        queryClient,
         ['todos.all'],
         tasks.filter((t) => !t.completed),
       );
     },
     onSettled: () => {
-      trpc.invalidateQuery(['todos.all']);
+      trpc.invalidateQuery(queryClient, ['todos.all']);
     },
   });
   return (

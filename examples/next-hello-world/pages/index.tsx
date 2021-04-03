@@ -1,4 +1,5 @@
 import Head from 'next/head';
+import { useQueryClient } from 'react-query';
 import { trpc } from '../utils/trpc';
 import { appRouter } from './api/trpc/[trpc]';
 
@@ -12,10 +13,11 @@ export default function Home() {
 
   console.log(helloNoArgs.data); // <-- hover over this object to see it's type inferred
 
+  const queryClient = useQueryClient();
   const postsQuery = trpc.useQuery(['posts.list']);
   const addPost = trpc.useMutation('posts.add', {
     onSuccess() {
-      trpc.queryClient.invalidateQueries('posts.list');
+      trpc.invalidateQuery(queryClient, ['posts.list']);
     },
   });
   const fieldErrors = addPost.error?.shape?.zodError?.fieldErrors ?? {};
