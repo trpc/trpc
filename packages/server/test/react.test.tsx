@@ -17,11 +17,7 @@ import {
 import { dehydrate } from 'react-query/hydration';
 import * as z from 'zod';
 import { ZodError } from 'zod';
-import {
-  createReactQueryHooks,
-  OutputWithCursor,
-  useInstance,
-} from '../../react/src';
+import { createReactQueryHooks, OutputWithCursor } from '../../react/src';
 import * as trpc from '../src';
 import { DefaultErrorShape } from '../src';
 import { routerToServerAndClient } from './_testHelpers';
@@ -190,7 +186,7 @@ describe('useQuery()', () => {
       return <pre>{JSON.stringify(allPostsQuery.data ?? 'n/a', null, 4)}</pre>;
     }
     function App() {
-      const queryClient = useInstance(() => new QueryClient());
+      const [queryClient] = useState(() => new QueryClient());
       return (
         <QueryClientProvider client={queryClient}>
           <MyComponent />
@@ -212,7 +208,7 @@ describe('useQuery()', () => {
       return <pre>{JSON.stringify(allPostsQuery.data ?? 'n/a', null, 4)}</pre>;
     }
     function App() {
-      const queryClient = useInstance(() => new QueryClient());
+      const [queryClient] = useState(() => new QueryClient());
       return (
         <QueryClientProvider client={queryClient}>
           <MyComponent />
@@ -267,7 +263,7 @@ test('mutation on mount + subscribe for it', async () => {
     return <pre>{JSON.stringify(posts, null, 4)}</pre>;
   }
   function App() {
-    const queryClient = useInstance(() => new QueryClient());
+    const [queryClient] = useState(() => new QueryClient());
     return (
       <QueryClientProvider client={queryClient}>
         <MyComponent />
@@ -292,7 +288,7 @@ test('useLiveQuery()', async () => {
     return <pre>{JSON.stringify(postsQuery.data ?? null, null, 4)}</pre>;
   }
   function App() {
-    const queryClient = useInstance(() => new QueryClient());
+    const [queryClient] = useState(() => new QueryClient());
     return (
       <QueryClientProvider client={queryClient}>
         <MyComponent />
@@ -378,7 +374,7 @@ test('prefetchQuery', async () => {
     return <>{JSON.stringify(state)}</>;
   }
   function App() {
-    const queryClient = useInstance(() => new QueryClient());
+    const [queryClient] = useState(() => new QueryClient());
     return (
       <QueryClientProvider client={queryClient}>
         <MyComponent />
@@ -444,7 +440,7 @@ test('useInfiniteQuery()', async () => {
     );
   }
   function App() {
-    const queryClient = useInstance(() => new QueryClient());
+    const [queryClient] = useState(() => new QueryClient());
     return (
       <QueryClientProvider client={queryClient}>
         <MyComponent />
@@ -536,7 +532,7 @@ describe('invalidate queries', () => {
       );
     }
     function App() {
-      const queryClient = useInstance(() => new QueryClient());
+      const [queryClient] = useState(() => new QueryClient());
       return (
         <QueryClientProvider client={queryClient}>
           <MyComponent />
@@ -603,7 +599,7 @@ describe('invalidate queries', () => {
       );
     }
     function App() {
-      const queryClient = useInstance(() => new QueryClient());
+      const [queryClient] = useState(() => new QueryClient());
       return (
         <QueryClientProvider client={queryClient}>
           <MyComponent />
@@ -670,7 +666,7 @@ test('formatError() react types test', async () => {
     return <></>;
   }
   function App() {
-    const queryClient = useInstance(() => new QueryClient());
+    const [queryClient] = useState(() => new QueryClient());
     return (
       <QueryClientProvider client={queryClient}>
         <MyComponent />

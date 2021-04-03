@@ -47,17 +47,6 @@ function getCacheKey<TTuple extends [string, ...unknown[]]>(
   return cacheKey;
 }
 
-/**
- * Takes a function that returns an instance which is stored as a ref exactly once
- */
-export function useInstance<TObj>(obj: () => TObj): TObj {
-  const ref = useRef<TObj>();
-  if (!ref.current) {
-    ref.current = obj();
-  }
-  return ref.current;
-}
-
 export function createReactQueryHooks<TRouter extends AnyRouter>({
   client,
 }: {
