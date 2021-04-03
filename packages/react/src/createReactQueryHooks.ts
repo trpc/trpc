@@ -49,8 +49,8 @@ function getCacheKey<TTuple extends [string, ...unknown[]]>(
 /**
  * Takes a function that returns an instance which is stored as a ref exactly once
  */
-export function useInstance<T>(obj: () => T): T {
-  const ref = useRef<T>();
+export function useInstance<TObj>(obj: () => TObj): TObj {
+  const ref = useRef<TObj>();
   if (!ref.current) {
     ref.current = obj();
   }
