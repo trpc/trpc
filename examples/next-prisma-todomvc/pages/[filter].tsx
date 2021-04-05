@@ -7,6 +7,7 @@ import {
 import Head from 'next/head';
 import Link from 'next/link';
 import { RefObject, useEffect, useRef, useState } from 'react';
+import { useQueryClient } from 'react-query';
 import { ReactQueryDevtools } from 'react-query/devtools';
 import 'todomvc-app-css/index.css';
 import 'todomvc-common/base.css';
@@ -54,6 +55,7 @@ function ListItem({ task, allTasks }: { task: Task; allTasks: Task[] }) {
   const wrapperRef = useRef(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
+  const utils = trpc.useQueryUtils();
   const [text, setText] = useState(task.text);
   const [completed, setCompleted] = useState(task.completed);
   useEffect(() => {
@@ -65,8 +67,8 @@ function ListItem({ task, allTasks }: { task: Task; allTasks: Task[] }) {
 
   const editTask = trpc.useMutation('todos.edit', {
     async onMutate({ id, data }) {
-      await trpc.cancelQuery(['todos.all']);
-      trpc.setQueryData(
+      await utils.cancelQuery(['todos.all']);
+      utils.setQueryData(
         ['todos.all'],
         allTasks.map((t) =>
           t.id === id
@@ -79,19 +81,19 @@ function ListItem({ task, allTasks }: { task: Task; allTasks: Task[] }) {
       );
     },
     onSettled: () => {
-      trpc.invalidateQuery(['todos.all']);
+      utils.invalidateQuery(['todos.all']);
     },
   });
   const deleteTask = trpc.useMutation('todos.delete', {
     async onMutate() {
-      await trpc.cancelQuery(['todos.all']);
-      trpc.setQueryData(
+      await utils.cancelQuery(['todos.all']);
+      utils.setQueryData(
         ['todos.all'],
         allTasks.filter((t) => t.id != task.id),
       );
     },
     onSettled: () => {
-      trpc.invalidateQuery(['todos.all']);
+      utils.invalidateQuery(['todos.all']);
     },
   });
 
@@ -170,11 +172,12 @@ export default function TodosPage({
   const allTasks = trpc.useQuery(['todos.all'], {
     staleTime: 3000,
   });
+  const utils = trpc.useQueryUtils();
   const addTask = trpc.useMutation('todos.add', {
     async onMutate({ text }) {
-      await trpc.cancelQuery(['todos.all']);
+      await utils.cancelQuery(['todos.all']);
       const tasks = allTasks.data ?? [];
-      trpc.setQueryData(
+      utils.setQueryData(
         ['todos.all'],
         [
           ...tasks,
@@ -188,21 +191,21 @@ export default function TodosPage({
       );
     },
     onSettled: () => {
-      trpc.invalidateQuery(['todos.all']);
+      utils.invalidateQuery(['todos.all']);
     },
   });
 
   const clearCompleted = trpc.useMutation('todos.clearCompleted', {
     async onMutate() {
-      await trpc.cancelQuery(['todos.all']);
+      await utils.cancelQuery(['todos.all']);
       const tasks = allTasks.data ?? [];
-      trpc.setQueryData(
+      utils.setQueryData(
         ['todos.all'],
         tasks.filter((t) => !t.completed),
       );
     },
     onSettled: () => {
-      trpc.invalidateQuery(['todos.all']);
+      utils.invalidateQuery(['todos.all']);
     },
   });
   return (
@@ -343,7 +346,7 @@ export const getStaticProps = async (
 
   return {
     props: {
-      dehydratedState: trpc.dehydrate(),
+      dehydratedState: ssr.dehydrate(),
       filter: context.params?.filter ?? 'all',
     },
     revalidate: 1,
