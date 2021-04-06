@@ -1,6 +1,6 @@
 {
   "name": "@examples/todo-web",
-  "version": "5.0.0-alpha.1",
+  "version": "5.0.0",
   "private": true,
   "scripts": {
     "dx:next": "prisma generate && next dev",
@@ -18,9 +18,9 @@
   },
   "dependencies": {
     "@prisma/client": "^2.18.0",
-    "@trpc/client": "^5.0.0-alpha.1",
-    "@trpc/react": "^5.0.0-alpha.1",
-    "@trpc/server": "^5.0.0-alpha.1",
+    "@trpc/client": "^5.0.0",
+    "@trpc/react": "^5.0.0",
+    "@trpc/server": "^5.0.0",
     "clsx": "^1.1.1",
     "jest": "^26.6.3",
     "jest-playwright": "^0.0.1",
