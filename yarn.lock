@@ -1061,13 +1061,13 @@
     "@manypkg/get-packages" "^1.0.1"
     semver "^5.4.1"
 
-"@changesets/changelog-github@^0.3.0":
-  version "0.3.0"
-  resolved "https://registry.yarnpkg.com/@changesets/changelog-github/-/changelog-github-0.3.0.tgz#b9c00e1f859d8390dfdb4992f4a633d5772b42f8"
-  integrity sha512-b+/QeTtJnn+s/rhZtS3dDg4tgNiiKmQlfZU7onLfFkn7HhINVoBsVSjWJh0fsVRv+OfKhSErv0i15/3kvyhTpg==
+"@changesets/changelog-github@^0.4.0":
+  version "0.4.0"
+  resolved "https://registry.yarnpkg.com/@changesets/changelog-github/-/changelog-github-0.4.0.tgz#ec80b18b9a5645191b5323fbddce4e4a012302d4"
+  integrity sha512-4GphTAdHJfECuuQg4l0eFGYyUh26mfyXpAi2FImrQvaN+boqTM+9EAAJe2b8Y3OKRfoET+ihgo+LARhW2xJoiw==
   dependencies:
     "@changesets/get-github-info" "^0.5.0"
-    "@changesets/types" "^3.0.0"
+    "@changesets/types" "^4.0.0"
     dotenv "^8.1.0"
 
 "@changesets/cli@^2.13.1":
@@ -1219,11 +1219,6 @@
   version "0.4.0"
   resolved "https://registry.npmjs.org/@changesets/types/-/types-0.4.0.tgz#3413badb2c3904357a36268cb9f8c7e0afc3a804"
   integrity sha512-TclHHKDVYQ8rJGZgVeWiF7c91yWzTTWdPagltgutelGu/Psup5PQlUq6svx7S8suj+jXcaE34yEEsfIvzXXB2Q==
-
-"@changesets/types@^3.0.0":
-  version "3.3.0"
-  resolved "https://registry.npmjs.org/@changesets/types/-/types-3.3.0.tgz#04cd8184b2d2da760667bd89bf9b930938dbd96e"
-  integrity sha512-rJamRo+OD/MQekImfIk07JZwYSB18iU6fYL8xOg0gfAiTh1a1+OlR1fPIxm55I7RsWw812is2YcPPwXdIewrhA==
 
 "@changesets/types@^4.0.0":
   version "4.0.0"
