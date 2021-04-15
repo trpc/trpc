@@ -2479,9 +2479,9 @@
     source-map-support "^0.5.16"
 
 "@prisma/client@^2.18.0":
-  version "2.21.0"
-  resolved "https://registry.yarnpkg.com/@prisma/client/-/client-2.21.0.tgz#97cb64d7ac76c1cce7f65f7a207320733efbac3a"
-  integrity sha512-RMtX0sdDl5MDJ49WOvGMzqgPF5yN6DQMSpzr+jpCkL7kuHASGiVcBYpvkBlNNA5a186zKCHuaMdNb8h7hDS4/A==
+  version "2.21.1"
+  resolved "https://registry.yarnpkg.com/@prisma/client/-/client-2.21.1.tgz#790e09b7f0367a456cdb40cc5898d25494631106"
+  integrity sha512-37Sq4vBsZt21AvgMzo2kLvPs1LhqEWoelwGNK/tDNuDR+HbuxlDSX6lIiqSwd7s4/Lw5mx2Dtevpopq/RzaqzQ==
   dependencies:
     "@prisma/engines-version" "2.21.0-36.e421996c87d5f3c8f7eeadd502d4ad402c89464d"
 
@@ -2631,9 +2631,9 @@
     "@testing-library/dom" "^7.28.1"
 
 "@testing-library/user-event@^13.0.7":
-  version "13.1.2"
-  resolved "https://registry.yarnpkg.com/@testing-library/user-event/-/user-event-13.1.2.tgz#2dff143155da093f0dc2485cf4717780d12a6235"
-  integrity sha512-89S/QELVCXbcHmgAfPrk0U8kCu9qESqV8/QQaUe5B4+7qi3kJlfQYCiB7Pfi2XInBtO0qm7vDmJb+/Oa+TFdyQ==
+  version "13.1.3"
+  resolved "https://registry.yarnpkg.com/@testing-library/user-event/-/user-event-13.1.3.tgz#f88dbd2c248f52f45305dfaa1deddfa8420fedab"
+  integrity sha512-PDTAb7CDhWzxdEFh29vnSyNFx/gigFPsVli2lgxoX+cbX6Dy2kTetB1J3dLm5TKh4d5nUWFfLpaPMoZuLLZ1Dg==
   dependencies:
     "@babel/runtime" "^7.12.5"
 
@@ -2805,9 +2805,9 @@
     form-data "^3.0.0"
 
 "@types/node@*", "@types/node@^14.14.17":
-  version "14.14.37"
-  resolved "https://registry.yarnpkg.com/@types/node/-/node-14.14.37.tgz#a3dd8da4eb84a996c36e331df98d82abd76b516e"
-  integrity sha512-XYmBiy+ohOR4Lh5jE379fV2IU+6Jn4g5qASinhitfyO71b/sCo6MKsMLF5tc7Zf2CE8hViVQyYSobJNke8OvUw==
+  version "14.14.39"
+  resolved "https://registry.yarnpkg.com/@types/node/-/node-14.14.39.tgz#9ef394d4eb52953d2890e4839393c309aa25d2d1"
+  integrity sha512-Qipn7rfTxGEDqZiezH+wxqWYR8vcXq5LRpZrETD19Gs4o8LbklbmqotSUsMU+s5G3PJwMRDfNEYoxrcBwIxOuw==
 
 "@types/node@^12.7.1":
   version "12.20.4"
@@ -5177,9 +5177,9 @@ escodegen@^2.0.0:
     source-map "~0.6.1"
 
 eslint-plugin-prettier@^3.3.1:
-  version "3.3.1"
-  resolved "https://registry.npmjs.org/eslint-plugin-prettier/-/eslint-plugin-prettier-3.3.1.tgz#7079cfa2497078905011e6f82e8dd8453d1371b7"
-  integrity sha512-Rq3jkcFY8RYeQLgk2cCwuc0P7SEFwDravPhsJZOQ5N4YI4DSg50NyqJ/9gdZHzQlHf8MvafSesbNJCcP/FF6pQ==
+  version "3.4.0"
+  resolved "https://registry.yarnpkg.com/eslint-plugin-prettier/-/eslint-plugin-prettier-3.4.0.tgz#cdbad3bf1dbd2b177e9825737fe63b476a08f0c7"
+  integrity sha512-UDK6rJT6INSfcOo545jiaOwB701uAIt2/dR7WnFQoGCVl1/EMqdANBmwUaqqQ45aXprsTGzSa39LI1PyuRBxxw==
   dependencies:
     prettier-linter-helpers "^1.0.0"
 
@@ -9731,9 +9731,9 @@ pretty-format@^26.0.0, pretty-format@^26.6.2:
     react-is "^17.0.1"
 
 prisma@^2.18.0:
-  version "2.21.0"
-  resolved "https://registry.yarnpkg.com/prisma/-/prisma-2.21.0.tgz#ffab3901fbd2335b77d9d939c5cf3031fe11a8f3"
-  integrity sha512-lmlfcWEyl24AO788DmZOerFl8npH0xW2aY1BmXLeTgHvovvk3/AJIYZNfaDEx9wuvjNLhZTExICMDAtJIFi3kQ==
+  version "2.21.1"
+  resolved "https://registry.yarnpkg.com/prisma/-/prisma-2.21.1.tgz#04314f87439fedc8ab9da0c55f3ad41321f36d80"
+  integrity sha512-uUnNaJTdbTNeZyJadu5rZnRlPi7o/u3ep9wqe4fZMNd70dyFl/q0RrAss6hqd6MTXPqknGNgxaoXIFNVRg37EA==
   dependencies:
     "@prisma/engines" "2.21.0-36.e421996c87d5f3c8f7eeadd502d4ad402c89464d"
 
@@ -10032,9 +10032,9 @@ react-is@^17.0.1:
   integrity sha512-NAnt2iGDXohE5LI7uBnLnqvLQMtzhkiAOLXTmv+qnF9Ky7xAPcX8Up/xWIhxvLVGJvuLiNc4xQLtuqDRzb4fSA==
 
 react-query@^3.6.0:
-  version "3.13.7"
-  resolved "https://registry.yarnpkg.com/react-query/-/react-query-3.13.7.tgz#34f5849abbf0c41d88044cca96502c98696b36c5"
-  integrity sha512-PIU51gQaIQX6WY82e8FbBzYr5pWajAbQsVKdkS3I+hnp0vTDsr3usIjWj90r0ZEGP43nZH3v2HPXXg1/bt8D4Q==
+  version "3.13.8"
+  resolved "https://registry.yarnpkg.com/react-query/-/react-query-3.13.8.tgz#fe82aa80064857bde93eb571534190554addb2d5"
+  integrity sha512-0zujQNExerbNgULg3W+7PKTyf/iGzTdBExUaRIxb/mLa+Ghc5QKl/5c8yqkwwvlAFUUX8GAQ/Qu3l46SKOWCOg==
   dependencies:
     "@babel/runtime" "^7.5.5"
     broadcast-channel "^3.4.1"
