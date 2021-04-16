@@ -1,7 +1,0 @@
-{
-  "sandboxes": [
-    "/examples/next-hello-world",
-    "/examples/playground",
-    "/examples/standalone-server"
-  ]
-}
