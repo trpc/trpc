@@ -275,65 +275,6 @@ export function createReactQueryHooks<TRouter extends AnyRouter>({
     );
   }
 
-  function useQueryUtils() {
-    const queryClient = useQueryClient();
-
-    return useMemo(() => {
-      function prefetchQuery<
-        TPath extends keyof TQueries & string,
-        TProcedure extends TQueries[TPath],
-        TOutput extends inferProcedureOutput<TProcedure>,
-        TInput extends inferProcedureInput<TProcedure>
-      >(
-        pathAndArgs: [path: TPath, ...args: inferHandlerInput<TProcedure>],
-        opts?: FetchQueryOptions<TInput, TError, TOutput>,
-      ) {
-        const cacheKey = getCacheKey(pathAndArgs, CACHE_KEY_QUERY);
-
-        return queryClient.prefetchQuery(
-          cacheKey,
-          () => client.query(...pathAndArgs) as any,
-          opts as any,
-        );
-      }
-      function invalidateQuery<
-        TPath extends keyof TQueries & string,
-        TInput extends inferProcedureInput<TQueries[TPath]>
-      >(pathAndArgs: [TPath, TInput?]) {
-        const cacheKey = getCacheKey(pathAndArgs);
-        return queryClient.invalidateQueries(cacheKey);
-      }
-
-      function cancelQuery<
-        TPath extends keyof TQueries & string,
-        TInput extends inferProcedureInput<TQueries[TPath]>
-      >(pathAndArgs: [TPath, TInput?]) {
-        const cacheKey = getCacheKey(pathAndArgs);
-        return queryClient.cancelQueries(cacheKey);
-      }
-
-      function setQueryData<
-        TPath extends keyof TQueries & string,
-        TInput extends inferProcedureInput<TQueries[TPath]>,
-        TOutput extends inferProcedureOutput<TQueries[TPath]>
-      >(pathAndArgs: [TPath, TInput?], output: TOutput) {
-        const cacheKey = getCacheKey(pathAndArgs);
-        queryClient.setQueryData(cacheKey.concat([CACHE_KEY_QUERY]), output);
-        queryClient.setQueryData(
-          cacheKey.concat([CACHE_KEY_INFINITE_QUERY]),
-          output,
-        );
-      }
-      return {
-        //
-        cancelQuery,
-        invalidateQuery,
-        setQueryData,
-        prefetchQuery,
-      };
-    }, [queryClient]);
-  }
-
   return {
     client,
     ssr,
@@ -342,7 +283,6 @@ export function createReactQueryHooks<TRouter extends AnyRouter>({
     useLiveQuery,
     useMutation: _useMutation,
     useQuery: _useQuery,
-    useQueryUtils,
     useSubscription,
   };
 }
