@@ -15,7 +15,7 @@ function MyApp({ Component, pageProps }: AppProps) {
     () =>
       pageProps.trpcClient ??
       new TRPCClient({
-        url: process.browser ? '/api/trpc' : 'http://localhost:3000/api/trpc',
+        url: '/api/trpc',
       }),
   );
   const hydratedState = useDehydratedState(
@@ -45,8 +45,13 @@ if (!process.browser) {
     ctx: GetServerSidePropsContext;
     AppTree: any;
   }) => {
+    const baseUrl = process.env.VERCEL_URL
+      ? `https://${process.env.VERCEL_URL}`
+      : 'http://localhost:3000';
+
+    console.log('VERCEL_URL', process.env.VERCEL_URL);
     const trpcClient = new TRPCClient({
-      url: 'http://localhost:3000/api/trpc',
+      url: `${baseUrl}/api/trpc`,
       getHeaders() {
         return ctx.req.headers;
       },
