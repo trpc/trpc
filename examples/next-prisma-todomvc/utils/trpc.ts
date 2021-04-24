@@ -17,7 +17,18 @@ export function createTRPCClient() {
 
   const url = `${baseUrl}/api/trpc`;
 
-  return trpc.createClient({ url, transformer: superjson });
+  return trpc.createClient({
+    url,
+    transformer: superjson,
+    getHeaders() {
+      if (!process.browser) {
+        return {
+          'x-ssr': '1',
+        };
+      }
+      return {};
+    },
+  });
 }
 /**
  * This is a helper method to infer the output of a query resolver

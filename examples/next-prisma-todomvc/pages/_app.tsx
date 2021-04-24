@@ -7,10 +7,13 @@ import { trpc, createTRPCClient } from '../utils/trpc';
 function MyApp({ Component, pageProps }: AppProps) {
   const [queryClient] = useState(() => new QueryClient());
   const [client] = useState(() => createTRPCClient());
+
   return (
     <trpc.Provider {...{ queryClient, client }}>
       <QueryClientProvider client={queryClient}>
-        <Hydrate state={trpc.useDehydratedState(pageProps.dehydratedState)}>
+        <Hydrate
+          state={trpc.useDehydratedState(client, pageProps.dehydratedState)}
+        >
           <Component {...pageProps} />
         </Hydrate>
       </QueryClientProvider>

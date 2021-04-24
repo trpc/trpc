@@ -343,6 +343,9 @@ export const getStaticProps = async (
     client: createTRPCClient(),
   });
 
+  await ssr.prefetchQuery('todos.all');
+
+  // console.log('state', ssr.dehydrate());
   return {
     props: {
       dehydratedState: ssr.dehydrate(),
