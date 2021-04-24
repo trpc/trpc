@@ -1,7 +1,6 @@
+import { TRPCClient } from '@trpc/react';
 import Head from 'next/head';
-import { useQueryClient } from 'react-query';
 import { trpc } from '../utils/trpc';
-import { appRouter } from './api/trpc/[trpc]';
 
 export default function Home() {
   // try typing here to see that you get autocompletion & type safety on the procedure's name
@@ -13,7 +12,7 @@ export default function Home() {
 
   console.log(helloNoArgs.data); // <-- hover over this object to see it's type inferred
 
-  const utils = trpc.useQueryUtils();
+  const utils = trpc.useContext();
   const postsQuery = trpc.useQuery(['posts.list']);
   const addPost = trpc.useMutation('posts.add', {
     onSuccess() {
@@ -109,7 +108,14 @@ export default function Home() {
 }
 
 export async function getStaticProps() {
-  const ssr = trpc.ssr(appRouter, { user: null });
+  const ssr = trpc.ssr({
+    client: new TRPCClient({
+      url: 'http://localhost:3000/api/trpc',
+      getHeaders() {
+        return {};
+      },
+    }),
+  });
 
   await ssr.prefetchQuery('posts.list');
 

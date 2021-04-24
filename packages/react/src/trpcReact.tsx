@@ -25,6 +25,7 @@ import {
   useMutation,
   UseMutationOptions,
   useQuery,
+  useQueryClient,
   UseQueryOptions,
   UseQueryResult,
 } from 'react-query';
@@ -337,23 +338,17 @@ export function trpcReact<TRouter extends AnyRouter>() {
    * @param ctx Context used in the calls
    */
   function ssr({
-    router,
-    ctx,
+    client,
     queryClient = new QueryClient(),
     transformer = {
       serialize: (obj) => obj,
       deserialize: (obj) => obj,
     },
   }: {
-    router: TRouter;
-    ctx: TContext;
+    client: TRPCClient<TRouter>;
     queryClient?: QueryClient;
     transformer?: DataTransformer;
   }) {
-    const caller = router.createCaller(ctx) as ReturnType<
-      TRouter['createCaller']
-    >;
-
     const prefetchQuery = async <
       TPath extends keyof TQueries & string,
       TProcedure extends TQueries[TPath]
@@ -364,7 +359,7 @@ export function trpcReact<TRouter extends AnyRouter>() {
       const cacheKey = [path, input ?? null, CACHE_KEY_QUERY];
 
       return queryClient.prefetchQuery(cacheKey, async () => {
-        const data = await caller.query(...pathAndArgs);
+        const data = await client.query(...pathAndArgs);
 
         return data;
       });
@@ -379,7 +374,7 @@ export function trpcReact<TRouter extends AnyRouter>() {
       const cacheKey = getCacheKey(pathAndArgs, CACHE_KEY_INFINITE_QUERY);
 
       return queryClient.prefetchInfiniteQuery(cacheKey, async () => {
-        const data = await caller.query(...pathAndArgs);
+        const data = await client.query(...pathAndArgs);
 
         return data;
       });
@@ -390,12 +385,73 @@ export function trpcReact<TRouter extends AnyRouter>() {
     }
 
     return {
-      caller,
+      client,
       prefetchQuery,
       prefetchInfiniteQuery,
       dehydrate: _dehydrate,
     };
   }
+
+  function useQueryUtils() {
+    const { client, queryClient } = useTRPC();
+
+    return useMemo(() => {
+      function prefetchQuery<
+        TPath extends keyof TQueries & string,
+        TProcedure extends TQueries[TPath],
+        TOutput extends inferProcedureOutput<TProcedure>,
+        TInput extends inferProcedureInput<TProcedure>
+      >(
+        pathAndArgs: [path: TPath, ...args: inferHandlerInput<TProcedure>],
+        opts?: FetchQueryOptions<TInput, TError, TOutput>,
+      ) {
+        const cacheKey = getCacheKey(pathAndArgs, CACHE_KEY_QUERY);
+
+        return queryClient.prefetchQuery(
+          cacheKey,
+          () => client.query(...pathAndArgs) as any,
+          opts as any,
+        );
+      }
+      function invalidateQuery<
+        TPath extends keyof TQueries & string,
+        TInput extends inferProcedureInput<TQueries[TPath]>
+      >(pathAndArgs: [TPath, TInput?]) {
+        const cacheKey = getCacheKey(pathAndArgs);
+        return queryClient.invalidateQueries(cacheKey);
+      }
+
+      function cancelQuery<
+        TPath extends keyof TQueries & string,
+        TInput extends inferProcedureInput<TQueries[TPath]>
+      >(pathAndArgs: [TPath, TInput?]) {
+        const cacheKey = getCacheKey(pathAndArgs);
+        return queryClient.cancelQueries(cacheKey);
+      }
+
+      function setQueryData<
+        TPath extends keyof TQueries & string,
+        TInput extends inferProcedureInput<TQueries[TPath]>,
+        TOutput extends inferProcedureOutput<TQueries[TPath]>
+      >(pathAndArgs: [TPath, TInput?], output: TOutput) {
+        const cacheKey = getCacheKey(pathAndArgs);
+        queryClient.setQueryData(cacheKey.concat([CACHE_KEY_QUERY]), output);
+        queryClient.setQueryData(
+          cacheKey.concat([CACHE_KEY_INFINITE_QUERY]),
+          output,
+        );
+      }
+      return {
+        //
+        cancelQuery,
+        invalidateQuery,
+        setQueryData,
+        prefetchQuery,
+        useQueryUtils,
+      };
+    }, [client, queryClient]);
+  }
+
   return {
     Provider: TRPCProvider,
     useContext: useTRPC,
@@ -405,6 +461,7 @@ export function trpcReact<TRouter extends AnyRouter>() {
     useLiveQuery,
     useDehydratedState,
     useInfiniteQuery: _useInfiniteQuery,
+    useQueryUtils,
     ssr,
   };
 }
