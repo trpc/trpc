@@ -1,20 +1,20 @@
 {
   "name": "@examples/playground",
-  "version": "4.0.1",
+  "version": "5.0.0",
   "private": true,
   "scripts": {
     "dev:server": "nodemon -e ts -w . -x ts-node ./src/server.ts",
     "dev:client": "nodemon -e ts -w . -x 'wait-on tcp:2021 && ts-node ./src/client.ts'",
     "dev": "run-p dev:* --print-label",
     "build": "tsc",
-    "start": "run-p start:* --print-label",
+    "start": "yarn dev",
     "test-dev": "start-server-and-test 'ts-node src/server.ts' 2021 'ts-node src/client.ts'",
     "test-start": "start-server-and-test 'node dist/server' 2021 'node dist/client'"
   },
   "dependencies": {
-    "@trpc/client": "^4.0.1",
-    "@trpc/react": "^4.0.1",
-    "@trpc/server": "^4.0.1",
+    "@trpc/client": "^5.0.0",
+    "@trpc/react": "^5.0.0",
+    "@trpc/server": "^5.0.0",
     "@types/node-fetch": "^2.5.8",
     "abort-controller": "^3.0.0",
     "body-parser": "^1.19.0",

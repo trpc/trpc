@@ -14,11 +14,19 @@ A type safe wrapper around calling `queryClient.invalidateQueries()`, all it doe
 
 ```tsx
 import { trpc } from '../utils/trpc'
+import {
+  useQueryClient,
+} from 'react-query';
+// ...
+
+
+// In component:
+const utils = trpc.useQueryUtils();
 
 const mutation = trpc.useMutation('editPost', {
   onSuccess(input) {
-    queryClient.invalidateQuery(['allPosts']);
-    queryClient.invalidateQuery(['postById', input.id]);
+    utils.invalidateQuery(['allPosts']);
+    utils.invalidateQuery(['postById', input.id]);
   },
 })
 ```
