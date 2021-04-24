@@ -7,13 +7,13 @@ import {
 import Head from 'next/head';
 import Link from 'next/link';
 import { RefObject, useEffect, useRef, useState } from 'react';
-import { useQueryClient } from 'react-query';
+import { QueryClient, useQueryClient } from 'react-query';
 import { ReactQueryDevtools } from 'react-query/devtools';
 import 'todomvc-app-css/index.css';
 import 'todomvc-common/base.css';
 import { inferQueryOutput, trpc } from '../utils/trpc';
 import { appRouter, createContext } from './api/trpc/[trpc]';
-
+import { TRPCClient } from '@trpc/react';
 type Task = inferQueryOutput<'todos.all'>[number];
 
 /**
@@ -172,7 +172,7 @@ export default function TodosPage({
   const allTasks = trpc.useQuery(['todos.all'], {
     staleTime: 3000,
   });
-  const utils = trpc.useQueryUtils();
+  const utils = trpc.useContext();
   const addTask = trpc.useMutation('todos.add', {
     async onMutate({ text }) {
       await utils.cancelQuery(['todos.all']);
@@ -339,10 +339,16 @@ export const getStaticPaths: GetStaticPaths = async () => {
 export const getStaticProps = async (
   context: GetStaticPropsContext<{ filter: string }>,
 ) => {
-  const ctx = await createContext();
-  const ssr = trpc.ssr(appRouter, ctx);
+  const baseUrl = process.env.VERCEL_URL
+    ? `https://${process.env.VERCEL_URL}`
+    : 'http://localhost:3000';
+  const url = `${baseUrl}/api/trpc`;
 
-  await ssr.prefetchQuery('todos.all');
+  const ssr = trpc.ssr({
+    client: trpc.createClient({
+      url,
+    }),
+  });
 
   return {
     props: {

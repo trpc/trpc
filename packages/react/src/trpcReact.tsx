@@ -1,4 +1,9 @@
-import type { TRPCClient, TRPCClientError } from '@trpc/client';
+import {
+  createTRPCClient,
+  CreateTRPCClientOptions,
+  TRPCClient,
+  TRPCClientError,
+} from '@trpc/client';
 import type {
   AnyRouter,
   inferHandlerInput,
@@ -33,21 +38,7 @@ import {
   DehydrateOptions,
 } from 'react-query/hydration';
 
-export function useDehydratedState(
-  client: TRPCClient<any>,
-  dehydratedState?: DehydratedState,
-) {
-  const transformed: DehydratedState | undefined = useMemo(() => {
-    if (!dehydratedState) {
-      return dehydratedState;
-    }
-
-    return client.transformer.deserialize(dehydratedState);
-  }, [client, dehydratedState]);
-  return transformed;
-}
-
-export type TRPCContextState<TRouter extends AnyRouter> = {
+type TRPCContextState<TRouter extends AnyRouter> = {
   queryClient: QueryClient;
   client: TRPCClient<TRouter>;
   ssr: boolean;
@@ -120,7 +111,67 @@ export function trpcReact<TRouter extends AnyRouter>() {
   type TSubscriptions = TRouter['_def']['subscriptions'];
   type TError = TRPCClientError<TRouter>;
 
-  const TRPCContext = createContext<TRPCContextState<TRouter>>({} as any);
+  type ProviderContext = TRPCContextState<TRouter>;
+  const TRPCContext = createContext<ProviderContext>({} as any);
+
+  function createClient(opts: CreateTRPCClientOptions<TRouter>) {
+    return createTRPCClient(opts);
+  }
+  /**
+   * Create functions you can use for server-side rendering / static generation
+   * @param router Your app's router
+   * @param ctx Context used in the calls
+   */
+  function ssr({
+    client,
+    queryClient = new QueryClient(),
+  }: {
+    client: TRPCClient<TRouter>;
+    queryClient?: QueryClient;
+  }) {
+    const prefetchQuery = async <
+      TPath extends keyof TQueries & string,
+      TProcedure extends TQueries[TPath]
+    >(
+      ...pathAndArgs: [path: TPath, ...args: inferHandlerInput<TProcedure>]
+    ) => {
+      const [path, input] = pathAndArgs;
+      const cacheKey = [path, input ?? null, CACHE_KEY_QUERY];
+
+      return queryClient.prefetchQuery(cacheKey, async () => {
+        const data = await client.query(...pathAndArgs);
+
+        return data;
+      });
+    };
+
+    const prefetchInfiniteQuery = async <
+      TPath extends keyof TQueries & string,
+      TProcedure extends TQueries[TPath]
+    >(
+      ...pathAndArgs: [path: TPath, ...args: inferHandlerInput<TProcedure>]
+    ) => {
+      const cacheKey = getCacheKey(pathAndArgs, CACHE_KEY_INFINITE_QUERY);
+
+      return queryClient.prefetchInfiniteQuery(cacheKey, async () => {
+        const data = await client.query(...pathAndArgs);
+
+        return data;
+      });
+    };
+
+    function _dehydrate(opts?: DehydrateOptions): DehydratedState {
+      return client.transformer.serialize(dehydrate(queryClient, opts));
+    }
+
+    return {
+      client,
+      prefetchQuery,
+      prefetchInfiniteQuery,
+      dehydrate: _dehydrate,
+    };
+  }
+
   function TRPCProvider({
     client,
     queryClient,
@@ -369,9 +420,23 @@ export function trpcReact<TRouter extends AnyRouter>() {
 
     return query;
   }
+  function useDehydratedState(
+    client: TRPCClient<TRouter>,
+    dehydratedState?: DehydratedState,
+  ) {
+    const transformed: DehydratedState | undefined = useMemo(() => {
+      if (!dehydratedState) {
+        return dehydratedState;
+      }
+
+      return client.transformer.deserialize(dehydratedState);
+    }, [client, dehydratedState]);
+    return transformed;
+  }
 
   return {
     Provider: TRPCProvider,
+    createClient,
     useContext: useTRPC,
     useQuery: _useQuery,
     useMutation: _useMutation,
@@ -379,5 +444,6 @@ export function trpcReact<TRouter extends AnyRouter>() {
     useLiveQuery,
     useDehydratedState,
     useInfiniteQuery: _useInfiniteQuery,
+    ssr,
   };
 }

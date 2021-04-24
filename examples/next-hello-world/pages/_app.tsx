@@ -1,12 +1,7 @@
 import { TRPCClient } from '@trpc/client';
-import { useDehydratedState, getDataFromTree } from '@trpc/react';
-import {
-  GetServerSidePropsContext,
-  NextComponentType,
-  NextPageContext,
-} from 'next';
+import { getDataFromTree } from '@trpc/react';
 import type { AppProps /*, AppContext */ } from 'next/app';
-import { AppContextType, AppTreeType } from 'next/dist/next-server/lib/utils';
+import { AppContextType } from 'next/dist/next-server/lib/utils';
 import React, { useState } from 'react';
 import { QueryClient, QueryClientProvider } from 'react-query';
 import { dehydrate, Hydrate } from 'react-query/hydration';
@@ -23,7 +18,7 @@ function MyApp({ Component, pageProps }: AppProps) {
         url: '/api/trpc',
       }),
   );
-  const hydratedState = useDehydratedState(
+  const hydratedState = trpc.useDehydratedState(
     trpcClient,
     pageProps.dehydratedState,
   );
