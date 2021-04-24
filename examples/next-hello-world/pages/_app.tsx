@@ -72,6 +72,8 @@ if (!process.browser) {
       dehydrate(queryClient),
     );
 
+    console.log('dehydratedState', JSON.stringify(dehydratedState, null, 4));
+
     return {
       pageProps: {
         dehydratedState,
