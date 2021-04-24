@@ -422,7 +422,7 @@ export function trpcReact<TRouter extends AnyRouter>() {
   }
   function useDehydratedState(
     client: TRPCClient<TRouter>,
-    dehydratedState?: DehydratedState,
+    dehydratedState: DehydratedState | undefined,
   ) {
     const transformed: DehydratedState | undefined = useMemo(() => {
       if (!dehydratedState) {
