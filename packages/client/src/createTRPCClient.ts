@@ -59,7 +59,7 @@ export interface FetchOptions {
 export interface CreateTRPCClientOptions<TRouter extends AnyRouter> {
   url: string;
   fetchOpts?: FetchOptions;
-  getHeaders?: () => Record<string, string | undefined>;
+  getHeaders?: () => Record<string, string | string[] | undefined>;
   onSuccess?: (data: HTTPSuccessResponseEnvelope<unknown>) => void;
   onError?: (error: TRPCClientError<TRouter>) => void;
   transformer?: DataTransformer;

@@ -48,7 +48,7 @@ if (!process.browser) {
     const trpcClient = new TRPCClient({
       url: 'http://localhost:3000/api/trpc',
       getHeaders() {
-        return {};
+        return ctx.req.headers;
       },
     });
     const queryClient = new QueryClient();
@@ -56,7 +56,7 @@ if (!process.browser) {
     await getDataFromTree(
       <AppTree
         pageProps={{
-          ...{},
+          ...{}, // <-- todo, get data from componenets https://hasura.io/learn/graphql/nextjs-fullstack-serverless/apollo-client/
           trpcClient,
           queryClient,
         }}
