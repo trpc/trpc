@@ -67,7 +67,7 @@ const getInitialProps = async ({ ctx, AppTree, Component }: AppContextType) => {
     // make it sloow
     await new Promise((resolve) => setTimeout(resolve, 3000));
 
-    ctx.res?.setHeader('Vary', 'Authorization');
+    // ctx.res?.setHeader('Vary', 'Authorization');
     ctx.res?.setHeader(
       'Cache-Control',
       's-maxage=1, stale-while-revalidate=600',
