@@ -10,16 +10,23 @@ export async function getDataFromTree(
     renderToString(tree);
 
     if (!queryClient.isFetching()) {
+      // nothing to be fetched
       return;
     }
-    while (true) {
-      // tmp hack
-      await new Promise((resolve) => setTimeout(resolve, 1));
 
-      if (!queryClient.isFetching()) {
-        break;
-      }
-    }
+    // wait for queries to resolve
+    await new Promise<void>((resolve) => {
+      const unsub = queryClient.getQueryCache().subscribe((event) => {
+        if (event?.type === 'queryUpdated' && !queryClient.isFetching()) {
+          // all queries have been resolved
+          console.log('done!');
+          unsub();
+          resolve();
+        }
+      });
+    });
+
+    // go further down the tree
     process();
   };
 

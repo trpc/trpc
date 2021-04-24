@@ -1,7 +1,12 @@
 import { TRPCClient } from '@trpc/client';
 import { useDehydratedState, getDataFromTree } from '@trpc/react';
-import { GetServerSidePropsContext } from 'next';
+import {
+  GetServerSidePropsContext,
+  NextComponentType,
+  NextPageContext,
+} from 'next';
 import type { AppProps /*, AppContext */ } from 'next/app';
+import { AppContextType, AppTreeType } from 'next/dist/next-server/lib/utils';
 import React, { useState } from 'react';
 import { QueryClient, QueryClientProvider } from 'react-query';
 import { dehydrate, Hydrate } from 'react-query/hydration';
@@ -41,10 +46,8 @@ if (!process.browser) {
   const getInitialProps = async ({
     ctx,
     AppTree,
-  }: {
-    ctx: GetServerSidePropsContext;
-    AppTree: any;
-  }) => {
+    Component,
+  }: AppContextType) => {
     const baseUrl = process.env.VERCEL_URL
       ? `https://${process.env.VERCEL_URL}`
       : 'http://localhost:3000';
@@ -53,15 +56,20 @@ if (!process.browser) {
     const trpcClient = new TRPCClient({
       url: `${baseUrl}/api/trpc`,
       getHeaders() {
-        return ctx.req.headers;
+        return ctx.req?.headers ?? {};
       },
     });
     const queryClient = new QueryClient();
 
+    let pageProps: Record<string, any> = {};
+    if (Component.getInitialProps) {
+      pageProps = await Component.getInitialProps(ctx);
+    }
+
     await getDataFromTree(
       <AppTree
         pageProps={{
-          ...{}, // <-- todo, get data from componenets https://hasura.io/learn/graphql/nextjs-fullstack-serverless/apollo-client/
+          ...pageProps,
           trpcClient,
           queryClient,
         }}
@@ -71,8 +79,6 @@ if (!process.browser) {
     const dehydratedState = trpcClient.transformer.serialize(
       dehydrate(queryClient),
     );
-
-    console.log('dehydratedState', JSON.stringify(dehydratedState, null, 4));
 
     return {
       pageProps: {
