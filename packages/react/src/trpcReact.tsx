@@ -64,15 +64,6 @@ export type TRPCContextState<TRouter extends AnyRouter> = {
     pathAndArgs: [path: TPath, ...args: inferHandlerInput<TProcedure>],
     opts?: FetchQueryOptions<TInput, TRPCClientError<TRouter>, TOutput>,
   ) => Promise<void>;
-  prefetchInfiniteQuery: <
-    TPath extends keyof TRouter['_def']['queries'] & string,
-    TProcedure extends TRouter['_def']['queries'][TPath],
-    TOutput extends inferProcedureOutput<TProcedure>,
-    TInput extends inferProcedureInput<TProcedure>
-  >(
-    pathAndArgs: [path: TPath, ...args: inferHandlerInput<TProcedure>],
-    opts?: FetchInfiniteQueryOptions<TInput, TRPCClientError<TRouter>, TOutput>,
-  ) => Promise<void>;
 
   invalidateQuery: <
     TPath extends keyof TRouter['_def']['queries'] & string,
@@ -147,21 +138,6 @@ export function trpcReact<TRouter extends AnyRouter>() {
               const cacheKey = getCacheKey(pathAndArgs, CACHE_KEY_QUERY);
 
               return queryClient.prefetchQuery(
-                cacheKey,
-                () => client.query(...pathAndArgs) as any,
-                opts as any,
-              );
-            },
-            [client, queryClient],
-          ),
-          prefetchInfiniteQuery: useCallback(
-            (pathAndArgs, opts) => {
-              const cacheKey = getCacheKey(
-                pathAndArgs,
-                CACHE_KEY_INFINITE_QUERY,
-              );
-
-              return queryClient.prefetchInfiniteQuery(
                 cacheKey,
                 () => client.query(...pathAndArgs) as any,
                 opts as any,
@@ -359,7 +335,7 @@ export function trpcReact<TRouter extends AnyRouter>() {
     // FIXME: this typing is wrong but it works
     opts?: UseInfiniteQueryOptions<TOutput, TError, TOutput, TOutput>,
   ) {
-    const { client, ssr, prefetchQuery } = useTRPC();
+    const { client, ssr } = useTRPC();
     const cacheKey = getCacheKey(pathAndArgs, CACHE_KEY_INFINITE_QUERY);
     const [path, input] = pathAndArgs;
     const query = useInfiniteQuery(
@@ -370,9 +346,6 @@ export function trpcReact<TRouter extends AnyRouter>() {
       },
       opts,
     );
-    if (!query.isFetched && ssr) {
-      prefetchQuery(pathAndArgs);
-    }
 
     return query;
   }
