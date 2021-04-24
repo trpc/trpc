@@ -107,22 +107,22 @@ export default function Home() {
   );
 }
 
-export async function getStaticProps() {
-  const ssr = trpc.ssr({
-    client: new TRPCClient({
-      url: 'http://localhost:3000/api/trpc',
-      getHeaders() {
-        return {};
-      },
-    }),
-  });
+// export async function getStaticProps() {
+//   const ssr = trpc.ssr({
+//     client: new TRPCClient({
+//       url: 'http://localhost:3000/api/trpc',
+//       getHeaders() {
+//         return {};
+//       },
+//     }),
+//   });
 
-  await ssr.prefetchQuery('posts.list');
+//   await ssr.prefetchQuery('posts.list');
 
-  return {
-    props: {
-      dehydratedState: ssr.dehydrate(),
-    },
-    revalidate: 1,
-  };
-}
+//   return {
+//     props: {
+//       dehydratedState: ssr.dehydrate(),
+//     },
+//     revalidate: 1,
+//   };
+// }

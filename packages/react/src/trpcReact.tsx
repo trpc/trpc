@@ -14,6 +14,7 @@ import React, {
   useEffect,
   useMemo,
   useRef,
+  useState,
 } from 'react';
 import {
   FetchQueryOptions,
@@ -50,6 +51,8 @@ export function useDehydratedState(
 export type TRPCContextState<TRouter extends AnyRouter> = {
   queryClient: QueryClient;
   client: TRPCClient<TRouter>;
+  ssr: boolean;
+  promises: Promise<unknown>[];
 
   prefetchQuery: <
     TPath extends keyof TRouter['_def']['queries'] & string,
@@ -107,7 +110,6 @@ export function trpcReact<TRouter extends AnyRouter>() {
   type TQueries = TRouter['_def']['queries'];
   type TMutations = TRouter['_def']['mutations'];
   type TSubscriptions = TRouter['_def']['subscriptions'];
-  type TContext = Parameters<TRouter['createCaller']>[0];
   type TError = TRPCClientError<TRouter>;
 
   const TRPCContext = createContext<TRPCContextState<TRouter>>({} as any);
@@ -115,16 +117,21 @@ export function trpcReact<TRouter extends AnyRouter>() {
     client,
     queryClient,
     children,
+    ssr = false,
   }: {
     queryClient: QueryClient;
     client: TRPCClient<TRouter>;
     children: ReactNode;
+    ssr?: boolean;
   }) {
+    const [promises] = useState(() => []);
     return (
       <TRPCContext.Provider
         value={{
           queryClient,
           client,
+          promises,
+          ssr,
           prefetchQuery: useCallback(
             (pathAndArgs, opts) => {
               const cacheKey = getCacheKey(pathAndArgs, CACHE_KEY_QUERY);
@@ -189,9 +196,18 @@ export function trpcReact<TRouter extends AnyRouter>() {
     >,
   ): UseQueryResult<TOutput, TError> {
     const cacheKey = getCacheKey(pathAndArgs, CACHE_KEY_QUERY);
-    const client = useTRPC().client;
+    const { client, queryClient, prefetchQuery, ssr, promises } = useTRPC();
 
-    return useQuery(cacheKey, () => client.query(...pathAndArgs) as any, opts);
+    const query = useQuery(
+      cacheKey,
+      () => client.query(...pathAndArgs) as any,
+      opts,
+    );
+    if (!query.isFetched && ssr) {
+      console.log('fetching', pathAndArgs);
+      prefetchQuery(pathAndArgs);
+    }
+    return query;
   }
 
   function _useMutation<
