@@ -3,7 +3,7 @@
   "version": "6.0.0-alpha.1",
   "private": true,
   "scripts": {
-    "dx:next": "prisma generate && next dev",
+    "dx:next": "prisma generate && next dev --port 3001",
     "dx:prisma-studio": "prisma studio",
     "dx": "run-p dx:* --print-label",
     "dev": "yarn dx:next",

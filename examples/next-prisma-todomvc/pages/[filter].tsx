@@ -11,7 +11,7 @@ import { QueryClient, useQueryClient } from 'react-query';
 import { ReactQueryDevtools } from 'react-query/devtools';
 import 'todomvc-app-css/index.css';
 import 'todomvc-common/base.css';
-import { inferQueryOutput, trpc } from '../utils/trpc';
+import { inferQueryOutput, trpc, createTRPCClient } from '../utils/trpc';
 import { appRouter, createContext } from './api/trpc/[trpc]';
 import { TRPCClient } from '@trpc/react';
 type Task = inferQueryOutput<'todos.all'>[number];
@@ -55,7 +55,7 @@ function ListItem({ task, allTasks }: { task: Task; allTasks: Task[] }) {
   const wrapperRef = useRef(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const utils = trpc.useQueryUtils();
+  const utils = trpc.useContext();
   const [text, setText] = useState(task.text);
   const [completed, setCompleted] = useState(task.completed);
   useEffect(() => {
@@ -339,15 +339,8 @@ export const getStaticPaths: GetStaticPaths = async () => {
 export const getStaticProps = async (
   context: GetStaticPropsContext<{ filter: string }>,
 ) => {
-  const baseUrl = process.env.VERCEL_URL
-    ? `https://${process.env.VERCEL_URL}`
-    : 'http://localhost:3000';
-  const url = `${baseUrl}/api/trpc`;
-
   const ssr = trpc.ssr({
-    client: trpc.createClient({
-      url,
-    }),
+    client: createTRPCClient(),
   });
 
   return {

@@ -1,5 +1,6 @@
 import { TRPCClient } from '@trpc/client';
 import { getDataFromTree } from '@trpc/react';
+import type { Dict } from '@trpc/server';
 import type { AppProps /*, AppContext */ } from 'next/app';
 import { AppContextType } from 'next/dist/next-server/lib/utils';
 import React, { useState } from 'react';
@@ -37,51 +38,41 @@ function MyApp({ Component, pageProps }: AppProps) {
   );
 }
 
-if (!process.browser) {
-  const getInitialProps = async ({
-    ctx,
-    AppTree,
-    Component,
-  }: AppContextType) => {
-    const baseUrl = process.env.VERCEL_URL
-      ? `https://${process.env.VERCEL_URL}`
-      : 'http://localhost:3000';
+const getInitialProps = async ({ ctx, AppTree, Component }: AppContextType) => {
+  const baseUrl = process.env.VERCEL_URL
+    ? `https://${process.env.VERCEL_URL}`
+    : 'http://localhost:3000';
 
-    console.log('VERCEL_URL', process.env.VERCEL_URL);
-    const trpcClient = new TRPCClient({
-      url: `${baseUrl}/api/trpc`,
-      getHeaders() {
-        return ctx.req?.headers ?? {};
-      },
-    });
-    const queryClient = new QueryClient();
+  const trpcClient = new TRPCClient({
+    url: `${baseUrl}/api/trpc`,
+    getHeaders() {
+      return ctx.req?.headers ?? {};
+    },
+  });
+  const queryClient = new QueryClient();
 
-    let pageProps: Record<string, any> = {};
+  let pageProps: Dict<unknown> = {};
+  if (!process.browser) {
     if (Component.getInitialProps) {
       pageProps = await Component.getInitialProps(ctx);
     }
-
-    await getDataFromTree(
-      <AppTree
-        pageProps={{
-          ...pageProps,
-          trpcClient,
-          queryClient,
-        }}
-      />,
+    const serverPageProps = {
+      ...pageProps,
+      trpcClient,
       queryClient,
-    );
-    const dehydratedState = trpcClient.transformer.serialize(
-      dehydrate(queryClient),
-    );
-
-    return {
-      pageProps: {
-        dehydratedState,
-      },
     };
+
+    await getDataFromTree(<AppTree pageProps={serverPageProps} />, queryClient);
+  }
+
+  pageProps.dehydratedState = trpcClient.transformer.serialize(
+    dehydrate(queryClient),
+  );
+
+  return {
+    pageProps,
   };
-  (MyApp as any).getInitialProps = getInitialProps;
-}
+};
+(MyApp as any).getInitialProps = getInitialProps;
 
 export default MyApp;
