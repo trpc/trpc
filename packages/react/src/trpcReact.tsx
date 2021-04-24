@@ -14,6 +14,7 @@ import React, {
   useEffect,
   useMemo,
   useRef,
+  useState,
 } from 'react';
 import {
   FetchQueryOptions,
@@ -69,17 +70,6 @@ export type TRPCContextState<TRouter extends AnyRouter> = {
   ) => void;
 };
 
-/**
- * Takes a function that returns an instance which is stored as a ref exactly once
- */
-export function useInstance<T>(obj: () => T): T {
-  const ref = useRef<T>();
-  if (!ref.current) {
-    ref.current = obj();
-  }
-  return ref.current;
-}
-
 function getCacheKey<TTuple extends [string, ...unknown[]]>(
   [path, input]: TTuple,
   extras?: string,
@@ -108,21 +98,15 @@ export function trpcReact<TRouter extends AnyRouter>() {
   type TError = TRPCClientError<TRouter>;
 
   const TRPCContext = createContext<TRPCContextState<TRouter>>({} as any);
-  function TRPCProvider(props: {
-    /**
-     * Pass in a function that returns a react-query QueryClient.
-     * Will only be called once on initialization and stored in as a ref
-     */
-    queryClient: () => QueryClient;
-    /**
-     * Pass in a function that returns a TRPCClient.
-     * Will only be called once on initialization and stored in as a ref
-     */
-    client: () => TRPCClient<TRouter>;
+  function TRPCProvider({
+    client,
+    queryClient,
+    children,
+  }: {
+    queryClient: QueryClient;
+    client: TRPCClient<TRouter>;
     children: ReactNode;
   }) {
-    const queryClient = useInstance(props.queryClient);
-    const client = useInstance(props.client);
     return (
       <TRPCContext.Provider
         value={{
@@ -170,7 +154,7 @@ export function trpcReact<TRouter extends AnyRouter>() {
           ),
         }}
       >
-        {props.children}
+        {children}
       </TRPCContext.Provider>
     );
   }
