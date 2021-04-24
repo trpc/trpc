@@ -14,7 +14,6 @@ import React, {
   useEffect,
   useMemo,
   useRef,
-  useState,
 } from 'react';
 import {
   FetchQueryOptions,
@@ -25,7 +24,6 @@ import {
   useMutation,
   UseMutationOptions,
   useQuery,
-  useQueryClient,
   UseQueryOptions,
   UseQueryResult,
 } from 'react-query';
@@ -34,6 +32,20 @@ import {
   DehydratedState,
   DehydrateOptions,
 } from 'react-query/hydration';
+
+export function useDehydratedState(
+  client: TRPCClient<any>,
+  dehydratedState?: DehydratedState,
+) {
+  const transformed: DehydratedState | undefined = useMemo(() => {
+    if (!dehydratedState) {
+      return dehydratedState;
+    }
+
+    return client.transformer.deserialize(dehydratedState);
+  }, [client, dehydratedState]);
+  return transformed;
+}
 
 export type TRPCContextState<TRouter extends AnyRouter> = {
   queryClient: QueryClient;
@@ -297,18 +309,6 @@ export function trpcReact<TRouter extends AnyRouter>() {
     return { ...hook, data };
   }
 
-  function useDehydratedState(dehydratedState?: DehydratedState) {
-    const client = useTRPC().client;
-    const transformed: DehydratedState | undefined = useMemo(() => {
-      if (!dehydratedState) {
-        return dehydratedState;
-      }
-
-      return client.transformer.deserialize(dehydratedState);
-    }, [client, dehydratedState]);
-    return transformed;
-  }
-
   function _useInfiniteQuery<
     TPath extends keyof TQueries & string,
     TInput extends inferProcedureInput<TQueries[TPath]> & { cursor: TCursor },
@@ -340,14 +340,9 @@ export function trpcReact<TRouter extends AnyRouter>() {
   function ssr({
     client,
     queryClient = new QueryClient(),
-    transformer = {
-      serialize: (obj) => obj,
-      deserialize: (obj) => obj,
-    },
   }: {
     client: TRPCClient<TRouter>;
     queryClient?: QueryClient;
-    transformer?: DataTransformer;
   }) {
     const prefetchQuery = async <
       TPath extends keyof TQueries & string,
@@ -381,7 +376,7 @@ export function trpcReact<TRouter extends AnyRouter>() {
     };
 
     function _dehydrate(opts?: DehydrateOptions): DehydratedState {
-      return transformer.serialize(dehydrate(queryClient, opts));
+      return client.transformer.serialize(dehydrate(queryClient, opts));
     }
 
     return {

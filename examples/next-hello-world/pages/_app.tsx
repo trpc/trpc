@@ -1,4 +1,5 @@
 import { TRPCClient } from '@trpc/client';
+import { useDehydratedState } from '@trpc/react';
 import type { AppProps /*, AppContext */ } from 'next/app';
 import { useState } from 'react';
 import { QueryClient, QueryClientProvider } from 'react-query';
@@ -13,10 +14,14 @@ function MyApp({ Component, pageProps }: AppProps) {
         url: '/api/trpc',
       }),
   );
+  const hydratedState = useDehydratedState(
+    trpcClient,
+    pageProps.dehydratedState,
+  );
   return (
     <trpc.Provider client={trpcClient} queryClient={queryClient}>
       <QueryClientProvider client={queryClient}>
-        <Hydrate state={trpc.useDehydratedState(pageProps.dehydratedState)}>
+        <Hydrate state={hydratedState}>
           <Component {...pageProps} />
         </Hydrate>
       </QueryClientProvider>
