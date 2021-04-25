@@ -49,11 +49,6 @@ export function withTRPCClient<TRouter extends AnyRouter>(
       pageProps.dehydratedState,
     );
 
-    console.log(
-      'pagePropspageProps.dehydratedState',
-      pageProps.dehydratedState,
-    );
-
     return (
       <trpc.Provider client={trpcClient} queryClient={queryClient} ssr={ssr}>
         <QueryClientProvider client={queryClient}>
@@ -66,11 +61,6 @@ export function withTRPCClient<TRouter extends AnyRouter>(
   };
 
   if (AppOrPage.getInitialProps || ssr) {
-    console.log(
-      'applying ssr',
-      "typeof window === 'undefined'",
-      typeof window === 'undefined',
-    );
     WithTRPC.getInitialProps = async (appOrPageCtx: AppContextType) => {
       const AppTree = appOrPageCtx.AppTree;
       const trpcClient = createTRPCClient(trpcOptions);
@@ -114,10 +104,6 @@ export function withTRPCClient<TRouter extends AnyRouter>(
             return true;
           },
         }),
-      );
-      console.log(
-        'pageProps.dehydratedState',
-        JSON.stringify(pageProps.dehydratedState),
       );
 
       return {

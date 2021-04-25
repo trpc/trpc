@@ -19,7 +19,6 @@ export async function getDataFromTree(
       const unsub = queryClient.getQueryCache().subscribe((event) => {
         if (event?.type === 'queryUpdated' && !queryClient.isFetching()) {
           // all queries have been resolved
-          // console.log('done!');
           unsub();
           resolve();
         }
