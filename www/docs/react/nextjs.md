@@ -77,7 +77,7 @@ The code here is taken from [`./examples/next-hello-world`](https://github.com/t
 
 
 ```bash
-yarn add @trpc/client @trpc/server @trpc/react zod react-query
+yarn add @trpc/client @trpc/server @trpc/react @trpc/next zod react-query
 ```
 
 - tRPC wraps a tiny layer of sugar around [react-query](https://react-query.tanstack.com/overview) when using React which gives you type safety and auto completion of your procedures
