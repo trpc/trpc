@@ -316,13 +316,13 @@ export function createReactQueryHooks<TRouter extends AnyRouter>() {
     >,
   ): UseQueryResult<TOutput, TError> {
     const cacheKey = getCacheKey(pathAndArgs, CACHE_KEY_QUERY);
-    const { client, fetchQuery, ssr, queryClient } = useTRPC();
+    const { client, prefetchQuery, ssr, queryClient } = useTRPC();
 
     if (typeof window === 'undefined' && ssr) {
       const hashed = hashQueryKey(cacheKey);
       const cache = queryClient.getQueryCache().get(hashed);
       if (!cache) {
-        fetchQuery(pathAndArgs);
+        prefetchQuery(pathAndArgs);
       }
     }
     const query = useQuery(
@@ -462,7 +462,7 @@ export function createReactQueryHooks<TRouter extends AnyRouter>() {
     // FIXME: this typing is wrong but it works
     opts?: UseInfiniteQueryOptions<TOutput, TError, TOutput, TOutput>,
   ) {
-    const { client, queryClient, fetchInfiniteQuery } = useTRPC();
+    const { client, queryClient, prefetchInfiniteQuery } = useTRPC();
     const cacheKey = getCacheKey(pathAndArgs, CACHE_KEY_INFINITE_QUERY);
     const [path, input] = pathAndArgs;
 
@@ -471,7 +471,7 @@ export function createReactQueryHooks<TRouter extends AnyRouter>() {
       const cache = queryClient.getQueryCache().get(hashed);
       if (!cache) {
         const actualInput = { ...input, cursor: null };
-        fetchInfiniteQuery([path, actualInput] as any);
+        prefetchInfiniteQuery([path, actualInput] as any);
       }
     }
     const query = useInfiniteQuery(

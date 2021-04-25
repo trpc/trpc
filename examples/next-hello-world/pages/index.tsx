@@ -20,9 +20,7 @@ export default function Home() {
 
   useEffect(() => {
     if (postsQuery.error) {
-      console.log('cache', utils.queryClient.getQueryCache());
-      debugger;
-      console.log(dehydrate(utils.queryClient));
+      console.log('error!', postsQuery.error);
     }
   }, [postsQuery.error, utils.queryClient]);
   const addPost = trpc.useMutation('posts.add', {
@@ -40,7 +38,7 @@ export default function Home() {
 
       <h1>tRPC starter examples</h1>
 
-      <h1>Posts query (statically rendered)</h1>
+      <h1>Posts query (server rendered)</h1>
 
       <h2>Posts</h2>
       {postsQuery.data?.map((post) => (

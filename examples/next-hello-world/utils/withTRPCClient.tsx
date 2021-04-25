@@ -81,16 +81,14 @@ export function withTRPCClient<TRouter extends AnyRouter>(
           <AppTree pageProps={serverPageProps} />,
           queryClient,
         );
-
-        // // ctx.res?.setHeader('Vary', 'Authorization');
-        // ctx.res?.setHeader(
-        //   'Cache-Control',
-        //   's-maxage=1, stale-while-revalidate=600',
-        // );
       }
-
       pageProps.dehydratedState = trpcClient.transformer.serialize(
-        dehydrate(queryClient),
+        dehydrate(queryClient, {
+          shouldDehydrateQuery() {
+            // makes sure errors are also hydrated
+            return true;
+          },
+        }),
       );
 
       return {
