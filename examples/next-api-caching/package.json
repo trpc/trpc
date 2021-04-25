@@ -1,6 +1,6 @@
 {
   "name": "@examples/next-api-caching",
-  "version": "6.0.0-alpha.13",
+  "version": "6.0.0-alpha.14",
   "private": true,
   "scripts": {
     "dev": "next dev",
@@ -12,7 +12,7 @@
   },
   "dependencies": {
     "@trpc/client": "^6.0.0-alpha.5",
-    "@trpc/react": "^6.0.0-alpha.13",
+    "@trpc/react": "^6.0.0-alpha.14",
     "@trpc/server": "^6.0.0-alpha.5",
     "next": "^10.0.5",
     "react": "^17.0.1",
