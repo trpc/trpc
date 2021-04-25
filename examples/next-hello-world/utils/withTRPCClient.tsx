@@ -1,10 +1,10 @@
 import {
   createTRPCClient,
   CreateTRPCClientOptions,
-  getDataFromTree,
   createReactQueryHooks,
   TRPCClient,
 } from '@trpc/react';
+import { getDataFromTree } from '@trpc/react/ssr';
 import { AnyRouter, Dict } from '@trpc/server';
 import {
   AppContextType,

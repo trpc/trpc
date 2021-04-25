@@ -10,12 +10,19 @@
     "url": "git+https://github.com/trpc/trpc.git",
     "directory": "packages/react"
   },
+  "preconstruct": {
+    "entrypoints": [
+      "index.ts",
+      "ssr.ts"
+    ]
+  },
   "scripts": {},
   "main": "dist/trpc-react.cjs.js",
   "typings": "dist/trpc-react.cjs.d.ts",
   "files": [
     "README.md",
-    "dist"
+    "dist",
+    "ssr"
   ],
   "eslintConfig": {
     "rules": {
@@ -39,7 +46,8 @@
     "react": "^17.0.1",
     "react-dom": "^17.0.1",
     "react-query": "^3.6.0",
-    "zod": "^1.11.11"
+    "zod": "^1.11.11",
+    "next": "*"
   },
   "publishConfig": {
     "access": "public"

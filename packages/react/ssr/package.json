@@ -1,0 +1,3 @@
+{
+  "main": "dist/trpc-react-ssr.cjs.js"
+}
