@@ -89,13 +89,21 @@ export function withTRPCClient<TRouter extends AnyRouter>(
 
       if (typeof window === 'undefined' && ssr) {
         await getDataFromTree(
-          <AppTree
-            pageProps={pageProps}
-            {...{
-              trpcClient,
-              queryClient,
-            }}
-          />,
+          <trpc.Provider
+            client={trpcClient}
+            queryClient={queryClient}
+            ssr={ssr}
+          >
+            <QueryClientProvider client={queryClient}>
+              <AppTree
+                pageProps={pageProps}
+                {...{
+                  trpcClient,
+                  queryClient,
+                }}
+              />
+            </QueryClientProvider>
+          </trpc.Provider>,
           queryClient,
         );
       }
