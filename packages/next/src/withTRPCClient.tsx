@@ -42,29 +42,18 @@ export function withTRPCClient<TRouter extends AnyRouter>(
         trpcClient?: TRPCClient<TRouter>;
       },
     ) => {
-      const { pageProps } = props;
       const [queryClient] = useState(
         () =>
           props.queryClient ??
-          new QueryClient(
-            getClientConfig({
-              ssr: false,
-            }).queryClientConfig,
-          ),
+          new QueryClient(getClientConfig({}).queryClientConfig),
       );
       const [trpcClient] = useState(
-        () =>
-          props.trpcClient ??
-          trpc.createClient(
-            getClientConfig({
-              ssr: false,
-            }),
-          ),
+        () => props.trpcClient ?? trpc.createClient(getClientConfig({})),
       );
 
       const hydratedState = trpc.useDehydratedState(
         trpcClient,
-        pageProps.dehydratedState,
+        props.pageProps.dehydratedState,
       );
 
       return (
@@ -89,9 +78,7 @@ export function withTRPCClient<TRouter extends AnyRouter>(
           : ((appOrPageCtx as any) as NextPageContext);
         const isServer = typeof window === 'undefined' && ssr;
 
-        const config = getClientConfig(
-          isServer ? { ssr: true, ctx } : { ssr: false },
-        );
+        const config = getClientConfig(isServer ? { ctx } : {});
 
         const trpcClient = createTRPCClient(config);
         const queryClient = new QueryClient(config.queryClientConfig);
@@ -104,21 +91,13 @@ export function withTRPCClient<TRouter extends AnyRouter>(
 
         if (typeof window === 'undefined' && ssr) {
           await getDataFromTree(
-            <trpc.Provider
-              client={trpcClient}
-              queryClient={queryClient}
-              ssr={ssr}
-            >
-              <QueryClientProvider client={queryClient}>
-                <AppTree
-                  pageProps={pageProps}
-                  {...{
-                    trpcClient,
-                    queryClient,
-                  }}
-                />
-              </QueryClientProvider>
-            </trpc.Provider>,
+            <AppTree
+              pageProps={pageProps}
+              {...{
+                trpcClient,
+                queryClient,
+              }}
+            />,
             queryClient,
           );
         }
