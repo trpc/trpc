@@ -23,7 +23,7 @@ export interface WithTRPCClientOptions<TRouter extends AnyRouter>
   ssr?: boolean;
 }
 
-export function withTRPCClient<TRouter extends AnyRouter>(
+export function withTRPC<TRouter extends AnyRouter>(
   AppOrPage: NextComponentType<any, any, any>,
   opts: WithTRPCClientOptions<TRouter>,
 ) {
@@ -121,7 +121,7 @@ export function withTRPCClient<TRouter extends AnyRouter>(
   }
 
   const displayName = AppOrPage.displayName || AppOrPage.name || 'Component';
-  WithTRPC.displayName = `withTRPCClient(${displayName})`;
+  WithTRPC.displayName = `withTRPC(${displayName})`;
 
   return WithTRPC;
 }

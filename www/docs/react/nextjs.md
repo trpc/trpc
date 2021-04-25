@@ -11,7 +11,7 @@ Recommended but not enforced file structure. This is what you get when starting 
 
 ```txt
 ├── pages
-│   ├── _app.tsx # <-- wrap App with `withTRPCClient()`
+│   ├── _app.tsx # <-- wrap App with `withTRPC()`
 │   ├── api
 │   │   └── trpc
 │   │       ├── [trpc].ts # <-- tRPC response handler
@@ -162,7 +162,7 @@ export const trpc = createReactQueryHooks<AppRouter>();
 
 
 ```tsx
-import { withTRPCClient } from '@trpc/next';
+import { withTRPC } from '@trpc/next';
 import { AppType } from 'next/dist/next-server/lib/utils';
 import React from 'react';
 import type { AppRouter } from './api/trpc/[trpc]';
@@ -171,7 +171,7 @@ const MyApp: AppType = ({ Component, pageProps }) => {
   return <Component {...pageProps} />;
 };
 
-export default withTRPCClient<AppRouter>(
+export default withTRPC<AppRouter>(
   ({ ctx }) => {
     if (process.browser) {
       return {
@@ -270,14 +270,14 @@ export const trpc = createReactQueryHooks<AppRouter>();
 
 
 ```tsx
-import { withTRPCClient } from '@trpc/next';
+import { withTRPC } from '@trpc/next';
 import type { AppProps /*, AppContext */ } from 'next/app';
 import { trpcClientOptions } from '../utils/trpc';
 
 function MyApp({ Component, pageProps }: AppProps) {
   return <Component {...pageProps} />;
 }
-export default withTRPCClient(
+export default withTRPC(
   () => {
     return { ...trpcClientOptions };
   },

@@ -1,4 +1,4 @@
-import { withTRPCClient } from '@trpc/next';
+import { withTRPC } from '@trpc/next';
 import { AppType } from 'next/dist/next-server/lib/utils';
 import React from 'react';
 import type { AppRouter } from './api/trpc/[trpc]';
@@ -16,7 +16,7 @@ MyApp.getInitialProps = async ({ ctx }) => {
   };
 };
 
-export default withTRPCClient<AppRouter>(
+export default withTRPC<AppRouter>(
   ({ ctx }) => {
     if (process.browser) {
       return {

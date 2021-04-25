@@ -16,7 +16,7 @@ If you turn on SSR in your app you might discover that your app loads slow on fo
 
 ```tsx
 // in _app.tsx
-export default withTRPCClient<AppRouter>(
+export default withTRPC<AppRouter>(
   ({ ctx }) => {
     if (process.browser) {
       return {
