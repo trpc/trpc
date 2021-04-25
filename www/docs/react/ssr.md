@@ -16,7 +16,7 @@ slug: /ssr
 
 ## Option A: Using SSR
 
-You don't have to do anything(!) apart from setting `{ ssr: true }` in your `withTRPC()`-setup; see [Getting Started with Next.js](http://localhost:3000/docs/nextjs#option-a-using-server-side-rendering).
+You don't have to do anything(!) apart from setting `{ ssr: true }` in your `withTRPC()`-setup; see [Getting Started with Next.js](/docs/nextjs#option-a-using-server-side-rendering).
 
 
 ## Option B: Using SSG
