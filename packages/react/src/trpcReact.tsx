@@ -105,6 +105,8 @@ export type OutputWithCursor<TData, TCursor extends any = any> = {
   data: TData;
 };
 
+const _TRPCContext = createContext({} as any);
+
 export function trpcReact<TRouter extends AnyRouter>() {
   type TQueries = TRouter['_def']['queries'];
   type TMutations = TRouter['_def']['mutations'];
@@ -112,7 +114,7 @@ export function trpcReact<TRouter extends AnyRouter>() {
   type TError = TRPCClientError<TRouter>;
 
   type ProviderContext = TRPCContextState<TRouter>;
-  const TRPCContext = createContext<ProviderContext>({} as any);
+  const TRPCContext = _TRPCContext as React.Context<ProviderContext>;
 
   function createClient(opts: CreateTRPCClientOptions<TRouter>) {
     return createTRPCClient(opts);
