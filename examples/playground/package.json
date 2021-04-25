@@ -1,6 +1,6 @@
 {
   "name": "@examples/playground",
-  "version": "6.0.0-alpha.7",
+  "version": "6.0.0-alpha.8",
   "private": true,
   "scripts": {
     "dev:server": "nodemon -e ts -w . -x ts-node ./src/server.ts",
@@ -13,7 +13,7 @@
   },
   "dependencies": {
     "@trpc/client": "^6.0.0-alpha.5",
-    "@trpc/react": "^6.0.0-alpha.7",
+    "@trpc/react": "^6.0.0-alpha.8",
     "@trpc/server": "^6.0.0-alpha.5",
     "@types/node-fetch": "^2.5.8",
     "abort-controller": "^3.0.0",
