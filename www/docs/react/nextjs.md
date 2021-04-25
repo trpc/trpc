@@ -264,31 +264,6 @@ import type { AppRouter } from '../pages/api/trpc/[trpc]';
 
 // create react query hooks for trpc
 export const trpc = createReactQueryHooks<AppRouter>();
-
-let baseUrl = '';
-
-if (!process.browser) {
-  baseUrl = process.env.VERCEL_URL
-    ? `https://${process.env.VERCEL_URL}`
-    : `http://localhost:3001`;
-}
-const url = `${baseUrl}/api/trpc`;
-
-export const trpcClientOptions: CreateTRPCClientOptions<AppRouter> = {
-  url,
-  transformer: superjson,
-  getHeaders() {
-    return {};
-  },
-};
-
-/**
- * This is a helper method to infer the output of a query resolver
- * @example type HelloOutput = inferQueryOutput<'hello'>
- */
-export type inferQueryOutput<
-  TRouteKey extends keyof AppRouter['_def']['queries']
-> = inferProcedureOutput<AppRouter['_def']['queries'][TRouteKey]>;
 ```
 
 #### 3. Configure `_app.tsx`
@@ -317,7 +292,8 @@ export default withTRPCClient(
 
 ```tsx
 import Head from 'next/head';
-import { trpc, trpcClientOptions } from '../utils/trpc';
+import { trpc } from '../utils/trpc';
+import { createSSGHelpers } from '@trpc/react/ssg';
 
 export default function Home() {
   // try typing here to see that you get autocompletion & type safety on the procedure's name
@@ -347,21 +323,24 @@ export default function Home() {
 }
 
 
-export const getStaticProps = async (
-  context: GetStaticPropsContext<{ filter: string }>,
-) => {
-  const ssg = createSSGHelpers(trpcClientOptions);
+// Optional: statically fetch the data
+// export const getStaticProps = async (
+//   context: GetStaticPropsContext<{ filter: string }>,
+// ) => {
+//   const ssg = createSSGHelpers({
+//     router: appRouter,
+//     transformer,
+//     ctx: {},
+//   });
 
-  await ssg.fetchQuery('hello');
-  await ssg.fetchQuery('hello', { text: 'client' });
+//   await ssg.fetchQuery('hello');
+//   await ssg.fetchQuery('hello', { text: 'client' });
 
-  return {
-    props: {
-      trpcState: ssg.dehydrate(),
-    },
-    revalidate: 1,
-  };
-};
-
+//   return {
+//     props: {
+//       trpcState: ssg.dehydrate(),
+//     },
+//     revalidate: 1,
+//   };
+// };
 ```
-
