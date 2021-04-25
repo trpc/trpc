@@ -1,12 +1,13 @@
+import React from 'react';
 import {
   createTRPCClient,
   CreateTRPCClientOptions,
   createReactQueryHooks,
   TRPCClient,
-} from '@trpc/react';
-import { getDataFromTree } from '@trpc/react/ssr';
-import { AnyRouter, Dict } from '@trpc/server';
-import {
+} from './';
+import { getDataFromTree } from './ssr';
+import type { AnyRouter, Dict } from '@trpc/server';
+import type {
   AppContextType,
   AppPropsType,
   NextComponentType,
