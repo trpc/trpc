@@ -10,7 +10,7 @@ import { RefObject, useEffect, useRef, useState } from 'react';
 import { ReactQueryDevtools } from 'react-query/devtools';
 import 'todomvc-app-css/index.css';
 import 'todomvc-common/base.css';
-import { createTRPCClient, inferQueryOutput, trpc } from '../utils/trpc';
+import { trpcClientOptions, inferQueryOutput, trpc } from '../utils/trpc';
 import { createSSGHelpers } from '@trpc/react/ssg';
 type Task = inferQueryOutput<'todos.all'>[number];
 
@@ -338,7 +338,7 @@ export const getStaticProps = async (
   context: GetStaticPropsContext<{ filter: string }>,
 ) => {
   const ssg = createSSGHelpers({
-    client: createTRPCClient(),
+    client: trpc.createClient(trpcClientOptions),
   });
 
   await ssg.prefetchQuery('todos.all');
