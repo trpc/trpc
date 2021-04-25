@@ -107,7 +107,10 @@ export function withTRPCClient<TRouter extends AnyRouter>(
           },
         }),
       );
-      console.log('pageProps.dehydratedState', pageProps.dehydratedState);
+      console.log(
+        'pageProps.dehydratedState',
+        JSON.stringify(pageProps.dehydratedState),
+      );
 
       return {
         pageProps,

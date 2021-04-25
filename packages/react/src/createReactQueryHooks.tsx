@@ -318,6 +318,12 @@ export function createReactQueryHooks<TRouter extends AnyRouter>() {
     const cacheKey = getCacheKey(pathAndArgs, CACHE_KEY_QUERY);
     const { client, prefetchQuery, ssr, queryClient } = useContext();
 
+    console.log(
+      `typeof window === 'undefined'`,
+      typeof window === 'undefined',
+      'ssr',
+      ssr,
+    );
     if (typeof window === 'undefined' && ssr) {
       const hashed = hashQueryKey(cacheKey);
       const cache = queryClient.getQueryCache().get(hashed);
