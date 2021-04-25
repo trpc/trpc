@@ -107,7 +107,7 @@ export type OutputWithCursor<TData, TCursor extends any = any> = {
 
 const _TRPCContext = createContext({} as any);
 
-export function trpcReact<TRouter extends AnyRouter>() {
+export function createReactQueryHooks<TRouter extends AnyRouter>() {
   type TQueries = TRouter['_def']['queries'];
   type TMutations = TRouter['_def']['mutations'];
   type TSubscriptions = TRouter['_def']['subscriptions'];

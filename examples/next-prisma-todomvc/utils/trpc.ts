@@ -1,4 +1,4 @@
-import { trpcReact } from '@trpc/react';
+import { createReactQueryHooks } from '@trpc/react';
 import type { inferProcedureOutput } from '@trpc/server';
 import superjson from 'superjson';
 // ℹ️ Type-only import:
@@ -6,7 +6,7 @@ import superjson from 'superjson';
 import type { AppRouter } from '../pages/api/trpc/[trpc]';
 
 // create react query hooks for trpc
-export const trpc = trpcReact<AppRouter>();
+export const trpc = createReactQueryHooks<AppRouter>();
 
 export function createTRPCClient() {
   const baseUrl = process.browser

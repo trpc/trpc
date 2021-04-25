@@ -1,3 +1,3 @@
 export * from '@trpc/client';
-export * from './trpcReact';
+export * from './createReactQueryHooks';
 export * from './getDataFromTree';

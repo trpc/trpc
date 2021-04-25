@@ -1,17 +1,16 @@
 import {
-  CreateTRPCClientOptions,
   createTRPCClient,
-  trpcReact,
+  CreateTRPCClientOptions,
   getDataFromTree,
+  createReactQueryHooks,
 } from '@trpc/react';
 import { AnyRouter, Dict } from '@trpc/server';
 import {
   AppContextType,
   AppPropsType,
   NextComponentType,
-  NextPageContext,
 } from 'next/dist/next-server/lib/utils';
-import { createElement, useState } from 'react';
+import { useState } from 'react';
 import { QueryClient, QueryClientProvider } from 'react-query';
 import { dehydrate, Hydrate } from 'react-query/hydration';
 type QueryClientConfig = ConstructorParameters<typeof QueryClient>[0];
@@ -27,7 +26,7 @@ export function withTRPCClient<TRouter extends AnyRouter>(
   opts: WithTRPCClientOptions<TRouter>,
 ) {
   const { queryClientConfig, ssr = false, ...trpcOptions } = opts;
-  const trpc = trpcReact<TRouter>();
+  const trpc = createReactQueryHooks<TRouter>();
 
   const WithTRPC = (props: AppPropsType) => {
     const { pageProps } = props;
@@ -71,7 +70,7 @@ export function withTRPCClient<TRouter extends AnyRouter>(
 
       const queryClient = new QueryClient(queryClientConfig);
 
-      if (!process.browser && ssr) {
+      if (typeof window === 'undefined' && ssr) {
         const serverPageProps = {
           ...pageProps,
           trpcClient,
