@@ -172,7 +172,7 @@ function MyApp({ Component, pageProps }: AppProps) {
   const [queryClient] = useState(() => new QueryClient());
   return (
     <QueryClientProvider client={queryClient}>
-      <Hydrate state={trpc.useDehydratedState(pageProps.dehydratedState)}>
+      <Hydrate state={trpc.useDehydratedState(pageProps.trpcState)}>
         <Component {...pageProps} />
       </Hydrate>
     </QueryClientProvider>
