@@ -61,6 +61,11 @@ export function withTRPCClient<TRouter extends AnyRouter>(
   };
 
   if (AppOrPage.getInitialProps || ssr) {
+    console.log(
+      'applying ssr',
+      "typeof window === 'undefined'",
+      typeof window === 'undefined',
+    );
     WithTRPC.getInitialProps = async (appOrPageCtx: AppContextType) => {
       const AppTree = appOrPageCtx.AppTree;
       const trpcClient = createTRPCClient(trpcOptions);
@@ -97,6 +102,7 @@ export function withTRPCClient<TRouter extends AnyRouter>(
           },
         }),
       );
+      console.log('pageProps.dehydratedState', pageProps.dehydratedState);
 
       return {
         pageProps,
