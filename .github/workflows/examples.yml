@@ -7,7 +7,6 @@ jobs:
       matrix:
         dir:
           [
-            next-api-caching,
             next-hello-world,
             next-prisma-todomvc,
             next-ssg-chat,

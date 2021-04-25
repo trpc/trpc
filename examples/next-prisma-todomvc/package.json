@@ -21,6 +21,7 @@
     "@trpc/client": "^6.0.0-alpha.17",
     "@trpc/react": "^6.0.0-alpha.19",
     "@trpc/server": "^6.0.0-alpha.17",
+    "@trpc/next": "^6.0.0-alpha.17",
     "clsx": "^1.1.1",
     "jest": "^26.6.3",
     "jest-playwright": "^0.0.1",

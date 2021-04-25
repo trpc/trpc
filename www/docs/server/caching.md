@@ -9,10 +9,6 @@ Since all queries are normal HTTP `GET`s we can use normal HTTP headers to cache
 
 The below examples uses [Vercel's edge caching](https://vercel.com/docs/serverless-functions/edge-caching) to serve data to your users as fast as possible.
 
-## Example project
-
-- https://github.com/trpc/trpc/tree/main/examples/next-api-caching
-- Live at [next-api-caching.trpc.io](https://next-api-caching.trpc.io)
 
 ## Example code
 
