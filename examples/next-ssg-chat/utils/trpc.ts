@@ -8,23 +8,7 @@ import type { AppRouter } from '../pages/api/trpc/[trpc]';
 // create react query hooks for trpc
 export const trpc = createReactQueryHooks<AppRouter>();
 
-let baseUrl = '';
-
-if (!process.browser) {
-  baseUrl = process.env.VERCEL_URL
-    ? `https://${process.env.VERCEL_URL}`
-    : `http://localhost:3001`;
-}
-const url = `${baseUrl}/api/trpc`;
-
-export const trpcClientOptions: CreateTRPCClientOptions<AppRouter> = {
-  url,
-  transformer: superjson,
-  getHeaders() {
-    return {};
-  },
-};
-
+export const transformer = superjson;
 /**
  * This is a helper method to infer the output of a query resolver
  * @example type HelloOutput = inferQueryOutput<'hello'>
