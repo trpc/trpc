@@ -35,6 +35,7 @@ import { createReactQueryHooks, OutputWithCursor } from '../../react/src';
 import { createSSGHelpers } from '../../react/ssg';
 import { DefaultErrorShape } from '../src';
 import { routerToServerAndClient } from './_testHelpers';
+import { AppType } from 'next/dist/next-server/lib/utils';
 setLogger({
   log() {},
   warn() {},
@@ -745,10 +746,10 @@ describe('withTRPC()', () => {
     // @ts-ignore
     delete global.window;
     const { trpc, trpcClientOptions } = factory;
-    function App() {
+    const App: AppType = () => {
       const query = trpc.useQuery(['allPosts']);
       return <>{JSON.stringify(query.data)}</>;
-    }
+    };
 
     const Wrapped = withTRPC(() => trpcClientOptions, {
       ssr: true,
@@ -770,7 +771,7 @@ describe('withTRPC()', () => {
     // @ts-ignore
     delete global.window;
     const { trpc, trpcClientOptions } = factory;
-    function App() {
+    const App: AppType = () => {
       const query = trpc.useInfiniteQuery(
         [
           'paginatedPosts',
@@ -783,7 +784,7 @@ describe('withTRPC()', () => {
         },
       );
       return <>{JSON.stringify(query.data || query.error)}</>;
-    }
+    };
 
     const Wrapped = withTRPC(() => trpcClientOptions, {
       ssr: true,
@@ -797,5 +798,27 @@ describe('withTRPC()', () => {
 
     const utils = render(<Wrapped {...props} />);
     expect(utils.container).toHaveTextContent('first post');
+  });
+
+  test('browser render', async () => {
+    const { trpc, trpcClientOptions } = factory;
+    const App: AppType = () => {
+      const query = trpc.useQuery(['allPosts']);
+      return <>{JSON.stringify(query.data)}</>;
+    };
+
+    const Wrapped = withTRPC(() => trpcClientOptions, {
+      ssr: true,
+    })(App);
+
+    const props = await Wrapped.getInitialProps!({
+      AppTree: Wrapped,
+    } as any);
+
+    const utils = render(<Wrapped {...props} />);
+
+    await waitFor(() => {
+      expect(utils.container).toHaveTextContent('first post');
+    });
   });
 });
