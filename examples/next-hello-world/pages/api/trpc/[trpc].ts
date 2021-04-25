@@ -46,7 +46,10 @@ export const appRouter = createRouter()
     };
   })
   .middleware(({ ctx }) => {
-    console.log('received request with headers', ctx.req.headers);
+    console.log('received request', {
+      url: ctx.req.url,
+      'x-ssr': ctx.req.headers['x-ssr'],
+    });
     // if (ctx.req.headers['x-ssr']) {
     //   throw new Error('Random failure');
     // }

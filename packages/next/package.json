@@ -1,0 +1,56 @@
+{
+  "name": "@trpc/next",
+  "version": "6.0.0-alpha.16",
+  "description": "tRPC Next lib",
+  "author": "KATT",
+  "license": "MIT",
+  "homepage": "https://trpc.io",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/trpc/trpc.git",
+    "directory": "packages/next"
+  },
+  "preconstruct": {
+    "entrypoints": [
+      "index.ts"
+    ]
+  },
+  "scripts": {},
+  "main": "dist/trpc-next.cjs.js",
+  "typings": "dist/trpc-next.cjs.d.ts",
+  "files": [
+    "README.md",
+    "dist"
+  ],
+  "eslintConfig": {
+    "rules": {
+      "react-hooks/exhaustive-deps": "error"
+    }
+  },
+  "peerDependencies": {
+    "react": ">=16.8.0",
+    "react-dom": ">=16.8.0",
+    "react-query": "^3.0.0",
+    "next": "*"
+  },
+  "dependencies": {
+    "@babel/runtime": "^7.9.0",
+    "@trpc/client": "^6.0.0-alpha.5",
+    "@trpc/react": "^6.0.0-alpha.5",
+    "@trpc/server": "^6.0.0-alpha.5"
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.11",
+    "body-parser": "^1.19.0",
+    "express": "^4.17.1",
+    "next": "*",
+    "react": "^17.0.1",
+    "react-dom": "^17.0.1",
+    "react-query": "^3.6.0",
+    "zod": "^1.11.11"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "gitHead": "82bf01f8759b04f2ade69c9047e28f74f889d547"
+}
