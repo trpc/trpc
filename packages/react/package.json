@@ -14,9 +14,7 @@
     "entrypoints": [
       "index.ts",
       "ssg.ts",
-      "ssr.ts",
-      "next.tsx",
-      "context.tsx"
+      "ssr.ts"
     ]
   },
   "scripts": {},
@@ -26,9 +24,7 @@
     "README.md",
     "dist",
     "ssg",
-    "ssr",
-    "next",
-    "context"
+    "ssr"
   ],
   "eslintConfig": {
     "rules": {

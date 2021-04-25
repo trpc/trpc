@@ -1,4 +1,4 @@
-import { withTRPCClient } from '@trpc/react/next';
+import { withTRPCClient } from '@trpc/react';
 import type { AppProps /*, AppContext */ } from 'next/app';
 import { trpcClientOptions } from '../utils/trpc';
 
