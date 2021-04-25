@@ -3,6 +3,7 @@ import {
   CreateTRPCClientOptions,
   getDataFromTree,
   createReactQueryHooks,
+  TRPCClient,
 } from '@trpc/react';
 import { AnyRouter, Dict } from '@trpc/server';
 import {
@@ -28,13 +29,18 @@ export function withTRPCClient<TRouter extends AnyRouter>(
   const { queryClientConfig, ssr = false, ...trpcOptions } = opts;
   const trpc = createReactQueryHooks<TRouter>();
 
-  const WithTRPC = (props: AppPropsType) => {
+  const WithTRPC = (
+    props: AppPropsType & {
+      queryClient?: QueryClient;
+      trpcClient?: TRPCClient<TRouter>;
+    },
+  ) => {
     const { pageProps } = props;
     const [queryClient] = useState(
-      () => pageProps.queryClient ?? new QueryClient(queryClientConfig),
+      () => props.queryClient ?? new QueryClient(queryClientConfig),
     );
     const [trpcClient] = useState(
-      () => pageProps.trpcClient ?? trpc.createClient(trpcOptions),
+      () => props.trpcClient ?? trpc.createClient(trpcOptions),
     );
 
     const hydratedState = trpc.useDehydratedState(
@@ -71,21 +77,21 @@ export function withTRPCClient<TRouter extends AnyRouter>(
       const queryClient = new QueryClient(queryClientConfig);
 
       if (typeof window === 'undefined' && ssr) {
-        const serverPageProps = {
-          ...pageProps,
-          trpcClient,
-          queryClient,
-        };
-
         await getDataFromTree(
-          <AppTree pageProps={serverPageProps} />,
+          <AppTree
+            pageProps={pageProps}
+            {...{
+              trpcClient,
+              queryClient,
+            }}
+          />,
           queryClient,
         );
       }
       pageProps.dehydratedState = trpcClient.transformer.serialize(
         dehydrate(queryClient, {
           shouldDehydrateQuery() {
-            // makes sure errors are also hydrated
+            // makes sure errors are also dehydrated
             return true;
           },
         }),
