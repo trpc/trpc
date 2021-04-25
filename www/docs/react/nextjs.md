@@ -140,6 +140,10 @@ export default trpcNext.createNextApiHandler({
 ### Option A) Using Server-side rendering
 
 
+:::info
+Reference project: https://github.com/trpc/trpc/tree/main/examples/next-hello-world
+:::
+
 #### 2. Create tRPC-hooks
 
 
@@ -235,4 +239,129 @@ export default function Home() {
 }
 ```
 
+
+
+### Option B) Using Server-side rendering
+
+
+:::info
+Reference project: https://github.com/trpc/trpc/tree/main/examples/next-todomvc
+:::
+
+
+#### 2. Create tRPC-hooks
+
+
+Create `./utils/trpc.ts`
+
+```tsx
+import { createReactQueryHooks, CreateTRPCClientOptions } from '@trpc/react';
+import type { inferProcedureOutput } from '@trpc/server';
+import superjson from 'superjson';
+// ℹ️ Type-only import:
+// https://www.typescriptlang.org/docs/handbook/release-notes/typescript-3-8.html#type-only-imports-and-export
+import type { AppRouter } from '../pages/api/trpc/[trpc]';
+
+// create react query hooks for trpc
+export const trpc = createReactQueryHooks<AppRouter>();
+
+let baseUrl = '';
+
+if (!process.browser) {
+  baseUrl = process.env.VERCEL_URL
+    ? `https://${process.env.VERCEL_URL}`
+    : `http://localhost:3001`;
+}
+const url = `${baseUrl}/api/trpc`;
+
+export const trpcClientOptions: CreateTRPCClientOptions<AppRouter> = {
+  url,
+  transformer: superjson,
+  getHeaders() {
+    return {};
+  },
+};
+
+/**
+ * This is a helper method to infer the output of a query resolver
+ * @example type HelloOutput = inferQueryOutput<'hello'>
+ */
+export type inferQueryOutput<
+  TRouteKey extends keyof AppRouter['_def']['queries']
+> = inferProcedureOutput<AppRouter['_def']['queries'][TRouteKey]>;
+```
+
+#### 3. Configure `_app.tsx`
+
+
+```tsx
+import { withTRPCClient } from '@trpc/next';
+import type { AppProps /*, AppContext */ } from 'next/app';
+import { trpcClientOptions } from '../utils/trpc';
+
+function MyApp({ Component, pageProps }: AppProps) {
+  return <Component {...pageProps} />;
+}
+export default withTRPCClient(
+  () => {
+    return { ...trpcClientOptions };
+  },
+  {
+    ssr: false,
+  },
+)(MyApp);
+```
+
+#### 4. Start consuming your data!
+
+
+```tsx
+import Head from 'next/head';
+import { trpc, trpcClientOptions } from '../utils/trpc';
+
+export default function Home() {
+  // try typing here to see that you get autocompletion & type safety on the procedure's name
+  const helloNoArgs = trpc.useQuery(['hello']);
+  const helloWithArgs = trpc.useQuery(['hello', { text: 'client' }]);
+
+  return (
+    <div>
+      <Head>
+        <title>Hello tRPC</title>
+        <link rel="icon" href="/favicon.ico" />
+      </Head>
+
+      <h1>Hello World Example</h1>
+      <ul>
+        <li>
+          helloNoArgs ({helloNoArgs.status}):{' '}
+          <pre>{JSON.stringify(helloNoArgs.data, null, 2)}</pre>
+        </li>
+        <li>
+          helloWithArgs ({helloWithArgs.status}):{' '}
+          <pre>{JSON.stringify(helloWithArgs.data, null, 2)}</pre>
+        </li>
+      </ul>
+    </div>
+  );
+}
+
+
+export const getStaticProps = async (
+  context: GetStaticPropsContext<{ filter: string }>,
+) => {
+  const ssg = createSSGHelpers(trpcClientOptions);
+
+  await ssg.fetchQuery('hello');
+  await ssg.fetchQuery('hello', { text: 'client' });
+
+  return {
+    props: {
+      trpcState: ssg.dehydrate(),
+    },
+    revalidate: 1,
+  };
+};
+
+```
 
