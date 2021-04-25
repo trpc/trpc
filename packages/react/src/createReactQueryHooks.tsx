@@ -104,7 +104,7 @@ type TRPCContextState<TRouter extends AnyRouter> = {
   ) => void;
 };
 
-function getCacheKey<TTuple extends [string, ...unknown[]]>(
+export function getCacheKey<TTuple extends [string, ...unknown[]]>(
   [path, input]: TTuple,
   extras?: string,
 ) {
@@ -115,9 +115,9 @@ function getCacheKey<TTuple extends [string, ...unknown[]]>(
   return cacheKey;
 }
 
-const CACHE_KEY_INFINITE_QUERY = 'TRPC_INFINITE_QUERY' as const;
-const CACHE_KEY_LIVE_QUERY = 'TRPC_LIVE_QUERY' as const;
-const CACHE_KEY_QUERY = 'TRPC_QUERY' as const;
+export const CACHE_KEY_INFINITE_QUERY = 'TRPC_INFINITE_QUERY' as const;
+export const CACHE_KEY_LIVE_QUERY = 'TRPC_LIVE_QUERY' as const;
+export const CACHE_KEY_QUERY = 'TRPC_QUERY' as const;
 
 export type OutputWithCursor<TData, TCursor extends any = any> = {
   cursor: TCursor | null;
@@ -299,7 +299,7 @@ export function createReactQueryHooks<TRouter extends AnyRouter>() {
     );
   }
 
-  function useTRPC() {
+  function useContext() {
     return React.useContext(TRPCContext);
   }
 
@@ -316,7 +316,7 @@ export function createReactQueryHooks<TRouter extends AnyRouter>() {
     >,
   ): UseQueryResult<TOutput, TError> {
     const cacheKey = getCacheKey(pathAndArgs, CACHE_KEY_QUERY);
-    const { client, prefetchQuery, ssr, queryClient } = useTRPC();
+    const { client, prefetchQuery, ssr, queryClient } = useContext();
 
     if (typeof window === 'undefined' && ssr) {
       const hashed = hashQueryKey(cacheKey);
@@ -342,7 +342,7 @@ export function createReactQueryHooks<TRouter extends AnyRouter>() {
     TInput extends inferProcedureInput<TMutations[TPath]>,
     TOutput extends inferProcedureOutput<TMutations[TPath]>
   >(path: TPath, opts?: UseMutationOptions<TOutput, TError, TInput>) {
-    const client = useTRPC().client;
+    const client = useContext().client;
     const hook = useMutation<TOutput, TError, TInput>(
       (input) => (client.mutation as any)(path, input),
       opts,
@@ -371,7 +371,7 @@ export function createReactQueryHooks<TRouter extends AnyRouter>() {
   ) {
     const enabled = opts?.enabled ?? true;
     const queryKey = hashQueryKey(pathAndArgs);
-    const client = useTRPC().client;
+    const client = useContext().client;
 
     return useEffect(() => {
       if (!enabled) {
@@ -420,7 +420,7 @@ export function createReactQueryHooks<TRouter extends AnyRouter>() {
 
     const currentCursor = useRef<any>(null);
     const cacheKey = getCacheKey(pathAndArgs, CACHE_KEY_LIVE_QUERY);
-    const client = useTRPC().client;
+    const client = useContext().client;
 
     const hook = useQuery<TInput, TError, TOutput>(
       cacheKey,
@@ -462,7 +462,7 @@ export function createReactQueryHooks<TRouter extends AnyRouter>() {
     // FIXME: this typing is wrong but it works
     opts?: UseInfiniteQueryOptions<TOutput, TError, TOutput, TOutput>,
   ) {
-    const { client, queryClient, prefetchInfiniteQuery } = useTRPC();
+    const { client, queryClient, prefetchInfiniteQuery } = useContext();
     const cacheKey = getCacheKey(pathAndArgs, CACHE_KEY_INFINITE_QUERY);
     const [path, input] = pathAndArgs;
 
@@ -502,7 +502,7 @@ export function createReactQueryHooks<TRouter extends AnyRouter>() {
   return {
     Provider: TRPCProvider,
     createClient,
-    useContext: useTRPC,
+    useContext: useContext,
     useQuery: _useQuery,
     useMutation: _useMutation,
     useSubscription,

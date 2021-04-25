@@ -13,6 +13,7 @@
   "preconstruct": {
     "entrypoints": [
       "index.ts",
+      "ssg.ts",
       "ssr.ts",
       "next.tsx"
     ]
@@ -23,6 +24,7 @@
   "files": [
     "README.md",
     "dist",
+    "ssg",
     "ssr",
     "next"
   ],

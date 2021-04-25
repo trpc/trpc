@@ -7,13 +7,11 @@ import {
 import Head from 'next/head';
 import Link from 'next/link';
 import { RefObject, useEffect, useRef, useState } from 'react';
-import { QueryClient, useQueryClient } from 'react-query';
 import { ReactQueryDevtools } from 'react-query/devtools';
 import 'todomvc-app-css/index.css';
 import 'todomvc-common/base.css';
-import { inferQueryOutput, trpc, createTRPCClient } from '../utils/trpc';
-import { appRouter, createContext } from './api/trpc/[trpc]';
-import { TRPCClient } from '@trpc/react';
+import { createTRPCClient, inferQueryOutput, trpc } from '../utils/trpc';
+import { createSSGHelpers } from '@trpc/react/ssg';
 type Task = inferQueryOutput<'todos.all'>[number];
 
 /**
@@ -339,16 +337,16 @@ export const getStaticPaths: GetStaticPaths = async () => {
 export const getStaticProps = async (
   context: GetStaticPropsContext<{ filter: string }>,
 ) => {
-  const ssr = trpc.ssr({
+  const ssg = createSSGHelpers({
     client: createTRPCClient(),
   });
 
-  await ssr.prefetchQuery('todos.all');
+  await ssg.prefetchQuery('todos.all');
 
   // console.log('state', ssr.dehydrate());
   return {
     props: {
-      dehydratedState: ssr.dehydrate(),
+      dehydratedState: ssg.dehydrate(),
       filter: context.params?.filter ?? 'all',
     },
     revalidate: 1,
