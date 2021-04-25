@@ -6,7 +6,11 @@ import {
   DehydratedState,
   DehydrateOptions,
 } from 'react-query/hydration';
-import { CACHE_KEY_INFINITE_QUERY, CACHE_KEY_QUERY, getCacheKey } from './';
+import {
+  CACHE_KEY_INFINITE_QUERY,
+  CACHE_KEY_QUERY,
+} from './internals/constants';
+import { getCacheKey } from './internals/getCacheKey';
 
 assertNotBrowser();
 export type OutputWithCursor<TData, TCursor extends any = any> = {
