@@ -1,5 +1,11 @@
-import { createTRPCClient, CreateTRPCClientOptions } from '@trpc/client';
-import { AnyRouter, assertNotBrowser, inferHandlerInput } from '@trpc/server';
+import { TRPCClient } from '@trpc/client';
+import {
+  AnyRouter,
+  assertNotBrowser,
+  DataTransformer,
+  inferHandlerInput,
+  inferRouterContext,
+} from '@trpc/server';
 import { QueryClient } from 'react-query';
 import {
   dehydrate,
@@ -19,21 +25,28 @@ export type OutputWithCursor<TData, TCursor extends any = any> = {
   data: TData;
 };
 
-export interface CreateSSGHelpersOptions<TRouter extends AnyRouter>
-  extends CreateTRPCClientOptions<TRouter> {
+export interface CreateSSGHelpersOptions<TRouter extends AnyRouter> {
+  router: TRouter;
+  ctx: inferRouterContext<TRouter>;
+  transformer?: DataTransformer;
   queryClientConfig?: QueryClientConfig;
 }
 
 /**
  * Create functions you can use for server-side rendering / static generation
  */
-export function createSSGHelpers<TRouter extends AnyRouter>(
-  opts: CreateSSGHelpersOptions<TRouter>,
-) {
+export function createSSGHelpers<TRouter extends AnyRouter>({
+  router,
+  transformer,
+  ctx,
+  queryClientConfig,
+}: CreateSSGHelpersOptions<TRouter>) {
   type TQueries = TRouter['_def']['queries'];
-  const queryClient = new QueryClient(opts.queryClientConfig);
-  const client = createTRPCClient(opts);
+  const queryClient = new QueryClient(queryClientConfig);
 
+  const caller = router.createCaller(ctx) as ReturnType<
+    TRouter['createCaller']
+  >;
   const prefetchQuery = async <
     TPath extends keyof TQueries & string,
     TProcedure extends TQueries[TPath]
@@ -44,7 +57,7 @@ export function createSSGHelpers<TRouter extends AnyRouter>(
     const cacheKey = [path, input ?? null, CACHE_KEY_QUERY];
 
     return queryClient.prefetchQuery(cacheKey, async () => {
-      const data = await client.query(...pathAndArgs);
+      const data = await caller.query(...pathAndArgs);
 
       return data;
     });
@@ -59,7 +72,7 @@ export function createSSGHelpers<TRouter extends AnyRouter>(
     const cacheKey = getCacheKey(pathAndArgs, CACHE_KEY_INFINITE_QUERY);
 
     return queryClient.prefetchInfiniteQuery(cacheKey, async () => {
-      const data = await client.query(...pathAndArgs);
+      const data = await caller.query(...pathAndArgs);
 
       return data;
     });
@@ -75,7 +88,7 @@ export function createSSGHelpers<TRouter extends AnyRouter>(
     const cacheKey = [path, input ?? null, CACHE_KEY_QUERY];
 
     return queryClient.fetchQuery(cacheKey, async () => {
-      const data = await client.query(...pathAndArgs);
+      const data = await caller.query(...pathAndArgs);
 
       return data;
     });
@@ -90,7 +103,7 @@ export function createSSGHelpers<TRouter extends AnyRouter>(
     const cacheKey = getCacheKey(pathAndArgs, CACHE_KEY_INFINITE_QUERY);
 
     return queryClient.fetchInfiniteQuery(cacheKey, async () => {
-      const data = await client.query(...pathAndArgs);
+      const data = await caller.query(...pathAndArgs);
 
       return data;
     });
@@ -104,11 +117,12 @@ export function createSSGHelpers<TRouter extends AnyRouter>(
       },
     },
   ): DehydratedState {
-    return client.transformer.serialize(dehydrate(queryClient, opts));
+    const serialize = transformer?.serialize ?? ((obj: unknown) => obj);
+
+    return serialize(dehydrate(queryClient, opts));
   }
 
   return {
-    client,
     prefetchQuery,
     prefetchInfiniteQuery,
     fetchQuery,

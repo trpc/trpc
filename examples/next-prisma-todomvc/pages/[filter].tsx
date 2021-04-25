@@ -1,3 +1,4 @@
+import { createSSGHelpers } from '@trpc/react/ssg';
 import clsx from 'clsx';
 import {
   GetStaticPaths,
@@ -10,8 +11,8 @@ import { RefObject, useEffect, useRef, useState } from 'react';
 import { ReactQueryDevtools } from 'react-query/devtools';
 import 'todomvc-app-css/index.css';
 import 'todomvc-common/base.css';
-import { trpcClientOptions, inferQueryOutput, trpc } from '../utils/trpc';
-import { createSSGHelpers } from '@trpc/react/ssg';
+import { inferQueryOutput, trpc, transformer } from '../utils/trpc';
+import { appRouter, createContext } from './api/trpc/[trpc]';
 type Task = inferQueryOutput<'todos.all'>[number];
 
 /**
@@ -337,7 +338,11 @@ export const getStaticPaths: GetStaticPaths = async () => {
 export const getStaticProps = async (
   context: GetStaticPropsContext<{ filter: string }>,
 ) => {
-  const ssg = createSSGHelpers(trpcClientOptions);
+  const ssg = createSSGHelpers({
+    router: appRouter,
+    transformer,
+    ctx: await createContext(),
+  });
 
   await ssg.fetchQuery('todos.all');
 
