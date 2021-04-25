@@ -241,7 +241,7 @@ export default function Home() {
 
 
 
-### Option B) Using Server-side rendering
+### Option B) Using SSG
 
 
 :::info

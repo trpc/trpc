@@ -21,7 +21,7 @@ import {
 
 
 // In component:
-const utils = trpc.useQueryUtils();
+const utils = trpc.useContext();
 
 const mutation = trpc.useMutation('editPost', {
   onSuccess(input) {
