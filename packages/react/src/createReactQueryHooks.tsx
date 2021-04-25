@@ -33,11 +33,7 @@ import {
   UseQueryOptions,
   UseQueryResult,
 } from 'react-query';
-import {
-  dehydrate,
-  DehydratedState,
-  DehydrateOptions,
-} from 'react-query/hydration';
+import { DehydratedState } from 'react-query/hydration';
 
 type TRPCContextState<TRouter extends AnyRouter> = {
   queryClient: QueryClient;
