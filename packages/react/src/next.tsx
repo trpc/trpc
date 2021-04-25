@@ -49,6 +49,11 @@ export function withTRPCClient<TRouter extends AnyRouter>(
       pageProps.dehydratedState,
     );
 
+    console.log(
+      'pagePropspageProps.dehydratedState',
+      pageProps.dehydratedState,
+    );
+
     return (
       <trpc.Provider client={trpcClient} queryClient={queryClient} ssr={ssr}>
         <QueryClientProvider client={queryClient}>
