@@ -23,6 +23,7 @@ import {
   FetchInfiniteQueryOptions,
   FetchQueryOptions,
   hashQueryKey,
+  InfiniteData,
   QueryClient,
   useInfiniteQuery,
   UseInfiniteQueryOptions,
@@ -43,6 +44,24 @@ type TRPCContextState<TRouter extends AnyRouter> = {
   client: TRPCClient<TRouter>;
   ssr: boolean;
 
+  fetchQuery: <
+    TPath extends keyof TRouter['_def']['queries'] & string,
+    TProcedure extends TRouter['_def']['queries'][TPath],
+    TOutput extends inferProcedureOutput<TProcedure>,
+    TInput extends inferProcedureInput<TProcedure>
+  >(
+    pathAndArgs: [path: TPath, ...args: inferHandlerInput<TProcedure>],
+    opts?: FetchQueryOptions<TInput, TRPCClientError<TRouter>, TOutput>,
+  ) => Promise<TOutput>;
+  fetchInfiniteQuery: <
+    TPath extends keyof TRouter['_def']['queries'] & string,
+    TProcedure extends TRouter['_def']['queries'][TPath],
+    TOutput extends inferProcedureOutput<TProcedure>,
+    TInput extends inferProcedureInput<TProcedure>
+  >(
+    pathAndArgs: [path: TPath, ...args: inferHandlerInput<TProcedure>],
+    opts?: FetchInfiniteQueryOptions<TInput, TRPCClientError<TRouter>, TOutput>,
+  ) => Promise<InfiniteData<TOutput>>;
   prefetchQuery: <
     TPath extends keyof TRouter['_def']['queries'] & string,
     TProcedure extends TRouter['_def']['queries'][TPath],
@@ -191,6 +210,33 @@ export function createReactQueryHooks<TRouter extends AnyRouter>() {
           queryClient,
           client,
           ssr,
+          fetchQuery: useCallback(
+            (pathAndArgs, opts) => {
+              const cacheKey = getCacheKey(pathAndArgs, CACHE_KEY_QUERY);
+
+              return queryClient.fetchQuery(
+                cacheKey,
+                () => client.query(...pathAndArgs) as any,
+                opts,
+              );
+            },
+            [client, queryClient],
+          ),
+          fetchInfiniteQuery: useCallback(
+            (pathAndArgs, opts) => {
+              const cacheKey = getCacheKey(
+                pathAndArgs,
+                CACHE_KEY_INFINITE_QUERY,
+              );
+
+              return queryClient.fetchInfiniteQuery(
+                cacheKey,
+                () => client.query(...pathAndArgs) as any,
+                opts,
+              );
+            },
+            [client, queryClient],
+          ),
           prefetchQuery: useCallback(
             (pathAndArgs, opts) => {
               const cacheKey = getCacheKey(pathAndArgs, CACHE_KEY_QUERY);
@@ -270,16 +316,24 @@ export function createReactQueryHooks<TRouter extends AnyRouter>() {
     >,
   ): UseQueryResult<TOutput, TError> {
     const cacheKey = getCacheKey(pathAndArgs, CACHE_KEY_QUERY);
-    const { client, prefetchQuery, ssr } = useTRPC();
+    const { client, fetchQuery, ssr, queryClient } = useTRPC();
 
+    if (typeof window === 'undefined' && ssr) {
+      const hashed = hashQueryKey(cacheKey);
+      const cache = queryClient.getQueryCache().get(hashed);
+      if (!cache) {
+        fetchQuery(pathAndArgs);
+      }
+    }
     const query = useQuery(
       cacheKey,
       () => client.query(...pathAndArgs) as any,
       opts,
     );
-    if (!query.isFetched && ssr) {
-      prefetchQuery(pathAndArgs);
-    }
+    // console.log(pathAndArgs, query.isFetched);
+    // if (!query.isFetched && ssr) {
+    //   prefetchQuery(pathAndArgs);
+    // }
     return query;
   }
 
@@ -408,9 +462,18 @@ export function createReactQueryHooks<TRouter extends AnyRouter>() {
     // FIXME: this typing is wrong but it works
     opts?: UseInfiniteQueryOptions<TOutput, TError, TOutput, TOutput>,
   ) {
-    const { client } = useTRPC();
+    const { client, queryClient, fetchInfiniteQuery } = useTRPC();
     const cacheKey = getCacheKey(pathAndArgs, CACHE_KEY_INFINITE_QUERY);
     const [path, input] = pathAndArgs;
+
+    if (typeof window === 'undefined' && ssr) {
+      const hashed = hashQueryKey(cacheKey);
+      const cache = queryClient.getQueryCache().get(hashed);
+      if (!cache) {
+        const actualInput = { ...input, cursor: null };
+        fetchInfiniteQuery([path, actualInput] as any);
+      }
+    }
     const query = useInfiniteQuery(
       cacheKey,
       ({ pageParam }) => {

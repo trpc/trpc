@@ -11,6 +11,7 @@ export const createContext = async (
   opts?: trpcNext.CreateNextContextOptions,
 ) => {
   return {
+    req: opts?.req,
     prisma,
     task: prisma.task,
   };

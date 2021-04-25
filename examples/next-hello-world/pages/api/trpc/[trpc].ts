@@ -23,6 +23,7 @@ export async function createContext({
   const user = await getUserFromHeader();
 
   return {
+    req,
     user,
   };
 }
@@ -43,6 +44,11 @@ export const appRouter = createRouter()
           ? error.originalError.flatten()
           : null,
     };
+  })
+  .middleware(({ ctx }) => {
+    // if (ctx.req.headers['x-ssr']) {
+    //   throw new Error('Random failure');
+    // }
   })
   // Create procedure at path 'hello'
   .query('hello', {

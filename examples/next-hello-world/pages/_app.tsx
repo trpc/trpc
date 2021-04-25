@@ -16,7 +16,7 @@ const MyApp: AppType = ({ Component, pageProps }) => {
 
 MyApp.getInitialProps = async ({ ctx }) => {
   // make it sloow
-  await new Promise((resolve) => setTimeout(resolve, 3000));
+  // await new Promise((resolve) => setTimeout(resolve, 1000));
 
   // ctx.res?.setHeader('Vary', 'Authorization');
   ctx.res?.setHeader('Cache-Control', 's-maxage=1, stale-while-revalidate=600');
@@ -35,4 +35,12 @@ const url = `${baseUrl}/api/trpc`;
 export default withTRPCClient(MyApp, {
   url,
   ssr: true,
+  getHeaders() {
+    if (process.browser) {
+      return {};
+    }
+    return {
+      'x-ssr': '1',
+    };
+  },
 });
