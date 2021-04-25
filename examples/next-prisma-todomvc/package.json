@@ -1,6 +1,6 @@
 {
   "name": "@examples/todo-web",
-  "version": "6.0.0-alpha.20",
+  "version": "6.0.0-alpha.21",
   "private": true,
   "scripts": {
     "dx:next": "prisma generate && next dev --port 3001",
@@ -19,8 +19,8 @@
   "dependencies": {
     "@prisma/client": "^2.18.0",
     "@trpc/client": "^6.0.0-alpha.20",
-    "@trpc/next": "^6.0.0-alpha.20",
-    "@trpc/react": "^6.0.0-alpha.20",
+    "@trpc/next": "^6.0.0-alpha.21",
+    "@trpc/react": "^6.0.0-alpha.21",
     "@trpc/server": "^6.0.0-alpha.20",
     "clsx": "^1.1.1",
     "jest": "^26.6.3",
