@@ -2,6 +2,8 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 /* eslint-disable @typescript-eslint/ban-types */
 /* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/ban-ts-comment */
+
 import * as trpcServer from '../../server/src';
 jest.mock('@trpc/server', () => trpcServer);
 import * as trpcClient from '../../client/src';
