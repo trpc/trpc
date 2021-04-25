@@ -331,10 +331,6 @@ export function createReactQueryHooks<TRouter extends AnyRouter>() {
       () => client.query(...pathAndArgs) as any,
       opts,
     );
-    // console.log(pathAndArgs, query.isFetched);
-    // if (!query.isFetched && ssr) {
-    //   prefetchQuery(pathAndArgs);
-    // }
     return query;
   }
 
