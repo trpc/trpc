@@ -1,18 +1,58 @@
 ---
 id: caching
-title: API Response Caching
-sidebar_label: API Response Caching
+title: Response Caching
+sidebar_label: Response Caching
 slug: /caching
 ---
-
-Since all queries are normal HTTP `GET`s we can use normal HTTP headers to cache responses, make the responses snappy, give your database a rest, and easier scale your API to gazillions of users.
 
 The below examples uses [Vercel's edge caching](https://vercel.com/docs/serverless-functions/edge-caching) to serve data to your users as fast as possible.
 
 
-## Example code
+## App Caching
 
-```ts
+If you turn on SSR in your app you might discover that your app loads slow on for instance Vercel, you can actually [statically render your whole app](https://twitter.com/alexdotjs/status/1386274093041950722) without doing SSG.
+
+### Example code
+
+```tsx
+// in _app.tsx
+export default withTRPCClient<AppRouter>(
+  ({ ctx }) => {
+    if (process.browser) {
+      return {
+        url: '/api/trpc',
+      };
+    }
+
+    const ONE_DAY_IN_SECONDS = 60 * 60 * 24;
+    ctx.res?.setHeader(
+      'Cache-Control',
+      `s-maxage=1, stale-while-revalidate=${ONE_DAY_IN_SECONDS}`,
+    );
+
+
+    const url = process.env.VERCEL_URL
+      ? `https://${process.env.VERCEL_URL}/api/trpc`
+      : 'http://localhost:3000/api/trpc';
+
+    return {
+      url,
+    };
+  },
+  { ssr: true },
+)(MyApp);
+
+```
+
+
+
+## API Response caching
+
+Since all queries are normal HTTP `GET`s we can use normal HTTP headers to cache responses, make the responses snappy, give your database a rest, and easier scale your API to gazillions of users.
+
+### Example code
+
+```tsx
 import * as trpc from '@trpc/server';
 import { inferAsyncReturnType } from '@trpc/server';
 import * as trpcNext from '@trpc/server/adapters/next';
