@@ -18,7 +18,8 @@ import { dehydrate } from 'react-query/hydration';
 import * as z from 'zod';
 import { ZodError } from 'zod';
 import { createReactQueryHooks, OutputWithCursor } from '../../react/src';
-import * as trpc from '../src';
+import { createSSGHelpers } from '../../react/ssg';
+import * as trpcServer from '../src';
 import { DefaultErrorShape } from '../src';
 import { routerToServerAndClient } from './_testHelpers';
 
@@ -48,7 +49,7 @@ function createAppRouter() {
 
   const allPosts = jest.fn();
   const postById = jest.fn();
-  const appRouter = trpc
+  const appRouter = trpcServer
     .router<Context>()
     .formatError(({ defaultShape, error }) => {
       return {
@@ -72,7 +73,7 @@ function createAppRouter() {
         postById(input);
         const post = db.posts.find((p) => p.id === input);
         if (!post) {
-          throw trpc.httpError.notFound();
+          throw trpcServer.httpError.notFound();
         }
         return post;
       },
@@ -121,7 +122,7 @@ function createAppRouter() {
     .subscription('newPosts', {
       input: z.number(),
       resolve({ input }) {
-        return trpc.subscriptionPullFactory<Post>({
+        return trpcServer.subscriptionPullFactory<Post>({
           intervalMs: 1,
           pull(emit) {
             db.posts.filter((p) => p.createdAt > input).forEach(emit.data);
@@ -137,7 +138,7 @@ function createAppRouter() {
         const { cursor } = input;
         postLiveInputs.push(input);
 
-        return trpc.subscriptionPullFactory<OutputWithCursor<Post[]>>({
+        return trpcServer.subscriptionPullFactory<OutputWithCursor<Post[]>>({
           intervalMs: 10,
           pull(emit) {
             const newCursor = hash(db.posts);
@@ -149,17 +150,19 @@ function createAppRouter() {
       },
     });
 
-  const { client, close } = routerToServerAndClient(appRouter);
+  const { client, trpcClientOptions, close } = routerToServerAndClient(
+    appRouter,
+  );
   const queryClient = new QueryClient();
-  const hooks = createReactQueryHooks({
-    client,
-  });
+  const trpc = createReactQueryHooks<typeof appRouter>();
 
   return {
     appRouter,
-    hooks,
+    trpc,
     close,
     db,
+    client,
+    trpcClientOptions,
     postLiveInputs,
     resolvers: {
       postById,
@@ -178,9 +181,9 @@ afterEach(() => {
 
 describe('useQuery()', () => {
   test('no input', async () => {
-    const { hooks } = factory;
+    const { trpc, client } = factory;
     function MyComponent() {
-      const allPostsQuery = hooks.useQuery(['allPosts']);
+      const allPostsQuery = trpc.useQuery(['allPosts']);
       expectTypeOf(allPostsQuery.data!).toMatchTypeOf<Post[]>();
 
       return <pre>{JSON.stringify(allPostsQuery.data ?? 'n/a', null, 4)}</pre>;
@@ -188,9 +191,11 @@ describe('useQuery()', () => {
     function App() {
       const [queryClient] = useState(() => new QueryClient());
       return (
-        <QueryClientProvider client={queryClient}>
-          <MyComponent />
-        </QueryClientProvider>
+        <trpc.Provider {...{ queryClient, client }}>
+          <QueryClientProvider client={queryClient}>
+            <MyComponent />
+          </QueryClientProvider>
+        </trpc.Provider>
       );
     }
 
@@ -201,18 +206,20 @@ describe('useQuery()', () => {
   });
 
   test('with input', async () => {
-    const { hooks } = factory;
+    const { trpc, client } = factory;
     function MyComponent() {
-      const allPostsQuery = hooks.useQuery(['paginatedPosts', { limit: 1 }]);
+      const allPostsQuery = trpc.useQuery(['paginatedPosts', { limit: 1 }]);
 
       return <pre>{JSON.stringify(allPostsQuery.data ?? 'n/a', null, 4)}</pre>;
     }
     function App() {
       const [queryClient] = useState(() => new QueryClient());
       return (
-        <QueryClientProvider client={queryClient}>
-          <MyComponent />
-        </QueryClientProvider>
+        <trpc.Provider {...{ queryClient, client }}>
+          <QueryClientProvider client={queryClient}>
+            <MyComponent />
+          </QueryClientProvider>
+        </trpc.Provider>
       );
     }
 
@@ -225,7 +232,7 @@ describe('useQuery()', () => {
 });
 
 test('mutation on mount + subscribe for it', async () => {
-  const { hooks } = factory;
+  const { trpc, client } = factory;
   function MyComponent() {
     const [posts, setPosts] = useState<Post[]>([]);
 
@@ -246,13 +253,13 @@ test('mutation on mount + subscribe for it', async () => {
       -1,
     );
 
-    hooks.useSubscription(['newPosts', input], {
+    trpc.useSubscription(['newPosts', input], {
       onBatch(posts) {
         addPosts(posts);
       },
     });
 
-    const mutation = hooks.useMutation('addPost');
+    const mutation = trpc.useMutation('addPost');
     const mutate = mutation.mutate;
     useEffect(() => {
       if (posts.length === 2) {
@@ -265,9 +272,11 @@ test('mutation on mount + subscribe for it', async () => {
   function App() {
     const [queryClient] = useState(() => new QueryClient());
     return (
-      <QueryClientProvider client={queryClient}>
-        <MyComponent />
-      </QueryClientProvider>
+      <trpc.Provider {...{ queryClient, client }}>
+        <QueryClientProvider client={queryClient}>
+          <MyComponent />
+        </QueryClientProvider>
+      </trpc.Provider>
     );
   }
 
@@ -281,18 +290,20 @@ test('mutation on mount + subscribe for it', async () => {
 });
 
 test('useLiveQuery()', async () => {
-  const { hooks, db, postLiveInputs } = factory;
+  const { trpc, db, postLiveInputs, client } = factory;
   function MyComponent() {
-    const postsQuery = hooks.useLiveQuery(['postsLive', {}]);
+    const postsQuery = trpc.useLiveQuery(['postsLive', {}]);
 
     return <pre>{JSON.stringify(postsQuery.data ?? null, null, 4)}</pre>;
   }
   function App() {
     const [queryClient] = useState(() => new QueryClient());
     return (
-      <QueryClientProvider client={queryClient}>
-        <MyComponent />
-      </QueryClientProvider>
+      <trpc.Provider {...{ queryClient, client }}>
+        <QueryClientProvider client={queryClient}>
+          <MyComponent />
+        </QueryClientProvider>
+      </trpc.Provider>
     );
   }
 
@@ -334,8 +345,8 @@ test('useLiveQuery()', async () => {
 });
 
 test('dehydrate', async () => {
-  const { hooks, appRouter, db } = factory;
-  const ssr = hooks.ssr(appRouter, {});
+  const { trpcClientOptions, db } = factory;
+  const ssr = createSSGHelpers(trpcClientOptions);
 
   await ssr.prefetchQuery('allPosts');
 
@@ -357,10 +368,10 @@ test('dehydrate', async () => {
 });
 
 test('prefetchQuery', async () => {
-  const { hooks } = factory;
+  const { trpc, client } = factory;
   function MyComponent() {
     const [state, setState] = useState<string>('nope');
-    const utils = hooks.useQueryUtils();
+    const utils = trpc.useContext();
     const queryClient = useQueryClient();
 
     useEffect(() => {
@@ -376,9 +387,11 @@ test('prefetchQuery', async () => {
   function App() {
     const [queryClient] = useState(() => new QueryClient());
     return (
-      <QueryClientProvider client={queryClient}>
-        <MyComponent />
-      </QueryClientProvider>
+      <trpc.Provider {...{ queryClient, client }}>
+        <QueryClientProvider client={queryClient}>
+          <MyComponent />
+        </QueryClientProvider>
+      </trpc.Provider>
     );
   }
 
@@ -389,10 +402,10 @@ test('prefetchQuery', async () => {
 });
 
 test('useInfiniteQuery()', async () => {
-  const { hooks } = factory;
+  const { trpc, client } = factory;
 
   function MyComponent() {
-    const q = hooks.useInfiniteQuery(
+    const q = trpc.useInfiniteQuery(
       [
         'paginatedPosts',
         {
@@ -442,9 +455,11 @@ test('useInfiniteQuery()', async () => {
   function App() {
     const [queryClient] = useState(() => new QueryClient());
     return (
-      <QueryClientProvider client={queryClient}>
-        <MyComponent />
-      </QueryClientProvider>
+      <trpc.Provider {...{ queryClient, client }}>
+        <QueryClientProvider client={queryClient}>
+          <MyComponent />
+        </QueryClientProvider>
+      </trpc.Provider>
     );
   }
 
@@ -489,8 +504,8 @@ test('useInfiniteQuery()', async () => {
 });
 
 test('prefetchInfiniteQuery()', async () => {
-  const { hooks, appRouter } = factory;
-  const ssr = hooks.ssr(appRouter, {});
+  const { trpcClientOptions } = factory;
+  const ssr = createSSGHelpers(trpcClientOptions);
 
   await ssr.prefetchInfiniteQuery('paginatedPosts', { limit: 1 });
 
@@ -501,12 +516,12 @@ test('prefetchInfiniteQuery()', async () => {
 
 describe('invalidate queries', () => {
   test('queryClient.invalidateQueries()', async () => {
-    const { hooks, resolvers } = factory;
+    const { trpc, resolvers, client } = factory;
     function MyComponent() {
-      const allPostsQuery = hooks.useQuery(['allPosts'], {
+      const allPostsQuery = trpc.useQuery(['allPosts'], {
         staleTime: Infinity,
       });
-      const postByIdQuery = hooks.useQuery(['postById', '1'], {
+      const postByIdQuery = trpc.useQuery(['postById', '1'], {
         staleTime: Infinity,
       });
       const queryClient = useQueryClient();
@@ -534,9 +549,11 @@ describe('invalidate queries', () => {
     function App() {
       const [queryClient] = useState(() => new QueryClient());
       return (
-        <QueryClientProvider client={queryClient}>
-          <MyComponent />
-        </QueryClientProvider>
+        <trpc.Provider {...{ queryClient, client }}>
+          <QueryClientProvider client={queryClient}>
+            <MyComponent />
+          </QueryClientProvider>
+        </trpc.Provider>
       );
     }
 
@@ -569,15 +586,15 @@ describe('invalidate queries', () => {
   });
 
   test('invalidateQuery()', async () => {
-    const { hooks, resolvers } = factory;
+    const { trpc, resolvers, client } = factory;
     function MyComponent() {
-      const allPostsQuery = hooks.useQuery(['allPosts'], {
+      const allPostsQuery = trpc.useQuery(['allPosts'], {
         staleTime: Infinity,
       });
-      const postByIdQuery = hooks.useQuery(['postById', '1'], {
+      const postByIdQuery = trpc.useQuery(['postById', '1'], {
         staleTime: Infinity,
       });
-      const utils = hooks.useQueryUtils();
+      const utils = trpc.useContext();
       return (
         <>
           <pre>
@@ -601,9 +618,11 @@ describe('invalidate queries', () => {
     function App() {
       const [queryClient] = useState(() => new QueryClient());
       return (
-        <QueryClientProvider client={queryClient}>
-          <MyComponent />
-        </QueryClientProvider>
+        <trpc.Provider {...{ queryClient, client }}>
+          <QueryClientProvider client={queryClient}>
+            <MyComponent />
+          </QueryClientProvider>
+        </trpc.Provider>
       );
     }
 
@@ -637,9 +656,9 @@ describe('invalidate queries', () => {
 });
 
 test('formatError() react types test', async () => {
-  const { hooks } = factory;
+  const { trpc, client } = factory;
   function MyComponent() {
-    const mutation = hooks.useMutation('addPost');
+    const mutation = trpc.useMutation('addPost');
 
     useEffect(() => {
       mutation.mutate({ title: 123 as any });
@@ -668,9 +687,11 @@ test('formatError() react types test', async () => {
   function App() {
     const [queryClient] = useState(() => new QueryClient());
     return (
-      <QueryClientProvider client={queryClient}>
-        <MyComponent />
-      </QueryClientProvider>
+      <trpc.Provider {...{ queryClient, client }}>
+        <QueryClientProvider client={queryClient}>
+          <MyComponent />
+        </QueryClientProvider>
+      </trpc.Provider>
     );
   }
 
@@ -681,12 +702,4 @@ test('formatError() react types test', async () => {
       `undefined`,
     );
   });
-});
-
-test('"caller" is of correct type', async () => {
-  const { appRouter, hooks } = factory;
-  const ssr = hooks.ssr(appRouter, {});
-  const data = await ssr.caller.query('allPosts');
-
-  expectTypeOf(data).toMatchTypeOf<Post[]>();
 });

@@ -20,18 +20,21 @@ export function routerToServerAndClient<TRouter extends AnyRouter>(
   });
   const { port } = server.listen(0);
 
-  const client = createTRPCClient<typeof router>({
+  const trpcClientOptions: CreateTRPCClientOptions<typeof router> = {
     url: `http://localhost:${port}`,
     fetchOpts: {
       AbortController: AbortController as any,
       fetch: fetch as any,
     },
     ...(opts?.client ?? {}),
-  });
+  };
+
+  const client = createTRPCClient<typeof router>(trpcClientOptions);
 
   return {
     client,
     close: () => server.server.close(),
     router,
+    trpcClientOptions,
   };
 }
