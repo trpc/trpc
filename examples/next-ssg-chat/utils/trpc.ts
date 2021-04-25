@@ -1,20 +1,29 @@
-import { createReactQueryHooks, createTRPCClient } from '@trpc/react';
+import { createReactQueryHooks, CreateTRPCClientOptions } from '@trpc/react';
 import type { inferProcedureOutput } from '@trpc/server';
 import superjson from 'superjson';
 // ℹ️ Type-only import:
 // https://www.typescriptlang.org/docs/handbook/release-notes/typescript-3-8.html#type-only-imports-and-export
 import type { AppRouter } from '../pages/api/trpc/[trpc]';
 
-// create helper methods for queries, mutations, and subscriptionos
-export const client = createTRPCClient<AppRouter>({
-  url: '/api/trpc',
-  transformer: superjson,
-});
-
 // create react query hooks for trpc
-export const trpc = createReactQueryHooks({
-  client,
-});
+export const trpc = createReactQueryHooks<AppRouter>();
+
+let baseUrl = '';
+
+if (!process.browser) {
+  baseUrl = process.env.VERCEL_URL
+    ? `https://${process.env.VERCEL_URL}`
+    : `http://localhost:3001`;
+}
+const url = `${baseUrl}/api/trpc`;
+
+export const trpcClientOptions: CreateTRPCClientOptions<AppRouter> = {
+  url,
+  transformer: superjson,
+  getHeaders() {
+    return {};
+  },
+};
 
 /**
  * This is a helper method to infer the output of a query resolver
