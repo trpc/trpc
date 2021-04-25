@@ -138,60 +138,6 @@ export function createReactQueryHooks<TRouter extends AnyRouter>() {
   function createClient(opts: CreateTRPCClientOptions<TRouter>) {
     return createTRPCClient(opts);
   }
-  /**
-   * Create functions you can use for server-side rendering / static generation
-   * @param router Your app's router
-   * @param ctx Context used in the calls
-   */
-  function ssr({
-    client,
-    queryClient = new QueryClient(),
-  }: {
-    client: TRPCClient<TRouter>;
-    queryClient?: QueryClient;
-  }) {
-    const prefetchQuery = async <
-      TPath extends keyof TQueries & string,
-      TProcedure extends TQueries[TPath]
-    >(
-      ...pathAndArgs: [path: TPath, ...args: inferHandlerInput<TProcedure>]
-    ) => {
-      const [path, input] = pathAndArgs;
-      const cacheKey = [path, input ?? null, CACHE_KEY_QUERY];
-
-      return queryClient.prefetchQuery(cacheKey, async () => {
-        const data = await client.query(...pathAndArgs);
-
-        return data;
-      });
-    };
-
-    const prefetchInfiniteQuery = async <
-      TPath extends keyof TQueries & string,
-      TProcedure extends TQueries[TPath]
-    >(
-      ...pathAndArgs: [path: TPath, ...args: inferHandlerInput<TProcedure>]
-    ) => {
-      const cacheKey = getCacheKey(pathAndArgs, CACHE_KEY_INFINITE_QUERY);
-
-      return queryClient.prefetchInfiniteQuery(cacheKey, async () => {
-        const data = await client.query(...pathAndArgs);
-
-        return data;
-      });
-    };
-
-    function _dehydrate(opts?: DehydrateOptions): DehydratedState {
-      return client.transformer.serialize(dehydrate(queryClient, opts));
-    }
-
-    return {
-      client,
-      prefetchQuery,
-      prefetchInfiniteQuery,
-      dehydrate: _dehydrate,
-    };
-  }
 
   function TRPCProvider({
     client,
