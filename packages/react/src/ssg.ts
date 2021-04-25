@@ -1,7 +1,11 @@
 import { createTRPCClient, CreateTRPCClientOptions } from '@trpc/client';
 import { AnyRouter, assertNotBrowser, inferHandlerInput } from '@trpc/server';
 import { QueryClient } from 'react-query';
-import { dehydrate, trpcState, DehydrateOptions } from 'react-query/hydration';
+import {
+  dehydrate,
+  DehydratedState,
+  DehydrateOptions,
+} from 'react-query/hydration';
 import {
   CACHE_KEY_INFINITE_QUERY,
   CACHE_KEY_QUERY,
@@ -99,7 +103,7 @@ export function createSSGHelpers<TRouter extends AnyRouter>(
         return true;
       },
     },
-  ): trpcState {
+  ): DehydratedState {
     return client.transformer.serialize(dehydrate(queryClient, opts));
   }
 

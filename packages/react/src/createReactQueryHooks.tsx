@@ -29,7 +29,7 @@ import {
   UseQueryOptions,
   UseQueryResult,
 } from 'react-query';
-import { trpcState } from 'react-query/hydration';
+import { DehydratedState } from 'react-query/hydration';
 import {
   CACHE_KEY_QUERY,
   CACHE_KEY_INFINITE_QUERY,
@@ -346,9 +346,9 @@ export function createReactQueryHooks<TRouter extends AnyRouter>() {
   }
   function useDehydratedState(
     client: TRPCClient<TRouter>,
-    trpcState: trpcState | undefined,
+    trpcState: DehydratedState | undefined,
   ) {
-    const transformed: trpcState | undefined = useMemo(() => {
+    const transformed: DehydratedState | undefined = useMemo(() => {
       if (!trpcState) {
         return trpcState;
       }
