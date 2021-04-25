@@ -28,6 +28,7 @@ const baseUrl = process.browser
 
 const url = `${baseUrl}/api/trpc`;
 
+console.log('url', url);
 export default withTRPCClient<AppRouter>(MyApp, {
   url,
   ssr: true,
