@@ -339,12 +339,12 @@ export const getStaticProps = async (
 ) => {
   const ssg = createSSGHelpers(trpcClientOptions);
 
-  await ssg.prefetchQuery('todos.all');
+  await ssg.fetchQuery('todos.all');
 
   // console.log('state', ssr.dehydrate());
   return {
     props: {
-      dehydratedState: ssg.dehydrate(),
+      trpcState: ssg.dehydrate(),
       filter: context.params?.filter ?? 'all',
     },
     revalidate: 1,

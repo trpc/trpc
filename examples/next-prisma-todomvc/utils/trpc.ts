@@ -8,12 +8,13 @@ import type { AppRouter } from '../pages/api/trpc/[trpc]';
 // create react query hooks for trpc
 export const trpc = createReactQueryHooks<AppRouter>();
 
-const baseUrl = process.browser
-  ? ''
-  : process.env.VERCEL_URL
-  ? `https://${process.env.VERCEL_URL}`
-  : 'http://localhost:3001';
+let baseUrl = '';
 
+if (!process.browser) {
+  baseUrl = process.env.VERCEL_URL
+    ? `https://${process.env.VERCEL_URL}`
+    : `http://localhost:3001`;
+}
 const url = `${baseUrl}/api/trpc`;
 
 export const trpcClientOptions: CreateTRPCClientOptions<AppRouter> = {

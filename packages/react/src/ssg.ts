@@ -1,11 +1,7 @@
 import { createTRPCClient, CreateTRPCClientOptions } from '@trpc/client';
 import { AnyRouter, assertNotBrowser, inferHandlerInput } from '@trpc/server';
 import { QueryClient } from 'react-query';
-import {
-  dehydrate,
-  DehydratedState,
-  DehydrateOptions,
-} from 'react-query/hydration';
+import { dehydrate, trpcState, DehydrateOptions } from 'react-query/hydration';
 import {
   CACHE_KEY_INFINITE_QUERY,
   CACHE_KEY_QUERY,
@@ -19,7 +15,7 @@ export type OutputWithCursor<TData, TCursor extends any = any> = {
   data: TData;
 };
 
-export interface CreateSSGHelpersOptioons<TRouter extends AnyRouter>
+export interface CreateSSGHelpersOptions<TRouter extends AnyRouter>
   extends CreateTRPCClientOptions<TRouter> {
   queryClientConfig?: QueryClientConfig;
 }
@@ -28,12 +24,11 @@ export interface CreateSSGHelpersOptioons<TRouter extends AnyRouter>
  * Create functions you can use for server-side rendering / static generation
  */
 export function createSSGHelpers<TRouter extends AnyRouter>(
-  opts: CreateSSGHelpersOptioons<TRouter>,
+  opts: CreateSSGHelpersOptions<TRouter>,
 ) {
-  const { queryClientConfig, ...trpcOptions } = opts;
   type TQueries = TRouter['_def']['queries'];
-  const queryClient = new QueryClient(queryClientConfig);
-  const client = createTRPCClient(trpcOptions);
+  const queryClient = new QueryClient(opts.queryClientConfig);
+  const client = createTRPCClient(opts);
 
   const prefetchQuery = async <
     TPath extends keyof TQueries & string,
@@ -66,6 +61,37 @@ export function createSSGHelpers<TRouter extends AnyRouter>(
     });
   };
 
+  const fetchQuery = async <
+    TPath extends keyof TQueries & string,
+    TProcedure extends TQueries[TPath]
+  >(
+    ...pathAndArgs: [path: TPath, ...args: inferHandlerInput<TProcedure>]
+  ) => {
+    const [path, input] = pathAndArgs;
+    const cacheKey = [path, input ?? null, CACHE_KEY_QUERY];
+
+    return queryClient.fetchQuery(cacheKey, async () => {
+      const data = await client.query(...pathAndArgs);
+
+      return data;
+    });
+  };
+
+  const fetchInfiniteQuery = async <
+    TPath extends keyof TQueries & string,
+    TProcedure extends TQueries[TPath]
+  >(
+    ...pathAndArgs: [path: TPath, ...args: inferHandlerInput<TProcedure>]
+  ) => {
+    const cacheKey = getCacheKey(pathAndArgs, CACHE_KEY_INFINITE_QUERY);
+
+    return queryClient.fetchInfiniteQuery(cacheKey, async () => {
+      const data = await client.query(...pathAndArgs);
+
+      return data;
+    });
+  };
+
   function _dehydrate(
     opts: DehydrateOptions = {
       shouldDehydrateQuery() {
@@ -73,7 +99,7 @@ export function createSSGHelpers<TRouter extends AnyRouter>(
         return true;
       },
     },
-  ): DehydratedState {
+  ): trpcState {
     return client.transformer.serialize(dehydrate(queryClient, opts));
   }
 
@@ -81,6 +107,8 @@ export function createSSGHelpers<TRouter extends AnyRouter>(
     client,
     prefetchQuery,
     prefetchInfiniteQuery,
+    fetchQuery,
+    fetchInfiniteQuery,
     dehydrate: _dehydrate,
   };
 }

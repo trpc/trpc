@@ -53,7 +53,7 @@ export function withTRPCClient<TRouter extends AnyRouter>(
 
       const hydratedState = trpc.useDehydratedState(
         trpcClient,
-        props.pageProps.dehydratedState,
+        props.pageProps.trpcState,
       );
 
       return (
@@ -101,7 +101,7 @@ export function withTRPCClient<TRouter extends AnyRouter>(
             queryClient,
           );
         }
-        pageProps.dehydratedState = trpcClient.transformer.serialize(
+        pageProps.trpcState = trpcClient.transformer.serialize(
           dehydrate(queryClient, {
             shouldDehydrateQuery() {
               // makes sure errors are also dehydrated

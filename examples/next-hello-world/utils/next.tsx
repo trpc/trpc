@@ -46,13 +46,10 @@ export function withTRPCClient<TRouter extends AnyRouter>(
 
     const hydratedState = trpc.useDehydratedState(
       trpcClient,
-      pageProps.dehydratedState,
+      pageProps.trpcState,
     );
 
-    console.log(
-      'pagePropspageProps.dehydratedState',
-      pageProps.dehydratedState,
-    );
+    console.log('pagePropspageProps.trpcState', pageProps.trpcState);
 
     return (
       <trpc.Provider client={trpcClient} queryClient={queryClient} ssr={ssr}>
@@ -107,7 +104,7 @@ export function withTRPCClient<TRouter extends AnyRouter>(
           queryClient,
         );
       }
-      pageProps.dehydratedState = trpcClient.transformer.serialize(
+      pageProps.trpcState = trpcClient.transformer.serialize(
         dehydrate(queryClient, {
           shouldDehydrateQuery() {
             // makes sure errors are also dehydrated
@@ -115,10 +112,7 @@ export function withTRPCClient<TRouter extends AnyRouter>(
           },
         }),
       );
-      console.log(
-        'pageProps.dehydratedState',
-        JSON.stringify(pageProps.dehydratedState),
-      );
+      console.log('pageProps.trpcState', JSON.stringify(pageProps.trpcState));
 
       return {
         pageProps,
