@@ -319,7 +319,7 @@ export function createReactQueryHooks<TRouter extends AnyRouter>() {
     const { client, prefetchQuery, ssr, queryClient } = useContext();
 
     console.log(
-      `typeof window === 'undefined'`,
+      `typeof window === 'undefined'?`,
       typeof window === 'undefined',
       'ssr',
       ssr,
