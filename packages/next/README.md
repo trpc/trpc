@@ -1,3 +1,3 @@
-# `@trpc/react`
+# `@trpc/next`
 
 https://trpc.io
