@@ -1,4 +1,3 @@
-import { TRPCClient } from '@trpc/client';
 import {
   AnyRouter,
   assertNotBrowser,

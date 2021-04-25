@@ -2,6 +2,17 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 /* eslint-disable @typescript-eslint/ban-types */
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import * as trpcServer from '../../server/src';
+jest.mock('@trpc/server', () => trpcServer);
+import * as trpcClient from '../../client/src';
+jest.mock('@trpc/client', () => trpcClient);
+import * as trpcReact from '../../react/src';
+jest.mock('@trpc/react', () => trpcReact);
+import * as trpcReact__ssr from '../../react/src/ssr';
+jest.mock('@trpc/react/ssr', () => trpcReact__ssr);
+import * as trpcReact__ssg from '../../react/src/ssg';
+jest.mock('@trpc/react/ssg', () => trpcReact__ssg);
+
 import '@testing-library/jest-dom';
 import { render, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
@@ -17,12 +28,11 @@ import {
 import { dehydrate } from 'react-query/hydration';
 import * as z from 'zod';
 import { ZodError } from 'zod';
+import { withTRPC } from '../../next/src';
 import { createReactQueryHooks, OutputWithCursor } from '../../react/src';
 import { createSSGHelpers } from '../../react/ssg';
-import * as trpcServer from '../src';
 import { DefaultErrorShape } from '../src';
 import { routerToServerAndClient } from './_testHelpers';
-
 setLogger({
   log() {},
   warn() {},
@@ -701,5 +711,75 @@ test('formatError() react types test', async () => {
     expect(utils.getByTestId('err').innerText).toMatchInlineSnapshot(
       `undefined`,
     );
+  });
+});
+
+// const MockApp: React.FC<any> = () => {
+//   return createElement('div');
+// };
+
+// const MockAppTree: React.FC<any> = () => {
+//   return createElement('div');
+// };
+
+describe('withTRPC()', () => {
+  test('useQuery', async () => {
+    const { window } = global;
+
+    // @ts-ignore
+    delete global.window;
+    const { trpc, trpcClientOptions } = factory;
+    function App() {
+      const query = trpc.useQuery(['allPosts']);
+      return <>{JSON.stringify(query.data)}</>;
+    }
+
+    const Wrapped = withTRPC(() => trpcClientOptions, {
+      ssr: true,
+    })(App);
+
+    const props = await Wrapped.getInitialProps!({
+      AppTree: Wrapped,
+    } as any);
+
+    global.window = window;
+
+    const utils = render(<Wrapped {...props} />);
+    expect(utils.container).toHaveTextContent('first post');
+  });
+
+  test('useInfiniteQuery', async () => {
+    const { window } = global;
+
+    // @ts-ignore
+    delete global.window;
+    const { trpc, trpcClientOptions } = factory;
+    function App() {
+      const query = trpc.useInfiniteQuery(
+        [
+          'paginatedPosts',
+          {
+            limit: 10,
+          },
+        ],
+        {
+          getNextPageParam: (lastPage) => lastPage.nextCursor,
+        },
+      );
+      return <>{JSON.stringify(query.data || query.error)}</>;
+    }
+
+    const Wrapped = withTRPC(() => trpcClientOptions, {
+      ssr: true,
+    })(App);
+
+    const props = await Wrapped.getInitialProps!({
+      AppTree: Wrapped,
+    } as any);
+
+    global.window = window;
+
+    const utils = render(<Wrapped {...props} />);
+    expect(utils.container).toHaveTextContent('first post');
   });
 });

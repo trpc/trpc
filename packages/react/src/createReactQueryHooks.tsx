@@ -328,9 +328,9 @@ export function createReactQueryHooks<TRouter extends AnyRouter>() {
     if (typeof window === 'undefined' && ssr) {
       const hashed = hashQueryKey(cacheKey);
       const cache = queryClient.getQueryCache().get(hashed);
+
       if (!cache) {
-        const actualInput = { ...input, cursor: null };
-        prefetchInfiniteQuery([path, actualInput] as any);
+        prefetchInfiniteQuery(pathAndArgs as any);
       }
     }
     const query = useInfiniteQuery(

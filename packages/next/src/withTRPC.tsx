@@ -1,8 +1,7 @@
-import React from 'react';
 import {
+  createReactQueryHooks,
   createTRPCClient,
   CreateTRPCClientOptions,
-  createReactQueryHooks,
   TRPCClient,
 } from '@trpc/react';
 import { getDataFromTree } from '@trpc/react/ssr';
@@ -13,7 +12,7 @@ import type {
   NextComponentType,
   NextPageContext,
 } from 'next/dist/next-server/lib/utils';
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { QueryClient, QueryClientProvider } from 'react-query';
 import { dehydrate, Hydrate } from 'react-query/hydration';
 type QueryClientConfig = ConstructorParameters<typeof QueryClient>[0];
@@ -33,7 +32,7 @@ export function withTRPC<TRouter extends AnyRouter>(
   }) => WithTRPCClientConfig<TRouter>,
   { ssr = false }: WithTRPCClientOptions = {},
 ) {
-  return (AppOrPage: NextComponentType<any, any, any>) => {
+  return (AppOrPage: NextComponentType<any, any, any>): NextComponentType => {
     const trpc = createReactQueryHooks<TRouter>();
 
     const WithTRPC = (
@@ -119,6 +118,6 @@ export function withTRPC<TRouter extends AnyRouter>(
     const displayName = AppOrPage.displayName || AppOrPage.name || 'Component';
     WithTRPC.displayName = `withTRPC(${displayName})`;
 
-    return WithTRPC;
+    return WithTRPC as any;
   };
 }
