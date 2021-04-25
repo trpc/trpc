@@ -1,4 +1,4 @@
-import { withTRPCClient } from '@trpc/react/next';
+import { withTRPCClient } from '../utils/next';
 import { AppType } from 'next/dist/next-server/lib/utils';
 import React from 'react';
 import type { AppRouter } from './api/trpc/[trpc]';
