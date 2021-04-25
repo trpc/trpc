@@ -1,10 +1,15 @@
+/**
+ * This should really be under `@trpc/react/next` but it breaks SSR
+ * as the context object is somehow different from `trpc.Provider` is created here
+ * versus how `useContext()` works
+ */
 import React from 'react';
 import {
   createTRPCClient,
   CreateTRPCClientOptions,
   createReactQueryHooks,
   TRPCClient,
-} from './';
+} from '.';
 import { getDataFromTree } from './ssr';
 import type { AnyRouter, Dict } from '@trpc/server';
 import type {
