@@ -1,4 +1,4 @@
-import { TRPCClient } from '@trpc/client';
+import { createTRPCClient, CreateTRPCClientOptions } from '@trpc/client';
 import { AnyRouter, assertNotBrowser, inferHandlerInput } from '@trpc/server';
 import { QueryClient } from 'react-query';
 import {
@@ -11,6 +11,7 @@ import {
   CACHE_KEY_QUERY,
 } from './internals/constants';
 import { getCacheKey } from './internals/getCacheKey';
+type QueryClientConfig = ConstructorParameters<typeof QueryClient>[0];
 
 assertNotBrowser();
 export type OutputWithCursor<TData, TCursor extends any = any> = {
@@ -18,17 +19,21 @@ export type OutputWithCursor<TData, TCursor extends any = any> = {
   data: TData;
 };
 
+export interface CreateSSGHelpersOptioons<TRouter extends AnyRouter>
+  extends CreateTRPCClientOptions<TRouter> {
+  queryClientConfig?: QueryClientConfig;
+}
+
 /**
  * Create functions you can use for server-side rendering / static generation
  */
-export function createSSGHelpers<TRouter extends AnyRouter>({
-  client,
-  queryClient = new QueryClient(),
-}: {
-  client: TRPCClient<TRouter>;
-  queryClient?: QueryClient;
-}) {
+export function createSSGHelpers<TRouter extends AnyRouter>(
+  opts: CreateSSGHelpersOptioons<TRouter>,
+) {
+  const { queryClientConfig, ...trpcOptions } = opts;
   type TQueries = TRouter['_def']['queries'];
+  const queryClient = new QueryClient(queryClientConfig);
+  const client = createTRPCClient(trpcOptions);
 
   const prefetchQuery = async <
     TPath extends keyof TQueries & string,

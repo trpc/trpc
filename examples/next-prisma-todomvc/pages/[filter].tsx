@@ -337,9 +337,7 @@ export const getStaticPaths: GetStaticPaths = async () => {
 export const getStaticProps = async (
   context: GetStaticPropsContext<{ filter: string }>,
 ) => {
-  const ssg = createSSGHelpers({
-    client: trpc.createClient(trpcClientOptions),
-  });
+  const ssg = createSSGHelpers(trpcClientOptions);
 
   await ssg.prefetchQuery('todos.all');
 
