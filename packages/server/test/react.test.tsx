@@ -345,8 +345,8 @@ test('useLiveQuery()', async () => {
 });
 
 test('dehydrate', async () => {
-  const { trpcClientOptions, db } = factory;
-  const ssr = createSSGHelpers(trpcClientOptions);
+  const { db, appRouter } = factory;
+  const ssr = createSSGHelpers({ router: appRouter, ctx: {} });
 
   await ssr.prefetchQuery('allPosts');
 
@@ -504,8 +504,8 @@ test('useInfiniteQuery()', async () => {
 });
 
 test('prefetchInfiniteQuery()', async () => {
-  const { trpcClientOptions } = factory;
-  const ssr = createSSGHelpers(trpcClientOptions);
+  const { appRouter } = factory;
+  const ssr = createSSGHelpers({ router: appRouter, ctx: {} });
 
   await ssr.prefetchInfiniteQuery('paginatedPosts', { limit: 1 });
 
