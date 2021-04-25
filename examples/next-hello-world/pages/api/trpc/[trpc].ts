@@ -45,11 +45,12 @@ export const appRouter = createRouter()
           : null,
     };
   })
-  // .middleware(({ ctx }) => {
-  //   if (ctx.req.headers['x-ssr']) {
-  //     throw new Error('Random failure');
-  //   }
-  // })
+  .middleware(({ ctx }) => {
+    console.log('received request with headers', ctx.req.headers);
+    // if (ctx.req.headers['x-ssr']) {
+    //   throw new Error('Random failure');
+    // }
+  })
   // Create procedure at path 'hello'
   .query('hello', {
     // using zod schema to validate and infer input values
