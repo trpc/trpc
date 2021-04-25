@@ -3,7 +3,7 @@
   "version": "6.0.0-alpha.21",
   "private": true,
   "scripts": {
-    "dx:next": "prisma generate && next dev --port 3002",
+    "dx:next": "prisma generate && next dev",
     "dx:prisma-studio": "prisma studio",
     "dx": "run-p dx:* --print-label",
     "dev": "yarn dx:next",
@@ -13,7 +13,7 @@
     "migrate-dev": "prisma migrate dev --preview-feature",
     "migrate": "prisma migrate deploy --preview-feature",
     "test": "jest",
-    "test-dev": "start-server-and-test dev 3002 test",
+    "test-dev": "start-server-and-test dev 3000 test",
     "test-start": "start-server-and-test start 3000 test"
   },
   "dependencies": {
