@@ -15,7 +15,8 @@
       "index.ts",
       "ssg.ts",
       "ssr.ts",
-      "next.tsx"
+      "next.tsx",
+      "context.tsx"
     ]
   },
   "scripts": {},
@@ -26,7 +27,8 @@
     "dist",
     "ssg",
     "ssr",
-    "next"
+    "next",
+    "context"
   ],
   "eslintConfig": {
     "rules": {

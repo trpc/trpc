@@ -36,7 +36,7 @@ import {
   CACHE_KEY_LIVE_QUERY,
 } from './internals/constants';
 import { getCacheKey } from './internals/getCacheKey';
-import { TRPCContext, TRPCContextState } from './internals/TRPCContext';
+import { TRPCContext, TRPCContextState } from './context';
 
 export type OutputWithCursor<TData, TCursor extends any = any> = {
   cursor: TCursor | null;
