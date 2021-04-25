@@ -16,8 +16,6 @@ export type OutputWithCursor<TData, TCursor extends any = any> = {
 
 /**
  * Create functions you can use for server-side rendering / static generation
- * @param router Your app's router
- * @param ctx Context used in the calls
  */
 export function createSSGHelpers<TRouter extends AnyRouter>({
   client,
@@ -28,11 +26,6 @@ export function createSSGHelpers<TRouter extends AnyRouter>({
 }) {
   type TQueries = TRouter['_def']['queries'];
 
-  /**
-   * Create functions you can use for server-side rendering / static generation
-   * @param router Your app's router
-   * @param ctx Context used in the calls
-   */
   const prefetchQuery = async <
     TPath extends keyof TQueries & string,
     TProcedure extends TQueries[TPath]
