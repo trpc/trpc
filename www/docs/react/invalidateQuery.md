@@ -14,10 +14,6 @@ A type safe wrapper around calling `queryClient.invalidateQueries()`, all it doe
 
 ```tsx
 import { trpc } from '../utils/trpc'
-import {
-  useQueryClient,
-} from 'react-query';
-// ...
 
 
 // In component:
@@ -30,4 +26,3 @@ const mutation = trpc.useMutation('editPost', {
   },
 })
 ```
-
