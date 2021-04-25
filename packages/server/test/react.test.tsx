@@ -353,17 +353,17 @@ test('useLiveQuery()', async () => {
     ]
   `);
 });
-
 test('dehydrate', async () => {
   const { db, appRouter } = factory;
   const ssr = createSSGHelpers({ router: appRouter, ctx: {} });
 
   await ssr.prefetchQuery('allPosts');
+  await ssr.fetchQuery('postById', '1');
 
   const dehydrated = ssr.dehydrate().queries;
-  expect(dehydrated).toHaveLength(1);
+  expect(dehydrated).toHaveLength(2);
 
-  const [cache] = dehydrated;
+  const [cache, cache2] = dehydrated;
   expect(cache.queryHash).toMatchInlineSnapshot(
     `"[\\"allPosts\\",null,\\"TRPC_QUERY\\"]"`,
   );
@@ -375,6 +375,13 @@ test('dehydrate', async () => {
     ]
   `);
   expect(cache.state.data).toEqual(db.posts);
+  expect(cache2.state.data).toMatchInlineSnapshot(`
+    Object {
+      "createdAt": 0,
+      "id": "1",
+      "title": "first post",
+    }
+  `);
 });
 
 test('prefetchQuery', async () => {
@@ -517,11 +524,18 @@ test('prefetchInfiniteQuery()', async () => {
   const { appRouter } = factory;
   const ssr = createSSGHelpers({ router: appRouter, ctx: {} });
 
-  await ssr.prefetchInfiniteQuery('paginatedPosts', { limit: 1 });
-
-  const data = JSON.stringify(ssr.dehydrate());
-  expect(data).toContain('first post');
-  expect(data).not.toContain('second post');
+  {
+    await ssr.prefetchInfiniteQuery('paginatedPosts', { limit: 1 });
+    const data = JSON.stringify(ssr.dehydrate());
+    expect(data).toContain('first post');
+    expect(data).not.toContain('second post');
+  }
+  {
+    await ssr.fetchInfiniteQuery('paginatedPosts', { limit: 2 });
+    const data = JSON.stringify(ssr.dehydrate());
+    expect(data).toContain('first post');
+    expect(data).toContain('second post');
+  }
 });
 
 describe('invalidate queries', () => {
