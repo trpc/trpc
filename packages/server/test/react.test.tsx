@@ -10,8 +10,6 @@ import * as trpcClient from '../../client/src';
 jest.mock('@trpc/client', () => trpcClient);
 import * as trpcReact from '../../react/src';
 jest.mock('@trpc/react', () => trpcReact);
-import * as trpcReact__ssr from '../../react/src/ssr';
-jest.mock('@trpc/react/ssr', () => trpcReact__ssr);
 import * as trpcReact__ssg from '../../react/src/ssg';
 jest.mock('@trpc/react/ssg', () => trpcReact__ssg);
 
@@ -757,6 +755,7 @@ describe('withTRPC()', () => {
 
     const props = await Wrapped.getInitialProps!({
       AppTree: Wrapped,
+      Component: <div />,
     } as any);
 
     global.window = window;
@@ -792,6 +791,7 @@ describe('withTRPC()', () => {
 
     const props = await Wrapped.getInitialProps!({
       AppTree: Wrapped,
+      Component: <div />,
     } as any);
 
     global.window = window;
@@ -813,6 +813,7 @@ describe('withTRPC()', () => {
 
     const props = await Wrapped.getInitialProps!({
       AppTree: Wrapped,
+      Component: <div />,
     } as any);
 
     const utils = render(<Wrapped {...props} />);

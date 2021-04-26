@@ -1,10 +1,14 @@
+/**
+ * Heavily based on urql's ssr
+ * https://github.com/FormidableLabs/urql/blob/main/packages/next-urql/src/with-urql-client.ts
+ */
+
 import {
   createReactQueryHooks,
   createTRPCClient,
   CreateTRPCClientOptions,
   TRPCClient,
 } from '@trpc/react';
-import { getDataFromTree } from '@trpc/react/ssr';
 import type { AnyRouter, Dict } from '@trpc/server';
 import type {
   AppContextType,
@@ -12,9 +16,11 @@ import type {
   NextComponentType,
   NextPageContext,
 } from 'next/dist/next-server/lib/utils';
-import React, { useState } from 'react';
+import React, { createElement, useState } from 'react';
 import { QueryClient, QueryClientProvider } from 'react-query';
 import { dehydrate, Hydrate } from 'react-query/hydration';
+import ssrPrepass from 'react-ssr-prepass';
+
 type QueryClientConfig = ConstructorParameters<typeof QueryClient>[0];
 
 export interface WithTRPCClientConfig<TRouter extends AnyRouter>
@@ -39,6 +45,7 @@ export function withTRPC<TRouter extends AnyRouter>(
       props: AppPropsType & {
         queryClient?: QueryClient;
         trpcClient?: TRPCClient<TRouter>;
+        isPrepass?: boolean;
       },
     ) => {
       const [queryClient] = useState(
@@ -52,11 +59,15 @@ export function withTRPC<TRouter extends AnyRouter>(
 
       const hydratedState = trpc.useDehydratedState(
         trpcClient,
-        props.pageProps.trpcState,
+        props.pageProps?.trpcState,
       );
 
       return (
-        <trpc.Provider client={trpcClient} queryClient={queryClient} ssr={ssr}>
+        <trpc.Provider
+          client={trpcClient}
+          queryClient={queryClient}
+          isPrepass={props.isPrepass}
+        >
           <QueryClientProvider client={queryClient}>
             <Hydrate state={hydratedState}>
               <AppOrPage {...props} />
@@ -89,17 +100,17 @@ export function withTRPC<TRouter extends AnyRouter>(
         }
 
         if (typeof window === 'undefined' && ssr) {
-          await getDataFromTree(
-            <AppTree
-              pageProps={pageProps}
-              {...{
-                trpcClient,
-                queryClient,
-              }}
-            />,
+          const props = {
+            ...pageProps,
+            trpcClient,
             queryClient,
-          );
+            isPrepass: true,
+          };
+          const appTreeProps = isApp ? props : { pageProps: props };
+          // Run the prepass step on AppTree. This will run all trpc queries on the server.
+          await ssrPrepass(createElement(AppTree, appTreeProps as any));
         }
+
         pageProps.trpcState = trpcClient.transformer.serialize(
           dehydrate(queryClient, {
             shouldDehydrateQuery() {

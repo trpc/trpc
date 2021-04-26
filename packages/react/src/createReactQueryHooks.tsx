@@ -60,19 +60,19 @@ export function createReactQueryHooks<TRouter extends AnyRouter>() {
     client,
     queryClient,
     children,
-    ssr = false,
+    isPrepass = false,
   }: {
     queryClient: QueryClient;
     client: TRPCClient<TRouter>;
     children: ReactNode;
-    ssr?: boolean;
+    isPrepass?: boolean;
   }) {
     return (
       <Context.Provider
         value={{
           queryClient,
           client,
-          ssr,
+          isPrepass,
           fetchQuery: useCallback(
             (pathAndArgs, opts) => {
               const cacheKey = getCacheKey(pathAndArgs, CACHE_KEY_QUERY);
@@ -172,26 +172,19 @@ export function createReactQueryHooks<TRouter extends AnyRouter>() {
     TOutput extends inferProcedureOutput<TProcedure>
   >(
     pathAndArgs: [path: TPath, ...args: inferHandlerInput<TProcedure>],
-    opts?: UseQueryOptions<
+    opts: UseQueryOptions<
       inferProcedureInput<TQueries[TPath]>,
       TError,
       TOutput
-    >,
+    > = {},
   ): UseQueryResult<TOutput, TError> {
     const cacheKey = getCacheKey(pathAndArgs, CACHE_KEY_QUERY);
-    const { client, prefetchQuery, ssr, queryClient } = useContext();
+    const { client, isPrepass } = useContext();
 
-    if (typeof window === 'undefined' && ssr) {
-      const hashed = hashQueryKey(cacheKey);
-      const cache = queryClient.getQueryCache().get(hashed);
-      if (!cache) {
-        prefetchQuery(pathAndArgs);
-      }
-    }
     const query = useQuery(
       cacheKey,
       () => client.query(...pathAndArgs) as any,
-      opts,
+      { ...opts, suspense: opts.suspense || isPrepass },
     );
     return query;
   }
@@ -319,27 +312,19 @@ export function createReactQueryHooks<TRouter extends AnyRouter>() {
   >(
     pathAndArgs: [TPath, Omit<TInput, 'cursor'>],
     // FIXME: this typing is wrong but it works
-    opts?: UseInfiniteQueryOptions<TOutput, TError, TOutput, TOutput>,
+    opts: UseInfiniteQueryOptions<TOutput, TError, TOutput, TOutput> = {},
   ) {
-    const { client, queryClient, prefetchInfiniteQuery, ssr } = useContext();
+    const { client, isPrepass } = useContext();
     const cacheKey = getCacheKey(pathAndArgs, CACHE_KEY_INFINITE_QUERY);
     const [path, input] = pathAndArgs;
 
-    if (typeof window === 'undefined' && ssr) {
-      const hashed = hashQueryKey(cacheKey);
-      const cache = queryClient.getQueryCache().get(hashed);
-
-      if (!cache) {
-        prefetchInfiniteQuery(pathAndArgs as any);
-      }
-    }
     const query = useInfiniteQuery(
       cacheKey,
       ({ pageParam }) => {
         const actualInput = { ...input, cursor: pageParam };
         return (client.query as any)(path, actualInput);
       },
-      opts,
+      { ...opts, suspense: opts.suspense || isPrepass },
     );
 
     return query;

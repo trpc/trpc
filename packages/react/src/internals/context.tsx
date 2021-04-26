@@ -16,7 +16,7 @@ import {
 export type TRPCContextState<TRouter extends AnyRouter> = {
   queryClient: QueryClient;
   client: TRPCClient<TRouter>;
-  ssr: boolean;
+  isPrepass: boolean;
 
   fetchQuery: <
     TPath extends keyof TRouter['_def']['queries'] & string,

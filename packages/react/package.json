@@ -13,8 +13,7 @@
   "preconstruct": {
     "entrypoints": [
       "index.ts",
-      "ssg.ts",
-      "ssr.ts"
+      "ssg.ts"
     ]
   },
   "scripts": {},
@@ -23,8 +22,7 @@
   "files": [
     "README.md",
     "dist",
-    "ssg",
-    "ssr"
+    "ssg"
   ],
   "eslintConfig": {
     "rules": {
