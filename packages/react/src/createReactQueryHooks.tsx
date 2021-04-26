@@ -21,6 +21,7 @@ import React, {
 import {
   hashQueryKey,
   QueryClient,
+  QueryKey,
   useInfiniteQuery,
   UseInfiniteQueryOptions,
   useMutation,
@@ -42,6 +43,36 @@ export type OutputWithCursor<TData, TCursor extends any = any> = {
   cursor: TCursor | null;
   data: TData;
 };
+
+interface TRPCUseQueryBaseOptions {
+  /**
+   * Opt out of SSR for this query
+   */
+  noSSR?: boolean;
+}
+
+interface UseTRPCQueryOptions<
+  TQueryFnData = unknown,
+  TError = unknown,
+  TData = TQueryFnData,
+  TQueryKey extends QueryKey = QueryKey
+> extends UseQueryOptions<TQueryFnData, TError, TData, TQueryKey>,
+    TRPCUseQueryBaseOptions {}
+
+interface UseTRPCInfiniteQueryOptions<
+  TQueryFnData = unknown,
+  TError = unknown,
+  TData = TQueryFnData,
+  TQueryData = TQueryFnData,
+  TQueryKey extends QueryKey = QueryKey
+> extends UseInfiniteQueryOptions<
+      TQueryFnData,
+      TError,
+      TData,
+      TQueryData,
+      TQueryKey
+    >,
+    TRPCUseQueryBaseOptions {}
 
 export function createReactQueryHooks<TRouter extends AnyRouter>() {
   type TQueries = TRouter['_def']['queries'];
@@ -172,7 +203,7 @@ export function createReactQueryHooks<TRouter extends AnyRouter>() {
     TOutput extends inferProcedureOutput<TProcedure>
   >(
     pathAndArgs: [path: TPath, ...args: inferHandlerInput<TProcedure>],
-    opts: UseQueryOptions<
+    opts: UseTRPCQueryOptions<
       inferProcedureInput<TQueries[TPath]>,
       TError,
       TOutput
@@ -184,7 +215,7 @@ export function createReactQueryHooks<TRouter extends AnyRouter>() {
     const query = useQuery(
       cacheKey,
       () => client.query(...pathAndArgs) as any,
-      { ...opts, suspense: opts.suspense || isPrepass },
+      { ...opts, suspense: isPrepass && !opts.noSSR ? true : opts.suspense },
     );
     return query;
   }
@@ -312,7 +343,7 @@ export function createReactQueryHooks<TRouter extends AnyRouter>() {
   >(
     pathAndArgs: [TPath, Omit<TInput, 'cursor'>],
     // FIXME: this typing is wrong but it works
-    opts: UseInfiniteQueryOptions<TOutput, TError, TOutput, TOutput> = {},
+    opts: UseTRPCInfiniteQueryOptions<TOutput, TError, TOutput, TOutput> = {},
   ) {
     const { client, isPrepass } = useContext();
     const cacheKey = getCacheKey(pathAndArgs, CACHE_KEY_INFINITE_QUERY);
@@ -324,7 +355,7 @@ export function createReactQueryHooks<TRouter extends AnyRouter>() {
         const actualInput = { ...input, cursor: pageParam };
         return (client.query as any)(path, actualInput);
       },
-      { ...opts, suspense: opts.suspense || isPrepass },
+      { ...opts, suspense: isPrepass && !opts.noSSR ? true : opts.suspense },
     );
 
     return query;

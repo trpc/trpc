@@ -822,4 +822,79 @@ describe('withTRPC()', () => {
       expect(utils.container).toHaveTextContent('first post');
     });
   });
+
+  describe('noSSR property', () => {
+    test('useQuery()', async () => {
+      const { window } = global;
+
+      // @ts-ignore
+      delete global.window;
+      const { trpc, trpcClientOptions } = factory;
+      const App: AppType = () => {
+        const query = trpc.useQuery(['allPosts'], { noSSR: true });
+        return <>{JSON.stringify(query.data)}</>;
+      };
+
+      const Wrapped = withTRPC(() => trpcClientOptions, {
+        ssr: true,
+      })(App);
+
+      const props = await Wrapped.getInitialProps!({
+        AppTree: Wrapped,
+        Component: <div />,
+      } as any);
+
+      global.window = window;
+
+      const utils = render(<Wrapped {...props} />);
+      expect(utils.container).not.toHaveTextContent('first post');
+
+      // should eventually be fetched
+      await waitFor(() => {
+        expect(utils.container).toHaveTextContent('first post');
+      });
+    });
+
+    test('useInfiniteQuery', async () => {
+      const { window } = global;
+
+      // @ts-ignore
+      delete global.window;
+      const { trpc, trpcClientOptions } = factory;
+      const App: AppType = () => {
+        const query = trpc.useInfiniteQuery(
+          [
+            'paginatedPosts',
+            {
+              limit: 10,
+            },
+          ],
+          {
+            getNextPageParam: (lastPage) => lastPage.nextCursor,
+            noSSR: true,
+          },
+        );
+        return <>{JSON.stringify(query.data || query.error)}</>;
+      };
+
+      const Wrapped = withTRPC(() => trpcClientOptions, {
+        ssr: true,
+      })(App);
+
+      const props = await Wrapped.getInitialProps!({
+        AppTree: Wrapped,
+        Component: <div />,
+      } as any);
+
+      global.window = window;
+
+      const utils = render(<Wrapped {...props} />);
+      expect(utils.container).not.toHaveTextContent('first post');
+
+      // should eventually be fetched
+      await waitFor(() => {
+        expect(utils.container).toHaveTextContent('first post');
+      });
+    });
+  });
 });

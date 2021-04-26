@@ -1,2 +1,5 @@
 export * from '@trpc/client';
-export * from './createReactQueryHooks';
+export {
+  createReactQueryHooks,
+  OutputWithCursor,
+} from './createReactQueryHooks';
