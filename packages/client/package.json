@@ -12,6 +12,7 @@
   },
   "scripts": {},
   "main": "dist/trpc-client.cjs.js",
+  "module": "dist/trpc-client.esm.js",
   "typings": "dist/trpc-client.cjs.d.ts",
   "files": [
     "README.md",

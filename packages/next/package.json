@@ -17,6 +17,7 @@
   },
   "scripts": {},
   "main": "dist/trpc-next.cjs.js",
+  "module": "dist/trpc-next.esm.js",
   "typings": "dist/trpc-next.cjs.d.ts",
   "files": [
     "README.md",

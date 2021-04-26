@@ -18,6 +18,7 @@
   },
   "scripts": {},
   "main": "dist/trpc-react.cjs.js",
+  "module": "dist/trpc-react.esm.js",
   "typings": "dist/trpc-react.cjs.d.ts",
   "files": [
     "README.md",
