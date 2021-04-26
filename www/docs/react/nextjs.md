@@ -245,7 +245,7 @@ export default function Home() {
 
 
 :::info
-Reference project: https://github.com/trpc/trpc/tree/main/examples/next-todomvc
+Reference project: https://github.com/trpc/trpc/tree/main/examples/next-prisma-todomvc
 :::
 
 

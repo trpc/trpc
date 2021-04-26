@@ -8,7 +8,7 @@ slug: /ssr
 
 :::info
 - Working examples:
-  - [examples/next-todomvc](https://github.com/trpc/trpc/tree/main/examples/next-todomvc)
+  - [examples/next-prisma-todomvc](https://github.com/trpc/trpc/tree/main/examples/next-prisma-todomvc)
   - [examples/next-hello-world](https://github.com/trpc/trpc/tree/main/examples/next-hello-world)
 - Follow [Next.js-guide](nextjs) before doing the below
 :::
