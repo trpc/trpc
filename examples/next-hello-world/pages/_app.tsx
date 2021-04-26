@@ -21,6 +21,13 @@ export default withTRPC<AppRouter>(
     if (process.browser) {
       return {
         url: '/api/trpc',
+        getHeaders() {
+          // optional:
+          // send some headers that are only sent from the server
+          return {
+            'x-ssr': '1',
+          };
+        },
       };
     }
 
@@ -36,6 +43,8 @@ export default withTRPC<AppRouter>(
     return {
       url,
       getHeaders() {
+        // optional:
+        // send some headers that are only sent from the client
         return {
           'x-ssr': '1',
         };

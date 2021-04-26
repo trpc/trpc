@@ -50,9 +50,6 @@ export const appRouter = createRouter()
       url: ctx.req.url,
       'x-ssr': ctx.req.headers['x-ssr'],
     });
-    // if (ctx.req.headers['x-ssr']) {
-    //   throw new Error('Random failure');
-    // }
   })
   // Create procedure at path 'hello'
   .query('hello', {
