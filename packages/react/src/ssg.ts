@@ -19,10 +19,6 @@ import { getCacheKey } from './internals/getCacheKey';
 type QueryClientConfig = ConstructorParameters<typeof QueryClient>[0];
 
 assertNotBrowser();
-export type OutputWithCursor<TData, TCursor extends any = any> = {
-  cursor: TCursor | null;
-  data: TData;
-};
 
 export interface CreateSSGHelpersOptions<TRouter extends AnyRouter> {
   router: TRouter;
