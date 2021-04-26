@@ -10,13 +10,13 @@ The below examples uses [Vercel's edge caching](https://vercel.com/docs/serverle
 
 ## App Caching
 
-If you turn on SSR in your app you might discover that your app loads slow on for instance Vercel, you can actually statically render your whole app without using SSG; [read this Twitter thread](https://twitter.com/alexdotjs/status/1386274093041950722) for more insights.
+If you turn on SSR in your app you might discover that your app loads slow on for instance Vercel, but you can actually statically render your whole app without using SSG; [read this Twitter thread](https://twitter.com/alexdotjs/status/1386274093041950722) for more insights.
 
 ### Example code
 
 ```tsx
 // in _app.tsx
-export default withTRPC<AppRouter>(
+export default withTRPC(
   ({ ctx }) => {
     if (process.browser) {
       return {
@@ -24,6 +24,7 @@ export default withTRPC<AppRouter>(
       };
     }
 
+    // cache full page for 1 day + revalidate once every second
     const ONE_DAY_IN_SECONDS = 60 * 60 * 24;
     ctx.res?.setHeader(
       'Cache-Control',
