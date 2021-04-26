@@ -1,6 +1,6 @@
 {
   "name": "@examples/standalone-server",
-  "version": "6.0.0-alpha.23",
+  "version": "6.0.0-alpha.24",
   "private": true,
   "scripts": {
     "dev:server": "nodemon -e ts -w . -x ts-node ./src/server.ts",
@@ -13,7 +13,7 @@
   },
   "dependencies": {
     "@trpc/client": "^6.0.0-alpha.23",
-    "@trpc/react": "^6.0.0-alpha.23",
+    "@trpc/react": "^6.0.0-alpha.24",
     "@trpc/server": "^6.0.0-alpha.23",
     "@types/node-fetch": "^2.5.8",
     "abort-controller": "^3.0.0",
