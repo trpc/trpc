@@ -18,6 +18,11 @@ slug: /ssr
 
 You don't have to do anything(!) apart from setting `{ ssr: true }` in your `withTRPC()`-setup; see [Getting Started with Next.js](/docs/nextjs#option-a-using-server-side-rendering).
 
+If there's a certain query you don't want to be fetched on the server you can supply `{ ssr: false }` like this:
+
+```tsx
+const myQuery = trpc.useQuery(['posts'], { ssr: false });
+```
 
 ## Option B: Using SSG
 

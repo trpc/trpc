@@ -823,7 +823,7 @@ describe('withTRPC()', () => {
     });
   });
 
-  describe('noSSR property', () => {
+  describe('`ssr: false` on query', () => {
     test('useQuery()', async () => {
       const { window } = global;
 
@@ -831,7 +831,7 @@ describe('withTRPC()', () => {
       delete global.window;
       const { trpc, trpcClientOptions } = factory;
       const App: AppType = () => {
-        const query = trpc.useQuery(['allPosts'], { noSSR: true });
+        const query = trpc.useQuery(['allPosts'], { ssr: false });
         return <>{JSON.stringify(query.data)}</>;
       };
 
@@ -871,7 +871,7 @@ describe('withTRPC()', () => {
           ],
           {
             getNextPageParam: (lastPage) => lastPage.nextCursor,
-            noSSR: true,
+            ssr: false,
           },
         );
         return <>{JSON.stringify(query.data || query.error)}</>;

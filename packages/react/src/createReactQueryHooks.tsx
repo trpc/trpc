@@ -46,9 +46,9 @@ export type OutputWithCursor<TData, TCursor extends any = any> = {
 
 interface TRPCUseQueryBaseOptions {
   /**
-   * Opt out of SSR for this query
+   * Opt out of SSR for this query by passing `ssr: false`
    */
-  noSSR?: boolean;
+  ssr?: boolean;
 }
 
 interface UseTRPCQueryOptions<
@@ -215,7 +215,10 @@ export function createReactQueryHooks<TRouter extends AnyRouter>() {
     const query = useQuery(
       cacheKey,
       () => client.query(...pathAndArgs) as any,
-      { ...opts, suspense: isPrepass && !opts.noSSR ? true : opts.suspense },
+      {
+        ...opts,
+        suspense: isPrepass && opts.ssr !== false ? true : opts.suspense,
+      },
     );
     return query;
   }
@@ -355,7 +358,10 @@ export function createReactQueryHooks<TRouter extends AnyRouter>() {
         const actualInput = { ...input, cursor: pageParam };
         return (client.query as any)(path, actualInput);
       },
-      { ...opts, suspense: isPrepass && !opts.noSSR ? true : opts.suspense },
+      {
+        ...opts,
+        suspense: isPrepass && opts.ssr !== false ? true : opts.suspense,
+      },
     );
 
     return query;
