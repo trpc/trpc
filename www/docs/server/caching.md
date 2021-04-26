@@ -10,7 +10,7 @@ The below examples uses [Vercel's edge caching](https://vercel.com/docs/serverle
 
 ## App Caching
 
-If you turn on SSR in your app you might discover that your app loads slow on for instance Vercel, you can actually [statically render your whole app](https://twitter.com/alexdotjs/status/1386274093041950722) without doing SSG.
+If you turn on SSR in your app you might discover that your app loads slow on for instance Vercel, you can actually statically render your whole app without using SSG; [read this Twitter thread](https://twitter.com/alexdotjs/status/1386274093041950722) for more insights.
 
 ### Example code
 
