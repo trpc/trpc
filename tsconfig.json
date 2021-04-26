@@ -9,6 +9,7 @@
       "@trpc/server": ["packages/server/src"],
       "@trpc/react": ["packages/react/src"],
       "@trpc/client": ["packages/client/src"],
+      "@trpc/next": ["packages/next/src"],
       "$test/*": ["test/*"]
     }
   }
