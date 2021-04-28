@@ -16,9 +16,9 @@
     ]
   },
   "scripts": {},
-  "main": "dist/trpc-next.cjs.js",
-  "module": "dist/trpc-next.esm.js",
-  "typings": "dist/trpc-next.cjs.d.ts",
+  "main": "dist/trpc-nextjs.cjs.js",
+  "module": "dist/trpc-nextjs.esm.js",
+  "typings": "dist/trpc-nextjs.cjs.d.ts",
   "files": [
     "README.md",
     "dist"
@@ -54,5 +54,5 @@
   "publishConfig": {
     "access": "public"
   },
-  "gitHead": "9ea5c1f180e83867c1dadf2d66b0212da2679f66"
+  "gitHead": "47a36880891e08243cc464a5b3dc5db6770f5201"
 }
