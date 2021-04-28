@@ -1,3 +1,4 @@
+import { createSSGHelpers } from '@trpc/react/ssg';
 import clsx from 'clsx';
 import {
   GetStaticPaths,
@@ -7,13 +8,11 @@ import {
 import Head from 'next/head';
 import Link from 'next/link';
 import { RefObject, useEffect, useRef, useState } from 'react';
-import { useQueryClient } from 'react-query';
 import { ReactQueryDevtools } from 'react-query/devtools';
 import 'todomvc-app-css/index.css';
 import 'todomvc-common/base.css';
-import { inferQueryOutput, trpc } from '../utils/trpc';
+import { inferQueryOutput, trpc, transformer } from '../utils/trpc';
 import { appRouter, createContext } from './api/trpc/[trpc]';
-
 type Task = inferQueryOutput<'todos.all'>[number];
 
 /**
@@ -55,7 +54,7 @@ function ListItem({ task, allTasks }: { task: Task; allTasks: Task[] }) {
   const wrapperRef = useRef(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const utils = trpc.useQueryUtils();
+  const utils = trpc.useContext();
   const [text, setText] = useState(task.text);
   const [completed, setCompleted] = useState(task.completed);
   useEffect(() => {
@@ -172,7 +171,7 @@ export default function TodosPage({
   const allTasks = trpc.useQuery(['todos.all'], {
     staleTime: 3000,
   });
-  const utils = trpc.useQueryUtils();
+  const utils = trpc.useContext();
   const addTask = trpc.useMutation('todos.add', {
     async onMutate({ text }) {
       await utils.cancelQuery(['todos.all']);
@@ -339,14 +338,18 @@ export const getStaticPaths: GetStaticPaths = async () => {
 export const getStaticProps = async (
   context: GetStaticPropsContext<{ filter: string }>,
 ) => {
-  const ctx = await createContext();
-  const ssr = trpc.ssr(appRouter, ctx);
+  const ssg = createSSGHelpers({
+    router: appRouter,
+    transformer,
+    ctx: await createContext(),
+  });
 
-  await ssr.prefetchQuery('todos.all');
+  await ssg.fetchQuery('todos.all');
 
+  // console.log('state', ssr.dehydrate());
   return {
     props: {
-      dehydratedState: ssr.dehydrate(),
+      trpcState: ssg.dehydrate(),
       filter: context.params?.filter ?? 'all',
     },
     revalidate: 1,

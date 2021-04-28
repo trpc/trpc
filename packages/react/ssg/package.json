@@ -1,0 +1,4 @@
+{
+  "main": "dist/trpc-react-ssg.cjs.js",
+  "module": "dist/trpc-react-ssg.esm.js"
+}

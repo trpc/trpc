@@ -40,6 +40,7 @@ module.exports = {
             'react/useInfiniteQuery',
             'react/invalidateQuery',
             'react/ssr',
+            'react/create-react-app',
           ],
         },
       ],

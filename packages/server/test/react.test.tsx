@@ -2,6 +2,17 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 /* eslint-disable @typescript-eslint/ban-types */
 /* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/ban-ts-comment */
+
+import * as trpcServer from '../../server/src';
+jest.mock('@trpc/server', () => trpcServer);
+import * as trpcClient from '../../client/src';
+jest.mock('@trpc/client', () => trpcClient);
+import * as trpcReact from '../../react/src';
+jest.mock('@trpc/react', () => trpcReact);
+import * as trpcReact__ssg from '../../react/src/ssg';
+jest.mock('@trpc/react/ssg', () => trpcReact__ssg);
+
 import '@testing-library/jest-dom';
 import { render, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
@@ -17,11 +28,12 @@ import {
 import { dehydrate } from 'react-query/hydration';
 import * as z from 'zod';
 import { ZodError } from 'zod';
+import { withTRPC } from '../../next/src';
 import { createReactQueryHooks, OutputWithCursor } from '../../react/src';
-import * as trpc from '../src';
+import { createSSGHelpers } from '../../react/ssg';
 import { DefaultErrorShape } from '../src';
 import { routerToServerAndClient } from './_testHelpers';
-
+import { AppType } from 'next/dist/next-server/lib/utils';
 setLogger({
   log() {},
   warn() {},
@@ -48,7 +60,7 @@ function createAppRouter() {
 
   const allPosts = jest.fn();
   const postById = jest.fn();
-  const appRouter = trpc
+  const appRouter = trpcServer
     .router<Context>()
     .formatError(({ defaultShape, error }) => {
       return {
@@ -72,7 +84,7 @@ function createAppRouter() {
         postById(input);
         const post = db.posts.find((p) => p.id === input);
         if (!post) {
-          throw trpc.httpError.notFound();
+          throw trpcServer.httpError.notFound();
         }
         return post;
       },
@@ -121,7 +133,7 @@ function createAppRouter() {
     .subscription('newPosts', {
       input: z.number(),
       resolve({ input }) {
-        return trpc.subscriptionPullFactory<Post>({
+        return trpcServer.subscriptionPullFactory<Post>({
           intervalMs: 1,
           pull(emit) {
             db.posts.filter((p) => p.createdAt > input).forEach(emit.data);
@@ -137,7 +149,7 @@ function createAppRouter() {
         const { cursor } = input;
         postLiveInputs.push(input);
 
-        return trpc.subscriptionPullFactory<OutputWithCursor<Post[]>>({
+        return trpcServer.subscriptionPullFactory<OutputWithCursor<Post[]>>({
           intervalMs: 10,
           pull(emit) {
             const newCursor = hash(db.posts);
@@ -149,17 +161,19 @@ function createAppRouter() {
       },
     });
 
-  const { client, close } = routerToServerAndClient(appRouter);
+  const { client, trpcClientOptions, close } = routerToServerAndClient(
+    appRouter,
+  );
   const queryClient = new QueryClient();
-  const hooks = createReactQueryHooks({
-    client,
-  });
+  const trpc = createReactQueryHooks<typeof appRouter>();
 
   return {
     appRouter,
-    hooks,
+    trpc,
     close,
     db,
+    client,
+    trpcClientOptions,
     postLiveInputs,
     resolvers: {
       postById,
@@ -178,9 +192,9 @@ afterEach(() => {
 
 describe('useQuery()', () => {
   test('no input', async () => {
-    const { hooks } = factory;
+    const { trpc, client } = factory;
     function MyComponent() {
-      const allPostsQuery = hooks.useQuery(['allPosts']);
+      const allPostsQuery = trpc.useQuery(['allPosts']);
       expectTypeOf(allPostsQuery.data!).toMatchTypeOf<Post[]>();
 
       return <pre>{JSON.stringify(allPostsQuery.data ?? 'n/a', null, 4)}</pre>;
@@ -188,9 +202,11 @@ describe('useQuery()', () => {
     function App() {
       const [queryClient] = useState(() => new QueryClient());
       return (
-        <QueryClientProvider client={queryClient}>
-          <MyComponent />
-        </QueryClientProvider>
+        <trpc.Provider {...{ queryClient, client }}>
+          <QueryClientProvider client={queryClient}>
+            <MyComponent />
+          </QueryClientProvider>
+        </trpc.Provider>
       );
     }
 
@@ -201,18 +217,20 @@ describe('useQuery()', () => {
   });
 
   test('with input', async () => {
-    const { hooks } = factory;
+    const { trpc, client } = factory;
     function MyComponent() {
-      const allPostsQuery = hooks.useQuery(['paginatedPosts', { limit: 1 }]);
+      const allPostsQuery = trpc.useQuery(['paginatedPosts', { limit: 1 }]);
 
       return <pre>{JSON.stringify(allPostsQuery.data ?? 'n/a', null, 4)}</pre>;
     }
     function App() {
       const [queryClient] = useState(() => new QueryClient());
       return (
-        <QueryClientProvider client={queryClient}>
-          <MyComponent />
-        </QueryClientProvider>
+        <trpc.Provider {...{ queryClient, client }}>
+          <QueryClientProvider client={queryClient}>
+            <MyComponent />
+          </QueryClientProvider>
+        </trpc.Provider>
       );
     }
 
@@ -225,7 +243,7 @@ describe('useQuery()', () => {
 });
 
 test('mutation on mount + subscribe for it', async () => {
-  const { hooks } = factory;
+  const { trpc, client } = factory;
   function MyComponent() {
     const [posts, setPosts] = useState<Post[]>([]);
 
@@ -246,13 +264,13 @@ test('mutation on mount + subscribe for it', async () => {
       -1,
     );
 
-    hooks.useSubscription(['newPosts', input], {
+    trpc.useSubscription(['newPosts', input], {
       onBatch(posts) {
         addPosts(posts);
       },
     });
 
-    const mutation = hooks.useMutation('addPost');
+    const mutation = trpc.useMutation('addPost');
     const mutate = mutation.mutate;
     useEffect(() => {
       if (posts.length === 2) {
@@ -265,9 +283,11 @@ test('mutation on mount + subscribe for it', async () => {
   function App() {
     const [queryClient] = useState(() => new QueryClient());
     return (
-      <QueryClientProvider client={queryClient}>
-        <MyComponent />
-      </QueryClientProvider>
+      <trpc.Provider {...{ queryClient, client }}>
+        <QueryClientProvider client={queryClient}>
+          <MyComponent />
+        </QueryClientProvider>
+      </trpc.Provider>
     );
   }
 
@@ -281,18 +301,20 @@ test('mutation on mount + subscribe for it', async () => {
 });
 
 test('useLiveQuery()', async () => {
-  const { hooks, db, postLiveInputs } = factory;
+  const { trpc, db, postLiveInputs, client } = factory;
   function MyComponent() {
-    const postsQuery = hooks.useLiveQuery(['postsLive', {}]);
+    const postsQuery = trpc.useLiveQuery(['postsLive', {}]);
 
     return <pre>{JSON.stringify(postsQuery.data ?? null, null, 4)}</pre>;
   }
   function App() {
     const [queryClient] = useState(() => new QueryClient());
     return (
-      <QueryClientProvider client={queryClient}>
-        <MyComponent />
-      </QueryClientProvider>
+      <trpc.Provider {...{ queryClient, client }}>
+        <QueryClientProvider client={queryClient}>
+          <MyComponent />
+        </QueryClientProvider>
+      </trpc.Provider>
     );
   }
 
@@ -332,17 +354,17 @@ test('useLiveQuery()', async () => {
     ]
   `);
 });
-
 test('dehydrate', async () => {
-  const { hooks, appRouter, db } = factory;
-  const ssr = hooks.ssr(appRouter, {});
+  const { db, appRouter } = factory;
+  const ssr = createSSGHelpers({ router: appRouter, ctx: {} });
 
   await ssr.prefetchQuery('allPosts');
+  await ssr.fetchQuery('postById', '1');
 
   const dehydrated = ssr.dehydrate().queries;
-  expect(dehydrated).toHaveLength(1);
+  expect(dehydrated).toHaveLength(2);
 
-  const [cache] = dehydrated;
+  const [cache, cache2] = dehydrated;
   expect(cache.queryHash).toMatchInlineSnapshot(
     `"[\\"allPosts\\",null,\\"TRPC_QUERY\\"]"`,
   );
@@ -354,13 +376,20 @@ test('dehydrate', async () => {
     ]
   `);
   expect(cache.state.data).toEqual(db.posts);
+  expect(cache2.state.data).toMatchInlineSnapshot(`
+    Object {
+      "createdAt": 0,
+      "id": "1",
+      "title": "first post",
+    }
+  `);
 });
 
 test('prefetchQuery', async () => {
-  const { hooks } = factory;
+  const { trpc, client } = factory;
   function MyComponent() {
     const [state, setState] = useState<string>('nope');
-    const utils = hooks.useQueryUtils();
+    const utils = trpc.useContext();
     const queryClient = useQueryClient();
 
     useEffect(() => {
@@ -376,9 +405,11 @@ test('prefetchQuery', async () => {
   function App() {
     const [queryClient] = useState(() => new QueryClient());
     return (
-      <QueryClientProvider client={queryClient}>
-        <MyComponent />
-      </QueryClientProvider>
+      <trpc.Provider {...{ queryClient, client }}>
+        <QueryClientProvider client={queryClient}>
+          <MyComponent />
+        </QueryClientProvider>
+      </trpc.Provider>
     );
   }
 
@@ -389,10 +420,10 @@ test('prefetchQuery', async () => {
 });
 
 test('useInfiniteQuery()', async () => {
-  const { hooks } = factory;
+  const { trpc, client } = factory;
 
   function MyComponent() {
-    const q = hooks.useInfiniteQuery(
+    const q = trpc.useInfiniteQuery(
       [
         'paginatedPosts',
         {
@@ -442,9 +473,11 @@ test('useInfiniteQuery()', async () => {
   function App() {
     const [queryClient] = useState(() => new QueryClient());
     return (
-      <QueryClientProvider client={queryClient}>
-        <MyComponent />
-      </QueryClientProvider>
+      <trpc.Provider {...{ queryClient, client }}>
+        <QueryClientProvider client={queryClient}>
+          <MyComponent />
+        </QueryClientProvider>
+      </trpc.Provider>
     );
   }
 
@@ -489,24 +522,31 @@ test('useInfiniteQuery()', async () => {
 });
 
 test('prefetchInfiniteQuery()', async () => {
-  const { hooks, appRouter } = factory;
-  const ssr = hooks.ssr(appRouter, {});
+  const { appRouter } = factory;
+  const ssr = createSSGHelpers({ router: appRouter, ctx: {} });
 
-  await ssr.prefetchInfiniteQuery('paginatedPosts', { limit: 1 });
-
-  const data = JSON.stringify(ssr.dehydrate());
-  expect(data).toContain('first post');
-  expect(data).not.toContain('second post');
+  {
+    await ssr.prefetchInfiniteQuery('paginatedPosts', { limit: 1 });
+    const data = JSON.stringify(ssr.dehydrate());
+    expect(data).toContain('first post');
+    expect(data).not.toContain('second post');
+  }
+  {
+    await ssr.fetchInfiniteQuery('paginatedPosts', { limit: 2 });
+    const data = JSON.stringify(ssr.dehydrate());
+    expect(data).toContain('first post');
+    expect(data).toContain('second post');
+  }
 });
 
 describe('invalidate queries', () => {
   test('queryClient.invalidateQueries()', async () => {
-    const { hooks, resolvers } = factory;
+    const { trpc, resolvers, client } = factory;
     function MyComponent() {
-      const allPostsQuery = hooks.useQuery(['allPosts'], {
+      const allPostsQuery = trpc.useQuery(['allPosts'], {
         staleTime: Infinity,
       });
-      const postByIdQuery = hooks.useQuery(['postById', '1'], {
+      const postByIdQuery = trpc.useQuery(['postById', '1'], {
         staleTime: Infinity,
       });
       const queryClient = useQueryClient();
@@ -534,9 +574,11 @@ describe('invalidate queries', () => {
     function App() {
       const [queryClient] = useState(() => new QueryClient());
       return (
-        <QueryClientProvider client={queryClient}>
-          <MyComponent />
-        </QueryClientProvider>
+        <trpc.Provider {...{ queryClient, client }}>
+          <QueryClientProvider client={queryClient}>
+            <MyComponent />
+          </QueryClientProvider>
+        </trpc.Provider>
       );
     }
 
@@ -569,15 +611,15 @@ describe('invalidate queries', () => {
   });
 
   test('invalidateQuery()', async () => {
-    const { hooks, resolvers } = factory;
+    const { trpc, resolvers, client } = factory;
     function MyComponent() {
-      const allPostsQuery = hooks.useQuery(['allPosts'], {
+      const allPostsQuery = trpc.useQuery(['allPosts'], {
         staleTime: Infinity,
       });
-      const postByIdQuery = hooks.useQuery(['postById', '1'], {
+      const postByIdQuery = trpc.useQuery(['postById', '1'], {
         staleTime: Infinity,
       });
-      const utils = hooks.useQueryUtils();
+      const utils = trpc.useContext();
       return (
         <>
           <pre>
@@ -601,9 +643,11 @@ describe('invalidate queries', () => {
     function App() {
       const [queryClient] = useState(() => new QueryClient());
       return (
-        <QueryClientProvider client={queryClient}>
-          <MyComponent />
-        </QueryClientProvider>
+        <trpc.Provider {...{ queryClient, client }}>
+          <QueryClientProvider client={queryClient}>
+            <MyComponent />
+          </QueryClientProvider>
+        </trpc.Provider>
       );
     }
 
@@ -637,9 +681,9 @@ describe('invalidate queries', () => {
 });
 
 test('formatError() react types test', async () => {
-  const { hooks } = factory;
+  const { trpc, client } = factory;
   function MyComponent() {
-    const mutation = hooks.useMutation('addPost');
+    const mutation = trpc.useMutation('addPost');
 
     useEffect(() => {
       mutation.mutate({ title: 123 as any });
@@ -668,9 +712,11 @@ test('formatError() react types test', async () => {
   function App() {
     const [queryClient] = useState(() => new QueryClient());
     return (
-      <QueryClientProvider client={queryClient}>
-        <MyComponent />
-      </QueryClientProvider>
+      <trpc.Provider {...{ queryClient, client }}>
+        <QueryClientProvider client={queryClient}>
+          <MyComponent />
+        </QueryClientProvider>
+      </trpc.Provider>
     );
   }
 
@@ -683,10 +729,172 @@ test('formatError() react types test', async () => {
   });
 });
 
-test('"caller" is of correct type', async () => {
-  const { appRouter, hooks } = factory;
-  const ssr = hooks.ssr(appRouter, {});
-  const data = await ssr.caller.query('allPosts');
+// const MockApp: React.FC<any> = () => {
+//   return createElement('div');
+// };
 
-  expectTypeOf(data).toMatchTypeOf<Post[]>();
+// const MockAppTree: React.FC<any> = () => {
+//   return createElement('div');
+// };
+
+describe('withTRPC()', () => {
+  test('useQuery', async () => {
+    const { window } = global;
+
+    // @ts-ignore
+    delete global.window;
+    const { trpc, trpcClientOptions } = factory;
+    const App: AppType = () => {
+      const query = trpc.useQuery(['allPosts']);
+      return <>{JSON.stringify(query.data)}</>;
+    };
+
+    const Wrapped = withTRPC(() => trpcClientOptions, {
+      ssr: true,
+    })(App);
+
+    const props = await Wrapped.getInitialProps!({
+      AppTree: Wrapped,
+      Component: <div />,
+    } as any);
+
+    global.window = window;
+
+    const utils = render(<Wrapped {...props} />);
+    expect(utils.container).toHaveTextContent('first post');
+  });
+
+  test('useInfiniteQuery', async () => {
+    const { window } = global;
+
+    // @ts-ignore
+    delete global.window;
+    const { trpc, trpcClientOptions } = factory;
+    const App: AppType = () => {
+      const query = trpc.useInfiniteQuery(
+        [
+          'paginatedPosts',
+          {
+            limit: 10,
+          },
+        ],
+        {
+          getNextPageParam: (lastPage) => lastPage.nextCursor,
+        },
+      );
+      return <>{JSON.stringify(query.data || query.error)}</>;
+    };
+
+    const Wrapped = withTRPC(() => trpcClientOptions, {
+      ssr: true,
+    })(App);
+
+    const props = await Wrapped.getInitialProps!({
+      AppTree: Wrapped,
+      Component: <div />,
+    } as any);
+
+    global.window = window;
+
+    const utils = render(<Wrapped {...props} />);
+    expect(utils.container).toHaveTextContent('first post');
+  });
+
+  test('browser render', async () => {
+    const { trpc, trpcClientOptions } = factory;
+    const App: AppType = () => {
+      const query = trpc.useQuery(['allPosts']);
+      return <>{JSON.stringify(query.data)}</>;
+    };
+
+    const Wrapped = withTRPC(() => trpcClientOptions, {
+      ssr: true,
+    })(App);
+
+    const props = await Wrapped.getInitialProps!({
+      AppTree: Wrapped,
+      Component: <div />,
+    } as any);
+
+    const utils = render(<Wrapped {...props} />);
+
+    await waitFor(() => {
+      expect(utils.container).toHaveTextContent('first post');
+    });
+  });
+
+  describe('`ssr: false` on query', () => {
+    test('useQuery()', async () => {
+      const { window } = global;
+
+      // @ts-ignore
+      delete global.window;
+      const { trpc, trpcClientOptions } = factory;
+      const App: AppType = () => {
+        const query = trpc.useQuery(['allPosts'], { ssr: false });
+        return <>{JSON.stringify(query.data)}</>;
+      };
+
+      const Wrapped = withTRPC(() => trpcClientOptions, {
+        ssr: true,
+      })(App);
+
+      const props = await Wrapped.getInitialProps!({
+        AppTree: Wrapped,
+        Component: <div />,
+      } as any);
+
+      global.window = window;
+
+      const utils = render(<Wrapped {...props} />);
+      expect(utils.container).not.toHaveTextContent('first post');
+
+      // should eventually be fetched
+      await waitFor(() => {
+        expect(utils.container).toHaveTextContent('first post');
+      });
+    });
+
+    test('useInfiniteQuery', async () => {
+      const { window } = global;
+
+      // @ts-ignore
+      delete global.window;
+      const { trpc, trpcClientOptions } = factory;
+      const App: AppType = () => {
+        const query = trpc.useInfiniteQuery(
+          [
+            'paginatedPosts',
+            {
+              limit: 10,
+            },
+          ],
+          {
+            getNextPageParam: (lastPage) => lastPage.nextCursor,
+            ssr: false,
+          },
+        );
+        return <>{JSON.stringify(query.data || query.error)}</>;
+      };
+
+      const Wrapped = withTRPC(() => trpcClientOptions, {
+        ssr: true,
+      })(App);
+
+      const props = await Wrapped.getInitialProps!({
+        AppTree: Wrapped,
+        Component: <div />,
+      } as any);
+
+      global.window = window;
+
+      const utils = render(<Wrapped {...props} />);
+      expect(utils.container).not.toHaveTextContent('first post');
+
+      // should eventually be fetched
+      await waitFor(() => {
+        expect(utils.container).toHaveTextContent('first post');
+      });
+    });
+  });
 });

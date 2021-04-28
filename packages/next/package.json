@@ -1,29 +1,27 @@
 {
-  "name": "@trpc/react",
+  "name": "@trpc/next",
   "version": "6.0.0-alpha.27",
-  "description": "tRPC React lib",
+  "description": "tRPC Next lib",
   "author": "KATT",
   "license": "MIT",
   "homepage": "https://trpc.io",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/trpc/trpc.git",
-    "directory": "packages/react"
+    "directory": "packages/next"
   },
   "preconstruct": {
     "entrypoints": [
-      "index.ts",
-      "ssg.ts"
+      "index.ts"
     ]
   },
   "scripts": {},
-  "main": "dist/trpc-react.cjs.js",
-  "module": "dist/trpc-react.esm.js",
-  "typings": "dist/trpc-react.cjs.d.ts",
+  "main": "dist/trpc-next.cjs.js",
+  "module": "dist/trpc-next.esm.js",
+  "typings": "dist/trpc-next.cjs.d.ts",
   "files": [
     "README.md",
-    "dist",
-    "ssg"
+    "dist"
   ],
   "eslintConfig": {
     "rules": {
@@ -31,6 +29,7 @@
     }
   },
   "peerDependencies": {
+    "next": "*",
     "react": ">=16.8.0",
     "react-dom": ">=16.8.0",
     "react-query": "^3.0.0"
@@ -38,7 +37,9 @@
   "dependencies": {
     "@babel/runtime": "^7.9.0",
     "@trpc/client": "^6.0.0-alpha.27",
-    "@trpc/server": "^6.0.0-alpha.27"
+    "@trpc/react": "^6.0.0-alpha.27",
+    "@trpc/server": "^6.0.0-alpha.27",
+    "react-ssr-prepass": "^1.4.0"
   },
   "devDependencies": {
     "@types/express": "^4.17.11",

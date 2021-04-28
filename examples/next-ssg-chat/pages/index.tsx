@@ -1,8 +1,8 @@
+import { createSSGHelpers } from '@trpc/react/ssg';
 import Head from 'next/head';
 import { useEffect, useMemo, useState } from 'react';
-import { inferQueryOutput, trpc } from '../utils/trpc';
+import { inferQueryOutput, trpc, transformer } from '../utils/trpc';
 import { appRouter } from './api/trpc/[trpc]';
-
 type MessagesOutput = inferQueryOutput<'messages.list'>;
 type Message = MessagesOutput['items'][number];
 
@@ -139,13 +139,17 @@ export default function Home() {
   );
 }
 export async function getStaticProps() {
-  const ssr = trpc.ssr(appRouter, {});
+  const ssg = createSSGHelpers({
+    router: appRouter,
+    transformer,
+    ctx: {},
+  });
 
-  await ssr.prefetchInfiniteQuery('messages.list', {});
+  await ssg.fetchInfiniteQuery('messages.list', {});
 
   return {
     props: {
-      dehydratedState: ssr.dehydrate(),
+      trpcState: ssg.dehydrate(),
     },
     revalidate: 1,
   };

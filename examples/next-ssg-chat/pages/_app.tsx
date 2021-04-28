@@ -1,17 +1,19 @@
-import type { AppProps /*, AppContext */ } from 'next/app';
-import { useState } from 'react';
-import { QueryClient, QueryClientProvider } from 'react-query';
-import { Hydrate } from 'react-query/hydration';
-import { trpc } from '../utils/trpc';
+import { withTRPC } from '@trpc/next';
+import { AppType } from 'next/dist/next-server/lib/utils';
+import { transformer } from '../utils/trpc';
 
-function MyApp({ Component, pageProps }: AppProps) {
-  const [queryClient] = useState(() => new QueryClient());
-  return (
-    <QueryClientProvider client={queryClient}>
-      <Hydrate state={trpc.useDehydratedState(pageProps.dehydratedState)}>
-        <Component {...pageProps} />
-      </Hydrate>
-    </QueryClientProvider>
-  );
-}
-export default MyApp;
+const MyApp: AppType = ({ Component, pageProps }) => {
+  return <Component {...pageProps} />;
+};
+
+export default withTRPC(
+  () => {
+    return {
+      url: '/api/trpc',
+      transformer,
+    };
+  },
+  {
+    ssr: false,
+  },
+)(MyApp);

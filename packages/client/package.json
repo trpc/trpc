@@ -1,6 +1,6 @@
 {
   "name": "@trpc/client",
-  "version": "5.0.0",
+  "version": "6.0.0-alpha.27",
   "description": "tRPC Client lib",
   "author": "KATT",
   "license": "MIT",
@@ -12,6 +12,7 @@
   },
   "scripts": {},
   "main": "dist/trpc-client.cjs.js",
+  "module": "dist/trpc-client.esm.js",
   "typings": "dist/trpc-client.cjs.d.ts",
   "files": [
     "README.md",
@@ -19,7 +20,7 @@
   ],
   "dependencies": {
     "@babel/runtime": "^7.9.0",
-    "@trpc/server": "^5.0.0"
+    "@trpc/server": "^6.0.0-alpha.27"
   },
   "publishConfig": {
     "access": "public"

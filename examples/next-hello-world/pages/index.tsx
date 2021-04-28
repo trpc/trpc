@@ -1,20 +1,17 @@
 import Head from 'next/head';
-import { useQueryClient } from 'react-query';
+import { useEffect } from 'react';
 import { trpc } from '../utils/trpc';
-import { appRouter } from './api/trpc/[trpc]';
 
 export default function Home() {
-  // try typing here to see that you get autocompletion & type safety on the procedure's name
-  const helloNoArgs = trpc.useQuery(['hello']);
-  const helloWithArgs = trpc.useQuery(['hello', { text: 'client' }]);
+  const utils = trpc.useContext();
 
-  // try to uncomment next line to show type checking:
-  // const helloWithInvalidArgs = trpc.useQuery(['hello', { text: false }]);
-
-  console.log(helloNoArgs.data); // <-- hover over this object to see it's type inferred
-
-  const utils = trpc.useQueryUtils();
   const postsQuery = trpc.useQuery(['posts.list']);
+
+  useEffect(() => {
+    if (postsQuery.error) {
+      console.log('error!', postsQuery.error);
+    }
+  }, [postsQuery.error, utils.queryClient]);
   const addPost = trpc.useMutation('posts.add', {
     onSuccess() {
       utils.invalidateQuery(['posts.list']);
@@ -30,7 +27,7 @@ export default function Home() {
 
       <h1>tRPC starter examples</h1>
 
-      <h1>Posts query (statically rendered)</h1>
+      <h1>Posts query (server rendered)</h1>
 
       <h2>Posts</h2>
       {postsQuery.data?.map((post) => (
@@ -74,17 +71,6 @@ export default function Home() {
         {addPost.error && <p className="error">{addPost.error.message}</p>}
       </form>
       <hr />
-      <h2>Hello World queries</h2>
-      <ul>
-        <li>
-          helloNoArgs ({helloNoArgs.status}):{' '}
-          <pre>{JSON.stringify(helloNoArgs.data, null, 2)}</pre>
-        </li>
-        <li>
-          helloWithArgs ({helloWithArgs.status}):{' '}
-          <pre>{JSON.stringify(helloWithArgs.data, null, 2)}</pre>
-        </li>
-      </ul>
 
       <div style={{ marginTop: '100px' }}>
         <a
@@ -106,17 +92,4 @@ export default function Home() {
       `}</style>
     </>
   );
-}
-
-export async function getStaticProps() {
-  const ssr = trpc.ssr(appRouter, { user: null });
-
-  await ssr.prefetchQuery('posts.list');
-
-  return {
-    props: {
-      dehydratedState: ssr.dehydrate(),
-    },
-    revalidate: 1,
-  };
 }

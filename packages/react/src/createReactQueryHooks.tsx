@@ -1,5 +1,9 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-import { TRPCClient, TRPCClientError } from '@trpc/client';
+import {
+  createTRPCClient,
+  CreateTRPCClientOptions,
+  TRPCClient,
+  TRPCClientError,
+} from '@trpc/client';
 import type {
   AnyRouter,
   inferHandlerInput,
@@ -7,56 +11,191 @@ import type {
   inferProcedureOutput,
   inferSubscriptionOutput,
 } from '@trpc/server';
-import { useEffect, useMemo, useRef } from 'react';
+import React, {
+  ReactNode,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+} from 'react';
 import {
-  FetchQueryOptions,
   hashQueryKey,
   QueryClient,
+  QueryKey,
   useInfiniteQuery,
   UseInfiniteQueryOptions,
   useMutation,
   UseMutationOptions,
   useQuery,
-  useQueryClient,
   UseQueryOptions,
   UseQueryResult,
 } from 'react-query';
+import { DehydratedState } from 'react-query/hydration';
 import {
-  dehydrate,
-  DehydratedState,
-  DehydrateOptions,
-} from 'react-query/hydration';
+  CACHE_KEY_QUERY,
+  CACHE_KEY_INFINITE_QUERY,
+  CACHE_KEY_LIVE_QUERY,
+} from './internals/constants';
+import { getCacheKey } from './internals/getCacheKey';
+import { TRPCContext, TRPCContextState } from './internals/context';
 
 export type OutputWithCursor<TData, TCursor extends any = any> = {
   cursor: TCursor | null;
   data: TData;
 };
 
-const CACHE_KEY_INFINITE_QUERY = 'TRPC_INFINITE_QUERY' as const;
-const CACHE_KEY_LIVE_QUERY = 'TRPC_LIVE_QUERY' as const;
-const CACHE_KEY_QUERY = 'TRPC_QUERY' as const;
-
-function getCacheKey<TTuple extends [string, ...unknown[]]>(
-  [path, input]: TTuple,
-  extras?: string,
-) {
-  const cacheKey = [path, input ?? null];
-  if (extras) {
-    cacheKey.push(extras);
-  }
-  return cacheKey;
+interface TRPCUseQueryBaseOptions {
+  /**
+   * Opt out of SSR for this query by passing `ssr: false`
+   */
+  ssr?: boolean;
 }
 
-export function createReactQueryHooks<TRouter extends AnyRouter>({
-  client,
-}: {
-  client: TRPCClient<TRouter>;
-}) {
+interface UseTRPCQueryOptions<
+  TQueryFnData = unknown,
+  TError = unknown,
+  TData = TQueryFnData,
+  TQueryKey extends QueryKey = QueryKey
+> extends UseQueryOptions<TQueryFnData, TError, TData, TQueryKey>,
+    TRPCUseQueryBaseOptions {}
+
+interface UseTRPCInfiniteQueryOptions<
+  TQueryFnData = unknown,
+  TError = unknown,
+  TData = TQueryFnData,
+  TQueryData = TQueryFnData,
+  TQueryKey extends QueryKey = QueryKey
+> extends UseInfiniteQueryOptions<
+      TQueryFnData,
+      TError,
+      TData,
+      TQueryData,
+      TQueryKey
+    >,
+    TRPCUseQueryBaseOptions {}
+
+export function createReactQueryHooks<TRouter extends AnyRouter>() {
   type TQueries = TRouter['_def']['queries'];
   type TMutations = TRouter['_def']['mutations'];
   type TSubscriptions = TRouter['_def']['subscriptions'];
-  type TContext = Parameters<TRouter['createCaller']>[0];
   type TError = TRPCClientError<TRouter>;
+
+  type ProviderContext = TRPCContextState<TRouter>;
+  const Context = TRPCContext as React.Context<ProviderContext>;
+
+  function createClient(opts: CreateTRPCClientOptions<TRouter>) {
+    return createTRPCClient(opts);
+  }
+
+  function TRPCProvider({
+    client,
+    queryClient,
+    children,
+    isPrepass = false,
+  }: {
+    queryClient: QueryClient;
+    client: TRPCClient<TRouter>;
+    children: ReactNode;
+    isPrepass?: boolean;
+  }) {
+    return (
+      <Context.Provider
+        value={{
+          queryClient,
+          client,
+          isPrepass,
+          fetchQuery: useCallback(
+            (pathAndArgs, opts) => {
+              const cacheKey = getCacheKey(pathAndArgs, CACHE_KEY_QUERY);
+
+              return queryClient.fetchQuery(
+                cacheKey,
+                () => client.query(...pathAndArgs) as any,
+                opts,
+              );
+            },
+            [client, queryClient],
+          ),
+          fetchInfiniteQuery: useCallback(
+            (pathAndArgs, opts) => {
+              const cacheKey = getCacheKey(
+                pathAndArgs,
+                CACHE_KEY_INFINITE_QUERY,
+              );
+
+              return queryClient.fetchInfiniteQuery(
+                cacheKey,
+                () => client.query(...pathAndArgs) as any,
+                opts,
+              );
+            },
+            [client, queryClient],
+          ),
+          prefetchQuery: useCallback(
+            (pathAndArgs, opts) => {
+              const cacheKey = getCacheKey(pathAndArgs, CACHE_KEY_QUERY);
+
+              return queryClient.prefetchQuery(
+                cacheKey,
+                () => client.query(...pathAndArgs) as any,
+                opts,
+              );
+            },
+            [client, queryClient],
+          ),
+          prefetchInfiniteQuery: useCallback(
+            (pathAndArgs, opts) => {
+              const cacheKey = getCacheKey(
+                pathAndArgs,
+                CACHE_KEY_INFINITE_QUERY,
+              );
+
+              return queryClient.prefetchInfiniteQuery(
+                cacheKey,
+                () => client.query(...pathAndArgs) as any,
+                opts,
+              );
+            },
+            [client, queryClient],
+          ),
+          invalidateQuery: useCallback(
+            (pathAndArgs) => {
+              const cacheKey = getCacheKey(pathAndArgs);
+              return queryClient.invalidateQueries(cacheKey);
+            },
+            [queryClient],
+          ),
+          cancelQuery: useCallback(
+            (pathAndArgs) => {
+              const cacheKey = getCacheKey(pathAndArgs);
+              return queryClient.cancelQueries(cacheKey);
+            },
+            [queryClient],
+          ),
+          setQueryData: useCallback(
+            (pathAndArgs, output) => {
+              const cacheKey = getCacheKey(pathAndArgs);
+              queryClient.setQueryData(
+                cacheKey.concat([CACHE_KEY_QUERY]),
+                output,
+              );
+              queryClient.setQueryData(
+                cacheKey.concat([CACHE_KEY_INFINITE_QUERY]),
+                output,
+              );
+            },
+            [queryClient],
+          ),
+        }}
+      >
+        {children}
+      </Context.Provider>
+    );
+  }
+
+  function useContext() {
+    return React.useContext(Context);
+  }
 
   function _useQuery<
     TPath extends keyof TQueries & string,
@@ -64,15 +203,24 @@ export function createReactQueryHooks<TRouter extends AnyRouter>({
     TOutput extends inferProcedureOutput<TProcedure>
   >(
     pathAndArgs: [path: TPath, ...args: inferHandlerInput<TProcedure>],
-    opts?: UseQueryOptions<
+    opts: UseTRPCQueryOptions<
       inferProcedureInput<TQueries[TPath]>,
       TError,
       TOutput
-    >,
+    > = {},
   ): UseQueryResult<TOutput, TError> {
     const cacheKey = getCacheKey(pathAndArgs, CACHE_KEY_QUERY);
+    const { client, isPrepass } = useContext();
 
-    return useQuery(cacheKey, () => client.query(...pathAndArgs) as any, opts);
+    const query = useQuery(
+      cacheKey,
+      () => client.query(...pathAndArgs) as any,
+      {
+        ...opts,
+        suspense: isPrepass && opts.ssr !== false ? true : opts.suspense,
+      },
+    );
+    return query;
   }
 
   function _useMutation<
@@ -80,6 +228,7 @@ export function createReactQueryHooks<TRouter extends AnyRouter>({
     TInput extends inferProcedureInput<TMutations[TPath]>,
     TOutput extends inferProcedureOutput<TMutations[TPath]>
   >(path: TPath, opts?: UseMutationOptions<TOutput, TError, TInput>) {
+    const client = useContext().client;
     const hook = useMutation<TOutput, TError, TInput>(
       (input) => (client.mutation as any)(path, input),
       opts,
@@ -87,6 +236,7 @@ export function createReactQueryHooks<TRouter extends AnyRouter>({
 
     return hook;
   }
+
   /* istanbul ignore next */
   /**
    * ⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️
@@ -107,6 +257,7 @@ export function createReactQueryHooks<TRouter extends AnyRouter>({
   ) {
     const enabled = opts?.enabled ?? true;
     const queryKey = hashQueryKey(pathAndArgs);
+    const client = useContext().client;
 
     return useEffect(() => {
       if (!enabled) {
@@ -155,6 +306,7 @@ export function createReactQueryHooks<TRouter extends AnyRouter>({
 
     const currentCursor = useRef<any>(null);
     const cacheKey = getCacheKey(pathAndArgs, CACHE_KEY_LIVE_QUERY);
+    const client = useContext().client;
 
     const hook = useQuery<TInput, TError, TOutput>(
       cacheKey,
@@ -186,73 +338,6 @@ export function createReactQueryHooks<TRouter extends AnyRouter>({
     return { ...hook, data };
   }
 
-  /**
-   * Create functions you can use for server-side rendering / static generation
-   * @param router Your app's router
-   * @param ctx Context used in the calls
-   */
-  function ssr(
-    router: TRouter,
-    ctx: TContext,
-    queryClient = new QueryClient(),
-  ) {
-    const caller = router.createCaller(ctx) as ReturnType<
-      TRouter['createCaller']
-    >;
-
-    const prefetchQuery = async <
-      TPath extends keyof TQueries & string,
-      TProcedure extends TQueries[TPath]
-    >(
-      ...pathAndArgs: [path: TPath, ...args: inferHandlerInput<TProcedure>]
-    ) => {
-      const [path, input] = pathAndArgs;
-      const cacheKey = [path, input ?? null, CACHE_KEY_QUERY];
-
-      return queryClient.prefetchQuery(cacheKey, async () => {
-        const data = await caller.query(...pathAndArgs);
-
-        return data;
-      });
-    };
-
-    const prefetchInfiniteQuery = async <
-      TPath extends keyof TQueries & string,
-      TProcedure extends TQueries[TPath]
-    >(
-      ...pathAndArgs: [path: TPath, ...args: inferHandlerInput<TProcedure>]
-    ) => {
-      const cacheKey = getCacheKey(pathAndArgs, CACHE_KEY_INFINITE_QUERY);
-
-      return queryClient.prefetchInfiniteQuery(cacheKey, async () => {
-        const data = await caller.query(...pathAndArgs);
-
-        return data;
-      });
-    };
-    function _dehydrate(opts?: DehydrateOptions): DehydratedState {
-      return client.transformer.serialize(dehydrate(queryClient, opts));
-    }
-
-    return {
-      caller,
-      prefetchQuery,
-      prefetchInfiniteQuery,
-      dehydrate: _dehydrate,
-    };
-  }
-
-  function useDehydratedState(dehydratedState?: DehydratedState) {
-    const transformed: DehydratedState | undefined = useMemo(() => {
-      if (!dehydratedState) {
-        return dehydratedState;
-      }
-
-      return client.transformer.deserialize(dehydratedState);
-    }, [dehydratedState]);
-    return transformed;
-  }
-
   function _useInfiniteQuery<
     TPath extends keyof TQueries & string,
     TInput extends inferProcedureInput<TQueries[TPath]> & { cursor: TCursor },
@@ -261,88 +346,49 @@ export function createReactQueryHooks<TRouter extends AnyRouter>({
   >(
     pathAndArgs: [TPath, Omit<TInput, 'cursor'>],
     // FIXME: this typing is wrong but it works
-    opts?: UseInfiniteQueryOptions<TOutput, TError, TOutput, TOutput>,
+    opts: UseTRPCInfiniteQueryOptions<TOutput, TError, TOutput, TOutput> = {},
   ) {
+    const { client, isPrepass } = useContext();
     const cacheKey = getCacheKey(pathAndArgs, CACHE_KEY_INFINITE_QUERY);
     const [path, input] = pathAndArgs;
-    return useInfiniteQuery(
+
+    const query = useInfiniteQuery(
       cacheKey,
       ({ pageParam }) => {
         const actualInput = { ...input, cursor: pageParam };
         return (client.query as any)(path, actualInput);
       },
-      opts,
+      {
+        ...opts,
+        suspense: isPrepass && opts.ssr !== false ? true : opts.suspense,
+      },
     );
+
+    return query;
   }
-
-  function useQueryUtils() {
-    const queryClient = useQueryClient();
-
-    return useMemo(() => {
-      function prefetchQuery<
-        TPath extends keyof TQueries & string,
-        TProcedure extends TQueries[TPath],
-        TOutput extends inferProcedureOutput<TProcedure>,
-        TInput extends inferProcedureInput<TProcedure>
-      >(
-        pathAndArgs: [path: TPath, ...args: inferHandlerInput<TProcedure>],
-        opts?: FetchQueryOptions<TInput, TError, TOutput>,
-      ) {
-        const cacheKey = getCacheKey(pathAndArgs, CACHE_KEY_QUERY);
-
-        return queryClient.prefetchQuery(
-          cacheKey,
-          () => client.query(...pathAndArgs) as any,
-          opts as any,
-        );
-      }
-      function invalidateQuery<
-        TPath extends keyof TQueries & string,
-        TInput extends inferProcedureInput<TQueries[TPath]>
-      >(pathAndArgs: [TPath, TInput?]) {
-        const cacheKey = getCacheKey(pathAndArgs);
-        return queryClient.invalidateQueries(cacheKey);
+  function useDehydratedState(
+    client: TRPCClient<TRouter>,
+    trpcState: DehydratedState | undefined,
+  ) {
+    const transformed: DehydratedState | undefined = useMemo(() => {
+      if (!trpcState) {
+        return trpcState;
       }
 
-      function cancelQuery<
-        TPath extends keyof TQueries & string,
-        TInput extends inferProcedureInput<TQueries[TPath]>
-      >(pathAndArgs: [TPath, TInput?]) {
-        const cacheKey = getCacheKey(pathAndArgs);
-        return queryClient.cancelQueries(cacheKey);
-      }
-
-      function setQueryData<
-        TPath extends keyof TQueries & string,
-        TInput extends inferProcedureInput<TQueries[TPath]>,
-        TOutput extends inferProcedureOutput<TQueries[TPath]>
-      >(pathAndArgs: [TPath, TInput?], output: TOutput) {
-        const cacheKey = getCacheKey(pathAndArgs);
-        queryClient.setQueryData(cacheKey.concat([CACHE_KEY_QUERY]), output);
-        queryClient.setQueryData(
-          cacheKey.concat([CACHE_KEY_INFINITE_QUERY]),
-          output,
-        );
-      }
-      return {
-        //
-        cancelQuery,
-        invalidateQuery,
-        setQueryData,
-        prefetchQuery,
-      };
-    }, [queryClient]);
+      return client.transformer.deserialize(trpcState);
+    }, [client, trpcState]);
+    return transformed;
   }
 
   return {
-    client,
-    ssr,
+    Provider: TRPCProvider,
+    createClient,
+    useContext: useContext,
+    useQuery: _useQuery,
+    useMutation: _useMutation,
+    useSubscription,
+    useLiveQuery,
     useDehydratedState,
     useInfiniteQuery: _useInfiniteQuery,
-    useLiveQuery,
-    useMutation: _useMutation,
-    useQuery: _useQuery,
-    useQueryUtils,
-    useSubscription,
   };
 }

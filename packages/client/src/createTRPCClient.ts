@@ -59,7 +59,7 @@ export interface FetchOptions {
 export interface CreateTRPCClientOptions<TRouter extends AnyRouter> {
   url: string;
   fetchOpts?: FetchOptions;
-  getHeaders?: () => Record<string, string | undefined>;
+  getHeaders?: () => Record<string, string | string[] | undefined>;
   onSuccess?: (data: HTTPSuccessResponseEnvelope<unknown>) => void;
   onError?: (error: TRPCClientError<TRouter>) => void;
   transformer?: DataTransformer;
@@ -176,7 +176,7 @@ export class TRPCClient<TRouter extends AnyRouter> {
       signal: ac?.signal,
       headers: this.getHeaders(),
     };
-    // console.log('reqOpts', {reqUrl, reqOpts, type, input})
+
     const promise: CancellablePromise<any> & {
       cancel(): void;
     } = this.handleResponse(this.fetch(reqUrl, reqOpts)) as any;
@@ -236,7 +236,7 @@ export class TRPCClient<TRouter extends AnyRouter> {
             path,
           });
           const data = await currentRequest;
-          // console.log('response', { path, input, data });
+
           resolve(data);
         } catch (_err) {
           const err: TRPCClientError<TRouter> = _err;

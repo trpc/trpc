@@ -11,7 +11,7 @@ Recommended but not enforced file structure. This is what you get when starting 
 
 ```txt
 ├── pages
-│   ├── _app.tsx # <-- add `react-query` provider here
+│   ├── _app.tsx # <-- wrap App with `withTRPC()`
 │   ├── api
 │   │   └── trpc
 │   │       ├── [trpc].ts # <-- tRPC response handler
@@ -26,7 +26,7 @@ Recommended but not enforced file structure. This is what you get when starting 
 ├── test  # <-- (optional) E2E-test helpers
 │   └── playwright.test.ts
 ├── utils
-│   └── trpc.ts # <-- initialize tRPC client
+│   └── trpc.ts # <-- create your typesafe tRPC hooks
 └── [...]
 ```
 
@@ -77,7 +77,7 @@ The code here is taken from [`./examples/next-hello-world`](https://github.com/t
 
 
 ```bash
-yarn add @trpc/client @trpc/server @trpc/react zod react-query
+yarn add @trpc/client @trpc/server @trpc/react @trpc/next zod react-query
 ```
 
 - tRPC wraps a tiny layer of sugar around [react-query](https://react-query.tanstack.com/overview) when using React which gives you type safety and auto completion of your procedures
@@ -137,51 +137,74 @@ export default trpcNext.createNextApiHandler({
 
 ```
 
-### 2. Create a trpc client
+### Option A) Using Server-side rendering
+
+
+:::info
+Reference project: https://github.com/trpc/trpc/tree/main/examples/next-hello-world
+:::
+
+#### 2. Create tRPC-hooks
 
 
 Create `./utils/trpc.ts`
 
 ```tsx
-import { createReactQueryHooks, createTRPCClient } from '@trpc/react';
-import { QueryClient } from 'react-query';
+import { createReactQueryHooks } from '@trpc/react';
 // Type-only import:
 // https://www.typescriptlang.org/docs/handbook/release-notes/typescript-3-8.html#type-only-imports-and-export
 import type { AppRouter } from '../pages/api/trpc/[trpc]';
 
-export const client = createTRPCClient<AppRouter>({
-  url: '/api/trpc',
-});
-
-export const trpc = createReactQueryHooks({
-  client,
-});
+export const trpc = createReactQueryHooks<AppRouter>();
 ```
 
-### 3. Configure `_app.tsx`
+#### 3. Configure `_app.tsx`
 
 
 ```tsx
-import type { AppProps /*, AppContext */ } from 'next/app';
-import { QueryClientProvider } from 'react-query';
-import { Hydrate } from 'react-query/hydration';
-import { trpc } from '../utils/trpc';
-import { useState } from 'react';
+import { withTRPC } from '@trpc/next';
+import { AppType } from 'next/dist/next-server/lib/utils';
+import React from 'react';
+import type { AppRouter } from './api/trpc/[trpc]';
 
-function MyApp({ Component, pageProps }: AppProps) {
-  const [queryClient] = useState(() => new QueryClient());
-  return (
-    <QueryClientProvider client={queryClient}>
-      <Hydrate state={trpc.useDehydratedState(pageProps.dehydratedState)}>
-        <Component {...pageProps} />
-      </Hydrate>
-    </QueryClientProvider>
-  );
-}
-export default MyApp;
+const MyApp: AppType = ({ Component, pageProps }) => {
+  return <Component {...pageProps} />;
+};
+
+export default withTRPC<AppRouter>(
+  ({ ctx }) => {
+    if (process.browser) {
+      return {
+        url: '/api/trpc',
+      };
+    }
+    // optional: use SSG-caching for each rendered page (see caching section for more details)
+    const ONE_DAY_SECONDS = 60 * 60 * 24;
+    ctx?.res?.setHeader(
+      'Cache-Control',
+      `s-maxage=1, stale-while-revalidate=${ONE_DAY_SECONDS}`,
+    );
+
+    // The server needs to know your app's full url
+    // On render.com you can use `http://${process.env.RENDER_INTERNAL_HOSTNAME}:${process.env.PORT}/api/trpc`
+    const url = process.env.VERCEL_URL
+      ? `https://${process.env.VERCEL_URL}/api/trpc`
+      : 'http://localhost:3000/api/trpc';
+
+    return {
+      url,
+      getHeaders() {
+        return {
+          'x-ssr': '1',
+        };
+      },
+    };
+  },
+  { ssr: true },
+)(MyApp);
 ```
 
-### 4. Start consuming your data!
+#### 4. Start consuming your data!
 
 
 ```tsx
@@ -192,11 +215,6 @@ export default function Home() {
   // try typing here to see that you get autocompletion & type safety on the procedure's name
   const helloNoArgs = trpc.useQuery(['hello']);
   const helloWithArgs = trpc.useQuery(['hello', { text: 'client' }]);
-
-  // try to uncomment next line to show type checking:
-  // const helloWithInvalidArgs = trpc.useQuery(['hello', { text: false }]);
-
-  console.log(helloNoArgs.data); // <-- hover over this object to see it's type inferred
 
   return (
     <div>
@@ -222,3 +240,108 @@ export default function Home() {
 ```
 
 
+
+### Option B) Using SSG
+
+
+:::info
+Reference project: https://github.com/trpc/trpc/tree/main/examples/next-prisma-todomvc
+:::
+
+
+#### 2. Create tRPC-hooks
+
+
+Create `./utils/trpc.ts`
+
+```tsx
+import { createReactQueryHooks, CreateTRPCClientOptions } from '@trpc/react';
+import type { inferProcedureOutput } from '@trpc/server';
+import superjson from 'superjson';
+// ℹ️ Type-only import:
+// https://www.typescriptlang.org/docs/handbook/release-notes/typescript-3-8.html#type-only-imports-and-export
+import type { AppRouter } from '../pages/api/trpc/[trpc]';
+
+// create react query hooks for trpc
+export const trpc = createReactQueryHooks<AppRouter>();
+```
+
+#### 3. Configure `_app.tsx`
+
+
+```tsx
+import { withTRPC } from '@trpc/next';
+import { AppType } from 'next/dist/next-server/lib/utils';
+import { trpcClientOptions } from '../utils/trpc';
+
+const MyApp: AppType = ({ Component, pageProps }) => {
+  return <Component {...pageProps} />;
+};
+
+export default withTRPC(
+  () => {
+    return { ...trpcClientOptions };
+  },
+  {
+    ssr: false,
+  },
+)(MyApp);
+```
+
+#### 4. Start consuming your data!
+
+
+```tsx
+import Head from 'next/head';
+import { trpc } from '../utils/trpc';
+import { createSSGHelpers } from '@trpc/react/ssg';
+
+export default function Home() {
+  // try typing here to see that you get autocompletion & type safety on the procedure's name
+  const helloNoArgs = trpc.useQuery(['hello']);
+  const helloWithArgs = trpc.useQuery(['hello', { text: 'client' }]);
+
+  return (
+    <div>
+      <Head>
+        <title>Hello tRPC</title>
+        <link rel="icon" href="/favicon.ico" />
+      </Head>
+
+      <h1>Hello World Example</h1>
+      <ul>
+        <li>
+          helloNoArgs ({helloNoArgs.status}):{' '}
+          <pre>{JSON.stringify(helloNoArgs.data, null, 2)}</pre>
+        </li>
+        <li>
+          helloWithArgs ({helloWithArgs.status}):{' '}
+          <pre>{JSON.stringify(helloWithArgs.data, null, 2)}</pre>
+        </li>
+      </ul>
+    </div>
+  );
+}
+
+
+// Optional: statically fetch the data
+// export const getStaticProps = async (
+//   context: GetStaticPropsContext<{ filter: string }>,
+// ) => {
+//   const ssg = createSSGHelpers({
+//     router: appRouter,
+//     transformer,
+//     ctx: {},
+//   });
+
+//   await ssg.fetchQuery('hello');
+//   await ssg.fetchQuery('hello', { text: 'client' });
+
+//   return {
+//     props: {
+//       trpcState: ssg.dehydrate(),
+//     },
+//     revalidate: 1,
+//   };
+// };
+```
