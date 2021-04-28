@@ -1,3 +1,3 @@
-# `@trpc/next`
+# `@trpc/nextjs`
 
 https://trpc.io

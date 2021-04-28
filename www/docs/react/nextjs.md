@@ -77,7 +77,7 @@ The code here is taken from [`./examples/next-hello-world`](https://github.com/t
 
 
 ```bash
-yarn add @trpc/client @trpc/server @trpc/react @trpc/next zod react-query
+yarn add @trpc/client @trpc/server @trpc/react @trpc/nextjs zod react-query
 ```
 
 - tRPC wraps a tiny layer of sugar around [react-query](https://react-query.tanstack.com/overview) when using React which gives you type safety and auto completion of your procedures
@@ -162,7 +162,7 @@ export const trpc = createReactQueryHooks<AppRouter>();
 
 
 ```tsx
-import { withTRPC } from '@trpc/next';
+import { withTRPC } from '@trpc/nextjs';
 import { AppType } from 'next/dist/next-server/lib/utils';
 import React from 'react';
 import type { AppRouter } from './api/trpc/[trpc]';
@@ -270,7 +270,7 @@ export const trpc = createReactQueryHooks<AppRouter>();
 
 
 ```tsx
-import { withTRPC } from '@trpc/next';
+import { withTRPC } from '@trpc/nextjs';
 import { AppType } from 'next/dist/next-server/lib/utils';
 import { trpcClientOptions } from '../utils/trpc';
 

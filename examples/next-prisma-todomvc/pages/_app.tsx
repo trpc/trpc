@@ -1,4 +1,4 @@
-import { withTRPC } from '@trpc/next';
+import { withTRPC } from '@trpc/nextjs';
 import { AppType } from 'next/dist/next-server/lib/utils';
 import { transformer } from '../utils/trpc';
 

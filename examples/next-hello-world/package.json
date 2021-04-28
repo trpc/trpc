@@ -12,7 +12,7 @@
   },
   "dependencies": {
     "@trpc/client": "^6.0.0-alpha.27",
-    "@trpc/next": "^6.0.0-alpha.27",
+    "@trpc/nextjs": "^6.0.0-alpha.27",
     "@trpc/react": "^6.0.0-alpha.27",
     "@trpc/server": "^6.0.0-alpha.27",
     "next": "^10.0.5",
