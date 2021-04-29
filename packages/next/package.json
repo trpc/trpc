@@ -8,7 +8,7 @@
   "repository": {
     "type": "git",
     "url": "git+https://github.com/trpc/trpc.git",
-    "directory": "packages/next"
+    "directory": "packages/nextjs"
   },
   "preconstruct": {
     "entrypoints": [
