@@ -1,6 +1,6 @@
 {
   "name": "@examples/todo-web",
-  "version": "6.0.0-alpha.27",
+  "version": "6.0.0-alpha.30",
   "private": true,
   "scripts": {
     "dx:next": "prisma generate && next dev",
@@ -18,10 +18,10 @@
   },
   "dependencies": {
     "@prisma/client": "^2.18.0",
-    "@trpc/client": "^6.0.0-alpha.27",
-    "@trpc/next": "^6.0.0-alpha.27",
-    "@trpc/react": "^6.0.0-alpha.27",
-    "@trpc/server": "^6.0.0-alpha.27",
+    "@trpc/client": "^6.0.0-alpha.29",
+    "@trpc/next": "^6.0.0-alpha.30",
+    "@trpc/react": "^6.0.0-alpha.30",
+    "@trpc/server": "^6.0.0-alpha.29",
     "clsx": "^1.1.1",
     "jest": "^26.6.3",
     "jest-playwright": "^0.0.1",
@@ -35,7 +35,7 @@
     "superjson": "^1.5.2",
     "todomvc-app-css": "^2.3.0",
     "todomvc-common": "^1.0.5",
-    "zod": "^1.11.11"
+    "zod": "^1.11.16"
   },
   "devDependencies": {
     "@types/jest": "^26.0.20",

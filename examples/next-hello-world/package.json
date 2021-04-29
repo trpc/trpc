@@ -1,6 +1,6 @@
 {
   "name": "@examples/hello-world",
-  "version": "6.0.0-alpha.27",
+  "version": "6.0.0-alpha.30",
   "private": true,
   "scripts": {
     "dev": "next dev",
@@ -11,15 +11,15 @@
     "test-start": "start-server-and-test start 3000 test"
   },
   "dependencies": {
-    "@trpc/client": "^6.0.0-alpha.27",
-    "@trpc/next": "^6.0.0-alpha.27",
-    "@trpc/react": "^6.0.0-alpha.27",
-    "@trpc/server": "^6.0.0-alpha.27",
+    "@trpc/client": "^6.0.0-alpha.29",
+    "@trpc/next": "^6.0.0-alpha.30",
+    "@trpc/react": "^6.0.0-alpha.30",
+    "@trpc/server": "^6.0.0-alpha.29",
     "next": "^10.0.5",
     "react": "^17.0.1",
     "react-dom": "^17.0.1",
     "react-query": "^3.6.0",
-    "zod": "^1.11.11"
+    "zod": "^1.11.16"
   },
   "devDependencies": {
     "@types/jest": "^26.0.20",
