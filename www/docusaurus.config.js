@@ -1,15 +1,16 @@
 module.exports = {
   title: 'tRPC',
   tagline: 'TypeScript toolkit for building end-to-end type-safe APIs',
-  url: 'https://your-docusaurus-test-site.com',
+  url: 'https://trpc.io',
   baseUrl: '/',
   onBrokenLinks: 'throw',
   onBrokenMarkdownLinks: 'warn',
   favicon: 'img/favicon.ico',
-  organizationName: 'facebook', // Usually your GitHub org/user name.
-  projectName: 'docusaurus', // Usually your repo name.
+  organizationName: 'trpc', // Usually your GitHub org/user name.
+  projectName: 'trpc', // Usually your repo name.
   themeConfig: {
     sidebarCollapsible: false,
+    image: 'img/facebook_cover_photo_2.png',
     navbar: {
       title: 'tRPC',
       logo: {
@@ -68,7 +69,7 @@ module.exports = {
             // },
             {
               label: 'GitHub',
-              href: 'https://github.com/facebook/docusaurus',
+              href: 'https://github.com/trpc/trpc',
             },
           ],
         },
