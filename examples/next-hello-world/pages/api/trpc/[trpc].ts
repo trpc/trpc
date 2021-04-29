@@ -36,6 +36,8 @@ export function createRouter() {
 // Important: only use this export with SSR/SSG
 export const appRouter = createRouter()
   .formatError(({ defaultShape, error }) => {
+    console.log('error', error);
+    console.log('originalError', error.originalError);
     return {
       ...defaultShape,
       zodError:
