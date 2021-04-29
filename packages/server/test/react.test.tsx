@@ -28,7 +28,7 @@ import {
 import { dehydrate } from 'react-query/hydration';
 import * as z from 'zod';
 import { ZodError } from 'zod';
-import { withTRPC } from '../../nextjs/src';
+import { withTRPC } from '../../next/src';
 import { createReactQueryHooks, OutputWithCursor } from '../../react/src';
 import { createSSGHelpers } from '../../react/ssg';
 import { DefaultErrorShape } from '../src';
