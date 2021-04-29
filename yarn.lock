@@ -12501,7 +12501,7 @@ yup@^0.32.8:
     property-expr "^2.0.4"
     toposort "^2.0.2"
 
-zod@^1.11.11:
-  version "1.11.13"
-  resolved "https://registry.yarnpkg.com/zod/-/zod-1.11.13.tgz#6acb1e52b670afeb816ce2e2ddf6ab359f9ea506"
-  integrity sha512-10+KA7eWa8g1hbKIXkOnhjJ4RKEwX85ECz3VJzP+pWkJOFKn76bHy1kG0d1JHBwmdElLcCsaB0O9HqIfT1vZnw==
+zod@^1.11.16:
+  version "1.11.16"
+  resolved "https://registry.npmjs.org/zod/-/zod-1.11.16.tgz#2696e96af86907ad7c0e05b58fdea099437a1c1e"
+  integrity sha512-vjVcrlxza/GzlGrYWo0+0Ii7HiDatOdNq1mlRNVSFWHGATY5pTbQBmXxY0QrmqTdlj35gFO2YDMr9q1csQRXaQ==

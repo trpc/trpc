@@ -32,7 +32,7 @@
     "react-query": "^3.6.0",
     "start-server-and-test": "^1.12.0",
     "superjson": "^1.5.2",
-    "zod": "^1.11.11"
+    "zod": "^1.11.16"
   },
   "devDependencies": {
     "@types/jest": "^26.0.20",

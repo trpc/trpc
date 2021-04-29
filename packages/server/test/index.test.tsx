@@ -382,7 +382,7 @@ describe('integration tests', () => {
       .toMatchInlineSnapshot(`
             [Error: 1 validation issue(s)
 
-              Issue #0: invalid_type at 
+              Issue #0: invalid_type at [[root]]
               Expected number, received string
             ]
           `);
@@ -391,7 +391,7 @@ describe('integration tests', () => {
       Array [
         [Error: 1 validation issue(s)
 
-        Issue #0: invalid_type at 
+        Issue #0: invalid_type at [[root]]
         Expected number, received string
       ],
       ]

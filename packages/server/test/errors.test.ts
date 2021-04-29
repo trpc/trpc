@@ -80,7 +80,7 @@ test('input error', async () => {
   expect(clientError.json?.error.message).toMatchInlineSnapshot(`
     "1 validation issue(s)
 
-      Issue #0: invalid_type at 
+      Issue #0: invalid_type at [[root]]
       Expected string, received number
     "
   `);

@@ -34,12 +34,12 @@ test('zod', async () => {
 
   await expect(client.query('num', '123' as any)).rejects
     .toMatchInlineSnapshot(`
-      [Error: 1 validation issue(s)
+          [Error: 1 validation issue(s)
 
-        Issue #0: invalid_type at 
-        Expected number, received string
-      ]
-    `);
+            Issue #0: invalid_type at [[root]]
+            Expected number, received string
+          ]
+        `);
   expect(res.input).toBe(123);
   close();
 });
