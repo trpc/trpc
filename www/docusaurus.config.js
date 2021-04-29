@@ -10,6 +10,7 @@ module.exports = {
   projectName: 'docusaurus', // Usually your repo name.
   themeConfig: {
     sidebarCollapsible: false,
+    image: 'img/facebook_cover_photo_2.png',
     navbar: {
       title: 'tRPC',
       logo: {
