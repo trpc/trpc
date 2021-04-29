@@ -22,6 +22,9 @@
     "@babel/runtime": "^7.9.0",
     "@trpc/server": "^6.0.0-alpha.28"
   },
+  "peerDependencies": {
+    "@trpc/server": "^6.0.0-alpha.28"
+  },
   "publishConfig": {
     "access": "public"
   },

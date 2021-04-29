@@ -29,6 +29,9 @@
     }
   },
   "peerDependencies": {
+    "@trpc/client": "^6.0.0-alpha.28",
+    "@trpc/react": "^6.0.0-alpha.28",
+    "@trpc/server": "^6.0.0-alpha.28",
     "next": "*",
     "react": ">=16.8.0",
     "react-dom": ">=16.8.0",
@@ -36,9 +39,6 @@
   },
   "dependencies": {
     "@babel/runtime": "^7.9.0",
-    "@trpc/client": "^6.0.0-alpha.28",
-    "@trpc/react": "^6.0.0-alpha.28",
-    "@trpc/server": "^6.0.0-alpha.28",
     "react-ssr-prepass": "^1.4.0"
   },
   "devDependencies": {
