@@ -1,6 +1,6 @@
 {
   "name": "@trpc/next",
-  "version": "6.0.0-alpha.29",
+  "version": "6.0.0-alpha.30",
   "description": "tRPC Next lib",
   "author": "KATT",
   "license": "MIT",
