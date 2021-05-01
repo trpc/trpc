@@ -80,7 +80,9 @@ function ListItem({ task, allTasks }: { task: Task; allTasks: Task[] }) {
       );
     },
     onSettled: () => {
-      utils.invalidateQuery(['todos.all']);
+      if (!utils.queryClient.isMutating()) {
+        utils.invalidateQuery(['todos.all']);
+      }
     },
   });
   const deleteTask = trpc.useMutation('todos.delete', {
@@ -92,7 +94,9 @@ function ListItem({ task, allTasks }: { task: Task; allTasks: Task[] }) {
       );
     },
     onSettled: () => {
-      utils.invalidateQuery(['todos.all']);
+      if (!utils.queryClient.isMutating()) {
+        utils.invalidateQuery(['todos.all']);
+      }
     },
   });
 
@@ -190,7 +194,9 @@ export default function TodosPage({
       );
     },
     onSettled: () => {
-      utils.invalidateQuery(['todos.all']);
+      if (!utils.queryClient.isMutating()) {
+        utils.invalidateQuery(['todos.all']);
+      }
     },
   });
 
@@ -204,7 +210,9 @@ export default function TodosPage({
       );
     },
     onSettled: () => {
-      utils.invalidateQuery(['todos.all']);
+      if (!utils.queryClient.isMutating()) {
+        utils.invalidateQuery(['todos.all']);
+      }
     },
   });
   return (
@@ -320,7 +328,7 @@ export default function TodosPage({
           Part of <a href="http://todomvc.com">TodoMVC</a>
         </p>
       </footer>
-      <ReactQueryDevtools initialIsOpen={false} />
+      <ReactQueryDevtools initialIsOpen={true} />
     </>
   );
 }
