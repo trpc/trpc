@@ -8,6 +8,7 @@ import {
 import Head from 'next/head';
 import Link from 'next/link';
 import { RefObject, useEffect, useRef, useState } from 'react';
+import { useIsMutating } from 'react-query';
 import { ReactQueryDevtools } from 'react-query/devtools';
 import 'todomvc-app-css/index.css';
 import 'todomvc-common/base.css';
@@ -79,11 +80,6 @@ function ListItem({ task, allTasks }: { task: Task; allTasks: Task[] }) {
         ),
       );
     },
-    onSettled: () => {
-      if (utils.queryClient.isMutating() <= 1) {
-        utils.invalidateQuery(['todos.all']);
-      }
-    },
   });
   const deleteTask = trpc.useMutation('todos.delete', {
     async onMutate() {
@@ -93,12 +89,17 @@ function ListItem({ task, allTasks }: { task: Task; allTasks: Task[] }) {
         allTasks.filter((t) => t.id != task.id),
       );
     },
-    onSettled: () => {
-      if (utils.queryClient.isMutating() <= 1) {
-        utils.invalidateQuery(['todos.all']);
-      }
-    },
   });
+
+  const number = useIsMutating();
+  useEffect(() => {
+    // invalidate queries when mutations have settled
+    // doing this here rather than in `onSettled()`
+    // to avoid race conditions if you're clicking fast
+    if (number === 0) {
+      utils.invalidateQuery(['todos.all']);
+    }
+  }, [number, utils]);
 
   useClickOutside({
     ref: wrapperRef,
@@ -193,11 +194,6 @@ export default function TodosPage({
         ],
       );
     },
-    onSettled: () => {
-      if (utils.queryClient.isMutating() <= 1) {
-        utils.invalidateQuery(['todos.all']);
-      }
-    },
   });
 
   const clearCompleted = trpc.useMutation('todos.clearCompleted', {
@@ -208,11 +204,6 @@ export default function TodosPage({
         ['todos.all'],
         tasks.filter((t) => !t.completed),
       );
-    },
-    onSettled: () => {
-      if (utils.queryClient.isMutating() <= 1) {
-        utils.invalidateQuery(['todos.all']);
-      }
     },
   });
   return (
