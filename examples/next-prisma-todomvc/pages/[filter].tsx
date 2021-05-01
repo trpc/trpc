@@ -80,7 +80,7 @@ function ListItem({ task, allTasks }: { task: Task; allTasks: Task[] }) {
       );
     },
     onSettled: () => {
-      if (!utils.queryClient.isMutating()) {
+      if (utils.queryClient.isMutating() > 1) {
         utils.invalidateQuery(['todos.all']);
       }
     },
@@ -94,7 +94,7 @@ function ListItem({ task, allTasks }: { task: Task; allTasks: Task[] }) {
       );
     },
     onSettled: () => {
-      if (!utils.queryClient.isMutating()) {
+      if (utils.queryClient.isMutating() > 1) {
         utils.invalidateQuery(['todos.all']);
       }
     },
@@ -194,7 +194,7 @@ export default function TodosPage({
       );
     },
     onSettled: () => {
-      if (!utils.queryClient.isMutating()) {
+      if (utils.queryClient.isMutating() > 1) {
         utils.invalidateQuery(['todos.all']);
       }
     },
@@ -210,7 +210,7 @@ export default function TodosPage({
       );
     },
     onSettled: () => {
-      if (!utils.queryClient.isMutating()) {
+      if (utils.queryClient.isMutating() > 1) {
         utils.invalidateQuery(['todos.all']);
       }
     },
