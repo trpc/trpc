@@ -47,9 +47,10 @@ export const appRouter = createRouter()
           : null,
     };
   })
-  .middleware(({ ctx }) => {
+  .middleware(({ ctx, path, type }) => {
     console.log('received request', {
-      url: ctx.req.url,
+      type,
+      path,
       'x-ssr': ctx.req.headers['x-ssr'],
     });
   })
