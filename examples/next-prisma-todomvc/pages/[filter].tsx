@@ -91,16 +91,6 @@ function ListItem({ task, allTasks }: { task: Task; allTasks: Task[] }) {
     },
   });
 
-  const number = useIsMutating();
-  useEffect(() => {
-    // invalidate queries when mutations have settled
-    // doing this here rather than in `onSettled()`
-    // to avoid race conditions if you're clicking fast
-    if (number === 0) {
-      utils.invalidateQuery(['todos.all']);
-    }
-  }, [number, utils]);
-
   useClickOutside({
     ref: wrapperRef,
     enabled: editing,
@@ -206,6 +196,16 @@ export default function TodosPage({
       );
     },
   });
+
+  const number = useIsMutating();
+  useEffect(() => {
+    // invalidate queries when mutations have settled
+    // doing this here rather than in `onSettled()`
+    // to avoid race conditions if you're clicking fast
+    if (number === 0) {
+      utils.invalidateQuery(['todos.all']);
+    }
+  }, [number, utils]);
   return (
     <>
       <Head>
