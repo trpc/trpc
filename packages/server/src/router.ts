@@ -99,6 +99,7 @@ export type DefaultErrorShape = {
 export type MiddlewareFunction<TContext> = (opts: {
   ctx: TContext;
   type: ProcedureType;
+  path: string;
 }) => Promise<void> | void;
 export class Router<
   TContext,
@@ -413,7 +414,7 @@ export class Router<
     }
     const procedure: Procedure<TContext> = target;
 
-    return procedure.call({ ctx, input, type });
+    return procedure.call({ ctx, input, type, path });
   }
 
   public createCaller(
