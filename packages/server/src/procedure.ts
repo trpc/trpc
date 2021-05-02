@@ -39,6 +39,7 @@ interface ProcedureOptions<TContext, TInput, TOutput> {
 export interface ProcedureCallOptions<TContext> {
   ctx: TContext;
   input: unknown;
+  path: string;
   type: ProcedureType;
 }
 export abstract class Procedure<
@@ -90,9 +91,10 @@ export abstract class Procedure<
     ctx,
     input: rawInput,
     type,
+    path,
   }: ProcedureCallOptions<TContext>): Promise<TOutput> {
     for (const middleware of this.middlewares) {
-      await middleware({ ctx, type });
+      await middleware({ ctx, type, path });
     }
     const input = this.parseInput(rawInput);
     const output = await this.resolver({ ctx, input, type });
