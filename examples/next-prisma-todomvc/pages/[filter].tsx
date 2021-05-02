@@ -8,6 +8,7 @@ import {
 import Head from 'next/head';
 import Link from 'next/link';
 import { RefObject, useEffect, useRef, useState } from 'react';
+import { useIsMutating } from 'react-query';
 import { ReactQueryDevtools } from 'react-query/devtools';
 import 'todomvc-app-css/index.css';
 import 'todomvc-common/base.css';
@@ -79,9 +80,6 @@ function ListItem({ task, allTasks }: { task: Task; allTasks: Task[] }) {
         ),
       );
     },
-    onSettled: () => {
-      utils.invalidateQuery(['todos.all']);
-    },
   });
   const deleteTask = trpc.useMutation('todos.delete', {
     async onMutate() {
@@ -90,9 +88,6 @@ function ListItem({ task, allTasks }: { task: Task; allTasks: Task[] }) {
         ['todos.all'],
         allTasks.filter((t) => t.id != task.id),
       );
-    },
-    onSettled: () => {
-      utils.invalidateQuery(['todos.all']);
     },
   });
 
@@ -189,9 +184,6 @@ export default function TodosPage({
         ],
       );
     },
-    onSettled: () => {
-      utils.invalidateQuery(['todos.all']);
-    },
   });
 
   const clearCompleted = trpc.useMutation('todos.clearCompleted', {
@@ -203,10 +195,17 @@ export default function TodosPage({
         tasks.filter((t) => !t.completed),
       );
     },
-    onSettled: () => {
-      utils.invalidateQuery(['todos.all']);
-    },
   });
+
+  const number = useIsMutating();
+  useEffect(() => {
+    // invalidate queries when mutations have settled
+    // doing this here rather than in `onSettled()`
+    // to avoid race conditions if you're clicking fast
+    if (number === 0) {
+      utils.invalidateQuery(['todos.all']);
+    }
+  }, [number, utils]);
   return (
     <>
       <Head>
@@ -320,7 +319,7 @@ export default function TodosPage({
           Part of <a href="http://todomvc.com">TodoMVC</a>
         </p>
       </footer>
-      <ReactQueryDevtools initialIsOpen={false} />
+      <ReactQueryDevtools initialIsOpen={true} />
     </>
   );
 }
