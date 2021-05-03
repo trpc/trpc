@@ -8176,6 +8176,14 @@ map-visit@^1.0.0:
   dependencies:
     object-visit "^1.0.0"
 
+match-sorter@^4.1.0:
+  version "4.2.1"
+  resolved "https://registry.yarnpkg.com/match-sorter/-/match-sorter-4.2.1.tgz#575b4b3737185ba9518b67612b66877ea0b37358"
+  integrity sha512-s+3h9TiZU9U1pWhIERHf8/f4LmBN6IXaRgo2CI17+XGByGS1GvG5VvXK9pcGyCjGe3WM3mSYRC3ipGrd5UEVgw==
+  dependencies:
+    "@babel/runtime" "^7.10.5"
+    remove-accents "0.4.2"
+
 match-sorter@^6.0.2:
   version "6.3.0"
   resolved "https://registry.npmjs.org/match-sorter/-/match-sorter-6.3.0.tgz#454a1b31ed218cddbce6231a0ecb5fdc549fed01"
@@ -10069,6 +10077,13 @@ react-is@^17.0.1:
   resolved "https://registry.npmjs.org/react-is/-/react-is-17.0.1.tgz#5b3531bd76a645a4c9fb6e693ed36419e3301339"
   integrity sha512-NAnt2iGDXohE5LI7uBnLnqvLQMtzhkiAOLXTmv+qnF9Ky7xAPcX8Up/xWIhxvLVGJvuLiNc4xQLtuqDRzb4fSA==
 
+react-query-devtools@^2.6.3:
+  version "2.6.3"
+  resolved "https://registry.yarnpkg.com/react-query-devtools/-/react-query-devtools-2.6.3.tgz#f7c982839d4b0001cee4d5ddfa826493c2f6341f"
+  integrity sha512-pSvWq5Q8zgIP7QbF0+4BerCHLaLn5HPzce7sIXYqz4XEizcYJHkJtcrAwn6bUkCu5JmAt1Y7fViQtZwOIG2SYA==
+  dependencies:
+    match-sorter "^4.1.0"
+
 react-query@^3.6.0:
   version "3.15.2"
   resolved "https://registry.yarnpkg.com/react-query/-/react-query-3.15.2.tgz#4ff4ffe9ff5e3bf002a7e863cc01b9d58c5fae01"
@@ -11622,9 +11637,9 @@ to-regex@^3.0.1, to-regex@^3.0.2:
     safe-regex "^1.1.0"
 
 todomvc-app-css@^2.3.0:
-  version "2.4.0"
-  resolved "https://registry.yarnpkg.com/todomvc-app-css/-/todomvc-app-css-2.4.0.tgz#9aa17f0e566163864e146e29bb593feaec67d9fb"
-  integrity sha512-0xIt5DAZhQ+qzeu9DBEWk5J7mnDVGJaFofNLK67E31HbqqIGPWsZNBZ0+uFzvQLDqKCteETAQ8oIFzz+jZHiAg==
+  version "2.4.1"
+  resolved "https://registry.yarnpkg.com/todomvc-app-css/-/todomvc-app-css-2.4.1.tgz#528b7e40a2d82e01d2756333c8ac34e23b750ff8"
+  integrity sha512-1mZYRG435VmqIw1WahBYhAJbyfH4HnRNI8EgF4ypK4R1RjwgBBvXd0N57ZwCa1lbHzYBraA6+dVyAg3GAPEACQ==
 
 todomvc-common@^1.0.5:
   version "1.0.5"
