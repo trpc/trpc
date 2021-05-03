@@ -71,6 +71,7 @@ export default function Home() {
         {addPost.error && <p className="error">{addPost.error.message}</p>}
       </form>
       <hr />
+
       <div style={{ marginTop: '100px' }}>
         <a
           href="https://vercel.com/?utm_source=trpc&utm_campaign=oss"
