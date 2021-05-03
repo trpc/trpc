@@ -11637,9 +11637,9 @@ to-regex@^3.0.1, to-regex@^3.0.2:
     safe-regex "^1.1.0"
 
 todomvc-app-css@^2.3.0:
-  version "2.4.0"
-  resolved "https://registry.yarnpkg.com/todomvc-app-css/-/todomvc-app-css-2.4.0.tgz#9aa17f0e566163864e146e29bb593feaec67d9fb"
-  integrity sha512-0xIt5DAZhQ+qzeu9DBEWk5J7mnDVGJaFofNLK67E31HbqqIGPWsZNBZ0+uFzvQLDqKCteETAQ8oIFzz+jZHiAg==
+  version "2.4.1"
+  resolved "https://registry.yarnpkg.com/todomvc-app-css/-/todomvc-app-css-2.4.1.tgz#528b7e40a2d82e01d2756333c8ac34e23b750ff8"
+  integrity sha512-1mZYRG435VmqIw1WahBYhAJbyfH4HnRNI8EgF4ypK4R1RjwgBBvXd0N57ZwCa1lbHzYBraA6+dVyAg3GAPEACQ==
 
 todomvc-common@^1.0.5:
   version "1.0.5"
