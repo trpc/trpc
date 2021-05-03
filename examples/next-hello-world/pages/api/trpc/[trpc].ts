@@ -1,7 +1,7 @@
 import * as trpc from '@trpc/server';
 import * as z from 'zod';
 import * as trpcNext from '@trpc/server/adapters/next';
-import { inferAsyncReturnType } from '@trpc/server';
+import { httpError, inferAsyncReturnType } from '@trpc/server';
 import { postsRouter } from './posts';
 
 // The app's context - is generated for each incoming request
@@ -62,10 +62,16 @@ export const appRouter = createRouter()
         text: z.string().optional(),
       })
       .optional(),
-    resolve({ input }) {
+    async resolve({ input }) {
       return {
         greeting: `hello ${input?.text ?? 'world'}`,
       };
+    },
+  })
+  .mutation('testMutation', {
+    resolve() {
+      throw httpError.unauthorized('test');
+      return 'hello';
     },
   })
   .merge('posts.', postsRouter);

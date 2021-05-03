@@ -17,6 +17,8 @@ export default function Home() {
       utils.invalidateQuery(['posts.list']);
     },
   });
+
+  const testMutation = trpc.useMutation('testMutation');
   const fieldErrors = addPost.error?.shape?.zodError?.fieldErrors ?? {};
   return (
     <>
@@ -70,6 +72,16 @@ export default function Home() {
         <input type="submit" disabled={addPost.isLoading} />
         {addPost.error && <p className="error">{addPost.error.message}</p>}
       </form>
+      <hr />
+
+      <button
+        onClick={() => {
+          testMutation.mutate(null);
+          alert('Check inspector logs');
+        }}
+      >
+        Trigger test mutation
+      </button>
       <hr />
 
       <div style={{ marginTop: '100px' }}>
