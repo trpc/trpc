@@ -14,9 +14,8 @@ export class TRPCError<TCode extends string = string> extends Error {
     super(message);
     this.code = code;
     this.originalError = originalError;
-    this.name = 'TRPCError';
 
-    Object.setPrototypeOf(this, TRPCError.prototype);
+    Object.setPrototypeOf(this, new.target.prototype);
   }
 }
 export interface TRPCErrorOptions {
