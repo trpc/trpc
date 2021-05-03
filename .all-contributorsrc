@@ -54,6 +54,15 @@
       "contributions": [
         "bug"
       ]
+    },
+    {
+      "login": "mgranderath",
+      "name": "Malte Granderath",
+      "avatar_url": "https://avatars.githubusercontent.com/u/22001111?v=4",
+      "profile": "http://granderath.tech",
+      "contributions": [
+        "bug"
+      ]
     }
   ],
   "contributorsPerLine": 7,
