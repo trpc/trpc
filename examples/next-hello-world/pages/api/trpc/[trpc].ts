@@ -62,16 +62,10 @@ export const appRouter = createRouter()
         text: z.string().optional(),
       })
       .optional(),
-    async resolve({ input }) {
+    resolve({ input }) {
       return {
         greeting: `hello ${input?.text ?? 'world'}`,
       };
-    },
-  })
-  .mutation('testMutation', {
-    resolve() {
-      throw httpError.unauthorized('test');
-      return 'hello';
     },
   })
   .merge('posts.', postsRouter);
