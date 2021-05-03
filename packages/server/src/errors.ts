@@ -14,8 +14,9 @@ export class TRPCError<TCode extends string = string> extends Error {
     super(message);
     this.code = code;
     this.originalError = originalError;
+    this.name = 'TRPCError';
 
-    Object.setPrototypeOf(this, TRPCError.prototype);
+    Object.setPrototypeOf(this, new.target.prototype);
   }
 }
 export interface TRPCErrorOptions {
@@ -58,8 +59,10 @@ export function getMessageFromUnkownError(
 }
 
 export function getErrorFromUnknown(err: unknown): TRPCError {
-  if (err instanceof TRPCError) {
-    return err;
+  // this should ideally be an `instanceof TRPCError` but for some reason that isn't working
+  // ref https://github.com/trpc/trpc/issues/331
+  if (err instanceof Error && err.name === 'TRPCError') {
+    return err as TRPCError;
   }
   return internalServerError(err);
 }
