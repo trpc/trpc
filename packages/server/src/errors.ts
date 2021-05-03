@@ -59,6 +59,8 @@ export function getMessageFromUnkownError(
 }
 
 export function getErrorFromUnknown(err: unknown): TRPCError {
+  // this should ideally be an `instanceof TRPCError` but for some reason that isn't working
+  // ref https://github.com/trpc/trpc/issues/331
   if (err instanceof Error && err.name === 'TRPCError') {
     return err as TRPCError;
   }
