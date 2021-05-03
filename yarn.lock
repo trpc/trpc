@@ -12540,6 +12540,6 @@ yup@^0.32.8:
     toposort "^2.0.2"
 
 zod@^1.11.16:
-  version "1.11.16"
-  resolved "https://registry.npmjs.org/zod/-/zod-1.11.16.tgz#2696e96af86907ad7c0e05b58fdea099437a1c1e"
-  integrity sha512-vjVcrlxza/GzlGrYWo0+0Ii7HiDatOdNq1mlRNVSFWHGATY5pTbQBmXxY0QrmqTdlj35gFO2YDMr9q1csQRXaQ==
+  version "1.11.17"
+  resolved "https://registry.yarnpkg.com/zod/-/zod-1.11.17.tgz#2aae9e91fc66128116ae9844e8f416a95f453f8e"
+  integrity sha512-UzIwO92D0dSFwIRyyqAfRXICITLjF0IP8tRbEK/un7adirMssWZx8xF/1hZNE7t61knWZ+lhEuUvxlu2MO8qqA==
