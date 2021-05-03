@@ -17,7 +17,6 @@ export default function Home() {
       utils.invalidateQuery(['posts.list']);
     },
   });
-
   const fieldErrors = addPost.error?.shape?.zodError?.fieldErrors ?? {};
   return (
     <>
