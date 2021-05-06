@@ -26,7 +26,7 @@ tRPC is a lot simpler and couples your server & app (for good and for bad). It m
 ## Alternative projects
 
 - [Blitz.js](https://blitzjs.com) is a full-stack framework. tRPC is just the data layer, but the philosophy of their _"Zero-API data layer"_ is very close to tRPC, but tRPC doesn't require a build pipeline nor is it tied to Next.js or even React.
-- ...
+- [crosswalk](https://github.com/danvk/crosswalk) has similar goals (type-safe REST APIs) but uses TypeScript types as a source of truth rather than Zod. This requires a build step to generate JSON Schema for runtime type validation.
 
 ....
 
