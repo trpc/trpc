@@ -11,6 +11,9 @@ module.exports = {
   themeConfig: {
     sidebarCollapsible: false,
     image: 'img/facebook_cover_photo_2.png',
+    prism: {
+      theme: require('prism-react-renderer/themes/vsDark'),
+    },
     navbar: {
       title: 'tRPC',
       logo: {
@@ -84,14 +87,12 @@ module.exports = {
         docs: {
           sidebarPath: require.resolve('./sidebars.js'),
           // Please change this to your repo.
-          editUrl:
-            'https://github.com/trpc/trpc/tree/main/www/',
+          editUrl: 'https://github.com/trpc/trpc/tree/main/www/',
         },
         blog: {
           showReadingTime: true,
           // Please change this to your repo.
-          editUrl:
-            'https://github.com/trpc/trpc/tree/main/www/blog/',
+          editUrl: 'https://github.com/trpc/trpc/tree/main/www/blog/',
         },
         theme: {
           customCss: require.resolve('./src/css/custom.css'),

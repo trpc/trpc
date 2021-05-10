@@ -19,7 +19,7 @@ Recommended but not enforced file structure. This is what you get when starting 
 │   └── [...]
 ├── prisma # <-- (optional) if prisma is added
 │   ├── migrations
-│   │   └── [...] 
+│   │   └── [...]
 │   └── schema.prisma
 ├── public
 │   └── [...]
@@ -32,17 +32,13 @@ Recommended but not enforced file structure. This is what you get when starting 
 
 ## 🌟 Start from scratch
 
-
 Execute [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app) to bootstrap one of the examples:
-
 
 ### TodoMVC with [Prisma](https://www.prisma.io/)
 
-
 > TodoMVC-app implemented with tRPC. Uses [superjson](https://github.com/blitz-js/superjson) to transparently use `Date`s over the wire.
-> 
+>
 > Live demo at [todomvc.trpc.io](https://todomvc.trpc.io)
-
 
 ```bash
 npx create-next-app --example https://github.com/trpc/trpc --example-path examples/next-prisma-todomvc trpc-todo
@@ -51,7 +47,7 @@ npx create-next-app --example https://github.com/trpc/trpc --example-path exampl
 ### Simple Starter without database
 
 > Simple starter project with a mock in-memory db.
-> 
+>
 > Live demo at [hello-world.trpc.io](https://hello-world.trpc.io) _(note that data isn't persisted on Vercel as it's running in lambda functions)_
 
 ```bash
@@ -61,7 +57,7 @@ npx create-next-app --example https://github.com/trpc/trpc --example-path exampl
 ### Real-time chat with [Prisma](https://www.prisma.io/)
 
 > Using experimental subscription support.
-> 
+>
 > Live demo at [chat.trpc.io](https://chat.trpc.io)
 
 ```bash
@@ -72,9 +68,7 @@ npx create-next-app --example https://github.com/trpc/trpc --example-path exampl
 
 The code here is taken from [`./examples/next-hello-world`](https://github.com/trpc/trpc/tree/main/examples/next-hello-world).
 
-
 ### 0. Install deps
-
 
 ```bash
 yarn add @trpc/client @trpc/server @trpc/react @trpc/next zod react-query
@@ -82,7 +76,6 @@ yarn add @trpc/client @trpc/server @trpc/react @trpc/next zod react-query
 
 - tRPC wraps a tiny layer of sugar around [react-query](https://react-query.tanstack.com/overview) when using React which gives you type safety and auto completion of your procedures
 - Zod is a great validation lib that works well, but tRPC also works out-of-the-box with yup/myzod/[..] - [see test suite](https://github.com/trpc/trpc/blob/main/packages/server/test/validators.test.ts)
-
 
 ### 1. Create an API handler
 
@@ -134,18 +127,15 @@ export default trpcNext.createNextApiHandler({
   router: appRouter,
   createContext,
 });
-
 ```
 
 ### Option A) Using Server-side rendering
-
 
 :::info
 Reference project: https://github.com/trpc/trpc/tree/main/examples/next-hello-world
 :::
 
 #### 2. Create tRPC-hooks
-
 
 Create `./utils/trpc.ts`
 
@@ -159,7 +149,6 @@ export const trpc = createReactQueryHooks<AppRouter>();
 ```
 
 #### 3. Configure `_app.tsx`
-
 
 ```tsx
 import { withTRPC } from '@trpc/next';
@@ -206,7 +195,6 @@ export default withTRPC<AppRouter>(
 
 #### 4. Start consuming your data!
 
-
 ```tsx
 import Head from 'next/head';
 import { trpc } from '../utils/trpc';
@@ -239,18 +227,13 @@ export default function Home() {
 }
 ```
 
-
-
 ### Option B) Using SSG
-
 
 :::info
 Reference project: https://github.com/trpc/trpc/tree/main/examples/next-prisma-todomvc
 :::
 
-
 #### 2. Create tRPC-hooks
-
 
 Create `./utils/trpc.ts`
 
@@ -267,7 +250,6 @@ export const trpc = createReactQueryHooks<AppRouter>();
 ```
 
 #### 3. Configure `_app.tsx`
-
 
 ```tsx
 import { withTRPC } from '@trpc/next';
@@ -289,7 +271,6 @@ export default withTRPC(
 ```
 
 #### 4. Start consuming your data!
-
 
 ```tsx
 import Head from 'next/head';
@@ -322,7 +303,6 @@ export default function Home() {
     </div>
   );
 }
-
 
 // Optional: statically fetch the data
 // export const getStaticProps = async (
