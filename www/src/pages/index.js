@@ -5,7 +5,7 @@ import Link from '@docusaurus/Link';
 import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
 import useBaseUrl from '@docusaurus/useBaseUrl';
 import styles from './styles.module.css';
-import GitHubButton from 'react-github-btn'
+import GitHubButton from 'react-github-btn';
 
 const features = [
   {
@@ -13,16 +13,21 @@ const features = [
     // imageUrl: 'img/undraw_docusaurus_mountain.svg',
     description: (
       <>
-        Automatic type-safety & autocompletion inferred from your API-paths, their input&nbsp;data, &amp;&nbsp;outputs.
+        Automatic type-safety & autocompletion inferred from your API-paths,
+        their input&nbsp;data, &amp;&nbsp;outputs.
       </>
     ),
   },
   {
-    title: <>🍃&nbsp;  Light &amp; Snappy DX</>,
+    title: <>🍃&nbsp; Light &amp; Snappy DX</>,
     // imageUrl: 'img/undraw_docusaurus_react.svg',
     description: (
       <>
-        No code generation, run-time bloat, or build pipeline. <a href="#zero" aria-describedby="footnote-label" id="footnotes-ref">Zero dependencies</a> &amp; a tiny client-side footprint.
+        No code generation, run-time bloat, or build pipeline.{' '}
+        <a href="#zero" aria-describedby="footnote-label" id="footnotes-ref">
+          Zero dependencies
+        </a>{' '}
+        &amp; a tiny client-side footprint.
       </>
     ),
   },
@@ -31,7 +36,8 @@ const features = [
     // imageUrl: 'img/undraw_docusaurus_tree.svg',
     description: (
       <>
-        Easy to add to your existing brownfield project with adapters for Connect/Express/Next.js.
+        Easy to add to your existing brownfield project with adapters for
+        Connect/Express/Next.js.
       </>
     ),
   },
@@ -58,33 +64,49 @@ function Home() {
   return (
     <Layout
       title={`${siteConfig.title} - toolkit for building end-to-end type-safe APIs`}
-      description="Automatic type-safety & autocompletion inferred from your API-paths, their input data, &amp; outputs 🧙‍♂️">
+      description="Automatic type-safety & autocompletion inferred from your API-paths, their input data, &amp; outputs 🧙‍♂️"
+    >
       <header className={clsx('hero hero--primary', styles.heroBanner)}>
         <div className="container">
           <h1 className="hero__title">{siteConfig.title}</h1>
           <p className="hero__subtitle">{siteConfig.tagline}</p>
           <p>
+            <GitHubButton
+              href="https://github.com/trpc/trpc"
+              data-icon="octicon-star"
+              data-size="large"
+              data-show-count="true"
+              aria-label="Star trpc/trpc on GitHub"
+            >
+              Star
+            </GitHubButton>
+          </p>
+
+          <p className={styles.figure}>
             <figure>
-              <img src="https://storage.googleapis.com/trpc/trpcgif.gif" alt="Server/client example" />
+              <img
+                src="https://storage.googleapis.com/trpc/trpcgif.gif"
+                alt="Server/client example"
+              />
               <figcaption>
-                The client above is <strong>not</strong> importing any code from the server, only it&apos;s type declarations.
-                <br />
-                <a href="https://www.typescriptlang.org/docs/handbook/release-notes/typescript-3-8.html#type-only-imports-and-export">Import type only imports declarations to be used for type annotations and declarations. It always gets fully erased, so there’s no remnant of it at runtime.</a>
+                The client above is <strong>not</strong> importing any code from
+                the server, only it&apos;s type declarations.{' '}
+                <code>import type</code> only imports declarations to be used
+                for type annotations and declarations. It{' '}
+                <a href="https://www.typescriptlang.org/docs/handbook/release-notes/typescript-3-8.html#type-only-imports-and-export">
+                  always gets fully erased
+                </a>
+                , so there’s no remnant of it at runtime.
               </figcaption>
             </figure>
           </p>
           <p>
             <Link
-              className={clsx(
-                'button button--outline button--secondary button--lg',
-                styles.getStarted,
-              )}
-              to={useBaseUrl('docs/')}>
+              className={clsx('getStarted', styles.getStarted)}
+              to={useBaseUrl('docs/')}
+            >
               Get Started
             </Link>
-          </p>
-          <p>
-            <GitHubButton href="https://github.com/trpc/trpc" data-icon="octicon-star" data-size="large" data-show-count="true" aria-label="Star trpc/trpc on GitHub">Star</GitHubButton>
           </p>
         </div>
       </header>
@@ -103,9 +125,14 @@ function Home() {
           </>
         )}
       </main>
-      <footer className="container">
+      <footer className={`container ${styles.container}`}>
         <ol className="footnotes">
-          <li id="zero"><code>@trpc/client</code> depends on some babel runtime helpers + that a <code>fetch()</code> polyfill/ponyfill is used if the browser doesn&apos;t support it. <code>@trpc/react</code> is built on top of <a href="https://react-query.tanstack.com/">react-query</a>.</li>
+          <li id="zero">
+            <code>@trpc/client</code> depends on some babel runtime helpers +
+            that a <code>fetch()</code> polyfill/ponyfill is used if the browser
+            doesn&apos;t support it. <code>@trpc/react</code> is built on top of{' '}
+            <a href="https://react-query.tanstack.com/">react-query</a>.
+          </li>
         </ol>
       </footer>
     </Layout>

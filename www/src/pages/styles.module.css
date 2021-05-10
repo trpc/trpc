@@ -11,10 +11,19 @@
   position: relative;
   overflow: hidden;
 }
+
+.heroBanner figcaption {
+  padding-top: 15px;
+  max-width: 600px;
+  margin: auto;
+  font-size: 90%;
+}
 .heroBanner figcaption a {
-  color: var(--ifm-font-color-base);
-  font-size: 0.8rem;
-  font-style: italic;
+  /* color: var(--ifm-font-color-base); */
+  color: white;
+  /* font-size: 0.8rem;
+  font-style: italic; */
+  text-decoration: underline;
 }
 
 @media screen and (max-width: 966px) {
@@ -23,7 +32,19 @@
   }
 }
 .getStarted {
+  display: inline-block;
   color: white;
+  background: --ifm-color-primary;
+  border: 2px solid white;
+  border-radius: 4px;
+  padding: 10px 25px;
+  margin: 50px 0px 0px 0px;
+  font-size: 14pt;
+}
+.getStarted:hover {
+  background: white;
+  color: --ifm-color-primary;
+  text-decoration: none;
 }
 
 .features {
@@ -33,7 +54,18 @@
   width: 100%;
 }
 
+@media screen and (max-width: 800px) {
+  .figure {
+    display: none;
+  }
+}
+
 .featureImage {
   height: 200px;
   width: 200px;
+}
+
+footer.container {
+  /* margin: 0 var(--ifm-spacing-horizontal); */
+  padding-left: 40px;
 }

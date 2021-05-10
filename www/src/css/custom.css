@@ -76,6 +76,9 @@ article {
 
 .footnotes {
   font-size: 0.9em;
+  max-width: 600px;
+  margin: auto;
+  padding: 10px 0px 60px 0px;
 }
 
 /**
