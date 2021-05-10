@@ -54,7 +54,18 @@
   width: 100%;
 }
 
+@media screen and (max-width: 800px) {
+  .figure {
+    display: none;
+  }
+}
+
 .featureImage {
   height: 200px;
   width: 200px;
+}
+
+footer.container {
+  /* margin: 0 var(--ifm-spacing-horizontal); */
+  padding-left: 40px;
 }

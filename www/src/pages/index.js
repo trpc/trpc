@@ -82,7 +82,7 @@ function Home() {
             </GitHubButton>
           </p>
 
-          <p style={{}}>
+          <p className={styles.figure}>
             <figure>
               <img
                 src="https://storage.googleapis.com/trpc/trpcgif.gif"
@@ -125,7 +125,7 @@ function Home() {
           </>
         )}
       </main>
-      <footer className="container">
+      <footer className={`container ${styles.container}`}>
         <ol className="footnotes">
           <li id="zero">
             <code>@trpc/client</code> depends on some babel runtime helpers +
