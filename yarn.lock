@@ -10085,9 +10085,9 @@ react-query-devtools@^2.6.3:
     match-sorter "^4.1.0"
 
 react-query@^3.6.0:
-  version "3.15.2"
-  resolved "https://registry.yarnpkg.com/react-query/-/react-query-3.15.2.tgz#4ff4ffe9ff5e3bf002a7e863cc01b9d58c5fae01"
-  integrity sha512-7pm/WR+zl064W0pfQffayM0Jmgsz2VcoDL0pRFk06ERpMSYLQjX0fFZfvVRIgJVRjgS3A04pSY1iOYdw92dzdA==
+  version "3.16.0"
+  resolved "https://registry.yarnpkg.com/react-query/-/react-query-3.16.0.tgz#8de1556aabb3d200d0f8eeb74ce2b0b3dd0a0a51"
+  integrity sha512-YOvI8mO9WG+r4XsyJinjlDMiV5IewUWUcTv2J7z6bIP3KOFvgT6k6HM8vQouz4hPnme7Ktq9j5e7LarUqgJXFQ==
   dependencies:
     "@babel/runtime" "^7.5.5"
     broadcast-channel "^3.4.1"
