@@ -63,6 +63,15 @@
       "contributions": [
         "bug"
       ]
+    },
+    {
+      "login": "kripod",
+      "name": "Kristóf Poduszló",
+      "avatar_url": "https://avatars.githubusercontent.com/u/14854048?v=4",
+      "profile": "https://github.com/kripod",
+      "contributions": [
+        "ideas"
+      ]
     }
   ],
   "contributorsPerLine": 7,
