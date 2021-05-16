@@ -123,5 +123,6 @@ export function createSSGHelpers<TRouter extends AnyRouter>({
     fetchQuery,
     fetchInfiniteQuery,
     dehydrate: _dehydrate,
+    queryClient,
   };
 }
