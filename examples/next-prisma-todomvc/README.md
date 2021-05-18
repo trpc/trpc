@@ -3,7 +3,7 @@
 
 - [TodoMVC](https://todomvc.com/) implemented with tRPC + [Prisma](https://prisma.io)
 - Live at [todomvc.trpc.io](https://todomvc.trpc.io)
-
+- Try in CodeSandbox: [https://githubbox.com/trpc/trpc/tree/main/examples/next-prisma-todomvc](https://githubbox.com/trpc/trpc/tree/main/examples/next-prisma-todomvc)
 ### Setup
 
 ```bash
@@ -24,7 +24,7 @@ yarn dx # runs prisma studio + next
 - This is not a recommended approach. If you want to fork this project as a starter, do the following:
   - `rm -rf ./prisma/_sqlite`
   - Update `package.json`:
-     - remove all references to sqlite
+     - remove all references of `sqlite`
      - replace commands using `*:sqlite` with `*:postgres`
 
 
