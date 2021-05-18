@@ -1,4 +1,5 @@
 {
+  "view": "console",
   "container": {
     "view": "terminal",
     "node": "14"
