@@ -10,4 +10,13 @@ export type CombinedDataTransformer = {
   output: DataTransformer;
 };
 
+export type CombinedDataTransformerClient = {
+  input: Pick<DataTransformer, 'serialize'>;
+  output: Pick<DataTransformer, 'deserialize'>;
+};
+
 export type DataTransformerOptions = DataTransformer | CombinedDataTransformer;
+
+export type ClientDataTransformerOptions =
+  | DataTransformer
+  | CombinedDataTransformerClient;

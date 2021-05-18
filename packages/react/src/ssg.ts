@@ -1,7 +1,7 @@
 import {
   AnyRouter,
   assertNotBrowser,
-  DataTransformerOptions,
+  ClientDataTransformerOptions,
   inferHandlerInput,
   inferRouterContext,
 } from '@trpc/server';
@@ -23,7 +23,7 @@ assertNotBrowser();
 export interface CreateSSGHelpersOptions<TRouter extends AnyRouter> {
   router: TRouter;
   ctx: inferRouterContext<TRouter>;
-  transformer?: DataTransformerOptions;
+  transformer?: ClientDataTransformerOptions;
   queryClientConfig?: QueryClientConfig;
 }
 

@@ -2,7 +2,7 @@
 import type {
   AnyRouter,
   DataTransformer,
-  DataTransformerOptions,
+  ClientDataTransformerOptions,
   HTTPErrorResponseEnvelope,
   HTTPResponseEnvelope,
   HTTPSuccessResponseEnvelope,
@@ -63,7 +63,7 @@ export interface CreateTRPCClientOptions<TRouter extends AnyRouter> {
   getHeaders?: () => Record<string, string | string[] | undefined>;
   onSuccess?: (data: HTTPSuccessResponseEnvelope<unknown>) => void;
   onError?: (error: TRPCClientError<TRouter>) => void;
-  transformer?: DataTransformerOptions;
+  transformer?: ClientDataTransformerOptions;
 }
 type TRPCType = 'subscription' | 'query' | 'mutation';
 
