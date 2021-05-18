@@ -1,3 +1,5 @@
 {
-  "startScript": "dev-codesandbox"
+  "container": {
+    "startScript": "dev-codesandbox"
+  }
 }
