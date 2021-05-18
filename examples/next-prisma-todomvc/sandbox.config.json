@@ -1,8 +1,12 @@
 {
+  "startScript": "dev-codesandbox",
+  "start": "dev-codesandbox",
   "container": {
-    "startScript": "dev-codesandbox"
+    "startScript": "dev-codesandbox",
+    "start": "dev-codesandbox"
   },
   "client": {
+    "start": "dev-codesandbox",
     "startScript": "dev-codesandbox"
   }
 }
