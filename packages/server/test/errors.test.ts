@@ -78,11 +78,15 @@ test('input error', async () => {
   }
   expect(clientError.res?.status).toBe(400);
   expect(clientError.json?.error.message).toMatchInlineSnapshot(`
-    "1 validation issue(s)
-
-      Issue #0: invalid_type at [[root]]
-      Expected string, received number
-    "
+    "[
+      {
+        \\"code\\": \\"invalid_type\\",
+        \\"expected\\": \\"string\\",
+        \\"received\\": \\"number\\",
+        \\"path\\": [],
+        \\"message\\": \\"Expected string, received number\\"
+      }
+    ]"
   `);
   expect(clientError.json?.error.code).toMatchInlineSnapshot(
     `"BAD_USER_INPUT"`,

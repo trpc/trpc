@@ -380,20 +380,28 @@ describe('integration tests', () => {
     await client.mutation('hello', 1);
     await expect(client.mutation('hello', 'not-a-number' as any)).rejects
       .toMatchInlineSnapshot(`
-            [Error: 1 validation issue(s)
-
-              Issue #0: invalid_type at [[root]]
-              Expected number, received string
-            ]
+            [Error: [
+              {
+                "code": "invalid_type",
+                "expected": "number",
+                "received": "string",
+                "path": [],
+                "message": "Expected number, received string"
+              }
+            ]]
           `);
 
     expect(onError.mock.calls[0]).toMatchInlineSnapshot(`
       Array [
-        [Error: 1 validation issue(s)
-
-        Issue #0: invalid_type at [[root]]
-        Expected number, received string
-      ],
+        [Error: [
+        {
+          "code": "invalid_type",
+          "expected": "number",
+          "received": "string",
+          "path": [],
+          "message": "Expected number, received string"
+        }
+      ]],
       ]
     `);
     expect(onSuccess.mock.calls[0]).toMatchInlineSnapshot(`
