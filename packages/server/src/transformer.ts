@@ -6,6 +6,8 @@ export type DataTransformer = {
 };
 
 export type CombinedDataTransformer = {
-  up: DataTransformer;
-  down: DataTransformer;
+  input: DataTransformer;
+  output: DataTransformer;
 };
+
+export type DataTransformerOptions = DataTransformer | CombinedDataTransformer;

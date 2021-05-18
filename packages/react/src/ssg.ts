@@ -1,8 +1,7 @@
 import {
   AnyRouter,
   assertNotBrowser,
-  DataTransformer,
-  CombinedDataTransformer,
+  DataTransformerOptions,
   inferHandlerInput,
   inferRouterContext,
 } from '@trpc/server';
@@ -24,7 +23,7 @@ assertNotBrowser();
 export interface CreateSSGHelpersOptions<TRouter extends AnyRouter> {
   router: TRouter;
   ctx: inferRouterContext<TRouter>;
-  transformer?: DataTransformer | CombinedDataTransformer;
+  transformer?: DataTransformerOptions;
   queryClientConfig?: QueryClientConfig;
 }
 
@@ -45,7 +44,7 @@ export function createSSGHelpers<TRouter extends AnyRouter>({
   >;
   const prefetchQuery = async <
     TPath extends keyof TQueries & string,
-    TProcedure extends TQueries[TPath]
+    TProcedure extends TQueries[TPath],
   >(
     ...pathAndArgs: [path: TPath, ...args: inferHandlerInput<TProcedure>]
   ) => {
@@ -61,7 +60,7 @@ export function createSSGHelpers<TRouter extends AnyRouter>({
 
   const prefetchInfiniteQuery = async <
     TPath extends keyof TQueries & string,
-    TProcedure extends TQueries[TPath]
+    TProcedure extends TQueries[TPath],
   >(
     ...pathAndArgs: [path: TPath, ...args: inferHandlerInput<TProcedure>]
   ) => {
@@ -76,7 +75,7 @@ export function createSSGHelpers<TRouter extends AnyRouter>({
 
   const fetchQuery = async <
     TPath extends keyof TQueries & string,
-    TProcedure extends TQueries[TPath]
+    TProcedure extends TQueries[TPath],
   >(
     ...pathAndArgs: [path: TPath, ...args: inferHandlerInput<TProcedure>]
   ) => {
@@ -92,7 +91,7 @@ export function createSSGHelpers<TRouter extends AnyRouter>({
 
   const fetchInfiniteQuery = async <
     TPath extends keyof TQueries & string,
-    TProcedure extends TQueries[TPath]
+    TProcedure extends TQueries[TPath],
   >(
     ...pathAndArgs: [path: TPath, ...args: inferHandlerInput<TProcedure>]
   ) => {
@@ -114,7 +113,7 @@ export function createSSGHelpers<TRouter extends AnyRouter>({
     },
   ): DehydratedState {
     const serialize = transformer
-      ? ('up' in transformer ? transformer.up : transformer).serialize
+      ? ('input' in transformer ? transformer.input : transformer).serialize
       : (obj: unknown) => obj;
 
     return serialize(dehydrate(queryClient, opts));

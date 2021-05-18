@@ -2,7 +2,7 @@
 import type {
   AnyRouter,
   DataTransformer,
-  CombinedDataTransformer,
+  DataTransformerOptions,
   HTTPErrorResponseEnvelope,
   HTTPResponseEnvelope,
   HTTPSuccessResponseEnvelope,
@@ -63,7 +63,7 @@ export interface CreateTRPCClientOptions<TRouter extends AnyRouter> {
   getHeaders?: () => Record<string, string | string[] | undefined>;
   onSuccess?: (data: HTTPSuccessResponseEnvelope<unknown>) => void;
   onError?: (error: TRPCClientError<TRouter>) => void;
-  transformer?: DataTransformer | CombinedDataTransformer;
+  transformer?: DataTransformerOptions;
 }
 type TRPCType = 'subscription' | 'query' | 'mutation';
 
@@ -80,10 +80,10 @@ export class TRPCClient<TRouter extends AnyRouter> {
     this.fetch = (...args: any[]) => (_fetch as any)(...args);
     this.AC = getAbortController(fetchOpts?.AbortController);
     this.transformer = opts.transformer
-      ? 'up' in opts.transformer
+      ? 'input' in opts.transformer
         ? {
-            serialize: opts.transformer.up.serialize,
-            deserialize: opts.transformer.down.deserialize,
+            serialize: opts.transformer.input.serialize,
+            deserialize: opts.transformer.output.deserialize,
           }
         : opts.transformer
       : {
@@ -196,7 +196,7 @@ export class TRPCClient<TRouter extends AnyRouter> {
   }
   public query<
     TQueries extends TRouter['_def']['queries'],
-    TPath extends string & keyof TQueries
+    TPath extends string & keyof TQueries,
   >(
     path: TPath,
     ...args: inferHandlerInput<TQueries[TPath]>
@@ -210,7 +210,7 @@ export class TRPCClient<TRouter extends AnyRouter> {
 
   public mutation<
     TMutations extends TRouter['_def']['mutations'],
-    TPath extends string & keyof TMutations
+    TPath extends string & keyof TMutations,
   >(
     path: TPath,
     ...args: inferHandlerInput<TMutations[TPath]>
@@ -226,7 +226,7 @@ export class TRPCClient<TRouter extends AnyRouter> {
     TSubscriptions extends TRouter['_def']['subscriptions'],
     TPath extends string & keyof TSubscriptions,
     TOutput extends inferSubscriptionOutput<TRouter, TPath>,
-    TInput extends inferProcedureInput<TSubscriptions[TPath]>
+    TInput extends inferProcedureInput<TSubscriptions[TPath]>,
   >(path: TPath, input: TInput): CancellablePromise<TOutput[]> {
     let stopped = false;
     let nextTry: any; // setting as `NodeJS.Timeout` causes compat issues, can probably be solved
@@ -265,14 +265,14 @@ export class TRPCClient<TRouter extends AnyRouter> {
       currentRequest?.cancel && currentRequest.cancel();
     };
 
-    return (promise as any) as CancellablePromise<TOutput[]>;
+    return promise as any as CancellablePromise<TOutput[]>;
   }
   /* istanbul ignore next */
   public subscription<
     TSubscriptions extends TRouter['_def']['subscriptions'],
     TPath extends string & keyof TSubscriptions,
     TOutput extends inferSubscriptionOutput<TRouter, TPath>,
-    TInput extends inferProcedureInput<TSubscriptions[TPath]>
+    TInput extends inferProcedureInput<TSubscriptions[TPath]>,
   >(
     path: TPath,
     opts: {

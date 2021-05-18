@@ -56,7 +56,7 @@ If a transformer should only be used for one directon or different transformers 
 
 ### How to
 
-Here [superjson](https://github.com/blitz-js/superjson) is be used for uploading and [devalue](https://github.com/Rich-Harris/devalue) for downloading data, because devalue is a lot faster but insecure to use on the server. 
+Here [superjson](https://github.com/blitz-js/superjson) is be used for uploading and [devalue](https://github.com/Rich-Harris/devalue) for downloading data, because devalue is a lot faster but insecure to use on the server.
 
 #### 0. Install
 
@@ -73,8 +73,8 @@ import devalue from 'devalue';
 // [...]
 
 export const transformer = {
-  up: superjson,
-  down: {
+  input: superjson,
+  output: {
     serialize: (object) => devalue(object),
     deserialize: (object) => eval(`(${object})`),
   },
@@ -116,7 +116,7 @@ type DataTransformer = {
 };
 
 type CombinedDataTransformer = {
-  up: DataTransformer;
-  down: DataTransformer;
+  input: DataTransformer;
+  output: DataTransformer;
 };
 ```
