@@ -24,8 +24,8 @@ yarn dx # runs prisma studio + next
 - This is not a recommended approach. If you want to fork this project as a starter
   1. `rm -rf ./prisma/_sqlite`
   2. Update `package.json`:
-    - remove all instances of `*:sqlite`
-    - replace commands using `*:sqlite` with `*:postgres`
+     - remove all instances of `*:sqlite`
+     - replace commands using `*:sqlite` with `*:postgres`
 
 
 ---
