@@ -14,7 +14,7 @@ yarn && yarn dev
 ### Useful commands
 
 ```bash
-yarn dev # runs prisma studio + next
+yarn dx # runs prisma studio + next
 ```
 
 
@@ -23,7 +23,9 @@ yarn dev # runs prisma studio + next
 - This project contains both Postgres & SQLite in able for us to easily showcase it in both CodeSandbox and deploy on Vercel.
 - This is not a recommended approach. If you want to fork this project as a starter
   1. `rm -rf ./prisma/_sqlite`
-  2. Update `package.json` and replace `generate:postgres` with `generate:sqlite`
+  2. Update `package.json`:
+    - remove all instances of `*:sqlite`
+    - replace commands using `*:sqlite` with `*:postgres`
 
 
 ---
