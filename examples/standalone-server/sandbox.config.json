@@ -1,10 +1,6 @@
-{
-  "view": "terminal",
+{{
+  "view": "console",
   "container": {
-    "view": "console",
     "node": "14"
-  },
-  "client": {
-    "view": "console"
   }
 }
