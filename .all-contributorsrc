@@ -81,6 +81,17 @@
       "contributions": [
         "example"
       ]
+    },
+    {
+      "login": "simonedelmann",
+      "name": "Simon Edelmann",
+      "avatar_url": "https://avatars.githubusercontent.com/u/2821076?v=4",
+      "profile": "https://github.com/simonedelmann",
+      "contributions": [
+        "code",
+        "ideas",
+        "test"
+      ]
     }
   ],
   "contributorsPerLine": 7,
