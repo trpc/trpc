@@ -42,7 +42,7 @@
     "superjson": "^1.5.2",
     "todomvc-app-css": "^2.3.0",
     "todomvc-common": "^1.0.5",
-    "zod": "^1.11.16"
+    "zod": "^3.0.0"
   },
   "devDependencies": {
     "@types/jest": "^26.0.20",
