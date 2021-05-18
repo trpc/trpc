@@ -1,8 +1,6 @@
 {
-  "client": {
-    "view": "terminal"
-  },
   "container": {
-    "view": "terminal"
+    "view": "terminal",
+    "node": "14"
   }
 }
