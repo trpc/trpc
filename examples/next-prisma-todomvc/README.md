@@ -18,13 +18,13 @@ yarn dx # runs prisma studio + next
 ```
 
 
-### :info: This example Contains _both_ Postgres _and_ SQLite
+### ℹ️ This example Contains _both_ Postgres _and_ SQLite
 
 - This project contains both Postgres & SQLite in able for us to easily showcase it in both CodeSandbox and deploy on Vercel.
-- This is not a recommended approach. If you want to fork this project as a starter
-  1. `rm -rf ./prisma/_sqlite`
-  2. Update `package.json`:
-     - remove all instances of `*:sqlite`
+- This is not a recommended approach. If you want to fork this project as a starter, do the following:
+  - `rm -rf ./prisma/_sqlite`
+  - Update `package.json`:
+     - remove all references to sqlite
      - replace commands using `*:sqlite` with `*:postgres`
 
 
