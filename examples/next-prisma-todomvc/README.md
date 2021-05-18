@@ -4,6 +4,9 @@
 - [TodoMVC](https://todomvc.com/) implemented with tRPC + [Prisma](https://prisma.io)
 - Live at [todomvc.trpc.io](https://todomvc.trpc.io)
 
+### :warning: Contains _both_ Postgres
+
+
 ### Setup
 
 - Get postgres running
