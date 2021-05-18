@@ -307,17 +307,40 @@ export default function TodosPage({
       </section>
       <footer className="info">
         <p>Double-click to edit a todo</p>
-        {/* Remove the below line ↓ */}
-        <p>
-          Template by <a href="http://sindresorhus.com">Sindre Sorhus</a>
-        </p>
         {/* Change this out with your name and url ↓ */}
         <p>
-          Created with <a href="http://trpc.io">tRPC</a>
+          Created with <a href="http://trpc.io">tRPC</a> by{' '}
+          <a href="https://twitter.com/alexdotjs">alexdotjs / KATT</a>.
         </p>
         <p>
-          Part of <a href="http://todomvc.com">TodoMVC</a>
+          <a href="https://github.com/trpc/trpc/tree/main/examples/next-prisma-todomvc">
+            Source code
+          </a>{' '}
+          -{' '}
+          <a href="https://codesandbox.io/s/github/trpc/trpc/tree/main/examples/next-prisma-todomvc?file=/pages/%5Bfilter%5D.tsx">
+            <strong>Play with it in CodeSandbox.</strong>
+          </a>
+          .
         </p>
+        <p>
+          Based on <a href="http://todomvc.com">TodoMVC</a>, template made by{' '}
+          <a href="http://sindresorhus.com">Sindre Sorhus</a>.
+        </p>
+        <div style={{ marginTop: '100px' }}>
+          <p>
+            <a
+              href="https://vercel.com/?utm_source=trpc&utm_campaign=oss"
+              target="_blank"
+              rel="noreferrer"
+            >
+              <img
+                src="/powered-by-vercel.svg"
+                alt="Powered by Vercel"
+                height={25}
+              />
+            </a>
+          </p>
+        </div>
       </footer>
       <ReactQueryDevtools initialIsOpen={false} />
     </>
