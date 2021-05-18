@@ -1,0 +1,6 @@
+{
+  "view": "console",
+  "container": {
+    "node": "14"
+  }
+}

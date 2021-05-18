@@ -1,6 +1,6 @@
 ## Chat (:construction: Work in progress)
 
-Live example at [chat.trpc.io](https://chat.trpc.io)
+Live at [chat.trpc.io](https://chat.trpc.io)
 
 ### Setup
 
