@@ -52,7 +52,7 @@
     "react": "^17.0.1",
     "react-dom": "^17.0.1",
     "react-query": "^3.6.0",
-    "zod": "^1.11.16"
+    "zod": "^3.0.0"
   },
   "publishConfig": {
     "access": "public"

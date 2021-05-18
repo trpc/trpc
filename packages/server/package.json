@@ -49,7 +49,7 @@
     "next": "^10.0.5",
     "typescript": "^4.2.3",
     "yup": "^0.32.8",
-    "zod": "^1.11.16"
+    "zod": "^3.0.0"
   },
   "gitHead": "82bf01f8759b04f2ade69c9047e28f74f889d547",
   "dependencies": {
