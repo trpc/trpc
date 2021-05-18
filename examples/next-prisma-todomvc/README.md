@@ -18,7 +18,7 @@ yarn dx # runs prisma studio + next
 ```
 
 
-### :warning: Contains _both_ Postgres _and_ SQLite
+### :info: This example Contains _both_ Postgres _and_ SQLite
 
 - This project contains both Postgres & SQLite in able for us to easily showcase it in both CodeSandbox and deploy on Vercel.
 - This is not a recommended approach. If you want to fork this project as a starter
