@@ -1,6 +1,8 @@
 ## TodoMVC
 
+
 - [TodoMVC](https://todomvc.com/) implemented with tRPC + [Prisma](https://prisma.io)
+- Live at [todomvc.trpc.io](https://todomvc.trpc.io)
 
 ### Setup
 

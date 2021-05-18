@@ -1,6 +1,9 @@
 ## Hello Next
 
 Live at [hello-world.trpc.io](https://hello-world.trpc.io)
+Try in CodeSandbox: [https://githubbox.com/trpc/trpc/tree/main/examples/next-hello-world](https://githubbox.com/trpc/trpc/tree/main/examples/next-hello-world)
+
+---
 
 Uses [Playwright](https://playwright.dev/) for E2E-testing.
 ## How to use
@@ -17,3 +20,8 @@ Deploy it to the cloud with [Vercel](https://vercel.com/new?utm_source=github&ut
 
 
 
+
+
+---
+
+Created by [@alexdotjs](https://twitter.com/alexdotjs).
