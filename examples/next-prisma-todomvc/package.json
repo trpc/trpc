@@ -3,6 +3,8 @@
   "version": "6.2.0",
   "private": true,
   "scripts": {
+    "migrate:sqlite": "npx prisma migrate dev --name sqlite-init --schema=./prisma/sqlite/schema.prisma",
+    "migrate:postgres": "npx prisma migrate dev --name postgres-init --schema=./prisma/postgres/schema.prisma",
     "dx:next": "prisma generate && next dev",
     "dx:prisma-studio": "prisma studio",
     "dx": "run-p dx:* --print-label",
