@@ -2,6 +2,7 @@ import {
   AnyRouter,
   assertNotBrowser,
   DataTransformer,
+  CombinedDataTransformer,
   inferHandlerInput,
   inferRouterContext,
 } from '@trpc/server';
@@ -23,7 +24,7 @@ assertNotBrowser();
 export interface CreateSSGHelpersOptions<TRouter extends AnyRouter> {
   router: TRouter;
   ctx: inferRouterContext<TRouter>;
-  transformer?: DataTransformer;
+  transformer?: DataTransformer | CombinedDataTransformer;
   queryClientConfig?: QueryClientConfig;
 }
 
@@ -112,7 +113,9 @@ export function createSSGHelpers<TRouter extends AnyRouter>({
       },
     },
   ): DehydratedState {
-    const serialize = transformer?.serialize ?? ((obj: unknown) => obj);
+    const serialize = transformer
+      ? ('up' in transformer ? transformer.up : transformer).serialize
+      : (obj: unknown) => obj;
 
     return serialize(dehydrate(queryClient, opts));
   }

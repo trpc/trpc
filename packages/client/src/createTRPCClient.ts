@@ -2,6 +2,7 @@
 import type {
   AnyRouter,
   DataTransformer,
+  CombinedDataTransformer,
   HTTPErrorResponseEnvelope,
   HTTPResponseEnvelope,
   HTTPSuccessResponseEnvelope,
@@ -62,7 +63,7 @@ export interface CreateTRPCClientOptions<TRouter extends AnyRouter> {
   getHeaders?: () => Record<string, string | string[] | undefined>;
   onSuccess?: (data: HTTPSuccessResponseEnvelope<unknown>) => void;
   onError?: (error: TRPCClientError<TRouter>) => void;
-  transformer?: DataTransformer;
+  transformer?: DataTransformer | CombinedDataTransformer;
 }
 type TRPCType = 'subscription' | 'query' | 'mutation';
 
@@ -78,10 +79,17 @@ export class TRPCClient<TRouter extends AnyRouter> {
     const _fetch = getFetch(fetchOpts?.fetch);
     this.fetch = (...args: any[]) => (_fetch as any)(...args);
     this.AC = getAbortController(fetchOpts?.AbortController);
-    this.transformer = opts.transformer ?? {
-      serialize: (data) => data,
-      deserialize: (data) => data,
-    };
+    this.transformer = opts.transformer
+      ? 'up' in opts.transformer
+        ? {
+            serialize: opts.transformer.up.serialize,
+            deserialize: opts.transformer.down.deserialize,
+          }
+        : opts.transformer
+      : {
+          serialize: (data) => data,
+          deserialize: (data) => data,
+        };
   }
 
   private serializeInput(input: unknown) {
