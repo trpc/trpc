@@ -54,9 +54,9 @@ export default trpcNext.createNextApiHandler({
 
 If a transformer should only be used for one directon or different transformers should be used for upload and download (e.g. for performance reasons), you can provide individual transformers for upload and download. Make sure you use the same combined transformer everywhere.
 
-### Howto
+### How to
 
-For demonstration purpose [superjson](https://github.com/blitz-js/superjson) should be used for uploading and faster but insecure [devalue](https://github.com/Rich-Harris/devalue) for downloading data.
+Here [superjson](https://github.com/blitz-js/superjson) is be used for uploading and [devalue](https://github.com/Rich-Harris/devalue) for downloading data, because devalue is a lot faster but insecure to use on the server. 
 
 #### 0. Install
 
@@ -84,7 +84,7 @@ export const transformer = {
 #### 2. Add to `createTRPCCLient()`
 
 ```ts
-import { transformer } from 'utils/trpc.ts';
+import { transformer } from '../utils/trpc';
 
 // [...]
 
@@ -97,7 +97,7 @@ export const client = createTRPCClient<AppRouter>({
 #### 3. Add to API handler
 
 ```ts
-import { transformer } from 'utils/trpc.ts';
+import { transformer } from '../../utils/trpc';
 
 // [...]
 
