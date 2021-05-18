@@ -1,7 +1,7 @@
 {
-  "view": "console",
+  "view": "terminal",
   "container": {
-    "view": "terminal",
+    "view": "console",
     "node": "14"
   },
   "client": {
