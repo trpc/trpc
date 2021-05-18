@@ -3,12 +3,12 @@
 
 - [TodoMVC](https://todomvc.com/) implemented with tRPC + [Prisma](https://prisma.io)
 - Live at [todomvc.trpc.io](https://todomvc.trpc.io)
-
+- Try in CodeSandbox: [https://githubbox.com/trpc/trpc/tree/main/examples/next-prisma-todomvc](https://githubbox.com/trpc/trpc/tree/main/examples/next-prisma-todomvc?file=/pages/%5Bfilter%5D.tsx)
 ### Setup
 
-- Get postgres running
-- `CREATE DATABASE todo`
-- Possibly tweak `.env` with your pg user
+```bash
+yarn && yarn dev
+```
 
 
 ### Useful commands
@@ -16,6 +16,17 @@
 ```bash
 yarn dx # runs prisma studio + next
 ```
+
+
+### ℹ️ This example Contains _both_ Postgres _and_ SQLite
+
+- This project contains both Postgres & SQLite in able for us to easily showcase it in both CodeSandbox and deploy on Vercel.
+- This is not a recommended approach. If you want to fork this project as a starter, do the following:
+  - `rm -rf ./prisma/_sqlite`
+  - Update `package.json`:
+     - remove all references of `sqlite`
+     - replace commands using `*:sqlite` with `*:postgres`
+
 
 ---
 

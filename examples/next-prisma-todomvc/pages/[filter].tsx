@@ -319,7 +319,7 @@ export default function TodosPage({
           Part of <a href="http://todomvc.com">TodoMVC</a>
         </p>
       </footer>
-      <ReactQueryDevtools initialIsOpen={true} />
+      <ReactQueryDevtools initialIsOpen={false} />
     </>
   );
 }

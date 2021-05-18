@@ -34,3 +34,5 @@ yarn-error.log*
 .vercel
 
 *.db
+*.db-journal
+prisma/_sqlite/migrations
