@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/ban-types */
 
 import * as trpc from '@trpc/server';
-import * as z from 'zod';
+import { z } from 'zod';
 
 type Context = {};
 

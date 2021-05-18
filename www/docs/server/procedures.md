@@ -41,7 +41,7 @@ export const appRouter = trpc.router<Context>()
 
 ```tsx
 import * as trpc from '@trpc/server';
-import * as z from 'zod';
+import { z } from 'zod';
 
 // [...]
 
