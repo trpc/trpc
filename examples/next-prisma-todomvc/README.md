@@ -3,7 +3,7 @@
 
 - [TodoMVC](https://todomvc.com/) implemented with tRPC + [Prisma](https://prisma.io)
 - Live at [todomvc.trpc.io](https://todomvc.trpc.io)
-- Try in CodeSandbox: [https://githubbox.com/trpc/trpc/tree/main/examples/next-prisma-todomvc](https://githubbox.com/trpc/trpc/tree/main/examples/next-prisma-todomvc)
+- Try in CodeSandbox: [https://githubbox.com/trpc/trpc/tree/main/examples/next-prisma-todomvc](https://githubbox.com/trpc/trpc/tree/main/examples/next-prisma-todomvc?file=/pages/%5Bfilter%5D.tsx)
 ### Setup
 
 ```bash
