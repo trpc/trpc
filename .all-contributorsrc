@@ -72,6 +72,15 @@
       "contributions": [
         "ideas"
       ]
+    },
+    {
+      "login": "molebox",
+      "name": "Rich Haines",
+      "avatar_url": "https://avatars.githubusercontent.com/u/22930449?v=4",
+      "profile": "https://www.richardhaines.dev",
+      "contributions": [
+        "example"
+      ]
     }
   ],
   "contributorsPerLine": 7,
