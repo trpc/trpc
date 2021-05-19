@@ -18,7 +18,6 @@ SuperJSON allows us to able to transparently use e.g. standard `Date`/`Map`/`Set
 
 ### How to
 
-
 #### 0. Install
 
 ```bash
@@ -51,11 +50,73 @@ export default trpcNext.createNextApiHandler({
 });
 ```
 
+## Different transformers for upload and download
+
+If a transformer should only be used for one directon or different transformers should be used for upload and download (e.g. for performance reasons), you can provide individual transformers for upload and download. Make sure you use the same combined transformer everywhere.
+
+### How to
+
+Here [superjson](https://github.com/blitz-js/superjson) is be used for uploading and [devalue](https://github.com/Rich-Harris/devalue) for downloading data, because devalue is a lot faster but insecure to use on the server.
+
+#### 0. Install
+
+```bash
+yarn add superjson devalue
+```
+
+#### 1. Add to `utils/trpc.ts`
+
+```ts
+import superjson from 'superjson';
+import devalue from 'devalue';
+
+// [...]
+
+export const transformer = {
+  input: superjson,
+  output: {
+    serialize: (object) => devalue(object),
+    deserialize: (object) => eval(`(${object})`),
+  },
+};
+```
+
+#### 2. Add to `createTRPCCLient()`
+
+```ts
+import { transformer } from '../utils/trpc';
+
+// [...]
+
+export const client = createTRPCClient<AppRouter>({
+  // [...]
+  transformer: transformer,
+});
+```
+
+#### 3. Add to API handler
+
+```ts
+import { transformer } from '../../utils/trpc';
+
+// [...]
+
+export default trpcNext.createNextApiHandler({
+  // [...]
+  transformer: transformer,
+});
+```
+
 ## `DataTransformer` interface
 
 ```ts
 type DataTransformer = {
   serialize(object: any): any;
   deserialize(object: any): any;
+};
+
+type CombinedDataTransformer = {
+  input: DataTransformer;
+  output: DataTransformer;
 };
 ```

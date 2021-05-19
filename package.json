@@ -27,7 +27,7 @@
     "lerna": "lerna",
     "start": "preconstruct watch",
     "dev": "yarn start",
-    "test": "lerna run test --scope @trpc/* --stream --",
+    "test": "cd packages/server && yarn test --",
     "lint": "eslint --ext \".js,.ts,.tsx\" --ignore-path .gitignore .",
     "lint-fix": "yarn lint --fix && manypkg fix",
     "postinstall": "preconstruct dev",

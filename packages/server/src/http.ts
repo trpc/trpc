@@ -12,7 +12,7 @@ import {
 } from './errors';
 import { AnyRouter, inferRouterContext, ProcedureType } from './router';
 import { Subscription } from './subscription';
-import { DataTransformer } from './transformer';
+import { DataTransformerOptions } from './transformer';
 import { Dict } from './types';
 assertNotBrowser();
 
@@ -114,7 +114,7 @@ export type BaseResponse = http.ServerResponse;
 
 export interface BaseOptions<
   TRouter extends AnyRouter,
-  TRequest extends BaseRequest
+  TRequest extends BaseRequest,
 > {
   subscriptions?: {
     /**
@@ -130,7 +130,7 @@ export interface BaseOptions<
   /**
    * Optional transformer too serialize/deserialize input args + data
    */
-  transformer?: DataTransformer;
+  transformer?: DataTransformerOptions;
   maxBodySize?: number;
   onError?: (opts: {
     error: TRPCError;
@@ -196,7 +196,7 @@ export async function requestHandler<
   TRouter extends AnyRouter,
   TCreateContextFn extends CreateContextFn<TRouter, TRequest, TResponse>,
   TRequest extends BaseRequest,
-  TResponse extends BaseResponse
+  TResponse extends BaseResponse,
 >({
   req,
   res,
@@ -221,6 +221,10 @@ export async function requestHandler<
   let type: 'unknown' | ProcedureType = 'unknown';
   let input: unknown = undefined;
   let ctx: inferRouterContext<TRouter> | undefined = undefined;
+  const combinedTransformer =
+    'input' in transformer
+      ? transformer
+      : { input: transformer, output: transformer };
   try {
     let output: unknown;
 
@@ -228,7 +232,7 @@ export async function requestHandler<
     const method = req.method;
 
     const deserializeInput = (input: unknown) =>
-      input ? transformer.deserialize(input) : input;
+      input ? combinedTransformer.input.deserialize(input) : input;
 
     const caller = router.createCaller(ctx);
     type = HTTP_METHOD_PROCEDURE_TYPE_MAP[req.method!] ?? 'unknown';
@@ -352,7 +356,7 @@ export async function requestHandler<
     };
     res.statusCode = json.statusCode;
     res.setHeader('Content-Type', 'application/json');
-    res.end(JSON.stringify(transformer.serialize(json)));
+    res.end(JSON.stringify(combinedTransformer.output.serialize(json)));
   } catch (_err) {
     const error = getErrorFromUnknown(_err);
 
@@ -363,7 +367,7 @@ export async function requestHandler<
     };
     res.statusCode = json.statusCode;
     res.setHeader('Content-Type', 'application/json');
-    res.end(JSON.stringify(transformer.serialize(json)));
+    res.end(JSON.stringify(combinedTransformer.output.serialize(json)));
     onError && onError({ error, path, input, ctx, type: type, req });
   }
   try {
