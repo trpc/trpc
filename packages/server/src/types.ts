@@ -16,17 +16,15 @@ export type flatten<T, Q> = identity<
   }
 >;
 
-export type Prefixer<
-  TObj extends Record<string, any>,
-  TPrefix extends string
-> = format<
-  {
-    [P in keyof TObj as Prefix<TPrefix, string & P>]: TObj[P];
-  }
->;
+export type Prefixer<TObj extends Record<string, any>, TPrefix extends string> =
+  format<
+    {
+      [P in keyof TObj as Prefix<TPrefix, string & P>]: TObj[P];
+    }
+  >;
 
 export type Maybe<T> = T | undefined | null;
 
 export type ThenArg<T> = T extends PromiseLike<infer U> ? ThenArg<U> : T;
 
-export type Dict<T> = Record<string, T>;
+export type Dict<T> = Record<string, T | undefined>;
