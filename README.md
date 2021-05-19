@@ -91,15 +91,15 @@ In another terminal, you can for instance navigate to `examples/next-hello-world
 ## Testing
 
 ```bash
-cd packages/server
 yarn test --watch
 ```
+
+Testing is currently coalesced in [./packages/server/test](./packages/server/test) - we import the different libs from here, this makes it easier for us to do integration testing + getting test coverage on the whole codebase.
 
 > [![codecov](https://codecov.io/gh/trpc/trpc/branch/main/graph/badge.svg?token=KPPS918B0G)](https://codecov.io/gh/trpc/trpc) 
 > 
 > Some things regarding subscriptions is excluded in the coverage as it's an experimental feature
 
-Testing is currently coalesced in [./packages/server/test](./packages/server/test) - we import the different libs from here, this makes it easier for us to do integration testing + getting test coverage on the whole codebase.
 
 # Contributors ✨
 
