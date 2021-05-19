@@ -2,7 +2,7 @@
 /* eslint-disable @typescript-eslint/ban-types */
 import { EventEmitter } from 'events';
 import { expectTypeOf } from 'expect-type';
-import * as z from 'zod';
+import { z } from 'zod';
 import * as trpc from '../src';
 import { routerToServerAndClient } from './_testHelpers';
 

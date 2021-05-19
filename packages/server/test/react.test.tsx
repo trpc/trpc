@@ -26,8 +26,7 @@ import {
   useQueryClient,
 } from 'react-query';
 import { dehydrate } from 'react-query/hydration';
-import * as z from 'zod';
-import { ZodError } from 'zod';
+import { z, ZodError } from 'zod';
 import { withTRPC } from '../../next/src';
 import { createReactQueryHooks, OutputWithCursor } from '../../react/src';
 import { createSSGHelpers } from '../../react/ssg';

@@ -4,7 +4,7 @@ import '@testing-library/jest-dom';
 import { expectTypeOf } from 'expect-type';
 import myzod from 'myzod';
 import * as yup from 'yup';
-import * as z from 'zod';
+import { z } from 'zod';
 import * as trpc from '../src';
 import { routerToServerAndClient } from './_testHelpers';
 

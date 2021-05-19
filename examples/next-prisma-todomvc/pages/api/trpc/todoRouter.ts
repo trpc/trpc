@@ -1,4 +1,4 @@
-import * as z from 'zod';
+import { z } from 'zod';
 import { createRouter } from './[trpc]';
 
 export const todoRouter = createRouter()

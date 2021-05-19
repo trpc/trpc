@@ -2,7 +2,7 @@ import bodyParser from 'body-parser';
 import { EventEmitter } from 'events';
 import express from 'express';
 import * as trpc from '@trpc/server';
-import * as z from 'zod';
+import { z } from 'zod';
 import * as trpcExpress from '@trpc/server/adapters/express';
 
 const createContext = ({
