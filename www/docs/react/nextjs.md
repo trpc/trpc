@@ -86,7 +86,7 @@ Paste the following code:
 ```ts
 import * as trpc from '@trpc/server';
 import * as trpcNext from '@trpc/server/adapters/next';
-import * as z from 'zod';
+import { z } from 'zod';
 
 // The app's context - is generated for each incoming request
 export type Context = {};
