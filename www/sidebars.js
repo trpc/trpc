@@ -37,6 +37,7 @@ module.exports = {
           collapsed: false,
           items: [
             'react/nextjs',
+            'react/queries-and-mutations',
             'react/useInfiniteQuery',
             'react/invalidateQuery',
             'react/ssr',
