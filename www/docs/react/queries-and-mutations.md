@@ -74,3 +74,7 @@ export function MyComponent() {
 
 ## Mutations
 
+
+Works like react-query's mutations - [see their docs](https://react-query.tanstack.com/guides/mutations).
+
+The only difference is that if you have an optional input argument you'll have to pass `null` or `undefined` as the input.
