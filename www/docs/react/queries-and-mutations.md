@@ -77,4 +77,4 @@ export function MyComponent() {
 
 Works like react-query's mutations - [see their docs](https://react-query.tanstack.com/guides/mutations).
 
-The only difference is that if you have an optional input argument you'll have to pass `null` or `undefined` as the input.
+If you have an optional input argument you'll have to pass `null` or `undefined` as the input - [see this discussion for more details](https://github.com/trpc/trpc/issues/390).
