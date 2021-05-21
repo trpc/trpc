@@ -96,7 +96,7 @@ trpc.router()
       .object({
         name: z.string(),
       })
-    resolve({ input }) {
+    async resolve({ input }) {
       // Here some login stuff would happen
       
       return {
@@ -132,4 +132,3 @@ export function MyComponent() {
   );
 }
 ```
-
