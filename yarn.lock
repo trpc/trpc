@@ -9649,9 +9649,9 @@ playwright-core@>=1.2.0:
     ws "^7.3.1"
 
 playwright@^1.8.0:
-  version "1.11.0"
-  resolved "https://registry.yarnpkg.com/playwright/-/playwright-1.11.0.tgz#0796cf08f4756e8187e01c705315d8e1fb48e25f"
-  integrity sha512-s3FQBRpu/pW/vZ/lFYhG/Q3WBUbT2rvMgrgy1PHDA7QtPN910C2rj9Ovd6A/m8yxuLnltd/OKqvlAGevWISHKw==
+  version "1.11.1"
+  resolved "https://registry.yarnpkg.com/playwright/-/playwright-1.11.1.tgz#c5f2946db5195bd099a57ce4e188c01057876cff"
+  integrity sha512-UuMrYuvzttbJXUD7sTVcQBsGRojelGepvuQPD+QtVm/n5zyKvkiUErU/DGRXfX8VDZRdQ5D6qVqZndrydC2b4w==
   dependencies:
     commander "^6.1.0"
     debug "^4.1.1"
