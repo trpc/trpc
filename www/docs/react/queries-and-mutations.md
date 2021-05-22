@@ -13,7 +13,7 @@ Here we are focusing outlining the small differences.
 
 ## Queries
 
-You pass an an `[path, input]`-tuple as the first argument. You'll notice that you get autocompletion on the `path` and automatic type safety on the `input`.
+You pass a `[path, input]`-tuple as the first argument. You'll notice that you get autocompletion on the `path` and automatic type safety on the `input`.
 
 If an `input`-argument is optional, you can omit the `, input` part of the argument.
 
