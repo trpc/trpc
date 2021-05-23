@@ -50,7 +50,7 @@ If your router file starts getting too big, split your router into several subro
 
 ## Express.js adapter
 
-tRPC includes adapters for Express.js out of the box. This adapter lets you convert your tRPC router into an Express.js middleware.
+tRPC includes an adapter for Express.js out of the box. This adapter lets you convert your tRPC router into an Express.js middleware.
 
 ```ts
 import { createExpressMiddleware } from '@trpc/server/adapters/express';
