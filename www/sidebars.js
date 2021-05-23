@@ -7,7 +7,7 @@ module.exports = {
       items: [
         'main/introduction',
         'main/quickstart',
-        'react/nextjs',
+        // 'react/nextjs',
         'main/example-apps',
         'main/contributing',
       ],
@@ -33,20 +33,34 @@ module.exports = {
       collapsed: false,
       items: ['client/vanilla'],
     },
+
     {
       type: 'category',
       label: '@trpc/react',
       collapsed: false,
       items: [
-        'react/nextjs',
-        'react/queries-and-mutations',
+        // 'react/nextjs',
+        'react/intro',
+        'react/queries',
+        'react/mutations',
         'react/useInfiniteQuery',
         'react/invalidateQuery',
-        'react/ssr',
-        'react/create-react-app',
+        // 'react/ssr',
+        // 'react/create-react-app',
       ],
     },
-
+    {
+      type: 'category',
+      label: '@trpc/next',
+      collapsed: false,
+      items: [
+        'nextjs/intro',
+        // 'nextjs/app-configuration',
+        'nextjs/ssr',
+        'nextjs/ssg',
+        'nextjs/starter-projects',
+      ],
+    },
     'further/further-reading',
   ],
 };
