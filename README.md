@@ -71,23 +71,6 @@ npx create-next-app --example https://github.com/trpc/trpc --example-path exampl
   <tbody>
     <tr>
       <td>
-        Next.js TodoMVC-example with SSG & Prisma.
-        <br/><br/>
-        <details>
-          <summary>Quick start with <code>create-next-app</code></summary>
-          <code>npx create-next-app --example https://github.com/trpc/trpc --example-path examples/next-hello-world my-app</code>
-        </details>
-      </td>
-      <td><a href="https://hello-world.trpc.io">hello-world.trpc.io</a></td>
-      <td>
-        <ul>
-          <li><a href="https://githubbox.com/trpc/trpc/tree/main/examples/next-hello-world">CodeSandbox</a></li>
-          <li><a href="https://codesandbox.io/s/github/trpc/trpc/tree/main/examples/next-hello-world?file=/pages/%5Bfilter%5D.tsx">Source</a></li>
-        </ul>
-      </td>
-    </tr>
-    <tr>
-      <td>
         Next.js example with mock database using SSR
         <br/><br/>
         <details>
@@ -105,6 +88,23 @@ npx create-next-app --example https://github.com/trpc/trpc --example-path exampl
     </tr>
     <tr>
       <td>
+        Next.js TodoMVC-example with SSG & Prisma.
+        <br/><br/>
+        <details>
+          <summary>Quick start with <code>create-next-app</code></summary>
+          <code>npx create-next-app --example https://github.com/trpc/trpc --example-path examples/next-hello-world my-app</code>
+        </details>
+      </td>
+      <td><a href="https://hello-world.trpc.io">hello-world.trpc.io</a></td>
+      <td>
+        <ul>
+          <li><a href="https://githubbox.com/trpc/trpc/tree/main/examples/next-hello-world">CodeSandbox</a></li>
+          <li><a href="https://codesandbox.io/s/github/trpc/trpc/tree/main/examples/next-hello-world?file=/pages/%5Bfilter%5D.tsx">Source</a></li>
+        </ul>
+      </td>
+    </tr>
+    <tr>
+      <td>
         Next.js real-time chat example.
         <br/>
         Uses experimental subscriptions.
@@ -117,8 +117,8 @@ npx create-next-app --example https://github.com/trpc/trpc --example-path exampl
       <td><a href="https://chat.trpc.io">chat.trpc.io</a></td>
       <td>
         <ul>
-          <!-- <li><a href="https://githubbox.com/trpc/trpc/tree/main/examples/next-prisma-chat">CodeSandbox</a></li> -->
-          <li><a href="https://github.com/trpc/trpc/tree/main/examples/next-prisma-chat">Source</a></li>
+          <!-- <li><a href="https://githubbox.com/trpc/trpc/tree/main/examples/next-ssg-chat">CodeSandbox</a></li> -->
+          <li><a href="https://github.com/trpc/trpc/tree/main/examples/next-ssg-chat">Source</a></li>
         </ul>
       </td>
     </tr>
