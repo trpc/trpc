@@ -40,7 +40,7 @@ tRPC is a framework for building strongly typed RPC APIs with TypeScript. Altern
 - [Intro](#intro)
 - [Usage](#usage)
 - [Example apps](#example-apps)
-- [Development workflow](#development-workflow)
+- [Contributing / Development workflow](#contributing--development-workflow)
   - [Hacking around with it](#hacking-around-with-it)
   - [Testing](#testing)
 - [Contributors ✨](#contributors-)
@@ -59,16 +59,91 @@ npx create-next-app --example https://github.com/trpc/trpc --example-path exampl
 
 # Example apps
 
-| URL                                                | Command                   | Path                                                               | Description                                                                                            |
-| -------------------------------------------------- | ------------------------- | ------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------ |
-| [todomvc.trpc.io](https://todomvc.trpc.io)         | `yarn example:todomvc`    | [`./examples/next-prisma-todomvc`](./examples/next-prisma-todomvc) | TodoMVC-example with SSG & Prisma. [Playwright](https://playwright.dev) for E2E-testing                |
-| [chat.trpc.io](https://chat.trpc.io)               | `yarn example:chat`       | [`./examples/next-ssg-chat`](./examples/next-ssg-chat)             | Next.js real-time chat example with SSG & Prisma. [Playwright](https://playwright.dev) for E2E-testing |
-| [hello-world.trpc.io](https://hello-world.trpc.io) | `yarn example:hello`      | [`./examples/next-hello-world`](./examples/next-hello-world)       | Minimal Next.js example. [Playwright](https://playwright.dev) for E2E-testing                          |
-| _n/a_                                              | `yarn example:standalone` | [`./examples/standalone-server`](./examples/standalone-server)     | Standalone tRPC server + node client                                                                   |
-| _n/a_                                              | `yarn example:playground` | [`./examples/playground`](./examples/playground)                   | Express server + node client                                                                           |
+<table>
+  <thead>
+    <tr>
+      <th>Description</th>
+      <th>URL</th>
+      <th>Links</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>
+        Next.js example with mock database using SSR
+        <br/><br/>
+        <details>
+          <summary>Quick start with <code>create-next-app</code></summary>
+          <code>npx create-next-app --example https://github.com/trpc/trpc --example-path examples/next-hello-world my-app</code>
+        </details>
+      </td>
+      <td><a href="https://hello-world.trpc.io">hello-world.trpc.io</a></td>
+      <td>
+        <ul>
+          <li><a href="https://githubbox.com/trpc/trpc/tree/main/examples/next-hello-world">CodeSandbox</a></li>
+          <li><a href="https://codesandbox.io/s/github/trpc/trpc/tree/main/examples/next-hello-world?file=/pages/index.tsx">Source</a></li>
+        </ul>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        Next.js TodoMVC-example with SSG & Prisma.
+        <br/><br/>
+        <details>
+          <summary>Quick start with <code>create-next-app</code></summary>
+          <code>npx create-next-app --example https://github.com/trpc/trpc --example-path examples/next-prisma-todomvc my-app</code>
+        </details>
+      </td>
+      <td><a href="https://todomvc.trpc.io">todomvc.trpc.io</a></td>
+      <td>
+        <ul>
+          <li><a href="https://githubbox.com/trpc/trpc/tree/main/examples/next-prisma-todomvc">CodeSandbox</a></li>
+          <li><a href="https://codesandbox.io/s/github/trpc/trpc/tree/main/examples/next-prisma-todomvc?file=/pages/%5Bfilter%5D.tsx">Source</a></li>
+        </ul>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        Next.js real-time chat example.
+        <br/>
+        Uses experimental subscriptions.
+        <br/><br/>
+        <details>
+          <summary>Quick start with <code>create-next-app</code></summary>
+          <code>npx create-next-app --example https://github.com/trpc/trpc --example-path examples/next-ssg-chat my-app</code>
+        </details>
+      </td>
+      <td><a href="https://chat.trpc.io">chat.trpc.io</a></td>
+      <td>
+        <ul>
+          <li><a href="https://github.com/trpc/trpc/tree/main/examples/next-ssg-chat">Source</a></li>
+        </ul>
+      </td>
+    </tr>
+    <tr>
+      <td>Vanilla standalone server &amp; procedure calls with node.js</td>
+      <td><em>n/a</em></td>
+      <td>
+        <ul>
+          <li><a href="https://githubbox.com/trpc/trpc/tree/main/examples/standalone-server">CodeSandbox</a></li>
+          <li><a href="https://github.com/trpc/trpc/tree/main/examples/standalone-server">Source</a></li>
+        </ul>
+      </td>
+    </tr>
+    <tr>
+      <td>Express server &amp; procedure calls with node.js.<br/>Uses experimental subscriptions.</td>
+      <td><em>n/a</em></td>
+      <td>
+        <ul>
+          <li><a href="https://githubbox.com/trpc/trpc/tree/main/examples/standalone-server">CodeSandbox</a></li>
+          <li><a href="https://github.com/trpc/trpc/tree/main/examples/standalone-server">Source</a></li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
 
-
-# Development workflow
+# Contributing / Development workflow
 
 ```bash
 git clone git@github.com:trpc/trpc.git
@@ -86,7 +161,6 @@ yarn dev
 ```
 
 In another terminal, you can for instance navigate to `examples/next-hello-world` and run `yarn dev` & it will update whenever code is changed in the packages.
-
 
 ## Testing
 
