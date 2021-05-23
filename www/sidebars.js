@@ -7,6 +7,7 @@ module.exports = {
       items: [
         'main/introduction',
         'react/nextjs',
+        'main/express',
         'main/example-apps',
         'main/contributing',
       ],
