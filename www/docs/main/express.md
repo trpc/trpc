@@ -62,7 +62,7 @@ const app = express();
 app.use(
   '/trpc',
   createExpressMiddleware({
-    router: AppRouter,
+    router: appRouter,
     createContext: () => null, // no context
   })
 );
