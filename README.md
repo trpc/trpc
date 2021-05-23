@@ -89,7 +89,7 @@ npx create-next-app --example https://github.com/trpc/trpc --example-path exampl
         <br/><br/>
         <details>
           <summary>Use <code>create-next app</code> to get started</summary>
-          Try it: <code>npx create-next-app --example https://github.com/trpc/trpc --example-path examples/next-prisma-todomvc my-app</code>
+          Try it: <pre>npx create-next-app --example https://github.com/trpc/trpc --example-path examples/next-prisma-todomvc my-app</pre>
         </details>
       </td>
       <td><a href="https://todomvc.trpc.io">todomvc.trpc.io</a></td>
