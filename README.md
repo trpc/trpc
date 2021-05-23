@@ -88,9 +88,9 @@ npx create-next-app --example https://github.com/trpc/trpc --example-path exampl
         Next.js example with mock database using SSR
         <br/><br/>
         <details>
-          <summary>Get </summary>
+          <summary>Use <code>create-next app</code> to get started</summary>
+          Try it: <code>npx create-next-app --example https://github.com/trpc/trpc --example-path examples/next-prisma-todomvc my-app</code>
         </details>
-        Try it: <code>npx create-next-app --example https://github.com/trpc/trpc --example-path examples/next-prisma-todomvc my-app</code>
       </td>
       <td><a href="https://todomvc.trpc.io">todomvc.trpc.io</a></td>
       <td>
