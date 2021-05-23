@@ -73,7 +73,10 @@ npx create-next-app --example https://github.com/trpc/trpc --example-path exampl
       <td>
         Next.js TodoMVC-example with SSG & Prisma.
         <br/><br/>
-        Try it: <code>npx create-next-app --example https://github.com/trpc/trpc --example-path examples/next-hello-world my-app</code>
+        <details>
+          <summary>Quick start with <code>create-next app</code></summary>
+          <code>npx create-next-app --example https://github.com/trpc/trpc --example-path examples/next-hello-world my-app</code>
+        </details>
       </td>
       <td><a href="https://hello-world.trpc.io">hello-world.trpc.io</a></td>
       <td>
@@ -88,8 +91,8 @@ npx create-next-app --example https://github.com/trpc/trpc --example-path exampl
         Next.js example with mock database using SSR
         <br/><br/>
         <details>
-          <summary>Use <code>create-next app</code> to get started</summary>
-          Try it: <code>npx create-next-app --example https://github.com/trpc/trpc --example-path examples/next-prisma-todomvc my-app</code>
+          <summary>Quick start with <code>create-next app</code></summary>
+          <code>npx create-next-app --example https://github.com/trpc/trpc --example-path examples/next-prisma-todomvc my-app</code>
         </details>
       </td>
       <td><a href="https://todomvc.trpc.io">todomvc.trpc.io</a></td>
