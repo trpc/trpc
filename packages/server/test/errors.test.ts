@@ -215,7 +215,7 @@ test('formatError()', async () => {
   close();
 });
 
-test('make sure object is created w/o prototype', async () => {
+test('make sure object is ignoring prototype', async () => {
   const onError = jest.fn();
   const { client, close } = routerToServerAndClient(
     trpc.router().query('hello', {
@@ -241,6 +241,28 @@ test('make sure object is created w/o prototype', async () => {
   expect(onError).toHaveBeenCalledTimes(1);
   const serverError = onError.mock.calls[0][0].error;
   expect(serverError.code).toBe('NOT_FOUND');
+
+  close();
+});
+
+test('ability to use protected props', async () => {
+  const onError = jest.fn();
+  const { client, close } = routerToServerAndClient(
+    trpc.router().query('toString', {
+      resolve() {
+        return 'there';
+      },
+    }),
+    {
+      server: {
+        onError,
+      },
+    },
+  );
+
+  const res = await client.query('toString' as any);
+
+  expect(res).toBe('there');
 
   close();
 });
