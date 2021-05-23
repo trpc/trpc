@@ -110,7 +110,7 @@ npx create-next-app --example https://github.com/trpc/trpc --example-path exampl
         <br/><br/>
         <details>
           <summary>Quick start with <code>create-next-app</code></summary>
-          <code>npx create-next-app --example https://github.com/trpc/trpc --example-path examples/chat my-app</code>
+          <code>npx create-next-app --example https://github.com/trpc/trpc --example-path examples/next-ssg-chat my-app</code>
         </details>
       </td>
       <td><a href="https://chat.trpc.io">chat.trpc.io</a></td>
