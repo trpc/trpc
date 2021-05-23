@@ -71,7 +71,7 @@ npx create-next-app --example https://github.com/trpc/trpc --example-path exampl
   <tbody>
     <tr>
       <td>
-        Next.js TodoMVC-example with SSG & Prisma.
+        Next.js example with mock database using SSR
         <br/><br/>
         <details>
           <summary>Quick start with <code>create-next-app</code></summary>
@@ -88,7 +88,7 @@ npx create-next-app --example https://github.com/trpc/trpc --example-path exampl
     </tr>
     <tr>
       <td>
-        Next.js example with mock database using SSR
+        Next.js TodoMVC-example with SSG & Prisma.
         <br/><br/>
         <details>
           <summary>Quick start with <code>create-next-app</code></summary>
