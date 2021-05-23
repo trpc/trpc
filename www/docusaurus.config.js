@@ -45,7 +45,7 @@ module.exports = {
               to: 'docs',
             },
             {
-              label: 'Getting Started with Next.js',
+              label: 'Usage with Next.js',
               to: 'docs/nextjs',
             },
           ],

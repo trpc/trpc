@@ -6,6 +6,7 @@ module.exports = {
       collapsed: false,
       items: [
         'main/introduction',
+        'main/quickstart',
         'react/nextjs',
         'main/example-apps',
         'main/contributing',
@@ -13,39 +14,39 @@ module.exports = {
     },
     {
       type: 'category',
-      label: 'Usage',
+      label: '@trpc/server',
       collapsed: false,
       items: [
-        {
-          type: 'category',
-          label: 'Server',
-          collapsed: false,
-          items: [
-            'server/procedures',
-            'server/context',
-            'server/merging-routers',
-            'server/middlewares',
-            'server/error-handling',
-            'server/error-formatting',
-            'server/data-transformers',
-            'server/caching',
-          ]
-        },
-        {
-          type: 'category',
-          label: '@trpc/react',
-          collapsed: false,
-          items: [
-            'react/nextjs',
-            'react/queries-and-mutations',
-            'react/useInfiniteQuery',
-            'react/invalidateQuery',
-            'react/ssr',
-            'react/create-react-app',
-          ],
-        },
+        'server/procedures',
+        'server/merging-routers',
+        'server/context',
+        'server/middlewares',
+        'server/error-handling',
+        'server/error-formatting',
+        'server/data-transformers',
+        'server/caching',
       ],
     },
-    'further/further-reading'
+    {
+      type: 'category',
+      label: '@trpc/client',
+      collapsed: false,
+      items: ['client/vanilla'],
+    },
+    {
+      type: 'category',
+      label: '@trpc/react',
+      collapsed: false,
+      items: [
+        'react/nextjs',
+        'react/queries-and-mutations',
+        'react/useInfiniteQuery',
+        'react/invalidateQuery',
+        'react/ssr',
+        'react/create-react-app',
+      ],
+    },
+
+    'further/further-reading',
   ],
 };

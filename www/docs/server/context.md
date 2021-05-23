@@ -1,7 +1,7 @@
 ---
 id: context
-title: Create Context
-sidebar_label: Create Context
+title: Request Context
+sidebar_label: Request Context
 slug: /context
 ---
 

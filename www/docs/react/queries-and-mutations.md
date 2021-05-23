@@ -5,11 +5,7 @@ sidebar_label: Queries & Mutations
 slug: /react-queries-and-mutations
 ---
 
-## Read this first
-
-In general, tRPC's queries and mutations are a tiny wrapper around react-query, so have a look at their docs for [Queries](https://react-query.tanstack.com/guides/queries) or [Mutations](https://react-query.tanstack.com/guides/mutations) for in-depth information about all the options.
-
-Here we are focusing outlining the small differences.
+The hooks provided by `@trpc/react` are a thin wrapper around React Query. For in-depth information about options and usage patterns, refer to their [docs]on [Queries](https://react-query.tanstack.com/guides/queries) and [Mutations](https://react-query.tanstack.com/guides/mutations). This page exclusively focuses on the differences between tRPC's hooks and standard React Query hooks.
 
 ## Queries
 
@@ -25,7 +21,8 @@ If an `input`-argument is optional, you can omit the `, input` part of the argum
 import * as trpc from '@trpc/server';
 import { z } from 'zod';
 
-trpc.router()
+trpc
+  .router()
   // Create procedure at path 'hello'
   .query('hello', {
     // using zod schema to validate and infer input values
@@ -39,10 +36,10 @@ trpc.router()
         greeting: `hello ${input?.text ?? 'world'}`,
       };
     },
-  })
+  });
 ```
-</details>
 
+</details>
 
 ```tsx
 import { trpc } from '../utils/trpc';
@@ -70,10 +67,7 @@ export function MyComponent() {
 }
 ```
 
-
-
 ## Mutations
-
 
 Works like react-query's mutations - [see their docs](https://react-query.tanstack.com/guides/mutations).
 
@@ -98,7 +92,7 @@ trpc.router()
       })
     async resolve({ input }) {
       // Here some login stuff would happen
-      
+
       return {
         user: {
           name: input.name,
@@ -108,8 +102,8 @@ trpc.router()
     },
   })
 ```
-</details>
 
+</details>
 
 ```tsx
 import { trpc } from '../utils/trpc';
@@ -117,12 +111,12 @@ import { trpc } from '../utils/trpc';
 export function MyComponent() {
   // Note! This is not a tuple ['login', ...] but a string 'login'
   const login = trpc.useMutation('login');
-  
+
   const handleLogin = async () => {
-    const name = 'John Doe'
-    
-    await login.mutateAsync({ name })
-  }
+    const name = 'John Doe';
+
+    await login.mutateAsync({ name });
+  };
 
   return (
     <div>

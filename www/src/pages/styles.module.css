@@ -19,8 +19,8 @@
   font-size: 90%;
 }
 .heroBanner figcaption a {
-  /* color: var(--ifm-font-color-base); */
-  color: white;
+  color: var(--ifm-hero-text-color);
+
   /* font-size: 0.8rem;
   font-style: italic; */
   text-decoration: underline;

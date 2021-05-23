@@ -1,7 +1,7 @@
 ---
 id: nextjs
-title: Getting Started with Next.js
-sidebar_label: Getting Started with Next.js
+title: Usage with Next.js
+sidebar_label: Usage with Next.js
 slug: /nextjs
 ---
 
@@ -30,39 +30,15 @@ Recommended but not enforced file structure. This is what you get when starting 
 └── [...]
 ```
 
-## 🌟 Start from scratch
+## 🌟 Sample projects
 
-Execute [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app) to bootstrap one of the examples:
+Get started quickly with one of the sample projects. Click on [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app) to bootstrap one of the examples:
 
-### TodoMVC with [Prisma](https://www.prisma.io/)
-
-> TodoMVC-app implemented with tRPC. Uses [superjson](https://github.com/blitz-js/superjson) to transparently use `Date`s over the wire.
->
-> Live demo at [todomvc.trpc.io](https://todomvc.trpc.io)
-
-```bash
-npx create-next-app --example https://github.com/trpc/trpc --example-path examples/next-prisma-todomvc trpc-todo
-```
-
-### Simple Starter without database
-
-> Simple starter project with a mock in-memory db.
->
-> Live demo at [hello-world.trpc.io](https://hello-world.trpc.io) _(note that data isn't persisted on Vercel as it's running in lambda functions)_
-
-```bash
-npx create-next-app --example https://github.com/trpc/trpc --example-path examples/next-hello-world my-app
-```
-
-### Real-time chat with [Prisma](https://www.prisma.io/)
-
-> Using experimental subscription support.
->
-> Live demo at [chat.trpc.io](https://chat.trpc.io)
-
-```bash
-npx create-next-app --example https://github.com/trpc/trpc --example-path examples/next-ssg-chat my-chat-app
-```
+| Starter                                                                                    | Description                                                                                                                            | Demo                                |
+| ------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------- |
+| [Basic](https://github.com/trpc/trpc/tree/main/examples/next-hello-world) (no database)    | Simple starter project with a mock in-memory db. Data isn't persisted as it's running in serverless functions on Vercel.               | [Demo](https://hello-world.trpc.io) |
+| [TodoMVC with Prisma](https://github.com/trpc/trpc/tree/main/examples/next-prisma-todomvc) | TodoMVC-app implemented with tRPC. Uses [superjson](https://github.com/blitz-js/superjson) to transparently use `Date`s over the wire. | [Demo](https://todomvc.trpc.io)     |
+| [Chat app](https://github.com/trpc/trpc/tree/main/examples/next-ssg-chat)                  | Real-time app built with experimental subscription support.                                                                            | [Demo](https://chat.trpc.io)        |
 
 ## 🐻 Add to existing project
 
@@ -129,7 +105,7 @@ export default trpcNext.createNextApiHandler({
 });
 ```
 
-### Option A) Using Server-side rendering
+#### Option A) Using Server-side rendering
 
 :::info
 Reference project: https://github.com/trpc/trpc/tree/main/examples/next-hello-world
