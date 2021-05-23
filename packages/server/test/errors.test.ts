@@ -237,11 +237,10 @@ test('make sure object is created w/o prototype', async () => {
   }
   assertClientError(clientError);
   expect(clientError.res?.status).toBe(404);
-  expect(clientError.json?.error).toMatchInlineSnapshot();
+  expect(clientError.json?.error.code).toBe('NOT_FOUND');
   expect(onError).toHaveBeenCalledTimes(1);
   const serverError = onError.mock.calls[0][0].error;
-
-  expect(serverError.originalError).toBeInstanceOf(ZodError);
+  expect(serverError.code).toBe('NOT_FOUND');
 
   close();
 });
