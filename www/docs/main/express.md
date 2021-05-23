@@ -46,7 +46,7 @@ export const appRouter = trpc
 export type AppRouter = typeof appRouter;
 ```
 
-If your router file starts getting too big, split your router into several subrouters each implemented in its own file. The [merge them](/docs/merging-routers) into a single root `appRouter`.
+If your router file starts getting too big, split your router into several subrouters each implemented in its own file. Then [merge them](/docs/merging-routers) into a single root `appRouter`.
 
 ## Express.js adapter
 
