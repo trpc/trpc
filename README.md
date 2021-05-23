@@ -96,7 +96,11 @@ In another terminal, you can for instance navigate to `examples/next-hello-world
   </thead>
   <tbody>
     <tr>
-      <td>hello</td>
+      <td>
+        <ul>
+          <li>test</li>
+        </ul>
+      </td>
       <td>hello</td>
     </tr>
   </tbody>
