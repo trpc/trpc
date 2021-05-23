@@ -88,10 +88,19 @@ yarn dev
 In another terminal, you can for instance navigate to `examples/next-hello-world` and run `yarn dev` & it will update whenever code is changed in the packages.
 
 <table>
-<tr>
-<td>hello</td>
-<td>hello</td>
-</tr></table>
+  <thead>
+    <tr>
+      <th>URL</th>
+      <th>Links</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>hello</td>
+      <td>hello</td>
+    </tr>
+  </tbody>
+</table>
 
 ## Testing
 
