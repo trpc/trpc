@@ -45,7 +45,7 @@ import { trpc } from './utils/trpc';
 
 const queryClient = new QueryClient();
 const trpcClient = trpc.createClient({
-  url: '/api/trpc',
+  url: 'http://localhost:5000/trpc',
 
   // optional
   getHeaders() {
