@@ -6,9 +6,10 @@ slug: /example-apps
 ---
 
 
-You can clone this project and play with local examples, or play with them in the CodeSandbox link below.
+You can clone trpc and play with local examples, or play with them in the CodeSandbox link below.
 
 Here's some example apps:
+
 
 <table>
   <thead>
@@ -21,7 +22,7 @@ Here's some example apps:
   <tbody>
     <tr>
       <td>
-        Next.js TodoMVC-example with SSG & Prisma.
+        Next.js example with mock database using SSR
         <br/><br/>
         <details>
           <summary>Quick start with <code>create-next-app</code></summary>
@@ -38,7 +39,7 @@ Here's some example apps:
     </tr>
     <tr>
       <td>
-        Next.js example with mock database using SSR
+        Next.js TodoMVC-example with SSG & Prisma.
         <br/><br/>
         <details>
           <summary>Quick start with <code>create-next-app</code></summary>

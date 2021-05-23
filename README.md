@@ -59,7 +59,6 @@ npx create-next-app --example https://github.com/trpc/trpc --example-path exampl
 
 # Example apps
 
-
 <table>
   <thead>
     <tr>
