@@ -162,25 +162,6 @@ yarn dev
 
 In another terminal, you can for instance navigate to `examples/next-hello-world` and run `yarn dev` & it will update whenever code is changed in the packages.
 
-<table>
-  <thead>
-    <tr>
-      <th>URL</th>
-      <th>Links</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td>
-        <ul>
-          <li>test</li>
-        </ul>
-      </td>
-      <td>hello</td>
-    </tr>
-  </tbody>
-</table>
-
 ## Testing
 
 ```bash
