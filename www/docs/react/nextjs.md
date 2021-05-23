@@ -32,37 +32,7 @@ Recommended but not enforced file structure. This is what you get when starting 
 
 ## 🌟 Start from scratch
 
-Execute [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app) to bootstrap one of the examples:
-
-### TodoMVC with [Prisma](https://www.prisma.io/)
-
-> TodoMVC-app implemented with tRPC. Uses [superjson](https://github.com/blitz-js/superjson) to transparently use `Date`s over the wire.
->
-> Live demo at [todomvc.trpc.io](https://todomvc.trpc.io)
-
-```bash
-npx create-next-app --example https://github.com/trpc/trpc --example-path examples/next-prisma-todomvc trpc-todo
-```
-
-### Simple Starter without database
-
-> Simple starter project with a mock in-memory db.
->
-> Live demo at [hello-world.trpc.io](https://hello-world.trpc.io) _(note that data isn't persisted on Vercel as it's running in lambda functions)_
-
-```bash
-npx create-next-app --example https://github.com/trpc/trpc --example-path examples/next-hello-world my-app
-```
-
-### Real-time chat with [Prisma](https://www.prisma.io/)
-
-> Using experimental subscription support.
->
-> Live demo at [chat.trpc.io](https://chat.trpc.io)
-
-```bash
-npx create-next-app --example https://github.com/trpc/trpc --example-path examples/next-ssg-chat my-chat-app
-```
+Easiest way to start is to use <code>npx create-next-app</code> on [one of the example apps](./../main/example-apps.md).
 
 ## 🐻 Add to existing project
 

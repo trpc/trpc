@@ -10,7 +10,6 @@ You can clone this project and play with local examples, or play with them in th
 
 Here's some example apps:
 
-
 <table>
   <thead>
     <tr>
@@ -22,9 +21,29 @@ Here's some example apps:
   <tbody>
     <tr>
       <td>
+        Next.js example with mock database using SSR
+        <br/><br/>
+        <details>
+          <summary>Quick start with <code>create-next-app</code></summary>
+          <code>npx create-next-app --example https://github.com/trpc/trpc --example-path examples/next-prisma-todomvc my-app</code>
+        </details>
+      </td>
+      <td><a href="https://todomvc.trpc.io">todomvc.trpc.io</a></td>
+      <td>
+        <ul>
+          <li><a href="https://githubbox.com/trpc/trpc/tree/main/examples/next-prisma-todomvc">CodeSandbox</a></li>
+          <li><a href="https://codesandbox.io/s/github/trpc/trpc/tree/main/examples/next-prisma-todomvc?file=/pages/%5Bfilter%5D.tsx">Source</a></li>
+        </ul>
+      </td>
+    </tr>
+    <tr>
+      <td>
         Next.js TodoMVC-example with SSG & Prisma.
         <br/><br/>
-        Try it: <code>npx create-next-app --example https://github.com/trpc/trpc --example-path examples/next-hello-world my-app</code>
+        <details>
+          <summary>Quick start with <code>create-next-app</code></summary>
+          <code>npx create-next-app --example https://github.com/trpc/trpc --example-path examples/next-hello-world my-app</code>
+        </details>
       </td>
       <td><a href="https://hello-world.trpc.io">hello-world.trpc.io</a></td>
       <td>
@@ -36,28 +55,19 @@ Here's some example apps:
     </tr>
     <tr>
       <td>
-        Next.js example with mock database using SSR
+        Next.js real-time chat example.
+        <br/>
+        Uses experimental subscriptions.
         <br/><br/>
         <details>
-          <summary>Get </summary>
+          <summary>Quick start with <code>create-next-app</code></summary>
+          <code>npx create-next-app --example https://github.com/trpc/trpc --example-path examples/chat my-app</code>
         </details>
-        Try it: <code>npx create-next-app --example https://github.com/trpc/trpc --example-path examples/next-prisma-todomvc my-app</code>
       </td>
-      <td><a href="https://todomvc.trpc.io">todomvc.trpc.io</a></td>
+      <td><a href="https://chat.trpc.io">chat.trpc.io</a></td>
       <td>
         <ul>
-          <li><a href="https://githubbox.com/trpc/trpc/tree/main/examples/next-prisma-todomvc">CodeSandbox</a></li>
-          <li><a href="https://codesandbox.io/s/github/trpc/trpc/tree/main/examples/next-prisma-todomvc?file=/pages/%5Bfilter%5D.tsx">Source</a></li>
-        </ul>
-      </td>
-    </tr>
-    <tr>
-      <td>Next.js real-time chat example.<br/>Uses experimental subscriptions.</td>
-      <td><a href="https://todomvc.trpc.io">todomvc.trpc.io</a></td>
-      <td>
-        <ul>
-          <li><a href="https://githubbox.com/trpc/trpc/tree/main/examples/next-prisma-todomvc">CodeSandbox</a></li>
-          <li><a href="https://github.com/trpc/trpc/tree/main/examples/next-prisma-todomvc">Source</a></li>
+          <li><a href="https://github.com/trpc/trpc/tree/main/examples/next-ssg-chat">Source</a></li>
         </ul>
       </td>
     </tr>
@@ -72,7 +82,7 @@ Here's some example apps:
       </td>
     </tr>
     <tr>
-      <td>Express server &amp; procedure calls with node.js.<br/>Contains experimental subscriptions.</td>
+      <td>Express server &amp; procedure calls with node.js.<br/>Uses experimental subscriptions.</td>
       <td><em>n/a</em></td>
       <td>
         <ul>

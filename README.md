@@ -133,7 +133,7 @@ npx create-next-app --example https://github.com/trpc/trpc --example-path exampl
       </td>
     </tr>
     <tr>
-      <td>Express server &amp; procedure calls with node.js.<br/>Contains experimental subscriptions.</td>
+      <td>Express server &amp; procedure calls with node.js.<br/>Uses experimental subscriptions.</td>
       <td><em>n/a</em></td>
       <td>
         <ul>
