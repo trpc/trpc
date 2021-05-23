@@ -34,6 +34,12 @@ Recommended but not enforced file structure. This is what you get when starting 
 
 Easiest way to start is to use <code>npx create-next-app</code> on [one of the example apps](./../main/example-apps.md).
 
+Below is using the next example hosted at [hello-world.trpc.io](http://hello-world.trpc.io/).
+
+```bash
+npx create-next-app --example https://github.com/trpc/trpc --example-path examples/next-hello-world my-app
+```
+
 ## 🐻 Add to existing project
 
 The code here is taken from [`./examples/next-hello-world`](https://github.com/trpc/trpc/tree/main/examples/next-hello-world).
