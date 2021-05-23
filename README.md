@@ -74,7 +74,7 @@ npx create-next-app --example https://github.com/trpc/trpc --example-path exampl
         Next.js TodoMVC-example with SSG & Prisma.
         <br/><br/>
         <details>
-          <summary>Quick start with <code>create-next app</code></summary>
+          <summary>Quick start with <code>create-next-app</code></summary>
           <code>npx create-next-app --example https://github.com/trpc/trpc --example-path examples/next-hello-world my-app</code>
         </details>
       </td>
@@ -91,7 +91,7 @@ npx create-next-app --example https://github.com/trpc/trpc --example-path exampl
         Next.js example with mock database using SSR
         <br/><br/>
         <details>
-          <summary>Quick start with <code>create-next app</code></summary>
+          <summary>Quick start with <code>create-next-app</code></summary>
           <code>npx create-next-app --example https://github.com/trpc/trpc --example-path examples/next-prisma-todomvc my-app</code>
         </details>
       </td>
@@ -104,12 +104,20 @@ npx create-next-app --example https://github.com/trpc/trpc --example-path exampl
       </td>
     </tr>
     <tr>
-      <td>Next.js real-time chat example.<br/>Uses experimental subscriptions.</td>
-      <td><a href="https://todomvc.trpc.io">todomvc.trpc.io</a></td>
+      <td>
+        Next.js real-time chat example.<br/>Uses experimental subscriptions.
+        
+        <br/><br/>
+        <details>
+          <summary>Quick start with <code>create-next-app</code></summary>
+          <code>npx create-next-app --example https://github.com/trpc/trpc --example-path examples/next-prisma-todomvc my-app</code>
+        </details>
+      </td>
+      <td><a href="https://chat.trpc.io">chat.trpc.io</a></td>
       <td>
         <ul>
-          <li><a href="https://githubbox.com/trpc/trpc/tree/main/examples/next-prisma-todomvc">CodeSandbox</a></li>
-          <li><a href="https://github.com/trpc/trpc/tree/main/examples/next-prisma-todomvc">Source</a></li>
+          <!-- <li><a href="https://githubbox.com/trpc/trpc/tree/main/examples/next-prisma-chat">CodeSandbox</a></li> -->
+          <li><a href="https://github.com/trpc/trpc/tree/main/examples/next-prisma-chat">Source</a></li>
         </ul>
       </td>
     </tr>
