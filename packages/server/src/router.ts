@@ -177,9 +177,9 @@ export class Router<
     procedure: CreateProcedureOptions<TContext, TInput, TOutput>,
   ) {
     const router = new Router<TContext, any, {}, {}, any>({
-      queries: {
+      queries: Object.assign(Object.create(null), {
         [path]: createProcedure(procedure),
-      },
+      }),
       mutations: Object.create(null),
       subscriptions: Object.create(null),
       middlewares: [],
@@ -221,9 +221,9 @@ export class Router<
   ) {
     const router = new Router<TContext, {}, any, {}, any>({
       queries: Object.create(null),
-      mutations: {
+      mutations: Object.assign(Object.create(null), {
         [path]: createProcedure(procedure),
-      },
+      }),
       subscriptions: Object.create(null),
       middlewares: [],
       errorFormatter: () => ({}),
@@ -276,9 +276,9 @@ export class Router<
     const router = new Router<TContext, {}, {}, any, any>({
       queries: Object.create(null),
       mutations: Object.create(null),
-      subscriptions: {
+      subscriptions: Object.assign(Object.create(null), {
         [path]: createProcedure(procedure),
-      },
+      }),
       middlewares: [],
       errorFormatter: () => ({}),
     });
