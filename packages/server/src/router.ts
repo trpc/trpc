@@ -17,46 +17,39 @@ import { flatten, Prefixer, ThenArg } from './types';
 assertNotBrowser();
 
 export type ProcedureType = 'query' | 'mutation' | 'subscription';
-export type ProcedureRecord<
-  TContext = any,
-  TInput = any,
-  TOutput = any
-> = Record<string, Procedure<TContext, TInput, TOutput>>;
+export type ProcedureRecord<TContext = any, TInput = any, TOutput = any> =
+  Record<string, Procedure<TContext, TInput, TOutput>>;
 
-export type inferProcedureInput<
-  TProcedure extends Procedure<any, any, any>
-> = TProcedure extends ProcedureWithInput<any, infer Input, any>
-  ? Input
-  : undefined;
+export type inferProcedureInput<TProcedure extends Procedure<any, any, any>> =
+  TProcedure extends ProcedureWithInput<any, infer Input, any>
+    ? Input
+    : undefined;
 
-export type inferAsyncReturnType<
-  TFunction extends (...args: any) => any
-> = ThenArg<ReturnType<TFunction>>;
+export type inferAsyncReturnType<TFunction extends (...args: any) => any> =
+  ThenArg<ReturnType<TFunction>>;
 
-export type inferProcedureOutput<
-  TProcedure extends Procedure
-> = inferAsyncReturnType<TProcedure['call']>;
+export type inferProcedureOutput<TProcedure extends Procedure> =
+  inferAsyncReturnType<TProcedure['call']>;
 
 export type inferSubscriptionOutput<
   TRouter extends AnyRouter,
-  TPath extends keyof TRouter['_def']['subscriptions']
+  TPath extends keyof TRouter['_def']['subscriptions'],
 > = ReturnType<
   inferAsyncReturnType<
     TRouter['_def']['subscriptions'][TPath]['call']
   >['output']
 >;
 
-export type inferHandlerInput<
-  TProcedure extends Procedure
-> = TProcedure extends ProcedureWithInput<any, infer TInput, any>
-  ? undefined extends TInput
-    ? [TInput?]
-    : [TInput]
-  : [undefined?];
+export type inferHandlerInput<TProcedure extends Procedure> =
+  TProcedure extends ProcedureWithInput<any, infer TInput, any>
+    ? undefined extends TInput
+      ? [TInput?]
+      : [TInput]
+    : [undefined?];
 
 type inferHandlerFn<TProcedures extends ProcedureRecord> = <
   TProcedure extends TProcedures[TPath],
-  TPath extends keyof TProcedures & string
+  TPath extends keyof TProcedures & string,
 >(
   path: TPath,
   ...args: inferHandlerInput<TProcedure>
@@ -110,7 +103,7 @@ export class Router<
     unknown,
     Subscription<unknown>
   >,
-  TErrorShape extends ErrorShape
+  TErrorShape extends ErrorShape,
 > {
   readonly _def: Readonly<{
     queries: Readonly<TQueries>;
@@ -144,7 +137,7 @@ export class Router<
 
   private static prefixProcedures<
     TProcedures extends ProcedureRecord,
-    TPrefix extends string
+    TPrefix extends string,
   >(procedures: TProcedures, prefix: TPrefix): Prefixer<TProcedures, TPrefix> {
     const eps: ProcedureRecord = {};
     for (const key in procedures) {
@@ -246,7 +239,7 @@ export class Router<
   public subscription<
     TPath extends string,
     TInput,
-    TOutput extends Subscription<unknown>
+    TOutput extends Subscription<unknown>,
   >(
     path: TPath,
     procedure: CreateProcedureWithInput<TContext, TInput, TOutput>,
@@ -264,7 +257,7 @@ export class Router<
    */
   public subscription<
     TPath extends string,
-    TOutput extends Subscription<unknown>
+    TOutput extends Subscription<unknown>,
   >(
     path: TPath,
     procedure: CreateProcedureWithoutInput<TContext, TOutput>,
@@ -278,7 +271,7 @@ export class Router<
   public subscription<
     TPath extends string,
     TInput,
-    TOutput extends Subscription<unknown>
+    TOutput extends Subscription<unknown>,
   >(path: TPath, procedure: CreateProcedureOptions<TContext, TInput, TOutput>) {
     const router = new Router<TContext, {}, {}, any, any>({
       queries: {},
@@ -417,9 +410,7 @@ export class Router<
     return procedure.call({ ctx, input, type, path });
   }
 
-  public createCaller(
-    ctx: TContext,
-  ): {
+  public createCaller(ctx: TContext): {
     query: inferHandlerFn<TQueries>;
     mutation: inferHandlerFn<TMutations>;
     subscription: inferHandlerFn<TSubscriptions>;

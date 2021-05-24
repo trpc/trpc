@@ -23,7 +23,7 @@ export type ProcedureInputParser<TInput = unknown> =
 export type ProcedureResolver<
   TContext = unknown,
   TInput = unknown,
-  TOutput = unknown
+  TOutput = unknown,
 > = (opts: {
   ctx: TContext;
   input: TInput;
@@ -45,7 +45,7 @@ export interface ProcedureCallOptions<TContext> {
 export abstract class Procedure<
   TContext = unknown,
   TInput = unknown,
-  TOutput = unknown
+  TOutput = unknown,
 > {
   private middlewares: Readonly<MiddlewareFunction<TContext>[]>;
   private resolver: ProcedureResolver<TContext, TInput, TOutput>;
@@ -147,7 +147,7 @@ export type CreateProcedureWithoutInput<TContext, TOutput> = {
 export type CreateProcedureOptions<
   TContext = unknown,
   TInput = unknown,
-  TOutput = unknown
+  TOutput = unknown,
 > =
   | CreateProcedureWithInput<TContext, TInput, TOutput>
   | CreateProcedureWithoutInput<TContext, TOutput>;
@@ -189,7 +189,7 @@ export function createProcedure<TContext, TInput, TOutput>(
 }
 
 export type inferProcedureFromOptions<
-  TOptions extends CreateProcedureOptions<any, any, any>
+  TOptions extends CreateProcedureOptions<any, any, any>,
 > = TOptions extends CreateProcedureWithInput<
   infer TContext,
   infer TInput,

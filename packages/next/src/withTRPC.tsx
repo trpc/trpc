@@ -85,7 +85,7 @@ export function withTRPC<TRouter extends AnyRouter>(
         const isApp = !!appOrPageCtx.Component;
         const ctx: NextPageContext = isApp
           ? appOrPageCtx.ctx
-          : ((appOrPageCtx as any) as NextPageContext);
+          : (appOrPageCtx as any as NextPageContext);
         const isServer = typeof window === 'undefined' && ssr;
 
         const config = getClientConfig(isServer ? { ctx } : {});

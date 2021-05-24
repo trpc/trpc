@@ -22,7 +22,7 @@ export type TRPCContextState<TRouter extends AnyRouter> = {
     TPath extends keyof TRouter['_def']['queries'] & string,
     TProcedure extends TRouter['_def']['queries'][TPath],
     TOutput extends inferProcedureOutput<TProcedure>,
-    TInput extends inferProcedureInput<TProcedure>
+    TInput extends inferProcedureInput<TProcedure>,
   >(
     pathAndArgs: [path: TPath, ...args: inferHandlerInput<TProcedure>],
     opts?: FetchQueryOptions<TInput, TRPCClientError<TRouter>, TOutput>,
@@ -31,7 +31,7 @@ export type TRPCContextState<TRouter extends AnyRouter> = {
     TPath extends keyof TRouter['_def']['queries'] & string,
     TProcedure extends TRouter['_def']['queries'][TPath],
     TOutput extends inferProcedureOutput<TProcedure>,
-    TInput extends inferProcedureInput<TProcedure>
+    TInput extends inferProcedureInput<TProcedure>,
   >(
     pathAndArgs: [path: TPath, ...args: inferHandlerInput<TProcedure>],
     opts?: FetchInfiniteQueryOptions<TInput, TRPCClientError<TRouter>, TOutput>,
@@ -40,7 +40,7 @@ export type TRPCContextState<TRouter extends AnyRouter> = {
     TPath extends keyof TRouter['_def']['queries'] & string,
     TProcedure extends TRouter['_def']['queries'][TPath],
     TOutput extends inferProcedureOutput<TProcedure>,
-    TInput extends inferProcedureInput<TProcedure>
+    TInput extends inferProcedureInput<TProcedure>,
   >(
     pathAndArgs: [path: TPath, ...args: inferHandlerInput<TProcedure>],
     opts?: FetchQueryOptions<TInput, TRPCClientError<TRouter>, TOutput>,
@@ -50,7 +50,7 @@ export type TRPCContextState<TRouter extends AnyRouter> = {
     TPath extends keyof TRouter['_def']['queries'] & string,
     TProcedure extends TRouter['_def']['queries'][TPath],
     TOutput extends inferProcedureOutput<TProcedure>,
-    TInput extends inferProcedureInput<TProcedure>
+    TInput extends inferProcedureInput<TProcedure>,
   >(
     pathAndArgs: [path: TPath, ...args: inferHandlerInput<TProcedure>],
     opts?: FetchInfiniteQueryOptions<TInput, TRPCClientError<TRouter>, TOutput>,
@@ -58,20 +58,20 @@ export type TRPCContextState<TRouter extends AnyRouter> = {
 
   invalidateQuery: <
     TPath extends keyof TRouter['_def']['queries'] & string,
-    TInput extends inferProcedureInput<TRouter['_def']['queries'][TPath]>
+    TInput extends inferProcedureInput<TRouter['_def']['queries'][TPath]>,
   >(
     pathAndArgs: [TPath, TInput?],
   ) => Promise<void>;
   cancelQuery: <
     TPath extends keyof TRouter['_def']['queries'] & string,
-    TInput extends inferProcedureInput<TRouter['_def']['queries'][TPath]>
+    TInput extends inferProcedureInput<TRouter['_def']['queries'][TPath]>,
   >(
     pathAndArgs: [TPath, TInput?],
   ) => Promise<void>;
   setQueryData: <
     TPath extends keyof TRouter['_def']['queries'] & string,
     TInput extends inferProcedureInput<TRouter['_def']['queries'][TPath]>,
-    TOutput extends inferProcedureOutput<TRouter['_def']['queries'][TPath]>
+    TOutput extends inferProcedureOutput<TRouter['_def']['queries'][TPath]>,
   >(
     pathAndArgs: [TPath, TInput?],
     output: TOutput,

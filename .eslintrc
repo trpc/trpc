@@ -3,7 +3,8 @@
   "extends": [
     "plugin:@typescript-eslint/recommended", // Uses the recommended rules from the @typescript-eslint/eslint-plugin
     "plugin:react/recommended",
-    "plugin:react-hooks/recommended"
+    "plugin:react-hooks/recommended",
+    "plugin:prettier/recommended"
   ],
   "parserOptions": {
     "ecmaVersion": 2018, // Allows for the parsing of modern ECMAScript features
@@ -24,5 +25,10 @@
         "@typescript-eslint/no-unused-vars": "off"
       }
     }
-  ]
+  ],
+  "settings": {
+    "react": {
+      "version": "detect"
+    }
+  }
 }
