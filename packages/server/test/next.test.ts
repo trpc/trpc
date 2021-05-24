@@ -62,8 +62,9 @@ test('bad setup', async () => {
   await handler(req, res);
   expect(status).toHaveBeenCalledWith(500);
 
-  const responseJson: HTTPErrorResponseEnvelope<typeof router> = (json.mock
-    .calls[0] as any)[0];
+  const responseJson: HTTPErrorResponseEnvelope<typeof router> = (
+    json.mock.calls[0] as any
+  )[0];
   expect(responseJson.ok).toMatchInlineSnapshot(`false`);
   expect(responseJson.error.message).toMatchInlineSnapshot(
     `"Query \\"trpc\\" not found - is the file named \`[trpc]\`.ts or \`[...trpc].ts\`?"`,

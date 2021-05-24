@@ -160,9 +160,8 @@ function createAppRouter() {
       },
     });
 
-  const { client, trpcClientOptions, close } = routerToServerAndClient(
-    appRouter,
-  );
+  const { client, trpcClientOptions, close } =
+    routerToServerAndClient(appRouter);
   const queryClient = new QueryClient();
   const trpc = createReactQueryHooks<typeof appRouter>();
 
