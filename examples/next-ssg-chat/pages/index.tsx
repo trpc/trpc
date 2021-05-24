@@ -24,14 +24,10 @@ const getLatestTimestamp = (m: Message[]) => {
 };
 
 export default function Home() {
-  const {
-    data,
-    hasPreviousPage,
-    isFetchingPreviousPage,
-    fetchPreviousPage,
-  } = trpc.useInfiniteQuery(['messages.list', {}], {
-    getPreviousPageParam: (d) => d.prevCursor,
-  });
+  const { data, hasPreviousPage, isFetchingPreviousPage, fetchPreviousPage } =
+    trpc.useInfiniteQuery(['messages.list', {}], {
+      getPreviousPageParam: (d) => d.prevCursor,
+    });
   const [msgs, setMessages] = useState(() =>
     data ? data.pages.map((p) => p.items).flat() : [],
   );

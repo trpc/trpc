@@ -30,7 +30,7 @@ module.exports = {
             'server/error-formatting',
             'server/data-transformers',
             'server/caching',
-          ]
+          ],
         },
         {
           type: 'category',
@@ -47,6 +47,6 @@ module.exports = {
         },
       ],
     },
-    'further/further-reading'
+    'further/further-reading',
   ],
 };
