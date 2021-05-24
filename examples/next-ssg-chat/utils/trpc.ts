@@ -14,5 +14,5 @@ export const transformer = superjson;
  * @example type HelloOutput = inferQueryOutput<'hello'>
  */
 export type inferQueryOutput<
-  TRouteKey extends keyof AppRouter['_def']['queries']
+  TRouteKey extends keyof AppRouter['_def']['queries'],
 > = inferProcedureOutput<AppRouter['_def']['queries'][TRouteKey]>;

@@ -83,6 +83,7 @@ const router = createRouter()
           let prevCursor: null | typeof cursor = null;
           if (items.length > take) {
             const prev = items.shift();
+            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
             prevCursor = prev!.createdAt;
           }
           return {
