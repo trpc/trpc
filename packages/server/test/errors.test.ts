@@ -2,8 +2,17 @@
 import { z, ZodError } from 'zod';
 import { TRPCClientError } from '../../client/src';
 import * as trpc from '../src';
+import { AnyRouter } from '../src';
 import { getMessageFromUnkownError, TRPCError } from '../src/errors';
 import { routerToServerAndClient } from './_testHelpers';
+
+function assertClientError(
+  err: unknown,
+): asserts err is TRPCClientError<AnyRouter> {
+  if (!(err instanceof TRPCClientError)) {
+    throw new Error('Did not throw');
+  }
+}
 
 test('basic', async () => {
   class MyError extends Error {
@@ -150,7 +159,7 @@ test('getMessageFromUnkownError()', () => {
 
 test('formatError()', async () => {
   const onError = jest.fn();
-  const { client, close, router } = routerToServerAndClient(
+  const { client, close } = routerToServerAndClient(
     trpc
       .router()
       .formatError(({ error }) => {
@@ -182,14 +191,7 @@ test('formatError()', async () => {
   } catch (_err) {
     clientError = _err;
   }
-  function assertIt(
-    err: unknown,
-  ): asserts err is TRPCClientError<typeof router> {
-    if (!(err instanceof TRPCClientError)) {
-      throw new Error('Did not throw');
-    }
-  }
-  assertIt(clientError);
+  assertClientError(clientError);
   expect(clientError.res?.status).toBe(400);
   expect(clientError.json?.error).toMatchInlineSnapshot(`
     Object {
@@ -210,5 +212,56 @@ test('formatError()', async () => {
 
   expect(serverError.originalError).toBeInstanceOf(ZodError);
 
+  close();
+});
+
+test('make sure object is ignoring prototype', async () => {
+  const onError = jest.fn();
+  const { client, close } = routerToServerAndClient(
+    trpc.router().query('hello', {
+      resolve() {
+        return 'there';
+      },
+    }),
+    {
+      server: {
+        onError,
+      },
+    },
+  );
+  let clientError: Error | null = null;
+  try {
+    await client.query('toString' as any);
+  } catch (_err) {
+    clientError = _err;
+  }
+  assertClientError(clientError);
+  expect(clientError.res?.status).toBe(404);
+  expect(clientError.json?.error.code).toBe('NOT_FOUND');
+  expect(onError).toHaveBeenCalledTimes(1);
+  const serverError = onError.mock.calls[0][0].error;
+  expect(serverError.code).toBe('NOT_FOUND');
+
+  close();
+});
+
+test('allow using built-in Object-properties', async () => {
+  const { client, close } = routerToServerAndClient(
+    trpc
+      .router()
+      .query('toString', {
+        resolve() {
+          return 'toStringValue';
+        },
+      })
+      .query('hasOwnProperty', {
+        resolve() {
+          return 'hasOwnPropertyValue';
+        },
+      }),
+  );
+
+  expect(await client.query('toString')).toBe('toStringValue');
+  expect(await client.query('hasOwnProperty')).toBe('hasOwnPropertyValue');
   close();
 });
