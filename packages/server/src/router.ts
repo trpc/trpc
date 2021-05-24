@@ -89,6 +89,27 @@ export type DefaultErrorShape = {
   stack?: string;
 };
 
+/**
+ * Create an empty object with `Object.create(null)`.
+ * Objects made from `Object.create(null)` are totally empty -- they do not inherit anything from Object.prototype.
+ */
+function safeObject(): {};
+
+/**
+ * Create an object without inheriting anything from `Object.prototype`
+ */
+function safeObject<TObj1>(obj: TObj1): TObj1;
+/**
+ * Merge two objects without inheritance from `Object.prototype`
+ */
+function safeObject<TObj1, TObj2>(
+  obj1: TObj1,
+  obj2: TObj2,
+): flatten<TObj1, TObj2>;
+function safeObject(...args: unknown[]) {
+  return Object.assign(Object.create(null), ...args);
+}
+
 export type MiddlewareFunction<TContext> = (opts: {
   ctx: TContext;
   type: ProcedureType;
@@ -121,9 +142,9 @@ export class Router<
     errorFormatter: ErrorFormatter<TContext, TErrorShape>;
   }) {
     this._def = def ?? {
-      queries: Object.create(null) as TQueries,
-      mutations: Object.create(null) as TMutations,
-      subscriptions: Object.create(null) as TSubscriptions,
+      queries: safeObject() as TQueries,
+      mutations: safeObject() as TMutations,
+      subscriptions: safeObject() as TSubscriptions,
       middlewares: [],
       errorFormatter: (({
         defaultShape,
@@ -139,7 +160,7 @@ export class Router<
     TProcedures extends ProcedureRecord,
     TPrefix extends string,
   >(procedures: TProcedures, prefix: TPrefix): Prefixer<TProcedures, TPrefix> {
-    const eps: ProcedureRecord = {};
+    const eps: ProcedureRecord = safeObject();
     for (const key in procedures) {
       eps[prefix + key] = procedures[key];
     }
@@ -177,11 +198,11 @@ export class Router<
     procedure: CreateProcedureOptions<TContext, TInput, TOutput>,
   ) {
     const router = new Router<TContext, any, {}, {}, any>({
-      queries: Object.assign(Object.create(null), {
+      queries: safeObject({
         [path]: createProcedure(procedure),
       }),
-      mutations: Object.create(null),
-      subscriptions: Object.create(null),
+      mutations: safeObject(),
+      subscriptions: safeObject(),
       middlewares: [],
       errorFormatter: () => ({}),
     });
@@ -220,11 +241,11 @@ export class Router<
     procedure: CreateProcedureOptions<TContext, TInput, TOutput>,
   ) {
     const router = new Router<TContext, {}, any, {}, any>({
-      queries: Object.create(null),
-      mutations: Object.assign(Object.create(null), {
+      queries: safeObject(),
+      mutations: safeObject({
         [path]: createProcedure(procedure),
       }),
-      subscriptions: Object.create(null),
+      subscriptions: safeObject(),
       middlewares: [],
       errorFormatter: () => ({}),
     });
@@ -274,9 +295,9 @@ export class Router<
     TOutput extends Subscription<unknown>,
   >(path: TPath, procedure: CreateProcedureOptions<TContext, TInput, TOutput>) {
     const router = new Router<TContext, {}, {}, any, any>({
-      queries: Object.create(null),
-      mutations: Object.create(null),
-      subscriptions: Object.assign(Object.create(null), {
+      queries: safeObject(),
+      mutations: safeObject(),
+      subscriptions: safeObject({
         [path]: createProcedure(procedure),
       }),
       middlewares: [],
@@ -355,7 +376,7 @@ export class Router<
     }
 
     const mergeProcedures = (defs: ProcedureRecord<any>) => {
-      const newDefs = {} as typeof defs;
+      const newDefs = safeObject() as typeof defs;
       for (const key in defs) {
         const procedure = defs[key];
         const newProcedure = procedure.inheritMiddlewares(
@@ -368,18 +389,15 @@ export class Router<
     };
 
     return new Router<TContext, any, any, any, TErrorShape>({
-      queries: Object.assign(
-        Object.create(null),
+      queries: safeObject(
         this._def.queries,
         mergeProcedures(childRouter._def.queries),
       ),
-      mutations: Object.assign(
-        Object.create(null),
+      mutations: safeObject(
         this._def.mutations,
         mergeProcedures(childRouter._def.mutations),
       ),
-      subscriptions: Object.assign(
-        Object.create(null),
+      subscriptions: safeObject(
         this._def.subscriptions,
         mergeProcedures(childRouter._def.subscriptions),
       ),
