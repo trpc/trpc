@@ -121,9 +121,9 @@ export class Router<
     errorFormatter: ErrorFormatter<TContext, TErrorShape>;
   }) {
     this._def = def ?? {
-      queries: {} as TQueries,
-      mutations: {} as TMutations,
-      subscriptions: {} as TSubscriptions,
+      queries: Object.create(null) as TQueries,
+      mutations: Object.create(null) as TMutations,
+      subscriptions: Object.create(null) as TSubscriptions,
       middlewares: [],
       errorFormatter: (({
         defaultShape,
@@ -180,8 +180,8 @@ export class Router<
       queries: {
         [path]: createProcedure(procedure),
       },
-      mutations: {},
-      subscriptions: {},
+      mutations: Object.create(null),
+      subscriptions: Object.create(null),
       middlewares: [],
       errorFormatter: () => ({}),
     });
@@ -220,11 +220,11 @@ export class Router<
     procedure: CreateProcedureOptions<TContext, TInput, TOutput>,
   ) {
     const router = new Router<TContext, {}, any, {}, any>({
-      queries: {},
+      queries: Object.create(null),
       mutations: {
         [path]: createProcedure(procedure),
       },
-      subscriptions: {},
+      subscriptions: Object.create(null),
       middlewares: [],
       errorFormatter: () => ({}),
     });
@@ -274,8 +274,8 @@ export class Router<
     TOutput extends Subscription<unknown>,
   >(path: TPath, procedure: CreateProcedureOptions<TContext, TInput, TOutput>) {
     const router = new Router<TContext, {}, {}, any, any>({
-      queries: {},
-      mutations: {},
+      queries: Object.create(null),
+      mutations: Object.create(null),
       subscriptions: {
         [path]: createProcedure(procedure),
       },
@@ -368,18 +368,21 @@ export class Router<
     };
 
     return new Router<TContext, any, any, any, TErrorShape>({
-      queries: {
-        ...this._def.queries,
-        ...mergeProcedures(childRouter._def.queries),
-      },
-      mutations: {
-        ...this._def.mutations,
-        ...mergeProcedures(childRouter._def.mutations),
-      },
-      subscriptions: {
-        ...this._def.subscriptions,
-        ...mergeProcedures(childRouter._def.subscriptions),
-      },
+      queries: Object.assign(
+        Object.create(null),
+        this._def.queries,
+        mergeProcedures(childRouter._def.queries),
+      ),
+      mutations: Object.assign(
+        Object.create(null),
+        this._def.mutations,
+        mergeProcedures(childRouter._def.mutations),
+      ),
+      subscriptions: Object.assign(
+        Object.create(null),
+        this._def.subscriptions,
+        mergeProcedures(childRouter._def.subscriptions),
+      ),
       middlewares: this._def.middlewares,
       errorFormatter: this._def.errorFormatter,
     });
@@ -401,11 +404,11 @@ export class Router<
   }): Promise<unknown> {
     const defTarget = PROCEDURE_DEFINITION_MAP[type];
     const defs = this._def[defTarget];
+    const procedure = defs[path] as Procedure<TContext> | undefined;
 
-    if (!defs.hasOwnProperty(path)) {
+    if (!procedure) {
       throw notFoundError(`No such ${type} procedure "${path}"`);
     }
-    const procedure: Procedure<TContext> = defs[path];
 
     return procedure.call({ ctx, input, type, path });
   }

@@ -245,24 +245,23 @@ test('make sure object is ignoring prototype', async () => {
   close();
 });
 
-test('ability to use protected props', async () => {
-  const onError = jest.fn();
+test('allow using built-in Object-properties', async () => {
   const { client, close } = routerToServerAndClient(
-    trpc.router().query('toString', {
-      resolve() {
-        return 'there';
-      },
-    }),
-    {
-      server: {
-        onError,
-      },
-    },
+    trpc
+      .router()
+      .query('toString', {
+        resolve() {
+          return 'toStringValue';
+        },
+      })
+      .query('hasOwnProperty', {
+        resolve() {
+          return 'hasOwnPropertyValue';
+        },
+      }),
   );
 
-  const res = await client.query('toString' as any);
-
-  expect(res).toBe('there');
-
+  expect(await client.query('toString')).toBe('toStringValue');
+  expect(await client.query('hasOwnProperty')).toBe('hasOwnPropertyValue');
   close();
 });
