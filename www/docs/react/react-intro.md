@@ -25,7 +25,7 @@ yarn add @trpc/client @trpc/server @trpc/react react-query zod
 
 ### 2. Implement your `appRouter`
 
-Follow the [Quickstart](/docs/quickstart) and read the [`@trpc/server` docs](/docs/procedures) for guidance on this. Once you have your API implemented and listening via HTTP, continue to the next step.
+Follow the [Quickstart](/docs/quickstart) and read the [`@trpc/server` docs](/docs/router) for guidance on this. Once you have your API implemented and listening via HTTP, continue to the next step.
 
 ### 3. Create tRPC hooks
 
