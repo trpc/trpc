@@ -9,9 +9,9 @@ author_image_url: https://avatars.githubusercontent.com/u/3084745?v=4
 ---
 
 
-## Sample apps
-
+:::tip
 If you prefer to jump into some complete example projects, check out [the Examples Apps](example-apps.md).
+:::
 
 ## Installation
 
@@ -32,6 +32,19 @@ For generating a powerful set of React hooks directly from your tRPC client. Pow
 `npm install @trpc/next`
 
 A set of utilies for integrating tRPC with [Next.js](https://nextjs.org/).
+
+### Snippets
+
+**npm:**
+```bash
+npm install @trpc/server @trpc/rcient @trpc/react @trpc/next
+```
+
+**yarn:**
+
+```bash
+yarn add @trpc/server @trpc/rcient @trpc/react @trpc/next
+```
 
 
 ## Defining a router
