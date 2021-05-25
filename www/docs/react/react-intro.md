@@ -43,19 +43,20 @@ import { useState } from 'react';
 import { QueryClient, QueryClientProvider } from 'react-query';
 import { trpc } from './utils/trpc';
 
-const queryClient = new QueryClient();
-const trpcClient = trpc.createClient({
-  url: 'http://localhost:5000/trpc',
-
-  // optional
-  getHeaders() {
-    return {
-      authorization: getAuthCookie(),
-    };
-  },
-});
-
 function App() {
+  const [queryClient] = useState(() => new QueryClient());
+  const [trpcClient] = useState(() =>
+    trpc.createClient({
+      url: 'http://localhost:5000/trpc',
+
+      // optional
+      getHeaders() {
+        return {
+          authorization: getAuthCookie(),
+        };
+      },
+    }),
+  );
   return (
     <trpc.Provider client={trpcClient} queryClient={queryClient}>
       <QueryClientProvider client={queryClient}>
