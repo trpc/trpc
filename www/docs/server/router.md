@@ -1,23 +1,21 @@
 ---
-id: procedures
-title: Defining Procedures
-sidebar_label: Defining Procedures (endponts/routes)
-slug: /procedures
+id: router
+title: Define Router
+sidebar_label: Define Router
+slug: /router
 ---
 
 :::info
 
 - A procedure can be viewed as the equivalent of a REST-endpoint.
 - There's no internal difference between queries and mutations apart from semantics.
-- Defining procedures is the same for queries, mutations, and subscription with the exception that subscriptions need to return a `Subscription`-instance.
+- Defining router is the same for queries, mutations, and subscription with the exception that subscriptions need to return a `Subscription`-instance.
 
 :::
-
 
 ## Input validation
 
 tRPC works out-of-the-box with yup/zod/myzod/custom validators/[..] - [see test suite](https://github.com/trpc/trpc/blob/main/packages/server/test/validators.test.ts)
-
 
 ### Example without input
 
@@ -26,7 +24,8 @@ import * as trpc from '@trpc/server';
 
 // [...]
 
-export const appRouter = trpc.router<Context>()
+export const appRouter = trpc
+  .router<Context>()
   // Create procedure at path 'hello'
   .query('hello', {
     resolve({ ctx }) {
@@ -37,7 +36,7 @@ export const appRouter = trpc.router<Context>()
   });
 ```
 
-### With [zod](https://github.com/colinhacks/zod)
+### With [Zod](https://github.com/colinhacks/zod)
 
 ```tsx
 import * as trpc from '@trpc/server';
@@ -45,25 +44,23 @@ import { z } from 'zod';
 
 // [...]
 
-export const appRouter = trpc.router<Context>()
-  .query('hello', {
-    input: z
-      .object({
-        text: z.string().optional(),
-      })
-      .optional(),
-    resolve({ input }) {
-      return {
-        greeting: `hello ${input?.text ?? 'world'}`,
-      };
-    },
-  });
+export const appRouter = trpc.router<Context>().query('hello', {
+  input: z
+    .object({
+      text: z.string().optional(),
+    })
+    .optional(),
+  resolve({ input }) {
+    return {
+      greeting: `hello ${input?.text ?? 'world'}`,
+    };
+  },
+});
 
 export type AppRouter = typeof appRouter;
 ```
 
-
-### With [yup](https://github.com/jquense/yup)
+### With [Yup](https://github.com/jquense/yup)
 
 ```tsx
 import * as trpc from '@trpc/server';
@@ -71,30 +68,31 @@ import * as yup from 'yup';
 
 // [...]
 
-export const appRouter = trpc.router<Context>()
-  .query('hello', {
-    input: yup
-      .object({
-        text: yup.string().required(),
-      }),
-    resolve({ input }) {
-      return {
-        greeting: `hello ${input?.text ?? 'world'}`,
-      };
-    },
-  });
+export const appRouter = trpc.router<Context>().query('hello', {
+  input: yup.object({
+    text: yup.string().required(),
+  }),
+  resolve({ input }) {
+    return {
+      greeting: `hello ${input?.text ?? 'world'}`,
+    };
+  },
+});
 
 export type AppRouter = typeof appRouter;
 ```
 
-## To add multiple endpoints, you must chain the calls
+## Method chaining
+
+To add multiple endpoints, you must chain the calls
 
 ```tsx
 import * as trpc from '@trpc/server';
 
 // [...]
 
-export const appRouter = trpc.router<Context>()
+export const appRouter = trpc
+  .router<Context>()
   .query('hello', {
     resolve() {
       return {
@@ -112,4 +110,3 @@ export const appRouter = trpc.router<Context>()
 
 export type AppRouter = typeof appRouter;
 ```
-

@@ -28,6 +28,12 @@ module.exports = {
           position: 'left',
         },
         {
+          to: 'docs/nextjs',
+          activeBasePath: 'docs',
+          label: 'Usage with Next.js',
+          position: 'left',
+        },
+        {
           href: 'https://github.com/trpc/trpc',
           label: 'GitHub',
           position: 'right',
@@ -45,7 +51,7 @@ module.exports = {
               to: 'docs',
             },
             {
-              label: 'Getting Started with Next.js',
+              label: 'Usage with Next.js',
               to: 'docs/nextjs',
             },
           ],

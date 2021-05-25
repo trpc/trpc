@@ -5,7 +5,36 @@ sidebar_label: Usage with Express.js
 slug: /express
 ---
 
-## Install deps
+
+## Example app
+
+<table>
+  <thead>
+    <tr>
+      <th>Description</th>
+      <th>URL</th>
+      <th>Links</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Express server &amp; procedure calls with node.js.<br/>Uses experimental subscriptions.</td>
+      <td><em>n/a</em></td>
+      <td>
+        <ul>
+          <li><a href="https://githubbox.com/trpc/trpc/tree/main/examples/standalone-server">CodeSandbox</a></li>
+          <li><a href="https://github.com/trpc/trpc/tree/main/examples/standalone-server">Source</a></li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+## How to add tRPC to existing Express.js project
+
+
+
+### 1. Install deps
 
 ```bash
 yarn add @trpc/server zod
@@ -13,7 +42,7 @@ yarn add @trpc/server zod
 
 > [Zod](https://github.com/colinhacks/zod) isn't a required dependency, but it's used in the sample router below.
 
-## Create a tRPC router
+### 2. Create a tRPC router
 
 Implement your tRPC router. A sample router is given below:
 
@@ -48,20 +77,27 @@ export type AppRouter = typeof appRouter;
 
 If your router file starts getting too big, split your router into several subrouters each implemented in its own file. Then [merge them](/docs/merging-routers) into a single root `appRouter`.
 
-## Express.js adapter
+### 3. Use the Express.js adapter
 
 tRPC includes an adapter for Express.js out of the box. This adapter lets you convert your tRPC router into an Express.js middleware.
 
 ```ts
-import { createExpressMiddleware } from '@trpc/server/adapters/express';
+import * as trpcExpress from '@trpc/server/adapters/express';
 
 const appRouter = /* ... */;
 
 const app = express();
 
+// created for each request
+const createContext = ({
+  req,
+  res,
+}: trpcExpress.CreateExpressContextOptions) => ({}) // no context
+type Context = trpc.inferAsyncReturnType<typeof createContext>;
+
 app.use(
   '/trpc',
-  createExpressMiddleware({
+  trpcExpress.createExpressMiddleware({
     router: appRouter,
     createContext: () => null, // no context
   })

@@ -1,13 +1,11 @@
 ---
-id: example-apps
-title: Example Apps
-sidebar_label: Example Apps
-slug: /example-apps
+id: starter-projects
+title: Starter Projects
+sidebar_label: Starter Projects
+slug: /starter-projects
 ---
 
-You can clone trpc and play with local examples, or play with them in the CodeSandbox link below.
-
-Here's some example apps:
+Get started quickly with one of the sample projects! Copy the snippet from _Quick start with `create-next-app`_ in the below list to clone the project.
 
 <table>
   <thead>
@@ -49,44 +47,6 @@ Here's some example apps:
         <ul>
           <li><a href="https://codesandbox.io/s/github/trpc/trpc/tree/main/examples/next-prisma-todomvc?file=/pages/%5Bfilter%5D.tsx">CodeSandbox</a></li>
           <li><a href="https://github.com/trpc/trpc/tree/main/examples/next-prisma-todomvc">Source</a></li>
-        </ul>
-      </td>
-    </tr>
-    <tr>
-      <td>
-        Next.js real-time chat example.
-        <br/>
-        Uses experimental subscriptions.
-        <br/><br/>
-        <details>
-          <summary>Quick start with <code>create-next-app</code></summary>
-          <code>npx create-next-app --example https://github.com/trpc/trpc --example-path examples/next-ssg-chat trpc-chat</code>
-        </details>
-      </td>
-      <td><a href="https://chat.trpc.io">chat.trpc.io</a></td>
-      <td>
-        <ul>
-          <li><a href="https://github.com/trpc/trpc/tree/main/examples/next-ssg-chat">Source</a></li>
-        </ul>
-      </td>
-    </tr>
-    <tr>
-      <td>Vanilla standalone server &amp; procedure calls with node.js</td>
-      <td><em>n/a</em></td>
-      <td>
-        <ul>
-          <li><a href="https://githubbox.com/trpc/trpc/tree/main/examples/standalone-server">CodeSandbox</a></li>
-          <li><a href="https://github.com/trpc/trpc/tree/main/examples/standalone-server">Source</a></li>
-        </ul>
-      </td>
-    </tr>
-    <tr>
-      <td>Express server &amp; procedure calls with node.js.<br/>Uses experimental subscriptions.</td>
-      <td><em>n/a</em></td>
-      <td>
-        <ul>
-          <li><a href="https://githubbox.com/trpc/trpc/tree/main/examples/standalone-server">CodeSandbox</a></li>
-          <li><a href="https://github.com/trpc/trpc/tree/main/examples/standalone-server">Source</a></li>
         </ul>
       </td>
     </tr>

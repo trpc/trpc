@@ -5,8 +5,8 @@ sidebar_label: Contributing
 slug: /contributing
 ---
 
-Please contribute!
+All contributions are welcome and appreciated, big or small.
+
+Feel free to submit pull requests, create issues, or start discussions on the [GitHub repo](https://github.com/trpc/trpc).
 
 Feel free to contact [**@alexdotjs** on Twitter](https://twitter.com/alexdotjs) if you need help or want to give feedback.
-
-Anyone welcome. Any contribution very welcome, big or small.
