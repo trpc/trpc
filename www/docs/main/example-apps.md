@@ -85,8 +85,8 @@ Here's some example apps:
       <td><em>n/a</em></td>
       <td>
         <ul>
-          <li><a href="https://githubbox.com/trpc/trpc/tree/main/examples/standalone-server">CodeSandbox</a></li>
-          <li><a href="https://github.com/trpc/trpc/tree/main/examples/standalone-server">Source</a></li>
+          <li><a href="https://githubbox.com/trpc/trpc/tree/main/examples/playground">CodeSandbox</a></li>
+          <li><a href="https://github.com/trpc/trpc/tree/main/examples/playground">Source</a></li>
         </ul>
       </td>
     </tr>
