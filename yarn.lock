@@ -2179,10 +2179,10 @@
     npmlog "^4.1.2"
     write-file-atomic "^3.0.3"
 
-"@manypkg/cli@^0.17.0":
-  version "0.17.0"
-  resolved "https://registry.npmjs.org/@manypkg/cli/-/cli-0.17.0.tgz#d5b91a150acca808a53bcc90046712a6efb44f5d"
-  integrity sha512-GTVvO73tAwkHtBqKS5DfIqT54BLCJxE9FMdS3nZTMv48piR8Ykd/gHAJedMiMDENGavZd06C8ySo4HLtyil5jA==
+"@manypkg/cli@^0.18.0":
+  version "0.18.0"
+  resolved "https://registry.yarnpkg.com/@manypkg/cli/-/cli-0.18.0.tgz#2b40d5aa7f88d43142e041de8fc8d7e44aa28a1d"
+  integrity sha512-dlgraFHLEnCJ8hrGULCOLZuiJWSzaWDgq0tq+O7pe37K37S2Mjrb7x/BcNHj8caZLf3kiPC0KW0iSMo8UyvpbQ==
   dependencies:
     "@babel/runtime" "^7.5.5"
     "@manypkg/get-packages" "^1.1.1"
@@ -2191,7 +2191,6 @@
     find-up "^4.1.0"
     fs-extra "^8.1.0"
     get-workspaces "^0.6.0"
-    meow "^6.0.0"
     normalize-path "^3.0.0"
     p-limit "^2.2.1"
     package-json "^6.5.0"
