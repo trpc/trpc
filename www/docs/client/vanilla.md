@@ -5,7 +5,7 @@ sidebar_label: Create Vanilla Client
 slug: /vanilla
 ---
 
-The magic of tRPC is making _strongly typed_ API calls without relying on code generation. With fullstack TypeScript projects, you can directly _import types from the server into the client_! This is a vital part of how tRPC works.
+The magic of tRPC is making _strongly typed_ API calls without relying on code generation. With full-stack TypeScript projects, you can directly _import types from the server into the client_! This is a vital part of how tRPC works.
 
 Import the `AppRouter` type into your client from the file your root tRPC router is defined. This single type represents the type signature of your entire API.
 
