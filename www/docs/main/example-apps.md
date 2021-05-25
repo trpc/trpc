@@ -5,11 +5,9 @@ sidebar_label: Example Apps
 slug: /example-apps
 ---
 
-
 You can clone trpc and play with local examples, or play with them in the CodeSandbox link below.
 
 Here's some example apps:
-
 
 <table>
   <thead>
