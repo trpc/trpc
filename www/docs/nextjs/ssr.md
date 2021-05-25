@@ -1,7 +1,7 @@
 ---
 id: ssr
 title: Server-Side Rendering
-sidebar_label: Server-Side Rendering
+sidebar_label: Server-Side Rendering (SSR)
 slug: /ssr
 ---
 

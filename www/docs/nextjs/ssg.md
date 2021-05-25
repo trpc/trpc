@@ -1,7 +1,7 @@
 ---
 id: ssg
 title: Static Site Generation
-sidebar_label: Static Site Generation
+sidebar_label: Static Site Generation (SSG)
 slug: /ssg
 ---
 
