@@ -3,7 +3,7 @@ Bare-minimum example.
 - Standalone HTTP-server
 - Vanilla `TRPCClient` in node
 
-Try in CodeSandbox: [https://githubbox.com/trpc/trpc/tree/main/examples/standalone-server](https://githubbox.com/trpc/trpc/tree/main/examples/standalone-server?file=/src/client.ts).
+Try in CodeSandbox: [https://githubbox.com/trpc/trpc/tree/main/examples/standalone-server](https://codesandbox.io/s/github/trpc/trpc/tree/main/examples/standalone-server?file=/src/client.ts).
 
 ---
 

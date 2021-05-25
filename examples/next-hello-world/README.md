@@ -1,7 +1,7 @@
 ## Hello Next
 
 Live at [hello-world.trpc.io](https://hello-world.trpc.io)
-Try in CodeSandbox: [https://githubbox.com/trpc/trpc/tree/main/examples/next-hello-world](https://githubbox.com/trpc/trpc/tree/main/examples/next-hello-world)
+Try in CodeSandbox: [https://githubbox.com/trpc/trpc/tree/main/examples/next-hello-world](https://codesandbox.io/s/github/trpc/trpc/tree/main/examples/next-hello-world)
 
 ---
 

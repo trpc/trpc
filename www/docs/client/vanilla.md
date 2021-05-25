@@ -14,7 +14,7 @@ Import the `AppRouter` type into your client from the file your root tRPC router
 import type { AppRouter } from '../path/to/server/trpc.ts';
 ```
 
-The `import type` keywords let you import from _any TypeScript file_ on your filesystem. Plus `import type` can only import types, NOT code. So there's no danger of accidentally importing server-side code into your client. All calls to `import type` are _always fully erased_ from your compiled JavaScript bundle ([source](https://www.typescriptlang.org/docs/handbook/release-notes/typescript-3-8.html#type-only-imports-and-export)).
+The `import type` keywords let you import from _any TypeScript file_ on your filesystem. Plus `import type` can only import types, **NOT** code. So there's no danger of accidentally importing server-side code into your client. All calls to `import type` are _always fully erased_ from your compiled JavaScript bundle ([source](https://www.typescriptlang.org/docs/handbook/release-notes/typescript-3-8.html#type-only-imports-and-export)).
 
 ### Initialize a tRPC client
 
@@ -39,3 +39,5 @@ const bilbo = await client.query('getUser', 'id_bilbo');
 const frodo = await client.mutation('createUser', { name: 'Frodo' });
 // => { id: 'id_frodo', name: 'Frodo' };
 ```
+
+
