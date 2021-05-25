@@ -26,7 +26,7 @@ For generating a powerful set of React hooks directly from your tRPC client. Pow
 
 `npm install @trpc/next`
 
-A set of utilies for integrating tRPC with Next.js
+A set of utilies for integrating tRPC with [Next.js](https://nextjs.org/).
 
 ### Sample apps
 

@@ -53,15 +53,22 @@ If your router file starts getting too big, split your router into several subro
 tRPC includes an adapter for Express.js out of the box. This adapter lets you convert your tRPC router into an Express.js middleware.
 
 ```ts
-import { createExpressMiddleware } from '@trpc/server/adapters/express';
+import * as trpcExpress from '@trpc/server/adapters/express';
 
 const appRouter = /* ... */;
 
 const app = express();
 
+// created for each request
+const createContext = ({
+  req,
+  res,
+}: trpcExpress.CreateExpressContextOptions) => ({}) // no context
+type Context = trpc.inferAsyncReturnType<typeof createContext>;
+
 app.use(
   '/trpc',
-  createExpressMiddleware({
+  trpcExpress.createExpressMiddleware({
     router: appRouter,
     createContext: () => null, // no context
   })
