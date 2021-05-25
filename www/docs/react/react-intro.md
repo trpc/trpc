@@ -12,6 +12,8 @@ slug: /react
 
 ## Add tRPC to existing React project
 
+> tRPC works fine with Create React App!
+
 ### 1. Install tRPC dependencies
 
 ```bash
