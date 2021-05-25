@@ -11103,9 +11103,9 @@ stacktrace-parser@0.1.10:
     type-fest "^0.7.1"
 
 start-server-and-test@^1.12.0:
-  version "1.12.2"
-  resolved "https://registry.yarnpkg.com/start-server-and-test/-/start-server-and-test-1.12.2.tgz#13afe6f22d7347e0fd47a739cdd085786fced14b"
-  integrity sha512-rjJF8N/8XVukEYR44Ehm8LAZIDjWCQKXX54W8UQ8pXz3yDKPCdqTqJy7VYnCAknPw65cmLfPxz8M2+K/zCAvVQ==
+  version "1.12.3"
+  resolved "https://registry.yarnpkg.com/start-server-and-test/-/start-server-and-test-1.12.3.tgz#e2d91811f1952f8dbbaa404a92841fec74407790"
+  integrity sha512-YNL/QdZ8gLYoAcvAFo/S2J4W0WS6Bi8HX/qZ74bMhZXEAMykvg7/8+vs0cPulhGBfoD4NGdbeEuV5wyhi1tlig==
   dependencies:
     bluebird "3.7.2"
     check-more-types "2.24.0"
