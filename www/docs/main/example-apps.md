@@ -30,8 +30,8 @@ Here's some example apps:
       <td><a href="https://hello-world.trpc.io">hello-world.trpc.io</a></td>
       <td>
         <ul>
-          <li><a href="https://githubbox.com/trpc/trpc/tree/main/examples/next-hello-world">CodeSandbox</a></li>
-          <li><a href="https://codesandbox.io/s/github/trpc/trpc/tree/main/examples/next-hello-world?file=/pages/index.tsx">Source</a></li>
+          <li><a href="https://codesandbox.io/s/github/trpc/trpc/tree/main/examples/next-hello-world?file=/pages/index.tsx">CodeSandbox</a></li>
+          <li><a href="https://github.com/trpc/trpc/tree/main/examples/next-hello-world">Source</a></li>
         </ul>
       </td>
     </tr>
@@ -47,8 +47,8 @@ Here's some example apps:
       <td><a href="https://todomvc.trpc.io">todomvc.trpc.io</a></td>
       <td>
         <ul>
-          <li><a href="https://githubbox.com/trpc/trpc/tree/main/examples/next-prisma-todomvc">CodeSandbox</a></li>
-          <li><a href="https://codesandbox.io/s/github/trpc/trpc/tree/main/examples/next-prisma-todomvc?file=/pages/%5Bfilter%5D.tsx">Source</a></li>
+          <li><a href="https://codesandbox.io/s/github/trpc/trpc/tree/main/examples/next-prisma-todomvc?file=/pages/%5Bfilter%5D.tsx">CodeSandbox</a></li>
+          <li><a href="https://github.com/trpc/trpc/tree/main/examples/next-prisma-todomvc">Source</a></li>
         </ul>
       </td>
     </tr>
