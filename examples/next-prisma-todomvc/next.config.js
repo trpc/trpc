@@ -6,6 +6,6 @@ module.exports = {
         destination: '/all',
         permanent: false,
       },
-    ]
+    ];
   },
-}
+};

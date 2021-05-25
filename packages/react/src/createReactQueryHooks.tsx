@@ -58,7 +58,7 @@ interface UseTRPCQueryOptions<TInput, TError, TOutput>
 interface UseTRPCInfiniteQueryOptions<
   TInput = unknown,
   TError = unknown,
-  TOutput = TInput
+  TOutput = TInput,
 > extends UseInfiniteQueryOptions<TInput, TError, TOutput, TOutput, QueryKey>,
     TRPCUseQueryBaseOptions {}
 
@@ -188,7 +188,7 @@ export function createReactQueryHooks<TRouter extends AnyRouter>() {
   function _useQuery<
     TPath extends keyof TQueries & string,
     TProcedure extends TQueries[TPath],
-    TOutput extends inferProcedureOutput<TProcedure>
+    TOutput extends inferProcedureOutput<TProcedure>,
   >(
     pathAndArgs: [path: TPath, ...args: inferHandlerInput<TProcedure>],
     opts: UseTRPCQueryOptions<
@@ -214,7 +214,7 @@ export function createReactQueryHooks<TRouter extends AnyRouter>() {
   function _useMutation<
     TPath extends keyof TMutations & string,
     TInput extends inferProcedureInput<TMutations[TPath]>,
-    TOutput extends inferProcedureOutput<TMutations[TPath]>
+    TOutput extends inferProcedureOutput<TMutations[TPath]>,
   >(path: TPath, opts?: UseMutationOptions<TOutput, TError, TInput>) {
     const client = useContext().client;
     const hook = useMutation<TOutput, TError, TInput>(
@@ -234,7 +234,7 @@ export function createReactQueryHooks<TRouter extends AnyRouter>() {
   function useSubscription<
     TPath extends keyof TSubscriptions & string,
     TInput extends inferProcedureInput<TSubscriptions[TPath]>,
-    TOutput extends inferSubscriptionOutput<TRouter, TPath>
+    TOutput extends inferSubscriptionOutput<TRouter, TPath>,
   >(
     pathAndArgs: [TPath, TInput],
     opts?: {
@@ -285,7 +285,7 @@ export function createReactQueryHooks<TRouter extends AnyRouter>() {
     TInput extends inferProcedureInput<TSubscriptions[TPath]> & { cursor: any },
     TOutput extends (inferSubscriptionOutput<TRouter, TPath> &
       OutputWithCursor<TData>)[],
-    TData
+    TData,
   >(
     pathAndArgs: [TPath, Omit<TInput, 'cursor'>],
     opts?: Omit<UseQueryOptions<TInput, TError, TOutput>, 'select'>,
@@ -330,7 +330,7 @@ export function createReactQueryHooks<TRouter extends AnyRouter>() {
     TPath extends keyof TQueries & string,
     TInput extends inferProcedureInput<TQueries[TPath]> & { cursor: TCursor },
     TOutput extends inferProcedureOutput<TQueries[TPath]>,
-    TCursor extends any
+    TCursor extends any,
   >(
     pathAndArgs: [TPath, Omit<TInput, 'cursor'>],
     // FIXME: this typing is wrong but it works

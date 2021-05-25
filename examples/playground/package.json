@@ -1,6 +1,6 @@
 {
   "name": "@examples/playground",
-  "version": "6.3.0",
+  "version": "6.3.1",
   "private": true,
   "scripts": {
     "dev:server": "nodemon -e ts -w . -x ts-node ./src/server.ts",
@@ -12,9 +12,9 @@
     "test-start": "start-server-and-test 'node dist/server' 2021 'node dist/client'"
   },
   "dependencies": {
-    "@trpc/client": "^6.3.0",
-    "@trpc/react": "^6.3.0",
-    "@trpc/server": "^6.3.0",
+    "@trpc/client": "^6.3.1",
+    "@trpc/react": "^6.3.1",
+    "@trpc/server": "^6.3.1",
     "@types/node-fetch": "^2.5.8",
     "abort-controller": "^3.0.0",
     "body-parser": "^1.19.0",
@@ -33,7 +33,7 @@
     "nodemon": "^2.0.7",
     "npm-run-all": "^4.1.5",
     "start-server-and-test": "^1.12.0",
-    "ts-node": "^9.1.1",
+    "ts-node": "^10.0.0",
     "wait-on": "^5.2.1"
   },
   "publishConfig": {

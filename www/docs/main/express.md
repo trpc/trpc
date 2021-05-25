@@ -22,7 +22,7 @@ import * as trpc from '@trpc/server';
 import * as trpcNext from '@trpc/server/adapters/next';
 import { z } from 'zod';
 
-export const appRouter = trpc
+const appRouter = trpc
   .router()
   .query('getUser', {
     input: z.string(),
@@ -46,11 +46,11 @@ export const appRouter = trpc
 export type AppRouter = typeof appRouter;
 ```
 
-If your router file starts getting too big, split your router into several subrouters each implemented in its own file. The [merge them](/docs/merging-routers) into a single root `appRouter`.
+If your router file starts getting too big, split your router into several subrouters each implemented in its own file. Then [merge them](/docs/merging-routers) into a single root `appRouter`.
 
 ## Express.js adapter
 
-tRPC includes adapters for Express.js out of the box. This adapter lets you convert your tRPC router into an Express.js middleware.
+tRPC includes an adapter for Express.js out of the box. This adapter lets you convert your tRPC router into an Express.js middleware.
 
 ```ts
 import { createExpressMiddleware } from '@trpc/server/adapters/express';
@@ -62,7 +62,7 @@ const app = express();
 app.use(
   '/trpc',
   createExpressMiddleware({
-    router: AppRouter,
+    router: appRouter,
     createContext: () => null, // no context
   })
 );
