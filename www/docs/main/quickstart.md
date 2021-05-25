@@ -8,9 +8,8 @@ author_url: https://twitter.com/colinhacks
 author_image_url: https://avatars.githubusercontent.com/u/3084745?v=4
 ---
 
-
 :::tip
-If you prefer to jump into some complete example projects, check out [the Examples Apps](example-apps.md).
+If you prefer to jump into some complete example projects, check out [the Example Apps](example-apps.md).
 :::
 
 ## Installation
@@ -27,7 +26,7 @@ For making typesafe API calls from your client. Install in your client codebase.
 
 `npm install @trpc/react`
 
-For generating a powerful set of React hooks directly from your tRPC client. Powered by [react-query](https://react-query.tanstack.com/).
+For generating a powerful set of React hooks for querying your tRPC API. Recommended for non-Next.js React projects. Powered by [react-query](https://react-query.tanstack.com/).
 
 `npm install @trpc/next`
 
@@ -36,16 +35,16 @@ A set of utilies for integrating tRPC with [Next.js](https://nextjs.org/).
 ### Installation Snippets
 
 **npm:**
+
 ```bash
-npm install @trpc/server @trpc/rcient @trpc/react @trpc/next
+npm install @trpc/server @trpc/client @trpc/react @trpc/next
 ```
 
 **yarn:**
 
 ```bash
-yarn add @trpc/server @trpc/rcient @trpc/react @trpc/next
+yarn add @trpc/server @trpc/client @trpc/react @trpc/next
 ```
-
 
 ## Defining a router
 

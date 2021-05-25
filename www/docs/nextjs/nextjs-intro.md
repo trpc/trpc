@@ -5,6 +5,9 @@ sidebar_label: Usage with Next.js
 slug: /nextjs
 ---
 
+:::info
+If you're using tRPC in a new project, consider using one of the example projects as a starting point: [tRPC Example Projects](/docs/example-apps)
+:::
 
 tRPC and Next.js are a match made in heaven! Next.js makes it easy for you to build your client and server together in one codebase. This makes it easy to share types between them.
 
@@ -38,15 +41,7 @@ Recommended but not enforced file structure. This is what you get when starting 
 └── [...]
 ```
 
-## Add tRPC to existing Next.js project
-
-
-:::info
-If you want to use tRPC with a new project, it's easier to start off with one of the example project - see the [Quickstart secion](../main/quickstart.md)
-:::
-
-
-### 1. Install deps
+## 1. Install deps
 
 ```bash
 yarn add @trpc/client @trpc/server @trpc/react @trpc/next zod react-query
@@ -55,7 +50,7 @@ yarn add @trpc/client @trpc/server @trpc/react @trpc/next zod react-query
 - React Query: `@trpc/react` provides a thin wrapper over [react-query](https://react-query.tanstack.com/overview). It is required as a peer dependency.
 - Zod: most examples use Zod for input validation, though it isn't required. You can use a validation library of your choice (Yup, io-ts, etc). In fact, any object containing a `parse` or `validateSync` method will work.
 
-### 2. Create a tRPC router
+## 2. Create a tRPC router
 
 Implement your tRPC router in `./pages/api/trpc/[trpc].ts`. If you need to split your router into several subrouters, implement them in a top-level `trpc` directory in your project root, then import them into `./pages/api/trpc/[trpc].ts` and [merge them](/docs/merging-routers) into a single root `appRouter`.
 
@@ -91,7 +86,7 @@ export default trpcNext.createNextApiHandler({
 
 </details>
 
-### 3. Create tRPC hooks
+## 3. Create tRPC hooks
 
 Create a set of strongly-typed hooks using your API's type signature.
 
@@ -104,7 +99,7 @@ export const trpc = createReactQueryHooks<AppRouter>();
 // => { useQuery: ..., useMutation: ...}
 ```
 
-### 4. Configure `_app.tsx`
+## 4. Configure `_app.tsx`
 
 The `createReactQueryHooks` function expects certain parameters to be passed via the Context API. To set these parameters, create a custom `_app.tsx` using the `withTRPC` higher-order component:
 
@@ -152,7 +147,7 @@ The second argument to `withTRPC` is a configuration object that currently only 
 
 - `ssr: boolean`: whether tRPC should await queries when server-side rendering a page. Defaults to `false`.
 
-### 5. Make API requests
+## 5. Make API requests
 
 ```tsx
 import { trpc } from '../utils/trpc';
