@@ -24,14 +24,14 @@ Recommended but not enforced file structure. This is what you get when starting 
 │   │   └── trpc
 │   │       └── [trpc].ts # <-- tRPC response handler
 │   └── [...]
-├── routers # <-- implement sub-routers here
-│   ├── users.ts
-│   ├── posts.ts
-│   ├── [...]
 ├── prisma # <-- if prisma is added
 │   ├── migrations
 │   │   └── [...]
 │   └── schema.prisma
+├── routers # <-- implement sub-routers here
+│   ├── users.ts
+│   ├── posts.ts
+│   └── [...]
 ├── public
 │   └── [...]
 ├── test  # <-- (optional) E2E-test helpers
