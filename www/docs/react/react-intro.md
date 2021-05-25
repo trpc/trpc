@@ -5,9 +5,14 @@ sidebar_label: Usage with React
 slug: /react
 ---
 
-> If you're using Next.js, read the [Usage with Next.js](/docs/nextjs) guide instead.
+:::info
+- If you're using Next.js, read the [Usage with Next.js](/docs/nextjs) guide instead.
+- In order to infer types from your Node.js backend you should have the frontend & backend in the same monorepo.
+:::
 
-## Install tRPC dependencies
+## Add tRPC to existing React project
+
+### 1. Install tRPC dependencies
 
 ```bash
 yarn add @trpc/client @trpc/server @trpc/react react-query zod
@@ -16,11 +21,11 @@ yarn add @trpc/client @trpc/server @trpc/react react-query zod
 - React Query: `@trpc/react` provides a thin wrapper over [react-query](https://react-query.tanstack.com/overview). It is required as a peer dependency.
 - Zod: most examples use Zod for input validation, though it isn't required. You can use a validation library of your choice (Yup, io-ts, etc). In fact, any object containing a `parse` or `validateSync` method will work.
 
-## Implement your `appRouter`
+### 2. Implement your `appRouter`
 
 Follow the [Quickstart](/docs/quickstart) and read the [`@trpc/server` docs](/docs/procedures) for guidance on this. Once you have your API implemented and listening via HTTP, continue to the next step.
 
-## Create tRPC hooks
+### 3. Create tRPC hooks
 
 Create a set of strongly-typed React hooks from your `AppRouter` type signature with `createReactQueryHooks`.
 
@@ -33,7 +38,7 @@ export const trpc = createReactQueryHooks<AppRouter>();
 // => { useQuery: ..., useMutation: ...}
 ```
 
-## Add tRPC providers
+### 4. Add tRPC providers
 
 In your `App.tsx`
 
@@ -67,7 +72,7 @@ function App() {
 }
 ```
 
-## Fetch data
+### 4. Fetch data
 
 ```tsx
 import { trpc } from '../utils/trpc';
