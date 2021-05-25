@@ -11,28 +11,7 @@ The code here is taken from [`./examples/next-hello-world`](https://github.com/t
 Reference project: https://github.com/trpc/trpc/tree/main/examples/next-prisma-todomvc
 :::
 
-Static site generation requires executing tRPC queries inside
-
-<!-- ### Configure `_app.tsx` for SSG
-
-There's no need to
-
-```tsx
-import { withTRPC } from '@trpc/next';
-import { AppType } from 'next/dist/next-server/lib/utils';
-import { trpcClientOptions } from '../utils/trpc';
-
-const MyApp: AppType = ({ Component, pageProps }) => {
-  return <Component {...pageProps} />;
-};
-
-export default withTRPC(
-  () => {
-    return { url: 'http://localhost:5000/trpc' };
-  },
-  { ssr: false },
-)(MyApp);
-``` -->
+Static site generation requires executing tRPC queries inside `getStaticProps` on each page.
 
 ## Fetch data in `getStaticProps`
 
