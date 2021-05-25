@@ -27,7 +27,7 @@ Create a set of strongly-typed React hooks from your `AppRouter` type signature 
 ```tsx
 // utils/trpc.ts
 import { createReactQueryHooks } from '@trpc/react';
-import type { AppRouter } from '../server/trpc';
+import type { AppRouter } from '../path/to/router.ts';
 
 export const trpc = createReactQueryHooks<AppRouter>();
 // => { useQuery: ..., useMutation: ...}

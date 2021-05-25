@@ -56,7 +56,12 @@ First we define a router somewhere in our server codebase:
 ```ts
 // server/index.ts
 import * as trpc from '@trpc/server';
-export const AppRouter = trpc.router();
+const appRouter = trpc.router();
+
+// only export *type signature* of router!
+// to avoid accidentally importing your API
+// into client-side code
+export type AppRouter = typeof appRouter;
 ```
 
 ### Add a query endpoint
@@ -73,7 +78,7 @@ Use the `.query()` method to add a endpoint endpoint to the router. Arguments:
 // server/index.ts
 import * as trpc from '@trpc/server';
 
-export const AppRouter = trpc.router().query('getUser', {
+const appRouter = trpc.router().query('getUser', {
   input: (val: unknown) => {
     if (typeof val === 'string') return val;
     throw new Error(`Invalid input: ${typeof val}`);
@@ -83,6 +88,8 @@ export const AppRouter = trpc.router().query('getUser', {
     return { id: req.input, name: 'Bilbo' };
   },
 });
+
+export type AppRouter = typeof appRouter;
 ```
 
 ### Add a mutation endpoint
@@ -98,7 +105,7 @@ createUser(payload: {name: string}) => {id: string; name: string};
 import * as trpc from '@trpc/server';
 import { z } from 'zod';
 
-export const AppRouter = trpc
+const appRouter = trpc
   .router()
   .query('getUser', {
     input: (val: unknown) => {
@@ -120,6 +127,8 @@ export const AppRouter = trpc
       });
     },
   });
+
+export type AppRouter = typeof appRouter;
 ```
 
 ## Next steps

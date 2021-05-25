@@ -19,11 +19,10 @@ Recommended but not enforced file structure. This is what you get when starting 
 │   ├── api
 │   │   └── trpc
 │   │       ├── [trpc].ts # <-- tRPC response handler
-│   │       └── [...] # <-- potential sub-routers
 │   └── [...]
-├── trpc # <-- (optional) if prisma is added
-│   ├── xRouter.ts # <-- implement subrouters here
-│   ├── yRouter.ts
+├── routers # <-- implement subrouters here
+│   ├── userRouter.ts
+│   ├── [...]
 ├── prisma # <-- if prisma is added
 │   ├── migrations
 │   │   └── [...]
