@@ -19,10 +19,11 @@ module.exports = {
       label: '@trpc/server',
       collapsed: false,
       items: [
-        'server/procedures',
+        'server/router',
         'server/merging-routers',
         'server/context',
         'server/middlewares',
+        'server/authorization',
         'server/error-handling',
         'server/error-formatting',
         'server/data-transformers',
