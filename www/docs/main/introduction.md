@@ -30,17 +30,17 @@ author_image_url: https://avatars1.githubusercontent.com/u/459267?s=460&v=4
 
 ## Introduction
 
-tRPC is a framework for building **typesafe** APIs with TypeScript — no GraphQL or code generation required.
+tRPC is a framework for building **typesafe** APIs with TypeScript — and there's no code generation required.
 
 As TypeScript and static typing increasingly becomes a best practice in web programming, the API presents a major pain point. We need better ways to **statically type** our API endpoints and **share those types** between our client and server.
 
-### The limitations of GraphQL
+### An alternative to traditional REST or GraphQL
 
-Currently GraphQL is the dominant way to implement typesafe APIs in TypeScript. Because GraphQL is designed as a language-agnostic specification for implementing APIs, it can't take full advantage of the power of a language like TypeScript. If your project is built with full-stack TypeScript, you can share types **directly** between your client and server, without relying on GraphQL or codegeneration.
+Currently GraphQL is the dominant way to implement typesafe APIs in TypeScript (and it's amazing!). Because GraphQL is designed as a language-agnostic specification for implementing APIs, it can't take full advantage of the power of a language like TypeScript. If your project is built with full-stack TypeScript, you can share types **directly** between your client and server, without relying on GraphQL or code generation.
 
 ## Introducing tRPC
 
-We set out to build a better library for building typesafe APIs that leverages the full power of modern TypeScript. Introducing tRPC! Featuring:
+We set out to build a simpler library for building typesafe APIs that leverages the full power of modern TypeScript. Introducing tRPC! Featuring:
 
 - 🧙‍♂️&nbsp; Full static typesafety & autocompletion on the client
 - 🐎&nbsp; Snappy DX. No code generation, run-time bloat, or build pipeline.
@@ -48,5 +48,5 @@ We set out to build a better library for building typesafe APIs that leverages t
 - 🐻&nbsp; Easy to add to your existing brownfield project.
 - 🔋&nbsp; Batteries included. React-library + Next.js/Express adapters. _(But tRPC is not tied to React - [reach out](https://twitter.com/alexdotjs) if you want to make a Svelte/Vue/... lib)_
 - 🥃&nbsp; Simple to use APIs for queries & mutations + experimental subscriptions support.
-- 👀&nbsp; Quite a few examples in the [./examples](https://github.com/trpc/trpc/tree/main/examples)-folder
+- 👀&nbsp; Quite a [Example Apps](example-apps.md) that you can use for reference or as a starting point.
 - ✅&nbsp; Well-tested & running in production.
