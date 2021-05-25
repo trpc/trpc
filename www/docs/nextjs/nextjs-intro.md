@@ -20,8 +20,9 @@ Recommended but not enforced file structure. This is what you get when starting 
 │   │   └── trpc
 │   │       ├── [trpc].ts # <-- tRPC response handler
 │   └── [...]
-├── routers # <-- implement subrouters here
-│   ├── userRouter.ts
+├── routers # <-- implement sub-routers here
+│   ├── users.ts
+│   ├── posts.ts
 │   ├── [...]
 ├── prisma # <-- if prisma is added
 │   ├── migrations
