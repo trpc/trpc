@@ -24,7 +24,7 @@ Here's some example apps:
         <br/><br/>
         <details>
           <summary>Quick start with <code>create-next-app</code></summary>
-          <code>npx create-next-app --example https://github.com/trpc/trpc --example-path examples/next-hello-world my-app</code>
+          <code>npx create-next-app --example https://github.com/trpc/trpc --example-path examples/next-hello-world trpc-hello-world</code>
         </details>
       </td>
       <td><a href="https://hello-world.trpc.io">hello-world.trpc.io</a></td>
@@ -41,7 +41,7 @@ Here's some example apps:
         <br/><br/>
         <details>
           <summary>Quick start with <code>create-next-app</code></summary>
-          <code>npx create-next-app --example https://github.com/trpc/trpc --example-path examples/next-prisma-todomvc my-app</code>
+          <code>npx create-next-app --example https://github.com/trpc/trpc --example-path examples/next-prisma-todomvc trpc-todo</code>
         </details>
       </td>
       <td><a href="https://todomvc.trpc.io">todomvc.trpc.io</a></td>
@@ -60,7 +60,7 @@ Here's some example apps:
         <br/><br/>
         <details>
           <summary>Quick start with <code>create-next-app</code></summary>
-          <code>npx create-next-app --example https://github.com/trpc/trpc --example-path examples/next-ssg-chat my-app</code>
+          <code>npx create-next-app --example https://github.com/trpc/trpc --example-path examples/next-ssg-chat trpc-chat</code>
         </details>
       </td>
       <td><a href="https://chat.trpc.io">chat.trpc.io</a></td>
