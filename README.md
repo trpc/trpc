@@ -22,7 +22,7 @@
 
 # Intro
 
-tRPC is a framework for building strongly typed RPC APIs with TypeScript. Alternatively, you can think of it as a way to avoid APIs altogether.
+tRPC is a framework for building strongly typed RPC APIs with TypeScript. Alternatively, you can think of it as a way to avoid APIs altogether. 
 
 - 🧙‍♂️&nbsp; Automatic type-safety & autocompletion inferred from your API-paths, their input data, outputs, & errors.
 - 🐎&nbsp; Snappy DX. No code generation, run-time bloat, or build pipeline.
@@ -45,9 +45,11 @@ tRPC is a framework for building strongly typed RPC APIs with TypeScript. Altern
   - [Testing](#testing)
 - [Contributors ✨](#contributors-)
 
+
 # Usage
 
-> **👉 See documentation on [trpc.io](https://trpc.io/docs). 👈**
+> **👉  See documentation on [trpc.io](https://trpc.io/docs). 👈**
+
 
 **Quick start:**
 
@@ -151,6 +153,7 @@ yarn
 
 ## Hacking around with it
 
+
 In one terminal, will run `preconstruct watch` in parallel which builds all `packages/*` on change:
 
 ```bash
@@ -167,9 +170,10 @@ yarn test --watch
 
 Testing is currently coalesced in [./packages/server/test](./packages/server/test) - we import the different libs from here, this makes it easier for us to do integration testing + getting test coverage on the whole codebase.
 
-> [![codecov](https://codecov.io/gh/trpc/trpc/branch/main/graph/badge.svg?token=KPPS918B0G)](https://codecov.io/gh/trpc/trpc)
->
+> [![codecov](https://codecov.io/gh/trpc/trpc/branch/main/graph/badge.svg?token=KPPS918B0G)](https://codecov.io/gh/trpc/trpc) 
+> 
 > Some things regarding subscriptions is excluded in the coverage as it's an experimental feature
+
 
 # Contributors ✨
 
@@ -198,6 +202,8 @@ Original [`0.x`](https://github.com/trpc/trpc/tree/v0.x)-version was created by 
 
 <!-- ALL-CONTRIBUTORS-LIST:END -->
 
+
+
 ---
 
-[![Powered by Vercel](./images/powered-by-vercel.svg 'Powered by Vercel')](https://vercel.com/?utm_source=trpc&utm_campaign=oss)
+[![Powered by Vercel](./images/powered-by-vercel.svg "Powered by Vercel")](https://vercel.com/?utm_source=trpc&utm_campaign=oss)
