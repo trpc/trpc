@@ -36,7 +36,9 @@ As TypeScript and static typing increasingly becomes a best practice in web prog
 
 ### An alternative to traditional REST or GraphQL
 
-Currently GraphQL is the dominant way to implement typesafe APIs in TypeScript (and it's amazing!). Because GraphQL is designed as a language-agnostic specification for implementing APIs, it can't take full advantage of the power of a language like TypeScript. If your project is built with full-stack TypeScript, you can share types **directly** between your client and server, without relying on GraphQL or code generation.
+Currently GraphQL is the dominant way to implement typesafe APIs in TypeScript (and it's amazing!). Since GraphQL is designed as a language-agnostic specification for implementing APIs, it doesn't take full advantage of the power of a language like TypeScript. 
+
+If your project is built with full-stack TypeScript, you can share types **directly** between your client and server, without relying on code generation.
 
 ## Introducing tRPC
 
