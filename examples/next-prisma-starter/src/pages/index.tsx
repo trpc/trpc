@@ -1,9 +1,11 @@
 import Head from 'next/head';
 import { ReactQueryDevtools } from 'react-query/devtools';
-// import { inferQueryOutput } from '../utils/trpc';
+import { trpc } from '../utils/trpc';
+// import { inferQueryOutput } from 'utils/trpc';
 // type Task = inferQueryOutput<'todos.all'>[number];
 
 export default function IndexPage() {
+  const todosQuery = trpc;
   return (
     <>
       <Head>

@@ -1,7 +1,10 @@
+/**
+ * This file contains the tRPC http response handler and context creation for Next.js
+ */
 import { PrismaClient } from '@prisma/client';
 import * as trpc from '@trpc/server';
 import * as trpcNext from '@trpc/server/adapters/next';
-import { todosRouter } from '../../../routers/todos';
+import { todosRouter } from 'routers/todos';
 
 const prisma = new PrismaClient();
 
@@ -32,6 +35,7 @@ export function createRouter() {
  * Create your application's root router
  * If you want to use SSG, you need export this
  * @link https://trpc.io/docs/ssg
+ * @link https://trpc.io/docs/router
  */
 const appRouter = createRouter()
   /**

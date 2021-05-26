@@ -9,7 +9,7 @@ const MyApp: AppType = ({ Component, pageProps }) => {
 export default withTRPC(
   () => {
     /**
-     * If you want to use SSR, you need to return the server's full URL
+     * If you want to use SSR, you need to use the server's full URL
      * @link https://trpc.io/docs/ssr
      */
     return {

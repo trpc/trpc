@@ -4,7 +4,7 @@
  */
 
 import { z } from 'zod';
-import { createRouter } from '../pages/api/trpc/[trpc]';
+import { createRouter } from 'pages/api/trpc/[trpc]';
 
 export const todosRouter = createRouter()
   // create

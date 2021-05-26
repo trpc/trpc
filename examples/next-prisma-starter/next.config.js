@@ -1,11 +1,4 @@
-module.exports = {
-  async redirects() {
-    return [
-      {
-        source: '/',
-        destination: '/all',
-        permanent: false,
-      },
-    ];
-  },
-};
+/**
+ * @link https://nextjs.org/docs/api-reference/next.config.js/introduction
+ */
+module.exports = {};
