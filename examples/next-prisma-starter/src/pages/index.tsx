@@ -1,3 +1,4 @@
+import { GetStaticPropsContext } from 'next';
 import Head from 'next/head';
 import { ReactQueryDevtools } from 'react-query/devtools';
 import { trpc } from '../utils/trpc';
@@ -17,12 +18,9 @@ export default function IndexPage() {
       </Head>
       <h1>Welcome to your tRPC starter!</h1>
       <p>
-        <a href="https://trpc.io/docs">
-          Check the <code>@trpc/react</code> or <code>@trpc/next</code> docs
-          whenever you get stuck
-        </a>
-        , or ping{' '}
-        <a href="https://twitter.com/alexdotjs">@alexdotjs on Twitter</a>.
+        Check <a href="https://trpc.io/docs">the docs</a> whenever you get
+        stuck, or ping <a href="https://twitter.com/alexdotjs">@alexdotjs</a> on
+        Twitter.
       </p>
       <h2>
         Posts
@@ -85,3 +83,30 @@ export default function IndexPage() {
     </>
   );
 }
+
+/**
+ * If you want to statically render this page
+ * - Export `appRouter` & `createContext` from [trpc].ts
+ * - Make the `opts` object optional on `createContext()`
+ *
+ * @link https://trpc.io/docs/ssg
+ */
+// export const getStaticProps = async (
+//   context: GetStaticPropsContext<{ filter: string }>,
+// ) => {
+//   const ssg = createSSGHelpers({
+//     router: appRouter,
+//     ctx: await createContext(),
+//   });
+
+//   await ssg.fetchQuery('todos.all');
+
+//   // console.log('state', ssr.dehydrate());
+//   return {
+//     props: {
+//       trpcState: ssg.dehydrate(),
+//       filter: context.params?.filter ?? 'all',
+//     },
+//     revalidate: 1,
+//   };
+// };
