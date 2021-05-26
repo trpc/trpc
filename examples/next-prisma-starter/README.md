@@ -27,8 +27,6 @@ How to switch to postgres
 - Remove migrations `rm -rf ./prisma/migrations`
 - Update `./prisma/schema.prisma`
 
-- This project contains both Postgres & SQLite in able for us to easily showcase it in both CodeSandbox and deploy on Vercel.
-
 ---
 
 Created by [@alexdotjs](https://twitter.com/alexdotjs).
