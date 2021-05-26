@@ -1,4 +1,3 @@
-import { GetStaticPropsContext } from 'next';
 import Head from 'next/head';
 import { ReactQueryDevtools } from 'react-query/devtools';
 import { trpc } from '../utils/trpc';
@@ -98,10 +97,9 @@ export default function IndexPage() {
 //     router: appRouter,
 //     ctx: await createContext(),
 //   });
-
-//   await ssg.fetchQuery('todos.all');
-
-//   // console.log('state', ssr.dehydrate());
+//
+//   await ssg.fetchQuery('posts.all');
+//
 //   return {
 //     props: {
 //       trpcState: ssg.dehydrate(),
