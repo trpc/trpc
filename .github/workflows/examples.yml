@@ -8,6 +8,7 @@ jobs:
         dir:
           [
             next-hello-world,
+            next-prisma-starter,
             next-prisma-todomvc,
             next-ssg-chat,
             playground,
