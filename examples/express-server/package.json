@@ -1,5 +1,5 @@
 {
-  "name": "@examples/playground",
+  "name": "@examples/express-server",
   "version": "6.3.1",
   "private": true,
   "scripts": {

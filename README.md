@@ -117,8 +117,8 @@ npx create-next-app --example https://github.com/trpc/trpc --example-path exampl
       <td><em>n/a</em></td>
       <td>
         <ul>
-          <li><a href="https://githubbox.com/trpc/trpc/tree/main/examples/playground">CodeSandbox</a></li>
-          <li><a href="https://github.com/trpc/trpc/tree/main/examples/playground">Source</a></li>
+          <li><a href="https://githubbox.com/trpc/trpc/tree/main/examples/express-server">CodeSandbox</a></li>
+          <li><a href="https://github.com/trpc/trpc/tree/main/examples/express-server">Source</a></li>
         </ul>
       </td>
     </tr>

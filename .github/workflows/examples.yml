@@ -7,10 +7,10 @@ jobs:
       matrix:
         dir:
           [
+            express-server,
+            next-chat,
             next-prisma-starter,
             next-prisma-todomvc,
-            next-chat,
-            playground,
             standalone-server,
           ]
         node: ['14.x']
