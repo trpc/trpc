@@ -5,12 +5,6 @@ sidebar_label: Server-Side Rendering (SSR)
 slug: /ssr
 ---
 
-The code here is taken from [`./examples/next-hello-world`](https://github.com/trpc/trpc/tree/main/examples/next-hello-world).
-
-:::info
-Reference project: https://github.com/trpc/trpc/tree/main/examples/next-hello-world
-:::
-
 ### Configure `_app.tsx` for SSR
 
 Server-side rendering comes with additional considerations. In order to execute queries properly during the server-side render step and customize caching behavior, we'll need to add some logic inside our `_app.tsx`:

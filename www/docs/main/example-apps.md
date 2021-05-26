@@ -37,23 +37,6 @@ Here's some example apps:
     </tr>
     <tr>
       <td>
-        Next.js example with mock database using SSR
-        <br/><br/>
-        <details>
-          <summary>Quick start with <code>create-next-app</code></summary>
-          <code>npx create-next-app --example https://github.com/trpc/trpc --example-path examples/next-hello-world trpc-hello-world</code>
-        </details>
-      </td>
-      <td><a href="https://hello-world.trpc.io">hello-world.trpc.io</a></td>
-      <td>
-        <ul>
-          <li><a href="https://codesandbox.io/s/github/trpc/trpc/tree/main/examples/next-hello-world?file=/pages/index.tsx">CodeSandbox</a></li>
-          <li><a href="https://github.com/trpc/trpc/tree/main/examples/next-hello-world">Source</a></li>
-        </ul>
-      </td>
-    </tr>
-    <tr>
-      <td>
         Next.js TodoMVC-example with SSG & Prisma.
         <br/><br/>
         <details>
@@ -77,13 +60,13 @@ Here's some example apps:
         <br/><br/>
         <details>
           <summary>Quick start with <code>create-next-app</code></summary>
-          <code>npx create-next-app --example https://github.com/trpc/trpc --example-path examples/next-ssg-chat trpc-chat</code>
+          <code>npx create-next-app --example https://github.com/trpc/trpc --example-path examples/next-chat trpc-chat</code>
         </details>
       </td>
       <td><a href="https://chat.trpc.io">chat.trpc.io</a></td>
       <td>
         <ul>
-          <li><a href="https://github.com/trpc/trpc/tree/main/examples/next-ssg-chat">Source</a></li>
+          <li><a href="https://github.com/trpc/trpc/tree/main/examples/next-chat">Source</a></li>
         </ul>
       </td>
     </tr>
@@ -102,8 +85,8 @@ Here's some example apps:
       <td><em>n/a</em></td>
       <td>
         <ul>
-          <li><a href="https://githubbox.com/trpc/trpc/tree/main/examples/playground">CodeSandbox</a></li>
-          <li><a href="https://github.com/trpc/trpc/tree/main/examples/playground">Source</a></li>
+          <li><a href="https://githubbox.com/trpc/trpc/tree/main/examples/express-server">CodeSandbox</a></li>
+          <li><a href="https://github.com/trpc/trpc/tree/main/examples/express-server">Source</a></li>
         </ul>
       </td>
     </tr>

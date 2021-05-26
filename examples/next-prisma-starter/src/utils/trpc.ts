@@ -5,7 +5,10 @@ import type { inferProcedureOutput } from '@trpc/server';
 // https://www.typescriptlang.org/docs/handbook/release-notes/typescript-3-8.html#type-only-imports-and-export
 import type { AppRouter } from 'pages/api/trpc/[trpc]';
 
-// create react query hooks for trpc
+/**
+ * A set of strongly-typed React hooks from your `AppRouter` type signature with `createReactQueryHooks`.
+ * @link https://trpc.io/docs/react#3-create-trpc-hooks
+ */
 export const trpc = createReactQueryHooks<AppRouter>();
 
 // export const transformer = superjson;

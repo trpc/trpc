@@ -55,7 +55,7 @@
     "prettier": "^2.3.0",
     "prisma": "^2.18.0",
     "ts-jest": "^26.5.3",
-    "typescript": "^4.2.3"
+    "typescript": "4.2.3"
   },
   "publishConfig": {
     "access": "restricted"
