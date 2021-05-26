@@ -16,6 +16,8 @@ yarn dev
 ```bash
 yarn dx # runs prisma studio + next
 yarn build # runs `prisma generate` + `prisma migrate` + `next build`
+yarn test-dev # runs e2e tests on dev
+yarn test-start # runs e2e tests on `next start` - build required before
 ```
 
 ## ℹ️ How to switch from SQLite to Postgres
