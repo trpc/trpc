@@ -3,7 +3,10 @@
   "version": "6.3.1",
   "private": true,
   "scripts": {
-    "build": "prisma generate && yarn migrate && next build",
+    "build:1-generate": "prisma generate",
+    "build:2-migrate": "prisma migrate deploy",
+    "build:3-build": "next build",
+    "build": "run-s build:*",
     "dev": "yarn dx:next",
     "dx:next": "yarn migrate-dev && yarn generate && next dev",
     "dx:studio": "yarn studio",
