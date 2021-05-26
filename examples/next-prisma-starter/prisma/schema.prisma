@@ -12,12 +12,12 @@ generator client {
   provider = "prisma-client-js"
 }
 
-model Task {
-  id        String  @id @default(uuid())
-  text      String
-  completed Boolean @default(value: "false")
+model Post {
+  id    String @id @default(uuid())
+  title String
+  text  String
 
-  // `Date`s requires superjson or similar to be added
+  // To return `Date`s intact through the API we need to add data transformers
   // https://trpc.io/docs/data-transformers
   // createdAt DateTime @unique @default(now())
   // updatedAt DateTime @unique @default(now())

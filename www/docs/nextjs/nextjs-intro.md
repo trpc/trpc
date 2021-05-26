@@ -10,6 +10,7 @@ tRPC and Next.js are a match made in heaven! Next.js makes it easy for you to bu
 
 tRPC includes dedicated tools to make the Next.js developer experience as seamless as possible.
 
+<!-- 
 ## Recommended file structure
 
 Recommended but not enforced file structure. This is what you get when starting from [the examples](../main/example-apps.md).
@@ -36,7 +37,7 @@ Recommended but not enforced file structure. This is what you get when starting 
 ├── utils
 │   └── trpc.ts # <-- create your typesafe tRPC hooks
 └── [...]
-```
+``` -->
 
 ## Add tRPC to existing Next.js project
 

@@ -2,6 +2,15 @@
 
 - Try in CodeSandbox: [https://githubbox.com/trpc/trpc/tree/main/examples/next-prisma-starter](https://codesandbox.io/s/github/trpc/trpc/tree/main/examples/next-prisma-starter?file=/pages/index.tsx)
 
+
+## Features
+
+- ⚙️ VSCode extension recommendations
+- 🧙‍♂️ E2E type safety with [tRPC](https://trpc.io)
+- 🎨 ESLint
+- ✅ E2E testing with Playwright
+- ⚡ Database with Prisma
+
 ## Setup
 
 ```bash
@@ -10,6 +19,15 @@ cd trpc-prisma-starter
 yarn
 yarn dev
 ```
+
+## Files of note
+
+| Path                        | Description                       |
+| --------------------------- | --------------------------------- |
+| `./prisma/schema.prisma`    | Prisma schema                     |
+| `./src/api/trpc/[trpc].tsx` | tRPC response handler             |
+| `./src/routers/*.tsx`       | Your app's different tRPC-routers |
+
 
 ## Commands
 

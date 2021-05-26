@@ -4,7 +4,7 @@
 import { PrismaClient } from '@prisma/client';
 import * as trpc from '@trpc/server';
 import * as trpcNext from '@trpc/server/adapters/next';
-import { todosRouter } from 'routers/todos';
+import { postsRouter } from 'routers/posts';
 
 const prisma = new PrismaClient();
 
@@ -43,7 +43,7 @@ const appRouter = createRouter()
    * @link https://trpc.io/docs/error-formatting
    */
   // .formatError(({ defaultShape, error }) => { })
-  .merge('todos.', todosRouter);
+  .merge('posts.', postsRouter);
 
 export type AppRouter = typeof appRouter;
 
