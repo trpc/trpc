@@ -5,7 +5,7 @@ sidebar_label: Usage with Next.js
 slug: /nextjs
 ---
 
-:::info
+:::tip
 If you're using tRPC in a new project, consider using one of the example projects as a starting point: [tRPC Example Projects](/docs/example-apps)
 :::
 
@@ -43,11 +43,6 @@ Recommended but not enforced file structure. This is what you get when starting 
 ``` -->
 
 ## Add tRPC to existing Next.js project
-
-
-:::info
-If you want to use tRPC with a new project, it's easier to start off with one of the example project - see the [Example Apps](../main/example-apps.md).
-:::
 
 
 ### 1. Install deps
