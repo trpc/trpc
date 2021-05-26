@@ -1,27 +1,43 @@
+/**
+ *
+ * This is an example router, you can delete this file and then update `../pages/api/trpc/[trpc].tsx`
+ */
+
 import { z } from 'zod';
 import { createRouter } from '../pages/api/trpc/[trpc]';
 
 export const todosRouter = createRouter()
-  // .query('all', {
-  //   async resolve({ ctx }) {
-  //     return ctx.task.findMany({
-  //       orderBy: {
-  //         createdAt: 'asc',
-  //       },
-  //     });
-  //   },
-  // })
+  // create
   .mutation('add', {
     input: z.object({
       text: z.string().min(1),
     }),
     async resolve({ ctx, input }) {
-      const todo = await ctx.task.create({
+      const todo = await ctx.prisma.task.create({
         data: input,
       });
       return todo;
     },
   })
+  // read
+  .query('all', {
+    async resolve({ ctx }) {
+      return ctx.prisma.task.findMany({
+        // orderBy: {
+        //   createdAt: 'asc',
+        // },
+      });
+    },
+  })
+  .query('byId', {
+    input: z.string(),
+    async resolve({ ctx, input }) {
+      return ctx.prisma.task.findUnique({
+        where: { id: input },
+      });
+    },
+  })
+  // update
   .mutation('edit', {
     input: z.object({
       id: z.string().uuid(),
@@ -32,24 +48,18 @@ export const todosRouter = createRouter()
     }),
     async resolve({ ctx, input }) {
       const { id, data } = input;
-      const todo = await ctx.task.update({
+      const todo = await ctx.prisma.task.update({
         where: { id },
         data,
       });
       return todo;
     },
   })
+  // delete
   .mutation('delete', {
     input: z.string().uuid(),
     async resolve({ input: id, ctx }) {
-      await ctx.task.delete({ where: { id } });
+      await ctx.prisma.task.delete({ where: { id } });
       return id;
-    },
-  })
-  .mutation('clearCompleted', {
-    async resolve({ ctx }) {
-      await ctx.task.deleteMany({ where: { completed: true } });
-
-      return ctx.task.findMany();
     },
   });
