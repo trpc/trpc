@@ -42,8 +42,8 @@ Recommended but not enforced file structure. This is what you get when starting 
 ## Add tRPC to existing Next.js project
 
 
-:::info
-If you want to use tRPC with a new project, it's easier to start off with one of the example project - see the [Quickstart secion](../main/quickstart.md)
+:::tip
+If you want to use tRPC with a new project, it's easier to start off with one of the example project - see the [Example Apps](../main/example-apps.md).
 :::
 
 
