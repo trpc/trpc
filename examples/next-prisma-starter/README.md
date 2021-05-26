@@ -7,8 +7,8 @@
 
 - ⚙️ VSCode extension recommendations
 - 🧙‍♂️ E2E type safety with [tRPC](https://trpc.io)
-- 🎨 ESLint
 - ✅ E2E testing with Playwright
+- 🎨 ESLint
 - ⚡ Database with Prisma
 
 ## Setup
