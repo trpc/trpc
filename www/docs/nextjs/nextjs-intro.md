@@ -5,6 +5,9 @@ sidebar_label: Usage with Next.js
 slug: /nextjs
 ---
 
+:::info
+If you're using tRPC in a new project, consider using one of the example projects as a starting point: [tRPC Example Projects](/docs/example-apps)
+:::
 
 tRPC and Next.js are a match made in heaven! Next.js makes it easy for you to build your client and server together in one codebase. This makes it easy to share types between them.
 
@@ -22,14 +25,14 @@ Recommended but not enforced file structure. This is what you get when starting 
 │   │   └── trpc
 │   │       └── [trpc].ts # <-- tRPC response handler
 │   └── [...]
-├── routers # <-- implement sub-routers here
-│   ├── users.ts
-│   ├── posts.ts
-│   ├── [...]
 ├── prisma # <-- if prisma is added
 │   ├── migrations
 │   │   └── [...]
 │   └── schema.prisma
+├── routers # <-- implement sub-routers here
+│   ├── users.ts
+│   ├── posts.ts
+│   └── [...]
 ├── public
 │   └── [...]
 ├── test  # <-- (optional) E2E-test helpers

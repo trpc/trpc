@@ -28,6 +28,12 @@ module.exports = {
           position: 'left',
         },
         {
+          to: 'docs/quickstart',
+          activeBasePath: 'docs',
+          label: 'Quickstart',
+          position: 'left',
+        },
+        {
           to: 'docs/nextjs',
           activeBasePath: 'docs',
           label: 'Usage with Next.js',
