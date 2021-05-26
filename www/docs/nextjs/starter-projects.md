@@ -28,7 +28,7 @@ Get started quickly with one of the sample projects! Copy the snippet from _Quic
       <td><em>n/a</em></td>
       <td>
         <ul>
-          <li><a href="https://codesandbox.io/s/github/trpc/trpc/tree/main/examples/next-prisma-starter?file=/pages/index.tsx">CodeSandbox</a></li>
+          <li><a href="https://codesandbox.io/s/github/trpc/trpc/tree/main/examples/next-prisma-starter?file=/src/pages/index.tsx">CodeSandbox</a></li>
           <li><a href="https://github.com/trpc/trpc/tree/main/examples/next-prisma-starter">Source</a></li>
         </ul>
       </td>
