@@ -13,11 +13,17 @@ async function main() {
     url: `http://localhost:2022`,
   });
 
-  const res = await client.query('hello', {
+  const helloResponse = await client.query('hello', {
     name: 'world',
   });
 
-  console.log('res', res);
+  console.log('helloResponse', helloResponse);
+
+  const createPostRes = await client.mutation('createPost', {
+    title: 'hello world',
+    text: 'check out tRPC.io',
+  });
+  console.log('createPostResponse', createPostRes);
 }
 
 main();
