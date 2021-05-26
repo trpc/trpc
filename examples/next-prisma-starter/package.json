@@ -1,0 +1,63 @@
+{
+  "name": "@examples/next-starter",
+  "version": "6.3.1",
+  "private": true,
+  "scripts": {
+    "build:1-generate": "prisma generate",
+    "build:2-migrate": "prisma migrate deploy",
+    "build:3-build": "next build",
+    "build": "run-s build:*",
+    "dev": "yarn dx:next",
+    "dx:next": "yarn migrate-dev && yarn generate && next dev",
+    "dx:studio": "yarn studio",
+    "dx": "run-p dx:* --print-label",
+    "generate": "prisma generate",
+    "migrate-dev": "prisma migrate dev",
+    "migrate": "prisma migrate deploy",
+    "start": "next start",
+    "studio": "prisma studio",
+    "lint": "eslint src",
+    "prisma-nuke": "rm -rf prisma/migrations prisma/*.db**",
+    "test-dev": "start-server-and-test dev 3000 test",
+    "test-start": "start-server-and-test start 3000 test",
+    "test": "jest"
+  },
+  "dependencies": {
+    "@prisma/client": "^2.18.0",
+    "@trpc/client": "^6.3.1",
+    "@trpc/next": "^6.3.1",
+    "@trpc/react": "^6.3.1",
+    "@trpc/server": "^6.3.1",
+    "clsx": "^1.1.1",
+    "next": "^10.0.5",
+    "react": "^17.0.1",
+    "react-dom": "^17.0.1",
+    "react-query": "^3.6.0",
+    "react-query-devtools": "^2.6.3",
+    "start-server-and-test": "^1.12.0",
+    "zod": "^3.0.0"
+  },
+  "devDependencies": {
+    "@types/jest": "^26.0.20",
+    "@types/node": "^15.0.1",
+    "@types/react": "^17.0.0",
+    "@typescript-eslint/eslint-plugin": "^4.25.0",
+    "eslint": "^7.22.0",
+    "eslint-config-prettier": "^8.3.0",
+    "eslint-plugin-prettier": "^3.3.1",
+    "eslint-plugin-react": "^7.22.0",
+    "eslint-plugin-react-hooks": "^4.2.0",
+    "jest": "^26.6.3",
+    "jest-playwright": "^0.0.1",
+    "jest-playwright-preset": "^1.4.5",
+    "npm-run-all": "^4.1.5",
+    "playwright": "^1.8.0",
+    "prettier": "^2.3.0",
+    "prisma": "^2.18.0",
+    "ts-jest": "^26.5.3",
+    "typescript": "^4.2.3"
+  },
+  "publishConfig": {
+    "access": "restricted"
+  }
+}
