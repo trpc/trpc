@@ -12,9 +12,9 @@ const prisma = new PrismaClient();
  * Creates context for an incoming request
  * @link https://trpc.io/docs/context
  */
-export const createContext = async (
+const createContext = async (
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  opts: trpcNext.CreateNextContextOptions,
+  { req, res }: trpcNext.CreateNextContextOptions,
 ) => {
   return {
     prisma,
@@ -49,6 +49,9 @@ export type AppRouter = typeof appRouter;
 
 export default trpcNext.createNextApiHandler({
   router: appRouter,
+  /**
+   * @link https://trpc.io/docs/context
+   */
   createContext,
   /**
    * Data transformer
