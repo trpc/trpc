@@ -12,11 +12,18 @@ export default function IndexPage() {
   return (
     <>
       <Head>
-        <title>Empty Prisma Starter</title>
+        <title>Prisma Starter</title>
         <link rel="icon" href="/favicon.ico" />
       </Head>
-      <h1>Welcome to your Empty tRPC starter</h1>
-
+      <h1>Welcome to your tRPC starter!</h1>
+      <p>
+        <a href="https://trpc.io/docs">
+          Check the <code>@trpc/react</code> or <code>@trpc/next</code> docs
+          whenever you get stuck
+        </a>
+        , or ping{' '}
+        <a href="https://twitter.com/alexdotjs">@alexdotjs on Twitter</a>.
+      </p>
       <h2>
         Posts
         {postsQuery.status === 'loading' && '(loading)'}
