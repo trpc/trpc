@@ -7,7 +7,6 @@ jobs:
       matrix:
         dir:
           [
-            next-hello-world,
             next-prisma-starter,
             next-prisma-todomvc,
             next-chat,

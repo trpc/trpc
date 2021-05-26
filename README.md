@@ -54,7 +54,7 @@ tRPC is a framework for building strongly typed RPC APIs with TypeScript. Altern
 **Quick start:**
 
 ```bash
-npx create-next-app --example https://github.com/trpc/trpc --example-path examples/next-hello-world trpc-hello-world
+npx create-next-app --example https://github.com/trpc/trpc --example-path examples/next-prisma-starter trpc-prisma-starter
 ```
 
 # Example apps
@@ -82,23 +82,6 @@ npx create-next-app --example https://github.com/trpc/trpc --example-path exampl
         <ul>
           <li><a href="https://codesandbox.io/s/github/trpc/trpc/tree/main/examples/next-prisma-starter?file=/src/pages/index.tsx">CodeSandbox</a></li>
           <li><a href="https://github.com/trpc/trpc/tree/main/examples/next-prisma-starter">Source</a></li>
-        </ul>
-      </td>
-    </tr>
-    <tr>
-      <td>
-        Next.js example with mock database using SSR
-        <br/><br/>
-        <details>
-          <summary>Quick start with <code>create-next-app</code></summary>
-          <code>npx create-next-app --example https://github.com/trpc/trpc --example-path examples/next-hello-world trpc-hello-world</code>
-        </details>
-      </td>
-      <td><a href="https://hello-world.trpc.io">hello-world.trpc.io</a></td>
-      <td>
-        <ul>
-          <li><a href="https://codesandbox.io/s/github/trpc/trpc/tree/main/examples/next-hello-world?file=/pages/index.tsx">CodeSandbox</a></li>
-          <li><a href="https://github.com/trpc/trpc/tree/main/examples/next-hello-world">Source</a></li>
         </ul>
       </td>
     </tr>
@@ -159,7 +142,7 @@ In one terminal, will run `preconstruct watch` in parallel which builds all `pac
 yarn dev
 ```
 
-In another terminal, you can for instance navigate to `examples/next-hello-world` and run `yarn dev` & it will update whenever code is changed in the packages.
+In another terminal, you can for instance navigate to `examples/next-prisma-starter` and run `yarn dev` & it will update whenever code is changed in the packages.
 
 ## Testing
 

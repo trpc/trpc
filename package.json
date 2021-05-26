@@ -39,7 +39,6 @@
     "example:playground": "yarn --cwd examples/playground dev",
     "example:todomvc": "yarn --cwd examples/next-prisma-todomvc dev",
     "example:chat": "yarn --cwd examples/next-chat dev",
-    "example:hello": "yarn --cwd examples/next-hello-world dev",
     "example:standalone": "yarn --cwd examples/standalone-server dev",
     "changeset": "changeset",
     "release": "changeset publish",

@@ -37,23 +37,6 @@ Here's some example apps:
     </tr>
     <tr>
       <td>
-        Next.js example with mock database using SSR
-        <br/><br/>
-        <details>
-          <summary>Quick start with <code>create-next-app</code></summary>
-          <code>npx create-next-app --example https://github.com/trpc/trpc --example-path examples/next-hello-world trpc-hello-world</code>
-        </details>
-      </td>
-      <td><a href="https://hello-world.trpc.io">hello-world.trpc.io</a></td>
-      <td>
-        <ul>
-          <li><a href="https://codesandbox.io/s/github/trpc/trpc/tree/main/examples/next-hello-world?file=/pages/index.tsx">CodeSandbox</a></li>
-          <li><a href="https://github.com/trpc/trpc/tree/main/examples/next-hello-world">Source</a></li>
-        </ul>
-      </td>
-    </tr>
-    <tr>
-      <td>
         Next.js TodoMVC-example with SSG & Prisma.
         <br/><br/>
         <details>

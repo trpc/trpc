@@ -5,9 +5,7 @@ sidebar_label: Static Site Generation (SSG)
 slug: /ssg
 ---
 
-The code here is taken from [`./examples/next-hello-world`](https://github.com/trpc/trpc/tree/main/examples/next-hello-world).
-
-:::info
+:::tip
 Reference project: https://github.com/trpc/trpc/tree/main/examples/next-prisma-todomvc
 :::
 
