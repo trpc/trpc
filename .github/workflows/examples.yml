@@ -10,7 +10,7 @@ jobs:
             next-hello-world,
             next-prisma-starter,
             next-prisma-todomvc,
-            next-ssg-chat,
+            next-chat,
             playground,
             standalone-server,
           ]

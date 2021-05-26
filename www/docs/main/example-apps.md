@@ -77,13 +77,13 @@ Here's some example apps:
         <br/><br/>
         <details>
           <summary>Quick start with <code>create-next-app</code></summary>
-          <code>npx create-next-app --example https://github.com/trpc/trpc --example-path examples/next-ssg-chat trpc-chat</code>
+          <code>npx create-next-app --example https://github.com/trpc/trpc --example-path examples/next-chat trpc-chat</code>
         </details>
       </td>
       <td><a href="https://chat.trpc.io">chat.trpc.io</a></td>
       <td>
         <ul>
-          <li><a href="https://github.com/trpc/trpc/tree/main/examples/next-ssg-chat">Source</a></li>
+          <li><a href="https://github.com/trpc/trpc/tree/main/examples/next-chat">Source</a></li>
         </ul>
       </td>
     </tr>
