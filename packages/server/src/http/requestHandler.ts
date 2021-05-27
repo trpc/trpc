@@ -77,15 +77,15 @@ const HTTP_METHOD_PROCEDURE_TYPE_MAP: Record<
 async function getDeserializedInput({
   req,
   type,
-  combinedTransformer,
+  transformer,
   maxBodySize,
 }: {
   req: BaseRequest;
   type: ProcedureType | 'unknown';
-  combinedTransformer: CombinedDataTransformer;
+  transformer: CombinedDataTransformer;
   maxBodySize: number | undefined;
 }) {
-  const deserializeInput = combinedTransformer.input.deserialize;
+  const deserializeInput = transformer.input.deserialize;
 
   if (type === 'query') {
     const query = req.query ? req.query : url.parse(req.url!, true).query;
@@ -123,7 +123,6 @@ export async function requestHandler<
     createContext,
     teardown,
     onError,
-    transformer,
     maxBodySize,
   } = opts;
   if (req.method === 'HEAD') {
@@ -136,9 +135,9 @@ export async function requestHandler<
     HTTP_METHOD_PROCEDURE_TYPE_MAP[req.method!] ?? ('unknown' as const);
   let input: unknown = undefined;
   let ctx: inferRouterContext<TRouter> | undefined = undefined;
+  const transformer = getCombinedDataTransformer(opts.transformer);
   try {
     let output: unknown;
-    const combinedTransformer = getCombinedDataTransformer(transformer);
     if (type === 'unknown') {
       throw new HTTPError(`Unexpected request method ${req.method}`, {
         statusCode: 405,
@@ -149,7 +148,7 @@ export async function requestHandler<
       maxBodySize,
       req,
       type,
-      combinedTransformer,
+      transformer,
     });
     ctx = await createContext?.({ req, res });
 
@@ -251,7 +250,7 @@ export async function requestHandler<
     };
     res.statusCode = json.statusCode;
     res.setHeader('Content-Type', 'application/json');
-    res.end(JSON.stringify(combinedTransformer.output.serialize(json)));
+    res.end(JSON.stringify(transformer.output.serialize(json)));
   } catch (_err) {
     const error = getErrorFromUnknown(_err);
 
@@ -262,7 +261,7 @@ export async function requestHandler<
     };
     res.statusCode = json.statusCode;
     res.setHeader('Content-Type', 'application/json');
-    res.end(JSON.stringify(combinedTransformer.output.serialize(json)));
+    res.end(JSON.stringify(transformer.output.serialize(json)));
     onError && onError({ error, path, input, ctx, type: type, req });
   }
   try {
