@@ -2,12 +2,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import http from 'http';
 import url from 'url';
-import {
-  BaseOptions,
-  CreateContextFn,
-  CreateContextFnOptions,
-  requestHandler,
-} from '../http';
+import { BaseOptions, CreateContextFn, CreateContextFnOptions } from '../http';
+import { requestHandler } from '../http';
 import { AnyRouter } from '../router';
 
 export type CreateHttpContextOptions = CreateContextFnOptions<
