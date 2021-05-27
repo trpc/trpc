@@ -1,59 +1,66 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
+import http from 'http';
+import qs from 'qs';
 import url from 'url';
-import { getErrorFromUnknown } from '../errors';
+import { assertNotBrowser } from '../assertNotBrowser';
+import { getErrorFromUnknown, TRPCError } from '../errors';
 import { AnyRouter, inferRouterContext, ProcedureType } from '../router';
 import { Subscription } from '../subscription';
-import { HTTPError, getStatusCodeFromError } from './errors';
+import { DataTransformerOptions } from '../transformer';
+import { getStatusCodeFromError, HTTPError } from './errors';
+import { getPostBody } from './internal/getPostBody';
 import {
-  BaseRequest,
-  CreateContextFn,
-  BaseResponse,
-  BaseOptions,
-  getQueryInput,
-  HTTPSuccessResponseEnvelope,
   HTTPErrorResponseEnvelope,
+  HTTPSuccessResponseEnvelope,
 } from './index';
+import { getQueryInput } from './internal/getQueryInput';
+assertNotBrowser();
 
-async function getPostBody({
-  req,
-  maxBodySize,
-}: {
-  req: BaseRequest;
+export type CreateContextFnOptions<TRequest, TResponse> = {
+  req: TRequest;
+  res: TResponse;
+};
+export type CreateContextFn<TRouter extends AnyRouter, TRequest, TResponse> = (
+  opts: CreateContextFnOptions<TRequest, TResponse>,
+) => inferRouterContext<TRouter> | Promise<inferRouterContext<TRouter>>;
+
+export type BaseRequest = http.IncomingMessage & {
+  method?: string;
+  query?: qs.ParsedQs;
+  body?: any;
+};
+export type BaseResponse = http.ServerResponse;
+
+export interface BaseOptions<
+  TRouter extends AnyRouter,
+  TRequest extends BaseRequest,
+> {
+  subscriptions?: {
+    /**
+     * Time in milliseconds before `408` is sent
+     */
+    requestTimeoutMs?: number;
+    /**
+     * Allow for some backpressure and batch send events every X ms
+     */
+    backpressureMs?: number;
+  };
+  teardown?: () => Promise<void>;
+  /**
+   * Optional transformer too serialize/deserialize input args + data
+   */
+  transformer?: DataTransformerOptions;
   maxBodySize?: number;
-}) {
-  return new Promise<any>((resolve, reject) => {
-    if (req.body) {
-      resolve(req.body);
-      return;
-    }
-    let body = '';
-    req.on('data', function (data) {
-      body += data;
-      if (typeof maxBodySize === 'number' && body.length > maxBodySize) {
-        reject(
-          new HTTPError('Payload Too Large', {
-            statusCode: 413,
-            code: 'BAD_USER_INPUT',
-          }),
-        );
-        req.socket.destroy();
-      }
-    });
-    req.on('end', () => {
-      try {
-        const json = JSON.parse(body);
-        resolve(json);
-      } catch (err) {
-        reject(
-          new HTTPError("Body couldn't be parsed as json", {
-            statusCode: 400,
-            code: 'BAD_USER_INPUT',
-          }),
-        );
-      }
-    });
-  });
+  onError?: (opts: {
+    error: TRPCError;
+    type: ProcedureType | 'unknown';
+    path: string | undefined;
+    req: TRequest;
+    input: unknown;
+    ctx: undefined | inferRouterContext<TRouter>;
+  }) => void;
 }
+
 const HTTP_METHOD_PROCEDURE_TYPE_MAP: Record<
   string,
   ProcedureType | undefined
