@@ -136,9 +136,9 @@ export async function requestHandler<
     HTTP_METHOD_PROCEDURE_TYPE_MAP[req.method!] ?? ('unknown' as const);
   let input: unknown = undefined;
   let ctx: inferRouterContext<TRouter> | undefined = undefined;
-  const combinedTransformer = getCombinedDataTransformer(transformer);
   try {
     let output: unknown;
+    const combinedTransformer = getCombinedDataTransformer(transformer);
     if (type === 'unknown') {
       throw new HTTPError(`Unexpected request method ${req.method}`, {
         statusCode: 405,
