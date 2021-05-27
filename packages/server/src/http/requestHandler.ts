@@ -83,7 +83,7 @@ async function getDeserializedInput({
   req: BaseRequest;
   type: ProcedureType | 'unknown';
   combinedTransformer: CombinedDataTransformer;
-  maxBodySize?: number;
+  maxBodySize: number | undefined;
 }) {
   const deserializeInput = combinedTransformer.input.deserialize;
 
@@ -124,8 +124,10 @@ export async function requestHandler<
     teardown,
     onError,
     transformer,
+    maxBodySize,
   } = opts;
   if (req.method === 'HEAD') {
+    // can be used for lambda warmup
     res.statusCode = 204;
     res.end();
     return;
@@ -143,7 +145,12 @@ export async function requestHandler<
         code: 'BAD_USER_INPUT',
       });
     }
-    input = await getDeserializedInput({ ...opts, type, combinedTransformer });
+    input = await getDeserializedInput({
+      maxBodySize,
+      req,
+      type,
+      combinedTransformer,
+    });
     ctx = await createContext?.({ req, res });
 
     const caller = router.createCaller(ctx);
