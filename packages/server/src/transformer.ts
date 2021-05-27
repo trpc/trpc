@@ -20,3 +20,17 @@ export type DataTransformerOptions = DataTransformer | CombinedDataTransformer;
 export type ClientDataTransformerOptions =
   | DataTransformer
   | CombinedDataTransformerClient;
+
+export function getCombinedDataTransformer(
+  transformer: DataTransformerOptions | undefined = {
+    serialize: (opts) => opts,
+    deserialize: (opts) => opts,
+  },
+) {
+  const combinedTransformer =
+    'input' in transformer
+      ? transformer
+      : { input: transformer, output: transformer };
+
+  return combinedTransformer;
+}

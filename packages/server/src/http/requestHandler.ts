@@ -6,7 +6,11 @@ import { assertNotBrowser } from '../assertNotBrowser';
 import { getErrorFromUnknown, TRPCError } from '../errors';
 import { AnyRouter, inferRouterContext, ProcedureType } from '../router';
 import { Subscription } from '../subscription';
-import { DataTransformerOptions } from '../transformer';
+import {
+  CombinedDataTransformer,
+  DataTransformerOptions,
+  getCombinedDataTransformer,
+} from '../transformer';
 import { getStatusCodeFromError, HTTPError } from './errors';
 import { getPostBody } from './internal/getPostBody';
 import {
@@ -70,70 +74,81 @@ const HTTP_METHOD_PROCEDURE_TYPE_MAP: Record<
   PATCH: 'subscription',
 };
 
+async function getDeserializedInput({
+  req,
+  type,
+  combinedTransformer,
+  maxBodySize,
+}: {
+  req: BaseRequest;
+  type: ProcedureType | 'unknown';
+  combinedTransformer: CombinedDataTransformer;
+  maxBodySize?: number;
+}) {
+  const deserializeInput = combinedTransformer.input.deserialize;
+
+  if (type === 'query') {
+    const query = req.query ? req.query : url.parse(req.url!, true).query;
+    const input = getQueryInput(query);
+    return deserializeInput(input);
+  }
+  if (type === 'mutation' || type === 'subscription') {
+    const body = await getPostBody({ req, maxBodySize });
+    const input = deserializeInput(body.input);
+    return input;
+  }
+  return undefined;
+}
+
 export async function requestHandler<
   TRouter extends AnyRouter,
   TCreateContextFn extends CreateContextFn<TRouter, TRequest, TResponse>,
   TRequest extends BaseRequest,
   TResponse extends BaseResponse,
->({
-  req,
-  res,
-  router,
-  path,
-  subscriptions,
-  createContext,
-  teardown,
-  transformer = {
-    serialize: (data) => data,
-    deserialize: (data) => data,
-  },
-  maxBodySize,
-  onError,
-}: {
-  req: TRequest;
-  res: TResponse;
-  path: string;
-  router: TRouter;
-  createContext: TCreateContextFn;
-} & BaseOptions<TRouter, TRequest>) {
-  let type: 'unknown' | ProcedureType = 'unknown';
+>(
+  opts: {
+    req: TRequest;
+    res: TResponse;
+    path: string;
+    router: TRouter;
+    createContext: TCreateContextFn;
+  } & BaseOptions<TRouter, TRequest>,
+) {
+  const {
+    req,
+    res,
+    router,
+    path,
+    subscriptions,
+    createContext,
+    teardown,
+    onError,
+    transformer,
+  } = opts;
+  if (req.method === 'HEAD') {
+    res.statusCode = 204;
+    res.end();
+    return;
+  }
+  const type =
+    HTTP_METHOD_PROCEDURE_TYPE_MAP[req.method!] ?? ('unknown' as const);
   let input: unknown = undefined;
   let ctx: inferRouterContext<TRouter> | undefined = undefined;
-  const combinedTransformer =
-    'input' in transformer
-      ? transformer
-      : { input: transformer, output: transformer };
+  const combinedTransformer = getCombinedDataTransformer(transformer);
   try {
     let output: unknown;
-
-    ctx = createContext && (await createContext({ req, res }));
-    const method = req.method;
-
-    const deserializeInput = (input: unknown) =>
-      input ? combinedTransformer.input.deserialize(input) : input;
+    if (type === 'unknown') {
+      throw new HTTPError(`Unexpected request method ${req.method}`, {
+        statusCode: 405,
+        code: 'BAD_USER_INPUT',
+      });
+    }
+    input = await getDeserializedInput({ ...opts, type, combinedTransformer });
+    ctx = await createContext?.({ req, res });
 
     const caller = router.createCaller(ctx);
-    type = HTTP_METHOD_PROCEDURE_TYPE_MAP[req.method!] ?? 'unknown';
-    const getInput = async () => {
-      if (type === 'query') {
-        const query = req.query ? req.query : url.parse(req.url!, true).query;
-        const input = getQueryInput(query);
-        return deserializeInput(input);
-      }
-      if (type === 'mutation' || type === 'subscription') {
-        const body = await getPostBody({ req, maxBodySize });
-        const input = deserializeInput(body.input);
-        return input;
-      }
-      return undefined;
-    };
-    input = await getInput();
 
-    if (method === 'HEAD') {
-      res.statusCode = 204;
-      res.end();
-      return;
-    } else if (type === 'query') {
+    if (type === 'query') {
       output = await caller.query(path, input);
     } else if (type === 'mutation') {
       output = await caller.mutation(path, input);
@@ -220,11 +235,6 @@ export async function requestHandler<
         res.once('close', onClose);
         requestTimeoutTimer = setTimeout(onRequestTimeout, requestTimeoutMs);
         sub.start();
-      });
-    } else {
-      throw new HTTPError(`Unexpected request method ${method}`, {
-        statusCode: 405,
-        code: 'BAD_USER_INPUT',
       });
     }
     const json: HTTPSuccessResponseEnvelope<unknown> = {
