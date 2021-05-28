@@ -15,7 +15,7 @@ module.exports = {
       theme: require('prism-react-renderer/themes/vsDark'),
     },
     googleAnalytics: {
-      trackingID: 'G-84E8JZWNQ3',
+      trackingID: 'UA-198119985-2',
       // Optional fields.
       anonymizeIP: true, // Should IPs be anonymized?
     },
