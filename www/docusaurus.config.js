@@ -1,6 +1,5 @@
 module.exports = {
   plugins: [
-    '@docusaurus/plugin-google-analytics',
     [
       '@docusaurus/plugin-sitemap',
       {
