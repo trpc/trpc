@@ -50,5 +50,5 @@ We set out to build a simpler library for building typesafe APIs that leverages 
 - 🐻&nbsp; Easy to add to your existing brownfield project.
 - 🔋&nbsp; Batteries included. React-library + Next.js/Express adapters. _(But tRPC is not tied to React - [reach out](https://twitter.com/alexdotjs) if you want to make a Svelte/Vue/... lib)_
 - 🥃&nbsp; Simple to use APIs for queries & mutations + experimental subscriptions support.
-- 👀&nbsp; Quite a [Example Apps](example-apps.md) that you can use for reference or as a starting point.
+- 👀&nbsp; Quite a few [Example Apps](example-apps.md) that you can use for reference or as a starting point.
 - ✅&nbsp; Well-tested & running in production.
