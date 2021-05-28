@@ -29,7 +29,7 @@
     "@trpc/react": "^6.3.1",
     "@trpc/server": "^6.3.1",
     "clsx": "^1.1.1",
-    "jest": "^26.6.3",
+    "jest": "^27.0.1",
     "jest-playwright": "^0.0.1",
     "jest-playwright-preset": "^1.4.5",
     "next": "^10.0.5",

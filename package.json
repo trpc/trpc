@@ -71,7 +71,7 @@
     "eslint-plugin-react": "^7.22.0",
     "eslint-plugin-react-hooks": "^4.2.0",
     "expect-type": "^0.11.0",
-    "jest": "^26.6.3",
+    "jest": "^27.0.1",
     "jsdom": "^16.5.1",
     "lerna": "^4.0.0",
     "playwright": "^1.8.0",
