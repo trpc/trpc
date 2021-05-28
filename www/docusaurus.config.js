@@ -1,5 +1,5 @@
 module.exports = {
-  plugins: ['@docusaurus/plugin-google-analytics'],
+  // plugins: ['@docusaurus/plugin-google-analytics'],
   title: 'tRPC',
   tagline: 'TypeScript toolkit for building end-to-end type-safe APIs',
   url: 'https://trpc.io',
