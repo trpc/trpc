@@ -119,20 +119,18 @@ async function callProcedure<TRouter extends AnyRouter>(opts: {
   type: ProcedureType;
   subscriptions: BaseOptions<any, any>['subscriptions'] | undefined;
   reqEvents: NodeJS.EventEmitter;
-}) {
-  let output: unknown = undefined;
+}): Promise<unknown> {
   const { type, path, input, subscriptions, caller, reqEvents } = opts;
   if (type === 'query') {
-    output = await caller.query(path, input);
-  } else if (type === 'mutation') {
-    output = await caller.mutation(path, input);
-  } else if (type === 'subscription') {
-    const sub = (output = await caller.subscription(
-      path,
-      input,
-    )) as Subscription;
+    return caller.query(path, input);
+  }
+  if (type === 'mutation') {
+    return caller.mutation(path, input);
+  }
+  if (type === 'subscription') {
+    const sub = (await caller.subscription(path, input)) as Subscription;
 
-    output = await new Promise((resolve, reject) => {
+    return new Promise((resolve, reject) => {
       const startTime = Date.now();
 
       const buffer: unknown[] = [];
@@ -208,11 +206,9 @@ async function callProcedure<TRouter extends AnyRouter>(opts: {
       requestTimeoutTimer = setTimeout(onRequestTimeout, requestTimeoutMs);
       sub.start();
     });
-  } else {
-    throw new Error(`Unknown procedure type ${type}`);
   }
 
-  return output;
+  throw new Error(`Unknown procedure type ${type}`);
 }
 
 export async function requestHandler<
