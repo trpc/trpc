@@ -96,7 +96,7 @@ async function getInputFromRequest({
   maxBodySize,
 }: {
   req: BaseRequest;
-  type: ProcedureType | 'unknown';
+  type: ProcedureType;
   maxBodySize: number | undefined;
 }) {
   if (type === 'query') {
