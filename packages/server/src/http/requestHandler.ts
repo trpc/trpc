@@ -75,8 +75,8 @@ const HTTP_METHOD_PROCEDURE_TYPE_MAP: Record<
 
 function getCombinedDataTransformer(
   transformer: DataTransformerOptions | undefined = {
-    serialize: (opts) => opts,
-    deserialize: (opts) => opts,
+    serialize: (value) => value,
+    deserialize: (value) => value,
   },
 ): CombinedDataTransformer {
   const combinedTransformer =
