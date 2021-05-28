@@ -9,7 +9,7 @@ export async function getPostBody({
   maxBodySize?: number;
 }) {
   return new Promise<any>((resolve, reject) => {
-    if (req.body) {
+    if (req.hasOwnProperty('body')) {
       resolve(req.body);
       return;
     }
