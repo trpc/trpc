@@ -1,14 +1,4 @@
 module.exports = {
-  plugins: [
-    [
-      '@docusaurus/plugin-sitemap',
-      {
-        changefreq: 'weekly',
-        priority: 0.5,
-        trailingSlash: false,
-      },
-    ],
-  ],
   title: 'tRPC',
   tagline: 'TypeScript toolkit for building end-to-end type-safe APIs',
   url: 'https://trpc.io',
