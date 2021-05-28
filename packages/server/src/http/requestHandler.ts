@@ -7,8 +7,8 @@ import { getErrorFromUnknown, TRPCError } from '../errors';
 import { AnyRouter, inferRouterContext, ProcedureType } from '../router';
 import { Subscription } from '../subscription';
 import {
+  CombinedDataTransformer,
   DataTransformerOptions,
-  getCombinedDataTransformer,
 } from '../transformer';
 import { getStatusCodeFromError, HTTPError } from './errors';
 import {
@@ -72,6 +72,20 @@ const HTTP_METHOD_PROCEDURE_TYPE_MAP: Record<
   POST: 'mutation',
   PATCH: 'subscription',
 };
+
+function getCombinedDataTransformer(
+  transformer: DataTransformerOptions | undefined = {
+    serialize: (opts) => opts,
+    deserialize: (opts) => opts,
+  },
+): CombinedDataTransformer {
+  const combinedTransformer =
+    'input' in transformer
+      ? transformer
+      : { input: transformer, output: transformer };
+
+  return combinedTransformer;
+}
 
 /**
  * Resolve input from request
