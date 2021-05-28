@@ -1,4 +1,5 @@
 module.exports = {
+  plugins: ['@docusaurus/plugin-google-analytics'],
   title: 'tRPC',
   tagline: 'TypeScript toolkit for building end-to-end type-safe APIs',
   url: 'https://trpc.io',
@@ -13,6 +14,11 @@ module.exports = {
     image: 'img/facebook_cover_photo_2.png',
     prism: {
       theme: require('prism-react-renderer/themes/vsDark'),
+    },
+    googleAnalytics: {
+      trackingID: 'UA-141789564-1',
+      // Optional fields.
+      anonymizeIP: true, // Should IPs be anonymized?
     },
     navbar: {
       title: 'tRPC',
