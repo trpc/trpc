@@ -7,16 +7,15 @@ import { getErrorFromUnknown, TRPCError } from '../errors';
 import { AnyRouter, inferRouterContext, ProcedureType } from '../router';
 import { Subscription } from '../subscription';
 import {
-  CombinedDataTransformer,
   DataTransformerOptions,
   getCombinedDataTransformer,
 } from '../transformer';
 import { getStatusCodeFromError, HTTPError } from './errors';
-import { getPostBody } from './internal/getPostBody';
 import {
   HTTPErrorResponseEnvelope,
   HTTPSuccessResponseEnvelope,
 } from './index';
+import { getPostBody } from './internal/getPostBody';
 import { getQueryInput } from './internal/getQueryInput';
 assertNotBrowser();
 
@@ -74,44 +73,43 @@ const HTTP_METHOD_PROCEDURE_TYPE_MAP: Record<
   PATCH: 'subscription',
 };
 
-async function getDeserializedInput({
+/**
+ * Resolve input from request
+ */
+async function getInputFromRequest({
   req,
   type,
-  transformer,
   maxBodySize,
 }: {
   req: BaseRequest;
   type: ProcedureType | 'unknown';
-  transformer: CombinedDataTransformer;
   maxBodySize: number | undefined;
 }) {
-  const deserializeInput = transformer.input.deserialize;
-
   if (type === 'query') {
     const query = req.query ? req.query : url.parse(req.url!, true).query;
     const input = getQueryInput(query);
-    return deserializeInput(input);
+    return input;
   }
   if (type === 'mutation' || type === 'subscription') {
     const body = await getPostBody({ req, maxBodySize });
-    const input = deserializeInput(body.input);
-    return input;
+    return body.input;
   }
   return undefined;
 }
 
-export async function callProcedure<TRouter extends AnyRouter>(opts: {
+/**
+ * Call procedure and get output
+ */
+async function callProcedure<TRouter extends AnyRouter>(opts: {
   path: string;
   input: unknown;
   caller: ReturnType<TRouter['createCaller']>;
   type: ProcedureType;
   subscriptions: BaseOptions<any, any>['subscriptions'] | undefined;
   reqEvents: NodeJS.EventEmitter;
-  resEvents: NodeJS.EventEmitter;
 }) {
   let output: unknown = undefined;
-  const { type, path, input, subscriptions, caller, reqEvents, resEvents } =
-    opts;
+  const { type, path, input, subscriptions, caller, reqEvents } = opts;
   if (type === 'query') {
     output = await caller.query(path, input);
   } else if (type === 'mutation') {
@@ -139,7 +137,6 @@ export async function callProcedure<TRouter extends AnyRouter>(opts: {
         sub.off('error', onError);
         sub.off('destroy', onDestroy);
         reqEvents.off('close', onClose);
-        resEvents.off('close', onClose);
         clearTimeout(requestTimeoutTimer);
         clearTimeout(backpressureTimer);
         sub.destroy();
@@ -196,7 +193,6 @@ export async function callProcedure<TRouter extends AnyRouter>(opts: {
       sub.on('error', onError);
       sub.on('destroy', onDestroy);
       reqEvents.once('close', onClose);
-      resEvents.once('close', onClose);
       requestTimeoutTimer = setTimeout(onRequestTimeout, requestTimeoutMs);
       sub.start();
     });
@@ -250,12 +246,12 @@ export async function requestHandler<
         code: 'BAD_USER_INPUT',
       });
     }
-    input = await getDeserializedInput({
+    const rawInput = await getInputFromRequest({
       maxBodySize,
       req,
       type,
-      transformer,
     });
+    input = transformer.input.deserialize(rawInput);
     ctx = await createContext?.({ req, res });
 
     const caller = router.createCaller(ctx);
@@ -265,7 +261,6 @@ export async function requestHandler<
       path,
       input,
       reqEvents: req,
-      resEvents: res,
       subscriptions,
       type,
     });
