@@ -409,7 +409,7 @@ export class Router<
   /**
    * Invoke procedure. Only for internal use within library.
    */
-  public async invoke({
+  private async invoke({
     type,
     path,
     ctx,
