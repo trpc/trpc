@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/ban-types */
+import { waitFor } from '@testing-library/dom';
 import { EventEmitter } from 'events';
 import { expectTypeOf } from 'expect-type';
 import { z } from 'zod';
@@ -300,5 +301,58 @@ test('error emit', async () => {
 
   expect(ee.listenerCount('server:msg')).toBe(0);
   expect(ee.listenerCount('server:error')).toBe(0);
+  close();
+});
+
+test('abort request', async () => {
+  const ee = new EventEmitter();
+  type Message = {
+    id: string;
+  };
+
+  const clientConnected = jest.fn();
+  const closedFn = jest.fn();
+  const { client, close } = routerToServerAndClient(
+    trpc.router().subscription('onMessage', {
+      input: z.string().optional(),
+      resolve() {
+        clientConnected();
+        const sub = new trpc.Subscription<Message>({
+          start(emit) {
+            const onMessage = (data: Message) => {
+              emit.data(data);
+            };
+            ee.on('server:msg', onMessage);
+            return () => ee.off('server:msg', onMessage);
+          },
+        });
+        sub.on('destroy', closedFn);
+        return sub;
+      },
+    }),
+    {
+      server: {
+        subscriptions: {
+          backpressureMs: 10,
+        },
+      },
+    },
+  );
+
+  const unsub = client.subscription('onMessage', {
+    initialInput: undefined,
+    nextInput: () => undefined,
+  });
+  await waitFor(() => {
+    expect(clientConnected).toHaveBeenCalled();
+  });
+
+  expect(closedFn).not.toHaveBeenCalled();
+  unsub();
+
+  await waitFor(() => {
+    expect(closedFn).toHaveBeenCalled();
+  });
+
   close();
 });
