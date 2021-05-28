@@ -72,7 +72,7 @@ export type AppRouter = typeof appRouter;
 
 ### Add a query endpoint
 
-Use the `.query()` method to add a endpoint endpoint to the router. Arguments:
+Use the `.query()` method to add a query endpoint to the router. Arguments:
 
 `.query(name: string, params: QueryParams)`
 
