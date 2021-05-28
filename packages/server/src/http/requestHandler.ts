@@ -100,6 +100,113 @@ async function getDeserializedInput({
   return undefined;
 }
 
+export async function callProcedure<TRouter extends AnyRouter>(opts: {
+  path: string;
+  input: unknown;
+  caller: ReturnType<TRouter['createCaller']>;
+  type: ProcedureType;
+  subscriptions: BaseOptions<any, any>['subscriptions'] | undefined;
+  reqEvents: NodeJS.EventEmitter;
+  resEvents: NodeJS.EventEmitter;
+}) {
+  let output: unknown = undefined;
+  const { type, path, input, subscriptions, caller, reqEvents, resEvents } =
+    opts;
+  if (type === 'query') {
+    output = await caller.query(path, input);
+  } else if (type === 'mutation') {
+    output = await caller.mutation(path, input);
+  } else if (type === 'subscription') {
+    const sub = (output = await caller.subscription(
+      path,
+      input,
+    )) as Subscription;
+
+    output = await new Promise((resolve, reject) => {
+      const startTime = Date.now();
+
+      const buffer: unknown[] = [];
+
+      const requestTimeoutMs = subscriptions?.requestTimeoutMs ?? 9000; // 10s is vercel's api timeout
+      const backpressureMs = subscriptions?.backpressureMs ?? 0;
+
+      // timers
+      let backpressureTimer: any = null;
+      let requestTimeoutTimer: any = null;
+
+      function cleanup() {
+        sub.off('data', onData);
+        sub.off('error', onError);
+        sub.off('destroy', onDestroy);
+        reqEvents.off('close', onClose);
+        resEvents.off('close', onClose);
+        clearTimeout(requestTimeoutTimer);
+        clearTimeout(backpressureTimer);
+        sub.destroy();
+      }
+      function onData(data: unknown) {
+        buffer.push(data);
+
+        const requestTimeLeft = requestTimeoutMs - (Date.now() - startTime);
+
+        const success = () => {
+          cleanup();
+          resolve(buffer);
+        };
+        if (requestTimeLeft <= backpressureMs) {
+          // will timeout before next backpressure tick
+          success();
+          return;
+        }
+        if (!backpressureTimer) {
+          backpressureTimer = setTimeout(success, backpressureMs);
+          return;
+        }
+      }
+      function onError(err: Error) {
+        cleanup();
+        // maybe if `buffer` has length here we should just return instead?
+        reject(err);
+      }
+      function onClose() {
+        cleanup();
+        reject(
+          new HTTPError(`Client Closed Request`, {
+            statusCode: 499,
+            code: 'BAD_USER_INPUT',
+          }),
+        );
+      }
+      function onRequestTimeout() {
+        cleanup();
+        reject(
+          new HTTPError(
+            `Subscription exceeded ${requestTimeoutMs}ms - please reconnect.`,
+            { statusCode: 408, code: 'TIMEOUT' },
+          ),
+        );
+      }
+
+      function onDestroy() {
+        reject(new Error(`Subscription was destroyed prematurely`));
+        cleanup();
+      }
+
+      sub.on('data', onData);
+      sub.on('error', onError);
+      sub.on('destroy', onDestroy);
+      reqEvents.once('close', onClose);
+      resEvents.once('close', onClose);
+      requestTimeoutTimer = setTimeout(onRequestTimeout, requestTimeoutMs);
+      sub.start();
+    });
+  } else {
+    throw new Error(`Unknown procedure type ${type}`);
+  }
+
+  return output;
+}
+
 export async function requestHandler<
   TRouter extends AnyRouter,
   TCreateContextFn extends CreateContextFn<TRouter, TRequest, TResponse>,
@@ -119,11 +226,11 @@ export async function requestHandler<
     res,
     router,
     path,
-    subscriptions,
     createContext,
     teardown,
     onError,
     maxBodySize,
+    subscriptions,
   } = opts;
   if (req.method === 'HEAD') {
     // can be used for lambda warmup
@@ -137,7 +244,6 @@ export async function requestHandler<
   let ctx: inferRouterContext<TRouter> | undefined = undefined;
   const transformer = getCombinedDataTransformer(opts.transformer);
   try {
-    let output: unknown;
     if (type === 'unknown') {
       throw new HTTPError(`Unexpected request method ${req.method}`, {
         statusCode: 405,
@@ -154,95 +260,15 @@ export async function requestHandler<
 
     const caller = router.createCaller(ctx);
 
-    if (type === 'query') {
-      output = await caller.query(path, input);
-    } else if (type === 'mutation') {
-      output = await caller.mutation(path, input);
-    } else if (type === 'subscription') {
-      const sub = (output = await caller.subscription(
-        path,
-        input,
-      )) as Subscription;
-
-      output = await new Promise((resolve, reject) => {
-        const startTime = Date.now();
-
-        const buffer: unknown[] = [];
-
-        const requestTimeoutMs = subscriptions?.requestTimeoutMs ?? 9000; // 10s is vercel's api timeout
-        const backpressureMs = subscriptions?.backpressureMs ?? 0;
-
-        // timers
-        let backpressureTimer: any = null;
-        let requestTimeoutTimer: any = null;
-
-        function cleanup() {
-          sub.off('data', onData);
-          sub.off('error', onError);
-          sub.off('destroy', onDestroy);
-          req.off('close', onClose);
-          res.off('close', onClose);
-          clearTimeout(requestTimeoutTimer);
-          clearTimeout(backpressureTimer);
-          sub.destroy();
-        }
-        function onData(data: unknown) {
-          buffer.push(data);
-
-          const requestTimeLeft = requestTimeoutMs - (Date.now() - startTime);
-
-          const success = () => {
-            cleanup();
-            resolve(buffer);
-          };
-          if (requestTimeLeft <= backpressureMs) {
-            // will timeout before next backpressure tick
-            success();
-            return;
-          }
-          if (!backpressureTimer) {
-            backpressureTimer = setTimeout(success, backpressureMs);
-            return;
-          }
-        }
-        function onError(err: Error) {
-          cleanup();
-          // maybe if `buffer` has length here we should just return instead?
-          reject(err);
-        }
-        function onClose() {
-          cleanup();
-          reject(
-            new HTTPError(`Client Closed Request`, {
-              statusCode: 499,
-              code: 'BAD_USER_INPUT',
-            }),
-          );
-        }
-        function onRequestTimeout() {
-          cleanup();
-          reject(
-            new HTTPError(
-              `Subscription exceeded ${requestTimeoutMs}ms - please reconnect.`,
-              { statusCode: 408, code: 'TIMEOUT' },
-            ),
-          );
-        }
-
-        function onDestroy() {
-          reject(new Error(`Subscription was destroyed prematurely`));
-          cleanup();
-        }
-
-        sub.on('data', onData);
-        sub.on('error', onError);
-        sub.on('destroy', onDestroy);
-        req.once('close', onClose);
-        res.once('close', onClose);
-        requestTimeoutTimer = setTimeout(onRequestTimeout, requestTimeoutMs);
-        sub.start();
-      });
-    }
+    const output = await callProcedure({
+      caller,
+      path,
+      input,
+      reqEvents: req,
+      resEvents: res,
+      subscriptions,
+      type,
+    });
     const json: HTTPSuccessResponseEnvelope<unknown> = {
       ok: true,
       statusCode: res.statusCode ?? 200,
