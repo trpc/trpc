@@ -104,11 +104,9 @@ async function getInputFromRequest({
     const input = getQueryInput(query);
     return input;
   }
-  if (type === 'mutation' || type === 'subscription') {
-    const body = await getPostBody({ req, maxBodySize });
-    return body.input;
-  }
-  return undefined;
+
+  const body = await getPostBody({ req, maxBodySize });
+  return body.input;
 }
 
 /**
