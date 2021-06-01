@@ -9,7 +9,8 @@
     "start": "yarn dev",
     "build": "tsc",
     "test-dev": "start-server-and-test 'ts-node src/server.ts' 2022 'ts-node src/client.ts'",
-    "test-start": "start-server-and-test 'node dist/server' 2022 'node dist/client'"
+    "test-start": "start-server-and-test 'node dist/server' 2022 'node dist/client'",
+    "lock-file": "yarn generate-lock-entry >> yarn.lock"
   },
   "dependencies": {
     "@trpc/client": "^6.3.1",
