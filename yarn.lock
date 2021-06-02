@@ -2480,10 +2480,10 @@
   resolved "https://registry.npmjs.org/@prisma/engines-version/-/engines-version-2.23.0-36.adf5e8cba3daf12d456d911d72b6e9418681b28b.tgz#c813279bbea48dedad039b0bc3b044117d2dbaa1"
   integrity sha512-VNgnOe+oPQKmy3HOtWi/Q1fvcKZUQkf1OfTD1pzrLBx9tJPejyxt1Mq54L+OOAuYvfrua6bmfojFVLh7uXuWVw==
 
-"@prisma/engines@2.23.0-36.adf5e8cba3daf12d456d911d72b6e9418681b28b":
-  version "2.23.0-36.adf5e8cba3daf12d456d911d72b6e9418681b28b"
-  resolved "https://registry.npmjs.org/@prisma/engines/-/engines-2.23.0-36.adf5e8cba3daf12d456d911d72b6e9418681b28b.tgz#440abe0ebef44b6e1bdaf2b4d14fcde9fe74f18c"
-  integrity sha512-Tgk3kggO5B9IT6mimJAw6HSxbFoDAuDKL3sHHSS41EnQm76j/nf4uhGZFPzOQwZWOLeT5ZLO2khr4/FCA9Nkhw==
+"@prisma/engines@2.24.0-30.f3e341280d96d0abc068f97e959ddf01f321a858":
+  version "2.24.0-30.f3e341280d96d0abc068f97e959ddf01f321a858"
+  resolved "https://registry.yarnpkg.com/@prisma/engines/-/engines-2.24.0-30.f3e341280d96d0abc068f97e959ddf01f321a858.tgz#c4fda8eedb864dd3b7afb8815a6f609d7d1bba2d"
+  integrity sha512-rcMl4XgkLg1ki94EfRXX6t/Abzw5CMQFkfC6K+dkxuJ9gIo+moGSZHsyYLAD0ccdYhEW0QbP9TNg0VVe8thrNw==
 
 "@rollup/plugin-alias@^3.1.1":
   version "3.1.2"
@@ -2855,16 +2855,16 @@
   integrity sha512-ewFXqrQHlFsgc09MK5jP5iR7vumV/BYayNC6PgJO2LPe8vrnNFyjQjSppfEngITi0qvfKtzFvgKymGheFM9UOA==
 
 "@types/react-dom@^17.0.0":
-  version "17.0.5"
-  resolved "https://registry.npmjs.org/@types/react-dom/-/react-dom-17.0.5.tgz#df44eed5b8d9e0b13bb0cd38e0ea6572a1231227"
-  integrity sha512-ikqukEhH4H9gr4iJCmQVNzTB307kROe3XFfHAOTxOXPOw7lAoEXnM5KWTkzeANGL5Ce6ABfiMl/zJBYNi7ObmQ==
+  version "17.0.6"
+  resolved "https://registry.yarnpkg.com/@types/react-dom/-/react-dom-17.0.6.tgz#c158325cf91b196270bc0f4af73463f149e7eafe"
+  integrity sha512-MGTI+TudxAnGTj8aco8mogaPSJGK2Whje7OZh1CxNLRyhJpTZg/pGQpIbCT0eCVFQyH7UFpdvCqQEThHIp/gsA==
   dependencies:
     "@types/react" "*"
 
 "@types/react@*", "@types/react@^17.0.0":
-  version "17.0.8"
-  resolved "https://registry.npmjs.org/@types/react/-/react-17.0.8.tgz#fe76e3ba0fbb5602704110fd1e3035cf394778e3"
-  integrity sha512-3sx4c0PbXujrYAKwXxNONXUtRp9C+hE2di0IuxFyf5BELD+B+AXL8G7QrmSKhVwKZDbv0igiAjQAMhXj8Yg3aw==
+  version "17.0.9"
+  resolved "https://registry.yarnpkg.com/@types/react/-/react-17.0.9.tgz#1147fb520024a62c9b3841f5cb4db89b73ddb87f"
+  integrity sha512-2Cw7FvevpJxQrCb+k5t6GH1KIvmadj5uBbjPaLlJB/nZWUj56e1ZqcD6zsoMFB47MsJUTFl9RJ132A7hb3QFJA==
   dependencies:
     "@types/prop-types" "*"
     "@types/scheduler" "*"
@@ -9729,11 +9729,11 @@ pretty-format@^26.0.0, pretty-format@^26.6.2:
     react-is "^17.0.1"
 
 prisma@^2.18.0:
-  version "2.23.0"
-  resolved "https://registry.npmjs.org/prisma/-/prisma-2.23.0.tgz#6464cca0e085ed23b1815013a67c868eff07a7d2"
-  integrity sha512-3c/lmDy8nsPcEsfCufvCTJUEuwmAcTPbeGg9fL1qjlvS314duLUA/k2nm3n1rq4ImKqzeC5uaKfvI2IoAfwrJA==
+  version "2.24.0"
+  resolved "https://registry.yarnpkg.com/prisma/-/prisma-2.24.0.tgz#7f2b25a11bd73dc1f9ab88e2fd92ff5fdddee85b"
+  integrity sha512-kZBYxAkThSFfAZzTGpsihaNqNbGQVzkPhQ0XklLDetN36EpQXeeOQhS05DrzlGSQ7rG7w8mt3m3iDF0S/RD/qw==
   dependencies:
-    "@prisma/engines" "2.23.0-36.adf5e8cba3daf12d456d911d72b6e9418681b28b"
+    "@prisma/engines" "2.24.0-30.f3e341280d96d0abc068f97e959ddf01f321a858"
 
 process-nextick-args@~2.0.0:
   version "2.0.1"
