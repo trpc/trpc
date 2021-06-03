@@ -1,0 +1,28 @@
+name: subtree-matrix
+
+on: [push]
+
+jobs:
+  sync-downstream:
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        path:
+          - command
+          - database
+          - support
+
+    name: Update downstream ${{ matrix.path }} package
+
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+      - uses: nxtlvlsoftware/git-subtree-action@1
+        with:
+          repo: 'nxtlvlsoftware/${{ matrix.path }}'
+          path: 'src/${{ matrix.path }}'
+          deploy_key: ${{ secrets.TRPC_GITHUB_TOKEN }}
+          force: true # will force push to the downstream repository
