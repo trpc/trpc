@@ -22,5 +22,5 @@ jobs:
         with:
           repo: 'trpc/${{ matrix.path }}'
           path: 'examples/${{ matrix.path }}'
-          deploy_key: ${{ secrets.TRPC_GITHUB_TOKEN }}
+          deploy_key: ${{ secrets.TRPC_DEPLOY_TOKEN }}
           force: true # will force push to the downstream repository
