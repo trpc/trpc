@@ -10,9 +10,7 @@ jobs:
       fail-fast: false
       matrix:
         path:
-          - command
-          - database
-          - support
+          - next-prisma-starter
 
     name: Update downstream ${{ matrix.path }} package
 
@@ -22,7 +20,7 @@ jobs:
           fetch-depth: 0
       - uses: nxtlvlsoftware/git-subtree-action@1
         with:
-          repo: 'nxtlvlsoftware/${{ matrix.path }}'
-          path: 'src/${{ matrix.path }}'
+          repo: 'trpc/${{ matrix.path }}'
+          path: 'examples/${{ matrix.path }}'
           deploy_key: ${{ secrets.TRPC_GITHUB_TOKEN }}
           force: true # will force push to the downstream repository
