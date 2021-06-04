@@ -5,11 +5,11 @@ Try in CodeSandbox: [https://githubbox.com/trpc/trpc/tree/main/examples/next-pri
 
 ## Features
 
+- 🧙‍♂️ E2E type safety with [tRPC](https://trpc.io)
 - ⚡ Full-stack React with Next.js
 - ⚡ Database with Prisma
 - ⚙️ VSCode extensions
 - 🎨 ESLint + Prettier
-- 🧙‍♂️ E2E type safety with [tRPC](https://trpc.io)
 - 💚 CI setup using GitHub Actions:
   - ✅ E2E testing with [Playwright](https://playwright.dev/)
   - ✅ Linting
