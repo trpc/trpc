@@ -1,35 +1,9 @@
 /**
- * This file contains the tRPC http response handler and context creation for Next.js
+ * This file contains the tRPC http response handler
  */
-import { PrismaClient } from '@prisma/client';
-import * as trpc from '@trpc/server';
 import * as trpcNext from '@trpc/server/adapters/next';
 import { postsRouter } from 'routers/posts';
-
-const prisma = new PrismaClient();
-
-/**
- * Creates context for an incoming request
- * @link https://trpc.io/docs/context
- */
-const createContext = async (
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  { req, res }: trpcNext.CreateNextContextOptions,
-) => {
-  return {
-    prisma,
-  };
-};
-
-// Infers the context returned from `createContext`
-export type Context = trpc.inferAsyncReturnType<typeof createContext>;
-
-/**
- * Helper function to create a router with context
- */
-export function createRouter() {
-  return trpc.router<Context>();
-}
+import { createContext, createRouter } from 'routers/utils/createRouter';
 
 /**
  * Create your application's root router
@@ -37,7 +11,7 @@ export function createRouter() {
  * @link https://trpc.io/docs/ssg
  * @link https://trpc.io/docs/router
  */
-const appRouter = createRouter()
+export const appRouter = createRouter()
   /**
    * Optionally do custom error (type safe!) formatting
    * @link https://trpc.io/docs/error-formatting
