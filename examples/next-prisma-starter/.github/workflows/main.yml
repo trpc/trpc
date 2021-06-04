@@ -1,4 +1,4 @@
-name: Examples E2E
+name: E2E-testing
 on: [push]
 jobs:
   e2e:
@@ -21,8 +21,9 @@ jobs:
 
       - uses: microsoft/playwright-github-action@v1
 
-      - name: Install deps and build (with cache)
-        uses: bahmutov/npm-install@v1
+      # - name: Install deps and build (with cache)
+      #   uses: bahmutov/npm-install@v1
+      - run: yarn install
 
       - run: yarn build
         env:
