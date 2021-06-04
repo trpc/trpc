@@ -2,24 +2,8 @@
  * This file contains the tRPC http response handler
  */
 import * as trpcNext from '@trpc/server/adapters/next';
-import { postsRouter } from 'routers/posts';
-import { createContext, createRouter } from 'routers/utils/createRouter';
-
-/**
- * Create your application's root router
- * If you want to use SSG, you need export this
- * @link https://trpc.io/docs/ssg
- * @link https://trpc.io/docs/router
- */
-export const appRouter = createRouter()
-  /**
-   * Optionally do custom error (type safe!) formatting
-   * @link https://trpc.io/docs/error-formatting
-   */
-  // .formatError(({ defaultShape, error }) => { })
-  .merge('posts.', postsRouter);
-
-export type AppRouter = typeof appRouter;
+import { appRouter } from 'routers/appRouter';
+import { createContext } from 'routers/utils/createRouter';
 
 export default trpcNext.createNextApiHandler({
   router: appRouter,

@@ -1,15 +1,16 @@
+import { inferAsyncReturnType } from '@trpc/server';
 import { createContext } from './utils/createRouter';
 import { createTestRouter } from './utils/testUtils';
-let t: ReturnType<typeof createTestRouter>;
+let t: inferAsyncReturnType<typeof createTestRouter>;
 
-beforeEach(() => {
-  t = createTestRouter({
+beforeAll(async () => {
+  t = await createTestRouter({
     createContext: createContext,
   });
 });
 
-afterEach(() => {
-  t.close();
+afterAll(() => {
+  return t.close();
 });
 
 test('create and get post', async () => {

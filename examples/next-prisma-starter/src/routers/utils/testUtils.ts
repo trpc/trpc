@@ -8,9 +8,9 @@ import {
 } from '@trpc/server';
 import AbortController from 'abort-controller';
 import fetch from 'node-fetch';
-import { appRouter, AppRouter } from 'pages/api/trpc/[trpc]';
+import { AppRouter, appRouter } from 'routers/appRouter';
 
-export function createTestRouter(opts: {
+export async function createTestRouter(opts: {
   createContext: CreateHttpContextFn<AppRouter>;
   server?: Partial<CreateHttpHandlerOptions<AppRouter>>;
   client?: Partial<CreateTRPCClientOptions<AppRouter>>;
@@ -20,7 +20,17 @@ export function createTestRouter(opts: {
     createContext: opts.createContext,
     ...(opts?.server ?? {}),
   });
-  const { port } = server.listen(0);
+
+  const port = await new Promise<number>((resolve, reject) => {
+    server.server.listen(0, () => {
+      const address = server.server.address();
+      if (address && typeof address !== 'string') {
+        resolve(address.port);
+      } else {
+        reject();
+      }
+    });
+  });
 
   return {
     client: (
@@ -34,7 +44,13 @@ export function createTestRouter(opts: {
         },
         ...(createClientOptions ?? {}),
       }),
-    close: (done?: () => void) => server.server.close(done),
+    close: () => {
+      return new Promise<void>((resolve, reject) => {
+        server.server.close((err) => {
+          err ? reject(err) : resolve();
+        });
+      });
+    },
     appRouter,
   };
 }
