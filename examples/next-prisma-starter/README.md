@@ -7,10 +7,13 @@ Try in CodeSandbox: [https://githubbox.com/trpc/trpc/tree/main/examples/next-pri
 
 - ⚡ Full-stack React with Next.js
 - ⚡ Database with Prisma
-- 🧙‍♂️ E2E type safety with [tRPC](https://trpc.io)
-- ✅ E2E testing with Playwright
-- 🎨 ESLint
 - ⚙️ VSCode extensions
+- 🎨 ESLint + Prettier
+- 🧙‍♂️ E2E type safety with [tRPC](https://trpc.io)
+- 💚 CI already setup using GitHub Actions:
+  - ✅ E2E testing with Playwright
+  - ✅ Linting
+
 
 ## Setup
 
