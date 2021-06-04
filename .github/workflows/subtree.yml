@@ -1,7 +1,8 @@
 name: subtree-matrix
-
-on: [push]
-
+on:
+  push:
+    branches:
+      - main
 jobs:
   sync-downstream:
     runs-on: ubuntu-latest
