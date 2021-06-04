@@ -17,10 +17,16 @@
     "start": "next start",
     "studio": "prisma studio",
     "lint": "eslint src",
+    "lint-fix": "yarn lint --fix",
     "prisma-nuke": "rm -rf prisma/migrations prisma/*.db**",
     "test-dev": "start-server-and-test dev 3000 test",
     "test-start": "start-server-and-test start 3000 test",
     "test": "jest"
+  },
+  "prettier": {
+    "printWidth": 80,
+    "trailingComma": "all",
+    "singleQuote": true
   },
   "dependencies": {
     "@prisma/client": "^2.18.0",
@@ -42,6 +48,7 @@
     "@types/node": "^15.0.1",
     "@types/react": "^17.0.0",
     "@typescript-eslint/eslint-plugin": "^4.25.0",
+    "@typescript-eslint/parser": "^4.26.0",
     "eslint": "^7.22.0",
     "eslint-config-prettier": "^8.3.0",
     "eslint-plugin-prettier": "^3.3.1",

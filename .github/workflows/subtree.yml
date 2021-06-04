@@ -1,0 +1,26 @@
+name: subtree-matrix
+
+on: [push]
+
+jobs:
+  sync-downstream:
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        path:
+          - next-prisma-starter
+
+    name: Update downstream ${{ matrix.path }} package
+
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+      - uses: nxtlvlsoftware/git-subtree-action@1.1
+        with:
+          repo: 'trpc/examples-${{ matrix.path }}'
+          path: 'examples/${{ matrix.path }}'
+          deploy_key: ${{ secrets.TRPC_DEPLOY_TOKEN }}
+          force: true # will force push to the downstream repository
