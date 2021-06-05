@@ -36,3 +36,5 @@ yarn-error.log*
 *.db
 *.db-journal
 prisma/_sqlite/migrations
+
+.nyc_output/

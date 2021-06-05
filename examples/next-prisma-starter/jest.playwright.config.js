@@ -7,7 +7,7 @@ module.exports = {
   testMatch: ['<rootDir>/playwright/**/?(*.)+(spec|test).[jt]s?(x)'],
   testEnvironmentOptions: {
     'jest-playwright': {
-      browsers: ['chromium', 'firefox', 'webkit'],
+      browsers: ['chromium' /*, 'firefox', 'webkit'*/],
       exitOnPageError: false, // GitHub currently throws errors
       launchOptions: {
         headless: true,
@@ -17,6 +17,7 @@ module.exports = {
           dir: 'playwright/videos/',
         },
       },
+      collectCoverage: true,
     },
   },
 };
