@@ -19,7 +19,7 @@ async function main() {
     },
 
     onError(err) {
-      console.log('❌ ', err.res?.status, err.message);
+      console.log('❌ ', err.json?.statusCode, err.message);
     },
   });
   await sleep();
@@ -47,7 +47,7 @@ async function main() {
     },
 
     onError(err) {
-      console.log('❌ ', err.res?.status, err.message);
+      console.log('❌ ', err.json?.statusCode, err.message);
     },
     getHeaders: () => ({
       authorization: 'secret',

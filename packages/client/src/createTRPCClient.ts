@@ -25,6 +25,9 @@ const retryDelay = (attemptIndex: number) =>
 
 export class TRPCClientError<TRouter extends AnyRouter> extends Error {
   public readonly json?: Maybe<HTTPErrorResponseEnvelope<TRouter>>;
+  /**
+   * @deprecated will always be `undefined` and will be removed in next major
+   */
   public readonly res?: Maybe<Response>;
   public readonly originalError?: Maybe<Error>;
   public readonly shape?: HTTPErrorResponseEnvelope<TRouter>['error'];
@@ -32,18 +35,15 @@ export class TRPCClientError<TRouter extends AnyRouter> extends Error {
   constructor(
     message: string,
     {
-      res,
       json,
       originalError,
     }: {
-      res?: Maybe<Response>;
       json?: Maybe<HTTPErrorResponseEnvelope<TRouter>>;
       originalError?: Maybe<Error>;
     },
   ) {
     super(message);
     this.message = message;
-    this.res = res;
     this.json = json;
     this.originalError = originalError;
     this.shape = this.json?.error;
@@ -75,8 +75,10 @@ type TRPCType = 'subscription' | 'query' | 'mutation';
 export class TRPCClient<TRouter extends AnyRouter> {
   private readonly links: OperationLink[];
   public readonly transformer: DataTransformer;
+  private opts: CreateTRPCClientOptions<TRouter>;
 
   constructor(opts: CreateTRPCClientOptions<TRouter>) {
+    this.opts = opts;
     if ('url' in opts) {
       this.transformer = opts.transformer
         ? 'input' in opts.transformer
@@ -124,6 +126,7 @@ export class TRPCClient<TRouter extends AnyRouter> {
       (resolve, reject) => {
         const unsub = result.subscribe((json) => {
           if (json.ok) {
+            this.opts.onSuccess?.(json);
             resolve(json.data);
           } else {
             const err = new TRPCClientError(json.error.message, {
@@ -131,6 +134,7 @@ export class TRPCClient<TRouter extends AnyRouter> {
             });
 
             reject(err);
+            this.opts.onError?.(err);
           }
           unsub();
         });

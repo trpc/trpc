@@ -43,7 +43,7 @@ test('basic', async () => {
   if (!(clientError instanceof TRPCClientError)) {
     throw new Error('Did not throw');
   }
-  expect(clientError.res?.status).toBe(500);
+  expect(clientError.json?.statusCode).toBe(500);
   expect(clientError.json?.error.message).toMatchInlineSnapshot(`"woop"`);
   expect(clientError.json?.error.code).toMatchInlineSnapshot(
     `"INTERNAL_SERVER_ERROR"`,
@@ -84,7 +84,7 @@ test('input error', async () => {
   if (!(clientError instanceof TRPCClientError)) {
     throw new Error('Did not throw');
   }
-  expect(clientError.res?.status).toBe(400);
+  expect(clientError.json?.statusCode).toBe(400);
   expect(clientError.json?.error.message).toMatchInlineSnapshot(`
     "[
       {
@@ -135,7 +135,7 @@ test('httpError.unauthorized()', async () => {
   if (!(clientError instanceof TRPCClientError)) {
     throw new Error('Did not throw');
   }
-  expect(clientError.res?.status).toBe(401);
+  expect(clientError.json?.statusCode).toBe(401);
   expect(clientError.json?.error.message).toMatchInlineSnapshot(
     `"Unauthorized"`,
   );
@@ -192,7 +192,7 @@ test('formatError()', async () => {
     clientError = _err;
   }
   assertClientError(clientError);
-  expect(clientError.res?.status).toBe(400);
+  expect(clientError.json?.statusCode).toBe(400);
   expect(clientError.json?.error).toMatchInlineSnapshot(`
     Object {
       "errors": Array [
@@ -236,7 +236,7 @@ test('make sure object is ignoring prototype', async () => {
     clientError = _err;
   }
   assertClientError(clientError);
-  expect(clientError.res?.status).toBe(404);
+  expect(clientError.json?.statusCode).toBe(404);
   expect(clientError.json?.error.code).toBe('NOT_FOUND');
   expect(onError).toHaveBeenCalledTimes(1);
   const serverError = onError.mock.calls[0][0].error;
