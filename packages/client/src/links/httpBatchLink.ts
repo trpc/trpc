@@ -63,11 +63,8 @@ export function dataLoader<TKey, TValue>(opts: {
         cancel() {
           // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
           batch!.cancelled = true;
-          if (dispatchTimer) {
-            clearTimeout(dispatchTimer as any);
-            batch = null;
-            dispatchTimer = null;
-          }
+          batch = null;
+          destroyTimer();
         },
       };
     }
