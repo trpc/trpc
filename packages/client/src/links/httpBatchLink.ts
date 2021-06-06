@@ -1,7 +1,8 @@
 import { HTTPResponseEnvelope } from 'packages/server/src/http';
 import { DataTransformer } from 'packages/server/src/transformer';
+import { Dict } from 'packages/server/src/types';
 import { getAbortController, getFetch } from '../helpers';
-import { AppLink } from './core';
+import { TRPCLink } from './core';
 import { HttpLinkOptions } from './httpLink';
 type CancelFn = () => void;
 
@@ -69,9 +70,9 @@ export function dataLoader<TKey, TValue>(fetchMany: BatchLoadFn<TKey, TValue>) {
         cancelled: false,
         items: [],
         cancel() {
-          // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-          // @ts-ignore
-          batch?.cancelled = true;
+          if (batch) {
+            batch.cancelled = true;
+          }
           destroyTimerAndBatch();
         },
       };
@@ -118,6 +119,10 @@ function fetchAndReturn(config: {
   const ac = config.AbortController ? new config.AbortController() : null;
   const reqOpts = {
     ...config.opts,
+    headers: {
+      'content-type': 'application/json',
+      ...(config.opts.headers ?? {}),
+    },
     signal: ac?.signal,
   };
   const promise = new Promise((resolve, reject) => {
@@ -136,10 +141,14 @@ function fetchAndReturn(config: {
   };
   return { promise, cancel };
 }
-export function httpBatchLink(opts: HttpLinkOptions): AppLink {
+export function httpBatchLink(opts: HttpLinkOptions): TRPCLink {
   const _fetch = getFetch(opts?.fetch);
   const AC = getAbortController(opts?.AbortController);
   const { url } = opts;
+  const getHeaders =
+    typeof opts.headers === 'function'
+      ? opts.headers
+      : () => opts.headers ?? {};
 
   const transformer = opts.transformer
     ? 'input' in opts.transformer
@@ -172,6 +181,7 @@ export function httpBatchLink(opts: HttpLinkOptions): AppLink {
         AbortController: AC as any,
         opts: {
           method: 'GET',
+          headers: getHeaders() as any,
         },
         transformer,
       });

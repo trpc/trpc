@@ -1,6 +1,6 @@
-import { AppLink } from './core';
+import { TRPCLink } from './core';
 
-export function retryLink(opts: { attempts: number }): AppLink {
+export function retryLink(opts: { attempts: number }): TRPCLink {
   // initialized config
   return () => {
     // initialized in app

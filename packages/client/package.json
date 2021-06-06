@@ -10,13 +10,21 @@
     "url": "git+https://github.com/trpc/trpc.git",
     "directory": "packages/client"
   },
+  "preconstruct": {
+    "entrypoints": [
+      "index.ts",
+      "links/httpBatchLink.ts",
+      "links/splitLink.ts"
+    ]
+  },
   "scripts": {},
   "main": "dist/trpc-client.cjs.js",
   "module": "dist/trpc-client.esm.js",
   "typings": "dist/trpc-client.cjs.d.ts",
   "files": [
     "README.md",
-    "dist"
+    "dist",
+    "links"
   ],
   "dependencies": {
     "@babel/runtime": "^7.9.0",

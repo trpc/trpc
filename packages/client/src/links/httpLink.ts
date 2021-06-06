@@ -1,12 +1,13 @@
-import { ClientDataTransformerOptions } from 'packages/server/src/transformer';
+import { ClientDataTransformerOptions } from '@trpc/server';
 import { getAbortController, getFetch } from '../helpers';
-import { AppLink } from './core';
+import { TRPCLink } from './core';
 
 export interface HttpLinkOptions {
   fetch?: typeof fetch;
   AbortController?: typeof AbortController;
   url: string;
   transformer?: ClientDataTransformerOptions;
+  headers?: Record<string, string> | (() => Record<string, string>);
 }
 type CallType = 'subscription' | 'query' | 'mutation';
 type ReqOpts = {
@@ -14,7 +15,7 @@ type ReqOpts = {
   body?: string;
   url: string;
 };
-export function httpLink(opts: HttpLinkOptions): AppLink {
+export function httpLink(opts: HttpLinkOptions): TRPCLink {
   const _fetch = getFetch(opts?.fetch);
   const AC = getAbortController(opts?.AbortController);
   const { url } = opts;

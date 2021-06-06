@@ -16,16 +16,16 @@ export type ResultEnvelope<TOutput = unknown> =
     };
 
 export type PrevCallback = (result: ResultEnvelope) => void;
-export type ContextLink = (opts: {
+export type OperationLink = (opts: {
   op: Operation;
   prev: PrevCallback;
   next: (op: Operation, callback: PrevCallback) => void;
   onDestroy: (callback: () => void) => void;
 }) => void;
 
-export type AppLink = () => ContextLink;
+export type TRPCLink = () => OperationLink;
 
-export function createChain(links: ContextLink[]) {
+export function createChain(links: OperationLink[]) {
   return {
     call(_op: Operation) {
       const $result = observable<ResultEnvelope | null>(null);

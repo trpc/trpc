@@ -1,16 +1,16 @@
-import { AppLink, Operation } from './core';
+import { TRPCLink, Operation } from './core';
 
 export function splitLink(opts: {
   /**
    * The link to execute next if the test function returns `true`.
    */
-  left: AppLink;
+  left: TRPCLink;
   /**
    * The link to execute next if the test function returns `false`.
    */
-  right: AppLink;
+  right: TRPCLink;
   condition: (op: Operation) => boolean;
-}): AppLink {
+}): TRPCLink {
   return () => {
     const left = opts.left();
     const right = opts.right();
