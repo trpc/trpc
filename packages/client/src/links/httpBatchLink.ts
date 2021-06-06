@@ -1,4 +1,7 @@
+import { HTTPResponseEnvelope } from 'packages/server/src/http';
 import { getAbortController, getFetch } from '../helpers';
+import { AppLink, ResultEnvelope } from './core';
+import { HttpLinkOptions } from './httpLink';
 
 type CancelFn = () => void;
 export type CancellablePromise<T = unknown> = Promise<T> & {
@@ -100,6 +103,33 @@ export function dataLoader<TKey, TValue>(fetchMany: BatchLoadFn<TKey, TValue>) {
   };
 }
 
+function fetchAndReturn(config: {
+  fetch: typeof fetch;
+  AbortController?: typeof AbortController;
+  url: string;
+  opts: RequestInit;
+}): CancellablePromise<any> {
+  const ac = config.AbortController ? new config.AbortController() : null;
+  const reqOpts = {
+    ...config.opts,
+    signal: ac?.signal,
+  };
+  const promise = new Promise((resolve, reject) => {
+    config
+      .fetch(config.url, reqOpts)
+      .then((res) => {
+        return res.json();
+      })
+      .then((json) => {
+        resolve(json);
+      })
+      .catch(reject);
+  }) as CancellablePromise<unknown>;
+  promise.cancel = () => {
+    ac?.abort();
+  };
+  return promise;
+}
 export function httpBatchLink(opts: HttpLinkOptions): AppLink {
   const _fetch = getFetch(opts?.fetch);
   const AC = getAbortController(opts?.AbortController);
@@ -108,6 +138,32 @@ export function httpBatchLink(opts: HttpLinkOptions): AppLink {
   return () => {
     // initialized in app
 
-    return ({ op, prev, onDestroy: onDone }) => {};
+    const query = dataLoader<
+      { path: string; input: unknown },
+      HTTPResponseEnvelope<unknown, any>
+    >((keyInputPairs) => {
+      const path = keyInputPairs.map(({ path }) => path).join(',');
+      const input = keyInputPairs
+        .map(({ input }) =>
+          input === undefined ? '' : encodeURIComponent(JSON.stringify(input)),
+        )
+        .join('&');
+
+      return fetchAndReturn({
+        url: `${url}/${path}?batch=1&${input}`,
+        fetch: _fetch,
+        AbortController: AC as any,
+        opts: {
+          method: 'GET',
+        },
+      });
+    });
+    return ({ op, prev, onDestroy }) => {
+      if (op.type === 'query') {
+        const promise = query.load(op);
+        onDestroy(() => promise.cancel());
+        promise.then(prev);
+      }
+    };
   };
 }
