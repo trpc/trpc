@@ -31,20 +31,28 @@ export function chainer(links: ContextLink[]) {
       const $result = observable<ResultEnvelope | null>(null);
       const $aborted = observable(false);
 
-      const prevStack: PrevCallback[] = [];
-      function walk({ index, op }: { index: number; op: Operation }) {
+      function walk({
+        index,
+        op,
+        stack,
+      }: {
+        index: number;
+        op: Operation;
+        stack: PrevCallback[];
+      }) {
         const link = links[index];
         const prev: PrevCallback =
           index === 0
             ? (value: ResultEnvelope) => $result.set(value)
-            : prevStack[index - 1];
+            : stack[index - 1];
 
         link({
           op,
           prev,
           next: (op, prevOp) => {
+            const prevStack = stack.slice();
             prevStack[index] = prevOp;
-            walk({ index: index + 1, op });
+            walk({ index: index + 1, op, stack: prevStack });
           },
           onDestroy: (callback) => {
             const unsub = $aborted.subscribe({
@@ -58,7 +66,7 @@ export function chainer(links: ContextLink[]) {
           },
         });
       }
-      walk({ index: 0, op: _op });
+      walk({ index: 0, op: _op, stack: [] });
       return {
         get: $result.get,
         subscribe: (callback: (value: ResultEnvelope) => void) => {
