@@ -25,7 +25,7 @@ export type ContextLink = (opts: {
 
 export type AppLink = () => ContextLink;
 
-export function chainer(links: ContextLink[]) {
+export function createChain(links: ContextLink[]) {
   return {
     call(_op: Operation) {
       const $result = observable<ResultEnvelope | null>(null);

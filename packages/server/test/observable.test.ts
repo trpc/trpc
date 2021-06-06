@@ -3,7 +3,7 @@ import { waitFor } from '@testing-library/dom';
 import AbortController from 'abort-controller';
 import fetch from 'node-fetch';
 import { z } from 'zod';
-import { chainer } from '../../client/src/links/core';
+import { createChain } from '../../client/src/links/core';
 import {
   dataLoader,
   httpBatchLink,
@@ -75,18 +75,16 @@ test('chainer ', async () => {
     }),
   );
 
-  const chain = [
+  const chain = createChain([
     retryLink({ attempts: 3 })(),
     httpLink({
       fetch: fetch as any,
       AbortController,
       url: `http://localhost:${port}`,
     })(),
-  ];
+  ]);
 
-  const chainExec = chainer(chain);
-
-  const result = chainExec.call({
+  const result = chain.call({
     type: 'query',
     path: 'hello',
     input: null,
@@ -107,7 +105,7 @@ test('chainer ', async () => {
 });
 
 test('mock cache link has immediate result', () => {
-  const chainExec = chainer([
+  const chain = createChain([
     retryLink({ attempts: 3 })(),
     // mock cache link
     ({ prev }) => {
@@ -119,7 +117,7 @@ test('mock cache link has immediate result', () => {
       url: `void`,
     })(),
   ]);
-  const result = chainExec.call({} as any);
+  const result = chain.call({} as any);
   expect(result.get()).toMatchObject({
     data: 'cached',
   });
@@ -128,7 +126,7 @@ test('mock cache link has immediate result', () => {
 test('cancel request', async () => {
   const onDestroyCall = jest.fn();
 
-  const chainExec = chainer([
+  const chain = createChain([
     ({ onDestroy }) => {
       onDestroy(() => {
         onDestroyCall();
@@ -136,7 +134,7 @@ test('cancel request', async () => {
     },
   ]);
 
-  const result = chainExec.call({
+  const result = chain.call({
     type: 'query',
     path: 'hello',
     input: null,
@@ -236,7 +234,7 @@ describe('batching', () => {
       },
     );
 
-    const chainExec = chainer([
+    const chain = createChain([
       httpBatchLink({
         fetch: fetch as any,
         AbortController,
@@ -244,13 +242,13 @@ describe('batching', () => {
       })(),
     ]);
 
-    const result1 = chainExec.call({
+    const result1 = chain.call({
       type: 'query',
       path: 'hello',
       input: null,
     });
 
-    const result2 = chainExec.call({
+    const result2 = chain.call({
       type: 'query',
       path: 'hello',
       input: 'alexdotjs',
