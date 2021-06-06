@@ -49,7 +49,7 @@ export function observable<TValue>(
       for (const subscription of subscribers) {
         subscription.onDone?.();
       }
-      while (subscribers) {
+      while (subscribers.length) {
         subscribers.pop();
       }
     },

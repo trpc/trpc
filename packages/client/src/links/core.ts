@@ -28,15 +28,15 @@ export type AppLink = () => ContextLink;
 export function chainer(links: ContextLink[]) {
   return {
     call(_op: Operation) {
-      const obs = observable<ResultEnvelope | null>(null);
-      const prevStack: PrevCallback[] = [];
-      const numListeners = observable(0);
+      const $result = observable<ResultEnvelope | null>(null);
+      const $aborted = observable(false);
 
+      const prevStack: PrevCallback[] = [];
       function walk({ index, op }: { index: number; op: Operation }) {
         const link = links[index];
         const prev: PrevCallback =
           index === 0
-            ? (value: ResultEnvelope) => obs.set(value)
+            ? (value: ResultEnvelope) => $result.set(value)
             : prevStack[index - 1];
 
         link({
@@ -47,9 +47,9 @@ export function chainer(links: ContextLink[]) {
             walk({ index: index + 1, op });
           },
           onDestroy: (callback) => {
-            const unsub = numListeners.subscribe({
-              onNext(subs) {
-                if (subs === 0) {
+            const unsub = $aborted.subscribe({
+              onNext(aborted) {
+                if (aborted) {
                   callback();
                   unsub();
                 }
@@ -60,20 +60,18 @@ export function chainer(links: ContextLink[]) {
       }
       walk({ index: 0, op: _op });
       return {
-        get: obs.get,
+        get: $result.get,
         subscribe: (callback: (value: ResultEnvelope) => void) => {
-          numListeners.set(numListeners.get() + 1);
-
-          return obs.subscribe({
+          return $result.subscribe({
             onNext: (v) => {
               if (v) {
                 callback(v);
               }
             },
-            onDone() {
-              numListeners.set(numListeners.get() - 1);
-            },
           });
+        },
+        abort: () => {
+          $aborted.set(true);
         },
       };
     },

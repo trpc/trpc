@@ -3,6 +3,10 @@ import { observable } from '../../client/src/observable';
 import { chainer } from '../../client/src/links/core';
 import { httpLink } from '../../client/src/links/httpLink';
 import { retryLink } from '../../client/src/links/retryLink';
+import {
+  dataLoader,
+  CancellablePromise,
+} from '../../client/src/links/httpBatchLink';
 import { routerToServerAndClient } from './_testHelpers';
 import * as trpc from '../src';
 import AbortController from 'abort-controller';
@@ -117,5 +121,45 @@ test('mock cache link has immediate result', () => {
   const result = chainExec.call({} as any);
   expect(result.get()).toMatchObject({
     data: 'cached',
+  });
+});
+
+test('cancel request', async () => {
+  const onDestroyCall = jest.fn();
+
+  const chainExec = chainer([
+    ({ onDestroy }) => {
+      onDestroy(() => {
+        onDestroyCall();
+      });
+    },
+  ]);
+
+  const result = chainExec.call({
+    type: 'query',
+    path: 'hello',
+    input: null,
+  });
+
+  result.abort();
+
+  expect(onDestroyCall).toHaveBeenCalled();
+});
+
+describe('batching', () => {
+  test('dataloader basic', async () => {
+    const fetchManyCalled = jest.fn();
+    const loader = dataLoader<number, number>({
+      fetchMany(keys) {
+        fetchManyCalled();
+        const promise = new Promise<number[]>((resolve) => {
+          resolve(keys.map((v) => v + 1));
+        }) as CancellablePromise<number[]>;
+        return promise;
+      },
+    });
+
+    const result = await Promise.all([loader.load(1), loader.load(2)]);
+    expect(result).toEqual([2, 3]);
   });
 });
