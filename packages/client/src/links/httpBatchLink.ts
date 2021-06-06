@@ -1,7 +1,3 @@
-import { getAbortController, getFetch } from '../helpers';
-import { AppLink } from './core';
-import { HttpLinkOptions } from './httpLink';
-
 type CancelFn = () => void;
 export type CancellablePromise<T = unknown> = Promise<T> & {
   cancel: CancelFn;
@@ -15,7 +11,7 @@ type BatchItem<TKey, TValue> = {
 type Batch<TKey, TValue> = {
   items: BatchItem<TKey, TValue>[];
   cancelled: boolean;
-  cancel?: CancelFn;
+  cancel: CancelFn;
 };
 type BatchLoadFn<TKey, TValue> = (keys: TKey[]) => CancellablePromise<TValue[]>;
 
@@ -24,7 +20,15 @@ export function dataLoader<TKey, TValue>(opts: {
 }) {
   let batch: Batch<TKey, TValue> | null = null;
   let dispatchTimer: NodeJS.Timer | number | null = null;
+
+  const destroyTimer = () => {
+    if (dispatchTimer) {
+      clearTimeout(dispatchTimer as any);
+    }
+    dispatchTimer = null;
+  };
   function dispatch() {
+    destroyTimer();
     if (!batch) {
       return;
     }
@@ -32,6 +36,7 @@ export function dataLoader<TKey, TValue>(opts: {
     batch = null;
     const promise = opts.fetchMany(batchCopy.items.map((v) => v.key));
     batchCopy.cancel = promise.cancel;
+
     promise
       .then((result) => {
         for (let i = 0; i < result.length; i++) {
@@ -55,6 +60,15 @@ export function dataLoader<TKey, TValue>(opts: {
       batch = {
         cancelled: false,
         items: [],
+        cancel() {
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+          batch!.cancelled = true;
+          if (dispatchTimer) {
+            clearTimeout(dispatchTimer as any);
+            batch = null;
+            dispatchTimer = null;
+          }
+        },
       };
     }
     const thisBatch = batch;
@@ -69,6 +83,7 @@ export function dataLoader<TKey, TValue>(opts: {
     }
     promise.cancel = () => {
       batchItem.cancelled = true;
+
       if (thisBatch.cancelled) {
         return;
       }
@@ -77,6 +92,7 @@ export function dataLoader<TKey, TValue>(opts: {
         return;
       }
       thisBatch.cancelled = true;
+      thisBatch.cancel?.();
     };
 
     return promise;
@@ -86,14 +102,14 @@ export function dataLoader<TKey, TValue>(opts: {
     load,
   };
 }
-export function httpBatchLink(opts: HttpLinkOptions): AppLink {
-  const _fetch = getFetch(opts?.fetch);
-  const AC = getAbortController(opts?.AbortController);
-  const { url } = opts;
-  // initialized config
-  return () => {
-    // initialized in app
+// export function httpBatchLink(opts: HttpLinkOptions): AppLink {
+//   const _fetch = getFetch(opts?.fetch);
+//   const AC = getAbortController(opts?.AbortController);
+//   const { url } = opts;
+//   // initialized config
+//   return () => {
+//     // initialized in app
 
-    return ({ op, prev, onDestroy: onDone }) => {};
-  };
-}
+//     return ({ op, prev, onDestroy: onDone }) => {};
+//   };
+// }

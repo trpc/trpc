@@ -158,8 +158,56 @@ describe('batching', () => {
         return promise;
       },
     });
+    {
+      const result = await Promise.all([loader.load(1), loader.load(2)]);
+      expect(result).toEqual([2, 3]);
+    }
+    {
+      const result = await Promise.all([loader.load(3), loader.load(4)]);
+      expect(result).toEqual([4, 5]);
+    }
+    expect(fetchManyCalled).toHaveBeenCalledTimes(2);
+  });
 
-    const result = await Promise.all([loader.load(1), loader.load(2)]);
-    expect(result).toEqual([2, 3]);
+  test('dataloader cancellation', async () => {
+    const fetchManyCalled = jest.fn();
+    const cancelCalled = jest.fn();
+    const loader = dataLoader<number, number>({
+      fetchMany(keys) {
+        fetchManyCalled();
+        const promise = new Promise<number[]>((resolve) => {
+          setTimeout(() => {
+            resolve(keys.map((v) => v + 1));
+          }, 10);
+        }) as CancellablePromise<number[]>;
+        promise.cancel = cancelCalled;
+        return promise;
+      },
+    });
+
+    {
+      // immediate, before it's actually executed
+      const promise1 = loader.load(1);
+      const promise2 = loader.load(2);
+
+      promise1.cancel();
+      promise2.cancel();
+
+      expect(cancelCalled).toHaveBeenCalledTimes(0);
+    }
+    {
+      // after some time
+      const promise1 = loader.load(2);
+      const promise2 = loader.load(3);
+
+      await new Promise((resolve) => setTimeout(resolve, 5));
+
+      promise1.cancel();
+      promise2.cancel();
+
+      await waitFor(() => {
+        expect(cancelCalled).toHaveBeenCalledTimes(1);
+      });
+    }
   });
 });
