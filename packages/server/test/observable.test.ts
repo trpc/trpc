@@ -46,7 +46,7 @@ test('retrylink', () => {
         });
       }
     },
-    onDone: () => {},
+    onDestroy: () => {},
   });
   expect(prev).toHaveBeenCalledTimes(1);
   expect(prev.mock.calls[0][0].data).toBe('succeeded on attempt 4');
@@ -97,4 +97,23 @@ test('chainer ', async () => {
   expect(serverCall).toHaveBeenCalledTimes(3);
 
   close();
+});
+
+test('mock cache link has immediate result', () => {
+  const chainExec = chainer([
+    retryLink({ attempts: 3 })(),
+    // mock cache link
+    ({ prev }) => {
+      prev({ ok: true, data: 'cached' });
+    },
+    httpLink({
+      fetch: fetch as any,
+      AbortController,
+      url: `void`,
+    })(),
+  ]);
+  const result = chainExec.call({} as any);
+  expect(result.get()).toMatchObject({
+    data: 'cached',
+  });
 });

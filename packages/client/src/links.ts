@@ -21,7 +21,7 @@ type ContextLink = (opts: {
   op: Operation;
   prev: PrevCallback;
   next: (op: Operation, callback: PrevCallback) => void;
-  onDone: (callback: () => void) => void;
+  onDestroy: (callback: () => void) => void;
 }) => void;
 
 type AppLink = () => ContextLink;
@@ -67,7 +67,7 @@ export function httpLink(opts: HttpLinkOptions): AppLink {
   // initialized config
   return () => {
     // initialized in app
-    return ({ op, prev, onDone }) => {
+    return ({ op, prev, onDestroy: onDone }) => {
       const ac = AC ? new AC() : null;
       const { path, input, type } = op;
       const reqOptsMap: Record<CallType, () => ReqOpts> = {
@@ -118,6 +118,7 @@ export function chainer(links: ContextLink[]) {
     call(_op: Operation) {
       const obs = observable<ResultEnvelope | null>(null);
       const prevStack: PrevCallback[] = [];
+
       function walk({ index, op }: { index: number; op: Operation }) {
         const link = links[index];
         const prev: PrevCallback =
@@ -132,7 +133,7 @@ export function chainer(links: ContextLink[]) {
             prevStack[index] = prevOp;
             walk({ index: index + 1, op });
           },
-          onDone: () => {},
+          onDestroy: () => {},
         });
       }
       walk({ index: 0, op: _op });
