@@ -29,19 +29,19 @@ export function dataLoader<TKey, TValue>(fetchMany: BatchLoadFn<TKey, TValue>) {
   let batch: Batch<TKey, TValue> | null = null;
   let dispatchTimer: NodeJS.Timer | number | null = null;
 
-  const destroyTimer = () => {
+  const destroyTimerAndBatch = () => {
     if (dispatchTimer) {
       clearTimeout(dispatchTimer as any);
     }
     dispatchTimer = null;
+    batch = null;
   };
   function dispatch() {
-    destroyTimer();
-    if (!batch) {
+    const batchCopy = batch;
+    destroyTimerAndBatch();
+    if (!batchCopy) {
       return;
     }
-    const batchCopy = batch;
-    batch = null;
     const { promise, cancel } = fetchMany(batchCopy.items.map((v) => v.key));
     batchCopy.cancel = cancel;
 
@@ -72,8 +72,7 @@ export function dataLoader<TKey, TValue>(fetchMany: BatchLoadFn<TKey, TValue>) {
           // eslint-disable-next-line @typescript-eslint/ban-ts-comment
           // @ts-ignore
           batch?.cancelled = true;
-          batch = null;
-          destroyTimer();
+          destroyTimerAndBatch();
         },
       };
     }
