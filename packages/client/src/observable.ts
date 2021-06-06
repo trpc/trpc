@@ -1,4 +1,4 @@
-interface ObservableLike<TValue> {
+export interface ObservableLike<TValue> {
   subscribe(subscription: {
     onNext?: (item: TValue) => void;
     onError?: (error: unknown) => void;

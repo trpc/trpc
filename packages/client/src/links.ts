@@ -1,24 +1,26 @@
 import { getAbortController, getFetch } from './helpers';
+import { observable } from './observable';
 
-type Operation = {
+type Operation<TInput = unknown> = {
   type: 'query' | 'mutation' | 'subscription';
-  input: unknown;
+  input: TInput;
   path: string;
 };
-type ResultEnvelope =
+type ResultEnvelope<TOutput = unknown> =
   | {
       ok: true;
-      data: unknown;
+      data: TOutput;
     }
   | {
       ok: false;
       error: Error;
     };
 
+type PrevCallback = (result: ResultEnvelope) => void;
 type ContextLink = (opts: {
   op: Operation;
-  prev: (result: ResultEnvelope) => void;
-  next: (op: Operation, callback: (result: ResultEnvelope) => void) => void;
+  prev: PrevCallback;
+  next: (op: Operation, callback: PrevCallback) => void;
   onDone: (callback: () => void) => void;
 }) => void;
 
@@ -28,12 +30,12 @@ export function retryLink(opts: { attempts: number }): AppLink {
   // initialized config
   return () => {
     // initialized in app
-    return ({ op: ctx, next, prev }) => {
+    return ({ op, next, prev }) => {
       // initialized for request
       let attempts = 0;
       const fn = () => {
         attempts++;
-        next(ctx, (result) => {
+        next(op, (result) => {
           if (result.ok) {
             prev(result);
           } else {
@@ -92,8 +94,9 @@ export function httpLink(opts: HttpLinkOptions): AppLink {
       async function fetchAndReturn() {
         const opts = reqOptsMap[type]();
         try {
-          const res = await _fetch(url, { ...opts, signal: ac?.signal });
+          const res = await _fetch(opts.url, { ...opts, signal: ac?.signal });
           const json = await res.json();
+
           prev(json);
         } catch (error) {
           prev({
@@ -107,5 +110,33 @@ export function httpLink(opts: HttpLinkOptions): AppLink {
         ac?.abort();
       });
     };
+  };
+}
+
+export function chainer(links: ContextLink[]) {
+  return {
+    call(_op: Operation) {
+      const obs = observable<ResultEnvelope | null>(null);
+      const prevStack: PrevCallback[] = [];
+      function walk({ index, op }: { index: number; op: Operation }) {
+        const link = links[index];
+        const prev: PrevCallback =
+          index === 0
+            ? (value: ResultEnvelope) => obs.set(value)
+            : prevStack[index - 1];
+
+        link({
+          op,
+          prev,
+          next: (op, prevOp) => {
+            prevStack[index] = prevOp;
+            walk({ index: index + 1, op });
+          },
+          onDone: () => {},
+        });
+      }
+      walk({ index: 0, op: _op });
+      return obs;
+    },
   };
 }
