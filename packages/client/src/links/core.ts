@@ -1,3 +1,4 @@
+import { HTTPResponseEnvelope } from 'packages/server/src/http';
 import { observable } from '../observable';
 
 export type Operation<TInput = unknown> = {
@@ -5,17 +6,7 @@ export type Operation<TInput = unknown> = {
   input: TInput;
   path: string;
 };
-export type ResultEnvelope<TOutput = unknown> =
-  | {
-      ok: true;
-      data: TOutput;
-    }
-  | {
-      ok: false;
-      error: Error;
-    };
-
-export type PrevCallback = (result: ResultEnvelope) => void;
+export type PrevCallback = (result: HTTPResponseEnvelope<unknown, any>) => void;
 export type OperationLink = (opts: {
   op: Operation;
   prev: PrevCallback;

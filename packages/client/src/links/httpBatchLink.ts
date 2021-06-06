@@ -1,15 +1,8 @@
 import { HTTPResponseEnvelope } from 'packages/server/src/http';
-import { DataTransformer } from 'packages/server/src/transformer';
-import { Dict } from 'packages/server/src/types';
 import { getAbortController, getFetch } from '../helpers';
 import { TRPCLink } from './core';
-import { HttpLinkOptions } from './httpLink';
-type CancelFn = () => void;
+import { fetchAndReturn, HttpLinkOptions } from './httpLink';
 
-type CancellablePromise<T> = {
-  promise: Promise<T>;
-  cancel: CancelFn;
-};
 type BatchItem<TKey, TValue> = {
   cancelled: boolean;
   key: TKey;
@@ -109,38 +102,6 @@ export function dataLoader<TKey, TValue>(fetchMany: BatchLoadFn<TKey, TValue>) {
   };
 }
 
-function fetchAndReturn(config: {
-  fetch: typeof fetch;
-  AbortController?: typeof AbortController;
-  url: string;
-  opts: RequestInit;
-  transformer: DataTransformer;
-}): CancellablePromise<any> {
-  const ac = config.AbortController ? new config.AbortController() : null;
-  const reqOpts = {
-    ...config.opts,
-    headers: {
-      'content-type': 'application/json',
-      ...(config.opts.headers ?? {}),
-    },
-    signal: ac?.signal,
-  };
-  const promise = new Promise((resolve, reject) => {
-    config
-      .fetch(config.url, reqOpts)
-      .then((res) => {
-        return res.json();
-      })
-      .then((json) => {
-        resolve(config.transformer.deserialize(json));
-      })
-      .catch(reject);
-  });
-  const cancel = () => {
-    ac?.abort();
-  };
-  return { promise, cancel };
-}
 export function httpBatchLink(opts: HttpLinkOptions): TRPCLink {
   const _fetch = getFetch(opts?.fetch);
   const AC = getAbortController(opts?.AbortController);
@@ -173,7 +134,9 @@ export function httpBatchLink(opts: HttpLinkOptions): TRPCLink {
       const path = keyInputPairs.map(({ path }) => path).join(',');
       const input = keyInputPairs.map(({ input }) => input);
 
-      const { promise, cancel } = fetchAndReturn({
+      const { promise, cancel } = fetchAndReturn<
+        HTTPResponseEnvelope<unknown, any>[]
+      >({
         url: `${url}/${path}?batch=1&input=${encodeURIComponent(
           JSON.stringify(transformer.serialize(input)),
         )}`,
@@ -200,7 +163,7 @@ export function httpBatchLink(opts: HttpLinkOptions): TRPCLink {
       if (op.type === 'query') {
         const { promise, cancel } = query.load(op);
         onDestroy(() => cancel());
-        promise.then((data) => {
+        promise.then((data: HTTPResponseEnvelope<unknown, any>) => {
           prev(data);
         });
       }
