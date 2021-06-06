@@ -118,6 +118,7 @@ export function chainer(links: ContextLink[]) {
     call(_op: Operation) {
       const obs = observable<ResultEnvelope | null>(null);
       const prevStack: PrevCallback[] = [];
+      const numListeners = observable(0);
 
       function walk({ index, op }: { index: number; op: Operation }) {
         const link = links[index];
@@ -133,11 +134,36 @@ export function chainer(links: ContextLink[]) {
             prevStack[index] = prevOp;
             walk({ index: index + 1, op });
           },
-          onDestroy: () => {},
+          onDestroy: (callback) => {
+            const unsub = numListeners.subscribe({
+              onNext(subs) {
+                if (subs === 0) {
+                  callback();
+                  unsub();
+                }
+              },
+            });
+          },
         });
       }
       walk({ index: 0, op: _op });
-      return obs;
+      return {
+        get: obs.get,
+        subscribe: (callback: (value: ResultEnvelope) => void) => {
+          numListeners.set(numListeners.get() + 1);
+
+          return obs.subscribe({
+            onNext: (v) => {
+              if (v) {
+                callback(v);
+              }
+            },
+            onDone() {
+              numListeners.set(numListeners.get() - 1);
+            },
+          });
+        },
+      };
     },
   };
 }
