@@ -1,4 +1,5 @@
 import { HTTPResponseEnvelope } from 'packages/server/src/http';
+import { DataTransformer } from 'packages/server/src/transformer';
 import { TRPCClientError } from '../createTRPCClient';
 import { observable } from '../observable';
 
@@ -20,7 +21,14 @@ export type OperationLink = (opts: {
   onDestroy: (callback: () => void) => void;
 }) => void;
 
-export type TRPCLink = () => OperationLink;
+export type TRPCLink = (opts: LinkRuntimeOptions) => OperationLink;
+
+export type LinkRuntimeOptions = {
+  transformer: DataTransformer;
+  headers: () => Record<string, string | string[] | undefined>;
+  fetch: typeof fetch;
+  AbortController?: typeof AbortController;
+};
 
 export function createChain(links: OperationLink[]) {
   return {

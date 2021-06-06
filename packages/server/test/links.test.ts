@@ -3,7 +3,7 @@ import { waitFor } from '@testing-library/dom';
 import AbortController from 'abort-controller';
 import fetch from 'node-fetch';
 import { z } from 'zod';
-import { createChain } from '../../client/src/links/core';
+import { createChain, LinkRuntimeOptions } from '../../client/src/links/core';
 import {
   dataLoader,
   httpBatchLink,
@@ -14,11 +14,20 @@ import { splitLink } from '../../client/src/links/splitLink';
 import * as trpc from '../src';
 import { routerToServerAndClient } from './_testHelpers';
 
+const mockRuntime: LinkRuntimeOptions = {
+  transformer: {
+    serialize: (obj) => obj,
+    deserialize: (obj) => obj,
+  },
+  fetch: fetch as any,
+  AbortController: AbortController as any,
+  headers: () => ({}),
+};
 test('retrylink', () => {
   let attempts = 0;
   const configuredLink = retryLink({ attempts: 5 });
 
-  const ctxLink = configuredLink();
+  const ctxLink = configuredLink(mockRuntime);
 
   const prev = jest.fn();
   ctxLink({
@@ -67,12 +76,10 @@ test('chainer', async () => {
   );
 
   const chain = createChain([
-    retryLink({ attempts: 3 })(),
+    retryLink({ attempts: 3 })(mockRuntime),
     httpLink({
-      fetch: fetch as any,
-      AbortController,
       url: `http://localhost:${port}`,
-    })(),
+    })(mockRuntime),
   ]);
 
   const result = chain.call({
@@ -95,16 +102,14 @@ test('chainer', async () => {
 
 test('mock cache link has immediate result', () => {
   const chain = createChain([
-    retryLink({ attempts: 3 })(),
+    retryLink({ attempts: 3 })(mockRuntime),
     // mock cache link
     ({ prev }) => {
       prev({ ok: true, data: 'cached', statusCode: 200 });
     },
     httpLink({
-      fetch: fetch as any,
-      AbortController,
       url: `void`,
-    })(),
+    })(mockRuntime),
   ]);
   const result = chain.call({} as any);
   expect(result.get()).toMatchObject({
@@ -225,10 +230,8 @@ describe('batching', () => {
 
     const chain = createChain([
       httpBatchLink({
-        fetch: fetch as any,
-        AbortController,
         url: `http://localhost:${port}`,
-      })(),
+      })(mockRuntime),
     ]);
 
     const result1 = chain.call({
@@ -270,7 +273,7 @@ test('split link', () => {
       condition(op) {
         return op.type === 'query';
       },
-    })(),
+    })(mockRuntime),
   ]);
   chain.call({
     type: 'query',

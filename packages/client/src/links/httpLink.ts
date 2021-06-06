@@ -1,15 +1,9 @@
-import { ClientDataTransformerOptions, DataTransformer } from '@trpc/server';
+import { DataTransformer } from '@trpc/server';
 import { TRPCClientError } from '../createTRPCClient';
-import { getAbortController, getFetch } from '../helpers';
 import { TRPCLink } from './core';
 
-type Headeresque = Record<string, string | string[] | undefined>;
 export interface HttpLinkOptions {
-  fetch?: typeof fetch;
-  AbortController?: typeof AbortController;
   url: string;
-  transformer?: ClientDataTransformerOptions;
-  headers?: Headeresque | (() => Headeresque);
 }
 type CallType = 'subscription' | 'query' | 'mutation';
 type ReqOpts = {
@@ -19,8 +13,8 @@ type ReqOpts = {
 };
 type CancelFn = () => void;
 
-type CancellablePromise<T> = {
-  promise: Promise<T>;
+export type PromiseAndCancel<TValue> = {
+  promise: Promise<TValue>;
   cancel: CancelFn;
 };
 
@@ -30,7 +24,7 @@ export function fetchAndReturn<TResponseShape = unknown>(config: {
   url: string;
   opts: RequestInit;
   transformer: DataTransformer;
-}): CancellablePromise<any> {
+}): PromiseAndCancel<any> {
   const ac = config.AbortController ? new config.AbortController() : null;
   const reqOpts = {
     ...config.opts,
@@ -58,40 +52,22 @@ export function fetchAndReturn<TResponseShape = unknown>(config: {
 }
 
 export function httpLink(opts: HttpLinkOptions): TRPCLink {
-  const _fetch = getFetch(opts?.fetch);
-  const AC = getAbortController(opts?.AbortController);
   const { url } = opts;
 
-  const transformer = opts.transformer
-    ? 'input' in opts.transformer
-      ? {
-          serialize: opts.transformer.input.serialize,
-          deserialize: opts.transformer.output.deserialize,
-        }
-      : opts.transformer
-    : {
-        serialize: (data: any) => data,
-        deserialize: (data: any) => data,
-      };
-
-  const getHeaders =
-    typeof opts.headers === 'function'
-      ? opts.headers
-      : () => opts.headers ?? {};
   // initialized config
-  return () => {
+  return (rt) => {
     // initialized in app
     return ({ op, prev, onDestroy }) => {
       const { path, input, type } = op;
       const reqOptsMap: Record<CallType, () => ReqOpts> = {
         subscription: () => ({
           method: 'PATCH',
-          body: JSON.stringify({ input: transformer.serialize(input) }),
+          body: JSON.stringify({ input: rt.transformer.serialize(input) }),
           url: `${url}/${path}`,
         }),
         mutation: () => ({
           method: 'POST',
-          body: JSON.stringify({ input: transformer.serialize(input) }),
+          body: JSON.stringify({ input: rt.transformer.serialize(input) }),
           url: `${url}/${path}`,
         }),
         query: () => ({
@@ -100,21 +76,21 @@ export function httpLink(opts: HttpLinkOptions): TRPCLink {
             `${url}/${path}` +
             (input != null
               ? `?input=${encodeURIComponent(
-                  JSON.stringify(transformer.serialize(input)),
+                  JSON.stringify(rt.transformer.serialize(input)),
                 )}`
               : ''),
         }),
       };
       const opts = reqOptsMap[type]();
       const { promise, cancel } = fetchAndReturn({
-        fetch: _fetch as any,
-        AbortController: AC as any,
+        fetch: rt.fetch,
+        AbortController: rt.AbortController,
         url: opts.url,
         opts: {
           ...opts,
-          headers: getHeaders() as any,
+          headers: rt.headers() as any,
         },
-        transformer,
+        transformer: rt.transformer,
       });
       onDestroy(() => cancel());
       promise

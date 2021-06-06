@@ -11,7 +11,13 @@ import type {
   inferSubscriptionOutput,
   Maybe,
 } from '@trpc/server';
-import { createChain, OperationLink } from './links/core';
+import { getAbortController, getFetch } from './helpers';
+import {
+  createChain,
+  LinkRuntimeOptions,
+  OperationLink,
+  TRPCLink,
+} from './links/core';
 import { httpLink } from './links/httpLink';
 
 type CancelFn = () => void;
@@ -57,52 +63,87 @@ export interface FetchOptions {
   AbortController?: typeof AbortController;
 }
 
-export type CreateTRPCClientOptions<TRouter extends AnyRouter> =
+export type CreateTRPCClientOptions<TRouter extends AnyRouter> = {
+  /**
+   * @deprecated likely to be removed
+   */
+  onSuccess?: (data: HTTPSuccessResponseEnvelope<unknown>) => void;
+  /**
+   * @deprecated likely to be removed
+   */
+  onError?: (error: TRPCClientError<TRouter>) => void;
+  /**
+   * add ponyfills for fetch / abortcontroller
+   */
+  fetchOpts?: FetchOptions;
+  /**
+   * @deprecated use `headers` instead
+   */
+  getHeaders?: () => Record<string, string | string[] | undefined>;
+  headers?: LinkRuntimeOptions['headers'];
+  transformer?: ClientDataTransformerOptions;
+} & (
   | {
       url: string;
-      fetchOpts?: FetchOptions;
-      getHeaders?: () => Record<string, string | string[] | undefined>;
-      onSuccess?: (data: HTTPSuccessResponseEnvelope<unknown>) => void;
-      onError?: (error: TRPCClientError<TRouter>) => void;
-      transformer?: ClientDataTransformerOptions;
     }
   | {
-      onSuccess?: (data: HTTPSuccessResponseEnvelope<unknown>) => void;
-      onError?: (error: TRPCClientError<TRouter>) => void;
-    };
+      links: TRPCLink[];
+    }
+);
 type TRPCType = 'subscription' | 'query' | 'mutation';
 
 export class TRPCClient<TRouter extends AnyRouter> {
   private readonly links: OperationLink[];
+  /**
+   * @deprecated use `runtime` instead
+   */
   public readonly transformer: DataTransformer;
   private opts: CreateTRPCClientOptions<TRouter>;
+  public readonly runtime: LinkRuntimeOptions;
 
   constructor(opts: CreateTRPCClientOptions<TRouter>) {
     this.opts = opts;
-    if ('url' in opts) {
-      this.transformer = opts.transformer
-        ? 'input' in opts.transformer
-          ? {
-              serialize: opts.transformer.input.serialize,
-              deserialize: opts.transformer.output.deserialize,
-            }
-          : opts.transformer
-        : {
-            serialize: (data) => data,
-            deserialize: (data) => data,
-          };
+    const transformer: DataTransformer = (this.transformer = opts.transformer
+      ? 'input' in opts.transformer
+        ? {
+            serialize: opts.transformer.input.serialize,
+            deserialize: opts.transformer.output.deserialize,
+          }
+        : opts.transformer
+      : {
+          serialize: (data) => data,
+          deserialize: (data) => data,
+        });
 
+    const _fetch = getFetch(opts.fetchOpts?.fetch);
+    const AC = getAbortController(opts.fetchOpts?.AbortController);
+
+    function getHeadersFn(): LinkRuntimeOptions['headers'] {
+      if (opts.headers) {
+        const headers = opts.headers;
+        return typeof headers === 'function' ? headers : () => headers;
+      }
+      if (opts.getHeaders) {
+        return opts.getHeaders;
+      }
+      return () => ({});
+    }
+    this.runtime = {
+      transformer,
+      AbortController: AC as any,
+      fetch: _fetch as any,
+      headers: getHeadersFn(),
+    };
+
+    if ('url' in opts) {
       this.links = [
         httpLink({
           url: opts.url,
-          headers: opts.getHeaders,
-          fetch: opts.fetchOpts?.fetch,
-          AbortController: opts.fetchOpts?.AbortController,
-          transformer: this.transformer,
-        })(),
+        })(this.runtime),
       ];
     } else {
-      throw new Error('Not implemented');
+      this.opts = opts;
+      this.links = opts.links.map((link) => link(this.runtime));
     }
   }
 

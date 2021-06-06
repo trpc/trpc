@@ -1,7 +1,6 @@
 import { HTTPResponseEnvelope } from 'packages/server/src/http';
-import { getAbortController, getFetch } from '../helpers';
 import { TRPCLink } from './core';
-import { fetchAndReturn, HttpLinkOptions } from './httpLink';
+import { fetchAndReturn, HttpLinkOptions, PromiseAndCancel } from './httpLink';
 
 type CancelFn = () => void;
 type BatchItem<TKey, TValue> = {
@@ -53,7 +52,7 @@ export function dataLoader<TKey, TValue>(fetchMany: BatchLoadFn<TKey, TValue>) {
         }
       });
   }
-  function load(key: TKey): CancellablePromise<TValue> {
+  function load(key: TKey): PromiseAndCancel<TValue> {
     const batchItem = {
       cancelled: false,
       key,
@@ -104,28 +103,9 @@ export function dataLoader<TKey, TValue>(fetchMany: BatchLoadFn<TKey, TValue>) {
 }
 
 export function httpBatchLink(opts: HttpLinkOptions): TRPCLink {
-  const _fetch = getFetch(opts?.fetch);
-  const AC = getAbortController(opts?.AbortController);
   const { url } = opts;
-  const getHeaders =
-    typeof opts.headers === 'function'
-      ? opts.headers
-      : () => opts.headers ?? {};
-
-  const transformer = opts.transformer
-    ? 'input' in opts.transformer
-      ? {
-          serialize: opts.transformer.input.serialize,
-          deserialize: opts.transformer.output.deserialize,
-        }
-      : opts.transformer
-    : {
-        serialize: (data: any) => data,
-        deserialize: (data: any) => data,
-      };
-
   // initialized config
-  return () => {
+  return (rt) => {
     // initialized in app
 
     const query = dataLoader<
@@ -139,15 +119,15 @@ export function httpBatchLink(opts: HttpLinkOptions): TRPCLink {
         HTTPResponseEnvelope<unknown, any>[]
       >({
         url: `${url}/${path}?batch=1&input=${encodeURIComponent(
-          JSON.stringify(transformer.serialize(input)),
+          JSON.stringify(rt.transformer.serialize(input)),
         )}`,
-        fetch: _fetch,
-        AbortController: AC as any,
+        fetch: rt.fetch,
+        AbortController: rt.AbortController,
         opts: {
           method: 'GET',
-          headers: getHeaders() as any,
+          headers: rt.headers() as any,
         },
-        transformer,
+        transformer: rt.transformer,
       });
 
       return {

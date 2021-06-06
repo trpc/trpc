@@ -16,7 +16,9 @@ export function getFetch(f?: typeof fetch): typeof fetch {
   }
   const win = getWindow();
   if (win.fetch) {
-    return win.fetch;
+    return typeof win.fetch.bind === 'function'
+      ? win.fetch.bind(win)
+      : win.fetch;
   }
 
   throw new Error('No fetch implementation found');
