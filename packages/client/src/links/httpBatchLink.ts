@@ -1,4 +1,5 @@
 import { HTTPResponseEnvelope } from 'packages/server/src/http';
+import { DataTransformer } from 'packages/server/src/transformer';
 import { getAbortController, getFetch } from '../helpers';
 import { AppLink, ResultEnvelope } from './core';
 import { HttpLinkOptions } from './httpLink';
@@ -108,6 +109,7 @@ function fetchAndReturn(config: {
   AbortController?: typeof AbortController;
   url: string;
   opts: RequestInit;
+  transformer: DataTransformer;
 }): CancellablePromise<any> {
   const ac = config.AbortController ? new config.AbortController() : null;
   const reqOpts = {
@@ -121,7 +123,7 @@ function fetchAndReturn(config: {
         return res.json();
       })
       .then((json) => {
-        resolve(json);
+        resolve(config.transformer.deserialize(json));
       })
       .catch(reject);
   }) as CancellablePromise<unknown>;
@@ -134,6 +136,19 @@ export function httpBatchLink(opts: HttpLinkOptions): AppLink {
   const _fetch = getFetch(opts?.fetch);
   const AC = getAbortController(opts?.AbortController);
   const { url } = opts;
+
+  const transformer = opts.transformer
+    ? 'input' in opts.transformer
+      ? {
+          serialize: opts.transformer.input.serialize,
+          deserialize: opts.transformer.output.deserialize,
+        }
+      : opts.transformer
+    : {
+        serialize: (data: any) => data,
+        deserialize: (data: any) => data,
+      };
+
   // initialized config
   return () => {
     // initialized in app
@@ -143,19 +158,18 @@ export function httpBatchLink(opts: HttpLinkOptions): AppLink {
       HTTPResponseEnvelope<unknown, any>
     >((keyInputPairs) => {
       const path = keyInputPairs.map(({ path }) => path).join(',');
-      const input = keyInputPairs
-        .map(({ input }) =>
-          input === undefined ? '' : encodeURIComponent(JSON.stringify(input)),
-        )
-        .join('&');
+      const input = keyInputPairs.map(({ input }) => input);
 
       return fetchAndReturn({
-        url: `${url}/${path}?batch=1&${input}`,
+        url: `${url}/${path}?batch=1&input=${encodeURIComponent(
+          JSON.stringify(transformer.serialize(input)),
+        )}`,
         fetch: _fetch,
         AbortController: AC as any,
         opts: {
           method: 'GET',
         },
+        transformer,
       });
     });
     return ({ op, prev, onDestroy }) => {

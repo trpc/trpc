@@ -62,6 +62,9 @@ export interface BaseOptions<
     input: unknown;
     ctx: undefined | inferRouterContext<TRouter>;
   }) => void;
+  batching?: {
+    enabled: boolean;
+  };
 }
 
 const HTTP_METHOD_PROCEDURE_TYPE_MAP: Record<
@@ -247,7 +250,13 @@ export async function requestHandler<
   let input: unknown = undefined;
   let ctx: inferRouterContext<TRouter> | undefined = undefined;
   const transformer = getCombinedDataTransformer(opts.transformer);
+
+  const query = req.query ? req.query : url.parse(req.url!, true).query;
+  const isBatch = query.batch;
   try {
+    if (isBatch && !opts.batching?.enabled) {
+      throw new Error(`Batching is not enabled on the server`);
+    }
     if (type === 'unknown') {
       throw new HTTPError(`Unexpected request method ${req.method}`, {
         statusCode: 405,

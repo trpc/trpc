@@ -1,3 +1,4 @@
+import { ClientDataTransformerOptions } from 'packages/server/src/transformer';
 import { getAbortController, getFetch } from '../helpers';
 import { AppLink } from './core';
 
@@ -5,6 +6,7 @@ export interface HttpLinkOptions {
   fetch?: typeof fetch;
   AbortController?: typeof AbortController;
   url: string;
+  transformer?: ClientDataTransformerOptions;
 }
 type CallType = 'subscription' | 'query' | 'mutation';
 type ReqOpts = {
