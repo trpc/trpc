@@ -23,10 +23,10 @@ import ssrPrepass from 'react-ssr-prepass';
 
 type QueryClientConfig = ConstructorParameters<typeof QueryClient>[0];
 
-export interface WithTRPCClientConfig<TRouter extends AnyRouter>
-  extends CreateTRPCClientOptions<TRouter> {
-  queryClientConfig?: QueryClientConfig;
-}
+export type WithTRPCClientConfig<TRouter extends AnyRouter> =
+  CreateTRPCClientOptions<TRouter> & {
+    queryClientConfig?: QueryClientConfig;
+  };
 
 interface WithTRPCClientOptions {
   ssr?: boolean;

@@ -110,7 +110,7 @@ test('allows you to throw an error (e.g. auth)', async () => {
 
   expect(await client.query('foo')).toBe('bar');
   await expect(client.query('admin.secretPlace')).rejects.toMatchObject({
-    res: { status: 401 },
+    json: { statusCode: 401 },
   });
   expect(resolverMock).toHaveBeenCalledTimes(0);
   headers.authorization = 'meow';
