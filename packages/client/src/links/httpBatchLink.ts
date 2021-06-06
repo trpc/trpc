@@ -3,6 +3,7 @@ import { getAbortController, getFetch } from '../helpers';
 import { TRPCLink } from './core';
 import { fetchAndReturn, HttpLinkOptions } from './httpLink';
 
+type CancelFn = () => void;
 type BatchItem<TKey, TValue> = {
   cancelled: boolean;
   key: TKey;
