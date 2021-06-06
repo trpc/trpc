@@ -89,12 +89,12 @@ export function httpLink(opts: HttpLinkOptions): TRPCLink {
       const reqOptsMap: Record<CallType, () => ReqOpts> = {
         subscription: () => ({
           method: 'PATCH',
-          body: JSON.stringify({ input }),
+          body: JSON.stringify({ input: transformer.serialize(input) }),
           url: `${url}/${path}`,
         }),
         mutation: () => ({
           method: 'POST',
-          body: JSON.stringify({ input }),
+          body: JSON.stringify({ input: transformer.serialize(input) }),
           url: `${url}/${path}`,
         }),
         query: () => ({
@@ -102,7 +102,9 @@ export function httpLink(opts: HttpLinkOptions): TRPCLink {
           url:
             `${url}/${path}` +
             (input != null
-              ? `?input=${encodeURIComponent(JSON.stringify(input))}`
+              ? `?input=${encodeURIComponent(
+                  JSON.stringify(transformer.serialize(input)),
+                )}`
               : ''),
         }),
       };

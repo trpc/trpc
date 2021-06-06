@@ -283,6 +283,7 @@ export async function requestHandler<
       req,
       type,
     });
+
     input = transformer.input.deserialize(rawInput);
     ctx = await createContext?.({ req, res });
 
