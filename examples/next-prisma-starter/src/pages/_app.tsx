@@ -1,4 +1,5 @@
 import { withTRPC } from '@trpc/next';
+import { httpBatchLink } from '@trpc/client/links/httpBatchLink';
 import { AppType } from 'next/dist/next-server/lib/utils';
 // import { transformer } from '../utils/trpc';
 
@@ -31,7 +32,11 @@ export default withTRPC(
      * @link https://trpc.io/docs/ssr
      */
     return {
-      url: `${getBaseUrl()}/api/trpc`,
+      links: [
+        httpBatchLink({
+          url: `${getBaseUrl()}/api/trpc`,
+        }),
+      ],
       /**
        * @link https://trpc.io/docs/data-transformers
        */
