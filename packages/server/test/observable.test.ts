@@ -46,11 +46,13 @@ test('retrylink', () => {
         callback({
           ok: false,
           error: new Error('Some error'),
+          statusCode: 200,
         });
       } else {
         callback({
           ok: true,
           data: 'succeeded on attempt ' + attempts,
+          statusCode: 200,
         });
       }
     },
@@ -92,12 +94,10 @@ test('chainer ', async () => {
   });
 
   await waitFor(() => {
-    const envelope = result.get();
-    if (!envelope || !envelope.ok) {
-      throw new Error();
-    }
-    expect(envelope.ok).toBeTruthy();
-    expect(envelope.data).toBe('world');
+    const value = result.get();
+    expect(value).toMatchObject({
+      data: 'world',
+    });
   });
 
   expect(serverCall).toHaveBeenCalledTimes(3);
@@ -110,7 +110,7 @@ test('mock cache link has immediate result', () => {
     retryLink({ attempts: 3 })(),
     // mock cache link
     ({ prev }) => {
-      prev({ ok: true, data: 'cached' });
+      prev({ ok: true, data: 'cached', statusCode: 200 });
     },
     httpLink({
       fetch: fetch as any,

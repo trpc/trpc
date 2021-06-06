@@ -1,8 +1,5 @@
-import {
-  ClientDataTransformerOptions,
-  DataTransformer,
-  HTTPResponseEnvelope,
-} from '@trpc/server';
+import { ClientDataTransformerOptions, DataTransformer } from '@trpc/server';
+import { TRPCClientError } from '../createTRPCClient';
 import { getAbortController, getFetch } from '../helpers';
 import { TRPCLink } from './core';
 
@@ -120,9 +117,16 @@ export function httpLink(opts: HttpLinkOptions): TRPCLink {
         transformer,
       });
       onDestroy(() => cancel());
-      promise.then((data: HTTPResponseEnvelope<unknown, any>) => {
-        prev(data);
-      });
+      promise
+        .then((data) => {
+          prev(data);
+        })
+        .catch((originalError) => {
+          const err = new TRPCClientError(originalError?.message, {
+            originalError,
+          });
+          prev(err);
+        });
     };
   };
 }

@@ -10,10 +10,10 @@ export function retryLink(opts: { attempts: number }): TRPCLink {
       const fn = () => {
         attempts++;
         next(op, (result) => {
-          if (result.ok) {
-            prev(result);
-          } else {
+          if (result instanceof Error || !result.ok) {
             attempts < opts.attempts ? fn() : prev(result);
+          } else {
+            prev(result);
           }
         });
       };

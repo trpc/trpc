@@ -124,17 +124,20 @@ export class TRPCClient<TRouter extends AnyRouter> {
 
     const promise: Partial<CancellablePromise> = new Promise(
       (resolve, reject) => {
-        const unsub = result.subscribe((json) => {
-          if (json.ok) {
-            this.opts.onSuccess?.(json);
-            resolve(json.data);
-          } else {
-            const err = new TRPCClientError(json.error.message, {
-              json: json as any,
-            });
+        const unsub = result.subscribe((result) => {
+          if (result instanceof Error || !result.ok) {
+            const error =
+              result instanceof Error
+                ? result
+                : new TRPCClientError(result.error.message, {
+                    json: result,
+                  });
 
-            reject(err);
-            this.opts.onError?.(err);
+            reject(error);
+            this.opts.onError?.(error);
+          } else {
+            this.opts.onSuccess?.(result);
+            resolve(result.data);
           }
           unsub();
         });

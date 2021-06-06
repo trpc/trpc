@@ -1,7 +1,5 @@
-import {
-  HTTPErrorResponseEnvelope,
-  HTTPResponseEnvelope,
-} from 'packages/server/src/http';
+import { HTTPResponseEnvelope } from 'packages/server/src/http';
+import { TRPCClientError } from '../createTRPCClient';
 import { observable } from '../observable';
 
 export type Operation<TInput = unknown> = {
@@ -9,7 +7,12 @@ export type Operation<TInput = unknown> = {
   input: TInput;
   path: string;
 };
-export type PrevCallback = (result: HTTPResponseEnvelope<unknown, any>) => void;
+type ResponseEnvelope = HTTPResponseEnvelope<any, any>;
+type ErrorResult = TRPCClientError<any>;
+
+type OperationResult = ResponseEnvelope | ErrorResult;
+
+export type PrevCallback = (result: OperationResult) => void;
 export type OperationLink = (opts: {
   op: Operation;
   prev: PrevCallback;
@@ -22,7 +25,7 @@ export type TRPCLink = () => OperationLink;
 export function createChain(links: OperationLink[]) {
   return {
     call(_op: Operation) {
-      const $result = observable<HTTPResponseEnvelope<any, any> | null>(null);
+      const $result = observable<OperationResult | null>(null);
       const $aborted = observable(false);
 
       function walk({
@@ -36,9 +39,7 @@ export function createChain(links: OperationLink[]) {
       }) {
         const link = links[index];
         const prev: PrevCallback =
-          index === 0
-            ? (value: HTTPResponseEnvelope) => $result.set(value)
-            : stack[index - 1];
+          index === 0 ? (value) => $result.set(value) : stack[index - 1];
 
         link({
           op,
@@ -63,9 +64,7 @@ export function createChain(links: OperationLink[]) {
       walk({ index: 0, op: _op, stack: [] });
       return {
         get: $result.get,
-        subscribe: (
-          callback: (value: HTTPResponseEnvelope<unknown, any>) => void,
-        ) => {
+        subscribe: (callback: (value: OperationResult) => void) => {
           return $result.subscribe({
             onNext: (v) => {
               if (v) {
