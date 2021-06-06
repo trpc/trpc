@@ -1,6 +1,8 @@
 /* eslint-disable @typescript-eslint/no-empty-function */
 import { observable } from '../../client/src/observable';
-import { httpLink, retryLink, chainer } from '../../client/src/links';
+import { chainer } from '../../client/src/links/core';
+import { httpLink } from '../../client/src/links/httpLink';
+import { retryLink } from '../../client/src/links/retryLink';
 import { routerToServerAndClient } from './_testHelpers';
 import * as trpc from '../src';
 import AbortController from 'abort-controller';
