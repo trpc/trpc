@@ -10,6 +10,7 @@ import {
   CombinedDataTransformer,
   DataTransformerOptions,
 } from '../transformer';
+import { HTTPResponseEnvelope } from './envelopes';
 import { getStatusCodeFromError, HTTPError } from './errors';
 import {
   HTTPErrorResponseEnvelope,
@@ -252,6 +253,21 @@ export async function requestHandler<
 
   const query = req.query ? req.query : url.parse(req.url!, true).query;
   const isBatch = query.batch;
+  function endResponse(
+    json:
+      | HTTPResponseEnvelope<unknown, any>
+      | HTTPResponseEnvelope<unknown, any>[],
+  ) {
+    if (Array.isArray(json)) {
+      const allCodes = Array.from(new Set(json.map((res) => res.statusCode)));
+      const statusCode = allCodes.length === 1 ? allCodes[0] : 207;
+      res.statusCode = statusCode;
+    } else {
+      res.statusCode = json.statusCode;
+    }
+    res.setHeader('Content-Type', 'application/json');
+    res.end(JSON.stringify(transformer.output.serialize(json)));
+  }
   try {
     if (isBatch && !opts.batching?.enabled) {
       throw new Error(`Batching is not enabled on the server`);
@@ -311,8 +327,7 @@ export async function requestHandler<
     );
 
     const result = isBatch ? results : results[0];
-    res.setHeader('Content-Type', 'application/json');
-    res.end(JSON.stringify(transformer.output.serialize(result)));
+    endResponse(result);
   } catch (_err) {
     const error = getErrorFromUnknown(_err);
 
@@ -321,9 +336,7 @@ export async function requestHandler<
       statusCode: getStatusCodeFromError(error),
       error: router.getErrorShape({ error, type, path: undefined, input, ctx }),
     };
-    res.statusCode = json.statusCode;
-    res.setHeader('Content-Type', 'application/json');
-    res.end(JSON.stringify(transformer.output.serialize(json)));
+    endResponse(json);
     onError && onError({ error, path: undefined, input, ctx, type: type, req });
   }
   try {

@@ -10,6 +10,7 @@ import {
 } from '../../client/src/links/httpBatchLink';
 import { httpLink } from '../../client/src/links/httpLink';
 import { retryLink } from '../../client/src/links/retryLink';
+import { splitLink } from '../../client/src/links/splitLink';
 import { observable } from '../../client/src/observable';
 import * as trpc from '../src';
 import { routerToServerAndClient } from './_testHelpers';
@@ -269,4 +270,25 @@ describe('batching', () => {
 
     close();
   });
+});
+
+test('split link', () => {
+  const left = jest.fn();
+  const right = jest.fn();
+  const chain = createChain([
+    splitLink({
+      left: () => left,
+      right: () => right,
+      condition(op) {
+        return op.type === 'query';
+      },
+    })(),
+  ]);
+  chain.call({
+    type: 'query',
+    input: null,
+    path: '',
+  });
+  expect(left).toHaveBeenCalledTimes(1);
+  expect(right).toHaveBeenCalledTimes(0);
 });
