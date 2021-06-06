@@ -6,12 +6,14 @@ import { retryLink } from '../../client/src/links/retryLink';
 import {
   dataLoader,
   CancellablePromise,
+  httpBatchLink,
 } from '../../client/src/links/httpBatchLink';
 import { routerToServerAndClient } from './_testHelpers';
 import * as trpc from '../src';
 import AbortController from 'abort-controller';
 import fetch from 'node-fetch';
 import { waitFor } from '@testing-library/dom';
+import { z } from 'zod';
 test('basic', () => {
   const value = observable(5);
   expect(value.get()).toBe(5);
@@ -205,5 +207,65 @@ describe('batching', () => {
         expect(cancelCalled).toHaveBeenCalledTimes(1);
       });
     }
+  });
+
+  test.only('query batching', async () => {
+    const contextCall = jest.fn();
+    const { port, close } = routerToServerAndClient(
+      trpc.router().query('hello', {
+        input: z.string().nullish(),
+        resolve({ input }) {
+          return `hello ${input ?? 'world'}`;
+        },
+      }),
+      {
+        server: {
+          createContext() {
+            contextCall();
+            return {};
+          },
+          batching: {
+            enabled: true,
+          },
+        },
+      },
+    );
+
+    const chainExec = chainer([
+      httpBatchLink({
+        fetch: fetch as any,
+        AbortController,
+        url: `http://localhost:${port}`,
+      })(),
+    ]);
+
+    const result1 = chainExec.call({
+      type: 'query',
+      path: 'hello',
+      input: null,
+    });
+
+    const result2 = chainExec.call({
+      type: 'query',
+      path: 'hello',
+      input: 'alexdotjs',
+    });
+
+    await waitFor(() => {
+      expect(result1.get()).not.toBeNull();
+      expect(result2.get()).not.toBeNull();
+    });
+    expect(result1.get()).toMatchObject({
+      data: 'hello world',
+    });
+    expect(result2.get()).toMatchObject({
+      data: 'hello alexodtjs',
+    });
+
+    console.log(result1.get(), result2.get());
+
+    expect(contextCall).toHaveBeenCalledTimes(1);
+
+    close();
   });
 });

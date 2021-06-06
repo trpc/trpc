@@ -1,7 +1,7 @@
 import { HTTPResponseEnvelope } from 'packages/server/src/http';
 import { DataTransformer } from 'packages/server/src/transformer';
 import { getAbortController, getFetch } from '../helpers';
-import { AppLink, ResultEnvelope } from './core';
+import { AppLink } from './core';
 import { HttpLinkOptions } from './httpLink';
 
 type CancelFn = () => void;
@@ -170,13 +170,20 @@ export function httpBatchLink(opts: HttpLinkOptions): AppLink {
           method: 'GET',
         },
         transformer,
+      }).then((res: unknown[] | unknown) => {
+        if (!Array.isArray(res)) {
+          return keyInputPairs.map(() => res);
+        }
+        return res;
       });
     });
     return ({ op, prev, onDestroy }) => {
       if (op.type === 'query') {
         const promise = query.load(op);
         onDestroy(() => promise.cancel());
-        promise.then(prev);
+        promise.then((data) => {
+          prev(data);
+        });
       }
     };
   };

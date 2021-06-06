@@ -49,6 +49,9 @@ export type AppRouter = typeof appRouter;
 
 export default trpcNext.createNextApiHandler({
   router: appRouter,
+  batching: {
+    enabled: true,
+  },
   /**
    * @link https://trpc.io/docs/context
    */

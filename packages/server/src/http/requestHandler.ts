@@ -232,7 +232,6 @@ export async function requestHandler<
     req,
     res,
     router,
-    path,
     createContext,
     teardown,
     onError,
@@ -272,35 +271,55 @@ export async function requestHandler<
     ctx = await createContext?.({ req, res });
 
     const caller = router.createCaller(ctx);
+    const paths = isBatch ? opts.path.split(',') : [opts.path];
+    const results = await Promise.all(
+      paths.map(async (path) => {
+        try {
+          const output = await callProcedure({
+            caller,
+            path,
+            input,
+            reqEvents: req,
+            subscriptions,
+            type,
+          });
+          const json: HTTPSuccessResponseEnvelope<unknown> = {
+            ok: true,
+            statusCode: res.statusCode ?? 200,
+            data: output,
+          };
+          return json;
+        } catch (_err) {
+          const error = getErrorFromUnknown(_err);
 
-    const output = await callProcedure({
-      caller,
-      path,
-      input,
-      reqEvents: req,
-      subscriptions,
-      type,
-    });
-    const json: HTTPSuccessResponseEnvelope<unknown> = {
-      ok: true,
-      statusCode: res.statusCode ?? 200,
-      data: output,
-    };
-    res.statusCode = json.statusCode;
+          const json: HTTPErrorResponseEnvelope<TRouter> = {
+            ok: false,
+            statusCode: getStatusCodeFromError(error),
+            error: router.getErrorShape({ error, type, path, input, ctx }),
+          };
+          res.statusCode = json.statusCode;
+
+          onError && onError({ error, path, input, ctx, type: type, req });
+          return json;
+        }
+      }),
+    );
+
+    const result = isBatch ? results : results[0];
     res.setHeader('Content-Type', 'application/json');
-    res.end(JSON.stringify(transformer.output.serialize(json)));
+    res.end(JSON.stringify(transformer.output.serialize(result)));
   } catch (_err) {
     const error = getErrorFromUnknown(_err);
 
     const json: HTTPErrorResponseEnvelope<TRouter> = {
       ok: false,
       statusCode: getStatusCodeFromError(error),
-      error: router.getErrorShape({ error, type, path, input, ctx }),
+      error: router.getErrorShape({ error, type, path: undefined, input, ctx }),
     };
     res.statusCode = json.statusCode;
     res.setHeader('Content-Type', 'application/json');
     res.end(JSON.stringify(transformer.output.serialize(json)));
-    onError && onError({ error, path, input, ctx, type: type, req });
+    onError && onError({ error, path: undefined, input, ctx, type: type, req });
   }
   try {
     teardown && (await teardown());
