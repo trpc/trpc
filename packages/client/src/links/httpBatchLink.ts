@@ -3,9 +3,10 @@ import { DataTransformer } from 'packages/server/src/transformer';
 import { getAbortController, getFetch } from '../helpers';
 import { AppLink } from './core';
 import { HttpLinkOptions } from './httpLink';
-
 type CancelFn = () => void;
-export type CancellablePromise<T = unknown> = Promise<T> & {
+
+type CancellablePromise<T> = {
+  promise: Promise<T>;
   cancel: CancelFn;
 };
 type BatchItem<TKey, TValue> = {
@@ -19,7 +20,10 @@ type Batch<TKey, TValue> = {
   cancelled: boolean;
   cancel: CancelFn;
 };
-type BatchLoadFn<TKey, TValue> = (keys: TKey[]) => CancellablePromise<TValue[]>;
+type BatchLoadFn<TKey, TValue> = (keys: TKey[]) => {
+  promise: Promise<TValue[]>;
+  cancel: CancelFn;
+};
 
 export function dataLoader<TKey, TValue>(fetchMany: BatchLoadFn<TKey, TValue>) {
   let batch: Batch<TKey, TValue> | null = null;
@@ -38,8 +42,7 @@ export function dataLoader<TKey, TValue>(fetchMany: BatchLoadFn<TKey, TValue>) {
     }
     const batchCopy = batch;
     batch = null;
-    const promise = fetchMany(batchCopy.items.map((v) => v.key));
-    batchCopy.cancel = promise.cancel;
+    const { promise } = fetchMany(batchCopy.items.map((v) => v.key));
 
     promise
       .then((result) => {
@@ -78,11 +81,11 @@ export function dataLoader<TKey, TValue>(fetchMany: BatchLoadFn<TKey, TValue>) {
       item.reject = reject;
       item.resolve = resolve;
       thisBatch.items.push(item);
-    }) as CancellablePromise<TValue>;
+    });
     if (!dispatchTimer) {
       dispatchTimer = setTimeout(dispatch);
     }
-    promise.cancel = () => {
+    const cancel = () => {
       batchItem.cancelled = true;
 
       if (thisBatch.cancelled) {
@@ -96,7 +99,7 @@ export function dataLoader<TKey, TValue>(fetchMany: BatchLoadFn<TKey, TValue>) {
       thisBatch.cancel?.();
     };
 
-    return promise;
+    return { promise, cancel };
   }
 
   return {
@@ -126,11 +129,11 @@ function fetchAndReturn(config: {
         resolve(config.transformer.deserialize(json));
       })
       .catch(reject);
-  }) as CancellablePromise<unknown>;
-  promise.cancel = () => {
+  });
+  const cancel = () => {
     ac?.abort();
   };
-  return promise;
+  return { promise, cancel };
 }
 export function httpBatchLink(opts: HttpLinkOptions): AppLink {
   const _fetch = getFetch(opts?.fetch);
@@ -160,7 +163,7 @@ export function httpBatchLink(opts: HttpLinkOptions): AppLink {
       const path = keyInputPairs.map(({ path }) => path).join(',');
       const input = keyInputPairs.map(({ input }) => input);
 
-      return fetchAndReturn({
+      const { promise, cancel } = fetchAndReturn({
         url: `${url}/${path}?batch=1&input=${encodeURIComponent(
           JSON.stringify(transformer.serialize(input)),
         )}`,
@@ -170,17 +173,22 @@ export function httpBatchLink(opts: HttpLinkOptions): AppLink {
           method: 'GET',
         },
         transformer,
-      }).then((res: unknown[] | unknown) => {
-        if (!Array.isArray(res)) {
-          return keyInputPairs.map(() => res);
-        }
-        return res;
       });
+
+      return {
+        promise: promise.then((res: unknown[] | unknown) => {
+          if (!Array.isArray(res)) {
+            return keyInputPairs.map(() => res);
+          }
+          return res;
+        }),
+        cancel,
+      };
     });
     return ({ op, prev, onDestroy }) => {
       if (op.type === 'query') {
-        const promise = query.load(op);
-        onDestroy(() => promise.cancel());
+        const { promise, cancel } = query.load(op);
+        onDestroy(() => cancel());
         promise.then((data) => {
           prev(data);
         });

@@ -1,19 +1,18 @@
 /* eslint-disable @typescript-eslint/no-empty-function */
-import { observable } from '../../client/src/observable';
-import { chainer } from '../../client/src/links/core';
-import { httpLink } from '../../client/src/links/httpLink';
-import { retryLink } from '../../client/src/links/retryLink';
-import {
-  dataLoader,
-  CancellablePromise,
-  httpBatchLink,
-} from '../../client/src/links/httpBatchLink';
-import { routerToServerAndClient } from './_testHelpers';
-import * as trpc from '../src';
+import { waitFor } from '@testing-library/dom';
 import AbortController from 'abort-controller';
 import fetch from 'node-fetch';
-import { waitFor } from '@testing-library/dom';
 import { z } from 'zod';
+import { chainer } from '../../client/src/links/core';
+import {
+  dataLoader,
+  httpBatchLink,
+} from '../../client/src/links/httpBatchLink';
+import { httpLink } from '../../client/src/links/httpLink';
+import { retryLink } from '../../client/src/links/retryLink';
+import { observable } from '../../client/src/observable';
+import * as trpc from '../src';
+import { routerToServerAndClient } from './_testHelpers';
 test('basic', () => {
   const value = observable(5);
   expect(value.get()).toBe(5);
@@ -155,8 +154,8 @@ describe('batching', () => {
       fetchManyCalled();
       const promise = new Promise<number[]>((resolve) => {
         resolve(keys.map((v) => v + 1));
-      }) as CancellablePromise<number[]>;
-      return promise;
+      });
+      return { promise, cancel: () => {} };
     });
     {
       const result = await Promise.all([loader.load(1), loader.load(2)]);
@@ -178,9 +177,9 @@ describe('batching', () => {
         setTimeout(() => {
           resolve(keys.map((v) => v + 1));
         }, 10);
-      }) as CancellablePromise<number[]>;
-      promise.cancel = cancelCalled;
-      return promise;
+      });
+
+      return { promise, cancel: cancelCalled };
     });
 
     {
@@ -259,7 +258,7 @@ describe('batching', () => {
       data: 'hello world',
     });
     expect(result2.get()).toMatchObject({
-      data: 'hello alexodtjs',
+      data: 'hello alexdotjs',
     });
 
     console.log(result1.get(), result2.get());

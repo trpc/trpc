@@ -271,14 +271,19 @@ export async function requestHandler<
     ctx = await createContext?.({ req, res });
 
     const caller = router.createCaller(ctx);
+    const inputs: unknown[] = isBatch
+      ? Array.isArray(input)
+        ? input
+        : [input]
+      : [input];
     const paths = isBatch ? opts.path.split(',') : [opts.path];
     const results = await Promise.all(
-      paths.map(async (path) => {
+      paths.map(async (path, index) => {
         try {
           const output = await callProcedure({
             caller,
             path,
-            input,
+            input: inputs[index],
             reqEvents: req,
             subscriptions,
             type,
