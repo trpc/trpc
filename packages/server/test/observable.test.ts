@@ -22,9 +22,10 @@ test('retrylink', () => {
 
   const prev = jest.fn();
   ctxLink({
-    ctx: {
+    op: {
       type: 'query',
       input: null,
+      path: '',
     },
     prev: prev,
     next: (_ctx, callback) => {
