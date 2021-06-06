@@ -10,25 +10,6 @@ export function httpBatchLink(opts: HttpLinkOptions): AppLink {
   return () => {
     // initialized in app
 
-    return ({ op, prev, onDestroy: onDone }) => {
-      async function fetchAndReturn() {
-        const opts = reqOptsMap[type]();
-        try {
-          const res = await _fetch(opts.url, { ...opts, signal: ac?.signal });
-          const json = await res.json();
-
-          prev(json);
-        } catch (error) {
-          prev({
-            ok: false,
-            error,
-          });
-        }
-      }
-      fetchAndReturn();
-      onDone(() => {
-        ac?.abort();
-      });
-    };
+    return ({ op, prev, onDestroy: onDone }) => {};
   };
 }

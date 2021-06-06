@@ -6,6 +6,7 @@ export interface ObservableLike<TValue> {
   }): UnsubscribeFn;
   get(): TValue;
   set(value: TValue): void;
+  destroy(): void;
 }
 
 type UnsubscribeFn = () => void;
@@ -43,6 +44,14 @@ export function observable<TValue>(
     },
     get() {
       return value;
+    },
+    destroy() {
+      for (const subscription of subscribers) {
+        subscription.onDone?.();
+      }
+      while (subscribers) {
+        subscribers.pop();
+      }
     },
   };
 }
