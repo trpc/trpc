@@ -1,3 +1,5 @@
+import { getAbortController, getFetch } from '../helpers';
+
 type CancelFn = () => void;
 export type CancellablePromise<T = unknown> = Promise<T> & {
   cancel: CancelFn;
@@ -15,9 +17,7 @@ type Batch<TKey, TValue> = {
 };
 type BatchLoadFn<TKey, TValue> = (keys: TKey[]) => CancellablePromise<TValue[]>;
 
-export function dataLoader<TKey, TValue>(opts: {
-  fetchMany: BatchLoadFn<TKey, TValue>;
-}) {
+export function dataLoader<TKey, TValue>(fetchMany: BatchLoadFn<TKey, TValue>) {
   let batch: Batch<TKey, TValue> | null = null;
   let dispatchTimer: NodeJS.Timer | number | null = null;
 
@@ -34,7 +34,7 @@ export function dataLoader<TKey, TValue>(opts: {
     }
     const batchCopy = batch;
     batch = null;
-    const promise = opts.fetchMany(batchCopy.items.map((v) => v.key));
+    const promise = fetchMany(batchCopy.items.map((v) => v.key));
     batchCopy.cancel = promise.cancel;
 
     promise
@@ -99,14 +99,15 @@ export function dataLoader<TKey, TValue>(opts: {
     load,
   };
 }
-// export function httpBatchLink(opts: HttpLinkOptions): AppLink {
-//   const _fetch = getFetch(opts?.fetch);
-//   const AC = getAbortController(opts?.AbortController);
-//   const { url } = opts;
-//   // initialized config
-//   return () => {
-//     // initialized in app
 
-//     return ({ op, prev, onDestroy: onDone }) => {};
-//   };
-// }
+export function httpBatchLink(opts: HttpLinkOptions): AppLink {
+  const _fetch = getFetch(opts?.fetch);
+  const AC = getAbortController(opts?.AbortController);
+  const { url } = opts;
+  // initialized config
+  return () => {
+    // initialized in app
+
+    return ({ op, prev, onDestroy: onDone }) => {};
+  };
+}

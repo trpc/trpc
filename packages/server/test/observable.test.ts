@@ -149,14 +149,12 @@ test('cancel request', async () => {
 describe('batching', () => {
   test('dataloader basic', async () => {
     const fetchManyCalled = jest.fn();
-    const loader = dataLoader<number, number>({
-      fetchMany(keys) {
-        fetchManyCalled();
-        const promise = new Promise<number[]>((resolve) => {
-          resolve(keys.map((v) => v + 1));
-        }) as CancellablePromise<number[]>;
-        return promise;
-      },
+    const loader = dataLoader<number, number>(function fetchMany(keys) {
+      fetchManyCalled();
+      const promise = new Promise<number[]>((resolve) => {
+        resolve(keys.map((v) => v + 1));
+      }) as CancellablePromise<number[]>;
+      return promise;
     });
     {
       const result = await Promise.all([loader.load(1), loader.load(2)]);
@@ -172,17 +170,15 @@ describe('batching', () => {
   test('dataloader cancellation', async () => {
     const fetchManyCalled = jest.fn();
     const cancelCalled = jest.fn();
-    const loader = dataLoader<number, number>({
-      fetchMany(keys) {
-        fetchManyCalled();
-        const promise = new Promise<number[]>((resolve) => {
-          setTimeout(() => {
-            resolve(keys.map((v) => v + 1));
-          }, 10);
-        }) as CancellablePromise<number[]>;
-        promise.cancel = cancelCalled;
-        return promise;
-      },
+    const loader = dataLoader<number, number>(function fetchMany(keys) {
+      fetchManyCalled();
+      const promise = new Promise<number[]>((resolve) => {
+        setTimeout(() => {
+          resolve(keys.map((v) => v + 1));
+        }, 10);
+      }) as CancellablePromise<number[]>;
+      promise.cancel = cancelCalled;
+      return promise;
     });
 
     {
