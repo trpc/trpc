@@ -158,11 +158,17 @@ describe('batching', () => {
       return { promise, cancel: () => {} };
     });
     {
-      const result = await Promise.all([loader.load(1), loader.load(2)]);
+      const result = await Promise.all([
+        loader.load(1).promise,
+        loader.load(2).promise,
+      ]);
       expect(result).toEqual([2, 3]);
     }
     {
-      const result = await Promise.all([loader.load(3), loader.load(4)]);
+      const result = await Promise.all([
+        loader.load(3).promise,
+        loader.load(4).promise,
+      ]);
       expect(result).toEqual([4, 5]);
     }
     expect(fetchManyCalled).toHaveBeenCalledTimes(2);
@@ -184,23 +190,23 @@ describe('batching', () => {
 
     {
       // immediate, before it's actually executed
-      const promise1 = loader.load(1);
-      const promise2 = loader.load(2);
+      const res1 = loader.load(1);
+      const res2 = loader.load(2);
 
-      promise1.cancel();
-      promise2.cancel();
+      res1.cancel();
+      res2.cancel();
 
       expect(cancelCalled).toHaveBeenCalledTimes(0);
     }
     {
       // after some time
-      const promise1 = loader.load(2);
-      const promise2 = loader.load(3);
+      const res1 = loader.load(2);
+      const res2 = loader.load(3);
 
       await new Promise((resolve) => setTimeout(resolve, 5));
 
-      promise1.cancel();
-      promise2.cancel();
+      res1.cancel();
+      res2.cancel();
 
       await waitFor(() => {
         expect(cancelCalled).toHaveBeenCalledTimes(1);
@@ -208,7 +214,7 @@ describe('batching', () => {
     }
   });
 
-  test.only('query batching', async () => {
+  test('query batching', async () => {
     const contextCall = jest.fn();
     const { port, close } = routerToServerAndClient(
       trpc.router().query('hello', {
@@ -260,8 +266,6 @@ describe('batching', () => {
     expect(result2.get()).toMatchObject({
       data: 'hello alexdotjs',
     });
-
-    console.log(result1.get(), result2.get());
 
     expect(contextCall).toHaveBeenCalledTimes(1);
 

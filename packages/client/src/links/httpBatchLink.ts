@@ -42,7 +42,8 @@ export function dataLoader<TKey, TValue>(fetchMany: BatchLoadFn<TKey, TValue>) {
     }
     const batchCopy = batch;
     batch = null;
-    const { promise } = fetchMany(batchCopy.items.map((v) => v.key));
+    const { promise, cancel } = fetchMany(batchCopy.items.map((v) => v.key));
+    batchCopy.cancel = cancel;
 
     promise
       .then((result) => {
@@ -68,8 +69,9 @@ export function dataLoader<TKey, TValue>(fetchMany: BatchLoadFn<TKey, TValue>) {
         cancelled: false,
         items: [],
         cancel() {
-          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-          batch!.cancelled = true;
+          // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+          // @ts-ignore
+          batch?.cancelled = true;
           batch = null;
           destroyTimer();
         },
