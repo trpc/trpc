@@ -21,12 +21,12 @@ export type OperationLink = (opts: {
 
 export type TRPCLink = (opts: LinkRuntimeOptions) => OperationLink;
 
-export type LinkRuntimeOptions = {
+export type LinkRuntimeOptions = Readonly<{
   transformer: DataTransformer;
   headers: () => Record<string, string | string[] | undefined>;
   fetch: typeof fetch;
   AbortController?: typeof AbortController;
-};
+}>;
 
 export interface HttpLinkOptions {
   url: string;
