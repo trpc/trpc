@@ -1,5 +1,6 @@
 import { withTRPC } from '@trpc/next';
 import { httpBatchLink } from '@trpc/client/links/httpBatchLink';
+import { loggerLink } from '@trpc/client/links/loggerLink';
 import { AppType } from 'next/dist/next-server/lib/utils';
 // import { transformer } from '../utils/trpc';
 
@@ -33,6 +34,10 @@ export default withTRPC(
      */
     return {
       links: [
+        loggerLink({
+          enabled: ({ event }) =>
+            process.env.NODE_ENV === 'development' || event === 'error',
+        }),
         httpBatchLink({
           url: `${getBaseUrl()}/api/trpc`,
         }),

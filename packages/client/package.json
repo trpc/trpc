@@ -15,7 +15,8 @@
       "index.ts",
       "links/httpLink.ts",
       "links/httpBatchLink.ts",
-      "links/splitLink.ts"
+      "links/splitLink.ts",
+      "links/loggerLink.ts"
     ]
   },
   "scripts": {},

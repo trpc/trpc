@@ -5,10 +5,11 @@ import fetch from 'node-fetch';
 import { z } from 'zod';
 import { createTRPCClient } from '../../client/src';
 import { executeChain } from '../../client/src/internals/executeChain';
-import { LinkRuntimeOptions } from '../../client/src/links/core';
+import { LinkRuntimeOptions, OperationLink } from '../../client/src/links/core';
 import { httpBatchLink } from '../../client/src/links/httpBatchLink';
 import { httpLink } from '../../client/src/links/httpLink';
 import { retryLink } from '../../client/src/links/retryLink';
+import { loggerLink } from '../../client/src/links/loggerLink';
 import { splitLink } from '../../client/src/links/splitLink';
 import * as trpc from '../src';
 import { routerToServerAndClient } from './_testHelpers';
@@ -320,4 +321,94 @@ test('multi down link', async () => {
       data: 'cached2',
     });
   });
+});
+
+test('loggerLink', () => {
+  const logger = {
+    error: jest.fn(),
+    log: jest.fn(),
+  };
+  const logLink = loggerLink({
+    logger,
+  })(mockRuntime);
+  const okLink: OperationLink = ({ prev }) =>
+    prev({ ok: true, statusCode: 200, data: null });
+  const errorLink: OperationLink = ({ prev }) =>
+    prev({ ok: false, statusCode: 400, error: null });
+  {
+    executeChain({
+      links: [logLink, okLink],
+      op: {
+        type: 'query',
+        input: null,
+        path: 'n/a',
+      },
+    });
+    expect(logger.log.mock.calls[0][0]).toMatchInlineSnapshot(
+      `"%c ⏳ >> query #1 %cn/a%c %O"`,
+    );
+    expect(logger.log.mock.calls[1][0]).toMatchInlineSnapshot(
+      `"%c ✅ << query #1 %cn/a%c %O"`,
+    );
+    logger.error.mockReset();
+    logger.log.mockReset();
+  }
+
+  {
+    executeChain({
+      links: [logLink, okLink],
+      op: {
+        type: 'subscription',
+        input: null,
+        path: 'n/a',
+      },
+    });
+    expect(logger.log.mock.calls[0][0]).toMatchInlineSnapshot(
+      `"%c ⏳ >> subscription #2 %cn/a%c %O"`,
+    );
+    expect(logger.log.mock.calls[1][0]).toMatchInlineSnapshot(
+      `"%c ✅ << subscription #2 %cn/a%c %O"`,
+    );
+    logger.error.mockReset();
+    logger.log.mockReset();
+  }
+
+  {
+    executeChain({
+      links: [logLink, okLink],
+      op: {
+        type: 'mutation',
+        input: null,
+        path: 'n/a',
+      },
+    });
+
+    expect(logger.log.mock.calls[0][0]).toMatchInlineSnapshot(
+      `"%c ⏳ >> mutation #3 %cn/a%c %O"`,
+    );
+    expect(logger.log.mock.calls[1][0]).toMatchInlineSnapshot(
+      `"%c ✅ << mutation #3 %cn/a%c %O"`,
+    );
+    logger.error.mockReset();
+    logger.log.mockReset();
+  }
+
+  {
+    executeChain({
+      links: [logLink, errorLink],
+      op: {
+        type: 'query',
+        input: null,
+        path: 'n/a',
+      },
+    });
+    expect(logger.log.mock.calls[0][0]).toMatchInlineSnapshot(
+      `"%c ⏳ >> query #4 %cn/a%c %O"`,
+    );
+    expect(logger.error.mock.calls[0][0]).toMatchInlineSnapshot(
+      `"%c ❌ << query #4 %cn/a%c %O"`,
+    );
+    logger.error.mockReset();
+    logger.log.mockReset();
+  }
 });
