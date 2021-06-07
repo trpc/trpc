@@ -2,7 +2,7 @@
 import { waitFor } from '@testing-library/dom';
 import { dataLoader } from '../../client/src/internals/dataLoader';
 
-test('dataloader basic', async () => {
+test('basic', async () => {
   const fetchManyCalled = jest.fn();
   const loader = dataLoader<number, number>(function fetchMany(keys) {
     fetchManyCalled();
@@ -28,7 +28,7 @@ test('dataloader basic', async () => {
   expect(fetchManyCalled).toHaveBeenCalledTimes(2);
 });
 
-test('dataloader cancellation', async () => {
+test('cancellation', async () => {
   const fetchManyCalled = jest.fn();
   const cancelCalled = jest.fn();
   const loader = dataLoader<number, number>(function fetchMany(keys) {
@@ -66,4 +66,32 @@ test('dataloader cancellation', async () => {
       expect(cancelCalled).toHaveBeenCalledTimes(1);
     });
   }
+});
+
+test('errors', async () => {
+  const loader = dataLoader<number, number>(function fetchMany(keys) {
+    const promise = new Promise<number[]>((_resolve, reject) => {
+      reject(new Error('Some error'));
+    });
+
+    return { promise, cancel: () => {} };
+  });
+
+  const results = await Promise.allSettled([
+    loader.load(1).promise,
+    loader.load(2).promise,
+  ]);
+
+  expect(results).toMatchInlineSnapshot(`
+    Array [
+      Object {
+        "reason": [Error: Some error],
+        "status": "rejected",
+      },
+      Object {
+        "reason": [Error: Some error],
+        "status": "rejected",
+      },
+    ]
+  `);
 });
