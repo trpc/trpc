@@ -75,7 +75,7 @@ test('chainer', async () => {
     }),
   );
 
-  const result = executeChain({
+  const $result = executeChain({
     links: [
       retryLink({ attempts: 3 })(mockRuntime),
       httpLink({
@@ -90,7 +90,7 @@ test('chainer', async () => {
   });
 
   await waitFor(() => {
-    const value = result.get();
+    const value = $result.get();
     expect(value).toMatchObject({
       data: 'world',
     });
@@ -101,8 +101,8 @@ test('chainer', async () => {
   close();
 });
 
-test('mock cache link has immediate result', () => {
-  const result = executeChain({
+test('mock cache link has immediate $result', () => {
+  const $result = executeChain({
     links: [
       retryLink({ attempts: 3 })(mockRuntime),
       // mock cache link
@@ -115,7 +115,7 @@ test('mock cache link has immediate result', () => {
     ],
     op: {} as any,
   });
-  expect(result.get()).toMatchObject({
+  expect($result.get()).toMatchObject({
     data: 'cached',
   });
 });
@@ -123,7 +123,7 @@ test('mock cache link has immediate result', () => {
 test('cancel request', async () => {
   const onDestroyCall = jest.fn();
 
-  const result = executeChain({
+  const $result = executeChain({
     links: [
       ({ onDestroy }) => {
         onDestroy(() => {
@@ -138,7 +138,7 @@ test('cancel request', async () => {
     },
   });
 
-  result.destroy();
+  $result.destroy();
 
   expect(onDestroyCall).toHaveBeenCalled();
 });
@@ -154,18 +154,18 @@ describe('batching', () => {
       return { promise, cancel: () => {} };
     });
     {
-      const result = await Promise.all([
+      const $result = await Promise.all([
         loader.load(1).promise,
         loader.load(2).promise,
       ]);
-      expect(result).toEqual([2, 3]);
+      expect($result).toEqual([2, 3]);
     }
     {
-      const result = await Promise.all([
+      const $result = await Promise.all([
         loader.load(3).promise,
         loader.load(4).promise,
       ]);
-      expect(result).toEqual([4, 5]);
+      expect($result).toEqual([4, 5]);
     }
     expect(fetchManyCalled).toHaveBeenCalledTimes(2);
   });
@@ -236,7 +236,7 @@ describe('batching', () => {
         url: `http://localhost:${port}`,
       })(mockRuntime),
     ];
-    const result1 = executeChain({
+    const $result1 = executeChain({
       links,
       op: {
         type: 'query',
@@ -245,7 +245,7 @@ describe('batching', () => {
       },
     });
 
-    const result2 = executeChain({
+    const $result2 = executeChain({
       links,
       op: {
         type: 'query',
@@ -255,13 +255,13 @@ describe('batching', () => {
     });
 
     await waitFor(() => {
-      expect(result1.get()).not.toBeNull();
-      expect(result2.get()).not.toBeNull();
+      expect($result1.get()).not.toBeNull();
+      expect($result2.get()).not.toBeNull();
     });
-    expect(result1.get()).toMatchObject({
+    expect($result1.get()).toMatchObject({
       data: 'hello world',
     });
-    expect(result2.get()).toMatchObject({
+    expect($result2.get()).toMatchObject({
       data: 'hello alexdotjs',
     });
 
@@ -354,8 +354,8 @@ test('create client with links', async () => {
     headers: {},
   });
 
-  const result = await client.query('hello');
-  expect(result).toBe('world');
+  const $result = await client.query('hello');
+  expect($result).toBe('world');
 
   close();
 });
