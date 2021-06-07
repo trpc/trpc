@@ -80,7 +80,9 @@ export type CreateTRPCClientOptions<TRouter extends AnyRouter> = {
    * @deprecated use `headers` instead
    */
   getHeaders?: () => Record<string, string | string[] | undefined>;
-  headers?: LinkRuntimeOptions['headers'];
+  headers?:
+    | LinkRuntimeOptions['headers']
+    | ReturnType<LinkRuntimeOptions['headers']>;
   transformer?: ClientDataTransformerOptions;
 } & (
   | {
@@ -135,15 +137,15 @@ export class TRPCClient<TRouter extends AnyRouter> {
       headers: getHeadersFn(),
     };
 
-    if ('url' in opts) {
+    if ('links' in opts) {
+      this.opts = opts;
+      this.links = opts.links.map((link) => link(this.runtime));
+    } else {
       this.links = [
         httpLink({
           url: opts.url,
         })(this.runtime),
       ];
-    } else {
-      this.opts = opts;
-      this.links = opts.links.map((link) => link(this.runtime));
     }
   }
 

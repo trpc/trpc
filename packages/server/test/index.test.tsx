@@ -260,7 +260,7 @@ describe('integration tests', () => {
             createContext,
           },
           client: {
-            getHeaders: () => headers,
+            headers: () => headers,
           },
         },
       );

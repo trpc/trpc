@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-empty-function */
 import { waitFor } from '@testing-library/dom';
+import { createTRPCClient } from '@trpc/client';
 import AbortController from 'abort-controller';
 import fetch from 'node-fetch';
 import { z } from 'zod';
@@ -282,4 +283,37 @@ test('split link', () => {
   });
   expect(left).toHaveBeenCalledTimes(1);
   expect(right).toHaveBeenCalledTimes(0);
+});
+
+test('create client with links', async () => {
+  let attempt = 0;
+  const serverCall = jest.fn();
+  const { close, router, port, trpcClientOptions } = routerToServerAndClient(
+    trpc.router().query('hello', {
+      resolve() {
+        attempt++;
+        serverCall();
+        if (attempt < 3) {
+          throw new Error('Errr ' + attempt);
+        }
+        return 'world';
+      },
+    }),
+  );
+  const client = createTRPCClient<typeof router>({
+    ...trpcClientOptions,
+    url: `http://localhost:${port}`,
+    links: [
+      retryLink({ attempts: 3 }),
+      httpLink({
+        url: `http://localhost:${port}`,
+      }),
+    ],
+    headers: {},
+  });
+
+  const result = await client.query('hello');
+  expect(result).toBe('world');
+
+  close();
 });
