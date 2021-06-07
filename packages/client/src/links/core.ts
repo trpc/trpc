@@ -1,8 +1,4 @@
-import {
-  DataTransformer,
-  HTTPResponseEnvelope,
-  ProcedureType,
-} from '@trpc/server';
+import { DataTransformer, HTTPResponseEnvelope } from '@trpc/server';
 import { TRPCClientError } from '../createTRPCClient';
 import { observable } from '../internals/observable';
 

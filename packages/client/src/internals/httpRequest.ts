@@ -1,4 +1,5 @@
 import { ProcedureType } from '@trpc/server';
+import { TRPCClientError } from '../createTRPCClient';
 import { LinkRuntimeOptions, PromiseAndCancel } from '../links/core';
 
 export function httpRequest<TResponseShape>(props: {

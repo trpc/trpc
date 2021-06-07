@@ -46,11 +46,10 @@ export function observable<TValue>(
       return value;
     },
     destroy() {
-      for (const subscription of subscribers) {
-        subscription.onDone?.();
-      }
       while (subscribers.length) {
-        subscribers.pop();
+        const subscription = subscribers.pop();
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        subscription!.onDone?.();
       }
     },
   };
