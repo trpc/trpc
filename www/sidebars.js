@@ -34,7 +34,7 @@ module.exports = {
       type: 'category',
       label: '@trpc/client',
       collapsed: false,
-      items: ['client/vanilla'],
+      items: ['client/vanilla', 'client/links'],
     },
 
     {
