@@ -1,6 +1,5 @@
 import { DataTransformer, HTTPResponseEnvelope } from '@trpc/server';
 import { TRPCClientError } from '../createTRPCClient';
-import { observable } from '../internals/observable';
 
 export type Operation<TInput = unknown> = {
   type: 'query' | 'mutation' | 'subscription';
@@ -10,7 +9,7 @@ export type Operation<TInput = unknown> = {
 type ResponseEnvelope = HTTPResponseEnvelope<any, any>;
 type ErrorResult = TRPCClientError<any>;
 
-type OperationResult = ResponseEnvelope | ErrorResult;
+export type OperationResult = ResponseEnvelope | ErrorResult;
 
 export type PrevCallback = (result: OperationResult) => void;
 export type OperationLink = (opts: {
@@ -28,62 +27,6 @@ export type LinkRuntimeOptions = {
   fetch: typeof fetch;
   AbortController?: typeof AbortController;
 };
-
-export function createChain(links: OperationLink[]) {
-  return {
-    call(_op: Operation) {
-      const $result = observable<OperationResult | null>(null);
-      const $destroyed = observable(false);
-
-      function walk({
-        index,
-        op,
-        stack,
-      }: {
-        index: number;
-        op: Operation;
-        stack: PrevCallback[];
-      }) {
-        const link = links[index];
-        const prev: PrevCallback =
-          index === 0 ? (value) => $result.set(value) : stack[index - 1];
-
-        link({
-          op,
-          prev,
-          next: (op, prevOp) => {
-            const prevStack = stack.slice();
-            prevStack[index] = prevOp;
-            walk({ index: index + 1, op, stack: prevStack });
-          },
-          onDestroy: (callback) => {
-            const unsub = $destroyed.subscribe((aborted) => {
-              if (aborted) {
-                callback();
-                unsub();
-              }
-            });
-          },
-        });
-      }
-      walk({ index: 0, op: _op, stack: [] });
-      return {
-        get: $result.get,
-        subscribe: (callback: (value: OperationResult) => void) => {
-          return $result.subscribe((v) => {
-            if (v) {
-              callback(v);
-            }
-          });
-        },
-        destroy: () => {
-          $destroyed.set(true);
-          $result.destroy();
-        },
-      };
-    },
-  };
-}
 
 export interface HttpLinkOptions {
   url: string;

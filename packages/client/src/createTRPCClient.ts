@@ -12,12 +12,8 @@ import type {
   Maybe,
 } from '@trpc/server';
 import { getAbortController, getFetch } from './internals/fetchHelpers';
-import {
-  createChain,
-  LinkRuntimeOptions,
-  OperationLink,
-  TRPCLink,
-} from './links/core';
+import { LinkRuntimeOptions, OperationLink, TRPCLink } from './links/core';
+import { createChain } from './internals/createChain';
 import { httpLink } from './links/httpLink';
 
 type CancelFn = () => void;

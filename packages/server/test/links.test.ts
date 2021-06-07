@@ -3,7 +3,9 @@ import { waitFor } from '@testing-library/dom';
 import AbortController from 'abort-controller';
 import fetch from 'node-fetch';
 import { z } from 'zod';
-import { createChain, LinkRuntimeOptions } from '../../client/src/links/core';
+import { LinkRuntimeOptions } from '../../client/src/links/core';
+import { createChain } from '../../client/src/internals/createChain';
+
 import {
   dataLoader,
   httpBatchLink,
