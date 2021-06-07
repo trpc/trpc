@@ -4,7 +4,7 @@ import AbortController from 'abort-controller';
 import fetch from 'node-fetch';
 import { z } from 'zod';
 import { LinkRuntimeOptions } from '../../client/src/links/core';
-import { createChain } from '../../client/src/internals/createChain';
+import { executeChain } from '../../client/src/internals/executeChain';
 
 import {
   dataLoader,
@@ -78,17 +78,18 @@ test('chainer', async () => {
     }),
   );
 
-  const chain = createChain([
-    retryLink({ attempts: 3 })(mockRuntime),
-    httpLink({
-      url: `http://localhost:${port}`,
-    })(mockRuntime),
-  ]);
-
-  const result = chain.call({
-    type: 'query',
-    path: 'hello',
-    input: null,
+  const result = executeChain({
+    links: [
+      retryLink({ attempts: 3 })(mockRuntime),
+      httpLink({
+        url: `http://localhost:${port}`,
+      })(mockRuntime),
+    ],
+    op: {
+      type: 'query',
+      path: 'hello',
+      input: null,
+    },
   });
 
   await waitFor(() => {
@@ -104,17 +105,19 @@ test('chainer', async () => {
 });
 
 test('mock cache link has immediate result', () => {
-  const chain = createChain([
-    retryLink({ attempts: 3 })(mockRuntime),
-    // mock cache link
-    ({ prev }) => {
-      prev({ ok: true, data: 'cached', statusCode: 200 });
-    },
-    httpLink({
-      url: `void`,
-    })(mockRuntime),
-  ]);
-  const result = chain.call({} as any);
+  const result = executeChain({
+    links: [
+      retryLink({ attempts: 3 })(mockRuntime),
+      // mock cache link
+      ({ prev }) => {
+        prev({ ok: true, data: 'cached', statusCode: 200 });
+      },
+      httpLink({
+        url: `void`,
+      })(mockRuntime),
+    ],
+    op: {} as any,
+  });
   expect(result.get()).toMatchObject({
     data: 'cached',
   });
@@ -123,18 +126,19 @@ test('mock cache link has immediate result', () => {
 test('cancel request', async () => {
   const onDestroyCall = jest.fn();
 
-  const chain = createChain([
-    ({ onDestroy }) => {
-      onDestroy(() => {
-        onDestroyCall();
-      });
+  const result = executeChain({
+    links: [
+      ({ onDestroy }) => {
+        onDestroy(() => {
+          onDestroyCall();
+        });
+      },
+    ],
+    op: {
+      type: 'query',
+      path: 'hello',
+      input: null,
     },
-  ]);
-
-  const result = chain.call({
-    type: 'query',
-    path: 'hello',
-    input: null,
   });
 
   result.destroy();
@@ -230,23 +234,27 @@ describe('batching', () => {
         },
       },
     );
-
-    const chain = createChain([
+    const links = [
       httpBatchLink({
         url: `http://localhost:${port}`,
       })(mockRuntime),
-    ]);
-
-    const result1 = chain.call({
-      type: 'query',
-      path: 'hello',
-      input: null,
+    ];
+    const result1 = executeChain({
+      links,
+      op: {
+        type: 'query',
+        path: 'hello',
+        input: null,
+      },
     });
 
-    const result2 = chain.call({
-      type: 'query',
-      path: 'hello',
-      input: 'alexdotjs',
+    const result2 = executeChain({
+      links,
+      op: {
+        type: 'query',
+        path: 'hello',
+        input: 'alexdotjs',
+      },
     });
 
     await waitFor(() => {
@@ -303,19 +311,21 @@ describe('batching', () => {
 test('split link', () => {
   const left = jest.fn();
   const right = jest.fn();
-  const chain = createChain([
-    splitLink({
-      left: () => left,
-      right: () => right,
-      condition(op) {
-        return op.type === 'query';
-      },
-    })(mockRuntime),
-  ]);
-  chain.call({
-    type: 'query',
-    input: null,
-    path: '',
+  executeChain({
+    links: [
+      splitLink({
+        left: () => left,
+        right: () => right,
+        condition(op) {
+          return op.type === 'query';
+        },
+      })(mockRuntime),
+    ],
+    op: {
+      type: 'query',
+      input: null,
+      path: '',
+    },
   });
   expect(left).toHaveBeenCalledTimes(1);
   expect(right).toHaveBeenCalledTimes(0);

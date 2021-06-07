@@ -13,7 +13,7 @@ import type {
 } from '@trpc/server';
 import { getAbortController, getFetch } from './internals/fetchHelpers';
 import { LinkRuntimeOptions, OperationLink, TRPCLink } from './links/core';
-import { createChain } from './internals/createChain';
+import { executeChain } from './internals/executeChain';
 import { httpLink } from './links/httpLink';
 
 type CancelFn = () => void;
@@ -154,11 +154,13 @@ export class TRPCClient<TRouter extends AnyRouter> {
     input: unknown;
     path: string;
   }) {
-    const chain = createChain(this.links);
-    const $result = chain.call({
-      type,
-      path,
-      input,
+    const $result = executeChain({
+      links: this.links,
+      op: {
+        type,
+        path,
+        input,
+      },
     });
 
     const promise: Partial<CancellablePromise> = new Promise(
