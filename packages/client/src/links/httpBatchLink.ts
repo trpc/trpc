@@ -1,6 +1,11 @@
-import { HTTPResponseEnvelope } from 'packages/server/src/http';
-import { TRPCLink } from './core';
-import { fetchAndReturn, HttpLinkOptions, PromiseAndCancel } from './httpLink';
+import { HTTPResponseEnvelope } from '@trpc/server';
+import { ProcedureType } from '@trpc/server';
+import {
+  httpRequest,
+  HttpLinkOptions,
+  PromiseAndCancel,
+  TRPCLink,
+} from './core';
 
 type CancelFn = () => void;
 type BatchItem<TKey, TValue> = {
@@ -105,105 +110,39 @@ export function dataLoader<TKey, TValue>(fetchMany: BatchLoadFn<TKey, TValue>) {
 export function httpBatchLink(opts: HttpLinkOptions): TRPCLink {
   const { url } = opts;
   // initialized config
-  return (rt) => {
+  return (runtime) => {
     // initialized in app
 
-    const query = dataLoader<
-      { path: string; input: unknown },
-      HTTPResponseEnvelope<unknown, any>
-    >((keyInputPairs) => {
-      const path = keyInputPairs.map(({ path }) => path).join(',');
-      const input = keyInputPairs.map(({ input }) => input);
+    const fetcher =
+      (type: ProcedureType) =>
+      (keyInputPairs: { path: string; input: unknown }[]) => {
+        const path = keyInputPairs.map(({ path }) => path).join(',');
+        const input = keyInputPairs.map(({ input }) => input);
 
-      const { promise, cancel } = fetchAndReturn<
-        HTTPResponseEnvelope<unknown, any>[]
-      >({
-        url: `${url}/${path}?batch=1&input=${encodeURIComponent(
-          JSON.stringify(rt.transformer.serialize(input)),
-        )}`,
-        fetch: rt.fetch,
-        AbortController: rt.AbortController,
-        opts: {
-          method: 'GET',
-          headers: rt.headers() as any,
-        },
-        transformer: rt.transformer,
-      });
+        const { promise, cancel } = httpRequest<
+          HTTPResponseEnvelope<unknown, any>[]
+        >({
+          url,
+          input,
+          path,
+          runtime,
+          type,
+          searchParams: 'batch=1',
+        });
 
-      return {
-        promise: promise.then((res: unknown[] | unknown) => {
-          if (!Array.isArray(res)) {
-            return keyInputPairs.map(() => res);
-          }
-          return res;
-        }),
-        cancel,
+        return {
+          promise: promise.then((res: unknown[] | unknown) => {
+            if (!Array.isArray(res)) {
+              return keyInputPairs.map(() => res);
+            }
+            return res;
+          }),
+          cancel,
+        };
       };
-    });
-
-    const mutation = dataLoader<
-      { path: string; input: unknown },
-      HTTPResponseEnvelope<unknown, any>
-    >((keyInputPairs) => {
-      const path = keyInputPairs.map(({ path }) => path).join(',');
-      const input = keyInputPairs.map(({ input }) => input);
-
-      const { promise, cancel } = fetchAndReturn<
-        HTTPResponseEnvelope<unknown, any>[]
-      >({
-        url: `${url}/${path}?batch=1`,
-        fetch: rt.fetch,
-        AbortController: rt.AbortController,
-        opts: {
-          method: 'POST',
-          headers: rt.headers() as any,
-          body: JSON.stringify({ input: rt.transformer.serialize(input) }),
-        },
-        transformer: rt.transformer,
-      });
-
-      return {
-        promise: promise.then((res: unknown[] | unknown) => {
-          if (!Array.isArray(res)) {
-            return keyInputPairs.map(() => res);
-          }
-          return res;
-        }),
-        cancel,
-      };
-    });
-
-    const subscription = dataLoader<
-      { path: string; input: unknown },
-      HTTPResponseEnvelope<unknown, any>
-    >((keyInputPairs) => {
-      const path = keyInputPairs.map(({ path }) => path).join(',');
-      const input = keyInputPairs.map(({ input }) => input);
-
-      const { promise, cancel } = fetchAndReturn<
-        HTTPResponseEnvelope<unknown, any>[]
-      >({
-        url: `${url}/${path}?batch=1`,
-        fetch: rt.fetch,
-        AbortController: rt.AbortController,
-        opts: {
-          method: 'PATCH',
-          headers: rt.headers() as any,
-          body: JSON.stringify({ input: rt.transformer.serialize(input) }),
-        },
-        transformer: rt.transformer,
-      });
-
-      return {
-        promise: promise.then((res: unknown[] | unknown) => {
-          if (!Array.isArray(res)) {
-            return keyInputPairs.map(() => res);
-          }
-          return res;
-        }),
-        cancel,
-      };
-    });
+    const query = dataLoader(fetcher('query'));
+    const mutation = dataLoader(fetcher('mutation'));
+    const subscription = dataLoader(fetcher('subscription'));
 
     const loaders = { query, subscription, mutation };
     return ({ op, prev, onDestroy }) => {

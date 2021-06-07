@@ -1,21 +1,12 @@
 import { DataTransformer } from '@trpc/server';
 import { TRPCClientError } from '../createTRPCClient';
-import { TRPCLink } from './core';
+import { HttpLinkOptions, PromiseAndCancel, TRPCLink } from './core';
 
-export interface HttpLinkOptions {
-  url: string;
-}
 type CallType = 'subscription' | 'query' | 'mutation';
 type ReqOpts = {
   method: string;
   body?: string;
   url: string;
-};
-type CancelFn = () => void;
-
-export type PromiseAndCancel<TValue> = {
-  promise: Promise<TValue>;
-  cancel: CancelFn;
 };
 
 export function fetchAndReturn<TResponseShape = unknown>(config: {
