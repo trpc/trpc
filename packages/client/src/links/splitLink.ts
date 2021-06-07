@@ -11,11 +11,11 @@ export function splitLink(opts: {
   right: TRPCLink;
   condition: (op: Operation) => boolean;
 }): TRPCLink {
-  return () => {
-    const left = opts.left();
-    const right = opts.right();
-    return (meta) => {
-      opts.condition(meta.op) ? left(meta) : right(meta);
+  return (rt) => {
+    const left = opts.left(rt);
+    const right = opts.right(rt);
+    return (props) => {
+      opts.condition(props.op) ? left(props) : right(props);
     };
   };
 }
