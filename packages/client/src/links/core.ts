@@ -57,13 +57,11 @@ export function createChain(links: OperationLink[]) {
             walk({ index: index + 1, op, stack: prevStack });
           },
           onDestroy: (callback) => {
-            const unsub = $destroyed.subscribe({
-              onNext(aborted) {
-                if (aborted) {
-                  callback();
-                  unsub();
-                }
-              },
+            const unsub = $destroyed.subscribe((aborted) => {
+              if (aborted) {
+                callback();
+                unsub();
+              }
             });
           },
         });
@@ -72,12 +70,10 @@ export function createChain(links: OperationLink[]) {
       return {
         get: $result.get,
         subscribe: (callback: (value: OperationResult) => void) => {
-          return $result.subscribe({
-            onNext: (v) => {
-              if (v) {
-                callback(v);
-              }
-            },
+          return $result.subscribe((v) => {
+            if (v) {
+              callback(v);
+            }
           });
         },
         destroy: () => {

@@ -5,9 +5,7 @@ test('basic', () => {
   expect(value.get()).toBe(5);
 
   const callback = jest.fn();
-  value.subscribe({
-    onNext: callback,
-  });
+  value.subscribe(callback);
   value.set(10);
   expect(callback).toHaveBeenCalledWith(10);
 });

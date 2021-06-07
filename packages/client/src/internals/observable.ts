@@ -1,9 +1,6 @@
+type SubscriptionCallback<TValue> = (item: TValue) => void;
 export interface ObservableLike<TValue> {
-  subscribe(subscription: {
-    onNext?: (item: TValue) => void;
-    onError?: (error: unknown) => void;
-    onDone?: () => void;
-  }): UnsubscribeFn;
+  subscribe(subscription: SubscriptionCallback<TValue>): UnsubscribeFn;
   get(): TValue;
   set(value: TValue): void;
   destroy(): void;
@@ -11,16 +8,10 @@ export interface ObservableLike<TValue> {
 
 type UnsubscribeFn = () => void;
 
-interface SubscriptionInternal<TValue> {
-  onNext?: (item: TValue) => void;
-  onError?: (error: unknown) => void;
-  onDone?: () => void;
-}
-
 export function observable<TValue>(
   initialValue: TValue,
 ): ObservableLike<TValue> {
-  const subscribers: SubscriptionInternal<TValue>[] = [];
+  const subscribers: SubscriptionCallback<TValue>[] = [];
   let value = initialValue;
   return {
     subscribe(subscription) {
@@ -28,7 +19,6 @@ export function observable<TValue>(
       return () => {
         const index = subscribers.indexOf(subscription);
         if (index !== -1) {
-          subscription.onDone?.();
           subscribers.splice(index, 1);
         }
       };
@@ -38,7 +28,7 @@ export function observable<TValue>(
       value = newValue;
       if (oldValue !== newValue) {
         for (const subscription of subscribers) {
-          subscription.onNext?.(newValue);
+          subscription(newValue);
         }
       }
     },
@@ -47,9 +37,7 @@ export function observable<TValue>(
     },
     destroy() {
       while (subscribers.length) {
-        const subscription = subscribers.pop();
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        subscription!.onDone?.();
+        subscribers.pop();
       }
     },
   };
