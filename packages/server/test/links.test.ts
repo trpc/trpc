@@ -3,14 +3,11 @@ import { waitFor } from '@testing-library/dom';
 import AbortController from 'abort-controller';
 import fetch from 'node-fetch';
 import { z } from 'zod';
-import { LinkRuntimeOptions } from '../../client/src/links/core';
-import { executeChain } from '../../client/src/internals/executeChain';
-
-import {
-  dataLoader,
-  httpBatchLink,
-} from '../../client/src/links/httpBatchLink';
 import { createTRPCClient } from '../../client/src';
+import { dataLoader } from '../../client/src/internals/dataLoader';
+import { executeChain } from '../../client/src/internals/executeChain';
+import { LinkRuntimeOptions } from '../../client/src/links/core';
+import { httpBatchLink } from '../../client/src/links/httpBatchLink';
 import { httpLink } from '../../client/src/links/httpLink';
 import { retryLink } from '../../client/src/links/retryLink';
 import { splitLink } from '../../client/src/links/splitLink';

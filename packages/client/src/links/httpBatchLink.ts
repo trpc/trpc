@@ -1,106 +1,10 @@
 import { HTTPResponseEnvelope } from '@trpc/server';
 import { ProcedureType } from '@trpc/server';
-import { HttpLinkOptions, PromiseAndCancel, TRPCLink } from './core';
+import { HttpLinkOptions, TRPCLink } from './core';
 import { httpRequest } from '../internals/httpRequest';
+import { dataLoader } from '../internals/dataLoader';
 
-type CancelFn = () => void;
-type BatchItem<TKey, TValue> = {
-  cancelled: boolean;
-  key: TKey;
-  resolve: (value: TValue) => void;
-  reject: (error: Error) => void;
-};
-type Batch<TKey, TValue> = {
-  items: BatchItem<TKey, TValue>[];
-  cancelled: boolean;
-  cancel: CancelFn;
-};
-type BatchLoadFn<TKey, TValue> = (keys: TKey[]) => {
-  promise: Promise<TValue[]>;
-  cancel: CancelFn;
-};
-
-export function dataLoader<TKey, TValue>(fetchMany: BatchLoadFn<TKey, TValue>) {
-  let batch: Batch<TKey, TValue> | null = null;
-  let dispatchTimer: NodeJS.Timer | number | null = null;
-
-  const destroyTimerAndBatch = () => {
-    if (dispatchTimer) {
-      clearTimeout(dispatchTimer as any);
-    }
-    dispatchTimer = null;
-    batch = null;
-  };
-  function dispatch() {
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    const batchCopy = batch!;
-    destroyTimerAndBatch();
-    const { promise, cancel } = fetchMany(batchCopy.items.map((v) => v.key));
-    batchCopy.cancel = cancel;
-
-    promise
-      .then((result) => {
-        for (let i = 0; i < result.length; i++) {
-          const value = result[i];
-          batchCopy.items[i].resolve(value);
-        }
-      })
-      .catch((error) => {
-        for (const item of batchCopy.items) {
-          item.reject(error);
-        }
-      });
-  }
-  function load(key: TKey): PromiseAndCancel<TValue> {
-    const batchItem = {
-      cancelled: false,
-      key,
-    };
-
-    if (!batch) {
-      batch = {
-        cancelled: false,
-        items: [],
-        cancel() {
-          if (batch) {
-            batch.cancelled = true;
-          }
-          destroyTimerAndBatch();
-        },
-      };
-    }
-    const thisBatch = batch;
-    const promise = new Promise<TValue>((resolve, reject) => {
-      const item = batchItem as any as BatchItem<TKey, TValue>;
-      item.reject = reject;
-      item.resolve = resolve;
-      thisBatch.items.push(item);
-    });
-    if (!dispatchTimer) {
-      dispatchTimer = setTimeout(dispatch);
-    }
-    const cancel = () => {
-      batchItem.cancelled = true;
-
-      if (thisBatch.cancelled) {
-        return;
-      }
-      if (!thisBatch.items.some((item) => item.cancelled)) {
-        // there are still things that can be resolved
-        return;
-      }
-      thisBatch.cancelled = true;
-      thisBatch.cancel?.();
-    };
-
-    return { promise, cancel };
-  }
-
-  return {
-    load,
-  };
-}
-
+export type CancelFn = () => void;
 export function httpBatchLink(opts: HttpLinkOptions): TRPCLink {
   const { url } = opts;
   // initialized config
