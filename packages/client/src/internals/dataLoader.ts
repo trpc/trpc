@@ -8,7 +8,6 @@ type BatchItem<TKey, TValue> = {
 };
 type Batch<TKey, TValue> = {
   items: BatchItem<TKey, TValue>[];
-  cancelled: boolean;
   cancel: CancelFn;
 };
 type BatchLoadFn<TKey, TValue> = (keys: TKey[]) => {
@@ -26,9 +25,7 @@ export function dataLoader<TKey, TValue>(fetchMany: BatchLoadFn<TKey, TValue>) {
   let dispatchTimer: NodeJS.Timer | number | null = null;
 
   const destroyTimerAndBatch = () => {
-    if (dispatchTimer) {
-      clearTimeout(dispatchTimer as any);
-    }
+    clearTimeout(dispatchTimer as any);
     dispatchTimer = null;
     batch = null;
   };
@@ -60,12 +57,8 @@ export function dataLoader<TKey, TValue>(fetchMany: BatchLoadFn<TKey, TValue>) {
 
     if (!batch) {
       batch = {
-        cancelled: false,
         items: [],
         cancel() {
-          if (batch) {
-            batch.cancelled = true;
-          }
           destroyTimerAndBatch();
         },
       };
@@ -83,15 +76,11 @@ export function dataLoader<TKey, TValue>(fetchMany: BatchLoadFn<TKey, TValue>) {
     const cancel = () => {
       batchItem.cancelled = true;
 
-      if (thisBatch.cancelled) {
-        return;
-      }
       if (thisBatch.items.some((item) => !item.cancelled)) {
         // there are still things that can be resolved
         return;
       }
-      thisBatch.cancelled = true;
-      thisBatch.cancel?.();
+      thisBatch.cancel();
     };
 
     return { promise, cancel };

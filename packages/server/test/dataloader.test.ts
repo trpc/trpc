@@ -57,7 +57,7 @@ test('cancellation', async () => {
     const res1 = loader.load(2);
     const res2 = loader.load(3);
 
-    await new Promise((resolve) => setTimeout(resolve, 5));
+    await new Promise((resolve) => setTimeout(resolve, 1));
 
     res1.cancel();
     res2.cancel();
@@ -69,7 +69,7 @@ test('cancellation', async () => {
 });
 
 test('errors', async () => {
-  const loader = dataLoader<number, number>(function fetchMany(keys) {
+  const loader = dataLoader<number, number>(function fetchMany() {
     const promise = new Promise<number[]>((_resolve, reject) => {
       reject(new Error('Some error'));
     });
@@ -77,21 +77,13 @@ test('errors', async () => {
     return { promise, cancel: () => {} };
   });
 
-  const results = await Promise.allSettled([
-    loader.load(1).promise,
-    loader.load(2).promise,
-  ]);
+  const result1 = loader.load(1);
+  const result2 = loader.load(2);
 
-  expect(results).toMatchInlineSnapshot(`
-    Array [
-      Object {
-        "reason": [Error: Some error],
-        "status": "rejected",
-      },
-      Object {
-        "reason": [Error: Some error],
-        "status": "rejected",
-      },
-    ]
-  `);
+  await expect(result1.promise).rejects.toMatchInlineSnapshot(
+    `[Error: Some error]`,
+  );
+  await expect(result2.promise).rejects.toMatchInlineSnapshot(
+    `[Error: Some error]`,
+  );
 });
