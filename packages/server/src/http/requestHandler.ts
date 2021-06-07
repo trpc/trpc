@@ -324,7 +324,7 @@ export async function requestHandler<
             statusCode: res.statusCode ?? 200,
             data: output,
           };
-          events.emit('flush');
+          events.emit('flush'); // `flush()` is used for subscriptions to flush out current output
           return json;
         } catch (_err) {
           const error = getErrorFromUnknown(_err);
