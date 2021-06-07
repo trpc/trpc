@@ -1,6 +1,5 @@
 /* eslint-disable @typescript-eslint/no-empty-function */
 import { waitFor } from '@testing-library/dom';
-import { createTRPCClient } from '@trpc/client';
 import AbortController from 'abort-controller';
 import fetch from 'node-fetch';
 import { z } from 'zod';
@@ -9,6 +8,7 @@ import {
   dataLoader,
   httpBatchLink,
 } from '../../client/src/links/httpBatchLink';
+import { createTRPCClient } from '../../client/src';
 import { httpLink } from '../../client/src/links/httpLink';
 import { retryLink } from '../../client/src/links/retryLink';
 import { splitLink } from '../../client/src/links/splitLink';
