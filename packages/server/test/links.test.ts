@@ -262,6 +262,40 @@ describe('batching', () => {
 
     close();
   });
+
+  test('server not configured for batching', async () => {
+    const serverCall = jest.fn();
+    const { close, router, port, trpcClientOptions } = routerToServerAndClient(
+      trpc.router().query('hello', {
+        resolve() {
+          serverCall();
+          return 'world';
+        },
+      }),
+      {
+        server: {
+          batching: {
+            enabled: false,
+          },
+        },
+      },
+    );
+    const client = createTRPCClient<typeof router>({
+      ...trpcClientOptions,
+      links: [
+        httpBatchLink({
+          url: `http://localhost:${port}`,
+        }),
+      ],
+      headers: {},
+    });
+
+    await expect(client.query('hello')).rejects.toMatchInlineSnapshot(
+      `[Error: Batching is not enabled on the server]`,
+    );
+
+    close();
+  });
 });
 
 test('split link', () => {
@@ -302,7 +336,6 @@ test('create client with links', async () => {
   );
   const client = createTRPCClient<typeof router>({
     ...trpcClientOptions,
-    url: `http://localhost:${port}`,
     links: [
       retryLink({ attempts: 3 }),
       httpLink({
