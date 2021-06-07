@@ -32,11 +32,9 @@ export function dataLoader<TKey, TValue>(fetchMany: BatchLoadFn<TKey, TValue>) {
     batch = null;
   };
   function dispatch() {
-    const batchCopy = batch;
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    const batchCopy = batch!;
     destroyTimerAndBatch();
-    if (!batchCopy) {
-      return;
-    }
     const { promise, cancel } = fetchMany(batchCopy.items.map((v) => v.key));
     batchCopy.cancel = cancel;
 
