@@ -149,9 +149,7 @@ export function httpBatchLink(opts: HttpLinkOptions): TRPCLink {
       const loader = loaders[op.type];
       const { promise, cancel } = loader.load(op);
       onDestroy(() => cancel());
-      promise.then((data: HTTPResponseEnvelope<unknown, any>) => {
-        prev(data);
-      });
+      promise.then(prev).catch(prev);
     };
   };
 }

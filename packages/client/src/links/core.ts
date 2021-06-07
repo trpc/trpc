@@ -102,7 +102,7 @@ export type PromiseAndCancel<TValue> = {
   cancel: CancelFn;
 };
 
-export function httpRequest<TResponseShape = unknown>(props: {
+export function httpRequest<TResponseShape>(props: {
   runtime: LinkRuntimeOptions;
   type: ProcedureType;
   input: unknown;
@@ -162,7 +162,12 @@ export function httpRequest<TResponseShape = unknown>(props: {
       .then((json) => {
         resolve(rt.transformer.deserialize(json));
       })
-      .catch(reject);
+      .catch((originalError) => {
+        const err = new TRPCClientError(originalError?.message, {
+          originalError,
+        });
+        reject(err);
+      });
   });
   const cancel = () => {
     ac?.abort();

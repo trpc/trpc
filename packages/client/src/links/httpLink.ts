@@ -1,13 +1,10 @@
 import { DataTransformer } from '@trpc/server';
-import { TRPCClientError } from '../createTRPCClient';
-import { HttpLinkOptions, PromiseAndCancel, TRPCLink } from './core';
-
-type CallType = 'subscription' | 'query' | 'mutation';
-type ReqOpts = {
-  method: string;
-  body?: string;
-  url: string;
-};
+import {
+  HttpLinkOptions,
+  httpRequest,
+  PromiseAndCancel,
+  TRPCLink,
+} from './core';
 
 export function fetchAndReturn<TResponseShape = unknown>(config: {
   fetch: typeof fetch;
@@ -46,54 +43,19 @@ export function httpLink(opts: HttpLinkOptions): TRPCLink {
   const { url } = opts;
 
   // initialized config
-  return (rt) => {
+  return (runtime) => {
     // initialized in app
     return ({ op, prev, onDestroy }) => {
       const { path, input, type } = op;
-      const reqOptsMap: Record<CallType, () => ReqOpts> = {
-        subscription: () => ({
-          method: 'PATCH',
-          body: JSON.stringify({ input: rt.transformer.serialize(input) }),
-          url: `${url}/${path}`,
-        }),
-        mutation: () => ({
-          method: 'POST',
-          body: JSON.stringify({ input: rt.transformer.serialize(input) }),
-          url: `${url}/${path}`,
-        }),
-        query: () => ({
-          method: 'GET',
-          url:
-            `${url}/${path}` +
-            (input != null
-              ? `?input=${encodeURIComponent(
-                  JSON.stringify(rt.transformer.serialize(input)),
-                )}`
-              : ''),
-        }),
-      };
-      const opts = reqOptsMap[type]();
-      const { promise, cancel } = fetchAndReturn({
-        fetch: rt.fetch,
-        AbortController: rt.AbortController,
-        url: opts.url,
-        opts: {
-          ...opts,
-          headers: rt.headers() as any,
-        },
-        transformer: rt.transformer,
+      const { promise, cancel } = httpRequest({
+        runtime,
+        type,
+        input,
+        url,
+        path,
       });
       onDestroy(() => cancel());
-      promise
-        .then((data) => {
-          prev(data);
-        })
-        .catch((originalError) => {
-          const err = new TRPCClientError(originalError?.message, {
-            originalError,
-          });
-          prev(err);
-        });
+      promise.then(prev).catch(prev);
     };
   };
 }
