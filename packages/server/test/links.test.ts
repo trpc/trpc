@@ -359,3 +359,32 @@ test('create client with links', async () => {
 
   close();
 });
+
+test('multi down link', async () => {
+  const $result = executeChain({
+    links: [
+      // mock cache link
+      ({ prev, onDestroy }) => {
+        const timer = setTimeout(() => {
+          prev({ ok: true, data: 'cached2', statusCode: 200 });
+        }, 1);
+        onDestroy(() => {
+          clearTimeout(timer);
+        });
+        prev({ ok: true, data: 'cached1', statusCode: 200 });
+      },
+      httpLink({
+        url: `void`,
+      })(mockRuntime),
+    ],
+    op: {} as any,
+  });
+  expect($result.get()).toMatchObject({
+    data: 'cached1',
+  });
+  await waitFor(() => {
+    expect($result.get()).toMatchObject({
+      data: 'cached2',
+    });
+  });
+});
