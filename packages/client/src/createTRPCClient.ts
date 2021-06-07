@@ -157,7 +157,7 @@ export class TRPCClient<TRouter extends AnyRouter> {
     path: string;
   }) {
     const chain = createChain(this.links);
-    const result = chain.call({
+    const $result = chain.call({
       type,
       path,
       input,
@@ -165,7 +165,7 @@ export class TRPCClient<TRouter extends AnyRouter> {
 
     const promise: Partial<CancellablePromise> = new Promise(
       (resolve, reject) => {
-        const unsub = result.subscribe((result) => {
+        $result.subscribe((result) => {
           if (result instanceof Error || !result.ok) {
             const error =
               result instanceof Error
@@ -180,13 +180,13 @@ export class TRPCClient<TRouter extends AnyRouter> {
             this.opts.onSuccess?.(result);
             resolve(result.data);
           }
-          unsub();
+          $result.destroy();
         });
       },
     );
 
     promise.cancel = () => {
-      result.abort();
+      $result.destroy();
     };
     return promise as any;
   }

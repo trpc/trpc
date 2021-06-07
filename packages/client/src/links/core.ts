@@ -37,7 +37,7 @@ export function createChain(links: OperationLink[]) {
   return {
     call(_op: Operation) {
       const $result = observable<OperationResult | null>(null);
-      const $aborted = observable(false);
+      const $destroyed = observable(false);
 
       function walk({
         index,
@@ -61,7 +61,7 @@ export function createChain(links: OperationLink[]) {
             walk({ index: index + 1, op, stack: prevStack });
           },
           onDestroy: (callback) => {
-            const unsub = $aborted.subscribe({
+            const unsub = $destroyed.subscribe({
               onNext(aborted) {
                 if (aborted) {
                   callback();
@@ -84,8 +84,9 @@ export function createChain(links: OperationLink[]) {
             },
           });
         },
-        abort: () => {
-          $aborted.set(true);
+        destroy: () => {
+          $destroyed.set(true);
+          $result.destroy();
         },
       };
     },
