@@ -35,16 +35,14 @@ function mockReq({
 function mockRes() {
   const res = new EventEmitter() as any;
 
-  const status = jest.fn(() => res);
   const json = jest.fn(() => res);
   const setHeader = jest.fn(() => res);
   const end = jest.fn(() => res);
   res.json = json;
-  res.status = status;
   res.setHeader = setHeader;
   res.end = end;
 
-  return { res, status, json, setHeader, end };
+  return { res, json, setHeader, end };
 }
 test('bad setup', async () => {
   const router = trpc.router().query('hello', {
@@ -57,10 +55,9 @@ test('bad setup', async () => {
   });
 
   const { req } = mockReq({ query: {} });
-  const { res, status, json } = mockRes();
+  const { res, json } = mockRes();
 
   await handler(req, res);
-  expect(status).toHaveBeenCalledWith(500);
 
   const responseJson: HTTPErrorResponseEnvelope<typeof router> = (
     json.mock.calls[0] as any

@@ -6,7 +6,6 @@ import { assertNotBrowser } from '../assertNotBrowser';
 import { getErrorFromUnknown, TRPCError } from '../errors';
 import { AnyRouter, inferRouterContext, ProcedureType } from '../router';
 import { Subscription } from '../subscription';
-import { Duplex } from 'stream';
 import {
   CombinedDataTransformer,
   DataTransformerOptions,
@@ -298,8 +297,8 @@ export async function requestHandler<
         : [input]
       : [input];
     const paths = isBatch ? opts.path.split(',') : [opts.path];
-    const events = new Duplex();
-    req.pipe(events);
+    const events = req;
+
     const results = await Promise.all(
       paths.map(async (path, index) => {
         try {

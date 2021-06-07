@@ -58,7 +58,8 @@ export function createNextApiHandler<TRouter extends AnyRouter>(
         statusCode: 500,
         error,
       };
-      res.status(json.statusCode).json(json);
+      res.statusCode = json.statusCode;
+      res.json(json);
       return;
     }
 
