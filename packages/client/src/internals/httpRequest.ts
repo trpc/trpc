@@ -18,7 +18,7 @@ export function httpRequest<TResponseShape>(props: {
     subscription: 'PATCH',
   };
   function getUrl() {
-    const urlParts = [props.url + '/' + path];
+    let url = props.url + '/' + path;
     const queryParts: string[] = [];
     if (props.searchParams) {
       queryParts.push(props.searchParams);
@@ -31,9 +31,9 @@ export function httpRequest<TResponseShape>(props: {
       );
     }
     if (queryParts.length) {
-      urlParts.push(queryParts.join('&'));
+      url += '?' + queryParts.join('&');
     }
-    return urlParts.join('?');
+    return url;
   }
   function getBody() {
     if (type === 'query') {
