@@ -1,4 +1,5 @@
-import { HttpLinkOptions, httpRequest, TRPCLink } from './core';
+import { HttpLinkOptions, TRPCLink } from './core';
+import { httpRequest } from './internals/httpRequest';
 
 export function httpLink(opts: HttpLinkOptions): TRPCLink {
   const { url } = opts;

@@ -16,8 +16,8 @@ import {
   HTTPErrorResponseEnvelope,
   HTTPSuccessResponseEnvelope,
 } from './index';
-import { getPostBody } from './internal/getPostBody';
-import { getQueryInput } from './internal/getQueryInput';
+import { getPostBody } from './internals/getPostBody';
+import { getQueryInput } from './internals/getQueryInput';
 assertNotBrowser();
 
 export type CreateContextFnOptions<TRequest, TResponse> = {

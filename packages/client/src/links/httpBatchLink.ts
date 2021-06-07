@@ -1,11 +1,7 @@
 import { HTTPResponseEnvelope } from '@trpc/server';
 import { ProcedureType } from '@trpc/server';
-import {
-  httpRequest,
-  HttpLinkOptions,
-  PromiseAndCancel,
-  TRPCLink,
-} from './core';
+import { HttpLinkOptions, PromiseAndCancel, TRPCLink } from './core';
+import { httpRequest } from './internals/httpRequest';
 
 type CancelFn = () => void;
 type BatchItem<TKey, TValue> = {
