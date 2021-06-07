@@ -140,14 +140,79 @@ export function httpBatchLink(opts: HttpLinkOptions): TRPCLink {
         cancel,
       };
     });
+
+    const mutation = dataLoader<
+      { path: string; input: unknown },
+      HTTPResponseEnvelope<unknown, any>
+    >((keyInputPairs) => {
+      const path = keyInputPairs.map(({ path }) => path).join(',');
+      const input = keyInputPairs.map(({ input }) => input);
+
+      const { promise, cancel } = fetchAndReturn<
+        HTTPResponseEnvelope<unknown, any>[]
+      >({
+        url: `${url}/${path}?batch=1`,
+        fetch: rt.fetch,
+        AbortController: rt.AbortController,
+        opts: {
+          method: 'POST',
+          headers: rt.headers() as any,
+          body: JSON.stringify({ input: rt.transformer.serialize(input) }),
+        },
+        transformer: rt.transformer,
+      });
+
+      return {
+        promise: promise.then((res: unknown[] | unknown) => {
+          if (!Array.isArray(res)) {
+            return keyInputPairs.map(() => res);
+          }
+          return res;
+        }),
+        cancel,
+      };
+    });
+
+    const subscription = dataLoader<
+      { path: string; input: unknown },
+      HTTPResponseEnvelope<unknown, any>
+    >((keyInputPairs) => {
+      const path = keyInputPairs.map(({ path }) => path).join(',');
+      const input = keyInputPairs.map(({ input }) => input);
+
+      const { promise, cancel } = fetchAndReturn<
+        HTTPResponseEnvelope<unknown, any>[]
+      >({
+        url: `${url}/${path}?batch=1`,
+        fetch: rt.fetch,
+        AbortController: rt.AbortController,
+        opts: {
+          method: 'PATCH',
+          headers: rt.headers() as any,
+          body: JSON.stringify({ input: rt.transformer.serialize(input) }),
+        },
+        transformer: rt.transformer,
+      });
+
+      return {
+        promise: promise.then((res: unknown[] | unknown) => {
+          if (!Array.isArray(res)) {
+            return keyInputPairs.map(() => res);
+          }
+          return res;
+        }),
+        cancel,
+      };
+    });
+
+    const loaders = { query, subscription, mutation };
     return ({ op, prev, onDestroy }) => {
-      if (op.type === 'query') {
-        const { promise, cancel } = query.load(op);
-        onDestroy(() => cancel());
-        promise.then((data: HTTPResponseEnvelope<unknown, any>) => {
-          prev(data);
-        });
-      }
+      const loader = loaders[op.type];
+      const { promise, cancel } = loader.load(op);
+      onDestroy(() => cancel());
+      promise.then((data: HTTPResponseEnvelope<unknown, any>) => {
+        prev(data);
+      });
     };
   };
 }
