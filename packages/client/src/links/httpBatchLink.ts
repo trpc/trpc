@@ -4,7 +4,6 @@ import { HttpLinkOptions, TRPCLink } from './core';
 import { httpRequest } from '../internals/httpRequest';
 import { dataLoader } from '../internals/dataLoader';
 
-export type CancelFn = () => void;
 export function httpBatchLink(opts: HttpLinkOptions): TRPCLink {
   const { url } = opts;
   // initialized config

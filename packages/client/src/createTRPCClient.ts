@@ -12,11 +12,15 @@ import type {
   Maybe,
 } from '@trpc/server';
 import { getAbortController, getFetch } from './internals/fetchHelpers';
-import { LinkRuntimeOptions, OperationLink, TRPCLink } from './links/core';
+import {
+  CancelFn,
+  LinkRuntimeOptions,
+  OperationLink,
+  TRPCLink,
+} from './links/core';
 import { executeChain } from './internals/executeChain';
 import { httpLink } from './links/httpLink';
 
-type CancelFn = () => void;
 type CancellablePromise<T = unknown> = Promise<T> & {
   cancel: CancelFn;
 };
