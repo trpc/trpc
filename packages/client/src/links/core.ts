@@ -4,7 +4,7 @@ import {
   ProcedureType,
 } from '@trpc/server';
 import { TRPCClientError } from '../createTRPCClient';
-import { observable } from '../observable';
+import { observable } from '../internals/observable';
 
 export type Operation<TInput = unknown> = {
   type: 'query' | 'mutation' | 'subscription';
