@@ -86,7 +86,7 @@ export function dataLoader<TKey, TValue>(fetchMany: BatchLoadFn<TKey, TValue>) {
       if (thisBatch.cancelled) {
         return;
       }
-      if (!thisBatch.items.some((item) => item.cancelled)) {
+      if (thisBatch.items.some((item) => !item.cancelled)) {
         // there are still things that can be resolved
         return;
       }
