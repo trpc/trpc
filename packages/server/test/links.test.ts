@@ -4,7 +4,6 @@ import AbortController from 'abort-controller';
 import fetch from 'node-fetch';
 import { z } from 'zod';
 import { createTRPCClient } from '../../client/src';
-import { dataLoader } from '../../client/src/internals/dataLoader';
 import { executeChain } from '../../client/src/internals/executeChain';
 import { LinkRuntimeOptions } from '../../client/src/links/core';
 import { httpBatchLink } from '../../client/src/links/httpBatchLink';
@@ -144,72 +143,6 @@ test('cancel request', async () => {
 });
 
 describe('batching', () => {
-  test('dataloader basic', async () => {
-    const fetchManyCalled = jest.fn();
-    const loader = dataLoader<number, number>(function fetchMany(keys) {
-      fetchManyCalled();
-      const promise = new Promise<number[]>((resolve) => {
-        resolve(keys.map((v) => v + 1));
-      });
-      return { promise, cancel: () => {} };
-    });
-    {
-      const $result = await Promise.all([
-        loader.load(1).promise,
-        loader.load(2).promise,
-      ]);
-      expect($result).toEqual([2, 3]);
-    }
-    {
-      const $result = await Promise.all([
-        loader.load(3).promise,
-        loader.load(4).promise,
-      ]);
-      expect($result).toEqual([4, 5]);
-    }
-    expect(fetchManyCalled).toHaveBeenCalledTimes(2);
-  });
-
-  test('dataloader cancellation', async () => {
-    const fetchManyCalled = jest.fn();
-    const cancelCalled = jest.fn();
-    const loader = dataLoader<number, number>(function fetchMany(keys) {
-      fetchManyCalled();
-      const promise = new Promise<number[]>((resolve) => {
-        setTimeout(() => {
-          resolve(keys.map((v) => v + 1));
-        }, 10);
-      });
-
-      return { promise, cancel: cancelCalled };
-    });
-
-    {
-      // immediate, before it's actually executed
-      const res1 = loader.load(1);
-      const res2 = loader.load(2);
-
-      res1.cancel();
-      res2.cancel();
-
-      expect(cancelCalled).toHaveBeenCalledTimes(0);
-    }
-    {
-      // after some time
-      const res1 = loader.load(2);
-      const res2 = loader.load(3);
-
-      await new Promise((resolve) => setTimeout(resolve, 5));
-
-      res1.cancel();
-      res2.cancel();
-
-      await waitFor(() => {
-        expect(cancelCalled).toHaveBeenCalledTimes(1);
-      });
-    }
-  });
-
   test('query batching', async () => {
     const contextCall = jest.fn();
     const { port, close } = routerToServerAndClient(
