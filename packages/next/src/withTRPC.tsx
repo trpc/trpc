@@ -111,7 +111,7 @@ export function withTRPC<TRouter extends AnyRouter>(
           await ssrPrepass(createElement(AppTree, appTreeProps as any));
         }
 
-        pageProps.trpcState = trpcClient.transformer.serialize(
+        pageProps.trpcState = trpcClient.runtime.transformer.serialize(
           dehydrate(queryClient, {
             shouldDehydrateQuery() {
               // makes sure errors are also dehydrated
