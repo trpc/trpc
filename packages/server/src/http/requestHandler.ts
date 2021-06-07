@@ -11,7 +11,7 @@ import {
   DataTransformerOptions,
 } from '../transformer';
 import { HTTPResponseEnvelope } from './envelopes';
-import { getStatusCodeFromError, HTTPError } from './errors';
+import { getStatusCodeFromError, httpError, HTTPError } from './errors';
 import {
   HTTPErrorResponseEnvelope,
   HTTPSuccessResponseEnvelope,
@@ -291,11 +291,18 @@ export async function requestHandler<
     ctx = await createContext?.({ req, res });
 
     const caller = router.createCaller(ctx);
-    const inputs: unknown[] = isBatch
-      ? Array.isArray(input)
-        ? input
-        : [input]
-      : [input];
+    const getInputs = (): unknown[] => {
+      if (!isBatch) {
+        return [input];
+      }
+      if (!Array.isArray(input)) {
+        throw httpError.badRequest(
+          '"input" needs to be an array when doing a batch call',
+        );
+      }
+      return input;
+    };
+    const inputs = getInputs();
     const paths = isBatch ? opts.path.split(',') : [opts.path];
     const events = req;
 
