@@ -6,6 +6,7 @@ import { assertNotBrowser } from '../assertNotBrowser';
 import { getErrorFromUnknown, TRPCError } from '../errors';
 import { AnyRouter, inferRouterContext, ProcedureType } from '../router';
 import { Subscription } from '../subscription';
+import { Duplex } from 'stream';
 import {
   CombinedDataTransformer,
   DataTransformerOptions,
@@ -122,9 +123,9 @@ async function callProcedure<TRouter extends AnyRouter>(opts: {
   caller: ReturnType<TRouter['createCaller']>;
   type: ProcedureType;
   subscriptions: BaseOptions<any, any>['subscriptions'] | undefined;
-  reqEvents: NodeJS.EventEmitter;
+  events: NodeJS.EventEmitter;
 }): Promise<unknown> {
-  const { type, path, input, subscriptions, caller, reqEvents } = opts;
+  const { type, path, input, subscriptions, caller, events: events } = opts;
   if (type === 'query') {
     return caller.query(path, input);
   }
@@ -150,27 +151,29 @@ async function callProcedure<TRouter extends AnyRouter>(opts: {
         sub.off('data', onData);
         sub.off('error', onError);
         sub.off('destroy', onDestroy);
-        reqEvents.off('close', onClose);
+        events.off('close', onClose);
+        events.off('flush', flush);
         clearTimeout(requestTimeoutTimer);
         clearTimeout(backpressureTimer);
         sub.destroy();
       }
+
+      const flush = () => {
+        cleanup();
+        resolve(buffer);
+      };
       function onData(data: unknown) {
         buffer.push(data);
 
         const requestTimeLeft = requestTimeoutMs - (Date.now() - startTime);
 
-        const success = () => {
-          cleanup();
-          resolve(buffer);
-        };
         if (requestTimeLeft <= backpressureMs) {
           // will timeout before next backpressure tick
-          success();
+          flush();
           return;
         }
         if (!backpressureTimer) {
-          backpressureTimer = setTimeout(success, backpressureMs);
+          backpressureTimer = setTimeout(flush, backpressureMs);
           return;
         }
       }
@@ -206,7 +209,8 @@ async function callProcedure<TRouter extends AnyRouter>(opts: {
       sub.on('data', onData);
       sub.on('error', onError);
       sub.on('destroy', onDestroy);
-      reqEvents.once('close', onClose);
+      events.once('close', onClose);
+      events.once('flush', flush);
       requestTimeoutTimer = setTimeout(onRequestTimeout, requestTimeoutMs);
       sub.start();
     });
@@ -294,6 +298,8 @@ export async function requestHandler<
         : [input]
       : [input];
     const paths = isBatch ? opts.path.split(',') : [opts.path];
+    const events = new Duplex();
+    req.pipe(events);
     const results = await Promise.all(
       paths.map(async (path, index) => {
         try {
@@ -301,7 +307,7 @@ export async function requestHandler<
             caller,
             path,
             input: inputs[index],
-            reqEvents: req,
+            events,
             subscriptions,
             type,
           });
@@ -310,6 +316,7 @@ export async function requestHandler<
             statusCode: res.statusCode ?? 200,
             data: output,
           };
+          events.emit('flush');
           return json;
         } catch (_err) {
           const error = getErrorFromUnknown(_err);
