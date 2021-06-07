@@ -11,7 +11,7 @@ import type {
   inferSubscriptionOutput,
   Maybe,
 } from '@trpc/server';
-import { getAbortController, getFetch } from './helpers';
+import { getAbortController, getFetch } from './internals/fetchHelpers';
 import {
   createChain,
   LinkRuntimeOptions,

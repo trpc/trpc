@@ -1,5 +1,5 @@
 import { ProcedureType } from '@trpc/server';
-import { LinkRuntimeOptions, PromiseAndCancel } from '../core';
+import { LinkRuntimeOptions, PromiseAndCancel } from '../links/core';
 
 export function httpRequest<TResponseShape>(props: {
   runtime: LinkRuntimeOptions;
