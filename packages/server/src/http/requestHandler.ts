@@ -255,7 +255,7 @@ export async function requestHandler<
   const transformer = getCombinedDataTransformer(opts.transformer);
 
   const query = req.query ? req.query : url.parse(req.url!, true).query;
-  const isBatch = query.batch;
+  const isBatchCall = query.batch;
   function endResponse(
     json:
       | HTTPResponseEnvelope<unknown, any>
@@ -272,7 +272,7 @@ export async function requestHandler<
     res.end(JSON.stringify(transformer.output.serialize(json)));
   }
   try {
-    if (isBatch && !opts.batching?.enabled) {
+    if (isBatchCall && !opts.batching?.enabled) {
       throw new Error(`Batching is not enabled on the server`);
     }
     if (type === 'unknown') {
@@ -292,7 +292,7 @@ export async function requestHandler<
 
     const caller = router.createCaller(ctx);
     const getInputs = (): unknown[] => {
-      if (!isBatch) {
+      if (!isBatchCall) {
         return [input];
       }
       if (!Array.isArray(input)) {
@@ -303,7 +303,7 @@ export async function requestHandler<
       return input;
     };
     const inputs = getInputs();
-    const paths = isBatch ? opts.path.split(',') : [opts.path];
+    const paths = isBatchCall ? opts.path.split(',') : [opts.path];
     const events = req;
 
     const results = await Promise.all(
@@ -340,7 +340,7 @@ export async function requestHandler<
       }),
     );
 
-    const result = isBatch ? results : results[0];
+    const result = isBatchCall ? results : results[0];
     endResponse(result);
   } catch (_err) {
     const error = getErrorFromUnknown(_err);
