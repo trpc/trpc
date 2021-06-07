@@ -254,8 +254,10 @@ export async function requestHandler<
   let ctx: inferRouterContext<TRouter> | undefined = undefined;
   const transformer = getCombinedDataTransformer(opts.transformer);
 
-  const query = req.query ? req.query : url.parse(req.url!, true).query;
-  const isBatchCall = query.batch;
+  const reqQueryParams = req.query
+    ? req.query
+    : url.parse(req.url!, true).query;
+  const isBatchCall = reqQueryParams.batch;
   function endResponse(
     json:
       | HTTPResponseEnvelope<unknown, any>
