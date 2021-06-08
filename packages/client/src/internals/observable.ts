@@ -6,6 +6,13 @@ export interface ObservableLike<TValue> {
   destroy(): void;
 }
 
+export interface TransientObservable<TValue> {
+  subscribe(subscription: SubscriptionCallback<TValue>): UnsubscribeFn;
+  get(): TValue;
+  set(value: TValue): void;
+  destroy(): void;
+}
+
 type UnsubscribeFn = () => void;
 
 export function observable<TValue>(

@@ -13,6 +13,7 @@ export const todoRouter = createRouter()
   })
   .mutation('add', {
     input: z.object({
+      id: z.string().optional(),
       text: z.string().min(1),
     }),
     async resolve({ ctx, input }) {

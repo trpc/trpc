@@ -6,7 +6,12 @@ import * as trpc from '@trpc/server';
 import * as trpcNext from '@trpc/server/adapters/next';
 import { postsRouter } from 'routers/posts';
 
-const prisma = new PrismaClient();
+const prisma = new PrismaClient({
+  log:
+    process.env.NODE_ENV === 'development'
+      ? ['query', 'error', 'warn']
+      : ['error'],
+});
 
 /**
  * Creates context for an incoming request
