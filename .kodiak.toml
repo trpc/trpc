@@ -12,3 +12,6 @@ automerge_label = ["🚀 merge", "⬆️ dependencies"]
 # only auto merge "minor" and "patch" version upgrades.
 versions = ["minor", "patch"]
 usernames = ["dependabot"]
+
+[update]
+autoupdate_label = "♻️ autoupdate"
