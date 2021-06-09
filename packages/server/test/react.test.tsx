@@ -914,7 +914,7 @@ describe('withTRPC()', () => {
     });
   });
 
-  test.only('useQuery - ssr batching', async () => {
+  test('useQuery - ssr batching', async () => {
     // @ts-ignore
     const { window } = global;
 

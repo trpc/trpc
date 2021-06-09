@@ -44,6 +44,8 @@ export type OutputWithCursor<TData, TCursor extends any = any> = {
   data: TData;
 };
 
+type PartialBy<T, K extends keyof T> = Omit<T, K> & Partial<Pick<T, K>>;
+
 interface TRPCUseQueryBaseOptions {
   /**
    * Opt out of SSR for this query by passing `ssr: false`
@@ -191,22 +193,27 @@ export function createReactQueryHooks<TRouter extends AnyRouter>() {
     TOutput extends inferProcedureOutput<TProcedure>,
   >(
     pathAndArgs: [path: TPath, ...args: inferHandlerInput<TProcedure>],
-    opts: UseTRPCQueryOptions<
+    opts?: UseTRPCQueryOptions<
       inferProcedureInput<TQueries[TPath]>,
       TError,
       TOutput
-    > = {},
+    >,
   ): UseQueryResult<TOutput, TError> {
     const cacheKey = getCacheKey(pathAndArgs, CACHE_KEY_QUERY);
-    const { client, isPrepass } = useContext();
+    const { client, isPrepass, queryClient, fetchQuery } = useContext();
 
+    if (
+      typeof window === 'undefined' &&
+      isPrepass &&
+      opts?.ssr !== false &&
+      !queryClient.getQueryCache().find(cacheKey)
+    ) {
+      fetchQuery(pathAndArgs);
+    }
     const query = useQuery(
       cacheKey,
       () => client.query(...pathAndArgs) as any,
-      {
-        ...opts,
-        suspense: isPrepass && opts.ssr !== false ? true : opts.suspense,
-      },
+      opts,
     );
     return query;
   }
@@ -332,24 +339,29 @@ export function createReactQueryHooks<TRouter extends AnyRouter>() {
     TOutput extends inferProcedureOutput<TQueries[TPath]>,
     TCursor extends any,
   >(
-    pathAndArgs: [TPath, Omit<TInput, 'cursor'>],
+    pathAndArgs: [TPath, PartialBy<TInput, 'cursor'>],
     // FIXME: this typing is wrong but it works
-    opts: UseTRPCInfiniteQueryOptions<TOutput, TError, TOutput> = {},
+    opts?: UseTRPCInfiniteQueryOptions<TOutput, TError, TOutput>,
   ) {
-    const { client, isPrepass } = useContext();
+    const { client, isPrepass, fetchInfiniteQuery, queryClient } = useContext();
     const cacheKey = getCacheKey(pathAndArgs, CACHE_KEY_INFINITE_QUERY);
     const [path, input] = pathAndArgs;
 
+    if (
+      typeof window === 'undefined' &&
+      isPrepass &&
+      opts?.ssr !== false &&
+      !queryClient.getQueryCache().find(cacheKey)
+    ) {
+      fetchInfiniteQuery(pathAndArgs as any);
+    }
     const query = useInfiniteQuery(
       cacheKey,
       ({ pageParam }) => {
         const actualInput = { ...input, cursor: pageParam };
         return (client.query as any)(path, actualInput);
       },
-      {
-        ...opts,
-        suspense: isPrepass && opts.ssr !== false ? true : opts.suspense,
-      },
+      opts,
     );
 
     return query;
