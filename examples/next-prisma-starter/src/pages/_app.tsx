@@ -1,9 +1,24 @@
 import { withTRPC } from '@trpc/next';
+import { httpBatchLink } from '@trpc/client/links/httpBatchLink';
+import { loggerLink } from '@trpc/client/links/loggerLink';
 import { AppType } from 'next/dist/next-server/lib/utils';
+import Link from 'next/link';
 // import { transformer } from '../utils/trpc';
 
 const MyApp: AppType = ({ Component, pageProps }) => {
-  return <Component {...pageProps} />;
+  return (
+    <>
+      <nav>
+        <Link href="/">
+          <a>Index</a>
+        </Link>{' '}
+        <Link href="/batching">
+          <a>Batching</a>
+        </Link>
+      </nav>
+      <Component {...pageProps} />
+    </>
+  );
 };
 
 function getBaseUrl() {
@@ -31,7 +46,15 @@ export default withTRPC(
      * @link https://trpc.io/docs/ssr
      */
     return {
-      url: `${getBaseUrl()}/api/trpc`,
+      links: [
+        loggerLink({
+          enabled: ({ event }) =>
+            process.env.NODE_ENV === 'development' || event === 'error',
+        }),
+        httpBatchLink({
+          url: `${getBaseUrl()}/api/trpc`,
+        }),
+      ],
       /**
        * @link https://trpc.io/docs/data-transformers
        */
@@ -39,13 +62,13 @@ export default withTRPC(
       /**
        * @link https://react-query.tanstack.com/reference/QueryClient
        */
-      // queryClientConfig: { defaultOptions: { queries: { staleTime: 60 } } },
+      queryClientConfig: { defaultOptions: { queries: { staleTime: 60 } } },
     };
   },
   {
     /**
      * @link https://trpc.io/docs/ssr
      */
-    ssr: true,
+    ssr: false,
   },
 )(MyApp);

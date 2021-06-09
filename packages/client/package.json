@@ -1,6 +1,6 @@
 {
   "name": "@trpc/client",
-  "version": "6.3.1",
+  "version": "6.4.0-alpha.3",
   "description": "tRPC Client lib",
   "author": "KATT",
   "license": "MIT",
@@ -10,17 +10,27 @@
     "url": "git+https://github.com/trpc/trpc.git",
     "directory": "packages/client"
   },
+  "preconstruct": {
+    "entrypoints": [
+      "index.ts",
+      "links/httpLink.ts",
+      "links/httpBatchLink.ts",
+      "links/splitLink.ts",
+      "links/loggerLink.ts"
+    ]
+  },
   "scripts": {},
   "main": "dist/trpc-client.cjs.js",
   "module": "dist/trpc-client.esm.js",
   "typings": "dist/trpc-client.cjs.d.ts",
   "files": [
     "README.md",
-    "dist"
+    "dist",
+    "links"
   ],
   "dependencies": {
     "@babel/runtime": "^7.9.0",
-    "@trpc/server": "^6.3.1"
+    "@trpc/server": "^6.4.0-alpha.3"
   },
   "publishConfig": {
     "access": "public"

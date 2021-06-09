@@ -1,8 +1,6 @@
 import Head from 'next/head';
 import { ReactQueryDevtools } from 'react-query/devtools';
 import { trpc } from '../utils/trpc';
-// import { inferQueryOutput } from 'utils/trpc';
-// type Task = inferQueryOutput<'todos.all'>[number];
 
 export default function IndexPage() {
   const postsQuery = trpc.useQuery(['posts.all']);

@@ -10,13 +10,14 @@ import {
   CombinedDataTransformer,
   DataTransformerOptions,
 } from '../transformer';
-import { getStatusCodeFromError, HTTPError } from './errors';
+import { HTTPResponseEnvelope } from './envelopes';
+import { getStatusCodeFromError, httpError, HTTPError } from './errors';
 import {
   HTTPErrorResponseEnvelope,
   HTTPSuccessResponseEnvelope,
 } from './index';
-import { getPostBody } from './internal/getPostBody';
-import { getQueryInput } from './internal/getQueryInput';
+import { getPostBody } from './internals/getPostBody';
+import { getQueryInput } from './internals/getQueryInput';
 assertNotBrowser();
 
 export type CreateContextFnOptions<TRequest, TResponse> = {
@@ -62,6 +63,9 @@ export interface BaseOptions<
     input: unknown;
     ctx: undefined | inferRouterContext<TRouter>;
   }) => void;
+  batching?: {
+    enabled: boolean;
+  };
 }
 
 const HTTP_METHOD_PROCEDURE_TYPE_MAP: Record<
@@ -118,9 +122,9 @@ async function callProcedure<TRouter extends AnyRouter>(opts: {
   caller: ReturnType<TRouter['createCaller']>;
   type: ProcedureType;
   subscriptions: BaseOptions<any, any>['subscriptions'] | undefined;
-  reqEvents: NodeJS.EventEmitter;
+  events: NodeJS.EventEmitter;
 }): Promise<unknown> {
-  const { type, path, input, subscriptions, caller, reqEvents } = opts;
+  const { type, path, input, subscriptions, caller, events: events } = opts;
   if (type === 'query') {
     return caller.query(path, input);
   }
@@ -146,27 +150,29 @@ async function callProcedure<TRouter extends AnyRouter>(opts: {
         sub.off('data', onData);
         sub.off('error', onError);
         sub.off('destroy', onDestroy);
-        reqEvents.off('close', onClose);
+        events.off('close', onClose);
+        events.off('flush', flush);
         clearTimeout(requestTimeoutTimer);
         clearTimeout(backpressureTimer);
         sub.destroy();
       }
+
+      const flush = () => {
+        cleanup();
+        resolve(buffer);
+      };
       function onData(data: unknown) {
         buffer.push(data);
 
         const requestTimeLeft = requestTimeoutMs - (Date.now() - startTime);
 
-        const success = () => {
-          cleanup();
-          resolve(buffer);
-        };
         if (requestTimeLeft <= backpressureMs) {
           // will timeout before next backpressure tick
-          success();
+          flush();
           return;
         }
         if (!backpressureTimer) {
-          backpressureTimer = setTimeout(success, backpressureMs);
+          backpressureTimer = setTimeout(flush, backpressureMs);
           return;
         }
       }
@@ -202,7 +208,8 @@ async function callProcedure<TRouter extends AnyRouter>(opts: {
       sub.on('data', onData);
       sub.on('error', onError);
       sub.on('destroy', onDestroy);
-      reqEvents.once('close', onClose);
+      events.once('close', onClose);
+      events.once('flush', flush);
       requestTimeoutTimer = setTimeout(onRequestTimeout, requestTimeoutMs);
       sub.start();
     });
@@ -229,7 +236,6 @@ export async function requestHandler<
     req,
     res,
     router,
-    path,
     createContext,
     teardown,
     onError,
@@ -247,7 +253,30 @@ export async function requestHandler<
   let input: unknown = undefined;
   let ctx: inferRouterContext<TRouter> | undefined = undefined;
   const transformer = getCombinedDataTransformer(opts.transformer);
+
+  const reqQueryParams = req.query
+    ? req.query
+    : url.parse(req.url!, true).query;
+  const isBatchCall = reqQueryParams.batch;
+  function endResponse(
+    json:
+      | HTTPResponseEnvelope<unknown, any>
+      | HTTPResponseEnvelope<unknown, any>[],
+  ) {
+    if (Array.isArray(json)) {
+      const allCodes = Array.from(new Set(json.map((res) => res.statusCode)));
+      const statusCode = allCodes.length === 1 ? allCodes[0] : 207;
+      res.statusCode = statusCode;
+    } else {
+      res.statusCode = json.statusCode;
+    }
+    res.setHeader('Content-Type', 'application/json');
+    res.end(JSON.stringify(transformer.output.serialize(json)));
+  }
   try {
+    if (isBatchCall && !opts.batching?.enabled) {
+      throw new Error(`Batching is not enabled on the server`);
+    }
     if (type === 'unknown') {
       throw new HTTPError(`Unexpected request method ${req.method}`, {
         statusCode: 405,
@@ -259,39 +288,72 @@ export async function requestHandler<
       req,
       type,
     });
+
     input = transformer.input.deserialize(rawInput);
     ctx = await createContext?.({ req, res });
 
     const caller = router.createCaller(ctx);
-
-    const output = await callProcedure({
-      caller,
-      path,
-      input,
-      reqEvents: req,
-      subscriptions,
-      type,
-    });
-    const json: HTTPSuccessResponseEnvelope<unknown> = {
-      ok: true,
-      statusCode: res.statusCode ?? 200,
-      data: output,
+    const getInputs = (): unknown[] => {
+      if (!isBatchCall) {
+        return [input];
+      }
+      if (!Array.isArray(input)) {
+        throw httpError.badRequest(
+          '"input" needs to be an array when doing a batch call',
+        );
+      }
+      return input;
     };
-    res.statusCode = json.statusCode;
-    res.setHeader('Content-Type', 'application/json');
-    res.end(JSON.stringify(transformer.output.serialize(json)));
+    const inputs = getInputs();
+    const paths = isBatchCall ? opts.path.split(',') : [opts.path];
+    const events = req;
+
+    const results = await Promise.all(
+      paths.map(async (path, index) => {
+        try {
+          const output = await callProcedure({
+            caller,
+            path,
+            input: inputs[index],
+            events,
+            subscriptions,
+            type,
+          });
+          const json: HTTPSuccessResponseEnvelope<unknown> = {
+            ok: true,
+            statusCode: res.statusCode ?? 200,
+            data: output,
+          };
+          events.emit('flush'); // `flush()` is used for subscriptions to flush out current output
+          return json;
+        } catch (_err) {
+          const error = getErrorFromUnknown(_err);
+
+          const json: HTTPErrorResponseEnvelope<TRouter> = {
+            ok: false,
+            statusCode: getStatusCodeFromError(error),
+            error: router.getErrorShape({ error, type, path, input, ctx }),
+          };
+          res.statusCode = json.statusCode;
+
+          onError && onError({ error, path, input, ctx, type: type, req });
+          return json;
+        }
+      }),
+    );
+
+    const result = isBatchCall ? results : results[0];
+    endResponse(result);
   } catch (_err) {
     const error = getErrorFromUnknown(_err);
 
     const json: HTTPErrorResponseEnvelope<TRouter> = {
       ok: false,
       statusCode: getStatusCodeFromError(error),
-      error: router.getErrorShape({ error, type, path, input, ctx }),
+      error: router.getErrorShape({ error, type, path: undefined, input, ctx }),
     };
-    res.statusCode = json.statusCode;
-    res.setHeader('Content-Type', 'application/json');
-    res.end(JSON.stringify(transformer.output.serialize(json)));
-    onError && onError({ error, path, input, ctx, type: type, req });
+    endResponse(json);
+    onError && onError({ error, path: undefined, input, ctx, type: type, req });
   }
   try {
     teardown && (await teardown());

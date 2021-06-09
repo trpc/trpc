@@ -363,7 +363,7 @@ export function createReactQueryHooks<TRouter extends AnyRouter>() {
         return trpcState;
       }
 
-      return client.transformer.deserialize(trpcState);
+      return client.runtime.transformer.deserialize(trpcState);
     }, [client, trpcState]);
     return transformed;
   }

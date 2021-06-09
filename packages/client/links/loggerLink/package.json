@@ -1,0 +1,4 @@
+{
+  "main": "dist/trpc-client-links-loggerLink.cjs.js",
+  "module": "dist/trpc-client-links-loggerLink.esm.js"
+}

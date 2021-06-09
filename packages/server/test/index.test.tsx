@@ -96,7 +96,7 @@ describe('integration tests', () => {
       expect(err.message).toMatchInlineSnapshot(
         `"No such query procedure \\"notFound\\""`,
       );
-      expect(err.res?.status).toBe(404);
+      expect(err.json?.statusCode).toBe(404);
     }
     close();
   });
@@ -124,7 +124,7 @@ describe('integration tests', () => {
       if (!(err instanceof TRPCClientError)) {
         throw new Error('Not TRPCClientError');
       }
-      expect(err.res?.status).toBe(400);
+      expect(err.json?.statusCode).toBe(400);
     }
     close();
   });
@@ -260,7 +260,7 @@ describe('integration tests', () => {
             createContext,
           },
           client: {
-            getHeaders: () => headers,
+            headers: () => headers,
           },
         },
       );
@@ -273,7 +273,7 @@ describe('integration tests', () => {
           expectTypeOf(res).toMatchTypeOf<{ id: number; name: string }>();
         } catch (err) {
           threw = true;
-          expect(err.res.status).toBe(401);
+          expect(err.json.statusCode).toBe(401);
         }
         if (!threw) {
           throw new Error("Didn't throw");

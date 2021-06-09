@@ -1,0 +1,4 @@
+{
+  "main": "dist/trpc-client-links-httpBatchLink.cjs.js",
+  "module": "dist/trpc-client-links-httpBatchLink.esm.js"
+}

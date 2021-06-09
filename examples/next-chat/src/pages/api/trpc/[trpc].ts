@@ -133,4 +133,7 @@ export default trpcNext.createNextApiHandler({
       // send to bug reporting
     }
   },
+  batching: {
+    enabled: true,
+  },
 });

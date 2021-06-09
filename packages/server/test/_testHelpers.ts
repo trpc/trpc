@@ -36,5 +36,6 @@ export function routerToServerAndClient<TRouter extends AnyRouter>(
     close: () => server.server.close(),
     router,
     trpcClientOptions,
+    port,
   };
 }

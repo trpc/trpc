@@ -1,6 +1,6 @@
 {
   "name": "@examples/next-starter",
-  "version": "6.3.1",
+  "version": "6.4.0-alpha.3",
   "private": true,
   "scripts": {
     "build:1-generate": "prisma generate",
@@ -11,6 +11,7 @@
     "dx:next": "yarn migrate-dev && yarn generate && next dev",
     "dx:studio": "yarn studio",
     "dx": "run-p dx:* --print-label",
+    "dev-nuke": "rm -rf prisma/*.db**",
     "generate": "prisma generate",
     "migrate-dev": "prisma migrate dev",
     "migrate": "prisma migrate deploy",
@@ -18,7 +19,6 @@
     "studio": "prisma studio",
     "lint": "eslint src",
     "lint-fix": "yarn lint --fix",
-    "prisma-nuke": "rm -rf prisma/migrations prisma/*.db**",
     "test-dev": "start-server-and-test dev 3000 test",
     "test-start": "start-server-and-test start 3000 test",
     "test": "jest"
@@ -30,10 +30,10 @@
   },
   "dependencies": {
     "@prisma/client": "^2.18.0",
-    "@trpc/client": "^6.3.1",
-    "@trpc/next": "^6.3.1",
-    "@trpc/react": "^6.3.1",
-    "@trpc/server": "^6.3.1",
+    "@trpc/client": "^6.4.0-alpha.3",
+    "@trpc/next": "^6.4.0-alpha.3",
+    "@trpc/react": "^6.4.0-alpha.3",
+    "@trpc/server": "^6.4.0-alpha.3",
     "clsx": "^1.1.1",
     "next": "^10.0.5",
     "react": "^17.0.1",
