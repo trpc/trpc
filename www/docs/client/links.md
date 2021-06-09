@@ -47,6 +47,7 @@ import { withTRPC } from '@trpc/next';
 import { AppType } from 'next/dist/next-server/lib/utils';
 // 👇 import the httpBatchLink
 import { httpBatchLink } from '@trpc/client/links/httpBatchLink';
+
 const MyApp: AppType = ({ Component, pageProps }) => {
   return <Component {...pageProps} />;
 };
