@@ -63,7 +63,7 @@ export default withTRPC(
     };
   },
   {
-    ssr: false,
+    // [..]
   },
 )(MyApp);
 ```
