@@ -10,11 +10,10 @@ Similar to urql's [_exchanges_](https://formidable.com/open-source/urql/docs/arc
 
 ## Request batching
 
-> The below examples assuming you use Next.js, but the same as below can be added if you use the vanilla tRPC client
-
-You can enable query batching in order to parallelise your requests to the server, this can make the below code produce exactly **one** HTTP request and on the server exactly **one** database query;
+You can enable query batching in order to parallelise your requests to the server, this can make the below code produce exactly **one** HTTP request and on the server exactly **one** database query:
 
 ```tsx
+// below will be done the same request when batching is enabled
 const somePosts = await Promise.all([
   client.query('posts.byId', 1),
   client.query('posts.byId', 2),
@@ -22,7 +21,11 @@ const somePosts = await Promise.all([
 ])
 ```
 
-### 1. Enable `batching` on your server:
+### Enabling request batching on a Next.js project
+
+> The below examples assuming you use Next.js, but the same as below can be added if you use the vanilla tRPC client
+
+#### 1. Enable `batching` on your server:
 
 In your `[trpc].ts`:
 
@@ -36,7 +39,7 @@ export default trpcNext.createNextApiHandler({
 });
 ```
 
-### 2. Add batching to your tRPC Client
+#### 2. Add batching to your tRPC Client
 
 
 ```ts
