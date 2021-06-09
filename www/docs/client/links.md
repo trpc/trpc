@@ -13,7 +13,7 @@ Similar to urql's [_exchanges_](https://formidable.com/open-source/urql/docs/arc
 You can enable query batching in order to parallelise your requests to the server, this can make the below code produce exactly **one** HTTP request and on the server exactly **one** database query:
 
 ```tsx
-// below will be done the same request when batching is enabled
+// below will be done in the same request when batching is enabled
 const somePosts = await Promise.all([
   client.query('posts.byId', 1),
   client.query('posts.byId', 2),
@@ -32,8 +32,8 @@ In your `[trpc].ts`:
 ```ts
 export default trpcNext.createNextApiHandler({
   // [...]
+  // 👇 enable batching
   batching: {
-    // enable batching
     enabled: true,
   },
 });
@@ -45,7 +45,8 @@ export default trpcNext.createNextApiHandler({
 ```ts
 import { withTRPC } from '@trpc/next';
 import { AppType } from 'next/dist/next-server/lib/utils';
-import { httpBatchLink } from '@trpc/client/links/httpBatchLink';  // 👈 import the http batch link
+// 👇 import the httpBatchLink
+import { httpBatchLink } from '@trpc/client/links/httpBatchLink';
 const MyApp: AppType = ({ Component, pageProps }) => {
   return <Component {...pageProps} />;
 };
