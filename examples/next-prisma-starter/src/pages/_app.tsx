@@ -1,21 +1,12 @@
-import { withTRPC } from '@trpc/next';
 import { httpBatchLink } from '@trpc/client/links/httpBatchLink';
 import { loggerLink } from '@trpc/client/links/loggerLink';
+import { withTRPC } from '@trpc/next';
 import { AppType } from 'next/dist/next-server/lib/utils';
-import Link from 'next/link';
 // import { transformer } from '../utils/trpc';
 
 const MyApp: AppType = ({ Component, pageProps }) => {
   return (
     <>
-      <nav>
-        <Link href="/">
-          <a>Index</a>
-        </Link>{' '}
-        <Link href="/batching">
-          <a>Batching</a>
-        </Link>
-      </nav>
       <Component {...pageProps} />
     </>
   );
