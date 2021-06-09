@@ -45,9 +45,7 @@ export default trpcNext.createNextApiHandler({
 ```ts
 import { withTRPC } from '@trpc/next';
 import { AppType } from 'next/dist/next-server/lib/utils';
-
-// import the http batch link
-import { httpBatchLink } from '@trpc/client/links/httpBatchLink';
+import { httpBatchLink } from '@trpc/client/links/httpBatchLink';  // 👈 import the http batch link
 const MyApp: AppType = ({ Component, pageProps }) => {
   return <Component {...pageProps} />;
 };
@@ -56,7 +54,7 @@ export default withTRPC(
   () => {
     return {
       links: [
-        // add the batch link
+        // 👇 add the batch link
         httpBatchLink({
           url: '/api/trpc',
         }),
@@ -68,4 +66,3 @@ export default withTRPC(
   },
 )(MyApp);
 ```
-
