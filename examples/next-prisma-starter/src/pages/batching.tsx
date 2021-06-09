@@ -16,47 +16,52 @@ export default function Batching() {
     },
   });
 
-  if (!postIndex0.data) {
-    return postIndex0.isLoading ? (
-      <>...</>
-    ) : (
-      <button
-        disabled={scaffoldMutation.isLoading}
-        onClick={() => {
-          batchingIds.map((id, index) => {
-            scaffoldMutation.mutate({
-              id,
-              title: `Scaffoleded post ${index + 1}`,
-              text: 'n/a',
-            });
-          });
-        }}
-      >
-        Scaffold some posts
-      </button>
-    );
-  }
   return (
     <>
-      <h3>Scaffolded posts</h3>
-      <p>Check inspector for batching magic</p>
+      <h1>Illustrate batching in tRPC</h1>
+      <p>❗ Check inspector and terminal for batching magic ❗</p>
       <ul>
         <li>
-          Will do exactly <strong>1</strong> HTTP call &amp; <strong>1</strong>{' '}
-          DB query for fetching the posts
+          Will do exactly <strong>one</strong> HTTP call &amp;{' '}
+          <strong>one</strong> <code>SELECT</code> for fetching all the posts
+          even if we have individual queries
         </li>
         <li>
-          Will do exactly <strong>1</strong> HTTP call &amp; <strong>1</strong>{' '}
-          DB query when adding the posts.
+          Will do exactly <strong>one</strong> HTTP call &amp;{' '}
+          <strong>one</strong> and <strong>one</strong> <code>INSERT</code> when
+          adding the posts even if we have individual mutation calls.
         </li>
       </ul>
-      <pre>
-        {JSON.stringify(
-          [postIndex0.data, postIndex1.data, postIndex2.data],
-          null,
-          2,
-        )}
-      </pre>
+      {postIndex0.data && (
+        <>
+          <h2>Loaded posts</h2>
+          <pre>
+            {JSON.stringify(
+              [postIndex0.data, postIndex1.data, postIndex2.data],
+              null,
+              2,
+            )}
+          </pre>
+        </>
+      )}
+      {!postIndex0.data && !postIndex0.isLoading && (
+        <>
+          <button
+            disabled={scaffoldMutation.isLoading}
+            onClick={() => {
+              batchingIds.map((id, index) => {
+                scaffoldMutation.mutate({
+                  id,
+                  title: `Scaffoleded post ${index + 1}`,
+                  text: 'n/a',
+                });
+              });
+            }}
+          >
+            Scaffold some posts
+          </button>
+        </>
+      )}
     </>
   );
 }
