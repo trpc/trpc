@@ -15,6 +15,7 @@ import { getAbortController, getFetch } from './internals/fetchHelpers';
 import {
   CancelFn,
   LinkRuntimeOptions,
+  OperationContext,
   OperationLink,
   TRPCLink,
 } from './links/core';
@@ -94,6 +95,9 @@ export type CreateTRPCClientOptions<TRouter extends AnyRouter> = {
 );
 type TRPCType = 'subscription' | 'query' | 'mutation';
 
+export type RequestOptions = {
+  context?: OperationContext;
+};
 export class TRPCClient<TRouter extends AnyRouter> {
   private readonly links: OperationLink[];
   /**
@@ -153,10 +157,12 @@ export class TRPCClient<TRouter extends AnyRouter> {
     type,
     input,
     path,
+    context = {},
   }: {
     type: TRPCType;
     input: unknown;
     path: string;
+    context?: OperationContext;
   }) {
     const $result = executeChain({
       links: this.links,
@@ -164,6 +170,7 @@ export class TRPCClient<TRouter extends AnyRouter> {
         type,
         path,
         input,
+        context,
       },
     });
 
@@ -199,12 +206,14 @@ export class TRPCClient<TRouter extends AnyRouter> {
     TPath extends string & keyof TQueries,
   >(
     path: TPath,
-    ...args: inferHandlerInput<TQueries[TPath]>
+    ...args: [...inferHandlerInput<TQueries[TPath]>, RequestOptions?]
   ): CancellablePromise<inferProcedureOutput<TQueries[TPath]>> {
+    const context = (args[1] as RequestOptions | undefined)?.context;
     return this.request({
       type: 'query',
       path,
       input: args[0],
+      context,
     });
   }
 
@@ -213,12 +222,14 @@ export class TRPCClient<TRouter extends AnyRouter> {
     TPath extends string & keyof TMutations,
   >(
     path: TPath,
-    ...args: inferHandlerInput<TMutations[TPath]>
+    ...args: [...inferHandlerInput<TMutations[TPath]>, RequestOptions?]
   ): CancellablePromise<inferProcedureOutput<TMutations[TPath]>> {
+    const context = (args[1] as RequestOptions | undefined)?.context;
     return this.request({
       type: 'mutation',
       path,
       input: args[0],
+      context,
     });
   }
   /* istanbul ignore next */
@@ -227,11 +238,15 @@ export class TRPCClient<TRouter extends AnyRouter> {
     TPath extends string & keyof TSubscriptions,
     TOutput extends inferSubscriptionOutput<TRouter, TPath>,
     TInput extends inferProcedureInput<TSubscriptions[TPath]>,
-  >(path: TPath, input: TInput): CancellablePromise<TOutput[]> {
+  >(
+    path: TPath,
+    input: TInput,
+    opts?: RequestOptions,
+  ): CancellablePromise<TOutput[]> {
     let stopped = false;
     let nextTry: any; // setting as `NodeJS.Timeout` causes compat issues, can probably be solved
     let currentRequest: CancellablePromise<TOutput[]> | null = null;
-
+    const context = opts?.context;
     const promise = new Promise<TOutput[]>((resolve, reject) => {
       const exec = async () => {
         if (stopped) {
@@ -242,6 +257,7 @@ export class TRPCClient<TRouter extends AnyRouter> {
             type: 'subscription',
             input,
             path,
+            context,
           });
           const data = await currentRequest;
 
@@ -283,9 +299,11 @@ export class TRPCClient<TRouter extends AnyRouter> {
        * Input cursor for next call to subscription endpoint
        */
       nextInput: (data: TOutput[]) => TInput;
+      context?: OperationContext;
     },
   ): CancelFn {
     let stopped = false;
+
     // let nextTry: any; // setting as `NodeJS.Timeout` causes compat issues, can probably be solved
     let currentPromise: CancellablePromise<TOutput[]> | null = null;
 

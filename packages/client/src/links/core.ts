@@ -1,10 +1,12 @@
 import { DataTransformer, HTTPResponseEnvelope } from '@trpc/server';
 import { TRPCClientError } from '../createTRPCClient';
 
+export type OperationContext = Record<string, unknown>;
 export type Operation<TInput = unknown> = {
   type: 'query' | 'mutation' | 'subscription';
   input: TInput;
   path: string;
+  context: OperationContext;
 };
 type ResponseEnvelope = HTTPResponseEnvelope<any, any>;
 type ErrorResult = TRPCClientError<any>;

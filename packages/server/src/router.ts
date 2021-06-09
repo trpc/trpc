@@ -45,7 +45,7 @@ export type inferHandlerInput<TProcedure extends Procedure> =
     ? undefined extends TInput
       ? [TInput?]
       : [TInput]
-    : [undefined?];
+    : [(undefined | null)?];
 
 type inferHandlerFn<TProcedures extends ProcedureRecord> = <
   TProcedure extends TProcedures[TPath],
