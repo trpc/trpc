@@ -37,6 +37,9 @@ export default withTRPC(
      * @link https://trpc.io/docs/ssr
      */
     return {
+      /**
+       * @link https://trpc.io/docs/links
+       */
       links: [
         loggerLink({
           enabled: ({ event }) =>
