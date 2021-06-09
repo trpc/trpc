@@ -60,6 +60,6 @@ export default withTRPC(
     /**
      * @link https://trpc.io/docs/ssr
      */
-    ssr: false,
+    ssr: true,
   },
 )(MyApp);
