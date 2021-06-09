@@ -27,9 +27,9 @@ export default function Batching() {
           even if we have individual queries
         </li>
         <li>
-          Will do exactly <strong>one</strong> HTTP call &amp;{' '}
-          <strong>one</strong> and <strong>one</strong> <code>INSERT</code> when
-          adding the posts even if we have individual mutation calls.
+          Will do exactly <strong>one</strong> HTTP call &amp; and{' '}
+          <strong>one</strong> <code>INSERT</code> when adding the posts even if
+          we have individual mutation calls.
         </li>
       </ul>
       {postIndex0.data && (
