@@ -1,6 +1,7 @@
 import {
   createTRPCClient,
   CreateTRPCClientOptions,
+  OperationContext,
   TRPCClient,
   TRPCClientError,
 } from '@trpc/client';
@@ -49,6 +50,10 @@ interface TRPCUseQueryBaseOptions {
    * Opt out of SSR for this query by passing `ssr: false`
    */
   ssr?: boolean;
+  /**
+   * Pass additional context to links
+   */
+  context?: OperationContext;
 }
 
 interface UseTRPCQueryOptions<TInput, TError, TOutput>
@@ -202,7 +207,10 @@ export function createReactQueryHooks<TRouter extends AnyRouter>() {
 
     const query = useQuery(
       cacheKey,
-      () => client.query(...pathAndArgs) as any,
+      () =>
+        (client.query as any)(pathAndArgs[0], pathAndArgs[1], {
+          context: opts.context,
+        }),
       {
         ...opts,
         suspense: isPrepass && opts.ssr !== false ? true : opts.suspense,
