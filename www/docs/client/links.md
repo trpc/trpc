@@ -83,7 +83,7 @@ export default withTRPC(
       links: [
         loggerLink({
           logger(opts) {
-            if (opts.event === 'error) {
+            if (opts.direction === 'down' && opts.result instanceof Error) {
               // send to bugsnag, etc
             }
           }
