@@ -6,11 +6,15 @@ import { createTRPCClient, CreateTRPCClientOptions } from '../../client/src';
 import { AnyRouter, CreateHttpHandlerOptions } from '../src';
 import { createHttpServer } from '../src/adapters/standalone';
 
+(global as any).fetch = fetch;
+(global as any).AbortController = AbortController;
 export function routerToServerAndClient<TRouter extends AnyRouter>(
   router: TRouter,
   opts?: {
     server?: Partial<CreateHttpHandlerOptions<TRouter>>;
-    client?: Partial<CreateTRPCClientOptions<TRouter>>;
+    client?:
+      | Partial<CreateTRPCClientOptions<TRouter>>
+      | ((opts: { url: string }) => Partial<CreateTRPCClientOptions<TRouter>>);
   },
 ) {
   const server = createHttpServer({
@@ -19,14 +23,14 @@ export function routerToServerAndClient<TRouter extends AnyRouter>(
     ...(opts?.server ?? {}),
   });
   const { port } = server.listen(0);
-
+  const url = `http://localhost:${port}`;
   const trpcClientOptions: CreateTRPCClientOptions<typeof router> = {
-    url: `http://localhost:${port}`,
-    fetchOpts: {
-      AbortController: AbortController as any,
-      fetch: fetch as any,
-    },
-    ...(opts?.client ?? {}),
+    url,
+    ...(opts?.client
+      ? typeof opts.client === 'function'
+        ? opts.client({ url })
+        : opts.client
+      : {}),
   };
 
   const client = createTRPCClient<typeof router>(trpcClientOptions);
