@@ -36,6 +36,7 @@ test('retrylink', () => {
       type: 'query',
       input: null,
       path: '',
+      context: {},
     },
     prev: prev,
     next: (_ctx, callback) => {
@@ -444,4 +445,25 @@ test('loggerLink', () => {
       }
     `);
   }
+});
+
+test('pass a context', () => {
+  const context = {
+    hello: 'there',
+  };
+  const callback = jest.fn();
+  executeChain({
+    links: [
+      ({ op }) => {
+        callback(op.context);
+      },
+    ],
+    op: {
+      type: 'query',
+      input: null,
+      path: '',
+      context,
+    },
+  });
+  expect(callback).toHaveBeenCalledWith(context);
 });

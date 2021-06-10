@@ -4,15 +4,17 @@ import {
   Operation,
   OperationResult,
   PrevCallback,
+  OperationContext,
 } from '../links/core';
 import { AnyRouter } from 'packages/server/src/router';
 
 export function executeChain<TRouter extends AnyRouter>(opts: {
   links: OperationLink<TRouter>[];
-  op: Operation;
+  op: Omit<Operation<TRouter>, 'context'> & { context?: OperationContext };
 }) {
   const $result = observable<OperationResult<TRouter> | null>(null);
   const $destroyed = observable(false);
+  const { context = {} } = opts.op;
 
   function walk({
     index,
@@ -45,7 +47,7 @@ export function executeChain<TRouter extends AnyRouter>(opts: {
       },
     });
   }
-  walk({ index: 0, op: opts.op, stack: [] });
+  walk({ index: 0, op: { ...opts.op, context }, stack: [] });
   return {
     get: $result.get,
     subscribe: (callback: (value: OperationResult<TRouter>) => void) => {

@@ -5,10 +5,12 @@ import {
 } from '@trpc/server';
 import { TRPCClientError } from '../createTRPCClient';
 
+export type OperationContext = Record<string, unknown>;
 export type Operation<TInput = unknown> = {
   type: 'query' | 'mutation' | 'subscription';
   input: TInput;
   path: string;
+  context: OperationContext;
 };
 
 export type OperationResult<TRouter extends AnyRouter> =
