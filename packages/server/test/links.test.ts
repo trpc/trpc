@@ -329,7 +329,7 @@ test('loggerLink', () => {
     log: jest.fn(),
   };
   const logLink = loggerLink({
-    logger,
+    console: logger,
   })(mockRuntime);
   const okLink: OperationLink = ({ prev }) =>
     prev({ ok: true, statusCode: 200, data: null });
@@ -410,5 +410,45 @@ test('loggerLink', () => {
     );
     logger.error.mockReset();
     logger.log.mockReset();
+  }
+
+  // custom logger
+  {
+    const logFn = jest.fn();
+    executeChain({
+      links: [loggerLink({ log: logFn })(mockRuntime), errorLink],
+      op: {
+        type: 'query',
+        input: null,
+        path: 'n/a',
+      },
+    });
+    const [firstCall, secondCall] = logFn.mock.calls.map((args) => args[0]);
+    expect(firstCall).toMatchInlineSnapshot(`
+      Object {
+        "event": "init",
+        "input": null,
+        "path": "n/a",
+        "requestId": 1,
+        "type": "query",
+      }
+    `);
+    // omit elapsedMs
+    const { elapsedMs, ...other } = secondCall;
+    expect(typeof elapsedMs).toBe('number');
+    expect(other).toMatchInlineSnapshot(`
+      Object {
+        "error": Object {
+          "error": null,
+          "ok": false,
+          "statusCode": 400,
+        },
+        "event": "error",
+        "input": null,
+        "path": "n/a",
+        "requestId": 1,
+        "type": "query",
+      }
+    `);
   }
 });

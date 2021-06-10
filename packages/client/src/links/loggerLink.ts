@@ -7,38 +7,36 @@ type ConsoleEsque = {
   error: (...args: any[]) => void;
 };
 
-type EnabledCondition = (opts: {
-  op: Operation;
+type EnableFnOptions = Operation & {
   event: 'init' | 'success' | 'error';
-}) => boolean;
-type LoggerOptions<TRouter extends UnknownRouter = UnknownRouter> =
-  Operation & {
-    /**
-     * Incremental id for requests
-     */
-    requestId: number;
-    enabled: EnabledCondition;
-  } & (
-      | {
-          /**
-           * Request was just initialized
-           */
-          event: 'init';
-        }
-      | {
-          event: 'success';
-          data?: unknown;
-          elapsedMs: number;
-        }
-      | {
-          event: 'error';
-          error: TRPCClientError<TRouter> | HTTPErrorResponseEnvelope<TRouter>;
-          elapsedMs: number;
-        }
-    );
+};
+type EnabledFn = (opts: EnableFnOptions) => boolean;
 
+type LogFnOptions<TRouter extends UnknownRouter> = Operation & {
+  /**
+   * Incremental id for requests
+   */
+  requestId: number;
+} & (
+    | {
+        /**
+         * Request was just initialized
+         */
+        event: 'init';
+      }
+    | {
+        event: 'success';
+        data?: unknown;
+        elapsedMs: number;
+      }
+    | {
+        event: 'error';
+        error: TRPCClientError<TRouter> | HTTPErrorResponseEnvelope<TRouter>;
+        elapsedMs: number;
+      }
+  );
 type LogFn<TRouter extends UnknownRouter = UnknownRouter> = (
-  opts: Omit<LoggerOptions<TRouter>, 'enabled'>,
+  opts: LogFnOptions<TRouter>,
 ) => void;
 
 const palette = {
@@ -51,12 +49,16 @@ const emojiMap = {
   success: '✅',
   error: '❌',
 };
+type LoggerLinkOptions<TRouter extends UnknownRouter> = {
+  log?: LogFn<TRouter>;
+  enabled?: EnabledFn;
+  /**
+   * Used in the built-in defaultLogger
+   */
+  console?: ConsoleEsque;
+};
 export function loggerLink<TRouter extends UnknownRouter = UnknownRouter>(
-  opts: {
-    logger?: LogFn<TRouter>;
-    enabled?: (opts: LoggerOptions<TRouter>) => boolean;
-    console?: ConsoleEsque;
-  } = {},
+  opts: LoggerLinkOptions<TRouter> = {},
 ): TRPCLink {
   const { console: c = console, enabled = () => true } = opts;
 
@@ -103,38 +105,38 @@ export function loggerLink<TRouter extends UnknownRouter = UnknownRouter>(
       props.event === 'success' || props.event === 'init' ? 'log' : 'error';
     c[fn].apply(null, [parts.join(' ')].concat(args));
   };
-  const { logger = defaultLogger } = opts;
+  const { log: logger = defaultLogger } = opts;
   return () => {
     let requestId = 0;
     return ({ op, next, prev }) => {
       // ->
       requestId++;
-      log({
-        enabled,
-        op,
-        event: 'init',
-        requestId,
-      });
+      enabled({ ...op, event: 'init' }) &&
+        logger({
+          ...op,
+          event: 'init',
+          requestId,
+        });
       const requestStartTime = Date.now();
       next(op, (result) => {
         const elapsedMs = Date.now() - requestStartTime;
-
         if (result instanceof Error || !result.ok) {
-          logger({
-            enabled,
-            event: 'error',
-            requestId,
-            elapsedMs,
-            error: result,
-          });
+          enabled({ ...op, event: 'error' }) &&
+            logger({
+              ...op,
+              event: 'error',
+              requestId,
+              elapsedMs,
+              error: result,
+            });
         } else {
-          log({
-            enabled,
-            op,
-            event: 'success',
-            requestId,
-            elapsedMs,
-          });
+          enabled({ ...op, event: 'success' }) &&
+            logger({
+              ...op,
+              event: 'success',
+              requestId,
+              elapsedMs,
+            });
         }
         // <-
         prev(result);
