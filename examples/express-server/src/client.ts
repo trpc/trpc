@@ -49,7 +49,7 @@ async function main() {
     onError(err) {
       console.log('❌ ', err.json?.statusCode, err.message);
     },
-    getHeaders: () => ({
+    headers: () => ({
       authorization: 'secret',
     }),
   });

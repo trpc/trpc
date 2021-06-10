@@ -103,7 +103,7 @@ test('allows you to throw an error (e.g. auth)', async () => {
         },
       },
       client: {
-        getHeaders: () => headers,
+        headers,
       },
     },
   );
