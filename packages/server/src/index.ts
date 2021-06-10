@@ -7,4 +7,4 @@ export * from './assertNotBrowser';
 export * from './adapters/standalone';
 export * from './envelopes';
 // FIXME should probably not be always exported
-export * from './websockets/websocketsHandler';
+export * from './websockets/websocketHandler';

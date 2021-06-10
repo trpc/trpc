@@ -1,17 +1,15 @@
-import WebSocket from 'ws';
-import { BaseOptions, CreateContextFn } from '../http';
-import { AnyRouter, ProcedureType } from '../router';
 import http from 'http';
-import { getErrorFromUnknown } from '../errors';
+import WebSocket from 'ws';
 import {
   TRPCProcedureEnvelope,
   TRPCProcedureErrorEnvelope,
-  TRPCProcedureSuccessEnvelope,
 } from '../envelopes';
-import { CombinedDataTransformer } from '../transformer';
-import { Subscription } from '../subscription';
+import { getErrorFromUnknown } from '../errors';
+import { BaseOptions, CreateContextFn } from '../http';
 import { getCombinedDataTransformer } from '../internals/getCombinedDataTransformer';
-import { ProcedureCallOptions } from '../procedure';
+import { AnyRouter, ProcedureType } from '../router';
+import { Subscription } from '../subscription';
+import { CombinedDataTransformer } from '../transformer';
 const wss = new WebSocket.Server({ port: 8080 });
 
 // https://developer.mozilla.org/en-US/docs/Web/API/CloseEvent
@@ -87,12 +85,14 @@ async function callProcedure<TRouter extends AnyRouter>(opts: {
   throw new Error(`Unknown procedure type ${type}`);
 }
 
-export function websocketsHandler<TRouter extends AnyRouter>(
-  opts: {
-    router: TRouter;
-    wss: WebSocket.Server;
-    createContext: CreateContextFn<TRouter, http.IncomingMessage, WebSocket>;
-  } & BaseOptions<TRouter, http.IncomingMessage>,
+export type WebSocketHandlerOptions<TRouter extends AnyRouter> = {
+  router: TRouter;
+  wss: WebSocket.Server;
+  createContext: CreateContextFn<TRouter, http.IncomingMessage, WebSocket>;
+} & BaseOptions<TRouter, http.IncomingMessage>;
+
+export function webSocketHandler<TRouter extends AnyRouter>(
+  opts: WebSocketHandlerOptions<TRouter>,
 ) {
   const { router, wss, createContext } = opts;
   const transformer = getCombinedDataTransformer(opts.transformer);
