@@ -10,7 +10,6 @@ import { getCombinedDataTransformer } from '../internals/getCombinedDataTransfor
 import { AnyRouter, ProcedureType } from '../router';
 import { Subscription } from '../subscription';
 import { CombinedDataTransformer } from '../transformer';
-const wss = new WebSocket.Server({ port: 8080 });
 
 // https://developer.mozilla.org/en-US/docs/Web/API/CloseEvent
 const WEBSOCKET_STATUS_CODES = {

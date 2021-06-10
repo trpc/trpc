@@ -4,7 +4,7 @@ import http from 'http';
 import WebSocket from 'ws';
 import { CreateContextFn, CreateContextFnOptions } from '../http';
 import { AnyRouter } from '../router';
-import { webSocketHandler, WebSocketHandlerOptions } from './websocketHandler';
+import { WebSocketHandlerOptions } from './websocketHandler';
 
 export type CreateWebSocketContextOptions = CreateContextFnOptions<
   http.IncomingMessage,
@@ -14,23 +14,28 @@ export type CreateWebSocketContextOptions = CreateContextFnOptions<
 export type CreateWebSocketContextFn<TRouter extends AnyRouter> =
   CreateContextFn<TRouter, http.IncomingMessage, http.ServerResponse>;
 
-export function createWebSocketServer<TRouter extends AnyRouter>(
-  opts: Omit<WebSocketHandlerOptions<TRouter>, 'wss'>,
-) {
-  const server = http.createServer();
+export type CreateWebSocketServerOptions<TRouter extends AnyRouter> = Omit<
+  WebSocketHandlerOptions<TRouter>,
+  'wss'
+>;
+// export function createWebSocketServer<TRouter extends AnyRouter>(
+//   opts: CreateWebSocketServerOptions<TRouter>,
+// ) {
+//   const server = http.createServer();
 
-  const wss = new WebSocket.Server({ server });
-  webSocketHandler({ ...opts, wss });
-  return {
-    wss,
-    listen(port?: number) {
-      server.listen(port);
-      const actualPort =
-        port === 0 ? ((server.address() as any).port as number) : port;
+//   const wss = new WebSocket.Server({ server });
+//   webSocketHandler({ ...opts, wss });
+//   return {
+//     server,
+//     wss,
+//     listen(port?: number) {
+//       server.listen(port);
+//       const actualPort =
+//         port === 0 ? ((server.address() as any).port as number) : port;
 
-      return {
-        port: actualPort,
-      };
-    },
-  };
-}
+//       return {
+//         port: actualPort,
+//       };
+//     },
+//   };
+// }
