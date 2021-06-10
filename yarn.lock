@@ -5507,10 +5507,10 @@ exec-sh@^0.3.2:
   resolved "https://registry.npmjs.org/exec-sh/-/exec-sh-0.3.6.tgz#ff264f9e325519a60cb5e273692943483cca63bc"
   integrity sha512-nQn+hI3yp+oD0huYhKwvYI32+JFeq+XkNcD1GAo3Y/MjxsfVGmrrzrnzjWiNY6f+pUCP440fThsFh5gZrRAU/w==
 
-execa@5.0.0, execa@^5.0.0:
-  version "5.0.0"
-  resolved "https://registry.npmjs.org/execa/-/execa-5.0.0.tgz#4029b0007998a841fbd1032e5f4de86a3c1e3376"
-  integrity sha512-ov6w/2LCiuyO4RLYGdpFGjkcs0wMTgGE8PrkTHikeUy5iJekXyPIKUjifk5CsE0pt7sMCrMZ3YNqoCj6idQOnQ==
+execa@5.1.1, execa@^5.0.0:
+  version "5.1.1"
+  resolved "https://registry.yarnpkg.com/execa/-/execa-5.1.1.tgz#f80ad9cbf4298f7bd1d4c9555c21e93741c411dd"
+  integrity sha512-8uSpZZocAZRBAPIEINJj3Lo9HyGitllczc27Eh5YYojjMFMn8yHMDMaUHE2Jqfq05D/wucwI4JGURyXt1vchyg==
   dependencies:
     cross-spawn "^7.0.3"
     get-stream "^6.0.0"
@@ -11140,14 +11140,14 @@ stacktrace-parser@0.1.10:
     type-fest "^0.7.1"
 
 start-server-and-test@^1.12.0:
-  version "1.12.3"
-  resolved "https://registry.npmjs.org/start-server-and-test/-/start-server-and-test-1.12.3.tgz#e2d91811f1952f8dbbaa404a92841fec74407790"
-  integrity sha512-YNL/QdZ8gLYoAcvAFo/S2J4W0WS6Bi8HX/qZ74bMhZXEAMykvg7/8+vs0cPulhGBfoD4NGdbeEuV5wyhi1tlig==
+  version "1.12.5"
+  resolved "https://registry.yarnpkg.com/start-server-and-test/-/start-server-and-test-1.12.5.tgz#d19d2c19d6db6b30df5add68ec26a1ab204525d6"
+  integrity sha512-8Wl0J1xwTDhvWoFeXLIP1VyT9GS5i0XG2440gbMQDNgyCBpb+t2XhahY3ysHIs2g5sDsiom6Iyvh3uQtNrAg5g==
   dependencies:
     bluebird "3.7.2"
     check-more-types "2.24.0"
     debug "4.3.1"
-    execa "5.0.0"
+    execa "5.1.1"
     lazy-ass "1.6.0"
     ps-tree "1.2.0"
     wait-on "5.3.0"
