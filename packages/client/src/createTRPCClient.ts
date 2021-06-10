@@ -94,10 +94,6 @@ export type CreateTRPCClientOptions<TRouter extends AnyRouter> = {
    * add ponyfills for fetch / abortcontroller
    */
   fetchOpts?: FetchOptions;
-  /**
-   * @deprecated use `headers` instead
-   */
-  getHeaders?: () => Record<string, string | string[] | undefined>;
   headers?:
     | LinkRuntimeOptions['headers']
     | ReturnType<LinkRuntimeOptions['headers']>;
@@ -114,10 +110,6 @@ type TRPCType = 'subscription' | 'query' | 'mutation';
 
 export class TRPCClient<TRouter extends AnyRouter> {
   private readonly links: OperationLink<TRouter>[];
-  /**
-   * @deprecated use `runtime` instead
-   */
-  public readonly transformer: DataTransformer;
   private opts: CreateTRPCClientOptions<TRouter>;
   public readonly runtime: LinkRuntimeOptions;
 
@@ -142,9 +134,6 @@ export class TRPCClient<TRouter extends AnyRouter> {
       if (opts.headers) {
         const headers = opts.headers;
         return typeof headers === 'function' ? headers : () => headers;
-      }
-      if (opts.getHeaders) {
-        return opts.getHeaders;
       }
       return () => ({});
     }
