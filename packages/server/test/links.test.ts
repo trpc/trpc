@@ -340,11 +340,12 @@ test('loggerLink', () => {
         path: 'n/a',
       },
     });
+
     expect(logger.log.mock.calls[0][0]).toMatchInlineSnapshot(
-      `"%c ⏳ >> query #1 %cn/a%c %O"`,
+      `"%c >> query #1 %cn/a%c %O"`,
     );
     expect(logger.log.mock.calls[1][0]).toMatchInlineSnapshot(
-      `"%c ✅ << query #1 %cn/a%c %O"`,
+      `"%c << query #1 %cn/a%c %O"`,
     );
     logger.error.mockReset();
     logger.log.mockReset();
@@ -360,10 +361,10 @@ test('loggerLink', () => {
       },
     });
     expect(logger.log.mock.calls[0][0]).toMatchInlineSnapshot(
-      `"%c ⏳ >> subscription #2 %cn/a%c %O"`,
+      `"%c >> subscription #2 %cn/a%c %O"`,
     );
     expect(logger.log.mock.calls[1][0]).toMatchInlineSnapshot(
-      `"%c ✅ << subscription #2 %cn/a%c %O"`,
+      `"%c << subscription #2 %cn/a%c %O"`,
     );
     logger.error.mockReset();
     logger.log.mockReset();
@@ -380,10 +381,10 @@ test('loggerLink', () => {
     });
 
     expect(logger.log.mock.calls[0][0]).toMatchInlineSnapshot(
-      `"%c ⏳ >> mutation #3 %cn/a%c %O"`,
+      `"%c >> mutation #3 %cn/a%c %O"`,
     );
     expect(logger.log.mock.calls[1][0]).toMatchInlineSnapshot(
-      `"%c ✅ << mutation #3 %cn/a%c %O"`,
+      `"%c << mutation #3 %cn/a%c %O"`,
     );
     logger.error.mockReset();
     logger.log.mockReset();
@@ -399,10 +400,10 @@ test('loggerLink', () => {
       },
     });
     expect(logger.log.mock.calls[0][0]).toMatchInlineSnapshot(
-      `"%c ⏳ >> query #4 %cn/a%c %O"`,
+      `"%c >> query #4 %cn/a%c %O"`,
     );
     expect(logger.error.mock.calls[0][0]).toMatchInlineSnapshot(
-      `"%c ❌ << query #4 %cn/a%c %O"`,
+      `"%c << query #4 %cn/a%c %O"`,
     );
     logger.error.mockReset();
     logger.log.mockReset();
@@ -422,7 +423,7 @@ test('loggerLink', () => {
     const [firstCall, secondCall] = logFn.mock.calls.map((args) => args[0]);
     expect(firstCall).toMatchInlineSnapshot(`
       Object {
-        "event": "init",
+        "direction": "up",
         "input": null,
         "path": "n/a",
         "requestId": 1,
@@ -434,15 +435,11 @@ test('loggerLink', () => {
     expect(typeof elapsedMs).toBe('number');
     expect(other).toMatchInlineSnapshot(`
       Object {
-        "data": Object {
-          "error": null,
-          "ok": false,
-          "statusCode": 400,
-        },
-        "event": "error",
+        "direction": "down",
         "input": null,
         "path": "n/a",
         "requestId": 1,
+        "result": [Error: ..],
         "type": "query",
       }
     `);

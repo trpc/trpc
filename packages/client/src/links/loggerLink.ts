@@ -95,8 +95,9 @@ export function loggerLink<TRouter extends AnyRouter = AnyRouter>(
       props.direction === 'down' &&
       props.result &&
       (props.result instanceof Error || !props.result.ok)
-        ? 'log'
-        : 'error';
+        ? 'error'
+        : 'log';
+
     c[fn].apply(null, [parts.join(' ')].concat(args));
   };
   const { log: logger = defaultLogger } = opts;
