@@ -251,10 +251,7 @@ export class TRPCClient<TRouter extends AnyRouter> {
         } catch (_err) {
           const err: TRPCClientError<TRouter> = _err;
 
-          if (
-            (err.result as Maybe<HTTPErrorResponseEnvelope<TRouter>>)
-              ?.statusCode === 408
-          ) {
+          if (err.result?.statusCode === 408) {
             // server told us to reconnect
             exec();
           } else {
