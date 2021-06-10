@@ -413,7 +413,7 @@ test('loggerLink', () => {
   {
     const logFn = jest.fn();
     executeChain({
-      links: [loggerLink({ log: logFn })(mockRuntime), errorLink],
+      links: [loggerLink({ logger: logFn })(mockRuntime), errorLink],
       op: {
         type: 'query',
         input: null,

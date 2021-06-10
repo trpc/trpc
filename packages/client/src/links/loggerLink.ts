@@ -55,8 +55,9 @@ type LoggerLinkOptions<TRouter extends AnyRouter> = {
   console?: ConsoleEsque;
 };
 
+// maybe this should be moved to it's own package
 const defaultLogger =
-  <TRouter extends AnyRouter>(c: ConsoleEsque): LogFn<TRouter> =>
+  <TRouter extends AnyRouter>(c: ConsoleEsque = console): LogFn<TRouter> =>
   (props) => {
     const { direction, requestId, input, type, path } = props;
     const [light, dark] = palette[type];
@@ -103,7 +104,7 @@ export function loggerLink<TRouter extends AnyRouter = AnyRouter>(
 ): TRPCLink<TRouter> {
   const { enabled = () => true } = opts;
 
-  const { logger = defaultLogger(opts.console ?? console) } = opts;
+  const { logger = defaultLogger(opts.console) } = opts;
   return () => {
     let requestId = 0;
     return ({ op, next, prev }) => {
