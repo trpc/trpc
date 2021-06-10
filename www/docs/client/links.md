@@ -73,10 +73,6 @@ export default withTRPC(
 ### Custom link
 
 ```tsx
-// 👇 import the loggerLink
-import { loggerLink } from '@trpc/client/links/loggerLink';
-
-
 export default withTRPC(
   () => {
     return {
