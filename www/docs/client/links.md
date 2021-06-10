@@ -85,12 +85,11 @@ export default withTRPC(
           ({ prev, next, op }) => {
             // custom link, doesn't do anything apart from passing results through
             // you can safely delete this
-            next(op, (res) => {
-              if (res instanceof Error) {
-                // maybe 
-                // console.log(res);
+            next(op, (result) => {
+              if (result instanceof Error) {
+                // maybe send to bugsnag?
               }
-              prev(res);
+              prev(result);
             });
           },
         // [..]
