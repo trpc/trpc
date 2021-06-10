@@ -70,7 +70,7 @@ export default withTRPC(
 )(MyApp);
 ```
 
-### Custom logger
+### Custom link
 
 ```tsx
 // 👇 import the loggerLink
@@ -81,16 +81,20 @@ export default withTRPC(
   () => {
     return {
       links: [
-        loggerLink({
-          logger(opts) {
-            if (opts.direction === 'down' && opts.result instanceof Error) {
-              // send to bugsnag, etc
-            }
-          }
-        }),
-        httpBatchLink({
-          url: '/api/trpc',
-        }),
+        () =>
+          ({ prev, next, op }) => {
+            // custom link, doesn't do anything apart from passing results through
+            // you can safely delete this
+            next(op, (res) => {
+              if (res instanceof Error) {
+                // maybe 
+                // console.log(res);
+              }
+              prev(res);
+            });
+          },
+        // [..]
+        // ❗ Make sure to end with a `httpBatchLink` or `httpLink`
       ],
     };
   },
