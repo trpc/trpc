@@ -1,15 +1,20 @@
-import { ProcedureType } from '@trpc/server';
-import { TRPCClientError } from '../createTRPCClient';
+import { AnyRouter, HTTPResponseEnvelope, ProcedureType } from '@trpc/server';
 import { LinkRuntimeOptions, PromiseAndCancel } from '../links/core';
 
-export function httpRequest<TResponseShape>(props: {
+export function httpRequest<
+  TRouter extends AnyRouter = AnyRouter,
+  TResponseShape extends HTTPResponseEnvelope<
+    TRouter,
+    unknown
+  > = HTTPResponseEnvelope<TRouter, unknown>,
+>(props: {
   runtime: LinkRuntimeOptions;
   type: ProcedureType;
   input: unknown;
   path: string;
   url: string;
   searchParams?: string;
-}): PromiseAndCancel<any> {
+}): PromiseAndCancel<TResponseShape> {
   const { type, runtime: rt, input, path } = props;
   const ac = rt.AbortController ? new rt.AbortController() : null;
   const method = {
@@ -62,12 +67,7 @@ export function httpRequest<TResponseShape>(props: {
       .then((json) => {
         resolve(rt.transformer.deserialize(json));
       })
-      .catch((originalError) => {
-        const err = new TRPCClientError(originalError?.message, {
-          originalError,
-        });
-        reject(err);
-      });
+      .catch(reject);
   });
   const cancel = () => {
     ac?.abort();

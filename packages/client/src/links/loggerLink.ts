@@ -1,81 +1,76 @@
-import { AnyRouter, HTTPErrorResponseEnvelope } from '@trpc/server';
-import { TRPCClientError } from '../createTRPCClient';
-import { Operation, TRPCLink } from './core';
+import { AnyRouter } from '@trpc/server';
+import { Operation, OperationResult, TRPCLink } from './core';
 
-type LogFn = (...data: any) => void;
-type Logger = {
-  log: LogFn;
-  error: LogFn;
+type ConsoleEsque = {
+  log: (...args: any[]) => void;
+  error: (...args: any[]) => void;
 };
-type EnabledCondition = (opts: {
-  op: Operation;
-  event: 'init' | 'success' | 'error';
-}) => boolean;
-type LoggerOptions<TRouter extends AnyRouter = AnyRouter> = {
+
+type EnableFnOptions<TRouter extends AnyRouter> =
+  | (Operation & {
+      direction: 'up';
+    })
+  | {
+      direction: 'down';
+      result: OperationResult<TRouter>;
+    };
+type EnabledFn<TRouter extends AnyRouter> = (
+  opts: EnableFnOptions<TRouter>,
+) => boolean;
+
+type LogFnOptions<TRouter extends AnyRouter> = Operation & {
   /**
    * Incremental id for requests
    */
   requestId: number;
-  op: Operation;
-  enabled: EnabledCondition;
 } & (
-  | {
-      event: 'init';
-    }
-  | {
-      event: 'success';
-      data?: unknown;
-      elapsedMs: number;
-    }
-  | {
-      event: 'error';
-      error: TRPCClientError<TRouter> | HTTPErrorResponseEnvelope<TRouter>;
-      elapsedMs: number;
-    }
-);
+    | {
+        /**
+         * Request was just initialized
+         */
+        direction: 'up';
+      }
+    | {
+        /**
+         * Request result
+         */
+        direction: 'down';
+        result: OperationResult<TRouter>;
+        elapsedMs: number;
+      }
+  );
+type LogFn<TRouter extends AnyRouter> = (opts: LogFnOptions<TRouter>) => void;
 
 const palette = {
   query: ['72e3ff', '3fb0d8'],
   mutation: ['c5a3fc', '904dfc'],
   subscription: ['ff49e1', 'd83fbe'],
 };
-const emojiMap = {
-  init: '⏳',
-  success: '✅',
-  error: '❌',
+type LoggerLinkOptions<TRouter extends AnyRouter> = {
+  logger?: LogFn<TRouter>;
+  enabled?: EnabledFn<TRouter>;
+  /**
+   * Used in the built-in defaultLogger
+   */
+  console?: ConsoleEsque;
 };
-export function loggerLink(
-  opts: {
-    logger?: Logger;
-    enabled?: (opts: {
-      op: Operation;
-      event: 'init' | 'success' | 'error';
-    }) => boolean;
-  } = {},
-): TRPCLink {
-  const { logger = console, enabled = () => true } = opts;
 
-  function log(props: LoggerOptions) {
-    if (!props.enabled({ op: props.op, event: props.event })) {
-      return;
-    }
-    const {
-      event,
-      requestId,
-      op: { input, type, path },
-    } = props;
+// maybe this should be moved to it's own package
+const defaultLogger =
+  <TRouter extends AnyRouter>(c: ConsoleEsque = console): LogFn<TRouter> =>
+  (props) => {
+    const { direction, requestId, input, type, path } = props;
     const [light, dark] = palette[type];
 
     const css = `
-      background-color: #${event === 'init' ? light : dark}; 
-      color: ${event === 'init' ? 'black' : 'white'};
-      padding: 2px;
-    `;
+    background-color: #${direction === 'up' ? light : dark}; 
+    color: ${direction === 'up' ? 'black' : 'white'};
+    padding: 2px;
+  `;
 
     const parts = [
       '%c',
-      emojiMap[event],
-      event === 'init' ? '>>' : '<<',
+      direction === 'up' ? '>>' : '<<',
       type,
       `#${requestId}`,
       `%c${path}%c`,
@@ -86,58 +81,53 @@ export function loggerLink(
       `${css}; font-weight: bold;`,
       `${css}; font-weight: normal;`,
     ];
-    if (props.event === 'error') {
-      args.push({
-        input,
-        error: props.error,
-        elapsedMs: props.elapsedMs,
-      });
-    } else if (props.event === 'success') {
-      args.push({
-        input,
-        output: props.data,
-        elapsedMs: props.elapsedMs,
-      });
-    } else if (props.event === 'init') {
+    if (props.direction === 'up') {
       args.push({ input });
+    } else {
+      args.push({
+        input,
+        result: props.result,
+        elapsedMs: props.elapsedMs,
+      });
     }
     const fn: 'error' | 'log' =
-      props.event === 'success' || props.event === 'init' ? 'log' : 'error';
-    logger[fn].apply(null, [parts.join(' ')].concat(args));
-  }
+      props.direction === 'down' &&
+      props.result &&
+      props.result instanceof Error
+        ? 'error'
+        : 'log';
+
+    c[fn].apply(null, [parts.join(' ')].concat(args));
+  };
+export function loggerLink<TRouter extends AnyRouter = AnyRouter>(
+  opts: LoggerLinkOptions<TRouter> = {},
+): TRPCLink<TRouter> {
+  const { enabled = () => true } = opts;
+
+  const { logger = defaultLogger(opts.console) } = opts;
   return () => {
     let requestId = 0;
     return ({ op, next, prev }) => {
       // ->
       requestId++;
-      log({
-        enabled,
-        op,
-        event: 'init',
-        requestId,
-      });
+      enabled({ ...op, direction: 'up' }) &&
+        logger({
+          ...op,
+          direction: 'up',
+          requestId,
+        });
       const requestStartTime = Date.now();
       next(op, (result) => {
         const elapsedMs = Date.now() - requestStartTime;
 
-        if (result instanceof Error || !result.ok) {
-          log({
-            enabled,
-            op,
-            event: 'error',
+        enabled({ ...op, direction: 'down', result }) &&
+          logger({
+            ...op,
+            direction: 'down',
             requestId,
             elapsedMs,
-            error: result,
+            result,
           });
-        } else {
-          log({
-            enabled,
-            op,
-            event: 'success',
-            requestId,
-            elapsedMs,
-          });
-        }
         // <-
         prev(result);
       });

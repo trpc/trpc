@@ -1,7 +1,9 @@
+import { TRPCLink } from '@trpc/client';
 import { httpBatchLink } from '@trpc/client/links/httpBatchLink';
 import { loggerLink } from '@trpc/client/links/loggerLink';
 import { withTRPC } from '@trpc/next';
 import { AppType } from 'next/dist/next-server/lib/utils';
+import { AppRouter } from './api/trpc/[trpc]';
 // import { transformer } from '../utils/trpc';
 
 const MyApp: AppType = ({ Component, pageProps }) => {
@@ -30,7 +32,7 @@ function getBaseUrl() {
   return `http://localhost:${process.env.PORT ?? 3000}`;
 }
 
-export default withTRPC(
+export default withTRPC<AppRouter>(
   () => {
     /**
      * If you want to use SSR, you need to use the server's full URL
@@ -41,9 +43,11 @@ export default withTRPC(
        * @link https://trpc.io/docs/links
        */
       links: [
+        // adds pretty logs to your console in development and logs errors in production
         loggerLink({
-          enabled: ({ event }) =>
-            process.env.NODE_ENV === 'development' || event === 'error',
+          enabled: (opts) =>
+            process.env.NODE_ENV === 'development' ||
+            (opts.direction === 'down' && opts.result instanceof Error),
         }),
         httpBatchLink({
           url: `${getBaseUrl()}/api/trpc`,

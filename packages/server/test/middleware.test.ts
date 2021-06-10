@@ -103,14 +103,14 @@ test('allows you to throw an error (e.g. auth)', async () => {
         },
       },
       client: {
-        getHeaders: () => headers,
+        headers,
       },
     },
   );
 
   expect(await client.query('foo')).toBe('bar');
   await expect(client.query('admin.secretPlace')).rejects.toMatchObject({
-    json: { statusCode: 401 },
+    result: { statusCode: 401 },
   });
   expect(resolverMock).toHaveBeenCalledTimes(0);
   headers.authorization = 'meow';

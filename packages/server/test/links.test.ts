@@ -3,7 +3,7 @@ import { waitFor } from '@testing-library/dom';
 import AbortController from 'abort-controller';
 import fetch from 'node-fetch';
 import { z } from 'zod';
-import { createTRPCClient } from '../../client/src';
+import { createTRPCClient, TRPCClientError } from '../../client/src';
 import { executeChain } from '../../client/src/internals/executeChain';
 import { LinkRuntimeOptions, OperationLink } from '../../client/src/links/core';
 import { httpBatchLink } from '../../client/src/links/httpBatchLink';
@@ -13,6 +13,7 @@ import { loggerLink } from '../../client/src/links/loggerLink';
 import { splitLink } from '../../client/src/links/splitLink';
 import * as trpc from '../src';
 import { routerToServerAndClient } from './_testHelpers';
+import { AnyRouter } from '../src';
 
 const mockRuntime: LinkRuntimeOptions = {
   transformer: {
@@ -41,16 +42,11 @@ test('retrylink', () => {
     next: (_ctx, callback) => {
       attempts++;
       if (attempts < 4) {
-        callback({
-          ok: false,
-          error: new Error('Some error'),
-          statusCode: 200,
-        });
+        callback(TRPCClientError.from(new Error('..')));
       } else {
         callback({
           ok: true,
           data: 'succeeded on attempt ' + attempts,
-          statusCode: 200,
         });
       }
     },
@@ -87,6 +83,7 @@ test('chainer', async () => {
       type: 'query',
       path: 'hello',
       input: null,
+      context: {},
     },
   });
 
@@ -108,7 +105,7 @@ test('mock cache link has immediate $result', () => {
       retryLink({ attempts: 3 })(mockRuntime),
       // mock cache link
       ({ prev }) => {
-        prev({ ok: true, data: 'cached', statusCode: 200 });
+        prev({ ok: true, data: 'cached' });
       },
       httpLink({
         url: `void`,
@@ -136,6 +133,7 @@ test('cancel request', async () => {
       type: 'query',
       path: 'hello',
       input: null,
+      context: {},
     },
   });
 
@@ -177,6 +175,7 @@ describe('batching', () => {
         type: 'query',
         path: 'hello',
         input: null,
+        context: {},
       },
     });
 
@@ -186,6 +185,7 @@ describe('batching', () => {
         type: 'query',
         path: 'hello',
         input: 'alexdotjs',
+        context: {},
       },
     });
 
@@ -257,6 +257,7 @@ test('split link', () => {
       type: 'query',
       input: null,
       path: '',
+      context: {},
     },
   });
   expect(left).toHaveBeenCalledTimes(1);
@@ -301,12 +302,12 @@ test('multi down link', async () => {
       // mock cache link
       ({ prev, onDestroy }) => {
         const timer = setTimeout(() => {
-          prev({ ok: true, data: 'cached2', statusCode: 200 });
+          prev({ ok: true, data: 'cached2' });
         }, 1);
         onDestroy(() => {
           clearTimeout(timer);
         });
-        prev({ ok: true, data: 'cached1', statusCode: 200 });
+        prev({ ok: true, data: 'cached1' });
       },
       httpLink({
         url: `void`,
@@ -330,12 +331,12 @@ test('loggerLink', () => {
     log: jest.fn(),
   };
   const logLink = loggerLink({
-    logger,
+    console: logger,
   })(mockRuntime);
-  const okLink: OperationLink = ({ prev }) =>
-    prev({ ok: true, statusCode: 200, data: null });
-  const errorLink: OperationLink = ({ prev }) =>
-    prev({ ok: false, statusCode: 400, error: null });
+  const okLink: OperationLink<AnyRouter> = ({ prev }) =>
+    prev({ ok: true, data: null });
+  const errorLink: OperationLink<AnyRouter> = ({ prev }) =>
+    prev(TRPCClientError.from(new Error('..')));
   {
     executeChain({
       links: [logLink, okLink],
@@ -343,13 +344,15 @@ test('loggerLink', () => {
         type: 'query',
         input: null,
         path: 'n/a',
+        context: {},
       },
     });
+
     expect(logger.log.mock.calls[0][0]).toMatchInlineSnapshot(
-      `"%c ⏳ >> query #1 %cn/a%c %O"`,
+      `"%c >> query #1 %cn/a%c %O"`,
     );
     expect(logger.log.mock.calls[1][0]).toMatchInlineSnapshot(
-      `"%c ✅ << query #1 %cn/a%c %O"`,
+      `"%c << query #1 %cn/a%c %O"`,
     );
     logger.error.mockReset();
     logger.log.mockReset();
@@ -362,13 +365,14 @@ test('loggerLink', () => {
         type: 'subscription',
         input: null,
         path: 'n/a',
+        context: {},
       },
     });
     expect(logger.log.mock.calls[0][0]).toMatchInlineSnapshot(
-      `"%c ⏳ >> subscription #2 %cn/a%c %O"`,
+      `"%c >> subscription #2 %cn/a%c %O"`,
     );
     expect(logger.log.mock.calls[1][0]).toMatchInlineSnapshot(
-      `"%c ✅ << subscription #2 %cn/a%c %O"`,
+      `"%c << subscription #2 %cn/a%c %O"`,
     );
     logger.error.mockReset();
     logger.log.mockReset();
@@ -381,14 +385,15 @@ test('loggerLink', () => {
         type: 'mutation',
         input: null,
         path: 'n/a',
+        context: {},
       },
     });
 
     expect(logger.log.mock.calls[0][0]).toMatchInlineSnapshot(
-      `"%c ⏳ >> mutation #3 %cn/a%c %O"`,
+      `"%c >> mutation #3 %cn/a%c %O"`,
     );
     expect(logger.log.mock.calls[1][0]).toMatchInlineSnapshot(
-      `"%c ✅ << mutation #3 %cn/a%c %O"`,
+      `"%c << mutation #3 %cn/a%c %O"`,
     );
     logger.error.mockReset();
     logger.log.mockReset();
@@ -401,17 +406,78 @@ test('loggerLink', () => {
         type: 'query',
         input: null,
         path: 'n/a',
+        context: {},
       },
     });
     expect(logger.log.mock.calls[0][0]).toMatchInlineSnapshot(
-      `"%c ⏳ >> query #4 %cn/a%c %O"`,
+      `"%c >> query #4 %cn/a%c %O"`,
     );
     expect(logger.error.mock.calls[0][0]).toMatchInlineSnapshot(
-      `"%c ❌ << query #4 %cn/a%c %O"`,
+      `"%c << query #4 %cn/a%c %O"`,
     );
     logger.error.mockReset();
     logger.log.mockReset();
   }
+
+  // custom logger
+  {
+    const logFn = jest.fn();
+    executeChain({
+      links: [loggerLink({ logger: logFn })(mockRuntime), errorLink],
+      op: {
+        type: 'query',
+        input: null,
+        path: 'n/a',
+        context: {},
+      },
+    });
+    const [firstCall, secondCall] = logFn.mock.calls.map((args) => args[0]);
+    expect(firstCall).toMatchInlineSnapshot(`
+      Object {
+        "context": Object {},
+        "direction": "up",
+        "input": null,
+        "path": "n/a",
+        "requestId": 1,
+        "type": "query",
+      }
+    `);
+    // omit elapsedMs
+    const { elapsedMs, ...other } = secondCall;
+    expect(typeof elapsedMs).toBe('number');
+    expect(other).toMatchInlineSnapshot(`
+      Object {
+        "context": Object {},
+        "direction": "down",
+        "input": null,
+        "path": "n/a",
+        "requestId": 1,
+        "result": [Error: ..],
+        "type": "query",
+      }
+    `);
+  }
+});
+
+test('pass a context', () => {
+  const context = {
+    hello: 'there',
+  };
+  const callback = jest.fn();
+  executeChain({
+    links: [
+      ({ op }) => {
+        callback(op.context);
+      },
+    ],
+    op: {
+      type: 'query',
+      input: null,
+      path: '',
+      context,
+    },
+  });
+  expect(callback).toHaveBeenCalledWith(context);
 });
 
 test('pass a context', () => {
