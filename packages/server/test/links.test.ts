@@ -83,6 +83,7 @@ test('chainer', async () => {
       type: 'query',
       path: 'hello',
       input: null,
+      context: {},
     },
   });
 
@@ -132,6 +133,7 @@ test('cancel request', async () => {
       type: 'query',
       path: 'hello',
       input: null,
+      context: {},
     },
   });
 
@@ -173,6 +175,7 @@ describe('batching', () => {
         type: 'query',
         path: 'hello',
         input: null,
+        context: {},
       },
     });
 
@@ -182,6 +185,7 @@ describe('batching', () => {
         type: 'query',
         path: 'hello',
         input: 'alexdotjs',
+        context: {},
       },
     });
 
@@ -253,6 +257,7 @@ test('split link', () => {
       type: 'query',
       input: null,
       path: '',
+      context: {},
     },
   });
   expect(left).toHaveBeenCalledTimes(1);
@@ -339,6 +344,7 @@ test('loggerLink', () => {
         type: 'query',
         input: null,
         path: 'n/a',
+        context: {},
       },
     });
 
@@ -359,6 +365,7 @@ test('loggerLink', () => {
         type: 'subscription',
         input: null,
         path: 'n/a',
+        context: {},
       },
     });
     expect(logger.log.mock.calls[0][0]).toMatchInlineSnapshot(
@@ -378,6 +385,7 @@ test('loggerLink', () => {
         type: 'mutation',
         input: null,
         path: 'n/a',
+        context: {},
       },
     });
 
@@ -398,6 +406,7 @@ test('loggerLink', () => {
         type: 'query',
         input: null,
         path: 'n/a',
+        context: {},
       },
     });
     expect(logger.log.mock.calls[0][0]).toMatchInlineSnapshot(
@@ -419,11 +428,13 @@ test('loggerLink', () => {
         type: 'query',
         input: null,
         path: 'n/a',
+        context: {},
       },
     });
     const [firstCall, secondCall] = logFn.mock.calls.map((args) => args[0]);
     expect(firstCall).toMatchInlineSnapshot(`
       Object {
+        "context": Object {},
         "direction": "up",
         "input": null,
         "path": "n/a",
@@ -436,6 +447,7 @@ test('loggerLink', () => {
     expect(typeof elapsedMs).toBe('number');
     expect(other).toMatchInlineSnapshot(`
       Object {
+        "context": Object {},
         "direction": "down",
         "input": null,
         "path": "n/a",
