@@ -12,7 +12,7 @@ export type Operation<TInput = unknown> = {
 };
 
 export type OperationResult<TRouter extends AnyRouter> =
-  | TRPCProcedureSuccessEnvelope<TRouter>
+  | TRPCProcedureSuccessEnvelope<unknown>
   | TRPCClientError<TRouter>;
 
 export type PrevCallback<TRouter extends AnyRouter> = (

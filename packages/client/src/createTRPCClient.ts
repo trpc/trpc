@@ -31,10 +31,7 @@ const retryDelay = (attemptIndex: number) =>
   attemptIndex === 0 ? 0 : Math.min(1000 * 2 ** attemptIndex, 30000);
 
 export class TRPCClientError<TRouter extends AnyRouter> extends Error {
-  public readonly json?: Maybe<TRPCProcedureErrorEnvelope<TRouter>>;
-  /**
-   * @deprecated will always be `undefined` and will be removed in next major
-   */
+  public readonly result?: Maybe<TRPCProcedureErrorEnvelope<TRouter>>;
   public readonly res?: Maybe<Response>;
   public readonly originalError?: Maybe<Error>;
   public readonly shape?: TRPCProcedureErrorEnvelope<TRouter>['error'];
@@ -42,18 +39,18 @@ export class TRPCClientError<TRouter extends AnyRouter> extends Error {
   constructor(
     message: string,
     {
-      json,
+      result: result,
       originalError,
     }: {
-      json: Maybe<TRPCProcedureErrorEnvelope<TRouter>>;
+      result: Maybe<TRPCProcedureErrorEnvelope<TRouter>>;
       originalError: Maybe<Error>;
     },
   ) {
     super(message);
     this.message = message;
-    this.json = json;
+    this.result = result;
     this.originalError = originalError;
-    this.shape = this.json?.error;
+    this.shape = this.result?.error;
 
     Object.setPrototypeOf(this, TRPCClientError.prototype);
   }
@@ -64,7 +61,7 @@ export class TRPCClientError<TRouter extends AnyRouter> extends Error {
     if (!(result instanceof Error)) {
       return new TRPCClientError<TRouter>((result.error as any).message ?? '', {
         originalError: null,
-        json: result,
+        result: result,
       });
     }
 
@@ -74,7 +71,7 @@ export class TRPCClientError<TRouter extends AnyRouter> extends Error {
 
     return new TRPCClientError<TRouter>(result.message, {
       originalError: result,
-      json: null,
+      result: null,
     });
   }
 }
@@ -266,7 +263,7 @@ export class TRPCClient<TRouter extends AnyRouter> {
           const err: TRPCClientError<TRouter> = _err;
 
           if (
-            (err.json as Maybe<HTTPErrorResponseEnvelope<TRouter>>)
+            (err.result as Maybe<HTTPErrorResponseEnvelope<TRouter>>)
               ?.statusCode === 408
           ) {
             // server told us to reconnect

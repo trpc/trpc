@@ -16,9 +16,7 @@ export function httpBatchLink<TRouter extends AnyRouter>(
       const path = keyInputPairs.map(({ path }) => path).join(',');
       const input = keyInputPairs.map(({ input }) => input);
 
-      const { promise, cancel } = httpRequest<
-        HTTPResponseEnvelope<unknown, any>[]
-      >({
+      const { promise, cancel } = httpRequest<TRouter>({
         url,
         input,
         path,

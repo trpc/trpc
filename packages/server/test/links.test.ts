@@ -3,7 +3,7 @@ import { waitFor } from '@testing-library/dom';
 import AbortController from 'abort-controller';
 import fetch from 'node-fetch';
 import { z } from 'zod';
-import { createTRPCClient } from '../../client/src';
+import { createTRPCClient, TRPCClientError } from '../../client/src';
 import { executeChain } from '../../client/src/internals/executeChain';
 import { LinkRuntimeOptions, OperationLink } from '../../client/src/links/core';
 import { httpBatchLink } from '../../client/src/links/httpBatchLink';
@@ -41,16 +41,11 @@ test('retrylink', () => {
     next: (_ctx, callback) => {
       attempts++;
       if (attempts < 4) {
-        callback({
-          ok: false,
-          error: new Error('Some error'),
-          statusCode: 200,
-        });
+        callback(TRPCClientError.from(new Error('..')));
       } else {
         callback({
           ok: true,
           data: 'succeeded on attempt ' + attempts,
-          statusCode: 200,
         });
       }
     },
@@ -108,7 +103,7 @@ test('mock cache link has immediate $result', () => {
       retryLink({ attempts: 3 })(mockRuntime),
       // mock cache link
       ({ prev }) => {
-        prev({ ok: true, data: 'cached', statusCode: 200 });
+        prev({ ok: true, data: 'cached' });
       },
       httpLink({
         url: `void`,
@@ -301,12 +296,12 @@ test('multi down link', async () => {
       // mock cache link
       ({ prev, onDestroy }) => {
         const timer = setTimeout(() => {
-          prev({ ok: true, data: 'cached2', statusCode: 200 });
+          prev({ ok: true, data: 'cached2' });
         }, 1);
         onDestroy(() => {
           clearTimeout(timer);
         });
-        prev({ ok: true, data: 'cached1', statusCode: 200 });
+        prev({ ok: true, data: 'cached1' });
       },
       httpLink({
         url: `void`,
@@ -333,9 +328,9 @@ test('loggerLink', () => {
     console: logger,
   })(mockRuntime);
   const okLink: OperationLink<AnyRouter> = ({ prev }) =>
-    prev({ ok: true, statusCode: 200, data: null });
+    prev({ ok: true, data: null });
   const errorLink: OperationLink<AnyRouter> = ({ prev }) =>
-    prev({ ok: false, statusCode: 400, error: null as any });
+    prev(TRPCClientError.from(new Error('..')));
   {
     executeChain({
       links: [logLink, okLink],
