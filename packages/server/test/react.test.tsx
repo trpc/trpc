@@ -33,6 +33,7 @@ import { createSSGHelpers } from '../../react/ssg';
 import { DefaultErrorShape } from '../src';
 import { routerToServerAndClient } from './_testHelpers';
 import { AppType } from 'next/dist/next-server/lib/utils';
+import { httpBatchLink } from '@trpc/client/links/httpBatchLink';
 setLogger({
   log() {},
   warn() {},
@@ -56,7 +57,7 @@ function createAppRouter() {
     ],
   };
   const postLiveInputs: unknown[] = [];
-
+  const createContext = jest.fn(() => ({}));
   const allPosts = jest.fn();
   const postById = jest.fn();
   const appRouter = trpcServer
@@ -160,8 +161,22 @@ function createAppRouter() {
       },
     });
 
-  const { client, trpcClientOptions, close } =
-    routerToServerAndClient(appRouter);
+  const { client, trpcClientOptions, close } = routerToServerAndClient(
+    appRouter,
+    {
+      server: {
+        createContext,
+        batching: {
+          enabled: true,
+        },
+      },
+      client({ url }) {
+        return {
+          links: [httpBatchLink({ url })],
+        };
+      },
+    },
+  );
   const queryClient = new QueryClient();
   const trpc = createReactQueryHooks<typeof appRouter>();
 
@@ -178,6 +193,7 @@ function createAppRouter() {
       allPosts,
     },
     queryClient,
+    createContext,
   };
 }
 let factory: ReturnType<typeof createAppRouter>;
@@ -354,12 +370,12 @@ test('useLiveQuery()', async () => {
 });
 test('dehydrate', async () => {
   const { db, appRouter } = factory;
-  const ssr = createSSGHelpers({ router: appRouter, ctx: {} });
+  const ssg = createSSGHelpers({ router: appRouter, ctx: {} });
 
-  await ssr.prefetchQuery('allPosts');
-  await ssr.fetchQuery('postById', '1');
+  await ssg.prefetchQuery('allPosts');
+  await ssg.fetchQuery('postById', '1');
 
-  const dehydrated = ssr.dehydrate().queries;
+  const dehydrated = ssg.dehydrate().queries;
   expect(dehydrated).toHaveLength(2);
 
   const [cache, cache2] = dehydrated;
@@ -521,17 +537,17 @@ test('useInfiniteQuery()', async () => {
 
 test('prefetchInfiniteQuery()', async () => {
   const { appRouter } = factory;
-  const ssr = createSSGHelpers({ router: appRouter, ctx: {} });
+  const ssg = createSSGHelpers({ router: appRouter, ctx: {} });
 
   {
-    await ssr.prefetchInfiniteQuery('paginatedPosts', { limit: 1 });
-    const data = JSON.stringify(ssr.dehydrate());
+    await ssg.prefetchInfiniteQuery('paginatedPosts', { limit: 1 });
+    const data = JSON.stringify(ssg.dehydrate());
     expect(data).toContain('first post');
     expect(data).not.toContain('second post');
   }
   {
-    await ssr.fetchInfiniteQuery('paginatedPosts', { limit: 2 });
-    const data = JSON.stringify(ssr.dehydrate());
+    await ssg.fetchInfiniteQuery('paginatedPosts', { limit: 2 });
+    const data = JSON.stringify(ssg.dehydrate());
     expect(data).toContain('first post');
     expect(data).toContain('second post');
   }
@@ -737,6 +753,7 @@ test('formatError() react types test', async () => {
 
 describe('withTRPC()', () => {
   test('useQuery', async () => {
+    // @ts-ignore
     const { window } = global;
 
     // @ts-ignore
@@ -756,6 +773,7 @@ describe('withTRPC()', () => {
       Component: <div />,
     } as any);
 
+    // @ts-ignore
     global.window = window;
 
     const utils = render(<Wrapped {...props} />);
@@ -894,5 +912,38 @@ describe('withTRPC()', () => {
         expect(utils.container).toHaveTextContent('first post');
       });
     });
+  });
+
+  test('useQuery - ssr batching', async () => {
+    // @ts-ignore
+    const { window } = global;
+
+    // @ts-ignore
+    delete global.window;
+    const { trpc, trpcClientOptions, createContext } = factory;
+    const App: AppType = () => {
+      const query1 = trpc.useQuery(['postById', '1']);
+      const query2 = trpc.useQuery(['postById', '2']);
+      return <>{JSON.stringify([query1.data, query2.data])}</>;
+    };
+
+    const Wrapped = withTRPC(() => trpcClientOptions, {
+      ssr: true,
+    })(App);
+
+    const props = await Wrapped.getInitialProps!({
+      AppTree: Wrapped,
+      Component: <div />,
+    } as any);
+
+    // @ts-ignore
+    global.window = window;
+
+    const utils = render(<Wrapped {...props} />);
+    expect(utils.container).toHaveTextContent('first post');
+    expect(utils.container).toHaveTextContent('second post');
+
+    // confirm we've batched if createContext has only been called once
+    expect(createContext).toHaveBeenCalledTimes(1);
   });
 });
