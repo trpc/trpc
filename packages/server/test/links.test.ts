@@ -479,3 +479,24 @@ test('pass a context', () => {
   });
   expect(callback).toHaveBeenCalledWith(context);
 });
+
+test('pass a context', () => {
+  const context = {
+    hello: 'there',
+  };
+  const callback = jest.fn();
+  executeChain({
+    links: [
+      ({ op }) => {
+        callback(op.context);
+      },
+    ],
+    op: {
+      type: 'query',
+      input: null,
+      path: '',
+      context,
+    },
+  });
+  expect(callback).toHaveBeenCalledWith(context);
+});
