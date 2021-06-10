@@ -115,7 +115,7 @@ export class TRPCClient<TRouter extends AnyRouter> {
 
   constructor(opts: CreateTRPCClientOptions<TRouter>) {
     this.opts = opts;
-    const transformer: DataTransformer = (this.transformer = opts.transformer
+    const transformer: DataTransformer = opts.transformer
       ? 'input' in opts.transformer
         ? {
             serialize: opts.transformer.input.serialize,
@@ -125,7 +125,7 @@ export class TRPCClient<TRouter extends AnyRouter> {
       : {
           serialize: (data) => data,
           deserialize: (data) => data,
-        });
+        };
 
     const _fetch = getFetch(opts.fetchOpts?.fetch);
     const AC = getAbortController(opts.fetchOpts?.AbortController);
