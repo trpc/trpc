@@ -2609,16 +2609,16 @@
     source-map-support "^0.5.16"
 
 "@prisma/client@^2.18.0":
-  version "2.24.0"
-  resolved "https://registry.yarnpkg.com/@prisma/client/-/client-2.24.0.tgz#83404f98905998770625ec7f13ad73532b144eba"
-  integrity sha512-y3BbJJMB3bhSXWpbqOlnAvnhvK0UYQMZZC5gacS+nR1eZl4MovVgl9syk6En3FXIQaneLukoiWfFaIxfDVZArw==
+  version "2.24.1"
+  resolved "https://registry.yarnpkg.com/@prisma/client/-/client-2.24.1.tgz#c4f26fb4d768dd52dd20a17e626f10e69cc0b85c"
+  integrity sha512-vllhf36g3oI98GF1Q5IPmnR5MYzBPeCcl/Xiz6EAi4DMOxE069o9ka5BAqYbUG2USx8JuKw09QdMnDrp3Kyn8g==
   dependencies:
-    "@prisma/engines-version" "2.24.0-30.f3e341280d96d0abc068f97e959ddf01f321a858"
+    "@prisma/engines-version" "2.24.1-2.18095475d5ee64536e2f93995e48ad800737a9e4"
 
-"@prisma/engines-version@2.24.0-30.f3e341280d96d0abc068f97e959ddf01f321a858":
-  version "2.24.0-30.f3e341280d96d0abc068f97e959ddf01f321a858"
-  resolved "https://registry.yarnpkg.com/@prisma/engines-version/-/engines-version-2.24.0-30.f3e341280d96d0abc068f97e959ddf01f321a858.tgz#609fb53d9feb1efc8689b4ce6098af1b486ad29f"
-  integrity sha512-KHns2Puc38woxnx3MKoUUW0tfR5yftDCmT/df0rUHe6ZcREt1kwI3dgvsOBz+6n7stuSNeLiU7uEkc7Ga3PgNA==
+"@prisma/engines-version@2.24.1-2.18095475d5ee64536e2f93995e48ad800737a9e4":
+  version "2.24.1-2.18095475d5ee64536e2f93995e48ad800737a9e4"
+  resolved "https://registry.yarnpkg.com/@prisma/engines-version/-/engines-version-2.24.1-2.18095475d5ee64536e2f93995e48ad800737a9e4.tgz#2c5813ef98bcbe659b18b521f002f5c8aabbaae2"
+  integrity sha512-60Do+ByVfHnhJ2id5h/lXOZnDQNIf5pz3enkKWOmyr744Z2IxkBu65jRckFfMN5cPtmXDre/Ay/GKm0aoeLwrw==
 
 "@prisma/engines@2.24.0-30.f3e341280d96d0abc068f97e959ddf01f321a858":
   version "2.24.0-30.f3e341280d96d0abc068f97e959ddf01f321a858"
