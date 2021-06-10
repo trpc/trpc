@@ -35,6 +35,7 @@ export function dataLoader<TKey, TValue>(fetchMany: BatchLoadFn<TKey, TValue>) {
     destroyTimerAndBatch();
     const { promise, cancel } = fetchMany(batchCopy.items.map((v) => v.key));
     batchCopy.cancel = cancel;
+
     promise
       .then((result) => {
         for (let i = 0; i < result.length; i++) {
@@ -43,7 +44,6 @@ export function dataLoader<TKey, TValue>(fetchMany: BatchLoadFn<TKey, TValue>) {
         }
       })
       .catch((error) => {
-        console.log({ error });
         for (const item of batchCopy.items) {
           item.reject(error);
         }

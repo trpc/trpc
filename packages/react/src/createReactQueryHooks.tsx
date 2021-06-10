@@ -44,8 +44,6 @@ export type OutputWithCursor<TData, TCursor extends any = any> = {
   data: TData;
 };
 
-type PartialBy<T, K extends keyof T> = Omit<T, K> & Partial<Pick<T, K>>;
-
 interface TRPCUseQueryBaseOptions {
   /**
    * Opt out of SSR for this query by passing `ssr: false`
@@ -339,7 +337,7 @@ export function createReactQueryHooks<TRouter extends AnyRouter>() {
     TOutput extends inferProcedureOutput<TQueries[TPath]>,
     TCursor extends any,
   >(
-    pathAndArgs: [TPath, PartialBy<TInput, 'cursor'>],
+    pathAndArgs: [TPath, Omit<TInput, 'cursor'>],
     // FIXME: this typing is wrong but it works
     opts?: UseTRPCInfiniteQueryOptions<TOutput, TError, TOutput>,
   ) {

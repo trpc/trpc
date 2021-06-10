@@ -46,6 +46,7 @@ export function httpRequest<TResponseShape>(props: {
 
   const promise = new Promise<TResponseShape>((resolve, reject) => {
     const url = getUrl();
+
     rt.fetch(url, {
       method: method[type],
       signal: ac?.signal,
