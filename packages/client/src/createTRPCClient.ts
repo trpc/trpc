@@ -3,7 +3,6 @@ import type {
   AnyRouter,
   ClientDataTransformerOptions,
   DataTransformer,
-  HTTPErrorResponseEnvelope,
   inferHandlerInput,
   inferProcedureInput,
   inferProcedureOutput,
