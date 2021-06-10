@@ -1,5 +1,5 @@
 {
-  "version": "6.5.0-alpha.0",
+  "version": "6.5.0",
   "registry": "https://registry.npmjs.org/",
   "publishConfig": {
     "access": "public"
