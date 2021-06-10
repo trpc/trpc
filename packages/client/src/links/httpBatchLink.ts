@@ -52,8 +52,10 @@ export function httpBatchLink<TRouter extends AnyRouter>(
       const { promise, cancel } = loader.load(op);
       onDestroy(() => cancel());
       promise
-        .then((v) => prev(v.ok ? v : TRPCClientError.from(v)))
-        .catch((v) => prev(TRPCClientError.from<TRouter>(v)));
+        .then((result) =>
+          prev(result.ok ? result : TRPCClientError.from(result)),
+        )
+        .catch((err) => prev(TRPCClientError.from<TRouter>(err)));
     };
   };
 }

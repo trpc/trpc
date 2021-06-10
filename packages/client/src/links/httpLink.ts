@@ -22,7 +22,9 @@ export function httpLink<TRouter extends AnyRouter>(
       });
       onDestroy(() => cancel());
       promise
-        .then((v) => prev(v.ok ? v : TRPCClientError.from(v)))
+        .then((result) =>
+          prev(result.ok ? result : TRPCClientError.from(result)),
+        )
         .catch((err) => TRPCClientError.from(err));
     };
   };
