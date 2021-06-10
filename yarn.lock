@@ -9746,9 +9746,9 @@ playwright-core@>=1.2.0:
     yazl "^2.5.1"
 
 playwright@^1.8.0:
-  version "1.11.1"
-  resolved "https://registry.npmjs.org/playwright/-/playwright-1.11.1.tgz#c5f2946db5195bd099a57ce4e188c01057876cff"
-  integrity sha512-UuMrYuvzttbJXUD7sTVcQBsGRojelGepvuQPD+QtVm/n5zyKvkiUErU/DGRXfX8VDZRdQ5D6qVqZndrydC2b4w==
+  version "1.12.1"
+  resolved "https://registry.yarnpkg.com/playwright/-/playwright-1.12.1.tgz#afea5260ffcc30b39ec17640c11dc6a117dc4ce7"
+  integrity sha512-n+L93YSy6ysWsDdnr9NgB9HnIfD33jDvSgB77hIhFKws5ShS3GhZHNZBfPDYdSLJg8IN99656ahDRutbAZ/pLQ==
   dependencies:
     commander "^6.1.0"
     debug "^4.1.1"
@@ -9762,7 +9762,7 @@ playwright@^1.8.0:
     proxy-from-env "^1.1.0"
     rimraf "^3.0.2"
     stack-utils "^2.0.3"
-    ws "^7.3.1"
+    ws "^7.4.6"
     yazl "^2.5.1"
 
 pngjs@^5.0.0:
@@ -12469,7 +12469,7 @@ write-pkg@^4.0.0:
     type-fest "^0.4.1"
     write-json-file "^3.2.0"
 
-ws@^7.3.1, ws@^7.4.5:
+ws@^7.3.1, ws@^7.4.5, ws@^7.4.6:
   version "7.4.6"
   resolved "https://registry.npmjs.org/ws/-/ws-7.4.6.tgz#5654ca8ecdeee47c33a9a4bf6d28e2be2980377c"
   integrity sha512-YmhHDO4MzaDLB+M9ym/mDA5z0naX8j7SIlT8f8z+I0VtzsRbekxEutHSme7NPS2qE8StCYQNUnfWdXta/Yu85A==
