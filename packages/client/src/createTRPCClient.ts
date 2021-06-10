@@ -39,7 +39,7 @@ export class TRPCClientError<TRouter extends AnyRouter> extends Error {
   constructor(
     message: string,
     {
-      result: result,
+      result,
       originalError,
     }: {
       result: Maybe<TRPCProcedureErrorEnvelope<TRouter>>;
@@ -61,7 +61,7 @@ export class TRPCClientError<TRouter extends AnyRouter> extends Error {
     if (!(result instanceof Error)) {
       return new TRPCClientError<TRouter>((result.error as any).message ?? '', {
         originalError: null,
-        result: result,
+        result,
       });
     }
 
