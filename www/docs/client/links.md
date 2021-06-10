@@ -73,21 +73,28 @@ export default withTRPC(
 ### Custom link
 
 ```tsx
+import { TRPCLink } from '@trpc/client';
+
+const customLink: TRPCLink<AppRouter> = (runtime) => {
+  // here we just got initialized in the app - this happens once per app
+  // useful for storing cache for instance
+  return ({ prev, next, op }) => {
+    // this is when passing the result to the next link
+    next(op, (result) => {
+      // this is when we've gotten result from the server
+      if (result instanceof Error) {
+        // maybe send to bugsnag?
+      }
+      prev(result);
+    });
+  };
+};
+
 export default withTRPC(
   () => {
     return {
       links: [
-        () =>
-          ({ prev, next, op }) => {
-            // this is when passing the result to the next link
-            next(op, (result) => {
-              // this is when we've gotten result from the server
-              if (result instanceof Error) {
-                // maybe send to bugsnag?
-              }
-              prev(result);
-            });
-          },
+        customLink,
         // [..]
         // ❗ Make sure to end with a `httpBatchLink` or `httpLink`
       ],

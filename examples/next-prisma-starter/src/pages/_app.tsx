@@ -1,3 +1,4 @@
+import { TRPCLink } from '@trpc/client';
 import { httpBatchLink } from '@trpc/client/links/httpBatchLink';
 import { loggerLink } from '@trpc/client/links/loggerLink';
 import { withTRPC } from '@trpc/next';
@@ -42,17 +43,7 @@ export default withTRPC<AppRouter>(
        * @link https://trpc.io/docs/links
        */
       links: [
-        () =>
-          ({ prev, next, op }) => {
-            // this is when passing the result to the next link
-            next(op, (result) => {
-              // this is when we've gotten result from the server
-              if (result instanceof Error) {
-                // maybe send to bugsnag?
-              }
-              prev(result);
-            });
-          },
+        // adds pretty logs to your console in development and logs errors in production
         loggerLink({
           enabled: (opts) =>
             process.env.NODE_ENV === 'development' ||
