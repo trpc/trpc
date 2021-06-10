@@ -56,6 +56,7 @@ export default withTRPC(
   () => {
     return {
       links: [
+        // [..]
         // 👇 add the batch link
         httpBatchLink({
           url: '/api/trpc',
@@ -67,4 +68,36 @@ export default withTRPC(
     // [..]
   },
 )(MyApp);
+```
+
+### Custom logger
+
+```tsx
+// 👇 import the loggerLink
+import { loggerLink } from '@trpc/client/links/loggerLink';
+
+
+export default withTRPC(
+  () => {
+    return {
+      links: [
+        loggerLink({
+          logger(opts) {
+            if (opts.event === 'error) {
+              // send to bugsnag, etc
+            }
+          }
+        }),
+        httpBatchLink({
+          url: '/api/trpc',
+        }),
+      ],
+    };
+  },
+  {
+    // [..]
+  },
+)(MyApp);
+
+
 ```

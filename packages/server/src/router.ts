@@ -60,13 +60,6 @@ export type inferRouterContext<TRouter extends AnyRouter> = Parameters<
 >[0];
 
 export type AnyRouter<TContext = any> = Router<TContext, any, any, any, any>;
-export type UnknownRouter<
-  TContext = unknown,
-  TQueries extends ProcedureRecord = {},
-  TMutations extends ProcedureRecord = {},
-  TSubscriptions extends ProcedureRecord = {},
-  TErrorShape extends ErrorShape = ErrorShape,
-> = Router<TContext, TQueries, TMutations, TSubscriptions, TErrorShape>;
 
 const PROCEDURE_DEFINITION_MAP: Record<
   ProcedureType,

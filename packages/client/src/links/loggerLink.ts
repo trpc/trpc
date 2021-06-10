@@ -1,18 +1,24 @@
-import { HTTPErrorResponseEnvelope, UnknownRouter } from '@trpc/server';
-import { TRPCClientError } from '../createTRPCClient';
-import { Operation, TRPCLink } from './core';
+import { AnyRouter } from '@trpc/server';
+import { Operation, OperationResult, TRPCLink } from './core';
 
 type ConsoleEsque = {
   log: (...args: any[]) => void;
   error: (...args: any[]) => void;
 };
 
-type EnableFnOptions = Operation & {
-  event: 'init' | 'success' | 'error';
-};
-type EnabledFn = (opts: EnableFnOptions) => boolean;
+type EnableFnOptions<TRouter extends AnyRouter> =
+  | (Operation & {
+      direction: 'up';
+    })
+  | {
+      direction: 'down';
+      result: OperationResult<TRouter>;
+    };
+type EnabledFn<TRouter extends AnyRouter> = (
+  opts: EnableFnOptions<TRouter>,
+) => boolean;
 
-type LogFnOptions<TRouter extends UnknownRouter> = Operation & {
+type LogFnOptions<TRouter extends AnyRouter> = Operation & {
   /**
    * Incremental id for requests
    */
@@ -22,60 +28,50 @@ type LogFnOptions<TRouter extends UnknownRouter> = Operation & {
         /**
          * Request was just initialized
          */
-        event: 'init';
+        direction: 'up';
       }
     | {
-        event: 'success';
-        data?: unknown;
-        elapsedMs: number;
-      }
-    | {
-        event: 'error';
-        error: TRPCClientError<TRouter> | HTTPErrorResponseEnvelope<TRouter>;
+        /**
+         * Request result
+         */
+        direction: 'down';
+        result: OperationResult<TRouter>;
         elapsedMs: number;
       }
   );
-type LogFn<TRouter extends UnknownRouter = UnknownRouter> = (
-  opts: LogFnOptions<TRouter>,
-) => void;
+type LogFn<TRouter extends AnyRouter> = (opts: LogFnOptions<TRouter>) => void;
 
 const palette = {
   query: ['72e3ff', '3fb0d8'],
   mutation: ['c5a3fc', '904dfc'],
   subscription: ['ff49e1', 'd83fbe'],
 };
-const emojiMap = {
-  init: '⏳',
-  success: '✅',
-  error: '❌',
-};
-type LoggerLinkOptions<TRouter extends UnknownRouter> = {
+type LoggerLinkOptions<TRouter extends AnyRouter> = {
   log?: LogFn<TRouter>;
-  enabled?: EnabledFn;
+  enabled?: EnabledFn<TRouter>;
   /**
    * Used in the built-in defaultLogger
    */
   console?: ConsoleEsque;
 };
-export function loggerLink<TRouter extends UnknownRouter = UnknownRouter>(
+export function loggerLink<TRouter extends AnyRouter = AnyRouter>(
   opts: LoggerLinkOptions<TRouter> = {},
-): TRPCLink {
+): TRPCLink<TRouter> {
   const { console: c = console, enabled = () => true } = opts;
 
   const defaultLogger: LogFn<TRouter> = (props) => {
-    const { event, requestId, input, type, path } = props;
+    const { direction, requestId, input, type, path } = props;
     const [light, dark] = palette[type];
 
     const css = `
-      background-color: #${event === 'init' ? light : dark}; 
-      color: ${event === 'init' ? 'black' : 'white'};
+      background-color: #${direction === 'up' ? light : dark}; 
+      color: ${direction === 'up' ? 'black' : 'white'};
       padding: 2px;
     `;
 
     const parts = [
       '%c',
-      emojiMap[event],
-      event === 'init' ? '>>' : '<<',
+      direction === 'up' ? '>>' : '<<',
       type,
       `#${requestId}`,
       `%c${path}%c`,
@@ -86,23 +82,21 @@ export function loggerLink<TRouter extends UnknownRouter = UnknownRouter>(
       `${css}; font-weight: bold;`,
       `${css}; font-weight: normal;`,
     ];
-    if (props.event === 'error') {
-      args.push({
-        input,
-        error: props.error,
-        elapsedMs: props.elapsedMs,
-      });
-    } else if (props.event === 'success') {
-      args.push({
-        input,
-        output: props.data,
-        elapsedMs: props.elapsedMs,
-      });
-    } else if (props.event === 'init') {
+    if (props.direction === 'up') {
       args.push({ input });
+    } else {
+      args.push({
+        input,
+        result: props.result,
+        elapsedMs: props.elapsedMs,
+      });
     }
     const fn: 'error' | 'log' =
-      props.event === 'success' || props.event === 'init' ? 'log' : 'error';
+      props.direction === 'down' &&
+      props.result &&
+      (props.result instanceof Error || !props.result.ok)
+        ? 'log'
+        : 'error';
     c[fn].apply(null, [parts.join(' ')].concat(args));
   };
   const { log: logger = defaultLogger } = opts;
@@ -111,33 +105,24 @@ export function loggerLink<TRouter extends UnknownRouter = UnknownRouter>(
     return ({ op, next, prev }) => {
       // ->
       requestId++;
-      enabled({ ...op, event: 'init' }) &&
+      enabled({ ...op, direction: 'up' }) &&
         logger({
           ...op,
-          event: 'init',
+          direction: 'up',
           requestId,
         });
       const requestStartTime = Date.now();
       next(op, (result) => {
         const elapsedMs = Date.now() - requestStartTime;
-        if (result instanceof Error || !result.ok) {
-          enabled({ ...op, event: 'error' }) &&
-            logger({
-              ...op,
-              event: 'error',
-              requestId,
-              elapsedMs,
-              error: result,
-            });
-        } else {
-          enabled({ ...op, event: 'success' }) &&
-            logger({
-              ...op,
-              event: 'success',
-              requestId,
-              elapsedMs,
-            });
-        }
+
+        enabled({ ...op, direction: 'down', result }) &&
+          logger({
+            ...op,
+            direction: 'down',
+            requestId,
+            elapsedMs,
+            result,
+          });
         // <-
         prev(result);
       });

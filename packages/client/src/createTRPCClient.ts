@@ -4,13 +4,15 @@ import type {
   ClientDataTransformerOptions,
   DataTransformer,
   HTTPErrorResponseEnvelope,
-  HTTPSuccessResponseEnvelope,
   inferHandlerInput,
   inferProcedureInput,
   inferProcedureOutput,
   inferSubscriptionOutput,
   Maybe,
+  TRPCProcedureErrorEnvelope,
+  TRPCProcedureSuccessEnvelope,
 } from '@trpc/server';
+import { executeChain } from './internals/executeChain';
 import { getAbortController, getFetch } from './internals/fetchHelpers';
 import {
   CancelFn,
@@ -18,7 +20,6 @@ import {
   OperationLink,
   TRPCLink,
 } from './links/core';
-import { executeChain } from './internals/executeChain';
 import { httpLink } from './links/httpLink';
 
 type CancellablePromise<T = unknown> = Promise<T> & {
@@ -30,13 +31,13 @@ const retryDelay = (attemptIndex: number) =>
   attemptIndex === 0 ? 0 : Math.min(1000 * 2 ** attemptIndex, 30000);
 
 export class TRPCClientError<TRouter extends AnyRouter> extends Error {
-  public readonly json?: Maybe<HTTPErrorResponseEnvelope<TRouter>>;
+  public readonly json?: Maybe<TRPCProcedureErrorEnvelope<TRouter>>;
   /**
    * @deprecated will always be `undefined` and will be removed in next major
    */
   public readonly res?: Maybe<Response>;
   public readonly originalError?: Maybe<Error>;
-  public readonly shape?: HTTPErrorResponseEnvelope<TRouter>['error'];
+  public readonly shape?: TRPCProcedureErrorEnvelope<TRouter>['error'];
 
   constructor(
     message: string,
@@ -44,8 +45,8 @@ export class TRPCClientError<TRouter extends AnyRouter> extends Error {
       json,
       originalError,
     }: {
-      json?: Maybe<HTTPErrorResponseEnvelope<TRouter>>;
-      originalError?: Maybe<Error>;
+      json: Maybe<TRPCProcedureErrorEnvelope<TRouter>>;
+      originalError: Maybe<Error>;
     },
   ) {
     super(message);
@@ -55,6 +56,26 @@ export class TRPCClientError<TRouter extends AnyRouter> extends Error {
     this.shape = this.json?.error;
 
     Object.setPrototypeOf(this, TRPCClientError.prototype);
+  }
+
+  public static from<TRouter extends AnyRouter>(
+    result: Error | TRPCProcedureErrorEnvelope<TRouter>,
+  ): TRPCClientError<TRouter> {
+    if (!(result instanceof Error)) {
+      return new TRPCClientError<TRouter>((result.error as any).message ?? '', {
+        originalError: null,
+        json: result,
+      });
+    }
+
+    if (result.name === 'TRPCClientError') {
+      return result;
+    }
+
+    return new TRPCClientError<TRouter>(result.message, {
+      originalError: result,
+      json: null,
+    });
   }
 }
 
@@ -67,7 +88,7 @@ export type CreateTRPCClientOptions<TRouter extends AnyRouter> = {
   /**
    * @deprecated likely to be removed
    */
-  onSuccess?: (data: HTTPSuccessResponseEnvelope<unknown>) => void;
+  onSuccess?: (data: TRPCProcedureSuccessEnvelope<unknown>) => void;
   /**
    * @deprecated likely to be removed
    */
@@ -89,13 +110,13 @@ export type CreateTRPCClientOptions<TRouter extends AnyRouter> = {
       url: string;
     }
   | {
-      links: TRPCLink[];
+      links: TRPCLink<TRouter>[];
     }
 );
 type TRPCType = 'subscription' | 'query' | 'mutation';
 
 export class TRPCClient<TRouter extends AnyRouter> {
-  private readonly links: OperationLink[];
+  private readonly links: OperationLink<TRouter>[];
   /**
    * @deprecated use `runtime` instead
    */
@@ -170,13 +191,8 @@ export class TRPCClient<TRouter extends AnyRouter> {
     const promise: Partial<CancellablePromise> = new Promise(
       (resolve, reject) => {
         $result.subscribe((result) => {
-          if (result instanceof Error || !result.ok) {
-            const error =
-              result instanceof Error
-                ? result
-                : new TRPCClientError(result.error.message, {
-                    json: result,
-                  });
+          if (result instanceof Error) {
+            const error = result;
 
             reject(error);
             this.opts.onError?.(error);
@@ -249,7 +265,10 @@ export class TRPCClient<TRouter extends AnyRouter> {
         } catch (_err) {
           const err: TRPCClientError<TRouter> = _err;
 
-          if (err.json?.statusCode === 408) {
+          if (
+            (err.json as Maybe<HTTPErrorResponseEnvelope<TRouter>>)
+              ?.statusCode === 408
+          ) {
             // server told us to reconnect
             exec();
           } else {

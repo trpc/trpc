@@ -13,6 +13,7 @@ import { loggerLink } from '../../client/src/links/loggerLink';
 import { splitLink } from '../../client/src/links/splitLink';
 import * as trpc from '../src';
 import { routerToServerAndClient } from './_testHelpers';
+import { AnyRouter } from '../src';
 
 const mockRuntime: LinkRuntimeOptions = {
   transformer: {
@@ -331,10 +332,10 @@ test('loggerLink', () => {
   const logLink = loggerLink({
     console: logger,
   })(mockRuntime);
-  const okLink: OperationLink = ({ prev }) =>
+  const okLink: OperationLink<AnyRouter> = ({ prev }) =>
     prev({ ok: true, statusCode: 200, data: null });
-  const errorLink: OperationLink = ({ prev }) =>
-    prev({ ok: false, statusCode: 400, error: null });
+  const errorLink: OperationLink<AnyRouter> = ({ prev }) =>
+    prev({ ok: false, statusCode: 400, error: null as any });
   {
     executeChain({
       links: [logLink, okLink],
@@ -438,7 +439,7 @@ test('loggerLink', () => {
     expect(typeof elapsedMs).toBe('number');
     expect(other).toMatchInlineSnapshot(`
       Object {
-        "error": Object {
+        "data": Object {
           "error": null,
           "ok": false,
           "statusCode": 400,

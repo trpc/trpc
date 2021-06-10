@@ -260,8 +260,8 @@ export async function requestHandler<
   const isBatchCall = reqQueryParams.batch;
   function endResponse(
     json:
-      | HTTPResponseEnvelope<unknown, any>
-      | HTTPResponseEnvelope<unknown, any>[],
+      | HTTPResponseEnvelope<AnyRouter, unknown>
+      | HTTPResponseEnvelope<AnyRouter, unknown>[],
   ) {
     if (Array.isArray(json)) {
       const allCodes = Array.from(new Set(json.map((res) => res.statusCode)));

@@ -1,7 +1,10 @@
 import { HttpLinkOptions, TRPCLink } from './core';
 import { httpRequest } from '../internals/httpRequest';
+import { AnyRouter } from '@trpc/server/router';
 
-export function httpLink(opts: HttpLinkOptions): TRPCLink {
+export function httpLink<TRouter extends AnyRouter>(
+  opts: HttpLinkOptions,
+): TRPCLink<TRouter> {
   const { url } = opts;
 
   // initialized config
