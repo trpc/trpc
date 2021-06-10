@@ -83,9 +83,9 @@ export default withTRPC(
       links: [
         () =>
           ({ prev, next, op }) => {
-            // custom link, doesn't do anything apart from passing results through
-            // you can safely delete this
+            // this is when passing the result to the next link
             next(op, (result) => {
+              // this is when we've gotten result from the server
               if (result instanceof Error) {
                 // maybe send to bugsnag?
               }
