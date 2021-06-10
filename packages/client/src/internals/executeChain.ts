@@ -4,11 +4,16 @@ import {
   Operation,
   OperationResult,
   PrevCallback,
+  OperationContext,
 } from '../links/core';
 
-export function executeChain(opts: { links: OperationLink[]; op: Operation }) {
+export function executeChain(opts: {
+  links: OperationLink[];
+  op: Omit<Operation, 'context'> & { context?: OperationContext };
+}) {
   const $result = observable<OperationResult | null>(null);
   const $destroyed = observable(false);
+  const { context = {} } = opts.op;
 
   function walk({
     index,
@@ -41,7 +46,7 @@ export function executeChain(opts: { links: OperationLink[]; op: Operation }) {
       },
     });
   }
-  walk({ index: 0, op: opts.op, stack: [] });
+  walk({ index: 0, op: { ...opts.op, context }, stack: [] });
   return {
     get: $result.get,
     subscribe: (callback: (value: OperationResult) => void) => {

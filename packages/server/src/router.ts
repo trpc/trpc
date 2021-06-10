@@ -43,9 +43,9 @@ export type inferSubscriptionOutput<
 export type inferHandlerInput<TProcedure extends Procedure> =
   TProcedure extends ProcedureWithInput<any, infer TInput, any>
     ? undefined extends TInput
-      ? [TInput?]
+      ? [(TInput | null | undefined)?]
       : [TInput]
-    : [undefined?];
+    : [(undefined | null)?];
 
 type inferHandlerFn<TProcedures extends ProcedureRecord> = <
   TProcedure extends TProcedures[TPath],
