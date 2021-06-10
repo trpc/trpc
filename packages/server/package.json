@@ -54,6 +54,8 @@
   },
   "gitHead": "82bf01f8759b04f2ade69c9047e28f74f889d547",
   "dependencies": {
-    "tslib": "^2.1.0"
+    "@types/ws": "^7.4.4",
+    "tslib": "^2.1.0",
+    "ws": "^7.4.6"
   }
 }
