@@ -47,27 +47,25 @@ const palette = {
   subscription: ['ff49e1', 'd83fbe'],
 };
 type LoggerLinkOptions<TRouter extends AnyRouter> = {
-  log?: LogFn<TRouter>;
+  logger?: LogFn<TRouter>;
   enabled?: EnabledFn<TRouter>;
   /**
    * Used in the built-in defaultLogger
    */
   console?: ConsoleEsque;
 };
-export function loggerLink<TRouter extends AnyRouter = AnyRouter>(
-  opts: LoggerLinkOptions<TRouter> = {},
-): TRPCLink<TRouter> {
-  const { console: c = console, enabled = () => true } = opts;
 
-  const defaultLogger: LogFn<TRouter> = (props) => {
+const defaultLogger =
+  <TRouter extends AnyRouter>(c: ConsoleEsque): LogFn<TRouter> =>
+  (props) => {
     const { direction, requestId, input, type, path } = props;
     const [light, dark] = palette[type];
 
     const css = `
-      background-color: #${direction === 'up' ? light : dark}; 
-      color: ${direction === 'up' ? 'black' : 'white'};
-      padding: 2px;
-    `;
+    background-color: #${direction === 'up' ? light : dark}; 
+    color: ${direction === 'up' ? 'black' : 'white'};
+    padding: 2px;
+  `;
 
     const parts = [
       '%c',
@@ -94,13 +92,18 @@ export function loggerLink<TRouter extends AnyRouter = AnyRouter>(
     const fn: 'error' | 'log' =
       props.direction === 'down' &&
       props.result &&
-      (props.result instanceof Error || !props.result.ok)
+      props.result instanceof Error
         ? 'error'
         : 'log';
 
     c[fn].apply(null, [parts.join(' ')].concat(args));
   };
-  const { log: logger = defaultLogger } = opts;
+export function loggerLink<TRouter extends AnyRouter = AnyRouter>(
+  opts: LoggerLinkOptions<TRouter> = {},
+): TRPCLink<TRouter> {
+  const { enabled = () => true } = opts;
+
+  const { logger = defaultLogger(opts.console ?? console) } = opts;
   return () => {
     let requestId = 0;
     return ({ op, next, prev }) => {
