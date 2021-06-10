@@ -42,6 +42,19 @@ export default withTRPC<AppRouter>(
        * @link https://trpc.io/docs/links
        */
       links: [
+        // () =>
+        //   ({ prev, next, op }) => {
+        //     /**
+        //      * custom link, doesn't do anything apart from passing results through
+        //      * you can safely delete this
+        //      * @link https://www-git-feature-loggerlink.tmp.trpc.io/docs/links#custom-link
+        //      */
+        //     // custom link, doesn't do anything apart from passing results through
+        //     // you can safely delete this
+        //     next(op, (res) => {
+        //       prev(res);
+        //     });
+        //   },
         loggerLink({
           enabled: (opts) =>
             process.env.NODE_ENV === 'development' ||
