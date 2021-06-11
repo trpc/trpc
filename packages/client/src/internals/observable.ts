@@ -71,9 +71,9 @@ export function observable<TValue, TError = unknown>(): ObservableLike<
   };
 }
 
-export function observableSubject<TValue>(
+export function observableSubject<TValue, TError = unknown>(
   initialValue: TValue,
-): ObservableSubject<TValue> {
+): ObservableSubject<TValue, TError> {
   const $obs = observable<TValue>();
   let value = initialValue;
   $obs.set(initialValue);

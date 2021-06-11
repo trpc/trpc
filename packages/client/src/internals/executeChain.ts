@@ -6,6 +6,7 @@ import {
   PrevCallback,
 } from '../links/core';
 import { AnyRouter } from 'packages/server/src/router';
+import { TRPCClientError } from '../createTRPCClient';
 
 export function executeChain<
   TRouter extends AnyRouter,
@@ -15,8 +16,9 @@ export function executeChain<
   links: OperationLink<TRouter, TInput, TOutput>[];
   op: Operation<TInput>;
 }) {
-  const $result =
-    observableSubject<OperationResult<TRouter, TOutput> | null>(null);
+  type TValue = OperationResult<TRouter, TOutput> | null;
+  type TError = TRPCClientError<TRouter>;
+  const $result = observableSubject<TValue, TError>(null);
   const $destroyed = observableSubject(false);
 
   function walk({

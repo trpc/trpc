@@ -116,8 +116,10 @@ export type RequestOptions = {
 export class TRPCClient<TRouter extends AnyRouter> {
   private readonly links: OperationLink<TRouter>[];
   public readonly runtime: LinkRuntimeOptions;
+  private opts: CreateTRPCClientOptions<TRouter>;
 
   constructor(opts: CreateTRPCClientOptions<TRouter>) {
+    this.opts = opts;
     const transformer: DataTransformer = opts.transformer
       ? 'input' in opts.transformer
         ? {
@@ -176,6 +178,26 @@ export class TRPCClient<TRouter extends AnyRouter> {
         path,
         input,
         context,
+      },
+    });
+
+    /**
+     * @deprecated
+     */
+    $result.subscribe({
+      onNext: (result) => {
+        if (!result) {
+          return;
+        }
+        if (result instanceof Error) {
+          this.opts.onError?.(result);
+          return;
+        } else {
+          this.opts.onSuccess?.(result);
+        }
+      },
+      onError: (err) => {
+        this.opts.onError?.(err);
       },
     });
 

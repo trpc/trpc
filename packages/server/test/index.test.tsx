@@ -358,6 +358,9 @@ describe('integration tests', () => {
     });
   });
 
+  /**
+   * @deprecated
+   */
   test('client onError(), onSuccess()', async () => {
     const onError = jest.fn();
     const onSuccess = jest.fn();
