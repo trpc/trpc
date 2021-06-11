@@ -13,7 +13,6 @@ import type {
 } from '@trpc/server';
 import { executeChain } from './internals/executeChain';
 import { getAbortController, getFetch } from './internals/fetchHelpers';
-import { ObservableLike } from './internals/observable';
 import {
   CancelFn,
   LinkRuntimeOptions,
