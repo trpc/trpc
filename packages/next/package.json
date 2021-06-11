@@ -29,9 +29,9 @@
     }
   },
   "peerDependencies": {
-    "@trpc/client": "^6.0.0-alpha.29",
-    "@trpc/react": "^6.0.0-alpha.29",
-    "@trpc/server": "^6.0.0-alpha.29",
+    "@trpc/client": "^7.0.1-alpha.0",
+    "@trpc/react": "^7.0.1-alpha.0",
+    "@trpc/server": "^7.0.1-alpha.0",
     "next": "*",
     "react": ">=16.8.0",
     "react-dom": ">=16.8.0",
