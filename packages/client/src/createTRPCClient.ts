@@ -158,6 +158,25 @@ export class TRPCClient<TRouter extends AnyRouter> {
         })(this.runtime),
       ];
     }
+    /**
+     * @deprecated
+     * prepending a link to call `onSuccess` / `onError`
+     */
+    if (this.opts.onError || this.opts.onError) {
+      // deprecation warning?
+      this.links = [
+        ({ op, next, prev }) => {
+          next(op, (result) => {
+            result instanceof Error
+              ? this.opts?.onError?.(result)
+              : this.opts?.onSuccess?.(result);
+
+            prev(result);
+          });
+        },
+        ...this.links,
+      ];
+    }
   }
 
   private $request<TInput = unknown, TOutput = unknown>({
@@ -178,26 +197,6 @@ export class TRPCClient<TRouter extends AnyRouter> {
         path,
         input,
         context,
-      },
-    });
-
-    /**
-     * @deprecated
-     */
-    $result.subscribe({
-      onNext: (result) => {
-        if (!result) {
-          return;
-        }
-        if (result instanceof Error) {
-          this.opts.onError?.(result);
-          return;
-        } else {
-          this.opts.onSuccess?.(result);
-        }
-      },
-      onError: (err) => {
-        this.opts.onError?.(err);
       },
     });
 
