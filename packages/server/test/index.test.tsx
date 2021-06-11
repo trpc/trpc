@@ -380,7 +380,12 @@ describe('integration tests', () => {
         },
       },
     );
-    await client.mutation('hello', 1);
+    const res = await client.mutation('hello', 1);
+    expect(res).toMatchInlineSnapshot(`
+      Object {
+        "input": 1,
+      }
+    `);
     await expect(client.mutation('hello', 'not-a-number' as any)).rejects
       .toMatchInlineSnapshot(`
             [Error: [
