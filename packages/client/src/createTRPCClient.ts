@@ -179,6 +179,18 @@ export class TRPCClient<TRouter extends AnyRouter> {
     }
   }
 
+  /**
+   * @deprecated will be turned private
+   */
+  public request<TInput = unknown, TOutput = unknown>(opts: {
+    type: TRPCType;
+    input: TInput;
+    path: string;
+    context?: OperationContext;
+  }) {
+    return this.requestAsPromise<TInput, TOutput>(opts);
+  }
+
   private $request<TInput = unknown, TOutput = unknown>({
     type,
     input,
@@ -229,17 +241,6 @@ export class TRPCClient<TRouter extends AnyRouter> {
     promise.cancel = promiseAndCancel.cancel;
 
     return promise;
-  }
-  /**
-   * @deprecated will be turned private
-   */
-  public request<TInput = unknown, TOutput = unknown>(opts: {
-    type: TRPCType;
-    input: TInput;
-    path: string;
-    context?: OperationContext;
-  }) {
-    return this.requestAsPromise<TInput, TOutput>(opts);
   }
   public query<
     TQueries extends TRouter['_def']['queries'],
