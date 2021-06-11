@@ -5,7 +5,7 @@ import { expectTypeOf } from 'expect-type';
 import { z } from 'zod';
 import * as trpc from '../src';
 import { routerToServerAndClient } from './_testHelpers';
-import { webSocketLink } from '../../client/src/links/webSocketLink';
+import { wsLink } from '../../client/src/links/wsLink';
 import WebSocket from 'ws';
 import { waitFor } from '@testing-library/react';
 
@@ -21,7 +21,7 @@ test('query', async () => {
       client({ wssUrl }) {
         ws = new WebSocket(wssUrl);
         return {
-          links: [webSocketLink({ ws })],
+          links: [wsLink({ ws })],
         };
       },
     },
@@ -59,7 +59,7 @@ test('subscriptionOnce()', async () => {
       client({ wssUrl }) {
         ws = new WebSocket(wssUrl);
         return {
-          links: [webSocketLink({ ws })],
+          links: [wsLink({ ws })],
         };
       },
     },
@@ -114,7 +114,7 @@ test('subscription()', async () => {
       client({ wssUrl }) {
         ws = new WebSocket(wssUrl);
         return {
-          links: [webSocketLink({ ws })],
+          links: [wsLink({ ws })],
         };
       },
     },

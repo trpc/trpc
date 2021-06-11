@@ -24,7 +24,6 @@ jobs:
 
       - name: Test
         run: yarn test --ci --coverage --maxWorkers=2
-        working-directory: ./packages/server
 
       - uses: codecov/codecov-action@v1
         with:

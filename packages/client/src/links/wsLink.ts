@@ -11,7 +11,7 @@ import { TRPCLink } from './core';
 export interface WebSocketLinkOptions {
   ws: WebSocket;
 }
-export function webSocketLink<TRouter extends AnyRouter>(
+export function wsLink<TRouter extends AnyRouter>(
   opts: WebSocketLinkOptions,
 ): TRPCLink<TRouter> {
   // initialized config
