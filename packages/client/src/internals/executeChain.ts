@@ -53,5 +53,10 @@ export function executeChain<
     });
   }
   walk({ index: 0, op: opts.op, stack: [] });
+  $result.subscribe({
+    onDone() {
+      $destroyed.set(true);
+    },
+  });
   return $result;
 }

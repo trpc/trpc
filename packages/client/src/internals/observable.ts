@@ -110,6 +110,9 @@ export function observableSubjectAsPromise<
         reject(err);
         $obs.done();
       },
+      onDone() {
+        reject(new Error('Done'));
+      },
     });
   });
   const cancel = () => $obs.done();
