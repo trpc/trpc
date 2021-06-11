@@ -1,41 +1,71 @@
-type SubscriptionCallback<TValue> = (item: TValue) => void;
-
-export interface ObservableLike<TValue> {
-  subscribe(subscription: SubscriptionCallback<TValue>): UnsubscribeFn;
-  set(value: TValue): void;
-  destroy(): void;
+export interface ObservableSubscription<TValue, TError> {
+  onNext?: (opts: TValue) => void;
+  onError?: (opts: TError) => void;
+  onDone?: () => void;
 }
-export interface ObservableSubject<TValue> extends ObservableLike<TValue> {
+
+export interface ObservableLike<TValue, TError = unknown> {
+  subscribe(
+    subscription: ObservableSubscription<TValue, TError>,
+  ): UnsubscribeFn;
+  set(value: TValue): void;
+  done(): void;
+  error(error: TError): void;
+}
+export interface ObservableSubject<TValue, TError = unknown>
+  extends ObservableLike<TValue, TError> {
   get(): TValue;
 }
 
 type UnsubscribeFn = () => void;
 
-export function observable<TValue>(): ObservableLike<TValue> {
-  const subscribers: SubscriptionCallback<TValue>[] = [];
+export function observable<TValue, TError = unknown>(): ObservableLike<
+  TValue,
+  TError
+> {
+  type Listener = {
+    subscription: ObservableSubscription<TValue, TError>;
+    unsubscribe: () => void;
+  };
+  const listeners: Listener[] = [];
+
   let value: TValue | null = null;
   return {
     subscribe(subscription) {
-      subscribers.push(subscription);
+      const listener: Listener = {
+        subscription,
+        unsubscribe() {
+          const index = listeners.indexOf(listener);
+          if (index !== -1) {
+            listeners.splice(index, 1);
+            listener.subscription.onDone?.();
+          }
+        },
+      };
+      listeners.push(listener);
       return () => {
-        const index = subscribers.indexOf(subscription);
-        if (index !== -1) {
-          subscribers.splice(index, 1);
-        }
+        listener.unsubscribe();
       };
     },
     set(newValue) {
       const oldValue = value;
       value = newValue;
       if (oldValue !== newValue) {
-        for (const subscription of subscribers) {
-          subscription(newValue);
+        for (const listener of listeners) {
+          listener.subscription.onNext?.(newValue);
         }
       }
     },
-    destroy() {
-      while (subscribers.length) {
-        subscribers.pop();
+    done() {
+      while (listeners.length) {
+        const listener = listeners.pop();
+        listener?.subscription.onDone?.();
+        listener?.unsubscribe();
+      }
+    },
+    error(error) {
+      for (const listener of listeners) {
+        listener.subscription.onError?.(error);
       }
     },
   };
@@ -58,4 +88,31 @@ export function observableSubject<TValue>(
       return value;
     },
   };
+}
+
+export function observableSubjectAsPromise<
+  TObservable extends ObservableSubject<TValue, unknown>,
+  TValue,
+>($obs: TObservable) {
+  const promise = new Promise<TValue>((resolve, reject) => {
+    if ($obs.get()) {
+      resolve($obs.get());
+      $obs.done();
+      return;
+    }
+    $obs.subscribe({
+      onNext: (result) => {
+        resolve(result);
+
+        $obs.done();
+      },
+      onError(err) {
+        reject(err);
+        $obs.done();
+      },
+    });
+  });
+  const cancel = () => $obs.done();
+
+  return { promise, cancel };
 }

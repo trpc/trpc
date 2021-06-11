@@ -4,8 +4,8 @@ test('basic', () => {
   const value = observableSubject(5);
   expect(value.get()).toBe(5);
 
-  const callback = jest.fn();
-  value.subscribe(callback);
+  const onNext = jest.fn();
+  value.subscribe({ onNext });
   value.set(10);
-  expect(callback).toHaveBeenCalledWith(10);
+  expect(onNext).toHaveBeenCalledWith(10);
 });

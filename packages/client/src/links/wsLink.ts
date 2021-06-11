@@ -6,10 +6,52 @@ import {
 } from '@trpc/server';
 import { TRPCClientError } from '../createTRPCClient';
 import { observableSubject } from '../internals/observable';
-import { TRPCLink } from './core';
+import { LinkRuntimeOptions, TRPCLink } from './core';
 
 export interface WebSocketLinkOptions {
   ws: WebSocket;
+}
+
+export function createWebSocketClient<TRouter extends AnyRouter>(opts: {
+  url: string;
+  runtime: LinkRuntimeOptions;
+}) {
+  const { url, runtime: rt } = opts;
+  const $open = observableSubject(false);
+
+  function createWS() {
+    const $newClient = observableSubject(new WebSocket(url));
+    // TODO protocols?
+    const ws = $newClient.get();
+
+    const listeners: Record<
+      number,
+      {
+        onNext: (opts: TRPCProcedureEnvelope<TRouter, unknown>) => void;
+        onError: (opts: TRPCClientError<TRouter>) => void;
+        onCompleted: (opts: TRPCClientError<TRouter>) => void;
+      }
+    > = {};
+    ws.addEventListener('open', () => {
+      $open.set(true);
+    });
+    ws.addEventListener('message', (msg) => {
+      try {
+        const { id, result } = rt.transformer.deserialize(
+          JSON.parse(msg.data),
+        ) as JSONRPC2ResponseEnvelope<TRPCProcedureEnvelope<TRouter, unknown>>;
+        const listener = listeners.get(id);
+        if (!listener) {
+          // FIXME do something
+          return;
+        }
+        listener(result);
+      } catch (err) {
+        // FIXME do something?
+      }
+    });
+  }
+  const $ws = observableSubject(createWS());
 }
 export function wsLink<TRouter extends AnyRouter>(
   opts: WebSocketLinkOptions,

@@ -41,30 +41,17 @@ export function executeChain<
         walk({ index: index + 1, op, stack: prevStack });
       },
       onDestroy: (callback) => {
-        const unsub = $destroyed.subscribe((aborted) => {
-          if (aborted) {
-            callback();
-            unsub();
-          }
+        const unsub = $destroyed.subscribe({
+          onNext: (aborted) => {
+            if (aborted) {
+              callback();
+              unsub();
+            }
+          },
         });
       },
     });
   }
   walk({ index: 0, op: opts.op, stack: [] });
-  return {
-    get: $result.get,
-    subscribe: (
-      callback: (value: OperationResult<TRouter, TOutput>) => void,
-    ) => {
-      return $result.subscribe((v) => {
-        if (v) {
-          callback(v);
-        }
-      });
-    },
-    destroy: () => {
-      $destroyed.set(true);
-      $result.destroy();
-    },
-  };
+  return $result;
 }

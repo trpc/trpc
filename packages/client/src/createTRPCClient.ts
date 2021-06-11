@@ -13,11 +13,13 @@ import type {
 } from '@trpc/server';
 import { executeChain } from './internals/executeChain';
 import { getAbortController, getFetch } from './internals/fetchHelpers';
+import { observableSubjectAsPromise } from './internals/observable';
 import {
   CancelFn,
   LinkRuntimeOptions,
   OperationContext,
   OperationLink,
+  OperationResult,
   TRPCLink,
 } from './links/core';
 import { httpLink } from './links/httpLink';
@@ -113,11 +115,9 @@ export type RequestOptions = {
 };
 export class TRPCClient<TRouter extends AnyRouter> {
   private readonly links: OperationLink<TRouter>[];
-  private opts: CreateTRPCClientOptions<TRouter>;
   public readonly runtime: LinkRuntimeOptions;
 
   constructor(opts: CreateTRPCClientOptions<TRouter>) {
-    this.opts = opts;
     const transformer: DataTransformer = opts.transformer
       ? 'input' in opts.transformer
         ? {
@@ -148,7 +148,6 @@ export class TRPCClient<TRouter extends AnyRouter> {
     };
 
     if ('links' in opts) {
-      this.opts = opts;
       this.links = opts.links.map((link) => link(this.runtime));
     } else {
       this.links = [
@@ -182,38 +181,44 @@ export class TRPCClient<TRouter extends AnyRouter> {
 
     return $result;
   }
+  private requestAsPromise<TInput = unknown, TOutput = unknown>(opts: {
+    type: TRPCType;
+    input: TInput;
+    path: string;
+    context?: OperationContext;
+  }): CancellablePromise<TOutput> {
+    const $result = this.$request<TInput, TOutput>(opts);
+
+    type TResult = typeof $result;
+    type TValue = OperationResult<TRouter, TOutput> | null;
+    const promiseAndCancel =
+      observableSubjectAsPromise<TResult, TValue>($result);
+    const promise = new Promise<TOutput>((resolve, reject) => {
+      promiseAndCancel.promise
+        .then((result) => {
+          if (!result) {
+            return;
+          }
+          result instanceof Error ? reject(result) : resolve(result.data);
+        })
+        .catch((err) => {
+          reject(err);
+        });
+    }) as CancellablePromise<TOutput>;
+    promise.cancel = promiseAndCancel.cancel;
+
+    return promise;
+  }
   /**
    * @deprecated will be turned private
    */
-  public request(opts: {
+  public request<TInput = unknown, TOutput = unknown>(opts: {
     type: TRPCType;
-    input: unknown;
+    input: TInput;
     path: string;
     context?: OperationContext;
   }) {
-    const $result = this.$request(opts);
-
-    const promise: Partial<CancellablePromise> = new Promise(
-      (resolve, reject) => {
-        $result.subscribe((result) => {
-          if (result instanceof Error) {
-            const error = result;
-
-            reject(error);
-            this.opts.onError?.(error);
-          } else {
-            this.opts.onSuccess?.(result);
-            resolve(result.data);
-          }
-          $result.destroy();
-        });
-      },
-    );
-
-    promise.cancel = () => {
-      $result.destroy();
-    };
-    return promise as any;
+    return this.requestAsPromise<TInput, TOutput>(opts);
   }
   public query<
     TQueries extends TRouter['_def']['queries'],
@@ -221,12 +226,15 @@ export class TRPCClient<TRouter extends AnyRouter> {
   >(
     path: TPath,
     ...args: [...inferHandlerInput<TQueries[TPath]>, RequestOptions?]
-  ): CancellablePromise<inferProcedureOutput<TQueries[TPath]>> {
+  ) {
     const context = (args[1] as RequestOptions | undefined)?.context;
-    return this.request({
+    return this.requestAsPromise<
+      inferHandlerInput<TQueries[TPath]>,
+      inferProcedureOutput<TQueries[TPath]>
+    >({
       type: 'query',
       path,
-      input: args[0],
+      input: args[0] as any,
       context,
     });
   }
@@ -237,12 +245,15 @@ export class TRPCClient<TRouter extends AnyRouter> {
   >(
     path: TPath,
     ...args: [...inferHandlerInput<TMutations[TPath]>, RequestOptions?]
-  ): CancellablePromise<inferProcedureOutput<TMutations[TPath]>> {
+  ) {
     const context = (args[1] as RequestOptions | undefined)?.context;
-    return this.request({
+    return this.requestAsPromise<
+      inferHandlerInput<TMutations[TPath]>,
+      inferProcedureOutput<TMutations[TPath]>
+    >({
       type: 'mutation',
       path,
-      input: args[0],
+      input: args[0] as any,
       context,
     });
   }
@@ -267,7 +278,7 @@ export class TRPCClient<TRouter extends AnyRouter> {
           return;
         }
         try {
-          currentRequest = this.request({
+          currentRequest = this.requestAsPromise({
             type: 'subscription',
             input,
             path,
