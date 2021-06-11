@@ -1,4 +1,4 @@
-import { AnyRouter, TRPCProcedureSuccessEnvelope } from '@trpc/server';
+import { AnyRouter } from '@trpc/server';
 import { TRPCClientError } from '../createTRPCClient';
 import {
   Operation,
