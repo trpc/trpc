@@ -1,3 +1,4 @@
+/* istanbul ignore file */
 import http from 'http';
 import WebSocket from 'ws';
 import {
