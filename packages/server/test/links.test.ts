@@ -137,7 +137,7 @@ test('cancel request', async () => {
     },
   });
 
-  $result.destroy();
+  $result.done();
 
   expect(onDestroyCall).toHaveBeenCalled();
 });

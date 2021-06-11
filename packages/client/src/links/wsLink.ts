@@ -19,9 +19,7 @@ export function createWebSocketClient(opts: { url: string }) {
   const $closed = observableSubject(false);
 
   function createWS() {
-    const $newClient = observableSubject(new WebSocket(url));
-    // TODO protocols?
-    const ws = $newClient.get();
+    const ws = new WebSocket(url);
 
     ws.addEventListener('open', () => {
       $isOpen.set(true);
