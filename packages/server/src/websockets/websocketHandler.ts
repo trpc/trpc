@@ -64,9 +64,8 @@ function parseMessage({
   transformer: CombinedDataTransformer;
 }) {
   assertIsString(message);
-  console.log('received', message);
   const obj = transformer.input.deserialize(JSON.parse(message));
-  console.log('received', obj);
+
   assertIsObject(obj);
   const { method, params, id } = obj;
   assertIsProcedureType(method);
@@ -133,12 +132,13 @@ export function webSocketHandler<TRouter extends AnyRouter>(
             result: json,
             id,
           };
-          ws.emit(JSON.stringify(transformer.output.serialize(res)));
+          ws.send(JSON.stringify(transformer.output.serialize(res)));
         }
         const info = parseMessage({ message, transformer });
         const { path, input, type, id } = info;
         try {
           const result = await callProcedure({ path, input, type, caller });
+
           if (result instanceof Subscription) {
             if (ws.CLOSED) {
               result.destroy();
