@@ -90,7 +90,7 @@ function parseMessage({
 
   return { type: method, id, input, path };
 }
-/* istanbul ignore next */
+
 async function callProcedure<TRouter extends AnyRouter>(opts: {
   path: string;
   input: unknown;
@@ -108,7 +108,7 @@ async function callProcedure<TRouter extends AnyRouter>(opts: {
     const sub = (await caller.subscription(path, input)) as Subscription;
     return sub;
   }
-  /* istanbul ignore next */
+
   throw new Error(`Unknown procedure type ${type}`);
 }
 
@@ -117,7 +117,7 @@ export type WebSocketHandlerOptions<TRouter extends AnyRouter> = {
   wss: WebSocket.Server;
   createContext: CreateContextFn<TRouter, http.IncomingMessage, WebSocket>;
 } & BaseOptions<TRouter, http.IncomingMessage>;
-/* istanbul ignore next */
+
 export function webSocketHandler<TRouter extends AnyRouter>(
   opts: WebSocketHandlerOptions<TRouter>,
 ) {
