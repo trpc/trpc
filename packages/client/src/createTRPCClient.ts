@@ -13,6 +13,7 @@ import type {
 } from '@trpc/server';
 import { executeChain } from './internals/executeChain';
 import { getAbortController, getFetch } from './internals/fetchHelpers';
+import { ObservableLike } from './internals/observable';
 import {
   CancelFn,
   LinkRuntimeOptions,
@@ -159,19 +160,19 @@ export class TRPCClient<TRouter extends AnyRouter> {
     }
   }
 
-  public request({
+  private $request<TInput = unknown, TOutput = unknown>({
     type,
     input,
     path,
     context = {},
   }: {
     type: TRPCType;
-    input: unknown;
+    input: TInput;
     path: string;
     context?: OperationContext;
   }) {
-    const $result = executeChain({
-      links: this.links,
+    const $result = executeChain<TRouter, TInput, TOutput>({
+      links: this.links as any,
       op: {
         type,
         path,
@@ -179,6 +180,19 @@ export class TRPCClient<TRouter extends AnyRouter> {
         context,
       },
     });
+
+    return $result;
+  }
+  /**
+   * @deprecated will be turned private
+   */
+  public request(opts: {
+    type: TRPCType;
+    input: unknown;
+    path: string;
+    context?: OperationContext;
+  }) {
+    const $result = this.$request(opts);
 
     const promise: Partial<CancellablePromise> = new Promise(
       (resolve, reject) => {
@@ -285,6 +299,9 @@ export class TRPCClient<TRouter extends AnyRouter> {
     return promise as any as CancellablePromise<TOutput[]>;
   }
   /* istanbul ignore next */
+  /**
+   * @deprecated - legacy stuff for http subscriptions
+   */
   public subscription<
     TSubscriptions extends TRouter['_def']['subscriptions'],
     TPath extends string & keyof TSubscriptions,
@@ -336,6 +353,25 @@ export class TRPCClient<TRouter extends AnyRouter> {
     };
     exec(opts.initialInput);
     return unsubscribe;
+  }
+
+  public $subscription<
+    TSubscriptions extends TRouter['_def']['subscriptions'],
+    TPath extends string & keyof TSubscriptions,
+    TOutput extends inferSubscriptionOutput<TRouter, TPath>,
+    TInput extends inferProcedureInput<TSubscriptions[TPath]>,
+  >(
+    path: TPath,
+    ...args: [...inferHandlerInput<TSubscriptions[TPath]>, RequestOptions?]
+  ) {
+    const context = (args[1] as RequestOptions | undefined)?.context;
+    const $res = this.$request<TInput, TOutput>({
+      type: 'subscription',
+      path,
+      input: args[0] as any,
+      context,
+    });
+    return $res;
   }
 }
 

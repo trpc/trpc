@@ -7,11 +7,16 @@ import {
 } from '../links/core';
 import { AnyRouter } from 'packages/server/src/router';
 
-export function executeChain<TRouter extends AnyRouter>(opts: {
-  links: OperationLink<TRouter>[];
-  op: Operation;
+export function executeChain<
+  TRouter extends AnyRouter,
+  TInput = unknown,
+  TOutput = unknown,
+>(opts: {
+  links: OperationLink<TRouter, TInput, TOutput>[];
+  op: Operation<TInput>;
 }) {
-  const $result = observableSubject<OperationResult<TRouter> | null>(null);
+  const $result =
+    observableSubject<OperationResult<TRouter, TOutput> | null>(null);
   const $destroyed = observableSubject(false);
 
   function walk({
@@ -20,11 +25,11 @@ export function executeChain<TRouter extends AnyRouter>(opts: {
     stack,
   }: {
     index: number;
-    op: Operation;
-    stack: PrevCallback<TRouter>[];
+    op: Operation<TInput>;
+    stack: PrevCallback<TRouter, TOutput>[];
   }) {
     const link = opts.links[index];
-    const prev: PrevCallback<TRouter> =
+    const prev: PrevCallback<TRouter, TOutput> =
       index === 0 ? (value) => $result.set(value) : stack[index - 1];
 
     link({
@@ -48,7 +53,9 @@ export function executeChain<TRouter extends AnyRouter>(opts: {
   walk({ index: 0, op: opts.op, stack: [] });
   return {
     get: $result.get,
-    subscribe: (callback: (value: OperationResult<TRouter>) => void) => {
+    subscribe: (
+      callback: (value: OperationResult<TRouter, TOutput>) => void,
+    ) => {
       return $result.subscribe((v) => {
         if (v) {
           callback(v);
