@@ -6,13 +6,14 @@ import { z } from 'zod';
 import * as trpc from '../src';
 import { routerToServerAndClient } from './_testHelpers';
 import { webSocketLink } from '../../client/src/links/webSocketLink';
+import WebSocket from 'ws';
 
 test('wss server basic', async () => {
   const ee = new EventEmitter();
   type Message = {
     id: string;
   };
-
+  let ws: any = null;
   const { client, close } = routerToServerAndClient(
     trpc
       .router()
@@ -38,8 +39,9 @@ test('wss server basic', async () => {
       }),
     {
       client({ wssUrl }) {
+        ws = new WebSocket(wssUrl);
         return {
-          links: [webSocketLink({ url: wssUrl })],
+          links: [webSocketLink({ ws })],
         };
       },
     },
@@ -74,4 +76,5 @@ test('wss server basic', async () => {
 
   // expect(ee.listenerCount('server:msg')).toBe(0);
   // expect(ee.listenerCount('server:error')).toBe(0);
+  ws.close();
 });

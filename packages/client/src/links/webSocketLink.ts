@@ -9,11 +9,7 @@ import { observableSubject } from '../internals/observable';
 import { TRPCLink } from './core';
 
 export interface WebSocketLinkOptions {
-  url: string;
-  /**
-   * @default 1000
-   */
-  reconnectTimeoutMs?: (attempt: number) => number;
+  ws: WebSocket;
 }
 export function webSocketLink<TRouter extends AnyRouter>(
   opts: WebSocketLinkOptions,
@@ -22,9 +18,8 @@ export function webSocketLink<TRouter extends AnyRouter>(
   return (rt) => {
     // connect to WSS
     let requestId = 0;
-    const { url, reconnectTimeoutMs = () => 1000 } = opts;
+    const { ws } = opts;
     const $open = observableSubject(false);
-    const $ws = observableSubject(new WebSocket(url));
     const listeners = new Map<
       number,
       (
@@ -34,52 +29,26 @@ export function webSocketLink<TRouter extends AnyRouter>(
         > /* | Error | CloseEvent */,
       ) => void
     >();
-    let attempt = 0;
 
-    function addHandlers(ws: WebSocket) {
-      ws.onmessage = (msg) => {
-        try {
-          const { id, result } = rt.transformer.deserialize(
-            JSON.parse(msg.data),
-          ) as JSONRPC2ResponseEnvelope<
-            TRPCProcedureEnvelope<TRouter, unknown>
-          >;
-          const listener = listeners.get(id);
-          if (!listener) {
-            // FIXME do something
-            return;
-          }
-          listener(result);
-        } catch (err) {
-          // FIXME do something?
+    ws.addEventListener('message', (msg) => {
+      try {
+        const { id, result } = rt.transformer.deserialize(
+          JSON.parse(msg.data),
+        ) as JSONRPC2ResponseEnvelope<TRPCProcedureEnvelope<TRouter, unknown>>;
+        const listener = listeners.get(id);
+        if (!listener) {
+          // FIXME do something
+          return;
         }
-      };
-      ws.onopen = () => {
-        attempt = 0;
-        $open.set(true);
-      };
+        listener(result);
+      } catch (err) {
+        // FIXME do something?
+      }
+    });
+    ws.addEventListener('open', () => {
+      $open.set(true);
+    });
 
-      ws.onclose = (e) => {
-        $open.set(false);
-
-        // FIXME notify listeners
-        console.log(
-          'Socket is closed. Reconnect will be attempted in 1 second.',
-          e.reason,
-        );
-        attempt++;
-        setTimeout(() => {
-          $ws.set(new WebSocket(url));
-        }, reconnectTimeoutMs(attempt));
-      };
-      // FIXME
-      // ws.onerror = (err) => {
-      //   $open.set(false);
-      //   console.error('Socket encountered error: ', err, 'Closing socket');
-      //   ws.close();
-      // };
-    }
-    addHandlers($ws.get());
     // FIXME
     // maybe auth through getProtocols?
     // function getProtocols() {
@@ -114,7 +83,7 @@ export function webSocketLink<TRouter extends AnyRouter>(
           },
           jsonrpc: '2.0',
         };
-        $ws.get().send(JSON.stringify(req));
+        ws.send(JSON.stringify(req));
         unsub$result = () => {
           // FIXME if it's a subscription, cancel it
           listeners.delete(requestId);
