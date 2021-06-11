@@ -21,15 +21,21 @@ const WEBSOCKET_STATUS_CODES = {
 // <-- {"jsonrpc": "2.0", "result": 19, "id": 1}
 // --> {"jsonrpc": "2.0", "method": "call", "params": [{type: x, 23]], "id": 1}
 
-export type JSONRPC2RequestEnvelope<TInput = unknown> = {
-  id: number;
-  jsonrpc: '2.0';
-  method: ProcedureType;
-  params: {
-    input: TInput;
-    path: string;
-  };
-};
+export type JSONRPC2RequestEnvelope<TInput = unknown> =
+  | {
+      id: number;
+      jsonrpc: '2.0';
+      method: ProcedureType;
+      params: {
+        input: TInput;
+        path: string;
+      };
+    }
+  | {
+      id: number;
+      jsonrpc: '2.0';
+      method: 'stop';
+    };
 export type JSONRPC2ResponseEnvelope<TResult = unknown> = {
   jsonrpc: '2.0';
   result: TResult;
@@ -68,9 +74,15 @@ function parseMessage({
 
   assertIsObject(obj);
   const { method, params, id } = obj;
+  assertIsRequestId(id);
+  if (method === 'stop') {
+    return {
+      type: 'stop' as const,
+      id,
+    };
+  }
   assertIsProcedureType(method);
   assertIsObject(params);
-  assertIsRequestId(id);
 
   const { input, path } = params;
   assertIsString(path);
@@ -110,18 +122,18 @@ export function webSocketHandler<TRouter extends AnyRouter>(
 ) {
   const { router, wss, createContext } = opts;
   const transformer = getCombinedDataTransformer(opts.transformer);
-  wss.on('connection', async (ws, req) => {
-    const subscriptions = new Map<number, Subscription<TRouter>>();
+  wss.on('connection', async (client, req) => {
+    const clientSubscriptions = new Map<number, Subscription<TRouter>>();
 
     try {
-      const ctx = await createContext({ req, res: ws });
+      const ctx = await createContext({ req, res: client });
       const caller = router.createCaller(ctx);
-      ws.on('message', async (message) => {
-        ws.on('close', () => {
-          for (const sub of subscriptions.values()) {
+      client.on('message', async (message) => {
+        client.on('close', () => {
+          for (const sub of clientSubscriptions.values()) {
             sub.destroy();
           }
-          subscriptions.clear();
+          clientSubscriptions.clear();
         });
         function respond(
           id: number,
@@ -132,28 +144,38 @@ export function webSocketHandler<TRouter extends AnyRouter>(
             result: json,
             id,
           };
-          ws.send(JSON.stringify(transformer.output.serialize(res)));
+          client.send(JSON.stringify(transformer.output.serialize(res)));
         }
         const info = parseMessage({ message, transformer });
+
+        if (info.type === 'stop') {
+          clientSubscriptions.get(info.id)?.destroy();
+          clientSubscriptions.delete(info.id);
+          return;
+        }
         const { path, input, type, id } = info;
         try {
           const result = await callProcedure({ path, input, type, caller });
 
           if (result instanceof Subscription) {
-            if (ws.CLOSED) {
-              result.destroy();
+            const sub = result;
+            if (client.readyState !== client.OPEN) {
+              sub.destroy();
               return;
             }
-            if (subscriptions.has(id)) {
-              result.destroy();
+
+            if (clientSubscriptions.has(id)) {
+              sub.destroy();
               throw new Error(`Duplicate id ${id}`);
             }
-            result.on('data', (data: unknown) => {
+            clientSubscriptions.set(id, sub);
+            sub.on('data', (data: unknown) => {
               respond(id, {
                 ok: true,
                 data,
               });
             });
+            await sub.start();
             // FIXME handle errors? or not? maybe push it to a callback with the ws client
             return;
           }
@@ -172,7 +194,7 @@ export function webSocketHandler<TRouter extends AnyRouter>(
               ctx,
             }),
           };
-          ws.send(json);
+          client.send(json);
         }
       });
     } catch (err) {
@@ -188,8 +210,8 @@ export function webSocketHandler<TRouter extends AnyRouter>(
           ctx: undefined,
         }),
       };
-      ws.send(json);
-      ws.close(WEBSOCKET_STATUS_CODES.ABNORMAL_CLOSURE);
+      client.send(json);
+      client.close(WEBSOCKET_STATUS_CODES.ABNORMAL_CLOSURE);
     }
   });
 }

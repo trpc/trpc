@@ -49,15 +49,10 @@ export function webSocketLink<TRouter extends AnyRouter>(
       $open.set(true);
     });
 
-    // FIXME
-    // maybe auth through getProtocols?
-    // function getProtocols() {
-    //   const headers = runtime.headers();
-    //   const protocols = Object.keys(headers)
-    //     .map((key) => [key, headers[key] as string])
-    //     .filter(([, value]) => typeof value === 'string');
-    //   return protocols;
-    // }
+    function send(req: JSONRPC2RequestEnvelope) {
+      ws.send(JSON.stringify(rt.transformer.serialize(req)));
+    }
+
     return ({ op, prev, onDestroy }) => {
       requestId++;
       if (listeners.get(requestId)) {
@@ -74,7 +69,7 @@ export function webSocketLink<TRouter extends AnyRouter>(
         listeners.set(requestId, (result) => {
           prev(result.ok ? result : TRPCClientError.from(result));
         });
-        const req: JSONRPC2RequestEnvelope = {
+        send({
           id: requestId,
           method: type,
           params: {
@@ -82,10 +77,13 @@ export function webSocketLink<TRouter extends AnyRouter>(
             path,
           },
           jsonrpc: '2.0',
-        };
-        ws.send(JSON.stringify(req));
+        });
         unsub$result = () => {
-          // FIXME if it's a subscription, cancel it
+          send({
+            id: requestId,
+            method: 'stop',
+            jsonrpc: '2.0',
+          });
           listeners.delete(requestId);
         };
       }
