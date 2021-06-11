@@ -1,4 +1,4 @@
-import { observable } from './observable';
+import { observableSubject } from './observable';
 import {
   OperationLink,
   Operation,
@@ -11,8 +11,8 @@ export function executeChain<TRouter extends AnyRouter>(opts: {
   links: OperationLink<TRouter>[];
   op: Operation;
 }) {
-  const $result = observable<OperationResult<TRouter> | null>(null);
-  const $destroyed = observable(false);
+  const $result = observableSubject<OperationResult<TRouter> | null>(null);
+  const $destroyed = observableSubject(false);
 
   function walk({
     index,

@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-empty-function */
-import { observable } from '../../client/src/internals/observable';
+import { observableSubject } from '../../client/src/internals/observable';
 test('basic', () => {
-  const value = observable(5);
+  const value = observableSubject(5);
   expect(value.get()).toBe(5);
 
   const callback = jest.fn();

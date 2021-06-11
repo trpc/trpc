@@ -38,9 +38,6 @@ export type LinkRuntimeOptions = Readonly<{
   AbortController?: typeof AbortController;
 }>;
 
-export interface HttpLinkOptions {
-  url: string;
-}
 export type CancelFn = () => void;
 
 export type PromiseAndCancel<TValue> = {

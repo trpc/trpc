@@ -44,7 +44,7 @@ export function routerToServerAndClient<TRouter extends AnyRouter>(
     createContext: () => ({}),
     ...(opts?.wssServer ?? {}),
   });
-  const wssUrl = `http://localhost:${wssPort}`;
+  const wssUrl = `ws://localhost:${wssPort}`;
 
   // client
   const trpcClientOptions: CreateTRPCClientOptions<typeof router> = {

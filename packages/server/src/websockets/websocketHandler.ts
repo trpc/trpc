@@ -21,9 +21,23 @@ const WEBSOCKET_STATUS_CODES = {
 // <-- {"jsonrpc": "2.0", "result": 19, "id": 1}
 // --> {"jsonrpc": "2.0", "method": "call", "params": [{type: x, 23]], "id": 1}
 
+export type JSONRPC2RequestEnvelope<TInput = unknown> = {
+  id: number;
+  jsonrpc: '2.0';
+  method: ProcedureType;
+  params: {
+    input: TInput;
+    path: string;
+  };
+};
+export type JSONRPC2ResponseEnvelope<TResult = unknown> = {
+  jsonrpc: '2.0';
+  result: TResult;
+  id: number;
+};
+
 function assertIsObject(obj: unknown): asserts obj is Record<string, unknown> {
-  const type = typeof obj;
-  if (type === 'function' || (type === 'object' && !!obj)) {
+  if (typeof obj !== 'object' || Array.isArray(obj) || !obj) {
     throw new Error('Not an object');
   }
 }
@@ -50,7 +64,9 @@ function parseMessage({
   transformer: CombinedDataTransformer;
 }) {
   assertIsString(message);
+  console.log('received', message);
   const obj = transformer.input.deserialize(JSON.parse(message));
+  console.log('received', obj);
   assertIsObject(obj);
   const { method, params, id } = obj;
   assertIsProcedureType(method);
@@ -108,13 +124,20 @@ export function webSocketHandler<TRouter extends AnyRouter>(
           }
           subscriptions.clear();
         });
-        function send(json: TRPCProcedureEnvelope<TRouter, unknown>) {
-          ws.emit(JSON.stringify(transformer.output.serialize(json)));
+        function respond(
+          id: number,
+          json: TRPCProcedureEnvelope<TRouter, unknown>,
+        ) {
+          const res: JSONRPC2ResponseEnvelope<typeof json> = {
+            jsonrpc: '2.0',
+            result: json,
+            id,
+          };
+          ws.emit(JSON.stringify(transformer.output.serialize(res)));
         }
+        const info = parseMessage({ message, transformer });
+        const { path, input, type, id } = info;
         try {
-          const info = parseMessage({ message, transformer });
-          const { path, input, type, id } = info;
-
           const result = await callProcedure({ path, input, type, caller });
           if (result instanceof Subscription) {
             if (ws.CLOSED) {
@@ -126,7 +149,7 @@ export function webSocketHandler<TRouter extends AnyRouter>(
               throw new Error(`Duplicate id ${id}`);
             }
             result.on('data', (data: unknown) => {
-              send({
+              respond(id, {
                 ok: true,
                 data,
               });
@@ -134,7 +157,7 @@ export function webSocketHandler<TRouter extends AnyRouter>(
             // FIXME handle errors? or not? maybe push it to a callback with the ws client
             return;
           }
-          send({
+          respond(id, {
             ok: true,
             data: result,
           });
