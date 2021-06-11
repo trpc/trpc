@@ -1,6 +1,6 @@
 {
   "name": "@examples/express-server",
-  "version": "7.0.1-alpha.0",
+  "version": "7.0.1-alpha.1",
   "private": true,
   "scripts": {
     "dev:server": "nodemon -e ts -w . -x ts-node ./src/server.ts",
@@ -13,7 +13,7 @@
   },
   "dependencies": {
     "@trpc/client": "^7.0.1-alpha.0",
-    "@trpc/react": "^7.0.1-alpha.0",
+    "@trpc/react": "^7.0.1-alpha.1",
     "@trpc/server": "^7.0.1-alpha.0",
     "@types/node-fetch": "^2.5.8",
     "abort-controller": "^3.0.0",
