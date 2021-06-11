@@ -1,12 +1,12 @@
-import { observableSubject } from './observable';
+import { AnyRouter, TRPCProcedureSuccessEnvelope } from '@trpc/server';
+import { TRPCClientError } from '../createTRPCClient';
 import {
-  OperationLink,
   Operation,
+  OperationLink,
   OperationResult,
   PrevCallback,
 } from '../links/core';
-import { AnyRouter } from 'packages/server/src/router';
-import { TRPCClientError } from '../createTRPCClient';
+import { observableSubject } from './observable';
 
 export function executeChain<
   TRouter extends AnyRouter,
@@ -16,11 +16,13 @@ export function executeChain<
   links: OperationLink<TRouter, TInput, TOutput>[];
   op: Operation<TInput>;
 }) {
-  type TValue = OperationResult<TRouter, TOutput> | null;
   type TError = TRPCClientError<TRouter>;
-  const $result = observableSubject<TValue, TError>(null);
+  const $result = observableSubject<TOutput | null, TError>(null);
   const $destroyed = observableSubject(false);
 
+  const updateResult = (result: OperationResult<TRouter, TOutput>) => {
+    result instanceof Error ? $result.error(result) : $result.set(result.data);
+  };
   function walk({
     index,
     op,
@@ -32,7 +34,7 @@ export function executeChain<
   }) {
     const link = opts.links[index];
     const prev: PrevCallback<TRouter, TOutput> =
-      index === 0 ? (value) => $result.set(value) : stack[index - 1];
+      index === 0 ? (value) => updateResult(value) : stack[index - 1];
 
     link({
       op,

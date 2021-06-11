@@ -19,7 +19,6 @@ import {
   LinkRuntimeOptions,
   OperationContext,
   OperationLink,
-  OperationResult,
   TRPCLink,
 } from './links/core';
 import { httpLink } from './links/httpLink';
@@ -223,16 +222,15 @@ export class TRPCClient<TRouter extends AnyRouter> {
     const $result = this.$request<TInput, TOutput>(opts);
 
     type TResult = typeof $result;
-    type TValue = OperationResult<TRouter, TOutput> | null;
     const promiseAndCancel =
-      observableSubjectAsPromise<TResult, TValue>($result);
+      observableSubjectAsPromise<TResult, TOutput | null>($result);
     const promise = new Promise<TOutput>((resolve, reject) => {
       promiseAndCancel.promise
         .then((result) => {
           if (!result) {
             return;
           }
-          result instanceof Error ? reject(result) : resolve(result.data);
+          result instanceof Error ? reject(result) : resolve(result);
         })
         .catch((err) => {
           reject(err);

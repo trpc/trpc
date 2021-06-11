@@ -148,18 +148,12 @@ test('$subscription()', async () => {
     Array [
       Array [
         Object {
-          "data": Object {
-            "id": "1",
-          },
-          "ok": true,
+          "id": "1",
         },
       ],
       Array [
         Object {
-          "data": Object {
-            "id": "1",
-          },
-          "ok": true,
+          "id": "1",
         },
       ],
     ]
