@@ -29,6 +29,36 @@ test('superjson up and down', async () => {
   close();
 });
 
+test('empty superjson up and down', async () => {
+  const transformer = superjson;
+
+  const { client, close } = routerToServerAndClient(
+    trpc
+      .router()
+      .query('empty-up', {
+        resolve() {
+          return 'hello world';
+        },
+      })
+      .query('empty-down', {
+        input: z.string(),
+        resolve() {
+          return 'hello world';
+        },
+      }),
+    {
+      client: { transformer },
+      server: { transformer },
+    },
+  );
+  const res1 = await client.query('empty-up');
+  expect(res1).toBe('hello world');
+  const res2 = await client.query('empty-down', '');
+  expect(res2).toBe('hello world');
+
+  close();
+});
+
 test('devalue up and down', async () => {
   const transformer: trpc.DataTransformer = {
     serialize: (object) => devalue(object),
