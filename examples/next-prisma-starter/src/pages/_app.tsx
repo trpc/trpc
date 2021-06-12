@@ -17,14 +17,14 @@ function getBaseUrl() {
   if (process.browser) {
     return '';
   }
-  // reference for vercel.com
+  // // reference for vercel.com
   // if (process.env.VERCEL_URL) {
   //   return `https://${process.env.VERCEL_URL}`;
   // }
 
   // // reference for render.com
-  // if (process.env.RENDER_EXTERNAL_URL) {
-  //   return process.env.RENDER_EXTERNAL_URL;
+  // if (process.env.RENDER_INTERNAL_HOSTNAME) {
+  //   return `http://${process.env.RENDER_INTERNAL_HOSTNAME}:${process.env.PORT}`;
   // }
 
   // assume localhost
