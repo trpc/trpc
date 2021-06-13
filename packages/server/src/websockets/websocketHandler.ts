@@ -35,14 +35,14 @@ export type JSONRPC2ProcedureRequestEnvelope<TInput> = {
     path: string;
   };
 };
-export type JSONRPC2ProcedureStopEnvelope<TInput = unknown> = {
+export type JSONRPC2ProcedureStopEnvelope = {
   id: number;
   jsonrpc: '2.0';
   method: 'stop';
 };
 export type JSONRPC2RequestEnvelope<TInput = unknown> =
   | JSONRPC2ProcedureRequestEnvelope<TInput>
-  | JSONRPC2ProcedureStopEnvelope<TInput>;
+  | JSONRPC2ProcedureStopEnvelope;
 export type JSONRPC2ResponseEnvelope<TResult = unknown> = {
   jsonrpc: '2.0';
   result: TResult;
