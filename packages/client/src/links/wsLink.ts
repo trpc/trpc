@@ -5,20 +5,25 @@ import {
   JSONRPC2RequestEnvelope,
   JSONRPC2ResponseEnvelope,
   TRPCProcedureEnvelope,
+  TRPCProcedureSuccessEnvelope,
 } from '@trpc/server';
 import { TRPCClientError } from '../createTRPCClient';
 import {
   observable,
   ObservableLike,
   observableSubject,
+  ObservableSubscription,
+  UnsubscribeFn,
 } from '../internals/observable';
 import { TRPCLink } from './core';
 
 export function createWebSocketClient(opts: { url: string }) {
   const { url } = opts;
   const $isOpen = observableSubject(false);
-  const $messages = observable<MessageEvent>();
+  const $incoming = observable<MessageEvent>();
   const $closed = observableSubject(false);
+  const outgoing: JSONRPC2RequestEnvelope[] = [];
+  let requestId = 0;
 
   function createWS() {
     const ws = new WebSocket(url);
@@ -30,7 +35,7 @@ export function createWebSocketClient(opts: { url: string }) {
       $ws.set(ws);
     });
     ws.addEventListener('message', (msg) => {
-      $messages.set(msg);
+      $incoming.set(msg);
     });
 
     // FIXME handle reconnect
@@ -45,18 +50,31 @@ export function createWebSocketClient(opts: { url: string }) {
         $ws.done();
         $isOpen.set(false);
         $isOpen.done();
-        $messages.done();
+        $incoming.done();
       } else {
         // FIXME maybe allow re-open?
       }
     },
   });
+
+  function request<TRouter extends AnyRouter, TOutput>(
+    opts: { op: Operation },
+    handlers: ObservableSubscription<
+      TRPCProcedureSuccessEnvelope<TOutput>,
+      TRPCClientError<TRouter>
+    >,
+  ): UnsubscribeFn {
+    $incoming.subscribe({
+      onNext({ data }) {},
+    });
+  }
   return {
     $ws,
     $isOpen,
-    $messages,
+    $messages: $incoming,
     isClosed: () => $closed.get(),
     close: () => $closed.set(true),
+    request,
   };
 }
 export type TRPCWebSocketClient = ReturnType<typeof createWebSocketClient>;

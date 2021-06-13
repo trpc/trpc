@@ -17,7 +17,7 @@ export interface ObservableSubject<TValue, TError = unknown>
   get(): TValue;
 }
 
-type UnsubscribeFn = () => void;
+export type UnsubscribeFn = () => void;
 
 export function observable<TValue, TError = unknown>(): ObservableLike<
   TValue,
