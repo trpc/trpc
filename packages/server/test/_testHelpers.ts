@@ -4,9 +4,10 @@ import AbortController from 'abort-controller';
 import fetch from 'node-fetch';
 import WebSocket from 'ws';
 import { createTRPCClient, CreateTRPCClientOptions } from '../../client/src';
-import { AnyRouter, CreateHttpHandlerOptions, webSocketHandler } from '../src';
+import { AnyRouter, CreateHttpHandlerOptions } from '../src';
+import { webSocketHandler } from '../src/websockets';
 import { createHttpServer } from '../src/adapters/standalone';
-import { CreateWebSocketServerOptions } from '../src/websockets/createWebSocketServer';
+import { CreateWebSocketServerOptions } from '../src/internals/createWebSocketServer';
 (global as any).fetch = fetch;
 (global as any).AbortController = AbortController;
 export function routerToServerAndClient<TRouter extends AnyRouter>(
@@ -18,7 +19,7 @@ export function routerToServerAndClient<TRouter extends AnyRouter>(
       | Partial<CreateTRPCClientOptions<TRouter>>
       | ((opts: {
           /**
-           * @deprecated
+           * @deprecated use `httpUrl`
            */
           url: string;
           httpUrl: string;
