@@ -273,7 +273,10 @@ export async function requestHandler<
       type,
     });
 
-    input = transformer.input.deserialize(rawInput);
+    input =
+      rawInput !== undefined
+        ? transformer.input.deserialize(rawInput)
+        : undefined;
     ctx = await createContext?.({ req, res });
 
     const caller = router.createCaller(ctx);
