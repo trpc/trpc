@@ -5,15 +5,12 @@ import {
   JSONRPC2RequestEnvelope,
   JSONRPC2ResponseEnvelope,
   TRPCProcedureEnvelope,
-  TRPCProcedureSuccessEnvelope,
 } from '@trpc/server';
 import { TRPCClientError } from '../createTRPCClient';
 import {
   observable,
   ObservableLike,
   observableSubject,
-  ObservableSubscription,
-  UnsubscribeFn,
 } from '../internals/observable';
 import { TRPCLink } from './core';
 
@@ -57,24 +54,23 @@ export function createWebSocketClient(opts: { url: string }) {
     },
   });
 
-  function request<TRouter extends AnyRouter, TOutput>(
-    opts: { op: Operation },
-    handlers: ObservableSubscription<
-      TRPCProcedureSuccessEnvelope<TOutput>,
-      TRPCClientError<TRouter>
-    >,
-  ): UnsubscribeFn {
-    $incoming.subscribe({
-      onNext({ data }) {},
-    });
-  }
+  // function request<TRouter extends AnyRouter, TOutput>(
+  //   opts: { op: Operation },
+  //   handlers: ObservableSubscription<
+  //     TRPCProcedureSuccessEnvelope<TOutput>,
+  //     TRPCClientError<TRouter>
+  //   >,
+  // ): UnsubscribeFn {
+  //   $incoming.subscribe({
+  //     onNext() {},
+  //   });
+  // }
   return {
     $ws,
     $isOpen,
     $messages: $incoming,
     isClosed: () => $closed.get(),
     close: () => $closed.set(true),
-    request,
   };
 }
 export type TRPCWebSocketClient = ReturnType<typeof createWebSocketClient>;
