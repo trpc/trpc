@@ -133,7 +133,7 @@ test('$subscription()', async () => {
         id: '1',
       });
       ee.emit('server:msg', {
-        id: '1',
+        id: '2',
       });
     });
   });
@@ -146,6 +146,13 @@ test('$subscription()', async () => {
     expect(onNext).toHaveBeenCalledTimes(2);
   });
 
+  ee.emit('server:msg', {
+    id: '2',
+  });
+  await waitFor(() => {
+    expect(onNext).toHaveBeenCalledTimes(3);
+  });
+
   expect(onNext.mock.calls).toMatchInlineSnapshot(`
     Array [
       Array [
@@ -155,7 +162,12 @@ test('$subscription()', async () => {
       ],
       Array [
         Object {
-          "id": "1",
+          "id": "2",
+        },
+      ],
+      Array [
+        Object {
+          "id": "2",
         },
       ],
     ]

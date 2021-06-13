@@ -23,7 +23,7 @@ export function createWSClient(opts: { url: string; WebSocket?: WebSocket }) {
   }
   const $isOpen = observableSubject(false);
   const $incomingEnvelopes = observable<JSONRPC2ResponseEnvelope>();
-  const $closed = observableSubject(false);
+
   let idCounter = 0;
   const outgoing: JSONRPC2RequestEnvelope[] = [];
   function triggerSendIfConnected() {
@@ -63,18 +63,6 @@ export function createWSClient(opts: { url: string; WebSocket?: WebSocket }) {
     return ws;
   }
   const $ws = observableSubject(createWS());
-
-  $closed.subscribe({
-    onNext: (open) => {
-      if (!open) {
-        $ws.done();
-        $isOpen.next(false);
-        $isOpen.done();
-      } else {
-        // FIXME maybe allow re-open?
-      }
-    },
-  });
 
   function request(
     op: {
@@ -127,7 +115,9 @@ export function createWSClient(opts: { url: string; WebSocket?: WebSocket }) {
     };
   }
   return {
-    close: () => $closed.next(true),
+    close: () => {
+      $ws.get().close();
+    },
     request,
   };
 }
