@@ -112,14 +112,17 @@ async function callProcedure<TRouter extends AnyRouter>(opts: {
   throw new Error(`Unknown procedure type ${type}`);
 }
 
-export type WebSocketHandlerOptions<TRouter extends AnyRouter> = {
+/**
+ * Web socket server handler
+ */
+export type WSSHandler<TRouter extends AnyRouter> = {
   router: TRouter;
   wss: WebSocket.Server;
   createContext: CreateContextFn<TRouter, http.IncomingMessage, WebSocket>;
 } & BaseOptions<TRouter, http.IncomingMessage>;
 
-export function webSocketHandler<TRouter extends AnyRouter>(
-  opts: WebSocketHandlerOptions<TRouter>,
+export function wssHandler<TRouter extends AnyRouter>(
+  opts: WSSHandler<TRouter>,
 ) {
   const { router, wss, createContext } = opts;
   const transformer = getCombinedDataTransformer(opts.transformer);
