@@ -158,7 +158,6 @@ export function webSocketHandler<TRouter extends AnyRouter>(
           clientSubscriptions.delete(info.id);
           return;
         }
-        console.log('received ', info);
         const { path, input, type, id } = info;
         try {
           const result = await callProcedure({ path, input, type, caller });
