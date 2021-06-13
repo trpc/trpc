@@ -21,13 +21,13 @@ export function createWSClient(opts: { url: string; WebSocket?: WebSocket }) {
       "No WebSocket implementation found - you probably don't want to use this on the server, but if you do you need to pass a `WebSocket`-ponyfill",
     );
   }
-  const $isOpen = observableSubject(false);
+  let isConnected = false;
   const $incomingEnvelopes = observable<JSONRPC2ResponseEnvelope>();
 
   let idCounter = 0;
   const outgoing: JSONRPC2RequestEnvelope[] = [];
   function triggerSendIfConnected() {
-    if (!$isOpen.get()) {
+    if (!isConnected) {
       return;
     }
     while (true) {
@@ -43,11 +43,11 @@ export function createWSClient(opts: { url: string; WebSocket?: WebSocket }) {
     const ws = new WebSocket(url);
 
     ws.addEventListener('open', () => {
-      $isOpen.next(true);
+      isConnected = true;
 
-      // FIXME gracefully reconnect if gotten told to do so
-      $ws.next(ws);
       triggerSendIfConnected();
+
+      // .. FIXME gracefully reconnect
     });
     ws.addEventListener('message', (msg) => {
       try {
