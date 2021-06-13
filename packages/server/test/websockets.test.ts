@@ -137,16 +137,16 @@ test('$subscription()', async () => {
       });
     });
   });
-  const callback = jest.fn();
-  const $sub = client.$subscription('onMessage');
-
-  $sub.subscribe({ onNext: callback });
-
-  await waitFor(() => {
-    expect(callback).toHaveBeenCalledTimes(2);
+  const onNext = jest.fn();
+  const unsub = client.$subscription('onMessage', undefined, {
+    onNext,
   });
 
-  expect(callback.mock.calls).toMatchInlineSnapshot(`
+  await waitFor(() => {
+    expect(onNext).toHaveBeenCalledTimes(2);
+  });
+
+  expect(onNext.mock.calls).toMatchInlineSnapshot(`
     Array [
       Array [
         Object {
@@ -161,7 +161,7 @@ test('$subscription()', async () => {
     ]
   `);
 
-  $sub.done();
+  unsub();
   await waitFor(() => {
     expect(ee.listenerCount('server:msg')).toBe(0);
     expect(ee.listenerCount('server:error')).toBe(0);

@@ -11,7 +11,7 @@ import { TRPCClientError } from '../createTRPCClient';
 import {
   observable,
   observableSubject,
-  ObservableSubscription,
+  ObservableCallbacks,
   UnsubscribeFn,
 } from '../internals/observable';
 import { TRPCLink } from './core';
@@ -79,7 +79,7 @@ export function createWebSocketClient(opts: { url: string }) {
       input: unknown;
       path: string;
     },
-    handlers: ObservableSubscription<JSONRPC2ResponseEnvelope, unknown>,
+    handlers: ObservableCallbacks<JSONRPC2ResponseEnvelope, unknown>,
   ): UnsubscribeFn {
     const { type, input, path } = op;
     const id = idCounter++;

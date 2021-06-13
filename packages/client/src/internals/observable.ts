@@ -1,13 +1,11 @@
-export interface ObservableSubscription<TValue, TError> {
+export interface ObservableCallbacks<TValue, TError> {
   onNext?: (opts: TValue) => void;
   onError?: (opts: TError) => void;
   onDone?: () => void;
 }
 
 export interface ObservableLike<TValue, TError = unknown> {
-  subscribe(
-    subscription: ObservableSubscription<TValue, TError>,
-  ): UnsubscribeFn;
+  subscribe(callbacks: ObservableCallbacks<TValue, TError>): UnsubscribeFn;
   set(value: TValue): void;
   done(): void;
   error(error: TError): void;
@@ -24,21 +22,21 @@ export function observable<TValue, TError = unknown>(): ObservableLike<
   TError
 > {
   type Listener = {
-    subscription: ObservableSubscription<TValue, TError>;
+    callbacks: ObservableCallbacks<TValue, TError>;
     unsubscribe: () => void;
   };
   const listeners: Listener[] = [];
 
   let value: TValue | null = null;
   return {
-    subscribe(subscription) {
+    subscribe(callbacks) {
       const listener: Listener = {
-        subscription,
+        callbacks,
         unsubscribe() {
           const index = listeners.indexOf(listener);
           if (index !== -1) {
             listeners.splice(index, 1);
-            listener.subscription.onDone?.();
+            listener.callbacks.onDone?.();
           }
         },
       };
@@ -52,20 +50,20 @@ export function observable<TValue, TError = unknown>(): ObservableLike<
       value = newValue;
       if (oldValue !== newValue) {
         for (const listener of listeners) {
-          listener.subscription.onNext?.(newValue);
+          listener.callbacks.onNext?.(newValue);
         }
       }
     },
     done() {
       while (listeners.length) {
         const listener = listeners.pop();
-        listener?.subscription.onDone?.();
+        listener?.callbacks.onDone?.();
         listener?.unsubscribe();
       }
     },
     error(error) {
       for (const listener of listeners) {
-        listener.subscription.onError?.(error);
+        listener.callbacks.onError?.(error);
       }
     },
   };

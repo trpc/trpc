@@ -13,7 +13,11 @@ import type {
 } from '@trpc/server';
 import { executeChain } from './internals/executeChain';
 import { getAbortController, getFetch } from './internals/fetchHelpers';
-import { observableSubjectAsPromise } from './internals/observable';
+import {
+  observableSubjectAsPromise,
+  ObservableCallbacks,
+  UnsubscribeFn,
+} from './internals/observable';
 import {
   CancelFn,
   LinkRuntimeOptions,
@@ -392,16 +396,26 @@ export class TRPCClient<TRouter extends AnyRouter> {
     TInput extends inferProcedureInput<TSubscriptions[TPath]>,
   >(
     path: TPath,
-    ...args: [...inferHandlerInput<TSubscriptions[TPath]>, RequestOptions?]
-  ) {
-    const context = (args[1] as RequestOptions | undefined)?.context;
+    input: TInput,
+    opts: RequestOptions &
+      ObservableCallbacks<TOutput, TRPCClientError<TRouter>>,
+  ): UnsubscribeFn {
     const $res = this.$request<TInput, TOutput>({
       type: 'subscription',
       path,
-      input: args[0] as any,
-      context,
+      input,
+      context: opts.context,
     });
-    return $res;
+    $res.subscribe({
+      onNext(output) {
+        output && opts.onNext?.(output);
+      },
+      onError: opts.onError,
+      onDone: opts.onDone,
+    });
+    return () => {
+      $res.done();
+    };
   }
 }
 
