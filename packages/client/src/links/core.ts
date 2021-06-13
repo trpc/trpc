@@ -1,25 +1,35 @@
-import { DataTransformer, HTTPResponseEnvelope } from '@trpc/server';
+import {
+  DataTransformer,
+  TRPCProcedureSuccessEnvelope,
+  AnyRouter,
+} from '@trpc/server';
 import { TRPCClientError } from '../createTRPCClient';
 
+export type OperationContext = Record<string, unknown>;
 export type Operation<TInput = unknown> = {
   type: 'query' | 'mutation' | 'subscription';
   input: TInput;
   path: string;
+  context: OperationContext;
 };
-type ResponseEnvelope = HTTPResponseEnvelope<any, any>;
-type ErrorResult = TRPCClientError<any>;
 
-export type OperationResult = ResponseEnvelope | ErrorResult;
+export type OperationResult<TRouter extends AnyRouter> =
+  | TRPCProcedureSuccessEnvelope<unknown>
+  | TRPCClientError<TRouter>;
 
-export type PrevCallback = (result: OperationResult) => void;
-export type OperationLink = (opts: {
+export type PrevCallback<TRouter extends AnyRouter> = (
+  result: OperationResult<TRouter>,
+) => void;
+export type OperationLink<TRouter extends AnyRouter> = (opts: {
   op: Operation;
-  prev: PrevCallback;
-  next: (op: Operation, callback: PrevCallback) => void;
+  prev: PrevCallback<TRouter>;
+  next: (op: Operation, callback: PrevCallback<TRouter>) => void;
   onDestroy: (callback: () => void) => void;
 }) => void;
 
-export type TRPCLink = (opts: LinkRuntimeOptions) => OperationLink;
+export type TRPCLink<TRouter extends AnyRouter> = (
+  opts: LinkRuntimeOptions,
+) => OperationLink<TRouter>;
 
 export type LinkRuntimeOptions = Readonly<{
   transformer: DataTransformer;

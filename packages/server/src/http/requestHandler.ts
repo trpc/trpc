@@ -260,8 +260,8 @@ export async function requestHandler<
   const isBatchCall = reqQueryParams.batch;
   function endResponse(
     json:
-      | HTTPResponseEnvelope<unknown, any>
-      | HTTPResponseEnvelope<unknown, any>[],
+      | HTTPResponseEnvelope<AnyRouter, unknown>
+      | HTTPResponseEnvelope<AnyRouter, unknown>[],
   ) {
     if (Array.isArray(json)) {
       const allCodes = Array.from(new Set(json.map((res) => res.statusCode)));
@@ -289,7 +289,10 @@ export async function requestHandler<
       type,
     });
 
-    input = transformer.input.deserialize(rawInput);
+    input =
+      rawInput !== undefined
+        ? transformer.input.deserialize(rawInput)
+        : undefined;
     ctx = await createContext?.({ req, res });
 
     const caller = router.createCaller(ctx);

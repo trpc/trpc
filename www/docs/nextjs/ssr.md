@@ -43,10 +43,9 @@ export default withTRPC<AppRouter>(
 
     return {
       url,
-      getHeaders() {
-        return {
-          'x-ssr': '1',
-        };
+      headers: {
+        // optional - inform server that it's an ssr request
+        'x-ssr': '1',
       },
     };
   },
