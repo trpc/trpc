@@ -9621,9 +9621,9 @@ playwright-core@>=1.2.0:
     yazl "^2.5.1"
 
 playwright@^1.8.0:
-  version "1.12.1"
-  resolved "https://registry.yarnpkg.com/playwright/-/playwright-1.12.1.tgz#afea5260ffcc30b39ec17640c11dc6a117dc4ce7"
-  integrity sha512-n+L93YSy6ysWsDdnr9NgB9HnIfD33jDvSgB77hIhFKws5ShS3GhZHNZBfPDYdSLJg8IN99656ahDRutbAZ/pLQ==
+  version "1.12.2"
+  resolved "https://registry.yarnpkg.com/playwright/-/playwright-1.12.2.tgz#a484447177b061dd76247734fe65d77e3fb139fa"
+  integrity sha512-tSZGeILY70T4imhCMCsvzhoaDm9baosIG5fQncSWprpjVc/X4yYdBQCLBMvOi98H50hvu9fhgy2hpsgFKCsUaw==
   dependencies:
     commander "^6.1.0"
     debug "^4.1.1"
@@ -10017,9 +10017,9 @@ react-is@^17.0.1:
   integrity sha512-w2GsyukL62IJnlaff/nRegPQR94C/XXamvMWmSHRJ4y7Ts/4ocGRmTHvOs8PSE6pB3dWOrD/nueuU5sduBsQ4w==
 
 react-query@^3.6.0:
-  version "3.16.1"
-  resolved "https://registry.yarnpkg.com/react-query/-/react-query-3.16.1.tgz#0bb9c5c45a74e14b5e204218fa602fe1a1065976"
-  integrity sha512-dof8XXSZ7HprfzvpbJE+YZrhUXcQYxy1j+NU8ZPYpKKDF79wlZAke+GyYhQ0b6SuOFp8ZpVXSpdD4AL3lxmeXQ==
+  version "3.17.0"
+  resolved "https://registry.yarnpkg.com/react-query/-/react-query-3.17.0.tgz#461c0a030044760cd874c7ea8aa9d55c2dceb15d"
+  integrity sha512-/qUNb6ESCz75Z/bR5p/ztp5ipRj8IQSiIpHK3AkCLTT4IqZsceAoD+9B+wbitA0LkxsR3snGrpgKUc9MMYQ/Ow==
   dependencies:
     "@babel/runtime" "^7.5.5"
     broadcast-channel "^3.4.1"
@@ -11795,10 +11795,10 @@ typedarray@^0.0.6:
   resolved "https://registry.npmjs.org/typedarray/-/typedarray-0.0.6.tgz#867ac74e3864187b1d3d47d996a78ec5c8830777"
   integrity sha1-hnrHTjhkGHsdPUfZlqeOxciDB3c=
 
-typescript@4.2.3:
-  version "4.2.3"
-  resolved "https://registry.npmjs.org/typescript/-/typescript-4.2.3.tgz#39062d8019912d43726298f09493d598048c1ce3"
-  integrity sha512-qOcYwxaByStAWrBf4x0fibwZvMRG+r4cQoTjbPtUlrWjBHbmCAww1i448U0GJ+3cNNEtebDteo/cHOR3xJ4wEw==
+typescript@4.3.2:
+  version "4.3.2"
+  resolved "https://registry.yarnpkg.com/typescript/-/typescript-4.3.2.tgz#399ab18aac45802d6f2498de5054fcbbe716a805"
+  integrity sha512-zZ4hShnmnoVnAHpVHWpTcxdv7dWP60S2FsydQLV8V5PbS3FifjWFFRiHSWpDJahly88PRyV5teTSLoq4eG7mKw==
 
 uglify-js@^3.1.4:
   version "3.13.8"
