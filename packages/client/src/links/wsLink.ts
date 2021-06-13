@@ -66,7 +66,10 @@ export function createWSClient(opts: { url: string; WebSocket?: WebSocket }) {
     ws.addEventListener('close', () => {
       isConnected = false;
 
-      // TODO maybe some timeout / jitter?
+      // TODO
+      // - maybe some timeout / jitter?
+      // - maybe different depending on code
+      // - if this connection has already been replaced by a new one, what to do?
       createWS();
     });
 
