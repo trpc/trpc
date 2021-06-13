@@ -17,9 +17,10 @@ import { routerToServerAndClient } from './_testHelpers';
 test('query', async () => {
   let ws: any = null;
   const { client, close } = routerToServerAndClient(
-    trpc.router().query('hello', {
-      resolve() {
-        return 'there';
+    trpc.router().query('greeting', {
+      input: z.string().nullish(),
+      resolve({ input }) {
+        return `hello ${input ?? 'world'}`;
       },
     }),
     {
@@ -31,8 +32,9 @@ test('query', async () => {
       },
     },
   );
-  const res = await client.query('hello');
-  expect(res).toBe('there');
+  expect(await client.query('greeting')).toBe('hello world');
+  expect(await client.query('greeting', null)).toBe('hello world');
+  expect(await client.query('greeting', 'alexdotjs')).toBe('hello alexdotjs');
 
   close();
   ws.close();

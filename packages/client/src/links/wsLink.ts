@@ -19,8 +19,6 @@ export function createWebSocketClient(opts: { url: string }) {
   const $isOpen = observableSubject(false);
   const $incoming = observable<MessageEvent>();
   const $closed = observableSubject(false);
-  const outgoing: JSONRPC2RequestEnvelope[] = [];
-  let requestId = 0;
 
   function createWS() {
     const ws = new WebSocket(url);
@@ -68,7 +66,7 @@ export function createWebSocketClient(opts: { url: string }) {
   return {
     $ws,
     $isOpen,
-    $messages: $incoming,
+    $incoming,
     isClosed: () => $closed.get(),
     close: () => $closed.set(true),
   };
@@ -88,14 +86,17 @@ export function wsLink<TRouter extends AnyRouter>(
     type Listener = ObservableLike<TRPCProcedureEnvelope<TRouter, unknown>>;
     const listeners: Record<number, Listener> = {};
 
-    client.$messages.subscribe({
+    client.$incoming.subscribe({
       onNext(msg) {
         try {
-          const { id, result } = rt.transformer.deserialize(
-            JSON.parse(msg.data),
+          const { id, result: rawResult } = JSON.parse(
+            msg.data,
           ) as JSONRPC2ResponseEnvelope<
             TRPCProcedureEnvelope<TRouter, unknown>
           >;
+
+          const result = rt.transformer.deserialize(rawResult);
+
           const listener = listeners[id];
           if (!listener) {
             // FIXME do something?
@@ -103,13 +104,14 @@ export function wsLink<TRouter extends AnyRouter>(
           }
           listener.set(result);
         } catch (err) {
+          console.error('error', err);
           // FIXME do something?
         }
       },
     });
 
     function send(req: JSONRPC2RequestEnvelope) {
-      client.$ws.get().send(JSON.stringify(rt.transformer.serialize(req)));
+      client.$ws.get().send(JSON.stringify(req));
     }
 
     return ({ op, prev, onDestroy }) => {
@@ -124,7 +126,11 @@ export function wsLink<TRouter extends AnyRouter>(
 
       function exec() {
         unsub$open?.();
-        const { input, type, path } = op;
+        const { input: rawInput, type, path } = op;
+        const input =
+          typeof rawInput !== 'undefined'
+            ? rt.transformer.serialize(rawInput)
+            : undefined;
         send({
           id: requestId,
           method: type,

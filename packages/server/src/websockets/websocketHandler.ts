@@ -71,7 +71,7 @@ function parseMessage({
   transformer: CombinedDataTransformer;
 }) {
   assertIsString(message);
-  const obj = transformer.input.deserialize(JSON.parse(message));
+  const obj = JSON.parse(message);
 
   assertIsObject(obj);
   const { method, params, id } = obj;
@@ -85,8 +85,12 @@ function parseMessage({
   assertIsProcedureType(method);
   assertIsObject(params);
 
-  const { input, path } = params;
+  const { input: rawInput, path } = params;
   assertIsString(path);
+  const input =
+    typeof rawInput !== 'undefined'
+      ? transformer.input.deserialize(rawInput)
+      : rawInput;
 
   return { type: method, id, input, path };
 }
@@ -140,12 +144,12 @@ export function webSocketHandler<TRouter extends AnyRouter>(
           id: number,
           json: TRPCProcedureEnvelope<TRouter, unknown>,
         ) {
-          const res: JSONRPC2ResponseEnvelope<typeof json> = {
+          const response: JSONRPC2ResponseEnvelope<typeof json> = {
             jsonrpc: '2.0',
-            result: json,
+            result: transformer.output.serialize(json),
             id,
           };
-          client.send(JSON.stringify(transformer.output.serialize(res)));
+          client.send(JSON.stringify(response));
         }
         const info = parseMessage({ message, transformer });
 
@@ -154,6 +158,7 @@ export function webSocketHandler<TRouter extends AnyRouter>(
           clientSubscriptions.delete(info.id);
           return;
         }
+        console.log('received ', info);
         const { path, input, type, id } = info;
         try {
           const result = await callProcedure({ path, input, type, caller });
