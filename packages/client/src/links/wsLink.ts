@@ -47,7 +47,12 @@ export function createWSClient(opts: { url: string; WebSocket?: WebSocket }) {
 
       triggerSendIfConnected();
 
-      // .. FIXME gracefully reconnect
+      // TODO gracefully reconnect if server restarts
+      // idea:
+      // 0. server broadcats specific msg
+      // 1. start new connection in background (with timeout/jitter)
+      // 2. wait for all non-subscriptions to fail
+      // 3. reconnect, trigger some error + done on all pending sub envelopes
     });
     ws.addEventListener('message', (msg) => {
       try {
@@ -56,6 +61,13 @@ export function createWSClient(opts: { url: string; WebSocket?: WebSocket }) {
       } catch (err) {
         // do something?
       }
+    });
+
+    ws.addEventListener('close', () => {
+      isConnected = false;
+
+      // TODO maybe some timeout / jitter?
+      createWS();
     });
 
     // FIXME handle reconnect
