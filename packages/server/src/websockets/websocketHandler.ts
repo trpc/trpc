@@ -10,7 +10,6 @@ import { BaseOptions, CreateContextFn } from '../http';
 import { getCombinedDataTransformer } from '../internals/getCombinedDataTransformer';
 import { AnyRouter, ProcedureType } from '../router';
 import { Subscription } from '../subscription';
-import { CombinedDataTransformer } from '../transformer';
 
 // https://developer.mozilla.org/en-US/docs/Web/API/CloseEvent
 const WEBSOCKET_STATUS_CODES = {
@@ -22,21 +21,28 @@ const WEBSOCKET_STATUS_CODES = {
 // <-- {"jsonrpc": "2.0", "result": 19, "id": 1}
 // --> {"jsonrpc": "2.0", "method": "call", "params": [{type: x, 23]], "id": 1}
 
+export type WSProcedureCall<TInput> = {
+  path: string;
+  input: TInput;
+};
+
+export type JSONRPC2ProcedureRequestEnvelope<TInput> = {
+  id: number;
+  jsonrpc: '2.0';
+  method: ProcedureType;
+  params: {
+    input: TInput;
+    path: string;
+  };
+};
+export type JSONRPC2ProcedureStopEnvelope<TInput = unknown> = {
+  id: number;
+  jsonrpc: '2.0';
+  method: 'stop';
+};
 export type JSONRPC2RequestEnvelope<TInput = unknown> =
-  | {
-      id: number;
-      jsonrpc: '2.0';
-      method: ProcedureType;
-      params: {
-        input: TInput;
-        path: string;
-      };
-    }
-  | {
-      id: number;
-      jsonrpc: '2.0';
-      method: 'stop';
-    };
+  | JSONRPC2ProcedureRequestEnvelope<TInput>
+  | JSONRPC2ProcedureStopEnvelope<TInput>;
 export type JSONRPC2ResponseEnvelope<TResult = unknown> = {
   jsonrpc: '2.0';
   result: TResult;
@@ -63,13 +69,7 @@ function assertIsString(obj: unknown): asserts obj is string {
     throw new Error('Invalid string');
   }
 }
-function parseMessage({
-  message,
-  transformer,
-}: {
-  message: unknown;
-  transformer: CombinedDataTransformer;
-}) {
+function parseMessage(message: unknown) {
   assertIsString(message);
   const obj = JSON.parse(message);
 
@@ -85,13 +85,8 @@ function parseMessage({
   assertIsProcedureType(method);
   assertIsObject(params);
 
-  const { input: rawInput, path } = params;
+  const { input, path } = params;
   assertIsString(path);
-  const input =
-    typeof rawInput !== 'undefined'
-      ? transformer.input.deserialize(rawInput)
-      : rawInput;
-
   return { type: method, id, input, path };
 }
 
@@ -151,14 +146,18 @@ export function webSocketHandler<TRouter extends AnyRouter>(
           };
           client.send(JSON.stringify(response));
         }
-        const info = parseMessage({ message, transformer });
+        const info = parseMessage(message);
+        const input =
+          typeof info.input !== 'undefined'
+            ? transformer.input.deserialize(info.input)
+            : undefined;
 
         if (info.type === 'stop') {
           clientSubscriptions.get(info.id)?.destroy();
           clientSubscriptions.delete(info.id);
           return;
         }
-        const { path, input, type, id } = info;
+        const { path, type, id } = info;
         try {
           const result = await callProcedure({ path, input, type, caller });
 
@@ -199,7 +198,7 @@ export function webSocketHandler<TRouter extends AnyRouter>(
               ctx,
             }),
           };
-          client.send(json);
+          respond(id, json);
         }
       });
     } catch (err) {

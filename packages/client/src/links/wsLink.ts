@@ -4,21 +4,37 @@ import {
   AnyRouter,
   JSONRPC2RequestEnvelope,
   JSONRPC2ResponseEnvelope,
+  ProcedureType,
   TRPCProcedureEnvelope,
 } from '@trpc/server';
 import { TRPCClientError } from '../createTRPCClient';
 import {
   observable,
-  ObservableLike,
   observableSubject,
+  ObservableSubscription,
+  UnsubscribeFn,
 } from '../internals/observable';
 import { TRPCLink } from './core';
 
 export function createWebSocketClient(opts: { url: string }) {
   const { url } = opts;
   const $isOpen = observableSubject(false);
-  const $incoming = observable<MessageEvent>();
+  const $incomingEnvelopes = observable<JSONRPC2ResponseEnvelope>();
   const $closed = observableSubject(false);
+  let idCounter = 0;
+  const outgoing: JSONRPC2RequestEnvelope[] = [];
+  function triggerSendIfConnected() {
+    if (!$isOpen.get()) {
+      return;
+    }
+    while (true) {
+      const msg = outgoing.shift();
+      if (!msg) {
+        break;
+      }
+      $ws.get().send(JSON.stringify(msg));
+    }
+  }
 
   function createWS() {
     const ws = new WebSocket(url);
@@ -26,11 +42,17 @@ export function createWebSocketClient(opts: { url: string }) {
     ws.addEventListener('open', () => {
       $isOpen.set(true);
 
-      // gracefully reconnect if gotten told to do so
+      // FIXME gracefully reconnect if gotten told to do so
       $ws.set(ws);
+      triggerSendIfConnected();
     });
     ws.addEventListener('message', (msg) => {
-      $incoming.set(msg);
+      try {
+        const json = JSON.parse(msg.data);
+        $incomingEnvelopes.set(json);
+      } catch (err) {
+        // do something?
+      }
     });
 
     // FIXME handle reconnect
@@ -45,13 +67,62 @@ export function createWebSocketClient(opts: { url: string }) {
         $ws.done();
         $isOpen.set(false);
         $isOpen.done();
-        $incoming.done();
       } else {
         // FIXME maybe allow re-open?
       }
     },
   });
 
+  function request(
+    op: {
+      type: ProcedureType;
+      input: unknown;
+      path: string;
+    },
+    handlers: ObservableSubscription<JSONRPC2ResponseEnvelope, unknown>,
+  ): UnsubscribeFn {
+    const { type, input, path } = op;
+    const id = idCounter++;
+    const envelope: JSONRPC2RequestEnvelope = {
+      id,
+      jsonrpc: '2.0',
+      method: type,
+      params: {
+        input,
+        path,
+      },
+    };
+    const $res = observable<JSONRPC2ResponseEnvelope, unknown>();
+    $res.subscribe(handlers);
+    const unsub = $incomingEnvelopes.subscribe({
+      onNext(envelope) {
+        if (envelope.id !== id) {
+          return;
+        }
+        $res.set(envelope);
+      },
+      onError() {
+        // FIXME
+      },
+    });
+
+    // enqueue message
+    outgoing.push(envelope);
+    triggerSendIfConnected();
+
+    return () => {
+      unsub();
+      $res.done();
+      if (op.type === 'subscription') {
+        outgoing.push({
+          id,
+          method: 'stop',
+          jsonrpc: '2.0',
+        });
+        triggerSendIfConnected();
+      }
+    };
+  }
   // function request<TRouter extends AnyRouter, TOutput>(
   //   opts: { op: Operation },
   //   handlers: ObservableSubscription<
@@ -64,11 +135,8 @@ export function createWebSocketClient(opts: { url: string }) {
   //   });
   // }
   return {
-    $ws,
-    $isOpen,
-    $incoming,
-    isClosed: () => $closed.get(),
     close: () => $closed.set(true),
+    request,
   };
 }
 export type TRPCWebSocketClient = ReturnType<typeof createWebSocketClient>;
@@ -81,91 +149,29 @@ export function wsLink<TRouter extends AnyRouter>(
 ): TRPCLink<TRouter> {
   // initialized config
   return (rt) => {
-    let requestId = 0;
     const { client } = opts;
-    type Listener = ObservableLike<TRPCProcedureEnvelope<TRouter, unknown>>;
-    const listeners: Record<number, Listener> = {};
-
-    client.$incoming.subscribe({
-      onNext(msg) {
-        try {
-          const { id, result: rawResult } = JSON.parse(
-            msg.data,
-          ) as JSONRPC2ResponseEnvelope<
-            TRPCProcedureEnvelope<TRouter, unknown>
-          >;
-
-          const result = rt.transformer.deserialize(rawResult);
-
-          const listener = listeners[id];
-          if (!listener) {
-            // FIXME do something?
-            return;
-          }
-          listener.set(result);
-        } catch (err) {
-          console.error('error', err);
-          // FIXME do something?
-        }
-      },
-    });
-
-    function send(req: JSONRPC2RequestEnvelope) {
-      client.$ws.get().send(JSON.stringify(req));
-    }
 
     return ({ op, prev, onDestroy }) => {
-      requestId++;
-      if (listeners[requestId]) {
-        // should never happen
-        prev(new Error(`Duplicate requestId '${requestId}'`));
-        return;
-      }
-      let unsub$open: null | (() => void) = null;
-      let unsub$result: null | (() => void) = null;
+      const { type, input: rawInput, path } = op;
+      const input = rt.transformer.serialize(rawInput);
+      const unsub = client.request(
+        { type, path, input },
+        {
+          onNext(envelope) {
+            const data = rt.transformer.deserialize(
+              envelope.result,
+            ) as TRPCProcedureEnvelope<TRouter, unknown>;
+            prev(data.ok ? data : TRPCClientError.from(data));
 
-      function exec() {
-        unsub$open?.();
-        const { input: rawInput, type, path } = op;
-        const input =
-          typeof rawInput !== 'undefined'
-            ? rt.transformer.serialize(rawInput)
-            : undefined;
-        send({
-          id: requestId,
-          method: type,
-          params: {
-            input,
-            path,
+            if (op.type !== 'subscription') {
+              // if it isn't a subscription we don't care about next response
+              unsub();
+            }
           },
-          jsonrpc: '2.0',
-        });
-        const $res = (listeners[requestId] = observable());
-        $res.subscribe({
-          onNext(result) {
-            prev(result.ok ? result : TRPCClientError.from(result));
-          },
-          onDone() {
-            send({
-              id: requestId,
-              method: 'stop',
-              jsonrpc: '2.0',
-            });
-          },
-        });
-        unsub$result = () => {
-          listeners[requestId]?.done();
-          delete listeners[requestId];
-        };
-      }
-      if (client.$isOpen.get()) {
-        exec();
-      } else {
-        unsub$open = client.$isOpen.subscribe({ onNext: exec });
-      }
+        },
+      );
       onDestroy(() => {
-        unsub$open?.();
-        unsub$result?.();
+        unsub();
       });
     };
   };
