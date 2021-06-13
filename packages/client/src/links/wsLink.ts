@@ -14,8 +14,13 @@ import {
 } from '../internals/observable';
 import { TRPCLink } from './core';
 
-export function createWebSocketClient(opts: { url: string }) {
-  const { url } = opts;
+export function createWSClient(opts: { url: string; WebSocket?: WebSocket }) {
+  const { url, WebSocket: WebSocketImpl = WebSocket } = opts;
+  if (!WebSocketImpl) {
+    throw new Error(
+      "No WebSocket implementation found - you probably don't want to use this on the server, but if you do you need to pass a `WebSocket`-ponyfill",
+    );
+  }
   const $isOpen = observableSubject(false);
   const $incomingEnvelopes = observable<JSONRPC2ResponseEnvelope>();
   const $closed = observableSubject(false);
@@ -38,16 +43,16 @@ export function createWebSocketClient(opts: { url: string }) {
     const ws = new WebSocket(url);
 
     ws.addEventListener('open', () => {
-      $isOpen.set(true);
+      $isOpen.next(true);
 
       // FIXME gracefully reconnect if gotten told to do so
-      $ws.set(ws);
+      $ws.next(ws);
       triggerSendIfConnected();
     });
     ws.addEventListener('message', (msg) => {
       try {
         const json = JSON.parse(msg.data);
-        $incomingEnvelopes.set(json);
+        $incomingEnvelopes.next(json);
       } catch (err) {
         // do something?
       }
@@ -63,7 +68,7 @@ export function createWebSocketClient(opts: { url: string }) {
     onNext: (open) => {
       if (!open) {
         $ws.done();
-        $isOpen.set(false);
+        $isOpen.next(false);
         $isOpen.done();
       } else {
         // FIXME maybe allow re-open?
@@ -97,7 +102,7 @@ export function createWebSocketClient(opts: { url: string }) {
         if (envelope.id !== id) {
           return;
         }
-        $res.set(envelope);
+        $res.next(envelope);
       },
       onError() {
         // FIXME
@@ -121,23 +126,12 @@ export function createWebSocketClient(opts: { url: string }) {
       }
     };
   }
-  // function request<TRouter extends AnyRouter, TOutput>(
-  //   opts: { op: Operation },
-  //   handlers: ObservableSubscription<
-  //     TRPCProcedureSuccessEnvelope<TOutput>,
-  //     TRPCClientError<TRouter>
-  //   >,
-  // ): UnsubscribeFn {
-  //   $incoming.subscribe({
-  //     onNext() {},
-  //   });
-  // }
   return {
-    close: () => $closed.set(true),
+    close: () => $closed.next(true),
     request,
   };
 }
-export type TRPCWebSocketClient = ReturnType<typeof createWebSocketClient>;
+export type TRPCWebSocketClient = ReturnType<typeof createWSClient>;
 
 export interface WebSocketLinkOptions {
   client: TRPCWebSocketClient;

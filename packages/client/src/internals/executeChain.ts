@@ -21,7 +21,7 @@ export function executeChain<
   const $destroyed = observableSubject(false);
 
   const updateResult = (result: OperationResult<TRouter, TOutput>) => {
-    result instanceof Error ? $result.error(result) : $result.set(result.data);
+    result instanceof Error ? $result.error(result) : $result.next(result.data);
   };
   function walk({
     index,
@@ -59,7 +59,7 @@ export function executeChain<
   walk({ index: 0, op: opts.op, stack: [] });
   $result.subscribe({
     onDone() {
-      $destroyed.set(true);
+      $destroyed.next(true);
     },
   });
   return $result;

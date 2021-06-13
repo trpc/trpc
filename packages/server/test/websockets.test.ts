@@ -7,7 +7,7 @@ import { expectTypeOf } from 'expect-type';
 // import { expectTypeOf } from 'expect-type';
 import { z } from 'zod';
 import {
-  createWebSocketClient,
+  createWSClient,
   TRPCWebSocketClient,
   wsLink,
 } from '../../client/src/links/wsLink';
@@ -25,7 +25,7 @@ test('query', async () => {
     }),
     {
       client({ wssUrl }) {
-        ws = createWebSocketClient({ url: wssUrl });
+        ws = createWSClient({ url: wssUrl });
         return {
           links: [wsLink({ client: ws })],
         };
@@ -65,7 +65,7 @@ test('subscriptionOnce()', async () => {
     }),
     {
       client({ wssUrl }) {
-        ws = createWebSocketClient({ url: wssUrl });
+        ws = createWSClient({ url: wssUrl });
         return {
           links: [wsLink({ client: ws })],
         };
@@ -120,7 +120,7 @@ test('$subscription()', async () => {
     }),
     {
       client({ wssUrl }) {
-        ws = createWebSocketClient({ url: wssUrl });
+        ws = createWSClient({ url: wssUrl });
         return {
           links: [wsLink({ client: ws })],
         };

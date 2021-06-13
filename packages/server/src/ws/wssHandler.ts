@@ -1,7 +1,7 @@
 /* istanbul ignore file */
 
 import http from 'http';
-import WebSocket from 'ws';
+import ws from 'ws';
 import {
   TRPCProcedureEnvelope,
   TRPCProcedureErrorEnvelope,
@@ -117,8 +117,8 @@ async function callProcedure<TRouter extends AnyRouter>(opts: {
  */
 export type WSSHandler<TRouter extends AnyRouter> = {
   router: TRouter;
-  wss: WebSocket.Server;
-  createContext: CreateContextFn<TRouter, http.IncomingMessage, WebSocket>;
+  wss: ws.Server;
+  createContext: CreateContextFn<TRouter, http.IncomingMessage, ws>;
 } & BaseOptions<TRouter, http.IncomingMessage>;
 
 export function wssHandler<TRouter extends AnyRouter>(

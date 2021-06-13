@@ -9,7 +9,7 @@ test('basic', () => {
 
   const onNext = jest.fn();
   $value.subscribe({ onNext });
-  $value.set(10);
+  $value.next(10);
   expect(onNext).toHaveBeenCalledWith(10);
 });
 

@@ -4,7 +4,7 @@ import superjson from 'superjson';
 import devalue from 'devalue';
 import { z } from 'zod';
 import { routerToServerAndClient } from './_testHelpers';
-import { createWebSocketClient, wsLink } from '../../client/src/links/wsLink';
+import { createWSClient, wsLink } from '../../client/src/links/wsLink';
 
 test('superjson up and down', async () => {
   const transformer = superjson;
@@ -80,7 +80,7 @@ test('wsLink: empty superjson up and down', async () => {
       }),
     {
       client({ wssUrl }) {
-        ws = createWebSocketClient({ url: wssUrl });
+        ws = createWSClient({ url: wssUrl });
         return { transformer, links: [wsLink({ client: ws })] };
       },
       server: { transformer },

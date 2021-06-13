@@ -6,7 +6,7 @@ export interface ObservableCallbacks<TValue, TError> {
 
 export interface ObservableLike<TValue, TError = unknown> {
   subscribe(callbacks: ObservableCallbacks<TValue, TError>): UnsubscribeFn;
-  set(value: TValue): void;
+  next(value: TValue): void;
   done(): void;
   error(error: TError): void;
 }
@@ -45,7 +45,7 @@ export function observable<TValue, TError = unknown>(): ObservableLike<
         listener.unsubscribe();
       };
     },
-    set(newValue) {
+    next(newValue) {
       const oldValue = value;
       value = newValue;
       if (oldValue !== newValue) {
@@ -74,13 +74,13 @@ export function observableSubject<TValue, TError = unknown>(
 ): ObservableSubject<TValue, TError> {
   const $obs = observable<TValue>();
   let value = initialValue;
-  $obs.set(initialValue);
+  $obs.next(initialValue);
 
   return {
     ...$obs,
-    set(v) {
+    next(v) {
       value = v;
-      $obs.set(v);
+      $obs.next(v);
     },
     get() {
       return value;

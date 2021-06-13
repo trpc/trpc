@@ -2,7 +2,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import AbortController from 'abort-controller';
 import fetch from 'node-fetch';
-import WebSocket from 'ws';
+import ws from 'ws';
 import { createTRPCClient, CreateTRPCClientOptions } from '../../client/src';
 import { AnyRouter, CreateHttpHandlerOptions } from '../src';
 import { wssHandler } from '../src/ws';
@@ -37,7 +37,7 @@ export function routerToServerAndClient<TRouter extends AnyRouter>(
   const httpUrl = `http://localhost:${httpPort}`;
 
   // wss
-  const wss = new WebSocket.Server({ port: 0 });
+  const wss = new ws.Server({ port: 0 });
   const wssPort = (wss.address() as any).port as number;
   wssHandler({
     wss,
