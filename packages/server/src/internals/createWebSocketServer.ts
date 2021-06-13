@@ -4,7 +4,7 @@ import http from 'http';
 import WebSocket from 'ws';
 import { CreateContextFn, CreateContextFnOptions } from '../http';
 import { AnyRouter } from '../router';
-import { WSSHandler } from '../websockets/wssHandler';
+import { WSSHandler } from '../ws/wssHandler';
 
 export type CreateWebSocketContextOptions = CreateContextFnOptions<
   http.IncomingMessage,

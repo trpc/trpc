@@ -1,12 +1,10 @@
 /* istanbul ignore file */
 
+import { AnyRouter, ProcedureType, TRPCProcedureEnvelope } from '@trpc/server';
 import {
-  AnyRouter,
   JSONRPC2RequestEnvelope,
   JSONRPC2ResponseEnvelope,
-  ProcedureType,
-  TRPCProcedureEnvelope,
-} from '@trpc/server';
+} from '@trpc/server/ws';
 import { TRPCClientError } from '../createTRPCClient';
 import {
   observable,

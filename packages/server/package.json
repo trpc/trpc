@@ -19,7 +19,8 @@
     "entrypoints": [
       "index.ts",
       "adapters/next.ts",
-      "adapters/express.ts"
+      "adapters/express.ts",
+      "ws/index.ts"
     ]
   },
   "scripts": {
@@ -31,7 +32,8 @@
   "files": [
     "README.md",
     "dist",
-    "adapters"
+    "adapters",
+    "ws"
   ],
   "publishConfig": {
     "access": "public"

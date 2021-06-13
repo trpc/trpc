@@ -5,7 +5,7 @@ import fetch from 'node-fetch';
 import WebSocket from 'ws';
 import { createTRPCClient, CreateTRPCClientOptions } from '../../client/src';
 import { AnyRouter, CreateHttpHandlerOptions } from '../src';
-import { wssHandler } from '../src/websockets';
+import { wssHandler } from '../src/ws';
 import { createHttpServer } from '../src/adapters/standalone';
 import { CreateWebSocketServerOptions } from '../src/internals/createWebSocketServer';
 (global as any).fetch = fetch;
