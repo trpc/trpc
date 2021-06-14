@@ -3,6 +3,7 @@
 // import WebSocket from 'ws';
 import { waitFor } from '@testing-library/react';
 import { EventEmitter } from 'events';
+import { expectTypeOf } from 'expect-type';
 // import { expectTypeOf } from 'expect-type';
 import ws from 'ws';
 import { z } from 'zod';
@@ -16,11 +17,11 @@ import * as trpc from '../src';
 import { applyWSSHandler } from '../src/ws';
 import { routerToServerAndClient } from './_testHelpers';
 
+type Message = {
+  id: string;
+};
 function factory() {
   const ee = new EventEmitter();
-  type Message = {
-    id: string;
-  };
   const subRef: {
     current: trpc.Subscription<Message>;
   } = {} as any;
@@ -163,7 +164,11 @@ test('$subscription()', async () => {
   });
   const onNext = jest.fn();
   const unsub = client.$subscription('onMessage', undefined, {
-    onNext,
+    onNext(data) {
+      expectTypeOf(data).not.toBeAny();
+      expectTypeOf(data).toMatchTypeOf<Message>();
+      onNext(data);
+    },
   });
 
   await waitFor(() => {

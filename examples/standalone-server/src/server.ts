@@ -1,9 +1,9 @@
 /* eslint-disable @typescript-eslint/ban-types */
 
 import * as trpc from '@trpc/server';
-import { applyWSSHandler } from '@trpc/server/ws';
 import { z } from 'zod';
 import ws from 'ws';
+import { applyWSSHandler } from '@trpc/server/ws';
 
 type Context = {};
 
@@ -32,6 +32,22 @@ export const appRouter = trpc
         id: `${Math.random()}`,
         ...input,
       };
+    },
+  })
+  .subscription('randomNumber', {
+    resolve() {
+      return new trpc.Subscription<{ randomNumber: number }>({
+        start(emit) {
+          const timer = setInterval(() => {
+            // emits a number every second
+            emit.data({ randomNumber: Math.random() });
+          }, 1e3);
+
+          return () => {
+            clearInterval(timer);
+          };
+        },
+      });
     },
   });
 

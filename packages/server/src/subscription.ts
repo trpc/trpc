@@ -86,13 +86,11 @@ export class Subscription<TOutput = unknown> {
     }
   }
 
-  /**
-   * This method is just here to help with `inferSubscriptionOutput` which I can't get working without it
-   */
   /* istanbul ignore next */
-  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-  // @ts-ignore
-  private output(): TOutput {
+  /**
+   * @deprecated This method is just here to help with `inferSubscriptionOutput` which I can't get working without it
+   */
+  public output(): TOutput {
     throw new Error('Not in use');
   }
 
