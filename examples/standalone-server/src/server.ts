@@ -71,4 +71,7 @@ applyWSSHandler<AppRouter>({
   },
 });
 
+// setInterval(() => {
+//   console.log('Connected clients', wss.clients.size);
+// }, 1000);
 listen(2022);

@@ -56,14 +56,14 @@ async function main() {
       if (count > 3) {
         // stop after 3 pulls
         unsub();
-        wsClient.close();
       }
     },
     onError(err) {
       console.error('error', err);
     },
     onDone() {
-      console.log('done called');
+      console.log('done called - closing websocket');
+      wsClient.close();
     },
   });
 }
