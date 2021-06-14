@@ -1,5 +1,3 @@
-/* istanbul ignore file */
-
 import http from 'http';
 import ws from 'ws';
 import {
@@ -62,21 +60,25 @@ export type JSONRPC2ResponseEnvelope<TResult = unknown> =
   | JSONRPC2ProcedureStoppedEnvelope
   | JSONRPC2ReconnectEnvelope;
 
+/* istanbul ignore next */
 function assertIsObject(obj: unknown): asserts obj is Record<string, unknown> {
   if (typeof obj !== 'object' || Array.isArray(obj) || !obj) {
     throw new Error('Not an object');
   }
 }
+/* istanbul ignore next */
 function assertIsProcedureType(obj: unknown): asserts obj is ProcedureType {
   if (obj !== 'query' && obj !== 'subscription' && obj !== 'mutation') {
     throw new Error('Invalid procedure type');
   }
 }
+/* istanbul ignore next */
 function assertIsRequestId(obj: unknown): asserts obj is number {
   if (typeof obj !== 'number' || isNaN(obj)) {
     throw new Error('Invalid requestId');
   }
 }
+/* istanbul ignore next */
 function assertIsString(obj: unknown): asserts obj is string {
   if (typeof obj !== 'string') {
     throw new Error('Invalid string');
@@ -120,7 +122,7 @@ async function callProcedure<TRouter extends AnyRouter>(opts: {
     const sub = (await caller.subscription(path, input)) as Subscription;
     return sub;
   }
-
+  /* istanbul ignore next */
   throw new Error(`Unknown procedure type ${type}`);
 }
 
@@ -174,12 +176,15 @@ export function applyWSSHandler<TRouter extends AnyRouter>(
 
           if (result instanceof Subscription) {
             const sub = result;
+            /* istanbul ignore next */
             if (client.readyState !== client.OPEN) {
+              // if the client got disconnected whilst initializing the subscription
               sub.destroy();
               return;
             }
-
+            /* istanbul ignore next */
             if (clientSubscriptions.has(id)) {
+              // duplicate request ids for client
               sub.destroy();
               throw new Error(`Duplicate id ${id}`);
             }
@@ -222,14 +227,15 @@ export function applyWSSHandler<TRouter extends AnyRouter>(
             ok: true,
             data: result,
           });
-        } catch (error) {
+        } catch (error) /* istanbul ignore next */ {
+          // procedure threw an error
           const json: TRPCProcedureErrorEnvelope<TRouter> = {
             ok: false,
             error: router.getErrorShape({
               error,
-              type: 'unknown',
-              path: undefined,
-              input: undefined,
+              type,
+              path,
+              input,
               ctx,
             }),
           };
@@ -244,7 +250,8 @@ export function applyWSSHandler<TRouter extends AnyRouter>(
         }
         clientSubscriptions.clear();
       });
-    } catch (err) {
+    } catch (err) /* istanbul ignore next */ {
+      // failed to create context
       const error = getErrorFromUnknown(err);
 
       const json: TRPCProcedureErrorEnvelope<TRouter> = {
