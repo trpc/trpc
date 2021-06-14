@@ -388,7 +388,7 @@ export class TRPCClient<TRouter extends AnyRouter> {
     exec(opts.initialInput);
     return unsubscribe;
   }
-
+  /* istanbul ignore next */
   public $subscription<
     TSubscriptions extends TRouter['_def']['subscriptions'],
     TPath extends string & keyof TSubscriptions,

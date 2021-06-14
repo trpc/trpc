@@ -5,17 +5,59 @@ import { waitFor } from '@testing-library/react';
 import { EventEmitter } from 'events';
 import { expectTypeOf } from 'expect-type';
 // import { expectTypeOf } from 'expect-type';
+import ws from 'ws';
 import { z } from 'zod';
 import {
   createWSClient,
   TRPCWebSocketClient,
+  WebSocketInterruptedError,
   wsLink,
 } from '../../client/src/links/wsLink';
 import * as trpc from '../src';
+import { wssHandler } from '../src/ws';
 import { routerToServerAndClient } from './_testHelpers';
 
+function factory() {
+  const ee = new EventEmitter();
+  type Message = {
+    id: string;
+  };
+  let wsClient: TRPCWebSocketClient = null as any;
+  const opts = routerToServerAndClient(
+    trpc.router().subscription('onMessage', {
+      input: z.string().optional(),
+      resolve() {
+        ee.emit('server:connect');
+        return new trpc.Subscription<Message>({
+          start(emit) {
+            const onMessage = (data: Message) => {
+              emit.data(data);
+            };
+            ee.on('server:msg', onMessage);
+            return () => ee.off('server:msg', onMessage);
+          },
+        });
+      },
+    }),
+    {
+      client({ wssUrl }) {
+        wsClient = createWSClient({ url: wssUrl });
+        return {
+          links: [wsLink({ client: wsClient })],
+        };
+      },
+    },
+  );
+
+  return {
+    ee,
+    wsClient,
+    ...opts,
+  };
+}
+
 test('query', async () => {
-  let ws: any = null;
+  let wsClient: any = null;
   const { client, close } = routerToServerAndClient(
     trpc.router().query('greeting', {
       input: z.string().nullish(),
@@ -25,9 +67,9 @@ test('query', async () => {
     }),
     {
       client({ wssUrl }) {
-        ws = createWSClient({ url: wssUrl });
+        wsClient = createWSClient({ url: wssUrl });
         return {
-          links: [wsLink({ client: ws })],
+          links: [wsLink({ client: wsClient })],
         };
       },
     },
@@ -37,7 +79,7 @@ test('query', async () => {
   expect(await client.query('greeting', 'alexdotjs')).toBe('hello alexdotjs');
 
   close();
-  ws.close();
+  wsClient.close();
 });
 
 test('subscriptionOnce()', async () => {
@@ -45,7 +87,7 @@ test('subscriptionOnce()', async () => {
   type Message = {
     id: string;
   };
-  let ws: any = null;
+  let wsClient: any = null;
 
   const { client, close } = routerToServerAndClient(
     trpc.router().subscription('onMessage', {
@@ -65,9 +107,9 @@ test('subscriptionOnce()', async () => {
     }),
     {
       client({ wssUrl }) {
-        ws = createWSClient({ url: wssUrl });
+        wsClient = createWSClient({ url: wssUrl });
         return {
-          links: [wsLink({ client: ws })],
+          links: [wsLink({ client: wsClient })],
         };
       },
     },
@@ -93,7 +135,7 @@ test('subscriptionOnce()', async () => {
     expect(ee.listenerCount('server:error')).toBe(0);
   });
   close();
-  ws.close();
+  wsClient.close();
 });
 
 test('$subscription()', async () => {
@@ -101,7 +143,7 @@ test('$subscription()', async () => {
   type Message = {
     id: string;
   };
-  let ws: TRPCWebSocketClient = null as any;
+  let wsClient: TRPCWebSocketClient = null as any;
   const { client, close } = routerToServerAndClient(
     trpc.router().subscription('onMessage', {
       input: z.string().optional(),
@@ -120,9 +162,9 @@ test('$subscription()', async () => {
     }),
     {
       client({ wssUrl }) {
-        ws = createWSClient({ url: wssUrl });
+        wsClient = createWSClient({ url: wssUrl });
         return {
-          links: [wsLink({ client: ws })],
+          links: [wsLink({ client: wsClient })],
         };
       },
     },
@@ -179,5 +221,77 @@ test('$subscription()', async () => {
     expect(ee.listenerCount('server:error')).toBe(0);
   });
   close();
-  ws.close();
+  wsClient.close();
+});
+
+test('$subscription() - interrupt', async () => {
+  const { client, close, wsClient, ee, wssPort, wssHandlerOpts } = factory();
+  ee.once('server:connect', () => {
+    setImmediate(() => {
+      ee.emit('server:msg', {
+        id: '1',
+      });
+      ee.emit('server:msg', {
+        id: '2',
+      });
+    });
+  });
+  const onNext = jest.fn();
+  const onError = jest.fn();
+  const onDone = jest.fn();
+  client.$subscription('onMessage', undefined, {
+    onNext,
+    onError,
+    onDone,
+  });
+
+  await waitFor(() => {
+    expect(onNext).toHaveBeenCalledTimes(2);
+  });
+  // close websocket
+  close();
+  await waitFor(() => {
+    expect(onError).toHaveBeenCalledTimes(1);
+  });
+  expect(onError.mock.calls[0][0]).toMatchInlineSnapshot(
+    `[Error: Operation ended prematurely]`,
+  );
+  expect(onError.mock.calls[0][0].originalError).toBeInstanceOf(
+    WebSocketInterruptedError,
+  );
+
+  // reconnect from client
+  client.$subscription('onMessage', undefined, {
+    onNext,
+    onError,
+    onDone,
+  });
+
+  // start a new wss server on same port, and trigger a message
+  onNext.mockClear();
+  onDone.mockClear();
+  ee.once('server:connect', () => {
+    setImmediate(() => {
+      ee.emit('server:msg', {
+        id: '3',
+      });
+    });
+  });
+  const wss = new ws.Server({ port: wssPort });
+  wssHandler({ ...wssHandlerOpts, wss });
+  await waitFor(() => {
+    expect(onNext).toHaveBeenCalledTimes(1);
+  });
+  expect(onNext.mock.calls).toMatchInlineSnapshot(`
+    Array [
+      Array [
+        Object {
+          "id": "3",
+        },
+      ],
+    ]
+  `);
+
+  wsClient.close();
+  wss.close();
 });

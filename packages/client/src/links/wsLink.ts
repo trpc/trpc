@@ -52,16 +52,27 @@ export function createWSClient(opts: { url: string; WebSocket?: WebSocket }) {
 
     ws.addEventListener('open', () => {
       isConnected = true;
+      const oldConnection = $ws.get();
+      if (oldConnection !== ws) {
+        // kill connection after 1 second
+        setTimeout(() => ws.close(), 1000);
+      }
+      $ws.next(ws);
 
       triggerSendIfConnected();
 
       // TODO gracefully reconnect if server restarts
       // idea:
-      // 0. server broadcats specific msg
-      // 1. start new connection in background (with timeout/jitter)
-      // 2. wait for all non-subscriptions to fail
-      // 3. reconnect, trigger some error + done on all pending sub envelopes
-      $ws.next(ws);
+      // [ ] server broadcats specific msg
+      // [ ] start new connection in background (with timeout/jitter)
+      // 2. wait for all non-subscriptions to fail / wait for X seconds before timing out
+      // [x] reconnect, trigger done on all pending sub envelopes
+    });
+    ws.addEventListener('error', () => {
+      // FIXME -- could probably be handled better
+      if (ws !== $ws.get()) {
+        createWS();
+      }
     });
     ws.addEventListener('message', (msg) => {
       try {
@@ -72,6 +83,8 @@ export function createWSClient(opts: { url: string; WebSocket?: WebSocket }) {
         } else {
           req.callbacks.onNext?.(json);
         }
+        // if ws has been replaced, let's check if there are other pending requests
+        // disconnect if none
       } catch (err) {
         // do something?
       }
@@ -81,11 +94,10 @@ export function createWSClient(opts: { url: string; WebSocket?: WebSocket }) {
       if ($ws.get() === ws) {
         // connection might have been replaced already
         isConnected = false;
-      } else {
+        createWS();
         // TODO
         // - maybe some timeout / jitter?
         // - maybe different depending on close code
-        createWS();
       }
 
       for (const key in pendingRequests) {
@@ -112,7 +124,7 @@ export function createWSClient(opts: { url: string; WebSocket?: WebSocket }) {
     callbacks: ObservableCallbacks<JSONRPC2ResponseEnvelope, unknown>,
   ): UnsubscribeFn {
     const { type, input, path } = op;
-    const id = idCounter++;
+    const id = ++idCounter;
     const envelope: JSONRPC2RequestEnvelope = {
       id,
       jsonrpc: '2.0',
