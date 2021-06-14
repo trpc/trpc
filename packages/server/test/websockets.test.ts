@@ -344,3 +344,34 @@ test('server emits disconnect', async () => {
   wsClient.close();
   close();
 });
+test('sub emits errors', async () => {
+  const { client, close, wsClient, wss, ee, subRef } = factory();
+
+  ee.once('subscription:created', () => {
+    setImmediate(() => {
+      subRef.current.emitError(new Error('test'));
+      ee.emit('server:msg', {
+        id: '1',
+      });
+    });
+  });
+  const onNewClient = jest.fn();
+  wss.addListener('connection', onNewClient);
+  const onNext = jest.fn();
+  const onError = jest.fn();
+  const onDone = jest.fn();
+  client.$subscription('onMessage', undefined, {
+    onNext,
+    onError,
+    onDone,
+  });
+
+  await waitFor(() => {
+    expect(onNext).toHaveBeenCalledTimes(1);
+    expect(onError).toHaveBeenCalledTimes(1);
+    expect(onDone).toHaveBeenCalledTimes(0);
+  });
+
+  wsClient.close();
+  close();
+});

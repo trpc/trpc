@@ -1,5 +1,3 @@
-/* istanbul ignore file */
-
 import { AnyRouter, ProcedureType, TRPCProcedureEnvelope } from '@trpc/server';
 import {
   JSONRPC2RequestEnvelope,
@@ -28,6 +26,7 @@ export function createWSClient(opts: {
     staleConnectionTimeoutMs = 1000,
     reconnectDelayMs = () => 0,
   } = opts;
+  /* istanbul ignore next */
   if (!WebSocketImpl) {
     throw new Error(
       "No WebSocket implementation found - you probably don't want to use this on the server, but if you do you need to pass a `WebSocket`-ponyfill",
@@ -101,17 +100,11 @@ export function createWSClient(opts: {
 
     newConnection.addEventListener('open', () => {
       connectAttempt = 0;
-      if (newConnection === connection) {
-        state = 'open';
-      } else {
-        newConnection.close();
-      }
+      state = 'open';
       triggerSendIfConnected();
     });
     newConnection.addEventListener('error', () => {
-      if (newConnection !== connection) {
-        tryReconnect();
-      }
+      tryReconnect();
     });
     newConnection.addEventListener('message', (msg) => {
       const res = JSON.parse(msg.data) as JSONRPC2ResponseEnvelope;
