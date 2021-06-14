@@ -8,7 +8,7 @@ coverage:
     project: # settings affecting project coverage
       default:
         target: auto # auto % coverage target
-        threshold: 5% # allow for 1% reduction of coverage without failing
+        threshold: 1% # allow for 1% reduction of coverage without failing
 
     # do not run coverage on patch nor changes
     patch: false
