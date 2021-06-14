@@ -20,6 +20,7 @@ async function main() {
   });
   const client = createTRPCClient<AppRouter>({
     links: [
+      // call subscriptions through websockets and the rest over http
       splitLink({
         condition(op) {
           return op.type === 'subscription';
