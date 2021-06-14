@@ -106,13 +106,19 @@ export function createWSClient(opts: {
       }
     });
     newConnection.addEventListener('message', (msg) => {
-      const json = JSON.parse(msg.data) as JSONRPC2ResponseEnvelope;
-      const req = pendingRequests[json.id];
+      const res = JSON.parse(msg.data) as JSONRPC2ResponseEnvelope;
+      const req = pendingRequests[res.id];
       if (!req) {
         // do something?
-      } else {
-        req.callbacks.onNext?.(json);
+        return;
       }
+      if (res.result === 'stopped') {
+        delete pendingRequests[res.id];
+        req.callbacks.onDone?.();
+        return;
+      }
+      req.callbacks.onNext?.(res);
+      // TODO
       // if ws has been replaced, let's check if there are other pending requests
       // disconnect if none
     });
@@ -129,8 +135,8 @@ export function createWSClient(opts: {
       for (const key in pendingRequests) {
         const req = pendingRequests[key];
         if (req.ws === newConnection) {
-          req.callbacks.onDone?.();
           delete pendingRequests[key];
+          req.callbacks.onDone?.();
         }
       }
     });
@@ -234,6 +240,7 @@ export function wsLink<TRouter extends AnyRouter>(
               prev(
                 TRPCClientError.from(
                   new WebSocketInterruptedError('Operation ended prematurely'),
+                  { isDone: true },
                 ),
               );
             }

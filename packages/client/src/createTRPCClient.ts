@@ -37,18 +37,25 @@ export class TRPCClientError<TRouter extends AnyRouter> extends Error {
   public readonly res?: Maybe<Response>;
   public readonly originalError?: Maybe<Error>;
   public readonly shape?: TRPCProcedureErrorEnvelope<TRouter>['error'];
+  /**
+   * Fatal error - expect no more results after this error
+   */
+  public readonly isDone: boolean;
 
   constructor(
     message: string,
     {
       result,
       originalError,
+      isDone = false,
     }: {
       result: Maybe<TRPCProcedureErrorEnvelope<TRouter>>;
       originalError: Maybe<Error>;
+      isDone?: boolean;
     },
   ) {
     super(message);
+    this.isDone = isDone;
     this.message = message;
     this.result = result;
     this.originalError = originalError;
@@ -59,19 +66,22 @@ export class TRPCClientError<TRouter extends AnyRouter> extends Error {
 
   public static from<TRouter extends AnyRouter>(
     result: Error | TRPCProcedureErrorEnvelope<TRouter>,
+    opts: { isDone?: boolean } = {},
   ): TRPCClientError<TRouter> {
     if (!(result instanceof Error)) {
       return new TRPCClientError<TRouter>((result.error as any).message ?? '', {
+        ...opts,
         originalError: null,
         result,
       });
     }
 
     if (result.name === 'TRPCClientError') {
-      return result;
+      return result as TRPCClientError<any>;
     }
 
     return new TRPCClientError<TRouter>(result.message, {
+      ...opts,
       originalError: result,
       result: null,
     });

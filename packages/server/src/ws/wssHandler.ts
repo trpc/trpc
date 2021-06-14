@@ -41,14 +41,21 @@ export type JSONRPC2ProcedureStopEnvelope = {
   jsonrpc: '2.0';
   method: 'stop';
 };
+export type JSONRPC2ProcedureStoppedEnvelope = {
+  id: number;
+  jsonrpc: '2.0';
+  result: 'stopped';
+};
 export type JSONRPC2RequestEnvelope<TInput = unknown> =
   | JSONRPC2ProcedureRequestEnvelope<TInput>
   | JSONRPC2ProcedureStopEnvelope;
-export type JSONRPC2ResponseEnvelope<TResult = unknown> = {
-  jsonrpc: '2.0';
-  result: TResult;
-  id: number;
-};
+export type JSONRPC2ResponseEnvelope<TResult = unknown> =
+  | {
+      jsonrpc: '2.0';
+      result: TResult;
+      id: number;
+    }
+  | JSONRPC2ProcedureStoppedEnvelope;
 
 function assertIsObject(obj: unknown): asserts obj is Record<string, unknown> {
   if (typeof obj !== 'object' || Array.isArray(obj) || !obj) {
@@ -141,11 +148,11 @@ export function wssHandler<TRouter extends AnyRouter>(
         });
         function respond(
           id: number,
-          json: TRPCProcedureEnvelope<TRouter, unknown>,
+          result: TRPCProcedureEnvelope<TRouter, unknown>,
         ) {
-          const response: JSONRPC2ResponseEnvelope<typeof json> = {
+          const response: JSONRPC2ResponseEnvelope<typeof result> = {
             jsonrpc: '2.0',
-            result: transformer.output.serialize(json),
+            result: transformer.output.serialize(result),
             id,
           };
           client.send(JSON.stringify(response));
@@ -198,6 +205,14 @@ export function wssHandler<TRouter extends AnyRouter>(
               opts.onError?.({ error, path, type, ctx, req, input });
               // TODO trigger some global error handler?
               respond(id, json);
+            });
+            sub.on('destroy', () => {
+              const response: JSONRPC2ProcedureStoppedEnvelope = {
+                jsonrpc: '2.0',
+                id,
+                result: 'stopped',
+              };
+              client.send(JSON.stringify(response));
             });
             await sub.start();
             // FIXME handle errors? or not? maybe push it to a callback with the ws client

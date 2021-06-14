@@ -21,6 +21,9 @@ function factory() {
   type Message = {
     id: string;
   };
+  const subRef: {
+    current: trpc.Subscription<Message>;
+  } = {} as any;
   let wsClient: TRPCWebSocketClient = null as any;
   const opts = routerToServerAndClient(
     trpc
@@ -51,7 +54,7 @@ function factory() {
         input: z.string().optional(),
         resolve() {
           ee.emit('server:connect');
-          return new trpc.Subscription<Message>({
+          const sub = (subRef.current = new trpc.Subscription<Message>({
             start(emit) {
               const onMessage = (data: Message) => {
                 emit.data(data);
@@ -59,7 +62,8 @@ function factory() {
               ee.on('server:msg', onMessage);
               return () => ee.off('server:msg', onMessage);
             },
-          });
+          }));
+          return sub;
         },
       }),
     {
@@ -76,6 +80,7 @@ function factory() {
     ee,
     wsClient,
     ...opts,
+    subRef,
   };
 }
 
@@ -260,4 +265,37 @@ test('$subscription() - server randomly stop and restart', async () => {
 
   wsClient.close();
   wss.close();
+});
+
+test('server subscription ended', async () => {
+  const { client, close, wsClient, ee, subRef } = factory();
+  ee.once('server:connect', () => {
+    setImmediate(() => {
+      ee.emit('server:msg', {
+        id: '1',
+      });
+      ee.emit('server:msg', {
+        id: '2',
+      });
+    });
+  });
+  const onNext = jest.fn();
+  const onError = jest.fn();
+  const onDone = jest.fn();
+  client.$subscription('onMessage', undefined, {
+    onNext,
+    onError,
+    onDone,
+  });
+
+  await waitFor(() => {
+    expect(onNext).toHaveBeenCalledTimes(2);
+  });
+  // destroy server subscription
+  subRef.current.destroy();
+  await waitFor(() => {
+    expect(onDone).toHaveBeenCalledTimes(1);
+  });
+  wsClient.close();
+  close();
 });

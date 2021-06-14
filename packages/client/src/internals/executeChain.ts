@@ -21,7 +21,14 @@ export function executeChain<
   const $destroyed = observableSubject(false);
 
   const updateResult = (result: OperationResult<TRouter, TOutput>) => {
-    result instanceof Error ? $result.error(result) : $result.next(result.data);
+    if (result instanceof Error) {
+      $result.error(result);
+      if (result.isDone) {
+        $result.done();
+      }
+    } else {
+      $result.next(result.data);
+    }
   };
   function walk({
     index,
