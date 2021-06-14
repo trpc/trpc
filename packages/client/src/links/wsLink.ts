@@ -6,11 +6,7 @@ import {
   JSONRPC2ResponseEnvelope,
 } from '@trpc/server/ws';
 import { TRPCClientError } from '../createTRPCClient';
-import {
-  observableSubject,
-  ObservableCallbacks,
-  UnsubscribeFn,
-} from '../internals/observable';
+import { ObservableCallbacks, UnsubscribeFn } from '../internals/observable';
 import { retryDelay } from '../internals/retryDelay';
 import { TRPCLink } from './core';
 
@@ -32,6 +28,13 @@ export function createWSClient(opts: {
   let isConnected = false;
   let idCounter = 0;
   let isClosed = false;
+  /**
+   * outgoing messages buffer whilst disconnected
+   */
+  const outgoing: JSONRPC2RequestEnvelope[] = [];
+  /**
+   * pending outgoing requests that are awaiting callback
+   */
   const pendingRequests: Record<
     number,
     {
@@ -45,8 +48,13 @@ export function createWSClient(opts: {
       >;
     }
   > = Object.create(null);
+  let connectAttempt = 0;
+  let connectTimer: NodeJS.Timer | number | null = null;
+  let connection = createWS();
 
-  const outgoing: JSONRPC2RequestEnvelope[] = [];
+  /**
+   * tries to send the list of messages
+   */
   function triggerSendIfConnected() {
     if (!isConnected) {
       return;
@@ -56,11 +64,9 @@ export function createWSClient(opts: {
       if (!msg) {
         break;
       }
-      $ws.get().send(JSON.stringify(msg));
+      connection.send(JSON.stringify(msg));
     }
   }
-  let connectAttempt = 0;
-  let connectTimer: NodeJS.Timer | number | null = null;
   function tryReconnect() {
     if (connectTimer || isClosed) {
       return;
@@ -70,18 +76,19 @@ export function createWSClient(opts: {
   }
 
   function createWS() {
-    const ws = new WebSocket(url);
+    const newConnection = new WebSocket(url);
     connectTimer = null;
 
-    ws.addEventListener('open', () => {
+    newConnection.addEventListener('open', () => {
       isConnected = true;
       connectAttempt = 0;
-      const oldConnection = $ws.get();
-      if (oldConnection !== ws) {
-        // kill connection after 1 second
-        setTimeout(() => ws.close(), 1000);
+      const oldConnection = connection;
+      if (oldConnection !== newConnection) {
+        // kill old connection after 1 second
+        // when we do graceful restarts
+        setTimeout(() => newConnection.close(), 1000);
       }
-      $ws.next(ws);
+      connection = newConnection;
 
       triggerSendIfConnected();
 
@@ -89,44 +96,39 @@ export function createWSClient(opts: {
       // idea:
       // [ ] server broadcats specific msg
       // [ ] start new connection in background (with timeout/jitter)
-      // 2. wait for all non-subscriptions to fail / wait for X seconds before timing out
+      // [x] wait for all non-subscriptions to fail / wait for X seconds before timing out
       // [x] reconnect, trigger done on all pending sub envelopes
     });
-    ws.addEventListener('error', () => {
+    newConnection.addEventListener('error', () => {
       // FIXME -- could probably be handled better
-      if (ws !== $ws.get()) {
+      if (newConnection !== connection) {
         tryReconnect();
       }
     });
-    ws.addEventListener('message', (msg) => {
-      try {
-        const json = JSON.parse(msg.data) as JSONRPC2ResponseEnvelope;
-        const req = pendingRequests[json.id];
-        if (!req) {
-          // do something?
-        } else {
-          req.callbacks.onNext?.(json);
-        }
-        // if ws has been replaced, let's check if there are other pending requests
-        // disconnect if none
-      } catch (err) {
+    newConnection.addEventListener('message', (msg) => {
+      const json = JSON.parse(msg.data) as JSONRPC2ResponseEnvelope;
+      const req = pendingRequests[json.id];
+      if (!req) {
         // do something?
+      } else {
+        req.callbacks.onNext?.(json);
       }
+      // if ws has been replaced, let's check if there are other pending requests
+      // disconnect if none
     });
 
-    ws.addEventListener('close', () => {
-      if ($ws.get() === ws) {
+    newConnection.addEventListener('close', () => {
+      if (connection === newConnection) {
         // connection might have been replaced already
         isConnected = false;
         tryReconnect();
-        // TODO
-        // - maybe some timeout / jitter?
-        // - maybe different depending on close code
       }
 
+      // trigger `onDone()` on all pending requests
+      // TODO maybe we should trigger a specific error too?
       for (const key in pendingRequests) {
         const req = pendingRequests[key];
-        if (req.ws === ws) {
+        if (req.ws === newConnection) {
           req.callbacks.onDone?.();
           delete pendingRequests[key];
         }
@@ -135,9 +137,8 @@ export function createWSClient(opts: {
 
     // FIXME handle reconnect
     // FIXME handle graceful reconnect - server restarts etc
-    return ws;
+    return newConnection;
   }
-  const $ws = observableSubject(createWS());
 
   function request(
     op: {
@@ -159,7 +160,7 @@ export function createWSClient(opts: {
       },
     };
     pendingRequests[id] = {
-      ws: $ws.get(),
+      ws: connection,
       callbacks,
     };
 
@@ -183,7 +184,7 @@ export function createWSClient(opts: {
   return {
     close: () => {
       isClosed = true;
-      $ws.get().close();
+      connection.close();
     },
     request,
   };
@@ -225,6 +226,9 @@ export function wsLink<TRouter extends AnyRouter>(
               unsub();
             }
           },
+          // // FIXME
+          // onError() {
+          // },
           onDone() {
             if (!unsubbed) {
               prev(
