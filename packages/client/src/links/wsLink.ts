@@ -7,7 +7,6 @@ import {
 } from '@trpc/server/ws';
 import { TRPCClientError } from '../createTRPCClient';
 import {
-  observable,
   observableSubject,
   ObservableCallbacks,
   UnsubscribeFn,
@@ -22,7 +21,16 @@ export function createWSClient(opts: { url: string; WebSocket?: WebSocket }) {
     );
   }
   let isConnected = false;
-  const $incomingEnvelopes = observable<JSONRPC2ResponseEnvelope>();
+  const pendingRequests: Record<
+    number,
+    {
+      ws: WebSocket;
+      callbacks: ObservableCallbacks<
+        JSONRPC2ResponseEnvelope,
+        TRPCClientError<AnyRouter>
+      >;
+    }
+  > = Object.create(null);
 
   let idCounter = 0;
   const outgoing: JSONRPC2RequestEnvelope[] = [];
@@ -53,24 +61,40 @@ export function createWSClient(opts: { url: string; WebSocket?: WebSocket }) {
       // 1. start new connection in background (with timeout/jitter)
       // 2. wait for all non-subscriptions to fail
       // 3. reconnect, trigger some error + done on all pending sub envelopes
+      $ws.next(ws);
     });
     ws.addEventListener('message', (msg) => {
       try {
-        const json = JSON.parse(msg.data);
-        $incomingEnvelopes.next(json);
+        const json = JSON.parse(msg.data) as JSONRPC2ResponseEnvelope;
+        const req = pendingRequests[json.id];
+        if (!req) {
+          // do something?
+        } else {
+          req.callbacks.onNext?.(json);
+        }
       } catch (err) {
         // do something?
       }
     });
 
     ws.addEventListener('close', () => {
-      isConnected = false;
+      if ($ws.get() === ws) {
+        // connection might have been replaced already
+        isConnected = false;
+      } else {
+        // TODO
+        // - maybe some timeout / jitter?
+        // - maybe different depending on close code
+        createWS();
+      }
 
-      // TODO
-      // - maybe some timeout / jitter?
-      // - maybe different depending on code
-      // - if this connection has already been replaced by a new one, what to do?
-      createWS();
+      for (const key in pendingRequests) {
+        const req = pendingRequests[key];
+        if (req.ws === ws) {
+          req.callbacks.onDone?.();
+          delete pendingRequests[key];
+        }
+      }
     });
 
     // FIXME handle reconnect
@@ -85,7 +109,7 @@ export function createWSClient(opts: { url: string; WebSocket?: WebSocket }) {
       input: unknown;
       path: string;
     },
-    handlers: ObservableCallbacks<JSONRPC2ResponseEnvelope, unknown>,
+    callbacks: ObservableCallbacks<JSONRPC2ResponseEnvelope, unknown>,
   ): UnsubscribeFn {
     const { type, input, path } = op;
     const id = idCounter++;
@@ -98,27 +122,18 @@ export function createWSClient(opts: { url: string; WebSocket?: WebSocket }) {
         path,
       },
     };
-    const $res = observable<JSONRPC2ResponseEnvelope, unknown>();
-    $res.subscribe(handlers);
-    const unsub = $incomingEnvelopes.subscribe({
-      onNext(envelope) {
-        if (envelope.id !== id) {
-          return;
-        }
-        $res.next(envelope);
-      },
-      onError() {
-        // FIXME
-      },
-    });
+    pendingRequests[id] = {
+      ws: $ws.get(),
+      callbacks,
+    };
 
     // enqueue message
     outgoing.push(envelope);
     triggerSendIfConnected();
 
     return () => {
-      unsub();
-      $res.done();
+      pendingRequests[id]?.callbacks.onDone?.();
+      delete pendingRequests[id];
       if (op.type === 'subscription') {
         outgoing.push({
           id,
@@ -141,6 +156,12 @@ export type TRPCWebSocketClient = ReturnType<typeof createWSClient>;
 export interface WebSocketLinkOptions {
   client: TRPCWebSocketClient;
 }
+export class WebSocketInterruptedError extends Error {
+  constructor(message: string) {
+    super(message);
+    Object.setPrototypeOf(this, WebSocketInterruptedError.prototype);
+  }
+}
 export function wsLink<TRouter extends AnyRouter>(
   opts: WebSocketLinkOptions,
 ): TRPCLink<TRouter> {
@@ -151,6 +172,7 @@ export function wsLink<TRouter extends AnyRouter>(
     return ({ op, prev, onDestroy }) => {
       const { type, input: rawInput, path } = op;
       const input = rt.transformer.serialize(rawInput);
+      let unsubbed = false;
       const unsub = client.request(
         { type, path, input },
         {
@@ -165,9 +187,19 @@ export function wsLink<TRouter extends AnyRouter>(
               unsub();
             }
           },
+          onDone() {
+            if (!unsubbed) {
+              prev(
+                TRPCClientError.from(
+                  new WebSocketInterruptedError('Operation ended prematurely'),
+                ),
+              );
+            }
+          },
         },
       );
       onDestroy(() => {
+        unsubbed = true;
         unsub();
       });
     };
