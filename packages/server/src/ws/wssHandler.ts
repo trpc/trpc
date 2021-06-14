@@ -279,7 +279,7 @@ export function applyWSSHandler<TRouter extends AnyRouter>(
       };
       const data = JSON.stringify(response);
       for (const client of wss.clients) {
-        if (client.readyState === ws.OPEN) {
+        if (client.readyState === 1 /* ws.OPEN */) {
           client.send(data);
         }
       }
