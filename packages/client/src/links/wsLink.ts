@@ -184,6 +184,7 @@ export function wsLink<TRouter extends AnyRouter>(
 
             if (op.type !== 'subscription') {
               // if it isn't a subscription we don't care about next response
+              unsubbed = true;
               unsub();
             }
           },
