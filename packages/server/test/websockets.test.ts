@@ -4,6 +4,7 @@
 import { waitFor } from '@testing-library/react';
 import { EventEmitter } from 'events';
 import { expectTypeOf } from 'expect-type';
+import WebSocket from 'ws';
 // import { expectTypeOf } from 'expect-type';
 import ws from 'ws';
 import { z } from 'zod';
@@ -28,6 +29,7 @@ function factory() {
   let wsClient: TRPCWebSocketClient = null as any;
   const onNewMessageSubscription = jest.fn();
   const subscriptionEnded = jest.fn();
+  const onNewClient = jest.fn();
   const opts = routerToServerAndClient(
     trpc
       .router()
@@ -35,6 +37,12 @@ function factory() {
         input: z.string().nullish(),
         resolve({ input }) {
           return `hello ${input ?? 'world'}`;
+        },
+      })
+      .mutation('slow', {
+        async resolve() {
+          await new Promise((resolve) => setTimeout(resolve, 50));
+          return 'slow query resolved';
         },
       })
       .mutation('posts.edit', {
@@ -87,12 +95,14 @@ function factory() {
     },
   );
 
+  opts.wss.addListener('connection', onNewClient);
   return {
     ee,
     wsClient,
     ...opts,
     subRef,
     onNewMessageSubscription,
+    onNewClient,
   };
 }
 
@@ -321,11 +331,15 @@ test('server subscription ended', async () => {
 });
 
 test('server emits disconnect', async () => {
-  const { client, close, wsClient, wssHandler, onNewMessageSubscription, wss } =
-    factory();
+  const {
+    client,
+    close,
+    wsClient,
+    wssHandler,
+    onNewMessageSubscription,
+    onNewClient,
+  } = factory();
 
-  const onNewClient = jest.fn();
-  wss.addListener('connection', onNewClient);
   const onNext = jest.fn();
   const onError = jest.fn();
   const onDone = jest.fn();
@@ -379,4 +393,21 @@ test('sub emits errors', async () => {
 
   wsClient.close();
   close();
+});
+
+test('wait for slow queries/mutations before disconnecting', async () => {
+  const { client, close, wsClient, onNewClient } = factory();
+
+  await waitFor(() => {
+    expect(onNewClient).toHaveBeenCalledTimes(1);
+  });
+  const promise = client.mutation('slow');
+  wsClient.close();
+  expect(await promise).toMatchInlineSnapshot(`"slow query resolved"`);
+  close();
+  await waitFor(() => {
+    expect((wsClient.getConnection() as any as WebSocket).readyState).toBe(
+      WebSocket.CLOSED,
+    );
+  });
 });

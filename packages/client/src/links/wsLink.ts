@@ -48,6 +48,7 @@ export function createWSClient(opts: {
        * Reference to the WebSocket instance this request was made to
        */
       ws: WebSocket;
+      type: ProcedureType;
       callbacks: ObservableCallbacks<
         JSONRPC2ResponseEnvelope,
         TRPCClientError<AnyRouter>
@@ -56,7 +57,7 @@ export function createWSClient(opts: {
   > = Object.create(null);
   let connectAttempt = 0;
   let connectTimer: NodeJS.Timer | number | null = null;
-  let connection = createWS();
+  let activeConnection = createWS();
   let state: 'open' | 'connecting' | 'closed' = 'connecting';
 
   /**
@@ -71,7 +72,7 @@ export function createWSClient(opts: {
       if (!msg) {
         break;
       }
-      connection.send(JSON.stringify(msg));
+      activeConnection.send(JSON.stringify(msg));
     }
   }
   function tryReconnect() {
@@ -84,32 +85,47 @@ export function createWSClient(opts: {
   function reconnectInMs(ms: number) {
     clearTimeout(connectTimer as any);
     state = 'connecting';
-    const oldConnection = connection;
+    const oldConnection = activeConnection;
     setTimeout(() => {
       oldConnection.close();
     }, staleConnectionTimeoutMs);
     connectTimer = setTimeout(() => {
-      connection = createWS();
+      activeConnection = createWS();
     }, ms);
   }
 
+  function closeIfNoPending(conn: WebSocket) {
+    // disconnect as soon as there are no pending queries /  mutations
+    const hasPendingRequests = Object.values(pendingRequests).some(
+      (p) => p.ws === conn && p.type !== 'subscription',
+    );
+    if (!hasPendingRequests) {
+      conn.close();
+    }
+  }
+
   function createWS() {
-    const newConnection = new WebSocket(url);
+    const conn = new WebSocket(url);
     clearTimeout(connectTimer as any);
     connectTimer = null;
 
-    newConnection.addEventListener('open', () => {
+    conn.addEventListener('open', () => {
       connectAttempt = 0;
       state = 'open';
       triggerSendIfConnected();
     });
-    newConnection.addEventListener('error', () => {
+    conn.addEventListener('error', () => {
       tryReconnect();
     });
-    newConnection.addEventListener('message', (msg) => {
+    conn.addEventListener('message', (msg) => {
       const res = JSON.parse(msg.data) as JSONRPC2ResponseEnvelope;
 
-      if (res.result === 'reconnect' && newConnection === connection) {
+      if (conn !== activeConnection) {
+        setTimeout(() => {
+          closeIfNoPending(conn);
+        }, 1);
+      }
+      if (res.result === 'reconnect' && conn === activeConnection) {
         reconnectInMs(reconnectDelayMs());
         return;
       }
@@ -122,26 +138,26 @@ export function createWSClient(opts: {
       if (res.result === 'stopped') {
         delete pendingRequests[res.id];
         req.callbacks.onDone?.();
-        return;
+      } else {
+        req.callbacks.onNext?.(res);
       }
-      req.callbacks.onNext?.(res);
     });
 
-    newConnection.addEventListener('close', () => {
-      if (connection === newConnection) {
+    conn.addEventListener('close', () => {
+      if (activeConnection === conn) {
         // connection might have been replaced already
         tryReconnect();
       }
 
       for (const key in pendingRequests) {
         const req = pendingRequests[key];
-        if (req.ws === newConnection) {
+        if (req.ws === conn) {
           delete pendingRequests[key];
           req.callbacks.onDone?.();
         }
       }
     });
-    return newConnection;
+    return conn;
   }
 
   function request(
@@ -164,7 +180,8 @@ export function createWSClient(opts: {
       },
     };
     pendingRequests[id] = {
-      ws: connection,
+      ws: activeConnection,
+      type,
       callbacks,
     };
 
@@ -188,9 +205,12 @@ export function createWSClient(opts: {
   return {
     close: () => {
       isClosed = true;
-      connection.close();
+      closeIfNoPending(activeConnection);
     },
     request,
+    getConnection() {
+      return activeConnection;
+    },
   };
 }
 export type TRPCWebSocketClient = ReturnType<typeof createWSClient>;
