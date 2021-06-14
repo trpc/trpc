@@ -31,6 +31,22 @@ function factory() {
           return `hello ${input ?? 'world'}`;
         },
       })
+      .mutation('posts.edit', {
+        input: z.object({
+          id: z.string(),
+          data: z.object({
+            title: z.string(),
+            text: z.string(),
+          }),
+        }),
+        async resolve({ input }) {
+          const { id, data } = input;
+          return {
+            id,
+            ...data,
+          };
+        },
+      })
       .subscription('onMessage', {
         input: z.string().optional(),
         resolve() {
@@ -73,6 +89,25 @@ test('query', async () => {
   wsClient.close();
 });
 
+test('mutation', async () => {
+  const { client, close, wsClient } = factory();
+  expect(
+    await client.mutation('posts.edit', {
+      id: 'id',
+      data: { title: 'title', text: 'text' },
+    }),
+  ).toMatchInlineSnapshot(`
+    Object {
+      "id": "id",
+      "text": "text",
+      "title": "title",
+    }
+  `);
+
+  close();
+  wsClient.close();
+});
+
 test('subscriptionOnce()', async () => {
   const { client, close, wsClient, ee } = factory();
   ee.once('server:connect', () => {
@@ -99,36 +134,7 @@ test('subscriptionOnce()', async () => {
 });
 
 test('$subscription()', async () => {
-  const ee = new EventEmitter();
-  type Message = {
-    id: string;
-  };
-  let wsClient: TRPCWebSocketClient = null as any;
-  const { client, close } = routerToServerAndClient(
-    trpc.router().subscription('onMessage', {
-      input: z.string().optional(),
-      resolve() {
-        ee.emit('server:connect');
-        return new trpc.Subscription<Message>({
-          start(emit) {
-            const onMessage = (data: Message) => {
-              emit.data(data);
-            };
-            ee.on('server:msg', onMessage);
-            return () => ee.off('server:msg', onMessage);
-          },
-        });
-      },
-    }),
-    {
-      client({ wssUrl }) {
-        wsClient = createWSClient({ url: wssUrl });
-        return {
-          links: [wsLink({ client: wsClient })],
-        };
-      },
-    },
-  );
+  const { client, close, ee, wsClient } = factory();
   ee.once('server:connect', () => {
     setImmediate(() => {
       ee.emit('server:msg', {
