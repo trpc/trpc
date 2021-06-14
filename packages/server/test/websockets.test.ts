@@ -3,7 +3,6 @@
 // import WebSocket from 'ws';
 import { waitFor } from '@testing-library/react';
 import { EventEmitter } from 'events';
-import { expectTypeOf } from 'expect-type';
 // import { expectTypeOf } from 'expect-type';
 import ws from 'ws';
 import { z } from 'zod';
@@ -24,21 +23,29 @@ function factory() {
   };
   let wsClient: TRPCWebSocketClient = null as any;
   const opts = routerToServerAndClient(
-    trpc.router().subscription('onMessage', {
-      input: z.string().optional(),
-      resolve() {
-        ee.emit('server:connect');
-        return new trpc.Subscription<Message>({
-          start(emit) {
-            const onMessage = (data: Message) => {
-              emit.data(data);
-            };
-            ee.on('server:msg', onMessage);
-            return () => ee.off('server:msg', onMessage);
-          },
-        });
-      },
-    }),
+    trpc
+      .router()
+      .query('greeting', {
+        input: z.string().nullish(),
+        resolve({ input }) {
+          return `hello ${input ?? 'world'}`;
+        },
+      })
+      .subscription('onMessage', {
+        input: z.string().optional(),
+        resolve() {
+          ee.emit('server:connect');
+          return new trpc.Subscription<Message>({
+            start(emit) {
+              const onMessage = (data: Message) => {
+                emit.data(data);
+              };
+              ee.on('server:msg', onMessage);
+              return () => ee.off('server:msg', onMessage);
+            },
+          });
+        },
+      }),
     {
       client({ wssUrl }) {
         wsClient = createWSClient({ url: wssUrl, retryDelay: () => 0 });
@@ -57,23 +64,7 @@ function factory() {
 }
 
 test('query', async () => {
-  let wsClient: any = null;
-  const { client, close } = routerToServerAndClient(
-    trpc.router().query('greeting', {
-      input: z.string().nullish(),
-      resolve({ input }) {
-        return `hello ${input ?? 'world'}`;
-      },
-    }),
-    {
-      client({ wssUrl }) {
-        wsClient = createWSClient({ url: wssUrl });
-        return {
-          links: [wsLink({ client: wsClient })],
-        };
-      },
-    },
-  );
+  const { client, close, wsClient } = factory();
   expect(await client.query('greeting')).toBe('hello world');
   expect(await client.query('greeting', null)).toBe('hello world');
   expect(await client.query('greeting', 'alexdotjs')).toBe('hello alexdotjs');
@@ -83,37 +74,7 @@ test('query', async () => {
 });
 
 test('subscriptionOnce()', async () => {
-  const ee = new EventEmitter();
-  type Message = {
-    id: string;
-  };
-  let wsClient: any = null;
-
-  const { client, close } = routerToServerAndClient(
-    trpc.router().subscription('onMessage', {
-      input: z.string().optional(),
-      resolve() {
-        ee.emit('server:connect');
-        return new trpc.Subscription<Message>({
-          start(emit) {
-            const onMessage = (data: Message) => {
-              emit.data(data);
-            };
-            ee.on('server:msg', onMessage);
-            return () => ee.off('server:msg', onMessage);
-          },
-        });
-      },
-    }),
-    {
-      client({ wssUrl }) {
-        wsClient = createWSClient({ url: wssUrl });
-        return {
-          links: [wsLink({ client: wsClient })],
-        };
-      },
-    },
-  );
+  const { client, close, wsClient, ee } = factory();
   ee.once('server:connect', () => {
     setImmediate(() => {
       ee.emit('server:msg', {
@@ -123,7 +84,6 @@ test('subscriptionOnce()', async () => {
   });
   const msgs = await client.subscriptionOnce('onMessage', '');
 
-  expectTypeOf(msgs).toMatchTypeOf<Message[]>();
   expect(msgs).toMatchInlineSnapshot(`
     Object {
       "id": "1",
