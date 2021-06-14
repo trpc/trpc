@@ -55,8 +55,6 @@ function factory() {
       .subscription('onMessage', {
         input: z.string().optional(),
         resolve() {
-          ee.emit('server:connect');
-          onNewMessageSubscription();
           const sub = (subRef.current = new trpc.Subscription<Message>({
             start(emit) {
               const onMessage = (data: Message) => {
@@ -69,12 +67,18 @@ function factory() {
               };
             },
           }));
+          ee.emit('subscription:created');
+          onNewMessageSubscription();
           return sub;
         },
       }),
     {
       client({ wssUrl }) {
-        wsClient = createWSClient({ url: wssUrl, retryDelay: () => 0 });
+        wsClient = createWSClient({
+          url: wssUrl,
+          retryDelayMs: () => 0,
+          staleConnectionTimeoutMs: 0,
+        });
         return {
           links: [wsLink({ client: wsClient })],
         };
@@ -122,7 +126,7 @@ test('mutation', async () => {
 
 test('subscriptionOnce()', async () => {
   const { client, close, wsClient, ee } = factory();
-  ee.once('server:connect', () => {
+  ee.once('subscription:created', () => {
     setImmediate(() => {
       ee.emit('server:msg', {
         id: '1',
@@ -147,7 +151,7 @@ test('subscriptionOnce()', async () => {
 
 test('$subscription()', async () => {
   const { client, close, ee, wsClient } = factory();
-  ee.once('server:connect', () => {
+  ee.once('subscription:created', () => {
     setImmediate(() => {
       ee.emit('server:msg', {
         id: '1',
@@ -205,7 +209,7 @@ test('$subscription()', async () => {
 test('$subscription() - server randomly stop and restart', async () => {
   const { client, close, wsClient, ee, wssPort, applyWSSHandlerOpts } =
     factory();
-  ee.once('server:connect', () => {
+  ee.once('subscription:created', () => {
     setImmediate(() => {
       ee.emit('server:msg', {
         id: '1',
@@ -240,6 +244,13 @@ test('$subscription() - server randomly stop and restart', async () => {
   );
 
   // reconnect from client
+  ee.once('subscription:created', () => {
+    setTimeout(() => {
+      ee.emit('server:msg', {
+        id: '3',
+      });
+    }, 1);
+  });
   client.$subscription('onMessage', undefined, {
     onNext,
     onError,
@@ -249,13 +260,7 @@ test('$subscription() - server randomly stop and restart', async () => {
   // start a new wss server on same port, and trigger a message
   onNext.mockClear();
   onDone.mockClear();
-  ee.once('server:connect', () => {
-    setImmediate(() => {
-      ee.emit('server:msg', {
-        id: '3',
-      });
-    });
-  });
+
   const wss = new ws.Server({ port: wssPort });
   applyWSSHandler({ ...applyWSSHandlerOpts, wss });
   await waitFor(() => {
@@ -277,7 +282,7 @@ test('$subscription() - server randomly stop and restart', async () => {
 
 test('server subscription ended', async () => {
   const { client, close, wsClient, ee, subRef } = factory();
-  ee.once('server:connect', () => {
+  ee.once('subscription:created', () => {
     setImmediate(() => {
       ee.emit('server:msg', {
         id: '1',

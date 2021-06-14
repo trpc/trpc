@@ -13,18 +13,20 @@ import { TRPCLink } from './core';
 export function createWSClient(opts: {
   url: string;
   WebSocket?: WebSocket;
-  retryDelay?: typeof retryDelay;
+  retryDelayMs?: typeof retryDelay;
   /**
    * If the server emits a `reconnect` event
-   * @default 0
+   * @default 1000
    */
-  staleConnectionTimeout?: number;
+  staleConnectionTimeoutMs?: number;
+  reconnectDelayMs?: () => number;
 }) {
   const {
     url,
     WebSocket: WebSocketImpl = WebSocket,
-    retryDelay: retryDelayFn = retryDelay,
-    staleConnectionTimeout = 0,
+    retryDelayMs: retryDelayFn = retryDelay,
+    staleConnectionTimeoutMs = 1000,
+    reconnectDelayMs = () => 0,
   } = opts;
   if (!WebSocketImpl) {
     throw new Error(
@@ -34,7 +36,7 @@ export function createWSClient(opts: {
   let idCounter = 0;
   let isClosed = false;
   /**
-   * outgoing messages buffer whilst disconnected
+   * outgoing messages buffer whilst not open
    */
   const outgoing: JSONRPC2RequestEnvelope[] = [];
   /**
@@ -56,12 +58,13 @@ export function createWSClient(opts: {
   let connectAttempt = 0;
   let connectTimer: NodeJS.Timer | number | null = null;
   let connection = createWS();
+  let state: 'open' | 'connecting' | 'closed' = 'connecting';
 
   /**
    * tries to send the list of messages
    */
   function triggerSendIfConnected() {
-    if (connection.readyState !== WebSocketImpl.OPEN) {
+    if (state !== 'open') {
       return;
     }
     while (true) {
@@ -77,7 +80,18 @@ export function createWSClient(opts: {
       return;
     }
     const timeout = retryDelayFn(connectAttempt++);
-    connectTimer = setTimeout(createWS, timeout);
+    reconnectInMs(timeout);
+  }
+  function reconnectInMs(ms: number) {
+    clearTimeout(connectTimer as any);
+    state = 'connecting';
+    const oldConnection = connection;
+    setTimeout(() => {
+      oldConnection.close();
+    }, staleConnectionTimeoutMs);
+    connectTimer = setTimeout(() => {
+      connection = createWS();
+    }, ms);
   }
 
   function createWS() {
@@ -87,8 +101,11 @@ export function createWSClient(opts: {
 
     newConnection.addEventListener('open', () => {
       connectAttempt = 0;
-      connection = newConnection;
-
+      if (newConnection === connection) {
+        state = 'open';
+      } else {
+        newConnection.close();
+      }
       triggerSendIfConnected();
     });
     newConnection.addEventListener('error', () => {
@@ -100,11 +117,7 @@ export function createWSClient(opts: {
       const res = JSON.parse(msg.data) as JSONRPC2ResponseEnvelope;
 
       if (res.result === 'reconnect' && newConnection === connection) {
-        const oldConnection = newConnection;
-        connection = createWS();
-        setTimeout(() => {
-          oldConnection.close();
-        }, staleConnectionTimeout);
+        reconnectInMs(reconnectDelayMs());
         return;
       }
 
@@ -119,9 +132,6 @@ export function createWSClient(opts: {
         return;
       }
       req.callbacks.onNext?.(res);
-      // TODO
-      // if ws has been replaced, let's check if there are other pending requests
-      // disconnect if none
     });
 
     newConnection.addEventListener('close', () => {
@@ -130,8 +140,6 @@ export function createWSClient(opts: {
         tryReconnect();
       }
 
-      // trigger `onDone()` on all pending requests
-      // TODO maybe we should trigger a specific error too?
       for (const key in pendingRequests) {
         const req = pendingRequests[key];
         if (req.ws === newConnection) {
@@ -140,9 +148,6 @@ export function createWSClient(opts: {
         }
       }
     });
-
-    // FIXME handle reconnect
-    // FIXME handle graceful reconnect - server restarts etc
     return newConnection;
   }
 
