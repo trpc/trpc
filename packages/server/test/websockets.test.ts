@@ -13,7 +13,7 @@ import {
   wsLink,
 } from '../../client/src/links/wsLink';
 import * as trpc from '../src';
-import { wssHandler } from '../src/ws';
+import { applyWSSHandler } from '../src/ws';
 import { routerToServerAndClient } from './_testHelpers';
 
 function factory() {
@@ -25,6 +25,8 @@ function factory() {
     current: trpc.Subscription<Message>;
   } = {} as any;
   let wsClient: TRPCWebSocketClient = null as any;
+  const onNewMessageSubscription = jest.fn();
+  const subscriptionEnded = jest.fn();
   const opts = routerToServerAndClient(
     trpc
       .router()
@@ -54,13 +56,17 @@ function factory() {
         input: z.string().optional(),
         resolve() {
           ee.emit('server:connect');
+          onNewMessageSubscription();
           const sub = (subRef.current = new trpc.Subscription<Message>({
             start(emit) {
               const onMessage = (data: Message) => {
                 emit.data(data);
               };
               ee.on('server:msg', onMessage);
-              return () => ee.off('server:msg', onMessage);
+              return () => {
+                subscriptionEnded();
+                ee.off('server:msg', onMessage);
+              };
             },
           }));
           return sub;
@@ -81,6 +87,7 @@ function factory() {
     wsClient,
     ...opts,
     subRef,
+    onNewMessageSubscription,
   };
 }
 
@@ -196,7 +203,8 @@ test('$subscription()', async () => {
 });
 
 test('$subscription() - server randomly stop and restart', async () => {
-  const { client, close, wsClient, ee, wssPort, wssHandlerOpts } = factory();
+  const { client, close, wsClient, ee, wssPort, applyWSSHandlerOpts } =
+    factory();
   ee.once('server:connect', () => {
     setImmediate(() => {
       ee.emit('server:msg', {
@@ -249,7 +257,7 @@ test('$subscription() - server randomly stop and restart', async () => {
     });
   });
   const wss = new ws.Server({ port: wssPort });
-  wssHandler({ ...wssHandlerOpts, wss });
+  applyWSSHandler({ ...applyWSSHandlerOpts, wss });
   await waitFor(() => {
     expect(onNext).toHaveBeenCalledTimes(1);
   });
@@ -296,6 +304,36 @@ test('server subscription ended', async () => {
   await waitFor(() => {
     expect(onDone).toHaveBeenCalledTimes(1);
   });
+  wsClient.close();
+  close();
+});
+
+test('server emits disconnect', async () => {
+  const { client, close, wsClient, wssHandler, onNewMessageSubscription, wss } =
+    factory();
+
+  const onNewClient = jest.fn();
+  wss.addListener('connection', onNewClient);
+  const onNext = jest.fn();
+  const onError = jest.fn();
+  const onDone = jest.fn();
+  client.$subscription('onMessage', undefined, {
+    onNext,
+    onError,
+    onDone,
+  });
+
+  await waitFor(() => {
+    expect(onNewMessageSubscription).toHaveBeenCalledTimes(1);
+    expect(onNewClient).toHaveBeenCalledTimes(1);
+  });
+  wssHandler.reconnectAllClients();
+  await waitFor(() => {
+    expect(onNewMessageSubscription).toHaveBeenCalledTimes(1);
+    expect(onNewClient).toHaveBeenCalledTimes(2);
+    expect(onDone).toHaveBeenCalledTimes(1);
+  });
+
   wsClient.close();
   close();
 });

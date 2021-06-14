@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/ban-types */
 
 import * as trpc from '@trpc/server';
-import { wssHandler } from '@trpc/server/ws';
+import { applyWSSHandler } from '@trpc/server/ws';
 import { z } from 'zod';
 import ws from 'ws';
 
@@ -49,7 +49,7 @@ trpc
 
 // ws server
 const wss = new ws.Server({ port: 2023 });
-wssHandler<AppRouter>({
+applyWSSHandler<AppRouter>({
   wss,
   router: appRouter,
   createContext() {

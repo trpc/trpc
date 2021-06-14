@@ -14,18 +14,23 @@ export function createWSClient(opts: {
   url: string;
   WebSocket?: WebSocket;
   retryDelay?: typeof retryDelay;
+  /**
+   * If the server emits a `reconnect` event
+   * @default 0
+   */
+  staleConnectionTimeout?: number;
 }) {
   const {
     url,
     WebSocket: WebSocketImpl = WebSocket,
     retryDelay: retryDelayFn = retryDelay,
+    staleConnectionTimeout = 0,
   } = opts;
   if (!WebSocketImpl) {
     throw new Error(
       "No WebSocket implementation found - you probably don't want to use this on the server, but if you do you need to pass a `WebSocket`-ponyfill",
     );
   }
-  let isConnected = false;
   let idCounter = 0;
   let isClosed = false;
   /**
@@ -56,7 +61,7 @@ export function createWSClient(opts: {
    * tries to send the list of messages
    */
   function triggerSendIfConnected() {
-    if (!isConnected) {
+    if (connection.readyState !== WebSocketImpl.OPEN) {
       return;
     }
     while (true) {
@@ -77,36 +82,32 @@ export function createWSClient(opts: {
 
   function createWS() {
     const newConnection = new WebSocket(url);
+    clearTimeout(connectTimer as any);
     connectTimer = null;
 
     newConnection.addEventListener('open', () => {
-      isConnected = true;
       connectAttempt = 0;
-      const oldConnection = connection;
-      if (oldConnection !== newConnection) {
-        // kill old connection after 1 second
-        // when we do graceful restarts
-        setTimeout(() => newConnection.close(), 1000);
-      }
       connection = newConnection;
 
       triggerSendIfConnected();
-
-      // TODO gracefully reconnect if server restarts
-      // idea:
-      // [ ] server broadcats specific msg
-      // [ ] start new connection in background (with timeout/jitter)
-      // [x] wait for all non-subscriptions to fail / wait for X seconds before timing out
-      // [x] reconnect, trigger done on all pending sub envelopes
     });
     newConnection.addEventListener('error', () => {
-      // FIXME -- could probably be handled better
       if (newConnection !== connection) {
         tryReconnect();
       }
     });
     newConnection.addEventListener('message', (msg) => {
       const res = JSON.parse(msg.data) as JSONRPC2ResponseEnvelope;
+
+      if (res.result === 'reconnect' && newConnection === connection) {
+        const oldConnection = newConnection;
+        connection = createWS();
+        setTimeout(() => {
+          oldConnection.close();
+        }, staleConnectionTimeout);
+        return;
+      }
+
       const req = pendingRequests[res.id];
       if (!req) {
         // do something?
@@ -126,7 +127,6 @@ export function createWSClient(opts: {
     newConnection.addEventListener('close', () => {
       if (connection === newConnection) {
         // connection might have been replaced already
-        isConnected = false;
         tryReconnect();
       }
 

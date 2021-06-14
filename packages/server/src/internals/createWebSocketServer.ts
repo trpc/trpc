@@ -4,7 +4,7 @@ import http from 'http';
 import WebSocket from 'ws';
 import { CreateContextFn, CreateContextFnOptions } from '../http';
 import { AnyRouter } from '../router';
-import { WSSHandler } from '../ws/wssHandler';
+import { WSSHandlerOptions } from '../ws/wssHandler';
 
 export type CreateWebSocketContextOptions = CreateContextFnOptions<
   http.IncomingMessage,
@@ -15,7 +15,7 @@ export type CreateWebSocketContextFn<TRouter extends AnyRouter> =
   CreateContextFn<TRouter, http.IncomingMessage, http.ServerResponse>;
 
 export type CreateWebSocketServerOptions<TRouter extends AnyRouter> = Omit<
-  WSSHandler<TRouter>,
+  WSSHandlerOptions<TRouter>,
   'wss'
 >;
 // export function createWebSocketServer<TRouter extends AnyRouter>(
@@ -24,7 +24,7 @@ export type CreateWebSocketServerOptions<TRouter extends AnyRouter> = Omit<
 //   const server = http.createServer();
 
 //   const wss = new WebSocket.Server({ server });
-//   wssHandler({ ...opts, wss });
+//   applyWSSHandler({ ...opts, wss });
 //   return {
 //     server,
 //     wss,

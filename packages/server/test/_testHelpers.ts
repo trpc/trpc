@@ -5,7 +5,7 @@ import fetch from 'node-fetch';
 import ws from 'ws';
 import { createTRPCClient, CreateTRPCClientOptions } from '../../client/src';
 import { AnyRouter, CreateHttpHandlerOptions } from '../src';
-import { WSSHandler, wssHandler } from '../src/ws';
+import { WSSHandlerOptions, applyWSSHandler } from '../src/ws';
 import { createHttpServer } from '../src/adapters/standalone';
 import { CreateWebSocketServerOptions } from '../src/internals/createWebSocketServer';
 (global as any).fetch = fetch;
@@ -39,13 +39,13 @@ export function routerToServerAndClient<TRouter extends AnyRouter>(
   // wss
   const wss = new ws.Server({ port: 0 });
   const wssPort = (wss.address() as any).port as number;
-  const wssHandlerOpts: WSSHandler<TRouter> = {
+  const applyWSSHandlerOpts: WSSHandlerOptions<TRouter> = {
     wss,
     router,
     createContext: () => ({}),
     ...(opts?.wssServer ?? {}),
   };
-  wssHandler(wssHandlerOpts);
+  const wssHandler = applyWSSHandler(applyWSSHandlerOpts);
   const wssUrl = `ws://localhost:${wssPort}`;
 
   // client
@@ -73,6 +73,8 @@ export function routerToServerAndClient<TRouter extends AnyRouter>(
     port: httpPort,
     httpPort,
     wssPort,
-    wssHandlerOpts,
+    applyWSSHandlerOpts,
+    wssHandler,
+    wss,
   };
 }

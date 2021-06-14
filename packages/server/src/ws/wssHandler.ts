@@ -11,7 +11,6 @@ import { BaseOptions, CreateContextFn } from '../http';
 import { getCombinedDataTransformer } from '../internals/getCombinedDataTransformer';
 import { AnyRouter, ProcedureType } from '../router';
 import { Subscription } from '../subscription';
-
 // https://developer.mozilla.org/en-US/docs/Web/API/CloseEvent
 const WEBSOCKET_STATUS_CODES = {
   ABNORMAL_CLOSURE: 1006,
@@ -46,6 +45,11 @@ export type JSONRPC2ProcedureStoppedEnvelope = {
   jsonrpc: '2.0';
   result: 'stopped';
 };
+export type JSONRPC2ReconnectEnvelope = {
+  id: number;
+  jsonrpc: '2.0';
+  result: 'reconnect';
+};
 export type JSONRPC2RequestEnvelope<TInput = unknown> =
   | JSONRPC2ProcedureRequestEnvelope<TInput>
   | JSONRPC2ProcedureStopEnvelope;
@@ -55,7 +59,8 @@ export type JSONRPC2ResponseEnvelope<TResult = unknown> =
       result: TResult;
       id: number;
     }
-  | JSONRPC2ProcedureStoppedEnvelope;
+  | JSONRPC2ProcedureStoppedEnvelope
+  | JSONRPC2ReconnectEnvelope;
 
 function assertIsObject(obj: unknown): asserts obj is Record<string, unknown> {
   if (typeof obj !== 'object' || Array.isArray(obj) || !obj) {
@@ -122,14 +127,15 @@ async function callProcedure<TRouter extends AnyRouter>(opts: {
 /**
  * Web socket server handler
  */
-export type WSSHandler<TRouter extends AnyRouter> = {
+export type WSSHandlerOptions<TRouter extends AnyRouter> = {
   router: TRouter;
   wss: ws.Server;
   createContext: CreateContextFn<TRouter, http.IncomingMessage, ws>;
+  process?: NodeJS.Process;
 } & BaseOptions<TRouter, http.IncomingMessage>;
 
-export function wssHandler<TRouter extends AnyRouter>(
-  opts: WSSHandler<TRouter>,
+export function applyWSSHandler<TRouter extends AnyRouter>(
+  opts: WSSHandlerOptions<TRouter>,
 ) {
   const { router, wss, createContext } = opts;
   const transformer = getCombinedDataTransformer(opts.transformer);
@@ -140,12 +146,6 @@ export function wssHandler<TRouter extends AnyRouter>(
       const ctx = await createContext({ req, res: client });
       const caller = router.createCaller(ctx);
       client.on('message', async (message) => {
-        client.on('close', () => {
-          for (const sub of clientSubscriptions.values()) {
-            sub.destroy();
-          }
-          clientSubscriptions.clear();
-        });
         function respond(
           id: number,
           result: TRPCProcedureEnvelope<TRouter, unknown>,
@@ -237,6 +237,13 @@ export function wssHandler<TRouter extends AnyRouter>(
           respond(id, json);
         }
       });
+
+      client.once('close', () => {
+        for (const sub of clientSubscriptions.values()) {
+          sub.destroy();
+        }
+        clientSubscriptions.clear();
+      });
     } catch (err) {
       const error = getErrorFromUnknown(err);
 
@@ -262,4 +269,20 @@ export function wssHandler<TRouter extends AnyRouter>(
       client.close(WEBSOCKET_STATUS_CODES.ABNORMAL_CLOSURE);
     }
   });
+
+  return {
+    reconnectAllClients: () => {
+      const response: JSONRPC2ReconnectEnvelope = {
+        jsonrpc: '2.0',
+        result: 'reconnect',
+        id: -1,
+      };
+      const data = JSON.stringify(response);
+      for (const client of wss.clients) {
+        if (client.readyState === ws.OPEN) {
+          client.send(data);
+        }
+      }
+    },
+  };
 }
