@@ -16,7 +16,7 @@ global.WebSocket = ws as any;
 async function main() {
   // http calls
   const wsClient = createWSClient({
-    url: `ws://localhost:2023`,
+    url: `ws://localhost:2022`,
   });
   const client = createTRPCClient<AppRouter>({
     links: [

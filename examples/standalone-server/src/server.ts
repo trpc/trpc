@@ -54,17 +54,15 @@ export const appRouter = trpc
 export type AppRouter = typeof appRouter;
 
 // http server
-trpc
-  .createHttpServer({
-    router: appRouter,
-    createContext() {
-      return {};
-    },
-  })
-  .listen(2022);
+const { server, listen } = trpc.createHttpServer({
+  router: appRouter,
+  createContext() {
+    return {};
+  },
+});
 
 // ws server
-const wss = new ws.Server({ port: 2023 });
+const wss = new ws.Server({ server });
 applyWSSHandler<AppRouter>({
   wss,
   router: appRouter,
@@ -72,3 +70,5 @@ applyWSSHandler<AppRouter>({
     return {};
   },
 });
+
+listen(2022);
