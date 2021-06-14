@@ -76,8 +76,8 @@ function factory() {
       client({ wssUrl }) {
         wsClient = createWSClient({
           url: wssUrl,
-          retryDelayMs: () => 0,
-          staleConnectionTimeoutMs: 0,
+          retryDelayMs: () => 10,
+          staleConnectionTimeoutMs: 1,
         });
         return {
           links: [wsLink({ client: wsClient })],
@@ -232,9 +232,10 @@ test('$subscription() - server randomly stop and restart', async () => {
     expect(onNext).toHaveBeenCalledTimes(2);
   });
   // close websocket
-  close();
+  await close();
   await waitFor(() => {
     expect(onError).toHaveBeenCalledTimes(1);
+    expect(onDone).toHaveBeenCalledTimes(1);
   });
   expect(onError.mock.calls[0][0]).toMatchInlineSnapshot(
     `[Error: Operation ended prematurely]`,
@@ -263,6 +264,7 @@ test('$subscription() - server randomly stop and restart', async () => {
 
   const wss = new ws.Server({ port: wssPort });
   applyWSSHandler({ ...applyWSSHandlerOpts, wss });
+
   await waitFor(() => {
     expect(onNext).toHaveBeenCalledTimes(1);
   });
