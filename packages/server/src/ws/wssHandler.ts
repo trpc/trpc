@@ -189,12 +189,13 @@ export function wssHandler<TRouter extends AnyRouter>(
                 ok: false,
                 error: router.getErrorShape({
                   error,
-                  type: 'subscription',
+                  type,
                   path,
                   input,
                   ctx,
                 }),
               };
+              opts.onError?.({ error, path, type, ctx, req, input });
               // TODO trigger some global error handler?
               respond(id, json);
             });
@@ -217,7 +218,7 @@ export function wssHandler<TRouter extends AnyRouter>(
               ctx,
             }),
           };
-          // TODO trigger some global error handler?
+          opts.onError?.({ error, path, type, ctx, req, input });
           respond(id, json);
         }
       });
@@ -235,6 +236,14 @@ export function wssHandler<TRouter extends AnyRouter>(
         }),
       };
       client.send(json);
+      opts.onError?.({
+        error,
+        path: undefined,
+        type: 'unknown',
+        ctx: undefined,
+        req,
+        input: undefined,
+      });
       client.close(WEBSOCKET_STATUS_CODES.ABNORMAL_CLOSURE);
     }
   });
