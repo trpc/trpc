@@ -1,5 +1,5 @@
 {
-  "name": "@examples/next-starter",
+  "name": "@examples/next-starter-websockets",
   "version": "7.1.0-alpha.1",
   "private": true,
   "scripts": {
