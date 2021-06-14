@@ -11,19 +11,33 @@ import {
   ObservableCallbacks,
   UnsubscribeFn,
 } from '../internals/observable';
+import { retryDelay } from '../internals/retryDelay';
 import { TRPCLink } from './core';
 
-export function createWSClient(opts: { url: string; WebSocket?: WebSocket }) {
-  const { url, WebSocket: WebSocketImpl = WebSocket } = opts;
+export function createWSClient(opts: {
+  url: string;
+  WebSocket?: WebSocket;
+  retryDelay?: typeof retryDelay;
+}) {
+  const {
+    url,
+    WebSocket: WebSocketImpl = WebSocket,
+    retryDelay: retryDelayFn = retryDelay,
+  } = opts;
   if (!WebSocketImpl) {
     throw new Error(
       "No WebSocket implementation found - you probably don't want to use this on the server, but if you do you need to pass a `WebSocket`-ponyfill",
     );
   }
   let isConnected = false;
+  let idCounter = 0;
+  let isClosed = false;
   const pendingRequests: Record<
     number,
     {
+      /**
+       * Reference to the WebSocket instance this request was made to
+       */
       ws: WebSocket;
       callbacks: ObservableCallbacks<
         JSONRPC2ResponseEnvelope,
@@ -32,7 +46,6 @@ export function createWSClient(opts: { url: string; WebSocket?: WebSocket }) {
     }
   > = Object.create(null);
 
-  let idCounter = 0;
   const outgoing: JSONRPC2RequestEnvelope[] = [];
   function triggerSendIfConnected() {
     if (!isConnected) {
@@ -46,12 +59,23 @@ export function createWSClient(opts: { url: string; WebSocket?: WebSocket }) {
       $ws.get().send(JSON.stringify(msg));
     }
   }
+  let connectAttempt = 0;
+  let connectTimer: NodeJS.Timer | number | null = null;
+  function tryReconnect() {
+    if (connectTimer || isClosed) {
+      return;
+    }
+    const timeout = retryDelayFn(connectAttempt++);
+    connectTimer = setTimeout(createWS, timeout);
+  }
 
   function createWS() {
     const ws = new WebSocket(url);
+    connectTimer = null;
 
     ws.addEventListener('open', () => {
       isConnected = true;
+      connectAttempt = 0;
       const oldConnection = $ws.get();
       if (oldConnection !== ws) {
         // kill connection after 1 second
@@ -71,7 +95,7 @@ export function createWSClient(opts: { url: string; WebSocket?: WebSocket }) {
     ws.addEventListener('error', () => {
       // FIXME -- could probably be handled better
       if (ws !== $ws.get()) {
-        createWS();
+        tryReconnect();
       }
     });
     ws.addEventListener('message', (msg) => {
@@ -94,7 +118,7 @@ export function createWSClient(opts: { url: string; WebSocket?: WebSocket }) {
       if ($ws.get() === ws) {
         // connection might have been replaced already
         isConnected = false;
-        createWS();
+        tryReconnect();
         // TODO
         // - maybe some timeout / jitter?
         // - maybe different depending on close code
@@ -158,6 +182,7 @@ export function createWSClient(opts: { url: string; WebSocket?: WebSocket }) {
   }
   return {
     close: () => {
+      isClosed = true;
       $ws.get().close();
     },
     request,

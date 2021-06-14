@@ -26,14 +26,11 @@ import {
   TRPCLink,
 } from './links/core';
 import { httpLink } from './links/httpLink';
+import { retryDelay } from './internals/retryDelay';
 
 type CancellablePromise<T = unknown> = Promise<T> & {
   cancel: CancelFn;
 };
-
-/* istanbul ignore next */
-const retryDelay = (attemptIndex: number) =>
-  attemptIndex === 0 ? 0 : Math.min(1000 * 2 ** attemptIndex, 30000);
 
 export class TRPCClientError<TRouter extends AnyRouter> extends Error {
   public readonly result?: Maybe<TRPCProcedureErrorEnvelope<TRouter>>;

@@ -41,7 +41,7 @@ function factory() {
     }),
     {
       client({ wssUrl }) {
-        wsClient = createWSClient({ url: wssUrl });
+        wsClient = createWSClient({ url: wssUrl, retryDelay: () => 0 });
         return {
           links: [wsLink({ client: wsClient })],
         };
@@ -224,7 +224,7 @@ test('$subscription()', async () => {
   wsClient.close();
 });
 
-test('$subscription() - interrupt', async () => {
+test('$subscription() - server randomly stop and restart', async () => {
   const { client, close, wsClient, ee, wssPort, wssHandlerOpts } = factory();
   ee.once('server:connect', () => {
     setImmediate(() => {
