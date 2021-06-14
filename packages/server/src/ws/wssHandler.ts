@@ -183,6 +183,21 @@ export function wssHandler<TRouter extends AnyRouter>(
                 data,
               });
             });
+            sub.on('error', (_error: unknown) => {
+              const error = getErrorFromUnknown(_error);
+              const json: TRPCProcedureErrorEnvelope<TRouter> = {
+                ok: false,
+                error: router.getErrorShape({
+                  error,
+                  type: 'subscription',
+                  path,
+                  input,
+                  ctx,
+                }),
+              };
+              // TODO trigger some global error handler?
+              respond(id, json);
+            });
             await sub.start();
             // FIXME handle errors? or not? maybe push it to a callback with the ws client
             return;
@@ -202,6 +217,7 @@ export function wssHandler<TRouter extends AnyRouter>(
               ctx,
             }),
           };
+          // TODO trigger some global error handler?
           respond(id, json);
         }
       });
