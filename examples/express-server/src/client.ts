@@ -2,6 +2,8 @@ import { createTRPCClient } from '@trpc/client';
 import AbortController from 'abort-controller';
 import fetch from 'node-fetch';
 import type { AppRouter } from './server';
+import { loggerLink } from '@trpc/client/links/loggerLink';
+import { httpLink } from '@trpc/client/links/httpLink';
 
 // polyfill
 global.AbortController = AbortController;
@@ -13,14 +15,7 @@ async function main() {
   const url = `http://localhost:2021/trpc`;
 
   const client = createTRPCClient<AppRouter>({
-    url,
-    onSuccess(envelope) {
-      console.log('✅ ', envelope.statusCode);
-    },
-
-    onError(err) {
-      console.log('❌ ', err.result?.statusCode, err.message);
-    },
+    links: [loggerLink(), httpLink({ url })],
   });
   await sleep();
   await client.query('hello');
@@ -41,17 +36,7 @@ async function main() {
   }
   await sleep();
   const authedClient = createTRPCClient<AppRouter>({
-    url,
-    onSuccess(envelope) {
-      console.log('✅ ', envelope.statusCode);
-    },
-
-    onError(err) {
-      console.log('❌ ', err.result?.statusCode, err.message);
-    },
-    headers: () => ({
-      authorization: 'secret',
-    }),
+    links: [loggerLink(), httpLink({ url })],
   });
 
   await authedClient.query('admin.secret');
