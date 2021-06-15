@@ -240,6 +240,7 @@ export async function requestHandler<
   const isBatchCall = reqQueryParams.batch;
   function endResponse(json: JSONRPC2Response | JSONRPC2Response[]) {
     res.statusCode = getHTTPStatusCode(json);
+
     res.setHeader('Content-Type', 'application/json');
     res.end(JSON.stringify(transformer.output.serialize(json)));
   }
@@ -250,7 +251,7 @@ export async function requestHandler<
     if (type === 'unknown') {
       throw new TRPCError({
         message: `Unexpected request method ${req.method}`,
-        code: 'NOT_FOUND',
+        code: 'METHOD_NOT_SUPPORTED',
       });
     }
     const rawInput = await getInputFromRequest({
