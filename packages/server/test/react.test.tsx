@@ -4,6 +4,15 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/ban-ts-comment */
 
+import * as trpcServer from '../../server/src';
+jest.mock('@trpc/server', () => trpcServer);
+import * as trpcClient from '../../client/src';
+jest.mock('@trpc/client', () => trpcClient);
+import * as trpcReact from '../../react/src';
+jest.mock('@trpc/react', () => trpcReact);
+import * as trpcReact__ssg from '../../react/src/ssg';
+jest.mock('@trpc/react/ssg', () => trpcReact__ssg);
+
 import '@testing-library/jest-dom';
 import { render, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
@@ -20,19 +29,11 @@ import {
 } from 'react-query';
 import { dehydrate } from 'react-query/hydration';
 import { z, ZodError } from 'zod';
-import * as trpcClient from '../../client/src';
 import { withTRPC } from '../../next/src';
-import * as trpcReact from '../../react/src';
 import { createReactQueryHooks, OutputWithCursor } from '../../react/src';
-import * as trpcReact__ssg from '../../react/src/ssg';
 import { createSSGHelpers } from '../../react/ssg';
-import * as trpcServer from '../../server/src';
 import { DefaultErrorShape } from '../src';
 import { routerToServerAndClient } from './_testHelpers';
-jest.mock('@trpc/server', () => trpcServer);
-jest.mock('@trpc/client', () => trpcClient);
-jest.mock('@trpc/react', () => trpcReact);
-jest.mock('@trpc/react/ssg', () => trpcReact__ssg);
 
 setLogger({
   log() {},
