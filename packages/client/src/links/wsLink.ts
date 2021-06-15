@@ -2,7 +2,6 @@ import { AnyRouter, ProcedureType } from '@trpc/server';
 import {
   TRPCClientMessage,
   TRPCRequestEnvelope,
-  TRPCResponseEnvelope,
   TRPCResult,
 } from '@trpc/server/jsonrpc2';
 import { TRPCClientError } from '../createTRPCClient';
@@ -251,8 +250,10 @@ export function wsLink<TRouter extends AnyRouter>(
               // TODO
               return;
             }
+
             const data = rt.transformer.deserialize(result.data);
-            prev(data);
+
+            prev({ type: 'data', data });
 
             if (op.type !== 'subscription') {
               // if it isn't a subscription we don't care about next response

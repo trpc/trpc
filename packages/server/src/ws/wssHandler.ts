@@ -45,6 +45,13 @@ function parseMessage(obj: unknown): TRPCRequestEnvelope {
   assertIsObject(obj);
   const { method, params, id } = obj;
   assertIsRequestId(id);
+  if (method === 'subscription.stop') {
+    return {
+      id,
+      method,
+      params: undefined,
+    };
+  }
   assertIsProcedureType(method);
   assertIsObject(params);
 
@@ -102,20 +109,20 @@ export function applyWSSHandler<TRouter extends AnyRouter>(
         function subscriptionResponse(result: TRPCSubscriptionResponse) {
           respond(result);
         }
-        const obj = transformer.input.deserialize(
-          JSON.parse(message as string),
-        );
-        const msg = parseMessage(obj);
+        const msg = parseMessage(JSON.parse(message as string));
+
         const { id } = msg;
         if (msg.method === 'subscription.stop') {
           clientSubscriptions.get(id)?.destroy();
           clientSubscriptions.delete(id);
           return;
         }
-        const { path, input } = msg.params;
+        const input = transformer.input.deserialize(msg.params.input);
+        const { path } = msg.params;
         const type = msg.method;
         try {
           const result = await callProcedure({ path, input, type, caller });
+
           if (!(result instanceof Subscription)) {
             respond({
               id,
