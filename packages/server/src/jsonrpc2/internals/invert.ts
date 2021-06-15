@@ -9,7 +9,7 @@ type Invert<T extends Record<PropertyKey, PropertyKey>> = {
 export function invert<T extends Record<PropertyKey, PropertyKey>>(
   obj: T,
 ): Invert<T> {
-  const newObj = {} as any;
+  const newObj = Object.create(null) as any;
   for (const key in obj) {
     const v = obj[key];
     newObj[v] = key;
