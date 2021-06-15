@@ -704,8 +704,8 @@ test('formatError() react types test', async () => {
       // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
-    if (mutation.error && mutation.error.result && mutation.error.shape) {
-      expectTypeOf(mutation.error.result.error).toMatchTypeOf<
+    if (mutation.error && mutation.error && mutation.error.shape) {
+      expectTypeOf(mutation.error.shape).toMatchTypeOf<
         DefaultErrorShape & {
           $test: string;
         }
