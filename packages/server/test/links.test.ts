@@ -88,9 +88,14 @@ test('chainer', async () => {
   });
 
   await waitFor(() => {
-    expect($result.get()).not.toBeNull();
+    expect($result.get().type).not.toBe('init');
   });
-  expect($result.get()).toMatchInlineSnapshot(`"world"`);
+  expect($result.get()).toMatchInlineSnapshot(`
+    Object {
+      "data": "world",
+      "type": "data",
+    }
+  `);
 
   expect(serverCall).toHaveBeenCalledTimes(3);
 
@@ -111,7 +116,12 @@ test('mock cache link has immediate $result', () => {
     ],
     op: {} as any,
   });
-  expect($result.get()).toMatchInlineSnapshot(`"cached"`);
+  expect($result.get()).toMatchInlineSnapshot(`
+    Object {
+      "data": "cached",
+      "type": "data",
+    }
+  `);
 });
 
 test('cancel request', async () => {
@@ -186,11 +196,21 @@ describe('batching', () => {
     });
 
     await waitFor(() => {
-      expect($result1.get()).not.toBeNull();
-      expect($result2.get()).not.toBeNull();
+      expect($result1.get().type).not.toBe('init');
+      expect($result2.get().type).not.toBe('init');
     });
-    expect($result1.get()).toMatchInlineSnapshot(`"hello world"`);
-    expect($result2.get()).toMatchInlineSnapshot(`"hello alexdotjs"`);
+    expect($result1.get()).toMatchInlineSnapshot(`
+      Object {
+        "data": "hello world",
+        "type": "data",
+      }
+    `);
+    expect($result2.get()).toMatchInlineSnapshot(`
+      Object {
+        "data": "hello alexdotjs",
+        "type": "data",
+      }
+    `);
 
     expect(contextCall).toHaveBeenCalledTimes(1);
 
@@ -307,9 +327,19 @@ test('multi down link', async () => {
     ],
     op: {} as any,
   });
-  expect($result.get()).toMatchInlineSnapshot(`"cached1"`);
+  expect($result.get()).toMatchInlineSnapshot(`
+    Object {
+      "data": "cached1",
+      "type": "data",
+    }
+  `);
   await waitFor(() => {
-    expect($result.get()).toMatchInlineSnapshot(`"cached1"`);
+    expect($result.get()).toMatchInlineSnapshot(`
+      Object {
+        "data": "cached1",
+        "type": "data",
+      }
+    `);
   });
 });
 
