@@ -1,11 +1,13 @@
 // https://www.jsonrpc.org/specification
 
+import { AnyRouter, inferProcedureInput } from '../router';
+
 // --> [1,2,3]
 // <-- {"jsonrpc": "2.0", "error": {"code": -32600, "message": "Invalid Request."}, "id": null}
 // --> {"jsonrpc": "2.0", "method": 1, "params": "bar"}
 // <-- {"jsonrpc": "2.0", "error": {"code": -32600, "message": "Invalid Request."}, "id": null}
 
-export const ERROR_CODES = {
+export const TRPC_ERROR_CODES = {
   /**
    * Invalid JSON was received by the server.
    * An error occurred on the server while parsing the JSON text.
@@ -59,3 +61,5 @@ export interface JSONRPCError<TError extends JSONRPCBaseError>
   extends JSONRPCBaseEnvelope {
   error: TError;
 }
+
+export type TRPCRequestId = NonNullable<JSONRPCRequestId>;

@@ -21,7 +21,7 @@
       "adapters/next.ts",
       "adapters/express.ts",
       "ws/index.ts",
-      "jsonrpc2.ts"
+      "jsonrpc2/index.ts"
     ]
   },
   "scripts": {
