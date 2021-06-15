@@ -9,3 +9,5 @@ slug: /fastify
 :::note
 Docs incomplete
 :::
+
+See the tests https://github.com/trpc/trpc/blob/main/packages/server/test/adapters/fastify.test.ts
