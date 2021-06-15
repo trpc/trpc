@@ -18,14 +18,12 @@ export function createWSClient(opts: {
    * @default 1000
    */
   staleConnectionTimeoutMs?: number;
-  reconnectDelayMs?: () => number;
 }) {
   const {
     url,
     WebSocket: WebSocketImpl = WebSocket,
     retryDelayMs: retryDelayFn = retryDelay,
     staleConnectionTimeoutMs = 1000,
-    reconnectDelayMs = () => 0,
   } = opts;
   /* istanbul ignore next */
   if (!WebSocketImpl) {
@@ -81,6 +79,15 @@ export function createWSClient(opts: {
     const timeout = retryDelayFn(connectAttempt++);
     reconnectInMs(timeout);
   }
+  function reconnect() {
+    clearTimeout(connectTimer as any);
+    state = 'connecting';
+    const oldConnection = activeConnection;
+    setTimeout(() => {
+      oldConnection.close();
+    }, staleConnectionTimeoutMs);
+    activeConnection = createWS();
+  }
   function reconnectInMs(ms: number) {
     clearTimeout(connectTimer as any);
     state = 'connecting';
@@ -88,15 +95,13 @@ export function createWSClient(opts: {
     setTimeout(() => {
       oldConnection.close();
     }, staleConnectionTimeoutMs);
-    connectTimer = setTimeout(() => {
-      activeConnection = createWS();
-    }, ms);
+    connectTimer = setTimeout(reconnect, ms);
   }
 
   function closeIfNoPending(conn: WebSocket) {
-    // disconnect as soon as there are no pending queries /  mutations
+    // disconnect as soon as there are is not pending result
     const hasPendingRequests = Object.values(pendingRequests).some(
-      (p) => p.ws === conn && p.type !== 'subscription',
+      (p) => p.ws === conn,
     );
     if (!hasPendingRequests) {
       conn.close();
@@ -121,12 +126,14 @@ export function createWSClient(opts: {
 
       if (conn !== activeConnection) {
         setTimeout(() => {
+          // when receiving a message, we any old connection that has no pending requests
           closeIfNoPending(conn);
         }, 1);
       }
+      // server asked client to do something
       if ('method' in msg) {
         if (msg.method === 'reconnect' && conn === activeConnection) {
-          reconnectInMs(reconnectDelayMs());
+          reconnect();
           // notify subscribers
           for (const p of Object.values(pendingRequests)) {
             if (p.type === 'subscription') {
@@ -234,6 +241,7 @@ export interface WebSocketLinkOptions {
 export class WebSocketInterruptedError extends Error {
   constructor(message: string) {
     super(message);
+    this.name = 'WebSocketInterruptedError';
     Object.setPrototypeOf(this, WebSocketInterruptedError.prototype);
   }
 }
@@ -241,6 +249,7 @@ export class WebSocketInterruptedError extends Error {
 export class ReconnectError extends Error {
   constructor() {
     super('ReconnectError');
+    this.name = 'ReconnectError';
     Object.setPrototypeOf(this, ReconnectError.prototype);
   }
 }

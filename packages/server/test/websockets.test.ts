@@ -10,11 +10,13 @@ import ws from 'ws';
 import { z } from 'zod';
 import {
   createWSClient,
+  ReconnectError,
   TRPCWebSocketClient,
   WebSocketInterruptedError,
   wsLink,
 } from '../../client/src/links/wsLink';
 import * as trpc from '../src';
+import { TRPCResult } from '../src/jsonrpc2';
 import { applyWSSHandler } from '../src/ws';
 import { routerToServerAndClient } from './_testHelpers';
 
@@ -86,7 +88,7 @@ function factory() {
         wsClient = createWSClient({
           url: wssUrl,
           retryDelayMs: () => 10,
-          staleConnectionTimeoutMs: 100,
+          staleConnectionTimeoutMs: 200,
         });
         return {
           links: [wsLink({ client: wsClient })],
@@ -176,13 +178,13 @@ test('$subscription()', async () => {
   const unsub = client.$subscription('onMessage', undefined, {
     onNext(data) {
       expectTypeOf(data).not.toBeAny();
-      expectTypeOf(data).toMatchTypeOf<Message>();
+      expectTypeOf(data).toMatchTypeOf<TRPCResult<Message>>();
       onNext(data);
     },
   });
 
   await waitFor(() => {
-    expect(onNext).toHaveBeenCalledTimes(2);
+    expect(onNext).toHaveBeenCalledTimes(3);
   });
 
   ee.emit('server:msg', {
@@ -196,17 +198,31 @@ test('$subscription()', async () => {
     Array [
       Array [
         Object {
-          "id": "1",
+          "type": "started",
         },
       ],
       Array [
         Object {
-          "id": "2",
+          "data": Object {
+            "id": "1",
+          },
+          "type": "data",
         },
       ],
       Array [
         Object {
-          "id": "2",
+          "data": Object {
+            "id": "2",
+          },
+          "type": "data",
+        },
+      ],
+      Array [
+        Object {
+          "data": Object {
+            "id": "2",
+          },
+          "type": "data",
         },
       ],
     ]
@@ -221,7 +237,7 @@ test('$subscription()', async () => {
   wsClient.close();
 });
 
-test.skip('$subscription() - server randomly stop and restart (this test might be flaky, try re-running)', async () => {
+test('$subscription() - server randomly stop and restart (this test might be flaky, try re-running)', async () => {
   const { client, close, wsClient, ee, wssPort, applyWSSHandlerOpts } =
     factory();
   ee.once('subscription:created', () => {
@@ -244,7 +260,7 @@ test.skip('$subscription() - server randomly stop and restart (this test might b
   });
 
   await waitFor(() => {
-    expect(onNext).toHaveBeenCalledTimes(2);
+    expect(onNext).toHaveBeenCalledTimes(3);
   });
   // close websocket
   await close();
@@ -253,7 +269,7 @@ test.skip('$subscription() - server randomly stop and restart (this test might b
     expect(onDone).toHaveBeenCalledTimes(1);
   });
   expect(onError.mock.calls[0][0]).toMatchInlineSnapshot(
-    `[Error: Operation ended prematurely]`,
+    `[TRPCClientError: Operation ended prematurely]`,
   );
   expect(onError.mock.calls[0][0].originalError).toBeInstanceOf(
     WebSocketInterruptedError,
@@ -281,13 +297,21 @@ test.skip('$subscription() - server randomly stop and restart (this test might b
   applyWSSHandler({ ...applyWSSHandlerOpts, wss });
 
   await waitFor(() => {
-    expect(onNext).toHaveBeenCalledTimes(1);
+    expect(onNext).toHaveBeenCalledTimes(2);
   });
   expect(onNext.mock.calls).toMatchInlineSnapshot(`
     Array [
       Array [
         Object {
-          "id": "3",
+          "type": "started",
+        },
+      ],
+      Array [
+        Object {
+          "data": Object {
+            "id": "3",
+          },
+          "type": "data",
         },
       ],
     ]
@@ -319,7 +343,7 @@ test('server subscription ended', async () => {
   });
 
   await waitFor(() => {
-    expect(onNext).toHaveBeenCalledTimes(2);
+    expect(onNext).toHaveBeenCalledTimes(3);
   });
   // destroy server subscription
   subRef.current.destroy();
@@ -387,7 +411,7 @@ test('sub emits errors', async () => {
   });
 
   await waitFor(() => {
-    expect(onNext).toHaveBeenCalledTimes(1);
+    expect(onNext).toHaveBeenCalledTimes(2);
     expect(onError).toHaveBeenCalledTimes(1);
     expect(onDone).toHaveBeenCalledTimes(0);
   });
@@ -413,7 +437,7 @@ test('wait for slow queries/mutations before disconnecting', async () => {
   });
 });
 
-test.only('ability to do do overlapping connects', async () => {
+test('ability to do do overlapping connects', async () => {
   const { client, close, wsClient, ee, wssHandler, wss } = factory();
   ee.once('subscription:created', () => {
     setImmediate(() => {
@@ -422,31 +446,39 @@ test.only('ability to do do overlapping connects', async () => {
       });
     });
   });
-  const onNext = jest.fn();
-  const onError = jest.fn();
-  const onDone = jest.fn();
-  client.$subscription('onMessage', undefined, {
-    onNext,
-    onError,
-    onDone,
-  });
+  function createSub() {
+    const onNext = jest.fn();
+    const onError = jest.fn();
+    const onDone = jest.fn();
+    const unsub = client.$subscription('onMessage', undefined, {
+      onNext,
+      onError,
+      onDone,
+    });
+    return { onNext, onDone, onError, unsub };
+  }
+  const sub1 = createSub();
 
   await waitFor(() => {
-    expect(onNext).toHaveBeenCalledTimes(1);
+    expect(sub1.onNext).toHaveBeenCalledTimes(2);
   });
   wssHandler.reconnectAllClients();
-
   await waitFor(() => {
+    expect(sub1.onError.mock.calls[0][0].originalError).toBeInstanceOf(
+      ReconnectError,
+    );
     expect(wss.clients.size).toBe(2);
   });
-
-  expect(onError.mock.calls).toMatchInlineSnapshot(`
-    Array [
-      Array [
-        [Error: ReconnectError],
-      ],
-    ]
-  `);
+  const sub2 = createSub();
+  await waitFor(() => {
+    expect(sub2.onNext).toHaveBeenCalledWith({
+      type: 'started',
+    });
+  });
+  sub1.unsub();
+  await waitFor(() => {
+    expect(wss.clients.size).toBe(1);
+  });
 
   wsClient.close();
   close();

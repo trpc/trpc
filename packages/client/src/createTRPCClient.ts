@@ -14,6 +14,7 @@ import {
   JSONRPC2ErrorResponse,
   TRPC_ERROR_CODES_BY_KEY,
 } from '@trpc/server/jsonrpc2';
+import { TRPCResult } from '@trpc/server/jsonrpc2';
 import { executeChain } from './internals/executeChain';
 import { getAbortController, getFetch } from './internals/fetchHelpers';
 import { ObservableCallbacks, UnsubscribeFn } from './internals/observable';
@@ -59,6 +60,7 @@ export class TRPCClientError<
     this.message = message;
     this.originalError = originalError;
     this.shape = result?.error;
+    this.name = 'TRPCClientError';
 
     Object.setPrototypeOf(this, TRPCClientError.prototype);
   }
@@ -74,7 +76,6 @@ export class TRPCClientError<
         result: result,
       });
     }
-
     if (result.name === 'TRPCClientError') {
       return result as TRPCClientError<any>;
     }
@@ -385,7 +386,7 @@ export class TRPCClient<TRouter extends AnyRouter> {
     path: TPath,
     input: TInput,
     opts: RequestOptions &
-      ObservableCallbacks<TOutput, TRPCClientError<TRouter>>,
+      ObservableCallbacks<TRPCResult<TOutput>, TRPCClientError<TRouter>>,
   ): UnsubscribeFn {
     const $res = this.$request<TInput, TOutput>({
       type: 'subscription',
@@ -395,7 +396,9 @@ export class TRPCClient<TRouter extends AnyRouter> {
     });
     $res.subscribe({
       onNext(output) {
-        output && output.type === 'data' && opts.onNext?.(output.data);
+        if (output.type !== 'init') {
+          opts.onNext?.(output);
+        }
       },
       onError: opts.onError,
       onDone: opts.onDone,
