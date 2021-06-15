@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-empty-function */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/ban-types */
 import { expectTypeOf } from 'expect-type';
@@ -532,4 +533,23 @@ describe('createCaller()', () => {
     });
     sub.start();
   });
+});
+
+// regression https://github.com/trpc/trpc/issues/527
+test.only('void mutation response', async () => {
+  const { client, close } = routerToServerAndClient(
+    trpc
+      .router()
+      .mutation('undefined', {
+        async resolve() {},
+      })
+      .mutation('null', {
+        async resolve() {
+          return null;
+        },
+      }),
+  );
+  expect(await client.mutation('undefined')).toMatchInlineSnapshot();
+  expect(await client.mutation('null')).toMatchInlineSnapshot();
+  close();
 });
