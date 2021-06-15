@@ -1,5 +1,9 @@
 import { AnyRouter, ProcedureType } from '@trpc/server';
-import { TRPCClientMessage, TRPCRequest, TRPCResult } from '@trpc/server/rpc';
+import {
+  TRPCClientIncomingMessage,
+  TRPCRequest,
+  TRPCResult,
+} from '@trpc/server/rpc';
 import { TRPCClientError } from '../createTRPCClient';
 import { ObservableCallbacks, UnsubscribeFn } from '../internals/observable';
 import { retryDelay } from '../internals/retryDelay';
@@ -118,7 +122,7 @@ export function createWSClient(opts: {
       tryReconnect();
     });
     conn.addEventListener('message', ({ data }) => {
-      const msg = JSON.parse(data) as TRPCClientMessage;
+      const msg = JSON.parse(data) as TRPCClientIncomingMessage;
 
       if (conn !== activeConnection) {
         setTimeout(() => {
