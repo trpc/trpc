@@ -9,7 +9,7 @@ import {
 } from '../';
 import { TRPCError } from '../errors';
 import { getHTTPStatusCode } from '../http/internals/getHTTPStatusCode';
-import { JSONRPC2ErrorResponse } from '../jsonrpc2';
+import { JSONRPC2ErrorResponse } from '../rpc';
 import { AnyRouter } from '../router';
 
 export type CreateNextContextOptions = CreateContextFnOptions<

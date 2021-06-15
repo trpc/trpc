@@ -16,7 +16,7 @@ import {
   wsLink,
 } from '../../client/src/links/wsLink';
 import * as trpc from '../src';
-import { TRPCResult } from '../src/jsonrpc2';
+import { TRPCResult } from '../src/rpc';
 import { applyWSSHandler } from '../src/ws';
 import { routerToServerAndClient } from './_testHelpers';
 

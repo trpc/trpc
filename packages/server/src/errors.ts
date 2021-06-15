@@ -1,4 +1,4 @@
-import { TRPC_ERROR_CODE_KEY } from './jsonrpc2';
+import { TRPC_ERROR_CODE_KEY } from './rpc';
 
 export class TRPCError extends Error {
   public readonly originalError?: unknown;

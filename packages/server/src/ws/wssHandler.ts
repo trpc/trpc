@@ -9,7 +9,7 @@ import {
   TRPCReconnectRequest,
   TRPCRequestEnvelope,
   TRPCSubscriptionResponse,
-} from '../jsonrpc2';
+} from '../rpc';
 import { AnyRouter, ProcedureType } from '../router';
 import { Subscription } from '../subscription';
 // https://developer.mozilla.org/en-US/docs/Web/API/CloseEvent

@@ -3,7 +3,7 @@ import {
   JSONRPC2_TO_HTTP_CODE,
   TRPC_ERROR_CODES_BY_NUMBER,
   TRPC_ERROR_CODE_NUMBER,
-} from '../../jsonrpc2';
+} from '../../rpc';
 
 export function getHTTPStatusCode(json: JSONRPC2Response | JSONRPC2Response[]) {
   const arr = Array.isArray(json) ? json : [json];

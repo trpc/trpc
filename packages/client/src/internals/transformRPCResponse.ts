@@ -1,4 +1,4 @@
-import { TRPCResponseEnvelope } from '@trpc/server/jsonrpc2';
+import { TRPCResponseEnvelope } from '@trpc/server/rpc';
 import { TRPCClientError } from '../createTRPCClient';
 import { LinkRuntimeOptions } from '../links/core';
 

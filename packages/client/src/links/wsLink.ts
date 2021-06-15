@@ -3,7 +3,7 @@ import {
   TRPCClientMessage,
   TRPCRequestEnvelope,
   TRPCResult,
-} from '@trpc/server/jsonrpc2';
+} from '@trpc/server/rpc';
 import { TRPCClientError } from '../createTRPCClient';
 import { ObservableCallbacks, UnsubscribeFn } from '../internals/observable';
 import { retryDelay } from '../internals/retryDelay';

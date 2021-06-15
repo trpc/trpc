@@ -1,4 +1,0 @@
-{
-  "main": "dist/trpc-server-jsonrpc2.cjs.js",
-  "module": "dist/trpc-server-jsonrpc2.esm.js"
-}

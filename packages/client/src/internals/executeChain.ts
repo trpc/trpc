@@ -1,5 +1,5 @@
 import { AnyRouter } from '@trpc/server';
-import { TRPCResult } from '@trpc/server/jsonrpc2';
+import { TRPCResult } from '@trpc/server/rpc';
 import { TRPCClientError } from '../createTRPCClient';
 import {
   Operation,

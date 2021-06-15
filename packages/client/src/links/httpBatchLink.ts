@@ -1,5 +1,5 @@
 import { AnyRouter, ProcedureType } from '@trpc/server';
-import { TRPCResponseEnvelope } from '@trpc/server/jsonrpc2';
+import { TRPCResponseEnvelope } from '@trpc/server/rpc';
 import { TRPCClientError } from '../createTRPCClient';
 import { dataLoader } from '../internals/dataLoader';
 import { transformRPCResponse } from '../internals/transformRPCResponse';

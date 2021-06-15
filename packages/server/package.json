@@ -21,7 +21,7 @@
       "adapters/next.ts",
       "adapters/express.ts",
       "ws/index.ts",
-      "jsonrpc2/index.ts"
+      "rpc/index.ts"
     ]
   },
   "scripts": {
@@ -35,7 +35,7 @@
     "dist",
     "adapters",
     "ws",
-    "jsonrpc2"
+    "rpc"
   ],
   "publishConfig": {
     "access": "public"

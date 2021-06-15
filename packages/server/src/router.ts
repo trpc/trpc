@@ -7,7 +7,7 @@ import {
   JSONRPC2BaseError,
   TRPC_ERROR_CODES_BY_KEY,
   TRPC_ERROR_CODE_NUMBER,
-} from './jsonrpc2';
+} from './rpc';
 import {
   createProcedure,
   CreateProcedureOptions,

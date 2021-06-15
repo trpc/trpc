@@ -23,6 +23,11 @@ export const TRPC_ERROR_CODES_BY_KEY = {
   /**
    * -32000 to -32099
    * Reserved for implementation-defined server-errors.
+   * Copying the last digits of 4XX errors
+   */
+
+  /**
+   * Unauthorized
    */
   UNAUTHORIZED: -32001,
   FORBIDDEN: -32003,

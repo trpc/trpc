@@ -13,8 +13,8 @@ import {
   JSONRPC2BaseError,
   JSONRPC2ErrorResponse,
   TRPC_ERROR_CODES_BY_KEY,
-} from '@trpc/server/jsonrpc2';
-import { TRPCResult } from '@trpc/server/jsonrpc2';
+} from '@trpc/server/rpc';
+import { TRPCResult } from '@trpc/server/rpc';
 import { executeChain } from './internals/executeChain';
 import { getAbortController, getFetch } from './internals/fetchHelpers';
 import { ObservableCallbacks, UnsubscribeFn } from './internals/observable';
