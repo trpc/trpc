@@ -9,10 +9,10 @@ import { JSONRPC2Error, JSONRPC2Response, JSONRPC2Result } from '../jsonrpc2';
 import { AnyRouter, inferRouterContext, ProcedureType } from '../router';
 import { Subscription } from '../subscription';
 import { DataTransformerOptions } from '../transformer';
-import { httpError } from './errors';
 import { getPostBody } from './internals/getPostBody';
 import { getQueryInput } from './internals/getQueryInput';
-import { getHTTPStatusCode } from './internals/getResponseStatusCode';
+import { getHTTPStatusCode } from './internals/getHTTPStatusCode';
+import { TRPCClientError } from '@trpc/client';
 assertNotBrowser();
 
 export type CreateContextFnOptions<TRequest, TResponse> = {
@@ -267,9 +267,10 @@ export async function requestHandler<
         return [input];
       }
       if (!Array.isArray(input)) {
-        throw httpError.badRequest(
-          '"input" needs to be an array when doing a batch call',
-        );
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: '"input" needs to be an array when doing a batch call',
+        });
       }
       return input;
     };

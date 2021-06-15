@@ -8,9 +8,8 @@ import type {
   inferProcedureOutput,
   inferSubscriptionOutput,
   Maybe,
-  TRPCProcedureErrorEnvelope,
-  TRPCProcedureSuccessEnvelope,
 } from '@trpc/server';
+import { JSONRPC2Error } from 'packages/server/src/jsonrpc2';
 import { executeChain } from './internals/executeChain';
 import { getAbortController, getFetch } from './internals/fetchHelpers';
 import { ObservableCallbacks, UnsubscribeFn } from './internals/observable';
@@ -29,10 +28,9 @@ type CancellablePromise<T = unknown> = Promise<T> & {
 };
 
 export class TRPCClientError<TRouter extends AnyRouter> extends Error {
-  public readonly result?: Maybe<TRPCProcedureErrorEnvelope<TRouter>>;
-  public readonly res?: Maybe<Response>;
-  public readonly originalError?: Maybe<Error>;
-  public readonly shape?: TRPCProcedureErrorEnvelope<TRouter>['error'];
+  public readonly result;
+  public readonly originalError;
+  public readonly shape;
   /**
    * Fatal error - expect no more results after this error
    */
@@ -45,7 +43,7 @@ export class TRPCClientError<TRouter extends AnyRouter> extends Error {
       originalError,
       isDone = false,
     }: {
-      result: Maybe<TRPCProcedureErrorEnvelope<TRouter>>;
+      result: ReturnType<TRouter['getErrorShape']>;
       originalError: Maybe<Error>;
       isDone?: boolean;
     },
@@ -61,7 +59,7 @@ export class TRPCClientError<TRouter extends AnyRouter> extends Error {
   }
 
   public static from<TRouter extends AnyRouter>(
-    result: Error | TRPCProcedureErrorEnvelope<TRouter>,
+    result: Error | JSONRPC2Error,
     opts: { isDone?: boolean } = {},
   ): TRPCClientError<TRouter> {
     if (!(result instanceof Error)) {

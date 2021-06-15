@@ -1,3 +1,5 @@
+import { AnyRouter } from '../router';
+
 // https://www.jsonrpc.org/specification
 export const TRPC_ERROR_CODES_MAP = {
   /**
@@ -24,6 +26,7 @@ export const TRPC_ERROR_CODES_MAP = {
   UNAUTHORIZED: -32001,
   FORBIDDEN: -32003,
   TIMEOUT: -32008,
+  PAYLOAD_TOO_LARGE: -32013,
   CLIENT_CLOSED_REQUEST: -32099,
 } as const;
 
@@ -44,6 +47,7 @@ export const JSONRPC2_TO_HTTP_CODE: Record<
   FORBIDDEN: 403,
   TIMEOUT: 408,
   CLIENT_CLOSED_REQUEST: 499,
+  PAYLOAD_TOO_LARGE: 413,
 };
 
 export type JSONRPC2RequestId = null | string | number;

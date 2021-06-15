@@ -62,6 +62,9 @@ export type inferRouterContext<TRouter extends AnyRouter> = Parameters<
 
 export type AnyRouter<TContext = any> = Router<TContext, any, any, any, any>;
 
+export type inferRouterError<TRouter extends AnyRouter> = ReturnType<
+  TRouter['getErrorShape']
+>;
 const PROCEDURE_DEFINITION_MAP: Record<
   ProcedureType,
   'queries' | 'mutations' | 'subscriptions'
