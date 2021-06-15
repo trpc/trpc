@@ -130,7 +130,7 @@ test('httpError.unauthorized()', async () => {
   if (!(clientError instanceof TRPCClientError)) {
     throw new Error('Did not throw');
   }
-  expect(clientError).toMatchInlineSnapshot(`[Error: UNAUTHORIZED]`);
+  expect(clientError).toMatchInlineSnapshot(`[TRPCClientError: UNAUTHORIZED]`);
   expect(onError).toHaveBeenCalledTimes(1);
   const serverError = onError.mock.calls[0][0].error;
 

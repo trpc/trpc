@@ -172,14 +172,14 @@ describe('integration tests', () => {
     await client.query('q', null as any); // treat null as undefined
     await expect(
       client.query('q', 'not-nullish' as any),
-    ).rejects.toMatchInlineSnapshot(`[Error: No input expected]`);
+    ).rejects.toMatchInlineSnapshot(`[TRPCClientError: No input expected]`);
 
     await client.mutation('m');
     await client.mutation('m', undefined);
     await client.mutation('m', null as any); // treat null as undefined
     await expect(
       client.mutation('m', 'not-nullish' as any),
-    ).rejects.toMatchInlineSnapshot(`[Error: No input expected]`);
+    ).rejects.toMatchInlineSnapshot(`[TRPCClientError: No input expected]`);
 
     close();
   });

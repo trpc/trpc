@@ -297,7 +297,7 @@ test('error emit', async () => {
   });
   await expect(
     client.subscriptionOnce('onMessage', ''),
-  ).rejects.toMatchInlineSnapshot(`[Error: Random error]`);
+  ).rejects.toMatchInlineSnapshot(`[TRPCClientError: Random error]`);
 
   expect(ee.listenerCount('server:msg')).toBe(0);
   expect(ee.listenerCount('server:error')).toBe(0);

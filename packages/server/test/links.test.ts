@@ -242,7 +242,7 @@ describe('batching', () => {
     });
 
     await expect(client.query('hello')).rejects.toMatchInlineSnapshot(
-      `[Error: Batching is not enabled on the server]`,
+      `[TRPCClientError: Batching is not enabled on the server]`,
     );
 
     close();
@@ -467,7 +467,7 @@ test('loggerLink', () => {
         "input": null,
         "path": "n/a",
         "requestId": 1,
-        "result": [Error: ..],
+        "result": [TRPCClientError: ..],
         "type": "query",
       }
     `);
