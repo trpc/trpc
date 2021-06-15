@@ -1,92 +1,19 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-import AbortController from 'abort-controller';
-import bodyParser from 'body-parser';
-import express from 'express';
-import http from 'http';
-import fetch from 'node-fetch';
-import { z } from 'zod';
-import { createTRPCClient } from '../../../client/src';
-import * as trpc from '../../src';
-import * as trpcExpress from '../../src/adapters/fastify';
-
-type Context = {
-  user: {
-    name: string;
-  } | null;
-};
+import f from 'fastify';
+import * as trpc from '../../../server/src';
 async function startServer() {
-  const createContext = (
-    _opts: trpcExpress.CreateExpressContextOptions,
-  ): Context => {
-    const getUser = () => {
-      if (_opts.req.headers.authorization === 'meow') {
-        return {
-          name: 'KATT',
-        };
-      }
-      return null;
-    };
+  const fastify = f();
 
-    return {
-      user: getUser(),
-    };
-  };
-
-  const router = trpc.router<Context>().query('hello', {
-    input: z
-      .object({
-        who: z.string().optional(),
-      })
-      .optional(),
-    resolve({ input, ctx }) {
-      return {
-        text: `hello ${input?.who ?? ctx.user?.name ?? 'world'}`,
-      };
-    },
+  // Declare a route
+  fastify.get('/', function (request, reply) {
+    reply.send({ hello: 'world' });
   });
-
-  // express implementation
-  const app = express();
-  app.use(bodyParser.json());
-
-  app.use(
-    '/trpc',
-    trpcExpress.createExpressMiddleware({
-      router,
-      createContext,
-    }),
-  );
-  const { server, port } = await new Promise<{
-    server: http.Server;
-    port: number;
-  }>((resolve) => {
-    const server = app.listen(0, () => {
-      resolve({
-        server,
-        port: (server.address() as any).port,
-      });
-    });
-  });
-
-  const client = createTRPCClient<typeof router>({
-    url: `http://localhost:${port}/trpc`,
-
-    fetchOpts: {
-      AbortController: AbortController as any,
-      fetch: fetch as any,
-    },
-  });
+  const url = await fastify.listen(0);
 
   return {
-    close: () =>
-      new Promise<void>((resolve, reject) =>
-        server.close((err) => {
-          err ? reject(err) : resolve();
-        }),
-      ),
-    port,
-    router,
-    client,
+    url,
+    close: () => {
+      return fastify.close();
+    },
   };
 }
 
@@ -98,20 +25,6 @@ afterAll(async () => {
   await t.close();
 });
 
-test('simple query', async () => {
-  expect(
-    await t.client.query('hello', {
-      who: 'test',
-    }),
-  ).toMatchInlineSnapshot(`
-    Object {
-      "text": "hello test",
-    }
-  `);
-
-  expect(await t.client.query('hello')).toMatchInlineSnapshot(`
-    Object {
-      "text": "hello world",
-    }
-  `);
+test('start server', async () => {
+  expect(t.url).toBeTruthy();
 });
