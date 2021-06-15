@@ -1,4 +1,4 @@
-import { AnyRouter } from 'packages/server/src/router';
+import { AnyRouter } from '@trpc/server';
 import { TRPCLink, Operation } from './core';
 
 export function splitLink<TRouter extends AnyRouter = AnyRouter>(opts: {

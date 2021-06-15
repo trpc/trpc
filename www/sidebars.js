@@ -9,7 +9,6 @@ module.exports = {
         'main/quickstart',
         'nextjs/intro',
         'react/intro',
-        'main/express',
         'main/example-apps',
         'main/contributing',
       ],
@@ -28,6 +27,7 @@ module.exports = {
         'server/error-formatting',
         'server/data-transformers',
         'server/caching',
+        'server/express',
       ],
     },
     {

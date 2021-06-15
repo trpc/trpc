@@ -355,7 +355,7 @@ export class Router<
       childRouter = maybeRouter;
     } else if (prefixOrRouter instanceof Router) {
       childRouter = prefixOrRouter;
-    } else {
+    } /* istanbul ignore next */ else {
       throw new Error('Invalid args');
     }
 
@@ -374,6 +374,7 @@ export class Router<
       ...duplicateMutations,
       ...duplicateSubscriptions,
     ];
+    /* istanbul ignore next */
     if (duplicates.length) {
       throw new Error(`Duplicate endpoint(s): ${duplicates.join(', ')}`);
     }

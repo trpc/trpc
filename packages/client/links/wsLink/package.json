@@ -1,0 +1,4 @@
+{
+  "main": "dist/trpc-client-links-wsLink.cjs.js",
+  "module": "dist/trpc-client-links-wsLink.esm.js"
+}

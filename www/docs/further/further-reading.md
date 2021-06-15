@@ -36,8 +36,8 @@ tRPC is a lot simpler and couples your server & website/app more tightly togethe
 
 ### HTTP Methods <-> Type mapping
 
-| HTTP Method | Mapping           | Notes                                                                                                  |
-| ----------- | ----------------- | ------------------------------------------------------------------------------------------------------ |
-| `GET`       | `.query()`        | Input JSON-stringified in query param.<br/>_e.g._ `?input=${JSON.stringify(encodeURIComponent(input))` |
-| `POST`      | `.mutation()`     | Input in post body.                                                                                    |
-| `PATCH`     | `.subscription()` | Input in post body.<br/>:warning: Experimental. API might change without major version bump.           |
+| HTTP Method          | Mapping           | Notes                                                                                                  |
+| -------------------- | ----------------- | ------------------------------------------------------------------------------------------------------ |
+| `GET`                | `.query()`        | Input JSON-stringified in query param.<br/>_e.g._ `?input=${JSON.stringify(encodeURIComponent(input))` |
+| `POST`               | `.mutation()`     | Input in post body.                                                                                    |
+| `PATCH` / WebSockets | `.subscription()` | Input in post body.<br/>:warning: Experimental. API might change without major version bump.           |

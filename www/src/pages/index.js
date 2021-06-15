@@ -82,24 +82,22 @@ function Home() {
             </GitHubButton>
           </p>
 
-          <p className={styles.figure}>
-            <figure>
-              <img
-                src="https://storage.googleapis.com/trpc/trpcgif.gif"
-                alt="Server/client example"
-              />
-              <figcaption>
-                The client above is <strong>not</strong> importing any code from
-                the server, only it&apos;s type declarations.{' '}
-                <code>import type</code> only imports declarations to be used
-                for type annotations and declarations. It{' '}
-                <a href="https://www.typescriptlang.org/docs/handbook/release-notes/typescript-3-8.html#type-only-imports-and-export">
-                  always gets fully erased
-                </a>
-                , so there’s no remnant of it at runtime.
-              </figcaption>
-            </figure>
-          </p>
+          <figure className={styles.figure}>
+            <img
+              src="https://storage.googleapis.com/trpc/trpcgif.gif"
+              alt="Server/client example"
+            />
+            <figcaption>
+              The client above is <strong>not</strong> importing any code from
+              the server, only it&apos;s type declarations.{' '}
+              <code>import type</code> only imports declarations to be used
+              annotations and declarations. It{' '}
+              <a href="https://www.typescriptlang.org/docs/handbook/release-notes/typescript-3-8.html#type-only-imports-and-export">
+                always gets fully erased
+              </a>
+              , so there’s no remnant of it at runtime.
+            </figcaption>
+          </figure>
           <p>
             <Link
               className={clsx('getStarted', styles.getStarted)}

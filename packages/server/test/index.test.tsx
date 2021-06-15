@@ -1,12 +1,15 @@
+/* eslint-disable @typescript-eslint/no-empty-function */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/ban-types */
 import { expectTypeOf } from 'expect-type';
+import { createTRPCClient } from '../../client/src';
+import { createWSClient, wsLink } from '../../client/src/links/wsLink';
 import { z } from 'zod';
 import { TRPCClientError } from '../../client/src';
 import * as trpc from '../src';
 import { CreateHttpContextOptions } from '../src';
 import { routerToServerAndClient } from './_testHelpers';
-
+import WebSocket from 'ws';
 test('mix query and mutation', async () => {
   type Context = {};
   const r = trpc
@@ -358,6 +361,9 @@ describe('integration tests', () => {
     });
   });
 
+  /**
+   * @deprecated
+   */
   test('client onError(), onSuccess()', async () => {
     const onError = jest.fn();
     const onSuccess = jest.fn();
@@ -377,7 +383,12 @@ describe('integration tests', () => {
         },
       },
     );
-    await client.mutation('hello', 1);
+    const res = await client.mutation('hello', 1);
+    expect(res).toMatchInlineSnapshot(`
+      Object {
+        "input": 1,
+      }
+    `);
     await expect(client.mutation('hello', 'not-a-number' as any)).rejects
       .toMatchInlineSnapshot(`
             [Error: [
@@ -524,4 +535,37 @@ describe('createCaller()', () => {
     });
     sub.start();
   });
+});
+
+// regression https://github.com/trpc/trpc/issues/527
+test('void mutation response', async () => {
+  const { client, close, wssPort, router } = routerToServerAndClient(
+    trpc
+      .router()
+      .mutation('undefined', {
+        async resolve() {},
+      })
+      .mutation('null', {
+        async resolve() {
+          return null;
+        },
+      }),
+  );
+  expect(await client.mutation('undefined')).toMatchInlineSnapshot(`undefined`);
+  expect(await client.mutation('null')).toMatchInlineSnapshot(`null`);
+
+  const ws = createWSClient({
+    url: `ws://localhost:${wssPort}`,
+    WebSocket: WebSocket as any,
+  });
+  const wsClient = createTRPCClient<typeof router>({
+    links: [wsLink({ client: ws })],
+  });
+
+  expect(await wsClient.mutation('undefined')).toMatchInlineSnapshot(
+    `undefined`,
+  );
+  expect(await wsClient.mutation('null')).toMatchInlineSnapshot(`null`);
+  ws.close();
+  close();
 });

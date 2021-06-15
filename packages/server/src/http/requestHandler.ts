@@ -6,12 +6,10 @@ import { assertNotBrowser } from '../assertNotBrowser';
 import { getErrorFromUnknown, TRPCError } from '../errors';
 import { AnyRouter, inferRouterContext, ProcedureType } from '../router';
 import { Subscription } from '../subscription';
-import {
-  CombinedDataTransformer,
-  DataTransformerOptions,
-} from '../transformer';
+import { DataTransformerOptions } from '../transformer';
 import { HTTPResponseEnvelope } from './envelopes';
 import { getStatusCodeFromError, httpError, HTTPError } from './errors';
+import { getCombinedDataTransformer } from '../internals/getCombinedDataTransformer';
 import {
   HTTPErrorResponseEnvelope,
   HTTPSuccessResponseEnvelope,
@@ -76,20 +74,6 @@ const HTTP_METHOD_PROCEDURE_TYPE_MAP: Record<
   POST: 'mutation',
   PATCH: 'subscription',
 };
-
-function getCombinedDataTransformer(
-  transformer: DataTransformerOptions | undefined = {
-    serialize: (value) => value,
-    deserialize: (value) => value,
-  },
-): CombinedDataTransformer {
-  const combinedTransformer =
-    'input' in transformer
-      ? transformer
-      : { input: transformer, output: transformer };
-
-  return combinedTransformer;
-}
 
 /**
  * Resolve input from request
