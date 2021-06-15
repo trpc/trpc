@@ -1,5 +1,4 @@
 import { TRPCError } from '../errors';
-import { TRPC_ERROR_CODES_BY_KEY, TRPC_ERROR_CODE_NUMBER } from '../jsonrpc2';
 
 /* istanbul ignore next */
 /**
