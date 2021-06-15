@@ -1,6 +1,6 @@
 {
   "name": "@trpc/server",
-  "version": "7.0.2",
+  "version": "7.1.0-alpha.1",
   "description": "tRPC Server",
   "author": "KATT",
   "license": "MIT",
@@ -19,7 +19,8 @@
     "entrypoints": [
       "index.ts",
       "adapters/next.ts",
-      "adapters/express.ts"
+      "adapters/express.ts",
+      "ws/index.ts"
     ]
   },
   "scripts": {
@@ -31,7 +32,8 @@
   "files": [
     "README.md",
     "dist",
-    "adapters"
+    "adapters",
+    "ws"
   ],
   "publishConfig": {
     "access": "public"
@@ -42,6 +44,7 @@
     "@testing-library/user-event": "^13.0.7",
     "@types/express": "^4.17.11",
     "@types/hash-sum": "^1.0.0",
+    "@types/ws": "^7.4.4",
     "devalue": "^2.0.1",
     "express": "^4.17.1",
     "hash-sum": "^2.0.0",
@@ -49,6 +52,7 @@
     "myzod": "^1.3.1",
     "next": "^10.0.5",
     "typescript": "4.3.2",
+    "ws": "^7.4.6",
     "yup": "^0.32.8",
     "zod": "^3.0.0"
   },

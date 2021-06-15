@@ -358,6 +358,9 @@ describe('integration tests', () => {
     });
   });
 
+  /**
+   * @deprecated
+   */
   test('client onError(), onSuccess()', async () => {
     const onError = jest.fn();
     const onSuccess = jest.fn();
@@ -377,7 +380,12 @@ describe('integration tests', () => {
         },
       },
     );
-    await client.mutation('hello', 1);
+    const res = await client.mutation('hello', 1);
+    expect(res).toMatchInlineSnapshot(`
+      Object {
+        "input": 1,
+      }
+    `);
     await expect(client.mutation('hello', 'not-a-number' as any)).rejects
       .toMatchInlineSnapshot(`
             [Error: [

@@ -13,23 +13,34 @@ export type Operation<TInput = unknown> = {
   context: OperationContext;
 };
 
-export type OperationResult<TRouter extends AnyRouter> =
-  | TRPCProcedureSuccessEnvelope<unknown>
+export type OperationResult<TRouter extends AnyRouter, TOutput = unknown> =
+  | TRPCProcedureSuccessEnvelope<TOutput>
   | TRPCClientError<TRouter>;
 
-export type PrevCallback<TRouter extends AnyRouter> = (
-  result: OperationResult<TRouter>,
+export type PrevCallback<TRouter extends AnyRouter, TOutput = unknown> = (
+  result: OperationResult<TRouter, TOutput>,
 ) => void;
-export type OperationLink<TRouter extends AnyRouter> = (opts: {
+export type OperationLink<
+  TRouter extends AnyRouter,
+  TInput = unknown,
+  TOutput = unknown,
+> = (opts: {
   op: Operation;
-  prev: PrevCallback<TRouter>;
-  next: (op: Operation, callback: PrevCallback<TRouter>) => void;
+  prev: PrevCallback<TRouter, TOutput>;
+  next: (
+    op: Operation<TInput>,
+    callback: PrevCallback<TRouter, TOutput>,
+  ) => void;
   onDestroy: (callback: () => void) => void;
 }) => void;
 
 export type TRPCLink<TRouter extends AnyRouter> = (
   opts: LinkRuntimeOptions,
 ) => OperationLink<TRouter>;
+
+export interface HttpLinkOptions {
+  url: string;
+}
 
 export type LinkRuntimeOptions = Readonly<{
   transformer: DataTransformer;
@@ -38,9 +49,6 @@ export type LinkRuntimeOptions = Readonly<{
   AbortController?: typeof AbortController;
 }>;
 
-export interface HttpLinkOptions {
-  url: string;
-}
 export type CancelFn = () => void;
 
 export type PromiseAndCancel<TValue> = {

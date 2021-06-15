@@ -31,7 +31,7 @@
     "lerna": "lerna",
     "start": "preconstruct watch",
     "dev": "yarn start",
-    "test": "cd packages/server && yarn test --",
+    "test": "cd packages/server && yarn jest",
     "lint": "eslint --ext \".js,.ts,.tsx\" --ignore-path .gitignore .",
     "lint-fix": "yarn lint --fix && manypkg fix",
     "postinstall": "preconstruct dev",
