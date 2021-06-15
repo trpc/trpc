@@ -28,7 +28,6 @@ type CancellablePromise<T = unknown> = Promise<T> & {
 };
 
 export class TRPCClientError<TRouter extends AnyRouter> extends Error {
-  public readonly result;
   public readonly originalError;
   public readonly shape;
   /**
@@ -39,11 +38,10 @@ export class TRPCClientError<TRouter extends AnyRouter> extends Error {
   constructor(
     message: string,
     {
-      result,
       originalError,
       isDone = false,
     }: {
-      result: ReturnType<TRouter['getErrorShape']>;
+      shape: Maybe<ReturnType<TRouter['getErrorShape']>>;
       originalError: Maybe<Error>;
       isDone?: boolean;
     },
@@ -51,22 +49,21 @@ export class TRPCClientError<TRouter extends AnyRouter> extends Error {
     super(message);
     this.isDone = isDone;
     this.message = message;
-    this.result = result;
     this.originalError = originalError;
-    this.shape = this.result?.error;
+    this.shape = this.shape;
 
     Object.setPrototypeOf(this, TRPCClientError.prototype);
   }
 
   public static from<TRouter extends AnyRouter>(
-    result: Error | JSONRPC2Error,
+    result: Error | JSONRPC2Error<any>,
     opts: { isDone?: boolean } = {},
   ): TRPCClientError<TRouter> {
     if (!(result instanceof Error)) {
       return new TRPCClientError<TRouter>((result.error as any).message ?? '', {
         ...opts,
         originalError: null,
-        result,
+        result: result.,
       });
     }
 
