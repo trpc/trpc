@@ -42,10 +42,10 @@ export function executeChain<
   }: {
     index: number;
     op: Operation<TInput>;
-    stack: PrevCallback<TRouter, TResult>[];
+    stack: PrevCallback<TRouter, TOutput>[];
   }) {
     const link = opts.links[index];
-    const prev: PrevCallback<TRouter, TResult> =
+    const prev: PrevCallback<TRouter, TOutput> =
       index === 0 ? (value) => updateResult(value) : stack[index - 1];
 
     link({
