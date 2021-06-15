@@ -1,7 +1,7 @@
 import { ProcedureType } from '../router';
 import { TRPC_ERROR_CODE_NUMBER } from './codes';
 
-export type JSONRPC2RequestId = number | string /*|string  | null*/;
+type JSONRPC2RequestId = number | string /*|string  | null*/;
 
 // BASE
 interface JSONRPC2BaseEnvelope {
