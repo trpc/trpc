@@ -1,8 +1,10 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import * as trpc from '@trpc/server';
 import superjson from 'superjson';
 import devalue from 'devalue';
 import { z } from 'zod';
 import { routerToServerAndClient } from './_testHelpers';
+import { createWSClient, wsLink } from '../../client/src/links/wsLink';
 
 test('superjson up and down', async () => {
   const transformer = superjson;
@@ -57,6 +59,41 @@ test('empty superjson up and down', async () => {
   expect(res2).toBe('hello world');
 
   close();
+});
+
+test('wsLink: empty superjson up and down', async () => {
+  const transformer = superjson;
+  let ws: any = null;
+  const { client, close } = routerToServerAndClient(
+    trpc
+      .router()
+      .query('empty-up', {
+        resolve() {
+          return 'hello world';
+        },
+      })
+      .query('empty-down', {
+        input: z.string(),
+        resolve() {
+          return 'hello world';
+        },
+      }),
+    {
+      client({ wssUrl }) {
+        ws = createWSClient({ url: wssUrl });
+        return { transformer, links: [wsLink({ client: ws })] };
+      },
+      server: { transformer },
+      wssServer: { transformer },
+    },
+  );
+  const res1 = await client.query('empty-up');
+  expect(res1).toBe('hello world');
+  const res2 = await client.query('empty-down', '');
+  expect(res2).toBe('hello world');
+
+  close();
+  ws.close();
 });
 
 test('devalue up and down', async () => {

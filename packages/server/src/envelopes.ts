@@ -17,3 +17,7 @@ export interface TRPCProcedureErrorEnvelope<TRouter extends AnyRouter> {
    */
   statusCode?: number;
 }
+
+export type TRPCProcedureEnvelope<TRouter extends AnyRouter, TOutput> =
+  | TRPCProcedureSuccessEnvelope<TOutput>
+  | TRPCProcedureErrorEnvelope<TRouter>;

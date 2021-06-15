@@ -88,11 +88,9 @@ test('chainer', async () => {
   });
 
   await waitFor(() => {
-    const value = $result.get();
-    expect(value).toMatchObject({
-      data: 'world',
-    });
+    expect($result.get()).not.toBeNull();
   });
+  expect($result.get()).toMatchInlineSnapshot(`"world"`);
 
   expect(serverCall).toHaveBeenCalledTimes(3);
 
@@ -113,9 +111,7 @@ test('mock cache link has immediate $result', () => {
     ],
     op: {} as any,
   });
-  expect($result.get()).toMatchObject({
-    data: 'cached',
-  });
+  expect($result.get()).toMatchInlineSnapshot(`"cached"`);
 });
 
 test('cancel request', async () => {
@@ -137,7 +133,7 @@ test('cancel request', async () => {
     },
   });
 
-  $result.destroy();
+  $result.done();
 
   expect(onDestroyCall).toHaveBeenCalled();
 });
@@ -193,12 +189,8 @@ describe('batching', () => {
       expect($result1.get()).not.toBeNull();
       expect($result2.get()).not.toBeNull();
     });
-    expect($result1.get()).toMatchObject({
-      data: 'hello world',
-    });
-    expect($result2.get()).toMatchObject({
-      data: 'hello alexdotjs',
-    });
+    expect($result1.get()).toMatchInlineSnapshot(`"hello world"`);
+    expect($result2.get()).toMatchInlineSnapshot(`"hello alexdotjs"`);
 
     expect(contextCall).toHaveBeenCalledTimes(1);
 
@@ -315,13 +307,9 @@ test('multi down link', async () => {
     ],
     op: {} as any,
   });
-  expect($result.get()).toMatchObject({
-    data: 'cached1',
-  });
+  expect($result.get()).toMatchInlineSnapshot(`"cached1"`);
   await waitFor(() => {
-    expect($result.get()).toMatchObject({
-      data: 'cached2',
-    });
+    expect($result.get()).toMatchInlineSnapshot(`"cached1"`);
   });
 });
 
