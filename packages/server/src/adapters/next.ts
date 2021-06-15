@@ -53,6 +53,7 @@ export function createNextApiHandler<TRouter extends AnyRouter>(
         input: undefined,
       });
       const json: JSONRPC2ErrorResponse = {
+        id: -1,
         error,
       };
       res.statusCode = getHTTPStatusCode(json);
