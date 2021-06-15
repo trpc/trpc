@@ -151,6 +151,7 @@ async function callProcedure<TRouter extends AnyRouter>(opts: {
 
         const requestTimeLeft = requestTimeoutMs - (Date.now() - startTime);
 
+        /* ignore next */
         if (requestTimeLeft <= backpressureMs) {
           // will timeout before next backpressure tick
           flush();
@@ -271,6 +272,7 @@ export async function requestHandler<
       if (!isBatchCall) {
         return [input];
       }
+      /* ignore next */
       if (!Array.isArray(input)) {
         throw new TRPCError({
           code: 'BAD_REQUEST',
@@ -332,9 +334,5 @@ export async function requestHandler<
     endResponse(json);
     onError && onError({ error, path: undefined, input, ctx, type: type, req });
   }
-  try {
-    teardown && (await teardown());
-  } catch (err) {
-    throw new Error('Teardown failed ' + err?.message);
-  }
+  await teardown?.();
 }
