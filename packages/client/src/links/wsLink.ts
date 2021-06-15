@@ -127,6 +127,12 @@ export function createWSClient(opts: {
       if ('method' in msg) {
         if (msg.method === 'reconnect' && conn === activeConnection) {
           reconnectInMs(reconnectDelayMs());
+          // notify subscribers
+          for (const p of Object.values(pendingRequests)) {
+            if (p.type === 'subscription') {
+              p.callbacks.onError?.(TRPCClientError.from(new ReconnectError()));
+            }
+          }
           return;
         }
         return;
@@ -231,6 +237,13 @@ export class WebSocketInterruptedError extends Error {
     Object.setPrototypeOf(this, WebSocketInterruptedError.prototype);
   }
 }
+
+export class ReconnectError extends Error {
+  constructor() {
+    super('ReconnectError');
+    Object.setPrototypeOf(this, ReconnectError.prototype);
+  }
+}
 export function wsLink<TRouter extends AnyRouter>(
   opts: WebSocketLinkOptions,
 ): TRPCLink<TRouter> {
@@ -246,14 +259,12 @@ export function wsLink<TRouter extends AnyRouter>(
         { type, path, input },
         {
           onNext(result) {
-            if (result.type !== 'data') {
-              // TODO
-              return;
+            if ('data' in result) {
+              const data = rt.transformer.deserialize(result.data);
+              prev({ type: 'data', data });
+            } else {
+              prev(result);
             }
-
-            const data = rt.transformer.deserialize(result.data);
-
-            prev({ type: 'data', data });
 
             if (op.type !== 'subscription') {
               // if it isn't a subscription we don't care about next response
@@ -261,7 +272,6 @@ export function wsLink<TRouter extends AnyRouter>(
               unsub();
             }
           },
-          // FIXME
           onError(err) {
             prev(TRPCClientError.from(err));
           },

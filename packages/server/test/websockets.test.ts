@@ -86,7 +86,7 @@ function factory() {
         wsClient = createWSClient({
           url: wssUrl,
           retryDelayMs: () => 10,
-          staleConnectionTimeoutMs: 1,
+          staleConnectionTimeoutMs: 100,
         });
         return {
           links: [wsLink({ client: wsClient })],
@@ -363,6 +363,7 @@ test('server emits disconnect', async () => {
   wsClient.close();
   close();
 });
+
 test('sub emits errors', async () => {
   const { client, close, wsClient, wss, ee, subRef } = factory();
 
@@ -410,4 +411,43 @@ test('wait for slow queries/mutations before disconnecting', async () => {
       WebSocket.CLOSED,
     );
   });
+});
+
+test.only('ability to do do overlapping connects', async () => {
+  const { client, close, wsClient, ee, wssHandler, wss } = factory();
+  ee.once('subscription:created', () => {
+    setImmediate(() => {
+      ee.emit('server:msg', {
+        id: '1',
+      });
+    });
+  });
+  const onNext = jest.fn();
+  const onError = jest.fn();
+  const onDone = jest.fn();
+  client.$subscription('onMessage', undefined, {
+    onNext,
+    onError,
+    onDone,
+  });
+
+  await waitFor(() => {
+    expect(onNext).toHaveBeenCalledTimes(1);
+  });
+  wssHandler.reconnectAllClients();
+
+  await waitFor(() => {
+    expect(wss.clients.size).toBe(2);
+  });
+
+  expect(onError.mock.calls).toMatchInlineSnapshot(`
+    Array [
+      Array [
+        [Error: ReconnectError],
+      ],
+    ]
+  `);
+
+  wsClient.close();
+  close();
 });
