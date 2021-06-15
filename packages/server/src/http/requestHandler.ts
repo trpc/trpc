@@ -294,7 +294,10 @@ export async function requestHandler<
             type,
           });
           const json: JSONRPC2ResultResponse = {
-            result: output,
+            result: {
+              type: 'data',
+              data: output,
+            },
           };
           events.emit('flush'); // `flush()` is used for subscriptions to flush out current output
           return json;
