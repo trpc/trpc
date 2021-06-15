@@ -11,7 +11,7 @@ import type {
 } from '@trpc/server';
 import {
   JSONRPC2BaseError,
-  JSONRPC2Error,
+  JSONRPC2ErrorResponse,
   TRPC_ERROR_CODES_BY_KEY,
 } from '@trpc/server/jsonrpc2';
 import { executeChain } from './internals/executeChain';
@@ -49,7 +49,7 @@ export class TRPCClientError<
       isDone = false,
       result,
     }: {
-      result: Maybe<JSONRPC2Error<TErrorShape>>;
+      result: Maybe<JSONRPC2ErrorResponse<TErrorShape>>;
       originalError: Maybe<Error>;
       isDone?: boolean;
     },
@@ -64,7 +64,7 @@ export class TRPCClientError<
   }
 
   public static from<TRouter extends AnyRouter>(
-    result: Error | JSONRPC2Error<any>,
+    result: Error | JSONRPC2ErrorResponse<any>,
     opts: { isDone?: boolean } = {},
   ): TRPCClientError<TRouter> {
     if (!(result instanceof Error)) {

@@ -1,9 +1,10 @@
 import { AnyRouter } from '@trpc/server';
+import { TRPCResult } from '@trpc/server/jsonrpc2';
 import { TRPCClientError } from '../createTRPCClient';
 import {
   Operation,
   OperationLink,
-  OperationResult as OperationResponse,
+  OperationResponse,
   PrevCallback,
 } from '../links/core';
 import { observableSubject } from './observable';
@@ -18,7 +19,7 @@ export function executeChain<
 }) {
   type TError = TRPCClientError<TRouter>;
   const $result = observableSubject<
-    { type: 'init' } | { type: 'result'; data: TOutput },
+    { type: 'init' } | TRPCResult<TOutput>,
     TError
   >({
     type: 'init',
@@ -32,7 +33,7 @@ export function executeChain<
         $result.done();
       }
     } else {
-      $result.next({ type: 'result', data: result.result });
+      $result.next(result);
     }
   };
   function walk({

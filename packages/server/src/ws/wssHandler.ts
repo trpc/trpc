@@ -4,10 +4,11 @@ import { getErrorFromUnknown } from '../errors';
 import { BaseOptions, CreateContextFn } from '../http';
 import { getCombinedDataTransformer } from '../internals/getCombinedDataTransformer';
 import {
-  JSONRPC2Error,
+  JSONRPC2ErrorResponse,
   JSONRPC2Response,
   TRPCReconnectRequest,
   TRPCRequestEnvelope,
+  TRPCSubscriptionResponse,
 } from '../jsonrpc2';
 import { AnyRouter, ProcedureType } from '../router';
 import { Subscription } from '../subscription';
@@ -95,8 +96,11 @@ export function applyWSSHandler<TRouter extends AnyRouter>(
       const ctx = await createContext({ req, res: client });
       const caller = router.createCaller(ctx);
       client.on('message', async (message) => {
-        function respond(result: JSONRPC2Response) {
-          client.send(JSON.stringify(transformer.output.serialize(result)));
+        function respond(json: JSONRPC2Response) {
+          client.send(JSON.stringify(json));
+        }
+        function subscriptionResponse(result: TRPCSubscriptionResponse) {
+          respond(result);
         }
         const obj = transformer.input.deserialize(
           JSON.parse(message as string),
@@ -117,11 +121,18 @@ export function applyWSSHandler<TRouter extends AnyRouter>(
               id,
               result: {
                 type: 'data',
-                data: result,
+                data: transformer.output.serialize(result),
               },
             });
             return;
           }
+
+          subscriptionResponse({
+            id,
+            result: {
+              type: 'started',
+            },
+          });
           const sub = result;
           /* istanbul ignore next */
           if (client.readyState !== client.OPEN) {
@@ -137,25 +148,33 @@ export function applyWSSHandler<TRouter extends AnyRouter>(
           }
           clientSubscriptions.set(id, sub);
           sub.on('data', (data: unknown) => {
-            respond({ id, result: { type: 'data', data } });
+            subscriptionResponse({
+              id,
+              result: {
+                type: 'data',
+                data: transformer.output.serialize(data),
+              },
+            });
           });
           sub.on('error', (_error: unknown) => {
             const error = getErrorFromUnknown(_error);
-            const json: JSONRPC2Error = {
+            const json: JSONRPC2ErrorResponse = {
               id,
-              error: router.getErrorShape({
-                error,
-                type,
-                path,
-                input,
-                ctx,
-              }),
+              error: transformer.output.serialize(
+                router.getErrorShape({
+                  error,
+                  type,
+                  path,
+                  input,
+                  ctx,
+                }),
+              ),
             };
             opts.onError?.({ error, path, type, ctx, req, input });
             respond(json);
           });
           sub.on('destroy', () => {
-            respond({
+            subscriptionResponse({
               id,
               result: {
                 type: 'stopped',
@@ -174,7 +193,7 @@ export function applyWSSHandler<TRouter extends AnyRouter>(
             ctx,
           });
           opts.onError?.({ error, path, type, ctx, req, input });
-          respond({ id, error: json });
+          respond({ id, error: transformer.output.serialize(json) });
         }
       });
 

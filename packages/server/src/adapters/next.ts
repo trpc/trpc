@@ -9,7 +9,7 @@ import {
 } from '../';
 import { TRPCError } from '../errors';
 import { getHTTPStatusCode } from '../http/internals/getHTTPStatusCode';
-import { JSONRPC2Error } from '../jsonrpc2';
+import { JSONRPC2ErrorResponse } from '../jsonrpc2';
 import { AnyRouter } from '../router';
 
 export type CreateNextContextOptions = CreateContextFnOptions<
@@ -52,7 +52,7 @@ export function createNextApiHandler<TRouter extends AnyRouter>(
         path: undefined,
         input: undefined,
       });
-      const json: JSONRPC2Error = {
+      const json: JSONRPC2ErrorResponse = {
         error,
       };
       res.statusCode = getHTTPStatusCode(json);

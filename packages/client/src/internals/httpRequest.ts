@@ -1,8 +1,8 @@
 import { ProcedureType } from '@trpc/server';
-import { JSONRPC2ResponseEnvelope } from 'packages/server/ws/dist/trpc-server-ws.cjs';
+import { JSONRPC2Response } from '@trpc/server/jsonrpc2';
 import { LinkRuntimeOptions, PromiseAndCancel } from '../links/core';
 
-export function httpRequest<TResponseShape = JSONRPC2ResponseEnvelope>(props: {
+export function httpRequest<TResponseShape = JSONRPC2Response>(props: {
   runtime: LinkRuntimeOptions;
   type: ProcedureType;
   input: unknown;

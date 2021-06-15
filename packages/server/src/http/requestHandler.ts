@@ -5,7 +5,11 @@ import url from 'url';
 import { assertNotBrowser } from '../assertNotBrowser';
 import { getErrorFromUnknown, TRPCError } from '../errors';
 import { getCombinedDataTransformer } from '../internals/getCombinedDataTransformer';
-import { JSONRPC2Error, JSONRPC2Response, JSONRPC2Result } from '../jsonrpc2';
+import {
+  JSONRPC2ErrorResponse,
+  JSONRPC2Response,
+  JSONRPC2ResultResponse,
+} from '../jsonrpc2';
 import { AnyRouter, inferRouterContext, ProcedureType } from '../router';
 import { Subscription } from '../subscription';
 import { DataTransformerOptions } from '../transformer';
@@ -289,7 +293,7 @@ export async function requestHandler<
             subscriptions,
             type,
           });
-          const json: JSONRPC2Result = {
+          const json: JSONRPC2ResultResponse = {
             result: output,
           };
           events.emit('flush'); // `flush()` is used for subscriptions to flush out current output
@@ -297,7 +301,7 @@ export async function requestHandler<
         } catch (_err) {
           const error = getErrorFromUnknown(_err);
 
-          const json: JSONRPC2Error = {
+          const json: JSONRPC2ErrorResponse = {
             error: router.getErrorShape({ error, type, path, input, ctx }),
           };
           endResponse(json);
@@ -312,7 +316,7 @@ export async function requestHandler<
   } catch (_err) {
     const error = getErrorFromUnknown(_err);
 
-    const json: JSONRPC2Error = {
+    const json: JSONRPC2ErrorResponse = {
       error: router.getErrorShape({ error, type, path: undefined, input, ctx }),
     };
     endResponse(json);

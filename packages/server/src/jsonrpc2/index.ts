@@ -31,7 +31,7 @@ export const TRPC_ERROR_CODES_BY_KEY = {
   CLIENT_CLOSED_REQUEST: -32099,
 } as const;
 
-export const TRPC_ERROR_CODES_BY_NUMBER = invert(TRPC_ERROR_CODES_BY_KEY); // type is { x: "a"; y: "b"; }
+export const TRPC_ERROR_CODES_BY_NUMBER = invert(TRPC_ERROR_CODES_BY_KEY);
 
 type ValueOf<T> = T[keyof T];
 
@@ -71,11 +71,11 @@ export interface JSONRPC2Request<
   params: TParams;
 }
 
-export interface JSONRPC2Result<TResult = unknown>
+export interface JSONRPC2ResultResponse<TResult = unknown>
   extends JSONRPC2BaseEnvelope {
   result: TResult;
 }
-export interface JSONRPC2Error<
+export interface JSONRPC2ErrorResponse<
   TError extends JSONRPC2BaseError = JSONRPC2BaseError,
 > extends JSONRPC2BaseEnvelope {
   error: TError;
@@ -86,7 +86,7 @@ export type TRPCRequestId = NonNullable<JSONRPC2RequestId>;
 export type JSONRPC2Response<
   TResult = unknown,
   TError extends JSONRPC2BaseError = JSONRPC2BaseError,
-> = JSONRPC2Result<TResult> | JSONRPC2Error<TError>;
+> = JSONRPC2ResultResponse<TResult> | JSONRPC2ErrorResponse<TError>;
 
 // TRPC specific
 export type TRPCRequestEnvelope =
@@ -99,6 +99,33 @@ export type TRPCRequestEnvelope =
       }
     >;
 
-export type TRPCResponseEnvelope = JSONRPC2Response;
-
 export type TRPCReconnectRequest = JSONRPC2Request<'reconnect', undefined>;
+
+export type TRPCSubscriptionResponse = JSONRPC2Response<
+  | {
+      type: 'data';
+      data: unknown;
+    }
+  | {
+      type: 'started';
+    }
+  | {
+      type: 'stopped';
+    }
+>;
+
+export type TRPCResult<TData = unknown> =
+  | {
+      type: 'data';
+      data: TData;
+    }
+  | {
+      type: 'started';
+    }
+  | {
+      type: 'stopped';
+    };
+export type TRPCResponseEnvelope<TData = unknown> =
+  | JSONRPC2ResultResponse<TRPCResult<TData>>
+  | JSONRPC2ErrorResponse;
+export type TRPCClientMessage = TRPCResponseEnvelope | TRPCReconnectRequest;

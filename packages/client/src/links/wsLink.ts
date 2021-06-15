@@ -1,8 +1,10 @@
 import { AnyRouter, ProcedureType } from '@trpc/server';
 import {
-  JSONRPC2RequestEnvelope,
-  JSONRPC2ResponseEnvelope,
-} from '@trpc/server/ws';
+  TRPCClientMessage,
+  TRPCRequestEnvelope,
+  TRPCResponseEnvelope,
+  TRPCResult,
+} from '@trpc/server/jsonrpc2';
 import { TRPCClientError } from '../createTRPCClient';
 import { ObservableCallbacks, UnsubscribeFn } from '../internals/observable';
 import { retryDelay } from '../internals/retryDelay';
@@ -37,10 +39,11 @@ export function createWSClient(opts: {
   /**
    * outgoing messages buffer whilst not open
    */
-  const outgoing: JSONRPC2RequestEnvelope[] = [];
+  const outgoing: TRPCRequestEnvelope[] = [];
   /**
    * pending outgoing requests that are awaiting callback
    */
+  type TCallbacks = ObservableCallbacks<TRPCResult, TRPCClientError<AnyRouter>>;
   const pendingRequests: Record<
     number,
     {
@@ -49,10 +52,7 @@ export function createWSClient(opts: {
        */
       ws: WebSocket;
       type: ProcedureType;
-      callbacks: ObservableCallbacks<
-        JSONRPC2ResponseEnvelope,
-        TRPCClientError<AnyRouter>
-      >;
+      callbacks: TCallbacks;
     }
   > = Object.create(null);
   let connectAttempt = 0;
@@ -117,29 +117,37 @@ export function createWSClient(opts: {
     conn.addEventListener('error', () => {
       tryReconnect();
     });
-    conn.addEventListener('message', (msg) => {
-      const res = JSON.parse(msg.data) as JSONRPC2ResponseEnvelope;
+    conn.addEventListener('message', ({ data }) => {
+      const msg = JSON.parse(data) as TRPCClientMessage;
 
       if (conn !== activeConnection) {
         setTimeout(() => {
           closeIfNoPending(conn);
         }, 1);
       }
-      if (res.result === 'reconnect' && conn === activeConnection) {
-        reconnectInMs(reconnectDelayMs());
+      if ('method' in msg) {
+        if (msg.method === 'reconnect' && conn === activeConnection) {
+          reconnectInMs(reconnectDelayMs());
+          return;
+        }
         return;
       }
 
-      const req = pendingRequests[res.id];
+      const req = pendingRequests[msg.id];
       if (!req) {
         // do something?
         return;
       }
-      if (res.result === 'stopped') {
-        delete pendingRequests[res.id];
+      if ('error' in msg) {
+        req.callbacks.onError?.(TRPCClientError.from(msg));
+        return;
+      }
+      if (msg.result.type === 'stopped') {
+        req.callbacks.onNext?.(msg.result);
         req.callbacks.onDone?.();
       } else {
-        req.callbacks.onNext?.(res);
+        req.callbacks.onNext?.(msg.result);
+        return;
       }
     });
 
@@ -166,11 +174,11 @@ export function createWSClient(opts: {
       input: unknown;
       path: string;
     },
-    callbacks: ObservableCallbacks<JSONRPC2ResponseEnvelope, unknown>,
+    callbacks: TCallbacks,
   ): UnsubscribeFn {
     const { type, input, path } = op;
     const id = ++idCounter;
-    const envelope: JSONRPC2RequestEnvelope = {
+    const envelope: TRPCRequestEnvelope = {
       id,
       jsonrpc: '2.0',
       method: type,
@@ -195,8 +203,8 @@ export function createWSClient(opts: {
       if (op.type === 'subscription') {
         outgoing.push({
           id,
-          method: 'stop',
-          jsonrpc: '2.0',
+          method: 'subscription.stop',
+          params: undefined,
         });
         triggerSendIfConnected();
       }
@@ -238,11 +246,13 @@ export function wsLink<TRouter extends AnyRouter>(
       const unsub = client.request(
         { type, path, input },
         {
-          onNext(envelope) {
-            const data = rt.transformer.deserialize(
-              envelope.result,
-            ) as TRPCProcedureEnvelope<TRouter, unknown>;
-            prev(data.ok ? data : TRPCClientError.from(data));
+          onNext(result) {
+            if (result.type !== 'data') {
+              // TODO
+              return;
+            }
+            const data = rt.transformer.deserialize(result.data);
+            prev(data);
 
             if (op.type !== 'subscription') {
               // if it isn't a subscription we don't care about next response
@@ -250,9 +260,10 @@ export function wsLink<TRouter extends AnyRouter>(
               unsub();
             }
           },
-          // // FIXME
-          // onError() {
-          // },
+          // FIXME
+          onError(err) {
+            prev(TRPCClientError.from(err));
+          },
           onDone() {
             if (!unsubbed) {
               prev(

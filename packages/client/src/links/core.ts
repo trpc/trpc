@@ -1,5 +1,5 @@
 import { AnyRouter, DataTransformer } from '@trpc/server';
-import { JSONRPC2Result } from '@trpc/server/jsonrpc2';
+import { JSONRPC2ResultResponse, TRPCResult } from '@trpc/server/jsonrpc2';
 import { TRPCClientError } from '../createTRPCClient';
 
 export type OperationContext = Record<string, unknown>;
@@ -11,7 +11,7 @@ export type Operation<TInput = unknown> = {
 };
 
 export type OperationResponse<TRouter extends AnyRouter, TOutput = unknown> =
-  | JSONRPC2Result<TOutput>
+  | TRPCResult<TOutput>
   | TRPCClientError<TRouter>;
 
 export type PrevCallback<TRouter extends AnyRouter, TOutput = unknown> = (

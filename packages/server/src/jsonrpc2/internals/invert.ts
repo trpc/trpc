@@ -1,12 +1,14 @@
-type AllValues<T extends Record<PropertyKey, PropertyKey>> = {
-  [P in keyof T]: { key: P; value: T[P] };
+type KeyFromValue<V, T extends Record<PropertyKey, PropertyKey>> = {
+  [K in keyof T]: V extends T[K] ? K : never;
 }[keyof T];
-type InvertResult<T extends Record<PropertyKey, PropertyKey>> = {
-  [P in AllValues<T>['value']]: Extract<AllValues<T>, { value: P }>['key'];
+
+type Invert<T extends Record<PropertyKey, PropertyKey>> = {
+  [V in T[keyof T]]: KeyFromValue<V, T>;
 };
+
 export function invert<T extends Record<PropertyKey, PropertyKey>>(
   obj: T,
-): InvertResult<T> {
+): Invert<T> {
   const newObj = {} as any;
   for (const key in obj) {
     const v = obj[key];
