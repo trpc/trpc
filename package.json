@@ -69,7 +69,6 @@
     "@typescript-eslint/eslint-plugin": "^4.25.0",
     "babel-plugin-annotate-pure-calls": "^0.4.0",
     "babel-plugin-dev-expression": "^0.2.2",
-    "core-js": "^3.9.1",
     "eslint": "^7.22.0",
     "eslint-config-prettier": "^8.3.0",
     "eslint-plugin-prettier": "^3.3.1",
@@ -83,7 +82,6 @@
     "prettier": "^2.3.0",
     "react": "^17.0.1",
     "react-dom": "^17.0.1",
-    "regenerator-runtime": "^0.13.7",
     "ts-jest": "^26.5.3",
     "typescript": "4.3.2"
   }
