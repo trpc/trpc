@@ -1,5 +1,5 @@
 import { TRPCError } from '../errors';
-import { TRPC_ERROR_CODES_MAP, TRPC_ERROR_CODE_NUMBER } from '../jsonrpc2';
+import { TRPC_ERROR_CODES_BY_KEY, TRPC_ERROR_CODE_NUMBER } from '../jsonrpc2';
 
 /* istanbul ignore next */
 /**
@@ -32,8 +32,8 @@ export function getStatusCodeFromError<
   TError extends { code?: number } | undefined,
 >(err: TError): TRPC_ERROR_CODE_NUMBER {
   const code = err?.code;
-  if (code && code in TRPC_ERROR_CODES_MAP) {
-    return (TRPC_ERROR_CODES_MAP as any)[code] as TRPC_ERROR_CODE_NUMBER;
+  if (code && code in TRPC_ERROR_CODES_BY_KEY) {
+    return (TRPC_ERROR_CODES_BY_KEY as any)[code] as TRPC_ERROR_CODE_NUMBER;
   }
-  return TRPC_ERROR_CODES_MAP.INTERNAL_SERVER_ERROR;
+  return TRPC_ERROR_CODES_BY_KEY.INTERNAL_SERVER_ERROR;
 }

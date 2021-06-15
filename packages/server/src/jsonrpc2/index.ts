@@ -1,7 +1,8 @@
-import { AnyRouter } from '../router';
+import { ProcedureType } from '../router';
+import { invert } from './internals/invert';
 
 // https://www.jsonrpc.org/specification
-export const TRPC_ERROR_CODES_MAP = {
+export const TRPC_ERROR_CODES_BY_KEY = {
   /**
    * Invalid JSON was received by the server.
    * An error occurred on the server while parsing the JSON text.
@@ -30,13 +31,15 @@ export const TRPC_ERROR_CODES_MAP = {
   CLIENT_CLOSED_REQUEST: -32099,
 } as const;
 
+export const TRPC_ERROR_CODES_BY_NUMBER = invert(TRPC_ERROR_CODES_BY_KEY); // type is { x: "a"; y: "b"; }
+
 type ValueOf<T> = T[keyof T];
 
-export type TRPC_ERROR_CODE_NUMBER = ValueOf<typeof TRPC_ERROR_CODES_MAP>;
-export type TRPC_ERROR_CODE_KEY = keyof typeof TRPC_ERROR_CODES_MAP;
+export type TRPC_ERROR_CODE_NUMBER = ValueOf<typeof TRPC_ERROR_CODES_BY_KEY>;
+export type TRPC_ERROR_CODE_KEY = keyof typeof TRPC_ERROR_CODES_BY_KEY;
 
 export const JSONRPC2_TO_HTTP_CODE: Record<
-  keyof typeof TRPC_ERROR_CODES_MAP,
+  keyof typeof TRPC_ERROR_CODES_BY_KEY,
   number
 > = {
   PARSE_ERROR: 400,
@@ -88,3 +91,9 @@ export type JSONRPC2Response<
   TResult = unknown,
   TError extends JSONRPC2BaseError = JSONRPC2BaseError,
 > = JSONRPC2Result<TResult> | JSONRPC2Error<TError>;
+
+// TRPC specific
+export type TRPCRequestEnvelope<TInput = unknown> = JSONRPC2RequestWithParams<
+  ProcedureType,
+  TInput
+>;

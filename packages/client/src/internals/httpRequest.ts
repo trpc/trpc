@@ -1,13 +1,8 @@
-import { AnyRouter, HTTPResponseEnvelope, ProcedureType } from '@trpc/server';
+import { ProcedureType } from '@trpc/server';
+import { JSONRPC2ResponseEnvelope } from 'packages/server/ws/dist/trpc-server-ws.cjs';
 import { LinkRuntimeOptions, PromiseAndCancel } from '../links/core';
 
-export function httpRequest<
-  TRouter extends AnyRouter = AnyRouter,
-  TResponseShape extends HTTPResponseEnvelope<
-    TRouter,
-    unknown
-  > = HTTPResponseEnvelope<TRouter, unknown>,
->(props: {
+export function httpRequest<TResponseShape = JSONRPC2ResponseEnvelope>(props: {
   runtime: LinkRuntimeOptions;
   type: ProcedureType;
   input: unknown;

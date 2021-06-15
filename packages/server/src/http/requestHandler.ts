@@ -12,7 +12,7 @@ import { DataTransformerOptions } from '../transformer';
 import { getPostBody } from './internals/getPostBody';
 import { getQueryInput } from './internals/getQueryInput';
 import { getHTTPStatusCode } from './internals/getHTTPStatusCode';
-import { TRPCClientError } from '@trpc/client';
+
 assertNotBrowser();
 
 export type CreateContextFnOptions<TRequest, TResponse> = {

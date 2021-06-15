@@ -3,7 +3,7 @@ import { TRPCClientError } from '../createTRPCClient';
 import {
   Operation,
   OperationLink,
-  OperationResult,
+  OperationResult as OperationResponse,
   PrevCallback,
 } from '../links/core';
 import { observableSubject } from './observable';
@@ -18,21 +18,21 @@ export function executeChain<
 }) {
   type TError = TRPCClientError<TRouter>;
   const $result = observableSubject<
-    { type: 'init' } | { type: 'data'; data: TOutput },
+    { type: 'init' } | { type: 'result'; data: TOutput },
     TError
   >({
     type: 'init',
   });
   const $destroyed = observableSubject(false);
 
-  const updateResult = (result: OperationResult<TRouter, TOutput>) => {
+  const updateResult = (result: OperationResponse<TRouter, TOutput>) => {
     if (result instanceof Error) {
       $result.error(result);
       if (result.isDone) {
         $result.done();
       }
     } else {
-      $result.next({ type: 'data', data: result.data });
+      $result.next({ type: 'result', data: result.result });
     }
   };
   function walk({

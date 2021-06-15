@@ -1,4 +1,4 @@
-import { AnyRouter, ProcedureType, TRPCProcedureEnvelope } from '@trpc/server';
+import { AnyRouter, ProcedureType } from '@trpc/server';
 import {
   JSONRPC2RequestEnvelope,
   JSONRPC2ResponseEnvelope,

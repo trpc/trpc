@@ -13,7 +13,7 @@ export function httpLink<TRouter extends AnyRouter>(
     // initialized in app
     return ({ op, prev, onDestroy }) => {
       const { path, input, type } = op;
-      const { promise, cancel } = httpRequest<TRouter>({
+      const { promise, cancel } = httpRequest({
         runtime,
         type,
         input,
@@ -23,7 +23,7 @@ export function httpLink<TRouter extends AnyRouter>(
       onDestroy(() => cancel());
       promise
         .then((result) =>
-          prev(result.ok ? result : TRPCClientError.from(result)),
+          prev('error' in result ? TRPCClientError.from(result) : result),
         )
         .catch((err) => TRPCClientError.from(err));
     };

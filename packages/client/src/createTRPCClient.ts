@@ -9,7 +9,11 @@ import type {
   inferSubscriptionOutput,
   Maybe,
 } from '@trpc/server';
-import { JSONRPC2Error } from 'packages/server/src/jsonrpc2';
+import {
+  JSONRPC2BaseError,
+  JSONRPC2Error,
+  TRPC_ERROR_CODES_BY_KEY,
+} from '@trpc/server/jsonrpc2';
 import { executeChain } from './internals/executeChain';
 import { getAbortController, getFetch } from './internals/fetchHelpers';
 import { ObservableCallbacks, UnsubscribeFn } from './internals/observable';
@@ -27,9 +31,12 @@ type CancellablePromise<T = unknown> = Promise<T> & {
   cancel: CancelFn;
 };
 
-export class TRPCClientError<TRouter extends AnyRouter> extends Error {
+export class TRPCClientError<
+  TRouter extends AnyRouter,
+  TErrorShape extends JSONRPC2BaseError = ReturnType<TRouter['getErrorShape']>,
+> extends Error {
   public readonly originalError;
-  public readonly shape;
+  public readonly shape: Maybe<TErrorShape>;
   /**
    * Fatal error - expect no more results after this error
    */
@@ -40,8 +47,9 @@ export class TRPCClientError<TRouter extends AnyRouter> extends Error {
     {
       originalError,
       isDone = false,
+      result,
     }: {
-      shape: Maybe<ReturnType<TRouter['getErrorShape']>>;
+      result: Maybe<JSONRPC2Error<TErrorShape>>;
       originalError: Maybe<Error>;
       isDone?: boolean;
     },
@@ -50,7 +58,7 @@ export class TRPCClientError<TRouter extends AnyRouter> extends Error {
     this.isDone = isDone;
     this.message = message;
     this.originalError = originalError;
-    this.shape = this.shape;
+    this.shape = result?.error;
 
     Object.setPrototypeOf(this, TRPCClientError.prototype);
   }
@@ -63,7 +71,7 @@ export class TRPCClientError<TRouter extends AnyRouter> extends Error {
       return new TRPCClientError<TRouter>((result.error as any).message ?? '', {
         ...opts,
         originalError: null,
-        result: result.,
+        result: result,
       });
     }
 
@@ -85,14 +93,6 @@ export interface FetchOptions {
 }
 
 export type CreateTRPCClientOptions<TRouter extends AnyRouter> = {
-  /**
-   * @deprecated likely to be removed
-   */
-  onSuccess?: (data: TRPCProcedureSuccessEnvelope<unknown>) => void;
-  /**
-   * @deprecated likely to be removed
-   */
-  onError?: (error: TRPCClientError<TRouter>) => void;
   /**
    * add ponyfills for fetch / abortcontroller
    */
@@ -117,10 +117,8 @@ export type RequestOptions = {
 export class TRPCClient<TRouter extends AnyRouter> {
   private readonly links: OperationLink<TRouter>[];
   public readonly runtime: LinkRuntimeOptions;
-  private opts: CreateTRPCClientOptions<TRouter>;
 
   constructor(opts: CreateTRPCClientOptions<TRouter>) {
-    this.opts = opts;
     const transformer: DataTransformer = opts.transformer
       ? 'input' in opts.transformer
         ? {
@@ -157,25 +155,6 @@ export class TRPCClient<TRouter extends AnyRouter> {
         httpLink({
           url: opts.url,
         })(this.runtime),
-      ];
-    }
-    /**
-     * @deprecated
-     * prepending a link to call `onSuccess` / `onError`
-     */
-    if (this.opts.onError || this.opts.onError) {
-      // deprecation warning?
-      this.links = [
-        ({ op, next, prev }) => {
-          next(op, (result) => {
-            result instanceof Error
-              ? this.opts?.onError?.(result)
-              : this.opts?.onSuccess?.(result);
-
-            prev(result);
-          });
-        },
-        ...this.links,
       ];
     }
   }
@@ -322,7 +301,7 @@ export class TRPCClient<TRouter extends AnyRouter> {
         } catch (_err) {
           const err: TRPCClientError<TRouter> = _err;
 
-          if (err.result?.statusCode === 408) {
+          if (err.shape?.code === TRPC_ERROR_CODES_BY_KEY.TIMEOUT) {
             // server told us to reconnect
             exec();
           } else {

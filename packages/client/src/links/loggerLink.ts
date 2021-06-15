@@ -1,5 +1,5 @@
 import { AnyRouter } from '@trpc/server';
-import { Operation, OperationResult, TRPCLink } from './core';
+import { Operation, OperationResponse, TRPCLink } from './core';
 
 type ConsoleEsque = {
   log: (...args: any[]) => void;
@@ -12,7 +12,7 @@ type EnableFnOptions<TRouter extends AnyRouter> =
     })
   | {
       direction: 'down';
-      result: OperationResult<TRouter>;
+      result: OperationResponse<TRouter>;
     };
 type EnabledFn<TRouter extends AnyRouter> = (
   opts: EnableFnOptions<TRouter>,
@@ -35,7 +35,7 @@ type LogFnOptions<TRouter extends AnyRouter> = Operation & {
          * Request result
          */
         direction: 'down';
-        result: OperationResult<TRouter>;
+        result: OperationResponse<TRouter>;
         elapsedMs: number;
       }
   );

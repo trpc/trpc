@@ -1,4 +1,5 @@
-import { AnyRouter, HTTPResponseEnvelope, ProcedureType } from '@trpc/server';
+import { AnyRouter, ProcedureType } from '@trpc/server';
+import { JSONRPC2ResponseEnvelope } from 'packages/server/ws/dist/trpc-server-ws.cjs';
 import { TRPCClientError } from '../createTRPCClient';
 import { dataLoader } from '../internals/dataLoader';
 import { httpRequest } from '../internals/httpRequest';
@@ -16,7 +17,7 @@ export function httpBatchLink<TRouter extends AnyRouter>(
       const path = keyInputPairs.map(({ path }) => path).join(',');
       const input = keyInputPairs.map(({ input }) => input);
 
-      const { promise, cancel } = httpRequest<TRouter>({
+      const { promise, cancel } = httpRequest({
         url,
         input,
         path,
@@ -35,16 +36,13 @@ export function httpBatchLink<TRouter extends AnyRouter>(
         cancel,
       };
     };
-    const query = dataLoader<Key, HTTPResponseEnvelope<TRouter, unknown>>(
-      fetcher('query'),
-    );
-    const mutation = dataLoader<Key, HTTPResponseEnvelope<TRouter, unknown>>(
+    const query = dataLoader<Key, JSONRPC2ResponseEnvelope>(fetcher('query'));
+    const mutation = dataLoader<Key, JSONRPC2ResponseEnvelope>(
       fetcher('mutation'),
     );
-    const subscription = dataLoader<
-      Key,
-      HTTPResponseEnvelope<TRouter, unknown>
-    >(fetcher('subscription'));
+    const subscription = dataLoader<Key, JSONRPC2ResponseEnvelope>(
+      fetcher('subscription'),
+    );
 
     const loaders = { query, subscription, mutation };
     return ({ op, prev, onDestroy }) => {
@@ -53,7 +51,7 @@ export function httpBatchLink<TRouter extends AnyRouter>(
       onDestroy(() => cancel());
       promise
         .then((result) =>
-          prev(result.ok ? result : TRPCClientError.from(result)),
+          prev('error' in result ? TRPCClientError.from(result) : result),
         )
         .catch((err) => prev(TRPCClientError.from<TRouter>(err)));
     };

@@ -3,7 +3,11 @@
 
 import { assertNotBrowser } from './assertNotBrowser';
 import { notFoundError, TRPCError } from './errors';
-import { JSONRPC2BaseError, TRPC_ERROR_CODE_NUMBER } from './jsonrpc2';
+import {
+  JSONRPC2BaseError,
+  TRPC_ERROR_CODES_BY_KEY,
+  TRPC_ERROR_CODE_NUMBER,
+} from './jsonrpc2';
 import {
   createProcedure,
   CreateProcedureOptions,
@@ -510,7 +514,7 @@ export class Router<
   }): TErrorShape {
     const defaultShape: DefaultErrorShape = {
       message: opts.error.message,
-      code: opts.error.code,
+      code: TRPC_ERROR_CODES_BY_KEY[opts.error.code],
       path: opts.path,
     };
     if (
