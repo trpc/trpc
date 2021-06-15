@@ -295,6 +295,7 @@ export async function requestHandler<
             type,
           });
           const json: JSONRPC2ResultResponse = {
+            id: -1,
             result: {
               type: 'data',
               data: output,
@@ -306,6 +307,7 @@ export async function requestHandler<
           const error = getErrorFromUnknown(_err);
 
           const json: JSONRPC2ErrorResponse = {
+            id: -1,
             error: router.getErrorShape({ error, type, path, input, ctx }),
           };
           onError && onError({ error, path, input, ctx, type: type, req });
@@ -320,6 +322,7 @@ export async function requestHandler<
     const error = getErrorFromUnknown(_err);
 
     const json: JSONRPC2ErrorResponse = {
+      id: -1,
       error: router.getErrorShape({ error, type, path: undefined, input, ctx }),
     };
     endResponse(json);

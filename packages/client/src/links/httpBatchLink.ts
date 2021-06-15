@@ -1,5 +1,5 @@
 import { AnyRouter, ProcedureType } from '@trpc/server';
-import { JSONRPC2ResponseEnvelope } from 'packages/server/ws/dist/trpc-server-ws.cjs';
+import { JSONRPC2Response } from '@trpc/server/jsonrpc2';
 import { TRPCClientError } from '../createTRPCClient';
 import { dataLoader } from '../internals/dataLoader';
 import { httpRequest } from '../internals/httpRequest';
@@ -36,11 +36,9 @@ export function httpBatchLink<TRouter extends AnyRouter>(
         cancel,
       };
     };
-    const query = dataLoader<Key, JSONRPC2ResponseEnvelope>(fetcher('query'));
-    const mutation = dataLoader<Key, JSONRPC2ResponseEnvelope>(
-      fetcher('mutation'),
-    );
-    const subscription = dataLoader<Key, JSONRPC2ResponseEnvelope>(
+    const query = dataLoader<Key, JSONRPC2Response>(fetcher('query'));
+    const mutation = dataLoader<Key, JSONRPC2Response>(fetcher('mutation'));
+    const subscription = dataLoader<Key, JSONRPC2Response>(
       fetcher('subscription'),
     );
 
