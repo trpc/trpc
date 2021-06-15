@@ -5,9 +5,9 @@ import express from 'express';
 import http from 'http';
 import fetch from 'node-fetch';
 import { z } from 'zod';
-import { createTRPCClient } from '../../client/src';
-import * as trpc from '../src';
-import * as trpcExpress from '../src/adapters/express';
+import { createTRPCClient } from '../../../client/src';
+import * as trpc from '../../src';
+import * as trpcExpress from '../../src/adapters/express';
 
 type Context = {
   user: {
