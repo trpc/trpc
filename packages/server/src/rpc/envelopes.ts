@@ -1,7 +1,7 @@
 import { ProcedureType } from '../router';
 import { TRPC_ERROR_CODE_NUMBER } from './codes';
 
-export type JSONRPC2RequestId = number /*|string  | null*/;
+export type JSONRPC2RequestId = number | string /*|string  | null*/;
 
 // BASE
 interface JSONRPC2BaseEnvelope {
@@ -67,5 +67,11 @@ export interface TRPCErrorResponse<
 }
 
 // Special from server -> client
-export type TRPCReconnectRequest = JSONRPC2Request<'reconnect', undefined>;
-export type TRPCClientIncomingMessage = TRPCResponse | TRPCReconnectRequest;
+export interface TRPCReconnectNotification {
+  id: null;
+  jsonrpc?: '2.0';
+  method: 'reconnect';
+}
+export type TRPCClientIncomingMessage =
+  | TRPCResponse
+  | TRPCReconnectNotification;

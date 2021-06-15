@@ -6,7 +6,7 @@ import { getCombinedDataTransformer } from '../internals/getCombinedDataTransfor
 import { AnyRouter, ProcedureType } from '../router';
 import {
   TRPCErrorResponse,
-  TRPCReconnectRequest,
+  TRPCReconnectNotification,
   TRPCRequest,
   TRPCResponse,
 } from '../rpc';
@@ -96,7 +96,10 @@ export function applyWSSHandler<TRouter extends AnyRouter>(
   const { router, wss, createContext } = opts;
   const transformer = getCombinedDataTransformer(opts.transformer);
   wss.on('connection', async (client, req) => {
-    const clientSubscriptions = new Map<number, Subscription<TRouter>>();
+    const clientSubscriptions = new Map<
+      number | string,
+      Subscription<TRouter>
+    >();
 
     try {
       const ctx = await createContext({ req, res: client });
@@ -237,10 +240,9 @@ export function applyWSSHandler<TRouter extends AnyRouter>(
 
   return {
     reconnectAllClients: () => {
-      const response: TRPCReconnectRequest = {
-        id: -1,
+      const response: TRPCReconnectNotification = {
+        id: null,
         method: 'reconnect',
-        params: undefined,
       };
       const data = JSON.stringify(response);
       for (const client of wss.clients) {

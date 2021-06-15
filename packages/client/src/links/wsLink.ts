@@ -42,7 +42,7 @@ export function createWSClient(opts: {
    */
   type TCallbacks = ObservableCallbacks<TRPCResult, TRPCClientError<AnyRouter>>;
   const pendingRequests: Record<
-    number,
+    number | string,
     {
       /**
        * Reference to the WebSocket instance this request was made to
