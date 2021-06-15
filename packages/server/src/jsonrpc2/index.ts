@@ -53,9 +53,9 @@ export const JSONRPC2_TO_HTTP_CODE: Record<
   PAYLOAD_TOO_LARGE: 413,
 };
 
-export type JSONRPC2RequestId = null | string | number;
+export type JSONRPC2RequestId = number /*|string  | null*/;
 export interface JSONRPC2BaseEnvelope {
-  id?: JSONRPC2RequestId;
+  id: JSONRPC2RequestId;
   jsonrpc?: '2.0';
 }
 export interface JSONRPC2BaseError {
@@ -63,15 +63,11 @@ export interface JSONRPC2BaseError {
   message: string;
 }
 
-export interface JSONRPC2RequestNoParams<TMethod extends string = string>
-  extends JSONRPC2BaseEnvelope {
-  method: TMethod;
-  params?: unknown;
-}
-export interface JSONRPC2RequestWithParams<
+export interface JSONRPC2Request<
   TMethod extends string = string,
   TParams = unknown,
-> extends JSONRPC2RequestNoParams<TMethod> {
+> extends JSONRPC2BaseEnvelope {
+  method: TMethod;
   params: TParams;
 }
 
@@ -93,7 +89,16 @@ export type JSONRPC2Response<
 > = JSONRPC2Result<TResult> | JSONRPC2Error<TError>;
 
 // TRPC specific
-export type TRPCRequestEnvelope<TInput = unknown> = JSONRPC2RequestWithParams<
-  ProcedureType,
-  TInput
->;
+export type TRPCRequestEnvelope =
+  | JSONRPC2Request<'subscription.stop'>
+  | JSONRPC2Request<
+      ProcedureType,
+      {
+        path: string;
+        input: unknown;
+      }
+    >;
+
+export type TRPCResponseEnvelope = JSONRPC2Response;
+
+export type TRPCReconnectRequest = JSONRPC2Request<'reconnect', undefined>;

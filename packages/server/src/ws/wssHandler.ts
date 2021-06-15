@@ -1,65 +1,20 @@
 import http from 'http';
 import ws from 'ws';
-import {
-  TRPCProcedureEnvelope,
-  TRPCProcedureErrorEnvelope,
-} from '../envelopes';
 import { getErrorFromUnknown } from '../errors';
 import { BaseOptions, CreateContextFn } from '../http';
 import { getCombinedDataTransformer } from '../internals/getCombinedDataTransformer';
+import {
+  JSONRPC2Error,
+  JSONRPC2Response,
+  TRPCReconnectRequest,
+  TRPCRequestEnvelope,
+} from '../jsonrpc2';
 import { AnyRouter, ProcedureType } from '../router';
 import { Subscription } from '../subscription';
 // https://developer.mozilla.org/en-US/docs/Web/API/CloseEvent
 const WEBSOCKET_STATUS_CODES = {
   ABNORMAL_CLOSURE: 1006,
 };
-
-// json rpc 2 reference
-// --> {"jsonrpc": "2.0", "method": "subtract", "params": [42, 23], "id": 1}
-// <-- {"jsonrpc": "2.0", "result": 19, "id": 1}
-// --> {"jsonrpc": "2.0", "method": "call", "params": [{type: x, 23]], "id": 1}
-
-export type WSProcedureCall<TInput> = {
-  path: string;
-  input: TInput;
-};
-
-export type JSONRPC2ProcedureRequestEnvelope<TInput> = {
-  id: number;
-  jsonrpc: '2.0';
-  method: ProcedureType;
-  params: {
-    input: TInput;
-    path: string;
-  };
-};
-export type JSONRPC2ProcedureStopEnvelope = {
-  id: number;
-  jsonrpc: '2.0';
-  method: 'stop';
-};
-export type JSONRPC2ProcedureStoppedEnvelope = {
-  id: number;
-  jsonrpc: '2.0';
-  result: 'stopped';
-};
-export type JSONRPC2ReconnectEnvelope = {
-  id: number;
-  jsonrpc: '2.0';
-  result: 'reconnect';
-};
-export type JSONRPC2RequestEnvelope<TInput = unknown> = {
-  id: number | null;
-  jsonrpc: '2.0';
-} & (JSONRPC2ProcedureRequestEnvelope<TInput> | JSONRPC2ProcedureStopEnvelope);
-export type JSONRPC2ResponseEnvelope<TResult = unknown> =
-  | {
-      jsonrpc: '2.0';
-      result: TResult;
-      id: number;
-    }
-  | JSONRPC2ProcedureStoppedEnvelope
-  | JSONRPC2ReconnectEnvelope;
 
 /* istanbul ignore next */
 function assertIsObject(obj: unknown): asserts obj is Record<string, unknown> {
@@ -85,25 +40,16 @@ function assertIsString(obj: unknown): asserts obj is string {
     throw new Error('Invalid string');
   }
 }
-function parseMessage(message: unknown) {
-  assertIsString(message);
-  const obj = JSON.parse(message);
-
+function parseMessage(obj: unknown): TRPCRequestEnvelope {
   assertIsObject(obj);
   const { method, params, id } = obj;
   assertIsRequestId(id);
-  if (method === 'stop') {
-    return {
-      type: 'stop' as const,
-      id,
-    };
-  }
   assertIsProcedureType(method);
   assertIsObject(params);
 
   const { input, path } = params;
   assertIsString(path);
-  return { type: method, id, input, path };
+  return { id, method, params: { input, path } };
 }
 
 async function callProcedure<TRouter extends AnyRouter>(opts: {
@@ -149,99 +95,86 @@ export function applyWSSHandler<TRouter extends AnyRouter>(
       const ctx = await createContext({ req, res: client });
       const caller = router.createCaller(ctx);
       client.on('message', async (message) => {
-        function respond(
-          id: number,
-          result: TRPCProcedureEnvelope<TRouter, unknown>,
-        ) {
-          const response: JSONRPC2ResponseEnvelope<typeof result> = {
-            jsonrpc: '2.0',
-            result: transformer.output.serialize(result),
-            id,
-          };
-          client.send(JSON.stringify(response));
+        function respond(result: JSONRPC2Response) {
+          client.send(JSON.stringify(transformer.output.serialize(result)));
         }
-        const info = parseMessage(message);
-        const input =
-          typeof info.input !== 'undefined'
-            ? transformer.input.deserialize(info.input)
-            : undefined;
-
-        if (info.type === 'stop') {
-          clientSubscriptions.get(info.id)?.destroy();
-          clientSubscriptions.delete(info.id);
+        const obj = transformer.input.deserialize(
+          JSON.parse(message as string),
+        );
+        const msg = parseMessage(obj);
+        const { id } = msg;
+        if (msg.method === 'subscription.stop') {
+          clientSubscriptions.get(id)?.destroy();
+          clientSubscriptions.delete(id);
           return;
         }
-        const { path, type, id } = info;
+        const { path, input } = msg.params;
+        const type = msg.method;
         try {
           const result = await callProcedure({ path, input, type, caller });
-
-          if (result instanceof Subscription) {
-            const sub = result;
-            /* istanbul ignore next */
-            if (client.readyState !== client.OPEN) {
-              // if the client got disconnected whilst initializing the subscription
-              sub.destroy();
-              return;
-            }
-            /* istanbul ignore next */
-            if (clientSubscriptions.has(id)) {
-              // duplicate request ids for client
-              sub.destroy();
-              throw new Error(`Duplicate id ${id}`);
-            }
-            clientSubscriptions.set(id, sub);
-            sub.on('data', (data: unknown) => {
-              respond(id, {
-                ok: true,
-                data,
-              });
+          if (!(result instanceof Subscription)) {
+            respond({
+              id,
+              result: {
+                type: 'data',
+                data: result,
+              },
             });
-            sub.on('error', (_error: unknown) => {
-              const error = getErrorFromUnknown(_error);
-              const json: TRPCProcedureErrorEnvelope<TRouter> = {
-                ok: false,
-                error: router.getErrorShape({
-                  error,
-                  type,
-                  path,
-                  input,
-                  ctx,
-                }),
-              };
-              opts.onError?.({ error, path, type, ctx, req, input });
-              // TODO trigger some global error handler?
-              respond(id, json);
-            });
-            sub.on('destroy', () => {
-              const response: JSONRPC2ProcedureStoppedEnvelope = {
-                jsonrpc: '2.0',
-                id,
-                result: 'stopped',
-              };
-              client.send(JSON.stringify(response));
-            });
-            await sub.start();
-            // FIXME handle errors? or not? maybe push it to a callback with the ws client
             return;
           }
-          respond(id, {
-            ok: true,
-            data: result,
+          const sub = result;
+          /* istanbul ignore next */
+          if (client.readyState !== client.OPEN) {
+            // if the client got disconnected whilst initializing the subscription
+            sub.destroy();
+            return;
+          }
+          /* istanbul ignore next */
+          if (clientSubscriptions.has(id)) {
+            // duplicate request ids for client
+            sub.destroy();
+            throw new Error(`Duplicate id ${id}`);
+          }
+          clientSubscriptions.set(id, sub);
+          sub.on('data', (data: unknown) => {
+            respond({ id, result: { type: 'data', data } });
           });
-        } catch (error) /* istanbul ignore next */ {
+          sub.on('error', (_error: unknown) => {
+            const error = getErrorFromUnknown(_error);
+            const json: JSONRPC2Error = {
+              id,
+              error: router.getErrorShape({
+                error,
+                type,
+                path,
+                input,
+                ctx,
+              }),
+            };
+            opts.onError?.({ error, path, type, ctx, req, input });
+            respond(json);
+          });
+          sub.on('destroy', () => {
+            respond({
+              id,
+              result: {
+                type: 'stopped',
+              },
+            });
+          });
+          await sub.start();
+        } catch (_error) /* istanbul ignore next */ {
           // procedure threw an error
-          const json: TRPCProcedureErrorEnvelope<TRouter> = {
-            ok: false,
-            error: router.getErrorShape({
-              error,
-              type,
-              path,
-              input,
-              ctx,
-            }),
-          };
+          const error = getErrorFromUnknown(_error);
+          const json = router.getErrorShape({
+            error: _error,
+            type,
+            path,
+            input,
+            ctx,
+          });
           opts.onError?.({ error, path, type, ctx, req, input });
-          respond(id, json);
+          respond({ id, error: json });
         }
       });
 
@@ -255,8 +188,8 @@ export function applyWSSHandler<TRouter extends AnyRouter>(
       // failed to create context
       const error = getErrorFromUnknown(err);
 
-      const json: TRPCProcedureErrorEnvelope<TRouter> = {
-        ok: false,
+      client.send({
+        id: -1,
         error: router.getErrorShape({
           error,
           type: 'unknown',
@@ -264,8 +197,7 @@ export function applyWSSHandler<TRouter extends AnyRouter>(
           input: undefined,
           ctx: undefined,
         }),
-      };
-      client.send(json);
+      });
       opts.onError?.({
         error,
         path: undefined,
@@ -280,10 +212,10 @@ export function applyWSSHandler<TRouter extends AnyRouter>(
 
   return {
     reconnectAllClients: () => {
-      const response: JSONRPC2ReconnectEnvelope = {
-        jsonrpc: '2.0',
-        result: 'reconnect',
+      const response: TRPCReconnectRequest = {
         id: -1,
+        method: 'reconnect',
+        params: undefined,
       };
       const data = JSON.stringify(response);
       for (const client of wss.clients) {
