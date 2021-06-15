@@ -19,6 +19,13 @@ module.exports = {
       // Optional fields.
       anonymizeIP: true, // Should IPs be anonymized?
     },
+    algolia: {
+      apiKey: '21afcd19f62cce875a67753d48f7e216',
+      indexName: 'trpc',
+      // Optional: see doc section below
+      contextualSearch: true,
+      // searchParameters: {},
+    },
     navbar: {
       title: 'tRPC',
       logo: {
