@@ -151,7 +151,7 @@ async function callProcedure<TRouter extends AnyRouter>(opts: {
 
         const requestTimeLeft = requestTimeoutMs - (Date.now() - startTime);
 
-        /* ignore next */
+        /* istanbul ignore next */
         if (requestTimeLeft <= backpressureMs) {
           // will timeout before next backpressure tick
           flush();
@@ -180,7 +180,7 @@ async function callProcedure<TRouter extends AnyRouter>(opts: {
           }),
         );
       }
-
+      /* istanbul ignore next */
       function onDestroy() {
         reject(new Error(`Subscription was destroyed prematurely`));
         cleanup();
@@ -195,7 +195,7 @@ async function callProcedure<TRouter extends AnyRouter>(opts: {
       sub.start();
     });
   }
-
+  /* istanbul ignore next */
   throw new Error(`Unknown procedure type ${type}`);
 }
 
@@ -272,7 +272,7 @@ export async function requestHandler<
       if (!isBatchCall) {
         return [input];
       }
-      /* ignore next */
+      /* istanbul ignore next */
       if (!Array.isArray(input)) {
         throw new TRPCError({
           code: 'BAD_REQUEST',
@@ -314,7 +314,7 @@ export async function requestHandler<
               router.getErrorShape({ error, type, path, input, ctx }),
             ),
           };
-          onError && onError({ error, path, input, ctx, type: type, req });
+          onError?.({ error, path, input, ctx, type: type, req });
           return json;
         }
       }),
@@ -332,7 +332,7 @@ export async function requestHandler<
       ),
     };
     endResponse(json);
-    onError && onError({ error, path: undefined, input, ctx, type: type, req });
+    onError?.({ error, path: undefined, input, ctx, type: type, req });
   }
   await teardown?.();
 }

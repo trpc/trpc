@@ -354,7 +354,7 @@ export class TRPCClient<TRouter extends AnyRouter> {
         if (stopped) {
           return;
         }
-        opts.onError && opts.onError(err);
+        opts.onError?.(err);
         attemptIndex++;
         setTimeout(() => {
           exec(input);

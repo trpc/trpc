@@ -278,7 +278,7 @@ export function createReactQueryHooks<TRouter extends AnyRouter>() {
           if (stopped) {
             return;
           }
-          opts?.onError && opts.onError(err);
+          opts?.onError?.(err);
         });
       return () => {
         stopped = true;
