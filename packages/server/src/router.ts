@@ -17,8 +17,11 @@ import { flatten, Prefixer, ThenArg } from './types';
 assertNotBrowser();
 
 export type ProcedureType = 'query' | 'mutation' | 'subscription';
-export type ProcedureRecord<TContext = any, TInput = any, TOutput = any> =
-  Record<string, Procedure<TContext, TInput, TOutput>>;
+export type ProcedureRecord<
+  TContext = any,
+  TInput = any,
+  TOutput = any,
+> = Record<string, Procedure<TContext, TInput, TOutput>>;
 
 export type inferProcedureInput<TProcedure extends Procedure<any, any, any>> =
   TProcedure extends ProcedureWithInput<any, infer Input, any>
