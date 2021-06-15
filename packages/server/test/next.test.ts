@@ -62,11 +62,11 @@ test('bad setup', async () => {
   const responseJson: HTTPErrorResponseEnvelope<typeof router> = (
     json.mock.calls[0] as any
   )[0];
-  expect(responseJson.ok).toMatchInlineSnapshot(`false`);
+  expect(responseJson.ok).toMatchInlineSnapshot(`undefined`);
   expect(responseJson.error.message).toMatchInlineSnapshot(
     `"Query \\"trpc\\" not found - is the file named \`[trpc]\`.ts or \`[...trpc].ts\`?"`,
   );
-  expect(responseJson.statusCode).toMatchInlineSnapshot(`500`);
+  expect(responseJson.statusCode).toMatchInlineSnapshot(`undefined`);
 });
 
 describe('ok request', () => {
@@ -94,9 +94,10 @@ describe('ok request', () => {
     );
     expect(json).toMatchInlineSnapshot(`
       Object {
-        "data": "world",
-        "ok": true,
-        "statusCode": 200,
+        "result": Object {
+          "data": "world",
+          "type": "data",
+        },
       }
     `);
   });
@@ -117,9 +118,10 @@ describe('ok request', () => {
     );
     expect(json).toMatchInlineSnapshot(`
       Object {
-        "data": "world",
-        "ok": true,
-        "statusCode": 200,
+        "result": Object {
+          "data": "world",
+          "type": "data",
+        },
       }
     `);
   });

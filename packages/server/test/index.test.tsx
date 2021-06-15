@@ -402,30 +402,8 @@ describe('integration tests', () => {
             ]]
           `);
 
-    expect(onError.mock.calls[0]).toMatchInlineSnapshot(`
-      Array [
-        [Error: [
-        {
-          "code": "invalid_type",
-          "expected": "number",
-          "received": "string",
-          "path": [],
-          "message": "Expected number, received string"
-        }
-      ]],
-      ]
-    `);
-    expect(onSuccess.mock.calls[0]).toMatchInlineSnapshot(`
-      Array [
-        Object {
-          "data": Object {
-            "input": 1,
-          },
-          "ok": true,
-          "statusCode": 200,
-        },
-      ]
-    `);
+    expect(onError.mock.calls[0]).toMatchInlineSnapshot(`undefined`);
+    expect(onSuccess.mock.calls[0]).toMatchInlineSnapshot(`undefined`);
 
     expect(onSuccess).toHaveBeenCalledTimes(1);
     expect(onError).toHaveBeenCalledTimes(1);

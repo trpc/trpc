@@ -44,10 +44,7 @@ test('retrylink', () => {
       if (attempts < 4) {
         callback(TRPCClientError.from(new Error('..')));
       } else {
-        callback({
-          ok: true,
-          data: 'succeeded on attempt ' + attempts,
-        });
+        callback({ type: 'data', data: 'succeeded on attempt ' + attempts });
       }
     },
     onDestroy: () => {},
@@ -108,7 +105,7 @@ test('mock cache link has immediate $result', () => {
       retryLink({ attempts: 3 })(mockRuntime),
       // mock cache link
       ({ prev }) => {
-        prev({ ok: true, data: 'cached' });
+        prev({ type: 'data', data: 'cached' });
       },
       httpLink({
         url: `void`,
@@ -314,12 +311,12 @@ test('multi down link', async () => {
       // mock cache link
       ({ prev, onDestroy }) => {
         const timer = setTimeout(() => {
-          prev({ ok: true, data: 'cached2' });
+          prev({ type: 'data', data: 'cached2' });
         }, 1);
         onDestroy(() => {
           clearTimeout(timer);
         });
-        prev({ ok: true, data: 'cached1' });
+        prev({ type: 'data', data: 'cached1' });
       },
       httpLink({
         url: `void`,
@@ -352,7 +349,7 @@ test('loggerLink', () => {
     console: logger,
   })(mockRuntime);
   const okLink: OperationLink<AnyRouter> = ({ prev }) =>
-    prev({ ok: true, data: null });
+    prev({ type: 'data', data: undefined });
   const errorLink: OperationLink<AnyRouter> = ({ prev }) =>
     prev(TRPCClientError.from(new Error('..')));
   {
