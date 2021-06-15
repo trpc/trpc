@@ -1,4 +1,4 @@
-import { JSONRPC2Response, TRPC_ERROR_CODES_BY_KEY } from '../../rpc';
+import { TRPCResponse, TRPC_ERROR_CODES_BY_KEY } from '../../rpc';
 import { invert } from './invert';
 
 export const TRPC_ERROR_CODES_BY_NUMBER = invert(TRPC_ERROR_CODES_BY_KEY);
@@ -21,7 +21,7 @@ const JSONRPC2_TO_HTTP_CODE: Record<
   METHOD_NOT_SUPPORTED: 405,
 };
 
-export function getHTTPStatusCode(json: JSONRPC2Response | JSONRPC2Response[]) {
+export function getHTTPStatusCode(json: TRPCResponse | TRPCResponse[]) {
   const arr = Array.isArray(json) ? json : [json];
   const codes = new Set(
     arr.map((res) => {

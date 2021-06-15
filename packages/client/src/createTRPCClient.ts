@@ -10,7 +10,7 @@ import type {
   Maybe,
 } from '@trpc/server';
 import {
-  JSONRPC2BaseError,
+  TRPCErrorShape,
   TRPCErrorResponse,
   TRPC_ERROR_CODES_BY_KEY,
 } from '@trpc/server/rpc';
@@ -34,7 +34,7 @@ type CancellablePromise<T = unknown> = Promise<T> & {
 
 export class TRPCClientError<
   TRouter extends AnyRouter,
-  TErrorShape extends JSONRPC2BaseError = ReturnType<TRouter['getErrorShape']>,
+  TErrorShape extends TRPCErrorShape = ReturnType<TRouter['getErrorShape']>,
 > extends Error {
   public readonly originalError;
   public readonly shape: Maybe<TErrorShape>;

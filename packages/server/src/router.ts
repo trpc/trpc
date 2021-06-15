@@ -13,7 +13,7 @@ import {
   ProcedureWithInput,
 } from './procedure';
 import {
-  JSONRPC2BaseError,
+  TRPCErrorShape,
   TRPC_ERROR_CODES_BY_KEY,
   TRPC_ERROR_CODE_NUMBER,
 } from './rpc';
@@ -78,7 +78,7 @@ const PROCEDURE_DEFINITION_MAP: Record<
   mutation: 'mutations',
   subscription: 'subscriptions',
 };
-export type ErrorFormatter<TContext, TOutput extends JSONRPC2BaseError> = ({
+export type ErrorFormatter<TContext, TOutput extends TRPCErrorShape> = ({
   error,
 }: {
   error: TRPCError;
@@ -131,7 +131,7 @@ export class Router<
     unknown,
     Subscription<unknown>
   >,
-  TErrorShape extends JSONRPC2BaseError,
+  TErrorShape extends TRPCErrorShape,
 > {
   readonly _def: Readonly<{
     queries: Readonly<TQueries>;

@@ -1,9 +1,5 @@
 import { AnyRouter, ProcedureType } from '@trpc/server';
-import {
-  TRPCClientMessage,
-  TRPCRequestEnvelope,
-  TRPCResult,
-} from '@trpc/server/rpc';
+import { TRPCClientMessage, TRPCRequest, TRPCResult } from '@trpc/server/rpc';
 import { TRPCClientError } from '../createTRPCClient';
 import { ObservableCallbacks, UnsubscribeFn } from '../internals/observable';
 import { retryDelay } from '../internals/retryDelay';
@@ -36,7 +32,7 @@ export function createWSClient(opts: {
   /**
    * outgoing messages buffer whilst not open
    */
-  const outgoing: TRPCRequestEnvelope[] = [];
+  const outgoing: TRPCRequest[] = [];
   /**
    * pending outgoing requests that are awaiting callback
    */
@@ -190,7 +186,7 @@ export function createWSClient(opts: {
   ): UnsubscribeFn {
     const { type, input, path } = op;
     const id = ++idCounter;
-    const envelope: TRPCRequestEnvelope = {
+    const envelope: TRPCRequest = {
       id,
       jsonrpc: '2.0',
       method: type,

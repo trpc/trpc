@@ -5,13 +5,13 @@ import url from 'url';
 import { assertNotBrowser } from '../assertNotBrowser';
 import { getErrorFromUnknown, TRPCError } from '../errors';
 import { getCombinedDataTransformer } from '../internals/getCombinedDataTransformer';
-import { TRPCErrorResponse, JSONRPC2Response, TRPCResponse } from '../rpc';
 import { AnyRouter, inferRouterContext, ProcedureType } from '../router';
+import { TRPCErrorResponse, TRPCResponse } from '../rpc';
 import { Subscription } from '../subscription';
 import { DataTransformerOptions } from '../transformer';
+import { getHTTPStatusCode } from './internals/getHTTPStatusCode';
 import { getPostBody } from './internals/getPostBody';
 import { getQueryInput } from './internals/getQueryInput';
-import { getHTTPStatusCode } from './internals/getHTTPStatusCode';
 
 assertNotBrowser();
 
@@ -235,7 +235,7 @@ export async function requestHandler<
     ? req.query
     : url.parse(req.url!, true).query;
   const isBatchCall = reqQueryParams.batch;
-  function endResponse(json: JSONRPC2Response | JSONRPC2Response[]) {
+  function endResponse(json: TRPCResponse | TRPCResponse[]) {
     res.statusCode = getHTTPStatusCode(json);
 
     res.setHeader('Content-Type', 'application/json');

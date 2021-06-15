@@ -3,14 +3,13 @@ import ws from 'ws';
 import { getErrorFromUnknown } from '../errors';
 import { BaseOptions, CreateContextFn } from '../http';
 import { getCombinedDataTransformer } from '../internals/getCombinedDataTransformer';
+import { AnyRouter, ProcedureType } from '../router';
 import {
   TRPCErrorResponse,
-  JSONRPC2Response,
   TRPCReconnectRequest,
-  TRPCRequestEnvelope,
+  TRPCRequest,
   TRPCResponse,
 } from '../rpc';
-import { AnyRouter, ProcedureType } from '../router';
 import { Subscription } from '../subscription';
 // https://developer.mozilla.org/en-US/docs/Web/API/CloseEvent
 const WEBSOCKET_STATUS_CODES = {
@@ -41,7 +40,7 @@ function assertIsString(obj: unknown): asserts obj is string {
     throw new Error('Invalid string');
   }
 }
-function parseMessage(obj: unknown): TRPCRequestEnvelope {
+function parseMessage(obj: unknown): TRPCRequest {
   assertIsObject(obj);
   const { method, params, id } = obj;
   assertIsRequestId(id);
@@ -103,7 +102,7 @@ export function applyWSSHandler<TRouter extends AnyRouter>(
       const ctx = await createContext({ req, res: client });
       const caller = router.createCaller(ctx);
       client.on('message', async (message) => {
-        function respond(json: JSONRPC2Response) {
+        function respond(json: TRPCResponse) {
           client.send(JSON.stringify(json));
         }
         function subscriptionResponse(result: TRPCResponse) {
