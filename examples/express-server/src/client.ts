@@ -37,6 +37,9 @@ async function main() {
   await sleep();
   const authedClient = createTRPCClient<AppRouter>({
     links: [loggerLink(), httpLink({ url })],
+    headers: () => ({
+      authorization: 'secret',
+    }),
   });
 
   await authedClient.query('admin.secret');
