@@ -1,6 +1,6 @@
 {
   "name": "@trpc/client",
-  "version": "7.1.0-alpha.1",
+  "version": "7.1.0",
   "description": "tRPC Client lib",
   "author": "KATT",
   "license": "MIT",
@@ -16,8 +16,7 @@
       "links/httpLink.ts",
       "links/httpBatchLink.ts",
       "links/splitLink.ts",
-      "links/loggerLink.ts",
-      "links/wsLink.ts"
+      "links/loggerLink.ts"
     ]
   },
   "scripts": {},
@@ -31,7 +30,7 @@
   ],
   "dependencies": {
     "@babel/runtime": "^7.9.0",
-    "@trpc/server": "^7.1.0-alpha.1"
+    "@trpc/server": "^7.1.0"
   },
   "publishConfig": {
     "access": "public"
