@@ -17,7 +17,12 @@ export function executeChain<
   op: Operation<TInput>;
 }) {
   type TError = TRPCClientError<TRouter>;
-  const $result = observableSubject<TOutput | null, TError>(null);
+  const $result = observableSubject<
+    { type: 'init' } | { type: 'data'; data: TOutput },
+    TError
+  >({
+    type: 'init',
+  });
   const $destroyed = observableSubject(false);
 
   const updateResult = (result: OperationResult<TRouter, TOutput>) => {
@@ -27,7 +32,7 @@ export function executeChain<
         $result.done();
       }
     } else {
-      $result.next(result.data);
+      $result.next({ type: 'data', data: result.data });
     }
   };
   function walk({
@@ -37,10 +42,10 @@ export function executeChain<
   }: {
     index: number;
     op: Operation<TInput>;
-    stack: PrevCallback<TRouter, TOutput>[];
+    stack: PrevCallback<TRouter, TResult>[];
   }) {
     const link = opts.links[index];
-    const prev: PrevCallback<TRouter, TOutput> =
+    const prev: PrevCallback<TRouter, TResult> =
       index === 0 ? (value) => updateResult(value) : stack[index - 1];
 
     link({

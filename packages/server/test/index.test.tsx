@@ -2,12 +2,14 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/ban-types */
 import { expectTypeOf } from 'expect-type';
+import { createTRPCClient } from '../../client/src';
+import { createWSClient, wsLink } from '../../client/src/links/wsLink';
 import { z } from 'zod';
 import { TRPCClientError } from '../../client/src';
 import * as trpc from '../src';
 import { CreateHttpContextOptions } from '../src';
 import { routerToServerAndClient } from './_testHelpers';
-
+import WebSocket from 'ws';
 test('mix query and mutation', async () => {
   type Context = {};
   const r = trpc
@@ -536,8 +538,8 @@ describe('createCaller()', () => {
 });
 
 // regression https://github.com/trpc/trpc/issues/527
-test.only('void mutation response', async () => {
-  const { client, close } = routerToServerAndClient(
+test('void mutation response', async () => {
+  const { client, close, wssPort, router } = routerToServerAndClient(
     trpc
       .router()
       .mutation('undefined', {
@@ -549,7 +551,21 @@ test.only('void mutation response', async () => {
         },
       }),
   );
-  expect(await client.mutation('undefined')).toMatchInlineSnapshot();
-  expect(await client.mutation('null')).toMatchInlineSnapshot();
+  expect(await client.mutation('undefined')).toMatchInlineSnapshot(`undefined`);
+  expect(await client.mutation('null')).toMatchInlineSnapshot(`null`);
+
+  const ws = createWSClient({
+    url: `ws://localhost:${wssPort}`,
+    WebSocket: WebSocket as any,
+  });
+  const wsClient = createTRPCClient<typeof router>({
+    links: [wsLink({ client: ws })],
+  });
+
+  expect(await wsClient.mutation('undefined')).toMatchInlineSnapshot(
+    `undefined`,
+  );
+  expect(await wsClient.mutation('null')).toMatchInlineSnapshot(`null`);
+  ws.close();
   close();
 });

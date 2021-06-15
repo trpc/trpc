@@ -13,11 +13,8 @@ import type {
 } from '@trpc/server';
 import { executeChain } from './internals/executeChain';
 import { getAbortController, getFetch } from './internals/fetchHelpers';
-import {
-  observableSubjectAsPromise,
-  ObservableCallbacks,
-  UnsubscribeFn,
-} from './internals/observable';
+import { ObservableCallbacks, UnsubscribeFn } from './internals/observable';
+import { retryDelay } from './internals/retryDelay';
 import {
   CancelFn,
   LinkRuntimeOptions,
@@ -26,7 +23,6 @@ import {
   TRPCLink,
 } from './links/core';
 import { httpLink } from './links/httpLink';
-import { retryDelay } from './internals/retryDelay';
 
 type CancellablePromise<T = unknown> = Promise<T> & {
   cancel: CancelFn;
@@ -232,22 +228,32 @@ export class TRPCClient<TRouter extends AnyRouter> {
   }): CancellablePromise<TOutput> {
     const $result = this.$request<TInput, TOutput>(opts);
 
-    type TResult = typeof $result;
-    const promiseAndCancel =
-      observableSubjectAsPromise<TResult, TOutput | null>($result);
     const promise = new Promise<TOutput>((resolve, reject) => {
-      promiseAndCancel.promise
-        .then((result) => {
-          if (!result) {
+      const res = $result.get();
+      if (res.type === 'data') {
+        resolve(res.data);
+        $result.done();
+        return;
+      }
+      $result.subscribe({
+        onNext: (result) => {
+          if (result.type !== 'data') {
             return;
           }
-          result instanceof Error ? reject(result) : resolve(result);
-        })
-        .catch((err) => {
+          resolve(result.data);
+
+          $result.done();
+        },
+        onError(err) {
           reject(err);
-        });
+          $result.done();
+        },
+        onDone() {
+          reject(new Error('Done'));
+        },
+      });
     }) as CancellablePromise<TOutput>;
-    promise.cancel = promiseAndCancel.cancel;
+    promise.cancel = () => $result.done();
 
     return promise;
   }
@@ -415,7 +421,7 @@ export class TRPCClient<TRouter extends AnyRouter> {
     });
     $res.subscribe({
       onNext(output) {
-        output && opts.onNext?.(output);
+        output && output.type === 'data' && opts.onNext?.(output.data);
       },
       onError: opts.onError,
       onDone: opts.onDone,

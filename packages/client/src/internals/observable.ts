@@ -87,33 +87,3 @@ export function observableSubject<TValue, TError = unknown>(
     },
   };
 }
-
-export function observableSubjectAsPromise<
-  TObservable extends ObservableSubject<TValue, unknown>,
-  TValue,
->($obs: TObservable) {
-  const promise = new Promise<TValue>((resolve, reject) => {
-    if ($obs.get()) {
-      resolve($obs.get());
-      $obs.done();
-      return;
-    }
-    $obs.subscribe({
-      onNext: (result) => {
-        resolve(result);
-
-        $obs.done();
-      },
-      onError(err) {
-        reject(err);
-        $obs.done();
-      },
-      onDone() {
-        reject(new Error('Done'));
-      },
-    });
-  });
-  const cancel = () => $obs.done();
-
-  return { promise, cancel };
-}
