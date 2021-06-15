@@ -3,6 +3,7 @@
 
 import { assertNotBrowser } from './assertNotBrowser';
 import { notFoundError, TRPCError } from './errors';
+import { JSONRPC2BaseError, TRPC_ERROR_CODE_NUMBER } from './jsonrpc2';
 import {
   createProcedure,
   CreateProcedureOptions,
@@ -69,7 +70,7 @@ const PROCEDURE_DEFINITION_MAP: Record<
   mutation: 'mutations',
   subscription: 'subscriptions',
 };
-export type ErrorFormatter<TContext, TOutput extends {}> = ({
+export type ErrorFormatter<TContext, TOutput extends JSONRPC2BaseError> = ({
   error,
 }: {
   error: TRPCError;
@@ -80,11 +81,9 @@ export type ErrorFormatter<TContext, TOutput extends {}> = ({
   defaultShape: DefaultErrorShape;
 }) => TOutput;
 
-export type ErrorShape = {};
-
 export type DefaultErrorShape = {
   message: string;
-  code: string;
+  code: TRPC_ERROR_CODE_NUMBER;
   path?: string;
   stack?: string;
 };
@@ -124,7 +123,7 @@ export class Router<
     unknown,
     Subscription<unknown>
   >,
-  TErrorShape extends ErrorShape,
+  TErrorShape extends JSONRPC2BaseError,
 > {
   readonly _def: Readonly<{
     queries: Readonly<TQueries>;
