@@ -55,7 +55,7 @@ export const JSONRPC2_TO_HTTP_CODE: Record<
 
 export type JSONRPC2RequestId = number /*|string  | null*/;
 export interface JSONRPC2BaseEnvelope {
-  id: JSONRPC2RequestId;
+  id?: JSONRPC2RequestId;
   jsonrpc?: '2.0';
 }
 export interface JSONRPC2BaseError {

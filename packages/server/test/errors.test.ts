@@ -43,11 +43,9 @@ test('basic', async () => {
   if (!(clientError instanceof TRPCClientError)) {
     throw new Error('Did not throw');
   }
-  expect(clientError.result?.statusCode).toBe(500);
-  expect(clientError.result?.error.message).toMatchInlineSnapshot(`"woop"`);
-  expect(clientError.result?.error.code).toMatchInlineSnapshot(
-    `"INTERNAL_SERVER_ERROR"`,
-  );
+  expect(clientError.shape.message).toMatchInlineSnapshot(`"woop"`);
+  expect(clientError.shape.code).toMatchInlineSnapshot(`-32603`);
+
   expect(onError).toHaveBeenCalledTimes(1);
   const serverError = onError.mock.calls[0][0].error;
 
@@ -84,8 +82,7 @@ test('input error', async () => {
   if (!(clientError instanceof TRPCClientError)) {
     throw new Error('Did not throw');
   }
-  expect(clientError.result?.statusCode).toBe(400);
-  expect(clientError.result?.error.message).toMatchInlineSnapshot(`
+  expect(clientError.shape.message).toMatchInlineSnapshot(`
     "[
       {
         \\"code\\": \\"invalid_type\\",
@@ -96,10 +93,8 @@ test('input error', async () => {
       }
     ]"
   `);
-  expect(clientError.result?.error.code).toMatchInlineSnapshot(
-    `"BAD_USER_INPUT"`,
-  );
-  expect(clientError.result?.error.path).toBe('err');
+  expect(clientError.shape.code).toMatchInlineSnapshot(`-32600`);
+
   expect(onError).toHaveBeenCalledTimes(1);
   const serverError = onError.mock.calls[0][0].error;
 
@@ -135,18 +130,11 @@ test('httpError.unauthorized()', async () => {
   if (!(clientError instanceof TRPCClientError)) {
     throw new Error('Did not throw');
   }
-  expect(clientError.result?.statusCode).toBe(401);
-  expect(clientError.result?.error.message).toMatchInlineSnapshot(
-    `"Unauthorized"`,
-  );
-  expect(clientError.result?.error.code).toMatchInlineSnapshot(
-    `"UNAUTHORIZED"`,
-  );
+  expect(clientError).toMatchInlineSnapshot(`[Error: UNAUTHORIZED]`);
   expect(onError).toHaveBeenCalledTimes(1);
   const serverError = onError.mock.calls[0][0].error;
 
   expect(serverError).toBeInstanceOf(TRPCError);
-  expect(serverError).toBeInstanceOf(trpc.HTTPError);
 
   close();
 });
@@ -192,21 +180,9 @@ test('formatError()', async () => {
     clientError = _err;
   }
   assertClientError(clientError);
-  expect(clientError.result?.statusCode).toBe(400);
-  expect(clientError.result?.error).toMatchInlineSnapshot(`
-    Object {
-      "errors": Array [
-        Object {
-          "code": "invalid_type",
-          "expected": "string",
-          "message": "Expected string, received number",
-          "path": Array [],
-          "received": "number",
-        },
-      ],
-      "type": "zod",
-    }
-  `);
+  expect(clientError.shape.message).toMatchInlineSnapshot(`undefined`);
+  expect(clientError.shape.code).toMatchInlineSnapshot(`undefined`);
+
   expect(onError).toHaveBeenCalledTimes(1);
   const serverError = onError.mock.calls[0][0].error;
 
@@ -236,8 +212,10 @@ test('make sure object is ignoring prototype', async () => {
     clientError = _err;
   }
   assertClientError(clientError);
-  expect(clientError.result?.statusCode).toBe(404);
-  expect(clientError.result?.error.code).toBe('NOT_FOUND');
+  expect(clientError.shape.message).toMatchInlineSnapshot(
+    `"No such query procedure \\"toString\\""`,
+  );
+  expect(clientError.shape.code).toMatchInlineSnapshot(`-32601`);
   expect(onError).toHaveBeenCalledTimes(1);
   const serverError = onError.mock.calls[0][0].error;
   expect(serverError.code).toBe('NOT_FOUND');

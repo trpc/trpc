@@ -24,5 +24,5 @@ export function getHTTPStatusCode(json: JSONRPC2Response | JSONRPC2Response[]) {
     return 200;
   }
   const key = TRPC_ERROR_CODES_BY_NUMBER[code];
-  return JSONRPC2_TO_HTTP_CODE[key];
+  return JSONRPC2_TO_HTTP_CODE[key] ?? 500;
 }

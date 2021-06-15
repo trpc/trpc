@@ -304,7 +304,6 @@ export async function requestHandler<
           const json: JSONRPC2ErrorResponse = {
             error: router.getErrorShape({ error, type, path, input, ctx }),
           };
-          endResponse(json);
           onError && onError({ error, path, input, ctx, type: type, req });
           return json;
         }
