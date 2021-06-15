@@ -48,9 +48,10 @@ export type JSONRPC2ReconnectEnvelope = {
   jsonrpc: '2.0';
   result: 'reconnect';
 };
-export type JSONRPC2RequestEnvelope<TInput = unknown> =
-  | JSONRPC2ProcedureRequestEnvelope<TInput>
-  | JSONRPC2ProcedureStopEnvelope;
+export type JSONRPC2RequestEnvelope<TInput = unknown> = {
+  id: number | null;
+  jsonrpc: '2.0';
+} & (JSONRPC2ProcedureRequestEnvelope<TInput> | JSONRPC2ProcedureStopEnvelope);
 export type JSONRPC2ResponseEnvelope<TResult = unknown> =
   | {
       jsonrpc: '2.0';
