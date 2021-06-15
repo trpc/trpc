@@ -46,6 +46,12 @@ module.exports = {
           position: 'left',
         },
         {
+          to: 'docs/example-apps',
+          activeBasePath: 'docs/example-apps',
+          label: 'Example Apps',
+          position: 'left',
+        },
+        {
           to: 'docs/nextjs',
           activeBasePath: 'docs/nextjs',
           label: 'Usage with Next.js',
