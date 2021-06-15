@@ -58,13 +58,10 @@ export type TRPCResult<TData = unknown> =
   | {
       type: 'stopped';
     };
-export type TRPCResultEnvelope<TData = unknown> = JSONRPC2ResultResponse<
-  TRPCResult<TData>
->;
 
-export type TRPCEnvelope<
+export type TRPCResponse<
   TData = unknown,
   TError extends JSONRPC2BaseError = JSONRPC2BaseError,
 > = JSONRPC2ResultResponse<TRPCResult<TData>> | TRPCErrorResponse<TError>;
 
-export type TRPCClientIncomingMessage = TRPCEnvelope | TRPCReconnectRequest;
+export type TRPCClientIncomingMessage = TRPCResponse | TRPCReconnectRequest;

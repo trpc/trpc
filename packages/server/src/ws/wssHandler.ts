@@ -8,7 +8,7 @@ import {
   JSONRPC2Response,
   TRPCReconnectRequest,
   TRPCRequestEnvelope,
-  TRPCEnvelope,
+  TRPCResponse,
 } from '../rpc';
 import { AnyRouter, ProcedureType } from '../router';
 import { Subscription } from '../subscription';
@@ -106,7 +106,7 @@ export function applyWSSHandler<TRouter extends AnyRouter>(
         function respond(json: JSONRPC2Response) {
           client.send(JSON.stringify(json));
         }
-        function subscriptionResponse(result: TRPCEnvelope) {
+        function subscriptionResponse(result: TRPCResponse) {
           respond(result);
         }
         const msg = parseMessage(JSON.parse(message as string));

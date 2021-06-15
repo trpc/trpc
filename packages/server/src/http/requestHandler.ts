@@ -5,7 +5,7 @@ import url from 'url';
 import { assertNotBrowser } from '../assertNotBrowser';
 import { getErrorFromUnknown, TRPCError } from '../errors';
 import { getCombinedDataTransformer } from '../internals/getCombinedDataTransformer';
-import { TRPCErrorResponse, JSONRPC2Response, TRPCEnvelope } from '../rpc';
+import { TRPCErrorResponse, JSONRPC2Response, TRPCResponse } from '../rpc';
 import { AnyRouter, inferRouterContext, ProcedureType } from '../router';
 import { Subscription } from '../subscription';
 import { DataTransformerOptions } from '../transformer';
@@ -292,7 +292,7 @@ export async function requestHandler<
             subscriptions,
             type,
           });
-          const json: TRPCEnvelope = {
+          const json: TRPCResponse = {
             id: -1,
             result: {
               type: 'data',
