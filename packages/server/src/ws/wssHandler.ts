@@ -4,11 +4,11 @@ import { getErrorFromUnknown } from '../errors';
 import { BaseOptions, CreateContextFn } from '../http';
 import { getCombinedDataTransformer } from '../internals/getCombinedDataTransformer';
 import {
-  JSONRPC2ErrorResponse,
+  TRPCErrorResponse,
   JSONRPC2Response,
   TRPCReconnectRequest,
   TRPCRequestEnvelope,
-  TRPCSubscriptionResponse,
+  TRPCEnvelope,
 } from '../rpc';
 import { AnyRouter, ProcedureType } from '../router';
 import { Subscription } from '../subscription';
@@ -106,7 +106,7 @@ export function applyWSSHandler<TRouter extends AnyRouter>(
         function respond(json: JSONRPC2Response) {
           client.send(JSON.stringify(json));
         }
-        function subscriptionResponse(result: TRPCSubscriptionResponse) {
+        function subscriptionResponse(result: TRPCEnvelope) {
           respond(result);
         }
         const msg = parseMessage(JSON.parse(message as string));
@@ -165,7 +165,7 @@ export function applyWSSHandler<TRouter extends AnyRouter>(
           });
           sub.on('error', (_error: unknown) => {
             const error = getErrorFromUnknown(_error);
-            const json: JSONRPC2ErrorResponse = {
+            const json: TRPCErrorResponse = {
               id,
               error: transformer.output.serialize(
                 router.getErrorShape({

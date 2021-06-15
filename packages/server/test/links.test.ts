@@ -85,7 +85,7 @@ test('chainer', async () => {
   });
 
   await waitFor(() => {
-    expect($result.get().type).not.toBe('init');
+    expect($result.get()).not.toBe(null);
   });
   expect($result.get()).toMatchInlineSnapshot(`
     Object {
@@ -193,8 +193,8 @@ describe('batching', () => {
     });
 
     await waitFor(() => {
-      expect($result1.get().type).not.toBe('init');
-      expect($result2.get().type).not.toBe('init');
+      expect($result1.get()).not.toBe(null);
+      expect($result2.get()).not.toBe(null);
     });
     expect($result1.get()).toMatchInlineSnapshot(`
       Object {

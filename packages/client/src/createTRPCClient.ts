@@ -11,7 +11,7 @@ import type {
 } from '@trpc/server';
 import {
   JSONRPC2BaseError,
-  JSONRPC2ErrorResponse,
+  TRPCErrorResponse,
   TRPC_ERROR_CODES_BY_KEY,
 } from '@trpc/server/rpc';
 import { TRPCResult } from '@trpc/server/rpc';
@@ -50,7 +50,7 @@ export class TRPCClientError<
       isDone = false,
       result,
     }: {
-      result: Maybe<JSONRPC2ErrorResponse<TErrorShape>>;
+      result: Maybe<TRPCErrorResponse<TErrorShape>>;
       originalError: Maybe<Error>;
       isDone?: boolean;
     },
@@ -66,7 +66,7 @@ export class TRPCClientError<
   }
 
   public static from<TRouter extends AnyRouter>(
-    result: Error | JSONRPC2ErrorResponse<any>,
+    result: Error | TRPCErrorResponse<any>,
     opts: { isDone?: boolean } = {},
   ): TRPCClientError<TRouter> {
     if (!(result instanceof Error)) {
@@ -193,14 +193,14 @@ export class TRPCClient<TRouter extends AnyRouter> {
 
     const promise = new Promise<TOutput>((resolve, reject) => {
       const res = $result.get();
-      if (res.type === 'data') {
+      if (res?.type === 'data') {
         resolve(res.data);
         $result.done();
         return;
       }
       $result.subscribe({
         onNext: (result) => {
-          if (result.type !== 'data') {
+          if (result?.type !== 'data') {
             return;
           }
           resolve(result.data);
@@ -384,7 +384,7 @@ export class TRPCClient<TRouter extends AnyRouter> {
     });
     $res.subscribe({
       onNext(output) {
-        if (output.type !== 'init') {
+        if (output) {
           opts.onNext?.(output);
         }
       },

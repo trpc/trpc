@@ -1,5 +1,5 @@
 import { AnyRouter, ProcedureType } from '@trpc/server';
-import { TRPCResponseEnvelope } from '@trpc/server/rpc';
+import { TRPCEnvelope } from '@trpc/server/rpc';
 import { TRPCClientError } from '../createTRPCClient';
 import { dataLoader } from '../internals/dataLoader';
 import { transformRPCResponse } from '../internals/transformRPCResponse';
@@ -37,11 +37,9 @@ export function httpBatchLink<TRouter extends AnyRouter>(
         cancel,
       };
     };
-    const query = dataLoader<Key, TRPCResponseEnvelope>(fetcher('query'));
-    const mutation = dataLoader<Key, TRPCResponseEnvelope>(fetcher('mutation'));
-    const subscription = dataLoader<Key, TRPCResponseEnvelope>(
-      fetcher('subscription'),
-    );
+    const query = dataLoader<Key, TRPCEnvelope>(fetcher('query'));
+    const mutation = dataLoader<Key, TRPCEnvelope>(fetcher('mutation'));
+    const subscription = dataLoader<Key, TRPCEnvelope>(fetcher('subscription'));
 
     const loaders = { query, subscription, mutation };
     return ({ op, prev, onDestroy }) => {

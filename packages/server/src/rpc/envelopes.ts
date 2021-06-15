@@ -2,7 +2,7 @@ import { ProcedureType } from '../router';
 import { TRPC_ERROR_CODE_NUMBER } from './codes';
 
 export type JSONRPC2RequestId = number /*|string  | null*/;
-export interface JSONRPC2BaseEnvelope {
+interface JSONRPC2BaseEnvelope {
   id: JSONRPC2RequestId;
   jsonrpc?: '2.0';
 }
@@ -11,19 +11,17 @@ export interface JSONRPC2BaseError {
   message: string;
 }
 
-export interface JSONRPC2Request<
-  TMethod extends string = string,
-  TParams = unknown,
-> extends JSONRPC2BaseEnvelope {
+interface JSONRPC2Request<TMethod extends string = string, TParams = unknown>
+  extends JSONRPC2BaseEnvelope {
   method: TMethod;
   params: TParams;
 }
 
-export interface JSONRPC2ResultResponse<TResult = unknown>
+interface JSONRPC2ResultResponse<TResult = unknown>
   extends JSONRPC2BaseEnvelope {
   result: TResult;
 }
-export interface JSONRPC2ErrorResponse<
+export interface TRPCErrorResponse<
   TError extends JSONRPC2BaseError = JSONRPC2BaseError,
 > extends JSONRPC2BaseEnvelope {
   error: TError;
@@ -34,7 +32,7 @@ export type TRPCRequestId = NonNullable<JSONRPC2RequestId>;
 export type JSONRPC2Response<
   TResult = unknown,
   TError extends JSONRPC2BaseError = JSONRPC2BaseError,
-> = JSONRPC2ResultResponse<TResult> | JSONRPC2ErrorResponse<TError>;
+> = JSONRPC2ResultResponse<TResult> | TRPCErrorResponse<TError>;
 // TRPC specific
 
 export type TRPCRequestEnvelope =
@@ -49,19 +47,6 @@ export type TRPCRequestEnvelope =
 
 export type TRPCReconnectRequest = JSONRPC2Request<'reconnect', undefined>;
 
-export type TRPCSubscriptionResponse = JSONRPC2Response<
-  | {
-      type: 'data';
-      data: unknown;
-    }
-  | {
-      type: 'started';
-    }
-  | {
-      type: 'stopped';
-    }
->;
-
 export type TRPCResult<TData = unknown> =
   | {
       type: 'data';
@@ -73,7 +58,13 @@ export type TRPCResult<TData = unknown> =
   | {
       type: 'stopped';
     };
-export type TRPCResponseEnvelope<TData = unknown> =
-  | JSONRPC2ResultResponse<TRPCResult<TData>>
-  | JSONRPC2ErrorResponse;
-export type TRPCClientMessage = TRPCResponseEnvelope | TRPCReconnectRequest;
+export type TRPCResultEnvelope<TData = unknown> = JSONRPC2ResultResponse<
+  TRPCResult<TData>
+>;
+
+export type TRPCEnvelope<
+  TData = unknown,
+  TError extends JSONRPC2BaseError = JSONRPC2BaseError,
+> = JSONRPC2ResultResponse<TRPCResult<TData>> | TRPCErrorResponse<TError>;
+
+export type TRPCClientIncomingMessage = TRPCEnvelope | TRPCReconnectRequest;

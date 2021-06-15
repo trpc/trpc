@@ -5,11 +5,7 @@ import url from 'url';
 import { assertNotBrowser } from '../assertNotBrowser';
 import { getErrorFromUnknown, TRPCError } from '../errors';
 import { getCombinedDataTransformer } from '../internals/getCombinedDataTransformer';
-import {
-  JSONRPC2ErrorResponse,
-  JSONRPC2Response,
-  JSONRPC2ResultResponse,
-} from '../JSONRPC2RequestId';
+import { TRPCErrorResponse, JSONRPC2Response, TRPCEnvelope } from '../rpc';
 import { AnyRouter, inferRouterContext, ProcedureType } from '../router';
 import { Subscription } from '../subscription';
 import { DataTransformerOptions } from '../transformer';
@@ -296,7 +292,7 @@ export async function requestHandler<
             subscriptions,
             type,
           });
-          const json: JSONRPC2ResultResponse = {
+          const json: TRPCEnvelope = {
             id: -1,
             result: {
               type: 'data',
@@ -308,7 +304,7 @@ export async function requestHandler<
         } catch (_err) {
           const error = getErrorFromUnknown(_err);
 
-          const json: JSONRPC2ErrorResponse = {
+          const json: TRPCErrorResponse = {
             id: -1,
             error: transformer.output.serialize(
               router.getErrorShape({ error, type, path, input, ctx }),
@@ -325,7 +321,7 @@ export async function requestHandler<
   } catch (_err) {
     const error = getErrorFromUnknown(_err);
 
-    const json: JSONRPC2ErrorResponse = {
+    const json: TRPCErrorResponse = {
       id: -1,
       error: transformer.output.serialize(
         router.getErrorShape({ error, type, path: undefined, input, ctx }),

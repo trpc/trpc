@@ -1,8 +1,8 @@
 import { ProcedureType } from '@trpc/server';
-import { TRPCResponseEnvelope } from '@trpc/server/rpc';
+import { TRPCEnvelope } from '@trpc/server/rpc';
 import { LinkRuntimeOptions, PromiseAndCancel } from '../links/core';
 
-export function httpRequest<TResponseShape = TRPCResponseEnvelope>(props: {
+export function httpRequest<TResponseShape = TRPCEnvelope>(props: {
   runtime: LinkRuntimeOptions;
   type: ProcedureType;
   input: unknown;
