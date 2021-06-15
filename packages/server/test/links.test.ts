@@ -56,7 +56,7 @@ test('retrylink', () => {
 test('chainer', async () => {
   let attempt = 0;
   const serverCall = jest.fn();
-  const { port, close } = routerToServerAndClient(
+  const { httpPort, close } = routerToServerAndClient(
     trpc.router().query('hello', {
       resolve() {
         attempt++;
@@ -73,7 +73,7 @@ test('chainer', async () => {
     links: [
       retryLink({ attempts: 3 })(mockRuntime),
       httpLink({
-        url: `http://localhost:${port}`,
+        url: `http://localhost:${httpPort}`,
       })(mockRuntime),
     ],
     op: {

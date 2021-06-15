@@ -27,13 +27,3 @@ export const httpError = {
   notFound: (message = 'NOT_FOUND') =>
     new TRPCError({ message, code: 'NOT_FOUND' }),
 };
-
-export function getStatusCodeFromError<
-  TError extends { code?: number } | undefined,
->(err: TError): TRPC_ERROR_CODE_NUMBER {
-  const code = err?.code;
-  if (code && code in TRPC_ERROR_CODES_BY_KEY) {
-    return (TRPC_ERROR_CODES_BY_KEY as any)[code] as TRPC_ERROR_CODE_NUMBER;
-  }
-  return TRPC_ERROR_CODES_BY_KEY.INTERNAL_SERVER_ERROR;
-}
