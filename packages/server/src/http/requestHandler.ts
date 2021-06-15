@@ -9,7 +9,7 @@ import {
   JSONRPC2ErrorResponse,
   JSONRPC2Response,
   JSONRPC2ResultResponse,
-} from '../rpc';
+} from '../JSONRPC2RequestId';
 import { AnyRouter, inferRouterContext, ProcedureType } from '../router';
 import { Subscription } from '../subscription';
 import { DataTransformerOptions } from '../transformer';

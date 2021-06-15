@@ -4,11 +4,6 @@
 import { assertNotBrowser } from './assertNotBrowser';
 import { notFoundError, TRPCError } from './errors';
 import {
-  JSONRPC2BaseError,
-  TRPC_ERROR_CODES_BY_KEY,
-  TRPC_ERROR_CODE_NUMBER,
-} from './rpc';
-import {
   createProcedure,
   CreateProcedureOptions,
   CreateProcedureWithInput,
@@ -17,8 +12,14 @@ import {
   Procedure,
   ProcedureWithInput,
 } from './procedure';
+import {
+  JSONRPC2BaseError,
+  TRPC_ERROR_CODES_BY_KEY,
+  TRPC_ERROR_CODE_NUMBER,
+} from './rpc';
 import { Subscription } from './subscription';
 import { flatten, Prefixer, ThenArg } from './types';
+
 assertNotBrowser();
 
 export type ProcedureType = 'query' | 'mutation' | 'subscription';

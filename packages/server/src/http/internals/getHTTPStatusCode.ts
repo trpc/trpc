@@ -1,9 +1,25 @@
-import {
-  JSONRPC2Response,
-  JSONRPC2_TO_HTTP_CODE,
-  TRPC_ERROR_CODES_BY_NUMBER,
-  TRPC_ERROR_CODE_NUMBER,
-} from '../../rpc';
+import { JSONRPC2Response, TRPC_ERROR_CODES_BY_KEY } from '../../rpc';
+import { invert } from './invert';
+
+export const TRPC_ERROR_CODES_BY_NUMBER = invert(TRPC_ERROR_CODES_BY_KEY);
+type ValueOf<T> = T[keyof T];
+
+export type TRPC_ERROR_CODE_NUMBER = ValueOf<typeof TRPC_ERROR_CODES_BY_KEY>;
+const JSONRPC2_TO_HTTP_CODE: Record<
+  keyof typeof TRPC_ERROR_CODES_BY_KEY,
+  number
+> = {
+  PARSE_ERROR: 400,
+  BAD_REQUEST: 400,
+  NOT_FOUND: 404,
+  INTERNAL_SERVER_ERROR: 500,
+  UNAUTHORIZED: 401,
+  FORBIDDEN: 403,
+  TIMEOUT: 408,
+  CLIENT_CLOSED_REQUEST: 499,
+  PAYLOAD_TOO_LARGE: 413,
+  METHOD_NOT_SUPPORTED: 405,
+};
 
 export function getHTTPStatusCode(json: JSONRPC2Response | JSONRPC2Response[]) {
   const arr = Array.isArray(json) ? json : [json];

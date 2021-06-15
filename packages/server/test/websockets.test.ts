@@ -4,9 +4,7 @@
 import { waitFor } from '@testing-library/react';
 import { EventEmitter } from 'events';
 import { expectTypeOf } from 'expect-type';
-import WebSocket from 'ws';
-// import { expectTypeOf } from 'expect-type';
-import ws from 'ws';
+import { default as WebSocket, default as ws } from 'ws';
 import { z } from 'zod';
 import {
   createWSClient,
