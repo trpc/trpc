@@ -242,7 +242,7 @@ export async function requestHandler<
     res.statusCode = getHTTPStatusCode(json);
 
     res.setHeader('Content-Type', 'application/json');
-    res.end(JSON.stringify(transformer.output.serialize(json)));
+    res.end(JSON.stringify(json));
   }
   try {
     if (isBatchCall && !opts.batching?.enabled) {
@@ -298,7 +298,7 @@ export async function requestHandler<
             id: -1,
             result: {
               type: 'data',
-              data: output,
+              data: transformer.output.serialize(output),
             },
           };
           events.emit('flush'); // `flush()` is used for subscriptions to flush out current output
@@ -308,7 +308,9 @@ export async function requestHandler<
 
           const json: JSONRPC2ErrorResponse = {
             id: -1,
-            error: router.getErrorShape({ error, type, path, input, ctx }),
+            error: transformer.output.serialize(
+              router.getErrorShape({ error, type, path, input, ctx }),
+            ),
           };
           onError && onError({ error, path, input, ctx, type: type, req });
           return json;
@@ -323,7 +325,9 @@ export async function requestHandler<
 
     const json: JSONRPC2ErrorResponse = {
       id: -1,
-      error: router.getErrorShape({ error, type, path: undefined, input, ctx }),
+      error: transformer.output.serialize(
+        router.getErrorShape({ error, type, path: undefined, input, ctx }),
+      ),
     };
     endResponse(json);
     onError && onError({ error, path: undefined, input, ctx, type: type, req });

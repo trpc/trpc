@@ -1,7 +1,8 @@
 import { AnyRouter, ProcedureType } from '@trpc/server';
-import { JSONRPC2Response } from '@trpc/server/jsonrpc2';
+import { TRPCResponseEnvelope } from '@trpc/server/jsonrpc2';
 import { TRPCClientError } from '../createTRPCClient';
 import { dataLoader } from '../internals/dataLoader';
+import { getPrevResult } from '../internals/getPrevResult';
 import { httpRequest } from '../internals/httpRequest';
 import { HttpLinkOptions, TRPCLink } from './core';
 
@@ -36,9 +37,9 @@ export function httpBatchLink<TRouter extends AnyRouter>(
         cancel,
       };
     };
-    const query = dataLoader<Key, JSONRPC2Response>(fetcher('query'));
-    const mutation = dataLoader<Key, JSONRPC2Response>(fetcher('mutation'));
-    const subscription = dataLoader<Key, JSONRPC2Response>(
+    const query = dataLoader<Key, TRPCResponseEnvelope>(fetcher('query'));
+    const mutation = dataLoader<Key, TRPCResponseEnvelope>(fetcher('mutation'));
+    const subscription = dataLoader<Key, TRPCResponseEnvelope>(
       fetcher('subscription'),
     );
 
@@ -48,13 +49,7 @@ export function httpBatchLink<TRouter extends AnyRouter>(
       const { promise, cancel } = loader.load(op);
       onDestroy(() => cancel());
       promise
-        .then((result) =>
-          prev(
-            'error' in result
-              ? TRPCClientError.from(result)
-              : (result.result as any),
-          ),
-        )
+        .then((envelope) => prev(getPrevResult({ envelope, runtime })))
         .catch((err) => prev(TRPCClientError.from<TRouter>(err)));
     };
   };

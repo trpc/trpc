@@ -1,8 +1,8 @@
 import { ProcedureType } from '@trpc/server';
-import { JSONRPC2Response } from '@trpc/server/jsonrpc2';
+import { TRPCResponseEnvelope } from '@trpc/server/jsonrpc2';
 import { LinkRuntimeOptions, PromiseAndCancel } from '../links/core';
 
-export function httpRequest<TResponseShape = JSONRPC2Response>(props: {
+export function httpRequest<TResponseShape = TRPCResponseEnvelope>(props: {
   runtime: LinkRuntimeOptions;
   type: ProcedureType;
   input: unknown;
@@ -60,7 +60,7 @@ export function httpRequest<TResponseShape = JSONRPC2Response>(props: {
         return res.json();
       })
       .then((json) => {
-        resolve(rt.transformer.deserialize(json));
+        resolve(json);
       })
       .catch(reject);
   });
