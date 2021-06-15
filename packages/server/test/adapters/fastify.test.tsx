@@ -1,14 +1,10 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import f from 'fastify';
-import * as trpc from '../../../server/src';
-import {
-  CreateHttpContextOptions,
-  createHttpHandler,
-  requestHandler,
-} from '../../../server/src';
 import { createTRPCClient } from '@trpc/client';
-import fetch from 'node-fetch';
 import AbortController from 'abort-controller';
+import f from 'fastify';
+import fetch from 'node-fetch';
+import * as trpc from '../../../server/src';
+import { CreateHttpContextOptions, requestHandler } from '../../../server/src';
 const fetchOpts = { fetch, AbortController } as any;
 
 async function startServer() {
