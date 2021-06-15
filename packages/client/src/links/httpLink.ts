@@ -1,6 +1,6 @@
 import { AnyRouter } from '@trpc/server';
 import { TRPCClientError } from '../createTRPCClient';
-import { getPrevResult } from '../internals/getPrevResult';
+import { transformRPCResponse } from '../internals/transformRPCResponse';
 import { httpRequest } from '../internals/httpRequest';
 import { HttpLinkOptions, TRPCLink } from './core';
 
@@ -23,7 +23,7 @@ export function httpLink<TRouter extends AnyRouter>(
       });
       onDestroy(() => cancel());
       promise
-        .then((envelope) => prev(getPrevResult({ envelope, runtime })))
+        .then((envelope) => prev(transformRPCResponse({ envelope, runtime })))
         .catch((err) => TRPCClientError.from(err));
     };
   };

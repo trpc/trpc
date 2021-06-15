@@ -2,7 +2,7 @@ import { AnyRouter, ProcedureType } from '@trpc/server';
 import { TRPCResponseEnvelope } from '@trpc/server/jsonrpc2';
 import { TRPCClientError } from '../createTRPCClient';
 import { dataLoader } from '../internals/dataLoader';
-import { getPrevResult } from '../internals/getPrevResult';
+import { transformRPCResponse } from '../internals/transformRPCResponse';
 import { httpRequest } from '../internals/httpRequest';
 import { HttpLinkOptions, TRPCLink } from './core';
 
@@ -49,7 +49,7 @@ export function httpBatchLink<TRouter extends AnyRouter>(
       const { promise, cancel } = loader.load(op);
       onDestroy(() => cancel());
       promise
-        .then((envelope) => prev(getPrevResult({ envelope, runtime })))
+        .then((envelope) => prev(transformRPCResponse({ envelope, runtime })))
         .catch((err) => prev(TRPCClientError.from<TRouter>(err)));
     };
   };

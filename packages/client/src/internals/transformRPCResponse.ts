@@ -2,7 +2,7 @@ import { TRPCResponseEnvelope } from '@trpc/server/jsonrpc2';
 import { TRPCClientError } from '../createTRPCClient';
 import { LinkRuntimeOptions } from '../links/core';
 
-export function getPrevResult({
+export function transformRPCResponse({
   envelope,
   runtime,
 }: {
