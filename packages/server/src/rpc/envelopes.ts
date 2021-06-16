@@ -20,9 +20,13 @@ interface JSONRPC2ResultResponse<TResult = unknown>
 }
 
 // inner types
-export interface TRPCErrorShape {
-  code: TRPC_ERROR_CODE_NUMBER;
+export interface TRPCErrorShape<
+  TCode extends number = TRPC_ERROR_CODE_NUMBER,
+  TData = never,
+> {
+  code: TCode;
   message: string;
+  data: TData;
 }
 export type TRPCRequestId = NonNullable<JSONRPC2RequestId>;
 

@@ -15,6 +15,7 @@ import {
 import {
   TRPCErrorShape,
   TRPC_ERROR_CODES_BY_KEY,
+  TRPC_ERROR_CODE_KEY,
   TRPC_ERROR_CODE_NUMBER,
 } from './rpc';
 import { Subscription } from './subscription';
@@ -78,7 +79,10 @@ const PROCEDURE_DEFINITION_MAP: Record<
   mutation: 'mutations',
   subscription: 'subscriptions',
 };
-export type ErrorFormatter<TContext, TOutput extends TRPCErrorShape> = ({
+export type ErrorFormatter<
+  TContext,
+  TOutput extends TRPCErrorShape<number, unknown>,
+> = ({
   error,
 }: {
   error: TRPCError;
@@ -89,12 +93,16 @@ export type ErrorFormatter<TContext, TOutput extends TRPCErrorShape> = ({
   defaultShape: DefaultErrorShape;
 }) => TOutput;
 
-export type DefaultErrorShape = {
-  message: string;
-  code: TRPC_ERROR_CODE_NUMBER;
+interface DefaultErrorData {
+  code: TRPC_ERROR_CODE_KEY;
   path?: string;
   stack?: string;
-};
+}
+export interface DefaultErrorShape
+  extends TRPCErrorShape<TRPC_ERROR_CODE_NUMBER, DefaultErrorData> {
+  message: string;
+  code: TRPC_ERROR_CODE_NUMBER;
+}
 
 /**
  * Create an empty object with `Object.create(null)`.
@@ -131,7 +139,7 @@ export class Router<
     unknown,
     Subscription<unknown>
   >,
-  TErrorShape extends TRPCErrorShape,
+  TErrorShape extends TRPCErrorShape<number, unknown>,
 > {
   readonly _def: Readonly<{
     queries: Readonly<TQueries>;
@@ -513,16 +521,19 @@ export class Router<
     input: unknown;
     ctx: undefined | TContext;
   }): TErrorShape {
+    const code = opts.error.code;
     const defaultShape: DefaultErrorShape = {
       message: opts.error.message,
-      code: TRPC_ERROR_CODES_BY_KEY[opts.error.code],
-      path: opts.path,
+      code: TRPC_ERROR_CODES_BY_KEY[code],
+      data: {
+        code,
+      },
     };
     if (
       process.env.NODE_ENV !== 'production' &&
       typeof opts.error.stack === 'string'
     ) {
-      defaultShape.stack = opts.error.stack;
+      defaultShape.data.stack = opts.error.stack;
     }
     return this._def.errorFormatter({ ...opts, defaultShape });
   }
