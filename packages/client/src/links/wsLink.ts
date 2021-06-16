@@ -99,6 +99,7 @@ export function createWSClient(opts: {
   }
 
   function closeIfNoPending(conn: WebSocket) {
+    state = 'closed';
     // disconnect as soon as there are is not pending result
     const hasPendingRequests = Object.values(pendingRequests).some(
       (p) => p.ws === conn,
@@ -124,7 +125,7 @@ export function createWSClient(opts: {
     conn.addEventListener('message', ({ data }) => {
       const msg = JSON.parse(data) as TRPCClientIncomingMessage;
 
-      if (conn !== activeConnection) {
+      if (conn !== activeConnection || state === 'closed') {
         setTimeout(() => {
           // when receiving a message, we any old connection that has no pending requests
           closeIfNoPending(conn);
@@ -146,6 +147,7 @@ export function createWSClient(opts: {
       }
 
       const req = pendingRequests[msg.id];
+      console.log('req', req);
       if (!req) {
         // do something?
         return;
@@ -210,8 +212,10 @@ export function createWSClient(opts: {
     triggerSendIfConnected();
 
     return () => {
-      pendingRequests[id]?.callbacks.onDone?.();
+      const callbacks = pendingRequests[id]?.callbacks;
       delete pendingRequests[id];
+
+      callbacks?.onDone?.();
       if (op.type === 'subscription') {
         outgoing.push({
           id,

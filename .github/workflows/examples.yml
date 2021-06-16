@@ -3,6 +3,7 @@ on: [push]
 jobs:
   e2e:
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 5
     strategy:
       matrix:
         dir:

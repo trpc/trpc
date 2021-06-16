@@ -115,8 +115,18 @@ export function applyWSSHandler<TRouter extends AnyRouter>(
 
         const { id } = msg;
         if (msg.method === 'subscription.stop') {
-          clientSubscriptions.get(id)?.destroy();
+          const sub = clientSubscriptions.get(id);
           clientSubscriptions.delete(id);
+          if (sub) {
+            console.log('unsubbed');
+            sub.destroy();
+            subscriptionResponse({
+              id,
+              result: {
+                type: 'stopped',
+              },
+            });
+          }
           return;
         }
         const input = transformer.input.deserialize(msg.params.input);
