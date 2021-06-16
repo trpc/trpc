@@ -147,7 +147,6 @@ export function createWSClient(opts: {
       }
 
       const req = pendingRequests[msg.id];
-      console.log('req', req);
       if (!req) {
         // do something?
         return;

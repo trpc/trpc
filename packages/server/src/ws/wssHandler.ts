@@ -40,10 +40,19 @@ function assertIsString(obj: unknown): asserts obj is string {
     throw new Error('Invalid string');
   }
 }
+/* istanbul ignore next */
+function assertIsJSONRPC2OrUndefined(
+  obj: unknown,
+): asserts obj is '2.0' | undefined {
+  if (typeof obj !== 'undefined' && obj !== '2.0') {
+    throw new Error('Must be JSONRPC 2.0');
+  }
+}
 function parseMessage(obj: unknown): TRPCRequest {
   assertIsObject(obj);
-  const { method, params, id } = obj;
+  const { method, params, id, jsonrpc } = obj;
   assertIsRequestId(id);
+  assertIsJSONRPC2OrUndefined(jsonrpc);
   if (method === 'subscription.stop') {
     return {
       id,
@@ -56,7 +65,7 @@ function parseMessage(obj: unknown): TRPCRequest {
 
   const { input, path } = params;
   assertIsString(path);
-  return { id, method, params: { input, path } };
+  return { jsonrpc, id, method, params: { input, path } };
 }
 
 async function callProcedure<TRouter extends AnyRouter>(opts: {
@@ -118,7 +127,6 @@ export function applyWSSHandler<TRouter extends AnyRouter>(
           const sub = clientSubscriptions.get(id);
           clientSubscriptions.delete(id);
           if (sub) {
-            console.log('unsubbed');
             sub.destroy();
             subscriptionResponse({
               id,
