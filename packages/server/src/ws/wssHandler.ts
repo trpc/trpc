@@ -1,6 +1,6 @@
 import http from 'http';
 import ws from 'ws';
-import { getErrorFromUnknown } from '../errors';
+import { getErrorFromUnknown, TRPCError } from '../errors';
 import { BaseOptions, CreateContextFn } from '../http';
 import { getCombinedDataTransformer } from '../internals/getCombinedDataTransformer';
 import { AnyRouter, ProcedureType } from '../router';
@@ -11,6 +11,7 @@ import {
   TRPCResponse,
 } from '../rpc';
 import { Subscription } from '../subscription';
+import { CombinedDataTransformer } from '../transformer';
 // https://developer.mozilla.org/en-US/docs/Web/API/CloseEvent
 const WEBSOCKET_STATUS_CODES = {
   ABNORMAL_CLOSURE: 1006,
@@ -48,7 +49,10 @@ function assertIsJSONRPC2OrUndefined(
     throw new Error('Must be JSONRPC 2.0');
   }
 }
-function parseMessage(obj: unknown): TRPCRequest {
+function parseMessage(
+  obj: unknown,
+  transformer: CombinedDataTransformer,
+): TRPCRequest {
   assertIsObject(obj);
   const { method, params, id, jsonrpc } = obj;
   assertIsRequestId(id);
@@ -63,8 +67,9 @@ function parseMessage(obj: unknown): TRPCRequest {
   assertIsProcedureType(method);
   assertIsObject(params);
 
-  const { input, path } = params;
+  const { input: rawInput, path } = params;
   assertIsString(path);
+  const input = transformer.input.deserialize(rawInput);
   return { jsonrpc, id, method, params: { input, path } };
 }
 
@@ -136,8 +141,7 @@ export function applyWSSHandler<TRouter extends AnyRouter>(
           }
           return;
         }
-        const input = transformer.input.deserialize(msg.params.input);
-        const { path } = msg.params;
+        const { path, input } = msg.params;
         const type = msg.method;
         try {
           const result = await callProcedure({ path, input, type, caller });
@@ -225,7 +229,25 @@ export function applyWSSHandler<TRouter extends AnyRouter>(
       client.on('message', async (message) => {
         const msgJSON = JSON.parse(message as string);
         const msgs = Array.isArray(msgJSON) ? msgJSON : [msgJSON];
-        msgs.map(parseMessage).map(handleRequest);
+        try {
+          msgs.map((raw) => parseMessage(raw, transformer)).map(handleRequest);
+        } catch (originalError) {
+          const error = new TRPCError({
+            code: 'PARSE_ERROR',
+            originalError,
+          });
+
+          client.send({
+            id: -1,
+            error: router.getErrorShape({
+              error,
+              type: 'unknown',
+              path: undefined,
+              input: undefined,
+              ctx: undefined,
+            }),
+          });
+        }
       });
 
       client.once('close', () => {
