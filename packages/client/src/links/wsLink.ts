@@ -151,12 +151,11 @@ export function createWSClient(opts: {
         req.callbacks.onError?.(TRPCClientError.from(msg));
         return;
       }
+
+      req.callbacks.onNext?.(msg.result);
+
       if (msg.result.type === 'stopped') {
-        req.callbacks.onNext?.(msg.result);
         req.callbacks.onDone?.();
-      } else {
-        req.callbacks.onNext?.(msg.result);
-        return;
       }
     });
 
