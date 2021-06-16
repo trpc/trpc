@@ -35,7 +35,7 @@
     "@trpc/react": "^7.2.1",
     "@trpc/server": "^7.2.1",
     "clsx": "^1.1.1",
-    "next": "^10.0.5",
+    "next": "^11.0.0",
     "react": "^17.0.1",
     "react-dom": "^17.0.1",
     "react-query": "^3.6.0",
