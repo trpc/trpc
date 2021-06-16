@@ -15,7 +15,7 @@ export function createWSClient(opts: {
   retryDelayMs?: typeof retryDelay;
   /**
    * If the server emits a `reconnect` event
-   * @default 1000
+   * @default 3000
    */
   staleConnectionTimeoutMs?: number;
 }) {
@@ -23,7 +23,7 @@ export function createWSClient(opts: {
     url,
     WebSocket: WebSocketImpl = WebSocket,
     retryDelayMs: retryDelayFn = retryDelay,
-    staleConnectionTimeoutMs = 1000,
+    staleConnectionTimeoutMs = 3000,
   } = opts;
   /* istanbul ignore next */
   if (!WebSocketImpl) {
