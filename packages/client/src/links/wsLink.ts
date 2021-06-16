@@ -236,11 +236,11 @@ export type TRPCWebSocketClient = ReturnType<typeof createWSClient>;
 export interface WebSocketLinkOptions {
   client: TRPCWebSocketClient;
 }
-export class WebSocketInterruptedError extends Error {
+export class WebSocketInterruptError extends Error {
   constructor(message: string) {
     super(message);
-    this.name = 'WebSocketInterruptedError';
-    Object.setPrototypeOf(this, WebSocketInterruptedError.prototype);
+    this.name = 'WebSocketInterruptError';
+    Object.setPrototypeOf(this, WebSocketInterruptError.prototype);
   }
 }
 
@@ -286,7 +286,7 @@ export function wsLink<TRouter extends AnyRouter>(
             if (!unsubbed) {
               prev(
                 TRPCClientError.from(
-                  new WebSocketInterruptedError('Operation ended prematurely'),
+                  new WebSocketInterruptError('Operation ended prematurely'),
                   { isDone: true },
                 ),
               );
