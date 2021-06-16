@@ -2,6 +2,7 @@
 /* eslint-disable @typescript-eslint/ban-types */
 // import WebSocket from 'ws';
 import { waitFor } from '@testing-library/react';
+import { TRPCClientError } from '@trpc/client';
 import { EventEmitter } from 'events';
 import { expectTypeOf } from 'expect-type';
 import { default as WebSocket, default as ws } from 'ws';
@@ -477,6 +478,24 @@ test('ability to do do overlapping connects', async () => {
   await waitFor(() => {
     expect(wss.clients.size).toBe(1);
   });
+
+  wsClient.close();
+  close();
+});
+
+test('not found error', async () => {
+  const { client, close, wsClient, router } = factory();
+
+  const error: TRPCClientError<typeof router> = await new Promise(
+    (resolve, reject) =>
+      client
+        .query('notFound' as any)
+        .then(reject)
+        .catch(resolve),
+  );
+
+  expect(error.name).toBe('TRPCClientError');
+  expect(error.shape?.data.code).toBe('NOT_FOUND');
 
   wsClient.close();
   close();
