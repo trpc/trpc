@@ -100,6 +100,7 @@ interface DefaultErrorData {
 }
 export interface DefaultErrorShape
   extends TRPCErrorShape<TRPC_ERROR_CODE_NUMBER, DefaultErrorData> {
+  path?: string;
   message: string;
   code: TRPC_ERROR_CODE_NUMBER;
 }
@@ -521,9 +522,10 @@ export class Router<
     input: unknown;
     ctx: undefined | TContext;
   }): TErrorShape {
-    const code = opts.error.code;
+    const { path, error } = opts;
+    const { code } = opts.error;
     const defaultShape: DefaultErrorShape = {
-      message: opts.error.message,
+      message: error.message,
       code: TRPC_ERROR_CODES_BY_KEY[code],
       data: {
         code,
@@ -534,6 +536,9 @@ export class Router<
       typeof opts.error.stack === 'string'
     ) {
       defaultShape.data.stack = opts.error.stack;
+    }
+    if (typeof path === 'string') {
+      defaultShape.data.path = path;
     }
     return this._def.errorFormatter({ ...opts, defaultShape });
   }
