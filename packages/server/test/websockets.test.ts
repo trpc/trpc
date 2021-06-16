@@ -11,7 +11,7 @@ import {
   createWSClient,
   ReconnectError,
   TRPCWebSocketClient,
-  WebSocketInterruptedError,
+  WebSocketInterruptError,
   wsLink,
 } from '../../client/src/links/wsLink';
 import * as trpc from '../src';
@@ -271,7 +271,7 @@ test.skip('$subscription() - server randomly stop and restart (this test might b
     `[TRPCClientError: Operation ended prematurely]`,
   );
   expect(onError.mock.calls[0][0].originalError).toBeInstanceOf(
-    WebSocketInterruptedError,
+    WebSocketInterruptError,
   );
 
   // reconnect from client
