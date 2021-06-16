@@ -16,15 +16,12 @@ const prisma = new PrismaClient({
  * @link https://trpc.io/docs/context
  */
 
-export const createContext = async (
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  {
-    req,
-    res,
-  }:
-    | trpcNext.CreateNextContextOptions
-    | CreateContextFnOptions<IncomingMessage, ws>,
-) => {
+export const createContext = async ({
+  req,
+  res,
+}:
+  | trpcNext.CreateNextContextOptions
+  | CreateContextFnOptions<IncomingMessage, ws>) => {
   return {
     prisma,
   };
