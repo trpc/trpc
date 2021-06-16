@@ -54,6 +54,8 @@ function MyComponent() {
 
 ## All properties sent to `formatError()`
 
+> Since `v.8.x.` tRPC is compliant with [JSON-RPC 2.0](https://www.jsonrpc.org/specification)
+
 ```ts
 {
   error: TRPCError;
