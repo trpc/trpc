@@ -375,7 +375,7 @@ test('server emits disconnect', async () => {
     expect(onNewMessageSubscription).toHaveBeenCalledTimes(1);
     expect(onNewClient).toHaveBeenCalledTimes(1);
   });
-  wssHandler.reconnectAllClients();
+  wssHandler.broadcastReconnectNotification();
   await waitFor(() => {
     expect(onNewMessageSubscription).toHaveBeenCalledTimes(1);
     expect(onNewClient).toHaveBeenCalledTimes(2);
@@ -460,7 +460,7 @@ test('ability to do do overlapping connects', async () => {
   await waitFor(() => {
     expect(sub1.onNext).toHaveBeenCalledTimes(2);
   });
-  wssHandler.reconnectAllClients();
+  wssHandler.broadcastReconnectNotification();
   await waitFor(() => {
     expect(sub1.onError.mock.calls[0][0].originalError).toBeInstanceOf(
       ReconnectError,

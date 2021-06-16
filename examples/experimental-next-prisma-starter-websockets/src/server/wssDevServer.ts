@@ -17,6 +17,6 @@ console.log('✅ WebSocket Server listening on ws://localhost:3001');
 
 process.on('SIGTERM', () => {
   console.log('SIGTERM');
-  handler.reconnectAllClients();
+  handler.broadcastReconnectNotification();
   wss.close();
 });

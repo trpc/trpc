@@ -249,7 +249,7 @@ export function applyWSSHandler<TRouter extends AnyRouter>(
   });
 
   return {
-    reconnectAllClients: () => {
+    broadcastReconnectNotification: () => {
       const response: TRPCReconnectNotification = {
         id: null,
         method: 'reconnect',

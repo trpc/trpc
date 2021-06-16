@@ -35,38 +35,6 @@ export default trpcNext.createNextApiHandler({
 }
 ```
 
-## Built-in error codes
-
-> Following [JSON-RPC 2.0](https://www.jsonrpc.org/specification)
-
-```jsx
-{
-  /**
-   * Invalid JSON was received by the server.
-   * An error occurred on the server while parsing the JSON text.
-   */
-  PARSE_ERROR: -32700,
-  /**
-   * The JSON sent is not a valid Request object.
-   */
-  BAD_REQUEST: -32600,
-  /**
-   * The method does not exist / is not available.
-   */
-  NOT_FOUND: -32601,
-  /**
-   * Internal JSON-RPC error.
-   */
-  INTERNAL_SERVER_ERROR: -32603,
-  UNAUTHORIZED: -32001,
-  FORBIDDEN: -32003,
-  METHOD_NOT_SUPPORTED: -32005,
-  TIMEOUT: -32008,
-  PAYLOAD_TOO_LARGE: -32013,
-  CLIENT_CLOSED_REQUEST: -32099,
-}
-```
-
 ## Accessing original error
 
 ```ts
