@@ -142,8 +142,6 @@ The first argument is a function that returns an object that configures the tRPC
 - `queryClientConfig`: a configuration object for the React Query `QueryClient` used internally by the tRPC React hooks: [QueryClient docs](https://react-query.tanstack.com/reference/QueryClient)
 - `getHeaders`: a function that returns a list of headers to be set on outgoing
   tRPC requests
-- `onSuccess`: a callback executed after every successful tRPC request
-- `onError`: a callback executed after every failed tRPC request
 - `transformer`: a transformer applied to outgoing payloads. Read more about [Data Transformers](/docs/data-transformers)
 - `FetchOptions`: customize the implementation of `fetch` used by tRPC internally
 
