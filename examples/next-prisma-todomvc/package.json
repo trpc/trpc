@@ -32,7 +32,7 @@
     "jest": "^26.6.3",
     "jest-playwright": "^0.0.1",
     "jest-playwright-preset": "^1.4.5",
-    "next": "^10.0.5",
+    "next": "^11.0.0",
     "playwright": "^1.8.0",
     "react": "^17.0.1",
     "react-dom": "^17.0.1",
