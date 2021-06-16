@@ -53,24 +53,32 @@ export function createWSClient(opts: {
     }
   > = Object.create(null);
   let connectAttempt = 0;
+  let dispatchTimer: NodeJS.Timer | number | null = null;
   let connectTimer: NodeJS.Timer | number | null = null;
   let activeConnection = createWS();
   let state: 'open' | 'connecting' | 'closed' = 'connecting';
-
   /**
    * tries to send the list of messages
    */
-  function triggerSendIfConnected() {
-    if (state !== 'open') {
+  function dispatch() {
+    if (state !== 'open' || dispatchTimer) {
       return;
     }
-    while (true) {
-      const msg = outgoing.shift();
-      if (!msg) {
-        break;
+    dispatchTimer = setTimeout(() => {
+      dispatchTimer = null;
+
+      if (outgoing.length === 1) {
+        // single send
+        activeConnection.send(JSON.stringify(outgoing.pop()));
+      } else {
+        // batch send
+        activeConnection.send(JSON.stringify(outgoing));
       }
-      activeConnection.send(JSON.stringify(msg));
-    }
+      // clear
+      while (outgoing.length) {
+        outgoing.pop();
+      }
+    });
   }
   function tryReconnect() {
     if (connectTimer || isClosed) {
@@ -80,7 +88,6 @@ export function createWSClient(opts: {
     reconnectInMs(timeout);
   }
   function reconnect() {
-    clearTimeout(connectTimer as any);
     state = 'connecting';
     const oldConnection = activeConnection;
     setTimeout(() => {
@@ -89,7 +96,9 @@ export function createWSClient(opts: {
     activeConnection = createWS();
   }
   function reconnectInMs(ms: number) {
-    clearTimeout(connectTimer as any);
+    if (connectTimer) {
+      return;
+    }
     state = 'connecting';
     connectTimer = setTimeout(reconnect, ms);
   }
@@ -113,7 +122,7 @@ export function createWSClient(opts: {
     conn.addEventListener('open', () => {
       connectAttempt = 0;
       state = 'open';
-      triggerSendIfConnected();
+      dispatch();
     });
     conn.addEventListener('error', () => {
       tryReconnect();
@@ -127,9 +136,10 @@ export function createWSClient(opts: {
           closeIfNoPending(conn);
         }, 1);
       }
-      // server asked client to do something
       if ('method' in msg) {
+        // server asked client to do something
         if (msg.method === 'reconnect' && conn === activeConnection) {
+          // server reconnect notification
           reconnect();
           // notify subscribers
           for (const p of Object.values(pendingRequests)) {
@@ -137,7 +147,6 @@ export function createWSClient(opts: {
               p.callbacks.onError?.(TRPCClientError.from(new ReconnectError()));
             }
           }
-          return;
         }
         return;
       }
@@ -203,7 +212,7 @@ export function createWSClient(opts: {
 
     // enqueue message
     outgoing.push(envelope);
-    triggerSendIfConnected();
+    dispatch();
 
     return () => {
       const callbacks = pendingRequests[id]?.callbacks;
@@ -216,7 +225,7 @@ export function createWSClient(opts: {
           method: 'subscription.stop',
           params: undefined,
         });
-        triggerSendIfConnected();
+        dispatch();
       }
     };
   }
