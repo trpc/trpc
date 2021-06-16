@@ -118,9 +118,6 @@ export function applyWSSHandler<TRouter extends AnyRouter>(
     function respond(json: TRPCResponse) {
       client.send(JSON.stringify(json));
     }
-    function subscriptionResponse(result: TRPCResponse) {
-      respond(result);
-    }
     try {
       const ctx = await createContext({ req, res: client });
       const caller = router.createCaller(ctx);
@@ -132,7 +129,7 @@ export function applyWSSHandler<TRouter extends AnyRouter>(
           clientSubscriptions.delete(id);
           if (sub) {
             sub.destroy();
-            subscriptionResponse({
+            respond({
               id,
               result: {
                 type: 'stopped',
@@ -157,7 +154,7 @@ export function applyWSSHandler<TRouter extends AnyRouter>(
             return;
           }
 
-          subscriptionResponse({
+          respond({
             id,
             result: {
               type: 'started',
@@ -178,7 +175,7 @@ export function applyWSSHandler<TRouter extends AnyRouter>(
           }
           clientSubscriptions.set(id, sub);
           sub.on('data', (data: unknown) => {
-            subscriptionResponse({
+            respond({
               id,
               result: {
                 type: 'data',
@@ -204,7 +201,7 @@ export function applyWSSHandler<TRouter extends AnyRouter>(
             respond(json);
           });
           sub.on('destroy', () => {
-            subscriptionResponse({
+            respond({
               id,
               result: {
                 type: 'stopped',
