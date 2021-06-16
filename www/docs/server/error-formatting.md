@@ -15,14 +15,17 @@ You can do custom error formatting in your router and the returned object will b
 ```ts
 
 const router = trpc.router<Context>()
-  .formatError(({ defaultShape, error }) => {
+  .formatError(({ shape, error }) => {
     return {
-      ...defaultShape,
-      zodError:
-        error.code === 'BAD_USER_INPUT' &&
-        error.originalError instanceof ZodError
-          ? error.originalError.flatten()
-          : null,
+      ...shape,
+      data: {
+        ...shape.data,
+        zodError:
+          error.code === 'BAD_USER_INPUT' &&
+          error.originalError instanceof ZodError
+            ? error.originalError.flatten()
+            : null,
+      };
     };
   })
 ```
@@ -58,17 +61,22 @@ function MyComponent() {
   path: string | undefined;
   input: unknown;
   ctx: undefined | TContext;
-  defaultShape: DefaultErrorShape; // the default error shape
+  shape: DefaultErrorShape; // the default error shape
 }
 ```
 
 **`DefaultErrorShape`:**
 
 ```ts
-export type DefaultErrorShape = {
-  message: string;
-  code: string;
+
+interface DefaultErrorData {
+  code: TRPC_ERROR_CODE_KEY;
   path?: string;
-  stack?: string; // will be set if `process.env.NODE_ENV !== 'production'`
-};
+  stack?: string;
+}
+interface DefaultErrorShape
+  extends TRPCErrorShape<TRPC_ERROR_CODE_NUMBER, DefaultErrorData> {
+  message: string;
+  code: TRPC_ERROR_CODE_NUMBER;
+}
 ```

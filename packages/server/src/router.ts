@@ -90,7 +90,7 @@ export type ErrorFormatter<
   path: string | undefined;
   input: unknown;
   ctx: undefined | TContext;
-  defaultShape: DefaultErrorShape;
+  shape: DefaultErrorShape;
 }) => TOutput;
 
 interface DefaultErrorData {
@@ -100,7 +100,6 @@ interface DefaultErrorData {
 }
 export interface DefaultErrorShape
   extends TRPCErrorShape<TRPC_ERROR_CODE_NUMBER, DefaultErrorData> {
-  path?: string;
   message: string;
   code: TRPC_ERROR_CODE_NUMBER;
 }
@@ -162,12 +161,8 @@ export class Router<
       mutations: safeObject() as TMutations,
       subscriptions: safeObject() as TSubscriptions,
       middlewares: [],
-      errorFormatter: (({
-        defaultShape,
-      }: {
-        defaultShape: DefaultErrorShape;
-      }) => {
-        return defaultShape;
+      errorFormatter: (({ shape }: { shape: DefaultErrorShape }) => {
+        return shape;
       }) as any,
     };
   }
@@ -524,7 +519,7 @@ export class Router<
   }): TErrorShape {
     const { path, error } = opts;
     const { code } = opts.error;
-    const defaultShape: DefaultErrorShape = {
+    const shape: DefaultErrorShape = {
       message: error.message,
       code: TRPC_ERROR_CODES_BY_KEY[code],
       data: {
@@ -535,12 +530,12 @@ export class Router<
       process.env.NODE_ENV !== 'production' &&
       typeof opts.error.stack === 'string'
     ) {
-      defaultShape.data.stack = opts.error.stack;
+      shape.data.stack = opts.error.stack;
     }
     if (typeof path === 'string') {
-      defaultShape.data.path = path;
+      shape.data.path = path;
     }
-    return this._def.errorFormatter({ ...opts, defaultShape });
+    return this._def.errorFormatter({ ...opts, shape });
   }
 }
 

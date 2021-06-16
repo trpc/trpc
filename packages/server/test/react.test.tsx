@@ -63,14 +63,14 @@ function createAppRouter() {
   const postById = jest.fn();
   const appRouter = trpcServer
     .router<Context>()
-    .formatError(({ defaultShape, error }) => {
+    .formatError(({ shape, error }) => {
       return {
         $test: 'formatted',
         zodError:
           error.originalError instanceof ZodError
             ? error.originalError.flatten()
             : null,
-        ...defaultShape,
+        ...shape,
       };
     })
     .query('allPosts', {
