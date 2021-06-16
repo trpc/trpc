@@ -17,10 +17,10 @@ export function executeChain<
   links: OperationLink<TRouter, TInput, TOutput>[];
   op: Operation<TInput>;
 }) {
-  const $result =
-    observableSubject<null | TRPCResult<TOutput>, TRPCClientError<TRouter>>(
-      null,
-    );
+  const $result = observableSubject<
+    null | TRPCResult<TOutput>,
+    TRPCClientError<TRouter>
+  >(null);
   const $destroyed = observableSubject(false);
 
   const updateResult = (result: OperationResponse<TRouter, TOutput>) => {
