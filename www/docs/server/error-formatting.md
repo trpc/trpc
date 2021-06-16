@@ -44,7 +44,7 @@ function MyComponent() {
   if (mutation.error?.shape?.zodError) {
     // zodError will be inferred
     return (
-      <pre>Error: {JSON.stringify(mutation.error.shape.zodError, null, 2)}</pre>
+      <pre>Error: {JSON.stringify(mutation.error.shape.data.zodError, null, 2)}</pre>
     );
   }
   return <>[...]</>;
