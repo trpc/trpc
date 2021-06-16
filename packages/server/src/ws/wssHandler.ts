@@ -110,18 +110,17 @@ export function applyWSSHandler<TRouter extends AnyRouter>(
       Subscription<TRouter>
     >();
 
+    function respond(json: TRPCResponse) {
+      client.send(JSON.stringify(json));
+    }
+    function subscriptionResponse(result: TRPCResponse) {
+      respond(result);
+    }
     try {
       const ctx = await createContext({ req, res: client });
       const caller = router.createCaller(ctx);
-      client.on('message', async (message) => {
-        function respond(json: TRPCResponse) {
-          client.send(JSON.stringify(json));
-        }
-        function subscriptionResponse(result: TRPCResponse) {
-          respond(result);
-        }
-        const msg = parseMessage(JSON.parse(message as string));
 
+      async function handleRequest(msg: TRPCRequest) {
         const { id } = msg;
         if (msg.method === 'subscription.stop') {
           const sub = clientSubscriptions.get(id);
@@ -222,6 +221,11 @@ export function applyWSSHandler<TRouter extends AnyRouter>(
           opts.onError?.({ error, path, type, ctx, req, input });
           respond({ id, error: transformer.output.serialize(json) });
         }
+      }
+      client.on('message', async (message) => {
+        const msgJSON = JSON.parse(message as string);
+        const msgs = Array.isArray(msgJSON) ? msgJSON : [msgJSON];
+        msgs.map(parseMessage).map(handleRequest);
       });
 
       client.once('close', () => {

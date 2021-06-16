@@ -500,3 +500,22 @@ test('not found error', async () => {
   wsClient.close();
   close();
 });
+
+test('batching', async () => {
+  const t = factory();
+  const promises = [
+    t.client.query('greeting'),
+    t.client.mutation('posts.edit', { id: '', data: { text: '', title: '' } }),
+  ] as const;
+
+  expect(await Promise.all(promises)).toMatchInlineSnapshot(`
+    Array [
+      "hello world",
+      Object {
+        "id": "",
+        "text": "",
+        "title": "",
+      },
+    ]
+  `);
+});
