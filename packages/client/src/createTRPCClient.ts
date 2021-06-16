@@ -40,6 +40,7 @@ export class TRPCClientError<
   public readonly shape: Maybe<TErrorShape>;
   /**
    * Fatal error - expect no more results after this error
+   * Used for when WebSockets disconnect prematurely.
    */
   public readonly isDone: boolean;
 
