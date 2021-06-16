@@ -91,10 +91,6 @@ export function createWSClient(opts: {
   function reconnectInMs(ms: number) {
     clearTimeout(connectTimer as any);
     state = 'connecting';
-    const oldConnection = activeConnection;
-    setTimeout(() => {
-      oldConnection.close();
-    }, staleConnectionTimeoutMs);
     connectTimer = setTimeout(reconnect, ms);
   }
 
