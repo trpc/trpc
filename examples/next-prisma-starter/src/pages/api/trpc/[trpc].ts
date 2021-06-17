@@ -44,7 +44,7 @@ export function createRouter() {
  */
 const appRouter = createRouter()
   /**
-   * Optionally do custom error (type safe!) formatting
+   * Optionally do custom error (typesafe!) formatting
    * @link https://trpc.io/docs/error-formatting
    */
   // .formatError(({ defaultShape, error }) => { })
