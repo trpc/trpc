@@ -13,7 +13,3 @@ slug: /love
 
 <blockquote className="twitter-tweet"><p lang="en" dir="ltr">Hah, we just did our first endpoint, returned some mock data from a resolver and got instant autocomplete in the client. Everyone&#39;s heads went 🤯🥳</p>&mdash; Marcus Rådell 🦀 (@marcusradell) <a href="https://twitter.com/marcusradell/status/1402991694446952458?ref_src=twsrc%5Etfw">June 10, 2021</a></blockquote> 
 
-
-
-
-<script async src="https://platform.twitter.com/widgets.js" charSet="utf-8" />
