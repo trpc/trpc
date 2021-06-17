@@ -6,7 +6,6 @@ import {
 } from '../envelopes';
 import { getErrorFromUnknown } from '../errors';
 import { BaseOptions, CreateContextFn } from '../http';
-import { getCombinedDataTransformer } from '../internals/getCombinedDataTransformer';
 import { AnyRouter, ProcedureType } from '../router';
 import { Subscription } from '../subscription';
 // https://developer.mozilla.org/en-US/docs/Web/API/CloseEvent
@@ -140,8 +139,15 @@ export type WSSHandlerOptions<TRouter extends AnyRouter> = {
 export function applyWSSHandler<TRouter extends AnyRouter>(
   opts: WSSHandlerOptions<TRouter>,
 ) {
-  const { router, wss, createContext } = opts;
-  const transformer = getCombinedDataTransformer(opts.transformer);
+  const { wss, createContext } = opts;
+
+  // backwards compat - add transformer to router
+  // TODO - remove in next major
+  const router = opts.transformer
+    ? opts.router.transformer(opts.transformer)
+    : opts.router;
+
+  const { transformer } = router._def;
   wss.on('connection', async (client, req) => {
     const clientSubscriptions = new Map<number, Subscription<TRouter>>();
 
@@ -155,7 +161,7 @@ export function applyWSSHandler<TRouter extends AnyRouter>(
         ) {
           const response: JSONRPC2ResponseEnvelope<typeof result> = {
             jsonrpc: '2.0',
-            result: transformer.output.serialize(result),
+            result: transformer.serialize(result),
             id,
           };
           client.send(JSON.stringify(response));
@@ -163,7 +169,7 @@ export function applyWSSHandler<TRouter extends AnyRouter>(
         const info = parseMessage(message);
         const input =
           typeof info.input !== 'undefined'
-            ? transformer.input.deserialize(info.input)
+            ? transformer.deserialize(info.input)
             : undefined;
 
         if (info.type === 'stop') {
