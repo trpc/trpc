@@ -479,6 +479,7 @@ export class Router<
   /**
    * Function to be called before any procedure is invoked
    * Can be async or sync
+   * @link https://trpc.io/docs/middlewares
    */
   public middleware(middleware: MiddlewareFunction<TContext>) {
     return new Router<
@@ -495,6 +496,7 @@ export class Router<
 
   /**
    * Format errors
+   * @link https://trpc.io/docs/error-formatting
    */
   public formatError<TErrorFormatter extends ErrorFormatter<TContext, any>>(
     errorFormatter: TErrorFormatter,
@@ -538,7 +540,8 @@ export class Router<
   }
 
   /**
-   * Optional transformer to serialize/deserialize input args + data
+   * Add data transformer to serialize/deserialize input args + output
+   * @link https://trpc.io/docs/data-transformers
    */
   transformer(_transformer: DataTransformerOptions) {
     const transformer = getDataTransformer(_transformer);
