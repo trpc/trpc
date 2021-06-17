@@ -95,11 +95,11 @@ export const client = createTRPCClient<AppRouter>({
 #### 4. Add to your `AppRouter`
 
 ```ts
-import superjson from 'superjson';
+import { transformer } from '../../utils/trpc';
 import * as trpc from '@trpc/server';
 
 export const appRouter = trpc.router()
-  .transformer(superjson)
+  .transformer(transformer)
   // .query(...)
 ```
 
