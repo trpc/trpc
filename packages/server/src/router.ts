@@ -3,7 +3,6 @@
 
 import { assertNotBrowser } from './assertNotBrowser';
 import { notFoundError, TRPCError } from './errors';
-import { getServerDataTransformer } from './internals/getCombinedDataTransformer';
 import {
   createProcedure,
   CreateProcedureOptions,
@@ -44,6 +43,18 @@ export type inferSubscriptionOutput<
     TRouter['_def']['subscriptions'][TPath]['call']
   >['output']
 >;
+
+function getDataTransformer(
+  transformer: DataTransformerOptions,
+): DataTransformer {
+  if ('input' in transformer) {
+    return {
+      deserialize: transformer.input.deserialize,
+      serialize: transformer.output.serialize,
+    };
+  }
+  return transformer;
+}
 
 export type inferHandlerInput<TProcedure extends Procedure> =
   TProcedure extends ProcedureWithInput<any, infer TInput, any>
@@ -530,7 +541,7 @@ export class Router<
    * Optional transformer to serialize/deserialize input args + data
    */
   transformer(_transformer: DataTransformerOptions) {
-    const transformer = getServerDataTransformer(_transformer);
+    const transformer = getDataTransformer(_transformer);
 
     if (this._def.transformer !== defaultTransformer) {
       throw new Error(

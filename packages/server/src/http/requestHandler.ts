@@ -48,7 +48,7 @@ export interface BaseOptions<
   };
   teardown?: () => Promise<void>;
   /**
-   * @deprecated use `router.transformer`
+   * @deprecated use `router.transformer()`
    */
   transformer?: DataTransformerOptions;
   maxBodySize?: number;
