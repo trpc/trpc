@@ -6,10 +6,7 @@ import { assertNotBrowser } from '../assertNotBrowser';
 import { getErrorFromUnknown, TRPCError } from '../errors';
 import { AnyRouter, inferRouterContext, ProcedureType } from '../router';
 import { Subscription } from '../subscription';
-import {
-  CombinedDataTransformer,
-  DataTransformerOptions,
-} from '../transformer';
+import { DataTransformerOptions } from '../transformer';
 import { HTTPResponseEnvelope } from './envelopes';
 import { getStatusCodeFromError, httpError, HTTPError } from './errors';
 import {
@@ -51,7 +48,7 @@ export interface BaseOptions<
   };
   teardown?: () => Promise<void>;
   /**
-   * Optional transformer too serialize/deserialize input args + data
+   * @deprecated use `router.transformer()`
    */
   transformer?: DataTransformerOptions;
   maxBodySize?: number;
@@ -76,20 +73,6 @@ const HTTP_METHOD_PROCEDURE_TYPE_MAP: Record<
   POST: 'mutation',
   PATCH: 'subscription',
 };
-
-function getCombinedDataTransformer(
-  transformer: DataTransformerOptions | undefined = {
-    serialize: (value) => value,
-    deserialize: (value) => value,
-  },
-): CombinedDataTransformer {
-  const combinedTransformer =
-    'input' in transformer
-      ? transformer
-      : { input: transformer, output: transformer };
-
-  return combinedTransformer;
-}
 
 /**
  * Resolve input from request
@@ -235,7 +218,6 @@ export async function requestHandler<
   const {
     req,
     res,
-    router,
     createContext,
     teardown,
     onError,
@@ -252,7 +234,12 @@ export async function requestHandler<
     HTTP_METHOD_PROCEDURE_TYPE_MAP[req.method!] ?? ('unknown' as const);
   let input: unknown = undefined;
   let ctx: inferRouterContext<TRouter> | undefined = undefined;
-  const transformer = getCombinedDataTransformer(opts.transformer);
+
+  // backwards compat - add transformer to router
+  // TODO - remove in next major
+  const router = opts.transformer
+    ? opts.router.transformer(opts.transformer)
+    : opts.router;
 
   const reqQueryParams = req.query
     ? req.query
@@ -260,8 +247,8 @@ export async function requestHandler<
   const isBatchCall = reqQueryParams.batch;
   function endResponse(
     json:
-      | HTTPResponseEnvelope<unknown, any>
-      | HTTPResponseEnvelope<unknown, any>[],
+      | HTTPResponseEnvelope<AnyRouter, unknown>
+      | HTTPResponseEnvelope<AnyRouter, unknown>[],
   ) {
     if (Array.isArray(json)) {
       const allCodes = Array.from(new Set(json.map((res) => res.statusCode)));
@@ -271,7 +258,7 @@ export async function requestHandler<
       res.statusCode = json.statusCode;
     }
     res.setHeader('Content-Type', 'application/json');
-    res.end(JSON.stringify(transformer.output.serialize(json)));
+    res.end(JSON.stringify(router._def.transformer.serialize(json)));
   }
   try {
     if (isBatchCall && !opts.batching?.enabled) {
@@ -289,7 +276,10 @@ export async function requestHandler<
       type,
     });
 
-    input = transformer.input.deserialize(rawInput);
+    input =
+      rawInput !== undefined
+        ? router._def.transformer.deserialize(rawInput)
+        : undefined;
     ctx = await createContext?.({ req, res });
 
     const caller = router.createCaller(ctx);

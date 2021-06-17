@@ -3,58 +3,84 @@ import type {
   AnyRouter,
   ClientDataTransformerOptions,
   DataTransformer,
-  HTTPErrorResponseEnvelope,
-  HTTPSuccessResponseEnvelope,
   inferHandlerInput,
   inferProcedureInput,
   inferProcedureOutput,
   inferSubscriptionOutput,
   Maybe,
+  TRPCProcedureErrorEnvelope,
+  TRPCProcedureSuccessEnvelope,
 } from '@trpc/server';
+import { executeChain } from './internals/executeChain';
 import { getAbortController, getFetch } from './internals/fetchHelpers';
+import { ObservableCallbacks, UnsubscribeFn } from './internals/observable';
+import { retryDelay } from './internals/retryDelay';
 import {
   CancelFn,
   LinkRuntimeOptions,
+  OperationContext,
   OperationLink,
   TRPCLink,
 } from './links/core';
-import { executeChain } from './internals/executeChain';
 import { httpLink } from './links/httpLink';
 
 type CancellablePromise<T = unknown> = Promise<T> & {
   cancel: CancelFn;
 };
 
-/* istanbul ignore next */
-const retryDelay = (attemptIndex: number) =>
-  attemptIndex === 0 ? 0 : Math.min(1000 * 2 ** attemptIndex, 30000);
-
 export class TRPCClientError<TRouter extends AnyRouter> extends Error {
-  public readonly json?: Maybe<HTTPErrorResponseEnvelope<TRouter>>;
-  /**
-   * @deprecated will always be `undefined` and will be removed in next major
-   */
+  public readonly result?: Maybe<TRPCProcedureErrorEnvelope<TRouter>>;
   public readonly res?: Maybe<Response>;
   public readonly originalError?: Maybe<Error>;
-  public readonly shape?: HTTPErrorResponseEnvelope<TRouter>['error'];
+  public readonly shape?: TRPCProcedureErrorEnvelope<TRouter>['error'];
+  /**
+   * Fatal error - expect no more results after this error
+   */
+  public readonly isDone: boolean;
 
   constructor(
     message: string,
     {
-      json,
+      result,
       originalError,
+      isDone = false,
     }: {
-      json?: Maybe<HTTPErrorResponseEnvelope<TRouter>>;
-      originalError?: Maybe<Error>;
+      result: Maybe<TRPCProcedureErrorEnvelope<TRouter>>;
+      originalError: Maybe<Error>;
+      isDone?: boolean;
     },
   ) {
     super(message);
+    this.isDone = isDone;
     this.message = message;
-    this.json = json;
+    this.result = result;
     this.originalError = originalError;
-    this.shape = this.json?.error;
+    this.shape = this.result?.error;
 
     Object.setPrototypeOf(this, TRPCClientError.prototype);
+  }
+
+  public static from<TRouter extends AnyRouter>(
+    result: Error | TRPCProcedureErrorEnvelope<TRouter>,
+    opts: { isDone?: boolean } = {},
+  ): TRPCClientError<TRouter> {
+    if (!(result instanceof Error)) {
+      return new TRPCClientError<TRouter>((result.error as any).message ?? '', {
+        ...opts,
+        originalError: null,
+        result,
+      });
+    }
+
+    if (result.name === 'TRPCClientError') {
+      return result as TRPCClientError<any>;
+    }
+
+    return new TRPCClientError<TRouter>(result.message, {
+      ...opts,
+      originalError: result,
+      result: null,
+    });
   }
 }
 
@@ -67,7 +93,7 @@ export type CreateTRPCClientOptions<TRouter extends AnyRouter> = {
   /**
    * @deprecated likely to be removed
    */
-  onSuccess?: (data: HTTPSuccessResponseEnvelope<unknown>) => void;
+  onSuccess?: (data: TRPCProcedureSuccessEnvelope<unknown>) => void;
   /**
    * @deprecated likely to be removed
    */
@@ -76,10 +102,6 @@ export type CreateTRPCClientOptions<TRouter extends AnyRouter> = {
    * add ponyfills for fetch / abortcontroller
    */
   fetchOpts?: FetchOptions;
-  /**
-   * @deprecated use `headers` instead
-   */
-  getHeaders?: () => Record<string, string | string[] | undefined>;
   headers?:
     | LinkRuntimeOptions['headers']
     | ReturnType<LinkRuntimeOptions['headers']>;
@@ -89,23 +111,22 @@ export type CreateTRPCClientOptions<TRouter extends AnyRouter> = {
       url: string;
     }
   | {
-      links: TRPCLink[];
+      links: TRPCLink<TRouter>[];
     }
 );
 type TRPCType = 'subscription' | 'query' | 'mutation';
 
+export type RequestOptions = {
+  context?: OperationContext;
+};
 export class TRPCClient<TRouter extends AnyRouter> {
-  private readonly links: OperationLink[];
-  /**
-   * @deprecated use `runtime` instead
-   */
-  public readonly transformer: DataTransformer;
-  private opts: CreateTRPCClientOptions<TRouter>;
+  private readonly links: OperationLink<TRouter>[];
   public readonly runtime: LinkRuntimeOptions;
+  private opts: CreateTRPCClientOptions<TRouter>;
 
   constructor(opts: CreateTRPCClientOptions<TRouter>) {
     this.opts = opts;
-    const transformer: DataTransformer = (this.transformer = opts.transformer
+    const transformer: DataTransformer = opts.transformer
       ? 'input' in opts.transformer
         ? {
             serialize: opts.transformer.input.serialize,
@@ -115,7 +136,7 @@ export class TRPCClient<TRouter extends AnyRouter> {
       : {
           serialize: (data) => data,
           deserialize: (data) => data,
-        });
+        };
 
     const _fetch = getFetch(opts.fetchOpts?.fetch);
     const AC = getAbortController(opts.fetchOpts?.AbortController);
@@ -124,9 +145,6 @@ export class TRPCClient<TRouter extends AnyRouter> {
       if (opts.headers) {
         const headers = opts.headers;
         return typeof headers === 'function' ? headers : () => headers;
-      }
-      if (opts.getHeaders) {
-        return opts.getHeaders;
       }
       return () => ({});
     }
@@ -138,7 +156,6 @@ export class TRPCClient<TRouter extends AnyRouter> {
     };
 
     if ('links' in opts) {
-      this.opts = opts;
       this.links = opts.links.map((link) => link(this.runtime));
     } else {
       this.links = [
@@ -147,64 +164,115 @@ export class TRPCClient<TRouter extends AnyRouter> {
         })(this.runtime),
       ];
     }
+    /**
+     * @deprecated
+     * prepending a link to call `onSuccess` / `onError`
+     */
+    if (this.opts.onError || this.opts.onError) {
+      // deprecation warning?
+      this.links = [
+        ({ op, next, prev }) => {
+          next(op, (result) => {
+            result instanceof Error
+              ? this.opts?.onError?.(result)
+              : this.opts?.onSuccess?.(result);
+
+            prev(result);
+          });
+        },
+        ...this.links,
+      ];
+    }
   }
 
-  public request({
+  /**
+   * @deprecated will be turned private
+   */
+  public request<TInput = unknown, TOutput = unknown>(opts: {
+    type: TRPCType;
+    input: TInput;
+    path: string;
+    context?: OperationContext;
+  }) {
+    return this.requestAsPromise<TInput, TOutput>(opts);
+  }
+
+  private $request<TInput = unknown, TOutput = unknown>({
     type,
     input,
     path,
+    context = {},
   }: {
     type: TRPCType;
-    input: unknown;
+    input: TInput;
     path: string;
+    context?: OperationContext;
   }) {
-    const $result = executeChain({
-      links: this.links,
+    const $result = executeChain<TRouter, TInput, TOutput>({
+      links: this.links as any,
       op: {
         type,
         path,
         input,
+        context,
       },
     });
 
-    const promise: Partial<CancellablePromise> = new Promise(
-      (resolve, reject) => {
-        $result.subscribe((result) => {
-          if (result instanceof Error || !result.ok) {
-            const error =
-              result instanceof Error
-                ? result
-                : new TRPCClientError(result.error.message, {
-                    json: result,
-                  });
+    return $result;
+  }
+  private requestAsPromise<TInput = unknown, TOutput = unknown>(opts: {
+    type: TRPCType;
+    input: TInput;
+    path: string;
+    context?: OperationContext;
+  }): CancellablePromise<TOutput> {
+    const $result = this.$request<TInput, TOutput>(opts);
 
-            reject(error);
-            this.opts.onError?.(error);
-          } else {
-            this.opts.onSuccess?.(result);
-            resolve(result.data);
+    const promise = new Promise<TOutput>((resolve, reject) => {
+      const res = $result.get();
+      if (res.type === 'data') {
+        resolve(res.data);
+        $result.done();
+        return;
+      }
+      $result.subscribe({
+        onNext: (result) => {
+          if (result.type !== 'data') {
+            return;
           }
-          $result.destroy();
-        });
-      },
-    );
+          resolve(result.data);
 
-    promise.cancel = () => {
-      $result.destroy();
-    };
-    return promise as any;
+          $result.done();
+        },
+        onError(err) {
+          reject(err);
+          $result.done();
+        },
+        onDone() {
+          reject(new Error('Done'));
+        },
+      });
+    }) as CancellablePromise<TOutput>;
+    promise.cancel = () => $result.done();
+
+    return promise;
   }
   public query<
     TQueries extends TRouter['_def']['queries'],
     TPath extends string & keyof TQueries,
   >(
     path: TPath,
-    ...args: inferHandlerInput<TQueries[TPath]>
-  ): CancellablePromise<inferProcedureOutput<TQueries[TPath]>> {
-    return this.request({
+    ...args: [...inferHandlerInput<TQueries[TPath]>, RequestOptions?]
+  ) {
+    const context = (args[1] as RequestOptions | undefined)?.context;
+    return this.requestAsPromise<
+      inferHandlerInput<TQueries[TPath]>,
+      inferProcedureOutput<TQueries[TPath]>
+    >({
       type: 'query',
       path,
-      input: args[0],
+      input: args[0] as any,
+      context,
     });
   }
 
@@ -213,12 +281,17 @@ export class TRPCClient<TRouter extends AnyRouter> {
     TPath extends string & keyof TMutations,
   >(
     path: TPath,
-    ...args: inferHandlerInput<TMutations[TPath]>
-  ): CancellablePromise<inferProcedureOutput<TMutations[TPath]>> {
-    return this.request({
+    ...args: [...inferHandlerInput<TMutations[TPath]>, RequestOptions?]
+  ) {
+    const context = (args[1] as RequestOptions | undefined)?.context;
+    return this.requestAsPromise<
+      inferHandlerInput<TMutations[TPath]>,
+      inferProcedureOutput<TMutations[TPath]>
+    >({
       type: 'mutation',
       path,
-      input: args[0],
+      input: args[0] as any,
+      context,
     });
   }
   /* istanbul ignore next */
@@ -227,21 +300,26 @@ export class TRPCClient<TRouter extends AnyRouter> {
     TPath extends string & keyof TSubscriptions,
     TOutput extends inferSubscriptionOutput<TRouter, TPath>,
     TInput extends inferProcedureInput<TSubscriptions[TPath]>,
-  >(path: TPath, input: TInput): CancellablePromise<TOutput[]> {
+  >(
+    path: TPath,
+    input: TInput,
+    opts?: RequestOptions,
+  ): CancellablePromise<TOutput[]> {
     let stopped = false;
     let nextTry: any; // setting as `NodeJS.Timeout` causes compat issues, can probably be solved
     let currentRequest: CancellablePromise<TOutput[]> | null = null;
-
+    const context = opts?.context;
     const promise = new Promise<TOutput[]>((resolve, reject) => {
       const exec = async () => {
         if (stopped) {
           return;
         }
         try {
-          currentRequest = this.request({
+          currentRequest = this.requestAsPromise({
             type: 'subscription',
             input,
             path,
+            context,
           });
           const data = await currentRequest;
 
@@ -249,7 +327,7 @@ export class TRPCClient<TRouter extends AnyRouter> {
         } catch (_err) {
           const err: TRPCClientError<TRouter> = _err;
 
-          if (err.json?.statusCode === 408) {
+          if (err.result?.statusCode === 408) {
             // server told us to reconnect
             exec();
           } else {
@@ -268,6 +346,9 @@ export class TRPCClient<TRouter extends AnyRouter> {
     return promise as any as CancellablePromise<TOutput[]>;
   }
   /* istanbul ignore next */
+  /**
+   * @deprecated - legacy stuff for http subscriptions
+   */
   public subscription<
     TSubscriptions extends TRouter['_def']['subscriptions'],
     TPath extends string & keyof TSubscriptions,
@@ -283,9 +364,11 @@ export class TRPCClient<TRouter extends AnyRouter> {
        * Input cursor for next call to subscription endpoint
        */
       nextInput: (data: TOutput[]) => TInput;
+      context?: OperationContext;
     },
   ): CancelFn {
     let stopped = false;
+
     // let nextTry: any; // setting as `NodeJS.Timeout` causes compat issues, can probably be solved
     let currentPromise: CancellablePromise<TOutput[]> | null = null;
 
@@ -317,6 +400,35 @@ export class TRPCClient<TRouter extends AnyRouter> {
     };
     exec(opts.initialInput);
     return unsubscribe;
+  }
+  /* istanbul ignore next */
+  public $subscription<
+    TSubscriptions extends TRouter['_def']['subscriptions'],
+    TPath extends string & keyof TSubscriptions,
+    TOutput extends inferSubscriptionOutput<TRouter, TPath>,
+    TInput extends inferProcedureInput<TSubscriptions[TPath]>,
+  >(
+    path: TPath,
+    input: TInput,
+    opts: RequestOptions &
+      ObservableCallbacks<TOutput, TRPCClientError<TRouter>>,
+  ): UnsubscribeFn {
+    const $res = this.$request<TInput, TOutput>({
+      type: 'subscription',
+      path,
+      input,
+      context: opts.context,
+    });
+    $res.subscribe({
+      onNext(output) {
+        output && output.type === 'data' && opts.onNext?.(output.data);
+      },
+      onError: opts.onError,
+      onDone: opts.onDone,
+    });
+    return () => {
+      $res.done();
+    };
   }
 }
 

@@ -13,12 +13,16 @@ import {
   ProcedureWithInput,
 } from './procedure';
 import { Subscription } from './subscription';
+import { DataTransformer, DataTransformerOptions } from './transformer';
 import { flatten, Prefixer, ThenArg } from './types';
 assertNotBrowser();
 
 export type ProcedureType = 'query' | 'mutation' | 'subscription';
-export type ProcedureRecord<TContext = any, TInput = any, TOutput = any> =
-  Record<string, Procedure<TContext, TInput, TOutput>>;
+export type ProcedureRecord<
+  TContext = any,
+  TInput = any,
+  TOutput = any,
+> = Record<string, Procedure<TContext, TInput, TOutput>>;
 
 export type inferProcedureInput<TProcedure extends Procedure<any, any, any>> =
   TProcedure extends ProcedureWithInput<any, infer Input, any>
@@ -40,12 +44,24 @@ export type inferSubscriptionOutput<
   >['output']
 >;
 
+function getDataTransformer(
+  transformer: DataTransformerOptions,
+): DataTransformer {
+  if ('input' in transformer) {
+    return {
+      deserialize: transformer.input.deserialize,
+      serialize: transformer.output.serialize,
+    };
+  }
+  return transformer;
+}
+
 export type inferHandlerInput<TProcedure extends Procedure> =
   TProcedure extends ProcedureWithInput<any, infer TInput, any>
     ? undefined extends TInput
-      ? [TInput?]
+      ? [(TInput | null | undefined)?]
       : [TInput]
-    : [undefined?];
+    : [(undefined | null)?];
 
 type inferHandlerFn<TProcedures extends ProcedureRecord> = <
   TProcedure extends TProcedures[TPath],
@@ -109,7 +125,17 @@ function safeObject<TObj1, TObj2>(
 function safeObject(...args: unknown[]) {
   return Object.assign(Object.create(null), ...args);
 }
-
+const defaultFormatter: ErrorFormatter<any, any> = ({
+  defaultShape,
+}: {
+  defaultShape: DefaultErrorShape;
+}) => {
+  return defaultShape;
+};
+const defaultTransformer: DataTransformer = {
+  serialize: (obj) => obj,
+  deserialize: (obj) => obj,
+};
 export type MiddlewareFunction<TContext> = (opts: {
   ctx: TContext;
   type: ProcedureType;
@@ -132,27 +158,24 @@ export class Router<
     subscriptions: Readonly<TSubscriptions>;
     middlewares: MiddlewareFunction<TContext>[];
     errorFormatter: ErrorFormatter<TContext, TErrorShape>;
+    transformer: DataTransformer;
   }>;
 
   constructor(def?: {
-    queries: TQueries;
-    mutations: TMutations;
-    subscriptions: TSubscriptions;
-    middlewares: MiddlewareFunction<TContext>[];
-    errorFormatter: ErrorFormatter<TContext, TErrorShape>;
+    queries?: TQueries;
+    mutations?: TMutations;
+    subscriptions?: TSubscriptions;
+    middlewares?: MiddlewareFunction<TContext>[];
+    errorFormatter?: ErrorFormatter<TContext, TErrorShape>;
+    transformer?: DataTransformer;
   }) {
-    this._def = def ?? {
-      queries: safeObject() as TQueries,
-      mutations: safeObject() as TMutations,
-      subscriptions: safeObject() as TSubscriptions,
-      middlewares: [],
-      errorFormatter: (({
-        defaultShape,
-      }: {
-        defaultShape: DefaultErrorShape;
-      }) => {
-        return defaultShape;
-      }) as any,
+    this._def = {
+      queries: (def?.queries ?? safeObject()) as TQueries,
+      mutations: (def?.mutations ?? safeObject()) as TMutations,
+      subscriptions: (def?.subscriptions ?? safeObject()) as TSubscriptions,
+      middlewares: def?.middlewares ?? [],
+      errorFormatter: def?.errorFormatter ?? defaultFormatter,
+      transformer: def?.transformer ?? defaultTransformer,
     };
   }
 
@@ -201,10 +224,6 @@ export class Router<
       queries: safeObject({
         [path]: createProcedure(procedure),
       }),
-      mutations: safeObject(),
-      subscriptions: safeObject(),
-      middlewares: [],
-      errorFormatter: () => ({}),
     });
 
     return this.merge(router) as any;
@@ -241,13 +260,9 @@ export class Router<
     procedure: CreateProcedureOptions<TContext, TInput, TOutput>,
   ) {
     const router = new Router<TContext, {}, any, {}, any>({
-      queries: safeObject(),
       mutations: safeObject({
         [path]: createProcedure(procedure),
       }),
-      subscriptions: safeObject(),
-      middlewares: [],
-      errorFormatter: () => ({}),
     });
 
     return this.merge(router) as any;
@@ -295,13 +310,9 @@ export class Router<
     TOutput extends Subscription<unknown>,
   >(path: TPath, procedure: CreateProcedureOptions<TContext, TInput, TOutput>) {
     const router = new Router<TContext, {}, {}, any, any>({
-      queries: safeObject(),
-      mutations: safeObject(),
       subscriptions: safeObject({
         [path]: createProcedure(procedure),
       }),
-      middlewares: [],
-      errorFormatter: () => ({}),
     });
 
     return this.merge(router) as any;
@@ -352,7 +363,7 @@ export class Router<
       childRouter = maybeRouter;
     } else if (prefixOrRouter instanceof Router) {
       childRouter = prefixOrRouter;
-    } else {
+    } /* istanbul ignore next */ else {
       throw new Error('Invalid args');
     }
 
@@ -371,6 +382,7 @@ export class Router<
       ...duplicateMutations,
       ...duplicateSubscriptions,
     ];
+    /* istanbul ignore next */
     if (duplicates.length) {
       throw new Error(`Duplicate endpoint(s): ${duplicates.join(', ')}`);
     }
@@ -403,6 +415,7 @@ export class Router<
       ),
       middlewares: this._def.middlewares,
       errorFormatter: this._def.errorFormatter,
+      transformer: this._def.transformer,
     });
   }
 
@@ -466,6 +479,7 @@ export class Router<
   /**
    * Function to be called before any procedure is invoked
    * Can be async or sync
+   * @link https://trpc.io/docs/middlewares
    */
   public middleware(middleware: MiddlewareFunction<TContext>) {
     return new Router<
@@ -482,10 +496,16 @@ export class Router<
 
   /**
    * Format errors
+   * @link https://trpc.io/docs/error-formatting
    */
   public formatError<TErrorFormatter extends ErrorFormatter<TContext, any>>(
     errorFormatter: TErrorFormatter,
   ) {
+    if (this._def.errorFormatter !== (defaultFormatter as any)) {
+      throw new Error(
+        'You seem to have double `formatError()`-calls in your router tree',
+      );
+    }
     return new Router<
       TContext,
       TQueries,
@@ -517,6 +537,30 @@ export class Router<
       defaultShape.stack = opts.error.stack;
     }
     return this._def.errorFormatter({ ...opts, defaultShape });
+  }
+
+  /**
+   * Add data transformer to serialize/deserialize input args + output
+   * @link https://trpc.io/docs/data-transformers
+   */
+  transformer(_transformer: DataTransformerOptions) {
+    const transformer = getDataTransformer(_transformer);
+
+    if (this._def.transformer !== defaultTransformer) {
+      throw new Error(
+        'You seem to have double `transformer()`-calls in your router tree',
+      );
+    }
+    return new Router<
+      TContext,
+      TQueries,
+      TMutations,
+      TSubscriptions,
+      TErrorShape
+    >({
+      ...this._def,
+      transformer,
+    });
   }
 }
 

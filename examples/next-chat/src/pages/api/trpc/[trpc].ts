@@ -45,7 +45,8 @@ export type Context = trpc.inferAsyncReturnType<typeof createContext>;
 function createRouter() {
   return trpc.router<Context>();
 }
-const router = createRouter()
+export const appRouter = createRouter()
+  .transformer(superjson)
   .query('hello', {
     input: z
       .object({
@@ -120,14 +121,12 @@ const router = createRouter()
       }),
   );
 
-export const appRouter = router;
-export type AppRouter = typeof router;
+export type AppRouter = typeof appRouter;
 
 export default trpcNext.createNextApiHandler({
-  router,
+  router: appRouter,
   createContext,
   teardown: () => prisma.$disconnect(),
-  transformer: superjson,
   onError({ error }) {
     if (error.code === 'INTERNAL_SERVER_ERROR') {
       // send to bug reporting

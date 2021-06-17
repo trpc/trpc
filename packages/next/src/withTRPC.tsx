@@ -48,13 +48,12 @@ export function withTRPC<TRouter extends AnyRouter>(
         isPrepass?: boolean;
       },
     ) => {
+      const [config] = useState(() => getClientConfig({}));
       const [queryClient] = useState(
-        () =>
-          props.queryClient ??
-          new QueryClient(getClientConfig({}).queryClientConfig),
+        () => props.queryClient ?? new QueryClient(config.queryClientConfig),
       );
       const [trpcClient] = useState(
-        () => props.trpcClient ?? trpc.createClient(getClientConfig({})),
+        () => props.trpcClient ?? trpc.createClient(config),
       );
 
       const hydratedState = trpc.useDehydratedState(
@@ -108,7 +107,22 @@ export function withTRPC<TRouter extends AnyRouter>(
           };
           const appTreeProps = isApp ? props : { pageProps: props };
           // Run the prepass step on AppTree. This will run all trpc queries on the server.
-          await ssrPrepass(createElement(AppTree, appTreeProps as any));
+
+          // multiple prepass ensures that we can do batching on the server
+          while (true) {
+            await ssrPrepass(createElement(AppTree, appTreeProps as any));
+            if (!queryClient.isFetching()) {
+              break;
+            }
+            await new Promise<void>((resolve) => {
+              const unsub = queryClient.getQueryCache().subscribe((event) => {
+                if (event?.query.getObserversCount() === 0) {
+                  resolve();
+                  unsub();
+                }
+              });
+            });
+          }
         }
 
         pageProps.trpcState = trpcClient.runtime.transformer.serialize(

@@ -57,7 +57,7 @@ function App() {
       url: 'http://localhost:5000/trpc',
 
       // optional
-      getHeaders() {
+      headers() {
         return {
           authorization: getAuthCookie(),
         };

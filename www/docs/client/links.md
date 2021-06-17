@@ -43,6 +43,7 @@ export default trpcNext.createNextApiHandler({
 
 
 ```ts
+import type { AppRouter } from 'pages/api/trpc/[trpc]';
 import { withTRPC } from '@trpc/next';
 import { AppType } from 'next/dist/next-server/lib/utils';
 // 👇 import the httpBatchLink
@@ -52,10 +53,11 @@ const MyApp: AppType = ({ Component, pageProps }) => {
   return <Component {...pageProps} />;
 };
 
-export default withTRPC(
+export default withTRPC<AppRouter>(
   () => {
     return {
       links: [
+        // [..]
         // 👇 add the batch link
         httpBatchLink({
           url: '/api/trpc',
@@ -67,4 +69,43 @@ export default withTRPC(
     // [..]
   },
 )(MyApp);
+```
+
+### Custom link
+
+```tsx
+import type { AppRouter } from 'pages/api/trpc/[trpc]';
+import { TRPCLink } from '@trpc/client';
+
+const customLink: TRPCLink<AppRouter> = (runtime) => {
+  // here we just got initialized in the app - this happens once per app
+  // useful for storing cache for instance
+  return ({ prev, next, op }) => {
+    // this is when passing the result to the next link
+    next(op, (result) => {
+      // this is when we've gotten result from the server
+      if (result instanceof Error) {
+        // maybe send to bugsnag?
+      }
+      prev(result);
+    });
+  };
+};
+
+export default withTRPC<AppRouter>(
+  () => {
+    return {
+      links: [
+        customLink,
+        // [..]
+        // ❗ Make sure to end with a `httpBatchLink` or `httpLink`
+      ],
+    };
+  },
+  {
+    // [..]
+  },
+)(MyApp);
+
+
 ```
