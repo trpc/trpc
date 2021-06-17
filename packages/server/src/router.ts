@@ -13,6 +13,7 @@ import {
   ProcedureWithInput,
 } from './procedure';
 import { Subscription } from './subscription';
+import { DataTransformer } from './transformer';
 import { flatten, Prefixer, ThenArg } from './types';
 assertNotBrowser();
 
@@ -113,6 +114,10 @@ function safeObject(...args: unknown[]) {
   return Object.assign(Object.create(null), ...args);
 }
 
+const passThroughDataTransformer: DataTransformer = {
+  serialize: (obj) => obj,
+  deserialize: (obj) => obj,
+};
 export type MiddlewareFunction<TContext> = (opts: {
   ctx: TContext;
   type: ProcedureType;
@@ -135,27 +140,28 @@ export class Router<
     subscriptions: Readonly<TSubscriptions>;
     middlewares: MiddlewareFunction<TContext>[];
     errorFormatter: ErrorFormatter<TContext, TErrorShape>;
+    transformer: DataTransformer;
   }>;
 
   constructor(def?: {
-    queries: TQueries;
-    mutations: TMutations;
-    subscriptions: TSubscriptions;
-    middlewares: MiddlewareFunction<TContext>[];
-    errorFormatter: ErrorFormatter<TContext, TErrorShape>;
+    queries?: TQueries;
+    mutations?: TMutations;
+    subscriptions?: TSubscriptions;
+    middlewares?: MiddlewareFunction<TContext>[];
+    errorFormatter?: ErrorFormatter<TContext, TErrorShape>;
+    transformer?: DataTransformer;
   }) {
-    this._def = def ?? {
-      queries: safeObject() as TQueries,
-      mutations: safeObject() as TMutations,
-      subscriptions: safeObject() as TSubscriptions,
-      middlewares: [],
-      errorFormatter: (({
-        defaultShape,
-      }: {
-        defaultShape: DefaultErrorShape;
-      }) => {
-        return defaultShape;
-      }) as any,
+    this._def = {
+      queries: (def?.queries ?? safeObject()) as TQueries,
+      mutations: (def?.mutations ?? safeObject()) as TMutations,
+      subscriptions: (def?.subscriptions ?? safeObject()) as TSubscriptions,
+      middlewares: def?.middlewares ?? [],
+      errorFormatter:
+        def?.errorFormatter ??
+        ((({ defaultShape }: { defaultShape: DefaultErrorShape }) => {
+          return defaultShape;
+        }) as any),
+      transformer: def?.transformer ?? passThroughDataTransformer,
     };
   }
 
@@ -244,13 +250,9 @@ export class Router<
     procedure: CreateProcedureOptions<TContext, TInput, TOutput>,
   ) {
     const router = new Router<TContext, {}, any, {}, any>({
-      queries: safeObject(),
       mutations: safeObject({
         [path]: createProcedure(procedure),
       }),
-      subscriptions: safeObject(),
-      middlewares: [],
-      errorFormatter: () => ({}),
     });
 
     return this.merge(router) as any;
@@ -298,13 +300,9 @@ export class Router<
     TOutput extends Subscription<unknown>,
   >(path: TPath, procedure: CreateProcedureOptions<TContext, TInput, TOutput>) {
     const router = new Router<TContext, {}, {}, any, any>({
-      queries: safeObject(),
-      mutations: safeObject(),
       subscriptions: safeObject({
         [path]: createProcedure(procedure),
       }),
-      middlewares: [],
-      errorFormatter: () => ({}),
     });
 
     return this.merge(router) as any;
@@ -499,6 +497,22 @@ export class Router<
     >({
       ...this._def,
       errorFormatter,
+    });
+  }
+
+  /**
+   * Apply data transformer on input and output
+   */
+  public transformer(transformer: DataTransformer) {
+    return new Router<
+      TContext,
+      TQueries,
+      TMutations,
+      TSubscriptions,
+      TErrorShape
+    >({
+      ...this._def,
+      transformer,
     });
   }
 
