@@ -1,5 +1,4 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import * as trpc from '@trpc/server';
 import devalue from 'devalue';
 import superjson from 'superjson';
 import { z } from 'zod';
@@ -8,6 +7,7 @@ import {
   TRPCWebSocketClient,
   wsLink,
 } from '../../client/src/links/wsLink';
+import * as trpc from '../src';
 import { routerToServerAndClient } from './_testHelpers';
 
 test('superjson up and down', async () => {
@@ -273,5 +273,13 @@ describe('transformer on router', () => {
 
     wsClient.close();
     close();
+  });
+
+  test('duplicate transformers', () => {
+    expect(() =>
+      trpc.router().transformer(superjson).transformer(superjson),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `"You seem to have double \`transformer()\`-calls in your router tree"`,
+    );
   });
 });
