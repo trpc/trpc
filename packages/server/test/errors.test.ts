@@ -156,44 +156,44 @@ test('getMessageFromUnkownError()', () => {
   expect(getMessageFromUnkownError(1, 'test')).toBe('test');
   expect(getMessageFromUnkownError({}, 'test')).toBe('test');
 });
-
-test('formatError()', async () => {
-  const onError = jest.fn();
-  const { client, close } = routerToServerAndClient(
-    trpc
-      .router()
-      .formatError(({ error }) => {
-        if (error.originalError instanceof ZodError) {
+describe('formatError()', () => {
+  test('simple', async () => {
+    const onError = jest.fn();
+    const { client, close } = routerToServerAndClient(
+      trpc
+        .router()
+        .formatError(({ error }) => {
+          if (error.originalError instanceof ZodError) {
+            return {
+              type: 'zod' as const,
+              errors: error.originalError.errors,
+            };
+          }
           return {
-            type: 'zod' as const,
-            errors: error.originalError.errors,
+            type: 'standard' as const,
           };
-        }
-        return {
-          type: 'standard' as const,
-        };
-      })
-      .mutation('err', {
-        input: z.string(),
-        resolve() {
-          return null;
+        })
+        .mutation('err', {
+          input: z.string(),
+          resolve() {
+            return null;
+          },
+        }),
+      {
+        server: {
+          onError,
         },
-      }),
-    {
-      server: {
-        onError,
       },
-    },
-  );
-  let clientError: Error | null = null;
-  try {
-    await client.mutation('err', 1 as any);
-  } catch (_err) {
-    clientError = _err;
-  }
-  assertClientError(clientError);
-  expect(clientError.result?.statusCode).toBe(400);
-  expect(clientError.result?.error).toMatchInlineSnapshot(`
+    );
+    let clientError: Error | null = null;
+    try {
+      await client.mutation('err', 1 as any);
+    } catch (_err) {
+      clientError = _err;
+    }
+    assertClientError(clientError);
+    expect(clientError.result?.statusCode).toBe(400);
+    expect(clientError.result?.error).toMatchInlineSnapshot(`
     Object {
       "errors": Array [
         Object {
@@ -207,12 +207,28 @@ test('formatError()', async () => {
       "type": "zod",
     }
   `);
-  expect(onError).toHaveBeenCalledTimes(1);
-  const serverError = onError.mock.calls[0][0].error;
+    expect(onError).toHaveBeenCalledTimes(1);
+    const serverError = onError.mock.calls[0][0].error;
 
-  expect(serverError.originalError).toBeInstanceOf(ZodError);
+    expect(serverError.originalError).toBeInstanceOf(ZodError);
 
-  close();
+    close();
+  });
+
+  test('double errors', async () => {
+    expect(() => {
+      trpc
+        .router()
+        .formatError(({ defaultShape }) => {
+          return { defaultShape };
+        })
+        .formatError(({ defaultShape }) => {
+          return { defaultShape };
+        });
+    }).toThrowErrorMatchingInlineSnapshot(
+      `"You seem to have double \`formatError()\`-calls in your router tree"`,
+    );
+  });
 });
 
 test('make sure object is ignoring prototype', async () => {
