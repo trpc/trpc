@@ -50,7 +50,7 @@
     "npm-run-all": "^4.1.5",
     "prisma": "^2.18.0",
     "ts-jest": "^26.5.3",
-    "typescript": "4.3.2"
+    "typescript": "4.3.3"
   },
   "publishConfig": {
     "access": "restricted"
