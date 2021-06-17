@@ -9,11 +9,11 @@ import GitHubButton from 'react-github-btn';
 
 const features = [
   {
-    title: <>🧙‍♂️&nbsp; Automatic typesafetyty</>,
+    title: <>🧙‍♂️&nbsp; Automatic typesafety</>,
     // imageUrl: 'img/undraw_docusaurus_mountain.svg',
     description: (
       <>
-        Automatic typesafetyty & autocompletion inferred from your API-paths,
+        Automatic typesafety & autocompletion inferred from your API-paths,
         their input&nbsp;data, &amp;&nbsp;outputs.
       </>
     ),
@@ -64,7 +64,7 @@ function Home() {
   return (
     <Layout
       title={`${siteConfig.title} - End-to-end typesafe APIs made easy`}
-      description="Automatic typesafetyty & autocompletion inferred from your API-paths, their input data, &amp; outputs 🧙‍♂️"
+      description="Automatic typesafety & autocompletion inferred from your API-paths, their input data, &amp; outputs 🧙‍♂️"
     >
       <header className={clsx('hero hero--primary', styles.heroBanner)}>
         <div className="container">
