@@ -112,7 +112,13 @@ function safeObject<TObj1, TObj2>(
 function safeObject(...args: unknown[]) {
   return Object.assign(Object.create(null), ...args);
 }
-
+const defaultFormatter: ErrorFormatter<unknown, DefaultErrorShape> = ({
+  defaultShape,
+}: {
+  defaultShape: DefaultErrorShape;
+}) => {
+  return defaultShape;
+};
 export type MiddlewareFunction<TContext> = (opts: {
   ctx: TContext;
   type: ProcedureType;
@@ -138,24 +144,18 @@ export class Router<
   }>;
 
   constructor(def?: {
-    queries: TQueries;
-    mutations: TMutations;
-    subscriptions: TSubscriptions;
-    middlewares: MiddlewareFunction<TContext>[];
-    errorFormatter: ErrorFormatter<TContext, TErrorShape>;
+    queries?: TQueries;
+    mutations?: TMutations;
+    subscriptions?: TSubscriptions;
+    middlewares?: MiddlewareFunction<TContext>[];
+    errorFormatter?: ErrorFormatter<TContext, TErrorShape>;
   }) {
-    this._def = def ?? {
-      queries: safeObject() as TQueries,
-      mutations: safeObject() as TMutations,
-      subscriptions: safeObject() as TSubscriptions,
-      middlewares: [],
-      errorFormatter: (({
-        defaultShape,
-      }: {
-        defaultShape: DefaultErrorShape;
-      }) => {
-        return defaultShape;
-      }) as any,
+    this._def = {
+      queries: (def?.queries ?? safeObject()) as TQueries,
+      mutations: (def?.mutations ?? safeObject()) as TMutations,
+      subscriptions: (def?.subscriptions ?? safeObject()) as TSubscriptions,
+      middlewares: def?.middlewares ?? [],
+      errorFormatter: def?.errorFormatter ?? (defaultFormatter as any),
     };
   }
 
@@ -204,10 +204,6 @@ export class Router<
       queries: safeObject({
         [path]: createProcedure(procedure),
       }),
-      mutations: safeObject(),
-      subscriptions: safeObject(),
-      middlewares: [],
-      errorFormatter: () => ({}),
     });
 
     return this.merge(router) as any;
@@ -244,13 +240,9 @@ export class Router<
     procedure: CreateProcedureOptions<TContext, TInput, TOutput>,
   ) {
     const router = new Router<TContext, {}, any, {}, any>({
-      queries: safeObject(),
       mutations: safeObject({
         [path]: createProcedure(procedure),
       }),
-      subscriptions: safeObject(),
-      middlewares: [],
-      errorFormatter: () => ({}),
     });
 
     return this.merge(router) as any;
@@ -298,13 +290,9 @@ export class Router<
     TOutput extends Subscription<unknown>,
   >(path: TPath, procedure: CreateProcedureOptions<TContext, TInput, TOutput>) {
     const router = new Router<TContext, {}, {}, any, any>({
-      queries: safeObject(),
-      mutations: safeObject(),
       subscriptions: safeObject({
         [path]: createProcedure(procedure),
       }),
-      middlewares: [],
-      errorFormatter: () => ({}),
     });
 
     return this.merge(router) as any;
@@ -391,6 +379,15 @@ export class Router<
 
       return Router.prefixProcedures(newDefs, prefix);
     };
+
+    if (
+      this._def.errorFormatter !== childRouter._def.errorFormatter &&
+      childRouter._def.errorFormatter !== defaultFormatter
+    ) {
+      throw new Error(
+        'You seem to have double `formatError()`-calls in your router tree',
+      );
+    }
 
     return new Router<TContext, any, any, any, TErrorShape>({
       queries: safeObject(
@@ -489,17 +486,16 @@ export class Router<
    */
   public formatError<TErrorFormatter extends ErrorFormatter<TContext, any>>(
     errorFormatter: TErrorFormatter,
-  ) {
-    return new Router<
-      TContext,
-      TQueries,
-      TMutations,
-      TSubscriptions,
-      ReturnType<TErrorFormatter>
-    >({
-      ...this._def,
+  ): Router<
+    TContext,
+    TQueries,
+    TMutations,
+    TSubscriptions,
+    ReturnType<TErrorFormatter>
+  > {
+    return new Router({
       errorFormatter,
-    });
+    }).merge(this) as any;
   }
 
   public getErrorShape(opts: {
