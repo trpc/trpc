@@ -63,7 +63,7 @@ function Home() {
   const { siteConfig = {} } = context;
   return (
     <Layout
-      title={`${siteConfig.title} - toolkit for building end-to-end type-safe APIs`}
+      title={`${siteConfig.title} - End-to-end typesafe APIs made easy`}
       description="Automatic type-safety & autocompletion inferred from your API-paths, their input data, &amp; outputs 🧙‍♂️"
     >
       <header className={clsx('hero hero--primary', styles.heroBanner)}>

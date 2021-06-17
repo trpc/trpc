@@ -1,6 +1,6 @@
 module.exports = {
   title: 'tRPC',
-  tagline: 'TypeScript toolkit for building end-to-end type-safe APIs',
+  tagline: 'End-to-end typesafe APIs made easy',
   url: 'https://trpc.io',
   baseUrl: '/',
   onBrokenLinks: 'throw',

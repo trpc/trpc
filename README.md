@@ -2,7 +2,7 @@
   <h1 align="center">
     <img src="./www/static/img/logo-text.png" alt="tRPC" height="100" />
   </h1>
-  <p>a toolkit for building end-to-end typesafe data layers</p>
+  <p>End-to-end typesafe APIs made easy</p>
   <p>
     <a href="https://codecov.io/gh/trpc/trpc">
       <img src="https://codecov.io/gh/trpc/trpc/branch/main/graph/badge.svg?token=KPPS918B0G" alt="codecov">
