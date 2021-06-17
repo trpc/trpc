@@ -13,7 +13,6 @@ import {
   ProcedureWithInput,
 } from './procedure';
 import { Subscription } from './subscription';
-import { DataTransformer } from './transformer';
 import { flatten, Prefixer, ThenArg } from './types';
 assertNotBrowser();
 
@@ -113,11 +112,6 @@ function safeObject<TObj1, TObj2>(
 function safeObject(...args: unknown[]) {
   return Object.assign(Object.create(null), ...args);
 }
-
-const passThroughDataTransformer: DataTransformer = {
-  serialize: (obj) => obj,
-  deserialize: (obj) => obj,
-};
 export type MiddlewareFunction<TContext> = (opts: {
   ctx: TContext;
   type: ProcedureType;
@@ -140,7 +134,6 @@ export class Router<
     subscriptions: Readonly<TSubscriptions>;
     middlewares: MiddlewareFunction<TContext>[];
     errorFormatter: ErrorFormatter<TContext, TErrorShape>;
-    transformer: DataTransformer;
   }>;
 
   constructor(def?: {
@@ -149,7 +142,6 @@ export class Router<
     subscriptions?: TSubscriptions;
     middlewares?: MiddlewareFunction<TContext>[];
     errorFormatter?: ErrorFormatter<TContext, TErrorShape>;
-    transformer?: DataTransformer;
   }) {
     this._def = {
       queries: (def?.queries ?? safeObject()) as TQueries,
@@ -161,7 +153,6 @@ export class Router<
         ((({ defaultShape }: { defaultShape: DefaultErrorShape }) => {
           return defaultShape;
         }) as any),
-      transformer: def?.transformer ?? passThroughDataTransformer,
     };
   }
 
@@ -497,22 +488,6 @@ export class Router<
     >({
       ...this._def,
       errorFormatter,
-    });
-  }
-
-  /**
-   * Apply data transformer on input and output
-   */
-  public transformer(transformer: DataTransformer) {
-    return new Router<
-      TContext,
-      TQueries,
-      TMutations,
-      TSubscriptions,
-      TErrorShape
-    >({
-      ...this._def,
-      transformer,
     });
   }
 
