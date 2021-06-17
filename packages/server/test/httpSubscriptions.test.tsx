@@ -7,7 +7,7 @@ import { z } from 'zod';
 import * as trpc from '../src';
 import { routerToServerAndClient } from './_testHelpers';
 
-test('subscriptionOnce() + type safety + backpressure', async () => {
+test('subscriptionOnce() + typesafety + backpressure', async () => {
   const ee = new EventEmitter();
   type Message = {
     id: string;
