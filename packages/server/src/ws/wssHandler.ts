@@ -2,7 +2,6 @@ import http from 'http';
 import ws from 'ws';
 import { getErrorFromUnknown, TRPCError } from '../errors';
 import { BaseOptions, CreateContextFn } from '../http';
-import { getCombinedDataTransformer } from '../internals/getCombinedDataTransformer';
 import { AnyRouter, ProcedureType } from '../router';
 import {
   TRPCErrorResponse,
@@ -11,7 +10,7 @@ import {
   TRPCResponse,
 } from '../rpc';
 import { Subscription } from '../subscription';
-import { CombinedDataTransformer } from '../transformer';
+import { DataTransformer } from '../transformer';
 // https://developer.mozilla.org/en-US/docs/Web/API/CloseEvent
 const WEBSOCKET_STATUS_CODES = {
   ABNORMAL_CLOSURE: 1006,
@@ -49,10 +48,7 @@ function assertIsJSONRPC2OrUndefined(
     throw new Error('Must be JSONRPC 2.0');
   }
 }
-function parseMessage(
-  obj: unknown,
-  transformer: CombinedDataTransformer,
-): TRPCRequest {
+function parseMessage(obj: unknown, transformer: DataTransformer): TRPCRequest {
   assertIsObject(obj);
   const { method, params, id, jsonrpc } = obj;
   assertIsRequestId(id);
@@ -69,7 +65,7 @@ function parseMessage(
 
   const { input: rawInput, path } = params;
   assertIsString(path);
-  const input = transformer.input.deserialize(rawInput);
+  const input = transformer.deserialize(rawInput);
   return { jsonrpc, id, method, params: { input, path } };
 }
 
@@ -107,8 +103,15 @@ export type WSSHandlerOptions<TRouter extends AnyRouter> = {
 export function applyWSSHandler<TRouter extends AnyRouter>(
   opts: WSSHandlerOptions<TRouter>,
 ) {
-  const { router, wss, createContext } = opts;
-  const transformer = getCombinedDataTransformer(opts.transformer);
+  const { wss, createContext } = opts;
+
+  // backwards compat - add transformer to router
+  // TODO - remove in next major
+  const router = opts.transformer
+    ? opts.router.transformer(opts.transformer)
+    : opts.router;
+
+  const { transformer } = router._def;
   wss.on('connection', async (client, req) => {
     const clientSubscriptions = new Map<
       number | string,
@@ -148,7 +151,7 @@ export function applyWSSHandler<TRouter extends AnyRouter>(
               id,
               result: {
                 type: 'data',
-                data: transformer.output.serialize(result),
+                data: transformer.serialize(result),
               },
             });
             return;
@@ -179,7 +182,7 @@ export function applyWSSHandler<TRouter extends AnyRouter>(
               id,
               result: {
                 type: 'data',
-                data: transformer.output.serialize(data),
+                data: transformer.serialize(data),
               },
             });
           });
@@ -187,7 +190,7 @@ export function applyWSSHandler<TRouter extends AnyRouter>(
             const error = getErrorFromUnknown(_error);
             const json: TRPCErrorResponse = {
               id,
-              error: transformer.output.serialize(
+              error: transformer.serialize(
                 router.getErrorShape({
                   error,
                   type,
@@ -220,7 +223,7 @@ export function applyWSSHandler<TRouter extends AnyRouter>(
             ctx,
           });
           opts.onError?.({ error, path, type, ctx, req, input });
-          respond({ id, error: transformer.output.serialize(json) });
+          respond({ id, error: transformer.serialize(json) });
         }
       }
       client.on('message', async (message) => {

@@ -37,17 +37,15 @@ export const client = createTRPCClient<AppRouter>({
 });
 ```
 
-#### 3. Add to API handler
+#### 3. Add to your `AppRouter`
 
 ```ts
 import superjson from 'superjson';
+import * as trpc from '@trpc/server';
 
-// [...]
-
-export default trpcNext.createNextApiHandler({
-  // [...]
-  transformer: superjson,
-});
+export const appRouter = trpc.router()
+  .transformer(superjson)
+  // .query(...)
 ```
 
 ## Different transformers for upload and download
@@ -94,18 +92,17 @@ export const client = createTRPCClient<AppRouter>({
 });
 ```
 
-#### 4. Add to API handler
+#### 4. Add to your `AppRouter`
 
 ```ts
-import { transformer } from '../../utils/trpc';
+import superjson from 'superjson';
+import * as trpc from '@trpc/server';
 
-// [...]
-
-export default trpcNext.createNextApiHandler({
-  // [...]
-  transformer: transformer,
-});
+export const appRouter = trpc.router()
+  .transformer(superjson)
+  // .query(...)
 ```
+
 
 ## `DataTransformer` interface
 

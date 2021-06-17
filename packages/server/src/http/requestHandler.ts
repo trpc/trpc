@@ -4,7 +4,6 @@ import qs from 'qs';
 import url from 'url';
 import { assertNotBrowser } from '../assertNotBrowser';
 import { getErrorFromUnknown, TRPCError } from '../errors';
-import { getCombinedDataTransformer } from '../internals/getCombinedDataTransformer';
 import { AnyRouter, inferRouterContext, ProcedureType } from '../router';
 import { TRPCErrorResponse, TRPCResponse } from '../rpc';
 import { Subscription } from '../subscription';
@@ -46,7 +45,7 @@ export interface BaseOptions<
   };
   teardown?: () => Promise<void>;
   /**
-   * Optional transformer too serialize/deserialize input args + data
+   * @deprecated use `router.transformer()`
    */
   transformer?: DataTransformerOptions;
   maxBodySize?: number;
@@ -212,7 +211,6 @@ export async function requestHandler<
   const {
     req,
     res,
-    router,
     createContext,
     teardown,
     onError,
@@ -229,7 +227,12 @@ export async function requestHandler<
     HTTP_METHOD_PROCEDURE_TYPE_MAP[req.method!] ?? ('unknown' as const);
   let input: unknown = undefined;
   let ctx: inferRouterContext<TRouter> | undefined = undefined;
-  const transformer = getCombinedDataTransformer(opts.transformer);
+
+  // backwards compat - add transformer to router
+  // TODO - remove in next major
+  const router = opts.transformer
+    ? opts.router.transformer(opts.transformer)
+    : opts.router;
 
   const reqQueryParams = req.query
     ? req.query
@@ -259,7 +262,7 @@ export async function requestHandler<
 
     input =
       rawInput !== undefined
-        ? transformer.input.deserialize(rawInput)
+        ? router._def.transformer.deserialize(rawInput)
         : undefined;
     ctx = await createContext?.({ req, res });
 
@@ -296,7 +299,7 @@ export async function requestHandler<
             id: -1,
             result: {
               type: 'data',
-              data: transformer.output.serialize(output),
+              data: router._def.transformer.serialize(output),
             },
           };
           events.emit('flush'); // `flush()` is used for subscriptions to flush out current output
@@ -306,7 +309,7 @@ export async function requestHandler<
 
           const json: TRPCErrorResponse = {
             id: -1,
-            error: transformer.output.serialize(
+            error: router._def.transformer.serialize(
               router.getErrorShape({ error, type, path, input, ctx }),
             ),
           };
@@ -323,7 +326,7 @@ export async function requestHandler<
 
     const json: TRPCErrorResponse = {
       id: -1,
-      error: transformer.output.serialize(
+      error: router._def.transformer.serialize(
         router.getErrorShape({ error, type, path: undefined, input, ctx }),
       ),
     };
