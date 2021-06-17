@@ -15,7 +15,6 @@ export default trpcNext.createNextApiHandler<AppRouter>({
    * Data transformer
    * @link https://trpc.io/docs/data-transformers
    */
-  // transformer: superjson,
 
   /**
    * @link https://trpc.io/docs/error-handling

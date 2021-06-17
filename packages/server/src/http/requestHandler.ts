@@ -9,7 +9,6 @@ import { Subscription } from '../subscription';
 import { DataTransformerOptions } from '../transformer';
 import { HTTPResponseEnvelope } from './envelopes';
 import { getStatusCodeFromError, httpError, HTTPError } from './errors';
-import { getCombinedDataTransformer } from '../internals/getCombinedDataTransformer';
 import {
   HTTPErrorResponseEnvelope,
   HTTPSuccessResponseEnvelope,
@@ -49,7 +48,7 @@ export interface BaseOptions<
   };
   teardown?: () => Promise<void>;
   /**
-   * Optional transformer too serialize/deserialize input args + data
+   * @deprecated use `router.transformer()`
    */
   transformer?: DataTransformerOptions;
   maxBodySize?: number;
@@ -219,7 +218,6 @@ export async function requestHandler<
   const {
     req,
     res,
-    router,
     createContext,
     teardown,
     onError,
@@ -236,7 +234,12 @@ export async function requestHandler<
     HTTP_METHOD_PROCEDURE_TYPE_MAP[req.method!] ?? ('unknown' as const);
   let input: unknown = undefined;
   let ctx: inferRouterContext<TRouter> | undefined = undefined;
-  const transformer = getCombinedDataTransformer(opts.transformer);
+
+  // backwards compat - add transformer to router
+  // TODO - remove in next major
+  const router = opts.transformer
+    ? opts.router.transformer(opts.transformer)
+    : opts.router;
 
   const reqQueryParams = req.query
     ? req.query
@@ -255,7 +258,7 @@ export async function requestHandler<
       res.statusCode = json.statusCode;
     }
     res.setHeader('Content-Type', 'application/json');
-    res.end(JSON.stringify(transformer.output.serialize(json)));
+    res.end(JSON.stringify(router._def.transformer.serialize(json)));
   }
   try {
     if (isBatchCall && !opts.batching?.enabled) {
@@ -275,7 +278,7 @@ export async function requestHandler<
 
     input =
       rawInput !== undefined
-        ? transformer.input.deserialize(rawInput)
+        ? router._def.transformer.deserialize(rawInput)
         : undefined;
     ctx = await createContext?.({ req, res });
 

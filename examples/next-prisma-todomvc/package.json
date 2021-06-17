@@ -1,6 +1,6 @@
 {
   "name": "@examples/todo-web",
-  "version": "7.2.1",
+  "version": "7.3.0-alpha.0",
   "private": true,
   "scripts": {
     "migrate-sqlite": "npx prisma migrate dev --name init --schema=./prisma/_sqlite/schema.prisma",
@@ -24,10 +24,10 @@
   },
   "dependencies": {
     "@prisma/client": "^2.18.0",
-    "@trpc/client": "^7.2.1",
-    "@trpc/next": "^7.2.1",
-    "@trpc/react": "^7.2.1",
-    "@trpc/server": "^7.2.1",
+    "@trpc/client": "^7.3.0-alpha.0",
+    "@trpc/next": "^7.3.0-alpha.0",
+    "@trpc/react": "^7.3.0-alpha.0",
+    "@trpc/server": "^7.3.0-alpha.0",
     "clsx": "^1.1.1",
     "jest": "^26.6.3",
     "jest-playwright": "^0.0.1",
