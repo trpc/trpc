@@ -201,10 +201,6 @@ export class Router<
       queries: safeObject({
         [path]: createProcedure(procedure),
       }),
-      mutations: safeObject(),
-      subscriptions: safeObject(),
-      middlewares: [],
-      errorFormatter: () => ({}),
     });
 
     return this.merge(router) as any;
