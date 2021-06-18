@@ -21,7 +21,6 @@ export function httpLink<TRouter extends AnyRouter>(
         path,
       });
       onDestroy(() => {
-        console.log('onDestroy');
         cancel();
       });
       promise
