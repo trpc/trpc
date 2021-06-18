@@ -259,14 +259,10 @@ export class TRPCClient<TRouter extends AnyRouter> {
             $result.done();
           }
         },
-        onDone() {
-          // this should never be called, it'll either error or onNext
-        },
       });
     }) as CancellablePromise<TOutput>;
     promise.cancel = () => {
       $result.error(TRPCClientError.from(new TRPCAbortError()));
-      // $result.done();
     };
 
     return promise;
