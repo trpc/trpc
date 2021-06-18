@@ -1,6 +1,6 @@
 import { AnyRouter, ProcedureType } from '@trpc/server';
 import { TRPCResponse } from '@trpc/server/rpc';
-import { TRPCClientError } from '../internals/TRPCClientError';
+import { TRPCClientError } from '../TRPCClientError';
 import { dataLoader } from '../internals/dataLoader';
 import { transformRPCResponse } from '../internals/transformRPCResponse';
 import { httpRequest } from '../internals/httpRequest';

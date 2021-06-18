@@ -4,7 +4,7 @@ import {
   TRPCRequest,
   TRPCResult,
 } from '@trpc/server/rpc';
-import { TRPCClientError } from '../internals/TRPCClientError';
+import { TRPCClientError } from '../TRPCClientError';
 import { ObservableCallbacks, UnsubscribeFn } from '../internals/observable';
 import { retryDelay } from '../internals/retryDelay';
 import { TRPCLink } from './core';

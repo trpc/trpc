@@ -4,7 +4,7 @@ import AbortController from 'abort-controller';
 import fetch from 'node-fetch';
 import { z } from 'zod';
 import { createTRPCClient } from '../../client/src';
-import { TRPCClientError } from '../../client/src/internals/TRPCClientError';
+import { TRPCClientError } from '../../client/src';
 import { executeChain } from '../../client/src/internals/executeChain';
 import { LinkRuntimeOptions, OperationLink } from '../../client/src/links/core';
 import { httpBatchLink } from '../../client/src/links/httpBatchLink';

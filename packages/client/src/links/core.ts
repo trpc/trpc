@@ -1,6 +1,6 @@
 import { AnyRouter, DataTransformer } from '@trpc/server';
 import { TRPCResult } from '@trpc/server/rpc';
-import { TRPCClientError } from '../internals/TRPCClientError';
+import { TRPCClientError } from '../TRPCClientError';
 
 export type OperationContext = Record<string, unknown>;
 export type Operation<TInput = unknown> = {

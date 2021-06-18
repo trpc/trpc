@@ -23,7 +23,7 @@ import {
 } from './links/core';
 import { httpLink } from './links/httpLink';
 import { TRPCAbortErrorSignal } from './internals/TRPCAbortErrorSignal';
-import { TRPCClientError } from './internals/TRPCClientError';
+import { TRPCClientError } from './TRPCClientError';
 
 type CancellablePromise<T = unknown> = Promise<T> & {
   cancel: CancelFn;
@@ -56,7 +56,7 @@ type TRPCType = 'subscription' | 'query' | 'mutation';
 type RequestOptions = {
   context?: OperationContext;
 };
-class TRPCClient<TRouter extends AnyRouter> {
+export class TRPCClient<TRouter extends AnyRouter> {
   private readonly links: OperationLink<TRouter>[];
   public readonly runtime: LinkRuntimeOptions;
 

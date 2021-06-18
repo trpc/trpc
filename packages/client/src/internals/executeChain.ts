@@ -1,6 +1,6 @@
 import { AnyRouter } from '@trpc/server';
 import { TRPCResult } from '@trpc/server/rpc';
-import { TRPCClientError } from './TRPCClientError';
+import { TRPCClientError } from '../TRPCClientError';
 import {
   Operation,
   OperationLink,
