@@ -1,5 +1,5 @@
 import { TRPCResponse } from '@trpc/server/rpc';
-import { TRPCClientError } from '../createTRPCClient';
+import { TRPCClientError } from './TRPCClientError';
 import { LinkRuntimeOptions } from '../links/core';
 
 export function transformRPCResponse({

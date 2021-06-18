@@ -5,7 +5,7 @@ import { expectTypeOf } from 'expect-type';
 import { createTRPCClient } from '../../client/src';
 import { createWSClient, wsLink } from '../../client/src/links/wsLink';
 import { z } from 'zod';
-import { TRPCClientError } from '../../client/src';
+import { TRPCClientError } from '../../client/src/internals/TRPCClientError';
 import * as trpc from '../src';
 import { CreateHttpContextOptions } from '../src';
 import { routerToServerAndClient } from './_testHelpers';

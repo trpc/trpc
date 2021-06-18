@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { z, ZodError } from 'zod';
-import { TRPCClientError } from '../../client/src';
+import { TRPCClientError } from '../../client/src/internals/TRPCClientError';
 import * as trpc from '../src';
 import { AnyRouter } from '../src';
 import { getMessageFromUnkownError, TRPCError } from '../src/errors';

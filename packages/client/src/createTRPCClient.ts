@@ -7,13 +7,8 @@ import type {
   inferProcedureInput,
   inferProcedureOutput,
   inferSubscriptionOutput,
-  Maybe,
 } from '@trpc/server';
-import {
-  TRPCErrorShape,
-  TRPCErrorResponse,
-  TRPC_ERROR_CODES_BY_KEY,
-} from '@trpc/server/rpc';
+import { TRPC_ERROR_CODES_BY_KEY } from '@trpc/server/rpc';
 import { TRPCResult } from '@trpc/server/rpc';
 import { executeChain } from './internals/executeChain';
 import { getAbortController, getFetch } from './internals/fetchHelpers';
@@ -28,68 +23,11 @@ import {
 } from './links/core';
 import { httpLink } from './links/httpLink';
 import { TRPCAbortErrorSignal } from './internals/TRPCAbortErrorSignal';
+import { TRPCClientError } from './internals/TRPCClientError';
 
 type CancellablePromise<T = unknown> = Promise<T> & {
   cancel: CancelFn;
 };
-
-export class TRPCClientError<
-  TRouter extends AnyRouter,
-  TErrorShape extends TRPCErrorShape = ReturnType<TRouter['getErrorShape']>,
-> extends Error {
-  public readonly originalError;
-  public readonly shape: Maybe<TErrorShape>;
-  /**
-   * Fatal error - expect no more results after this error
-   * Used for when WebSockets disconnect prematurely.
-   */
-  public readonly isDone: boolean;
-
-  constructor(
-    message: string,
-    {
-      originalError,
-      isDone = false,
-      result,
-    }: {
-      result: Maybe<TRPCErrorResponse<TErrorShape>>;
-      originalError: Maybe<Error>;
-      isDone?: boolean;
-    },
-  ) {
-    super(message);
-    this.isDone = isDone;
-    this.message = message;
-    this.originalError = originalError;
-    this.shape = result?.error;
-    this.name = 'TRPCClientError';
-
-    this.name = 'TRPCClientError';
-    Object.setPrototypeOf(this, TRPCClientError.prototype);
-  }
-
-  public static from<TRouter extends AnyRouter>(
-    result: Error | TRPCErrorResponse<any>,
-    opts: { isDone?: boolean } = {},
-  ): TRPCClientError<TRouter> {
-    if (!(result instanceof Error)) {
-      return new TRPCClientError<TRouter>((result.error as any).message ?? '', {
-        ...opts,
-        originalError: null,
-        result: result,
-      });
-    }
-    if (result.name === 'TRPCClientError') {
-      return result as TRPCClientError<any>;
-    }
-
-    return new TRPCClientError<TRouter>(result.message, {
-      ...opts,
-      originalError: result,
-      result: null,
-    });
-  }
-}
 
 export interface FetchOptions {
   fetch?: typeof fetch;
