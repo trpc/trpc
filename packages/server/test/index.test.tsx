@@ -11,6 +11,7 @@ import { CreateHttpContextOptions } from '../src';
 import { routerToServerAndClient } from './_testHelpers';
 import WebSocket from 'ws';
 import { waitFor } from '@testing-library/react';
+import { httpBatchLink } from '../../client/src/links/httpBatchLink';
 test('mix query and mutation', async () => {
   type Context = {};
   const r = trpc
@@ -572,30 +573,82 @@ test('void mutation response', async () => {
 });
 
 // https://github.com/trpc/trpc/issues/559
-test('cancelling request should throw AbortError', async () => {
-  const { client, close } = routerToServerAndClient(
-    trpc.router().query('slow', {
-      async resolve() {
-        await new Promise((resolve) => setTimeout(resolve, 500));
-        return null;
-      },
-    }),
-  );
-  const onReject = jest.fn();
-  const req = client.query('slow');
-  req.catch(onReject);
-  // cancel after 10ms
-  await new Promise((resolve) => setTimeout(resolve, 10));
-  req.cancel();
+describe.only('AbortError', () => {
+  test('cancelling request should throw AbortError', async () => {
+    const { client, close } = routerToServerAndClient(
+      trpc.router().query('slow', {
+        async resolve() {
+          await new Promise((resolve) => setTimeout(resolve, 500));
+          return null;
+        },
+      }),
+    );
+    const onReject = jest.fn();
+    const req = client.query('slow');
+    req.catch(onReject);
+    // cancel after 10ms
+    await new Promise((resolve) => setTimeout(resolve, 5));
+    req.cancel();
 
-  await waitFor(() => {
-    expect(onReject).toHaveBeenCalledTimes(1);
+    await waitFor(() => {
+      expect(onReject).toHaveBeenCalledTimes(1);
+    });
+
+    const err = onReject.mock.calls[0][0] as TRPCClientError<any>;
+
+    expect(err.name).toBe('TRPCClientError');
+    expect(err.originalError?.name).toBe('AbortError');
+
+    close();
   });
 
-  const err = onReject.mock.calls[0][0] as TRPCClientError<any>;
+  test('cancelling batch request should throw TRPCAbortError', async () => {
+    // aborting _one_ batch request doesn't necessarily mean we cancel the reqs part of that batch
+    // therefore, we throw TRPCAbortError instead
 
-  expect(err.name).toBe('TRPCClientError');
-  expect(err.originalError?.name).toBe('AbortError');
+    const { client, close } = routerToServerAndClient(
+      trpc
+        .router()
+        .query('slow1', {
+          async resolve() {
+            await new Promise((resolve) => setTimeout(resolve, 500));
+            return 'slow1';
+          },
+        })
+        .query('slow2', {
+          async resolve() {
+            await new Promise((resolve) => setTimeout(resolve, 500));
+            return 'slow1';
+          },
+        }),
+      {
+        server: {
+          batching: {
+            enabled: true,
+          },
+        },
+        client({ httpUrl }) {
+          return {
+            links: [httpBatchLink({ url: httpUrl })],
+          };
+        },
+      },
+    );
+    const req1 = client.query('slow1');
+    const req2 = client.query('slow2');
+    const onReject1 = jest.fn();
+    req1.catch(onReject1);
 
-  close();
+    await new Promise((resolve) => setTimeout(resolve, 5));
+    await waitFor(() => {
+      expect(onReject1).toHaveBeenCalledTimes(1);
+    });
+
+    const err = onReject1.mock.calls[0][0] as TRPCClientError<any>;
+    expect(err.originalError?.name).toBe('TRPCAbortError');
+
+    expect(await req2).toBe('slow2');
+
+    close();
+  });
 });
