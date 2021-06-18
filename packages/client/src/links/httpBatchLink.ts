@@ -2,6 +2,7 @@ import { AnyRouter, HTTPResponseEnvelope, ProcedureType } from '@trpc/server';
 import { TRPCClientError } from '../createTRPCClient';
 import { dataLoader } from '../internals/dataLoader';
 import { httpRequest } from '../internals/httpRequest';
+import { TRPCAbortError } from '../internals/TRPCAbortError';
 import { HttpLinkOptions, TRPCLink } from './core';
 
 export function httpBatchLink<TRouter extends AnyRouter>(
@@ -50,12 +51,29 @@ export function httpBatchLink<TRouter extends AnyRouter>(
     return ({ op, prev, onDestroy }) => {
       const loader = loaders[op.type];
       const { promise, cancel } = loader.load(op);
-      onDestroy(() => cancel());
+      let done = false;
+      onDestroy(() => {
+        console.log('destroy called', op, { done });
+        if (!done) {
+          prev(TRPCClientError.from(new TRPCAbortError()));
+        }
+        done = true;
+        cancel();
+      });
       promise
-        .then((result) =>
-          prev(result.ok ? result : TRPCClientError.from(result)),
-        )
-        .catch((err) => prev(TRPCClientError.from<TRouter>(err)));
+        .then((result) => {
+          if (!done) {
+            prev(result.ok ? result : TRPCClientError.from(result));
+          }
+        })
+        .catch((err) => {
+          if (!done) {
+            prev(TRPCClientError.from<TRouter>(err));
+          }
+        })
+        .finally(() => {
+          done = true;
+        });
     };
   };
 }

@@ -640,6 +640,7 @@ describe.only('AbortError', () => {
     req1.catch(onReject1);
 
     await new Promise((resolve) => setTimeout(resolve, 5));
+    req1.cancel();
     await waitFor(() => {
       expect(onReject1).toHaveBeenCalledTimes(1);
     });
