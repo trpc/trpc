@@ -4,6 +4,7 @@ import qs from 'qs';
 import url from 'url';
 import { assertNotBrowser } from '../assertNotBrowser';
 import { getErrorFromUnknown, TRPCError } from '../errors';
+import { deprecateTransformWarning } from '../internals/once';
 import { AnyRouter, inferRouterContext, ProcedureType } from '../router';
 import { TRPCErrorResponse, TRPCResponse } from '../rpc';
 import { Subscription } from '../subscription';
@@ -222,6 +223,9 @@ export async function requestHandler<
     res.statusCode = 204;
     res.end();
     return;
+  }
+  if (opts.transformer) {
+    deprecateTransformWarning();
   }
   const type =
     HTTP_METHOD_PROCEDURE_TYPE_MAP[req.method!] ?? ('unknown' as const);
