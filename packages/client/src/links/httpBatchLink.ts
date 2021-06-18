@@ -45,10 +45,29 @@ export function httpBatchLink<TRouter extends AnyRouter>(
     return ({ op, prev, onDestroy }) => {
       const loader = loaders[op.type];
       const { promise, cancel } = loader.load(op);
-      onDestroy(() => cancel());
+      let done = false;
+      onDestroy(() => {
+        if (!done) {
+          prev(
+            TRPCClientError.from(
+              new DOMException('The operation was aborted.', 'AbortError'),
+            ),
+          );
+        }
+        done = true;
+        cancel();
+      });
       promise
-        .then((envelope) => prev(transformRPCResponse({ envelope, runtime })))
-        .catch((err) => prev(TRPCClientError.from<TRouter>(err)));
+        .then((envelope) => {
+          if (!done) {
+            prev(transformRPCResponse({ envelope, runtime }));
+          }
+        })
+        .catch((err) => {
+          if (!done) {
+            prev(TRPCClientError.from<TRouter>(err));
+          }
+        });
     };
   };
 }

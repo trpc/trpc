@@ -27,6 +27,7 @@ import {
   TRPCLink,
 } from './links/core';
 import { httpLink } from './links/httpLink';
+import { TRPCAbortErrorSignal } from './internals/TRPCAbortErrorSignal';
 
 type CancellablePromise<T = unknown> = Promise<T> & {
   cancel: CancelFn;
@@ -63,6 +64,7 @@ export class TRPCClientError<
     this.shape = result?.error;
     this.name = 'TRPCClientError';
 
+    this.name = 'TRPCClientError';
     Object.setPrototypeOf(this, TRPCClientError.prototype);
   }
 
@@ -209,15 +211,17 @@ export class TRPCClient<TRouter extends AnyRouter> {
           $result.done();
         },
         onError(err) {
-          reject(err);
-          $result.done();
-        },
-        onDone() {
-          reject(new Error('Done'));
+          // this is used to bubble up to the ending link
+          if (err.originalError?.name !== 'TRPCAbortErrorSignal') {
+            reject(err);
+            $result.done();
+          }
         },
       });
     }) as CancellablePromise<TOutput>;
-    promise.cancel = () => $result.done();
+    promise.cancel = () => {
+      $result.error(TRPCClientError.from(new TRPCAbortErrorSignal()));
+    };
 
     return promise;
   }

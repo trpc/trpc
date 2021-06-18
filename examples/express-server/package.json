@@ -1,6 +1,6 @@
 {
   "name": "@examples/express-server",
-  "version": "7.3.0",
+  "version": "7.3.1",
   "private": true,
   "scripts": {
     "dev:server": "nodemon -e ts -w . -x ts-node ./src/server.ts",
@@ -12,9 +12,9 @@
     "test-start": "start-server-and-test 'node dist/server' 2021 'node dist/client'"
   },
   "dependencies": {
-    "@trpc/client": "^7.3.0",
-    "@trpc/react": "^7.3.0",
-    "@trpc/server": "^7.3.0",
+    "@trpc/client": "^7.3.1",
+    "@trpc/react": "^7.3.1",
+    "@trpc/server": "^7.3.1",
     "@types/node-fetch": "^2.5.8",
     "abort-controller": "^3.0.0",
     "body-parser": "^1.19.0",
