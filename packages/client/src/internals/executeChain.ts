@@ -71,7 +71,7 @@ export function executeChain<
   walk({ index: 0, op: opts.op, stack: [] });
   $result.subscribe({
     onError(err) {
-      if (err.originalError?.name === 'TRPCAbortError') {
+      if (err.originalError?.name === 'TRPCAbortErrorSignal') {
         $destroyed.next(true);
       }
     },

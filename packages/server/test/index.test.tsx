@@ -573,7 +573,7 @@ test('void mutation response', async () => {
 });
 
 // https://github.com/trpc/trpc/issues/559
-describe.only('AbortError', () => {
+describe('AbortError', () => {
   test('cancelling request should throw AbortError', async () => {
     const { client, close } = routerToServerAndClient(
       trpc.router().query('slow', {
@@ -618,7 +618,7 @@ describe.only('AbortError', () => {
         .query('slow2', {
           async resolve() {
             await new Promise((resolve) => setTimeout(resolve, 500));
-            return 'slow1';
+            return 'slow2';
           },
         }),
       {

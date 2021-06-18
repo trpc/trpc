@@ -53,7 +53,6 @@ export function httpBatchLink<TRouter extends AnyRouter>(
       const { promise, cancel } = loader.load(op);
       let done = false;
       onDestroy(() => {
-        console.log('destroy called', op, { done });
         if (!done) {
           prev(TRPCClientError.from(new TRPCAbortError()));
         }
