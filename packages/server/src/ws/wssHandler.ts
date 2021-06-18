@@ -6,6 +6,7 @@ import {
 } from '../envelopes';
 import { getErrorFromUnknown } from '../errors';
 import { BaseOptions, CreateContextFn } from '../http';
+import { deprecateTransformWarning } from '../internals/once';
 import { AnyRouter, ProcedureType } from '../router';
 import { Subscription } from '../subscription';
 // https://developer.mozilla.org/en-US/docs/Web/API/CloseEvent
@@ -141,6 +142,9 @@ export function applyWSSHandler<TRouter extends AnyRouter>(
 ) {
   const { wss, createContext } = opts;
 
+  if (opts.transformer) {
+    deprecateTransformWarning();
+  }
   // backwards compat - add transformer to router
   // TODO - remove in next major
   const router = opts.transformer
