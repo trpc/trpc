@@ -53,10 +53,10 @@ export type CreateTRPCClientOptions<TRouter extends AnyRouter> = {
 );
 type TRPCType = 'subscription' | 'query' | 'mutation';
 
-export type RequestOptions = {
+type RequestOptions = {
   context?: OperationContext;
 };
-export class TRPCClient<TRouter extends AnyRouter> {
+class TRPCClient<TRouter extends AnyRouter> {
   private readonly links: OperationLink<TRouter>[];
   public readonly runtime: LinkRuntimeOptions;
 
