@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
+import { deprecateTransformWarning, once } from '../internals/once';
 import http from 'http';
 import qs from 'qs';
 import url from 'url';
@@ -229,6 +230,9 @@ export async function requestHandler<
     res.statusCode = 204;
     res.end();
     return;
+  }
+  if (opts.transformer) {
+    deprecateTransformWarning();
   }
   const type =
     HTTP_METHOD_PROCEDURE_TYPE_MAP[req.method!] ?? ('unknown' as const);
