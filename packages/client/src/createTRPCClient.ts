@@ -23,7 +23,7 @@ import {
   TRPCLink,
 } from './links/core';
 import { httpLink } from './links/httpLink';
-import { TRPCAbortErrorSignal } from './internals/TRPCAbortError';
+import { TRPCAbortErrorSignal } from './internals/TRPCAbortErrorSignal';
 
 type CancellablePromise<T = unknown> = Promise<T> & {
   cancel: CancelFn;

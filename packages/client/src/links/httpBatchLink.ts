@@ -2,7 +2,6 @@ import { AnyRouter, HTTPResponseEnvelope, ProcedureType } from '@trpc/server';
 import { TRPCClientError } from '../createTRPCClient';
 import { dataLoader } from '../internals/dataLoader';
 import { httpRequest } from '../internals/httpRequest';
-import { TRPCAbortError } from '../internals/TRPCAbortError';
 import { HttpLinkOptions, TRPCLink } from './core';
 
 export function httpBatchLink<TRouter extends AnyRouter>(
@@ -54,7 +53,11 @@ export function httpBatchLink<TRouter extends AnyRouter>(
       let done = false;
       onDestroy(() => {
         if (!done) {
-          prev(TRPCClientError.from(new TRPCAbortError()));
+          prev(
+            TRPCClientError.from(
+              new DOMException('The operation was aborted.', 'AbortError'),
+            ),
+          );
         }
         done = true;
         cancel();

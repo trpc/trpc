@@ -602,9 +602,8 @@ describe('AbortError', () => {
     close();
   });
 
-  test('cancelling batch request should throw TRPCAbortError', async () => {
+  test('cancelling batch request should throw AbortError', async () => {
     // aborting _one_ batch request doesn't necessarily mean we cancel the reqs part of that batch
-    // therefore, we throw TRPCAbortError instead
 
     const { client, close } = routerToServerAndClient(
       trpc
@@ -646,7 +645,7 @@ describe('AbortError', () => {
     });
 
     const err = onReject1.mock.calls[0][0] as TRPCClientError<any>;
-    expect(err.originalError?.name).toBe('TRPCAbortError');
+    expect(err.originalError?.name).toBe('AbortError');
 
     expect(await req2).toBe('slow2');
 
