@@ -20,12 +20,15 @@ export function httpLink<TRouter extends AnyRouter>(
         url,
         path,
       });
-      onDestroy(() => cancel());
+      onDestroy(() => {
+        console.log('onDestroy');
+        cancel();
+      });
       promise
         .then((result) =>
           prev(result.ok ? result : TRPCClientError.from(result)),
         )
-        .catch((err) => TRPCClientError.from(err));
+        .catch((err) => prev(TRPCClientError.from(err)));
     };
   };
 }

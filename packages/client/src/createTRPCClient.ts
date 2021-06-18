@@ -57,6 +57,7 @@ export class TRPCClientError<TRouter extends AnyRouter> extends Error {
     this.originalError = originalError;
     this.shape = this.result?.error;
 
+    this.name = 'TRPCClientError';
     Object.setPrototypeOf(this, TRPCClientError.prototype);
   }
 
@@ -89,6 +90,13 @@ export interface FetchOptions {
   AbortController?: typeof AbortController;
 }
 
+class TRPCAbortError extends Error {
+  constructor() {
+    super('TRPCAbortError');
+    this.name = 'TRPCAbortError';
+    Object.setPrototypeOf(this, TRPCAbortError.prototype);
+  }
+}
 export type CreateTRPCClientOptions<TRouter extends AnyRouter> = {
   /**
    * @deprecated likely to be removed
@@ -245,15 +253,21 @@ export class TRPCClient<TRouter extends AnyRouter> {
           $result.done();
         },
         onError(err) {
-          reject(err);
-          $result.done();
+          // this is used to bubble up to the ending link
+          if (err.originalError?.name !== 'TRPCAbortError') {
+            reject(err);
+            $result.done();
+          }
         },
         onDone() {
-          reject(new Error('Done'));
+          // this should never be called, it'll either error or onNext
         },
       });
     }) as CancellablePromise<TOutput>;
-    promise.cancel = () => $result.done();
+    promise.cancel = () => {
+      $result.error(TRPCClientError.from(new TRPCAbortError()));
+      // $result.done();
+    };
 
     return promise;
   }

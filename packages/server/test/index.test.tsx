@@ -10,6 +10,7 @@ import * as trpc from '../src';
 import { CreateHttpContextOptions } from '../src';
 import { routerToServerAndClient } from './_testHelpers';
 import WebSocket from 'ws';
+import { waitFor } from '@testing-library/react';
 test('mix query and mutation', async () => {
   type Context = {};
   const r = trpc
@@ -157,14 +158,14 @@ describe('integration tests', () => {
     await client.query('q', null as any); // treat null as undefined
     await expect(
       client.query('q', 'not-nullish' as any),
-    ).rejects.toMatchInlineSnapshot(`[Error: No input expected]`);
+    ).rejects.toMatchInlineSnapshot(`[TRPCClientError: No input expected]`);
 
     await client.mutation('m');
     await client.mutation('m', undefined);
     await client.mutation('m', null as any); // treat null as undefined
     await expect(
       client.mutation('m', 'not-nullish' as any),
-    ).rejects.toMatchInlineSnapshot(`[Error: No input expected]`);
+    ).rejects.toMatchInlineSnapshot(`[TRPCClientError: No input expected]`);
 
     close();
   });
@@ -391,7 +392,7 @@ describe('integration tests', () => {
     `);
     await expect(client.mutation('hello', 'not-a-number' as any)).rejects
       .toMatchInlineSnapshot(`
-            [Error: [
+            [TRPCClientError: [
               {
                 "code": "invalid_type",
                 "expected": "number",
@@ -404,7 +405,7 @@ describe('integration tests', () => {
 
     expect(onError.mock.calls[0]).toMatchInlineSnapshot(`
       Array [
-        [Error: [
+        [TRPCClientError: [
         {
           "code": "invalid_type",
           "expected": "number",
@@ -567,5 +568,34 @@ test('void mutation response', async () => {
   );
   expect(await wsClient.mutation('null')).toMatchInlineSnapshot(`null`);
   ws.close();
+  close();
+});
+
+// https://github.com/trpc/trpc/issues/559
+test('cancelling request should throw AbortError', async () => {
+  const { client, close } = routerToServerAndClient(
+    trpc.router().query('slow', {
+      async resolve() {
+        await new Promise((resolve) => setTimeout(resolve, 500));
+        return null;
+      },
+    }),
+  );
+  const onReject = jest.fn();
+  const req = client.query('slow');
+  req.catch(onReject);
+  // cancel after 10ms
+  await new Promise((resolve) => setTimeout(resolve, 10));
+  req.cancel();
+
+  await waitFor(() => {
+    expect(onReject).toHaveBeenCalledTimes(1);
+  });
+
+  const err = onReject.mock.calls[0][0] as TRPCClientError<any>;
+
+  expect(err.name).toBe('TRPCClientError');
+  expect(err.originalError?.name).toBe('AbortError');
+
   close();
 });
