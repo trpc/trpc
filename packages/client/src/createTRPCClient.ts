@@ -23,6 +23,7 @@ import {
   TRPCLink,
 } from './links/core';
 import { httpLink } from './links/httpLink';
+import { TRPCAbortError } from './internals/TRPCAbortError';
 
 type CancellablePromise<T = unknown> = Promise<T> & {
   cancel: CancelFn;
@@ -90,13 +91,6 @@ export interface FetchOptions {
   AbortController?: typeof AbortController;
 }
 
-class TRPCAbortError extends Error {
-  constructor() {
-    super('TRPCAbortError');
-    this.name = 'TRPCAbortError';
-    Object.setPrototypeOf(this, TRPCAbortError.prototype);
-  }
-}
 export type CreateTRPCClientOptions<TRouter extends AnyRouter> = {
   /**
    * @deprecated likely to be removed
