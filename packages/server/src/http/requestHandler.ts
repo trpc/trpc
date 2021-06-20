@@ -112,6 +112,7 @@ async function callProcedure<TRouter extends AnyRouter>(opts: {
   if (type === 'mutation') {
     return caller.mutation(path, input);
   }
+  /* istanbul ignore next */
   if (type === 'subscription') {
     const sub = (await caller.subscription(path, input)) as Subscription;
 
