@@ -5,7 +5,6 @@ import type {
   inferProcedureInput,
   inferProcedureOutput,
 } from '@trpc/server';
-import { inferSubscriptionOutput } from '@trpc/server';
 import { createContext } from 'react';
 import {
   FetchInfiniteQueryOptions,
