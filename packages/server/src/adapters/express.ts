@@ -26,7 +26,8 @@ export function createExpressMiddleware<TRouter extends AnyRouter>(
 
     requestHandler({
       ...opts,
-      req,
+      // hack from https://github.com/trpc/trpc/pull/463
+      req: req as any,
       res: res as any,
       path: endpoint,
     });
