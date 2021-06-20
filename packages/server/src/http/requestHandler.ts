@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
+import http from 'http';
 import qs from 'qs';
-import stream from 'stream';
 import url from 'url';
 import { assertNotBrowser } from '../assertNotBrowser';
 import { getErrorFromUnknown, TRPCError } from '../errors';
@@ -16,6 +16,7 @@ import {
 } from './index';
 import { getPostBody } from './internals/getPostBody';
 import { getQueryInput } from './internals/getQueryInput';
+
 assertNotBrowser();
 
 export type CreateContextFnOptions<TRequest, TResponse> = {
@@ -26,25 +27,12 @@ export type CreateContextFn<TRouter extends AnyRouter, TRequest, TResponse> = (
   opts: CreateContextFnOptions<TRequest, TResponse>,
 ) => inferRouterContext<TRouter> | Promise<inferRouterContext<TRouter>>;
 
-export type BaseRequest = stream.Readable & {
-  socket: stream.Duplex;
-  url?: string;
+export type BaseRequest = http.IncomingMessage & {
   method?: string;
   query?: qs.ParsedQs;
   body?: any;
 };
-export type BaseResponse = stream.Writable & {
-  statusCode?: number;
-} & (
-    | {
-        // http
-        setHeader: (name: string, value: string) => any;
-      }
-    | {
-        // express
-        set: (name: string, value: string) => any;
-      }
-  );
+export type BaseResponse = http.ServerResponse;
 
 export interface BaseOptions<
   TRouter extends AnyRouter,
@@ -274,8 +262,7 @@ export async function requestHandler<
     } else {
       res.statusCode = json.statusCode;
     }
-    const method = 'setHeader' in res ? res.setHeader : res.set;
-    method.call(res, 'Content-Type', 'application/json');
+    res.setHeader('Content-Type', 'application/json');
     res.end(JSON.stringify(router._def.transformer.serialize(json)));
   }
   try {
