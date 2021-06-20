@@ -84,13 +84,6 @@ export type TRPCContextState<TRouter extends AnyRouter> = {
   >(
     pathAndArgs: [TPath, TInput?],
   ) => TOutput | undefined;
-  getLiveQueryData: <
-    TPath extends keyof TRouter['_def']['subscriptions'] & string,
-    TInput extends inferProcedureInput<TRouter['_def']['subscriptions'][TPath]>,
-    TOutput extends inferSubscriptionOutput<TRouter, TPath>,
-  >(
-    pathAndArgs: [TPath, TInput?],
-  ) => TOutput | undefined;
 };
 
 export const TRPCContext = createContext(null as any);

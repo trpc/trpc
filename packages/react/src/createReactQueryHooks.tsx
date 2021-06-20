@@ -28,7 +28,6 @@ import {
 import { DehydratedState } from 'react-query/hydration';
 import {
   CACHE_KEY_INFINITE_QUERY,
-  CACHE_KEY_LIVE_QUERY,
   CACHE_KEY_QUERY,
 } from './internals/constants';
 import { TRPCContext, TRPCContextState } from './internals/context';
@@ -170,10 +169,6 @@ export function createReactQueryHooks<TRouter extends AnyRouter>() {
                 output,
               );
               queryClient.setQueryData(
-                cacheKey.concat([CACHE_KEY_LIVE_QUERY]),
-                output,
-              );
-              queryClient.setQueryData(
                 cacheKey.concat([CACHE_KEY_INFINITE_QUERY]),
                 output,
               );
@@ -184,15 +179,6 @@ export function createReactQueryHooks<TRouter extends AnyRouter>() {
             (pathAndArgs) => {
               const cacheKey = getCacheKey(pathAndArgs);
               return queryClient.getQueryData(cacheKey.concat(CACHE_KEY_QUERY));
-            },
-            [queryClient],
-          ),
-          getLiveQueryData: useCallback(
-            (pathAndArgs) => {
-              const cacheKey = getCacheKey(pathAndArgs);
-              return queryClient.getQueryData(
-                cacheKey.concat(CACHE_KEY_LIVE_QUERY),
-              );
             },
             [queryClient],
           ),
