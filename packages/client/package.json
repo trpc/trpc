@@ -15,7 +15,6 @@
       "index.ts",
       "links/httpLink.ts",
       "links/httpBatchLink.ts",
-      "links/httpSubscriptionLink.ts",
       "links/splitLink.ts",
       "links/loggerLink.ts",
       "links/wsLink.ts"
