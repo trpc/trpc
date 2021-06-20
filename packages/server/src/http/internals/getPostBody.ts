@@ -23,7 +23,7 @@ export async function getPostBody({
             code: 'BAD_USER_INPUT',
           }),
         );
-        req.destroy();
+        req.socket.destroy();
       }
     });
     req.on('end', () => {
