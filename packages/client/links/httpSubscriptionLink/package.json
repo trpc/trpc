@@ -1,0 +1,4 @@
+{
+  "main": "dist/trpc-client-links-httpSubscriptionLink.cjs.js",
+  "module": "dist/trpc-client-links-httpSubscriptionLink.esm.js"
+}

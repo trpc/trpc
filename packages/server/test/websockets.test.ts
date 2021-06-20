@@ -136,31 +136,6 @@ test('mutation', async () => {
   wsClient.close();
 });
 
-test('subscriptionOnce()', async () => {
-  const { client, close, wsClient, ee } = factory();
-  ee.once('subscription:created', () => {
-    setImmediate(() => {
-      ee.emit('server:msg', {
-        id: '1',
-      });
-    });
-  });
-  const msgs = await client.subscriptionOnce('onMessage', '');
-
-  expect(msgs).toMatchInlineSnapshot(`
-    Object {
-      "id": "1",
-    }
-  `);
-
-  await waitFor(() => {
-    expect(ee.listenerCount('server:msg')).toBe(0);
-    expect(ee.listenerCount('server:error')).toBe(0);
-  });
-  close();
-  wsClient.close();
-});
-
 test('$subscription()', async () => {
   const { client, close, ee, wsClient } = factory();
   ee.once('subscription:created', () => {
