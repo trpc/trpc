@@ -94,6 +94,15 @@
         "test",
         "doc"
       ]
+    },
+    {
+      "login": "anthonyshort",
+      "name": "Anthony Short",
+      "avatar_url": "https://avatars.githubusercontent.com/u/36125?v=4",
+      "profile": "https://anthonyshort.me",
+      "contributions": [
+        "financial"
+      ]
     }
   ],
   "contributorsPerLine": 7,
