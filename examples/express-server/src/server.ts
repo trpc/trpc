@@ -1,4 +1,3 @@
-import bodyParser from 'body-parser';
 import { EventEmitter } from 'events';
 import express from 'express';
 import * as trpc from '@trpc/server';
@@ -145,7 +144,6 @@ export type AppRouter = typeof appRouter;
 async function main() {
   // express implementation
   const app = express();
-  app.use(bodyParser.json());
 
   app.use((req, _res, next) => {
     // request logger
