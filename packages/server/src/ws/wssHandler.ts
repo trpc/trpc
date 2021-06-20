@@ -70,13 +70,19 @@ function parseMessage(obj: unknown, transformer: DataTransformer): TRPCRequest {
   return { jsonrpc, id, method, params: { input, path } };
 }
 
-async function callProcedure<TRouter extends AnyRouter>(opts: {
+async function callProcedure<
+  TRouter extends AnyRouter<TContext>,
+  TContext,
+>(opts: {
   path: string;
   input: unknown;
-  caller: ReturnType<TRouter['createCaller']>;
+  router: TRouter;
+  ctx: TContext;
   type: ProcedureType;
 }): Promise<unknown | Subscription<TRouter>> {
-  const { type, path, input, caller } = opts;
+  const { type, path, input } = opts;
+
+  const caller = opts.router.createCaller(opts.ctx);
   if (type === 'query') {
     return caller.query(path, input);
   }
@@ -127,7 +133,6 @@ export function applyWSSHandler<TRouter extends AnyRouter>(
     }
     try {
       const ctx = await createContext({ req, res: client });
-      const caller = router.createCaller(ctx);
 
       async function handleRequest(msg: TRPCRequest) {
         const { id } = msg;
@@ -148,7 +153,13 @@ export function applyWSSHandler<TRouter extends AnyRouter>(
         const { path, input } = msg.params;
         const type = msg.method;
         try {
-          const result = await callProcedure({ path, input, type, caller });
+          const result = await callProcedure({
+            path,
+            input,
+            type,
+            router,
+            ctx,
+          });
 
           if (!(result instanceof Subscription)) {
             respond({
