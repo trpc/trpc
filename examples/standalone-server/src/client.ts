@@ -48,7 +48,7 @@ async function main() {
   console.log('createPostResponse', createPostRes);
 
   let count = 0;
-  const unsub = client.$subscription('randomNumber', null, {
+  const unsub = client.subscription('randomNumber', null, {
     onNext(data) {
       // ^ note that `data` here is inferred
       console.log('received', data);

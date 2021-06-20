@@ -198,8 +198,7 @@ export class TRPCClient<TRouter extends AnyRouter> {
       context,
     });
   }
-  /* istanbul ignore next */
-  public $subscription<
+  public subscription<
     TSubscriptions extends TRouter['_def']['subscriptions'],
     TPath extends string & keyof TSubscriptions,
     TOutput extends inferSubscriptionOutput<TRouter, TPath>,

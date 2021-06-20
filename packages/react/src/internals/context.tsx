@@ -5,6 +5,7 @@ import type {
   inferProcedureInput,
   inferProcedureOutput,
 } from '@trpc/server';
+import { inferSubscriptionOutput } from '@trpc/server';
 import { createContext } from 'react';
 import {
   FetchInfiniteQueryOptions,
@@ -76,6 +77,20 @@ export type TRPCContextState<TRouter extends AnyRouter> = {
     pathAndArgs: [TPath, TInput?],
     output: TOutput,
   ) => void;
+  getQueryData: <
+    TPath extends keyof TRouter['_def']['queries'] & string,
+    TInput extends inferProcedureInput<TRouter['_def']['queries'][TPath]>,
+    TOutput extends inferProcedureOutput<TRouter['_def']['queries'][TPath]>,
+  >(
+    pathAndArgs: [TPath, TInput?],
+  ) => TOutput | undefined;
+  getLiveQueryData: <
+    TPath extends keyof TRouter['_def']['subscriptions'] & string,
+    TInput extends inferProcedureInput<TRouter['_def']['subscriptions'][TPath]>,
+    TOutput extends inferSubscriptionOutput<TRouter, TPath>,
+  >(
+    pathAndArgs: [TPath, TInput?],
+  ) => TOutput | undefined;
 };
 
 export const TRPCContext = createContext(null as any);

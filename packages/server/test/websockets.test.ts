@@ -149,7 +149,7 @@ test('$subscription()', async () => {
     });
   });
   const onNext = jest.fn();
-  const unsub = client.$subscription('onMessage', undefined, {
+  const unsub = client.subscription('onMessage', undefined, {
     onNext(data) {
       expectTypeOf(data).not.toBeAny();
       expectTypeOf(data).toMatchTypeOf<TRPCResult<Message>>();
@@ -227,7 +227,7 @@ test.skip('$subscription() - server randomly stop and restart (this test might b
   const onNext = jest.fn();
   const onError = jest.fn();
   const onDone = jest.fn();
-  client.$subscription('onMessage', undefined, {
+  client.subscription('onMessage', undefined, {
     onNext,
     onError,
     onDone,
@@ -257,7 +257,7 @@ test.skip('$subscription() - server randomly stop and restart (this test might b
       });
     }, 1);
   });
-  client.$subscription('onMessage', undefined, {
+  client.subscription('onMessage', undefined, {
     onNext,
     onError,
     onDone,
@@ -310,7 +310,7 @@ test('server subscription ended', async () => {
   const onNext = jest.fn();
   const onError = jest.fn();
   const onDone = jest.fn();
-  client.$subscription('onMessage', undefined, {
+  client.subscription('onMessage', undefined, {
     onNext,
     onError,
     onDone,
@@ -341,7 +341,7 @@ test('server emits disconnect', async () => {
   const onNext = jest.fn();
   const onError = jest.fn();
   const onDone = jest.fn();
-  client.$subscription('onMessage', undefined, {
+  client.subscription('onMessage', undefined, {
     onNext,
     onError,
     onDone,
@@ -378,7 +378,7 @@ test('sub emits errors', async () => {
   const onNext = jest.fn();
   const onError = jest.fn();
   const onDone = jest.fn();
-  client.$subscription('onMessage', undefined, {
+  client.subscription('onMessage', undefined, {
     onNext,
     onError,
     onDone,
@@ -424,7 +424,7 @@ test('ability to do do overlapping connects', async () => {
     const onNext = jest.fn();
     const onError = jest.fn();
     const onDone = jest.fn();
-    const unsub = client.$subscription('onMessage', undefined, {
+    const unsub = client.subscription('onMessage', undefined, {
       onNext,
       onError,
       onDone,
