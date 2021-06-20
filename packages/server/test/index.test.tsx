@@ -101,7 +101,9 @@ describe('integration tests', () => {
       expect(err.message).toMatchInlineSnapshot(
         `"No such query procedure \\"notFound\\""`,
       );
-      expect(err.result?.statusCode).toBe(404);
+      expect(err.shape?.message).toMatchInlineSnapshot(
+        `"No such query procedure \\"notFound\\""`,
+      );
     }
     close();
   });
@@ -129,7 +131,20 @@ describe('integration tests', () => {
       if (!(err instanceof TRPCClientError)) {
         throw new Error('Not TRPCClientError');
       }
-      expect(err.result?.statusCode).toBe(400);
+      expect(err.shape?.code).toMatchInlineSnapshot(`-32600`);
+      expect(err.shape?.message).toMatchInlineSnapshot(`
+        "[
+          {
+            \\"code\\": \\"invalid_type\\",
+            \\"expected\\": \\"string\\",
+            \\"received\\": \\"number\\",
+            \\"path\\": [
+              \\"who\\"
+            ],
+            \\"message\\": \\"Expected string, received number\\"
+          }
+        ]"
+      `);
     }
     close();
   });
@@ -278,7 +293,7 @@ describe('integration tests', () => {
           expectTypeOf(res).toMatchTypeOf<{ id: number; name: string }>();
         } catch (err) {
           threw = true;
-          expect(err.result.statusCode).toBe(401);
+          expect(err.shape.message).toMatchInlineSnapshot(`"UNAUTHORIZED"`);
         }
         if (!threw) {
           throw new Error("Didn't throw");
@@ -361,77 +376,6 @@ describe('integration tests', () => {
       expect(res.text).toBe('hello katt');
       close();
     });
-  });
-
-  /**
-   * @deprecated
-   */
-  test('client onError(), onSuccess()', async () => {
-    const onError = jest.fn();
-    const onSuccess = jest.fn();
-    const { client, close } = routerToServerAndClient(
-      trpc.router().mutation('hello', {
-        input: z.number(),
-        resolve({ input }) {
-          return {
-            input,
-          };
-        },
-      }),
-      {
-        client: {
-          onError,
-          onSuccess,
-        },
-      },
-    );
-    const res = await client.mutation('hello', 1);
-    expect(res).toMatchInlineSnapshot(`
-      Object {
-        "input": 1,
-      }
-    `);
-    await expect(client.mutation('hello', 'not-a-number' as any)).rejects
-      .toMatchInlineSnapshot(`
-            [TRPCClientError: [
-              {
-                "code": "invalid_type",
-                "expected": "number",
-                "received": "string",
-                "path": [],
-                "message": "Expected number, received string"
-              }
-            ]]
-          `);
-
-    expect(onError.mock.calls[0]).toMatchInlineSnapshot(`
-      Array [
-        [TRPCClientError: [
-        {
-          "code": "invalid_type",
-          "expected": "number",
-          "received": "string",
-          "path": [],
-          "message": "Expected number, received string"
-        }
-      ]],
-      ]
-    `);
-    expect(onSuccess.mock.calls[0]).toMatchInlineSnapshot(`
-      Array [
-        Object {
-          "data": Object {
-            "input": 1,
-          },
-          "ok": true,
-          "statusCode": 200,
-        },
-      ]
-    `);
-
-    expect(onSuccess).toHaveBeenCalledTimes(1);
-    expect(onError).toHaveBeenCalledTimes(1);
-    close();
   });
 });
 

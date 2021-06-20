@@ -7,10 +7,9 @@ import type {
   inferProcedureInput,
   inferProcedureOutput,
   inferSubscriptionOutput,
-  Maybe,
-  TRPCProcedureErrorEnvelope,
-  TRPCProcedureSuccessEnvelope,
 } from '@trpc/server';
+import { TRPC_ERROR_CODES_BY_KEY } from '@trpc/server/rpc';
+import { TRPCResult } from '@trpc/server/rpc';
 import { executeChain } from './internals/executeChain';
 import { getAbortController, getFetch } from './internals/fetchHelpers';
 import { ObservableCallbacks, UnsubscribeFn } from './internals/observable';
@@ -24,67 +23,11 @@ import {
 } from './links/core';
 import { httpLink } from './links/httpLink';
 import { TRPCAbortErrorSignal } from './internals/TRPCAbortErrorSignal';
+import { TRPCClientError } from './TRPCClientError';
 
 type CancellablePromise<T = unknown> = Promise<T> & {
   cancel: CancelFn;
 };
-
-export class TRPCClientError<TRouter extends AnyRouter> extends Error {
-  public readonly result?: Maybe<TRPCProcedureErrorEnvelope<TRouter>>;
-  public readonly res?: Maybe<Response>;
-  public readonly originalError?: Maybe<Error>;
-  public readonly shape?: TRPCProcedureErrorEnvelope<TRouter>['error'];
-  /**
-   * Fatal error - expect no more results after this error
-   */
-  public readonly isDone: boolean;
-
-  constructor(
-    message: string,
-    {
-      result,
-      originalError,
-      isDone = false,
-    }: {
-      result: Maybe<TRPCProcedureErrorEnvelope<TRouter>>;
-      originalError: Maybe<Error>;
-      isDone?: boolean;
-    },
-  ) {
-    super(message);
-    this.isDone = isDone;
-    this.message = message;
-    this.result = result;
-    this.originalError = originalError;
-    this.shape = this.result?.error;
-
-    this.name = 'TRPCClientError';
-    Object.setPrototypeOf(this, TRPCClientError.prototype);
-  }
-
-  public static from<TRouter extends AnyRouter>(
-    result: Error | TRPCProcedureErrorEnvelope<TRouter>,
-    opts: { isDone?: boolean } = {},
-  ): TRPCClientError<TRouter> {
-    if (!(result instanceof Error)) {
-      return new TRPCClientError<TRouter>((result.error as any).message ?? '', {
-        ...opts,
-        originalError: null,
-        result,
-      });
-    }
-
-    if (result.name === 'TRPCClientError') {
-      return result as TRPCClientError<any>;
-    }
-
-    return new TRPCClientError<TRouter>(result.message, {
-      ...opts,
-      originalError: result,
-      result: null,
-    });
-  }
-}
 
 export interface FetchOptions {
   fetch?: typeof fetch;
@@ -92,14 +35,6 @@ export interface FetchOptions {
 }
 
 export type CreateTRPCClientOptions<TRouter extends AnyRouter> = {
-  /**
-   * @deprecated likely to be removed
-   */
-  onSuccess?: (data: TRPCProcedureSuccessEnvelope<unknown>) => void;
-  /**
-   * @deprecated likely to be removed
-   */
-  onError?: (error: TRPCClientError<TRouter>) => void;
   /**
    * add ponyfills for fetch / abortcontroller
    */
@@ -118,16 +53,14 @@ export type CreateTRPCClientOptions<TRouter extends AnyRouter> = {
 );
 type TRPCType = 'subscription' | 'query' | 'mutation';
 
-export type RequestOptions = {
+type RequestOptions = {
   context?: OperationContext;
 };
 export class TRPCClient<TRouter extends AnyRouter> {
   private readonly links: OperationLink<TRouter>[];
   public readonly runtime: LinkRuntimeOptions;
-  private opts: CreateTRPCClientOptions<TRouter>;
 
   constructor(opts: CreateTRPCClientOptions<TRouter>) {
-    this.opts = opts;
     const transformer: DataTransformer = opts.transformer
       ? 'input' in opts.transformer
         ? {
@@ -166,37 +99,6 @@ export class TRPCClient<TRouter extends AnyRouter> {
         })(this.runtime),
       ];
     }
-    /**
-     * @deprecated
-     * prepending a link to call `onSuccess` / `onError`
-     */
-    if (this.opts.onError || this.opts.onError) {
-      // deprecation warning?
-      this.links = [
-        ({ op, next, prev }) => {
-          next(op, (result) => {
-            result instanceof Error
-              ? this.opts?.onError?.(result)
-              : this.opts?.onSuccess?.(result);
-
-            prev(result);
-          });
-        },
-        ...this.links,
-      ];
-    }
-  }
-
-  /**
-   * @deprecated will be turned private
-   */
-  public request<TInput = unknown, TOutput = unknown>(opts: {
-    type: TRPCType;
-    input: TInput;
-    path: string;
-    context?: OperationContext;
-  }) {
-    return this.requestAsPromise<TInput, TOutput>(opts);
   }
 
   private $request<TInput = unknown, TOutput = unknown>({
@@ -232,14 +134,14 @@ export class TRPCClient<TRouter extends AnyRouter> {
 
     const promise = new Promise<TOutput>((resolve, reject) => {
       const res = $result.get();
-      if (res.type === 'data') {
+      if (res?.type === 'data') {
         resolve(res.data);
         $result.done();
         return;
       }
       $result.subscribe({
         onNext: (result) => {
-          if (result.type !== 'data') {
+          if (result?.type !== 'data') {
             return;
           }
           resolve(result.data);
@@ -331,7 +233,7 @@ export class TRPCClient<TRouter extends AnyRouter> {
         } catch (_err) {
           const err: TRPCClientError<TRouter> = _err;
 
-          if (err.result?.statusCode === 408) {
+          if (err.shape?.code === TRPC_ERROR_CODES_BY_KEY.TIMEOUT) {
             // server told us to reconnect
             exec();
           } else {
@@ -395,7 +297,7 @@ export class TRPCClient<TRouter extends AnyRouter> {
         if (stopped) {
           return;
         }
-        opts.onError && opts.onError(err);
+        opts.onError?.(err);
         attemptIndex++;
         setTimeout(() => {
           exec(input);
@@ -415,7 +317,7 @@ export class TRPCClient<TRouter extends AnyRouter> {
     path: TPath,
     input: TInput,
     opts: RequestOptions &
-      ObservableCallbacks<TOutput, TRPCClientError<TRouter>>,
+      ObservableCallbacks<TRPCResult<TOutput>, TRPCClientError<TRouter>>,
   ): UnsubscribeFn {
     const $res = this.$request<TInput, TOutput>({
       type: 'subscription',
@@ -425,7 +327,9 @@ export class TRPCClient<TRouter extends AnyRouter> {
     });
     $res.subscribe({
       onNext(output) {
-        output && output.type === 'data' && opts.onNext?.(output.data);
+        if (output) {
+          opts.onNext?.(output);
+        }
       },
       onError: opts.onError,
       onDone: opts.onDone,

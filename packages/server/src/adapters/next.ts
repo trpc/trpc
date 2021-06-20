@@ -5,10 +5,11 @@ import {
   BaseOptions,
   CreateContextFn,
   CreateContextFnOptions,
-  HTTPError,
   requestHandler,
-  HTTPErrorResponseEnvelope,
 } from '../';
+import { TRPCError } from '../errors';
+import { getHTTPStatusCode } from '../http/internals/getHTTPStatusCode';
+import { TRPCErrorResponse } from '../rpc';
 import { AnyRouter } from '../router';
 
 export type CreateNextContextOptions = CreateContextFnOptions<
@@ -41,24 +42,21 @@ export function createNextApiHandler<TRouter extends AnyRouter>(
 
     if (path === null) {
       const error = opts.router.getErrorShape({
-        error: new HTTPError(
-          'Query "trpc" not found - is the file named `[trpc]`.ts or `[...trpc].ts`?',
-          {
-            statusCode: 500,
-            code: 'INTERNAL_SERVER_ERROR',
-          },
-        ),
+        error: new TRPCError({
+          message:
+            'Query "trpc" not found - is the file named `[trpc]`.ts or `[...trpc].ts`?',
+          code: 'INTERNAL_SERVER_ERROR',
+        }),
         type: 'unknown',
         ctx: undefined,
         path: undefined,
         input: undefined,
       });
-      const json: HTTPErrorResponseEnvelope<TRouter> = {
-        ok: false,
-        statusCode: 500,
+      const json: TRPCErrorResponse = {
+        id: -1,
         error,
       };
-      res.statusCode = json.statusCode;
+      res.statusCode = getHTTPStatusCode(json);
       res.json(json);
       return;
     }

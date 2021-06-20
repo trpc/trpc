@@ -3,7 +3,6 @@
 import * as trpc from '../src';
 import * as trpcNext from '../src/adapters/next';
 import { EventEmitter } from 'events';
-import { HTTPErrorResponseEnvelope, HTTPSuccessResponseEnvelope } from '../src';
 
 function mockReq({
   query,
@@ -59,14 +58,12 @@ test('bad setup', async () => {
 
   await handler(req, res);
 
-  const responseJson: HTTPErrorResponseEnvelope<typeof router> = (
-    json.mock.calls[0] as any
-  )[0];
-  expect(responseJson.ok).toMatchInlineSnapshot(`false`);
+  const responseJson: any = (json.mock.calls[0] as any)[0];
+  expect(responseJson.ok).toMatchInlineSnapshot(`undefined`);
   expect(responseJson.error.message).toMatchInlineSnapshot(
     `"Query \\"trpc\\" not found - is the file named \`[trpc]\`.ts or \`[...trpc].ts\`?"`,
   );
-  expect(responseJson.statusCode).toMatchInlineSnapshot(`500`);
+  expect(responseJson.statusCode).toMatchInlineSnapshot(`undefined`);
 });
 
 describe('ok request', () => {
@@ -89,14 +86,14 @@ describe('ok request', () => {
     await handler(req, res);
     expect(res.statusCode).toBe(200);
 
-    const json: HTTPSuccessResponseEnvelope<string> = JSON.parse(
-      (end.mock.calls[0] as any)[0],
-    );
+    const json: any = JSON.parse((end.mock.calls[0] as any)[0]);
     expect(json).toMatchInlineSnapshot(`
       Object {
-        "data": "world",
-        "ok": true,
-        "statusCode": 200,
+        "id": -1,
+        "result": Object {
+          "data": "world",
+          "type": "data",
+        },
       }
     `);
   });
@@ -112,14 +109,14 @@ describe('ok request', () => {
     await handler(req, res);
     expect(res.statusCode).toBe(200);
 
-    const json: HTTPSuccessResponseEnvelope<string> = JSON.parse(
-      (end.mock.calls[0] as any)[0],
-    );
+    const json: any = JSON.parse((end.mock.calls[0] as any)[0]);
     expect(json).toMatchInlineSnapshot(`
       Object {
-        "data": "world",
-        "ok": true,
-        "statusCode": 200,
+        "id": -1,
+        "result": Object {
+          "data": "world",
+          "type": "data",
+        },
       }
     `);
   });
@@ -145,10 +142,8 @@ test('404', async () => {
   await handler(req, res);
 
   expect(res.statusCode).toBe(404);
-  const json: HTTPErrorResponseEnvelope<typeof router> = JSON.parse(
-    (end.mock.calls[0] as any)[0],
-  );
-  expect(json.statusCode).toBe(404);
+  const json: any = JSON.parse((end.mock.calls[0] as any)[0]);
+
   expect(json.error.message).toMatchInlineSnapshot(
     `"No such query procedure \\"not-found-path\\""`,
   );
@@ -180,11 +175,9 @@ test('payload too large', async () => {
   await handler(req, res);
 
   expect(res.statusCode).toBe(413);
-  const json: HTTPErrorResponseEnvelope<typeof router> = JSON.parse(
-    (end.mock.calls[0] as any)[0],
-  );
-  expect(json.statusCode).toBe(413);
-  expect(json.error.message).toMatchInlineSnapshot(`"Payload Too Large"`);
+  const json: any = JSON.parse((end.mock.calls[0] as any)[0]);
+
+  expect(json.error.message).toMatchInlineSnapshot(`"PAYLOAD_TOO_LARGE"`);
 });
 
 test('HEAD request', async () => {

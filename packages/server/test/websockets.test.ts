@@ -2,19 +2,20 @@
 /* eslint-disable @typescript-eslint/ban-types */
 // import WebSocket from 'ws';
 import { waitFor } from '@testing-library/react';
+import { TRPCClientError } from '@trpc/client';
 import { EventEmitter } from 'events';
 import { expectTypeOf } from 'expect-type';
-import WebSocket from 'ws';
-// import { expectTypeOf } from 'expect-type';
-import ws from 'ws';
+import { default as WebSocket, default as ws } from 'ws';
 import { z } from 'zod';
 import {
   createWSClient,
+  ReconnectError,
   TRPCWebSocketClient,
-  WebSocketInterruptedError,
+  WebSocketInterruptError,
   wsLink,
 } from '../../client/src/links/wsLink';
 import * as trpc from '../src';
+import { TRPCResult } from '../src/rpc';
 import { applyWSSHandler } from '../src/ws';
 import { routerToServerAndClient } from './_testHelpers';
 
@@ -86,7 +87,7 @@ function factory() {
         wsClient = createWSClient({
           url: wssUrl,
           retryDelayMs: () => 10,
-          staleConnectionTimeoutMs: 1,
+          staleConnectionTimeoutMs: 200,
         });
         return {
           links: [wsLink({ client: wsClient })],
@@ -176,13 +177,13 @@ test('$subscription()', async () => {
   const unsub = client.$subscription('onMessage', undefined, {
     onNext(data) {
       expectTypeOf(data).not.toBeAny();
-      expectTypeOf(data).toMatchTypeOf<Message>();
+      expectTypeOf(data).toMatchTypeOf<TRPCResult<Message>>();
       onNext(data);
     },
   });
 
   await waitFor(() => {
-    expect(onNext).toHaveBeenCalledTimes(2);
+    expect(onNext).toHaveBeenCalledTimes(3);
   });
 
   ee.emit('server:msg', {
@@ -196,17 +197,31 @@ test('$subscription()', async () => {
     Array [
       Array [
         Object {
-          "id": "1",
+          "type": "started",
         },
       ],
       Array [
         Object {
-          "id": "2",
+          "data": Object {
+            "id": "1",
+          },
+          "type": "data",
         },
       ],
       Array [
         Object {
-          "id": "2",
+          "data": Object {
+            "id": "2",
+          },
+          "type": "data",
+        },
+      ],
+      Array [
+        Object {
+          "data": Object {
+            "id": "2",
+          },
+          "type": "data",
         },
       ],
     ]
@@ -244,7 +259,7 @@ test.skip('$subscription() - server randomly stop and restart (this test might b
   });
 
   await waitFor(() => {
-    expect(onNext).toHaveBeenCalledTimes(2);
+    expect(onNext).toHaveBeenCalledTimes(3);
   });
   // close websocket
   await close();
@@ -253,10 +268,10 @@ test.skip('$subscription() - server randomly stop and restart (this test might b
     expect(onDone).toHaveBeenCalledTimes(1);
   });
   expect(onError.mock.calls[0][0]).toMatchInlineSnapshot(
-    `[Error: Operation ended prematurely]`,
+    `[TRPCClientError: Operation ended prematurely]`,
   );
   expect(onError.mock.calls[0][0].originalError).toBeInstanceOf(
-    WebSocketInterruptedError,
+    WebSocketInterruptError,
   );
 
   // reconnect from client
@@ -281,13 +296,21 @@ test.skip('$subscription() - server randomly stop and restart (this test might b
   applyWSSHandler({ ...applyWSSHandlerOpts, wss });
 
   await waitFor(() => {
-    expect(onNext).toHaveBeenCalledTimes(1);
+    expect(onNext).toHaveBeenCalledTimes(2);
   });
   expect(onNext.mock.calls).toMatchInlineSnapshot(`
     Array [
       Array [
         Object {
-          "id": "3",
+          "type": "started",
+        },
+      ],
+      Array [
+        Object {
+          "data": Object {
+            "id": "3",
+          },
+          "type": "data",
         },
       ],
     ]
@@ -319,7 +342,7 @@ test('server subscription ended', async () => {
   });
 
   await waitFor(() => {
-    expect(onNext).toHaveBeenCalledTimes(2);
+    expect(onNext).toHaveBeenCalledTimes(3);
   });
   // destroy server subscription
   subRef.current.destroy();
@@ -353,7 +376,7 @@ test('server emits disconnect', async () => {
     expect(onNewMessageSubscription).toHaveBeenCalledTimes(1);
     expect(onNewClient).toHaveBeenCalledTimes(1);
   });
-  wssHandler.reconnectAllClients();
+  wssHandler.broadcastReconnectNotification();
   await waitFor(() => {
     expect(onNewMessageSubscription).toHaveBeenCalledTimes(1);
     expect(onNewClient).toHaveBeenCalledTimes(2);
@@ -363,6 +386,7 @@ test('server emits disconnect', async () => {
   wsClient.close();
   close();
 });
+
 test('sub emits errors', async () => {
   const { client, close, wsClient, wss, ee, subRef } = factory();
 
@@ -386,7 +410,7 @@ test('sub emits errors', async () => {
   });
 
   await waitFor(() => {
-    expect(onNext).toHaveBeenCalledTimes(1);
+    expect(onNext).toHaveBeenCalledTimes(2);
     expect(onError).toHaveBeenCalledTimes(1);
     expect(onDone).toHaveBeenCalledTimes(0);
   });
@@ -410,4 +434,88 @@ test('wait for slow queries/mutations before disconnecting', async () => {
       WebSocket.CLOSED,
     );
   });
+});
+
+test('ability to do do overlapping connects', async () => {
+  const { client, close, wsClient, ee, wssHandler, wss } = factory();
+  ee.once('subscription:created', () => {
+    setImmediate(() => {
+      ee.emit('server:msg', {
+        id: '1',
+      });
+    });
+  });
+  function createSub() {
+    const onNext = jest.fn();
+    const onError = jest.fn();
+    const onDone = jest.fn();
+    const unsub = client.$subscription('onMessage', undefined, {
+      onNext,
+      onError,
+      onDone,
+    });
+    return { onNext, onDone, onError, unsub };
+  }
+  const sub1 = createSub();
+
+  await waitFor(() => {
+    expect(sub1.onNext).toHaveBeenCalledTimes(2);
+  });
+  wssHandler.broadcastReconnectNotification();
+  await waitFor(() => {
+    expect(sub1.onError.mock.calls[0][0].originalError).toBeInstanceOf(
+      ReconnectError,
+    );
+    expect(wss.clients.size).toBe(2);
+  });
+  const sub2 = createSub();
+  await waitFor(() => {
+    expect(sub2.onNext).toHaveBeenCalledWith({
+      type: 'started',
+    });
+  });
+  sub1.unsub();
+  await waitFor(() => {
+    expect(wss.clients.size).toBe(1);
+  });
+
+  wsClient.close();
+  close();
+});
+
+test('not found error', async () => {
+  const { client, close, wsClient, router } = factory();
+
+  const error: TRPCClientError<typeof router> = await new Promise(
+    (resolve, reject) =>
+      client
+        .query('notFound' as any)
+        .then(reject)
+        .catch(resolve),
+  );
+
+  expect(error.name).toBe('TRPCClientError');
+  expect(error.shape?.data.code).toBe('NOT_FOUND');
+
+  wsClient.close();
+  close();
+});
+
+test('batching', async () => {
+  const t = factory();
+  const promises = [
+    t.client.query('greeting'),
+    t.client.mutation('posts.edit', { id: '', data: { text: '', title: '' } }),
+  ] as const;
+
+  expect(await Promise.all(promises)).toMatchInlineSnapshot(`
+    Array [
+      "hello world",
+      Object {
+        "id": "",
+        "text": "",
+        "title": "",
+      },
+    ]
+  `);
 });

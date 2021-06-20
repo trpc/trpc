@@ -3,17 +3,18 @@ import { waitFor } from '@testing-library/dom';
 import AbortController from 'abort-controller';
 import fetch from 'node-fetch';
 import { z } from 'zod';
-import { createTRPCClient, TRPCClientError } from '../../client/src';
+import { createTRPCClient } from '../../client/src';
+import { TRPCClientError } from '../../client/src';
 import { executeChain } from '../../client/src/internals/executeChain';
 import { LinkRuntimeOptions, OperationLink } from '../../client/src/links/core';
 import { httpBatchLink } from '../../client/src/links/httpBatchLink';
 import { httpLink } from '../../client/src/links/httpLink';
-import { retryLink } from '../../client/src/links/retryLink';
 import { loggerLink } from '../../client/src/links/loggerLink';
+import { retryLink } from '../../client/src/links/retryLink';
 import { splitLink } from '../../client/src/links/splitLink';
 import * as trpc from '../src';
-import { routerToServerAndClient } from './_testHelpers';
 import { AnyRouter } from '../src';
+import { routerToServerAndClient } from './_testHelpers';
 
 const mockRuntime: LinkRuntimeOptions = {
   transformer: {
@@ -44,10 +45,7 @@ test('retrylink', () => {
       if (attempts < 4) {
         callback(TRPCClientError.from(new Error('..')));
       } else {
-        callback({
-          ok: true,
-          data: 'succeeded on attempt ' + attempts,
-        });
+        callback({ type: 'data', data: 'succeeded on attempt ' + attempts });
       }
     },
     onDestroy: () => {},
@@ -59,7 +57,7 @@ test('retrylink', () => {
 test('chainer', async () => {
   let attempt = 0;
   const serverCall = jest.fn();
-  const { port, close } = routerToServerAndClient(
+  const { httpPort, close } = routerToServerAndClient(
     trpc.router().query('hello', {
       resolve() {
         attempt++;
@@ -76,7 +74,7 @@ test('chainer', async () => {
     links: [
       retryLink({ attempts: 3 })(mockRuntime),
       httpLink({
-        url: `http://localhost:${port}`,
+        url: `http://localhost:${httpPort}`,
       })(mockRuntime),
     ],
     op: {
@@ -88,7 +86,7 @@ test('chainer', async () => {
   });
 
   await waitFor(() => {
-    expect($result.get().type).not.toBe('init');
+    expect($result.get()).not.toBe(null);
   });
   expect($result.get()).toMatchInlineSnapshot(`
     Object {
@@ -108,7 +106,7 @@ test('mock cache link has immediate $result', () => {
       retryLink({ attempts: 3 })(mockRuntime),
       // mock cache link
       ({ prev }) => {
-        prev({ ok: true, data: 'cached' });
+        prev({ type: 'data', data: 'cached' });
       },
       httpLink({
         url: `void`,
@@ -196,8 +194,8 @@ describe('batching', () => {
     });
 
     await waitFor(() => {
-      expect($result1.get().type).not.toBe('init');
-      expect($result2.get().type).not.toBe('init');
+      expect($result1.get()).not.toBe(null);
+      expect($result2.get()).not.toBe(null);
     });
     expect($result1.get()).toMatchInlineSnapshot(`
       Object {
@@ -314,12 +312,12 @@ test('multi down link', async () => {
       // mock cache link
       ({ prev, onDestroy }) => {
         const timer = setTimeout(() => {
-          prev({ ok: true, data: 'cached2' });
+          prev({ type: 'data', data: 'cached2' });
         }, 1);
         onDestroy(() => {
           clearTimeout(timer);
         });
-        prev({ ok: true, data: 'cached1' });
+        prev({ type: 'data', data: 'cached1' });
       },
       httpLink({
         url: `void`,
@@ -352,7 +350,7 @@ test('loggerLink', () => {
     console: logger,
   })(mockRuntime);
   const okLink: OperationLink<AnyRouter> = ({ prev }) =>
-    prev({ ok: true, data: null });
+    prev({ type: 'data', data: undefined });
   const errorLink: OperationLink<AnyRouter> = ({ prev }) =>
     prev(TRPCClientError.from(new Error('..')));
   {

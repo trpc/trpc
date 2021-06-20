@@ -1,6 +1,8 @@
-import { AnyRouter, HTTPResponseEnvelope, ProcedureType } from '@trpc/server';
-import { TRPCClientError } from '../createTRPCClient';
+import { AnyRouter, ProcedureType } from '@trpc/server';
+import { TRPCResponse } from '@trpc/server/rpc';
+import { TRPCClientError } from '../TRPCClientError';
 import { dataLoader } from '../internals/dataLoader';
+import { transformRPCResponse } from '../internals/transformRPCResponse';
 import { httpRequest } from '../internals/httpRequest';
 import { HttpLinkOptions, TRPCLink } from './core';
 
@@ -16,7 +18,7 @@ export function httpBatchLink<TRouter extends AnyRouter>(
       const path = keyInputPairs.map(({ path }) => path).join(',');
       const input = keyInputPairs.map(({ input }) => input);
 
-      const { promise, cancel } = httpRequest<TRouter>({
+      const { promise, cancel } = httpRequest({
         url,
         input,
         path,
@@ -35,16 +37,9 @@ export function httpBatchLink<TRouter extends AnyRouter>(
         cancel,
       };
     };
-    const query = dataLoader<Key, HTTPResponseEnvelope<TRouter, unknown>>(
-      fetcher('query'),
-    );
-    const mutation = dataLoader<Key, HTTPResponseEnvelope<TRouter, unknown>>(
-      fetcher('mutation'),
-    );
-    const subscription = dataLoader<
-      Key,
-      HTTPResponseEnvelope<TRouter, unknown>
-    >(fetcher('subscription'));
+    const query = dataLoader<Key, TRPCResponse>(fetcher('query'));
+    const mutation = dataLoader<Key, TRPCResponse>(fetcher('mutation'));
+    const subscription = dataLoader<Key, TRPCResponse>(fetcher('subscription'));
 
     const loaders = { query, subscription, mutation };
     return ({ op, prev, onDestroy }) => {
@@ -63,18 +58,15 @@ export function httpBatchLink<TRouter extends AnyRouter>(
         cancel();
       });
       promise
-        .then((result) => {
+        .then((envelope) => {
           if (!done) {
-            prev(result.ok ? result : TRPCClientError.from(result));
+            prev(transformRPCResponse({ envelope, runtime }));
           }
         })
         .catch((err) => {
           if (!done) {
             prev(TRPCClientError.from<TRouter>(err));
           }
-        })
-        .finally(() => {
-          done = true;
         });
     };
   };

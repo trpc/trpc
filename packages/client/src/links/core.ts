@@ -1,9 +1,6 @@
-import {
-  DataTransformer,
-  TRPCProcedureSuccessEnvelope,
-  AnyRouter,
-} from '@trpc/server';
-import { TRPCClientError } from '../createTRPCClient';
+import { AnyRouter, DataTransformer } from '@trpc/server';
+import { TRPCResult } from '@trpc/server/rpc';
+import { TRPCClientError } from '../TRPCClientError';
 
 export type OperationContext = Record<string, unknown>;
 export type Operation<TInput = unknown> = {
@@ -13,12 +10,12 @@ export type Operation<TInput = unknown> = {
   context: OperationContext;
 };
 
-export type OperationResult<TRouter extends AnyRouter, TOutput = unknown> =
-  | TRPCProcedureSuccessEnvelope<TOutput>
+export type OperationResponse<TRouter extends AnyRouter, TOutput = unknown> =
+  | TRPCResult<TOutput>
   | TRPCClientError<TRouter>;
 
 export type PrevCallback<TRouter extends AnyRouter, TOutput = unknown> = (
-  result: OperationResult<TRouter, TOutput>,
+  result: OperationResponse<TRouter, TOutput>,
 ) => void;
 export type OperationLink<
   TRouter extends AnyRouter,

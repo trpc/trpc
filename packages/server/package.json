@@ -20,7 +20,8 @@
       "index.ts",
       "adapters/next.ts",
       "adapters/express.ts",
-      "ws/index.ts"
+      "ws/index.ts",
+      "rpc/index.ts"
     ]
   },
   "scripts": {
@@ -33,7 +34,8 @@
     "README.md",
     "dist",
     "adapters",
-    "ws"
+    "ws",
+    "rpc"
   ],
   "publishConfig": {
     "access": "public"

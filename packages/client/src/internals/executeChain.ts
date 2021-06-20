@@ -1,9 +1,10 @@
 import { AnyRouter } from '@trpc/server';
-import { TRPCClientError } from '../createTRPCClient';
+import { TRPCResult } from '@trpc/server/rpc';
+import { TRPCClientError } from '../TRPCClientError';
 import {
   Operation,
   OperationLink,
-  OperationResult,
+  OperationResponse,
   PrevCallback,
 } from '../links/core';
 import { observableSubject } from './observable';
@@ -16,23 +17,20 @@ export function executeChain<
   links: OperationLink<TRouter, TInput, TOutput>[];
   op: Operation<TInput>;
 }) {
-  type TError = TRPCClientError<TRouter>;
   const $result = observableSubject<
-    { type: 'init' } | { type: 'data'; data: TOutput },
-    TError
-  >({
-    type: 'init',
-  });
+    null | TRPCResult<TOutput>,
+    TRPCClientError<TRouter>
+  >(null);
   const $destroyed = observableSubject(false);
 
-  const updateResult = (result: OperationResult<TRouter, TOutput>) => {
+  const updateResult = (result: OperationResponse<TRouter, TOutput>) => {
     if (result instanceof Error) {
       $result.error(result);
       if (result.isDone) {
         $result.done();
       }
     } else {
-      $result.next({ type: 'data', data: result.data });
+      $result.next(result);
     }
   };
   function walk({

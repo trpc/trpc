@@ -12,9 +12,16 @@ import {
   Procedure,
   ProcedureWithInput,
 } from './procedure';
+import {
+  TRPCErrorShape,
+  TRPC_ERROR_CODES_BY_KEY,
+  TRPC_ERROR_CODE_KEY,
+  TRPC_ERROR_CODE_NUMBER,
+} from './rpc';
 import { Subscription } from './subscription';
 import { DataTransformer, DataTransformerOptions } from './transformer';
 import { flatten, Prefixer, ThenArg } from './types';
+
 assertNotBrowser();
 
 export type ProcedureType = 'query' | 'mutation' | 'subscription';
@@ -77,6 +84,9 @@ export type inferRouterContext<TRouter extends AnyRouter> = Parameters<
 
 export type AnyRouter<TContext = any> = Router<TContext, any, any, any, any>;
 
+export type inferRouterError<TRouter extends AnyRouter> = ReturnType<
+  TRouter['getErrorShape']
+>;
 const PROCEDURE_DEFINITION_MAP: Record<
   ProcedureType,
   'queries' | 'mutations' | 'subscriptions'
@@ -85,7 +95,10 @@ const PROCEDURE_DEFINITION_MAP: Record<
   mutation: 'mutations',
   subscription: 'subscriptions',
 };
-export type ErrorFormatter<TContext, TOutput extends {}> = ({
+export type ErrorFormatter<
+  TContext,
+  TOutput extends TRPCErrorShape<number, unknown>,
+> = ({
   error,
 }: {
   error: TRPCError;
@@ -93,17 +106,19 @@ export type ErrorFormatter<TContext, TOutput extends {}> = ({
   path: string | undefined;
   input: unknown;
   ctx: undefined | TContext;
-  defaultShape: DefaultErrorShape;
+  shape: DefaultErrorShape;
 }) => TOutput;
 
-export type ErrorShape = {};
-
-export type DefaultErrorShape = {
-  message: string;
-  code: string;
+interface DefaultErrorData {
+  code: TRPC_ERROR_CODE_KEY;
   path?: string;
   stack?: string;
-};
+}
+export interface DefaultErrorShape
+  extends TRPCErrorShape<TRPC_ERROR_CODE_NUMBER, DefaultErrorData> {
+  message: string;
+  code: TRPC_ERROR_CODE_NUMBER;
+}
 
 /**
  * Create an empty object with `Object.create(null)`.
@@ -126,11 +141,11 @@ function safeObject(...args: unknown[]) {
   return Object.assign(Object.create(null), ...args);
 }
 const defaultFormatter: ErrorFormatter<any, any> = ({
-  defaultShape,
+  shape,
 }: {
-  defaultShape: DefaultErrorShape;
+  shape: DefaultErrorShape;
 }) => {
-  return defaultShape;
+  return shape;
 };
 const defaultTransformer: DataTransformer = {
   serialize: (obj) => obj,
@@ -150,7 +165,7 @@ export class Router<
     unknown,
     Subscription<unknown>
   >,
-  TErrorShape extends ErrorShape,
+  TErrorShape extends TRPCErrorShape<number, unknown>,
 > {
   readonly _def: Readonly<{
     queries: Readonly<TQueries>;
@@ -525,18 +540,25 @@ export class Router<
     input: unknown;
     ctx: undefined | TContext;
   }): TErrorShape {
-    const defaultShape: DefaultErrorShape = {
-      message: opts.error.message,
-      code: opts.error.code,
-      path: opts.path,
+    const { path, error } = opts;
+    const { code } = opts.error;
+    const shape: DefaultErrorShape = {
+      message: error.message,
+      code: TRPC_ERROR_CODES_BY_KEY[code],
+      data: {
+        code,
+      },
     };
     if (
       process.env.NODE_ENV !== 'production' &&
       typeof opts.error.stack === 'string'
     ) {
-      defaultShape.stack = opts.error.stack;
+      shape.data.stack = opts.error.stack;
     }
-    return this._def.errorFormatter({ ...opts, defaultShape });
+    if (typeof path === 'string') {
+      shape.data.path = path;
+    }
+    return this._def.errorFormatter({ ...opts, shape });
   }
 
   /**

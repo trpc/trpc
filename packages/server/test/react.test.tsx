@@ -16,8 +16,10 @@ jest.mock('@trpc/react/ssg', () => trpcReact__ssg);
 import '@testing-library/jest-dom';
 import { render, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { httpBatchLink } from '@trpc/client/links/httpBatchLink';
 import { expectTypeOf } from 'expect-type';
 import hash from 'hash-sum';
+import { AppType } from 'next/dist/next-server/lib/utils';
 import React, { Fragment, useEffect, useState } from 'react';
 import {
   QueryClient,
@@ -32,8 +34,7 @@ import { createReactQueryHooks, OutputWithCursor } from '../../react/src';
 import { createSSGHelpers } from '../../react/ssg';
 import { DefaultErrorShape } from '../src';
 import { routerToServerAndClient } from './_testHelpers';
-import { AppType } from 'next/dist/next-server/lib/utils';
-import { httpBatchLink } from '@trpc/client/links/httpBatchLink';
+
 setLogger({
   log() {},
   warn() {},
@@ -62,14 +63,14 @@ function createAppRouter() {
   const postById = jest.fn();
   const appRouter = trpcServer
     .router<Context>()
-    .formatError(({ defaultShape, error }) => {
+    .formatError(({ shape, error }) => {
       return {
         $test: 'formatted',
         zodError:
           error.originalError instanceof ZodError
             ? error.originalError.flatten()
             : null,
-        ...defaultShape,
+        ...shape,
       };
     })
     .query('allPosts', {
@@ -704,8 +705,8 @@ test('formatError() react types test', async () => {
       // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
-    if (mutation.error && mutation.error.result && mutation.error.shape) {
-      expectTypeOf(mutation.error.result.error).toMatchTypeOf<
+    if (mutation.error && mutation.error && mutation.error.shape) {
+      expectTypeOf(mutation.error.shape).toMatchTypeOf<
         DefaultErrorShape & {
           $test: string;
         }

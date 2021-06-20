@@ -6,14 +6,10 @@ import { assertNotBrowser } from '../assertNotBrowser';
 import { getErrorFromUnknown, TRPCError } from '../errors';
 import { deprecateTransformWarning } from '../internals/once';
 import { AnyRouter, inferRouterContext, ProcedureType } from '../router';
+import { TRPCErrorResponse, TRPCResponse } from '../rpc';
 import { Subscription } from '../subscription';
 import { DataTransformerOptions } from '../transformer';
-import { HTTPResponseEnvelope } from './envelopes';
-import { getStatusCodeFromError, httpError, HTTPError } from './errors';
-import {
-  HTTPErrorResponseEnvelope,
-  HTTPSuccessResponseEnvelope,
-} from './index';
+import { getHTTPStatusCode } from './internals/getHTTPStatusCode';
 import { getPostBody } from './internals/getPostBody';
 import { getQueryInput } from './internals/getQueryInput';
 
@@ -151,6 +147,7 @@ async function callProcedure<TRouter extends AnyRouter>(opts: {
 
         const requestTimeLeft = requestTimeoutMs - (Date.now() - startTime);
 
+        /* istanbul ignore next */
         if (requestTimeLeft <= backpressureMs) {
           // will timeout before next backpressure tick
           flush();
@@ -168,23 +165,18 @@ async function callProcedure<TRouter extends AnyRouter>(opts: {
       }
       function onClose() {
         cleanup();
-        reject(
-          new HTTPError(`Client Closed Request`, {
-            statusCode: 499,
-            code: 'BAD_USER_INPUT',
-          }),
-        );
+        reject(new TRPCError({ code: 'CLIENT_CLOSED_REQUEST' }));
       }
       function onRequestTimeout() {
         cleanup();
         reject(
-          new HTTPError(
-            `Subscription exceeded ${requestTimeoutMs}ms - please reconnect.`,
-            { statusCode: 408, code: 'TIMEOUT' },
-          ),
+          new TRPCError({
+            message: `Subscription exceeded ${requestTimeoutMs}ms - please reconnect.`,
+            code: 'TIMEOUT',
+          }),
         );
       }
-
+      /* istanbul ignore next */
       function onDestroy() {
         reject(new Error(`Subscription was destroyed prematurely`));
         cleanup();
@@ -199,7 +191,7 @@ async function callProcedure<TRouter extends AnyRouter>(opts: {
       sub.start();
     });
   }
-
+  /* istanbul ignore next */
   throw new Error(`Unknown procedure type ${type}`);
 }
 
@@ -250,29 +242,20 @@ export async function requestHandler<
     ? req.query
     : url.parse(req.url!, true).query;
   const isBatchCall = reqQueryParams.batch;
-  function endResponse(
-    json:
-      | HTTPResponseEnvelope<AnyRouter, unknown>
-      | HTTPResponseEnvelope<AnyRouter, unknown>[],
-  ) {
-    if (Array.isArray(json)) {
-      const allCodes = Array.from(new Set(json.map((res) => res.statusCode)));
-      const statusCode = allCodes.length === 1 ? allCodes[0] : 207;
-      res.statusCode = statusCode;
-    } else {
-      res.statusCode = json.statusCode;
-    }
+  function endResponse(json: TRPCResponse | TRPCResponse[]) {
+    res.statusCode = getHTTPStatusCode(json);
+
     res.setHeader('Content-Type', 'application/json');
-    res.end(JSON.stringify(router._def.transformer.serialize(json)));
+    res.end(JSON.stringify(json));
   }
   try {
     if (isBatchCall && !opts.batching?.enabled) {
       throw new Error(`Batching is not enabled on the server`);
     }
     if (type === 'unknown') {
-      throw new HTTPError(`Unexpected request method ${req.method}`, {
-        statusCode: 405,
-        code: 'BAD_USER_INPUT',
+      throw new TRPCError({
+        message: `Unexpected request method ${req.method}`,
+        code: 'METHOD_NOT_SUPPORTED',
       });
     }
     const rawInput = await getInputFromRequest({
@@ -292,10 +275,12 @@ export async function requestHandler<
       if (!isBatchCall) {
         return [input];
       }
+      /* istanbul ignore next */
       if (!Array.isArray(input)) {
-        throw httpError.badRequest(
-          '"input" needs to be an array when doing a batch call',
-        );
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: '"input" needs to be an array when doing a batch call',
+        });
       }
       return input;
     };
@@ -314,24 +299,25 @@ export async function requestHandler<
             subscriptions,
             type,
           });
-          const json: HTTPSuccessResponseEnvelope<unknown> = {
-            ok: true,
-            statusCode: res.statusCode ?? 200,
-            data: output,
+          const json: TRPCResponse = {
+            id: -1,
+            result: {
+              type: 'data',
+              data: router._def.transformer.serialize(output),
+            },
           };
           events.emit('flush'); // `flush()` is used for subscriptions to flush out current output
           return json;
         } catch (_err) {
           const error = getErrorFromUnknown(_err);
 
-          const json: HTTPErrorResponseEnvelope<TRouter> = {
-            ok: false,
-            statusCode: getStatusCodeFromError(error),
-            error: router.getErrorShape({ error, type, path, input, ctx }),
+          const json: TRPCErrorResponse = {
+            id: -1,
+            error: router._def.transformer.serialize(
+              router.getErrorShape({ error, type, path, input, ctx }),
+            ),
           };
-          res.statusCode = json.statusCode;
-
-          onError && onError({ error, path, input, ctx, type: type, req });
+          onError?.({ error, path, input, ctx, type: type, req });
           return json;
         }
       }),
@@ -342,17 +328,14 @@ export async function requestHandler<
   } catch (_err) {
     const error = getErrorFromUnknown(_err);
 
-    const json: HTTPErrorResponseEnvelope<TRouter> = {
-      ok: false,
-      statusCode: getStatusCodeFromError(error),
-      error: router.getErrorShape({ error, type, path: undefined, input, ctx }),
+    const json: TRPCErrorResponse = {
+      id: -1,
+      error: router._def.transformer.serialize(
+        router.getErrorShape({ error, type, path: undefined, input, ctx }),
+      ),
     };
     endResponse(json);
-    onError && onError({ error, path: undefined, input, ctx, type: type, req });
+    onError?.({ error, path: undefined, input, ctx, type: type, req });
   }
-  try {
-    teardown && (await teardown());
-  } catch (err) {
-    throw new Error('Teardown failed ' + err?.message);
-  }
+  await teardown?.();
 }

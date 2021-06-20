@@ -13,7 +13,7 @@ export function retryLink<TRouter extends AnyRouter = AnyRouter>(opts: {
       const fn = () => {
         attempts++;
         next(op, (result) => {
-          if (result instanceof Error || !result.ok) {
+          if (result instanceof Error) {
             attempts < opts.attempts ? fn() : prev(result);
           } else {
             prev(result);

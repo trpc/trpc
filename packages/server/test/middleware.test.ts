@@ -109,9 +109,9 @@ test('allows you to throw an error (e.g. auth)', async () => {
   );
 
   expect(await client.query('foo')).toBe('bar');
-  await expect(client.query('admin.secretPlace')).rejects.toMatchObject({
-    result: { statusCode: 401 },
-  });
+  await expect(client.query('admin.secretPlace')).rejects.toMatchInlineSnapshot(
+    `[TRPCClientError: UNAUTHORIZED]`,
+  );
   expect(resolverMock).toHaveBeenCalledTimes(0);
   headers.authorization = 'meow';
   expect(await client.query('admin.secretPlace')).toBe('a key');

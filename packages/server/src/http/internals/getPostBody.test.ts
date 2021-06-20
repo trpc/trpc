@@ -15,7 +15,5 @@ test('body cannot be parsed', async () => {
   }, 1);
   await expect(
     getPostBody({ req: events } as any),
-  ).rejects.toMatchInlineSnapshot(
-    `[TRPCError: Body couldn't be parsed as json]`,
-  );
+  ).rejects.toMatchInlineSnapshot(`[TRPCError: PARSE_ERROR]`);
 });

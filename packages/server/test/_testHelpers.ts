@@ -5,16 +5,15 @@ import fetch from 'node-fetch';
 import ws from 'ws';
 import { createTRPCClient, CreateTRPCClientOptions } from '../../client/src';
 import { AnyRouter, CreateHttpHandlerOptions } from '../src';
-import { WSSHandlerOptions, applyWSSHandler } from '../src/ws';
 import { createHttpServer } from '../src/adapters/standalone';
-import { CreateWebSocketServerOptions } from '../src/internals/createWebSocketServer';
+import { applyWSSHandler, WSSHandlerOptions } from '../src/ws';
 (global as any).fetch = fetch;
 (global as any).AbortController = AbortController;
 export function routerToServerAndClient<TRouter extends AnyRouter>(
   router: TRouter,
   opts?: {
     server?: Partial<CreateHttpHandlerOptions<TRouter>>;
-    wssServer?: Partial<CreateWebSocketServerOptions<TRouter>>;
+    wssServer?: Partial<WSSHandlerOptions<TRouter>>;
     client?:
       | Partial<CreateTRPCClientOptions<TRouter>>
       | ((opts: {

@@ -1,4 +1,6 @@
-export class TRPCError<TCode extends string = string> extends Error {
+import { TRPC_ERROR_CODE_KEY } from './rpc/codes';
+
+export class TRPCError extends Error {
   public readonly originalError?: unknown;
   public readonly code;
 
@@ -7,11 +9,11 @@ export class TRPCError<TCode extends string = string> extends Error {
     code,
     originalError,
   }: {
-    message: string;
-    code: TCode;
+    message?: string;
+    code: TRPC_ERROR_CODE_KEY;
     originalError?: unknown;
   }) {
-    super(message);
+    super(message ?? code);
     this.code = code;
     this.originalError = originalError;
     this.name = 'TRPCError';
@@ -26,7 +28,19 @@ export interface TRPCErrorOptions {
 export const inputValidationError = (
   message: string,
   opts: TRPCErrorOptions = {},
-) => new TRPCError({ message, code: 'BAD_USER_INPUT', ...opts });
+) =>
+  new TRPCError({
+    message,
+    code: 'BAD_REQUEST',
+    ...opts,
+  });
+
+export const badRequestError = (message: string, opts: TRPCErrorOptions = {}) =>
+  new TRPCError({
+    message,
+    code: 'BAD_REQUEST',
+    ...opts,
+  });
 
 export const notFoundError = (message: string, opts: TRPCErrorOptions = {}) =>
   new TRPCError({ message, code: 'NOT_FOUND', ...opts });

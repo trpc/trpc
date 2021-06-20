@@ -1,4 +1,4 @@
-import { HTTPError } from '../errors';
+import { TRPCError } from '../../errors';
 import { BaseRequest } from '../requestHandler';
 
 export async function getPostBody({
@@ -17,12 +17,7 @@ export async function getPostBody({
     req.on('data', function (data) {
       body += data;
       if (typeof maxBodySize === 'number' && body.length > maxBodySize) {
-        reject(
-          new HTTPError('Payload Too Large', {
-            statusCode: 413,
-            code: 'BAD_USER_INPUT',
-          }),
-        );
+        reject(new TRPCError({ code: 'PAYLOAD_TOO_LARGE' }));
         req.socket.destroy();
       }
     });
@@ -31,12 +26,7 @@ export async function getPostBody({
         const json = JSON.parse(body);
         resolve(json);
       } catch (err) {
-        reject(
-          new HTTPError("Body couldn't be parsed as json", {
-            statusCode: 400,
-            code: 'BAD_USER_INPUT',
-          }),
-        );
+        reject(new TRPCError({ code: 'PARSE_ERROR' }));
       }
     });
   });

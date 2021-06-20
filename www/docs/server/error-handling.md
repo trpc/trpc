@@ -23,6 +23,7 @@ export default trpcNext.createNextApiHandler({
 
 ## All properties sent to `onError()`
 
+
 ```ts
 {
   error: TRPCError;
@@ -33,19 +34,6 @@ export default trpcNext.createNextApiHandler({
   req: BaseRequest; // request object
 }
 ```
-
-## Built-in error codes
-
-
-| Code                    | HTTP Status   | Description                                                |
-| ----------------------- | ------------- | ---------------------------------------------------------- |
-| `BAD_USER_INPUT`        | `400` / `413` | Input validation failed. 413 if data exceeds `maxBodySize` |
-| `NOT_FOUND`             | `404`         | Procedure path not found                                   |
-| `UNAUTHENTICATED`       | `401`         | Unauthorized request                                       |
-| `FORBIDDEN`             | `403`         | Forbidden request                                          |
-| `INTERNAL_SERVER_ERROR` | `500`         | Something in the resolver threw an error                   |
-| `TIMEOUT`               | `408`         | Used in subscriptions to tell client to reconnect          |
-
 
 ## Accessing original error
 
