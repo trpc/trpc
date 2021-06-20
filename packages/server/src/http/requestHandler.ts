@@ -34,11 +34,16 @@ export type BaseRequest = stream.Readable & {
 };
 export type BaseResponse = stream.Writable & {
   statusCode?: number;
-  // express
-  set?: (name: string, value: string) => any;
-  // other
-  setHeader: (name: string, value: string) => any;
-};
+} & (
+    | {
+        // http
+        setHeader: (name: string, value: string) => any;
+      }
+    | {
+        // express
+        set: (name: string, value: string) => any;
+      }
+  );
 
 export interface BaseOptions<
   TRouter extends AnyRouter,
@@ -268,7 +273,8 @@ export async function requestHandler<
     } else {
       res.statusCode = json.statusCode;
     }
-    (res.setHeader || res.set)?.call(res, 'Content-Type', 'application/json');
+    const method = 'setHeader' in res ? res.setHeader : res.set;
+    method.call(res, 'Content-Type', 'application/json');
     res.end(JSON.stringify(router._def.transformer.serialize(json)));
   }
   try {
