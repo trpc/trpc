@@ -27,6 +27,7 @@ export type CreateContextFn<TRouter extends AnyRouter, TRequest, TResponse> = (
 ) => inferRouterContext<TRouter> | Promise<inferRouterContext<TRouter>>;
 
 export type BaseRequest = stream.Readable & {
+  socket: stream.Duplex;
   url?: string;
   method?: string;
   query?: qs.ParsedQs;
