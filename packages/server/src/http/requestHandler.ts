@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
-import http from 'http';
 import qs from 'qs';
+import stream from 'stream';
 import url from 'url';
 import { assertNotBrowser } from '../assertNotBrowser';
 import { getErrorFromUnknown, TRPCError } from '../errors';
@@ -26,12 +26,19 @@ export type CreateContextFn<TRouter extends AnyRouter, TRequest, TResponse> = (
   opts: CreateContextFnOptions<TRequest, TResponse>,
 ) => inferRouterContext<TRouter> | Promise<inferRouterContext<TRouter>>;
 
-export type BaseRequest = http.IncomingMessage & {
+export type BaseRequest = stream.Readable & {
+  url?: string;
   method?: string;
   query?: qs.ParsedQs;
   body?: any;
 };
-export type BaseResponse = http.ServerResponse;
+export type BaseResponse = stream.Writable & {
+  statusCode?: number;
+  // express
+  set?: (name: string, value: string) => any;
+  // other
+  setHeader: (name: string, value: string) => any;
+};
 
 export interface BaseOptions<
   TRouter extends AnyRouter,
@@ -261,7 +268,7 @@ export async function requestHandler<
     } else {
       res.statusCode = json.statusCode;
     }
-    res.setHeader('Content-Type', 'application/json');
+    (res.setHeader || res.set)?.call(res, 'Content-Type', 'application/json');
     res.end(JSON.stringify(router._def.transformer.serialize(json)));
   }
   try {
