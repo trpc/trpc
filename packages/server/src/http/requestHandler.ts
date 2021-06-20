@@ -4,6 +4,7 @@ import qs from 'qs';
 import url from 'url';
 import { assertNotBrowser } from '../assertNotBrowser';
 import { getErrorFromUnknown, TRPCError } from '../errors';
+import { callProcedure } from '../internals/callProcedure';
 import { deprecateTransformWarning } from '../internals/once';
 import { AnyRouter, inferRouterContext, ProcedureType } from '../router';
 import { TRPCErrorResponse, TRPCResponse } from '../rpc';
@@ -94,32 +95,6 @@ async function getInputFromRequest({
   return body.input;
 }
 
-/**
- * Call procedure and get output
- */
-async function callProcedure<TRouter extends AnyRouter>(opts: {
-  path: string;
-  input: unknown;
-  caller: ReturnType<TRouter['createCaller']>;
-  type: ProcedureType;
-  subscriptions: BaseOptions<any, any>['subscriptions'] | undefined;
-  events: NodeJS.EventEmitter;
-}): Promise<unknown> {
-  const { type, path, input, subscriptions, caller, events: events } = opts;
-  if (type === 'query') {
-    return caller.query(path, input);
-  }
-  if (type === 'mutation') {
-    return caller.mutation(path, input);
-  }
-  /* istanbul ignore next */
-  if (type === 'subscription') {
-    return caller;
-  }
-  /* istanbul ignore next */
-  throw new Error(`Unknown procedure type ${type}`);
-}
-
 export async function requestHandler<
   TRouter extends AnyRouter,
   TCreateContextFn extends CreateContextFn<TRouter, TRequest, TResponse>,
@@ -177,7 +152,7 @@ export async function requestHandler<
     if (isBatchCall && !opts.batching?.enabled) {
       throw new Error(`Batching is not enabled on the server`);
     }
-    if (type === 'unknown') {
+    if (type === 'unknown' || type === 'subscription') {
       throw new TRPCError({
         message: `Unexpected request method ${req.method}`,
         code: 'METHOD_NOT_SUPPORTED',
@@ -195,7 +170,6 @@ export async function requestHandler<
         : undefined;
     ctx = await createContext?.({ req, res });
 
-    const caller = router.createCaller(ctx);
     const getInputs = (): unknown[] => {
       if (!isBatchCall) {
         return [input];
@@ -217,11 +191,10 @@ export async function requestHandler<
       paths.map(async (path, index) => {
         try {
           const output = await callProcedure({
-            caller,
+            ctx,
+            router,
             path,
             input: inputs[index],
-            events,
-            subscriptions,
             type,
           });
           const json: TRPCResponse = {

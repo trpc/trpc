@@ -2,6 +2,7 @@ import http from 'http';
 import ws from 'ws';
 import { getErrorFromUnknown, TRPCError } from '../errors';
 import { BaseOptions, CreateContextFn } from '../http';
+import { callProcedure } from '../internals/callProcedure';
 import { deprecateTransformWarning } from '../internals/once';
 import { AnyRouter, ProcedureType } from '../router';
 import {
@@ -68,33 +69,6 @@ function parseMessage(obj: unknown, transformer: DataTransformer): TRPCRequest {
   assertIsString(path);
   const input = transformer.deserialize(rawInput);
   return { jsonrpc, id, method, params: { input, path } };
-}
-
-async function callProcedure<
-  TRouter extends AnyRouter<TContext>,
-  TContext,
->(opts: {
-  path: string;
-  input: unknown;
-  router: TRouter;
-  ctx: TContext;
-  type: ProcedureType;
-}): Promise<unknown | Subscription<TRouter>> {
-  const { type, path, input } = opts;
-
-  const caller = opts.router.createCaller(opts.ctx);
-  if (type === 'query') {
-    return caller.query(path, input);
-  }
-  if (type === 'mutation') {
-    return caller.mutation(path, input);
-  }
-  if (type === 'subscription') {
-    const sub = (await caller.subscription(path, input)) as Subscription;
-    return sub;
-  }
-  /* istanbul ignore next */
-  throw new Error(`Unknown procedure type ${type}`);
 }
 
 /**
