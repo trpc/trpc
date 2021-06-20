@@ -10,7 +10,7 @@ author_image_url: https://avatars1.githubusercontent.com/u/459267?s=460&v=4
 
 <div align="center">
   <img src="/img/logo-text.png" alt="tRPC" height="150" />
-  <p>a toolkit for building end-to-end typesafe data layers</p>
+  <p>End-to-end typesafe APIs made easy</p>
   <p>
     <a href="https://codecov.io/gh/trpc/trpc">
       <img src="https://codecov.io/gh/trpc/trpc/branch/main/graph/badge.svg?token=KPPS918B0G" alt="codecov" />
@@ -20,12 +20,12 @@ author_image_url: https://avatars1.githubusercontent.com/u/459267?s=460&v=4
       <img src="https://img.shields.io/github/stars/trpc/trpc.svg?label=🌟%20stars&style=flat" alt="GitHub Stars"/>
     </a>
   </p>
-  <p>
-    <figure>
-      <img src="https://storage.googleapis.com/trpc/trpcgif.gif" alt="Server/client example" />
-     
-    </figure>
-  </p>
+
+  <h2>Watch Video</h2>
+  <figure>
+    <iframe src="https://www.youtube.com/embed/qBXrwFsFK1Q?start=433" title="YouTube video player" frameBorder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen style={{maxWidth: '100%', width: '560px', height: '315px'}}></iframe>
+    <figcaption style={{ fontSize: '0.7rem' }}><a href="https://twitter.com/alexdotjs">alexdotjs / KATT</a> presenting at Prisma's TypeScript meetup. Skipped to 7:13 where the coding begins.</figcaption>
+  </figure>
 </div>
 
 ## Introduction

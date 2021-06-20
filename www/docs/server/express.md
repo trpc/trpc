@@ -1,7 +1,7 @@
 ---
 id: express
 title: Usage with Express.js
-sidebar_label: Usage with Express.js
+sidebar_label: "Adapter: Express.js"
 slug: /express
 ---
 

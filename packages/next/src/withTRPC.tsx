@@ -48,13 +48,12 @@ export function withTRPC<TRouter extends AnyRouter>(
         isPrepass?: boolean;
       },
     ) => {
+      const [config] = useState(() => getClientConfig({}));
       const [queryClient] = useState(
-        () =>
-          props.queryClient ??
-          new QueryClient(getClientConfig({}).queryClientConfig),
+        () => props.queryClient ?? new QueryClient(config.queryClientConfig),
       );
       const [trpcClient] = useState(
-        () => props.trpcClient ?? trpc.createClient(getClientConfig({})),
+        () => props.trpcClient ?? trpc.createClient(config),
       );
 
       const hydratedState = trpc.useDehydratedState(

@@ -1,17 +1,16 @@
+import { TRPCProcedureErrorEnvelope, TRPCProcedureSuccessEnvelope } from '../';
 import { AnyRouter } from '../router';
 
-export type HTTPSuccessResponseEnvelope<TOutput> = {
-  ok: true;
+export interface HTTPSuccessResponseEnvelope<TOutput>
+  extends TRPCProcedureSuccessEnvelope<TOutput> {
   statusCode: number;
-  data: TOutput;
-};
+}
 
-export type HTTPErrorResponseEnvelope<TRouter extends AnyRouter> = {
-  ok: false;
+export interface HTTPErrorResponseEnvelope<TRouter extends AnyRouter>
+  extends TRPCProcedureErrorEnvelope<TRouter> {
   statusCode: number;
-  error: ReturnType<TRouter['_def']['errorFormatter']>;
-};
+}
 
-export type HTTPResponseEnvelope<TOutput, TRouter extends AnyRouter> =
+export type HTTPResponseEnvelope<TRouter extends AnyRouter, TOutput> =
   | HTTPSuccessResponseEnvelope<TOutput>
   | HTTPErrorResponseEnvelope<TRouter>;

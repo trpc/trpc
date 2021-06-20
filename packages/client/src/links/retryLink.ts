@@ -1,6 +1,9 @@
+import { AnyRouter } from 'packages/server/src/router';
 import { TRPCLink } from './core';
 
-export function retryLink(opts: { attempts: number }): TRPCLink {
+export function retryLink<TRouter extends AnyRouter = AnyRouter>(opts: {
+  attempts: number;
+}): TRPCLink<TRouter> {
   // initialized config
   return () => {
     // initialized in app

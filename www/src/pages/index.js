@@ -9,11 +9,11 @@ import GitHubButton from 'react-github-btn';
 
 const features = [
   {
-    title: <>🧙‍♂️&nbsp; Automatic type-safety</>,
+    title: <>🧙‍♂️&nbsp; Automatic typesafety</>,
     // imageUrl: 'img/undraw_docusaurus_mountain.svg',
     description: (
       <>
-        Automatic type-safety & autocompletion inferred from your API-paths,
+        Automatic typesafety & autocompletion inferred from your API-paths,
         their input&nbsp;data, &amp;&nbsp;outputs.
       </>
     ),
@@ -63,8 +63,8 @@ function Home() {
   const { siteConfig = {} } = context;
   return (
     <Layout
-      title={`${siteConfig.title} - toolkit for building end-to-end type-safe APIs`}
-      description="Automatic type-safety & autocompletion inferred from your API-paths, their input data, &amp; outputs 🧙‍♂️"
+      title={`${siteConfig.title} - End-to-end typesafe APIs made easy`}
+      description="Automatic typesafety & autocompletion inferred from your API-paths, their input data, &amp; outputs 🧙‍♂️"
     >
       <header className={clsx('hero hero--primary', styles.heroBanner)}>
         <div className="container">
@@ -82,24 +82,22 @@ function Home() {
             </GitHubButton>
           </p>
 
-          <p className={styles.figure}>
-            <figure>
-              <img
-                src="https://storage.googleapis.com/trpc/trpcgif.gif"
-                alt="Server/client example"
-              />
-              <figcaption>
-                The client above is <strong>not</strong> importing any code from
-                the server, only it&apos;s type declarations.{' '}
-                <code>import type</code> only imports declarations to be used
-                for type annotations and declarations. It{' '}
-                <a href="https://www.typescriptlang.org/docs/handbook/release-notes/typescript-3-8.html#type-only-imports-and-export">
-                  always gets fully erased
-                </a>
-                , so there’s no remnant of it at runtime.
-              </figcaption>
-            </figure>
-          </p>
+          <figure className={styles.figure}>
+            <img
+              src="https://storage.googleapis.com/trpc/trpcgif.gif"
+              alt="Server/client example"
+            />
+            <figcaption>
+              The client above is <strong>not</strong> importing any code from
+              the server, only it&apos;s type declarations.{' '}
+              <code>import type</code> only imports declarations to be used
+              annotations and declarations. It{' '}
+              <a href="https://www.typescriptlang.org/docs/handbook/release-notes/typescript-3-8.html#type-only-imports-and-export">
+                always gets fully erased
+              </a>
+              , so there’s no remnant of it at runtime.
+            </figcaption>
+          </figure>
           <p>
             <Link
               className={clsx('getStarted', styles.getStarted)}

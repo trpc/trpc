@@ -8,7 +8,7 @@ slug: /merging-routers
 
 Writing all API-code in your code in the same file is not a great idea. It's easy to merge routers with other routers. 
 
-Thanks to TypeScript 4.1 template literal types we can also prefix the procedures without breaking type safety.
+Thanks to TypeScript 4.1 template literal types we can also prefix the procedures without breaking typesafety.
 
 ## Working example
 

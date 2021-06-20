@@ -2,7 +2,7 @@
   <h1 align="center">
     <img src="./www/static/img/logo-text.png" alt="tRPC" height="100" />
   </h1>
-  <p>a toolkit for building end-to-end typesafe data layers</p>
+  <p>End-to-end typesafe APIs made easy</p>
   <p>
     <a href="https://codecov.io/gh/trpc/trpc">
       <img src="https://codecov.io/gh/trpc/trpc/branch/main/graph/badge.svg?token=KPPS918B0G" alt="codecov">
@@ -24,7 +24,7 @@
 
 tRPC is a framework for building strongly typed RPC APIs with TypeScript. Alternatively, you can think of it as a way to avoid APIs altogether. 
 
-- 🧙‍♂️&nbsp; Automatic type-safety & autocompletion inferred from your API-paths, their input data, outputs, & errors.
+- 🧙‍♂️&nbsp; Automatic typesafety & autocompletion inferred from your API-paths, their input data, outputs, & errors.
 - 🐎&nbsp; Snappy DX. No code generation, run-time bloat, or build pipeline.
 - 🍃&nbsp; Light. tRPC has zero deps and a tiny client-side footprint.
 - 🐻&nbsp; Easy to add to your existing brownfield project.
@@ -189,7 +189,7 @@ Original [`0.x`](https://github.com/trpc/trpc/tree/v0.x)-version was created by 
     <td align="center"><a href="https://pieter.venter.pro"><img src="https://avatars.githubusercontent.com/u/1845861?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Pieter Venter</b></sub></a><br /><a href="#ideas-cyrus-za" title="Ideas, Planning, & Feedback">🤔</a> <a href="https://github.com/trpc/trpc/pulls?q=is%3Apr+reviewed-by%3Acyrus-za" title="Reviewed Pull Requests">👀</a></td>
     <td align="center"><a href="https://sendou.cc/"><img src="https://avatars.githubusercontent.com/u/38327916?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Kalle</b></sub></a><br /><a href="https://github.com/trpc/trpc/issues?q=author%3ASendouc" title="Bug reports">🐛</a></td>
     <td align="center"><a href="http://granderath.tech"><img src="https://avatars.githubusercontent.com/u/22001111?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Malte Granderath</b></sub></a><br /><a href="https://github.com/trpc/trpc/issues?q=author%3Amgranderath" title="Bug reports">🐛</a></td>
-    <td align="center"><a href="https://github.com/kripod"><img src="https://avatars.githubusercontent.com/u/14854048?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Kristóf Poduszló</b></sub></a><br /><a href="#ideas-kripod" title="Ideas, Planning, & Feedback">🤔</a></td>
+    <td align="center"><a href="https://github.com/kripod"><img src="https://avatars.githubusercontent.com/u/14854048?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Kristóf Poduszló</b></sub></a><br /><a href="#ideas-kripod" title="Ideas, Planning, & Feedback">🤔</a> <a href="https://github.com/trpc/trpc/issues?q=author%3Akripod" title="Bug reports">🐛</a></td>
     <td align="center"><a href="https://www.richardhaines.dev"><img src="https://avatars.githubusercontent.com/u/22930449?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Rich Haines</b></sub></a><br /><a href="#example-molebox" title="Examples">💡</a></td>
   </tr>
   <tr>

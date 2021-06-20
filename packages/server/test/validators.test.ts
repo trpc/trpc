@@ -34,7 +34,7 @@ test('zod', async () => {
 
   await expect(client.query('num', '123' as any)).rejects
     .toMatchInlineSnapshot(`
-          [Error: [
+          [TRPCClientError: [
             {
               "code": "invalid_type",
               "expected": "number",
@@ -62,7 +62,7 @@ test('yup', async () => {
   const res = await client.query('num', 123);
 
   await expect(client.query('num', 'asd' as any)).rejects.toMatchInlineSnapshot(
-    `[Error: this must be a \`number\` type, but the final value was: \`NaN\` (cast from the value \`"asd"\`).]`,
+    `[TRPCClientError: this must be a \`number\` type, but the final value was: \`NaN\` (cast from the value \`"asd"\`).]`,
   );
   expect(res.input).toBe(123);
   close();
@@ -81,7 +81,7 @@ test('myzod', async () => {
   const { client, close } = routerToServerAndClient(router);
   const res = await client.query('num', 123);
   await expect(client.query('num', '123' as any)).rejects.toMatchInlineSnapshot(
-    `[Error: expected type to be number but got string]`,
+    `[TRPCClientError: expected type to be number but got string]`,
   );
   expect(res.input).toBe(123);
   close();
@@ -105,7 +105,7 @@ test('validator fn', async () => {
   const { client, close } = routerToServerAndClient(router);
   const res = await client.query('num', 123);
   await expect(client.query('num', '123' as any)).rejects.toMatchInlineSnapshot(
-    `[Error: Not a number]`,
+    `[TRPCClientError: Not a number]`,
   );
   expect(res.input).toBe(123);
   close();

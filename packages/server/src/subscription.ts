@@ -1,5 +1,3 @@
-/* istanbul ignore file */
-
 import { EventEmitter } from 'events';
 
 interface SubscriptionEvents<TOutput> {
@@ -62,6 +60,7 @@ export class Subscription<TOutput = unknown> {
   }
 
   public async start() {
+    /* istanbul ignore next */
     if (this.isDestroyed) {
       throw new Error('Called start() on a destroyed subscription');
     }
@@ -71,22 +70,28 @@ export class Subscription<TOutput = unknown> {
         data: (data) => this.emitOutput(data),
       };
       const cancel = await this.opts.start(emit);
-      if (this.isDestroyed) {
+      if (
+        this.isDestroyed
+        /* istanbul ignore next */
+      ) {
         cancel();
       } else {
         this.events.on('destroy', cancel);
       }
-    } catch (err) {
+    } catch (
+      err
+      /* istanbul ignore next */
+    ) {
       this.emitError(err);
     }
   }
 
+  /* istanbul ignore next */
   /**
-   * This method is just here to help with `inferSubscriptionOutput` which I can't get working without it
-   * @deprecated
+   * @deprecated This method is just here to help with `inferSubscriptionOutput` which I can't get working without it
    */
-  protected output(): TOutput {
-    throw new Error('Legacy');
+  public output(): TOutput {
+    throw new Error('Not in use');
   }
 
   /**
@@ -121,14 +126,17 @@ export function subscriptionPullFactory<TOutput>(opts: {
   let timer: any;
   let stopped = false;
   async function _pull(emit: SubscriptionEmit<TOutput>) {
+    /* istanbul ignore next */
     if (stopped) {
       return;
     }
     try {
       await opts.pull(emit);
-    } catch (err) {
+    } catch (err /* istanbul ignore next */) {
       emit.error(err);
     }
+
+    /* istanbul ignore else */
     if (!stopped) {
       timer = setTimeout(() => _pull(emit), opts.intervalMs);
     }
