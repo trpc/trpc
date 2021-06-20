@@ -27,7 +27,7 @@ export function createExpressMiddleware<TRouter extends AnyRouter>(
     requestHandler({
       ...opts,
       req,
-      res,
+      res: res as any,
       path: endpoint,
     });
   };
