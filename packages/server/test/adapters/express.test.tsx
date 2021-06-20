@@ -1,6 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import AbortController from 'abort-controller';
-import bodyParser from 'body-parser';
 import express from 'express';
 import http from 'http';
 import fetch from 'node-fetch';
@@ -47,7 +46,6 @@ async function startServer() {
 
   // express implementation
   const app = express();
-  app.use(bodyParser.json());
 
   app.use(
     '/trpc',

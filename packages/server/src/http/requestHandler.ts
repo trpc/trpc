@@ -16,6 +16,7 @@ import {
 } from './index';
 import { getPostBody } from './internals/getPostBody';
 import { getQueryInput } from './internals/getQueryInput';
+
 assertNotBrowser();
 
 export type CreateContextFnOptions<TRequest, TResponse> = {
