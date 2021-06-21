@@ -5,3 +5,10 @@ export class TRPCAbortErrorSignal extends Error {
     Object.setPrototypeOf(this, TRPCAbortErrorSignal.prototype);
   }
 }
+export class TRPCAbortError extends Error {
+  constructor() {
+    super('The operation was aborted.');
+    this.name = 'TRPCAbortError';
+    Object.setPrototypeOf(this, TRPCAbortError.prototype);
+  }
+}

@@ -8,6 +8,7 @@ import { TRPCClientError } from '../TRPCClientError';
 import { ObservableCallbacks, UnsubscribeFn } from '../internals/observable';
 import { retryDelay } from '../internals/retryDelay';
 import { TRPCLink } from './core';
+import { TRPCAbortError } from '../internals/TRPCAbortErrorSignal';
 
 export function createWSClient(opts: {
   url: string;
@@ -292,14 +293,11 @@ export function wsLink<TRouter extends AnyRouter>(
             prev(TRPCClientError.from(err));
           },
           onDone() {
-            if (!unsubbed) {
-              prev(
-                TRPCClientError.from(
-                  new WebSocketInterruptError('Operation ended prematurely'),
-                  { isDone: true },
-                ),
-              );
-            }
+            const result = unsubbed
+              ? new TRPCAbortError()
+              : new WebSocketInterruptError('Operation ended prematurely');
+
+            prev(TRPCClientError.from(result, { isDone: true }));
           },
         },
       );

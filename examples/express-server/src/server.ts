@@ -53,7 +53,6 @@ function createMessage(text: string) {
   ee.emit('newMessage', msg);
   return msg;
 }
-type Message = ReturnType<typeof createMessage>;
 
 const posts = createRouter()
   .mutation('create', {
