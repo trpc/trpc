@@ -19,8 +19,8 @@ const MyApp: AppType = ({ Component, pageProps }) => {
   return <Component {...pageProps} />;
 };
 
-export default withTRPC<AppRouter>(
-  ({ ctx }) => {
+export default withTRPC<AppRouter>({
+  config({ ctx }) {
     // during SSR rendering
     if (typeof window === 'undefined') {
       return {
@@ -49,6 +49,6 @@ export default withTRPC<AppRouter>(
       },
     };
   },
-  { ssr: true },
-)(MyApp);
+  ssr: true,
+})(MyApp);
 ```

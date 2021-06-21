@@ -45,8 +45,8 @@ function getEndingLink() {
   });
 }
 
-export default withTRPC<AppRouter>(
-  () => {
+export default withTRPC<AppRouter>({
+  config() {
     /**
      * If you want to use SSR, you need to use the server's full URL
      * @link https://trpc.io/docs/ssr
@@ -75,10 +75,8 @@ export default withTRPC<AppRouter>(
       queryClientConfig: { defaultOptions: { queries: { staleTime: 60 } } },
     };
   },
-  {
-    /**
-     * @link https://trpc.io/docs/ssr
-     */
-    ssr: true,
-  },
-)(MyApp);
+  /**
+   * @link https://trpc.io/docs/ssr
+   */
+  ssr: true,
+})(MyApp);

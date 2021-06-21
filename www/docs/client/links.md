@@ -53,8 +53,8 @@ const MyApp: AppType = ({ Component, pageProps }) => {
   return <Component {...pageProps} />;
 };
 
-export default withTRPC<AppRouter>(
-  () => {
+export default withTRPC<AppRouter>({
+  config() {
     return {
       links: [
         // [..]
@@ -65,10 +65,8 @@ export default withTRPC<AppRouter>(
       ],
     };
   },
-  {
-    // [..]
-  },
-)(MyApp);
+  // ssr: false,
+})(MyApp);
 ```
 
 ### Custom link
@@ -92,8 +90,8 @@ const customLink: TRPCLink<AppRouter> = (runtime) => {
   };
 };
 
-export default withTRPC<AppRouter>(
-  () => {
+export default withTRPC<AppRouter>({
+  config() {
     return {
       links: [
         customLink,
@@ -102,10 +100,8 @@ export default withTRPC<AppRouter>(
       ],
     };
   },
-  {
-    // [..]
-  },
-)(MyApp);
+  // ssr: false
+})(MyApp);
 
 
 ```

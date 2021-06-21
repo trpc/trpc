@@ -42,6 +42,7 @@ Recommended but not enforced file structure. This is what you get when starting 
 └── [...]
 ``` -->
 
+
 ## Add tRPC to existing Next.js project
 
 
@@ -115,8 +116,8 @@ const MyApp: AppType = ({ Component, pageProps }) => {
   return <Component {...pageProps} />;
 };
 
-export default withTRPC(
-  (_ctx) => {
+export default withTRPC({
+  config(_ctx) {
     const url = process.env.VERCEL_URL
       ? `https://${process.env.VERCEL_URL}/api/trpc`
       : 'http://localhost:3000/api/trpc';
@@ -132,22 +133,9 @@ export default withTRPC(
       },
     };
   },
-  { ssr: true },
-)(MyApp);
+  ssr: true,
+})(MyApp);
 ```
-
-The first argument is a function that returns an object that configures the tRPC and React Query clients. This function has a `ctx` input that gives you access to the Next.js `req` object, among other things. The returned value can contain the following properties:
-
-- `url` REQUIRED: Your API URL.
-- `queryClientConfig`: a configuration object for the React Query `QueryClient` used internally by the tRPC React hooks: [QueryClient docs](https://react-query.tanstack.com/reference/QueryClient)
-- `getHeaders`: a function that returns a list of headers to be set on outgoing
-  tRPC requests
-- `transformer`: a transformer applied to outgoing payloads. Read more about [Data Transformers](/docs/data-transformers)
-- `FetchOptions`: customize the implementation of `fetch` used by tRPC internally
-
-The second argument to `withTRPC` is a configuration object that currently only accepts one param:
-
-- `ssr: boolean`: whether tRPC should await queries when server-side rendering a page. Defaults to `false`.
 
 ### 5. Make API requests
 
@@ -166,6 +154,26 @@ const IndexPage = () => {
 
 export default IndexPage;
 ```
+
+
+
+## `withTRPC()` options
+
+### `config`-callback
+
+The `config`-argument is a function that returns an object that configures the tRPC and React Query clients. This function has a `ctx` input that gives you access to the Next.js `req` object, among other things. The returned value can contain the following properties:
+
+- `url` REQUIRED: Your API URL.
+- `queryClientConfig`: a configuration object for the React Query `QueryClient` used internally by the tRPC React hooks: [QueryClient docs](https://react-query.tanstack.com/reference/QueryClient)
+- `getHeaders`: a function that returns a list of headers to be set on outgoing
+  tRPC requests
+- `transformer`: a transformer applied to outgoing payloads. Read more about [Data Transformers](/docs/data-transformers)
+- `FetchOptions`: customize the implementation of `fetch` used by tRPC internally
+
+### `ssr`-boolean (default: `false`)
+
+Whether tRPC should await queries when server-side rendering a page. Defaults to `false`.
+
 
 ## Next steps
 

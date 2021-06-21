@@ -6,8 +6,8 @@ const MyApp: AppType = ({ Component, pageProps }) => {
   return <Component {...pageProps} />;
 };
 
-export default withTRPC(
-  () => {
+export default withTRPC({
+  config() {
     return {
       transformer,
       links: [
@@ -17,7 +17,5 @@ export default withTRPC(
       ],
     };
   },
-  {
-    ssr: true,
-  },
-)(MyApp);
+  ssr: false,
+})(MyApp);

@@ -28,16 +28,11 @@ export type WithTRPCClientConfig<TRouter extends AnyRouter> =
     queryClientConfig?: QueryClientConfig;
   };
 
-interface WithTRPCClientOptions {
+export function withTRPC<TRouter extends AnyRouter>(opts: {
+  config: (info: { ctx?: NextPageContext }) => WithTRPCClientConfig<TRouter>;
   ssr?: boolean;
-}
-
-export function withTRPC<TRouter extends AnyRouter>(
-  getClientConfig: (info: {
-    ctx?: NextPageContext;
-  }) => WithTRPCClientConfig<TRouter>,
-  { ssr = false }: WithTRPCClientOptions = {},
-) {
+}) {
+  const { config: getClientConfig, ssr = false } = opts;
   return (AppOrPage: NextComponentType<any, any, any>): NextComponentType => {
     const trpc = createReactQueryHooks<TRouter>();
 

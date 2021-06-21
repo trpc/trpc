@@ -6,14 +6,12 @@ const MyApp: AppType = ({ Component, pageProps }) => {
   return <Component {...pageProps} />;
 };
 
-export default withTRPC(
-  () => {
+export default withTRPC({
+  config() {
     return {
       url: '/api/trpc',
       transformer,
     };
   },
-  {
-    ssr: false,
-  },
-)(MyApp);
+  ssr: false,
+})(MyApp);
