@@ -88,10 +88,7 @@ export function withTRPC<TRouter extends AnyRouter>(opts: {
         const queryClient = new QueryClient(config.queryClientConfig);
 
         // Run the wrapped component's getInitialProps function.
-        let pageProps: Dict<unknown> = {
-          trpcClient,
-          queryClient,
-        };
+        let pageProps: Dict<unknown> = {};
         if (AppOrPage.getInitialProps) {
           const originalProps = await AppOrPage.getInitialProps(
             appOrPageCtx as any,
@@ -112,7 +109,12 @@ export function withTRPC<TRouter extends AnyRouter>(opts: {
         }
 
         if (ssr) {
-          const prepassProps = { ...pageProps, isPrepass: true };
+          const prepassProps = {
+            ...pageProps,
+            trpcClient,
+            queryClient,
+            isPrepass: true,
+          };
 
           // Run the prepass step on AppTree. This will run all trpc queries on the server.
           // multiple prepass ensures that we can do batching on the server
