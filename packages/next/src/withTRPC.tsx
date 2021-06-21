@@ -102,15 +102,16 @@ export function withTRPC<TRouter extends AnyRouter>(opts: {
             ...pageProps,
           };
         }
+        const getAppTreeProps = (props: Record<string, unknown>) =>
+          isApp ? { pageProps: props } : props;
 
         if (typeof window !== 'undefined' || !ssr) {
-          const appTreeProps = isApp ? { pageProps } : pageProps;
-          return appTreeProps;
+          return getAppTreeProps(pageProps);
         }
 
         if (ssr) {
           const prepassProps = {
-            ...pageProps,
+            pageProps,
             trpcClient,
             queryClient,
             isPrepass: true,
@@ -143,7 +144,7 @@ export function withTRPC<TRouter extends AnyRouter>(opts: {
           }),
         );
 
-        const appTreeProps = isApp ? { pageProps } : pageProps;
+        const appTreeProps = getAppTreeProps(pageProps);
         return appTreeProps;
       };
     }
