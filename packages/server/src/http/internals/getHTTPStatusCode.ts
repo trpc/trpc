@@ -44,6 +44,13 @@ export function getHTTPStatusCode(json: TRPCResponse | TRPCResponse[]) {
   const key = TRPC_ERROR_CODES_BY_NUMBER[code];
 
   const res = JSONRPC2_TO_HTTP_CODE[key] ?? 500;
+  console.log({
+    json: JSON.stringify(json),
+    key,
+    codes: Array.from(codes),
+    code,
+    res,
+  });
 
   return res;
 }

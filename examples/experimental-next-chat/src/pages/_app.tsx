@@ -18,6 +18,6 @@ export default withTRPC(
     };
   },
   {
-    ssr: false,
+    ssr: true,
   },
 )(MyApp);

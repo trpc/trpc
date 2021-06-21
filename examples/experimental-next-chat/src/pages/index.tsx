@@ -60,8 +60,8 @@ export default function Home() {
   const timestamp = useMemo(() => getLatestTimestamp(msgs), [msgs]);
   trpc.useSubscription(['messages.newMessages', { timestamp }], {
     enabled: !!data, // only subscribe if data has loaded
-    onBatch(newMsgs) {
-      addMessages(newMsgs);
+    onNext(newMsgs) {
+      addMessages([newMsgs]);
     },
   });
 
@@ -133,20 +133,4 @@ export default function Home() {
       </div>
     </>
   );
-}
-export async function getStaticProps() {
-  const ssg = createSSGHelpers({
-    router: appRouter,
-    transformer,
-    ctx: {},
-  });
-
-  await ssg.fetchInfiniteQuery('messages.list', {});
-
-  return {
-    props: {
-      trpcState: ssg.dehydrate(),
-    },
-    revalidate: 1,
-  };
 }
