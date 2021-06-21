@@ -58,41 +58,6 @@ async function main() {
   const msgs = await client.query('messages.list');
   console.log('msgs', msgs);
 
-  let i = 0;
-
-  const unsubscribe = client.subscription('posts.newMessage', {
-    initialInput: {
-      timestamp: msgs.reduce((max, msg) => Math.max(max, msg.createdAt), 0),
-    },
-    onData(buffer) {
-      console.log('<- subscription received', buffer.flat().length, 'messages');
-      buffer.flat().forEach((msg) => {
-        msgs.push(msg);
-      });
-    },
-    nextInput() {
-      return {
-        timestamp: msgs.reduce((max, msg) => Math.max(max, msg.createdAt), 0),
-      };
-    },
-  });
-
-  await Promise.all([
-    client.mutation('messages.add', `test message${i++}`),
-    client.mutation('messages.add', `test message${i++}`),
-    client.mutation('messages.add', `test message${i++}`),
-    client.mutation('messages.add', `test message${i++}`),
-  ]);
-  await sleep();
-
-  await client.mutation('messages.add', `test message${i++}`);
-
-  await Promise.all([
-    client.mutation('messages.add', `test message${i++}`),
-    client.mutation('messages.add', `test message${i++}`),
-  ]);
-
-  unsubscribe();
   console.log('👌 should be a clean exit if everything is working right');
 }
 
