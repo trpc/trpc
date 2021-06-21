@@ -69,10 +69,8 @@ async function startServer() {
   const client = createTRPCClient<typeof router>({
     url: `http://localhost:${port}/trpc`,
 
-    fetchOpts: {
-      AbortController: AbortController as any,
-      fetch: fetch as any,
-    },
+    AbortController: AbortController as any,
+    fetch: fetch as any,
   });
 
   return {

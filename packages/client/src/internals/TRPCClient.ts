@@ -37,9 +37,13 @@ export function getRequestId() {
 
 export type CreateTRPCClientOptions<TRouter extends AnyRouter> = {
   /**
-   * add ponyfills for fetch / abortcontroller
+   * add ponyfill for fetch
    */
-  fetchOpts?: FetchOptions;
+  fetch?: typeof fetch;
+  /**
+   * add ponyfill for AbortController
+   */
+  AbortController?: typeof AbortController;
   headers?:
     | LinkRuntimeOptions['headers']
     | ReturnType<LinkRuntimeOptions['headers']>;
@@ -73,8 +77,8 @@ export class TRPCClient<TRouter extends AnyRouter> {
           deserialize: (data) => data,
         };
 
-    const _fetch = getFetch(opts.fetchOpts?.fetch);
-    const AC = getAbortController(opts.fetchOpts?.AbortController);
+    const _fetch = getFetch(opts?.fetch);
+    const AC = getAbortController(opts?.AbortController);
 
     function getHeadersFn(): LinkRuntimeOptions['headers'] {
       if (opts.headers) {
