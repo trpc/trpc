@@ -50,23 +50,5 @@ Get started quickly with one of the sample projects! Copy the snippet from _Quic
         </ul>
       </td>
     </tr>
-    <tr>
-      <td>
-        Next.js real-time chat example.
-        <br/>
-        Uses experimental subscriptions.
-        <br/><br/>
-        <details>
-          <summary>Quick start with <code>create-next-app</code></summary>
-          <code>npx create-next-app --example https://github.com/trpc/trpc --example-path examples/next-chat trpc-chat</code>
-        </details>
-      </td>
-      <td><a href="https://chat.trpc.io">chat.trpc.io</a></td>
-      <td>
-        <ul>
-          <li><a href="https://github.com/trpc/trpc/tree/main/examples/next-chat">Source</a></li>
-        </ul>
-      </td>
-    </tr>
   </tbody>
 </table>

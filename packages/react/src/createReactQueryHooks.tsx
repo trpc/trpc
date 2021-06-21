@@ -12,13 +12,7 @@ import type {
   inferProcedureOutput,
   inferSubscriptionOutput,
 } from '@trpc/server';
-import React, {
-  ReactNode,
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-} from 'react';
+import React, { ReactNode, useCallback, useEffect, useMemo } from 'react';
 import {
   hashQueryKey,
   QueryClient,
@@ -33,12 +27,11 @@ import {
 } from 'react-query';
 import { DehydratedState } from 'react-query/hydration';
 import {
-  CACHE_KEY_QUERY,
   CACHE_KEY_INFINITE_QUERY,
-  CACHE_KEY_LIVE_QUERY,
+  CACHE_KEY_QUERY,
 } from './internals/constants';
-import { getCacheKey } from './internals/getCacheKey';
 import { TRPCContext, TRPCContextState } from './internals/context';
+import { getCacheKey } from './internals/getCacheKey';
 
 export type OutputWithCursor<TData, TCursor extends any = any> = {
   cursor: TCursor | null;
@@ -182,6 +175,13 @@ export function createReactQueryHooks<TRouter extends AnyRouter>() {
             },
             [queryClient],
           ),
+          getQueryData: useCallback(
+            (pathAndArgs) => {
+              const cacheKey = getCacheKey(pathAndArgs);
+              return queryClient.getQueryData(cacheKey.concat(CACHE_KEY_QUERY));
+            },
+            [queryClient],
+          ),
         }}
       >
         {children}
@@ -250,10 +250,10 @@ export function createReactQueryHooks<TRouter extends AnyRouter>() {
     TOutput extends inferSubscriptionOutput<TRouter, TPath>,
   >(
     pathAndArgs: [TPath, TInput],
-    opts?: {
+    opts: {
       enabled?: boolean;
       onError?: (err: TError) => void;
-      onBatch?: (data: TOutput[]) => void;
+      onNext: (data: TOutput) => void;
     },
   ) {
     const enabled = opts?.enabled ?? true;
@@ -264,79 +264,26 @@ export function createReactQueryHooks<TRouter extends AnyRouter>() {
       if (!enabled) {
         return;
       }
-      let stopped = false;
       const [path, input] = pathAndArgs;
-      const promise = client.subscriptionOnce(path, input);
-      promise
-        .then((data) => {
-          if (stopped) {
-            return;
+      let isStopped = false;
+      const unsub = client.subscription(path, input, {
+        onError: (err) => {
+          if (!isStopped) {
+            opts.onError?.(err);
           }
-          opts?.onBatch && opts.onBatch(data);
-        })
-        .catch((err) => {
-          if (stopped) {
-            return;
+        },
+        onNext: (res) => {
+          if (res.type === 'data' && !isStopped) {
+            opts.onNext(res.data);
           }
-          opts?.onError?.(err);
-        });
+        },
+      });
       return () => {
-        stopped = true;
-        promise.cancel();
+        isStopped = false;
+        unsub();
       };
       // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [queryKey, enabled]);
-  }
-  /* istanbul ignore next */
-  /**
-   * ⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️
-   *  **Experimental.** API might change without major version bump
-   * ⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠
-   */
-  function useLiveQuery<
-    TPath extends keyof TSubscriptions & string,
-    TInput extends inferProcedureInput<TSubscriptions[TPath]> & { cursor: any },
-    TOutput extends (inferSubscriptionOutput<TRouter, TPath> &
-      OutputWithCursor<TData>)[],
-    TData,
-  >(
-    pathAndArgs: [TPath, Omit<TInput, 'cursor'>],
-    opts?: Omit<UseQueryOptions<TInput, TError, TOutput>, 'select'>,
-  ) {
-    const [path, userInput] = pathAndArgs;
-
-    const currentCursor = useRef<any>(null);
-    const cacheKey = getCacheKey(pathAndArgs, CACHE_KEY_LIVE_QUERY);
-    const client = useContext().client;
-
-    const hook = useQuery<TInput, TError, TOutput>(
-      cacheKey,
-      () =>
-        (client.subscriptionOnce as any)(path, {
-          ...userInput,
-          cursor: currentCursor.current,
-        }) as any,
-      opts,
-    );
-    const lastItem = useMemo(() => {
-      const raw = hook.data;
-      if (typeof raw === 'undefined') {
-        return undefined;
-      }
-      const last = raw[raw.length - 1];
-      return last;
-    }, [hook.data]);
-
-    const data: TOutput[number]['data'] | undefined = lastItem?.data;
-    const lastCursor = lastItem?.cursor;
-
-    useEffect(() => {
-      currentCursor.current = lastCursor;
-      hook.refetch();
-      // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [lastCursor]);
-
-    return { ...hook, data };
   }
 
   function _useInfiniteQuery<
@@ -393,7 +340,6 @@ export function createReactQueryHooks<TRouter extends AnyRouter>() {
     useQuery: _useQuery,
     useMutation: _useMutation,
     useSubscription,
-    useLiveQuery,
     useDehydratedState,
     useInfiniteQuery: _useInfiniteQuery,
   };

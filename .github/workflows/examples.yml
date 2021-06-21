@@ -6,10 +6,9 @@ jobs:
     timeout-minutes: 5
     strategy:
       matrix:
-        dir:
-          [
+        dir: [
             express-server,
-            next-chat,
+            # next-chat,
             next-prisma-starter,
             next-prisma-todomvc,
             standalone-server,

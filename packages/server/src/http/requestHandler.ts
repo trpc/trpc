@@ -4,10 +4,10 @@ import qs from 'qs';
 import url from 'url';
 import { assertNotBrowser } from '../assertNotBrowser';
 import { getErrorFromUnknown, TRPCError } from '../errors';
+import { callProcedure } from '../internals/callProcedure';
 import { deprecateTransformWarning } from '../internals/once';
 import { AnyRouter, inferRouterContext, ProcedureType } from '../router';
 import { TRPCErrorResponse, TRPCResponse } from '../rpc';
-import { Subscription } from '../subscription';
 import { DataTransformerOptions } from '../transformer';
 import { getHTTPStatusCode } from './internals/getHTTPStatusCode';
 import { getPostBody } from './internals/getPostBody';
@@ -34,16 +34,6 @@ export interface BaseOptions<
   TRouter extends AnyRouter,
   TRequest extends BaseRequest,
 > {
-  subscriptions?: {
-    /**
-     * Time in milliseconds before `408` is sent
-     */
-    requestTimeoutMs?: number;
-    /**
-     * Allow for some backpressure and batch send events every X ms
-     */
-    backpressureMs?: number;
-  };
   teardown?: () => Promise<void>;
   /**
    * @deprecated use `router.transformer()`
@@ -94,107 +84,6 @@ async function getInputFromRequest({
   return body.input;
 }
 
-/**
- * Call procedure and get output
- */
-async function callProcedure<TRouter extends AnyRouter>(opts: {
-  path: string;
-  input: unknown;
-  caller: ReturnType<TRouter['createCaller']>;
-  type: ProcedureType;
-  subscriptions: BaseOptions<any, any>['subscriptions'] | undefined;
-  events: NodeJS.EventEmitter;
-}): Promise<unknown> {
-  const { type, path, input, subscriptions, caller, events: events } = opts;
-  if (type === 'query') {
-    return caller.query(path, input);
-  }
-  if (type === 'mutation') {
-    return caller.mutation(path, input);
-  }
-  if (type === 'subscription') {
-    const sub = (await caller.subscription(path, input)) as Subscription;
-
-    return new Promise((resolve, reject) => {
-      const startTime = Date.now();
-
-      const buffer: unknown[] = [];
-
-      const requestTimeoutMs = subscriptions?.requestTimeoutMs ?? 9000; // 10s is vercel's api timeout
-      const backpressureMs = subscriptions?.backpressureMs ?? 0;
-
-      // timers
-      let backpressureTimer: any = null;
-      let requestTimeoutTimer: any = null;
-
-      function cleanup() {
-        sub.off('data', onData);
-        sub.off('error', onError);
-        sub.off('destroy', onDestroy);
-        events.off('close', onClose);
-        events.off('flush', flush);
-        clearTimeout(requestTimeoutTimer);
-        clearTimeout(backpressureTimer);
-        sub.destroy();
-      }
-
-      const flush = () => {
-        cleanup();
-        resolve(buffer);
-      };
-      function onData(data: unknown) {
-        buffer.push(data);
-
-        const requestTimeLeft = requestTimeoutMs - (Date.now() - startTime);
-
-        /* istanbul ignore next */
-        if (requestTimeLeft <= backpressureMs) {
-          // will timeout before next backpressure tick
-          flush();
-          return;
-        }
-        if (!backpressureTimer) {
-          backpressureTimer = setTimeout(flush, backpressureMs);
-          return;
-        }
-      }
-      function onError(err: Error) {
-        cleanup();
-        // maybe if `buffer` has length here we should just return instead?
-        reject(err);
-      }
-      function onClose() {
-        cleanup();
-        reject(new TRPCError({ code: 'CLIENT_CLOSED_REQUEST' }));
-      }
-      function onRequestTimeout() {
-        cleanup();
-        reject(
-          new TRPCError({
-            message: `Subscription exceeded ${requestTimeoutMs}ms - please reconnect.`,
-            code: 'TIMEOUT',
-          }),
-        );
-      }
-      /* istanbul ignore next */
-      function onDestroy() {
-        reject(new Error(`Subscription was destroyed prematurely`));
-        cleanup();
-      }
-
-      sub.on('data', onData);
-      sub.on('error', onError);
-      sub.on('destroy', onDestroy);
-      events.once('close', onClose);
-      events.once('flush', flush);
-      requestTimeoutTimer = setTimeout(onRequestTimeout, requestTimeoutMs);
-      sub.start();
-    });
-  }
-  /* istanbul ignore next */
-  throw new Error(`Unknown procedure type ${type}`);
-}
-
 export async function requestHandler<
   TRouter extends AnyRouter,
   TCreateContextFn extends CreateContextFn<TRouter, TRequest, TResponse>,
@@ -209,15 +98,7 @@ export async function requestHandler<
     createContext: TCreateContextFn;
   } & BaseOptions<TRouter, TRequest>,
 ) {
-  const {
-    req,
-    res,
-    createContext,
-    teardown,
-    onError,
-    maxBodySize,
-    subscriptions,
-  } = opts;
+  const { req, res, createContext, teardown, onError, maxBodySize } = opts;
   if (req.method === 'HEAD') {
     // can be used for lambda warmup
     res.statusCode = 204;
@@ -243,7 +124,7 @@ export async function requestHandler<
     : url.parse(req.url!, true).query;
   const isBatchCall = reqQueryParams.batch;
   function endResponse(json: TRPCResponse | TRPCResponse[]) {
-    res.statusCode = getHTTPStatusCode(json);
+    res.statusCode = getHTTPStatusCode(json, router._def.transformer);
 
     res.setHeader('Content-Type', 'application/json');
     res.end(JSON.stringify(json));
@@ -252,7 +133,7 @@ export async function requestHandler<
     if (isBatchCall && !opts.batching?.enabled) {
       throw new Error(`Batching is not enabled on the server`);
     }
-    if (type === 'unknown') {
+    if (type === 'unknown' || type === 'subscription') {
       throw new TRPCError({
         message: `Unexpected request method ${req.method}`,
         code: 'METHOD_NOT_SUPPORTED',
@@ -270,7 +151,6 @@ export async function requestHandler<
         : undefined;
     ctx = await createContext?.({ req, res });
 
-    const caller = router.createCaller(ctx);
     const getInputs = (): unknown[] => {
       if (!isBatchCall) {
         return [input];
@@ -292,11 +172,10 @@ export async function requestHandler<
       paths.map(async (path, index) => {
         try {
           const output = await callProcedure({
-            caller,
+            ctx,
+            router,
             path,
             input: inputs[index],
-            events,
-            subscriptions,
             type,
           });
           const json: TRPCResponse = {

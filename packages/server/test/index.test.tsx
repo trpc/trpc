@@ -517,8 +517,8 @@ test('void mutation response', async () => {
 });
 
 // https://github.com/trpc/trpc/issues/559
-describe('AbortError', () => {
-  test('cancelling request should throw AbortError', async () => {
+describe('TRPCAbortError', () => {
+  test('cancelling request should throw TRPCAbortError', async () => {
     const { client, close } = routerToServerAndClient(
       trpc.router().query('slow', {
         async resolve() {
@@ -541,7 +541,7 @@ describe('AbortError', () => {
     const err = onReject.mock.calls[0][0] as TRPCClientError<any>;
 
     expect(err.name).toBe('TRPCClientError');
-    expect(err.originalError?.name).toBe('AbortError');
+    expect(err.originalError?.name).toBe('TRPCAbortError');
 
     close();
   });
@@ -589,7 +589,7 @@ describe('AbortError', () => {
     });
 
     const err = onReject1.mock.calls[0][0] as TRPCClientError<any>;
-    expect(err.originalError?.name).toBe('AbortError');
+    expect(err.originalError?.name).toBe('TRPCAbortError');
 
     expect(await req2).toBe('slow2');
 
