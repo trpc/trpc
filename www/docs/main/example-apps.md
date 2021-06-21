@@ -52,7 +52,7 @@ Here's some example apps:
         </ul>
       </td>
     </tr>
-    <tr>
+    <!-- <tr>
       <td>
         Next.js real-time chat example.
         <br/>
@@ -69,7 +69,7 @@ Here's some example apps:
           <li><a href="https://github.com/trpc/trpc/tree/main/examples/next-chat">Source</a></li>
         </ul>
       </td>
-    </tr>
+    </tr> -->
     <tr>
       <td>Vanilla standalone server &amp; procedure calls with node.js</td>
       <td><em>n/a</em></td>

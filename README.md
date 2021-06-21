@@ -102,7 +102,7 @@ npx create-next-app --example https://github.com/trpc/trpc --example-path exampl
         </ul>
       </td>
     </tr>
-    <tr>
+    <!-- <tr>
       <td>
         Next.js real-time chat example.
         <br/>
@@ -119,7 +119,7 @@ npx create-next-app --example https://github.com/trpc/trpc --example-path exampl
           <li><a href="https://github.com/trpc/trpc/tree/main/examples/next-chat">Source</a></li>
         </ul>
       </td>
-    </tr>
+    </tr> -->
     <tr>
       <td>Vanilla standalone server &amp; procedure calls with node.js</td>
       <td><em>n/a</em></td>

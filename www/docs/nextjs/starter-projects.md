@@ -50,7 +50,7 @@ Get started quickly with one of the sample projects! Copy the snippet from _Quic
         </ul>
       </td>
     </tr>
-    <tr>
+    <!-- <tr>
       <td>
         Next.js real-time chat example.
         <br/>
@@ -67,6 +67,6 @@ Get started quickly with one of the sample projects! Copy the snippet from _Quic
           <li><a href="https://github.com/trpc/trpc/tree/main/examples/next-chat">Source</a></li>
         </ul>
       </td>
-    </tr>
+    </tr> -->
   </tbody>
 </table>
