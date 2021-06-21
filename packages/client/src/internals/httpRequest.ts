@@ -25,7 +25,7 @@ export function httpRequest<TResponseShape = TRPCResponse>(props: {
       queryParts.push(props.searchParams);
     }
     if (type === 'query') {
-      queryParts.push(`id=${props.ids.join(',')}`);
+      queryParts.push(`ids=${props.ids.join(',')}`);
     }
     if (type === 'query' && input != null) {
       queryParts.push(

@@ -59,7 +59,7 @@ const HTTP_METHOD_PROCEDURE_TYPE_MAP: Record<
 /**
  * Resolve input from request
  */
-async function getInputFromRequest({
+async function getRequestParams({
   req,
   type,
   maxBodySize,
@@ -71,11 +71,13 @@ async function getInputFromRequest({
   if (type === 'query') {
     const query = req.query ? req.query : url.parse(req.url!, true).query;
     const input = getQueryInput(query);
-    return input;
+    const ids =
+      typeof query.ids === 'string' ? query.ids.split(',').map(Number) : [];
+    return { input, ids };
   }
 
-  const body = await getPostBody({ req, maxBodySize });
-  return body.input;
+  const { input, ids } = await getPostBody({ req, maxBodySize });
+  return { input, ids };
 }
 
 export async function requestHandler<
@@ -125,7 +127,7 @@ export async function requestHandler<
         code: 'METHOD_NOT_SUPPORTED',
       });
     }
-    const rawInput = await getInputFromRequest({
+    const { input: rawInput, ids } = await getRequestParams({
       maxBodySize,
       req,
       type,
@@ -152,10 +154,6 @@ export async function requestHandler<
     };
     const inputs = getInputs();
     const paths = isBatchCall ? opts.path.split(',') : [opts.path];
-    const query = req.query ? req.query : url.parse(req.url!, true).query;
-    const ids =
-      typeof query.id === 'string' ? query.id.split(',').map(Number) : [];
-
     const results = await Promise.all(
       paths.map(async (path, index) => {
         const id = isNaN(ids[index]) ? -1 : ids[index];
