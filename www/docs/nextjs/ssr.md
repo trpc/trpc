@@ -20,7 +20,7 @@ const MyApp: AppType = ({ Component, pageProps }) => {
 };
 
 export default withTRPC<AppRouter>({
-  config: ({ ctx }) => {
+  config({ ctx }) {
     // during SSR rendering
     if (typeof window === 'undefined') {
       return {

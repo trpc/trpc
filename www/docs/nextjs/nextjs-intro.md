@@ -117,7 +117,7 @@ const MyApp: AppType = ({ Component, pageProps }) => {
 };
 
 export default withTRPC({
-  config: (_ctx) => {
+  config(_ctx) {
     const url = process.env.VERCEL_URL
       ? `https://${process.env.VERCEL_URL}/api/trpc`
       : 'http://localhost:3000/api/trpc';
