@@ -25,7 +25,7 @@ export function httpRequest<TResponseShape = TRPCResponse>(props: {
       queryParts.push(props.searchParams);
     }
     if (type === 'query') {
-      queryParts.push(`ids=${props.ids.join(',')}`);
+      queryParts.push(`id=${props.ids.join(',')}`);
     }
     if (type === 'query' && input != null) {
       queryParts.push(
@@ -44,7 +44,7 @@ export function httpRequest<TResponseShape = TRPCResponse>(props: {
       return undefined;
     }
     return JSON.stringify({
-      ids: props.ids,
+      id: props.ids,
       input: rt.transformer.serialize(input),
     });
   }

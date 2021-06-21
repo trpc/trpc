@@ -72,12 +72,12 @@ async function getRequestParams({
     const query = req.query ? req.query : url.parse(req.url!, true).query;
     const input = getQueryInput(query);
     const ids =
-      typeof query.ids === 'string' ? query.ids.split(',').map(Number) : [];
+      typeof query.id === 'string' ? query.id.split(',').map(Number) : [];
     return { input, ids };
   }
 
-  const { input, ids } = await getPostBody({ req, maxBodySize });
-  return { input, ids };
+  const { input, id } = await getPostBody({ req, maxBodySize });
+  return { input, id };
 }
 
 export async function requestHandler<
