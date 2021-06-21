@@ -127,5 +127,5 @@ Your endpoints are now available via HTTP!
 
 | Endpoint     | HTTP URI                                                                                              |
 | ------------ | ----------------------------------------------------------------------------------------------------- |
-| `getUser`    | `GET http://localhost:4000/getUser?input=INPUT` <br/><br/>where `INPUT` is a URI-encoded JSON string. |
-| `createUser` | `POST http://localhost:4000/createUser` <br/><br/>with `req.body` of type `{name: string}`            |
+| `getUser`    | `GET http://localhost:4000/trpc/getUser?input=INPUT` <br/><br/>where `INPUT` is a URI-encoded JSON string. |
+| `createUser` | `POST http://localhost:4000/trpc/createUser` <br/><br/>with `req.body` of type `{name: string}`            |
