@@ -788,7 +788,8 @@ describe('withTRPC()', () => {
       return <>{JSON.stringify(query.data)}</>;
     };
 
-    const Wrapped = withTRPC(() => trpcClientOptions, {
+    const Wrapped = withTRPC({
+      config: () => trpcClientOptions,
       ssr: true,
     })(App);
 
@@ -825,9 +826,10 @@ describe('withTRPC()', () => {
       return <>{JSON.stringify(query.data || query.error)}</>;
     };
 
-    const Wrapped = withTRPC({ config: () => trpcClientOptions, ssr: true })(
-      App,
-    );
+    const Wrapped = withTRPC({
+      config: () => trpcClientOptions,
+      ssr: true,
+    })(App);
 
     const props = await Wrapped.getInitialProps!({
       AppTree: Wrapped,
@@ -847,9 +849,10 @@ describe('withTRPC()', () => {
       return <>{JSON.stringify(query.data)}</>;
     };
 
-    const Wrapped = withTRPC({ config: () => trpcClientOptions, ssr: true })(
-      App,
-    );
+    const Wrapped = withTRPC({
+      config: () => trpcClientOptions,
+      ssr: true,
+    })(App);
 
     const props = await Wrapped.getInitialProps!({
       AppTree: Wrapped,
@@ -875,9 +878,10 @@ describe('withTRPC()', () => {
         return <>{JSON.stringify(query.data)}</>;
       };
 
-      const Wrapped = withTRPC({ config: () => trpcClientOptions, ssr: true })(
-        App,
-      );
+      const Wrapped = withTRPC({
+        config: () => trpcClientOptions,
+        ssr: true,
+      })(App);
 
       const props = await Wrapped.getInitialProps!({
         AppTree: Wrapped,
@@ -917,9 +921,10 @@ describe('withTRPC()', () => {
         return <>{JSON.stringify(query.data || query.error)}</>;
       };
 
-      const Wrapped = withTRPC({ config: () => trpcClientOptions, ssr: true })(
-        App,
-      );
+      const Wrapped = withTRPC({
+        config: () => trpcClientOptions,
+        ssr: true,
+      })(App);
 
       const props = await Wrapped.getInitialProps!({
         AppTree: Wrapped,
@@ -951,9 +956,10 @@ describe('withTRPC()', () => {
       return <>{JSON.stringify([query1.data, query2.data])}</>;
     };
 
-    const Wrapped = withTRPC({ config: () => trpcClientOptions, ssr: true })(
-      App,
-    );
+    const Wrapped = withTRPC({
+      config: () => trpcClientOptions,
+      ssr: true,
+    })(App);
 
     const props = await Wrapped.getInitialProps!({
       AppTree: Wrapped,
