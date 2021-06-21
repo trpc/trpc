@@ -115,8 +115,8 @@ const MyApp: AppType = ({ Component, pageProps }) => {
   return <Component {...pageProps} />;
 };
 
-export default withTRPC(
-  (_ctx) => {
+export default withTRPC({
+  config: (_ctx) => {
     const url = process.env.VERCEL_URL
       ? `https://${process.env.VERCEL_URL}/api/trpc`
       : 'http://localhost:3000/api/trpc';
@@ -132,8 +132,8 @@ export default withTRPC(
       },
     };
   },
-  { ssr: true },
-)(MyApp);
+  ssr: true,
+})(MyApp);
 ```
 
 The first argument is a function that returns an object that configures the tRPC and React Query clients. This function has a `ctx` input that gives you access to the Next.js `req` object, among other things. The returned value can contain the following properties:
