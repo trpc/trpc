@@ -67,7 +67,10 @@ async function getRequestParams({
   req: BaseRequest;
   type: ProcedureType;
   maxBodySize: number | undefined;
-}) {
+}): Promise<{
+  input: unknown;
+  ids: number[];
+}> {
   if (type === 'query') {
     const query = req.query ? req.query : url.parse(req.url!, true).query;
     const input = getQueryInput(query);
@@ -77,7 +80,8 @@ async function getRequestParams({
   }
 
   const { input, id } = await getPostBody({ req, maxBodySize });
-  return { input, id };
+  const ids = Array.isArray(id) ? id : [id];
+  return { input, ids };
 }
 
 export async function requestHandler<
