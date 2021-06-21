@@ -8,7 +8,6 @@ import { callProcedure } from '../internals/callProcedure';
 import { deprecateTransformWarning } from '../internals/once';
 import { AnyRouter, inferRouterContext, ProcedureType } from '../router';
 import { TRPCErrorResponse, TRPCResponse } from '../rpc';
-import { Subscription } from '../subscription';
 import { DataTransformerOptions } from '../transformer';
 import { getHTTPStatusCode } from './internals/getHTTPStatusCode';
 import { getPostBody } from './internals/getPostBody';
@@ -35,16 +34,6 @@ export interface BaseOptions<
   TRouter extends AnyRouter,
   TRequest extends BaseRequest,
 > {
-  subscriptions?: {
-    /**
-     * Time in milliseconds before `408` is sent
-     */
-    requestTimeoutMs?: number;
-    /**
-     * Allow for some backpressure and batch send events every X ms
-     */
-    backpressureMs?: number;
-  };
   teardown?: () => Promise<void>;
   /**
    * @deprecated use `router.transformer()`
@@ -109,15 +98,7 @@ export async function requestHandler<
     createContext: TCreateContextFn;
   } & BaseOptions<TRouter, TRequest>,
 ) {
-  const {
-    req,
-    res,
-    createContext,
-    teardown,
-    onError,
-    maxBodySize,
-    subscriptions,
-  } = opts;
+  const { req, res, createContext, teardown, onError, maxBodySize } = opts;
   if (req.method === 'HEAD') {
     // can be used for lambda warmup
     res.statusCode = 204;
