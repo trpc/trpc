@@ -42,9 +42,6 @@ export function httpLink<TRouter extends AnyRouter>(
             done = true;
             prev(TRPCClientError.from(err));
           }
-        })
-        .finally(() => {
-          done = true;
         });
     };
   };
