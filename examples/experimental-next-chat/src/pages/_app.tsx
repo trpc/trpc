@@ -12,7 +12,7 @@ export default withTRPC(
       transformer,
       links: [
         httpBatchLink({
-          url: '/api/trpc',
+          url: process.browser ? '/api/trpc' : 'http://localhost:3000/api/trpc',
         }),
       ],
     };
