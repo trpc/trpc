@@ -166,7 +166,6 @@ export async function requestHandler<
     };
     const inputs = getInputs();
     const paths = isBatchCall ? opts.path.split(',') : [opts.path];
-    const events = req;
     const query = req.query ? req.query : url.parse(req.url!, true).query;
     const ids =
       typeof query.ids === 'string' ? query.ids.split(',').map(Number) : [];
@@ -189,7 +188,6 @@ export async function requestHandler<
               data: router._def.transformer.serialize(output),
             },
           };
-          events.emit('flush'); // `flush()` is used for subscriptions to flush out current output
           return json;
         } catch (_err) {
           const error = getErrorFromUnknown(_err);
