@@ -44,7 +44,7 @@ export function httpRequest<TResponseShape = TRPCResponse>(props: {
       return undefined;
     }
     return JSON.stringify({
-      ids: props.ids,
+      id: props.ids,
       input: rt.transformer.serialize(input),
     });
   }
