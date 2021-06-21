@@ -4,7 +4,8 @@
   "workspaces": {
     "packages": [
       "packages/*",
-      "examples/*"
+      "examples/*",
+      "examples/.wip/*"
     ],
     "nohoist": [
       "**/@prisma",
