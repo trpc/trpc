@@ -88,38 +88,36 @@ export function withTRPC<TRouter extends AnyRouter>(opts: {
         const queryClient = new QueryClient(config.queryClientConfig);
 
         // Run the wrapped component's getInitialProps function.
-        let pageProps: Dict<unknown> = {};
+        let pageProps: Dict<unknown> = {
+          trpcClient,
+          queryClient,
+        };
         if (AppOrPage.getInitialProps) {
           const originalProps = await AppOrPage.getInitialProps(
             appOrPageCtx as any,
           );
+          const originalPageProps = isApp
+            ? originalProps.pageProps ?? {}
+            : originalProps;
 
-          pageProps = isApp ? originalProps.pageProps ?? {} : originalProps;
+          pageProps = {
+            ...originalPageProps,
+            ...pageProps,
+          };
         }
 
         if (typeof window !== 'undefined' || !ssr) {
-          const props = {
-            ...pageProps,
-            trpcClient,
-            queryClient,
-          };
-          const appTreeProps = isApp ? { pageProps: props } : props;
-
+          const appTreeProps = isApp ? { pageProps } : pageProps;
           return appTreeProps;
         }
-        const props = {
-          ...pageProps,
-          trpcClient,
-          queryClient,
-          isPrepass: true,
-        };
-        const appTreeProps = isApp ? { pageProps: props } : props;
 
-        if (typeof window === 'undefined' && ssr) {
+        if (ssr) {
+          const prepassProps = { ...pageProps, isPrepass: true };
+
           // Run the prepass step on AppTree. This will run all trpc queries on the server.
           // multiple prepass ensures that we can do batching on the server
           while (true) {
-            await ssrPrepass(createElement(AppTree, appTreeProps as any));
+            await ssrPrepass(createElement(AppTree, prepassProps as any));
             if (!queryClient.isFetching()) {
               break;
             }
@@ -143,6 +141,7 @@ export function withTRPC<TRouter extends AnyRouter>(opts: {
           }),
         );
 
+        const appTreeProps = isApp ? { pageProps } : pageProps;
         return appTreeProps;
       };
     }
