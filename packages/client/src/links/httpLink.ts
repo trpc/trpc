@@ -25,17 +25,24 @@ export function httpLink<TRouter extends AnyRouter>(
       });
       onDestroy(() => {
         if (!done) {
-          prev(TRPCClientError.from(new TRPCAbortError(), { isDone: true }));
           done = true;
+          prev(TRPCClientError.from(new TRPCAbortError(), { isDone: true }));
           cancel();
         }
       });
       promise
-        .then(
-          (envelope) =>
-            !done && prev(transformRPCResponse({ envelope, runtime })),
-        )
-        .catch((err) => !done && prev(TRPCClientError.from(err)))
+        .then((envelope) => {
+          if (!done) {
+            done = true;
+            prev(transformRPCResponse({ envelope, runtime }));
+          }
+        })
+        .catch((err) => {
+          if (!done) {
+            done = true;
+            prev(TRPCClientError.from(err));
+          }
+        })
         .finally(() => {
           done = true;
         });
