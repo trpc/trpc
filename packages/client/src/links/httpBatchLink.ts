@@ -14,10 +14,11 @@ export function httpBatchLink<TRouter extends AnyRouter>(
   // initialized config
   return (runtime) => {
     // initialized in app
-    type Key = { path: string; input: unknown };
+    type Key = { id: number; path: string; input: unknown };
     const fetcher = (type: ProcedureType) => (keyInputPairs: Key[]) => {
-      const path = keyInputPairs.map(({ path }) => path).join(',');
-      const input = keyInputPairs.map(({ input }) => input);
+      const path = keyInputPairs.map((op) => op.path).join(',');
+      const input = keyInputPairs.map((op) => op.input);
+      const ids = keyInputPairs.map((op) => op.id);
 
       const { promise, cancel } = httpRequest({
         url,
@@ -25,7 +26,8 @@ export function httpBatchLink<TRouter extends AnyRouter>(
         path,
         runtime,
         type,
-        searchParams: 'batch=1',
+        searchParams: `batch=1`,
+        ids,
       });
 
       return {

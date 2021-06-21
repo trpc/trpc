@@ -18,12 +18,8 @@ type EnabledFn<TRouter extends AnyRouter> = (
   opts: EnableFnOptions<TRouter>,
 ) => boolean;
 
-type LogFnOptions<TRouter extends AnyRouter> = Operation & {
-  /**
-   * Incremental id for requests
-   */
-  requestId: number;
-} & (
+type LogFnOptions<TRouter extends AnyRouter> = Operation &
+  (
     | {
         /**
          * Request was just initialized
@@ -59,7 +55,7 @@ type LoggerLinkOptions<TRouter extends AnyRouter> = {
 const defaultLogger =
   <TRouter extends AnyRouter>(c: ConsoleEsque = console): LogFn<TRouter> =>
   (props) => {
-    const { direction, requestId, input, type, path, context } = props;
+    const { direction, input, type, path, context, id } = props;
     const [light, dark] = palette[type];
 
     const css = `
@@ -72,7 +68,7 @@ const defaultLogger =
       '%c',
       direction === 'up' ? '>>' : '<<',
       type,
-      `#${requestId}`,
+      `#${id}`,
       `%c${path}%c`,
       '%O',
     ];
@@ -107,15 +103,12 @@ export function loggerLink<TRouter extends AnyRouter = AnyRouter>(
 
   const { logger = defaultLogger(opts.console) } = opts;
   return () => {
-    let requestId = 0;
     return ({ op, next, prev }) => {
       // ->
-      requestId++;
       enabled({ ...op, direction: 'up' }) &&
         logger({
           ...op,
           direction: 'up',
-          requestId,
         });
       const requestStartTime = Date.now();
       next(op, (result) => {
@@ -125,7 +118,6 @@ export function loggerLink<TRouter extends AnyRouter = AnyRouter>(
           logger({
             ...op,
             direction: 'down',
-            requestId,
             elapsedMs,
             result,
           });

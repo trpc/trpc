@@ -167,6 +167,8 @@ export async function requestHandler<
     const inputs = getInputs();
     const paths = isBatchCall ? opts.path.split(',') : [opts.path];
     const events = req;
+    const query = req.query ? req.query : url.parse(req.url!, true).query;
+    const ids = typeof query.ids === 'string' ? query.ids.split(',') : [];
 
     const results = await Promise.all(
       paths.map(async (path, index) => {
@@ -179,7 +181,7 @@ export async function requestHandler<
             type,
           });
           const json: TRPCResponse = {
-            id: -1,
+            id: ids[index] ?? -1,
             result: {
               type: 'data',
               data: router._def.transformer.serialize(output),
