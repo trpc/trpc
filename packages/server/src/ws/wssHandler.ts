@@ -3,7 +3,6 @@ import ws from 'ws';
 import { getErrorFromUnknown, TRPCError } from '../errors';
 import { BaseOptions, CreateContextFn } from '../http';
 import { callProcedure } from '../internals/callProcedure';
-import { deprecateTransformWarning } from '../internals/once';
 import { AnyRouter, ProcedureType } from '../router';
 import {
   TRPCErrorResponse,
