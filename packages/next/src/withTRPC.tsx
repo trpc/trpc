@@ -90,19 +90,33 @@ export function withTRPC<TRouter extends AnyRouter>(opts: {
         // Run the wrapped component's getInitialProps function.
         let pageProps: Dict<unknown> = {};
         if (AppOrPage.getInitialProps) {
-          pageProps = await AppOrPage.getInitialProps(appOrPageCtx as any);
+          const originalProps = await AppOrPage.getInitialProps(
+            appOrPageCtx as any,
+          );
+
+          pageProps = isApp ? originalProps.pageProps ?? {} : originalProps;
         }
 
-        if (typeof window === 'undefined' && ssr) {
+        if (typeof window !== 'undefined' || !ssr) {
           const props = {
             ...pageProps,
             trpcClient,
             queryClient,
-            isPrepass: true,
           };
-          const appTreeProps = isApp ? props : { pageProps: props };
-          // Run the prepass step on AppTree. This will run all trpc queries on the server.
+          const appTreeProps = isApp ? { pageProps: props } : props;
 
+          return appTreeProps;
+        }
+        const props = {
+          ...pageProps,
+          trpcClient,
+          queryClient,
+          isPrepass: true,
+        };
+        const appTreeProps = isApp ? { pageProps: props } : props;
+
+        if (typeof window === 'undefined' && ssr) {
+          // Run the prepass step on AppTree. This will run all trpc queries on the server.
           // multiple prepass ensures that we can do batching on the server
           while (true) {
             await ssrPrepass(createElement(AppTree, appTreeProps as any));
@@ -129,9 +143,7 @@ export function withTRPC<TRouter extends AnyRouter>(opts: {
           }),
         );
 
-        return {
-          pageProps,
-        };
+        return appTreeProps;
       };
     }
 
