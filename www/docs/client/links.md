@@ -54,7 +54,7 @@ const MyApp: AppType = ({ Component, pageProps }) => {
 };
 
 export default withTRPC<AppRouter>({
-  config: () => {
+  config() {
     return {
       links: [
         // [..]
@@ -91,7 +91,7 @@ const customLink: TRPCLink<AppRouter> = (runtime) => {
 };
 
 export default withTRPC<AppRouter>({
-  config: () => {
+  config() {
     return {
       links: [
         customLink,

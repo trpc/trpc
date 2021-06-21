@@ -7,7 +7,7 @@ const MyApp: AppType = ({ Component, pageProps }) => {
 };
 
 export default withTRPC({
-  config: () => {
+  config() {
     return {
       url: '/api/trpc',
       transformer,
