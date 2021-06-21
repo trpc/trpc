@@ -24,13 +24,15 @@ export function httpRequest<TResponseShape = TRPCResponse>(props: {
     if (props.searchParams) {
       queryParts.push(props.searchParams);
     }
+    if (type === 'query') {
+      queryParts.push(`id=${props.ids.join(',')}`);
+    }
     if (type === 'query' && input != null) {
       queryParts.push(
         `input=${encodeURIComponent(
           JSON.stringify(rt.transformer.serialize(input)),
         )}`,
       );
-      queryParts.push(`ids=${props.ids.join(',')}`);
     }
     if (queryParts.length) {
       url += '?' + queryParts.join('&');

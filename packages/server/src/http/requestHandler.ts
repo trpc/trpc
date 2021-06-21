@@ -168,7 +168,7 @@ export async function requestHandler<
     const paths = isBatchCall ? opts.path.split(',') : [opts.path];
     const query = req.query ? req.query : url.parse(req.url!, true).query;
     const ids =
-      typeof query.ids === 'string' ? query.ids.split(',').map(Number) : [];
+      typeof query.id === 'string' ? query.id.split(',').map(Number) : [];
 
     const results = await Promise.all(
       paths.map(async (path, index) => {
