@@ -8,9 +8,8 @@ import {
   requestHandler,
 } from '../';
 import { TRPCError } from '../errors';
-import { getHTTPStatusCode } from '../http/internals/getHTTPStatusCode';
-import { TRPCErrorResponse } from '../rpc';
 import { AnyRouter } from '../router';
+import { TRPCErrorResponse } from '../rpc';
 
 export type CreateNextContextOptions = CreateContextFnOptions<
   NextApiRequest,
@@ -56,7 +55,7 @@ export function createNextApiHandler<TRouter extends AnyRouter>(
         id: -1,
         error,
       };
-      res.statusCode = getHTTPStatusCode(json);
+      res.statusCode = 500;
       res.json(json);
       return;
     }

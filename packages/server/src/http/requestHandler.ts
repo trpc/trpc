@@ -124,7 +124,7 @@ export async function requestHandler<
     : url.parse(req.url!, true).query;
   const isBatchCall = reqQueryParams.batch;
   function endResponse(json: TRPCResponse | TRPCResponse[]) {
-    res.statusCode = getHTTPStatusCode(json);
+    res.statusCode = getHTTPStatusCode(json, router._def.transformer);
 
     res.setHeader('Content-Type', 'application/json');
     res.end(JSON.stringify(json));
