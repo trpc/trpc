@@ -41,7 +41,7 @@ export const appRouter = trpc
           const timer = setInterval(() => {
             // emits a number every second
             emit.data({ randomNumber: Math.random() });
-          }, 1e3);
+          }, 200);
 
           return () => {
             clearInterval(timer);

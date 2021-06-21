@@ -8,12 +8,11 @@ import type {
   inferProcedureOutput,
   inferSubscriptionOutput,
 } from '@trpc/server';
-import { TRPC_ERROR_CODES_BY_KEY } from '@trpc/server/rpc';
 import { TRPCResult } from '@trpc/server/rpc';
 import { executeChain } from './internals/executeChain';
 import { getAbortController, getFetch } from './internals/fetchHelpers';
 import { ObservableCallbacks, UnsubscribeFn } from './internals/observable';
-import { retryDelay } from './internals/retryDelay';
+import { TRPCAbortErrorSignal } from './internals/TRPCAbortErrorSignal';
 import {
   CancelFn,
   LinkRuntimeOptions,
@@ -22,7 +21,6 @@ import {
   TRPCLink,
 } from './links/core';
 import { httpLink } from './links/httpLink';
-import { TRPCAbortErrorSignal } from './internals/TRPCAbortErrorSignal';
 import { TRPCClientError } from './TRPCClientError';
 
 type CancellablePromise<T = unknown> = Promise<T> & {
@@ -200,115 +198,7 @@ export class TRPCClient<TRouter extends AnyRouter> {
       context,
     });
   }
-  /* istanbul ignore next */
-  public subscriptionOnce<
-    TSubscriptions extends TRouter['_def']['subscriptions'],
-    TPath extends string & keyof TSubscriptions,
-    TOutput extends inferSubscriptionOutput<TRouter, TPath>,
-    TInput extends inferProcedureInput<TSubscriptions[TPath]>,
-  >(
-    path: TPath,
-    input: TInput,
-    opts?: RequestOptions,
-  ): CancellablePromise<TOutput[]> {
-    let stopped = false;
-    let nextTry: any; // setting as `NodeJS.Timeout` causes compat issues, can probably be solved
-    let currentRequest: CancellablePromise<TOutput[]> | null = null;
-    const context = opts?.context;
-    const promise = new Promise<TOutput[]>((resolve, reject) => {
-      const exec = async () => {
-        if (stopped) {
-          return;
-        }
-        try {
-          currentRequest = this.requestAsPromise({
-            type: 'subscription',
-            input,
-            path,
-            context,
-          });
-          const data = await currentRequest;
-
-          resolve(data as any);
-        } catch (_err) {
-          const err: TRPCClientError<TRouter> = _err;
-
-          if (err.shape?.code === TRPC_ERROR_CODES_BY_KEY.TIMEOUT) {
-            // server told us to reconnect
-            exec();
-          } else {
-            reject(err);
-          }
-        }
-      };
-      exec();
-    }) as CancellablePromise<TOutput[]>;
-    promise.cancel = () => {
-      stopped = true;
-      clearTimeout(nextTry);
-      currentRequest?.cancel && currentRequest.cancel();
-    };
-
-    return promise as any as CancellablePromise<TOutput[]>;
-  }
-  /* istanbul ignore next */
-  /**
-   * @deprecated - legacy stuff for http subscriptions
-   */
   public subscription<
-    TSubscriptions extends TRouter['_def']['subscriptions'],
-    TPath extends string & keyof TSubscriptions,
-    TOutput extends inferSubscriptionOutput<TRouter, TPath>,
-    TInput extends inferProcedureInput<TSubscriptions[TPath]>,
-  >(
-    path: TPath,
-    opts: {
-      initialInput: TInput;
-      onError?: (err: TRPCClientError<TRouter>) => void;
-      onData?: (data: TOutput[]) => void;
-      /**
-       * Input cursor for next call to subscription endpoint
-       */
-      nextInput: (data: TOutput[]) => TInput;
-      context?: OperationContext;
-    },
-  ): CancelFn {
-    let stopped = false;
-
-    // let nextTry: any; // setting as `NodeJS.Timeout` causes compat issues, can probably be solved
-    let currentPromise: CancellablePromise<TOutput[]> | null = null;
-
-    let attemptIndex = 0;
-    const unsubscribe: CancelFn = () => {
-      stopped = true;
-      currentPromise?.cancel();
-      currentPromise = null;
-    };
-    const exec = async (input: TInput) => {
-      try {
-        currentPromise = this.subscriptionOnce(path, input);
-        const res = await currentPromise;
-        attemptIndex = 0;
-        opts.onData && opts.onData(res);
-
-        const nextInput = opts.nextInput(res);
-        exec(nextInput);
-      } catch (err) {
-        if (stopped) {
-          return;
-        }
-        opts.onError?.(err);
-        attemptIndex++;
-        setTimeout(() => {
-          exec(input);
-        }, retryDelay(attemptIndex));
-      }
-    };
-    exec(opts.initialInput);
-    return unsubscribe;
-  }
-  /* istanbul ignore next */
-  public $subscription<
     TSubscriptions extends TRouter['_def']['subscriptions'],
     TPath extends string & keyof TSubscriptions,
     TOutput extends inferSubscriptionOutput<TRouter, TPath>,
@@ -335,7 +225,7 @@ export class TRPCClient<TRouter extends AnyRouter> {
       onDone: opts.onDone,
     });
     return () => {
-      $res.done();
+      $res.error(TRPCClientError.from(new TRPCAbortErrorSignal()));
     };
   }
 }

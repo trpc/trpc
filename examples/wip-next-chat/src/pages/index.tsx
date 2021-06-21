@@ -28,9 +28,14 @@ export default function Home() {
     trpc.useInfiniteQuery(['messages.list', {}], {
       getPreviousPageParam: (d) => d.prevCursor,
     });
-  const [msgs, setMessages] = useState(() =>
-    data ? data.pages.map((p) => p.items).flat() : [],
-  );
+  const [msgState, setMessages] = useState(() => [] as Message[]);
+
+  const msgs = useMemo(() => {
+    if (msgState.length) {
+      return msgState;
+    }
+    return data ? data.pages.map((p) => p.items).flat() : [];
+  }, [msgState, data]);
   const addMessages = (newMessages?: Message[]) => {
     setMessages((nowMessages) => {
       const map: Record<Message['id'], Message> = {};
@@ -60,8 +65,8 @@ export default function Home() {
   const timestamp = useMemo(() => getLatestTimestamp(msgs), [msgs]);
   trpc.useSubscription(['messages.newMessages', { timestamp }], {
     enabled: !!data, // only subscribe if data has loaded
-    onBatch(newMsgs) {
-      addMessages(newMsgs);
+    onNext(newMsgs) {
+      addMessages([newMsgs]);
     },
   });
 
@@ -133,20 +138,4 @@ export default function Home() {
       </div>
     </>
   );
-}
-export async function getStaticProps() {
-  const ssg = createSSGHelpers({
-    router: appRouter,
-    transformer,
-    ctx: {},
-  });
-
-  await ssg.fetchInfiniteQuery('messages.list', {});
-
-  return {
-    props: {
-      trpcState: ssg.dehydrate(),
-    },
-    revalidate: 1,
-  };
 }

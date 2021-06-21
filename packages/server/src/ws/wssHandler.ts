@@ -2,6 +2,7 @@ import http from 'http';
 import ws from 'ws';
 import { getErrorFromUnknown, TRPCError } from '../errors';
 import { BaseOptions, CreateContextFn } from '../http';
+import { callProcedure } from '../internals/callProcedure';
 import { deprecateTransformWarning } from '../internals/once';
 import { AnyRouter, ProcedureType } from '../router';
 import {
@@ -70,27 +71,6 @@ function parseMessage(obj: unknown, transformer: DataTransformer): TRPCRequest {
   return { jsonrpc, id, method, params: { input, path } };
 }
 
-async function callProcedure<TRouter extends AnyRouter>(opts: {
-  path: string;
-  input: unknown;
-  caller: ReturnType<TRouter['createCaller']>;
-  type: ProcedureType;
-}): Promise<unknown | Subscription<TRouter>> {
-  const { type, path, input, caller } = opts;
-  if (type === 'query') {
-    return caller.query(path, input);
-  }
-  if (type === 'mutation') {
-    return caller.mutation(path, input);
-  }
-  if (type === 'subscription') {
-    const sub = (await caller.subscription(path, input)) as Subscription;
-    return sub;
-  }
-  /* istanbul ignore next */
-  throw new Error(`Unknown procedure type ${type}`);
-}
-
 /**
  * Web socket server handler
  */
@@ -127,7 +107,6 @@ export function applyWSSHandler<TRouter extends AnyRouter>(
     }
     try {
       const ctx = await createContext({ req, res: client });
-      const caller = router.createCaller(ctx);
 
       async function handleRequest(msg: TRPCRequest) {
         const { id } = msg;
@@ -148,7 +127,13 @@ export function applyWSSHandler<TRouter extends AnyRouter>(
         const { path, input } = msg.params;
         const type = msg.method;
         try {
-          const result = await callProcedure({ path, input, type, caller });
+          const result = await callProcedure({
+            path,
+            input,
+            type,
+            router,
+            ctx,
+          });
 
           if (!(result instanceof Subscription)) {
             respond({

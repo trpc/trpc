@@ -136,31 +136,6 @@ test('mutation', async () => {
   wsClient.close();
 });
 
-test('subscriptionOnce()', async () => {
-  const { client, close, wsClient, ee } = factory();
-  ee.once('subscription:created', () => {
-    setImmediate(() => {
-      ee.emit('server:msg', {
-        id: '1',
-      });
-    });
-  });
-  const msgs = await client.subscriptionOnce('onMessage', '');
-
-  expect(msgs).toMatchInlineSnapshot(`
-    Object {
-      "id": "1",
-    }
-  `);
-
-  await waitFor(() => {
-    expect(ee.listenerCount('server:msg')).toBe(0);
-    expect(ee.listenerCount('server:error')).toBe(0);
-  });
-  close();
-  wsClient.close();
-});
-
 test('$subscription()', async () => {
   const { client, close, ee, wsClient } = factory();
   ee.once('subscription:created', () => {
@@ -174,7 +149,7 @@ test('$subscription()', async () => {
     });
   });
   const onNext = jest.fn();
-  const unsub = client.$subscription('onMessage', undefined, {
+  const unsub = client.subscription('onMessage', undefined, {
     onNext(data) {
       expectTypeOf(data).not.toBeAny();
       expectTypeOf(data).toMatchTypeOf<TRPCResult<Message>>();
@@ -252,7 +227,7 @@ test.skip('$subscription() - server randomly stop and restart (this test might b
   const onNext = jest.fn();
   const onError = jest.fn();
   const onDone = jest.fn();
-  client.$subscription('onMessage', undefined, {
+  client.subscription('onMessage', undefined, {
     onNext,
     onError,
     onDone,
@@ -282,7 +257,7 @@ test.skip('$subscription() - server randomly stop and restart (this test might b
       });
     }, 1);
   });
-  client.$subscription('onMessage', undefined, {
+  client.subscription('onMessage', undefined, {
     onNext,
     onError,
     onDone,
@@ -335,7 +310,7 @@ test('server subscription ended', async () => {
   const onNext = jest.fn();
   const onError = jest.fn();
   const onDone = jest.fn();
-  client.$subscription('onMessage', undefined, {
+  client.subscription('onMessage', undefined, {
     onNext,
     onError,
     onDone,
@@ -366,7 +341,7 @@ test('server emits disconnect', async () => {
   const onNext = jest.fn();
   const onError = jest.fn();
   const onDone = jest.fn();
-  client.$subscription('onMessage', undefined, {
+  client.subscription('onMessage', undefined, {
     onNext,
     onError,
     onDone,
@@ -403,7 +378,7 @@ test('sub emits errors', async () => {
   const onNext = jest.fn();
   const onError = jest.fn();
   const onDone = jest.fn();
-  client.$subscription('onMessage', undefined, {
+  client.subscription('onMessage', undefined, {
     onNext,
     onError,
     onDone,
@@ -449,7 +424,7 @@ test('ability to do do overlapping connects', async () => {
     const onNext = jest.fn();
     const onError = jest.fn();
     const onDone = jest.fn();
-    const unsub = client.$subscription('onMessage', undefined, {
+    const unsub = client.subscription('onMessage', undefined, {
       onNext,
       onError,
       onDone,

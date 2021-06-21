@@ -2,7 +2,7 @@
 
 :warning: tRPC subscriptions are experimental.
 
-Live at [chat.trpc.io](https://chat.trpc.io)
+<!-- Live at [chat.trpc.io](https://chat.trpc.io) -->
 
 ### Setup
 
