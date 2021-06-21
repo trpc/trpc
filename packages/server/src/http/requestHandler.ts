@@ -173,8 +173,8 @@ export async function requestHandler<
 
     const results = await Promise.all(
       paths.map(async (path, index) => {
+        const id = isNaN(ids[index]) ? -1 : ids[index];
         try {
-          const id = isNaN(ids[index]) ? -1 : ids[index];
           const output = await callProcedure({
             ctx,
             router,
@@ -195,7 +195,7 @@ export async function requestHandler<
           const error = getErrorFromUnknown(_err);
 
           const json: TRPCErrorResponse = {
-            id: -1,
+            id,
             error: router._def.transformer.serialize(
               router.getErrorShape({ error, type, path, input, ctx }),
             ),
