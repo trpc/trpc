@@ -168,11 +168,13 @@ export async function requestHandler<
     const paths = isBatchCall ? opts.path.split(',') : [opts.path];
     const events = req;
     const query = req.query ? req.query : url.parse(req.url!, true).query;
-    const ids = typeof query.ids === 'string' ? query.ids.split(',') : [];
+    const ids =
+      typeof query.ids === 'string' ? query.ids.split(',').map(Number) : [];
 
     const results = await Promise.all(
       paths.map(async (path, index) => {
         try {
+          const id = isNaN(ids[index]) ? -1 : ids[index];
           const output = await callProcedure({
             ctx,
             router,
@@ -181,7 +183,7 @@ export async function requestHandler<
             type,
           });
           const json: TRPCResponse = {
-            id: ids[index] ?? -1,
+            id,
             result: {
               type: 'data',
               data: router._def.transformer.serialize(output),
