@@ -84,16 +84,7 @@ export type WSSHandlerOptions<TRouter extends AnyRouter> = {
 export function applyWSSHandler<TRouter extends AnyRouter>(
   opts: WSSHandlerOptions<TRouter>,
 ) {
-  const { wss, createContext } = opts;
-
-  if (opts.transformer) {
-    deprecateTransformWarning();
-  }
-  // backwards compat - add transformer to router
-  // TODO - remove in next major
-  const router = opts.transformer
-    ? opts.router.transformer(opts.transformer)
-    : opts.router;
+  const { wss, createContext, router } = opts;
 
   const { transformer } = router._def;
   wss.on('connection', async (client, req) => {

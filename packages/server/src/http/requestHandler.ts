@@ -5,10 +5,8 @@ import url from 'url';
 import { assertNotBrowser } from '../assertNotBrowser';
 import { getErrorFromUnknown, TRPCError } from '../errors';
 import { callProcedure } from '../internals/callProcedure';
-import { deprecateTransformWarning } from '../internals/once';
 import { AnyRouter, inferRouterContext, ProcedureType } from '../router';
 import { TRPCErrorResponse, TRPCResponse } from '../rpc';
-import { DataTransformerOptions } from '../transformer';
 import { getHTTPStatusCode } from './internals/getHTTPStatusCode';
 import { getPostBody } from './internals/getPostBody';
 import { getQueryInput } from './internals/getQueryInput';
@@ -35,10 +33,6 @@ export interface BaseOptions<
   TRequest extends BaseRequest,
 > {
   teardown?: () => Promise<void>;
-  /**
-   * @deprecated use `router.transformer()`
-   */
-  transformer?: DataTransformerOptions;
   maxBodySize?: number;
   onError?: (opts: {
     error: TRPCError;
@@ -98,26 +92,18 @@ export async function requestHandler<
     createContext: TCreateContextFn;
   } & BaseOptions<TRouter, TRequest>,
 ) {
-  const { req, res, createContext, teardown, onError, maxBodySize } = opts;
+  const { req, res, createContext, teardown, onError, maxBodySize, router } =
+    opts;
   if (req.method === 'HEAD') {
     // can be used for lambda warmup
     res.statusCode = 204;
     res.end();
     return;
   }
-  if (opts.transformer) {
-    deprecateTransformWarning();
-  }
   const type =
     HTTP_METHOD_PROCEDURE_TYPE_MAP[req.method!] ?? ('unknown' as const);
   let input: unknown = undefined;
   let ctx: inferRouterContext<TRouter> | undefined = undefined;
-
-  // backwards compat - add transformer to router
-  // TODO - remove in next major
-  const router = opts.transformer
-    ? opts.router.transformer(opts.transformer)
-    : opts.router;
 
   const reqQueryParams = req.query
     ? req.query
