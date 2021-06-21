@@ -16,16 +16,18 @@ test('superjson up and down', async () => {
   const date = new Date();
   const fn = jest.fn();
   const { client, close } = routerToServerAndClient(
-    trpc.router().query('hello', {
-      input: z.date(),
-      resolve({ input }) {
-        fn(input);
-        return input;
-      },
-    }),
+    trpc
+      .router()
+      .transformer(transformer)
+      .query('hello', {
+        input: z.date(),
+        resolve({ input }) {
+          fn(input);
+          return input;
+        },
+      }),
     {
       client: { transformer },
-      server: { transformer },
     },
   );
   const res = await client.query('hello', date);
@@ -41,6 +43,7 @@ test('empty superjson up and down', async () => {
   const { client, close } = routerToServerAndClient(
     trpc
       .router()
+      .transformer(transformer)
       .query('empty-up', {
         resolve() {
           return 'hello world';
@@ -54,7 +57,6 @@ test('empty superjson up and down', async () => {
       }),
     {
       client: { transformer },
-      server: { transformer },
     },
   );
   const res1 = await client.query('empty-up');
@@ -71,6 +73,7 @@ test('wsLink: empty superjson up and down', async () => {
   const { client, close } = routerToServerAndClient(
     trpc
       .router()
+      .transformer(transformer)
       .query('empty-up', {
         resolve() {
           return 'hello world';
@@ -87,8 +90,6 @@ test('wsLink: empty superjson up and down', async () => {
         ws = createWSClient({ url: wssUrl });
         return { transformer, links: [wsLink({ client: ws })] };
       },
-      server: { transformer },
-      wssServer: { transformer },
     },
   );
   const res1 = await client.query('empty-up');
@@ -109,16 +110,18 @@ test('devalue up and down', async () => {
   const date = new Date();
   const fn = jest.fn();
   const { client, close } = routerToServerAndClient(
-    trpc.router().query('hello', {
-      input: z.date(),
-      resolve({ input }) {
-        fn(input);
-        return input;
-      },
-    }),
+    trpc
+      .router()
+      .transformer(transformer)
+      .query('hello', {
+        input: z.date(),
+        resolve({ input }) {
+          fn(input);
+          return input;
+        },
+      }),
     {
       client: { transformer },
-      server: { transformer },
     },
   );
   const res = await client.query('hello', date);
@@ -140,16 +143,18 @@ test('superjson up and devalue down', async () => {
   const date = new Date();
   const fn = jest.fn();
   const { client, close } = routerToServerAndClient(
-    trpc.router().query('hello', {
-      input: z.date(),
-      resolve({ input }) {
-        fn(input);
-        return input;
-      },
-    }),
+    trpc
+      .router()
+      .transformer(transformer)
+      .query('hello', {
+        input: z.date(),
+        resolve({ input }) {
+          fn(input);
+          return input;
+        },
+      }),
     {
       client: { transformer },
-      server: { transformer },
     },
   );
   const res = await client.query('hello', date);
@@ -187,16 +192,18 @@ test('all transformers running in correct order', async () => {
   };
 
   const { client, close } = routerToServerAndClient(
-    trpc.router().query('hello', {
-      input: z.string(),
-      resolve({ input }) {
-        fn(input);
-        return input;
-      },
-    }),
+    trpc
+      .router()
+      .transformer(transformer)
+      .query('hello', {
+        input: z.string(),
+        resolve({ input }) {
+          fn(input);
+          return input;
+        },
+      }),
     {
       client: { transformer },
-      server: { transformer },
     },
   );
   const res = await client.query('hello', world);
