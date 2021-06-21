@@ -42,7 +42,7 @@ async function startServer() {
 
   const client = createTRPCClient<AppRouter>({
     url: `${url}/trpc`,
-    fetchOpts,
+    ...fetchOpts,
   });
   return {
     url,
