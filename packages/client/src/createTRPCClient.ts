@@ -9,7 +9,7 @@ import type {
   inferSubscriptionOutput,
 } from '@trpc/server';
 import { TRPCResult } from '@trpc/server/rpc';
-import { executeChain, getOperationId } from './internals/executeChain';
+import { executeChain } from './internals/executeChain';
 import { getAbortController, getFetch } from './internals/fetchHelpers';
 import { ObservableCallbacks, UnsubscribeFn } from './internals/observable';
 import { TRPCAbortErrorSignal } from './internals/TRPCAbortErrorSignal';
@@ -30,6 +30,10 @@ type CancellablePromise<T = unknown> = Promise<T> & {
 export interface FetchOptions {
   fetch?: typeof fetch;
   AbortController?: typeof AbortController;
+}
+let idCounter = 0;
+export function getRequestId() {
+  return ++idCounter;
 }
 
 export type CreateTRPCClientOptions<TRouter extends AnyRouter> = {
@@ -113,7 +117,7 @@ export class TRPCClient<TRouter extends AnyRouter> {
     const $result = executeChain<TRouter, TInput, TOutput>({
       links: this.links as any,
       op: {
-        id: getOperationId(),
+        id: getRequestId(),
         type,
         path,
         input,

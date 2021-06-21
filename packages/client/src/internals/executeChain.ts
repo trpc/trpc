@@ -8,11 +8,6 @@ import {
   PrevCallback,
 } from '../links/core';
 import { observableSubject } from './observable';
-let counter = 0;
-
-export function getOperationId() {
-  return ++counter;
-}
 
 export function executeChain<
   TRouter extends AnyRouter,
