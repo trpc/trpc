@@ -32,7 +32,6 @@ export function createWSClient(opts: {
       "No WebSocket implementation found - you probably don't want to use this on the server, but if you do you need to pass a `WebSocket`-ponyfill",
     );
   }
-  let idCounter = 0;
   let isClosed = false;
   /**
    * outgoing messages buffer whilst not open
@@ -188,14 +187,14 @@ export function createWSClient(opts: {
 
   function request(
     op: {
+      id: number | string;
       type: ProcedureType;
       input: unknown;
       path: string;
     },
     callbacks: TCallbacks,
   ): UnsubscribeFn {
-    const { type, input, path } = op;
-    const id = ++idCounter;
+    const { type, input, path, id } = op;
     const envelope: TRPCRequest = {
       id,
       jsonrpc: '2.0',
@@ -269,11 +268,11 @@ export function wsLink<TRouter extends AnyRouter>(
     const { client } = opts;
 
     return ({ op, prev, onDestroy }) => {
-      const { type, input: rawInput, path } = op;
+      const { type, input: rawInput, path, id } = op;
       const input = rt.transformer.serialize(rawInput);
       let unsubbed = false;
       const unsub = client.request(
-        { type, path, input },
+        { type, path, input, id },
         {
           onNext(result) {
             if ('data' in result) {

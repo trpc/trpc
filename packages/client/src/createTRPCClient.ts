@@ -31,6 +31,10 @@ export interface FetchOptions {
   fetch?: typeof fetch;
   AbortController?: typeof AbortController;
 }
+let idCounter = 0;
+export function getRequestId() {
+  return ++idCounter;
+}
 
 export type CreateTRPCClientOptions<TRouter extends AnyRouter> = {
   /**
@@ -113,6 +117,7 @@ export class TRPCClient<TRouter extends AnyRouter> {
     const $result = executeChain<TRouter, TInput, TOutput>({
       links: this.links as any,
       op: {
+        id: getRequestId(),
         type,
         path,
         input,
