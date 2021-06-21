@@ -166,10 +166,13 @@ export async function requestHandler<
     };
     const inputs = getInputs();
     const paths = isBatchCall ? opts.path.split(',') : [opts.path];
-    const events = req;
+    const query = req.query ? req.query : url.parse(req.url!, true).query;
+    const ids =
+      typeof query.id === 'string' ? query.id.split(',').map(Number) : [];
 
     const results = await Promise.all(
       paths.map(async (path, index) => {
+        const id = isNaN(ids[index]) ? -1 : ids[index];
         try {
           const output = await callProcedure({
             ctx,
@@ -179,19 +182,18 @@ export async function requestHandler<
             type,
           });
           const json: TRPCResponse = {
-            id: -1,
+            id,
             result: {
               type: 'data',
               data: router._def.transformer.serialize(output),
             },
           };
-          events.emit('flush'); // `flush()` is used for subscriptions to flush out current output
           return json;
         } catch (_err) {
           const error = getErrorFromUnknown(_err);
 
           const json: TRPCErrorResponse = {
-            id: -1,
+            id,
             error: router._def.transformer.serialize(
               router.getErrorShape({ error, type, path, input, ctx }),
             ),

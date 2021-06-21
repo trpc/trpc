@@ -4,6 +4,7 @@ import { TRPCClientError } from '../TRPCClientError';
 
 export type OperationContext = Record<string, unknown>;
 export type Operation<TInput = unknown> = {
+  id: number;
   type: 'query' | 'mutation' | 'subscription';
   input: TInput;
   path: string;

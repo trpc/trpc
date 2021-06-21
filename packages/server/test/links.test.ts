@@ -34,6 +34,7 @@ test('retrylink', () => {
   const prev = jest.fn();
   ctxLink({
     op: {
+      id: 1,
       type: 'query',
       input: null,
       path: '',
@@ -78,6 +79,7 @@ test('chainer', async () => {
       })(mockRuntime),
     ],
     op: {
+      id: 1,
       type: 'query',
       path: 'hello',
       input: null,
@@ -112,7 +114,9 @@ test('mock cache link has immediate $result', () => {
         url: `void`,
       })(mockRuntime),
     ],
-    op: {} as any,
+    op: {
+      id: 1,
+    } as any,
   });
   expect($result.get()).toMatchInlineSnapshot(`
     Object {
@@ -134,6 +138,7 @@ test('cancel request', async () => {
       },
     ],
     op: {
+      id: 1,
       type: 'query',
       path: 'hello',
       input: null,
@@ -176,6 +181,7 @@ describe('batching', () => {
     const $result1 = executeChain({
       links,
       op: {
+        id: 1,
         type: 'query',
         path: 'hello',
         input: null,
@@ -186,6 +192,7 @@ describe('batching', () => {
     const $result2 = executeChain({
       links,
       op: {
+        id: 2,
         type: 'query',
         path: 'hello',
         input: 'alexdotjs',
@@ -264,6 +271,7 @@ test('split link', () => {
       })(mockRuntime),
     ],
     op: {
+      id: 1,
       type: 'query',
       input: null,
       path: '',
@@ -323,7 +331,9 @@ test('multi down link', async () => {
         url: `void`,
       })(mockRuntime),
     ],
-    op: {} as any,
+    op: {
+      id: 1,
+    } as any,
   });
   expect($result.get()).toMatchInlineSnapshot(`
     Object {
@@ -357,6 +367,7 @@ test('loggerLink', () => {
     executeChain({
       links: [logLink, okLink],
       op: {
+        id: 1,
         type: 'query',
         input: null,
         path: 'n/a',
@@ -378,6 +389,7 @@ test('loggerLink', () => {
     executeChain({
       links: [logLink, okLink],
       op: {
+        id: 1,
         type: 'subscription',
         input: null,
         path: 'n/a',
@@ -385,10 +397,10 @@ test('loggerLink', () => {
       },
     });
     expect(logger.log.mock.calls[0][0]).toMatchInlineSnapshot(
-      `"%c >> subscription #2 %cn/a%c %O"`,
+      `"%c >> subscription #1 %cn/a%c %O"`,
     );
     expect(logger.log.mock.calls[1][0]).toMatchInlineSnapshot(
-      `"%c << subscription #2 %cn/a%c %O"`,
+      `"%c << subscription #1 %cn/a%c %O"`,
     );
     logger.error.mockReset();
     logger.log.mockReset();
@@ -398,6 +410,7 @@ test('loggerLink', () => {
     executeChain({
       links: [logLink, okLink],
       op: {
+        id: 1,
         type: 'mutation',
         input: null,
         path: 'n/a',
@@ -406,10 +419,10 @@ test('loggerLink', () => {
     });
 
     expect(logger.log.mock.calls[0][0]).toMatchInlineSnapshot(
-      `"%c >> mutation #3 %cn/a%c %O"`,
+      `"%c >> mutation #1 %cn/a%c %O"`,
     );
     expect(logger.log.mock.calls[1][0]).toMatchInlineSnapshot(
-      `"%c << mutation #3 %cn/a%c %O"`,
+      `"%c << mutation #1 %cn/a%c %O"`,
     );
     logger.error.mockReset();
     logger.log.mockReset();
@@ -419,6 +432,7 @@ test('loggerLink', () => {
     executeChain({
       links: [logLink, errorLink],
       op: {
+        id: 1,
         type: 'query',
         input: null,
         path: 'n/a',
@@ -426,10 +440,10 @@ test('loggerLink', () => {
       },
     });
     expect(logger.log.mock.calls[0][0]).toMatchInlineSnapshot(
-      `"%c >> query #4 %cn/a%c %O"`,
+      `"%c >> query #1 %cn/a%c %O"`,
     );
     expect(logger.error.mock.calls[0][0]).toMatchInlineSnapshot(
-      `"%c << query #4 %cn/a%c %O"`,
+      `"%c << query #1 %cn/a%c %O"`,
     );
     logger.error.mockReset();
     logger.log.mockReset();
@@ -441,6 +455,7 @@ test('loggerLink', () => {
     executeChain({
       links: [loggerLink({ logger: logFn })(mockRuntime), errorLink],
       op: {
+        id: 1,
         type: 'query',
         input: null,
         path: 'n/a',
@@ -452,9 +467,9 @@ test('loggerLink', () => {
       Object {
         "context": Object {},
         "direction": "up",
+        "id": 1,
         "input": null,
         "path": "n/a",
-        "requestId": 1,
         "type": "query",
       }
     `);
@@ -465,9 +480,9 @@ test('loggerLink', () => {
       Object {
         "context": Object {},
         "direction": "down",
+        "id": 1,
         "input": null,
         "path": "n/a",
-        "requestId": 1,
         "result": [TRPCClientError: ..],
         "type": "query",
       }
@@ -487,6 +502,7 @@ test('pass a context', () => {
       },
     ],
     op: {
+      id: 1,
       type: 'query',
       input: null,
       path: '',
@@ -508,6 +524,7 @@ test('pass a context', () => {
       },
     ],
     op: {
+      id: 1,
       type: 'query',
       input: null,
       path: '',
