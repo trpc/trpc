@@ -2,6 +2,11 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import AbortController from 'abort-controller';
 import fetch from 'node-fetch';
+import {
+  createWSClient,
+  WebSocketClientOptions,
+  TRPCWebSocketClient,
+} from '../../client/src/links/wsLink';
 import ws from 'ws';
 import { createTRPCClient, CreateTRPCClientOptions } from '../../client/src';
 import { AnyRouter, CreateHttpHandlerOptions } from '../src';
@@ -14,6 +19,7 @@ export function routerToServerAndClient<TRouter extends AnyRouter>(
   opts?: {
     server?: Partial<CreateHttpHandlerOptions<TRouter>>;
     wssServer?: Partial<WSSHandlerOptions<TRouter>>;
+    wsClient?: Partial<WebSocketClientOptions>;
     client?:
       | Partial<CreateTRPCClientOptions<TRouter>>
       | ((opts: {
@@ -23,6 +29,7 @@ export function routerToServerAndClient<TRouter extends AnyRouter>(
           url: string;
           httpUrl: string;
           wssUrl: string;
+          wsClient: TRPCWebSocketClient;
         }) => Partial<CreateTRPCClientOptions<TRouter>>);
   },
 ) {
@@ -48,23 +55,26 @@ export function routerToServerAndClient<TRouter extends AnyRouter>(
   const wssUrl = `ws://localhost:${wssPort}`;
 
   // client
+  const wsClient = createWSClient({
+    url: wssUrl,
+    ...opts?.wsClient,
+  });
   const trpcClientOptions: CreateTRPCClientOptions<typeof router> = {
     url: httpUrl,
     ...(opts?.client
       ? typeof opts.client === 'function'
-        ? opts.client({ url: httpUrl, httpUrl, wssUrl })
+        ? opts.client({ url: httpUrl, httpUrl, wssUrl, wsClient })
         : opts.client
       : {}),
   };
   const client = createTRPCClient<typeof router>(trpcClientOptions);
-
   return {
+    wsClient,
     client,
     close: async () => {
-      await Promise.all([
-        new Promise((resolve) => httpServer.server.close(resolve)),
-        new Promise((resolve) => wss.close(resolve)),
-      ]);
+      wsClient.close();
+      httpServer.server.close();
+      wss.close();
     },
     router,
     trpcClientOptions,

@@ -14,7 +14,7 @@ import {
   TRPCResponse,
 } from 'packages/server/src/rpc';
 
-export function createWSClient(opts: {
+export interface WebSocketClientOptions {
   url: string;
   WebSocket?: WebSocket;
   retryDelayMs?: typeof retryDelay;
@@ -23,7 +23,8 @@ export function createWSClient(opts: {
    * @default 3000
    */
   staleConnectionTimeoutMs?: number;
-}) {
+}
+export function createWSClient(opts: WebSocketClientOptions) {
   const {
     url,
     WebSocket: WebSocketImpl = WebSocket,
