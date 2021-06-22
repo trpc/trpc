@@ -145,6 +145,7 @@ export function createWSClient(opts: {
     const handleIncomingResponse = (res: TRPCResponse) => {
       const req = res.id !== null && pendingRequests[res.id];
       if (!req) {
+        // do something?
         return;
       }
       if ('error' in res) {
@@ -168,7 +169,7 @@ export function createWSClient(opts: {
       }
       if (conn !== activeConnection || state === 'closed') {
         setTimeout(() => {
-          // when receiving a message, we any close old connection that has no pending requests
+          // when receiving a message, we close old connection that has no pending requests
           closeIfNoPending(conn);
         }, 1);
       }
