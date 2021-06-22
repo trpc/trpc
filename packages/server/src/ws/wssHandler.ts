@@ -150,12 +150,6 @@ export function applyWSSHandler<TRouter extends AnyRouter>(
             return;
           }
 
-          respond({
-            id,
-            result: {
-              type: 'started',
-            },
-          });
           const sub = result;
           /* istanbul ignore next */
           if (client.readyState !== client.OPEN) {
@@ -167,7 +161,10 @@ export function applyWSSHandler<TRouter extends AnyRouter>(
           if (clientSubscriptions.has(id)) {
             // duplicate request ids for client
             sub.destroy();
-            throw new Error(`Duplicate id ${id}`);
+            throw new TRPCError({
+              message: `Duplicate id ${id}`,
+              code: 'BAD_REQUEST',
+            });
           }
           clientSubscriptions.set(id, sub);
           sub.on('data', (data: unknown) => {
@@ -203,6 +200,13 @@ export function applyWSSHandler<TRouter extends AnyRouter>(
                 type: 'stopped',
               },
             });
+          });
+
+          respond({
+            id,
+            result: {
+              type: 'started',
+            },
           });
           await sub.start();
         } catch (_error) /* istanbul ignore next */ {
