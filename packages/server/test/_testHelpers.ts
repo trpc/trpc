@@ -73,8 +73,10 @@ export function routerToServerAndClient<TRouter extends AnyRouter>(
     client,
     close: async () => {
       wsClient.close();
-      httpServer.server.close();
-      wss.close();
+      await Promise.all([
+        new Promise((resolve) => httpServer.server.close(resolve)),
+        new Promise((resolve) => wss.close(resolve)),
+      ]);
     },
     router,
     trpcClientOptions,
