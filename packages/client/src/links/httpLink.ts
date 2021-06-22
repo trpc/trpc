@@ -22,7 +22,6 @@ export function httpLink<TRouter extends AnyRouter>(
         input,
         url,
         path,
-        ids: [op.id],
       });
       onDestroy(() => {
         if (!done) {

@@ -30,9 +30,16 @@ function assertIsProcedureType(obj: unknown): asserts obj is ProcedureType {
   }
 }
 /* istanbul ignore next */
-function assertIsRequestId(obj: unknown): asserts obj is number {
-  if (typeof obj !== 'number' || isNaN(obj)) {
-    throw new Error('Invalid requestId');
+function assertIsRequestId(
+  obj: unknown,
+): asserts obj is number | string | null {
+  if (
+    obj !== null &&
+    typeof obj === 'number' &&
+    isNaN(obj) &&
+    typeof obj !== 'string'
+  ) {
+    throw new Error('Invalid request id');
   }
 }
 /* istanbul ignore next */
@@ -100,6 +107,12 @@ export function applyWSSHandler<TRouter extends AnyRouter>(
 
       async function handleRequest(msg: TRPCRequest) {
         const { id } = msg;
+        if (id === null) {
+          throw new TRPCError({
+            code: 'BAD_REQUEST',
+            message: '`id` is required',
+          });
+        }
         if (msg.method === 'subscription.stop') {
           const sub = clientSubscriptions.get(id);
           clientSubscriptions.delete(id);
@@ -206,8 +219,8 @@ export function applyWSSHandler<TRouter extends AnyRouter>(
         }
       }
       client.on('message', async (message) => {
-        const msgJSON = JSON.parse(message as string);
-        const msgs = Array.isArray(msgJSON) ? msgJSON : [msgJSON];
+        const msgJSON: unknown = JSON.parse(message as string);
+        const msgs: unknown[] = Array.isArray(msgJSON) ? msgJSON : [msgJSON];
         try {
           msgs.map((raw) => parseMessage(raw, transformer)).map(handleRequest);
         } catch (originalError) {
@@ -216,15 +229,17 @@ export function applyWSSHandler<TRouter extends AnyRouter>(
             originalError,
           });
 
-          client.send({
-            id: -1,
-            error: router.getErrorShape({
-              error,
-              type: 'unknown',
-              path: undefined,
-              input: undefined,
-              ctx: undefined,
-            }),
+          respond({
+            id: null,
+            error: transformer.serialize(
+              router.getErrorShape({
+                error,
+                type: 'unknown',
+                path: undefined,
+                input: undefined,
+                ctx: undefined,
+              }),
+            ),
           });
         }
       });

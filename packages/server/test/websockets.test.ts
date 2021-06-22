@@ -9,9 +9,7 @@ import { default as WebSocket, default as ws } from 'ws';
 import { z } from 'zod';
 import {
   createWSClient,
-  ReconnectError,
   TRPCWebSocketClient,
-  WebSocketInterruptError,
   wsLink,
 } from '../../client/src/links/wsLink';
 import * as trpc from '../src';
@@ -245,8 +243,8 @@ test.skip('$subscription() - server randomly stop and restart (this test might b
   expect(onError.mock.calls[0][0]).toMatchInlineSnapshot(
     `[TRPCClientError: Operation ended prematurely]`,
   );
-  expect(onError.mock.calls[0][0].originalError).toBeInstanceOf(
-    WebSocketInterruptError,
+  expect(onError.mock.calls[0][0].originalError.name).toBe(
+    'TRPCWebSocketClosedError',
   );
 
   // reconnect from client
@@ -438,8 +436,8 @@ test('ability to do do overlapping connects', async () => {
   });
   wssHandler.broadcastReconnectNotification();
   await waitFor(() => {
-    expect(sub1.onError.mock.calls[0][0].originalError).toBeInstanceOf(
-      ReconnectError,
+    expect(sub1.onError.mock.calls[0][0].originalError.name).toBe(
+      'TRPCReconnectError',
     );
     expect(wss.clients.size).toBe(2);
   });

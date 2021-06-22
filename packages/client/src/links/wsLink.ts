@@ -9,6 +9,10 @@ import { ObservableCallbacks, UnsubscribeFn } from '../internals/observable';
 import { retryDelay } from '../internals/retryDelay';
 import { TRPCLink } from './core';
 import { TRPCAbortError } from '../internals/TRPCAbortErrorSignal';
+import {
+  TRPCClientIncomingRequest,
+  TRPCResponse,
+} from 'packages/server/src/rpc';
 
 export function createWSClient(opts: {
   url: string;
@@ -127,44 +131,49 @@ export function createWSClient(opts: {
     conn.addEventListener('error', () => {
       tryReconnect();
     });
-    conn.addEventListener('message', ({ data }) => {
-      const msg = JSON.parse(data) as TRPCClientIncomingMessage;
-
-      if (conn !== activeConnection || state === 'closed') {
-        setTimeout(() => {
-          // when receiving a message, we any old connection that has no pending requests
-          closeIfNoPending(conn);
-        }, 1);
-      }
-      if ('method' in msg) {
-        // server asked client to do something
-        if (msg.method === 'reconnect' && conn === activeConnection) {
-          // server reconnect notification
-          reconnect();
-          // notify subscribers
-          for (const p of Object.values(pendingRequests)) {
-            if (p.type === 'subscription') {
-              p.callbacks.onError?.(TRPCClientError.from(new ReconnectError()));
-            }
+    const handleIncomingRequest = (req: TRPCClientIncomingRequest) => {
+      if (req.method === 'reconnect' && conn === activeConnection) {
+        reconnect();
+        // notify subscribers
+        for (const p of Object.values(pendingRequests)) {
+          if (p.type === 'subscription') {
+            p.callbacks.onError?.(
+              TRPCClientError.from(new TRPCReconnectError()),
+            );
           }
         }
-        return;
       }
-
-      const req = pendingRequests[msg.id];
+    };
+    const handleIncomingResponse = (res: TRPCResponse) => {
+      const req = res.id !== null && pendingRequests[res.id];
       if (!req) {
         // do something?
         return;
       }
-      if ('error' in msg) {
-        req.callbacks.onError?.(TRPCClientError.from(msg));
+      if ('error' in res) {
+        req.callbacks.onError?.(TRPCClientError.from(res));
         return;
       }
 
-      req.callbacks.onNext?.(msg.result);
+      req.callbacks.onNext?.(res.result);
 
-      if (msg.result.type === 'stopped') {
+      if (res.result.type === 'stopped') {
         req.callbacks.onDone?.();
+      }
+    };
+    conn.addEventListener('message', ({ data }) => {
+      const msg = JSON.parse(data) as TRPCClientIncomingMessage;
+
+      if ('method' in msg) {
+        handleIncomingRequest(msg);
+      } else {
+        handleIncomingResponse(msg);
+      }
+      if (conn !== activeConnection || state === 'closed') {
+        setTimeout(() => {
+          // when receiving a message, we close old connection that has no pending requests
+          closeIfNoPending(conn);
+        }, 1);
       }
     });
 
@@ -245,19 +254,19 @@ export type TRPCWebSocketClient = ReturnType<typeof createWSClient>;
 export interface WebSocketLinkOptions {
   client: TRPCWebSocketClient;
 }
-export class WebSocketInterruptError extends Error {
+class TRPCWebSocketClosedError extends Error {
   constructor(message: string) {
     super(message);
-    this.name = 'WebSocketInterruptError';
-    Object.setPrototypeOf(this, WebSocketInterruptError.prototype);
+    this.name = 'TRPCWebSocketClosedError';
+    Object.setPrototypeOf(this, TRPCWebSocketClosedError.prototype);
   }
 }
 
-export class ReconnectError extends Error {
+class TRPCReconnectError extends Error {
   constructor() {
-    super('ReconnectError');
-    this.name = 'ReconnectError';
-    Object.setPrototypeOf(this, ReconnectError.prototype);
+    super('TRPCReconnectError');
+    this.name = 'TRPCReconnectError';
+    Object.setPrototypeOf(this, TRPCReconnectError.prototype);
   }
 }
 export function wsLink<TRouter extends AnyRouter>(
@@ -294,7 +303,7 @@ export function wsLink<TRouter extends AnyRouter>(
           onDone() {
             const result = unsubbed
               ? new TRPCAbortError()
-              : new WebSocketInterruptError('Operation ended prematurely');
+              : new TRPCWebSocketClosedError('Operation ended prematurely');
 
             prev(TRPCClientError.from(result, { isDone: true }));
           },

@@ -1,7 +1,13 @@
 import { invert } from '../http/internals/invert';
 
-// https://www.jsonrpc.org/specification
+// reference: https://www.jsonrpc.org/specification
 
+/**
+ * JSON-RPC 2.0 Error codes
+ *
+ * `-32000` to `-32099` are reserved for implementation-defined server-errors.
+ * For tRPC we're copying the last digits of HTTP 4XX errors.
+ */
 export const TRPC_ERROR_CODES_BY_KEY = {
   /**
    * Invalid JSON was received by the server.
@@ -20,20 +26,13 @@ export const TRPC_ERROR_CODES_BY_KEY = {
    * Internal JSON-RPC error.
    */
   INTERNAL_SERVER_ERROR: -32603,
-  /**
-   * -32000 to -32099
-   * Reserved for implementation-defined server-errors.
-   * Copying the last digits of 4XX errors
-   */
-  /**
-   * Unauthorized
-   */
-  UNAUTHORIZED: -32001,
-  FORBIDDEN: -32003,
-  METHOD_NOT_SUPPORTED: -32005,
-  TIMEOUT: -32008,
-  PAYLOAD_TOO_LARGE: -32013,
-  CLIENT_CLOSED_REQUEST: -32099,
+  // Implementation specific errors
+  UNAUTHORIZED: -32001, // 401
+  FORBIDDEN: -32003, // 403
+  METHOD_NOT_SUPPORTED: -32005, // 405
+  TIMEOUT: -32008, // 408
+  PAYLOAD_TOO_LARGE: -32013, // 413
+  CLIENT_CLOSED_REQUEST: -32099, // 499
 } as const;
 
 export const TRPC_ERROR_CODES_BY_NUMBER = invert(TRPC_ERROR_CODES_BY_KEY);

@@ -69,19 +69,16 @@ async function getRequestParams({
   maxBodySize: number | undefined;
 }): Promise<{
   input: unknown;
-  ids: number[];
 }> {
   if (type === 'query') {
     const query = req.query ? req.query : url.parse(req.url!, true).query;
     const input = getQueryInput(query);
-    const ids =
-      typeof query.id === 'string' ? query.id.split(',').map(Number) : [];
-    return { input, ids };
+    return { input };
   }
 
-  const { input, id } = await getPostBody({ req, maxBodySize });
-  const ids = Array.isArray(id) ? id : [id];
-  return { input, ids };
+  const { input } = await getPostBody({ req, maxBodySize });
+
+  return { input };
 }
 
 export async function requestHandler<
@@ -131,7 +128,7 @@ export async function requestHandler<
         code: 'METHOD_NOT_SUPPORTED',
       });
     }
-    const { input: rawInput, ids } = await getRequestParams({
+    const { input: rawInput } = await getRequestParams({
       maxBodySize,
       req,
       type,
@@ -160,7 +157,7 @@ export async function requestHandler<
     const paths = isBatchCall ? opts.path.split(',') : [opts.path];
     const results = await Promise.all(
       paths.map(async (path, index) => {
-        const id = isNaN(ids[index]) ? -1 : ids[index];
+        const id = null;
         try {
           const output = await callProcedure({
             ctx,

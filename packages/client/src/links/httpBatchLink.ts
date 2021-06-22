@@ -18,7 +18,6 @@ export function httpBatchLink<TRouter extends AnyRouter>(
     const fetcher = (type: ProcedureType) => (keyInputPairs: Key[]) => {
       const path = keyInputPairs.map((op) => op.path).join(',');
       const input = keyInputPairs.map((op) => op.input);
-      const ids = keyInputPairs.map((op) => op.id);
 
       const { promise, cancel } = httpRequest({
         url,
@@ -27,7 +26,6 @@ export function httpBatchLink<TRouter extends AnyRouter>(
         runtime,
         type,
         searchParams: `batch=1`,
-        ids,
       });
 
       return {
