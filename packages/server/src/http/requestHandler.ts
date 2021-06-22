@@ -45,6 +45,7 @@ export interface BaseOptions<
   batching?: {
     enabled: boolean;
   };
+  router: TRouter;
 }
 
 const HTTP_METHOD_PROCEDURE_TYPE_MAP: Record<
@@ -91,7 +92,6 @@ export async function requestHandler<
     req: TRequest;
     res: TResponse;
     path: string;
-    router: TRouter;
     createContext: TCreateContextFn;
   } & BaseOptions<TRouter, TRequest>,
 ) {

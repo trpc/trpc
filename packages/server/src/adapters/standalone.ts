@@ -20,7 +20,6 @@ export type CreateHttpContextFn<TRouter extends AnyRouter> = CreateContextFn<
 export interface CreateHttpHandlerOptions<TRouter extends AnyRouter>
   extends BaseOptions<TRouter, http.IncomingMessage> {
   createContext: CreateHttpContextFn<TRouter>;
-  router: TRouter;
 }
 export function createHttpHandler<TRouter extends AnyRouter>(
   opts: CreateHttpHandlerOptions<TRouter>,

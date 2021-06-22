@@ -23,7 +23,6 @@ export type CreateNextContextFn<TRouter extends AnyRouter> = CreateContextFn<
 >;
 export function createNextApiHandler<TRouter extends AnyRouter>(
   opts: {
-    router: TRouter;
     createContext: CreateNextContextFn<TRouter>;
   } & BaseOptions<TRouter, NextApiRequest>,
 ): NextApiHandler {

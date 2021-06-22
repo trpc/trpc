@@ -17,7 +17,6 @@ export type CreateExpressContextFn<TRouter extends AnyRouter> = CreateContextFn<
 
 export function createExpressMiddleware<TRouter extends AnyRouter>(
   opts: {
-    router: TRouter;
     createContext: CreateExpressContextFn<TRouter>;
   } & BaseOptions<TRouter, express.Request>,
 ): express.Handler {

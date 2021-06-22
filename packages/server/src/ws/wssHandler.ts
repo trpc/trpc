@@ -81,7 +81,6 @@ function parseMessage(obj: unknown, transformer: DataTransformer): TRPCRequest {
  * Web socket server handler
  */
 export type WSSHandlerOptions<TRouter extends AnyRouter> = {
-  router: TRouter;
   wss: ws.Server;
   createContext: CreateContextFn<TRouter, http.IncomingMessage, ws>;
   process?: NodeJS.Process;
