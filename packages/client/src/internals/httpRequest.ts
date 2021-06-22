@@ -9,7 +9,6 @@ export function httpRequest<TResponseShape = TRPCResponse>(props: {
   path: string;
   url: string;
   searchParams?: string;
-  ids: number[];
 }): PromiseAndCancel<TResponseShape> {
   const { type, runtime: rt, input, path } = props;
   const ac = rt.AbortController ? new rt.AbortController() : null;
@@ -23,9 +22,6 @@ export function httpRequest<TResponseShape = TRPCResponse>(props: {
     const queryParts: string[] = [];
     if (props.searchParams) {
       queryParts.push(props.searchParams);
-    }
-    if (type === 'query') {
-      queryParts.push(`id=${props.ids.join(',')}`);
     }
     if (type === 'query' && input != null) {
       queryParts.push(
@@ -44,7 +40,6 @@ export function httpRequest<TResponseShape = TRPCResponse>(props: {
       return undefined;
     }
     return JSON.stringify({
-      id: props.ids,
       input: rt.transformer.serialize(input),
     });
   }

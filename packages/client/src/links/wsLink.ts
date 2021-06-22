@@ -9,6 +9,10 @@ import { ObservableCallbacks, UnsubscribeFn } from '../internals/observable';
 import { retryDelay } from '../internals/retryDelay';
 import { TRPCLink } from './core';
 import { TRPCAbortError } from '../internals/TRPCAbortErrorSignal';
+import {
+  TRPCClientIncomingRequest,
+  TRPCResponse,
+} from 'packages/server/src/rpc';
 
 export function createWSClient(opts: {
   url: string;
@@ -127,44 +131,52 @@ export function createWSClient(opts: {
     conn.addEventListener('error', () => {
       tryReconnect();
     });
-    conn.addEventListener('message', ({ data }) => {
-      const msg = JSON.parse(data) as TRPCClientIncomingMessage;
-
-      if (conn !== activeConnection || state === 'closed') {
-        setTimeout(() => {
-          // when receiving a message, we any old connection that has no pending requests
-          closeIfNoPending(conn);
-        }, 1);
-      }
-      if ('method' in msg) {
-        // server asked client to do something
-        if (msg.method === 'reconnect' && conn === activeConnection) {
-          // server reconnect notification
-          reconnect();
-          // notify subscribers
-          for (const p of Object.values(pendingRequests)) {
-            if (p.type === 'subscription') {
-              p.callbacks.onError?.(TRPCClientError.from(new ReconnectError()));
-            }
+    const handleIncomingRequest = (req: TRPCClientIncomingRequest) => {
+      if (req.method === 'reconnect' && conn === activeConnection) {
+        reconnect();
+        // notify subscribers
+        for (const p of Object.values(pendingRequests)) {
+          if (p.type === 'subscription') {
+            p.callbacks.onError?.(TRPCClientError.from(new ReconnectError()));
           }
         }
+      }
+    };
+    const handleIncomingResponse = (res: TRPCResponse) => {
+      /* istanbul ignore next */
+      if (res.id === null) {
         return;
       }
 
-      const req = pendingRequests[msg.id];
+      const req = pendingRequests[res.id];
       if (!req) {
         // do something?
         return;
       }
-      if ('error' in msg) {
-        req.callbacks.onError?.(TRPCClientError.from(msg));
+      if ('error' in res) {
+        req.callbacks.onError?.(TRPCClientError.from(res));
         return;
       }
 
-      req.callbacks.onNext?.(msg.result);
+      req.callbacks.onNext?.(res.result);
 
-      if (msg.result.type === 'stopped') {
+      if (res.result.type === 'stopped') {
         req.callbacks.onDone?.();
+      }
+    };
+    conn.addEventListener('message', ({ data }) => {
+      const msg = JSON.parse(data) as TRPCClientIncomingMessage;
+
+      if ('method' in msg) {
+        handleIncomingRequest(msg);
+      } else {
+        handleIncomingResponse(msg);
+      }
+      if (conn !== activeConnection || state === 'closed') {
+        setTimeout(() => {
+          // when receiving a message, we any close old connection that has no pending requests
+          closeIfNoPending(conn);
+        }, 1);
       }
     });
 
