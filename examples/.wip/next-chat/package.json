@@ -22,7 +22,7 @@
     "@trpc/next": "^8.1.0",
     "@trpc/react": "^8.1.0",
     "@trpc/server": "^8.1.0",
-    "jest": "^26.6.3",
+    "jest": "^27.0.5",
     "jest-playwright": "^0.0.1",
     "jest-playwright-preset": "^1.4.5",
     "next": "^11.0.0",
