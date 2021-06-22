@@ -9,12 +9,9 @@ import { ObservableCallbacks, UnsubscribeFn } from '../internals/observable';
 import { retryDelay } from '../internals/retryDelay';
 import { TRPCLink } from './core';
 import { TRPCAbortError } from '../internals/TRPCAbortErrorSignal';
-import {
-  TRPCClientIncomingRequest,
-  TRPCResponse,
-} from 'packages/server/src/rpc';
+import { TRPCClientIncomingRequest, TRPCResponse } from '@trpc/server/rpc';
 
-export function createWSClient(opts: {
+export interface WebSocketClientOptions {
   url: string;
   WebSocket?: WebSocket;
   retryDelayMs?: typeof retryDelay;
@@ -23,7 +20,8 @@ export function createWSClient(opts: {
    * @default 3000
    */
   staleConnectionTimeoutMs?: number;
-}) {
+}
+export function createWSClient(opts: WebSocketClientOptions) {
   const {
     url,
     WebSocket: WebSocketImpl = WebSocket,

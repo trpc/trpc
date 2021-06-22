@@ -1,12 +1,15 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
-import http from 'http';
-import qs from 'qs';
 import url from 'url';
 import { assertNotBrowser } from '../assertNotBrowser';
 import { getErrorFromUnknown, TRPCError } from '../errors';
 import { callProcedure } from '../internals/callProcedure';
 import { AnyRouter, inferRouterContext, ProcedureType } from '../router';
 import { TRPCErrorResponse, TRPCResponse } from '../rpc';
+import {
+  BaseRequest,
+  BaseResponse,
+  BaseHandlerOptions,
+} from '../internals/BaseHandlerOptions';
 import { getHTTPStatusCode } from './internals/getHTTPStatusCode';
 import { getPostBody } from './internals/getPostBody';
 import { getQueryInput } from './internals/getQueryInput';
@@ -20,32 +23,6 @@ export type CreateContextFnOptions<TRequest, TResponse> = {
 export type CreateContextFn<TRouter extends AnyRouter, TRequest, TResponse> = (
   opts: CreateContextFnOptions<TRequest, TResponse>,
 ) => inferRouterContext<TRouter> | Promise<inferRouterContext<TRouter>>;
-
-export type BaseRequest = http.IncomingMessage & {
-  method?: string;
-  query?: qs.ParsedQs;
-  body?: any;
-};
-export type BaseResponse = http.ServerResponse;
-
-export interface BaseOptions<
-  TRouter extends AnyRouter,
-  TRequest extends BaseRequest,
-> {
-  teardown?: () => Promise<void>;
-  maxBodySize?: number;
-  onError?: (opts: {
-    error: TRPCError;
-    type: ProcedureType | 'unknown';
-    path: string | undefined;
-    req: TRequest;
-    input: unknown;
-    ctx: undefined | inferRouterContext<TRouter>;
-  }) => void;
-  batching?: {
-    enabled: boolean;
-  };
-}
 
 const HTTP_METHOD_PROCEDURE_TYPE_MAP: Record<
   string,
@@ -91,9 +68,8 @@ export async function requestHandler<
     req: TRequest;
     res: TResponse;
     path: string;
-    router: TRouter;
     createContext: TCreateContextFn;
-  } & BaseOptions<TRouter, TRequest>,
+  } & BaseHandlerOptions<TRouter, TRequest>,
 ) {
   const { req, res, createContext, teardown, onError, maxBodySize, router } =
     opts;

@@ -1,4 +1,4 @@
-import { AnyRouter } from 'packages/server/src/router';
+import { AnyRouter } from '@trpc/server';
 import { TRPCLink } from './core';
 
 export function retryLink<TRouter extends AnyRouter = AnyRouter>(opts: {

@@ -7,11 +7,7 @@ import { EventEmitter } from 'events';
 import { expectTypeOf } from 'expect-type';
 import { default as WebSocket, default as ws } from 'ws';
 import { z } from 'zod';
-import {
-  createWSClient,
-  TRPCWebSocketClient,
-  wsLink,
-} from '../../client/src/links/wsLink';
+import { wsLink } from '../../client/src/links/wsLink';
 import * as trpc from '../src';
 import { TRPCResult } from '../src/rpc';
 import { applyWSSHandler } from '../src/ws';
@@ -25,7 +21,6 @@ function factory() {
   const subRef: {
     current: trpc.Subscription<Message>;
   } = {} as any;
-  let wsClient: TRPCWebSocketClient = null as any;
   const onNewMessageSubscription = jest.fn();
   const subscriptionEnded = jest.fn();
   const onNewClient = jest.fn();
@@ -81,12 +76,11 @@ function factory() {
         },
       }),
     {
-      client({ wssUrl }) {
-        wsClient = createWSClient({
-          url: wssUrl,
-          retryDelayMs: () => 10,
-          staleConnectionTimeoutMs: 200,
-        });
+      wsClient: {
+        retryDelayMs: () => 10,
+        staleConnectionTimeoutMs: 200,
+      },
+      client({ wsClient }) {
         return {
           links: [wsLink({ client: wsClient })],
         };
@@ -96,27 +90,28 @@ function factory() {
 
   opts.wss.addListener('connection', onNewClient);
   return {
-    ee,
-    wsClient,
     ...opts,
+    ee,
     subRef,
     onNewMessageSubscription,
     onNewClient,
+    async close() {
+      await opts.close();
+    },
   };
 }
 
 test('query', async () => {
-  const { client, close, wsClient } = factory();
+  const { client, close } = factory();
   expect(await client.query('greeting')).toBe('hello world');
   expect(await client.query('greeting', null)).toBe('hello world');
   expect(await client.query('greeting', 'alexdotjs')).toBe('hello alexdotjs');
 
   close();
-  wsClient.close();
 });
 
 test('mutation', async () => {
-  const { client, close, wsClient } = factory();
+  const { client, close } = factory();
   expect(
     await client.mutation('posts.edit', {
       id: 'id',
@@ -131,11 +126,10 @@ test('mutation', async () => {
   `);
 
   close();
-  wsClient.close();
 });
 
 test('$subscription()', async () => {
-  const { client, close, ee, wsClient } = factory();
+  const { client, close, ee } = factory();
   ee.once('subscription:created', () => {
     setImmediate(() => {
       ee.emit('server:msg', {
@@ -206,12 +200,10 @@ test('$subscription()', async () => {
     expect(ee.listenerCount('server:error')).toBe(0);
   });
   close();
-  wsClient.close();
 });
 
 test.skip('$subscription() - server randomly stop and restart (this test might be flaky, try re-running)', async () => {
-  const { client, close, wsClient, ee, wssPort, applyWSSHandlerOpts } =
-    factory();
+  const { client, close, ee, wssPort, applyWSSHandlerOpts } = factory();
   ee.once('subscription:created', () => {
     setImmediate(() => {
       ee.emit('server:msg', {
@@ -289,12 +281,11 @@ test.skip('$subscription() - server randomly stop and restart (this test might b
     ]
   `);
 
-  wsClient.close();
   wss.close();
 });
 
 test('server subscription ended', async () => {
-  const { client, close, wsClient, ee, subRef } = factory();
+  const { client, close, ee, subRef } = factory();
   ee.once('subscription:created', () => {
     setImmediate(() => {
       ee.emit('server:msg', {
@@ -322,19 +313,12 @@ test('server subscription ended', async () => {
   await waitFor(() => {
     expect(onDone).toHaveBeenCalledTimes(1);
   });
-  wsClient.close();
   close();
 });
 
 test('server emits disconnect', async () => {
-  const {
-    client,
-    close,
-    wsClient,
-    wssHandler,
-    onNewMessageSubscription,
-    onNewClient,
-  } = factory();
+  const { client, close, wssHandler, onNewMessageSubscription, onNewClient } =
+    factory();
 
   const onNext = jest.fn();
   const onError = jest.fn();
@@ -356,12 +340,11 @@ test('server emits disconnect', async () => {
     expect(onDone).toHaveBeenCalledTimes(1);
   });
 
-  wsClient.close();
   close();
 });
 
 test('sub emits errors', async () => {
-  const { client, close, wsClient, wss, ee, subRef } = factory();
+  const { client, close, wss, ee, subRef } = factory();
 
   ee.once('subscription:created', () => {
     setImmediate(() => {
@@ -388,7 +371,6 @@ test('sub emits errors', async () => {
     expect(onDone).toHaveBeenCalledTimes(0);
   });
 
-  wsClient.close();
   close();
 });
 
@@ -407,10 +389,11 @@ test('wait for slow queries/mutations before disconnecting', async () => {
       WebSocket.CLOSED,
     );
   });
+  close();
 });
 
 test('ability to do do overlapping connects', async () => {
-  const { client, close, wsClient, ee, wssHandler, wss } = factory();
+  const { client, close, ee, wssHandler, wss } = factory();
   ee.once('subscription:created', () => {
     setImmediate(() => {
       ee.emit('server:msg', {
@@ -452,12 +435,11 @@ test('ability to do do overlapping connects', async () => {
     expect(wss.clients.size).toBe(1);
   });
 
-  wsClient.close();
   close();
 });
 
 test('not found error', async () => {
-  const { client, close, wsClient, router } = factory();
+  const { client, close, router } = factory();
 
   const error: TRPCClientError<typeof router> = await new Promise(
     (resolve, reject) =>
@@ -470,7 +452,6 @@ test('not found error', async () => {
   expect(error.name).toBe('TRPCClientError');
   expect(error.shape?.data.code).toMatchInlineSnapshot(`"PATH_NOT_FOUND"`);
 
-  wsClient.close();
   close();
 });
 
@@ -491,4 +472,5 @@ test('batching', async () => {
       },
     ]
   `);
+  t.close();
 });

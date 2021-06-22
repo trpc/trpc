@@ -1,7 +1,8 @@
 import http from 'http';
 import ws from 'ws';
 import { getErrorFromUnknown, TRPCError } from '../errors';
-import { BaseOptions, CreateContextFn } from '../http';
+import { CreateContextFn } from '../http';
+import { BaseHandlerOptions } from '../internals/BaseHandlerOptions';
 import { callProcedure } from '../internals/callProcedure';
 import { AnyRouter, ProcedureType } from '../router';
 import {
@@ -81,11 +82,10 @@ function parseMessage(obj: unknown, transformer: DataTransformer): TRPCRequest {
  * Web socket server handler
  */
 export type WSSHandlerOptions<TRouter extends AnyRouter> = {
-  router: TRouter;
   wss: ws.Server;
   createContext: CreateContextFn<TRouter, http.IncomingMessage, ws>;
   process?: NodeJS.Process;
-} & BaseOptions<TRouter, http.IncomingMessage>;
+} & BaseHandlerOptions<TRouter, http.IncomingMessage>;
 
 export function applyWSSHandler<TRouter extends AnyRouter>(
   opts: WSSHandlerOptions<TRouter>,
@@ -150,12 +150,6 @@ export function applyWSSHandler<TRouter extends AnyRouter>(
             return;
           }
 
-          respond({
-            id,
-            result: {
-              type: 'started',
-            },
-          });
           const sub = result;
           /* istanbul ignore next */
           if (client.readyState !== client.OPEN) {
@@ -167,7 +161,10 @@ export function applyWSSHandler<TRouter extends AnyRouter>(
           if (clientSubscriptions.has(id)) {
             // duplicate request ids for client
             sub.destroy();
-            throw new Error(`Duplicate id ${id}`);
+            throw new TRPCError({
+              message: `Duplicate id ${id}`,
+              code: 'BAD_REQUEST',
+            });
           }
           clientSubscriptions.set(id, sub);
           sub.on('data', (data: unknown) => {
@@ -203,6 +200,13 @@ export function applyWSSHandler<TRouter extends AnyRouter>(
                 type: 'stopped',
               },
             });
+          });
+
+          respond({
+            id,
+            result: {
+              type: 'started',
+            },
           });
           await sub.start();
         } catch (_error) /* istanbul ignore next */ {
