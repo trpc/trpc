@@ -50,7 +50,7 @@ function useClickOutside({
     };
   }, [ref, enabled]);
 }
-function ListItem({ task, allTasks }: { task: Task; allTasks: Task[] }) {
+function ListItem({ task }: { task: Task }) {
   const [editing, setEditing] = useState(false);
   const wrapperRef = useRef(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -68,6 +68,10 @@ function ListItem({ task, allTasks }: { task: Task; allTasks: Task[] }) {
   const editTask = trpc.useMutation('todos.edit', {
     async onMutate({ id, data }) {
       await utils.cancelQuery(['todos.all']);
+      const allTasks = utils.getQueryData(['todos.all']);
+      if (!allTasks) {
+        return;
+      }
       utils.setQueryData(
         ['todos.all'],
         allTasks.map((t) =>
@@ -84,6 +88,10 @@ function ListItem({ task, allTasks }: { task: Task; allTasks: Task[] }) {
   const deleteTask = trpc.useMutation('todos.delete', {
     async onMutate() {
       await utils.cancelQuery(['todos.all']);
+      const allTasks = utils.getQueryData(['todos.all']);
+      if (!allTasks) {
+        return;
+      }
       utils.setQueryData(
         ['todos.all'],
         allTasks.filter((t) => t.id != task.id),
@@ -247,7 +255,7 @@ export default function TodosPage({
                 return true;
               })
               .map((task) => (
-                <ListItem key={task.id} task={task} allTasks={allTasks.data} />
+                <ListItem key={task.id} task={task} />
               ))}
           </ul>
         </section>
