@@ -10,7 +10,10 @@ slug: /RPC
 :::
 
 :::tip
-You can read more details by drilling into the TypeScript definitions in [/packages/server/rpc](https://github.com/trpc/trpc/tree/feature/refactor-rpc/packages/server/src/rpc).
+You can read more details by drilling into the TypeScript definitions in 
+
+- [/packages/server/src/rpc/envelopes.ts](https://github.com/trpc/trpc/tree/main/packages/server/src/rpc/envelopes.ts)
+- [/packages/server/src/rpc/codes.ts](https://github.com/trpc/trpc/tree/main/packages/server/src/rpc/codes.ts).
 :::
 
 ## Client Request Methods
