@@ -143,14 +143,8 @@ export function createWSClient(opts: {
       }
     };
     const handleIncomingResponse = (res: TRPCResponse) => {
-      /* istanbul ignore next */
-      if (res.id === null) {
-        return;
-      }
-
-      const req = pendingRequests[res.id];
+      const req = res.id !== null && pendingRequests[res.id];
       if (!req) {
-        // do something?
         return;
       }
       if ('error' in res) {
