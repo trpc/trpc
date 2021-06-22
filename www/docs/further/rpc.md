@@ -1,11 +1,11 @@
 ---
-id: RPC
+id: rpc
 title: Subscriptions / WebSockets / JSON-RPC 2.0
 sidebar_label: Subscriptions / WebSockets / JSON-RPC 2.0
-slug: /RPC
+slug: /rpc
 ---
 
-:::warning
+:::info
 - Subscriptions & WebSockets are both experimental and might have breaking changes without a major version bump.
 :::
 
