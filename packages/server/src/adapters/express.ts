@@ -1,7 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import type * as express from 'express';
-import { BaseOptions, CreateContextFn, CreateContextFnOptions } from '../http';
+import { CreateContextFn, CreateContextFnOptions } from '../http';
 import { requestHandler } from '../http';
+import { BaseHandlerOptions } from '../internals/BaseHandlerOptions';
 import { AnyRouter } from '../router';
 
 export type CreateExpressContextOptions = CreateContextFnOptions<
@@ -18,7 +19,7 @@ export type CreateExpressContextFn<TRouter extends AnyRouter> = CreateContextFn<
 export function createExpressMiddleware<TRouter extends AnyRouter>(
   opts: {
     createContext: CreateExpressContextFn<TRouter>;
-  } & BaseOptions<TRouter, express.Request>,
+  } & BaseHandlerOptions<TRouter, express.Request>,
 ): express.Handler {
   return (req, res) => {
     const endpoint = req.path.substr(1);

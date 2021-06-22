@@ -1,7 +1,8 @@
 import http from 'http';
 import ws from 'ws';
 import { getErrorFromUnknown, TRPCError } from '../errors';
-import { BaseOptions, CreateContextFn } from '../http';
+import { CreateContextFn } from '../http';
+import { BaseHandlerOptions } from '../internals/BaseHandlerOptions';
 import { callProcedure } from '../internals/callProcedure';
 import { AnyRouter, ProcedureType } from '../router';
 import {
@@ -84,7 +85,7 @@ export type WSSHandlerOptions<TRouter extends AnyRouter> = {
   wss: ws.Server;
   createContext: CreateContextFn<TRouter, http.IncomingMessage, ws>;
   process?: NodeJS.Process;
-} & BaseOptions<TRouter, http.IncomingMessage>;
+} & BaseHandlerOptions<TRouter, http.IncomingMessage>;
 
 export function applyWSSHandler<TRouter extends AnyRouter>(
   opts: WSSHandlerOptions<TRouter>,
