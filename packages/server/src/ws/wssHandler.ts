@@ -107,6 +107,7 @@ export function applyWSSHandler<TRouter extends AnyRouter>(
 
       async function handleRequest(msg: TRPCRequest) {
         const { id } = msg;
+        /* istanbul ignore next */
         if (id === null) {
           throw new TRPCError({
             code: 'BAD_REQUEST',

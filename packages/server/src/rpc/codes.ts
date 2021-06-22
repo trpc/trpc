@@ -21,7 +21,7 @@ export const TRPC_ERROR_CODES_BY_KEY = {
   /**
    * The method does not exist / is not available.
    */
-  NOT_FOUND: -32601,
+  METHOD_NOT_FOUND: -32601,
   /**
    * Internal JSON-RPC error.
    */
@@ -29,6 +29,7 @@ export const TRPC_ERROR_CODES_BY_KEY = {
   // Implementation specific errors
   UNAUTHORIZED: -32001, // 401
   FORBIDDEN: -32003, // 403
+  PATH_NOT_FOUND: -32004, // 404
   METHOD_NOT_SUPPORTED: -32005, // 405
   TIMEOUT: -32008, // 408
   PAYLOAD_TOO_LARGE: -32013, // 413

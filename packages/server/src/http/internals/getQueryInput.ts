@@ -1,5 +1,5 @@
 import qs from 'qs';
-import { inputValidationError } from '../../errors';
+import { TRPCError } from '../../errors';
 
 export function getQueryInput(query: qs.ParsedQs) {
   const queryInput = query.input;
@@ -8,7 +8,10 @@ export function getQueryInput(query: qs.ParsedQs) {
   }
   try {
     return JSON.parse(queryInput as string);
-  } catch (err) {
-    throw inputValidationError('Expected query.input to be a JSON string');
+  } catch (originalError) {
+    throw new TRPCError({
+      code: 'BAD_REQUEST',
+      originalError,
+    });
   }
 }

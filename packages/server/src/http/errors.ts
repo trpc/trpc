@@ -8,21 +8,21 @@ export const httpError = {
   /**
    * @deprecated use `new TRPCError({ code: 'FORBIDDEN', message: '... })`
    */
-  forbidden: (message = 'FORBIDDEN') =>
+  forbidden: (message?: string) =>
     new TRPCError({ message, code: 'FORBIDDEN' }),
   /**
    * @deprecated use `new TRPCError({ code: 'UNAUTHORIZED', message: '... })`
    */
-  unauthorized: (message = 'UNAUTHORIZED') =>
+  unauthorized: (message?: string) =>
     new TRPCError({ message, code: 'UNAUTHORIZED' }),
   /**
    * @deprecated use `new TRPCError({ code: 'BAD_REQUEST', message: '... })`
    */
-  badRequest: (message = 'BAD_REQUEST') =>
+  badRequest: (message?: string) =>
     new TRPCError({ message, code: 'BAD_REQUEST' }),
   /**
-   * @deprecated use `new TRPCError({ code: 'NOT_FOUND', message: '... })`
+   * @deprecated use `new TRPCError({ code: 'METHOD_NOT_FOUND', message: '... })`
    */
-  notFound: (message = 'NOT_FOUND') =>
-    new TRPCError({ message, code: 'NOT_FOUND' }),
+  notFound: (message?: string) =>
+    new TRPCError({ message, code: 'PATH_NOT_FOUND' }),
 };

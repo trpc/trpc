@@ -240,12 +240,12 @@ test('make sure object is ignoring prototype', async () => {
   }
   assertClientError(clientError);
   expect(clientError.shape.message).toMatchInlineSnapshot(
-    `"No such query procedure \\"toString\\""`,
+    `"No \\"query\\"-procedure on path \\"toString\\""`,
   );
-  expect(clientError.shape.code).toMatchInlineSnapshot(`-32601`);
+  expect(clientError.shape.code).toMatchInlineSnapshot(`-32004`);
   expect(onError).toHaveBeenCalledTimes(1);
   const serverError = onError.mock.calls[0][0].error;
-  expect(serverError.code).toBe('NOT_FOUND');
+  expect(serverError.code).toMatchInlineSnapshot(`"PATH_NOT_FOUND"`);
 
   close();
 });
