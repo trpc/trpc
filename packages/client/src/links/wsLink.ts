@@ -9,10 +9,7 @@ import { ObservableCallbacks, UnsubscribeFn } from '../internals/observable';
 import { retryDelay } from '../internals/retryDelay';
 import { TRPCLink } from './core';
 import { TRPCAbortError } from '../internals/TRPCAbortErrorSignal';
-import {
-  TRPCClientIncomingRequest,
-  TRPCResponse,
-} from 'packages/server/src/rpc';
+import { TRPCClientIncomingRequest, TRPCResponse } from '@trpc/server/rpc';
 
 export interface WebSocketClientOptions {
   url: string;
