@@ -252,7 +252,7 @@ export type TRPCWebSocketClient = ReturnType<typeof createWSClient>;
 export interface WebSocketLinkOptions {
   client: TRPCWebSocketClient;
 }
-export class WebSocketInterruptError extends Error {
+class WebSocketInterruptError extends Error {
   constructor(message: string) {
     super(message);
     this.name = 'WebSocketInterruptError';
@@ -260,7 +260,7 @@ export class WebSocketInterruptError extends Error {
   }
 }
 
-export class ReconnectError extends Error {
+class ReconnectError extends Error {
   constructor() {
     super('ReconnectError');
     this.name = 'ReconnectError';
