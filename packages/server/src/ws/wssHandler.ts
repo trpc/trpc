@@ -34,8 +34,9 @@ function assertIsRequestId(
   obj: unknown,
 ): asserts obj is number | string | null {
   if (
-    obj !== null ||
-    (typeof obj === 'number' && isNaN(obj)) ||
+    obj !== null &&
+    typeof obj === 'number' &&
+    isNaN(obj) &&
     typeof obj !== 'string'
   ) {
     throw new Error('Invalid request id');
@@ -228,15 +229,17 @@ export function applyWSSHandler<TRouter extends AnyRouter>(
             originalError,
           });
 
-          client.send({
-            id: -1,
-            error: router.getErrorShape({
-              error,
-              type: 'unknown',
-              path: undefined,
-              input: undefined,
-              ctx: undefined,
-            }),
+          respond({
+            id: null,
+            error: transformer.serialize(
+              router.getErrorShape({
+                error,
+                type: 'unknown',
+                path: undefined,
+                input: undefined,
+                ctx: undefined,
+              }),
+            ),
           });
         }
       });
