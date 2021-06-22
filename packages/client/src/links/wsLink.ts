@@ -137,7 +137,9 @@ export function createWSClient(opts: {
         // notify subscribers
         for (const p of Object.values(pendingRequests)) {
           if (p.type === 'subscription') {
-            p.callbacks.onError?.(TRPCClientError.from(new ReconnectError()));
+            p.callbacks.onError?.(
+              TRPCClientError.from(new TRPCReconnectError()),
+            );
           }
         }
       }
@@ -260,11 +262,11 @@ class WebSocketInterruptError extends Error {
   }
 }
 
-class ReconnectError extends Error {
+class TRPCReconnectError extends Error {
   constructor() {
-    super('ReconnectError');
-    this.name = 'ReconnectError';
-    Object.setPrototypeOf(this, ReconnectError.prototype);
+    super('TRPCReconnectError');
+    this.name = 'TRPCReconnectError';
+    Object.setPrototypeOf(this, TRPCReconnectError.prototype);
   }
 }
 export function wsLink<TRouter extends AnyRouter>(

@@ -9,7 +9,7 @@ import { default as WebSocket, default as ws } from 'ws';
 import { z } from 'zod';
 import {
   createWSClient,
-  ReconnectError,
+  TRPCReconnectError,
   TRPCWebSocketClient,
   WebSocketInterruptError,
   wsLink,
@@ -439,7 +439,7 @@ test('ability to do do overlapping connects', async () => {
   wssHandler.broadcastReconnectNotification();
   await waitFor(() => {
     expect(sub1.onError.mock.calls[0][0].originalError).toBeInstanceOf(
-      ReconnectError,
+      TRPCReconnectError,
     );
     expect(wss.clients.size).toBe(2);
   });
