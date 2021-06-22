@@ -468,7 +468,7 @@ test('not found error', async () => {
   );
 
   expect(error.name).toBe('TRPCClientError');
-  expect(error.shape?.data.code).toBe('NOT_FOUND');
+  expect(error.shape?.data.code).toBe('METHOD_NOT_FOUND');
 
   wsClient.close();
   close();

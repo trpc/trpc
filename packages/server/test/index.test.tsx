@@ -99,10 +99,10 @@ describe('integration tests', () => {
         throw new Error('Not TRPCClientError');
       }
       expect(err.message).toMatchInlineSnapshot(
-        `"No such query procedure \\"notFound\\""`,
+        `"No \\"query\\"-procedure on path \\"notFound\\""`,
       );
       expect(err.shape?.message).toMatchInlineSnapshot(
-        `"No such query procedure \\"notFound\\""`,
+        `"No \\"query\\"-procedure on path \\"notFound\\""`,
       );
     }
     close();

@@ -145,7 +145,7 @@ test('404', async () => {
   const json: any = JSON.parse((end.mock.calls[0] as any)[0]);
 
   expect(json.error.message).toMatchInlineSnapshot(
-    `"No such query procedure \\"not-found-path\\""`,
+    `"No \\"query\\"-procedure on path \\"not-found-path\\""`,
   );
 });
 
