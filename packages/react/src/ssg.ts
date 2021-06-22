@@ -3,9 +3,10 @@ import {
   assertNotBrowser,
   ClientDataTransformerOptions,
   inferHandlerInput,
+  inferProcedureOutput,
   inferRouterContext,
 } from '@trpc/server';
-import { QueryClient } from 'react-query';
+import { InfiniteData, QueryClient } from 'react-query';
 import {
   dehydrate,
   DehydratedState,
@@ -76,9 +77,10 @@ export function createSSGHelpers<TRouter extends AnyRouter>({
   const fetchQuery = async <
     TPath extends keyof TQueries & string,
     TProcedure extends TQueries[TPath],
+    TOutput extends inferProcedureOutput<TProcedure>,
   >(
     ...pathAndArgs: [path: TPath, ...args: inferHandlerInput<TProcedure>]
-  ) => {
+  ): Promise<TOutput> => {
     const [path, input] = pathAndArgs;
     const cacheKey = [path, input ?? null, CACHE_KEY_QUERY];
 
@@ -92,9 +94,10 @@ export function createSSGHelpers<TRouter extends AnyRouter>({
   const fetchInfiniteQuery = async <
     TPath extends keyof TQueries & string,
     TProcedure extends TQueries[TPath],
+    TOutput extends inferProcedureOutput<TProcedure>,
   >(
     ...pathAndArgs: [path: TPath, ...args: inferHandlerInput<TProcedure>]
-  ) => {
+  ): Promise<InfiniteData<TOutput>> => {
     const cacheKey = getCacheKey(pathAndArgs, CACHE_KEY_INFINITE_QUERY);
 
     return queryClient.fetchInfiniteQuery(cacheKey, async () => {
