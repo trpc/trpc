@@ -63,7 +63,7 @@ Here's some example apps:
       </td>
     </tr>
     <tr>
-      <td>Express server &amp; procedure calls with node.js.<br/>Uses experimental subscriptions.</td>
+      <td>Express server &amp; procedure calls with node.js.</td>
       <td><em>n/a</em></td>
       <td>
         <ul>
