@@ -168,7 +168,7 @@ test('payload too large', async () => {
   });
   const { res, end } = mockRes();
 
-  setImmediate(() => {
+  setTimeout(() => {
     req.emit('data', JSON.stringify('123456789'));
     req.emit('end');
   });
