@@ -43,7 +43,7 @@
     "zod": "^3.0.0"
   },
   "devDependencies": {
-    "@types/jest": "^26.0.20",
+    "@types/jest": "^26.0.23",
     "@types/node": "^15.0.1",
     "@types/react": "^17.0.0",
     "@typescript-eslint/eslint-plugin": "^4.25.0",
@@ -54,14 +54,14 @@
     "eslint-plugin-prettier": "^3.3.1",
     "eslint-plugin-react": "^7.22.0",
     "eslint-plugin-react-hooks": "^4.2.0",
-    "jest": "^26.6.3",
+    "jest": "^27.0.5",
     "jest-playwright": "^0.0.1",
     "jest-playwright-preset": "^1.4.5",
     "npm-run-all": "^4.1.5",
     "playwright": "^1.8.0",
     "prettier": "^2.3.0",
     "prisma": "^2.18.0",
-    "ts-jest": "^26.5.3",
+    "ts-jest": "^27.0.3",
     "typescript": "4.3.4"
   },
   "publishConfig": {

@@ -419,15 +419,17 @@ describe('createCaller()', () => {
     expectTypeOf(data).toMatchTypeOf<{ input: number }>();
     expect(data).toEqual({ input: 2 });
   });
-  test('subscription()', async (done) => {
+  test('subscription()', async () => {
     const sub = await router.createCaller({}).subscription('sub', 3);
 
-    sub.on('data', (data: { input: number }) => {
-      expect(data).toEqual({ input: 3 });
-      expectTypeOf(data).toMatchTypeOf<{ input: number }>();
-      done();
+    await new Promise<void>((resolve) => {
+      sub.on('data', (data: { input: number }) => {
+        expect(data).toEqual({ input: 3 });
+        expectTypeOf(data).toMatchTypeOf<{ input: number }>();
+        resolve();
+      });
+      sub.start();
     });
-    sub.start();
   });
 });
 
@@ -471,15 +473,16 @@ describe('createCaller()', () => {
     expectTypeOf(data).toMatchTypeOf<{ input: number }>();
     expect(data).toEqual({ input: 2 });
   });
-  test('subscription()', async (done) => {
+  test('subscription()', async () => {
     const sub = await router.createCaller({}).subscription('sub', 3);
-
-    sub.on('data', (data: { input: number }) => {
-      expect(data).toEqual({ input: 3 });
-      expectTypeOf(data).toMatchTypeOf<{ input: number }>();
-      done();
+    await new Promise<void>((resolve) => {
+      sub.on('data', (data: { input: number }) => {
+        expect(data).toEqual({ input: 3 });
+        expectTypeOf(data).toMatchTypeOf<{ input: number }>();
+        resolve();
+      });
+      sub.start();
     });
-    sub.start();
   });
 });
 

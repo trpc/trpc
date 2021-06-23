@@ -131,7 +131,7 @@ test('mutation', async () => {
 test('$subscription()', async () => {
   const { client, close, ee } = factory();
   ee.once('subscription:created', () => {
-    setImmediate(() => {
+    setTimeout(() => {
       ee.emit('server:msg', {
         id: '1',
       });
@@ -205,7 +205,7 @@ test('$subscription()', async () => {
 test.skip('$subscription() - server randomly stop and restart (this test might be flaky, try re-running)', async () => {
   const { client, close, ee, wssPort, applyWSSHandlerOpts } = factory();
   ee.once('subscription:created', () => {
-    setImmediate(() => {
+    setTimeout(() => {
       ee.emit('server:msg', {
         id: '1',
       });
@@ -287,7 +287,7 @@ test.skip('$subscription() - server randomly stop and restart (this test might b
 test('server subscription ended', async () => {
   const { client, close, ee, subRef } = factory();
   ee.once('subscription:created', () => {
-    setImmediate(() => {
+    setTimeout(() => {
       ee.emit('server:msg', {
         id: '1',
       });
@@ -347,7 +347,7 @@ test('sub emits errors', async () => {
   const { client, close, wss, ee, subRef } = factory();
 
   ee.once('subscription:created', () => {
-    setImmediate(() => {
+    setTimeout(() => {
       subRef.current.emitError(new Error('test'));
       ee.emit('server:msg', {
         id: '1',
@@ -395,7 +395,7 @@ test('wait for slow queries/mutations before disconnecting', async () => {
 test('ability to do do overlapping connects', async () => {
   const { client, close, ee, wssHandler, wss } = factory();
   ee.once('subscription:created', () => {
-    setImmediate(() => {
+    setTimeout(() => {
       ee.emit('server:msg', {
         id: '1',
       });
