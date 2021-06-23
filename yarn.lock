@@ -11679,7 +11679,7 @@ stylis@3.5.4:
   resolved "https://registry.npmjs.org/stylis/-/stylis-3.5.4.tgz#f665f25f5e299cf3d64654ab949a57c768b73fbe"
   integrity sha512-8/3pSmthWM7lsPBKv7NXkzn2Uc9W7NotcwGNpJaa3k7WMM1XDCA4MgT5k/8BIexd5ydZdboXtU90XH9Ec4Bv/Q==
 
-superjson@^1.5.2:
+superjson@^1.7.4:
   version "1.7.4"
   resolved "https://registry.npmjs.org/superjson/-/superjson-1.7.4.tgz#76ba9091e74c93ce6f61914b58854ee0b1ba37b9"
   integrity sha512-A6DYTe04+x4L9NPywHeGZNy6/gLe8qqKCwhEfTH9M4eXpTjiTsF83JZ3j4hwXx1ogRb4779nWxsDlJGIECOJkw==

@@ -5,6 +5,7 @@ import { PrismaClient } from '@prisma/client';
 import * as trpc from '@trpc/server';
 import * as trpcNext from '@trpc/server/adapters/next';
 import { postsRouter } from 'routers/posts';
+import superjson from 'superjson';
 
 const prisma = new PrismaClient({
   log:
@@ -47,7 +48,7 @@ const appRouter = createRouter()
    * Data transformer
    * @link https://trpc.io/docs/data-transformers
    */
-  // .transformer(superjson)
+  .transformer(superjson)
   /**
    * Optionally do custom error (typesafe!) formatting
    * @link https://trpc.io/docs/error-formatting
