@@ -13,6 +13,9 @@ export default function IndexPage() {
       utils.invalidateQuery(['posts.all']);
       utils.invalidateQuery(['posts.byId']);
     },
+    onError(err) {
+      console.error('Subscription error:', err);
+    },
   });
 
   return (
@@ -23,13 +26,11 @@ export default function IndexPage() {
       </Head>
       <h1>Welcome to your tRPC starter!</h1>
 
-      <Link href="/about">
-        <a>other page</a>
-      </Link>
       <p>
-        Check <a href="https://trpc.io/docs">the docs</a> whenever you get
-        stuck, or ping <a href="https://twitter.com/alexdotjs">@alexdotjs</a> on
-        Twitter.
+        <Link href="/about">
+          <a>Go to other page</a>
+        </Link>{' '}
+        (cancels subscription)
       </p>
       <h2>
         Posts
