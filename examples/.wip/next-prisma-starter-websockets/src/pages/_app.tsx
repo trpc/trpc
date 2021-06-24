@@ -32,16 +32,19 @@ function getHostname() {
   return `http://localhost:${process.env.PORT ?? 3000}`;
 }
 function getEndingLink() {
-  if (process.browser) {
-    const client = createWSClient({
-      url: `ws://localhost:3001/api/trpc`,
-    });
-    return wsLink<AppRouter>({
-      client,
+  if (!process.browser) {
+    return httpBatchLink({
+      url: `${getHostname()}/api/trpc`,
     });
   }
-  return httpBatchLink({
-    url: `${getHostname()}/api/trpc`,
+  const client = createWSClient({
+    url: `ws://localhost:${
+      // FIXME
+      process.env.NODE_ENV === 'production' ? 3000 : 3001
+    }/api/trpc`,
+  });
+  return wsLink<AppRouter>({
+    client,
   });
 }
 
@@ -78,5 +81,5 @@ export default withTRPC<AppRouter>({
   /**
    * @link https://trpc.io/docs/ssr
    */
-  ssr: true,
+  ssr: false,
 })(MyApp);

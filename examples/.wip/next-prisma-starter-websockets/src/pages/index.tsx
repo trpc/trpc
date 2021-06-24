@@ -1,13 +1,14 @@
 import Head from 'next/head';
 import { ReactQueryDevtools } from 'react-query/devtools';
 import { trpc } from '../utils/trpc';
+import Link from 'next/link';
 
 export default function IndexPage() {
   const postsQuery = trpc.useQuery(['posts.all']);
   const addPost = trpc.useMutation('posts.add');
   const utils = trpc.useContext();
 
-  trpc.useSubscription(['posts.ping', null], {
+  trpc.useSubscription(['posts.ping', undefined], {
     onNext() {
       utils.invalidateQuery(['posts.all']);
       utils.invalidateQuery(['posts.byId']);
@@ -21,6 +22,10 @@ export default function IndexPage() {
         <link rel="icon" href="/favicon.ico" />
       </Head>
       <h1>Welcome to your tRPC starter!</h1>
+
+      <Link href="/about">
+        <a>other page</a>
+      </Link>
       <p>
         Check <a href="https://trpc.io/docs">the docs</a> whenever you get
         stuck, or ping <a href="https://twitter.com/alexdotjs">@alexdotjs</a> on

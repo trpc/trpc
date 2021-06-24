@@ -1,11 +1,11 @@
 {
   "extends": "./tsconfig.json",
   "compilerOptions": {
-    "lib": ["es2020"],
     "module": "commonjs",
-    "target": "es2020",
     "outDir": "dist",
-    "moduleResolution": "node"
+    "target": "es2020",
+    "isolatedModules": false,
+    "noEmit": false
   },
   "include": ["next-env.d.ts", "src/**/*.ts", "src/**/*.tsx"]
 }
