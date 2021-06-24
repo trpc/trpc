@@ -7,6 +7,13 @@ export default function IndexPage() {
   const addPost = trpc.useMutation('posts.add');
   const utils = trpc.useContext();
 
+  trpc.useSubscription(['posts.ping', null], {
+    onNext() {
+      utils.invalidateQuery(['posts.all']);
+      utils.invalidateQuery(['posts.byId']);
+    },
+  });
+
   return (
     <>
       <Head>

@@ -5,7 +5,9 @@
 
 import { z } from 'zod';
 import { createRouter } from '../trpc';
-
+import { EventEmitter } from 'events';
+import { Subscription } from '@trpc/server';
+const ee = new EventEmitter();
 export const postsRouter = createRouter()
   // create
   .mutation('add', {
@@ -18,6 +20,7 @@ export const postsRouter = createRouter()
       const todo = await ctx.prisma.post.create({
         data: input,
       });
+      ee.emit('ping');
       return todo;
     },
   })
@@ -55,6 +58,7 @@ export const postsRouter = createRouter()
         where: { id },
         data,
       });
+      ee.emit('ping');
       return todo;
     },
   })
@@ -63,6 +67,20 @@ export const postsRouter = createRouter()
     input: z.string().uuid(),
     async resolve({ input: id, ctx }) {
       await ctx.prisma.post.delete({ where: { id } });
+      ee.emit('ping');
       return id;
+    },
+  })
+  .subscription('ping', {
+    async resolve() {
+      return new Subscription<'ping'>({
+        start(emit) {
+          const ping = () => emit.data('ping');
+          ee.on('ping', ping);
+          return () => {
+            ee.off('ping', ping);
+          };
+        },
+      });
     },
   });
