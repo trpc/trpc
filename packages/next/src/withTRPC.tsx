@@ -39,13 +39,14 @@ export function withTRPC<TRouter extends AnyRouter>(opts: {
     trpcClient: TRPCClient<TRouter>;
     isPrepass: boolean;
   };
-  type WithTRPCProps = AppPropsType & {
-    trpc?: TRPCProp;
-  };
   return (AppOrPage: NextComponentType<any, any, any>): NextComponentType => {
     const trpc = createReactQueryHooks<TRouter>();
 
-    const WithTRPC = (props: WithTRPCProps) => {
+    const WithTRPC = (
+      props: AppPropsType & {
+        trpc?: TRPCProp;
+      },
+    ) => {
       const [{ queryClient, trpcClient, isPrepass }] = useState(() => {
         if (props.trpc) {
           return props.trpc;
