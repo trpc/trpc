@@ -246,10 +246,12 @@ export function createReactQueryHooks<TRouter extends AnyRouter>() {
    */
   function useSubscription<
     TPath extends keyof TSubscriptions & string,
-    TInput extends inferProcedureInput<TSubscriptions[TPath]>,
     TOutput extends inferSubscriptionOutput<TRouter, TPath>,
   >(
-    pathAndArgs: [TPath, TInput],
+    pathAndArgs: [
+      path: TPath,
+      ...args: inferHandlerInput<TSubscriptions[TPath]>
+    ],
     opts: {
       enabled?: boolean;
       onError?: (err: TError) => void;
@@ -266,7 +268,7 @@ export function createReactQueryHooks<TRouter extends AnyRouter>() {
       }
       const [path, input] = pathAndArgs;
       let isStopped = false;
-      const unsub = client.subscription(path, input, {
+      const unsub = client.subscription(path, (input ?? undefined) as any, {
         onError: (err) => {
           if (!isStopped) {
             opts.onError?.(err);
