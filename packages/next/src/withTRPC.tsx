@@ -149,6 +149,7 @@ export function withTRPC<TRouter extends AnyRouter>(opts: {
           });
         }
 
+        // dehydrate query client's state and add it to the props
         pageProps.trpcState = trpcClient.runtime.transformer.serialize(
           dehydrate(queryClient, {
             shouldDehydrateQuery() {
