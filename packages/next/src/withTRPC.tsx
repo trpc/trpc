@@ -23,33 +23,42 @@ import ssrPrepass from 'react-ssr-prepass';
 
 type QueryClientConfig = ConstructorParameters<typeof QueryClient>[0];
 
-export type WithTRPCClientConfig<TRouter extends AnyRouter> =
+export type WithTRPCConfig<TRouter extends AnyRouter> =
   CreateTRPCClientOptions<TRouter> & {
     queryClientConfig?: QueryClientConfig;
   };
 
 export function withTRPC<TRouter extends AnyRouter>(opts: {
-  config: (info: { ctx?: NextPageContext }) => WithTRPCClientConfig<TRouter>;
+  config: (info: { ctx?: NextPageContext }) => WithTRPCConfig<TRouter>;
   ssr?: boolean;
 }) {
   const { config: getClientConfig, ssr = false } = opts;
+  type TRPCProp = {
+    config: WithTRPCConfig<TRouter>;
+    queryClient: QueryClient;
+    trpcClient: TRPCClient<TRouter>;
+    isPrepass: boolean;
+  };
+  type WithTRPCProps = AppPropsType & {
+    trpc?: TRPCProp;
+  };
   return (AppOrPage: NextComponentType<any, any, any>): NextComponentType => {
     const trpc = createReactQueryHooks<TRouter>();
 
-    const WithTRPC = (
-      props: AppPropsType & {
-        queryClient?: QueryClient;
-        trpcClient?: TRPCClient<TRouter>;
-        isPrepass?: boolean;
-      },
-    ) => {
-      const [config] = useState(() => getClientConfig({}));
-      const [queryClient] = useState(
-        () => props.queryClient ?? new QueryClient(config.queryClientConfig),
-      );
-      const [trpcClient] = useState(
-        () => props.trpcClient ?? trpc.createClient(config),
-      );
+    const WithTRPC = (props: WithTRPCProps) => {
+      const [{ queryClient, trpcClient, isPrepass }] = useState(() => {
+        if (props.trpc) {
+          return props.trpc;
+        }
+        const config = getClientConfig({});
+        const queryClient = new QueryClient(config.queryClientConfig);
+        const trpcClient = trpc.createClient(config);
+        return {
+          queryClient,
+          trpcClient,
+          isPrepass: false,
+        };
+      });
 
       const hydratedState = trpc.useDehydratedState(
         trpcClient,
@@ -60,7 +69,7 @@ export function withTRPC<TRouter extends AnyRouter>(opts: {
         <trpc.Provider
           client={trpcClient}
           queryClient={queryClient}
-          isPrepass={props.isPrepass}
+          isPrepass={isPrepass}
         >
           <QueryClientProvider client={queryClient}>
             <Hydrate state={hydratedState}>
@@ -107,11 +116,15 @@ export function withTRPC<TRouter extends AnyRouter>(opts: {
         const trpcClient = createTRPCClient(config);
         const queryClient = new QueryClient(config.queryClientConfig);
 
-        const prepassProps = {
-          pageProps,
+        const trpcProp: TRPCProp = {
+          config,
           trpcClient,
           queryClient,
           isPrepass: true,
+        };
+        const prepassProps = {
+          pageProps,
+          trpc: trpcProp,
         };
 
         // Run the prepass step on AppTree. This will run all trpc queries on the server.
