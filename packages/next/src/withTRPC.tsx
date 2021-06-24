@@ -82,11 +82,6 @@ export function withTRPC<TRouter extends AnyRouter>(opts: {
           : (appOrPageCtx as any as NextPageContext);
         const isServer = typeof window === 'undefined' && ssr;
 
-        const config = getClientConfig(isServer ? { ctx } : {});
-
-        const trpcClient = createTRPCClient(config);
-        const queryClient = new QueryClient(config.queryClientConfig);
-
         // Run the wrapped component's getInitialProps function.
         let pageProps: Dict<unknown> = {};
         if (AppOrPage.getInitialProps) {
@@ -108,41 +103,42 @@ export function withTRPC<TRouter extends AnyRouter>(opts: {
         if (typeof window !== 'undefined' || !ssr) {
           return getAppTreeProps(pageProps);
         }
+        const config = getClientConfig(isServer ? { ctx } : {});
+        const trpcClient = createTRPCClient(config);
+        const queryClient = new QueryClient(config.queryClientConfig);
 
-        if (ssr) {
-          const prepassProps = {
-            pageProps,
-            trpcClient,
-            queryClient,
-            isPrepass: true,
-          };
+        const prepassProps = {
+          pageProps,
+          trpcClient,
+          queryClient,
+          isPrepass: true,
+        };
 
-          // Run the prepass step on AppTree. This will run all trpc queries on the server.
-          // multiple prepass ensures that we can do batching on the server
-          while (true) {
-            await ssrPrepass(createElement(AppTree, prepassProps as any));
-            if (!queryClient.isFetching()) {
-              break;
-            }
-            await new Promise<void>((resolve) => {
-              const unsub = queryClient.getQueryCache().subscribe((event) => {
-                if (event?.query.getObserversCount() === 0) {
-                  resolve();
-                  unsub();
-                }
-              });
-            });
+        // Run the prepass step on AppTree. This will run all trpc queries on the server.
+        // multiple prepass ensures that we can do batching on the server
+        while (true) {
+          await ssrPrepass(createElement(AppTree, prepassProps as any));
+          if (!queryClient.isFetching()) {
+            break;
           }
-
-          pageProps.trpcState = trpcClient.runtime.transformer.serialize(
-            dehydrate(queryClient, {
-              shouldDehydrateQuery() {
-                // makes sure errors are also dehydrated
-                return true;
-              },
-            }),
-          );
+          await new Promise<void>((resolve) => {
+            const unsub = queryClient.getQueryCache().subscribe((event) => {
+              if (event?.query.getObserversCount() === 0) {
+                resolve();
+                unsub();
+              }
+            });
+          });
         }
+
+        pageProps.trpcState = trpcClient.runtime.transformer.serialize(
+          dehydrate(queryClient, {
+            shouldDehydrateQuery() {
+              // makes sure errors are also dehydrated
+              return true;
+            },
+          }),
+        );
 
         const appTreeProps = getAppTreeProps(pageProps);
         return appTreeProps;
