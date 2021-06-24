@@ -3,7 +3,16 @@ import { ReactQueryDevtools } from 'react-query/devtools';
 import { trpc } from '../utils/trpc';
 
 export default function IndexPage() {
-  const postsQuery = trpc.useQuery(['posts.all']);
+  const postsQuery = trpc.useQuery([
+    'posts.all',
+    {
+      orderBy: [
+        {
+          title: 'desc',
+        },
+      ],
+    },
+  ]);
   const addPost = trpc.useMutation('posts.add');
   const utils = trpc.useContext();
 

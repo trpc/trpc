@@ -5,7 +5,8 @@
 
 import { z } from 'zod';
 import { createRouter } from 'pages/api/trpc/[trpc]';
-
+import { PostOrderByInput, Prisma } from '@prisma/client';
+// import { PostOrderByInput } from '@prisma/client';
 export const postsRouter = createRouter()
   // create
   .mutation('add', {
@@ -23,13 +24,27 @@ export const postsRouter = createRouter()
   })
   // read
   .query('all', {
-    async resolve({ ctx }) {
+    input: z
+      .object({
+        orderBy: z
+          .unknown()
+          .refine((obj) => {
+            const shape = z.record(z.literal('asc').or(z.literal('desc')));
+
+            const sortBy = shape.or(z.array(shape));
+
+            return sortBy.safeParse(obj).success;
+          })
+          .transform((s) => s as Prisma.PostFindManyArgs['orderBy']),
+      })
+      .optional(),
+    async resolve({ ctx, input }) {
       /**
        * For pagination you can have a look at this docs site
        * @link https://trpc.io/docs/useInfiniteQuery
        */
 
-      return ctx.prisma.post.findMany();
+      return ctx.prisma.post.findMany(input);
     },
   })
   .query('byId', {
