@@ -23,33 +23,43 @@ import ssrPrepass from 'react-ssr-prepass';
 
 type QueryClientConfig = ConstructorParameters<typeof QueryClient>[0];
 
-export type WithTRPCClientConfig<TRouter extends AnyRouter> =
+export type WithTRPCConfig<TRouter extends AnyRouter> =
   CreateTRPCClientOptions<TRouter> & {
     queryClientConfig?: QueryClientConfig;
   };
 
 export function withTRPC<TRouter extends AnyRouter>(opts: {
-  config: (info: { ctx?: NextPageContext }) => WithTRPCClientConfig<TRouter>;
+  config: (info: { ctx?: NextPageContext }) => WithTRPCConfig<TRouter>;
   ssr?: boolean;
 }) {
   const { config: getClientConfig, ssr = false } = opts;
+  type TRPCProp = {
+    config: WithTRPCConfig<TRouter>;
+    queryClient: QueryClient;
+    trpcClient: TRPCClient<TRouter>;
+    isPrepass: boolean;
+  };
   return (AppOrPage: NextComponentType<any, any, any>): NextComponentType => {
     const trpc = createReactQueryHooks<TRouter>();
 
     const WithTRPC = (
       props: AppPropsType & {
-        queryClient?: QueryClient;
-        trpcClient?: TRPCClient<TRouter>;
-        isPrepass?: boolean;
+        trpc?: TRPCProp;
       },
     ) => {
-      const [config] = useState(() => getClientConfig({}));
-      const [queryClient] = useState(
-        () => props.queryClient ?? new QueryClient(config.queryClientConfig),
-      );
-      const [trpcClient] = useState(
-        () => props.trpcClient ?? trpc.createClient(config),
-      );
+      const [{ queryClient, trpcClient, isPrepass }] = useState(() => {
+        if (props.trpc) {
+          return props.trpc;
+        }
+        const config = getClientConfig({});
+        const queryClient = new QueryClient(config.queryClientConfig);
+        const trpcClient = trpc.createClient(config);
+        return {
+          queryClient,
+          trpcClient,
+          isPrepass: false,
+        };
+      });
 
       const hydratedState = trpc.useDehydratedState(
         trpcClient,
@@ -60,7 +70,7 @@ export function withTRPC<TRouter extends AnyRouter>(opts: {
         <trpc.Provider
           client={trpcClient}
           queryClient={queryClient}
-          isPrepass={props.isPrepass}
+          isPrepass={isPrepass}
         >
           <QueryClientProvider client={queryClient}>
             <Hydrate state={hydratedState}>
@@ -81,11 +91,6 @@ export function withTRPC<TRouter extends AnyRouter>(opts: {
           ? appOrPageCtx.ctx
           : (appOrPageCtx as any as NextPageContext);
         const isServer = typeof window === 'undefined' && ssr;
-
-        const config = getClientConfig(isServer ? { ctx } : {});
-
-        const trpcClient = createTRPCClient(config);
-        const queryClient = new QueryClient(config.queryClientConfig);
 
         // Run the wrapped component's getInitialProps function.
         let pageProps: Dict<unknown> = {};
@@ -108,33 +113,43 @@ export function withTRPC<TRouter extends AnyRouter>(opts: {
         if (typeof window !== 'undefined' || !ssr) {
           return getAppTreeProps(pageProps);
         }
+        const config = getClientConfig(isServer ? { ctx } : {});
+        const trpcClient = createTRPCClient(config);
+        const queryClient = new QueryClient(config.queryClientConfig);
 
-        if (ssr) {
-          const prepassProps = {
-            pageProps,
-            trpcClient,
-            queryClient,
-            isPrepass: true,
-          };
+        const trpcProp: TRPCProp = {
+          config,
+          trpcClient,
+          queryClient,
+          isPrepass: true,
+        };
+        const prepassProps = {
+          pageProps,
+          trpc: trpcProp,
+        };
 
-          // Run the prepass step on AppTree. This will run all trpc queries on the server.
-          // multiple prepass ensures that we can do batching on the server
-          while (true) {
-            await ssrPrepass(createElement(AppTree, prepassProps as any));
-            if (!queryClient.isFetching()) {
-              break;
-            }
-            await new Promise<void>((resolve) => {
-              const unsub = queryClient.getQueryCache().subscribe((event) => {
-                if (event?.query.getObserversCount() === 0) {
-                  resolve();
-                  unsub();
-                }
-              });
-            });
+        // Run the prepass step on AppTree. This will run all trpc queries on the server.
+        // multiple prepass ensures that we can do batching on the server
+        while (true) {
+          // render fullt tree
+          await ssrPrepass(createElement(AppTree, prepassProps as any));
+          if (!queryClient.isFetching()) {
+            // the render didn't cause the queryClient to fetch anything
+            break;
           }
+
+          // wait until the query cache has settled it's promises
+          await new Promise<void>((resolve) => {
+            const unsub = queryClient.getQueryCache().subscribe((event) => {
+              if (event?.query.getObserversCount() === 0) {
+                resolve();
+                unsub();
+              }
+            });
+          });
         }
 
+        // dehydrate query client's state and add it to the props
         pageProps.trpcState = trpcClient.runtime.transformer.serialize(
           dehydrate(queryClient, {
             shouldDehydrateQuery() {
