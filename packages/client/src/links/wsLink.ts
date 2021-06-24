@@ -277,11 +277,14 @@ export function wsLink<TRouter extends AnyRouter>(
     return ({ op, prev, onDestroy }) => {
       const { type, input: rawInput, path, id } = op;
       const input = rt.transformer.serialize(rawInput);
-      let unsubbed = false;
+      let done = false;
       const unsub = client.request(
         { type, path, input, id },
         {
           onNext(result) {
+            if (done) {
+              return;
+            }
             if ('data' in result) {
               const data = rt.transformer.deserialize(result.data);
               prev({ type: 'data', data });
@@ -291,24 +294,31 @@ export function wsLink<TRouter extends AnyRouter>(
 
             if (op.type !== 'subscription') {
               // if it isn't a subscription we don't care about next response
-              unsubbed = true;
+              done = true;
               unsub();
             }
           },
           onError(err) {
+            if (done) {
+              return;
+            }
             prev(TRPCClientError.from(err));
           },
           onDone() {
-            const result = unsubbed
-              ? new TRPCAbortError()
-              : new TRPCWebSocketClosedError('Operation ended prematurely');
+            if (done) {
+              return;
+            }
+            const result = new TRPCWebSocketClosedError(
+              'Operation ended prematurely',
+            );
 
             prev(TRPCClientError.from(result, { isDone: true }));
+            done = true;
           },
         },
       );
       onDestroy(() => {
-        unsubbed = true;
+        done = true;
         unsub();
       });
     };
