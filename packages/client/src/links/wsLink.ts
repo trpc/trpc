@@ -1,15 +1,15 @@
 import { AnyRouter, ProcedureType } from '@trpc/server';
 import {
   TRPCClientIncomingMessage,
+  TRPCClientIncomingRequest,
   TRPCRequest,
+  TRPCResponse,
   TRPCResult,
 } from '@trpc/server/rpc';
-import { TRPCClientError } from '../TRPCClientError';
 import { ObservableCallbacks, UnsubscribeFn } from '../internals/observable';
 import { retryDelay } from '../internals/retryDelay';
+import { TRPCClientError } from '../TRPCClientError';
 import { TRPCLink } from './core';
-import { TRPCAbortError } from '../internals/TRPCAbortErrorSignal';
-import { TRPCClientIncomingRequest, TRPCResponse } from '@trpc/server/rpc';
 
 export interface WebSocketClientOptions {
   url: string;
@@ -122,6 +122,10 @@ export function createWSClient(opts: WebSocketClientOptions) {
     connectTimer = null;
 
     conn.addEventListener('open', () => {
+      /* istanbul ignore next */
+      if (conn !== activeConnection) {
+        return;
+      }
       connectAttempt = 0;
       state = 'open';
       dispatch();

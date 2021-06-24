@@ -14,34 +14,15 @@ const MyApp: AppType = ({ Component, pageProps }) => {
   );
 };
 
-function getHostname() {
-  if (process.browser) {
-    return 'localhost';
-  }
-  // // reference for vercel.com
-  // if (process.env.VERCEL_URL) {
-  //   return `${process.env.VERCEL_URL}`;
-  // }
-
-  // // reference for render.com
-  // if (process.env.RENDER_INTERNAL_HOSTNAME) {
-  //   return `${process.env.RENDER_INTERNAL_HOSTNAME}:${process.env.PORT}`;
-  // }
-
-  // assume localhost
-  return `http://localhost:${process.env.PORT ?? 3000}`;
-}
 function getEndingLink() {
   if (!process.browser) {
     return httpBatchLink({
-      url: `${getHostname()}/api/trpc`,
+      url: `http://localhost:3000/api/trpc`,
     });
   }
+  const port = process.env.NODE_ENV === 'production' ? 3000 : 3001;
   const client = createWSClient({
-    url: `ws://localhost:${
-      // FIXME
-      process.env.NODE_ENV === 'production' ? 3000 : 3001
-    }/api/trpc`,
+    url: `ws://localhost:${port}`,
   });
   return wsLink<AppRouter>({
     client,
