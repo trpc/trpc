@@ -131,7 +131,9 @@ export function createWSClient(opts: WebSocketClientOptions) {
       dispatch();
     });
     conn.addEventListener('error', () => {
-      tryReconnect();
+      if (conn === activeConnection) {
+        tryReconnect();
+      }
     });
     const handleIncomingRequest = (req: TRPCClientIncomingRequest) => {
       if (req.method === 'reconnect' && conn === activeConnection) {
