@@ -228,7 +228,11 @@ export class TRPCClient<TRouter extends AnyRouter> {
           opts.onNext?.(output);
         }
       },
-      onError: opts.onError,
+      onError(err) {
+        if (err.originalError?.name !== 'TRPCAbortErrorSignal') {
+          opts.onError?.(err);
+        }
+      },
       onDone: opts.onDone,
     });
     return () => {
