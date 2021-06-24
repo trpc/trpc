@@ -133,16 +133,16 @@ export function withTRPC<TRouter extends AnyRouter>(opts: {
               });
             });
           }
-        }
 
-        pageProps.trpcState = trpcClient.runtime.transformer.serialize(
-          dehydrate(queryClient, {
-            shouldDehydrateQuery() {
-              // makes sure errors are also dehydrated
-              return true;
-            },
-          }),
-        );
+          pageProps.trpcState = trpcClient.runtime.transformer.serialize(
+            dehydrate(queryClient, {
+              shouldDehydrateQuery() {
+                // makes sure errors are also dehydrated
+                return true;
+              },
+            }),
+          );
+        }
 
         const appTreeProps = getAppTreeProps(pageProps);
         return appTreeProps;
