@@ -46,24 +46,24 @@ export function httpBatchLink<TRouter extends AnyRouter>(
     return ({ op, prev, onDestroy }) => {
       const loader = loaders[op.type];
       const { promise, cancel } = loader.load(op);
-      let done = false;
+      let isDone = false;
       onDestroy(() => {
-        if (!done) {
-          done = true;
+        if (!isDone) {
+          isDone = true;
           prev(TRPCClientError.from(new TRPCAbortError(), { isDone: true }));
           cancel();
         }
       });
       promise
         .then((envelope) => {
-          if (!done) {
-            done = true;
+          if (!isDone) {
+            isDone = true;
             prev(transformRPCResponse({ envelope, runtime }));
           }
         })
         .catch((err) => {
-          if (!done) {
-            done = true;
+          if (!isDone) {
+            isDone = true;
             prev(TRPCClientError.from<TRouter>(err));
           }
         });

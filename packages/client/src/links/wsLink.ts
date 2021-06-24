@@ -277,12 +277,12 @@ export function wsLink<TRouter extends AnyRouter>(
     return ({ op, prev, onDestroy }) => {
       const { type, input: rawInput, path, id } = op;
       const input = rt.transformer.serialize(rawInput);
-      let done = false;
+      let isDone = false;
       const unsub = client.request(
         { type, path, input, id },
         {
           onNext(result) {
-            if (done) {
+            if (isDone) {
               return;
             }
             if ('data' in result) {
@@ -294,18 +294,18 @@ export function wsLink<TRouter extends AnyRouter>(
 
             if (op.type !== 'subscription') {
               // if it isn't a subscription we don't care about next response
-              done = true;
+              isDone = true;
               unsub();
             }
           },
           onError(err) {
-            if (done) {
+            if (isDone) {
               return;
             }
             prev(TRPCClientError.from(err));
           },
           onDone() {
-            if (done) {
+            if (isDone) {
               return;
             }
             const result = new TRPCWebSocketClosedError(
@@ -313,12 +313,12 @@ export function wsLink<TRouter extends AnyRouter>(
             );
 
             prev(TRPCClientError.from(result, { isDone: true }));
-            done = true;
+            isDone = true;
           },
         },
       );
       onDestroy(() => {
-        done = true;
+        isDone = true;
         unsub();
       });
     };
