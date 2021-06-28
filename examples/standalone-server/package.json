@@ -31,7 +31,7 @@
     "npm-run-all": "^4.1.5",
     "start-server-and-test": "^1.12.0",
     "ts-node": "^10.0.0",
-    "wait-on": "^5.2.1"
+    "wait-on": "^6.0.0"
   },
   "publishConfig": {
     "access": "restricted"
