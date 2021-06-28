@@ -10046,9 +10046,9 @@ prettier@^1.19.1:
   integrity sha512-s7PoyDv/II1ObgQunCbB9PdLmUcBZcnWOcxDh7O0N/UwDEsHyqkW+Qh28jW+mVuCdx7gLB0BotYI1Y6uI9iyew==
 
 prettier@^2.3.0:
-  version "2.3.1"
-  resolved "https://registry.npmjs.org/prettier/-/prettier-2.3.1.tgz#76903c3f8c4449bc9ac597acefa24dc5ad4cbea6"
-  integrity sha512-p+vNbgpLjif/+D+DwAZAbndtRrR0md0MwfmOVN9N+2RgyACMT+7tfaRnT+WDPkqnuVwleyuBIG2XBxKDme3hPA==
+  version "2.3.2"
+  resolved "https://registry.yarnpkg.com/prettier/-/prettier-2.3.2.tgz#ef280a05ec253712e486233db5c6f23441e7342d"
+  integrity sha512-lnJzDfJ66zkMy58OL5/NY5zp70S7Nz6KqcKkXYzn2tMVrNxvbqaBpg7H3qHaLxCJ5lNMsGuM8+ohS7cZrthdLQ==
 
 pretty-format@^26.0.0, pretty-format@^26.6.2:
   version "26.6.2"
@@ -10391,9 +10391,9 @@ react-is@^16.8.1:
   integrity sha512-24e6ynE2H+OKt4kqsOvNd8kBpV65zoxbA4BVsEOB3ARVWQki/DHzaUoC5KuON/BiccDaCCTZBuOcfZs70kR8bQ==
 
 react-query@^3.6.0:
-  version "3.17.2"
-  resolved "https://registry.npmjs.org/react-query/-/react-query-3.17.2.tgz#3ed5b0460a5a05332fbb175c36da55fb2d3ff929"
-  integrity sha512-icMtYL/+jUv0Q3n8GRz6CTyMYKh+l5EBKwhkr8qhbtYRORr43YGiN6EJSyw9WFaSQ9bwD1G9ZhaFxow9NMV0Sw==
+  version "3.18.1"
+  resolved "https://registry.yarnpkg.com/react-query/-/react-query-3.18.1.tgz#893b5475a7b4add099e007105317446f7a2cd310"
+  integrity sha512-17lv3pQxU9n+cB5acUv0/cxNTjo9q8G+RsedC6Ax4V9D8xEM7Q5xf9xAbCPdEhDrrnzPjTls9fQEABKRSi7OJA==
   dependencies:
     "@babel/runtime" "^7.5.5"
     broadcast-channel "^3.4.1"
