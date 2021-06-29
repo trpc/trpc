@@ -1,6 +1,7 @@
 import http from 'http';
 import ws from 'ws';
-import { getErrorFromUnknown, TRPCError } from '../errors';
+import { getErrorFromUnknown } from '../internals/errors';
+import { TRPCError } from '../TRPCError';
 import { CreateContextFn } from '../http';
 import { BaseHandlerOptions } from '../internals/BaseHandlerOptions';
 import { callProcedure } from '../internals/callProcedure';
