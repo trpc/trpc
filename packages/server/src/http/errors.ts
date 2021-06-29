@@ -1,4 +1,4 @@
-import { TRPCError } from '../errors';
+import { TRPCError } from '../TRPCError';
 
 /* istanbul ignore next */
 /**

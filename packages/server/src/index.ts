@@ -5,3 +5,4 @@ export * from './subscription';
 export * from './transformer';
 export * from './assertNotBrowser';
 export * from './adapters/standalone';
+export * from './TRPCError';

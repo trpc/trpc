@@ -1,7 +1,8 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 import url from 'url';
 import { assertNotBrowser } from '../assertNotBrowser';
-import { getErrorFromUnknown, TRPCError } from '../errors';
+import { getErrorFromUnknown } from '../internals/errors';
+import { TRPCError } from '../TRPCError';
 import { callProcedure } from '../internals/callProcedure';
 import { AnyRouter, inferRouterContext, ProcedureType } from '../router';
 import { TRPCErrorResponse, TRPCResponse } from '../rpc';
