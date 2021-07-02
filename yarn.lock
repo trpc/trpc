@@ -5615,10 +5615,10 @@ expand-tilde@^1.2.2:
   dependencies:
     os-homedir "^1.0.1"
 
-expect-playwright@^0.4.0:
-  version "0.4.1"
-  resolved "https://registry.npmjs.org/expect-playwright/-/expect-playwright-0.4.1.tgz#363c84d72d3d4ded0b30e49c68cb8f90bd896661"
-  integrity sha512-lPssOx7gN4mKOvJPsdySBCqwOK7i8mqpHwzqKhaASlil3YMAL4XQHuwnVhCty8UNfA7UaWwdJSrMIFXsj6kEqQ==
+expect-playwright@^0.7.0:
+  version "0.7.1"
+  resolved "https://registry.yarnpkg.com/expect-playwright/-/expect-playwright-0.7.1.tgz#88323d6603c467e62ad832e88605989f96ed3fdc"
+  integrity sha512-2Wx6Emk9FZyveO8iD+VUTrXhJVnQmE0P1NotagAm5Wferd8wGMFbsFHbG7Sh9N5ffiETonQWd0HLzGuHVvHq0g==
 
 expect-type@^0.11.0:
   version "0.11.0"
@@ -7593,11 +7593,11 @@ jest-mock@^27.0.6:
     "@types/node" "*"
 
 jest-playwright-preset@^1.4.5:
-  version "1.6.1"
-  resolved "https://registry.npmjs.org/jest-playwright-preset/-/jest-playwright-preset-1.6.1.tgz#1f01339f7c9ccfb3bb356ca67d073e790d4470e4"
-  integrity sha512-paWczD9R6dQ9c+XGL0PrLGEyGT0It32POFzvflXLNaJs469BmgO1zScgg2vzd2Agao9oOQpDg/0u1XvxWZvrzg==
+  version "1.7.0"
+  resolved "https://registry.yarnpkg.com/jest-playwright-preset/-/jest-playwright-preset-1.7.0.tgz#bd5998d1a9090fdf68a9dc4421da4c0d45f9156c"
+  integrity sha512-G25Nik+By0SNniMDdkouDL/yA1LdqjzsXNSVU4xnRX1typjXRmzRE0aSgqxas2sRi8cwG3M1ioHdkLLsp6sang==
   dependencies:
-    expect-playwright "^0.4.0"
+    expect-playwright "^0.7.0"
     jest-process-manager "^0.3.1"
     nyc "^15.1.0"
     playwright-core ">=1.2.0"
