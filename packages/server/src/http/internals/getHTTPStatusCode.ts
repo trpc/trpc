@@ -1,5 +1,5 @@
 import { TRPCResponse, TRPC_ERROR_CODES_BY_KEY } from '../../rpc';
-import { DataTransformer } from '../../transformer';
+import { CombinedDataTransformer } from '../../transformer';
 import { invert } from './invert';
 
 export const TRPC_ERROR_CODES_BY_NUMBER = invert(TRPC_ERROR_CODES_BY_KEY);
@@ -25,13 +25,13 @@ const JSONRPC2_TO_HTTP_CODE: Record<
 
 export function getHTTPStatusCode(
   json: TRPCResponse | TRPCResponse[],
-  transformer: DataTransformer,
+  transformer: CombinedDataTransformer,
 ) {
   const arr = Array.isArray(json) ? json : [json];
   const codes = new Set(
     arr.map((res) => {
       if ('error' in res) {
-        return transformer.deserialize(res.error).code;
+        return transformer.output.deserialize(res.error).code;
       }
       return 200;
     }),
