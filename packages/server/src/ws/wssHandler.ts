@@ -13,7 +13,7 @@ import {
   TRPCResponse,
 } from '../rpc';
 import { Subscription } from '../subscription';
-import { DataTransformer } from '../transformer';
+import { CombinedDataTransformer } from '../transformer';
 // https://developer.mozilla.org/en-US/docs/Web/API/CloseEvent
 const WEBSOCKET_STATUS_CODES = {
   ABNORMAL_CLOSURE: 1006,
@@ -58,7 +58,10 @@ function assertIsJSONRPC2OrUndefined(
     throw new Error('Must be JSONRPC 2.0');
   }
 }
-function parseMessage(obj: unknown, transformer: DataTransformer): TRPCRequest {
+function parseMessage(
+  obj: unknown,
+  transformer: CombinedDataTransformer,
+): TRPCRequest {
   assertIsObject(obj);
   const { method, params, id, jsonrpc } = obj;
   assertIsRequestId(id);
@@ -75,7 +78,7 @@ function parseMessage(obj: unknown, transformer: DataTransformer): TRPCRequest {
 
   const { input: rawInput, path } = params;
   assertIsString(path);
-  const input = transformer.deserialize(rawInput);
+  const input = transformer.input.deserialize(rawInput);
   return { jsonrpc, id, method, params: { input, path } };
 }
 
@@ -145,7 +148,7 @@ export function applyWSSHandler<TRouter extends AnyRouter>(
               id,
               result: {
                 type: 'data',
-                data: transformer.serialize(result),
+                data: transformer.output.serialize(result),
               },
             });
             return;
@@ -173,7 +176,7 @@ export function applyWSSHandler<TRouter extends AnyRouter>(
               id,
               result: {
                 type: 'data',
-                data: transformer.serialize(data),
+                data: transformer.output.serialize(data),
               },
             });
           });
@@ -181,7 +184,7 @@ export function applyWSSHandler<TRouter extends AnyRouter>(
             const error = getErrorFromUnknown(_error);
             const json: TRPCErrorResponse = {
               id,
-              error: transformer.serialize(
+              error: transformer.output.serialize(
                 router.getErrorShape({
                   error,
                   type,
@@ -221,7 +224,7 @@ export function applyWSSHandler<TRouter extends AnyRouter>(
             ctx,
           });
           opts.onError?.({ error, path, type, ctx, req, input });
-          respond({ id, error: transformer.serialize(json) });
+          respond({ id, error: transformer.output.serialize(json) });
         }
       }
       client.on('message', async (message) => {
@@ -237,7 +240,7 @@ export function applyWSSHandler<TRouter extends AnyRouter>(
 
           respond({
             id: null,
-            error: transformer.serialize(
+            error: transformer.output.serialize(
               router.getErrorShape({
                 error,
                 type: 'unknown',

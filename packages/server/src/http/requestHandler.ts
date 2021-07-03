@@ -113,7 +113,7 @@ export async function requestHandler<
 
     input =
       rawInput !== undefined
-        ? router._def.transformer.deserialize(rawInput)
+        ? router._def.transformer.input.deserialize(rawInput)
         : undefined;
     ctx = await createContext?.({ req, res });
 
@@ -147,7 +147,7 @@ export async function requestHandler<
             id,
             result: {
               type: 'data',
-              data: router._def.transformer.serialize(output),
+              data: router._def.transformer.output.serialize(output),
             },
           };
           return json;
@@ -156,7 +156,7 @@ export async function requestHandler<
 
           const json: TRPCErrorResponse = {
             id,
-            error: router._def.transformer.serialize(
+            error: router._def.transformer.output.serialize(
               router.getErrorShape({ error, type, path, input, ctx }),
             ),
           };
@@ -173,7 +173,7 @@ export async function requestHandler<
 
     const json: TRPCErrorResponse = {
       id: -1,
-      error: router._def.transformer.serialize(
+      error: router._def.transformer.output.serialize(
         router.getErrorShape({ error, type, path: undefined, input, ctx }),
       ),
     };
