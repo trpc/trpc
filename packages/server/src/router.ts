@@ -19,7 +19,7 @@ import {
   TRPC_ERROR_CODE_NUMBER,
 } from './rpc';
 import { Subscription } from './subscription';
-import { DataTransformer, DataTransformerOptions } from './transformer';
+import { CombinedDataTransformer, DataTransformerOptions } from './transformer';
 import { flatten, Prefixer, ThenArg } from './types';
 
 assertNotBrowser();
@@ -53,14 +53,11 @@ export type inferSubscriptionOutput<
 
 function getDataTransformer(
   transformer: DataTransformerOptions,
-): DataTransformer {
+): CombinedDataTransformer {
   if ('input' in transformer) {
-    return {
-      deserialize: transformer.input.deserialize,
-      serialize: transformer.output.serialize,
-    };
+    return transformer;
   }
-  return transformer;
+  return { input: transformer, output: transformer };
 }
 
 export type inferHandlerInput<TProcedure extends Procedure> =
@@ -147,9 +144,9 @@ const defaultFormatter: ErrorFormatter<any, any> = ({
 }) => {
   return shape;
 };
-const defaultTransformer: DataTransformer = {
-  serialize: (obj) => obj,
-  deserialize: (obj) => obj,
+const defaultTransformer: CombinedDataTransformer = {
+  input: { serialize: (obj) => obj, deserialize: (obj) => obj },
+  output: { serialize: (obj) => obj, deserialize: (obj) => obj },
 };
 export type MiddlewareFunction<TContext> = (opts: {
   ctx: TContext;
@@ -173,7 +170,7 @@ export class Router<
     subscriptions: Readonly<TSubscriptions>;
     middlewares: MiddlewareFunction<TContext>[];
     errorFormatter: ErrorFormatter<TContext, TErrorShape>;
-    transformer: DataTransformer;
+    transformer: CombinedDataTransformer;
   }>;
 
   constructor(def?: {
@@ -182,7 +179,7 @@ export class Router<
     subscriptions?: TSubscriptions;
     middlewares?: MiddlewareFunction<TContext>[];
     errorFormatter?: ErrorFormatter<TContext, TErrorShape>;
-    transformer?: DataTransformer;
+    transformer?: CombinedDataTransformer;
   }) {
     this._def = {
       queries: (def?.queries ?? safeObject()) as TQueries,

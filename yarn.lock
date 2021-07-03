@@ -2828,9 +2828,9 @@
     form-data "^3.0.0"
 
 "@types/node@*", "@types/node@^15.0.1":
-  version "15.12.5"
-  resolved "https://registry.yarnpkg.com/@types/node/-/node-15.12.5.tgz#9a78318a45d75c9523d2396131bd3cca54b2d185"
-  integrity sha512-se3yX7UHv5Bscf8f1ERKvQOD6sTyycH3hdaoozvaLxgUiY5lIGEeH37AD0G0Qi9kPqihPn0HOfd2yaIEN9VwEg==
+  version "15.14.0"
+  resolved "https://registry.yarnpkg.com/@types/node/-/node-15.14.0.tgz#74dbf254fb375551a9d2a71faf6b9dbc2178dc53"
+  integrity sha512-um/+/ip3QZmwLfIkWZSNtQIJNVAqrJ92OkLMeuZrjZMTAJniI7fh8N8OICyDhAJ2mzgk/fmYFo72jRr5HyZ1EQ==
 
 "@types/node@^12.7.1":
   version "12.20.15"
@@ -2875,9 +2875,9 @@
     "@types/react" "*"
 
 "@types/react@*", "@types/react@^17.0.0":
-  version "17.0.11"
-  resolved "https://registry.npmjs.org/@types/react/-/react-17.0.11.tgz#67fcd0ddbf5a0b083a0f94e926c7d63f3b836451"
-  integrity sha512-yFRQbD+whVonItSk7ZzP/L+gPTJVBkL/7shLEF+i9GC/1cV3JmUxEQz6+9ylhUpWSDuqo1N9qEvqS6vTj4USUA==
+  version "17.0.13"
+  resolved "https://registry.yarnpkg.com/@types/react/-/react-17.0.13.tgz#6b7c9a8f2868586ad87d941c02337c6888fb874f"
+  integrity sha512-D/G3PiuqTfE3IMNjLn/DCp6umjVCSvtZTPdtAFy5+Ved6CsdRvivfKeCzw79W4AatShtU4nGqgvOv5Gro534vQ==
   dependencies:
     "@types/prop-types" "*"
     "@types/scheduler" "*"
@@ -5615,10 +5615,10 @@ expand-tilde@^1.2.2:
   dependencies:
     os-homedir "^1.0.1"
 
-expect-playwright@^0.4.0:
-  version "0.4.1"
-  resolved "https://registry.npmjs.org/expect-playwright/-/expect-playwright-0.4.1.tgz#363c84d72d3d4ded0b30e49c68cb8f90bd896661"
-  integrity sha512-lPssOx7gN4mKOvJPsdySBCqwOK7i8mqpHwzqKhaASlil3YMAL4XQHuwnVhCty8UNfA7UaWwdJSrMIFXsj6kEqQ==
+expect-playwright@^0.7.0:
+  version "0.7.1"
+  resolved "https://registry.yarnpkg.com/expect-playwright/-/expect-playwright-0.7.1.tgz#88323d6603c467e62ad832e88605989f96ed3fdc"
+  integrity sha512-2Wx6Emk9FZyveO8iD+VUTrXhJVnQmE0P1NotagAm5Wferd8wGMFbsFHbG7Sh9N5ffiETonQWd0HLzGuHVvHq0g==
 
 expect-type@^0.11.0:
   version "0.11.0"
@@ -7593,11 +7593,11 @@ jest-mock@^27.0.6:
     "@types/node" "*"
 
 jest-playwright-preset@^1.4.5:
-  version "1.6.1"
-  resolved "https://registry.npmjs.org/jest-playwright-preset/-/jest-playwright-preset-1.6.1.tgz#1f01339f7c9ccfb3bb356ca67d073e790d4470e4"
-  integrity sha512-paWczD9R6dQ9c+XGL0PrLGEyGT0It32POFzvflXLNaJs469BmgO1zScgg2vzd2Agao9oOQpDg/0u1XvxWZvrzg==
+  version "1.7.0"
+  resolved "https://registry.yarnpkg.com/jest-playwright-preset/-/jest-playwright-preset-1.7.0.tgz#bd5998d1a9090fdf68a9dc4421da4c0d45f9156c"
+  integrity sha512-G25Nik+By0SNniMDdkouDL/yA1LdqjzsXNSVU4xnRX1typjXRmzRE0aSgqxas2sRi8cwG3M1ioHdkLLsp6sang==
   dependencies:
-    expect-playwright "^0.4.0"
+    expect-playwright "^0.7.0"
     jest-process-manager "^0.3.1"
     nyc "^15.1.0"
     playwright-core ">=1.2.0"
@@ -9043,9 +9043,9 @@ node-releases@^1.1.71:
   integrity sha512-uW7fodD6pyW2FZNZnp/Z3hvWKeEW1Y8R1+1CnErE8cXFXzl5blBOoVB41CvMer6P6Q0S5FXDwcHgFd1Wj0U9zg==
 
 nodemon@^2.0.7:
-  version "2.0.8"
-  resolved "https://registry.yarnpkg.com/nodemon/-/nodemon-2.0.8.tgz#95719984d4ae57c2b5ce2a1e1bf1ca14de36f500"
-  integrity sha512-omq5AbNSMZjjZf12qd5vRpVobbuBJsLhTOS/vwy5ApnO6jpHbS/YuN97X4/zzB9YkdAa3q73HG5IuyM6kIQw8Q==
+  version "2.0.9"
+  resolved "https://registry.yarnpkg.com/nodemon/-/nodemon-2.0.9.tgz#f5cd550ba215da3c1081459ae2c1c8da2c353165"
+  integrity sha512-6O4k7C8f2HQArGpaPBOqGGddjzDLQAqCYmq3tKMeNIbz7Is/hOphMHy2dcY10sSq5wl3cqyn9Iz+Ep2j51JOLg==
   dependencies:
     chokidar "^3.2.2"
     debug "^3.2.6"
@@ -12218,10 +12218,10 @@ typedarray@^0.0.6:
   resolved "https://registry.npmjs.org/typedarray/-/typedarray-0.0.6.tgz#867ac74e3864187b1d3d47d996a78ec5c8830777"
   integrity sha1-hnrHTjhkGHsdPUfZlqeOxciDB3c=
 
-typescript@4.3.4:
-  version "4.3.4"
-  resolved "https://registry.npmjs.org/typescript/-/typescript-4.3.4.tgz#3f85b986945bcf31071decdd96cf8bfa65f9dcbc"
-  integrity sha512-uauPG7XZn9F/mo+7MrsRjyvbxFpzemRjKEZXS4AK83oP2KKOJPvb+9cO/gmnv8arWZvhnjVOXz7B49m1l0e9Ew==
+typescript@4.3.5:
+  version "4.3.5"
+  resolved "https://registry.yarnpkg.com/typescript/-/typescript-4.3.5.tgz#4d1c37cc16e893973c45a06886b7113234f119f4"
+  integrity sha512-DqQgihaQ9cUrskJo9kIyW/+g0Vxsk8cDtZ52a3NGh0YNTfpUSArXSohyUGnvbPazEPLu398C0UxmKSOrPumUzA==
 
 uglify-js@^3.1.4:
   version "3.13.9"
