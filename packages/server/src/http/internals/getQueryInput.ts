@@ -1,5 +1,5 @@
 import qs from 'qs';
-import { TRPCError } from '../../errors';
+import { TRPCError } from '../../TRPCError';
 
 export function getQueryInput(query: qs.ParsedQs) {
   const queryInput = query.input;
