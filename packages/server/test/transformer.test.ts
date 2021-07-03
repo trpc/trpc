@@ -7,6 +7,8 @@ import {
   TRPCWebSocketClient,
   wsLink,
 } from '../../client/src/links/wsLink';
+import { TRPCClientError } from '../../client/src';
+import { TRPCError } from '../src/TRPCError';
 import * as trpc from '../src';
 import { routerToServerAndClient } from './_testHelpers';
 
@@ -288,5 +290,63 @@ describe('transformer on router', () => {
     ).toThrowErrorMatchingInlineSnapshot(
       `"You seem to have double \`transformer()\`-calls in your router tree"`,
     );
+  });
+
+  test('superjson up and devalue down: transform errors correctly', async () => {
+    const transformer: trpc.CombinedDataTransformer = {
+      input: superjson,
+      output: {
+        serialize: (object) => devalue(object),
+        deserialize: (object) => eval(`(${object})`),
+      },
+    };
+
+    class MyError extends Error {
+      constructor(message: string) {
+        super(message);
+        Object.setPrototypeOf(this, MyError.prototype);
+      }
+    }
+    const onError = jest.fn();
+    const { client, close } = routerToServerAndClient(
+      trpc
+        .router()
+        .transformer(transformer)
+        .query('err', {
+          resolve() {
+            throw new MyError('woop');
+          },
+        }),
+      {
+        server: {
+          onError,
+        },
+        client: {
+          transformer,
+        },
+      },
+    );
+    let clientError: Error | null = null;
+    try {
+      await client.query('err');
+    } catch (_err) {
+      clientError = _err;
+    }
+    if (!(clientError instanceof TRPCClientError)) {
+      throw new Error('Did not throw');
+    }
+    expect(clientError.shape.message).toMatchInlineSnapshot(`"woop"`);
+    expect(clientError.shape.code).toMatchInlineSnapshot(`-32603`);
+
+    expect(onError).toHaveBeenCalledTimes(1);
+    const serverError = onError.mock.calls[0][0].error;
+
+    expect(serverError).toBeInstanceOf(TRPCError);
+    if (!(serverError instanceof TRPCError)) {
+      throw new Error('Wrong error');
+    }
+    expect(serverError.originalError).toBeInstanceOf(MyError);
+
+    close();
   });
 });
