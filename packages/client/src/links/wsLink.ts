@@ -6,6 +6,7 @@ import {
   TRPCResponse,
   TRPCResult,
 } from '@trpc/server/rpc';
+import { TRPCErrorResponse } from '@trpc/server/rpc';
 import { ObservableCallbacks, UnsubscribeFn } from '../internals/observable';
 import { retryDelay } from '../internals/retryDelay';
 import { TRPCClientError } from '../TRPCClientError';
@@ -41,7 +42,10 @@ export function createWSClient(opts: WebSocketClientOptions) {
   /**
    * pending outgoing requests that are awaiting callback
    */
-  type TCallbacks = ObservableCallbacks<TRPCResult, TRPCClientError<AnyRouter>>;
+  type TCallbacks = ObservableCallbacks<
+    TRPCResult,
+    TRPCClientError<AnyRouter> | TRPCErrorResponse
+  >;
   type TRequest = {
     /**
      * Reference to the WebSocket instance this request was made to
@@ -157,7 +161,7 @@ export function createWSClient(opts: WebSocketClientOptions) {
         return;
       }
       if ('error' in res) {
-        req.callbacks.onError?.(TRPCClientError.from(res));
+        req.callbacks.onError?.(res);
         return;
       }
 
@@ -329,7 +333,15 @@ export function wsLink<TRouter extends AnyRouter>(
             if (isDone) {
               return;
             }
-            prev(TRPCClientError.from(err));
+            console.log('err', err);
+            prev(
+              err instanceof Error
+                ? err
+                : TRPCClientError.from({
+                    ...err,
+                    error: rt.transformer.deserialize(err.error),
+                  }),
+            );
           },
           onDone() {
             if (isDone) {
