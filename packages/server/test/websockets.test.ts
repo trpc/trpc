@@ -198,7 +198,7 @@ test('$subscription()', async () => {
   close();
 });
 
-test.only('$subscription() - server randomly stop and restart (this test might be flaky, try re-running)', async () => {
+test('$subscription() - server randomly stop and restart (this test might be flaky, try re-running)', async () => {
   const { client, close, ee, wssPort, applyWSSHandlerOpts } = factory();
   ee.once('subscription:created', () => {
     setTimeout(() => {
