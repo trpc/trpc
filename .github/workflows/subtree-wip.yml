@@ -1,4 +1,6 @@
 name: subtree-matrix-wip
+
+on: push
 jobs:
   sync-downstream:
     runs-on: ubuntu-latest
