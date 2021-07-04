@@ -11,7 +11,7 @@ export default function AboutPage() {
   });
   return (
     <div>
-      Here's a random number from a sub: {num} <br />
+      Here&apos;s a random number from a sub: {num} <br />
       <Link href="/">
         <a>Index</a>
       </Link>
