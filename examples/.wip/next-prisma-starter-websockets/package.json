@@ -2,6 +2,9 @@
   "name": "@examples/next-starter-websockets",
   "version": "8.1.4-alpha.0",
   "private": true,
+  "engines": {
+    "node": "14.x"
+  },
   "scripts": {
     "build:1-generate": "prisma generate",
     "build:2-migrate": "prisma migrate deploy",
