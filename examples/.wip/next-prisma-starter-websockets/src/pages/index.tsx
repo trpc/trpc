@@ -26,24 +26,35 @@ export default function IndexPage() {
         <title>Prisma Starter</title>
         <link rel="icon" href="/favicon.ico" />
       </Head>
-      <h1>Welcome to your tRPC starter!</h1>
-
+      <h1>tRPC WebSocket starter</h1>
       <p>
-        <Link href="/about">
-          <a>Go to other page</a>
-        </Link>{' '}
-        (cancels subscription)
+        Showcases WebSocket + subscription support
+        <ul>
+          <li>Open inspector and head to Network tab</li>
+          <li>All client requests are handled through WebSockets</li>
+          <li>
+            We have a simple backend subscription that nudges the client to
+            invalidate the cache which then triggers a refetch.
+          </li>
+        </ul>
       </p>
+
       <h2>
-        Posts
+        Messages
         {postsQuery.status === 'loading' && '(loading)'}
       </h2>
       {postsQuery.data?.map((item) => (
         <article key={item.id}>
-          <h3>{item.title}</h3>
-          <p>{item.text.substr(0)}</p>
+          [
+          {new Intl.DateTimeFormat('en-GB', {
+            dateStyle: 'short',
+            timeStyle: 'short',
+          }).format(item.createdAt)}
+          ] <strong>{item.name}</strong>: <em>{item.text}</em>
         </article>
       ))}
+      <hr />
+      <h2>Add message</h2>
 
       <form
         onSubmit={async (e) => {
@@ -55,28 +66,22 @@ export default function IndexPage() {
            */
 
           const $text: HTMLInputElement = (e as any).target.elements.text;
-          const $title: HTMLInputElement = (e as any).target.elements.title;
+          const $name: HTMLInputElement = (e as any).target.elements.name;
           const input = {
-            title: $title.value,
+            name: $name.value,
             text: $text.value,
           };
           try {
             await addPost.mutateAsync(input);
             utils.invalidateQuery(['posts.all']);
 
-            $title.value = '';
             $text.value = '';
           } catch {}
         }}
       >
-        <label htmlFor="title">Title:</label>
+        <label htmlFor="name">Your name:</label>
         <br />
-        <input
-          id="title"
-          name="title"
-          type="text"
-          disabled={addPost.isLoading}
-        />
+        <input id="name" name="name" type="text" disabled={addPost.isLoading} />
 
         <br />
         <label htmlFor="text">Text:</label>
@@ -89,6 +94,12 @@ export default function IndexPage() {
         )}
       </form>
 
+      <p>
+        <Link href="/about">
+          <a>Go to other page that displays a random number</a>
+        </Link>{' '}
+        (cancels subscription)
+      </p>
       {process.env.NODE_ENV !== 'production' && (
         <ReactQueryDevtools initialIsOpen={false} />
       )}
