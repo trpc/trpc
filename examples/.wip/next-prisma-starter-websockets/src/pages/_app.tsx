@@ -5,6 +5,8 @@ import { withTRPC } from '@trpc/next';
 import { AppType } from 'next/dist/next-server/lib/utils';
 import type { AppRouter } from 'server/routers/app';
 // import { transformer } from '../utils/trpc';
+import getConfig from 'next/config';
+const { publicRuntimeConfig } = getConfig();
 
 const MyApp: AppType = ({ Component, pageProps }) => {
   return (
@@ -15,14 +17,14 @@ const MyApp: AppType = ({ Component, pageProps }) => {
 };
 
 function getEndingLink() {
+  const { APP_URL } = publicRuntimeConfig;
   if (!process.browser) {
     return httpBatchLink({
-      url: `http://localhost:3000/api/trpc`,
+      url: `${APP_URL}/api/trpc`,
     });
   }
-  const port = process.env.NODE_ENV === 'production' ? 3000 : 3001;
   const client = createWSClient({
-    url: `ws://localhost:${port}`,
+    url: APP_URL.replace(/^http/, 'ws'),
   });
   return wsLink<AppRouter>({
     client,
