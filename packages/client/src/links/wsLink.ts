@@ -42,18 +42,17 @@ export function createWSClient(opts: WebSocketClientOptions) {
    * pending outgoing requests that are awaiting callback
    */
   type TCallbacks = ObservableCallbacks<TRPCResult, TRPCClientError<AnyRouter>>;
-  const pendingRequests: Record<
-    number | string,
-    {
-      /**
-       * Reference to the WebSocket instance this request was made to
-       */
-      ws: WebSocket;
-      type: ProcedureType;
-      callbacks: TCallbacks;
-      op: Operation;
-    }
-  > = Object.create(null);
+  type TRequest = {
+    /**
+     * Reference to the WebSocket instance this request was made to
+     */
+    ws: WebSocket;
+    type: ProcedureType;
+    callbacks: TCallbacks;
+    op: Operation;
+  };
+  const pendingRequests: Record<number | string, TRequest> =
+    Object.create(null);
   let connectAttempt = 0;
   let dispatchTimer: NodeJS.Timer | number | null = null;
   let connectTimer: NodeJS.Timer | number | null = null;
@@ -111,6 +110,13 @@ export function createWSClient(opts: WebSocketClientOptions) {
     }
   }
 
+  function resumeSubscriptionOnReconnect(req: TRequest) {
+    if (outgoing.some((r) => r.id === req.op.id)) {
+      return;
+    }
+    request(req.op, req.callbacks);
+  }
+
   function createWS() {
     const conn = new WebSocket(url);
     clearTimeout(connectTimer as any);
@@ -134,12 +140,12 @@ export function createWSClient(opts: WebSocketClientOptions) {
       if (req.method === 'reconnect' && conn === activeConnection) {
         reconnect();
         // notify subscribers
-        for (const p of Object.values(pendingRequests)) {
-          if (p.type === 'subscription') {
-            p.callbacks.onError?.(
+        for (const pendingReq of Object.values(pendingRequests)) {
+          if (pendingReq.type === 'subscription') {
+            pendingReq.callbacks.onError?.(
               TRPCClientError.from(new TRPCReconnectError()),
             );
-            request(p.op, p.callbacks);
+            resumeSubscriptionOnReconnect(pendingReq);
           }
         }
       }
@@ -200,7 +206,10 @@ export function createWSClient(opts: WebSocketClientOptions) {
         );
         if (req.type === 'subscription' && state !== 'closed') {
           // request restart of sub with next connection
-          request(req.op, req.callbacks);
+          if (outgoing.some((msg) => msg.id !== req.op.id)) {
+            request(req.op, req.callbacks);
+          }
+          resumeSubscriptionOnReconnect(req);
         } else {
           req.callbacks.onDone?.();
         }
