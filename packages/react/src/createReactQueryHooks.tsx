@@ -212,6 +212,7 @@ export function createReactQueryHooks<TRouter extends AnyRouter>() {
       typeof window === 'undefined' &&
       isPrepass &&
       opts?.ssr !== false &&
+      opts?.enabled !== false &&
       !queryClient.getQueryCache().find(cacheKey)
     ) {
       fetchQuery(pathAndArgs);
