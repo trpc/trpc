@@ -20,7 +20,7 @@ export const postsRouter = createRouter()
       const todo = await ctx.prisma.post.create({
         data: input,
       });
-      ee.emit('ping');
+      ee.emit('updated');
       return todo;
     },
   })
@@ -58,7 +58,7 @@ export const postsRouter = createRouter()
         where: { id },
         data,
       });
-      ee.emit('ping');
+      ee.emit('updated');
       return todo;
     },
   })
@@ -67,18 +67,18 @@ export const postsRouter = createRouter()
     input: z.string().uuid(),
     async resolve({ input: id, ctx }) {
       await ctx.prisma.post.delete({ where: { id } });
-      ee.emit('ping');
+      ee.emit('updated');
       return id;
     },
   })
-  .subscription('ping', {
+  .subscription('updated', {
     async resolve() {
-      return new Subscription<'ping'>({
+      return new Subscription<'updated'>({
         start(emit) {
-          const ping = () => emit.data('ping');
-          ee.on('ping', ping);
+          const updated = () => emit.data('updated');
+          ee.on('updated', updated);
           return () => {
-            ee.off('ping', ping);
+            ee.off('updated', updated);
           };
         },
       });

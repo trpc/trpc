@@ -8,7 +8,9 @@ export default function IndexPage() {
   const addPost = trpc.useMutation('posts.add');
   const utils = trpc.useContext();
 
-  trpc.useSubscription(['posts.ping', undefined], {
+  // subscription that tells us that something has changed
+  // -> invalidate cache which triggers refetch
+  trpc.useSubscription(['posts.updated', undefined], {
     onNext() {
       utils.invalidateQuery(['posts.all']);
       utils.invalidateQuery(['posts.byId']);
