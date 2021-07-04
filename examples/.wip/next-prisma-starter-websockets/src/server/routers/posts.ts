@@ -35,6 +35,42 @@ export const postsRouter = createRouter()
       return ctx.prisma.post.findMany();
     },
   })
+  .query('infinite', {
+    input: z
+      .object({
+        cursor: z.date().optional(),
+        take: z.number().min(1).max(50).optional(),
+      })
+      .optional(),
+    async resolve({ input, ctx }) {
+      const { take = 10, cursor } = input ?? {};
+      // `cursor` is of type `Date | undefined`
+      // `take` is of type `number | undefined`
+      const page = await ctx.prisma.post.findMany({
+        orderBy: {
+          createdAt: 'desc',
+        },
+        cursor: cursor
+          ? {
+              createdAt: cursor,
+            }
+          : undefined,
+        take: take + 1,
+        skip: 0,
+      });
+      const items = page.reverse();
+      let prevCursor: null | typeof cursor = null;
+      if (items.length > take) {
+        const prev = items.shift();
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        prevCursor = prev!.createdAt;
+      }
+      return {
+        items,
+        prevCursor,
+      };
+    },
+  })
   .query('byId', {
     input: z.string(),
     async resolve({ ctx, input }) {

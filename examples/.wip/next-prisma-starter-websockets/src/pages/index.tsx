@@ -2,9 +2,14 @@ import Head from 'next/head';
 import { ReactQueryDevtools } from 'react-query/devtools';
 import { trpc } from '../utils/trpc';
 import Link from 'next/link';
+import { Fragment } from 'react';
 
 export default function IndexPage() {
-  const postsQuery = trpc.useQuery(['posts.all']);
+  const postsQuery = trpc.useInfiniteQuery(['posts.infinite', {}], {
+    getPreviousPageParam: (d) => d.prevCursor,
+  });
+  const { hasPreviousPage, isFetchingPreviousPage, fetchPreviousPage } =
+    postsQuery;
   const addPost = trpc.useMutation('posts.add');
   const utils = trpc.useContext();
 
@@ -12,8 +17,7 @@ export default function IndexPage() {
   // -> invalidate cache which triggers refetch
   trpc.useSubscription(['posts.updated', undefined], {
     onNext() {
-      utils.invalidateQuery(['posts.all']);
-      utils.invalidateQuery(['posts.byId']);
+      utils.queryClient.invalidateQueries();
     },
     onError(err) {
       console.error('Subscription error:', err);
@@ -43,15 +47,30 @@ export default function IndexPage() {
         Messages
         {postsQuery.status === 'loading' && '(loading)'}
       </h2>
-      {postsQuery.data?.map((item) => (
-        <article key={item.id}>
-          [
-          {new Intl.DateTimeFormat('en-GB', {
-            dateStyle: 'short',
-            timeStyle: 'short',
-          }).format(item.createdAt)}
-          ] <strong>{item.name}</strong>: <em>{item.text}</em>
-        </article>
+      <button
+        data-testid="loadMore"
+        onClick={() => fetchPreviousPage()}
+        disabled={!hasPreviousPage || isFetchingPreviousPage}
+      >
+        {isFetchingPreviousPage
+          ? 'Loading more...'
+          : hasPreviousPage
+          ? 'Load More'
+          : 'Nothing more to load'}
+      </button>
+      {postsQuery.data?.pages.map((group, index) => (
+        <Fragment key={index}>
+          {group.items.map((item) => (
+            <article key={item.id}>
+              [
+              {new Intl.DateTimeFormat('en-GB', {
+                dateStyle: 'short',
+                timeStyle: 'short',
+              }).format(item.createdAt)}
+              ] <strong>{item.name}</strong>: <em>{item.text}</em>
+            </article>
+          ))}
+        </Fragment>
       ))}
       <hr />
       <h2>Add message</h2>
