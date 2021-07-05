@@ -12947,6 +12947,6 @@ yup@^0.32.8:
     toposort "^2.0.2"
 
 zod@^3.0.0:
-  version "3.2.0"
-  resolved "https://registry.npmjs.org/zod/-/zod-3.2.0.tgz#4f06fac3c74e56902eae43a47a1687bf49c9b70b"
-  integrity sha512-yvcO3FZ8URR+LliMGqaW7tlVOOTzmup3vzKEe9Ds7twyJtdhvYa7dIYr0FbD1wVfWC1OuS83vZfHtCKslPuRhA==
+  version "3.3.4"
+  resolved "https://registry.yarnpkg.com/zod/-/zod-3.3.4.tgz#5609bb7e945945108690f87ea73454111c323259"
+  integrity sha512-g5V20IUn3QBpbMKjZxKp58ocUOO9/L0OlJ5+rl84QSeN6tK5ea/yQboYA59t2D8Puc/qVyz4YflhCgqR2uMtaA==
