@@ -978,100 +978,213 @@ describe('withTRPC()', () => {
   });
 
   describe('`enabled: false` on query during ssr', () => {
-    test('queryKey does not change', async () => {
-      const { window } = global;
+    describe('useQuery', () => {
+      test('queryKey does not change', async () => {
+        const { window } = global;
 
-      // @ts-ignore
-      delete global.window;
-      const { trpc, trpcClientOptions } = factory;
-      const App: AppType = () => {
-        const query1 = trpc.useQuery(['postById', '1']);
-        // query2 depends only on query1 status
-        const query2 = trpc.useQuery(['postById', '2'], {
-          enabled: query1.status === 'success',
+        // @ts-ignore
+        delete global.window;
+        const { trpc, trpcClientOptions } = factory;
+        const App: AppType = () => {
+          const query1 = trpc.useQuery(['postById', '1']);
+          // query2 depends only on query1 status
+          const query2 = trpc.useQuery(['postById', '2'], {
+            enabled: query1.status === 'success',
+          });
+          return (
+            <>
+              <>{JSON.stringify(query1.data)}</>
+              <>{JSON.stringify(query2.data)}</>
+            </>
+          );
+        };
+
+        const Wrapped = withTRPC({
+          config: () => trpcClientOptions,
+          ssr: true,
+        })(App);
+
+        const props = await Wrapped.getInitialProps!({
+          AppTree: Wrapped,
+          Component: <div />,
+        } as any);
+
+        global.window = window;
+
+        const utils = render(<Wrapped {...props} />);
+
+        // when queryKey does not change query2 only fetched in the browser
+        expect(utils.container).toHaveTextContent('first post');
+        expect(utils.container).not.toHaveTextContent('second post');
+
+        await waitFor(() => {
+          expect(utils.container).toHaveTextContent('first post');
+          expect(utils.container).toHaveTextContent('second post');
         });
-        return (
-          <>
-            <>{JSON.stringify(query1.data)}</>
-            <>{JSON.stringify(query2.data)}</>
-          </>
-        );
-      };
+      });
 
-      const Wrapped = withTRPC({
-        config: () => trpcClientOptions,
-        ssr: true,
-      })(App);
+      test('queryKey changes', async () => {
+        const { window } = global;
 
-      const props = await Wrapped.getInitialProps!({
-        AppTree: Wrapped,
-        Component: <div />,
-      } as any);
+        // @ts-ignore
+        delete global.window;
+        const { trpc, trpcClientOptions } = factory;
+        const App: AppType = () => {
+          const query1 = trpc.useQuery(['postById', '1']);
+          // query2 depends on data fetched by query1
+          const query2 = trpc.useQuery(
+            [
+              'postById',
+              // workaround of TS requiring a string param
+              query1.data
+                ? (parseInt(query1.data.id) + 1).toString()
+                : 'definitely not a post id',
+            ],
+            {
+              enabled: !!query1.data,
+            },
+          );
+          return (
+            <>
+              <>{JSON.stringify(query1.data)}</>
+              <>{JSON.stringify(query2.data)}</>
+            </>
+          );
+        };
 
-      global.window = window;
+        const Wrapped = withTRPC({
+          config: () => trpcClientOptions,
+          ssr: true,
+        })(App);
 
-      const utils = render(<Wrapped {...props} />);
+        const props = await Wrapped.getInitialProps!({
+          AppTree: Wrapped,
+          Component: <div />,
+        } as any);
 
-      // when queryKey does not change query2 only fetched in the browser
-      expect(utils.container).toHaveTextContent('first post');
-      expect(utils.container).not.toHaveTextContent('second post');
+        global.window = window;
 
-      await waitFor(() => {
+        const utils = render(<Wrapped {...props} />);
+
+        // when queryKey changes both queries are fetched on the server
         expect(utils.container).toHaveTextContent('first post');
         expect(utils.container).toHaveTextContent('second post');
+
+        await waitFor(() => {
+          expect(utils.container).toHaveTextContent('first post');
+          expect(utils.container).toHaveTextContent('second post');
+        });
       });
     });
 
-    test('queryKey changes', async () => {
-      const { window } = global;
+    describe('useInfiniteQuery', () => {
+      test('queryKey does not change', async () => {
+        const { window } = global;
 
-      // @ts-ignore
-      delete global.window;
-      const { trpc, trpcClientOptions } = factory;
-      const App: AppType = () => {
-        const query1 = trpc.useQuery(['postById', '1']);
-        // query2 depends on data fetched by query1
-        const query2 = trpc.useQuery(
-          [
-            'postById',
-            // workaround of TS requiring a string param
-            query1.data
-              ? (parseInt(query1.data.id) + 1).toString()
-              : 'definitely not a post id',
-          ],
-          {
-            enabled: !!query1.data,
-          },
-        );
-        return (
-          <>
-            <>{JSON.stringify(query1.data)}</>
-            <>{JSON.stringify(query2.data)}</>
-          </>
-        );
-      };
+        // @ts-ignore
+        delete global.window;
+        const { trpc, trpcClientOptions } = factory;
+        const App: AppType = () => {
+          const query1 = trpc.useInfiniteQuery(
+            ['paginatedPosts', { limit: 1 }],
+            {
+              getNextPageParam: (lastPage) => lastPage.nextCursor,
+            },
+          );
+          // query2 depends only on query1 status
+          const query2 = trpc.useInfiniteQuery(
+            ['paginatedPosts', { limit: 2 }],
+            {
+              getNextPageParam: (lastPage) => lastPage.nextCursor,
+              enabled: query1.status === 'success',
+            },
+          );
+          return (
+            <>
+              <>{JSON.stringify(query1.data)}</>
+              <>{JSON.stringify(query2.data)}</>
+            </>
+          );
+        };
 
-      const Wrapped = withTRPC({
-        config: () => trpcClientOptions,
-        ssr: true,
-      })(App);
+        const Wrapped = withTRPC({
+          config: () => trpcClientOptions,
+          ssr: true,
+        })(App);
 
-      const props = await Wrapped.getInitialProps!({
-        AppTree: Wrapped,
-        Component: <div />,
-      } as any);
+        const props = await Wrapped.getInitialProps!({
+          AppTree: Wrapped,
+          Component: <div />,
+        } as any);
 
-      global.window = window;
+        global.window = window;
 
-      const utils = render(<Wrapped {...props} />);
+        const utils = render(<Wrapped {...props} />);
 
-      // when queryKey changes both queries are fetched on the server
-      expect(utils.container).toHaveTextContent('first post');
-      expect(utils.container).toHaveTextContent('second post');
+        // when queryKey does not change query2 only fetched in the browser
+        expect(utils.container).toHaveTextContent('first post');
+        expect(utils.container).not.toHaveTextContent('second post');
 
-      await waitFor(() => {
+        await waitFor(() => {
+          expect(utils.container).toHaveTextContent('first post');
+          expect(utils.container).toHaveTextContent('second post');
+        });
+      });
+
+      test('queryKey changes', async () => {
+        const { window } = global;
+
+        // @ts-ignore
+        delete global.window;
+        const { trpc, trpcClientOptions } = factory;
+        const App: AppType = () => {
+          const query1 = trpc.useInfiniteQuery(
+            ['paginatedPosts', { limit: 1 }],
+            {
+              getNextPageParam: (lastPage) => lastPage.nextCursor,
+            },
+          );
+          // query2 depends on data fetched by query1
+          const query2 = trpc.useInfiniteQuery(
+            [
+              'paginatedPosts',
+              { limit: query1.data ? query1.data.pageParams.length + 1 : 0 },
+            ],
+            {
+              getNextPageParam: (lastPage) => lastPage.nextCursor,
+              enabled: query1.status === 'success',
+            },
+          );
+          return (
+            <>
+              <>{JSON.stringify(query1.data)}</>
+              <>{JSON.stringify(query2.data)}</>
+            </>
+          );
+        };
+
+        const Wrapped = withTRPC({
+          config: () => trpcClientOptions,
+          ssr: true,
+        })(App);
+
+        const props = await Wrapped.getInitialProps!({
+          AppTree: Wrapped,
+          Component: <div />,
+        } as any);
+
+        global.window = window;
+
+        const utils = render(<Wrapped {...props} />);
+
+        // when queryKey changes both queries are fetched on the server
         expect(utils.container).toHaveTextContent('first post');
         expect(utils.container).toHaveTextContent('second post');
+
+        await waitFor(() => {
+          expect(utils.container).toHaveTextContent('first post');
+          expect(utils.container).toHaveTextContent('second post');
+        });
       });
     });
   });
