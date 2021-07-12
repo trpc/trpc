@@ -31,22 +31,19 @@ export type SubscriptionEmit<TOutput> = {
   data: EmitFn<TOutput>;
   error: EmitFn<Error>;
 };
-export interface SubscriptionOptions<TOutput> {
-  start: (
-    emit: SubscriptionEmit<TOutput>,
-  ) => UnsubscribeFn | Promise<UnsubscribeFn>;
-}
+export type SubscriptionCallback<TOutput> = (
+  emit: SubscriptionEmit<TOutput>,
+) => UnsubscribeFn | Promise<UnsubscribeFn>;
+
 export class Subscription<TOutput = unknown> {
   private readonly events: SubscriptionEventEmitter<TOutput>;
-  private opts: Required<SubscriptionOptions<TOutput>>;
+  private callback;
   private isDestroyed: boolean;
 
-  constructor(opts: SubscriptionOptions<TOutput>) {
+  constructor(callback: SubscriptionCallback<TOutput>) {
     this.isDestroyed = false;
     this.events = new SubscriptionEventEmitter<TOutput>();
-    this.opts = {
-      ...opts,
-    };
+    this.callback = callback;
   }
 
   public destroy() {
@@ -69,7 +66,7 @@ export class Subscription<TOutput = unknown> {
         error: (err) => this.emitError(err),
         data: (data) => this.emitOutput(data),
       };
-      const cancel = await this.opts.start(emit);
+      const cancel = await this.callback(emit);
       if (
         this.isDestroyed
         /* istanbul ignore next */
@@ -142,13 +139,11 @@ export function subscriptionPullFactory<TOutput>(opts: {
     }
   }
 
-  return new Subscription<TOutput>({
-    start(emit) {
-      _pull(emit);
-      return () => {
-        clearTimeout(timer);
-        stopped = true;
-      };
-    },
+  return new Subscription<TOutput>((emit) => {
+    _pull(emit);
+    return () => {
+      clearTimeout(timer);
+      stopped = true;
+    };
   });
 }

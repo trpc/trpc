@@ -398,13 +398,11 @@ describe('createCaller()', () => {
     .subscription('sub', {
       input: z.number(),
       async resolve({ input }) {
-        return new trpc.Subscription<{ input: typeof input }>({
-          start(emit) {
-            emit.data({ input });
-            return () => {
-              // noop
-            };
-          },
+        return new trpc.Subscription<{ input: typeof input }>((emit) => {
+          emit.data({ input });
+          return () => {
+            // noop
+          };
         });
       },
     });
@@ -452,13 +450,11 @@ describe('createCaller()', () => {
     .subscription('sub', {
       input: z.number(),
       async resolve({ input }) {
-        return new trpc.Subscription<{ input: typeof input }>({
-          start(emit) {
-            emit.data({ input });
-            return () => {
-              // noop
-            };
-          },
+        return new trpc.Subscription<{ input: typeof input }>((emit) => {
+          emit.data({ input });
+          return () => {
+            // noop
+          };
         });
       },
     });

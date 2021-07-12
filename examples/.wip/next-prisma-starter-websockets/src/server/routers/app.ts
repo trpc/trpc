@@ -28,15 +28,13 @@ export const appRouter = createRouter()
   .merge('posts.', postsRouter)
   .subscription('randomNumber', {
     resolve() {
-      return new Subscription<number>({
-        start(emit) {
-          const int = setInterval(() => {
-            emit.data(Math.random());
-          }, 500);
-          return () => {
-            clearInterval(int);
-          };
-        },
+      return new Subscription<number>((emit) => {
+        const int = setInterval(() => {
+          emit.data(Math.random());
+        }, 500);
+        return () => {
+          clearInterval(int);
+        };
       });
     },
   });

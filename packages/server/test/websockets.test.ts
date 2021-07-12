@@ -58,8 +58,8 @@ function factory() {
       .subscription('onMessage', {
         input: z.string().optional(),
         resolve() {
-          const sub = (subRef.current = new trpc.Subscription<Message>({
-            start(emit) {
+          const sub = (subRef.current = new trpc.Subscription<Message>(
+            (emit) => {
               const onMessage = (data: Message) => {
                 emit.data(data);
               };
@@ -69,7 +69,7 @@ function factory() {
                 ee.off('server:msg', onMessage);
               };
             },
-          }));
+          ));
           ee.emit('subscription:created');
           onNewMessageSubscription();
           return sub;

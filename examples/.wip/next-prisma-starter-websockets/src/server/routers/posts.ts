@@ -109,14 +109,12 @@ export const postsRouter = createRouter()
   })
   .subscription('updated', {
     async resolve() {
-      return new Subscription<'updated'>({
-        start(emit) {
-          const updated = () => emit.data('updated');
-          ee.on('updated', updated);
-          return () => {
-            ee.off('updated', updated);
-          };
-        },
+      return new Subscription<'updated'>((emit) => {
+        const updated = () => emit.data('updated');
+        ee.on('updated', updated);
+        return () => {
+          ee.off('updated', updated);
+        };
       });
     },
   });
