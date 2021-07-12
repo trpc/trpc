@@ -112,6 +112,26 @@
       "contributions": [
         "financial"
       ]
+    },
+    {
+      "login": "hypnodron",
+      "name": "hypnodron",
+      "avatar_url": "https://avatars.githubusercontent.com/u/3454041?v=4",
+      "profile": "https://github.com/hypnodron",
+      "contributions": [
+        "test",
+        "code",
+        "bug"
+      ]
+    },
+    {
+      "login": "danielyogel",
+      "name": "Daniel Yogel",
+      "avatar_url": "https://avatars.githubusercontent.com/u/2037064?v=4",
+      "profile": "http://www.appdome.com",
+      "contributions": [
+        "financial"
+      ]
     }
   ],
   "contributorsPerLine": 7,

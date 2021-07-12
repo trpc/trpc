@@ -212,9 +212,10 @@ export function createReactQueryHooks<TRouter extends AnyRouter>() {
       typeof window === 'undefined' &&
       isPrepass &&
       opts?.ssr !== false &&
+      opts?.enabled !== false &&
       !queryClient.getQueryCache().find(cacheKey)
     ) {
-      fetchQuery(pathAndArgs);
+      fetchQuery(pathAndArgs, opts as any);
     }
     const query = useQuery(
       cacheKey,
@@ -306,9 +307,10 @@ export function createReactQueryHooks<TRouter extends AnyRouter>() {
       typeof window === 'undefined' &&
       isPrepass &&
       opts?.ssr !== false &&
+      opts?.enabled !== false &&
       !queryClient.getQueryCache().find(cacheKey)
     ) {
-      fetchInfiniteQuery(pathAndArgs as any);
+      fetchInfiniteQuery(pathAndArgs as any, opts as any);
     }
     const query = useInfiniteQuery(
       cacheKey,
