@@ -17,14 +17,14 @@ const MyApp: AppType = ({ Component, pageProps }) => {
 };
 
 function getEndingLink() {
-  const { APP_URL } = publicRuntimeConfig;
+  const { APP_URL, WS_URL } = publicRuntimeConfig;
   if (!process.browser) {
     return httpBatchLink({
       url: `${APP_URL}/api/trpc`,
     });
   }
   const client = createWSClient({
-    url: APP_URL.replace(/^http/, 'ws'),
+    url: WS_URL,
   });
   return wsLink<AppRouter>({
     client,
