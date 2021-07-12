@@ -120,7 +120,8 @@
       "profile": "https://github.com/hypnodron",
       "contributions": [
         "test",
-        "code"
+        "code",
+        "bug"
       ]
     }
   ],
