@@ -149,8 +149,7 @@ export function createReactQueryHooks<TRouter extends AnyRouter>() {
           ),
           invalidateQuery: useCallback(
             (pathAndArgs) => {
-              const cacheKey = getCacheKey(pathAndArgs);
-              return queryClient.invalidateQueries(cacheKey);
+              return queryClient.invalidateQueries(pathAndArgs);
             },
             [queryClient],
           ),

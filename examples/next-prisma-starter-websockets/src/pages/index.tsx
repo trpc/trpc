@@ -17,7 +17,7 @@ export default function IndexPage() {
   // -> invalidate cache which triggers refetch
   trpc.useSubscription(['posts.updated'], {
     onNext() {
-      utils.queryClient.invalidateQueries();
+      utils.invalidateQuery(['posts.infinite']);
     },
     onError(err) {
       console.error('Subscription error:', err);
