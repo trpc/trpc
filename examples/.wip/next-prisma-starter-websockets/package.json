@@ -16,7 +16,7 @@
     "generate": "prisma generate",
     "migrate-dev": "prisma migrate dev",
     "migrate": "prisma migrate deploy",
-    "start": "node dist/server/prodServer.js",
+    "start": "NODE_ENV=production node dist/server/prodServer.js",
     "studio": "prisma studio",
     "lint": "eslint src",
     "lint-fix": "yarn lint --fix",
