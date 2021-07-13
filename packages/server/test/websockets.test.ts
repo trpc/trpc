@@ -379,9 +379,6 @@ test('subscriptions are automatically resumed', async () => {
   wssHandler.broadcastReconnectNotification();
   await waitFor(() => {
     expect(wss.clients.size).toBe(1);
-    expect(sub1.onError.mock.calls[0][0].originalError.name).toBe(
-      'TRPCReconnectError',
-    );
   });
 
   await waitFor(() => {

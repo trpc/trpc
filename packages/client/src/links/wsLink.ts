@@ -146,9 +146,6 @@ export function createWSClient(opts: WebSocketClientOptions) {
         // notify subscribers
         for (const pendingReq of Object.values(pendingRequests)) {
           if (pendingReq.type === 'subscription') {
-            pendingReq.callbacks.onError?.(
-              TRPCClientError.from(new TRPCReconnectError()),
-            );
             resumeSubscriptionOnReconnect(pendingReq);
           }
         }
@@ -291,13 +288,6 @@ class TRPCSubscriptionEndedError extends Error {
   }
 }
 
-class TRPCReconnectError extends Error {
-  constructor() {
-    super('TRPCReconnectError');
-    this.name = 'TRPCReconnectError';
-    Object.setPrototypeOf(this, TRPCReconnectError.prototype);
-  }
-}
 export function wsLink<TRouter extends AnyRouter>(
   opts: WebSocketLinkOptions,
 ): TRPCLink<TRouter> {
