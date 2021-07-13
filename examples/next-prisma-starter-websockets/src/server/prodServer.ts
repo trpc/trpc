@@ -34,10 +34,6 @@ app.prepare().then(() => {
   // notifying clients to reconnect after 54s
   wss.on('connection', (client) => {
     const timer = setTimeout(() => {
-      const msg: TRPCReconnectNotification = {
-        id: null,
-        method: 'reconnect',
-      };
       if (client.readyState === ws.OPEN) {
         client.send(msgJson);
       }

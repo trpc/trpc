@@ -11,6 +11,6 @@ module.exports = {
   publicRuntimeConfig: {
     // Will be available on both server and client
     APP_URL: process.env.APP_URL || `http://localhost:3000`,
-    WS_URL: process.env.WS_URL || `ws://localhost:${wsPort}`
+    WS_URL: process.env.WS_URL || `ws://localhost:${wsPort}`,
   },
 };
