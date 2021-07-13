@@ -31,18 +31,15 @@ export default function IndexPage() {
         <link rel="icon" href="/favicon.ico" />
       </Head>
       <h1>tRPC WebSocket starter</h1>
-      <p>
-        Showcases WebSocket + subscription support
-        <ul>
-          <li>Open inspector and head to Network tab</li>
-          <li>All client requests are handled through WebSockets</li>
-          <li>
-            We have a simple backend subscription that nudges the client to
-            invalidate the cache which then triggers a refetch.
-          </li>
-        </ul>
-      </p>
-
+      Showcases WebSocket + subscription support
+      <ul>
+        <li>Open inspector and head to Network tab</li>
+        <li>All client requests are handled through WebSockets</li>
+        <li>
+          We have a simple backend subscription that nudges the client to
+          invalidate the cache which then triggers a refetch.
+        </li>
+      </ul>
       <h2>
         Messages
         {postsQuery.status === 'loading' && '(loading)'}
@@ -74,7 +71,6 @@ export default function IndexPage() {
       ))}
       <hr />
       <h2>Add message</h2>
-
       <form
         onSubmit={async (e) => {
           e.preventDefault();
@@ -112,7 +108,6 @@ export default function IndexPage() {
           <p style={{ color: 'red' }}>{addPost.error.message}</p>
         )}
       </form>
-
       <p>
         <Link href="/about">
           <a>Go to other page that displays a random number</a>
