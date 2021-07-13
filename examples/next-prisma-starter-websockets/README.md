@@ -2,7 +2,7 @@
 
 > :warning: WebSockets is an experimental feature & can change without major version bump :warning:
 
-- Try in CodeSandbox: [https://githubbox.com/trpc/trpc/tree/main/examples/next-prisma-starter-websockets](https://codesandbox.io/s/github/trpc/trpc/tree/main/examples/next-prisma-starter-websockets?file=/src/pages/index.tsx)
+
 - Try demo http://nextjs-websockets.trpc.io/
 
 
