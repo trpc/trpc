@@ -2,7 +2,7 @@ import Head from 'next/head';
 import { ReactQueryDevtools } from 'react-query/devtools';
 import { trpc } from '../utils/trpc';
 import Link from 'next/link';
-import { Fragment } from 'react';
+import { Fragment, useCallback, useEffect, useState } from 'react';
 
 export default function IndexPage() {
   const postsQuery = trpc.useInfiniteQuery(['posts.infinite', {}], {
@@ -13,11 +13,41 @@ export default function IndexPage() {
   const addPost = trpc.useMutation('posts.add');
   const utils = trpc.useContext();
 
-  // subscription that tells us that something has changed
-  // -> invalidate cache which triggers refetch
-  trpc.useSubscription(['posts.updated'], {
-    onNext() {
-      utils.invalidateQuery(['posts.infinite']);
+  // list of messages that are rendered
+  const [messages, setMessages] = useState(() => {
+    const msgs = postsQuery.data?.pages.map((page) => page.items).flat();
+    return msgs;
+  });
+  type Post = NonNullable<typeof messages>[number];
+
+  // fn to add and dedupe new messages onto state
+  const addMessages = useCallback((incoming?: Post[]) => {
+    setMessages((current) => {
+      const map: Record<Post['id'], Post> = {};
+      for (const msg of current ?? []) {
+        map[msg.id] = msg;
+      }
+      for (const msg of incoming ?? []) {
+        map[msg.id] = msg;
+      }
+      return Object.values(map).sort(
+        (a, b) => a.createdAt.getTime() - b.createdAt.getTime(),
+      );
+    });
+  }, []);
+
+  // when new data, merge with current state
+  useEffect(() => {
+    const msgs = postsQuery.data?.pages.map((page) => page.items).flat();
+    addMessages(msgs);
+  }, [postsQuery.data?.pages, addMessages]);
+
+  // sstart subscription
+  trpc.useSubscription(['posts.events'], {
+    onNext({ type, data }) {
+      if (type === 'add') {
+        addMessages([data]);
+      }
     },
     onError(err) {
       console.error('Subscription error:', err);
@@ -55,19 +85,15 @@ export default function IndexPage() {
           ? 'Load More'
           : 'Nothing more to load'}
       </button>
-      {postsQuery.data?.pages.map((group, index) => (
-        <Fragment key={index}>
-          {group.items.map((item) => (
-            <article key={item.id}>
-              [
-              {new Intl.DateTimeFormat('en-GB', {
-                dateStyle: 'short',
-                timeStyle: 'short',
-              }).format(item.createdAt)}
-              ] <strong>{item.name}</strong>: <em>{item.text}</em>
-            </article>
-          ))}
-        </Fragment>
+      {messages?.map((item) => (
+        <article key={item.id}>
+          [
+          {new Intl.DateTimeFormat('en-GB', {
+            dateStyle: 'short',
+            timeStyle: 'short',
+          }).format(item.createdAt)}
+          ] <strong>{item.name}</strong>: <em>{item.text}</em>
+        </article>
       ))}
       <hr />
       <h2>Add message</h2>

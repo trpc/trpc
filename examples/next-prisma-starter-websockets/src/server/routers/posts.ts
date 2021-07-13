@@ -7,7 +7,24 @@ import { z } from 'zod';
 import { createRouter } from '../trpc';
 import { EventEmitter } from 'events';
 import { Subscription } from '@trpc/server';
-const ee = new EventEmitter();
+import { Post } from '@prisma/client';
+
+interface MyEvents {
+  add: (data: Post) => void;
+}
+declare interface MyEventEmitter {
+  on<U extends keyof MyEvents>(event: U, listener: MyEvents[U]): this;
+  once<U extends keyof MyEvents>(event: U, listener: MyEvents[U]): this;
+  emit<U extends keyof MyEvents>(
+    event: U,
+    ...args: Parameters<MyEvents[U]>
+  ): boolean;
+}
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+class MyEventEmitter extends EventEmitter {}
+
+const ee = new MyEventEmitter();
+
 export const postsRouter = createRouter()
   // create
   .mutation('add', {
@@ -17,11 +34,11 @@ export const postsRouter = createRouter()
       text: z.string().min(1),
     }),
     async resolve({ ctx, input }) {
-      const todo = await ctx.prisma.post.create({
+      const post = await ctx.prisma.post.create({
         data: input,
       });
-      ee.emit('updated');
-      return todo;
+      ee.emit('add', post);
+      return post;
     },
   })
   // read
@@ -80,40 +97,41 @@ export const postsRouter = createRouter()
     },
   })
   // update
-  .mutation('edit', {
-    input: z.object({
-      id: z.string().uuid(),
-      data: z.object({
-        name: z.string().min(1).max(32).optional(),
-        text: z.string().min(1).optional(),
-      }),
-    }),
-    async resolve({ ctx, input }) {
-      const { id, data } = input;
-      const todo = await ctx.prisma.post.update({
-        where: { id },
-        data,
-      });
-      ee.emit('updated');
-      return todo;
-    },
-  })
+  // .mutation('edit', {
+  //   input: z.object({
+  //     id: z.string().uuid(),
+  //     data: z.object({
+  //       name: z.string().min(1).max(32).optional(),
+  //       text: z.string().min(1).optional(),
+  //     }),
+  //   }),
+  //   async resolve({ ctx, input }) {
+  //     const { id, data } = input;
+  //     const post = await ctx.prisma.post.update({
+  //       where: { id },
+  //       data,
+  //     });
+  //     return post;
+  //   },
+  // })
   // delete
-  .mutation('delete', {
-    input: z.string().uuid(),
-    async resolve({ input: id, ctx }) {
-      await ctx.prisma.post.delete({ where: { id } });
-      ee.emit('updated');
-      return id;
-    },
-  })
-  .subscription('updated', {
+  // .mutation('delete', {
+  //   input: z.string().uuid(),
+  //   async resolve({ input: id, ctx }) {
+  //     await ctx.prisma.post.delete({ where: { id } });
+  //     return id;
+  //   },
+  // })
+  .subscription('events', {
     async resolve() {
-      return new Subscription<'updated'>((emit) => {
-        const updated = () => emit.data('updated');
-        ee.on('updated', updated);
+      return new Subscription<{
+        type: 'add';
+        data: Post;
+      }>((emit) => {
+        const onAdd = (data: Post) => emit.data({ type: 'add', data });
+        ee.on('add', onAdd);
         return () => {
-          ee.off('updated', updated);
+          ee.off('add', onAdd);
         };
       });
     },
