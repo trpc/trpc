@@ -5,7 +5,7 @@
   "scripts": {
     "build:1-generate": "prisma generate",
     "build:2-migrate": "prisma migrate deploy",
-    "build:3-next": "next build",
+    "build:3-next": "NODE_ENV=production next build",
     "build:4-server": "tsc --project tsconfig.server.json",
     "build": "run-s build:*",
     "dev:wss": "PORT=3001 nodemon --watch src --ext .ts,.tsx,js,jsx --signal SIGTERM --exec \"ts-node --project tsconfig.server.json src/server/wssDevServer.ts\"",
@@ -16,7 +16,7 @@
     "generate": "prisma generate",
     "migrate-dev": "prisma migrate dev",
     "migrate": "prisma migrate deploy",
-    "start": "next start",
+    "start": "node dist/server/prodServer.js",
     "studio": "prisma studio",
     "lint": "eslint src",
     "lint-fix": "yarn lint --fix",
