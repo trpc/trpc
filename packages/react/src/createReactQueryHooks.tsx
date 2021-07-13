@@ -155,8 +155,7 @@ export function createReactQueryHooks<TRouter extends AnyRouter>() {
           ),
           cancelQuery: useCallback(
             (pathAndArgs) => {
-              const cacheKey = getCacheKey(pathAndArgs);
-              return queryClient.cancelQueries(cacheKey);
+              return queryClient.cancelQueries(pathAndArgs);
             },
             [queryClient],
           ),
