@@ -154,7 +154,6 @@ export class TRPCClient<TRouter extends AnyRouter> {
           $result.done();
         },
         onError(err) {
-          // this is used to bubble up to the ending link
           reject(err);
           $result.done();
         },
