@@ -254,18 +254,18 @@ test('$subscription() - server randomly stop and restart (this test might be fla
     expect(onNext).toHaveBeenCalledTimes(2);
   });
   expect(onNext.mock.calls.map((args) => args[0])).toMatchInlineSnapshot(`
-Array [
-  Object {
-    "type": "started",
-  },
-  Object {
-    "data": Object {
-      "id": "3",
-    },
-    "type": "data",
-  },
-]
-`);
+    Array [
+      Object {
+        "type": "started",
+      },
+      Object {
+        "data": Object {
+          "id": "3",
+        },
+        "type": "data",
+      },
+    ]
+  `);
 
   wss.close();
 });
@@ -299,6 +299,10 @@ test('server subscription ended', async () => {
   await waitFor(() => {
     expect(onDone).toHaveBeenCalledTimes(1);
   });
+  expect(onError).toHaveBeenCalledTimes(1);
+  expect(onError.mock.calls[0][0]).toMatchInlineSnapshot(
+    `[TRPCClientError: Operation ended prematurely]`,
+  );
   close();
 });
 
