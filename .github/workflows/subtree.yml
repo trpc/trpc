@@ -10,8 +10,11 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        path:
-          - next-prisma-starter
+        path: [
+            #
+            next-prisma-starter,
+            next-prisma-starter-websockets,
+          ]
 
     name: Update downstream ${{ matrix.path }} package
 
