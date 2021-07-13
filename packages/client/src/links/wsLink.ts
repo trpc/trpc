@@ -207,9 +207,6 @@ export function createWSClient(opts: WebSocketClientOptions) {
         );
         if (req.type === 'subscription' && state !== 'closed') {
           // request restart of sub with next connection
-          if (outgoing.some((msg) => msg.id !== req.op.id)) {
-            request(req.op, req.callbacks);
-          }
           resumeSubscriptionOnReconnect(req);
         } else {
           req.callbacks.onDone?.();
@@ -323,7 +320,6 @@ export function wsLink<TRouter extends AnyRouter>(
             if (isDone) {
               return;
             }
-            console.log('err', err);
             prev(
               err instanceof Error
                 ? err
