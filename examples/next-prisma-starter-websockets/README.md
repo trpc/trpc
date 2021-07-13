@@ -2,13 +2,14 @@
 
 > :warning: WebSockets is an experimental feature & can change without major version bump :warning:
 
-Try in CodeSandbox: [https://githubbox.com/trpc/trpc/tree/main/examples/next-prisma-starter](https://codesandbox.io/s/github/trpc/trpc/tree/main/examples/next-prisma-starter?file=/src/pages/index.tsx)
+Try in CodeSandbox: [https://githubbox.com/trpc/trpc/tree/main/examples/next-prisma-starter-websockets](https://codesandbox.io/s/github/trpc/trpc/tree/main/examples/next-prisma-starter-websockets?file=/src/pages/index.tsx)
 
 
 ## Features
 
 - 🧙‍♂️ E2E type safety with [tRPC](https://trpc.io)
 - ⚡ Full-stack React with Next.js
+- ⚡ WebSockets / Subscription support
 - ⚡ Database with Prisma
 - ⚙️ VSCode extensions
 - 🎨 ESLint + Prettier
@@ -20,8 +21,8 @@ Try in CodeSandbox: [https://githubbox.com/trpc/trpc/tree/main/examples/next-pri
 ## Setup
 
 ```bash
-npx create-next-app --example https://github.com/trpc/trpc --example-path examples/next-prisma-starter trpc-prisma-starter
-cd trpc-prisma-starter
+npx create-next-app --example https://github.com/trpc/trpc --example-path examples/next-prisma-starter-websockets trpc-prisma-starter-websockets
+cd trpc-prisma-starter-websockets
 yarn
 yarn dev
 ```
@@ -60,14 +61,6 @@ yarn test-dev # runs e2e tests on dev
 yarn test-start # runs e2e tests on `next start` - build required before
 yarn dev-nuke # resets local db
 ```
-
-## ℹ️ How to switch from SQLite to Postgres
-
-How to switch to postgres
-
-- Remove migrations: `rm -rf ./prisma/migrations`
-- Update: `./prisma/schema.prisma` (see commented code)
-
 ---
 
 Created by [@alexdotjs](https://twitter.com/alexdotjs).
