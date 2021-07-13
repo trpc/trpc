@@ -40,7 +40,7 @@ tRPC is a framework for building strongly typed RPC APIs with TypeScript. Altern
 - [Intro](#intro)
 - [Usage](#usage)
 - [Example apps](#example-apps)
-- [Core team](#core-team)
+- [Core Team](#core-team)
 - [Financial Contributors](#financial-contributors)
 - [Contributors ✨](#contributors-)
 
@@ -58,7 +58,7 @@ npx create-next-app --example https://github.com/trpc/trpc --example-path exampl
 
 ## Example apps
 
-<table>
+<table width="100%">
   <thead>
     <tr>
       <th>Description</th>
@@ -124,18 +124,18 @@ npx create-next-app --example https://github.com/trpc/trpc --example-path exampl
   </tbody>
 </table>
 
-## Core team
+## Core Team
 
 <table>
   <tr>
-    <td align="center"><a href="https://twitter.com/alexdotjs"><img src="https://avatars.githubusercontent.com/u/459267?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Alex "KATT" Johansson</b></sub></a></td>
+    <td align="center"><a href="https://twitter.com/alexdotjs"><img src="https://avatars.githubusercontent.com/u/459267?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Alex / KATT</b></sub></a></td>
   </tr>
 </table>
 
 
 ## Financial Contributors
 
-If you like working with tRPC, consider giving a token a apprecation by [GitHub Sponsors](https://github.com/sponsors/KATT).
+If you like working with tRPC, consider giving a token a apprecation by [GitHub Sponsors](https://github.com/sponsors/KATT) or [get in touch](https://twitter.com/alexdotjs) if you want your company's logo featured in the tRPC repository or website.
 
 
 <table>
