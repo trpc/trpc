@@ -5,7 +5,7 @@ import { dataLoader } from '../internals/dataLoader';
 import { transformRPCResponse } from '../internals/transformRPCResponse';
 import { httpRequest } from '../internals/httpRequest';
 import { HttpLinkOptions, TRPCLink } from './core';
-import { TRPCAbortError } from '../internals/TRPCAbortErrorSignal';
+import { TRPCAbortError } from '../internals/TRPCAbortError';
 
 export function httpBatchLink<TRouter extends AnyRouter>(
   opts: HttpLinkOptions,

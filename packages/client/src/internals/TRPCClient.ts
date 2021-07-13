@@ -11,7 +11,7 @@ import { TRPCResult } from '@trpc/server/rpc';
 import { executeChain } from './executeChain';
 import { getAbortController, getFetch } from './fetchHelpers';
 import { ObservableCallbacks, UnsubscribeFn } from './observable';
-import { TRPCAbortErrorSignal } from './TRPCAbortErrorSignal';
+import { TRPCAbortError } from './TRPCAbortError';
 import {
   CancelFn,
   LinkRuntimeOptions,
@@ -155,15 +155,16 @@ export class TRPCClient<TRouter extends AnyRouter> {
         },
         onError(err) {
           // this is used to bubble up to the ending link
-          if (err.originalError?.name !== 'TRPCAbortErrorSignal') {
-            reject(err);
-            $result.done();
-          }
+          reject(err);
+          $result.done();
+        },
+        onDone() {
+          reject(TRPCClientError.from(new TRPCAbortError()));
         },
       });
     }) as CancellablePromise<TOutput>;
     promise.cancel = () => {
-      $result.error(TRPCClientError.from(new TRPCAbortErrorSignal()));
+      $result.done();
     };
 
     return promise;
@@ -229,14 +230,12 @@ export class TRPCClient<TRouter extends AnyRouter> {
         }
       },
       onError(err) {
-        if (err.originalError?.name !== 'TRPCAbortErrorSignal') {
-          opts.onError?.(err);
-        }
+        opts.onError?.(err);
       },
       onDone: opts.onDone,
     });
     return () => {
-      $res.error(TRPCClientError.from(new TRPCAbortErrorSignal()));
+      $res.done();
     };
   }
 }

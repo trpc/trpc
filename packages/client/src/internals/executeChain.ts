@@ -21,7 +21,6 @@ export function executeChain<
     null | TRPCResult<TOutput>,
     TRPCClientError<TRouter>
   >(null);
-  const $destroyed = observableSubject(false);
 
   const updateResult = (result: OperationResponse<TRouter, TOutput>) => {
     if (result instanceof Error) {
@@ -55,27 +54,14 @@ export function executeChain<
         walk({ index: index + 1, op, stack: prevStack });
       },
       onDestroy: (callback) => {
-        const unsub = $destroyed.subscribe({
-          onNext: (aborted) => {
-            if (aborted) {
-              callback();
-              unsub();
-            }
+        $result.subscribe({
+          onDone() {
+            callback();
           },
         });
       },
     });
   }
   walk({ index: 0, op: opts.op, stack: [] });
-  $result.subscribe({
-    onError(err) {
-      if (err.originalError?.name === 'TRPCAbortErrorSignal') {
-        $destroyed.next(true);
-      }
-    },
-    onDone() {
-      $destroyed.next(true);
-    },
-  });
   return $result;
 }

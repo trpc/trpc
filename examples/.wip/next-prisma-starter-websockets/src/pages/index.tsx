@@ -15,7 +15,7 @@ export default function IndexPage() {
 
   // subscription that tells us that something has changed
   // -> invalidate cache which triggers refetch
-  trpc.useSubscription(['posts.updated', undefined], {
+  trpc.useSubscription(['posts.updated'], {
     onNext() {
       utils.queryClient.invalidateQueries();
     },
