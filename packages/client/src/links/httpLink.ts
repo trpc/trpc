@@ -3,7 +3,7 @@ import { TRPCClientError } from '../TRPCClientError';
 import { transformRPCResponse } from '../internals/transformRPCResponse';
 import { httpRequest } from '../internals/httpRequest';
 import { HttpLinkOptions, TRPCLink } from './core';
-import { TRPCAbortError } from '../internals/TRPCAbortErrorSignal';
+import { TRPCAbortError } from '../internals/TRPCAbortError';
 
 export function httpLink<TRouter extends AnyRouter>(
   opts: HttpLinkOptions,
@@ -15,7 +15,7 @@ export function httpLink<TRouter extends AnyRouter>(
     // initialized in app
     return ({ op, prev, onDestroy }) => {
       const { path, input, type } = op;
-      let done = false;
+      let isDone = false;
       const { promise, cancel } = httpRequest({
         runtime,
         type,
@@ -24,22 +24,22 @@ export function httpLink<TRouter extends AnyRouter>(
         path,
       });
       onDestroy(() => {
-        if (!done) {
-          done = true;
+        if (!isDone) {
+          isDone = true;
           prev(TRPCClientError.from(new TRPCAbortError(), { isDone: true }));
           cancel();
         }
       });
       promise
         .then((envelope) => {
-          if (!done) {
-            done = true;
+          if (!isDone) {
+            isDone = true;
             prev(transformRPCResponse({ envelope, runtime }));
           }
         })
         .catch((err) => {
-          if (!done) {
-            done = true;
+          if (!isDone) {
+            isDone = true;
             prev(TRPCClientError.from(err));
           }
         });

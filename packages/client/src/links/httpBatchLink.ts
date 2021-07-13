@@ -5,7 +5,7 @@ import { dataLoader } from '../internals/dataLoader';
 import { transformRPCResponse } from '../internals/transformRPCResponse';
 import { httpRequest } from '../internals/httpRequest';
 import { HttpLinkOptions, TRPCLink } from './core';
-import { TRPCAbortError } from '../internals/TRPCAbortErrorSignal';
+import { TRPCAbortError } from '../internals/TRPCAbortError';
 
 export function httpBatchLink<TRouter extends AnyRouter>(
   opts: HttpLinkOptions,
@@ -46,24 +46,24 @@ export function httpBatchLink<TRouter extends AnyRouter>(
     return ({ op, prev, onDestroy }) => {
       const loader = loaders[op.type];
       const { promise, cancel } = loader.load(op);
-      let done = false;
+      let isDone = false;
       onDestroy(() => {
-        if (!done) {
-          done = true;
+        if (!isDone) {
+          isDone = true;
           prev(TRPCClientError.from(new TRPCAbortError(), { isDone: true }));
           cancel();
         }
       });
       promise
         .then((envelope) => {
-          if (!done) {
-            done = true;
+          if (!isDone) {
+            isDone = true;
             prev(transformRPCResponse({ envelope, runtime }));
           }
         })
         .catch((err) => {
-          if (!done) {
-            done = true;
+          if (!isDone) {
+            isDone = true;
             prev(TRPCClientError.from<TRouter>(err));
           }
         });

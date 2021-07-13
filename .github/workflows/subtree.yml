@@ -3,6 +3,7 @@ on:
   push:
     branches:
       - main
+      - ws-example
 jobs:
   sync-downstream:
     runs-on: ubuntu-latest
@@ -10,8 +11,11 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        path:
-          - next-prisma-starter
+        path: [
+            #
+            next-prisma-starter,
+            next-prisma-starter-websockets,
+          ]
 
     name: Update downstream ${{ matrix.path }} package
 

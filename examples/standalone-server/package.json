@@ -1,6 +1,6 @@
 {
   "name": "@examples/standalone-server",
-  "version": "8.1.4",
+  "version": "8.1.5-alpha.3",
   "private": true,
   "scripts": {
     "dev:server": "nodemon -e ts -w . -x ts-node ./src/server.ts",
@@ -12,9 +12,9 @@
     "test-start": "start-server-and-test 'node dist/server' 2022 'node dist/client'"
   },
   "dependencies": {
-    "@trpc/client": "^8.1.4",
-    "@trpc/react": "^8.1.4",
-    "@trpc/server": "^8.1.4",
+    "@trpc/client": "^8.1.5-alpha.2",
+    "@trpc/react": "^8.1.5-alpha.3",
+    "@trpc/server": "^8.1.5-alpha.2",
     "@types/node-fetch": "^2.5.8",
     "abort-controller": "^3.0.0",
     "node-fetch": "^2.6.1",
@@ -27,7 +27,7 @@
   },
   "devDependencies": {
     "@types/ws": "^7.4.4",
-    "nodemon": "^2.0.7",
+    "nodemon": "^2.0.12",
     "npm-run-all": "^4.1.5",
     "start-server-and-test": "^1.12.0",
     "ts-node": "^10.0.0",

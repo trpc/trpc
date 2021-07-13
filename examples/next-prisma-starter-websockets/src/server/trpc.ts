@@ -23,6 +23,8 @@ export const createContext = async ({
   | trpcNext.CreateNextContextOptions
   | CreateContextFnOptions<IncomingMessage, ws>) => {
   return {
+    req,
+    res,
     prisma,
   };
 };

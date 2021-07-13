@@ -36,17 +36,15 @@ export const appRouter = trpc
   })
   .subscription('randomNumber', {
     resolve() {
-      return new trpc.Subscription<{ randomNumber: number }>({
-        start(emit) {
-          const timer = setInterval(() => {
-            // emits a number every second
-            emit.data({ randomNumber: Math.random() });
-          }, 200);
+      return new trpc.Subscription<{ randomNumber: number }>((emit) => {
+        const timer = setInterval(() => {
+          // emits a number every second
+          emit.data({ randomNumber: Math.random() });
+        }, 200);
 
-          return () => {
-            clearInterval(timer);
-          };
-        },
+        return () => {
+          clearInterval(timer);
+        };
       });
     },
   });

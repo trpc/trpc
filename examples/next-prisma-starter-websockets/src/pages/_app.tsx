@@ -4,7 +4,9 @@ import { loggerLink } from '@trpc/client/links/loggerLink';
 import { withTRPC } from '@trpc/next';
 import { AppType } from 'next/dist/next-server/lib/utils';
 import type { AppRouter } from 'server/routers/app';
-// import { transformer } from '../utils/trpc';
+import superjson from 'superjson';
+import getConfig from 'next/config';
+const { publicRuntimeConfig } = getConfig();
 
 const MyApp: AppType = ({ Component, pageProps }) => {
   return (
@@ -14,34 +16,18 @@ const MyApp: AppType = ({ Component, pageProps }) => {
   );
 };
 
-function getHostname() {
-  if (process.browser) {
-    return 'localhost';
-  }
-  // // reference for vercel.com
-  // if (process.env.VERCEL_URL) {
-  //   return `${process.env.VERCEL_URL}`;
-  // }
-
-  // // reference for render.com
-  // if (process.env.RENDER_INTERNAL_HOSTNAME) {
-  //   return `${process.env.RENDER_INTERNAL_HOSTNAME}:${process.env.PORT}`;
-  // }
-
-  // assume localhost
-  return `http://localhost:${process.env.PORT ?? 3000}`;
-}
 function getEndingLink() {
-  if (process.browser) {
-    const client = createWSClient({
-      url: `ws://localhost:3001/api/trpc`,
-    });
-    return wsLink<AppRouter>({
-      client,
+  const { APP_URL, WS_URL } = publicRuntimeConfig;
+  if (!process.browser) {
+    return httpBatchLink({
+      url: `${APP_URL}/api/trpc`,
     });
   }
-  return httpBatchLink({
-    url: `${getHostname()}/api/trpc`,
+  const client = createWSClient({
+    url: WS_URL,
+  });
+  return wsLink<AppRouter>({
+    client,
   });
 }
 
@@ -68,7 +54,7 @@ export default withTRPC<AppRouter>({
       /**
        * @link https://trpc.io/docs/data-transformers
        */
-      // transformer,
+      transformer: superjson,
       /**
        * @link https://react-query.tanstack.com/reference/QueryClient
        */

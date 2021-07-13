@@ -123,12 +123,6 @@ export function applyWSSHandler<TRouter extends AnyRouter>(
           clientSubscriptions.delete(id);
           if (sub) {
             sub.destroy();
-            respond({
-              id,
-              result: {
-                type: 'stopped',
-              },
-            });
           }
           return;
         }
