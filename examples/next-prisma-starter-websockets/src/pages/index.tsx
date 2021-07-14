@@ -2,7 +2,83 @@ import Head from 'next/head';
 import { ReactQueryDevtools } from 'react-query/devtools';
 import { trpc } from '../utils/trpc';
 import Link from 'next/link';
-import { Fragment, useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
+
+function AddMessageForm() {
+  const addPost = trpc.useMutation('posts.add');
+  const [name, setName] = useState('');
+  const utils = trpc.useContext();
+
+  if (!name) {
+    return (
+      <form
+        onSubmit={(e) => {
+          e.preventDefault();
+          const $name: HTMLInputElement = (e as any).target.elements.name;
+          setName($name.value.trim());
+        }}
+      >
+        <label htmlFor="name">What&apos;s your name?</label>
+        <br />
+        <input id="name" name="name" type="text" autoFocus />
+        <br />
+        <input type="submit" />
+      </form>
+    );
+  }
+  return (
+    <form
+      onSubmit={async (e) => {
+        e.preventDefault();
+        /**
+         * In a real app you probably don't want to use this manually
+         * Checkout React Hook Form - it works great with tRPC
+         * @link https://react-hook-form.com/
+         */
+
+        const $text: HTMLInputElement = (e as any).target.elements.text;
+        const input = {
+          name,
+          text: $text.value,
+        };
+        try {
+          await addPost.mutateAsync(input);
+          $text.value = '';
+        } catch {}
+      }}
+    >
+      <fieldset disabled={addPost.isLoading}>
+        <label htmlFor="name">Your name:</label>
+        <br />
+        <input id="name" name="name" type="text" disabled value={name} />
+
+        <br />
+        <label htmlFor="text">Text:</label>
+        <br />
+        <textarea
+          id="text"
+          name="text"
+          autoFocus
+          onKeyDown={() => {
+            utils.client.mutation('posts.isTyping', {
+              name,
+              typing: true,
+            });
+          }}
+          onBlur={() => {
+            utils.client.mutation('posts.isTyping', {
+              name,
+              typing: false,
+            });
+          }}
+        />
+        <br />
+        <input type="submit" />
+      </fieldset>
+      {addPost.error && <p style={{ color: 'red' }}>{addPost.error.message}</p>}
+    </form>
+  );
+}
 
 export default function IndexPage() {
   const postsQuery = trpc.useInfiniteQuery(['posts.infinite', {}], {
@@ -11,7 +87,6 @@ export default function IndexPage() {
   const utils = trpc.useContext();
   const { hasPreviousPage, isFetchingPreviousPage, fetchPreviousPage } =
     postsQuery;
-  const addPost = trpc.useMutation('posts.add');
 
   // list of messages that are rendered
   const [messages, setMessages] = useState(() => {
@@ -51,6 +126,13 @@ export default function IndexPage() {
       console.error('Subscription error:', err);
       // we might have missed a message - invalidate cache
       utils.queryClient.invalidateQueries();
+    },
+  });
+
+  const [currentlyTyping, setCurrentlyTyping] = useState<string[]>([]);
+  trpc.useSubscription(['posts.whoIsTyping'], {
+    onNext(data) {
+      setCurrentlyTyping(data);
     },
   });
 
@@ -97,41 +179,11 @@ export default function IndexPage() {
       ))}
       <hr />
       <h2>Add message</h2>
-      <form
-        onSubmit={async (e) => {
-          e.preventDefault();
-          /**
-           * In a real app you probably don't want to use this manually
-           * Checkout React Hook Form - it works great with tRPC
-           * @link https://react-hook-form.com/
-           */
-
-          const $text: HTMLInputElement = (e as any).target.elements.text;
-          const $name: HTMLInputElement = (e as any).target.elements.name;
-          const input = {
-            name: $name.value,
-            text: $text.value,
-          };
-          try {
-            await addPost.mutateAsync(input);
-            $text.value = '';
-          } catch {}
-        }}
-      >
-        <label htmlFor="name">Your name:</label>
-        <br />
-        <input id="name" name="name" type="text" disabled={addPost.isLoading} />
-
-        <br />
-        <label htmlFor="text">Text:</label>
-        <br />
-        <textarea id="text" name="text" disabled={addPost.isLoading} />
-        <br />
-        <input type="submit" disabled={addPost.isLoading} />
-        {addPost.error && (
-          <p style={{ color: 'red' }}>{addPost.error.message}</p>
-        )}
-      </form>
+      <AddMessageForm />
+      <p style={{ fontStyle: 'italic' }}>
+        Currently typing:{' '}
+        {currentlyTyping.length ? currentlyTyping.join(', ') : 'No one'}
+      </p>
       <p>
         <Link href="/about">
           <a>Go to other page that displays a random number</a>

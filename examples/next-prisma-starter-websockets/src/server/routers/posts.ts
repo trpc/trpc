@@ -11,6 +11,7 @@ import { Post } from '@prisma/client';
 
 interface MyEvents {
   add: (data: Post) => void;
+  isTypingUpdate: () => void;
 }
 declare interface MyEventEmitter {
   on<U extends keyof MyEvents>(event: U, listener: MyEvents[U]): this;
@@ -25,6 +26,26 @@ class MyEventEmitter extends EventEmitter {}
 
 const ee = new MyEventEmitter();
 
+// who is currently typing, key is `name`
+const currentlyTyping: Record<string, { lastTyped: Date }> =
+  Object.create(null);
+
+// every 1s, clear old "isTyping"
+const interval = setInterval(() => {
+  let updated = false;
+  const now = Date.now();
+  for (const [key, value] of Object.entries(currentlyTyping)) {
+    if (now - value.lastTyped.getTime() > 3e3) {
+      delete currentlyTyping[key];
+      updated = true;
+    }
+  }
+  if (updated) {
+    ee.emit('isTypingUpdate');
+  }
+}, 3e3);
+process.on('SIGTERM', () => clearInterval(interval));
+
 export const postsRouter = createRouter()
   // create
   .mutation('add', {
@@ -38,7 +59,25 @@ export const postsRouter = createRouter()
         data: input,
       });
       ee.emit('add', post);
+      delete currentlyTyping[input.name];
+      ee.emit('isTypingUpdate');
       return post;
+    },
+  })
+  .mutation('isTyping', {
+    input: z.object({
+      name: z.string().min(1),
+      typing: z.boolean(),
+    }),
+    resolve({ input }) {
+      if (!input.typing) {
+        delete currentlyTyping[input.name];
+      } else {
+        currentlyTyping[input.name] = {
+          lastTyped: new Date(),
+        };
+      }
+      ee.emit('isTypingUpdate');
     },
   })
   .query('infinite', {
@@ -84,6 +123,25 @@ export const postsRouter = createRouter()
         ee.on('add', onAdd);
         return () => {
           ee.off('add', onAdd);
+        };
+      });
+    },
+  })
+  .subscription('whoIsTyping', {
+    resolve() {
+      let prev: string[] | null = null;
+      return new Subscription<string[]>((emit) => {
+        const onIsTypingUpdate = () => {
+          const newData = Object.keys(currentlyTyping);
+
+          if (!prev || prev.toString() !== newData.toString()) {
+            emit.data(newData);
+          }
+          prev = newData;
+        };
+        ee.on('isTypingUpdate', onIsTypingUpdate);
+        return () => {
+          ee.off('isTypingUpdate', onIsTypingUpdate);
         };
       });
     },
