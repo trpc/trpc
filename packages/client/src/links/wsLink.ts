@@ -168,7 +168,6 @@ export function createWSClient(opts: WebSocketClientOptions) {
         // gracefully replace old connection with this
         req.ws = activeConnection;
         closeIfNoPending(oldWs);
-        return;
       }
 
       if (res.result.type === 'stopped' && conn === activeConnection) {
