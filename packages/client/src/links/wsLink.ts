@@ -200,17 +200,17 @@ export function createWSClient(opts: WebSocketClientOptions) {
         if (req.ws !== conn) {
           continue;
         }
-        delete pendingRequests[key];
         req.callbacks.onError?.(
           TRPCClientError.from(
             new TRPCWebSocketClosedError('WebSocket closed prematurely'),
           ),
         );
-        if (req.type === 'subscription' && state !== 'closed') {
+        if (req.type !== 'subscription') {
+          delete pendingRequests[key];
+          req.callbacks.onDone?.();
+        } else if (state !== 'closed') {
           // request restart of sub with next connection
           resumeSubscriptionOnReconnect(req);
-        } else {
-          req.callbacks.onDone?.();
         }
       }
     });
