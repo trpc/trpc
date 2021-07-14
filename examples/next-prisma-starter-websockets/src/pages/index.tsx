@@ -3,11 +3,13 @@ import { ReactQueryDevtools } from 'react-query/devtools';
 import { trpc } from '../utils/trpc';
 import Link from 'next/link';
 import { useCallback, useEffect, useState } from 'react';
+import { useRouter } from 'next/dist/client/router';
 
 function AddMessageForm() {
   const addPost = trpc.useMutation('posts.add');
-  const [name, setName] = useState('');
   const utils = trpc.useContext();
+  const router = useRouter();
+  const name = typeof router.query.name === 'string' && router.query.name;
 
   if (!name) {
     return (
@@ -15,7 +17,9 @@ function AddMessageForm() {
         onSubmit={(e) => {
           e.preventDefault();
           const $name: HTMLInputElement = (e as any).target.elements.name;
-          setName($name.value.trim());
+          router.push({ query: { name: $name.value } }, undefined, {
+            scroll: false,
+          });
         }}
       >
         <label htmlFor="name">What&apos;s your name?</label>
