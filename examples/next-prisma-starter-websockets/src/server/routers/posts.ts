@@ -41,17 +41,6 @@ export const postsRouter = createRouter()
       return post;
     },
   })
-  // read
-  .query('all', {
-    async resolve({ ctx }) {
-      /**
-       * For pagination you can have a look at this docs site
-       * @link https://trpc.io/docs/useInfiniteQuery
-       */
-
-      return ctx.prisma.post.findMany();
-    },
-  })
   .query('infinite', {
     input: z
       .object({
@@ -86,14 +75,6 @@ export const postsRouter = createRouter()
         items,
         prevCursor,
       };
-    },
-  })
-  .query('byId', {
-    input: z.string(),
-    async resolve({ ctx, input }) {
-      return ctx.prisma.post.findUnique({
-        where: { id: input },
-      });
     },
   })
   // update
