@@ -8,10 +8,10 @@ export default function IndexPage() {
   const postsQuery = trpc.useInfiniteQuery(['posts.infinite', {}], {
     getPreviousPageParam: (d) => d.prevCursor,
   });
+  const utils = trpc.useContext();
   const { hasPreviousPage, isFetchingPreviousPage, fetchPreviousPage } =
     postsQuery;
   const addPost = trpc.useMutation('posts.add');
-  const utils = trpc.useContext();
 
   // list of messages that are rendered
   const [messages, setMessages] = useState(() => {
@@ -36,21 +36,21 @@ export default function IndexPage() {
     });
   }, []);
 
-  // when new data, merge with current state
+  // when new data from `useInfiniteQuery`, merge with current state
   useEffect(() => {
     const msgs = postsQuery.data?.pages.map((page) => page.items).flat();
     addMessages(msgs);
   }, [postsQuery.data?.pages, addMessages]);
 
-  // sstart subscription
-  trpc.useSubscription(['posts.events'], {
-    onNext({ type, data }) {
-      if (type === 'add') {
-        addMessages([data]);
-      }
+  // subscribe to new posts and add
+  trpc.useSubscription(['posts.onAdd'], {
+    onNext(post) {
+      addMessages([post]);
     },
     onError(err) {
       console.error('Subscription error:', err);
+      // we might have missed a message - invalidate cache
+      utils.queryClient.invalidateQueries();
     },
   });
 
@@ -66,8 +66,8 @@ export default function IndexPage() {
         <li>Open inspector and head to Network tab</li>
         <li>All client requests are handled through WebSockets</li>
         <li>
-          We have a simple backend subscription that nudges the client to
-          invalidate the cache which then triggers a refetch.
+          We have a simple backend subscription on new messages that adds the
+          newly added message to the current state
         </li>
       </ul>
       <h2>
@@ -114,8 +114,6 @@ export default function IndexPage() {
           };
           try {
             await addPost.mutateAsync(input);
-            utils.invalidateQuery(['posts.all']);
-
             $text.value = '';
           } catch {}
         }}

@@ -77,39 +77,10 @@ export const postsRouter = createRouter()
       };
     },
   })
-  // update
-  // .mutation('edit', {
-  //   input: z.object({
-  //     id: z.string().uuid(),
-  //     data: z.object({
-  //       name: z.string().min(1).max(32).optional(),
-  //       text: z.string().min(1).optional(),
-  //     }),
-  //   }),
-  //   async resolve({ ctx, input }) {
-  //     const { id, data } = input;
-  //     const post = await ctx.prisma.post.update({
-  //       where: { id },
-  //       data,
-  //     });
-  //     return post;
-  //   },
-  // })
-  // delete
-  // .mutation('delete', {
-  //   input: z.string().uuid(),
-  //   async resolve({ input: id, ctx }) {
-  //     await ctx.prisma.post.delete({ where: { id } });
-  //     return id;
-  //   },
-  // })
-  .subscription('events', {
-    async resolve() {
-      return new Subscription<{
-        type: 'add';
-        data: Post;
-      }>((emit) => {
-        const onAdd = (data: Post) => emit.data({ type: 'add', data });
+  .subscription('onAdd', {
+    resolve() {
+      return new Subscription<Post>((emit) => {
+        const onAdd = (data: Post) => emit.data(data);
         ee.on('add', onAdd);
         return () => {
           ee.off('add', onAdd);
