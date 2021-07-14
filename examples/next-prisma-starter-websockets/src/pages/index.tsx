@@ -2,25 +2,141 @@ import Head from 'next/head';
 import { ReactQueryDevtools } from 'react-query/devtools';
 import { trpc } from '../utils/trpc';
 import Link from 'next/link';
-import { Fragment } from 'react';
+import { useCallback, useEffect, useState } from 'react';
+import { useRouter } from 'next/dist/client/router';
+
+function AddMessageForm() {
+  const addPost = trpc.useMutation('posts.add');
+  const utils = trpc.useContext();
+  const router = useRouter();
+  const name = typeof router.query.name === 'string' && router.query.name;
+
+  if (!name) {
+    return (
+      <form
+        onSubmit={(e) => {
+          e.preventDefault();
+          const $name: HTMLInputElement = (e as any).target.elements.name;
+          router.push({ query: { name: $name.value } }, undefined, {
+            scroll: false,
+          });
+        }}
+      >
+        <label htmlFor="name">What&apos;s your name?</label>
+        <br />
+        <input id="name" name="name" type="text" autoFocus />
+        <br />
+        <input type="submit" />
+      </form>
+    );
+  }
+  return (
+    <form
+      onSubmit={async (e) => {
+        e.preventDefault();
+        /**
+         * In a real app you probably don't want to use this manually
+         * Checkout React Hook Form - it works great with tRPC
+         * @link https://react-hook-form.com/
+         */
+
+        const $text: HTMLInputElement = (e as any).target.elements.text;
+        const input = {
+          name,
+          text: $text.value,
+        };
+        try {
+          await addPost.mutateAsync(input);
+          $text.value = '';
+        } catch {}
+      }}
+    >
+      <fieldset disabled={addPost.isLoading}>
+        <label htmlFor="name">Your name:</label>
+        <br />
+        <input id="name" name="name" type="text" disabled value={name} />
+
+        <br />
+        <label htmlFor="text">Text:</label>
+        <br />
+        <textarea
+          id="text"
+          name="text"
+          autoFocus
+          onKeyDown={() => {
+            utils.client.mutation('posts.isTyping', {
+              name,
+              typing: true,
+            });
+          }}
+          onBlur={() => {
+            utils.client.mutation('posts.isTyping', {
+              name,
+              typing: false,
+            });
+          }}
+        />
+        <br />
+        <input type="submit" />
+      </fieldset>
+      {addPost.error && <p style={{ color: 'red' }}>{addPost.error.message}</p>}
+    </form>
+  );
+}
 
 export default function IndexPage() {
   const postsQuery = trpc.useInfiniteQuery(['posts.infinite', {}], {
     getPreviousPageParam: (d) => d.prevCursor,
   });
+  const utils = trpc.useContext();
   const { hasPreviousPage, isFetchingPreviousPage, fetchPreviousPage } =
     postsQuery;
-  const addPost = trpc.useMutation('posts.add');
-  const utils = trpc.useContext();
 
-  // subscription that tells us that something has changed
-  // -> invalidate cache which triggers refetch
-  trpc.useSubscription(['posts.updated'], {
-    onNext() {
-      utils.invalidateQuery(['posts.infinite']);
+  // list of messages that are rendered
+  const [messages, setMessages] = useState(() => {
+    const msgs = postsQuery.data?.pages.map((page) => page.items).flat();
+    return msgs;
+  });
+  type Post = NonNullable<typeof messages>[number];
+
+  // fn to add and dedupe new messages onto state
+  const addMessages = useCallback((incoming?: Post[]) => {
+    setMessages((current) => {
+      const map: Record<Post['id'], Post> = {};
+      for (const msg of current ?? []) {
+        map[msg.id] = msg;
+      }
+      for (const msg of incoming ?? []) {
+        map[msg.id] = msg;
+      }
+      return Object.values(map).sort(
+        (a, b) => a.createdAt.getTime() - b.createdAt.getTime(),
+      );
+    });
+  }, []);
+
+  // when new data from `useInfiniteQuery`, merge with current state
+  useEffect(() => {
+    const msgs = postsQuery.data?.pages.map((page) => page.items).flat();
+    addMessages(msgs);
+  }, [postsQuery.data?.pages, addMessages]);
+
+  // subscribe to new posts and add
+  trpc.useSubscription(['posts.onAdd'], {
+    onNext(post) {
+      addMessages([post]);
     },
     onError(err) {
       console.error('Subscription error:', err);
+      // we might have missed a message - invalidate cache
+      utils.queryClient.invalidateQueries();
+    },
+  });
+
+  const [currentlyTyping, setCurrentlyTyping] = useState<string[]>([]);
+  trpc.useSubscription(['posts.whoIsTyping'], {
+    onNext(data) {
+      setCurrentlyTyping(data);
     },
   });
 
@@ -36,8 +152,8 @@ export default function IndexPage() {
         <li>Open inspector and head to Network tab</li>
         <li>All client requests are handled through WebSockets</li>
         <li>
-          We have a simple backend subscription that nudges the client to
-          invalidate the cache which then triggers a refetch.
+          We have a simple backend subscription on new messages that adds the
+          newly added message to the current state
         </li>
       </ul>
       <h2>
@@ -55,59 +171,23 @@ export default function IndexPage() {
           ? 'Load More'
           : 'Nothing more to load'}
       </button>
-      {postsQuery.data?.pages.map((group, index) => (
-        <Fragment key={index}>
-          {group.items.map((item) => (
-            <article key={item.id}>
-              [
-              {new Intl.DateTimeFormat('en-GB', {
-                dateStyle: 'short',
-                timeStyle: 'short',
-              }).format(item.createdAt)}
-              ] <strong>{item.name}</strong>: <em>{item.text}</em>
-            </article>
-          ))}
-        </Fragment>
+      {messages?.map((item) => (
+        <article key={item.id}>
+          [
+          {new Intl.DateTimeFormat('en-GB', {
+            dateStyle: 'short',
+            timeStyle: 'short',
+          }).format(item.createdAt)}
+          ] <strong>{item.name}</strong>: <em>{item.text}</em>
+        </article>
       ))}
       <hr />
       <h2>Add message</h2>
-      <form
-        onSubmit={async (e) => {
-          e.preventDefault();
-          /**
-           * In a real app you probably don't want to use this manually
-           * Checkout React Hook Form - it works great with tRPC
-           * @link https://react-hook-form.com/
-           */
-
-          const $text: HTMLInputElement = (e as any).target.elements.text;
-          const $name: HTMLInputElement = (e as any).target.elements.name;
-          const input = {
-            name: $name.value,
-            text: $text.value,
-          };
-          try {
-            await addPost.mutateAsync(input);
-            utils.invalidateQuery(['posts.all']);
-
-            $text.value = '';
-          } catch {}
-        }}
-      >
-        <label htmlFor="name">Your name:</label>
-        <br />
-        <input id="name" name="name" type="text" disabled={addPost.isLoading} />
-
-        <br />
-        <label htmlFor="text">Text:</label>
-        <br />
-        <textarea id="text" name="text" disabled={addPost.isLoading} />
-        <br />
-        <input type="submit" disabled={addPost.isLoading} />
-        {addPost.error && (
-          <p style={{ color: 'red' }}>{addPost.error.message}</p>
-        )}
-      </form>
+      <AddMessageForm />
+      <p style={{ fontStyle: 'italic' }}>
+        Currently typing:{' '}
+        {currentlyTyping.length ? currentlyTyping.join(', ') : 'No one'}
+      </p>
       <p>
         <Link href="/about">
           <a>Go to other page that displays a random number</a>

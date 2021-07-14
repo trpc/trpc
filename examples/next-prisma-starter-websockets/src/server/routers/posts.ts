@@ -7,7 +7,45 @@ import { z } from 'zod';
 import { createRouter } from '../trpc';
 import { EventEmitter } from 'events';
 import { Subscription } from '@trpc/server';
-const ee = new EventEmitter();
+import { Post } from '@prisma/client';
+
+interface MyEvents {
+  add: (data: Post) => void;
+  isTypingUpdate: () => void;
+}
+declare interface MyEventEmitter {
+  on<U extends keyof MyEvents>(event: U, listener: MyEvents[U]): this;
+  once<U extends keyof MyEvents>(event: U, listener: MyEvents[U]): this;
+  emit<U extends keyof MyEvents>(
+    event: U,
+    ...args: Parameters<MyEvents[U]>
+  ): boolean;
+}
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+class MyEventEmitter extends EventEmitter {}
+
+const ee = new MyEventEmitter();
+
+// who is currently typing, key is `name`
+const currentlyTyping: Record<string, { lastTyped: Date }> =
+  Object.create(null);
+
+// every 1s, clear old "isTyping"
+const interval = setInterval(() => {
+  let updated = false;
+  const now = Date.now();
+  for (const [key, value] of Object.entries(currentlyTyping)) {
+    if (now - value.lastTyped.getTime() > 3e3) {
+      delete currentlyTyping[key];
+      updated = true;
+    }
+  }
+  if (updated) {
+    ee.emit('isTypingUpdate');
+  }
+}, 3e3);
+process.on('SIGTERM', () => clearInterval(interval));
+
 export const postsRouter = createRouter()
   // create
   .mutation('add', {
@@ -17,22 +55,29 @@ export const postsRouter = createRouter()
       text: z.string().min(1),
     }),
     async resolve({ ctx, input }) {
-      const todo = await ctx.prisma.post.create({
+      const post = await ctx.prisma.post.create({
         data: input,
       });
-      ee.emit('updated');
-      return todo;
+      ee.emit('add', post);
+      delete currentlyTyping[input.name];
+      ee.emit('isTypingUpdate');
+      return post;
     },
   })
-  // read
-  .query('all', {
-    async resolve({ ctx }) {
-      /**
-       * For pagination you can have a look at this docs site
-       * @link https://trpc.io/docs/useInfiniteQuery
-       */
-
-      return ctx.prisma.post.findMany();
+  .mutation('isTyping', {
+    input: z.object({
+      name: z.string().min(1),
+      typing: z.boolean(),
+    }),
+    resolve({ input }) {
+      if (!input.typing) {
+        delete currentlyTyping[input.name];
+      } else {
+        currentlyTyping[input.name] = {
+          lastTyped: new Date(),
+        };
+      }
+      ee.emit('isTypingUpdate');
     },
   })
   .query('infinite', {
@@ -71,49 +116,32 @@ export const postsRouter = createRouter()
       };
     },
   })
-  .query('byId', {
-    input: z.string(),
-    async resolve({ ctx, input }) {
-      return ctx.prisma.post.findUnique({
-        where: { id: input },
-      });
-    },
-  })
-  // update
-  .mutation('edit', {
-    input: z.object({
-      id: z.string().uuid(),
-      data: z.object({
-        name: z.string().min(1).max(32).optional(),
-        text: z.string().min(1).optional(),
-      }),
-    }),
-    async resolve({ ctx, input }) {
-      const { id, data } = input;
-      const todo = await ctx.prisma.post.update({
-        where: { id },
-        data,
-      });
-      ee.emit('updated');
-      return todo;
-    },
-  })
-  // delete
-  .mutation('delete', {
-    input: z.string().uuid(),
-    async resolve({ input: id, ctx }) {
-      await ctx.prisma.post.delete({ where: { id } });
-      ee.emit('updated');
-      return id;
-    },
-  })
-  .subscription('updated', {
-    async resolve() {
-      return new Subscription<'updated'>((emit) => {
-        const updated = () => emit.data('updated');
-        ee.on('updated', updated);
+  .subscription('onAdd', {
+    resolve() {
+      return new Subscription<Post>((emit) => {
+        const onAdd = (data: Post) => emit.data(data);
+        ee.on('add', onAdd);
         return () => {
-          ee.off('updated', updated);
+          ee.off('add', onAdd);
+        };
+      });
+    },
+  })
+  .subscription('whoIsTyping', {
+    resolve() {
+      let prev: string[] | null = null;
+      return new Subscription<string[]>((emit) => {
+        const onIsTypingUpdate = () => {
+          const newData = Object.keys(currentlyTyping);
+
+          if (!prev || prev.toString() !== newData.toString()) {
+            emit.data(newData);
+          }
+          prev = newData;
+        };
+        ee.on('isTypingUpdate', onIsTypingUpdate);
+        return () => {
+          ee.off('isTypingUpdate', onIsTypingUpdate);
         };
       });
     },

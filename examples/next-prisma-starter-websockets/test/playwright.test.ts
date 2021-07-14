@@ -12,6 +12,7 @@ test('send message', async () => {
     .replace(/[^a-z]+/g, '')
     .substr(0, 6);
   await page.type('[name=name]', nonce);
+  await page.click('[type=submit]');
   await page.type('[name=text]', nonce);
   await page.click('[type=submit]');
 
