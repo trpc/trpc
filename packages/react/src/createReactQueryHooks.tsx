@@ -280,7 +280,7 @@ export function createReactQueryHooks<TRouter extends AnyRouter>() {
         },
       });
       return () => {
-        isStopped = false;
+        isStopped = true;
         unsub();
       };
       // eslint-disable-next-line react-hooks/exhaustive-deps
