@@ -137,6 +137,11 @@ npx create-next-app --example https://github.com/trpc/trpc --example-path exampl
 
 If you like working with tRPC, consider giving a token a apprecation by [GitHub Sponsors](https://github.com/sponsors/KATT) or [get in touch](https://twitter.com/alexdotjs) if you want your company's logo featured in the tRPC repository or website.
 
+### Companies
+
+_No one here yet - [get in touch!](https://twitter.com/alexdotjs)_
+
+### Individuals
 
 <table>
   <tr>
