@@ -9,6 +9,8 @@ import getConfig from 'next/config';
 import { getSession, Provider } from 'next-auth/client';
 const { publicRuntimeConfig } = getConfig();
 
+const { APP_URL, WS_URL } = publicRuntimeConfig;
+
 const MyApp: AppType = ({ Component, pageProps }) => {
   return (
     <Provider session={pageProps.session}>
@@ -26,7 +28,6 @@ MyApp.getInitialProps = async ({ ctx }) => {
 };
 
 function getEndingLink() {
-  const { APP_URL, WS_URL } = publicRuntimeConfig;
   if (!process.browser) {
     return httpBatchLink({
       url: `${APP_URL}/api/trpc`,
@@ -83,5 +84,5 @@ export default withTRPC<AppRouter>({
   /**
    * @link https://trpc.io/docs/ssr
    */
-  ssr: true,
+  ssr: !!APP_URL,
 })(MyApp);
