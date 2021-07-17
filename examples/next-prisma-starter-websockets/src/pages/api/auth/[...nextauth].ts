@@ -32,8 +32,8 @@ if (useTestCredentials) {
 } else {
   providers.push(
     Providers.GitHub({
-      clientId: process.env.GITHUB_CLIENT_ID,
-      clientSecret: process.env.GITHUB_SECRET,
+      clientId: GITHUB_CLIENT_ID,
+      clientSecret: GITHUB_SECRET,
       profile(profile) {
         return {
           id: profile.id,
