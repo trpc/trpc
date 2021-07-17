@@ -1,4 +1,4 @@
-import { envsafe, str } from 'envsafe';
+import { envsafe, str, url } from 'envsafe';
 export const env = envsafe({
   GITHUB_CLIENT_ID: str({
     devDefault: '832513c5ece0dfa99e82',
@@ -10,4 +10,5 @@ export const env = envsafe({
     default: process.env.NODE_ENV,
     desc: 'Only used to signal if we are in test mode',
   }),
+  NEXT_AUTH_URL: url(),
 });
