@@ -1,10 +1,29 @@
 import NextAuth from 'next-auth';
-import Providers from 'next-auth/providers';
+import Providers, { AppProviders } from 'next-auth/providers';
 import { env } from 'server/env';
 
-export default NextAuth({
-  // Configure one or more authentication providers
-  providers: [
+const providers: AppProviders = [];
+
+if (env.APP_ENV === 'test') {
+  providers.push(
+    Providers.Credentials({
+      id: 'github',
+      name: 'Mocked GitHub',
+      async authorize(credentials) {
+        const user = {
+          id: credentials.name,
+          name: credentials.name,
+          email: credentials.name,
+        };
+        return user;
+      },
+      credentials: {
+        name: { type: 'test' },
+      },
+    }),
+  );
+} else {
+  providers.push(
     Providers.GitHub({
       clientId: env.GITHUB_CLIENT_ID,
       clientSecret: env.GITHUB_SECRET,
@@ -17,6 +36,9 @@ export default NextAuth({
         } as any;
       },
     }),
-    // ...add more providers here
-  ],
+  );
+}
+export default NextAuth({
+  // Configure one or more authentication providers
+  providers,
 });

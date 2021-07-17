@@ -1,11 +1,12 @@
 jest.setTimeout(35e3);
 
 test('send message', async () => {
-  await new Promise((resolve) => setTimeout(resolve, 1e3));
-  await page.goto('http://localhost:3000');
-
   const viewer = await browser.newPage();
   await viewer.goto('http://localhost:3000');
+
+  await page.goto('http://localhost:3000/api/auth/signin');
+  await page.type('[name="name"]', 'test');
+  await page.click('[type="submit"]');
 
   const nonce = Math.random()
     .toString(36)

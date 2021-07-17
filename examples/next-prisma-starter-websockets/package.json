@@ -20,8 +20,8 @@
     "studio": "prisma studio",
     "lint": "eslint src",
     "lint-fix": "yarn lint --fix",
-    "test-dev": "start-server-and-test dev 3000 test",
-    "test-start": "WS_URL=ws://localhost:3000 start-server-and-test start 3000 test",
+    "test-dev": "APP_ENV=test start-server-and-test dev 3000 test",
+    "test-start": "APP_ENV=test WS_URL=ws://localhost:3000 start-server-and-test start 3000 test",
     "test": "jest"
   },
   "prettier": {
