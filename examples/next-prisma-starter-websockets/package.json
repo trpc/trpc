@@ -39,6 +39,7 @@
     "envsafe": "^2.0.3",
     "next": "^11.0.0",
     "next-auth": "^3.27.3",
+    "node-fetch": "^2.6.1",
     "react": "^17.0.1",
     "react-dom": "^17.0.1",
     "react-query": "^3.6.0",

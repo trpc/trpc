@@ -6,14 +6,23 @@ import { AppType } from 'next/dist/next-server/lib/utils';
 import type { AppRouter } from 'server/routers/app';
 import superjson from 'superjson';
 import getConfig from 'next/config';
+import { getSession, Provider } from 'next-auth/client';
 const { publicRuntimeConfig } = getConfig();
 
 const MyApp: AppType = ({ Component, pageProps }) => {
   return (
-    <>
+    <Provider session={pageProps.session}>
       <Component {...pageProps} />
-    </>
+    </Provider>
   );
+};
+
+MyApp.getInitialProps = async ({ ctx }) => {
+  return {
+    pageProps: {
+      session: await getSession(ctx),
+    },
+  };
 };
 
 function getEndingLink() {
@@ -32,7 +41,7 @@ function getEndingLink() {
 }
 
 export default withTRPC<AppRouter>({
-  config() {
+  config({ ctx }) {
     /**
      * If you want to use SSR, you need to use the server's full URL
      * @link https://trpc.io/docs/ssr
@@ -59,6 +68,16 @@ export default withTRPC<AppRouter>({
        * @link https://react-query.tanstack.com/reference/QueryClient
        */
       queryClientConfig: { defaultOptions: { queries: { staleTime: 60 } } },
+      headers: () => {
+        if (ctx?.req) {
+          // on ssr, forward client's headers to the server
+          return {
+            ...ctx.req.headers,
+            'x-ssr': '1',
+          };
+        }
+        return {};
+      },
     };
   },
   /**
