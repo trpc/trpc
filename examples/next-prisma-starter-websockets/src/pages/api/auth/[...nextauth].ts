@@ -1,10 +1,17 @@
 import NextAuth from 'next-auth';
 import Providers, { AppProviders } from 'next-auth/providers';
-import { env } from 'server/env';
 
+let useTestCredentials = process.env.NODE_ENV === 'test';
+const { GITHUB_CLIENT_ID, GITHUB_SECRET } = process.env;
+if (
+  process.env.NODE_ENV !== 'production' &&
+  (!GITHUB_CLIENT_ID || !GITHUB_SECRET)
+) {
+  console.log('⚠️ Using mocked GitHub auth correct credentails were not added');
+  useTestCredentials = true;
+}
 const providers: AppProviders = [];
-
-if (env.APP_ENV === 'test') {
+if (useTestCredentials) {
   providers.push(
     Providers.Credentials({
       id: 'github',
@@ -25,8 +32,8 @@ if (env.APP_ENV === 'test') {
 } else {
   providers.push(
     Providers.GitHub({
-      clientId: env.GITHUB_CLIENT_ID,
-      clientSecret: env.GITHUB_SECRET,
+      clientId: process.env.GITHUB_CLIENT_ID,
+      clientSecret: process.env.GITHUB_SECRET,
       profile(profile) {
         return {
           id: profile.id,

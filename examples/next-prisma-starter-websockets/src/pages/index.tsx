@@ -16,7 +16,7 @@ function AddMessageForm() {
   const userName = session?.user?.name;
   if (!userName) {
     return (
-      <button onClick={() => signIn('github')} data-testid="signin">
+      <button onClick={() => signIn()} data-testid="signin">
         Sign In to write
       </button>
     );

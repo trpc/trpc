@@ -36,7 +36,6 @@
     "@trpc/react": "^8.2.1",
     "@trpc/server": "^8.2.0",
     "clsx": "^1.1.1",
-    "envsafe": "^2.0.3",
     "next": "^11.0.0",
     "next-auth": "^3.27.3",
     "node-fetch": "^2.6.1",
