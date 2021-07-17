@@ -10,5 +10,5 @@ export const env = envsafe({
     default: process.env.NODE_ENV,
     desc: 'Only used to signal if we are in test mode',
   }),
-  NEXT_AUTH_URL: url(),
+  NEXTAUTH_URL: url(),
 });
