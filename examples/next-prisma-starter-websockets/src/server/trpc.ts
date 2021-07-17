@@ -4,6 +4,7 @@ import * as trpcNext from '@trpc/server/adapters/next';
 import { IncomingMessage } from 'http';
 import ws from 'ws';
 import * as trpc from '@trpc/server';
+import { getSession } from 'next-auth/client';
 
 const prisma = new PrismaClient({
   log:
@@ -22,10 +23,13 @@ export const createContext = async ({
 }:
   | trpcNext.CreateNextContextOptions
   | CreateContextFnOptions<IncomingMessage, ws>) => {
+  const session = await getSession({ req });
+  console.log('session', session);
   return {
     req,
     res,
     prisma,
+    session,
   };
 };
 export type Context = trpc.inferAsyncReturnType<typeof createContext>;
