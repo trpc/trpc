@@ -13,8 +13,8 @@ function AddMessageForm() {
   const name = typeof router.query.name === 'string' && router.query.name;
   const [session] = useSession();
 
-  const user = session?.user;
-  if (!user) {
+  const userName = session?.user?.name;
+  if (!userName) {
     return <button onClick={() => signIn('github')}>Sign In to write</button>;
   }
   return (
@@ -42,7 +42,7 @@ function AddMessageForm() {
         <fieldset disabled={addPost.isLoading}>
           <label htmlFor="name">Your name:</label>
           <br />
-          <input id="name" name="name" type="text" disabled value={user.name} />
+          <input id="name" name="name" type="text" disabled value={userName} />
 
           <br />
           <label htmlFor="text">Text:</label>
