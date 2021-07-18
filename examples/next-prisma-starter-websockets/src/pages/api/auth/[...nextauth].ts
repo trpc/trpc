@@ -2,8 +2,11 @@ import NextAuth from 'next-auth';
 import Providers, { AppProviders } from 'next-auth/providers';
 
 let useMockProvider = process.env.NODE_ENV === 'test';
-const { GITHUB_CLIENT_ID, GITHUB_SECRET, NODE_ENV } = process.env;
-if (NODE_ENV !== 'production' && (!GITHUB_CLIENT_ID || !GITHUB_SECRET)) {
+const { GITHUB_CLIENT_ID, GITHUB_SECRET, NODE_ENV, APP_ENV } = process.env;
+if (
+  (NODE_ENV !== 'production' || APP_ENV === 'test') &&
+  (!GITHUB_CLIENT_ID || !GITHUB_SECRET)
+) {
   console.log('⚠️ Using mocked GitHub auth correct credentails were not added');
   useMockProvider = true;
 }
