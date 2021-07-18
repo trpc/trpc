@@ -66,6 +66,7 @@ export const postsRouter = createRouter()
         data: {
           ...input,
           name,
+          source: 'GITHUB',
         },
       });
       ee.emit('add', post);

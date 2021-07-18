@@ -12,10 +12,16 @@ generator client {
   provider = "prisma-client-js"
 }
 
+enum PosterSource {
+  RAW
+  GITHUB
+}
+
 model Post {
-  id   String @id @default(uuid())
-  name String
-  text String
+  id     String       @id @default(uuid())
+  name   String
+  text   String
+  source PosterSource @default(RAW)
 
   // To return `Date`s intact through the API we need to add data transformers
   // https://trpc.io/docs/data-transformers

@@ -174,7 +174,21 @@ export default function IndexPage() {
             dateStyle: 'short',
             timeStyle: 'short',
           }).format(item.createdAt)}
-          ] <strong>{item.name}</strong>: <em>{item.text}</em>
+          ]{' '}
+          <strong>
+            {item.source === 'RAW' ? (
+              item.name
+            ) : (
+              <a
+                href={`https://github.com/${item.name}`}
+                target="_blank"
+                rel="noreferrer"
+              >
+                {item.name}
+              </a>
+            )}
+          </strong>
+          : <em>{item.text}</em>
         </article>
       ))}
       <hr />
