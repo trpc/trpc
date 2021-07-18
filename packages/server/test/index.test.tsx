@@ -595,3 +595,34 @@ describe('TRPCAbortError', () => {
     close();
   });
 });
+
+test('regression: JSON.stringify([undefined]) gives [null] causes wrong type to procedure input', async () => {
+  const { client, close } = routerToServerAndClient(
+    trpc.router().query('q', {
+      input: z.string().optional(),
+      async resolve({ input }) {
+        return { input };
+      },
+    }),
+    {
+      client({ httpUrl }) {
+        return {
+          links: [httpBatchLink({ url: httpUrl })],
+        };
+      },
+      server: {
+        batching: {
+          enabled: true,
+        },
+      },
+    },
+  );
+
+  expect(await client.query('q', 'foo')).toMatchInlineSnapshot(`
+Object {
+  "input": "foo",
+}
+`);
+  expect(await client.query('q')).toMatchInlineSnapshot(`Object {}`);
+  close();
+});
