@@ -1,86 +1,78 @@
+import { signIn, signOut, useSession } from 'next-auth/client';
 import Head from 'next/head';
-import { ReactQueryDevtools } from 'react-query/devtools';
-import { trpc } from '../utils/trpc';
 import Link from 'next/link';
 import { useCallback, useEffect, useState } from 'react';
-import { useRouter } from 'next/dist/client/router';
+import { ReactQueryDevtools } from 'react-query/devtools';
+import { trpc } from '../utils/trpc';
 
 function AddMessageForm() {
   const addPost = trpc.useMutation('posts.add');
   const utils = trpc.useContext();
-  const router = useRouter();
-  const name = typeof router.query.name === 'string' && router.query.name;
+  const [session] = useSession();
 
-  if (!name) {
+  const userName = session?.user?.name;
+  if (!userName) {
     return (
-      <form
-        onSubmit={(e) => {
-          e.preventDefault();
-          const $name: HTMLInputElement = (e as any).target.elements.name;
-          router.push({ query: { name: $name.value } }, undefined, {
-            scroll: false,
-          });
-        }}
-      >
-        <label htmlFor="name">What&apos;s your name?</label>
-        <br />
-        <input id="name" name="name" type="text" autoFocus />
-        <br />
-        <input type="submit" />
-      </form>
+      <button onClick={() => signIn()} data-testid="signin">
+        Sign In to write
+      </button>
     );
   }
   return (
-    <form
-      onSubmit={async (e) => {
-        e.preventDefault();
-        /**
-         * In a real app you probably don't want to use this manually
-         * Checkout React Hook Form - it works great with tRPC
-         * @link https://react-hook-form.com/
-         */
+    <>
+      <form
+        onSubmit={async (e) => {
+          e.preventDefault();
+          /**
+           * In a real app you probably don't want to use this manually
+           * Checkout React Hook Form - it works great with tRPC
+           * @link https://react-hook-form.com/
+           */
 
-        const $text: HTMLInputElement = (e as any).target.elements.text;
-        const input = {
-          name,
-          text: $text.value,
-        };
-        try {
-          await addPost.mutateAsync(input);
-          $text.value = '';
-        } catch {}
-      }}
-    >
-      <fieldset disabled={addPost.isLoading}>
-        <label htmlFor="name">Your name:</label>
-        <br />
-        <input id="name" name="name" type="text" disabled value={name} />
+          const $text: HTMLInputElement = (e as any).target.elements.text;
+          const input = {
+            text: $text.value,
+          };
+          try {
+            await addPost.mutateAsync(input);
+            $text.value = '';
+          } catch {}
+        }}
+      >
+        <fieldset disabled={addPost.isLoading}>
+          <label htmlFor="name">Your name:</label>
+          <br />
+          <input id="name" name="name" type="text" disabled value={userName} />
 
-        <br />
-        <label htmlFor="text">Text:</label>
-        <br />
-        <textarea
-          id="text"
-          name="text"
-          autoFocus
-          onKeyDown={() => {
-            utils.client.mutation('posts.isTyping', {
-              name,
-              typing: true,
-            });
-          }}
-          onBlur={() => {
-            utils.client.mutation('posts.isTyping', {
-              name,
-              typing: false,
-            });
-          }}
-        />
-        <br />
-        <input type="submit" />
-      </fieldset>
-      {addPost.error && <p style={{ color: 'red' }}>{addPost.error.message}</p>}
-    </form>
+          <br />
+          <label htmlFor="text">Text:</label>
+          <br />
+          <textarea
+            id="text"
+            name="text"
+            autoFocus
+            onKeyDown={() => {
+              utils.client.mutation('posts.isTyping', {
+                typing: true,
+              });
+            }}
+            onBlur={() => {
+              utils.client.mutation('posts.isTyping', {
+                typing: false,
+              });
+            }}
+          />
+          <br />
+          <input type="submit" />
+        </fieldset>
+        {addPost.error && (
+          <p style={{ color: 'red' }}>{addPost.error.message}</p>
+        )}
+      </form>
+      <p>
+        or, <button onClick={() => signOut()}>Sign Out</button>
+      </p>
+    </>
   );
 }
 
@@ -178,16 +170,30 @@ export default function IndexPage() {
             dateStyle: 'short',
             timeStyle: 'short',
           }).format(item.createdAt)}
-          ] <strong>{item.name}</strong>: <em>{item.text}</em>
+          ]{' '}
+          <strong>
+            {item.source === 'RAW' ? (
+              item.name
+            ) : (
+              <a
+                href={`https://github.com/${item.name}`}
+                target="_blank"
+                rel="noreferrer"
+              >
+                {item.name}
+              </a>
+            )}
+          </strong>
+          : <em>{item.text}</em>
         </article>
       ))}
       <hr />
-      <h2>Add message</h2>
-      <AddMessageForm />
       <p style={{ fontStyle: 'italic' }}>
         Currently typing:{' '}
         {currentlyTyping.length ? currentlyTyping.join(', ') : 'No one'}
       </p>
+      <h2>Add message</h2>
+      <AddMessageForm />
       <p>
         <Link href="/about">
           <a>Go to other page that displays a random number</a>

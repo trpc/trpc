@@ -4,9 +4,9 @@
  */
 
 import { z } from 'zod';
-import { createRouter } from '../trpc';
+import { Context, createRouter } from '../trpc';
 import { EventEmitter } from 'events';
-import { Subscription } from '@trpc/server';
+import { Subscription, TRPCError } from '@trpc/server';
 import { Post } from '@prisma/client';
 
 interface MyEvents {
@@ -46,34 +46,45 @@ const interval = setInterval(() => {
 }, 3e3);
 process.on('SIGTERM', () => clearInterval(interval));
 
+const getNameOrThrow = (ctx: Context) => {
+  const name = ctx.session?.user?.name;
+  if (!name) {
+    throw new TRPCError({ code: 'FORBIDDEN' });
+  }
+  return name;
+};
 export const postsRouter = createRouter()
   // create
   .mutation('add', {
     input: z.object({
       id: z.string().uuid().optional(),
-      name: z.string().min(1).max(32),
       text: z.string().min(1),
     }),
     async resolve({ ctx, input }) {
+      const name = getNameOrThrow(ctx);
       const post = await ctx.prisma.post.create({
-        data: input,
+        data: {
+          ...input,
+          name,
+          source: 'GITHUB',
+        },
       });
       ee.emit('add', post);
-      delete currentlyTyping[input.name];
+      delete currentlyTyping[name];
       ee.emit('isTypingUpdate');
       return post;
     },
   })
   .mutation('isTyping', {
     input: z.object({
-      name: z.string().min(1),
       typing: z.boolean(),
     }),
-    resolve({ input }) {
+    resolve({ input, ctx }) {
+      const name = getNameOrThrow(ctx);
       if (!input.typing) {
-        delete currentlyTyping[input.name];
+        delete currentlyTyping[name];
       } else {
-        currentlyTyping[input.name] = {
+        currentlyTyping[name] = {
           lastTyped: new Date(),
         };
       }
