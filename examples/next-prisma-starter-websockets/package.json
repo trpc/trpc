@@ -21,7 +21,7 @@
     "lint": "eslint src",
     "lint-fix": "yarn lint --fix",
     "test-dev": "APP_ENV=test start-server-and-test dev 3000 test",
-    "test-start": "APP_ENV=test APP_URL=http://localhost:3000 WS_URL=ws://localhost:3000 start-server-and-test start 3000 test",
+    "test-start": "APP_ENV=test WS_URL=ws://localhost:3000 start-server-and-test start 3000 test",
     "test": "jest"
   },
   "prettier": {
