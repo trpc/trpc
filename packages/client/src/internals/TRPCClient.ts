@@ -19,7 +19,7 @@ import {
   OperationLink,
   TRPCLink,
 } from '../links/core';
-import { httpLink } from '../links/httpLink';
+import { httpBatchLink } from '../links/httpBatchLink';
 import { TRPCClientError } from '../TRPCClientError';
 
 type CancellablePromise<T = unknown> = Promise<T> & {
@@ -98,7 +98,7 @@ export class TRPCClient<TRouter extends AnyRouter> {
       this.links = opts.links.map((link) => link(this.runtime));
     } else {
       this.links = [
-        httpLink({
+        httpBatchLink({
           url: opts.url,
         })(this.runtime),
       ];
