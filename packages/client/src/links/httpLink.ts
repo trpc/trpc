@@ -15,7 +15,6 @@ export function httpLink<TRouter extends AnyRouter>(
     // initialized in app
     return ({ op, prev, onDestroy }) => {
       const { path, input, type } = op;
-      let isDone = false;
       const { promise, cancel } = httpRequest({
         runtime,
         type,
@@ -23,25 +22,24 @@ export function httpLink<TRouter extends AnyRouter>(
         url,
         path,
       });
-      onDestroy(() => {
-        if (!isDone) {
-          isDone = true;
-          prev(TRPCClientError.from(new TRPCAbortError(), { isDone: true }));
-          cancel();
+      let isDone = false;
+      const prevOnce: typeof prev = (result) => {
+        if (isDone) {
+          return;
         }
+        isDone = true;
+        prev(result);
+      };
+      onDestroy(() => {
+        prevOnce(TRPCClientError.from(new TRPCAbortError(), { isDone: true }));
+        cancel();
       });
       promise
         .then((envelope) => {
-          if (!isDone) {
-            isDone = true;
-            prev(transformRPCResponse({ envelope, runtime }));
-          }
+          prevOnce(transformRPCResponse({ envelope, runtime }));
         })
         .catch((err) => {
-          if (!isDone) {
-            isDone = true;
-            prev(TRPCClientError.from(err));
-          }
+          prevOnce(TRPCClientError.from(err));
         });
     };
   };
