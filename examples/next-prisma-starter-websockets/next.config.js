@@ -2,9 +2,20 @@
  * @link https://nextjs.org/docs/api-reference/next.config.js/introduction
  */
 
+const IS_DEV = process.env.NODE_ENV === 'development';
 let appUrl = process.env.APP_URL;
-if (!appUrl && process.env.HEROKU_APP_NAME && process.env.HEROKU_PR_NUMBER) {
-  appUrl = `https://${process.env.HEROKU_APP_NAME}-pr-${process.env.HEROKU_PR_NUMBER}.herokuapp.com`;
+
+if (!appUrl && IS_DEV) {
+  appUrl = 'http://localhost:3000';
+}
+wsUrl = process.env.WS_URL;
+if (!wsUrl && IS_DEV) {
+  wsUrl = 'ws://localhost:3001';
+}
+
+if (!appUrl || !wsUrl) {
+  console.error({ wsUrl, appUrl });
+  throw new Error('Missing appUrl or wsUrl');
 }
 
 module.exports = {
@@ -14,6 +25,6 @@ module.exports = {
   publicRuntimeConfig: {
     // Will be available on both server and client
     APP_URL: appUrl,
-    WS_URL: process.env.WS_URL,
+    WS_URL: wsUrl,
   },
 };

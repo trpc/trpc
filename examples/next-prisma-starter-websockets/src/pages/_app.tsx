@@ -34,7 +34,7 @@ function getEndingLink() {
     });
   }
   const client = createWSClient({
-    url: WS_URL || window.location.origin.replace(/^http/, 'ws'),
+    url: WS_URL,
   });
   return wsLink<AppRouter>({
     client,
