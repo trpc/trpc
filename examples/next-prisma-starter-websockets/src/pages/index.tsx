@@ -1,16 +1,13 @@
+import { signIn, signOut, useSession } from 'next-auth/client';
 import Head from 'next/head';
-import { ReactQueryDevtools } from 'react-query/devtools';
-import { trpc } from '../utils/trpc';
 import Link from 'next/link';
 import { useCallback, useEffect, useState } from 'react';
-import { useRouter } from 'next/dist/client/router';
-import { signIn, signOut, useSession } from 'next-auth/client';
+import { ReactQueryDevtools } from 'react-query/devtools';
+import { trpc } from '../utils/trpc';
 
 function AddMessageForm() {
   const addPost = trpc.useMutation('posts.add');
   const utils = trpc.useContext();
-  const router = useRouter();
-  const name = typeof router.query.name === 'string' && router.query.name;
   const [session] = useSession();
 
   const userName = session?.user?.name;
@@ -34,7 +31,6 @@ function AddMessageForm() {
 
           const $text: HTMLInputElement = (e as any).target.elements.text;
           const input = {
-            name,
             text: $text.value,
           };
           try {
