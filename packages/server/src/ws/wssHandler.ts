@@ -103,7 +103,7 @@ export function applyWSSHandler<TRouter extends AnyRouter>(
       client.send(JSON.stringify(json));
     }
     const ctxPromise = createContext({ req, res: client });
-    let ctx: inferRouterContext<TRouter> | null = null;
+    let ctx: inferRouterContext<TRouter> | undefined = undefined;
 
     async function handleRequest(msg: TRPCRequest) {
       const { id } = msg;
