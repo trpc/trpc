@@ -65,6 +65,9 @@ test('batching with raw batch', async () => {
   const { close, httpUrl } = factory();
 
   {
+    /**
+     * @deprecated TODO delete in next major
+     **/
     const res = await fetch(
       `${httpUrl}/myQuery?batch=1&input=${JSON.stringify([])}`,
     );
