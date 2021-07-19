@@ -35,6 +35,7 @@ function getEndingLink() {
   }
   const client = createWSClient({
     url: WS_URL,
+    mode: 'lazy',
   });
   return wsLink<AppRouter>({
     client,
