@@ -42,6 +42,25 @@ export interface ProcedureCallOptions<TContext> {
   path: string;
   type: ProcedureType;
 }
+
+function execParser<T>(fn: (v: unknown) => T, rawInput: unknown): T {
+  if (rawInput !== null) {
+    return fn(rawInput);
+  }
+  // do potentially second pass to see if we can parse it as `undefined` if rawInput was `null`
+  // this is because JSON.stringify() will convert e.g. [undefined] to [null]
+  // https://github.com/trpc/trpc/pull/669
+  try {
+    return fn(rawInput);
+  } catch (err) {
+    try {
+      return fn(undefined);
+    } catch {
+      // throw original parsing error
+      throw err;
+    }
+  }
+}
 export abstract class Procedure<
   TContext = unknown,
   TInput = unknown,
@@ -57,37 +76,19 @@ export abstract class Procedure<
     this.inputParser = opts.inputParser;
   }
 
-  private execParser(fn: (v: unknown) => TInput, rawInput: unknown): TInput {
-    if (rawInput !== null) {
-      return fn(rawInput);
-    }
-    // do potentially second pass to see if we can parse it as `undefined` if rawInput was `null`
-    // this is because JSON.stringify() will convert e.g. [undefined] to [null]
-    // https://github.com/trpc/trpc/pull/669
-    try {
-      return fn(rawInput);
-    } catch (err) {
-      try {
-        return fn(undefined);
-      } catch {
-        throw err;
-      }
-    }
-  }
-
   private parseInput(rawInput: unknown): TInput {
     try {
       const parser: any = this.inputParser;
 
       if (typeof parser === 'function') {
-        return this.execParser((v) => parser(v), rawInput);
+        return execParser((v) => parser(v), rawInput);
       }
       if (typeof parser.parse === 'function') {
-        return this.execParser((v) => parser.parse(v), rawInput);
+        return execParser((v) => parser.parse(v), rawInput);
       }
 
       if (typeof parser.validateSync === 'function') {
-        return this.execParser((v) => parser.validateSync(v), rawInput);
+        return execParser((v) => parser.validateSync(v), rawInput);
       }
 
       throw new Error('Could not find a validator fn');
