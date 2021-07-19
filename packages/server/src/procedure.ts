@@ -42,6 +42,7 @@ export interface ProcedureCallOptions<TContext> {
   path: string;
   type: ProcedureType;
 }
+
 export abstract class Procedure<
   TContext = unknown,
   TInput = unknown,

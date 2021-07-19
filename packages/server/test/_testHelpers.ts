@@ -37,7 +37,11 @@ export function routerToServerAndClient<TRouter extends AnyRouter>(
   const httpServer = createHttpServer({
     router,
     createContext: () => ({}),
-    ...(opts?.server ?? {}),
+    ...(opts?.server ?? {
+      batching: {
+        enabled: true,
+      },
+    }),
   });
   const { port: httpPort } = httpServer.listen(0);
   const httpUrl = `http://localhost:${httpPort}`;

@@ -2,28 +2,39 @@ import { ProcedureType } from '@trpc/server';
 import { TRPCResponse } from '@trpc/server/rpc';
 import { LinkRuntimeOptions, PromiseAndCancel } from '../links/core';
 
-export function httpRequest<TResponseShape = TRPCResponse>(props: {
-  runtime: LinkRuntimeOptions;
-  type: ProcedureType;
-  input: unknown;
-  path: string;
-  url: string;
-  searchParams?: string;
-}): PromiseAndCancel<TResponseShape> {
-  const { type, runtime: rt, input, path } = props;
+// https://github.com/trpc/trpc/pull/669
+function arrayToDict(array: unknown[]) {
+  const dict: Record<number, unknown> = Object.create(null);
+  for (let index = 0; index < array.length; index++) {
+    const element = array[index];
+    dict[index] = element;
+  }
+  return dict;
+}
+
+export function httpRequest<TResponseShape = TRPCResponse>(
+  props: {
+    runtime: LinkRuntimeOptions;
+    type: ProcedureType;
+    path: string;
+    url: string;
+  } & ({ inputs: unknown[] } | { input: unknown }),
+): PromiseAndCancel<TResponseShape> {
+  const { type, runtime: rt, path } = props;
   const ac = rt.AbortController ? new rt.AbortController() : null;
   const method = {
     query: 'GET',
     mutation: 'POST',
     subscription: 'PATCH',
   };
+  const input = 'input' in props ? props.input : arrayToDict(props.inputs);
   function getUrl() {
     let url = props.url + '/' + path;
     const queryParts: string[] = [];
-    if (props.searchParams) {
-      queryParts.push(props.searchParams);
+    if ('inputs' in props) {
+      queryParts.push('batch=1');
     }
-    if (type === 'query' && input != null) {
+    if (type === 'query' && input !== undefined) {
       queryParts.push(
         `input=${encodeURIComponent(
           JSON.stringify(rt.transformer.serialize(input)),
