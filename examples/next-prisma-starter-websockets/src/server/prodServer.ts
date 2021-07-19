@@ -13,6 +13,15 @@ const handle = app.getRequestHandler();
 
 app.prepare().then(() => {
   const server = http.createServer((req, res) => {
+    const proto = req.headers['x-forwarded-proto'];
+    if (proto && proto === 'http') {
+      // redirect to ssl
+      res.writeHead(303, {
+        location: `https://` + req.headers.host + (req.headers.url ?? ''),
+      });
+      res.end();
+      return;
+    }
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     const parsedUrl = parse(req.url!, true);
     handle(req, res, parsedUrl);

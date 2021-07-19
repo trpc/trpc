@@ -54,9 +54,21 @@ async function getRequestParams({
     return { input };
   }
 
-  const { input } = await getPostBody({ req, maxBodySize });
+  const body = await getPostBody({ req, maxBodySize });
+  /**
+   * @deprecated TODO delete me for next major
+   * */
+  if (
+    body &&
+    typeof body === 'object' &&
+    'input' in body &&
+    Object.keys(body).length === 1
+  ) {
+    // legacy format
+    return { input: body.input };
+  }
 
-  return { input };
+  return { input: body };
 }
 
 export async function requestHandler<
@@ -118,18 +130,23 @@ export async function requestHandler<
         : undefined;
     ctx = await createContext?.({ req, res });
 
-    const getInputs = (): unknown[] => {
+    const getInputs = (): unknown[] | Record<number, unknown> => {
       if (!isBatchCall) {
         return [input];
       }
-      /* istanbul ignore next */
-      if (!Array.isArray(input)) {
+
+      // TODO - next major, delete `Array.isArray()`
+      if (
+        !Array.isArray(input) &&
+        (typeof input !== 'object' || input == null)
+      ) {
         throw new TRPCError({
           code: 'BAD_REQUEST',
-          message: '"input" needs to be an array when doing a batch call',
+          message:
+            '"input" needs to be an array or object when doing a batch call',
         });
       }
-      return input;
+      return input as any;
     };
     const inputs = getInputs();
     const paths = isBatchCall ? opts.path.split(',') : [opts.path];

@@ -1,4 +1,4 @@
-import { httpLink } from '@trpc/client/links/httpLink';
+import { httpBatchLink } from '@trpc/client/links/httpBatchLink';
 import { loggerLink } from '@trpc/client/links/loggerLink';
 import { withTRPC } from '@trpc/next';
 import { AppType } from 'next/dist/next-server/lib/utils';
@@ -48,7 +48,7 @@ export default withTRPC<AppRouter>({
             process.env.NODE_ENV === 'development' ||
             (opts.direction === 'down' && opts.result instanceof Error),
         }),
-        httpLink({
+        httpBatchLink({
           url: `${getBaseUrl()}/api/trpc`,
         }),
       ],

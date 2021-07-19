@@ -99,15 +99,17 @@ function createAppRouter() {
     })
     .query('paginatedPosts', {
       input: z.object({
-        limit: z.number().min(1).max(100).optional(),
-        cursor: z.number().optional(),
+        limit: z.number().min(1).max(100).nullish(),
+        cursor: z.number().nullish(),
       }),
-      resolve({ input: { limit = 50, cursor } }) {
+      resolve({ input }) {
         const items: typeof db.posts = [];
-        let nextCursor: typeof cursor | undefined = undefined;
+        const limit = input.limit ?? 50;
+        const { cursor } = input;
+        let nextCursor: typeof cursor = null;
         for (let index = 0; index < db.posts.length; index++) {
           const element = db.posts[index];
-          if (typeof cursor !== 'undefined' && element.createdAt < cursor) {
+          if (cursor != null && element.createdAt < cursor) {
             continue;
           }
           items.push(element);
