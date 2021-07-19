@@ -57,7 +57,7 @@ export const postsRouter = createRouter()
   // create
   .mutation('add', {
     input: z.object({
-      id: z.string().uuid().nullish(),
+      id: z.string().uuid().optional(),
       text: z.string().min(1),
     }),
     async resolve({ ctx, input }) {
@@ -99,7 +99,8 @@ export const postsRouter = createRouter()
       })
       .nullish(),
     async resolve({ input, ctx }) {
-      const { take = 10, cursor } = input ?? {};
+      const take = input?.take ?? 10;
+      const cursor = input?.cursor;
       // `cursor` is of type `Date | undefined`
       // `take` is of type `number | undefined`
       const page = await ctx.prisma.post.findMany({
