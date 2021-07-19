@@ -12,6 +12,7 @@ import { httpBatchLink } from '../../client/src/links/httpBatchLink';
 import { TRPCError } from '../src/TRPCError';
 import * as trpc from '../src';
 import { routerToServerAndClient } from './_testHelpers';
+import { httpLink } from '../../client/src/links/httpLink';
 
 test('superjson up and down', async () => {
   const transformer = superjson;
@@ -134,7 +135,7 @@ test('devalue up and down', async () => {
   close();
 });
 
-test('superjson up and devalue down', async () => {
+test('not batching: superjson up and devalue down', async () => {
   const transformer: trpc.CombinedDataTransformer = {
     input: superjson,
     output: {
@@ -157,7 +158,10 @@ test('superjson up and devalue down', async () => {
         },
       }),
     {
-      client: { transformer },
+      client: ({ httpUrl }) => ({
+        transformer,
+        links: [httpLink({ url: httpUrl })],
+      }),
     },
   );
   const res = await client.query('hello', date);
