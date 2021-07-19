@@ -85,6 +85,7 @@ export function routerToServerAndClient<TRouter extends AnyRouter>(
     port: httpPort,
     httpPort,
     wssPort,
+    httpUrl,
     applyWSSHandlerOpts,
     wssHandler,
     wss,
