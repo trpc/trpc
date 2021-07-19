@@ -1,10 +1,12 @@
+import { useRouter } from 'next/dist/client/router';
 import Link from 'next/link';
 import { useState } from 'react';
 import { trpc } from 'utils/trpc';
 
 export default function AboutPage() {
   const [num, setNumber] = useState<number>();
-  const [enabled, setEnabled] = useState<boolean>(true);
+  const router = useRouter();
+  const enabled = router.query.on !== '0';
   trpc.useSubscription(['randomNumber', undefined], {
     onNext(n) {
       setNumber(n);
@@ -17,7 +19,13 @@ export default function AboutPage() {
         Enabled:
         <input
           type="checkbox"
-          onChange={(e) => setEnabled(e.target.checked)}
+          onChange={(e) =>
+            router.replace({
+              query: {
+                on: e.target.checked ? '1' : '0',
+              },
+            })
+          }
           checked={enabled}
         />
       </label>
