@@ -11,11 +11,6 @@ You are able to serialize the response data & input args. The transformers need 
 
 SuperJSON allows us to able to transparently use e.g. standard `Date`/`Map`/`Set`s over the wire between the server and client. That means you can return any of these types in your API-resolver and use them in the client without recreating the objects from JSON.
 
-### Working Example
-
-- `createNextApiHandler()` in [`./examples/next-prisma-todomvc/[trpc.ts]`](https://github.com/trpc/trpc/tree/main/examples/next-prisma-todomvc/pages/api/trpc/%5Btrpc%5D.ts), and
-- `createTRPCClient` in [`./examples/next-prisma-todomvc/utils/trpc.ts`](https://github.com/trpc/trpc/tree/main/examples/next-prisma-todomvc/utils/trpc.ts)
-
 ### How to
 
 #### 1. Install
