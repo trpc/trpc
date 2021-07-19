@@ -56,7 +56,7 @@ function factory() {
         },
       })
       .subscription('onMessage', {
-        input: z.string().optional(),
+        input: z.string().nullish(),
         resolve() {
           const sub = (subRef.current = new trpc.Subscription<Message>(
             (emit) => {

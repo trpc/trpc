@@ -26,9 +26,9 @@ trpc
     // using zod schema to validate and infer input values
     input: z
       .object({
-        text: z.string().optional(),
+        text: z.string().nullish(),
       })
-      .optional(),
+      .nullish(),
     resolve({ input }) {
       return {
         greeting: `hello ${input?.text ?? 'world'}`,

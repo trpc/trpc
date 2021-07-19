@@ -14,7 +14,7 @@ export const appRouter = trpc
       .object({
         name: z.string(),
       })
-      .optional(),
+      .nullish(),
     resolve: ({ input }) => {
       return {
         text: `hello ${input?.name ?? 'world'}`,

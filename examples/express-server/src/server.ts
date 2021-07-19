@@ -90,7 +90,7 @@ const messages = createRouter()
 // root router to call
 export const appRouter = createRouter()
   .query('hello', {
-    input: z.string().optional(),
+    input: z.string().nullish(),
     resolve: ({ input, ctx }) => {
       return `hello ${input ?? ctx.user?.name ?? 'world'}`;
     },

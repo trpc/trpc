@@ -7,7 +7,7 @@ import { createWSClient, wsLink } from '../../client/src/links/wsLink';
 import { z } from 'zod';
 import { TRPCClientError } from '../../client/src';
 import * as trpc from '../src';
-import { CreateHttpContextOptions } from '../src';
+import { CreateHttpContextOptions, Maybe } from '../src';
 import { routerToServerAndClient } from './_testHelpers';
 import WebSocket from 'ws';
 import { waitFor } from '@testing-library/react';
@@ -83,7 +83,7 @@ describe('integration tests', () => {
           .object({
             who: z.string(),
           })
-          .optional(),
+          .nullish(),
         resolve({ input }) {
           return {
             text: `hello ${input?.who ?? 'world'}`,
@@ -115,9 +115,9 @@ describe('integration tests', () => {
           .object({
             who: z.string(),
           })
-          .optional(),
+          .nullish(),
         resolve({ input }) {
-          expectTypeOf(input).toMatchTypeOf<{ who: string } | undefined>();
+          expectTypeOf(input).toMatchTypeOf<Maybe<{ who: string }>>();
           return {
             text: `hello ${input?.who ?? 'world'}`,
           };
@@ -314,14 +314,14 @@ describe('integration tests', () => {
     });
 
     test('optional input', async () => {
-      type Input = { who: string } | undefined;
+      type Input = Maybe<{ who: string }>;
       const { client, close } = routerToServerAndClient(
         trpc.router().query('hello', {
           input: z
             .object({
               who: z.string(),
             })
-            .optional(),
+            .nullish(),
           resolve({ input }) {
             expectTypeOf(input).not.toBeAny();
             expectTypeOf(input).toMatchTypeOf<Input>();
@@ -350,14 +350,14 @@ describe('integration tests', () => {
     });
 
     test('mutation', async () => {
-      type Input = { who: string } | undefined;
+      type Input = Maybe<{ who: string }>;
       const { client, close } = routerToServerAndClient(
         trpc.router().mutation('hello', {
           input: z
             .object({
               who: z.string(),
             })
-            .optional(),
+            .nullish(),
           resolve({ input }) {
             expectTypeOf(input).not.toBeAny();
             expectTypeOf(input).toMatchTypeOf<Input>();
