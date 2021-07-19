@@ -29,9 +29,11 @@ export const appRouter = createRouter()
   .subscription('randomNumber', {
     resolve() {
       return new Subscription<number>((emit) => {
-        const int = setInterval(() => {
+        const generateNumberAndEmit = () => {
           emit.data(Math.random());
-        }, 500);
+        };
+        const int = setInterval(generateNumberAndEmit, 500);
+        generateNumberAndEmit();
         return () => {
           clearInterval(int);
         };
