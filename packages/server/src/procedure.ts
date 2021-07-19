@@ -43,24 +43,6 @@ export interface ProcedureCallOptions<TContext> {
   type: ProcedureType;
 }
 
-function execParser<T>(fn: (v: unknown) => T, rawInput: unknown): T {
-  if (rawInput !== null) {
-    return fn(rawInput);
-  }
-  // do potentially second pass to see if we can parse it as `undefined` if rawInput was `null`
-  // this is because JSON.stringify() will convert e.g. [undefined] to [null]
-  // https://github.com/trpc/trpc/pull/669
-  try {
-    return fn(rawInput);
-  } catch (err) {
-    try {
-      return fn(undefined);
-    } catch {
-      // throw original parsing error
-      throw err;
-    }
-  }
-}
 export abstract class Procedure<
   TContext = unknown,
   TInput = unknown,
@@ -81,14 +63,14 @@ export abstract class Procedure<
       const parser: any = this.inputParser;
 
       if (typeof parser === 'function') {
-        return execParser((v) => parser(v), rawInput);
+        return parser(rawInput);
       }
       if (typeof parser.parse === 'function') {
-        return execParser((v) => parser.parse(v), rawInput);
+        return parser.parse(rawInput);
       }
 
       if (typeof parser.validateSync === 'function') {
-        return execParser((v) => parser.validateSync(v), rawInput);
+        return parser.validateSync(rawInput);
       }
 
       throw new Error('Could not find a validator fn');

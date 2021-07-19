@@ -129,18 +129,23 @@ export async function requestHandler<
         : undefined;
     ctx = await createContext?.({ req, res });
 
-    const getInputs = (): unknown[] => {
+    const getInputs = (): unknown[] | Record<number, unknown> => {
       if (!isBatchCall) {
         return [input];
       }
-      /* istanbul ignore next */
-      if (!Array.isArray(input)) {
+
+      // TODO - next major, delete `Array.isArray()`
+      if (
+        !Array.isArray(input) &&
+        (typeof input !== 'object' || input == null)
+      ) {
         throw new TRPCError({
           code: 'BAD_REQUEST',
-          message: '"input" needs to be an array when doing a batch call',
+          message:
+            '"input" needs to be an array or object when doing a batch call',
         });
       }
-      return input;
+      return input as any;
     };
     const inputs = getInputs();
     const paths = isBatchCall ? opts.path.split(',') : [opts.path];

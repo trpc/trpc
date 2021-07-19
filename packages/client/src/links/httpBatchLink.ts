@@ -17,15 +17,14 @@ export function httpBatchLink<TRouter extends AnyRouter>(
     type Key = { id: number; path: string; input: unknown };
     const fetcher = (type: ProcedureType) => (keyInputPairs: Key[]) => {
       const path = keyInputPairs.map((op) => op.path).join(',');
-      const input = keyInputPairs.map((op) => op.input);
+      const inputs = keyInputPairs.map((op) => op.input);
 
       const { promise, cancel } = httpRequest({
         url,
-        input,
+        inputs,
         path,
         runtime,
         type,
-        searchParams: `batch=1`,
       });
 
       return {
