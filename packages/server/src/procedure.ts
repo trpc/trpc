@@ -80,14 +80,14 @@ export abstract class Procedure<
       const parser: any = this.inputParser;
 
       if (typeof parser === 'function') {
-        return this.execParser(parser, rawInput);
+        return this.execParser((v) => parser(v), rawInput);
       }
       if (typeof parser.parse === 'function') {
-        return this.execParser(parser.parse, rawInput);
+        return this.execParser((v) => parser.parse(v), rawInput);
       }
 
       if (typeof parser.validateSync === 'function') {
-        return this.execParser(parser.validateSync, rawInput);
+        return this.execParser((v) => parser.validateSync(v), rawInput);
       }
 
       throw new Error('Could not find a validator fn');
