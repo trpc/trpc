@@ -6,6 +6,7 @@ export default function IndexPage() {
   const postsQuery = trpc.useQuery(['posts.all']);
   const addPost = trpc.useMutation('posts.add');
   const utils = trpc.useContext();
+  // trpc.useQuery(['posts.byId', 'a083530f-245a-4fb8-aaae-bc43921c6444']);
 
   return (
     <>
