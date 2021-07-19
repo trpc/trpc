@@ -207,6 +207,42 @@ test('batching: superjson up and devalue down', async () => {
   close();
 });
 
+test('batching: superjson up and devalue down', async () => {
+  const transformer: trpc.CombinedDataTransformer = {
+    input: superjson,
+    output: {
+      serialize: (object) => devalue(object),
+      deserialize: (object) => eval(`(${object})`),
+    },
+  };
+
+  const date = new Date();
+  const fn = jest.fn();
+  const { client, close } = routerToServerAndClient(
+    trpc
+      .router()
+      .transformer(transformer)
+      .query('hello', {
+        input: z.date(),
+        resolve({ input }) {
+          fn(input);
+          return input;
+        },
+      }),
+    {
+      client: ({ httpUrl }) => ({
+        transformer,
+        links: [httpBatchLink({ url: httpUrl })],
+      }),
+    },
+  );
+  const res = await client.query('hello', date);
+  expect(res.getTime()).toBe(date.getTime());
+  expect((fn.mock.calls[0][0] as Date).getTime()).toBe(date.getTime());
+
+  close();
+});
+
 test('all transformers running in correct order', async () => {
   const world = 'foo';
   const fn = jest.fn();
