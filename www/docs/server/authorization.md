@@ -50,7 +50,7 @@ import { createRouter } from './[trpc]';
 export const appRouter = createRouter()
   // open for anyone
   .query('hello', {
-    input: z.string().optional(),
+    input: z.string().nullish(),
     resolve: ({ input, ctx }) => {
       return `hello ${input ?? ctx.user?.name ?? 'world'}`;
     },
@@ -81,7 +81,7 @@ import { createRouter } from './[trpc]';
 export const appRouter = createRouter()
   // this is accessible for everyone
   .query('hello', {
-    input: z.string().optional(),
+    input: z.string().nullish(),
     resolve: ({ input, ctx }) => {
       return `hello ${input ?? ctx.user?.name ?? 'world'}`;
     },

@@ -47,9 +47,9 @@ import { z } from 'zod';
 export const appRouter = trpc.router<Context>().query('hello', {
   input: z
     .object({
-      text: z.string().optional(),
+      text: z.string().nullish(),
     })
-    .optional(),
+    .nullish(),
   resolve({ input }) {
     return {
       greeting: `hello ${input?.text ?? 'world'}`,

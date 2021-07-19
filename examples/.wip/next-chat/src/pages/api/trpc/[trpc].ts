@@ -50,9 +50,9 @@ export const appRouter = createRouter()
   .query('hello', {
     input: z
       .object({
-        text: z.string().optional(),
+        text: z.string().nullish(),
       })
-      .optional(),
+      .nullish(),
     resolve({ input }) {
       return `hello ${input?.text ?? 'world'}`;
     },
@@ -62,8 +62,8 @@ export const appRouter = createRouter()
     createRouter()
       .query('list', {
         input: z.object({
-          cursor: z.date().optional(),
-          take: z.number().min(1).max(50).optional(),
+          cursor: z.date().nullish(),
+          take: z.number().min(1).max(50).nullish(),
         }),
         async resolve({ input: { take = 10, cursor } }) {
           // `cursor` is of type `Date | undefined`
