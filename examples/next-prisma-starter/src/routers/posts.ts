@@ -10,7 +10,7 @@ export const postsRouter = createRouter()
   // create
   .mutation('add', {
     input: z.object({
-      id: z.string().uuid().nullish(),
+      id: z.string().uuid().optional(),
       title: z.string().min(1).max(32),
       text: z.string().min(1),
     }),
@@ -45,8 +45,8 @@ export const postsRouter = createRouter()
     input: z.object({
       id: z.string().uuid(),
       data: z.object({
-        title: z.string().min(1).max(32).nullish(),
-        text: z.string().min(1).nullish(),
+        title: z.string().min(1).max(32).optional(),
+        text: z.string().min(1).optional(),
       }),
     }),
     async resolve({ ctx, input }) {

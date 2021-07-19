@@ -13,7 +13,7 @@ export const todoRouter = createRouter()
   })
   .mutation('add', {
     input: z.object({
-      id: z.string().nullish(),
+      id: z.string().optional(),
       text: z.string().min(1),
     }),
     async resolve({ ctx, input }) {
@@ -27,8 +27,8 @@ export const todoRouter = createRouter()
     input: z.object({
       id: z.string().uuid(),
       data: z.object({
-        completed: z.boolean().nullish(),
-        text: z.string().min(1).nullish(),
+        completed: z.boolean().optional(),
+        text: z.string().min(1).optional(),
       }),
     }),
     async resolve({ ctx, input }) {
