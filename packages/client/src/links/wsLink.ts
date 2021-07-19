@@ -69,7 +69,8 @@ export function createWSClient(opts: WebSocketClientOptions) {
   let dispatchTimer: NodeJS.Timer | number | null = null;
   let connectTimer: NodeJS.Timer | number | null = null;
   let activeConnection: WebSocket | null = mode === 'eager' ? createWS() : null;
-  let state: 'open' | 'connecting' | 'closed' = 'connecting';
+  // only for internal use to close the connection in tests
+  let state: 'open' | 'closed' = 'open';
 
   function getOrCreateConnection() {
     if (
@@ -117,7 +118,6 @@ export function createWSClient(opts: WebSocketClientOptions) {
     reconnectInMs(timeout);
   }
   function reconnect() {
-    state = 'connecting';
     const oldConnection = activeConnection;
     activeConnection = createWS();
     closeIfNoPending(oldConnection);
@@ -126,7 +126,6 @@ export function createWSClient(opts: WebSocketClientOptions) {
     if (connectTimer) {
       return;
     }
-    state = 'connecting';
     connectTimer = setTimeout(reconnect, ms);
   }
 
@@ -161,7 +160,6 @@ export function createWSClient(opts: WebSocketClientOptions) {
         return;
       }
       connectAttempt = 0;
-      state = 'open';
       dispatch();
     });
     conn.addEventListener('error', () => {
