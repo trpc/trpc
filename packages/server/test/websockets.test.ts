@@ -16,7 +16,7 @@ import { routerToServerAndClient } from './_testHelpers';
 type Message = {
   id: string;
 };
-function factory() {
+function factory(config?: { createContext: () => Promise<unknown> }) {
   const ee = new EventEmitter();
   const subRef: {
     current: trpc.Subscription<Message>;
@@ -83,6 +83,12 @@ function factory() {
         return {
           links: [wsLink({ client: wsClient })],
         };
+      },
+      server: {
+        ...(config ?? {}),
+      },
+      wssServer: {
+        ...(config ?? {}),
       },
     },
   );
@@ -198,7 +204,7 @@ test('$subscription()', async () => {
   close();
 });
 
-test('$subscription() - server randomly stop and restart (this test might be flaky, try re-running)', async () => {
+xtest('$subscription() - server randomly stop and restart (this test might be flaky, try re-running)', async () => {
   const { client, close, ee, wssPort, applyWSSHandlerOpts } = factory();
   ee.once('subscription:created', () => {
     setTimeout(() => {
@@ -459,4 +465,19 @@ test('batching', async () => {
     ]
   `);
   t.close();
+});
+
+test('createContext fail', async () => {
+  const t = factory({
+    async createContext() {
+      await new Promise<void>((resolve) => setTimeout(resolve, 5));
+      throw new Error('Failed');
+    },
+  });
+
+  await expect(t.client.query('greeting')).rejects.toMatchInlineSnapshot(
+    `[TRPCClientError: Failed]`,
+  );
+
+  await t.close();
 });

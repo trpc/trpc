@@ -14,10 +14,6 @@ import {
 } from '../rpc';
 import { Subscription } from '../subscription';
 import { CombinedDataTransformer } from '../transformer';
-// https://developer.mozilla.org/en-US/docs/Web/API/CloseEvent
-const WEBSOCKET_STATUS_CODES = {
-  ABNORMAL_CLOSURE: 1006,
-};
 
 /* istanbul ignore next */
 function assertIsObject(obj: unknown): asserts obj is Record<string, unknown> {
@@ -257,28 +253,34 @@ export function applyWSSHandler<TRouter extends AnyRouter>(
     async function createContextAsync() {
       try {
         ctx = await ctxPromise;
-      } catch (err) /* istanbul ignore next */ {
-        // failed to create context
+      } catch (err) {
         const error = getErrorFromUnknown(err);
-        client.send({
-          id: -1,
-          error: router.getErrorShape({
-            error,
-            type: 'unknown',
-            path: undefined,
-            input: undefined,
-            ctx: undefined,
-          }),
-        });
+        const json: TRPCErrorResponse = {
+          id: null,
+          error: transformer.output.serialize(
+            router.getErrorShape({
+              error,
+              type: 'unknown',
+              path: undefined,
+              input: undefined,
+              ctx,
+            }),
+          ),
+        };
         opts.onError?.({
           error,
           path: undefined,
           type: 'unknown',
-          ctx: undefined,
+          ctx,
           req,
           input: undefined,
         });
-        client.close(WEBSOCKET_STATUS_CODES.ABNORMAL_CLOSURE);
+        respond(json);
+
+        // close in next tick
+        (global.setImmediate ?? global.setTimeout)(() => {
+          client.close();
+        });
       }
     }
     createContextAsync();
