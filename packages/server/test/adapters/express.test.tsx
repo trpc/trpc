@@ -34,9 +34,9 @@ async function startServer() {
   const router = trpc.router<Context>().query('hello', {
     input: z
       .object({
-        who: z.string().optional(),
+        who: z.string().nullish(),
       })
-      .optional(),
+      .nullish(),
     resolve({ input, ctx }) {
       return {
         text: `hello ${input?.who ?? ctx.user?.name ?? 'world'}`,

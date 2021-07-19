@@ -57,7 +57,7 @@ export const postsRouter = createRouter()
   // create
   .mutation('add', {
     input: z.object({
-      id: z.string().uuid().optional(),
+      id: z.string().uuid().nullish(),
       text: z.string().min(1),
     }),
     async resolve({ ctx, input }) {
@@ -94,10 +94,10 @@ export const postsRouter = createRouter()
   .query('infinite', {
     input: z
       .object({
-        cursor: z.date().optional(),
-        take: z.number().min(1).max(50).optional(),
+        cursor: z.date().nullish(),
+        take: z.number().min(1).max(50).nullish(),
       })
-      .optional(),
+      .nullish(),
     async resolve({ input, ctx }) {
       const { take = 10, cursor } = input ?? {};
       // `cursor` is of type `Date | undefined`
