@@ -72,7 +72,13 @@ export function createWSClient(opts: WebSocketClientOptions) {
   let state: 'open' | 'connecting' | 'closed' = 'connecting';
 
   function getOrCreateConnection() {
-    activeConnection ??= createWS();
+    if (
+      !activeConnection ||
+      activeConnection.readyState === WebSocket.CLOSING ||
+      activeConnection.readyState === WebSocket.CLOSED
+    ) {
+      activeConnection = createWS();
+    }
     return activeConnection;
   }
   /**
@@ -102,6 +108,9 @@ export function createWSClient(opts: WebSocketClientOptions) {
   }
   function tryReconnectIfNeeded(conn: WebSocket) {
     if (connectTimer || conn !== activeConnection || state === 'closed') {
+      return;
+    }
+    if (mode === 'lazy' && outgoing.length === 0) {
       return;
     }
     const timeout = retryDelayFn(connectAttempt++);
@@ -209,8 +218,6 @@ export function createWSClient(opts: WebSocketClientOptions) {
     });
 
     conn.addEventListener('close', () => {
-      tryReconnectIfNeeded(conn);
-
       for (const key in pendingRequests) {
         const req = pendingRequests[key];
         if (req.ws !== conn) {
@@ -229,6 +236,7 @@ export function createWSClient(opts: WebSocketClientOptions) {
           resumeSubscriptionOnReconnect(req);
         }
       }
+      tryReconnectIfNeeded(conn);
     });
     return conn;
   }
