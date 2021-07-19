@@ -17,7 +17,7 @@ app.prepare().then(() => {
     if (proto && proto === 'http') {
       // redirect to ssl
       res.writeHead(303, {
-        location: `https://` + req.headers.host + req.headers.url ?? '',
+        location: `https://` + req.headers.host + (req.headers.url ?? ''),
       });
       res.end();
       return;
