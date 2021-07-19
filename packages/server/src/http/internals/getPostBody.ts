@@ -23,6 +23,10 @@ export async function getPostBody({
     });
     req.on('end', () => {
       try {
+        if (body === '') {
+          resolve(undefined);
+          return;
+        }
         const json = JSON.parse(body);
         resolve(json);
       } catch (err) {

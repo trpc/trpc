@@ -54,9 +54,21 @@ async function getRequestParams({
     return { input };
   }
 
-  const { input } = await getPostBody({ req, maxBodySize });
+  const body = await getPostBody({ req, maxBodySize });
+  /**
+   * @deprecated TODO delete me for next major
+   * */
+  if (
+    body &&
+    typeof body === 'object' &&
+    'input' in body &&
+    Object.keys(body).length === 1
+  ) {
+    // legacy format
+    return { input: body.input };
+  }
 
-  return { input };
+  return { input: body };
 }
 
 export async function requestHandler<

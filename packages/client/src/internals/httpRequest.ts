@@ -39,9 +39,8 @@ export function httpRequest<TResponseShape = TRPCResponse>(props: {
     if (type === 'query') {
       return undefined;
     }
-    return JSON.stringify({
-      input: rt.transformer.serialize(input),
-    });
+    const rawInput = rt.transformer.serialize(input);
+    return rawInput !== undefined ? JSON.stringify(rawInput) : undefined;
   }
 
   const promise = new Promise<TResponseShape>((resolve, reject) => {
