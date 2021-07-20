@@ -14,7 +14,7 @@ Similar to urql's [_exchanges_](https://formidable.com/open-source/urql/docs/arc
 ##### 1. Configure client / `_app.tsx`
 
 ```tsx
-import { createTRPCClient } from '@trpc/client';
+import { withTRPC } from '@trpc/next';
 import { httpBatchLink } from '@trpc/client/links/httpBatchLink';
 import { httpLink } from '@trpc/client/links/httpLink';
 import { splitLink } from '@trpc/client/links/splitLink';
