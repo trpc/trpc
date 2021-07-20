@@ -18,24 +18,7 @@ slug: /express
   </thead>
   <tbody>
     <tr>
-      <td>
-        Next.js starter with Prisma, E2E testing, &amp; ESLint
-        <br/><br/>
-        <details>
-          <summary>Quick start with <code>create-next-app</code></summary>
-          <code>npx create-next-app --example https://github.com/trpc/trpc --example-path examples/next-prisma-starter trpc-prisma-starter</code>
-        </details>
-      </td>
-      <td><em>n/a</em></td>
-      <td>
-        <ul>
-          <li><a href="https://codesandbox.io/s/github/trpc/trpc/tree/main/examples/next-prisma-starter?file=/src/pages/index.tsx">CodeSandbox</a></li>
-          <li><a href="https://github.com/trpc/trpc/tree/main/examples/next-prisma-starter">Source</a></li>
-        </ul>
-      </td>
-    </tr>
-    <tr>
-      <td>Express server &amp; procedure calls with node.js.<br/>Uses experimental subscriptions.</td>
+      <td>Express server &amp; procedure calls with node.js.</td>
       <td><em>n/a</em></td>
       <td>
         <ul>
@@ -125,7 +108,7 @@ app.listen(4000);
 
 Your endpoints are now available via HTTP!
 
-| Endpoint     | HTTP URI                                                                                              |
-| ------------ | ----------------------------------------------------------------------------------------------------- |
+| Endpoint     | HTTP URI                                                                                                   |
+| ------------ | ---------------------------------------------------------------------------------------------------------- |
 | `getUser`    | `GET http://localhost:4000/trpc/getUser?input=INPUT` <br/><br/>where `INPUT` is a URI-encoded JSON string. |
 | `createUser` | `POST http://localhost:4000/trpc/createUser` <br/><br/>with `req.body` of type `{name: string}`            |
