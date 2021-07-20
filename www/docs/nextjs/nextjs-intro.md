@@ -115,7 +115,7 @@ const MyApp: AppType = ({ Component, pageProps }) => {
 };
 
 export default withTRPC<AppRouter>({
-  config() {
+  config({ ctx }) {
     /**
      * If you want to use SSR, you need to use the server's full URL
      * @link https://trpc.io/docs/ssr
@@ -167,12 +167,16 @@ export default IndexPage;
 
 The `config`-argument is a function that returns an object that configures the tRPC and React Query clients. This function has a `ctx` input that gives you access to the Next.js `req` object, among other things. The returned value can contain the following properties:
 
-- `url` REQUIRED: Your API URL.
-- `queryClientConfig`: a configuration object for the React Query `QueryClient` used internally by the tRPC React hooks: [QueryClient docs](https://react-query.tanstack.com/reference/QueryClient)
-- `getHeaders`: a function that returns a list of headers to be set on outgoing
-  tRPC requests
-- `transformer`: a transformer applied to outgoing payloads. Read more about [Data Transformers](/docs/data-transformers)
-- `FetchOptions`: customize the implementation of `fetch` used by tRPC internally
+- Exactly **one of** these are **required**:
+  - `url` your API URL.
+  - `links` to customize the flow of data between tRPC Client and the tRPC-server. [Read more](../client/links.md).
+
+- Optional:
+  - `queryClientConfig`: a configuration object for the React Query `QueryClient` used internally by the tRPC React hooks: [QueryClient docs](https://react-query.tanstack.com/reference/QueryClient)
+  - `headers`: an object or a function that returns an object of outgoing tRPC requests
+  - `transformer`: a transformer applied to outgoing payloads. Read more about [Data Transformers](/docs/data-transformers)
+  - `fetch`: customize the implementation of `fetch` used by tRPC internally
+  - `AbortController`: customize the implementation of `AbortController` used by tRPC internally
 
 ### `ssr`-boolean (default: `false`)
 

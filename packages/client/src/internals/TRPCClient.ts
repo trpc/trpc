@@ -14,6 +14,7 @@ import { ObservableCallbacks, UnsubscribeFn } from './observable';
 import { TRPCAbortError } from './TRPCAbortError';
 import {
   CancelFn,
+  HttpHeaders,
   LinkRuntimeOptions,
   OperationContext,
   OperationLink,
@@ -37,22 +38,33 @@ export function getRequestId() {
 
 export type CreateTRPCClientOptions<TRouter extends AnyRouter> = {
   /**
-   * add ponyfill for fetch
+   * Add ponyfill for fetch
    */
   fetch?: typeof fetch;
   /**
    * add ponyfill for AbortController
    */
   AbortController?: typeof AbortController;
-  headers?:
-    | LinkRuntimeOptions['headers']
-    | ReturnType<LinkRuntimeOptions['headers']>;
+  /**
+   * headers to be set on outgoing requests / callback that of said headers
+   */
+  headers?: HttpHeaders | (() => HttpHeaders);
+  /**
+   * Data transformer
+   * @link http://localhost:3000/docs/data-transformers
+   **/
   transformer?: ClientDataTransformerOptions;
 } & (
   | {
+      /**
+       * HTTP URL of API
+       **/
       url: string;
     }
   | {
+      /**
+       * @link http://localhost:3000/docs/links
+       **/
       links: TRPCLink<TRouter>[];
     }
 );

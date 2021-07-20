@@ -20,7 +20,7 @@ Here's some example apps:
   <tbody>
     <tr>
       <td>
-        Next.js starter with Prisma, E2E testing, &amp; ESLint
+        <strong>Recommended:</strong><br/>Next.js starter with Prisma, E2E testing, &amp; ESLint
         <br/><br/>
         <details>
           <summary>Quick start with <code>create-next-app</code></summary>
@@ -32,6 +32,23 @@ Here's some example apps:
         <ul>
           <li><a href="https://codesandbox.io/s/github/trpc/trpc/tree/main/examples/next-prisma-starter?file=/src/pages/index.tsx">CodeSandbox</a></li>
           <li><a href="https://github.com/trpc/trpc/tree/main/examples/next-prisma-starter">Source</a></li>
+        </ul>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        Next.js starter with Prisma, E2E testing, ESLint, WebSockets, &amp; Subscription support
+        <br/><br/>
+        <details>
+          <summary>Quick start with <code>create-next-app</code></summary>
+          <code>npx create-next-app --example https://github.com/trpc/trpc --example-path examples/next-prisma-starter-websockets trpc-prisma-starter-websockets</code>
+        </details>
+      </td>
+      <td><a href="http://nextjs-websockets.trpc.io">nextjs-websockets.trpc.io</a></td>
+      <td>
+        <ul>
+          <li><a href="https://codesandbox.io/s/github/trpc/trpc/tree/main/examples/next-prisma-starter?file=/src/pages/index.tsx">CodeSandbox</a></li>
+          <li><a href="https://github.com/trpc/trpc/tree/main/examples/next-prisma-starter-websockets">Source</a></li>
         </ul>
       </td>
     </tr>

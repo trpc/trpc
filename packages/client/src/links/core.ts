@@ -40,9 +40,10 @@ export interface HttpLinkOptions {
   url: string;
 }
 
+export type HttpHeaders = Record<string, string | string[] | undefined>;
 export type LinkRuntimeOptions = Readonly<{
   transformer: DataTransformer;
-  headers: () => Record<string, string | string[] | undefined>;
+  headers: () => HttpHeaders;
   fetch: typeof fetch;
   AbortController?: typeof AbortController;
 }>;
