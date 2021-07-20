@@ -55,7 +55,7 @@ tRPC allows you to easily build & consume fully typesafe APIs, without schemas o
 
 ## Usage
 
-**👉  See full documentation documentation on [trpc.io](https://trpc.io/docs). 👈**
+**👉  See full documentation documentation on [tRPC.io](https://trpc.io/docs). 👈**
 
 
 **Quick start with a full-stack Next.js example:**
