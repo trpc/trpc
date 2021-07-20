@@ -9,7 +9,8 @@ import { default as WebSocket, default as ws } from 'ws';
 import { z } from 'zod';
 import { wsLink } from '../../client/src/links/wsLink';
 import * as trpc from '../src';
-import { TRPCResult, TRPCRequest } from '../src/rpc';
+import { TRPCError } from '../src';
+import { TRPCRequest, TRPCResult } from '../src/rpc';
 import { applyWSSHandler } from '../src/ws';
 import { routerToServerAndClient, waitMs } from './_testHelpers';
 
@@ -35,7 +36,7 @@ function factory(config?: { createContext: () => Promise<unknown> }) {
       })
       .mutation('slow', {
         async resolve() {
-          await new Promise((resolve) => setTimeout(resolve, 50));
+          await waitMs(50);
           return 'slow query resolved';
         },
       })
@@ -467,33 +468,34 @@ test('batching', async () => {
   t.close();
 });
 
-test.only('raw: slow createContext + send messages immediately on connection', async () => {
-  const t = factory({
-    async createContext() {
-      await waitMs(50);
-      return {};
-    },
-  });
-  const rawClient = new WebSocket(t.wssUrl);
-
-  const msg: TRPCRequest = {
-    id: 1,
-    method: 'query',
-    params: {
-      path: 'greeting',
-      input: null,
-    },
-  };
-  const msgStr = JSON.stringify(msg);
-  rawClient.onopen = () => {
-    rawClient.send(msgStr);
-  };
-  const data = await new Promise<string>((resolve) => {
-    rawClient.addEventListener('message', (msg) => {
-      resolve(msg.data);
+describe.only('regression test - slow createContext', () => {
+  test('send messages immediately on connection', async () => {
+    const t = factory({
+      async createContext() {
+        await waitMs(50);
+        return {};
+      },
     });
-  });
-  expect(JSON.parse(data)).toMatchInlineSnapshot(`
+    const rawClient = new WebSocket(t.wssUrl);
+
+    const msg: TRPCRequest = {
+      id: 1,
+      method: 'query',
+      params: {
+        path: 'greeting',
+        input: null,
+      },
+    };
+    const msgStr = JSON.stringify(msg);
+    rawClient.onopen = () => {
+      rawClient.send(msgStr);
+    };
+    const data = await new Promise<string>((resolve) => {
+      rawClient.addEventListener('message', (msg) => {
+        resolve(msg.data);
+      });
+    });
+    expect(JSON.parse(data)).toMatchInlineSnapshot(`
 Object {
   "id": 1,
   "result": Object {
@@ -502,6 +504,84 @@ Object {
   },
 }
 `);
-  rawClient.close();
-  t.close();
+    rawClient.close();
+    t.close();
+  });
+
+  test('createContext throws', async () => {
+    const createContext = jest.fn(async () => {
+      await waitMs(20);
+      throw new TRPCError({ code: 'UNAUTHORIZED', message: 'test' });
+    });
+    const t = factory({
+      createContext,
+    });
+    // close built-in client immediately to prevent connection
+    t.wsClient.close();
+    const rawClient = new WebSocket(t.wssUrl);
+
+    const msg: TRPCRequest = {
+      id: 1,
+      method: 'query',
+      params: {
+        path: 'greeting',
+        input: null,
+      },
+    };
+    const msgStr = JSON.stringify(msg);
+    rawClient.onopen = () => {
+      rawClient.send(msgStr);
+    };
+
+    const responses: any[] = [];
+    rawClient.addEventListener('message', (msg) => {
+      responses.push(JSON.parse(msg.data));
+    });
+    await new Promise<void>((resolve) => {
+      rawClient.addEventListener('close', () => {
+        resolve();
+      });
+    });
+    for (const res of responses) {
+      expect(res).toHaveProperty('error');
+      expect(typeof res.error.data.stack).toBe('string');
+      res.error.data.stack = '[redacted]';
+    }
+    expect(responses).toHaveLength(2);
+    const [first, second] = responses;
+
+    expect(first.id).toBe(null);
+    expect(second.id).toBe(1);
+
+    expect(responses).toMatchInlineSnapshot(`
+Array [
+  Object {
+    "error": Object {
+      "code": -32001,
+      "data": Object {
+        "code": "UNAUTHORIZED",
+        "stack": "[redacted]",
+      },
+      "message": "test",
+    },
+    "id": null,
+  },
+  Object {
+    "error": Object {
+      "code": -32001,
+      "data": Object {
+        "code": "UNAUTHORIZED",
+        "path": "greeting",
+        "stack": "[redacted]",
+      },
+      "message": "test",
+    },
+    "id": 1,
+  },
+]
+`);
+
+    expect(createContext).toHaveBeenCalledTimes(1);
+    t.close();
+  });
 });
