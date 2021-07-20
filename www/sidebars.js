@@ -37,7 +37,6 @@ module.exports = {
       items: [
         //
         'client/vanilla',
-        'client/batching',
         'client/links',
       ],
     },
