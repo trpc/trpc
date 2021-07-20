@@ -468,7 +468,7 @@ test('batching', async () => {
   t.close();
 });
 
-describe.only('regression test - slow createContext', () => {
+describe('regression test - slow createContext', () => {
   test('send messages immediately on connection', async () => {
     const t = factory({
       async createContext() {
