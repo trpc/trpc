@@ -8,12 +8,10 @@ export function splitLink<TRouter extends AnyRouter = AnyRouter>(
     | {
         /**
          * The link to execute next if the test function returns `true`.
-         * @deprecated use `true`
          */
         left: TRPCLink<TRouter>;
         /**
          * The link to execute next if the test function returns `false`.
-         * @deprecated use `false`
          */
         right: TRPCLink<TRouter>;
       }
