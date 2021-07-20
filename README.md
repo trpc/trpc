@@ -40,7 +40,7 @@ tRPC allows you to easily build & consume fully typesafe APIs, without schemas o
 - ✅&nbsp; It's well-tested & running in production.
 
 
-> Still reading? Follow [@alexdotjs on Twitter](https://twitter.com/alexdotjs) if you have any questions or want to keep up to date what's coming next.
+> Still reading? Follow [**@alexdotjs** on Twitter](https://twitter.com/alexdotjs) if you have any questions or want to keep up to date what's coming next.
 
 ---
 
