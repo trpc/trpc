@@ -241,6 +241,7 @@ export function createWSClient(opts: WebSocketClientOptions) {
     return () => {
       const callbacks = pendingRequests[id]?.callbacks;
       delete pendingRequests[id];
+      outgoing = outgoing.filter((msg) => msg.id !== id);
 
       callbacks?.onDone?.();
       if (op.type === 'subscription') {
