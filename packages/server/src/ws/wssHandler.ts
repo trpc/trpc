@@ -116,10 +116,10 @@ export function applyWSSHandler<TRouter extends AnyRouter>(
       }
       if (msg.method === 'subscription.stop') {
         const sub = clientSubscriptions.get(id);
-        clientSubscriptions.delete(id);
         if (sub) {
           sub.destroy();
         }
+        clientSubscriptions.delete(id);
         return;
       }
       const { path, input } = msg.params;
