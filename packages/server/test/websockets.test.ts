@@ -585,3 +585,41 @@ Array [
     t.close();
   });
 });
+
+test('malformatted JSON', async () => {
+  const t = factory();
+  // close built-in client immediately to prevent connection
+  t.wsClient.close();
+  const rawClient = new WebSocket(t.wssUrl);
+
+  rawClient.onopen = () => {
+    rawClient.send('not json');
+  };
+
+  const res: any = await new Promise<string>((resolve) => {
+    rawClient.addEventListener('message', (msg) => {
+      resolve(JSON.parse(msg.data));
+    });
+  });
+
+  expect(res).toHaveProperty('error');
+  expect(typeof res.error.data.stack).toBe('string');
+  res.error.data.stack = '[redacted]';
+
+  expect(res.id).toBe(null);
+
+  expect(res).toMatchInlineSnapshot(`
+Object {
+  "error": Object {
+    "code": -32700,
+    "data": Object {
+      "code": "PARSE_ERROR",
+      "stack": "[redacted]",
+    },
+    "message": "Unexpected token o in JSON at position 1",
+  },
+  "id": null,
+}
+`);
+  t.close();
+});
