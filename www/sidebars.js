@@ -7,9 +7,9 @@ module.exports = {
       items: [
         'main/introduction',
         'main/quickstart',
+        'main/example-apps',
         'nextjs/intro',
         'react/intro',
-        'main/example-apps',
         'main/contributing',
       ],
     },

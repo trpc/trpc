@@ -22,107 +22,47 @@
 
 ## Intro
 
-tRPC is a framework for building strongly typed RPC APIs with TypeScript. Alternatively, you can think of it as a way to avoid APIs altogether. 
+tRPC allows you to easily build & consume fully typesafe APIs, without schemas or code generation.
 
+- 🧙‍♂️&nbsp; Full static typesafety & autocompletion on the client - on inputs, outputs, & errors.
 - 🧙‍♂️&nbsp; Automatic typesafety & autocompletion inferred from your API-paths, their input data, outputs, & errors.
 - 🐎&nbsp; Snappy DX. No code generation, run-time bloat, or build pipeline.
 - 🍃&nbsp; Light. tRPC has zero deps and a tiny client-side footprint.
 - 🐻&nbsp; Easy to add to your existing brownfield project.
-- 🔋&nbsp; Batteries included. React-library + Next.js/Express adapters. _(But tRPC is not tied to React - [reach out](https://twitter.com/alexdotjs) if you want to make a Svelte/Vue/... lib)_
-- 🥃&nbsp; Simple to use APIs for queries & mutations + experimental subscriptions support.
-- 👀&nbsp; Quite a few examples in the [./examples](./examples)-folder
-- ✅&nbsp; Well-tested & running in production.
+- 🔋&nbsp; Batteries included. React-library + Next.js/Express/lambda adapters. _(But tRPC is not tied to React - [reach out](https://twitter.com/alexdotjs) if you want to make a Svelte/Vue/... lib)_
+- 🥃&nbsp; Simple to use APIs for queries, mutations, & subscriptions support.
+- ⚡️&nbsp; Request batching - requests made at the same time can be automatically combined
 
-> _tRPC requires TypeScript > 4.1 because of [Template Literal Types](https://www.typescriptlang.org/docs/handbook/2/template-literal-types.html), but you can get some benefits with autocompletion etc even if you use raw JS._
+
+... and:
+
+- 👀&nbsp; Quite a few examples in the [./examples](./examples)-folder
+- ✅&nbsp; It's well-tested & running in production.
+
+
+> Still reading? Follow [**@alexdotjs** on Twitter](https://twitter.com/alexdotjs) if you have any questions or want to keep up to date what's coming next.
 
 ---
 
 - [Intro](#intro)
 - [Usage](#usage)
-- [Example apps](#example-apps)
 - [Core Team](#core-team)
 - [Financial Contributors](#financial-contributors)
-- [Contributors ✨](#contributors-)
+  - [Companies](#companies)
+  - [Individuals](#individuals)
+- [All contributors ✨](#all-contributors-)
 
 
 ## Usage
 
-> **👉  See full documentation documentation on [trpc.io](https://trpc.io/docs). 👈**
+**👉  See full documentation documentation on [tRPC.io](https://trpc.io/docs). 👈**
 
 
-**Quick start:**
+**Quick start with a full-stack Next.js example:**
 
-```bash
+```sh
 npx create-next-app --example https://github.com/trpc/trpc --example-path examples/next-prisma-starter trpc-prisma-starter
 ```
-
-## Example apps
-
-<table width="100%">
-  <thead>
-    <tr>
-      <th>Description</th>
-      <th>URL</th>
-      <th>Links</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td>
-        Next.js starter with Prisma, E2E testing, &amp; ESLint
-        <br/><br/>
-        <details>
-          <summary>Quick start with <code>create-next-app</code></summary>
-          <code>npx create-next-app --example https://github.com/trpc/trpc --example-path examples/next-prisma-starter trpc-prisma-starter</code>
-        </details>
-      </td>
-      <td><em>n/a</em></td>
-      <td>
-        <ul>
-          <li><a href="https://codesandbox.io/s/github/trpc/trpc/tree/main/examples/next-prisma-starter?file=/src/pages/index.tsx">CodeSandbox</a></li>
-          <li><a href="https://github.com/trpc/trpc/tree/main/examples/next-prisma-starter">Source</a></li>
-        </ul>
-      </td>
-    </tr>
-    <tr>
-      <td>
-        Next.js TodoMVC-example with SSG & Prisma.
-        <br/><br/>
-        <details>
-          <summary>Quick start with <code>create-next-app</code></summary>
-          <code>npx create-next-app --example https://github.com/trpc/trpc --example-path examples/next-prisma-todomvc trpc-todo</code>
-        </details>
-      </td>
-      <td><a href="https://todomvc.trpc.io">todomvc.trpc.io</a></td>
-      <td>
-        <ul>
-          <li><a href="https://codesandbox.io/s/github/trpc/trpc/tree/main/examples/next-prisma-todomvc?file=/pages/%5Bfilter%5D.tsx">CodeSandbox</a></li>
-          <li><a href="https://github.com/trpc/trpc/tree/main/examples/next-prisma-todomvc">Source</a></li>
-        </ul>
-      </td>
-    </tr>
-    <tr>
-      <td>Vanilla standalone server &amp; procedure calls with node.js</td>
-      <td><em>n/a</em></td>
-      <td>
-        <ul>
-          <li><a href="https://githubbox.com/trpc/trpc/tree/main/examples/standalone-server">CodeSandbox</a></li>
-          <li><a href="https://github.com/trpc/trpc/tree/main/examples/standalone-server">Source</a></li>
-        </ul>
-      </td>
-    </tr>
-    <tr>
-      <td>Express server &amp; procedure calls with node.js.<br/>Uses experimental subscriptions.</td>
-      <td><em>n/a</em></td>
-      <td>
-        <ul>
-          <li><a href="https://githubbox.com/trpc/trpc/tree/main/examples/express-server">CodeSandbox</a></li>
-          <li><a href="https://github.com/trpc/trpc/tree/main/examples/express-server">Source</a></li>
-        </ul>
-      </td>
-    </tr>
-  </tbody>
-</table>
 
 ## Core Team
 
@@ -133,13 +73,17 @@ npx create-next-app --example https://github.com/trpc/trpc --example-path exampl
 </table>
 
 
+> 👋 Hi, I'm Alex and I am the main maintainer if tRPC, don't hesitate to contact me on [Twitter](https://twitter.com/alexdotjs) or [email](alex@trpc.io) if you are interested in tRPC in any way.
+
+
+
 ## Financial Contributors
 
-If you like working with tRPC, consider giving a token a apprecation by [GitHub Sponsors](https://github.com/sponsors/KATT) or [get in touch](https://twitter.com/alexdotjs) if you want your company's logo featured in the tRPC repository or website.
+If you like working with tRPC, consider giving a token a apprecation by [GitHub Sponsors](https://github.com/sponsors/KATT) or [get in touch](https://twitter.com/alexdotjs) if you want your company's logo featured in the tRPC repository or on the website.
 
 ### Companies
 
-_No one here yet - [get in touch!](https://twitter.com/alexdotjs)_
+_No one here yet - get in touch on [Twitter](https://twitter.com/alexdotjs) or by [email](alex@trpc.io)._
 
 ### Individuals
 
@@ -152,7 +96,7 @@ _No one here yet - [get in touch!](https://twitter.com/alexdotjs)_
 </table>
 
 
-## Contributors ✨
+## All contributors ✨
 
 > tRPC is developed by [KATT](https://twitter.com/alexdotjs), originally based on a proof-of-concept a proof of concept by [colinhacks](https://github.com/colinhacks).
 

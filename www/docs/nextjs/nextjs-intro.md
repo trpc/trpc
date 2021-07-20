@@ -6,41 +6,39 @@ slug: /nextjs
 ---
 
 :::tip
-If you're using tRPC in a new project, consider using one of the example projects as a starting point: [tRPC Example Projects](/docs/example-apps)
+If you're using tRPC in a new project, consider using one of the example projects as a starting point or for reference: [tRPC Example Projects](/docs/example-apps)
 :::
 
 tRPC and Next.js are a match made in heaven! Next.js makes it easy for you to build your client and server together in one codebase. This makes it easy to share types between them.
 
 tRPC includes dedicated tools to make the Next.js developer experience as seamless as possible.
 
-<!-- 
+
 ## Recommended file structure
 
 Recommended but not enforced file structure. This is what you get when starting from [the examples](../main/example-apps.md).
 
 ```txt
-├── pages
-│   ├── _app.tsx # <-- wrap App with `withTRPC()`
-│   ├── api
-│   │   └── trpc
-│   │       └── [trpc].ts # <-- tRPC response handler
-│   └── [...]
+.
 ├── prisma # <-- if prisma is added
-│   ├── migrations
-│   │   └── [...]
-│   └── schema.prisma
-├── routers # <-- implement sub-routers here
-│   ├── users.ts
-│   ├── posts.ts
-│   └── [...]
-├── public
-│   └── [...]
-├── test  # <-- (optional) E2E-test helpers
-│   └── playwright.test.ts
-├── utils
-│   └── trpc.ts # <-- create your typesafe tRPC hooks
-└── [...]
-``` -->
+│   └── [..]
+├── src
+│   ├── pages
+│   │   ├── _app.tsx # <-- add `withTRPC()`-HOC here
+│   │   ├── api
+│   │   │   └── trpc
+│   │   │       └── [trpc].ts # <-- tRPC HTTP handler
+│   │   └── [..]
+│   ├── server
+│   │   ├── routers
+│   │   │   ├── app.ts   # <-- main app router
+│   │   │   ├── posts.ts # <-- sub routers
+│   │   │   └── [..]
+│   │   └── trpc.ts  # <-- create app context
+│   └── utils
+│       └── trpc.ts  # <-- your typesafe tRPC hooks
+└── [..]
+```
 
 
 ## Add tRPC to existing Next.js project
@@ -57,7 +55,7 @@ yarn add @trpc/client @trpc/server @trpc/react @trpc/next zod react-query
 
 ### 2. Create a tRPC router
 
-Implement your tRPC router in `./pages/api/trpc/[trpc].ts`. If you need to split your router into several subrouters, implement them in a top-level `trpc` directory in your project root, then import them into `./pages/api/trpc/[trpc].ts` and [merge them](/docs/merging-routers) into a single root `appRouter`.
+Implement your tRPC router in `./pages/api/trpc/[trpc].ts`. If you need to split your router into several subrouters, implement them in a top-level `server` directory in your project root, then import them into `./pages/api/trpc/[trpc].ts` and [merge them](/docs/merging-routers) into a single root `appRouter`.
 
 <details><summary>View sample router</summary>
 
@@ -108,7 +106,7 @@ export const trpc = createReactQueryHooks<AppRouter>();
 
 The `createReactQueryHooks` function expects certain parameters to be passed via the Context API. To set these parameters, create a custom `_app.tsx` using the `withTRPC` higher-order component:
 
-```ts
+```tsx
 import { withTRPC } from '@trpc/next';
 import { AppType } from 'next/dist/next-server/lib/utils';
 
@@ -116,23 +114,27 @@ const MyApp: AppType = ({ Component, pageProps }) => {
   return <Component {...pageProps} />;
 };
 
-export default withTRPC({
-  config(_ctx) {
+export default withTRPC<AppRouter>({
+  config({ ctx }) {
+    /**
+     * If you want to use SSR, you need to use the server's full URL
+     * @link https://trpc.io/docs/ssr
+     */
     const url = process.env.VERCEL_URL
       ? `https://${process.env.VERCEL_URL}/api/trpc`
       : 'http://localhost:3000/api/trpc';
 
     return {
       url,
-      queryClientConfig: {
-        defaultOptions: {
-          queries: {
-            staleTime: 600,
-          },
-        },
-      },
+      /**
+       * @link https://react-query.tanstack.com/reference/QueryClient
+       */
+      // queryClientConfig: { defaultOptions: { queries: { staleTime: 60 } } },
     };
   },
+  /**
+   * @link https://trpc.io/docs/ssr
+   */
   ssr: true,
 })(MyApp);
 ```
@@ -144,7 +146,9 @@ import { trpc } from '../utils/trpc';
 
 const IndexPage = () => {
   const hello = trpc.useQuery(['hello', { text: 'client' }]);
-  if (!hello.data) return <div>Loading...</div>;
+  if (!hello.data) {
+    return <div>Loading...</div>;
+  }
   return (
     <div>
       <p>{hello.data.greeting}</p>
@@ -163,12 +167,16 @@ export default IndexPage;
 
 The `config`-argument is a function that returns an object that configures the tRPC and React Query clients. This function has a `ctx` input that gives you access to the Next.js `req` object, among other things. The returned value can contain the following properties:
 
-- `url` REQUIRED: Your API URL.
-- `queryClientConfig`: a configuration object for the React Query `QueryClient` used internally by the tRPC React hooks: [QueryClient docs](https://react-query.tanstack.com/reference/QueryClient)
-- `getHeaders`: a function that returns a list of headers to be set on outgoing
-  tRPC requests
-- `transformer`: a transformer applied to outgoing payloads. Read more about [Data Transformers](/docs/data-transformers)
-- `FetchOptions`: customize the implementation of `fetch` used by tRPC internally
+- Exactly **one of** these are **required**:
+  - `url` your API URL.
+  - `links` to customize the flow of data between tRPC Client and the tRPC-server. [Read more](../client/links.md).
+
+- Optional:
+  - `queryClientConfig`: a configuration object for the React Query `QueryClient` used internally by the tRPC React hooks: [QueryClient docs](https://react-query.tanstack.com/reference/QueryClient)
+  - `headers`: an object or a function that returns an object of outgoing tRPC requests
+  - `transformer`: a transformer applied to outgoing payloads. Read more about [Data Transformers](/docs/data-transformers)
+  - `fetch`: customize the implementation of `fetch` used by tRPC internally
+  - `AbortController`: customize the implementation of `AbortController` used by tRPC internally
 
 ### `ssr`-boolean (default: `false`)
 
