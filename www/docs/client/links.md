@@ -23,10 +23,9 @@ const somePosts = await Promise.all([
 
 ## Customizing data flow
 
+> The below examples assuming you use Next.js, but the same as below can be added if you use the vanilla tRPC client
 
 ### Disabling request batching
-
-> The below examples assuming you use Next.js, but the same as below can be added if you use the vanilla tRPC client
 
 #### 1. Disable `batching` on your server:
 
