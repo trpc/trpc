@@ -33,28 +33,21 @@ module.exports = {
       },
       items: [
         {
-          to: 'docs/',
-          activeBasePath: 'docs',
+          to: 'docs',
           label: 'Docs',
-          position: 'left',
+          activeBaseRegex: 'docs(/?)$',
         },
         {
           to: 'docs/quickstart',
-          activeBasePath: 'docs/quickstart',
           label: 'Quickstart',
-          position: 'left',
         },
         {
           to: 'docs/example-apps',
-          activeBasePath: 'docs/example-apps',
           label: 'Example Apps',
-          position: 'left',
         },
         {
           to: 'docs/nextjs',
-          activeBasePath: 'docs/nextjs',
           label: 'Usage with Next.js',
-          position: 'left',
         },
         {
           href: 'https://github.com/trpc/trpc',
