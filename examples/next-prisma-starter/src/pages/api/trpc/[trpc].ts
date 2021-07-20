@@ -1,62 +1,9 @@
 /**
- * This file contains the tRPC http response handler and context creation for Next.js
+ * This file contains tRPC's HTTP response handler
  */
-import { PrismaClient } from '@prisma/client';
-import * as trpc from '@trpc/server';
 import * as trpcNext from '@trpc/server/adapters/next';
-import { postsRouter } from 'routers/posts';
-import superjson from 'superjson';
-
-const prisma = new PrismaClient({
-  log:
-    process.env.NODE_ENV === 'development'
-      ? ['query', 'error', 'warn']
-      : ['error'],
-});
-
-/**
- * Creates context for an incoming request
- * @link https://trpc.io/docs/context
- */
-const createContext = async (
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  { req, res }: trpcNext.CreateNextContextOptions,
-) => {
-  return {
-    prisma,
-  };
-};
-
-// Infers the context returned from `createContext`
-export type Context = trpc.inferAsyncReturnType<typeof createContext>;
-
-/**
- * Helper function to create a router with context
- */
-export function createRouter() {
-  return trpc.router<Context>();
-}
-
-/**
- * Create your application's root router
- * If you want to use SSG, you need export this
- * @link https://trpc.io/docs/ssg
- * @link https://trpc.io/docs/router
- */
-const appRouter = createRouter()
-  /**
-   * Data transformer
-   * @link https://trpc.io/docs/data-transformers
-   */
-  .transformer(superjson)
-  /**
-   * Optionally do custom error (typesafe!) formatting
-   * @link https://trpc.io/docs/error-formatting
-   */
-  // .formatError(({ shape, error }) => { })
-  .merge('posts.', postsRouter);
-
-export type AppRouter = typeof appRouter;
+import { appRouter } from 'server/routers/app';
+import { createContext } from 'server/trpc';
 
 export default trpcNext.createNextApiHandler({
   router: appRouter,

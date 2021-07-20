@@ -3,8 +3,8 @@
  * This is an example router, you can delete this file and then update `../pages/api/trpc/[trpc].tsx`
  */
 
+import { createRouter } from 'server/trpc';
 import { z } from 'zod';
-import { createRouter } from 'pages/api/trpc/[trpc]';
 
 export const postsRouter = createRouter()
   // create
