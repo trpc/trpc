@@ -9,7 +9,7 @@ author_image_url: https://avatars.githubusercontent.com/u/3084745?v=4
 ---
 
 :::tip
-If you prefer to jump into some complete example projects, check out [the Example Apps](example-apps.md).
+We highly encourage you to check out [the Example Apps](example-apps.md) to get a feel of tRPC and getting up & running as seamless as possible.
 :::
 
 ## Installation
