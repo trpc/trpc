@@ -8,9 +8,31 @@ author_url: https://twitter.com/colinhacks
 author_image_url: https://avatars.githubusercontent.com/u/3084745?v=4
 ---
 
-:::tip
-If you prefer to jump into some complete example projects, check out [the Example Apps](example-apps.md).
-:::
+
+## Quick Start through example
+
+
+<table>
+  <tbody>
+    <tr>
+      <td>
+        Next.js starter with Prisma, E2E testing, &amp; ESLint
+        <br/><br/>
+        <details>
+          <summary>Quick start with <code>create-next-app</code></summary>
+          <code>npx create-next-app --example https://github.com/trpc/trpc --example-path examples/next-prisma-starter trpc-prisma-starter</code>
+        </details>
+      </td>
+      <td><em>n/a</em></td>
+      <td>
+        <ul>
+          <li><a href="https://codesandbox.io/s/github/trpc/trpc/tree/main/examples/next-prisma-starter?file=/src/pages/index.tsx">CodeSandbox</a></li>
+          <li><a href="https://github.com/trpc/trpc/tree/main/examples/next-prisma-starter">Source</a></li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
 
 ## Installation
 

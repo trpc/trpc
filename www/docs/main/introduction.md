@@ -57,5 +57,3 @@ We set out to build a simple library for building typesafe APIs that leverages t
 - 👀&nbsp; Quite a few [Example Apps](example-apps.md) that you can use for reference or as a starting point.
 - ✅&nbsp; Well-tested & running in production.
 
-
-> Still reading? Follow [@alexdotjs on Twitter](https://twitter.com/alexdotjs) if you have any questions or want to keep up to date what's coming next.
