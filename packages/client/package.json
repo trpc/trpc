@@ -1,6 +1,6 @@
 {
   "name": "@trpc/client",
-  "version": "8.3.1",
+  "version": "8.4.0-alpha.0",
   "description": "tRPC Client lib",
   "author": "KATT",
   "license": "MIT",
@@ -31,7 +31,7 @@
   ],
   "dependencies": {
     "@babel/runtime": "^7.9.0",
-    "@trpc/server": "^8.3.1"
+    "@trpc/server": "^8.4.0-alpha.0"
   },
   "publishConfig": {
     "access": "public"
