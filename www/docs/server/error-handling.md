@@ -51,7 +51,7 @@ export default trpcNext.createNextApiHandler({
 ## Error helpers
 
 ```ts
-import {TRPCError} as trpc from '@trpc/server';
+import { TRPCError } from '@trpc/server';
 
 throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Optional Message' });
 
