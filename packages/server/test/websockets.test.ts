@@ -9,14 +9,14 @@ import { default as WebSocket, default as ws } from 'ws';
 import { z } from 'zod';
 import { wsLink } from '../../client/src/links/wsLink';
 import * as trpc from '../src';
-import { TRPCResult } from '../src/rpc';
+import { TRPCResult, TRPCRequest } from '../src/rpc';
 import { applyWSSHandler } from '../src/ws';
-import { routerToServerAndClient } from './_testHelpers';
+import { routerToServerAndClient, waitMs } from './_testHelpers';
 
 type Message = {
   id: string;
 };
-function factory() {
+function factory(config?: { createContext: () => Promise<unknown> }) {
   const ee = new EventEmitter();
   const subRef: {
     current: trpc.Subscription<Message>;
@@ -83,6 +83,12 @@ function factory() {
         return {
           links: [wsLink({ client: wsClient })],
         };
+      },
+      server: {
+        ...(config ?? {}),
+      },
+      wssServer: {
+        ...(config ?? {}),
       },
     },
   );
@@ -458,5 +464,44 @@ test('batching', async () => {
       },
     ]
   `);
+  t.close();
+});
+
+test.only('raw: slow createContext + send messages immediately on connection', async () => {
+  const t = factory({
+    async createContext() {
+      await waitMs(50);
+      return {};
+    },
+  });
+  const rawClient = new WebSocket(t.wssUrl);
+
+  const msg: TRPCRequest = {
+    id: 1,
+    method: 'query',
+    params: {
+      path: 'greeting',
+      input: null,
+    },
+  };
+  const msgStr = JSON.stringify(msg);
+  rawClient.onopen = () => {
+    rawClient.send(msgStr);
+  };
+  const data = await new Promise<string>((resolve) => {
+    rawClient.addEventListener('message', (msg) => {
+      resolve(msg.data);
+    });
+  });
+  expect(JSON.parse(data)).toMatchInlineSnapshot(`
+Object {
+  "id": 1,
+  "result": Object {
+    "data": "hello world",
+    "type": "data",
+  },
+}
+`);
+  rawClient.close();
   t.close();
 });
