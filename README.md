@@ -83,7 +83,7 @@ If you like working with tRPC, consider giving a token a apprecation by [GitHub 
 
 ### Companies
 
-_No one here yet - get in touch! on [Twitter](https://twitter.com/alexdotjs) or [by email](alex@trpc.io)._
+_No one here yet - get in touch on [Twitter](https://twitter.com/alexdotjs) or [by email](alex@trpc.io)._
 
 ### Individuals
 
