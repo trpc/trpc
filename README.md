@@ -42,28 +42,9 @@ tRPC allows you to easily build & consume fully typesafe APIs, without schemas o
 
 > Still reading? Follow [@alexdotjs on Twitter](https://twitter.com/alexdotjs) if you have any questions or want to keep up to date what's coming next.
 
-### Requirements
-
-- TypeScript > 4.1 because of [Template Literal Types](https://www.typescriptlang.org/docs/handbook/2/template-literal-types.html). Not done the leap to TypeScript yet? You can get benefits with autocompletion etc even if you use raw JS.
-
-
-### Testimonials
-
-> trpc is most impressive library I&#39;ve seen for Typescript+Next.js in a long time 
-> 
-> If your app uses API routes between the UI and external APIs this is a super simple, clean way to handle it. No build steps.
-> 
-> I really hope this gains traction.
-> 
-> &mdash; Anthony Short (@anthonyshort) <a href="https://twitter.com/anthonyshort/status/1403008330641989637">June 10, 2021</a></blockquote>
-
-[See more](https://trpc/docs/love)
-
 ---
 
 - [Intro](#intro)
-  - [Requirements](#requirements)
-  - [Testimonials](#testimonials)
 - [Usage](#usage)
 - [Core Team](#core-team)
 - [Financial Contributors](#financial-contributors)
@@ -74,18 +55,16 @@ tRPC allows you to easily build & consume fully typesafe APIs, without schemas o
 
 ## Usage
 
-> **👉  See full documentation documentation on [trpc.io](https://trpc.io/docs). 👈**
+**👉  See full documentation documentation on [trpc.io](https://trpc.io/docs). 👈**
 
 
-**Quick start:**
+**Quick start with a full-stack Next.js example:**
 
-```bash
+```sh
 npx create-next-app --example https://github.com/trpc/trpc --example-path examples/next-prisma-starter trpc-prisma-starter
 ```
 
 ## Core Team
-
-> 👋 Hi, I'm [Alex / KATT](https://twitter.com/alexdotjs) and I am the maintainer if tRPC, but I want to get more people involved - don't hesitate to contact me if you are interested but don't know where to start.
 
 <table>
   <tr>
@@ -94,13 +73,17 @@ npx create-next-app --example https://github.com/trpc/trpc --example-path exampl
 </table>
 
 
+> 👋 Hi, I'm Alex and I am the main maintainer if tRPC, don't hesitate to contact me on [Twitter](https://twitter.com/alexdotjs) or [email](alex@trpc.io) if you are interested in tRPC in any way.
+
+
+
 ## Financial Contributors
 
 If you like working with tRPC, consider giving a token a apprecation by [GitHub Sponsors](https://github.com/sponsors/KATT) or [get in touch](https://twitter.com/alexdotjs) if you want your company's logo featured in the tRPC repository or website.
 
 ### Companies
 
-_No one here yet - get in touch! on [Twitter](https://twitter.com/alexdotjs) or [by email](alex@trpc.io).
+_No one here yet - get in touch! on [Twitter](https://twitter.com/alexdotjs) or [by email](alex@trpc.io)._
 
 ### Individuals
 
