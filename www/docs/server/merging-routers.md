@@ -12,10 +12,8 @@ Thanks to TypeScript 4.1 template literal types we can also prefix the procedure
 
 ## Working example
 
-- Code at [/examples/prisma-starter/pages/api/trpc/%5Btrpc%5D.tsx](https://github.com/trpc/trpc/blob/main/examples/prisma-starter/pages/api/%5Btrpc%5D.tsx)
+- Code at [/examples/next-prisma-starter/src/server/routers/app.ts](https://github.com/trpc/trpc/blob/main/examples/next-prisma-starter/src/server/routers/app.ts)
 - All code for posts living in a separate router and namespaced with `posts.`
-- Live at [hello-world.trpc.io](https://hello-world.trpc.io)
-
 
 ## Example code
 

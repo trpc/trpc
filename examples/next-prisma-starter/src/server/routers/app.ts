@@ -1,10 +1,9 @@
 /**
- * This file contains the tRPC http response handler and context creation for Next.js
+ * This file contains the root router of your tRPC-backend
  */
 import superjson from 'superjson';
 import { createRouter } from '../trpc';
 import { postsRouter } from './posts';
-// Infers the context returned from `createContext`
 
 /**
  * Create your application's root router
