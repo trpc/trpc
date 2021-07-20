@@ -61,6 +61,11 @@ module.exports = {
           label: 'GitHub',
           position: 'right',
         },
+        {
+          href: 'https://twitter.com/alexdotjs',
+          label: 'Twitter',
+          position: 'right',
+        },
       ],
     },
     footer: {
