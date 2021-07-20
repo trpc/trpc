@@ -45,6 +45,7 @@ type Context = inferAsyncReturnType<typeof createContext>;
 
 ```ts
 import * as trpc from '@trpc/server';
+import { TRPCError } from '@trpc/server';
 import { createRouter } from './[trpc]';
 
 export const appRouter = createRouter()
@@ -59,10 +60,7 @@ export const appRouter = createRouter()
   .query('secret', {
     resolve: ({ ctx }) => {
       if (!ctx.user) {
-        throw trpc.httpError.unauthorized();
-      }
-      if (ctx.user?.name !== 'KATT') {
-        throw trpc.httpError.forbidden();
+        throw new TRPCError({ code: 'UNAUTHORIZED' });
       }
       return {
         secret: 'sauce',
