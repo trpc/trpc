@@ -22,21 +22,22 @@
 
 ## Intro
 
-tRPC allows you to easily build fully typesafe APIs.
+tRPC allows you to easily build & consume fully typesafe APIs, without schemas or code generation.
 
+- 🧙‍♂️&nbsp; Full static typesafety & autocompletion on the client - on inputs, outputs, & errors.
 - 🧙‍♂️&nbsp; Automatic typesafety & autocompletion inferred from your API-paths, their input data, outputs, & errors.
 - 🐎&nbsp; Snappy DX. No code generation, run-time bloat, or build pipeline.
 - 🍃&nbsp; Light. tRPC has zero deps and a tiny client-side footprint.
-- ⚡️&nbsp; Request batching - requests made at the same time are automatically combined
 - 🐻&nbsp; Easy to add to your existing brownfield project.
 - 🔋&nbsp; Batteries included. React-library + Next.js/Express/lambda adapters. _(But tRPC is not tied to React - [reach out](https://twitter.com/alexdotjs) if you want to make a Svelte/Vue/... lib)_
-- 🥃&nbsp; Simple to use APIs for queries & mutations + experimental subscriptions/WebSockets support.
+- 🥃&nbsp; Simple to use APIs for queries, mutations, & subscriptions support.
+- ⚡️&nbsp; Request batching - requests made at the same time can be automatically combined
 
 
 ... and:
 
 - 👀&nbsp; Quite a few examples in the [./examples](./examples)-folder
-- ✅&nbsp; Well-tested & running in production.
+- ✅&nbsp; It's well-tested & running in production.
 
 
 > Still reading? Follow [@alexdotjs on Twitter](https://twitter.com/alexdotjs) if you have any questions or want to keep up to date what's coming next.
