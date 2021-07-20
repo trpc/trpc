@@ -1,6 +1,6 @@
 ---
 id: love
-title: Love
+title: Love / Testimonials
 sidebar_label: Love
 slug: /love
 ---
