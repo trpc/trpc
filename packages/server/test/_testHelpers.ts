@@ -90,8 +90,13 @@ export function routerToServerAndClient<TRouter extends AnyRouter>(
     httpPort,
     wssPort,
     httpUrl,
+    wssUrl,
     applyWSSHandlerOpts,
     wssHandler,
     wss,
   };
+}
+
+export async function waitMs(ms: number) {
+  await new Promise<void>((resolve) => setTimeout(resolve, ms));
 }
