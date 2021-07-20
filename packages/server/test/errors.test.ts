@@ -113,7 +113,7 @@ test('httpError.unauthorized()', async () => {
   const { client, close } = routerToServerAndClient(
     trpc.router().query('err', {
       resolve() {
-        throw trpc.httpError.unauthorized();
+        throw new TRPCError({ code: 'UNAUTHORIZED' });
       },
     }),
     {
