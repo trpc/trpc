@@ -86,6 +86,7 @@ export async function requestHandler<
 ) {
   const { req, res, createContext, teardown, onError, maxBodySize, router } =
     opts;
+  const batchingEnabled = opts.batching?.enabled ?? true;
   if (req.method === 'HEAD') {
     // can be used for lambda warmup
     res.statusCode = 204;
@@ -108,7 +109,7 @@ export async function requestHandler<
     res.end(JSON.stringify(json));
   }
   try {
-    if (isBatchCall && !opts.batching?.enabled) {
+    if (isBatchCall && !batchingEnabled) {
       throw new Error(`Batching is not enabled on the server`);
     }
     if (type === 'unknown' || type === 'subscription') {

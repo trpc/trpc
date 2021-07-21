@@ -25,10 +25,10 @@ async function main() {
         condition(op) {
           return op.type === 'subscription';
         },
-        left: wsLink({
+        true: wsLink({
           client: wsClient,
         }),
-        right: httpLink({
+        false: httpLink({
           url: `http://localhost:2022`,
         }),
       }),
