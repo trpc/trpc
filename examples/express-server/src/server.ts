@@ -3,6 +3,7 @@ import express from 'express';
 import * as trpc from '@trpc/server';
 import { z } from 'zod';
 import * as trpcExpress from '@trpc/server/adapters/express';
+import { TRPCError } from '@trpc/server';
 
 const createContext = ({
   req,
@@ -101,10 +102,10 @@ export const appRouter = createRouter()
     createRouter().query('secret', {
       resolve: ({ ctx }) => {
         if (!ctx.user) {
-          throw trpc.httpError.unauthorized();
+          throw new TRPCError({ code: 'UNAUTHORIZED' });
         }
         if (ctx.user?.name !== 'alex') {
-          throw trpc.httpError.forbidden();
+          throw new TRPCError({ code: 'FORBIDDEN' });
         }
         return {
           secret: 'sauce',

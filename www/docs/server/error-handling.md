@@ -51,11 +51,15 @@ export default trpcNext.createNextApiHandler({
 ## Error helpers
 
 ```ts
-import * as trpc from '@trpc/server';
+import { TRPCError } from '@trpc/server';
 
-// in your resolver:
-throw trpc.httpError.unauthorized('Optional message') // --> 401
-throw trpc.httpError.forbidden('Optional message')    // --> 403
-throw trpc.httpError.badRequest('Optional message')   // --> 400
-throw trpc.httpError.notFound('Optional message')     // --> 404
+throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Optional Message' });
+
+// Some available codes:
+// 
+// "FORBIDDEN"
+// "BAD_REQUEST"
+// "INTERNAL_SERVER_ERROR"
+// "PATH_NOT_FOUND"
+// "TIMEOUT"
 ```
