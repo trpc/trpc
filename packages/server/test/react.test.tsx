@@ -191,10 +191,10 @@ function createAppRouter() {
               condition(op) {
                 return op.type === 'subscription';
               },
-              left: wsLink({
+              true: wsLink({
                 client: wsClient,
               }),
-              right: httpBatchLink({
+              false: httpBatchLink({
                 url: httpUrl,
               }),
             }),
