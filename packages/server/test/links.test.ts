@@ -256,32 +256,57 @@ describe('batching', () => {
     close();
   });
 });
-
-test('split link', () => {
-  const left = jest.fn();
-  const right = jest.fn();
-  executeChain({
-    links: [
-      splitLink({
-        left: () => left,
-        right: () => right,
-        condition(op) {
-          return op.type === 'query';
-        },
-      })(mockRuntime),
-    ],
-    op: {
-      id: 1,
-      type: 'query',
-      input: null,
-      path: '',
-      context: {},
-    },
+describe('splitLink', () => {
+  test('left/right', () => {
+    const left = jest.fn();
+    const right = jest.fn();
+    executeChain({
+      links: [
+        splitLink({
+          left: () => left,
+          right: () => right,
+          condition(op) {
+            return op.type === 'query';
+          },
+        })(mockRuntime),
+      ],
+      op: {
+        id: 1,
+        type: 'query',
+        input: null,
+        path: '',
+        context: {},
+      },
+    });
+    expect(left).toHaveBeenCalledTimes(1);
+    expect(right).toHaveBeenCalledTimes(0);
   });
-  expect(left).toHaveBeenCalledTimes(1);
-  expect(right).toHaveBeenCalledTimes(0);
-});
 
+  test('true/false', () => {
+    const trueLink = jest.fn();
+    const falseLink = jest.fn();
+    executeChain({
+      links: [
+        splitLink({
+          true: () => trueLink,
+          false: () => falseLink,
+          condition(op) {
+            return op.type === 'query';
+          },
+        })(mockRuntime),
+      ],
+      op: {
+        id: 1,
+        type: 'query',
+        input: null,
+        path: '',
+        context: {},
+      },
+    });
+    expect(trueLink).toHaveBeenCalledTimes(1);
+    expect(falseLink).toHaveBeenCalledTimes(0);
+  });
+});
 test('create client with links', async () => {
   let attempt = 0;
   const serverCall = jest.fn();
