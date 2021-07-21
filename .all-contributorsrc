@@ -133,6 +133,15 @@
       "contributions": [
         "financial"
       ]
+    },
+    {
+      "login": "sam3d",
+      "name": "Sam Holmes",
+      "avatar_url": "https://avatars.githubusercontent.com/u/8385528?v=4",
+      "profile": "https://samholmes.net",
+      "contributions": [
+        "financial"
+      ]
     }
   ],
   "contributorsPerLine": 7,
