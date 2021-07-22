@@ -32,7 +32,10 @@ function getBaseUrl() {
 }
 
 export default withTRPC<AppRouter>({
-  config() {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  config({ ctx }) {
+    // for app caching with SSR see https://trpc.io/docs/caching
+
     /**
      * If you want to use SSR, you need to use the server's full URL
      * @link https://trpc.io/docs/ssr
