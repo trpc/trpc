@@ -69,9 +69,12 @@ export type CreateTRPCClientOptions<TRouter extends AnyRouter> = {
     }
 );
 type TRPCType = 'subscription' | 'query' | 'mutation';
-type RequestOptions = {
+export interface TRPCRequestOptions {
+  /**
+   * Pass additional context to links
+   */
   context?: OperationContext;
-};
+}
 export class TRPCClient<TRouter extends AnyRouter> {
   private readonly links: OperationLink<TRouter>[];
   public readonly runtime: LinkRuntimeOptions;
@@ -185,9 +188,9 @@ export class TRPCClient<TRouter extends AnyRouter> {
     TPath extends string & keyof TQueries,
   >(
     path: TPath,
-    ...args: [...inferHandlerInput<TQueries[TPath]>, RequestOptions?]
+    ...args: [...inferHandlerInput<TQueries[TPath]>, TRPCRequestOptions?]
   ) {
-    const context = (args[1] as RequestOptions | undefined)?.context;
+    const context = (args[1] as TRPCRequestOptions | undefined)?.context;
     return this.requestAsPromise<
       inferHandlerInput<TQueries[TPath]>,
       inferProcedureOutput<TQueries[TPath]>
@@ -204,9 +207,9 @@ export class TRPCClient<TRouter extends AnyRouter> {
     TPath extends string & keyof TMutations,
   >(
     path: TPath,
-    ...args: [...inferHandlerInput<TMutations[TPath]>, RequestOptions?]
+    ...args: [...inferHandlerInput<TMutations[TPath]>, TRPCRequestOptions?]
   ) {
-    const context = (args[1] as RequestOptions | undefined)?.context;
+    const context = (args[1] as TRPCRequestOptions | undefined)?.context;
     return this.requestAsPromise<
       inferHandlerInput<TMutations[TPath]>,
       inferProcedureOutput<TMutations[TPath]>
@@ -225,7 +228,7 @@ export class TRPCClient<TRouter extends AnyRouter> {
   >(
     path: TPath,
     input: TInput,
-    opts: RequestOptions &
+    opts: TRPCRequestOptions &
       ObservableCallbacks<TRPCResult<TOutput>, TRPCClientError<TRouter>>,
   ): UnsubscribeFn {
     const $res = this.$request<TInput, TOutput>({
