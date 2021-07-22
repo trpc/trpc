@@ -47,13 +47,13 @@ export function createSSGHelpers<TRouter extends AnyRouter>({
     TPath extends keyof TQueries & string,
     TProcedure extends TQueries[TPath],
   >(
-    ...pathAndArgs: [path: TPath, ...args: inferHandlerInput<TProcedure>]
+    ...pathAndInput: [path: TPath, ...args: inferHandlerInput<TProcedure>]
   ) => {
-    const [path, input] = pathAndArgs;
+    const [path, input] = pathAndInput;
     const cacheKey = [path, input ?? null, CACHE_KEY_QUERY];
 
     return queryClient.prefetchQuery(cacheKey, async () => {
-      const data = await caller.query(...pathAndArgs);
+      const data = await caller.query(...pathAndInput);
 
       return data;
     });
@@ -63,12 +63,12 @@ export function createSSGHelpers<TRouter extends AnyRouter>({
     TPath extends keyof TQueries & string,
     TProcedure extends TQueries[TPath],
   >(
-    ...pathAndArgs: [path: TPath, ...args: inferHandlerInput<TProcedure>]
+    ...pathAndInput: [path: TPath, ...args: inferHandlerInput<TProcedure>]
   ) => {
-    const cacheKey = getCacheKey(pathAndArgs, CACHE_KEY_INFINITE_QUERY);
+    const cacheKey = getCacheKey(pathAndInput, CACHE_KEY_INFINITE_QUERY);
 
     return queryClient.prefetchInfiniteQuery(cacheKey, async () => {
-      const data = await caller.query(...pathAndArgs);
+      const data = await caller.query(...pathAndInput);
 
       return data;
     });
@@ -79,13 +79,13 @@ export function createSSGHelpers<TRouter extends AnyRouter>({
     TProcedure extends TQueries[TPath],
     TOutput extends inferProcedureOutput<TProcedure>,
   >(
-    ...pathAndArgs: [path: TPath, ...args: inferHandlerInput<TProcedure>]
+    ...pathAndInput: [path: TPath, ...args: inferHandlerInput<TProcedure>]
   ): Promise<TOutput> => {
-    const [path, input] = pathAndArgs;
+    const [path, input] = pathAndInput;
     const cacheKey = [path, input ?? null, CACHE_KEY_QUERY];
 
     return queryClient.fetchQuery(cacheKey, async () => {
-      const data = await caller.query(...pathAndArgs);
+      const data = await caller.query(...pathAndInput);
 
       return data;
     });
@@ -96,12 +96,12 @@ export function createSSGHelpers<TRouter extends AnyRouter>({
     TProcedure extends TQueries[TPath],
     TOutput extends inferProcedureOutput<TProcedure>,
   >(
-    ...pathAndArgs: [path: TPath, ...args: inferHandlerInput<TProcedure>]
+    ...pathAndInput: [path: TPath, ...args: inferHandlerInput<TProcedure>]
   ): Promise<InfiniteData<TOutput>> => {
-    const cacheKey = getCacheKey(pathAndArgs, CACHE_KEY_INFINITE_QUERY);
+    const cacheKey = getCacheKey(pathAndInput, CACHE_KEY_INFINITE_QUERY);
 
     return queryClient.fetchInfiniteQuery(cacheKey, async () => {
-      const data = await caller.query(...pathAndArgs);
+      const data = await caller.query(...pathAndInput);
 
       return data;
     });
