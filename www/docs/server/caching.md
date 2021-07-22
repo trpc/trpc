@@ -112,15 +112,6 @@ export const appRouter = createRouter()
         lastUpdated: new Date().toJSON(),
       };
     },
-  })
-  .query('slow-query-uncached', {
-    async resolve() {
-      await waitFor(5000); // wait for 5s
-
-      return {
-        lastUpdated: new Date().toJSON(),
-      };
-    },
   });
 
 // Exporting type _type_ AppRouter only exposes types that can be used for inference
