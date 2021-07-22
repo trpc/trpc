@@ -21,11 +21,6 @@ export const appRouter = trpc
       };
     },
   })
-  .query('noInput', {
-    resolve() {
-      return 'hello';
-    },
-  })
   .mutation('createPost', {
     input: z.object({
       title: z.string(),
