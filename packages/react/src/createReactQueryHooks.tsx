@@ -1,9 +1,9 @@
 import {
   createTRPCClient,
   CreateTRPCClientOptions,
-  OperationContext,
   TRPCClient,
   TRPCClientError,
+  TRPCRequestOptions,
 } from '@trpc/client';
 import type {
   AnyRouter,
@@ -38,15 +38,11 @@ export type OutputWithCursor<TData, TCursor extends any = any> = {
   data: TData;
 };
 
-interface TRPCUseQueryBaseOptions {
+interface TRPCUseQueryBaseOptions extends TRPCRequestOptions {
   /**
    * Opt out of SSR for this query by passing `ssr: false`
    */
   ssr?: boolean;
-  /**
-   * Pass additional context to links
-   */
-  context?: OperationContext;
 }
 
 interface UseTRPCQueryOptions<TInput, TError, TOutput>
@@ -63,6 +59,14 @@ interface UseTRPCInfiniteQueryOptions<
 interface UseTRPCMutationOptions<TInput, TError, TOutput>
   extends UseMutationOptions<TOutput, TError, TInput>,
     TRPCUseQueryBaseOptions {}
+
+function getArgs<TPathAndInput extends unknown[], TOptions>(
+  pathAndInput: TPathAndInput,
+  opts: TOptions,
+) {
+  const [path, input] = pathAndInput;
+  return [path, input, opts] as const;
+}
 export function createReactQueryHooks<TRouter extends AnyRouter>() {
   type TQueries = TRouter['_def']['queries'];
   type TMutations = TRouter['_def']['mutations'];
@@ -94,74 +98,76 @@ export function createReactQueryHooks<TRouter extends AnyRouter>() {
           client,
           isPrepass,
           fetchQuery: useCallback(
-            (pathAndArgs, opts) => {
-              const cacheKey = getCacheKey(pathAndArgs, CACHE_KEY_QUERY);
+            (pathAndInput, opts) => {
+              const cacheKey = getCacheKey(pathAndInput, CACHE_KEY_QUERY);
 
               return queryClient.fetchQuery(
                 cacheKey,
-                () => client.query(...pathAndArgs) as any,
+                () => (client as any).query(...getArgs(pathAndInput, opts)),
                 opts,
               );
             },
             [client, queryClient],
           ),
           fetchInfiniteQuery: useCallback(
-            (pathAndArgs, opts) => {
+            (pathAndInput, opts) => {
               const cacheKey = getCacheKey(
-                pathAndArgs,
+                pathAndInput,
                 CACHE_KEY_INFINITE_QUERY,
               );
 
               return queryClient.fetchInfiniteQuery(
                 cacheKey,
-                () => client.query(...pathAndArgs) as any,
+                () =>
+                  (client as any).query(...getArgs(pathAndInput, opts)) as any,
                 opts,
               );
             },
             [client, queryClient],
           ),
           prefetchQuery: useCallback(
-            (pathAndArgs, opts) => {
-              const cacheKey = getCacheKey(pathAndArgs, CACHE_KEY_QUERY);
+            (pathAndInput, opts) => {
+              const cacheKey = getCacheKey(pathAndInput, CACHE_KEY_QUERY);
 
               return queryClient.prefetchQuery(
                 cacheKey,
-                () => client.query(...pathAndArgs) as any,
+                () => (client as any).query(...getArgs(pathAndInput, opts)),
                 opts,
               );
             },
             [client, queryClient],
           ),
           prefetchInfiniteQuery: useCallback(
-            (pathAndArgs, opts) => {
+            (pathAndInput, opts) => {
               const cacheKey = getCacheKey(
-                pathAndArgs,
+                pathAndInput,
                 CACHE_KEY_INFINITE_QUERY,
               );
 
               return queryClient.prefetchInfiniteQuery(
                 cacheKey,
-                () => client.query(...pathAndArgs) as any,
+                () =>
+                  (client as any).query(...getArgs(pathAndInput, opts)) as any,
                 opts,
               );
             },
             [client, queryClient],
           ),
           invalidateQuery: useCallback(
-            (pathAndArgs) => {
-              return queryClient.invalidateQueries(pathAndArgs);
+            (pathAndInput) => {
+              return queryClient.invalidateQueries(pathAndInput);
             },
             [queryClient],
           ),
           cancelQuery: useCallback(
-            (pathAndArgs) => {
-              return queryClient.cancelQueries(pathAndArgs);
+            (pathAndInput) => {
+              return queryClient.cancelQueries(pathAndInput);
             },
             [queryClient],
           ),
           setQueryData: useCallback(
-            (pathAndArgs, output) => {
-              const cacheKey = getCacheKey(pathAndArgs);
+            (pathAndInput, output) => {
+              const cacheKey = getCacheKey(pathAndInput);
               queryClient.setQueryData(
                 cacheKey.concat([CACHE_KEY_QUERY]),
                 output,
@@ -174,8 +180,8 @@ export function createReactQueryHooks<TRouter extends AnyRouter>() {
             [queryClient],
           ),
           getQueryData: useCallback(
-            (pathAndArgs) => {
-              const cacheKey = getCacheKey(pathAndArgs);
+            (pathAndInput) => {
+              const cacheKey = getCacheKey(pathAndInput);
               return queryClient.getQueryData(cacheKey.concat(CACHE_KEY_QUERY));
             },
             [queryClient],
@@ -196,14 +202,14 @@ export function createReactQueryHooks<TRouter extends AnyRouter>() {
     TProcedure extends TQueries[TPath],
     TOutput extends inferProcedureOutput<TProcedure>,
   >(
-    pathAndArgs: [path: TPath, ...args: inferHandlerInput<TProcedure>],
+    pathAndInput: [path: TPath, ...args: inferHandlerInput<TProcedure>],
     opts?: UseTRPCQueryOptions<
       inferProcedureInput<TQueries[TPath]>,
       TError,
       TOutput
     >,
   ): UseQueryResult<TOutput, TError> {
-    const cacheKey = getCacheKey(pathAndArgs, CACHE_KEY_QUERY);
+    const cacheKey = getCacheKey(pathAndInput, CACHE_KEY_QUERY);
     const { client, isPrepass, queryClient, fetchQuery } = useContext();
 
     if (
@@ -213,11 +219,11 @@ export function createReactQueryHooks<TRouter extends AnyRouter>() {
       opts?.enabled !== false &&
       !queryClient.getQueryCache().find(cacheKey)
     ) {
-      fetchQuery(pathAndArgs, opts as any);
+      fetchQuery(pathAndInput, opts as any);
     }
     const query = useQuery(
       cacheKey,
-      () => client.query(...pathAndArgs) as any,
+      () => (client as any).query(...getArgs(pathAndInput, opts)) as any,
       opts,
     );
     return query;
@@ -247,7 +253,7 @@ export function createReactQueryHooks<TRouter extends AnyRouter>() {
     TPath extends keyof TSubscriptions & string,
     TOutput extends inferSubscriptionOutput<TRouter, TPath>,
   >(
-    pathAndArgs: [
+    pathAndInput: [
       path: TPath,
       ...args: inferHandlerInput<TSubscriptions[TPath]>
     ],
@@ -258,14 +264,14 @@ export function createReactQueryHooks<TRouter extends AnyRouter>() {
     },
   ) {
     const enabled = opts?.enabled ?? true;
-    const queryKey = hashQueryKey(pathAndArgs);
+    const queryKey = hashQueryKey(pathAndInput);
     const client = useContext().client;
 
     return useEffect(() => {
       if (!enabled) {
         return;
       }
-      const [path, input] = pathAndArgs;
+      const [path, input] = pathAndInput;
       let isStopped = false;
       const unsub = client.subscription(path, (input ?? undefined) as any, {
         onError: (err) => {
@@ -293,13 +299,13 @@ export function createReactQueryHooks<TRouter extends AnyRouter>() {
     TOutput extends inferProcedureOutput<TQueries[TPath]>,
     TCursor extends any,
   >(
-    pathAndArgs: [TPath, Omit<TInput, 'cursor'>],
+    pathAndInput: [TPath, Omit<TInput, 'cursor'>],
     // FIXME: this typing is wrong but it works
     opts?: UseTRPCInfiniteQueryOptions<TOutput, TError, TOutput>,
   ) {
     const { client, isPrepass, fetchInfiniteQuery, queryClient } = useContext();
-    const cacheKey = getCacheKey(pathAndArgs, CACHE_KEY_INFINITE_QUERY);
-    const [path, input] = pathAndArgs;
+    const cacheKey = getCacheKey(pathAndInput, CACHE_KEY_INFINITE_QUERY);
+    const [path, input] = pathAndInput;
 
     if (
       typeof window === 'undefined' &&
@@ -308,7 +314,7 @@ export function createReactQueryHooks<TRouter extends AnyRouter>() {
       opts?.enabled !== false &&
       !queryClient.getQueryCache().find(cacheKey)
     ) {
-      fetchInfiniteQuery(pathAndArgs as any, opts as any);
+      fetchInfiniteQuery(pathAndInput as any, opts as any);
     }
     const query = useInfiniteQuery(
       cacheKey,

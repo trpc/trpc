@@ -15,13 +15,13 @@ export async function callProcedure<
 
   const caller = opts.router.createCaller(opts.ctx);
   if (type === 'query') {
-    return caller.query(path, input);
+    return caller.query(path, input as any);
   }
   if (type === 'mutation') {
-    return caller.mutation(path, input);
+    return caller.mutation(path, input as any);
   }
   if (type === 'subscription') {
-    const sub = (await caller.subscription(path, input)) as Subscription;
+    const sub = (await caller.subscription(path, input as any)) as Subscription;
     return sub;
   }
   /* istanbul ignore next */
