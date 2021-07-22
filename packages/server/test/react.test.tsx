@@ -171,6 +171,10 @@ function createAppRouter() {
       },
     });
 
+  const linkSpy = {
+    up: jest.fn(),
+    down: jest.fn(),
+  };
   const { client, trpcClientOptions, close } = routerToServerAndClient(
     appRouter,
     {
@@ -187,6 +191,14 @@ function createAppRouter() {
         return {
           // links: [wsLink({ client: ws })],
           links: [
+            () =>
+              ({ op, next, prev }) => {
+                linkSpy.up(op);
+                next(op, (result) => {
+                  linkSpy.down(result);
+                  prev(result);
+                });
+              },
             splitLink({
               condition(op) {
                 return op.type === 'subscription';
@@ -220,6 +232,7 @@ function createAppRouter() {
     },
     queryClient,
     createContext,
+    linkSpy,
   };
 }
 let factory: ReturnType<typeof createAppRouter>;
@@ -253,6 +266,41 @@ describe('useQuery()', () => {
     const utils = render(<App />);
     await waitFor(() => {
       expect(utils.container).toHaveTextContent('first post');
+    });
+  });
+
+  test('with operation context', async () => {
+    const { trpc, client, linkSpy } = factory;
+    function MyComponent() {
+      const allPostsQuery = trpc.useQuery(['allPosts'], {
+        context: {
+          test: '1',
+        },
+      });
+      expectTypeOf(allPostsQuery.data!).toMatchTypeOf<Post[]>();
+
+      return <pre>{JSON.stringify(allPostsQuery.data ?? 'n/a', null, 4)}</pre>;
+    }
+    function App() {
+      const [queryClient] = useState(() => new QueryClient());
+      return (
+        <trpc.Provider {...{ queryClient, client }}>
+          <QueryClientProvider client={queryClient}>
+            <MyComponent />
+          </QueryClientProvider>
+        </trpc.Provider>
+      );
+    }
+
+    const utils = render(<App />);
+    await waitFor(() => {
+      expect(utils.container).toHaveTextContent('first post');
+    });
+
+    expect(linkSpy.up).toHaveBeenCalledTimes(1);
+    expect(linkSpy.down).toHaveBeenCalledTimes(1);
+    expect(linkSpy.up.mock.calls[0][0].context).toMatchObject({
+      test: '1',
     });
   });
 
