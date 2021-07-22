@@ -66,14 +66,32 @@ import * as trpc from '@trpc/server';
 import { inferAsyncReturnType } from '@trpc/server';
 import * as trpcNext from '@trpc/server/adapters/next';
 
-// The app's context - is generated for each incoming request
-export async function createContext(opts?: trpcNext.CreateNextContextOptions) {
-  // Opts is marked as optional so can easier use the `createContext()`-fn in `getStaticProps`, etc
+export const createContext = async ({
+  req,
+  res,
+}: trpcNext.CreateNextContextOptions) => {
+  // get the tRPC-paths called in this request
+  const paths = (req.query.trpc as string).split(',');
+  // assuming you have a router prefixed with `public.` where you colocate publicly accessible routes
+  const isPublic = paths.some((path) => !path.startsWith('public.'));
+
+  // check if it's a query & public
+  if (req.method === 'GET' && isPublic) {
+    // cache request for 1 day + revalidate once every second
+    const ONE_DAY_IN_SECONDS = 60 * 60 * 24;
+    res.setHeader(
+      'Cache-Control',
+      `s-maxage=1, stale-while-revalidate=${ONE_DAY_IN_SECONDS}`,
+    );
+  }
+
   return {
-    req: opts?.req,
-    res: opts?.res,
+    req,
+    res,
+    prisma,
   };
-}
+};
+
 type Context = inferAsyncReturnType<typeof createContext>;
 
 export function createRouter() {
@@ -87,9 +105,6 @@ const waitFor = async (ms: number) =>
 export const appRouter = createRouter()
   .query('slow-query-cached', {
     async resolve({ ctx }) {
-      // See https://vercel.com/docs/serverless-functions/edge-caching
-      ctx.res?.setHeader('Cache-Control', 's-maxage=1, stale-while-revalidate');
-
       await waitFor(5000); // wait for 5s
 
       return {
