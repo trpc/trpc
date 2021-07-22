@@ -41,6 +41,8 @@ async function main() {
 
   console.log('helloResponse', helloResponse);
 
+  await client.query('noInput', 'break');
+
   const createPostRes = await client.mutation('createPost', {
     title: 'hello world',
     text: 'check out tRPC.io',
