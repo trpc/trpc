@@ -25,7 +25,6 @@
 tRPC allows you to easily build & consume fully typesafe APIs, without schemas or code generation.
 
 - 🧙‍♂️&nbsp; Full static typesafety & autocompletion on the client - on inputs, outputs, & errors.
-- 🧙‍♂️&nbsp; Automatic typesafety & autocompletion inferred from your API-paths, their input data, outputs, & errors.
 - 🐎&nbsp; Snappy DX. No code generation, run-time bloat, or build pipeline.
 - 🍃&nbsp; Light. tRPC has zero deps and a tiny client-side footprint.
 - 🐻&nbsp; Easy to add to your existing brownfield project.
