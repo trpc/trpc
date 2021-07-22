@@ -62,10 +62,12 @@ function getDataTransformer(
 
 export type inferHandlerInput<TProcedure extends Procedure> =
   TProcedure extends ProcedureWithInput<any, infer TInput, any>
-    ? undefined extends TInput
-      ? [(TInput | null | undefined)?]
-      : [TInput]
-    : [(undefined | null)?];
+    ? undefined extends TInput // ? is input optional
+      ? unknown extends TInput // ? is input unset
+        ? [(null | undefined)?] // -> there is no input
+        : [(TInput | null | undefined)?] // -> there is optional input
+      : [TInput] // -> input is required
+    : [(undefined | null)?]; // -> there is no input
 
 type inferHandlerFn<TProcedures extends ProcedureRecord> = <
   TProcedure extends TProcedures[TPath],
