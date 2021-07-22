@@ -8,6 +8,12 @@ slug: /caching
 The below examples uses [Vercel's edge caching](https://vercel.com/docs/serverless-functions/edge-caching) to serve data to your users as fast as possible.
 
 
+:::warning
+Always be careful with caching - especially if you handle personal information.
+Since batching is enabled by default, it's recommended to set your cache headers in the `createContext`-function and make sure that there are not any concurrent calls that may include personal data or to omit cache headers completely when there is an auth headers or cookie.
+:::
+
+
 ## App Caching
 
 If you turn on SSR in your app you might discover that your app loads slow on for instance Vercel, but you can actually statically render your whole app without using SSG; [read this Twitter thread](https://twitter.com/alexdotjs/status/1386274093041950722) for more insights.
