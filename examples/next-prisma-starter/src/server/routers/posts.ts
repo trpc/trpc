@@ -5,7 +5,6 @@
 
 import { createRouter } from 'server/trpc';
 import { z } from 'zod';
-import zodToJsonSchema from 'zod-to-json-schema';
 
 export const postsRouter = createRouter()
   // create
@@ -57,12 +56,6 @@ export const postsRouter = createRouter()
         data,
       });
       return todo;
-    },
-  })
-  .query('edit.input', {
-    resolve() {
-      const schema: any = (postsRouter._def.mutations.edit as any).inputParser;
-      return zodToJsonSchema(schema, 'edit.input');
     },
   })
   // delete
