@@ -50,7 +50,7 @@ export abstract class Procedure<
 > {
   private middlewares: Readonly<MiddlewareFunction<TContext>[]>;
   private resolver: ProcedureResolver<TContext, TInput, TOutput>;
-  private inputParser: ProcedureInputParser<TInput>;
+  public readonly inputParser: ProcedureInputParser<TInput>;
 
   constructor(opts: ProcedureOptions<TContext, TInput, TOutput>) {
     this.middlewares = opts.middlewares;
