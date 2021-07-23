@@ -144,6 +144,15 @@
       "contributions": [
         "financial"
       ]
+    },
+    {
+      "login": "mmkal",
+      "name": "Misha Kaletsky",
+      "avatar_url": "https://avatars.githubusercontent.com/u/15040698?v=4",
+      "profile": "https://github.com/mmkal",
+      "contributions": [
+        "ideas"
+      ]
     }
   ],
   "contributorsPerLine": 7,
