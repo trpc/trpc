@@ -6,7 +6,7 @@ import { createWSClient, wsLink } from '@trpc/client/links/wsLink';
 import AbortController from 'abort-controller';
 import fetch from 'node-fetch';
 import ws from 'ws';
-import { Dict } from '../../../packages/server/dist/trpc-server.cjs';
+import { Dict } from '@trpc/server';
 import type { AppRouter } from './server';
 
 // polyfill fetch & websocket
