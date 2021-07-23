@@ -1,11 +1,12 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { createTRPCClient } from '@trpc/client';
+import { createTRPCClient, OperationResponse } from '@trpc/client';
 import { httpLink } from '@trpc/client/links/httpLink';
 import { splitLink } from '@trpc/client/links/splitLink';
 import { createWSClient, wsLink } from '@trpc/client/links/wsLink';
 import AbortController from 'abort-controller';
 import fetch from 'node-fetch';
 import ws from 'ws';
+import { Dict } from '../../../packages/server/dist/trpc-server.cjs';
 import type { AppRouter } from './server';
 
 // polyfill fetch & websocket
@@ -20,6 +21,26 @@ async function main() {
   });
   const client = createTRPCClient<AppRouter>({
     links: [
+      // custom cache link
+      () => {
+        // this fn here is initialized once per app boot
+        const cache: Dict<any> = {};
+        return ({ op, prev, next }) => {
+          const cacheKey = JSON.stringify(op.input ?? null);
+          if (op.type === 'query' && cache[cacheKey]) {
+            prev(cache[cacheKey]);
+          }
+          next(op, (result) => {
+            // received result
+            if (!(result instanceof Error)) {
+              // not an error response
+              cache[cacheKey] = result;
+            }
+            // pass back the chain
+            prev(result);
+          });
+        };
+      },
       // call subscriptions through websockets and the rest over http
       splitLink({
         condition(op) {
