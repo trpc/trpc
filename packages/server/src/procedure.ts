@@ -99,12 +99,40 @@ export abstract class Procedure<
     type,
     path,
   }: ProcedureCallOptions<TContext>): Promise<TOutput> {
-    for (const middleware of this.middlewares) {
-      await middleware({ ctx, type, path });
-    }
-    const input = this.parseInput(rawInput);
-    const output = await this.resolver({ ctx, input, type });
-    return output;
+    return await new Promise<TOutput>((resolve, reject) => {
+      let stack = 0;
+
+      const callNextMiddleware = async () => {
+        try {
+          const fn = this.middlewares[stack++];
+          if (!fn) {
+            const input = this.parseInput(rawInput);
+            const output = await this.resolver({ ctx, input, type });
+            resolve(output);
+            return;
+          }
+          let nextCalled = false;
+          await fn({
+            ctx,
+            type,
+            path,
+            next: () => {
+              if (nextCalled) {
+                throw new TRPCError({
+                  code: 'INTERNAL_SERVER_ERROR',
+                  message: 'A middleware called next() twice',
+                });
+              }
+              nextCalled = true;
+              return callNextMiddleware();
+            },
+          });
+        } catch (err) {
+          reject(err);
+        }
+      };
+      callNextMiddleware();
+    });
   }
 
   /**

@@ -154,7 +154,9 @@ export type MiddlewareFunction<TContext> = (opts: {
   ctx: TContext;
   type: ProcedureType;
   path: string;
+  next: () => Promise<void>;
 }) => Promise<void> | void;
+
 export class Router<
   TContext,
   TQueries extends ProcedureRecord<TContext>,

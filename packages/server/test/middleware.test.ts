@@ -1,9 +1,11 @@
-import { routerToServerAndClient } from './_testHelpers';
+import { routerToServerAndClient, waitMs } from './_testHelpers';
 import * as trpc from '../src';
 import { httpError } from '../src';
 
 test('is called if def first', async () => {
-  const middleware = jest.fn();
+  const middleware = jest.fn((opts) => {
+    opts.next();
+  });
   const { client, close } = routerToServerAndClient(
     trpc
       .router()
@@ -74,10 +76,11 @@ test('allows you to throw an error (e.g. auth)', async () => {
         'admin.',
         trpc
           .router<Context>()
-          .middleware(({ ctx }) => {
+          .middleware(({ ctx, next }) => {
             if (!ctx.user?.isAdmin) {
               throw httpError.unauthorized();
             }
+            return next();
           })
           .query('secretPlace', {
             resolve() {
@@ -120,9 +123,15 @@ test('allows you to throw an error (e.g. auth)', async () => {
 });
 
 test('child routers + hook call order', async () => {
-  const middlewareInParent = jest.fn();
-  const middlewareInChild = jest.fn();
-  const middlewareInGrandChild = jest.fn();
+  const middlewareInParent = jest.fn((opts) => {
+    opts.next();
+  });
+  const middlewareInChild = jest.fn((opts) => {
+    opts.next();
+  });
+  const middlewareInGrandChild = jest.fn((opts) => {
+    opts.next();
+  });
   const { client, close } = routerToServerAndClient(
     trpc
       .router()
@@ -195,10 +204,11 @@ test('equiv', () => {
       'admin.',
       trpc
         .router<Context>()
-        .middleware(({ ctx }) => {
+        .middleware(({ ctx, next }) => {
           if (!ctx.user?.isAdmin) {
             throw httpError.unauthorized();
           }
+          next();
         })
         .query('secretPlace', {
           resolve() {
@@ -217,10 +227,11 @@ test('equiv', () => {
     .merge(
       trpc
         .router<Context>()
-        .middleware(({ ctx }) => {
+        .middleware(({ ctx, next }) => {
           if (!ctx.user?.isAdmin) {
             throw httpError.unauthorized();
           }
+          next();
         })
         .query('admin.secretPlace', {
           resolve() {
@@ -228,4 +239,51 @@ test('equiv', () => {
           },
         }),
     );
+});
+
+test('call next() twice throws an error', async () => {
+  const middleware = jest.fn((opts) => {
+    opts.next();
+    opts.next();
+  });
+  const { client, close } = routerToServerAndClient(
+    trpc
+      .router()
+      .middleware(middleware)
+      .query('foo1', {
+        resolve() {
+          return 'bar1';
+        },
+      }),
+  );
+
+  await expect(client.query('foo1')).rejects.toMatchInlineSnapshot(
+    `[TRPCClientError: A middleware called next() twice]`,
+  );
+  close();
+});
+
+test('measure time middleware', async () => {
+  const WAIT_FOR_MS = 20;
+  let time = 0;
+  const { client, close } = routerToServerAndClient(
+    trpc
+      .router()
+      .middleware(async ({ next }) => {
+        const start = Date.now();
+
+        await next();
+        time = Date.now() - start;
+      })
+      .query('slowQuery', {
+        async resolve() {
+          await waitMs(WAIT_FOR_MS);
+          return 'hello';
+        },
+      }),
+  );
+
+  expect(await client.query('slowQuery')).toBe('hello');
+  expect(time >= WAIT_FOR_MS).toBeTruthy();
+  close();
 });
