@@ -242,7 +242,7 @@ test('equiv', () => {
 });
 
 test('call next() twice throws an error', async () => {
-  const middleware = jest.fn((opts) => {
+  const middleware = jest.fn(async (opts) => {
     opts.next();
     opts.next();
   });

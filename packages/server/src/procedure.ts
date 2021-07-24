@@ -103,16 +103,18 @@ export abstract class Procedure<
       let stack = 0;
 
       const callNextMiddleware = async () => {
+        const allPromises: unknown[] = [];
         try {
           const fn = this.middlewares[stack++];
           if (!fn) {
             const input = this.parseInput(rawInput);
             const output = await this.resolver({ ctx, input, type });
+            await Promise.all(allPromises); // <-- make sure no middleware throws
             resolve(output);
             return;
           }
           let nextCalled = false;
-          await fn({
+          const promise = await fn({
             ctx,
             type,
             path,
@@ -127,6 +129,7 @@ export abstract class Procedure<
               return callNextMiddleware();
             },
           });
+          allPromises.push(promise);
         } catch (err) {
           reject(err);
         }
