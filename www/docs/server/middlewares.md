@@ -30,7 +30,7 @@ trpc
       .router<Context>()
       .middleware(async ({ ctx }) => {
         if (!ctx.user?.isAdmin) {
-          throw httpError.unauthorized();
+          throw new TRPCError({ code: "UNAUTHORIZED" });
         }
       })
       .query('secretPlace', {
@@ -42,3 +42,7 @@ trpc
       }),
   )
 ```
+
+:::tip
+See [Error Handling](error-handling.md) to learn more about the `TRPCError` thrown in the above example.
+:::
