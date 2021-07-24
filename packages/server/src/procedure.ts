@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { assertNotBrowser } from './assertNotBrowser';
-import { TRPCError } from './TRPCError';
 import { MiddlewareFunction, ProcedureType } from './router';
+import { TRPCError } from './TRPCError';
 assertNotBrowser();
 
 export type ProcedureInputParserZodEsque<TInput = unknown> = {
@@ -43,6 +43,25 @@ export interface ProcedureCallOptions<TContext> {
   type: ProcedureType;
 }
 
+type ParseFn<TInput> = (value: unknown) => TInput;
+function getParseFn<TInput>(
+  inputParser: ProcedureInputParser<TInput>,
+): ParseFn<TInput> {
+  const parser = inputParser as any;
+  if (typeof parser === 'function') {
+    return parser;
+  }
+  if (typeof parser.parse === 'function') {
+    return parser.parse.bind(parser);
+  }
+
+  if (typeof parser.validateSync === 'function') {
+    return parser.validateSync.bind(parser);
+  }
+
+  throw new Error('Could not find a validator fn');
+}
+
 export abstract class Procedure<
   TContext = unknown,
   TInput = unknown,
@@ -50,30 +69,19 @@ export abstract class Procedure<
 > {
   private middlewares: Readonly<MiddlewareFunction<TContext>[]>;
   private resolver: ProcedureResolver<TContext, TInput, TOutput>;
-  private inputParser: ProcedureInputParser<TInput>;
+  private readonly inputParser: ProcedureInputParser<TInput>;
+  private parse: ParseFn<TInput>;
 
   constructor(opts: ProcedureOptions<TContext, TInput, TOutput>) {
     this.middlewares = opts.middlewares;
     this.resolver = opts.resolver;
     this.inputParser = opts.inputParser;
+    this.parse = getParseFn(this.inputParser);
   }
 
   private parseInput(rawInput: unknown): TInput {
     try {
-      const parser: any = this.inputParser;
-
-      if (typeof parser === 'function') {
-        return parser(rawInput);
-      }
-      if (typeof parser.parse === 'function') {
-        return parser.parse(rawInput);
-      }
-
-      if (typeof parser.validateSync === 'function') {
-        return parser.validateSync(rawInput);
-      }
-
-      throw new Error('Could not find a validator fn');
+      return this.parse(rawInput);
     } catch (originalError) {
       throw new TRPCError({
         code: 'BAD_REQUEST',
