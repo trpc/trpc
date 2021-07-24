@@ -10,7 +10,7 @@ You can are able to add middlewares to a whole router with the `middleware()` me
 
 
 
-## Example, from [the tests](https://github.com/trpc/trpc/tree/main/packages/server/test/middleware.test.ts):
+## Example
 
 
 In the example below any call to `admin.*` will ensure that the user is an "admin" before executing any query or mutation.
