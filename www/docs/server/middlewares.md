@@ -10,7 +10,7 @@ You can are able to add middlewares to a whole router with the `middleware()` me
 
 
 
-## Example, from [the tests](https://github.com/trpc/trpc/tree/main/packages/server/test/middleware.test.ts):
+## Example
 
 
 In the example below any call to `admin.*` will ensure that the user is an "admin" before executing any query or mutation.
@@ -30,7 +30,7 @@ trpc
       .router<Context>()
       .middleware(async ({ ctx }) => {
         if (!ctx.user?.isAdmin) {
-          throw httpError.unauthorized();
+          throw new TRPCError({ code: "UNAUTHORIZED" });
         }
       })
       .query('secretPlace', {
@@ -42,3 +42,7 @@ trpc
       }),
   )
 ```
+
+:::tip
+See [Error Handling](error-handling.md) to learn more about the `TRPCError` thrown in the above example.
+:::
