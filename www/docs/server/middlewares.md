@@ -6,7 +6,7 @@ slug: /middlewares
 ---
 
 
-You can are able to add middlewares to a whole router with the `middleware()` method. The middleware(s) will be run before any of the procedures defined after are invoked & can be async or sync.
+You can are able to add middlewares to a whole router with the `middleware()` method. The middleware(s) will be run before any of the procedures are invoked & can be async or sync.
 
 
 
@@ -28,10 +28,11 @@ trpc
     'admin.',
     trpc
       .router<Context>()
-      .middleware(async ({ ctx }) => {
+      .middleware(async ({ ctx, next }) => {
         if (!ctx.user?.isAdmin) {
           throw new TRPCError({ code: "UNAUTHORIZED" });
         }
+        next()
       })
       .query('secretPlace', {
         resolve() {

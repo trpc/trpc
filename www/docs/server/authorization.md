@@ -88,10 +88,11 @@ export const appRouter = createRouter()
     'admin.',
     createRouter()
       // this protectes all procedures defined after in this router
-      .middleware(async ({ ctx }) => {
+      .middleware(async ({ ctx, next }) => {
         if (!ctx.user?.isAdmin) {
           throw httpError.unauthorized();
         }
+        next()
       })
       .query('secret', {
         resolve: ({ ctx }) => {
