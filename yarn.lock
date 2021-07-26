@@ -11704,9 +11704,9 @@ stacktrace-parser@0.1.10:
     type-fest "^0.7.1"
 
 start-server-and-test@^1.12.0:
-  version "1.13.0"
-  resolved "https://registry.yarnpkg.com/start-server-and-test/-/start-server-and-test-1.13.0.tgz#192ed2ae16bd7568c0275a1c2461ef874922bed4"
-  integrity sha512-04A+a3Rja4X4Ha3JtpmSHY8cQMlH7HnGFUTWaMhfZuSodqek7KKd7qn65TYjFNNX9yJinM502wMUGGJi67i72w==
+  version "1.13.1"
+  resolved "https://registry.yarnpkg.com/start-server-and-test/-/start-server-and-test-1.13.1.tgz#c06eb18c3f31d610724722b7eecbdf2550b03582"
+  integrity sha512-wZjksmjG5scEHXmV/3HWzImxNzUgaNQ6W8kkqL2GbiOldM+nqiqh7niimlC9ZGNopTGj16kheWZnZtSWgdBZNQ==
   dependencies:
     bluebird "3.7.2"
     check-more-types "2.24.0"
@@ -11714,7 +11714,7 @@ start-server-and-test@^1.12.0:
     execa "5.1.1"
     lazy-ass "1.6.0"
     ps-tree "1.2.0"
-    wait-on "5.3.0"
+    wait-on "6.0.0"
 
 static-extend@^0.1.1:
   version "0.1.2"
@@ -12868,18 +12868,7 @@ w3c-xmlserializer@^2.0.0:
   dependencies:
     xml-name-validator "^3.0.0"
 
-wait-on@5.3.0, wait-on@^5.3.0:
-  version "5.3.0"
-  resolved "https://registry.npmjs.org/wait-on/-/wait-on-5.3.0.tgz#584e17d4b3fe7b46ac2b9f8e5e102c005c2776c7"
-  integrity sha512-DwrHrnTK+/0QFaB9a8Ol5Lna3k7WvUR4jzSKmz0YaPBpuN2sACyiPVKVfj6ejnjcajAcvn3wlbTyMIn9AZouOg==
-  dependencies:
-    axios "^0.21.1"
-    joi "^17.3.0"
-    lodash "^4.17.21"
-    minimist "^1.2.5"
-    rxjs "^6.6.3"
-
-wait-on@^6.0.0:
+wait-on@6.0.0, wait-on@^6.0.0:
   version "6.0.0"
   resolved "https://registry.yarnpkg.com/wait-on/-/wait-on-6.0.0.tgz#7e9bf8e3d7fe2daecbb7a570ac8ca41e9311c7e7"
   integrity sha512-tnUJr9p5r+bEYXPUdRseolmz5XqJTTj98JgOsfBn7Oz2dxfE2g3zw1jE+Mo8lopM3j3et/Mq1yW7kKX6qw7RVw==
@@ -12889,6 +12878,17 @@ wait-on@^6.0.0:
     lodash "^4.17.21"
     minimist "^1.2.5"
     rxjs "^7.1.0"
+
+wait-on@^5.3.0:
+  version "5.3.0"
+  resolved "https://registry.npmjs.org/wait-on/-/wait-on-5.3.0.tgz#584e17d4b3fe7b46ac2b9f8e5e102c005c2776c7"
+  integrity sha512-DwrHrnTK+/0QFaB9a8Ol5Lna3k7WvUR4jzSKmz0YaPBpuN2sACyiPVKVfj6ejnjcajAcvn3wlbTyMIn9AZouOg==
+  dependencies:
+    axios "^0.21.1"
+    joi "^17.3.0"
+    lodash "^4.17.21"
+    minimist "^1.2.5"
+    rxjs "^6.6.3"
 
 wait-port@^0.2.9:
   version "0.2.9"
