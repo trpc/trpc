@@ -4,6 +4,9 @@ import { withTRPC } from '@trpc/next';
 import { AppType } from 'next/dist/next-server/lib/utils';
 import { AppRouter } from 'server/routers/app';
 import superjson from 'superjson';
+import { TRPCClientError } from '@trpc/client';
+
+superjson.registerClass(TRPCClientError); // <-- this is needed for errors to propagate on SSR
 
 const MyApp: AppType = ({ Component, pageProps }) => {
   return (
@@ -46,11 +49,11 @@ export default withTRPC<AppRouter>({
        */
       links: [
         // adds pretty logs to your console in development and logs errors in production
-        loggerLink({
-          enabled: (opts) =>
-            process.env.NODE_ENV === 'development' ||
-            (opts.direction === 'down' && opts.result instanceof Error),
-        }),
+        // loggerLink({
+        //   enabled: (opts) =>
+        //     process.env.NODE_ENV === 'development' ||
+        //     (opts.direction === 'down' && opts.result instanceof Error),
+        // }),
         httpBatchLink({
           url: `${getBaseUrl()}/api/trpc`,
         }),

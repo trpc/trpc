@@ -21,6 +21,7 @@ import {
 import { Subscription } from './subscription';
 import { CombinedDataTransformer, DataTransformerOptions } from './transformer';
 import { flatten, Prefixer, ThenArg } from './types';
+import { getHTTPStatusCodeFromError } from './http/internals/getHTTPStatusCode';
 
 assertNotBrowser();
 
@@ -110,6 +111,7 @@ export type ErrorFormatter<
 
 interface DefaultErrorData {
   code: TRPC_ERROR_CODE_KEY;
+  httpStatus: number;
   path?: string;
   stack?: string;
 }
@@ -549,6 +551,7 @@ export class Router<
       code: TRPC_ERROR_CODES_BY_KEY[code],
       data: {
         code,
+        httpStatus: getHTTPStatusCodeFromError(error),
       },
     };
     if (

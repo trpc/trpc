@@ -1,5 +1,6 @@
 import { TRPCResponse, TRPC_ERROR_CODES_BY_KEY } from '../../rpc';
 import { CombinedDataTransformer } from '../../transformer';
+import { TRPCError } from '../../TRPCError';
 import { invert } from './invert';
 
 export const TRPC_ERROR_CODES_BY_NUMBER = invert(TRPC_ERROR_CODES_BY_KEY);
@@ -51,4 +52,10 @@ export function getHTTPStatusCode(
   const res = JSONRPC2_TO_HTTP_CODE[key] ?? 500;
 
   return res;
+}
+
+export function getHTTPStatusCodeFromError(error: TRPCError) {
+  const { code } = error;
+
+  return JSONRPC2_TO_HTTP_CODE[code] ?? 500;
 }

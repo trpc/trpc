@@ -1,7 +1,7 @@
 import Head from 'next/head';
 import { ReactQueryDevtools } from 'react-query/devtools';
 import { trpc } from '../utils/trpc';
-
+import Link from 'next/link';
 export default function IndexPage() {
   const postsQuery = trpc.useQuery(['post.all']);
   const addPost = trpc.useMutation('post.add');
@@ -28,6 +28,9 @@ export default function IndexPage() {
         <article key={item.id}>
           <h3>{item.title}</h3>
           <p>{item.text.substr(0)}</p>
+          <Link href={`/post/${item.id}`}>
+            <a>View more</a>
+          </Link>
         </article>
       ))}
 

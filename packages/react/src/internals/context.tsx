@@ -21,10 +21,14 @@ interface TRPCFetchInfiniteQueryOptions<TInput, TError, TOutput>
   extends FetchInfiniteQueryOptions<TInput, TError, TOutput>,
     TRPCRequestOptions {}
 
-export type TRPCContextState<TRouter extends AnyRouter> = {
+export type TRPCContextState<
+  TRouter extends AnyRouter,
+  TServerSideContext = unknown,
+> = {
   queryClient: QueryClient;
   client: TRPCClient<TRouter>;
   isPrepass: boolean;
+  ssrContext?: TServerSideContext;
 
   fetchQuery: <
     TPath extends keyof TRouter['_def']['queries'] & string,
