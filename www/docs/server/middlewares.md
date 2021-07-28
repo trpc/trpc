@@ -55,11 +55,10 @@ In the example below timings for queries are logged automatically.
 trpc
   .router<Context>()
   .middleware(async ({ path, type, next }) => {
-    const start = Date.now()
-    const result = await next()
-    console.log('request timing:', {path, type, took: Date.now() - start})
-
-    return result
+    const start = Date.now();
+    const result = await next();
+    console.log('request timing:', {path, type, took: Date.now() - start});
+    return result;
   })
   .query('foo', {
     resolve() {
