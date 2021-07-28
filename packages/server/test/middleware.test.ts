@@ -1,10 +1,11 @@
 import { routerToServerAndClient, waitMs } from './_testHelpers';
 import * as trpc from '../src';
 import { httpError } from '../src';
+import { AsyncLocalStorage } from 'async_hooks';
 
 test('is called if def first', async () => {
   const middleware = jest.fn((opts) => {
-    opts.next();
+    return opts.next();
   });
   const { client, close } = routerToServerAndClient(
     trpc
@@ -124,13 +125,13 @@ test('allows you to throw an error (e.g. auth)', async () => {
 
 test('child routers + hook call order', async () => {
   const middlewareInParent = jest.fn((opts) => {
-    opts.next();
+    return opts.next();
   });
   const middlewareInChild = jest.fn((opts) => {
-    opts.next();
+    return opts.next();
   });
   const middlewareInGrandChild = jest.fn((opts) => {
-    opts.next();
+    return opts.next();
   });
   const { client, close } = routerToServerAndClient(
     trpc
@@ -185,6 +186,63 @@ test('child routers + hook call order', async () => {
   close();
 });
 
+test('not returning next result is an error at compile-time', async () => {
+  const { client, close } = routerToServerAndClient(
+    trpc
+      .router()
+      // @ts-expect-error Compiler makes sure we actually return the `next()` result.
+      .middleware(async ({ next }) => {
+        await next();
+      })
+      .query('helloQuery', {
+        async resolve() {
+          return 'hello';
+        },
+      }),
+  );
+
+  await expect(client.query('helloQuery')).rejects.toMatchInlineSnapshot(
+    `[TRPCClientError: Cannot read property 'output' of undefined]`,
+  );
+
+  close();
+});
+
+test('async hooks', async () => {
+  const storage = new AsyncLocalStorage<{ requestId: number }>();
+  let requestCount = 0;
+  const log = jest.fn();
+  const { client, close } = routerToServerAndClient(
+    trpc
+      .router()
+      .middleware((opts) => {
+        return new Promise((resolve, reject) => {
+          storage.run({ requestId: ++requestCount }, async () => {
+            opts.next().then(resolve, reject);
+          });
+        });
+      })
+      .query('foo', {
+        input: String,
+        resolve({ input }) {
+          // We can now call `.getStore()` arbitrarily deep in the call stack, without having to explicitly pass context
+          const ambientRequestInfo = storage.getStore();
+          log({ input, requestId: ambientRequestInfo?.requestId });
+          return 'bar ' + input;
+        },
+      }),
+  );
+
+  expect(await client.query('foo', 'one')).toBe('bar one');
+  expect(await client.query('foo', 'two')).toBe('bar two');
+
+  expect(log).toHaveBeenCalledTimes(2);
+  expect(log).toHaveBeenCalledWith({ input: 'one', requestId: 1 });
+  expect(log).toHaveBeenCalledWith({ input: 'two', requestId: 2 });
+
+  close();
+});
+
 test('equiv', () => {
   type Context = {
     user?: {
@@ -208,7 +266,7 @@ test('equiv', () => {
           if (!ctx.user?.isAdmin) {
             throw httpError.unauthorized();
           }
-          next();
+          return next();
         })
         .query('secretPlace', {
           resolve() {
@@ -231,7 +289,7 @@ test('equiv', () => {
           if (!ctx.user?.isAdmin) {
             throw httpError.unauthorized();
           }
-          next();
+          return next();
         })
         .query('admin.secretPlace', {
           resolve() {
@@ -239,28 +297,6 @@ test('equiv', () => {
           },
         }),
     );
-});
-
-test('call next() twice throws an error', async () => {
-  const middleware = jest.fn(async (opts) => {
-    opts.next();
-    opts.next();
-  });
-  const { client, close } = routerToServerAndClient(
-    trpc
-      .router()
-      .middleware(middleware)
-      .query('foo1', {
-        resolve() {
-          return 'bar1';
-        },
-      }),
-  );
-
-  await expect(client.query('foo1')).rejects.toMatchInlineSnapshot(
-    `[TRPCClientError: A middleware called next() twice]`,
-  );
-  close();
 });
 
 test('measure time middleware', async () => {
@@ -272,8 +308,10 @@ test('measure time middleware', async () => {
       .middleware(async ({ next }) => {
         const start = Date.now();
 
-        await next();
+        const result = await next();
         time = Date.now() - start;
+
+        return result;
       })
       .query('slowQuery', {
         async resolve() {

@@ -20,6 +20,7 @@
   "prettier": {
     "printWidth": 80,
     "trailingComma": "all",
+    "endOfLine": "auto",
     "singleQuote": true
   },
   "resolutions": {

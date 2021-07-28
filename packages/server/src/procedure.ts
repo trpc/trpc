@@ -1,6 +1,11 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { assertNotBrowser } from './assertNotBrowser';
-import { MiddlewareFunction, ProcedureType } from './router';
+import {
+  MiddlewareFunction,
+  middlewareMarker,
+  MiddlewareNextFn,
+  ProcedureType,
+} from './router';
 import { TRPCError } from './TRPCError';
 assertNotBrowser();
 
@@ -99,43 +104,29 @@ export abstract class Procedure<
     type,
     path,
   }: ProcedureCallOptions<TContext>): Promise<TOutput> {
-    return await new Promise<TOutput>((resolve, reject) => {
-      let stack = 0;
+    const middlewareFns: MiddlewareFunction<TContext>[] = [
+      ...this.middlewares,
+      // wrap the actual resolver and treat as the last "middleware"
+      async () => ({
+        marker: middlewareMarker,
+        output: await this.resolver(opts),
+      }),
+    ];
 
-      const callNextMiddleware = async () => {
-        const allPromises: unknown[] = [];
-        try {
-          const fn = this.middlewares[stack++];
-          if (!fn) {
-            const input = this.parseInput(rawInput);
-            const output = await this.resolver({ ctx, input, type });
-            await Promise.all(allPromises); // <-- make sure no middleware throws
-            resolve(output);
-            return;
-          }
-          let nextCalled = false;
-          const promise = await fn({
-            ctx,
-            type,
-            path,
-            next: () => {
-              if (nextCalled) {
-                throw new TRPCError({
-                  code: 'INTERNAL_SERVER_ERROR',
-                  message: 'A middleware called next() twice',
-                });
-              }
-              nextCalled = true;
-              return callNextMiddleware();
-            },
-          });
-          allPromises.push(promise);
-        } catch (err) {
-          reject(err);
-        }
+    const nextFns: MiddlewareNextFn[] = middlewareFns.map((fn, i) => {
+      return async () => {
+        return fn({
+          ...opts,
+          next: nextFns[i + 1],
+        });
       };
-      callNextMiddleware();
     });
+
+    const opts = { ctx, type, path, input: this.parseInput(rawInput) };
+    // there's always at least one "next" since we wrap this.resolver in a middleware
+    const result = await nextFns[0]();
+
+    return result.output as TOutput;
   }
 
   /**

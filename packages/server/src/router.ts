@@ -150,12 +150,29 @@ const defaultTransformer: CombinedDataTransformer = {
   input: { serialize: (obj) => obj, deserialize: (obj) => obj },
   output: { serialize: (obj) => obj, deserialize: (obj) => obj },
 };
-export type MiddlewareFunction<TContext> = (opts: {
+
+export const middlewareMarker = Symbol('middlewareMarker');
+export interface MiddlewareResult {
+  /**
+   * All middlewares should pass through their `next()`'s output.
+   * Requiring this marker makes sure that can't be forgotten at compile-time.
+   */
+  readonly marker: typeof middlewareMarker;
+  output: {};
+}
+export interface MiddlewareFunctionOpts<TContext> {
   ctx: TContext;
   type: ProcedureType;
   path: string;
-  next: () => Promise<void>;
-}) => Promise<void> | void;
+  input: unknown;
+}
+export type MiddlewareNextFn = () => Promise<MiddlewareResult>;
+
+export type MiddlewareFunction<TContext> = (
+  opts: MiddlewareFunctionOpts<TContext> & {
+    next: MiddlewareNextFn;
+  },
+) => Promise<MiddlewareResult>;
 
 export class Router<
   TContext,

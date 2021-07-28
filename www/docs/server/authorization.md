@@ -92,7 +92,7 @@ export const appRouter = createRouter()
         if (!ctx.user?.isAdmin) {
           throw httpError.unauthorized();
         }
-        next()
+        return next()
       })
       .query('secret', {
         resolve: ({ ctx }) => {
