@@ -5,7 +5,7 @@ import { getErrorFromUnknown } from '../internals/errors';
 import { TRPCError } from '../TRPCError';
 import { callProcedure } from '../internals/callProcedure';
 import { AnyRouter, inferRouterContext, ProcedureType } from '../router';
-import { TRPCErrorResponse, TRPCResponse } from '../rpc';
+import { TRPCErrorResponse, TRPCResponse, TRPCResultResponse } from '../rpc';
 import {
   BaseRequest,
   BaseResponse,
@@ -14,6 +14,8 @@ import {
 import { getHTTPStatusCode } from './internals/getHTTPStatusCode';
 import { getPostBody } from './internals/getPostBody';
 import { getQueryInput } from './internals/getQueryInput';
+import { Dict } from '../types';
+import { JSONValue } from './internals/JSONValue';
 
 assertNotBrowser();
 
@@ -69,6 +71,49 @@ async function getRequestParams({
   }
 
   return { input: body };
+}
+
+export async function httpRequestHandler<TRouter extends AnyRouter>(opts: {
+  router: TRouter;
+  ctx: inferRouterContext<TRouter>;
+  paths: string[];
+  inputs: unknown[];
+  type: ProcedureType;
+}): Promise<TRPCResponse<TRouter>[]> {
+  const { ctx, router, type, inputs } = opts;
+  const results = await Promise.all(
+    opts.paths.map(async (path, index) => {
+      const id = null;
+      const input = inputs[index];
+      try {
+        const output = await callProcedure({
+          ctx,
+          router,
+          path,
+          input: inputs[index],
+          type,
+        });
+        const json: TRPCResultResponse<TRouter> = {
+          id,
+          result: {
+            type: 'data',
+            data: router._def.transformer.output.serialize(output),
+          },
+        };
+        return json;
+      } catch (_err) {
+        const error = getErrorFromUnknown(_err);
+
+        const json: TRPCErrorResponse = {
+          id,
+          error: router._def.transformer.output.serialize(
+            router.getErrorShape({ error, type, path, input, ctx }),
+          ),
+        };
+        return json;
+      }
+    }),
+  );
 }
 
 export async function requestHandler<
