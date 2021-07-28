@@ -5,7 +5,11 @@ interface ErrorComponentProps {
   statusCode?: number;
 }
 
-function ErrorComponent({ statusCode }: ErrorComponentProps): JSX.Element {
+function ErrorComponent({
+  statusCode,
+  ...other
+}: ErrorComponentProps): JSX.Element {
+  console.log('other', other);
   return (
     <p>
       {statusCode
@@ -16,7 +20,7 @@ function ErrorComponent({ statusCode }: ErrorComponentProps): JSX.Element {
 }
 
 ErrorComponent.getInitialProps = ({ res, err }: NextPageContext) => {
-  console.log('hello me');
+  console.log('hello me', res);
   const statusCode = res ? res.statusCode : err ? err.statusCode : 404;
   return { statusCode };
 };
