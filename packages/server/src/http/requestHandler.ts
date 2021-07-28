@@ -136,14 +136,10 @@ export async function requestHandler<
       }
 
       // TODO - next major, delete `Array.isArray()`
-      if (
-        !Array.isArray(input) &&
-        (typeof input !== 'object' || input == null)
-      ) {
+      if (typeof input !== 'object' || input == null || Array.isArray(input)) {
         throw new TRPCError({
           code: 'BAD_REQUEST',
-          message:
-            '"input" needs to be an array or object when doing a batch call',
+          message: '"input" needs to be an object when doing a batch call',
         });
       }
       return input as any;

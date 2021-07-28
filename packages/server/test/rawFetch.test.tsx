@@ -48,15 +48,15 @@ test('call mutation with `input`-prop', async () => {
 
   expect(json).toHaveProperty('result');
   expect(json.result).toMatchInlineSnapshot(`
-Object {
-  "data": Object {
-    "input": Object {
-      "name": "alexdotjs",
-    },
-  },
-  "type": "data",
-}
-`);
+    Object {
+      "data": Object {
+        "input": Object {
+          "name": "alexdotjs",
+        },
+      },
+      "type": "data",
+    }
+  `);
 
   close();
 });
@@ -65,41 +65,15 @@ test('batching with raw batch', async () => {
   const { close, httpUrl } = factory();
 
   {
-    /**
-     * @deprecated TODO delete in next major
-     **/
     const res = await fetch(
       `${httpUrl}/myQuery?batch=1&input=${JSON.stringify([])}`,
     );
     const json = await res.json();
 
-    expect(json[0]).toHaveProperty('result');
-    expect(json[0].result).toMatchInlineSnapshot(`
-Object {
-  "data": "default",
-  "type": "data",
-}
-`);
-  }
-
-  {
-    /**
-     * @deprecated TODO - remove in next major
-     **/
-    const res = await fetch(
-      `${httpUrl}/myQuery?batch=1&input=${JSON.stringify([
-        { name: 'alexdotjs' },
-      ])}`,
+    expect(json.error.data.code).toMatchInlineSnapshot(`"BAD_REQUEST"`);
+    expect(json.error.message).toMatchInlineSnapshot(
+      `"\\"input\\" needs to be an object when doing a batch call"`,
     );
-    const json = await res.json();
-
-    expect(json[0]).toHaveProperty('result');
-    expect(json[0].result).toMatchInlineSnapshot(`
-Object {
-  "data": "alexdotjs",
-  "type": "data",
-}
-`);
   }
 
   {
@@ -112,11 +86,11 @@ Object {
 
     expect(json[0]).toHaveProperty('result');
     expect(json[0].result).toMatchInlineSnapshot(`
-Object {
-  "data": "alexdotjs",
-  "type": "data",
-}
-`);
+      Object {
+        "data": "alexdotjs",
+        "type": "data",
+      }
+    `);
   }
 
   close();
