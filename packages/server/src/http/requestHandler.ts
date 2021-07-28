@@ -55,18 +55,6 @@ async function getRequestParams({
   }
 
   const body = await getPostBody({ req, maxBodySize });
-  /**
-   * @deprecated TODO delete me for next major
-   * */
-  if (
-    body &&
-    typeof body === 'object' &&
-    'input' in body &&
-    Object.keys(body).length === 1
-  ) {
-    // legacy format
-    return { input: body.input };
-  }
 
   return { input: body };
 }
@@ -135,15 +123,10 @@ export async function requestHandler<
         return [input];
       }
 
-      // TODO - next major, delete `Array.isArray()`
-      if (
-        !Array.isArray(input) &&
-        (typeof input !== 'object' || input == null)
-      ) {
+      if (input == null || typeof input !== 'object' || Array.isArray(input)) {
         throw new TRPCError({
           code: 'BAD_REQUEST',
-          message:
-            '"input" needs to be an array or object when doing a batch call',
+          message: '"input" needs to be an object when doing a batch call',
         });
       }
       return input as any;
