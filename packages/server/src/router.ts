@@ -152,7 +152,7 @@ const defaultTransformer: CombinedDataTransformer = {
 };
 
 export const middlewareMarker = Symbol('middlewareMarker');
-export interface MiddlewareResult {
+interface MiddlewareResult {
   /**
    * All middlewares should pass through their `next()`'s output.
    * Requiring this marker makes sure that can't be forgotten at compile-time.
@@ -160,19 +160,14 @@ export interface MiddlewareResult {
   readonly marker: typeof middlewareMarker;
   output: {};
 }
-export interface MiddlewareFunctionOpts<TContext> {
+
+export type MiddlewareFunction<TContext> = (opts: {
   ctx: TContext;
   type: ProcedureType;
   path: string;
   input: unknown;
-}
-export type MiddlewareNextFn = () => Promise<MiddlewareResult>;
-
-export type MiddlewareFunction<TContext> = (
-  opts: MiddlewareFunctionOpts<TContext> & {
-    next: MiddlewareNextFn;
-  },
-) => Promise<MiddlewareResult>;
+  next: () => Promise<MiddlewareResult>;
+}) => Promise<MiddlewareResult>;
 
 export class Router<
   TContext,

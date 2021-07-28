@@ -1,11 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { assertNotBrowser } from './assertNotBrowser';
-import {
-  MiddlewareFunction,
-  middlewareMarker,
-  MiddlewareNextFn,
-  ProcedureType,
-} from './router';
+import { MiddlewareFunction, middlewareMarker, ProcedureType } from './router';
 import { TRPCError } from './TRPCError';
 assertNotBrowser();
 
@@ -113,13 +108,8 @@ export abstract class Procedure<
       }),
     ];
 
-    const nextFns: MiddlewareNextFn[] = middlewareFns.map((fn, i) => {
-      return async () => {
-        return fn({
-          ...opts,
-          next: nextFns[i + 1],
-        });
-      };
+    const nextFns = middlewareFns.map((fn, i) => {
+      return async () => fn({ ...opts, next: nextFns[i + 1] });
     });
 
     const opts = { ctx, type, path, input: this.parseInput(rawInput) };
