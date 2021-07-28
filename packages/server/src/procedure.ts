@@ -100,6 +100,8 @@ export abstract class Procedure<
     type,
     path,
   }: ProcedureCallOptions<TContext>): Promise<TOutput> {
+    const opts = { ctx, type, path, input: this.parseInput(rawInput) };
+
     const middlewareFns: MiddlewareFunction<TContext>[] = [
       ...this.middlewares,
       // wrap the actual resolver and treat as the last "middleware"
@@ -113,7 +115,6 @@ export abstract class Procedure<
       return async () => fn({ ...opts, next: nextFns[i + 1] });
     });
 
-    const opts = { ctx, type, path, input: this.parseInput(rawInput) };
     // there's always at least one "next" since we wrap this.resolver in a middleware
     const result = await nextFns[0]();
 
