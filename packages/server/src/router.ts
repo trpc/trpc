@@ -21,6 +21,7 @@ import {
 import { Subscription } from './subscription';
 import { CombinedDataTransformer, DataTransformerOptions } from './transformer';
 import { flatten, Prefixer, ThenArg } from './types';
+import { MiddlewareFunction } from './internals/middlewares';
 
 assertNotBrowser();
 
@@ -150,24 +151,6 @@ const defaultTransformer: CombinedDataTransformer = {
   input: { serialize: (obj) => obj, deserialize: (obj) => obj },
   output: { serialize: (obj) => obj, deserialize: (obj) => obj },
 };
-
-export const middlewareMarker = Symbol('middlewareMarker');
-interface MiddlewareResult {
-  /**
-   * All middlewares should pass through their `next()`'s output.
-   * Requiring this marker makes sure that can't be forgotten at compile-time.
-   */
-  readonly marker: typeof middlewareMarker;
-  output: {};
-}
-
-export type MiddlewareFunction<TContext> = (opts: {
-  ctx: TContext;
-  type: ProcedureType;
-  path: string;
-  input: unknown;
-  next: () => Promise<MiddlewareResult>;
-}) => Promise<MiddlewareResult>;
 
 export class Router<
   TContext,

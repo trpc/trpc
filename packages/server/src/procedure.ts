@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { assertNotBrowser } from './assertNotBrowser';
-import { MiddlewareFunction, middlewareMarker, ProcedureType } from './router';
+import { ProcedureType } from './router';
+import { MiddlewareFunction, middlewareMarker } from './internals/middlewares';
 import { TRPCError } from './TRPCError';
 assertNotBrowser();
 
