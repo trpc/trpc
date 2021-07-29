@@ -72,12 +72,25 @@ export abstract class Procedure<
   private resolver: ProcedureResolver<TContext, TInput, TOutput>;
   private readonly inputParser: ProcedureInputParser<TInput>;
   private parse: ParseFn<TInput>;
+  private middlewaresWithResolver: MiddlewareFunction<TContext>[];
 
   constructor(opts: ProcedureOptions<TContext, TInput, TOutput>) {
     this.middlewares = opts.middlewares;
     this.resolver = opts.resolver;
     this.inputParser = opts.inputParser;
     this.parse = getParseFn(this.inputParser);
+
+    this.middlewaresWithResolver = [
+      ...this.middlewares,
+      // wrap the actual resolver and treat as the last "middleware"
+      async ({ rawInput, ...opts }) => ({
+        marker: middlewareMarker,
+        output: await this.resolver({
+          ...opts,
+          input: this.parseInput(rawInput),
+        }),
+      }),
+    ];
   }
 
   private parseInput(rawInput: unknown): TInput {
@@ -95,20 +108,8 @@ export abstract class Procedure<
    * Trigger middlewares in order, parse raw input & call resolver
    */
   public async call(opts: ProcedureCallOptions<TContext>): Promise<TOutput> {
-    const middlewareFns: MiddlewareFunction<TContext>[] = [
-      ...this.middlewares,
-      // wrap the actual resolver and treat as the last "middleware"
-      async ({ rawInput, ...opts }) => ({
-        marker: middlewareMarker,
-        output: await this.resolver({
-          ...opts,
-          input: this.parseInput(rawInput),
-        }),
-      }),
-    ];
-
-    const nextFns = middlewareFns.map((fn, i) => {
-      return async () => fn({ ...opts, next: nextFns[i + 1] });
+    const nextFns = this.middlewaresWithResolver.map((fn, index) => {
+      return () => fn({ ...opts, next: nextFns[index + 1] });
     });
 
     // there's always at least one "next" since we wrap this.resolver in a middleware
