@@ -90,7 +90,7 @@ export const appRouter = createRouter()
       // this protectes all procedures defined after in this router
       .middleware(async ({ ctx }) => {
         if (!ctx.user?.isAdmin) {
-          throw httpError.unauthorized();
+          throw new TRPCError({code: 'UNAUTHORIZED'});
         }
       })
       .query('secret', {

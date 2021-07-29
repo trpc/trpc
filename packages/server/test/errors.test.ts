@@ -108,7 +108,7 @@ test('input error', async () => {
   close();
 });
 
-test('httpError.unauthorized()', async () => {
+test('unauthorized()', async () => {
   const onError = jest.fn();
   const { client, close } = routerToServerAndClient(
     trpc.router().query('err', {
