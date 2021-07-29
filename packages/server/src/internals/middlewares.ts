@@ -14,6 +14,9 @@ export type MiddlewareFunction<TContext> = (opts: {
   ctx: TContext;
   type: ProcedureType;
   path: string;
-  input: unknown;
+  /**
+   * The raw input sent. Only intended for internal use.
+   */
+  rawInput: unknown;
   next: () => Promise<MiddlewareResult>;
 }) => Promise<MiddlewareResult>;

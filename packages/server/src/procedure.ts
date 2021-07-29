@@ -39,7 +39,7 @@ interface ProcedureOptions<TContext, TInput, TOutput> {
 
 export interface ProcedureCallOptions<TContext> {
   ctx: TContext;
-  input: unknown;
+  rawInput: unknown;
   path: string;
   type: ProcedureType;
 }
@@ -94,20 +94,16 @@ export abstract class Procedure<
   /**
    * Trigger middlewares in order, parse raw input & call resolver
    */
-  public async call({
-    ctx,
-    input: rawInput,
-    type,
-    path,
-  }: ProcedureCallOptions<TContext>): Promise<TOutput> {
-    const opts = { ctx, type, path, input: this.parseInput(rawInput) };
-
+  public async call(opts: ProcedureCallOptions<TContext>): Promise<TOutput> {
     const middlewareFns: MiddlewareFunction<TContext>[] = [
       ...this.middlewares,
       // wrap the actual resolver and treat as the last "middleware"
-      async () => ({
+      async ({ rawInput, ...opts }) => ({
         marker: middlewareMarker,
-        output: await this.resolver(opts),
+        output: await this.resolver({
+          ...opts,
+          input: this.parseInput(rawInput),
+        }),
       }),
     ];
 
