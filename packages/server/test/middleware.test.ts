@@ -202,7 +202,7 @@ test('not returning next result is an error at compile-time', async () => {
   );
 
   await expect(client.query('helloQuery')).rejects.toMatchInlineSnapshot(
-    `[TRPCClientError: No result from middlewares - did you forget to \`return next()\`?]`,
+    `[TRPCClientError: Cannot read property 'output' of undefined]`,
   );
 
   close();

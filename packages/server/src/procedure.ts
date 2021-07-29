@@ -3,7 +3,6 @@ import { assertNotBrowser } from './assertNotBrowser';
 import { ProcedureType } from './router';
 import { MiddlewareFunction, middlewareMarker } from './internals/middlewares';
 import { TRPCError } from './TRPCError';
-import { getErrorFromUnknown } from './internals/errors';
 assertNotBrowser();
 
 export type ProcedureInputParserZodEsque<TInput = unknown> = {
@@ -101,29 +100,15 @@ export abstract class Procedure<
     type,
     path,
   }: ProcedureCallOptions<TContext>): Promise<TOutput> {
-    const opts = { ctx, type, path };
+    const opts = { ctx, type, path, input: this.parseInput(rawInput) };
 
     const middlewareFns: MiddlewareFunction<TContext>[] = [
       ...this.middlewares,
       // wrap the actual resolver and treat as the last "middleware"
-      async (opts) => {
-        try {
-          const input = this.parseInput(rawInput);
-          const data = await this.resolver({ ...opts, input });
-          return {
-            marker: middlewareMarker,
-            ok: true,
-            data,
-          };
-        } catch (_error) {
-          const error = getErrorFromUnknown(_error);
-          return {
-            marker: middlewareMarker,
-            ok: false,
-            error,
-          };
-        }
-      },
+      async () => ({
+        marker: middlewareMarker,
+        output: await this.resolver(opts),
+      }),
     ];
 
     const nextFns = middlewareFns.map((fn, i) => {
@@ -132,18 +117,8 @@ export abstract class Procedure<
 
     // there's always at least one "next" since we wrap this.resolver in a middleware
     const result = await nextFns[0]();
-    if (!result) {
-      throw new TRPCError({
-        code: 'INTERNAL_SERVER_ERROR',
-        message:
-          'No result from middlewares - did you forget to `return next()`?',
-      });
-    }
-    if (result.ok) {
-      return result.data as TOutput;
-    }
-    // re-throw error
-    throw result.error;
+
+    return result.output as TOutput;
   }
 
   /**
