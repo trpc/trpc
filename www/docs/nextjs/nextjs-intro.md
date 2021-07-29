@@ -18,7 +18,7 @@ tRPC includes dedicated tools to make the Next.js developer experience as seamle
 
 Recommended but not enforced file structure. This is what you get when starting from [the examples](../main/example-apps.md).
 
-```txt
+```graphql
 .
 ├── prisma # <-- if prisma is added
 │   └── [..]
