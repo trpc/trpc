@@ -9,15 +9,16 @@ Do you love or hate tRPC? Feel free to ping [@alexdotjs on Twitter](https://twit
 
 ## Sponsors
 
-A special shoutout to these amazing individuals who are sponsoring tRPC.
 
 <table>
-  <tr>
-    <td align="center"><a href="https://anthonyshort.me"><img src="https://avatars.githubusercontent.com/u/36125?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Anthony Short</b></sub></a></td>
-    <td align="center"><a href="https://hampuskraft.com"><img src="https://avatars.githubusercontent.com/u/24176136?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Hampus Kraft</b></sub></a></td>
-    <td align="center"><a href="http://www.appdome.com"><img src="https://avatars.githubusercontent.com/u/2037064?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Daniel Yogel</b></sub></a></td>
-    <td align="center"><a href="https://samholmes.net"><img src="https://avatars.githubusercontent.com/u/8385528?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Sam Holmes</b></sub></a></td>
-  </tr>
+  <tbody>
+    <tr>
+      <td align="center"><a href="https://anthonyshort.me"><img src="https://avatars.githubusercontent.com/u/36125?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Anthony Short</b></sub></a></td>
+      <td align="center"><a href="https://hampuskraft.com"><img src="https://avatars.githubusercontent.com/u/24176136?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Hampus Kraft</b></sub></a></td>
+      <td align="center"><a href="http://www.appdome.com"><img src="https://avatars.githubusercontent.com/u/2037064?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Daniel Yogel</b></sub></a></td>
+      <td align="center"><a href="https://samholmes.net"><img src="https://avatars.githubusercontent.com/u/8385528?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Sam Holmes</b></sub></a></td>
+    </tr>
+  </tbody>
 </table>
 
 
