@@ -73,6 +73,11 @@ function Home() {
           src="https://platform.twitter.com/widgets.js"
           charSet="utf-8"
         />
+        <script
+          async
+          src="https://platform.twitter.com/widgets.js"
+          charset="utf-8"
+        />
       </Head>
       <header className={clsx('hero hero--primary', styles.heroBanner)}>
         <div className="container">
