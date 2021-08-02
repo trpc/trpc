@@ -1,9 +1,11 @@
 ---
 id: love
 title: Testimonials / Love
-sidebar_label: Love
+sidebar_label: Testimonials
 slug: /love
 ---
+
+Do you love or hate tRPC? Feel free to ping [@alexdotjs on Twitter](https://twitter.com/alexdotjs)
 
 ## From Twitter
 
@@ -19,7 +21,7 @@ slug: /love
 <blockquote className="twitter-tweet"><p lang="en" dir="ltr">Hah, we just did our first endpoint, returned some mock data from a resolver and got instant autocomplete in the client. Everyone&#39;s heads went 🤯🥳</p>&mdash; Marcus Rådell 🦀 (@marcusradell) <a href="https://twitter.com/marcusradell/status/1402991694446952458?ref_src=twsrc%5Etfw">June 10, 2021</a></blockquote> 
 
 
----
+
 
 ## From GitHub
 
@@ -33,9 +35,25 @@ dangreaves <a href="https://github.com/trpc/trpc/discussions/455#discussion-3392
 <blockquote className="github-comment"><p lang="en" dir="ltr">First of all I want to say thank you very much for making this library! I was already looking for a library like this for quite some time. <em>[...]</em></p>&mdash; simonedelmann <a href="https://github.com/trpc/trpc/issues/378#issue-893740950">May 17, 2021</a></blockquote>
 
 
-
-
 <blockquote className="github-comment"><p lang="en" dir="ltr">Hi there, thanks for this library! I'm checking it out and appreciate how it feels like a much more lightweight approach to my typical Prisma-Nexus-Apollo-GQL Codegen stack. <em>[...]</em></p>&mdash; lostfictions <a href="https://github.com/trpc/trpc/pull/712#issue-696293837">June 24, 2021</a></blockquote>
 
 
 
+<blockquote className="github-comment"><p lang="en" dir="ltr">Thank you for the quick fix and the amazing project 💯</p>&mdash; lostfictions <a href="https://github.com/trpc/trpc/issues/331#issuecomment-831263018">May 3, 2021</a></blockquote>
+
+
+
+
+## Sponsors
+
+A special shoutout to these amazing individuals who are sponsoring tRPC.
+
+
+<table>
+  <tr>
+    <td align="center"><a href="https://anthonyshort.me"><img src="https://avatars.githubusercontent.com/u/36125?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Anthony Short</b></sub></a></td>
+    <td align="center"><a href="https://hampuskraft.com"><img src="https://avatars.githubusercontent.com/u/24176136?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Hampus Kraft</b></sub></a></td>
+    <td align="center"><a href="http://www.appdome.com"><img src="https://avatars.githubusercontent.com/u/2037064?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Daniel Yogel</b></sub></a></td>
+    <td align="center"><a href="https://samholmes.net"><img src="https://avatars.githubusercontent.com/u/8385528?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Sam Holmes</b></sub></a></td>
+  </tr>
+</table>
