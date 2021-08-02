@@ -62,6 +62,12 @@ function Feature({ imageUrl, title, description }) {
 function Home() {
   const context = useDocusaurusContext();
   const { siteConfig = {} } = context;
+
+  useEffect(() => {
+    const script = document.createElement('script');
+    script.src = 'https://platform.twitter.com/widgets.js';
+    document.getElementsByClassName('twitter-tweet')[0].appendChild(script);
+  }, []);
   return (
     <Layout
       title={`${siteConfig.title} - End-to-end typesafe APIs made easy`}
@@ -72,11 +78,6 @@ function Home() {
           async
           src="https://platform.twitter.com/widgets.js"
           charSet="utf-8"
-        />
-        <script
-          async
-          src="https://platform.twitter.com/widgets.js"
-          charset="utf-8"
         />
       </Head>
       <header className={clsx('hero hero--primary', styles.heroBanner)}>
