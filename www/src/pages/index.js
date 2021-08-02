@@ -63,11 +63,6 @@ function Home() {
   const context = useDocusaurusContext();
   const { siteConfig = {} } = context;
 
-  useEffect(() => {
-    const script = document.createElement('script');
-    script.src = 'https://platform.twitter.com/widgets.js';
-    document.getElementsByClassName('twitter-tweet')[0].appendChild(script);
-  }, []);
   return (
     <Layout
       title={`${siteConfig.title} - End-to-end typesafe APIs made easy`}
