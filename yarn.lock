@@ -12016,9 +12016,9 @@ stylis@3.5.4:
   integrity sha512-8/3pSmthWM7lsPBKv7NXkzn2Uc9W7NotcwGNpJaa3k7WMM1XDCA4MgT5k/8BIexd5ydZdboXtU90XH9Ec4Bv/Q==
 
 superjson@^1.7.4:
-  version "1.7.4"
-  resolved "https://registry.npmjs.org/superjson/-/superjson-1.7.4.tgz#76ba9091e74c93ce6f61914b58854ee0b1ba37b9"
-  integrity sha512-A6DYTe04+x4L9NPywHeGZNy6/gLe8qqKCwhEfTH9M4eXpTjiTsF83JZ3j4hwXx1ogRb4779nWxsDlJGIECOJkw==
+  version "1.7.5"
+  resolved "https://registry.yarnpkg.com/superjson/-/superjson-1.7.5.tgz#596d080fd3c010f6d991c53a292c03704f160649"
+  integrity sha512-AHuFroOcMTK6LdG/irwXIHwH6Gof5nh42iywnhhf7hMZ6UJqFDRtJ82ViJg14UX3AG8vWRf4Dh3oPIJcqu16Nw==
   dependencies:
     debug "^4.3.1"
     lodash.clonedeep "^4.5.0"
