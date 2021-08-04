@@ -1,7 +1,8 @@
-import { routerToServerAndClient, waitMs } from './_testHelpers';
+import { AsyncLocalStorage } from 'async_hooks';
 import * as trpc from '../src';
 import { httpError } from '../src';
-import { AsyncLocalStorage } from 'async_hooks';
+import { MiddlewareResult } from '../src/internals/middlewares';
+import { routerToServerAndClient, waitMs } from './_testHelpers';
 
 test('is called if def first', async () => {
   const middleware = jest.fn((opts) => {
@@ -202,7 +203,7 @@ test('not returning next result is an error at compile-time', async () => {
   );
 
   await expect(client.query('helloQuery')).rejects.toMatchInlineSnapshot(
-    `[TRPCClientError: Cannot read property 'output' of undefined]`,
+    `[TRPCClientError: No result from middlewares - did you forget to \`return next()\`?]`,
   );
 
   close();
@@ -324,4 +325,48 @@ test('measure time middleware', async () => {
   expect(await client.query('slowQuery')).toBe('hello');
   expect(time >= WAIT_FOR_MS).toBeTruthy();
   close();
+});
+
+test('middleware throwing should return a union', async () => {
+  class CustomError extends Error {
+    constructor(msg: string) {
+      super(msg);
+      Object.setPrototypeOf(this, CustomError.prototype);
+    }
+  }
+  const fn = jest.fn((res: MiddlewareResult) => {
+    return res;
+  });
+  const { client, close } = routerToServerAndClient(
+    trpc
+      .router()
+      .middleware(async ({ next }) => {
+        const result = await next();
+        fn(result);
+        return result;
+      })
+      .middleware(() => {
+        throw new CustomError('error');
+      })
+      .query('test', {
+        resolve() {
+          return 'test';
+        },
+      }),
+  );
+
+  try {
+    await client.query('test');
+  } catch {}
+  expect(fn).toHaveBeenCalledTimes(1);
+  const res = fn.mock.calls[0][0];
+  if (res.ok) {
+    throw new Error('wrong state');
+  }
+  delete res.error.stack;
+  expect(res.error).toMatchInlineSnapshot(`[TRPCError: error]`);
+  const originalError = res.error.originalError as CustomError;
+  expect(originalError).toBeInstanceOf(CustomError);
+
+  await close();
 });

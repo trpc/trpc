@@ -3,6 +3,7 @@ import { assertNotBrowser } from './assertNotBrowser';
 import { ProcedureType } from './router';
 import { MiddlewareFunction, middlewareMarker } from './internals/middlewares';
 import { TRPCError } from './TRPCError';
+import { getErrorFromUnknown } from './internals/errors';
 assertNotBrowser();
 
 export type ProcedureInputParserZodEsque<TInput = unknown> = {
@@ -63,6 +64,22 @@ function getParseFn<TInput>(
   throw new Error('Could not find a validator fn');
 }
 
+type AsyncFn<T> = () => Promise<T> | T;
+async function wrapCallSafe<T>(fn: AsyncFn<T>) {
+  try {
+    const data = await fn();
+    return {
+      ok: true as const,
+      data,
+    };
+  } catch (error: unknown) {
+    return {
+      ok: false as const,
+      error,
+    };
+  }
+}
+
 export abstract class Procedure<
   TContext = unknown,
   TInput = unknown,
@@ -97,22 +114,46 @@ export abstract class Procedure<
   public async call(opts: ProcedureCallOptions<TContext>): Promise<TOutput> {
     const middlewaresWithResolver = this.middlewares.concat([
       // wrap the actual resolver and treat as the last "middleware"
-      async () => ({
-        marker: middlewareMarker,
-        output: await this.resolver({
-          ...opts,
-          input: this.parseInput(opts.rawInput),
-        }),
-      }),
+      async () => {
+        const input = this.parseInput(opts.rawInput);
+        const data = await this.resolver({ ...opts, input });
+        return {
+          marker: middlewareMarker,
+          ok: true,
+          data,
+        };
+      },
     ]);
     const nextFns = middlewaresWithResolver.map((fn, index) => {
-      return () => fn({ ...opts, next: nextFns[index + 1] });
+      return async () => {
+        const res = await wrapCallSafe(() =>
+          fn({ ...opts, next: nextFns[index + 1] }),
+        );
+        if (res.ok) {
+          return res.data;
+        }
+        return {
+          ok: false as const,
+          error: getErrorFromUnknown(res.error),
+        };
+      };
     });
 
     // there's always at least one "next" since we wrap this.resolver in a middleware
     const result = await nextFns[0]();
+    if (!result) {
+      throw new TRPCError({
+        code: 'INTERNAL_SERVER_ERROR',
+        message:
+          'No result from middlewares - did you forget to `return next()`?',
+      });
+    }
+    if (!result.ok) {
+      // rethrow
+      throw result.error;
+    }
 
-    return result.output as TOutput;
+    return result.data as TOutput;
   }
 
   /**
