@@ -65,6 +65,10 @@ function getParseFn<TInput>(
 }
 
 type AsyncFn<T> = () => Promise<T> | T;
+/**
+ * Wrap a function in a safe wrapper that never throws
+ * Returns a discriminated union
+ */
 async function wrapCallSafe<T>(fn: AsyncFn<T>) {
   try {
     const data = await fn();
@@ -112,8 +116,8 @@ export abstract class Procedure<
    * Trigger middlewares in order, parse raw input & call resolver
    */
   public async call(opts: ProcedureCallOptions<TContext>): Promise<TOutput> {
+    // wrap the actual resolver and treat as the last "middleware"
     const middlewaresWithResolver = this.middlewares.concat([
-      // wrap the actual resolver and treat as the last "middleware"
       async () => {
         const input = this.parseInput(opts.rawInput);
         const data = await this.resolver({ ...opts, input });
@@ -124,6 +128,8 @@ export abstract class Procedure<
         };
       },
     ]);
+
+    // create `next()` calls in resolvers
     const nextFns = middlewaresWithResolver.map((fn, index) => {
       return async () => {
         const res = await wrapCallSafe(() =>
@@ -149,7 +155,7 @@ export abstract class Procedure<
       });
     }
     if (!result.ok) {
-      // rethrow
+      // re-throw original error
       throw result.error;
     }
 
