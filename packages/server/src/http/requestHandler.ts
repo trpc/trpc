@@ -84,8 +84,24 @@ export async function requestHandler<
     createContext: TCreateContextFn;
   } & BaseHandlerOptions<TRouter, TRequest>,
 ) {
-  const { req, res, createContext, teardown, onError, maxBodySize, router } =
-    opts;
+  const {
+    req,
+    res,
+    createContext,
+    teardown,
+    onError = ({ error, type, path, input }) => {
+      if (error.code === 'INTERNAL_SERVER_ERROR') {
+        console.error('API error:', {
+          type,
+          path,
+          input,
+          cause: error.originalError,
+        });
+      }
+    },
+    maxBodySize,
+    router,
+  } = opts;
   const batchingEnabled = opts.batching?.enabled ?? true;
   if (req.method === 'HEAD') {
     // can be used for lambda warmup
