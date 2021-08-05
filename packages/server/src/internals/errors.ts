@@ -20,5 +20,11 @@ export function getErrorFromUnknown(originalError: unknown): TRPCError {
   if (originalError instanceof Error && originalError.name === 'TRPCError') {
     return originalError as TRPCError;
   }
-  return new TRPCError({ code: 'INTERNAL_SERVER_ERROR', originalError });
+  const err = new TRPCError({ code: 'INTERNAL_SERVER_ERROR', originalError });
+
+  // take stack trace from originalError
+  if (originalError instanceof Error) {
+    err.stack = originalError.stack;
+  }
+  return err;
 }
