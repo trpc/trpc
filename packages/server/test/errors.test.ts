@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-non-null-assertion */
 /* eslint-disable @typescript-eslint/no-empty-function */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { z, ZodError } from 'zod';
@@ -314,8 +315,11 @@ test('retain stack trace', async () => {
   expect(serverError).toBeInstanceOf(TRPCError);
   expect(serverError.originalError).toBeInstanceOf(CustomError);
 
-  console.log('stack', serverError.stack);
   expect(serverError.stack).not.toContain('getErrorFromUnknown');
+  const stackParts = serverError.stack!.split('\n');
+
+  // first line of stack trace
+  expect(stackParts[1]).toContain(__filename);
 
   close();
 });
