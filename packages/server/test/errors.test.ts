@@ -1,11 +1,13 @@
+/* eslint-disable @typescript-eslint/no-empty-function */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { z, ZodError } from 'zod';
 import { TRPCClientError } from '../../client/src';
 import * as trpc from '../src';
 import { AnyRouter } from '../src';
+import { OnErrorFunction } from '../src/internals/BaseHandlerOptions';
 import { getMessageFromUnkownError } from '../src/internals/errors';
 import { TRPCError } from '../src/TRPCError';
-import { routerToServerAndClient } from './_testHelpers';
+import { routerToServerAndClient, waitError } from './_testHelpers';
 
 function assertClientError(
   err: unknown,
@@ -269,5 +271,51 @@ test('allow using built-in Object-properties', async () => {
 
   expect(await client.query('toString')).toBe('toStringValue');
   expect(await client.query('hasOwnProperty')).toBe('hasOwnPropertyValue');
+  close();
+});
+
+test('retain stack trace', async () => {
+  class CustomError extends Error {
+    constructor() {
+      super('CustomError.msg');
+      this.name = 'CustomError';
+
+      Object.setPrototypeOf(this, new.target.prototype);
+    }
+  }
+
+  const onErrorFn: OnErrorFunction<any, any> = () => {};
+
+  const onError = jest.fn(onErrorFn);
+
+  const { client, close } = routerToServerAndClient(
+    trpc.router().query('hello', {
+      resolve() {
+        if (true) {
+          throw new CustomError();
+        }
+        return 'toStringValue';
+      },
+    }),
+    {
+      server: {
+        onError,
+      },
+    },
+  );
+
+  const clientError = await waitError(() => client.query('hello'));
+  expect(clientError.name).toBe('TRPCClientError');
+
+  expect(onError).toHaveBeenCalledTimes(1);
+
+  const serverOnErrorOpts = onError.mock.calls[0][0];
+  const serverError = serverOnErrorOpts.error;
+  expect(serverError).toBeInstanceOf(TRPCError);
+  expect(serverError.originalError).toBeInstanceOf(CustomError);
+
+  console.log('stack', serverError.stack);
+  expect(serverError.stack).not.toContain('getErrorFromUnknown');
+
   close();
 });

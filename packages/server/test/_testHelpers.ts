@@ -100,3 +100,15 @@ export function routerToServerAndClient<TRouter extends AnyRouter>(
 export async function waitMs(ms: number) {
   await new Promise<void>((resolve) => setTimeout(resolve, ms));
 }
+
+export async function waitError(
+  fn: () => Promise<unknown> | unknown,
+): Promise<Error> {
+  try {
+    await fn();
+  } catch (err) {
+    expect(err).toBeInstanceOf(Error);
+    return err;
+  }
+  throw new Error('Function did not throw');
+}
