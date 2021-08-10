@@ -49,7 +49,7 @@
     "zod": "^3.0.0"
   },
   "devDependencies": {
-    "@types/jest": "^26.0.23",
+    "@types/jest": "^27.0.0",
     "@types/node": "^16.0.0",
     "@types/node-fetch": "^2.5.11",
     "@types/react": "^17.0.0",
