@@ -9066,9 +9066,9 @@ mute-stream@0.0.8, mute-stream@~0.0.4:
   integrity sha512-nnbWWOkoWyUsTjKrhgD0dcz22mdkSnpYqbEjIm2nhwhuxlSkpywJmBo8h0ZqJdkp73mb90SssHkN4rsRaBAfAA==
 
 myzod@^1.3.1:
-  version "1.8.4"
-  resolved "https://registry.yarnpkg.com/myzod/-/myzod-1.8.4.tgz#7b8a824320b601c48c4f16647a71b90242cb1065"
-  integrity sha512-wLMGq0+sGf+c5L+Llifd6t214/0A6iqeoL3cThkoQdiBR4xnBUxsF0TQdQx35uUx14Y53hRWmq7uibs2XMXqhA==
+  version "1.8.5"
+  resolved "https://registry.yarnpkg.com/myzod/-/myzod-1.8.5.tgz#7bfa4f1db84142e95eb049ba83d71de16f31da15"
+  integrity sha512-Dw8N6hj/4nn6YoSGQlK52To6sZF4YngffWsgqT9ltyKRAXKUw9k7vjeUy/HesxYZ+Ok9bd5cHlcR9znubzfOXQ==
 
 mz@^2.4.0:
   version "2.7.0"
