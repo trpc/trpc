@@ -37,6 +37,9 @@ Do you love or hate tRPC? Feel free to ping [@alexdotjs on Twitter](https://twit
 
 ## From GitHub
 
+<blockquote className="github-comment"><p lang="en" dir="ltr">We built a nextjs website with trpc and it has worked wonderful 🙌  <em>[...]</em></p>&mdash; cNille <a href="https://github.com/trpc/trpc/issues/775#issue-966343527">Aug 11, 2021</a></blockquote>
+
+
 <blockquote className="github-comment"><p lang="en" dir="ltr">Hi - have just started using trpc and it is 👌 <em>[...]</em></p>&mdash; mmkal <a href="https://github.com/trpc/trpc/issues/703#issue-950972268">July 22, 2021</a></blockquote>
 
 
