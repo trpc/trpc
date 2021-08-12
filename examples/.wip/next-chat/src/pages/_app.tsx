@@ -1,7 +1,7 @@
 import { withTRPC } from '@trpc/next';
-import { AppType } from 'next/dist/next-server/lib/utils';
 import { transformer } from '../utils/trpc';
 import { httpBatchLink } from '@trpc/client/links/httpBatchLink';
+import { AppType } from 'next/dist/shared/lib/utils';
 const MyApp: AppType = ({ Component, pageProps }) => {
   return <Component {...pageProps} />;
 };

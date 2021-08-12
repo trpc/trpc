@@ -19,7 +19,7 @@ import userEvent from '@testing-library/user-event';
 import { httpBatchLink } from '@trpc/client/links/httpBatchLink';
 import { expectTypeOf } from 'expect-type';
 import hash from 'hash-sum';
-import { AppType } from 'next/dist/next-server/lib/utils';
+import { AppType } from 'next/dist/shared/lib/utils';
 import React, { Fragment, useEffect, useState } from 'react';
 import {
   QueryClient,

@@ -1,5 +1,5 @@
 import { withTRPC } from '@trpc/next';
-import { AppType } from 'next/dist/next-server/lib/utils';
+import { AppType } from 'next/dist/shared/lib/utils';
 import { transformer } from '../utils/trpc';
 
 const MyApp: AppType = ({ Component, pageProps }) => {
