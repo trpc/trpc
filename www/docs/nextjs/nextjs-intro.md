@@ -108,7 +108,7 @@ The `createReactQueryHooks` function expects certain parameters to be passed via
 
 ```tsx
 import { withTRPC } from '@trpc/next';
-import { AppType } from 'next/dist/next-server/lib/utils';
+import { AppType } from 'next/dist/shared/lib/utils';
 
 const MyApp: AppType = ({ Component, pageProps }) => {
   return <Component {...pageProps} />;
