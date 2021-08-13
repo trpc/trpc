@@ -93,7 +93,7 @@ function createAppRouter() {
         postById(input);
         const post = db.posts.find((p) => p.id === input);
         if (!post) {
-          throw new TRPCError({ code: 'PATH_NOT_FOUND' });
+          throw new TRPCError({ code: 'NOT_FOUND' });
         }
         return post;
       },

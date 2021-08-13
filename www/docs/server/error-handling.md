@@ -60,6 +60,6 @@ throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Optional Message'
 // "FORBIDDEN"
 // "BAD_REQUEST"
 // "INTERNAL_SERVER_ERROR"
-// "PATH_NOT_FOUND"
+// "NOT_FOUND"
 // "TIMEOUT"
 ```
