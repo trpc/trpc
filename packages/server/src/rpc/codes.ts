@@ -19,10 +19,6 @@ export const TRPC_ERROR_CODES_BY_KEY = {
    */
   BAD_REQUEST: -32600,
   /**
-   * The method does not exist / is not available.
-   */
-  METHOD_NOT_FOUND: -32601,
-  /**
    * Internal JSON-RPC error.
    */
   INTERNAL_SERVER_ERROR: -32603,

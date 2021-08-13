@@ -270,7 +270,7 @@ describe('integration tests', () => {
         trpc.router<Context>().query('whoami', {
           async resolve({ ctx }) {
             if (!ctx.user) {
-              throw new TRPCError{ code: 'UNAUTHORIZED' });
+              throw new TRPCError({ code: 'UNAUTHORIZED' });
             }
             return ctx.user;
           },

@@ -18,7 +18,7 @@ tRPC includes dedicated tools to make the Next.js developer experience as seamle
 
 Recommended but not enforced file structure. This is what you get when starting from [the examples](../main/example-apps.md).
 
-```txt
+```graphql
 .
 ├── prisma # <-- if prisma is added
 │   └── [..]
@@ -108,7 +108,7 @@ The `createReactQueryHooks` function expects certain parameters to be passed via
 
 ```tsx
 import { withTRPC } from '@trpc/next';
-import { AppType } from 'next/dist/next-server/lib/utils';
+import { AppType } from 'next/dist/shared/lib/utils';
 
 const MyApp: AppType = ({ Component, pageProps }) => {
   return <Component {...pageProps} />;

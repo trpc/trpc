@@ -11,6 +11,7 @@ module.exports = {
         'nextjs/intro',
         'react/intro',
         'main/contributing',
+        'main/love',
       ],
     },
     {
