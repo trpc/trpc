@@ -7,7 +7,7 @@ import { createWSClient, wsLink } from '../../client/src/links/wsLink';
 import { z } from 'zod';
 import { TRPCClientError } from '../../client/src';
 import * as trpc from '../src';
-import { CreateHttpContextOptions, Maybe } from '../src';
+import { CreateHttpContextOptions, Maybe, TRPCError } from '../src';
 import { routerToServerAndClient } from './_testHelpers';
 import WebSocket from 'ws';
 import { waitFor } from '@testing-library/react';
@@ -270,7 +270,7 @@ describe('integration tests', () => {
         trpc.router<Context>().query('whoami', {
           async resolve({ ctx }) {
             if (!ctx.user) {
-              throw trpc.httpError.unauthorized();
+              throw new TRPCError({ code: 'UNAUTHORIZED' });
             }
             return ctx.user;
           },

@@ -1,6 +1,6 @@
-import { routerToServerAndClient } from './_testHelpers';
 import * as trpc from '../src';
-import { httpError } from '../src';
+import { TRPCError } from '../src';
+import { routerToServerAndClient } from './_testHelpers';
 
 test('is called if def first', async () => {
   const middleware = jest.fn();
@@ -76,7 +76,7 @@ test('allows you to throw an error (e.g. auth)', async () => {
           .router<Context>()
           .middleware(({ ctx }) => {
             if (!ctx.user?.isAdmin) {
-              throw httpError.unauthorized();
+              throw new TRPCError({ code: 'UNAUTHORIZED' });
             }
           })
           .query('secretPlace', {
@@ -197,7 +197,7 @@ test('equiv', () => {
         .router<Context>()
         .middleware(({ ctx }) => {
           if (!ctx.user?.isAdmin) {
-            throw httpError.unauthorized();
+            throw new TRPCError({ code: 'UNAUTHORIZED' });
           }
         })
         .query('secretPlace', {
@@ -219,7 +219,7 @@ test('equiv', () => {
         .router<Context>()
         .middleware(({ ctx }) => {
           if (!ctx.user?.isAdmin) {
-            throw httpError.unauthorized();
+            throw new TRPCError({ code: 'UNAUTHORIZED' });
           }
         })
         .query('admin.secretPlace', {
