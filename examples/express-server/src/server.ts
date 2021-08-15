@@ -65,7 +65,7 @@ const posts = createRouter()
         id: ++id,
         ...input,
       };
-      db.post.push(post);
+      db.posts.push(post);
       return post;
     },
   })

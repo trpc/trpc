@@ -90,7 +90,7 @@ function createAppRouter() {
       input: z.string(),
       resolve({ input }) {
         postById(input);
-        const post = db.post.find((p) => p.id === input);
+        const post = db.posts.find((p) => p.id === input);
         if (!post) {
           throw trpcServer.httpError.notFound();
         }
@@ -107,7 +107,7 @@ function createAppRouter() {
         const limit = input.limit ?? 50;
         const { cursor } = input;
         let nextCursor: typeof cursor = null;
-        for (let index = 0; index < db.post.length; index++) {
+        for (let index = 0; index < db.posts.length; index++) {
           const element = db.posts[index];
           if (cursor != null && element.createdAt < cursor) {
             continue;
@@ -118,7 +118,7 @@ function createAppRouter() {
           }
         }
         const last = items[items.length - 1];
-        const nextIndex = db.post.findIndex((item) => item === last) + 1;
+        const nextIndex = db.posts.findIndex((item) => item === last) + 1;
         if (db.posts[nextIndex]) {
           nextCursor = db.posts[nextIndex].createdAt;
         }
@@ -133,7 +133,7 @@ function createAppRouter() {
         title: z.string(),
       }),
       resolve({ input }) {
-        db.post.push({
+        db.posts.push({
           id: `${Math.random()}`,
           createdAt: Date.now(),
           title: input.title,
@@ -146,7 +146,7 @@ function createAppRouter() {
         return trpcServer.subscriptionPullFactory<Post>({
           intervalMs: 1,
           pull(emit) {
-            db.post.filter((p) => p.createdAt > input).forEach(emit.data);
+            db.posts.filter((p) => p.createdAt > input).forEach(emit.data);
           },
         });
       },
@@ -410,7 +410,7 @@ test('mutation on mount + subscribe for it', async () => {
 
 //   for (let index = 0; index < 3; index++) {
 //     const title = `a new post index:${index}`;
-//     db.post.push({
+//     db.posts.push({
 //       id: `r${index}`,
 //       createdAt: 0,
 //       title,
