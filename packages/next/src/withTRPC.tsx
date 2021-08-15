@@ -162,17 +162,9 @@ export function withTRPC<TRouter extends AnyRouter>(opts: {
             return true;
           },
         });
-        // console.log(
-        //   'ℹ️ trpcState, pre transformer',
-        //   JSON.stringify(dehydrated, null, 4),
-        // );
+
         pageProps.trpcState =
           trpcClient.runtime.transformer.serialize(dehydrated);
-
-        // console.log(
-        //   'ℹ️ trpcState, post transformer',
-        //   JSON.stringify(pageProps.trpcState, null, 4),
-        // );
 
         const appTreeProps = getAppTreeProps(pageProps);
 
