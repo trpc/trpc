@@ -15,9 +15,9 @@ Request batching is automatically enabled which batches your requests to the ser
 ```tsx
 // below will be done in the same request when batching is enabled
 const somePosts = await Promise.all([
-  client.query('posts.byId', 1),
-  client.query('posts.byId', 2),
-  client.query('posts.byId', 3),
+  client.query('post.byId', 1),
+  client.query('post.byId', 2),
+  client.query('post.byId', 3),
 ])
 ```
 

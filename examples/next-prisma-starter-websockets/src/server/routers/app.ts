@@ -24,7 +24,7 @@ export const appRouter = createRouter()
    * @link https://trpc.io/docs/error-formatting
    */
   // .formatError(({ shape, error }) => { })
-  .merge('posts.', postsRouter)
+  .merge('post.', postsRouter)
   .subscription('randomNumber', {
     resolve() {
       return new Subscription<number>((emit) => {

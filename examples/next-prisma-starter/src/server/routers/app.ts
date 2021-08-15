@@ -22,6 +22,6 @@ export const appRouter = createRouter()
    * @link https://trpc.io/docs/error-formatting
    */
   // .formatError(({ shape, error }) => { })
-  .merge('posts.', postsRouter);
+  .merge('post.', postsRouter);
 
 export type AppRouter = typeof appRouter;
