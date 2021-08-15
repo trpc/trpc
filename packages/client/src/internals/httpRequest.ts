@@ -33,6 +33,7 @@ export function httpRequest<TResponseShape = TRPCResponse>(
       : arrayToDict(
           props.inputs.map((_input) => rt.transformer.serialize(_input)),
         );
+
   function getUrl() {
     let url = props.url + '/' + path;
     const queryParts: string[] = [];
@@ -51,8 +52,7 @@ export function httpRequest<TResponseShape = TRPCResponse>(
     if (type === 'query') {
       return undefined;
     }
-    const rawInput = rt.transformer.serialize(input);
-    return rawInput !== undefined ? JSON.stringify(rawInput) : undefined;
+    return input !== undefined ? JSON.stringify(input) : undefined;
   }
 
   const promise = new Promise<TResponseShape>((resolve, reject) => {
