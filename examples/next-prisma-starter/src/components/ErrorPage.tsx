@@ -13,20 +13,18 @@ export function ErrorPage(props: {
   const { error } = props;
   const utils = trpc.useContext();
 
-  throw error;
+  const statusCode = error.shape?.data.httpStatus ?? 500;
+  if (!process.browser) {
+    const res = utils.ssrContext?.res;
+    if (res) {
+      res.statusCode = statusCode;
+    }
+  }
 
-  // const statusCode = error.shape?.data.httpStatus ?? 500;
-  // if (!process.browser) {
-  //   const res = utils.ssrContext?.res;
-  //   if (res) {
-  //     res.statusCode = statusCode;
-  //   }
-  // }
-
-  // return (
-  //   <NextError
-  //     title={error.shape?.message ?? error.message}
-  //     statusCode={statusCode}
-  //   />
-  // );
+  return (
+    <NextError
+      title={error.shape?.message ?? error.message}
+      statusCode={statusCode}
+    />
+  );
 }

@@ -67,13 +67,16 @@ function getArgs<TPathAndInput extends unknown[], TOptions>(
   const [path, input] = pathAndInput;
   return [path, input, opts] as const;
 }
-export function createReactQueryHooks<TRouter extends AnyRouter, TServerSideContext = unknown>() {
+export function createReactQueryHooks<
+  TRouter extends AnyRouter,
+  TServerSideContext = unknown,
+>() {
   type TQueries = TRouter['_def']['queries'];
   type TMutations = TRouter['_def']['mutations'];
   type TSubscriptions = TRouter['_def']['subscriptions'];
   type TError = TRPCClientError<TRouter>;
 
-  type ProviderContext = TRPCContextState<TRouter>;
+  type ProviderContext = TRPCContextState<TRouter, TServerSideContext>;
   const Context = TRPCContext as React.Context<ProviderContext>;
 
   function createClient(opts: CreateTRPCClientOptions<TRouter>) {
