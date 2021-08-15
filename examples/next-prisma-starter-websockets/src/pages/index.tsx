@@ -6,7 +6,7 @@ import { ReactQueryDevtools } from 'react-query/devtools';
 import { trpc } from '../utils/trpc';
 
 function AddMessageForm() {
-  const addPost = trpc.useMutation('posts.add');
+  const addPost = trpc.useMutation('post.add');
   const utils = trpc.useContext();
   const [session] = useSession();
 
@@ -52,12 +52,12 @@ function AddMessageForm() {
             name="text"
             autoFocus
             onKeyDown={() => {
-              utils.client.mutation('posts.isTyping', {
+              utils.client.mutation('post.isTyping', {
                 typing: true,
               });
             }}
             onBlur={() => {
-              utils.client.mutation('posts.isTyping', {
+              utils.client.mutation('post.isTyping', {
                 typing: false,
               });
             }}
@@ -77,7 +77,7 @@ function AddMessageForm() {
 }
 
 export default function IndexPage() {
-  const postsQuery = trpc.useInfiniteQuery(['posts.infinite', {}], {
+  const postsQuery = trpc.useInfiniteQuery(['post.infinite', {}], {
     getPreviousPageParam: (d) => d.prevCursor,
   });
   const utils = trpc.useContext();
@@ -114,7 +114,7 @@ export default function IndexPage() {
   }, [postsQuery.data?.pages, addMessages]);
 
   // subscribe to new posts and add
-  trpc.useSubscription(['posts.onAdd'], {
+  trpc.useSubscription(['post.onAdd'], {
     onNext(post) {
       addMessages([post]);
     },
@@ -126,7 +126,7 @@ export default function IndexPage() {
   });
 
   const [currentlyTyping, setCurrentlyTyping] = useState<string[]>([]);
-  trpc.useSubscription(['posts.whoIsTyping'], {
+  trpc.useSubscription(['post.whoIsTyping'], {
     onNext(data) {
       setCurrentlyTyping(data);
     },
@@ -222,7 +222,7 @@ export default function IndexPage() {
 //     ctx: await createContext(),
 //   });
 //
-//   await ssg.fetchQuery('posts.all');
+//   await ssg.fetchQuery('post.all');
 //
 //   return {
 //     props: {

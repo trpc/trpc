@@ -14,7 +14,7 @@ import 'todomvc-app-css/index.css';
 import 'todomvc-common/base.css';
 import { inferQueryOutput, trpc, transformer } from '../utils/trpc';
 import { appRouter, createContext } from './api/trpc/[trpc]';
-type Task = inferQueryOutput<'todos.all'>[number];
+type Task = inferQueryOutput<'todo.all'>[number];
 
 /**
  * Hook for checking when the user clicks outside the passed ref
@@ -65,15 +65,15 @@ function ListItem({ task }: { task: Task }) {
     setCompleted(task.completed);
   }, [task.completed]);
 
-  const editTask = trpc.useMutation('todos.edit', {
+  const editTask = trpc.useMutation('todo.edit', {
     async onMutate({ id, data }) {
-      await utils.cancelQuery(['todos.all']);
-      const allTasks = utils.getQueryData(['todos.all']);
+      await utils.cancelQuery(['todo.all']);
+      const allTasks = utils.getQueryData(['todo.all']);
       if (!allTasks) {
         return;
       }
       utils.setQueryData(
-        ['todos.all'],
+        ['todo.all'],
         allTasks.map((t) =>
           t.id === id
             ? {
@@ -85,15 +85,15 @@ function ListItem({ task }: { task: Task }) {
       );
     },
   });
-  const deleteTask = trpc.useMutation('todos.delete', {
+  const deleteTask = trpc.useMutation('todo.delete', {
     async onMutate() {
-      await utils.cancelQuery(['todos.all']);
-      const allTasks = utils.getQueryData(['todos.all']);
+      await utils.cancelQuery(['todo.all']);
+      const allTasks = utils.getQueryData(['todo.all']);
       if (!allTasks) {
         return;
       }
       utils.setQueryData(
-        ['todos.all'],
+        ['todo.all'],
         allTasks.filter((t) => t.id != task.id),
       );
     },
@@ -171,16 +171,16 @@ function ListItem({ task }: { task: Task }) {
 export default function TodosPage({
   filter,
 }: InferGetStaticPropsType<typeof getStaticProps>) {
-  const allTasks = trpc.useQuery(['todos.all'], {
+  const allTasks = trpc.useQuery(['todo.all'], {
     staleTime: 3000,
   });
   const utils = trpc.useContext();
-  const addTask = trpc.useMutation('todos.add', {
+  const addTask = trpc.useMutation('todo.add', {
     async onMutate({ text }) {
-      await utils.cancelQuery(['todos.all']);
+      await utils.cancelQuery(['todo.all']);
       const tasks = allTasks.data ?? [];
       utils.setQueryData(
-        ['todos.all'],
+        ['todo.all'],
         [
           ...tasks,
           {
@@ -194,12 +194,12 @@ export default function TodosPage({
     },
   });
 
-  const clearCompleted = trpc.useMutation('todos.clearCompleted', {
+  const clearCompleted = trpc.useMutation('todo.clearCompleted', {
     async onMutate() {
-      await utils.cancelQuery(['todos.all']);
+      await utils.cancelQuery(['todo.all']);
       const tasks = allTasks.data ?? [];
       utils.setQueryData(
-        ['todos.all'],
+        ['todo.all'],
         tasks.filter((t) => !t.completed),
       );
     },
@@ -211,7 +211,7 @@ export default function TodosPage({
     // doing this here rather than in `onSettled()`
     // to avoid race conditions if you're clicking fast
     if (number === 0) {
-      utils.invalidateQuery(['todos.all']);
+      utils.invalidateQuery(['todo.all']);
     }
   }, [number, utils]);
   return (
@@ -374,7 +374,7 @@ export const getStaticProps = async (
     ctx: await createContext(),
   });
 
-  await ssg.fetchQuery('todos.all');
+  await ssg.fetchQuery('todo.all');
 
   // console.log('state', ssr.dehydrate());
   return {

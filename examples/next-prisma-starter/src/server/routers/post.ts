@@ -6,7 +6,7 @@
 import { createRouter } from 'server/trpc';
 import { z } from 'zod';
 
-export const postsRouter = createRouter()
+export const postRouter = createRouter()
   // create
   .mutation('add', {
     input: z.object({
