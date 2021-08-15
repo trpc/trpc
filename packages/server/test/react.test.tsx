@@ -358,10 +358,10 @@ test('mutation on mount + subscribe for it', async () => {
     const mutation = trpc.useMutation('addPost');
     const mutate = mutation.mutate;
     useEffect(() => {
-      if (post.length === 2) {
+      if (posts.length === 2) {
         mutate({ title: 'third post' });
       }
-    }, [post.length, mutate]);
+    }, [posts.length, mutate]);
 
     return <pre>{JSON.stringify(posts, null, 4)}</pre>;
   }
