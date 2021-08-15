@@ -32,7 +32,7 @@ Recommended but not enforced file structure. This is what you get when starting 
 │   ├── server
 │   │   ├── routers
 │   │   │   ├── app.ts   # <-- main app router
-│   │   │   ├── posts.ts # <-- sub routers
+│   │   │   ├── post.ts  # <-- sub routers
 │   │   │   └── [..]
 │   │   └── trpc.ts  # <-- create app context
 │   └── utils

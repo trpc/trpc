@@ -64,9 +64,9 @@ test('merge', async () => {
       },
     });
 
-  const r = root.merge('posts.', posts);
+  const r = root.merge('post.', posts);
   const caller = r.createCaller({});
-  expect(await caller.query('posts.list')).toMatchInlineSnapshot(`
+  expect(await caller.query('post.list')).toMatchInlineSnapshot(`
     Array [
       Object {
         "text": "initial",
