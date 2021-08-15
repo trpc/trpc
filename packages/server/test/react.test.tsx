@@ -347,7 +347,10 @@ test('mutation on mount + subscribe for it', async () => {
         return Object.values(map);
       });
     };
-    const input = post.reduce((num, post) => Math.max(num, post.createdAt), -1);
+    const input = posts.reduce(
+      (num, post) => Math.max(num, post.createdAt),
+      -1,
+    );
 
     trpc.useSubscription(['newPosts', input], {
       onNext(post) {
