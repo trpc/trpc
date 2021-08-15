@@ -3,7 +3,7 @@
  */
 import superjson from 'superjson';
 import { createRouter } from '../trpc';
-import { postRouter } from './posts';
+import { postRouter } from './post';
 
 /**
  * Create your application's root router

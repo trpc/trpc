@@ -4,7 +4,7 @@
 import { Subscription } from '@trpc/server';
 import { clearInterval } from 'timers';
 import { createRouter } from '../trpc';
-import { postRouter } from './posts';
+import { postRouter } from './post';
 import superjson from 'superjson';
 
 /**
