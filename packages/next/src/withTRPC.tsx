@@ -10,12 +10,12 @@ import {
   TRPCClient,
 } from '@trpc/react';
 import type { AnyRouter, Dict } from '@trpc/server';
-import type {
+import {
   AppContextType,
   AppPropsType,
   NextComponentType,
   NextPageContext,
-} from 'next/dist/shared/lib/utils';
+} from 'next/dist/next-server/lib/utils';
 import React, { createElement, useState } from 'react';
 import { QueryClient, QueryClientProvider } from 'react-query';
 import { dehydrate, Hydrate } from 'react-query/hydration';

@@ -560,6 +560,7 @@ Array [
       "code": -32001,
       "data": Object {
         "code": "UNAUTHORIZED",
+        "httpStatus": 401,
         "stack": "[redacted]",
       },
       "message": "test",
@@ -571,6 +572,7 @@ Array [
       "code": -32001,
       "data": Object {
         "code": "UNAUTHORIZED",
+        "httpStatus": 401,
         "path": "greeting",
         "stack": "[redacted]",
       },
@@ -614,6 +616,7 @@ Object {
     "code": -32700,
     "data": Object {
       "code": "PARSE_ERROR",
+      "httpStatus": 400,
       "stack": "[redacted]",
     },
     "message": "Unexpected token o in JSON at position 1",
