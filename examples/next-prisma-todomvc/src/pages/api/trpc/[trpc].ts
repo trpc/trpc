@@ -21,9 +21,7 @@ export type Context = trpc.inferAsyncReturnType<typeof createContext>;
 export function createRouter() {
   return trpc.router<Context>();
 }
-const router = createRouter()
-  .transformer(superjson)
-  .merge('todos.', todoRouter);
+const router = createRouter().transformer(superjson).merge('todo.', todoRouter);
 
 export const appRouter = router;
 export type AppRouter = typeof router;
