@@ -2,11 +2,18 @@ import Head from 'next/head';
 import { ReactQueryDevtools } from 'react-query/devtools';
 import { trpc } from '../utils/trpc';
 import Link from 'next/link';
+
 export default function IndexPage() {
   const postsQuery = trpc.useQuery(['post.all']);
   const addPost = trpc.useMutation('post.add');
   const utils = trpc.useContext();
-  // trpc.useQuery(['post.byId', 'a083530f-245a-4fb8-aaae-bc43921c6444']);
+
+  // prefetch all posts for instant navigation
+  // useEffect(() => {
+  //   postsQuery.data?.forEach((post) => {
+  //     utils.prefetchQuery(['post.byId', post.id]);
+  //   });
+  // }, [postsQuery.data, utils]);
 
   return (
     <>
