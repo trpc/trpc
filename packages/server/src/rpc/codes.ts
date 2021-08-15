@@ -17,7 +17,7 @@ export const TRPC_ERROR_CODES_BY_KEY = {
   /**
    * The JSON sent is not a valid Request object.
    */
-  BAD_REQUEST: -32600,
+  BAD_REQUEST: -32600, // 400
   /**
    * Internal JSON-RPC error.
    */
