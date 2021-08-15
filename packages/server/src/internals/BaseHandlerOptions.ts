@@ -10,6 +10,14 @@ export type BaseRequest = http.IncomingMessage & {
 };
 export type BaseResponse = http.ServerResponse;
 
+export type OnErrorFunction<TRouter extends AnyRouter, TRequest> = (opts: {
+  error: TRPCError;
+  type: ProcedureType | 'unknown';
+  path: string | undefined;
+  req: TRequest;
+  input: unknown;
+  ctx: undefined | inferRouterContext<TRouter>;
+}) => void;
 /**
  * Base interface for any HTTP/WSS handlers
  */
@@ -19,14 +27,7 @@ export interface BaseHandlerOptions<
 > {
   teardown?: () => Promise<void>;
   maxBodySize?: number;
-  onError?: (opts: {
-    error: TRPCError;
-    type: ProcedureType | 'unknown';
-    path: string | undefined;
-    req: TRequest;
-    input: unknown;
-    ctx: undefined | inferRouterContext<TRouter>;
-  }) => void;
+  onError?: OnErrorFunction<TRouter, TRequest>;
   batching?: {
     enabled: boolean;
   };

@@ -127,4 +127,12 @@ module.exports = {
       },
     ],
   ],
+  scripts: [
+    {
+      async: true,
+      src: 'https://platform.twitter.com/widgets.js',
+      charSet: 'utf-8',
+    },
+  ],
+  clientModules: [require.resolve('./docusaurus.twitter-reload.js')],
 };

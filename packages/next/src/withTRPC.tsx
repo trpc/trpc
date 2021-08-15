@@ -15,7 +15,7 @@ import type {
   AppPropsType,
   NextComponentType,
   NextPageContext,
-} from 'next/dist/next-server/lib/utils';
+} from 'next/dist/shared/lib/utils';
 import React, { createElement, useState } from 'react';
 import { QueryClient, QueryClientProvider } from 'react-query';
 import { dehydrate, Hydrate } from 'react-query/hydration';

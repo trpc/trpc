@@ -74,7 +74,7 @@ export const createContext = async ({
   // get the tRPC-paths called in this request
   const paths = (req.query.trpc as string).split(',');
   // assuming you have a router prefixed with `public.` where you colocate publicly accessible routes
-  const isPublic = paths.some((path) => !path.startsWith('public.'));
+  const isPublic = !paths.some((path) => !path.startsWith('public.'));
 
   // check if it's a query & public
   if (req.method === 'GET' && isPublic) {
