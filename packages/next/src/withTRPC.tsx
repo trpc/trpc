@@ -90,7 +90,6 @@ export function withTRPC<TRouter extends AnyRouter>(opts: {
       WithTRPC.getInitialProps = async (appOrPageCtx: AppContextType) => {
         const AppTree = appOrPageCtx.AppTree;
 
-        console.log({ AppOrPage });
         // Determine if we are wrapping an App component or a Page component.
         const isApp = !!appOrPageCtx.Component;
         const ctx: NextPageContext = isApp
