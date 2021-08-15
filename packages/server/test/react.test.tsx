@@ -39,7 +39,7 @@ import {
   TRPCWebSocketClient,
 } from '../../client/src/links/wsLink';
 import { splitLink } from '../../client/src/links/splitLink';
-import { AppType } from 'next/dist/next-server/lib/utils';
+import { AppType } from 'next/dist/shared/lib/utils';
 
 setLogger({
   log() {},
