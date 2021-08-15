@@ -4,7 +4,7 @@
 import { Subscription } from '@trpc/server';
 import { clearInterval } from 'timers';
 import { createRouter } from '../trpc';
-import { postsRouter } from './posts';
+import { postRouter } from './post';
 import superjson from 'superjson';
 
 /**
@@ -24,7 +24,7 @@ export const appRouter = createRouter()
    * @link https://trpc.io/docs/error-formatting
    */
   // .formatError(({ shape, error }) => { })
-  .merge('posts.', postsRouter)
+  .merge('post.', postRouter)
   .subscription('randomNumber', {
     resolve() {
       return new Subscription<number>((emit) => {

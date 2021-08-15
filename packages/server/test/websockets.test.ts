@@ -40,7 +40,7 @@ function factory(config?: { createContext: () => Promise<unknown> }) {
           return 'slow query resolved';
         },
       })
-      .mutation('posts.edit', {
+      .mutation('post.edit', {
         input: z.object({
           id: z.string(),
           data: z.object({
@@ -116,7 +116,7 @@ test('query', async () => {
 test('mutation', async () => {
   const { client, close } = factory();
   expect(
-    await client.mutation('posts.edit', {
+    await client.mutation('post.edit', {
       id: 'id',
       data: { title: 'title', text: 'text' },
     }),
@@ -452,7 +452,7 @@ test('batching', async () => {
   const t = factory();
   const promises = [
     t.client.query('greeting'),
-    t.client.mutation('posts.edit', { id: '', data: { text: '', title: '' } }),
+    t.client.mutation('post.edit', { id: '', data: { text: '', title: '' } }),
   ] as const;
 
   expect(await Promise.all(promises)).toMatchInlineSnapshot(`

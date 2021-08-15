@@ -32,12 +32,12 @@ async function main() {
   await client.query('hello');
   await client.query('hello', 'client');
   await sleep();
-  const postCreate = await client.mutation('posts.create', {
+  const postCreate = await client.mutation('post.create', {
     title: 'hello client',
   });
   console.log('created post', postCreate.title);
   await sleep();
-  const postList = await client.query('posts.list');
+  const postList = await client.query('post.list');
   console.log('has posts', postList, 'first:', postList[0].title);
   await sleep();
   try {
