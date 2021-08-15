@@ -90,7 +90,7 @@ function createAppRouter() {
       input: z.string(),
       resolve({ input }) {
         postById(input);
-        const post = db.posts.find((p) => p.id === input);
+        const post = db.post.find((p) => p.id === input);
         if (!post) {
           throw trpcServer.httpError.notFound();
         }
@@ -107,7 +107,7 @@ function createAppRouter() {
         const limit = input.limit ?? 50;
         const { cursor } = input;
         let nextCursor: typeof cursor = null;
-        for (let index = 0; index < db.posts.length; index++) {
+        for (let index = 0; index < db.post.length; index++) {
           const element = db.posts[index];
           if (cursor != null && element.createdAt < cursor) {
             continue;
@@ -118,7 +118,7 @@ function createAppRouter() {
           }
         }
         const last = items[items.length - 1];
-        const nextIndex = db.posts.findIndex((item) => item === last) + 1;
+        const nextIndex = db.post.findIndex((item) => item === last) + 1;
         if (db.posts[nextIndex]) {
           nextCursor = db.posts[nextIndex].createdAt;
         }
@@ -133,7 +133,7 @@ function createAppRouter() {
         title: z.string(),
       }),
       resolve({ input }) {
-        db.posts.push({
+        db.post.push({
           id: `${Math.random()}`,
           createdAt: Date.now(),
           title: input.title,
@@ -146,7 +146,7 @@ function createAppRouter() {
         return trpcServer.subscriptionPullFactory<Post>({
           intervalMs: 1,
           pull(emit) {
-            db.posts.filter((p) => p.createdAt > input).forEach(emit.data);
+            db.post.filter((p) => p.createdAt > input).forEach(emit.data);
           },
         });
       },
@@ -347,10 +347,7 @@ test('mutation on mount + subscribe for it', async () => {
         return Object.values(map);
       });
     };
-    const input = posts.reduce(
-      (num, post) => Math.max(num, post.createdAt),
-      -1,
-    );
+    const input = post.reduce((num, post) => Math.max(num, post.createdAt), -1);
 
     trpc.useSubscription(['newPosts', input], {
       onNext(post) {
@@ -361,10 +358,10 @@ test('mutation on mount + subscribe for it', async () => {
     const mutation = trpc.useMutation('addPost');
     const mutate = mutation.mutate;
     useEffect(() => {
-      if (posts.length === 2) {
+      if (post.length === 2) {
         mutate({ title: 'third post' });
       }
-    }, [posts.length, mutate]);
+    }, [post.length, mutate]);
 
     return <pre>{JSON.stringify(posts, null, 4)}</pre>;
   }
@@ -413,7 +410,7 @@ test('mutation on mount + subscribe for it', async () => {
 
 //   for (let index = 0; index < 3; index++) {
 //     const title = `a new post index:${index}`;
-//     db.posts.push({
+//     db.post.push({
 //       id: `r${index}`,
 //       createdAt: 0,
 //       title,

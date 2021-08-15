@@ -65,7 +65,7 @@ const posts = createRouter()
         id: ++id,
         ...input,
       };
-      db.posts.push(post);
+      db.post.push(post);
       return post;
     },
   })
@@ -96,7 +96,7 @@ export const appRouter = createRouter()
       return `hello ${input ?? ctx.user?.name ?? 'world'}`;
     },
   })
-  .merge('posts.', posts)
+  .merge('post.', posts)
   .merge(
     'admin.',
     createRouter().query('secret', {

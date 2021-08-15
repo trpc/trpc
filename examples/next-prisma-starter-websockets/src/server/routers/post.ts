@@ -53,7 +53,7 @@ const getNameOrThrow = (ctx: Context) => {
   }
   return name;
 };
-export const postsRouter = createRouter()
+export const postRouter = createRouter()
   // create
   .mutation('add', {
     input: z.object({

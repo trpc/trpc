@@ -43,7 +43,7 @@ yarn dev
       <td>Prisma schema</td>
     </tr>
     <tr>
-      <td><a href="./src/api/trpc/[trpc].tsx"><code>./src/api/trpc/[trpc].tsx</code></a></td>
+      <td><a href="./src/api/trpc/].tsx"><code>./src/api/trpc/[trpc].tsx</code></a></td>
       <td>tRPC response handler</td>
     </tr>
     <tr>

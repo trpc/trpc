@@ -2,7 +2,7 @@ import { PrismaClient } from '@prisma/client';
 import * as trpc from '@trpc/server';
 import * as trpcNext from '@trpc/server/adapters/next';
 import superjson from 'superjson';
-import { todoRouter } from '../../../routers/todos';
+import { todoRouter } from '../../../routers/todo';
 const prisma = new PrismaClient();
 
 // create context based of incoming request
@@ -21,9 +21,7 @@ export type Context = trpc.inferAsyncReturnType<typeof createContext>;
 export function createRouter() {
   return trpc.router<Context>();
 }
-const router = createRouter()
-  .transformer(superjson)
-  .merge('todos.', todoRouter);
+const router = createRouter().transformer(superjson).merge('todo.', todoRouter);
 
 export const appRouter = router;
 export type AppRouter = typeof router;
