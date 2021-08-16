@@ -83,7 +83,6 @@ export async function requestHandler<
   }
   const type =
     HTTP_METHOD_PROCEDURE_TYPE_MAP[req.method!] ?? ('unknown' as const);
-  const input: unknown = undefined;
   let ctx: inferRouterContext<TRouter> | undefined = undefined;
 
   const reqQueryParams = req.query
@@ -145,6 +144,7 @@ export async function requestHandler<
     const results = await Promise.all(
       paths.map(async (path, index) => {
         const id = null;
+        const input = inputs[index];
         try {
           const output = await callProcedure({
             ctx,
@@ -179,16 +179,34 @@ export async function requestHandler<
     const result = isBatchCall ? results : results[0];
     endResponse(result);
   } catch (_err) {
+    // we get here if
+    // - batching is called when it's not enabled
+    // - `createContext()` throws
+    // - post body is too large
+    // - input deserialization fails
     const error = getErrorFromUnknown(_err);
 
     const json: TRPCErrorResponse = {
-      id: -1,
+      id: null,
       error: router._def.transformer.output.serialize(
-        router.getErrorShape({ error, type, path: undefined, input, ctx }),
+        router.getErrorShape({
+          error,
+          type,
+          path: undefined,
+          input: undefined,
+          ctx,
+        }),
       ),
     };
     endResponse(json);
-    onError?.({ error, path: undefined, input, ctx, type: type, req });
+    onError?.({
+      error,
+      path: undefined,
+      input: undefined,
+      ctx,
+      type: type,
+      req,
+    });
   }
   await teardown?.();
 }
