@@ -1,8 +1,7 @@
 import Head from 'next/head';
+import Link from 'next/link';
 import { ReactQueryDevtools } from 'react-query/devtools';
 import { trpc } from '../utils/trpc';
-import Link from 'next/link';
-import { useEffect } from 'react';
 
 export default function IndexPage() {
   const postsQuery = trpc.useQuery(['post.all']);
@@ -10,11 +9,11 @@ export default function IndexPage() {
   const utils = trpc.useContext();
 
   // prefetch all posts for instant navigation
-  useEffect(() => {
-    postsQuery.data?.forEach((post) => {
-      utils.prefetchQuery(['post.byId', post.id]);
-    });
-  }, [postsQuery.data, utils]);
+  // useEffect(() => {
+  //   postsQuery.data?.forEach((post) => {
+  //     utils.prefetchQuery(['post.byId', post.id]);
+  //   });
+  // }, [postsQuery.data, utils]);
 
   return (
     <>
