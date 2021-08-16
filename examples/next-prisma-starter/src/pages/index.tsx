@@ -1,9 +1,12 @@
+import { GetServerSidePropsContext, InferGetServerSidePropsType } from 'next';
 import Head from 'next/head';
 import Link from 'next/link';
 import { ReactQueryDevtools } from 'react-query/devtools';
 import { trpc } from '../utils/trpc';
 
-export default function IndexPage() {
+export default function IndexPage(
+  props: InferGetServerSidePropsType<typeof getServerSideProps>,
+) {
   const postsQuery = trpc.useQuery(['post.all']);
   const addPost = trpc.useMutation('post.add');
   const utils = trpc.useContext();
@@ -14,6 +17,9 @@ export default function IndexPage() {
   //     utils.prefetchQuery(['post.byId', post.id]);
   //   });
   // }, [postsQuery.data, utils]);
+
+  console.log('props:', props);
+  console.log('deep', props.deep.test);
 
   return (
     <>
@@ -116,3 +122,13 @@ export default function IndexPage() {
 //     revalidate: 1,
 //   };
 // };
+
+export const getServerSideProps = async () => {
+  return {
+    props: {
+      deep: {
+        test: 'ok' as const,
+      },
+    },
+  };
+};
