@@ -2,6 +2,8 @@ name: Examples E2E
 on: [push]
 jobs:
   e2e:
+    env:
+      DATABASE_URL: postgresql://postgres:@localhost:5432/trpcdb
     runs-on: ${{ matrix.os }}
     timeout-minutes: 10
     strategy:
@@ -34,11 +36,5 @@ jobs:
         uses: bahmutov/npm-install@v1
 
       - run: yarn --cwd examples/${{ matrix.dir }} build
-        env:
-          DATABASE_URL: postgresql://postgres:@localhost:5432/trpcdb
       - run: yarn --cwd examples/${{ matrix.dir }} test-start
-        env:
-          DATABASE_URL: postgresql://postgres:@localhost:5432/trpcdb
       - run: yarn --cwd examples/${{ matrix.dir }} test-dev
-        env:
-          DATABASE_URL: postgresql://postgres:@localhost:5432/trpcdb
