@@ -2,6 +2,8 @@ name: E2E-testing
 on: [push]
 jobs:
   e2e:
+    env:
+      DATABASE_URL: postgresql://postgres:@localhost:5432/trpcdb
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -26,12 +28,6 @@ jobs:
       - run: yarn install
 
       - run: yarn build
-        env:
-          DATABASE_URL: postgresql://postgres:@localhost:5432/trpcdb
       - run: yarn lint
       - run: yarn test-start
-        env:
-          DATABASE_URL: postgresql://postgres:@localhost:5432/trpcdb
       - run: yarn test-dev
-        env:
-          DATABASE_URL: postgresql://postgres:@localhost:5432/trpcdb
