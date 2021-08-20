@@ -221,7 +221,7 @@ describe('formatError()', () => {
     );
   });
   test('setting custom http response code', async () => {
-    const TEAPOT_ERORR_CODE = 418;
+    const TEAPOT_ERROR_CODE = 418;
     const onError = jest.fn();
     const { close, httpUrl } = routerToServerAndClient(
       trpc
@@ -234,7 +234,7 @@ describe('formatError()', () => {
             ...shape,
             data: {
               ...shape.data,
-              httpStatus: TEAPOT_ERORR_CODE,
+              httpStatus: TEAPOT_ERROR_CODE,
             },
           };
         })
@@ -253,7 +253,7 @@ describe('formatError()', () => {
     const res = await fetch(`${httpUrl}/q`);
 
     expect(res.ok).toBeFalsy();
-    expect(res.status).toBe(TEAPOT_ERORR_CODE);
+    expect(res.status).toBe(TEAPOT_ERROR_CODE);
 
     close();
   });
