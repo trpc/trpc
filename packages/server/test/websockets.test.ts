@@ -443,7 +443,7 @@ test('not found error', async () => {
   );
 
   expect(error.name).toBe('TRPCClientError');
-  expect(error.shape?.data.code).toMatchInlineSnapshot(`"PATH_NOT_FOUND"`);
+  expect(error.shape?.data.code).toMatchInlineSnapshot(`"NOT_FOUND"`);
 
   close();
 });

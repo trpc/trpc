@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import { AsyncLocalStorage } from 'async_hooks';
 import * as trpc from '../src';
-import { httpError } from '../src';
+import { TRPCError } from '../src';
 import { MiddlewareResult } from '../src/internals/middlewares';
 import { routerToServerAndClient, waitMs } from './_testHelpers';
 
@@ -81,7 +81,7 @@ test('allows you to throw an error (e.g. auth)', async () => {
           .router<Context>()
           .middleware(({ ctx, next }) => {
             if (!ctx.user?.isAdmin) {
-              throw httpError.unauthorized();
+              throw new TRPCError({ code: 'UNAUTHORIZED' });
             }
             return next();
           })
@@ -266,7 +266,7 @@ test('equiv', () => {
         .router<Context>()
         .middleware(({ ctx, next }) => {
           if (!ctx.user?.isAdmin) {
-            throw httpError.unauthorized();
+            throw new TRPCError({ code: 'UNAUTHORIZED' });
           }
           return next();
         })
@@ -289,7 +289,7 @@ test('equiv', () => {
         .router<Context>()
         .middleware(({ ctx, next }) => {
           if (!ctx.user?.isAdmin) {
-            throw httpError.unauthorized();
+            throw new TRPCError({ code: 'UNAUTHORIZED' });
           }
           return next();
         })

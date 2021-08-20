@@ -27,7 +27,13 @@ export function httpRequest<TResponseShape = TRPCResponse>(
     mutation: 'POST',
     subscription: 'PATCH',
   };
-  const input = 'input' in props ? props.input : arrayToDict(props.inputs);
+  const input =
+    'input' in props
+      ? rt.transformer.serialize(props.input)
+      : arrayToDict(
+          props.inputs.map((_input) => rt.transformer.serialize(_input)),
+        );
+
   function getUrl() {
     let url = props.url + '/' + path;
     const queryParts: string[] = [];
@@ -35,11 +41,7 @@ export function httpRequest<TResponseShape = TRPCResponse>(
       queryParts.push('batch=1');
     }
     if (type === 'query' && input !== undefined) {
-      queryParts.push(
-        `input=${encodeURIComponent(
-          JSON.stringify(rt.transformer.serialize(input)),
-        )}`,
-      );
+      queryParts.push(`input=${encodeURIComponent(JSON.stringify(input))}`);
     }
     if (queryParts.length) {
       url += '?' + queryParts.join('&');
@@ -50,8 +52,7 @@ export function httpRequest<TResponseShape = TRPCResponse>(
     if (type === 'query') {
       return undefined;
     }
-    const rawInput = rt.transformer.serialize(input);
-    return rawInput !== undefined ? JSON.stringify(rawInput) : undefined;
+    return input !== undefined ? JSON.stringify(input) : undefined;
   }
 
   const promise = new Promise<TResponseShape>((resolve, reject) => {

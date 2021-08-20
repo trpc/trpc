@@ -74,6 +74,7 @@ export const appRouter = createRouter()
 
 ```ts
 import * as trpc from '@trpc/server';
+import { TRPCError } from '@trpc/server';
 import { createRouter } from './[trpc]';
 
 export const appRouter = createRouter()
@@ -90,7 +91,7 @@ export const appRouter = createRouter()
       // this protectes all procedures defined after in this router
       .middleware(async ({ ctx, next }) => {
         if (!ctx.user?.isAdmin) {
-          throw httpError.unauthorized();
+          throw new TRPCError({ code: 'UNAUTHORIZED' });
         }
         return next()
       })

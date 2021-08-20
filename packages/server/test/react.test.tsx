@@ -40,6 +40,7 @@ import {
   TRPCWebSocketClient,
 } from '../../client/src/links/wsLink';
 import { splitLink } from '../../client/src/links/splitLink';
+import { TRPCError } from '../src/TRPCError';
 
 setLogger({
   log() {},
@@ -92,7 +93,7 @@ function createAppRouter() {
         postById(input);
         const post = db.posts.find((p) => p.id === input);
         if (!post) {
-          throw trpcServer.httpError.notFound();
+          throw new TRPCError({ code: 'NOT_FOUND' });
         }
         return post;
       },

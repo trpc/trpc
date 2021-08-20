@@ -442,7 +442,7 @@ export class Router<
 
     if (!procedure) {
       throw new TRPCError({
-        code: 'PATH_NOT_FOUND',
+        code: 'NOT_FOUND',
         message: `No "${type}"-procedure on path "${path}"`,
       });
     }
