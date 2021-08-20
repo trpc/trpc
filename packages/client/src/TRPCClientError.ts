@@ -7,6 +7,7 @@ export class TRPCClientError<
 > extends Error {
   public readonly originalError;
   public readonly shape: Maybe<TErrorShape>;
+  public readonly data: Maybe<TErrorShape['data']>;
   /**
    * Fatal error - expect no more results after this error
    * Used for when WebSockets disconnect prematurely.
@@ -30,6 +31,7 @@ export class TRPCClientError<
     this.message = message;
     this.originalError = originalError;
     this.shape = result?.error;
+    this.data = result?.error.data;
     this.name = 'TRPCClientError';
 
     this.name = 'TRPCClientError';
