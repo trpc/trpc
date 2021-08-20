@@ -12,6 +12,7 @@ module.exports = {
         'react/intro',
         'main/contributing',
         'main/love',
+        'main/sponsors',
       ],
     },
     {
