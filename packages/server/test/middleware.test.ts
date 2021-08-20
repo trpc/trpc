@@ -362,12 +362,12 @@ test('middleware throwing should return a union', async () => {
   const { client, close } = routerToServerAndClient(
     trpc
       .router()
-      .middleware(async ({ next }) => {
+      .middleware(async function firstMiddleware({ next }) {
         const result = await next();
         fn(result);
         return result;
       })
-      .middleware(() => {
+      .middleware(async function middlewareThatThrows() {
         throw new CustomError('error');
       })
       .query('test', {
@@ -382,6 +382,7 @@ test('middleware throwing should return a union', async () => {
   } catch {}
   expect(fn).toHaveBeenCalledTimes(1);
   const res = fn.mock.calls[0][0];
+
   if (res.ok) {
     throw new Error('wrong state');
   }
@@ -390,5 +391,5 @@ test('middleware throwing should return a union', async () => {
   const originalError = res.error.originalError as CustomError;
   expect(originalError).toBeInstanceOf(CustomError);
 
-  await close();
+  close();
 });
