@@ -9,7 +9,7 @@ import { OnErrorFunction } from '../src/internals/BaseHandlerOptions';
 import { getMessageFromUnkownError } from '../src/internals/errors';
 import { TRPCError } from '../src/TRPCError';
 import { routerToServerAndClient, waitError } from './_testHelpers';
-
+import fetch from 'node-fetch';
 function assertClientError(
   err: unknown,
 ): asserts err is TRPCClientError<AnyRouter> {
@@ -219,6 +219,43 @@ describe('formatError()', () => {
     }).toThrowErrorMatchingInlineSnapshot(
       `"You seem to have double \`formatError()\`-calls in your router tree"`,
     );
+  });
+  test('setting custom http response code', async () => {
+    const TEAPOT_ERORR_CODE = 418;
+    const onError = jest.fn();
+    const { close, httpUrl } = routerToServerAndClient(
+      trpc
+        .router()
+        .formatError(({ error, shape }) => {
+          if (!(error.originalError instanceof ZodError)) {
+            return shape;
+          }
+          return {
+            ...shape,
+            data: {
+              ...shape.data,
+              httpStatus: TEAPOT_ERORR_CODE,
+            },
+          };
+        })
+        .query('q', {
+          input: z.string(),
+          resolve() {
+            return null;
+          },
+        }),
+      {
+        server: {
+          onError,
+        },
+      },
+    );
+    const res = await fetch(`${httpUrl}/q`);
+
+    expect(res.ok).toBeFalsy();
+    expect(res.status).toBe(TEAPOT_ERORR_CODE);
+
+    close();
   });
 });
 

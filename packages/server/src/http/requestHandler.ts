@@ -1,16 +1,16 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 import url from 'url';
 import { assertNotBrowser } from '../assertNotBrowser';
-import { getErrorFromUnknown } from '../internals/errors';
-import { TRPCError } from '../TRPCError';
-import { callProcedure } from '../internals/callProcedure';
-import { AnyRouter, inferRouterContext, ProcedureType } from '../router';
-import { TRPCErrorResponse, TRPCResponse } from '../rpc';
 import {
+  BaseHandlerOptions,
   BaseRequest,
   BaseResponse,
-  BaseHandlerOptions,
 } from '../internals/BaseHandlerOptions';
+import { callProcedure } from '../internals/callProcedure';
+import { getErrorFromUnknown } from '../internals/errors';
+import { AnyRouter, inferRouterContext, ProcedureType } from '../router';
+import { TRPCErrorResponse, TRPCResponse } from '../rpc';
+import { TRPCError } from '../TRPCError';
 import { getHTTPStatusCode } from './internals/getHTTPStatusCode';
 import { getPostBody } from './internals/getPostBody';
 import { getQueryInput } from './internals/getQueryInput';
@@ -89,12 +89,37 @@ export async function requestHandler<
     ? req.query
     : url.parse(req.url!, true).query;
   const isBatchCall = reqQueryParams.batch;
-  function endResponse(json: TRPCResponse | TRPCResponse[]) {
-    res.statusCode = getHTTPStatusCode(json, router._def.transformer);
+
+  function serializeResponseItem(obj: TRPCResponse): TRPCResponse {
+    if ('error' in obj) {
+      return {
+        ...obj,
+        error: router._def.transformer.output.serialize(obj.error),
+      };
+    }
+    if (obj.result.type !== 'data') {
+      return obj;
+    }
+    return {
+      ...obj,
+      result: {
+        ...obj.result,
+        data: router._def.transformer.output.serialize(obj.result.data),
+      },
+    };
+  }
+  function endResponse(untransformedJSON: TRPCResponse | TRPCResponse[]) {
+    res.statusCode = getHTTPStatusCode(untransformedJSON);
 
     res.setHeader('Content-Type', 'application/json');
-    res.end(JSON.stringify(json));
+
+    const transformedJSON = Array.isArray(untransformedJSON)
+      ? untransformedJSON.map(serializeResponseItem)
+      : serializeResponseItem(untransformedJSON);
+
+    res.end(JSON.stringify(transformedJSON));
   }
+
   try {
     if (isBatchCall && !batchingEnabled) {
       throw new Error(`Batching is not enabled on the server`);
@@ -141,7 +166,7 @@ export async function requestHandler<
     };
     const inputs = getInputs();
     const paths = isBatchCall ? opts.path.split(',') : [opts.path];
-    const results = await Promise.all(
+    const rawResults = await Promise.all(
       paths.map(async (path, index) => {
         const id = null;
         const input = inputs[index];
@@ -157,7 +182,7 @@ export async function requestHandler<
             id,
             result: {
               type: 'data',
-              data: router._def.transformer.output.serialize(output),
+              data: output,
             },
           };
           return json;
@@ -166,9 +191,7 @@ export async function requestHandler<
 
           const json: TRPCErrorResponse = {
             id,
-            error: router._def.transformer.output.serialize(
-              router.getErrorShape({ error, type, path, input, ctx }),
-            ),
+            error: router.getErrorShape({ error, type, path, input, ctx }),
           };
           onError?.({ error, path, input, ctx, type: type, req });
           return json;
@@ -176,7 +199,7 @@ export async function requestHandler<
       }),
     );
 
-    const result = isBatchCall ? results : results[0];
+    const result = isBatchCall ? rawResults : rawResults[0];
     endResponse(result);
   } catch (_err) {
     // we get here if
@@ -188,15 +211,13 @@ export async function requestHandler<
 
     const json: TRPCErrorResponse = {
       id: null,
-      error: router._def.transformer.output.serialize(
-        router.getErrorShape({
-          error,
-          type,
-          path: undefined,
-          input: undefined,
-          ctx,
-        }),
-      ),
+      error: router.getErrorShape({
+        error,
+        type,
+        path: undefined,
+        input: undefined,
+        ctx,
+      }),
     };
     endResponse(json);
     onError?.({
