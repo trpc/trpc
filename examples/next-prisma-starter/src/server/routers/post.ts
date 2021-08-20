@@ -46,7 +46,7 @@ export const postRouter = createRouter()
       });
       if (!post) {
         throw new TRPCError({
-          code: 'PATH_NOT_FOUND',
+          code: 'NOT_FOUND',
           message: `No post with id '${input}'`,
         });
       }
