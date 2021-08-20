@@ -110,7 +110,7 @@ npx create-next-app --example https://github.com/trpc/trpc --example-path exampl
 
 ## All contributors ✨
 
-> tRPC is developed by [KATT](https://twitter.com/alexdotjs), originally based on a proof-of-concept a proof of concept by [colinhacks](https://github.com/colinhacks).
+> tRPC is developed by [KATT](https://twitter.com/alexdotjs), originally based on a proof-of-concept by [colinhacks](https://github.com/colinhacks).
 
 <!-- ALL-CONTRIBUTORS-LIST:START - Do not remove or modify this section -->
 <!-- prettier-ignore-start -->
