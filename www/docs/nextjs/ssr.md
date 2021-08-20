@@ -12,7 +12,7 @@ Server-side rendering comes with additional considerations. In order to execute 
 ```tsx
 import React from 'react';
 import { withTRPC } from '@trpc/next';
-import { AppType } from 'next/dist/next-server/lib/utils';
+import { AppType } from 'next/dist/shared/lib/utils';
 import type { AppRouter } from './api/trpc/[trpc]';
 
 const MyApp: AppType = ({ Component, pageProps }) => {

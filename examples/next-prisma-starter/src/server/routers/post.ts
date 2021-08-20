@@ -6,7 +6,7 @@
 import { createRouter } from 'server/trpc';
 import { z } from 'zod';
 
-export const postsRouter = createRouter()
+export const postRouter = createRouter()
   // create
   .mutation('add', {
     input: z.object({
@@ -29,7 +29,12 @@ export const postsRouter = createRouter()
        * @link https://trpc.io/docs/useInfiniteQuery
        */
 
-      return ctx.prisma.post.findMany();
+      return ctx.prisma.post.findMany({
+        select: {
+          id: true,
+          title: true,
+        },
+      });
     },
   })
   .query('byId', {

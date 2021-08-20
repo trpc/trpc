@@ -1,12 +1,19 @@
 import Head from 'next/head';
+import Link from 'next/link';
 import { ReactQueryDevtools } from 'react-query/devtools';
 import { trpc } from '../utils/trpc';
 
 export default function IndexPage() {
-  const postsQuery = trpc.useQuery(['posts.all']);
-  const addPost = trpc.useMutation('posts.add');
+  const postsQuery = trpc.useQuery(['post.all']);
+  const addPost = trpc.useMutation('post.add');
   const utils = trpc.useContext();
-  // trpc.useQuery(['posts.byId', 'a083530f-245a-4fb8-aaae-bc43921c6444']);
+
+  // prefetch all posts for instant navigation
+  // useEffect(() => {
+  //   postsQuery.data?.forEach((post) => {
+  //     utils.prefetchQuery(['post.byId', post.id]);
+  //   });
+  // }, [postsQuery.data, utils]);
 
   return (
     <>
@@ -27,7 +34,9 @@ export default function IndexPage() {
       {postsQuery.data?.map((item) => (
         <article key={item.id}>
           <h3>{item.title}</h3>
-          <p>{item.text.substr(0)}</p>
+          <Link href={`/post/${item.id}`}>
+            <a>View more</a>
+          </Link>
         </article>
       ))}
 
@@ -48,7 +57,7 @@ export default function IndexPage() {
           };
           try {
             await addPost.mutateAsync(input);
-            utils.invalidateQuery(['posts.all']);
+            utils.invalidateQuery(['post.all']);
 
             $title.value = '';
             $text.value = '';
@@ -97,7 +106,7 @@ export default function IndexPage() {
 //     ctx: await createContext(),
 //   });
 //
-//   await ssg.fetchQuery('posts.all');
+//   await ssg.fetchQuery('post.all');
 //
 //   return {
 //     props: {

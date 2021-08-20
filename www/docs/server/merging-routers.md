@@ -13,7 +13,7 @@ Thanks to TypeScript 4.1 template literal types we can also prefix the procedure
 ## Working example
 
 - Code at [/examples/next-prisma-starter/src/server/routers/app.ts](https://github.com/trpc/trpc/blob/main/examples/next-prisma-starter/src/server/routers/app.ts)
-- All code for posts living in a separate router and namespaced with `posts.`
+- All code for posts living in a separate router and namespaced with `post.`
 
 ## Example code
 
@@ -49,7 +49,7 @@ const users = createRouter()
 
 
 const appRouter = createRouter()
-  .merge('users.', users) // prefix user procedures with "users."
-  .merge('posts.', posts) // prefix poosts procedures with "posts."
+  .merge('user', users) // prefix user procedures with "user"
+  .merge('post.', posts) // prefix poosts procedures with "post."
   ;
 ```

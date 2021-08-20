@@ -15,9 +15,9 @@ Request batching is automatically enabled which batches your requests to the ser
 ```tsx
 // below will be done in the same request when batching is enabled
 const somePosts = await Promise.all([
-  client.query('posts.byId', 1),
-  client.query('posts.byId', 2),
-  client.query('posts.byId', 3),
+  client.query('post.byId', 1),
+  client.query('post.byId', 2),
+  client.query('post.byId', 3),
 ])
 ```
 
@@ -47,7 +47,7 @@ export default trpcNext.createNextApiHandler({
 ```ts
 import type { AppRouter } from 'pages/api/trpc/[trpc]';
 import { withTRPC } from '@trpc/next';
-import { AppType } from 'next/dist/next-server/lib/utils';
+import { AppType } from 'next/dist/shared/lib/utils';
 // 👇 import the httpBatchLink
 import { httpLink } from '@trpc/client/links/httpLink';
 
