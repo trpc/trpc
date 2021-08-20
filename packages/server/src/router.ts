@@ -10,6 +10,7 @@ import {
   CreateProcedureWithoutInput,
   inferProcedureFromOptions,
   Procedure,
+  ProcedureCallOptions,
   ProcedureWithInput,
 } from './procedure';
 import {
@@ -21,6 +22,7 @@ import {
 import { Subscription } from './subscription';
 import { CombinedDataTransformer, DataTransformerOptions } from './transformer';
 import { flatten, Prefixer, ThenArg } from './types';
+import { MiddlewareFunction } from './internals/middlewares';
 
 assertNotBrowser();
 
@@ -150,11 +152,7 @@ const defaultTransformer: CombinedDataTransformer = {
   input: { serialize: (obj) => obj, deserialize: (obj) => obj },
   output: { serialize: (obj) => obj, deserialize: (obj) => obj },
 };
-export type MiddlewareFunction<TContext> = (opts: {
-  ctx: TContext;
-  type: ProcedureType;
-  path: string;
-}) => Promise<void> | void;
+
 export class Router<
   TContext,
   TQueries extends ProcedureRecord<TContext>,
@@ -436,17 +434,8 @@ export class Router<
   /**
    * Invoke procedure. Only for internal use within library.
    */
-  private async invoke({
-    type,
-    path,
-    ctx,
-    input,
-  }: {
-    type: ProcedureType;
-    ctx: TContext;
-    path: string;
-    input?: unknown;
-  }): Promise<unknown> {
+  private async call(opts: ProcedureCallOptions<TContext>): Promise<unknown> {
+    const { type, path } = opts;
     const defTarget = PROCEDURE_DEFINITION_MAP[type];
     const defs = this._def[defTarget];
     const procedure = defs[path] as Procedure<TContext> | undefined;
@@ -458,7 +447,7 @@ export class Router<
       });
     }
 
-    return procedure.call({ ctx, input, type, path });
+    return procedure.call(opts);
   }
 
   public createCaller(ctx: TContext): {
@@ -468,27 +457,27 @@ export class Router<
   } {
     return {
       query: (path, ...args) => {
-        return this.invoke({
+        return this.call({
           type: 'query',
           ctx,
           path,
-          input: args[0],
+          rawInput: args[0],
         }) as any;
       },
       mutation: (path, ...args) => {
-        return this.invoke({
+        return this.call({
           type: 'mutation',
           ctx,
           path,
-          input: args[0],
+          rawInput: args[0],
         }) as any;
       },
       subscription: (path, ...args) => {
-        return this.invoke({
+        return this.call({
           type: 'subscription',
           ctx,
           path,
-          input: args[0],
+          rawInput: args[0],
         }) as any;
       },
     };
