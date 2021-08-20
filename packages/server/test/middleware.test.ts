@@ -1,9 +1,14 @@
-import { routerToServerAndClient } from './_testHelpers';
+/* eslint-disable @typescript-eslint/no-unused-vars */
+import { AsyncLocalStorage } from 'async_hooks';
 import * as trpc from '../src';
 import { httpError } from '../src';
+import { MiddlewareResult } from '../src/internals/middlewares';
+import { routerToServerAndClient, waitMs } from './_testHelpers';
 
 test('is called if def first', async () => {
-  const middleware = jest.fn();
+  const middleware = jest.fn((opts) => {
+    return opts.next();
+  });
   const { client, close } = routerToServerAndClient(
     trpc
       .router()
@@ -74,10 +79,11 @@ test('allows you to throw an error (e.g. auth)', async () => {
         'admin.',
         trpc
           .router<Context>()
-          .middleware(({ ctx }) => {
+          .middleware(({ ctx, next }) => {
             if (!ctx.user?.isAdmin) {
               throw httpError.unauthorized();
             }
+            return next();
           })
           .query('secretPlace', {
             resolve() {
@@ -120,9 +126,15 @@ test('allows you to throw an error (e.g. auth)', async () => {
 });
 
 test('child routers + hook call order', async () => {
-  const middlewareInParent = jest.fn();
-  const middlewareInChild = jest.fn();
-  const middlewareInGrandChild = jest.fn();
+  const middlewareInParent = jest.fn((opts) => {
+    return opts.next();
+  });
+  const middlewareInChild = jest.fn((opts) => {
+    return opts.next();
+  });
+  const middlewareInGrandChild = jest.fn((opts) => {
+    return opts.next();
+  });
   const { client, close } = routerToServerAndClient(
     trpc
       .router()
@@ -176,6 +188,63 @@ test('child routers + hook call order', async () => {
   close();
 });
 
+test('not returning next result is an error at compile-time', async () => {
+  const { client, close } = routerToServerAndClient(
+    trpc
+      .router()
+      // @ts-expect-error Compiler makes sure we actually return the `next()` result.
+      .middleware(async ({ next }) => {
+        await next();
+      })
+      .query('helloQuery', {
+        async resolve() {
+          return 'hello';
+        },
+      }),
+  );
+
+  await expect(client.query('helloQuery')).rejects.toMatchInlineSnapshot(
+    `[TRPCClientError: No result from middlewares - did you forget to \`return next()\`?]`,
+  );
+
+  close();
+});
+
+test('async hooks', async () => {
+  const storage = new AsyncLocalStorage<{ requestId: number }>();
+  let requestCount = 0;
+  const log = jest.fn();
+  const { client, close } = routerToServerAndClient(
+    trpc
+      .router()
+      .middleware((opts) => {
+        return new Promise((resolve, reject) => {
+          storage.run({ requestId: ++requestCount }, async () => {
+            opts.next().then(resolve, reject);
+          });
+        });
+      })
+      .query('foo', {
+        input: String,
+        resolve({ input }) {
+          // We can now call `.getStore()` arbitrarily deep in the call stack, without having to explicitly pass context
+          const ambientRequestInfo = storage.getStore();
+          log({ input, requestId: ambientRequestInfo?.requestId });
+          return 'bar ' + input;
+        },
+      }),
+  );
+
+  expect(await client.query('foo', 'one')).toBe('bar one');
+  expect(await client.query('foo', 'two')).toBe('bar two');
+
+  expect(log).toHaveBeenCalledTimes(2);
+  expect(log).toHaveBeenCalledWith({ input: 'one', requestId: 1 });
+  expect(log).toHaveBeenCalledWith({ input: 'two', requestId: 2 });
+
+  close();
+});
+
 test('equiv', () => {
   type Context = {
     user?: {
@@ -195,10 +264,11 @@ test('equiv', () => {
       'admin.',
       trpc
         .router<Context>()
-        .middleware(({ ctx }) => {
+        .middleware(({ ctx, next }) => {
           if (!ctx.user?.isAdmin) {
             throw httpError.unauthorized();
           }
+          return next();
         })
         .query('secretPlace', {
           resolve() {
@@ -217,10 +287,11 @@ test('equiv', () => {
     .merge(
       trpc
         .router<Context>()
-        .middleware(({ ctx }) => {
+        .middleware(({ ctx, next }) => {
           if (!ctx.user?.isAdmin) {
             throw httpError.unauthorized();
           }
+          return next();
         })
         .query('admin.secretPlace', {
           resolve() {
@@ -228,4 +299,97 @@ test('equiv', () => {
           },
         }),
     );
+});
+
+test('measure time middleware', async () => {
+  const WAIT_FOR_MS = 20;
+  let time = 0;
+  const logMock = jest.fn();
+  const { client, close } = routerToServerAndClient(
+    trpc
+      .router()
+      .middleware(async ({ next, path, type }) => {
+        const start = Date.now();
+        const durationMs = Date.now() - start;
+        const result = await next();
+        result.ok
+          ? logMock('OK request timing:', { path, type, durationMs })
+          : logMock('Non-OK request timing', { path, type, durationMs });
+        time = Date.now() - start;
+
+        return result;
+      })
+      .query('slowQuery', {
+        async resolve() {
+          await waitMs(WAIT_FOR_MS);
+          return 'hello';
+        },
+      }),
+  );
+
+  expect(await client.query('slowQuery')).toBe('hello');
+  expect(time >= WAIT_FOR_MS).toBeTruthy();
+
+  const calls = (logMock.mock.calls as any[]).map((args) => {
+    // omit durationMs as it's variable
+    const [str, { durationMs, ...opts }] = args;
+    return [str, opts];
+  });
+  expect(calls).toMatchInlineSnapshot(`
+Array [
+  Array [
+    "OK request timing:",
+    Object {
+      "path": "slowQuery",
+      "type": "query",
+    },
+  ],
+]
+`);
+  close();
+});
+
+test('middleware throwing should return a union', async () => {
+  class CustomError extends Error {
+    constructor(msg: string) {
+      super(msg);
+      Object.setPrototypeOf(this, CustomError.prototype);
+    }
+  }
+  const fn = jest.fn((res: MiddlewareResult) => {
+    return res;
+  });
+  const { client, close } = routerToServerAndClient(
+    trpc
+      .router()
+      .middleware(async function firstMiddleware({ next }) {
+        const result = await next();
+        fn(result);
+        return result;
+      })
+      .middleware(async function middlewareThatThrows() {
+        throw new CustomError('error');
+      })
+      .query('test', {
+        resolve() {
+          return 'test';
+        },
+      }),
+  );
+
+  try {
+    await client.query('test');
+  } catch {}
+  expect(fn).toHaveBeenCalledTimes(1);
+  const res = fn.mock.calls[0][0];
+
+  if (res.ok) {
+    throw new Error('wrong state');
+  }
+  delete res.error.stack;
+  expect(res.error).toMatchInlineSnapshot(`[TRPCError: error]`);
+  const originalError = res.error.originalError as CustomError;
+  expect(originalError).toBeInstanceOf(CustomError);
+
+  close();
 });
