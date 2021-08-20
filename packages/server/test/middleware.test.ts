@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import { AsyncLocalStorage } from 'async_hooks';
 import * as trpc from '../src';
 import { httpError } from '../src';
@@ -303,13 +304,17 @@ test('equiv', () => {
 test('measure time middleware', async () => {
   const WAIT_FOR_MS = 20;
   let time = 0;
+  const logMock = jest.fn();
   const { client, close } = routerToServerAndClient(
     trpc
       .router()
-      .middleware(async ({ next }) => {
+      .middleware(async ({ next, path, type }) => {
         const start = Date.now();
-
+        const durationMs = Date.now() - start;
         const result = await next();
+        result.ok
+          ? logMock('OK request timing:', { path, type, durationMs })
+          : logMock('Non-OK request timing', { path, type, durationMs });
         time = Date.now() - start;
 
         return result;
@@ -324,6 +329,23 @@ test('measure time middleware', async () => {
 
   expect(await client.query('slowQuery')).toBe('hello');
   expect(time >= WAIT_FOR_MS).toBeTruthy();
+
+  const calls = (logMock.mock.calls as any[]).map((args) => {
+    // omit durationMs as it's variable
+    const [str, { durationMs, ...opts }] = args;
+    return [str, opts];
+  });
+  expect(calls).toMatchInlineSnapshot(`
+Array [
+  Array [
+    "OK request timing:",
+    Object {
+      "path": "slowQuery",
+      "type": "query",
+    },
+  ],
+]
+`);
   close();
 });
 
