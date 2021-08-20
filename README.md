@@ -82,7 +82,15 @@ If you like working with tRPC, consider giving a token a apprecation by [GitHub 
 
 ### Companies
 
-_No one here yet - get in touch on [Twitter](https://twitter.com/alexdotjs) or by [email](mailto:alex@trpc.io)._
+<table>
+  <tbody>
+    <tr>
+      <td align="center"><a href="https://newfront.com"><img src="https://user-images.githubusercontent.com/36125/130158930-216fa212-5909-4ee1-b4b9-fd5935f51245.png" width="143px;" alt=""/></a></td>
+    </tr>
+  </tbody>
+</table>
+
+_Get in touch on [Twitter](https://twitter.com/alexdotjs) or by [email](mailto:alex@trpc.io)._
 
 ### Individuals
 
