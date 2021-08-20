@@ -2,7 +2,6 @@ import Head from 'next/head';
 import Link from 'next/link';
 import { ReactQueryDevtools } from 'react-query/devtools';
 import { trpc } from '../utils/trpc';
-import Link from 'next/link';
 
 export default function IndexPage() {
   const postsQuery = trpc.useQuery(['post.all']);
