@@ -1,7 +1,9 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { assertNotBrowser } from './assertNotBrowser';
-import { MiddlewareFunction, ProcedureType } from './router';
+import { ProcedureType } from './router';
+import { MiddlewareFunction, middlewareMarker } from './internals/middlewares';
 import { TRPCError } from './TRPCError';
+import { getErrorFromUnknown } from './internals/errors';
 assertNotBrowser();
 
 export type ProcedureInputParserZodEsque<TInput = unknown> = {
@@ -38,7 +40,7 @@ interface ProcedureOptions<TContext, TInput, TOutput> {
 
 export interface ProcedureCallOptions<TContext> {
   ctx: TContext;
-  input: unknown;
+  rawInput: unknown;
   path: string;
   type: ProcedureType;
 }
@@ -60,6 +62,26 @@ function getParseFn<TInput>(
   }
 
   throw new Error('Could not find a validator fn');
+}
+
+type AsyncFn<T> = () => Promise<T> | T;
+/**
+ * Wrap a function in a safe wrapper that never throws
+ * Returns a discriminated union
+ */
+async function wrapCallSafe<T>(fn: AsyncFn<T>) {
+  try {
+    const data = await fn();
+    return {
+      ok: true as const,
+      data,
+    };
+  } catch (error: unknown) {
+    return {
+      ok: false as const,
+      error,
+    };
+  }
 }
 
 export abstract class Procedure<
@@ -93,18 +115,51 @@ export abstract class Procedure<
   /**
    * Trigger middlewares in order, parse raw input & call resolver
    */
-  public async call({
-    ctx,
-    input: rawInput,
-    type,
-    path,
-  }: ProcedureCallOptions<TContext>): Promise<TOutput> {
-    for (const middleware of this.middlewares) {
-      await middleware({ ctx, type, path });
+  public async call(opts: ProcedureCallOptions<TContext>): Promise<TOutput> {
+    // wrap the actual resolver and treat as the last "middleware"
+    const middlewaresWithResolver = this.middlewares.concat([
+      async () => {
+        const input = this.parseInput(opts.rawInput);
+        const data = await this.resolver({ ...opts, input });
+        return {
+          marker: middlewareMarker,
+          ok: true,
+          data,
+        };
+      },
+    ]);
+
+    // create `next()` calls in resolvers
+    const nextFns = middlewaresWithResolver.map((fn, index) => {
+      return async () => {
+        const res = await wrapCallSafe(() =>
+          fn({ ...opts, next: nextFns[index + 1] }),
+        );
+        if (res.ok) {
+          return res.data;
+        }
+        return {
+          ok: false as const,
+          error: getErrorFromUnknown(res.error),
+        };
+      };
+    });
+
+    // there's always at least one "next" since we wrap this.resolver in a middleware
+    const result = await nextFns[0]();
+    if (!result) {
+      throw new TRPCError({
+        code: 'INTERNAL_SERVER_ERROR',
+        message:
+          'No result from middlewares - did you forget to `return next()`?',
+      });
     }
-    const input = this.parseInput(rawInput);
-    const output = await this.resolver({ ctx, input, type });
-    return output;
+    if (!result.ok) {
+      // re-throw original error
+      throw result.error;
+    }
+
+    return result.data as TOutput;
   }
 
   /**

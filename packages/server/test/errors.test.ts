@@ -111,7 +111,7 @@ test('input error', async () => {
   close();
 });
 
-test('httpError.unauthorized()', async () => {
+test('unauthorized()', async () => {
   const onError = jest.fn();
   const { client, close } = routerToServerAndClient(
     trpc.router().query('err', {
@@ -249,7 +249,7 @@ test('make sure object is ignoring prototype', async () => {
   expect(clientError.shape.code).toMatchInlineSnapshot(`-32004`);
   expect(onError).toHaveBeenCalledTimes(1);
   const serverError = onError.mock.calls[0][0].error;
-  expect(serverError.code).toMatchInlineSnapshot(`"PATH_NOT_FOUND"`);
+  expect(serverError.code).toMatchInlineSnapshot(`"NOT_FOUND"`);
 
   close();
 });

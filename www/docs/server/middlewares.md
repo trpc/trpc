@@ -6,12 +6,11 @@ slug: /middlewares
 ---
 
 
-You can are able to add middlewares to a whole router with the `middleware()` method. The middleware(s) will be run before any of the procedures defined after are invoked & can be async or sync.
+You are able to add middleware(s) to a whole router with the `middleware()` method. The middleware(s) will wrap the invocation of the procedure and must pass through its return value.
 
+## Examples
 
-
-## Example
-
+### Authorization
 
 In the example below any call to `admin.*` will ensure that the user is an "admin" before executing any query or mutation.
 
@@ -28,10 +27,11 @@ trpc
     'admin.',
     trpc
       .router<Context>()
-      .middleware(async ({ ctx }) => {
+      .middleware(async ({ ctx, next }) => {
         if (!ctx.user?.isAdmin) {
           throw new TRPCError({ code: "UNAUTHORIZED" });
         }
+        return next()
       })
       .query('secretPlace', {
         resolve() {
@@ -46,3 +46,28 @@ trpc
 :::tip
 See [Error Handling](error-handling.md) to learn more about the `TRPCError` thrown in the above example.
 :::
+
+### Logging
+
+In the example below timings for queries are logged automatically.
+
+```ts
+trpc
+  .router<Context>()
+  .middleware(async ({ path, type, next }) => {
+    const start = Date.now();
+    const result = await next();
+    console.log('request timing:', {path, type, took: Date.now() - start});
+    return result;
+  })
+  .query('foo', {
+    resolve() {
+      return 'bar';
+    },
+  })
+  .query('abc', {
+    resolve() {
+      return 'def';
+    },
+  })
+```

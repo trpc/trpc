@@ -55,18 +55,6 @@ async function getRequestParams({
   }
 
   const body = await getPostBody({ req, maxBodySize });
-  /**
-   * @deprecated TODO delete me for next major
-   * */
-  if (
-    body &&
-    typeof body === 'object' &&
-    'input' in body &&
-    Object.keys(body).length === 1
-  ) {
-    // legacy format
-    return { input: body.input };
-  }
 
   return { input: body };
 }
@@ -95,7 +83,6 @@ export async function requestHandler<
   }
   const type =
     HTTP_METHOD_PROCEDURE_TYPE_MAP[req.method!] ?? ('unknown' as const);
-  let input: unknown = undefined;
   let ctx: inferRouterContext<TRouter> | undefined = undefined;
 
   const reqQueryParams = req.query
@@ -124,35 +111,40 @@ export async function requestHandler<
       type,
     });
 
-    input =
-      rawInput !== undefined
-        ? router._def.transformer.input.deserialize(rawInput)
-        : undefined;
     ctx = await createContext?.({ req, res });
 
-    const getInputs = (): unknown[] | Record<number, unknown> => {
+    const getInputs = (): Record<number, unknown> => {
       if (!isBatchCall) {
-        return [input];
+        return {
+          0: router._def.transformer.input.deserialize(rawInput),
+        };
       }
 
-      // TODO - next major, delete `Array.isArray()`
       if (
-        !Array.isArray(input) &&
-        (typeof input !== 'object' || input == null)
+        rawInput == null ||
+        typeof rawInput !== 'object' ||
+        Array.isArray(rawInput)
       ) {
         throw new TRPCError({
           code: 'BAD_REQUEST',
-          message:
-            '"input" needs to be an array or object when doing a batch call',
+          message: '"input" needs to be an object when doing a batch call',
         });
       }
-      return input as any;
+      const input: Record<number, unknown> = {};
+      for (const key in rawInput) {
+        const k = key as any as number;
+        input[k] = router._def.transformer.input.deserialize(
+          (rawInput as any)[k],
+        );
+      }
+      return input;
     };
     const inputs = getInputs();
     const paths = isBatchCall ? opts.path.split(',') : [opts.path];
     const results = await Promise.all(
       paths.map(async (path, index) => {
         const id = null;
+        const input = inputs[index];
         try {
           const output = await callProcedure({
             ctx,
@@ -187,16 +179,34 @@ export async function requestHandler<
     const result = isBatchCall ? results : results[0];
     endResponse(result);
   } catch (_err) {
+    // we get here if
+    // - batching is called when it's not enabled
+    // - `createContext()` throws
+    // - post body is too large
+    // - input deserialization fails
     const error = getErrorFromUnknown(_err);
 
     const json: TRPCErrorResponse = {
-      id: -1,
+      id: null,
       error: router._def.transformer.output.serialize(
-        router.getErrorShape({ error, type, path: undefined, input, ctx }),
+        router.getErrorShape({
+          error,
+          type,
+          path: undefined,
+          input: undefined,
+          ctx,
+        }),
       ),
     };
     endResponse(json);
-    onError?.({ error, path: undefined, input, ctx, type: type, req });
+    onError?.({
+      error,
+      path: undefined,
+      input: undefined,
+      ctx,
+      type: type,
+      req,
+    });
   }
   await teardown?.();
 }

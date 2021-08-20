@@ -20,6 +20,7 @@
   "prettier": {
     "printWidth": 80,
     "trailingComma": "all",
+    "endOfLine": "auto",
     "singleQuote": true
   },
   "resolutions": {
@@ -46,7 +47,11 @@
     "changeset": "changeset",
     "release": "changeset publish",
     "version:canary": "changeset version --snapshot canary",
-    "release:canary": "changeset publish --tag canary"
+    "release:canary": "changeset publish --tag canary",
+    "commit-date": "git log -n 1 --date=format:'%Y-%m-%d-%H-%M-%S' --pretty=format:'%ad'",
+    "canary-preid": "echo \"$(yarn --silent current-branch)-$(yarn --silent commit-date)\"",
+    "current-branch": "echo \"$(git rev-parse --abbrev-ref HEAD)\" | sed -E 's/refs\\/heads\\///' | sed -E 's/\\W|_/-/g'",
+    "publish-canary": "lerna publish --canary --preid $(yarn --silent canary-preid) --dist-tag $(yarn --silent current-branch)"
   },
   "dependencies": {
     "@babel/core": "^7.13.10",
