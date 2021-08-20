@@ -7,21 +7,6 @@ slug: /love
 
 Do you love or hate tRPC? Feel free to ping [@alexdotjs on Twitter](https://twitter.com/alexdotjs)
 
-## Sponsors
-
-
-<table>
-  <tbody>
-    <tr>
-      <td align="center"><a href="https://anthonyshort.me"><img src="https://avatars.githubusercontent.com/u/36125?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Anthony Short</b></sub></a></td>
-      <td align="center"><a href="https://hampuskraft.com"><img src="https://avatars.githubusercontent.com/u/24176136?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Hampus Kraft</b></sub></a></td>
-      <td align="center"><a href="http://www.appdome.com"><img src="https://avatars.githubusercontent.com/u/2037064?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Daniel Yogel</b></sub></a></td>
-      <td align="center"><a href="https://samholmes.net"><img src="https://avatars.githubusercontent.com/u/8385528?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Sam Holmes</b></sub></a></td>
-    </tr>
-  </tbody>
-</table>
-
-
 ## From Twitter
 
 <blockquote className="twitter-tweet" data-cards="hidden"><p lang="en" dir="ltr">I am massively impressed by <a href="https://twitter.com/alexdotjs?ref_src=twsrc%5Etfw">@alexdotjs</a>&#39;s <a href="https://t.co/5UmA71uyVg">trpc.io</a>: <br/><br/>end-to-end type-safety is awesome, but so is the simplicity of the architecture: It fits so nicely in my brain! And It uses GET requests for the queries!<br/><br/>I&#39;m using it in production on <a href="https://twitter.com/_snaplet?ref_src=twsrc%5Etfw">@_snaplet</a>, an am very happy</p>&mdash; Peter Cilliers-Pistorius (@appfactory) <a href="https://twitter.com/appfactory/status/1422111411422040068?ref_src=twsrc%5Etfw">August 2, 2021</a></blockquote>
