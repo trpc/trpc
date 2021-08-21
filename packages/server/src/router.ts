@@ -15,6 +15,7 @@ import {
 } from './procedure';
 import {
   TRPCErrorShape,
+  TRPCResponse,
   TRPC_ERROR_CODES_BY_KEY,
   TRPC_ERROR_CODE_KEY,
   TRPC_ERROR_CODE_NUMBER,
@@ -62,6 +63,18 @@ function getDataTransformer(
   }
   return { input: transformer, output: transformer };
 }
+
+/**
+ * Function triggered before requests are sent out the user
+ **/
+type BeforeEndFunction<TRouter extends AnyRouter> = (opts: {
+  data: TRPCResponse<unknown, inferRouterError<TRouter>>[];
+  ctx?: inferRouterContext<TRouter>;
+  /**
+   * The different tRPC paths requested
+   **/
+  paths?: string[];
+}) => void;
 
 export type inferHandlerInput<TProcedure extends Procedure> =
   TProcedure extends ProcedureWithInput<any, infer TInput, any>
@@ -155,6 +168,10 @@ const defaultTransformer: CombinedDataTransformer = {
   output: { serialize: (obj) => obj, deserialize: (obj) => obj },
 };
 
+const defaultBeforeEnd: BeforeEndFunction<any> = () => {
+  // empty function
+};
+
 export class Router<
   TContext,
   TQueries extends ProcedureRecord<TContext>,
@@ -173,6 +190,9 @@ export class Router<
     middlewares: MiddlewareFunction<TContext>[];
     errorFormatter: ErrorFormatter<TContext, TErrorShape>;
     transformer: CombinedDataTransformer;
+    beforeEnd: BeforeEndFunction<
+      Router<TContext, TQueries, TMutations, TSubscriptions, TErrorShape>
+    >;
   }>;
 
   constructor(def?: {
@@ -182,6 +202,9 @@ export class Router<
     middlewares?: MiddlewareFunction<TContext>[];
     errorFormatter?: ErrorFormatter<TContext, TErrorShape>;
     transformer?: CombinedDataTransformer;
+    beforeEnd?: BeforeEndFunction<
+      Router<TContext, TQueries, TMutations, TSubscriptions, TErrorShape>
+    >;
   }) {
     this._def = {
       queries: (def?.queries ?? safeObject()) as TQueries,
@@ -190,6 +213,7 @@ export class Router<
       middlewares: def?.middlewares ?? [],
       errorFormatter: def?.errorFormatter ?? defaultFormatter,
       transformer: def?.transformer ?? defaultTransformer,
+      beforeEnd: def?.beforeEnd ?? defaultBeforeEnd,
     };
   }
 
@@ -430,6 +454,7 @@ export class Router<
       middlewares: this._def.middlewares,
       errorFormatter: this._def.errorFormatter,
       transformer: this._def.transformer,
+      beforeEnd: this._def.beforeEnd,
     });
   }
 
@@ -576,6 +601,29 @@ export class Router<
     >({
       ...this._def,
       transformer,
+    });
+  }
+
+  /**
+   * Add handler to be called before response is sent to the user
+   * Useful for setting cache headers
+   * @link https://trpc.io/docs/caching
+   */
+  beforeEnd(beforeEnd: BeforeEndFunction<this>) {
+    if (this._def.beforeEnd !== defaultBeforeEnd) {
+      throw new Error(
+        'You seem to have double `beforeEnd()`-calls in your router tree',
+      );
+    }
+    return new Router<
+      TContext,
+      TQueries,
+      TMutations,
+      TSubscriptions,
+      TErrorShape
+    >({
+      ...this._def,
+      beforeEnd,
     });
   }
 }

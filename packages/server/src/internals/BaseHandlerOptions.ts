@@ -38,8 +38,4 @@ export interface BaseHandlerOptions<
     enabled: boolean;
   };
   router: TRouter;
-  beforeRequestEnd?: (opts: {
-    data: TRPCResponse<unknown, inferRouterError<TRouter>>[];
-    ctx: inferRouterContext<TRouter>;
-  }) => void;
 }

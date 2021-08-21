@@ -128,6 +128,7 @@ export async function requestHandler<
       type,
     });
 
+    const paths = isBatchCall ? opts.path.split(',') : [opts.path];
     ctx = await createContext?.({ req, res });
 
     const getInputs = (): Record<number, unknown> => {
@@ -157,7 +158,6 @@ export async function requestHandler<
       return input;
     };
     const inputs = getInputs();
-    const paths = isBatchCall ? opts.path.split(',') : [opts.path];
     const rawResults = await Promise.all(
       paths.map(async (path, index) => {
         const id = null;
