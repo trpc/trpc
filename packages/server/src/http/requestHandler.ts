@@ -9,8 +9,13 @@ import {
 import { callProcedure } from '../internals/callProcedure';
 import { getErrorFromUnknown } from '../internals/errors';
 import { transformTRPCResponse } from '../internals/transformTRPCResponse';
-import { AnyRouter, inferRouterContext, ProcedureType } from '../router';
-import { TRPCErrorResponse, TRPCResponse } from '../rpc';
+import {
+  AnyRouter,
+  inferRouterContext,
+  inferRouterError,
+  ProcedureType,
+} from '../router';
+import { TRPCErrorResponse, TRPCResponse, TRPCResultResponse } from '../rpc';
 import { TRPCError } from '../TRPCError';
 import { getHTTPStatusCode } from './internals/getHTTPStatusCode';
 import { getPostBody } from './internals/getPostBody';
@@ -90,8 +95,10 @@ export async function requestHandler<
     ? req.query
     : url.parse(req.url!, true).query;
   const isBatchCall = reqQueryParams.batch;
+  type TRouterError = inferRouterError<TRouter>;
+  type TRouterResponse = TRPCResponse<unknown, TRouterError>;
 
-  function endResponse(untransformedJSON: TRPCResponse | TRPCResponse[]) {
+  function endResponse(untransformedJSON: TRouterResponse | TRouterResponse[]) {
     if (!res.statusCode || res.statusCode === 200) {
       // only override statusCode if not already set
       // node defaults to be `200` in the `http` package
@@ -163,7 +170,7 @@ export async function requestHandler<
             input: inputs[index],
             type,
           });
-          const json: TRPCResponse = {
+          const json: TRPCResultResponse<unknown> = {
             id,
             result: {
               type: 'data',
@@ -174,7 +181,7 @@ export async function requestHandler<
         } catch (_err) {
           const error = getErrorFromUnknown(_err);
 
-          const json: TRPCErrorResponse = {
+          const json: TRPCErrorResponse<TRouterError> = {
             id,
             error: router.getErrorShape({ error, type, path, input, ctx }),
           };
@@ -184,7 +191,9 @@ export async function requestHandler<
       }),
     );
 
-    const result = isBatchCall ? rawResults : rawResults[0];
+    const result: TRouterResponse | TRouterResponse[] = isBatchCall
+      ? rawResults
+      : rawResults[0];
     endResponse(result);
   } catch (_err) {
     // we get here if
@@ -194,7 +203,7 @@ export async function requestHandler<
     // - input deserialization fails
     const error = getErrorFromUnknown(_err);
 
-    const json: TRPCErrorResponse = {
+    const json: TRPCErrorResponse<TRouterError> = {
       id: null,
       error: router.getErrorShape({
         error,

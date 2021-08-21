@@ -1,7 +1,13 @@
 import http from 'http';
 import qs from 'qs';
 import { TRPCError } from '../TRPCError';
-import { AnyRouter, inferRouterContext, ProcedureType } from '../router';
+import {
+  AnyRouter,
+  inferRouterContext,
+  inferRouterError,
+  ProcedureType,
+} from '../router';
+import { TRPCResponse } from '../rpc';
 
 export type BaseRequest = http.IncomingMessage & {
   method?: string;
@@ -32,4 +38,8 @@ export interface BaseHandlerOptions<
     enabled: boolean;
   };
   router: TRouter;
+  beforeRequestEnd?: (opts: {
+    data: TRPCResponse<unknown, inferRouterError<TRouter>>[];
+    ctx: inferRouterContext<TRouter>;
+  }) => void;
 }
