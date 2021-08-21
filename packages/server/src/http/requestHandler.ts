@@ -1,11 +1,7 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 import url from 'url';
 import { assertNotBrowser } from '../assertNotBrowser';
-import {
-  BaseHandlerOptions,
-  BaseRequest,
-  BaseResponse,
-} from '../internals/BaseHandlerOptions';
+import { BaseRequest, BaseResponse } from '../internals/BaseHandlerOptions';
 import { callProcedure } from '../internals/callProcedure';
 import { getErrorFromUnknown } from '../internals/errors';
 import { transformTRPCResponse } from '../internals/transformTRPCResponse';
@@ -20,6 +16,7 @@ import { TRPCError } from '../TRPCError';
 import { getHTTPStatusCode } from './internals/getHTTPStatusCode';
 import { getPostBody } from './internals/getPostBody';
 import { getQueryInput } from './internals/getQueryInput';
+import { HTTPHandlerOptions } from './internals/HTTPHandlerOptions';
 
 assertNotBrowser();
 
@@ -67,7 +64,6 @@ async function getRequestParams({
 
 export async function requestHandler<
   TRouter extends AnyRouter,
-  TCreateContextFn extends CreateContextFn<TRouter, TRequest, TResponse>,
   TRequest extends BaseRequest,
   TResponse extends BaseResponse,
 >(
@@ -75,8 +71,7 @@ export async function requestHandler<
     req: TRequest;
     res: TResponse;
     path: string;
-    createContext: TCreateContextFn;
-  } & BaseHandlerOptions<TRouter, TRequest>,
+  } & HTTPHandlerOptions<TRouter, TRequest, TResponse>,
 ) {
   const { req, res, createContext, teardown, onError, maxBodySize, router } =
     opts;
