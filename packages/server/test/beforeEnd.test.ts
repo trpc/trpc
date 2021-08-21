@@ -21,14 +21,14 @@ test('set custom headers in beforeEnd', async () => {
       .router<trpc.CreateHttpContextOptions>()
       .beforeEnd(({ ctx, paths, data, type }) => {
         // assuming you have all your public routes with the kewyord `public` in them
-        const isPublic =
-          paths && !paths.some((path) => !path.includes('public'));
+        const allPublic =
+          paths && paths.every((path) => path.includes('public'));
         // checking that no responses contains an error
-        const allOk = !data.some((data) => 'error' in data);
+        const allOk = data.every((data) => 'result' in data);
         // checking we're doing a query request
         const isQuery = type === 'query';
 
-        if (ctx?.res && isPublic && allOk && isQuery) {
+        if (ctx?.res && allPublic && allOk && isQuery) {
           // cache request for 1 day + revalidate once every second
           const ONE_DAY_IN_SECONDS = 60 * 60 * 24;
           ctx.res.setHeader(
