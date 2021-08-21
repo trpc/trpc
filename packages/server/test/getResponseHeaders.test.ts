@@ -22,7 +22,7 @@ test('set custom headers in beforeEnd', async () => {
     {
       server: {
         onError,
-        beforeEnd({ ctx, paths, data, type }) {
+        getResponseHeaders({ ctx, paths, data, type }) {
           // assuming you have all your public routes with the kewyord `public` in them
           const allPublic =
             paths && paths.every((path) => path.includes('public'));
@@ -34,11 +34,11 @@ test('set custom headers in beforeEnd', async () => {
           if (ctx?.res && allPublic && allOk && isQuery) {
             // cache request for 1 day + revalidate once every second
             const ONE_DAY_IN_SECONDS = 60 * 60 * 24;
-            ctx.res.setHeader(
-              'Cache-Control',
-              `s-maxage=1, stale-while-revalidate=${ONE_DAY_IN_SECONDS}`,
-            );
+            return {
+              'cache-control': `s-maxage=1, stale-while-revalidate=${ONE_DAY_IN_SECONDS}`,
+            };
           }
+          return {};
         },
       },
     },

@@ -103,14 +103,23 @@ export async function requestHandler<
 
     res.setHeader('Content-Type', 'application/json');
 
-    opts.beforeEnd?.({
-      ctx,
-      paths,
-      type,
-      data: Array.isArray(untransformedJSON)
-        ? untransformedJSON
-        : [untransformedJSON],
-    });
+    const headers =
+      opts.getResponseHeaders?.({
+        ctx,
+        paths,
+        type,
+        data: Array.isArray(untransformedJSON)
+          ? untransformedJSON
+          : [untransformedJSON],
+      }) ?? {};
+
+    for (const [key, value] of Object.entries(headers)) {
+      if (!value) {
+        continue;
+      }
+
+      res.setHeader(key, value);
+    }
 
     const transformedJSON = transformTRPCResponse(router, untransformedJSON);
 
