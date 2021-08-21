@@ -292,6 +292,36 @@ Object {
 
     close();
   });
+
+  test('do not override response status set by middleware or resolver', async () => {
+    const TEAPOT_ERROR_CODE = 418;
+    const onError = jest.fn();
+    const { close, httpUrl } = routerToServerAndClient(
+      trpc
+        .router<trpc.CreateHttpContextOptions>()
+        .middleware(({ ctx }) => {
+          ctx.res.statusCode = TEAPOT_ERROR_CODE;
+          throw new Error('Some error');
+        })
+        .query('q', {
+          input: z.string(),
+          resolve() {
+            return null;
+          },
+        }),
+      {
+        server: {
+          onError,
+        },
+      },
+    );
+    const res = await fetch(`${httpUrl}/q`);
+
+    expect(res.ok).toBeFalsy();
+    expect(res.status).toBe(TEAPOT_ERROR_CODE);
+
+    close();
+  });
 });
 
 test('make sure object is ignoring prototype', async () => {

@@ -109,7 +109,11 @@ export async function requestHandler<
     };
   }
   function endResponse(untransformedJSON: TRPCResponse | TRPCResponse[]) {
-    res.statusCode = getHTTPStatusCode(untransformedJSON);
+    if (!res.statusCode || res.statusCode === 200) {
+      // only override statusCode if not already set
+      // node defaults to be `200` in the `http` package
+      res.statusCode = getHTTPStatusCode(untransformedJSON);
+    }
 
     res.setHeader('Content-Type', 'application/json');
 
