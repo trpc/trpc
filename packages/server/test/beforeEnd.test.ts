@@ -3,40 +3,12 @@
 import fetch from 'node-fetch';
 import * as trpc from '../src';
 import { routerToServerAndClient } from './_testHelpers';
-test('duplicate beforeEnd', () => {
-  expect(() =>
-    trpc
-      .router()
-      .beforeEnd(() => {})
-      .beforeEnd(() => {}),
-  ).toThrowErrorMatchingInlineSnapshot(
-    `"You seem to have double \`beforeEnd()\`-calls in your router tree"`,
-  );
-});
 
 test('set custom headers in beforeEnd', async () => {
   const onError = jest.fn();
   const { close, httpUrl } = routerToServerAndClient(
     trpc
       .router<trpc.CreateHttpContextOptions>()
-      .beforeEnd(({ ctx, paths, data, type }) => {
-        // assuming you have all your public routes with the kewyord `public` in them
-        const allPublic =
-          paths && paths.every((path) => path.includes('public'));
-        // checking that no responses contains an error
-        const allOk = data.every((data) => 'result' in data);
-        // checking we're doing a query request
-        const isQuery = type === 'query';
-
-        if (ctx?.res && allPublic && allOk && isQuery) {
-          // cache request for 1 day + revalidate once every second
-          const ONE_DAY_IN_SECONDS = 60 * 60 * 24;
-          ctx.res.setHeader(
-            'Cache-Control',
-            `s-maxage=1, stale-while-revalidate=${ONE_DAY_IN_SECONDS}`,
-          );
-        }
-      })
       .query('public.q', {
         resolve() {
           return 'public endpoint';
@@ -50,6 +22,24 @@ test('set custom headers in beforeEnd', async () => {
     {
       server: {
         onError,
+        beforeEnd({ ctx, paths, data, type }) {
+          // assuming you have all your public routes with the kewyord `public` in them
+          const allPublic =
+            paths && paths.every((path) => path.includes('public'));
+          // checking that no responses contains an error
+          const allOk = data.every((data) => 'result' in data);
+          // checking we're doing a query request
+          const isQuery = type === 'query';
+
+          if (ctx?.res && allPublic && allOk && isQuery) {
+            // cache request for 1 day + revalidate once every second
+            const ONE_DAY_IN_SECONDS = 60 * 60 * 24;
+            ctx.res.setHeader(
+              'Cache-Control',
+              `s-maxage=1, stale-while-revalidate=${ONE_DAY_IN_SECONDS}`,
+            );
+          }
+        },
       },
     },
   );

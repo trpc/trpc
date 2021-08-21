@@ -60,7 +60,7 @@ export default withTRPC({
 
 Since all queries are normal HTTP `GET`s we can use normal HTTP headers to cache responses, make the responses snappy, give your database a rest, and easier scale your API to gazillions of users.
 
-### Using `beforeEnd()` to cache responses
+### Using `beforeEnd` to cache responses
 
 > Assuming you're deploying your API somewhere that can handle stale-while-revalidate cache headers like Vercel.
 
@@ -90,7 +90,25 @@ const waitFor = async (ms: number) =>
   new Promise((resolve) => setTimeout(resolve, ms));
 
 export const appRouter = createRouter()
-  .beforeEnd(({ ctx, paths, data, type }) => {
+  .query('public.slow-query-cached', {
+    async resolve({ ctx }) {
+      await waitFor(5000); // wait for 5s
+
+      return {
+        lastUpdated: new Date().toJSON(),
+      };
+    },
+  });
+
+// Exporting type _type_ AppRouter only exposes types that can be used for inference
+// https://www.typescriptlang.org/docs/handbook/release-notes/typescript-3-8.html#type-only-imports-and-export
+export type AppRouter = typeof appRouter;
+
+// export API handler
+export default trpcNext.createNextApiHandler({
+  router: appRouter,
+  createContext,
+  beforeEnd({ ctx, paths, data, type }) {
     // assuming you have all your public routes with the kewyord `public` in them
     const allPublic =
       paths && paths.every((path) => path.includes('public'));
@@ -107,17 +125,6 @@ export const appRouter = createRouter()
         `s-maxage=1, stale-while-revalidate=${ONE_DAY_IN_SECONDS}`,
       );
     }
-  })
-  .query('public.slow-query-cached', {
-    async resolve({ ctx }) {
-      await waitFor(5000); // wait for 5s
-
-      return {
-        lastUpdated: new Date().toJSON(),
-      };
-    },
-  });
-
-// [...]
-
+  },
+});
 ```
