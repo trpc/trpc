@@ -1,7 +1,6 @@
 /* eslint-disable @typescript-eslint/no-empty-function */
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import fetch from 'node-fetch';
-import { z } from 'zod';
 import * as trpc from '../src';
 import { routerToServerAndClient } from './_testHelpers';
 test('duplicate beforeEnd', () => {
@@ -11,19 +10,28 @@ test('duplicate beforeEnd', () => {
       .beforeEnd(() => {})
       .beforeEnd(() => {}),
   ).toThrowErrorMatchingInlineSnapshot(
-    `"You seem to have double \`transformer()\`-calls in your router tree"`,
+    `"You seem to have double \`beforeEnd()\`-calls in your router tree"`,
   );
 });
 
 test('set custom headers in beforeEnd', async () => {
-  const TEAPOT_ERROR_CODE = 418;
   const onError = jest.fn();
   const { close, httpUrl } = routerToServerAndClient(
     trpc
       .router<trpc.CreateHttpContextOptions>()
-      //
+      .beforeEnd(({ ctx, paths }) => {
+        expect(ctx).toBeTruthy();
+        expect(paths).toBeTruthy();
+        expect(paths).toMatchInlineSnapshot(`
+Array [
+  "q",
+]
+`);
+        if (ctx?.res) {
+          ctx.res.setHeader('x-whois', 'alexdotjs');
+        }
+      })
       .query('q', {
-        input: z.string(),
         resolve() {
           return null;
         },
@@ -36,8 +44,17 @@ test('set custom headers in beforeEnd', async () => {
   );
   const res = await fetch(`${httpUrl}/q`);
 
-  expect(res.ok).toBeFalsy();
-  expect(res.status).toBe(TEAPOT_ERROR_CODE);
+  expect(await res.json()).toMatchInlineSnapshot(`
+Object {
+  "id": null,
+  "result": Object {
+    "data": null,
+    "type": "data",
+  },
+}
+`);
+
+  expect(res.headers.get('x-whois')).toBe('alexdotjs');
 
   close();
 });

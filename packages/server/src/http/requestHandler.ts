@@ -90,6 +90,7 @@ export async function requestHandler<
   const type =
     HTTP_METHOD_PROCEDURE_TYPE_MAP[req.method!] ?? ('unknown' as const);
   let ctx: inferRouterContext<TRouter> | undefined = undefined;
+  let paths: string[] | undefined = undefined;
 
   const reqQueryParams = req.query
     ? req.query
@@ -106,6 +107,15 @@ export async function requestHandler<
     }
 
     res.setHeader('Content-Type', 'application/json');
+
+    router._def.beforeEnd({
+      ctx,
+      paths,
+      type,
+      data: Array.isArray(untransformedJSON)
+        ? untransformedJSON
+        : [untransformedJSON],
+    });
 
     const transformedJSON = transformTRPCResponse(router, untransformedJSON);
 
@@ -128,7 +138,7 @@ export async function requestHandler<
       type,
     });
 
-    const paths = isBatchCall ? opts.path.split(',') : [opts.path];
+    paths = isBatchCall ? opts.path.split(',') : [opts.path];
     ctx = await createContext?.({ req, res });
 
     const getInputs = (): Record<number, unknown> => {

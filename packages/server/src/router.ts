@@ -74,6 +74,7 @@ type BeforeEndFunction<TRouter extends AnyRouter> = (opts: {
    * The different tRPC paths requested
    **/
   paths?: string[];
+  type: ProcedureType | 'unknown';
 }) => void;
 
 export type inferHandlerInput<TProcedure extends Procedure> =
