@@ -103,7 +103,7 @@ export async function requestHandler<
 
     res.setHeader('Content-Type', 'application/json');
 
-    router._def.beforeEnd({
+    opts.beforeEnd?.({
       ctx,
       paths,
       type,
