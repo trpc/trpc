@@ -64,9 +64,6 @@ function getDataTransformer(
   return { input: transformer, output: transformer };
 }
 
-/**
- * Function triggered before requests are sent out the user
- **/
 type BeforeEndFunction<TRouter extends AnyRouter> = (opts: {
   data: TRPCResponse<unknown, inferRouterError<TRouter>>[];
   ctx?: inferRouterContext<TRouter>;
