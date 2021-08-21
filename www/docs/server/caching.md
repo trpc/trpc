@@ -62,8 +62,7 @@ Since all queries are normal HTTP `GET`s we can use normal HTTP headers to cache
 
 ### Using `beforeEnd()` to cache responses
 
-
-Assuming you're deploying your site somewhere that can handle stale-while-revalidate cache headers:
+> Assuming you're deploying your API somewhere that can handle stale-while-revalidate cache headers like Vercel.
 
 ```tsx
 import * as trpc from '@trpc/server';
