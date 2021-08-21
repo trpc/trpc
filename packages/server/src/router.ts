@@ -156,10 +156,6 @@ const defaultTransformer: CombinedDataTransformer = {
   output: { serialize: (obj) => obj, deserialize: (obj) => obj },
 };
 
-const defaultBeforeEnd: BeforeEndFunction<any> = () => {
-  // empty function
-};
-
 export class Router<
   TContext,
   TQueries extends ProcedureRecord<TContext>,
