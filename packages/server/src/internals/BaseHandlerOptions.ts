@@ -1,13 +1,7 @@
 import http from 'http';
 import qs from 'qs';
+import { AnyRouter, inferRouterContext, ProcedureType } from '../router';
 import { TRPCError } from '../TRPCError';
-import {
-  AnyRouter,
-  inferRouterContext,
-  inferRouterError,
-  ProcedureType,
-} from '../router';
-import { TRPCResponse } from '../rpc';
 
 export type BaseRequest = http.IncomingMessage & {
   method?: string;

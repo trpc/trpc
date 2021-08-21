@@ -439,6 +439,7 @@ export class Router<
     };
 
     return new Router<TContext, any, any, any, TErrorShape>({
+      ...this._def,
       queries: safeObject(
         this._def.queries,
         mergeProcedures(childRouter._def.queries),
@@ -451,10 +452,6 @@ export class Router<
         this._def.subscriptions,
         mergeProcedures(childRouter._def.subscriptions),
       ),
-      middlewares: this._def.middlewares,
-      errorFormatter: this._def.errorFormatter,
-      transformer: this._def.transformer,
-      beforeEnd: this._def.beforeEnd,
     });
   }
 
