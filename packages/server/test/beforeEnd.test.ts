@@ -19,21 +19,32 @@ test('set custom headers in beforeEnd', async () => {
   const { close, httpUrl } = routerToServerAndClient(
     trpc
       .router<trpc.CreateHttpContextOptions>()
-      .beforeEnd(({ ctx, paths }) => {
-        expect(ctx).toBeTruthy();
-        expect(paths).toBeTruthy();
-        expect(paths).toMatchInlineSnapshot(`
-Array [
-  "q",
-]
-`);
-        if (ctx?.res) {
-          ctx.res.setHeader('x-whois', 'alexdotjs');
+      .beforeEnd(({ ctx, paths, data, type }) => {
+        // assuming you have all your public routes with the kewyord `public` in them
+        const isPublic =
+          paths && !paths.some((path) => !path.includes('public'));
+        // checking that no responses contains an error
+        const allOk = !data.some((data) => 'error' in data);
+        // checking we're doing a query request
+        const isQuery = type === 'query';
+
+        if (ctx?.res && isPublic && allOk && isQuery) {
+          // cache request for 1 day + revalidate once every second
+          const ONE_DAY_IN_SECONDS = 60 * 60 * 24;
+          ctx.res.setHeader(
+            'Cache-Control',
+            `s-maxage=1, stale-while-revalidate=${ONE_DAY_IN_SECONDS}`,
+          );
         }
       })
-      .query('q', {
+      .query('public.q', {
         resolve() {
-          return null;
+          return 'public endpoint';
+        },
+      })
+      .query('nonCachedEndpoint', {
+        resolve() {
+          return 'not cached endpoint';
         },
       }),
     {
@@ -42,19 +53,38 @@ Array [
       },
     },
   );
-  const res = await fetch(`${httpUrl}/q`);
+  {
+    const res = await fetch(`${httpUrl}/public.q`);
 
-  expect(await res.json()).toMatchInlineSnapshot(`
+    expect(await res.json()).toMatchInlineSnapshot(`
 Object {
   "id": null,
   "result": Object {
-    "data": null,
+    "data": "public endpoint",
     "type": "data",
   },
 }
 `);
 
-  expect(res.headers.get('x-whois')).toBe('alexdotjs');
+    expect(res.headers.get('cache-control')).toMatchInlineSnapshot(
+      `"s-maxage=1, stale-while-revalidate=86400"`,
+    );
+  }
+  {
+    const res = await fetch(`${httpUrl}/nonCachedEndpoint`);
+
+    expect(await res.json()).toMatchInlineSnapshot(`
+Object {
+  "id": null,
+  "result": Object {
+    "data": "not cached endpoint",
+    "type": "data",
+  },
+}
+`);
+
+    expect(res.headers.get('cache-control')).toBeNull();
+  }
 
   close();
 });
