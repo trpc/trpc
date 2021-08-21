@@ -613,16 +613,10 @@ export class Router<
         'You seem to have double `beforeEnd()`-calls in your router tree',
       );
     }
-    return new Router<
-      TContext,
-      TQueries,
-      TMutations,
-      TSubscriptions,
-      TErrorShape
-    >({
+    return new Router({
       ...this._def,
       beforeEnd,
-    });
+    }) as this;
   }
 }
 
