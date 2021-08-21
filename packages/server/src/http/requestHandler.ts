@@ -8,6 +8,7 @@ import {
 } from '../internals/BaseHandlerOptions';
 import { callProcedure } from '../internals/callProcedure';
 import { getErrorFromUnknown } from '../internals/errors';
+import { transformTRPCResponse } from '../internals/transformTRPCResponse';
 import { AnyRouter, inferRouterContext, ProcedureType } from '../router';
 import { TRPCErrorResponse, TRPCResponse } from '../rpc';
 import { TRPCError } from '../TRPCError';
@@ -90,24 +91,6 @@ export async function requestHandler<
     : url.parse(req.url!, true).query;
   const isBatchCall = reqQueryParams.batch;
 
-  function serializeResponseItem(obj: TRPCResponse): TRPCResponse {
-    if ('error' in obj) {
-      return {
-        ...obj,
-        error: router._def.transformer.output.serialize(obj.error),
-      };
-    }
-    if (obj.result.type !== 'data') {
-      return obj;
-    }
-    return {
-      ...obj,
-      result: {
-        ...obj.result,
-        data: router._def.transformer.output.serialize(obj.result.data),
-      },
-    };
-  }
   function endResponse(untransformedJSON: TRPCResponse | TRPCResponse[]) {
     if (!res.statusCode || res.statusCode === 200) {
       // only override statusCode if not already set
@@ -117,9 +100,7 @@ export async function requestHandler<
 
     res.setHeader('Content-Type', 'application/json');
 
-    const transformedJSON = Array.isArray(untransformedJSON)
-      ? untransformedJSON.map(serializeResponseItem)
-      : serializeResponseItem(untransformedJSON);
+    const transformedJSON = transformTRPCResponse(router, untransformedJSON);
 
     res.end(JSON.stringify(transformedJSON));
   }
