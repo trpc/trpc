@@ -528,19 +528,19 @@ export class Router<
    */
   public formatError<TErrorFormatter extends ErrorFormatter<TContext, any>>(
     errorFormatter: TErrorFormatter,
-  ) {
+  ): Router<
+    TContext,
+    TQueries,
+    TMutations,
+    TSubscriptions,
+    ReturnType<TErrorFormatter>
+  > {
     if (this._def.errorFormatter !== (defaultFormatter as any)) {
       throw new Error(
         'You seem to have double `formatError()`-calls in your router tree',
       );
     }
-    return new Router<
-      TContext,
-      TQueries,
-      TMutations,
-      TSubscriptions,
-      ReturnType<TErrorFormatter>
-    >({
+    return new Router({
       ...this._def,
       errorFormatter,
     });
