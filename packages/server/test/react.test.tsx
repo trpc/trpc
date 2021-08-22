@@ -32,7 +32,6 @@ import { z, ZodError } from 'zod';
 import { withTRPC } from '../../next/src';
 import { createReactQueryHooks, OutputWithCursor } from '../../react/src';
 import { createSSGHelpers } from '../../react/ssg';
-import { DefaultErrorShape } from '../src';
 import { routerToServerAndClient } from './_testHelpers';
 import {
   wsLink,
@@ -780,16 +779,7 @@ test('formatError() react types test', async () => {
     }, []);
 
     if (mutation.error && mutation.error && mutation.error.shape) {
-      expectTypeOf(mutation.error.shape).toMatchTypeOf<
-        DefaultErrorShape & {
-          $test: string;
-        }
-      >();
-      expectTypeOf(mutation.error.shape).toMatchTypeOf<
-        DefaultErrorShape & {
-          $test: string;
-        }
-      >();
+      expectTypeOf(mutation.error.shape.$test).toBeString();
       return (
         <pre data-testid="err">
           {JSON.stringify(mutation.error.shape.zodError, null, 2)}

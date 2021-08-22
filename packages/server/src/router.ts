@@ -21,17 +21,16 @@ import {
 } from './rpc';
 import { Subscription } from './subscription';
 import { CombinedDataTransformer, DataTransformerOptions } from './transformer';
-import { flatten, Prefixer, ThenArg } from './types';
+import { flatten, Prefixer, ThenArg } from './internals/typeUtils';
 import { MiddlewareFunction } from './internals/middlewares';
 
 assertNotBrowser();
 
 export type ProcedureType = 'query' | 'mutation' | 'subscription';
-export type ProcedureRecord<
-  TContext = any,
-  TInput = any,
-  TOutput = any,
-> = Record<string, Procedure<TContext, TInput, TOutput>>;
+type ProcedureRecord<TContext = any, TInput = any, TOutput = any> = Record<
+  string,
+  Procedure<TContext, TInput, TOutput>
+>;
 
 export type inferProcedureInput<TProcedure extends Procedure<any, any, any>> =
   TProcedure extends ProcedureWithInput<any, infer Input, any>
@@ -96,7 +95,7 @@ const PROCEDURE_DEFINITION_MAP: Record<
   mutation: 'mutations',
   subscription: 'subscriptions',
 };
-export type ErrorFormatter<
+type ErrorFormatter<
   TContext,
   TOutput extends TRPCErrorShape<number, unknown>,
 > = ({
@@ -115,7 +114,7 @@ interface DefaultErrorData {
   path?: string;
   stack?: string;
 }
-export interface DefaultErrorShape
+interface DefaultErrorShape
   extends TRPCErrorShape<TRPC_ERROR_CODE_NUMBER, DefaultErrorData> {
   message: string;
   code: TRPC_ERROR_CODE_NUMBER;
