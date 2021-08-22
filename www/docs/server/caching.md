@@ -60,7 +60,7 @@ export default withTRPC({
 
 Since all queries are normal HTTP `GET`s we can use normal HTTP headers to cache responses, make the responses snappy, give your database a rest, and easier scale your API to gazillions of users.
 
-### Using `beforeEnd` to cache responses
+### Using `getResponseHeaders ` to cache responses
 
 > Assuming you're deploying your API somewhere that can handle stale-while-revalidate cache headers like Vercel.
 
