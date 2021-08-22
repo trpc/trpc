@@ -552,7 +552,15 @@ export class Router<
 
     return new Router({
       ...this._def,
-      middlewares: [...this._def.middlewares, middleware as any],
+      middlewares: [
+        ...this._def.middlewares,
+        // transform to middleware
+        // right now assumed ctx is not actually changed and only asserted - needs to be fixed
+        async ({ next, ctx }) => {
+          await middleware({ ctx });
+          return next();
+        },
+      ],
     }) as any as Router<
       TInferredContext,
       SwapContext<TQueries, TInferredContext>,
