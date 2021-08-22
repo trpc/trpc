@@ -24,15 +24,15 @@ const JSONRPC2_TO_HTTP_CODE: Record<
 
 export function getHTTPStatusCode(json: TRPCResponse | TRPCResponse[]) {
   const arr = Array.isArray(json) ? json : [json];
-  const httpStatuses = new Set<number>(
+  const httpStatuses = new Set(
     arr.map((res) => {
       if ('error' in res) {
-        // default error shape has `data.httpStatus`
-        const data: any = res.error.data;
-        if (typeof data?.httpStatus === 'number') {
+        const data = res.error.data;
+        if (typeof data.httpStatus === 'number') {
           return data.httpStatus;
         }
-        return TRPC_ERROR_CODES_BY_NUMBER[res.error.code] ?? 500;
+        const code = TRPC_ERROR_CODES_BY_NUMBER[res.error.code];
+        return JSONRPC2_TO_HTTP_CODE[code] ?? 500;
       }
       return 200;
     }),

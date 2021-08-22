@@ -112,7 +112,7 @@ export default withTRPC<AppRouter>({
 ##### 2. Perform request without batching
 
 ```tsx
-const postsQuery = trpc.useQuery(['posts], {
+const postsQuery = trpc.useQuery(['posts'], {
   context: {
     skipBatch: true,
   },

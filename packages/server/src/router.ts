@@ -97,10 +97,7 @@ const PROCEDURE_DEFINITION_MAP: Record<
   mutation: 'mutations',
   subscription: 'subscriptions',
 };
-export type ErrorFormatter<
-  TContext,
-  TOutput extends TRPCErrorShape<number, unknown>,
-> = ({
+export type ErrorFormatter<TContext, TShape extends TRPCErrorShape<number>> = ({
   error,
 }: {
   error: TRPCError;
@@ -109,14 +106,14 @@ export type ErrorFormatter<
   input: unknown;
   ctx: undefined | TContext;
   shape: DefaultErrorShape;
-}) => TOutput;
+}) => TShape;
 
-interface DefaultErrorData {
+type DefaultErrorData = {
   code: TRPC_ERROR_CODE_KEY;
   httpStatus: number;
   path?: string;
   stack?: string;
-}
+};
 export interface DefaultErrorShape
   extends TRPCErrorShape<TRPC_ERROR_CODE_NUMBER, DefaultErrorData> {
   message: string;
@@ -164,7 +161,7 @@ export class Router<
     unknown,
     Subscription<unknown>
   >,
-  TErrorShape extends TRPCErrorShape<number, unknown>,
+  TErrorShape extends TRPCErrorShape<number>,
 > {
   readonly _def: Readonly<{
     queries: Readonly<TQueries>;
@@ -504,23 +501,18 @@ export class Router<
    * Format errors
    * @link https://trpc.io/docs/error-formatting
    */
-  public formatError<TErrorFormatter extends ErrorFormatter<TContext, any>>(
-    errorFormatter: TErrorFormatter,
-  ): Router<
-    TContext,
-    TQueries,
-    TMutations,
-    TSubscriptions,
-    ReturnType<TErrorFormatter>
-  > {
+  public formatError<
+    TErrorFormatter extends ErrorFormatter<TContext, TRPCErrorShape<number>>,
+  >(errorFormatter: TErrorFormatter) {
     if (this._def.errorFormatter !== (defaultFormatter as any)) {
       throw new Error(
         'You seem to have double `formatError()`-calls in your router tree',
       );
     }
-    return new Router({
+    type TShape = ReturnType<TErrorFormatter>;
+    return new Router<TContext, TQueries, TMutations, TSubscriptions, TShape>({
       ...this._def,
-      errorFormatter,
+      errorFormatter: errorFormatter as any,
     });
   }
 

@@ -246,10 +246,10 @@ Object {
       trpc
         .router()
         .formatError(({ shape }) => {
-          return { shape };
+          return shape;
         })
         .formatError(({ shape }) => {
-          return { shape };
+          return shape;
         });
     }).toThrowErrorMatchingInlineSnapshot(
       `"You seem to have double \`formatError()\`-calls in your router tree"`,
