@@ -2,7 +2,10 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { assertNotBrowser } from './assertNotBrowser';
-import { TRPCError } from './TRPCError';
+import {
+  MiddlewareFunctionKeepContext,
+  MiddlewareFunctionWithNewContext,
+} from './internals/middlewares';
 import {
   createProcedure,
   CreateProcedureOptions,
@@ -21,8 +24,8 @@ import {
 } from './rpc';
 import { Subscription } from './subscription';
 import { CombinedDataTransformer, DataTransformerOptions } from './transformer';
-import { flatten, Prefixer, ThenArg } from './types';
-import { MiddlewareFunction } from './internals/middlewares';
+import { TRPCError } from './TRPCError';
+import { flatten, format, Prefixer, ThenArg } from './types';
 
 assertNotBrowser();
 
@@ -153,6 +156,26 @@ const defaultTransformer: CombinedDataTransformer = {
   output: { serialize: (obj) => obj, deserialize: (obj) => obj },
 };
 
+export type SwapProcedureContext<
+  TProcedure extends Procedure<any, any, any>,
+  TNewContext,
+> = TProcedure extends Procedure<
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  infer _TOldContext,
+  infer TInput,
+  infer TOutput
+>
+  ? Procedure<TNewContext, TInput, TOutput>
+  : never;
+
+export type SwapContext<
+  TObj extends ProcedureRecord<any, any, any>,
+  TNewContext,
+> = format<
+  {
+    [P in keyof TObj]: SwapProcedureContext<TObj[P], TNewContext>;
+  }
+>;
 export class Router<
   TContext,
   TQueries extends ProcedureRecord<TContext>,
@@ -168,7 +191,7 @@ export class Router<
     queries: Readonly<TQueries>;
     mutations: Readonly<TMutations>;
     subscriptions: Readonly<TSubscriptions>;
-    middlewares: MiddlewareFunction<TContext>[];
+    middlewares: MiddlewareFunctionKeepContext<TContext>[];
     errorFormatter: ErrorFormatter<TContext, TErrorShape>;
     transformer: CombinedDataTransformer;
   }>;
@@ -177,7 +200,7 @@ export class Router<
     queries?: TQueries;
     mutations?: TMutations;
     subscriptions?: TSubscriptions;
-    middlewares?: MiddlewareFunction<TContext>[];
+    middlewares?: MiddlewareFunctionKeepContext<TContext>[];
     errorFormatter?: ErrorFormatter<TContext, TErrorShape>;
     transformer?: CombinedDataTransformer;
   }) {
@@ -482,22 +505,38 @@ export class Router<
       },
     };
   }
+
   /**
    * Function to be called before any procedure is invoked
    * Can be async or sync
    * @link https://trpc.io/docs/middlewares
    */
-  public middleware(middleware: MiddlewareFunction<TContext>) {
-    return new Router<
-      TContext,
-      TQueries,
-      TMutations,
-      TSubscriptions,
-      TErrorShape
-    >({
+  public middleware(middleware: MiddlewareFunctionKeepContext<TContext>): this {
+    return new Router({
       ...this._def,
       middlewares: [...this._def.middlewares, middleware],
-    });
+    }) as any;
+  }
+
+  /**
+   * Swap context middleware
+   * @link https://trpc.io/docs/middlewares
+   */
+  public middlewareSwapContext<
+    TMiddlewareFn extends MiddlewareFunctionWithNewContext<TContext, unknown>,
+  >(middleware: TMiddlewareFn) {
+    type TInferredContext = inferAsyncReturnType<TMiddlewareFn>['ctx'];
+
+    return new Router({
+      ...this._def,
+      middlewares: [...this._def.middlewares, middleware],
+    }) as any as Router<
+      TInferredContext,
+      SwapContext<TQueries, TInferredContext>,
+      SwapContext<TMutations, TInferredContext>,
+      SwapContext<TSubscriptions, TInferredContext>,
+      TErrorShape
+    >;
   }
 
   /**

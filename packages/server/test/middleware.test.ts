@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import { AsyncLocalStorage } from 'async_hooks';
+import { expectTypeOf } from 'expect-type';
 import * as trpc from '../src';
 import { TRPCError } from '../src';
 import { MiddlewareResult } from '../src/internals/middlewares';
@@ -390,6 +391,51 @@ test('middleware throwing should return a union', async () => {
   expect(res.error).toMatchInlineSnapshot(`[TRPCError: error]`);
   const originalError = res.error.originalError as CustomError;
   expect(originalError).toBeInstanceOf(CustomError);
+
+  close();
+});
+
+test('mutate context in middleware', async () => {
+  type User = {
+    id: string;
+  };
+  type OriginalContext = {
+    user?: User;
+  };
+  const { client, close } = routerToServerAndClient(
+    trpc
+      .router<OriginalContext>()
+      .middlewareSwapContext(async function firstMiddleware({ next, ctx }) {
+        if (!ctx.user) {
+          throw new TRPCError({ code: 'UNAUTHORIZED' });
+        }
+        const newContext = {
+          user: ctx.user,
+        };
+        const result = await next({ ctx: newContext });
+        return result;
+      })
+      .query('test', {
+        resolve({ ctx }) {
+          // should have asserted that `ctx.user` is not nullable
+          expectTypeOf(ctx).toMatchTypeOf<{ user: User }>();
+          return 'test';
+        },
+      }),
+    {
+      server: {
+        createContext() {
+          return {
+            user: {
+              id: 'alexdotjs',
+            },
+          };
+        },
+      },
+    },
+  );
+
+  expect(await client.query('test')).toMatchInlineSnapshot(`"test"`);
 
   close();
 });

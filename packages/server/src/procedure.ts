@@ -1,7 +1,10 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { assertNotBrowser } from './assertNotBrowser';
 import { ProcedureType } from './router';
-import { MiddlewareFunction, middlewareMarker } from './internals/middlewares';
+import {
+  MiddlewareFunctionKeepContext,
+  middlewareMarker,
+} from './internals/middlewares';
 import { TRPCError } from './TRPCError';
 import { getErrorFromUnknown } from './internals/errors';
 assertNotBrowser();
@@ -33,7 +36,7 @@ export type ProcedureResolver<
 }) => Promise<TOutput> | TOutput;
 
 interface ProcedureOptions<TContext, TInput, TOutput> {
-  middlewares: MiddlewareFunction<TContext>[];
+  middlewares: MiddlewareFunctionKeepContext<TContext>[];
   resolver: ProcedureResolver<TContext, TInput, TOutput>;
   inputParser: ProcedureInputParser<TInput>;
 }
@@ -89,7 +92,7 @@ export abstract class Procedure<
   TInput = unknown,
   TOutput = unknown,
 > {
-  private middlewares: Readonly<MiddlewareFunction<TContext>[]>;
+  private middlewares: Readonly<MiddlewareFunctionKeepContext<TContext>[]>;
   private resolver: ProcedureResolver<TContext, TInput, TOutput>;
   private readonly inputParser: ProcedureInputParser<TInput>;
   private parse: ParseFn<TInput>;
@@ -166,7 +169,9 @@ export abstract class Procedure<
    * Create new procedure with passed middlewares
    * @param middlewares
    */
-  public inheritMiddlewares(middlewares: MiddlewareFunction<TContext>[]): this {
+  public inheritMiddlewares(
+    middlewares: MiddlewareFunctionKeepContext<TContext>[],
+  ): this {
     const Constructor: {
       new (opts: ProcedureOptions<TContext, TInput, TOutput>): Procedure<
         TContext,
