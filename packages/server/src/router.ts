@@ -529,7 +529,30 @@ export class Router<
 
     return new Router({
       ...this._def,
-      middlewares: [...this._def.middlewares, middleware],
+      middlewares: [...this._def.middlewares, middleware as any],
+    }) as any as Router<
+      TInferredContext,
+      SwapContext<TQueries, TInferredContext>,
+      SwapContext<TMutations, TInferredContext>,
+      SwapContext<TSubscriptions, TInferredContext>,
+      TErrorShape
+    >;
+  }
+
+  /**
+   * Swap context middleware
+   * @link https://trpc.io/docs/middlewares
+   */
+  public swapContext<
+    TMiddlewareFn extends (opts: {
+      ctx: TContext;
+    }) => Promise<unknown> | unknown,
+  >(middleware: TMiddlewareFn) {
+    type TInferredContext = inferAsyncReturnType<TMiddlewareFn>;
+
+    return new Router({
+      ...this._def,
+      middlewares: [...this._def.middlewares, middleware as any],
     }) as any as Router<
       TInferredContext,
       SwapContext<TQueries, TInferredContext>,

@@ -439,3 +439,47 @@ test('mutate context in middleware', async () => {
 
   close();
 });
+
+test('swapContext', async () => {
+  type User = {
+    id: string;
+  };
+  type OriginalContext = {
+    user?: User;
+  };
+  const { client, close } = routerToServerAndClient(
+    trpc
+      .router<OriginalContext>()
+      .swapContext(async function ({ ctx }) {
+        if (!ctx.user) {
+          throw new TRPCError({ code: 'UNAUTHORIZED' });
+        }
+        const newContext = {
+          user: ctx.user,
+        };
+        return newContext;
+      })
+      .query('test', {
+        resolve({ ctx }) {
+          // should have asserted that `ctx.user` is not nullable
+          expectTypeOf(ctx).toMatchTypeOf<{ user: User }>();
+          return 'test';
+        },
+      }),
+    {
+      server: {
+        createContext() {
+          return {
+            user: {
+              id: 'alexdotjs',
+            },
+          };
+        },
+      },
+    },
+  );
+
+  expect(await client.query('test')).toMatchInlineSnapshot(`"test"`);
+
+  close();
+});
