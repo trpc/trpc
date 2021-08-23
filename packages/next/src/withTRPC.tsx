@@ -11,7 +11,7 @@ import {
   TRPCClientError,
   TRPCClientErrorLike,
 } from '@trpc/react';
-import type { AnyRouter, Dict, Maybe } from '@trpc/server';
+import type { AnyRouter, Dict, Maybe, ResponseMeta } from '@trpc/server';
 import {
   AppContextType,
   AppPropsType,
@@ -59,7 +59,7 @@ export function withTRPC<TRouter extends AnyRouter>(
         responseMeta?: (opts: {
           ctx: NextPageContext;
           clientErrors: TRPCClientError<TRouter>[];
-        }) => Dict<string>;
+        }) => ResponseMeta;
       }
   ),
 ) {
@@ -127,7 +127,6 @@ export function withTRPC<TRouter extends AnyRouter>(
         const ctx: NextPageContext = isApp
           ? appOrPageCtx.ctx
           : (appOrPageCtx as any as NextPageContext);
-        const isServer = typeof window === 'undefined' && opts.ssr;
 
         // Run the wrapped component's getInitialProps function.
         let pageProps: Dict<unknown> = {};
@@ -150,7 +149,7 @@ export function withTRPC<TRouter extends AnyRouter>(
         if (typeof window !== 'undefined' || !opts.ssr) {
           return getAppTreeProps(pageProps);
         }
-        const config = getClientConfig(isServer ? { ctx } : {});
+        const config = getClientConfig({ ctx });
         const trpcClient = createTRPCClient(config);
         const queryClient = new QueryClient(config.queryClientConfig);
 
@@ -209,7 +208,7 @@ export function withTRPC<TRouter extends AnyRouter>(
 
         const appTreeProps = getAppTreeProps(pageProps);
 
-        const headers =
+        const meta =
           opts.responseMeta?.({
             ctx,
             clientErrors: [
@@ -224,12 +223,13 @@ export function withTRPC<TRouter extends AnyRouter>(
               ),
           }) ?? {};
 
-        for (const [key, value] of Object.entries(headers)) {
-          if (!value) {
-            continue;
+        for (const [key, value] of Object.entries(meta)) {
+          if (typeof value === 'string') {
+            ctx.res?.setHeader(key, value);
           }
-
-          ctx.res?.setHeader(key, value);
+        }
+        if (meta.status && ctx.res) {
+          ctx.res.statusCode = meta.status;
         }
         return appTreeProps;
       };
