@@ -2,7 +2,7 @@ import {
   createTRPCClient,
   CreateTRPCClientOptions,
   TRPCClient,
-  TRPCClientError,
+  TRPCClientErrorLike,
   TRPCRequestOptions,
 } from '@trpc/client';
 import type {
@@ -74,7 +74,7 @@ export function createReactQueryHooks<
   type TQueries = TRouter['_def']['queries'];
   type TMutations = TRouter['_def']['mutations'];
   type TSubscriptions = TRouter['_def']['subscriptions'];
-  type TError = TRPCClientError<TRouter>;
+  type TError = TRPCClientErrorLike<TRouter>;
 
   type ProviderContext = TRPCContextState<TRouter, TServerSideContext>;
   const Context = TRPCContext as React.Context<ProviderContext>;

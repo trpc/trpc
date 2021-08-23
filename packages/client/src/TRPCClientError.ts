@@ -1,13 +1,19 @@
-import { AnyRouter, Maybe } from '@trpc/server';
-import { TRPCErrorShape, TRPCErrorResponse } from '@trpc/server/rpc';
+import { AnyRouter, inferRouterError, Maybe } from '@trpc/server';
+import { TRPCErrorResponse } from '@trpc/server/rpc';
 
-export class TRPCClientError<
-  TRouter extends AnyRouter,
-  TErrorShape extends TRPCErrorShape = ReturnType<TRouter['getErrorShape']>,
-> extends Error {
+export interface TRPCClientErrorLike<TRouter extends AnyRouter> {
+  readonly message: string;
+  readonly shape: Maybe<inferRouterError<TRouter>>;
+  readonly data: Maybe<inferRouterError<TRouter>['data']>;
+}
+
+export class TRPCClientError<TRouter extends AnyRouter>
+  extends Error
+  implements TRPCClientErrorLike<TRouter>
+{
   public readonly originalError;
-  public readonly shape: Maybe<TErrorShape>;
-  public readonly data: Maybe<TErrorShape['data']>;
+  public readonly shape: Maybe<inferRouterError<TRouter>>;
+  public readonly data: Maybe<inferRouterError<TRouter>['data']>;
   /**
    * Fatal error - expect no more results after this error
    * Used for when WebSockets disconnect prematurely.
@@ -21,7 +27,7 @@ export class TRPCClientError<
       isDone = false,
       result,
     }: {
-      result: Maybe<TRPCErrorResponse<TErrorShape>>;
+      result: Maybe<TRPCErrorResponse<inferRouterError<TRouter>>>;
       originalError: Maybe<Error>;
       isDone?: boolean;
     },
@@ -34,7 +40,6 @@ export class TRPCClientError<
     this.data = result?.error.data;
     this.name = 'TRPCClientError';
 
-    this.name = 'TRPCClientError';
     Object.setPrototypeOf(this, TRPCClientError.prototype);
   }
 
