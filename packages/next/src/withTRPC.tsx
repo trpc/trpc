@@ -56,7 +56,7 @@ export function withTRPC<TRouter extends AnyRouter>(
       }
     | {
         ssr: true;
-        responseHeaders?: (opts: {
+        responseMeta?: (opts: {
           ctx: NextPageContext;
           clientErrors: TRPCClientError<TRouter>[];
         }) => Dict<string>;
@@ -210,7 +210,7 @@ export function withTRPC<TRouter extends AnyRouter>(
         const appTreeProps = getAppTreeProps(pageProps);
 
         const headers =
-          opts.responseHeaders?.({
+          opts.responseMeta?.({
             ctx,
             clientErrors: [
               ...dehydratedCache.queries,

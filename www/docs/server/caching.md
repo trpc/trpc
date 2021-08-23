@@ -42,7 +42,7 @@ export default withTRPC({
     };
   },
   ssr: true,
-  responseHeaders({ ctx, clientErrors }) {
+  responseMeta({ ctx, clientErrors }) {
     // cache full page for 1 day + revalidate once every second
     const ONE_DAY_IN_SECONDS = 60 * 60 * 24;
 
@@ -66,7 +66,7 @@ export default withTRPC({
 
 Since all queries are normal HTTP `GET`s we can use normal HTTP headers to cache responses, make the responses snappy, give your database a rest, and easier scale your API to gazillions of users.
 
-### Using `responseHeaders ` to cache responses
+### Using `responseMeta ` to cache responses
 
 > Assuming you're deploying your API somewhere that can handle stale-while-revalidate cache headers like Vercel.
 
@@ -114,7 +114,7 @@ export type AppRouter = typeof appRouter;
 export default trpcNext.createNextApiHandler({
   router: appRouter,
   createContext,
-  responseHeaders({ ctx, paths, data, type }) {
+  responseMeta({ ctx, paths, data, type }) {
     // assuming you have all your public routes with the kewyord `public` in them
     const allPublic =
       paths && paths.every((path) => path.includes('public'));

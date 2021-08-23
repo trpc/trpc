@@ -10,10 +10,10 @@ import {
   ProcedureType,
 } from '../../router';
 import { TRPCResponse } from '../../rpc';
-import { Dict } from '../../types';
 import { CreateContextFn } from '../requestHandler';
+import { ResponseMeta } from '../ResponseMeta';
 
-type ResponseHeadersFunction<TRouter extends AnyRouter> = (opts: {
+type ResponseMetaFunction<TRouter extends AnyRouter> = (opts: {
   data: TRPCResponse<unknown, inferRouterError<TRouter>>[];
   ctx?: inferRouterContext<TRouter>;
   /**
@@ -21,7 +21,7 @@ type ResponseHeadersFunction<TRouter extends AnyRouter> = (opts: {
    **/
   paths?: string[];
   type: ProcedureType | 'unknown';
-}) => Dict<string>;
+}) => ResponseMeta;
 
 export interface HTTPHandlerOptions<
   TRouter extends AnyRouter,
@@ -37,5 +37,5 @@ export interface HTTPHandlerOptions<
    * Useful for setting cache headers
    * @link https://trpc.io/docs/caching
    */
-  responseHeaders?: ResponseHeadersFunction<TRouter>;
+  responseMeta?: ResponseMetaFunction<TRouter>;
 }
