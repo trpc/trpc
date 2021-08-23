@@ -152,10 +152,15 @@ export async function requestHandler<
     paths = isBatchCall ? opts.path.split(',') : [opts.path];
     ctx = await createContext?.({ req, res });
 
+    const deserializeInputValue = (rawValue: unknown) => {
+      return typeof rawValue !== 'undefined'
+        ? router._def.transformer.input.deserialize(rawValue)
+        : rawValue;
+    };
     const getInputs = (): Record<number, unknown> => {
       if (!isBatchCall) {
         return {
-          0: router._def.transformer.input.deserialize(rawInput),
+          0: deserializeInputValue(rawInput),
         };
       }
 
@@ -172,9 +177,11 @@ export async function requestHandler<
       const input: Record<number, unknown> = {};
       for (const key in rawInput) {
         const k = key as any as number;
-        input[k] = router._def.transformer.input.deserialize(
-          (rawInput as any)[k],
-        );
+        const rawValue = (rawInput as any)[k];
+
+        const value = deserializeInputValue(rawValue);
+
+        input[k] = value;
       }
       return input;
     };
@@ -187,7 +194,7 @@ export async function requestHandler<
             ctx,
             router,
             path,
-            input: inputs[index],
+            input,
             type,
           });
           return {
@@ -210,6 +217,7 @@ export async function requestHandler<
     const errors = rawResults.flatMap((obj) => (obj.error ? [obj.error] : []));
     const resultEnvelopes = rawResults.map((obj) => {
       const { path, input } = obj;
+
       if (obj.error) {
         const json: TRPCErrorResponse<TRouterError> = {
           id: null,
@@ -234,9 +242,7 @@ export async function requestHandler<
       }
     });
 
-    const result: TRouterResponse | TRouterResponse[] = isBatchCall
-      ? resultEnvelopes
-      : resultEnvelopes[0];
+    const result = isBatchCall ? resultEnvelopes : resultEnvelopes[0];
     endResponse(result, errors);
   } catch (_err) {
     // we get here if
@@ -256,7 +262,6 @@ export async function requestHandler<
         ctx,
       }),
     };
-    endResponse(json, [error]);
     onError?.({
       error,
       path: undefined,
@@ -265,6 +270,7 @@ export async function requestHandler<
       type: type,
       req,
     });
+    endResponse(json, [error]);
   }
   await teardown?.();
 }
