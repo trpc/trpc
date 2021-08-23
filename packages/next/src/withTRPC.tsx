@@ -25,9 +25,11 @@ import ssrPrepass from 'react-ssr-prepass';
 
 type QueryClientConfig = ConstructorParameters<typeof QueryClient>[0];
 
-function transformQueryOrMutationCacheErrors(
-  result: DehydratedState['queries'][0] | DehydratedState['mutations'][0],
-) {
+function transformQueryOrMutationCacheErrors<
+  TState extends
+    | DehydratedState['queries'][0]
+    | DehydratedState['mutations'][0],
+>(result: TState): TState {
   const error = result.state.error as Maybe<TRPCClientError<any>>;
   if (error instanceof Error && error.name === 'TRPCClientError') {
     const newError: TRPCClientErrorLike<any> = {
@@ -37,7 +39,10 @@ function transformQueryOrMutationCacheErrors(
     };
     return {
       ...result,
-      error: newError,
+      state: {
+        ...result.state,
+        error: newError,
+      },
     };
   }
   return result;

@@ -47,13 +47,16 @@ export default withTRPC({
     const ONE_DAY_IN_SECONDS = 60 * 60 * 24;
 
     if (clientErrors.length) {
+      // potentially propagate http errors from API-call
       return {};
     }
 
     // cache request for 1 day + revalidate once every second
     const ONE_DAY_IN_SECONDS = 60 * 60 * 24;
     return {
-      'cache-control': `s-maxage=1, stale-while-revalidate=${ONE_DAY_IN_SECONDS}`,
+      headers: {
+        'cache-control': `s-maxage=1, stale-while-revalidate=${ONE_DAY_IN_SECONDS}`,
+      }
     };
   },
 })(MyApp);
