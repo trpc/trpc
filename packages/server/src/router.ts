@@ -2,7 +2,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { assertNotBrowser } from './assertNotBrowser';
-import { TRPCError } from './TRPCError';
+import { getHTTPStatusCodeFromError } from './http/internals/getHTTPStatusCode';
+import { MiddlewareFunction } from './internals/middlewares';
 import {
   createProcedure,
   CreateProcedureOptions,
@@ -21,9 +22,8 @@ import {
 } from './rpc';
 import { Subscription } from './subscription';
 import { CombinedDataTransformer, DataTransformerOptions } from './transformer';
+import { TRPCError } from './TRPCError';
 import { flatten, Prefixer, ThenArg } from './types';
-import { getHTTPStatusCodeFromError } from './http/internals/getHTTPStatusCode';
-import { MiddlewareFunction } from './internals/middlewares';
 
 assertNotBrowser();
 
@@ -412,6 +412,7 @@ export class Router<
     };
 
     return new Router<TContext, any, any, any, TErrorShape>({
+      ...this._def,
       queries: safeObject(
         this._def.queries,
         mergeProcedures(childRouter._def.queries),
@@ -424,9 +425,6 @@ export class Router<
         this._def.subscriptions,
         mergeProcedures(childRouter._def.subscriptions),
       ),
-      middlewares: this._def.middlewares,
-      errorFormatter: this._def.errorFormatter,
-      transformer: this._def.transformer,
     });
   }
 

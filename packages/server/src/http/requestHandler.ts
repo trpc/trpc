@@ -1,20 +1,22 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 import url from 'url';
 import { assertNotBrowser } from '../assertNotBrowser';
-import {
-  BaseHandlerOptions,
-  BaseRequest,
-  BaseResponse,
-} from '../internals/BaseHandlerOptions';
+import { BaseRequest, BaseResponse } from '../internals/BaseHandlerOptions';
 import { callProcedure } from '../internals/callProcedure';
 import { getErrorFromUnknown } from '../internals/errors';
 import { transformTRPCResponse } from '../internals/transformTRPCResponse';
-import { AnyRouter, inferRouterContext, ProcedureType } from '../router';
-import { TRPCErrorResponse, TRPCResponse } from '../rpc';
+import {
+  AnyRouter,
+  inferRouterContext,
+  inferRouterError,
+  ProcedureType,
+} from '../router';
+import { TRPCErrorResponse, TRPCResponse, TRPCResultResponse } from '../rpc';
 import { TRPCError } from '../TRPCError';
 import { getHTTPStatusCode } from './internals/getHTTPStatusCode';
 import { getPostBody } from './internals/getPostBody';
 import { getQueryInput } from './internals/getQueryInput';
+import { HTTPHandlerOptions } from './internals/HTTPHandlerOptions';
 
 assertNotBrowser();
 
@@ -62,7 +64,6 @@ async function getRequestParams({
 
 export async function requestHandler<
   TRouter extends AnyRouter,
-  TCreateContextFn extends CreateContextFn<TRouter, TRequest, TResponse>,
   TRequest extends BaseRequest,
   TResponse extends BaseResponse,
 >(
@@ -70,8 +71,7 @@ export async function requestHandler<
     req: TRequest;
     res: TResponse;
     path: string;
-    createContext: TCreateContextFn;
-  } & BaseHandlerOptions<TRouter, TRequest>,
+  } & HTTPHandlerOptions<TRouter, TRequest, TResponse>,
 ) {
   const { req, res, createContext, teardown, onError, maxBodySize, router } =
     opts;
@@ -85,13 +85,16 @@ export async function requestHandler<
   const type =
     HTTP_METHOD_PROCEDURE_TYPE_MAP[req.method!] ?? ('unknown' as const);
   let ctx: inferRouterContext<TRouter> | undefined = undefined;
+  let paths: string[] | undefined = undefined;
 
   const reqQueryParams = req.query
     ? req.query
     : url.parse(req.url!, true).query;
   const isBatchCall = reqQueryParams.batch;
+  type TRouterError = inferRouterError<TRouter>;
+  type TRouterResponse = TRPCResponse<unknown, TRouterError>;
 
-  function endResponse(untransformedJSON: TRPCResponse | TRPCResponse[]) {
+  function endResponse(untransformedJSON: TRouterResponse | TRouterResponse[]) {
     if (!res.statusCode || res.statusCode === 200) {
       // only override statusCode if not already set
       // node defaults to be `200` in the `http` package
@@ -99,6 +102,27 @@ export async function requestHandler<
     }
 
     res.setHeader('Content-Type', 'application/json');
+
+    const meta =
+      opts.responseMeta?.({
+        ctx,
+        paths,
+        type,
+        data: Array.isArray(untransformedJSON)
+          ? untransformedJSON
+          : [untransformedJSON],
+      }) ?? {};
+
+    for (const [key, value] of Object.entries(meta.headers ?? {})) {
+      if (typeof value !== 'string') {
+        continue;
+      }
+
+      res.setHeader(key, value);
+    }
+    if (meta.status) {
+      res.statusCode = meta.status;
+    }
 
     const transformedJSON = transformTRPCResponse(router, untransformedJSON);
 
@@ -121,6 +145,7 @@ export async function requestHandler<
       type,
     });
 
+    paths = isBatchCall ? opts.path.split(',') : [opts.path];
     ctx = await createContext?.({ req, res });
 
     const getInputs = (): Record<number, unknown> => {
@@ -150,7 +175,6 @@ export async function requestHandler<
       return input;
     };
     const inputs = getInputs();
-    const paths = isBatchCall ? opts.path.split(',') : [opts.path];
     const rawResults = await Promise.all(
       paths.map(async (path, index) => {
         const id = null;
@@ -163,7 +187,7 @@ export async function requestHandler<
             input: inputs[index],
             type,
           });
-          const json: TRPCResponse = {
+          const json: TRPCResultResponse<unknown> = {
             id,
             result: {
               type: 'data',
@@ -174,7 +198,7 @@ export async function requestHandler<
         } catch (_err) {
           const error = getErrorFromUnknown(_err);
 
-          const json: TRPCErrorResponse = {
+          const json: TRPCErrorResponse<TRouterError> = {
             id,
             error: router.getErrorShape({ error, type, path, input, ctx }),
           };
@@ -184,7 +208,9 @@ export async function requestHandler<
       }),
     );
 
-    const result = isBatchCall ? rawResults : rawResults[0];
+    const result: TRouterResponse | TRouterResponse[] = isBatchCall
+      ? rawResults
+      : rawResults[0];
     endResponse(result);
   } catch (_err) {
     // we get here if
@@ -194,7 +220,7 @@ export async function requestHandler<
     // - input deserialization fails
     const error = getErrorFromUnknown(_err);
 
-    const json: TRPCErrorResponse = {
+    const json: TRPCErrorResponse<TRouterError> = {
       id: null,
       error: router.getErrorShape({
         error,

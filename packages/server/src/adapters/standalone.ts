@@ -2,9 +2,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import http from 'http';
 import url from 'url';
-import { CreateContextFn, CreateContextFnOptions } from '../http';
-import { requestHandler } from '../http';
-import { BaseHandlerOptions } from '../internals/BaseHandlerOptions';
+import { CreateContextFnOptions, requestHandler } from '../http';
+import { HTTPHandlerOptions } from '../http/internals/HTTPHandlerOptions';
 import { AnyRouter } from '../router';
 
 export type CreateHttpContextOptions = CreateContextFnOptions<
@@ -12,16 +11,9 @@ export type CreateHttpContextOptions = CreateContextFnOptions<
   http.ServerResponse
 >;
 
-export type CreateHttpContextFn<TRouter extends AnyRouter> = CreateContextFn<
-  TRouter,
-  http.IncomingMessage,
-  http.ServerResponse
->;
+export type CreateHttpHandlerOptions<TRouter extends AnyRouter> =
+  HTTPHandlerOptions<TRouter, http.IncomingMessage, http.ServerResponse>;
 
-export interface CreateHttpHandlerOptions<TRouter extends AnyRouter>
-  extends BaseHandlerOptions<TRouter, http.IncomingMessage> {
-  createContext: CreateHttpContextFn<TRouter>;
-}
 export function createHttpHandler<TRouter extends AnyRouter>(
   opts: CreateHttpHandlerOptions<TRouter>,
 ) {

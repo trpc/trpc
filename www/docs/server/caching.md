@@ -33,14 +33,6 @@ export default withTRPC({
       };
     }
 
-    // cache full page for 1 day + revalidate once every second
-    const ONE_DAY_IN_SECONDS = 60 * 60 * 24;
-    ctx.res?.setHeader(
-      'Cache-Control',
-      `s-maxage=1, stale-while-revalidate=${ONE_DAY_IN_SECONDS}`,
-    );
-
-
     const url = process.env.VERCEL_URL
       ? `https://${process.env.VERCEL_URL}/api/trpc`
       : 'http://localhost:3000/api/trpc';
@@ -50,6 +42,23 @@ export default withTRPC({
     };
   },
   ssr: true,
+  responseMeta({ ctx, clientErrors }) {
+    // cache full page for 1 day + revalidate once every second
+    const ONE_DAY_IN_SECONDS = 60 * 60 * 24;
+
+    if (clientErrors.length) {
+      // potentially propagate http errors from API-call
+      return {};
+    }
+
+    // cache request for 1 day + revalidate once every second
+    const ONE_DAY_IN_SECONDS = 60 * 60 * 24;
+    return {
+      headers: {
+        'cache-control': `s-maxage=1, stale-while-revalidate=${ONE_DAY_IN_SECONDS}`,
+      }
+    };
+  },
 })(MyApp);
 
 ```
@@ -60,7 +69,9 @@ export default withTRPC({
 
 Since all queries are normal HTTP `GET`s we can use normal HTTP headers to cache responses, make the responses snappy, give your database a rest, and easier scale your API to gazillions of users.
 
-### Example code
+### Using `responseMeta ` to cache responses
+
+> Assuming you're deploying your API somewhere that can handle stale-while-revalidate cache headers like Vercel.
 
 ```tsx
 import * as trpc from '@trpc/server';
@@ -71,21 +82,6 @@ export const createContext = async ({
   req,
   res,
 }: trpcNext.CreateNextContextOptions) => {
-  // get the tRPC-paths called in this request
-  const paths = (req.query.trpc as string).split(',');
-  // assuming you have a router prefixed with `public.` where you colocate publicly accessible routes
-  const isPublic = !paths.some((path) => !path.startsWith('public.'));
-
-  // check if it's a query & public
-  if (req.method === 'GET' && isPublic) {
-    // cache request for 1 day + revalidate once every second
-    const ONE_DAY_IN_SECONDS = 60 * 60 * 24;
-    res.setHeader(
-      'Cache-Control',
-      `s-maxage=1, stale-while-revalidate=${ONE_DAY_IN_SECONDS}`,
-    );
-  }
-
   return {
     req,
     res,
@@ -102,9 +98,8 @@ export function createRouter() {
 const waitFor = async (ms: number) =>
   new Promise((resolve) => setTimeout(resolve, ms));
 
-// Important: only use this export with SSR/SSG
 export const appRouter = createRouter()
-  .query('slow-query-cached', {
+  .query('public.slow-query-cached', {
     async resolve({ ctx }) {
       await waitFor(5000); // wait for 5s
 
@@ -122,6 +117,23 @@ export type AppRouter = typeof appRouter;
 export default trpcNext.createNextApiHandler({
   router: appRouter,
   createContext,
-});
+  responseMeta({ ctx, paths, data, type }) {
+    // assuming you have all your public routes with the kewyord `public` in them
+    const allPublic =
+      paths && paths.every((path) => path.includes('public'));
+    // checking that no responses contains an error
+    const allOk = data.every((data) => 'result' in data);
+    // checking we're doing a query request
+    const isQuery = type === 'query';
 
+    if (ctx?.res && allPublic && allOk && isQuery) {
+      // cache request for 1 day + revalidate once every second
+      const ONE_DAY_IN_SECONDS = 60 * 60 * 24;
+      return {
+        'cache-control': `s-maxage=1, stale-while-revalidate=${ONE_DAY_IN_SECONDS}`,
+      };
+    }
+    return {};
+  },
+});
 ```
