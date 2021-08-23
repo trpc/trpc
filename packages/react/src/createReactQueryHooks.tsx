@@ -67,16 +67,13 @@ function getArgs<TPathAndInput extends unknown[], TOptions>(
   const [path, input] = pathAndInput;
   return [path, input, opts] as const;
 }
-export function createReactQueryHooks<
-  TRouter extends AnyRouter,
-  TServerSideContext = unknown,
->() {
+export function createReactQueryHooks<TRouter extends AnyRouter>() {
   type TQueries = TRouter['_def']['queries'];
   type TMutations = TRouter['_def']['mutations'];
   type TSubscriptions = TRouter['_def']['subscriptions'];
   type TError = TRPCClientErrorLike<TRouter>;
 
-  type ProviderContext = TRPCContextState<TRouter, TServerSideContext>;
+  type ProviderContext = TRPCContextState<TRouter>;
   const Context = TRPCContext as React.Context<ProviderContext>;
 
   function createClient(opts: CreateTRPCClientOptions<TRouter>) {
@@ -88,13 +85,11 @@ export function createReactQueryHooks<
     queryClient,
     children,
     isPrepass = false,
-    ssrContext,
   }: {
     queryClient: QueryClient;
     client: TRPCClient<TRouter>;
     children: ReactNode;
     isPrepass?: boolean;
-    ssrContext?: TServerSideContext;
   }) {
     return (
       <Context.Provider
@@ -102,7 +97,6 @@ export function createReactQueryHooks<
           queryClient,
           client,
           isPrepass,
-          ssrContext,
           fetchQuery: useCallback(
             (pathAndInput, opts) => {
               const cacheKey = getCacheKey(pathAndInput, CACHE_KEY_QUERY);
