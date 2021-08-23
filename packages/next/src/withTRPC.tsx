@@ -8,8 +8,10 @@ import {
   createTRPCClient,
   CreateTRPCClientOptions,
   TRPCClient,
+  TRPCClientError,
+  TRPCClientErrorLike,
 } from '@trpc/react';
-import type { AnyRouter, Dict } from '@trpc/server';
+import type { AnyRouter, Dict, Maybe } from '@trpc/server';
 import {
   AppContextType,
   AppPropsType,
@@ -18,7 +20,7 @@ import {
 } from 'next/dist/shared/lib/utils';
 import React, { createElement, useState } from 'react';
 import { QueryClient, QueryClientProvider } from 'react-query';
-import { dehydrate, Hydrate } from 'react-query/hydration';
+import { dehydrate, DehydratedState, Hydrate } from 'react-query/hydration';
 import ssrPrepass from 'react-ssr-prepass';
 
 type QueryClientConfig = ConstructorParameters<typeof QueryClient>[0];
@@ -28,6 +30,23 @@ export type WithTRPCConfig<TRouter extends AnyRouter> =
     queryClientConfig?: QueryClientConfig;
   };
 
+function transformQueryOrMutationCacheErrors(
+  result: DehydratedState['queries'][0] | DehydratedState['mutations'][0],
+) {
+  const error = result.state.error as Maybe<TRPCClientError<any>>;
+  if (error instanceof Error && error.name === 'TRPCClientError') {
+    const newError: TRPCClientErrorLike<any> = {
+      message: error.message,
+      data: error.data,
+      shape: error.shape,
+    };
+    return {
+      ...result,
+      error: newError,
+    };
+  }
+  return result;
+}
 export function withTRPC<TRouter extends AnyRouter>(opts: {
   config: (info: { ctx?: NextPageContext }) => WithTRPCConfig<TRouter>;
   ssr?: boolean;
@@ -137,7 +156,7 @@ export function withTRPC<TRouter extends AnyRouter>(opts: {
         // Run the prepass step on AppTree. This will run all trpc queries on the server.
         // multiple prepass ensures that we can do batching on the server
         while (true) {
-          // render fullt tree
+          // render full tree
           await ssrPrepass(createElement(AppTree, prepassProps as any));
           if (!queryClient.isFetching()) {
             // the render didn't cause the queryClient to fetch anything
@@ -154,17 +173,26 @@ export function withTRPC<TRouter extends AnyRouter>(opts: {
             });
           });
         }
-
-        // dehydrate query client's state and add it to the props
-        const dehydrated = dehydrate(queryClient, {
+        const dehydratedCache = dehydrate(queryClient, {
           shouldDehydrateQuery() {
             // makes sure errors are also dehydrated
             return true;
           },
         });
-
-        pageProps.trpcState =
-          trpcClient.runtime.transformer.serialize(dehydrated);
+        // since error instances can't be serialized, let's make them into `TRPCClientErrorLike`-objects
+        const dehydratedCacheWithErrors = {
+          ...dehydratedCache,
+          queries: dehydratedCache.queries.map(
+            transformQueryOrMutationCacheErrors,
+          ),
+          mutation: dehydratedCache.queries.map(
+            transformQueryOrMutationCacheErrors,
+          ),
+        };
+        // dehydrate query client's state and add it to the props
+        pageProps.trpcState = trpcClient.runtime.transformer.serialize(
+          dehydratedCacheWithErrors,
+        );
 
         const appTreeProps = getAppTreeProps(pageProps);
 
