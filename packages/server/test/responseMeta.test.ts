@@ -22,12 +22,12 @@ test('set custom headers in beforeEnd', async () => {
     {
       server: {
         onError,
-        responseMeta({ ctx, paths, data, type }) {
+        responseMeta({ ctx, paths, type, errors }) {
           // assuming you have all your public routes with the kewyord `public` in them
           const allPublic =
             paths && paths.every((path) => path.includes('public'));
-          // checking that no responses contains an error
-          const allOk = data.every((data) => 'result' in data);
+          // checking that no procedures errored
+          const allOk = errors.length === 0;
           // checking we're doing a query request
           const isQuery = type === 'query';
 

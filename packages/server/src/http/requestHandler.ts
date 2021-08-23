@@ -94,7 +94,10 @@ export async function requestHandler<
   type TRouterError = inferRouterError<TRouter>;
   type TRouterResponse = TRPCResponse<unknown, TRouterError>;
 
-  function endResponse(untransformedJSON: TRouterResponse | TRouterResponse[]) {
+  function endResponse(
+    untransformedJSON: TRouterResponse | TRouterResponse[],
+    errors: TRPCError[],
+  ) {
     if (!res.statusCode || res.statusCode === 200) {
       // only override statusCode if not already set
       // node defaults to be `200` in the `http` package
@@ -111,6 +114,7 @@ export async function requestHandler<
         data: Array.isArray(untransformedJSON)
           ? untransformedJSON
           : [untransformedJSON],
+        errors,
       }) ?? {};
 
     for (const [key, value] of Object.entries(meta.headers ?? {})) {
@@ -177,7 +181,6 @@ export async function requestHandler<
     const inputs = getInputs();
     const rawResults = await Promise.all(
       paths.map(async (path, index) => {
-        const id = null;
         const input = inputs[index];
         try {
           const output = await callProcedure({
@@ -187,31 +190,54 @@ export async function requestHandler<
             input: inputs[index],
             type,
           });
-          const json: TRPCResultResponse<unknown> = {
-            id,
-            result: {
-              type: 'data',
-              data: output,
-            },
+          return {
+            input,
+            path,
+            data: output,
           };
-          return json;
         } catch (_err) {
           const error = getErrorFromUnknown(_err);
 
-          const json: TRPCErrorResponse<TRouterError> = {
-            id,
-            error: router.getErrorShape({ error, type, path, input, ctx }),
-          };
           onError?.({ error, path, input, ctx, type: type, req });
-          return json;
+          return {
+            input,
+            path,
+            error: error,
+          };
         }
       }),
     );
+    const errors = rawResults.flatMap((obj) => (obj.error ? [obj.error] : []));
+    const resultEnvelopes = rawResults.map((obj) => {
+      const { path, input } = obj;
+      if (obj.error) {
+        const json: TRPCErrorResponse<TRouterError> = {
+          id: null,
+          error: router.getErrorShape({
+            error: obj.error,
+            type,
+            path,
+            input,
+            ctx,
+          }),
+        };
+        return json;
+      } else {
+        const json: TRPCResultResponse<unknown> = {
+          id: null,
+          result: {
+            type: 'data',
+            data: obj.data,
+          },
+        };
+        return json;
+      }
+    });
 
     const result: TRouterResponse | TRouterResponse[] = isBatchCall
-      ? rawResults
-      : rawResults[0];
-    endResponse(result);
+      ? resultEnvelopes
+      : resultEnvelopes[0];
+    endResponse(result, errors);
   } catch (_err) {
     // we get here if
     // - batching is called when it's not enabled
@@ -230,7 +256,7 @@ export async function requestHandler<
         ctx,
       }),
     };
-    endResponse(json);
+    endResponse(json, [error]);
     onError?.({
       error,
       path: undefined,
