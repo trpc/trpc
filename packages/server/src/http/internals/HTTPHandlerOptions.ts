@@ -37,5 +37,5 @@ export interface HTTPHandlerOptions<
    * Useful for setting cache headers
    * @link https://trpc.io/docs/caching
    */
-  getResponseHeaders?: ResponseHeadersFunction<TRouter>;
+  responseHeaders?: ResponseHeadersFunction<TRouter>;
 }

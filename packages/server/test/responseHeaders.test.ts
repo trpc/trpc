@@ -22,7 +22,7 @@ test('set custom headers in beforeEnd', async () => {
     {
       server: {
         onError,
-        getResponseHeaders({ ctx, paths, data, type }) {
+        responseHeaders({ ctx, paths, data, type }) {
           // assuming you have all your public routes with the kewyord `public` in them
           const allPublic =
             paths && paths.every((path) => path.includes('public'));

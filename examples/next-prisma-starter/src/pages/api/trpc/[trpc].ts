@@ -29,7 +29,7 @@ export default trpcNext.createNextApiHandler({
   /**
    * @link https://trpc.io/docs/caching#api-response-caching
    */
-  // getResponseHeaders() {
+  // responseHeaders() {
   //   // ...
   // },
 });

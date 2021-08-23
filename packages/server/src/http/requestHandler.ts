@@ -104,7 +104,7 @@ export async function requestHandler<
     res.setHeader('Content-Type', 'application/json');
 
     const headers =
-      opts.getResponseHeaders?.({
+      opts.responseHeaders?.({
         ctx,
         paths,
         type,
