@@ -72,7 +72,7 @@ export default withTRPC<AppRouter>({
    */
   responseMeta({ clientErrors }) {
     if (clientErrors.length) {
-      // grab the first error's httpStatus
+      // propagate http first error from API calls
       return {
         status: clientErrors[0].data?.httpStatus ?? 500,
       };

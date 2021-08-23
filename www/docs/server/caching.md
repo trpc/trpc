@@ -44,8 +44,10 @@ export default withTRPC({
   ssr: true,
   responseMeta({ ctx, clientErrors }) {
     if (clientErrors.length) {
-      // potentially propagate http errors from API-call
-      return {};
+      // propagate http first error from API calls
+      return {
+        status: clientErrors[0].data?.httpStatus ?? 500,
+      };
     }
 
     // cache request for 1 day + revalidate once every second
