@@ -1,6 +1,6 @@
 {
   "name": "@trpc/next",
-  "version": "9.0.0-alpha.2",
+  "version": "9.0.0-alpha.7",
   "description": "tRPC Next lib",
   "author": "KATT",
   "license": "MIT",
@@ -29,16 +29,16 @@
     }
   },
   "peerDependencies": {
-    "next": "*",
+    "next": "^11.1.0",
     "react": ">=16.8.0",
     "react-dom": ">=16.8.0",
     "react-query": "^3.0.0"
   },
   "dependencies": {
     "@babel/runtime": "^7.9.0",
-    "@trpc/client": "^9.0.0-alpha.2",
-    "@trpc/react": "^9.0.0-alpha.2",
-    "@trpc/server": "^9.0.0-alpha.2",
+    "@trpc/client": "^9.0.0-alpha.7",
+    "@trpc/react": "^9.0.0-alpha.7",
+    "@trpc/server": "^9.0.0-alpha.7",
     "react-ssr-prepass": "^1.4.0"
   },
   "devDependencies": {

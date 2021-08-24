@@ -427,3 +427,39 @@ describe('transformer on router', () => {
     close();
   });
 });
+
+test('superjson - no input', async () => {
+  const transformer = superjson;
+
+  const fn = jest.fn();
+  const { close, httpUrl } = routerToServerAndClient(
+    trpc
+      .router()
+      .transformer(transformer)
+      .query('hello', {
+        async resolve({ input }) {
+          fn(input);
+          return 'world';
+        },
+      }),
+    {
+      client: { transformer },
+    },
+  );
+  const json = await (await fetch(`${httpUrl}/hello`)).json();
+
+  expect(json).not.toHaveProperty('error');
+  expect(json).toMatchInlineSnapshot(`
+Object {
+  "id": null,
+  "result": Object {
+    "data": Object {
+      "json": "world",
+    },
+    "type": "data",
+  },
+}
+`);
+
+  close();
+});
