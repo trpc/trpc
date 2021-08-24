@@ -5,6 +5,7 @@
 
 import { createRouter } from 'server/trpc';
 import { z } from 'zod';
+import { TRPCError } from '@trpc/server';
 
 export const postRouter = createRouter()
   // create
@@ -40,9 +41,16 @@ export const postRouter = createRouter()
   .query('byId', {
     input: z.string(),
     async resolve({ ctx, input }) {
-      return ctx.prisma.post.findUnique({
+      const post = await ctx.prisma.post.findUnique({
         where: { id: input },
       });
+      if (!post) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: `No post with id '${input}'`,
+        });
+      }
+      return post;
     },
   })
   // update
