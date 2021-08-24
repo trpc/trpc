@@ -14,6 +14,7 @@ import {
 } from '../rpc';
 import { Subscription } from '../subscription';
 import { CombinedDataTransformer } from '../transformer';
+import { transformTRPCResponse } from '../internals/transformTRPCResponse';
 
 /* istanbul ignore next */
 function assertIsObject(obj: unknown): asserts obj is Record<string, unknown> {
@@ -99,8 +100,10 @@ export function applyWSSHandler<TRouter extends AnyRouter>(
       Subscription<TRouter>
     >();
 
-    function respond(json: TRPCResponse) {
-      client.send(JSON.stringify(json));
+    function respond(untransformedJSON: TRPCResponse) {
+      client.send(
+        JSON.stringify(transformTRPCResponse(router, untransformedJSON)),
+      );
     }
     const ctxPromise = createContext({ req, res: client });
     let ctx: inferRouterContext<TRouter> | undefined = undefined;
@@ -139,7 +142,7 @@ export function applyWSSHandler<TRouter extends AnyRouter>(
             id,
             result: {
               type: 'data',
-              data: transformer.output.serialize(result),
+              data: result,
             },
           });
           return;
@@ -167,7 +170,7 @@ export function applyWSSHandler<TRouter extends AnyRouter>(
             id,
             result: {
               type: 'data',
-              data: transformer.output.serialize(data),
+              data,
             },
           });
         });
@@ -175,15 +178,13 @@ export function applyWSSHandler<TRouter extends AnyRouter>(
           const error = getErrorFromUnknown(_error);
           const json: TRPCErrorResponse = {
             id,
-            error: transformer.output.serialize(
-              router.getErrorShape({
-                error,
-                type,
-                path,
-                input,
-                ctx,
-              }),
-            ),
+            error: router.getErrorShape({
+              error,
+              type,
+              path,
+              input,
+              ctx,
+            }),
           };
           opts.onError?.({ error, path, type, ctx, req, input });
           respond(json);
@@ -215,7 +216,7 @@ export function applyWSSHandler<TRouter extends AnyRouter>(
           ctx,
         });
         opts.onError?.({ error, path, type, ctx, req, input });
-        respond({ id, error: transformer.output.serialize(json) });
+        respond({ id, error: json });
       }
     }
     client.on('message', async (message) => {
@@ -231,15 +232,13 @@ export function applyWSSHandler<TRouter extends AnyRouter>(
 
         respond({
           id: null,
-          error: transformer.output.serialize(
-            router.getErrorShape({
-              error,
-              type: 'unknown',
-              path: undefined,
-              input: undefined,
-              ctx: undefined,
-            }),
-          ),
+          error: router.getErrorShape({
+            error,
+            type: 'unknown',
+            path: undefined,
+            input: undefined,
+            ctx: undefined,
+          }),
         });
       }
     });
@@ -257,15 +256,13 @@ export function applyWSSHandler<TRouter extends AnyRouter>(
         const error = getErrorFromUnknown(err);
         const json: TRPCErrorResponse = {
           id: null,
-          error: transformer.output.serialize(
-            router.getErrorShape({
-              error,
-              type: 'unknown',
-              path: undefined,
-              input: undefined,
-              ctx,
-            }),
-          ),
+          error: router.getErrorShape({
+            error,
+            type: 'unknown',
+            path: undefined,
+            input: undefined,
+            ctx,
+          }),
         };
         opts.onError?.({
           error,

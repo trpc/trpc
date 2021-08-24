@@ -1,26 +1,19 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 import type { NextApiHandler, NextApiRequest, NextApiResponse } from 'next';
-import { CreateContextFn, CreateContextFnOptions, requestHandler } from '../';
-import { TRPCError } from '../TRPCError';
-import { BaseHandlerOptions } from '../internals/BaseHandlerOptions';
+import { CreateContextFnOptions, requestHandler } from '../';
+import { HTTPHandlerOptions } from '../http/internals/HTTPHandlerOptions';
 import { AnyRouter } from '../router';
 import { TRPCErrorResponse } from '../rpc';
+import { TRPCError } from '../TRPCError';
 
 export type CreateNextContextOptions = CreateContextFnOptions<
   NextApiRequest,
   NextApiResponse
 >;
 
-export type CreateNextContextFn<TRouter extends AnyRouter> = CreateContextFn<
-  TRouter,
-  NextApiRequest,
-  NextApiResponse
->;
 export function createNextApiHandler<TRouter extends AnyRouter>(
-  opts: {
-    createContext: CreateNextContextFn<TRouter>;
-  } & BaseHandlerOptions<TRouter, NextApiRequest>,
+  opts: HTTPHandlerOptions<TRouter, NextApiRequest, NextApiResponse>,
 ): NextApiHandler {
   return async (req, res) => {
     function getPath(): string | null {

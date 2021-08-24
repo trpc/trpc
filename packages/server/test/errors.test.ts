@@ -9,7 +9,7 @@ import { OnErrorFunction } from '../src/internals/BaseHandlerOptions';
 import { getMessageFromUnkownError } from '../src/internals/errors';
 import { TRPCError } from '../src/TRPCError';
 import { routerToServerAndClient, waitError } from './_testHelpers';
-
+import fetch from 'node-fetch';
 function assertClientError(
   err: unknown,
 ): asserts err is TRPCClientError<AnyRouter> {
@@ -154,16 +154,18 @@ describe('formatError()', () => {
     const { client, close } = routerToServerAndClient(
       trpc
         .router()
-        .formatError(({ error }) => {
+        .formatError(({ error, shape }) => {
           if (error.originalError instanceof ZodError) {
             return {
-              type: 'zod' as const,
-              errors: error.originalError.errors,
+              ...shape,
+              data: {
+                ...shape.data,
+                type: 'zod' as const,
+                errors: error.originalError.errors,
+              },
             };
           }
-          return {
-            type: 'standard' as const,
-          };
+          return shape;
         })
         .mutation('err', {
           input: z.string(),
@@ -184,20 +186,53 @@ describe('formatError()', () => {
       clientError = _err;
     }
     assertClientError(clientError);
+    delete (clientError.data as any).stack;
+    expect(clientError.data).toMatchInlineSnapshot(`
+Object {
+  "code": "BAD_REQUEST",
+  "errors": Array [
+    Object {
+      "code": "invalid_type",
+      "expected": "string",
+      "message": "Expected string, received number",
+      "path": Array [],
+      "received": "number",
+    },
+  ],
+  "httpStatus": 400,
+  "path": "err",
+  "type": "zod",
+}
+`);
     expect(clientError.shape).toMatchInlineSnapshot(`
+Object {
+  "code": -32600,
+  "data": Object {
+    "code": "BAD_REQUEST",
+    "errors": Array [
       Object {
-        "errors": Array [
-          Object {
-            "code": "invalid_type",
-            "expected": "string",
-            "message": "Expected string, received number",
-            "path": Array [],
-            "received": "number",
-          },
-        ],
-        "type": "zod",
-      }
-    `);
+        "code": "invalid_type",
+        "expected": "string",
+        "message": "Expected string, received number",
+        "path": Array [],
+        "received": "number",
+      },
+    ],
+    "httpStatus": 400,
+    "path": "err",
+    "type": "zod",
+  },
+  "message": "[
+  {
+    \\"code\\": \\"invalid_type\\",
+    \\"expected\\": \\"string\\",
+    \\"received\\": \\"number\\",
+    \\"path\\": [],
+    \\"message\\": \\"Expected string, received number\\"
+  }
+]",
+}
+`);
     expect(onError).toHaveBeenCalledTimes(1);
     const serverError = onError.mock.calls[0][0].error;
 
@@ -211,14 +246,81 @@ describe('formatError()', () => {
       trpc
         .router()
         .formatError(({ shape }) => {
-          return { shape };
+          return shape;
         })
         .formatError(({ shape }) => {
-          return { shape };
+          return shape;
         });
     }).toThrowErrorMatchingInlineSnapshot(
       `"You seem to have double \`formatError()\`-calls in your router tree"`,
     );
+  });
+  test('setting custom http response code', async () => {
+    const TEAPOT_ERROR_CODE = 418;
+    const onError = jest.fn();
+    const { close, httpUrl } = routerToServerAndClient(
+      trpc
+        .router()
+        .formatError(({ error, shape }) => {
+          if (!(error.originalError instanceof ZodError)) {
+            return shape;
+          }
+          return {
+            ...shape,
+            data: {
+              ...shape.data,
+              httpStatus: TEAPOT_ERROR_CODE,
+            },
+          };
+        })
+        .query('q', {
+          input: z.string(),
+          resolve() {
+            return null;
+          },
+        }),
+      {
+        server: {
+          onError,
+        },
+      },
+    );
+    const res = await fetch(`${httpUrl}/q`);
+
+    expect(res.ok).toBeFalsy();
+    expect(res.status).toBe(TEAPOT_ERROR_CODE);
+
+    close();
+  });
+
+  test('do not override response status set by middleware or resolver', async () => {
+    const TEAPOT_ERROR_CODE = 418;
+    const onError = jest.fn();
+    const { close, httpUrl } = routerToServerAndClient(
+      trpc
+        .router<trpc.CreateHttpContextOptions>()
+        .middleware(({ ctx }) => {
+          ctx.res.statusCode = TEAPOT_ERROR_CODE;
+          throw new Error('Some error');
+        })
+        .query('q', {
+          input: z.string(),
+          resolve() {
+            return null;
+          },
+        }),
+      {
+        server: {
+          onError,
+        },
+      },
+    );
+    const res = await fetch(`${httpUrl}/q`);
+
+    expect(res.ok).toBeFalsy();
+    expect(res.status).toBe(TEAPOT_ERROR_CODE);
+
+    close();
   });
 });
 

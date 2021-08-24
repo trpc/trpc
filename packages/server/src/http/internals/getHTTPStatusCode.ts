@@ -1,5 +1,5 @@
 import { TRPCResponse, TRPC_ERROR_CODES_BY_KEY } from '../../rpc';
-import { CombinedDataTransformer } from '../../transformer';
+import { TRPCError } from '../../TRPCError';
 import { invert } from './invert';
 
 export const TRPC_ERROR_CODES_BY_NUMBER = invert(TRPC_ERROR_CODES_BY_KEY);
@@ -22,32 +22,33 @@ const JSONRPC2_TO_HTTP_CODE: Record<
   METHOD_NOT_SUPPORTED: 405,
 };
 
-export function getHTTPStatusCode(
-  json: TRPCResponse | TRPCResponse[],
-  transformer: CombinedDataTransformer,
-) {
+export function getHTTPStatusCode(json: TRPCResponse | TRPCResponse[]) {
   const arr = Array.isArray(json) ? json : [json];
-  const codes = new Set(
+  const httpStatuses = new Set(
     arr.map((res) => {
       if ('error' in res) {
-        return transformer.output.deserialize(res.error).code;
+        const data = res.error.data;
+        if (typeof data.httpStatus === 'number') {
+          return data.httpStatus;
+        }
+        const code = TRPC_ERROR_CODES_BY_NUMBER[res.error.code];
+        return JSONRPC2_TO_HTTP_CODE[code] ?? 500;
       }
       return 200;
     }),
   );
 
-  if (codes.size !== 1) {
+  if (httpStatuses.size !== 1) {
     return 207;
   }
 
-  const code: TRPC_ERROR_CODE_NUMBER | 200 = codes.values().next().value;
+  const httpStatus = httpStatuses.values().next().value;
 
-  if (code === 200) {
-    return 200;
-  }
-  const key = TRPC_ERROR_CODES_BY_NUMBER[code];
+  return httpStatus;
+}
 
-  const res = JSONRPC2_TO_HTTP_CODE[key] ?? 500;
+export function getHTTPStatusCodeFromError(error: TRPCError) {
+  const { code } = error;
 
-  return res;
+  return JSONRPC2_TO_HTTP_CODE[code] ?? 500;
 }
