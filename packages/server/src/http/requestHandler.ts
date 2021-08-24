@@ -209,7 +209,7 @@ export async function requestHandler<
           return {
             input,
             path,
-            error: error,
+            error,
           };
         }
       }),
