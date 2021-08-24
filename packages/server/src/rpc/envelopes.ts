@@ -28,7 +28,7 @@ interface JSONRPC2ResultResponse<TResult = unknown>
 // inner types
 export interface TRPCErrorShape<
   TCode extends number = TRPC_ERROR_CODE_NUMBER,
-  TData = never,
+  TData extends Record<string, unknown> = Record<string, unknown>,
 > {
   code: TCode;
   message: string;

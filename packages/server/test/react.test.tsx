@@ -19,7 +19,6 @@ import userEvent from '@testing-library/user-event';
 import { httpBatchLink } from '@trpc/client/links/httpBatchLink';
 import { expectTypeOf } from 'expect-type';
 import hash from 'hash-sum';
-import { AppType } from 'next/dist/shared/lib/utils';
 import React, { Fragment, useEffect, useState } from 'react';
 import {
   QueryClient,
@@ -40,6 +39,7 @@ import {
   TRPCWebSocketClient,
 } from '../../client/src/links/wsLink';
 import { splitLink } from '../../client/src/links/splitLink';
+import { AppType } from 'next/dist/shared/lib/utils';
 import { TRPCError } from '../src/TRPCError';
 
 setLogger({

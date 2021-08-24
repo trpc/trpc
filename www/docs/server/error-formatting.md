@@ -41,10 +41,10 @@ function MyComponent() {
     mutation.mutate({ title: 'example' });
   }, []);
 
-  if (mutation.error?.shape?.data.zodError) {
+  if (mutation.error?.data?.zodError) {
     // zodError will be inferred
     return (
-      <pre>Error: {JSON.stringify(mutation.error.shape.data.zodError, null, 2)}</pre>
+      <pre>Error: {JSON.stringify(mutation.error.data.zodError, null, 2)}</pre>
     );
   }
   return <>[...]</>;
@@ -73,9 +73,11 @@ function MyComponent() {
 
 interface DefaultErrorData {
   code: TRPC_ERROR_CODE_KEY;
+  httpStatus: number;
   path?: string;
   stack?: string;
 }
+
 interface DefaultErrorShape
   extends TRPCErrorShape<TRPC_ERROR_CODE_NUMBER, DefaultErrorData> {
   message: string;

@@ -36,7 +36,7 @@ export function routerToServerAndClient<TRouter extends AnyRouter>(
   // http
   const httpServer = createHttpServer({
     router,
-    createContext: () => ({}),
+    createContext: ({ req, res }) => ({ req, res }),
     ...(opts?.server ?? {
       batching: {
         enabled: true,
@@ -52,7 +52,7 @@ export function routerToServerAndClient<TRouter extends AnyRouter>(
   const applyWSSHandlerOpts: WSSHandlerOptions<TRouter> = {
     wss,
     router,
-    createContext: () => ({}),
+    createContext: ({ req, res }) => ({ req, res }),
     ...(opts?.wssServer ?? {}),
   };
   const wssHandler = applyWSSHandler(applyWSSHandlerOpts);
