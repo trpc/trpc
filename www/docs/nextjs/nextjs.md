@@ -183,6 +183,34 @@ The `config`-argument is a function that returns an object that configures the t
 Whether tRPC should await queries when server-side rendering a page. Defaults to `false`.
 
 
+### `responseMeta`-callback
+
+Ability to set request headers and HTTP status when server-side rendering. 
+
+#### Example
+
+```tsx
+export default withTRPC<AppRouter>({
+  config({ ctx }) { /* [...] */ },
+  ssr: true,
+  responseMeta({ clientErrors, ctx }) {
+    if (clientErrors.length) {
+      // propagate first http error from API calls
+      return {
+        status: clientErrors[0].data?.httpStatus ?? 500,
+      };
+    }
+    // cache full page for 1 day + revalidate once every second
+    const ONE_DAY_IN_SECONDS = 60 * 60 * 24;
+    return {
+      'Cache-Control': `s-maxage=1, stale-while-revalidate=${ONE_DAY_IN_SECONDS}`,
+    };
+  },
+})(MyApp);
+
+```
+
+
 ## Next steps
 
 Refer to the `@trpc/react` docs for additional information on executing [Queries](/docs/react-queries) and [Mutations](/docs/react-mutations) inside your components.
