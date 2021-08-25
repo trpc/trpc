@@ -23,8 +23,8 @@ author_image_url: https://avatars1.githubusercontent.com/u/459267?s=460&v=4
 
   <h2>Watch Video</h2>
   <figure>
-    <iframe src="https://www.youtube.com/embed/qBXrwFsFK1Q?start=433" title="YouTube video player" frameBorder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen style={{maxWidth: '100%', width: '560px', height: '315px'}}></iframe>
-    <figcaption style={{ fontSize: '0.7rem' }}><a href="https://twitter.com/alexdotjs">alexdotjs / KATT</a> presenting at Prisma's TypeScript meetup. Skipped to 7:13 where the coding begins.</figcaption>
+    <iframe src="https://www.youtube.com/embed/-_GZJ3xwYOw" title="YouTube video player" frameBorder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen style={{maxWidth: '100%', width: '560px', height: '315px'}}></iframe>
+    <figcaption style={{ fontSize: '0.7rem' }}><a href="https://twitter.com/alexdotjs">Alex / KATT</a> and Prisma's Mahmoud Abdelwahab doing a deep dive into tRPC.</figcaption>
   </figure>
 </div>
 
