@@ -1,6 +1,6 @@
 {
   "name": "@examples/next-starter",
-  "version": "9.0.0-alpha.7",
+  "version": "9.0.0",
   "private": true,
   "scripts": {
     "build:1-generate": "prisma generate",
@@ -30,10 +30,10 @@
   },
   "dependencies": {
     "@prisma/client": "^2.18.0",
-    "@trpc/client": "^9.0.0-alpha.7",
-    "@trpc/next": "^9.0.0-alpha.7",
-    "@trpc/react": "^9.0.0-alpha.7",
-    "@trpc/server": "^9.0.0-alpha.7",
+    "@trpc/client": "^9.0.0",
+    "@trpc/next": "^9.0.0",
+    "@trpc/react": "^9.0.0",
+    "@trpc/server": "^9.0.0",
     "clsx": "^1.1.1",
     "next": "^11.1.0",
     "react": "^17.0.1",
