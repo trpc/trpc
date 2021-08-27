@@ -91,20 +91,16 @@ describe('integration tests', () => {
         },
       }),
     );
-    try {
-      await client.query('notFound' as any);
-      throw new Error('Did not fail');
-    } catch (err) {
-      if (!(err instanceof TRPCClientError)) {
-        throw new Error('Not TRPCClientError');
-      }
-      expect(err.message).toMatchInlineSnapshot(
-        `"No \\"query\\"-procedure on path \\"notFound\\""`,
-      );
-      expect(err.shape?.message).toMatchInlineSnapshot(
-        `"No \\"query\\"-procedure on path \\"notFound\\""`,
-      );
-    }
+    const err = await waitError(
+      client.query('notFound' as any),
+      TRPCClientError,
+    );
+    expect(err.message).toMatchInlineSnapshot(
+      `"No \\"query\\"-procedure on path \\"notFound\\""`,
+    );
+    expect(err.shape?.message).toMatchInlineSnapshot(
+      `"No \\"query\\"-procedure on path \\"notFound\\""`,
+    );
     close();
   });
 
@@ -124,15 +120,12 @@ describe('integration tests', () => {
         },
       }),
     );
-    try {
-      await client.query('hello', { who: 123 as any });
-      throw new Error('Did not fail');
-    } catch (err) {
-      if (!(err instanceof TRPCClientError)) {
-        throw new Error('Not TRPCClientError');
-      }
-      expect(err.shape?.code).toMatchInlineSnapshot(`-32600`);
-      expect(err.shape?.message).toMatchInlineSnapshot(`
+    const err = await waitError(
+      client.query('hello', { who: 123 as any }),
+      TRPCClientError,
+    );
+    expect(err.shape?.code).toMatchInlineSnapshot(`-32600`);
+    expect(err.shape?.message).toMatchInlineSnapshot(`
         "[
           {
             \\"code\\": \\"invalid_type\\",
@@ -145,7 +138,6 @@ describe('integration tests', () => {
           }
         ]"
       `);
-    }
     close();
   });
 
@@ -287,10 +279,8 @@ describe('integration tests', () => {
 
       // no auth, should fail
       {
-        const err = await waitError(client.query('whoami'));
-        expect((err as any).shape.message).toMatchInlineSnapshot(
-          `"UNAUTHORIZED"`,
-        );
+        const err = await waitError(client.query('whoami'), TRPCClientError);
+        expect(err.shape.message).toMatchInlineSnapshot(`"UNAUTHORIZED"`);
       }
       // auth, should work
       {

@@ -101,9 +101,19 @@ export async function waitMs(ms: number) {
   await new Promise<void>((resolve) => setTimeout(resolve, ms));
 }
 
-export async function waitError(
+type Constructor<T extends {} = {}> = new (...args: any[]) => T;
+
+export async function waitError<TError = Error>(
+  /**
+   * Function callback or promise that you expect will throw
+   */
   fnOrPromise: (() => Promise<unknown> | unknown) | Promise<unknown>,
-): Promise<Error> {
+  /**
+   * Force error constructor to be of specific type
+   * @default Error
+   **/
+  errorConstructor?: Constructor<TError>,
+): Promise<TError> {
   try {
     if (typeof fnOrPromise === 'function') {
       await fnOrPromise();
@@ -111,8 +121,8 @@ export async function waitError(
       await fnOrPromise;
     }
   } catch (err) {
-    expect(err).toBeInstanceOf(Error);
-    return err as Error;
+    expect(err).toBeInstanceOf(errorConstructor ?? Error);
+    return err as TError;
   }
   throw new Error('Function did not throw');
 }

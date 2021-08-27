@@ -13,6 +13,7 @@ import { TRPCError } from '../src/TRPCError';
 import * as trpc from '../src';
 import { routerToServerAndClient, waitError } from './_testHelpers';
 import { httpLink } from '../../client/src/links/httpLink';
+import fetch from 'node-fetch';
 
 test('superjson up and down', async () => {
   const transformer = superjson;
@@ -403,10 +404,7 @@ describe('transformer on router', () => {
         },
       },
     );
-    const clientError = await waitError(client.query('err'));
-    if (!(clientError instanceof TRPCClientError)) {
-      throw new Error('Did not throw');
-    }
+    const clientError = await waitError(client.query('err'), TRPCClientError);
     expect(clientError.shape.message).toMatchInlineSnapshot(`"woop"`);
     expect(clientError.shape.code).toMatchInlineSnapshot(`-32603`);
 

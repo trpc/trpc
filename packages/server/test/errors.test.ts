@@ -1,22 +1,14 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 /* eslint-disable @typescript-eslint/no-empty-function */
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import fetch from 'node-fetch';
 import { z, ZodError } from 'zod';
 import { TRPCClientError } from '../../client/src';
 import * as trpc from '../src';
-import { AnyRouter } from '../src';
 import { OnErrorFunction } from '../src/internals/BaseHandlerOptions';
 import { getMessageFromUnkownError } from '../src/internals/errors';
 import { TRPCError } from '../src/TRPCError';
 import { routerToServerAndClient, waitError } from './_testHelpers';
-import fetch from 'node-fetch';
-function assertClientError(
-  err: unknown,
-): asserts err is TRPCClientError<AnyRouter> {
-  if (!(err instanceof TRPCClientError)) {
-    throw new Error('Did not throw');
-  }
-}
 
 test('basic', async () => {
   class MyError extends Error {
@@ -38,10 +30,7 @@ test('basic', async () => {
       },
     },
   );
-  const clientError = await waitError(client.query('err'));
-  if (!(clientError instanceof TRPCClientError)) {
-    throw new Error('Did not throw');
-  }
+  const clientError = await waitError(client.query('err'), TRPCClientError);
   expect(clientError.shape.message).toMatchInlineSnapshot(`"woop"`);
   expect(clientError.shape.code).toMatchInlineSnapshot(`-32603`);
 
@@ -72,10 +61,10 @@ test('input error', async () => {
       },
     },
   );
-  const clientError = await waitError(client.mutation('err', 1 as any));
-  if (!(clientError instanceof TRPCClientError)) {
-    throw new Error('Did not throw');
-  }
+  const clientError = await waitError(
+    client.mutation('err', 1 as any),
+    TRPCClientError,
+  );
   expect(clientError.shape.message).toMatchInlineSnapshot(`
     "[
       {
@@ -115,10 +104,7 @@ test('unauthorized()', async () => {
       },
     },
   );
-  const clientError = await waitError(client.query('err'));
-  if (!(clientError instanceof TRPCClientError)) {
-    throw new Error('Did not throw');
-  }
+  const clientError = await waitError(client.query('err'), TRPCClientError);
   expect(clientError).toMatchInlineSnapshot(`[TRPCClientError: UNAUTHORIZED]`);
   expect(onError).toHaveBeenCalledTimes(1);
   const serverError = onError.mock.calls[0][0].error;
@@ -164,8 +150,10 @@ describe('formatError()', () => {
         },
       },
     );
-    const clientError = await waitError(client.mutation('err', 1 as any));
-    assertClientError(clientError);
+    const clientError = await waitError(
+      client.mutation('err', 1 as any),
+      TRPCClientError,
+    );
     delete (clientError.data as any).stack;
     expect(clientError.data).toMatchInlineSnapshot(`
 Object {
@@ -318,8 +306,10 @@ test('make sure object is ignoring prototype', async () => {
       },
     },
   );
-  const clientError = await waitError(client.query('toString' as any));
-  assertClientError(clientError);
+  const clientError = await waitError(
+    client.query('toString' as any),
+    TRPCClientError,
+  );
   expect(clientError.shape.message).toMatchInlineSnapshot(
     `"No \\"query\\"-procedure on path \\"toString\\""`,
   );
