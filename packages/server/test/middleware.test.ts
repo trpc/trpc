@@ -310,8 +310,8 @@ test('measure time middleware', async () => {
       .router()
       .middleware(async ({ next, path, type }) => {
         const start = Date.now();
-        const durationMs = Date.now() - start;
         const result = await next();
+        const durationMs = Date.now() - start;
         result.ok
           ? logMock('OK request timing:', { path, type, durationMs })
           : logMock('Non-OK request timing', { path, type, durationMs });

@@ -57,7 +57,8 @@ trpc
   .middleware(async ({ path, type, next }) => {
     const start = Date.now();
     const result = await next();
-    console.log('request timing:', {path, type, took: Date.now() - start});
+    const durationMs = Date.now() - start;
+    console.log('request timing:', { path, type, durationMs });
     return result;
   })
   .query('foo', {
