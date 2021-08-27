@@ -108,7 +108,7 @@ export async function waitError(
     await fn();
   } catch (err) {
     expect(err).toBeInstanceOf(Error);
-    return err;
+    return err as Error;
   }
   throw new Error('Function did not throw');
 }
