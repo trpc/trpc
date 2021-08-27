@@ -303,7 +303,7 @@ test('equiv', () => {
 
 test('measure time middleware', async () => {
   const WAIT_FOR_MS = 20;
-  let time = 0;
+  let durationMs = 0;
   const logMock = jest.fn();
   const { client, close } = routerToServerAndClient(
     trpc
@@ -311,11 +311,10 @@ test('measure time middleware', async () => {
       .middleware(async ({ next, path, type }) => {
         const start = Date.now();
         const result = await next();
-        const durationMs = Date.now() - start;
+        durationMs = Date.now() - start;
         result.ok
           ? logMock('OK request timing:', { path, type, durationMs })
           : logMock('Non-OK request timing', { path, type, durationMs });
-        time = Date.now() - start;
 
         return result;
       })
@@ -328,7 +327,7 @@ test('measure time middleware', async () => {
   );
 
   expect(await client.query('slowQuery')).toBe('hello');
-  expect(time >= WAIT_FOR_MS).toBeTruthy();
+  expect(durationMs >= WAIT_FOR_MS).toBeTruthy();
 
   const calls = (logMock.mock.calls as any[]).map((args) => {
     // omit durationMs as it's variable
