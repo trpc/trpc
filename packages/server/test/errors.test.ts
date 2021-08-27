@@ -38,12 +38,7 @@ test('basic', async () => {
       },
     },
   );
-  let clientError: Error | null = null;
-  try {
-    await client.query('err');
-  } catch (_err) {
-    clientError = _err;
-  }
+  const clientError = await waitError(client.query('err'));
   if (!(clientError instanceof TRPCClientError)) {
     throw new Error('Did not throw');
   }
@@ -77,12 +72,7 @@ test('input error', async () => {
       },
     },
   );
-  let clientError: Error | null = null;
-  try {
-    await client.mutation('err', 1 as any);
-  } catch (_err) {
-    clientError = _err;
-  }
+  const clientError = await waitError(client.mutation('err', 1 as any));
   if (!(clientError instanceof TRPCClientError)) {
     throw new Error('Did not throw');
   }
@@ -125,12 +115,7 @@ test('unauthorized()', async () => {
       },
     },
   );
-  let clientError: Error | null = null;
-  try {
-    await client.query('err');
-  } catch (_err) {
-    clientError = _err;
-  }
+  const clientError = await waitError(client.query('err'));
   if (!(clientError instanceof TRPCClientError)) {
     throw new Error('Did not throw');
   }
@@ -179,12 +164,7 @@ describe('formatError()', () => {
         },
       },
     );
-    let clientError: Error | null = null;
-    try {
-      await client.mutation('err', 1 as any);
-    } catch (_err) {
-      clientError = _err;
-    }
+    const clientError = await waitError(client.mutation('err', 1 as any));
     assertClientError(clientError);
     delete (clientError.data as any).stack;
     expect(clientError.data).toMatchInlineSnapshot(`
@@ -338,12 +318,7 @@ test('make sure object is ignoring prototype', async () => {
       },
     },
   );
-  let clientError: Error | null = null;
-  try {
-    await client.query('toString' as any);
-  } catch (_err) {
-    clientError = _err;
-  }
+  const clientError = await waitError(client.query('toString' as any));
   assertClientError(clientError);
   expect(clientError.shape.message).toMatchInlineSnapshot(
     `"No \\"query\\"-procedure on path \\"toString\\""`,
