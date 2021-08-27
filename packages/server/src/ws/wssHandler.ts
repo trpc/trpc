@@ -209,7 +209,7 @@ export function applyWSSHandler<TRouter extends AnyRouter>(
         // procedure threw an error
         const error = getErrorFromUnknown(_error);
         const json = router.getErrorShape({
-          error: _error,
+          error,
           type,
           path,
           input,

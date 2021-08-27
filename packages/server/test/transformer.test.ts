@@ -11,7 +11,7 @@ import { TRPCClientError } from '../../client/src';
 import { httpBatchLink } from '../../client/src/links/httpBatchLink';
 import { TRPCError } from '../src/TRPCError';
 import * as trpc from '../src';
-import { routerToServerAndClient } from './_testHelpers';
+import { routerToServerAndClient, waitError } from './_testHelpers';
 import { httpLink } from '../../client/src/links/httpLink';
 
 test('superjson up and down', async () => {
@@ -403,12 +403,7 @@ describe('transformer on router', () => {
         },
       },
     );
-    let clientError: Error | null = null;
-    try {
-      await client.query('err');
-    } catch (_err) {
-      clientError = _err;
-    }
+    const clientError = await waitError(client.query('err'));
     if (!(clientError instanceof TRPCClientError)) {
       throw new Error('Did not throw');
     }

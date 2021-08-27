@@ -8,7 +8,7 @@ import { z } from 'zod';
 import { TRPCClientError } from '../../client/src';
 import * as trpc from '../src';
 import { CreateHttpContextOptions, Maybe, TRPCError } from '../src';
-import { routerToServerAndClient } from './_testHelpers';
+import { routerToServerAndClient, waitError } from './_testHelpers';
 import WebSocket from 'ws';
 import { waitFor } from '@testing-library/react';
 import { httpBatchLink } from '../../client/src/links/httpBatchLink';
@@ -287,17 +287,10 @@ describe('integration tests', () => {
 
       // no auth, should fail
       {
-        let threw = false;
-        try {
-          const res = await client.query('whoami');
-          expectTypeOf(res).toMatchTypeOf<{ id: number; name: string }>();
-        } catch (err) {
-          threw = true;
-          expect(err.shape.message).toMatchInlineSnapshot(`"UNAUTHORIZED"`);
-        }
-        if (!threw) {
-          throw new Error("Didn't throw");
-        }
+        const err = await waitError(client.query('whoami'));
+        expect((err as any).shape.message).toMatchInlineSnapshot(
+          `"UNAUTHORIZED"`,
+        );
       }
       // auth, should work
       {
