@@ -100,6 +100,7 @@ export function routerToServerAndClient<TRouter extends AnyRouter>(
 export async function waitMs(ms: number) {
   await new Promise<void>((resolve) => setTimeout(resolve, ms));
 }
+
 type Constructor<T extends {} = {}> = new (...args: any[]) => T;
 
 export async function waitError<TError = Error>(
