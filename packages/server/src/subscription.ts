@@ -1,4 +1,5 @@
 import { EventEmitter } from 'events';
+import { getErrorFromUnknown } from './internals/errors';
 
 interface SubscriptionEvents<TOutput> {
   data: (data: TOutput) => void;
@@ -79,7 +80,7 @@ export class Subscription<TOutput = unknown> {
       err
       /* istanbul ignore next */
     ) {
-      this.emitError(err);
+      this.emitError(getErrorFromUnknown(err));
     }
   }
 
@@ -130,7 +131,7 @@ export function subscriptionPullFactory<TOutput>(opts: {
     try {
       await opts.pull(emit);
     } catch (err /* istanbul ignore next */) {
-      emit.error(err);
+      emit.error(getErrorFromUnknown(err));
     }
 
     /* istanbul ignore else */
