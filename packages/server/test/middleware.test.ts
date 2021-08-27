@@ -3,7 +3,7 @@ import { AsyncLocalStorage } from 'async_hooks';
 import * as trpc from '../src';
 import { TRPCError } from '../src';
 import { MiddlewareResult } from '../src/internals/middlewares';
-import { routerToServerAndClient, waitMs } from './_testHelpers';
+import { routerToServerAndClient } from './_testHelpers';
 
 test('is called if def first', async () => {
   const middleware = jest.fn((opts) => {
@@ -302,8 +302,7 @@ test('equiv', () => {
 });
 
 test('measure time middleware', async () => {
-  const WAIT_FOR_MS = 20;
-  let durationMs = 0;
+  let durationMs = -1;
   const logMock = jest.fn();
   const { client, close } = routerToServerAndClient(
     trpc
@@ -318,16 +317,15 @@ test('measure time middleware', async () => {
 
         return result;
       })
-      .query('slowQuery', {
+      .query('greeting', {
         async resolve() {
-          await waitMs(WAIT_FOR_MS);
           return 'hello';
         },
       }),
   );
 
-  expect(await client.query('slowQuery')).toBe('hello');
-  expect(durationMs >= WAIT_FOR_MS).toBeTruthy();
+  expect(await client.query('greeting')).toBe('hello');
+  expect(durationMs > -1).toBeTruthy();
 
   const calls = (logMock.mock.calls as any[]).map((args) => {
     // omit durationMs as it's variable
@@ -339,7 +337,7 @@ Array [
   Array [
     "OK request timing:",
     Object {
-      "path": "slowQuery",
+      "path": "greeting",
       "type": "query",
     },
   ],
