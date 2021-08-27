@@ -164,6 +164,15 @@
       "contributions": [
         "doc"
       ]
+    },
+    {
+      "login": "jzimmek",
+      "name": "Jan Zimmek",
+      "avatar_url": "https://avatars.githubusercontent.com/u/40382?v=4",
+      "profile": "https://github.com/jzimmek",
+      "contributions": [
+        "financial"
+      ]
     }
   ],
   "contributorsPerLine": 7,
