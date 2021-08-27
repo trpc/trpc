@@ -3,7 +3,7 @@ import { AsyncLocalStorage } from 'async_hooks';
 import * as trpc from '../src';
 import { TRPCError } from '../src';
 import { MiddlewareResult } from '../src/internals/middlewares';
-import { routerToServerAndClient, waitMs } from './_testHelpers';
+import { routerToServerAndClient } from './_testHelpers';
 
 test('is called if def first', async () => {
   const middleware = jest.fn((opts) => {
