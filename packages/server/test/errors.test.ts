@@ -38,10 +38,7 @@ test('basic', async () => {
       },
     },
   );
-  const clientError = await waitError(client.query('err'));
-  if (!(clientError instanceof TRPCClientError)) {
-    throw new Error('Did not throw');
-  }
+  const clientError = await waitError(client.query('err'), TRPCClientError);
   expect(clientError.shape.message).toMatchInlineSnapshot(`"woop"`);
   expect(clientError.shape.code).toMatchInlineSnapshot(`-32603`);
 
