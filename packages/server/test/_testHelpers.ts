@@ -102,10 +102,14 @@ export async function waitMs(ms: number) {
 }
 
 export async function waitError(
-  fn: () => Promise<unknown> | unknown,
+  fnOrPromise: (() => Promise<unknown> | unknown) | Promise<unknown>,
 ): Promise<Error> {
   try {
-    await fn();
+    if (typeof fnOrPromise === 'function') {
+      await fnOrPromise();
+    } else {
+      await fnOrPromise;
+    }
   } catch (err) {
     expect(err).toBeInstanceOf(Error);
     return err as Error;
