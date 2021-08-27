@@ -58,7 +58,10 @@ trpc
     const start = Date.now();
     const result = await next();
     const durationMs = Date.now() - start;
-    console.log('request timing:', { path, type, durationMs });
+    result.ok
+      ? logMock('OK request timing:', { path, type, durationMs })
+      : logMock('Non-OK request timing', { path, type, durationMs });
+
     return result;
   })
   .query('foo', {
