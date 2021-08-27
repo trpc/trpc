@@ -104,7 +104,14 @@ export async function waitMs(ms: number) {
 type Constructor<T extends {} = {}> = new (...args: any[]) => T;
 
 export async function waitError<TError = Error>(
+  /**
+   * Function callback or promise that you expect will throw
+   */
   fnOrPromise: (() => Promise<unknown> | unknown) | Promise<unknown>,
+  /**
+   * Force error constructor to be of specific type
+   * @default Error
+   **/
   errorConstructor?: Constructor<TError>,
 ): Promise<TError> {
   try {
