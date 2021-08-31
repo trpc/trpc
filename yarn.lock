@@ -1057,12 +1057,12 @@
     semver "^5.4.1"
 
 "@changesets/changelog-github@^0.4.0":
-  version "0.4.0"
-  resolved "https://registry.npmjs.org/@changesets/changelog-github/-/changelog-github-0.4.0.tgz#ec80b18b9a5645191b5323fbddce4e4a012302d4"
-  integrity sha512-4GphTAdHJfECuuQg4l0eFGYyUh26mfyXpAi2FImrQvaN+boqTM+9EAAJe2b8Y3OKRfoET+ihgo+LARhW2xJoiw==
+  version "0.4.1"
+  resolved "https://registry.yarnpkg.com/@changesets/changelog-github/-/changelog-github-0.4.1.tgz#880cb624477972ea103abf6942cf4ee3106f682b"
+  integrity sha512-WK9DzS3i0wa2doEnOr4sm/FMnNtxzCCAKP7dEcWvhYkgXYX5R6jmfHAcDstmjAhiuvbhoHYom4MOC1tIzgwnfA==
   dependencies:
     "@changesets/get-github-info" "^0.5.0"
-    "@changesets/types" "^4.0.0"
+    "@changesets/types" "^4.0.1"
     dotenv "^8.1.0"
 
 "@changesets/cli@^2.13.1":
@@ -1215,10 +1215,10 @@
   resolved "https://registry.npmjs.org/@changesets/types/-/types-0.4.0.tgz#3413badb2c3904357a36268cb9f8c7e0afc3a804"
   integrity sha512-TclHHKDVYQ8rJGZgVeWiF7c91yWzTTWdPagltgutelGu/Psup5PQlUq6svx7S8suj+jXcaE34yEEsfIvzXXB2Q==
 
-"@changesets/types@^4.0.0":
-  version "4.0.0"
-  resolved "https://registry.npmjs.org/@changesets/types/-/types-4.0.0.tgz#635f804546b0a96ecc0ca3f26403a6782a3dc938"
-  integrity sha512-whLmPx2wgJRoOtxVZop+DJ71z1gTSkij7osiHgN+pe//FiE6bb4ffvBBb0rACs2cUPfAkWxgSPzqkECgKS1jvQ==
+"@changesets/types@^4.0.0", "@changesets/types@^4.0.1":
+  version "4.0.1"
+  resolved "https://registry.yarnpkg.com/@changesets/types/-/types-4.0.1.tgz#85cf3cc32baff0691112d9d15fc21fbe022c9f0a"
+  integrity sha512-zVfv752D8K2tjyFmxU/vnntQ+dPu+9NupOSguA/2Zuym4tVxRh0ylArgKZ1bOAi2eXfGlZMxJU/kj7uCSI15RQ==
 
 "@changesets/write@^0.1.4":
   version "0.1.4"
