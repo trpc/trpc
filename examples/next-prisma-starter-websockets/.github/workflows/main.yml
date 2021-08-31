@@ -2,6 +2,8 @@ name: E2E-testing
 on: [push]
 jobs:
   e2e:
+    env:
+      DATABASE_URL: postgresql://postgres:@localhost:5432/trpcdb
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -19,19 +21,17 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v2
 
-      - uses: microsoft/playwright-github-action@v1
+      - name: Install deps and build (with cache)
+        uses: bahmutov/npm-install@v1
 
-      # - name: Install deps and build (with cache)
-      #   uses: bahmutov/npm-install@v1
-      - run: yarn install
+      - name: Next.js cache
+        uses: actions/cache@v2
+        with:
+          path: ${{ github.workspace }}/.next/cache
+          key: ${{ runner.os }}-${{ runner.node }}--nextjs
 
-      - run: yarn build
-        env:
-          DATABASE_URL: postgresql://postgres:@localhost:5432/trpcdb
+      - run: yarn playwright install-deps
       - run: yarn lint
+      - run: yarn build-vercel
       - run: yarn test-start
-        env:
-          DATABASE_URL: postgresql://postgres:@localhost:5432/trpcdb
       - run: yarn test-dev
-        env:
-          DATABASE_URL: postgresql://postgres:@localhost:5432/trpcdb

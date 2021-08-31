@@ -30,8 +30,6 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v2
 
-      - uses: microsoft/playwright-github-action@v1
-
       - name: Install deps and build (with cache)
         uses: bahmutov/npm-install@v1
 
@@ -39,8 +37,9 @@ jobs:
         uses: actions/cache@v2
         with:
           path: ${{ github.workspace }}/.next/cache
-          key: ${{ runner.dir }}-${{ runner.os }}-nextjs
-
+          key: ${{ runner.dir }}-${{ runner.os }}-${{ runner.node }}-nextjs
+      
+      - run: yarn playwright install-deps
       # lint if exists in package.json
       - run: cat package.json | if grep --silent '"lint"'; then yarn lint; fi
       - run: yarn --cwd examples/${{ matrix.dir }} build
