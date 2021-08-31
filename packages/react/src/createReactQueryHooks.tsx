@@ -118,8 +118,13 @@ export function createReactQueryHooks<TRouter extends AnyRouter>() {
 
               return queryClient.fetchInfiniteQuery(
                 cacheKey,
-                () =>
-                  (client as any).query(...getArgs(pathAndInput, opts)) as any,
+                ({ pageParam }) => {
+                  const [path, input] = pathAndInput;
+                  const actualInput = { ...(input as any), cursor: pageParam };
+                  return (client as any).query(
+                    ...getArgs([path, actualInput], opts),
+                  );
+                },
                 opts,
               );
             },
@@ -146,8 +151,13 @@ export function createReactQueryHooks<TRouter extends AnyRouter>() {
 
               return queryClient.prefetchInfiniteQuery(
                 cacheKey,
-                () =>
-                  (client as any).query(...getArgs(pathAndInput, opts)) as any,
+                ({ pageParam }) => {
+                  const [path, input] = pathAndInput;
+                  const actualInput = { ...(input as any), cursor: pageParam };
+                  return (client as any).query(
+                    ...getArgs([path, actualInput], opts),
+                  );
+                },
                 opts,
               );
             },
@@ -321,7 +331,7 @@ export function createReactQueryHooks<TRouter extends AnyRouter>() {
       cacheKey,
       ({ pageParam }) => {
         const actualInput = { ...input, cursor: pageParam };
-        return (client.query as any)(path, actualInput);
+        return (client as any).query(...getArgs([path, actualInput], opts));
       },
       opts,
     );
