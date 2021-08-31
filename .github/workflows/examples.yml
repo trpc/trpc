@@ -40,8 +40,8 @@ jobs:
           key: ${{ runner.dir }}-${{ runner.os }}-${{ runner.node }}-nextjs
       
       - run: yarn playwright install-deps
-      # lint if exists in package.json
-      - run: cat package.json | if grep --silent '"lint"'; then yarn lint; fi
+
+      - run: cd examples/${{ matrix.dir }} && cat package.json | if grep --silent '"lint"'; then yarn lint; fi
       - run: yarn --cwd examples/${{ matrix.dir }} build
       - run: yarn --cwd examples/${{ matrix.dir }} test-start
       - run: yarn --cwd examples/${{ matrix.dir }} test-dev
