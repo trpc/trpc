@@ -35,6 +35,7 @@ jobs:
       - name: Install deps and build (with cache)
         uses: bahmutov/npm-install@v1
 
+      - run: yarn --cwd examples/${{ matrix.dir }} lint
       - run: yarn --cwd examples/${{ matrix.dir }} build
       - run: yarn --cwd examples/${{ matrix.dir }} test-start
       - run: yarn --cwd examples/${{ matrix.dir }} test-dev
