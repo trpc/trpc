@@ -33,6 +33,6 @@ jobs:
 
       - run: yarn playwright install-deps
       - run: yarn lint
-      - run: yarn build-vercel
+      - run: yarn build
       - run: yarn test-start
       - run: yarn test-dev
