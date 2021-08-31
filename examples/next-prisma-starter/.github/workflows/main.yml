@@ -21,8 +21,9 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v2
 
-      - name: Install deps and build (with cache)
-        uses: bahmutov/npm-install@v1
+      # - name: Install deps and build (with cache)
+      #   uses: bahmutov/npm-install@v1
+      - run: yarn install
 
       - name: Next.js cache
         uses: actions/cache@v2
