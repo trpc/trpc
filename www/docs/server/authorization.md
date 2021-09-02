@@ -88,7 +88,7 @@ export const appRouter = createRouter()
   .merge(
     'admin.',
     createRouter()
-      // this protectes all procedures defined after in this router
+      // this protects all procedures defined next in this router
       .middleware(async ({ ctx, next }) => {
         if (!ctx.user?.isAdmin) {
           throw new TRPCError({ code: 'UNAUTHORIZED' });
