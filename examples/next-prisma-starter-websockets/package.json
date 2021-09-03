@@ -51,7 +51,7 @@
   "devDependencies": {
     "@types/jest": "^27.0.0",
     "@types/node": "^16.0.0",
-    "@types/node-fetch": "^2.5.11",
+    "@types/node-fetch": "^3.0.3",
     "@types/react": "^17.0.0",
     "@types/ws": "^7.4.4",
     "@typescript-eslint/eslint-plugin": "^4.25.0",
