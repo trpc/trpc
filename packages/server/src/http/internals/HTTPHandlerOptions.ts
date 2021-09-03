@@ -25,19 +25,27 @@ type ResponseMetaFn<TRouter extends AnyRouter> = (opts: {
   errors: TRPCError[];
 }) => ResponseMeta;
 
-export interface HTTPHandlerOptions<
+export type HTTPHandlerOptions<
   TRouter extends AnyRouter,
   TRequest extends BaseRequest,
   TResponse extends BaseResponse,
-> extends BaseHandlerOptions<TRouter, TRequest> {
-  /**
-   * @link https://trpc.io/docs/context
-   **/
-  createContext: CreateContextFn<TRouter, TRequest, TResponse>;
+> = BaseHandlerOptions<TRouter, TRequest> & {
   /**
    * Add handler to be called before response is sent to the user
    * Useful for setting cache headers
    * @link https://trpc.io/docs/caching
    */
   responseMeta?: ResponseMetaFn<TRouter>;
-}
+} & (inferRouterContext<TRouter> extends void
+    ? {
+        /**
+         * @link https://trpc.io/docs/context
+         **/
+        createContext?: CreateContextFn<TRouter, TRequest, TResponse>;
+      }
+    : {
+        /**
+         * @link https://trpc.io/docs/context
+         **/
+        createContext: CreateContextFn<TRouter, TRequest, TResponse>;
+      });

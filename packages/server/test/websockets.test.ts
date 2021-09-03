@@ -17,7 +17,7 @@ import { routerToServerAndClient, waitMs } from './_testHelpers';
 type Message = {
   id: string;
 };
-function factory(config?: { createContext: () => Promise<unknown> }) {
+function factory(config?: { createContext: () => Promise<any> }) {
   const ee = new EventEmitter();
   const subRef: {
     current: trpc.Subscription<Message>;

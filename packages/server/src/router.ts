@@ -570,6 +570,6 @@ export class Router<
   }
 }
 
-export function router<TContext>() {
+export function router<TContext = void>() {
   return new Router<TContext, {}, {}, {}, DefaultErrorShape>();
 }
