@@ -82,11 +82,15 @@ function parseMessage(
 /**
  * Web socket server handler
  */
-export type WSSHandlerOptions<TRouter extends AnyRouter> = {
-  wss: ws.Server;
-  createContext: CreateContextFn<TRouter, http.IncomingMessage, ws>;
-  process?: NodeJS.Process;
-} & BaseHandlerOptions<TRouter, http.IncomingMessage>;
+export type WSSHandlerOptions<TRouter extends AnyRouter> =
+  BaseHandlerOptions<TRouter, http.IncomingMessage> & {
+    wss: ws.Server;
+    process?: NodeJS.Process;
+  } & (inferRouterContext<TRouter> extends void ? {
+    createContext?: CreateContextFn<TRouter, http.IncomingMessage, ws>;
+  } : {
+    createContext: CreateContextFn<TRouter, http.IncomingMessage, ws>;
+  });
 
 export function applyWSSHandler<TRouter extends AnyRouter>(
   opts: WSSHandlerOptions<TRouter>,
@@ -105,7 +109,7 @@ export function applyWSSHandler<TRouter extends AnyRouter>(
         JSON.stringify(transformTRPCResponse(router, untransformedJSON)),
       );
     }
-    const ctxPromise = createContext({ req, res: client });
+    const ctxPromise = createContext?.({ req, res: client });
     let ctx: inferRouterContext<TRouter> | undefined = undefined;
 
     async function handleRequest(msg: TRPCRequest) {
