@@ -5,6 +5,7 @@
     "target": "ES3",
     "importHelpers": true,
     "declaration": true,
+    "declarationMap": true,
     "sourceMap": true,
     "strict": true,
     "noUnusedLocals": true,

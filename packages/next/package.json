@@ -21,7 +21,8 @@
   "typings": "dist/trpc-next.cjs.d.ts",
   "files": [
     "README.md",
-    "dist"
+    "dist",
+    "src"
   ],
   "eslintConfig": {
     "rules": {

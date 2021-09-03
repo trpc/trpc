@@ -23,7 +23,8 @@
   "files": [
     "README.md",
     "dist",
-    "ssg"
+    "ssg",
+    "src"
   ],
   "eslintConfig": {
     "rules": {
