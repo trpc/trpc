@@ -10,6 +10,9 @@
     "url": "git+https://github.com/trpc/trpc.git",
     "directory": "packages/server"
   },
+  "engines": {
+    "node": ">=14"
+  },
   "eslintConfig": {
     "rules": {
       "explicit-module-boundary-types": "off"
