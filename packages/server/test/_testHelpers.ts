@@ -53,7 +53,7 @@ export function routerToServerAndClient<TRouter extends AnyRouter>(
     wss,
     router,
     createContext: ({ req, res }) => ({ req, res }),
-    ...(opts?.wssServer ?? {}),
+    ...((opts?.wssServer as any) ?? {}),
   };
   const wssHandler = applyWSSHandler(applyWSSHandlerOpts);
   const wssUrl = `ws://localhost:${wssPort}`;
