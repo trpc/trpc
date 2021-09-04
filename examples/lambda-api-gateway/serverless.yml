@@ -1,0 +1,17 @@
+service: serverless-example
+
+plugins:
+  - serverless-plugin-typescript
+  - serverless-offline
+
+provider:
+  name: aws
+  runtime: nodejs14.x
+
+functions:
+  hello:
+    handler: server.lambdaHandler
+    events:
+      - http:
+          path: /greet
+          method: get
