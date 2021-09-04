@@ -36,7 +36,7 @@ test('basic test', async () => {
     await handler(
       mockAPIGatewayProxyEvent({
         body: JSON.stringify({ who: 'test' }),
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'Application/json' },
         method: 'GET',
         path: 'hello',
       }),
