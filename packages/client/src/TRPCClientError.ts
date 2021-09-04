@@ -26,12 +26,7 @@ export class TRPCClientError<TRouter extends AnyRouter>
 
   constructor(
     message: string,
-    {
-      originalError,
-      isDone = false,
-      result,
-      cause,
-    }: {
+    opts: {
       result: Maybe<TRPCErrorResponse<inferRouterError<TRouter>>>;
       /**
        * @deprecated use cause
@@ -41,12 +36,17 @@ export class TRPCClientError<TRouter extends AnyRouter>
       isDone?: boolean;
     },
   ) {
-    super(message);
-    this.isDone = isDone;
-    this.message = message;
-    this.cause = this.originalError = cause ?? originalError;
-    this.shape = result?.error;
-    this.data = result?.error.data;
+    const cause = opts.cause ?? opts.originalError;
+
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore https://github.com/tc39/proposal-error-cause
+    super(message, { cause });
+
+    this.isDone = opts.isDone ?? false;
+
+    this.cause = this.originalError = cause;
+    this.shape = opts.result?.error;
+    this.data = opts.result?.error.data;
     this.name = 'TRPCClientError';
 
     Object.setPrototypeOf(this, TRPCClientError.prototype);

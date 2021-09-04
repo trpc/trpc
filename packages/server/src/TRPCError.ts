@@ -22,7 +22,9 @@ export class TRPCError extends Error {
     const code = opts.code;
     const message = opts.message ?? getMessageFromUnkownError(cause, code);
 
-    super(message);
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore https://github.com/tc39/proposal-error-cause
+    super(message, { cause });
 
     this.code = code;
     this.cause = this.originalError = cause;
