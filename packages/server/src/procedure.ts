@@ -104,10 +104,10 @@ export abstract class Procedure<
   private parseInput(rawInput: unknown): TInput {
     try {
       return this.parse(rawInput);
-    } catch (originalError) {
+    } catch (cause) {
       throw new TRPCError({
         code: 'BAD_REQUEST',
-        originalError,
+        cause,
       });
     }
   }

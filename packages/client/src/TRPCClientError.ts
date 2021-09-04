@@ -11,7 +11,11 @@ export class TRPCClientError<TRouter extends AnyRouter>
   extends Error
   implements TRPCClientErrorLike<TRouter>
 {
+  /**
+   * @deprecated use `cause`
+   */
   public readonly originalError;
+  public readonly cause;
   public readonly shape: Maybe<inferRouterError<TRouter>>;
   public readonly data: Maybe<inferRouterError<TRouter>['data']>;
   /**
@@ -26,16 +30,21 @@ export class TRPCClientError<TRouter extends AnyRouter>
       originalError,
       isDone = false,
       result,
+      cause,
     }: {
       result: Maybe<TRPCErrorResponse<inferRouterError<TRouter>>>;
-      originalError: Maybe<Error>;
+      /**
+       * @deprecated use cause
+       **/
+      originalError?: Maybe<Error>;
+      cause?: Maybe<Error>;
       isDone?: boolean;
     },
   ) {
     super(message);
     this.isDone = isDone;
     this.message = message;
-    this.originalError = originalError;
+    this.cause = this.originalError = cause ?? originalError;
     this.shape = result?.error;
     this.data = result?.error.data;
     this.name = 'TRPCClientError';
@@ -50,7 +59,7 @@ export class TRPCClientError<TRouter extends AnyRouter>
     if (!(result instanceof Error)) {
       return new TRPCClientError<TRouter>((result.error as any).message ?? '', {
         ...opts,
-        originalError: null,
+        cause: null,
         result: result,
       });
     }
@@ -60,7 +69,7 @@ export class TRPCClientError<TRouter extends AnyRouter>
 
     return new TRPCClientError<TRouter>(result.message, {
       ...opts,
-      originalError: result,
+      cause: result,
       result: null,
     });
   }
