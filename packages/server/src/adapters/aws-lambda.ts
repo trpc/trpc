@@ -1,68 +1,100 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
-
+import { URLSearchParams } from 'url';
+import { CreateContextFnOptions } from '../';
+import { CreateContextFn } from '../http';
+import { HTTPHandlerOptionsBase } from '../http/internals/HTTPHandlerOptions';
+import { HTTPHeaders, HTTPRequest } from '../http/internals/HTTPResponse';
 import { resolveHttpResponse } from '../http/requestHandler';
 import { AnyRouter, inferRouterContext } from '../router';
-import { HTTPRequest } from '../http/internals/HTTPResponse';
-import { URLSearchParams } from 'url';
-import { OnErrorFunction } from '../internals/OnErrorFunction';
-
 function lambdaEventToHTTPRequest(event: APIGatewayProxyEvent): HTTPRequest {
-  const usp = new URLSearchParams();
-  if (event.multiValueQueryStringParameters) {
-    Object.entries(event.multiValueQueryStringParameters).forEach(([k, v]) => {
-      if (v) {
-        v.forEach((_v) => usp.append(k, _v));
-      }
-    });
+  const query = new URLSearchParams();
+  for (const [key, value] of Object.entries(
+    event.multiValueQueryStringParameters ?? {},
+  )) {
+    for (const v of value ?? []) {
+      query.append(key, v);
+    }
   }
   return {
     method: event.httpMethod,
-    query: usp,
+    query,
     headers: event.headers,
     body: event.body,
   };
 }
-export interface LambdaTRPCContext<TRouter extends AnyRouter> {
-  router: TRouter;
-  createContext: (
-    event: APIGatewayProxyEvent,
-  ) => Promise<inferRouterContext<TRouter>>;
-  onError?: OnErrorFunction<TRouter, HTTPRequest>;
+
+export type CreateLambdaContextOptions =
+  CreateContextFnOptions<APIGatewayProxyEvent>;
+type AWSLambdaOptions<
+  TRouter extends AnyRouter,
+  TRequest,
+> = HTTPHandlerOptionsBase<TRouter, TRequest> &
+  (inferRouterContext<TRouter> extends void
+    ? {
+        /**
+         * @link https://trpc.io/docs/context
+         **/
+        createContext?: CreateContextFn<TRouter, TRequest>;
+      }
+    : {
+        /**
+         * @link https://trpc.io/docs/context
+         **/
+        createContext: CreateContextFn<TRouter, TRequest>;
+      });
+
+function transformHeaders(
+  headers: HTTPHeaders,
+): APIGatewayProxyResult['headers'] {
+  const obj: APIGatewayProxyResult['headers'] = {};
+
+  for (const [key, value] of Object.entries(headers)) {
+    if (typeof value === 'undefined') {
+      continue;
+    }
+    obj[key] = Array.isArray(value) ? value.join(', ') : value;
+  }
+  return obj;
 }
 
 export function createApiGatewayHandler<TRouter extends AnyRouter>(
-  opts: LambdaTRPCContext<TRouter>,
+  opts: AWSLambdaOptions<TRouter, APIGatewayProxyEvent>,
 ): (event: APIGatewayProxyEvent) => Promise<APIGatewayProxyResult> {
   return async (event: APIGatewayProxyEvent) => {
     const req = lambdaEventToHTTPRequest(event);
     const path = event.path;
 
+    const createContext = async function _createContext(): Promise<
+      inferRouterContext<TRouter>
+    > {
+      return await opts.createContext?.({
+        req: event,
+        res: undefined,
+      });
+    };
+
     const response = await resolveHttpResponse({
-      ...opts,
-      createContext: () => opts.createContext(event),
+      router: opts.router,
+      batching: opts.batching,
+      responseMeta: opts.responseMeta,
+      createContext,
       req,
       path,
-      batching: {
-        enabled: false,
-      },
       error: null,
-      responseMeta: () => ({}),
       onError(o) {
-        opts.onError?.(o);
+        opts?.onError?.({
+          ...o,
+          req: event,
+        });
       },
     });
 
     const resp: APIGatewayProxyResult = {
       statusCode: response.status,
-      // TODO: Is this stupid?
-      body: response.body ? response.body : JSON.stringify({}),
-      // TODO: Can we validate this or write some defensive code to not have potential weird errors coming into lambda output?
-      multiValueHeaders: response.headers as Record<
-        string | number,
-        (string | number | boolean)[]
-      >,
+      body: response.body ?? '',
+      headers: transformHeaders(response.headers ?? {}),
     };
     return resp;
   };

@@ -27,11 +27,15 @@ import {
 
 assertNotBrowser();
 
-export type CreateContextFnOptions<TRequest, TResponse> = {
+export type CreateContextFnOptions<TRequest, TResponse = undefined> = {
   req: TRequest;
   res: TResponse;
 };
-export type CreateContextFn<TRouter extends AnyRouter, TRequest, TResponse> = (
+export type CreateContextFn<
+  TRouter extends AnyRouter,
+  TRequest,
+  TResponse = undefined,
+> = (
   opts: CreateContextFnOptions<TRequest, TResponse>,
 ) => inferRouterContext<TRouter> | Promise<inferRouterContext<TRouter>>;
 
@@ -65,11 +69,9 @@ function getRawProcedureInputOrThrow(req: HTTPRequest) {
 export async function resolveHttpResponse<
   TRouter extends AnyRouter,
   TRequest extends HTTPRequest,
->(
-  opts: Required<ResolveHTTPRequestOptions<TRouter, TRequest>>,
-): Promise<HTTPResponse> {
+>(opts: ResolveHTTPRequestOptions<TRouter, TRequest>): Promise<HTTPResponse> {
   const { createContext, onError, router, req } = opts;
-  const batchingEnabled = opts.batching.enabled;
+  const batchingEnabled = opts.batching?.enabled ?? true;
   if (req.method === 'HEAD') {
     // can be used for lambda warmup
     return {
@@ -294,8 +296,8 @@ export async function requestHandler<
     body: bodyResult.ok ? bodyResult.data : undefined,
   };
   const result = await resolveHttpResponse({
-    batching: opts.batching ?? { enabled: true },
-    responseMeta: opts.responseMeta ?? (() => ({})),
+    batching: opts.batching,
+    responseMeta: opts.responseMeta,
     path,
     createContext,
     router,
