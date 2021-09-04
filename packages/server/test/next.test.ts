@@ -7,6 +7,7 @@ import { EventEmitter } from 'events';
 function mockReq({
   query,
   method = 'GET',
+  body,
 }: {
   query: Record<string, any>;
   method?:
@@ -18,6 +19,7 @@ function mockReq({
     | 'POST'
     | 'PUT'
     | 'TRACE';
+  body?: unknown;
 }) {
   const req = new EventEmitter() as any;
 
@@ -28,6 +30,13 @@ function mockReq({
     destroy: jest.fn(),
   };
   req.socket = socket;
+
+  setTimeout(() => {
+    if (body) {
+      req.emit('data', JSON.stringify(body));
+    }
+    req.emit('end');
+  });
 
   return { req, socket };
 }
@@ -50,7 +59,6 @@ test('bad setup', async () => {
 
   const handler = trpcNext.createNextApiHandler({
     router,
-    createContext() {},
   });
 
   const { req } = mockReq({ query: {} });
@@ -73,7 +81,6 @@ describe('ok request', () => {
 
   const handler = trpcNext.createNextApiHandler({
     router,
-    createContext() {},
   });
   test('[...trpc].ts', async () => {
     const { req } = mockReq({
@@ -129,7 +136,6 @@ test('404', async () => {
 
   const handler = trpcNext.createNextApiHandler({
     router,
-    createContext() {},
   });
 
   const { req } = mockReq({
@@ -156,7 +162,6 @@ test('payload too large', async () => {
 
   const handler = trpcNext.createNextApiHandler({
     router,
-    createContext() {},
     maxBodySize: 1,
   });
 
@@ -165,13 +170,10 @@ test('payload too large', async () => {
       trpc: ['hello'],
     },
     method: 'POST',
+    body: '123456789',
   });
   const { res, end } = mockRes();
 
-  setTimeout(() => {
-    req.emit('data', JSON.stringify('123456789'));
-    req.emit('end');
-  });
   await handler(req, res);
 
   expect(res.statusCode).toBe(413);
@@ -187,7 +189,6 @@ test('HEAD request', async () => {
 
   const handler = trpcNext.createNextApiHandler({
     router,
-    createContext() {},
   });
 
   const { req } = mockReq({
@@ -210,7 +211,6 @@ test('PUT request (fails)', async () => {
 
   const handler = trpcNext.createNextApiHandler({
     router,
-    createContext() {},
   });
 
   const { req } = mockReq({

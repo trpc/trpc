@@ -13,7 +13,12 @@ test('body cannot be parsed', async () => {
     events.emit('data', {});
     events.emit('end');
   }, 1);
-  await expect(
-    getPostBody({ req: events } as any),
-  ).rejects.toMatchInlineSnapshot(`[TRPCError: PARSE_ERROR]`);
+
+  await expect(getPostBody({ req: events } as any)).resolves
+    .toMatchInlineSnapshot(`
+          Object {
+            "error": [TRPCError: Unexpected token o in JSON at position 1],
+            "ok": false,
+          }
+        `);
 });

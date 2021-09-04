@@ -8,29 +8,37 @@ export async function getPostBody({
   req: BaseRequest;
   maxBodySize?: number;
 }) {
-  return new Promise<any>((resolve, reject) => {
+  return new Promise<
+    { ok: true; data: unknown } | { ok: false; error: TRPCError }
+  >((resolve) => {
     if (req.hasOwnProperty('body')) {
       resolve(req.body);
       return;
     }
     let body = '';
+    let hasBody = false;
     req.on('data', function (data) {
       body += data;
+      hasBody = true;
       if (typeof maxBodySize === 'number' && body.length > maxBodySize) {
-        reject(new TRPCError({ code: 'PAYLOAD_TOO_LARGE' }));
+        resolve({
+          ok: false,
+          error: new TRPCError({ code: 'PAYLOAD_TOO_LARGE' }),
+        });
         req.socket.destroy();
       }
     });
     req.on('end', () => {
       try {
-        if (body === '') {
-          resolve(undefined);
-          return;
-        }
-        const json = JSON.parse(body);
-        resolve(json);
+        resolve({
+          ok: true,
+          data: hasBody ? JSON.parse(body) : undefined,
+        });
       } catch (err) {
-        reject(new TRPCError({ code: 'PARSE_ERROR' }));
+        resolve({
+          ok: false,
+          error: new TRPCError({ code: 'PARSE_ERROR', originalError: err }),
+        });
       }
     });
   });

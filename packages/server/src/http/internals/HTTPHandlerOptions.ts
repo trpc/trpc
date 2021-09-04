@@ -1,3 +1,4 @@
+import { Maybe } from '@trpc/server';
 import {
   BaseHandlerOptions,
   BaseRequest,
@@ -26,7 +27,7 @@ type ResponseMetaFn<TRouter extends AnyRouter> = (opts: {
   errors: TRPCError[];
 }) => ResponseMeta;
 
-interface HTTPHandlerOptionsBase<TRouter extends AnyRouter, TRequest>
+export interface HTTPHandlerOptionsBase<TRouter extends AnyRouter, TRequest>
   extends BaseHandlerOptions<TRouter, TRequest> {
   /**
    * Add handler to be called before response is sent to the user
@@ -64,4 +65,5 @@ export interface HTTPHandlerInnerOptions<
   createContext: () => Promise<inferRouterContext<TRouter>>;
   req: TRequest;
   path: string;
+  error?: Maybe<TRPCError>;
 }

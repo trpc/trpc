@@ -65,9 +65,11 @@ function getRawProcedureInputOrThrow(req: HTTPRequest) {
 export async function requestHandlerInner<
   TRouter extends AnyRouter,
   TRequest extends HTTPRequest,
->(opts: HTTPHandlerInnerOptions<TRouter, TRequest>): Promise<HTTPResponse> {
+>(
+  opts: Required<HTTPHandlerInnerOptions<TRouter, TRequest>>,
+): Promise<HTTPResponse> {
   const { createContext, onError, router, req } = opts;
-  const batchingEnabled = opts.batching?.enabled ?? true;
+  const batchingEnabled = opts.batching.enabled;
   if (req.method === 'HEAD') {
     // can be used for lambda warmup
     return {
@@ -122,6 +124,9 @@ export async function requestHandlerInner<
   }
 
   try {
+    if (opts.error) {
+      throw opts.error;
+    }
     if (isBatchCall && !batchingEnabled) {
       throw new Error(`Batching is not enabled on the server`);
     }
@@ -277,21 +282,31 @@ export async function requestHandler<
   };
   const { path, router } = opts;
 
-  const body = await getPostBody(opts);
+  const bodyResult = await getPostBody(opts);
+
   const query = opts.req.query
     ? new URLSearchParams(opts.req.query as any)
-    : new URLSearchParams(opts.req.url!.split('?').slice(1).join('?'));
+    : new URLSearchParams(opts.req.url!.split('?')[1]);
   const req: HTTPRequest = {
     method: opts.req.method!,
     headers: opts.req.headers,
     query,
-    body,
+    body: bodyResult.ok ? bodyResult.data : undefined,
   };
   const result = await requestHandlerInner({
+    batching: opts.batching ?? { enabled: true },
+    responseMeta: opts.responseMeta ?? (() => ({})),
     path,
     createContext,
     router,
     req,
+    error: bodyResult.ok ? null : bodyResult.error,
+    onError(o) {
+      opts?.onError?.({
+        ...o,
+        req: opts.req,
+      });
+    },
   });
 
   const { res } = opts;
