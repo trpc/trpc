@@ -12,7 +12,7 @@ export async function getPostBody({
     { ok: true; data: unknown } | { ok: false; error: TRPCError }
   >((resolve) => {
     if (req.hasOwnProperty('body')) {
-      resolve(req.body);
+      resolve({ ok: true, data: req.body });
       return;
     }
     let body = '';
@@ -29,17 +29,10 @@ export async function getPostBody({
       }
     });
     req.on('end', () => {
-      try {
-        resolve({
-          ok: true,
-          data: hasBody ? JSON.parse(body) : undefined,
-        });
-      } catch (err) {
-        resolve({
-          ok: false,
-          error: new TRPCError({ code: 'PARSE_ERROR', originalError: err }),
-        });
-      }
+      resolve({
+        ok: true,
+        data: hasBody ? body : undefined,
+      });
     });
   });
 }

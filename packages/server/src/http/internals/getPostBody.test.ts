@@ -5,20 +5,3 @@ test('has body', async () => {
   const resolvedBody = await getPostBody({ req: { body } } as any);
   expect(body).toBe(resolvedBody);
 });
-
-test('body cannot be parsed', async () => {
-  const events = new EventEmitter();
-  setTimeout(() => {
-    events.emit('data', {});
-    events.emit('data', {});
-    events.emit('end');
-  }, 1);
-
-  await expect(getPostBody({ req: events } as any)).resolves
-    .toMatchInlineSnapshot(`
-          Object {
-            "error": [TRPCError: Unexpected token o in JSON at position 1],
-            "ok": false,
-          }
-        `);
-});
