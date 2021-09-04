@@ -2,7 +2,7 @@ import * as trpc from '@trpc/server/src';
 import { z } from 'zod';
 import { APIGatewayProxyHandler, APIGatewayProxyEvent } from 'aws-lambda';
 // TODO: Fix this stupid relative import
-import { createApiGatewayHandler } from '../../packages/server/src/adapters/aws-lambda';
+import { createApiGatewayHandler } from '@trpc/server/adapters/aws-lambda';
 
 type LambdaContext = {
   authHeader?: string;

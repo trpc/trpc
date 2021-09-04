@@ -36,12 +36,12 @@ test('basic test', async () => {
     await handler(
       mockAPIGatewayProxyEvent({
         body: JSON.stringify({ who: 'test' }),
-        headers: { 'Content-Type': 'Application/json' },
+        headers: { 'Content-Type': 'application/json' },
         method: 'GET',
         path: 'hello',
       }),
     ),
-  ).toBe({
+  ).toStrictEqual({
     body: JSON.stringify({
       id: null,
       result: {
@@ -52,7 +52,7 @@ test('basic test', async () => {
       },
     }),
     multiValueHeaders: {
-      'Content-Type': 'Application/json',
+      'Content-Type': 'application/json',
     },
     statusCode: 200,
   });

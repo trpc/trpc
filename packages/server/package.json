@@ -20,6 +20,7 @@
       "index.ts",
       "adapters/next.ts",
       "adapters/express.ts",
+      "adapters/aws-lambda.ts",
       "ws/index.ts",
       "rpc/index.ts"
     ]
