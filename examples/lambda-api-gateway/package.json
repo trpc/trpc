@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@trpc/client": "^9.1.0",
+    "@trpc/server": "^9.1.0",
     "typescript": "^4.4.2"
   }
 }
