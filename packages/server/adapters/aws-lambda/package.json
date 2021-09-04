@@ -1,0 +1,4 @@
+{
+  "main": "dist/trpc-server-adapters-aws-lambda.cjs.js",
+  "module": "dist/trpc-server-adapters-aws-lambda.esm.js"
+}

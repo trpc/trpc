@@ -1,8 +1,7 @@
 import * as trpc from '@trpc/server/src';
 import { z } from 'zod';
 import { APIGatewayProxyHandler, APIGatewayProxyEvent } from 'aws-lambda';
-// TODO: Fix this stupid relative import
-import { createApiGatewayHandler } from '@trpc/server/adapters/aws-lambda';
+import { createApiGatewayHandler, LambdaTRPCContext } from '@trpc/server/adapters/aws-lambda';
 
 type LambdaContext = {
   authHeader?: string;
@@ -13,12 +12,15 @@ export const appRouter = trpc.router<LambdaContext>().query('/greet', {
     return `Greetings, ${req.input}`;
   },
 });
+export type AppRouter = typeof appRouter
 
-export const handler = createApiGatewayHandler({
+const args = {
   router: appRouter,
-  createContext: (event: APIGatewayProxyEvent) =>
-    Promise.resolve({ authHeader: event.headers['Authorization'] }),
-});
+  createContext: async (event: APIGatewayProxyEvent) => ({ authHeader: event.headers['Authorization'] }),
+}
+
+// TODO: This is not any!
+export const handler = createApiGatewayHandler(args as any);
 
 export const lambdaHandler: APIGatewayProxyHandler = async (
   event: APIGatewayProxyEvent,
