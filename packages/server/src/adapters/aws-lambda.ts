@@ -56,7 +56,8 @@ export function createApiGatewayHandler<TRouter extends AnyRouter>(
 
     const resp: APIGatewayProxyResult = {
       statusCode: response.status,
-      body: JSON.stringify(response.body),
+      // TODO: Is this stupid?
+      body: response.body ? response.body : '',
       // TODO: Can we validate this or write some defensive code to not have potential weird errors coming into lambda output?
       multiValueHeaders: response.headers as Record<
         string | number,
