@@ -7,7 +7,11 @@ import {
 } from '@trpc/server/adapters/aws-lambda';
 import { inferAsyncReturnType } from '@trpc/server/src';
 
-function createContext(opts: CreateLambdaContextOptions) {}
+function createContext(opts: CreateLambdaContextOptions) {
+  return {
+    req: opts.req,
+  };
+}
 type Context = inferAsyncReturnType<typeof createContext>;
 
 const appRouter = trpc.router<Context>().query('/greet', {
