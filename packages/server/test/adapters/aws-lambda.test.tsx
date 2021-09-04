@@ -3,6 +3,7 @@ import { z } from 'zod';
 import * as trpc from '../../src';
 import * as trpcLambda from '../../src/adapters/aws-lambda';
 import { APIGatewayProxyEvent } from 'aws-lambda';
+import { mockAPIGatewayProxyEvent } from './aws-lambda.utils';
 
 type Context = {
   user?: string;
@@ -30,62 +31,6 @@ const handler = trpcLambda.createApiGatewayHandler({
   createContext,
 });
 
-const mockAPIGatewayProxyEvent = ({
-  body,
-  headers,
-  path,
-  method,
-}: {
-  body: string;
-  headers: { [key: string]: string };
-  path: string;
-  method: string;
-}): APIGatewayProxyEvent => {
-  return {
-    body,
-    headers,
-    multiValueHeaders: {},
-    path,
-    httpMethod: method,
-    pathParameters: {},
-    isBase64Encoded: false,
-    queryStringParameters: null,
-    multiValueQueryStringParameters: null,
-    resource: 'mock',
-    stageVariables: {},
-    requestContext: {
-      accountId: 'mock',
-      apiId: 'mock',
-      path: 'mock',
-      protocol: 'mock',
-      httpMethod: method,
-      stage: 'mock',
-      requestId: 'mock',
-      requestTimeEpoch: 123,
-      resourceId: 'mock',
-      resourcePath: 'mock',
-      identity: {
-        accessKey: null,
-        accountId: null,
-        apiKey: null,
-        apiKeyId: null,
-        caller: null,
-        clientCert: null,
-        cognitoAuthenticationProvider: null,
-        cognitoAuthenticationType: null,
-        cognitoIdentityId: null,
-        cognitoIdentityPoolId: null,
-        principalOrgId: null,
-        sourceIp: 'mock',
-        user: null,
-        userAgent: null,
-        userArn: null,
-      },
-      authorizer: {},
-    },
-  };
-};
-
 test('basic test', async () => {
   expect(
     await handler(
@@ -93,12 +38,22 @@ test('basic test', async () => {
         body: JSON.stringify({ who: 'test' }),
         headers: { 'Content-Type': 'application/json' },
         method: 'GET',
-        path: '/greet',
+        path: 'hello',
       }),
     ),
-  ).toMatchInlineSnapshot(`
-    Object {
-      "text": "hello test",
-    }
-  `);
+  ).toBe({
+    body: JSON.stringify({
+      id: null,
+      result: {
+        type: 'data',
+        data: {
+          text: 'hello world',
+        },
+      },
+    }),
+    multiValueHeaders: {
+      'Content-Type': 'Application/json',
+    },
+    statusCode: 200,
+  });
 });
