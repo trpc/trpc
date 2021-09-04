@@ -58,7 +58,7 @@ export type HTTPHandlerOptions<
         createContext: CreateContextFn<TRouter, TRequest, TResponse>;
       });
 
-export interface HTTPHandlerInnerOptions<
+export interface ResolveHTTPRequestOptions<
   TRouter extends AnyRouter,
   TRequest extends HTTPRequest,
 > extends HTTPHandlerOptionsBase<TRouter, TRequest> {

@@ -16,7 +16,7 @@ import { TRPCError } from '../TRPCError';
 import { getHTTPStatusCode } from './internals/getHTTPStatusCode';
 import { getPostBody } from './internals/getPostBody';
 import {
-  HTTPHandlerInnerOptions,
+  ResolveHTTPRequestOptions,
   HTTPHandlerOptions,
 } from './internals/HTTPHandlerOptions';
 import {
@@ -62,11 +62,11 @@ function getRawProcedureInputOrThrow(req: HTTPRequest) {
   }
 }
 
-export async function requestHandlerInner<
+export async function resolveHttpResponse<
   TRouter extends AnyRouter,
   TRequest extends HTTPRequest,
 >(
-  opts: Required<HTTPHandlerInnerOptions<TRouter, TRequest>>,
+  opts: Required<ResolveHTTPRequestOptions<TRouter, TRequest>>,
 ): Promise<HTTPResponse> {
   const { createContext, onError, router, req } = opts;
   const batchingEnabled = opts.batching.enabled;
@@ -293,7 +293,7 @@ export async function requestHandler<
     query,
     body: bodyResult.ok ? bodyResult.data : undefined,
   };
-  const result = await requestHandlerInner({
+  const result = await resolveHttpResponse({
     batching: opts.batching ?? { enabled: true },
     responseMeta: opts.responseMeta ?? (() => ({})),
     path,
