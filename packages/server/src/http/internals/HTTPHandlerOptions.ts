@@ -13,6 +13,7 @@ import { TRPCResponse } from '../../rpc';
 import { TRPCError } from '../../TRPCError';
 import { CreateContextFn } from '../requestHandler';
 import { ResponseMeta } from '../ResponseMeta';
+import { HTTPRequest } from './HTTPResponse';
 
 type ResponseMetaFn<TRouter extends AnyRouter> = (opts: {
   data: TRPCResponse<unknown, inferRouterError<TRouter>>[];
@@ -25,17 +26,23 @@ type ResponseMetaFn<TRouter extends AnyRouter> = (opts: {
   errors: TRPCError[];
 }) => ResponseMeta;
 
-export type HTTPHandlerOptions<
-  TRouter extends AnyRouter,
-  TRequest extends BaseRequest,
-  TResponse extends BaseResponse,
-> = BaseHandlerOptions<TRouter, TRequest> & {
+interface HTTPHandlerOptionsBase<TRouter extends AnyRouter, TRequest>
+  extends BaseHandlerOptions<TRouter, TRequest> {
   /**
    * Add handler to be called before response is sent to the user
    * Useful for setting cache headers
    * @link https://trpc.io/docs/caching
    */
   responseMeta?: ResponseMetaFn<TRouter>;
+}
+
+export type HTTPHandlerOptions<
+  TRouter extends AnyRouter,
+  TRequest extends BaseRequest,
+  TResponse extends BaseResponse,
+> = HTTPHandlerOptionsBase<TRouter, TRequest> & {
+  teardown?: () => Promise<void>;
+  maxBodySize?: number;
 } & (inferRouterContext<TRouter> extends void
     ? {
         /**
@@ -49,3 +56,12 @@ export type HTTPHandlerOptions<
          **/
         createContext: CreateContextFn<TRouter, TRequest, TResponse>;
       });
+
+export interface HTTPHandlerInnerOptions<
+  TRouter extends AnyRouter,
+  TRequest extends HTTPRequest,
+> extends HTTPHandlerOptionsBase<TRouter, TRequest> {
+  createContext: () => Promise<inferRouterContext<TRouter>>;
+  req: TRequest;
+  path: string;
+}
