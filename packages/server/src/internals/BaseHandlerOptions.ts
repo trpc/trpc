@@ -6,7 +6,7 @@ import { OnErrorFunction } from './OnErrorFunction';
 export type BaseRequest = http.IncomingMessage & {
   method?: string;
   query?: qs.ParsedQs;
-  body?: any;
+  body?: unknown;
 };
 export type BaseResponse = http.ServerResponse;
 

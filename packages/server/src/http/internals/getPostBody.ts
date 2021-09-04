@@ -11,7 +11,7 @@ export async function getPostBody({
   return new Promise<
     { ok: true; data: unknown } | { ok: false; error: TRPCError }
   >((resolve) => {
-    if (req.hasOwnProperty('body')) {
+    if ('body' in req) {
       resolve({ ok: true, data: req.body });
       return;
     }
