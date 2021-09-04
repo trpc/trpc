@@ -9,7 +9,8 @@ type Context = {
   user?: string;
 };
 
-const router = trpc.router<Context>().query('hello', {
+const router = trpc.router<Context>()
+.query('hello', {
   input: z
     .object({
       who: z.string().nullish(),
@@ -18,6 +19,17 @@ const router = trpc.router<Context>().query('hello', {
   resolve({ input, ctx }) {
     return {
       text: `hello ${input?.who ?? ctx.user ?? 'world'}`,
+    };
+  },
+})
+.query('echo', {
+    input: z
+    .object({
+      who: z.object({ name: z.string().nullish() }),
+    }),
+  resolve({ input }) {
+    return {
+      text: `hello ${input.who.name}`,
     };
   },
 });
@@ -56,4 +68,41 @@ test('basic test', async () => {
     },
     statusCode: 200,
   });
+  expect(
+    await handler(
+      mockAPIGatewayProxyEvent({
+        body: JSON.stringify({ }),
+        headers: { 'Content-Type': 'application/json', 'X-USER': 'Lilja' },
+        method: 'GET',
+        path: 'hello',
+      }),
+    ),
+  ).toStrictEqual({
+    body: JSON.stringify({
+      id: null,
+      result: {
+        type: 'data',
+        data: {
+          text: 'hello Lilja',
+        },
+      },
+    }),
+    multiValueHeaders: {
+      'Content-Type': 'application/json',
+    },
+    statusCode: 200,
+  });
+});
+test("bad type", async () => {
+    const res = await handler(
+      mockAPIGatewayProxyEvent({
+        body: JSON.stringify({ who: [[]] }),
+        headers: { 'Content-Type': 'application/json' },
+        method: 'GET',
+        path: 'echo',
+      }),
+    )
+    expect(
+        JSON.parse(res.body)
+    ).toHaveProperty("error");
 });
