@@ -79,7 +79,7 @@ export async function requestHandlerInner<
   let ctx: inferRouterContext<TRouter> | undefined = undefined;
   let paths: string[] | undefined = undefined;
 
-  const isBatchCall = req.query.get('batch') === '1';
+  const isBatchCall = !!req.query.get('batch');
   type TRouterError = inferRouterError<TRouter>;
   type TRouterResponse = TRPCResponse<unknown, TRouterError>;
 
@@ -170,6 +170,7 @@ export async function requestHandlerInner<
       return input;
     };
     const inputs = getInputs();
+
     const rawResults = await Promise.all(
       paths.map(async (path, index) => {
         const input = inputs[index];
@@ -277,10 +278,13 @@ export async function requestHandler<
   const { path, router } = opts;
 
   const body = await getPostBody(opts);
+  const query = opts.req.query
+    ? new URLSearchParams(opts.req.query as any)
+    : new URLSearchParams(opts.req.url!.split('?').slice(1).join('?'));
   const req: HTTPRequest = {
     method: opts.req.method!,
     headers: opts.req.headers,
-    query: new URLSearchParams((opts.req.query || opts.req.url) as any),
+    query,
     body,
   };
   const result = await requestHandlerInner({
