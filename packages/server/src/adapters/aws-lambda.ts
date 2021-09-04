@@ -24,7 +24,7 @@ function lambdaEventToHTTPRequest(event: APIGatewayProxyEvent): HTTPRequest {
     body: event.body,
   };
 }
-interface LambdaTRPCContext<TRouter extends AnyRouter> {
+export interface LambdaTRPCContext<TRouter extends AnyRouter> {
   router: TRouter;
   createContext: (
     event: APIGatewayProxyEvent,
