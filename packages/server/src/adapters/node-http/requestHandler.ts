@@ -1,25 +1,13 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 import { URLSearchParams } from 'url';
-import { assertNotBrowser } from '../assertNotBrowser';
-import {
-  BaseRequest,
-  BaseResponse,
-  HTTPHandlerOptions,
-} from '../adapters/node-http/types';
-import { AnyRouter, inferRouterContext } from '../router';
-import { getPostBody } from '../adapters/node-http/getPostBody';
-import { HTTPRequest } from './internals/types';
-import { resolveHttpResponse } from './internals/resolveHttpResponse';
+import { assertNotBrowser } from '../../assertNotBrowser';
+import { BaseRequest, BaseResponse, HTTPHandlerOptions } from './types';
+import { AnyRouter, inferRouterContext } from '../../router';
+import { getPostBody } from './getPostBody';
+import { HTTPRequest } from '../../http/internals/types';
+import { resolveHttpResponse } from '../../http/internals/resolveHttpResponse';
 
 assertNotBrowser();
-
-export type CreateContextFnOptions<TRequest, TResponse> = {
-  req: TRequest;
-  res: TResponse;
-};
-export type CreateContextFn<TRouter extends AnyRouter, TRequest, TResponse> = (
-  opts: CreateContextFnOptions<TRequest, TResponse>,
-) => inferRouterContext<TRouter> | Promise<inferRouterContext<TRouter>>;
 
 export async function requestHandler<
   TRouter extends AnyRouter,

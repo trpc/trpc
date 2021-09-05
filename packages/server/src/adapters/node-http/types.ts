@@ -3,7 +3,7 @@ import qs from 'qs';
 import { AnyRouter } from '../../router';
 import { OnErrorFunction } from '../../internals/OnErrorFunction';
 import { HTTPHandlerOptionsBase } from '../../http/internals/HTTPHandlerOptions';
-import { inferRouterContext, CreateContextFn } from '../..';
+import { inferRouterContext } from '../..';
 
 export type BaseRequest = http.IncomingMessage & {
   method?: string;
@@ -43,3 +43,11 @@ export type HTTPHandlerOptions<
          **/
         createContext: CreateContextFn<TRouter, TRequest, TResponse>;
       });
+
+export type CreateContextFnOptions<TRequest, TResponse> = {
+  req: TRequest;
+  res: TResponse;
+};
+export type CreateContextFn<TRouter extends AnyRouter, TRequest, TResponse> = (
+  opts: CreateContextFnOptions<TRequest, TResponse>,
+) => inferRouterContext<TRouter> | Promise<inferRouterContext<TRouter>>;
