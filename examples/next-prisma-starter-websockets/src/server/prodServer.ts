@@ -2,7 +2,7 @@ import http from 'http';
 import { parse } from 'url';
 import next from 'next';
 import ws from 'ws';
-import { applyWSSHandler } from '@trpc/server/ws';
+import { applyWSSHandler } from '@trpc/server/adapters/ws';
 import { appRouter } from './routers/app';
 import { createContext } from './trpc';
 import { TRPCReconnectNotification } from '@trpc/server/rpc';

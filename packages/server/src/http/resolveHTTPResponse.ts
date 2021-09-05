@@ -1,7 +1,5 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
-import { URLSearchParams } from 'url';
-import { assertNotBrowser } from '../assertNotBrowser';
-import { BaseRequest, BaseResponse } from '../internals/BaseHandlerOptions';
+import { Maybe } from '@trpc/server';
 import { callProcedure } from '../internals/callProcedure';
 import { getErrorFromUnknown } from '../internals/errors';
 import { transformTRPCResponse } from '../internals/transformTRPCResponse';
@@ -14,26 +12,12 @@ import {
 import { TRPCErrorResponse, TRPCResponse, TRPCResultResponse } from '../rpc';
 import { TRPCError } from '../TRPCError';
 import { getHTTPStatusCode } from './internals/getHTTPStatusCode';
-import { getPostBody } from './internals/getPostBody';
-import {
-  ResolveHTTPRequestOptions,
-  HTTPHandlerOptions,
-} from './internals/HTTPHandlerOptions';
 import {
   HTTPHeaders,
   HTTPRequest,
   HTTPResponse,
-} from './internals/HTTPResponse';
-
-assertNotBrowser();
-
-export type CreateContextFnOptions<TRequest, TResponse> = {
-  req: TRequest;
-  res: TResponse;
-};
-export type CreateContextFn<TRouter extends AnyRouter, TRequest, TResponse> = (
-  opts: CreateContextFnOptions<TRequest, TResponse>,
-) => inferRouterContext<TRouter> | Promise<inferRouterContext<TRouter>>;
+  HTTPBaseHandlerOptions,
+} from './internals/types';
 
 const HTTP_METHOD_PROCEDURE_TYPE_MAP: Record<
   string,
@@ -43,7 +27,6 @@ const HTTP_METHOD_PROCEDURE_TYPE_MAP: Record<
   POST: 'mutation',
   PATCH: 'subscription',
 };
-
 function getRawProcedureInputOrThrow(req: HTTPRequest) {
   try {
     if (req.method === 'GET') {
@@ -62,14 +45,22 @@ function getRawProcedureInputOrThrow(req: HTTPRequest) {
   }
 }
 
+interface ResolveHTTPRequestOptions<
+  TRouter extends AnyRouter,
+  TRequest extends HTTPRequest,
+> extends HTTPBaseHandlerOptions<TRouter, TRequest> {
+  createContext: () => Promise<inferRouterContext<TRouter>>;
+  req: TRequest;
+  path: string;
+  error?: Maybe<TRPCError>;
+}
+
 export async function resolveHttpResponse<
   TRouter extends AnyRouter,
   TRequest extends HTTPRequest,
->(
-  opts: Required<ResolveHTTPRequestOptions<TRouter, TRequest>>,
-): Promise<HTTPResponse> {
+>(opts: ResolveHTTPRequestOptions<TRouter, TRequest>): Promise<HTTPResponse> {
   const { createContext, onError, router, req } = opts;
-  const batchingEnabled = opts.batching.enabled;
+  const batchingEnabled = opts.batching?.enabled ?? true;
   if (req.method === 'HEAD') {
     // can be used for lambda warmup
     return {
@@ -262,63 +253,4 @@ export async function resolveHttpResponse<
     });
     return endResponse(json, [error]);
   }
-}
-
-export async function requestHandler<
-  TRouter extends AnyRouter,
-  TRequest extends BaseRequest,
-  TResponse extends BaseResponse,
->(
-  opts: {
-    req: TRequest;
-    res: TResponse;
-    path: string;
-  } & HTTPHandlerOptions<TRouter, TRequest, TResponse>,
-) {
-  const createContext = async function _createContext(): Promise<
-    inferRouterContext<TRouter>
-  > {
-    return await opts.createContext?.(opts);
-  };
-  const { path, router } = opts;
-
-  const bodyResult = await getPostBody(opts);
-
-  const query = opts.req.query
-    ? new URLSearchParams(opts.req.query as any)
-    : new URLSearchParams(opts.req.url!.split('?')[1]);
-  const req: HTTPRequest = {
-    method: opts.req.method!,
-    headers: opts.req.headers,
-    query,
-    body: bodyResult.ok ? bodyResult.data : undefined,
-  };
-  const result = await resolveHttpResponse({
-    batching: opts.batching ?? { enabled: true },
-    responseMeta: opts.responseMeta ?? (() => ({})),
-    path,
-    createContext,
-    router,
-    req,
-    error: bodyResult.ok ? null : bodyResult.error,
-    onError(o) {
-      opts?.onError?.({
-        ...o,
-        req: opts.req,
-      });
-    },
-  });
-
-  const { res } = opts;
-  if ('status' in result && (!res.statusCode || res.statusCode === 200)) {
-    res.statusCode = result.status;
-  }
-  for (const [key, value] of Object.entries(result.headers ?? {})) {
-    if (!value) {
-      continue;
-    }
-    res.setHeader(key, value);
-  }
-  res.end(result.body);
-  await opts.teardown?.();
 }

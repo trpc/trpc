@@ -20,6 +20,9 @@
       "index.ts",
       "adapters/next.ts",
       "adapters/express.ts",
+      "adapters/ws.ts",
+      "adapters/node-http/index.ts",
+      "adapters/standalone.ts",
       "ws/index.ts",
       "rpc/index.ts"
     ]
