@@ -1,7 +1,7 @@
 name: Build & Test
 on: [push]
 jobs:
-  test:
+  build:
     name: Build and test on Node ${{ matrix.node }} and ${{ matrix.os }}
 
     runs-on: ${{ matrix.os }}
@@ -21,11 +21,19 @@ jobs:
 
       - name: Install deps and build (with cache)
         uses: bahmutov/npm-install@v1
-
-      - name: Test
-        run: yarn test --ci --coverage --maxWorkers=2
+  test:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - run: yarn test --ci --coverage --maxWorkers=2
 
       - uses: codecov/codecov-action@v1
         with:
           token: ${{ secrets.CODECOV_TOKEN }} # not required for public repos
           directory: ./packages
+  lint:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - run: yarn lint
+      - run: yarn manypkg check
