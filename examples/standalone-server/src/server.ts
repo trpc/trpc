@@ -3,7 +3,7 @@
 import * as trpc from '@trpc/server';
 import { z } from 'zod';
 import ws from 'ws';
-import { applyWSSHandler } from '@trpc/server/ws';
+import { applyWSSHandler } from '@trpc/server/adapters/ws';
 
 type Context = {};
 

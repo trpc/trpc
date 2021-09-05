@@ -3,9 +3,8 @@ import { createTRPCClient } from '@trpc/client';
 import AbortController from 'abort-controller';
 import f from 'fastify';
 import fetch from 'node-fetch';
-import { nodeHTTPRequestHandler } from '../../src/adapters/node-http';
 import * as trpc from '../../src';
-import { CreateHttpContextOptions } from '../../src';
+import { CreateHttpContextOptions, requestHandler } from '../../src';
 const fetchOpts = { fetch, AbortController } as any;
 
 async function startServer() {
@@ -30,7 +29,7 @@ async function startServer() {
     };
   }
   fastify.all('/trpc/:path', (req, reply) => {
-    nodeHTTPRequestHandler({
+    requestHandler({
       req: req.raw,
       res: reply.raw,
       router: appRouter,

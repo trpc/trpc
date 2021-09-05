@@ -1,17 +1,8 @@
-import http from 'http';
-import qs from 'qs';
-import { AnyRouter } from '../router';
 import { OnErrorFunction } from './OnErrorFunction';
-
-export type BaseRequest = http.IncomingMessage & {
-  method?: string;
-  query?: qs.ParsedQs;
-  body?: unknown;
-};
-export type BaseResponse = http.ServerResponse;
+import { AnyRouter } from '../router';
 
 /**
- * Base interface for any HTTP/WSS handlers
+ * Base interface for any response handler
  */
 export interface BaseHandlerOptions<TRouter extends AnyRouter, TRequest> {
   onError?: OnErrorFunction<TRouter, TRequest>;

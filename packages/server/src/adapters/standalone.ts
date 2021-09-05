@@ -2,24 +2,27 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import http from 'http';
 import url from 'url';
-import { CreateContextFnOptions, requestHandler } from '../http';
-import { HTTPHandlerOptions } from '../http/internals/HTTPHandlerOptions';
 import { AnyRouter } from '../router';
+import { nodeHTTPRequestHandler } from './node-http';
+import {
+  NodeHTTPCreateContextFnOptions,
+  NodeHTTPHandlerOptions,
+} from './node-http';
 
-export type CreateHttpContextOptions = CreateContextFnOptions<
+export type CreateHttpContextOptions = NodeHTTPCreateContextFnOptions<
   http.IncomingMessage,
   http.ServerResponse
 >;
 
 export type CreateHttpHandlerOptions<TRouter extends AnyRouter> =
-  HTTPHandlerOptions<TRouter, http.IncomingMessage, http.ServerResponse>;
+  NodeHTTPHandlerOptions<TRouter, http.IncomingMessage, http.ServerResponse>;
 
 export function createHttpHandler<TRouter extends AnyRouter>(
   opts: CreateHttpHandlerOptions<TRouter>,
 ) {
   return async (req: http.IncomingMessage, res: http.ServerResponse) => {
     const endpoint = url.parse(req.url!).pathname!.substr(1);
-    await requestHandler({
+    await nodeHTTPRequestHandler({
       ...opts,
       req,
       res,
