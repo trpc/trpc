@@ -60,6 +60,15 @@ module.exports = {
       collapsed: false,
       items: ['nextjs/ssr', 'nextjs/ssg', 'nextjs/starter-projects'],
     },
-    'further/further-reading',
+    {
+      type: 'category',
+      label: 'Extra information',
+      collapsed: false,
+      items: [
+        'further/rpc',
+        'further/subscriptions',
+        'further/further-reading',
+      ],
+    },
   ],
 };
