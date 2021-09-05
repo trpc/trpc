@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 import { URLSearchParams } from 'url';
 import { assertNotBrowser } from '../../assertNotBrowser';
-import { BaseRequest, BaseResponse, HTTPHandlerOptions } from './types';
+import { BaseRequest, BaseResponse, NodeHTTPHandlerOptions } from './types';
 import { AnyRouter, inferRouterContext } from '../../router';
 import { getPostBody } from './getPostBody';
 import { HTTPRequest } from '../../http/internals/types';
@@ -18,7 +18,7 @@ export async function requestHandler<
     req: TRequest;
     res: TResponse;
     path: string;
-  } & HTTPHandlerOptions<TRouter, TRequest, TResponse>,
+  } & NodeHTTPHandlerOptions<TRouter, TRequest, TResponse>,
 ) {
   const createContext = async function _createContext(): Promise<
     inferRouterContext<TRouter>
@@ -39,8 +39,8 @@ export async function requestHandler<
     body: bodyResult.ok ? bodyResult.data : undefined,
   };
   const result = await resolveHttpResponse({
-    batching: opts.batching ?? { enabled: true },
-    responseMeta: opts.responseMeta ?? (() => ({})),
+    batching: opts.batching,
+    responseMeta: opts.responseMeta,
     path,
     createContext,
     router,

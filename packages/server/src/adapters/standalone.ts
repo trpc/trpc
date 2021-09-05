@@ -4,7 +4,7 @@ import http from 'http';
 import url from 'url';
 import { CreateContextFnOptions, requestHandler } from '../http';
 import { AnyRouter } from '../router';
-import { HTTPHandlerOptions } from './node-http/types';
+import { NodeHTTPHandlerOptions } from './node-http/types';
 
 export type CreateHttpContextOptions = CreateContextFnOptions<
   http.IncomingMessage,
@@ -12,7 +12,7 @@ export type CreateHttpContextOptions = CreateContextFnOptions<
 >;
 
 export type CreateHttpHandlerOptions<TRouter extends AnyRouter> =
-  HTTPHandlerOptions<TRouter, http.IncomingMessage, http.ServerResponse>;
+  NodeHTTPHandlerOptions<TRouter, http.IncomingMessage, http.ServerResponse>;
 
 export function createHttpHandler<TRouter extends AnyRouter>(
   opts: CreateHttpHandlerOptions<TRouter>,

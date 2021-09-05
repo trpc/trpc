@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
+import { Maybe } from '@trpc/server';
 import { callProcedure } from '../../internals/callProcedure';
 import { getErrorFromUnknown } from '../../internals/errors';
 import { transformTRPCResponse } from '../../internals/transformTRPCResponse';
@@ -11,7 +12,7 @@ import {
 import { TRPCErrorResponse, TRPCResponse, TRPCResultResponse } from '../../rpc';
 import { TRPCError } from '../../TRPCError';
 import { getHTTPStatusCode } from './getHTTPStatusCode';
-import { ResolveHTTPRequestOptions } from './HTTPHandlerOptions';
+import { HTTPBaseHandlerOptions } from './HTTPHandlerOptions';
 import { HTTPHeaders, HTTPRequest, HTTPResponse } from './types';
 
 const HTTP_METHOD_PROCEDURE_TYPE_MAP: Record<
@@ -38,6 +39,16 @@ function getRawProcedureInputOrThrow(req: HTTPRequest) {
       originalError,
     });
   }
+}
+
+export interface ResolveHTTPRequestOptions<
+  TRouter extends AnyRouter,
+  TRequest extends HTTPRequest,
+> extends HTTPBaseHandlerOptions<TRouter, TRequest> {
+  createContext: () => Promise<inferRouterContext<TRouter>>;
+  req: TRequest;
+  path: string;
+  error?: Maybe<TRPCError>;
 }
 
 export async function resolveHttpResponse<

@@ -2,7 +2,7 @@
 import type * as express from 'express';
 import { CreateContextFnOptions, requestHandler } from '../http';
 import { AnyRouter } from '../router';
-import { HTTPHandlerOptions } from './node-http/types';
+import { NodeHTTPHandlerOptions } from './node-http/types';
 
 export type CreateExpressContextOptions = CreateContextFnOptions<
   express.Request,
@@ -10,7 +10,7 @@ export type CreateExpressContextOptions = CreateContextFnOptions<
 >;
 
 export function createExpressMiddleware<TRouter extends AnyRouter>(
-  opts: HTTPHandlerOptions<TRouter, express.Request, express.Response>,
+  opts: NodeHTTPHandlerOptions<TRouter, express.Request, express.Response>,
 ): express.Handler {
   return (req, res) => {
     const endpoint = req.path.substr(1);

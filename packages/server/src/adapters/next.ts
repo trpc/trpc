@@ -5,7 +5,7 @@ import { CreateContextFnOptions, requestHandler } from '../';
 import { AnyRouter } from '../router';
 import { TRPCErrorResponse } from '../rpc';
 import { TRPCError } from '../TRPCError';
-import { HTTPHandlerOptions } from './node-http/types';
+import { NodeHTTPHandlerOptions } from './node-http/types';
 
 export type CreateNextContextOptions = CreateContextFnOptions<
   NextApiRequest,
@@ -13,7 +13,7 @@ export type CreateNextContextOptions = CreateContextFnOptions<
 >;
 
 export function createNextApiHandler<TRouter extends AnyRouter>(
-  opts: HTTPHandlerOptions<TRouter, NextApiRequest, NextApiResponse>,
+  opts: NodeHTTPHandlerOptions<TRouter, NextApiRequest, NextApiResponse>,
 ): NextApiHandler {
   return async (req, res) => {
     function getPath(): string | null {

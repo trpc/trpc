@@ -1,7 +1,7 @@
 import http from 'http';
 import qs from 'qs';
 import { inferRouterContext } from '../..';
-import { HTTPHandlerOptionsBase } from '../../http/internals/HTTPHandlerOptions';
+import { HTTPBaseHandlerOptions } from '../../http/internals/HTTPHandlerOptions';
 import { AnyRouter } from '../../router';
 
 export type BaseRequest = http.IncomingMessage & {
@@ -11,11 +11,11 @@ export type BaseRequest = http.IncomingMessage & {
 };
 export type BaseResponse = http.ServerResponse;
 
-export type HTTPHandlerOptions<
+export type NodeHTTPHandlerOptions<
   TRouter extends AnyRouter,
   TRequest extends BaseRequest,
   TResponse extends BaseResponse,
-> = HTTPHandlerOptionsBase<TRouter, TRequest> & {
+> = HTTPBaseHandlerOptions<TRouter, TRequest> & {
   teardown?: () => Promise<void>;
   maxBodySize?: number;
 } & (inferRouterContext<TRouter> extends void
