@@ -1,7 +1,10 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 import { URLSearchParams } from 'url';
 import { assertNotBrowser } from '../assertNotBrowser';
-import { BaseRequest, BaseResponse } from '../internals/BaseHandlerOptions';
+import {
+  BaseRequest,
+  BaseResponse,
+} from '../adapters/node-http/BaseHandlerOptions';
 import { callProcedure } from '../internals/callProcedure';
 import { getErrorFromUnknown } from '../internals/errors';
 import { transformTRPCResponse } from '../internals/transformTRPCResponse';

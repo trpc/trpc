@@ -1,7 +1,7 @@
 import http from 'http';
 import qs from 'qs';
-import { AnyRouter } from '../router';
-import { OnErrorFunction } from './OnErrorFunction';
+import { AnyRouter } from '../../router';
+import { OnErrorFunction } from '../../internals/OnErrorFunction';
 
 export type BaseRequest = http.IncomingMessage & {
   method?: string;

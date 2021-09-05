@@ -3,7 +3,7 @@ import ws from 'ws';
 import { getErrorFromUnknown } from '../internals/errors';
 import { TRPCError } from '../TRPCError';
 import { CreateContextFn } from '../http';
-import { BaseHandlerOptions } from '../internals/BaseHandlerOptions';
+import { BaseHandlerOptions } from '../adapters/node-http/BaseHandlerOptions';
 import { callProcedure } from '../internals/callProcedure';
 import { AnyRouter, inferRouterContext, ProcedureType } from '../router';
 import {

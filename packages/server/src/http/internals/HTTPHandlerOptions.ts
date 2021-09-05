@@ -3,7 +3,7 @@ import {
   BaseHandlerOptions,
   BaseRequest,
   BaseResponse,
-} from '../../internals/BaseHandlerOptions';
+} from '../../adapters/node-http/BaseHandlerOptions';
 import {
   AnyRouter,
   inferRouterContext,
