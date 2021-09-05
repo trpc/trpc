@@ -11,8 +11,8 @@ import type { AppRouter } from './server';
 // polyfill fetch & websocket
 const globalAny = global as any;
 globalAny.AbortController = AbortController;
-globalAny.fetch = fetch as any;
-globalAny.WebSocket = ws as any;
+globalAny.fetch = fetch;
+globalAny.WebSocket = ws;
 
 async function main() {
   // http calls
