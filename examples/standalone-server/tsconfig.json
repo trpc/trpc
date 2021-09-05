@@ -1,15 +1,13 @@
 {
   "compilerOptions": {
-    "lib": ["ES2019"],
+    "outDir": "./dist",
+    "lib": ["ES2019", "DOM"],
     "module": "commonjs",
     "target": "ES2019",
+    "declaration": true,
     "esModuleInterop": true,
-    "strict": true,
-    "strictNullChecks": true /* Enable strict null checks. */
+    "strict": true
   },
   "include": ["src"],
-  "exclude": [
-    "node_modules"
-    // "**/__tests__/"
-  ]
+  "exclude": ["node_modules"]
 }
