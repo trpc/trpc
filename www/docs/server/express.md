@@ -48,7 +48,6 @@ Implement your tRPC router. A sample router is given below:
 
 ```ts
 import * as trpc from '@trpc/server';
-import * as trpcNext from '@trpc/server/adapters/next';
 import { z } from 'zod';
 
 const appRouter = trpc
