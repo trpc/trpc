@@ -31,6 +31,12 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     steps:
+      - name: Get build
+        uses: actions/cache@v2
+        with:
+          path: .
+          key: ${{ runner.os }}-build-${{ github.sha }}
+      
       - run: yarn test --ci --coverage --maxWorkers=2
 
       - uses: codecov/codecov-action@v1
