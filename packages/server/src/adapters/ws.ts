@@ -1,6 +1,6 @@
 import http from 'http';
 import ws from 'ws';
-import { BaseHandlerOptions } from '../http/internals/HTTPHandlerOptions';
+import { BaseHandlerOptions } from '../internals/BaseHandlerOptions';
 import { callProcedure } from '../internals/callProcedure';
 import { getErrorFromUnknown } from '../internals/errors';
 import { transformTRPCResponse } from '../internals/transformTRPCResponse';
