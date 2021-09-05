@@ -29,13 +29,13 @@
     "@trpc/react": "^9.2.0",
     "@trpc/server": "^9.2.0",
     "clsx": "^1.1.1",
-    "jest": "^27.0.5",
+    "jest": "^27.1.0",
     "jest-playwright": "^0.0.1",
     "jest-playwright-preset": "^1.4.5",
     "next": "^11.1.0",
-    "playwright": "^1.8.0",
-    "react": "^17.0.1",
-    "react-dom": "^17.0.1",
+    "playwright": "^1.14.1",
+    "react": "^17.0.2",
+    "react-dom": "^17.0.2",
     "react-query": "^3.6.0",
     "start-server-and-test": "^1.12.0",
     "superjson": "^1.7.4",
@@ -44,12 +44,12 @@
     "zod": "^3.0.0"
   },
   "devDependencies": {
-    "@types/jest": "^27.0.0",
+    "@types/jest": "^27.0.1",
     "@types/node": "^16.0.0",
-    "@types/react": "^17.0.0",
+    "@types/react": "^17.0.20",
     "npm-run-all": "^4.1.5",
     "prisma": "^2.18.0",
-    "ts-jest": "^27.0.3",
+    "ts-jest": "^27.0.5",
     "typescript": "4.4.2"
   },
   "publishConfig": {
