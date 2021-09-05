@@ -19,6 +19,12 @@ jobs:
         with:
           node-version: ${{ matrix.node }}
 
+      - name: Cache build
+        uses: actions/cache@v2
+        with:
+          path: .
+          key: ${{ runner.os }}-build-${{ github.sha }}
+
       - name: Install deps and build (with cache)
         uses: bahmutov/npm-install@v1
   test:
