@@ -3,22 +3,22 @@
 import http from 'http';
 import url from 'url';
 import { AnyRouter } from '../router';
-import { nodeHTTPRequestHandler } from './node-http';
 import {
   NodeHTTPCreateContextFnOptions,
   NodeHTTPHandlerOptions,
+  nodeHTTPRequestHandler,
 } from './node-http';
 
-export type CreateHttpContextOptions = NodeHTTPCreateContextFnOptions<
+export type CreateHTTPHandlerOptions<TRouter extends AnyRouter> =
+  NodeHTTPHandlerOptions<TRouter, http.IncomingMessage, http.ServerResponse>;
+
+export type CreateHTTPContextOptions = NodeHTTPCreateContextFnOptions<
   http.IncomingMessage,
   http.ServerResponse
 >;
 
-export type CreateHttpHandlerOptions<TRouter extends AnyRouter> =
-  NodeHTTPHandlerOptions<TRouter, http.IncomingMessage, http.ServerResponse>;
-
-export function createHttpHandler<TRouter extends AnyRouter>(
-  opts: CreateHttpHandlerOptions<TRouter>,
+export function createHTTPHandler<TRouter extends AnyRouter>(
+  opts: CreateHTTPHandlerOptions<TRouter>,
 ) {
   return async (req: http.IncomingMessage, res: http.ServerResponse) => {
     const endpoint = url.parse(req.url!).pathname!.substr(1);
@@ -31,10 +31,10 @@ export function createHttpHandler<TRouter extends AnyRouter>(
   };
 }
 
-export function createHttpServer<TRouter extends AnyRouter>(
-  opts: CreateHttpHandlerOptions<TRouter>,
+export function createHTTPServer<TRouter extends AnyRouter>(
+  opts: CreateHTTPHandlerOptions<TRouter>,
 ) {
-  const handler = createHttpHandler(opts);
+  const handler = createHTTPHandler(opts);
   const server = http.createServer((req, res) => handler(req, res));
 
   return {
