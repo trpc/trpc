@@ -14,7 +14,7 @@ import {
 import { TRPCErrorResponse, TRPCResponse, TRPCResultResponse } from '../rpc';
 import { TRPCError } from '../TRPCError';
 import { getHTTPStatusCode } from './internals/getHTTPStatusCode';
-import { getPostBody } from './internals/getPostBody';
+import { getPostBody } from '../adapters/node-http/getPostBody';
 import {
   ResolveHTTPRequestOptions,
   HTTPHandlerOptions,
