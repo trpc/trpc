@@ -1,7 +1,11 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 import { URLSearchParams } from 'url';
 import { assertNotBrowser } from '../assertNotBrowser';
-import { BaseRequest, BaseResponse } from '../adapters/node-http/types';
+import {
+  BaseRequest,
+  BaseResponse,
+  HTTPHandlerOptions,
+} from '../adapters/node-http/types';
 import { callProcedure } from '../internals/callProcedure';
 import { getErrorFromUnknown } from '../internals/errors';
 import { transformTRPCResponse } from '../internals/transformTRPCResponse';
@@ -15,10 +19,7 @@ import { TRPCErrorResponse, TRPCResponse, TRPCResultResponse } from '../rpc';
 import { TRPCError } from '../TRPCError';
 import { getHTTPStatusCode } from './internals/getHTTPStatusCode';
 import { getPostBody } from '../adapters/node-http/getPostBody';
-import {
-  ResolveHTTPRequestOptions,
-  HTTPHandlerOptions,
-} from './internals/HTTPHandlerOptions';
+import { ResolveHTTPRequestOptions } from './internals/HTTPHandlerOptions';
 import { HTTPHeaders, HTTPRequest, HTTPResponse } from './internals/types';
 
 assertNotBrowser();
