@@ -13,17 +13,21 @@ import { resolveHttpResponse } from '../../http/internals/resolveHttpResponse';
 
 assertNotBrowser();
 
+type NodeHTTPRequestHandlerOptions<
+  TRouter extends AnyRouter,
+  TRequest extends NodeHTTPRequest,
+  TResponse extends NodeHTTPResponse,
+> = {
+  req: TRequest;
+  res: TResponse;
+  path: string;
+} & NodeHTTPHandlerOptions<TRouter, TRequest, TResponse>;
+
 export async function requestHandler<
   TRouter extends AnyRouter,
   TRequest extends NodeHTTPRequest,
   TResponse extends NodeHTTPResponse,
->(
-  opts: {
-    req: TRequest;
-    res: TResponse;
-    path: string;
-  } & NodeHTTPHandlerOptions<TRouter, TRequest, TResponse>,
-) {
+>(opts: NodeHTTPRequestHandlerOptions<TRouter, TRequest, TResponse>) {
   const createContext = async function _createContext(): Promise<
     inferRouterContext<TRouter>
   > {
