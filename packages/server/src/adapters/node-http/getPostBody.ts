@@ -1,11 +1,11 @@
 import { TRPCError } from '../../TRPCError';
-import { BaseRequest } from './types';
+import { NodeHTTPRequest } from './types';
 
 export async function getPostBody({
   req,
   maxBodySize,
 }: {
-  req: BaseRequest;
+  req: NodeHTTPRequest;
   maxBodySize?: number;
 }) {
   return new Promise<

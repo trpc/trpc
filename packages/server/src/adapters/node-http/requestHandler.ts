@@ -1,7 +1,11 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 import { URLSearchParams } from 'url';
 import { assertNotBrowser } from '../../assertNotBrowser';
-import { BaseRequest, BaseResponse, NodeHTTPHandlerOptions } from './types';
+import {
+  NodeHTTPRequest,
+  NodeHTTPResponse,
+  NodeHTTPHandlerOptions,
+} from './types';
 import { AnyRouter, inferRouterContext } from '../../router';
 import { getPostBody } from './getPostBody';
 import { HTTPRequest } from '../../http/internals/types';
@@ -11,8 +15,8 @@ assertNotBrowser();
 
 export async function requestHandler<
   TRouter extends AnyRouter,
-  TRequest extends BaseRequest,
-  TResponse extends BaseResponse,
+  TRequest extends NodeHTTPRequest,
+  TResponse extends NodeHTTPResponse,
 >(
   opts: {
     req: TRequest;

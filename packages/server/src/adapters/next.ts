@@ -1,13 +1,16 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 import type { NextApiHandler, NextApiRequest, NextApiResponse } from 'next';
-import { CreateContextFnOptions, requestHandler } from '../';
 import { AnyRouter } from '../router';
 import { TRPCErrorResponse } from '../rpc';
 import { TRPCError } from '../TRPCError';
-import { NodeHTTPHandlerOptions } from './node-http/types';
+import { requestHandler } from './node-http/requestHandler';
+import {
+  NodeHTTPCreateContextFnOptions,
+  NodeHTTPHandlerOptions,
+} from './node-http/types';
 
-export type CreateNextContextOptions = CreateContextFnOptions<
+export type CreateNextContextOptions = NodeHTTPCreateContextFnOptions<
   NextApiRequest,
   NextApiResponse
 >;

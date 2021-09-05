@@ -2,11 +2,14 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import http from 'http';
 import url from 'url';
-import { CreateContextFnOptions, requestHandler } from '../http';
 import { AnyRouter } from '../router';
-import { NodeHTTPHandlerOptions } from './node-http/types';
+import { requestHandler } from './node-http/requestHandler';
+import {
+  NodeHTTPCreateContextFnOptions,
+  NodeHTTPHandlerOptions,
+} from './node-http/types';
 
-export type CreateHttpContextOptions = CreateContextFnOptions<
+export type CreateHttpContextOptions = NodeHTTPCreateContextFnOptions<
   http.IncomingMessage,
   http.ServerResponse
 >;

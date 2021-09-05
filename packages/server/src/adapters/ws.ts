@@ -2,7 +2,6 @@ import http from 'http';
 import ws from 'ws';
 import { getErrorFromUnknown } from '../internals/errors';
 import { TRPCError } from '../TRPCError';
-import { CreateContextFn } from '../http';
 import { callProcedure } from '../internals/callProcedure';
 import { AnyRouter, inferRouterContext, ProcedureType } from '../router';
 import {
@@ -15,6 +14,7 @@ import { Subscription } from '../subscription';
 import { CombinedDataTransformer } from '../transformer';
 import { transformTRPCResponse } from '../internals/transformTRPCResponse';
 import { BaseHandlerOptions } from '../http/internals/HTTPHandlerOptions';
+import { NodeHTTPCreateContextFn } from './node-http/types';
 
 /* istanbul ignore next */
 function assertIsObject(obj: unknown): asserts obj is Record<string, unknown> {
@@ -90,10 +90,18 @@ export type WSSHandlerOptions<TRouter extends AnyRouter> = BaseHandlerOptions<
   process?: NodeJS.Process;
 } & (inferRouterContext<TRouter> extends void
     ? {
-        createContext?: CreateContextFn<TRouter, http.IncomingMessage, ws>;
+        createContext?: NodeHTTPCreateContextFn<
+          TRouter,
+          http.IncomingMessage,
+          ws
+        >;
       }
     : {
-        createContext: CreateContextFn<TRouter, http.IncomingMessage, ws>;
+        createContext: NodeHTTPCreateContextFn<
+          TRouter,
+          http.IncomingMessage,
+          ws
+        >;
       });
 
 export function applyWSSHandler<TRouter extends AnyRouter>(

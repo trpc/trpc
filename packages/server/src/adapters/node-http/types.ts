@@ -4,17 +4,17 @@ import { inferRouterContext } from '../..';
 import { HTTPBaseHandlerOptions } from '../../http/internals/HTTPHandlerOptions';
 import { AnyRouter } from '../../router';
 
-export type BaseRequest = http.IncomingMessage & {
+export type NodeHTTPRequest = http.IncomingMessage & {
   method?: string;
   query?: qs.ParsedQs;
   body?: unknown;
 };
-export type BaseResponse = http.ServerResponse;
+export type NodeHTTPResponse = http.ServerResponse;
 
 export type NodeHTTPHandlerOptions<
   TRouter extends AnyRouter,
-  TRequest extends BaseRequest,
-  TResponse extends BaseResponse,
+  TRequest extends NodeHTTPRequest,
+  TResponse extends NodeHTTPResponse,
 > = HTTPBaseHandlerOptions<TRouter, TRequest> & {
   teardown?: () => Promise<void>;
   maxBodySize?: number;
@@ -23,19 +23,23 @@ export type NodeHTTPHandlerOptions<
         /**
          * @link https://trpc.io/docs/context
          **/
-        createContext?: CreateContextFn<TRouter, TRequest, TResponse>;
+        createContext?: NodeHTTPCreateContextFn<TRouter, TRequest, TResponse>;
       }
     : {
         /**
          * @link https://trpc.io/docs/context
          **/
-        createContext: CreateContextFn<TRouter, TRequest, TResponse>;
+        createContext: NodeHTTPCreateContextFn<TRouter, TRequest, TResponse>;
       });
 
-export type CreateContextFnOptions<TRequest, TResponse> = {
+export type NodeHTTPCreateContextFnOptions<TRequest, TResponse> = {
   req: TRequest;
   res: TResponse;
 };
-export type CreateContextFn<TRouter extends AnyRouter, TRequest, TResponse> = (
-  opts: CreateContextFnOptions<TRequest, TResponse>,
+export type NodeHTTPCreateContextFn<
+  TRouter extends AnyRouter,
+  TRequest,
+  TResponse,
+> = (
+  opts: NodeHTTPCreateContextFnOptions<TRequest, TResponse>,
 ) => inferRouterContext<TRouter> | Promise<inferRouterContext<TRouter>>;
