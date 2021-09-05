@@ -14,11 +14,6 @@
       "source": "/docs/react-queries-and-mutations",
       "destination": "/docs/react-queries",
       "permanent": true
-    },
-    {
-      "source": "/docs/subscriptions",
-      "destination": "/docs/rpc",
-      "permanent": false
     }
   ]
 }
