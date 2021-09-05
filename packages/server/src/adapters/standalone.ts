@@ -3,8 +3,8 @@
 import http from 'http';
 import url from 'url';
 import { CreateContextFnOptions, requestHandler } from '../http';
-import { HTTPHandlerOptions } from '../http/internals/HTTPHandlerOptions';
 import { AnyRouter } from '../router';
+import { HTTPHandlerOptions } from './node-http/BaseHandlerOptions';
 
 export type CreateHttpContextOptions = CreateContextFnOptions<
   http.IncomingMessage,

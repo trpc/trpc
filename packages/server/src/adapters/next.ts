@@ -2,10 +2,10 @@
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 import type { NextApiHandler, NextApiRequest, NextApiResponse } from 'next';
 import { CreateContextFnOptions, requestHandler } from '../';
-import { HTTPHandlerOptions } from '../http/internals/HTTPHandlerOptions';
 import { AnyRouter } from '../router';
 import { TRPCErrorResponse } from '../rpc';
 import { TRPCError } from '../TRPCError';
+import { HTTPHandlerOptions } from './node-http/BaseHandlerOptions';
 
 export type CreateNextContextOptions = CreateContextFnOptions<
   NextApiRequest,

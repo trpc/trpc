@@ -2,6 +2,8 @@ import http from 'http';
 import qs from 'qs';
 import { AnyRouter } from '../../router';
 import { OnErrorFunction } from '../../internals/OnErrorFunction';
+import { HTTPHandlerOptionsBase } from '../../http/internals/HTTPHandlerOptions';
+import { inferRouterContext, CreateContextFn } from '../../';
 
 export type BaseRequest = http.IncomingMessage & {
   method?: string;
@@ -20,3 +22,24 @@ export interface BaseHandlerOptions<TRouter extends AnyRouter, TRequest> {
   };
   router: TRouter;
 }
+
+export type HTTPHandlerOptions<
+  TRouter extends AnyRouter,
+  TRequest extends BaseRequest,
+  TResponse extends BaseResponse,
+> = HTTPHandlerOptionsBase<TRouter, TRequest> & {
+  teardown?: () => Promise<void>;
+  maxBodySize?: number;
+} & (inferRouterContext<TRouter> extends void
+    ? {
+        /**
+         * @link https://trpc.io/docs/context
+         **/
+        createContext?: CreateContextFn<TRouter, TRequest, TResponse>;
+      }
+    : {
+        /**
+         * @link https://trpc.io/docs/context
+         **/
+        createContext: CreateContextFn<TRouter, TRequest, TResponse>;
+      });
