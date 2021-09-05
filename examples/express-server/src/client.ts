@@ -1,5 +1,5 @@
 import { createTRPCClient } from '@trpc/client';
-import { httpLink } from '@trpc/client/links/httpLink';
+import { httpBatchLink } from '@trpc/client/links/httpBatchLink';
 import { loggerLink } from '@trpc/client/links/loggerLink';
 import AbortController from 'abort-controller';
 import fetch from 'node-fetch';
@@ -25,12 +25,18 @@ async function main() {
             prev(result);
           });
         },
-      httpLink({ url }),
+      httpBatchLink({ url }),
     ],
   });
   await sleep();
-  await client.query('hello');
-  await client.query('hello', 'client');
+
+  // parallel queries
+  await Promise.all([
+    //
+    client.query('hello'),
+    client.query('hello', 'client'),
+  ]);
+
   await sleep();
   const postCreate = await client.mutation('post.create', {
     title: 'hello client',
@@ -47,7 +53,7 @@ async function main() {
   }
   await sleep();
   const authedClient = createTRPCClient<AppRouter>({
-    links: [loggerLink(), httpLink({ url })],
+    links: [loggerLink(), httpBatchLink({ url })],
     headers: () => ({
       authorization: 'secret',
     }),
