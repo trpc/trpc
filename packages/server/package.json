@@ -15,9 +15,6 @@
       "explicit-module-boundary-types": "off"
     }
   },
-  "engines": {
-    "node": ">=12"
-  },
   "preconstruct": {
     "entrypoints": [
       "index.ts",
