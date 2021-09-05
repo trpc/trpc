@@ -12,7 +12,7 @@ import {
 } from '../../router';
 import { TRPCResponse } from '../../rpc';
 import { TRPCError } from '../../TRPCError';
-import { CreateContextFn } from '../requestHandler';
+import { CreateContextFn } from '../resolveHttpResponse';
 import { ResponseMeta } from '../ResponseMeta';
 import { HTTPRequest } from './types';
 
