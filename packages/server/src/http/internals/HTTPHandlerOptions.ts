@@ -14,7 +14,7 @@ import { TRPCResponse } from '../../rpc';
 import { TRPCError } from '../../TRPCError';
 import { CreateContextFn } from '../requestHandler';
 import { ResponseMeta } from '../ResponseMeta';
-import { HTTPRequest } from './HTTPResponse';
+import { HTTPRequest } from './types';
 
 type ResponseMetaFn<TRouter extends AnyRouter> = (opts: {
   data: TRPCResponse<unknown, inferRouterError<TRouter>>[];

@@ -19,11 +19,7 @@ import {
   ResolveHTTPRequestOptions,
   HTTPHandlerOptions,
 } from './internals/HTTPHandlerOptions';
-import {
-  HTTPHeaders,
-  HTTPRequest,
-  HTTPResponse,
-} from './internals/HTTPResponse';
+import { HTTPHeaders, HTTPRequest, HTTPResponse } from './internals/types';
 
 assertNotBrowser();
 
