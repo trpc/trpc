@@ -18,12 +18,12 @@ export const createHttpServer = createHTTPServer;
 export const createHttpHandler = createHTTPHandler;
 
 /**
- * @deprecated use `CreateHttpHandlerOptions` from `@trpc/server/adapters/standalone`
+ * @deprecated use `CreateHTTPHandlerOptions` from `@trpc/server/adapters/standalone`
  */
 export type CreateHttpHandlerOptions<TRouter extends AnyRouter> =
   CreateHTTPHandlerOptions<TRouter>;
 
 /**
- * @deprecated use `CreateHttpHandlerOptions` from `@trpc/server/adapters/standalone`
+ * @deprecated use `CreateHTTPContextOptions` from `@trpc/server/adapters/standalone`
  */
 export type CreateHttpContextOptions = CreateHTTPContextOptions;
