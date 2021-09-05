@@ -65,9 +65,9 @@ module.exports = {
       label: 'Extra information',
       collapsed: false,
       items: [
-        'further/further-reading',
         'further/rpc',
         'further/subscriptions',
+        'further/further-reading',
       ],
     },
   ],
