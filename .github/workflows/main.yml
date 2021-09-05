@@ -42,7 +42,7 @@ jobs:
       - uses: codecov/codecov-action@v1
         with:
           token: ${{ secrets.CODECOV_TOKEN }} # not required for public repos
-          directory: /home/runner/work/trpc/trpcpackages
+          directory: ./packages
   lint:
     needs: build
     runs-on: ubuntu-latest
