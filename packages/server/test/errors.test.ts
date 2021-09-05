@@ -42,6 +42,7 @@ test('basic', async () => {
     throw new Error('Wrong error');
   }
   expect(serverError.originalError).toBeInstanceOf(MyError);
+  expect(serverError.cause).toBeInstanceOf(MyError);
 
   close();
 });
@@ -86,6 +87,7 @@ test('input error', async () => {
   //   throw new Error('Wrong error');
   // }
   expect(serverError.originalError).toBeInstanceOf(ZodError);
+  expect(serverError.cause).toBeInstanceOf(ZodError);
 
   close();
 });
