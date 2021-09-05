@@ -13,7 +13,7 @@ import {
   Procedure,
   ProcedureCallOptions,
   ProcedureWithInput,
-} from './procedure';
+} from './internals/procedure';
 import {
   TRPCErrorShape,
   TRPC_ERROR_CODES_BY_KEY,
@@ -27,24 +27,44 @@ import { flatten, Prefixer, ThenArg } from './types';
 
 assertNotBrowser();
 
+/**
+ * @public
+ */
 export type ProcedureType = 'query' | 'mutation' | 'subscription';
+
+/**
+ * @internal
+ */
 export type ProcedureRecord<
   TContext = any,
   TInput = any,
   TOutput = any,
 > = Record<string, Procedure<TContext, TInput, TOutput>>;
 
+/**
+ * @public
+ */
 export type inferProcedureInput<TProcedure extends Procedure<any, any, any>> =
   TProcedure extends ProcedureWithInput<any, infer Input, any>
     ? Input
     : undefined;
 
+/**
+ * @public
+ */
 export type inferAsyncReturnType<TFunction extends (...args: any) => any> =
   ThenArg<ReturnType<TFunction>>;
 
+/**
+ * @public
+ */
 export type inferProcedureOutput<TProcedure extends Procedure> =
   inferAsyncReturnType<TProcedure['call']>;
 
+/**
+ * @public
+ * @beta
+ */
 export type inferSubscriptionOutput<
   TRouter extends AnyRouter,
   TPath extends keyof TRouter['_def']['subscriptions'],
@@ -63,6 +83,9 @@ function getDataTransformer(
   return { input: transformer, output: transformer };
 }
 
+/**
+ * @internal
+ */
 export type inferHandlerInput<TProcedure extends Procedure> =
   TProcedure extends ProcedureWithInput<any, infer TInput, any>
     ? undefined extends TInput // ? is input optional
@@ -80,12 +103,21 @@ type inferHandlerFn<TProcedures extends ProcedureRecord> = <
   ...args: inferHandlerInput<TProcedure>
 ) => Promise<inferProcedureOutput<TProcedures[TPath]>>;
 
+/**
+ * @internal
+ */
 export type inferRouterContext<TRouter extends AnyRouter> = Parameters<
   TRouter['createCaller']
 >[0];
 
+/**
+ * @public
+ */
 export type AnyRouter<TContext = any> = Router<TContext, any, any, any, any>;
 
+/**
+ * @internal
+ */
 export type inferRouterError<TRouter extends AnyRouter> = ReturnType<
   TRouter['getErrorShape']
 >;
@@ -97,6 +129,10 @@ const PROCEDURE_DEFINITION_MAP: Record<
   mutation: 'mutations',
   subscription: 'subscriptions',
 };
+
+/**
+ * @internal
+ */
 export type ErrorFormatter<TContext, TShape extends TRPCErrorShape<number>> = ({
   error,
 }: {
@@ -114,6 +150,10 @@ type DefaultErrorData = {
   path?: string;
   stack?: string;
 };
+
+/**
+ * @internal
+ */
 export interface DefaultErrorShape
   extends TRPCErrorShape<TRPC_ERROR_CODE_NUMBER, DefaultErrorData> {
   message: string;
@@ -279,9 +319,7 @@ export class Router<
     return this.merge(router) as any;
   }
   /**
-   * ⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️
-   *  **Experimental.** API might change without major version bump
-   * ⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠
+   * @beta Might change without a major version bump
    */
   public subscription<
     TPath extends string,
@@ -298,9 +336,7 @@ export class Router<
     TErrorShape
   >;
   /**
-   * ⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️
-   *  **Experimental.** API might change without major version bump
-   * ⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠
+   * @beta Might change without a major version bump
    */
   public subscription<
     TPath extends string,
@@ -315,6 +351,9 @@ export class Router<
     TSubscriptions & Record<TPath, inferProcedureFromOptions<typeof procedure>>,
     TErrorShape
   >;
+  /**
+   * @beta Might change without a major version bump
+   */
   public subscription<
     TPath extends string,
     TInput,

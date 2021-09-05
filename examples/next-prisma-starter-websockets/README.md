@@ -1,6 +1,6 @@
 # Prisma + tRPC + WebSockets
 
-> :warning: WebSockets is an experimental feature & can change without major version bump :warning:
+> :info: WebSockets is a beta feature & may change without major version bump :info:
 
 
 - Try demo http://nextjs-websockets.trpc.io/

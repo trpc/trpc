@@ -232,10 +232,10 @@ export function applyWSSHandler<TRouter extends AnyRouter>(
         const msgJSON: unknown = JSON.parse(message as string);
         const msgs: unknown[] = Array.isArray(msgJSON) ? msgJSON : [msgJSON];
         msgs.map((raw) => parseMessage(raw, transformer)).map(handleRequest);
-      } catch (originalError) {
+      } catch (cause) {
         const error = new TRPCError({
           code: 'PARSE_ERROR',
-          originalError,
+          cause,
         });
 
         respond({
