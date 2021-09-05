@@ -1,7 +1,7 @@
 import http from 'http';
 import qs from 'qs';
 import { inferRouterContext } from '../..';
-import { HTTPBaseHandlerOptions } from '../../http/internals/HTTPHandlerOptions';
+import { HTTPBaseHandlerOptions } from '../../http/internals/types';
 import { AnyRouter } from '../../router';
 
 export type NodeHTTPRequest = http.IncomingMessage & {
