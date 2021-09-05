@@ -8,10 +8,10 @@ export function getQueryInput(query: qs.ParsedQs) {
   }
   try {
     return JSON.parse(queryInput as string);
-  } catch (originalError) {
+  } catch (cause) {
     throw new TRPCError({
       code: 'BAD_REQUEST',
-      originalError,
+      cause,
     });
   }
 }
