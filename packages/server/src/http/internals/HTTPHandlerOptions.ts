@@ -1,5 +1,5 @@
 import { Maybe } from '@trpc/server';
-import { BaseHandlerOptions } from '../../adapters/node-http/types';
+import { OnErrorFunction } from '../../internals/OnErrorFunction';
 import {
   AnyRouter,
   inferRouterContext,
@@ -21,6 +21,17 @@ type ResponseMetaFn<TRouter extends AnyRouter> = (opts: {
   type: ProcedureType | 'unknown';
   errors: TRPCError[];
 }) => ResponseMeta;
+
+/**
+ * Base interface for any HTTP/WSS handlers
+ */
+export interface BaseHandlerOptions<TRouter extends AnyRouter, TRequest> {
+  onError?: OnErrorFunction<TRouter, TRequest>;
+  batching?: {
+    enabled: boolean;
+  };
+  router: TRouter;
+}
 
 export interface HTTPHandlerOptionsBase<TRouter extends AnyRouter, TRequest>
   extends BaseHandlerOptions<TRouter, TRequest> {

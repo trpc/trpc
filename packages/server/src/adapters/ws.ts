@@ -3,7 +3,6 @@ import ws from 'ws';
 import { getErrorFromUnknown } from '../internals/errors';
 import { TRPCError } from '../TRPCError';
 import { CreateContextFn } from '../http';
-import { BaseHandlerOptions } from './node-http/types';
 import { callProcedure } from '../internals/callProcedure';
 import { AnyRouter, inferRouterContext, ProcedureType } from '../router';
 import {
@@ -15,6 +14,7 @@ import {
 import { Subscription } from '../subscription';
 import { CombinedDataTransformer } from '../transformer';
 import { transformTRPCResponse } from '../internals/transformTRPCResponse';
+import { BaseHandlerOptions } from '../http/internals/HTTPHandlerOptions';
 
 /* istanbul ignore next */
 function assertIsObject(obj: unknown): asserts obj is Record<string, unknown> {
