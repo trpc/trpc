@@ -27,6 +27,9 @@ import { flatten, Prefixer, ThenArg } from './types';
 
 assertNotBrowser();
 
+/**
+ * @public
+ */
 export type ProcedureType = 'query' | 'mutation' | 'subscription';
 
 /**
