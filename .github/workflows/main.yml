@@ -22,7 +22,7 @@ jobs:
       - name: Cache build
         uses: actions/cache@v2
         with:
-          path: ./
+          path: /home/runner/work/trpc/trpc
           key: ${{ runner.os }}-build-${{ github.sha }}
 
       - name: Install deps and build (with cache)
@@ -34,7 +34,7 @@ jobs:
       - name: Get build
         uses: actions/cache@v2
         with:
-          path: ./
+          path: /home/runner/work/trpc/trpc
           key: ${{ runner.os }}-build-${{ github.sha }}
       
       - run: yarn test --ci --coverage --maxWorkers=2
@@ -42,7 +42,7 @@ jobs:
       - uses: codecov/codecov-action@v1
         with:
           token: ${{ secrets.CODECOV_TOKEN }} # not required for public repos
-          directory: ./packages
+          directory: /home/runner/work/trpc/trpcpackages
   lint:
     needs: build
     runs-on: ubuntu-latest
@@ -50,7 +50,7 @@ jobs:
       - name: Get build
         uses: actions/cache@v2
         with:
-          path: ./
+          path: /home/runner/work/trpc/trpc
           key: ${{ runner.os }}-build-${{ github.sha }}
       - run: yarn lint
       - run: yarn manypkg check
