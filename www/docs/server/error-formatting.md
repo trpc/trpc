@@ -22,8 +22,8 @@ const router = trpc.router<Context>()
         ...shape.data,
         zodError:
           error.code === 'BAD_USER_INPUT' &&
-          error.originalError instanceof ZodError
-            ? error.originalError.flatten()
+          error.cause instanceof ZodError
+            ? error.cause.flatten()
             : null,
       };
     };

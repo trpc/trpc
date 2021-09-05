@@ -42,7 +42,7 @@ export default trpcNext.createNextApiHandler({
   // [...]
   onError({ error }) {
     console.error('Error:', error);
-    console.log('Original error thrown', error.originalError);
+    console.log('Original error thrown', error.cause);
   },
 });
 ```

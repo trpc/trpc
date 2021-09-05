@@ -14,17 +14,20 @@ export function getMessageFromUnkownError(
   return fallback;
 }
 
-export function getErrorFromUnknown(originalError: unknown): TRPCError {
+export function getErrorFromUnknown(cause: unknown): TRPCError {
   // this should ideally be an `instanceof TRPCError` but for some reason that isn't working
   // ref https://github.com/trpc/trpc/issues/331
-  if (originalError instanceof Error && originalError.name === 'TRPCError') {
-    return originalError as TRPCError;
+  if (cause instanceof Error && cause.name === 'TRPCError') {
+    return cause as TRPCError;
   }
-  const err = new TRPCError({ code: 'INTERNAL_SERVER_ERROR', originalError });
+  const err = new TRPCError({
+    code: 'INTERNAL_SERVER_ERROR',
+    cause,
+  });
 
-  // take stack trace from originalError
-  if (originalError instanceof Error) {
-    err.stack = originalError.stack;
+  // take stack trace from cause
+  if (cause instanceof Error) {
+    err.stack = cause.stack;
   }
   return err;
 }
