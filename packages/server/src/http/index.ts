@@ -2,7 +2,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { assertNotBrowser } from '../assertNotBrowser';
 
-export * from './resolveHttpResponse';
+export * from './requestHandler';
 export * from './ResponseMeta';
 
 assertNotBrowser();
