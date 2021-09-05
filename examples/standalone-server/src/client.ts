@@ -9,9 +9,10 @@ import ws from 'ws';
 import type { AppRouter } from './server';
 
 // polyfill fetch & websocket
-global.AbortController = AbortController;
-global.fetch = fetch as any;
-global.WebSocket = ws as any;
+const globalAny = global as any;
+globalAny.AbortController = AbortController;
+globalAny.fetch = fetch;
+globalAny.WebSocket = ws;
 
 async function main() {
   // http calls

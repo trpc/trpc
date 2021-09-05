@@ -1,6 +1,6 @@
 ## Chat
 
-:warning: tRPC subscriptions are experimental.
+:warning: tRPC subscriptions are beta.
 
 <!-- Live at [chat.trpc.io](https://chat.trpc.io) -->
 

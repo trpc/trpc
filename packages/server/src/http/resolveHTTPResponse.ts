@@ -37,10 +37,10 @@ function getRawProcedureInputOrThrow(req: HTTPRequest) {
       return JSON.parse(raw!);
     }
     return typeof req.body === 'string' ? JSON.parse(req.body) : req.body;
-  } catch (originalError) {
+  } catch (cause) {
     throw new TRPCError({
       code: 'PARSE_ERROR',
-      originalError,
+      cause,
     });
   }
 }
@@ -55,7 +55,7 @@ interface ResolveHTTPRequestOptions<
   error?: Maybe<TRPCError>;
 }
 
-export async function resolveHttpResponse<
+export async function resolveHTTPResponse<
   TRouter extends AnyRouter,
   TRequest extends HTTPRequest,
 >(opts: ResolveHTTPRequestOptions<TRouter, TRequest>): Promise<HTTPResponse> {
@@ -183,8 +183,8 @@ export async function resolveHttpResponse<
             path,
             data: output,
           };
-        } catch (_err) {
-          const error = getErrorFromUnknown(_err);
+        } catch (cause) {
+          const error = getErrorFromUnknown(cause);
 
           onError?.({ error, path, input, ctx, type: type, req });
           return {
@@ -225,13 +225,13 @@ export async function resolveHttpResponse<
 
     const result = isBatchCall ? resultEnvelopes : resultEnvelopes[0];
     return endResponse(result, errors);
-  } catch (_err) {
+  } catch (cause) {
     // we get here if
     // - batching is called when it's not enabled
     // - `createContext()` throws
     // - post body is too large
     // - input deserialization fails
-    const error = getErrorFromUnknown(_err);
+    const error = getErrorFromUnknown(cause);
 
     const json: TRPCErrorResponse<TRouterError> = {
       id: null,

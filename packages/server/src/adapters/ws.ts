@@ -207,9 +207,9 @@ export function applyWSSHandler<TRouter extends AnyRouter>(
           },
         });
         await sub.start();
-      } catch (_error) /* istanbul ignore next */ {
+      } catch (cause) /* istanbul ignore next */ {
         // procedure threw an error
-        const error = getErrorFromUnknown(_error);
+        const error = getErrorFromUnknown(cause);
         const json = router.getErrorShape({
           error,
           type,
@@ -226,10 +226,10 @@ export function applyWSSHandler<TRouter extends AnyRouter>(
         const msgJSON: unknown = JSON.parse(message as string);
         const msgs: unknown[] = Array.isArray(msgJSON) ? msgJSON : [msgJSON];
         msgs.map((raw) => parseMessage(raw, transformer)).map(handleRequest);
-      } catch (originalError) {
+      } catch (cause) {
         const error = new TRPCError({
           code: 'PARSE_ERROR',
-          originalError,
+          cause,
         });
 
         respond({
@@ -254,8 +254,8 @@ export function applyWSSHandler<TRouter extends AnyRouter>(
     async function createContextAsync() {
       try {
         ctx = await ctxPromise;
-      } catch (err) {
-        const error = getErrorFromUnknown(err);
+      } catch (cause) {
+        const error = getErrorFromUnknown(cause);
         const json: TRPCErrorResponse = {
           id: null,
           error: router.getErrorShape({

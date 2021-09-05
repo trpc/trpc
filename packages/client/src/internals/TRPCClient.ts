@@ -14,7 +14,7 @@ import { ObservableCallbacks, UnsubscribeFn } from './observable';
 import { TRPCAbortError } from './TRPCAbortError';
 import {
   CancelFn,
-  HttpHeaders,
+  HTTPHeaders,
   LinkRuntimeOptions,
   OperationContext,
   OperationLink,
@@ -48,7 +48,7 @@ export type CreateTRPCClientOptions<TRouter extends AnyRouter> = {
   /**
    * headers to be set on outgoing requests / callback that of said headers
    */
-  headers?: HttpHeaders | (() => HttpHeaders);
+  headers?: HTTPHeaders | (() => HTTPHeaders);
   /**
    * Data transformer
    * @link http://localhost:3000/docs/data-transformers

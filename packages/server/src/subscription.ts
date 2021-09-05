@@ -36,6 +36,9 @@ export type SubscriptionCallback<TOutput> = (
   emit: SubscriptionEmit<TOutput>,
 ) => UnsubscribeFn | Promise<UnsubscribeFn>;
 
+/**
+ * @beta
+ */
 export class Subscription<TOutput = unknown> {
   private readonly events: SubscriptionEventEmitter<TOutput>;
   private callback;
@@ -77,10 +80,10 @@ export class Subscription<TOutput = unknown> {
         this.events.on('destroy', cancel);
       }
     } catch (
-      err
+      cause
       /* istanbul ignore next */
     ) {
-      this.emitError(getErrorFromUnknown(err));
+      this.emitError(getErrorFromUnknown(cause));
     }
   }
 
@@ -113,6 +116,9 @@ export class Subscription<TOutput = unknown> {
   }
 }
 
+/**
+ * @alpha Might be removed
+ */
 export function subscriptionPullFactory<TOutput>(opts: {
   /**
    * The interval of how often the function should run

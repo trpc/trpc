@@ -36,14 +36,19 @@ export type TRPCLink<TRouter extends AnyRouter> = (
   opts: LinkRuntimeOptions,
 ) => OperationLink<TRouter>;
 
-export interface HttpLinkOptions {
+export interface HTTPLinkOptions {
   url: string;
 }
 
-export type HttpHeaders = Record<string, string | string[] | undefined>;
+/**
+ * @deprecated use `HTTPLinkOptions`
+ */
+export type HttpLinkOptions = HTTPLinkOptions;
+
+export type HTTPHeaders = Record<string, string | string[] | undefined>;
 export type LinkRuntimeOptions = Readonly<{
   transformer: DataTransformer;
-  headers: () => HttpHeaders;
+  headers: () => HTTPHeaders;
   fetch: typeof fetch;
   AbortController?: typeof AbortController;
 }>;

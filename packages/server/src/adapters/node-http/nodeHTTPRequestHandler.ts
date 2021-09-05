@@ -9,7 +9,7 @@ import {
 import { AnyRouter, inferRouterContext } from '../../router';
 import { getPostBody } from './internals/getPostBody';
 import { HTTPRequest } from '../../http/internals/types';
-import { resolveHttpResponse } from '../../http/resolveHTTPResponse';
+import { resolveHTTPResponse } from '../../http/resolveHTTPResponse';
 
 assertNotBrowser();
 
@@ -46,7 +46,7 @@ export async function nodeHTTPRequestHandler<
     query,
     body: bodyResult.ok ? bodyResult.data : undefined,
   };
-  const result = await resolveHttpResponse({
+  const result = await resolveHTTPResponse({
     batching: opts.batching,
     responseMeta: opts.responseMeta,
     path,
