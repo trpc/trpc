@@ -38,14 +38,14 @@ export type NodeHTTPHandlerOptions<
   maxBodySize?: number;
 } & NodeHTTPCreateContextOption<TRouter, TRequest, TResponse>;
 
-export type NodeHTTPCreateContextFnOptions<TRequest, TResponse> = {
+export type NodeHTTPCreateContextFnOptions<TRequest, TResponse = undefined> = {
   req: TRequest;
   res: TResponse;
 };
 export type NodeHTTPCreateContextFn<
   TRouter extends AnyRouter,
   TRequest,
-  TResponse,
+  TResponse = undefined,
 > = (
   opts: NodeHTTPCreateContextFnOptions<TRequest, TResponse>,
 ) => inferRouterContext<TRouter> | Promise<inferRouterContext<TRouter>>;

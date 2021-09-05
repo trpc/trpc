@@ -3,10 +3,12 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
 import { URLSearchParams } from 'url';
 import { CreateContextFnOptions } from '../';
-import { CreateContextFn } from '../http';
-import { HTTPHandlerOptionsBase } from '../http/internals/HTTPHandlerOptions';
-import { HTTPHeaders, HTTPRequest } from '../http/internals/HTTPResponse';
-import { resolveHttpResponse } from '../http/requestHandler';
+import { CreateContextFn, resolveHttpResponse } from '../http';
+import {
+  HTTPBaseHandlerOptions,
+  HTTPHeaders,
+  HTTPRequest,
+} from '../http/internals/types';
 import { AnyRouter, inferRouterContext } from '../router';
 function lambdaEventToHTTPRequest(event: APIGatewayProxyEvent): HTTPRequest {
   const query = new URLSearchParams();
@@ -30,7 +32,7 @@ export type CreateLambdaContextOptions =
 type AWSLambdaOptions<
   TRouter extends AnyRouter,
   TRequest,
-> = HTTPHandlerOptionsBase<TRouter, TRequest> &
+> = HTTPBaseHandlerOptions<TRouter, TRequest> &
   (inferRouterContext<TRouter> extends void
     ? {
         /**

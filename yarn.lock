@@ -3436,6 +3436,11 @@
   resolved "https://registry.npmjs.org/@types/aria-query/-/aria-query-4.2.1.tgz#78b5433344e2f92e8b306c06a5622c50c245bf6b"
   integrity sha512-S6oPal772qJZHoRZLFc/XoZW2gFvwXusYUmXPXkgxJLuEk2vOt7jc4Yo6z/vtI0EBkbPBVrJJ0B+prLIKiWqHg==
 
+"@types/aws-lambda@^8.10.83":
+  version "8.10.83"
+  resolved "https://registry.npmjs.org/@types/aws-lambda/-/aws-lambda-8.10.83.tgz#66db06cedb7476e860e8655e4387fd2e4385433a"
+  integrity sha512-7YsLv/B8rF7K7jYAGmYBxLq3QU+hQV7qNJBMcSCmJCTcXuzoTKGBX8d4v9CsVs0SOKBSAErXG7rtk8jVxiP30g==
+
 "@types/babel__core@^7.0.0", "@types/babel__core@^7.1.14":
   version "7.1.14"
   resolved "https://registry.npmjs.org/@types/babel__core/-/babel__core-7.1.14.tgz#faaeefc4185ec71c389f4501ee5ec84b170cc402"
@@ -4407,7 +4412,17 @@ avvio@^7.1.2:
     fastq "^1.6.1"
     queue-microtask "^1.1.2"
 
-aws-sdk@^2.834.0, aws-sdk@^2.979.0:
+aws-lambda@^1.0.6:
+  version "1.0.6"
+  resolved "https://registry.npmjs.org/aws-lambda/-/aws-lambda-1.0.6.tgz#ba562478264646b51e9dc817d7d25ea468ed011b"
+  integrity sha512-Z9lmZBiDYejzjMWuQSDXuZWAqAun6vGt7WApB1r0f8tLNf0IlTGsH30qENfP1kXeTbbMgPpt1bPEeMZjYDTXxQ==
+  dependencies:
+    aws-sdk "*"
+    commander "^3.0.2"
+    js-yaml "^3.13.1"
+    watchpack "^2.0.0-beta.10"
+
+aws-sdk@*, aws-sdk@^2.834.0, aws-sdk@^2.979.0:
   version "2.983.0"
   resolved "https://registry.npmjs.org/aws-sdk/-/aws-sdk-2.983.0.tgz#4c6d98d802b2cf159acbc105979b892b427b5fb3"
   integrity sha512-i4QMJt5hEYzhoDzmbo0v+aAuHQPXM6ah15GBKObbxwYxmzK9wjMG+FH3DiWZZHdFsf3C+p1zDg4rIr63jmOeBw==
@@ -9221,7 +9236,7 @@ is-yarn-global@^0.3.0:
   resolved "https://registry.npmjs.org/is-yarn-global/-/is-yarn-global-0.3.0.tgz#d502d3382590ea3004893746754c89139973e232"
   integrity sha512-VjSeb/lHmkoyd8ryPVIKvOCn4D1koMqY+vqyjjUfc3xyKtP4dYOxM44sZrnqQSzSds3xyOrUTLTC9LVCVgLngw==
 
-isarray@1.0.0, isarray@^1.0.0, isarray@~1.0.0:
+isarray@1.0.0, isarray@~1.0.0:
   version "1.0.0"
   resolved "https://registry.npmjs.org/isarray/-/isarray-1.0.0.tgz#bb935d48582cba168c06834957a54a3e07124f11"
   integrity sha1-u5NdSFgsuhaMBoNJV6VKPgcSTxE=
@@ -15885,6 +15900,14 @@ watchpack@2.1.1:
   version "2.1.1"
   resolved "https://registry.npmjs.org/watchpack/-/watchpack-2.1.1.tgz#e99630550fca07df9f90a06056987baa40a689c7"
   integrity sha512-Oo7LXCmc1eE1AjyuSBmtC3+Wy4HcV8PxWh2kP6fOl8yTlNS7r0K9l1ao2lrrUza7V39Y3D/BbJgY8VeSlc5JKw==
+  dependencies:
+    glob-to-regexp "^0.4.1"
+    graceful-fs "^4.1.2"
+
+watchpack@^2.0.0-beta.10:
+  version "2.2.0"
+  resolved "https://registry.npmjs.org/watchpack/-/watchpack-2.2.0.tgz#47d78f5415fe550ecd740f99fe2882323a58b1ce"
+  integrity sha512-up4YAn/XHgZHIxFBVCdlMiWDj6WaLKpwVeGQk2I5thdYxF/KmF0aaz6TfJZ/hfl1h/XlcDr7k1KH7ThDagpFaA==
   dependencies:
     glob-to-regexp "^0.4.1"
     graceful-fs "^4.1.2"
