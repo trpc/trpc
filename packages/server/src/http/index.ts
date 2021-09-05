@@ -20,6 +20,7 @@ export type {
   NodeHTTPCreateContextFnOptions as CreateContextFnOptions,
 } from '../adapters/node-http/types';
 
+export * from './resolveHTTPResponse';
 export * from './ResponseMeta';
 
 assertNotBrowser();

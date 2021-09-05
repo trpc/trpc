@@ -1,23 +1,23 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 import { Maybe } from '@trpc/server';
-import { callProcedure } from '../../internals/callProcedure';
-import { getErrorFromUnknown } from '../../internals/errors';
-import { transformTRPCResponse } from '../../internals/transformTRPCResponse';
+import { callProcedure } from '../internals/callProcedure';
+import { getErrorFromUnknown } from '../internals/errors';
+import { transformTRPCResponse } from '../internals/transformTRPCResponse';
 import {
   AnyRouter,
   inferRouterContext,
   inferRouterError,
   ProcedureType,
-} from '../../router';
-import { TRPCErrorResponse, TRPCResponse, TRPCResultResponse } from '../../rpc';
-import { TRPCError } from '../../TRPCError';
-import { getHTTPStatusCode } from './getHTTPStatusCode';
+} from '../router';
+import { TRPCErrorResponse, TRPCResponse, TRPCResultResponse } from '../rpc';
+import { TRPCError } from '../TRPCError';
+import { getHTTPStatusCode } from './internals/getHTTPStatusCode';
 import {
   HTTPHeaders,
   HTTPRequest,
   HTTPResponse,
   HTTPBaseHandlerOptions,
-} from './types';
+} from './internals/types';
 
 const HTTP_METHOD_PROCEDURE_TYPE_MAP: Record<
   string,
@@ -45,7 +45,7 @@ function getRawProcedureInputOrThrow(req: HTTPRequest) {
   }
 }
 
-export interface ResolveHTTPRequestOptions<
+interface ResolveHTTPRequestOptions<
   TRouter extends AnyRouter,
   TRequest extends HTTPRequest,
 > extends HTTPBaseHandlerOptions<TRouter, TRequest> {
