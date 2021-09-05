@@ -15,7 +15,7 @@ slug: /further-reading
 
 ## Relationship to GraphQL
 
-If you are already have a custom GraphQL-server for your project; don't use tRPC. GraphQL is amazing; it's great to be able to make a flexible API where each consumer can pick just the data needed for it. 
+If you are already have a custom GraphQL-server for your project you may not want to use tRPC. GraphQL is amazing; it's great to be able to make a flexible API where each consumer can pick just the data needed for it. 
 
 The thing is, GraphQL isn't that easy to get right - ACL is needed to be solved on a per-type basis, complexity analysis, and performance are all non-trivial things.
 
@@ -27,17 +27,3 @@ tRPC is a lot simpler and couples your server & website/app more tightly togethe
 
 - [Blitz.js](https://blitzjs.com) is a full-stack framework. tRPC is just the data layer, but the philosophy of their _"Zero-API data layer"_ is very close to tRPC, but tRPC doesn't require a build pipeline nor is it tied to Next.js or even React.
 - ...
-
-....
-
-
-## Internals
-
-
-### HTTP Methods <-> Type mapping
-
-| HTTP Method | Mapping           | Notes                                                                                                  |
-| ----------- | ----------------- | ------------------------------------------------------------------------------------------------------ |
-| `GET`       | `.query()`        | Input JSON-stringified in query param.<br/>_e.g._ `?input=${JSON.stringify(encodeURIComponent(input))` |
-| `POST`      | `.mutation()`     | Input as post body.                                                                                    |
-| WebSockets  | `.subscription()` | Input as post body.<br/>:warning: Experimental. API might change without major version bump.           |
