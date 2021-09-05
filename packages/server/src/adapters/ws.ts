@@ -207,9 +207,9 @@ export function applyWSSHandler<TRouter extends AnyRouter>(
           },
         });
         await sub.start();
-      } catch (_error) /* istanbul ignore next */ {
+      } catch (cause) /* istanbul ignore next */ {
         // procedure threw an error
-        const error = getErrorFromUnknown(_error);
+        const error = getErrorFromUnknown(cause);
         const json = router.getErrorShape({
           error,
           type,
@@ -254,8 +254,8 @@ export function applyWSSHandler<TRouter extends AnyRouter>(
     async function createContextAsync() {
       try {
         ctx = await ctxPromise;
-      } catch (err) {
-        const error = getErrorFromUnknown(err);
+      } catch (cause) {
+        const error = getErrorFromUnknown(cause);
         const json: TRPCErrorResponse = {
           id: null,
           error: router.getErrorShape({

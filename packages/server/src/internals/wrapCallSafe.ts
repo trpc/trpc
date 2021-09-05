@@ -10,10 +10,10 @@ export async function wrapCallSafe<T>(fn: AsyncFn<T>) {
       ok: true as const,
       data,
     };
-  } catch (error: unknown) {
+  } catch (cause) {
     return {
       ok: false as const,
-      error,
+      error: cause,
     };
   }
 }

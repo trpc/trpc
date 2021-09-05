@@ -38,8 +38,8 @@ export function httpLink<TRouter extends AnyRouter>(
         .then((envelope) => {
           prevOnce(transformRPCResponse({ envelope, runtime }));
         })
-        .catch((err) => {
-          prevOnce(TRPCClientError.from(err));
+        .catch((cause) => {
+          prevOnce(TRPCClientError.from(cause));
         });
     };
   };

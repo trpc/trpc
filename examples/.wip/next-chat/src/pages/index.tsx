@@ -116,7 +116,7 @@ export default function Home() {
             const res = await addMessage.mutateAsync(input);
             $text.value = '';
             addMessages([res]);
-          } catch (err) {}
+          } catch (cause) {}
         }}
       >
         <input name="text" type="text" />

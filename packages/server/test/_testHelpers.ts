@@ -120,9 +120,9 @@ export async function waitError<TError = Error>(
     } else {
       await fnOrPromise;
     }
-  } catch (err) {
-    expect(err).toBeInstanceOf(errorConstructor ?? Error);
-    return err as TError;
+  } catch (cause) {
+    expect(cause).toBeInstanceOf(errorConstructor ?? Error);
+    return cause as TError;
   }
   throw new Error('Function did not throw');
 }

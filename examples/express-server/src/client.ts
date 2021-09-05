@@ -42,7 +42,7 @@ async function main() {
   await sleep();
   try {
     await client.query('admin.secret');
-  } catch (err) {
+  } catch (cause) {
     // will fail
   }
   await sleep();

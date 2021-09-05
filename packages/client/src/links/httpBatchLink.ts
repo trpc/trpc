@@ -61,8 +61,8 @@ export function httpBatchLink<TRouter extends AnyRouter>(
         .then((envelope) => {
           prevOnce(transformRPCResponse({ envelope, runtime }));
         })
-        .catch((err) => {
-          prevOnce(TRPCClientError.from<TRouter>(err));
+        .catch((cause) => {
+          prevOnce(TRPCClientError.from<TRouter>(cause));
         });
     };
   };
