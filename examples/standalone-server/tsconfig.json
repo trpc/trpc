@@ -4,6 +4,12 @@
     "module": "commonjs",
     "target": "ES2019",
     "esModuleInterop": true,
-    "strict": true
-  }
+    "strict": true,
+    "strictNullChecks": true /* Enable strict null checks. */
+  },
+  "include": ["src"],
+  "exclude": [
+    "node_modules"
+    // "**/__tests__/"
+  ]
 }
