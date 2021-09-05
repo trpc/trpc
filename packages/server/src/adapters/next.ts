@@ -5,7 +5,7 @@ import { CreateContextFnOptions, requestHandler } from '../';
 import { AnyRouter } from '../router';
 import { TRPCErrorResponse } from '../rpc';
 import { TRPCError } from '../TRPCError';
-import { HTTPHandlerOptions } from './node-http/BaseHandlerOptions';
+import { HTTPHandlerOptions } from './node-http/types';
 
 export type CreateNextContextOptions = CreateContextFnOptions<
   NextApiRequest,

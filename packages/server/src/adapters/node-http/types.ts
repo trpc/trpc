@@ -3,7 +3,7 @@ import qs from 'qs';
 import { AnyRouter } from '../../router';
 import { OnErrorFunction } from '../../internals/OnErrorFunction';
 import { HTTPHandlerOptionsBase } from '../../http/internals/HTTPHandlerOptions';
-import { inferRouterContext, CreateContextFn } from '../../';
+import { inferRouterContext, CreateContextFn } from '../..';
 
 export type BaseRequest = http.IncomingMessage & {
   method?: string;

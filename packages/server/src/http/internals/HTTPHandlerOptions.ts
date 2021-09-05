@@ -1,5 +1,5 @@
 import { Maybe } from '@trpc/server';
-import { BaseHandlerOptions } from '../../adapters/node-http/BaseHandlerOptions';
+import { BaseHandlerOptions } from '../../adapters/node-http/types';
 import {
   AnyRouter,
   inferRouterContext,

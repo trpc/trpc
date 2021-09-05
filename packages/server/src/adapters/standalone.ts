@@ -4,7 +4,7 @@ import http from 'http';
 import url from 'url';
 import { CreateContextFnOptions, requestHandler } from '../http';
 import { AnyRouter } from '../router';
-import { HTTPHandlerOptions } from './node-http/BaseHandlerOptions';
+import { HTTPHandlerOptions } from './node-http/types';
 
 export type CreateHttpContextOptions = CreateContextFnOptions<
   http.IncomingMessage,

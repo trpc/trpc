@@ -1,5 +1,5 @@
 import { TRPCError } from '../../TRPCError';
-import { BaseRequest } from './BaseHandlerOptions';
+import { BaseRequest } from './types';
 
 export async function getPostBody({
   req,

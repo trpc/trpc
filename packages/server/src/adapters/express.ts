@@ -2,7 +2,7 @@
 import type * as express from 'express';
 import { CreateContextFnOptions, requestHandler } from '../http';
 import { AnyRouter } from '../router';
-import { HTTPHandlerOptions } from './node-http/BaseHandlerOptions';
+import { HTTPHandlerOptions } from './node-http/types';
 
 export type CreateExpressContextOptions = CreateContextFnOptions<
   express.Request,
