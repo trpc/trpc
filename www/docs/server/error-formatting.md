@@ -5,7 +5,7 @@ sidebar_label: Error Formatting
 slug: /error-formatting
 ---
 
-You can do custom error formatting in your router and the returned object will be inferred all the way to your client (& React components)
+The error formatting in your router will be inferred all the way to your client (&&nbsp;React&nbsp;components)
 
 
 ## Usage example highlighted
@@ -54,7 +54,7 @@ function MyComponent() {
 
 ## All properties sent to `formatError()`
 
-> Since `v.8.x.` tRPC is compliant with [JSON-RPC 2.0](https://www.jsonrpc.org/specification)
+> Since `v8.x` tRPC is compliant with [JSON-RPC 2.0](https://www.jsonrpc.org/specification)
 
 ```ts
 {
