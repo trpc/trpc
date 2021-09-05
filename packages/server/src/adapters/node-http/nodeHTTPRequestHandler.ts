@@ -7,7 +7,7 @@ import {
   NodeHTTPHandlerOptions,
 } from './types';
 import { AnyRouter, inferRouterContext } from '../../router';
-import { getPostBody } from './getPostBody';
+import { getPostBody } from './internals/getPostBody';
 import { HTTPRequest } from '../../http/internals/types';
 import { resolveHttpResponse } from '../../http/resolveHTTPResponse';
 

@@ -1,5 +1,5 @@
-import { TRPCError } from '../../TRPCError';
-import { NodeHTTPRequest } from './types';
+import { TRPCError } from '../../../TRPCError';
+import { NodeHTTPRequest } from '../types';
 
 export async function getPostBody({
   req,
