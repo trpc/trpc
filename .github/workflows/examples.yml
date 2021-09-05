@@ -51,7 +51,7 @@ jobs:
           node-version: ${{ matrix.start }}
 
       - run: node -v
-      - run: yarn install --cwd examples/${{ matrix.dir }} --ignore-scripts
+      # - run: yarn install --cwd examples/${{ matrix.dir }} --ignore-scripts
       - run: yarn playwright install-deps
 
       - name: if exists, run yarn lint
