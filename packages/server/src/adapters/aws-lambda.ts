@@ -1,15 +1,13 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
 import { URLSearchParams } from 'url';
-import { CreateContextFnOptions } from '../';
-import { CreateContextFn, resolveHttpResponse } from '../http';
+import { resolveHTTPResponse } from '..';
 import {
   HTTPBaseHandlerOptions,
   HTTPHeaders,
   HTTPRequest,
 } from '../http/internals/types';
 import { AnyRouter, inferRouterContext } from '../router';
+import { NodeHTTPCreateContextFn } from './node-http';
 function lambdaEventToHTTPRequest(event: APIGatewayProxyEvent): HTTPRequest {
   const query = new URLSearchParams();
   for (const [key, value] of Object.entries(
@@ -27,8 +25,9 @@ function lambdaEventToHTTPRequest(event: APIGatewayProxyEvent): HTTPRequest {
   };
 }
 
-export type CreateLambdaContextOptions =
-  CreateContextFnOptions<APIGatewayProxyEvent>;
+export interface CreateLambdaContextOptions {
+  req: APIGatewayProxyEvent;
+}
 type AWSLambdaOptions<
   TRouter extends AnyRouter,
   TRequest,
@@ -38,13 +37,13 @@ type AWSLambdaOptions<
         /**
          * @link https://trpc.io/docs/context
          **/
-        createContext?: CreateContextFn<TRouter, TRequest>;
+        createContext?: NodeHTTPCreateContextFn<TRouter, TRequest>;
       }
     : {
         /**
          * @link https://trpc.io/docs/context
          **/
-        createContext: CreateContextFn<TRouter, TRequest>;
+        createContext: NodeHTTPCreateContextFn<TRouter, TRequest>;
       });
 
 function transformHeaders(
@@ -77,7 +76,7 @@ export function createApiGatewayHandler<TRouter extends AnyRouter>(
       });
     };
 
-    const response = await resolveHttpResponse({
+    const response = await resolveHTTPResponse({
       router: opts.router,
       batching: opts.batching,
       responseMeta: opts.responseMeta,
