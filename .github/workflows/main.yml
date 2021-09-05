@@ -19,13 +19,13 @@ jobs:
         with:
           node-version: ${{ matrix.node }}
 
+      - name: Install deps and build (with cache)
+        uses: bahmutov/npm-install@v1
+
       - uses: actions/upload-artifact@v2
         with:
           name: ${{ runner.os }}-build-${{ github.sha }}
           path: .
-
-      - name: Install deps and build (with cache)
-        uses: bahmutov/npm-install@v1
   test:
     needs: build
     runs-on: ubuntu-latest
