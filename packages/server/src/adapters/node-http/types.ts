@@ -11,6 +11,24 @@ export type NodeHTTPRequest = http.IncomingMessage & {
 };
 export type NodeHTTPResponse = http.ServerResponse;
 
+export type NodeHTTPCreateContextOption<
+  TRouter extends AnyRouter,
+  TRequest,
+  TResponse,
+> = inferRouterContext<TRouter> extends void
+  ? {
+      /**
+       * @link https://trpc.io/docs/context
+       **/
+      createContext?: NodeHTTPCreateContextFn<TRouter, TRequest, TResponse>;
+    }
+  : {
+      /**
+       * @link https://trpc.io/docs/context
+       **/
+      createContext: NodeHTTPCreateContextFn<TRouter, TRequest, TResponse>;
+    };
+
 export type NodeHTTPHandlerOptions<
   TRouter extends AnyRouter,
   TRequest extends NodeHTTPRequest,
@@ -18,19 +36,7 @@ export type NodeHTTPHandlerOptions<
 > = HTTPBaseHandlerOptions<TRouter, TRequest> & {
   teardown?: () => Promise<void>;
   maxBodySize?: number;
-} & (inferRouterContext<TRouter> extends void
-    ? {
-        /**
-         * @link https://trpc.io/docs/context
-         **/
-        createContext?: NodeHTTPCreateContextFn<TRouter, TRequest, TResponse>;
-      }
-    : {
-        /**
-         * @link https://trpc.io/docs/context
-         **/
-        createContext: NodeHTTPCreateContextFn<TRouter, TRequest, TResponse>;
-      });
+} & NodeHTTPCreateContextOption<TRouter, TRequest, TResponse>;
 
 export type NodeHTTPCreateContextFnOptions<TRequest, TResponse> = {
   req: TRequest;
