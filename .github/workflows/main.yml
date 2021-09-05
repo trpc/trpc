@@ -19,11 +19,10 @@ jobs:
         with:
           node-version: ${{ matrix.node }}
 
-      - name: Cache build
-        uses: actions/cache@v2
+      - uses: actions/upload-artifact@v2
         with:
-          path: /home/runner/work/trpc/trpc
-          key: ${{ runner.os }}-build-${{ github.sha }}
+          name: ${{ runner.os }}-build-${{ github.sha }}
+          path: .
 
       - name: Install deps and build (with cache)
         uses: bahmutov/npm-install@v1
@@ -31,12 +30,10 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     steps:
-      - name: Get build
-        uses: actions/cache@v2
+      - uses: actions/download-artifact@v2
         with:
-          path: /home/runner/work/trpc/trpc
-          key: ${{ runner.os }}-build-${{ github.sha }}
-      
+          name: ${{ runner.os }}-build-${{ github.sha }}
+          path: .
       - run: yarn test --ci --coverage --maxWorkers=2
 
       - uses: codecov/codecov-action@v1
@@ -47,10 +44,9 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     steps:
-      - name: Get build
-        uses: actions/cache@v2
+      - uses: actions/download-artifact@v2
         with:
-          path: /home/runner/work/trpc/trpc
-          key: ${{ runner.os }}-build-${{ github.sha }}
+          name: ${{ runner.os }}-build-${{ github.sha }}
+          path: .
       - run: yarn lint
       - run: yarn manypkg check
