@@ -22,7 +22,7 @@ jobs:
       - name: Cache build
         uses: actions/cache@v2
         with:
-          path: ${{env.working-directory}} 
+          path: ${{ runner.working-directory }} 
           key: ${{ runner.os }}-build-${{ github.sha }}
 
       - name: Install deps and build (with cache)
@@ -34,7 +34,7 @@ jobs:
       - name: Get build
         uses: actions/cache@v2
         with:
-          path: ${{env.working-directory}} 
+          path: ${{ runner.working-directory }} 
           key: ${{ runner.os }}-build-${{ github.sha }}
       
       - run: yarn test --ci --coverage --maxWorkers=2
@@ -50,7 +50,7 @@ jobs:
       - name: Get build
         uses: actions/cache@v2
         with:
-          path: ${{env.working-directory}} 
+          path: ${{ runner.working-directory }} 
           key: ${{ runner.os }}-build-${{ github.sha }}
       - run: yarn lint
       - run: yarn manypkg check
