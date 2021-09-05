@@ -10,8 +10,8 @@ import { AnyRouter } from '../router';
 /**
  * @deprecated use `createHTTPServer` from `@trpc/server/adapters/standalone`
  */
-
 export const createHttpServer = createHTTPServer;
+
 /**
  * @deprecated use `createHTTPHandler` from `@trpc/server/adapters/standalone`
  */
