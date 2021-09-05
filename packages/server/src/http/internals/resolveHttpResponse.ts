@@ -43,11 +43,9 @@ function getRawProcedureInputOrThrow(req: HTTPRequest) {
 export async function resolveHttpResponse<
   TRouter extends AnyRouter,
   TRequest extends HTTPRequest,
->(
-  opts: Required<ResolveHTTPRequestOptions<TRouter, TRequest>>,
-): Promise<HTTPResponse> {
+>(opts: ResolveHTTPRequestOptions<TRouter, TRequest>): Promise<HTTPResponse> {
   const { createContext, onError, router, req } = opts;
-  const batchingEnabled = opts.batching.enabled;
+  const batchingEnabled = opts.batching?.enabled ?? true;
   if (req.method === 'HEAD') {
     // can be used for lambda warmup
     return {
