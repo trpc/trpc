@@ -67,7 +67,7 @@ export async function nodeHTTPRequestHandler<
     res.statusCode = result.status;
   }
   for (const [key, value] of Object.entries(result.headers ?? {})) {
-    if (!value) {
+    if (typeof value === 'undefined') {
       continue;
     }
     res.setHeader(key, value);
