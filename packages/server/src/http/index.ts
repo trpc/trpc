@@ -5,7 +5,7 @@ import { nodeHTTPRequestHandler as requestHandlerInner } from '../adapters/node-
 
 // @deprecated delete in next major
 /**
- * @deprecated will be removed in next major
+ * @deprecated replace with `import { nodeHTTPRequestHandler } from '@trpc/server/adapters/node-http';`
  */
 export const requestHandler: typeof requestHandlerInner = requestHandlerInner;
 // @deprecated delete in next major

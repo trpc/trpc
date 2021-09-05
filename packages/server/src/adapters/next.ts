@@ -4,11 +4,11 @@ import type { NextApiHandler, NextApiRequest, NextApiResponse } from 'next';
 import { AnyRouter } from '../router';
 import { TRPCErrorResponse } from '../rpc';
 import { TRPCError } from '../TRPCError';
-import { nodeHTTPRequestHandler } from './node-http/nodeHTTPRequestHandler';
+import { nodeHTTPRequestHandler } from './node-http';
 import {
   NodeHTTPCreateContextFnOptions,
   NodeHTTPHandlerOptions,
-} from './node-http/types';
+} from './node-http';
 
 export type CreateNextContextOptions = NodeHTTPCreateContextFnOptions<
   NextApiRequest,

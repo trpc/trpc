@@ -14,7 +14,7 @@ import {
 import { Subscription } from '../subscription';
 import { CombinedDataTransformer } from '../transformer';
 import { TRPCError } from '../TRPCError';
-import { NodeHTTPCreateContextOption } from './node-http/types';
+import { NodeHTTPCreateContextOption } from './node-http';
 
 /* istanbul ignore next */
 function assertIsObject(obj: unknown): asserts obj is Record<string, unknown> {

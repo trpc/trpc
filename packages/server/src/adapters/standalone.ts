@@ -3,11 +3,11 @@
 import http from 'http';
 import url from 'url';
 import { AnyRouter } from '../router';
-import { nodeHTTPRequestHandler } from './node-http/nodeHTTPRequestHandler';
+import { nodeHTTPRequestHandler } from './node-http';
 import {
   NodeHTTPCreateContextFnOptions,
   NodeHTTPHandlerOptions,
-} from './node-http/types';
+} from './node-http';
 
 export type CreateHttpContextOptions = NodeHTTPCreateContextFnOptions<
   http.IncomingMessage,

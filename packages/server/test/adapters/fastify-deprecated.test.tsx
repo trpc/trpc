@@ -3,8 +3,8 @@ import { createTRPCClient } from '@trpc/client';
 import AbortController from 'abort-controller';
 import f from 'fastify';
 import fetch from 'node-fetch';
-import * as trpc from '../../../server/src';
-import { CreateHttpContextOptions, requestHandler } from '../../../server/src';
+import * as trpc from '../../src';
+import { CreateHttpContextOptions, requestHandler } from '../../src';
 const fetchOpts = { fetch, AbortController } as any;
 
 async function startServer() {
