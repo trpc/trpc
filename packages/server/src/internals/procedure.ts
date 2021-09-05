@@ -1,9 +1,9 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { assertNotBrowser } from './assertNotBrowser';
-import { ProcedureType } from './router';
-import { MiddlewareFunction, middlewareMarker } from './internals/middlewares';
-import { TRPCError } from './TRPCError';
-import { getErrorFromUnknown } from './internals/errors';
+import { assertNotBrowser } from '../assertNotBrowser';
+import { ProcedureType } from '../router';
+import { MiddlewareFunction, middlewareMarker } from './middlewares';
+import { TRPCError } from '../TRPCError';
+import { getErrorFromUnknown } from './errors';
 assertNotBrowser();
 
 export type ProcedureInputParserZodEsque<TInput = unknown> = {
@@ -38,6 +38,9 @@ interface ProcedureOptions<TContext, TInput, TOutput> {
   inputParser: ProcedureInputParser<TInput>;
 }
 
+/**
+ * @internal
+ */
 export interface ProcedureCallOptions<TContext> {
   ctx: TContext;
   rawInput: unknown;
@@ -84,6 +87,9 @@ async function wrapCallSafe<T>(fn: AsyncFn<T>) {
   }
 }
 
+/**
+ * @internal
+ */
 export abstract class Procedure<
   TContext = unknown,
   TInput = unknown,
@@ -114,6 +120,7 @@ export abstract class Procedure<
 
   /**
    * Trigger middlewares in order, parse raw input & call resolver
+   * @internal
    */
   public async call(opts: ProcedureCallOptions<TContext>): Promise<TOutput> {
     // wrap the actual resolver and treat as the last "middleware"
