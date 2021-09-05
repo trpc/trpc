@@ -55,7 +55,7 @@ interface ResolveHTTPRequestOptions<
   error?: Maybe<TRPCError>;
 }
 
-export async function resolveHttpResponse<
+export async function resolveHTTPResponse<
   TRouter extends AnyRouter,
   TRequest extends HTTPRequest,
 >(opts: ResolveHTTPRequestOptions<TRouter, TRequest>): Promise<HTTPResponse> {
