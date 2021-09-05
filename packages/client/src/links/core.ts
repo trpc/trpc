@@ -43,9 +43,7 @@ export interface HTTPLinkOptions {
 /**
  * @deprecated use `HTTPLinkOptions`
  */
-export interface HttpLinkOptions {
-  url: string;
-}
+export type HttpLinkOptions = HTTPLinkOptions;
 
 export type HTTPHeaders = Record<string, string | string[] | undefined>;
 export type LinkRuntimeOptions = Readonly<{
