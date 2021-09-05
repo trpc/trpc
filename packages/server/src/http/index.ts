@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { assertNotBrowser } from '../assertNotBrowser';
-import { requestHandler as requestHandlerInner } from '../adapters/node-http/requestHandler';
+import { nodeHTTPRequestHandler as requestHandlerInner } from '../adapters/node-http/nodeHTTPRequestHandler';
 
 // @deprecated delete in next major
 /**

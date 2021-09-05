@@ -23,7 +23,7 @@ type NodeHTTPRequestHandlerOptions<
   path: string;
 } & NodeHTTPHandlerOptions<TRouter, TRequest, TResponse>;
 
-export async function requestHandler<
+export async function nodeHTTPRequestHandler<
   TRouter extends AnyRouter,
   TRequest extends NodeHTTPRequest,
   TResponse extends NodeHTTPResponse,

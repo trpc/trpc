@@ -4,7 +4,7 @@ import type { NextApiHandler, NextApiRequest, NextApiResponse } from 'next';
 import { AnyRouter } from '../router';
 import { TRPCErrorResponse } from '../rpc';
 import { TRPCError } from '../TRPCError';
-import { requestHandler } from './node-http/requestHandler';
+import { nodeHTTPRequestHandler } from './node-http/nodeHTTPRequestHandler';
 import {
   NodeHTTPCreateContextFnOptions,
   NodeHTTPHandlerOptions,
@@ -51,7 +51,7 @@ export function createNextApiHandler<TRouter extends AnyRouter>(
       return;
     }
 
-    await requestHandler({
+    await nodeHTTPRequestHandler({
       ...opts,
       req,
       res,

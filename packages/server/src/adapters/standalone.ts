@@ -3,7 +3,7 @@
 import http from 'http';
 import url from 'url';
 import { AnyRouter } from '../router';
-import { requestHandler } from './node-http/requestHandler';
+import { nodeHTTPRequestHandler } from './node-http/nodeHTTPRequestHandler';
 import {
   NodeHTTPCreateContextFnOptions,
   NodeHTTPHandlerOptions,
@@ -22,7 +22,7 @@ export function createHttpHandler<TRouter extends AnyRouter>(
 ) {
   return async (req: http.IncomingMessage, res: http.ServerResponse) => {
     const endpoint = url.parse(req.url!).pathname!.substr(1);
-    await requestHandler({
+    await nodeHTTPRequestHandler({
       ...opts,
       req,
       res,

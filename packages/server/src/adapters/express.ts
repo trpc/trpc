@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import type * as express from 'express';
 import { AnyRouter } from '../router';
-import { requestHandler } from './node-http/requestHandler';
+import { nodeHTTPRequestHandler } from './node-http/nodeHTTPRequestHandler';
 import {
   NodeHTTPCreateContextFnOptions,
   NodeHTTPHandlerOptions,
@@ -18,7 +18,7 @@ export function createExpressMiddleware<TRouter extends AnyRouter>(
   return (req, res) => {
     const endpoint = req.path.substr(1);
 
-    requestHandler({
+    nodeHTTPRequestHandler({
       ...opts,
       req,
       res,
