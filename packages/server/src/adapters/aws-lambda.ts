@@ -1,13 +1,9 @@
-import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
+import type { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
 import { URLSearchParams } from 'url';
 import { resolveHTTPResponse } from '..';
-import {
-  HTTPBaseHandlerOptions,
-  HTTPHeaders,
-  HTTPRequest,
-} from '../http/internals/types';
+import { HTTPHeaders, HTTPRequest } from '../http/internals/types';
 import { AnyRouter, inferRouterContext } from '../router';
-import { NodeHTTPCreateContextFn } from './node-http';
+import type { AWSLambdaOptions } from './lambda-utils';
 function lambdaEventToHTTPRequest(event: APIGatewayProxyEvent): HTTPRequest {
   const query = new URLSearchParams();
   for (const [key, value] of Object.entries(
@@ -26,25 +22,8 @@ function lambdaEventToHTTPRequest(event: APIGatewayProxyEvent): HTTPRequest {
 }
 
 export interface CreateLambdaContextOptions {
-  req: APIGatewayProxyEvent;
+  event: APIGatewayProxyEvent;
 }
-type AWSLambdaOptions<
-  TRouter extends AnyRouter,
-  TRequest,
-> = HTTPBaseHandlerOptions<TRouter, TRequest> &
-  (inferRouterContext<TRouter> extends void
-    ? {
-        /**
-         * @link https://trpc.io/docs/context
-         **/
-        createContext?: NodeHTTPCreateContextFn<TRouter, TRequest>;
-      }
-    : {
-        /**
-         * @link https://trpc.io/docs/context
-         **/
-        createContext: NodeHTTPCreateContextFn<TRouter, TRequest>;
-      });
 
 function transformHeaders(
   headers: HTTPHeaders,
@@ -70,10 +49,7 @@ export function createApiGatewayHandler<TRouter extends AnyRouter>(
     const createContext = async function _createContext(): Promise<
       inferRouterContext<TRouter>
     > {
-      return await opts.createContext?.({
-        req: event,
-        res: undefined,
-      });
+      return await opts.createContext?.(event);
     };
 
     const response = await resolveHTTPResponse({

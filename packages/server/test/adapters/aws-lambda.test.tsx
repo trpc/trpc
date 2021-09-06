@@ -6,10 +6,10 @@ import * as trpcLambda from '../../src/adapters/aws-lambda';
 import { mockAPIGatewayProxyEvent } from './aws-lambda.utils';
 
 const createContext = async ({
-  req,
+  event,
 }: trpcLambda.CreateLambdaContextOptions) => {
   return {
-    user: req.headers['X-USER'],
+    user: event.headers['X-USER'],
   };
 };
 
