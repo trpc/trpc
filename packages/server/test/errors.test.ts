@@ -5,7 +5,7 @@ import fetch from 'node-fetch';
 import { z, ZodError } from 'zod';
 import { TRPCClientError } from '../../client/src';
 import * as trpc from '../src';
-import { OnErrorFunction } from '../src/internals/BaseHandlerOptions';
+import { OnErrorFunction } from '../src/internals/OnErrorFunction';
 import { getMessageFromUnkownError } from '../src/internals/errors';
 import { TRPCError } from '../src/TRPCError';
 import { routerToServerAndClient, waitError } from './_testHelpers';

@@ -80,10 +80,10 @@ export class Subscription<TOutput = unknown> {
         this.events.on('destroy', cancel);
       }
     } catch (
-      err
+      cause
       /* istanbul ignore next */
     ) {
-      this.emitError(getErrorFromUnknown(err));
+      this.emitError(getErrorFromUnknown(cause));
     }
   }
 

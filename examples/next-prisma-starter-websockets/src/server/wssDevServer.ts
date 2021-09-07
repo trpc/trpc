@@ -1,5 +1,5 @@
 import ws from 'ws';
-import { applyWSSHandler } from '@trpc/server/ws';
+import { applyWSSHandler } from '@trpc/server/adapters/ws';
 import { appRouter } from './routers/app';
 import { createContext } from './trpc';
 import fetch from 'node-fetch';

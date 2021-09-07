@@ -10,7 +10,7 @@ import {
 import ws from 'ws';
 import { createTRPCClient, CreateTRPCClientOptions } from '../../client/src';
 import { AnyRouter, CreateHttpHandlerOptions } from '../src';
-import { createHttpServer } from '../src/adapters/standalone';
+import { createHttpServer } from '../src';
 import { applyWSSHandler, WSSHandlerOptions } from '../src/ws';
 (global as any).fetch = fetch;
 (global as any).AbortController = AbortController;
@@ -120,9 +120,9 @@ export async function waitError<TError = Error>(
     } else {
       await fnOrPromise;
     }
-  } catch (err) {
-    expect(err).toBeInstanceOf(errorConstructor ?? Error);
-    return err as TError;
+  } catch (cause) {
+    expect(cause).toBeInstanceOf(errorConstructor ?? Error);
+    return cause as TError;
   }
   throw new Error('Function did not throw');
 }
