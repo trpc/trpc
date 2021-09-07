@@ -37,13 +37,13 @@ test('pass headers', async () => {
       url: httpUrl,
       headers() {
         return {
-          'X-Special': 'special header o/',
+          'X-Special': 'special header',
         };
       },
     });
     expect(await client.query('hello')).toMatchInlineSnapshot(`
 Object {
-  "x-special": "special header o/",
+  "x-special": "special header",
 }
 `);
   }
