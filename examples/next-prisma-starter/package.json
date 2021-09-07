@@ -29,7 +29,7 @@
     "singleQuote": true
   },
   "dependencies": {
-    "@prisma/client": "^2.18.0",
+    "@prisma/client": "^3.0.1",
     "@trpc/client": "^9.3.0",
     "@trpc/next": "^9.3.0",
     "@trpc/react": "^9.3.0",
