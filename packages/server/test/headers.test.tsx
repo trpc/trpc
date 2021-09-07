@@ -47,5 +47,20 @@ Object {
 }
 `);
   }
+  {
+    const client = createTRPCClient({
+      url: httpUrl,
+      async headers() {
+        return {
+          'X-Special': 'async special header',
+        };
+      },
+    });
+    expect(await client.query('hello')).toMatchInlineSnapshot(`
+Object {
+  "x-special": "async special header",
+}
+`);
+  }
   close();
 });
