@@ -2,11 +2,11 @@ import { AnyRouter } from '@trpc/server';
 import { TRPCClientError } from '../TRPCClientError';
 import { transformRPCResponse } from '../internals/transformRPCResponse';
 import { httpRequest } from '../internals/httpRequest';
-import { HttpLinkOptions, TRPCLink } from './core';
+import { HTTPLinkOptions, TRPCLink } from './core';
 import { TRPCAbortError } from '../internals/TRPCAbortError';
 
 export function httpLink<TRouter extends AnyRouter>(
-  opts: HttpLinkOptions,
+  opts: HTTPLinkOptions,
 ): TRPCLink<TRouter> {
   const { url } = opts;
 
@@ -38,8 +38,8 @@ export function httpLink<TRouter extends AnyRouter>(
         .then((envelope) => {
           prevOnce(transformRPCResponse({ envelope, runtime }));
         })
-        .catch((err) => {
-          prevOnce(TRPCClientError.from(err));
+        .catch((cause) => {
+          prevOnce(TRPCClientError.from(cause));
         });
     };
   };

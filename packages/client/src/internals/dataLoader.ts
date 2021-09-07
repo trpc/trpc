@@ -43,9 +43,9 @@ export function dataLoader<TKey, TValue>(fetchMany: BatchLoadFn<TKey, TValue>) {
           batchCopy.items[i].resolve(value);
         }
       })
-      .catch((error) => {
+      .catch((cause) => {
         for (const item of batchCopy.items) {
-          item.reject(error);
+          item.reject(cause);
         }
       });
   }

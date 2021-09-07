@@ -12,6 +12,18 @@ import { routerToServerAndClient, waitError } from './_testHelpers';
 import WebSocket from 'ws';
 import { waitFor } from '@testing-library/react';
 import { httpBatchLink } from '../../client/src/links/httpBatchLink';
+
+test('smoke test', async () => {
+  const { client, close } = routerToServerAndClient(
+    trpc.router().query('hello', {
+      resolve() {
+        return 'world';
+      },
+    }),
+  );
+  expect(await client.query('hello')).toBe('world');
+  close();
+});
 test('mix query and mutation', async () => {
   type Context = {};
   const r = trpc
