@@ -43,7 +43,7 @@ export interface HttpLinkOptions {
 export type HttpHeaders = Record<string, string | string[] | undefined>;
 export type LinkRuntimeOptions = Readonly<{
   transformer: DataTransformer;
-  headers: (() => HttpHeaders) | (() => Promise<HttpHeaders>);
+  headers: (() => HttpHeaders | Promise<HttpHeaders>);
   fetch: typeof fetch;
   AbortController?: typeof AbortController;
 }>;
