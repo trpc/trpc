@@ -48,7 +48,7 @@ export type CreateTRPCClientOptions<TRouter extends AnyRouter> = {
   /**
    * headers to be set on outgoing requests / callback that of said headers
    */
-  headers?: HttpHeaders | (() => HttpHeaders) | (() => Promise<HttpHeaders>);
+  headers?: HttpHeaders | (() => HttpHeaders | Promise<HttpHeaders>)
   /**
    * Data transformer
    * @link http://localhost:3000/docs/data-transformers
