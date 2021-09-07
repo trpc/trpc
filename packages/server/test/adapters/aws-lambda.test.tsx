@@ -38,6 +38,7 @@ const router = trpc
       };
     },
   });
+
 const handler = trpcLambda.createApiGatewayHandler({
   router,
   createContext,
