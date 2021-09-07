@@ -15,5 +15,8 @@
       "destination": "/docs/react-queries",
       "permanent": true
     }
-  ]
+  ],
+  "github": {
+    "silent": true
+  }
 }
