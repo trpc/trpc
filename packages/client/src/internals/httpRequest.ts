@@ -58,15 +58,18 @@ export function httpRequest<TResponseShape = TRPCResponse>(
   const promise = new Promise<TResponseShape>((resolve, reject) => {
     const url = getUrl();
 
-    rt.fetch(url, {
-      method: method[type],
-      signal: ac?.signal,
-      body: getBody(),
-      headers: {
-        'content-type': 'application/json',
-        ...rt.headers(),
-      },
-    })
+    Promise.resolve(rt.headers())
+      .then((headers) =>
+        rt.fetch(url, {
+          method: method[type],
+          signal: ac?.signal,
+          body: getBody(),
+          headers: {
+            'content-type': 'application/json',
+            ...headers,
+          },
+        }),
+      )
       .then((res) => {
         return res.json();
       })
