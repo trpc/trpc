@@ -1,6 +1,6 @@
 {
   "name": "@trpc/next",
-  "version": "9.3.0",
+  "version": "9.4.0",
   "description": "tRPC Next lib",
   "author": "KATT",
   "license": "MIT",
@@ -37,9 +37,9 @@
   },
   "dependencies": {
     "@babel/runtime": "^7.9.0",
-    "@trpc/client": "^9.3.0",
-    "@trpc/react": "^9.3.0",
-    "@trpc/server": "^9.3.0",
+    "@trpc/client": "^9.4.0",
+    "@trpc/react": "^9.4.0",
+    "@trpc/server": "^9.4.0",
     "react-ssr-prepass": "^1.4.0"
   },
   "devDependencies": {
