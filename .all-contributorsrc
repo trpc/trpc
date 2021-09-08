@@ -173,6 +173,16 @@
       "contributions": [
         "financial"
       ]
+    },
+    {
+      "login": "alaister",
+      "name": "Alaister Young",
+      "avatar_url": "https://avatars.githubusercontent.com/u/10985857?v=4",
+      "profile": "https://www.alaisteryoung.com",
+      "contributions": [
+        "code",
+        "test"
+      ]
     }
   ],
   "contributorsPerLine": 7,
