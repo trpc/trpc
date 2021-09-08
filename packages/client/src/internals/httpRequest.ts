@@ -59,11 +59,13 @@ export function httpRequest<TResponseShape = TRPCResponse>(
     const url = getUrl();
 
     rt.fetch(url, {
+      ...rt.fetchOptions,
       method: method[type],
       signal: ac?.signal,
       body: getBody(),
       headers: {
         'content-type': 'application/json',
+        ...(rt.fetchOptions.headers ?? {}),
         ...rt.headers(),
       },
     })
