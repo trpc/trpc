@@ -51,7 +51,7 @@ export type FetchFnOptions = RequestInit;
 
 export type LinkRuntimeOptions = Readonly<{
   transformer: DataTransformer;
-  headers: () => HTTPHeaders;
+  headers: () => HTTPHeaders | Promise<HTTPHeaders>;
   fetch: typeof fetch;
   fetchOptions: FetchFnOptions;
   AbortController?: typeof AbortController;
