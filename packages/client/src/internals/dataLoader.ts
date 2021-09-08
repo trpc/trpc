@@ -9,24 +9,38 @@ type BatchItem<TKey, TValue> = {
 type Batch<TKey, TValue> = {
   items: BatchItem<TKey, TValue>[];
   cancel: CancelFn;
+  dispatched: boolean;
 };
 type BatchLoadFn<TKey, TValue> = (keys: TKey[]) => {
   promise: Promise<TValue[]>;
   cancel: CancelFn;
 };
 
+interface DataLoaderOptions {
+  throttleMs?: number;
+}
+
 /**
  * Dataloader that's very inspired by https://github.com/graphql/dataloader
  * Less configuration, no caching, and allows you to cancel requests
  * When cancelling a single fetch the whole batch will be cancelled only when _all_ items are cancelled
  */
-export function dataLoader<TKey, TValue>(fetchMany: BatchLoadFn<TKey, TValue>) {
+export function dataLoader<TKey, TValue>(
+  fetchMany: BatchLoadFn<TKey, TValue>,
+  opts?: DataLoaderOptions,
+) {
+  const { throttleMs = 0 } = opts ?? {};
   let batch: Batch<TKey, TValue> | null = null;
   let dispatchTimer: NodeJS.Timer | number | null = null;
+  type TBatchItem = BatchItem<TKey, TValue>;
 
-  const destroyTimerAndBatch = () => {
+  const destroyTimer = () => {
     clearTimeout(dispatchTimer as any);
     dispatchTimer = null;
+  };
+
+  const destroyTimerAndBatch = () => {
+    destroyTimer();
     batch = null;
   };
   function dispatch() {
@@ -35,6 +49,7 @@ export function dataLoader<TKey, TValue>(fetchMany: BatchLoadFn<TKey, TValue>) {
     destroyTimerAndBatch();
     const { promise, cancel } = fetchMany(batchCopy.items.map((v) => v.key));
     batchCopy.cancel = cancel;
+    batchCopy.dispatched = true;
 
     promise
       .then((result) => {
@@ -61,20 +76,29 @@ export function dataLoader<TKey, TValue>(fetchMany: BatchLoadFn<TKey, TValue>) {
         cancel() {
           destroyTimerAndBatch();
         },
+        dispatched: false,
       };
     }
     const thisBatch = batch;
     const promise = new Promise<TValue>((resolve, reject) => {
-      const item = batchItem as any as BatchItem<TKey, TValue>;
+      const item = batchItem as any as TBatchItem;
       item.reject = reject;
       item.resolve = resolve;
       thisBatch.items.push(item);
     });
-    if (!dispatchTimer) {
-      dispatchTimer = setTimeout(dispatch);
-    }
+    destroyTimer();
+    dispatchTimer = setTimeout(dispatch, throttleMs);
     const cancel = () => {
+      if (batchItem.cancelled) {
+        // called fn twice
+        return;
+      }
       batchItem.cancelled = true;
+      if (!thisBatch.dispatched) {
+        // if it's not dispatched, simply remove it
+        const index = thisBatch.items.indexOf(batchItem as any as TBatchItem);
+        thisBatch.items.splice(index, 1);
+      }
 
       if (thisBatch.items.some((item) => !item.cancelled)) {
         // there are still things that can be resolved
@@ -88,5 +112,9 @@ export function dataLoader<TKey, TValue>(fetchMany: BatchLoadFn<TKey, TValue>) {
 
   return {
     load,
+    /**
+     * @internal
+     */
+    getBatch: () => batch,
   };
 }

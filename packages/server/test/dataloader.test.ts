@@ -87,3 +87,36 @@ test('errors', async () => {
     `[Error: Some error]`,
   );
 });
+
+test('throttle and resetting', async () => {
+  const loader = dataLoader<number, number>(
+    function fetchMany(items) {
+      const promise = Promise.resolve(items);
+
+      return { promise, cancel: () => {} };
+    },
+    {
+      throttleMs: 1,
+    },
+  );
+
+  const res1 = loader.load(1);
+  const res2 = loader.load(2);
+  const res3 = loader.load(2);
+
+  expect(loader.getBatch()?.items.length).toBe(3);
+
+  res1.cancel();
+  expect(loader.getBatch()?.items.length).toBe(2);
+
+  res2.cancel();
+  expect(loader.getBatch()?.items.length).toBe(1);
+
+  // calling it twice shouldn't have any effect
+  res2.cancel();
+  expect(loader.getBatch()?.items.length).toBe(1);
+
+  // cancelling all should reset the whole batch
+  res3.cancel();
+  expect(loader.getBatch()).toBeNull();
+});

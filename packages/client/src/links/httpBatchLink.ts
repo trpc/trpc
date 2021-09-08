@@ -7,8 +7,14 @@ import { httpRequest } from '../internals/httpRequest';
 import { HTTPLinkOptions, TRPCLink } from './core';
 import { TRPCAbortError } from '../internals/TRPCAbortError';
 
+interface HTTPBatchLinkOptions extends HTTPLinkOptions {
+  /**
+   * Throttle batch request with `N` milliseconds
+   */
+  throttleMs?: number;
+}
 export function httpBatchLink<TRouter extends AnyRouter>(
-  opts: HTTPLinkOptions,
+  opts: HTTPBatchLinkOptions,
 ): TRPCLink<TRouter> {
   const { url } = opts;
   // initialized config
@@ -37,9 +43,16 @@ export function httpBatchLink<TRouter extends AnyRouter>(
         cancel,
       };
     };
-    const query = dataLoader<Key, TRPCResponse>(fetcher('query'));
-    const mutation = dataLoader<Key, TRPCResponse>(fetcher('mutation'));
-    const subscription = dataLoader<Key, TRPCResponse>(fetcher('subscription'));
+    const query = dataLoader<Key, TRPCResponse>(fetcher('query'), {
+      throttleMs: opts.throttleMs,
+    });
+    const mutation = dataLoader<Key, TRPCResponse>(fetcher('mutation'), {
+      throttleMs: opts.throttleMs,
+    });
+    const subscription = dataLoader<Key, TRPCResponse>(
+      fetcher('subscription'),
+      { throttleMs: opts.throttleMs },
+    );
 
     const loaders = { query, subscription, mutation };
     return ({ op, prev, onDestroy }) => {
