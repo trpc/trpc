@@ -176,6 +176,7 @@ The `config`-argument is a function that returns an object that configures the t
   - `headers`: an object or a function that returns an object of outgoing tRPC requests
   - `transformer`: a transformer applied to outgoing payloads. Read more about [Data Transformers](/docs/data-transformers)
   - `fetch`: customize the implementation of `fetch` used by tRPC internally
+  - `fetchOptions`: customize the base parameters sent to `fetch()`
   - `AbortController`: customize the implementation of `AbortController` used by tRPC internally
 
 ### `ssr`-boolean (default: `false`)
