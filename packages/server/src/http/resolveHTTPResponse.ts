@@ -1,7 +1,5 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
-import url from 'url';
-import { assertNotBrowser } from '../assertNotBrowser';
-import { BaseRequest, BaseResponse } from '../internals/BaseHandlerOptions';
+import { Maybe } from '@trpc/server';
 import { callProcedure } from '../internals/callProcedure';
 import { getErrorFromUnknown } from '../internals/errors';
 import { transformTRPCResponse } from '../internals/transformTRPCResponse';
@@ -14,19 +12,12 @@ import {
 import { TRPCErrorResponse, TRPCResponse, TRPCResultResponse } from '../rpc';
 import { TRPCError } from '../TRPCError';
 import { getHTTPStatusCode } from './internals/getHTTPStatusCode';
-import { getPostBody } from './internals/getPostBody';
-import { getQueryInput } from './internals/getQueryInput';
-import { HTTPHandlerOptions } from './internals/HTTPHandlerOptions';
-
-assertNotBrowser();
-
-export type CreateContextFnOptions<TRequest, TResponse> = {
-  req: TRequest;
-  res: TResponse;
-};
-export type CreateContextFn<TRouter extends AnyRouter, TRequest, TResponse> = (
-  opts: CreateContextFnOptions<TRequest, TResponse>,
-) => inferRouterContext<TRouter> | Promise<inferRouterContext<TRouter>>;
+import {
+  HTTPHeaders,
+  HTTPRequest,
+  HTTPResponse,
+  HTTPBaseHandlerOptions,
+} from './internals/types';
 
 const HTTP_METHOD_PROCEDURE_TYPE_MAP: Record<
   string,
@@ -36,75 +27,63 @@ const HTTP_METHOD_PROCEDURE_TYPE_MAP: Record<
   POST: 'mutation',
   PATCH: 'subscription',
 };
-
-/**
- * Resolve input from request
- */
-async function getRequestParams({
-  req,
-  type,
-  maxBodySize,
-}: {
-  req: BaseRequest;
-  type: ProcedureType;
-  maxBodySize: number | undefined;
-}): Promise<{
-  input: unknown;
-}> {
-  if (type === 'query') {
-    const query = req.query ? req.query : url.parse(req.url!, true).query;
-    const input = getQueryInput(query);
-    return { input };
+function getRawProcedureInputOrThrow(req: HTTPRequest) {
+  try {
+    if (req.method === 'GET') {
+      if (!req.query.has('input')) {
+        return undefined;
+      }
+      const raw = req.query.get('input');
+      return JSON.parse(raw!);
+    }
+    return typeof req.body === 'string' ? JSON.parse(req.body) : req.body;
+  } catch (cause) {
+    throw new TRPCError({
+      code: 'PARSE_ERROR',
+      cause,
+    });
   }
-
-  const body = await getPostBody({ req, maxBodySize });
-
-  return { input: body };
 }
 
-export async function requestHandler<
+interface ResolveHTTPRequestOptions<
   TRouter extends AnyRouter,
-  TRequest extends BaseRequest,
-  TResponse extends BaseResponse,
->(
-  opts: {
-    req: TRequest;
-    res: TResponse;
-    path: string;
-  } & HTTPHandlerOptions<TRouter, TRequest, TResponse>,
-) {
-  const { req, res, createContext, teardown, onError, maxBodySize, router } =
-    opts;
+  TRequest extends HTTPRequest,
+> extends HTTPBaseHandlerOptions<TRouter, TRequest> {
+  createContext: () => Promise<inferRouterContext<TRouter>>;
+  req: TRequest;
+  path: string;
+  error?: Maybe<TRPCError>;
+}
+
+export async function resolveHTTPResponse<
+  TRouter extends AnyRouter,
+  TRequest extends HTTPRequest,
+>(opts: ResolveHTTPRequestOptions<TRouter, TRequest>): Promise<HTTPResponse> {
+  const { createContext, onError, router, req } = opts;
   const batchingEnabled = opts.batching?.enabled ?? true;
   if (req.method === 'HEAD') {
     // can be used for lambda warmup
-    res.statusCode = 204;
-    res.end();
-    return;
+    return {
+      status: 204,
+    };
   }
   const type =
-    HTTP_METHOD_PROCEDURE_TYPE_MAP[req.method!] ?? ('unknown' as const);
+    HTTP_METHOD_PROCEDURE_TYPE_MAP[req.method] ?? ('unknown' as const);
   let ctx: inferRouterContext<TRouter> | undefined = undefined;
   let paths: string[] | undefined = undefined;
 
-  const reqQueryParams = req.query
-    ? req.query
-    : url.parse(req.url!, true).query;
-  const isBatchCall = reqQueryParams.batch;
+  const isBatchCall = !!req.query.get('batch');
   type TRouterError = inferRouterError<TRouter>;
   type TRouterResponse = TRPCResponse<unknown, TRouterError>;
 
   function endResponse(
     untransformedJSON: TRouterResponse | TRouterResponse[],
     errors: TRPCError[],
-  ) {
-    if (!res.statusCode || res.statusCode === 200) {
-      // only override statusCode if not already set
-      // node defaults to be `200` in the `http` package
-      res.statusCode = getHTTPStatusCode(untransformedJSON);
-    }
-
-    res.setHeader('Content-Type', 'application/json');
+  ): HTTPResponse {
+    let status = getHTTPStatusCode(untransformedJSON);
+    const headers: HTTPHeaders = {
+      'Content-Type': 'application/json',
+    };
 
     const meta =
       opts.responseMeta?.({
@@ -118,22 +97,27 @@ export async function requestHandler<
       }) ?? {};
 
     for (const [key, value] of Object.entries(meta.headers ?? {})) {
-      if (typeof value !== 'string') {
-        continue;
-      }
-
-      res.setHeader(key, value);
+      headers[key] = value;
     }
     if (meta.status) {
-      res.statusCode = meta.status;
+      status = meta.status;
     }
 
     const transformedJSON = transformTRPCResponse(router, untransformedJSON);
 
-    res.end(JSON.stringify(transformedJSON));
+    const body = JSON.stringify(transformedJSON);
+
+    return {
+      body,
+      status,
+      headers,
+    };
   }
 
   try {
+    if (opts.error) {
+      throw opts.error;
+    }
     if (isBatchCall && !batchingEnabled) {
       throw new Error(`Batching is not enabled on the server`);
     }
@@ -143,14 +127,10 @@ export async function requestHandler<
         code: 'METHOD_NOT_SUPPORTED',
       });
     }
-    const { input: rawInput } = await getRequestParams({
-      maxBodySize,
-      req,
-      type,
-    });
+    const rawInput = getRawProcedureInputOrThrow(req);
 
     paths = isBatchCall ? opts.path.split(',') : [opts.path];
-    ctx = await createContext?.({ req, res });
+    ctx = await createContext();
 
     const deserializeInputValue = (rawValue: unknown) => {
       return typeof rawValue !== 'undefined'
@@ -186,6 +166,7 @@ export async function requestHandler<
       return input;
     };
     const inputs = getInputs();
+
     const rawResults = await Promise.all(
       paths.map(async (path, index) => {
         const input = inputs[index];
@@ -202,8 +183,8 @@ export async function requestHandler<
             path,
             data: output,
           };
-        } catch (_err) {
-          const error = getErrorFromUnknown(_err);
+        } catch (cause) {
+          const error = getErrorFromUnknown(cause);
 
           onError?.({ error, path, input, ctx, type: type, req });
           return {
@@ -243,14 +224,14 @@ export async function requestHandler<
     });
 
     const result = isBatchCall ? resultEnvelopes : resultEnvelopes[0];
-    endResponse(result, errors);
-  } catch (_err) {
+    return endResponse(result, errors);
+  } catch (cause) {
     // we get here if
     // - batching is called when it's not enabled
     // - `createContext()` throws
     // - post body is too large
     // - input deserialization fails
-    const error = getErrorFromUnknown(_err);
+    const error = getErrorFromUnknown(cause);
 
     const json: TRPCErrorResponse<TRouterError> = {
       id: null,
@@ -270,7 +251,6 @@ export async function requestHandler<
       type: type,
       req,
     });
-    endResponse(json, [error]);
+    return endResponse(json, [error]);
   }
-  await teardown?.();
 }

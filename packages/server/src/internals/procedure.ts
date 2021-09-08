@@ -4,6 +4,7 @@ import { ProcedureType } from '../router';
 import { MiddlewareFunction, middlewareMarker } from './middlewares';
 import { TRPCError } from '../TRPCError';
 import { getErrorFromUnknown } from './errors';
+import { wrapCallSafe } from './wrapCallSafe';
 assertNotBrowser();
 
 export type ProcedureInputParserZodEsque<TInput = unknown> = {
@@ -65,26 +66,6 @@ function getParseFn<TInput>(
   }
 
   throw new Error('Could not find a validator fn');
-}
-
-type AsyncFn<T> = () => Promise<T> | T;
-/**
- * Wrap a function in a safe wrapper that never throws
- * Returns a discriminated union
- */
-async function wrapCallSafe<T>(fn: AsyncFn<T>) {
-  try {
-    const data = await fn();
-    return {
-      ok: true as const,
-      data,
-    };
-  } catch (error: unknown) {
-    return {
-      ok: false as const,
-      error,
-    };
-  }
 }
 
 /**

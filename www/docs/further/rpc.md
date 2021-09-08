@@ -31,7 +31,7 @@ trpc
   .router<Context>()
   .query('postById', {
     input: String,
-    resolve({ input, ctx }) {
+    async resolve({ input, ctx }) {
       const post = await ctx.post.findUnique({
         where: { id: input },
       });
@@ -40,7 +40,7 @@ trpc
   })
   .query('relatedPosts', {
     input: String,
-    resolve({ ctx, input }) {
+    async resolve({ ctx, input }) {
       const posts = await ctx.findRelatedPostsById(input)
       return posts;
     },
