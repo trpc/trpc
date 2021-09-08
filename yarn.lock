@@ -2492,10 +2492,10 @@
   resolved "https://registry.npmjs.org/@panva/asn1.js/-/asn1.js-1.0.0.tgz#dd55ae7b8129e02049f009408b97c61ccf9032f6"
   integrity sha512-UdkG3mLEqXgnlKsWanWcgb6dOjUzJ+XC5f+aWw30qrtjxeNUSfKX1cd5FBzOaXQumoe9nIqeZUvrRJS03HCCtw==
 
-"@preconstruct/cli@^2.1.1":
-  version "2.1.1"
-  resolved "https://registry.npmjs.org/@preconstruct/cli/-/cli-2.1.1.tgz#3c43c5e730b58010b0a15b280b385395145e8090"
-  integrity sha512-RTKDx/fmRGt8G2OlbFN/J37Bq49LXbEDCdMTypUWrRC3uj/fcrKaDjKSjXl/oos0youkZoB31M+t5ZjJsZhY1w==
+"@preconstruct/cli@^2.1.2":
+  version "2.1.2"
+  resolved "https://registry.npmjs.org/@preconstruct/cli/-/cli-2.1.2.tgz#27384ac0240826b0d031c3d34f6435927dccd756"
+  integrity sha512-N/yi1Dy50lcABos+saLk1/FPw+RjShhuSKasPKqaWM01Kr5Wbqj4VQR8S+12nfkoSXCe/UNI8/MUbmeHlwhPHw==
   dependencies:
     "@babel/code-frame" "^7.5.5"
     "@babel/core" "^7.7.7"
