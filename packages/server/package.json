@@ -38,7 +38,8 @@
     "dist",
     "adapters",
     "ws",
-    "rpc"
+    "rpc",
+    "src"
   ],
   "publishConfig": {
     "access": "public"

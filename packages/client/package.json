@@ -27,7 +27,8 @@
   "files": [
     "README.md",
     "dist",
-    "links"
+    "links",
+    "src"
   ],
   "dependencies": {
     "@babel/runtime": "^7.9.0",
