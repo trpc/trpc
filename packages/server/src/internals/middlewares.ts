@@ -27,36 +27,12 @@ export type MiddlewareResult<TContext> =
   | MiddlewareOKResult<TContext>
   | MiddlewareErrorResult<TContext>;
 
-export interface MiddlewareFunctionOptionsBase<TContext> {
-  ctx: TContext;
+export type MiddlewareFunction<TInputContext, TContext> = (opts: {
+  ctx: TInputContext;
   type: ProcedureType;
   path: string;
-}
-
-export interface MiddlewareFunctionKeepContextOptions<TContext>
-  extends MiddlewareFunctionOptionsBase<TContext> {
-  next: Promise<MiddlewareResult<TContext>>;
-}
-export interface NextWithContextOptions<TNewContext> {
-  ctx: TNewContext;
-}
-export interface MiddlewareFunctionNewContextOptions<TContext, TNewContext>
-  extends MiddlewareFunctionOptionsBase<TContext> {
-  next: (
-    opts: NextWithContextOptions<TNewContext>,
-  ) => Promise<MiddlewareResult<TNewContext>>;
-}
-
-export type MiddlewareFunctionKeepContext<TContext> = (opts: {
-  ctx: TContext;
-  type: ProcedureType;
-  path: string;
-  next: () => Promise<MiddlewareResult<TContext>>;
+  next: {
+    (): Promise<MiddlewareResult<TInputContext>>;
+    <T>(opts: { ctx: T }): Promise<MiddlewareResult<T>>;
+  };
 }) => Promise<MiddlewareResult<TContext>>;
-
-export type MiddlewareFunctionWithNewContext<TContext, TNewContext> = (opts: {
-  ctx: TContext;
-  type: ProcedureType;
-  path: string;
-  next: (opts: { ctx: TNewContext }) => Promise<MiddlewareResult<TNewContext>>;
-}) => Promise<MiddlewareResult<TNewContext>>;

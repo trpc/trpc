@@ -219,7 +219,7 @@ test('async hooks', async () => {
     trpc
       .router()
       .middleware((opts) => {
-        return new Promise((resolve, reject) => {
+        return new Promise<MiddlewareResult<unknown>>((resolve, reject) => {
           storage.run({ requestId: ++requestCount }, async () => {
             opts.next().then(resolve, reject);
           });
@@ -357,7 +357,7 @@ test('middleware throwing should return a union', async () => {
       Object.setPrototypeOf(this, CustomError.prototype);
     }
   }
-  const fn = jest.fn((res: MiddlewareResult) => {
+  const fn = jest.fn((res: MiddlewareResult<unknown>) => {
     return res;
   });
   const { client, close } = routerToServerAndClient(
@@ -400,77 +400,49 @@ test('mutate context in middleware', async () => {
     id: string;
   };
   type OriginalContext = {
-    user?: User;
+    maybeUser?: User;
   };
   const { client, close } = routerToServerAndClient(
     trpc
       .router<OriginalContext>()
-      .middlewareSwapContext(async function firstMiddleware({ next, ctx }) {
-        if (!ctx.user) {
+      .middleware(async function firstMiddleware({ next }) {
+        return next();
+      })
+      .query('isAuthorized', {
+        resolve({ ctx }) {
+          return Boolean(ctx.maybeUser);
+        },
+      })
+      .middleware(async function secondMiddleware({ next, ctx }) {
+        if (!ctx.maybeUser) {
           throw new TRPCError({ code: 'UNAUTHORIZED' });
         }
         const newContext = {
-          user: ctx.user,
+          user: ctx.maybeUser,
         };
         const result = await next({ ctx: newContext });
         return result;
       })
-      .query('test', {
-        resolve({ ctx }) {
-          // should have asserted that `ctx.user` is not nullable
-          expectTypeOf(ctx).toMatchTypeOf<{ user: User }>();
-          return 'test';
-        },
-      }),
-    {
-      server: {
-        createContext() {
-          return {
-            user: {
-              id: 'alexdotjs',
-            },
-          };
-        },
-      },
-    },
-  );
-
-  expect(await client.query('test')).toMatchInlineSnapshot(`"test"`);
-
-  close();
-});
-
-test('swapContext', async () => {
-  type User = {
-    id: string;
-  };
-  type OriginalContext = {
-    user?: User;
-  };
-  const { client, close } = routerToServerAndClient(
-    trpc
-      .router<OriginalContext>()
-      .swapContext(async function ({ ctx }) {
-        if (!ctx.user) {
-          throw new TRPCError({ code: 'UNAUTHORIZED' });
-        }
-        const newContext = {
-          user: ctx.user,
-        };
-        return newContext;
+      .middleware(async function thirdMiddleware({ next, ctx }) {
+        return next({
+          ctx: {
+            ...ctx,
+            email: ctx.user.id.includes('@'),
+          },
+        });
       })
       .query('test', {
         resolve({ ctx }) {
           // should have asserted that `ctx.user` is not nullable
-          expectTypeOf(ctx).toMatchTypeOf<{ user: User }>();
-          return 'test';
+          expectTypeOf(ctx).toEqualTypeOf<{ user: User; email: boolean }>();
+          return `id: ${ctx.user.id}, email: ${ctx.email}`;
         },
       }),
     {
       server: {
         createContext() {
           return {
-            user: {
+            maybeUser: {
               id: 'alexdotjs',
             },
           };
@@ -479,7 +451,10 @@ test('swapContext', async () => {
     },
   );
 
-  expect(await client.query('test')).toMatchInlineSnapshot(`"test"`);
+  expect(await client.query('isAuthorized')).toBe(true);
+  expect(await client.query('test')).toMatchInlineSnapshot(
+    `"id: alexdotjs, email: false"`,
+  );
 
   close();
 });
