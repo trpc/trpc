@@ -2,7 +2,7 @@
 import { AsyncLocalStorage } from 'async_hooks';
 import { expectTypeOf } from 'expect-type';
 import * as trpc from '../src';
-import { TRPCError } from '../src';
+import { TRPCError, inferProcedureOutput } from '../src';
 import { MiddlewareResult } from '../src/internals/middlewares';
 import { routerToServerAndClient } from './_testHelpers';
 
@@ -491,4 +491,50 @@ test('mutate context in middleware', async () => {
   );
 
   close();
+});
+
+test('mutate context and combine with other routes', async () => {
+  type User = {
+    id: number;
+  };
+  type Context = {
+    maybeUser?: User;
+  };
+  function createRouter() {
+    return trpc.router<Context>();
+  }
+
+  const authorizedRouter = createRouter()
+    .middleware(({ ctx, next }) => {
+      if (!ctx.maybeUser) {
+        throw new TRPCError({ code: 'UNAUTHORIZED' });
+      }
+      return next({
+        ctx: {
+          user: ctx.maybeUser,
+        },
+      });
+    })
+    .query('me', {
+      resolve({ ctx }) {
+        return ctx.user;
+      },
+    });
+
+  const appRouter = createRouter()
+    .merge('authed.', authorizedRouter)
+    .query('someQuery', {
+      resolve({ ctx }) {
+        expectTypeOf(ctx).toMatchTypeOf<Context>();
+      },
+    });
+
+  type AppRouter = typeof appRouter;
+
+  type MeResponse = inferProcedureOutput<
+    AppRouter['_def']['queries']['authed.me']
+  >;
+
+  const meResponse = null as MeResponse;
+  expectTypeOf(meResponse).toMatchTypeOf<User>();
 });
