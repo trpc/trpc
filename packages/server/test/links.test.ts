@@ -24,6 +24,7 @@ const mockRuntime: LinkRuntimeOptions = {
   fetch: fetch as any,
   AbortController: AbortController as any,
   headers: () => ({}),
+  fetchOptions: {},
 };
 test('retrylink', () => {
   let attempts = 0;
