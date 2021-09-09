@@ -46,14 +46,10 @@ export interface HTTPLinkOptions {
 export type HttpLinkOptions = HTTPLinkOptions;
 
 export type HTTPHeaders = Record<string, string | string[] | undefined>;
-
-export type FetchFnOptions = RequestInit;
-
 export type LinkRuntimeOptions = Readonly<{
   transformer: DataTransformer;
   headers: () => HTTPHeaders | Promise<HTTPHeaders>;
   fetch: typeof fetch;
-  fetchOptions: FetchFnOptions;
   AbortController?: typeof AbortController;
 }>;
 
