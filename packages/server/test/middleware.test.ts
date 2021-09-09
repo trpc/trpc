@@ -395,6 +395,43 @@ test('middleware throwing should return a union', async () => {
   close();
 });
 
+test('omitting ctx in next() does not affect the actual ctx', async () => {
+  type User = {
+    id: string;
+  };
+  type OriginalContext = {
+    maybeUser?: User;
+  };
+  const { client, close } = routerToServerAndClient(
+    trpc
+      .router<OriginalContext>()
+      .middleware(async function firstMiddleware({ next }) {
+        return next();
+      })
+      .query('test', {
+        resolve({ ctx }) {
+          expectTypeOf(ctx).toEqualTypeOf<OriginalContext>();
+          return ctx.maybeUser?.id;
+        },
+      }),
+    {
+      server: {
+        createContext() {
+          return {
+            maybeUser: {
+              id: 'alexdotjs',
+            },
+          };
+        },
+      },
+    },
+  );
+
+  expect(await client.query('test')).toMatchInlineSnapshot(`"alexdotjs"`);
+
+  close();
+});
+
 test('mutate context in middleware', async () => {
   type User = {
     id: string;
