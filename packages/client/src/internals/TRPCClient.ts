@@ -19,6 +19,7 @@ import {
   OperationContext,
   OperationLink,
   TRPCLink,
+  FetchFnOptions,
 } from '../links/core';
 import { httpBatchLink } from '../links/httpBatchLink';
 import { TRPCClientError } from '../TRPCClientError';
@@ -27,12 +28,15 @@ type CancellablePromise<T = unknown> = Promise<T> & {
   cancel: CancelFn;
 };
 
+/**
+ * @deprecated no longer used
+ */
 export interface FetchOptions {
   fetch?: typeof fetch;
   AbortController?: typeof AbortController;
 }
 let idCounter = 0;
-export function getRequestId() {
+function getRequestId() {
   return ++idCounter;
 }
 
@@ -41,6 +45,11 @@ export type CreateTRPCClientOptions<TRouter extends AnyRouter> = {
    * Add ponyfill for fetch
    */
   fetch?: typeof fetch;
+  /**
+   * Add options to fetch
+   * @example { credentials: 'include' }
+   */
+  fetchOptions?: FetchFnOptions;
   /**
    * add ponyfill for AbortController
    */
@@ -106,6 +115,7 @@ export class TRPCClient<TRouter extends AnyRouter> {
       transformer,
       AbortController: AC as any,
       fetch: _fetch as any,
+      fetchOptions: opts.fetchOptions ?? {},
       headers: getHeadersFn(),
     };
 

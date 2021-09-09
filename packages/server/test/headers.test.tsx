@@ -27,12 +27,14 @@ test('pass headers', async () => {
     },
   );
   {
+    // no headers sent
     const client = createTRPCClient({
       url: httpUrl,
     });
     expect(await client.query('hello')).toMatchInlineSnapshot(`Object {}`);
   }
   {
+    // custom header sent
     const client = createTRPCClient({
       url: httpUrl,
       headers() {
@@ -47,18 +49,35 @@ Object {
 }
 `);
   }
+
   {
+    // async headers
     const client = createTRPCClient({
       url: httpUrl,
       async headers() {
-        return {
-          'X-Special': 'async special header',
-        };
+        return { 'X-Special': 'async special header' };
       },
     });
     expect(await client.query('hello')).toMatchInlineSnapshot(`
 Object {
   "x-special": "async special header",
+}
+`);
+  }
+
+  {
+    // header sent through `fetchOptions`
+    const client = createTRPCClient({
+      url: httpUrl,
+      fetchOptions: {
+        headers: {
+          'x-special': 'fetchOptions.headers',
+        },
+      },
+    });
+    expect(await client.query('hello')).toMatchInlineSnapshot(`
+Object {
+  "x-special": "fetchOptions.headers",
 }
 `);
   }
