@@ -1,22 +1,14 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 /* eslint-disable @typescript-eslint/no-empty-function */
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import fetch from 'node-fetch';
 import { z, ZodError } from 'zod';
 import { TRPCClientError } from '../../client/src';
 import * as trpc from '../src';
-import { AnyRouter } from '../src';
-import { OnErrorFunction } from '../src/internals/BaseHandlerOptions';
+import { OnErrorFunction } from '../src/internals/OnErrorFunction';
 import { getMessageFromUnkownError } from '../src/internals/errors';
 import { TRPCError } from '../src/TRPCError';
 import { routerToServerAndClient, waitError } from './_testHelpers';
-
-function assertClientError(
-  err: unknown,
-): asserts err is TRPCClientError<AnyRouter> {
-  if (!(err instanceof TRPCClientError)) {
-    throw new Error('Did not throw');
-  }
-}
 
 test('basic', async () => {
   class MyError extends Error {
@@ -38,15 +30,7 @@ test('basic', async () => {
       },
     },
   );
-  let clientError: Error | null = null;
-  try {
-    await client.query('err');
-  } catch (_err) {
-    clientError = _err;
-  }
-  if (!(clientError instanceof TRPCClientError)) {
-    throw new Error('Did not throw');
-  }
+  const clientError = await waitError(client.query('err'), TRPCClientError);
   expect(clientError.shape.message).toMatchInlineSnapshot(`"woop"`);
   expect(clientError.shape.code).toMatchInlineSnapshot(`-32603`);
 
@@ -58,6 +42,7 @@ test('basic', async () => {
     throw new Error('Wrong error');
   }
   expect(serverError.originalError).toBeInstanceOf(MyError);
+  expect(serverError.cause).toBeInstanceOf(MyError);
 
   close();
 });
@@ -77,15 +62,10 @@ test('input error', async () => {
       },
     },
   );
-  let clientError: Error | null = null;
-  try {
-    await client.mutation('err', 1 as any);
-  } catch (_err) {
-    clientError = _err;
-  }
-  if (!(clientError instanceof TRPCClientError)) {
-    throw new Error('Did not throw');
-  }
+  const clientError = await waitError(
+    client.mutation('err', 1 as any),
+    TRPCClientError,
+  );
   expect(clientError.shape.message).toMatchInlineSnapshot(`
     "[
       {
@@ -107,6 +87,7 @@ test('input error', async () => {
   //   throw new Error('Wrong error');
   // }
   expect(serverError.originalError).toBeInstanceOf(ZodError);
+  expect(serverError.cause).toBeInstanceOf(ZodError);
 
   close();
 });
@@ -125,15 +106,7 @@ test('unauthorized()', async () => {
       },
     },
   );
-  let clientError: Error | null = null;
-  try {
-    await client.query('err');
-  } catch (_err) {
-    clientError = _err;
-  }
-  if (!(clientError instanceof TRPCClientError)) {
-    throw new Error('Did not throw');
-  }
+  const clientError = await waitError(client.query('err'), TRPCClientError);
   expect(clientError).toMatchInlineSnapshot(`[TRPCClientError: UNAUTHORIZED]`);
   expect(onError).toHaveBeenCalledTimes(1);
   const serverError = onError.mock.calls[0][0].error;
@@ -154,16 +127,18 @@ describe('formatError()', () => {
     const { client, close } = routerToServerAndClient(
       trpc
         .router()
-        .formatError(({ error }) => {
+        .formatError(({ error, shape }) => {
           if (error.originalError instanceof ZodError) {
             return {
-              type: 'zod' as const,
-              errors: error.originalError.errors,
+              ...shape,
+              data: {
+                ...shape.data,
+                type: 'zod' as const,
+                errors: error.originalError.errors,
+              },
             };
           }
-          return {
-            type: 'standard' as const,
-          };
+          return shape;
         })
         .mutation('err', {
           input: z.string(),
@@ -177,27 +152,57 @@ describe('formatError()', () => {
         },
       },
     );
-    let clientError: Error | null = null;
-    try {
-      await client.mutation('err', 1 as any);
-    } catch (_err) {
-      clientError = _err;
-    }
-    assertClientError(clientError);
+    const clientError = await waitError(
+      client.mutation('err', 1 as any),
+      TRPCClientError,
+    );
+    delete (clientError.data as any).stack;
+    expect(clientError.data).toMatchInlineSnapshot(`
+Object {
+  "code": "BAD_REQUEST",
+  "errors": Array [
+    Object {
+      "code": "invalid_type",
+      "expected": "string",
+      "message": "Expected string, received number",
+      "path": Array [],
+      "received": "number",
+    },
+  ],
+  "httpStatus": 400,
+  "path": "err",
+  "type": "zod",
+}
+`);
     expect(clientError.shape).toMatchInlineSnapshot(`
+Object {
+  "code": -32600,
+  "data": Object {
+    "code": "BAD_REQUEST",
+    "errors": Array [
       Object {
-        "errors": Array [
-          Object {
-            "code": "invalid_type",
-            "expected": "string",
-            "message": "Expected string, received number",
-            "path": Array [],
-            "received": "number",
-          },
-        ],
-        "type": "zod",
-      }
-    `);
+        "code": "invalid_type",
+        "expected": "string",
+        "message": "Expected string, received number",
+        "path": Array [],
+        "received": "number",
+      },
+    ],
+    "httpStatus": 400,
+    "path": "err",
+    "type": "zod",
+  },
+  "message": "[
+  {
+    \\"code\\": \\"invalid_type\\",
+    \\"expected\\": \\"string\\",
+    \\"received\\": \\"number\\",
+    \\"path\\": [],
+    \\"message\\": \\"Expected string, received number\\"
+  }
+]",
+}
+`);
     expect(onError).toHaveBeenCalledTimes(1);
     const serverError = onError.mock.calls[0][0].error;
 
@@ -211,14 +216,81 @@ describe('formatError()', () => {
       trpc
         .router()
         .formatError(({ shape }) => {
-          return { shape };
+          return shape;
         })
         .formatError(({ shape }) => {
-          return { shape };
+          return shape;
         });
     }).toThrowErrorMatchingInlineSnapshot(
       `"You seem to have double \`formatError()\`-calls in your router tree"`,
     );
+  });
+  test('setting custom http response code', async () => {
+    const TEAPOT_ERROR_CODE = 418;
+    const onError = jest.fn();
+    const { close, httpUrl } = routerToServerAndClient(
+      trpc
+        .router()
+        .formatError(({ error, shape }) => {
+          if (!(error.originalError instanceof ZodError)) {
+            return shape;
+          }
+          return {
+            ...shape,
+            data: {
+              ...shape.data,
+              httpStatus: TEAPOT_ERROR_CODE,
+            },
+          };
+        })
+        .query('q', {
+          input: z.string(),
+          resolve() {
+            return null;
+          },
+        }),
+      {
+        server: {
+          onError,
+        },
+      },
+    );
+    const res = await fetch(`${httpUrl}/q`);
+
+    expect(res.ok).toBeFalsy();
+    expect(res.status).toBe(TEAPOT_ERROR_CODE);
+
+    close();
+  });
+
+  test('do not override response status set by middleware or resolver', async () => {
+    const TEAPOT_ERROR_CODE = 418;
+    const onError = jest.fn();
+    const { close, httpUrl } = routerToServerAndClient(
+      trpc
+        .router<trpc.CreateHttpContextOptions>()
+        .middleware(({ ctx }) => {
+          ctx.res.statusCode = TEAPOT_ERROR_CODE;
+          throw new Error('Some error');
+        })
+        .query('q', {
+          input: z.string(),
+          resolve() {
+            return null;
+          },
+        }),
+      {
+        server: {
+          onError,
+        },
+      },
+    );
+    const res = await fetch(`${httpUrl}/q`);
+
+    expect(res.ok).toBeFalsy();
+    expect(res.status).toBe(TEAPOT_ERROR_CODE);
+
+    close();
   });
 });
 
@@ -236,13 +308,10 @@ test('make sure object is ignoring prototype', async () => {
       },
     },
   );
-  let clientError: Error | null = null;
-  try {
-    await client.query('toString' as any);
-  } catch (_err) {
-    clientError = _err;
-  }
-  assertClientError(clientError);
+  const clientError = await waitError(
+    client.query('toString' as any),
+    TRPCClientError,
+  );
   expect(clientError.shape.message).toMatchInlineSnapshot(
     `"No \\"query\\"-procedure on path \\"toString\\""`,
   );

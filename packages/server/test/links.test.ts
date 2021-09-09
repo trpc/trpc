@@ -165,7 +165,6 @@ describe('batching', () => {
         server: {
           createContext() {
             contextCall();
-            return {};
           },
           batching: {
             enabled: true,

@@ -10,7 +10,7 @@ import {
 import ws from 'ws';
 import { createTRPCClient, CreateTRPCClientOptions } from '../../client/src';
 import { AnyRouter, CreateHttpHandlerOptions } from '../src';
-import { createHttpServer } from '../src/adapters/standalone';
+import { createHttpServer } from '../src';
 import { applyWSSHandler, WSSHandlerOptions } from '../src/ws';
 (global as any).fetch = fetch;
 (global as any).AbortController = AbortController;
@@ -36,7 +36,7 @@ export function routerToServerAndClient<TRouter extends AnyRouter>(
   // http
   const httpServer = createHttpServer({
     router,
-    createContext: () => ({}),
+    createContext: ({ req, res }) => ({ req, res }),
     ...(opts?.server ?? {
       batching: {
         enabled: true,
@@ -52,8 +52,8 @@ export function routerToServerAndClient<TRouter extends AnyRouter>(
   const applyWSSHandlerOpts: WSSHandlerOptions<TRouter> = {
     wss,
     router,
-    createContext: () => ({}),
-    ...(opts?.wssServer ?? {}),
+    createContext: ({ req, res }) => ({ req, res }),
+    ...((opts?.wssServer as any) ?? {}),
   };
   const wssHandler = applyWSSHandler(applyWSSHandlerOpts);
   const wssUrl = `ws://localhost:${wssPort}`;
@@ -101,14 +101,28 @@ export async function waitMs(ms: number) {
   await new Promise<void>((resolve) => setTimeout(resolve, ms));
 }
 
-export async function waitError(
-  fn: () => Promise<unknown> | unknown,
-): Promise<Error> {
+type Constructor<T extends {} = {}> = new (...args: any[]) => T;
+
+export async function waitError<TError = Error>(
+  /**
+   * Function callback or promise that you expect will throw
+   */
+  fnOrPromise: (() => Promise<unknown> | unknown) | Promise<unknown>,
+  /**
+   * Force error constructor to be of specific type
+   * @default Error
+   **/
+  errorConstructor?: Constructor<TError>,
+): Promise<TError> {
   try {
-    await fn();
-  } catch (err) {
-    expect(err).toBeInstanceOf(Error);
-    return err;
+    if (typeof fnOrPromise === 'function') {
+      await fnOrPromise();
+    } else {
+      await fnOrPromise;
+    }
+  } catch (cause) {
+    expect(cause).toBeInstanceOf(errorConstructor ?? Error);
+    return cause as TError;
   }
   throw new Error('Function did not throw');
 }

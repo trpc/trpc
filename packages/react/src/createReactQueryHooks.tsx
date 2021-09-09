@@ -2,7 +2,7 @@ import {
   createTRPCClient,
   CreateTRPCClientOptions,
   TRPCClient,
-  TRPCClientError,
+  TRPCClientErrorLike,
   TRPCRequestOptions,
 } from '@trpc/client';
 import type {
@@ -71,7 +71,7 @@ export function createReactQueryHooks<TRouter extends AnyRouter>() {
   type TQueries = TRouter['_def']['queries'];
   type TMutations = TRouter['_def']['mutations'];
   type TSubscriptions = TRouter['_def']['subscriptions'];
-  type TError = TRPCClientError<TRouter>;
+  type TError = TRPCClientErrorLike<TRouter>;
 
   type ProviderContext = TRPCContextState<TRouter>;
   const Context = TRPCContext as React.Context<ProviderContext>;
@@ -118,8 +118,13 @@ export function createReactQueryHooks<TRouter extends AnyRouter>() {
 
               return queryClient.fetchInfiniteQuery(
                 cacheKey,
-                () =>
-                  (client as any).query(...getArgs(pathAndInput, opts)) as any,
+                ({ pageParam }) => {
+                  const [path, input] = pathAndInput;
+                  const actualInput = { ...(input as any), cursor: pageParam };
+                  return (client as any).query(
+                    ...getArgs([path, actualInput], opts),
+                  );
+                },
                 opts,
               );
             },
@@ -146,8 +151,13 @@ export function createReactQueryHooks<TRouter extends AnyRouter>() {
 
               return queryClient.prefetchInfiniteQuery(
                 cacheKey,
-                () =>
-                  (client as any).query(...getArgs(pathAndInput, opts)) as any,
+                ({ pageParam }) => {
+                  const [path, input] = pathAndInput;
+                  const actualInput = { ...(input as any), cursor: pageParam };
+                  return (client as any).query(
+                    ...getArgs([path, actualInput], opts),
+                  );
+                },
                 opts,
               );
             },
@@ -210,7 +220,7 @@ export function createReactQueryHooks<TRouter extends AnyRouter>() {
     >,
   ): UseQueryResult<TOutput, TError> {
     const cacheKey = getCacheKey(pathAndInput, CACHE_KEY_QUERY);
-    const { client, isPrepass, queryClient, fetchQuery } = useContext();
+    const { client, isPrepass, queryClient, prefetchQuery } = useContext();
 
     if (
       typeof window === 'undefined' &&
@@ -219,7 +229,7 @@ export function createReactQueryHooks<TRouter extends AnyRouter>() {
       opts?.enabled !== false &&
       !queryClient.getQueryCache().find(cacheKey)
     ) {
-      fetchQuery(pathAndInput, opts as any);
+      prefetchQuery(pathAndInput, opts as any);
     }
     const query = useQuery(
       cacheKey,
@@ -303,7 +313,8 @@ export function createReactQueryHooks<TRouter extends AnyRouter>() {
     // FIXME: this typing is wrong but it works
     opts?: UseTRPCInfiniteQueryOptions<TOutput, TError, TOutput>,
   ) {
-    const { client, isPrepass, fetchInfiniteQuery, queryClient } = useContext();
+    const { client, isPrepass, prefetchInfiniteQuery, queryClient } =
+      useContext();
     const cacheKey = getCacheKey(pathAndInput, CACHE_KEY_INFINITE_QUERY);
     const [path, input] = pathAndInput;
 
@@ -314,13 +325,13 @@ export function createReactQueryHooks<TRouter extends AnyRouter>() {
       opts?.enabled !== false &&
       !queryClient.getQueryCache().find(cacheKey)
     ) {
-      fetchInfiniteQuery(pathAndInput as any, opts as any);
+      prefetchInfiniteQuery(pathAndInput as any, opts as any);
     }
     const query = useInfiniteQuery(
       cacheKey,
       ({ pageParam }) => {
         const actualInput = { ...input, cursor: pageParam };
-        return (client.query as any)(path, actualInput);
+        return (client as any).query(...getArgs([path, actualInput], opts));
       },
       opts,
     );

@@ -26,6 +26,11 @@
   text-decoration: underline;
 }
 
+.heroBanner figcaption code {
+  background-color: var(--ifm-color-darkest);
+  color: #222;
+}
+
 @media screen and (max-width: 966px) {
   .heroBanner {
     padding: 2rem;

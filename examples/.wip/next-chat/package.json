@@ -1,6 +1,6 @@
 {
   "name": "@examples/chat",
-  "version": "9.0.0-alpha.2",
+  "version": "9.4.0",
   "private": true,
   "scripts": {
     "dx:next": "prisma generate && next dev",
@@ -17,31 +17,31 @@
     "test-start": "start-server-and-test start 3000 test"
   },
   "dependencies": {
-    "@prisma/client": "^2.18.0",
-    "@trpc/client": "^9.0.0-alpha.2",
-    "@trpc/next": "^9.0.0-alpha.2",
-    "@trpc/react": "^9.0.0-alpha.2",
-    "@trpc/server": "^9.0.0-alpha.2",
-    "jest": "^27.0.5",
+    "@prisma/client": "^3.0.1",
+    "@trpc/client": "^9.4.0",
+    "@trpc/next": "^9.4.0",
+    "@trpc/react": "^9.4.0",
+    "@trpc/server": "^9.4.0",
+    "jest": "^27.1.0",
     "jest-playwright": "^0.0.1",
     "jest-playwright-preset": "^1.4.5",
     "next": "^11.1.0",
-    "playwright": "^1.8.0",
-    "react": "^17.0.1",
-    "react-dom": "^17.0.1",
+    "playwright": "^1.14.1",
+    "react": "^17.0.2",
+    "react-dom": "^17.0.2",
     "react-query": "^3.6.0",
     "start-server-and-test": "^1.12.0",
     "superjson": "^1.7.4",
     "zod": "^3.0.0"
   },
   "devDependencies": {
-    "@types/jest": "^27.0.0",
+    "@types/jest": "^27.0.1",
     "@types/node": "^16.0.0",
-    "@types/react": "^17.0.0",
+    "@types/react": "^17.0.20",
     "npm-run-all": "^4.1.5",
-    "prisma": "^2.18.0",
-    "ts-jest": "^27.0.3",
-    "typescript": "4.3.5"
+    "prisma": "^3.0.1",
+    "ts-jest": "^27.0.5",
+    "typescript": "4.4.2"
   },
   "publishConfig": {
     "access": "restricted"

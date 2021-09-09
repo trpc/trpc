@@ -1,10 +1,9 @@
 import http from 'http';
 import ws from 'ws';
-import { getErrorFromUnknown } from '../internals/errors';
-import { TRPCError } from '../TRPCError';
-import { CreateContextFn } from '../http';
 import { BaseHandlerOptions } from '../internals/BaseHandlerOptions';
 import { callProcedure } from '../internals/callProcedure';
+import { getErrorFromUnknown } from '../internals/errors';
+import { transformTRPCResponse } from '../internals/transformTRPCResponse';
 import { AnyRouter, inferRouterContext, ProcedureType } from '../router';
 import {
   TRPCErrorResponse,
@@ -14,6 +13,8 @@ import {
 } from '../rpc';
 import { Subscription } from '../subscription';
 import { CombinedDataTransformer } from '../transformer';
+import { TRPCError } from '../TRPCError';
+import { NodeHTTPCreateContextOption } from './node-http';
 
 /* istanbul ignore next */
 function assertIsObject(obj: unknown): asserts obj is Record<string, unknown> {
@@ -81,11 +82,13 @@ function parseMessage(
 /**
  * Web socket server handler
  */
-export type WSSHandlerOptions<TRouter extends AnyRouter> = {
+export type WSSHandlerOptions<TRouter extends AnyRouter> = BaseHandlerOptions<
+  TRouter,
+  http.IncomingMessage
+> & {
   wss: ws.Server;
-  createContext: CreateContextFn<TRouter, http.IncomingMessage, ws>;
   process?: NodeJS.Process;
-} & BaseHandlerOptions<TRouter, http.IncomingMessage>;
+} & NodeHTTPCreateContextOption<TRouter, http.IncomingMessage, ws>;
 
 export function applyWSSHandler<TRouter extends AnyRouter>(
   opts: WSSHandlerOptions<TRouter>,
@@ -99,10 +102,12 @@ export function applyWSSHandler<TRouter extends AnyRouter>(
       Subscription<TRouter>
     >();
 
-    function respond(json: TRPCResponse) {
-      client.send(JSON.stringify(json));
+    function respond(untransformedJSON: TRPCResponse) {
+      client.send(
+        JSON.stringify(transformTRPCResponse(router, untransformedJSON)),
+      );
     }
-    const ctxPromise = createContext({ req, res: client });
+    const ctxPromise = createContext?.({ req, res: client });
     let ctx: inferRouterContext<TRouter> | undefined = undefined;
 
     async function handleRequest(msg: TRPCRequest) {
@@ -139,7 +144,7 @@ export function applyWSSHandler<TRouter extends AnyRouter>(
             id,
             result: {
               type: 'data',
-              data: transformer.output.serialize(result),
+              data: result,
             },
           });
           return;
@@ -167,7 +172,7 @@ export function applyWSSHandler<TRouter extends AnyRouter>(
             id,
             result: {
               type: 'data',
-              data: transformer.output.serialize(data),
+              data,
             },
           });
         });
@@ -175,15 +180,13 @@ export function applyWSSHandler<TRouter extends AnyRouter>(
           const error = getErrorFromUnknown(_error);
           const json: TRPCErrorResponse = {
             id,
-            error: transformer.output.serialize(
-              router.getErrorShape({
-                error,
-                type,
-                path,
-                input,
-                ctx,
-              }),
-            ),
+            error: router.getErrorShape({
+              error,
+              type,
+              path,
+              input,
+              ctx,
+            }),
           };
           opts.onError?.({ error, path, type, ctx, req, input });
           respond(json);
@@ -204,18 +207,18 @@ export function applyWSSHandler<TRouter extends AnyRouter>(
           },
         });
         await sub.start();
-      } catch (_error) /* istanbul ignore next */ {
+      } catch (cause) /* istanbul ignore next */ {
         // procedure threw an error
-        const error = getErrorFromUnknown(_error);
+        const error = getErrorFromUnknown(cause);
         const json = router.getErrorShape({
-          error: _error,
+          error,
           type,
           path,
           input,
           ctx,
         });
         opts.onError?.({ error, path, type, ctx, req, input });
-        respond({ id, error: transformer.output.serialize(json) });
+        respond({ id, error: json });
       }
     }
     client.on('message', async (message) => {
@@ -223,23 +226,21 @@ export function applyWSSHandler<TRouter extends AnyRouter>(
         const msgJSON: unknown = JSON.parse(message as string);
         const msgs: unknown[] = Array.isArray(msgJSON) ? msgJSON : [msgJSON];
         msgs.map((raw) => parseMessage(raw, transformer)).map(handleRequest);
-      } catch (originalError) {
+      } catch (cause) {
         const error = new TRPCError({
           code: 'PARSE_ERROR',
-          originalError,
+          cause,
         });
 
         respond({
           id: null,
-          error: transformer.output.serialize(
-            router.getErrorShape({
-              error,
-              type: 'unknown',
-              path: undefined,
-              input: undefined,
-              ctx: undefined,
-            }),
-          ),
+          error: router.getErrorShape({
+            error,
+            type: 'unknown',
+            path: undefined,
+            input: undefined,
+            ctx: undefined,
+          }),
         });
       }
     });
@@ -253,19 +254,17 @@ export function applyWSSHandler<TRouter extends AnyRouter>(
     async function createContextAsync() {
       try {
         ctx = await ctxPromise;
-      } catch (err) {
-        const error = getErrorFromUnknown(err);
+      } catch (cause) {
+        const error = getErrorFromUnknown(cause);
         const json: TRPCErrorResponse = {
           id: null,
-          error: transformer.output.serialize(
-            router.getErrorShape({
-              error,
-              type: 'unknown',
-              path: undefined,
-              input: undefined,
-              ctx,
-            }),
-          ),
+          error: router.getErrorShape({
+            error,
+            type: 'unknown',
+            path: undefined,
+            input: undefined,
+            ctx,
+          }),
         };
         opts.onError?.({
           error,

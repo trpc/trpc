@@ -42,7 +42,7 @@ export default trpcNext.createNextApiHandler({
   // [...]
   onError({ error }) {
     console.error('Error:', error);
-    console.log('Original error thrown', error.originalError);
+    console.log('Original error thrown', error.cause);
   },
 });
 ```
@@ -53,7 +53,13 @@ export default trpcNext.createNextApiHandler({
 ```ts
 import { TRPCError } from '@trpc/server';
 
-throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Optional Message' });
+throw new TRPCError({ 
+  code: 'INTERNAL_SERVER_ERROR', 
+  message: 'Optional Message', 
+  // optional: pass your thrown error to TRPCError to retain stack trace
+  cause: myError,
+});
+
 
 // Some available codes:
 // 

@@ -1,4 +1,5 @@
 import { EventEmitter } from 'events';
+import { getErrorFromUnknown } from './internals/errors';
 
 interface SubscriptionEvents<TOutput> {
   data: (data: TOutput) => void;
@@ -35,6 +36,9 @@ export type SubscriptionCallback<TOutput> = (
   emit: SubscriptionEmit<TOutput>,
 ) => UnsubscribeFn | Promise<UnsubscribeFn>;
 
+/**
+ * @beta
+ */
 export class Subscription<TOutput = unknown> {
   private readonly events: SubscriptionEventEmitter<TOutput>;
   private callback;
@@ -76,10 +80,10 @@ export class Subscription<TOutput = unknown> {
         this.events.on('destroy', cancel);
       }
     } catch (
-      err
+      cause
       /* istanbul ignore next */
     ) {
-      this.emitError(err);
+      this.emitError(getErrorFromUnknown(cause));
     }
   }
 
@@ -112,6 +116,9 @@ export class Subscription<TOutput = unknown> {
   }
 }
 
+/**
+ * @alpha Might be removed
+ */
 export function subscriptionPullFactory<TOutput>(opts: {
   /**
    * The interval of how often the function should run
@@ -130,7 +137,7 @@ export function subscriptionPullFactory<TOutput>(opts: {
     try {
       await opts.pull(emit);
     } catch (err /* istanbul ignore next */) {
-      emit.error(err);
+      emit.error(getErrorFromUnknown(err));
     }
 
     /* istanbul ignore else */

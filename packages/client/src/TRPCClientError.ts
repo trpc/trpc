@@ -1,12 +1,23 @@
-import { AnyRouter, Maybe } from '@trpc/server';
-import { TRPCErrorShape, TRPCErrorResponse } from '@trpc/server/rpc';
+import { AnyRouter, inferRouterError, Maybe } from '@trpc/server';
+import { TRPCErrorResponse } from '@trpc/server/rpc';
 
-export class TRPCClientError<
-  TRouter extends AnyRouter,
-  TErrorShape extends TRPCErrorShape = ReturnType<TRouter['getErrorShape']>,
-> extends Error {
+export interface TRPCClientErrorLike<TRouter extends AnyRouter> {
+  readonly message: string;
+  readonly shape: Maybe<inferRouterError<TRouter>>;
+  readonly data: Maybe<inferRouterError<TRouter>['data']>;
+}
+
+export class TRPCClientError<TRouter extends AnyRouter>
+  extends Error
+  implements TRPCClientErrorLike<TRouter>
+{
+  /**
+   * @deprecated use `cause`
+   */
   public readonly originalError;
-  public readonly shape: Maybe<TErrorShape>;
+  public readonly cause;
+  public readonly shape: Maybe<inferRouterError<TRouter>>;
+  public readonly data: Maybe<inferRouterError<TRouter>['data']>;
   /**
    * Fatal error - expect no more results after this error
    * Used for when WebSockets disconnect prematurely.
@@ -15,24 +26,29 @@ export class TRPCClientError<
 
   constructor(
     message: string,
-    {
-      originalError,
-      isDone = false,
-      result,
-    }: {
-      result: Maybe<TRPCErrorResponse<TErrorShape>>;
-      originalError: Maybe<Error>;
+    opts: {
+      result: Maybe<TRPCErrorResponse<inferRouterError<TRouter>>>;
+      /**
+       * @deprecated use cause
+       **/
+      originalError?: Maybe<Error>;
+      cause?: Maybe<Error>;
       isDone?: boolean;
     },
   ) {
-    super(message);
-    this.isDone = isDone;
-    this.message = message;
-    this.originalError = originalError;
-    this.shape = result?.error;
+    const cause = opts.cause ?? opts.originalError;
+
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore https://github.com/tc39/proposal-error-cause
+    super(message, { cause });
+
+    this.isDone = opts.isDone ?? false;
+
+    this.cause = this.originalError = cause;
+    this.shape = opts.result?.error;
+    this.data = opts.result?.error.data;
     this.name = 'TRPCClientError';
 
-    this.name = 'TRPCClientError';
     Object.setPrototypeOf(this, TRPCClientError.prototype);
   }
 
@@ -43,7 +59,7 @@ export class TRPCClientError<
     if (!(result instanceof Error)) {
       return new TRPCClientError<TRouter>((result.error as any).message ?? '', {
         ...opts,
-        originalError: null,
+        cause: null,
         result: result,
       });
     }
@@ -53,7 +69,7 @@ export class TRPCClientError<
 
     return new TRPCClientError<TRouter>(result.message, {
       ...opts,
-      originalError: result,
+      cause: result,
       result: null,
     });
   }

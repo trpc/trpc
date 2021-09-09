@@ -5,7 +5,7 @@ sidebar_label: Error Formatting
 slug: /error-formatting
 ---
 
-You can do custom error formatting in your router and the returned object will be inferred all the way to your client (& React components)
+The error formatting in your router will be inferred all the way to your client (&&nbsp;React&nbsp;components)
 
 
 ## Usage example highlighted
@@ -22,8 +22,8 @@ const router = trpc.router<Context>()
         ...shape.data,
         zodError:
           error.code === 'BAD_USER_INPUT' &&
-          error.originalError instanceof ZodError
-            ? error.originalError.flatten()
+          error.cause instanceof ZodError
+            ? error.cause.flatten()
             : null,
       };
     };
@@ -41,10 +41,10 @@ function MyComponent() {
     mutation.mutate({ title: 'example' });
   }, []);
 
-  if (mutation.error?.shape?.data.zodError) {
+  if (mutation.error?.data?.zodError) {
     // zodError will be inferred
     return (
-      <pre>Error: {JSON.stringify(mutation.error.shape.data.zodError, null, 2)}</pre>
+      <pre>Error: {JSON.stringify(mutation.error.data.zodError, null, 2)}</pre>
     );
   }
   return <>[...]</>;
@@ -54,7 +54,7 @@ function MyComponent() {
 
 ## All properties sent to `formatError()`
 
-> Since `v.8.x.` tRPC is compliant with [JSON-RPC 2.0](https://www.jsonrpc.org/specification)
+> Since `v8.x` tRPC is compliant with [JSON-RPC 2.0](https://www.jsonrpc.org/specification)
 
 ```ts
 {
@@ -73,9 +73,11 @@ function MyComponent() {
 
 interface DefaultErrorData {
   code: TRPC_ERROR_CODE_KEY;
+  httpStatus: number;
   path?: string;
   stack?: string;
 }
+
 interface DefaultErrorShape
   extends TRPCErrorShape<TRPC_ERROR_CODE_NUMBER, DefaultErrorData> {
   message: string;

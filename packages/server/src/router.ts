@@ -2,6 +2,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { assertNotBrowser } from './assertNotBrowser';
+import { getHTTPStatusCodeFromError } from './http/internals/getHTTPStatusCode';
 import { MiddlewareFunction } from './internals/middlewares';
 import {
   createProcedure,
@@ -12,7 +13,7 @@ import {
   Procedure,
   ProcedureCallOptions,
   ProcedureWithInput,
-} from './procedure';
+} from './internals/procedure';
 import {
   TRPCErrorShape,
   TRPC_ERROR_CODES_BY_KEY,
@@ -26,7 +27,14 @@ import { flatten, format, Prefixer, ThenArg } from './types';
 
 assertNotBrowser();
 
+/**
+ * @public
+ */
 export type ProcedureType = 'query' | 'mutation' | 'subscription';
+
+/**
+ * @internal
+ */
 export type ProcedureRecord<
   TInputContext = any,
   TContext = any,
@@ -34,19 +42,32 @@ export type ProcedureRecord<
   TOutput = any,
 > = Record<string, Procedure<TInputContext, TContext, TInput, TOutput>>;
 
+/**
+ * @public
+ */
 export type inferProcedureInput<
   TProcedure extends Procedure<any, any, any, any>,
 > = TProcedure extends ProcedureWithInput<any, any, infer Input, any>
   ? Input
   : undefined;
 
+/**
+ * @public
+ */
 export type inferAsyncReturnType<TFunction extends (...args: any) => any> =
   ThenArg<ReturnType<TFunction>>;
 
+/**
+ * @public
+ */
 export type inferProcedureOutput<
   TProcedure extends Procedure<any, any, any, any>,
 > = inferAsyncReturnType<TProcedure['call']>;
 
+/**
+ * @public
+ * @beta
+ */
 export type inferSubscriptionOutput<
   TRouter extends AnyRouter,
   TPath extends keyof TRouter['_def']['subscriptions'],
@@ -64,7 +85,9 @@ function getDataTransformer(
   }
   return { input: transformer, output: transformer };
 }
-
+/**
+ * @internal
+ */
 export type inferHandlerInput<
   TProcedure extends Procedure<any, any, any, any>,
 > = TProcedure extends ProcedureWithInput<any, any, infer TInput, any>
@@ -83,10 +106,16 @@ type inferHandlerFn<TProcedures extends ProcedureRecord> = <
   ...args: inferHandlerInput<TProcedure>
 ) => Promise<inferProcedureOutput<TProcedures[TPath]>>;
 
+/**
+ * @internal
+ */
 export type inferRouterContext<TRouter extends AnyRouter> = Parameters<
   TRouter['createCaller']
 >[0];
 
+/**
+ * @public
+ */
 export type AnyRouter<TContext = any> = Router<
   any,
   TContext,
@@ -96,6 +125,9 @@ export type AnyRouter<TContext = any> = Router<
   any
 >;
 
+/**
+ * @internal
+ */
 export type inferRouterError<TRouter extends AnyRouter> = ReturnType<
   TRouter['getErrorShape']
 >;
@@ -107,10 +139,11 @@ const PROCEDURE_DEFINITION_MAP: Record<
   mutation: 'mutations',
   subscription: 'subscriptions',
 };
-export type ErrorFormatter<
-  TContext,
-  TOutput extends TRPCErrorShape<number, unknown>,
-> = ({
+
+/**
+ * @internal
+ */
+export type ErrorFormatter<TContext, TShape extends TRPCErrorShape<number>> = ({
   error,
 }: {
   error: TRPCError;
@@ -119,13 +152,18 @@ export type ErrorFormatter<
   input: unknown;
   ctx: undefined | TContext;
   shape: DefaultErrorShape;
-}) => TOutput;
+}) => TShape;
 
-interface DefaultErrorData {
+type DefaultErrorData = {
   code: TRPC_ERROR_CODE_KEY;
+  httpStatus: number;
   path?: string;
   stack?: string;
-}
+};
+
+/**
+ * @internal
+ */
 export interface DefaultErrorShape
   extends TRPCErrorShape<TRPC_ERROR_CODE_NUMBER, DefaultErrorData> {
   message: string;
@@ -196,7 +234,7 @@ export class Router<
     unknown,
     Subscription<unknown>
   >,
-  TErrorShape extends TRPCErrorShape<number, unknown>,
+  TErrorShape extends TRPCErrorShape<number>,
 > {
   readonly _def: Readonly<{
     queries: Readonly<TQueries>;
@@ -318,9 +356,7 @@ export class Router<
     return this.merge(router) as any;
   }
   /**
-   * ⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️
-   *  **Experimental.** API might change without major version bump
-   * ⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠
+   * @beta Might change without a major version bump
    */
   public subscription<
     TPath extends string,
@@ -339,9 +375,7 @@ export class Router<
     TErrorShape
   >;
   /**
-   * ⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️
-   *  **Experimental.** API might change without major version bump
-   * ⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠
+   * @beta Might change without a major version bump
    */
   public subscription<
     TPath extends string,
@@ -358,6 +392,9 @@ export class Router<
       Record<TPath, inferProcedureFromOptions<TInputContext, typeof procedure>>,
     TErrorShape
   >;
+  /**
+   * @beta Might change without a major version bump
+   */
   public subscription<
     TPath extends string,
     TInput,
@@ -457,6 +494,7 @@ export class Router<
     };
 
     return new Router<TInputContext, TContext, any, any, any, TErrorShape>({
+      ...this._def,
       queries: safeObject(
         this._def.queries,
         mergeProcedures(childRouter._def.queries),
@@ -469,9 +507,6 @@ export class Router<
         this._def.subscriptions,
         mergeProcedures(childRouter._def.subscriptions),
       ),
-      middlewares: this._def.middlewares,
-      errorFormatter: this._def.errorFormatter,
-      transformer: this._def.transformer,
     });
   }
 
@@ -555,9 +590,9 @@ export class Router<
    * Format errors
    * @link https://trpc.io/docs/error-formatting
    */
-  public formatError<TErrorFormatter extends ErrorFormatter<TContext, any>>(
-    errorFormatter: TErrorFormatter,
-  ) {
+  public formatError<
+    TErrorFormatter extends ErrorFormatter<TContext, TRPCErrorShape<number>>,
+  >(errorFormatter: TErrorFormatter) {
     if (this._def.errorFormatter !== (defaultFormatter as any)) {
       throw new Error(
         'You seem to have double `formatError()`-calls in your router tree',
@@ -572,7 +607,7 @@ export class Router<
       ReturnType<TErrorFormatter>
     >({
       ...this._def,
-      errorFormatter,
+      errorFormatter: errorFormatter as any,
     });
   }
 
@@ -590,6 +625,7 @@ export class Router<
       code: TRPC_ERROR_CODES_BY_KEY[code],
       data: {
         code,
+        httpStatus: getHTTPStatusCodeFromError(error),
       },
     };
     if (

@@ -11,8 +11,9 @@ import { TRPCClientError } from '../../client/src';
 import { httpBatchLink } from '../../client/src/links/httpBatchLink';
 import { TRPCError } from '../src/TRPCError';
 import * as trpc from '../src';
-import { routerToServerAndClient } from './_testHelpers';
+import { routerToServerAndClient, waitError } from './_testHelpers';
 import { httpLink } from '../../client/src/links/httpLink';
+import fetch from 'node-fetch';
 
 test('superjson up and down', async () => {
   const transformer = superjson;
@@ -403,15 +404,7 @@ describe('transformer on router', () => {
         },
       },
     );
-    let clientError: Error | null = null;
-    try {
-      await client.query('err');
-    } catch (_err) {
-      clientError = _err;
-    }
-    if (!(clientError instanceof TRPCClientError)) {
-      throw new Error('Did not throw');
-    }
+    const clientError = await waitError(client.query('err'), TRPCClientError);
     expect(clientError.shape.message).toMatchInlineSnapshot(`"woop"`);
     expect(clientError.shape.code).toMatchInlineSnapshot(`-32603`);
 
@@ -426,4 +419,40 @@ describe('transformer on router', () => {
 
     close();
   });
+});
+
+test('superjson - no input', async () => {
+  const transformer = superjson;
+
+  const fn = jest.fn();
+  const { close, httpUrl } = routerToServerAndClient(
+    trpc
+      .router()
+      .transformer(transformer)
+      .query('hello', {
+        async resolve({ input }) {
+          fn(input);
+          return 'world';
+        },
+      }),
+    {
+      client: { transformer },
+    },
+  );
+  const json = await (await fetch(`${httpUrl}/hello`)).json();
+
+  expect(json).not.toHaveProperty('error');
+  expect(json).toMatchInlineSnapshot(`
+Object {
+  "id": null,
+  "result": Object {
+    "data": Object {
+      "json": "world",
+    },
+    "type": "data",
+  },
+}
+`);
+
+  close();
 });

@@ -3,7 +3,8 @@
 import * as trpc from '@trpc/server';
 import { z } from 'zod';
 import ws from 'ws';
-import { applyWSSHandler } from '@trpc/server/ws';
+import { applyWSSHandler } from '@trpc/server/adapters/ws';
+import { createHTTPServer } from '@trpc/server/adapters/standalone';
 
 type Context = {};
 
@@ -52,7 +53,7 @@ export const appRouter = trpc
 export type AppRouter = typeof appRouter;
 
 // http server
-const { server, listen } = trpc.createHttpServer({
+const { server, listen } = createHTTPServer({
   router: appRouter,
   createContext() {
     return {};

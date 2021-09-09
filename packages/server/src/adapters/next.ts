@@ -1,26 +1,22 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 import type { NextApiHandler, NextApiRequest, NextApiResponse } from 'next';
-import { CreateContextFn, CreateContextFnOptions, requestHandler } from '../';
-import { TRPCError } from '../TRPCError';
-import { BaseHandlerOptions } from '../internals/BaseHandlerOptions';
 import { AnyRouter } from '../router';
 import { TRPCErrorResponse } from '../rpc';
+import { TRPCError } from '../TRPCError';
+import { nodeHTTPRequestHandler } from './node-http';
+import {
+  NodeHTTPCreateContextFnOptions,
+  NodeHTTPHandlerOptions,
+} from './node-http';
 
-export type CreateNextContextOptions = CreateContextFnOptions<
+export type CreateNextContextOptions = NodeHTTPCreateContextFnOptions<
   NextApiRequest,
   NextApiResponse
 >;
 
-export type CreateNextContextFn<TRouter extends AnyRouter> = CreateContextFn<
-  TRouter,
-  NextApiRequest,
-  NextApiResponse
->;
 export function createNextApiHandler<TRouter extends AnyRouter>(
-  opts: {
-    createContext: CreateNextContextFn<TRouter>;
-  } & BaseHandlerOptions<TRouter, NextApiRequest>,
+  opts: NodeHTTPHandlerOptions<TRouter, NextApiRequest, NextApiResponse>,
 ): NextApiHandler {
   return async (req, res) => {
     function getPath(): string | null {
@@ -55,7 +51,7 @@ export function createNextApiHandler<TRouter extends AnyRouter>(
       return;
     }
 
-    await requestHandler({
+    await nodeHTTPRequestHandler({
       ...opts,
       req,
       res,

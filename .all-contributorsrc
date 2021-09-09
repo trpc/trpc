@@ -164,6 +164,25 @@
       "contributions": [
         "doc"
       ]
+    },
+    {
+      "login": "jzimmek",
+      "name": "Jan Zimmek",
+      "avatar_url": "https://avatars.githubusercontent.com/u/40382?v=4",
+      "profile": "https://github.com/jzimmek",
+      "contributions": [
+        "financial"
+      ]
+    },
+    {
+      "login": "alaister",
+      "name": "Alaister Young",
+      "avatar_url": "https://avatars.githubusercontent.com/u/10985857?v=4",
+      "profile": "https://www.alaisteryoung.com",
+      "contributions": [
+        "code",
+        "test"
+      ]
     }
   ],
   "contributorsPerLine": 7,

@@ -1,9 +1,10 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { assertNotBrowser } from './assertNotBrowser';
-import { ProcedureType } from './router';
-import { MiddlewareFunction, middlewareMarker } from './internals/middlewares';
-import { TRPCError } from './TRPCError';
-import { getErrorFromUnknown } from './internals/errors';
+import { assertNotBrowser } from '../assertNotBrowser';
+import { ProcedureType } from '../router';
+import { MiddlewareFunction, middlewareMarker } from './middlewares';
+import { TRPCError } from '../TRPCError';
+import { getErrorFromUnknown } from './errors';
+import { wrapCallSafe } from './wrapCallSafe';
 assertNotBrowser();
 
 export type ProcedureInputParserZodEsque<TInput = unknown> = {
@@ -38,6 +39,9 @@ interface ProcedureOptions<TContext, TInput, TOutput> {
   inputParser: ProcedureInputParser<TInput>;
 }
 
+/**
+ * @internal
+ */
 export interface ProcedureCallOptions<TContext> {
   ctx: TContext;
   rawInput: unknown;
@@ -64,26 +68,9 @@ function getParseFn<TInput>(
   throw new Error('Could not find a validator fn');
 }
 
-type AsyncFn<T> = () => Promise<T> | T;
 /**
- * Wrap a function in a safe wrapper that never throws
- * Returns a discriminated union
+ * @internal
  */
-async function wrapCallSafe<T>(fn: AsyncFn<T>) {
-  try {
-    const data = await fn();
-    return {
-      ok: true as const,
-      data,
-    };
-  } catch (error: unknown) {
-    return {
-      ok: false as const,
-      error,
-    };
-  }
-}
-
 export abstract class Procedure<
   TInputContext, //
   TContext,
@@ -105,16 +92,17 @@ export abstract class Procedure<
   private parseInput(rawInput: unknown): TInput {
     try {
       return this.parse(rawInput);
-    } catch (originalError) {
+    } catch (cause) {
       throw new TRPCError({
         code: 'BAD_REQUEST',
-        originalError,
+        cause,
       });
     }
   }
 
   /**
    * Trigger middlewares in order, parse raw input & call resolver
+   * @internal
    */
   public async call(
     opts: ProcedureCallOptions<TInputContext>,

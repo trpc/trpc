@@ -8,10 +8,22 @@ import { z } from 'zod';
 import { TRPCClientError } from '../../client/src';
 import * as trpc from '../src';
 import { CreateHttpContextOptions, Maybe, TRPCError } from '../src';
-import { routerToServerAndClient } from './_testHelpers';
+import { routerToServerAndClient, waitError } from './_testHelpers';
 import WebSocket from 'ws';
 import { waitFor } from '@testing-library/react';
 import { httpBatchLink } from '../../client/src/links/httpBatchLink';
+
+test('smoke test', async () => {
+  const { client, close } = routerToServerAndClient(
+    trpc.router().query('hello', {
+      resolve() {
+        return 'world';
+      },
+    }),
+  );
+  expect(await client.query('hello')).toBe('world');
+  close();
+});
 test('mix query and mutation', async () => {
   type Context = {};
   const r = trpc
@@ -91,20 +103,16 @@ describe('integration tests', () => {
         },
       }),
     );
-    try {
-      await client.query('notFound' as any);
-      throw new Error('Did not fail');
-    } catch (err) {
-      if (!(err instanceof TRPCClientError)) {
-        throw new Error('Not TRPCClientError');
-      }
-      expect(err.message).toMatchInlineSnapshot(
-        `"No \\"query\\"-procedure on path \\"notFound\\""`,
-      );
-      expect(err.shape?.message).toMatchInlineSnapshot(
-        `"No \\"query\\"-procedure on path \\"notFound\\""`,
-      );
-    }
+    const err = await waitError(
+      client.query('notFound' as any),
+      TRPCClientError,
+    );
+    expect(err.message).toMatchInlineSnapshot(
+      `"No \\"query\\"-procedure on path \\"notFound\\""`,
+    );
+    expect(err.shape?.message).toMatchInlineSnapshot(
+      `"No \\"query\\"-procedure on path \\"notFound\\""`,
+    );
     close();
   });
 
@@ -124,15 +132,12 @@ describe('integration tests', () => {
         },
       }),
     );
-    try {
-      await client.query('hello', { who: 123 as any });
-      throw new Error('Did not fail');
-    } catch (err) {
-      if (!(err instanceof TRPCClientError)) {
-        throw new Error('Not TRPCClientError');
-      }
-      expect(err.shape?.code).toMatchInlineSnapshot(`-32600`);
-      expect(err.shape?.message).toMatchInlineSnapshot(`
+    const err = await waitError(
+      client.query('hello', { who: 123 as any }),
+      TRPCClientError,
+    );
+    expect(err.shape?.code).toMatchInlineSnapshot(`-32600`);
+    expect(err.shape?.message).toMatchInlineSnapshot(`
         "[
           {
             \\"code\\": \\"invalid_type\\",
@@ -145,7 +150,6 @@ describe('integration tests', () => {
           }
         ]"
       `);
-    }
     close();
   });
 
@@ -287,17 +291,8 @@ describe('integration tests', () => {
 
       // no auth, should fail
       {
-        let threw = false;
-        try {
-          const res = await client.query('whoami');
-          expectTypeOf(res).toMatchTypeOf<{ id: number; name: string }>();
-        } catch (err) {
-          threw = true;
-          expect(err.shape.message).toMatchInlineSnapshot(`"UNAUTHORIZED"`);
-        }
-        if (!threw) {
-          throw new Error("Didn't throw");
-        }
+        const err = await waitError(client.query('whoami'), TRPCClientError);
+        expect(err.shape.message).toMatchInlineSnapshot(`"UNAUTHORIZED"`);
       }
       // auth, should work
       {
