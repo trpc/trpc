@@ -34,7 +34,7 @@ export type ProcedureResolver<
 }) => Promise<TOutput> | TOutput;
 
 interface ProcedureOptions<TContext, TInput, TOutput> {
-  middlewares: MiddlewareFunction<TContext>[];
+  middlewares: Array<MiddlewareFunction<any, any>>;
   resolver: ProcedureResolver<TContext, TInput, TOutput>;
   inputParser: ProcedureInputParser<TInput>;
 }
@@ -72,11 +72,12 @@ function getParseFn<TInput>(
  * @internal
  */
 export abstract class Procedure<
-  TContext = unknown,
-  TInput = unknown,
-  TOutput = unknown,
+  TInputContext, //
+  TContext,
+  TInput,
+  TOutput,
 > {
-  private middlewares: Readonly<MiddlewareFunction<TContext>[]>;
+  private middlewares: Readonly<Array<MiddlewareFunction<any, any>>>;
   private resolver: ProcedureResolver<TContext, TInput, TOutput>;
   private readonly inputParser: ProcedureInputParser<TInput>;
   private parse: ParseFn<TInput>;
@@ -103,25 +104,32 @@ export abstract class Procedure<
    * Trigger middlewares in order, parse raw input & call resolver
    * @internal
    */
-  public async call(opts: ProcedureCallOptions<TContext>): Promise<TOutput> {
+  public async call(
+    opts: ProcedureCallOptions<TInputContext>,
+  ): Promise<TOutput> {
     // wrap the actual resolver and treat as the last "middleware"
     const middlewaresWithResolver = this.middlewares.concat([
-      async () => {
+      async ({ ctx }: { ctx: TContext }) => {
         const input = this.parseInput(opts.rawInput);
-        const data = await this.resolver({ ...opts, input });
+        const data = await this.resolver({ ...opts, ctx, input });
         return {
           marker: middlewareMarker,
           ok: true,
           data,
-        };
+          ctx,
+        } as const;
       },
     ]);
 
     // create `next()` calls in resolvers
     const nextFns = middlewaresWithResolver.map((fn, index) => {
-      return async () => {
+      return async (nextOpts?: { ctx: TContext }) => {
         const res = await wrapCallSafe(() =>
-          fn({ ...opts, next: nextFns[index + 1] }),
+          fn({
+            ...(opts as any),
+            ...(nextOpts as any),
+            next: nextFns[index + 1],
+          }),
         );
         if (res.ok) {
           return res.data;
@@ -154,9 +162,12 @@ export abstract class Procedure<
    * Create new procedure with passed middlewares
    * @param middlewares
    */
-  public inheritMiddlewares(middlewares: MiddlewareFunction<TContext>[]): this {
+  public inheritMiddlewares(
+    middlewares: MiddlewareFunction<TInputContext, TContext>[],
+  ): this {
     const Constructor: {
       new (opts: ProcedureOptions<TContext, TInput, TOutput>): Procedure<
+        TInputContext,
         TContext,
         TInput,
         TOutput
@@ -173,17 +184,18 @@ export abstract class Procedure<
   }
 }
 
-export class ProcedureWithoutInput<TContext, TOutput> extends Procedure<
+export class ProcedureWithoutInput<
+  TInputContext,
   TContext,
-  undefined,
-  TOutput
-> {}
+  TOutput,
+> extends Procedure<TInputContext, TContext, undefined, TOutput> {}
 
-export class ProcedureWithInput<TContext, TInput, TOutput> extends Procedure<
+export class ProcedureWithInput<
+  TInputContext,
   TContext,
   TInput,
-  TOutput
-> {}
+  TOutput,
+> extends Procedure<TInputContext, TContext, TInput, TOutput> {}
 
 export type CreateProcedureWithInput<TContext, TInput, TOutput> = {
   input: ProcedureInputParser<TInput>;
@@ -206,15 +218,15 @@ function isProcedureWithInput<TContext, TInput, TOutput>(
 ): opts is CreateProcedureWithInput<TContext, TInput, TOutput> {
   return !!opts.input;
 }
-export function createProcedure<TContext, TInput, TOutput>(
+export function createProcedure<TInputContext, TContext, TInput, TOutput>(
   opts: CreateProcedureWithInput<TContext, TInput, TOutput>,
-): ProcedureWithInput<TContext, TInput, TOutput>;
-export function createProcedure<TContext, TOutput>(
+): ProcedureWithInput<TInputContext, TContext, TInput, TOutput>;
+export function createProcedure<TInputContext, TContext, TOutput>(
   opts: CreateProcedureWithoutInput<TContext, TOutput>,
-): ProcedureWithoutInput<TContext, TOutput>;
-export function createProcedure<TContext, TInput, TOutput>(
+): ProcedureWithoutInput<TInputContext, TContext, TOutput>;
+export function createProcedure<TInputContext, TContext, TInput, TOutput>(
   opts: CreateProcedureOptions<TContext, TInput, TOutput>,
-): Procedure<TContext, TInput, TOutput>;
+): Procedure<TInputContext, TContext, TInput, TOutput>;
 export function createProcedure<TContext, TInput, TOutput>(
   opts: CreateProcedureOptions<TContext, TInput, TOutput>,
 ) {
@@ -241,17 +253,18 @@ export function createProcedure<TContext, TInput, TOutput>(
 }
 
 export type inferProcedureFromOptions<
+  TInputContext,
   TOptions extends CreateProcedureOptions<any, any, any>,
 > = TOptions extends CreateProcedureWithInput<
   infer TContext,
   infer TInput,
   infer TOutput
 >
-  ? ProcedureWithInput<TContext, TInput, TOutput>
+  ? ProcedureWithInput<TInputContext, TContext, TInput, TOutput>
   : TOptions extends CreateProcedureWithoutInput<
       //
       infer TContext,
       infer TOutput
     >
-  ? ProcedureWithoutInput<TContext, TOutput>
-  : Procedure<unknown, unknown>;
+  ? ProcedureWithoutInput<TInputContext, TContext, TOutput>
+  : Procedure<unknown, unknown, unknown, unknown>;

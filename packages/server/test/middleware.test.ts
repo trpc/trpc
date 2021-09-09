@@ -1,7 +1,8 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import { AsyncLocalStorage } from 'async_hooks';
+import { expectTypeOf } from 'expect-type';
 import * as trpc from '../src';
-import { TRPCError } from '../src';
+import { TRPCError, inferProcedureOutput } from '../src';
 import { MiddlewareResult } from '../src/internals/middlewares';
 import { routerToServerAndClient } from './_testHelpers';
 
@@ -218,7 +219,7 @@ test('async hooks', async () => {
     trpc
       .router()
       .middleware((opts) => {
-        return new Promise((resolve, reject) => {
+        return new Promise<MiddlewareResult<unknown>>((resolve, reject) => {
           storage.run({ requestId: ++requestCount }, async () => {
             opts.next().then(resolve, reject);
           });
@@ -353,7 +354,7 @@ test('middleware throwing should return a union', async () => {
       Object.setPrototypeOf(this, CustomError.prototype);
     }
   }
-  const fn = jest.fn((res: MiddlewareResult) => {
+  const fn = jest.fn((res: MiddlewareResult<unknown>) => {
     return res;
   });
   const { client, close } = routerToServerAndClient(
@@ -389,4 +390,150 @@ test('middleware throwing should return a union', async () => {
   expect(originalError).toBeInstanceOf(CustomError);
 
   close();
+});
+
+test('omitting ctx in next() does not affect the actual ctx', async () => {
+  type User = {
+    id: string;
+  };
+  type OriginalContext = {
+    maybeUser?: User;
+  };
+  const { client, close } = routerToServerAndClient(
+    trpc
+      .router<OriginalContext>()
+      .middleware(async function firstMiddleware({ next }) {
+        return next();
+      })
+      .query('test', {
+        resolve({ ctx }) {
+          expectTypeOf(ctx).toEqualTypeOf<OriginalContext>();
+          return ctx.maybeUser?.id;
+        },
+      }),
+    {
+      server: {
+        createContext() {
+          return {
+            maybeUser: {
+              id: 'alexdotjs',
+            },
+          };
+        },
+      },
+    },
+  );
+
+  expect(await client.query('test')).toMatchInlineSnapshot(`"alexdotjs"`);
+
+  close();
+});
+
+test('mutate context in middleware', async () => {
+  type User = {
+    id: string;
+  };
+  type OriginalContext = {
+    maybeUser?: User;
+  };
+  const { client, close } = routerToServerAndClient(
+    trpc
+      .router<OriginalContext>()
+      .middleware(async function firstMiddleware({ next }) {
+        return next();
+      })
+      .query('isAuthorized', {
+        resolve({ ctx }) {
+          return Boolean(ctx.maybeUser);
+        },
+      })
+      .middleware(async function secondMiddleware({ next, ctx }) {
+        if (!ctx.maybeUser) {
+          throw new TRPCError({ code: 'UNAUTHORIZED' });
+        }
+        const newContext = {
+          user: ctx.maybeUser,
+        };
+        const result = await next({ ctx: newContext });
+        return result;
+      })
+      .middleware(async function thirdMiddleware({ next, ctx }) {
+        return next({
+          ctx: {
+            ...ctx,
+            email: ctx.user.id.includes('@'),
+          },
+        });
+      })
+      .query('test', {
+        resolve({ ctx }) {
+          // should have asserted that `ctx.user` is not nullable
+          expectTypeOf(ctx).toEqualTypeOf<{ user: User; email: boolean }>();
+          return `id: ${ctx.user.id}, email: ${ctx.email}`;
+        },
+      }),
+    {
+      server: {
+        createContext() {
+          return {
+            maybeUser: {
+              id: 'alexdotjs',
+            },
+          };
+        },
+      },
+    },
+  );
+
+  expect(await client.query('isAuthorized')).toBe(true);
+  expect(await client.query('test')).toMatchInlineSnapshot(
+    `"id: alexdotjs, email: false"`,
+  );
+
+  close();
+});
+
+test('mutate context and combine with other routes', async () => {
+  type User = {
+    id: number;
+  };
+  type Context = {
+    maybeUser?: User;
+  };
+  function createRouter() {
+    return trpc.router<Context>();
+  }
+
+  const authorizedRouter = createRouter()
+    .middleware(({ ctx, next }) => {
+      if (!ctx.maybeUser) {
+        throw new TRPCError({ code: 'UNAUTHORIZED' });
+      }
+      return next({
+        ctx: {
+          user: ctx.maybeUser,
+        },
+      });
+    })
+    .query('me', {
+      resolve({ ctx }) {
+        return ctx.user;
+      },
+    });
+
+  const appRouter = createRouter()
+    .merge('authed.', authorizedRouter)
+    .query('someQuery', {
+      resolve({ ctx }) {
+        expectTypeOf(ctx).toMatchTypeOf<Context>();
+      },
+    });
+
+  type AppRouter = typeof appRouter;
+
+  type MeResponse = inferProcedureOutput<
+    AppRouter['_def']['queries']['authed.me']
+  >;
+
+  expectTypeOf<MeResponse>().toMatchTypeOf<User>();
 });

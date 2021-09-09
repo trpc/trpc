@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-empty-function */
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import * as trpc from '../src';
-import * as trpcNext from '../src/adapters/next';
+import * as trpc from '../../src';
+import * as trpcNext from '../../src/adapters/next';
 import { EventEmitter } from 'events';
 
 function mockReq({
