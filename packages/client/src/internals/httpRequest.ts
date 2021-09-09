@@ -66,7 +66,6 @@ export function httpRequest<TResponseShape = TRPCResponse>(
           body: getBody(),
           headers: {
             'content-type': 'application/json',
-            ...(rt.fetchOptions.headers ?? {}),
             ...headers,
           },
         }),
