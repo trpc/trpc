@@ -1,4 +1,5 @@
 import { httpBatchLink } from '@trpc/client/links/httpBatchLink';
+import { splitLink } from '@trpc/client/links/splitLink';
 import { loggerLink } from '@trpc/client/links/loggerLink';
 import { withTRPC } from '@trpc/next';
 import { AppType } from 'next/dist/shared/lib/utils';
@@ -49,8 +50,17 @@ export default withTRPC<AppRouter>({
             process.env.NODE_ENV === 'development' ||
             (opts.direction === 'down' && opts.result instanceof Error),
         }),
-        httpBatchLink({
-          url: `${getBaseUrl()}/api/trpc`,
+        splitLink({
+          condition(op) {
+            return !!op.context.throttle;
+          },
+          true: httpBatchLink({
+            url: `${getBaseUrl()}/api/trpc`,
+            throttleMs: 3000,
+          }),
+          false: httpBatchLink({
+            url: `${getBaseUrl()}/api/trpc`,
+          }),
         }),
       ],
       /**
@@ -60,7 +70,7 @@ export default withTRPC<AppRouter>({
       /**
        * @link https://react-query.tanstack.com/reference/QueryClient
        */
-      queryClientConfig: { defaultOptions: { queries: { staleTime: 60 } } },
+      queryClientConfig: { defaultOptions: { queries: { staleTime: 6000 } } },
     };
   },
   /**

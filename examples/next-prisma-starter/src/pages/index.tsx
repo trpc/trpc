@@ -1,19 +1,41 @@
 import Head from 'next/head';
 import Link from 'next/link';
+import { useEffect } from 'react';
+import { useInView } from 'react-intersection-observer';
 import { ReactQueryDevtools } from 'react-query/devtools';
-import { trpc } from '../utils/trpc';
+import { inferQueryOutput, trpc } from '../utils/trpc';
 
+function PostListItem(props: { item: inferQueryOutput<'post.all'>[number] }) {
+  const { item } = props;
+  const utils = trpc.useContext();
+
+  const { ref, inView } = useInView({});
+  useEffect(() => {
+    if (!inView) {
+      return;
+    }
+    utils.prefetchQuery(['post.byId', item.id], {
+      context: { throttle: true },
+    });
+    return () => {
+      // unmounted
+      utils.cancelQuery(['post.byId', item.id]);
+    };
+  }, [inView, item.id, utils]);
+
+  return (
+    <article key={item.id} ref={ref}>
+      <h3>{item.title}</h3>
+      <Link href={`/post/${item.id}`}>
+        <a>View more</a>
+      </Link>
+    </article>
+  );
+}
 export default function IndexPage() {
   const postsQuery = trpc.useQuery(['post.all']);
   const addPost = trpc.useMutation('post.add');
   const utils = trpc.useContext();
-
-  // prefetch all posts for instant navigation
-  // useEffect(() => {
-  //   postsQuery.data?.forEach((post) => {
-  //     utils.prefetchQuery(['post.byId', post.id]);
-  //   });
-  // }, [postsQuery.data, utils]);
 
   return (
     <>
@@ -32,12 +54,7 @@ export default function IndexPage() {
         {postsQuery.status === 'loading' && '(loading)'}
       </h2>
       {postsQuery.data?.map((item) => (
-        <article key={item.id}>
-          <h3>{item.title}</h3>
-          <Link href={`/post/${item.id}`}>
-            <a>View more</a>
-          </Link>
-        </article>
+        <PostListItem key={item.id} item={item} />
       ))}
 
       <form
