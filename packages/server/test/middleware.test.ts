@@ -535,6 +535,5 @@ test('mutate context and combine with other routes', async () => {
     AppRouter['_def']['queries']['authed.me']
   >;
 
-  const meResponse = null as MeResponse;
-  expectTypeOf(meResponse).toMatchTypeOf<User>();
+  expectTypeOf<MeResponse>().toMatchTypeOf<User>();
 });

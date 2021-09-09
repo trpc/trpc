@@ -308,13 +308,13 @@ export class VNextRouter<
     path: TPath,
     procedure: CreateProcedureOptions<TContext, TInput, TOutput>,
   ) {
-    const router = new Router<TInputContext, TContext, any, {}, {}, any>({
+    const router = new Router<TContext, TContext, any, {}, {}, any>({
       queries: safeObject({
         [path]: createProcedure(procedure),
       }),
     });
 
-    return this.merge(router) as any;
+    return this.merge(router);
   }
 
   public mutation<TPath extends string, TInput, TOutput>(
@@ -349,13 +349,13 @@ export class VNextRouter<
     path: TPath,
     procedure: CreateProcedureOptions<TContext, TInput, TOutput>,
   ) {
-    const router = new Router<TInputContext, TContext, {}, any, {}, any>({
+    const router = new Router<TContext, TContext, {}, any, {}, any>({
       mutations: safeObject({
         [path]: createProcedure(procedure),
       }),
     });
 
-    return this.merge(router) as any;
+    return this.merge(router);
   }
   /**
    * @beta Might change without a major version bump
@@ -402,7 +402,7 @@ export class VNextRouter<
     TInput,
     TOutput extends Subscription<unknown>,
   >(path: TPath, procedure: CreateProcedureOptions<TContext, TInput, TOutput>) {
-    const router = new Router<TInputContext, TContext, {}, {}, any, any>({
+    const router = new Router<TContext, TContext, {}, {}, any, any>({
       subscriptions: safeObject({
         [path]: createProcedure(procedure),
       }),
@@ -415,11 +415,11 @@ export class VNextRouter<
    * Merge router with other router
    * @param router
    */
-  public merge<TChildRouter extends AnyRouter<TContext>>(
+  public merge<TChildRouter extends Router<TContext, any, any, any, any, any>>(
     router: TChildRouter,
   ): Router<
     TInputContext,
-    TContext,
+    inferRouterContext<TChildRouter>,
     flatten<TQueries, TChildRouter['_def']['queries']>,
     flatten<TMutations, TChildRouter['_def']['mutations']>,
     flatten<TSubscriptions, TChildRouter['_def']['subscriptions']>,
@@ -431,12 +431,15 @@ export class VNextRouter<
    * @param prefix Prefix that this router should live under
    * @param router
    */
-  public merge<TPath extends string, TChildRouter extends AnyRouter<TContext>>(
+  public merge<
+    TPath extends string,
+    TChildRouter extends Router<TContext, any, any, any, any, any>,
+  >(
     prefix: TPath,
     router: TChildRouter,
   ): Router<
     TInputContext,
-    TContext,
+    inferRouterContext<TChildRouter>,
     flatten<TQueries, Prefixer<TChildRouter['_def']['queries'], `${TPath}`>>,
     flatten<
       TMutations,
@@ -495,7 +498,7 @@ export class VNextRouter<
       return Router.prefixProcedures(newDefs, prefix);
     };
 
-    return new Router<TInputContext, TContext, any, any, any, TErrorShape>({
+    return new Router<TInputContext, any, any, any, any, TErrorShape>({
       ...this._def,
       queries: safeObject(
         this._def.queries,
