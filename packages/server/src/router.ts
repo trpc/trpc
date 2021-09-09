@@ -224,7 +224,9 @@ export type SwapContext<
   }
 >;
 
-/** @experimental The type signature of this class may change without warning. */
+/**
+ * @internal The type signature of this class may change without warning.
+ */
 export class Router<
   TInputContext,
   TContext,
@@ -671,7 +673,11 @@ export class Router<
   }
 }
 
-/** Subclass of `VNextRouter` with `TInputContext` and `TContext` set to the same type, for backcompat. */
+/**
+ * Subclass of `VNextRouter` with `TInputContext` and `TContext` set to the same type, for backcompat.
+ *
+ * @deprecated
+ */
 export class LegacyRouter<
   TContext,
   TQueries extends ProcedureRecord<TContext, TContext>,
