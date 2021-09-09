@@ -108,7 +108,7 @@ export class TRPCClient<TRouter extends AnyRouter> {
     this.runtime = {
       transformer,
       AbortController: AC as any,
-      fetch: _fetch as any,
+      fetch: _fetch,
       headers: getHeadersFn(),
     };
 

@@ -21,7 +21,7 @@ const mockRuntime: LinkRuntimeOptions = {
     serialize: (obj) => obj,
     deserialize: (obj) => obj,
   },
-  fetch: fetch as any,
+  fetch,
   AbortController: AbortController as any,
   headers: () => ({}),
 };
