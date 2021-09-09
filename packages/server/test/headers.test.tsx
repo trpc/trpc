@@ -27,12 +27,15 @@ test('pass headers', async () => {
     },
   );
   {
+    // no headers sent
     const client = createTRPCClient({
       url: httpUrl,
     });
     expect(await client.query('hello')).toMatchInlineSnapshot(`Object {}`);
   }
+
   {
+    // async headers
     const client = createTRPCClient({
       url: httpUrl,
       headers() {
