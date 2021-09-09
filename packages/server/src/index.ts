@@ -1,6 +1,6 @@
 export * from './assertNotBrowser';
 export * from './http';
-export * from './router';
+export * from './router.legacy';
 export * from './subscription';
 export * from './transformer';
 export * from './TRPCError';
