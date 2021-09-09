@@ -75,3 +75,34 @@ trpc
     },
   })
 ```
+
+### Context Swapping
+
+A middleware can replace the router's context, and downstream procedures will receive the new context value:
+
+```ts
+interface Context {
+  maybeUser?: {
+    id: string
+  }
+}
+
+trpc
+  .router<Context>()
+  .middleware(({ ctx, next }) => {
+    if (!ctx.maybeUser) {
+      throw new TRPCError({ code: 'UNAUTHORIZED' });
+    }
+
+    return next({
+      ctx: {
+        user: ctx.maybeUser, // user value is known to be non-null now
+      },
+    });
+  })
+  .query('userId', {
+    async resolve({ctx}) {
+      return ctx.user.id;
+    }
+  });
+```

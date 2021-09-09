@@ -15,7 +15,7 @@ export type NodeHTTPCreateContextOption<
   TRouter extends AnyRouter,
   TRequest,
   TResponse,
-> = inferRouterContext<TRouter> extends void
+> = unknown extends inferRouterContext<TRouter>
   ? {
       /**
        * @link https://trpc.io/docs/context
