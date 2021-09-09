@@ -202,7 +202,7 @@ const defaultTransformer: CombinedDataTransformer = {
   output: { serialize: (obj) => obj, deserialize: (obj) => obj },
 };
 
-export type SwapProcedureContext<
+type SwapProcedureContext<
   TProcedure extends Procedure<any, any, any, any>,
   TNewContext,
 > = TProcedure extends Procedure<
@@ -215,7 +215,7 @@ export type SwapProcedureContext<
   ? Procedure<TInputContext, TNewContext, TInput, TOutput>
   : never;
 
-export type SwapContext<
+type SwapContext<
   TObj extends ProcedureRecord<any, any, any, any>,
   TNewContext,
 > = format<
