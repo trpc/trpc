@@ -1,5 +1,6 @@
 import { expectTypeOf } from 'expect-type';
-import { Router, VNextRouter } from '../src';
+import { Router } from '../src';
+import { Router as VNextRouter } from '../src/router';
 
 test('deprecated router type is supported', () => {
   type Context = { foo: string };

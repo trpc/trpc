@@ -225,7 +225,7 @@ export type SwapContext<
 >;
 
 /** @experimental The type signature of this class may change without warning. */
-export class VNextRouter<
+export class Router<
   TInputContext,
   TContext,
   TQueries extends ProcedureRecord<TInputContext, TContext>,
@@ -670,28 +670,6 @@ export class VNextRouter<
     });
   }
 }
-
-/** Private passthrough alias of VNextRouter to avoid churn and leaking the temporary `VNext` name in too many places. */
-class Router<
-  TInputContext,
-  TContext,
-  TQueries extends ProcedureRecord<TInputContext, TContext>,
-  TMutations extends ProcedureRecord<TInputContext, TContext>,
-  TSubscriptions extends ProcedureRecord<
-    TInputContext,
-    TContext,
-    unknown,
-    Subscription<unknown>
-  >,
-  TErrorShape extends TRPCErrorShape<number>,
-> extends VNextRouter<
-  TInputContext,
-  TContext,
-  TQueries,
-  TMutations,
-  TSubscriptions,
-  TErrorShape
-> {}
 
 /** Subclass of `VNextRouter` with `TInputContext` and `TContext` set to the same type, for backcompat. */
 export class LegacyRouter<
