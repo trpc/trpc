@@ -218,11 +218,9 @@ type SwapProcedureContext<
 type SwapContext<
   TObj extends ProcedureRecord<any, any, any, any>,
   TNewContext,
-> = format<
-  {
-    [P in keyof TObj]: SwapProcedureContext<TObj[P], TNewContext>;
-  }
->;
+> = format<{
+  [P in keyof TObj]: SwapProcedureContext<TObj[P], TNewContext>;
+}>;
 
 /**
  * @internal The type signature of this class may change without warning.
