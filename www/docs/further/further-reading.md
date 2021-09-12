@@ -25,7 +25,7 @@ tRPC is a lot simpler and couples your server & website/app more tightly togethe
 
 ## Differences to Blitz.js
 
-> I've gotten asked several times about differences with Blitz.js and outlined some differences [on Twitter](https://twitter.com/alexdotjs/status/1436654002477969411) in a thread with Brandon Bayer, the creator of Blitz. &mdash; [Alex / KATT](https://twitter.com/alexdotjs)
+> I've gotten asked several times about differences with Blitz.js and outlined some differences [on Twitter](https://twitter.com/alexdotjs/status/1436654002477969411) and asked Brandon Bayer, the creator of Blitz, to chip in. &mdash; [Alex / KATT](https://twitter.com/alexdotjs)
 
 [Blitz.js](https://blitzjs.com) is a full-stack framework & tRPC is mainly the data layer, but the philosophy of the _"Zero-API data layer"_ is a common thread. Blitz solves the data layer by a custom compiler &amp; tRPC solves the data layer by type inference.
 
