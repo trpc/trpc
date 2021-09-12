@@ -39,7 +39,7 @@ The key difference is that Blitz is a full-stack framework and tRPC is a library
 - Not tied to React as it has no custom build pipeline
 - Works great with React Native
 - Well-tested & production-ready
-- Can be added to existing brownfield projects
+- Can be added to existing brownfield projects and adopted incrementally
 - WebSockets transport
 - Subscription support
 - Zero-conf SSR with `ssr: true` in `_app.tsx` does a prepass of all `useQuery` on the server
