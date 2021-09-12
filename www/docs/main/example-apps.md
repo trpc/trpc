@@ -37,6 +37,24 @@ Here's some example apps:
     </tr>
     <tr>
       <td>
+        <em>zART-stack</em> example (<b>z</b>ero-<b>A</b>PI, <b>T</b>ypeScript, <b>R</b>eact).
+        <br />
+        Monorepo setup with <strong>React Native</strong>, Next.js, &amp; Prisma
+        <br/><br/>
+        <details>
+          <summary>Quick start with <code>git clone</code></summary>
+          <code>git clone git@github.com:KATT/zart.git</code>
+        </details>
+      </td>
+      <td><em>n/a</em></td>
+      <td>
+        <ul>
+          <li><a href="https://github.com/KATT/zART">Source</a></li>
+        </ul>
+      </td>
+    </tr>
+    <tr>
+      <td>
         Next.js starter with Prisma, E2E testing, ESLint, WebSockets, &amp; Subscription support
         <br/><br/>
         <details>
