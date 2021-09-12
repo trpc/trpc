@@ -27,14 +27,14 @@ tRPC is a lot simpler and couples your server & website/app more tightly togethe
 
 > I've gotten asked several times about differences with Blitz.js and outlined some differences [on Twitter](https://twitter.com/alexdotjs/status/1436654002477969411) in a thread with Brandon Bayer, the creator of Blitz. &mdash; [Alex / KATT](https://twitter.com/alexdotjs)
 
-[Blitz.js](https://blitzjs.com) is a full-stack framework & tRPC is mainly the data layer, but the philosophy of their _"Zero-API data layer"_ is very close to tRPC. Blitz solves the data layer by a custom compiler &amp; tRPC solves the data layer by type inference.
+[Blitz.js](https://blitzjs.com) is a full-stack framework & tRPC is mainly the data layer, but the philosophy of the _"Zero-API data layer"_ is a common thread. Blitz solves the data layer by a custom compiler &amp; tRPC solves the data layer by type inference.
 
 ### Benefits with tRPC
 
 - Easy HTTP caching of queries as requests are made with `GET` rather than `POST`
 - Query batching out-of-the-box
-- Not tied to React / specific stack as it has no build pipeline
-- Works with React Native
+- Not tied to React as it has no build pipeline
+- Works great with React Native
 - No custom build pipeline
 - Well-tested & production-ready
 - Can be added to existing brownfield projects
@@ -48,5 +48,5 @@ tRPC is a lot simpler and couples your server & website/app more tightly togethe
 
 - Blitz has a plenty of nice DX-benefits with it being a full-stack famework  
 - Blitz' custom build pipeline enables stuff like CMD+clicking a fn to jump to the backend function  
-- tRPC has no code scaffolding, plug-and-play auth, etc [yet]  
-- tRPC currently has a smaller community  
+- Code scaffolding, plug-and-play auth, etc
+- Blitzjs has a bigger community  
