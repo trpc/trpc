@@ -34,19 +34,19 @@ tRPC is a lot simpler and couples your server & website/app more tightly togethe
 - Easy HTTP caching of queries as requests are made with `GET` rather than `POST`
 - Query batching out-of-the-box
 - Not tied to React as it has no build pipeline
-- Works great with React Native
-- No custom build pipeline
+- Works with React Native
 - Well-tested & production-ready
 - Can be added to existing brownfield projects
 - WebSockets transport
 - Subscription support
-- Zero-conf SSR with `ssr: true` in `_app.tsx` does a prepass of all `useQuery` on the server
+- Zero-conf SSR in `@trpc/next` with `ssr: true` in `_app.tsx` does a prepass of all `useQuery` on the server
 - Configurable data flow between client/server with links
 - Single API-endpoint which reduces amounts of cold starts in serverless environments
+- Not having to `import` your queries or mutations - if they're defined on the server, they're available to client
 
 ### Benefits with Blitz.js
 
 - Blitz has a plenty of nice DX-benefits with it being a full-stack famework  
 - Blitz' custom build pipeline enables stuff like CMD+clicking a fn to jump to the backend function  
 - Code scaffolding, plug-and-play auth, etc
-- Blitzjs has a bigger community  
+- Blitz has a bigger community  
