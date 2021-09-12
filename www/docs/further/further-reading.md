@@ -30,7 +30,7 @@ tRPC is a lot simpler and couples your server & website/app more tightly togethe
 
 The philosophy of the _"Zero-API data layer"_ is a common thread in both tRPC & Blitz but it is solved in different ways - Blitz solves the data layer by a custom compiler &amp; tRPC solves the data layer by advanced type inference.
 
-The key difference is that Blitz is a full-stack framework and tRPC is mainly targeting the data layer and doesn't have strong opinions about the rest of your stack.
+The key difference is that Blitz is a full-stack framework and tRPC is a library mainly targeting the data layer and doesn't have strong opinions about the rest of your stack.
 
 ### Benefits with tRPC
 
