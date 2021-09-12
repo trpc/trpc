@@ -23,19 +23,21 @@ We've taken a lot of inspiration from GraphQL & if you've made GraphQL-servers b
 
 tRPC is a lot simpler and couples your server & website/app more tightly together (for good and for bad). It makes it easy to move quickly, do changes without updating a schema & there's no of thinking about the ever-traversable graph.
 
-## Differences to Blitz.js
+## Differences to [Blitz.js](https://blitzjs.com/)
 
-> I've gotten asked several times about differences with Blitz.js and outlined some differences [on Twitter](https://twitter.com/alexdotjs/status/1436654002477969411) and asked Brandon Bayer, the creator of Blitz, to chip in. &mdash; [Alex / KATT](https://twitter.com/alexdotjs)
+> I've gotten asked several times about differences with Blitz.js and started outlining some differences [on Twitter](https://twitter.com/alexdotjs/status/1436654002477969411). If you think the below comparison is wrong in any way, please don't hesitate to reach out. &mdash; [Alex / KATT](https://twitter.com/alexdotjs)
 
-[Blitz.js](https://blitzjs.com) is a full-stack framework & tRPC is mainly the data layer, but the philosophy of the _"Zero-API data layer"_ is a common thread. Blitz solves the data layer by a custom compiler &amp; tRPC solves the data layer by type inference.
+
+The philosophy of the _"Zero-API data layer"_ is a common thread in both tRPC & Blitz but it is solved in different ways - Blitz solves the data layer by a custom compiler &amp; tRPC solves the data layer by advanced type inference.
+
+The key difference is that Blitz is a full-stack framework and tRPC is a library mainly targeting the data layer and doesn't have strong opinions about the rest of your stack.
 
 ### Benefits with tRPC
 
 - Easy HTTP caching of queries as requests are made with `GET` rather than `POST`
 - Query batching out-of-the-box
-- Not tied to React as it has no build pipeline
+- Not tied to React as it has no custom build pipeline
 - Works great with React Native
-- No custom build pipeline
 - Well-tested & production-ready
 - Can be added to existing brownfield projects
 - WebSockets transport
@@ -43,10 +45,12 @@ tRPC is a lot simpler and couples your server & website/app more tightly togethe
 - Zero-conf SSR with `ssr: true` in `_app.tsx` does a prepass of all `useQuery` on the server
 - Configurable data flow between client/server with links
 - Single API-endpoint which reduces amounts of cold starts in serverless environments
+- Use any database you want
 
 ### Benefits with Blitz.js
 
+- More batteries included and easier to setup
 - Blitz has a plenty of nice DX-benefits with it being a full-stack famework  
-- Blitz' custom build pipeline enables stuff like CMD+clicking a fn to jump to the backend function  
+- Blitz' custom build pipeline enables stuff like CMD+clicking a function to jump to the backend function  
 - Code scaffolding, plug-and-play auth, etc
 - Blitzjs has a bigger community  
