@@ -45,7 +45,6 @@ The key difference is that Blitz is a full-stack framework and tRPC is a library
 - Zero-conf SSR with `ssr: true` in `_app.tsx` does a prepass of all `useQuery` on the server
 - Configurable data flow between client/server with links
 - Single API-endpoint which reduces amounts of cold starts in serverless environments
-- Use any database you want
 
 ### Benefits with Blitz.js
 
