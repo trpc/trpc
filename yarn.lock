@@ -2504,9 +2504,9 @@
   integrity sha512-UdkG3mLEqXgnlKsWanWcgb6dOjUzJ+XC5f+aWw30qrtjxeNUSfKX1cd5FBzOaXQumoe9nIqeZUvrRJS03HCCtw==
 
 "@preconstruct/cli@^2.1.2":
-  version "2.1.3"
-  resolved "https://registry.yarnpkg.com/@preconstruct/cli/-/cli-2.1.3.tgz#5e10f012e6962b22ea972ef136211680b9cdd67b"
-  integrity sha512-uKA/XEs156fyZhCz+FCjBU7nFHFIybLV7SMmtKrHioqs+Eac8TPFNetWAeGRB96dRTvIpqezE/UPr916X85ufw==
+  version "2.1.4"
+  resolved "https://registry.yarnpkg.com/@preconstruct/cli/-/cli-2.1.4.tgz#246bfe307490f29a537dd4b0092286787884a879"
+  integrity sha512-7sJ2O6qYiEqXtl3s7ik9Tw1iYNTapnfbLlmsy/stF8temoMZWsezU3tpVvGWeGfDo1OA2HT1QSl5AneRx2wq4Q==
   dependencies:
     "@babel/code-frame" "^7.5.5"
     "@babel/core" "^7.7.7"
