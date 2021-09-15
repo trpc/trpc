@@ -9,7 +9,8 @@ import {
 } from '@trpc/server';
 import { TRPCResult } from '@trpc/server/rpc';
 import { executeChain } from './executeChain';
-import { getAbortController, getFetch } from './fetchHelpers';
+import { getAbortController } from './fetchHelpers';
+import { getFetch } from '../getFetch';
 import { ObservableCallbacks, UnsubscribeFn } from './observable';
 import { TRPCAbortError } from './TRPCAbortError';
 import {

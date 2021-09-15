@@ -63,8 +63,6 @@ export type LinkRuntimeOptions = Readonly<{
   AbortController?: typeof AbortController;
 }>;
 
-export { getFetch } from '../internals/fetchHelpers';
-
 export type CancelFn = () => void;
 
 export type PromiseAndCancel<TValue> = {
