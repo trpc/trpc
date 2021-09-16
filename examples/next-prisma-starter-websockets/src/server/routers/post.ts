@@ -4,7 +4,8 @@
  */
 
 import { z } from 'zod';
-import { Context, createRouter } from '../trpc';
+import { createRouter } from '../createRouter';
+import { Context } from '../context';
 import { EventEmitter } from 'events';
 import { Subscription, TRPCError } from '@trpc/server';
 import { Post } from '@prisma/client';
