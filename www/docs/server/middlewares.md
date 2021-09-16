@@ -82,7 +82,8 @@ A middleware can replace the router's context, and downstream procedures will re
 
 ```ts
 interface Context {
-  maybeUser?: {
+  // user is nullable
+  user?: {
     id: string
   }
 }
@@ -90,12 +91,13 @@ interface Context {
 trpc
   .router<Context>()
   .middleware(({ ctx, next }) => {
-    if (!ctx.maybeUser) {
+    if (!ctx.user) {
       throw new TRPCError({ code: 'UNAUTHORIZED' });
     }
 
     return next({
       ctx: {
+        ...ctx,
         user: ctx.maybeUser, // user value is known to be non-null now
       },
     });
@@ -105,4 +107,30 @@ trpc
       return ctx.user.id;
     }
   });
+```
+
+### `createProtectedRouter()`-helper
+
+This helper can be used anywhere in your app tree to enforce downstream procedures to be authorized.
+
+```tsx
+import * as trpc from "@trpc/server";
+import { Context } from "./context";
+
+export function createProtectedRouter() {
+  return trpc
+    .router<Context>()
+    .middleware(({ ctx, next }) => {
+      if (!ctx.user) {
+        throw new trpc.TRPCError({ code: "UNAUTHORIZED" });
+      }
+      return next({
+        ctx: {
+          ...ctx,
+          // infers that `user` is non-nullable to downstream procedures
+          user: ctx.user,
+        },
+      });
+    });
+}
 ```
