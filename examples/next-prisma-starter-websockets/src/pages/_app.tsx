@@ -3,7 +3,7 @@ import { wsLink, createWSClient } from '@trpc/client/links/wsLink';
 import { loggerLink } from '@trpc/client/links/loggerLink';
 import { withTRPC } from '@trpc/next';
 import { AppType } from 'next/dist/shared/lib/utils';
-import type { AppRouter } from 'server/routers/app';
+import type { AppRouter } from 'server/routers/_app';
 import superjson from 'superjson';
 import getConfig from 'next/config';
 import { getSession, Provider } from 'next-auth/client';

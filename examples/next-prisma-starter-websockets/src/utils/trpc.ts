@@ -1,6 +1,6 @@
 import { createReactQueryHooks } from '@trpc/react';
 import type { inferProcedureOutput } from '@trpc/server';
-import { AppRouter } from 'server/routers/app';
+import { AppRouter } from 'server/routers/_app';
 // import superjson from 'superjson';
 // ℹ️ Type-only import:
 // https://www.typescriptlang.org/docs/handbook/release-notes/typescript-3-8.html#type-only-imports-and-export
