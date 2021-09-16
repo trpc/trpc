@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import * as trpc from '@trpc/server';
+import * as trpc from '../dist/trpc-server.cjs';
 import { expectTypeOf } from 'expect-type';
 import { z } from 'zod';
 
