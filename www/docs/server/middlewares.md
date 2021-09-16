@@ -8,9 +8,7 @@ slug: /middlewares
 
 You are able to add middleware(s) to a whole router with the `middleware()` method. The middleware(s) will wrap the invocation of the procedure and must pass through its return value.
 
-## Examples
-
-### Authorization
+## Authorization
 
 In the example below any call to `admin.*` will ensure that the user is an "admin" before executing any query or mutation.
 
@@ -47,7 +45,7 @@ trpc
 See [Error Handling](error-handling.md) to learn more about the `TRPCError` thrown in the above example.
 :::
 
-### Logging
+## Logging
 
 In the example below timings for queries are logged automatically.
 
@@ -76,7 +74,7 @@ trpc
   })
 ```
 
-### Context Swapping
+## Context Swapping
 
 A middleware can replace the router's context, and downstream procedures will receive the new context value:
 
@@ -109,7 +107,7 @@ trpc
   });
 ```
 
-### `createProtectedRouter()`-helper
+#### `createProtectedRouter()`-helper
 
 This helper can be used anywhere in your app tree to enforce downstream procedures to be authorized.
 
