@@ -28,6 +28,9 @@ test('inferProcedureFromInput regression', async () => {
           return 'out' as const;
         },
       })
+      .query('noinput', {
+        resolve: async () => 'out' as const,
+      })
       .middleware(async ({ next, ctx }) =>
         next({
           ctx: {
@@ -54,6 +57,14 @@ test('inferProcedureFromInput regression', async () => {
   >().toEqualTypeOf<{
     in: string;
   }>();
+
+  expectTypeOf<
+    trpc.inferProcedureInput<Queries['admin.noinput']>
+  >().toBeUnknown();
+
+  expectTypeOf<
+    trpc.inferProcedureOutput<Queries['admin.noinput']>
+  >().toEqualTypeOf<'out'>();
 
   expectTypeOf<
     trpc.inferProcedureInput<Queries['admin.hello-2']>
