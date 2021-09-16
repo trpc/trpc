@@ -5,6 +5,8 @@ import * as trpc from '../../dist/trpc-server.cjs';
 import { expectTypeOf } from 'expect-type';
 import { z } from 'zod';
 
+// https://github.com/trpc/trpc/issues/949
+// https://github.com/trpc/trpc/pull/955
 test('inferProcedureFromInput regression', async () => {
   // eslint-disable-next-line @typescript-eslint/ban-types
   type Context = {};
