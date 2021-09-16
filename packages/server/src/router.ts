@@ -98,10 +98,7 @@ export type inferHandlerInput<
     : [TInput] // -> input is required
   : [(undefined | null)?]; // -> there is no input
 
-/**
- * @internal
- */
-export type inferHandlerFn<TProcedures extends ProcedureRecord> = <
+type inferHandlerFn<TProcedures extends ProcedureRecord> = <
   TProcedure extends TProcedures[TPath],
   TPath extends keyof TProcedures & string,
 >(
@@ -157,7 +154,7 @@ export type ErrorFormatter<TContext, TShape extends TRPCErrorShape<number>> = ({
   shape: DefaultErrorShape;
 }) => TShape;
 
-export type DefaultErrorData = {
+type DefaultErrorData = {
   code: TRPC_ERROR_CODE_KEY;
   httpStatus: number;
   path?: string;
@@ -205,10 +202,7 @@ const defaultTransformer: CombinedDataTransformer = {
   output: { serialize: (obj) => obj, deserialize: (obj) => obj },
 };
 
-/**
- * @internal
- */
-export type SwapProcedureContext<
+type SwapProcedureContext<
   TProcedure extends Procedure<any, any, any, any>,
   TNewContext,
 > = TProcedure extends Procedure<
@@ -221,10 +215,7 @@ export type SwapProcedureContext<
   ? Procedure<TInputContext, TNewContext, TInput, TOutput>
   : never;
 
-/**
- * @internal
- */
-export type SwapContext<
+type SwapContext<
   TObj extends ProcedureRecord<any, any, any, any>,
   TNewContext,
 > = format<{
