@@ -2,7 +2,7 @@
 import { AsyncLocalStorage } from 'async_hooks';
 import { expectTypeOf } from 'expect-type';
 import * as trpc from '../src';
-import { TRPCError, inferProcedureOutput } from '../src';
+import { inferProcedureOutput, TRPCError } from '../src';
 import { MiddlewareResult } from '../src/internals/middlewares';
 import { routerToServerAndClient } from './_testHelpers';
 
