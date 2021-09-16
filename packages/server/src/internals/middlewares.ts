@@ -28,7 +28,10 @@ export type MiddlewareResult<TContext> =
   | MiddlewareOKResult<TContext>
   | MiddlewareErrorResult<TContext>;
 
-export type MiddlewareFunction<TInputContext, TContext> = (opts: {
+export type MiddlewareFunction<
+  TInputContext,
+  TContext = TInputContext,
+> = (opts: {
   ctx: TInputContext;
   type: ProcedureType;
   path: string;

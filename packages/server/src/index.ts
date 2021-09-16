@@ -5,6 +5,8 @@ export * from './transformer';
 export * from './TRPCError';
 export * from './types';
 export * from './internals/procedure';
+export * from './internals/middlewares';
+export * from './internals/BaseHandlerOptions';
 
 // deprecated
 export * from './deprecated/createHttpServer';

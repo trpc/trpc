@@ -23,9 +23,6 @@ export type ProcedureInputParser<TInput = unknown> =
   | ProcedureInputParserYupEsque<TInput>
   | ProcedureInputParserCustomValidatorEsque<TInput>;
 
-/**
- * @internal
- */
 export type ProcedureResolver<
   TContext = unknown,
   TInput = unknown,
@@ -42,9 +39,6 @@ interface ProcedureOptions<TContext, TInput, TOutput> {
   inputParser: ProcedureInputParser<TInput>;
 }
 
-/**
- * @internal
- */
 export interface ProcedureCallOptions<TContext> {
   ctx: TContext;
   rawInput: unknown;
@@ -71,9 +65,6 @@ function getParseFn<TInput>(
   throw new Error('Could not find a validator fn');
 }
 
-/**
- * @internal
- */
 export abstract class Procedure<
   TInputContext, //
   TContext,
@@ -103,10 +94,6 @@ export abstract class Procedure<
     }
   }
 
-  /**
-   * Trigger middlewares in order, parse raw input & call resolver
-   * @internal
-   */
   public async call(
     opts: ProcedureCallOptions<TInputContext>,
   ): Promise<TOutput> {
@@ -222,16 +209,10 @@ function isProcedureWithInput<TContext, TInput, TOutput>(
   return !!opts.input;
 }
 
-/**
- * @internal
- */
 export function createProcedure<TInputContext, TContext, TInput, TOutput>(
   opts: CreateProcedureWithInput<TContext, TInput, TOutput>,
 ): ProcedureWithInput<TInputContext, TContext, TInput, TOutput>;
 
-/**
- * @internal
- */
 export function createProcedure<TInputContext, TContext, TOutput>(
   opts: CreateProcedureWithoutInput<TContext, TOutput>,
 ): ProcedureWithoutInput<TInputContext, TContext, TOutput>;
@@ -263,9 +244,6 @@ export function createProcedure<TContext, TInput, TOutput>(
   });
 }
 
-/**
- * @internal
- */
 export type inferProcedureFromOptions<
   TInputContext,
   TOptions extends CreateProcedureOptions<any, any, any>,

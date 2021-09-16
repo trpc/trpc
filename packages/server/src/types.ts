@@ -1,26 +1,14 @@
 /* eslint-disable @typescript-eslint/ban-types */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-/**
- * @internal
- */
 export type Prefix<K extends string, T extends string> = `${K}${T}`;
 
-/**
- * @internal
- */
 export type identity<T> = T;
 
-/**
- * @internal
- */
 export type format<T> = {
   [k in keyof T]: T[k];
 };
 
-/**
- * @internal
- */
 export type flatten<T, Q> = identity<{
   [k in keyof T | keyof Q]: k extends keyof T
     ? T[k]
@@ -29,9 +17,6 @@ export type flatten<T, Q> = identity<{
     : never;
 }>;
 
-/**
- * @internal
- */
 export type Prefixer<
   TObj extends Record<string, any>,
   TPrefix extends string,
@@ -44,9 +29,6 @@ export type Prefixer<
  */
 export type Maybe<T> = T | undefined | null;
 
-/**
- * @internal
- */
 export type ThenArg<T> = T extends PromiseLike<infer U> ? ThenArg<U> : T;
 
 /**
