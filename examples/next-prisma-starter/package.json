@@ -63,7 +63,7 @@
     "prettier": "^2.3.2",
     "prisma": "^3.0.1",
     "ts-jest": "^27.0.5",
-    "typescript": "4.4.2"
+    "typescript": "4.4.3"
   },
   "publishConfig": {
     "access": "restricted"
