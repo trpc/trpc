@@ -8,9 +8,7 @@ slug: /middlewares
 
 You are able to add middleware(s) to a whole router with the `middleware()` method. The middleware(s) will wrap the invocation of the procedure and must pass through its return value.
 
-## Examples
-
-### Authorization
+## Authorization
 
 In the example below any call to `admin.*` will ensure that the user is an "admin" before executing any query or mutation.
 
@@ -47,7 +45,7 @@ trpc
 See [Error Handling](error-handling.md) to learn more about the `TRPCError` thrown in the above example.
 :::
 
-### Logging
+## Logging
 
 In the example below timings for queries are logged automatically.
 
@@ -76,13 +74,14 @@ trpc
   })
 ```
 
-### Context Swapping
+## Context Swapping
 
 A middleware can replace the router's context, and downstream procedures will receive the new context value:
 
 ```ts
 interface Context {
-  maybeUser?: {
+  // user is nullable
+  user?: {
     id: string
   }
 }
@@ -90,12 +89,13 @@ interface Context {
 trpc
   .router<Context>()
   .middleware(({ ctx, next }) => {
-    if (!ctx.maybeUser) {
+    if (!ctx.user) {
       throw new TRPCError({ code: 'UNAUTHORIZED' });
     }
 
     return next({
       ctx: {
+        ...ctx,
         user: ctx.maybeUser, // user value is known to be non-null now
       },
     });
@@ -105,4 +105,30 @@ trpc
       return ctx.user.id;
     }
   });
+```
+
+### `createProtectedRouter()`-helper
+
+This helper can be used anywhere in your app tree to enforce downstream procedures to be authorized.
+
+```tsx
+import * as trpc from "@trpc/server";
+import { Context } from "./context";
+
+export function createProtectedRouter() {
+  return trpc
+    .router<Context>()
+    .middleware(({ ctx, next }) => {
+      if (!ctx.user) {
+        throw new trpc.TRPCError({ code: "UNAUTHORIZED" });
+      }
+      return next({
+        ctx: {
+          ...ctx,
+          // infers that `user` is non-nullable to downstream procedures
+          user: ctx.user,
+        },
+      });
+    });
+}
 ```
