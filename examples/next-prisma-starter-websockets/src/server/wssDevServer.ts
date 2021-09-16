@@ -1,7 +1,7 @@
 import ws from 'ws';
 import { applyWSSHandler } from '@trpc/server/adapters/ws';
-import { appRouter } from './routers/app';
-import { createContext } from './trpc';
+import { appRouter } from './routers/_app';
+import { createContext } from './context';
 import fetch from 'node-fetch';
 
 if (!global.fetch) {
