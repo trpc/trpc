@@ -32,6 +32,9 @@ assertNotBrowser();
  */
 export type ProcedureType = 'query' | 'mutation' | 'subscription';
 
+/**
+ * @internal
+ */
 export type ProcedureRecord<
   TInputContext = any,
   TContext = any,
@@ -82,6 +85,9 @@ function getDataTransformer(
   }
   return { input: transformer, output: transformer };
 }
+/**
+ * @internal
+ */
 export type inferHandlerInput<
   TProcedure extends Procedure<any, any, any, any>,
 > = TProcedure extends ProcedureWithInput<any, any, infer TInput, any>
@@ -92,6 +98,9 @@ export type inferHandlerInput<
     : [TInput] // -> input is required
   : [(undefined | null)?]; // -> there is no input
 
+/**
+ * @internal
+ */
 export type inferHandlerFn<TProcedures extends ProcedureRecord> = <
   TProcedure extends TProcedures[TPath],
   TPath extends keyof TProcedures & string,
@@ -100,6 +109,9 @@ export type inferHandlerFn<TProcedures extends ProcedureRecord> = <
   ...args: inferHandlerInput<TProcedure>
 ) => Promise<inferProcedureOutput<TProcedures[TPath]>>;
 
+/**
+ * @internal
+ */
 export type inferRouterContext<TRouter extends AnyRouter> = Parameters<
   TRouter['createCaller']
 >[0];
@@ -116,6 +128,9 @@ export type AnyRouter<TContext = any> = Router<
   any
 >;
 
+/**
+ * @internal
+ */
 export type inferRouterError<TRouter extends AnyRouter> = ReturnType<
   TRouter['getErrorShape']
 >;
@@ -128,6 +143,9 @@ const PROCEDURE_DEFINITION_MAP: Record<
   subscription: 'subscriptions',
 };
 
+/**
+ * @internal
+ */
 export type ErrorFormatter<TContext, TShape extends TRPCErrorShape<number>> = ({
   error,
 }: {
@@ -146,6 +164,9 @@ export type DefaultErrorData = {
   stack?: string;
 };
 
+/**
+ * @internal
+ */
 export interface DefaultErrorShape
   extends TRPCErrorShape<TRPC_ERROR_CODE_NUMBER, DefaultErrorData> {
   message: string;
@@ -184,19 +205,25 @@ const defaultTransformer: CombinedDataTransformer = {
   output: { serialize: (obj) => obj, deserialize: (obj) => obj },
 };
 
+/**
+ * @internal
+ */
 export type SwapProcedureContext<
   TProcedure extends Procedure<any, any, any, any>,
   TNewContext,
-> = TProcedure extends ProcedureWithInput<
+> = TProcedure extends Procedure<
   infer TInputContext,
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   infer _TOldContext,
   infer TInput,
   infer TOutput
 >
-  ? ProcedureWithInput<TInputContext, TNewContext, TInput, TOutput>
+  ? Procedure<TInputContext, TNewContext, TInput, TOutput>
   : never;
 
+/**
+ * @internal
+ */
 export type SwapContext<
   TObj extends ProcedureRecord<any, any, any, any>,
   TNewContext,
@@ -204,6 +231,9 @@ export type SwapContext<
   [P in keyof TObj]: SwapProcedureContext<TObj[P], TNewContext>;
 }>;
 
+/**
+ * @internal The type signature of this class may change without warning.
+ */
 export class Router<
   TInputContext,
   TContext,
@@ -554,7 +584,7 @@ export class Router<
    * Function to be called before any procedure is invoked
    * @link https://trpc.io/docs/middlewares
    */
-  public middleware<TNewContext = TContext>(
+  public middleware<TNewContext>(
     middleware: MiddlewareFunction<TContext, TNewContext>,
   ): Router<
     TInputContext,

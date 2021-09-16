@@ -2,56 +2,25 @@ import { expectTypeOf } from 'expect-type';
 import * as trpc from '@trpc/server';
 import { z } from 'zod';
 
-// eslint-disable-next-line @typescript-eslint/ban-types
-type Context = {};
-const appRouter = trpc.router<Context>().merge(
-  'admin.',
+const appRouter = trpc.router().merge(
+  'admin/',
   trpc
-    .router<Context>()
+    .router()
     .mutation('testMutation', {
       input: z.object({
-        in: z.string(),
+        foo: z.string(),
       }),
-      resolve: async ({ input }) => `out` as const,
+      resolve: async ({ input }) => `${input.foo}!`,
     })
-    .query('hello', {
-      input: z.object({
-        in: z.string(),
-      }),
-      resolve() {
-        return 'out' as const;
-      },
-    })
-    .middleware(async ({ next, ctx }) =>
-      next({
-        ctx: {
-          ...ctx,
-          _test: '1',
-        },
-      }),
-    )
-    .query('hello-2', {
-      input: z.object({
-        in: z.string(),
-      }),
-      resolve() {
-        return 'out' as const;
-      },
-    }),
+    .middleware(async ({ next }) => next()),
 );
 
 type Mutations = typeof appRouter._def.mutations;
-type Queries = typeof appRouter._def.queries;
-
-type TInput = trpc.inferProcedureInput<Queries['admin.hello']>;
-expectTypeOf<trpc.inferProcedureInput<Queries['admin.hello']>>().toEqualTypeOf<{
-  in: string;
-}>();
 
 expectTypeOf<
-  trpc.inferProcedureInput<Mutations['admin.testMutation']>
->().toEqualTypeOf<{ in: string }>();
+  trpc.inferProcedureInput<Mutations['admin/testMutation']>
+>().toEqualTypeOf<{ foo: string }>();
 
 expectTypeOf<
-  trpc.inferProcedureInput<Mutations['admin.testMutation']>
+  trpc.inferProcedureInput<Mutations['admin/testMutation']>
 >().not.toBeUnknown();
