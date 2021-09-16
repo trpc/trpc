@@ -205,14 +205,14 @@ const defaultTransformer: CombinedDataTransformer = {
 type SwapProcedureContext<
   TProcedure extends Procedure<any, any, any, any>,
   TNewContext,
-> = TProcedure extends ProcedureWithInput<
+> = TProcedure extends Procedure<
   infer TInputContext,
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   infer _TOldContext,
   infer TInput,
   infer TOutput
 >
-  ? ProcedureWithInput<TInputContext, TNewContext, TInput, TOutput>
+  ? Procedure<TInputContext, TNewContext, TInput, TOutput>
   : never;
 
 type SwapContext<
