@@ -3,7 +3,7 @@ import { parse } from 'url';
 import next from 'next';
 import ws from 'ws';
 import { applyWSSHandler } from '@trpc/server/adapters/ws';
-import { appRouter } from './routers/app';
+import { appRouter } from './routers/_app';
 import { createContext } from './context';
 import { TRPCReconnectNotification } from '@trpc/server/rpc';
 const port = parseInt(process.env.PORT || '3000', 10);
