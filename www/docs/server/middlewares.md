@@ -107,7 +107,7 @@ trpc
   });
 ```
 
-#### `createProtectedRouter()`-helper
+### `createProtectedRouter()`-helper
 
 This helper can be used anywhere in your app tree to enforce downstream procedures to be authorized.
 
