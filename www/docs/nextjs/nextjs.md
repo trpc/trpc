@@ -34,7 +34,8 @@ Recommended but not enforced file structure. This is what you get when starting 
 │   │   │   ├── app.ts   # <-- main app router
 │   │   │   ├── post.ts  # <-- sub routers
 │   │   │   └── [..]
-│   │   └── trpc.ts  # <-- create app context
+│   │   ├── context.ts      # <-- create app context
+│   │   └── createRouter.ts # <-- router helper
 │   └── utils
 │       └── trpc.ts  # <-- your typesafe tRPC hooks
 └── [..]
