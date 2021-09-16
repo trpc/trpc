@@ -2,7 +2,7 @@ import { ProcedureType } from '../router';
 import { TRPCError } from '../TRPCError';
 
 export const middlewareMarker = Symbol('middlewareMarker');
-interface MiddlewareResultBase<TContext> {
+export interface MiddlewareResultBase<TContext> {
   /**
    * All middlewares should pass through their `next()`'s output.
    * Requiring this marker makes sure that can't be forgotten at compile-time.
@@ -11,12 +11,13 @@ interface MiddlewareResultBase<TContext> {
   ctx: TContext;
 }
 
-interface MiddlewareOKResult<TContext> extends MiddlewareResultBase<TContext> {
+export interface MiddlewareOKResult<TContext>
+  extends MiddlewareResultBase<TContext> {
   ok: true;
   data: unknown;
   // this could be extended with `input`/`rawInput` later
 }
-interface MiddlewareErrorResult<TContext>
+export interface MiddlewareErrorResult<TContext>
   extends MiddlewareResultBase<TContext> {
   ok: false;
   error: TRPCError;

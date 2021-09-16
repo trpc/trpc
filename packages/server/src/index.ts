@@ -4,6 +4,7 @@ export * from './subscription';
 export * from './transformer';
 export * from './TRPCError';
 export * from './types';
+export * from './internals/procedure';
 
 // deprecated
 export * from './deprecated/createHttpServer';

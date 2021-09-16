@@ -23,6 +23,9 @@ export type ProcedureInputParser<TInput = unknown> =
   | ProcedureInputParserYupEsque<TInput>
   | ProcedureInputParserCustomValidatorEsque<TInput>;
 
+/**
+ * @internal
+ */
 export type ProcedureResolver<
   TContext = unknown,
   TInput = unknown,
@@ -218,9 +221,17 @@ function isProcedureWithInput<TContext, TInput, TOutput>(
 ): opts is CreateProcedureWithInput<TContext, TInput, TOutput> {
   return !!opts.input;
 }
+
+/**
+ * @internal
+ */
 export function createProcedure<TInputContext, TContext, TInput, TOutput>(
   opts: CreateProcedureWithInput<TContext, TInput, TOutput>,
 ): ProcedureWithInput<TInputContext, TContext, TInput, TOutput>;
+
+/**
+ * @internal
+ */
 export function createProcedure<TInputContext, TContext, TOutput>(
   opts: CreateProcedureWithoutInput<TContext, TOutput>,
 ): ProcedureWithoutInput<TInputContext, TContext, TOutput>;
@@ -252,6 +263,9 @@ export function createProcedure<TContext, TInput, TOutput>(
   });
 }
 
+/**
+ * @internal
+ */
 export type inferProcedureFromOptions<
   TInputContext,
   TOptions extends CreateProcedureOptions<any, any, any>,
