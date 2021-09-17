@@ -5526,9 +5526,9 @@ eslint-plugin-react-hooks@^4.2.0:
   integrity sha512-623WEiZJqxR7VdxFCKLI6d6LLpwJkGPYKODnkH3D7WpOG5KM8yWueBd8TLsNAetEJNF5iJmolaAKO3F8yzyVBQ==
 
 eslint-plugin-react@^7.23.1, eslint-plugin-react@^7.25.1:
-  version "7.25.1"
-  resolved "https://registry.npmjs.org/eslint-plugin-react/-/eslint-plugin-react-7.25.1.tgz#9286b7cd9bf917d40309760f403e53016eda8331"
-  integrity sha512-P4j9K1dHoFXxDNP05AtixcJEvIT6ht8FhYKsrkY0MPCPaUMYijhpWwNiRDZVtA8KFuZOkGSeft6QwH8KuVpJug==
+  version "7.25.2"
+  resolved "https://registry.yarnpkg.com/eslint-plugin-react/-/eslint-plugin-react-7.25.2.tgz#d567a217d306b76dd110561f28074e2328ae38f8"
+  integrity sha512-elx4585wgmryanJK4C5IoSKQyVZ+e7H0t2JOOtJNBql0cuercvSShvRReuLBbfx8687yW5yv+UL7pXwMsd6adQ==
   dependencies:
     array-includes "^3.1.3"
     array.prototype.flatmap "^1.2.4"
@@ -5980,9 +5980,9 @@ fastify-warning@^0.2.0:
   integrity sha512-s1EQguBw/9qtc1p/WTY4eq9WMRIACkj+HTcOIK1in4MV5aFaQC9ZCIt0dJ7pr5bIf4lPpHvAtP2ywpTNgs7hqw==
 
 fastify@^3.17.0:
-  version "3.21.1"
-  resolved "https://registry.yarnpkg.com/fastify/-/fastify-3.21.1.tgz#4f77b309d798d4145f2888fa0778398aa313ef44"
-  integrity sha512-BibsysctHZzNAV6oSqTnWVGnEeNDJksk8va642WZeyIzKo0udDSvcR6r8jWtUAWpqWzMC13b7tACdpX9kd0h9w==
+  version "3.21.3"
+  resolved "https://registry.yarnpkg.com/fastify/-/fastify-3.21.3.tgz#2c32124d82489b7cf5ee7a546e5ab85f647cdf57"
+  integrity sha512-4PuuCCcGZpcD9ERc8x6H7GHElcHQxHVouyANAVw/Nd9h07X63QQJ2EpHeQtuiDCjcs0pf9wKb6KIul3qCYh+1g==
   dependencies:
     "@fastify/ajv-compiler" "^1.0.0"
     abstract-logging "^2.0.0"
