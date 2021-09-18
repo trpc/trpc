@@ -184,7 +184,7 @@ export type CreateProcedureWithInput<TContext, TInput, TOutput> = {
   resolve: ProcedureResolver<TContext, TInput, TOutput>;
 };
 export type CreateProcedureWithoutInput<TContext, TOutput> = {
-  resolve: ProcedureResolver<TContext, undefined, TOutput>;
+  resolve: ProcedureResolver<TContext, undefined | null, TOutput>;
 };
 
 export type CreateProcedureOptions<
