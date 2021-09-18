@@ -60,7 +60,7 @@ test('inferProcedureFromInput regression', async () => {
 
   expectTypeOf<
     trpc.inferProcedureInput<Queries['admin.noInput']>
-  >().toBeUndefined();
+  >().toEqualTypeOf<undefined | null>();
 
   expectTypeOf<
     trpc.inferProcedureOutput<Queries['admin.noInput']>
