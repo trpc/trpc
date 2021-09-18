@@ -33,8 +33,6 @@ trpc
       })
       .query('secretPlace', {
         resolve() {
-          resolverMock();
-
           return 'a key';
         },
       }),
