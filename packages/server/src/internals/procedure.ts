@@ -179,14 +179,21 @@ export class Procedure<TInputContext, TContext, TInput, TOutput> {
   }
 }
 
-export type CreateProcedureOptions<TContext, TInput, TOutput> =
-  | {
-      resolve: ProcedureResolver<TContext, TInput, TOutput>;
-    }
-  | {
-      input: ProcedureInputParser<TInput>;
-      resolve: ProcedureResolver<TContext, TInput, TOutput>;
-    };
+export type CreateProcedureWithInput<TContext, TInput, TOutput> = {
+  input: ProcedureInputParser<TInput>;
+  resolve: ProcedureResolver<TContext, TInput, TOutput>;
+};
+export type CreateProcedureWithoutInput<TContext, TOutput> = {
+  resolve: ProcedureResolver<TContext, undefined, TOutput>;
+};
+
+export type CreateProcedureOptions<
+  TContext = unknown,
+  TInput = unknown,
+  TOutput = unknown,
+> =
+  | CreateProcedureWithInput<TContext, TInput, TOutput>
+  | CreateProcedureWithoutInput<TContext, TOutput>;
 
 export function createProcedure<TContext, TInput, TOutput>(
   opts: CreateProcedureOptions<TContext, TInput, TOutput>,
@@ -206,9 +213,9 @@ export function createProcedure<TContext, TInput, TOutput>(
 
   return new Procedure({
     inputParser: inputParser as any,
-    resolver: opts.resolve,
+    resolver: opts.resolve as any,
     middlewares: [],
-  }) as any;
+  });
 }
 
 export type inferProcedureFromOptions<
