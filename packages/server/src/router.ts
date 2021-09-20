@@ -12,7 +12,6 @@ import {
   inferProcedureFromOptions,
   Procedure,
   ProcedureCallOptions,
-  ProcedureWithInput,
 } from './internals/procedure';
 import {
   TRPCErrorShape,
@@ -47,8 +46,10 @@ export type ProcedureRecord<
  */
 export type inferProcedureInput<
   TProcedure extends Procedure<any, any, any, any>,
-> = TProcedure extends ProcedureWithInput<any, any, infer Input, any>
-  ? Input
+> = TProcedure extends Procedure<any, any, infer Input, any>
+  ? undefined extends Input
+    ? Input | null
+    : Input
   : undefined;
 
 /**
@@ -90,7 +91,7 @@ function getDataTransformer(
  */
 export type inferHandlerInput<
   TProcedure extends Procedure<any, any, any, any>,
-> = TProcedure extends ProcedureWithInput<any, any, infer TInput, any>
+> = TProcedure extends Procedure<any, any, infer TInput, any>
   ? undefined extends TInput // ? is input optional
     ? unknown extends TInput // ? is input unset
       ? [(null | undefined)?] // -> there is no input
@@ -205,14 +206,14 @@ const defaultTransformer: CombinedDataTransformer = {
 type SwapProcedureContext<
   TProcedure extends Procedure<any, any, any, any>,
   TNewContext,
-> = TProcedure extends ProcedureWithInput<
+> = TProcedure extends Procedure<
   infer TInputContext,
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   infer _TOldContext,
   infer TInput,
   infer TOutput
 >
-  ? ProcedureWithInput<TInputContext, TNewContext, TInput, TOutput>
+  ? Procedure<TInputContext, TNewContext, TInput, TOutput>
   : never;
 
 type SwapContext<
@@ -290,6 +291,7 @@ export class Router<
     TSubscriptions,
     TErrorShape
   >;
+
   public query<TPath extends string, TOutput>(
     path: TPath,
     procedure: CreateProcedureWithoutInput<TContext, TOutput>,
@@ -304,10 +306,8 @@ export class Router<
     TSubscriptions,
     TErrorShape
   >;
-  public query<TPath extends string, TInput, TOutput>(
-    path: TPath,
-    procedure: CreateProcedureOptions<TContext, TInput, TOutput>,
-  ) {
+
+  query(path: string, procedure: CreateProcedureOptions<TContext, any, any>) {
     const router = new Router<TContext, TContext, any, {}, {}, any>({
       queries: safeObject({
         [path]: createProcedure(procedure),
@@ -331,6 +331,7 @@ export class Router<
     TSubscriptions,
     TErrorShape
   >;
+
   public mutation<TPath extends string, TOutput>(
     path: TPath,
     procedure: CreateProcedureWithoutInput<TContext, TOutput>,
@@ -345,9 +346,10 @@ export class Router<
     TSubscriptions,
     TErrorShape
   >;
-  public mutation<TPath extends string, TInput, TOutput>(
-    path: TPath,
-    procedure: CreateProcedureOptions<TContext, TInput, TOutput>,
+
+  public mutation(
+    path: string,
+    procedure: CreateProcedureOptions<TContext, any, any>,
   ) {
     const router = new Router<TContext, TContext, {}, any, {}, any>({
       mutations: safeObject({
@@ -357,6 +359,7 @@ export class Router<
 
     return this.merge(router);
   }
+
   /**
    * @beta Might change without a major version bump
    */
@@ -376,6 +379,7 @@ export class Router<
       Record<TPath, inferProcedureFromOptions<TInputContext, typeof procedure>>,
     TErrorShape
   >;
+
   /**
    * @beta Might change without a major version bump
    */
@@ -394,14 +398,11 @@ export class Router<
       Record<TPath, inferProcedureFromOptions<TInputContext, typeof procedure>>,
     TErrorShape
   >;
-  /**
-   * @beta Might change without a major version bump
-   */
-  public subscription<
-    TPath extends string,
-    TInput,
-    TOutput extends Subscription<unknown>,
-  >(path: TPath, procedure: CreateProcedureOptions<TContext, TInput, TOutput>) {
+
+  public subscription(
+    path: string,
+    procedure: CreateProcedureOptions<TContext, any, any>,
+  ) {
     const router = new Router<TContext, TContext, {}, {}, any, any>({
       subscriptions: safeObject({
         [path]: createProcedure(procedure),

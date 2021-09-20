@@ -71,12 +71,7 @@ function getParseFn<TInput>(
 /**
  * @internal
  */
-export abstract class Procedure<
-  TInputContext, //
-  TContext,
-  TInput,
-  TOutput,
-> {
+export class Procedure<TInputContext, TContext, TInput, TOutput> {
   private middlewares: Readonly<Array<MiddlewareFunction<any, any>>>;
   private resolver: ProcedureResolver<TContext, TInput, TOutput>;
   private readonly inputParser: ProcedureInputParser<TInput>;
@@ -184,19 +179,6 @@ export abstract class Procedure<
   }
 }
 
-export class ProcedureWithoutInput<
-  TInputContext,
-  TContext,
-  TOutput,
-> extends Procedure<TInputContext, TContext, undefined, TOutput> {}
-
-export class ProcedureWithInput<
-  TInputContext,
-  TContext,
-  TInput,
-  TOutput,
-> extends Procedure<TInputContext, TContext, TInput, TOutput> {}
-
 export type CreateProcedureWithInput<TContext, TInput, TOutput> = {
   input: ProcedureInputParser<TInput>;
   resolve: ProcedureResolver<TContext, TInput, TOutput>;
@@ -213,58 +195,36 @@ export type CreateProcedureOptions<
   | CreateProcedureWithInput<TContext, TInput, TOutput>
   | CreateProcedureWithoutInput<TContext, TOutput>;
 
-function isProcedureWithInput<TContext, TInput, TOutput>(
-  opts: any,
-): opts is CreateProcedureWithInput<TContext, TInput, TOutput> {
-  return !!opts.input;
-}
-export function createProcedure<TInputContext, TContext, TInput, TOutput>(
-  opts: CreateProcedureWithInput<TContext, TInput, TOutput>,
-): ProcedureWithInput<TInputContext, TContext, TInput, TOutput>;
-export function createProcedure<TInputContext, TContext, TOutput>(
-  opts: CreateProcedureWithoutInput<TContext, TOutput>,
-): ProcedureWithoutInput<TInputContext, TContext, TOutput>;
-export function createProcedure<TInputContext, TContext, TInput, TOutput>(
-  opts: CreateProcedureOptions<TContext, TInput, TOutput>,
-): Procedure<TInputContext, TContext, TInput, TOutput>;
 export function createProcedure<TContext, TInput, TOutput>(
   opts: CreateProcedureOptions<TContext, TInput, TOutput>,
-) {
-  if (isProcedureWithInput<TContext, TInput, TOutput>(opts)) {
-    return new ProcedureWithInput({
-      inputParser: opts.input,
-      resolver: opts.resolve,
-      middlewares: [],
-    });
-  }
-  return new ProcedureWithoutInput({
-    resolver: opts.resolve,
+): Procedure<unknown, TContext, TInput, TOutput> {
+  const inputParser =
+    'input' in opts
+      ? opts.input
+      : (input: unknown) => {
+          if (input != null) {
+            throw new TRPCError({
+              code: 'BAD_REQUEST',
+              message: 'No input expected',
+            });
+          }
+          return undefined;
+        };
+
+  return new Procedure({
+    inputParser: inputParser as any,
+    resolver: opts.resolve as any,
     middlewares: [],
-    inputParser(input: unknown) {
-      if (input != null) {
-        throw new TRPCError({
-          code: 'BAD_REQUEST',
-          message: 'No input expected',
-        });
-      }
-      return undefined;
-    },
   });
 }
 
 export type inferProcedureFromOptions<
   TInputContext,
   TOptions extends CreateProcedureOptions<any, any, any>,
-> = TOptions extends CreateProcedureWithInput<
+> = TOptions extends CreateProcedureOptions<
   infer TContext,
   infer TInput,
   infer TOutput
 >
-  ? ProcedureWithInput<TInputContext, TContext, TInput, TOutput>
-  : TOptions extends CreateProcedureWithoutInput<
-      //
-      infer TContext,
-      infer TOutput
-    >
-  ? ProcedureWithoutInput<TInputContext, TContext, TOutput>
-  : Procedure<unknown, unknown, unknown, unknown>;
+  ? Procedure<TInputContext, TContext, TInput, TOutput>
+  : never;
