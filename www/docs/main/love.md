@@ -41,7 +41,7 @@ dangreaves <a href="https://github.com/trpc/trpc/discussions/455#discussion-3392
 
 
 
-<blockquote className="github-comment"><p lang="en" dir="ltr">Thank you for the quick fix and the amazing project 💯</p>&mdash; lostfictions <a href="https://github.com/trpc/trpc/issues/331#issuecomment-831263018">May 3, 2021</a></blockquote>
+<blockquote className="github-comment"><p lang="en" dir="ltr">Thank you for the quick fix and the amazing project 💯</p>&mdash; mgranderath <a href="https://github.com/trpc/trpc/issues/331#issuecomment-831263018">May 3, 2021</a></blockquote>
 
 
 
