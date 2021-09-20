@@ -47,7 +47,9 @@ export type ProcedureRecord<
 export type inferProcedureInput<
   TProcedure extends Procedure<any, any, any, any>,
 > = TProcedure extends Procedure<any, any, infer Input, any>
-  ? Input
+  ? undefined extends Input
+    ? Input | null
+    : Input
   : undefined;
 
 /**
