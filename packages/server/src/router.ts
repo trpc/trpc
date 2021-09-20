@@ -415,7 +415,7 @@ export class Router<
    * Merge router with other router
    * @param router
    */
-  public merge<TChildRouter extends Router<TContext, any, any, any, any, any>>(
+  public merge<TChildRouter extends AnyRouter<TContext>>(
     router: TChildRouter,
   ): Router<
     TInputContext,
@@ -431,10 +431,7 @@ export class Router<
    * @param prefix Prefix that this router should live under
    * @param router
    */
-  public merge<
-    TPath extends string,
-    TChildRouter extends Router<TContext, any, any, any, any, any>,
-  >(
+  public merge<TPath extends string, TChildRouter extends AnyRouter<TContext>>(
     prefix: TPath,
     router: TChildRouter,
   ): Router<
