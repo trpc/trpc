@@ -6,7 +6,7 @@ slug: /subscriptions
 ---
 
 :::info
-Subscriptions & WebSockets are in beta, but feel free to use them and report any issue you may find on [GitHub](https://github.com/trpc/trpc)
+Subscriptions & WebSockets are in beta, alpha & might change without a major version bump. However, feel free to use them and report any issue you may find on [GitHub](https://github.com/trpc/trpc)
 :::
 
 ## Using Subscriptions

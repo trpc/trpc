@@ -21,15 +21,13 @@ export type format<T> = {
 /**
  * @internal
  */
-export type flatten<T, Q> = identity<
-  {
-    [k in keyof T | keyof Q]: k extends keyof T
-      ? T[k]
-      : k extends keyof Q
-      ? Q[k]
-      : never;
-  }
->;
+export type flatten<T, Q> = identity<{
+  [k in keyof T | keyof Q]: k extends keyof T
+    ? T[k]
+    : k extends keyof Q
+    ? Q[k]
+    : never;
+}>;
 
 /**
  * @internal
@@ -37,11 +35,9 @@ export type flatten<T, Q> = identity<
 export type Prefixer<
   TObj extends Record<string, any>,
   TPrefix extends string,
-> = format<
-  {
-    [P in keyof TObj as Prefix<TPrefix, string & P>]: TObj[P];
-  }
->;
+> = format<{
+  [P in keyof TObj as Prefix<TPrefix, string & P>]: TObj[P];
+}>;
 
 /**
  * @public
