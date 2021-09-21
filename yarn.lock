@@ -2919,9 +2919,9 @@
     form-data "^3.0.0"
 
 "@types/node@*", "@types/node@^16.0.0":
-  version "16.9.4"
-  resolved "https://registry.yarnpkg.com/@types/node/-/node-16.9.4.tgz#a12f0ee7847cf17a97f6fdf1093cb7a9af23cca4"
-  integrity sha512-KDazLNYAGIuJugdbULwFZULF9qQ13yNWEBFnfVpqlpgAAo6H/qnM9RjBgh0A0kmHf3XxAKLdN5mTIng9iUvVLA==
+  version "16.9.5"
+  resolved "https://registry.yarnpkg.com/@types/node/-/node-16.9.5.tgz#d7d87cebbe3927a8b6b3d0c6b42b0999ae9c54e5"
+  integrity sha512-5xkJln5CDkmQTi13oWS+EUruKbfHJD5CQnyxe8L3Gt3sLsPFl+rjiOVU7O59QF1RUyw3rdkm9yDTNQcOR+ob9A==
 
 "@types/node@^12.7.1":
   version "12.20.23"
