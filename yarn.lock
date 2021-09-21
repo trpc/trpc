@@ -2919,9 +2919,9 @@
     form-data "^3.0.0"
 
 "@types/node@*", "@types/node@^16.0.0":
-  version "16.9.4"
-  resolved "https://registry.yarnpkg.com/@types/node/-/node-16.9.4.tgz#a12f0ee7847cf17a97f6fdf1093cb7a9af23cca4"
-  integrity sha512-KDazLNYAGIuJugdbULwFZULF9qQ13yNWEBFnfVpqlpgAAo6H/qnM9RjBgh0A0kmHf3XxAKLdN5mTIng9iUvVLA==
+  version "16.9.5"
+  resolved "https://registry.yarnpkg.com/@types/node/-/node-16.9.5.tgz#d7d87cebbe3927a8b6b3d0c6b42b0999ae9c54e5"
+  integrity sha512-5xkJln5CDkmQTi13oWS+EUruKbfHJD5CQnyxe8L3Gt3sLsPFl+rjiOVU7O59QF1RUyw3rdkm9yDTNQcOR+ob9A==
 
 "@types/node@^12.7.1":
   version "12.20.23"
@@ -10271,9 +10271,9 @@ playwright-core@>=1.2.0:
     yazl "^2.5.1"
 
 playwright@^1.14.1:
-  version "1.14.1"
-  resolved "https://registry.npmjs.org/playwright/-/playwright-1.14.1.tgz#73913d3044a85a58edf13148245279231072532e"
-  integrity sha512-JYNjhwWcfsBkg0FMGLbFO9e58FVdmICE4k97/glIQV7cBULL7oxNjRQC7Ffe+Y70XVNnP0HSJLaA0W5SukyftQ==
+  version "1.15.0"
+  resolved "https://registry.yarnpkg.com/playwright/-/playwright-1.15.0.tgz#c8c75287541e75317988b973a306d2f61065aefb"
+  integrity sha512-JtagFVjNvccP1rIixHB/4KbR+BzMTJLty6mo71YLatvJR9ZH+PX8DLlhw1KDdIH2YGMSQGf2ihh4KAp9tsklxQ==
   dependencies:
     commander "^6.1.0"
     debug "^4.1.1"
