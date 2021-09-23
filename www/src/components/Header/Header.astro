@@ -1,7 +1,6 @@
 ---
 import { getLanguageFromURL, KNOWN_LANGUAGE_CODES } from '../../languages.ts';
 import * as CONFIG from '../../config.ts';
-import AstroLogo from './AstroLogo.astro';
 import SkipToContent from './SkipToContent.astro';
 import SidebarToggle from './SidebarToggle.tsx';
 import LanguageSelect from './LanguageSelect.jsx';
@@ -120,7 +119,7 @@ const lang = currentPage && getLanguageFromURL(currentPage);
         <SidebarToggle client:idle/>
     </div>
     <div class="logo flex">
-        <AstroLogo size={40} />
+        <img src="/logo.svg" height={40} />
         <a href="/">
           <h1>Documentation</h1>
         </a>
