@@ -81,8 +81,25 @@ function Home() {
           src="https://platform.twitter.com/widgets.js"
           charSet="utf-8"
         />
+        <style>
+          {/* Hides navbar */}
+          {`
+          .navbar {
+            display: none
+          }`}
+        </style>
       </Head>
       <header>
+        <div
+          style={{
+            width: '100%',
+            padding: '1rem',
+            fontSize: 20,
+            fontWeight: 'bold',
+          }}
+        >
+          <a href="/docs">Docs</a>
+        </div>
         <div
           className="container"
           style={{
@@ -98,17 +115,8 @@ function Home() {
           </h1>
           <div style={{ marginTop: '3rem' }} />
           <Logo />
-          <p className="hero__subtitle">{siteConfig.tagline}</p>
-          <p>
-            <GitHubButton
-              href="https://github.com/trpc/trpc"
-              data-icon="octicon-star"
-              data-size="large"
-              data-show-count="true"
-              aria-label="Star trpc/trpc on GitHub"
-            >
-              Star
-            </GitHubButton>
+          <p className="hero__subtitle" style={{ paddingTop: '1rem' }}>
+            {siteConfig.tagline}
           </p>
 
           <figure className={styles.figure}>
