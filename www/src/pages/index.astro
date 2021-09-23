@@ -18,11 +18,20 @@ const description =
     <meta name="theme-color" content="#000000" />
   </head>
   <body>
-    <div class="p-8">
-      <a
-        href="/en/introduction"
-        class="text-2xl text-blue-700 hover:text-blue-500 hover:underline"
-        >Docs</a>
+    <div class="w-full h-screen flex items-center justify-center relative">
+      <div class="p-8 absolute top-0 w-full">
+        <a
+          href="/en/introduction"
+          class="text-2xl text-blue-700 hover:text-blue-500 hover:underline"
+          >Docs</a>
+      </div>
+
+      <div>
+        <img src="/logo.svg" height={400} />
+        <h1 class="pt-4 font-light text-center text-2xl">
+          API definitions don't have to be hard
+        </h1>
+      </div>
     </div>
   </body>
 </html>
