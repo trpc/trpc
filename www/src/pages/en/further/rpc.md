@@ -30,7 +30,7 @@ When batching, we combine all parallel procedure calls of the same type in one r
 ```tsx
 trpc
   .router<Context>()
-  .query("postById", {
+  .query('postById', {
     input: String,
     async resolve({ input, ctx }) {
       const post = await ctx.post.findUnique({
@@ -39,7 +39,7 @@ trpc
       return post;
     },
   })
-  .query("relatedPosts", {
+  .query('relatedPosts', {
     input: String,
     async resolve({ ctx, input }) {
       const posts = await ctx.findRelatedPostsById(input);
@@ -52,8 +52,8 @@ trpc
 
 ```tsx
 function MyComponent() {
-  const post1 = trpc.useQuery(["postById", "1"]);
-  const relatedPosts = trpc.useQuery(["relatedPosts", "1"]);
+  const post1 = trpc.useQuery(['postById', '1']);
+  const relatedPosts = trpc.useQuery(['relatedPosts', '1']);
 
   // [...]
 }
@@ -71,9 +71,9 @@ function MyComponent() {
 ```ts
 encodeURIComponent(
   JSON.stringify({
-    0: "1", // <-- input for `postById`
-    1: "1", // <-- input for `relatedPosts`
-  })
+    0: '1', // <-- input for `postById`
+    1: '1', // <-- input for `relatedPosts`
+  }),
 );
 ```
 
@@ -140,7 +140,7 @@ In order to have a specification that works regardless of the transport layer we
 {
   id: null;
   result: {
-    type: "data";
+    type: 'data';
     data: TOutput; // output from procedure
   }
 }

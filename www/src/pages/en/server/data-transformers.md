@@ -23,7 +23,7 @@ yarn add superjson
 #### 2. Add to `createTRPCCLient()`
 
 ```ts
-import superjson from "superjson";
+import superjson from 'superjson';
 
 // [...]
 
@@ -36,8 +36,8 @@ export const client = createTRPCClient<AppRouter>({
 #### 3. Add to your `AppRouter`
 
 ```ts
-import superjson from "superjson";
-import * as trpc from "@trpc/server";
+import superjson from 'superjson';
+import * as trpc from '@trpc/server';
 
 export const appRouter = trpc.router().transformer(superjson);
 // .query(...)
@@ -60,8 +60,8 @@ yarn add superjson devalue
 #### 2. Add to `utils/trpc.ts`
 
 ```ts
-import superjson from "superjson";
-import devalue from "devalue";
+import superjson from 'superjson';
+import devalue from 'devalue';
 
 // [...]
 
@@ -77,7 +77,7 @@ export const transformer = {
 #### 3. Add to `createTRPCCLient()`
 
 ```ts
-import { transformer } from "../utils/trpc";
+import { transformer } from '../utils/trpc';
 
 // [...]
 
@@ -90,8 +90,8 @@ export const client = createTRPCClient<AppRouter>({
 #### 4. Add to your `AppRouter`
 
 ```ts
-import { transformer } from "../../utils/trpc";
-import * as trpc from "@trpc/server";
+import { transformer } from '../../utils/trpc';
+import * as trpc from '@trpc/server';
 
 export const appRouter = trpc.router().transformer(transformer);
 // .query(...)

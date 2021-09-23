@@ -15,12 +15,12 @@ Static site generation requires executing tRPC queries inside `getStaticProps` o
 ## Fetch data in `getStaticProps`
 
 ```tsx
-import Head from "next/head";
-import { trpc } from "../utils/trpc";
-import { createSSGHelpers } from "@trpc/react/ssg";
+import Head from 'next/head';
+import { trpc } from '../utils/trpc';
+import { createSSGHelpers } from '@trpc/react/ssg';
 
 export default function Home() {
-  const hello = trpc.useQuery(["hello"]);
+  const hello = trpc.useQuery(['hello']);
 
   if (!hello.data) return <div>Loading...</div>;
   return (
@@ -32,7 +32,7 @@ export default function Home() {
 
 // Statically fetch the data in getStaticProps
 export const getStaticProps = async (
-  context: GetStaticPropsContext<{ filter: string }>
+  context: GetStaticPropsContext<{ filter: string }>,
 ) => {
   const ssg = createSSGHelpers({
     router: appRouter,
@@ -40,8 +40,8 @@ export const getStaticProps = async (
     ctx: {},
   });
 
-  await ssg.fetchQuery("hello");
-  await ssg.fetchQuery("hello", { text: "client" });
+  await ssg.fetchQuery('hello');
+  await ssg.fetchQuery('hello', { text: 'client' });
 
   return {
     props: {

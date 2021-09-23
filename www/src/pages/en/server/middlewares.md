@@ -15,26 +15,26 @@ In the example below any call to `admin.*` will ensure that the user is an "admi
 ```ts
 trpc
   .router<Context>()
-  .query("foo", {
+  .query('foo', {
     resolve() {
-      return "bar";
+      return 'bar';
     },
   })
   .merge(
-    "admin.",
+    'admin.',
     trpc
       .router<Context>()
       .middleware(async ({ ctx, next }) => {
         if (!ctx.user?.isAdmin) {
-          throw new TRPCError({ code: "UNAUTHORIZED" });
+          throw new TRPCError({ code: 'UNAUTHORIZED' });
         }
         return next();
       })
-      .query("secretPlace", {
+      .query('secretPlace', {
         resolve() {
-          return "a key";
+          return 'a key';
         },
-      })
+      }),
   );
 ```
 
@@ -54,19 +54,19 @@ trpc
     const result = await next();
     const durationMs = Date.now() - start;
     result.ok
-      ? logMock("OK request timing:", { path, type, durationMs })
-      : logMock("Non-OK request timing", { path, type, durationMs });
+      ? logMock('OK request timing:', { path, type, durationMs })
+      : logMock('Non-OK request timing', { path, type, durationMs });
 
     return result;
   })
-  .query("foo", {
+  .query('foo', {
     resolve() {
-      return "bar";
+      return 'bar';
     },
   })
-  .query("abc", {
+  .query('abc', {
     resolve() {
-      return "def";
+      return 'def';
     },
   });
 ```
@@ -87,7 +87,7 @@ trpc
   .router<Context>()
   .middleware(({ ctx, next }) => {
     if (!ctx.user) {
-      throw new TRPCError({ code: "UNAUTHORIZED" });
+      throw new TRPCError({ code: 'UNAUTHORIZED' });
     }
 
     return next({
@@ -97,7 +97,7 @@ trpc
       },
     });
   })
-  .query("userId", {
+  .query('userId', {
     async resolve({ ctx }) {
       return ctx.user.id;
     },
@@ -109,13 +109,13 @@ trpc
 This helper can be used anywhere in your app tree to enforce downstream procedures to be authorized.
 
 ```tsx
-import * as trpc from "@trpc/server";
-import { Context } from "./context";
+import * as trpc from '@trpc/server';
+import { Context } from './context';
 
 export function createProtectedRouter() {
   return trpc.router<Context>().middleware(({ ctx, next }) => {
     if (!ctx.user) {
-      throw new trpc.TRPCError({ code: "UNAUTHORIZED" });
+      throw new trpc.TRPCError({ code: 'UNAUTHORIZED' });
     }
     return next({
       ctx: {

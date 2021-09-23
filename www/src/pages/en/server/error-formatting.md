@@ -34,10 +34,10 @@ const router = trpc.router<Context>()
 
 ```tsx
 function MyComponent() {
-  const mutation = trpc.useMutation("addPost");
+  const mutation = trpc.useMutation('addPost');
 
   useEffect(() => {
-    mutation.mutate({ title: "example" });
+    mutation.mutate({ title: 'example' });
   }, []);
 
   if (mutation.error?.data?.zodError) {
@@ -57,7 +57,7 @@ function MyComponent() {
 ```ts
 {
   error: TRPCError;
-  type: ProcedureType | "unknown";
+  type: ProcedureType | 'unknown';
   path: string | undefined;
   input: unknown;
   ctx: undefined | TContext;

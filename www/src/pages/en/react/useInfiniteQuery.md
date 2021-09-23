@@ -57,19 +57,19 @@ trpc.router<Context>()
 ## Example React Component
 
 ```tsx
-import { trpc } from "../utils/trpc";
+import { trpc } from '../utils/trpc';
 
 function MyComponent() {
   const myQuery = trpc.useInfiniteQuery(
     [
-      "infinitePosts",
+      'infinitePosts',
       {
         limit: 10,
       },
     ],
     {
       getNextPageParam: (lastPage) => lastPage.nextCursor,
-    }
+    },
   );
   // [...]
 }

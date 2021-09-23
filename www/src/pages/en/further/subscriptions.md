@@ -22,15 +22,15 @@ Subscriptions & WebSockets are in beta, alpha & might change without a major ver
 ### Adding a subscription procedure
 
 ```tsx
-import * as trpc from "@trpc/server";
-import { EventEmitter } from "events";
+import * as trpc from '@trpc/server';
+import { EventEmitter } from 'events';
 
 // create a global event emitter (could be replaced by redis, etc)
 const ee = new EventEmitter();
 
 trpc
   .router()
-  .subscription("onAdd", {
+  .subscription('onAdd', {
     resolve({ ctx }) {
       // `resolve()` is triggered for each client when they start subscribing `onAdd`
 
@@ -42,16 +42,16 @@ trpc
         };
 
         // trigger `onAdd()` when `add` is triggered in our event emitter
-        ee.on("add", onAdd);
+        ee.on('add', onAdd);
 
         // unsubscribe function when client disconnects or stops subscribing
         return () => {
-          ee.off("add", onAdd);
+          ee.off('add', onAdd);
         };
       });
     },
   })
-  .mutation("add", {
+  .mutation('add', {
     input: z.object({
       id: z.string().uuid().optional(),
       text: z.string().min(1),
@@ -59,7 +59,7 @@ trpc
     async resolve({ ctx, input }) {
       const post = { ...input }; /* [..] add to db */
 
-      ee.emit("add", post);
+      ee.emit('add', post);
       return post;
     },
   });
@@ -72,25 +72,25 @@ yarn add ws
 ```
 
 ```ts
-import ws from "ws";
-import { applyWSSHandler } from "@trpc/server/adapters/ws";
-import { appRouter } from "./routers/app";
-import { createContext } from "./trpc";
+import ws from 'ws';
+import { applyWSSHandler } from '@trpc/server/adapters/ws';
+import { appRouter } from './routers/app';
+import { createContext } from './trpc';
 const wss = new ws.Server({
   port: 3001,
 });
 const handler = applyWSSHandler({ wss, router: appRouter, createContext });
 
-wss.on("connection", (ws) => {
+wss.on('connection', (ws) => {
   console.log(`➕➕ Connection (${wss.clients.size})`);
-  ws.once("close", () => {
+  ws.once('close', () => {
     console.log(`➖➖ Connection (${wss.clients.size})`);
   });
 });
-console.log("✅ WebSocket Server listening on ws://localhost:3001");
+console.log('✅ WebSocket Server listening on ws://localhost:3001');
 
-process.on("SIGTERM", () => {
-  console.log("SIGTERM");
+process.on('SIGTERM', () => {
+  console.log('SIGTERM');
   handler.broadcastReconnectNotification();
   wss.close();
 });
@@ -103,8 +103,8 @@ You can [use Links](../client/links.md) to route queries and/or mutations to HTT
 :::
 
 ```tsx
-import { createWSClient, wsLink } from "@trpc/client/links/wsLink";
-import { httpBatchLink } from "@trpc/client/links/httpBatchLink";
+import { createWSClient, wsLink } from '@trpc/client/links/wsLink';
+import { httpBatchLink } from '@trpc/client/links/httpBatchLink';
 
 // create persistent WebSocket connection
 const wsClient = createWSClient({
@@ -155,9 +155,9 @@ _... below, or an error._
 ```ts
 {
   id: number | string;
-  jsonrpc: "2.0";
+  jsonrpc: '2.0';
   result: {
-    type: "data"; // always 'data' for mutation / queries
+    type: 'data'; // always 'data' for mutation / queries
     data: TOutput; // output from procedure
   }
 }

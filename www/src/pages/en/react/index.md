@@ -35,8 +35,8 @@ Create a set of strongly-typed React hooks from your `AppRouter` type signature 
 
 ```tsx
 // utils/trpc.ts
-import { createReactQueryHooks } from "@trpc/react";
-import type { AppRouter } from "../path/to/router.ts";
+import { createReactQueryHooks } from '@trpc/react';
+import type { AppRouter } from '../path/to/router.ts';
 
 export const trpc = createReactQueryHooks<AppRouter>();
 // => { useQuery: ..., useMutation: ...}
@@ -47,16 +47,16 @@ export const trpc = createReactQueryHooks<AppRouter>();
 In your `App.tsx`
 
 ```tsx
-import React from "react";
-import { useState } from "react";
-import { QueryClient, QueryClientProvider } from "react-query";
-import { trpc } from "./utils/trpc";
+import React from 'react';
+import { useState } from 'react';
+import { QueryClient, QueryClientProvider } from 'react-query';
+import { trpc } from './utils/trpc';
 
 function App() {
   const [queryClient] = useState(() => new QueryClient());
   const [trpcClient] = useState(() =>
     trpc.createClient({
-      url: "http://localhost:5000/trpc",
+      url: 'http://localhost:5000/trpc',
 
       // optional
       headers() {
@@ -64,7 +64,7 @@ function App() {
           authorization: getAuthCookie(),
         };
       },
-    })
+    }),
   );
   return (
     <trpc.Provider client={trpcClient} queryClient={queryClient}>
@@ -79,10 +79,10 @@ function App() {
 ### 4. Fetch data
 
 ```tsx
-import { trpc } from "../utils/trpc";
+import { trpc } from '../utils/trpc';
 
 const IndexPage = () => {
-  const hello = trpc.useQuery(["hello", { text: "client" }]);
+  const hello = trpc.useQuery(['hello', { text: 'client' }]);
   if (!hello.data) return <div>Loading...</div>;
   return (
     <div>

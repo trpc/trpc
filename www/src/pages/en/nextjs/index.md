@@ -59,11 +59,11 @@ Implement your tRPC router in `./pages/api/trpc/[trpc].ts`. If you need to split
 <details><summary>View sample router</summary>
 
 ```ts
-import * as trpc from "@trpc/server";
-import * as trpcNext from "@trpc/server/adapters/next";
-import { z } from "zod";
+import * as trpc from '@trpc/server';
+import * as trpcNext from '@trpc/server/adapters/next';
+import { z } from 'zod';
 
-const appRouter = trpc.router().query("hello", {
+const appRouter = trpc.router().query('hello', {
   input: z
     .object({
       text: z.string().nullish(),
@@ -71,7 +71,7 @@ const appRouter = trpc.router().query("hello", {
     .nullish(),
   resolve({ input }) {
     return {
-      greeting: `hello ${input?.text ?? "world"}`,
+      greeting: `hello ${input?.text ?? 'world'}`,
     };
   },
 });
@@ -94,8 +94,8 @@ Create a set of strongly-typed hooks using your API's type signature.
 
 ```tsx
 // utils/trpc.ts
-import { createReactQueryHooks } from "@trpc/react";
-import type { AppRouter } from "../pages/api/trpc/[trpc]";
+import { createReactQueryHooks } from '@trpc/react';
+import type { AppRouter } from '../pages/api/trpc/[trpc]';
 
 export const trpc = createReactQueryHooks<AppRouter>();
 // => { useQuery: ..., useMutation: ...}
@@ -106,8 +106,8 @@ export const trpc = createReactQueryHooks<AppRouter>();
 The `createReactQueryHooks` function expects certain parameters to be passed via the Context API. To set these parameters, create a custom `_app.tsx` using the `withTRPC` higher-order component:
 
 ```tsx
-import { withTRPC } from "@trpc/next";
-import { AppType } from "next/dist/shared/lib/utils";
+import { withTRPC } from '@trpc/next';
+import { AppType } from 'next/dist/shared/lib/utils';
 
 const MyApp: AppType = ({ Component, pageProps }) => {
   return <Component {...pageProps} />;
@@ -121,7 +121,7 @@ export default withTRPC<AppRouter>({
      */
     const url = process.env.VERCEL_URL
       ? `https://${process.env.VERCEL_URL}/api/trpc`
-      : "http://localhost:3000/api/trpc";
+      : 'http://localhost:3000/api/trpc';
 
     return {
       url,
@@ -141,10 +141,10 @@ export default withTRPC<AppRouter>({
 ### 5. Make API requests
 
 ```tsx
-import { trpc } from "../utils/trpc";
+import { trpc } from '../utils/trpc';
 
 const IndexPage = () => {
-  const hello = trpc.useQuery(["hello", { text: "client" }]);
+  const hello = trpc.useQuery(['hello', { text: 'client' }]);
   if (!hello.data) {
     return <div>Loading...</div>;
   }
@@ -202,7 +202,7 @@ export default withTRPC<AppRouter>({
     // cache full page for 1 day + revalidate once every second
     const ONE_DAY_IN_SECONDS = 60 * 60 * 24;
     return {
-      "Cache-Control": `s-maxage=1, stale-while-revalidate=${ONE_DAY_IN_SECONDS}`,
+      'Cache-Control': `s-maxage=1, stale-while-revalidate=${ONE_DAY_IN_SECONDS}`,
     };
   },
 })(MyApp);

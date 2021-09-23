@@ -45,14 +45,14 @@ trpc.router()
 </details>
 
 ```tsx
-import { trpc } from "../utils/trpc";
+import { trpc } from '../utils/trpc';
 
 export function MyComponent() {
   // Note! This is not a tuple ['login', ...] but a string 'login'
-  const login = trpc.useMutation("login");
+  const login = trpc.useMutation('login');
 
   const handleLogin = async () => {
-    const name = "John Doe";
+    const name = 'John Doe';
 
     await login.mutateAsync({ name });
   };

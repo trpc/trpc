@@ -19,26 +19,26 @@ Thanks to TypeScript 4.1 template literal types we can also prefix the procedure
 
 ```ts
 const posts = createRouter()
-  .mutation("create", {
+  .mutation('create', {
     input: z.object({
       title: z.string(),
     }),
     resolve: ({ input }) => {
       // ..
       return {
-        id: "xxxx",
+        id: 'xxxx',
         ...input,
       };
     },
   })
-  .query("list", {
+  .query('list', {
     resolve() {
       // ..
       return [];
     },
   });
 
-const users = createRouter().query("list", {
+const users = createRouter().query('list', {
   resolve() {
     // ..
     return [];
@@ -46,6 +46,6 @@ const users = createRouter().query("list", {
 });
 
 const appRouter = createRouter()
-  .merge("user", users) // prefix user procedures with "user"
-  .merge("post.", posts); // prefix poosts procedures with "post."
+  .merge('user', users) // prefix user procedures with "user"
+  .merge('post.', posts); // prefix poosts procedures with "post."
 ```

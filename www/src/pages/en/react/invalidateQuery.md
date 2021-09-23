@@ -11,15 +11,15 @@ A typesafe wrapper around calling `queryClient.invalidateQueries()`, all it does
 ## Example code
 
 ```tsx
-import { trpc } from "../utils/trpc";
+import { trpc } from '../utils/trpc';
 
 // In component:
 const utils = trpc.useContext();
 
-const mutation = trpc.useMutation("editPost", {
+const mutation = trpc.useMutation('editPost', {
   onSuccess(input) {
-    utils.invalidateQuery(["allPosts"]);
-    utils.invalidateQuery(["postById", input.id]);
+    utils.invalidateQuery(['allPosts']);
+    utils.invalidateQuery(['postById', input.id]);
   },
 });
 ```

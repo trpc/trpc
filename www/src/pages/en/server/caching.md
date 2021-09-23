@@ -28,13 +28,13 @@ export default withTRPC({
   config({ ctx }) {
     if (process.browser) {
       return {
-        url: "/api/trpc",
+        url: '/api/trpc',
       };
     }
 
     const url = process.env.VERCEL_URL
       ? `https://${process.env.VERCEL_URL}/api/trpc`
-      : "http://localhost:3000/api/trpc";
+      : 'http://localhost:3000/api/trpc';
 
     return {
       url,
@@ -53,7 +53,7 @@ export default withTRPC({
     const ONE_DAY_IN_SECONDS = 60 * 60 * 24;
     return {
       headers: {
-        "cache-control": `s-maxage=1, stale-while-revalidate=${ONE_DAY_IN_SECONDS}`,
+        'cache-control': `s-maxage=1, stale-while-revalidate=${ONE_DAY_IN_SECONDS}`,
       },
     };
   },
@@ -69,9 +69,9 @@ Since all queries are normal HTTP `GET`s we can use normal HTTP headers to cache
 > Assuming you're deploying your API somewhere that can handle stale-while-revalidate cache headers like Vercel.
 
 ```tsx
-import * as trpc from "@trpc/server";
-import { inferAsyncReturnType } from "@trpc/server";
-import * as trpcNext from "@trpc/server/adapters/next";
+import * as trpc from '@trpc/server';
+import { inferAsyncReturnType } from '@trpc/server';
+import * as trpcNext from '@trpc/server/adapters/next';
 
 export const createContext = async ({
   req,
@@ -93,7 +93,7 @@ export function createRouter() {
 const waitFor = async (ms: number) =>
   new Promise((resolve) => setTimeout(resolve, ms));
 
-export const appRouter = createRouter().query("public.slow-query-cached", {
+export const appRouter = createRouter().query('public.slow-query-cached', {
   async resolve({ ctx }) {
     await waitFor(5000); // wait for 5s
 
@@ -113,18 +113,18 @@ export default trpcNext.createNextApiHandler({
   createContext,
   responseMeta({ ctx, paths, type, errors }) {
     // assuming you have all your public routes with the kewyord `public` in them
-    const allPublic = paths && paths.every((path) => path.includes("public"));
+    const allPublic = paths && paths.every((path) => path.includes('public'));
     // checking that no procedures errored
     const allOk = errors.length === 0;
     // checking we're doing a query request
-    const isQuery = type === "query";
+    const isQuery = type === 'query';
 
     if (ctx?.res && allPublic && allOk && isQuery) {
       // cache request for 1 day + revalidate once every second
       const ONE_DAY_IN_SECONDS = 60 * 60 * 24;
       return {
         headers: {
-          "cache-control": `s-maxage=1, stale-while-revalidate=${ONE_DAY_IN_SECONDS}`,
+          'cache-control': `s-maxage=1, stale-while-revalidate=${ONE_DAY_IN_SECONDS}`,
         },
       };
     }

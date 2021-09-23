@@ -11,9 +11,9 @@ The `createContext`-function is called for each incoming request so here you can
 ## Create context from request headers
 
 ```ts
-import * as trpc from "@trpc/server";
-import { inferAsyncReturnType } from "@trpc/server";
-import { decodeAndVerifyJwtToken } from "./somewhere/in/your/app/utils";
+import * as trpc from '@trpc/server';
+import { inferAsyncReturnType } from '@trpc/server';
+import { decodeAndVerifyJwtToken } from './somewhere/in/your/app/utils';
 
 export async function createContext({
   req,
@@ -26,7 +26,7 @@ export async function createContext({
   async function getUserFromHeader() {
     if (req.headers.authorization) {
       const user = await decodeAndVerifyJwtToken(
-        req.headers.authorization.split(" ")[1]
+        req.headers.authorization.split(' ')[1],
       );
       return user;
     }
@@ -46,26 +46,26 @@ type Context = inferAsyncReturnType<typeof createContext>;
 ## Option 1: Authorize using resolver
 
 ```ts
-import * as trpc from "@trpc/server";
-import { TRPCError } from "@trpc/server";
-import { createRouter } from "./[trpc]";
+import * as trpc from '@trpc/server';
+import { TRPCError } from '@trpc/server';
+import { createRouter } from './[trpc]';
 
 export const appRouter = createRouter()
   // open for anyone
-  .query("hello", {
+  .query('hello', {
     input: z.string().nullish(),
     resolve: ({ input, ctx }) => {
-      return `hello ${input ?? ctx.user?.name ?? "world"}`;
+      return `hello ${input ?? ctx.user?.name ?? 'world'}`;
     },
   })
   // checked in resolver
-  .query("secret", {
+  .query('secret', {
     resolve: ({ ctx }) => {
       if (!ctx.user) {
-        throw new TRPCError({ code: "UNAUTHORIZED" });
+        throw new TRPCError({ code: 'UNAUTHORIZED' });
       }
       return {
-        secret: "sauce",
+        secret: 'sauce',
       };
     },
   });
@@ -74,34 +74,34 @@ export const appRouter = createRouter()
 ## Option 2: Authorize using middleware
 
 ```ts
-import * as trpc from "@trpc/server";
-import { TRPCError } from "@trpc/server";
-import { createRouter } from "./[trpc]";
+import * as trpc from '@trpc/server';
+import { TRPCError } from '@trpc/server';
+import { createRouter } from './[trpc]';
 
 export const appRouter = createRouter()
   // this is accessible for everyone
-  .query("hello", {
+  .query('hello', {
     input: z.string().nullish(),
     resolve: ({ input, ctx }) => {
-      return `hello ${input ?? ctx.user?.name ?? "world"}`;
+      return `hello ${input ?? ctx.user?.name ?? 'world'}`;
     },
   })
   .merge(
-    "admin.",
+    'admin.',
     createRouter()
       // this protects all procedures defined next in this router
       .middleware(async ({ ctx, next }) => {
         if (!ctx.user?.isAdmin) {
-          throw new TRPCError({ code: "UNAUTHORIZED" });
+          throw new TRPCError({ code: 'UNAUTHORIZED' });
         }
         return next();
       })
-      .query("secret", {
+      .query('secret', {
         resolve: ({ ctx }) => {
           return {
-            secret: "sauce",
+            secret: 'sauce',
           };
         },
-      })
+      }),
   );
 ```

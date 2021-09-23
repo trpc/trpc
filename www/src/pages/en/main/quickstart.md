@@ -62,7 +62,7 @@ First we define a router somewhere in our server codebase:
 
 ```ts
 // server/index.ts
-import * as trpc from "@trpc/server";
+import * as trpc from '@trpc/server';
 const appRouter = trpc.router();
 
 // only export *type signature* of router!
@@ -83,16 +83,16 @@ Use the `.query()` method to add a query endpoint to the router. Arguments:
 
 ```ts
 // server/index.ts
-import * as trpc from "@trpc/server";
+import * as trpc from '@trpc/server';
 
-const appRouter = trpc.router().query("getUser", {
+const appRouter = trpc.router().query('getUser', {
   input: (val: unknown) => {
-    if (typeof val === "string") return val;
+    if (typeof val === 'string') return val;
     throw new Error(`Invalid input: ${typeof val}`);
   },
   async resolve(req) {
     req.input; // string
-    return { id: req.input, name: "Bilbo" };
+    return { id: req.input, name: 'Bilbo' };
   },
 });
 
@@ -109,22 +109,22 @@ createUser(payload: {name: string}) => {id: string; name: string};
 
 ```ts
 // server/index.ts
-import * as trpc from "@trpc/server";
-import { z } from "zod";
+import * as trpc from '@trpc/server';
+import { z } from 'zod';
 
 const appRouter = trpc
   .router()
-  .query("getUser", {
+  .query('getUser', {
     input: (val: unknown) => {
-      if (typeof val === "string") return val;
+      if (typeof val === 'string') return val;
       throw new Error(`Invalid input: ${typeof val}`);
     },
     async resolve(req) {
       req.input; // string
-      return { id: req.input, name: "Bilbo" };
+      return { id: req.input, name: 'Bilbo' };
     },
   })
-  .mutation("createUser", {
+  .mutation('createUser', {
     // validate input with Zod
     input: z.object({ name: z.string().min(5) }),
     async resolve(req) {

@@ -14,8 +14,8 @@ If a procedure fails we trigger a function with information about the procedure 
 export default trpcNext.createNextApiHandler({
   // [...]
   onError({ error }) {
-    console.error("Error:", error);
-    if (error.code === "INTERNAL_SERVER_ERROR") {
+    console.error('Error:', error);
+    if (error.code === 'INTERNAL_SERVER_ERROR') {
       // send to bug reporting
     }
   },
@@ -27,7 +27,7 @@ export default trpcNext.createNextApiHandler({
 ```ts
 {
   error: TRPCError;
-  type: "query" | "mutation" | "subscription" | "unknown";
+  type: 'query' | 'mutation' | 'subscription' | 'unknown';
   path: string | undefined; // path of the procedure that was triggered
   input: unknown;
   ctx: Context | undefined;
@@ -41,8 +41,8 @@ export default trpcNext.createNextApiHandler({
 export default trpcNext.createNextApiHandler({
   // [...]
   onError({ error }) {
-    console.error("Error:", error);
-    console.log("Original error thrown", error.cause);
+    console.error('Error:', error);
+    console.log('Original error thrown', error.cause);
   },
 });
 ```
@@ -50,11 +50,11 @@ export default trpcNext.createNextApiHandler({
 ## Error helpers
 
 ```ts
-import { TRPCError } from "@trpc/server";
+import { TRPCError } from '@trpc/server';
 
 throw new TRPCError({
-  code: "INTERNAL_SERVER_ERROR",
-  message: "Optional Message",
+  code: 'INTERNAL_SERVER_ERROR',
+  message: 'Optional Message',
   // optional: pass your thrown error to TRPCError to retain stack trace
   cause: myError,
 });
