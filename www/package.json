@@ -1,36 +1,19 @@
 {
-  "name": "www",
-  "version": "0.0.0",
+  "name": "@example/docs",
+  "version": "0.0.1",
   "private": true,
   "scripts": {
-    "docusaurus": "docusaurus",
-    "start": "docusaurus start",
-    "dev": "yarn start",
-    "build": "docusaurus build",
-    "swizzle": "docusaurus swizzle",
-    "deploy": "docusaurus deploy",
-    "serve": "docusaurus serve",
-    "clear": "docusaurus clear"
+    "dev": "astro dev",
+    "start": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview"
   },
   "dependencies": {
-    "@docusaurus/core": "2.0.0-beta.6",
-    "@docusaurus/preset-classic": "2.0.0-beta.6",
-    "@mdx-js/react": "^1.6.22",
-    "clsx": "^1.1.1",
-    "react": "^17.0.2",
-    "react-dom": "^17.0.2",
-    "react-github-btn": "^1.2.1"
+    "@docsearch/react": "^1.0.0-alpha.27"
   },
-  "browserslist": {
-    "production": [
-      ">0.5%",
-      "not dead",
-      "not op_mini all"
-    ],
-    "development": [
-      "last 1 chrome version",
-      "last 1 firefox version",
-      "last 1 safari version"
-    ]
+  "devDependencies": {
+    "@astrojs/renderer-preact": "^0.2.2",
+    "@snowpack/plugin-dotenv": "^2.1.0",
+    "astro": "^0.20.7"
   }
 }
