@@ -92,57 +92,80 @@ function Home() {
       <header>
         <div
           style={{
-            width: '100%',
-            padding: '1rem',
-            fontSize: 20,
-            fontWeight: 'bold',
-          }}
-        >
-          <a href="/docs">Docs</a>
-        </div>
-        <div
-          className="container"
-          style={{
             display: 'flex',
             alignItems: 'center',
             flexDirection: 'column',
-            justifyContent: 'center',
-            textAlign: 'center',
           }}
         >
-          <h1 className="hero__title" style={{ display: 'none' }}>
-            {siteConfig.title}
-          </h1>
-          <div style={{ marginTop: '3rem' }} />
-          <Logo />
-          <p className="hero__subtitle" style={{ paddingTop: '1rem' }}>
-            {siteConfig.tagline}
-          </p>
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              flexDirection: 'column',
+              justifyContent: 'center',
+              textAlign: 'center',
+              width: '100vw',
 
-          <figure className={styles.figure}>
-            <img
-              src="https://storage.googleapis.com/trpc/trpcgif.gif"
-              alt="Server/client example"
-            />
-            <figcaption>
-              The client above is <strong>not</strong> importing any code from
-              the server, only its type declarations. <code>import type</code>{' '}
-              only imports declarations to be used annotations and declarations.
-              It{' '}
-              <a href="https://www.typescriptlang.org/docs/handbook/release-notes/typescript-3-8.html#type-only-imports-and-export">
-                always gets fully erased
-              </a>
-              , so there’s no remnant of it at runtime.
-            </figcaption>
-          </figure>
-          <p>
-            <Link
-              className={clsx('getStarted', styles.getStarted)}
-              to={useBaseUrl('docs/')}
+              backgroundImage: 'url(/img/backdrop.svg)',
+              backgroundRepeat: 'no-repeat',
+              backgroundSize: 'cover',
+            }}
+          >
+            <div
+              style={{
+                width: '100%',
+                padding: '1rem',
+                fontSize: 20,
+                fontWeight: 'bold',
+                display: 'flex',
+              }}
             >
-              Get Started
-            </Link>
-          </p>
+              <a href="/docs">Docs</a>
+            </div>
+            <h1 className="hero__title" style={{ display: 'none' }}>
+              {siteConfig.title}
+            </h1>
+            <div style={{ marginTop: '3rem' }} />
+            <Logo />
+            <p className="hero__subtitle" style={{ paddingTop: '1rem' }}>
+              {siteConfig.tagline}
+            </p>
+          </div>
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              flexDirection: 'column',
+              justifyContent: 'center',
+              textAlign: 'center',
+              maxWidth: '60rem',
+            }}
+          >
+            <figure className={styles.figure}>
+              <img
+                src="https://storage.googleapis.com/trpc/trpcgif.gif"
+                alt="Server/client example"
+              />
+              <figcaption>
+                The client above is <strong>not</strong> importing any code from
+                the server, only its type declarations. <code>import type</code>{' '}
+                only imports declarations to be used annotations and
+                declarations. It{' '}
+                <a href="https://www.typescriptlang.org/docs/handbook/release-notes/typescript-3-8.html#type-only-imports-and-export">
+                  always gets fully erased
+                </a>
+                , so there’s no remnant of it at runtime.
+              </figcaption>
+            </figure>
+            <p>
+              <Link
+                className={clsx('getStarted', styles.getStarted)}
+                to={useBaseUrl('docs/')}
+              >
+                Get Started
+              </Link>
+            </p>
+          </div>
         </div>
       </header>
       <main>
