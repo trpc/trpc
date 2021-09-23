@@ -7,6 +7,7 @@ import useBaseUrl from '@docusaurus/useBaseUrl';
 import styles from './styles.module.css';
 import GitHubButton from 'react-github-btn';
 import Head from '@docusaurus/Head';
+import useThemeContext from '@theme/hooks/useThemeContext';
 
 const features = [
   {
@@ -59,6 +60,12 @@ function Feature({ imageUrl, title, description }) {
   );
 }
 
+const Logo = () => {
+  const { isDarkTheme } = useThemeContext();
+
+  return <img src={isDarkTheme ? '/img/logo-dark.svg' : '/img/logo.svg'} />;
+};
+
 function Home() {
   const context = useDocusaurusContext();
   const { siteConfig = {} } = context;
@@ -75,9 +82,22 @@ function Home() {
           charSet="utf-8"
         />
       </Head>
-      <header className={clsx('hero hero--primary', styles.heroBanner)}>
-        <div className="container">
-          <h1 className="hero__title">{siteConfig.title}</h1>
+      <header>
+        <div
+          className="container"
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            flexDirection: 'column',
+            justifyContent: 'center',
+            textAlign: 'center',
+          }}
+        >
+          <h1 className="hero__title" style={{ display: 'none' }}>
+            {siteConfig.title}
+          </h1>
+          <div style={{ marginTop: '3rem' }} />
+          <Logo />
           <p className="hero__subtitle">{siteConfig.tagline}</p>
           <p>
             <GitHubButton

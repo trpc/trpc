@@ -28,6 +28,7 @@ module.exports = {
       logo: {
         alt: 'tRPC logo',
         src: 'img/logo.svg',
+        srcDark: 'img/logo-dark.svg',
       },
       items: [
         {
