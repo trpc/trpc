@@ -94,7 +94,7 @@ trpc
     return next({
       ctx: {
         ...ctx,
-        user: ctx.maybeUser, // user value is known to be non-null now
+        user: ctx.user, // user value is known to be non-null now
       },
     });
   })
