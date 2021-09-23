@@ -6,7 +6,8 @@
     "dev": "astro dev",
     "start": "astro dev",
     "build": "astro build && mv ./dist ./build",
-    "preview": "astro preview"
+    "preview": "astro preview",
+    "format": "yarn prettier -w ./src"
   },
   "dependencies": {
     "@docsearch/react": "^1.0.0-alpha.27"
@@ -15,6 +16,8 @@
     "@astrojs/renderer-preact": "^0.2.2",
     "@snowpack/plugin-dotenv": "^2.1.0",
     "astro": "^0.20.7",
+    "prettier": "^2.4.1",
+    "prettier-plugin-astro": "^0.0.7",
     "tailwindcss": "^2.2.15"
   }
 }
