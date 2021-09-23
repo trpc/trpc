@@ -201,6 +201,15 @@
       "contributions": [
         "financial"
       ]
+    },
+    {
+      "login": "stemount",
+      "name": "Stephen Mount",
+      "avatar_url": "https://avatars.githubusercontent.com/u/150512?v=4",
+      "profile": "https://ste.london",
+      "contributions": [
+        "financial"
+      ]
     }
   ],
   "contributorsPerLine": 7,
