@@ -8,8 +8,9 @@ author_url: https://twitter.com/alexdotjs
 author_image_url: https://avatars1.githubusercontent.com/u/459267?s=460&v=4
 ---
 
+
 <div align="center">
-  <img src="/img/logo-text.png" alt="tRPC" height="150" />
+  <img src="/img/logo.svg" alt="tRPC" height="150" />
   <p>End-to-end typesafe APIs made easy</p>
   <p>
     <a href="https://codecov.io/gh/trpc/trpc">

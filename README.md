@@ -1,6 +1,6 @@
 <div align="center">
   <h1 align="center">
-    <img src="./www/static/img/logo-text.png" alt="tRPC" height="100" />
+    <img src="./www/static/img/logo.svg" alt="tRPC" height="100" />
   </h1>
   <p>End-to-end typesafe APIs made easy</p>
   <p>

@@ -25,10 +25,9 @@ module.exports = {
       // searchParameters: {},
     },
     navbar: {
-      title: 'tRPC',
       logo: {
         alt: 'tRPC logo',
-        src: 'img/logo-no-text.png',
+        src: 'img/logo.svg',
       },
       items: [
         {
