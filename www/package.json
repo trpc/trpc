@@ -14,6 +14,7 @@
   "devDependencies": {
     "@astrojs/renderer-preact": "^0.2.2",
     "@snowpack/plugin-dotenv": "^2.1.0",
-    "astro": "^0.20.7"
+    "astro": "^0.20.7",
+    "tailwindcss": "^2.2.15"
   }
 }
