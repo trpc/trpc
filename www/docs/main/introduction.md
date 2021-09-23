@@ -1,6 +1,6 @@
 ---
 id: introduction
-title: tRPC
+title: ""
 sidebar_label: Introduction
 slug: /
 author: Alex / KATT 🐱
