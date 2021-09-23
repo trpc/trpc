@@ -109,6 +109,7 @@ function Home() {
               backgroundImage: 'url(/img/backdrop.svg)',
               backgroundRepeat: 'no-repeat',
               backgroundSize: 'cover',
+              backgroundPosition: 'center',
             }}
           >
             <div
