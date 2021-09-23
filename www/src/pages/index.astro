@@ -1,5 +1,23 @@
-<script>
-  // Redirect your homepage to the first page of documentation.
-  // If you have a landing page, remove this script and add it here!
-  window.location.pathname = `/en/introduction`;
-</script>
+---
+import "../style/global.css";
+
+const siteTitle = "tRPC - End-to-end typesafe APIs made easy";
+const description = "Automatic typesafety & autocompletion inferred from your API-paths, their input data, &amp; outputs 🧙‍♂️";
+---
+
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width" />
+    <link rel="icon" href="/favicon.svg" />
+    <meta name="description" content={description} />
+    <meta property="og:title" content={siteTitle} />
+    <meta property="og:description" content={description} />
+    <title>{siteTitle}</title>
+    <meta name="theme-color" content="#000000" />
+
+  </head>
+  <body>
+   <a href="/en/introduction">Docs</a>
+  </body>
+</html>
