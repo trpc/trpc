@@ -1,14 +1,22 @@
 import { useRouter } from 'next/dist/client/router';
 import { trpc } from 'utils/trpc';
+import NextError from 'next/error';
 
 export default function PostViewPage() {
   const id = useRouter().query.id as string;
   const postQuery = trpc.useQuery(['post.byId', id]);
-
-  const { data } = postQuery;
-  if (!data) {
-    return <>Imagine error/loading state handling here</>;
+  if (postQuery.error) {
+    return (
+      <NextError
+        title={postQuery.error.message}
+        statusCode={postQuery.error.data?.httpStatus ?? 500}
+      />
+    );
   }
+  if (postQuery.status !== 'success') {
+    return <>Loading...</>;
+  }
+  const { data } = postQuery;
   return (
     <>
       <h1>{data.title}</h1>
