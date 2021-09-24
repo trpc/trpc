@@ -210,6 +210,15 @@
       "contributions": [
         "financial"
       ]
+    },
+    {
+      "login": "infix",
+      "name": "amr",
+      "avatar_url": "https://avatars.githubusercontent.com/u/40860821?v=4",
+      "profile": "https://github.com/infix",
+      "contributions": [
+        "code"
+      ]
     }
   ],
   "contributorsPerLine": 7,
