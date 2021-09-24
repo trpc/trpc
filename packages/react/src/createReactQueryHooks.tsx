@@ -74,8 +74,8 @@ type UseTRPCMutationResult<
   ? Override<
       UseMutationResult<TOutput, TError, TInput>,
       {
-        mutate: (options?: TOptions) => TOutput;
-        mutateAsync: (options?: TOptions) => Promise<TOutput>;
+        mutate: (variables?: null, options?: TOptions) => TOutput;
+        mutateAsync: (variables?: null, options?: TOptions) => Promise<TOutput>;
       }
     >
   : UseMutationResult<TOutput, TError, TInput>;
