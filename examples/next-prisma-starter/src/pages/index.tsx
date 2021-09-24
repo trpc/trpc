@@ -40,6 +40,8 @@ export default function IndexPage() {
         </article>
       ))}
 
+      <hr />
+
       <form
         onSubmit={async (e) => {
           e.preventDefault();
