@@ -135,6 +135,14 @@ function Home() {
             <p className="hero__subtitle" style={{ paddingTop: '1rem' }}>
               {siteConfig.tagline}
             </p>
+            <p>
+              <Link
+                className={clsx('getStarted', styles.getStarted)}
+                to={useBaseUrl('docs/')}
+              >
+                Get Started
+              </Link>
+            </p>
           </div>
           <div
             style={{
@@ -150,6 +158,7 @@ function Home() {
               <img
                 src="https://storage.googleapis.com/trpc/trpcgif.gif"
                 alt="Server/client example"
+                className={styles.demo}
               />
               <figcaption>
                 The client above is <strong>not</strong> importing any code from
@@ -162,14 +171,6 @@ function Home() {
                 , so there’s no remnant of it at runtime.
               </figcaption>
             </figure>
-            <p>
-              <Link
-                className={clsx('getStarted', styles.getStarted)}
-                to={useBaseUrl('docs/')}
-              >
-                Get Started
-              </Link>
-            </p>
           </div>
         </div>
       </header>

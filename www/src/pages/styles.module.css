@@ -39,16 +39,14 @@
 .getStarted {
   display: inline-block;
   color: white;
-  background: --ifm-color-primary;
-  border: 2px solid white;
+  background-color: var(--ifm-color-primary);
   border-radius: 4px;
   padding: 10px 25px;
-  margin: 50px 0px 0px 0px;
   font-size: 14pt;
 }
 .getStarted:hover {
-  background: white;
-  color: --ifm-color-primary;
+  background-color: var(--ifm-color-primary-light);
+  color: white;
   text-decoration: none;
 }
 
@@ -63,6 +61,13 @@
   .figure {
     display: none;
   }
+}
+
+.demo {
+  border-radius: 8px;
+  box-shadow: 0 1px 1px hsl(0deg 0% 0% / 0.075),
+    0 2px 2px hsl(0deg 0% 0% / 0.075), 0 4px 4px hsl(0deg 0% 0% / 0.075),
+    0 8px 8px hsl(0deg 0% 0% / 0.075), 0 16px 16px hsl(0deg 0% 0% / 0.075);
 }
 
 .featureImage {
