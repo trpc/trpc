@@ -16,10 +16,10 @@ export const postRouter = createRouter()
       text: z.string().min(1),
     }),
     async resolve({ ctx, input }) {
-      const todo = await ctx.prisma.post.create({
+      const post = await ctx.prisma.post.create({
         data: input,
       });
-      return todo;
+      return post;
     },
   })
   // read
@@ -69,11 +69,11 @@ export const postRouter = createRouter()
     }),
     async resolve({ ctx, input }) {
       const { id, data } = input;
-      const todo = await ctx.prisma.post.update({
+      const post = await ctx.prisma.post.update({
         where: { id },
         data,
       });
-      return todo;
+      return post;
     },
   })
   // delete
