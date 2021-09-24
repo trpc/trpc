@@ -5,8 +5,8 @@ import Link from '@docusaurus/Link';
 import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
 import useBaseUrl from '@docusaurus/useBaseUrl';
 import styles from './styles.module.css';
-import GitHubButton from 'react-github-btn';
 import Head from '@docusaurus/Head';
+import useThemeContext from '@theme/hooks/useThemeContext';
 
 const features = [
   {
@@ -59,6 +59,17 @@ function Feature({ imageUrl, title, description }) {
   );
 }
 
+const Logo = () => {
+  const { isDarkTheme } = useThemeContext();
+
+  return (
+    <img
+      src={isDarkTheme ? '/img/logo-block.svg' : '/img/logo-block.svg'}
+      height={400}
+    />
+  );
+};
+
 function Home() {
   const context = useDocusaurusContext();
   const { siteConfig = {} } = context;
@@ -74,47 +85,92 @@ function Home() {
           src="https://platform.twitter.com/widgets.js"
           charSet="utf-8"
         />
+        <style>
+          {/* Hides navbar */}
+          {`
+          .navbar {
+            display: none
+          }`}
+        </style>
       </Head>
-      <header className={clsx('hero hero--primary', styles.heroBanner)}>
-        <div className="container">
-          <h1 className="hero__title">{siteConfig.title}</h1>
-          <p className="hero__subtitle">{siteConfig.tagline}</p>
-          <p>
-            <GitHubButton
-              href="https://github.com/trpc/trpc"
-              data-icon="octicon-star"
-              data-size="large"
-              data-show-count="true"
-              aria-label="Star trpc/trpc on GitHub"
-            >
-              Star
-            </GitHubButton>
-          </p>
+      <header>
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            flexDirection: 'column',
+          }}
+        >
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              flexDirection: 'column',
+              justifyContent: 'center',
+              textAlign: 'center',
+              width: '100vw',
 
-          <figure className={styles.figure}>
-            <img
-              src="https://storage.googleapis.com/trpc/trpcgif.gif"
-              alt="Server/client example"
-            />
-            <figcaption>
-              The client above is <strong>not</strong> importing any code from
-              the server, only its type declarations. <code>import type</code>{' '}
-              only imports declarations to be used annotations and declarations.
-              It{' '}
-              <a href="https://www.typescriptlang.org/docs/handbook/release-notes/typescript-3-8.html#type-only-imports-and-export">
-                always gets fully erased
-              </a>
-              , so there’s no remnant of it at runtime.
-            </figcaption>
-          </figure>
-          <p>
-            <Link
-              className={clsx('getStarted', styles.getStarted)}
-              to={useBaseUrl('docs/')}
+              backgroundImage: 'url(/img/backdrop.svg)',
+              backgroundRepeat: 'no-repeat',
+              backgroundSize: 'cover',
+              backgroundPosition: 'center',
+            }}
+          >
+            <div
+              style={{
+                width: '100%',
+                padding: '1rem',
+                fontSize: 20,
+                fontWeight: 'bold',
+                display: 'flex',
+              }}
             >
-              Get Started
-            </Link>
-          </p>
+              <a href="/docs">Docs</a>
+            </div>
+            <h1 className="hero__title" style={{ display: 'none' }}>
+              {siteConfig.title}
+            </h1>
+            <div style={{ marginTop: '3rem' }} />
+            <Logo />
+            <p className="hero__subtitle" style={{ paddingTop: '1rem' }}>
+              {siteConfig.tagline}
+            </p>
+          </div>
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              flexDirection: 'column',
+              justifyContent: 'center',
+              textAlign: 'center',
+              maxWidth: '60rem',
+            }}
+          >
+            <figure className={styles.figure}>
+              <img
+                src="https://storage.googleapis.com/trpc/trpcgif.gif"
+                alt="Server/client example"
+              />
+              <figcaption>
+                The client above is <strong>not</strong> importing any code from
+                the server, only its type declarations. <code>import type</code>{' '}
+                only imports declarations to be used annotations and
+                declarations. It{' '}
+                <a href="https://www.typescriptlang.org/docs/handbook/release-notes/typescript-3-8.html#type-only-imports-and-export">
+                  always gets fully erased
+                </a>
+                , so there’s no remnant of it at runtime.
+              </figcaption>
+            </figure>
+            <p>
+              <Link
+                className={clsx('getStarted', styles.getStarted)}
+                to={useBaseUrl('docs/')}
+              >
+                Get Started
+              </Link>
+            </p>
+          </div>
         </div>
       </header>
       <main>
