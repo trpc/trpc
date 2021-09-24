@@ -43,6 +43,11 @@ export const postRouter = createRouter()
     async resolve({ ctx, input }) {
       const post = await ctx.prisma.post.findUnique({
         where: { id: input },
+        select: {
+          id: true,
+          title: true,
+          text: true,
+        },
       });
       if (!post) {
         throw new TRPCError({
