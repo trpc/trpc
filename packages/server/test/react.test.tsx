@@ -414,6 +414,7 @@ describe('useMutation()', () => {
           const newAllPost = await allPostsQuery.refetch();
           expect(newAllPost.data).toHaveLength(0);
         });
+        // eslint-disable-next-line react-hooks/exhaustive-deps
       }, []);
 
       return <pre>{JSON.stringify(allPostsQuery.data ?? {}, null, 4)}</pre>;
@@ -454,6 +455,7 @@ describe('useMutation()', () => {
           const newAllPost = await allPostsQuery.refetch();
           expect(newAllPost.data).toHaveLength(1);
         });
+        // eslint-disable-next-line react-hooks/exhaustive-deps
       }, []);
 
       return <pre>{JSON.stringify(allPostsQuery.data ?? {}, null, 4)}</pre>;
