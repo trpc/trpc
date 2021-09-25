@@ -21,7 +21,6 @@ import {
   UseInfiniteQueryOptions,
   useMutation,
   UseMutationOptions,
-  UseMutationResult,
   useQuery,
   UseQueryOptions,
   UseQueryResult,
@@ -60,31 +59,6 @@ interface UseTRPCInfiniteQueryOptions<
 interface UseTRPCMutationOptions<TInput, TError, TOutput>
   extends UseMutationOptions<TOutput, TError, TInput>,
     TRPCUseQueryBaseOptions {}
-
-type Override<A, B> = {
-  [K in keyof A]: K extends keyof B ? B[K] : A[K];
-};
-type Equals<X, Y> = (<T>() => T extends X ? 1 : 2) extends <T>() => T extends Y
-  ? 1
-  : 2
-  ? true
-  : false;
-
-type UseTRPCMutationResult<TInput, TOutput, TError, TOptions> = Equals<
-  TInput,
-  NonNullable<TInput>
-> extends false
-  ? Override<
-      UseMutationResult<TOutput, TError, TInput>,
-      {
-        mutate: (variables?: TInput, options?: TOptions) => TOutput;
-        mutateAsync: (
-          variables?: TInput,
-          options?: TOptions,
-        ) => Promise<TOutput>;
-      }
-    >
-  : UseMutationResult<TOutput, TError, TInput>;
 
 function getArgs<TPathAndInput extends unknown[], TOptions>(
   pathAndInput: TPathAndInput,
@@ -269,11 +243,7 @@ export function createReactQueryHooks<TRouter extends AnyRouter>() {
     TPath extends keyof TMutations & string,
     TInput extends inferProcedureInput<TMutations[TPath]>,
     TOutput extends inferProcedureOutput<TMutations[TPath]>,
-    TOptions = UseTRPCMutationOptions<TInput, TError, TOutput>,
-  >(
-    path: TPath,
-    opts?: TOptions,
-  ): UseTRPCMutationResult<TInput, TOutput, TError, TOptions> {
+  >(path: TPath, opts?: UseTRPCMutationOptions<TInput, TError, TOutput>) {
     const client = useContext().client;
     const hook = useMutation<TOutput, TError, TInput>(
       (input) => (client.mutation as any)(path, input),

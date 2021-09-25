@@ -48,7 +48,7 @@ export type inferProcedureInput<
   TProcedure extends Procedure<any, any, any, any>,
 > = TProcedure extends Procedure<any, any, infer Input, any>
   ? undefined extends Input
-    ? Input | null
+    ? Input | null | void // void is necessary to allow procedures with nullish input to be called without an input
     : Input
   : undefined;
 
