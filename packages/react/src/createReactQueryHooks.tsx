@@ -64,18 +64,24 @@ interface UseTRPCMutationOptions<TInput, TError, TOutput>
 type Override<A, B> = {
   [K in keyof A]: K extends keyof B ? B[K] : A[K];
 };
+type Equals<X, Y> = (<T>() => T extends X ? 1 : 2) extends <T>() => T extends Y
+  ? 1
+  : 2
+  ? true
+  : false;
 
-type UseTRPCMutationResult<
+type UseTRPCMutationResult<TInput, TOutput, TError, TOptions> = Equals<
   TInput,
-  TOutput,
-  TError,
-  TOptions = UseTRPCMutationOptions<TOutput, TError, never>,
-> = TInput extends null | undefined
+  NonNullable<TInput>
+> extends false
   ? Override<
       UseMutationResult<TOutput, TError, TInput>,
       {
-        mutate: (variables?: null, options?: TOptions) => TOutput;
-        mutateAsync: (variables?: null, options?: TOptions) => Promise<TOutput>;
+        mutate: (variables?: TInput, options?: TOptions) => TOutput;
+        mutateAsync: (
+          variables?: TInput,
+          options?: TOptions,
+        ) => Promise<TOutput>;
       }
     >
   : UseMutationResult<TOutput, TError, TInput>;
@@ -263,17 +269,18 @@ export function createReactQueryHooks<TRouter extends AnyRouter>() {
     TPath extends keyof TMutations & string,
     TInput extends inferProcedureInput<TMutations[TPath]>,
     TOutput extends inferProcedureOutput<TMutations[TPath]>,
+    TOptions = UseTRPCMutationOptions<TInput, TError, TOutput>,
   >(
     path: TPath,
-    opts?: UseTRPCMutationOptions<TInput, TError, TOutput>,
-  ): UseTRPCMutationResult<TInput, TOutput, TError> {
+    opts?: TOptions,
+  ): UseTRPCMutationResult<TInput, TOutput, TError, TOptions> {
     const client = useContext().client;
     const hook = useMutation<TOutput, TError, TInput>(
       (input) => (client.mutation as any)(path, input),
       opts,
     );
 
-    return hook as UseTRPCMutationResult<TInput, TPath, TOutput>;
+    return hook;
   }
 
   /* istanbul ignore next */
