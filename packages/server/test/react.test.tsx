@@ -141,6 +141,16 @@ function createAppRouter() {
         });
       },
     })
+    .mutation('deletePosts', {
+      input: z.array(z.string()).nullish(),
+      resolve({ input }) {
+        if (input) {
+          db.posts = db.posts.filter((p) => !input.includes(p.id));
+        } else {
+          db.posts = [];
+        }
+      },
+    })
     .subscription('newPosts', {
       input: z.number(),
       resolve({ input }) {
@@ -386,6 +396,90 @@ test('mutation on mount + subscribe for it', async () => {
   });
   await waitFor(() => {
     expect(utils.container).toHaveTextContent('third post');
+  });
+});
+
+describe('useMutation()', () => {
+  test('nullish input called with no input', async () => {
+    const { trpc, client } = factory;
+
+    function MyComponent() {
+      const allPostsQuery = trpc.useQuery(['allPosts']);
+      const deletePostsMutation = trpc.useMutation('deletePosts');
+
+      useEffect(() => {
+        allPostsQuery.refetch().then(async (allPosts) => {
+          expect(allPosts.data).toHaveLength(2);
+          await deletePostsMutation.mutateAsync();
+          const newAllPost = await allPostsQuery.refetch();
+          expect(newAllPost.data).toHaveLength(0);
+        });
+      }, []);
+
+      return <pre>{JSON.stringify(allPostsQuery.data ?? {}, null, 4)}</pre>;
+    }
+
+    function App() {
+      const [queryClient] = useState(() => new QueryClient());
+      return (
+        <trpc.Provider {...{ queryClient, client }}>
+          <QueryClientProvider client={queryClient}>
+            <MyComponent />
+          </QueryClientProvider>
+        </trpc.Provider>
+      );
+    }
+
+    const utils = render(<App />);
+    await waitFor(() => {
+      expect(utils.container).toHaveTextContent('first post');
+    });
+
+    await waitFor(() => {
+      expect(utils.container).toHaveTextContent('[]');
+    });
+  });
+
+  test('nullish input called with input', async () => {
+    const { trpc, client } = factory;
+
+    function MyComponent() {
+      const allPostsQuery = trpc.useQuery(['allPosts']);
+      const deletePostsMutation = trpc.useMutation('deletePosts');
+
+      useEffect(() => {
+        allPostsQuery.refetch().then(async (allPosts) => {
+          expect(allPosts.data).toHaveLength(2);
+          await deletePostsMutation.mutateAsync(['1']);
+          const newAllPost = await allPostsQuery.refetch();
+          expect(newAllPost.data).toHaveLength(1);
+        });
+      }, []);
+
+      return <pre>{JSON.stringify(allPostsQuery.data ?? {}, null, 4)}</pre>;
+    }
+
+    function App() {
+      const [queryClient] = useState(() => new QueryClient());
+      return (
+        <trpc.Provider {...{ queryClient, client }}>
+          <QueryClientProvider client={queryClient}>
+            <MyComponent />
+          </QueryClientProvider>
+        </trpc.Provider>
+      );
+    }
+
+    const utils = render(<App />);
+    await waitFor(() => {
+      expect(utils.container).toHaveTextContent('first post');
+      expect(utils.container).toHaveTextContent('second post');
+    });
+
+    await waitFor(() => {
+      expect(utils.container).not.toHaveTextContent('first post');
+      expect(utils.container).toHaveTextContent('second post');
+    });
   });
 });
 
