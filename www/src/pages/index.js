@@ -144,52 +144,135 @@ function Home() {
               </Link>
             </p>
           </div>
+        </div>
+      </header>
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          flexDirection: 'column',
+        }}
+      >
+        <main>
+          {features && features.length > 0 && (
+            <>
+              <section className={styles.features}>
+                <div className="container">
+                  <div className="row">
+                    {features.map((props, idx) => (
+                      <Feature key={idx} {...props} />
+                    ))}
+                  </div>
+                </div>
+              </section>
+            </>
+          )}
+        </main>
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            flexDirection: 'column',
+            justifyContent: 'center',
+            textAlign: 'center',
+            maxWidth: '60rem',
+          }}
+        >
           <div
             style={{
               display: 'flex',
+              alignContent: 'stretch',
               alignItems: 'center',
-              flexDirection: 'column',
-              justifyContent: 'center',
-              textAlign: 'center',
-              maxWidth: '60rem',
             }}
           >
-            <figure className={styles.figure}>
+            <div
+              style={{
+                flexBasis: 1,
+                flexGrow: 1,
+                margin: '2rem',
+                fontSize: '1.3rem',
+              }}
+            >
+              Defining an endpoint is as simple as defining an input and calling
+              a function. Seriously. Database operations, complex computations,
+              whatever you need. <b>Just call it.</b>
+            </div>
+            <figure
+              style={{ flexBasis: 1, flexGrow: 1, margin: '2rem' }}
+              height={200}
+            >
               <img
-                src="https://storage.googleapis.com/trpc/trpcgif.gif"
+                src="/img/router-def-example.png"
                 alt="Server/client example"
-                className={styles.demo}
               />
-              <figcaption>
-                The client above is <strong>not</strong> importing any code from
-                the server, only its type declarations. <code>import type</code>{' '}
-                only imports declarations to be used annotations and
-                declarations. It{' '}
-                <a href="https://www.typescriptlang.org/docs/handbook/release-notes/typescript-3-8.html#type-only-imports-and-export">
-                  always gets fully erased
-                </a>
-                , so there’s no remnant of it at runtime.
-              </figcaption>
             </figure>
           </div>
+          <div
+            style={{
+              display: 'flex',
+              alignContent: 'stretch',
+              alignItems: 'center',
+            }}
+          >
+            <div
+              style={{
+                flexBasis: 1,
+                flexGrow: 1,
+                margin: '2rem',
+                fontSize: '1.3rem',
+              }}
+            >
+              Accessing your API on your client is even simpler.{' '}
+              <b>Typesafe too</b>. See that <code>{`"get-user-by-id"`}</code>{' '}
+              string? It autocompleted.
+            </div>
+            <figure
+              style={{ flexBasis: 1, flexGrow: 1, margin: '2rem' }}
+              height={200}
+            >
+              <img
+                src="/img/component-def-example.png"
+                alt="Server/client example"
+              />
+            </figure>
+          </div>
+          <div
+            style={{
+              flexBasis: 1,
+              flexGrow: 1,
+              margin: '2rem',
+              fontSize: '2rem',
+              fontStyle: 'italic',
+            }}
+          >
+            {"Let's see it in action"}
+          </div>
+          <figure className={styles.figure}>
+            <img
+              src="https://storage.googleapis.com/trpc/trpcgif.gif"
+              alt="Server/client example"
+              className={styles.demo}
+            />
+            <figcaption>
+              The client above is <strong>not</strong> importing any code from
+              the server, only its type declarations. <code>import type</code>{' '}
+              only imports declarations to be used annotations and declarations.
+              It{' '}
+              <a href="https://www.typescriptlang.org/docs/handbook/release-notes/typescript-3-8.html#type-only-imports-and-export">
+                always gets fully erased
+              </a>
+              , so there’s no remnant of it at runtime.
+            </figcaption>
+          </figure>
         </div>
-      </header>
-      <main>
-        {features && features.length > 0 && (
-          <>
-            <section className={styles.features}>
-              <div className="container">
-                <div className="row">
-                  {features.map((props, idx) => (
-                    <Feature key={idx} {...props} />
-                  ))}
-                </div>
-              </div>
-            </section>
-          </>
-        )}
-      </main>
-      <footer className={`container ${styles.container}`}>
+      </div>
+
+      <div style={{ paddingTop: '3rem' }} />
+
+      <footer
+        className={`container ${styles.container}`}
+        style={{ fontSize: '0.9rem', fontWeight: 400 }}
+      >
         <ol className="footnotes">
           <li id="zero">
             <code>@trpc/client</code> depends on some babel runtime helpers +
