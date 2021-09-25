@@ -16,7 +16,6 @@ import React, { ReactNode, useCallback, useEffect, useMemo } from 'react';
 import {
   hashQueryKey,
   QueryClient,
-  QueryKey,
   useInfiniteQuery,
   UseInfiniteQueryOptions,
   useMutation,
@@ -45,15 +44,15 @@ interface TRPCUseQueryBaseOptions extends TRPCRequestOptions {
   ssr?: boolean;
 }
 
-interface UseTRPCQueryOptions<TInput, TError, TOutput>
-  extends UseQueryOptions<TInput, TError, TOutput, QueryKey>,
+interface UseTRPCQueryOptions<TError, TOutput, TQueryKey extends unknown[]>
+  extends UseQueryOptions<TOutput, TError, TOutput, TQueryKey>,
     TRPCUseQueryBaseOptions {}
 
 interface UseTRPCInfiniteQueryOptions<
-  TInput = unknown,
-  TError = unknown,
-  TOutput = TInput,
-> extends UseInfiniteQueryOptions<TInput, TError, TOutput, TOutput, QueryKey>,
+  TError,
+  TOutput,
+  TQueryKey extends unknown[],
+> extends UseInfiniteQueryOptions<TOutput, TError, TOutput, TOutput, TQueryKey>,
     TRPCUseQueryBaseOptions {}
 
 interface UseTRPCMutationOptions<TInput, TError, TOutput>
@@ -214,12 +213,14 @@ export function createReactQueryHooks<TRouter extends AnyRouter>() {
   >(
     pathAndInput: [path: TPath, ...args: inferHandlerInput<TProcedure>],
     opts?: UseTRPCQueryOptions<
-      inferProcedureInput<TQueries[TPath]>,
       TError,
-      TOutput
+      TOutput,
+      [TPath, inferProcedureInput<TQueries[TPath]>]
     >,
   ): UseQueryResult<TOutput, TError> {
-    const cacheKey = getCacheKey(pathAndInput, CACHE_KEY_QUERY);
+    type TInput = inferProcedureInput<TProcedure>;
+    type TQueryKey = [TPath, TInput];
+    const cacheKey = getCacheKey(pathAndInput, CACHE_KEY_QUERY) as TQueryKey;
     const { client, isPrepass, queryClient, prefetchQuery } = useContext();
 
     if (
@@ -310,12 +311,18 @@ export function createReactQueryHooks<TRouter extends AnyRouter>() {
     TCursor extends any,
   >(
     pathAndInput: [TPath, Omit<TInput, 'cursor'>],
-    // FIXME: this typing is wrong but it works
-    opts?: UseTRPCInfiniteQueryOptions<TOutput, TError, TOutput>,
+    opts?: UseTRPCInfiniteQueryOptions<
+      TError,
+      TOutput,
+      [TPath, Omit<TInput, 'cursor'>]
+    >,
   ) {
     const { client, isPrepass, prefetchInfiniteQuery, queryClient } =
       useContext();
-    const cacheKey = getCacheKey(pathAndInput, CACHE_KEY_INFINITE_QUERY);
+    const cacheKey = getCacheKey(pathAndInput, CACHE_KEY_INFINITE_QUERY) as [
+      TPath,
+      Omit<TInput, 'cursor'>,
+    ];
     const [path, input] = pathAndInput;
 
     if (
