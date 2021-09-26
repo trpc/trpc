@@ -27,7 +27,7 @@ test('infer input & output', async () => {
   {
     const input: inferProcedureInput<TQueries['noInput']> = null as any;
     const output: inferProcedureOutput<TQueries['noInput']> = null as any;
-    expectTypeOf(input).toMatchTypeOf<undefined | null>();
+    expectTypeOf(input).toMatchTypeOf<undefined | null | void>();
     expectTypeOf(output).toMatchTypeOf<{ input: undefined }>();
   }
 });
