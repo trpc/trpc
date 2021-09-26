@@ -9,8 +9,6 @@ slug: /react-mutations
 
 Works like react-query's mutations - [see their docs](https://react-query.tanstack.com/guides/mutations).
 
-If you have an optional input argument you'll have to pass `null` or `undefined` as the input - [see this discussion for more details](https://github.com/trpc/trpc/issues/390).
-
 ### Example
 
 <details><summary>Backend code</summary>
