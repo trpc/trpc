@@ -6,6 +6,6 @@ export function assertNotBrowser() {
     process.env.NODE_ENV !== 'test' &&
     process.env.JEST_WORKER_ID === undefined
   ) {
-    throw new Error('Imported server-only code in the broowser');
+    throw new Error('Imported server-only code in the browser');
   }
 }
