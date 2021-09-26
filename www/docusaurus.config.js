@@ -89,7 +89,7 @@ module.exports = {
             },
             {
               label: 'Discord',
-              href: '/discord',
+              href: 'https://trpc.io/discord',
             },
           ],
         },
