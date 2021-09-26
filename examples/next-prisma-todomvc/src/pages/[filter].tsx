@@ -305,7 +305,7 @@ export default function TodosPage({
             <button
               className="clear-completed"
               onClick={() => {
-                clearCompleted.mutate(null);
+                clearCompleted.mutate();
               }}
             >
               Clear completed
