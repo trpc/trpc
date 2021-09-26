@@ -151,6 +151,11 @@ function createAppRouter() {
         }
       },
     })
+    .mutation('PING', {
+      resolve() {
+        return 'PONG' as const;
+      },
+    })
     .subscription('newPosts', {
       input: z.number(),
       resolve({ input }) {
@@ -400,6 +405,65 @@ test('mutation on mount + subscribe for it', async () => {
 });
 
 describe('useMutation()', () => {
+  test('@deprecated call with null/undefined', async () => {
+    const { trpc, client } = factory;
+
+    const results: unknown[] = [];
+    function MyComponent() {
+      const mutation = trpc.useMutation('PING');
+      const [finished, setFinished] = useState(false);
+
+      useEffect(() => {
+        (async () => {
+          await new Promise((resolve) =>
+            mutation.mutate(null, {
+              onSettled: resolve,
+            }),
+          );
+          await new Promise((resolve) =>
+            mutation.mutate(undefined, {
+              onSettled: resolve,
+            }),
+          );
+
+          await mutation.mutateAsync(null);
+
+          await mutation.mutateAsync(undefined);
+          setFinished(true);
+        })();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+      }, []);
+
+      useEffect(() => {
+        results.push(mutation.data);
+      }, [mutation.data]);
+
+      return (
+        <pre>
+          {JSON.stringify(mutation.data ?? {}, null, 4)}
+          {finished && '__IS_FINISHED__'}
+        </pre>
+      );
+    }
+
+    function App() {
+      const [queryClient] = useState(() => new QueryClient());
+      return (
+        <trpc.Provider {...{ queryClient, client }}>
+          <QueryClientProvider client={queryClient}>
+            <MyComponent />
+          </QueryClientProvider>
+        </trpc.Provider>
+      );
+    }
+
+    const utils = render(<App />);
+    await waitFor(() => {
+      expect(utils.container).toHaveTextContent('__IS_FINISHED__');
+    });
+
+    // expect(results).toMatchInlineSnapshot();
+  });
   test('nullish input called with no input', async () => {
     const { trpc, client } = factory;
 
