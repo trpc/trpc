@@ -405,7 +405,7 @@ test('mutation on mount + subscribe for it', async () => {
 });
 
 describe('useMutation()', () => {
-  test('@deprecated call with null/undefined', async () => {
+  test('call procedure with no input with null/undefined', async () => {
     const { trpc, client } = factory;
 
     const results: unknown[] = [];
