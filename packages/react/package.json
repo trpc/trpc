@@ -38,8 +38,8 @@
   },
   "dependencies": {
     "@babel/runtime": "^7.9.0",
-    "@trpc/client": "^9.8.0",
-    "@trpc/server": "^9.8.0"
+    "@trpc/client": "9.8.0",
+    "@trpc/server": "9.8.0"
   },
   "devDependencies": {
     "@types/express": "^4.17.12",
