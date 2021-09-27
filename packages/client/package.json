@@ -32,7 +32,7 @@
   ],
   "dependencies": {
     "@babel/runtime": "^7.9.0",
-    "@trpc/server": "^9.8.1-alpha.0"
+    "@trpc/server": "9.8.1-alpha.0"
   },
   "publishConfig": {
     "access": "public"
