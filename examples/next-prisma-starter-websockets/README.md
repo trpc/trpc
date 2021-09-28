@@ -1,6 +1,6 @@
 # Prisma + tRPC + WebSockets
 
-> :info: WebSockets is a beta feature & may change without major version bump :info:
+> ℹ️ WebSockets is a beta feature & may change without major version bump ℹ️
 
 
 - Try demo http://nextjs-websockets.trpc.io/
@@ -12,6 +12,7 @@
 - ⚡ Full-stack React with Next.js
 - ⚡ WebSockets / Subscription support
 - ⚡ Database with Prisma
+- 🔐 Authorization using [next-auth](https://next-auth.js.org/)
 - ⚙️ VSCode extensions
 - 🎨 ESLint + Prettier
 - 💚 CI setup using GitHub Actions:
