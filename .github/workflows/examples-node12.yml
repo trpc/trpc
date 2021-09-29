@@ -1,7 +1,7 @@
 name: Examples E2E
 on: [push]
 jobs:
-  e2e:
+  e2e-node12:
     env:
       DATABASE_URL: postgresql://postgres:@localhost:5432/trpcdb
     runs-on: ${{ matrix.os }}
