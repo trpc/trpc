@@ -16,10 +16,7 @@ jobs:
             next-prisma-todomvc,
             standalone-server,
           ]
-        # build trpc with:
-        node-build: ['14.x']
-        # start example with:
-        node-start: ['12.x']
+        node: ['14.x']
         os: [ubuntu-latest]
     services:
       postgres:
@@ -33,10 +30,10 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v2
 
-      - name: Use Node ${{ matrix.node-build }}
+      - name: Use Node ${{ matrix.node }}
         uses: actions/setup-node@v1
         with:
-          node-version: ${{ matrix.node-build }}
+          node-version: ${{ matrix.node }}
 
       - name: Install deps and build (with cache)
         uses: bahmutov/npm-install@v1
@@ -46,11 +43,6 @@ jobs:
         with:
           path: ${{ github.workspace }}/.next/cache
           key: ${{ runner.dir }}-${{ runner.os }}-${{ runner.node }}-${{ runner.start }}-nextjs
-
-      - name: Use Node ${{ matrix.node-start }}
-        uses: actions/setup-node@v1
-        with:
-          node-version: ${{ matrix.node-start }}
 
       - run: node -v
       # - run: yarn install --cwd examples/${{ matrix.dir }} --ignore-scripts
