@@ -8,14 +8,7 @@ jobs:
     timeout-minutes: 10
     strategy:
       matrix:
-        dir: [
-            express-server,
-            # next-chat,
-            next-prisma-starter,
-            next-prisma-starter-websockets,
-            next-prisma-todomvc,
-            standalone-server,
-          ]
+        dir: [next-prisma-starter]
         # build trpc with:
         node-build: ['14.x']
         # start example with:
