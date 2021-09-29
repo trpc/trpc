@@ -1,22 +1,18 @@
 name: Examples E2E
 on: [push]
 jobs:
-  e2e:
+  e2e-node12:
     env:
       DATABASE_URL: postgresql://postgres:@localhost:5432/trpcdb
     runs-on: ${{ matrix.os }}
     timeout-minutes: 10
     strategy:
       matrix:
-        dir: [
-            express-server,
-            # next-chat,
-            next-prisma-starter,
-            next-prisma-starter-websockets,
-            next-prisma-todomvc,
-            standalone-server,
-          ]
-        node: ['14.x']
+        dir: [next-prisma-starter]
+        # build trpc with:
+        node-build: ['14.x']
+        # start example with:
+        node-start: ['12.x']
         os: [ubuntu-latest]
     services:
       postgres:
@@ -30,10 +26,10 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v2
 
-      - name: Use Node ${{ matrix.node }}
+      - name: Use Node ${{ matrix.node-build }}
         uses: actions/setup-node@v1
         with:
-          node-version: ${{ matrix.node }}
+          node-version: ${{ matrix.node-build }}
 
       - name: Install deps and build (with cache)
         uses: bahmutov/npm-install@v1
@@ -43,6 +39,11 @@ jobs:
         with:
           path: ${{ github.workspace }}/.next/cache
           key: ${{ runner.dir }}-${{ runner.os }}-${{ runner.node }}-${{ runner.start }}-nextjs
+
+      - name: Use Node ${{ matrix.node-start }}
+        uses: actions/setup-node@v1
+        with:
+          node-version: ${{ matrix.node-start }}
 
       - run: node -v
       # - run: yarn install --cwd examples/${{ matrix.dir }} --ignore-scripts
