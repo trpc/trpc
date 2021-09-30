@@ -17,6 +17,9 @@ slug: /sponsors
     <tr>
       <td align="center"><a href="https://newfront.com"><img src="https://user-images.githubusercontent.com/36125/130158930-216fa212-5909-4ee1-b4b9-fd5935f51245.png" width="143" alt=""/></a></td>
     </tr>
+    <tr>
+      <td align="center"><a href="https://hidrb.com"><img src="https://avatars.githubusercontent.com/u/77294655?v=4?s=143" alt=""/></a></td>
+    </tr>
   </tbody>
 </table>
 
