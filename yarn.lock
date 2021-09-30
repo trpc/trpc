@@ -2976,9 +2976,9 @@
     "@types/react" "*"
 
 "@types/react@*", "@types/react@^17.0.20":
-  version "17.0.25"
-  resolved "https://registry.yarnpkg.com/@types/react/-/react-17.0.25.tgz#8b88c226e54910762decc9de2aa36b4dc9240503"
-  integrity sha512-IXrzSOr3CVbEQgmjEdCWF57J7CVaJ7lL/n4penxHm8h0XIcr0AxqGucogh2zj3qRxgk4M4JImOP/MfomkPOhvQ==
+  version "17.0.26"
+  resolved "https://registry.yarnpkg.com/@types/react/-/react-17.0.26.tgz#960ea4b3518cc154ed7df3b35656c508df653331"
+  integrity sha512-MXxuXrH2xOcv5cp/su4oz69dNQnSA90JjFw5HBd5wifw6Ihi94j7dRJm7qNsB30tnruXSCPc9qmlhGop4nh9Hw==
   dependencies:
     "@types/prop-types" "*"
     "@types/scheduler" "*"
@@ -13351,6 +13351,6 @@ zen-observable@0.8.15:
   integrity sha512-PQ2PC7R9rslx84ndNBZB/Dkv8V8fZEpk83RLgXtYd0fwUgEjseMn1Dgajh2x6S8QbZAFa9p2qVCEuYZNgve0dQ==
 
 zod@^3.0.0:
-  version "3.9.4"
-  resolved "https://registry.yarnpkg.com/zod/-/zod-3.9.4.tgz#c7ec1cad19a8801145930369602db7c6c3bdc685"
-  integrity sha512-eHSHpvWrA/zCf5tGTosnU/TMpu8cxKwIZUi5/sRrvzzSTv+QZoGyNon2alORHLT2XhMwwQ5V4PgU+LsIWe6/2g==
+  version "3.9.5"
+  resolved "https://registry.yarnpkg.com/zod/-/zod-3.9.5.tgz#11ebe51bf0c0356cea4465177e917db5f71768f4"
+  integrity sha512-n8zC7CLFi/aOhKKrdczg8sCL8myY/mMa0Y6w6uKOFRaHZOD62bqMR2ah3rltZy381/JakY0TTh5IilHqH0BLBw==
