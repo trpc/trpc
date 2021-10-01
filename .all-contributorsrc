@@ -219,6 +219,15 @@
       "contributions": [
         "code"
       ]
+    },
+    {
+      "login": "thomas-coldwell",
+      "name": "Thomas Coldwell",
+      "avatar_url": "https://avatars.githubusercontent.com/u/31568400?v=4",
+      "profile": "http://thomascoldwell.dev",
+      "contributions": [
+        "doc"
+      ]
     }
   ],
   "contributorsPerLine": 7,
