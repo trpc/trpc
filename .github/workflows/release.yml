@@ -1,0 +1,41 @@
+name: Release
+on:
+  workflow_run:
+    workflows: ['Build & Test']
+    branches: [main]
+    types: [completed]
+
+jobs:
+  release:
+    if: github.event.workflow_run.conclusion == 'success'
+    timeout-minutes: 10
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+
+      - name: Use Node.js 14.x
+        uses: actions/setup-node@v1
+        with:
+          version: 14.x
+
+      - name: Install deps and build (with cache)
+        uses: bahmutov/npm-install@v1
+
+      - name: Add token
+        run: echo "//registry.npmjs.org/:_authToken=$NPM_TOKEN" > $HOME/.npmrc
+        env:
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Create versions pull request or release new version
+        uses: changesets/action@c3d88279fd9abe11410de073005e34863f735b1c
+        if: github.ref == 'refs/heads/main'
+        with:
+          version: yarn version:ci && rm $HOME/.npmrc
+          publish: yarn release && rm $HOME/.npmrc
+          commit: 'chore(changeset): version update'
+          title: 'chore(changeset): version update'
+        env:
+          GITHUB_TOKEN: ${{ secrets.TRPC_GITHUB_TOKEN }}
