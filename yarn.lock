@@ -10293,9 +10293,9 @@ playwright-core@>=1.2.0:
     yazl "^2.5.1"
 
 playwright@^1.14.1:
-  version "1.15.0"
-  resolved "https://registry.yarnpkg.com/playwright/-/playwright-1.15.0.tgz#c8c75287541e75317988b973a306d2f61065aefb"
-  integrity sha512-JtagFVjNvccP1rIixHB/4KbR+BzMTJLty6mo71YLatvJR9ZH+PX8DLlhw1KDdIH2YGMSQGf2ihh4KAp9tsklxQ==
+  version "1.15.1"
+  resolved "https://registry.yarnpkg.com/playwright/-/playwright-1.15.1.tgz#f53dae5fbbe9c7b1eca06e2638af8196e0deec96"
+  integrity sha512-MQaKii1mhfoZF0+HXE4h5s2CwZNJmcASlmI097yosoZ9Fo5RW9RkLN5VMCbSw9xTyoqo6vdE6Df0OFpupYjBow==
   dependencies:
     commander "^6.1.0"
     debug "^4.1.1"
