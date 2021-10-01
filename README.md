@@ -149,6 +149,9 @@ npx create-next-app --example https://github.com/trpc/trpc --example-path exampl
     <td align="center"><a href="https://ste.london"><img src="https://avatars.githubusercontent.com/u/150512?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Stephen Mount</b></sub></a><br /><a href="#financial-stemount" title="Financial">💵</a></td>
     <td align="center"><a href="https://github.com/infix"><img src="https://avatars.githubusercontent.com/u/40860821?v=4?s=100" width="100px;" alt=""/><br /><sub><b>amr</b></sub></a><br /><a href="https://github.com/trpc/trpc/commits?author=infix" title="Code">💻</a></td>
   </tr>
+  <tr>
+    <td align="center"><a href="http://thomascoldwell.dev"><img src="https://avatars.githubusercontent.com/u/31568400?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Thomas Coldwell</b></sub></a><br /><a href="https://github.com/trpc/trpc/commits?author=thomas-coldwell" title="Documentation">📖</a></td>
+  </tr>
 </table>
 
 <!-- markdownlint-restore -->
