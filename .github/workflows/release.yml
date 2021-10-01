@@ -1,10 +1,14 @@
 name: Release
 on:
-  push:
-    branches:
-      - main
+  workflow_run:
+    workflows: ['Build & Test']
+    branches: [main]
+    types: [completed]
+
 jobs:
   release:
+    if: github.event.workflow_run.conclusion == 'success'
+    timeout-minutes: 10
     runs-on: ubuntu-latest
 
     steps:
@@ -20,20 +24,18 @@ jobs:
       - name: Install deps and build (with cache)
         uses: bahmutov/npm-install@v1
 
-      - name: Create Release Pull Request or Publish to npm
-        uses: changesets/action@master
-        with:
-          publish: yarn release
+      - name: Add token
+        run: echo "//registry.npmjs.org/:_authToken=$NPM_TOKEN" > $HOME/.npmrc
         env:
-          GITHUB_TOKEN: ${{ secrets.TRPC_GITHUB_TOKEN }}
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
 
-      - name: Publishing canary releases to npm registry
-        if: steps.changesets.outputs.published != 'true'
-        run: |
-          git checkout main
-          yarn version:canary
-          yarn release:canary
+      - name: Create versions pull request or release new version
+        uses: changesets/action@c3d88279fd9abe11410de073005e34863f735b1c
+        if: github.ref == 'refs/heads/main'
+        with:
+          version: yarn version:ci && rm $HOME/.npmrc
+          publish: yarn release && rm $HOME/.npmrc
+          commit: 'chore(changeset): version update'
+          title: 'chore(changeset): version update'
         env:
           GITHUB_TOKEN: ${{ secrets.TRPC_GITHUB_TOKEN }}
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
