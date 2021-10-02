@@ -12,7 +12,7 @@ slug: /sponsors
 
 ## Companies
 
-> Are you a company that is using tRPC & want to attract amazing TypeScript developers to your team? Have a look at the [sponsorship tiers](https://github.com/sponsors/KATT) or get in touch on [Twitter](https://twitter.com/alexdotjs) or by [email](mailto:alex@trpc.io) to discuss partnerships.
+> Is your company using tRPC & want to attract amazing TypeScript developers to your team? Have a look at the [sponsorship tiers](https://github.com/sponsors/KATT) or get in touch on [Twitter](https://twitter.com/alexdotjs) or by [email](mailto:alex@trpc.io) to discuss partnerships.
 
 <table>
   <tbody>
