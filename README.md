@@ -111,6 +111,7 @@ npx create-next-app --example https://github.com/trpc/trpc --example-path exampl
     </tr>
     <tr>
       <td align="center"><a href="https://ste.london"><img src="https://avatars.githubusercontent.com/u/150512?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Stephen Mount</b></sub></a></td>
+      <td align="center"><a href="https://github.com/dev-alex06"><img src="https://avatars.githubusercontent.com/u/60710873?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Alex Schumacher</b></sub></a></td>
     </tr>
   </tbody>
 </table>
@@ -152,6 +153,7 @@ npx create-next-app --example https://github.com/trpc/trpc --example-path exampl
   </tr>
   <tr>
     <td align="center"><a href="http://thomascoldwell.dev"><img src="https://avatars.githubusercontent.com/u/31568400?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Thomas Coldwell</b></sub></a><br /><a href="https://github.com/trpc/trpc/commits?author=thomas-coldwell" title="Documentation">📖</a></td>
+    <td align="center"><a href="https://github.com/dev-alex06"><img src="https://avatars.githubusercontent.com/u/60710873?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Alex Schumacher</b></sub></a><br /><a href="#financial-dev-alex06" title="Financial">💵</a></td>
   </tr>
 </table>
 
