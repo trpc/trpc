@@ -44,13 +44,13 @@ interface TRPCUseQueryBaseOptions extends TRPCRequestOptions {
   ssr?: boolean;
 }
 
-interface UseTRPCQueryOptions<TError, TOutput, TQueryKey extends unknown[]>
+interface UseTRPCQueryOptions<TOutput, TError, TQueryKey extends unknown[]>
   extends UseQueryOptions<TOutput, TError, TOutput, TQueryKey>,
     TRPCUseQueryBaseOptions {}
 
 interface UseTRPCInfiniteQueryOptions<
-  TError,
   TOutput,
+  TError,
   TQueryKey extends unknown[],
 > extends UseInfiniteQueryOptions<TOutput, TError, TOutput, TOutput, TQueryKey>,
     TRPCUseQueryBaseOptions {}
@@ -213,8 +213,8 @@ export function createReactQueryHooks<TRouter extends AnyRouter>() {
   >(
     pathAndInput: [path: TPath, ...args: inferHandlerInput<TProcedure>],
     opts?: UseTRPCQueryOptions<
-      TError,
       TOutput,
+      TError,
       [TPath, inferProcedureInput<TQueries[TPath]>]
     >,
   ): UseQueryResult<TOutput, TError> {
@@ -312,8 +312,8 @@ export function createReactQueryHooks<TRouter extends AnyRouter>() {
   >(
     pathAndInput: [TPath, Omit<TInput, 'cursor'>],
     opts?: UseTRPCInfiniteQueryOptions<
-      TError,
       TOutput,
+      TError,
       [TPath, Omit<TInput, 'cursor'>]
     >,
   ) {
