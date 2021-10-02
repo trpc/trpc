@@ -48,11 +48,14 @@ interface UseTRPCQueryOptions<TPath, TInput, TOutput, TError>
   extends UseQueryOptions<TOutput, TError, TOutput, [TPath, TInput]>,
     TRPCUseQueryBaseOptions {}
 
-interface UseTRPCInfiniteQueryOptions<
-  TOutput,
-  TError,
-  TQueryKey extends unknown[],
-> extends UseInfiniteQueryOptions<TOutput, TError, TOutput, TOutput, TQueryKey>,
+interface UseTRPCInfiniteQueryOptions<TPath, TInput, TOutput, TError>
+  extends UseInfiniteQueryOptions<
+      TOutput,
+      TError,
+      TOutput,
+      TOutput,
+      [TPath, TInput]
+    >,
     TRPCUseQueryBaseOptions {}
 
 interface UseTRPCMutationOptions<TInput, TError, TOutput>
@@ -312,9 +315,10 @@ export function createReactQueryHooks<TRouter extends AnyRouter>() {
   >(
     pathAndInput: [TPath, Omit<TInput, 'cursor'>],
     opts?: UseTRPCInfiniteQueryOptions<
+      TPath,
+      Omit<TInput, 'cursor'>,
       TOutput,
-      TError,
-      [TPath, Omit<TInput, 'cursor'>]
+      TError
     >,
   ) {
     const { client, isPrepass, prefetchInfiniteQuery, queryClient } =
