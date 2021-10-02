@@ -24,7 +24,7 @@ slug: /sponsors
 </table>
 
 
-## Individuals
+## 😻 Individuals
 
 
 <table>

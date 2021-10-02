@@ -48,8 +48,8 @@ tRPC allows you to easily build & consume fully typesafe APIs, without schemas o
 - [Core Team](#core-team)
 - [Financial Contributors](#financial-contributors)
   - [Companies](#companies)
-  - [🥉 Bronze Sponsors](#-bronze-sponsors)
-  - [Individuals](#individuals)
+    - [🥉 Bronze Sponsors](#-bronze-sponsors)
+  - [😻 Individuals](#-individuals)
 - [All contributors ✨](#all-contributors-)
 
 
@@ -85,7 +85,7 @@ npx create-next-app --example https://github.com/trpc/trpc --example-path exampl
 
 > Is your company using tRPC & want to attract amazing TypeScript developers to your team? Have a look at the [sponsorship tiers](https://github.com/sponsors/KATT) or [get in touch](mailto:alex@trpc.io) to discuss potential partnerships.
 
-### 🥉 Bronze Sponsors
+#### 🥉 Bronze Sponsors
 
 <table>
   <tbody>
@@ -97,7 +97,7 @@ npx create-next-app --example https://github.com/trpc/trpc --example-path exampl
 </table>
 
 
-### Individuals
+### 😻 Individuals
 
 
 <table>
