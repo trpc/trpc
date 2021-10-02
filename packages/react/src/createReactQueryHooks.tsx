@@ -44,8 +44,8 @@ interface TRPCUseQueryBaseOptions extends TRPCRequestOptions {
   ssr?: boolean;
 }
 
-interface UseTRPCQueryOptions<TOutput, TError, TQueryKey extends unknown[]>
-  extends UseQueryOptions<TOutput, TError, TOutput, TQueryKey>,
+interface UseTRPCQueryOptions<TPath, TInput, TOutput, TError>
+  extends UseQueryOptions<TOutput, TError, TOutput, [TPath, TInput]>,
     TRPCUseQueryBaseOptions {}
 
 interface UseTRPCInfiniteQueryOptions<
@@ -209,15 +209,15 @@ export function createReactQueryHooks<TRouter extends AnyRouter>() {
   function _useQuery<
     TPath extends keyof TQueries & string,
     TProcedure extends TQueries[TPath],
-    TOutput extends inferProcedureOutput<TProcedure>,
   >(
     pathAndInput: [path: TPath, ...args: inferHandlerInput<TProcedure>],
     opts?: UseTRPCQueryOptions<
-      TOutput,
-      TError,
-      [TPath, inferProcedureInput<TQueries[TPath]>]
+      TPath,
+      inferProcedureInput<TProcedure>,
+      inferProcedureOutput<TProcedure>,
+      TError
     >,
-  ): UseQueryResult<TOutput, TError> {
+  ): UseQueryResult<inferProcedureOutput<TProcedure>, TError> {
     type TInput = inferProcedureInput<TProcedure>;
     type TQueryKey = [TPath, TInput];
     const cacheKey = getCacheKey(pathAndInput, CACHE_KEY_QUERY) as TQueryKey;
