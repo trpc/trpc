@@ -40,7 +40,7 @@ slug: /sponsors
     </tr>
     <tr>
       <td align="center"><a href="https://ste.london"><img src="https://avatars.githubusercontent.com/u/150512?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Stephen Mount</b></sub></a></td>
-      <td align="center"><a href="https://github.com/dev-alex06"><img src="https://avatars.githubusercontent.com/u/60710873?v=4?s=100" width="100px;" alt=""/><br /><sub><b>dev-alex06</b></sub></a></td>
+      <td align="center"><a href="https://github.com/alexn-s"><img src="https://avatars.githubusercontent.com/u/60710873?v=4?s=100" width="100px;" alt=""/><br /><sub><b>alexn-s</b></sub></a></td>
     </tr>
   </tbody>
 </table>
