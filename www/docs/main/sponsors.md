@@ -5,12 +5,14 @@ sidebar_label: Sponsors
 slug: /sponsors
 ---
 
-> If you like working with tRPC, consider giving a token a apprecation by [GitHub Sponsors](https://github.com/sponsors/KATT) or [get in touch](https://twitter.com/alexdotjs) if you want your company's logo featured in the tRPC repository or on the website.
-> 
-> _Get in touch on [Twitter](https://twitter.com/alexdotjs) or by [email](mailto:alex@trpc.io)._
+> If you like working with tRPC, consider giving a token a apprecation by [GitHub Sponsors](https://github.com/sponsors/KATT)!
 
 
 ## Companies
+
+> Is your company using tRPC & want to attract amazing TypeScript developers to your team? Have a look at the [sponsorship tiers](https://github.com/sponsors/KATT) or get in touch on [Twitter](https://twitter.com/alexdotjs) or by [email](mailto:alex@trpc.io) to discuss potential partnerships.
+
+### 🥉 Bronze Sponsors
 
 <table>
   <tbody>
@@ -22,7 +24,7 @@ slug: /sponsors
 </table>
 
 
-## Individuals
+## 😻 Individuals
 
 
 <table>

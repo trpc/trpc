@@ -48,7 +48,8 @@ tRPC allows you to easily build & consume fully typesafe APIs, without schemas o
 - [Core Team](#core-team)
 - [Financial Contributors](#financial-contributors)
   - [Companies](#companies)
-  - [Individuals](#individuals)
+    - [🥉 Bronze Sponsors](#-bronze-sponsors)
+  - [😻 Individuals](#-individuals)
 - [All contributors ✨](#all-contributors-)
 
 
@@ -72,18 +73,19 @@ npx create-next-app --example https://github.com/trpc/trpc --example-path exampl
 </table>
 
 
-> 👋 Hi, I'm Alex and I am the main maintainer if tRPC, don't hesitate to contact me on [Twitter](https://twitter.com/alexdotjs) or [email](mailto:alex@trpc.io) if you are curious about tRPC in any way.
+> 👋 Hi, I'm Alex and I am the creator of tRPC, don't hesitate to contact me on [Twitter](https://twitter.com/alexdotjs) or [email](mailto:alex@trpc.io) if you are curious about tRPC in any way.
 
 
 
 ## Financial Contributors
 
-> If you like working with tRPC, consider giving a token a apprecation by [GitHub Sponsors](https://github.com/sponsors/KATT) or [get in touch](https://twitter.com/alexdotjs) if you want your company's logo featured in the tRPC repository or on the website.
-> 
-> _Get in touch on [Twitter](https://twitter.com/alexdotjs) or by [email](mailto:alex@trpc.io)._
-
+> If you like working with tRPC, consider giving a token a apprecation by [GitHub Sponsors](https://github.com/sponsors/KATT)!
 
 ### Companies
+
+> Is your company using tRPC & want to attract amazing TypeScript developers to your team? Have a look at the [sponsorship tiers](https://github.com/sponsors/KATT) or [get in touch](mailto:alex@trpc.io) to discuss potential partnerships.
+
+#### 🥉 Bronze Sponsors
 
 <table>
   <tbody>
@@ -95,7 +97,7 @@ npx create-next-app --example https://github.com/trpc/trpc --example-path exampl
 </table>
 
 
-### Individuals
+### 😻 Individuals
 
 
 <table>
