@@ -82,7 +82,7 @@ npx create-next-app --example https://github.com/trpc/trpc --example-path exampl
 
 ### Companies
 
-> Is your company using tRPC & want to attract amazing TypeScript developers to your team? Have a look at the [sponsorship tiers](https://github.com/sponsors/KATT) or get in touch on [Twitter](https://twitter.com/alexdotjs) or by [email](mailto:alex@trpc.io) to discuss partnerships.
+> Is your company using tRPC & want to attract amazing TypeScript developers to your team? Have a look at the [sponsorship tiers](https://github.com/sponsors/KATT) or [get in touch](mailto:alex@trpc.io) to discuss partnerships.
 
 
 <table>
