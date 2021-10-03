@@ -109,22 +109,26 @@ trpc
 
 A middleware can access the raw input that will be passed to a procedure. This can be used to for authentication / other preprocessing in the middleware that requires access to the procedure input, and can be especially useful when used in conjunction with Context Swapping.
 
-:::warn
-The raw input passed to a middleware has not yet been validated by a procedure's `input` schema / validator, so be careful when using it! Because of this, it has type `unknown`.
+:::caution
+The `rawInput` passed to a middleware has not yet been validated by a procedure's `input` schema / validator, so be careful when using it! Because of this, `rawInput` has type `unknown`. For more info see [#1059](https://github.com/trpc/trpc/pull/1059#issuecomment-932985023).
 :::
 
 ```ts
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null;
+}
+
 trpc
   .router<Context>()
   .middleware(async ({ next, rawInput, ctx }) => {
-    const userId = rawInput?.userId as string;
+    const userId = isRecord(rawInput) ? rawInput.userId : undefined;
     if (typeof userId !== "string") throw new TRPCError({ code: "BAD_REQUEST" });
-    // Verify user authentication
+    // Verify user
     return next({ ctx: { ...ctx, userId }})
   })
   .query('foo', {
     resolve({ ctx }) {
-      return ctx.userId;
+      console.log(ctx.userId);
     },
   });
 ```
