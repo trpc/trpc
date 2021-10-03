@@ -395,6 +395,18 @@ export function createReactQueryHooksV2<TRouter extends AnyRouter>() {
   function _useQuery<
     TPath extends keyof TQueries & string,
     TProcedure extends TQueries[TPath],
+  >(
+    pathAndInput: [path: TPath, ...args: inferHandlerInput<TProcedure>],
+    opts?: UseTRPCQueryOptions<
+      TPath,
+      inferProcedureInput<TProcedure>,
+      inferProcedureOutput<TProcedure>,
+      TError
+    >,
+  ): UseQueryResult<inferProcedureOutput<TProcedure>, TError>;
+  function _useQuery<
+    TPath extends keyof TQueries & string,
+    TProcedure extends TQueries[TPath],
     TOutput extends inferProcedureOutput<TProcedure>,
     TInput extends inferProcedureInput<TProcedure>,
   >(
@@ -402,11 +414,18 @@ export function createReactQueryHooksV2<TRouter extends AnyRouter>() {
     ...args: TInput extends undefined | null
       ? [UseTRPCQueryOptionsV2NullableInput<TPath, TInput, TOutput, TError>?]
       : [UseTRPCQueryOptionsV2RequiredInput<TPath, TInput, TOutput, TError>]
-  ): UseQueryResult<TOutput, TError> {
-    const opts = args[0] ?? {};
-    const { input, ...rest } = opts;
+  ): UseQueryResult<TOutput, TError>;
+  function _useQuery(pathOrTuple: string | [string, unknown?], opts: any = {}) {
+    const args = useMemo(() => {
+      if (Array.isArray(pathOrTuple)) {
+        return [pathOrTuple, opts];
+      }
+      const { input, ...rest } = opts;
 
-    return v1.useQuery([path, input] as any, rest as any);
+      return [[pathOrTuple, input], rest];
+    }, [pathOrTuple, opts]);
+
+    return (v1.useQuery as any)(...args);
   }
 
   return {

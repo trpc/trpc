@@ -1679,6 +1679,7 @@ describe('useQuery() v2', () => {
     const { trpcV2: trpc, client } = factory;
     function MyComponent() {
       const allPostsQuery = trpc.useQuery('allPosts');
+      trpc.useQuery(['allPosts']);
       expectTypeOf(allPostsQuery.data!).toMatchTypeOf<Post[]>();
 
       return <pre>{JSON.stringify(allPostsQuery.data ?? 'n/a', null, 4)}</pre>;
