@@ -231,10 +231,38 @@ export function createReactQueryHooks<TRouter extends AnyRouter>() {
       inferProcedureOutput<TProcedure>,
       TError
     >,
-  ): UseQueryResult<inferProcedureOutput<TProcedure>, TError> {
-    type TInput = inferProcedureInput<TProcedure>;
-    type TQueryKey = [TPath, TInput];
-    const cacheKey = getCacheKey(pathAndInput, CACHE_KEY_QUERY) as TQueryKey;
+  ): UseQueryResult<inferProcedureOutput<TProcedure>, TError>;
+  function _useQuery<
+    TPath extends keyof TQueries & string,
+    TProcedure extends TQueries[TPath],
+    TOutput extends inferProcedureOutput<TProcedure>,
+    TInput extends inferProcedureInput<TProcedure>,
+  >(
+    path: TPath,
+    ...args: TInput extends undefined | null
+      ? [UseTRPCQueryOptionsV2NullableInput<TPath, TInput, TOutput, TError>?]
+      : [UseTRPCQueryOptionsV2RequiredInput<TPath, TInput, TOutput, TError>]
+  ): UseQueryResult<TOutput, TError>;
+  function _useQuery(pathOrTuple: string | [string, unknown?], opts: any = {}) {
+    const _getArgs = () => {
+      if (Array.isArray(pathOrTuple)) {
+        const [path, input] = pathOrTuple;
+        return {
+          path,
+          input,
+          opts,
+        };
+      }
+      const { input, ...rest } = opts;
+      return {
+        path: pathOrTuple,
+        input,
+        opts: rest,
+      };
+    };
+    const args = _getArgs();
+    const pathAndInput = [args.path, args.input];
+    const cacheKey = getCacheKey([args.path, args.input], CACHE_KEY_QUERY);
     const { client, isPrepass, queryClient, prefetchQuery } = useContext();
 
     if (
@@ -244,11 +272,11 @@ export function createReactQueryHooks<TRouter extends AnyRouter>() {
       opts?.enabled !== false &&
       !queryClient.getQueryCache().find(cacheKey)
     ) {
-      prefetchQuery(pathAndInput, opts as any);
+      prefetchQuery(pathAndInput as any, opts as any);
     }
     const query = useQuery(
       cacheKey,
-      () => (client as any).query(...getArgs(pathAndInput, opts)) as any,
+      () => (client as any).query(...getArgs(pathAndInput, args.opts)) as any,
       opts,
     );
     return query;
@@ -383,53 +411,5 @@ export function createReactQueryHooks<TRouter extends AnyRouter>() {
     useSubscription,
     useDehydratedState,
     useInfiniteQuery: _useInfiniteQuery,
-  };
-}
-
-export function createReactQueryHooksV2<TRouter extends AnyRouter>() {
-  type TQueries = TRouter['_def']['queries'];
-  type TError = TRPCClientErrorLike<TRouter>;
-
-  const v1 = createReactQueryHooks<TRouter>();
-
-  function _useQuery<
-    TPath extends keyof TQueries & string,
-    TProcedure extends TQueries[TPath],
-  >(
-    pathAndInput: [path: TPath, ...args: inferHandlerInput<TProcedure>],
-    opts?: UseTRPCQueryOptions<
-      TPath,
-      inferProcedureInput<TProcedure>,
-      inferProcedureOutput<TProcedure>,
-      TError
-    >,
-  ): UseQueryResult<inferProcedureOutput<TProcedure>, TError>;
-  function _useQuery<
-    TPath extends keyof TQueries & string,
-    TProcedure extends TQueries[TPath],
-    TOutput extends inferProcedureOutput<TProcedure>,
-    TInput extends inferProcedureInput<TProcedure>,
-  >(
-    path: TPath,
-    ...args: TInput extends undefined | null
-      ? [UseTRPCQueryOptionsV2NullableInput<TPath, TInput, TOutput, TError>?]
-      : [UseTRPCQueryOptionsV2RequiredInput<TPath, TInput, TOutput, TError>]
-  ): UseQueryResult<TOutput, TError>;
-  function _useQuery(pathOrTuple: string | [string, unknown?], opts: any = {}) {
-    const args = useMemo(() => {
-      if (Array.isArray(pathOrTuple)) {
-        return [pathOrTuple, opts];
-      }
-      const { input, ...rest } = opts;
-
-      return [[pathOrTuple, input], rest];
-    }, [pathOrTuple, opts]);
-
-    return (v1.useQuery as any)(...args);
-  }
-
-  return {
-    ...v1,
-    useQuery: _useQuery,
   };
 }

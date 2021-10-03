@@ -29,11 +29,7 @@ import {
 import { dehydrate } from 'react-query/hydration';
 import { z, ZodError } from 'zod';
 import { withTRPC } from '../../next/src';
-import {
-  createReactQueryHooks,
-  createReactQueryHooksV2,
-  OutputWithCursor,
-} from '../../react/src';
+import { createReactQueryHooks, OutputWithCursor } from '../../react/src';
 import { createSSGHelpers } from '../../react/ssg';
 import { DefaultErrorShape } from '../src';
 import { routerToServerAndClient } from './_testHelpers';
@@ -237,7 +233,6 @@ function createAppRouter() {
   );
   const queryClient = new QueryClient();
   const trpc = createReactQueryHooks<typeof appRouter>();
-  const trpcV2 = createReactQueryHooksV2<typeof appRouter>();
 
   return {
     appRouter,
@@ -254,7 +249,6 @@ function createAppRouter() {
     queryClient,
     createContext,
     linkSpy,
-    trpcV2,
   };
 }
 let factory: ReturnType<typeof createAppRouter>;
@@ -1676,7 +1670,7 @@ describe('withTRPC()', () => {
 
 describe('useQuery() v2', () => {
   test('no input', async () => {
-    const { trpcV2: trpc, client } = factory;
+    const { trpc, client } = factory;
     function MyComponent() {
       const allPostsQuery = trpc.useQuery('allPosts');
       trpc.useQuery(['allPosts']);
@@ -1702,7 +1696,7 @@ describe('useQuery() v2', () => {
   });
 
   test('with input', async () => {
-    const { trpcV2: trpc, client } = factory;
+    const { trpc, client } = factory;
     function MyComponent() {
       // @ts-expect-error
       trpc.useQuery('paginatedPosts');
