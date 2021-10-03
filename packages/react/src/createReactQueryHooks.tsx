@@ -16,11 +16,11 @@ import React, { ReactNode, useCallback, useEffect, useMemo } from 'react';
 import {
   hashQueryKey,
   QueryClient,
-  useInfiniteQuery,
+  useInfiniteQuery as __useInfiniteQuery,
   UseInfiniteQueryOptions,
-  useMutation,
+  useMutation as useMutationRQ,
   UseMutationOptions,
-  useQuery,
+  useQuery as __useQuery,
   UseQueryOptions,
   UseQueryResult,
 } from 'react-query';
@@ -220,7 +220,7 @@ export function createReactQueryHooks<TRouter extends AnyRouter>() {
     return React.useContext(Context);
   }
 
-  function _useQuery<
+  function useQuery<
     TPath extends keyof TQueries & string,
     TProcedure extends TQueries[TPath],
   >(
@@ -232,7 +232,7 @@ export function createReactQueryHooks<TRouter extends AnyRouter>() {
       TError
     >,
   ): UseQueryResult<inferProcedureOutput<TProcedure>, TError>;
-  function _useQuery<
+  function useQuery<
     TPath extends keyof TQueries & string,
     TProcedure extends TQueries[TPath],
     TOutput extends inferProcedureOutput<TProcedure>,
@@ -243,10 +243,7 @@ export function createReactQueryHooks<TRouter extends AnyRouter>() {
       ? [UseTRPCQueryOptionsV2NullishInput<TPath, TInput, TOutput, TError>?]
       : [UseTRPCQueryOptionsV2RequiredInput<TPath, TInput, TOutput, TError>]
   ): UseQueryResult<TOutput, TError>;
-  function _useQuery(
-    pathOrTuple: string | [string, unknown?],
-    _opts: any = {},
-  ) {
+  function useQuery(pathOrTuple: string | [string, unknown?], _opts: any = {}) {
     // <determine> if is passed as a tuple or a string and assert args
     let path: string;
     let input: unknown;
@@ -274,7 +271,7 @@ export function createReactQueryHooks<TRouter extends AnyRouter>() {
     ) {
       prefetchQuery(pathAndInput as any, opts as any);
     }
-    const query = useQuery(
+    const query = __useQuery(
       cacheKey,
       () => (client as any).query(...getArgs(pathAndInput, opts)) as any,
       opts,
@@ -282,7 +279,7 @@ export function createReactQueryHooks<TRouter extends AnyRouter>() {
     return query;
   }
 
-  function _useMutation<
+  function useMutation<
     TPath extends keyof TMutations & string,
     TOutput extends inferProcedureOutput<TMutations[TPath]>,
   >(
@@ -294,7 +291,7 @@ export function createReactQueryHooks<TRouter extends AnyRouter>() {
     >,
   ) {
     const client = useContext().client;
-    const hook = useMutation<
+    const hook = useMutationRQ<
       TOutput,
       TError,
       inferProcedureInput<TMutations[TPath]>
@@ -353,7 +350,7 @@ export function createReactQueryHooks<TRouter extends AnyRouter>() {
     }, [queryKey, enabled]);
   }
 
-  function _useInfiniteQuery<
+  function useInfiniteQuery<
     TPath extends keyof TQueries & string,
     TInput extends inferProcedureInput<TQueries[TPath]> & { cursor: TCursor },
     TOutput extends inferProcedureOutput<TQueries[TPath]>,
@@ -384,7 +381,7 @@ export function createReactQueryHooks<TRouter extends AnyRouter>() {
     ) {
       prefetchInfiniteQuery(pathAndInput as any, opts as any);
     }
-    const query = useInfiniteQuery(
+    const query = __useInfiniteQuery(
       cacheKey,
       ({ pageParam }) => {
         const actualInput = { ...input, cursor: pageParam };
@@ -413,10 +410,10 @@ export function createReactQueryHooks<TRouter extends AnyRouter>() {
     Provider: TRPCProvider,
     createClient,
     useContext: useContext,
-    useQuery: _useQuery,
-    useMutation: _useMutation,
+    useQuery: useQuery,
+    useMutation,
     useSubscription,
     useDehydratedState,
-    useInfiniteQuery: _useInfiniteQuery,
+    useInfiniteQuery,
   };
 }
