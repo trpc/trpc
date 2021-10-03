@@ -243,38 +243,41 @@ export function createReactQueryHooks<TRouter extends AnyRouter>() {
       ? [UseTRPCQueryOptionsV2NullableInput<TPath, TInput, TOutput, TError>?]
       : [UseTRPCQueryOptionsV2RequiredInput<TPath, TInput, TOutput, TError>]
   ): UseQueryResult<TOutput, TError>;
-  function _useQuery(pathOrTuple: string | [string, unknown?], opts: any = {}) {
+  function _useQuery(
+    pathOrTuple: string | [string, unknown?],
+    _opts: any = {},
+  ) {
     // <determine> if is passed as a tuple or a string and assert args
-    let _path: string;
-    let _input: unknown;
-    let _opts: any;
+    let path: string;
+    let input: unknown;
+    let opts: any;
     if (Array.isArray(pathOrTuple)) {
-      [_path, _input] = pathOrTuple;
-      _opts = opts;
+      [path, input] = pathOrTuple;
+      opts = _opts;
     } else {
-      const { input, ...rest } = opts;
-      _path = pathOrTuple;
-      _input = input;
-      _opts = rest;
+      const { input: _input, ...rest } = _opts;
+      path = pathOrTuple;
+      input = _input;
+      opts = rest;
     }
     // </determine>
-    const pathAndInput: [string, unknown] = [_path, _input];
+    const pathAndInput: [string, unknown] = [path, input];
     const cacheKey = getCacheKey(pathAndInput, CACHE_KEY_QUERY);
     const { client, isPrepass, queryClient, prefetchQuery } = useContext();
 
     if (
       typeof window === 'undefined' &&
       isPrepass &&
-      _opts?.ssr !== false &&
-      _opts?.enabled !== false &&
+      opts?.ssr !== false &&
+      opts?.enabled !== false &&
       !queryClient.getQueryCache().find(cacheKey)
     ) {
-      prefetchQuery(pathAndInput as any, _opts as any);
+      prefetchQuery(pathAndInput as any, opts as any);
     }
     const query = useQuery(
       cacheKey,
-      () => (client as any).query(...getArgs(pathAndInput, _opts)) as any,
-      _opts,
+      () => (client as any).query(...getArgs(pathAndInput, opts)) as any,
+      opts,
     );
     return query;
   }
