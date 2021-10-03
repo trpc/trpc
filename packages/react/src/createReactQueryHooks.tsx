@@ -400,7 +400,7 @@ export function createReactQueryHooksV2<TRouter extends AnyRouter>() {
   >(
     path: TPath,
     ...args: TInput extends undefined | null
-      ? [UseTRPCQueryOptionsV2NullableInput<TPath, TInput, TOutput, TError>]
+      ? [UseTRPCQueryOptionsV2NullableInput<TPath, TInput, TOutput, TError>?]
       : [UseTRPCQueryOptionsV2RequiredInput<TPath, TInput, TOutput, TError>]
   ): UseQueryResult<TOutput, TError> {
     const opts = args[0] ?? {};
