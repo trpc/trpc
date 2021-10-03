@@ -1700,10 +1700,18 @@ describe('useQuery() v2', () => {
     function MyComponent() {
       // @ts-expect-error
       trpc.useQuery('paginatedPosts');
+      trpc.useQuery('paginatedPosts', {
+        input: {
+          limit: 1,
+          // we _should_ add a @ts-expect-error here
+          notExists: 'test',
+        },
+      });
 
       const allPostsQuery = trpc.useQuery('paginatedPosts', {
         input: {
           limit: 1,
+          extra: 12,
         },
       });
 

@@ -284,14 +284,21 @@ export function createReactQueryHooks<TRouter extends AnyRouter>() {
 
   function _useMutation<
     TPath extends keyof TMutations & string,
-    TInput extends inferProcedureInput<TMutations[TPath]>,
     TOutput extends inferProcedureOutput<TMutations[TPath]>,
-  >(path: TPath, opts?: UseTRPCMutationOptions<TInput, TError, TOutput>) {
+  >(
+    path: TPath,
+    opts?: UseTRPCMutationOptions<
+      inferProcedureInput<TMutations[TPath]>,
+      TError,
+      TOutput
+    >,
+  ) {
     const client = useContext().client;
-    const hook = useMutation<TOutput, TError, TInput>(
-      (input) => (client.mutation as any)(path, input),
-      opts,
-    );
+    const hook = useMutation<
+      TOutput,
+      TError,
+      inferProcedureInput<TMutations[TPath]>
+    >((input) => (client.mutation as any)(path, input), opts);
 
     return hook;
   }
