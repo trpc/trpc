@@ -76,14 +76,14 @@ interface UseTRPCInfiniteQueryOptions<TPath, TInput, TOutput, TError>
     >,
     TRPCUseQueryBaseOptions {}
 
-// interface UseTRPCInfiniteQueryRequiredInputOptions<
-//   TPath,
-//   TInput,
-//   TOutput,
-//   TError,
-// > extends UseInfiniteQueryOptions<TOutput, TError, TOutput, [TPath, TInput]>,
-//     TRPCUseQueryBaseOptions,
-//     TRPCUseQueryBaseOptionsRequiredInput<TInput> {}
+interface UseTRPCInfiniteQueryRequiredInputOptions<
+  TPath,
+  TInput,
+  TOutput,
+  TError,
+> extends UseInfiniteQueryOptions<TOutput, TError, TOutput, [TPath, TInput]>,
+    TRPCUseQueryBaseOptions,
+    TRPCUseQueryBaseOptionsRequiredInput<TInput> {}
 
 // interface UseTRPCInfiniteQueryOptionalInputOptions<
 //   TPath,
@@ -98,7 +98,7 @@ interface UseTRPCMutationOptions<TInput, TError, TOutput>
   extends UseMutationOptions<TOutput, TError, TInput>,
     TRPCUseQueryBaseOptions {}
 
-function getArgs<TPathAndInput extends unknown[], TOptions>(
+function getClientArgs<TPathAndInput extends unknown[], TOptions>(
   pathAndInput: TPathAndInput,
   opts: TOptions,
 ) {
@@ -162,7 +162,8 @@ export function createReactQueryHooks<TRouter extends AnyRouter>() {
 
               return queryClient.fetchQuery(
                 cacheKey,
-                () => (client as any).query(...getArgs(pathAndInput, opts)),
+                () =>
+                  (client as any).query(...getClientArgs(pathAndInput, opts)),
                 opts,
               );
             },
@@ -181,7 +182,7 @@ export function createReactQueryHooks<TRouter extends AnyRouter>() {
                   const [path, input] = pathAndInput;
                   const actualInput = { ...(input as any), cursor: pageParam };
                   return (client as any).query(
-                    ...getArgs([path, actualInput], opts),
+                    ...getClientArgs([path, actualInput], opts),
                   );
                 },
                 opts,
@@ -195,7 +196,8 @@ export function createReactQueryHooks<TRouter extends AnyRouter>() {
 
               return queryClient.prefetchQuery(
                 cacheKey,
-                () => (client as any).query(...getArgs(pathAndInput, opts)),
+                () =>
+                  (client as any).query(...getClientArgs(pathAndInput, opts)),
                 opts,
               );
             },
@@ -214,7 +216,7 @@ export function createReactQueryHooks<TRouter extends AnyRouter>() {
                   const [path, input] = pathAndInput;
                   const actualInput = { ...(input as any), cursor: pageParam };
                   return (client as any).query(
-                    ...getArgs([path, actualInput], opts),
+                    ...getClientArgs([path, actualInput], opts),
                   );
                 },
                 opts,
@@ -306,7 +308,7 @@ export function createReactQueryHooks<TRouter extends AnyRouter>() {
     }
     const query = __useQuery(
       cacheKey,
-      () => (client as any).query(...getArgs(pathAndInput, opts)) as any,
+      () => (client as any).query(...getClientArgs(pathAndInput, opts)),
       opts,
     );
     return query;
@@ -386,11 +388,11 @@ export function createReactQueryHooks<TRouter extends AnyRouter>() {
   function useInfiniteQuery<
     TPath extends keyof TQueries & string,
     TProcedure extends TQueries[TPath],
-    TInput extends inferProcedureInput<TQueries[TPath]> & { cursor: TCursor },
     TOutput extends inferProcedureOutput<TQueries[TPath]>,
+    TInput extends inferProcedureInput<TQueries[TPath]> & { cursor: TCursor },
     TCursor extends any,
   >(
-    pathAndInput: [TPath, Omit<TInput, 'cursor'>],
+    pathAndInput: [path: TPath, input: Omit<TInput, 'cursor'>],
     opts?: UseTRPCInfiniteQueryOptions<
       TPath,
       Omit<TInput, 'cursor'>,
@@ -398,6 +400,21 @@ export function createReactQueryHooks<TRouter extends AnyRouter>() {
       TError
     >,
   ): UseInfiniteQueryResult<inferProcedureOutput<TProcedure>, TError>;
+  function useInfiniteQuery<
+    TPath extends keyof TQueries & string,
+    TProcedure extends TQueries[TPath],
+    TOutput extends inferProcedureOutput<TProcedure>,
+    TInput extends inferProcedureInput<TProcedure> & { cursor: TCursor },
+    TCursor extends any,
+  >(
+    path: TPath,
+    opts: UseTRPCInfiniteQueryRequiredInputOptions<
+      TPath,
+      Omit<TInput, 'cursor'>,
+      TOutput,
+      TError
+    >,
+  ): UseInfiniteQueryResult<TOutput, TError>;
   function useInfiniteQuery(
     pathOrTuple: string | [string, unknown?],
     _opts?: any,
@@ -421,7 +438,9 @@ export function createReactQueryHooks<TRouter extends AnyRouter>() {
       cacheKey,
       ({ pageParam }) => {
         const actualInput = { ...((input as any) ?? {}), cursor: pageParam };
-        return (client as any).query(...getArgs([path, actualInput], opts));
+        return (client as any).query(
+          ...getClientArgs([path, actualInput], opts),
+        );
       },
       opts,
     );

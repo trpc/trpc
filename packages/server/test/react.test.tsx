@@ -1668,54 +1668,123 @@ describe('withTRPC()', () => {
   });
 });
 
-describe('useQuery() v2', () => {
-  test('no input', async () => {
-    const { trpc, client } = factory;
-    function MyComponent() {
-      const allPostsQuery = trpc.useQuery('allPosts');
-      trpc.useQuery(['allPosts']);
-      expectTypeOf(allPostsQuery.data!).toMatchTypeOf<Post[]>();
+describe('with a string path', () => {
+  describe('useQuery()', () => {
+    test('no input', async () => {
+      const { trpc, client } = factory;
+      function MyComponent() {
+        const allPostsQuery = trpc.useQuery('allPosts');
+        trpc.useQuery(['allPosts']);
+        expectTypeOf(allPostsQuery.data!).toMatchTypeOf<Post[]>();
 
-      return <pre>{JSON.stringify(allPostsQuery.data ?? 'n/a', null, 4)}</pre>;
-    }
-    function App() {
-      const [queryClient] = useState(() => new QueryClient());
-      return (
-        <trpc.Provider {...{ queryClient, client }}>
-          <QueryClientProvider client={queryClient}>
-            <MyComponent />
-          </QueryClientProvider>
-        </trpc.Provider>
-      );
-    }
+        return (
+          <pre>{JSON.stringify(allPostsQuery.data ?? 'n/a', null, 4)}</pre>
+        );
+      }
+      function App() {
+        const [queryClient] = useState(() => new QueryClient());
+        return (
+          <trpc.Provider {...{ queryClient, client }}>
+            <QueryClientProvider client={queryClient}>
+              <MyComponent />
+            </QueryClientProvider>
+          </trpc.Provider>
+        );
+      }
 
-    const utils = render(<App />);
-    await waitFor(() => {
-      expect(utils.container).toHaveTextContent('first post');
+      const utils = render(<App />);
+      await waitFor(() => {
+        expect(utils.container).toHaveTextContent('first post');
+      });
+    });
+
+    test('with input', async () => {
+      const { trpc, client } = factory;
+      function MyComponent() {
+        // @ts-expect-error
+        trpc.useQuery('paginatedPosts');
+        trpc.useQuery('paginatedPosts', {
+          input: {
+            limit: 1,
+            // we _should_ add a @ts-expect-error here
+            notExists: 'test',
+          },
+        });
+
+        const allPostsQuery = trpc.useQuery('paginatedPosts', {
+          input: {
+            limit: 1,
+            extra: 12,
+          },
+        });
+
+        return (
+          <pre>{JSON.stringify(allPostsQuery.data ?? 'n/a', null, 4)}</pre>
+        );
+      }
+      function App() {
+        const [queryClient] = useState(() => new QueryClient());
+        return (
+          <trpc.Provider {...{ queryClient, client }}>
+            <QueryClientProvider client={queryClient}>
+              <MyComponent />
+            </QueryClientProvider>
+          </trpc.Provider>
+        );
+      }
+
+      const utils = render(<App />);
+      await waitFor(() => {
+        expect(utils.container).toHaveTextContent('first post');
+      });
+      expect(utils.container).not.toHaveTextContent('second post');
     });
   });
-
-  test('with input', async () => {
+  test('useInfiniteQuery()', async () => {
     const { trpc, client } = factory;
+
     function MyComponent() {
-      // @ts-expect-error
-      trpc.useQuery('paginatedPosts');
-      trpc.useQuery('paginatedPosts', {
+      const q = trpc.useInfiniteQuery('paginatedPosts', {
         input: {
           limit: 1,
-          // we _should_ add a @ts-expect-error here
-          notExists: 'test',
         },
+        getNextPageParam: (lastPage) => lastPage.nextCursor,
       });
+      expectTypeOf(q.data?.pages[0].items).toMatchTypeOf<undefined | Post[]>();
 
-      const allPostsQuery = trpc.useQuery('paginatedPosts', {
-        input: {
-          limit: 1,
-          extra: 12,
-        },
-      });
-
-      return <pre>{JSON.stringify(allPostsQuery.data ?? 'n/a', null, 4)}</pre>;
+      return q.status === 'loading' ? (
+        <p>Loading...</p>
+      ) : q.status === 'error' ? (
+        <p>Error: {q.error.message}</p>
+      ) : (
+        <>
+          {q.data?.pages.map((group, i) => (
+            <Fragment key={i}>
+              {group.items.map((msg) => (
+                <Fragment key={msg.id}>
+                  <div>{msg.title}</div>
+                </Fragment>
+              ))}
+            </Fragment>
+          ))}
+          <div>
+            <button
+              onClick={() => q.fetchNextPage()}
+              disabled={!q.hasNextPage || q.isFetchingNextPage}
+              data-testid="loadMore"
+            >
+              {q.isFetchingNextPage
+                ? 'Loading more...'
+                : q.hasNextPage
+                ? 'Load More'
+                : 'Nothing more to load'}
+            </button>
+          </div>
+          <div>
+            {q.isFetching && !q.isFetchingNextPage ? 'Fetching...' : null}
+          </div>
+        </>
+      );
     }
     function App() {
       const [queryClient] = useState(() => new QueryClient());
@@ -1732,6 +1801,39 @@ describe('useQuery() v2', () => {
     await waitFor(() => {
       expect(utils.container).toHaveTextContent('first post');
     });
-    expect(utils.container).not.toHaveTextContent('second post');
+    await waitFor(() => {
+      expect(utils.container).toHaveTextContent('first post');
+      expect(utils.container).not.toHaveTextContent('second post');
+      expect(utils.container).toHaveTextContent('Load More');
+    });
+    userEvent.click(utils.getByTestId('loadMore'));
+    await waitFor(() => {
+      expect(utils.container).toHaveTextContent('Loading more...');
+    });
+    await waitFor(() => {
+      expect(utils.container).toHaveTextContent('first post');
+      expect(utils.container).toHaveTextContent('second post');
+      expect(utils.container).toHaveTextContent('Nothing more to load');
+    });
+
+    expect(utils.container).toMatchInlineSnapshot(`
+      <div>
+        <div>
+          first post
+        </div>
+        <div>
+          second post
+        </div>
+        <div>
+          <button
+            data-testid="loadMore"
+            disabled=""
+          >
+            Nothing more to load
+          </button>
+        </div>
+        <div />
+      </div>
+    `);
   });
 });
