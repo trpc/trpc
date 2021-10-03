@@ -48,6 +48,17 @@ interface UseTRPCQueryOptions<TPath, TInput, TOutput, TError>
   extends UseQueryOptions<TOutput, TError, TOutput, [TPath, TInput]>,
     TRPCUseQueryBaseOptions {}
 
+interface UseTRPCQueryOptionsV2NullableInput<TPath, TInput, TOutput, TError>
+  extends UseQueryOptions<TOutput, TError, TOutput, [TPath, TInput]>,
+    TRPCUseQueryBaseOptions {
+  input?: TInput;
+}
+
+interface UseTRPCQueryOptionsV2RequiredInput<TPath, TInput, TOutput, TError>
+  extends UseQueryOptions<TOutput, TError, TOutput, [TPath, TInput]>,
+    TRPCUseQueryBaseOptions {
+  input: TInput;
+}
 interface UseTRPCInfiniteQueryOptions<TPath, TInput, TOutput, TError>
   extends UseInfiniteQueryOptions<
       TOutput,
@@ -372,5 +383,52 @@ export function createReactQueryHooks<TRouter extends AnyRouter>() {
     useSubscription,
     useDehydratedState,
     useInfiniteQuery: _useInfiniteQuery,
+  };
+}
+
+export function createReactQueryHooksV2<TRouter extends AnyRouter>() {
+  type TQueries = TRouter['_def']['queries'];
+  type TError = TRPCClientErrorLike<TRouter>;
+
+  const v1 = createReactQueryHooks<TRouter>();
+
+  function _useQuery<
+    TPath extends keyof TQueries & string,
+    TProcedure extends TQueries[TPath],
+    TOutput extends inferProcedureOutput<TProcedure>,
+    TInput extends inferProcedureInput<TProcedure> &
+      NonNullable<inferProcedureInput<TProcedure>>,
+  >(
+    path: TPath,
+    opts: UseTRPCQueryOptionsV2RequiredInput<TPath, TInput, TOutput, TError>,
+  ): UseQueryResult<TOutput, TError>;
+  function _useQuery<
+    TPath extends keyof TQueries & string,
+    TProcedure extends TQueries[TPath],
+    TOutput extends inferProcedureOutput<TProcedure>,
+    TInput extends inferProcedureInput<TProcedure> & (undefined | null),
+  >(
+    path: TPath,
+    opts?: UseTRPCQueryOptionsV2NullableInput<TPath, TInput, TOutput, TError>,
+  ): UseQueryResult<TOutput, TError>;
+  function _useQuery<
+    TPath extends keyof TQueries & string,
+    TProcedure extends TQueries[TPath],
+    TOutput extends inferProcedureOutput<TProcedure>,
+    TInput extends inferProcedureInput<TProcedure>,
+  >(
+    path: TPath,
+    opts?:
+      | UseTRPCQueryOptionsV2RequiredInput<TPath, TInput, TOutput, TError>
+      | UseTRPCQueryOptionsV2NullableInput<TPath, TInput, TOutput, TError>,
+  ): UseQueryResult<TOutput, TError> {
+    const { input, ...rest } = opts ?? {};
+
+    return v1.useQuery([path, input] as any, rest as any);
+  }
+
+  return {
+    ...v1,
+    useQuery: _useQuery,
   };
 }

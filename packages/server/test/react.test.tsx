@@ -29,7 +29,11 @@ import {
 import { dehydrate } from 'react-query/hydration';
 import { z, ZodError } from 'zod';
 import { withTRPC } from '../../next/src';
-import { createReactQueryHooks, OutputWithCursor } from '../../react/src';
+import {
+  createReactQueryHooks,
+  createReactQueryHooksV2,
+  OutputWithCursor,
+} from '../../react/src';
 import { createSSGHelpers } from '../../react/ssg';
 import { DefaultErrorShape } from '../src';
 import { routerToServerAndClient } from './_testHelpers';
@@ -233,6 +237,7 @@ function createAppRouter() {
   );
   const queryClient = new QueryClient();
   const trpc = createReactQueryHooks<typeof appRouter>();
+  const trpcV2 = createReactQueryHooksV2<typeof appRouter>();
 
   return {
     appRouter,
@@ -249,6 +254,7 @@ function createAppRouter() {
     queryClient,
     createContext,
     linkSpy,
+    trpcV2,
   };
 }
 let factory: ReturnType<typeof createAppRouter>;
@@ -1665,5 +1671,66 @@ describe('withTRPC()', () => {
         });
       });
     });
+  });
+});
+
+describe('useQuery() v2', () => {
+  test('no input', async () => {
+    const { trpcV2: trpc, client } = factory;
+    function MyComponent() {
+      const allPostsQuery = trpc.useQuery('allPosts', {
+        input: null,
+      });
+      expectTypeOf(allPostsQuery.data!).toMatchTypeOf<Post[]>();
+
+      return <pre>{JSON.stringify(allPostsQuery.data ?? 'n/a', null, 4)}</pre>;
+    }
+    function App() {
+      const [queryClient] = useState(() => new QueryClient());
+      return (
+        <trpc.Provider {...{ queryClient, client }}>
+          <QueryClientProvider client={queryClient}>
+            <MyComponent />
+          </QueryClientProvider>
+        </trpc.Provider>
+      );
+    }
+
+    const utils = render(<App />);
+    await waitFor(() => {
+      expect(utils.container).toHaveTextContent('first post');
+    });
+  });
+
+  test('with input', async () => {
+    const { trpcV2: trpc, client } = factory;
+    function MyComponent() {
+      // @ts-expect-error
+      trpc.useQuery('paginatedPosts');
+
+      const allPostsQuery = trpc.useQuery('paginatedPosts', {
+        input: {
+          limit: 1,
+        },
+      });
+
+      return <pre>{JSON.stringify(allPostsQuery.data ?? 'n/a', null, 4)}</pre>;
+    }
+    function App() {
+      const [queryClient] = useState(() => new QueryClient());
+      return (
+        <trpc.Provider {...{ queryClient, client }}>
+          <QueryClientProvider client={queryClient}>
+            <MyComponent />
+          </QueryClientProvider>
+        </trpc.Provider>
+      );
+    }
+
+    const utils = render(<App />);
+    await waitFor(() => {
+      expect(utils.container).toHaveTextContent('first post');
+    });
+    expect(utils.container).not.toHaveTextContent('second post');
   });
 });
