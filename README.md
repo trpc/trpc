@@ -48,7 +48,8 @@ tRPC allows you to easily build & consume fully typesafe APIs, without schemas o
 - [Core Team](#core-team)
 - [Financial Contributors](#financial-contributors)
   - [Companies](#companies)
-  - [Individuals](#individuals)
+    - [🥉 Bronze Sponsors](#-bronze-sponsors)
+  - [😻 Individuals](#-individuals)
 - [All contributors ✨](#all-contributors-)
 
 
@@ -72,29 +73,31 @@ npx create-next-app --example https://github.com/trpc/trpc --example-path exampl
 </table>
 
 
-> 👋 Hi, I'm Alex and I am the main maintainer if tRPC, don't hesitate to contact me on [Twitter](https://twitter.com/alexdotjs) or [email](mailto:alex@trpc.io) if you are curious about tRPC in any way.
+> 👋 Hi, I'm Alex and I am the creator of tRPC, don't hesitate to contact me on [Twitter](https://twitter.com/alexdotjs) or [email](mailto:alex@trpc.io) if you are curious about tRPC in any way.
 
 
 
 ## Financial Contributors
 
-> If you like working with tRPC, consider giving a token a apprecation by [GitHub Sponsors](https://github.com/sponsors/KATT) or [get in touch](https://twitter.com/alexdotjs) if you want your company's logo featured in the tRPC repository or on the website.
-> 
-> _Get in touch on [Twitter](https://twitter.com/alexdotjs) or by [email](mailto:alex@trpc.io)._
-
+> If you like working with tRPC, consider giving a token a apprecation by [GitHub Sponsors](https://github.com/sponsors/KATT)!
 
 ### Companies
+
+> Is your company using tRPC & want to attract amazing TypeScript developers to your team? Have a look at the [sponsorship tiers](https://github.com/sponsors/KATT) or [get in touch](mailto:alex@trpc.io) to discuss potential partnerships.
+
+#### 🥉 Bronze Sponsors
 
 <table>
   <tbody>
     <tr>
-      <td align="center"><a href="https://newfront.com"><img src="https://user-images.githubusercontent.com/36125/130158930-216fa212-5909-4ee1-b4b9-fd5935f51245.png" width="143" alt=""/></a></td>
+      <td align="center"><a href="https://newfront.com"><img src="https://user-images.githubusercontent.com/36125/130158930-216fa212-5909-4ee1-b4b9-fd5935f51245.png" width="143" alt=""/><br />Newfront</a></td>
+      <td align="center"><a href="https://hidrb.com"><img src="https://avatars.githubusercontent.com/u/77294655?v=4?s=143" width="143" alt=""/><br/>Dr. B</a></td>
     </tr>
   </tbody>
 </table>
 
 
-### Individuals
+### 😻 Individuals
 
 
 <table>
@@ -110,6 +113,7 @@ npx create-next-app --example https://github.com/trpc/trpc --example-path exampl
     </tr>
     <tr>
       <td align="center"><a href="https://ste.london"><img src="https://avatars.githubusercontent.com/u/150512?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Stephen Mount</b></sub></a></td>
+      <td align="center"><a href="https://github.com/alexn-s"><img src="https://avatars.githubusercontent.com/u/60710873?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Alex Schumacher</b></sub></a></td>
     </tr>
   </tbody>
 </table>
@@ -151,6 +155,8 @@ npx create-next-app --example https://github.com/trpc/trpc --example-path exampl
   </tr>
   <tr>
     <td align="center"><a href="http://thomascoldwell.dev"><img src="https://avatars.githubusercontent.com/u/31568400?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Thomas Coldwell</b></sub></a><br /><a href="https://github.com/trpc/trpc/commits?author=thomas-coldwell" title="Documentation">📖</a></td>
+    <td align="center"><a href="https://github.com/alexn-s"><img src="https://avatars.githubusercontent.com/u/60710873?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Alex Schumacher</b></sub></a><br /><a href="#financial-alexn-s" title="Financial">💵</a></td>
+    <td align="center"><a href="https://github.com/ifiokjr"><img src="https://avatars.githubusercontent.com/u/1160934?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Ifiok Jr.</b></sub></a><br /><a href="https://github.com/trpc/trpc/commits?author=ifiokjr" title="Tests">⚠️</a> <a href="https://github.com/trpc/trpc/commits?author=ifiokjr" title="Code">💻</a> <a href="https://github.com/trpc/trpc/commits?author=ifiokjr" title="Documentation">📖</a></td>
   </tr>
 </table>
 
