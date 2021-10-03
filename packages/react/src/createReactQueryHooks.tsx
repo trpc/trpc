@@ -19,7 +19,7 @@ import {
   useInfiniteQuery as __useInfiniteQuery,
   UseInfiniteQueryOptions,
   UseInfiniteQueryResult,
-  useMutation as useMutationRQ,
+  useMutation as __useMutation,
   UseMutationOptions,
   useQuery as __useQuery,
   UseQueryOptions,
@@ -326,7 +326,7 @@ export function createReactQueryHooks<TRouter extends AnyRouter>() {
     >,
   ) {
     const client = useContext().client;
-    const hook = useMutationRQ<
+    const hook = __useMutation<
       TOutput,
       TError,
       inferProcedureInput<TMutations[TPath]>
