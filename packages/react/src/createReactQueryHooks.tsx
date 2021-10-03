@@ -48,7 +48,7 @@ interface UseTRPCQueryOptions<TPath, TInput, TOutput, TError>
   extends UseQueryOptions<TOutput, TError, TOutput, [TPath, TInput]>,
     TRPCUseQueryBaseOptions {}
 
-interface UseTRPCQueryOptionsV2NullableInput<TPath, TInput, TOutput, TError>
+interface UseTRPCQueryOptionsV2NullishInput<TPath, TInput, TOutput, TError>
   extends UseQueryOptions<TOutput, TError, TOutput, [TPath, TInput]>,
     TRPCUseQueryBaseOptions {
   input?: TInput;
@@ -240,7 +240,7 @@ export function createReactQueryHooks<TRouter extends AnyRouter>() {
   >(
     path: TPath,
     ...args: TInput extends undefined | null
-      ? [UseTRPCQueryOptionsV2NullableInput<TPath, TInput, TOutput, TError>?]
+      ? [UseTRPCQueryOptionsV2NullishInput<TPath, TInput, TOutput, TError>?]
       : [UseTRPCQueryOptionsV2RequiredInput<TPath, TInput, TOutput, TError>]
   ): UseQueryResult<TOutput, TError>;
   function _useQuery(
