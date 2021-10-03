@@ -102,10 +102,11 @@ export class Procedure<TInputContext, TContext, TInput, TOutput> {
   public async call(
     opts: ProcedureCallOptions<TInputContext>,
   ): Promise<TOutput> {
+    const input = this.parseInput(opts.rawInput);
+
     // wrap the actual resolver and treat as the last "middleware"
     const middlewaresWithResolver = this.middlewares.concat([
       async ({ ctx }: { ctx: TContext }) => {
-        const input = this.parseInput(opts.rawInput);
         const data = await this.resolver({ ...opts, ctx, input });
         return {
           marker: middlewareMarker,
@@ -123,6 +124,7 @@ export class Procedure<TInputContext, TContext, TInput, TOutput> {
           fn({
             ...(opts as any),
             ...(nextOpts as any),
+            input,
             next: nextFns[index + 1],
           }),
         );

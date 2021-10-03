@@ -23,18 +23,31 @@ test('is called if def first', async () => {
         resolve() {
           return 'bar2';
         },
+      })
+      .query('foo3', {
+        input: String,
+        resolve() {
+          return 'bar3';
+        },
       }),
   );
 
-  expect(await client.query('foo1')).toBe('bar1');
   const calls = middleware.mock.calls;
+  expect(await client.query('foo1')).toBe('bar1');
   expect(calls[0][0]).toHaveProperty('type');
   expect(calls[0][0]).toHaveProperty('ctx');
   expect(calls[0][0].type).toBe('query');
+
   expect(await client.mutation('foo2')).toBe('bar2');
   expect(calls[1][0].type).toBe('mutation');
 
-  expect(middleware).toHaveBeenCalledTimes(2);
+  expect(await client.query('foo3', 'foo3input')).toBe('bar3');
+  expect(calls[2][0]).toHaveProperty('type');
+  expect(calls[2][0]).toHaveProperty('ctx');
+  expect(calls[2][0].type).toBe('query');
+  expect(calls[2][0].input).toBe('foo3input');
+
+  expect(middleware).toHaveBeenCalledTimes(3);
   close();
 });
 
