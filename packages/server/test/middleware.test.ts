@@ -45,7 +45,7 @@ test('is called if def first', async () => {
   expect(calls[2][0]).toHaveProperty('type');
   expect(calls[2][0]).toHaveProperty('ctx');
   expect(calls[2][0].type).toBe('query');
-  expect(calls[2][0].input).toBe('foo3input');
+  expect(calls[2][0].rawInput).toBe('foo3input');
 
   expect(middleware).toHaveBeenCalledTimes(3);
   close();
