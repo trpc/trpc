@@ -325,14 +325,12 @@ export function createReactQueryHooks<TRouter extends AnyRouter>() {
       TOutput
     >,
   ) {
-    const client = useContext().client;
-    const hook = __useMutation<
+    const { client } = useContext();
+    return __useMutation<
       TOutput,
       TError,
       inferProcedureInput<TMutations[TPath]>
     >((input) => (client.mutation as any)(path, input), opts);
-
-    return hook;
   }
 
   /* istanbul ignore next */
@@ -357,7 +355,7 @@ export function createReactQueryHooks<TRouter extends AnyRouter>() {
   ) {
     const enabled = opts?.enabled ?? true;
     const queryKey = hashQueryKey(pathAndInput);
-    const client = useContext().client;
+    const { client } = useContext();
 
     return useEffect(() => {
       if (!enabled) {
