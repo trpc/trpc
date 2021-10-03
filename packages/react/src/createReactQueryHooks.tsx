@@ -44,21 +44,27 @@ interface TRPCUseQueryBaseOptions extends TRPCRequestOptions {
   ssr?: boolean;
 }
 
+interface TRPCUseQueryBaseOptionsOptionalInput<TInput> {
+  input?: TInput;
+}
+
+interface TRPCUseQueryBaseOptionsRequiredInput<TInput> {
+  input: TInput;
+}
+
 interface UseTRPCQueryOptions<TPath, TInput, TOutput, TError>
   extends UseQueryOptions<TOutput, TError, TOutput, [TPath, TInput]>,
     TRPCUseQueryBaseOptions {}
 
 interface UseTRPCQueryOptionsOptionalInput<TPath, TInput, TOutput, TError>
   extends UseQueryOptions<TOutput, TError, TOutput, [TPath, TInput]>,
-    TRPCUseQueryBaseOptions {
-  input?: TInput;
-}
+    TRPCUseQueryBaseOptionsOptionalInput<TInput> {}
 
 interface UseTRPCQueryOptionsRequiredInput<TPath, TInput, TOutput, TError>
   extends UseQueryOptions<TOutput, TError, TOutput, [TPath, TInput]>,
-    TRPCUseQueryBaseOptions {
-  input: TInput;
-}
+    TRPCUseQueryBaseOptions,
+    TRPCUseQueryBaseOptionsRequiredInput<TInput> {}
+
 interface UseTRPCInfiniteQueryOptions<TPath, TInput, TOutput, TError>
   extends UseInfiniteQueryOptions<
       TOutput,
@@ -409,8 +415,8 @@ export function createReactQueryHooks<TRouter extends AnyRouter>() {
   return {
     Provider: TRPCProvider,
     createClient,
-    useContext: useContext,
-    useQuery: useQuery,
+    useContext,
+    useQuery,
     useMutation,
     useSubscription,
     useDehydratedState,
