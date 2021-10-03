@@ -396,33 +396,15 @@ export function createReactQueryHooksV2<TRouter extends AnyRouter>() {
     TPath extends keyof TQueries & string,
     TProcedure extends TQueries[TPath],
     TOutput extends inferProcedureOutput<TProcedure>,
-    TInput extends inferProcedureInput<TProcedure> &
-      NonNullable<inferProcedureInput<TProcedure>>,
-  >(
-    path: TPath,
-    opts: UseTRPCQueryOptionsV2RequiredInput<TPath, TInput, TOutput, TError>,
-  ): UseQueryResult<TOutput, TError>;
-  function _useQuery<
-    TPath extends keyof TQueries & string,
-    TProcedure extends TQueries[TPath],
-    TOutput extends inferProcedureOutput<TProcedure>,
-    TInput extends inferProcedureInput<TProcedure> & (undefined | null),
-  >(
-    path: TPath,
-    opts?: UseTRPCQueryOptionsV2NullableInput<TPath, TInput, TOutput, TError>,
-  ): UseQueryResult<TOutput, TError>;
-  function _useQuery<
-    TPath extends keyof TQueries & string,
-    TProcedure extends TQueries[TPath],
-    TOutput extends inferProcedureOutput<TProcedure>,
     TInput extends inferProcedureInput<TProcedure>,
   >(
     path: TPath,
-    opts?:
-      | UseTRPCQueryOptionsV2RequiredInput<TPath, TInput, TOutput, TError>
-      | UseTRPCQueryOptionsV2NullableInput<TPath, TInput, TOutput, TError>,
+    ...args: TInput extends undefined | null
+      ? [UseTRPCQueryOptionsV2NullableInput<TPath, TInput, TOutput, TError>]
+      : [UseTRPCQueryOptionsV2RequiredInput<TPath, TInput, TOutput, TError>]
   ): UseQueryResult<TOutput, TError> {
-    const { input, ...rest } = opts ?? {};
+    const opts = args[0] ?? {};
+    const { input, ...rest } = opts;
 
     return v1.useQuery([path, input] as any, rest as any);
   }
