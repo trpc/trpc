@@ -11,6 +11,7 @@ import type {
   inferProcedureInput,
   inferProcedureOutput,
   inferSubscriptionOutput,
+  ProcedureRecord,
 } from '@trpc/server';
 import React, { ReactNode, useCallback, useEffect, useMemo } from 'react';
 import {
@@ -126,11 +127,21 @@ function getOptions(pathOrTuple: string | [string, unknown?], _opts: any = {}) {
   };
 }
 
+type inferInfiniteQueryNames<TObj extends ProcedureRecord<any, any, any, any>> =
+  {
+    [TPath in keyof TObj]: inferProcedureInput<TObj[TPath]> extends {
+      cursor?: any;
+    }
+      ? TPath
+      : never;
+  }[keyof TObj];
+
 export function createReactQueryHooks<TRouter extends AnyRouter>() {
   type TQueries = TRouter['_def']['queries'];
   type TMutations = TRouter['_def']['mutations'];
   type TSubscriptions = TRouter['_def']['subscriptions'];
   type TError = TRPCClientErrorLike<TRouter>;
+  type TInfiniteQueryNames = inferInfiniteQueryNames<TQueries>;
 
   type ProviderContext = TRPCContextState<TRouter>;
   const Context = TRPCContext as React.Context<ProviderContext>;
@@ -384,7 +395,7 @@ export function createReactQueryHooks<TRouter extends AnyRouter>() {
   }
 
   function useInfiniteQuery<
-    TPath extends keyof TQueries & string,
+    TPath extends TInfiniteQueryNames & string,
     TProcedure extends TQueries[TPath],
     TOutput extends inferProcedureOutput<TQueries[TPath]>,
     TInput extends inferProcedureInput<TQueries[TPath]> & { cursor: TCursor },
@@ -399,7 +410,7 @@ export function createReactQueryHooks<TRouter extends AnyRouter>() {
     >,
   ): UseInfiniteQueryResult<inferProcedureOutput<TProcedure>, TError>;
   function useInfiniteQuery<
-    TPath extends keyof TQueries & string,
+    TPath extends TInfiniteQueryNames & string,
     TProcedure extends TQueries[TPath],
     TOutput extends inferProcedureOutput<TProcedure>,
     TInput extends inferProcedureInput<TProcedure> & { cursor: TCursor },
