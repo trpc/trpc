@@ -56,11 +56,11 @@ interface UseTRPCQueryOptions<TPath, TInput, TOutput, TError>
   extends UseQueryOptions<TOutput, TError, TOutput, [TPath, TInput]>,
     TRPCUseQueryBaseOptions {}
 
-interface UseTRPCQueryOptionsOptionalInput<TPath, TInput, TOutput, TError>
+interface UseTRPCQueryOptionalInputOptions<TPath, TInput, TOutput, TError>
   extends UseQueryOptions<TOutput, TError, TOutput, [TPath, TInput]>,
     TRPCUseQueryBaseOptionsOptionalInput<TInput> {}
 
-interface UseTRPCQueryOptionsRequiredInput<TPath, TInput, TOutput, TError>
+interface UseTRPCQueryRequiredInputOptions<TPath, TInput, TOutput, TError>
   extends UseQueryOptions<TOutput, TError, TOutput, [TPath, TInput]>,
     TRPCUseQueryBaseOptions,
     TRPCUseQueryBaseOptionsRequiredInput<TInput> {}
@@ -246,8 +246,8 @@ export function createReactQueryHooks<TRouter extends AnyRouter>() {
   >(
     path: TPath,
     ...args: TInput extends undefined
-      ? [UseTRPCQueryOptionsOptionalInput<TPath, TInput, TOutput, TError>?]
-      : [UseTRPCQueryOptionsRequiredInput<TPath, TInput, TOutput, TError>]
+      ? [UseTRPCQueryOptionalInputOptions<TPath, TInput, TOutput, TError>?]
+      : [UseTRPCQueryRequiredInputOptions<TPath, TInput, TOutput, TError>]
   ): UseQueryResult<TOutput, TError>;
   function useQuery(pathOrTuple: string | [string, unknown?], _opts: any = {}) {
     // <determine> if is passed as a tuple or a string and assert args
