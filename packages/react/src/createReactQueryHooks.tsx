@@ -18,6 +18,7 @@ import {
   QueryClient,
   useInfiniteQuery as __useInfiniteQuery,
   UseInfiniteQueryOptions,
+  UseInfiniteQueryResult,
   useMutation as useMutationRQ,
   UseMutationOptions,
   useQuery as __useQuery,
@@ -75,6 +76,24 @@ interface UseTRPCInfiniteQueryOptions<TPath, TInput, TOutput, TError>
     >,
     TRPCUseQueryBaseOptions {}
 
+// interface UseTRPCInfiniteQueryRequiredInputOptions<
+//   TPath,
+//   TInput,
+//   TOutput,
+//   TError,
+// > extends UseInfiniteQueryOptions<TOutput, TError, TOutput, [TPath, TInput]>,
+//     TRPCUseQueryBaseOptions,
+//     TRPCUseQueryBaseOptionsRequiredInput<TInput> {}
+
+// interface UseTRPCInfiniteQueryOptionalInputOptions<
+//   TPath,
+//   TInput,
+//   TOutput,
+//   TError,
+// > extends UseInfiniteQueryOptions<TOutput, TError, TOutput, [TPath, TInput]>,
+//     TRPCUseQueryBaseOptions,
+//     TRPCUseQueryBaseOptionsOptionalInput<TInput> {}
+
 interface UseTRPCMutationOptions<TInput, TError, TOutput>
   extends UseMutationOptions<TOutput, TError, TInput>,
     TRPCUseQueryBaseOptions {}
@@ -86,6 +105,27 @@ function getArgs<TPathAndInput extends unknown[], TOptions>(
   const [path, input] = pathAndInput;
   return [path, input, opts] as const;
 }
+
+function getOptions(pathOrTuple: string | [string, unknown?], _opts: any = {}) {
+  let path: string;
+  let input: unknown;
+  let opts: any;
+  if (Array.isArray(pathOrTuple)) {
+    [path, input] = pathOrTuple;
+    opts = _opts;
+  } else {
+    const { input: _input, ...rest } = _opts;
+    path = pathOrTuple;
+    input = _input;
+    opts = rest;
+  }
+  return {
+    path,
+    input,
+    opts,
+  };
+}
+
 export function createReactQueryHooks<TRouter extends AnyRouter>() {
   type TQueries = TRouter['_def']['queries'];
   type TMutations = TRouter['_def']['mutations'];
@@ -249,21 +289,8 @@ export function createReactQueryHooks<TRouter extends AnyRouter>() {
       ? [UseTRPCQueryOptionalInputOptions<TPath, TInput, TOutput, TError>?]
       : [UseTRPCQueryRequiredInputOptions<TPath, TInput, TOutput, TError>]
   ): UseQueryResult<TOutput, TError>;
-  function useQuery(pathOrTuple: string | [string, unknown?], _opts: any = {}) {
-    // <determine> if is passed as a tuple or a string and assert args
-    let path: string;
-    let input: unknown;
-    let opts: any;
-    if (Array.isArray(pathOrTuple)) {
-      [path, input] = pathOrTuple;
-      opts = _opts;
-    } else {
-      const { input: _input, ...rest } = _opts;
-      path = pathOrTuple;
-      input = _input;
-      opts = rest;
-    }
-    // </determine>
+  function useQuery(pathOrTuple: string | [string, unknown?], _opts?: any) {
+    const { path, input, opts } = getOptions(pathOrTuple, _opts);
     const pathAndInput: [string, unknown] = [path, input];
     const cacheKey = getCacheKey(pathAndInput, CACHE_KEY_QUERY);
     const { client, isPrepass, queryClient, prefetchQuery } = useContext();
@@ -358,6 +385,7 @@ export function createReactQueryHooks<TRouter extends AnyRouter>() {
 
   function useInfiniteQuery<
     TPath extends keyof TQueries & string,
+    TProcedure extends TQueries[TPath],
     TInput extends inferProcedureInput<TQueries[TPath]> & { cursor: TCursor },
     TOutput extends inferProcedureOutput<TQueries[TPath]>,
     TCursor extends any,
@@ -369,14 +397,16 @@ export function createReactQueryHooks<TRouter extends AnyRouter>() {
       TOutput,
       TError
     >,
+  ): UseInfiniteQueryResult<inferProcedureOutput<TProcedure>, TError>;
+  function useInfiniteQuery(
+    pathOrTuple: string | [string, unknown?],
+    _opts?: any,
   ) {
+    const { path, input, opts } = getOptions(pathOrTuple, _opts);
+    const pathAndInput: [string, unknown] = [path, input];
     const { client, isPrepass, prefetchInfiniteQuery, queryClient } =
       useContext();
-    const cacheKey = getCacheKey(pathAndInput, CACHE_KEY_INFINITE_QUERY) as [
-      TPath,
-      Omit<TInput, 'cursor'>,
-    ];
-    const [path, input] = pathAndInput;
+    const cacheKey = getCacheKey(pathAndInput, CACHE_KEY_INFINITE_QUERY);
 
     if (
       typeof window === 'undefined' &&
@@ -390,7 +420,7 @@ export function createReactQueryHooks<TRouter extends AnyRouter>() {
     const query = __useInfiniteQuery(
       cacheKey,
       ({ pageParam }) => {
-        const actualInput = { ...input, cursor: pageParam };
+        const actualInput = { ...((input as any) ?? {}), cursor: pageParam };
         return (client as any).query(...getArgs([path, actualInput], opts));
       },
       opts,
