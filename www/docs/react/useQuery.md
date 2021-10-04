@@ -7,6 +7,13 @@ slug: /react-queries
 
 > The hooks provided by `@trpc/react` are a thin wrapper around React Query. For in-depth information about options and usage patterns, refer to their docs on [Queries](https://react-query.tanstack.com/guides/queries).
 
+```tsx
+function useQuery(
+  pathAndInput: string | [string, TInput?],
+  opts?: UseTRPCQueryOptions;
+)
+```
+
 - If the query has an optional `input`, you pass only it's procedure name as the first argument
 - If the query requires an input, you have to pass a `[path, input]`-tuple as the first argument
 
