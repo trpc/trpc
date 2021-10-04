@@ -50,7 +50,7 @@
     "@testing-library/user-event": "^13.2.1",
     "@types/express": "^4.17.12",
     "@types/hash-sum": "^1.0.0",
-    "@types/ws": "^7.4.4",
+    "@types/ws": "^8.2.0",
     "devalue": "^2.0.1",
     "express": "^4.17.1",
     "fastify": "^3.17.0",
