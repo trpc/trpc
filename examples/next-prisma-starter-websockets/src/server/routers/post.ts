@@ -93,15 +93,13 @@ export const postRouter = createRouter()
     },
   })
   .query('infinite', {
-    input: z
-      .object({
-        cursor: z.date().nullish(),
-        take: z.number().min(1).max(50).nullish(),
-      })
-      .nullish(),
+    input: z.object({
+      cursor: z.date().nullish(),
+      take: z.number().min(1).max(50).nullish(),
+    }),
     async resolve({ input, ctx }) {
-      const take = input?.take ?? 10;
-      const cursor = input?.cursor;
+      const take = input.take ?? 10;
+      const cursor = input.cursor;
       // `cursor` is of type `Date | undefined`
       // `take` is of type `number | undefined`
       const page = await ctx.prisma.post.findMany({
