@@ -130,3 +130,31 @@ export function createProtectedRouter() {
     });
 }
 ```
+
+## Raw input
+
+A middleware can access the raw input that will be passed to a procedure. This can be used to for authentication / other preprocessing in the middleware that requires access to the procedure input, and can be especially useful when used in conjunction with Context Swapping.
+
+:::caution
+The `rawInput` passed to a middleware has not yet been validated by a procedure's `input` schema / validator, so be careful when using it! Because of this, `rawInput` has type `unknown`. For more info see [#1059](https://github.com/trpc/trpc/pull/1059#issuecomment-932985023).
+:::
+
+```ts
+const inputSchema = z.object({ userId: z.string() });
+
+trpc
+  .router<Context>()
+  .middleware(async ({ next, rawInput, ctx }) => {
+    const result = inputSchema.safeParse(rawInput);
+    if (!result.success) throw new TRPCError({ code: "BAD_REQUEST" });
+    const { userId } = result.data;
+    // Check user id auth
+    return next({ ctx: { ...ctx, userId }})
+  })
+  .query('userId', {
+    input: inputSchema,
+    resolve({ ctx }) {
+      return ctx.userId;
+    },
+  });
+```
