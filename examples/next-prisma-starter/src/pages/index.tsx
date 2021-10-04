@@ -59,7 +59,7 @@ export default function IndexPage() {
           };
           try {
             await addPost.mutateAsync(input);
-            utils.invalidateQuery(['post.all']);
+            utils.invalidateQueries('post.all');
 
             $title.value = '';
             $text.value = '';
