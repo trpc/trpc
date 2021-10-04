@@ -12634,10 +12634,10 @@ typeorm@^0.2.30:
     yargs "^17.0.1"
     zen-observable-ts "^1.0.0"
 
-typescript@4.4.3:
-  version "4.4.3"
-  resolved "https://registry.npmjs.org/typescript/-/typescript-4.4.3.tgz#bdc5407caa2b109efd4f82fe130656f977a29324"
-  integrity sha512-4xfscpisVgqqDfPaJo5vkd+Qd/ItkoagnHpufr+i2QCHBsNYp+G7UAoyFl8aPtx879u38wPV65rZ8qbGZijalA==
+typescript@^4.5.0-beta:
+  version "4.5.0-dev.20211004"
+  resolved "https://registry.npmjs.org/typescript/-/typescript-4.5.0-dev.20211004.tgz#596e15427e9d6814002fc265bc45cdf4c6caf38c"
+  integrity sha512-uYE+osZkS7cs3vcHqEXPvXrdpRFbOwPRx+Ew7yO8sLX20dbEOc3rCRCXY81GH3RDQ//mb/h6uh07y9XWOxmSIw==
 
 uglify-js@^3.1.4:
   version "3.14.1"
