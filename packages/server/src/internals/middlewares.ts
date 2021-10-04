@@ -31,6 +31,7 @@ export type MiddlewareFunction<TInputContext, TContext> = (opts: {
   ctx: TInputContext;
   type: ProcedureType;
   path: string;
+  rawInput: unknown;
   next: {
     (): Promise<MiddlewareResult<TInputContext>>;
     <T>(opts: { ctx: T }): Promise<MiddlewareResult<T>>;
