@@ -254,10 +254,10 @@ export function createReactQueryHooks<TRouter extends AnyRouter>() {
   }
 
   function useQuery<
-    TPath extends TQueriesWithOptionalInputs & string,
+    TPath extends keyof TQueries & string,
     TProcedure extends TQueries[TPath],
   >(
-    pathAndInput: TPath,
+    pathAndInput: [path: TPath, ...args: inferHandlerInput<TProcedure>],
     opts?: UseTRPCQueryOptions<
       TPath,
       inferProcedureInput<TProcedure>,
@@ -266,10 +266,10 @@ export function createReactQueryHooks<TRouter extends AnyRouter>() {
     >,
   ): UseQueryResult<inferProcedureOutput<TProcedure>, TError>;
   function useQuery<
-    TPath extends keyof TQueries & string,
+    TPath extends TQueriesWithOptionalInputs & string,
     TProcedure extends TQueries[TPath],
   >(
-    pathAndInput: [path: TPath, ...args: inferHandlerInput<TProcedure>],
+    pathAndInput: TPath,
     opts?: UseTRPCQueryOptions<
       TPath,
       inferProcedureInput<TProcedure>,
