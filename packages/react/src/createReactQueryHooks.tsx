@@ -101,21 +101,12 @@ type inferInfiniteQueryNames<TObj extends ProcedureRecord<any, any, any, any>> =
       : never;
   }[keyof TObj];
 
-type inferQueriesWithOptionalInputs<
-  TObj extends ProcedureRecord<any, any, any, any>,
-> = {
-  [TPath in keyof TObj]: undefined extends inferProcedureInput<TObj[TPath]>
-    ? TPath
-    : never;
-}[keyof TObj];
-
 export function createReactQueryHooks<TRouter extends AnyRouter>() {
   type TQueries = TRouter['_def']['queries'];
   type TMutations = TRouter['_def']['mutations'];
   type TSubscriptions = TRouter['_def']['subscriptions'];
   type TError = TRPCClientErrorLike<TRouter>;
   type TInfiniteQueryNames = inferInfiniteQueryNames<TQueries>;
-  type TQueriesWithOptionalInputs = inferQueriesWithOptionalInputs<TQueries>;
 
   type ProviderContext = TRPCContextState<TRouter>;
   const Context = TRPCContext as React.Context<ProviderContext>;
@@ -264,22 +255,7 @@ export function createReactQueryHooks<TRouter extends AnyRouter>() {
       inferProcedureOutput<TProcedure>,
       TError
     >,
-  ): UseQueryResult<inferProcedureOutput<TProcedure>, TError>;
-  function useQuery<
-    TPath extends TQueriesWithOptionalInputs & string,
-    TProcedure extends TQueries[TPath],
-  >(
-    pathAndInput: TPath,
-    opts?: UseTRPCQueryOptions<
-      TPath,
-      inferProcedureInput<TProcedure>,
-      inferProcedureOutput<TProcedure>,
-      TError
-    >,
-  ): UseQueryResult<inferProcedureOutput<TProcedure>, TError>;
-  function useQuery(pathOrTuple: string | [string, unknown?], _opts?: any) {
-    const { path, input, opts } = getOptions(pathOrTuple, _opts);
-    const pathAndInput: [string, unknown] = [path, input];
+  ): UseQueryResult<inferProcedureOutput<TProcedure>, TError> {
     const cacheKey = getCacheKey(pathAndInput, CACHE_KEY_QUERY);
     const { client, isPrepass, queryClient, prefetchQuery } = useContext();
 
@@ -292,12 +268,11 @@ export function createReactQueryHooks<TRouter extends AnyRouter>() {
     ) {
       prefetchQuery(pathAndInput as any, opts as any);
     }
-    const query = __useQuery(
-      cacheKey,
+    return __useQuery(
+      cacheKey as any,
       () => (client as any).query(...getClientArgs(pathAndInput, opts)),
       opts,
     );
-    return query;
   }
 
   function useMutation<
