@@ -1,8 +1,8 @@
 ---
-id: invalidateQuery
-title: invalidateQuery
-sidebar_label: invalidateQuery()
-slug: /invalidateQuery
+id: invalidateQueries
+title: invalidateQueries
+sidebar_label: invalidateQueries()
+slug: /invalidateQueries
 ---
 
 
@@ -21,8 +21,8 @@ const utils = trpc.useContext();
 
 const mutation = trpc.useMutation('editPost', {
   onSuccess(input) {
-    utils.invalidateQuery(['allPosts']);
-    utils.invalidateQuery(['postById', input.id]);
+    utils.invalidateQueries(['allPosts']);
+    utils.invalidateQueries(['postById', input.id]);
   },
 })
 ```

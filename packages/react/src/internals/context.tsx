@@ -72,11 +72,20 @@ export type TRPCContextState<TRouter extends AnyRouter> = {
     >,
   ) => Promise<void>;
 
+  /**
+   * @deprecated use `invalidateQueries`
+   */
   invalidateQuery: <
     TPath extends keyof TRouter['_def']['queries'] & string,
     TInput extends inferProcedureInput<TRouter['_def']['queries'][TPath]>,
   >(
     pathAndInput: [TPath, TInput?],
+  ) => Promise<void>;
+  invalidateQueries: <
+    TPath extends keyof TRouter['_def']['queries'] & string,
+    TInput extends inferProcedureInput<TRouter['_def']['queries'][TPath]>,
+  >(
+    pathAndInput: [TPath, TInput?] | TPath,
   ) => Promise<void>;
   cancelQuery: <
     TPath extends keyof TRouter['_def']['queries'] & string,
