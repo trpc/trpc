@@ -1,7 +1,7 @@
 ---
 id: mutations
-title: Mutations
-sidebar_label: useMutation
+title: useMutation()
+sidebar_label: useMutation()
 slug: /react-mutations
 ---
 

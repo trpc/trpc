@@ -1,7 +1,7 @@
 ---
 id: queries
-title: Queries
-sidebar_label: useQuery
+title: useQuery()
+sidebar_label: useQuery()
 slug: /react-queries
 ---
 
