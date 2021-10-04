@@ -72,26 +72,6 @@ function getClientArgs<TPathAndInput extends unknown[], TOptions>(
   return [path, input, opts] as const;
 }
 
-function getOptions(pathOrTuple: string | [string, unknown?], _opts: any = {}) {
-  let path: string;
-  let input: unknown;
-  let opts: any;
-  if (Array.isArray(pathOrTuple)) {
-    [path, input] = pathOrTuple;
-    opts = _opts;
-  } else {
-    const { input: _input, ...rest } = _opts;
-    path = pathOrTuple;
-    input = _input;
-    opts = rest;
-  }
-  return {
-    path,
-    input,
-    opts,
-  };
-}
-
 type inferInfiniteQueryNames<TObj extends ProcedureRecord<any, any, any, any>> =
   {
     [TPath in keyof TObj]: inferProcedureInput<TObj[TPath]> extends {
@@ -358,13 +338,8 @@ export function createReactQueryHooks<TRouter extends AnyRouter>() {
       TOutput,
       TError
     >,
-  ): UseInfiniteQueryResult<inferProcedureOutput<TProcedure>, TError>;
-  function useInfiniteQuery(
-    pathOrTuple: string | [string, unknown?],
-    _opts?: any,
-  ) {
-    const { path, input, opts } = getOptions(pathOrTuple, _opts);
-    const pathAndInput: [string, unknown] = [path, input];
+  ): UseInfiniteQueryResult<inferProcedureOutput<TProcedure>, TError> {
+    const [path, input] = pathAndInput;
     const { client, isPrepass, prefetchInfiniteQuery, queryClient } =
       useContext();
     const cacheKey = getCacheKey(pathAndInput, CACHE_KEY_INFINITE_QUERY);
@@ -378,8 +353,9 @@ export function createReactQueryHooks<TRouter extends AnyRouter>() {
     ) {
       prefetchInfiniteQuery(pathAndInput as any, opts as any);
     }
-    const query = __useInfiniteQuery(
-      cacheKey,
+
+    return __useInfiniteQuery(
+      cacheKey as any,
       ({ pageParam }) => {
         const actualInput = { ...((input as any) ?? {}), cursor: pageParam };
         return (client as any).query(
@@ -388,8 +364,6 @@ export function createReactQueryHooks<TRouter extends AnyRouter>() {
       },
       opts,
     );
-
-    return query;
   }
   function useDehydratedState(
     client: TRPCClient<TRouter>,
