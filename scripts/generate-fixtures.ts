@@ -2,7 +2,7 @@ import fs from 'fs';
 import path from 'path';
 function getBigRouter() {
   const str = [`trpc.router()`];
-  for (let num = 1; num <= 65; num++) {
+  for (let num = 1; num <= 40; num++) {
     str.push(`.query('${num}', { resolve() { return '${num}' as const; } })`);
     // str.push(
     //   `.mutation('${index}', { resolve() { return '${index}' as const; } })`,
