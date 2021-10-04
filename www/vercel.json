@@ -16,6 +16,11 @@
       "permanent": true
     },
     {
+      "source": "/docs/invalidateQuery",
+      "destination": "/docs/invalidateQueries",
+      "permanent": true
+    },
+    {
       "source": "/discord",
       "destination": "https://discord.gg/wzaMgEJkcf",
       "permanent": false
