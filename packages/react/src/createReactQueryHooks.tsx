@@ -127,18 +127,14 @@ function getOptions(pathOrTuple: string | [string, unknown?], _opts: any = {}) {
   };
 }
 
-/**
- * @internal
- */
-export type inferInfiniteQueryNames<
-  TObj extends ProcedureRecord<any, any, any, any>,
-> = {
-  [TPath in keyof TObj]: inferProcedureInput<TObj[TPath]> extends {
-    cursor?: any;
-  }
-    ? TPath
-    : never;
-}[keyof TObj];
+type inferInfiniteQueryNames<TObj extends ProcedureRecord<any, any, any, any>> =
+  {
+    [TPath in keyof TObj]: inferProcedureInput<TObj[TPath]> extends {
+      cursor?: any;
+    }
+      ? TPath
+      : never;
+  }[keyof TObj];
 
 export function createReactQueryHooks<TRouter extends AnyRouter>() {
   type TQueries = TRouter['_def']['queries'];
