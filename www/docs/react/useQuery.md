@@ -9,13 +9,12 @@ slug: /react-queries
 
 ```tsx
 function useQuery(
-  pathAndInput: string | [string, TInput?],
+  pathAndInput: [string, TInput?],
   opts?: UseTRPCQueryOptions;
 )
 ```
 
-- If the query has an optional `input`, you pass only it's procedure name as the first argument
-- If the query requires an input, you have to pass a `[path, input]`-tuple as the first argument
+The first argument is a `[path, input]`-tuple - if the `input` is optional, you can omit the `, input`-part.
 
 You'll notice that you get autocompletion on the `path` and automatic typesafety on the `input`.
 
