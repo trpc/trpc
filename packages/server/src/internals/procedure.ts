@@ -67,12 +67,12 @@ function getParseFn<TInput>(
     return parser.parse.bind(parser);
   }
 
-  if (typeof parser.create === 'function') {
-    return parser.create.bind(parser);
-  }
-
   if (typeof parser.validateSync === 'function') {
     return parser.validateSync.bind(parser);
+  }
+
+  if (typeof parser.create === 'function') {
+    return parser.create.bind(parser);
   }
 
   throw new Error('Could not find a validator fn');
