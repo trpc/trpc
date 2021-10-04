@@ -5,6 +5,7 @@ import * as trpc from '../src';
 import { inferProcedureOutput, TRPCError } from '../src';
 import { MiddlewareResult } from '../src/internals/middlewares';
 import { routerToServerAndClient } from './_testHelpers';
+import { z } from 'zod';
 
 test('is called if def first', async () => {
   const middleware = jest.fn((opts) => {
@@ -23,12 +24,6 @@ test('is called if def first', async () => {
         resolve() {
           return 'bar2';
         },
-      })
-      .query('foo3', {
-        input: String,
-        resolve() {
-          return 'bar3';
-        },
       }),
   );
 
@@ -41,13 +36,7 @@ test('is called if def first', async () => {
   expect(await client.mutation('foo2')).toBe('bar2');
   expect(calls[1][0].type).toBe('mutation');
 
-  expect(await client.query('foo3', 'foo3input')).toBe('bar3');
-  expect(calls[2][0]).toHaveProperty('type');
-  expect(calls[2][0]).toHaveProperty('ctx');
-  expect(calls[2][0].type).toBe('query');
-  expect(calls[2][0].rawInput).toBe('foo3input');
-
-  expect(middleware).toHaveBeenCalledTimes(3);
+  expect(middleware).toHaveBeenCalledTimes(2);
   close();
 });
 
@@ -66,6 +55,44 @@ test('is not called if def last', async () => {
 
   expect(await client.query('foo')).toBe('bar');
   expect(middleware).toHaveBeenCalledTimes(0);
+  close();
+});
+
+test('receives rawInput as param', async () => {
+  const inputSchema = z.object({ userId: z.string() });
+  const middleware = jest.fn((opts) => {
+    const result = inputSchema.safeParse(opts.rawInput);
+    if (!result.success) throw new TRPCError({ code: 'BAD_REQUEST' });
+    const { userId } = result.data;
+    // Check user id auth
+    return opts.next({ ctx: { userId } });
+  });
+
+  const { client, close } = routerToServerAndClient(
+    trpc
+      .router()
+      .middleware(middleware)
+      .query('userId', {
+        input: inputSchema,
+        resolve({ ctx }) {
+          return (ctx as any).userId;
+        },
+      }),
+  );
+
+  const calls = middleware.mock.calls;
+
+  expect(await client.query('userId', { userId: 'ABCD' })).toBe('ABCD');
+  expect(calls[0][0]).toHaveProperty('type');
+  expect(calls[0][0]).toHaveProperty('ctx');
+  expect(calls[0][0].type).toBe('query');
+  expect(calls[0][0].rawInput).toStrictEqual({ userId: 'ABCD' });
+
+  await expect(client.query('userId', { userId: 123 as any })).rejects.toThrow(
+    'BAD_REQUEST',
+  );
+
+  expect(middleware).toHaveBeenCalledTimes(2);
   close();
 });
 
