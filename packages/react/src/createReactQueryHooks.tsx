@@ -327,15 +327,15 @@ export function createReactQueryHooks<TRouter extends AnyRouter>() {
   function useInfiniteQuery<
     TPath extends TInfiniteQueryNames & string,
     TProcedure extends TQueries[TPath],
-    TOutput extends inferProcedureOutput<TQueries[TPath]>,
-    TInput extends inferProcedureInput<TQueries[TPath]> & { cursor: TCursor },
-    TCursor extends any,
   >(
-    pathAndInput: [path: TPath, input: Omit<TInput, 'cursor'>],
+    pathAndInput: [
+      path: TPath,
+      input: Omit<inferProcedureInput<TQueries[TPath]>, 'cursor'>,
+    ],
     opts?: UseTRPCInfiniteQueryOptions<
       TPath,
-      Omit<TInput, 'cursor'>,
-      TOutput,
+      Omit<inferProcedureInput<TQueries[TPath]>, 'cursor'>,
+      inferProcedureOutput<TProcedure>,
       TError
     >,
   ): UseInfiniteQueryResult<inferProcedureOutput<TProcedure>, TError> {
