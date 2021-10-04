@@ -46,26 +46,9 @@ interface TRPCUseQueryBaseOptions extends TRPCRequestOptions {
   ssr?: boolean;
 }
 
-interface TRPCUseQueryBaseOptionsOptionalInput<TInput> {
-  input?: TInput;
-}
-
-interface TRPCUseQueryBaseOptionsRequiredInput<TInput> {
-  input: TInput;
-}
-
 interface UseTRPCQueryOptions<TPath, TInput, TOutput, TError>
   extends UseQueryOptions<TOutput, TError, TOutput, [TPath, TInput]>,
     TRPCUseQueryBaseOptions {}
-
-interface UseTRPCQueryOptionalInputOptions<TPath, TInput, TOutput, TError>
-  extends UseQueryOptions<TOutput, TError, TOutput, [TPath, TInput]>,
-    TRPCUseQueryBaseOptionsOptionalInput<TInput> {}
-
-interface UseTRPCQueryRequiredInputOptions<TPath, TInput, TOutput, TError>
-  extends UseQueryOptions<TOutput, TError, TOutput, [TPath, TInput]>,
-    TRPCUseQueryBaseOptions,
-    TRPCUseQueryBaseOptionsRequiredInput<TInput> {}
 
 interface UseTRPCInfiniteQueryOptions<TPath, TInput, TOutput, TError>
   extends UseInfiniteQueryOptions<
@@ -76,24 +59,6 @@ interface UseTRPCInfiniteQueryOptions<TPath, TInput, TOutput, TError>
       [TPath, TInput]
     >,
     TRPCUseQueryBaseOptions {}
-
-interface UseTRPCInfiniteQueryRequiredInputOptions<
-  TPath,
-  TInput,
-  TOutput,
-  TError,
-> extends UseInfiniteQueryOptions<TOutput, TError, TOutput, [TPath, TInput]>,
-    TRPCUseQueryBaseOptions,
-    TRPCUseQueryBaseOptionsRequiredInput<TInput> {}
-
-// interface UseTRPCInfiniteQueryOptionalInputOptions<
-//   TPath,
-//   TInput,
-//   TOutput,
-//   TError,
-// > extends UseInfiniteQueryOptions<TOutput, TError, TOutput, [TPath, TInput]>,
-//     TRPCUseQueryBaseOptions,
-//     TRPCUseQueryBaseOptionsOptionalInput<TInput> {}
 
 interface UseTRPCMutationOptions<TInput, TError, TOutput>
   extends UseMutationOptions<TOutput, TError, TInput>,
@@ -136,12 +101,21 @@ type inferInfiniteQueryNames<TObj extends ProcedureRecord<any, any, any, any>> =
       : never;
   }[keyof TObj];
 
+type inferQueriesWithOptionalInputs<
+  TObj extends ProcedureRecord<any, any, any, any>,
+> = {
+  [TPath in keyof TObj]: undefined extends inferProcedureInput<TObj[TPath]>
+    ? TPath
+    : never;
+}[keyof TObj];
+
 export function createReactQueryHooks<TRouter extends AnyRouter>() {
   type TQueries = TRouter['_def']['queries'];
   type TMutations = TRouter['_def']['mutations'];
   type TSubscriptions = TRouter['_def']['subscriptions'];
   type TError = TRPCClientErrorLike<TRouter>;
   type TInfiniteQueryNames = inferInfiniteQueryNames<TQueries>;
+  type TQueriesWithOptionalInputs = inferQueriesWithOptionalInputs<TQueries>;
 
   type ProviderContext = TRPCContextState<TRouter>;
   const Context = TRPCContext as React.Context<ProviderContext>;
@@ -280,6 +254,18 @@ export function createReactQueryHooks<TRouter extends AnyRouter>() {
   }
 
   function useQuery<
+    TPath extends TQueriesWithOptionalInputs & string,
+    TProcedure extends TQueries[TPath],
+  >(
+    pathAndInput: TPath,
+    opts?: UseTRPCQueryOptions<
+      TPath,
+      inferProcedureInput<TProcedure>,
+      inferProcedureOutput<TProcedure>,
+      TError
+    >,
+  ): UseQueryResult<inferProcedureOutput<TProcedure>, TError>;
+  function useQuery<
     TPath extends keyof TQueries & string,
     TProcedure extends TQueries[TPath],
   >(
@@ -291,17 +277,6 @@ export function createReactQueryHooks<TRouter extends AnyRouter>() {
       TError
     >,
   ): UseQueryResult<inferProcedureOutput<TProcedure>, TError>;
-  function useQuery<
-    TPath extends keyof TQueries & string,
-    TProcedure extends TQueries[TPath],
-    TOutput extends inferProcedureOutput<TProcedure>,
-    TInput extends inferProcedureInput<TProcedure>,
-  >(
-    path: TPath,
-    ...args: TInput extends undefined
-      ? [UseTRPCQueryOptionalInputOptions<TPath, TInput, TOutput, TError>?]
-      : [UseTRPCQueryRequiredInputOptions<TPath, TInput, TOutput, TError>]
-  ): UseQueryResult<TOutput, TError>;
   function useQuery(pathOrTuple: string | [string, unknown?], _opts?: any) {
     const { path, input, opts } = getOptions(pathOrTuple, _opts);
     const pathAndInput: [string, unknown] = [path, input];
@@ -395,7 +370,7 @@ export function createReactQueryHooks<TRouter extends AnyRouter>() {
   }
 
   function useInfiniteQuery<
-    TPath extends TInfiniteQueryNames,
+    TPath extends TInfiniteQueryNames & string,
     TProcedure extends TQueries[TPath],
     TOutput extends inferProcedureOutput<TQueries[TPath]>,
     TInput extends inferProcedureInput<TQueries[TPath]> & { cursor: TCursor },
@@ -409,21 +384,6 @@ export function createReactQueryHooks<TRouter extends AnyRouter>() {
       TError
     >,
   ): UseInfiniteQueryResult<inferProcedureOutput<TProcedure>, TError>;
-  function useInfiniteQuery<
-    TPath extends TInfiniteQueryNames & string,
-    TProcedure extends TQueries[TPath],
-    TOutput extends inferProcedureOutput<TProcedure>,
-    TInput extends inferProcedureInput<TProcedure> & { cursor: TCursor },
-    TCursor extends any,
-  >(
-    path: TPath,
-    opts: UseTRPCInfiniteQueryRequiredInputOptions<
-      TPath,
-      Omit<TInput, 'cursor'>,
-      TOutput,
-      TError
-    >,
-  ): UseInfiniteQueryResult<TOutput, TError>;
   function useInfiniteQuery(
     pathOrTuple: string | [string, unknown?],
     _opts?: any,
