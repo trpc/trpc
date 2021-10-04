@@ -121,8 +121,10 @@ export class Procedure<TInputContext, TContext, TInput, TOutput> {
       return async (nextOpts?: { ctx: TContext }) => {
         const res = await wrapCallSafe(() =>
           fn({
-            ...(opts as any),
-            ...(nextOpts as any),
+            ctx: nextOpts ? nextOpts.ctx : opts.ctx,
+            type: opts.type,
+            path: opts.path,
+            rawInput: opts.rawInput,
             next: nextFns[index + 1],
           }),
         );
