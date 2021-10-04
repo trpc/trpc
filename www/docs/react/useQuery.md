@@ -50,9 +50,8 @@ trpc
 import { trpc } from '../utils/trpc';
 
 export function MyComponent() {
-  // input is optional, so can pass first argument as a string
-  const helloNoArgs = trpc.useQuery('hello'); // identical to `trpc.useQuery(['hello'])`
-  // if we want to pass an input, we pass a `[path, input]`-tuple
+  // input is optional, so we don't have to pass second argument
+  const helloNoArgs = trpc.useQuery(['hello']);
   const helloWithArgs = trpc.useQuery(['hello', { text: 'client' }]);
 
   return (
