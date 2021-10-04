@@ -20,7 +20,11 @@
   </p>
 </div>
 
+
+> 💬 Join the tRPC Discord server to chat to other people using tRPC - [trpc.io/discord](https://trpc.io/discord)
+
 ## Intro
+
 
 tRPC allows you to easily build & consume fully typesafe APIs, without schemas or code generation.
 
