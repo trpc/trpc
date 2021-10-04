@@ -16,7 +16,7 @@
       "permanent": true
     },
     {
-      "source": "/docs/invalidateQueries",
+      "source": "/docs/invalidateQuery",
       "destination": "/docs/invalidateQueries",
       "permanent": true
     },
