@@ -248,6 +248,15 @@
         "code",
         "doc"
       ]
+    },
+    {
+      "login": "Memory-Lane-Games",
+      "name": "Memory-Lane-Games",
+      "avatar_url": "https://avatars.githubusercontent.com/u/63847783?v=4",
+      "profile": "https://github.com/Memory-Lane-Games",
+      "contributions": [
+        "financial"
+      ]
     }
   ],
   "contributorsPerLine": 7,
