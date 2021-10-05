@@ -8,11 +8,13 @@ export type Prefix<K extends string, T extends string> = `${K}${T}`;
 
 /**
  * @internal
+ * @deprecated will be removed in next major
  */
 export type identity<T> = T;
 
 /**
  * @internal
+ * @deprecated will be removed in next major
  */
 export type format<T> = {
   [k in keyof T]: T[k];
@@ -20,6 +22,7 @@ export type format<T> = {
 
 /**
  * @internal
+ * @deprecated will be removed in next major
  */
 export type flatten<T, Q> = identity<{
   [k in keyof T | keyof Q]: k extends keyof T
@@ -35,9 +38,9 @@ export type flatten<T, Q> = identity<{
 export type Prefixer<
   TObj extends Record<string, any>,
   TPrefix extends string,
-> = format<{
+> = {
   [P in keyof TObj as Prefix<TPrefix, string & P>]: TObj[P];
-}>;
+};
 
 /**
  * @public

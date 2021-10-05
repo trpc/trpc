@@ -81,12 +81,21 @@ type inferInfiniteQueryNames<TObj extends ProcedureRecord<any, any, any, any>> =
       : never;
   }[keyof TObj];
 
+type inferProcedures<TObj extends ProcedureRecord<any, any, any, any>> = {
+  [TPath in keyof TObj]: {
+    input: inferProcedureInput<TObj[TPath]>;
+    output: inferProcedureOutput<TObj[TPath]>;
+  };
+};
+
 export function createReactQueryHooks<TRouter extends AnyRouter>() {
   type TQueries = TRouter['_def']['queries'];
-  type TMutations = TRouter['_def']['mutations'];
   type TSubscriptions = TRouter['_def']['subscriptions'];
   type TError = TRPCClientErrorLike<TRouter>;
   type TInfiniteQueryNames = inferInfiniteQueryNames<TQueries>;
+
+  type TQueryValues = inferProcedures<TRouter['_def']['queries']>;
+  type TMutationValues = inferProcedures<TRouter['_def']['mutations']>;
 
   type ProviderContext = TRPCContextState<TRouter>;
   const Context = TRPCContext as React.Context<ProviderContext>;
@@ -233,18 +242,15 @@ export function createReactQueryHooks<TRouter extends AnyRouter>() {
     return React.useContext(Context);
   }
 
-  function useQuery<
-    TPath extends keyof TQueries & string,
-    TProcedure extends TQueries[TPath],
-  >(
-    pathAndInput: [path: TPath, ...args: inferHandlerInput<TProcedure>],
+  function useQuery<TPath extends keyof TQueryValues & string>(
+    pathAndInput: [path: TPath, ...args: inferHandlerInput<TQueries[TPath]>],
     opts?: UseTRPCQueryOptions<
       TPath,
-      inferProcedureInput<TProcedure>,
-      inferProcedureOutput<TProcedure>,
+      TQueryValues[TPath]['input'],
+      TQueryValues[TPath]['output'],
       TError
     >,
-  ): UseQueryResult<inferProcedureOutput<TProcedure>, TError> {
+  ): UseQueryResult<TQueryValues[TPath]['output'], TError> {
     const cacheKey = getCacheKey(pathAndInput, CACHE_KEY_QUERY);
     const { client, isPrepass, queryClient, prefetchQuery } = useContext();
 
@@ -264,22 +270,19 @@ export function createReactQueryHooks<TRouter extends AnyRouter>() {
     );
   }
 
-  function useMutation<
-    TPath extends keyof TMutations & string,
-    TOutput extends inferProcedureOutput<TMutations[TPath]>,
-  >(
+  function useMutation<TPath extends keyof TMutationValues & string>(
     path: TPath,
     opts?: UseTRPCMutationOptions<
-      inferProcedureInput<TMutations[TPath]>,
+      TMutationValues[TPath]['input'],
       TError,
-      TOutput
+      TMutationValues[TPath]['output']
     >,
   ) {
     const { client } = useContext();
     return __useMutation<
-      TOutput,
+      TMutationValues[TPath]['output'],
       TError,
-      inferProcedureInput<TMutations[TPath]>
+      TMutationValues[TPath]['input']
     >((input) => (client.mutation as any)(path, input), opts);
   }
 
@@ -333,21 +336,18 @@ export function createReactQueryHooks<TRouter extends AnyRouter>() {
     }, [queryKey, enabled]);
   }
 
-  function useInfiniteQuery<
-    TPath extends TInfiniteQueryNames & string,
-    TProcedure extends TQueries[TPath],
-  >(
+  function useInfiniteQuery<TPath extends TInfiniteQueryNames & string>(
     pathAndInput: [
       path: TPath,
-      input: Omit<inferProcedureInput<TQueries[TPath]>, 'cursor'>,
+      input: Omit<TQueryValues[TPath]['input'], 'cursor'>,
     ],
     opts?: UseTRPCInfiniteQueryOptions<
       TPath,
-      Omit<inferProcedureInput<TQueries[TPath]>, 'cursor'>,
-      inferProcedureOutput<TProcedure>,
+      Omit<TQueryValues[TPath]['input'], 'cursor'>,
+      TQueryValues[TPath]['output'],
       TError
     >,
-  ): UseInfiniteQueryResult<inferProcedureOutput<TProcedure>, TError> {
+  ): UseInfiniteQueryResult<TQueryValues[TPath]['output'], TError> {
     const [path, input] = pathAndInput;
     const { client, isPrepass, prefetchInfiniteQuery, queryClient } =
       useContext();
