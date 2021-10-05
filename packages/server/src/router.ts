@@ -465,7 +465,6 @@ export class Router<
       ...duplicateMutations,
       ...duplicateSubscriptions,
     ];
-    /* istanbul ignore next */
     if (duplicates.length) {
       throw new Error(`Duplicate endpoint(s): ${duplicates.join(', ')}`);
     }
