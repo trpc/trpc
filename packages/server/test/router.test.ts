@@ -1,5 +1,5 @@
 import { expectTypeOf } from 'expect-type';
-import { Router } from '../src';
+import { Router, router } from '../src';
 import { Router as VNextRouter } from '../src/router';
 
 test('deprecated router type is supported', () => {
@@ -10,4 +10,20 @@ test('deprecated router type is supported', () => {
 
   expectTypeOf(legacyRouter).toMatchTypeOf<RouterWithContext>();
   expect(legacyRouter instanceof VNextRouter).toEqual(true);
+});
+
+test('double errors', async () => {
+  expect(() => {
+    router()
+      .query('dupe', {
+        resolve() {
+          return null;
+        },
+      })
+      .query('dupe', {
+        resolve() {
+          return null;
+        },
+      });
+  }).toThrowErrorMatchingInlineSnapshot(`"Duplicate endpoint(s): dupe"`);
 });
