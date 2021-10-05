@@ -40,7 +40,7 @@ slug: /sponsors
 </table>
 
 
-### 😻 Individuals & smaller amounts
+### 😻 Individuals
 
 
 <table>
