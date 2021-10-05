@@ -35,7 +35,7 @@
     "lint": "eslint --ext \".js,.ts,.tsx\" --ignore-path .gitignore .",
     "lint-fix": "yarn lint --fix && manypkg fix",
     "codegen": "yarn ts-node scripts/generate-big-f-router.ts",
-    "ts-node": "ts-node --compiler-options \"{\\\"module\\\":\\\"commonjs\\\"}\"",
+    "ts-node": "ts-node --compiler-options '{\"module\":\"commonjs\"}'",
     "postinstall": "preconstruct dev && yarn codegen",
     "build": "preconstruct build",
     "test-dev-examples": "lerna exec --concurrency 1 --scope @examples/* --stream -- yarn test-dev",
