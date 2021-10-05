@@ -283,10 +283,8 @@ export class Router<
   ): Router<
     TInputContext,
     TContext,
-    flatten<
-      TQueries,
-      Record<TPath, inferProcedureFromOptions<TInputContext, typeof procedure>>
-    >,
+    TQueries &
+      Record<TPath, inferProcedureFromOptions<TInputContext, typeof procedure>>,
     TMutations,
     TSubscriptions,
     TErrorShape
@@ -298,10 +296,8 @@ export class Router<
   ): Router<
     TInputContext,
     TContext,
-    flatten<
-      TQueries,
-      Record<TPath, inferProcedureFromOptions<TInputContext, typeof procedure>>
-    >,
+    TQueries &
+      Record<TPath, inferProcedureFromOptions<TInputContext, typeof procedure>>,
     TMutations,
     TSubscriptions,
     TErrorShape
@@ -324,10 +320,8 @@ export class Router<
     TInputContext,
     TContext,
     TQueries,
-    flatten<
-      TMutations,
-      Record<TPath, inferProcedureFromOptions<TInputContext, typeof procedure>>
-    >,
+    TMutations &
+      Record<TPath, inferProcedureFromOptions<TInputContext, typeof procedure>>,
     TSubscriptions,
     TErrorShape
   >;
@@ -339,10 +333,8 @@ export class Router<
     TInputContext,
     TContext,
     TQueries,
-    flatten<
-      TMutations,
-      Record<TPath, inferProcedureFromOptions<TInputContext, typeof procedure>>
-    >,
+    TMutations &
+      Record<TPath, inferProcedureFromOptions<TInputContext, typeof procedure>>,
     TSubscriptions,
     TErrorShape
   >;
@@ -421,9 +413,9 @@ export class Router<
   ): Router<
     TInputContext,
     inferRouterContext<TChildRouter>,
-    flatten<TQueries, TChildRouter['_def']['queries']>,
-    flatten<TMutations, TChildRouter['_def']['mutations']>,
-    flatten<TSubscriptions, TChildRouter['_def']['subscriptions']>,
+    TQueries & TChildRouter['_def']['queries'],
+    TMutations & TChildRouter['_def']['mutations'],
+    TSubscriptions & TChildRouter['_def']['subscriptions'],
     TErrorShape
   >;
 
@@ -441,15 +433,10 @@ export class Router<
   ): Router<
     TInputContext,
     inferRouterContext<TChildRouter>,
-    flatten<TQueries, Prefixer<TChildRouter['_def']['queries'], `${TPath}`>>,
-    flatten<
-      TMutations,
-      Prefixer<TChildRouter['_def']['mutations'], `${TPath}`>
-    >,
-    flatten<
-      TSubscriptions,
-      Prefixer<TChildRouter['_def']['subscriptions'], `${TPath}`>
-    >,
+    TQueries & Prefixer<TChildRouter['_def']['queries'], `${TPath}`>,
+    TMutations & Prefixer<TChildRouter['_def']['mutations'], `${TPath}`>,
+    TSubscriptions &
+      Prefixer<TChildRouter['_def']['subscriptions'], `${TPath}`>,
     TErrorShape
   >;
 
