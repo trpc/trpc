@@ -2572,16 +2572,16 @@
     source-map-support "^0.5.16"
 
 "@prisma/client@^3.0.1":
-  version "3.1.1"
-  resolved "https://registry.yarnpkg.com/@prisma/client/-/client-3.1.1.tgz#f4012631528049c22d12b212846dcf503db33cfe"
-  integrity sha512-8ud8vVFMIg37yrkZ4wPpjKoMxFbCL0Pesq5eyLnag/s0LTKsVEN7ZBIQq9JzWW+AUqOzGKXr2Jt4Sl8xdGI99w==
+  version "3.2.0"
+  resolved "https://registry.yarnpkg.com/@prisma/client/-/client-3.2.0.tgz#6aa79b2945ca7553d5a4c14bbe0067d9f975e061"
+  integrity sha512-YCS/N3DZWoaKXhyS8dHwgUvT/NKXvlLbB5fsy0FvYC305JgNtMLjNbxsx0HjIcNw82MEhP7zWEXNvOLpOgGCUg==
   dependencies:
-    "@prisma/engines-version" "3.1.0-24.c22652b7e418506fab23052d569b85d3aec4883f"
+    "@prisma/engines-version" "3.2.0-34.afdab2f10860244038c4e32458134112852d4dad"
 
-"@prisma/engines-version@3.1.0-24.c22652b7e418506fab23052d569b85d3aec4883f":
-  version "3.1.0-24.c22652b7e418506fab23052d569b85d3aec4883f"
-  resolved "https://registry.yarnpkg.com/@prisma/engines-version/-/engines-version-3.1.0-24.c22652b7e418506fab23052d569b85d3aec4883f.tgz#f9908eb7808f2a546634398063942eaecb2474ef"
-  integrity sha512-EuEMKLuwIcBO7uInZQHeG1yaywcfl32Tq8TDf5tgLvblk+ka70sej7S67lh3BV5gXMLTc3GdthSHPfDqZEK5uA==
+"@prisma/engines-version@3.2.0-34.afdab2f10860244038c4e32458134112852d4dad":
+  version "3.2.0-34.afdab2f10860244038c4e32458134112852d4dad"
+  resolved "https://registry.yarnpkg.com/@prisma/engines-version/-/engines-version-3.2.0-34.afdab2f10860244038c4e32458134112852d4dad.tgz#bd63ad4bbc32935ec43e93cb59220495893c844d"
+  integrity sha512-zYzFOmFvk5YzShqm6DuK7ULtjbJQpebAeD3gcpPfPjx6Uf9pug3bxeswp8/3sk2KKVUeKPUQg5p3TZLskyBNjA==
 
 "@prisma/engines@3.1.0-24.c22652b7e418506fab23052d569b85d3aec4883f":
   version "3.1.0-24.c22652b7e418506fab23052d569b85d3aec4883f"
@@ -3066,7 +3066,7 @@
 
 "@typescript-eslint/eslint-plugin@^4.11.1", "@typescript-eslint/eslint-plugin@^4.30.0":
   version "4.33.0"
-  resolved "https://registry.npmjs.org/@typescript-eslint/eslint-plugin/-/eslint-plugin-4.33.0.tgz#c24dc7c8069c7706bc40d99f6fa87edcb2005276"
+  resolved "https://registry.yarnpkg.com/@typescript-eslint/eslint-plugin/-/eslint-plugin-4.33.0.tgz#c24dc7c8069c7706bc40d99f6fa87edcb2005276"
   integrity sha512-aINiAxGVdOl1eJyVjaWn/YcVAq4Gi/Yo35qHGCnqbWVz61g39D0h23veY/MA0rFFGfxK7TySg2uwDeNv+JgVpg==
   dependencies:
     "@typescript-eslint/experimental-utils" "4.33.0"
@@ -3092,7 +3092,7 @@
 
 "@typescript-eslint/parser@^4.11.1", "@typescript-eslint/parser@^4.20.0", "@typescript-eslint/parser@^4.26.0":
   version "4.33.0"
-  resolved "https://registry.npmjs.org/@typescript-eslint/parser/-/parser-4.33.0.tgz#dfe797570d9694e560528d18eecad86c8c744899"
+  resolved "https://registry.yarnpkg.com/@typescript-eslint/parser/-/parser-4.33.0.tgz#dfe797570d9694e560528d18eecad86c8c744899"
   integrity sha512-ZohdsbXadjGBSK0/r+d87X0SBmKzOq4/S5nzK6SBgJspFo9/CUDJ7hjayuze+JK7CZQLDMroqytp7pOcFKTxZA==
   dependencies:
     "@typescript-eslint/scope-manager" "4.33.0"
