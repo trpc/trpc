@@ -51,9 +51,9 @@ tRPC allows you to easily build & consume fully typesafe APIs, without schemas o
 - [Usage](#usage)
 - [Core Team](#core-team)
 - [Financial Contributors](#financial-contributors)
-  - [Companies](#companies)
-    - [🥉 Bronze Sponsors](#-bronze-sponsors)
-  - [😻 Individuals](#-individuals)
+  - [For Companies](#for-companies)
+  - [🥉 Bronze Sponsors](#-bronze-sponsors)
+  - [😻 Individuals & smaller amounts](#-individuals--smaller-amounts)
 - [All contributors ✨](#all-contributors-)
 
 
@@ -85,11 +85,11 @@ npx create-next-app --example https://github.com/trpc/trpc --example-path exampl
 
 > If you like working with tRPC, consider giving a token a apprecation by [GitHub Sponsors](https://github.com/sponsors/KATT)!
 
-### Companies
+### For Companies
 
-> Is your company using tRPC & want to attract amazing TypeScript developers to your team? Have a look at the [sponsorship tiers](https://github.com/sponsors/KATT) or [get in touch](mailto:alex@trpc.io) to discuss potential partnerships.
+> Is your company using tRPC, want to attract amazing TypeScript developers to your team, & support long-term maintainance of tRPC? Have a look at the [sponsorship tiers](https://github.com/sponsors/KATT) or [get in touch](mailto:alex@trpc.io) to discuss potential partnerships.
 
-#### 🥉 Bronze Sponsors
+### 🥉 Bronze Sponsors
 
 <table>
   <tbody>
@@ -102,7 +102,7 @@ npx create-next-app --example https://github.com/trpc/trpc --example-path exampl
 </table>
 
 
-### 😻 Individuals
+### 😻 Individuals & smaller amounts
 
 
 <table>
@@ -119,6 +119,7 @@ npx create-next-app --example https://github.com/trpc/trpc --example-path exampl
     <tr>
       <td align="center"><a href="https://ste.london"><img src="https://avatars.githubusercontent.com/u/150512?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Stephen Mount</b></sub></a></td>
       <td align="center"><a href="https://github.com/alexn-s"><img src="https://avatars.githubusercontent.com/u/60710873?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Alex Schumacher</b></sub></a></td>
+      <td align="center"><a href="https://github.com/Memory-Lane-Games"><img src="https://avatars.githubusercontent.com/u/63847783?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Memory-Lane-Games</b></sub></a></td>
     </tr>
   </tbody>
 </table>
