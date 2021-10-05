@@ -10,3 +10,6 @@ package-lock.json
 yalc.lock
 
 coverage/
+
+.yarn/*
+!.yarn/releases
