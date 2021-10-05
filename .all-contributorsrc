@@ -263,6 +263,15 @@
       "contributions": [
         "financial"
       ]
+    },
+    {
+      "login": "bluebill1049",
+      "name": "Bill",
+      "avatar_url": "https://avatars.githubusercontent.com/u/10513364?v=4",
+      "profile": "https://react-hook-form.com",
+      "contributions": [
+        "financial"
+      ]
     }
   ],
   "contributorsPerLine": 7,
