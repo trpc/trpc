@@ -34,7 +34,7 @@
     "test": "cd packages/server && yarn jest",
     "lint": "eslint --ext \".js,.ts,.tsx\" --ignore-path .gitignore .",
     "lint-fix": "yarn lint --fix && manypkg fix",
-    "codegen": "yarn ts-node scripts/generate-fixtures.ts",
+    "codegen": "yarn ts-node scripts/generate-big-f-router.ts",
     "ts-node": "ts-node --compiler-options \"{\\\"module\\\":\\\"commonjs\\\"}\"",
     "postinstall": "preconstruct dev && yarn codegen",
     "build": "preconstruct build",
