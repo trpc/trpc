@@ -22,7 +22,7 @@ import {
 import { Subscription } from './subscription';
 import { CombinedDataTransformer, DataTransformerOptions } from './transformer';
 import { TRPCError } from './TRPCError';
-import { flatten, format, Prefixer, ThenArg } from './types';
+import { Prefixer, ThenArg } from './types';
 
 assertNotBrowser();
 
@@ -184,10 +184,7 @@ function safeObject<TObj1>(obj: TObj1): TObj1;
 /**
  * Merge two objects without inheritance from `Object.prototype`
  */
-function safeObject<TObj1, TObj2>(
-  obj1: TObj1,
-  obj2: TObj2,
-): flatten<TObj1, TObj2>;
+function safeObject<TObj1, TObj2>(obj1: TObj1, obj2: TObj2): TObj1 & TObj2;
 function safeObject(...args: unknown[]) {
   return Object.assign(Object.create(null), ...args);
 }
@@ -219,9 +216,9 @@ type SwapProcedureContext<
 type SwapContext<
   TObj extends ProcedureRecord<any, any, any, any>,
   TNewContext,
-> = format<{
+> = {
   [P in keyof TObj]: SwapProcedureContext<TObj[P], TNewContext>;
-}>;
+};
 
 /**
  * @internal The type signature of this class may change without warning.
