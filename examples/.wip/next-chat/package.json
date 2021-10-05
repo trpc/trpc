@@ -1,6 +1,6 @@
 {
   "name": "@examples/chat",
-  "version": "9.9.0",
+  "version": "9.9.1",
   "private": true,
   "scripts": {
     "dx:next": "prisma generate && next dev",
@@ -18,10 +18,10 @@
   },
   "dependencies": {
     "@prisma/client": "^3.0.1",
-    "@trpc/client": "^9.9.0",
-    "@trpc/next": "^9.9.0",
-    "@trpc/react": "^9.9.0",
-    "@trpc/server": "^9.9.0",
+    "@trpc/client": "^9.9.1",
+    "@trpc/next": "^9.9.1",
+    "@trpc/react": "^9.9.1",
+    "@trpc/server": "^9.9.1",
     "jest": "^27.1.0",
     "jest-playwright": "^0.0.1",
     "jest-playwright-preset": "^1.4.5",
