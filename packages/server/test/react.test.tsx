@@ -4,15 +4,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/ban-ts-comment */
 
-import * as trpcServer from '../../server/src';
-jest.mock('@trpc/server', () => trpcServer);
-import * as trpcClient from '../../client/src';
-jest.mock('@trpc/client', () => trpcClient);
-import * as trpcReact from '../../react/src';
-jest.mock('@trpc/react', () => trpcReact);
-import * as trpcReact__ssg from '../../react/src/ssg';
-jest.mock('@trpc/react/ssg', () => trpcReact__ssg);
-
+import { trpcServer } from './_packages';
 import '@testing-library/jest-dom';
 import { render, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
