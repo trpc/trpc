@@ -204,7 +204,8 @@
         "financial",
         "code",
         "doc",
-        "test"
+        "test",
+        "bug"
       ]
     },
     {
