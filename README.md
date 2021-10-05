@@ -52,7 +52,7 @@ tRPC allows you to easily build & consume fully typesafe APIs, without schemas o
 - [Core Team](#core-team)
 - [Financial Contributors](#financial-contributors)
   - [🥉 Bronze Sponsors](#-bronze-sponsors)
-  - [😻 Individuals & smaller amounts](#-individuals--smaller-amounts)
+  - [😻 Individuals](#-individuals)
 - [All contributors ✨](#all-contributors-)
 
 
@@ -112,7 +112,7 @@ npx create-next-app --example https://github.com/trpc/trpc --example-path exampl
 </table>
 
 
-### 😻 Individuals & smaller amounts
+### 😻 Individuals
 
 
 <table>
@@ -129,7 +129,6 @@ npx create-next-app --example https://github.com/trpc/trpc --example-path exampl
     <tr>
       <td align="center"><a href="https://ste.london"><img src="https://avatars.githubusercontent.com/u/150512?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Stephen Mount</b></sub></a></td>
       <td align="center"><a href="https://github.com/alexn-s"><img src="https://avatars.githubusercontent.com/u/60710873?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Alex Schumacher</b></sub></a></td>
-      <td align="center"><a href="https://github.com/Memory-Lane-Games"><img src="https://avatars.githubusercontent.com/u/63847783?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Memory-Lane-Games</b></sub></a></td>
     </tr>
   </tbody>
 </table>
