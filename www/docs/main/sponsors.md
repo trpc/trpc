@@ -8,9 +8,24 @@ slug: /sponsors
 > If you like working with tRPC, consider giving a token a apprecation by [GitHub Sponsors](https://github.com/sponsors/KATT)!
 
 
-## Companies
+## Financial Contributors
 
-> Is your company using tRPC & want to attract amazing TypeScript developers to your team? Have a look at the [sponsorship tiers](https://github.com/sponsors/KATT) or get in touch on [Twitter](https://twitter.com/alexdotjs) or by [email](mailto:alex@trpc.io) to discuss potential partnerships.
+> If you like working with tRPC, consider giving a token a apprecation by [GitHub Sponsors](https://github.com/sponsors/KATT)!
+
+**For companies**
+
+> Is your company using tRPC, want to attract amazing TypeScript developers to your team, & support long-term maintainance of tRPC? Have a look at the [sponsorship tiers](https://github.com/sponsors/KATT) or [get in touch](mailto:alex@trpc.io) to discuss potential partnerships.
+
+
+<!-- 
+### 🥉 Gold Sponsors
+
+<img src="https://placehold.jp/e5faff/0e3847/300x150.png?text=%3Cimg%20%2F%3E" width="300" height="150">
+
+### 🥉 Silver Sponsors
+
+<img src="https://placehold.jp/e5faff/0e3847/150x150.png?text=%3Cimg%20%2F%3E" width="150" height="150"> 
+-->
 
 ### 🥉 Bronze Sponsors
 
@@ -19,12 +34,13 @@ slug: /sponsors
     <tr>
       <td align="center"><a href="https://newfront.com"><img src="https://user-images.githubusercontent.com/36125/130158930-216fa212-5909-4ee1-b4b9-fd5935f51245.png" width="143" alt=""/><br />Newfront</a></td>
       <td align="center"><a href="https://hidrb.com"><img src="https://avatars.githubusercontent.com/u/77294655?v=4?s=143" width="143" alt=""/><br/>Dr. B</a></td>
+      <td align="center"><a href="https://cal.com"><img src="https://avatars.githubusercontent.com/u/79145102?s=200&v=4" width="143" alt=""/><br/>Cal.com</a></td>
     </tr>
   </tbody>
 </table>
 
 
-## 😻 Individuals
+### 😻 Individuals
 
 
 <table>
@@ -40,8 +56,8 @@ slug: /sponsors
     </tr>
     <tr>
       <td align="center"><a href="https://ste.london"><img src="https://avatars.githubusercontent.com/u/150512?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Stephen Mount</b></sub></a></td>
-      <td align="center"><a href="https://github.com/alexn-s"><img src="https://avatars.githubusercontent.com/u/60710873?v=4?s=100" width="100px;" alt=""/><br /><sub><b>alexn-s</b></sub></a></td>
+      <td align="center"><a href="https://github.com/alexn-s"><img src="https://avatars.githubusercontent.com/u/60710873?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Alex Schumacher</b></sub></a></td>
+      <td align="center"><a href="https://react-hook-form.com"><img src="https://avatars.githubusercontent.com/u/10513364?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Bill</b></sub></a></td>
     </tr>
   </tbody>
 </table>
-

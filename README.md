@@ -51,8 +51,7 @@ tRPC allows you to easily build & consume fully typesafe APIs, without schemas o
 - [Usage](#usage)
 - [Core Team](#core-team)
 - [Financial Contributors](#financial-contributors)
-  - [Companies](#companies)
-    - [🥉 Bronze Sponsors](#-bronze-sponsors)
+  - [🥉 Bronze Sponsors](#-bronze-sponsors)
   - [😻 Individuals](#-individuals)
 - [All contributors ✨](#all-contributors-)
 
@@ -85,11 +84,22 @@ npx create-next-app --example https://github.com/trpc/trpc --example-path exampl
 
 > If you like working with tRPC, consider giving a token a apprecation by [GitHub Sponsors](https://github.com/sponsors/KATT)!
 
-### Companies
 
-> Is your company using tRPC & want to attract amazing TypeScript developers to your team? Have a look at the [sponsorship tiers](https://github.com/sponsors/KATT) or [get in touch](mailto:alex@trpc.io) to discuss potential partnerships.
+**For companies**
 
-#### 🥉 Bronze Sponsors
+> Is your company using tRPC, want to attract amazing TypeScript developers to your team, & support long-term maintainance of tRPC? Have a look at the [sponsorship tiers](https://github.com/sponsors/KATT) or [get in touch](mailto:alex@trpc.io) to discuss potential partnerships.
+
+<!-- 
+### 🥉 Gold Sponsors
+
+<img src="https://placehold.jp/e5faff/0e3847/300x150.png?text=%3Cimg%20%2F%3E" width="300" height="150">
+
+### 🥉 Silver Sponsors
+
+<img src="https://placehold.jp/e5faff/0e3847/150x150.png?text=%3Cimg%20%2F%3E" width="150" height="150"> 
+-->
+
+### 🥉 Bronze Sponsors
 
 <table>
   <tbody>
@@ -119,6 +129,7 @@ npx create-next-app --example https://github.com/trpc/trpc --example-path exampl
     <tr>
       <td align="center"><a href="https://ste.london"><img src="https://avatars.githubusercontent.com/u/150512?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Stephen Mount</b></sub></a></td>
       <td align="center"><a href="https://github.com/alexn-s"><img src="https://avatars.githubusercontent.com/u/60710873?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Alex Schumacher</b></sub></a></td>
+      <td align="center"><a href="https://react-hook-form.com"><img src="https://avatars.githubusercontent.com/u/10513364?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Bill</b></sub></a></td>
     </tr>
   </tbody>
 </table>
