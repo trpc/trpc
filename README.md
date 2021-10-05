@@ -129,6 +129,7 @@ npx create-next-app --example https://github.com/trpc/trpc --example-path exampl
     <tr>
       <td align="center"><a href="https://ste.london"><img src="https://avatars.githubusercontent.com/u/150512?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Stephen Mount</b></sub></a></td>
       <td align="center"><a href="https://github.com/alexn-s"><img src="https://avatars.githubusercontent.com/u/60710873?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Alex Schumacher</b></sub></a></td>
+      <td align="center"><a href="https://react-hook-form.com"><img src="https://avatars.githubusercontent.com/u/10513364?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Bill</b></sub></a></td>
     </tr>
   </tbody>
 </table>
