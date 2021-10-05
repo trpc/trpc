@@ -13,3 +13,4 @@ coverage/
 
 .yarn/*
 !.yarn/releases
+!.yarn/plugins

@@ -67,5 +67,7 @@
   },
   "publishConfig": {
     "access": "restricted"
-  }
+  },
+  "homepage": "https://trpc.io",
+  "license": "MIT"
 }
