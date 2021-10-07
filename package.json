@@ -34,7 +34,9 @@
     "test": "cd packages/server && yarn jest",
     "lint": "eslint --ext \".js,.ts,.tsx\" --ignore-path .gitignore .",
     "lint-fix": "yarn lint --fix && manypkg fix",
-    "postinstall": "preconstruct dev",
+    "codegen": "yarn ts-node scripts/generate-big-f-router.ts",
+    "ts-node": "ts-node --compiler-options '{\"module\":\"commonjs\"}'",
+    "postinstall": "preconstruct dev && yarn codegen",
     "build": "preconstruct build",
     "test-dev-examples": "lerna exec --concurrency 1 --scope @examples/* --stream -- yarn test-dev",
     "build-examples": "lerna run build --scope @examples/* --stream",
@@ -50,8 +52,8 @@
     "release:canary": "changeset publish --tag canary",
     "commit-date": "git log -n 1 --date=format:'%Y-%m-%d-%H-%M-%S' --pretty=format:'%ad'",
     "canary-preid": "echo \"$(yarn --silent current-branch)-$(yarn --silent commit-date)\"",
-    "current-branch": "echo \"$(git rev-parse --abbrev-ref HEAD)\" | sed -E 's/refs\\/heads\\///' | sed -E 's/\\W|_/-/g'",
-    "publish-canary": "lerna publish --canary --preid $(yarn --silent canary-preid) --dist-tag $(yarn --silent current-branch)"
+    "current-branch": "echo \"$(git rev-parse --abbrev-ref HEAD)\" | sed -E 's/refs\\/heads\\///' | sed -E 's/\\W|_/-/g' | sed -e 's/\\//-/'",
+    "publish-canary": "lerna publish --force-publish --canary --preid $(yarn --silent canary-preid) --dist-tag $(yarn --silent current-branch)"
   },
   "dependencies": {
     "@babel/core": "^7.15.5",
@@ -87,6 +89,6 @@
     "react": "^17.0.2",
     "react-dom": "^17.0.2",
     "ts-jest": "^27.0.5",
-    "typescript": "4.4.2"
+    "typescript": "4.4.3"
   }
 }

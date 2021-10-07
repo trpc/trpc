@@ -14,9 +14,16 @@
       "source": "/docs/react-queries-and-mutations",
       "destination": "/docs/react-queries",
       "permanent": true
+    },
+    {
+      "source": "/docs/invalidateQuery",
+      "destination": "/docs/invalidateQueries",
+      "permanent": true
+    },
+    {
+      "source": "/discord",
+      "destination": "https://discord.gg/wzaMgEJkcf",
+      "permanent": false
     }
-  ],
-  "github": {
-    "silent": true
-  }
+  ]
 }

@@ -4,15 +4,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/ban-ts-comment */
 
-import * as trpcServer from '../../server/src';
-jest.mock('@trpc/server', () => trpcServer);
-import * as trpcClient from '../../client/src';
-jest.mock('@trpc/client', () => trpcClient);
-import * as trpcReact from '../../react/src';
-jest.mock('@trpc/react', () => trpcReact);
-import * as trpcReact__ssg from '../../react/src/ssg';
-jest.mock('@trpc/react/ssg', () => trpcReact__ssg);
-
+import { trpcServer } from './_packages';
 import '@testing-library/jest-dom';
 import { render, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
@@ -139,6 +131,21 @@ function createAppRouter() {
           createdAt: Date.now(),
           title: input.title,
         });
+      },
+    })
+    .mutation('deletePosts', {
+      input: z.array(z.string()).nullish(),
+      resolve({ input }) {
+        if (input) {
+          db.posts = db.posts.filter((p) => !input.includes(p.id));
+        } else {
+          db.posts = [];
+        }
+      },
+    })
+    .mutation('PING', {
+      resolve() {
+        return 'PONG' as const;
       },
     })
     .subscription('newPosts', {
@@ -386,6 +393,151 @@ test('mutation on mount + subscribe for it', async () => {
   });
   await waitFor(() => {
     expect(utils.container).toHaveTextContent('third post');
+  });
+});
+
+describe('useMutation()', () => {
+  test('call procedure with no input with null/undefined', async () => {
+    const { trpc, client } = factory;
+
+    const results: unknown[] = [];
+    function MyComponent() {
+      const mutation = trpc.useMutation('PING');
+      const [finished, setFinished] = useState(false);
+
+      useEffect(() => {
+        (async () => {
+          await new Promise((resolve) =>
+            mutation.mutate(null, {
+              onSettled: resolve,
+            }),
+          );
+          await new Promise((resolve) =>
+            mutation.mutate(undefined, {
+              onSettled: resolve,
+            }),
+          );
+
+          await mutation.mutateAsync(null);
+
+          await mutation.mutateAsync(undefined);
+          setFinished(true);
+        })();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+      }, []);
+
+      useEffect(() => {
+        results.push(mutation.data);
+      }, [mutation.data]);
+
+      return (
+        <pre>
+          {JSON.stringify(mutation.data ?? {}, null, 4)}
+          {finished && '__IS_FINISHED__'}
+        </pre>
+      );
+    }
+
+    function App() {
+      const [queryClient] = useState(() => new QueryClient());
+      return (
+        <trpc.Provider {...{ queryClient, client }}>
+          <QueryClientProvider client={queryClient}>
+            <MyComponent />
+          </QueryClientProvider>
+        </trpc.Provider>
+      );
+    }
+
+    const utils = render(<App />);
+    await waitFor(() => {
+      expect(utils.container).toHaveTextContent('__IS_FINISHED__');
+    });
+
+    // expect(results).toMatchInlineSnapshot();
+  });
+  test('nullish input called with no input', async () => {
+    const { trpc, client } = factory;
+
+    function MyComponent() {
+      const allPostsQuery = trpc.useQuery(['allPosts']);
+      const deletePostsMutation = trpc.useMutation('deletePosts');
+
+      useEffect(() => {
+        allPostsQuery.refetch().then(async (allPosts) => {
+          expect(allPosts.data).toHaveLength(2);
+          await deletePostsMutation.mutateAsync();
+          const newAllPost = await allPostsQuery.refetch();
+          expect(newAllPost.data).toHaveLength(0);
+        });
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+      }, []);
+
+      return <pre>{JSON.stringify(allPostsQuery.data ?? {}, null, 4)}</pre>;
+    }
+
+    function App() {
+      const [queryClient] = useState(() => new QueryClient());
+      return (
+        <trpc.Provider {...{ queryClient, client }}>
+          <QueryClientProvider client={queryClient}>
+            <MyComponent />
+          </QueryClientProvider>
+        </trpc.Provider>
+      );
+    }
+
+    const utils = render(<App />);
+    await waitFor(() => {
+      expect(utils.container).toHaveTextContent('first post');
+    });
+
+    await waitFor(() => {
+      expect(utils.container).toHaveTextContent('[]');
+    });
+  });
+
+  test('nullish input called with input', async () => {
+    const { trpc, client } = factory;
+
+    function MyComponent() {
+      const allPostsQuery = trpc.useQuery(['allPosts']);
+      const deletePostsMutation = trpc.useMutation('deletePosts');
+
+      useEffect(() => {
+        allPostsQuery.refetch().then(async (allPosts) => {
+          expect(allPosts.data).toHaveLength(2);
+          await deletePostsMutation.mutateAsync(['1']);
+          const newAllPost = await allPostsQuery.refetch();
+          expect(newAllPost.data).toHaveLength(1);
+        });
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+      }, []);
+
+      return <pre>{JSON.stringify(allPostsQuery.data ?? {}, null, 4)}</pre>;
+    }
+
+    function App() {
+      const [queryClient] = useState(() => new QueryClient());
+      return (
+        <trpc.Provider {...{ queryClient, client }}>
+          <QueryClientProvider client={queryClient}>
+            <MyComponent />
+          </QueryClientProvider>
+        </trpc.Provider>
+      );
+    }
+
+    const utils = render(<App />);
+    await waitFor(() => {
+      expect(utils.container).toHaveTextContent('first post');
+      expect(utils.container).toHaveTextContent('second post');
+    });
+
+    await waitFor(() => {
+      expect(utils.container).not.toHaveTextContent('first post');
+      expect(utils.container).toHaveTextContent('second post');
+    });
   });
 });
 
@@ -991,6 +1143,74 @@ describe('invalidate queries', () => {
             onClick={() => {
               utils.invalidateQuery(['allPosts']);
               utils.invalidateQuery(['postById', '1']);
+            }}
+          />
+        </>
+      );
+    }
+    function App() {
+      const [queryClient] = useState(() => new QueryClient());
+      return (
+        <trpc.Provider {...{ queryClient, client }}>
+          <QueryClientProvider client={queryClient}>
+            <MyComponent />
+          </QueryClientProvider>
+        </trpc.Provider>
+      );
+    }
+
+    const utils = render(<App />);
+
+    await waitFor(() => {
+      expect(utils.container).toHaveTextContent('postByIdQuery:success');
+      expect(utils.container).toHaveTextContent('allPostsQuery:success');
+
+      expect(utils.container).toHaveTextContent('postByIdQuery:not-stale');
+      expect(utils.container).toHaveTextContent('allPostsQuery:not-stale');
+    });
+
+    expect(resolvers.allPosts).toHaveBeenCalledTimes(1);
+    expect(resolvers.postById).toHaveBeenCalledTimes(1);
+
+    utils.getByTestId('refetch').click();
+
+    await waitFor(() => {
+      expect(utils.container).toHaveTextContent('postByIdQuery:stale');
+      expect(utils.container).toHaveTextContent('allPostsQuery:stale');
+    });
+    await waitFor(() => {
+      expect(utils.container).toHaveTextContent('postByIdQuery:not-stale');
+      expect(utils.container).toHaveTextContent('allPostsQuery:not-stale');
+    });
+
+    expect(resolvers.allPosts).toHaveBeenCalledTimes(2);
+    expect(resolvers.postById).toHaveBeenCalledTimes(2);
+  });
+  test('invalidateQueries()', async () => {
+    const { trpc, resolvers, client } = factory;
+    function MyComponent() {
+      const allPostsQuery = trpc.useQuery(['allPosts'], {
+        staleTime: Infinity,
+      });
+      const postByIdQuery = trpc.useQuery(['postById', '1'], {
+        staleTime: Infinity,
+      });
+      const utils = trpc.useContext();
+      return (
+        <>
+          <pre>
+            allPostsQuery:{allPostsQuery.status} allPostsQuery:
+            {allPostsQuery.isStale ? 'stale' : 'not-stale'}{' '}
+          </pre>
+          <pre>
+            postByIdQuery:{postByIdQuery.status} postByIdQuery:
+            {postByIdQuery.isStale ? 'stale' : 'not-stale'}
+          </pre>
+          <button
+            data-testid="refetch"
+            onClick={() => {
+              utils.invalidateQueries(['allPosts']);
+              utils.invalidateQueries(['postById', '1']);
             }}
           />
         </>

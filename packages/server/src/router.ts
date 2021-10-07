@@ -12,7 +12,6 @@ import {
   inferProcedureFromOptions,
   Procedure,
   ProcedureCallOptions,
-  ProcedureWithInput,
 } from './internals/procedure';
 import {
   TRPCErrorShape,
@@ -23,7 +22,7 @@ import {
 import { Subscription } from './subscription';
 import { CombinedDataTransformer, DataTransformerOptions } from './transformer';
 import { TRPCError } from './TRPCError';
-import { flatten, format, Prefixer, ThenArg } from './types';
+import { Prefixer, ThenArg } from './types';
 
 assertNotBrowser();
 
@@ -47,8 +46,10 @@ export type ProcedureRecord<
  */
 export type inferProcedureInput<
   TProcedure extends Procedure<any, any, any, any>,
-> = TProcedure extends ProcedureWithInput<any, any, infer Input, any>
-  ? Input
+> = TProcedure extends Procedure<any, any, infer Input, any>
+  ? undefined extends Input
+    ? Input | null | void // void is necessary to allow procedures with nullish input to be called without an input
+    : Input
   : undefined;
 
 /**
@@ -90,7 +91,7 @@ function getDataTransformer(
  */
 export type inferHandlerInput<
   TProcedure extends Procedure<any, any, any, any>,
-> = TProcedure extends ProcedureWithInput<any, any, infer TInput, any>
+> = TProcedure extends Procedure<any, any, infer TInput, any>
   ? undefined extends TInput // ? is input optional
     ? unknown extends TInput // ? is input unset
       ? [(null | undefined)?] // -> there is no input
@@ -183,10 +184,7 @@ function safeObject<TObj1>(obj: TObj1): TObj1;
 /**
  * Merge two objects without inheritance from `Object.prototype`
  */
-function safeObject<TObj1, TObj2>(
-  obj1: TObj1,
-  obj2: TObj2,
-): flatten<TObj1, TObj2>;
+function safeObject<TObj1, TObj2>(obj1: TObj1, obj2: TObj2): TObj1 & TObj2;
 function safeObject(...args: unknown[]) {
   return Object.assign(Object.create(null), ...args);
 }
@@ -218,11 +216,9 @@ type SwapProcedureContext<
 type SwapContext<
   TObj extends ProcedureRecord<any, any, any, any>,
   TNewContext,
-> = format<
-  {
-    [P in keyof TObj]: SwapProcedureContext<TObj[P], TNewContext>;
-  }
->;
+> = {
+  [P in keyof TObj]: SwapProcedureContext<TObj[P], TNewContext>;
+};
 
 /**
  * @internal The type signature of this class may change without warning.
@@ -284,32 +280,27 @@ export class Router<
   ): Router<
     TInputContext,
     TContext,
-    flatten<
-      TQueries,
-      Record<TPath, inferProcedureFromOptions<TInputContext, typeof procedure>>
-    >,
+    TQueries &
+      Record<TPath, inferProcedureFromOptions<TInputContext, typeof procedure>>,
     TMutations,
     TSubscriptions,
     TErrorShape
   >;
+
   public query<TPath extends string, TOutput>(
     path: TPath,
     procedure: CreateProcedureWithoutInput<TContext, TOutput>,
   ): Router<
     TInputContext,
     TContext,
-    flatten<
-      TQueries,
-      Record<TPath, inferProcedureFromOptions<TInputContext, typeof procedure>>
-    >,
+    TQueries &
+      Record<TPath, inferProcedureFromOptions<TInputContext, typeof procedure>>,
     TMutations,
     TSubscriptions,
     TErrorShape
   >;
-  public query<TPath extends string, TInput, TOutput>(
-    path: TPath,
-    procedure: CreateProcedureOptions<TContext, TInput, TOutput>,
-  ) {
+
+  query(path: string, procedure: CreateProcedureOptions<TContext, any, any>) {
     const router = new Router<TContext, TContext, any, {}, {}, any>({
       queries: safeObject({
         [path]: createProcedure(procedure),
@@ -326,13 +317,12 @@ export class Router<
     TInputContext,
     TContext,
     TQueries,
-    flatten<
-      TMutations,
-      Record<TPath, inferProcedureFromOptions<TInputContext, typeof procedure>>
-    >,
+    TMutations &
+      Record<TPath, inferProcedureFromOptions<TInputContext, typeof procedure>>,
     TSubscriptions,
     TErrorShape
   >;
+
   public mutation<TPath extends string, TOutput>(
     path: TPath,
     procedure: CreateProcedureWithoutInput<TContext, TOutput>,
@@ -340,16 +330,15 @@ export class Router<
     TInputContext,
     TContext,
     TQueries,
-    flatten<
-      TMutations,
-      Record<TPath, inferProcedureFromOptions<TInputContext, typeof procedure>>
-    >,
+    TMutations &
+      Record<TPath, inferProcedureFromOptions<TInputContext, typeof procedure>>,
     TSubscriptions,
     TErrorShape
   >;
-  public mutation<TPath extends string, TInput, TOutput>(
-    path: TPath,
-    procedure: CreateProcedureOptions<TContext, TInput, TOutput>,
+
+  public mutation(
+    path: string,
+    procedure: CreateProcedureOptions<TContext, any, any>,
   ) {
     const router = new Router<TContext, TContext, {}, any, {}, any>({
       mutations: safeObject({
@@ -359,6 +348,7 @@ export class Router<
 
     return this.merge(router);
   }
+
   /**
    * @beta Might change without a major version bump
    */
@@ -378,6 +368,7 @@ export class Router<
       Record<TPath, inferProcedureFromOptions<TInputContext, typeof procedure>>,
     TErrorShape
   >;
+
   /**
    * @beta Might change without a major version bump
    */
@@ -396,14 +387,11 @@ export class Router<
       Record<TPath, inferProcedureFromOptions<TInputContext, typeof procedure>>,
     TErrorShape
   >;
-  /**
-   * @beta Might change without a major version bump
-   */
-  public subscription<
-    TPath extends string,
-    TInput,
-    TOutput extends Subscription<unknown>,
-  >(path: TPath, procedure: CreateProcedureOptions<TContext, TInput, TOutput>) {
+
+  public subscription(
+    path: string,
+    procedure: CreateProcedureOptions<TContext, any, any>,
+  ) {
     const router = new Router<TContext, TContext, {}, {}, any, any>({
       subscriptions: safeObject({
         [path]: createProcedure(procedure),
@@ -422,9 +410,9 @@ export class Router<
   ): Router<
     TInputContext,
     inferRouterContext<TChildRouter>,
-    flatten<TQueries, TChildRouter['_def']['queries']>,
-    flatten<TMutations, TChildRouter['_def']['mutations']>,
-    flatten<TSubscriptions, TChildRouter['_def']['subscriptions']>,
+    TQueries & TChildRouter['_def']['queries'],
+    TMutations & TChildRouter['_def']['mutations'],
+    TSubscriptions & TChildRouter['_def']['subscriptions'],
     TErrorShape
   >;
 
@@ -442,15 +430,10 @@ export class Router<
   ): Router<
     TInputContext,
     inferRouterContext<TChildRouter>,
-    flatten<TQueries, Prefixer<TChildRouter['_def']['queries'], `${TPath}`>>,
-    flatten<
-      TMutations,
-      Prefixer<TChildRouter['_def']['mutations'], `${TPath}`>
-    >,
-    flatten<
-      TSubscriptions,
-      Prefixer<TChildRouter['_def']['subscriptions'], `${TPath}`>
-    >,
+    TQueries & Prefixer<TChildRouter['_def']['queries'], `${TPath}`>,
+    TMutations & Prefixer<TChildRouter['_def']['mutations'], `${TPath}`>,
+    TSubscriptions &
+      Prefixer<TChildRouter['_def']['subscriptions'], `${TPath}`>,
     TErrorShape
   >;
 
@@ -482,7 +465,6 @@ export class Router<
       ...duplicateMutations,
       ...duplicateSubscriptions,
     ];
-    /* istanbul ignore next */
     if (duplicates.length) {
       throw new Error(`Duplicate endpoint(s): ${duplicates.join(', ')}`);
     }

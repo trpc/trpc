@@ -34,7 +34,8 @@ Recommended but not enforced file structure. This is what you get when starting 
 │   │   │   ├── app.ts   # <-- main app router
 │   │   │   ├── post.ts  # <-- sub routers
 │   │   │   └── [..]
-│   │   └── trpc.ts  # <-- create app context
+│   │   ├── context.ts      # <-- create app context
+│   │   └── createRouter.ts # <-- router helper
 │   └── utils
 │       └── trpc.ts  # <-- your typesafe tRPC hooks
 └── [..]
@@ -51,7 +52,7 @@ yarn add @trpc/client @trpc/server @trpc/react @trpc/next zod react-query
 ```
 
 - React Query: `@trpc/react` provides a thin wrapper over [react-query](https://react-query.tanstack.com/overview). It is required as a peer dependency.
-- Zod: most examples use Zod for input validation, though it isn't required. You can use a validation library of your choice (Yup, io-ts, etc). In fact, any object containing a `parse` or `validateSync` method will work.
+- Zod: most examples use Zod for input validation, though it isn't required. You can use a validation library of your choice (Yup, [Superstruct](https://github.com/ianstormtaylor/superstruct), io-ts, etc). In fact, any object containing a `parse`, `create` or `validateSync` method will work.
 
 ### 2. Create a tRPC router
 
@@ -185,7 +186,7 @@ Whether tRPC should await queries when server-side rendering a page. Defaults to
 
 ### `responseMeta`-callback
 
-Ability to set request headers and HTTP status when server-side rendering. 
+Ability to set request headers and HTTP status when server-side rendering.
 
 #### Example
 

@@ -153,7 +153,8 @@
       "contributions": [
         "ideas",
         "test",
-        "code"
+        "code",
+        "review"
       ]
     },
     {
@@ -182,6 +183,94 @@
       "contributions": [
         "code",
         "test"
+      ]
+    },
+    {
+      "login": "theobr",
+      "name": "Theo Browne",
+      "avatar_url": "https://avatars.githubusercontent.com/u/6751787?v=4",
+      "profile": "http://t3.gg",
+      "contributions": [
+        "review",
+        "financial"
+      ]
+    },
+    {
+      "login": "mgreenw",
+      "name": "Max Greenwald",
+      "avatar_url": "https://avatars.githubusercontent.com/u/2615374?v=4",
+      "profile": "https://maxgreenwald.me",
+      "contributions": [
+        "financial",
+        "code",
+        "doc",
+        "test",
+        "bug"
+      ]
+    },
+    {
+      "login": "stemount",
+      "name": "Stephen Mount",
+      "avatar_url": "https://avatars.githubusercontent.com/u/150512?v=4",
+      "profile": "https://ste.london",
+      "contributions": [
+        "financial"
+      ]
+    },
+    {
+      "login": "infix",
+      "name": "amr",
+      "avatar_url": "https://avatars.githubusercontent.com/u/40860821?v=4",
+      "profile": "https://github.com/infix",
+      "contributions": [
+        "code"
+      ]
+    },
+    {
+      "login": "thomas-coldwell",
+      "name": "Thomas Coldwell",
+      "avatar_url": "https://avatars.githubusercontent.com/u/31568400?v=4",
+      "profile": "http://thomascoldwell.dev",
+      "contributions": [
+        "doc"
+      ]
+    },
+    {
+      "login": "alexn-s",
+      "name": "Alex Schumacher",
+      "avatar_url": "https://avatars.githubusercontent.com/u/60710873?v=4",
+      "profile": "https://github.com/alexn-s",
+      "contributions": [
+        "financial"
+      ]
+    },
+    {
+      "login": "ifiokjr",
+      "name": "Ifiok Jr.",
+      "avatar_url": "https://avatars.githubusercontent.com/u/1160934?v=4",
+      "profile": "https://github.com/ifiokjr",
+      "contributions": [
+        "test",
+        "code",
+        "doc"
+      ]
+    },
+    {
+      "login": "Memory-Lane-Games",
+      "name": "Memory-Lane-Games",
+      "avatar_url": "https://avatars.githubusercontent.com/u/63847783?v=4",
+      "profile": "https://github.com/Memory-Lane-Games",
+      "contributions": [
+        "financial"
+      ]
+    },
+    {
+      "login": "bluebill1049",
+      "name": "Bill",
+      "avatar_url": "https://avatars.githubusercontent.com/u/10513364?v=4",
+      "profile": "https://react-hook-form.com",
+      "contributions": [
+        "financial"
       ]
     }
   ],

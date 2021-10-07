@@ -87,6 +87,10 @@ module.exports = {
               label: 'Twitter',
               href: 'https://twitter.com/alexdotjs',
             },
+            {
+              label: 'Discord',
+              href: 'https://trpc.io/discord',
+            },
           ],
         },
         {

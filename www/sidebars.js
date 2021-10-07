@@ -51,7 +51,7 @@ module.exports = {
         'react/queries',
         'react/mutations',
         'react/useInfiniteQuery',
-        'react/invalidateQuery',
+        'react/invalidateQueries',
       ],
     },
     {

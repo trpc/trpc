@@ -4,6 +4,7 @@ import '@testing-library/jest-dom';
 import { expectTypeOf } from 'expect-type';
 import myzod from 'myzod';
 import * as yup from 'yup';
+import * as t from 'superstruct';
 import { z } from 'zod';
 import * as trpc from '../src';
 import { routerToServerAndClient } from './_testHelpers';
@@ -44,6 +45,25 @@ test('zod', async () => {
             }
           ]]
         `);
+  expect(res.input).toBe(123);
+  close();
+});
+
+test('superstruct', async () => {
+  const router = trpc.router().query('num', {
+    input: t.number(),
+    resolve({ input }) {
+      return {
+        input,
+      };
+    },
+  });
+  const { client, close } = routerToServerAndClient(router);
+  const res = await client.query('num', 123);
+
+  await expect(client.query('num', '123' as any)).rejects.toMatchInlineSnapshot(
+    `[TRPCClientError: Expected a number, but received: "123"]`,
+  );
   expect(res.input).toBe(123);
   close();
 });

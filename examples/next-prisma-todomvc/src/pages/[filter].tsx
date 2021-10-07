@@ -211,7 +211,7 @@ export default function TodosPage({
     // doing this here rather than in `onSettled()`
     // to avoid race conditions if you're clicking fast
     if (number === 0) {
-      utils.invalidateQuery(['todo.all']);
+      utils.invalidateQueries('todo.all');
     }
   }, [number, utils]);
   return (
@@ -305,7 +305,7 @@ export default function TodosPage({
             <button
               className="clear-completed"
               onClick={() => {
-                clearCompleted.mutate(null);
+                clearCompleted.mutate();
               }}
             >
               Clear completed

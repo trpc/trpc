@@ -57,6 +57,8 @@ export default function IndexPage() {
         <PostListItem key={item.id} item={item} />
       ))}
 
+      <hr />
+
       <form
         onSubmit={async (e) => {
           e.preventDefault();
@@ -74,7 +76,7 @@ export default function IndexPage() {
           };
           try {
             await addPost.mutateAsync(input);
-            utils.invalidateQuery(['post.all']);
+            utils.invalidateQueries('post.all');
 
             $title.value = '';
             $text.value = '';

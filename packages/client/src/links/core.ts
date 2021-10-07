@@ -46,10 +46,20 @@ export interface HTTPLinkOptions {
 export type HttpLinkOptions = HTTPLinkOptions;
 
 export type HTTPHeaders = Record<string, string | string[] | undefined>;
+
+/**
+ * The default `fetch` implementation has an overloaded signature. By convention this library
+ * only uses the overload taking a string and options object.
+ */
+export type TRPCFetch = (
+  url: string,
+  options?: RequestInit,
+) => Promise<Response>;
+
 export type LinkRuntimeOptions = Readonly<{
   transformer: DataTransformer;
   headers: () => HTTPHeaders | Promise<HTTPHeaders>;
-  fetch: typeof fetch;
+  fetch: TRPCFetch;
   AbortController?: typeof AbortController;
 }>;
 

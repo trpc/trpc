@@ -3,7 +3,7 @@ import { splitLink } from '@trpc/client/links/splitLink';
 import { loggerLink } from '@trpc/client/links/loggerLink';
 import { withTRPC } from '@trpc/next';
 import { AppType } from 'next/dist/shared/lib/utils';
-import { AppRouter } from 'server/routers/app';
+import { AppRouter } from 'server/routers/_app';
 import superjson from 'superjson';
 
 const MyApp: AppType = ({ Component, pageProps }) => {

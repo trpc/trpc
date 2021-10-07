@@ -1,15 +1,13 @@
 ---
 id: mutations
-title: Mutations
-sidebar_label: useMutation
+title: useMutation()
+sidebar_label: useMutation()
 slug: /react-mutations
 ---
 
 > The hooks provided by `@trpc/react` are a thin wrapper around React Query. For in-depth information about options and usage patterns, refer to their docs on [Mutations](https://react-query.tanstack.com/guides/mutations).
 
 Works like react-query's mutations - [see their docs](https://react-query.tanstack.com/guides/mutations).
-
-If you have an optional input argument you'll have to pass `null` or `undefined` as the input - [see this discussion for more details](https://github.com/trpc/trpc/issues/390).
 
 ### Example
 
@@ -48,18 +46,20 @@ import { trpc } from '../utils/trpc';
 
 export function MyComponent() {
   // Note! This is not a tuple ['login', ...] but a string 'login'
-  const login = trpc.useMutation('login');
+  const mutation = trpc.useMutation('login');
 
   const handleLogin = async () => {
     const name = 'John Doe';
 
-    await login.mutateAsync({ name });
+    mutation.mutate({ name });
   };
 
   return (
     <div>
       <h1>Login Form</h1>
-      <button onClick={handleLogin}>Login</button>
+      <button onClick={handleLogin} disabled={mutation.isLoading}>Login</button>
+
+      {mutation.error && <p>Something went wrong! {mutation.error.message}</p>}
     </div>
   );
 }
