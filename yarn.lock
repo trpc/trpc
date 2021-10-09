@@ -3755,6 +3755,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@tootallnate/once@npm:2":
+  version: 2.0.0
+  resolution: "@tootallnate/once@npm:2.0.0"
+  checksum: ad87447820dd3f24825d2d947ebc03072b20a42bfc96cbafec16bff8bbda6c1a81fcb0be56d5b21968560c5359a0af4038a68ba150c3e1694fe4c109a063bed8
+  languageName: node
+  linkType: hard
+
 "@trpc/client@^9.9.1, @trpc/client@workspace:packages/client":
   version: 0.0.0-use.local
   resolution: "@trpc/client@workspace:packages/client"
@@ -4474,6 +4481,15 @@ __metadata:
   bin:
     acorn: bin/acorn
   checksum: 0a8fd264349285aa36194b26a5a9d70c3641e78ad459ec44b9a9a5738e0ce6d86ec120ca2c0f04477165cee912fdeb158f62d6582697185c82278bdbf71187f8
+  languageName: node
+  linkType: hard
+
+"acorn@npm:^8.5.0":
+  version: 8.5.0
+  resolution: "acorn@npm:8.5.0"
+  bin:
+    acorn: bin/acorn
+  checksum: 2e4c1dbed3da327684863debf31d341bf8882c6893c506653872c00977eee45675feb9129255d6c74c88424d2b20d889ca6de5b39776e5e3cccfc756b3ca1da8
   languageName: node
   linkType: hard
 
@@ -6737,14 +6753,14 @@ __metadata:
   languageName: node
   linkType: hard
 
-"data-urls@npm:^3.0.0":
-  version: 3.0.0
-  resolution: "data-urls@npm:3.0.0"
+"data-urls@npm:^3.0.1":
+  version: 3.0.1
+  resolution: "data-urls@npm:3.0.1"
   dependencies:
     abab: ^2.0.3
-    whatwg-mimetype: ^2.3.0
-    whatwg-url: ^9.0.0
-  checksum: ab28cf38a5515238bc74fc84bf955b261e2e085ab8f26192ee6abfbd668c060103d0e460d3732a243b5683695b5691e38857e5e0970c689012851399114f3413
+    whatwg-mimetype: ^3.0.0
+    whatwg-url: ^10.0.0
+  checksum: 00c71280d5d8146a2f19f3fce3ce59c3b860c66cd584f4e7db8764477a9c97966fa06543c9d9d28b762784f50e21c2e2ccb2d0be24b392ec82eb21daf7804b3e
   languageName: node
   linkType: hard
 
@@ -7114,6 +7130,15 @@ __metadata:
   dependencies:
     webidl-conversions: ^5.0.0
   checksum: d638e9cb05c52999f1b2eb87c374b03311ea5b1d69c2f875bc92da73e17db60c12142b45c950228642ff7f845c536b65305483350d080df59003a653da80b691
+  languageName: node
+  linkType: hard
+
+"domexception@npm:^4.0.0":
+  version: 4.0.0
+  resolution: "domexception@npm:4.0.0"
+  dependencies:
+    webidl-conversions: ^7.0.0
+  checksum: ddbc1268edf33a8ba02ccc596735ede80375ee0cf124b30d2f05df5b464ba78ef4f49889b6391df4a04954e63d42d5631c7fcf8b1c4f12bc531252977a5f13d5
   languageName: node
   linkType: hard
 
@@ -9289,6 +9314,15 @@ __metadata:
   languageName: node
   linkType: hard
 
+"html-encoding-sniffer@npm:^3.0.0":
+  version: 3.0.0
+  resolution: "html-encoding-sniffer@npm:3.0.0"
+  dependencies:
+    whatwg-encoding: ^2.0.0
+  checksum: 8d806aa00487e279e5ccb573366a951a9f68f65c90298eac9c3a2b440a7ffe46615aff2995a2f61c6746c639234e6179a97e18ca5ccbbf93d3725ef2099a4502
+  languageName: node
+  linkType: hard
+
 "html-escaper@npm:^2.0.0":
   version: 2.0.2
   resolution: "html-escaper@npm:2.0.2"
@@ -9337,6 +9371,17 @@ __metadata:
     agent-base: 6
     debug: 4
   checksum: c6a5da5a1929416b6bbdf77b1aca13888013fe7eb9d59fc292e25d18e041bb154a8dfada58e223fc7b76b9b2d155a87e92e608235201f77d34aa258707963a82
+  languageName: node
+  linkType: hard
+
+"http-proxy-agent@npm:^5.0.0":
+  version: 5.0.0
+  resolution: "http-proxy-agent@npm:5.0.0"
+  dependencies:
+    "@tootallnate/once": 2
+    agent-base: 6
+    debug: 4
+  checksum: e2ee1ff1656a131953839b2a19cd1f3a52d97c25ba87bd2559af6ae87114abf60971e498021f9b73f9fd78aea8876d1fb0d4656aac8a03c6caa9fc175f22b786
   languageName: node
   linkType: hard
 
@@ -9400,7 +9445,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"iconv-lite@npm:^0.6.2":
+"iconv-lite@npm:0.6.3, iconv-lite@npm:^0.6.2":
   version: 0.6.3
   resolution: "iconv-lite@npm:0.6.3"
   dependencies:
@@ -10929,22 +10974,22 @@ __metadata:
   languageName: node
   linkType: hard
 
-"jsdom@npm:^17.0.0":
-  version: 17.0.0
-  resolution: "jsdom@npm:17.0.0"
+"jsdom@npm:^18.0.0":
+  version: 18.0.0
+  resolution: "jsdom@npm:18.0.0"
   dependencies:
     abab: ^2.0.5
-    acorn: ^8.4.1
+    acorn: ^8.5.0
     acorn-globals: ^6.0.0
     cssom: ^0.5.0
     cssstyle: ^2.3.0
-    data-urls: ^3.0.0
+    data-urls: ^3.0.1
     decimal.js: ^10.3.1
-    domexception: ^2.0.1
+    domexception: ^4.0.0
     escodegen: ^2.0.0
     form-data: ^4.0.0
-    html-encoding-sniffer: ^2.0.1
-    http-proxy-agent: ^4.0.1
+    html-encoding-sniffer: ^3.0.0
+    http-proxy-agent: ^5.0.0
     https-proxy-agent: ^5.0.0
     is-potential-custom-element-name: ^1.0.1
     nwsapi: ^2.2.0
@@ -10953,19 +10998,19 @@ __metadata:
     symbol-tree: ^3.2.4
     tough-cookie: ^4.0.0
     w3c-hr-time: ^1.0.2
-    w3c-xmlserializer: ^2.0.0
-    webidl-conversions: ^6.1.0
-    whatwg-encoding: ^1.0.5
-    whatwg-mimetype: ^2.3.0
-    whatwg-url: ^9.0.0
-    ws: ^8.0.0
-    xml-name-validator: ^3.0.0
+    w3c-xmlserializer: ^3.0.0
+    webidl-conversions: ^7.0.0
+    whatwg-encoding: ^2.0.0
+    whatwg-mimetype: ^3.0.0
+    whatwg-url: ^10.0.0
+    ws: ^8.2.3
+    xml-name-validator: ^4.0.0
   peerDependencies:
     canvas: ^2.5.0
   peerDependenciesMeta:
     canvas:
       optional: true
-  checksum: 4b156517267662b63e43616a03afbbb10c50383e8552d22e695f322ea94b0b33ee61e6401113dd4bacf5b61ac26d94a263296d87cdd8f1a7ab69cf8785f72b88
+  checksum: fb62d696eba2a137e95d8c58aeecbfef29b2909a0039e61fdd32827500a4dcabc89c845d8d74ede8e5b044c714190d9074890525688649e72459ad47935471ca
   languageName: node
   linkType: hard
 
@@ -13754,7 +13799,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"playwright@npm:^1.14.1, playwright@npm:^1.15.1":
+"playwright@npm:^1.14.1":
   version: 1.15.1
   resolution: "playwright@npm:1.15.1"
   dependencies:
@@ -13775,6 +13820,30 @@ __metadata:
   bin:
     playwright: lib/cli/cli.js
   checksum: 62887f473b233f62e89f6574349cec96c61e4d17180019ecd5f7e55b5701bc25e1adb124bf59795d02b82d69e693b96e701f27e6a2d94fb3cc72de9f595b2391
+  languageName: node
+  linkType: hard
+
+"playwright@npm:^1.15.1":
+  version: 1.15.2
+  resolution: "playwright@npm:1.15.2"
+  dependencies:
+    commander: ^6.1.0
+    debug: ^4.1.1
+    extract-zip: ^2.0.1
+    https-proxy-agent: ^5.0.0
+    jpeg-js: ^0.4.2
+    mime: ^2.4.6
+    pngjs: ^5.0.0
+    progress: ^2.0.3
+    proper-lockfile: ^4.1.1
+    proxy-from-env: ^1.1.0
+    rimraf: ^3.0.2
+    stack-utils: ^2.0.3
+    ws: ^7.4.6
+    yazl: ^2.5.1
+  bin:
+    playwright: lib/cli/cli.js
+  checksum: 12138a712c8c351c52413454714cb9dd99dd5924556744054d5908df799f23287d83cf8a89dfc51b329d53c570795ae658d6654c7d1b7a674a2e65e846232401
   languageName: node
   linkType: hard
 
@@ -16511,6 +16580,15 @@ resolve@^2.0.0-next.3:
   languageName: node
   linkType: hard
 
+"tr46@npm:^3.0.0":
+  version: 3.0.0
+  resolution: "tr46@npm:3.0.0"
+  dependencies:
+    punycode: ^2.1.1
+  checksum: 44c3cc6767fb800490e6e9fd64fd49041aa4e49e1f6a012b34a75de739cc9ed3a6405296072c1df8b6389ae139c5e7c6496f659cfe13a04a4bff3a1422981270
+  languageName: node
+  linkType: hard
+
 "tree-kill@npm:^1.2.2":
   version: 1.2.2
   resolution: "tree-kill@npm:1.2.2"
@@ -16564,7 +16642,7 @@ resolve@^2.0.0-next.3:
     eslint-plugin-react-hooks: ^4.2.0
     expect-type: ^0.12.0
     jest: ^27.1.0
-    jsdom: ^17.0.0
+    jsdom: ^18.0.0
     lerna: ^4.0.0
     playwright: ^1.14.1
     prettier: ^2.3.2
@@ -17341,6 +17419,15 @@ typescript@4.4.3:
   languageName: node
   linkType: hard
 
+"w3c-xmlserializer@npm:^3.0.0":
+  version: 3.0.0
+  resolution: "w3c-xmlserializer@npm:3.0.0"
+  dependencies:
+    xml-name-validator: ^4.0.0
+  checksum: 0af8589942eeb11c9fe29eb31a1a09f3d5dd136aea53a9848dfbabff79ac0dd26fe13eb54d330d5555fe27bb50b28dca0715e09f9cc2bfa7670ccc8b7f919ca2
+  languageName: node
+  linkType: hard
+
 "wait-on@npm:6.0.0, wait-on@npm:^6.0.0":
   version: 6.0.0
   resolution: "wait-on@npm:6.0.0"
@@ -17433,6 +17520,13 @@ typescript@4.4.3:
   languageName: node
   linkType: hard
 
+"webidl-conversions@npm:^7.0.0":
+  version: 7.0.0
+  resolution: "webidl-conversions@npm:7.0.0"
+  checksum: f05588567a2a76428515333eff87200fae6c83c3948a7482ebb109562971e77ef6dc49749afa58abb993391227c5697b3ecca52018793e0cb4620a48f10bd21b
+  languageName: node
+  linkType: hard
+
 "whatwg-encoding@npm:^1.0.5":
   version: 1.0.5
   resolution: "whatwg-encoding@npm:1.0.5"
@@ -17442,10 +17536,36 @@ typescript@4.4.3:
   languageName: node
   linkType: hard
 
+"whatwg-encoding@npm:^2.0.0":
+  version: 2.0.0
+  resolution: "whatwg-encoding@npm:2.0.0"
+  dependencies:
+    iconv-lite: 0.6.3
+  checksum: 7087810c410aa9b689cbd6af8773341a53cdc1f3aae2a882c163bd5522ec8ca4cdfc269aef417a5792f411807d5d77d50df4c24e3abb00bb60192858a40cc675
+  languageName: node
+  linkType: hard
+
 "whatwg-mimetype@npm:^2.3.0":
   version: 2.3.0
   resolution: "whatwg-mimetype@npm:2.3.0"
   checksum: 23eb885940bcbcca4ff841c40a78e9cbb893ec42743993a42bf7aed16085b048b44b06f3402018931687153550f9a32d259dfa524e4f03577ab898b6965e5383
+  languageName: node
+  linkType: hard
+
+"whatwg-mimetype@npm:^3.0.0":
+  version: 3.0.0
+  resolution: "whatwg-mimetype@npm:3.0.0"
+  checksum: ce08bbb36b6aaf64f3a84da89707e3e6a31e5ab1c1a2379fd68df79ba712a4ab090904f0b50e6693b0dafc8e6343a6157e40bf18fdffd26e513cf95ee2a59824
+  languageName: node
+  linkType: hard
+
+"whatwg-url@npm:^10.0.0":
+  version: 10.0.0
+  resolution: "whatwg-url@npm:10.0.0"
+  dependencies:
+    tr46: ^3.0.0
+    webidl-conversions: ^7.0.0
+  checksum: a21ec309c5cc743fe9414509408bedf65eaf0fb5c17ac66baa08ef12fce16da4dd30ce90abefbd5a716408301c58a73666dabfd5042cf4242992eb98b954f861
   languageName: node
   linkType: hard
 
@@ -17468,16 +17588,6 @@ typescript@4.4.3:
     tr46: ^2.1.0
     webidl-conversions: ^6.1.0
   checksum: a87abcc6cefcece5311eb642858c8fdb234e51ec74196bfacf8def2edae1bfbffdf6acb251646ed6301f8cee44262642d8769c707256125a91387e33f405dd1e
-  languageName: node
-  linkType: hard
-
-"whatwg-url@npm:^9.0.0":
-  version: 9.1.0
-  resolution: "whatwg-url@npm:9.1.0"
-  dependencies:
-    tr46: ^2.1.0
-    webidl-conversions: ^6.1.0
-  checksum: cfee81bb7f87036e1151da15cefd3076fa97a4a4a658c4b58f6e74891acf25f180aa955e761cda77995f6e260b8dc3c4326ebc83d539ed978a50062c6b3bd0d1
   languageName: node
   linkType: hard
 
@@ -17694,7 +17804,7 @@ typescript@4.4.3:
   languageName: node
   linkType: hard
 
-"ws@npm:^8.0.0":
+"ws@npm:^8.0.0, ws@npm:^8.2.3":
   version: 8.2.3
   resolution: "ws@npm:8.2.3"
   peerDependencies:
@@ -17720,6 +17830,13 @@ typescript@4.4.3:
   version: 3.0.0
   resolution: "xml-name-validator@npm:3.0.0"
   checksum: b3ac459afed783c285bb98e4960bd1f3ba12754fd4f2320efa0f9181ca28928c53cc75ca660d15d205e81f92304419afe94c531c7cfb3e0649aa6d140d53ecb0
+  languageName: node
+  linkType: hard
+
+"xml-name-validator@npm:^4.0.0":
+  version: 4.0.0
+  resolution: "xml-name-validator@npm:4.0.0"
+  checksum: af100b79c29804f05fa35aa3683e29a321db9b9685d5e5febda3fa1e40f13f85abc40f45a6b2bf7bee33f68a1dc5e8eaef4cec100a304a9db565e6061d4cb5ad
   languageName: node
   linkType: hard
 
