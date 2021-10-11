@@ -39,10 +39,13 @@ export const postRouter = createRouter()
     },
   })
   .query('byId', {
-    input: z.string(),
+    input: z.object({
+      id: z.string(),
+    }),
     async resolve({ ctx, input }) {
+      const { id } = input;
       const post = await ctx.prisma.post.findUnique({
-        where: { id: input },
+        where: { id },
         select: {
           id: true,
           title: true,
