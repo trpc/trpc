@@ -9,7 +9,7 @@ slug: /ssr
 
 ### Configure `_app.tsx` for SSR
 
-Server-side rendering comes with additional considerations. In order to execute queries properly during the server-side render step and customize caching behavior, we'll might want to add some extra logic inside our `_app.tsx`:
+Server-side rendering comes with additional considerations. In order to execute queries properly during the server-side render step and customize caching behavior, we might want to add some extra logic inside our `_app.tsx`:
 
 ```tsx
 import React from 'react';
