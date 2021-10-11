@@ -5,9 +5,11 @@ sidebar_label: Server-Side Rendering (SSR)
 slug: /ssr
 ---
 
+> The only thing you need to do to get SSR on your application is to set `ssr: true` in your `_app.tsx`, but it comes with some additional considerations.
+
 ### Configure `_app.tsx` for SSR
 
-Server-side rendering comes with additional considerations. In order to execute queries properly during the server-side render step and customize caching behavior, we'll need to add some logic inside our `_app.tsx`:
+Server-side rendering comes with additional considerations. In order to execute queries properly during the server-side render step and customize caching behavior, we'll might want to add some extra logic inside our `_app.tsx`:
 
 ```tsx
 import React from 'react';
