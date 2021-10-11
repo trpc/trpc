@@ -22,6 +22,8 @@ export default function PostViewPage() {
   return (
     <>
       <h1>{data.title}</h1>
+      <em>Created {data.createdAt.toLocaleDateString()}</em>
+
       <p>{data.text}</p>
 
       <h2>Raw data:</h2>

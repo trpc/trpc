@@ -50,6 +50,8 @@ export const postRouter = createRouter()
           id: true,
           title: true,
           text: true,
+          createdAt: true,
+          updatedAt: true,
         },
       });
       if (!post) {
