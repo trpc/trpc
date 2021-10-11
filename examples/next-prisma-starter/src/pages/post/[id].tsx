@@ -19,9 +19,6 @@ export default function PostViewPage() {
     return <>Loading...</>;
   }
   const { data } = postQuery;
-  if (!data) {
-    return <>No post found :(</>;
-  }
   return (
     <>
       <h1>{data.title}</h1>
