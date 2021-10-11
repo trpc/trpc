@@ -12167,9 +12167,9 @@ superjson@^1.7.4:
     lodash.clonedeep "^4.5.0"
 
 superstruct@^0.15.2:
-  version "0.15.2"
-  resolved "https://registry.yarnpkg.com/superstruct/-/superstruct-0.15.2.tgz#ab7fb84c455a9d7da84c11cfd82c85a4fee9dfff"
-  integrity sha512-OsJI8lv6/PsInwCf4ultejmsJYseYshKhkcbDendqNwj3MeGXENajl3ujMGMU4FDDSSeJTOwFn9T6pnfsS9DYA==
+  version "0.15.3"
+  resolved "https://registry.yarnpkg.com/superstruct/-/superstruct-0.15.3.tgz#07edfc715259ebfe3b4b2e4cb53e8e45b51674a4"
+  integrity sha512-wilec1Rg3FtKuRjRyCt70g5W29YUEuaLnybdVQUI+VQ7m0bw8k7TzrRv5iYmo6IpjLVrwxP5t3RgjAVqhYh4Fg==
 
 supports-color@^2.0.0:
   version "2.0.0"
