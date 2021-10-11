@@ -23,12 +23,13 @@ const MyApp: AppType = ({ Component, pageProps }) => {
 
 export default withTRPC<AppRouter>({
   config({ ctx }) {
-    // during SSR rendering
-    if (typeof window === 'undefined') {
+    if (process.browser) {
+      // during client requests
       return {
         url: '/api/trpc',
       };
     }
+    // during SSR below
 
     // optional: use SSG-caching for each rendered page (see caching section for more details)
     const ONE_DAY_SECONDS = 60 * 60 * 24;
