@@ -2992,9 +2992,9 @@
     "@types/react" "*"
 
 "@types/react@*", "@types/react@^17.0.20":
-  version "17.0.27"
-  resolved "https://registry.yarnpkg.com/@types/react/-/react-17.0.27.tgz#6498ed9b3ad117e818deb5525fa1946c09f2e0e6"
-  integrity sha512-zgiJwtsggVGtr53MndV7jfiUESTqrbxOcBvwfe6KS/9bzaVPCTDieTWnFNecVNx6EAaapg5xsLLWFfHHR437AA==
+  version "17.0.29"
+  resolved "https://registry.yarnpkg.com/@types/react/-/react-17.0.29.tgz#9535f3fc01a4981ce9cadcf0daa2593c0c2f2251"
+  integrity sha512-HSenIfBEBZ70BLrrVhtEtHpqaP79waauPtA8XKlczTxL3hXrW/ElGNLTpD1TmqkykgGlOAK55+D3SmUHEirpFw==
   dependencies:
     "@types/prop-types" "*"
     "@types/scheduler" "*"
@@ -13472,9 +13472,9 @@ yocto-queue@^0.1.0:
   integrity sha512-rVksvsnNCdJ/ohGc6xgPwyN8eheCxsiLM8mxuE/t/mOVqJewPuO1miLpTHQiRgTKCLexL4MeAFVagts7HmNZ2Q==
 
 yup@^0.32.8:
-  version "0.32.10"
-  resolved "https://registry.yarnpkg.com/yup/-/yup-0.32.10.tgz#b8809bb9a5c4782672b86651cae41adef1decbb8"
-  integrity sha512-xRZnd0EEXz+zNQ3mIN5p5r9FbSeK811oKXT3SKU+yml0NiqEd5qj+Roy37kkMYVaOM6TTQs/D/sfWHS/JxXeTg==
+  version "0.32.11"
+  resolved "https://registry.yarnpkg.com/yup/-/yup-0.32.11.tgz#d67fb83eefa4698607982e63f7ca4c5ed3cf18c5"
+  integrity sha512-Z2Fe1bn+eLstG8DRR6FTavGD+MeAwyfmouhHsIUgaADz8jvFKbO/fXc2trJKZg+5EBjh4gGm3iU/t3onKlXHIg==
   dependencies:
     "@babel/runtime" "^7.15.4"
     "@types/lodash" "^4.14.175"
