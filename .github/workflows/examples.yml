@@ -15,6 +15,7 @@ jobs:
             next-prisma-starter-websockets,
             next-prisma-todomvc,
             standalone-server,
+            nuxt,
           ]
         node: ['14.x']
         os: [ubuntu-latest]
@@ -51,5 +52,8 @@ jobs:
       - name: if exists, run yarn lint
         run: cd examples/${{ matrix.dir }} && cat package.json | if grep --silent '"lint"'; then yarn lint; fi
       - run: yarn --cwd examples/${{ matrix.dir }} build
-      - run: yarn --cwd examples/${{ matrix.dir }} test-start
-      - run: yarn --cwd examples/${{ matrix.dir }} test-dev
+      - name: if exists, run yarn test-start
+        run: cd examples/${{ matrix.dir }} && cat package.json | if grep --silent '"test-start"'; then yarn lint; fi
+      - run: yarn --cwd examples/${{ matrix.dir }} build
+      - name: if exists, run yarn test-dev
+        run: cd examples/${{ matrix.dir }} && cat package.json | if grep --silent '"test-dev"'; then yarn lint; fi
