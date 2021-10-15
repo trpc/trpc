@@ -99,8 +99,7 @@ Here's some example apps:
       <td><em>n/a</em></td>
       <td>
         <ul>
-          <!-- <li><a href="https://codesandbox.io/s/github/trpc/trpc/tree/main/examples/nuxt?file=/app.vue">CodeSandbox</a></li> -->
-          <li><a href="https://github.com/trpc/trpc/tree/main/examples/next-prisma-todomvc">Source</a></li>
+          <li><a href="https://github.com/trpc/trpc/tree/main/examples/nuxt">Source</a></li>
         </ul>
       </td>
     </tr>
