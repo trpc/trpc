@@ -9,9 +9,9 @@
 
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { client } from './lib/client'
 
 const data = await $fetch('/api/hello')
-const firstPost = await client.query('post.byId', 1)
+const firstPost = await client.query('post.byId', { id: 1 })
 </script>
