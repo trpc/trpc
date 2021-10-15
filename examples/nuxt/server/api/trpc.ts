@@ -5,7 +5,7 @@ import {
 
 import { IncomingMessage, ServerResponse } from 'http';
 import { createContext } from '../context';
-import { appRouter } from '~~/server/routers/_app';
+import { appRouter } from '../routers/_app';
 
 export type CreateHTTPContextOptions = NodeHTTPCreateContextFnOptions<
   IncomingMessage,
