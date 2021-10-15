@@ -10,6 +10,5 @@
 <script setup lang="ts">
   import { client } from './lib/client'
 
-  const data = await $fetch('/api/hello')
   const posts = await client.query('post.all')
 </script>
