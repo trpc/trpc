@@ -88,6 +88,23 @@ Here's some example apps:
       </td>
     </tr>
     <tr>
+      <td>
+        Nuxt.js Example
+        <br/><br/>
+        <details>
+          <summary>Quick start with <code>git clone</code></summary>
+          <code>git clone https://github.com/trpc/examples-nuxt trpc-nuxt && cd trpc-nuxt && yarn && yarn dev</code>
+        </details>
+      </td>
+      <td><em>n/a</em></td>
+      <td>
+        <ul>
+          <!-- <li><a href="https://codesandbox.io/s/github/trpc/trpc/tree/main/examples/nuxt?file=/app.vue">CodeSandbox</a></li> -->
+          <li><a href="https://github.com/trpc/trpc/tree/main/examples/next-prisma-todomvc">Source</a></li>
+        </ul>
+      </td>
+    </tr>
+    <tr>
       <td>Vanilla standalone server &amp; procedure calls with node.js</td>
       <td><em>n/a</em></td>
       <td>

@@ -32,7 +32,7 @@ tRPC allows you to easily build & consume fully typesafe APIs, without schemas o
 - 🐎&nbsp; Snappy DX. No code generation, run-time bloat, or build pipeline.
 - 🍃&nbsp; Light. tRPC has zero deps and a tiny client-side footprint.
 - 🐻&nbsp; Easy to add to your existing brownfield project.
-- 🔋&nbsp; Batteries included. React-library + Next.js/Express adapters. _(But tRPC is not tied to React - [reach out](https://twitter.com/alexdotjs) if you want to make a Svelte/Vue/... lib)_
+- 🔋&nbsp; Batteries included. React-library + Next.js/Express adapters/Nuxt. _(But tRPC is not tied to React - [reach out](https://twitter.com/alexdotjs) if you want to make a Svelte/... lib)_
 - 🥃&nbsp; Simple to use APIs for queries, mutations, & subscriptions support.
 - ⚡️&nbsp; Request batching - requests made at the same time can be automatically combined into one
 
@@ -49,6 +49,8 @@ tRPC allows you to easily build & consume fully typesafe APIs, without schemas o
 
 - [Intro](#intro)
 - [Usage](#usage)
+  - [Next.js](#nextjs)
+  - [Nuxt.js](#nuxtjs)
 - [Core Team](#core-team)
 - [Financial Contributors](#financial-contributors)
   - [🥉 Bronze Sponsors](#-bronze-sponsors)
@@ -61,11 +63,17 @@ tRPC allows you to easily build & consume fully typesafe APIs, without schemas o
 **👉  See full documentation documentation on [tRPC.io](https://trpc.io/docs). 👈**
 
 
+### Next.js
+
 **Quick start with a full-stack Next.js example:**
 
 ```sh
 npx create-next-app --example https://github.com/trpc/trpc --example-path examples/next-prisma-starter trpc-prisma-starter
 ```
+
+### Nuxt.js
+
+**Quick start with a full-stack Nuxt.js example:**
 
 ## Core Team
 
