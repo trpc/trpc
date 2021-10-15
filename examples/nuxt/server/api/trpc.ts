@@ -1,4 +1,4 @@
-import nodeHTTP from '@trpc/server/adapters/node-http';
+import * as nodeHTTP from '@trpc/server/adapters/node-http';
 
 import { IncomingMessage, ServerResponse } from 'http';
 import { createContext } from '../context';
