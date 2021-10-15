@@ -1,7 +1,7 @@
 import {
   NodeHTTPCreateContextFnOptions,
   nodeHTTPRequestHandler,
-} from '@trpc/server/adapters/node-http';
+} from '@trpc/server/adapters/node-http/dist/trpc-server-adapters-node-http.cjs.js';
 
 import { IncomingMessage, ServerResponse } from 'http';
 import { createContext } from '../context';
@@ -19,7 +19,7 @@ export default async function trpcHandler(
   if (!req.url) {
     throw new Error('Something wrong');
   }
-  const path = req.url.substr('/trpc/'.length);
+  const path = req.url.substr('/'.length);
   console.log({ path });
   await nodeHTTPRequestHandler({
     router: appRouter,
