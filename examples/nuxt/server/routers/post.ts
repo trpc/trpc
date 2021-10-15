@@ -1,24 +1,27 @@
-/**
- *
- * This is an example router, you can delete this file and then update `../pages/api/trpc/[trpc].tsx`
- */
-
-import { createRouter } from 'server/createRouter';
 import { z } from 'zod';
-import { TRPCError } from '@trpc/server';
+import { createRouter } from '../createRouter';
 
+let idx = 0;
+const posts = [
+  {
+    id: ++idx,
+    title: 'Hello',
+    text: 'Nuxt + tRPC',
+  },
+];
 export const postRouter = createRouter()
   // create
   .mutation('add', {
     input: z.object({
-      id: z.string().uuid().optional(),
       title: z.string().min(1).max(32),
       text: z.string().min(1),
     }),
     async resolve({ ctx, input }) {
-      const post = await ctx.prisma.post.create({
-        data: input,
-      });
+      const post = {
+        id: ++idx,
+        ...input,
+      };
+      posts.push(post);
       return post;
     },
   })
@@ -30,54 +33,19 @@ export const postRouter = createRouter()
        * @link https://trpc.io/docs/useInfiniteQuery
        */
 
-      return ctx.prisma.post.findMany({
-        select: {
-          id: true,
-          title: true,
-        },
-      });
+      return posts;
     },
   })
   .query('byId', {
     input: z.object({
-      id: z.string(),
+      id: z.number(),
     }),
     async resolve({ ctx, input }) {
       const { id } = input;
-      const post = await ctx.prisma.post.findUnique({
-        where: { id },
-        select: {
-          id: true,
-          title: true,
-          text: true,
-          createdAt: true,
-          updatedAt: true,
-        },
-      });
-      return post;
-    },
-  })
-  .mutation('edit', {
-    input: z.object({
-      id: z.string().uuid(),
-      data: z.object({
-        title: z.string().min(1).max(32).optional(),
-        text: z.string().min(1).optional(),
-      }),
-    }),
-    async resolve({ ctx, input }) {
-      const { id, data } = input;
-      const post = await ctx.prisma.post.update({
-        where: { id },
-        data,
-      });
-      return post;
+      return posts.find((post) => post.id === id);
     },
   })
   .mutation('delete', {
     input: z.string().uuid(),
-    async resolve({ input: id, ctx }) {
-      await ctx.prisma.post.delete({ where: { id } });
-      return id;
-    },
+    async resolve({ input: id, ctx }) {},
   });
