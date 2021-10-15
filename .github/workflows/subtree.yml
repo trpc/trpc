@@ -15,6 +15,7 @@ jobs:
             #
             next-prisma-starter,
             next-prisma-starter-websockets,
+            nuxt,
           ]
 
     name: Update downstream ${{ matrix.path }} package
