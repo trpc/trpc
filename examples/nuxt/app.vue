@@ -1,17 +1,15 @@
 <template>
-  <div>
-    {{ data }}
-  </div>
-  <article>
-    <h2>{{ firstPost.title }}</h2>
-    {{ firstPost.text }}
-  </article>
-
+  <h1>Posts</h1>
+  <ul>
+    <li v-for="post in posts" :key="post.id">
+      {{ post.title }}
+    </li>
+  </ul>
 </template>
 
 <script setup lang="ts">
-import { client } from './lib/client'
+  import { client } from './lib/client'
 
-const data = await $fetch('/api/hello')
-const firstPost = await client.query('post.byId', { id: 1 })
+  const data = await $fetch('/api/hello')
+  const posts = await client.query('post.all')
 </script>

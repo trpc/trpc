@@ -2,7 +2,7 @@ import { z } from 'zod';
 import { createRouter } from '../createRouter';
 
 let idx = 0;
-const posts = [
+const postsDb = [
   {
     id: ++idx,
     title: 'Hello',
@@ -21,19 +21,14 @@ export const postRouter = createRouter()
         id: ++idx,
         ...input,
       };
-      posts.push(post);
+      postsDb.push(post);
       return post;
     },
   })
   // read
   .query('all', {
     async resolve({ ctx }) {
-      /**
-       * For pagination you can have a look at this docs site
-       * @link https://trpc.io/docs/useInfiniteQuery
-       */
-
-      return posts;
+      return postsDb;
     },
   })
   .query('byId', {
@@ -42,7 +37,7 @@ export const postRouter = createRouter()
     }),
     async resolve({ ctx, input }) {
       const { id } = input;
-      return posts.find((post) => post.id === id);
+      return postsDb.find((post) => post.id === id);
     },
   })
   .mutation('delete', {
@@ -51,9 +46,9 @@ export const postRouter = createRouter()
     }),
     async resolve({ input, ctx }) {
       const { id } = input;
-      const index = posts.findIndex((post) => post.id === id);
+      const index = postsDb.findIndex((post) => post.id === id);
       if (index > -1) {
-        posts.slice(index);
+        postsDb.slice(index);
       }
       return {
         id,

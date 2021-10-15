@@ -3,6 +3,8 @@
     "yzhang.markdown-all-in-one",
     "esbenp.prettier-vscode",
     "dbaeumer.vscode-eslint",
-    "bungcip.better-toml"
+    "bungcip.better-toml",
+    "jcbuisson.vue",
+    "johnsoncodehk.volar"
   ]
 }
