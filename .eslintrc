@@ -24,6 +24,12 @@
       "rules": {
         "@typescript-eslint/no-unused-vars": "off"
       }
+    },
+    {
+      "files": "examples/nuxt/*.d.ts",
+      "rules": {
+        "@typescript-eslint/triple-slash-reference": "off"
+      }
     }
   ],
   "settings": {
