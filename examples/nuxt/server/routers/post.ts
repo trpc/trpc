@@ -46,6 +46,17 @@ export const postRouter = createRouter()
     },
   })
   .mutation('delete', {
-    input: z.string().uuid(),
-    async resolve({ input: id, ctx }) {},
+    input: z.object({
+      id: z.number(),
+    }),
+    async resolve({ input, ctx }) {
+      const { id } = input;
+      const index = posts.findIndex((post) => post.id === id);
+      if (index > -1) {
+        posts.slice(index);
+      }
+      return {
+        id,
+      };
+    },
   });
