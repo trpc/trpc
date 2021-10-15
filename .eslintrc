@@ -10,6 +10,7 @@
     "ecmaVersion": 2018, // Allows for the parsing of modern ECMAScript features
     "sourceType": "module" // Allows for the use of imports
   },
+  "ignorePatterns": ["**/nuxt.d.ts"],
   "rules": {
     // Place to specify ESLint rules. Can be used to overwrite rules specified from the extended configs
     "@typescript-eslint/explicit-function-return-type": "off",
@@ -23,12 +24,6 @@
       "files": ["examples/**/*"],
       "rules": {
         "@typescript-eslint/no-unused-vars": "off"
-      }
-    },
-    {
-      "files": "examples/nuxt/*.d.ts",
-      "rules": {
-        "@typescript-eslint/triple-slash-reference": "off"
       }
     }
   ],
