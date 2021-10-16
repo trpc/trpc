@@ -9,5 +9,3 @@ export * from './types';
 export * from './deprecated/createHttpServer';
 export * from './deprecated/requestHandler';
 export * from './deprecated/LegacyRouter';
-
-export * from './adapters';

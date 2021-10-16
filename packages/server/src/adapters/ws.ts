@@ -1,5 +1,5 @@
 import http from 'http';
-import type ws from 'ws';
+import ws from 'ws';
 import { BaseHandlerOptions } from '../internals/BaseHandlerOptions';
 import { callProcedure } from '../internals/callProcedure';
 import { getErrorFromUnknown } from '../internals/errors';

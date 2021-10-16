@@ -39,18 +39,18 @@ export type OutputWithCursor<TData, TCursor extends any = any> = {
   data: TData;
 };
 
-export interface TRPCUseQueryBaseOptions extends TRPCRequestOptions {
+interface TRPCUseQueryBaseOptions extends TRPCRequestOptions {
   /**
    * Opt out of SSR for this query by passing `ssr: false`
    */
   ssr?: boolean;
 }
 
-export interface UseTRPCQueryOptions<TPath, TInput, TOutput, TError>
+interface UseTRPCQueryOptions<TPath, TInput, TOutput, TError>
   extends UseQueryOptions<TOutput, TError, TOutput, [TPath, TInput]>,
     TRPCUseQueryBaseOptions {}
 
-export interface UseTRPCInfiniteQueryOptions<TPath, TInput, TOutput, TError>
+interface UseTRPCInfiniteQueryOptions<TPath, TInput, TOutput, TError>
   extends UseInfiniteQueryOptions<
       TOutput,
       TError,
@@ -60,7 +60,7 @@ export interface UseTRPCInfiniteQueryOptions<TPath, TInput, TOutput, TError>
     >,
     TRPCUseQueryBaseOptions {}
 
-export interface UseTRPCMutationOptions<TInput, TError, TOutput>
+interface UseTRPCMutationOptions<TInput, TError, TOutput>
   extends UseMutationOptions<TOutput, TError, TInput>,
     TRPCUseQueryBaseOptions {}
 
