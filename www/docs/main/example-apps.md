@@ -89,7 +89,7 @@ Here's some example apps:
     </tr>
     <tr>
       <td>
-        Nuxt Example
+        Nuxt.js (Vue) Example
         <br/><br/>
         <details>
           <summary>Quick start with <code>git clone</code></summary>
