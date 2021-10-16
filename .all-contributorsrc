@@ -272,6 +272,24 @@
       "contributions": [
         "financial"
       ]
+    },
+    {
+      "login": "keenahn",
+      "name": "Keenahn Tiberius Jung",
+      "avatar_url": "https://avatars.githubusercontent.com/u/283603?v=4",
+      "profile": "http://about.me/keenahn",
+      "contributions": [
+        "code"
+      ]
+    },
+    {
+      "login": "danielroe",
+      "name": "Daniel Roe",
+      "avatar_url": "https://avatars.githubusercontent.com/u/28706372?v=4",
+      "profile": "https://roe.dev",
+      "contributions": [
+        "code"
+      ]
     }
   ],
   "contributorsPerLine": 7,
