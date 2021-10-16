@@ -31,34 +31,50 @@
     "./package.json": "./package.json",
     ".": {
       "types": "./dist/trpc-server.cjs.d.ts",
+      "module": "./dist/trpc-server.esm.js",
+      "import": "./dist/trpc-server.esm.js",
       "default": "./dist/trpc-server.cjs.js"
     },
     "./adapters/express": {
       "types": "./adapters/express/dist/trpc-server-adapters-express.cjs.d.ts",
+      "module": "./adapters/express/dist/trpc-server-adapters-express.esm.js",
+      "import": "./adapters/express/dist/trpc-server-adapters-express.esm.js",
       "default": "./adapters/express/dist/trpc-server-adapters-express.cjs.js"
     },
     "./adapters/next": {
       "types": "./adapters/next/dist/trpc-server-adapters-next.cjs.d.ts",
+      "module": "./adapters/next/dist/trpc-server-adapters-next.esm.js",
+      "import": "./adapters/next/dist/trpc-server-adapters-next.esm.js",
       "default": "./adapters/next/dist/trpc-server-adapters-next.cjs.js"
     },
     "./adapters/node-http": {
       "types": "./adapters/node-http/dist/trpc-server-adapters-node-http.cjs.d.ts",
+      "module": "./adapters/node-http/dist/trpc-server-adapters-node-http.esm.js",
+      "import": "./adapters/node-http/dist/trpc-server-adapters-node-http.esm.js",
       "default": "./adapters/node-http/dist/trpc-server-adapters-node-http.cjs.js"
     },
     "./adapters/standalone": {
       "types": "./adapters/standalone/dist/trpc-server-adapters-standalone.cjs.d.ts",
+      "module": "./adapters/standalone/dist/trpc-server-adapters-standalone.esm.js",
+      "import": "./adapters/standalone/dist/trpc-server-adapters-standalone.esm.js",
       "default": "./adapters/standalone/dist/trpc-server-adapters-standalone.cjs.js"
     },
     "./adapters/ws": {
       "types": "./adapters/ws/dist/trpc-server-adapters-ws.cjs.d.ts",
+      "module": "./adapters/ws/dist/trpc-server-adapters-ws.esm.js",
+      "import": "./adapters/ws/dist/trpc-server-adapters-ws.esm.js",
       "default": "./adapters/ws/dist/trpc-server-adapters-ws.cjs.js"
     },
     "./rpc": {
       "types": "./rpc/dist/trpc-server-rpc.cjs.d.ts",
+      "module": "./rpc/dist/trpc-server-rpc.esm.js",
+      "import": "./rpc/dist/trpc-server-rpc.esm.js",
       "default": "./rpc/dist/trpc-server-rpc.cjs.js"
     },
     "./ws": {
       "types": "./ws/dist/trpc-server-ws.cjs.d.ts",
+      "module": "./ws/dist/trpc-server-ws.esm.js",
+      "import": "./ws/dist/trpc-server-ws.esm.js",
       "default": "./ws/dist/trpc-server-ws.cjs.js"
     }
   },
