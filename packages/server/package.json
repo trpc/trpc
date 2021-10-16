@@ -23,8 +23,8 @@
       "adapters/node-http/index.ts",
       "adapters/standalone.ts",
       "adapters/ws.ts",
-      "ws/index.ts",
-      "rpc/index.ts"
+      "rpc/index.ts",
+      "ws/index.ts"
     ]
   },
   "scripts": {
@@ -33,6 +33,17 @@
   "main": "dist/trpc-server.cjs.js",
   "module": "dist/trpc-server.esm.js",
   "typings": "dist/trpc-server.cjs.d.ts",
+  "exports": {
+    "./package.json": "./package.json",
+    ".": "./dist/trpc-server.cjs.js",
+    "./adapters/express": "./adapters/express/dist/trpc-server-adapters-express.cjs.js",
+    "./adapters/next": "./adapters/next/dist/trpc-server-adapters-next.cjs.js",
+    "./adapters/node-http": "./adapters/node-http/dist/trpc-server-adapters-node-http.cjs.js",
+    "./adapters/standalone": "./adapters/standalone/dist/trpc-server-adapters-standalone.cjs.js",
+    "./adapters/ws": "./adapters/ws/dist/trpc-server-adapters-ws.cjs.js",
+    "./rpc": "./rpc/dist/trpc-server-rpc.cjs.js",
+    "./ws": "./ws/dist/trpc-server-ws.cjs.js"
+  },
   "files": [
     "README.md",
     "dist",
