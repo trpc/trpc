@@ -1,14 +1,11 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
-import {
-  NodeHTTPCreateContextFnOptions,
-  nodeHTTPRequestHandler,
-} from '@trpc/server/adapters/node-http/dist/trpc-server-adapters-node-http.cjs.js';
+import * as nodeHTTP from '@trpc/server/adapters/node-http';
 import * as url from 'url';
 import { IncomingMessage, ServerResponse } from 'http';
 import { createContext } from '../context';
 import { appRouter } from '../routers/_app';
 
-export type CreateHTTPContextOptions = NodeHTTPCreateContextFnOptions<
+export type CreateHTTPContextOptions = nodeHTTP.NodeHTTPCreateContextFnOptions<
   IncomingMessage,
   ServerResponse
 >;
@@ -21,7 +18,7 @@ export default async function trpcHandler(
 
   const path = parts.pathname!.substr(1);
 
-  await nodeHTTPRequestHandler({
+  await nodeHTTP.nodeHTTPRequestHandler({
     router: appRouter,
     req,
     res,
