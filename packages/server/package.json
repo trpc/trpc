@@ -27,12 +27,6 @@
       "ws/index.ts"
     ]
   },
-  "scripts": {
-    "test": "jest"
-  },
-  "main": "dist/trpc-server.cjs.js",
-  "module": "dist/trpc-server.esm.js",
-  "typings": "dist/trpc-server.cjs.d.ts",
   "exports": {
     "./package.json": "./package.json",
     ".": "./dist/trpc-server.cjs.js",
@@ -44,6 +38,12 @@
     "./rpc": "./rpc/dist/trpc-server-rpc.cjs.js",
     "./ws": "./ws/dist/trpc-server-ws.cjs.js"
   },
+  "scripts": {
+    "test": "jest"
+  },
+  "main": "dist/trpc-server.cjs.js",
+  "module": "dist/trpc-server.esm.js",
+  "typings": "dist/trpc-server.cjs.d.ts",
   "files": [
     "README.md",
     "dist",
