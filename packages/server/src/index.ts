@@ -10,4 +10,4 @@ export * from './deprecated/createHttpServer';
 export * from './deprecated/requestHandler';
 export * from './deprecated/LegacyRouter';
 
-export * as adapters from './adapters';
+export * from './adapters';

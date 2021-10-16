@@ -1,5 +1,5 @@
-export * as express from './express';
-export * as nextjs from './next';
-export * as standalone from './standalone';
-export * as ws from './ws';
-export * as nodeHTTP from './node-http';
+export * as expressAdapter from './express';
+export * as nextjsAdapter from './next';
+export * as standaloneAdapter from './standalone';
+export * as wsAdapter from './ws';
+export * as nodeHTTPAdapter from './node-http';
