@@ -178,6 +178,9 @@ npx create-next-app --example https://github.com/trpc/trpc --example-path exampl
     <td align="center"><a href="http://about.me/keenahn"><img src="https://avatars.githubusercontent.com/u/283603?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Keenahn Tiberius Jung</b></sub></a><br /><a href="https://github.com/trpc/trpc/commits?author=keenahn" title="Code">💻</a></td>
     <td align="center"><a href="https://roe.dev"><img src="https://avatars.githubusercontent.com/u/28706372?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Daniel Roe</b></sub></a><br /><a href="https://github.com/trpc/trpc/commits?author=danielroe" title="Code">💻</a></td>
   </tr>
+  <tr>
+    <td align="center"><a href="https://github.com/sachinraja"><img src="https://avatars.githubusercontent.com/u/58836760?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Sachin Raja</b></sub></a><br /><a href="https://github.com/trpc/trpc/pulls?q=is%3Apr+reviewed-by%3Asachinraja" title="Reviewed Pull Requests">👀</a> <a href="#ideas-sachinraja" title="Ideas, Planning, & Feedback">🤔</a></td>
+  </tr>
 </table>
 
 <!-- markdownlint-restore -->
