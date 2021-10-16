@@ -13,12 +13,21 @@
   "preconstruct": {
     "entrypoints": [
       "index.ts",
-      "links/httpLink.ts",
       "links/httpBatchLink.ts",
-      "links/splitLink.ts",
+      "links/httpLink.ts",
       "links/loggerLink.ts",
+      "links/splitLink.ts",
       "links/wsLink.ts"
     ]
+  },
+  "exports": {
+    "./package.json": "./package.json",
+    ".": "./dist/trpc-client.cjs.js",
+    "./links/httpBatchLink": "./links/httpBatchLink/dist/trpc-client-links-httpBatchLink.cjs.js",
+    "./links/httpLink": "./links/httpLink/dist/trpc-client-adapters-express.cjs.js",
+    "./links/loggerLink": "./links/loggerLink/dist/trpc-client-links-loggerLink.cjs.js",
+    "./links/splitLink": "./links/splitLink/dist/trpc-client-links-splitLink.cjs.js",
+    "./links/wsLink": "./links/wsLink/dist/trpc-client-adapters-wsLink.cjs.js"
   },
   "scripts": {},
   "main": "dist/trpc-client.cjs.js",
