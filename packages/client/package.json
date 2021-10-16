@@ -22,12 +22,30 @@
   },
   "exports": {
     "./package.json": "./package.json",
-    ".": "./dist/trpc-client.cjs.js",
-    "./links/httpBatchLink": "./links/httpBatchLink/dist/trpc-client-links-httpBatchLink.cjs.js",
-    "./links/httpLink": "./links/httpLink/dist/trpc-client-links-httpLink.cjs.js",
-    "./links/loggerLink": "./links/loggerLink/dist/trpc-client-links-loggerLink.cjs.js",
-    "./links/splitLink": "./links/splitLink/dist/trpc-client-links-splitLink.cjs.js",
-    "./links/wsLink": "./links/wsLink/dist/trpc-client-links-wsLink.cjs.js"
+    ".": {
+      "default": "./dist/trpc-client.cjs.js",
+      "types": "./dist/trpc-client.cjs.d.ts"
+    },
+    "./links/httpBatchLink": {
+      "default": "./links/httpBatchLink/dist/trpc-client-links-httpBatchLink.cjs.js",
+      "types": "./links/httpBatchLink/dist/trpc-client-links-httpBatchLink.cjs.d.ts"
+    },
+    "./links/httpLink": {
+      "default": "./links/httpLink/dist/trpc-client-links-httpLink.cjs.js",
+      "types": "./links/httpLink/dist/trpc-client-links-httpLink.cjs.d.ts"
+    },
+    "./links/loggerLink": {
+      "default": "./links/loggerLink/dist/trpc-client-links-loggerLink.cjs.js",
+      "types": "./links/loggerLink/dist/trpc-client-links-loggerLink.cjs.d.ts"
+    },
+    "./links/splitLink": {
+      "default": "./links/splitLink/dist/trpc-client-links-splitLink.cjs.js",
+      "types": "./links/splitLink/dist/trpc-client-links-splitLink.cjs.d.ts"
+    },
+    "./links/wsLink": {
+      "default": "./links/wsLink/dist/trpc-client-links-wsLink.cjs.js",
+      "types": "./links/wsLink/dist/trpc-client-links-wsLink.cjs.d.ts"
+    }
   },
   "scripts": {},
   "main": "dist/trpc-client.cjs.js",

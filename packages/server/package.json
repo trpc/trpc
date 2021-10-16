@@ -29,14 +29,38 @@
   },
   "exports": {
     "./package.json": "./package.json",
-    ".": "./dist/trpc-server.cjs.js",
-    "./adapters/express": "./adapters/express/dist/trpc-server-adapters-express.cjs.js",
-    "./adapters/next": "./adapters/next/dist/trpc-server-adapters-next.cjs.js",
-    "./adapters/node-http": "./adapters/node-http/dist/trpc-server-adapters-node-http.cjs.js",
-    "./adapters/standalone": "./adapters/standalone/dist/trpc-server-adapters-standalone.cjs.js",
-    "./adapters/ws": "./adapters/ws/dist/trpc-server-adapters-ws.cjs.js",
-    "./rpc": "./rpc/dist/trpc-server-rpc.cjs.js",
-    "./ws": "./ws/dist/trpc-server-ws.cjs.js"
+    ".": {
+      "default": "./dist/trpc-server.cjs.js",
+      "types": "./dist/trpc-server.cjs.d.ts"
+    },
+    "./adapters/express": {
+      "default": "./adapters/express/dist/trpc-server-adapters-express.cjs.js",
+      "types": "./adapters/express/dist/trpc-server-adapters-express.cjs.d.ts"
+    },
+    "./adapters/next": {
+      "default": "./adapters/next/dist/trpc-server-adapters-next.cjs.js",
+      "types": "./adapters/next/dist/trpc-server-adapters-next.cjs.d.ts"
+    },
+    "./adapters/node-http": {
+      "default": "./adapters/node-http/dist/trpc-server-adapters-node-http.cjs.js",
+      "types": "./adapters/node-http/dist/trpc-server-adapters-node-http.cjs.d.ts"
+    },
+    "./adapters/standalone": {
+      "default": "./adapters/standalone/dist/trpc-server-adapters-standalone.cjs.js",
+      "types": "./adapters/standalone/dist/trpc-server-adapters-standalone.cjs.d.ts"
+    },
+    "./adapters/ws": {
+      "default": "./adapters/ws/dist/trpc-server-adapters-ws.cjs.js",
+      "types": "./adapters/ws/dist/trpc-server-adapters-ws.cjs.d.ts"
+    },
+    "./rpc": {
+      "default": "./rpc/dist/trpc-server-rpc.cjs.js",
+      "types": "./rpc/dist/trpc-server-rpc.cjs.d.ts"
+    },
+    "./ws": {
+      "default": "./ws/dist/trpc-server-ws.cjs.js",
+      "types": "./ws/dist/trpc-server-ws.cjs.d.ts"
+    }
   },
   "scripts": {
     "test": "jest"
