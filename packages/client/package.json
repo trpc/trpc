@@ -13,12 +13,51 @@
   "preconstruct": {
     "entrypoints": [
       "index.ts",
-      "links/httpLink.ts",
       "links/httpBatchLink.ts",
-      "links/splitLink.ts",
+      "links/httpLink.ts",
       "links/loggerLink.ts",
+      "links/splitLink.ts",
       "links/wsLink.ts"
     ]
+  },
+  "exports": {
+    "./package.json": "./package.json",
+    ".": {
+      "types": "./dist/trpc-client.cjs.d.ts",
+      "module": "./dist/trpc-client.esm.js",
+      "import": "./dist/trpc-client.esm.js",
+      "default": "./dist/trpc-client.cjs.js"
+    },
+    "./links/httpBatchLink": {
+      "types": "./links/httpBatchLink/dist/trpc-client-links-httpBatchLink.cjs.d.ts",
+      "module": "./links/httpBatchLink/dist/trpc-client-links-httpBatchLink.esm.js",
+      "import": "./links/httpBatchLink/dist/trpc-client-links-httpBatchLink.esm.js",
+      "default": "./links/httpBatchLink/dist/trpc-client-links-httpBatchLink.cjs.js"
+    },
+    "./links/httpLink": {
+      "types": "./links/httpLink/dist/trpc-client-links-httpLink.cjs.d.ts",
+      "module": "./links/httpLink/dist/trpc-client-links-httpLink.esm.js",
+      "import": "./links/httpLink/dist/trpc-client-links-httpLink.esm.js",
+      "default": "./links/httpLink/dist/trpc-client-links-httpLink.cjs.js"
+    },
+    "./links/loggerLink": {
+      "types": "./links/loggerLink/dist/trpc-client-links-loggerLink.cjs.d.ts",
+      "module": "./links/loggerLink/dist/trpc-client-links-loggerLink.esm.js",
+      "import": "./links/loggerLink/dist/trpc-client-links-loggerLink.esm.js",
+      "default": "./links/loggerLink/dist/trpc-client-links-loggerLink.cjs.js"
+    },
+    "./links/splitLink": {
+      "types": "./links/splitLink/dist/trpc-client-links-splitLink.cjs.d.ts",
+      "module": "./links/splitLink/dist/trpc-client-links-splitLink.esm.js",
+      "import": "./links/splitLink/dist/trpc-client-links-splitLink.esm.js",
+      "default": "./links/splitLink/dist/trpc-client-links-splitLink.cjs.js"
+    },
+    "./links/wsLink": {
+      "types": "./links/wsLink/dist/trpc-client-links-wsLink.cjs.d.ts",
+      "module": "./links/wsLink/dist/trpc-client-links-wsLink.esm.js",
+      "import": "./links/wsLink/dist/trpc-client-links-wsLink.esm.js",
+      "default": "./links/wsLink/dist/trpc-client-links-wsLink.cjs.js"
+    }
   },
   "scripts": {},
   "main": "dist/trpc-client.cjs.js",

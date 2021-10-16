@@ -290,6 +290,16 @@
       "contributions": [
         "code"
       ]
+    },
+    {
+      "login": "sachinraja",
+      "name": "Sachin Raja",
+      "avatar_url": "https://avatars.githubusercontent.com/u/58836760?v=4",
+      "profile": "https://github.com/sachinraja",
+      "contributions": [
+        "review",
+        "ideas"
+      ]
     }
   ],
   "contributorsPerLine": 7,

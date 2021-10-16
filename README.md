@@ -187,6 +187,9 @@ npx nuxi init tprc --template trpc/trpc/examples/nuxt
     <td align="center"><a href="https://github.com/Memory-Lane-Games"><img src="https://avatars.githubusercontent.com/u/63847783?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Memory-Lane-Games</b></sub></a><br /><a href="#financial-Memory-Lane-Games" title="Financial">💵</a></td>
     <td align="center"><a href="https://react-hook-form.com"><img src="https://avatars.githubusercontent.com/u/10513364?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Bill</b></sub></a><br /><a href="#financial-bluebill1049" title="Financial">💵</a></td>
   </tr>
+  <tr>
+    <td align="center"><a href="https://github.com/sachinraja"><img src="https://avatars.githubusercontent.com/u/58836760?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Sachin Raja</b></sub></a><br /><a href="https://github.com/trpc/trpc/pulls?q=is%3Apr+reviewed-by%3Asachinraja" title="Reviewed Pull Requests">👀</a> <a href="#ideas-sachinraja" title="Ideas, Planning, & Feedback">🤔</a></td>
+  </tr>
 </table>
 
 <!-- markdownlint-restore -->
