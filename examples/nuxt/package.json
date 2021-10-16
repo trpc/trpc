@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@trpc/client": "^9.9.1",
-    "@trpc/server": "^9.9.1"
+    "@trpc/server": "^9.9.1",
+    "zod": "^3.9.8"
   }
 }
