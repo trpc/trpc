@@ -50,7 +50,7 @@ tRPC allows you to easily build & consume fully typesafe APIs, without schemas o
 - [Intro](#intro)
 - [Usage](#usage)
   - [Next.js](#nextjs)
-  - [Nuxt.js](#nuxtjs)
+  - [Nuxt](#nuxtjs)
 - [Core Team](#core-team)
 - [Financial Contributors](#financial-contributors)
   - [🥉 Bronze Sponsors](#-bronze-sponsors)
@@ -71,9 +71,12 @@ tRPC allows you to easily build & consume fully typesafe APIs, without schemas o
 npx create-next-app --example https://github.com/trpc/trpc --example-path examples/next-prisma-starter trpc-prisma-starter
 ```
 
-### Nuxt.js
+### Nuxt
 
-**Quick start with a full-stack Nuxt.js example:**
+**Quick start with a full-stack Nuxt example:**
+```sh
+npx nuxi init tprc --template trpc/trpc/examples/nuxt
+```
 
 ## Core Team
 
