@@ -54,7 +54,7 @@ jobs:
         run: cd examples/${{ matrix.dir }} && cat package.json | if grep --silent '"lint"'; then yarn lint; fi
       - run: yarn --cwd examples/${{ matrix.dir }} build
       - name: if exists, run yarn test-start
-        run: cd examples/${{ matrix.dir }} && cat package.json | if grep --silent '"test-start"'; then yarn lint; fi
+        run: cd examples/${{ matrix.dir }} && cat package.json | if grep --silent '"test-start"'; then yarn test-start; fi
       - run: yarn --cwd examples/${{ matrix.dir }} build
       - name: if exists, run yarn test-dev
-        run: cd examples/${{ matrix.dir }} && cat package.json | if grep --silent '"test-dev"'; then yarn lint; fi
+        run: cd examples/${{ matrix.dir }} && cat package.json | if grep --silent '"test-dev"'; then yarn test-dev; fi
