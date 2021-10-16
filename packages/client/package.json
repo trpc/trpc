@@ -23,28 +23,28 @@
   "exports": {
     "./package.json": "./package.json",
     ".": {
-      "default": "./dist/trpc-client.cjs.js",
-      "types": "./dist/trpc-client.cjs.d.ts"
+      "types": "./dist/trpc-client.cjs.d.ts",
+      "default": "./dist/trpc-client.cjs.js"
     },
     "./links/httpBatchLink": {
-      "default": "./links/httpBatchLink/dist/trpc-client-links-httpBatchLink.cjs.js",
-      "types": "./links/httpBatchLink/dist/trpc-client-links-httpBatchLink.cjs.d.ts"
+      "types": "./links/httpBatchLink/dist/trpc-client-links-httpBatchLink.cjs.d.ts",
+      "default": "./links/httpBatchLink/dist/trpc-client-links-httpBatchLink.cjs.js"
     },
     "./links/httpLink": {
-      "default": "./links/httpLink/dist/trpc-client-links-httpLink.cjs.js",
-      "types": "./links/httpLink/dist/trpc-client-links-httpLink.cjs.d.ts"
+      "types": "./links/httpLink/dist/trpc-client-links-httpLink.cjs.d.ts",
+      "default": "./links/httpLink/dist/trpc-client-links-httpLink.cjs.js"
     },
     "./links/loggerLink": {
-      "default": "./links/loggerLink/dist/trpc-client-links-loggerLink.cjs.js",
-      "types": "./links/loggerLink/dist/trpc-client-links-loggerLink.cjs.d.ts"
+      "types": "./links/loggerLink/dist/trpc-client-links-loggerLink.cjs.d.ts",
+      "default": "./links/loggerLink/dist/trpc-client-links-loggerLink.cjs.js"
     },
     "./links/splitLink": {
-      "default": "./links/splitLink/dist/trpc-client-links-splitLink.cjs.js",
-      "types": "./links/splitLink/dist/trpc-client-links-splitLink.cjs.d.ts"
+      "types": "./links/splitLink/dist/trpc-client-links-splitLink.cjs.d.ts",
+      "default": "./links/splitLink/dist/trpc-client-links-splitLink.cjs.js"
     },
     "./links/wsLink": {
-      "default": "./links/wsLink/dist/trpc-client-links-wsLink.cjs.js",
-      "types": "./links/wsLink/dist/trpc-client-links-wsLink.cjs.d.ts"
+      "types": "./links/wsLink/dist/trpc-client-links-wsLink.cjs.d.ts",
+      "default": "./links/wsLink/dist/trpc-client-links-wsLink.cjs.js"
     }
   },
   "scripts": {},
