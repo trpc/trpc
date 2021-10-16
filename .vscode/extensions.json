@@ -4,7 +4,6 @@
     "esbenp.prettier-vscode",
     "dbaeumer.vscode-eslint",
     "bungcip.better-toml",
-    "jcbuisson.vue",
     "johnsoncodehk.volar"
   ]
 }
