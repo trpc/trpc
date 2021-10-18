@@ -5848,10 +5848,10 @@ expect-playwright@^0.7.0:
   resolved "https://registry.npmjs.org/expect-playwright/-/expect-playwright-0.7.2.tgz#e1f2c31cd0d13d04e1ba4136019613ad01f6ea43"
   integrity sha512-5o9si+8SUi68QVI0CRVv8tvTjZinpJWRSfQ3GP6v0DvlK55lDgFvD79r6A/NU+EUawrBc62qP30MxzOUnXNJZQ==
 
-expect-type@^0.12.0:
-  version "0.12.0"
-  resolved "https://registry.npmjs.org/expect-type/-/expect-type-0.12.0.tgz#133534b5e2561158c371e74af63fd8f18a9f3d42"
-  integrity sha512-IHwziEOjpjXqxQhtOAD5zMiQpGztaEKM4Q8wnwoRN9NIFlnyNHNjRxKWv+18UqRfsqi6vVnZIYFU16ePf+HaqA==
+expect-type@^0.13.0:
+  version "0.13.0"
+  resolved "https://registry.yarnpkg.com/expect-type/-/expect-type-0.13.0.tgz#916646a7a73f3ee77039a634ee9035efe1876eb2"
+  integrity sha512-CclevazQfrqo8EvbLPmP7osnb1SZXkw47XPPvUUpeMz4HuGzDltE7CaIt3RLyT9UQrwVK/LDn+KVcC0hcgjgDg==
 
 expect@^27.2.5:
   version "27.2.5"
