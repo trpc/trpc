@@ -54,7 +54,7 @@
     "@types/node-fetch": "^2.5.11",
     "@types/react": "^17.0.20",
     "@types/ws": "^8.2.0",
-    "@typescript-eslint/eslint-plugin": "^4.30.0",
+    "@typescript-eslint/eslint-plugin": "^5.1.0",
     "@typescript-eslint/parser": "^4.26.0",
     "eslint": "^7.32.0",
     "eslint-config-next": "^11.0.1",
