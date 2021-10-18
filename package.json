@@ -80,7 +80,7 @@
     "eslint-plugin-prettier": "^4.0.0",
     "eslint-plugin-react": "^7.25.1",
     "eslint-plugin-react-hooks": "^4.2.0",
-    "expect-type": "^0.12.0",
+    "expect-type": "^0.13.0",
     "jest": "^27.1.0",
     "jsdom": "^18.0.0",
     "lerna": "^4.0.0",
