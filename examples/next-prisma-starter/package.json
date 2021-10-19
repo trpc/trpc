@@ -13,7 +13,6 @@
     "db-nuke": "docker-compose down --volumes --remove-orphans",
     "dev": "next dev",
     "dx": "cross-env DATABASE_URL=postgresql://postgres:@localhost:5632/trpcdb run-s db-up db-migrate db-seed dev",
-    "generate": "prisma generate",
     "migrate-dev": "prisma migrate dev",
     "migrate": "prisma migrate deploy",
     "start": "next start",
@@ -23,7 +22,8 @@
     "test-dev": "start-server-and-test dev 3000 test",
     "test-start": "start-server-and-test start 3000 test",
     "test": "jest",
-    "ts-node": "ts-node --compiler-options \"{\\\"module\\\":\\\"commonjs\\\"}\""
+    "ts-node": "ts-node --compiler-options \"{\\\"module\\\":\\\"commonjs\\\"}\"",
+    "postinstall": "prisma generate"
   },
   "prisma": {
     "seed": "yarn ts-node prisma/seed.ts"
