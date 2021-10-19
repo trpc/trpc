@@ -82,7 +82,7 @@ yarn dev-nuke # resets local db
 ## Commands
 
 ```bash
-yarn dx # starts postgres db + runs migrations + 
+yarn dx # starts postgres db + runs migrations + seeds + starts next.js 
 yarn build # runs `prisma generate` + `prisma migrate` + `next build`
 yarn test-dev # runs e2e tests on dev
 yarn test-start # runs e2e tests on `next start` - build required before
