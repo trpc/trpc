@@ -100,7 +100,9 @@ export function createReactQueryHooks<TRouter extends AnyRouter>() {
   type ProviderContext = TRPCContextState<TRouter>;
   const Context = TRPCContext as React.Context<ProviderContext>;
 
-  function createClient(opts: CreateTRPCClientOptions<TRouter>) {
+  function createClient(
+    opts: CreateTRPCClientOptions<TRouter>,
+  ): TRPCClient<TRouter> {
     return createTRPCClient(opts);
   }
 
