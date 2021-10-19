@@ -40,13 +40,13 @@ yarn dx
 npx create-next-app --example https://github.com/trpc/trpc --example-path examples/next-prisma-starter trpc-prisma-starter
 cd trpc-prisma-starter
 yarn
-yarn dx # starts a postgres instance + 
+yarn dx
 ```
 
 ## Commands
 
 ```bash
-yarn dx # runs prisma studio + next
+yarn dx # starts a Postgres db through Docker + seeds + migrations + starts next
 yarn build # runs `prisma generate` + `prisma migrate` + `next build`
 yarn test-dev # runs e2e tests on dev
 yarn test-start # runs e2e tests on `next start` - build required before
