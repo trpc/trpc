@@ -18,17 +18,6 @@ import Head from 'next/head';
 import { trpc } from '../utils/trpc';
 import { createSSGHelpers } from '@trpc/react/ssg';
 
-export default function Home() {
-  const hello = trpc.useQuery(['hello']);
-
-  if (!hello.data) return <div>Loading...</div>;
-  return (
-    <div>
-      <p>{hello.data.greeting}</p>
-    </div>
-  );
-}
-
 // Statically fetch the data in getStaticProps
 export const getStaticProps = async (
   context: GetStaticPropsContext<{ filter: string }>,
@@ -49,4 +38,17 @@ export const getStaticProps = async (
     revalidate: 1,
   };
 };
+
+export default function Home() {
+  // Retrieve data from the cache, if available. Otherwise make an HTTP request, as normal.
+  const hello = trpc.useQuery(['hello']);
+  
+  if (!hello.data) return <div>Loading...</div>;
+  return (
+    <div>
+      <p>{hello.data.greeting}</p>
+    </div>
+  );
+}
+
 ```
