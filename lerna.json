@@ -1,10 +1,12 @@
 {
-  "version": "9.10.1",
+  "version": "9.10.1-alpha.5",
   "registry": "https://registry.npmjs.org/",
   "publishConfig": {
     "access": "public"
   },
   "npmClient": "yarn",
   "useWorkspaces": true,
-  "packages": ["packages/*"]
+  "packages": [
+    "packages/*"
+  ]
 }
