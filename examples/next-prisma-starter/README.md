@@ -27,12 +27,10 @@ yarn dx
 
 ### Requirements
 
-- Node
-- yarn
-- Docker (for running postgres)
+- Node >= 14
+- Docker (for running Postgres)
 
 ## Development
-
 
 ### Start project
 
@@ -43,14 +41,16 @@ yarn
 yarn dx
 ```
 
-## Commands
+### Commands
 
 ```bash
-yarn dx # starts a Postgres db through Docker + seeds + migrations + starts next
-yarn build # runs `prisma generate` + `prisma migrate` + `next build`
-yarn test-dev # runs e2e tests on dev
+yarn build      # runs `prisma generate` + `prisma migrate` + `next build`
+yarn db-nuke    # resets local db
+yarn dx         # starts postgres db + runs migrations + seeds + starts next.js 
+yarn test-dev   # runs e2e tests on dev
 yarn test-start # runs e2e tests on `next start` - build required before
-yarn dev-nuke # resets local db
+yarn test:unit  # runs normal jest unit tests
+yarn test:e2e   # runs e2e tests
 ```
 
 ## Files of note
@@ -78,18 +78,6 @@ yarn dev-nuke # resets local db
   </tbody>
 </table>
 
-
-## Commands
-
-```bash
-yarn build      # runs `prisma generate` + `prisma migrate` + `next build`
-yarn db-nuke    # resets local db
-yarn dx         # starts postgres db + runs migrations + seeds + starts next.js 
-yarn test-dev   # runs e2e tests on dev
-yarn test-start # runs e2e tests on `next start` - build required before
-yarn test:unit  # runs normal jest unit tests
-yarn test:e2e   # runs e2e tests
-```
 
 ---
 
