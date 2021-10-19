@@ -22,10 +22,8 @@ for (const name of packages) {
 
   const content = fs.readFileSync(packageJSON).toString();
 
-  const newContent = content.replace(
-    /\"@trpc\/(\w+)\": "\^(\d)/g,
-    `"@trpc/$1": "$2`,
-  );
+  // matches `"@trpc/*: "^` and replaces it with `"@trpc/*: "`
+  const newContent = content.replace(/\"@trpc\/(\w+)\": "\^/g, `"@trpc/$1": "`);
   fs.writeFileSync(packageJSON, newContent);
   console.log(`  📍 Pinned ${name} @trpc/* dependencies`);
 }
