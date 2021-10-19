@@ -21,7 +21,36 @@ Try in CodeSandbox: [https://githubbox.com/trpc/trpc/tree/main/examples/next-pri
 npx create-next-app --example https://github.com/trpc/trpc --example-path examples/next-prisma-starter trpc-prisma-starter
 cd trpc-prisma-starter
 yarn
-yarn dev
+yarn dx
+```
+
+
+### Requirements
+
+- Docker (for running postgres)
+- Node
+- yarn
+
+## Development
+
+
+### Start project
+
+```bash
+npx create-next-app --example https://github.com/trpc/trpc --example-path examples/next-prisma-starter trpc-prisma-starter
+cd trpc-prisma-starter
+yarn
+yarn dx # starts a postgres instance + 
+```
+
+## Commands
+
+```bash
+yarn dx # runs prisma studio + next
+yarn build # runs `prisma generate` + `prisma migrate` + `next build`
+yarn test-dev # runs e2e tests on dev
+yarn test-start # runs e2e tests on `next start` - build required before
+yarn dev-nuke # resets local db
 ```
 
 ## Files of note
@@ -49,22 +78,16 @@ yarn dev
   </tbody>
 </table>
 
+
 ## Commands
 
 ```bash
-yarn dx # runs prisma studio + next
+yarn dx # starts postgres db + runs migrations + 
 yarn build # runs `prisma generate` + `prisma migrate` + `next build`
 yarn test-dev # runs e2e tests on dev
 yarn test-start # runs e2e tests on `next start` - build required before
-yarn dev-nuke # resets local db
+yarn db-nuke # resets local db
 ```
-
-## ℹ️ How to switch from SQLite to Postgres
-
-How to switch to postgres
-
-- Remove migrations: `rm -rf ./prisma/migrations`
-- Update: `./prisma/schema.prisma` (see commented code)
 
 ---
 
