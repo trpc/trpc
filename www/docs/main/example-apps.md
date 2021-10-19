@@ -55,7 +55,7 @@ Here's some example apps:
     </tr>
     <tr>
       <td>
-        Next.js starter with Prisma, E2E testing, ESLint, WebSockets, &amp; Subscription support
+        Next.js starter with Prisma, E2E testing, ESLint, Auth using next-auth, WebSockets, &amp; Subscription support
         <br/><br/>
         <details>
           <summary>Quick start with <code>create-next-app</code></summary>

@@ -223,7 +223,7 @@ export function applyWSSHandler<TRouter extends AnyRouter>(
     }
     client.on('message', async (message) => {
       try {
-        const msgJSON: unknown = JSON.parse(message as string);
+        const msgJSON: unknown = JSON.parse(message.toString());
         const msgs: unknown[] = Array.isArray(msgJSON) ? msgJSON : [msgJSON];
         msgs.map((raw) => parseMessage(raw, transformer)).map(handleRequest);
       } catch (cause) {

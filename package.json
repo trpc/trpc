@@ -34,14 +34,14 @@
     "test": "cd packages/server && yarn jest",
     "lint": "eslint --ext \".js,.ts,.tsx\" --ignore-path .gitignore .",
     "lint-fix": "yarn lint --fix && manypkg fix",
-    "postinstall": "preconstruct dev",
+    "codegen": "yarn ts-node scripts/generate-big-f-router.ts",
+    "ts-node": "ts-node --compiler-options '{\"module\":\"commonjs\"}'",
+    "postinstall": "preconstruct dev && yarn codegen",
     "build": "preconstruct build",
     "test-dev-examples": "lerna exec --concurrency 1 --scope @examples/* --stream -- yarn test-dev",
     "build-examples": "lerna run build --scope @examples/* --stream",
     "test-examples": "lerna exec --concurrency 1 --scope @examples/* --stream -- yarn test-start",
     "prepublish": "yarn build",
-    "version": "echo '------------- version -------------'",
-    "postversion": "echo '------------- postversion -------------'",
     "example:express": "yarn --cwd examples/express-server dev",
     "example:todomvc": "yarn --cwd examples/next-prisma-todomvc dev",
     "example:chat": "yarn --cwd examples/next-chat dev",
@@ -51,8 +51,8 @@
     "version:canary": "changeset version --snapshot canary",
     "release:canary": "changeset publish --tag canary",
     "commit-date": "git log -n 1 --date=format:'%Y-%m-%d-%H-%M-%S' --pretty=format:'%ad'",
-    "canary-preid": "echo \"$(yarn --silent current-branch | sed -e 's/\\//-/')-$(yarn --silent commit-date)\"",
-    "current-branch": "echo \"$(git rev-parse --abbrev-ref HEAD)\" | sed -E 's/refs\\/heads\\///' | sed -E 's/\\W|_/-/g'",
+    "canary-preid": "echo \"$(yarn --silent current-branch)-$(yarn --silent commit-date)\"",
+    "current-branch": "echo \"$(git rev-parse --abbrev-ref HEAD)\" | sed -E 's/refs\\/heads\\///' | sed -E 's/\\W|_/-/g' | sed -e 's/\\//-/'",
     "publish-canary": "lerna publish --force-publish --canary --preid $(yarn --silent canary-preid) --dist-tag $(yarn --silent current-branch)"
   },
   "dependencies": {
@@ -80,15 +80,15 @@
     "eslint-plugin-prettier": "^4.0.0",
     "eslint-plugin-react": "^7.25.1",
     "eslint-plugin-react-hooks": "^4.2.0",
-    "expect-type": "^0.12.0",
+    "expect-type": "^0.13.0",
     "jest": "^27.1.0",
-    "jsdom": "^17.0.0",
+    "jsdom": "^18.0.0",
     "lerna": "^4.0.0",
     "playwright": "^1.14.1",
     "prettier": "^2.3.2",
     "react": "^17.0.2",
     "react-dom": "^17.0.2",
     "ts-jest": "^27.0.5",
-    "typescript": "4.4.3"
+    "typescript": "4.4.4"
   }
 }

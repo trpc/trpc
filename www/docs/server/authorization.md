@@ -104,3 +104,5 @@ export const appRouter = createRouter()
     }),
   );
 ```
+
+This middleware can be re-used for multiple sub-routers by creating a [protected router](../server/middlewares.md#createprotectedrouter-helper) helper.

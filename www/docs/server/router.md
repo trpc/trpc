@@ -15,7 +15,7 @@ slug: /router
 
 ## Input validation
 
-tRPC works out-of-the-box with yup/zod/myzod/custom validators/[..] - [see test suite](https://github.com/trpc/trpc/blob/main/packages/server/test/validators.test.ts)
+tRPC works out-of-the-box with yup/superstruct/zod/myzod/custom validators/[..] - [see test suite](https://github.com/trpc/trpc/blob/main/packages/server/test/validators.test.ts)
 
 ### Example without input
 
@@ -75,6 +75,31 @@ export const appRouter = trpc.router<Context>().query('hello', {
   resolve({ input }) {
     return {
       greeting: `hello ${input?.text ?? 'world'}`,
+    };
+  },
+});
+
+export type AppRouter = typeof appRouter;
+```
+
+### With [Superstruct](https://github.com/ianstormtaylor/superstruct)
+
+```tsx
+import * as trpc from '@trpc/server';
+import * as t from 'superstruct';
+
+// [...]
+
+export const appRouter = trpc.router<Context>().query('hello', {
+  input: t.object({
+    /**
+     * Also supports inline doc strings when referencing the type.
+     */
+    text: t.defaulted(t.string(), 'world'),
+  }),
+  resolve({ input }) {
+    return {
+      greeting: `hello ${input.text}`,
     };
   },
 });

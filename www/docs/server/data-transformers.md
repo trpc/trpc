@@ -19,7 +19,7 @@ SuperJSON allows us to able to transparently use e.g. standard `Date`/`Map`/`Set
 yarn add superjson
 ```
 
-#### 2. Add to `createTRPCCLient()`
+#### 2. Add to `createTRPCCLient()` or `withTRPC()` config
 
 ```ts
 import superjson from 'superjson';
@@ -30,6 +30,20 @@ export const client = createTRPCClient<AppRouter>({
   // [...]
   transformer: superjson,
 });
+```
+```ts
+import superjson from 'superjson';
+
+// [...]
+
+export default withTRPC<AppRouter>({
+  config({ ctx }) {
+    return {
+      // [...]
+      transformer: superjson,
+    }
+  }
+})(MyApp);
 ```
 
 #### 3. Add to your `AppRouter`

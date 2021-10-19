@@ -11,6 +11,10 @@ export type ProcedureInputParserZodEsque<TInput = unknown> = {
   parse: (input: any) => TInput;
 };
 
+export type ProcedureInputParserSuperstructEsque<TInput = unknown> = {
+  create: (input: unknown) => TInput;
+};
+
 export type ProcedureInputParserCustomValidatorEsque<TInput = unknown> = (
   input: unknown,
 ) => TInput;
@@ -21,6 +25,7 @@ export type ProcedureInputParserYupEsque<TInput = unknown> = {
 export type ProcedureInputParser<TInput = unknown> =
   | ProcedureInputParserZodEsque<TInput>
   | ProcedureInputParserYupEsque<TInput>
+  | ProcedureInputParserSuperstructEsque<TInput>
   | ProcedureInputParserCustomValidatorEsque<TInput>;
 
 export type ProcedureResolver<
@@ -57,12 +62,17 @@ function getParseFn<TInput>(
   if (typeof parser === 'function') {
     return parser;
   }
+
   if (typeof parser.parse === 'function') {
     return parser.parse.bind(parser);
   }
 
   if (typeof parser.validateSync === 'function') {
     return parser.validateSync.bind(parser);
+  }
+
+  if (typeof parser.create === 'function') {
+    return parser.create.bind(parser);
   }
 
   throw new Error('Could not find a validator fn');
@@ -121,8 +131,10 @@ export class Procedure<TInputContext, TContext, TInput, TOutput> {
       return async (nextOpts?: { ctx: TContext }) => {
         const res = await wrapCallSafe(() =>
           fn({
-            ...(opts as any),
-            ...(nextOpts as any),
+            ctx: nextOpts ? nextOpts.ctx : opts.ctx,
+            type: opts.type,
+            path: opts.path,
+            rawInput: opts.rawInput,
             next: nextFns[index + 1],
           }),
         );

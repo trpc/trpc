@@ -492,7 +492,7 @@ describe('regression test - slow createContext', () => {
     };
     const data = await new Promise<string>((resolve) => {
       rawClient.addEventListener('message', (msg) => {
-        resolve(msg.data);
+        resolve(msg.data as any);
       });
     });
     expect(JSON.parse(data)).toMatchInlineSnapshot(`
@@ -535,7 +535,7 @@ Object {
 
     const responses: any[] = [];
     rawClient.addEventListener('message', (msg) => {
-      responses.push(JSON.parse(msg.data));
+      responses.push(JSON.parse(msg.data as any));
     });
     await new Promise<void>((resolve) => {
       rawClient.addEventListener('close', () => {
@@ -600,7 +600,7 @@ test('malformatted JSON', async () => {
 
   const res: any = await new Promise<string>((resolve) => {
     rawClient.addEventListener('message', (msg) => {
-      resolve(JSON.parse(msg.data));
+      resolve(JSON.parse(msg.data as any));
     });
   });
 

@@ -1,15 +1,22 @@
 ---
 id: queries
-title: Queries
-sidebar_label: useQuery
+title: useQuery()
+sidebar_label: useQuery()
 slug: /react-queries
 ---
 
 > The hooks provided by `@trpc/react` are a thin wrapper around React Query. For in-depth information about options and usage patterns, refer to their docs on [Queries](https://react-query.tanstack.com/guides/queries).
 
-You pass a `[path, input]`-tuple as the first argument. You'll notice that you get autocompletion on the `path` and automatic typesafety on the `input`.
+```tsx
+function useQuery(
+  pathAndInput: [string, TInput?],
+  opts?: UseTRPCQueryOptions;
+)
+```
 
-If an `input`-argument is optional, you can omit the `, input` part of the argument.
+The first argument is a `[path, input]`-tuple - if the `input` is optional, you can omit the `, input`-part.
+
+You'll notice that you get autocompletion on the `path` and automatic typesafety on the `input`.
 
 ### Example
 

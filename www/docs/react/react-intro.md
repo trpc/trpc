@@ -21,7 +21,7 @@ yarn add @trpc/client @trpc/server @trpc/react react-query zod
 ```
 
 - React Query: `@trpc/react` provides a thin wrapper over [react-query](https://react-query.tanstack.com/overview). It is required as a peer dependency.
-- Zod: most examples use Zod for input validation, though it isn't required. You can use a validation library of your choice (Yup, io-ts, etc). In fact, any object containing a `parse` or `validateSync` method will work.
+- Zod: most examples use Zod for input validation, though it isn't required. You can use a validation library of your choice (Yup, [Superstruct](https://github.com/ianstormtaylor/superstruct), io-ts, etc). In fact, any object containing a `parse`, `create` or `validateSync` method will work.
 
 ### 2. Implement your `appRouter`
 

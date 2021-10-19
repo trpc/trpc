@@ -10,3 +10,4 @@ package-lock.json
 yalc.lock
 
 coverage/
+__generated__

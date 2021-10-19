@@ -153,7 +153,8 @@
       "contributions": [
         "ideas",
         "test",
-        "code"
+        "code",
+        "review"
       ]
     },
     {
@@ -190,6 +191,7 @@
       "avatar_url": "https://avatars.githubusercontent.com/u/6751787?v=4",
       "profile": "http://t3.gg",
       "contributions": [
+        "review",
         "financial"
       ]
     },
@@ -199,7 +201,11 @@
       "avatar_url": "https://avatars.githubusercontent.com/u/2615374?v=4",
       "profile": "https://maxgreenwald.me",
       "contributions": [
-        "financial"
+        "financial",
+        "code",
+        "doc",
+        "test",
+        "bug"
       ]
     },
     {
@@ -216,6 +222,90 @@
       "name": "amr",
       "avatar_url": "https://avatars.githubusercontent.com/u/40860821?v=4",
       "profile": "https://github.com/infix",
+      "contributions": [
+        "code"
+      ]
+    },
+    {
+      "login": "thomas-coldwell",
+      "name": "Thomas Coldwell",
+      "avatar_url": "https://avatars.githubusercontent.com/u/31568400?v=4",
+      "profile": "http://thomascoldwell.dev",
+      "contributions": [
+        "doc"
+      ]
+    },
+    {
+      "login": "alexn-s",
+      "name": "Alex Schumacher",
+      "avatar_url": "https://avatars.githubusercontent.com/u/60710873?v=4",
+      "profile": "https://github.com/alexn-s",
+      "contributions": [
+        "financial"
+      ]
+    },
+    {
+      "login": "ifiokjr",
+      "name": "Ifiok Jr.",
+      "avatar_url": "https://avatars.githubusercontent.com/u/1160934?v=4",
+      "profile": "https://github.com/ifiokjr",
+      "contributions": [
+        "test",
+        "code",
+        "doc"
+      ]
+    },
+    {
+      "login": "Memory-Lane-Games",
+      "name": "Memory-Lane-Games",
+      "avatar_url": "https://avatars.githubusercontent.com/u/63847783?v=4",
+      "profile": "https://github.com/Memory-Lane-Games",
+      "contributions": [
+        "financial"
+      ]
+    },
+    {
+      "login": "bluebill1049",
+      "name": "Bill",
+      "avatar_url": "https://avatars.githubusercontent.com/u/10513364?v=4",
+      "profile": "https://react-hook-form.com",
+      "contributions": [
+        "financial"
+      ]
+    },
+    {
+      "login": "keenahn",
+      "name": "Keenahn Tiberius Jung",
+      "avatar_url": "https://avatars.githubusercontent.com/u/283603?v=4",
+      "profile": "http://about.me/keenahn",
+      "contributions": [
+        "code"
+      ]
+    },
+    {
+      "login": "danielroe",
+      "name": "Daniel Roe",
+      "avatar_url": "https://avatars.githubusercontent.com/u/28706372?v=4",
+      "profile": "https://roe.dev",
+      "contributions": [
+        "code"
+      ]
+    },
+    {
+      "login": "sachinraja",
+      "name": "Sachin Raja",
+      "avatar_url": "https://avatars.githubusercontent.com/u/58836760?v=4",
+      "profile": "https://github.com/sachinraja",
+      "contributions": [
+        "review",
+        "ideas"
+      ]
+    },
+    {
+      "login": "mkreuzmayr",
+      "name": "Michael Kreuzmayr",
+      "avatar_url": "https://avatars.githubusercontent.com/u/20108212?v=4",
+      "profile": "https://github.com/mkreuzmayr",
       "contributions": [
         "code"
       ]
