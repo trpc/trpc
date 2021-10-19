@@ -41,6 +41,7 @@
     "test-dev-examples": "lerna exec --concurrency 1 --scope @examples/* --stream -- yarn test-dev",
     "build-examples": "lerna run build --scope @examples/* --stream",
     "test-examples": "lerna exec --concurrency 1 --scope @examples/* --stream -- yarn test-start",
+    "prepublish": "yarn build",
     "prepack": "yarn ts-node scripts/postversion.ts",
     "example:express": "yarn --cwd examples/express-server dev",
     "example:todomvc": "yarn --cwd examples/next-prisma-todomvc dev",
