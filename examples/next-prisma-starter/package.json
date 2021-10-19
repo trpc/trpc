@@ -19,7 +19,7 @@
     "test-start": "start-server-and-test start 3000 test-e2e",
     "test": "run-s test:*",
     "test:unit": "jest",
-    "test:e2e": "jest --config jest.playwright.config.js",
+    "test:e2e": "jest --config jest.playwright.config.ts",
     "ts-node": "ts-node --compiler-options \"{\\\"module\\\":\\\"commonjs\\\"}\"",
     "postinstall": "prisma generate"
   },

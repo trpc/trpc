@@ -1,3 +1,5 @@
+import type { Config } from '@jest/types';
+
 const opts = {
   // launch headless on CI, in browser locally
   headless: !!process.env.CI || !!process.env.PLAYWRIGHT_HEADLESS,
@@ -5,7 +7,7 @@ const opts = {
   executablePath: process.env.PLAYWRIGHT_CHROME_EXECUTABLE_PATH,
 };
 
-module.exports = {
+const config: Config.InitialOptions = {
   verbose: true,
   preset: 'jest-playwright-preset',
   transform: {
@@ -29,3 +31,5 @@ module.exports = {
     },
   },
 };
+
+export default config;
