@@ -6,6 +6,7 @@ jobs:
       DATABASE_URL: postgresql://postgres:@localhost:5432/trpcdb
     runs-on: ${{ matrix.os }}
     timeout-minutes: 10
+    continue-on-error: true
     strategy:
       matrix:
         dir: [

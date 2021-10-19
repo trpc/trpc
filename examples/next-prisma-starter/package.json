@@ -3,25 +3,28 @@
   "version": "9.10.0",
   "private": true,
   "scripts": {
-    "build:1-generate": "prisma generate",
-    "build:2-migrate": "prisma migrate deploy",
-    "build:3-build": "next build",
+    "build:1-migrate": "prisma migrate deploy",
+    "build:2-build": "next build",
     "build": "run-s build:*",
-    "dev": "yarn dx:next",
-    "dx:next": "yarn migrate-dev && yarn generate && next dev",
-    "dx:studio": "yarn studio",
-    "dx": "run-p dx:* --print-label",
-    "dev-nuke": "rm -rf prisma/*.db**",
-    "generate": "prisma generate",
-    "migrate-dev": "prisma migrate dev",
-    "migrate": "prisma migrate deploy",
+    "db-up": "docker-compose up -d",
+    "db-seed": "prisma db seed",
+    "db-migrate-dev": "yarn prisma migrate dev",
+    "db-nuke": "docker-compose down --volumes --remove-orphans",
+    "dev": "next dev",
+    "dx": "cross-env DATABASE_URL=postgresql://postgres:@localhost:5632/trpcdb run-s db-up db-migrate-dev db-seed dev",
     "start": "next start",
-    "studio": "prisma studio",
     "lint": "eslint src",
     "lint-fix": "yarn lint --fix",
     "test-dev": "start-server-and-test dev 3000 test",
     "test-start": "start-server-and-test start 3000 test",
-    "test": "jest"
+    "test": "run-s test:*",
+    "test:unit": "jest",
+    "test:e2e": "jest --config jest.playwright.config.ts",
+    "ts-node": "ts-node --compiler-options \"{\\\"module\\\":\\\"commonjs\\\"}\"",
+    "postinstall": "prisma generate"
+  },
+  "prisma": {
+    "seed": "yarn ts-node prisma/seed.ts"
   },
   "prettier": {
     "printWidth": 80,
@@ -49,6 +52,7 @@
     "@types/react": "^17.0.20",
     "@typescript-eslint/eslint-plugin": "^4.30.0",
     "@typescript-eslint/parser": "^4.26.0",
+    "cross-env": "^7.0.3",
     "eslint": "^7.32.0",
     "eslint-config-next": "^11.0.1",
     "eslint-config-prettier": "^8.3.0",
@@ -63,6 +67,7 @@
     "prettier": "^2.3.2",
     "prisma": "^3.0.1",
     "ts-jest": "^27.0.5",
+    "ts-node": "^10.3.0",
     "typescript": "4.4.4"
   },
   "publishConfig": {
