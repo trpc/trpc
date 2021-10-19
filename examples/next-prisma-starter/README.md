@@ -27,9 +27,9 @@ yarn dx
 
 ### Requirements
 
-- Docker (for running postgres)
 - Node
 - yarn
+- Docker (for running postgres)
 
 ## Development
 
