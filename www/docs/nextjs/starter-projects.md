@@ -25,7 +25,7 @@ Get started quickly with one of the sample projects! Copy the snippet from _Quic
           <code>npx create-next-app --example https://github.com/trpc/trpc --example-path examples/next-prisma-starter trpc-prisma-starter</code>
         </details>
       </td>
-      <td><em>n/a</em></td>
+      <td><a href="https://nextjs.trpc.io">nextjs.trpc.io</a></td>
       <td>
         <ul>
           <li><a href="https://codesandbox.io/s/github/trpc/trpc/tree/main/examples/next-prisma-starter?file=/src/pages/index.tsx">CodeSandbox</a></li>
