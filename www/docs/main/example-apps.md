@@ -30,7 +30,6 @@ Here's some example apps:
       <td><a href="https://nextjs.trpc.io">nextjs.trpc.io</a></td>
       <td>
         <ul>
-          <li><a href="https://codesandbox.io/s/github/trpc/trpc/tree/main/examples/next-prisma-starter?file=/src/pages/index.tsx">CodeSandbox</a></li>
           <li><a href="https://github.com/trpc/trpc/tree/main/examples/next-prisma-starter">Source</a></li>
         </ul>
       </td>
