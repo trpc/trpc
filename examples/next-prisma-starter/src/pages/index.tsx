@@ -10,9 +10,9 @@ export default function IndexPage() {
 
   // prefetch all posts for instant navigation
   // useEffect(() => {
-  //   postsQuery.data?.forEach((post) => {
-  //     utils.prefetchQuery(['post.byId', post.id]);
-  //   });
+  //   for (const { id } of postsQuery.data ?? []) {
+  //     utils.prefetchQuery(['post.byId', { id }]);
+  //   }
   // }, [postsQuery.data, utils]);
 
   return (
