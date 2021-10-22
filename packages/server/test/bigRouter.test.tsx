@@ -4,12 +4,12 @@ import { render, waitFor } from '@testing-library/react';
 import { createReactQueryHooks } from '../../react/src';
 import { routerToServerAndClient } from './_testHelpers';
 import { bigRouter } from './__generated__/bigRouter';
-import { kont } from 'kont';
+import { konn } from 'konn';
 import { QueryClient, QueryClientProvider } from 'react-query';
 import { expectTypeOf } from 'expect-type';
 import React, { useState } from 'react';
 
-const ctx = kont()
+const ctx = konn()
   .beforeEach(() => {
     const server = routerToServerAndClient(bigRouter, {});
     const queryClient = new QueryClient();
