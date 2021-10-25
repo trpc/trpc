@@ -2934,9 +2934,9 @@
     form-data "^3.0.0"
 
 "@types/node@*", "@types/node@^16.0.0":
-  version "16.11.3"
-  resolved "https://registry.yarnpkg.com/@types/node/-/node-16.11.3.tgz#fad0b069ec205b0e81429c805d306d2c12e26be1"
-  integrity sha512-aIYL9Eemcecs1y77XzFGiSc+FdfN58k4J23UEe6+hynf4Wd9g4DzQPwIKL080vSMuubFqy2hWwOzCtJdc6vFKw==
+  version "16.11.5"
+  resolved "https://registry.yarnpkg.com/@types/node/-/node-16.11.5.tgz#e91be5ba4ab88c06095e7b61f9ad1767a1093faf"
+  integrity sha512-NyUV2DGcqYIx9op++MG2+Z4Nhw1tPhi0Wfs81TgncuX1aJC4zf2fgCJlJhl4BW9bCSS04e34VkqmOS96w0XQdg==
 
 "@types/node@^12.7.1":
   version "12.20.23"
@@ -2981,9 +2981,9 @@
     "@types/react" "*"
 
 "@types/react@*", "@types/react@^17.0.20":
-  version "17.0.31"
-  resolved "https://registry.yarnpkg.com/@types/react/-/react-17.0.31.tgz#fe05ebf91ff3ae35bb6b13f6c1b461db8089dff8"
-  integrity sha512-MQSR5EL4JZtdWRvqDgz9kXhSDDoy2zMTYyg7UhP+FZ5ttUOocWyxiqFJiI57sUG0BtaEX7WDXYQlkCYkb3X9vQ==
+  version "17.0.32"
+  resolved "https://registry.yarnpkg.com/@types/react/-/react-17.0.32.tgz#89a161286bbe2325d4d516420a27364a324909f4"
+  integrity sha512-hAm1pmwA3oZWbkB985RFwNvBRMG0F3KWSiC4/hNmanigKZMiKQoH5Q6etNw8HIDztTGfvXyOjPvdNnvBUCuaPg==
   dependencies:
     "@types/prop-types" "*"
     "@types/scheduler" "*"
@@ -10388,10 +10388,10 @@ platform@1.3.6:
   resolved "https://registry.npmjs.org/platform/-/platform-1.3.6.tgz#48b4ce983164b209c2d45a107adb31f473a6e7a7"
   integrity sha512-fnWVljUchTro6RiCFvCXBbNhJc2NijN7oIQxbwsyL0buWJPG85v81ehlHI9fXrJsMNgTofEoWIQeClKpgxFLrg==
 
-playwright-core@=1.16.0, playwright-core@>=1.2.0:
-  version "1.16.0"
-  resolved "https://registry.npmjs.org/playwright-core/-/playwright-core-1.16.0.tgz#c23fca9a0086c00f3e684b1dcaffd2f0d2d55ec6"
-  integrity sha512-bJBIceYaNvdGKUreCltfBgsQbvwnWdWd8u+9Ncx9aSHzWUNFDh9cQGTQxqOI2egbMw+ovSG0YU/0lJIzm/Uj/w==
+playwright-core@=1.16.1, playwright-core@>=1.2.0:
+  version "1.16.1"
+  resolved "https://registry.yarnpkg.com/playwright-core/-/playwright-core-1.16.1.tgz#f8564359c9b0881eab1de55ca7723b21539eb585"
+  integrity sha512-SdThyChaLkvFkVEPZ/pfhiaaD4pnBTts2MYZzRMS+fYeyHzPy/FI+NUTj5Rgs+ZN9BCIrbJhfzvfYBxco/4X4A==
   dependencies:
     commander "^8.2.0"
     debug "^4.1.1"
@@ -10411,11 +10411,11 @@ playwright-core@=1.16.0, playwright-core@>=1.2.0:
     yazl "^2.5.1"
 
 playwright@^1.14.1, playwright@^1.15.2:
-  version "1.16.0"
-  resolved "https://registry.npmjs.org/playwright/-/playwright-1.16.0.tgz#2a3a87de34dee6aad6d07f6fa05fdb5d57455058"
-  integrity sha512-EFjixq8/wT1So6TH1yXoJ3fxFJkEhmmi8BanR5yfCScG76x4WDH0zj8mVkDl9ovfODjy9g6Ba/a/5rXO+0sz6Q==
+  version "1.16.1"
+  resolved "https://registry.yarnpkg.com/playwright/-/playwright-1.16.1.tgz#c3518b02448f7fd0246e8f4ccdc38ac4f74b428d"
+  integrity sha512-D7o7itqxsJ4vx4OlcPv9brOe74M2J4gDDt9qVI9ptgtHtxCi48I8tSXE/trX1PoHFuJeeVlo+tGvhtisvPGu1A==
   dependencies:
-    playwright-core "=1.16.0"
+    playwright-core "=1.16.1"
 
 pngjs@^5.0.0:
   version "5.0.0"
@@ -10833,9 +10833,9 @@ react-is@^16.8.1:
   integrity sha512-24e6ynE2H+OKt4kqsOvNd8kBpV65zoxbA4BVsEOB3ARVWQki/DHzaUoC5KuON/BiccDaCCTZBuOcfZs70kR8bQ==
 
 react-query@^3.27.0:
-  version "3.27.0"
-  resolved "https://registry.npmjs.org/react-query/-/react-query-3.27.0.tgz#77c76377ae41d180c4718da07ef72df82e07306b"
-  integrity sha512-2MR5LBXnR6OMXQVLcv/57x1zkDNj6gK5J5mtjGi6pu0aQ6Y4jGQysVvkrAErMKMZJVZELFcYGA8LsGIHzlo/zg==
+  version "3.28.0"
+  resolved "https://registry.yarnpkg.com/react-query/-/react-query-3.28.0.tgz#1bfe12944860b2b773680054de37f19438f59d1d"
+  integrity sha512-OeX+nRqs7Zi0MvvtaKxKWE4N966UGtqSVuedOsz8cJh9eW195fgtYZ9nW3hZjIPPmeDY1PkArLUiV4wZvNRDPw==
   dependencies:
     "@babel/runtime" "^7.5.5"
     broadcast-channel "^3.4.1"
