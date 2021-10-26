@@ -58,7 +58,7 @@ export interface ProcedureCallOptions<TContext> {
   type: ProcedureType;
 }
 
-type ParseFn<TInput> = (value: unknown) => TInput;
+type ParseFn<TInput> = (value: unknown) => TInput | Promise<TInput>;
 function getParseFn<TInput>(
   inputParser: ProcedureInputParser<TInput>,
 ): ParseFn<TInput> {
@@ -108,9 +108,9 @@ export class Procedure<TInputContext, TContext, TInput, TOutput> {
     this.parse = getParseFn(this.inputParser);
   }
 
-  private parseInput(rawInput: unknown): TInput | Promise<TInput> {
+  private async parseInput(rawInput: unknown): Promise<TInput> {
     try {
-      return this.parse(rawInput);
+      return await this.parse(rawInput);
     } catch (cause) {
       throw new TRPCError({
         code: 'BAD_REQUEST',
