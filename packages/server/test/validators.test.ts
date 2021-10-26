@@ -50,8 +50,10 @@ test('zod', async () => {
 });
 
 test('zod async', async () => {
+  const input = z.string().refine(async (value) => value === 'foo');
+
   const router = trpc.router().query('q', {
-    input: z.string().refine(async (value) => value + 'bar'),
+    input,
     resolve({ input }) {
       return {
         input,
@@ -59,8 +61,22 @@ test('zod async', async () => {
     },
   });
   const { client, close } = routerToServerAndClient(router);
+
+  await expect(client.query('q', 'bar')).rejects.toMatchInlineSnapshot(`
+          [TRPCClientError: [
+            {
+              "code": "custom",
+              "message": "Invalid input",
+              "path": []
+            }
+          ]]
+        `);
   const res = await client.query('q', 'foo');
-  expect(res).toMatchInlineSnapshot();
+  expect(res).toMatchInlineSnapshot(`
+    Object {
+      "input": "foo",
+    }
+  `);
   close();
 });
 
