@@ -1,7 +1,12 @@
 import Head from 'next/head';
 import Link from 'next/link';
 import { ReactQueryDevtools } from 'react-query/devtools';
-import { trpc } from '../utils/trpc';
+import { TQueries, trpc } from '../utils/trpc';
+
+type PostListItemProps = TQueries['post.all']['output'][number];
+function PostListItem(props: PostListItemProps) {
+  return <pre>{JSON.stringify(props, null, 4)}</pre>;
+}
 
 export default function IndexPage() {
   const postsQuery = trpc.useQuery(['post.all']);

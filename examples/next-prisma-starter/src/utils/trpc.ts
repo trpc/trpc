@@ -1,5 +1,9 @@
 import { createReactQueryHooks } from '@trpc/react';
-import type { inferProcedureOutput } from '@trpc/server';
+import type {
+  inferProcedureOutput,
+  inferProcedureInput,
+  ProcedureRecord,
+} from '@trpc/server';
 // ℹ️ Type-only import:
 // https://www.typescriptlang.org/docs/handbook/release-notes/typescript-3-8.html#type-only-imports-and-export
 import type { AppRouter } from 'server/routers/_app';
@@ -10,11 +14,35 @@ import type { AppRouter } from 'server/routers/_app';
  */
 export const trpc = createReactQueryHooks<AppRouter>();
 
-// export const transformer = superjson;
+// -------------- option 1 --------------
+type inferProcedures<TObj extends ProcedureRecord<any, any, any, any>> = {
+  [TPath in keyof TObj]: {
+    input: inferProcedureInput<TObj[TPath]>;
+    output: inferProcedureOutput<TObj[TPath]>;
+  };
+};
 /**
- * This is a helper method to infer the output of a query resolver
- * @example type HelloOutput = inferQueryOutput<'hello'>
+ * @example usage:
+ * function PostListItem(props: TQueries['post.byId']['output']) {
+ *   return <pre>{JSON.stringify(props, null, 4)}</pre>;
+ * }
  */
-export type inferQueryOutput<
-  TRouteKey extends keyof AppRouter['_def']['queries'],
-> = inferProcedureOutput<AppRouter['_def']['queries'][TRouteKey]>;
+export type TQueries = inferProcedures<AppRouter['_def']['queries']>;
+export type TMutations = inferProcedures<AppRouter['_def']['mutations']>;
+
+// -------------- option 2 --------------
+type inferProcedureInputs<TObj extends ProcedureRecord<any, any, any, any>> = {
+  [TPath in keyof TObj]: inferProcedureInput<TObj[TPath]>;
+};
+type inferProcedureOutputs<TObj extends ProcedureRecord<any, any, any, any>> = {
+  [TPath in keyof TObj]: inferProcedureOutput<TObj[TPath]>;
+};
+
+/**
+ * @example usage:
+ * function PostListItem(props: TQueryOutputs['post.byId']) {
+ *   return <pre>{JSON.stringify(props, null, 4)}</pre>;
+ * }
+ */
+export type TQueryOutputs = inferProcedureOutputs<AppRouter['_def']['queries']>;
+export type TQueryInputs = inferProcedureInputs<AppRouter['_def']['mutations']>;
