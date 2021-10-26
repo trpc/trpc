@@ -2250,10 +2250,10 @@
   resolved "https://registry.npmjs.org/@next/env/-/env-11.1.2.tgz#27996efbbc54c5f949f5e8c0a156e3aa48369b99"
   integrity sha512-+fteyVdQ7C/OoulfcF6vd1Yk0FEli4453gr8kSFbU8sKseNSizYq6df5MKz/AjwLptsxrUeIkgBdAzbziyJ3mA==
 
-"@next/eslint-plugin-next@11.1.2":
-  version "11.1.2"
-  resolved "https://registry.npmjs.org/@next/eslint-plugin-next/-/eslint-plugin-next-11.1.2.tgz#f26cf90bcb6cd2e4645e2ba253bbc9aaaa43a170"
-  integrity sha512-cN+ojHRsufr9Yz0rtvjv8WI5En0RPZRJnt0y16Ha7DD+0n473evz8i1ETEJHmOLeR7iPJR0zxRrxeTN/bJMOjg==
+"@next/eslint-plugin-next@12.0.0":
+  version "12.0.0"
+  resolved "https://registry.yarnpkg.com/@next/eslint-plugin-next/-/eslint-plugin-next-12.0.0.tgz#754e603ee3e4b248f33c172a27e772a189a99974"
+  integrity sha512-pXpSBUkaHfIPD3LOpa3SJCxoPAHS68JBgtQylmhjG/Nu2EogzxHFs+GuIyKsLJVKG/8VKe5JobnEQ4u/NmLPPg==
   dependencies:
     glob "7.1.7"
 
@@ -5508,12 +5508,12 @@ escodegen@^2.0.0:
   optionalDependencies:
     source-map "~0.6.1"
 
-eslint-config-next@^11.0.1:
-  version "11.1.2"
-  resolved "https://registry.npmjs.org/eslint-config-next/-/eslint-config-next-11.1.2.tgz#73c918f2fa6120d5f65080bf3fcf6b154905707e"
-  integrity sha512-dFutecxX2Z5/QVlLwdtKt+gIfmNMP8Qx6/qZh3LM/DFVdGJEAnUKrr4VwGmACB2kx/PQ5bx3R+QxnEg4fDPiTg==
+eslint-config-next@^12.0.0:
+  version "12.0.0"
+  resolved "https://registry.yarnpkg.com/eslint-config-next/-/eslint-config-next-12.0.0.tgz#0789aa739ab8227bab08839ba5e3794aad63208f"
+  integrity sha512-h4o5e8Nq7DLgXVt0sDmgNaHauSNBfYb78ru6FPg3H9jRYAP7Z/9P4Olcs4MfpVzW4O1bDolyM0mcKVmqNOZj5g==
   dependencies:
-    "@next/eslint-plugin-next" "11.1.2"
+    "@next/eslint-plugin-next" "12.0.0"
     "@rushstack/eslint-patch" "^1.0.6"
     "@typescript-eslint/parser" "^4.20.0"
     eslint-import-resolver-node "^0.3.4"
