@@ -49,6 +49,21 @@ test('zod', async () => {
   close();
 });
 
+test('zod async', async () => {
+  const router = trpc.router().query('q', {
+    input: z.string().refine(async (value) => value + 'bar'),
+    resolve({ input }) {
+      return {
+        input,
+      };
+    },
+  });
+  const { client, close } = routerToServerAndClient(router);
+  const res = await client.query('q', 'foo');
+  expect(res).toMatchInlineSnapshot();
+  close();
+});
+
 test('superstruct', async () => {
   const router = trpc.router().query('num', {
     input: t.number(),
