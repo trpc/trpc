@@ -21,7 +21,7 @@ export type ProcedureInputParserSuperstructEsque<TInput = unknown> = {
 
 export type ProcedureInputParserCustomValidatorEsque<TInput = unknown> = (
   input: unknown,
-) => TInput;
+) => TInput | Promise<TInput>;
 
 export type ProcedureInputParserYupEsque<TInput = unknown> = {
   validateSync: (input: unknown) => TInput;

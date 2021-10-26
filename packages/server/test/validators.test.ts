@@ -161,3 +161,27 @@ test('validator fn', async () => {
   expect(res.input).toBe(123);
   close();
 });
+
+test('async validator fn', async () => {
+  async function numParser(input: unknown) {
+    if (typeof input !== 'number') {
+      throw new Error('Not a number');
+    }
+    return input;
+  }
+  const router = trpc.router().query('num', {
+    input: numParser,
+    resolve({ input }) {
+      return {
+        input,
+      };
+    },
+  });
+  const { client, close } = routerToServerAndClient(router);
+  const res = await client.query('num', 123);
+  await expect(client.query('num', '123' as any)).rejects.toMatchInlineSnapshot(
+    `[TRPCClientError: Not a number]`,
+  );
+  expect(res.input).toBe(123);
+  close();
+});
