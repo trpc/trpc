@@ -30,7 +30,7 @@
     }
   },
   "peerDependencies": {
-    "next": "^11.1.0",
+    "next": "*",
     "react": ">=16.8.0",
     "react-dom": ">=16.8.0",
     "react-query": "^3.0.0"
