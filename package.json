@@ -65,7 +65,7 @@
     "@babel/preset-typescript": "^7.15.0",
     "@changesets/changelog-github": "^0.4.1",
     "@changesets/cli": "^2.17.0",
-    "@manypkg/cli": "^0.18.0",
+    "@manypkg/cli": "^0.19.0",
     "@preconstruct/cli": "^2.1.2",
     "@testing-library/jest-dom": "^5.14.1",
     "@testing-library/react": "^12.0.0",

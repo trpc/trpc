@@ -2167,13 +2167,13 @@
     npmlog "^4.1.2"
     write-file-atomic "^3.0.3"
 
-"@manypkg/cli@^0.18.0":
-  version "0.18.0"
-  resolved "https://registry.npmjs.org/@manypkg/cli/-/cli-0.18.0.tgz#2b40d5aa7f88d43142e041de8fc8d7e44aa28a1d"
-  integrity sha512-dlgraFHLEnCJ8hrGULCOLZuiJWSzaWDgq0tq+O7pe37K37S2Mjrb7x/BcNHj8caZLf3kiPC0KW0iSMo8UyvpbQ==
+"@manypkg/cli@^0.19.0":
+  version "0.19.0"
+  resolved "https://registry.yarnpkg.com/@manypkg/cli/-/cli-0.19.0.tgz#4cf8cce52e3ff698840cae752d70e9a204606189"
+  integrity sha512-/vK7vsCGbB3qIkZisJZDb6S4GSrR81LR+BOT3SUXYgAt/HtqxAgCTX1AhZRRF4fWQtBUtaIEAPjMjp8pOc0UUQ==
   dependencies:
     "@babel/runtime" "^7.5.5"
-    "@manypkg/get-packages" "^1.1.1"
+    "@manypkg/get-packages" "^1.1.2"
     chalk "^2.4.2"
     detect-indent "^6.0.0"
     find-up "^4.1.0"
@@ -2198,12 +2198,13 @@
     find-up "^4.1.0"
     fs-extra "^8.1.0"
 
-"@manypkg/get-packages@^1.0.1", "@manypkg/get-packages@^1.1.1":
-  version "1.1.1"
-  resolved "https://registry.npmjs.org/@manypkg/get-packages/-/get-packages-1.1.1.tgz#7c7e72d0061ab2e61d2ce4da58ce91290a60ac8d"
-  integrity sha512-J6VClfQSVgR6958eIDTGjfdCrELy1eT+SHeoSMomnvRQVktZMnEA5edIr5ovRFNw5y+Bk/jyoevPzGYod96mhw==
+"@manypkg/get-packages@^1.0.1", "@manypkg/get-packages@^1.1.2":
+  version "1.1.2"
+  resolved "https://registry.yarnpkg.com/@manypkg/get-packages/-/get-packages-1.1.2.tgz#d0af46018966dbe064103472b3dae9662bf2ea71"
+  integrity sha512-AoA/VBOik2YZh+z44YlK/wgEA5lbzd5pfGsjjaGFuAjUXe0+zBL6oK3ryOK3pDkV7SljyN0sLpVeLBLKc3LeVA==
   dependencies:
     "@babel/runtime" "^7.5.5"
+    "@changesets/types" "^4.0.1"
     "@manypkg/find-root" "^1.1.0"
     fs-extra "^8.1.0"
     globby "^11.0.0"
