@@ -127,7 +127,6 @@ export type TRPCContextState<TRouter extends AnyRouter> = {
   >(
     pathAndInput: [TPath, TInput?],
     output: TOutput,
-    // Dropping first two args
     options?: SetDataOptions,
   ) => void;
   /**
