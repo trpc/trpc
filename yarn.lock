@@ -5373,6 +5373,15 @@ end-of-stream@^1.1.0:
   dependencies:
     once "^1.4.0"
 
+endent@^2.1.0:
+  version "2.1.0"
+  resolved "https://registry.yarnpkg.com/endent/-/endent-2.1.0.tgz#5aaba698fb569e5e18e69e1ff7a28ff35373cd88"
+  integrity sha512-r8VyPX7XL8U01Xgnb1CjZ3XV+z90cXIJ9JPE/R9SEC9vpw2P6CfsRPJmp20DppC5N7ZAMCmjYkJIa744Iyg96w==
+  dependencies:
+    dedent "^0.7.0"
+    fast-json-parse "^1.0.3"
+    objectorarray "^1.0.5"
+
 enquirer@^2.3.0, enquirer@^2.3.5, enquirer@^2.3.6:
   version "2.3.6"
   resolved "https://registry.npmjs.org/enquirer/-/enquirer-2.3.6.tgz#2a7fe5dd634a1e4125a975ec994ff5456dc3734d"
@@ -6021,6 +6030,11 @@ fast-glob@^3.1.1, fast-glob@^3.2.4:
     glob-parent "^5.1.2"
     merge2 "^1.3.0"
     micromatch "^4.0.4"
+
+fast-json-parse@^1.0.3:
+  version "1.0.3"
+  resolved "https://registry.yarnpkg.com/fast-json-parse/-/fast-json-parse-1.0.3.tgz#43e5c61ee4efa9265633046b770fb682a7577c4d"
+  integrity sha512-FRWsaZRWEJ1ESVNbDWmsAlqDk96gPQezzLghafp5J4GUKjbCz3OkAHuZs5TuPEtkbVQERysLp9xv6c24fBm8Aw==
 
 fast-json-stable-stringify@2.x, fast-json-stable-stringify@^2.0.0:
   version "2.1.0"
@@ -8439,12 +8453,13 @@ kleur@^3.0.3:
   resolved "https://registry.npmjs.org/kleur/-/kleur-3.0.3.tgz#a79c9ecc86ee1ce3fa6206d1216c501f147fc07e"
   integrity sha512-eTIzlVOSUR+JxdDFepEYcBMtZ9Qqdef+rnzWdRZuMbOywu5tO2w2N7rqjoANZ5k9vywhL6Br1VRjUIgTQx4E8w==
 
-konn@^0.6.0:
-  version "0.6.0"
-  resolved "https://registry.npmjs.org/konn/-/konn-0.6.0.tgz#df22148662e841f32a6524151271862676dcccc0"
-  integrity sha512-2f9ktNofziY0NxbFF/XYm/xEhd5mQf8T+0+x+vlVU6cUM9zDf6QEIEjBKruDgDV6iOPpSJoJ1kvx58+zehX5OQ==
+konn@^0.7.0:
+  version "0.7.0"
+  resolved "https://registry.yarnpkg.com/konn/-/konn-0.7.0.tgz#f083a1cb48e4543936d4dd6dfc7cb9b5215e033d"
+  integrity sha512-vSWkLjtNEpsavMXpedj5TgKTS8/MK9d6U/MQuJg8VaSyXqMuXHOJ3Lxqz59fSoFBcvN1/5BkMictMnt1oVgN1Q==
   dependencies:
     "@jsdevtools/ono" "^7.1.3"
+    endent "^2.1.0"
     execa "^5.1.1"
     floggy "^0.3.1"
     fs-jetpack "^4.2.0"
@@ -9814,6 +9829,11 @@ object.values@^1.1.4:
     call-bind "^1.0.2"
     define-properties "^1.1.3"
     es-abstract "^1.18.2"
+
+objectorarray@^1.0.5:
+  version "1.0.5"
+  resolved "https://registry.yarnpkg.com/objectorarray/-/objectorarray-1.0.5.tgz#2c05248bbefabd8f43ad13b41085951aac5e68a5"
+  integrity sha512-eJJDYkhJFFbBBAxeh8xW+weHlkI28n2ZdQV/J/DNfWfSKlGEf2xcfAbZTv3riEXHAhL9SVOTs2pRmXiSTf78xg==
 
 oblivious-set@1.0.0:
   version "1.0.0"
