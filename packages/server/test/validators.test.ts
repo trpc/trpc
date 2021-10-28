@@ -49,6 +49,37 @@ test('zod', async () => {
   close();
 });
 
+test('zod async', async () => {
+  const input = z.string().refine(async (value) => value === 'foo');
+
+  const router = trpc.router().query('q', {
+    input,
+    resolve({ input }) {
+      return {
+        input,
+      };
+    },
+  });
+  const { client, close } = routerToServerAndClient(router);
+
+  await expect(client.query('q', 'bar')).rejects.toMatchInlineSnapshot(`
+          [TRPCClientError: [
+            {
+              "code": "custom",
+              "message": "Invalid input",
+              "path": []
+            }
+          ]]
+        `);
+  const res = await client.query('q', 'foo');
+  expect(res).toMatchInlineSnapshot(`
+    Object {
+      "input": "foo",
+    }
+  `);
+  close();
+});
+
 test('superstruct', async () => {
   const router = trpc.router().query('num', {
     input: t.number(),
@@ -109,6 +140,30 @@ test('myzod', async () => {
 
 test('validator fn', async () => {
   function numParser(input: unknown) {
+    if (typeof input !== 'number') {
+      throw new Error('Not a number');
+    }
+    return input;
+  }
+  const router = trpc.router().query('num', {
+    input: numParser,
+    resolve({ input }) {
+      return {
+        input,
+      };
+    },
+  });
+  const { client, close } = routerToServerAndClient(router);
+  const res = await client.query('num', 123);
+  await expect(client.query('num', '123' as any)).rejects.toMatchInlineSnapshot(
+    `[TRPCClientError: Not a number]`,
+  );
+  expect(res.input).toBe(123);
+  close();
+});
+
+test('async validator fn', async () => {
+  async function numParser(input: unknown) {
     if (typeof input !== 'number') {
       throw new Error('Not a number');
     }

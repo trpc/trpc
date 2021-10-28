@@ -1,15 +1,19 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { assertNotBrowser } from '../assertNotBrowser';
 import { ProcedureType } from '../router';
-import { MiddlewareFunction, middlewareMarker } from './middlewares';
 import { TRPCError } from '../TRPCError';
 import { getErrorFromUnknown } from './errors';
+import { MiddlewareFunction, middlewareMarker } from './middlewares';
 import { wrapCallSafe } from './wrapCallSafe';
 assertNotBrowser();
 
-export type ProcedureInputParserZodEsque<TInput = unknown> = {
-  parse: (input: any) => TInput;
-};
+export type ProcedureInputParserZodEsque<TInput = unknown> =
+  | {
+      parse: (input: any) => TInput;
+    }
+  | {
+      parseAsync: (input: any) => TInput;
+    };
 
 export type ProcedureInputParserSuperstructEsque<TInput = unknown> = {
   create: (input: unknown) => TInput;
@@ -17,7 +21,7 @@ export type ProcedureInputParserSuperstructEsque<TInput = unknown> = {
 
 export type ProcedureInputParserCustomValidatorEsque<TInput = unknown> = (
   input: unknown,
-) => TInput;
+) => TInput | Promise<TInput>;
 
 export type ProcedureInputParserYupEsque<TInput = unknown> = {
   validateSync: (input: unknown) => TInput;
@@ -54,24 +58,34 @@ export interface ProcedureCallOptions<TContext> {
   type: ProcedureType;
 }
 
-type ParseFn<TInput> = (value: unknown) => TInput;
+type ParseFn<TInput> = (value: unknown) => TInput | Promise<TInput>;
 function getParseFn<TInput>(
   inputParser: ProcedureInputParser<TInput>,
 ): ParseFn<TInput> {
   const parser = inputParser as any;
+
   if (typeof parser === 'function') {
+    // ProcedureInputParserCustomValidatorEsque
     return parser;
   }
 
+  if (typeof parser.parseAsync === 'function') {
+    // ProcedureInputParserZodEsque
+    return parser.parseAsync.bind(parser);
+  }
+
   if (typeof parser.parse === 'function') {
+    // ProcedureInputParserZodEsque
     return parser.parse.bind(parser);
   }
 
   if (typeof parser.validateSync === 'function') {
+    // ProcedureInputParserYupEsque
     return parser.validateSync.bind(parser);
   }
 
   if (typeof parser.create === 'function') {
+    // ProcedureInputParserSuperstructEsque
     return parser.create.bind(parser);
   }
 
@@ -94,9 +108,9 @@ export class Procedure<TInputContext, TContext, TInput, TOutput> {
     this.parse = getParseFn(this.inputParser);
   }
 
-  private parseInput(rawInput: unknown): TInput {
+  private async parseInput(rawInput: unknown): Promise<TInput> {
     try {
-      return this.parse(rawInput);
+      return await this.parse(rawInput);
     } catch (cause) {
       throw new TRPCError({
         code: 'BAD_REQUEST',
@@ -115,7 +129,7 @@ export class Procedure<TInputContext, TContext, TInput, TOutput> {
     // wrap the actual resolver and treat as the last "middleware"
     const middlewaresWithResolver = this.middlewares.concat([
       async ({ ctx }: { ctx: TContext }) => {
-        const input = this.parseInput(opts.rawInput);
+        const input = await this.parseInput(opts.rawInput);
         const data = await this.resolver({ ...opts, ctx, input });
         return {
           marker: middlewareMarker,
