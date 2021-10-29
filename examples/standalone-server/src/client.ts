@@ -3,6 +3,7 @@ import { createTRPCClient } from '@trpc/client';
 import { httpLink } from '@trpc/client/links/httpLink';
 import { splitLink } from '@trpc/client/links/splitLink';
 import { createWSClient, wsLink } from '@trpc/client/links/wsLink';
+import { wrapCallSafe } from './client/utils';
 import AbortController from 'abort-controller';
 import fetch from 'node-fetch';
 import ws from 'ws';
@@ -36,9 +37,11 @@ async function main() {
     ],
   });
 
-  const helloResponse = await client.query('hello', {
-    name: 'world',
-  });
+  const helloResponse = await wrapCallSafe(() =>
+    client.query('hello', {
+      name: 'world',
+    }),
+  );
 
   console.log('helloResponse', helloResponse);
 
