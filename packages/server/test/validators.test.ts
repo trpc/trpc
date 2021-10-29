@@ -11,7 +11,8 @@ import { routerToServerAndClient } from './_testHelpers';
 
 test('no validator', async () => {
   const router = trpc.router().query('hello', {
-    resolve() {
+    resolve({ input }) {
+      expectTypeOf(input).toBeUndefined();
       return 'test';
     },
   });
@@ -25,6 +26,7 @@ test('zod', async () => {
   const router = trpc.router().query('num', {
     input: z.number(),
     resolve({ input }) {
+      expectTypeOf(input).toBeNumber();
       return {
         input,
       };
@@ -55,6 +57,7 @@ test('zod async', async () => {
   const router = trpc.router().query('q', {
     input,
     resolve({ input }) {
+      expectTypeOf(input).toBeString();
       return {
         input,
       };
@@ -84,12 +87,6 @@ test('zod transform mixed input/output', async () => {
   const input = z.object({
     length: z.string().transform((s) => s.length),
   });
-  // helpers for anyone picking this up
-  type RawInput = z.input<typeof input>;
-  type ParsedInput = z.output<typeof input>;
-  const simpleInput = z.object({
-    length: z.string(),
-  });
 
   const router = trpc.router().query('num', {
     input: input,
@@ -102,14 +99,31 @@ test('zod transform mixed input/output', async () => {
   });
   const { client, close } = routerToServerAndClient(router);
 
-  await expect(
-    client.query('num', { length: '123' }),
-  ).resolves.toMatchInlineSnapshot();
+  await expect(client.query('num', { length: '123' })).resolves
+    .toMatchInlineSnapshot(`
+          Object {
+            "input": Object {
+              "length": 3,
+            },
+          }
+        `);
 
   await expect(
     // @ts-expect-error this should only accept a string
     client.query('num', { length: 123 }),
-  ).rejects.toMatchInlineSnapshot();
+  ).rejects.toMatchInlineSnapshot(`
+          [TRPCClientError: [
+            {
+              "code": "invalid_type",
+              "expected": "string",
+              "received": "number",
+              "path": [
+                "length"
+              ],
+              "message": "Expected string, received number"
+            }
+          ]]
+        `);
 
   close();
 });
@@ -118,6 +132,7 @@ test('superstruct', async () => {
   const router = trpc.router().query('num', {
     input: t.number(),
     resolve({ input }) {
+      expectTypeOf(input).toBeNumber();
       return {
         input,
       };
@@ -184,6 +199,7 @@ test('validator fn', async () => {
   const router = trpc.router().query('num', {
     input: numParser,
     resolve({ input }) {
+      expectTypeOf(input).toBeNumber();
       return {
         input,
       };
@@ -208,6 +224,7 @@ test('async validator fn', async () => {
   const router = trpc.router().query('num', {
     input: numParser,
     resolve({ input }) {
+      expectTypeOf(input).toBeNumber();
       return {
         input,
       };

@@ -1,3 +1,4 @@
+import { CreateProcedureWithInputOutputParser } from './internals/procedure';
 /* eslint-disable @typescript-eslint/ban-types */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
@@ -281,12 +282,24 @@ export class Router<
 
   public query<TPath extends string, TInput, TParsedInput, TOutput>(
     path: TPath,
-    procedure: CreateProcedureWithInput<
+    procedure: CreateProcedureWithInputOutputParser<
       TContext,
       TInput,
       TParsedInput,
       TOutput
     >,
+  ): Router<
+    TInputContext,
+    TContext,
+    TQueries &
+      Record<TPath, inferProcedureFromOptions<TInputContext, typeof procedure>>,
+    TMutations,
+    TSubscriptions,
+    TErrorShape
+  >;
+  public query<TPath extends string, TInput, TOutput>(
+    path: TPath,
+    procedure: CreateProcedureWithInput<TContext, TInput, TInput, TOutput>,
   ): Router<
     TInputContext,
     TContext,
@@ -310,7 +323,10 @@ export class Router<
     TErrorShape
   >;
 
-  query(path: string, procedure: CreateProcedureOptions<TContext, any, any>) {
+  query(
+    path: string,
+    procedure: CreateProcedureOptions<TContext, any, any, any>,
+  ) {
     const router = new Router<TContext, TContext, any, {}, {}, any>({
       queries: safeObject({
         [path]: createProcedure(procedure),
@@ -322,12 +338,24 @@ export class Router<
 
   public mutation<TPath extends string, TInput, TParsedInput, TOutput>(
     path: TPath,
-    procedure: CreateProcedureWithInput<
+    procedure: CreateProcedureWithInputOutputParser<
       TContext,
       TInput,
       TParsedInput,
       TOutput
     >,
+  ): Router<
+    TInputContext,
+    TContext,
+    TQueries,
+    TMutations &
+      Record<TPath, inferProcedureFromOptions<TInputContext, typeof procedure>>,
+    TSubscriptions,
+    TErrorShape
+  >;
+  public mutation<TPath extends string, TInput, TOutput>(
+    path: TPath,
+    procedure: CreateProcedureWithInput<TContext, TInput, TInput, TOutput>,
   ): Router<
     TInputContext,
     TContext,
@@ -353,7 +381,7 @@ export class Router<
 
   public mutation(
     path: string,
-    procedure: CreateProcedureOptions<TContext, any, any>,
+    procedure: CreateProcedureOptions<TContext, any, any, any>,
   ) {
     const router = new Router<TContext, TContext, {}, any, {}, any>({
       mutations: safeObject({
@@ -374,12 +402,32 @@ export class Router<
     TOutput extends Subscription<unknown>,
   >(
     path: TPath,
-    procedure: CreateProcedureWithInput<
+    procedure: CreateProcedureWithInputOutputParser<
       TContext,
       TInput,
       TParsedInput,
       TOutput
     >,
+  ): Router<
+    TInputContext,
+    TContext,
+    TQueries,
+    TMutations,
+    TSubscriptions &
+      Record<TPath, inferProcedureFromOptions<TInputContext, typeof procedure>>,
+    TErrorShape
+  >;
+
+  /**
+   * @beta Might change without a major version bump
+   */
+  public subscription<
+    TPath extends string,
+    TInput,
+    TOutput extends Subscription<unknown>,
+  >(
+    path: TPath,
+    procedure: CreateProcedureWithInput<TContext, TInput, TInput, TOutput>,
   ): Router<
     TInputContext,
     TContext,
@@ -411,7 +459,7 @@ export class Router<
 
   public subscription(
     path: string,
-    procedure: CreateProcedureOptions<TContext, any, any>,
+    procedure: CreateProcedureOptions<TContext, any, any, any>,
   ) {
     const router = new Router<TContext, TContext, {}, {}, any, any>({
       subscriptions: safeObject({

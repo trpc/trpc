@@ -7,51 +7,45 @@ import { MiddlewareFunction, middlewareMarker } from './middlewares';
 import { wrapCallSafe } from './wrapCallSafe';
 assertNotBrowser();
 
-export type ProcedureInputParserZodEsque<
-  TInput = unknown,
-  TParsedInput = unknown,
-> = {
+export type ProcedureInputParserZodEsque<TInput, TParsedInput> = {
   _input: TInput;
   _output: TParsedInput;
 };
 
-export type ProcedureInputParserMyZodEsque<TInput = unknown> = {
+export type ProcedureInputParserMyZodEsque<TInput> = {
   parse: (input: any) => TInput;
 };
 
-export type ProcedureInputParserSuperstructEsque<TInput = unknown> = {
+export type ProcedureInputParserSuperstructEsque<TInput> = {
   create: (input: unknown) => TInput;
 };
 
-export type ProcedureInputParserCustomValidatorEsque<TInput = unknown> = (
+export type ProcedureInputParserCustomValidatorEsque<TInput> = (
   input: unknown,
 ) => TInput | Promise<TInput>;
 
-export type ProcedureInputParserYupEsque<TInput = unknown> = {
+export type ProcedureInputParserYupEsque<TInput> = {
   validateSync: (input: unknown) => TInput;
 };
-export type ProcedureInputParser<TInput, TParsedInput> =
-  | ProcedureInputParserZodEsque<TInput, TParsedInput>
+export type ProcedureInputParser<TInput> =
   | ProcedureInputParserYupEsque<TInput>
   | ProcedureInputParserSuperstructEsque<TInput>
   | ProcedureInputParserCustomValidatorEsque<TInput>
   | ProcedureInputParserMyZodEsque<TInput>;
 
-export type ProcedureResolver<
-  TContext = unknown,
-  TInput = unknown,
-  TParsedInput = unknown,
-  TOutput = unknown,
-> = (opts: {
+export type ProcedureInputParserWithInputOutput<TInput, TParsedInput> =
+  ProcedureInputParserZodEsque<TInput, TParsedInput>;
+
+export type ProcedureResolver<TContext, TParsedInput, TOutput> = (opts: {
   ctx: TContext;
   input: TParsedInput;
   type: ProcedureType;
 }) => Promise<TOutput> | TOutput;
 
-interface ProcedureOptions<TContext, TInput, TParsedInput, TOutput> {
+interface ProcedureOptions<TContext, TParsedInput, TOutput> {
   middlewares: Array<MiddlewareFunction<any, any>>;
-  resolver: ProcedureResolver<TContext, TInput, TParsedInput, TOutput>;
-  inputParser: ProcedureInputParser<TInput, TParsedInput>;
+  resolver: ProcedureResolver<TContext, TParsedInput, TOutput>;
+  inputParser: ProcedureInputParser<TParsedInput>;
 }
 
 /**
@@ -64,12 +58,12 @@ export interface ProcedureCallOptions<TContext> {
   type: ProcedureType;
 }
 
-type ParseFn<TInput, TParsedInput> = (
+type ParseFn<TParsedInput> = (
   value: unknown,
 ) => TParsedInput | Promise<TParsedInput>;
-function getParseFn<TInput, TParsedInput>(
-  inputParser: ProcedureInputParser<TInput, TParsedInput>,
-): ParseFn<TInput, TParsedInput> {
+function getParseFn<TParsedInput>(
+  inputParser: ProcedureInputParser<TParsedInput>,
+): ParseFn<TParsedInput> {
   const parser = inputParser as any;
 
   if (typeof parser === 'function') {
@@ -105,11 +99,11 @@ function getParseFn<TInput, TParsedInput>(
  */
 export class Procedure<TInputContext, TContext, TInput, TParsedInput, TOutput> {
   private middlewares: Readonly<Array<MiddlewareFunction<any, any>>>;
-  private resolver: ProcedureResolver<TContext, TInput, TParsedInput, TOutput>;
-  private readonly inputParser: ProcedureInputParser<TInput, TParsedInput>;
-  private parse: ParseFn<TInput, TParsedInput>;
+  private resolver: ProcedureResolver<TContext, TParsedInput, TOutput>;
+  private readonly inputParser: ProcedureInputParser<TParsedInput>;
+  private parse: ParseFn<TParsedInput>;
 
-  constructor(opts: ProcedureOptions<TContext, TInput, TParsedInput, TOutput>) {
+  constructor(opts: ProcedureOptions<TContext, TParsedInput, TOutput>) {
     this.middlewares = opts.middlewares;
     this.resolver = opts.resolver;
     this.inputParser = opts.inputParser;
@@ -195,9 +189,13 @@ export class Procedure<TInputContext, TContext, TInput, TParsedInput, TOutput> {
     middlewares: MiddlewareFunction<TInputContext, TContext>[],
   ): this {
     const Constructor: {
-      new (
-        opts: ProcedureOptions<TContext, TInput, TParsedInput, TOutput>,
-      ): Procedure<TInputContext, TContext, TInput, TParsedInput, TOutput>;
+      new (opts: ProcedureOptions<TContext, TParsedInput, TOutput>): Procedure<
+        TInputContext,
+        TContext,
+        TInput,
+        TParsedInput,
+        TOutput
+      >;
     } = (this as any).constructor;
 
     const instance = new Constructor({
@@ -212,20 +210,35 @@ export class Procedure<TInputContext, TContext, TInput, TParsedInput, TOutput> {
 
 export type CreateProcedureWithInput<TContext, TInput, TParsedInput, TOutput> =
   {
-    input: ProcedureInputParser<TInput, TParsedInput>;
-    resolve: ProcedureResolver<TContext, TInput, TParsedInput, TOutput>;
+    input: ProcedureInputParser<TInput>;
+    resolve: ProcedureResolver<TContext, TParsedInput, TOutput>;
   };
+export type CreateProcedureWithInputOutputParser<
+  TContext,
+  TInput,
+  TParsedInput,
+  TOutput,
+> = {
+  input: ProcedureInputParserWithInputOutput<TInput, TParsedInput>;
+  resolve: ProcedureResolver<TContext, TParsedInput, TOutput>;
+};
 export type CreateProcedureWithoutInput<TContext, TOutput> = {
-  resolve: ProcedureResolver<TContext, undefined, undefined, TOutput>;
+  resolve: ProcedureResolver<TContext, undefined, TOutput>;
 };
 
 export type CreateProcedureOptions<
-  TContext = unknown,
-  TInput = unknown,
-  TParsedInput = unknown,
-  TOutput = unknown,
+  TContext,
+  TInput = undefined,
+  TParsedInput = undefined,
+  TOutput = undefined,
 > =
   | CreateProcedureWithInput<TContext, TInput, TParsedInput, TOutput>
+  | CreateProcedureWithInputOutputParser<
+      TContext,
+      TInput,
+      TParsedInput,
+      TOutput
+    >
   | CreateProcedureWithoutInput<TContext, TOutput>;
 
 export function createProcedure<TContext, TInput, TParsedInput, TOutput>(
@@ -253,12 +266,18 @@ export function createProcedure<TContext, TInput, TParsedInput, TOutput>(
 
 export type inferProcedureFromOptions<
   TInputContext,
-  TOptions extends CreateProcedureOptions<any, any, any>,
+  TOptions extends CreateProcedureOptions<any, any, any, any>,
 > = TOptions extends CreateProcedureOptions<
   infer TContext,
   infer TInput,
   infer TParsedInput,
   infer TOutput
 >
-  ? Procedure<TInputContext, TContext, TInput, TParsedInput, TOutput>
+  ? Procedure<
+      TInputContext,
+      TContext,
+      unknown extends TInput ? undefined : TInput,
+      unknown extends TParsedInput ? undefined : TParsedInput,
+      TOutput
+    >
   : never;
