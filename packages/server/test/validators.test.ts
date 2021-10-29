@@ -81,24 +81,30 @@ test('zod async', async () => {
 });
 
 test('zod transform mixed input/output', async () => {
-  const input = z.string().transform((s) => s.length);
+  const input = z.object({
+    length: z.string().transform((s) => s.length),
+  });
+
   const router = trpc.router().query('num', {
     input: input,
     resolve({ input }) {
+      expectTypeOf(input.length).toBeNumber();
       return {
         input,
       };
     },
   });
   const { client, close } = routerToServerAndClient(router);
-  const res = await client.query('num', 123);
 
-  await expect(client.query('num', '123')).resolves.toMatchInlineSnapshot();
+  await expect(
+    client.query('num', { length: '123' }),
+  ).resolves.toMatchInlineSnapshot();
 
-  // @ts-expect-error
-  await expect(client.query('num', 123)).rejects.toMatchInlineSnapshot();
+  await expect(
+    // @ts-expect-error
+    client.query('num', { length: 123 }),
+  ).rejects.toMatchInlineSnapshot();
 
-  expect(res.input).toBe(123);
   close();
 });
 
