@@ -113,8 +113,7 @@ test('superstruct', async () => {
   const { client, close } = routerToServerAndClient(router);
   const res = await client.query('num', 123);
 
-  // @ts-expect-error
-  await expect(client.query('num', '123')).rejects.toMatchInlineSnapshot(
+  await expect(client.query('num', '123' as any)).rejects.toMatchInlineSnapshot(
     `[TRPCClientError: Expected a number, but received: "123"]`,
   );
   expect(res.input).toBe(123);
