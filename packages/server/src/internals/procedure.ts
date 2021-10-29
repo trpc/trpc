@@ -13,7 +13,10 @@ export type ProcedureInputParserZodEsque<
 > = {
   _input: TInput;
   _output: TParsedInput;
-  parseAsync: (input: any) => TParsedInput;
+};
+
+export type ProcedureInputParserMyZodEsque<TInput = unknown> = {
+  parse: (input: any) => TInput;
 };
 
 export type ProcedureInputParserSuperstructEsque<TInput = unknown> = {
@@ -31,7 +34,8 @@ export type ProcedureInputParser<TInput, TParsedInput> =
   | ProcedureInputParserZodEsque<TInput, TParsedInput>
   | ProcedureInputParserYupEsque<TInput>
   | ProcedureInputParserSuperstructEsque<TInput>
-  | ProcedureInputParserCustomValidatorEsque<TInput>;
+  | ProcedureInputParserCustomValidatorEsque<TInput>
+  | ProcedureInputParserMyZodEsque<TInput>;
 
 export type ProcedureResolver<
   TContext = unknown,
