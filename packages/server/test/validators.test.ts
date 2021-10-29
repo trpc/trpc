@@ -87,6 +87,9 @@ test('zod transform mixed input/output', async () => {
   // helpers for anyone picking this up
   type RawInput = z.input<typeof input>;
   type ParsedInput = z.output<typeof input>;
+  const simpleInput = z.object({
+    length: z.string(),
+  });
 
   const router = trpc.router().query('num', {
     input: input,

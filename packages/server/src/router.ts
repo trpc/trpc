@@ -38,15 +38,19 @@ export type ProcedureRecord<
   TInputContext = any,
   TContext = any,
   TInput = any,
+  TParsedInput = any,
   TOutput = any,
-> = Record<string, Procedure<TInputContext, TContext, TInput, TOutput>>;
+> = Record<
+  string,
+  Procedure<TInputContext, TContext, TInput, TParsedInput, TOutput>
+>;
 
 /**
  * @public
  */
 export type inferProcedureInput<
-  TProcedure extends Procedure<any, any, any, any>,
-> = TProcedure extends Procedure<any, any, infer Input, any>
+  TProcedure extends Procedure<any, any, any, any, any>,
+> = TProcedure extends Procedure<any, any, infer Input, any, any>
   ? undefined extends Input
     ? Input | null | void // void is necessary to allow procedures with nullish input to be called without an input
     : Input
@@ -62,7 +66,7 @@ export type inferAsyncReturnType<TFunction extends (...args: any) => any> =
  * @public
  */
 export type inferProcedureOutput<
-  TProcedure extends Procedure<any, any, any, any>,
+  TProcedure extends Procedure<any, any, any, any, any>,
 > = inferAsyncReturnType<TProcedure['call']>;
 
 /**
@@ -90,8 +94,8 @@ function getDataTransformer(
  * @internal
  */
 export type inferHandlerInput<
-  TProcedure extends Procedure<any, any, any, any>,
-> = TProcedure extends Procedure<any, any, infer TInput, any>
+  TProcedure extends Procedure<any, any, any, any, any>,
+> = TProcedure extends Procedure<any, any, infer TInput, any, any>
   ? undefined extends TInput // ? is input optional
     ? unknown extends TInput // ? is input unset
       ? [(null | undefined)?] // -> there is no input
@@ -201,16 +205,17 @@ const defaultTransformer: CombinedDataTransformer = {
 };
 
 type SwapProcedureContext<
-  TProcedure extends Procedure<any, any, any, any>,
+  TProcedure extends Procedure<any, any, any, any, any>,
   TNewContext,
 > = TProcedure extends Procedure<
   infer TInputContext,
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   infer _TOldContext,
   infer TInput,
+  infer TParsedInput,
   infer TOutput
 >
-  ? Procedure<TInputContext, TNewContext, TInput, TOutput>
+  ? Procedure<TInputContext, TNewContext, TInput, TParsedInput, TOutput>
   : never;
 
 type SwapContext<
@@ -274,9 +279,14 @@ export class Router<
     return eps as any;
   }
 
-  public query<TPath extends string, TInput, TOutput>(
+  public query<TPath extends string, TInput, TParsedInput, TOutput>(
     path: TPath,
-    procedure: CreateProcedureWithInput<TContext, TInput, TOutput>,
+    procedure: CreateProcedureWithInput<
+      TContext,
+      TInput,
+      TParsedInput,
+      TOutput
+    >,
   ): Router<
     TInputContext,
     TContext,
@@ -310,9 +320,14 @@ export class Router<
     return this.merge(router);
   }
 
-  public mutation<TPath extends string, TInput, TOutput>(
+  public mutation<TPath extends string, TInput, TParsedInput, TOutput>(
     path: TPath,
-    procedure: CreateProcedureWithInput<TContext, TInput, TOutput>,
+    procedure: CreateProcedureWithInput<
+      TContext,
+      TInput,
+      TParsedInput,
+      TOutput
+    >,
   ): Router<
     TInputContext,
     TContext,
@@ -355,10 +370,16 @@ export class Router<
   public subscription<
     TPath extends string,
     TInput,
+    TParsedInput,
     TOutput extends Subscription<unknown>,
   >(
     path: TPath,
-    procedure: CreateProcedureWithInput<TContext, TInput, TOutput>,
+    procedure: CreateProcedureWithInput<
+      TContext,
+      TInput,
+      TParsedInput,
+      TOutput
+    >,
   ): Router<
     TInputContext,
     TContext,
@@ -509,7 +530,7 @@ export class Router<
     const defTarget = PROCEDURE_DEFINITION_MAP[type];
     const defs = this._def[defTarget];
     const procedure = defs[path] as
-      | Procedure<TInputContext, TContext, any, any>
+      | Procedure<TInputContext, TContext, any, any, any>
       | undefined;
 
     if (!procedure) {
