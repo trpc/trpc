@@ -81,8 +81,9 @@ test('zod async', async () => {
 });
 
 test('zod transform mixed input/output', async () => {
+  const input = z.string().transform((s) => s.length);
   const router = trpc.router().query('num', {
-    input: z.string().transform((s) => s.length),
+    input: input,
     resolve({ input }) {
       return {
         input,
