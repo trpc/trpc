@@ -84,6 +84,9 @@ test('zod transform mixed input/output', async () => {
   const input = z.object({
     length: z.string().transform((s) => s.length),
   });
+  // helpers for anyone picking this up
+  type RawInput = z.input<typeof input>;
+  type ParsedInput = z.output<typeof input>;
 
   const router = trpc.router().query('num', {
     input: input,
@@ -101,7 +104,7 @@ test('zod transform mixed input/output', async () => {
   ).resolves.toMatchInlineSnapshot();
 
   await expect(
-    // @ts-expect-error
+    // @ts-expect-error this should only accept a string
     client.query('num', { length: 123 }),
   ).rejects.toMatchInlineSnapshot();
 
@@ -120,7 +123,8 @@ test('superstruct', async () => {
   const { client, close } = routerToServerAndClient(router);
   const res = await client.query('num', 123);
 
-  await expect(client.query('num', '123' as any)).rejects.toMatchInlineSnapshot(
+  // @ts-expect-error this only accepts a `number`
+  await expect(client.query('num', '123')).rejects.toMatchInlineSnapshot(
     `[TRPCClientError: Expected a number, but received: "123"]`,
   );
   expect(res.input).toBe(123);
@@ -140,7 +144,7 @@ test('yup', async () => {
   const { client, close } = routerToServerAndClient(router);
   const res = await client.query('num', 123);
 
-  // @ts-expect-error
+  // @ts-expect-error this only accepts a `number`
   await expect(client.query('num', 'asd')).rejects.toMatchInlineSnapshot(
     `[TRPCClientError: this must be a \`number\` type, but the final value was: \`NaN\` (cast from the value \`"asd"\`).]`,
   );
