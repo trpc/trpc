@@ -3,10 +3,10 @@ import { createTRPCClient } from '@trpc/client';
 import { httpLink } from '@trpc/client/links/httpLink';
 import { splitLink } from '@trpc/client/links/splitLink';
 import { createWSClient, wsLink } from '@trpc/client/links/wsLink';
-import { wrapCallSafe } from './client/utils';
 import AbortController from 'abort-controller';
 import fetch from 'node-fetch';
 import ws from 'ws';
+import { createSafeClient } from './client/utils';
 import type { AppRouter } from './server';
 
 // polyfill fetch & websocket
@@ -37,13 +37,15 @@ async function main() {
     ],
   });
 
-  const helloResponse = await wrapCallSafe(() =>
-    client.query('hello', {
-      name: 'world',
-    }),
-  );
+  const safeClient = createSafeClient(client);
+
+  const helloResponse = await safeClient.query('hello', { name: 'world' });
+  const helloResponseInvalid = await safeClient.query('hello', {
+    name: 123 as any,
+  });
 
   console.log('helloResponse', helloResponse);
+  console.log('helloResponseInvalid', helloResponseInvalid);
 
   const createPostRes = await client.mutation('createPost', {
     title: 'hello world',
