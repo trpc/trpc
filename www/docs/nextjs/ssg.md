@@ -28,23 +28,6 @@ import { appRouter } from 'server/routers/_app';
 import superjson from 'superjson';
 import { trpc } from 'utils/trpc';
 
-export const getStaticPaths: GetStaticPaths = async () => {
-  const posts = await prisma.post.findMany({
-    select: {
-      id: true,
-    },
-  });
-
-  return {
-    paths: posts.map((post) => ({
-      params: {
-        id: post.id,
-      },
-    })),
-    // https://nextjs.org/docs/basic-features/data-fetching#fallback-blocking
-    fallback: 'blocking',
-  };
-};
 
 export async function getStaticProps(
   context: GetStaticPropsContext<{ id: string }>,
@@ -67,6 +50,25 @@ export async function getStaticProps(
     revalidate: 1,
   };
 }
+
+export const getStaticPaths: GetStaticPaths = async () => {
+  const posts = await prisma.post.findMany({
+    select: {
+      id: true,
+    },
+  });
+
+  return {
+    paths: posts.map((post) => ({
+      params: {
+        id: post.id,
+      },
+    })),
+    // https://nextjs.org/docs/basic-features/data-fetching#fallback-blocking
+    fallback: 'blocking',
+  };
+};
+
 
 export default function PostViewPage(
   props: InferGetStaticPropsType<typeof getStaticProps>,
