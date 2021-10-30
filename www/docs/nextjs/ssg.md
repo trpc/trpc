@@ -38,6 +38,8 @@ export async function getStaticProps(
     transformer: superjson, // optional - adds superjson serialization
   });
   const id = context.params?.id as string;
+  
+  // prefetch `post.byId`
   await ssg.fetchQuery('post.byId', {
     id,
   });
