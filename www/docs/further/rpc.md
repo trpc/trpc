@@ -18,7 +18,7 @@ slug: /rpc
 When batching, we combine all parallel procedure calls of the same type in one request using a data loader.
 
 - The called procedures' names are combined by a comma (`,`) in the `pathname`
-- Input parameters are sent as a a query parameter called `input` which has the shape `Record<number, unknown>`. 
+- Input parameters are sent as a a query parameter called `input` which has the shape `Record<number, unknown>`.
 - We also need to pass `batch=1` as a query parameter.
 - If the response has different statuses we send back `207 Multi-Status` _(e.g. if one call errored and one succeeded) _
 
@@ -193,6 +193,7 @@ UNAUTHORIZED: 401,
 FORBIDDEN: 403,
 TIMEOUT: 408,
 CLIENT_CLOSED_REQUEST: 499,
+PRECONDITION_FAILED: 412,
 PAYLOAD_TOO_LARGE: 413,
 METHOD_NOT_SUPPORTED: 405,
 ```
@@ -229,6 +230,7 @@ export const TRPC_ERROR_CODES_BY_KEY = {
   NOT_FOUND: -32004, // 404
   METHOD_NOT_SUPPORTED: -32005, // 405
   TIMEOUT: -32008, // 408
+  PRECONDITION_FAILED: -32012, // 412
   PAYLOAD_TOO_LARGE: -32013, // 413
   CLIENT_CLOSED_REQUEST: -32099, // 499
 } as const;
@@ -238,7 +240,7 @@ export const TRPC_ERROR_CODES_BY_KEY = {
 
 ## Dig deeper
 
-You can read more details by drilling into the TypeScript definitions in 
+You can read more details by drilling into the TypeScript definitions in
 
 - [/packages/server/src/rpc/envelopes.ts](https://github.com/trpc/trpc/tree/main/packages/server/src/rpc/envelopes.ts)
 - [/packages/server/src/rpc/codes.ts](https://github.com/trpc/trpc/tree/main/packages/server/src/rpc/codes.ts).
