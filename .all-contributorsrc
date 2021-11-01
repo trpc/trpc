@@ -309,6 +309,15 @@
       "contributions": [
         "code"
       ]
+    },
+    {
+      "login": "kimroen",
+      "name": "Kim Røen",
+      "avatar_url": "https://avatars.githubusercontent.com/u/520420?v=4",
+      "profile": "https://github.com/kimroen",
+      "contributions": [
+        "ideas"
+      ]
     }
   ],
   "contributorsPerLine": 7,
