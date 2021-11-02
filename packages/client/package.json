@@ -31,7 +31,9 @@
     "src"
   ],
   "dependencies": {
-    "@babel/runtime": "^7.9.0",
+    "@babel/runtime": "^7.9.0"
+  },
+  "peerDependencies": {
     "@trpc/server": "^9.12.0"
   },
   "publishConfig": {
