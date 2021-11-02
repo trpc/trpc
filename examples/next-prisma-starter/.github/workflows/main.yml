@@ -29,7 +29,7 @@ jobs:
         uses: actions/cache@v2
         with:
           path: ${{ github.workspace }}/.next/cache
-          key: ${{ runner.os }}-${{ runner.node }}--nextjs
+          key: ${{ runner.os }}-${{ runner.node }}-${{ hashFiles('**/yarn.lock') }}-nextjs
 
       - run: yarn playwright install-deps
       - run: yarn lint
