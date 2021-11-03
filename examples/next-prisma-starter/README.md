@@ -1,8 +1,5 @@
 # Prisma + tRPC
 
-Try in CodeSandbox: [https://githubbox.com/trpc/trpc/tree/main/examples/next-prisma-starter](https://codesandbox.io/s/github/trpc/trpc/tree/main/examples/next-prisma-starter?file=/src/pages/index.tsx)
-
-
 ## Features
 
 - 🧙‍♂️ E2E typesafety with [tRPC](https://trpc.io)

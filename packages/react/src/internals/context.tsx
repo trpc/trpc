@@ -12,9 +12,9 @@ import {
   InfiniteData,
   InvalidateOptions,
   QueryClient,
+  SetDataOptions,
+  CancelOptions,
 } from 'react-query';
-import { SetDataOptions } from 'react-query/types/core/query';
-import { CancelOptions } from 'react-query/types/core/retryer';
 
 interface TRPCFetchQueryOptions<TInput, TError, TOutput>
   extends FetchQueryOptions<TInput, TError, TOutput>,
