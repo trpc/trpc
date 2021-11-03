@@ -37,3 +37,8 @@ yarn-error.log*
 *.db
 *.db-journal
 prisma/_sqlite/migrations
+
+
+# testing
+playwright/videos
+playwright/screenshots
