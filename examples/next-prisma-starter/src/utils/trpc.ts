@@ -61,9 +61,6 @@ type inferFlat<TObj extends ProcedureRecord<any, any, any, any>> = flat<
       TObj[TPath]
     >;
   } & {
-    [TPath in keyof TObj as `${string &
-      TPath}.inputParsed`]: inferProcedureParsedInput<TObj[TPath]>;
-  } & {
     [TPath in keyof TObj as `${string & TPath}.output`]: inferProcedureOutput<
       TObj[TPath]
     >;
@@ -76,4 +73,4 @@ export type TFlat = flat<
     Prefixer<inferFlat<AppRouter['_def']['subscriptions']>, 'subscription.'>
 >;
 
-export type TPostInput = TFlat['query.post.byId.input'];
+export type Post = TFlat['query.post.byId.output'];
