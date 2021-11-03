@@ -43,7 +43,7 @@ jobs:
         uses: actions/cache@v2
         with:
           path: ${{ github.workspace }}/.next/cache
-          key: ${{ runner.dir }}-${{ runner.os }}-${{ runner.node }}-${{ runner.start }}-nextjs
+          key: ${{ runner.dir }}-${{ runner.os }}-${{ runner.node }}-${{ hashFiles('**/yarn.lock') }}-nextjs
 
       - run: node -v
       # - run: yarn install --cwd examples/${{ matrix.dir }} --ignore-scripts

@@ -4,6 +4,7 @@ import type {
   inferProcedureInput,
   ProcedureRecord,
   Prefixer,
+  inferProcedureParsedInput,
 } from '@trpc/server';
 // ℹ️ Type-only import:
 // https://www.typescriptlang.org/docs/handbook/release-notes/typescript-3-8.html#type-only-imports-and-export
@@ -60,14 +61,19 @@ type inferFlat<TObj extends ProcedureRecord<any, any, any, any>> = flat<
       TObj[TPath]
     >;
   } & {
+    [TPath in keyof TObj as `${string &
+      TPath}.inputParsed`]: inferProcedureParsedInput<TObj[TPath]>;
+  } & {
     [TPath in keyof TObj as `${string & TPath}.output`]: inferProcedureOutput<
       TObj[TPath]
     >;
   }
 >;
 
-type TFlat = flat<
-  Prefixer<inferFlat<AppRouter['_def']['queries']>, 'query'> &
-    Prefixer<inferFlat<AppRouter['_def']['mutations']>, 'mutation'> &
-    Prefixer<inferFlat<AppRouter['_def']['subscriptions']>, 'subscription'>
+export type TFlat = flat<
+  Prefixer<inferFlat<AppRouter['_def']['queries']>, 'query.'> &
+    Prefixer<inferFlat<AppRouter['_def']['mutations']>, 'mutation.'> &
+    Prefixer<inferFlat<AppRouter['_def']['subscriptions']>, 'subscription.'>
 >;
+
+export type TPostInput = TFlat['query.post.byId.input'];

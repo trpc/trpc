@@ -10,7 +10,10 @@ import {
   FetchInfiniteQueryOptions,
   FetchQueryOptions,
   InfiniteData,
+  InvalidateOptions,
   QueryClient,
+  SetDataOptions,
+  CancelOptions,
 } from 'react-query';
 
 interface TRPCFetchQueryOptions<TInput, TError, TOutput>
@@ -92,6 +95,7 @@ export type TRPCContextState<TRouter extends AnyRouter> = {
     TInput extends inferProcedureInput<TRouter['_def']['queries'][TPath]>,
   >(
     pathAndInput: [TPath, TInput?],
+    options?: InvalidateOptions,
   ) => Promise<void>;
   /**
    * @link https://react-query.tanstack.com/guides/query-invalidation
@@ -101,6 +105,7 @@ export type TRPCContextState<TRouter extends AnyRouter> = {
     TInput extends inferProcedureInput<TRouter['_def']['queries'][TPath]>,
   >(
     pathAndInput: [TPath, TInput?] | TPath,
+    options?: InvalidateOptions,
   ) => Promise<void>;
   /**
    * @link https://react-query.tanstack.com/guides/query-cancellation
@@ -110,6 +115,7 @@ export type TRPCContextState<TRouter extends AnyRouter> = {
     TInput extends inferProcedureInput<TRouter['_def']['queries'][TPath]>,
   >(
     pathAndInput: [TPath, TInput?],
+    options?: CancelOptions,
   ) => Promise<void>;
   /**
    * @link https://react-query.tanstack.com/reference/QueryClient#queryclientsetquerydata
@@ -121,6 +127,7 @@ export type TRPCContextState<TRouter extends AnyRouter> = {
   >(
     pathAndInput: [TPath, TInput?],
     output: TOutput,
+    options?: SetDataOptions,
   ) => void;
   /**
    * @link https://react-query.tanstack.com/reference/QueryClient#queryclientgetquerydata

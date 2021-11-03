@@ -18,6 +18,7 @@ const config: Config.InitialOptions = {
     'jest-playwright': {
       browsers: ['chromium' /*, 'firefox', 'webkit'*/],
       exitOnPageError: false,
+      launchType: 'LAUNCH',
       launchOptions: {
         headless: opts.headless,
         executablePath: opts.executablePath,

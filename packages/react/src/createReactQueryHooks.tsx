@@ -195,14 +195,14 @@ export function createReactQueryHooks<TRouter extends AnyRouter>() {
            * @deprecated use `invalidateQueries`
            */
           invalidateQuery: useCallback(
-            (pathAndInput) => {
-              return queryClient.invalidateQueries(pathAndInput);
+            (...args) => {
+              return queryClient.invalidateQueries(...(args as any));
             },
             [queryClient],
           ),
           invalidateQueries: useCallback(
-            (pathAndInput) => {
-              return queryClient.invalidateQueries(pathAndInput);
+            (...args) => {
+              return queryClient.invalidateQueries(...(args as any));
             },
             [queryClient],
           ),
@@ -213,15 +213,17 @@ export function createReactQueryHooks<TRouter extends AnyRouter>() {
             [queryClient],
           ),
           setQueryData: useCallback(
-            (pathAndInput, output) => {
+            (pathAndInput, output, ...args) => {
               const cacheKey = getCacheKey(pathAndInput);
               queryClient.setQueryData(
                 cacheKey.concat([CACHE_KEY_QUERY]),
                 output,
+                ...args,
               );
               queryClient.setQueryData(
                 cacheKey.concat([CACHE_KEY_INFINITE_QUERY]),
                 output,
+                ...args,
               );
             },
             [queryClient],
