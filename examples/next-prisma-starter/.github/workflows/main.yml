@@ -29,10 +29,19 @@ jobs:
         uses: actions/cache@v2
         with:
           path: ${{ github.workspace }}/.next/cache
-          key: ${{ runner.os }}-${{ runner.node }}--nextjs
+          key: ${{ runner.os }}-${{ runner.node }}-${{ hashFiles('**/yarn.lock') }}-nextjs
 
       - run: yarn playwright install-deps
       - run: yarn lint
       - run: yarn build
       - run: yarn test-start
       - run: yarn test-dev
+
+      - name: Upload videos
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v2
+        with:
+          name: videos
+          path: |
+            playwright/screenshots
+            playwright/videos
