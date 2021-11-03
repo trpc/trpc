@@ -36,6 +36,9 @@
   "peerDependencies": {
     "@trpc/server": "^9.12.0"
   },
+  "devDependencies": {
+    "@trpc/server": "^9.12.0"
+  },
   "publishConfig": {
     "access": "public"
   },

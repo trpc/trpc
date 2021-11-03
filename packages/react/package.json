@@ -42,6 +42,8 @@
     "@babel/runtime": "^7.9.0"
   },
   "devDependencies": {
+    "@trpc/client": "^9.12.0",
+    "@trpc/server": "^9.12.0",
     "@types/express": "^4.17.12",
     "express": "^4.17.1",
     "next": "^12.0.1",
