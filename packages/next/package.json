@@ -30,7 +30,7 @@
     }
   },
   "peerDependencies": {
-    "@trpc/client": "^9.12.1-alpha.0",
+    "@trpc/client": "^9.12.0",
     "@trpc/react": "^9.12.0",
     "@trpc/server": "^9.12.0",
     "next": "*",
