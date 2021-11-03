@@ -63,7 +63,9 @@ export type inferAsyncReturnType<TFunction extends (...args: any) => any> =
  */
 export type inferProcedureOutput<
   TProcedure extends Procedure<any, any, any, any>,
-> = inferAsyncReturnType<TProcedure['call']>;
+> = inferAsyncReturnType<TProcedure['call']> extends Subscription
+  ? inferAsyncReturnType<TProcedure['call']>['output']
+  : inferAsyncReturnType<TProcedure['call']>;
 
 /**
  * @public
@@ -237,9 +239,9 @@ export class Router<
   TErrorShape extends TRPCErrorShape<number>,
 > {
   readonly _def: Readonly<{
-    queries: Readonly<TQueries>;
-    mutations: Readonly<TMutations>;
-    subscriptions: Readonly<TSubscriptions>;
+    queries: TQueries;
+    mutations: TMutations;
+    subscriptions: TSubscriptions;
     middlewares: MiddlewareFunction<TInputContext, TContext>[];
     errorFormatter: ErrorFormatter<TContext, TErrorShape>;
     transformer: CombinedDataTransformer;
