@@ -36,3 +36,12 @@ jobs:
       - run: yarn build
       - run: yarn test-start
       - run: yarn test-dev
+
+      - name: Upload videos
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v2
+        with:
+          name: videos
+          path: |
+            playwright/screenshots
+            playwright/videos
