@@ -1042,10 +1042,17 @@
     core-js-pure "^3.16.0"
     regenerator-runtime "^0.13.4"
 
-"@babel/runtime@7.15.4", "@babel/runtime@^7.10.2", "@babel/runtime@^7.10.4", "@babel/runtime@^7.11.2", "@babel/runtime@^7.12.5", "@babel/runtime@^7.14.0", "@babel/runtime@^7.15.4", "@babel/runtime@^7.5.5", "@babel/runtime@^7.6.2", "@babel/runtime@^7.7.2", "@babel/runtime@^7.7.7", "@babel/runtime@^7.8.4", "@babel/runtime@^7.9.0", "@babel/runtime@^7.9.2":
+"@babel/runtime@7.15.4":
   version "7.15.4"
   resolved "https://registry.npmjs.org/@babel/runtime/-/runtime-7.15.4.tgz#fd17d16bfdf878e6dd02d19753a39fa8a8d9c84a"
   integrity sha512-99catp6bHCaxr4sJ/DbTGgHS4+Rs2RVd2g7iOap6SLGPDknRK9ztKNsE/Fg6QhSeh1FGE5f6gHGQmvvn3I3xhw==
+  dependencies:
+    regenerator-runtime "^0.13.4"
+
+"@babel/runtime@^7.10.2", "@babel/runtime@^7.10.4", "@babel/runtime@^7.11.2", "@babel/runtime@^7.12.5", "@babel/runtime@^7.14.0", "@babel/runtime@^7.15.4", "@babel/runtime@^7.5.5", "@babel/runtime@^7.6.2", "@babel/runtime@^7.7.2", "@babel/runtime@^7.7.7", "@babel/runtime@^7.8.4", "@babel/runtime@^7.9.0", "@babel/runtime@^7.9.2":
+  version "7.16.0"
+  resolved "https://registry.yarnpkg.com/@babel/runtime/-/runtime-7.16.0.tgz#e27b977f2e2088ba24748bf99b5e1dece64e4f0b"
+  integrity sha512-Nht8L0O8YCktmsDV6FqFue7vQLRx3Hb0B37lS5y0jDRqRxlBG4wIJHnf9/bgSE2UyipKFA01YtS+npRdTWBUyw==
   dependencies:
     regenerator-runtime "^0.13.4"
 
@@ -2679,16 +2686,16 @@
     source-map-support "^0.5.16"
 
 "@prisma/client@^3.0.1":
-  version "3.3.0"
-  resolved "https://registry.yarnpkg.com/@prisma/client/-/client-3.3.0.tgz#7945101206af1927d925a8d9c62bb188e9260c97"
-  integrity sha512-34tonDW2v74VcG1mx+k/IUGG/eSHKwDiYKfFIZgaPLq/C0h8YQxh7pro272xpOf1pt6duX1Bi90dpGijh1MYgQ==
+  version "3.4.0"
+  resolved "https://registry.yarnpkg.com/@prisma/client/-/client-3.4.0.tgz#d94eca61847be13c505751b8875d7cb8951476ad"
+  integrity sha512-rjnp7dPVArqT/VgeWllUN+5927u224Gud//d16omL2hyXl9BnWzmeZJQ0plTYuP5yCR/M1N4iUC8ysDPlhA08g==
   dependencies:
-    "@prisma/engines-version" "3.3.0-30.33838b0f78f1fe9052cf9a00e9761c9dc097a63c"
+    "@prisma/engines-version" "3.4.0-27.1c9fdaa9e2319b814822d6dbfd0a69e1fcc13a85"
 
-"@prisma/engines-version@3.3.0-30.33838b0f78f1fe9052cf9a00e9761c9dc097a63c":
-  version "3.3.0-30.33838b0f78f1fe9052cf9a00e9761c9dc097a63c"
-  resolved "https://registry.yarnpkg.com/@prisma/engines-version/-/engines-version-3.3.0-30.33838b0f78f1fe9052cf9a00e9761c9dc097a63c.tgz#10269530152dc126c81b363c27cefc3c060013e2"
-  integrity sha512-g21xPYq0zHoJ/xUkNxIf5Hle0oiDyelZHU8gwq7J3RNVrccjbUZ28S99KT4yUabV8SQQRNSnR0QMLGMv9Eqs/A==
+"@prisma/engines-version@3.4.0-27.1c9fdaa9e2319b814822d6dbfd0a69e1fcc13a85":
+  version "3.4.0-27.1c9fdaa9e2319b814822d6dbfd0a69e1fcc13a85"
+  resolved "https://registry.yarnpkg.com/@prisma/engines-version/-/engines-version-3.4.0-27.1c9fdaa9e2319b814822d6dbfd0a69e1fcc13a85.tgz#87868281c28b6b9b9e13ee844bd93edf0f38390a"
+  integrity sha512-acL30wD3lj6qGAN9JIA+fhcd8j5I+Db9d1Pge2jwmK/QVbmbnH+lhTMV5pYIdgxbZWs9R+DoNnOHvUQCOW1xeQ==
 
 "@prisma/engines@3.4.0-27.1c9fdaa9e2319b814822d6dbfd0a69e1fcc13a85":
   version "3.4.0-27.1c9fdaa9e2319b814822d6dbfd0a69e1fcc13a85"
