@@ -92,11 +92,11 @@ npx create-next-app --example https://github.com/trpc/trpc --example-path exampl
 > Is your company using tRPC, want to attract amazing TypeScript developers to your team, & support long-term maintainance of tRPC? Have a look at the [sponsorship tiers](https://github.com/sponsors/KATT) or [get in touch](mailto:alex@trpc.io) to discuss potential partnerships.
 
 
-### 🥉 Gold Sponsors
+### 🥇 Gold Sponsors
 
 <img src="https://placehold.jp/e5faff/0e3847/300x150.png?text=%3Cimg%20%2F%3E" width="300" height="150">
 
-### 🥉 Silver Sponsors
+### 🥈 Silver Sponsors
 
 <img src="https://placehold.jp/e5faff/0e3847/150x150.png?text=%3Cimg%20%2F%3E" width="150" height="150"> 
 
