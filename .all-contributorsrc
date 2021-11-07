@@ -318,6 +318,15 @@
       "contributions": [
         "ideas"
       ]
+    },
+    {
+      "login": "chimon2000",
+      "name": "Ryan",
+      "avatar_url": "https://avatars.githubusercontent.com/u/6907797?v=4",
+      "profile": "https://standardresume.co/r/ryan-edge",
+      "contributions": [
+        "financial"
+      ]
     }
   ],
   "contributorsPerLine": 7,
