@@ -182,6 +182,7 @@ npx create-next-app --example https://github.com/trpc/trpc --example-path exampl
     <td align="center"><a href="https://github.com/sachinraja"><img src="https://avatars.githubusercontent.com/u/58836760?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Sachin Raja</b></sub></a><br /><a href="https://github.com/trpc/trpc/pulls?q=is%3Apr+reviewed-by%3Asachinraja" title="Reviewed Pull Requests">👀</a> <a href="#ideas-sachinraja" title="Ideas, Planning, & Feedback">🤔</a></td>
     <td align="center"><a href="https://github.com/mkreuzmayr"><img src="https://avatars.githubusercontent.com/u/20108212?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Michael Kreuzmayr</b></sub></a><br /><a href="https://github.com/trpc/trpc/commits?author=mkreuzmayr" title="Code">💻</a></td>
     <td align="center"><a href="https://github.com/kimroen"><img src="https://avatars.githubusercontent.com/u/520420?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Kim Røen</b></sub></a><br /><a href="#ideas-kimroen" title="Ideas, Planning, & Feedback">🤔</a></td>
+    <td align="center"><a href="https://standardresume.co/r/ryan-edge"><img src="https://avatars.githubusercontent.com/u/6907797?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Ryan</b></sub></a><br /><a href="#financial-chimon2000" title="Financial">💵</a></td>
   </tr>
 </table>
 
