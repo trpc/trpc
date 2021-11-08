@@ -1,11 +1,8 @@
-/* eslint-disable @typescript-eslint/ban-types */
-
 import * as trpc from '@trpc/server';
 import { createHTTPServer } from '@trpc/server/adapters/standalone';
-import { z } from 'zod';
 
 export const appRouter = trpc.router().query('hello', {
-  resolve: () => {
+  async resolve() {
     return {
       text: `hello from server 2`,
     };

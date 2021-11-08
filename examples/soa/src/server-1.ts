@@ -2,17 +2,11 @@
 
 import * as trpc from '@trpc/server';
 import { createHTTPServer } from '@trpc/server/adapters/standalone';
-import { z } from 'zod';
 
 export type Context = {};
 
 export const appRouter = trpc.router<Context>().query('hello', {
-  input: z
-    .object({
-      name: z.string(),
-    })
-    .nullish(),
-  resolve: ({ input }) => {
+  async resolve() {
     return {
       text: `hello from server 1`,
     };

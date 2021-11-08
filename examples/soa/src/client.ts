@@ -15,25 +15,34 @@ globalAny.WebSocket = ws;
 async function main() {
   const client = createTRPCClient<CombinedServer>({
     links: [
+      // create a custom ending link
       (runtime) => {
+        // initialize the different links for different targets
         const servers = {
           server1: httpBatchLink({ url: 'http://localhost:2031' })(runtime),
           server2: httpBatchLink({ url: 'http://localhost:2032' })(runtime),
         };
         return (ctx) => {
           const { op } = ctx;
-          const parts = op.path.split('.');
-          // first part of the query should be `server1` or `server2`
-          const serverName = parts.shift() as string as keyof typeof servers;
+          // split the path by `.` as the first part will signify the server target name
+          const pathParts = op.path.split('.');
 
-          const path = parts.join('.');
+          // first part of the query should be `server1` or `server2`
+          const serverName =
+            pathParts.shift() as string as keyof typeof servers;
+
+          // combine the rest of the parts of the paths
+          // -- this is what we're actually calling the target server with
+          const path = pathParts.join('.');
           console.log(`calling ${serverName} on path ${path}`);
+
           const link = servers[serverName];
 
           link({
             ...ctx,
             op: {
               ...op,
+              // override the target path with the prefix removed
               path,
             },
           });
@@ -42,6 +51,7 @@ async function main() {
     ],
   });
 
+  // test server call
   const server1Response = await client.query('server1.hello');
   const server2Response = await client.query('server2.hello');
 
