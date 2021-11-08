@@ -4,7 +4,7 @@ import { httpBatchLink } from '@trpc/client/links/httpBatchLink';
 import AbortController from 'abort-controller';
 import fetch from 'node-fetch';
 import ws from 'ws';
-import { CombinedServer } from './server-_combined';
+import type { CombinedServer } from './server-_combined';
 
 // polyfill fetch & websocket
 const globalAny = global as any;

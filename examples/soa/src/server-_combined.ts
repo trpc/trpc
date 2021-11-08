@@ -4,7 +4,7 @@ import * as server2 from './server-2';
 
 // this object is not actually used - we just use it to combine the two servers
 const combinedServer = trpc
-  .router()
+  .router<any>()
   .merge('server1.', server1.appRouter)
   .merge('server2.', server2.appRouter);
 

@@ -4,7 +4,9 @@ import * as trpc from '@trpc/server';
 import { createHTTPServer } from '@trpc/server/adapters/standalone';
 import { z } from 'zod';
 
-export const appRouter = trpc.router().query('hello', {
+export type Context = {};
+
+export const appRouter = trpc.router<Context>().query('hello', {
   input: z
     .object({
       name: z.string(),
