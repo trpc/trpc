@@ -38,7 +38,7 @@
     "clsx": "^1.1.1",
     "next": "^12.0.1",
     "next-auth": "^3.27.3",
-    "node-fetch": "^2.6.1",
+    "node-fetch": "^3.1.0",
     "react": "^17.0.2",
     "react-dom": "^17.0.2",
     "react-query": "^3.27.0",
