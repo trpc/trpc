@@ -29,7 +29,6 @@ async function main() {
           const path = parts.join('.');
           console.log(`calling ${serverName} on path ${path}`);
           const link = servers[serverName];
-          console.log({ link });
 
           link({
             ...ctx,
