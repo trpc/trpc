@@ -2206,12 +2206,12 @@
     write-file-atomic "^3.0.3"
 
 "@manypkg/cli@^0.19.0":
-  version "0.19.0"
-  resolved "https://registry.yarnpkg.com/@manypkg/cli/-/cli-0.19.0.tgz#4cf8cce52e3ff698840cae752d70e9a204606189"
-  integrity sha512-/vK7vsCGbB3qIkZisJZDb6S4GSrR81LR+BOT3SUXYgAt/HtqxAgCTX1AhZRRF4fWQtBUtaIEAPjMjp8pOc0UUQ==
+  version "0.19.1"
+  resolved "https://registry.yarnpkg.com/@manypkg/cli/-/cli-0.19.1.tgz#2dec45d340e1265276625c4b6c9b284d3376bd10"
+  integrity sha512-EXBPPh6wYSKmSD5DdUjNG2rc55C2G/poIJ0D3O8tnk83o3nZh8g94JwN5/AumbSsDZ0yagmkS+DChNlRhIUG7w==
   dependencies:
     "@babel/runtime" "^7.5.5"
-    "@manypkg/get-packages" "^1.1.2"
+    "@manypkg/get-packages" "^1.1.3"
     chalk "^2.4.2"
     detect-indent "^6.0.0"
     find-up "^4.1.0"
@@ -2236,10 +2236,10 @@
     find-up "^4.1.0"
     fs-extra "^8.1.0"
 
-"@manypkg/get-packages@^1.0.1", "@manypkg/get-packages@^1.1.2":
-  version "1.1.2"
-  resolved "https://registry.yarnpkg.com/@manypkg/get-packages/-/get-packages-1.1.2.tgz#d0af46018966dbe064103472b3dae9662bf2ea71"
-  integrity sha512-AoA/VBOik2YZh+z44YlK/wgEA5lbzd5pfGsjjaGFuAjUXe0+zBL6oK3ryOK3pDkV7SljyN0sLpVeLBLKc3LeVA==
+"@manypkg/get-packages@^1.0.1", "@manypkg/get-packages@^1.1.3":
+  version "1.1.3"
+  resolved "https://registry.yarnpkg.com/@manypkg/get-packages/-/get-packages-1.1.3.tgz#e184db9bba792fa4693de4658cfb1463ac2c9c47"
+  integrity sha512-fo+QhuU3qE/2TQMQmbVMqaQ6EWbMhi4ABWP+O4AM1NqPBuy0OrApV5LO6BrrgnhtAHS2NH6RrVk9OL181tTi8A==
   dependencies:
     "@babel/runtime" "^7.5.5"
     "@changesets/types" "^4.0.1"
