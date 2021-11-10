@@ -3,5 +3,6 @@ import type { BagRouter } from 'server/routers/bag';
 const trpc = createReactQueryHooks<BagRouter>();
 
 export const useBagQuery = trpc.useQuery;
+export const useBagInfiniteQuery = trpc.useInfiniteQuery;
 export const useBagMutation = trpc.useMutation;
 export const useBagContext = trpc.useContext;

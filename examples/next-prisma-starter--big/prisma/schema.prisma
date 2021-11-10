@@ -240,3 +240,462 @@ model User {
   createdAt DateTime @unique @default(now())
   updatedAt DateTime @unique @default(now())
 }
+
+model Random0 {
+  id    String @id @default(uuid())
+  title String
+  text  String
+
+  createdAt DateTime @unique @default(now())
+  updatedAt DateTime @unique @default(now())
+}
+
+model Random1 {
+  id    String @id @default(uuid())
+  title String
+  text  String
+
+  createdAt DateTime @unique @default(now())
+  updatedAt DateTime @unique @default(now())
+}
+
+model Random2 {
+  id    String @id @default(uuid())
+  title String
+  text  String
+
+  createdAt DateTime @unique @default(now())
+  updatedAt DateTime @unique @default(now())
+}
+
+model Random3 {
+  id    String @id @default(uuid())
+  title String
+  text  String
+
+  createdAt DateTime @unique @default(now())
+  updatedAt DateTime @unique @default(now())
+}
+
+model Random4 {
+  id    String @id @default(uuid())
+  title String
+  text  String
+
+  createdAt DateTime @unique @default(now())
+  updatedAt DateTime @unique @default(now())
+}
+
+model Random5 {
+  id    String @id @default(uuid())
+  title String
+  text  String
+
+  createdAt DateTime @unique @default(now())
+  updatedAt DateTime @unique @default(now())
+}
+
+model Random6 {
+  id    String @id @default(uuid())
+  title String
+  text  String
+
+  createdAt DateTime @unique @default(now())
+  updatedAt DateTime @unique @default(now())
+}
+
+model Random7 {
+  id    String @id @default(uuid())
+  title String
+  text  String
+
+  createdAt DateTime @unique @default(now())
+  updatedAt DateTime @unique @default(now())
+}
+
+model Random8 {
+  id    String @id @default(uuid())
+  title String
+  text  String
+
+  createdAt DateTime @unique @default(now())
+  updatedAt DateTime @unique @default(now())
+}
+
+model Random9 {
+  id    String @id @default(uuid())
+  title String
+  text  String
+
+  createdAt DateTime @unique @default(now())
+  updatedAt DateTime @unique @default(now())
+}
+
+model Random10 {
+  id    String @id @default(uuid())
+  title String
+  text  String
+
+  createdAt DateTime @unique @default(now())
+  updatedAt DateTime @unique @default(now())
+}
+
+model Random11 {
+  id    String @id @default(uuid())
+  title String
+  text  String
+
+  createdAt DateTime @unique @default(now())
+  updatedAt DateTime @unique @default(now())
+}
+
+model Random12 {
+  id    String @id @default(uuid())
+  title String
+  text  String
+
+  createdAt DateTime @unique @default(now())
+  updatedAt DateTime @unique @default(now())
+}
+
+model Random13 {
+  id    String @id @default(uuid())
+  title String
+  text  String
+
+  createdAt DateTime @unique @default(now())
+  updatedAt DateTime @unique @default(now())
+}
+
+model Random14 {
+  id    String @id @default(uuid())
+  title String
+  text  String
+
+  createdAt DateTime @unique @default(now())
+  updatedAt DateTime @unique @default(now())
+}
+
+model Random15 {
+  id    String @id @default(uuid())
+  title String
+  text  String
+
+  createdAt DateTime @unique @default(now())
+  updatedAt DateTime @unique @default(now())
+}
+
+model Random16 {
+  id    String @id @default(uuid())
+  title String
+  text  String
+
+  createdAt DateTime @unique @default(now())
+  updatedAt DateTime @unique @default(now())
+}
+
+model Random17 {
+  id    String @id @default(uuid())
+  title String
+  text  String
+
+  createdAt DateTime @unique @default(now())
+  updatedAt DateTime @unique @default(now())
+}
+
+model Random18 {
+  id    String @id @default(uuid())
+  title String
+  text  String
+
+  createdAt DateTime @unique @default(now())
+  updatedAt DateTime @unique @default(now())
+}
+
+model Random19 {
+  id    String @id @default(uuid())
+  title String
+  text  String
+
+  createdAt DateTime @unique @default(now())
+  updatedAt DateTime @unique @default(now())
+}
+
+model Random20 {
+  id    String @id @default(uuid())
+  title String
+  text  String
+
+  createdAt DateTime @unique @default(now())
+  updatedAt DateTime @unique @default(now())
+}
+
+model Random21 {
+  id    String @id @default(uuid())
+  title String
+  text  String
+
+  createdAt DateTime @unique @default(now())
+  updatedAt DateTime @unique @default(now())
+}
+
+model Random22 {
+  id    String @id @default(uuid())
+  title String
+  text  String
+
+  createdAt DateTime @unique @default(now())
+  updatedAt DateTime @unique @default(now())
+}
+
+model Random23 {
+  id    String @id @default(uuid())
+  title String
+  text  String
+
+  createdAt DateTime @unique @default(now())
+  updatedAt DateTime @unique @default(now())
+}
+
+model Random24 {
+  id    String @id @default(uuid())
+  title String
+  text  String
+
+  createdAt DateTime @unique @default(now())
+  updatedAt DateTime @unique @default(now())
+}
+
+model Random25 {
+  id    String @id @default(uuid())
+  title String
+  text  String
+
+  createdAt DateTime @unique @default(now())
+  updatedAt DateTime @unique @default(now())
+}
+
+model Random26 {
+  id    String @id @default(uuid())
+  title String
+  text  String
+
+  createdAt DateTime @unique @default(now())
+  updatedAt DateTime @unique @default(now())
+}
+
+model Random27 {
+  id    String @id @default(uuid())
+  title String
+  text  String
+
+  createdAt DateTime @unique @default(now())
+  updatedAt DateTime @unique @default(now())
+}
+
+model Random28 {
+  id    String @id @default(uuid())
+  title String
+  text  String
+
+  createdAt DateTime @unique @default(now())
+  updatedAt DateTime @unique @default(now())
+}
+
+model Random29 {
+  id    String @id @default(uuid())
+  title String
+  text  String
+
+  createdAt DateTime @unique @default(now())
+  updatedAt DateTime @unique @default(now())
+}
+
+model Random30 {
+  id    String @id @default(uuid())
+  title String
+  text  String
+
+  createdAt DateTime @unique @default(now())
+  updatedAt DateTime @unique @default(now())
+}
+
+model Random31 {
+  id    String @id @default(uuid())
+  title String
+  text  String
+
+  createdAt DateTime @unique @default(now())
+  updatedAt DateTime @unique @default(now())
+}
+
+model Random32 {
+  id    String @id @default(uuid())
+  title String
+  text  String
+
+  createdAt DateTime @unique @default(now())
+  updatedAt DateTime @unique @default(now())
+}
+
+model Random33 {
+  id    String @id @default(uuid())
+  title String
+  text  String
+
+  createdAt DateTime @unique @default(now())
+  updatedAt DateTime @unique @default(now())
+}
+
+model Random34 {
+  id    String @id @default(uuid())
+  title String
+  text  String
+
+  createdAt DateTime @unique @default(now())
+  updatedAt DateTime @unique @default(now())
+}
+
+model Random35 {
+  id    String @id @default(uuid())
+  title String
+  text  String
+
+  createdAt DateTime @unique @default(now())
+  updatedAt DateTime @unique @default(now())
+}
+
+model Random36 {
+  id    String @id @default(uuid())
+  title String
+  text  String
+
+  createdAt DateTime @unique @default(now())
+  updatedAt DateTime @unique @default(now())
+}
+
+model Random37 {
+  id    String @id @default(uuid())
+  title String
+  text  String
+
+  createdAt DateTime @unique @default(now())
+  updatedAt DateTime @unique @default(now())
+}
+
+model Random38 {
+  id    String @id @default(uuid())
+  title String
+  text  String
+
+  createdAt DateTime @unique @default(now())
+  updatedAt DateTime @unique @default(now())
+}
+
+model Random39 {
+  id    String @id @default(uuid())
+  title String
+  text  String
+
+  createdAt DateTime @unique @default(now())
+  updatedAt DateTime @unique @default(now())
+}
+
+model Random40 {
+  id    String @id @default(uuid())
+  title String
+  text  String
+
+  createdAt DateTime @unique @default(now())
+  updatedAt DateTime @unique @default(now())
+}
+
+model Random41 {
+  id    String @id @default(uuid())
+  title String
+  text  String
+
+  createdAt DateTime @unique @default(now())
+  updatedAt DateTime @unique @default(now())
+}
+
+model Random42 {
+  id    String @id @default(uuid())
+  title String
+  text  String
+
+  createdAt DateTime @unique @default(now())
+  updatedAt DateTime @unique @default(now())
+}
+
+model Random43 {
+  id    String @id @default(uuid())
+  title String
+  text  String
+
+  createdAt DateTime @unique @default(now())
+  updatedAt DateTime @unique @default(now())
+}
+
+model Random44 {
+  id    String @id @default(uuid())
+  title String
+  text  String
+
+  createdAt DateTime @unique @default(now())
+  updatedAt DateTime @unique @default(now())
+}
+
+model Random45 {
+  id    String @id @default(uuid())
+  title String
+  text  String
+
+  createdAt DateTime @unique @default(now())
+  updatedAt DateTime @unique @default(now())
+}
+
+model Random46 {
+  id    String @id @default(uuid())
+  title String
+  text  String
+
+  createdAt DateTime @unique @default(now())
+  updatedAt DateTime @unique @default(now())
+}
+
+model Random47 {
+  id    String @id @default(uuid())
+  title String
+  text  String
+
+  createdAt DateTime @unique @default(now())
+  updatedAt DateTime @unique @default(now())
+}
+
+model Random48 {
+  id    String @id @default(uuid())
+  title String
+  text  String
+
+  createdAt DateTime @unique @default(now())
+  updatedAt DateTime @unique @default(now())
+}
+
+model Random49 {
+  id    String @id @default(uuid())
+  title String
+  text  String
+
+  createdAt DateTime @unique @default(now())
+  updatedAt DateTime @unique @default(now())
+}
+
+model Random50 {
+  id    String @id @default(uuid())
+  title String
+  text  String
+
+  createdAt DateTime @unique @default(now())
+  updatedAt DateTime @unique @default(now())
+}

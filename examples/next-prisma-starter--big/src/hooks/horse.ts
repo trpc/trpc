@@ -3,5 +3,6 @@ import type { HorseRouter } from 'server/routers/horse';
 const trpc = createReactQueryHooks<HorseRouter>();
 
 export const useHorseQuery = trpc.useQuery;
+export const useHorseInfiniteQuery = trpc.useInfiniteQuery;
 export const useHorseMutation = trpc.useMutation;
 export const useHorseContext = trpc.useContext;
