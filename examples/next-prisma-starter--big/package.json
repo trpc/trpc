@@ -23,7 +23,7 @@
     "ts-node": "ts-node --compiler-options \"{\\\"module\\\":\\\"commonjs\\\"}\"",
     "postinstall": "prisma generate",
     "generate": "yarn ts-node scripts/generate-router",
-    "play": "rm -rf prisma/migrations && yarn generate && yarn db-nuke && yarn dx"
+    "play": "rm -rf prisma/migrations && rm -rf src/server/routers/* && rm -rf src/hooks/* && yarn generate && yarn db-nuke && yarn dx"
   },
   "prisma": {
     "seed": "yarn ts-node prisma/seed.ts"
