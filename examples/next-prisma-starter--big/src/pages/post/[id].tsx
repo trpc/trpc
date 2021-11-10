@@ -1,10 +1,11 @@
 import { usePostQuery } from 'hooks/post';
 import NextError from 'next/error';
 import { useRouter } from 'next/router';
-
+// import { trpc } from 'utils/trpc';
 export default function PostViewPage() {
   const id = useRouter().query.id as string;
   const postQuery = usePostQuery(['post.byId', { id }]);
+  // trpc.useQuery(['post.byId', { id }]);
 
   if (postQuery.error) {
     return (

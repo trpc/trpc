@@ -36,7 +36,7 @@ import { userRouter } from './user';
  * @link https://trpc.io/docs/ssg
  * @link https://trpc.io/docs/router
  */
-export const appRouter = (createRouter() as any)
+export const appRouter = createRouter()
   /**
    * Add data transformers
    * @link https://trpc.io/docs/data-transformers

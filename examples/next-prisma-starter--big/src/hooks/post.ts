@@ -1,4 +1,4 @@
-import { createReactQueryHooks } from '@trpc/react';    
+import { createReactQueryHooks } from '@trpc/react';
 import type { PostRouter } from 'server/routers/post';
 const trpc = createReactQueryHooks<PostRouter>();
 

@@ -162,6 +162,7 @@ import type { ${uppercased}Router } from 'server/routers/${name}';
 const trpc = createReactQueryHooks<${uppercased}Router>();
 
 export const use${uppercased}Query = trpc.useQuery;
+export const use${uppercased}InfiniteQuery = trpc.useInfiniteQuery;
 export const use${uppercased}Mutation = trpc.useMutation;
 export const use${uppercased}Context = trpc.useContext;
     `.trim();
