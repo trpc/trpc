@@ -22,7 +22,8 @@
     "test:e2e": "jest --config jest.playwright.config.ts",
     "ts-node": "ts-node --compiler-options \"{\\\"module\\\":\\\"commonjs\\\"}\"",
     "postinstall": "prisma generate",
-    "generate": "yarn ts-node scripts/generate-router"
+    "generate": "yarn ts-node scripts/generate-router",
+    "play": "rm -rf prisma/migrations && yarn generate && yarn db-nuke && yarn dx"
   },
   "prisma": {
     "seed": "yarn ts-node prisma/seed.ts"
