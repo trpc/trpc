@@ -1,7 +1,6 @@
-import { CreateProcedureWithInputOutputParser } from './internals/procedure';
+import { format } from '.';
 /* eslint-disable @typescript-eslint/ban-types */
 /* eslint-disable @typescript-eslint/no-explicit-any */
-
 import { assertNotBrowser } from './assertNotBrowser';
 import { getHTTPStatusCodeFromError } from './http/internals/getHTTPStatusCode';
 import { MiddlewareFunction } from './internals/middlewares';
@@ -9,6 +8,7 @@ import {
   createProcedure,
   CreateProcedureOptions,
   CreateProcedureWithInput,
+  CreateProcedureWithInputOutputParser,
   CreateProcedureWithoutInput,
   inferProcedureFromOptions,
   Procedure,
@@ -721,6 +721,17 @@ export class Router<
       ...this._def,
       transformer,
     });
+  }
+
+  public flat(): Router<
+    TInputContext,
+    TContext,
+    format<TQueries>,
+    format<TMutations>,
+    format<TSubscriptions>,
+    TErrorShape
+  > {
+    return this;
   }
 }
 

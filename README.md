@@ -51,6 +51,8 @@ tRPC allows you to easily build & consume fully typesafe APIs, without schemas o
 - [Usage](#usage)
 - [Core Team](#core-team)
 - [Financial Contributors](#financial-contributors)
+  - [🥉 Gold Sponsors](#-gold-sponsors)
+  - [🥉 Silver Sponsors](#-silver-sponsors)
   - [🥉 Bronze Sponsors](#-bronze-sponsors)
   - [😻 Individuals](#-individuals)
 - [All contributors ✨](#all-contributors-)
@@ -89,24 +91,25 @@ npx create-next-app --example https://github.com/trpc/trpc --example-path exampl
 
 > Is your company using tRPC, want to attract amazing TypeScript developers to your team, & support long-term maintainance of tRPC? Have a look at the [sponsorship tiers](https://github.com/sponsors/KATT) or [get in touch](mailto:alex@trpc.io) to discuss potential partnerships.
 
-<!-- 
-### 🥉 Gold Sponsors
+
+### 🥇 Gold Sponsors
 
 <img src="https://placehold.jp/e5faff/0e3847/300x150.png?text=%3Cimg%20%2F%3E" width="300" height="150">
 
-### 🥉 Silver Sponsors
+### 🥈 Silver Sponsors
 
 <img src="https://placehold.jp/e5faff/0e3847/150x150.png?text=%3Cimg%20%2F%3E" width="150" height="150"> 
--->
+
 
 ### 🥉 Bronze Sponsors
 
 <table>
   <tbody>
     <tr>
-      <td align="center"><a href="https://newfront.com"><img src="https://user-images.githubusercontent.com/36125/130158930-216fa212-5909-4ee1-b4b9-fd5935f51245.png" width="143" alt=""/><br />Newfront</a></td>
-      <td align="center"><a href="https://hidrb.com"><img src="https://avatars.githubusercontent.com/u/77294655?v=4?s=143" width="143" alt=""/><br/>Dr. B</a></td>
-      <td align="center"><a href="https://cal.com"><img src="https://avatars.githubusercontent.com/u/79145102?s=200&v=4" width="143" alt=""/><br/>Cal.com</a></td>
+      <td align="center"><a href="https://newfront.com"><img src="https://user-images.githubusercontent.com/36125/130158930-216fa212-5909-4ee1-b4b9-fd5935f51245.png" width="120" alt=""/><br />Newfront</a></td>
+      <td align="center"><a href="https://hidrb.com"><img src="https://avatars.githubusercontent.com/u/77294655?v=4?s=120" width="120" alt=""/><br/>Dr. B</a></td>
+      <td align="center"><a href="https://cal.com"><img src="https://avatars.githubusercontent.com/u/79145102?s=200&v=4" width="120" alt=""/><br/>Cal.com</a></td>
+      <td align="center"><a href="https://github.com/chimon2000"><img src="https://avatars.githubusercontent.com/u/6907797?v=4?s=120" width="120" alt=""/><br/>Ryan Edge</a></td>
     </tr>
   </tbody>
 </table>
@@ -130,6 +133,7 @@ npx create-next-app --example https://github.com/trpc/trpc --example-path exampl
       <td align="center"><a href="https://ste.london"><img src="https://avatars.githubusercontent.com/u/150512?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Stephen Mount</b></sub></a></td>
       <td align="center"><a href="https://github.com/alexn-s"><img src="https://avatars.githubusercontent.com/u/60710873?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Alex Schumacher</b></sub></a></td>
       <td align="center"><a href="https://react-hook-form.com"><img src="https://avatars.githubusercontent.com/u/10513364?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Bill</b></sub></a></td>
+      <td align="center"><a href="https://github.com/chimon2000"><img src="https://avatars.githubusercontent.com/u/6907797?v=4?s=100" width="100px;" alt=""/><br/>Ryan Edge</a></td>
     </tr>
   </tbody>
 </table>
@@ -182,6 +186,7 @@ npx create-next-app --example https://github.com/trpc/trpc --example-path exampl
     <td align="center"><a href="https://github.com/sachinraja"><img src="https://avatars.githubusercontent.com/u/58836760?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Sachin Raja</b></sub></a><br /><a href="https://github.com/trpc/trpc/pulls?q=is%3Apr+reviewed-by%3Asachinraja" title="Reviewed Pull Requests">👀</a> <a href="#ideas-sachinraja" title="Ideas, Planning, & Feedback">🤔</a></td>
     <td align="center"><a href="https://github.com/mkreuzmayr"><img src="https://avatars.githubusercontent.com/u/20108212?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Michael Kreuzmayr</b></sub></a><br /><a href="https://github.com/trpc/trpc/commits?author=mkreuzmayr" title="Code">💻</a></td>
     <td align="center"><a href="https://github.com/kimroen"><img src="https://avatars.githubusercontent.com/u/520420?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Kim Røen</b></sub></a><br /><a href="#ideas-kimroen" title="Ideas, Planning, & Feedback">🤔</a></td>
+    <td align="center"><a href="https://standardresume.co/r/ryan-edge"><img src="https://avatars.githubusercontent.com/u/6907797?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Ryan</b></sub></a><br /><a href="#financial-chimon2000" title="Financial">💵</a></td>
   </tr>
 </table>
 
