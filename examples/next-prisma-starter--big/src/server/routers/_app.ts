@@ -1,35 +1,34 @@
-
 /**
  * This file contains the root router of your tRPC-backend
  */
 import superjson from 'superjson';
 import { createRouter } from '../createRouter';
-import { animalRouter } from './animal'
-import { bookRouter } from './book'
-import { calendarRouter } from './calendar'
-import { listRouter } from './list'
-import { movieRouter } from './movie'
-import { postRouter } from './post'
-import { userRouter } from './user'
-import { settingRouter } from './setting'
-import { photoRouter } from './photo'
-import { catRouter } from './cat'
-import { dogRouter } from './dog'
-import { horseRouter } from './horse'
-import { seatRouter } from './seat'
-import { flightRouter } from './flight'
-import { tripRouter } from './trip'
-import { contentRouter } from './content'
-import { backpackRouter } from './backpack'
-import { bottleRouter } from './bottle'
-import { bagRouter } from './bag'
-import { shoeRouter } from './shoe'
-import { sweaterRouter } from './sweater'
-import { partnerRouter } from './partner'
-import { equipmentRouter } from './equipment'
-import { thingRouter } from './thing'
-import { bookcaseRouter } from './bookcase'
-import { trialRouter } from './trial'
+import { animalRouter } from './animal';
+import { bookRouter } from './book';
+import { calendarRouter } from './calendar';
+import { listRouter } from './list';
+import { movieRouter } from './movie';
+import { postRouter } from './post';
+import { userRouter } from './user';
+import { settingRouter } from './setting';
+import { photoRouter } from './photo';
+import { catRouter } from './cat';
+import { dogRouter } from './dog';
+import { horseRouter } from './horse';
+import { seatRouter } from './seat';
+import { flightRouter } from './flight';
+import { tripRouter } from './trip';
+import { contentRouter } from './content';
+import { backpackRouter } from './backpack';
+import { bottleRouter } from './bottle';
+import { bagRouter } from './bag';
+import { shoeRouter } from './shoe';
+import { sweaterRouter } from './sweater';
+import { partnerRouter } from './partner';
+import { equipmentRouter } from './equipment';
+import { thingRouter } from './thing';
+import { bookcaseRouter } from './bookcase';
+import { trialRouter } from './trial';
 
 /**
  * Create your application's root router
@@ -73,7 +72,8 @@ export const appRouter = createRouter()
   .merge('equipment.', equipmentRouter)
   .merge('thing.', thingRouter)
   .merge('bookcase.', bookcaseRouter)
-  .merge('trial.', trialRouter);
+  .merge('trial.', trialRouter)
+  .flat();
 
 export type AppRouter = typeof appRouter;
 
@@ -82,4 +82,3 @@ console.log({
   mutations: Object.keys(appRouter._def.mutations).length,
   subscriptions: Object.keys(appRouter._def.subscriptions).length,
 });
-

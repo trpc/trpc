@@ -157,7 +157,7 @@ const appRouter = `
  */
 import superjson from 'superjson';
 import { createRouter } from '../createRouter';
-${names.map((name) => `import { ${name}Router } from './${name}'`).join('\n')}
+${names.map((name) => `import { ${name}Router } from './${name}';`).join('\n')}
 
 /**
  * Create your application's root router
