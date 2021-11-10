@@ -723,6 +723,10 @@ export class Router<
     });
   }
 
+  /**
+   * Experimental - might disappear
+   * @alpha
+   */
   public flat(): Router<
     TInputContext,
     TContext,
