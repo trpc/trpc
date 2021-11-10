@@ -1,4 +1,4 @@
-import { format } from '.';
+import { flatten, format } from '.';
 /* eslint-disable @typescript-eslint/ban-types */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { assertNotBrowser } from './assertNotBrowser';
@@ -242,14 +242,14 @@ export class Router<
   >,
   TErrorShape extends TRPCErrorShape<number>,
 > {
-  readonly _def: Readonly<{
-    queries: Readonly<TQueries>;
-    mutations: Readonly<TMutations>;
-    subscriptions: Readonly<TSubscriptions>;
+  readonly _def: {
+    queries: TQueries;
+    mutations: TMutations;
+    subscriptions: TSubscriptions;
     middlewares: MiddlewareFunction<TInputContext, TContext>[];
     errorFormatter: ErrorFormatter<TContext, TErrorShape>;
     transformer: CombinedDataTransformer;
-  }>;
+  };
 
   constructor(def?: {
     queries?: TQueries;
@@ -721,17 +721,6 @@ export class Router<
       ...this._def,
       transformer,
     });
-  }
-
-  public flat(): Router<
-    TInputContext,
-    TContext,
-    format<TQueries>,
-    format<TMutations>,
-    format<TSubscriptions>,
-    TErrorShape
-  > {
-    return this;
   }
 }
 

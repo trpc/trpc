@@ -1,34 +1,35 @@
+
 /**
  * This file contains the root router of your tRPC-backend
  */
 import superjson from 'superjson';
 import { createRouter } from '../createRouter';
 import { animalRouter } from './animal';
+import { backpackRouter } from './backpack';
+import { bagRouter } from './bag';
 import { bookRouter } from './book';
+import { bookcaseRouter } from './bookcase';
+import { bottleRouter } from './bottle';
 import { calendarRouter } from './calendar';
+import { catRouter } from './cat';
+import { contentRouter } from './content';
+import { dogRouter } from './dog';
+import { equipmentRouter } from './equipment';
+import { flightRouter } from './flight';
+import { horseRouter } from './horse';
 import { listRouter } from './list';
 import { movieRouter } from './movie';
-import { postRouter } from './post';
-import { userRouter } from './user';
-import { settingRouter } from './setting';
+import { partnerRouter } from './partner';
 import { photoRouter } from './photo';
-import { catRouter } from './cat';
-import { dogRouter } from './dog';
-import { horseRouter } from './horse';
+import { postRouter } from './post';
 import { seatRouter } from './seat';
-import { flightRouter } from './flight';
-import { tripRouter } from './trip';
-import { contentRouter } from './content';
-import { backpackRouter } from './backpack';
-import { bottleRouter } from './bottle';
-import { bagRouter } from './bag';
+import { settingRouter } from './setting';
 import { shoeRouter } from './shoe';
 import { sweaterRouter } from './sweater';
-import { partnerRouter } from './partner';
-import { equipmentRouter } from './equipment';
 import { thingRouter } from './thing';
-import { bookcaseRouter } from './bookcase';
 import { trialRouter } from './trial';
+import { tripRouter } from './trip';
+import { userRouter } from './user';
 
 /**
  * Create your application's root router
@@ -47,33 +48,32 @@ export const appRouter = createRouter()
    * @link https://trpc.io/docs/error-formatting
    */
   // .formatError(({ shape, error }) => { })
-  .merge('animal.', animalRouter)
-  .merge('book.', bookRouter)
-  .merge('calendar.', calendarRouter)
-  .merge('list.', listRouter)
-  .merge('movie.', movieRouter)
-  .merge('post.', postRouter)
-  .merge('user.', userRouter)
-  .merge('setting.', settingRouter)
-  .merge('photo.', photoRouter)
-  .merge('cat.', catRouter)
-  .merge('dog.', dogRouter)
-  .merge('horse.', horseRouter)
-  .merge('seat.', seatRouter)
-  .merge('flight.', flightRouter)
-  .merge('trip.', tripRouter)
-  .merge('content.', contentRouter)
-  .merge('backpack.', backpackRouter)
-  .merge('bottle.', bottleRouter)
-  .merge('bag.', bagRouter)
-  .merge('shoe.', shoeRouter)
-  .merge('sweater.', sweaterRouter)
-  .merge('partner.', partnerRouter)
-  .merge('equipment.', equipmentRouter)
-  .merge('thing.', thingRouter)
-  .merge('bookcase.', bookcaseRouter)
-  .merge('trial.', trialRouter)
-  .flat();
+  .merge(animalRouter)
+  .merge(backpackRouter)
+  .merge(bagRouter)
+  .merge(bookRouter)
+  .merge(bookcaseRouter)
+  .merge(bottleRouter)
+  .merge(calendarRouter)
+  .merge(catRouter)
+  .merge(contentRouter)
+  .merge(dogRouter)
+  .merge(equipmentRouter)
+  .merge(flightRouter)
+  .merge(horseRouter)
+  .merge(listRouter)
+  .merge(movieRouter)
+  .merge(partnerRouter)
+  .merge(photoRouter)
+  .merge(postRouter)
+  .merge(seatRouter)
+  .merge(settingRouter)
+  .merge(shoeRouter)
+  .merge(sweaterRouter)
+  .merge(thingRouter)
+  .merge(trialRouter)
+  .merge(tripRouter)
+  .merge(userRouter);
 
 export type AppRouter = typeof appRouter;
 
@@ -82,3 +82,4 @@ console.log({
   mutations: Object.keys(appRouter._def.mutations).length,
   subscriptions: Object.keys(appRouter._def.subscriptions).length,
 });
+

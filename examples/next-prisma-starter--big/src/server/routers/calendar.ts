@@ -1,7 +1,7 @@
 import { createRouter } from 'server/createRouter';
 import { z } from 'zod';
 import { TRPCError } from '@trpc/server';
-export const calendarRouter = createRouter()
+const router = createRouter()
   // create
   .mutation('add', {
     input: z.object({
@@ -82,3 +82,7 @@ export const calendarRouter = createRouter()
       return { id };
     },
   });
+
+export const calendarRouter = createRouter().merge('calendar.', router);
+
+export type CalendarRouter = typeof calendarRouter;

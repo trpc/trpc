@@ -1,7 +1,7 @@
 import { createRouter } from 'server/createRouter';
 import { z } from 'zod';
 import { TRPCError } from '@trpc/server';
-export const bagRouter = createRouter()
+const router = createRouter()
   // create
   .mutation('add', {
     input: z.object({
@@ -82,3 +82,7 @@ export const bagRouter = createRouter()
       return { id };
     },
   });
+
+export const bagRouter = createRouter().merge('bag.', router);
+
+export type BagRouter = typeof bagRouter;

@@ -1,35 +1,39 @@
 import fs from 'fs';
+const SRC_DIR = __dirname + '/../src';
 const PRISMA_FILE = __dirname + '/../prisma/schema.prisma';
 const SERVER_DIR = __dirname + '/../src/server';
 
+function uppercaseFirst(str: string) {
+  return str[0].toUpperCase() + str.substr(1);
+}
 const names = [
   //
   'animal',
+  'backpack',
+  'bag',
   'book',
+  'bookcase',
+  'bottle',
   'calendar',
+  'cat',
+  'content',
+  'dog',
+  'equipment',
+  'flight',
+  'horse',
   'list',
   'movie',
-  'post',
-  'user',
-  'setting',
+  'partner',
   'photo',
-  'cat',
-  'dog',
-  'horse',
+  'post',
   'seat',
-  'flight',
-  'trip',
-  'content',
-  'backpack',
-  'bottle',
-  'bag',
+  'setting',
   'shoe',
   'sweater',
-  'partner',
-  'equipment',
   'thing',
-  'bookcase',
   'trial',
+  'trip',
+  'user',
 ];
 
 // Big F̶u̶c̶ Fantastic Router
@@ -47,7 +51,7 @@ generator client {
 `.trim(),
 ];
 for (const name of names) {
-  const uppercased = name[0].toUpperCase() + name.substr(1);
+  const uppercased = uppercaseFirst(name);
   prisma.push(
     `
 model ${uppercased} {
@@ -65,7 +69,7 @@ model ${uppercased} {
 import { createRouter } from 'server/createRouter';
 import { z } from 'zod';
 import { TRPCError } from '@trpc/server';
-export const ${name}Router = createRouter()
+const router = createRouter()
   // create
   .mutation('add', {
     input: z.object({
@@ -146,9 +150,22 @@ export const ${name}Router = createRouter()
       return { id };
     },
   });
+
+export const ${name}Router = createRouter().merge('${name}.', router);
+
+export type ${uppercased}Router = typeof ${name}Router;
     `.trim();
 
+  const utils = `
+import { createReactQueryHooks } from '@trpc/react';    
+import type { ${uppercased}Router } from 'server/routers/${name}';
+const trpc = createReactQueryHooks<${uppercased}Router>();
+
+export const use${uppercased}Query = trpc.useQuery;
+export const use${uppercased}Mutation = trpc.useMutation;
+    `.trim();
   fs.writeFileSync(SERVER_DIR + '/routers/' + name + '.ts', router);
+  fs.writeFileSync(SRC_DIR + `/hooks/${name}.ts`, utils);
 }
 
 const appRouter = `
@@ -176,7 +193,7 @@ export const appRouter = createRouter()
    * @link https://trpc.io/docs/error-formatting
    */
   // .formatError(({ shape, error }) => { })
-  ${names.map((name) => `.merge('${name}.', ${name}Router)`).join('\n  ')};
+  ${names.map((name) => `.merge(${name}Router)`).join('\n  ')};
 
 export type AppRouter = typeof appRouter;
 
