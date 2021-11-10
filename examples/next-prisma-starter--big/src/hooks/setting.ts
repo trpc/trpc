@@ -4,3 +4,4 @@ const trpc = createReactQueryHooks<SettingRouter>();
 
 export const useSettingQuery = trpc.useQuery;
 export const useSettingMutation = trpc.useMutation;
+export const useSettingContext = trpc.useContext;

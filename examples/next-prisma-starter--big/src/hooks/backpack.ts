@@ -4,3 +4,4 @@ const trpc = createReactQueryHooks<BackpackRouter>();
 
 export const useBackpackQuery = trpc.useQuery;
 export const useBackpackMutation = trpc.useMutation;
+export const useBackpackContext = trpc.useContext;

@@ -4,3 +4,4 @@ const trpc = createReactQueryHooks<MovieRouter>();
 
 export const useMovieQuery = trpc.useQuery;
 export const useMovieMutation = trpc.useMutation;
+export const useMovieContext = trpc.useContext;

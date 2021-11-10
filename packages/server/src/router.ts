@@ -722,6 +722,17 @@ export class Router<
       transformer,
     });
   }
+
+  public flat(): Router<
+    TInputContext,
+    TContext,
+    flatten<{}, TQueries>,
+    flatten<{}, TMutations>,
+    flatten<{}, TSubscriptions>,
+    TErrorShape
+  > {
+    return this as any;
+  }
 }
 
 /**

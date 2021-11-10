@@ -4,3 +4,4 @@ const trpc = createReactQueryHooks<PostRouter>();
 
 export const usePostQuery = trpc.useQuery;
 export const usePostMutation = trpc.useMutation;
+export const usePostContext = trpc.useContext;

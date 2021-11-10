@@ -4,3 +4,4 @@ const trpc = createReactQueryHooks<BottleRouter>();
 
 export const useBottleQuery = trpc.useQuery;
 export const useBottleMutation = trpc.useMutation;
+export const useBottleContext = trpc.useContext;

@@ -4,3 +4,4 @@ const trpc = createReactQueryHooks<BagRouter>();
 
 export const useBagQuery = trpc.useQuery;
 export const useBagMutation = trpc.useMutation;
+export const useBagContext = trpc.useContext;

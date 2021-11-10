@@ -4,3 +4,4 @@ const trpc = createReactQueryHooks<PhotoRouter>();
 
 export const usePhotoQuery = trpc.useQuery;
 export const usePhotoMutation = trpc.useMutation;
+export const usePhotoContext = trpc.useContext;

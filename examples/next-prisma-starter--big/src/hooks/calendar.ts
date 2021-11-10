@@ -4,3 +4,4 @@ const trpc = createReactQueryHooks<CalendarRouter>();
 
 export const useCalendarQuery = trpc.useQuery;
 export const useCalendarMutation = trpc.useMutation;
+export const useCalendarContext = trpc.useContext;

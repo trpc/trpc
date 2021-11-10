@@ -4,3 +4,4 @@ const trpc = createReactQueryHooks<SweaterRouter>();
 
 export const useSweaterQuery = trpc.useQuery;
 export const useSweaterMutation = trpc.useMutation;
+export const useSweaterContext = trpc.useContext;

@@ -4,3 +4,4 @@ const trpc = createReactQueryHooks<TrialRouter>();
 
 export const useTrialQuery = trpc.useQuery;
 export const useTrialMutation = trpc.useMutation;
+export const useTrialContext = trpc.useContext;

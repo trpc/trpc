@@ -4,3 +4,4 @@ const trpc = createReactQueryHooks<UserRouter>();
 
 export const useUserQuery = trpc.useQuery;
 export const useUserMutation = trpc.useMutation;
+export const useUserContext = trpc.useContext;

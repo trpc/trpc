@@ -2,7 +2,6 @@ import { httpBatchLink } from '@trpc/client/links/httpBatchLink';
 import { loggerLink } from '@trpc/client/links/loggerLink';
 import { withTRPC } from '@trpc/next';
 import { AppType } from 'next/dist/shared/lib/utils';
-import { AppRouter } from 'server/routers/_app';
 import superjson from 'superjson';
 
 const MyApp: AppType = ({ Component, pageProps }) => {
@@ -31,7 +30,7 @@ function getBaseUrl() {
   return `http://localhost:${process.env.PORT ?? 3000}`;
 }
 
-export default withTRPC<AppRouter>({
+export default withTRPC({
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   config() {
     /**

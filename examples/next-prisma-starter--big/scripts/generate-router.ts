@@ -163,6 +163,7 @@ const trpc = createReactQueryHooks<${uppercased}Router>();
 
 export const use${uppercased}Query = trpc.useQuery;
 export const use${uppercased}Mutation = trpc.useMutation;
+export const use${uppercased}Context = trpc.useContext;
     `.trim();
   fs.writeFileSync(SERVER_DIR + '/routers/' + name + '.ts', router);
   fs.writeFileSync(SRC_DIR + `/hooks/${name}.ts`, utils);

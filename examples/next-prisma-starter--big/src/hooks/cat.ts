@@ -4,3 +4,4 @@ const trpc = createReactQueryHooks<CatRouter>();
 
 export const useCatQuery = trpc.useQuery;
 export const useCatMutation = trpc.useMutation;
+export const useCatContext = trpc.useContext;

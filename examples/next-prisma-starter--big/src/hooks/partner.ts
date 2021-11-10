@@ -4,3 +4,4 @@ const trpc = createReactQueryHooks<PartnerRouter>();
 
 export const usePartnerQuery = trpc.useQuery;
 export const usePartnerMutation = trpc.useMutation;
+export const usePartnerContext = trpc.useContext;

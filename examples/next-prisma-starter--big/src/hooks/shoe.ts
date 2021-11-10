@@ -4,3 +4,4 @@ const trpc = createReactQueryHooks<ShoeRouter>();
 
 export const useShoeQuery = trpc.useQuery;
 export const useShoeMutation = trpc.useMutation;
+export const useShoeContext = trpc.useContext;

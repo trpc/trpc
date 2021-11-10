@@ -4,3 +4,4 @@ const trpc = createReactQueryHooks<ListRouter>();
 
 export const useListQuery = trpc.useQuery;
 export const useListMutation = trpc.useMutation;
+export const useListContext = trpc.useContext;

@@ -4,3 +4,4 @@ const trpc = createReactQueryHooks<DogRouter>();
 
 export const useDogQuery = trpc.useQuery;
 export const useDogMutation = trpc.useMutation;
+export const useDogContext = trpc.useContext;

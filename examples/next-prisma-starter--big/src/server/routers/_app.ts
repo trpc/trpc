@@ -1,4 +1,3 @@
-
 /**
  * This file contains the root router of your tRPC-backend
  */
@@ -37,7 +36,7 @@ import { userRouter } from './user';
  * @link https://trpc.io/docs/ssg
  * @link https://trpc.io/docs/router
  */
-export const appRouter = createRouter()
+export const appRouter = (createRouter() as any)
   /**
    * Add data transformers
    * @link https://trpc.io/docs/data-transformers
@@ -82,4 +81,3 @@ console.log({
   mutations: Object.keys(appRouter._def.mutations).length,
   subscriptions: Object.keys(appRouter._def.subscriptions).length,
 });
-

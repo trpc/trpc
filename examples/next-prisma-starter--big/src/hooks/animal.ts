@@ -4,3 +4,4 @@ const trpc = createReactQueryHooks<AnimalRouter>();
 
 export const useAnimalQuery = trpc.useQuery;
 export const useAnimalMutation = trpc.useMutation;
+export const useAnimalContext = trpc.useContext;

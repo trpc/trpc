@@ -4,3 +4,4 @@ const trpc = createReactQueryHooks<TripRouter>();
 
 export const useTripQuery = trpc.useQuery;
 export const useTripMutation = trpc.useMutation;
+export const useTripContext = trpc.useContext;

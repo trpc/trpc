@@ -1,12 +1,12 @@
+import { usePostContext, usePostMutation, usePostQuery } from 'hooks/post';
 import Head from 'next/head';
 import Link from 'next/link';
 import { ReactQueryDevtools } from 'react-query/devtools';
-import { trpc } from '../utils/trpc';
 
 export default function IndexPage() {
-  const postsQuery = trpc.useQuery(['post.all']);
-  const addPost = trpc.useMutation('post.add');
-  const utils = trpc.useContext();
+  const postsQuery = usePostQuery(['post.all']);
+  const addPost = usePostMutation('post.add');
+  const utils = usePostContext();
 
   // prefetch all posts for instant navigation
   // useEffect(() => {

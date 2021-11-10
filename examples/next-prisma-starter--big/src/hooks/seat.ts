@@ -4,3 +4,4 @@ const trpc = createReactQueryHooks<SeatRouter>();
 
 export const useSeatQuery = trpc.useQuery;
 export const useSeatMutation = trpc.useMutation;
+export const useSeatContext = trpc.useContext;
