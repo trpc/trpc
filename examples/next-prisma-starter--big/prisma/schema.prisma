@@ -1,0 +1,242 @@
+datasource db {
+  provider = "postgres"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model Animal {
+  id    String @id @default(uuid())
+  title String
+  text  String
+
+  createdAt DateTime @unique @default(now())
+  updatedAt DateTime @unique @default(now())
+}
+
+model Book {
+  id    String @id @default(uuid())
+  title String
+  text  String
+
+  createdAt DateTime @unique @default(now())
+  updatedAt DateTime @unique @default(now())
+}
+
+model Calendar {
+  id    String @id @default(uuid())
+  title String
+  text  String
+
+  createdAt DateTime @unique @default(now())
+  updatedAt DateTime @unique @default(now())
+}
+
+model List {
+  id    String @id @default(uuid())
+  title String
+  text  String
+
+  createdAt DateTime @unique @default(now())
+  updatedAt DateTime @unique @default(now())
+}
+
+model Movie {
+  id    String @id @default(uuid())
+  title String
+  text  String
+
+  createdAt DateTime @unique @default(now())
+  updatedAt DateTime @unique @default(now())
+}
+
+model Post {
+  id    String @id @default(uuid())
+  title String
+  text  String
+
+  createdAt DateTime @unique @default(now())
+  updatedAt DateTime @unique @default(now())
+}
+
+model User {
+  id    String @id @default(uuid())
+  title String
+  text  String
+
+  createdAt DateTime @unique @default(now())
+  updatedAt DateTime @unique @default(now())
+}
+
+model Setting {
+  id    String @id @default(uuid())
+  title String
+  text  String
+
+  createdAt DateTime @unique @default(now())
+  updatedAt DateTime @unique @default(now())
+}
+
+model Photo {
+  id    String @id @default(uuid())
+  title String
+  text  String
+
+  createdAt DateTime @unique @default(now())
+  updatedAt DateTime @unique @default(now())
+}
+
+model Cat {
+  id    String @id @default(uuid())
+  title String
+  text  String
+
+  createdAt DateTime @unique @default(now())
+  updatedAt DateTime @unique @default(now())
+}
+
+model Dog {
+  id    String @id @default(uuid())
+  title String
+  text  String
+
+  createdAt DateTime @unique @default(now())
+  updatedAt DateTime @unique @default(now())
+}
+
+model Horse {
+  id    String @id @default(uuid())
+  title String
+  text  String
+
+  createdAt DateTime @unique @default(now())
+  updatedAt DateTime @unique @default(now())
+}
+
+model Seat {
+  id    String @id @default(uuid())
+  title String
+  text  String
+
+  createdAt DateTime @unique @default(now())
+  updatedAt DateTime @unique @default(now())
+}
+
+model Flight {
+  id    String @id @default(uuid())
+  title String
+  text  String
+
+  createdAt DateTime @unique @default(now())
+  updatedAt DateTime @unique @default(now())
+}
+
+model Trip {
+  id    String @id @default(uuid())
+  title String
+  text  String
+
+  createdAt DateTime @unique @default(now())
+  updatedAt DateTime @unique @default(now())
+}
+
+model Content {
+  id    String @id @default(uuid())
+  title String
+  text  String
+
+  createdAt DateTime @unique @default(now())
+  updatedAt DateTime @unique @default(now())
+}
+
+model Backpack {
+  id    String @id @default(uuid())
+  title String
+  text  String
+
+  createdAt DateTime @unique @default(now())
+  updatedAt DateTime @unique @default(now())
+}
+
+model Bottle {
+  id    String @id @default(uuid())
+  title String
+  text  String
+
+  createdAt DateTime @unique @default(now())
+  updatedAt DateTime @unique @default(now())
+}
+
+model Bag {
+  id    String @id @default(uuid())
+  title String
+  text  String
+
+  createdAt DateTime @unique @default(now())
+  updatedAt DateTime @unique @default(now())
+}
+
+model Shoe {
+  id    String @id @default(uuid())
+  title String
+  text  String
+
+  createdAt DateTime @unique @default(now())
+  updatedAt DateTime @unique @default(now())
+}
+
+model Sweater {
+  id    String @id @default(uuid())
+  title String
+  text  String
+
+  createdAt DateTime @unique @default(now())
+  updatedAt DateTime @unique @default(now())
+}
+
+model Partner {
+  id    String @id @default(uuid())
+  title String
+  text  String
+
+  createdAt DateTime @unique @default(now())
+  updatedAt DateTime @unique @default(now())
+}
+
+model Equipment {
+  id    String @id @default(uuid())
+  title String
+  text  String
+
+  createdAt DateTime @unique @default(now())
+  updatedAt DateTime @unique @default(now())
+}
+
+model Thing {
+  id    String @id @default(uuid())
+  title String
+  text  String
+
+  createdAt DateTime @unique @default(now())
+  updatedAt DateTime @unique @default(now())
+}
+
+model Bookcase {
+  id    String @id @default(uuid())
+  title String
+  text  String
+
+  createdAt DateTime @unique @default(now())
+  updatedAt DateTime @unique @default(now())
+}
+
+model Trial {
+  id    String @id @default(uuid())
+  title String
+  text  String
+
+  createdAt DateTime @unique @default(now())
+  updatedAt DateTime @unique @default(now())
+}
