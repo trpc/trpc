@@ -241,7 +241,7 @@ model User {
   updatedAt DateTime @unique @default(now())
 }
 
-model Random0 {
+model Router26 {
   id    String @id @default(uuid())
   title String
   text  String
@@ -250,7 +250,7 @@ model Random0 {
   updatedAt DateTime @unique @default(now())
 }
 
-model Random1 {
+model Router27 {
   id    String @id @default(uuid())
   title String
   text  String
@@ -259,7 +259,7 @@ model Random1 {
   updatedAt DateTime @unique @default(now())
 }
 
-model Random2 {
+model Router28 {
   id    String @id @default(uuid())
   title String
   text  String
@@ -268,7 +268,7 @@ model Random2 {
   updatedAt DateTime @unique @default(now())
 }
 
-model Random3 {
+model Router29 {
   id    String @id @default(uuid())
   title String
   text  String
@@ -277,7 +277,7 @@ model Random3 {
   updatedAt DateTime @unique @default(now())
 }
 
-model Random4 {
+model Router30 {
   id    String @id @default(uuid())
   title String
   text  String
@@ -286,7 +286,7 @@ model Random4 {
   updatedAt DateTime @unique @default(now())
 }
 
-model Random5 {
+model Router31 {
   id    String @id @default(uuid())
   title String
   text  String
@@ -295,7 +295,7 @@ model Random5 {
   updatedAt DateTime @unique @default(now())
 }
 
-model Random6 {
+model Router32 {
   id    String @id @default(uuid())
   title String
   text  String
@@ -304,7 +304,7 @@ model Random6 {
   updatedAt DateTime @unique @default(now())
 }
 
-model Random7 {
+model Router33 {
   id    String @id @default(uuid())
   title String
   text  String
@@ -313,7 +313,7 @@ model Random7 {
   updatedAt DateTime @unique @default(now())
 }
 
-model Random8 {
+model Router34 {
   id    String @id @default(uuid())
   title String
   text  String
@@ -322,7 +322,7 @@ model Random8 {
   updatedAt DateTime @unique @default(now())
 }
 
-model Random9 {
+model Router35 {
   id    String @id @default(uuid())
   title String
   text  String
@@ -331,7 +331,7 @@ model Random9 {
   updatedAt DateTime @unique @default(now())
 }
 
-model Random10 {
+model Router36 {
   id    String @id @default(uuid())
   title String
   text  String
@@ -340,7 +340,7 @@ model Random10 {
   updatedAt DateTime @unique @default(now())
 }
 
-model Random11 {
+model Router37 {
   id    String @id @default(uuid())
   title String
   text  String
@@ -349,7 +349,7 @@ model Random11 {
   updatedAt DateTime @unique @default(now())
 }
 
-model Random12 {
+model Router38 {
   id    String @id @default(uuid())
   title String
   text  String
@@ -358,7 +358,7 @@ model Random12 {
   updatedAt DateTime @unique @default(now())
 }
 
-model Random13 {
+model Router39 {
   id    String @id @default(uuid())
   title String
   text  String
@@ -367,7 +367,7 @@ model Random13 {
   updatedAt DateTime @unique @default(now())
 }
 
-model Random14 {
+model Router40 {
   id    String @id @default(uuid())
   title String
   text  String
@@ -376,7 +376,7 @@ model Random14 {
   updatedAt DateTime @unique @default(now())
 }
 
-model Random15 {
+model Router41 {
   id    String @id @default(uuid())
   title String
   text  String
@@ -385,7 +385,7 @@ model Random15 {
   updatedAt DateTime @unique @default(now())
 }
 
-model Random16 {
+model Router42 {
   id    String @id @default(uuid())
   title String
   text  String
@@ -394,7 +394,7 @@ model Random16 {
   updatedAt DateTime @unique @default(now())
 }
 
-model Random17 {
+model Router43 {
   id    String @id @default(uuid())
   title String
   text  String
@@ -403,7 +403,7 @@ model Random17 {
   updatedAt DateTime @unique @default(now())
 }
 
-model Random18 {
+model Router44 {
   id    String @id @default(uuid())
   title String
   text  String
@@ -412,7 +412,7 @@ model Random18 {
   updatedAt DateTime @unique @default(now())
 }
 
-model Random19 {
+model Router45 {
   id    String @id @default(uuid())
   title String
   text  String
@@ -421,7 +421,7 @@ model Random19 {
   updatedAt DateTime @unique @default(now())
 }
 
-model Random20 {
+model Router46 {
   id    String @id @default(uuid())
   title String
   text  String
@@ -430,7 +430,7 @@ model Random20 {
   updatedAt DateTime @unique @default(now())
 }
 
-model Random21 {
+model Router47 {
   id    String @id @default(uuid())
   title String
   text  String
@@ -439,7 +439,7 @@ model Random21 {
   updatedAt DateTime @unique @default(now())
 }
 
-model Random22 {
+model Router48 {
   id    String @id @default(uuid())
   title String
   text  String
@@ -448,250 +448,7 @@ model Random22 {
   updatedAt DateTime @unique @default(now())
 }
 
-model Random23 {
-  id    String @id @default(uuid())
-  title String
-  text  String
-
-  createdAt DateTime @unique @default(now())
-  updatedAt DateTime @unique @default(now())
-}
-
-model Random24 {
-  id    String @id @default(uuid())
-  title String
-  text  String
-
-  createdAt DateTime @unique @default(now())
-  updatedAt DateTime @unique @default(now())
-}
-
-model Random25 {
-  id    String @id @default(uuid())
-  title String
-  text  String
-
-  createdAt DateTime @unique @default(now())
-  updatedAt DateTime @unique @default(now())
-}
-
-model Random26 {
-  id    String @id @default(uuid())
-  title String
-  text  String
-
-  createdAt DateTime @unique @default(now())
-  updatedAt DateTime @unique @default(now())
-}
-
-model Random27 {
-  id    String @id @default(uuid())
-  title String
-  text  String
-
-  createdAt DateTime @unique @default(now())
-  updatedAt DateTime @unique @default(now())
-}
-
-model Random28 {
-  id    String @id @default(uuid())
-  title String
-  text  String
-
-  createdAt DateTime @unique @default(now())
-  updatedAt DateTime @unique @default(now())
-}
-
-model Random29 {
-  id    String @id @default(uuid())
-  title String
-  text  String
-
-  createdAt DateTime @unique @default(now())
-  updatedAt DateTime @unique @default(now())
-}
-
-model Random30 {
-  id    String @id @default(uuid())
-  title String
-  text  String
-
-  createdAt DateTime @unique @default(now())
-  updatedAt DateTime @unique @default(now())
-}
-
-model Random31 {
-  id    String @id @default(uuid())
-  title String
-  text  String
-
-  createdAt DateTime @unique @default(now())
-  updatedAt DateTime @unique @default(now())
-}
-
-model Random32 {
-  id    String @id @default(uuid())
-  title String
-  text  String
-
-  createdAt DateTime @unique @default(now())
-  updatedAt DateTime @unique @default(now())
-}
-
-model Random33 {
-  id    String @id @default(uuid())
-  title String
-  text  String
-
-  createdAt DateTime @unique @default(now())
-  updatedAt DateTime @unique @default(now())
-}
-
-model Random34 {
-  id    String @id @default(uuid())
-  title String
-  text  String
-
-  createdAt DateTime @unique @default(now())
-  updatedAt DateTime @unique @default(now())
-}
-
-model Random35 {
-  id    String @id @default(uuid())
-  title String
-  text  String
-
-  createdAt DateTime @unique @default(now())
-  updatedAt DateTime @unique @default(now())
-}
-
-model Random36 {
-  id    String @id @default(uuid())
-  title String
-  text  String
-
-  createdAt DateTime @unique @default(now())
-  updatedAt DateTime @unique @default(now())
-}
-
-model Random37 {
-  id    String @id @default(uuid())
-  title String
-  text  String
-
-  createdAt DateTime @unique @default(now())
-  updatedAt DateTime @unique @default(now())
-}
-
-model Random38 {
-  id    String @id @default(uuid())
-  title String
-  text  String
-
-  createdAt DateTime @unique @default(now())
-  updatedAt DateTime @unique @default(now())
-}
-
-model Random39 {
-  id    String @id @default(uuid())
-  title String
-  text  String
-
-  createdAt DateTime @unique @default(now())
-  updatedAt DateTime @unique @default(now())
-}
-
-model Random40 {
-  id    String @id @default(uuid())
-  title String
-  text  String
-
-  createdAt DateTime @unique @default(now())
-  updatedAt DateTime @unique @default(now())
-}
-
-model Random41 {
-  id    String @id @default(uuid())
-  title String
-  text  String
-
-  createdAt DateTime @unique @default(now())
-  updatedAt DateTime @unique @default(now())
-}
-
-model Random42 {
-  id    String @id @default(uuid())
-  title String
-  text  String
-
-  createdAt DateTime @unique @default(now())
-  updatedAt DateTime @unique @default(now())
-}
-
-model Random43 {
-  id    String @id @default(uuid())
-  title String
-  text  String
-
-  createdAt DateTime @unique @default(now())
-  updatedAt DateTime @unique @default(now())
-}
-
-model Random44 {
-  id    String @id @default(uuid())
-  title String
-  text  String
-
-  createdAt DateTime @unique @default(now())
-  updatedAt DateTime @unique @default(now())
-}
-
-model Random45 {
-  id    String @id @default(uuid())
-  title String
-  text  String
-
-  createdAt DateTime @unique @default(now())
-  updatedAt DateTime @unique @default(now())
-}
-
-model Random46 {
-  id    String @id @default(uuid())
-  title String
-  text  String
-
-  createdAt DateTime @unique @default(now())
-  updatedAt DateTime @unique @default(now())
-}
-
-model Random47 {
-  id    String @id @default(uuid())
-  title String
-  text  String
-
-  createdAt DateTime @unique @default(now())
-  updatedAt DateTime @unique @default(now())
-}
-
-model Random48 {
-  id    String @id @default(uuid())
-  title String
-  text  String
-
-  createdAt DateTime @unique @default(now())
-  updatedAt DateTime @unique @default(now())
-}
-
-model Random49 {
-  id    String @id @default(uuid())
-  title String
-  text  String
-
-  createdAt DateTime @unique @default(now())
-  updatedAt DateTime @unique @default(now())
-}
-
-model Random50 {
+model Router49 {
   id    String @id @default(uuid())
   title String
   text  String

@@ -34,58 +34,9 @@ const names = [
   'trial',
   'trip',
   'user',
-  'random0',
-  'random1',
-  'random2',
-  'random3',
-  'random4',
-  'random5',
-  'random6',
-  'random7',
-  'random8',
-  'random9',
-  'random10',
-  'random11',
-  'random12',
-  'random13',
-  'random14',
-  'random15',
-  'random16',
-  'random17',
-  'random18',
-  'random19',
-  'random20',
-  'random21',
-  'random22',
-  'random23',
-  'random24',
-  'random25',
-  'random26',
-  'random27',
-  'random28',
-  'random29',
-  'random30',
-  'random31',
-  'random32',
-  'random33',
-  'random34',
-  'random35',
-  'random36',
-  'random37',
-  'random38',
-  'random39',
-  'random40',
-  'random41',
-  'random42',
-  'random43',
-  'random44',
-  'random45',
-  'random46',
-  'random47',
-  'random48',
-  'random49',
-  'random50',
 ];
+
+const NUM_ROUTERS = 50;
 
 const prisma = [
   `
@@ -99,7 +50,9 @@ generator client {
 }
 `.trim(),
 ];
-for (const name of names) {
+for (let index = 0; index < NUM_ROUTERS; index++) {
+  const name = names[index] ?? `router${index}`;
+
   const uppercased = uppercaseFirst(name);
   prisma.push(
     `
