@@ -7,7 +7,7 @@ export default function IndexPage() {
   const utils = trpc.useContext();
   const postsQuery = trpc.useQuery(['post.all']);
   const addPost = trpc.useMutation('post.add', {
-    async onSettled() {
+    async onSuccess() {
       // refetches posts after a post is added
       await utils.invalidateQueries(['post.all']);
     },
