@@ -50,8 +50,8 @@ const NUM_ROUTERS = 50;
 const prisma = [
   `
 datasource db {
-  provider = "postgres"
-  url      = env("DATABASE_URL")
+  provider = "sqlite"
+  url      = "file:./dev.db"
 }
 
 generator client {

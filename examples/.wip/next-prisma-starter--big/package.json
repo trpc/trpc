@@ -11,7 +11,7 @@
     "db-migrate-dev": "yarn prisma migrate dev",
     "db-nuke": "docker-compose down --volumes --remove-orphans",
     "dev": "next dev",
-    "dx": "cross-env DATABASE_URL=postgresql://postgres:@localhost:5633/trpcdb run-s db-up db-migrate-dev db-seed dev",
+    "dx": "run-s db-up db-migrate-dev db-seed dev",
     "start": "next start",
     "lint": "eslint src",
     "lint-fix": "yarn lint --fix",
@@ -21,9 +21,9 @@
     "test:unit": "jest",
     "test:e2e": "jest --config jest.playwright.config.ts",
     "ts-node": "ts-node --compiler-options \"{\\\"module\\\":\\\"commonjs\\\"}\"",
-    "postinstall": "prisma generate",
-    "generate": "yarn ts-node scripts/generate-router",
-    "play": "rm -rf prisma/migrations && rm -rf src/server/routers/* && rm -rf src/hooks/* && yarn generate && yarn db-nuke && yarn dx"
+    "postinstall": "yarn play",
+    "codegen": "yarn ts-node scripts/generate-router",
+    "play": "rm -rf prisma/migrations prisma/*.db src/server/routers/* && rm -rf src/hooks/* && run-s codegen db-nuke 'db-migrate-dev --name init' db-seed"
   },
   "prisma": {
     "seed": "yarn ts-node prisma/seed.ts"
