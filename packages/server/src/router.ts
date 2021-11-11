@@ -724,7 +724,9 @@ export class Router<
   }
 
   /**
-   * Experimental - might disappear
+   * Flattens the generics of TQueries/TMutations/TSubscriptions.
+   * ⚠️ Experimental - might disappear. ⚠️
+   *
    * @alpha
    */
   public flat(): Router<
