@@ -14,6 +14,7 @@ import {
   QueryClient,
   SetDataOptions,
   CancelOptions,
+  InvalidateQueryFilters,
 } from 'react-query';
 
 interface TRPCFetchQueryOptions<TInput, TError, TOutput>
@@ -105,6 +106,7 @@ export type TRPCContextState<TRouter extends AnyRouter> = {
     TInput extends inferProcedureInput<TRouter['_def']['queries'][TPath]>,
   >(
     pathAndInput: [TPath, TInput?] | TPath,
+    filters?: InvalidateQueryFilters,
     options?: InvalidateOptions,
   ) => Promise<void>;
   /**
