@@ -2,6 +2,15 @@ import fs from 'fs';
 const SRC_DIR = __dirname + '/../src';
 const PRISMA_FILE = __dirname + '/../prisma/schema.prisma';
 const SERVER_DIR = __dirname + '/../src/server';
+const ROUTER_DIR = SERVER_DIR + '/routers';
+const HOOKS_DIR = __dirname + '/../src/hooks';
+
+if (!fs.existsSync(ROUTER_DIR)) {
+  fs.mkdirSync(ROUTER_DIR, { recursive: true });
+}
+if (!fs.existsSync(HOOKS_DIR)) {
+  fs.mkdirSync(HOOKS_DIR, { recursive: true });
+}
 
 function uppercaseFirst(str: string) {
   return str[0].toUpperCase() + str.substr(1);

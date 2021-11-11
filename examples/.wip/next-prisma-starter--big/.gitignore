@@ -43,3 +43,9 @@ prisma/_sqlite/migrations
 # testing
 playwright/videos
 playwright/screenshots
+
+
+# generated
+src/hooks
+src/server/routers
+prisma/schema.prisma
