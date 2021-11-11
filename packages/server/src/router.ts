@@ -1,4 +1,3 @@
-import { flatten, format } from '.';
 /* eslint-disable @typescript-eslint/ban-types */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { assertNotBrowser } from './assertNotBrowser';
@@ -23,7 +22,7 @@ import {
 import { Subscription } from './subscription';
 import { CombinedDataTransformer, DataTransformerOptions } from './transformer';
 import { TRPCError } from './TRPCError';
-import { Prefixer, ThenArg } from './types';
+import { flatten, Prefixer, ThenArg } from './types';
 
 assertNotBrowser();
 
