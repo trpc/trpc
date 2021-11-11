@@ -48,4 +48,5 @@ playwright/screenshots
 # generated
 src/hooks
 src/server/routers
-prisma/schema.prisma
+# prisma/schema.prisma
+# prisma/migrations
