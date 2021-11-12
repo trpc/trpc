@@ -1,120 +1,39 @@
-import Head from 'next/head';
+import { props as ssgProps } from 'feature/ssg/meta';
 import Link from 'next/link';
-import { ReactQueryDevtools } from 'react-query/devtools';
-import { trpc } from '../utils/trpc';
+import Breadcrumbs, { ExampleProps } from 'utils/example';
 
-export default function IndexPage() {
-  const postsQuery = trpc.useQuery(['post.all']);
-  const addPost = trpc.useMutation('post.add');
-  const utils = trpc.useContext();
-
-  // prefetch all posts for instant navigation
-  // useEffect(() => {
-  //   for (const { id } of postsQuery.data ?? []) {
-  //     utils.prefetchQuery(['post.byId', { id }]);
-  //   }
-  // }, [postsQuery.data, utils]);
-
+const propsList: ExampleProps[] = [ssgProps];
+export default function Page() {
   return (
     <>
-      <Head>
-        <title>Prisma Starter</title>
-        <link rel="icon" href="/favicon.ico" />
-      </Head>
-      <h1>Welcome to your tRPC starter!</h1>
-      <p>
-        Check <a href="https://trpc.io/docs">the docs</a> whenever you get
-        stuck, or ping <a href="https://twitter.com/alexdotjs">@alexdotjs</a> on
-        Twitter.
-      </p>
-      <h2>
-        Posts
-        {postsQuery.status === 'loading' && '(loading)'}
-      </h2>
-      {postsQuery.data?.map((item) => (
-        <article key={item.id}>
-          <h3>{item.title}</h3>
-          <Link href={`/post/${item.id}`}>
-            <a>View more</a>
-          </Link>
-        </article>
-      ))}
-
-      <hr />
-
-      <form
-        onSubmit={async (e) => {
-          e.preventDefault();
-          /**
-           * In a real app you probably don't want to use this manually
-           * Checkout React Hook Form - it works great with tRPC
-           * @link https://react-hook-form.com/
-           */
-
-          const $text: HTMLInputElement = (e as any).target.elements.text;
-          const $title: HTMLInputElement = (e as any).target.elements.title;
-          const input = {
-            title: $title.value,
-            text: $text.value,
-          };
-          try {
-            await addPost.mutateAsync(input);
-            utils.invalidateQueries('post.all');
-
-            $title.value = '';
-            $text.value = '';
-          } catch {}
-        }}
-      >
-        <label htmlFor="title">Title:</label>
-        <br />
-        <input
-          id="title"
-          name="title"
-          type="text"
-          disabled={addPost.isLoading}
-        />
-
-        <br />
-        <label htmlFor="text">Text:</label>
-        <br />
-        <textarea id="text" name="text" disabled={addPost.isLoading} />
-        <br />
-        <input type="submit" disabled={addPost.isLoading} />
-        {addPost.error && (
-          <p style={{ color: 'red' }}>{addPost.error.message}</p>
-        )}
-      </form>
-
-      {process.env.NODE_ENV !== 'production' && (
-        <ReactQueryDevtools initialIsOpen={false} />
-      )}
+      <div className="bg-indigo-700">
+        <div className="max-w-2xl mx-auto text-center py-16 px-4 sm:py-20 sm:px-6 lg:px-8">
+          <h2 className="text-3xl font-extrabold text-white sm:text-4xl">
+            <span className="block">A collection tRPC usage patterns</span>
+            {/* <span className="block">Start using Workflow today.</span> */}
+          </h2>
+          <p className="mt-4 text-lg leading-6 text-indigo-200">
+            Ac euismod vel sit maecenas id pellentesque eu sed consectetur.
+            Malesuada adipiscing sagittis vel nulla nec.
+          </p>
+        </div>
+      </div>
+      {/* <Breadcrumbs pages={[]} /> */}
+      <main className="max-w-7xl mx-auto sm:px-6 lg:px-8">
+        <ul className="space-y-2 p-4">
+          {propsList.map((props) => (
+            // tmp styling with `prose` here
+            <Link key={props.title} href={props.href}>
+              <a className="bg-white overflow-hidden shadow rounded-lg block">
+                <div className="px-4 py-5 sm:p-6 prose">
+                  <h2>{props.title}</h2>
+                  {props.summary}
+                </div>
+              </a>
+            </Link>
+          ))}
+        </ul>
+      </main>
     </>
   );
 }
-
-/**
- * If you want to statically render this page
- * - Export `appRouter` & `createContext` from [trpc].ts
- * - Make the `opts` object optional on `createContext()`
- *
- * @link https://trpc.io/docs/ssg
- */
-// export const getStaticProps = async (
-//   context: GetStaticPropsContext<{ filter: string }>,
-// ) => {
-//   const ssg = createSSGHelpers({
-//     router: appRouter,
-//     ctx: await createContext(),
-//   });
-//
-//   await ssg.fetchQuery('post.all');
-//
-//   return {
-//     props: {
-//       trpcState: ssg.dehydrate(),
-//       filter: context.params?.filter ?? 'all',
-//     },
-//     revalidate: 1,
-//   };
-// };
