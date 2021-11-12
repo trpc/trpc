@@ -11,7 +11,7 @@ export const ssgProps: ExampleProps = {
     </>
   ),
   files: [
-    { title: 'Router', path: 'router.ts' },
-    { title: 'Page', path: 'page.tsx' },
+    { title: 'Router', path: 'feature/ssg/router.ts' },
+    { title: 'Page', path: 'pages/ssg.tsx' },
   ],
 };
