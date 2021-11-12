@@ -2,6 +2,7 @@ import { HomeIcon } from '@heroicons/react/solid';
 import Head from 'next/head';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
+import { trpc } from './trpc';
 
 interface SourceFile {
   title: string;
@@ -74,6 +75,23 @@ export default function Breadcrumbs(props: {
     </nav>
   );
 }
+
+function ViewSource(props: SourceFile) {
+  const query = trpc.useQuery([
+    'source.getSource',
+    {
+      path: props.path,
+    },
+  ]);
+
+  return (
+    <details>
+      <summary>{props.title}</summary>
+
+      <pre>{query.data?.contents}</pre>
+    </details>
+  );
+}
 export function ExamplePage(props: ExampleProps) {
   return (
     <>
@@ -84,6 +102,9 @@ export function ExamplePage(props: ExampleProps) {
 
       <h1>{props.title}</h1>
       <div className="prose lg:prose-xl">{props.summary}</div>
+      {props.files.map((file) => (
+        <ViewSource key={file.path} {...file} />
+      ))}
       <div className="prose-sm lg:prose"></div>
       <hr className="w-full border-t border-gray-300" />
     </>
