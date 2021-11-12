@@ -6,6 +6,13 @@ export const reactHookFormProps: ExampleProps = {
   summary: (
     <>
       <p>
+        Using tRPC &amp; <code>react-hook-form</code>
+      </p>
+    </>
+  ),
+  detail: (
+    <>
+      <p>
         Using tRPC &amp;{' '}
         <a
           href="https://react-hook-form.com/"
