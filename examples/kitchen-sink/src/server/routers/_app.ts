@@ -4,7 +4,6 @@
 import { ssgRouter } from 'feature/ssg/router';
 import superjson from 'superjson';
 import { createRouter } from '../createRouter';
-import { postRouter } from './post';
 import { sourceRouter } from './source';
 
 /**
@@ -24,9 +23,9 @@ export const appRouter = createRouter()
    * @link https://trpc.io/docs/error-formatting
    */
   // .formatError(({ shape, error }) => { })
-  .merge('post.', postRouter)
+
   .merge('source.', sourceRouter)
   // features:
-  .merge('ssg.', ssgRouter);
+  .merge(ssgRouter);
 
 export type AppRouter = typeof appRouter;
