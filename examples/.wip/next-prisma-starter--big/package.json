@@ -6,12 +6,11 @@
     "build:1-migrate": "prisma migrate deploy",
     "build:2-build": "next build",
     "build": "run-s build:*",
-    "db-up": "docker-compose up -d",
     "db-seed": "prisma db seed",
     "db-migrate-dev": "yarn prisma migrate dev",
-    "db-nuke": "docker-compose down --volumes --remove-orphans",
+    "db-nuke": "rm -rf prisma/migrations prisma/*.db",
     "dev": "next dev",
-    "dx": "run-s db-up db-migrate-dev db-seed dev",
+    "dx": "run-s db-migrate-dev db-seed dev",
     "start": "next start",
     "lint": "eslint src",
     "lint-fix": "yarn lint --fix",
@@ -23,7 +22,7 @@
     "ts-node": "ts-node --compiler-options \"{\\\"module\\\":\\\"commonjs\\\"}\"",
     "postinstall": "yarn play",
     "codegen": "yarn ts-node scripts/generate-router",
-    "play": "rm -rf prisma/migrations prisma/*.db src/server/routers/* && rm -rf src/hooks/* && run-s codegen db-nuke 'db-migrate-dev --name init' db-seed"
+    "play": "rm -rf src/hooks/* && run-s codegen db-nuke 'db-migrate-dev --name init' db-seed"
   },
   "prisma": {
     "seed": "yarn ts-node prisma/seed.ts"
