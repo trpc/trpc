@@ -33,6 +33,7 @@
   },
   "dependencies": {
     "@heroicons/react": "^1.0.5",
+    "@hookform/resolvers": "^2.8.3",
     "@prisma/client": "^3.0.1",
     "@tailwindcss/typography": "^0.4.1",
     "@trpc/client": "^9.13.0",
@@ -45,6 +46,7 @@
     "postcss": "^8.3.11",
     "react": "^17.0.2",
     "react-dom": "^17.0.2",
+    "react-hook-form": "^7.19.5",
     "react-query": "^3.27.0",
     "start-server-and-test": "^1.12.0",
     "superjson": "^1.7.4",

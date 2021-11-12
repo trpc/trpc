@@ -1,8 +1,10 @@
+import { reactHookFormProps } from 'feature/react-hook-form/meta';
 import { ssgProps as ssgProps } from 'feature/ssg/meta';
 import Link from 'next/link';
 import { ExampleProps } from 'utils/example';
 
-const propsList: ExampleProps[] = [ssgProps];
+const propsList: ExampleProps[] = [ssgProps, reactHookFormProps];
+
 export default function Page() {
   return (
     <>
