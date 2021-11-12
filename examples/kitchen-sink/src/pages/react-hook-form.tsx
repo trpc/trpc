@@ -60,7 +60,9 @@ export default function Page() {
         </label>
         <p>{methods.formState.errors.text?.message}</p>
 
-        <input type="submit" disabled={mutation.isLoading} />
+        <button type="submit" disabled={mutation.isLoading} className="border">
+          {mutation.isLoading ? 'Loading' : 'Submit'}
+        </button>
       </form>
     </>
   );
