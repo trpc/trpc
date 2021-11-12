@@ -1,6 +1,6 @@
-import { props as ssgProps } from 'feature/ssg/meta';
+import { ssgProps as ssgProps } from 'feature/ssg/meta';
 import Link from 'next/link';
-import Breadcrumbs, { ExampleProps } from 'utils/example';
+import { ExampleProps } from 'utils/example';
 
 const propsList: ExampleProps[] = [ssgProps];
 export default function Page() {

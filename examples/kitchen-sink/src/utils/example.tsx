@@ -1,6 +1,6 @@
 import { HomeIcon } from '@heroicons/react/solid';
 import Head from 'next/head';
-import Link from 'next/Link';
+import Link from 'next/link';
 import { useRouter } from 'next/router';
 
 interface SourceFile {
