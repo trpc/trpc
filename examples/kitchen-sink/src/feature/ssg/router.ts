@@ -1,7 +1,12 @@
 import * as trpc from '@trpc/server';
 import { z } from 'zod';
 
-const posts = [{ id: '1', title: 'Hello tRPC' }];
+const posts = [
+  {
+    id: '1',
+    title: 'This data comes from the backend',
+  },
+];
 
 export const ssgRouter = trpc.router().query('ssg.byId', {
   input: z.object({

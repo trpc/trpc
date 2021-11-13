@@ -8,7 +8,7 @@ import Highlight, { defaultProps } from 'prism-react-renderer';
 import { Fragment, ReactNode } from 'react';
 import { UseQueryResult } from 'react-query';
 // import { Pre, Line, LineNo, LineContent } from './styles';
-
+import theme from 'prism-react-renderer/themes/vsDark';
 interface SourceFile {
   title: string;
   path: string;
@@ -85,7 +85,7 @@ function Code(props: { contents: string; language: string }) {
   return (
     <Highlight
       {...defaultProps}
-      // theme={theme}
+      theme={theme}
       code={props.contents}
       language="tsx"
     >
@@ -119,7 +119,7 @@ function ViewSource(props: SourceFile) {
       <summary>
         {props.title} (<code>{filename}</code>)
       </summary>
-      {query.status === 'loading' && <em>Loading....</em>}
+      {query.status === 'loading' && <Spinner />}
       {query.status === 'success' && (
         <Code contents={query.data.contents} language={language} />
       )}
@@ -161,14 +161,19 @@ export function ExamplePage(
         <div className="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-4 p-4">
           <Breadcrumbs pages={[props]} />
           <hr className="w-full border-t border-gray-300" />
-          <div className="prose-sm lg:prose">{props.detail}</div>
+          <div className="border-l-2 border-primary-400 overflow-hidden py-2 px-4 space-y-2">
+            <div className="prose-lg">
+              <h3>{props.title}</h3>
+              {props.detail || props.summary}
+            </div>
+            <h2 className="text-lg font-bold">View Source</h2>
+            <ul className="list-disc list-inside px-4">
+              {props.files.map((file) => (
+                <ViewSource key={file.path} {...file} />
+              ))}
+            </ul>
+          </div>
 
-          <h2 className="text-xl font-bold">View Source</h2>
-          <ul className="list-disc list-inside">
-            {props.files.map((file) => (
-              <ViewSource key={file.path} {...file} />
-            ))}
-          </ul>
           <div className="prose-sm lg:prose"></div>
           <hr className="w-full border-t border-gray-300" />
 
