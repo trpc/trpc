@@ -1,10 +1,12 @@
+/* eslint-disable @typescript-eslint/no-non-null-assertion */
 import { HomeIcon } from '@heroicons/react/solid';
 import Head from 'next/head';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { trpc } from './trpc';
 import Highlight, { defaultProps } from 'prism-react-renderer';
-import { Fragment } from 'react';
+import { Fragment, ReactNode } from 'react';
+import { UseQueryResult } from 'react-query';
 // import { Pre, Line, LineNo, LineContent } from './styles';
 
 interface SourceFile {
@@ -79,7 +81,7 @@ export default function Breadcrumbs(props: {
   );
 }
 
-function Code(props: { contents: string }) {
+function Code(props: { contents: string; language: string }) {
   return (
     <Highlight
       {...defaultProps}
@@ -88,7 +90,7 @@ function Code(props: { contents: string }) {
       language="tsx"
     >
       {({ className, style, tokens, getLineProps, getTokenProps }) => (
-        <pre className={className} style={style}>
+        <pre className={`${className} p-4 ml-4`} style={style}>
           {tokens.map((line, i) => (
             <div key={i} {...getLineProps({ line, key: i })}>
               {line.map((token, key) => (
@@ -109,31 +111,78 @@ function ViewSource(props: SourceFile) {
       path: props.path,
     },
   ]);
+  const filename = props.path.split('/').pop()!;
+  const language = filename.split('.').pop()!;
 
   return (
     <details>
-      <summary>{props.title}</summary>
+      <summary>
+        {props.title} (<code>{filename}</code>)
+      </summary>
       {query.status === 'loading' && <em>Loading....</em>}
-      {query.status === 'success' && <Code contents={query.data.contents} />}
+      {query.status === 'success' && (
+        <Code contents={query.data.contents} language={language} />
+      )}
     </details>
   );
 }
-export function ExamplePage(props: ExampleProps) {
+
+function Spinner() {
+  return (
+    <div>
+      <span className="animate animate-spin italic py-2 text-primary-500 inline-block">
+        ⏳
+      </span>
+    </div>
+  );
+}
+export function ExamplePage(
+  props: ExampleProps & {
+    children?: ReactNode;
+    query?: UseQueryResult;
+  },
+) {
   return (
     <>
       <Head>
         <title>{props.title}</title>
       </Head>
-      <Breadcrumbs pages={[props]} />
 
-      <h1>{props.title}</h1>
-      <div className="prose lg:prose-xl">{props.summary}</div>
-      <div className="prose-sm lg:prose">{props.detail}</div>
-      {props.files.map((file) => (
-        <ViewSource key={file.path} {...file} />
-      ))}
-      <div className="prose-sm lg:prose"></div>
-      <hr className="w-full border-t border-gray-300" />
+      <div className="bg-primary-400">
+        <div className="max-w-2xl mx-auto text-center py-16 px-4 sm:py-4 sm:px-6 lg:px-8">
+          <h1 className="text-3xl font-extrabold text-white sm:text-4xl">
+            {props.title}
+          </h1>
+
+          <div className="text-primary-200">{props.summary}</div>
+        </div>
+      </div>
+      <main>
+        <div className="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-4 p-4">
+          <Breadcrumbs pages={[props]} />
+          <hr className="w-full border-t border-gray-300" />
+          <div className="prose-sm lg:prose">{props.detail}</div>
+
+          <h2 className="text-xl font-bold">View Source</h2>
+          <ul className="list-disc list-inside">
+            {props.files.map((file) => (
+              <ViewSource key={file.path} {...file} />
+            ))}
+          </ul>
+          <div className="prose-sm lg:prose"></div>
+          <hr className="w-full border-t border-gray-300" />
+
+          {props.query ? (
+            props.query.data ? (
+              props.children
+            ) : (
+              <Spinner />
+            )
+          ) : (
+            props.children
+          )}
+        </div>
+      </main>
     </>
   );
 }
