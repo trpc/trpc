@@ -28,17 +28,21 @@ tRPC is a lot simpler and couples your server & website/app more tightly togethe
 > I've gotten asked several times about differences with Blitz.js and started outlining some differences [on Twitter](https://twitter.com/alexdotjs/status/1436654002477969411). If you think the below comparison is wrong in any way, please don't hesitate to reach&nbsp;out.   
 > &mdash; [Alex&nbsp;/&nbsp;KATT](https://twitter.com/alexdotjs)
 
-The philosophy of the _"Zero-API data layer"_ is the main common denominator in tRPC & Blitz but it is solved in different ways - Blitz solves the data layer by a custom compiler &amp; tRPC solves the data layer by advanced type inference.
+The philosophy of the _"Zero-API data layer"_ is the main common denominator in tRPC & Blitz. 
 
-The key difference is that Blitz is a full-stack framework and tRPC is a library mainly targeting the data layer and doesn't have strong opinions about the rest of your stack.
+Blitz adds this data layer into Next.js core, resulting in a more native, integrated DX. But tRPC is a standalone library that can be used with any app or framework without buying in to the Next.js runtime.
+
+### Benefits with both tRPC and Blitz
+
+- Don't have to mess with REST or GraphQL
+- Well-tested & production-ready
+- HTTP caching of queries
+- Works great with React Native (although Blitz doesn't yet have good docs or utils for this)
 
 ### Benefits with tRPC
 
-- Easy HTTP caching of queries as requests are made with `GET` rather than `POST`
 - Query batching out-of-the-box
-- Not tied to React as it has no custom build pipeline
-- Works great with React Native
-- Well-tested & production-ready
+- Not tied to React or the Next.js runtime
 - Can be added to existing brownfield projects and adopted incrementally
 - WebSockets transport
 - Subscription support
@@ -48,8 +52,9 @@ The key difference is that Blitz is a full-stack framework and tRPC is a library
 
 ### Benefits with Blitz.js
 
-- More batteries included and easier to setup
-- Blitz has a plenty of nice DX-benefits with it being a full-stack famework  
-- Blitz' custom build pipeline enables stuff like CMD+clicking a function to jump to the backend function  
-- Code scaffolding, plug-and-play auth, etc
+- First class data layer integrated with the Next.js runtime, resulting in a more seamless experience
+- If already using Next.js, it's extremely simple to switch to Blitz and adopt the data layer incrementally
+- Automatic integration with Blitz auth
+- Since you import server functions directly to the frontend, you can do things like CMD+click a function to jump to definition
 - Blitzjs has a bigger community  
+- Not a single API-endpoint so you don't have any code size issues in serverless environments
