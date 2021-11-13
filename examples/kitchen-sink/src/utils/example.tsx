@@ -161,12 +161,12 @@ export function ExamplePage(
         <div className="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-4 p-4">
           <Breadcrumbs pages={[props]} />
           <hr className="w-full border-t border-gray-300" />
-          <div className="border-l-2 border-primary-400 overflow-hidden py-2 px-4 space-y-2">
+          <div className="border-l-2 bg-white border-primary-400 overflow-hidden py-2 px-4 space-y-2">
             <div className="prose-lg">
               <h3>{props.title}</h3>
               {props.detail || props.summary}
             </div>
-            <h2 className="text-lg font-bold">View Source</h2>
+            <h3 className="text-lg font-bold">View Source 👇</h3>
             <ul className="list-disc list-inside px-4">
               {props.files.map((file) => (
                 <ViewSource key={file.path} {...file} />
