@@ -13,7 +13,6 @@ tRPC and Next.js are a match made in heaven! Next.js makes it easy for you to bu
 
 tRPC includes dedicated tools to make the Next.js developer experience as seamless as possible.
 
-
 ## Recommended file structure
 
 Recommended but not enforced file structure. This is what you get when starting from [the examples](../main/example-apps.md).
@@ -41,9 +40,7 @@ Recommended but not enforced file structure. This is what you get when starting 
 └── [..]
 ```
 
-
 ## Add tRPC to existing Next.js project
-
 
 ### 1. Install deps
 
@@ -161,7 +158,9 @@ const IndexPage = () => {
 export default IndexPage;
 ```
 
-
+:::caution
+If you encounter problems with the required parameters in the **hello** endpoint, and you have used _zod_ to validate them, make sure that your tsconfig.json file contains `"strict": true` and `"strictNullChecks": true`. If not add them or change their value to `true`
+:::
 
 ## `withTRPC()` options
 
@@ -170,6 +169,7 @@ export default IndexPage;
 The `config`-argument is a function that returns an object that configures the tRPC and React Query clients. This function has a `ctx` input that gives you access to the Next.js `req` object, among other things. The returned value can contain the following properties:
 
 - Exactly **one of** these are **required**:
+
   - `url` your API URL.
   - `links` to customize the flow of data between tRPC Client and the tRPC-server. [Read more](../client/links.md).
 
@@ -184,7 +184,6 @@ The `config`-argument is a function that returns an object that configures the t
 
 Whether tRPC should await queries when server-side rendering a page. Defaults to `false`.
 
-
 ### `responseMeta`-callback
 
 Ability to set request headers and HTTP status when server-side rendering.
@@ -193,7 +192,9 @@ Ability to set request headers and HTTP status when server-side rendering.
 
 ```tsx
 export default withTRPC<AppRouter>({
-  config({ ctx }) { /* [...] */ },
+  config({ ctx }) {
+    /* [...] */
+  },
   ssr: true,
   responseMeta({ clientErrors, ctx }) {
     if (clientErrors.length) {
@@ -209,9 +210,7 @@ export default withTRPC<AppRouter>({
     };
   },
 })(MyApp);
-
 ```
-
 
 ## Next steps
 
