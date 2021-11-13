@@ -3,12 +3,11 @@ import { HomeIcon } from '@heroicons/react/solid';
 import Head from 'next/head';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
-import { trpc } from './trpc';
 import Highlight, { defaultProps } from 'prism-react-renderer';
-import { Fragment, ReactNode } from 'react';
-import { UseQueryResult } from 'react-query';
-// import { Pre, Line, LineNo, LineContent } from './styles';
 import theme from 'prism-react-renderer/themes/vsDark';
+import { ReactNode } from 'react';
+import { UseQueryResult } from 'react-query';
+import { trpc } from './trpc';
 interface SourceFile {
   title: string;
   path: string;
