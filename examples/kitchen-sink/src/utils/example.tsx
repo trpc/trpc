@@ -3,6 +3,9 @@ import Head from 'next/head';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { trpc } from './trpc';
+import Highlight, { defaultProps } from 'prism-react-renderer';
+import { Fragment } from 'react';
+// import { Pre, Line, LineNo, LineContent } from './styles';
 
 interface SourceFile {
   title: string;
@@ -76,6 +79,29 @@ export default function Breadcrumbs(props: {
   );
 }
 
+function Code(props: { contents: string }) {
+  return (
+    <Highlight
+      {...defaultProps}
+      // theme={theme}
+      code={props.contents}
+      language="tsx"
+    >
+      {({ className, style, tokens, getLineProps, getTokenProps }) => (
+        <pre className={className} style={style}>
+          {tokens.map((line, i) => (
+            <div key={i} {...getLineProps({ line, key: i })}>
+              {line.map((token, key) => (
+                <span key={key} {...getTokenProps({ token, key })} />
+              ))}
+            </div>
+          ))}
+        </pre>
+      )}
+    </Highlight>
+  );
+}
+
 function ViewSource(props: SourceFile) {
   const query = trpc.useQuery([
     'source.getSource',
@@ -87,8 +113,8 @@ function ViewSource(props: SourceFile) {
   return (
     <details>
       <summary>{props.title}</summary>
-
-      <pre>{query.data?.contents}</pre>
+      {query.status === 'loading' && <em>Loading....</em>}
+      {query.status === 'success' && <Code contents={query.data.contents} />}
     </details>
   );
 }
