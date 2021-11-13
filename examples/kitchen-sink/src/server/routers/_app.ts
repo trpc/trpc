@@ -1,10 +1,10 @@
 /**
  * This file contains the root router of your tRPC-backend
  */
+import { reactHookFormRouter } from 'feature/react-hook-form/router';
 import { ssgRouter } from 'feature/ssg/router';
 import superjson from 'superjson';
 import { createRouter } from '../createRouter';
-import { postRouter } from './post';
 import { sourceRouter } from './source';
 
 /**
@@ -24,9 +24,10 @@ export const appRouter = createRouter()
    * @link https://trpc.io/docs/error-formatting
    */
   // .formatError(({ shape, error }) => { })
-  .merge('post.', postRouter)
+
   .merge('source.', sourceRouter)
   // features:
-  .merge('ssg.', ssgRouter);
+  .merge(reactHookFormRouter)
+  .merge(ssgRouter);
 
 export type AppRouter = typeof appRouter;

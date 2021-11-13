@@ -128,6 +128,7 @@ export function ExamplePage(props: ExampleProps) {
 
       <h1>{props.title}</h1>
       <div className="prose lg:prose-xl">{props.summary}</div>
+      <div className="prose-sm lg:prose">{props.detail}</div>
       {props.files.map((file) => (
         <ViewSource key={file.path} {...file} />
       ))}

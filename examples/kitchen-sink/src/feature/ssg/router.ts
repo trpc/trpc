@@ -3,7 +3,7 @@ import { z } from 'zod';
 
 const posts = [{ id: '1', title: 'Hello tRPC' }];
 
-export const ssgRouter = trpc.router().query('byId', {
+export const ssgRouter = trpc.router().query('ssg.byId', {
   input: z.object({
     id: z.string(),
   }),
