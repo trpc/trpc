@@ -159,7 +159,7 @@ export default IndexPage;
 ```
 
 :::caution
-If you encounter problems with the required parameters in the **hello** endpoint, and you have used _zod_ to validate them, make sure that your tsconfig.json file contains `"strict": true` and `"strictNullChecks": true`. If not add them or change their value to `true`
+If you encounter problems with the required parameters in the **hello** endpoint using useQuery (in the example above `{ text: 'client' }`), and you have used _zod_ to validate them, make sure that your tsconfig.json file contains `"strict": true` and `"strictNullChecks": true`. If not add them or change their value to `true`
 :::
 
 ## `withTRPC()` options
