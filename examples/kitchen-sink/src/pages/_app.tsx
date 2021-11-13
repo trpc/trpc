@@ -16,7 +16,7 @@ function ContributorsWantedBanner() {
   }, []);
   return (
     <>
-      <div className="h-10" />
+      <div className="h-20" />
       <div
         className={
           'fixed inset-x-0 bottom-0 transition-opacity duration-700 ' +
