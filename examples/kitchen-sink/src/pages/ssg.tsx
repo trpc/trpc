@@ -17,10 +17,11 @@ export default function Page(
   const post = query.data!;
   return (
     <>
-      <ExamplePage {...ssgProps} />{' '}
-      <article className="prose">
-        <h1>{post.title}</h1>
-      </article>
+      <ExamplePage {...ssgProps} query={query}>
+        <article className="prose">
+          <h2>{post.title}</h2>
+        </article>
+      </ExamplePage>
     </>
   );
 }
