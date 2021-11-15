@@ -17,7 +17,7 @@ jobs:
             next-prisma-todomvc,
             standalone-server,
           ]
-        node: ['14.x']
+        node: ['14.x', '16.x']
         os: [ubuntu-latest]
     services:
       postgres:

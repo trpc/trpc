@@ -14,6 +14,9 @@ import {
   QueryClient,
   SetDataOptions,
   CancelOptions,
+  InvalidateQueryFilters,
+  RefetchQueryFilters,
+  RefetchOptions,
 } from 'react-query';
 
 interface TRPCFetchQueryOptions<TInput, TError, TOutput>
@@ -100,13 +103,35 @@ export type TRPCContextState<TRouter extends AnyRouter> = {
   /**
    * @link https://react-query.tanstack.com/guides/query-invalidation
    */
-  invalidateQueries: <
-    TPath extends keyof TRouter['_def']['queries'] & string,
-    TInput extends inferProcedureInput<TRouter['_def']['queries'][TPath]>,
-  >(
-    pathAndInput: [TPath, TInput?] | TPath,
-    options?: InvalidateOptions,
-  ) => Promise<void>;
+  invalidateQueries:
+    | (<
+        TPath extends keyof TRouter['_def']['queries'] & string,
+        TInput extends inferProcedureInput<TRouter['_def']['queries'][TPath]>,
+      >(
+        pathAndInput: [TPath, TInput?] | TPath,
+        filters?: InvalidateQueryFilters,
+        options?: InvalidateOptions,
+      ) => Promise<void>)
+    | ((
+        filters?: InvalidateQueryFilters,
+        options?: InvalidateOptions,
+      ) => Promise<void>);
+  /**
+   * @link https://react-query.tanstack.com/reference/QueryClient#queryclientrefetchqueries
+   */
+  refetchQueries:
+    | (<
+        TPath extends keyof TRouter['_def']['queries'] & string,
+        TInput extends inferProcedureInput<TRouter['_def']['queries'][TPath]>,
+      >(
+        pathAndInput: [TPath, TInput?],
+        filters?: RefetchQueryFilters,
+        options?: RefetchOptions,
+      ) => Promise<void>)
+    | ((
+        filters?: RefetchQueryFilters,
+        options?: RefetchOptions,
+      ) => Promise<void>);
   /**
    * @link https://react-query.tanstack.com/guides/query-cancellation
    */

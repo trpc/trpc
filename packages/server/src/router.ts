@@ -1,7 +1,5 @@
-import { CreateProcedureWithInputOutputParser } from './internals/procedure';
 /* eslint-disable @typescript-eslint/ban-types */
 /* eslint-disable @typescript-eslint/no-explicit-any */
-
 import { assertNotBrowser } from './assertNotBrowser';
 import { getHTTPStatusCodeFromError } from './http/internals/getHTTPStatusCode';
 import { MiddlewareFunction } from './internals/middlewares';
@@ -9,6 +7,7 @@ import {
   createProcedure,
   CreateProcedureOptions,
   CreateProcedureWithInput,
+  CreateProcedureWithInputOutputParser,
   CreateProcedureWithoutInput,
   inferProcedureFromOptions,
   Procedure,
@@ -23,7 +22,7 @@ import {
 import { Subscription } from './subscription';
 import { CombinedDataTransformer, DataTransformerOptions } from './transformer';
 import { TRPCError } from './TRPCError';
-import { Prefixer, ThenArg } from './types';
+import { flatten, Prefixer, ThenArg } from './types';
 
 assertNotBrowser();
 
@@ -242,14 +241,14 @@ export class Router<
   >,
   TErrorShape extends TRPCErrorShape<number>,
 > {
-  readonly _def: Readonly<{
-    queries: Readonly<TQueries>;
-    mutations: Readonly<TMutations>;
-    subscriptions: Readonly<TSubscriptions>;
+  readonly _def: {
+    queries: TQueries;
+    mutations: TMutations;
+    subscriptions: TSubscriptions;
     middlewares: MiddlewareFunction<TInputContext, TContext>[];
     errorFormatter: ErrorFormatter<TContext, TErrorShape>;
     transformer: CombinedDataTransformer;
-  }>;
+  };
 
   constructor(def?: {
     queries?: TQueries;
@@ -721,6 +720,23 @@ export class Router<
       ...this._def,
       transformer,
     });
+  }
+
+  /**
+   * Flattens the generics of TQueries/TMutations/TSubscriptions.
+   * ⚠️ Experimental - might disappear. ⚠️
+   *
+   * @alpha
+   */
+  public flat(): Router<
+    TInputContext,
+    TContext,
+    flatten<{}, TQueries>,
+    flatten<{}, TMutations>,
+    flatten<{}, TSubscriptions>,
+    TErrorShape
+  > {
+    return this as any;
   }
 }
 

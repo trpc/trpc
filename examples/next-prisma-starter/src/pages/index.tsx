@@ -4,9 +4,14 @@ import { ReactQueryDevtools } from 'react-query/devtools';
 import { trpc } from '../utils/trpc';
 
 export default function IndexPage() {
-  const postsQuery = trpc.useQuery(['post.all']);
-  const addPost = trpc.useMutation('post.add');
   const utils = trpc.useContext();
+  const postsQuery = trpc.useQuery(['post.all']);
+  const addPost = trpc.useMutation('post.add', {
+    async onSuccess() {
+      // refetches posts after a post is added
+      await utils.invalidateQueries(['post.all']);
+    },
+  });
 
   // prefetch all posts for instant navigation
   // useEffect(() => {
@@ -59,7 +64,6 @@ export default function IndexPage() {
           };
           try {
             await addPost.mutateAsync(input);
-            utils.invalidateQueries('post.all');
 
             $title.value = '';
             $text.value = '';

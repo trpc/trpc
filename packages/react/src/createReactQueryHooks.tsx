@@ -22,6 +22,7 @@ import {
   UseInfiniteQueryResult,
   useMutation as __useMutation,
   UseMutationOptions,
+  UseMutationResult,
   useQuery as __useQuery,
   UseQueryOptions,
   UseQueryResult,
@@ -195,15 +196,15 @@ export function createReactQueryHooks<TRouter extends AnyRouter>() {
            * @deprecated use `invalidateQueries`
            */
           invalidateQuery: useCallback(
-            (...args) => {
-              return queryClient.invalidateQueries(...(args as any));
-            },
+            (...args: any[]) => queryClient.invalidateQueries(...args),
             [queryClient],
           ),
           invalidateQueries: useCallback(
-            (...args) => {
-              return queryClient.invalidateQueries(...(args as any));
-            },
+            (...args: any[]) => queryClient.invalidateQueries(...args),
+            [queryClient],
+          ),
+          refetchQueries: useCallback(
+            (...args: any[]) => queryClient.refetchQueries(...args),
             [queryClient],
           ),
           cancelQuery: useCallback(
@@ -281,13 +282,16 @@ export function createReactQueryHooks<TRouter extends AnyRouter>() {
       TError,
       TMutationValues[TPath]['output']
     >,
-  ) {
+  ): UseMutationResult<
+    TMutationValues[TPath]['output'],
+    TError,
+    TMutationValues[TPath]['input']
+  > {
     const { client } = useContext();
-    return __useMutation<
-      TMutationValues[TPath]['output'],
-      TError,
-      TMutationValues[TPath]['input']
-    >((input) => (client.mutation as any)(path, input), opts);
+    return __useMutation(
+      (input) => (client.mutation as any)(path, input),
+      opts,
+    );
   }
 
   /* istanbul ignore next */

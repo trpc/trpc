@@ -51,8 +51,8 @@ tRPC allows you to easily build & consume fully typesafe APIs, without schemas o
 - [Usage](#usage)
 - [Core Team](#core-team)
 - [Financial Contributors](#financial-contributors)
-  - [🥉 Gold Sponsors](#-gold-sponsors)
-  - [🥉 Silver Sponsors](#-silver-sponsors)
+  - [🥇 Gold Sponsors](#-gold-sponsors)
+  - [🥈 Silver Sponsors](#-silver-sponsors)
   - [🥉 Bronze Sponsors](#-bronze-sponsors)
   - [😻 Individuals](#-individuals)
 - [All contributors ✨](#all-contributors-)
@@ -92,11 +92,11 @@ npx create-next-app --example https://github.com/trpc/trpc --example-path exampl
 > Is your company using tRPC, want to attract amazing TypeScript developers to your team, & support long-term maintainance of tRPC? Have a look at the [sponsorship tiers](https://github.com/sponsors/KATT) or [get in touch](mailto:alex@trpc.io) to discuss potential partnerships.
 
 
-### 🥉 Gold Sponsors
+### 🥇 Gold Sponsors
 
 <img src="https://placehold.jp/e5faff/0e3847/300x150.png?text=%3Cimg%20%2F%3E" width="300" height="150">
 
-### 🥉 Silver Sponsors
+### 🥈 Silver Sponsors
 
 <img src="https://placehold.jp/e5faff/0e3847/150x150.png?text=%3Cimg%20%2F%3E" width="150" height="150"> 
 
@@ -110,6 +110,9 @@ npx create-next-app --example https://github.com/trpc/trpc --example-path exampl
       <td align="center"><a href="https://hidrb.com"><img src="https://avatars.githubusercontent.com/u/77294655?v=4?s=120" width="120" alt=""/><br/>Dr. B</a></td>
       <td align="center"><a href="https://cal.com"><img src="https://avatars.githubusercontent.com/u/79145102?s=200&v=4" width="120" alt=""/><br/>Cal.com</a></td>
       <td align="center"><a href="https://github.com/chimon2000"><img src="https://avatars.githubusercontent.com/u/6907797?v=4?s=120" width="120" alt=""/><br/>Ryan Edge</a></td>
+    </tr>
+    <tr>
+      <td align="center"><a href="https://snaplet.dev"><img src="https://avatars.githubusercontent.com/u/69029941?v=4?s=120" width="120" alt=""/><br/>Snaplet</a></td>
     </tr>
   </tbody>
 </table>
@@ -187,6 +190,7 @@ npx create-next-app --example https://github.com/trpc/trpc --example-path exampl
     <td align="center"><a href="https://github.com/mkreuzmayr"><img src="https://avatars.githubusercontent.com/u/20108212?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Michael Kreuzmayr</b></sub></a><br /><a href="https://github.com/trpc/trpc/commits?author=mkreuzmayr" title="Code">💻</a></td>
     <td align="center"><a href="https://github.com/kimroen"><img src="https://avatars.githubusercontent.com/u/520420?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Kim Røen</b></sub></a><br /><a href="#ideas-kimroen" title="Ideas, Planning, & Feedback">🤔</a></td>
     <td align="center"><a href="https://standardresume.co/r/ryan-edge"><img src="https://avatars.githubusercontent.com/u/6907797?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Ryan</b></sub></a><br /><a href="#financial-chimon2000" title="Financial">💵</a></td>
+    <td align="center"><a href="https://www.snaplet.dev"><img src="https://avatars.githubusercontent.com/u/69029941?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Snaplet</b></sub></a><br /><a href="#financial-snaplet" title="Financial">💵</a></td>
   </tr>
 </table>
 
