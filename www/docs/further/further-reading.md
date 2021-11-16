@@ -30,13 +30,13 @@ tRPC is a lot simpler and couples your server & website/app more tightly togethe
 
 The philosophy of the _"Zero-API data layer"_ is the main common denominator in tRPC & Blitz. 
 
-Blitz adds this data layer into Next.js core, resulting in a more native, integrated DX. But tRPC is a standalone library that can be used with any app or framework without buying in to the Next.js runtime.
-
+Blitz is a full-stack framework & achieves this by maintaining an up-to-date fork of Next.js and adding it into core - resulting in a more integrated developer experience. tRPC is a set of libraries that mainly focuses on the API-layer that can be used with any app or framework, resulting in no framework lock-in of React or Blitz' fork of Next.js.
 
 ### Benefits with tRPC
 
 - Easy HTTP caching of queries as requests are made with `GET` rather than `POST` _(Blitz.js is planning on adding support for this too)_
 - Query batching out-of-the-box
+- Works great with React Native
 - Not tied to React or the Next.js runtime
 - Can be added to existing brownfield projects and adopted incrementally
 - WebSockets transport
