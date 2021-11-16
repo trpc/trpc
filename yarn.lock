@@ -3153,7 +3153,7 @@
 
 "@typescript-eslint/eslint-plugin@^4.11.1", "@typescript-eslint/eslint-plugin@^4.30.0":
   version "4.33.0"
-  resolved "https://registry.npmjs.org/@typescript-eslint/eslint-plugin/-/eslint-plugin-4.33.0.tgz#c24dc7c8069c7706bc40d99f6fa87edcb2005276"
+  resolved "https://registry.yarnpkg.com/@typescript-eslint/eslint-plugin/-/eslint-plugin-4.33.0.tgz#c24dc7c8069c7706bc40d99f6fa87edcb2005276"
   integrity sha512-aINiAxGVdOl1eJyVjaWn/YcVAq4Gi/Yo35qHGCnqbWVz61g39D0h23veY/MA0rFFGfxK7TySg2uwDeNv+JgVpg==
   dependencies:
     "@typescript-eslint/experimental-utils" "4.33.0"
@@ -3179,7 +3179,7 @@
 
 "@typescript-eslint/parser@^4.11.1", "@typescript-eslint/parser@^4.20.0", "@typescript-eslint/parser@^4.26.0":
   version "4.33.0"
-  resolved "https://registry.npmjs.org/@typescript-eslint/parser/-/parser-4.33.0.tgz#dfe797570d9694e560528d18eecad86c8c744899"
+  resolved "https://registry.yarnpkg.com/@typescript-eslint/parser/-/parser-4.33.0.tgz#dfe797570d9694e560528d18eecad86c8c744899"
   integrity sha512-ZohdsbXadjGBSK0/r+d87X0SBmKzOq4/S5nzK6SBgJspFo9/CUDJ7hjayuze+JK7CZQLDMroqytp7pOcFKTxZA==
   dependencies:
     "@typescript-eslint/scope-manager" "4.33.0"
@@ -6211,9 +6211,9 @@ fastify-warning@^0.2.0:
   integrity sha512-s1EQguBw/9qtc1p/WTY4eq9WMRIACkj+HTcOIK1in4MV5aFaQC9ZCIt0dJ7pr5bIf4lPpHvAtP2ywpTNgs7hqw==
 
 fastify@^3.17.0:
-  version "3.23.1"
-  resolved "https://registry.yarnpkg.com/fastify/-/fastify-3.23.1.tgz#01ad64e564b8e4b3eb18acdfa175e95ed26f0403"
-  integrity sha512-Y+HasdpVHpr96W+gLKJXuKBVA4ydXUoW4khGtCnsE9E6R1C4MXlg5x/m3shyeR3xTDZwPBwu39FlUIgjsyLhGw==
+  version "3.24.0"
+  resolved "https://registry.yarnpkg.com/fastify/-/fastify-3.24.0.tgz#38b64e6a2f459dacda4a8342306b0882de534b58"
+  integrity sha512-fmRyrI25rzLGHDQ1FME02NsbP658mVa0EaSqfYUFwx2UOF+4/GcyNrsdWILSDOEiUbOsRYCD3sRCE9v7mvRLRQ==
   dependencies:
     "@fastify/ajv-compiler" "^1.0.0"
     abstract-logging "^2.0.0"
@@ -8486,9 +8486,9 @@ jsdom@^16.6.0:
     xml-name-validator "^3.0.0"
 
 jsdom@^18.0.0:
-  version "18.0.1"
-  resolved "https://registry.yarnpkg.com/jsdom/-/jsdom-18.0.1.tgz#7317c91be425f31ff25814ad427eed8a2a310b61"
-  integrity sha512-mgVzrYP4IJiJKVqXkAdBn+jg+nQgPusBxTJulz3m1Y/1RIrkk8aDoNaQE5BNbHwe72WwiwE7k3Av2THXDpvzPQ==
+  version "18.1.0"
+  resolved "https://registry.yarnpkg.com/jsdom/-/jsdom-18.1.0.tgz#43e88a0e4d6d2aeeec0a18810c0934c02b2ae3e4"
+  integrity sha512-q6QFAfSGLEUqRJ+GCV6vn6ItZCMARWh1d33wiJZPxc+wMNw7HK71JPmQ4C2lIZAsBH8TiJu4uplach/UcrC6bQ==
   dependencies:
     abab "^2.0.5"
     acorn "^8.5.0"
@@ -11157,9 +11157,9 @@ react-is@^16.8.1:
   integrity sha512-24e6ynE2H+OKt4kqsOvNd8kBpV65zoxbA4BVsEOB3ARVWQki/DHzaUoC5KuON/BiccDaCCTZBuOcfZs70kR8bQ==
 
 react-query@^3.27.0:
-  version "3.32.2"
-  resolved "https://registry.yarnpkg.com/react-query/-/react-query-3.32.2.tgz#66da144c4b2862f06a679aea3790ccb17f099a4e"
-  integrity sha512-g72+faJAwvYywXNrAbP+Iq5YJJzp94ADWHZMSJPi9I3DZdRDQ76gYi/YLzrA9fE9VZkoKz+OOH321eCsC2GPLQ==
+  version "3.32.3"
+  resolved "https://registry.yarnpkg.com/react-query/-/react-query-3.32.3.tgz#a15035d0bcd632fffc7044839469e685c2dbcfc9"
+  integrity sha512-RB/EOSdJkmuypDIARG/mVi2T41WZKz3tUh72HAUu1OA3VoFr2kG2OFZoO3ylMKjUYI4A9bSaD7wtYg4Nwb71gQ==
   dependencies:
     "@babel/runtime" "^7.5.5"
     broadcast-channel "^3.4.1"

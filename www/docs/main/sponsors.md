@@ -32,10 +32,13 @@ slug: /sponsors
 <table>
   <tbody>
     <tr>
-      <td align="center"><a href="https://newfront.com"><img src="https://user-images.githubusercontent.com/36125/130158930-216fa212-5909-4ee1-b4b9-fd5935f51245.png" width="143" alt=""/><br />Newfront</a></td>
-      <td align="center"><a href="https://hidrb.com"><img src="https://avatars.githubusercontent.com/u/77294655?v=4?s=143" width="143" alt=""/><br/>Dr. B</a></td>
-      <td align="center"><a href="https://cal.com"><img src="https://avatars.githubusercontent.com/u/79145102?s=200&v=4" width="143" alt=""/><br/>Cal.com</a></td>
-      <td align="center"><a href="https://github.com/chimon2000"><img src="https://avatars.githubusercontent.com/u/6907797?v=4?s=143" width="143" alt=""/><br/>Ryan Edge</a></td>
+      <td align="center"><a href="https://newfront.com"><img src="https://user-images.githubusercontent.com/36125/130158930-216fa212-5909-4ee1-b4b9-fd5935f51245.png" width="120" alt=""/><br />Newfront</a></td>
+      <td align="center"><a href="https://hidrb.com"><img src="https://avatars.githubusercontent.com/u/77294655?v=4?s=120" width="120" alt=""/><br/>Dr. B</a></td>
+      <td align="center"><a href="https://cal.com"><img src="https://avatars.githubusercontent.com/u/79145102?s=200&v=4" width="120" alt=""/><br/>Cal.com</a></td>
+      <td align="center"><a href="https://github.com/chimon2000"><img src="https://avatars.githubusercontent.com/u/6907797?v=4?s=120" width="120" alt=""/><br/>Ryan Edge</a></td>
+    </tr>
+    <tr>
+      <td align="center"><a href="https://snaplet.dev"><img src="https://avatars.githubusercontent.com/u/69029941?v=4?s=120" width="120" alt=""/><br/>Snaplet</a></td>
     </tr>
   </tbody>
 </table>

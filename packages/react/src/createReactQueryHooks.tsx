@@ -196,15 +196,15 @@ export function createReactQueryHooks<TRouter extends AnyRouter>() {
            * @deprecated use `invalidateQueries`
            */
           invalidateQuery: useCallback(
-            (...args) => {
-              return queryClient.invalidateQueries(...(args as any));
-            },
+            (...args: any[]) => queryClient.invalidateQueries(...args),
             [queryClient],
           ),
           invalidateQueries: useCallback(
-            (...args) => {
-              return queryClient.invalidateQueries(...(args as any));
-            },
+            (...args: any[]) => queryClient.invalidateQueries(...args),
+            [queryClient],
+          ),
+          refetchQueries: useCallback(
+            (...args: any[]) => queryClient.refetchQueries(...args),
             [queryClient],
           ),
           cancelQuery: useCallback(
