@@ -2648,10 +2648,10 @@
   resolved "https://registry.yarnpkg.com/@prisma/engines-version/-/engines-version-3.5.0-38.78a5df6def6943431f4c022e1428dbc3e833cf8e.tgz#254fdb80ae6db397ee1e638d12561f35d058e340"
   integrity sha512-X16YmBmj7Omso4ZbkNBe6gPYlNcnwZMUPtXsguCkn+KoMqm3DJD9M4X31gx0Gf13Q44dY3SKPJZUk44/XUj/WA==
 
-"@prisma/engines@3.4.1-2.57771c0558568c7d08bd34c7248af5244ae16bd9":
-  version "3.4.1-2.57771c0558568c7d08bd34c7248af5244ae16bd9"
-  resolved "https://registry.yarnpkg.com/@prisma/engines/-/engines-3.4.1-2.57771c0558568c7d08bd34c7248af5244ae16bd9.tgz#8e5534bfe255210c29b5181f694c9acd32d558c2"
-  integrity sha512-NO4Q88k3CfUpYzfpDD+0wSVCqhaeljCFAGSe1XyvmXAOlMU2AAjCwmRn6S4UXlT9yEGB/LwFjdvGjcgfUQ+Mtw==
+"@prisma/engines@3.5.0-38.78a5df6def6943431f4c022e1428dbc3e833cf8e":
+  version "3.5.0-38.78a5df6def6943431f4c022e1428dbc3e833cf8e"
+  resolved "https://registry.yarnpkg.com/@prisma/engines/-/engines-3.5.0-38.78a5df6def6943431f4c022e1428dbc3e833cf8e.tgz#1873885836294060239f8a887452fd429dc03ae1"
+  integrity sha512-MqZUrxuLlIbjB3wu8LrRJOKcvR4k3dunKoI4Q2bPfAwLQY0XlpsLZ3TRVW1c32ooVk939p6iGNkaCUo63Et36g==
 
 "@rollup/plugin-alias@^3.1.1":
   version "3.1.5"
@@ -10847,11 +10847,11 @@ prism-react-renderer@^1.2.1:
   integrity sha512-w23ch4f75V1Tnz8DajsYKvY5lF7H1+WvzvLUcF0paFxkTHSp42RS0H5CttdN2Q8RR3DRGZ9v5xD/h3n8C8kGmg==
 
 prisma@^3.0.1:
-  version "3.4.2"
-  resolved "https://registry.yarnpkg.com/prisma/-/prisma-3.4.2.tgz#d09e983f30fed579ddb1bb60adb369db732e3de5"
-  integrity sha512-wOD1lni7MfH/Qkp5SAkUthLKG+pQcpD31Nm8nAKj9ESgqId/dy+JDSTYOuk/pySvFyby/A+bsAPWIaVmo7qqhQ==
+  version "3.5.0"
+  resolved "https://registry.yarnpkg.com/prisma/-/prisma-3.5.0.tgz#3717368d75568b370869a5b588f688bd41a14130"
+  integrity sha512-WEYQ+H98O0yigG+lI0gfh4iyBChvnM6QTXPDtY9eFraLXAmyb6tf/T2mUdrUAU1AEvHLVzQA5A+RpONZlQozBg==
   dependencies:
-    "@prisma/engines" "3.4.1-2.57771c0558568c7d08bd34c7248af5244ae16bd9"
+    "@prisma/engines" "3.5.0-38.78a5df6def6943431f4c022e1428dbc3e833cf8e"
 
 process-nextick-args@~2.0.0:
   version "2.0.1"
