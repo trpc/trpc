@@ -30,7 +30,7 @@ tRPC is a lot simpler and couples your server & website/app more tightly togethe
 
 The philosophy of the _"Zero-API data layer"_ is the main common denominator in tRPC & Blitz. 
 
-Blitz is a full-stack framework & achieves this by maintaining an up-to-date fork of Next.js and adding it into core - resulting in a more integrated developer experience. tRPC is a set of libraries that mainly focuses on the API-layer that can be used with any app or framework, resulting in no framework lock-in of React or Blitz' fork of Next.js.
+Blitz is a full-stack framework & achieves this by maintaining a fork of Next.js and adding it into core - resulting in a more integrated developer experience. tRPC is a set of libraries that mainly focuses on the API-layer that can be used with any app or framework, resulting in no framework lock-in of React or Blitz' fork of Next.js.
 
 ### Benefits with tRPC
 
