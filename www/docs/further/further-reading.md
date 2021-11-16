@@ -37,6 +37,7 @@ Blitz is a full-stack framework & achieves this by maintaining an up-to-date for
 - Easy HTTP caching of queries as requests are made with `GET` rather than `POST` _(Blitz.js is planning on adding support for this too)_
 - Query batching out-of-the-box
 - Works great with React Native
+- Well-tested & production-ready
 - Not tied to React or Blitz' fork of Next.js
 - Can be added to existing brownfield projects and adopted incrementally, regardless of stack
 - WebSockets transport
