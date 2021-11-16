@@ -37,8 +37,8 @@ Blitz is a full-stack framework & achieves this by maintaining an up-to-date for
 - Easy HTTP caching of queries as requests are made with `GET` rather than `POST` _(Blitz.js is planning on adding support for this too)_
 - Query batching out-of-the-box
 - Works great with React Native
-- Not tied to React or the Next.js runtime
-- Can be added to existing brownfield projects and adopted incrementally
+- Not tied to React or Blitz' fork of Next.js
+- Can be added to existing brownfield projects and adopted incrementally, regardless of stack
 - WebSockets transport
 - Subscription support
 - Zero-conf SSR with `ssr: true` in `_app.tsx` does a prepass of all `useQuery` on the server
@@ -48,8 +48,7 @@ Blitz is a full-stack framework & achieves this by maintaining an up-to-date for
 ### Benefits with Blitz.js
 
 - Data layer integrated with the Next.js runtime, resulting in a more integrated experience
-- If already using Next.js, it's extremely simple to switch to Blitz and adopt the data layer incrementally
+- If already using Next.js, you can switch to Blitz and adopt the data layer incrementally
 - Automatic integration with Blitz' auth
 - Since you import server functions directly to the frontend, you can do things like CMD+click a function to jump to definition
 - Blitzjs has a bigger community  
-- Not a single API-endpoint so you don't have any code size issues in serverless environments
