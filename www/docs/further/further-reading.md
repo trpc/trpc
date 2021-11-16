@@ -52,7 +52,7 @@ Blitz adds this data layer into Next.js core, resulting in a more native, integr
 
 ### Benefits with Blitz.js
 
-- First class data layer integrated with the Next.js runtime, resulting in a more seamless experience
+- Data layer integrated with the Next.js runtime, resulting in a more integrated experience
 - If already using Next.js, it's extremely simple to switch to Blitz and adopt the data layer incrementally
 - Automatic integration with Blitz auth
 - Since you import server functions directly to the frontend, you can do things like CMD+click a function to jump to definition
