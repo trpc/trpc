@@ -40,7 +40,7 @@ Blitz adds this data layer into Next.js core, resulting in a more native, integr
 
 ### Benefits with tRPC
 
-- Easy HTTP caching of queries as requests are made with GET rather than POST (Blitz will be adding support for this too)
+- Easy HTTP caching of queries as requests are made with `GET` rather than `POST` _(Blitz.js is planning on adding support for this too)_
 - Query batching out-of-the-box
 - Not tied to React or the Next.js runtime
 - Can be added to existing brownfield projects and adopted incrementally
