@@ -46,7 +46,7 @@ import { trpc } from '../utils/trpc';
 
 export function MyComponent() {
   // This can either be a tuple ['login'] or string 'login'
-  const mutation = trpc.useMutation('login');
+  const mutation = trpc.useMutation(['login']);
 
   const handleLogin = async () => {
     const name = 'John Doe';
