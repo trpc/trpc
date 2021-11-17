@@ -1,5 +1,5 @@
 import * as trpc from '@trpc/server';
-import { validationSchema } from 'pages/react-hook-form';
+import { validationSchema } from './index';
 
 const items = [
   {
