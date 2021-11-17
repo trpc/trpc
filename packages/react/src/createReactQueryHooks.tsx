@@ -276,7 +276,7 @@ export function createReactQueryHooks<TRouter extends AnyRouter>() {
   }
 
   function useMutation<TPath extends keyof TMutationValues & string>(
-    path: TPath,
+    path: TPath | [TPath],
     opts?: UseTRPCMutationOptions<
       TMutationValues[TPath]['input'],
       TError,
@@ -288,10 +288,11 @@ export function createReactQueryHooks<TRouter extends AnyRouter>() {
     TMutationValues[TPath]['input']
   > {
     const { client } = useContext();
-    return __useMutation(
-      (input) => (client.mutation as any)(path, input),
-      opts,
-    );
+
+    return __useMutation((input) => {
+      const actualPath = Array.isArray(path) ? path[0] : path;
+      return (client.mutation as any)(actualPath, input);
+    }, opts);
   }
 
   /* istanbul ignore next */
