@@ -1,6 +1,8 @@
 import { useRouter } from 'next/router';
 import { trpc } from 'utils/trpc';
 import NextError from 'next/error';
+import { Layout } from 'components/Layout';
+import { ReactElement } from 'react';
 
 export default function PostViewPage() {
   const id = useRouter().query.id as string;
@@ -31,3 +33,5 @@ export default function PostViewPage() {
     </>
   );
 }
+
+PostViewPage.getLayout = (page: ReactElement) => <Layout>{page}</Layout>;
