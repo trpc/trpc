@@ -33,7 +33,7 @@ export default function Page() {
     <>
       <h2 className="text-3xl font-bold">Posts</h2>
 
-      {query.data?.map((post) => (
+      {posts.map((post) => (
         <article
           key={post.id}
           className="prose bg-white shadow overflow-hidden sm:rounded-lg p-4"
