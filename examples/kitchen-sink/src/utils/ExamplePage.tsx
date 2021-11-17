@@ -28,21 +28,6 @@ export interface ExampleProps {
    * Files for "View Source" in the UI
    */
   files: SourceFile[];
-
-  examples?: [
-    {
-      title: string;
-      summary?: JSX.Element;
-      /**
-       * Detail page components
-       */
-      detail?: JSX.Element;
-      /**
-       * Files for "View Source" in the UI
-       */
-      files: SourceFile[];
-    },
-  ];
 }
 
 export default function Breadcrumbs(props: {
