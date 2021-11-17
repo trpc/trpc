@@ -497,6 +497,47 @@ describe('useMutation()', () => {
     });
   });
 
+  test('useMutation([path]) tuple', async () => {
+    const { trpc, client } = factory;
+
+    function MyComponent() {
+      const allPostsQuery = trpc.useQuery(['allPosts']);
+      const deletePostsMutation = trpc.useMutation(['deletePosts']);
+
+      useEffect(() => {
+        allPostsQuery.refetch().then(async (allPosts) => {
+          expect(allPosts.data).toHaveLength(2);
+          await deletePostsMutation.mutateAsync();
+          const newAllPost = await allPostsQuery.refetch();
+          expect(newAllPost.data).toHaveLength(0);
+        });
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+      }, []);
+
+      return <pre>{JSON.stringify(allPostsQuery.data ?? {}, null, 4)}</pre>;
+    }
+
+    function App() {
+      const [queryClient] = useState(() => new QueryClient());
+      return (
+        <trpc.Provider {...{ queryClient, client }}>
+          <QueryClientProvider client={queryClient}>
+            <MyComponent />
+          </QueryClientProvider>
+        </trpc.Provider>
+      );
+    }
+
+    const utils = render(<App />);
+    await waitFor(() => {
+      expect(utils.container).toHaveTextContent('first post');
+    });
+
+    await waitFor(() => {
+      expect(utils.container).toHaveTextContent('[]');
+    });
+  });
+
   test('nullish input called with input', async () => {
     const { trpc, client } = factory;
 
