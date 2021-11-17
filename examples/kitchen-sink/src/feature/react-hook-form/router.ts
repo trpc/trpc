@@ -9,7 +9,7 @@ const items = [
   },
 ];
 
-export const reactHookFormRouter = trpc
+export const router = trpc
   .router()
   .query('reactHookForm.list', {
     async resolve() {

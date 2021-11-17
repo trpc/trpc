@@ -7,6 +7,7 @@ import Highlight, { defaultProps } from 'prism-react-renderer';
 import theme from 'prism-react-renderer/themes/vsDark';
 import { ReactNode } from 'react';
 import { UseQueryResult } from 'react-query';
+import { ClientSuspense, ErrorBoundary } from './ClientSuspense';
 import { trpc } from './trpc';
 interface SourceFile {
   title: string;
@@ -27,6 +28,21 @@ export interface ExampleProps {
    * Files for "View Source" in the UI
    */
   files: SourceFile[];
+
+  examples?: [
+    {
+      title: string;
+      summary?: JSX.Element;
+      /**
+       * Detail page components
+       */
+      detail?: JSX.Element;
+      /**
+       * Files for "View Source" in the UI
+       */
+      files: SourceFile[];
+    },
+  ];
 }
 
 export default function Breadcrumbs(props: {
@@ -138,7 +154,6 @@ function Spinner() {
 export function ExamplePage(
   props: ExampleProps & {
     children?: ReactNode;
-    query?: UseQueryResult;
   },
 ) {
   return (
@@ -175,16 +190,9 @@ export function ExamplePage(
 
           <div className="prose-sm lg:prose"></div>
           <hr className="w-full border-t border-gray-300" />
-
-          {props.query ? (
-            props.query.data ? (
-              props.children
-            ) : (
-              <Spinner />
-            )
-          ) : (
-            props.children
-          )}
+          <ErrorBoundary>
+            <ClientSuspense fallback={Spinner}>{props.children}</ClientSuspense>
+          </ErrorBoundary>
         </div>
       </main>
     </>

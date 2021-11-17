@@ -1,6 +1,6 @@
-import { ExampleProps } from 'utils/example';
+import { ExampleProps } from 'utils/ExamplePage';
 
-export const reactHookFormProps: ExampleProps = {
+export const meta: ExampleProps = {
   title: 'React Hook Form',
   href: '/react-hook-form',
   summary: (
@@ -27,6 +27,6 @@ export const reactHookFormProps: ExampleProps = {
   ),
   files: [
     { title: 'Router', path: 'feature/react-hook-form/router.ts' },
-    { title: 'Page', path: 'pages/react-hook-form.tsx' },
+    { title: 'Page', path: 'feature/react-hook-form/index.tsx' },
   ],
 };

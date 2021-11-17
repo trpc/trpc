@@ -1,9 +1,9 @@
-import { reactHookFormProps } from 'feature/react-hook-form/meta';
-import { ssgProps as ssgProps } from 'feature/ssg/meta';
+import { meta as reactHookFormMeta } from 'feature/react-hook-form/meta';
+import { meta as ssgMeta } from 'feature/ssg/meta';
 import Head from 'next/head';
 import Link from 'next/link';
-import { ExampleProps } from 'utils/example';
-const propsList: ExampleProps[] = [ssgProps, reactHookFormProps];
+import { ExampleProps } from 'utils/ExamplePage';
+const propsList: ExampleProps[] = [reactHookFormMeta, ssgMeta];
 
 export default function Page() {
   return (

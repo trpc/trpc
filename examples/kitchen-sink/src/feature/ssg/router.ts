@@ -8,7 +8,7 @@ const posts = [
   },
 ];
 
-export const ssgRouter = trpc.router().query('ssg.byId', {
+export const router = trpc.router().query('ssg.byId', {
   input: z.object({
     id: z.string(),
   }),

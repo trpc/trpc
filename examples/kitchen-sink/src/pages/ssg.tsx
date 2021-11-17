@@ -3,9 +3,9 @@ import { GetStaticPropsContext, InferGetStaticPropsType } from 'next';
 import { createContext } from 'server/context';
 import { appRouter } from 'server/routers/_app';
 import superjson from 'superjson';
-import { ExamplePage } from 'utils/example';
+import { ExamplePage } from 'utils/ExamplePage';
 import { trpc } from 'utils/trpc';
-import { ssgProps } from 'feature/ssg/meta';
+import { meta } from 'feature/ssg/meta';
 
 export default function Page(
   props: InferGetStaticPropsType<typeof getStaticProps>,
@@ -17,7 +17,7 @@ export default function Page(
   const post = query.data!;
   return (
     <>
-      <ExamplePage {...ssgProps} query={query}>
+      <ExamplePage {...meta}>
         <article className="prose">
           <h2>{post.title}</h2>
         </article>
