@@ -1,6 +1,6 @@
-import Head from 'next/head';
+import { Layout } from 'components/Layout';
 import Link from 'next/link';
-import { ReactQueryDevtools } from 'react-query/devtools';
+import { ReactElement } from 'react';
 import { trpc } from '../utils/trpc';
 
 export default function IndexPage() {
@@ -22,16 +22,6 @@ export default function IndexPage() {
 
   return (
     <>
-      <Head>
-        <title>Prisma Starter</title>
-        <link rel="icon" href="/favicon.ico" />
-      </Head>
-      <h1>Welcome to your tRPC starter!</h1>
-      <p>
-        Check <a href="https://trpc.io/docs">the docs</a> whenever you get
-        stuck, or ping <a href="https://twitter.com/alexdotjs">@alexdotjs</a> on
-        Twitter.
-      </p>
       <h2>
         Posts
         {postsQuery.status === 'loading' && '(loading)'}
@@ -89,13 +79,11 @@ export default function IndexPage() {
           <p style={{ color: 'red' }}>{addPost.error.message}</p>
         )}
       </form>
-
-      {process.env.NODE_ENV !== 'production' && (
-        <ReactQueryDevtools initialIsOpen={false} />
-      )}
     </>
   );
 }
+
+IndexPage.getLayout = (page: ReactElement) => <Layout>{page}</Layout>;
 
 /**
  * If you want to statically render this page
