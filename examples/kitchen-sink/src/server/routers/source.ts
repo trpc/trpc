@@ -4,7 +4,9 @@ import { createRouter } from 'server/createRouter';
 import path from 'path';
 export const sourceRouter = createRouter().query('getSource', {
   input: z.object({
-    path: z.string(),
+    path: z.string().refine((val) => !val.includes('..'), {
+      message: 'Only relative paths allowed',
+    }),
   }),
   async resolve({ input }) {
     const ROOT = path.resolve(__dirname + '/../../../../../src') + '/';
