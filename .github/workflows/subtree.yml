@@ -3,7 +3,7 @@ on:
   push:
     branches:
       - main
-      - ws-example
+      - kitchen-sink-tmp
 jobs:
   sync-downstream:
     runs-on: ubuntu-latest
@@ -16,6 +16,7 @@ jobs:
             next-prisma-starter,
             next-prisma-starter-websockets,
             next-prisma-todomvc,
+            kitchen-sink,
           ]
 
     name: Update downstream ${{ matrix.path }} package
