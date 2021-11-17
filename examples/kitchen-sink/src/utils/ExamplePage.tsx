@@ -231,7 +231,7 @@ export function ExamplePage(
             </div>
             <div className="rounded-lg bg-white p-4">
               <ErrorBoundary>
-                <ClientSuspense fallback={Spinner}>
+                <ClientSuspense fallback={<Spinner />}>
                   {!routerQuery.file && props.children}
                   {props.files.map((file) => (
                     <Fragment key={file.path}>
