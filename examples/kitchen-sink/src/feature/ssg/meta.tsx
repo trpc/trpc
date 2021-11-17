@@ -1,6 +1,6 @@
-import { ExampleProps } from 'utils/example';
+import { ExampleProps } from 'utils/ExamplePage';
 
-export const ssgProps: ExampleProps = {
+export const meta: ExampleProps = {
   title: 'Static Site Generation (SSG)',
   href: '/ssg',
   summary: (

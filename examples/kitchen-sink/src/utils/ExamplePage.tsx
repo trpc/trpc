@@ -5,13 +5,20 @@ import Link from 'next/link';
 import { useRouter } from 'next/router';
 import Highlight, { defaultProps } from 'prism-react-renderer';
 import theme from 'prism-react-renderer/themes/vsDark';
-import { ReactNode } from 'react';
-import { UseQueryResult } from 'react-query';
+import { Fragment, ReactNode, useEffect } from 'react';
+import { ClientSuspense, ErrorBoundary } from './ClientSuspense';
 import { trpc } from './trpc';
+import { EyeIcon } from '@heroicons/react/outline';
+import { CodeIcon } from '@heroicons/react/outline';
+
 interface SourceFile {
   title: string;
   path: string;
 }
+function clsx(...classes: unknown[]) {
+  return classes.filter(Boolean).join(' ');
+}
+
 export interface ExampleProps {
   title: string;
   href: string;
@@ -89,7 +96,10 @@ function Code(props: { contents: string; language: string }) {
       language="tsx"
     >
       {({ className, style, tokens, getLineProps, getTokenProps }) => (
-        <pre className={`${className} p-4 ml-4`} style={style}>
+        <pre
+          className={`${className} p-4 overflow-scroll rounded`}
+          style={style}
+        >
           {tokens.map((line, i) => (
             <div key={i} {...getLineProps({ line, key: i })}>
               {line.map((token, key) => (
@@ -103,27 +113,32 @@ function Code(props: { contents: string; language: string }) {
   );
 }
 
+function basename(path: string) {
+  return path.split('/').pop()!;
+}
+
 function ViewSource(props: SourceFile) {
-  const query = trpc.useQuery([
-    'source.getSource',
+  const query = trpc.useQuery(
+    [
+      'source.getSource',
+      {
+        path: props.path,
+      },
+    ],
     {
-      path: props.path,
+      cacheTime: Infinity,
+      refetchOnWindowFocus: false,
+      refetchOnMount: false,
+      refetchOnReconnect: false,
     },
-  ]);
-  const filename = props.path.split('/').pop()!;
+  );
+  const filename = basename(props.path);
   const language = filename.split('.').pop()!;
 
-  return (
-    <details>
-      <summary>
-        {props.title} (<code>{filename}</code>)
-      </summary>
-      {query.status === 'loading' && <Spinner />}
-      {query.status === 'success' && (
-        <Code contents={query.data.contents} language={language} />
-      )}
-    </details>
-  );
+  if (!query.data) {
+    return <Spinner />;
+  }
+  return <Code contents={query.data.contents} language={language} />;
 }
 
 function Spinner() {
@@ -138,9 +153,17 @@ function Spinner() {
 export function ExamplePage(
   props: ExampleProps & {
     children?: ReactNode;
-    query?: UseQueryResult;
   },
 ) {
+  const routerQuery = useRouter().query;
+
+  const utils = trpc.useContext();
+  useEffect(() => {
+    for (const file of props.files) {
+      utils.prefetchQuery(['source.getSource', { path: file.path }]);
+    }
+  }, [props.files, utils]);
+
   return (
     <>
       <Head>
@@ -165,26 +188,62 @@ export function ExamplePage(
               <h3>{props.title}</h3>
               {props.detail || props.summary}
             </div>
-            <h3 className="text-lg font-bold">View Source 👇</h3>
-            <ul className="list-disc list-inside px-4">
-              {props.files.map((file) => (
-                <ViewSource key={file.path} {...file} />
-              ))}
-            </ul>
           </div>
-
-          <div className="prose-sm lg:prose"></div>
-          <hr className="w-full border-t border-gray-300" />
-
-          {props.query ? (
-            props.query.data ? (
-              props.children
-            ) : (
-              <Spinner />
-            )
-          ) : (
-            props.children
-          )}
+          <div id="content">
+            <div className="flex justify-between sticky top-0 bg-primary-100 bg-opacity-50">
+              <div></div>
+              <div className="btn-group top-0">
+                <Link
+                  href={{ query: { file: undefined }, hash: 'content' }}
+                  scroll={false}
+                >
+                  <a
+                    className={clsx('btn', !routerQuery.file && 'btn--active')}
+                  >
+                    <EyeIcon className="btn__icon" aria-hidden="true" />
+                    Preview
+                  </a>
+                </Link>
+                {props.files.map((file) => (
+                  <Link
+                    href={{
+                      query: {
+                        file: file.path,
+                      },
+                      hash: 'content',
+                    }}
+                    scroll={false}
+                    key={file.path}
+                  >
+                    <a
+                      className={clsx(
+                        'btn',
+                        routerQuery.file === file.path && 'btn--active',
+                      )}
+                    >
+                      <CodeIcon className="btn__icon" aria-hidden="true" />
+                      {/* {file.title} */}
+                      <code>{basename(file.path)}</code>
+                    </a>
+                  </Link>
+                ))}
+              </div>
+            </div>
+            <div className="rounded-lg bg-white p-4">
+              <ErrorBoundary>
+                <ClientSuspense fallback={<Spinner />}>
+                  {!routerQuery.file && props.children}
+                  {props.files.map((file) => (
+                    <Fragment key={file.path}>
+                      {file.path === routerQuery.file && (
+                        <ViewSource {...file} />
+                      )}
+                    </Fragment>
+                  ))}
+                </ClientSuspense>
+              </ErrorBoundary>
+            </div>
+          </div>
         </div>
       </main>
     </>

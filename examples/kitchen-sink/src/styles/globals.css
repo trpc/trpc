@@ -2,6 +2,36 @@
 @tailwind components;
 @tailwind utilities;
 
+html {
+  scroll-behavior: smooth;
+}
 body {
   @apply bg-primary-100;
+}
+
+.btn {
+  @apply relative inline-flex items-center px-3 py-2 border border-gray-300 bg-white text-sm leading-5 font-medium text-gray-500 transition ease-in-out duration-150 rounded-md transition-colors;
+}
+.btn__icon {
+  @apply mr-2 h-5 w-5 transition-colors opacity-90;
+}
+
+.btn--active {
+  @apply bg-primary-500 text-white;
+}
+
+.btn:focus {
+  @apply z-10 outline-none border-primary-300;
+}
+
+.btn-group {
+  @apply relative z-0 inline-flex shadow-sm;
+}
+
+.btn-group > .btn:not(:first-child) {
+  @apply rounded-l-none -ml-px;
+}
+
+.btn-group > .btn:not(:last-child) {
+  @apply rounded-r-none;
 }

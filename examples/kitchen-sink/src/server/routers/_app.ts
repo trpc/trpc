@@ -1,8 +1,8 @@
 /**
  * This file contains the root router of your tRPC-backend
  */
-import { reactHookFormRouter } from 'feature/react-hook-form/router';
-import { ssgRouter } from 'feature/ssg/router';
+import { router as reactHookFormRouter } from 'feature/react-hook-form/router';
+import { router as ssgRouter } from 'feature/ssg/router';
 import superjson from 'superjson';
 import { createRouter } from '../createRouter';
 import { sourceRouter } from './source';
@@ -27,7 +27,7 @@ export const appRouter = createRouter()
 
   .merge('source.', sourceRouter)
   // features:
-  .merge(reactHookFormRouter)
-  .merge(ssgRouter);
+  .merge(ssgRouter)
+  .merge(reactHookFormRouter);
 
 export type AppRouter = typeof appRouter;
