@@ -9,6 +9,7 @@ import Highlight, { defaultProps } from 'prism-react-renderer';
 import theme from 'prism-react-renderer/themes/vsDark';
 import React, { Fragment, ReactNode, useEffect, useRef, useState } from 'react';
 import { ClientSuspense, ErrorBoundary } from './ClientSuspense';
+import { getImportsFromSource } from './getImportsFromSource';
 import { trpc } from './trpc';
 
 interface SourceFile {
@@ -88,38 +89,38 @@ export default function Breadcrumbs(props: {
 }
 
 function Code(props: { contents: string; language: string; path: string }) {
-  // const utils = trpc.useContext();
-  // const [code, setCode] = useState(props.contents);
-  // const [types, setTypes] = useState<FileMap>({});
+  const utils = trpc.useContext();
+  const [code, setCode] = useState(props.contents);
+  const [types, setTypes] = useState<FileMap>({});
 
-  // const modulesCache = useRef([] as string[]);
-  // useEffect(() => {
-  //   const modules = getImportsFromSource(code);
-  //   for (const moduleName of modules) {
-  //     const key = props.path + moduleName;
-  //     if (modulesCache.current.includes(key)) {
-  //       continue;
-  //     }
-  //     modulesCache.current.push(key);
+  const modulesCache = useRef(new Set<string>());
+  useEffect(() => {
+    const modules = getImportsFromSource(code);
+    for (const moduleName of modules) {
+      const key = props.path + moduleName;
+      if (modulesCache.current.has(key)) {
+        continue;
+      }
+      modulesCache.current.add(key);
 
-  //     utils
-  //       .fetchQuery([
-  //         'source.getDefinitions',
-  //         moduleName.startsWith('.')
-  //           ? { moduleName, relativeTo: props.path }
-  //           : { moduleName },
-  //       ])
-  //       .then((data) => {
-  //         // setTypes((state) => ({
-  //         //   ...state,
-  //         //   moduleName: data.definition,
-  //         // }));
-  //       })
-  //       .catch((err) => {
-  //         console.warn('Could not fetch def for', moduleName, { err });
-  //       });
-  //   }
-  // }, [code, utils, props.path]);
+      utils
+        .fetchQuery([
+          'source.getDefinitions',
+          moduleName.startsWith('.')
+            ? { moduleName, relativeTo: props.path }
+            : { moduleName },
+        ])
+        .then((data) => {
+          // setTypes((state) => ({
+          //   ...state,
+          //   moduleName: data.definition,
+          // }));
+        })
+        .catch((err) => {
+          console.warn('Could not fetch def for', moduleName, { err });
+        });
+    }
+  }, [code, utils, props.path]);
 
   return (
     <>
