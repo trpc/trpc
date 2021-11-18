@@ -4,7 +4,7 @@ import { ReactQueryDevtools } from 'react-query/devtools';
 
 type DefaultLayoutProps = { children: ReactNode };
 
-export function DefaultLayout({ children }: DefaultLayoutProps) {
+export const DefaultLayout = ({ children }: DefaultLayoutProps) => {
   return (
     <>
       <Head>
@@ -19,4 +19,4 @@ export function DefaultLayout({ children }: DefaultLayoutProps) {
       )}
     </>
   );
-}
+};
