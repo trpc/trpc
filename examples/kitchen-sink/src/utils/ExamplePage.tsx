@@ -1,15 +1,15 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
+import { CodeIcon, EyeIcon } from '@heroicons/react/outline';
 import { HomeIcon } from '@heroicons/react/solid';
+import { Editor, FileMap } from '@prisma/text-editors';
 import Head from 'next/head';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
 import Highlight, { defaultProps } from 'prism-react-renderer';
 import theme from 'prism-react-renderer/themes/vsDark';
-import { Fragment, ReactNode, useEffect } from 'react';
+import React, { Fragment, ReactNode, useEffect, useRef, useState } from 'react';
 import { ClientSuspense, ErrorBoundary } from './ClientSuspense';
 import { trpc } from './trpc';
-import { EyeIcon } from '@heroicons/react/outline';
-import { CodeIcon } from '@heroicons/react/outline';
 
 interface SourceFile {
   title: string;
@@ -87,29 +87,65 @@ export default function Breadcrumbs(props: {
   );
 }
 
-function Code(props: { contents: string; language: string }) {
+function Code(props: { contents: string; language: string; path: string }) {
+  // const utils = trpc.useContext();
+  // const [code, setCode] = useState(props.contents);
+  // const [types, setTypes] = useState<FileMap>({});
+
+  // const modulesCache = useRef([] as string[]);
+  // useEffect(() => {
+  //   const modules = getImportsFromSource(code);
+  //   for (const moduleName of modules) {
+  //     const key = props.path + moduleName;
+  //     if (modulesCache.current.includes(key)) {
+  //       continue;
+  //     }
+  //     modulesCache.current.push(key);
+
+  //     utils
+  //       .fetchQuery([
+  //         'source.getDefinitions',
+  //         moduleName.startsWith('.')
+  //           ? { moduleName, relativeTo: props.path }
+  //           : { moduleName },
+  //       ])
+  //       .then((data) => {
+  //         // setTypes((state) => ({
+  //         //   ...state,
+  //         //   moduleName: data.definition,
+  //         // }));
+  //       })
+  //       .catch((err) => {
+  //         console.warn('Could not fetch def for', moduleName, { err });
+  //       });
+  //   }
+  // }, [code, utils, props.path]);
+
   return (
-    <Highlight
-      {...defaultProps}
-      theme={theme}
-      code={props.contents}
-      language="tsx"
-    >
-      {({ className, style, tokens, getLineProps, getTokenProps }) => (
-        <pre
-          className={`${className} p-4 overflow-scroll rounded`}
-          style={style}
-        >
-          {tokens.map((line, i) => (
-            <div key={i} {...getLineProps({ line, key: i })}>
-              {line.map((token, key) => (
-                <span key={key} {...getTokenProps({ token, key })} />
-              ))}
-            </div>
-          ))}
-        </pre>
-      )}
-    </Highlight>
+    <>
+      <div>{/* <Editor lang="ts" value={code} onChange={setCode} /> */}</div>
+      <Highlight
+        {...defaultProps}
+        theme={theme}
+        code={props.contents}
+        language="tsx"
+      >
+        {({ className, style, tokens, getLineProps, getTokenProps }) => (
+          <pre
+            className={`${className} p-4 overflow-scroll rounded`}
+            style={style}
+          >
+            {tokens.map((line, i) => (
+              <div key={i} {...getLineProps({ line, key: i })}>
+                {line.map((token, key) => (
+                  <span key={key} {...getTokenProps({ token, key })} />
+                ))}
+              </div>
+            ))}
+          </pre>
+        )}
+      </Highlight>
+    </>
   );
 }
 
@@ -138,7 +174,13 @@ function ViewSource(props: SourceFile) {
   if (!query.data) {
     return <Spinner />;
   }
-  return <Code contents={query.data.contents} language={language} />;
+  return (
+    <Code
+      contents={query.data.contents}
+      language={language}
+      path={props.path}
+    />
+  );
 }
 
 function Spinner() {
@@ -163,12 +205,26 @@ export function ExamplePage(
       utils.prefetchQuery(['source.getSource', { path: file.path }]);
     }
   }, [props.files, utils]);
+  const [code, setCode] = useState('');
 
   return (
     <>
       <Head>
         <title>{props.title}</title>
       </Head>
+
+      <Editor
+        lang="ts"
+        value={code}
+        style={{
+          gridColumn: '2 / 3',
+          gridRow: '2 / -1',
+          boxShadow: '2px 0px 8px #0001',
+          zIndex: 1,
+          borderRight: '1px solid #E2E8F0',
+        }}
+        onChange={setCode}
+      />
 
       <div className="bg-primary-400">
         <div className="max-w-2xl mx-auto text-center py-16 px-4 sm:py-4 sm:px-6 lg:px-8">
