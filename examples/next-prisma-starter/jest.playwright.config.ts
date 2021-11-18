@@ -3,7 +3,7 @@ import type { Config } from '@jest/types';
 const opts = {
   // launch headless on CI, in browser locally
   headless: !!process.env.CI || !!process.env.PLAYWRIGHT_HEADLESS,
-  collectCoverage: !!process.env.PLAYWRIGHT_HEADLESS,
+  // collectCoverage: !!process.env.PLAYWRIGHT_HEADLESS,
   executablePath: process.env.PLAYWRIGHT_CHROME_EXECUTABLE_PATH,
 };
 
@@ -28,7 +28,7 @@ const config: Config.InitialOptions = {
           dir: 'playwright/videos',
         },
       },
-      collectCoverage: opts.collectCoverage,
+      // collectCoverage: opts.collectCoverage,
     },
   },
 };
