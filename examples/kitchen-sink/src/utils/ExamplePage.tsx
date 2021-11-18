@@ -5,8 +5,6 @@ import { Editor, FileMap } from '@prisma/text-editors';
 import Head from 'next/head';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
-import Highlight, { defaultProps } from 'prism-react-renderer';
-import theme from 'prism-react-renderer/themes/vsDark';
 import React, { Fragment, ReactNode, useEffect, useRef, useState } from 'react';
 import { ClientSuspense, ErrorBoundary } from './ClientSuspense';
 import { getImportsFromSource } from './getImportsFromSource';
@@ -125,7 +123,7 @@ function Code(props: { contents: string; language: string; path: string }) {
   return (
     <>
       <div>{/* <Editor lang="ts" value={code} onChange={setCode} /> */}</div>
-      <Highlight
+      {/* <Highlight
         {...defaultProps}
         theme={theme}
         code={props.contents}
@@ -145,7 +143,7 @@ function Code(props: { contents: string; language: string; path: string }) {
             ))}
           </pre>
         )}
-      </Highlight>
+      </Highlight> */}
     </>
   );
 }
@@ -214,18 +212,7 @@ export function ExamplePage(
         <title>{props.title}</title>
       </Head>
 
-      <Editor
-        lang="ts"
-        value={code}
-        style={{
-          gridColumn: '2 / 3',
-          gridRow: '2 / -1',
-          boxShadow: '2px 0px 8px #0001',
-          zIndex: 1,
-          borderRight: '1px solid #E2E8F0',
-        }}
-        onChange={setCode}
-      />
+      <Editor lang="ts" value={code} onChange={setCode} />
 
       <div className="bg-primary-400">
         <div className="max-w-2xl mx-auto text-center py-16 px-4 sm:py-4 sm:px-6 lg:px-8">
