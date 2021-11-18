@@ -1,10 +1,9 @@
 import { useRouter } from 'next/router';
 import { trpc } from 'utils/trpc';
 import NextError from 'next/error';
-import { Layout } from 'components/Layout';
-import { ReactElement } from 'react';
+import { NextPageWithLayout } from 'pages/_app';
 
-export default function PostViewPage() {
+const PostViewPage: NextPageWithLayout = () => {
   const id = useRouter().query.id as string;
   const postQuery = trpc.useQuery(['post.byId', { id }]);
 
@@ -32,6 +31,6 @@ export default function PostViewPage() {
       <pre>{JSON.stringify(data, null, 4)}</pre>
     </>
   );
-}
+};
 
-PostViewPage.getLayout = (page: ReactElement) => <Layout>{page}</Layout>;
+export default PostViewPage;

@@ -2,9 +2,9 @@ import Head from 'next/head';
 import { ReactNode } from 'react';
 import { ReactQueryDevtools } from 'react-query/devtools';
 
-type LayoutProps = { children: ReactNode };
+type DefaultLayoutProps = { children: ReactNode };
 
-export function Layout({ children }: LayoutProps) {
+export function DefaultLayout({ children }: DefaultLayoutProps) {
   return (
     <>
       <Head>

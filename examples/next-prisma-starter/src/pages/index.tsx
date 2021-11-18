@@ -1,9 +1,8 @@
-import { Layout } from 'components/Layout';
 import Link from 'next/link';
-import { ReactElement } from 'react';
 import { trpc } from '../utils/trpc';
+import { NextPageWithLayout } from './_app';
 
-export default function IndexPage() {
+const IndexPage: NextPageWithLayout = () => {
   const utils = trpc.useContext();
   const postsQuery = trpc.useQuery(['post.all']);
   const addPost = trpc.useMutation('post.add', {
@@ -88,9 +87,9 @@ export default function IndexPage() {
       </form>
     </>
   );
-}
+};
 
-IndexPage.getLayout = (page: ReactElement) => <Layout>{page}</Layout>;
+export default IndexPage;
 
 /**
  * If you want to statically render this page
