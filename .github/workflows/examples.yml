@@ -34,7 +34,7 @@ jobs:
       - name: Use Node 16
         uses: actions/setup-node@v1
         with:
-          node-version: 16
+          node-version: 16.x
 
       - name: Install deps and build (with cache)
         uses: bahmutov/npm-install@v1
