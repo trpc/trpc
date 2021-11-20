@@ -9,8 +9,6 @@ jobs:
     strategy:
       matrix:
         dir: [next-prisma-starter]
-        # build trpc with:
-        node-build: ['16.x']
         # start example with:
         node-start: ['12.x']
         os: [ubuntu-latest]
@@ -26,10 +24,10 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v2
 
-      - name: Use Node ${{ matrix.node-build }}
+      - name: Use Node 16
         uses: actions/setup-node@v1
         with:
-          node-version: ${{ matrix.node-build }}
+          node-version: 16
 
       - name: Install deps and build (with cache)
         uses: bahmutov/npm-install@v1
