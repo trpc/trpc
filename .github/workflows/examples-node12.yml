@@ -9,7 +9,7 @@ jobs:
     strategy:
       matrix:
         dir: [next-prisma-starter]
-        # start example with:
+        node: ['14.x']
         node-start: ['12.x']
         os: [ubuntu-latest]
     services:
@@ -24,10 +24,10 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v2
 
-      - name: Use Node 14
+      - name: Use Node ${{ matrix.node }}
         uses: actions/setup-node@v1
         with:
-          node-version: 14.x
+          node-version: ${{ matrix.node }}
 
       - name: Install deps and build (with cache)
         uses: bahmutov/npm-install@v1
