@@ -31,10 +31,10 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v2
 
-      - name: Use Node 16
+      - name: Use Node 14
         uses: actions/setup-node@v1
         with:
-          node-version: 16.x
+          node-version: 14.x
 
       - name: Install deps and build (with cache)
         uses: bahmutov/npm-install@v1
