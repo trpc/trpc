@@ -39,7 +39,7 @@ jobs:
       - run: node -v
       - name: Install deps and build (with cache)
         uses: bahmutov/npm-install@v1
-
+      - run: cat ./packages/client/dist/declarations/src/links/wsLink.d.ts
       - name: Next.js cache
         uses: actions/cache@v2
         with:
@@ -54,9 +54,10 @@ jobs:
       - run: node -v
       # - run: yarn install --cwd examples/${{ matrix.dir }} --ignore-scripts
       - run: yarn --ignore-engines playwright install-deps
-
+      - run: cat ./packages/client/dist/declarations/src/links/wsLink.d.ts
       - name: if exists, run yarn lint
         run: cd examples/${{ matrix.dir }} && cat package.json | if grep --silent '"lint"'; then yarn lint; fi
+      - run: cat ./packages/client/dist/declarations/src/links/wsLink.d.ts
       - run: yarn --cwd examples/${{ matrix.dir }} build
       - run: yarn --cwd examples/${{ matrix.dir }} test-start
       - run: yarn --cwd examples/${{ matrix.dir }} test-dev
