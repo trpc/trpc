@@ -36,6 +36,7 @@ jobs:
         with:
           node-version: 14.x
 
+      - run: node -v
       - name: Install deps and build (with cache)
         uses: bahmutov/npm-install@v1
 
