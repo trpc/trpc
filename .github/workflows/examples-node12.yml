@@ -45,7 +45,7 @@ jobs:
 
       - run: node -v
       # - run: yarn install --cwd examples/${{ matrix.dir }} --ignore-scripts
-      - run: yarn playwright install-deps
+      - run: yarn --ignore-engines playwright install-deps
 
       - name: if exists, run yarn lint
         run: cd examples/${{ matrix.dir }} && cat package.json | if grep --silent '"lint"'; then yarn lint; fi
