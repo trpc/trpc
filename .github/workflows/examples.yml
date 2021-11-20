@@ -42,8 +42,7 @@ jobs:
           path: ${{ github.workspace }}${{ matrix.dir }}/.next/cache
           key: ${{ matrix.dir }}-${{ runner.os }}-${{ matrix.node-start }}-${{ hashFiles('**/yarn.lock') }}-nextjs
 
-      - name: Use Node ${{ matrix.node-start }}
-        uses: actions/setup-node@v2
+      - uses: actions/setup-node@v2
         with:
           node-version: ${{ matrix.node-start }}
 
