@@ -1,5 +1,5 @@
 import { AnyRouter, ProcedureType } from '@trpc/server';
-import type {
+import {
   TRPCClientIncomingMessage,
   TRPCClientIncomingRequest,
   TRPCRequest,
