@@ -10,7 +10,7 @@ jobs:
       matrix:
         dir: [next-prisma-starter]
         # build trpc with:
-        node-build: ['14.x']
+        node-build: ['16.x']
         # start example with:
         node-start: ['12.x']
         os: [ubuntu-latest]
@@ -38,7 +38,7 @@ jobs:
         uses: actions/cache@v2
         with:
           path: ${{ github.workspace }}/.next/cache
-          key: ${{ runner.dir }}-${{ runner.os }}-${{ runner.node }}-${{ hashFiles('**/yarn.lock') }}-nextjs
+          key: ${{ runner.dir }}-${{ runner.os }}-${{ matrix.node-start }}-${{ hashFiles('**/yarn.lock') }}-nextjs
 
       - name: Use Node ${{ matrix.node-start }}
         uses: actions/setup-node@v1
