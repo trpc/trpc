@@ -17,7 +17,6 @@ jobs:
             next-prisma-todomvc,
             standalone-server,
           ]
-        node: ['14.x']
         node-start: ['14.x', '16.x']
         os: [ubuntu-latest]
     services:
@@ -32,10 +31,10 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v2
 
-      - name: Use Node ${{ matrix.node }}
+      - name: Use Node 16
         uses: actions/setup-node@v1
         with:
-          node-version: ${{ matrix.node }}
+          node-version: 16.x
 
       - run: node -v
       - name: Install deps and build (with cache)
