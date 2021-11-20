@@ -38,6 +38,7 @@ jobs:
 
       - run: node -v
       - uses: bahmutov/npm-install@v1
+      - run: yarn build
       - run: cat ./packages/client/dist/declarations/src/links/wsLink.d.ts
       - name: Next.js cache
         uses: actions/cache@v2
