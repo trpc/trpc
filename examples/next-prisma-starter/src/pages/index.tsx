@@ -1,9 +1,8 @@
-import Head from 'next/head';
 import Link from 'next/link';
-import { ReactQueryDevtools } from 'react-query/devtools';
 import { trpc } from '../utils/trpc';
+import { NextPageWithLayout } from './_app';
 
-export default function IndexPage() {
+const IndexPage: NextPageWithLayout = () => {
   const utils = trpc.useContext();
   const postsQuery = trpc.useQuery(['post.all']);
   const addPost = trpc.useMutation('post.add', {
@@ -22,16 +21,13 @@ export default function IndexPage() {
 
   return (
     <>
-      <Head>
-        <title>Prisma Starter</title>
-        <link rel="icon" href="/favicon.ico" />
-      </Head>
       <h1>Welcome to your tRPC starter!</h1>
       <p>
         Check <a href="https://trpc.io/docs">the docs</a> whenever you get
         stuck, or ping <a href="https://twitter.com/alexdotjs">@alexdotjs</a> on
         Twitter.
       </p>
+
       <h2>
         Posts
         {postsQuery.status === 'loading' && '(loading)'}
@@ -89,13 +85,11 @@ export default function IndexPage() {
           <p style={{ color: 'red' }}>{addPost.error.message}</p>
         )}
       </form>
-
-      {process.env.NODE_ENV !== 'production' && (
-        <ReactQueryDevtools initialIsOpen={false} />
-      )}
     </>
   );
-}
+};
+
+export default IndexPage;
 
 /**
  * If you want to statically render this page
