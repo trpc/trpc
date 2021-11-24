@@ -27,10 +27,14 @@ interface TRPCFetchInfiniteQueryOptions<TInput, TError, TOutput>
   extends FetchInfiniteQueryOptions<TInput, TError, TOutput>,
     TRPCRequestOptions {}
 
-export type TRPCContextState<TRouter extends AnyRouter> = {
+export type TRPCContextState<
+  TRouter extends AnyRouter,
+  TSSRContext = undefined,
+> = {
   queryClient: QueryClient;
   client: TRPCClient<TRouter>;
   isPrepass: boolean;
+  ssrContext: TSSRContext | null;
 
   /**
    * @link https://react-query.tanstack.com/guides/prefetching

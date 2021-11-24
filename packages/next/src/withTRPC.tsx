@@ -75,28 +75,32 @@ export function withTRPC<TRouter extends AnyRouter>(
     queryClient: QueryClient;
     trpcClient: TRPCClient<TRouter>;
     isPrepass: true;
+    ssrContext: NextPageContext;
   };
   return (AppOrPage: NextComponentType<any, any, any>): NextComponentType => {
-    const trpc = createReactQueryHooks<TRouter>();
+    const trpc = createReactQueryHooks<TRouter, NextPageContext>();
 
     const WithTRPC = (
       props: AppPropsType & {
         trpc?: TRPCPrepassProps;
       },
     ) => {
-      const [{ queryClient, trpcClient, isPrepass }] = useState(() => {
-        if (props.trpc) {
-          return props.trpc;
-        }
-        const config = getClientConfig({});
-        const queryClient = new QueryClient(config.queryClientConfig);
-        const trpcClient = trpc.createClient(config);
-        return {
-          queryClient,
-          trpcClient,
-          isPrepass: false,
-        };
-      });
+      const [{ queryClient, trpcClient, isPrepass, ssrContext }] = useState(
+        () => {
+          if (props.trpc) {
+            return props.trpc;
+          }
+          const config = getClientConfig({});
+          const queryClient = new QueryClient(config.queryClientConfig);
+          const trpcClient = trpc.createClient(config);
+          return {
+            queryClient,
+            trpcClient,
+            isPrepass: false,
+            ssrContext: null,
+          };
+        },
+      );
 
       const hydratedState = trpc.useDehydratedState(
         trpcClient,
@@ -108,6 +112,7 @@ export function withTRPC<TRouter extends AnyRouter>(
           client={trpcClient}
           queryClient={queryClient}
           isPrepass={isPrepass}
+          ssrContext={ssrContext}
         >
           <QueryClientProvider client={queryClient}>
             <Hydrate state={hydratedState}>
@@ -158,6 +163,7 @@ export function withTRPC<TRouter extends AnyRouter>(
           trpcClient,
           queryClient,
           isPrepass: true,
+          ssrContext: ctx,
         };
         const prepassProps = {
           pageProps,

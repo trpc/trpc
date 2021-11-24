@@ -17,7 +17,7 @@ jobs:
             next-prisma-todomvc,
             standalone-server,
           ]
-        node: ['14.x', '16.x']
+        node-start: ['14.x', '16.x']
         os: [ubuntu-latest]
     services:
       postgres:
@@ -28,26 +28,25 @@ jobs:
         ports:
           - 5432:5432
     steps:
-      - name: Checkout repo
-        uses: actions/checkout@v2
-
-      - name: Use Node ${{ matrix.node }}
-        uses: actions/setup-node@v1
+      - uses: actions/checkout@v2
+      - uses: actions/setup-node@v2
         with:
-          node-version: ${{ matrix.node }}
-
-      - name: Install deps and build (with cache)
-        uses: bahmutov/npm-install@v1
+          node-version: 14.x
+      - run: node -v
+      - uses: bahmutov/npm-install@v1
 
       - name: Next.js cache
         uses: actions/cache@v2
         with:
-          path: ${{ github.workspace }}/.next/cache
-          key: ${{ runner.dir }}-${{ runner.os }}-${{ runner.node }}-${{ hashFiles('**/yarn.lock') }}-nextjs
+          path: ${{ github.workspace }}${{ matrix.dir }}/.next/cache
+          key: ${{ matrix.dir }}-${{ runner.os }}-${{ matrix.node-start }}-${{ hashFiles('**/yarn.lock') }}-nextjs
+
+      - uses: actions/setup-node@v2
+        with:
+          node-version: ${{ matrix.node-start }}
 
       - run: node -v
-      # - run: yarn install --cwd examples/${{ matrix.dir }} --ignore-scripts
-      - run: yarn playwright install-deps
+      - run: yarn --ignore-engines playwright install-deps
 
       - name: if exists, run yarn lint
         run: cd examples/${{ matrix.dir }} && cat package.json | if grep --silent '"lint"'; then yarn lint; fi

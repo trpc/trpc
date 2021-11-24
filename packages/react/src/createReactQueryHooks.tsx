@@ -89,7 +89,10 @@ type inferProcedures<TObj extends ProcedureRecord<any, any, any, any>> = {
   };
 };
 
-export function createReactQueryHooks<TRouter extends AnyRouter>() {
+export function createReactQueryHooks<
+  TRouter extends AnyRouter,
+  TSSRContext = unknown,
+>() {
   type TQueries = TRouter['_def']['queries'];
   type TSubscriptions = TRouter['_def']['subscriptions'];
   type TError = TRPCClientErrorLike<TRouter>;
@@ -98,7 +101,7 @@ export function createReactQueryHooks<TRouter extends AnyRouter>() {
   type TQueryValues = inferProcedures<TRouter['_def']['queries']>;
   type TMutationValues = inferProcedures<TRouter['_def']['mutations']>;
 
-  type ProviderContext = TRPCContextState<TRouter>;
+  type ProviderContext = TRPCContextState<TRouter, TSSRContext>;
   const Context = TRPCContext as React.Context<ProviderContext>;
 
   function createClient(
@@ -112,11 +115,13 @@ export function createReactQueryHooks<TRouter extends AnyRouter>() {
     queryClient,
     children,
     isPrepass = false,
+    ssrContext,
   }: {
     queryClient: QueryClient;
     client: TRPCClient<TRouter>;
     children: ReactNode;
     isPrepass?: boolean;
+    ssrContext?: TSSRContext | null;
   }) {
     return (
       <Context.Provider
@@ -124,6 +129,7 @@ export function createReactQueryHooks<TRouter extends AnyRouter>() {
           queryClient,
           client,
           isPrepass,
+          ssrContext: ssrContext || null,
           fetchQuery: useCallback(
             (pathAndInput, opts) => {
               const cacheKey = getCacheKey(pathAndInput, CACHE_KEY_QUERY);
