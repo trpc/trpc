@@ -91,7 +91,7 @@ type inferProcedures<TObj extends ProcedureRecord<any, any, any, any>> = {
 
 export function createReactQueryHooks<
   TRouter extends AnyRouter,
-  TSSRContext = undefined,
+  TSSRContext = unknown,
 >() {
   type TQueries = TRouter['_def']['queries'];
   type TSubscriptions = TRouter['_def']['subscriptions'];
