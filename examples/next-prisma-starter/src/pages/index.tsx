@@ -1,9 +1,16 @@
+import { TRPCClientError, TRPCClientErrorLike } from '@trpc/client';
+import { Maybe } from '@trpc/server';
 import Link from 'next/link';
+import { dehydrate, DehydratedState, QueryClient } from 'react-query';
 import { trpc } from '../utils/trpc';
-import { NextPageWithLayout } from './_app';
-
-const IndexPage: NextPageWithLayout = () => {
+import { getBaseUrl, NextPageWithLayout } from './_app';
+import superjson from 'superjson';
+import ssrPrepass from 'react-ssr-prepass';
+import { createElement } from 'react';
+const IndexPage: NextPageWithLayout = (props) => {
+  console.log({ props });
   const utils = trpc.useContext();
+
   const postsQuery = trpc.useQuery(['post.all']);
   const addPost = trpc.useMutation('post.add', {
     async onSuccess() {
@@ -87,6 +94,91 @@ const IndexPage: NextPageWithLayout = () => {
       </form>
     </>
   );
+};
+
+function transformQueryOrMutationCacheErrors<
+  TState extends
+    | DehydratedState['queries'][0]
+    | DehydratedState['mutations'][0],
+>(result: TState): TState {
+  const error = result.state.error as Maybe<TRPCClientError<any>>;
+  if (error instanceof Error && error.name === 'TRPCClientError') {
+    const newError: TRPCClientErrorLike<any> = {
+      message: error.message,
+      data: error.data,
+      shape: error.shape,
+    };
+    return {
+      ...result,
+      state: {
+        ...result.state,
+        error: newError,
+      },
+    };
+  }
+  return result;
+}
+IndexPage.getInitialProps = async (context) => {
+  const queryClient = new QueryClient();
+  const client = trpc.createClient({
+    transformer: superjson,
+    url: getBaseUrl() + '/api/trpc',
+  });
+
+  const trpcProp = {
+    config: {},
+    trpcClient: client,
+    queryClient,
+    isPrepass: true,
+    ssrContext: context,
+  };
+  const prepassProps = {
+    pageProps: {},
+    trpc: trpcProp,
+  };
+  // Run the prepass step on AppTree. This will run all trpc queries on the server.
+  // multiple prepass ensures that we can do batching on the server
+  while (true) {
+    // render full tree
+    await ssrPrepass(createElement(context.AppTree, prepassProps as any));
+    if (!queryClient.isFetching()) {
+      // the render didn't cause the queryClient to fetch anything
+      break;
+    }
+
+    // wait until the query cache has settled it's promises
+    await new Promise<void>((resolve) => {
+      const unsub = queryClient.getQueryCache().subscribe((event) => {
+        if (event?.query.getObserversCount() === 0) {
+          resolve();
+          unsub();
+        }
+      });
+    });
+  }
+
+  const dehydratedCache = dehydrate(queryClient, {
+    shouldDehydrateQuery() {
+      // makes sure errors are also dehydrated
+      return true;
+    },
+  });
+  // since error instances can't be serialized, let's make them into `TRPCClientErrorLike`-objects
+  const dehydratedCacheWithErrors = {
+    ...dehydratedCache,
+    queries: dehydratedCache.queries.map(transformQueryOrMutationCacheErrors),
+    mutations: dehydratedCache.mutations.map(
+      transformQueryOrMutationCacheErrors,
+    ),
+  };
+
+  const trpcState = client.runtime.transformer.serialize(
+    dehydratedCacheWithErrors,
+  );
+
+  return {
+    trpcState,
+  };
 };
 
 export default IndexPage;
