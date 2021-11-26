@@ -210,15 +210,11 @@ export function createReactQueryHooks<
             [queryClient],
           ),
           setQueryData: useCallback(
-            (...args) => {
-              queryClient.setQueryData(...args);
-            },
+            (...args) => queryClient.setQueryData(...args),
             [queryClient],
           ),
           getQueryData: useCallback(
-            (...args) => {
-              return queryClient.getQueryData(...args);
-            },
+            (...args) => queryClient.getQueryData(...args),
             [queryClient],
           ),
         }}
