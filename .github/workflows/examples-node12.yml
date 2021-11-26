@@ -1,4 +1,4 @@
-name: Examples E2E
+name: Examples E2E (12.0)
 on: [push]
 jobs:
   e2e-node12:
