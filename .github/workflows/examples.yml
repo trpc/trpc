@@ -29,6 +29,7 @@ jobs:
           - 5432:5432
     steps:
       - uses: actions/checkout@v2
+
       - uses: actions/setup-node@v2
         with:
           node-version: 14.x
@@ -40,20 +41,20 @@ jobs:
           key: ${{ matrix.dir }}-${{ runner.os }}-${{ matrix.node-start }}-${{ hashFiles('**/yarn.lock') }}-nextjs
 
       - run: node -v
+
       - uses: bahmutov/npm-install@v1
+
       - uses: actions/setup-node@v2
         with:
           node-version: ${{ matrix.node-start }}
-      - run: cat ./packages/client/dist/declarations/src/links/wsLink.d.ts
 
       - run: node -v
       # - run: yarn install --cwd examples/${{ matrix.dir }} --ignore-scripts
       - run: yarn --ignore-engines playwright install-deps
-      - run: cat ./packages/client/dist/declarations/src/links/wsLink.d.ts
 
       - name: if exists, run yarn lint
         run: cd examples/${{ matrix.dir }} && cat package.json | if grep --silent '"lint"'; then yarn lint; fi
-      - run: cat ./packages/client/dist/declarations/src/links/wsLink.d.ts
+
       - run: yarn --cwd examples/${{ matrix.dir }} build
       - run: yarn --cwd examples/${{ matrix.dir }} test-start
       - run: yarn --cwd examples/${{ matrix.dir }} test-dev
