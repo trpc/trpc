@@ -71,10 +71,7 @@ export function createSSGHelpers<TRouter extends AnyRouter>({
   >(
     ...pathAndInput: [path: TPath, ...args: inferHandlerInput<TProcedure>]
   ): Promise<TOutput> => {
-    const [path, input] = pathAndInput;
-    const cacheKey = [path, input ?? null];
-
-    return queryClient.fetchQuery(cacheKey, async () => {
+    return queryClient.fetchQuery(pathAndInput, async () => {
       const data = await caller.query(...pathAndInput);
 
       return data;
