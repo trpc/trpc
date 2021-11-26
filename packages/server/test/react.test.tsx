@@ -647,11 +647,10 @@ test('dehydrate', async () => {
   expect(dehydrated).toHaveLength(2);
 
   const [cache, cache2] = dehydrated;
-  expect(cache.queryHash).toMatchInlineSnapshot(`"[\\"allPosts\\",null]"`);
+  expect(cache.queryHash).toMatchInlineSnapshot(`"[\\"allPosts\\"]"`);
   expect(cache.queryKey).toMatchInlineSnapshot(`
     Array [
       "allPosts",
-      null,
     ]
   `);
   expect(cache.state.data).toEqual(db.posts);

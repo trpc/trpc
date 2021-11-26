@@ -12,7 +12,6 @@ import {
   DehydratedState,
   DehydrateOptions,
 } from 'react-query/hydration';
-import { getCacheKey } from './internals/getCacheKey';
 type QueryClientConfig = ConstructorParameters<typeof QueryClient>[0];
 
 assertNotBrowser();
@@ -45,9 +44,7 @@ export function createSSGHelpers<TRouter extends AnyRouter>({
   >(
     ...pathAndInput: [path: TPath, ...args: inferHandlerInput<TProcedure>]
   ) => {
-    const cacheKey = getCacheKey(pathAndInput);
-
-    return queryClient.prefetchQuery(cacheKey, async () => {
+    return queryClient.prefetchQuery(pathAndInput, async () => {
       const data = await caller.query(...pathAndInput);
 
       return data;
@@ -60,9 +57,7 @@ export function createSSGHelpers<TRouter extends AnyRouter>({
   >(
     ...pathAndInput: [path: TPath, ...args: inferHandlerInput<TProcedure>]
   ) => {
-    const cacheKey = getCacheKey(pathAndInput);
-
-    return queryClient.prefetchInfiniteQuery(cacheKey, async () => {
+    return queryClient.prefetchInfiniteQuery(pathAndInput, async () => {
       const data = await caller.query(...pathAndInput);
 
       return data;
@@ -93,9 +88,7 @@ export function createSSGHelpers<TRouter extends AnyRouter>({
   >(
     ...pathAndInput: [path: TPath, ...args: inferHandlerInput<TProcedure>]
   ): Promise<InfiniteData<TOutput>> => {
-    const cacheKey = getCacheKey(pathAndInput);
-
-    return queryClient.fetchInfiniteQuery(cacheKey, async () => {
+    return queryClient.fetchInfiniteQuery(pathAndInput, async () => {
       const data = await caller.query(...pathAndInput);
 
       return data;

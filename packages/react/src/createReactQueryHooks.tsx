@@ -29,7 +29,6 @@ import {
 } from 'react-query';
 import { DehydratedState } from 'react-query/hydration';
 import { TRPCContext, TRPCContextState } from './internals/context';
-import { getCacheKey } from './internals/getCacheKey';
 
 export type OutputWithCursor<TData, TCursor extends any = any> = {
   cursor: TCursor | null;
@@ -128,10 +127,8 @@ export function createReactQueryHooks<
           ssrContext: ssrContext || null,
           fetchQuery: useCallback(
             (pathAndInput, opts) => {
-              const cacheKey = getCacheKey(pathAndInput);
-
               return queryClient.fetchQuery(
-                cacheKey,
+                pathAndInput,
                 () =>
                   (client as any).query(...getClientArgs(pathAndInput, opts)),
                 opts,
@@ -141,10 +138,8 @@ export function createReactQueryHooks<
           ),
           fetchInfiniteQuery: useCallback(
             (pathAndInput, opts) => {
-              const cacheKey = getCacheKey(pathAndInput);
-
               return queryClient.fetchInfiniteQuery(
-                cacheKey,
+                pathAndInput,
                 ({ pageParam }) => {
                   const [path, input] = pathAndInput;
                   const actualInput = { ...(input as any), cursor: pageParam };
@@ -159,10 +154,8 @@ export function createReactQueryHooks<
           ),
           prefetchQuery: useCallback(
             (pathAndInput, opts) => {
-              const cacheKey = getCacheKey(pathAndInput);
-
               return queryClient.prefetchQuery(
-                cacheKey,
+                pathAndInput,
                 () =>
                   (client as any).query(...getClientArgs(pathAndInput, opts)),
                 opts,
@@ -172,10 +165,8 @@ export function createReactQueryHooks<
           ),
           prefetchInfiniteQuery: useCallback(
             (pathAndInput, opts) => {
-              const cacheKey = getCacheKey(pathAndInput);
-
               return queryClient.prefetchInfiniteQuery(
-                cacheKey,
+                pathAndInput,
                 ({ pageParam }) => {
                   const [path, input] = pathAndInput;
                   const actualInput = { ...(input as any), cursor: pageParam };
@@ -237,7 +228,6 @@ export function createReactQueryHooks<
       TError
     >,
   ): UseQueryResult<TQueryValues[TPath]['output'], TError> {
-    const cacheKey = getCacheKey(pathAndInput);
     const { client, isPrepass, queryClient, prefetchQuery } = useContext();
 
     if (
@@ -245,12 +235,12 @@ export function createReactQueryHooks<
       isPrepass &&
       opts?.ssr !== false &&
       opts?.enabled !== false &&
-      !queryClient.getQueryCache().find(cacheKey)
+      !queryClient.getQueryCache().find(pathAndInput)
     ) {
       prefetchQuery(pathAndInput as any, opts as any);
     }
     return __useQuery(
-      cacheKey as any,
+      pathAndInput as any,
       () => (client as any).query(...getClientArgs(pathAndInput, opts)),
       opts,
     );
@@ -341,20 +331,19 @@ export function createReactQueryHooks<
     const [path, input] = pathAndInput;
     const { client, isPrepass, prefetchInfiniteQuery, queryClient } =
       useContext();
-    const cacheKey = getCacheKey(pathAndInput);
 
     if (
       typeof window === 'undefined' &&
       isPrepass &&
       opts?.ssr !== false &&
       opts?.enabled !== false &&
-      !queryClient.getQueryCache().find(cacheKey)
+      !queryClient.getQueryCache().find(pathAndInput)
     ) {
       prefetchInfiniteQuery(pathAndInput as any, opts as any);
     }
 
     return __useInfiniteQuery(
-      cacheKey as any,
+      pathAndInput as any,
       ({ pageParam }) => {
         const actualInput = { ...((input as any) ?? {}), cursor: pageParam };
         return (client as any).query(
