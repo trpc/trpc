@@ -42,9 +42,7 @@ jobs:
 
       - run: node -v
 
-      - uses: bahmutov/npm-install@v1
-      - run: cat ./packages/client/dist/declarations/src/links/wsLink.d.ts
-      - run: yarn build
+      - run: yarn --frozen-lockfile
       - run: cat ./packages/client/dist/declarations/src/links/wsLink.d.ts
 
       - uses: actions/setup-node@v2
