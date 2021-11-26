@@ -34,9 +34,7 @@ jobs:
           node-version: 16.x
       - run: node -v
       - uses: bahmutov/npm-install@v1
-      - run: cat ./packages/client/dist/declarations/src/links/wsLink.d.ts
-      - run: yarn build
-      - run: cat ./packages/client/dist/declarations/src/links/wsLink.d.ts
+
       - name: Next.js cache
         uses: actions/cache@v2
         with:
@@ -48,9 +46,14 @@ jobs:
           node-version: ${{ matrix.node-start }}
 
       - run: node -v
+<<<<<<< HEAD
       # - run: yarn install --cwd examples/${{ matrix.dir }} --ignore-scripts
       - run: yarn --ignore-engines playwright install-deps
       - run: cat ./packages/client/dist/declarations/src/links/wsLink.d.ts
+=======
+      - run: yarn --ignore-engines playwright install-deps
+
+>>>>>>> origin/main
       - name: if exists, run yarn lint
         run: cd examples/${{ matrix.dir }} && cat package.json | if grep --silent '"lint"'; then yarn lint; fi
       - run: cat ./packages/client/dist/declarations/src/links/wsLink.d.ts

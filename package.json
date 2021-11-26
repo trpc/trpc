@@ -30,6 +30,9 @@
     "**/@typescript-eslint/eslint-plugin": "^4.11.1",
     "**/@typescript-eslint/parser": "^4.11.1"
   },
+  "engines": {
+    "node": "^14.0.0"
+  },
   "scripts": {
     "lerna": "lerna",
     "start": "preconstruct watch",
