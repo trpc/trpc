@@ -44,6 +44,7 @@ jobs:
       - uses: actions/setup-node@v2
         with:
           node-version: ${{ matrix.node-start }}
+      - run: cat ./packages/client/dist/declarations/src/links/wsLink.d.ts
 
       - run: node -v
       # - run: yarn install --cwd examples/${{ matrix.dir }} --ignore-scripts
