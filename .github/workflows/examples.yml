@@ -32,8 +32,6 @@ jobs:
       - uses: actions/setup-node@v2
         with:
           node-version: 14.x
-      - run: node -v
-      - uses: bahmutov/npm-install@v1
 
       - name: Next.js cache
         uses: actions/cache@v2
@@ -41,6 +39,8 @@ jobs:
           path: ${{ github.workspace }}${{ matrix.dir }}/.next/cache
           key: ${{ matrix.dir }}-${{ runner.os }}-${{ matrix.node-start }}-${{ hashFiles('**/yarn.lock') }}-nextjs
 
+      - run: node -v
+      - uses: bahmutov/npm-install@v1
       - uses: actions/setup-node@v2
         with:
           node-version: ${{ matrix.node-start }}
