@@ -7,17 +7,18 @@ import type {
 } from '@trpc/server';
 import { createContext } from 'react';
 import {
-  CancelOptions,
   FetchInfiniteQueryOptions,
   FetchQueryOptions,
   InfiniteData,
   InvalidateOptions,
-  InvalidateQueryFilters,
   QueryClient,
-  RefetchOptions,
-  RefetchQueryFilters,
   SetDataOptions,
+  CancelOptions,
+  InvalidateQueryFilters,
+  RefetchQueryFilters,
+  RefetchOptions,
 } from 'react-query';
+import { Updater } from 'react-query/types/core/utils';
 
 interface TRPCFetchQueryOptions<TInput, TError, TOutput>
   extends FetchQueryOptions<TInput, TError, TOutput>,
@@ -155,7 +156,7 @@ export type TRPCContextState<
     TOutput extends inferProcedureOutput<TRouter['_def']['queries'][TPath]>,
   >(
     pathAndInput: [TPath, TInput?],
-    output: TOutput,
+    updater: Updater<TOutput | undefined, TOutput>,
     options?: SetDataOptions,
   ) => void;
   /**
