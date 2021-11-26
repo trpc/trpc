@@ -12,10 +12,6 @@ import {
   DehydratedState,
   DehydrateOptions,
 } from 'react-query/hydration';
-import {
-  CACHE_KEY_INFINITE_QUERY,
-  CACHE_KEY_QUERY,
-} from './internals/constants';
 import { getCacheKey } from './internals/getCacheKey';
 type QueryClientConfig = ConstructorParameters<typeof QueryClient>[0];
 
@@ -49,8 +45,7 @@ export function createSSGHelpers<TRouter extends AnyRouter>({
   >(
     ...pathAndInput: [path: TPath, ...args: inferHandlerInput<TProcedure>]
   ) => {
-    const [path, input] = pathAndInput;
-    const cacheKey = [path, input ?? null, CACHE_KEY_QUERY];
+    const cacheKey = getCacheKey(pathAndInput);
 
     return queryClient.prefetchQuery(cacheKey, async () => {
       const data = await caller.query(...pathAndInput);
@@ -65,7 +60,7 @@ export function createSSGHelpers<TRouter extends AnyRouter>({
   >(
     ...pathAndInput: [path: TPath, ...args: inferHandlerInput<TProcedure>]
   ) => {
-    const cacheKey = getCacheKey(pathAndInput, CACHE_KEY_INFINITE_QUERY);
+    const cacheKey = getCacheKey(pathAndInput);
 
     return queryClient.prefetchInfiniteQuery(cacheKey, async () => {
       const data = await caller.query(...pathAndInput);
@@ -82,7 +77,7 @@ export function createSSGHelpers<TRouter extends AnyRouter>({
     ...pathAndInput: [path: TPath, ...args: inferHandlerInput<TProcedure>]
   ): Promise<TOutput> => {
     const [path, input] = pathAndInput;
-    const cacheKey = [path, input ?? null, CACHE_KEY_QUERY];
+    const cacheKey = [path, input ?? null];
 
     return queryClient.fetchQuery(cacheKey, async () => {
       const data = await caller.query(...pathAndInput);
@@ -98,7 +93,7 @@ export function createSSGHelpers<TRouter extends AnyRouter>({
   >(
     ...pathAndInput: [path: TPath, ...args: inferHandlerInput<TProcedure>]
   ): Promise<InfiniteData<TOutput>> => {
-    const cacheKey = getCacheKey(pathAndInput, CACHE_KEY_INFINITE_QUERY);
+    const cacheKey = getCacheKey(pathAndInput);
 
     return queryClient.fetchInfiniteQuery(cacheKey, async () => {
       const data = await caller.query(...pathAndInput);

@@ -1,10 +1,7 @@
-export function getCacheKey<TTuple extends [string, ...unknown[]]>(
-  [path, input]: TTuple,
-  extras?: string,
-) {
+export function getCacheKey<TTuple extends [string, ...unknown[]]>([
+  path,
+  input,
+]: TTuple) {
   const cacheKey = [path, input ?? null];
-  if (extras) {
-    cacheKey.push(extras);
-  }
   return cacheKey;
 }

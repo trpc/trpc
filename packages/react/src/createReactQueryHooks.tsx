@@ -28,10 +28,6 @@ import {
   UseQueryResult,
 } from 'react-query';
 import { DehydratedState } from 'react-query/hydration';
-import {
-  CACHE_KEY_INFINITE_QUERY,
-  CACHE_KEY_QUERY,
-} from './internals/constants';
 import { TRPCContext, TRPCContextState } from './internals/context';
 import { getCacheKey } from './internals/getCacheKey';
 
@@ -132,7 +128,7 @@ export function createReactQueryHooks<
           ssrContext: ssrContext || null,
           fetchQuery: useCallback(
             (pathAndInput, opts) => {
-              const cacheKey = getCacheKey(pathAndInput, CACHE_KEY_QUERY);
+              const cacheKey = getCacheKey(pathAndInput);
 
               return queryClient.fetchQuery(
                 cacheKey,
@@ -145,10 +141,7 @@ export function createReactQueryHooks<
           ),
           fetchInfiniteQuery: useCallback(
             (pathAndInput, opts) => {
-              const cacheKey = getCacheKey(
-                pathAndInput,
-                CACHE_KEY_INFINITE_QUERY,
-              );
+              const cacheKey = getCacheKey(pathAndInput);
 
               return queryClient.fetchInfiniteQuery(
                 cacheKey,
@@ -166,7 +159,7 @@ export function createReactQueryHooks<
           ),
           prefetchQuery: useCallback(
             (pathAndInput, opts) => {
-              const cacheKey = getCacheKey(pathAndInput, CACHE_KEY_QUERY);
+              const cacheKey = getCacheKey(pathAndInput);
 
               return queryClient.prefetchQuery(
                 cacheKey,
@@ -179,10 +172,7 @@ export function createReactQueryHooks<
           ),
           prefetchInfiniteQuery: useCallback(
             (pathAndInput, opts) => {
-              const cacheKey = getCacheKey(
-                pathAndInput,
-                CACHE_KEY_INFINITE_QUERY,
-              );
+              const cacheKey = getCacheKey(pathAndInput);
 
               return queryClient.prefetchInfiniteQuery(
                 cacheKey,
@@ -220,25 +210,14 @@ export function createReactQueryHooks<
             [queryClient],
           ),
           setQueryData: useCallback(
-            (pathAndInput, output, ...args) => {
-              const cacheKey = getCacheKey(pathAndInput);
-              queryClient.setQueryData(
-                cacheKey.concat([CACHE_KEY_QUERY]),
-                output,
-                ...args,
-              );
-              queryClient.setQueryData(
-                cacheKey.concat([CACHE_KEY_INFINITE_QUERY]),
-                output,
-                ...args,
-              );
+            (...args) => {
+              queryClient.setQueryData(...args);
             },
             [queryClient],
           ),
           getQueryData: useCallback(
-            (pathAndInput) => {
-              const cacheKey = getCacheKey(pathAndInput);
-              return queryClient.getQueryData(cacheKey.concat(CACHE_KEY_QUERY));
+            (...args) => {
+              return queryClient.getQueryData(...args);
             },
             [queryClient],
           ),
@@ -262,7 +241,7 @@ export function createReactQueryHooks<
       TError
     >,
   ): UseQueryResult<TQueryValues[TPath]['output'], TError> {
-    const cacheKey = getCacheKey(pathAndInput, CACHE_KEY_QUERY);
+    const cacheKey = getCacheKey(pathAndInput);
     const { client, isPrepass, queryClient, prefetchQuery } = useContext();
 
     if (
@@ -366,7 +345,7 @@ export function createReactQueryHooks<
     const [path, input] = pathAndInput;
     const { client, isPrepass, prefetchInfiniteQuery, queryClient } =
       useContext();
-    const cacheKey = getCacheKey(pathAndInput, CACHE_KEY_INFINITE_QUERY);
+    const cacheKey = getCacheKey(pathAndInput);
 
     if (
       typeof window === 'undefined' &&
