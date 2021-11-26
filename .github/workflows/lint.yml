@@ -9,10 +9,9 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Use Node.js 16.x
-        uses: actions/setup-node@v1
+      - uses: actions/setup-node@v1
         with:
-          version: 16.x
+          version: 14.x
 
       - name: Install deps and build (with cache)
         uses: bahmutov/npm-install@v1
