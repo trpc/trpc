@@ -17,9 +17,6 @@
       "packages/*"
     ]
   },
-  "engines": {
-    "node": "^16.0.0"
-  },
   "prettier": {
     "printWidth": 80,
     "trailingComma": "all",
@@ -31,7 +28,7 @@
     "**/@typescript-eslint/parser": "^4.11.1"
   },
   "engines": {
-    "node": "^14.0.0"
+    "node": "^16.0.0"
   },
   "scripts": {
     "lerna": "lerna",
