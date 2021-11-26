@@ -166,11 +166,13 @@ export function createTRPCHOC<TRouter extends AnyRouter>(
   const withTRPC =
     (opts: { ssr?: boolean }) =>
     (AppOrPage: NextComponentType<any, any, any>): NextComponentType => {
+      console.log('hoky');
       const WithTRPC = (
         props: AppPropsType & {
           trpc?: TRPCPrepassProps;
         },
       ) => {
+        console.log('-------hey');
         const [{ queryClient, trpcClient, isPrepass, ssrContext }] = useState(
           () => {
             if (props.trpc) {
@@ -208,45 +210,46 @@ export function createTRPCHOC<TRouter extends AnyRouter>(
           </trpc.Provider>
         );
       };
-
-      if (opts.ssr) {
-        WithTRPC.getInitialProps = async (
-          appOrPageCtx: AppContextType | NextPageContext,
-        ) => {
-          // Determine if we are wrapping an App component or a Page component.
-          const ctx: NextPageContext =
-            'Component' in appOrPageCtx ? appOrPageCtx.ctx : appOrPageCtx;
-
-          // Run the wrapped component's getInitialProps function.
-          let pageProps: Dict<unknown> = {};
-          if (AppOrPage.getInitialProps) {
-            const originalProps = await AppOrPage.getInitialProps(
-              appOrPageCtx as any,
-            );
-            const originalPageProps =
-              'Component' in appOrPageCtx
-                ? originalProps.pageProps ?? {}
-                : originalProps;
-
-            pageProps = {
-              ...originalPageProps,
-              ...pageProps,
-            };
-          }
-
-          const props = await prepass(ctx, pageProps);
-
-          return 'Component' in appOrPageCtx
-            ? {
-                pageProps: props,
-              }
-            : props;
-        };
-      }
-
       const displayName =
         AppOrPage.displayName || AppOrPage.name || 'Component';
       WithTRPC.displayName = `withTRPC(${displayName})`;
+
+      if (!opts.ssr) {
+        return WithTRPC as any;
+      }
+
+      WithTRPC.getInitialProps = async (
+        appOrPageCtx: AppContextType | NextPageContext,
+      ) => {
+        // Determine if we are wrapping an App component or a Page component.
+        const ctx: NextPageContext =
+          'Component' in appOrPageCtx ? appOrPageCtx.ctx : appOrPageCtx;
+
+        // Run the wrapped component's getInitialProps function.
+        let pageProps: Dict<unknown> = {};
+        if (AppOrPage.getInitialProps) {
+          const originalProps = await AppOrPage.getInitialProps(
+            appOrPageCtx as any,
+          );
+          const originalPageProps =
+            'Component' in appOrPageCtx
+              ? originalProps.pageProps ?? {}
+              : originalProps;
+
+          pageProps = {
+            ...originalPageProps,
+            ...pageProps,
+          };
+        }
+
+        const props = await prepass(ctx, pageProps);
+
+        return 'Component' in appOrPageCtx
+          ? {
+              pageProps: props,
+            }
+          : props;
+      };
 
       return WithTRPC as any;
     };
@@ -273,5 +276,7 @@ export function withTRPC<TRouter extends AnyRouter>(
       }
   ),
 ) {
-  return createTRPCHOC(opts).withTRPC(opts);
+  const t = createTRPCHOC(opts);
+
+  return t.withTRPC(opts);
 }

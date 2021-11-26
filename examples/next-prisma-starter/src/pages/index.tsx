@@ -118,70 +118,70 @@ function transformQueryOrMutationCacheErrors<
   }
   return result;
 }
-IndexPage.getInitialProps = async (context) => {
-  const queryClient = new QueryClient();
-  const client = trpc.createClient({
-    transformer: superjson,
-    url: getBaseUrl() + '/api/trpc',
-  });
+// IndexPage.getInitialProps = async (context) => {
+//   const queryClient = new QueryClient();
+//   const client = trpc.createClient({
+//     transformer: superjson,
+//     url: getBaseUrl() + '/api/trpc',
+//   });
 
-  const trpcProp = {
-    config: {},
-    trpcClient: client,
-    queryClient,
-    isPrepass: true,
-    ssrContext: context,
-  };
-  const prepassProps = {
-    pageProps: {},
-    trpc: trpcProp,
-  };
-  // Run the prepass step on AppTree. This will run all trpc queries on the server.
-  // multiple prepass ensures that we can do batching on the server
-  while (true) {
-    // render full tree
-    await ssrPrepass(createElement(context.AppTree, prepassProps as any));
-    if (!queryClient.isFetching()) {
-      // the render didn't cause the queryClient to fetch anything
-      break;
-    }
+//   const trpcProp = {
+//     config: {},
+//     trpcClient: client,
+//     queryClient,
+//     isPrepass: true,
+//     ssrContext: context,
+//   };
+//   const prepassProps = {
+//     pageProps: {},
+//     trpc: trpcProp,
+//   };
+//   // Run the prepass step on AppTree. This will run all trpc queries on the server.
+//   // multiple prepass ensures that we can do batching on the server
+//   while (true) {
+//     // render full tree
+//     await ssrPrepass(createElement(context.AppTree, prepassProps as any));
+//     if (!queryClient.isFetching()) {
+//       // the render didn't cause the queryClient to fetch anything
+//       break;
+//     }
 
-    // wait until the query cache has settled it's promises
-    await new Promise<void>((resolve) => {
-      const unsub = queryClient.getQueryCache().subscribe((event) => {
-        if (event?.query.getObserversCount() === 0) {
-          resolve();
-          unsub();
-        }
-      });
-    });
-  }
+//     // wait until the query cache has settled it's promises
+//     await new Promise<void>((resolve) => {
+//       const unsub = queryClient.getQueryCache().subscribe((event) => {
+//         if (event?.query.getObserversCount() === 0) {
+//           resolve();
+//           unsub();
+//         }
+//       });
+//     });
+//   }
 
-  const dehydratedCache = dehydrate(queryClient, {
-    shouldDehydrateQuery() {
-      // makes sure errors are also dehydrated
-      return true;
-    },
-  });
-  // since error instances can't be serialized, let's make them into `TRPCClientErrorLike`-objects
-  const dehydratedCacheWithErrors = {
-    ...dehydratedCache,
-    queries: dehydratedCache.queries.map(transformQueryOrMutationCacheErrors),
-    mutations: dehydratedCache.mutations.map(
-      transformQueryOrMutationCacheErrors,
-    ),
-  };
+//   const dehydratedCache = dehydrate(queryClient, {
+//     shouldDehydrateQuery() {
+//       // makes sure errors are also dehydrated
+//       return true;
+//     },
+//   });
+//   // since error instances can't be serialized, let's make them into `TRPCClientErrorLike`-objects
+//   const dehydratedCacheWithErrors = {
+//     ...dehydratedCache,
+//     queries: dehydratedCache.queries.map(transformQueryOrMutationCacheErrors),
+//     mutations: dehydratedCache.mutations.map(
+//       transformQueryOrMutationCacheErrors,
+//     ),
+//   };
 
-  const trpcState = client.runtime.transformer.serialize(
-    dehydratedCacheWithErrors,
-  );
+//   const trpcState = client.runtime.transformer.serialize(
+//     dehydratedCacheWithErrors,
+//   );
 
-  return {
-    trpcState,
-  };
-};
+//   return {
+//     trpcState,
+//   };
+// };
 
-export default IndexPage;
+// export default IndexPage;
 
 /**
  * If you want to statically render this page

@@ -24,7 +24,7 @@ const MyApp = (({ Component, pageProps }: AppPropsWithLayout) => {
   return getLayout(<Component {...pageProps} />);
 }) as AppType;
 
-function getBaseUrl() {
+export function getBaseUrl() {
   if (process.browser) {
     return '';
   }
@@ -78,19 +78,4 @@ export default withTRPC<AppRouter>({
    * @link https://trpc.io/docs/ssr
    */
   ssr: true,
-  /**
-   * Set headers or status code when doing SSR
-   */
-  responseMeta({ clientErrors }) {
-    if (clientErrors.length) {
-      // propagate http first error from API calls
-      return {
-        status: clientErrors[0].data?.httpStatus ?? 500,
-      };
-    }
-
-    // for app caching with SSR see https://trpc.io/docs/caching
-
-    return {};
-  },
 })(MyApp);

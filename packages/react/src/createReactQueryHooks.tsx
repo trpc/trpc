@@ -264,7 +264,7 @@ export function createReactQueryHooks<
   ): UseQueryResult<TQueryValues[TPath]['output'], TError> {
     const cacheKey = getCacheKey(pathAndInput, CACHE_KEY_QUERY);
     const { client, isPrepass, queryClient, prefetchQuery } = useContext();
-
+    console.log({ isPrepass });
     if (
       typeof window === 'undefined' &&
       isPrepass &&
