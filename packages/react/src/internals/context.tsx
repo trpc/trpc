@@ -7,16 +7,16 @@ import type {
 } from '@trpc/server';
 import { createContext } from 'react';
 import {
+  CancelOptions,
   FetchInfiniteQueryOptions,
   FetchQueryOptions,
   InfiniteData,
   InvalidateOptions,
-  QueryClient,
-  SetDataOptions,
-  CancelOptions,
   InvalidateQueryFilters,
-  RefetchQueryFilters,
+  QueryClient,
   RefetchOptions,
+  RefetchQueryFilters,
+  SetDataOptions,
 } from 'react-query';
 
 interface TRPCFetchQueryOptions<TInput, TError, TOutput>
