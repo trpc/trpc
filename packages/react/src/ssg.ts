@@ -12,11 +12,6 @@ import {
   DehydratedState,
   DehydrateOptions,
 } from 'react-query/hydration';
-import {
-  CACHE_KEY_INFINITE_QUERY,
-  CACHE_KEY_QUERY,
-} from './internals/constants';
-import { getCacheKey } from './internals/getCacheKey';
 type QueryClientConfig = ConstructorParameters<typeof QueryClient>[0];
 
 assertNotBrowser();
@@ -49,10 +44,7 @@ export function createSSGHelpers<TRouter extends AnyRouter>({
   >(
     ...pathAndInput: [path: TPath, ...args: inferHandlerInput<TProcedure>]
   ) => {
-    const [path, input] = pathAndInput;
-    const cacheKey = [path, input ?? null, CACHE_KEY_QUERY];
-
-    return queryClient.prefetchQuery(cacheKey, async () => {
+    return queryClient.prefetchQuery(pathAndInput, async () => {
       const data = await caller.query(...pathAndInput);
 
       return data;
@@ -65,9 +57,7 @@ export function createSSGHelpers<TRouter extends AnyRouter>({
   >(
     ...pathAndInput: [path: TPath, ...args: inferHandlerInput<TProcedure>]
   ) => {
-    const cacheKey = getCacheKey(pathAndInput, CACHE_KEY_INFINITE_QUERY);
-
-    return queryClient.prefetchInfiniteQuery(cacheKey, async () => {
+    return queryClient.prefetchInfiniteQuery(pathAndInput, async () => {
       const data = await caller.query(...pathAndInput);
 
       return data;
@@ -81,10 +71,7 @@ export function createSSGHelpers<TRouter extends AnyRouter>({
   >(
     ...pathAndInput: [path: TPath, ...args: inferHandlerInput<TProcedure>]
   ): Promise<TOutput> => {
-    const [path, input] = pathAndInput;
-    const cacheKey = [path, input ?? null, CACHE_KEY_QUERY];
-
-    return queryClient.fetchQuery(cacheKey, async () => {
+    return queryClient.fetchQuery(pathAndInput, async () => {
       const data = await caller.query(...pathAndInput);
 
       return data;
@@ -98,9 +85,7 @@ export function createSSGHelpers<TRouter extends AnyRouter>({
   >(
     ...pathAndInput: [path: TPath, ...args: inferHandlerInput<TProcedure>]
   ): Promise<InfiniteData<TOutput>> => {
-    const cacheKey = getCacheKey(pathAndInput, CACHE_KEY_INFINITE_QUERY);
-
-    return queryClient.fetchInfiniteQuery(cacheKey, async () => {
+    return queryClient.fetchInfiniteQuery(pathAndInput, async () => {
       const data = await caller.query(...pathAndInput);
 
       return data;
