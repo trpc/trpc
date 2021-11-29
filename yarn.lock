@@ -6121,9 +6121,9 @@ fastify-warning@^0.2.0:
   integrity sha512-s1EQguBw/9qtc1p/WTY4eq9WMRIACkj+HTcOIK1in4MV5aFaQC9ZCIt0dJ7pr5bIf4lPpHvAtP2ywpTNgs7hqw==
 
 fastify@^3.17.0:
-  version "3.24.0"
-  resolved "https://registry.yarnpkg.com/fastify/-/fastify-3.24.0.tgz#38b64e6a2f459dacda4a8342306b0882de534b58"
-  integrity sha512-fmRyrI25rzLGHDQ1FME02NsbP658mVa0EaSqfYUFwx2UOF+4/GcyNrsdWILSDOEiUbOsRYCD3sRCE9v7mvRLRQ==
+  version "3.24.1"
+  resolved "https://registry.yarnpkg.com/fastify/-/fastify-3.24.1.tgz#979d34e096f40b7a90e90733efbbdae81623034e"
+  integrity sha512-ZL0V6u37d65tAY8lMwVMFtFvnEeJcG80QBNSdChqCm4i4x+is/38OU14gzJuRXhpenTL+pTJzNcu5Kn1ouzM3Q==
   dependencies:
     "@fastify/ajv-compiler" "^1.0.0"
     abstract-logging "^2.0.0"
