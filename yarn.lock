@@ -10850,9 +10850,9 @@ react-is@^16.8.1:
   integrity sha512-24e6ynE2H+OKt4kqsOvNd8kBpV65zoxbA4BVsEOB3ARVWQki/DHzaUoC5KuON/BiccDaCCTZBuOcfZs70kR8bQ==
 
 react-query@^3.27.0:
-  version "3.33.7"
-  resolved "https://registry.yarnpkg.com/react-query/-/react-query-3.33.7.tgz#6ab1b2cb39e2e925a4fc44e8a269c7691e7eb2f3"
-  integrity sha512-uL/1ZatxcRyvfhbNPeuOlLVbcdMQKzQ2t+SQLJMrMM0plfa/Al3buaPbGsbsmIwvyWeI4CVkkSBKzQIkU4p9MQ==
+  version "3.34.0"
+  resolved "https://registry.yarnpkg.com/react-query/-/react-query-3.34.0.tgz#43477ac6d117d850354e6db80dcca6d5c1b36728"
+  integrity sha512-g6L90FeCLzz6+53CbVKYJALBiZR5icOYPjqGGiNgHNeufcnddLZaQGE9wheclk10k6g+o+Dd4/jAtswhjVblXw==
   dependencies:
     "@babel/runtime" "^7.5.5"
     broadcast-channel "^3.4.1"
