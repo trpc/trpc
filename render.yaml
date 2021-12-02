@@ -10,6 +10,7 @@ services:
     envVars:
       - key: NODE_ENV
         value: production
+
       - key: DATABASE_URL
         fromDatabase:
           name: trpc-websockets-db
