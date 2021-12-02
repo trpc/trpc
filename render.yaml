@@ -14,8 +14,6 @@ services:
         fromDatabase:
           name: trpc-websockets-db
           property: connectionString
-      - key: SESSION_SECRET_KEY
-        generateValue: true
 
       - fromGroup: trpc-websockets
 
