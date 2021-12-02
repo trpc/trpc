@@ -1,0 +1,24 @@
+services:
+  - type: web
+    name: trpc-websockets
+    env: node
+    plan: free
+    buildCommand: cd ./examples/next-prisma-starter-websockets &&
+      yarn --frozen-lockfile --prod=false &&
+      yarn build
+    startCommand: yarn start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        fromDatabase:
+          name: trpc-websockets-db
+          property: connectionString
+      - key: SESSION_SECRET_KEY
+        generateValue: true
+
+      - fromGroup: trpc-websockets
+
+databases:
+  - name: trpc-websockets-db
+    plan: free
