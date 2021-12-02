@@ -61,7 +61,7 @@ Here's some example apps:
           <code>npx create-next-app --example https://github.com/trpc/trpc --example-path examples/next-prisma-starter-websockets trpc-prisma-starter-websockets</code>
         </details>
       </td>
-      <td><a href="http://websockets.trpc.io">websockets.trpc.io</a></td>
+      <td><a href="http://nextjs-websockets.trpc.io">nextjs-websockets.trpc.io</a></td>
       <td>
         <ul>
           <li><a href="https://codesandbox.io/s/github/trpc/trpc/tree/main/examples/next-prisma-starter?file=/src/pages/index.tsx">CodeSandbox</a></li>
