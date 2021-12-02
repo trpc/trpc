@@ -3,7 +3,7 @@ services:
     name: trpc-websockets
     env: node
     plan: free
-    buildCommand: cd examples/next-prisma-starter-websockets
+    buildCommand: cd ./examples/next-prisma-starter-websockets
       yarn --frozen-lockfile --prod=false &&
       yarn build
     startCommand: yarn start
