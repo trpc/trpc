@@ -2,7 +2,7 @@ services:
   - type: web
     name: trpc-websockets
     env: node
-    plan: starter
+    plan: free
     buildCommand: cd examples/next-prisma-starter-websockets
       yarn --frozen-lockfile --prod=false &&
       yarn build
@@ -19,4 +19,4 @@ services:
 
 databases:
   - name: trpc-websockets-db
-    plan: starter
+    plan: free
