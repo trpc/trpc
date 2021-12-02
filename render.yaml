@@ -3,9 +3,10 @@ services:
     name: trpc-websockets
     env: node
     plan: starter
-    buildCommand: yarn --frozen-lockfile --prod=false &&
+    buildCommand: cd examples/next-prisma-starter-websockets
+      yarn --frozen-lockfile --prod=false &&
       yarn build
-    startCommand: blitz start
+    startCommand: yarn start
     envVars:
       - key: NODE_ENV
         value: production
