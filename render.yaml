@@ -3,7 +3,7 @@ services:
     name: trpc-websockets
     env: node
     plan: free
-    buildCommand: cd ./examples/next-prisma-starter-websockets
+    buildCommand: cd ./examples/next-prisma-starter-websockets &&
       yarn --frozen-lockfile --prod=false &&
       yarn build
     startCommand: yarn start
@@ -17,16 +17,7 @@ services:
       - key: SESSION_SECRET_KEY
         generateValue: true
 
-      - key: APP_URL
-        sync: false
-      - key: GITHUB_CLIENT_ID
-        sync: false
-      - key: GITHUB_SECRET
-        sync: false
-      - key: NEXTAUTH_URL
-        sync: false
-      - key: WS_URL
-        sync: false
+      - fromGroup: trpc-websockets
 
 databases:
   - name: trpc-websockets-db
