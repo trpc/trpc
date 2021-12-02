@@ -17,6 +17,19 @@ services:
       - key: SESSION_SECRET_KEY
         generateValue: true
 
+      - key: APP_URL
+        sync: false
+      - key: GITHUB_CLIENT_ID
+        sync: false
+      - key: GITHUB_SECRET
+        sync: false
+      - key: NEXTAUTH_URL
+        sync: false
+      - key: NEXTAUTH_URL
+        sync: false
+      - key: WS_URL
+        sync: false
+
 databases:
   - name: trpc-websockets-db
     plan: free
