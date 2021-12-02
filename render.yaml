@@ -6,7 +6,7 @@ services:
     buildCommand: yarn --prod=false &&
       cd ./examples/next-prisma-starter-websockets &&
       yarn build
-    startCommand: yarn start
+    startCommand: cd ./examples/next-prisma-starter-websockets && yarn start
     envVars:
       - key: NODE_ENV
         value: production
