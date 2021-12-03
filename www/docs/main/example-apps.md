@@ -63,6 +63,7 @@ Here's some example apps:
       </td>
       <td><a href="http://websockets.trpc.io">websockets.trpc.io</a></td>
       <td>
+
         <ul>
           <li><a href="https://codesandbox.io/s/github/trpc/trpc/tree/main/examples/next-prisma-starter?file=/src/pages/index.tsx">CodeSandbox</a></li>
           <li><a href="https://github.com/trpc/trpc/tree/main/examples/next-prisma-starter-websockets">Source</a></li>
