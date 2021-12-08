@@ -336,6 +336,15 @@
       "contributions": [
         "financial"
       ]
+    },
+    {
+      "login": "merelinguist",
+      "name": "Dylan Brookes",
+      "avatar_url": "https://avatars.githubusercontent.com/u/24858006?v=4",
+      "profile": "https://github.com/merelinguist",
+      "contributions": [
+        "example"
+      ]
     }
   ],
   "contributorsPerLine": 7,
