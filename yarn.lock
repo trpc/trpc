@@ -8286,10 +8286,10 @@ jsdom@^16.6.0:
     ws "^7.4.6"
     xml-name-validator "^3.0.0"
 
-jsdom@^18.0.0:
-  version "18.1.1"
-  resolved "https://registry.yarnpkg.com/jsdom/-/jsdom-18.1.1.tgz#15ec896f5ab7df9669a62375606f47c8c09551aa"
-  integrity sha512-NmJQbjQ/gpS/1at/ce3nCx89HbXL/f5OcenBe8wU1Eik0ROhyUc3LtmG3567dEHAGXkN8rmILW/qtCOPxPHQJw==
+jsdom@^19.0.0:
+  version "19.0.0"
+  resolved "https://registry.yarnpkg.com/jsdom/-/jsdom-19.0.0.tgz#93e67c149fe26816d38a849ea30ac93677e16b6a"
+  integrity sha512-RYAyjCbxy/vri/CfnjUWJQQtZ3LKlLnDqj+9XLNnJPgEGeirZs3hllKR20re8LUZ6o1b1X4Jat+Qd26zmP41+A==
   dependencies:
     abab "^2.0.5"
     acorn "^8.5.0"
@@ -10407,10 +10407,10 @@ platform@1.3.6:
   resolved "https://registry.npmjs.org/platform/-/platform-1.3.6.tgz#48b4ce983164b209c2d45a107adb31f473a6e7a7"
   integrity sha512-fnWVljUchTro6RiCFvCXBbNhJc2NijN7oIQxbwsyL0buWJPG85v81ehlHI9fXrJsMNgTofEoWIQeClKpgxFLrg==
 
-playwright-core@=1.17.0, playwright-core@>=1.2.0:
-  version "1.17.0"
-  resolved "https://registry.yarnpkg.com/playwright-core/-/playwright-core-1.17.0.tgz#4bb36367ea890e337f6074b866065be6d3e7d66d"
-  integrity sha512-9ZzKZwmK6G7O9+jtvIurL8efIbJQu3oW0kI4uuNreY3O2jQDWH6xNnD27HCaJN1/tHnw/OmdUC2AmMDZv3vNhQ==
+playwright-core@=1.17.1, playwright-core@>=1.2.0:
+  version "1.17.1"
+  resolved "https://registry.yarnpkg.com/playwright-core/-/playwright-core-1.17.1.tgz#a16e0f89284a0ed8ae6d77e1c905c84b8a2ba022"
+  integrity sha512-C3c8RpPiC3qr15fRDN6dx6WnUkPLFmST37gms2aoHPDRvp7EaGDPMMZPpqIm/QWB5J40xDrQCD4YYHz2nBTojQ==
   dependencies:
     commander "^8.2.0"
     debug "^4.1.1"
@@ -10430,11 +10430,11 @@ playwright-core@=1.17.0, playwright-core@>=1.2.0:
     yazl "^2.5.1"
 
 playwright@^1.14.1, playwright@^1.15.2:
-  version "1.17.0"
-  resolved "https://registry.yarnpkg.com/playwright/-/playwright-1.17.0.tgz#ad9918888737a1f310027a1fe2fd27f86ddd5e7e"
-  integrity sha512-rBBrdj5+iYFBSsMa7glK3MBaxkcXxHN7uW6pY7PzTB7xtGFTfdK0h0BPB7/vWiVIGOvz4Hy9g2UJNaZDHkAmgA==
+  version "1.17.1"
+  resolved "https://registry.yarnpkg.com/playwright/-/playwright-1.17.1.tgz#a6d63302ee40f41283c4bf869de261c4743a787c"
+  integrity sha512-DisCkW9MblDJNS3rG61p8LiLA2WA7IY/4A4W7DX4BphWe/HuWjKmGQptuk4NVIh5UuSwXpW/jaH2+ZgjHs3GMA==
   dependencies:
-    playwright-core "=1.17.0"
+    playwright-core "=1.17.1"
 
 pngjs@^5.0.0:
   version "5.0.0"
