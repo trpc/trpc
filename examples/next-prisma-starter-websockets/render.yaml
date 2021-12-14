@@ -3,9 +3,11 @@ services:
     name: trpc-websockets
     env: node
     plan: free
+    repo: https://github.com/trpc/examples-next-prisma-starter-websockets.git
     buildCommand: yarn --prod=false &&
       yarn build
     startCommand: yarn start
+    healthCheckPath: /api/trpc/post.infinite
     envVars:
       - key: NODE_ENV
         value: production
