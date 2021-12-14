@@ -4,9 +4,8 @@ services:
     env: node
     plan: free
     buildCommand: yarn --prod=false &&
-      cd ./examples/next-prisma-starter-websockets &&
       yarn build
-    startCommand: cd ./examples/next-prisma-starter-websockets && yarn start
+    startCommand: yarn start
     envVars:
       - key: NODE_ENV
         value: production
