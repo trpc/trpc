@@ -6,6 +6,7 @@ services:
     buildCommand: yarn --prod=false &&
       yarn build
     startCommand: yarn start
+    healthCheckPath: /api/trpc/healthz
     envVars:
       - key: NODE_ENV
         value: production
