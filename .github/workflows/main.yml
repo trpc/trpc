@@ -9,7 +9,7 @@ jobs:
       matrix:
         node: ['14.x']
         os: [ubuntu-latest]
-        REACT_QUERY_VERSION: ['react-query', 'react-query-4']
+        rq: [3, 'react-query-4']
 
     steps:
       - name: Checkout repo
@@ -26,7 +26,7 @@ jobs:
       - name: Test
         run: yarn test --ci --coverage --maxWorkers=2
         env:
-          REACT_QUERY_VERSION: ${{ matrix.REACT_QUERY_VERSION }}
+          REACT_QUERY_VERSION: ${{ matrix.rq }}
 
       - uses: codecov/codecov-action@v1
         with:
