@@ -1,5 +1,5 @@
-jest.mock('react-query', () => {
-  const version = process.env.REACT_QUERY_VERSION || 'react-query';
-
-  return jest.requireActual(version);
-});
+if (process.env.REACT_QUERY_VERSION) {
+  jest.mock('react-query', () =>
+    jest.requireActual(process.env.REACT_QUERY_VERSION),
+  );
+}
