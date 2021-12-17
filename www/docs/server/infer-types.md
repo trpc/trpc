@@ -1,7 +1,7 @@
 ---
 id: infer-types
-title: Infering Types
-sidebar_label: Infering Types
+title: Inferring Types
+sidebar_label: Inferring Types
 slug: /infer-types
 ---
 
