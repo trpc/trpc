@@ -31,7 +31,7 @@ export function dataLoader<TKey, TValue>(
 ) {
   const { debounceMs = 0 } = opts ?? {};
   let batch: Batch<TKey, TValue> | null = null;
-  let dispatchTimer: NodeJS.Timer | number | null = null;
+  let dispatchTimer: ReturnType<typeof setTimeout> | null = null;
   type TBatchItem = BatchItem<TKey, TValue>;
 
   const destroyTimer = () => {
