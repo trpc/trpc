@@ -27,6 +27,9 @@
     "**/@typescript-eslint/eslint-plugin": "^4.11.1",
     "**/@typescript-eslint/parser": "^4.11.1"
   },
+  "engines": {
+    "node": "^14.0.0"
+  },
   "scripts": {
     "lerna": "lerna",
     "start": "preconstruct watch",
@@ -42,6 +45,7 @@
     "build-examples": "lerna run build --scope @examples/* --stream",
     "test-examples": "lerna exec --concurrency 1 --scope @examples/* --stream -- yarn test-start",
     "prepublish": "yarn build",
+    "prepack": "yarn ts-node scripts/postversion.ts",
     "example:express": "yarn --cwd examples/express-server dev",
     "example:todomvc": "yarn --cwd examples/next-prisma-todomvc dev",
     "example:chat": "yarn --cwd examples/next-chat dev",
@@ -64,7 +68,7 @@
     "@babel/preset-typescript": "^7.15.0",
     "@changesets/changelog-github": "^0.4.1",
     "@changesets/cli": "^2.17.0",
-    "@manypkg/cli": "^0.18.0",
+    "@manypkg/cli": "^0.19.0",
     "@preconstruct/cli": "^2.1.2",
     "@testing-library/jest-dom": "^5.14.1",
     "@testing-library/react": "^12.0.0",
@@ -80,15 +84,16 @@
     "eslint-plugin-prettier": "^4.0.0",
     "eslint-plugin-react": "^7.25.1",
     "eslint-plugin-react-hooks": "^4.2.0",
-    "expect-type": "^0.12.0",
+    "expect-type": "^0.13.0",
     "jest": "^27.1.0",
-    "jsdom": "^17.0.0",
+    "jsdom": "^19.0.0",
     "lerna": "^4.0.0",
     "playwright": "^1.14.1",
     "prettier": "^2.3.2",
     "react": "^17.0.2",
     "react-dom": "^17.0.2",
+    "react-query-4": "npm:react-query@^4.0.0-alpha.4",
     "ts-jest": "^27.0.5",
-    "typescript": "4.4.3"
+    "typescript": "4.4.4"
   }
 }

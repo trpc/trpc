@@ -1,6 +1,6 @@
 {
   "name": "@trpc/next",
-  "version": "9.9.1",
+  "version": "9.16.0",
   "description": "tRPC Next lib",
   "author": "KATT",
   "license": "MIT",
@@ -30,25 +30,28 @@
     }
   },
   "peerDependencies": {
-    "next": "^11.1.0",
+    "@trpc/client": "^9.12.0",
+    "@trpc/react": "^9.12.0",
+    "@trpc/server": "^9.12.0",
+    "next": "*",
     "react": ">=16.8.0",
     "react-dom": ">=16.8.0",
-    "react-query": "^3.0.0"
+    "react-query": "^3.31.0 || ^4.0.0-alpha.4"
   },
   "dependencies": {
     "@babel/runtime": "^7.9.0",
-    "@trpc/client": "^9.9.1",
-    "@trpc/react": "^9.9.1",
-    "@trpc/server": "^9.9.1",
     "react-ssr-prepass": "^1.4.0"
   },
   "devDependencies": {
+    "@trpc/client": "^9.16.0",
+    "@trpc/react": "^9.16.0",
+    "@trpc/server": "^9.16.0",
     "@types/express": "^4.17.12",
     "express": "^4.17.1",
-    "next": "^11.1.0",
+    "next": "^12.0.1",
     "react": "^17.0.2",
     "react-dom": "^17.0.2",
-    "react-query": "^3.6.0",
+    "react-query": "^3.27.0",
     "zod": "^3.0.0"
   },
   "publishConfig": {

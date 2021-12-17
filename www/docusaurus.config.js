@@ -58,6 +58,11 @@ module.exports = {
           label: 'Twitter',
           position: 'right',
         },
+        {
+          href: 'https://trpc.io/discord',
+          label: 'Discord',
+          position: 'right',
+        },
       ],
     },
     footer: {

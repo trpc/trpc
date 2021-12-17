@@ -22,7 +22,6 @@ export type format<T> = {
 
 /**
  * @internal
- * @deprecated will be removed in next major
  */
 export type flatten<T, Q> = identity<{
   [k in keyof T | keyof Q]: k extends keyof T

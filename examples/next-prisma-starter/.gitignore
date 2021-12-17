@@ -25,6 +25,7 @@ yarn-debug.log*
 yarn-error.log*
 
 # local env files
+.env
 .env.local
 .env.development.local
 .env.test.local
@@ -36,3 +37,8 @@ yarn-error.log*
 *.db
 *.db-journal
 prisma/_sqlite/migrations
+
+
+# testing
+playwright/videos
+playwright/screenshots

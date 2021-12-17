@@ -28,18 +28,18 @@ tRPC is a lot simpler and couples your server & website/app more tightly togethe
 > I've gotten asked several times about differences with Blitz.js and started outlining some differences [on Twitter](https://twitter.com/alexdotjs/status/1436654002477969411). If you think the below comparison is wrong in any way, please don't hesitate to reach&nbsp;out.   
 > &mdash; [Alex&nbsp;/&nbsp;KATT](https://twitter.com/alexdotjs)
 
-The philosophy of the _"Zero-API data layer"_ is the main common denominator in tRPC & Blitz but it is solved in different ways - Blitz solves the data layer by a custom compiler &amp; tRPC solves the data layer by advanced type inference.
+The philosophy of the _"Zero-API data layer"_ is the main common denominator in tRPC & Blitz. 
 
-The key difference is that Blitz is a full-stack framework and tRPC is a library mainly targeting the data layer and doesn't have strong opinions about the rest of your stack.
+Blitz is a full-stack framework & achieves this by maintaining a fork of Next.js and adding it into core - resulting in a more integrated developer experience. tRPC is a set of libraries that mainly focuses on the API-layer that can be used with any app or framework, resulting in no framework lock-in of React or Blitz' fork of Next.js.
 
 ### Benefits with tRPC
 
-- Easy HTTP caching of queries as requests are made with `GET` rather than `POST`
+- Easy HTTP caching of queries as requests are made with `GET` rather than `POST` _(Blitz.js is planning on adding support for this too)_
 - Query batching out-of-the-box
-- Not tied to React as it has no custom build pipeline
 - Works great with React Native
 - Well-tested & production-ready
-- Can be added to existing brownfield projects and adopted incrementally
+- Not tied to React or Blitz' fork of Next.js
+- Can be added to existing brownfield projects and adopted incrementally, regardless of stack
 - WebSockets transport
 - Subscription support
 - Zero-conf SSR with `ssr: true` in `_app.tsx` does a prepass of all `useQuery` on the server
@@ -48,8 +48,7 @@ The key difference is that Blitz is a full-stack framework and tRPC is a library
 
 ### Benefits with Blitz.js
 
-- More batteries included and easier to setup
-- Blitz has a plenty of nice DX-benefits with it being a full-stack famework  
-- Blitz' custom build pipeline enables stuff like CMD+clicking a function to jump to the backend function  
-- Code scaffolding, plug-and-play auth, etc
+- Data layer integrated with the Next.js runtime, resulting in a more integrated experience
+- Automatic integration with Blitz' auth
+- Since you import server functions directly to the frontend, you can do things like CMD+click a function to jump to definition
 - Blitzjs has a bigger community  

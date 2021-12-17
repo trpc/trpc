@@ -17,6 +17,7 @@ const contents = `
 import * as trpc from '../../src';
 
 export const bigRouter = ${getBFR()}
+  .flat();
 `.trim();
 
 const dir = path.join(

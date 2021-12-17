@@ -272,6 +272,88 @@
       "contributions": [
         "financial"
       ]
+    },
+    {
+      "login": "keenahn",
+      "name": "Keenahn Tiberius Jung",
+      "avatar_url": "https://avatars.githubusercontent.com/u/283603?v=4",
+      "profile": "http://about.me/keenahn",
+      "contributions": [
+        "code"
+      ]
+    },
+    {
+      "login": "danielroe",
+      "name": "Daniel Roe",
+      "avatar_url": "https://avatars.githubusercontent.com/u/28706372?v=4",
+      "profile": "https://roe.dev",
+      "contributions": [
+        "code"
+      ]
+    },
+    {
+      "login": "sachinraja",
+      "name": "Sachin Raja",
+      "avatar_url": "https://avatars.githubusercontent.com/u/58836760?v=4",
+      "profile": "https://github.com/sachinraja",
+      "contributions": [
+        "review",
+        "ideas"
+      ]
+    },
+    {
+      "login": "mkreuzmayr",
+      "name": "Michael Kreuzmayr",
+      "avatar_url": "https://avatars.githubusercontent.com/u/20108212?v=4",
+      "profile": "https://github.com/mkreuzmayr",
+      "contributions": [
+        "code"
+      ]
+    },
+    {
+      "login": "kimroen",
+      "name": "Kim Røen",
+      "avatar_url": "https://avatars.githubusercontent.com/u/520420?v=4",
+      "profile": "https://github.com/kimroen",
+      "contributions": [
+        "ideas"
+      ]
+    },
+    {
+      "login": "chimon2000",
+      "name": "Ryan",
+      "avatar_url": "https://avatars.githubusercontent.com/u/6907797?v=4",
+      "profile": "https://standardresume.co/r/ryan-edge",
+      "contributions": [
+        "financial"
+      ]
+    },
+    {
+      "login": "snaplet",
+      "name": "Snaplet",
+      "avatar_url": "https://avatars.githubusercontent.com/u/69029941?v=4",
+      "profile": "https://www.snaplet.dev",
+      "contributions": [
+        "financial"
+      ]
+    },
+    {
+      "login": "merelinguist",
+      "name": "Dylan Brookes",
+      "avatar_url": "https://avatars.githubusercontent.com/u/24858006?v=4",
+      "profile": "https://github.com/merelinguist",
+      "contributions": [
+        "example"
+      ]
+    },
+    {
+      "login": "MarcGuiselin",
+      "name": "Marc Guiselin",
+      "avatar_url": "https://avatars.githubusercontent.com/u/24906387?v=4",
+      "profile": "http://guiselin.com",
+      "contributions": [
+        "doc"
+      ]
     }
   ],
   "contributorsPerLine": 7,

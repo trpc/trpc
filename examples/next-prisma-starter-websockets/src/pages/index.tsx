@@ -147,6 +147,15 @@ export default function IndexPage() {
           We have a simple backend subscription on new messages that adds the
           newly added message to the current state
         </li>
+        <li>
+          <a
+            href="https://github.com/trpc/trpc/tree/main/examples/next-prisma-starter-websockets"
+            target="_blank"
+            rel="noreferrer"
+          >
+            View Source on GitHub
+          </a>
+        </li>
       </ul>
       <h2>
         Messages

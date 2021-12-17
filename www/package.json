@@ -13,8 +13,8 @@
     "clear": "docusaurus clear"
   },
   "dependencies": {
-    "@docusaurus/core": "2.0.0-beta.6",
-    "@docusaurus/preset-classic": "2.0.0-beta.6",
+    "@docusaurus/core": "^2.0.0-beta.8",
+    "@docusaurus/preset-classic": "^2.0.0-beta.8",
     "@mdx-js/react": "^1.6.22",
     "clsx": "^1.1.1",
     "react": "^17.0.2",

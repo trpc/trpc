@@ -5,9 +5,11 @@ sidebar_label: Server-Side Rendering (SSR)
 slug: /ssr
 ---
 
+> The only thing you need to do to get SSR on your application is to set `ssr: true` in your `_app.tsx`, but it comes with some additional considerations.
+
 ### Configure `_app.tsx` for SSR
 
-Server-side rendering comes with additional considerations. In order to execute queries properly during the server-side render step and customize caching behavior, we'll need to add some logic inside our `_app.tsx`:
+Server-side rendering comes with additional considerations. In order to execute queries properly during the server-side render step and customize caching behavior, we might want to add some extra logic inside our `_app.tsx`:
 
 ```tsx
 import React from 'react';
@@ -21,12 +23,13 @@ const MyApp: AppType = ({ Component, pageProps }) => {
 
 export default withTRPC<AppRouter>({
   config({ ctx }) {
-    // during SSR rendering
-    if (typeof window === 'undefined') {
+    if (process.browser) {
+      // during client requests
       return {
         url: '/api/trpc',
       };
     }
+    // during SSR below
 
     // optional: use SSG-caching for each rendered page (see caching section for more details)
     const ONE_DAY_SECONDS = 60 * 60 * 24;

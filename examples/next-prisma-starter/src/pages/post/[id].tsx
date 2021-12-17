@@ -1,10 +1,12 @@
-import { useRouter } from 'next/dist/client/router';
+import { useRouter } from 'next/router';
 import { trpc } from 'utils/trpc';
 import NextError from 'next/error';
+import { NextPageWithLayout } from 'pages/_app';
 
-export default function PostViewPage() {
+const PostViewPage: NextPageWithLayout = () => {
   const id = useRouter().query.id as string;
-  const postQuery = trpc.useQuery(['post.byId', id]);
+  const postQuery = trpc.useQuery(['post.byId', { id }]);
+
   if (postQuery.error) {
     return (
       <NextError
@@ -13,6 +15,7 @@ export default function PostViewPage() {
       />
     );
   }
+
   if (postQuery.status !== 'success') {
     return <>Loading...</>;
   }
@@ -20,10 +23,14 @@ export default function PostViewPage() {
   return (
     <>
       <h1>{data.title}</h1>
+      <em>Created {data.createdAt.toLocaleDateString()}</em>
+
       <p>{data.text}</p>
 
       <h2>Raw data:</h2>
       <pre>{JSON.stringify(data, null, 4)}</pre>
     </>
   );
-}
+};
+
+export default PostViewPage;

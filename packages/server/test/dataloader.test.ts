@@ -88,7 +88,7 @@ test('errors', async () => {
   );
 });
 
-test('throttle and resetting', async () => {
+test('debounce and resetting', async () => {
   const loader = dataLoader<number, number>(
     function fetchMany(items) {
       const promise = Promise.resolve(items);

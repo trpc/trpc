@@ -1,8 +1,6 @@
-import Head from 'next/head';
 import Link from 'next/link';
 import { useEffect } from 'react';
 import { useInView } from 'react-intersection-observer';
-import { ReactQueryDevtools } from 'react-query/devtools';
 import { inferQueryOutput, trpc } from '../utils/trpc';
 
 function PostListItem(props: { item: inferQueryOutput<'post.all'>[number] }) {
@@ -10,16 +8,18 @@ function PostListItem(props: { item: inferQueryOutput<'post.all'>[number] }) {
   const utils = trpc.useContext();
 
   const { ref, inView } = useInView({});
+
   useEffect(() => {
     if (!inView) {
       return;
     }
-    utils.prefetchQuery(['post.byId', item.id], {
-      context: { throttle: true },
+    const input = { id: item.id };
+    utils.prefetchQuery(['post.byId', input], {
+      context: { debounce: true },
     });
     return () => {
       // unmounted
-      utils.cancelQuery(['post.byId', item.id]);
+      utils.cancelQuery(['post.byId', input]);
     };
   }, [inView, item.id, utils]);
 
@@ -33,22 +33,24 @@ function PostListItem(props: { item: inferQueryOutput<'post.all'>[number] }) {
   );
 }
 export default function IndexPage() {
-  const postsQuery = trpc.useQuery(['post.all']);
-  const addPost = trpc.useMutation('post.add');
   const utils = trpc.useContext();
+  const postsQuery = trpc.useQuery(['post.all']);
+  const addPost = trpc.useMutation('post.add', {
+    async onSuccess() {
+      // refetches posts after a post is added
+      await utils.invalidateQueries(['post.all']);
+    },
+  });
 
   return (
     <>
-      <Head>
-        <title>Prisma Starter</title>
-        <link rel="icon" href="/favicon.ico" />
-      </Head>
       <h1>Welcome to your tRPC starter!</h1>
       <p>
         Check <a href="https://trpc.io/docs">the docs</a> whenever you get
         stuck, or ping <a href="https://twitter.com/alexdotjs">@alexdotjs</a> on
         Twitter.
       </p>
+
       <h2>
         Posts
         {postsQuery.status === 'loading' && '(loading)'}
@@ -76,7 +78,6 @@ export default function IndexPage() {
           };
           try {
             await addPost.mutateAsync(input);
-            utils.invalidateQueries('post.all');
 
             $title.value = '';
             $text.value = '';
@@ -102,10 +103,6 @@ export default function IndexPage() {
           <p style={{ color: 'red' }}>{addPost.error.message}</p>
         )}
       </form>
-
-      {process.env.NODE_ENV !== 'production' && (
-        <ReactQueryDevtools initialIsOpen={false} />
-      )}
     </>
   );
 }
