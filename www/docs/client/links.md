@@ -91,8 +91,8 @@ export default withTRPC<AppRouter>({
       links: [
         splitLink({
           condition(op) {
-            // check for context property `skipBatch`
-            return op.context.skipBatch === true;
+            // check for meta property `skipBatch`
+            return op.meta.skipBatch === true;
           },
           // when condition is true, use normal request
           true: httpLink({
@@ -113,7 +113,7 @@ export default withTRPC<AppRouter>({
 
 ```tsx
 const postsQuery = trpc.useQuery(['posts'], {
-  context: {
+  meta: {
     skipBatch: true,
   },
 });
@@ -121,7 +121,7 @@ const postsQuery = trpc.useQuery(['posts'], {
 // or
 
 const postResult = client.query('posts', null, {
-  context: {
+  meta: {
     skipBatch: true,
   },
 })

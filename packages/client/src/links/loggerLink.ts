@@ -55,7 +55,7 @@ type LoggerLinkOptions<TRouter extends AnyRouter> = {
 const defaultLogger =
   <TRouter extends AnyRouter>(c: ConsoleEsque = console): LogFn<TRouter> =>
   (props) => {
-    const { direction, input, type, path, context, id } = props;
+    const { direction, input, type, path, meta, id } = props;
     const [light, dark] = palette[type];
 
     const css = `
@@ -78,13 +78,13 @@ const defaultLogger =
       `${css}; font-weight: normal;`,
     ];
     if (props.direction === 'up') {
-      args.push({ input, context });
+      args.push({ input, meta });
     } else {
       args.push({
         input,
         result: props.result,
         elapsedMs: props.elapsedMs,
-        context,
+        meta,
       });
     }
     const fn: 'error' | 'log' =

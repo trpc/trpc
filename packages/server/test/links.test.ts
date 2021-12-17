@@ -39,6 +39,7 @@ test('retrylink', () => {
       input: null,
       path: '',
       context: {},
+      meta: {},
     },
     prev: prev,
     next: (_ctx, callback) => {
@@ -84,6 +85,7 @@ test('chainer', async () => {
       path: 'hello',
       input: null,
       context: {},
+      meta: {},
     },
   });
 
@@ -143,6 +145,7 @@ test('cancel request', async () => {
       path: 'hello',
       input: null,
       context: {},
+      meta: {},
     },
   });
 
@@ -185,6 +188,7 @@ describe('batching', () => {
         path: 'hello',
         input: null,
         context: {},
+        meta: {},
       },
     });
 
@@ -196,6 +200,7 @@ describe('batching', () => {
         path: 'hello',
         input: 'alexdotjs',
         context: {},
+        meta: {},
       },
     });
 
@@ -275,6 +280,7 @@ describe('splitLink', () => {
         input: null,
         path: '',
         context: {},
+        meta: {},
       },
     });
     expect(left).toHaveBeenCalledTimes(1);
@@ -300,6 +306,7 @@ describe('splitLink', () => {
         input: null,
         path: '',
         context: {},
+        meta: {},
       },
     });
     expect(trueLink).toHaveBeenCalledTimes(1);
@@ -396,6 +403,7 @@ test('loggerLink', () => {
         input: null,
         path: 'n/a',
         context: {},
+        meta: {},
       },
     });
 
@@ -418,6 +426,7 @@ test('loggerLink', () => {
         input: null,
         path: 'n/a',
         context: {},
+        meta: {},
       },
     });
     expect(logger.log.mock.calls[0][0]).toMatchInlineSnapshot(
@@ -439,6 +448,7 @@ test('loggerLink', () => {
         input: null,
         path: 'n/a',
         context: {},
+        meta: {},
       },
     });
 
@@ -461,6 +471,7 @@ test('loggerLink', () => {
         input: null,
         path: 'n/a',
         context: {},
+        meta: {},
       },
     });
     expect(logger.log.mock.calls[0][0]).toMatchInlineSnapshot(
@@ -484,6 +495,7 @@ test('loggerLink', () => {
         input: null,
         path: 'n/a',
         context: {},
+        meta: {},
       },
     });
     const [firstCall, secondCall] = logFn.mock.calls.map((args) => args[0]);
@@ -493,6 +505,7 @@ test('loggerLink', () => {
         "direction": "up",
         "id": 1,
         "input": null,
+        "meta": Object {},
         "path": "n/a",
         "type": "query",
       }
@@ -506,6 +519,7 @@ test('loggerLink', () => {
         "direction": "down",
         "id": 1,
         "input": null,
+        "meta": Object {},
         "path": "n/a",
         "result": [TRPCClientError: ..],
         "type": "query",
@@ -514,8 +528,8 @@ test('loggerLink', () => {
   }
 });
 
-test('pass a context', () => {
-  const context = {
+test('pass meta', () => {
+  const meta = {
     hello: 'there',
   };
   const callback = jest.fn();
@@ -530,14 +544,15 @@ test('pass a context', () => {
       type: 'query',
       input: null,
       path: '',
-      context,
+      meta,
+      context: meta,
     },
   });
-  expect(callback).toHaveBeenCalledWith(context);
+  expect(callback).toHaveBeenCalledWith(meta);
 });
 
-test('pass a context', () => {
-  const context = {
+test('pass meta', () => {
+  const meta = {
     hello: 'there',
   };
   const callback = jest.fn();
@@ -552,8 +567,9 @@ test('pass a context', () => {
       type: 'query',
       input: null,
       path: '',
-      context,
+      context: meta,
+      meta,
     },
   });
-  expect(callback).toHaveBeenCalledWith(context);
+  expect(callback).toHaveBeenCalledWith(meta);
 });

@@ -17,7 +17,7 @@ import {
   CancelFn,
   HTTPHeaders,
   LinkRuntimeOptions,
-  OperationContext,
+  OperationMeta,
   OperationLink,
   TRPCLink,
 } from '../links/core';
@@ -77,7 +77,12 @@ export interface TRPCRequestOptions {
   /**
    * Pass additional context to links
    */
-  context?: OperationContext;
+  meta?: OperationMeta;
+
+  /**
+   * @deprecated use `meta`
+   */
+  context?: OperationMeta;
 }
 export class TRPCClient<TRouter extends AnyRouter> {
   private readonly links: OperationLink<TRouter>[];
@@ -124,17 +129,18 @@ export class TRPCClient<TRouter extends AnyRouter> {
     }
   }
 
-  private $request<TInput = unknown, TOutput = unknown>({
-    type,
-    input,
-    path,
-    context = {},
-  }: {
+  private $request<TInput = unknown, TOutput = unknown>(opts: {
     type: TRPCType;
     input: TInput;
     path: string;
-    context?: OperationContext;
+    meta?: OperationMeta;
+    /**
+     * @deprecated use `meta`
+     */
+    context?: OperationMeta;
   }) {
+    const { type, input, path } = opts;
+    const meta = opts.meta || opts.context || {};
     const $result = executeChain<TRouter, TInput, TOutput>({
       links: this.links as any,
       op: {
@@ -142,7 +148,8 @@ export class TRPCClient<TRouter extends AnyRouter> {
         type,
         path,
         input,
-        context,
+        meta,
+        context: meta,
       },
     });
 
@@ -152,7 +159,11 @@ export class TRPCClient<TRouter extends AnyRouter> {
     type: TRPCType;
     input: TInput;
     path: string;
-    context?: OperationContext;
+    meta?: OperationMeta;
+    /**
+     * @deprecated use `meta`
+     */
+    context?: OperationMeta;
   }): CancellablePromise<TOutput> {
     const $result = this.$request<TInput, TOutput>(opts);
 
@@ -194,7 +205,8 @@ export class TRPCClient<TRouter extends AnyRouter> {
     path: TPath,
     ...args: [...inferHandlerInput<TQueries[TPath]>, TRPCRequestOptions?]
   ) {
-    const context = (args[1] as TRPCRequestOptions | undefined)?.context;
+    const opts = args[1] as TRPCRequestOptions | undefined;
+    const meta = opts?.meta || opts?.context;
     return this.requestAsPromise<
       inferHandlerInput<TQueries[TPath]>,
       inferProcedureOutput<TQueries[TPath]>
@@ -202,7 +214,7 @@ export class TRPCClient<TRouter extends AnyRouter> {
       type: 'query',
       path,
       input: args[0] as any,
-      context,
+      meta,
     });
   }
 
@@ -213,7 +225,8 @@ export class TRPCClient<TRouter extends AnyRouter> {
     path: TPath,
     ...args: [...inferHandlerInput<TMutations[TPath]>, TRPCRequestOptions?]
   ) {
-    const context = (args[1] as TRPCRequestOptions | undefined)?.context;
+    const opts = args[1] as TRPCRequestOptions | undefined;
+    const meta = opts?.meta || opts?.context;
     return this.requestAsPromise<
       inferHandlerInput<TMutations[TPath]>,
       inferProcedureOutput<TMutations[TPath]>
@@ -221,7 +234,7 @@ export class TRPCClient<TRouter extends AnyRouter> {
       type: 'mutation',
       path,
       input: args[0] as any,
-      context,
+      meta,
     });
   }
   public subscription<
@@ -239,7 +252,7 @@ export class TRPCClient<TRouter extends AnyRouter> {
       type: 'subscription',
       path,
       input,
-      context: opts.context,
+      meta: opts.meta || opts.context,
     });
     $res.subscribe({
       onNext(output) {

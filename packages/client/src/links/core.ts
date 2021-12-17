@@ -2,13 +2,17 @@ import { AnyRouter, DataTransformer } from '@trpc/server';
 import { TRPCResult } from '@trpc/server/rpc';
 import { TRPCClientError } from '../TRPCClientError';
 
-export type OperationContext = Record<string, unknown>;
+export type OperationMeta = Record<string, unknown>;
 export type Operation<TInput = unknown> = {
   id: number;
   type: 'query' | 'mutation' | 'subscription';
   input: TInput;
   path: string;
-  context: OperationContext;
+  meta: OperationMeta;
+  /**
+   * @deprecated use `meta`
+   */
+  context: OperationMeta;
 };
 
 export type OperationResponse<TRouter extends AnyRouter, TOutput = unknown> =
