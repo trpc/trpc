@@ -192,6 +192,7 @@ npx create-next-app --example https://github.com/trpc/trpc --example-path exampl
     <td align="center"><a href="https://standardresume.co/r/ryan-edge"><img src="https://avatars.githubusercontent.com/u/6907797?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Ryan</b></sub></a><br /><a href="#financial-chimon2000" title="Financial">💵</a></td>
     <td align="center"><a href="https://www.snaplet.dev"><img src="https://avatars.githubusercontent.com/u/69029941?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Snaplet</b></sub></a><br /><a href="#financial-snaplet" title="Financial">💵</a></td>
     <td align="center"><a href="https://github.com/merelinguist"><img src="https://avatars.githubusercontent.com/u/24858006?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Dylan Brookes</b></sub></a><br /><a href="#example-merelinguist" title="Examples">💡</a></td>
+    <td align="center"><a href="http://guiselin.com"><img src="https://avatars.githubusercontent.com/u/24906387?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Marc Guiselin</b></sub></a><br /><a href="https://github.com/trpc/trpc/commits?author=MarcGuiselin" title="Documentation">📖</a></td>
   </tr>
 </table>
 
