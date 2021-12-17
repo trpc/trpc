@@ -9,7 +9,7 @@ It is often useful to wrap functionality of your `@trpc/client` or `@trpc/react`
 
 ## Inference Helpers
 
-`@trpc/server` exports the following helper types to assist with infering these types from the `AppRouter` exported by your `@trpc/server` router:
+`@trpc/server` exports the following helper types to assist with inferring these types from the `AppRouter` exported by your `@trpc/server` router:
 
 - `inferProcedureOutput<TProcedure>`
 - `inferProcedureInput<TProcedure>`
