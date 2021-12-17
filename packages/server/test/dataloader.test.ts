@@ -96,7 +96,7 @@ test('throttle and resetting', async () => {
       return { promise, cancel: () => {} };
     },
     {
-      throttleMs: 1,
+      debounceMs: 1,
     },
   );
 

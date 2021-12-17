@@ -17,7 +17,7 @@ type BatchLoadFn<TKey, TValue> = (keys: TKey[]) => {
 };
 
 interface DataLoaderOptions {
-  throttleMs?: number;
+  debounceMs?: number;
 }
 
 /**
@@ -29,7 +29,7 @@ export function dataLoader<TKey, TValue>(
   fetchMany: BatchLoadFn<TKey, TValue>,
   opts?: DataLoaderOptions,
 ) {
-  const { throttleMs = 0 } = opts ?? {};
+  const { debounceMs = 0 } = opts ?? {};
   let batch: Batch<TKey, TValue> | null = null;
   let dispatchTimer: NodeJS.Timer | number | null = null;
   type TBatchItem = BatchItem<TKey, TValue>;
@@ -87,7 +87,7 @@ export function dataLoader<TKey, TValue>(
       thisBatch.items.push(item);
     });
     destroyTimer();
-    dispatchTimer = setTimeout(dispatch, throttleMs);
+    dispatchTimer = setTimeout(dispatch, debounceMs);
     const cancel = () => {
       if (batchItem.cancelled) {
         // called fn twice

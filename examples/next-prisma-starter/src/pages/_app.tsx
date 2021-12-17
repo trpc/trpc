@@ -56,7 +56,7 @@ export default withTRPC<AppRouter>({
           },
           true: httpBatchLink({
             url: `${getBaseUrl()}/api/trpc`,
-            throttleMs: 3000,
+            debounceMs: 3000,
           }),
           false: httpBatchLink({
             url: `${getBaseUrl()}/api/trpc`,

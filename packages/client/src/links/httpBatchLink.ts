@@ -11,7 +11,7 @@ interface HTTPBatchLinkOptions extends HTTPLinkOptions {
   /**
    * Throttle batch request with `N` milliseconds
    */
-  throttleMs?: number;
+  debounceMs?: number;
 }
 export function httpBatchLink<TRouter extends AnyRouter>(
   opts: HTTPBatchLinkOptions,
@@ -44,14 +44,14 @@ export function httpBatchLink<TRouter extends AnyRouter>(
       };
     };
     const query = dataLoader<Key, TRPCResponse>(fetcher('query'), {
-      throttleMs: opts.throttleMs,
+      debounceMs: opts.debounceMs,
     });
     const mutation = dataLoader<Key, TRPCResponse>(fetcher('mutation'), {
-      throttleMs: opts.throttleMs,
+      debounceMs: opts.debounceMs,
     });
     const subscription = dataLoader<Key, TRPCResponse>(
       fetcher('subscription'),
-      { throttleMs: opts.throttleMs },
+      { debounceMs: opts.debounceMs },
     );
 
     const loaders = { query, subscription, mutation };
