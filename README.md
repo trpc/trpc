@@ -67,6 +67,8 @@ tRPC allows you to easily build & consume fully typesafe APIs, without schemas o
 
 ```sh
 yarn create next-app --example https://github.com/trpc/trpc --example-path examples/next-prisma-starter trpc-prisma-starter
+# or:
+npx create-next-app --example https://github.com/trpc/trpc --example-path examples/next-prisma-starter trpc-prisma-starter
 ```
 
 ## Core Team
