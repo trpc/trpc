@@ -13,7 +13,7 @@ generator client {
 model Task {
   id        String  @id @default(uuid())
   text      String
-  completed Boolean @default(value: "false")
+  completed Boolean @default(value: false)
 
   createdAt DateTime @unique @default(now())
   // updatedAt DateTime @unique @default(now())
