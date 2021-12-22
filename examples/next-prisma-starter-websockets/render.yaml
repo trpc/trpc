@@ -1,3 +1,4 @@
+previewsEnabled: true
 services:
   - type: web
     name: trpc-websockets
@@ -7,6 +8,8 @@ services:
       yarn build
     startCommand: yarn start
     healthCheckPath: /api/trpc/healthz
+    previewPlan: free
+
     envVars:
       - key: NODE_ENV
         value: production
@@ -21,3 +24,4 @@ services:
 databases:
   - name: trpc-websockets-db
     plan: free
+    previewPlan: free
