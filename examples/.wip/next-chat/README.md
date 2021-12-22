@@ -7,7 +7,7 @@
 ### Setup
 
 ```bash
-npx create-next-app --example https://github.com/trpc/trpc --example-path examples/next-chat trpc-chat
+yarn create next-app --example https://github.com/trpc/trpc --example-path examples/next-chat trpc-chat
 cd trpc-chat
 yarn
 yarn dev
