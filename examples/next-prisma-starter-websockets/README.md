@@ -23,7 +23,7 @@
 ## Setup
 
 ```bash
-npx create-next-app --example https://github.com/trpc/trpc --example-path examples/next-prisma-starter-websockets trpc-prisma-starter-websockets
+yarn create next-app --example https://github.com/trpc/trpc --example-path examples/next-prisma-starter-websockets trpc-prisma-starter-websockets
 cd trpc-prisma-starter-websockets
 yarn
 yarn dev
