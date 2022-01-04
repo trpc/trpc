@@ -1,15 +1,5 @@
-import { pipeFromArray } from './operators/pipe';
+import { pipeFromArray } from './util/pipe';
 import { Observable, Observer, OperatorFunction, TeardownLogic } from './types';
-
-// function triggerIfSet<TFunction extends (...args: any[]) => void>(
-//   value: TFunction | undefined,
-// ): TFunction {
-//   return (...args) => {
-//     if (value) {
-//       value(...args);
-//     }
-//   };
-// }
 
 export function observable<TValue, TError>(
   subscribe: (observer: Observer<TValue, TError>) => TeardownLogic,
@@ -30,18 +20,6 @@ export function observable<TValue, TError>(
       return {
         unsubscribe() {
           teardown?.();
-
-          // if (!teardown) {
-          //   return;
-          // }
-          // if (typeof teardown === 'function') {
-          //   teardown();
-          //   return;
-          // }
-          // if ('unsubscribe' in teardown) {
-          //   teardown.unsubscribe();
-          //   return;
-          // }
         },
       };
     },
