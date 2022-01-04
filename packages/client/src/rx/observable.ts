@@ -19,7 +19,11 @@ export function observable<TValue, TError = unknown>(
       });
       return {
         unsubscribe() {
-          teardown?.();
+          if (typeof teardown === 'function') {
+            teardown();
+          } else if (teardown) {
+            teardown.unsubscribe();
+          }
         },
       };
     },

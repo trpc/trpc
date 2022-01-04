@@ -3,7 +3,8 @@ import { share } from './operators/share';
 import { EventEmitter } from 'events';
 import { error, map } from './operators';
 import { expectTypeOf } from 'expect-type';
-import { TRPCError } from '@trpc/server';
+import { TRPCError, AnyRouter } from '@trpc/server';
+import { executeChain } from '../links2/core';
 
 test('vanilla observable', () => {
   const obs = observable<number, Error>((observer) => {
@@ -201,4 +202,48 @@ test('error', () => {
   expect(err.cause).toBeInstanceOf(CustomError);
 
   sub.unsubscribe();
+});
+
+describe('chain', () => {
+  test('chain', () => {
+    const result$ = executeChain<AnyRouter, unknown, unknown>({
+      links: [
+        ({ next, op }) => {
+          return observable((observer) => {
+            const next$ = next(op, observer);
+            return () => {
+              next$.unsubscribe();
+            };
+          });
+        },
+        ({ op }) => {
+          return observable((subscribe) => {
+            subscribe.next({
+              id: null,
+              result: {
+                type: 'data',
+                data: {
+                  input: op.input,
+                },
+              },
+            });
+            subscribe.complete();
+          });
+        },
+      ],
+      op: {
+        type: 'query',
+        id: 1,
+        input: 'world',
+        path: 'hello',
+        meta: {},
+      },
+    });
+
+    const next = jest.fn();
+
+    result$.subscribe({ next });
+    console.log(next.mock.calls);
+    expect(next).toHaveBeenCalledTimes(1);
+  });
 });
