@@ -5,7 +5,7 @@ import { observable } from '../rx/observable';
 import { Observable } from '../rx/types';
 
 export type OperationMeta = Record<string, unknown>;
-export type Operation<TInput> = {
+export type Operation<TInput = unknown> = {
   id: number;
   type: 'query' | 'mutation' | 'subscription';
   input: TInput;

@@ -1,9 +1,11 @@
+/* eslint-disable @typescript-eslint/no-empty-function */
 import { waitFor } from '@testing-library/dom';
 import { AnyRouter, TRPCError } from '@trpc/server';
 import { EventEmitter } from 'events';
 import { expectTypeOf } from 'expect-type';
-import { executeChain, OperationLink } from '../links2/core';
+import { executeChain, OperationLink, TRPCLink } from '../links2/core';
 import { dedupeLink } from '../links2/dedupeLink';
+import { splitLink } from '../links2/splitLink';
 import { observable } from './observable';
 import { error, map } from './operators';
 import { share } from './operators/share';
@@ -363,7 +365,7 @@ test('dedupe', async () => {
   }
 });
 
-test.only('dedupe - cancel one does not cancel the other', async () => {
+test('dedupe - cancel one does not cancel the other', async () => {
   const endingLinkTriggered = jest.fn();
   const timerTriggered = jest.fn();
   const links: OperationLink<AnyRouter, any, any>[] = [
@@ -424,4 +426,54 @@ test.only('dedupe - cancel one does not cancel the other', async () => {
       expect(next).toHaveBeenCalledTimes(1);
     });
   }
+});
+
+test.only('splitLink', () => {
+  const wsLinkSpy = jest.fn();
+  const wsLink: TRPCLink<any> = () => () =>
+    observable(() => {
+      wsLinkSpy();
+    });
+  const httpLinkSpy = jest.fn();
+  const httpLink: TRPCLink<any> = () => () =>
+    observable(() => {
+      httpLinkSpy();
+    });
+  const links: OperationLink<AnyRouter, any, any>[] = [
+    // "dedupe link"
+    splitLink({
+      condition(op) {
+        return op.type === 'subscription';
+      },
+      true: wsLink,
+      false: [httpLink],
+    })(null as any),
+  ];
+
+  executeChain({
+    links,
+    op: {
+      type: 'query',
+      input: null,
+      path: '.',
+      id: 0,
+      meta: {},
+    },
+  }).subscribe({});
+  expect(httpLinkSpy).toHaveBeenCalledTimes(1);
+  expect(wsLinkSpy).toHaveBeenCalledTimes(0);
+  jest.resetAllMocks();
+
+  executeChain({
+    links,
+    op: {
+      type: 'subscription',
+      input: null,
+      path: '.',
+      id: 0,
+      meta: {},
+    },
+  }).subscribe({});
+  expect(httpLinkSpy).toHaveBeenCalledTimes(0);
+  expect(wsLinkSpy).toHaveBeenCalledTimes(1);
 });
