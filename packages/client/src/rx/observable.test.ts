@@ -171,7 +171,7 @@ test('error', () => {
     }
   }
   function getErrorFromUnknown(cause: unknown): TRPCError {
-    if (cause instanceof Error && cause.name === 'TRPCError') {
+    if (cause instanceof TRPCError) {
       return cause as TRPCError;
     }
     const err = new TRPCError({
@@ -179,10 +179,6 @@ test('error', () => {
       cause,
     });
 
-    // take stack trace from cause
-    if (cause instanceof Error) {
-      err.stack = cause.stack;
-    }
     return err;
   }
 
@@ -197,6 +193,7 @@ test('error', () => {
       errorSpy(err);
     },
   });
+
   expect(errorSpy).toHaveBeenCalledTimes(1);
 
   const err = errorSpy.mock.calls[0][0];
