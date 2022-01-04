@@ -428,7 +428,7 @@ test('dedupe - cancel one does not cancel the other', async () => {
   }
 });
 
-test.only('splitLink', () => {
+test('splitLink', () => {
   const wsLinkSpy = jest.fn();
   const wsLink: TRPCLink<any> = () => () =>
     observable(() => {
