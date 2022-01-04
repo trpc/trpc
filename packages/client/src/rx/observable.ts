@@ -24,17 +24,20 @@ export function observable<TValue, TError>(
       });
       return {
         unsubscribe() {
-          if (!teardown) {
-            return;
-          }
-          if (typeof teardown === 'function') {
+          if (teardown) {
             teardown();
-            return;
           }
-          if ('unsubscribe' in teardown) {
-            teardown.unsubscribe();
-            return;
-          }
+          // if (!teardown) {
+          //   return;
+          // }
+          // if (typeof teardown === 'function') {
+          //   teardown();
+          //   return;
+          // }
+          // if ('unsubscribe' in teardown) {
+          //   teardown.unsubscribe();
+          //   return;
+          // }
         },
       };
     },

@@ -17,7 +17,6 @@ export interface Observer<TValue, TError> {
 }
 
 export type TeardownLogic =
-  | SubscriptionLike
-  | Unsubscribable
-  | (() => void)
-  | void;
+  // | SubscriptionLike
+  // | Unsubscribable
+  (() => void) | void;
