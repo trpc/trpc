@@ -205,7 +205,7 @@ test('error', () => {
 });
 
 describe('chain', () => {
-  test('chain', () => {
+  test('trivial', () => {
     const result$ = executeChain<AnyRouter, unknown, unknown>({
       links: [
         ({ next, op }) => {
@@ -245,5 +245,57 @@ describe('chain', () => {
     result$.subscribe({ next });
     console.log(next.mock.calls);
     expect(next).toHaveBeenCalledTimes(1);
+  });
+  test('multiple responses', () => {
+    const result$ = executeChain<AnyRouter, unknown, unknown>({
+      links: [
+        ({ next, op }) => {
+          return observable((observer) => {
+            observer.next({
+              id: null,
+              result: {
+                type: 'data',
+                data: 'from cache',
+              },
+            });
+            const next$ = next(op, observer);
+            return () => {
+              next$.unsubscribe();
+            };
+          });
+        },
+        ({ op }) => {
+          return observable((subscribe) => {
+            subscribe.next({
+              id: null,
+              result: {
+                type: 'data',
+                data: {
+                  input: op.input,
+                },
+              },
+            });
+            subscribe.complete();
+          });
+        },
+      ],
+      op: {
+        type: 'query',
+        id: 1,
+        input: 'world',
+        path: 'hello',
+        meta: {},
+      },
+    });
+
+    const next = jest.fn();
+
+    result$.subscribe({ next });
+    console.log(next.mock.calls);
+    expect(next).toHaveBeenCalledTimes(2);
+    expect(next.mock.calls[0][0].result.data).toBe('from cache');
+    expect(next.mock.calls[1][0].result.data).toEqual({
+      input: 'world',
+    });
   });
 });
