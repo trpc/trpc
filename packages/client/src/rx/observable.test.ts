@@ -1,10 +1,12 @@
-import { observable } from './observable';
-import { share } from './operators/share';
+import { waitFor } from '@testing-library/dom';
+import { AnyRouter, TRPCError } from '@trpc/server';
 import { EventEmitter } from 'events';
-import { error, map } from './operators';
 import { expectTypeOf } from 'expect-type';
-import { TRPCError, AnyRouter } from '@trpc/server';
-import { executeChain } from '../links2/core';
+import { executeChain, OperationLink } from '../links2/core';
+import { dedupeLink } from '../links2/dedupeLink';
+import { observable } from './observable';
+import { error, map } from './operators';
+import { share } from './operators/share';
 
 test('vanilla observable', () => {
   const obs = observable<number, Error>((observer) => {
@@ -210,7 +212,7 @@ describe('chain', () => {
       links: [
         ({ next, op }) => {
           return observable((observer) => {
-            const next$ = next(op, observer);
+            const next$ = next(op).subscribe(observer);
             return () => {
               next$.unsubscribe();
             };
@@ -258,7 +260,7 @@ describe('chain', () => {
                 data: 'from cache',
               },
             });
-            const next$ = next(op, observer);
+            const next$ = next(op).subscribe(observer);
             return () => {
               next$.unsubscribe();
             };
@@ -298,4 +300,128 @@ describe('chain', () => {
       input: 'world',
     });
   });
+});
+
+test('dedupe', async () => {
+  const endingLinkTriggered = jest.fn();
+  const timerTriggered = jest.fn();
+  const links: OperationLink<AnyRouter, any, any>[] = [
+    // "dedupe link"
+    dedupeLink()(null as any),
+    ({ op }) => {
+      return observable((subscribe) => {
+        endingLinkTriggered();
+        const timer = setTimeout(() => {
+          timerTriggered();
+          subscribe.next({
+            id: null,
+            result: {
+              type: 'data',
+              data: {
+                input: op.input,
+              },
+            },
+          });
+          subscribe.complete();
+        }, 1);
+        return () => clearTimeout(timer);
+      });
+    },
+  ];
+  {
+    const call1 = executeChain<AnyRouter, unknown, unknown>({
+      links,
+      op: {
+        type: 'query',
+        id: 1,
+        input: 'world',
+        path: 'hello',
+        meta: {},
+      },
+    });
+
+    const call2 = executeChain<AnyRouter, unknown, unknown>({
+      links,
+      op: {
+        type: 'query',
+        id: 1,
+        input: 'world',
+        path: 'hello',
+        meta: {},
+      },
+    });
+    const next = jest.fn();
+    call1.subscribe({ next });
+    call2.subscribe({ next });
+
+    expect(endingLinkTriggered).toHaveBeenCalledTimes(1);
+    await waitFor(() => {
+      expect(timerTriggered).toHaveBeenCalledTimes(1);
+    });
+
+    expect(next).toHaveBeenCalledTimes(2);
+  }
+});
+
+test.only('dedupe - cancel one does not cancel the other', async () => {
+  const endingLinkTriggered = jest.fn();
+  const timerTriggered = jest.fn();
+  const links: OperationLink<AnyRouter, any, any>[] = [
+    // "dedupe link"
+    dedupeLink()(null as any),
+    ({ op }) => {
+      return observable((subscribe) => {
+        endingLinkTriggered();
+        const timer = setTimeout(() => {
+          timerTriggered();
+          subscribe.next({
+            id: null,
+            result: {
+              type: 'data',
+              data: {
+                input: op.input,
+              },
+            },
+          });
+          subscribe.complete();
+        }, 1);
+        return () => clearTimeout(timer);
+      });
+    },
+  ];
+
+  {
+    const call1 = executeChain<AnyRouter, unknown, unknown>({
+      links,
+      op: {
+        type: 'query',
+        id: 1,
+        input: 'world',
+        path: 'hello',
+        meta: {},
+      },
+    });
+
+    const call2 = executeChain<AnyRouter, unknown, unknown>({
+      links,
+      op: {
+        type: 'query',
+        id: 1,
+        input: 'world',
+        path: 'hello',
+        meta: {},
+      },
+    });
+    const next = jest.fn();
+    const call1$ = call1.subscribe({ next });
+    call2.subscribe({ next });
+    call1$.unsubscribe();
+
+    expect(endingLinkTriggered).toHaveBeenCalledTimes(1);
+    await waitFor(() => {
+      expect(timerTriggered).toHaveBeenCalledTimes(1);
+
+      expect(next).toHaveBeenCalledTimes(1);
+    });
+  }
 });

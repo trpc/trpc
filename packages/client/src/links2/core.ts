@@ -2,10 +2,10 @@ import { AnyRouter, DataTransformer, inferRouterError } from '@trpc/server';
 import { TRPCResponse } from '@trpc/server/rpc';
 import { TRPCClientErrorLike } from '..';
 import { observable } from '../rx/observable';
-import { Observable, Observer, Unsubscribable } from '../rx/types';
+import { Observable } from '../rx/types';
 
 export type OperationMeta = Record<string, unknown>;
-export type Operation<TInput = unknown> = {
+export type Operation<TInput> = {
   id: number;
   type: 'query' | 'mutation' | 'subscription';
   input: TInput;
@@ -39,14 +39,13 @@ export type OperationLink<
   TInput = unknown,
   TOutput = unknown,
 > = (opts: {
-  op: Operation;
+  op: Operation<TInput>;
   next: (
     op: Operation<TInput>,
-    result: Observer<
-      TRPCResponse<TOutput, inferRouterError<TRouter>>,
-      TRPCClientErrorLike<TRouter>
-    >,
-  ) => Unsubscribable;
+  ) => Observable<
+    TRPCResponse<TOutput, inferRouterError<TRouter>>,
+    TRPCClientErrorLike<TRouter>
+  >;
 }) => Observable<
   TRPCResponse<TOutput, inferRouterError<TRouter>>,
   TRPCClientErrorLike<TRouter>
@@ -67,14 +66,14 @@ export function executeChain<
   TRPCResponse<TOutput, inferRouterError<TRouter>>,
   TRPCClientErrorLike<TRouter>
 > {
-  const rootObservable = observable((observer) => {
-    function execute(index = 0, op = opts.op, currentObservable = observer) {
+  return observable((observer) => {
+    function execute(index = 0, op = opts.op) {
       const observable$ = opts.links[index]({
         op,
-        next(nextOp, result) {
-          const observer = execute(index + 1, nextOp, currentObservable);
+        next(nextOp) {
+          const observer = execute(index + 1, nextOp);
 
-          return observer.subscribe(result);
+          return observer;
         },
       });
       return observable$;
@@ -87,5 +86,4 @@ export function executeChain<
       sub.unsubscribe();
     };
   });
-  return rootObservable;
 }

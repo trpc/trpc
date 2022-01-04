@@ -47,15 +47,18 @@ export function share<TValue, TError>(
     return {
       subscribe(observer) {
         refCount++;
+
         observers.push(observer);
         startIfNeeded();
         return {
           unsubscribe() {
             refCount--;
             resetIfNeeded();
+
             const index = observers.findIndex((v) => v === observer);
+
             if (index > -1) {
-              observers.splice(index);
+              observers.splice(index, 1);
             }
           },
         };
