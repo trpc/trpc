@@ -1,10 +1,11 @@
 import { observable } from './observable';
 import { share } from './operators/share';
 import { EventEmitter } from 'events';
-import { map } from './operators';
+import { error, map } from './operators';
 import { expectTypeOf } from 'expect-type';
+import { TRPCError } from '@trpc/server';
 
-test('smoke', () => {
+test('vanilla observable', () => {
   const obs = observable<number, Error>((observer) => {
     observer.next(1);
     observer.complete();
@@ -158,4 +159,49 @@ test('map', () => {
   expect(ee.listeners('data')).toHaveLength(1);
   subscription.unsubscribe();
   expect(ee.listeners('data')).toHaveLength(0);
+});
+
+test('error', () => {
+  class CustomError extends Error {
+    constructor(message: string) {
+      super(message);
+      this.name = 'CustomError';
+
+      Object.setPrototypeOf(this, new.target.prototype);
+    }
+  }
+  function getErrorFromUnknown(cause: unknown): TRPCError {
+    if (cause instanceof Error && cause.name === 'TRPCError') {
+      return cause as TRPCError;
+    }
+    const err = new TRPCError({
+      code: 'INTERNAL_SERVER_ERROR',
+      cause,
+    });
+
+    // take stack trace from cause
+    if (cause instanceof Error) {
+      err.stack = cause.stack;
+    }
+    return err;
+  }
+
+  const observer = observable<number>((observer) => {
+    observer.error(new CustomError('Some error'));
+  }).pipe(error((error) => getErrorFromUnknown(error)));
+
+  const errorSpy = jest.fn();
+  const sub = observer.subscribe({
+    error(err) {
+      expectTypeOf<TRPCError>(err);
+      errorSpy(err);
+    },
+  });
+  expect(errorSpy).toHaveBeenCalledTimes(1);
+
+  const err = errorSpy.mock.calls[0][0];
+  expect(err).toBeInstanceOf(TRPCError);
+  expect(err.cause).toBeInstanceOf(CustomError);
+
+  sub.unsubscribe();
 });

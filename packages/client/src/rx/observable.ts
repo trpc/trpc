@@ -1,7 +1,7 @@
 import { pipeFromArray } from './util/pipe';
 import { Observable, Observer, OperatorFunction, TeardownLogic } from './types';
 
-export function observable<TValue, TError>(
+export function observable<TValue, TError = unknown>(
   subscribe: (observer: Observer<TValue, TError>) => TeardownLogic,
 ): Observable<TValue, TError> {
   const self: Observable<TValue, TError> = {
