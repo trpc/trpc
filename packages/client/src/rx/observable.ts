@@ -1,32 +1,36 @@
-import { Observer, Subscribable, TeardownLogic } from './types';
+import { pipeFromArray } from './operators/pipe';
+import { Observable, Observer, OperatorFunction, TeardownLogic } from './types';
+
+// function triggerIfSet<TFunction extends (...args: any[]) => void>(
+//   value: TFunction | undefined,
+// ): TFunction {
+//   return (...args) => {
+//     if (value) {
+//       value(...args);
+//     }
+//   };
+// }
 
 export function observable<TValue, TError>(
   subscribe: (observer: Observer<TValue, TError>) => TeardownLogic,
-): Subscribable<TValue, TError> {
-  return {
+): Observable<TValue, TError> {
+  const self: Observable<TValue, TError> = {
     subscribe(observer) {
       const teardown = subscribe({
-        next(v) {
-          if (observer.next) {
-            observer.next(v);
-          }
-        },
-        complete() {
-          if (observer.complete) {
-            observer.complete();
-          }
+        next(value) {
+          observer.next?.(value);
         },
         error(err) {
-          if (observer.error) {
-            observer.error(err);
-          }
+          observer.error?.(err);
+        },
+        complete() {
+          observer.complete?.();
         },
       });
       return {
         unsubscribe() {
-          if (teardown) {
-            teardown();
-          }
+          teardown?.();
+
           // if (!teardown) {
           //   return;
           // }
@@ -41,5 +45,11 @@ export function observable<TValue, TError>(
         },
       };
     },
+    pipe(
+      ...operations: OperatorFunction<any, any, any, any>[]
+    ): Observable<any, any> {
+      return pipeFromArray(operations)(self) as any;
+    },
   };
+  return self;
 }
