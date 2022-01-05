@@ -79,11 +79,11 @@ export function executeChain<
       return observable$;
     }
 
-    const obs$ = execute();
-    const sub = obs$.subscribe(observer);
+    const obs = execute();
+    const subscription$ = obs.subscribe(observer);
 
     return () => {
-      sub.unsubscribe();
+      subscription$.unsubscribe();
     };
   });
 }
