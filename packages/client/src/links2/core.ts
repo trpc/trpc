@@ -86,3 +86,7 @@ export function executeChain<
     };
   });
 }
+
+export interface HTTPLinkOptions {
+  url: string;
+}
