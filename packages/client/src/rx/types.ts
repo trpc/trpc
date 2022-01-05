@@ -49,7 +49,6 @@ export type TeardownLogic =
   Unsubscribable | (() => void) | void;
 
 export type UnaryFunction<T, R> = (source: T) => R;
-export type FunaryFunction<T, R> = (source: T) => R;
 
 export type OperatorFunction<
   TValueBefore,

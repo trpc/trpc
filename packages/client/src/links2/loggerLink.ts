@@ -1,8 +1,5 @@
-import {
-  AnyRouter,
-  ClientDataTransformerOptions,
-  DataTransformer,
-} from '@trpc/server';
+import { AnyRouter } from '@trpc/server';
+import { TRPCClientError } from '..';
 import { observable } from '../rx/observable';
 import { Operation, OperationResult, TRPCLink } from './core';
 
@@ -17,7 +14,7 @@ type EnableFnOptions<TRouter extends AnyRouter> =
     })
   | {
       direction: 'down';
-      result: OperationResult<TRouter, unknown>;
+      result: OperationResult<TRouter, unknown> | TRPCClientError<TRouter>;
     };
 type EnabledFn<TRouter extends AnyRouter> = (
   opts: EnableFnOptions<TRouter>,
@@ -36,7 +33,7 @@ type LogFnOptions<TRouter extends AnyRouter> = Operation &
          * Request result
          */
         direction: 'down';
-        result: OperationResult<TRouter, unknown>;
+        result: OperationResult<TRouter, unknown> | TRPCClientError<TRouter>;
         elapsedMs: number;
       }
   );
@@ -92,6 +89,7 @@ const defaultLogger =
         meta,
       });
     }
+    console.log('result', props);
     const fn: 'error' | 'log' =
       props.direction === 'down' &&
       props.result &&
@@ -119,6 +117,18 @@ export function loggerLink<TRouter extends AnyRouter = AnyRouter>(
           });
         const requestStartTime = Date.now();
         const next$ = next(op).subscribe({
+          ...observer,
+          error(value) {
+            const elapsedMs = Date.now() - requestStartTime;
+
+            enabled({ ...op, direction: 'down', result: value }) &&
+              logger({
+                ...op,
+                direction: 'down',
+                elapsedMs,
+                result: value,
+              });
+          },
           next(value) {
             const elapsedMs = Date.now() - requestStartTime;
 
@@ -130,10 +140,6 @@ export function loggerLink<TRouter extends AnyRouter = AnyRouter>(
                 result: value,
               });
           },
-          error(err) {
-            observer.error(err);
-          },
-          complete: observer.complete,
         });
         return next$;
       });

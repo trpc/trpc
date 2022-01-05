@@ -18,35 +18,40 @@ export class TRPCClientError<TRouter extends AnyRouter>
   public readonly cause;
   public readonly shape: Maybe<inferRouterError<TRouter>>;
   public readonly data: Maybe<inferRouterError<TRouter>['data']>;
+  public readonly meta;
   /**
    * Fatal error - expect no more results after this error
    * Used for when WebSockets disconnect prematurely.
+   * @deprecated
    */
   public readonly isDone: boolean;
 
   constructor(
     message: string,
-    opts: {
+    opts?: {
       result: Maybe<TRPCErrorResponse<inferRouterError<TRouter>>>;
       /**
-       * @deprecated use cause
+       * @deprecated use `cause`
        **/
       originalError?: Maybe<Error>;
       cause?: Maybe<Error>;
+      /** @deprecated **/
       isDone?: boolean;
+      meta?: Record<string, unknown>;
     },
   ) {
-    const cause = opts.cause ?? opts.originalError;
+    const cause = opts?.cause ?? opts?.originalError;
 
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore https://github.com/tc39/proposal-error-cause
     super(message, { cause });
 
-    this.isDone = opts.isDone ?? false;
+    this.isDone = opts?.isDone ?? false;
+    this.meta = opts?.meta;
 
     this.cause = this.originalError = cause;
-    this.shape = opts.result?.error;
-    this.data = opts.result?.error.data;
+    this.shape = opts?.result?.error;
+    this.data = opts?.result?.error.data;
     this.name = 'TRPCClientError';
 
     Object.setPrototypeOf(this, TRPCClientError.prototype);
@@ -54,7 +59,7 @@ export class TRPCClientError<TRouter extends AnyRouter>
 
   public static from<TRouter extends AnyRouter>(
     result: Error | TRPCErrorResponse<any>,
-    opts: { isDone?: boolean } = {},
+    opts: { isDone?: boolean; meta?: Record<string, unknown> } = {},
   ): TRPCClientError<TRouter> {
     if (!(result instanceof Error)) {
       return new TRPCClientError<TRouter>((result.error as any).message ?? '', {

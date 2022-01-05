@@ -1,6 +1,15 @@
 export interface ObservableCallbacks<TValue, TError> {
+  /**
+   * @deprecated use `next`
+   */
   onNext?: (opts: TValue) => void;
+  /**
+   * @deprecated use `error`
+   */
   onError?: (opts: TError) => void;
+  /**
+   * @deprecated use `completed`
+   */
   onDone?: () => void;
 }
 

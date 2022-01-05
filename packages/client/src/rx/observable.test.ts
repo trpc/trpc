@@ -1,9 +1,9 @@
 /* eslint-disable @typescript-eslint/no-empty-function */
 import { waitFor } from '@testing-library/dom';
-import { AnyRouter, TRPCError } from '@trpc/server';
+import { AnyRouter, TRPCError } from '../../../server/src';
 import { EventEmitter } from 'events';
 import { expectTypeOf } from 'expect-type';
-import { executeChain, OperationLink, TRPCLink } from '../links2/core';
+import { createChain, OperationLink, TRPCLink } from '../links2/core';
 import { dedupeLink } from '../links2/dedupeLink';
 import { splitLink } from '../links2/splitLink';
 import { observable } from './observable';
@@ -155,11 +155,32 @@ test('map', () => {
   ee.emit('data', { num: 1 });
   ee.emit('data', { num: 2 });
   expect(next).toHaveBeenCalledTimes(2);
-  expect(next.mock.calls).toEqual([[1], [2]]);
-  expect(pipeCalls.mock.calls).toEqual([
-    [{ num: 1 }, 0],
-    [{ num: 2 }, 1],
-  ]);
+  expect(next.mock.calls).toMatchInlineSnapshot(`
+    Array [
+      Array [
+        1,
+      ],
+      Array [
+        2,
+      ],
+    ]
+  `);
+  expect(pipeCalls.mock.calls).toMatchInlineSnapshot(`
+    Array [
+      Array [
+        Object {
+          "num": 1,
+        },
+        0,
+      ],
+      Array [
+        Object {
+          "num": 2,
+        },
+        1,
+      ],
+    ]
+  `);
 
   expect(ee.listeners('data')).toHaveLength(1);
   subscription.unsubscribe();
@@ -210,7 +231,7 @@ test('error', () => {
 
 describe('chain', () => {
   test('trivial', () => {
-    const result$ = executeChain<AnyRouter, unknown, unknown>({
+    const result$ = createChain<AnyRouter, unknown, unknown>({
       links: [
         ({ next, op }) => {
           return observable((observer) => {
@@ -250,11 +271,11 @@ describe('chain', () => {
     const next = jest.fn();
 
     result$.subscribe({ next });
-    console.log(next.mock.calls);
+    // console.log(next.mock.calls);
     expect(next).toHaveBeenCalledTimes(1);
   });
   test('multiple responses', () => {
-    const result$ = executeChain<AnyRouter, unknown, unknown>({
+    const result$ = createChain<AnyRouter, unknown, unknown>({
       links: [
         ({ next, op }) => {
           return observable((observer) => {
@@ -303,12 +324,37 @@ describe('chain', () => {
     const next = jest.fn();
 
     result$.subscribe({ next });
-    console.log(next.mock.calls);
+
     expect(next).toHaveBeenCalledTimes(2);
-    expect(next.mock.calls[0][0].data.result.data).toBe('from cache');
-    expect(next.mock.calls[1][0].data.result.data).toEqual({
-      input: 'world',
-    });
+    expect(next.mock.calls[0]).toMatchInlineSnapshot(`
+      Array [
+        Object {
+          "data": Object {
+            "id": null,
+            "result": Object {
+              "data": "from cache",
+              "type": "data",
+            },
+          },
+          "meta": Object {},
+        },
+      ]
+    `);
+    expect(next.mock.calls[1]).toMatchInlineSnapshot(`
+      Array [
+        Object {
+          "data": Object {
+            "id": null,
+            "result": Object {
+              "data": Object {
+                "input": "world",
+              },
+              "type": "data",
+            },
+          },
+        },
+      ]
+    `);
   });
 });
 
@@ -341,7 +387,7 @@ test('dedupe', async () => {
     },
   ];
   {
-    const call1 = executeChain<AnyRouter, unknown, unknown>({
+    const call1 = createChain<AnyRouter, unknown, unknown>({
       links,
       op: {
         type: 'query',
@@ -352,7 +398,7 @@ test('dedupe', async () => {
       },
     });
 
-    const call2 = executeChain<AnyRouter, unknown, unknown>({
+    const call2 = createChain<AnyRouter, unknown, unknown>({
       links,
       op: {
         type: 'query',
@@ -405,7 +451,7 @@ test('dedupe - cancel one does not cancel the other', async () => {
   ];
 
   {
-    const call1 = executeChain<AnyRouter, unknown, unknown>({
+    const call1 = createChain<AnyRouter, unknown, unknown>({
       links,
       op: {
         type: 'query',
@@ -416,7 +462,7 @@ test('dedupe - cancel one does not cancel the other', async () => {
       },
     });
 
-    const call2 = executeChain<AnyRouter, unknown, unknown>({
+    const call2 = createChain<AnyRouter, unknown, unknown>({
       links,
       op: {
         type: 'query',
@@ -462,7 +508,7 @@ test('splitLink', () => {
     })(null as any),
   ];
 
-  executeChain({
+  createChain({
     links,
     op: {
       type: 'query',
@@ -476,7 +522,7 @@ test('splitLink', () => {
   expect(wsLinkSpy).toHaveBeenCalledTimes(0);
   jest.resetAllMocks();
 
-  executeChain({
+  createChain({
     links,
     op: {
       type: 'subscription',

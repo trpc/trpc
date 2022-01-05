@@ -39,3 +39,22 @@ export function observable<TValue, TError = unknown>(
   };
   return self;
 }
+
+export function toPromise<TObservable extends Observable<TValue, any>, TValue>(
+  observable: TObservable,
+) {
+  let abort: () => void;
+  const promise = new Promise<TValue>((resolve, reject) => {
+    const obs$ = observable.subscribe({
+      next: resolve,
+      error: reject,
+    });
+    abort = () => {
+      obs$.unsubscribe();
+    };
+  });
+  return {
+    promise,
+    abort: abort!,
+  };
+}

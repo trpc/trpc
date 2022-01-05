@@ -8,21 +8,39 @@ import {
   inferSubscriptionOutput,
 } from '@trpc/server';
 import { TRPCResult } from '@trpc/server/rpc';
-import { executeChain } from './executeChain';
-import { getAbortController } from './fetchHelpers';
+import { CancelFn } from '..';
 import { getFetch } from '../getFetch';
-import { ObservableCallbacks, UnsubscribeFn } from './observable';
-import { TRPCAbortError } from './TRPCAbortError';
 import {
-  CancelFn,
+  createChain,
   HTTPHeaders,
   LinkRuntimeOptions,
-  OperationContext,
   OperationLink,
+  OperationMeta,
+  transformOperationResult,
   TRPCLink,
-} from '../links/core';
-import { httpBatchLink } from '../links/httpBatchLink';
+} from '../links2/core';
+import { httpBatchLink } from '../links2/httpBatchLink';
+import { observable, toPromise } from '../rx/observable';
+import { share } from '../rx/operators';
+import { Observer } from '../rx/types';
 import { TRPCClientError } from '../TRPCClientError';
+import { getAbortController } from './fetchHelpers';
+import { UnsubscribeFn } from './observable';
+
+interface ObserverWithLegacy<TValue, TError> extends Observer<TValue, TError> {
+  /**
+   * @deprecated use `next`
+   */
+  onNext: (opts: TValue) => void;
+  /**
+   * @deprecated use `error`
+   */
+  onError: (opts: TError) => void;
+  /**
+   * @deprecated use `completed`
+   */
+  onDone: () => void;
+}
 
 type CancellablePromise<T = unknown> = Promise<T> & {
   cancel: CancelFn;
@@ -77,7 +95,7 @@ export interface TRPCRequestOptions {
   /**
    * Pass additional context to links
    */
-  context?: OperationContext;
+  context?: OperationMeta;
 }
 export class TRPCClient<TRouter extends AnyRouter> {
   private readonly links: OperationLink<TRouter>[];
@@ -133,59 +151,45 @@ export class TRPCClient<TRouter extends AnyRouter> {
     type: TRPCType;
     input: TInput;
     path: string;
-    context?: OperationContext;
+    context?: OperationMeta;
   }) {
-    const $result = executeChain<TRouter, TInput, TOutput>({
-      links: this.links as any,
+    const chain$ = createChain<TRouter, TInput, TOutput>({
+      links: this.links as OperationLink<any, any, any>[],
       op: {
         id: getRequestId(),
         type,
         path,
         input,
-        context,
+        meta: context,
       },
     });
-
-    return $result;
+    return observable<TOutput, TRPCClientError<TRouter>>((observer) => {
+      return chain$.subscribe({
+        ...observer,
+        next(result) {
+          const transformed = transformOperationResult(result);
+          if (transformed.ok) {
+            observer.next(transformed.data);
+          } else {
+            observer.error(transformed.error);
+          }
+        },
+      });
+    }).pipe(share());
   }
   private requestAsPromise<TInput = unknown, TOutput = unknown>(opts: {
     type: TRPCType;
     input: TInput;
     path: string;
-    context?: OperationContext;
+    context?: OperationMeta;
   }): CancellablePromise<TOutput> {
-    const $result = this.$request<TInput, TOutput>(opts);
+    const req$ = this.$request<TInput, TOutput>(opts);
 
-    const promise = new Promise<TOutput>((resolve, reject) => {
-      const res = $result.get();
-      if (res?.type === 'data') {
-        resolve(res.data);
-        $result.done();
-        return;
-      }
-      $result.subscribe({
-        onNext: (result) => {
-          if (result?.type !== 'data') {
-            return;
-          }
-          resolve(result.data);
+    const { promise, abort } = toPromise(req$);
+    const cancellablePromise: CancellablePromise<any> = promise as any;
+    cancellablePromise.cancel = abort;
 
-          $result.done();
-        },
-        onError(err) {
-          reject(err);
-          $result.done();
-        },
-        onDone() {
-          reject(TRPCClientError.from(new TRPCAbortError()));
-        },
-      });
-    }) as CancellablePromise<TOutput>;
-    promise.cancel = () => {
-      $result.done();
-    };
-
-    return promise;
+    return cancellablePromise;
   }
   public query<
     TQueries extends TRouter['_def']['queries'],
@@ -233,27 +237,38 @@ export class TRPCClient<TRouter extends AnyRouter> {
     path: TPath,
     input: TInput,
     opts: TRPCRequestOptions &
-      ObservableCallbacks<TRPCResult<TOutput>, TRPCClientError<TRouter>>,
+      Partial<
+        ObserverWithLegacy<TRPCResult<TOutput>, TRPCClientError<TRouter>>
+      >,
   ): UnsubscribeFn {
-    const $res = this.$request<TInput, TOutput>({
+    const obs$ = this.$request<TInput, TOutput>({
       type: 'subscription',
       path,
       input,
       context: opts.context,
     });
-    $res.subscribe({
-      onNext(output) {
-        if (output) {
-          opts.onNext?.(output);
+    const sub = obs$.subscribe({
+      next(result) {
+        if ('error' in result.data) {
+          const err = TRPCClientError.from(result.data, { meta: result.meta });
+          opts.onError?.(err);
+          opts.error?.(err);
+          return;
         }
+        if (result.data.result.type !== 'data') {
+          // FIXME this shouldn't be needed
+          return;
+        }
+        opts.next?.(result.data.result.data);
       },
-      onError(err) {
+      error(err) {
         opts.onError?.(err);
+        opts.error?.(err);
       },
-      onDone: opts.onDone,
+      complete: opts.onDone,
     });
     return () => {
-      $res.done();
+      sub.unsubscribe();
     };
   }
 }
