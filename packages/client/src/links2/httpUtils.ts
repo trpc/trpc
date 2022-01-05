@@ -38,7 +38,12 @@ export function httpRequest(
   const { type, runtime: rt, path } = props;
   const ac = rt.AbortController ? new rt.AbortController() : null;
 
-  const input = 'input' in props ? props.input : arrayToDict(props.inputs);
+  const input =
+    'input' in props
+      ? rt.transformer.serialize(props.input)
+      : arrayToDict(
+          props.inputs.map((_input) => rt.transformer.serialize(_input)),
+        );
 
   function getUrl() {
     let url = props.url + '/' + path;

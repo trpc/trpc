@@ -6,10 +6,13 @@ import {
 import { observable } from '../rx/observable';
 import { OperationResult, TRPCLink } from './core';
 
-function transformOperationResult<TResult extends OperationResult<any, any>>(
-  result: TResult,
-  transformer: DataTransformer,
-) {
+/**
+ * @internal
+ * @deprecated will stop being exported from this file
+ */
+export function transformOperationResult<
+  TResult extends OperationResult<any, any>,
+>(result: TResult, transformer: DataTransformer) {
   if ('error' in result.data) {
     return {
       ...result,
@@ -33,7 +36,7 @@ function transformOperationResult<TResult extends OperationResult<any, any>>(
     },
   };
 }
-export function splitLink<TRouter extends AnyRouter = AnyRouter>(opts: {
+export function transformerLink<TRouter extends AnyRouter = AnyRouter>(opts: {
   transformer: ClientDataTransformerOptions;
 }): TRPCLink<TRouter> {
   const transformer: DataTransformer = opts.transformer
