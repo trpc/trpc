@@ -18,11 +18,12 @@ export function observable<TValue, TError = unknown>(
           observer.next?.(value);
         },
         error(err) {
+          // TODO maybe unsubscribe or prevent further calls?
           observer.error?.(err);
         },
         complete() {
           observer.complete?.();
-          // TODO maybe unsubscribe?
+          // TODO maybe unsubscribe or prevent further calls?
           // unsubscribe();
         },
       });
