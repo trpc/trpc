@@ -6,6 +6,13 @@ export function observable<TValue, TError = unknown>(
 ): Observable<TValue, TError> {
   const self: Observable<TValue, TError> = {
     subscribe(observer) {
+      function unsubscribe() {
+        if (typeof teardown === 'function') {
+          teardown();
+        } else if (teardown) {
+          teardown.unsubscribe();
+        }
+      }
       const teardown = subscribe({
         next(value) {
           observer.next?.(value);
@@ -15,16 +22,12 @@ export function observable<TValue, TError = unknown>(
         },
         complete() {
           observer.complete?.();
+          // TODO maybe unsubscribe?
+          // unsubscribe();
         },
       });
       return {
-        unsubscribe() {
-          if (typeof teardown === 'function') {
-            teardown();
-          } else if (teardown) {
-            teardown.unsubscribe();
-          }
-        },
+        unsubscribe,
       };
     },
     pipe(

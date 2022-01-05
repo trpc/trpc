@@ -1,5 +1,4 @@
 import { ProcedureType } from '@trpc/server';
-import { TRPCResponse } from '@trpc/server/rpc';
 import { PromiseAndCancel } from '../links/core';
 import { LinkRuntimeOptions } from './core';
 
@@ -22,8 +21,8 @@ const METHOD = {
   subscription: 'PATCH',
 } as const;
 
-interface ResponseShape {
-  json: TRPCResponse;
+export interface ResponseShape {
+  json: unknown;
   meta: {
     response: Response;
   };
