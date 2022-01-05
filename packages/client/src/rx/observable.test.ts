@@ -125,9 +125,9 @@ class CustomEventEmitter<TOutput> extends EventEmitter {}
 test('map', () => {
   type EventShape = { num: number };
   const ee = new CustomEventEmitter<EventShape>();
-  const eventObservable = observable<EventShape, unknown>((subscriber) => {
+  const eventObservable = observable<EventShape, unknown>((observer) => {
     const callback = (data: EventShape) => {
-      subscriber.next(data);
+      observer.next(data);
     };
     ee.on('data', callback);
 
@@ -221,17 +221,20 @@ describe('chain', () => {
           });
         },
         ({ op }) => {
-          return observable((subscribe) => {
-            subscribe.next({
-              id: null,
-              result: {
-                type: 'data',
-                data: {
-                  input: op.input,
+          return observable((observer) => {
+            observer.next({
+              meta: {},
+              data: {
+                id: null,
+                result: {
+                  type: 'data',
+                  data: {
+                    input: op.input,
+                  },
                 },
               },
             });
-            subscribe.complete();
+            observer.complete();
           });
         },
       ],
@@ -256,10 +259,13 @@ describe('chain', () => {
         ({ next, op }) => {
           return observable((observer) => {
             observer.next({
-              id: null,
-              result: {
-                type: 'data',
-                data: 'from cache',
+              meta: {},
+              data: {
+                id: null,
+                result: {
+                  type: 'data',
+                  data: 'from cache',
+                },
               },
             });
             const next$ = next(op).subscribe(observer);
@@ -269,17 +275,19 @@ describe('chain', () => {
           });
         },
         ({ op }) => {
-          return observable((subscribe) => {
-            subscribe.next({
-              id: null,
-              result: {
-                type: 'data',
-                data: {
-                  input: op.input,
+          return observable((observer) => {
+            observer.next({
+              data: {
+                id: null,
+                result: {
+                  type: 'data',
+                  data: {
+                    input: op.input,
+                  },
                 },
               },
             });
-            subscribe.complete();
+            observer.complete();
           });
         },
       ],
@@ -297,8 +305,8 @@ describe('chain', () => {
     result$.subscribe({ next });
     console.log(next.mock.calls);
     expect(next).toHaveBeenCalledTimes(2);
-    expect(next.mock.calls[0][0].result.data).toBe('from cache');
-    expect(next.mock.calls[1][0].result.data).toEqual({
+    expect(next.mock.calls[0][0].data.result.data).toBe('from cache');
+    expect(next.mock.calls[1][0].data.result.data).toEqual({
       input: 'world',
     });
   });
@@ -316,11 +324,13 @@ test('dedupe', async () => {
         const timer = setTimeout(() => {
           timerTriggered();
           subscribe.next({
-            id: null,
-            result: {
-              type: 'data',
-              data: {
-                input: op.input,
+            data: {
+              id: null,
+              result: {
+                type: 'data',
+                data: {
+                  input: op.input,
+                },
               },
             },
           });
@@ -377,11 +387,13 @@ test('dedupe - cancel one does not cancel the other', async () => {
         const timer = setTimeout(() => {
           timerTriggered();
           subscribe.next({
-            id: null,
-            result: {
-              type: 'data',
-              data: {
-                input: op.input,
+            data: {
+              id: null,
+              result: {
+                type: 'data',
+                data: {
+                  input: op.input,
+                },
               },
             },
           });

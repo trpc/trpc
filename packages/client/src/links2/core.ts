@@ -34,22 +34,24 @@ export type LinkRuntimeOptions = Readonly<{
   AbortController?: typeof AbortController;
 }>;
 
+export interface OperationResult<TRouter extends AnyRouter, TOutput> {
+  data: TRPCResponse<TOutput, inferRouterError<TRouter>>;
+  meta?: OperationMeta;
+}
+
+export type OperationResultObservable<
+  TRouter extends AnyRouter,
+  TOutput,
+> = Observable<OperationResult<TRouter, TOutput>, TRPCClientErrorLike<TRouter>>;
+
 export type OperationLink<
   TRouter extends AnyRouter,
   TInput = unknown,
   TOutput = unknown,
 > = (opts: {
   op: Operation<TInput>;
-  next: (
-    op: Operation<TInput>,
-  ) => Observable<
-    TRPCResponse<TOutput, inferRouterError<TRouter>>,
-    TRPCClientErrorLike<TRouter>
-  >;
-}) => Observable<
-  TRPCResponse<TOutput, inferRouterError<TRouter>>,
-  TRPCClientErrorLike<TRouter>
->;
+  next: (op: Operation<TInput>) => OperationResultObservable<TRouter, TOutput>;
+}) => OperationResultObservable<TRouter, TOutput>;
 
 export type TRPCLink<TRouter extends AnyRouter> = (
   opts: LinkRuntimeOptions,
@@ -62,10 +64,7 @@ export function executeChain<
 >(opts: {
   links: OperationLink<TRouter, TInput, TOutput>[];
   op: Operation<TInput>;
-}): Observable<
-  TRPCResponse<TOutput, inferRouterError<TRouter>>,
-  TRPCClientErrorLike<TRouter>
-> {
+}): OperationResultObservable<TRouter, TOutput> {
   return observable((observer) => {
     function execute(index = 0, op = opts.op) {
       const observable$ = opts.links[index]({

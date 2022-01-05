@@ -3,28 +3,33 @@ import {
   ClientDataTransformerOptions,
   DataTransformer,
 } from '@trpc/server';
-import { TRPCResponse } from '@trpc/server/rpc';
 import { observable } from '../rx/observable';
-import { TRPCLink } from './core';
+import { OperationResult, TRPCLink } from './core';
 
-function transformTRPCResponseItem<TItem extends TRPCResponse>(
-  item: TItem,
+function transformOperationResult<TResult extends OperationResult<any, any>>(
+  result: TResult,
   transformer: DataTransformer,
-): TItem {
-  if ('error' in item) {
+) {
+  if ('error' in result.data) {
     return {
-      ...item,
-      error: transformer.deserialize(item.error),
+      ...result,
+      data: {
+        ...result.data,
+        error: transformer.deserialize(result.data.error),
+      },
     };
   }
-  if (item.result.type !== 'data') {
-    return item;
+  if (result.data.result.type !== 'data') {
+    return result;
   }
   return {
-    ...item,
-    result: {
-      ...item.result,
-      data: transformer.deserialize(item.result.data),
+    ...result,
+    data: {
+      ...result.data,
+      result: {
+        ...result.data.result,
+        data: transformer.deserialize(result.data.result.data),
+      },
     },
   };
 }
@@ -49,7 +54,7 @@ export function splitLink<TRouter extends AnyRouter = AnyRouter>(opts: {
       return observable((observer) => {
         const next$ = props.next({ ...props.op, input }).subscribe({
           next(value) {
-            const transformed = transformTRPCResponseItem(value, transformer);
+            const transformed = transformOperationResult(value, transformer);
             observer.next(transformed);
           },
           error: observer.error,
