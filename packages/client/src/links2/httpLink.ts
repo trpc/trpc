@@ -25,7 +25,7 @@ export function httpLink<TRouter extends AnyRouter>(
           method === 'GET'
             ? opts.url +
               (stringifiedInput
-                ? `?${encodeURIComponent(stringifiedInput)}`
+                ? `?input=${encodeURIComponent(stringifiedInput)}`
                 : '')
             : opts.url;
         const body = method !== 'GET' ? stringifiedInput : undefined;
