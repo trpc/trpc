@@ -1,6 +1,9 @@
 import { pipeFromArray } from './util/pipe';
 import { Observable, Observer, OperatorFunction, TeardownLogic } from './types';
 
+export type inferObservableValue<TObservable extends Observable<any, any>> =
+  TObservable extends Observable<infer TValue, any> ? TValue : never;
+
 export function observable<TValue, TError = unknown>(
   subscribe: (observer: Observer<TValue, TError>) => TeardownLogic,
 ): Observable<TValue, TError> {
@@ -40,27 +43,23 @@ export function observable<TValue, TError = unknown>(
   return self;
 }
 
-export function toPromise<TObservable extends Observable<TValue, any>, TValue>(
-  observable: TObservable,
-) {
+export function toPromise<TValue>(observable: Observable<TValue, unknown>) {
   let abort: () => void;
-  const promise = new Promise<TValue>((resolve, reject) => {
-    let completed = false;
+  const promise = new Promise<TValue | undefined>((resolve, reject) => {
+    let value: TValue | undefined = undefined;
     const obs$ = observable.subscribe({
       next(data) {
-        completed = true;
-        resolve(data);
+        value = data;
       },
       error(data) {
-        completed = true;
         reject(data);
+      },
+      complete() {
+        resolve(value);
       },
     });
     abort = () => {
-      if (!completed) {
-        reject(new Error('Aborted'));
-      }
-      completed = true;
+      resolve(value);
       obs$.unsubscribe();
     };
   });

@@ -20,12 +20,13 @@ import {
   TRPCLink,
 } from '../links2/core';
 import { httpBatchLink } from '../links2/httpBatchLink';
-import { observable, toPromise } from '../rx/observable';
+import { inferObservableValue, toPromise } from '../rx/observable';
 import { share } from '../rx/operators';
 import { Observer } from '../rx/types';
 import { TRPCClientError } from '../TRPCClientError';
 import { getAbortController } from './fetchHelpers';
 import { UnsubscribeFn } from './observable';
+import { TRPCAbortError } from './TRPCAbortError';
 
 interface ObserverWithLegacy<TValue, TError> extends Observer<TValue, TError> {
   /**
@@ -163,19 +164,7 @@ export class TRPCClient<TRouter extends AnyRouter> {
         meta: context,
       },
     });
-    return observable<TOutput, TRPCClientError<TRouter>>((observer) => {
-      return chain$.subscribe({
-        ...observer,
-        next(result) {
-          const transformed = transformOperationResult(result);
-          if (transformed.ok) {
-            observer.next(transformed.data);
-          } else {
-            observer.error(transformed.error);
-          }
-        },
-      });
-    }).pipe(share());
+    return chain$.pipe(share());
   }
   private requestAsPromise<TInput = unknown, TOutput = unknown>(opts: {
     type: TRPCType;
@@ -184,9 +173,21 @@ export class TRPCClient<TRouter extends AnyRouter> {
     context?: OperationMeta;
   }): CancellablePromise<TOutput> {
     const req$ = this.$request<TInput, TOutput>(opts);
+    type TValue = inferObservableValue<typeof req$>;
+    const { promise, abort } = toPromise<TValue>(req$);
+    const cancellablePromise: CancellablePromise<any> = promise.then(
+      (result) => {
+        if (result === undefined) {
+          throw TRPCClientError.from(new TRPCAbortError());
+        }
 
-    const { promise, abort } = toPromise(req$);
-    const cancellablePromise: CancellablePromise<any> = promise as any;
+        const transformed = transformOperationResult(result);
+        if (transformed.ok) {
+          return transformed.data;
+        }
+        throw transformed.error;
+      },
+    ) as any;
     cancellablePromise.cancel = abort;
 
     return cancellablePromise;
