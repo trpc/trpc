@@ -45,11 +45,22 @@ export function toPromise<TObservable extends Observable<TValue, any>, TValue>(
 ) {
   let abort: () => void;
   const promise = new Promise<TValue>((resolve, reject) => {
+    let completed = false;
     const obs$ = observable.subscribe({
-      next: resolve,
-      error: reject,
+      next(data) {
+        completed = true;
+        resolve(data);
+      },
+      error(data) {
+        completed = true;
+        reject(data);
+      },
     });
     abort = () => {
+      if (!completed) {
+        reject(new Error('Aborted'));
+      }
+      completed = true;
       obs$.unsubscribe();
     };
   });

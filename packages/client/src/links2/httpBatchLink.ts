@@ -26,13 +26,16 @@ export function httpBatchLink<TRouter extends AnyRouter>(
 
         return {
           promise: promise.then((res) => {
-            const json = Array.isArray(res.json)
+            const resJSON = Array.isArray(res.json)
               ? res.json
               : keyInputPairs.map(() => res.json);
-            return json.map(() => ({
+
+            const result = resJSON.map((item) => ({
               meta: res.meta,
-              json: res.json,
+              json: item,
             }));
+
+            return result;
           }),
           cancel,
         };

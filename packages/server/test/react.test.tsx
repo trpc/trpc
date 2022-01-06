@@ -29,8 +29,8 @@ import {
   wsLink,
   createWSClient,
   TRPCWebSocketClient,
-} from '../../client/src/links/wsLink';
-import { splitLink } from '../../client/src/links/splitLink';
+} from '../../client/src/links2/wsLink';
+import { splitLink } from '../../client/src/links2/splitLink';
 import { AppType } from 'next/dist/shared/lib/utils';
 import { TRPCError } from '../src/TRPCError';
 
