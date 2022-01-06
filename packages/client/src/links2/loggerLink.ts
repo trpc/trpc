@@ -89,7 +89,6 @@ const defaultLogger =
         meta,
       });
     }
-    console.log('result', props);
     const fn: 'error' | 'log' =
       props.direction === 'down' &&
       props.result &&
