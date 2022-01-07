@@ -5,7 +5,7 @@ test('basic', () => {
   expect($value.get()).toBe(5);
 
   const onNext = jest.fn();
-  $value.subscribe({ onNext });
+  $value.subscribe({ next: onNext });
   $value.next(10);
   expect(onNext).toHaveBeenCalledWith(10);
 });

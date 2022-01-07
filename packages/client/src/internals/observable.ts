@@ -45,7 +45,7 @@ export function observable<TValue, TError = unknown>(): ObservableLike<
           const index = listeners.indexOf(listener);
           if (index !== -1) {
             listeners.splice(index, 1);
-            listener.callbacks.onDone?.();
+            listener.callbacks.completed?.();
           }
         },
       };
@@ -59,20 +59,20 @@ export function observable<TValue, TError = unknown>(): ObservableLike<
       value = newValue;
       if (oldValue !== newValue) {
         for (const listener of listeners) {
-          listener.callbacks.onNext?.(newValue);
+          listener.callbacks.next?.(newValue);
         }
       }
     },
     done() {
       while (listeners.length) {
         const listener = listeners.pop();
-        listener?.callbacks.onDone?.();
+        listener?.callbacks.completed?.();
         listener?.unsubscribe();
       }
     },
     error(error) {
       for (const listener of listeners) {
-        listener.callbacks.onError?.(error);
+        listener.callbacks.error?.(error);
       }
     },
   };

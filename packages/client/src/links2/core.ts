@@ -2,7 +2,7 @@ import { AnyRouter, DataTransformer, inferRouterError } from '@trpc/server';
 import { TRPCResponse } from '@trpc/server/rpc';
 import { TRPCClientError } from '..';
 import { observable } from '../rx/observable';
-import { Observable } from '../rx/types';
+import { Observable, Observer } from '../rx/types';
 
 export type OperationMeta = Record<string, unknown>;
 export type Operation<TInput = unknown> = {
@@ -10,7 +10,7 @@ export type Operation<TInput = unknown> = {
   type: 'query' | 'mutation' | 'subscription';
   input: TInput;
   path: string;
-  meta: OperationMeta;
+  meta?: OperationMeta;
 };
 
 export type HTTPHeaders = Record<string, string | string[] | undefined>;
@@ -44,6 +44,11 @@ export type OperationResultObservable<
   TOutput,
 > = Observable<OperationResult<TRouter, TOutput>, TRPCClientError<TRouter>>;
 
+export type OperationResultObserver<
+  TRouter extends AnyRouter,
+  TOutput,
+> = Observer<OperationResult<TRouter, TOutput>, TRPCClientError<TRouter>>;
+
 export type OperationLink<
   TRouter extends AnyRouter,
   TInput = unknown,
@@ -67,7 +72,8 @@ export function createChain<
 }): OperationResultObservable<TRouter, TOutput> {
   return observable((observer) => {
     function execute(index = 0, op = opts.op) {
-      const observable$ = opts.links[index]({
+      const next$ = opts.links[index];
+      const observer = next$({
         op,
         next(nextOp) {
           const observer = execute(index + 1, nextOp);
@@ -75,7 +81,7 @@ export function createChain<
           return observer;
         },
       });
-      return observable$;
+      return observer;
     }
 
     const obs = execute();

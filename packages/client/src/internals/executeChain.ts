@@ -55,7 +55,7 @@ export function executeChain<
       },
       onDestroy: (callback) => {
         $result.subscribe({
-          onDone() {
+          completed() {
             callback();
           },
         });

@@ -28,21 +28,6 @@ import { getAbortController } from './fetchHelpers';
 import { UnsubscribeFn } from './observable';
 import { TRPCAbortError } from './TRPCAbortError';
 
-interface ObserverWithLegacy<TValue, TError> extends Observer<TValue, TError> {
-  /**
-   * @deprecated use `next`
-   */
-  onNext: (opts: TValue) => void;
-  /**
-   * @deprecated use `error`
-   */
-  onError: (opts: TError) => void;
-  /**
-   * @deprecated use `completed`
-   */
-  onDone: () => void;
-}
-
 type CancellablePromise<T = unknown> = Promise<T> & {
   cancel: CancelFn;
 };
@@ -238,38 +223,29 @@ export class TRPCClient<TRouter extends AnyRouter> {
     path: TPath,
     input: TInput,
     opts: TRPCRequestOptions &
-      Partial<
-        ObserverWithLegacy<TRPCResult<TOutput>, TRPCClientError<TRouter>>
-      >,
+      Partial<Observer<TRPCResult<TOutput>, TRPCClientError<TRouter>>>,
   ): UnsubscribeFn {
-    const obs$ = this.$request<TInput, TOutput>({
+    const observable$ = this.$request<TInput, TOutput>({
       type: 'subscription',
       path,
       input,
       context: opts.context,
     });
-    const sub = obs$.subscribe({
+    const observer = observable$.subscribe({
       next(result) {
         if ('error' in result.data) {
           const err = TRPCClientError.from(result.data, { meta: result.meta });
-          opts.onError?.(err);
+
           opts.error?.(err);
           return;
         }
-        if (result.data.result.type !== 'data') {
-          // FIXME this shouldn't be needed
-          return;
-        }
-        opts.next?.(result.data.result.data);
+        opts.next?.(result.data.result);
       },
-      error(err) {
-        opts.onError?.(err);
-        opts.error?.(err);
-      },
-      complete: opts.onDone,
+      error: opts.error,
+      complete: opts.complete,
     });
     return () => {
-      sub.unsubscribe();
+      observer.unsubscribe();
     };
   }
 }
