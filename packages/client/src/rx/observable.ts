@@ -43,6 +43,7 @@ export function observable<TValue, TError = unknown>(
   return self;
 }
 
+/** @internal */
 export function toPromise<TValue>(observable: Observable<TValue, unknown>) {
   let abort: () => void;
   const promise = new Promise<TValue | undefined>((resolve, reject) => {

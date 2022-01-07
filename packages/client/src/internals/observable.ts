@@ -8,7 +8,7 @@ export interface ObservableCallbacks<TValue, TError> {
    */
   onError?: (opts: TError) => void;
   /**
-   * @deprecated use `completed`
+   * @deprecated use `onDone`
    */
   onDone?: () => void;
 }
@@ -45,7 +45,7 @@ export function observable<TValue, TError = unknown>(): ObservableLike<
           const index = listeners.indexOf(listener);
           if (index !== -1) {
             listeners.splice(index, 1);
-            listener.callbacks.completed?.();
+            listener.callbacks.onDone?.();
           }
         },
       };
@@ -59,20 +59,20 @@ export function observable<TValue, TError = unknown>(): ObservableLike<
       value = newValue;
       if (oldValue !== newValue) {
         for (const listener of listeners) {
-          listener.callbacks.next?.(newValue);
+          listener.callbacks.onNext?.(newValue);
         }
       }
     },
     done() {
       while (listeners.length) {
         const listener = listeners.pop();
-        listener?.callbacks.completed?.();
+        listener?.callbacks.onDone?.();
         listener?.unsubscribe();
       }
     },
     error(error) {
       for (const listener of listeners) {
-        listener.callbacks.error?.(error);
+        listener.callbacks.onError?.(error);
       }
     },
   };

@@ -115,10 +115,10 @@ export default function IndexPage() {
 
   // subscribe to new posts and add
   trpc.useSubscription(['post.onAdd'], {
-    onNext(post) {
+    next(post) {
       addMessages([post]);
     },
-    onError(err) {
+    error(err) {
       console.error('Subscription error:', err);
       // we might have missed a message - invalidate cache
       utils.queryClient.invalidateQueries();

@@ -17,7 +17,9 @@
       "links/httpBatchLink.ts",
       "links/splitLink.ts",
       "links/loggerLink.ts",
-      "links/wsLink.ts"
+      "links/wsLink.ts",
+      "rx/index.ts",
+      "rx/operators/index.ts"
     ]
   },
   "scripts": {},
@@ -28,7 +30,8 @@
     "README.md",
     "dist",
     "links",
-    "src"
+    "src",
+    "rx"
   ],
   "dependencies": {
     "@babel/runtime": "^7.9.0"

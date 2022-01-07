@@ -65,7 +65,7 @@ export default function Home() {
   const timestamp = useMemo(() => getLatestTimestamp(msgs), [msgs]);
   trpc.useSubscription(['messages.newMessages', { timestamp }], {
     enabled: !!data, // only subscribe if data has loaded
-    onNext(newMsgs) {
+    next(newMsgs) {
       addMessages([newMsgs]);
     },
   });

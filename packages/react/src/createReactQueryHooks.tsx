@@ -282,8 +282,8 @@ export function createReactQueryHooks<
     ],
     opts: {
       enabled?: boolean;
-      onError?: (err: TError) => void;
-      onNext: (data: TOutput) => void;
+      error?: (err: TError) => void;
+      next: (data: TOutput) => void;
     },
   ) {
     const enabled = opts?.enabled ?? true;
@@ -297,14 +297,14 @@ export function createReactQueryHooks<
       const [path, input] = pathAndInput;
       let isStopped = false;
       const unsub = client.subscription(path, (input ?? undefined) as any, {
-        onError: (err) => {
+        error: (err) => {
           if (!isStopped) {
-            opts.onError?.(err);
+            opts.error?.(err);
           }
         },
-        onNext: (res) => {
+        next: (res) => {
           if (res.type === 'data' && !isStopped) {
-            opts.onNext(res.data);
+            opts.next(res.data);
           }
         },
       });
