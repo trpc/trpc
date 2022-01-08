@@ -77,15 +77,15 @@ export interface TRPCRequestOptions {
    */
   context?: OperationMeta;
 }
+
+export type CreateTRPCClientOptions<TRouter extends AnyRouter> =
+  | CreateTRPCClientWithLinksOptions<TRouter>
+  | CreateTRPCClientWithURLOptions;
 export class TRPCClient<TRouter extends AnyRouter> {
   private readonly links: OperationLink<TRouter>[];
   public readonly runtime: LinkRuntime;
 
-  constructor(
-    opts:
-      | CreateTRPCClientWithLinksOptions<TRouter>
-      | CreateTRPCClientWithURLOptions,
-  ) {
+  constructor(opts: CreateTRPCClientOptions<TRouter>) {
     const _fetch = getFetch(opts?.fetch);
     const AC = getAbortController(opts?.AbortController);
 
