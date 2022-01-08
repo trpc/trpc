@@ -19,34 +19,7 @@ SuperJSON allows us to able to transparently use e.g. standard `Date`/`Map`/`Set
 yarn add superjson
 ```
 
-#### 2. Add to `createTRPCCLient()` or `withTRPC()` config
-
-```ts
-import superjson from 'superjson';
-
-// [...]
-
-export const client = createTRPCClient<AppRouter>({
-  // [...]
-  transformer: superjson,
-});
-```
-```ts
-import superjson from 'superjson';
-
-// [...]
-
-export default withTRPC<AppRouter>({
-  config({ ctx }) {
-    return {
-      // [...]
-      transformer: superjson,
-    }
-  }
-})(MyApp);
-```
-
-#### 3. Add to your `AppRouter`
+#### 3. Add to your backend
 
 ```ts
 import superjson from 'superjson';
@@ -56,6 +29,47 @@ export const appRouter = trpc.router()
   .transformer(superjson)
   // .query(...)
 ```
+#### 3. Add to `createTRPCCLient()` or `setupNext()` config
+
+```ts
+import superjson from 'superjson';
+import { transformerLink } from '@trpc/client/links/transformerLink';
+import { httpBatchLink } from '@trpc/client/links/httpBatchLink';
+// [...]
+
+export const client = createTRPCClient<AppRouter>({
+  links: [
+    transformerLink(superjson), // <---
+    httpBatchLink({
+      url: `/api/trpc`,
+    }),
+  ],
+  // [...]
+});
+```
+```ts
+import { httpBatchLink } from '@trpc/client/links/httpBatchLink';
+import { transformerLink } from '@trpc/client/links/transformerLink';
+import { setupTRPC } from '@trpc/next';
+import superjson from 'superjson';
+import type { AppRouter } from 'server/routers/_app';
+
+// [...]
+
+export default setupTRPC<AppRouter>({
+  transformer: superjson, // <-- Used for hydration when server-side rendering
+  config({ ctx }) {
+    links: [
+      transformerLink(superjson), // <-- Used for the actual requests
+      httpBatchLink({
+        url: `${getBaseUrl()}/api/trpc`,
+      }),
+    ],
+  },
+  // [...]
+})(MyApp);
+```
+
 
 ## Different transformers for upload and download
 

@@ -1,4 +1,3 @@
-import { TRPCLink } from '@trpc/client';
 import { httpBatchLink } from '@trpc/client/links/httpBatchLink';
 import { loggerLink } from '@trpc/client/links/loggerLink';
 import { transformerLink } from '@trpc/client/links/transformerLink';
@@ -8,7 +7,6 @@ import type { inferProcedureOutput } from '@trpc/server';
 // https://www.typescriptlang.org/docs/handbook/release-notes/typescript-3-8.html#type-only-imports-and-export
 import type { AppRouter } from 'server/routers/_app';
 import superjson from 'superjson';
-import { customLink } from './customLink';
 
 function getBaseUrl() {
   if (process.browser) {
@@ -48,7 +46,6 @@ export const trpc = setupTRPC<AppRouter>({
        * @link https://trpc.io/docs/links
        */
       links: [
-        customLink,
         // adds pretty logs to your console in development and logs errors in production
         loggerLink({
           enabled: (opts) =>
