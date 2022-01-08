@@ -16,7 +16,7 @@ export function dedupeLink<
 
       if (op.type !== 'query') {
         // pass through
-        return observable((observer) => next(op).subscribe(observer));
+        return next(op);
       }
       const key = JSON.stringify([op.path, op.input]);
       if (pending[key]) {
@@ -30,7 +30,6 @@ export function dedupeLink<
         }
         const next$ = next(op).subscribe({
           next(v) {
-            reset();
             observer.next(v);
           },
           error(e) {
