@@ -43,6 +43,8 @@ export interface TRPCUseQueryBaseOptions extends TRPCRequestOptions {
   ssr?: boolean;
 }
 
+export type { TRPCContextState, TRPCContext } from './internals/context';
+
 export interface UseTRPCQueryOptions<TPath, TInput, TOutput, TError>
   extends UseQueryOptions<TOutput, TError, TOutput, [TPath, TInput]>,
     TRPCUseQueryBaseOptions {}

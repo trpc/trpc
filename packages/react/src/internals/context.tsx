@@ -27,7 +27,7 @@ interface TRPCFetchQueryOptions<TInput, TError, TOutput>
 interface TRPCFetchInfiniteQueryOptions<TInput, TError, TOutput>
   extends FetchInfiniteQueryOptions<TInput, TError, TOutput>,
     TRPCRequestOptions {}
-
+/** @internal **/
 export type TRPCContextState<
   TRouter extends AnyRouter,
   TSSRContext = undefined,
