@@ -116,32 +116,27 @@ export function loggerLink<TRouter extends AnyRouter = AnyRouter>(
             direction: 'up',
           });
         const requestStartTime = Date.now();
+        function logResult(
+          result: OperationResult<TRouter, unknown> | TRPCClientError<TRouter>,
+        ) {
+          const elapsedMs = Date.now() - requestStartTime;
+
+          enabled({ ...op, direction: 'down', result }) &&
+            logger({
+              ...op,
+              direction: 'down',
+              elapsedMs,
+              result,
+            });
+        }
         return next(op)
           .pipe(
             tap({
               next(result) {
-                const elapsedMs = Date.now() - requestStartTime;
-
-                enabled({ ...op, direction: 'down', result }) &&
-                  logger({
-                    ...op,
-                    direction: 'down',
-                    elapsedMs,
-                    result,
-                  });
-                observer.next(result);
+                logResult(result);
               },
               error(result) {
-                const elapsedMs = Date.now() - requestStartTime;
-
-                enabled({ ...op, direction: 'down', result: result }) &&
-                  logger({
-                    ...op,
-                    direction: 'down',
-                    elapsedMs,
-                    result,
-                  });
-                observer.error(result);
+                logResult(result);
               },
             }),
           )
