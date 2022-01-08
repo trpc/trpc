@@ -55,14 +55,18 @@ interface CreateTRPCClientBaseOptions {
    */
   headers?: HTTPHeaders | (() => HTTPHeaders | Promise<HTTPHeaders>);
 }
-interface CreateTRPCClientWithURLOptions extends CreateTRPCClientBaseOptions {
+
+/** @internal */
+export interface CreateTRPCClientWithURLOptions
+  extends CreateTRPCClientBaseOptions {
   /**
    * HTTP URL of API
    **/
   url: string;
 }
 
-interface CreateTRPCClientWithLinksOptions<TRouter extends AnyRouter>
+/** @internal */
+export interface CreateTRPCClientWithLinksOptions<TRouter extends AnyRouter>
   extends CreateTRPCClientBaseOptions {
   /**
    * @link http://localhost:3000/docs/links
@@ -78,6 +82,7 @@ export interface TRPCRequestOptions {
   context?: OperationMeta;
 }
 
+/** @internal */
 export type CreateTRPCClientOptions<TRouter extends AnyRouter> =
   | CreateTRPCClientWithLinksOptions<TRouter>
   | CreateTRPCClientWithURLOptions;

@@ -1,4 +1,4 @@
-import { AnyRouter, inferRouterError } from '@trpc/server';
+import { AnyRouter, inferRouterError, Dict } from '@trpc/server';
 import { TRPCResponse } from '@trpc/server/rpc';
 import { Observable, Observer } from '../rx/types';
 import { TRPCClientError } from '../TRPCClientError';
@@ -19,7 +19,7 @@ export type Operation<TInput = unknown> = {
   meta?: OperationMeta;
 };
 
-export type HTTPHeaders = Record<string, string | string[] | undefined>;
+export type HTTPHeaders = Dict<string | string[]>;
 
 /**
  * The default `fetch` implementation has an overloaded signature. By convention this library
