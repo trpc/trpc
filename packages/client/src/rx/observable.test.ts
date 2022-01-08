@@ -245,7 +245,7 @@ describe('chain', () => {
         ({ op }) => {
           return observable((observer) => {
             observer.next({
-              meta: {},
+              context: {},
               data: {
                 id: null,
                 result: {
@@ -265,7 +265,7 @@ describe('chain', () => {
         id: 1,
         input: 'world',
         path: 'hello',
-        meta: {},
+        context: {},
       },
     });
 
@@ -281,7 +281,7 @@ describe('chain', () => {
         ({ next, op }) => {
           return observable((observer) => {
             observer.next({
-              meta: {},
+              context: {},
               data: {
                 id: null,
                 result: {
@@ -318,7 +318,7 @@ describe('chain', () => {
         id: 1,
         input: 'world',
         path: 'hello',
-        meta: {},
+        context: {},
       },
     });
 
@@ -330,6 +330,7 @@ describe('chain', () => {
     expect(next.mock.calls[0]).toMatchInlineSnapshot(`
       Array [
         Object {
+          "context": Object {},
           "data": Object {
             "id": null,
             "result": Object {
@@ -337,7 +338,6 @@ describe('chain', () => {
               "type": "data",
             },
           },
-          "meta": Object {},
         },
       ]
     `);
@@ -395,7 +395,7 @@ test('dedupe', async () => {
         id: 1,
         input: 'world',
         path: 'hello',
-        meta: {},
+        context: {},
       },
     });
 
@@ -406,7 +406,7 @@ test('dedupe', async () => {
         id: 1,
         input: 'world',
         path: 'hello',
-        meta: {},
+        context: {},
       },
     });
     const next = jest.fn();
@@ -459,7 +459,7 @@ test('dedupe - cancel one does not cancel the other', async () => {
         id: 1,
         input: 'world',
         path: 'hello',
-        meta: {},
+        context: {},
       },
     });
 
@@ -470,7 +470,7 @@ test('dedupe - cancel one does not cancel the other', async () => {
         id: 1,
         input: 'world',
         path: 'hello',
-        meta: {},
+        context: {},
       },
     });
     const next = jest.fn();
@@ -516,7 +516,7 @@ test('splitLink', () => {
       input: null,
       path: '.',
       id: 0,
-      meta: {},
+      context: {},
     },
   }).subscribe({});
   expect(httpLinkSpy).toHaveBeenCalledTimes(1);
@@ -530,7 +530,7 @@ test('splitLink', () => {
       input: null,
       path: '.',
       id: 0,
-      meta: {},
+      context: {},
     },
   }).subscribe({});
   expect(httpLinkSpy).toHaveBeenCalledTimes(0);

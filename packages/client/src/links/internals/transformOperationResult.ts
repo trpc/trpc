@@ -6,20 +6,20 @@ import { OperationResult } from '../types';
 export function transformOperationResult<TRouter extends AnyRouter, TOutput>(
   result: OperationResult<TRouter, TOutput>,
 ) {
-  const { meta } = result;
+  const { context } = result;
 
   if ('error' in result.data) {
     const error = TRPCClientError.from<TRouter>(result.data);
     return {
       ok: false,
       error,
-      meta,
+      context,
     } as const;
   }
   const data = (result.data.result as any).data as TOutput;
   return {
     ok: true,
     data,
-    meta,
+    context,
   } as const;
 }

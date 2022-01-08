@@ -10,13 +10,13 @@ export type PromiseAndCancel<TValue> = {
   cancel: CancelFn;
 };
 
-export type OperationMeta = Record<string, unknown>;
+export type OperationContext = Record<string, unknown>;
 export type Operation<TInput = unknown> = {
   id: number;
   type: 'query' | 'mutation' | 'subscription';
   input: TInput;
   path: string;
-  meta?: OperationMeta;
+  context?: OperationContext;
 };
 
 export type HTTPHeaders = Dict<string | string[]>;
@@ -38,7 +38,7 @@ export interface LinkRuntime {
 
 export interface OperationResult<TRouter extends AnyRouter, TOutput> {
   data: TRPCResponse<TOutput, inferRouterError<TRouter>>;
-  meta?: OperationMeta;
+  context?: OperationContext;
 }
 
 export type OperationResultObservable<

@@ -47,7 +47,7 @@ test('chainer', async () => {
       type: 'query',
       path: 'hello',
       input: null,
-      meta: {},
+      context: {},
     },
   });
 
@@ -88,7 +88,7 @@ test('cancel request', async () => {
       type: 'query',
       path: 'hello',
       input: null,
-      meta: {},
+      context: {},
     },
   });
 
@@ -130,7 +130,7 @@ describe('batching', () => {
         type: 'query',
         path: 'hello',
         input: null,
-        meta: {},
+        context: {},
       },
     });
 
@@ -141,7 +141,7 @@ describe('batching', () => {
         type: 'query',
         path: 'hello',
         input: 'alexdotjs',
-        meta: {},
+        context: {},
       },
     });
 
@@ -249,7 +249,7 @@ test.only('loggerLink', () => {
         type: 'query',
         input: null,
         path: 'n/a',
-        meta: {},
+        context: {},
       },
     })
       .subscribe({})
@@ -278,7 +278,7 @@ test.only('loggerLink', () => {
         type: 'subscription',
         input: null,
         path: 'n/a',
-        meta: {},
+        context: {},
       },
     })
       .subscribe({})
@@ -301,7 +301,7 @@ test.only('loggerLink', () => {
         type: 'mutation',
         input: null,
         path: 'n/a',
-        meta: {},
+        context: {},
       },
     })
       .subscribe({})
@@ -325,7 +325,7 @@ test.only('loggerLink', () => {
         type: 'query',
         input: null,
         path: 'n/a',
-        meta: {},
+        context: {},
       },
     })
       .subscribe({})
@@ -351,7 +351,7 @@ test.only('loggerLink', () => {
         type: 'query',
         input: null,
         path: 'n/a',
-        meta: {},
+        context: {},
       },
     })
       .subscribe({})
@@ -359,10 +359,10 @@ test.only('loggerLink', () => {
     const [firstCall, secondCall] = logFn.mock.calls.map((args) => args[0]);
     expect(firstCall).toMatchInlineSnapshot(`
       Object {
+        "context": Object {},
         "direction": "up",
         "id": 1,
         "input": null,
-        "meta": Object {},
         "path": "n/a",
         "type": "query",
       }
@@ -372,10 +372,10 @@ test.only('loggerLink', () => {
     expect(typeof elapsedMs).toBe('number');
     expect(other).toMatchInlineSnapshot(`
       Object {
+        "context": Object {},
         "direction": "down",
         "id": 1,
         "input": null,
-        "meta": Object {},
         "path": "n/a",
         "result": [TRPCClientError: ..],
         "type": "query",

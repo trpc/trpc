@@ -21,7 +21,7 @@ export function httpLink<TRouter extends AnyRouter>(
         promise
           .then((res) =>
             observer.next({
-              meta: res.meta,
+              context: res.meta,
               data: res.json as any,
             }),
           )

@@ -283,11 +283,11 @@ export function wsLink<TRouter extends AnyRouter>(
     const { client } = opts;
     return ({ op }) => {
       return observable((observer) => {
-        const { type, input, path, id, meta } = op;
+        const { type, input, path, id, context } = op;
 
         let isDone = false;
         const unsub = client.request(
-          { type, path, input, id, meta },
+          { type, path, input, id, context },
           {
             ...observer,
             complete() {

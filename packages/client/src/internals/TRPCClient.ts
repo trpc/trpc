@@ -12,7 +12,7 @@ import {
   HTTPHeaders,
   LinkRuntime,
   OperationLink,
-  OperationMeta,
+  OperationContext,
   TRPCLink,
 } from '../links/types';
 import { transformOperationResult } from '../links/internals/transformOperationResult';
@@ -79,7 +79,7 @@ export interface TRPCRequestOptions {
   /**
    * Pass additional context to links
    */
-  context?: OperationMeta;
+  context?: OperationContext;
 }
 
 /** @internal */
@@ -127,7 +127,7 @@ export class TRPCClient<TRouter extends AnyRouter> {
     type: TRPCType;
     input: TInput;
     path: string;
-    context?: OperationMeta;
+    context?: OperationContext;
   }) {
     const chain$ = createChain<TRouter, TInput, TOutput>({
       links: this.links as OperationLink<any, any, any>[],
@@ -136,7 +136,7 @@ export class TRPCClient<TRouter extends AnyRouter> {
         type,
         path,
         input,
-        meta: context,
+        context,
       },
     });
     return chain$.pipe(share());
@@ -145,7 +145,7 @@ export class TRPCClient<TRouter extends AnyRouter> {
     type: TRPCType;
     input: TInput;
     path: string;
-    context?: OperationMeta;
+    context?: OperationContext;
   }): CancellablePromise<TOutput> {
     const req$ = this.$request<TInput, TOutput>(opts);
     type TValue = inferObservableValue<typeof req$>;
@@ -224,7 +224,9 @@ export class TRPCClient<TRouter extends AnyRouter> {
     const observer = observable$.subscribe({
       next(result) {
         if ('error' in result.data) {
-          const err = TRPCClientError.from(result.data, { meta: result.meta });
+          const err = TRPCClientError.from(result.data, {
+            meta: result.context,
+          });
 
           opts.error?.(err);
           return;
