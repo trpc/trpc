@@ -10,9 +10,10 @@ import Link from 'next/link';
 import { RefObject, useEffect, useRef, useState } from 'react';
 import { useIsMutating } from 'react-query';
 import { ReactQueryDevtools } from 'react-query/devtools';
+import superjson from 'superjson';
 import 'todomvc-app-css/index.css';
 import 'todomvc-common/base.css';
-import { inferQueryOutput, trpc, transformer } from '../utils/trpc';
+import { inferQueryOutput, trpc } from '../utils/trpc';
 import { appRouter, createContext } from './api/trpc/[trpc]';
 type Task = inferQueryOutput<'todo.all'>[number];
 
@@ -370,7 +371,7 @@ export const getStaticProps = async (
 ) => {
   const ssg = createSSGHelpers({
     router: appRouter,
-    transformer,
+    transformer: superjson,
     ctx: await createContext(),
   });
 
