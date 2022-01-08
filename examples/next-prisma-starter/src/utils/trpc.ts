@@ -2,7 +2,7 @@ import { httpBatchLink } from '@trpc/client/links/httpBatchLink';
 import { loggerLink } from '@trpc/client/links/loggerLink';
 import { transformerLink } from '@trpc/client/links/transformerLink';
 import { setupTRPC } from '@trpc/next';
-import type { inferProcedureOutput } from '@trpc/server';
+import type { inferProcedureInput, inferProcedureOutput } from '@trpc/server';
 // ℹ️ Type-only import:
 // https://www.typescriptlang.org/docs/handbook/release-notes/typescript-3-8.html#type-only-imports-and-export
 import type { AppRouter } from 'server/routers/_app';
@@ -93,3 +93,15 @@ export const trpc = setupTRPC<AppRouter>({
 export type inferQueryOutput<
   TRouteKey extends keyof AppRouter['_def']['queries'],
 > = inferProcedureOutput<AppRouter['_def']['queries'][TRouteKey]>;
+
+export type inferQueryInput<
+  TRouteKey extends keyof AppRouter['_def']['queries'],
+> = inferProcedureInput<AppRouter['_def']['queries'][TRouteKey]>;
+
+export type inferMutationInput<
+  TRouteKey extends keyof AppRouter['_def']['mutations'],
+> = inferProcedureInput<AppRouter['_def']['mutations'][TRouteKey]>;
+
+export type inferMutationOutput<
+  TRouteKey extends keyof AppRouter['_def']['mutations'],
+> = inferProcedureOutput<AppRouter['_def']['mutations'][TRouteKey]>;
