@@ -354,6 +354,24 @@
       "contributions": [
         "doc"
       ]
+    },
+    {
+      "login": "illarionvk",
+      "name": "Illarion Koperski",
+      "avatar_url": "https://avatars.githubusercontent.com/u/5012724?v=4",
+      "profile": "https://www.illarionvk.com",
+      "contributions": [
+        "financial"
+      ]
+    },
+    {
+      "login": "albingroen",
+      "name": "Albin Groen",
+      "avatar_url": "https://avatars.githubusercontent.com/u/19674362?v=4",
+      "profile": "http://abgn.me",
+      "contributions": [
+        "financial"
+      ]
     }
   ],
   "contributorsPerLine": 7,
