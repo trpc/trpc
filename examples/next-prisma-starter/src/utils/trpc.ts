@@ -85,7 +85,6 @@ export const trpc = setupTRPC<AppRouter>({
   },
 });
 
-// export const transformer = superjson;
 /**
  * This is a helper method to infer the output of a query resolver
  * @example type HelloOutput = inferQueryOutput<'hello'>

@@ -127,7 +127,7 @@ export default function IndexPage() {
 
   const [currentlyTyping, setCurrentlyTyping] = useState<string[]>([]);
   trpc.useSubscription(['post.whoIsTyping'], {
-    onNext(data) {
+    next(data) {
       setCurrentlyTyping(data);
     },
   });
