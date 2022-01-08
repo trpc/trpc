@@ -8,7 +8,11 @@ export function setupTRPC<TRouter extends AnyRouter>(
   const hooks = createReactQueryHooks<TRouter>(opts);
   const _withTRPC = withTRPC(opts);
   return {
-    ...hooks,
+    useContext: hooks.useContext,
+    useInfiniteQuery: hooks.useInfiniteQuery,
+    useMutation: hooks.useMutation,
+    useQuery: hooks.useQuery,
+    useSubscription: hooks.useSubscription,
     withTRPC: _withTRPC,
   };
 }

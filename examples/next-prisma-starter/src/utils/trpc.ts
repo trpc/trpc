@@ -31,7 +31,9 @@ function getBaseUrl() {
  * @link https://trpc.io/docs/react#3-create-trpc-hooks
  */
 export const trpc = setupTRPC<AppRouter>({
-  // Used for hydration/dehydration
+  /**
+   * Data transformer used for hydration and dehydration.
+   */
   transformer: superjson,
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   config() {
@@ -55,10 +57,6 @@ export const trpc = setupTRPC<AppRouter>({
           url: `${getBaseUrl()}/api/trpc`,
         }),
       ],
-      /**
-       * @link https://trpc.io/docs/data-transformers
-       */
-      transformer: superjson,
       /**
        * @link https://react-query.tanstack.com/reference/QueryClient
        */
