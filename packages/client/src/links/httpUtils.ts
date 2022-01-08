@@ -1,7 +1,6 @@
 import { ProcedureType } from '@trpc/server';
-import { PromiseAndCancel } from './types';
-import { LinkRuntime } from './types';
-
+import { LinkRuntime, PromiseAndCancel } from './types';
+import { OperationMeta } from '..';
 export interface HTTPLinkOptions {
   url: string;
 }
@@ -64,7 +63,7 @@ export function httpRequest(
   const promise = new Promise<ResponseShape>((resolve, reject) => {
     const url = getUrl();
 
-    let response: Response;
+    const meta = {} as any as ResponseShape['meta'];
     Promise.resolve(rt.headers())
       .then((headers) =>
         rt.fetch(url, {
@@ -78,14 +77,13 @@ export function httpRequest(
         }),
       )
       .then((_res) => {
+        meta.response = _res;
         return _res.json();
       })
       .then((json) => {
         resolve({
           json,
-          meta: {
-            response,
-          },
+          meta,
         });
       })
       .catch(reject);

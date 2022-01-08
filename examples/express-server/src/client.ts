@@ -4,6 +4,7 @@ import { loggerLink } from '@trpc/client/links/loggerLink';
 import AbortController from 'abort-controller';
 import fetch from 'node-fetch';
 import type { AppRouter } from './server';
+import { tap } from '@trpc/client/rx/operators';
 
 // polyfill
 global.AbortController = AbortController;
@@ -17,13 +18,16 @@ async function main() {
   const client = createTRPCClient<AppRouter>({
     links: [
       () =>
-        ({ op, prev, next }) => {
+        ({ op, next }) => {
           console.log('->', op.type, op.path, op.input);
 
-          return next(op, (result) => {
-            console.log('<-', op.type, op.path, op.input, ':', result);
-            prev(result);
-          });
+          return next(op).pipe(
+            tap({
+              next(result) {
+                console.log('<-', op.type, op.path, op.input, ':', result);
+              },
+            }),
+          );
         },
       httpBatchLink({ url }),
     ],
