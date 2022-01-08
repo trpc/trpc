@@ -86,6 +86,9 @@ type inferProcedures<TObj extends ProcedureRecord<any, any, any, any>> = {
 };
 
 export interface CreateReactQueryHooksOptions {
+  /**
+   * Data transformer used for hydration and dehydration.
+   */
   transformer?: DataTransformer;
 }
 

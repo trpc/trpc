@@ -58,7 +58,7 @@ interface WithTRPCOptions<TRouter extends AnyRouter>
   config: (info: { ctx?: NextPageContext }) => WithTRPCConfig<TRouter>;
 }
 
-interface WithTRPCSSROptions<TRouter extends AnyRouter>
+export interface WithTRPCSSROptions<TRouter extends AnyRouter>
   extends WithTRPCOptions<TRouter> {
   ssr: true;
   responseMeta?: (opts: {
@@ -66,7 +66,7 @@ interface WithTRPCSSROptions<TRouter extends AnyRouter>
     clientErrors: TRPCClientError<TRouter>[];
   }) => ResponseMeta;
 }
-interface WithTRPCNoSSROptions<TRouter extends AnyRouter>
+export interface WithTRPCNoSSROptions<TRouter extends AnyRouter>
   extends WithTRPCOptions<TRouter> {
   ssr?: false;
 }
