@@ -18,7 +18,7 @@ import {
   OperationMeta,
   transformOperationResult,
   TRPCLink,
-} from '../links/core2';
+} from '../links/core';
 import { httpBatchLink } from '../links/httpBatchLink';
 import { inferObservableValue, toPromise } from '../rx/observable';
 import { share } from '../rx/operators';

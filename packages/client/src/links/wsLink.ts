@@ -9,7 +9,7 @@ import { UnsubscribeFn } from '../internals/observable';
 import { retryDelay } from '../internals/retryDelay';
 import { observable } from '../rx/observable';
 import { TRPCClientError } from '../TRPCClientError';
-import { Operation, OperationResultObserver, TRPCLink } from './core2';
+import { Operation, OperationResultObserver, TRPCLink } from './core';
 
 export interface WebSocketClientOptions {
   url: string;

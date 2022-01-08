@@ -1,6 +1,6 @@
 import { ProcedureType } from '@trpc/server';
 import { PromiseAndCancel } from './core';
-import { LinkRuntimeOptions } from './core2';
+import { LinkRuntimeOptions } from './core';
 
 export interface HTTPLinkOptions {
   url: string;

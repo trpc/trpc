@@ -1,6 +1,6 @@
 import { AnyRouter } from '@trpc/server';
 import { observable } from '../rx/observable';
-import { TRPCLink } from './core2';
+import { TRPCLink } from './core';
 import { HTTPLinkOptions, httpRequest } from './httpUtils';
 import { transformOperationResult } from '../links/transformerLink';
 

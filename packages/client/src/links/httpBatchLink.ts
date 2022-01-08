@@ -1,7 +1,7 @@
 import { AnyRouter, ProcedureType } from '@trpc/server';
 import { dataLoader } from '../internals/dataLoader';
 import { transformOperationResult } from './transformerLink';
-import { TRPCLink } from './core2';
+import { TRPCLink } from './core';
 import { observable } from '../rx/observable';
 import { HTTPLinkOptions, httpRequest, ResponseShape } from './httpUtils';
 

@@ -7,7 +7,7 @@ import {
   createChain,
   LinkRuntimeOptions,
   OperationLink,
-} from '@trpc/client/src/links/core2';
+} from '@trpc/client/src/links/core';
 import { httpBatchLink } from '../../client/src/links/httpBatchLink';
 import { httpLink } from '../../client/src/links/httpLink';
 import { loggerLink } from '../../client/src/links/loggerLink';

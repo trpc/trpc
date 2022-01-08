@@ -1,7 +1,7 @@
 import { AnyRouter } from '@trpc/server';
 import { TRPCClientError } from '..';
 import { observable } from '../rx/observable';
-import { Operation, OperationResult, TRPCLink } from './core2';
+import { Operation, OperationResult, TRPCLink } from './core';
 
 type ConsoleEsque = {
   log: (...args: any[]) => void;

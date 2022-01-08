@@ -3,7 +3,7 @@ import { waitFor } from '@testing-library/dom';
 import { AnyRouter, TRPCError } from '../../../server/src';
 import { EventEmitter } from 'events';
 import { expectTypeOf } from 'expect-type';
-import { createChain, OperationLink, TRPCLink } from '../links/core2';
+import { createChain, OperationLink, TRPCLink } from '../links/core';
 import { dedupeLink } from '../links/dedupeLink';
 import { splitLink } from '../links/splitLink';
 import { observable } from './observable';
