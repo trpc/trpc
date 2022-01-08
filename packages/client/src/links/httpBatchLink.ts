@@ -1,8 +1,7 @@
 import { AnyRouter, ProcedureType } from '@trpc/server';
 import { dataLoader } from '../internals/dataLoader';
-import { transformOperationResult } from './transformerLink';
-import { TRPCLink } from './core';
 import { observable } from '../rx/observable';
+import { TRPCLink } from './core';
 import { HTTPLinkOptions, httpRequest, ResponseShape } from './httpUtils';
 
 export function httpBatchLink<TRouter extends AnyRouter>(
@@ -53,15 +52,10 @@ export function httpBatchLink<TRouter extends AnyRouter>(
 
         promise
           .then((res) =>
-            observer.next(
-              transformOperationResult(
-                {
-                  meta: res.meta,
-                  data: res.json as any,
-                },
-                runtime.transformer,
-              ),
-            ),
+            observer.next({
+              meta: res.meta,
+              data: res.json as any,
+            }),
           )
           .catch((err) => observer.error(err as any))
           .finally(() => observer.complete());

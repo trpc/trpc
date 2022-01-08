@@ -12,6 +12,7 @@ import type {
   inferProcedureOutput,
   inferSubscriptionOutput,
   ProcedureRecord,
+  DataTransformer,
 } from '@trpc/server';
 import React, { ReactNode, useCallback, useEffect, useMemo } from 'react';
 import {
@@ -84,10 +85,18 @@ type inferProcedures<TObj extends ProcedureRecord<any, any, any, any>> = {
   };
 };
 
+export interface CreateReactQueryHooksOptions {
+  transformer?: DataTransformer;
+}
+
 export function createReactQueryHooks<
   TRouter extends AnyRouter,
   TSSRContext = unknown,
->() {
+>(opts?: CreateReactQueryHooksOptions) {
+  const transfomer: DataTransformer = opts?.transformer ?? {
+    serialize: (v) => v,
+    deserialize: (v) => v,
+  };
   type TQueries = TRouter['_def']['queries'];
   type TSubscriptions = TRouter['_def']['subscriptions'];
   type TError = TRPCClientErrorLike<TRouter>;
@@ -353,17 +362,14 @@ export function createReactQueryHooks<
       opts,
     );
   }
-  function useDehydratedState(
-    client: TRPCClient<TRouter>,
-    trpcState: DehydratedState | undefined,
-  ) {
+  function useDehydratedState(trpcState: DehydratedState | undefined) {
     const transformed: DehydratedState | undefined = useMemo(() => {
       if (!trpcState) {
         return trpcState;
       }
 
-      return client.runtime.transformer.deserialize(trpcState);
-    }, [client, trpcState]);
+      return transfomer.deserialize(trpcState);
+    }, [trpcState]);
     return transformed;
   }
 

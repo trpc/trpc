@@ -2,7 +2,6 @@ import { AnyRouter } from '@trpc/server';
 import { observable } from '../rx/observable';
 import { TRPCLink } from './core';
 import { HTTPLinkOptions, httpRequest } from './httpUtils';
-import { transformOperationResult } from '../links/transformerLink';
 
 export function httpLink<TRouter extends AnyRouter>(
   opts: HTTPLinkOptions,
@@ -20,16 +19,11 @@ export function httpLink<TRouter extends AnyRouter>(
           url,
         });
         promise
-          .then(({ meta, json }) =>
-            observer.next(
-              transformOperationResult(
-                {
-                  meta,
-                  data: json as any,
-                },
-                runtime.transformer,
-              ),
-            ),
+          .then((res) =>
+            observer.next({
+              meta: res.meta,
+              data: res.json as any,
+            }),
           )
           .catch(observer.error)
           .finally(() => observer.complete());

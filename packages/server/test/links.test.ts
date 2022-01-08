@@ -18,10 +18,6 @@ import { AnyRouter } from '../src';
 import { routerToServerAndClient } from './_testHelpers';
 
 const mockRuntime: LinkRuntime = {
-  transformer: {
-    serialize: (obj) => obj,
-    deserialize: (obj) => obj,
-  },
   fetch: fetch as any,
   AbortController: AbortController as any,
   headers: () => ({}),

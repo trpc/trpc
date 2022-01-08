@@ -1,7 +1,5 @@
 import {
   AnyRouter,
-  ClientDataTransformerOptions,
-  DataTransformer,
   inferHandlerInput,
   inferProcedureInput,
   inferProcedureOutput,
@@ -80,13 +78,13 @@ export interface TRPCRequestOptions {
 }
 export class TRPCClient<TRouter extends AnyRouter> {
   private readonly links: OperationLink<TRouter>[];
-  public readonly runtime: LinkRuntime<TRouter>;
+  public readonly runtime: LinkRuntime;
 
   constructor(opts: CreateTRPCClientOptions<TRouter>) {
     const _fetch = getFetch(opts?.fetch);
     const AC = getAbortController(opts?.AbortController);
 
-    function getHeadersFn(): LinkRuntime<TRouter>['headers'] {
+    function getHeadersFn(): LinkRuntime['headers'] {
       if (opts.headers) {
         const headers = opts.headers;
         return typeof headers === 'function' ? headers : () => headers;
@@ -94,11 +92,6 @@ export class TRPCClient<TRouter extends AnyRouter> {
       return () => ({});
     }
     this.runtime = {
-      client: this,
-      transformer: {
-        deserialize: (v) => v,
-        serialize: (v) => v,
-      },
       AbortController: AC as any,
       fetch: _fetch,
       headers: getHeadersFn(),
@@ -113,22 +106,6 @@ export class TRPCClient<TRouter extends AnyRouter> {
         })(this.runtime),
       ];
     }
-  }
-
-  /** @internal */
-  public setTransformer(transformer: ClientDataTransformerOptions) {
-    const actual: DataTransformer = transformer
-      ? 'input' in transformer
-        ? {
-            serialize: transformer.input.serialize,
-            deserialize: transformer.output.deserialize,
-          }
-        : transformer
-      : {
-          serialize: (data) => data,
-          deserialize: (data) => data,
-        };
-    this.runtime.transformer = actual;
   }
 
   private $request<TInput = unknown, TOutput = unknown>({

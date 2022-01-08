@@ -29,7 +29,7 @@ export interface ResponseShape {
 }
 export function httpRequest(
   props: {
-    runtime: LinkRuntime<any>;
+    runtime: LinkRuntime;
     type: ProcedureType;
     path: string;
     url: string;
@@ -38,12 +38,7 @@ export function httpRequest(
   const { type, runtime: rt, path } = props;
   const ac = rt.AbortController ? new rt.AbortController() : null;
 
-  const input =
-    'input' in props
-      ? rt.transformer.serialize(props.input)
-      : arrayToDict(
-          props.inputs.map((_input) => rt.transformer.serialize(_input)),
-        );
+  const input = 'input' in props ? props.input : arrayToDict(props.inputs);
 
   function getUrl() {
     let url = props.url + '/' + path;
