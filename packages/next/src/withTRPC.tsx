@@ -6,7 +6,6 @@
 import {
   createReactQueryHooks,
   createTRPCClient,
-  CreateTRPCClientOptions,
   TRPCClient,
   TRPCClientError,
   TRPCClientErrorLike,
@@ -19,6 +18,7 @@ import {
   NextComponentType,
   NextPageContext,
 } from 'next/dist/shared/lib/utils';
+import type { CreateTRPCClientOptions } from '@trpc/client/src/internals/TRPCClient';
 import React, { createElement, useState } from 'react';
 import { QueryClient, QueryClientProvider } from 'react-query';
 import { dehydrate, DehydratedState, Hydrate } from 'react-query/hydration';
@@ -84,7 +84,7 @@ export function withTRPC<TRouter extends AnyRouter>(
     ssrContext: NextPageContext;
   };
   return (AppOrPage: NextComponentType<any, any, any>): NextComponentType => {
-    const trpc = createReactQueryHooks<TRouter, NextPageContext>();
+    const trpc = createReactQueryHooks<TRouter, NextPageContext>(opts);
 
     const WithTRPC = (
       props: AppPropsType & {
