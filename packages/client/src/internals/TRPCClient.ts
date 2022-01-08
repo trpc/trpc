@@ -41,8 +41,7 @@ let idCounter = 0;
 function getRequestId() {
   return ++idCounter;
 }
-
-export type CreateTRPCClientOptions<TRouter extends AnyRouter> = {
+interface CreateTRPCClientBaseOptions {
   /**
    * Add ponyfill for fetch
    */
@@ -55,20 +54,22 @@ export type CreateTRPCClientOptions<TRouter extends AnyRouter> = {
    * headers to be set on outgoing requests / callback that of said headers
    */
   headers?: HTTPHeaders | (() => HTTPHeaders | Promise<HTTPHeaders>);
-} & (
-  | {
-      /**
-       * HTTP URL of API
-       **/
-      url: string;
-    }
-  | {
-      /**
-       * @link http://localhost:3000/docs/links
-       **/
-      links: TRPCLink<TRouter>[];
-    }
-);
+}
+interface CreateTRPCClientWithURLOptions extends CreateTRPCClientBaseOptions {
+  /**
+   * HTTP URL of API
+   **/
+  url: string;
+}
+
+interface CreateTRPCClientWithLinksOptions<TRouter extends AnyRouter>
+  extends CreateTRPCClientBaseOptions {
+  /**
+   * @link http://localhost:3000/docs/links
+   **/
+  links: TRPCLink<TRouter>[];
+}
+
 type TRPCType = 'subscription' | 'query' | 'mutation';
 export interface TRPCRequestOptions {
   /**
@@ -80,7 +81,11 @@ export class TRPCClient<TRouter extends AnyRouter> {
   private readonly links: OperationLink<TRouter>[];
   public readonly runtime: LinkRuntime;
 
-  constructor(opts: CreateTRPCClientOptions<TRouter>) {
+  constructor(
+    opts:
+      | CreateTRPCClientWithLinksOptions<TRouter>
+      | CreateTRPCClientWithURLOptions,
+  ) {
     const _fetch = getFetch(opts?.fetch);
     const AC = getAbortController(opts?.AbortController);
 
