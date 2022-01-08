@@ -3,11 +3,8 @@ import AbortController from 'abort-controller';
 import fetch from 'node-fetch';
 import { z } from 'zod';
 import { createTRPCClient, TRPCClientError } from '../../client/src';
-import {
-  createChain,
-  LinkRuntime,
-  OperationLink,
-} from '@trpc/client/src/links/core';
+import { LinkRuntime, OperationLink } from '@trpc/client/src/links/types';
+import { createChain } from '@trpc/client/src/links/internals/createChain';
 import { httpBatchLink } from '../../client/src/links/httpBatchLink';
 import { httpLink } from '../../client/src/links/httpLink';
 import { loggerLink } from '../../client/src/links/loggerLink';

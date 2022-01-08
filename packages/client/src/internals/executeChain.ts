@@ -6,7 +6,7 @@ import {
   OperationLink,
   OperationResponse,
   PrevCallback,
-} from '../links/core';
+} from '../links/types';
 import { observableSubject } from './observable';
 
 export function executeChain<

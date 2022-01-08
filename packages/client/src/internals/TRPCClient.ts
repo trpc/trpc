@@ -9,14 +9,14 @@ import { TRPCResult } from '@trpc/server/rpc';
 import { CancelFn } from '..';
 import { getFetch } from '../getFetch';
 import {
-  createChain,
   HTTPHeaders,
   LinkRuntime,
   OperationLink,
   OperationMeta,
-  transformOperationResult,
   TRPCLink,
-} from '../links/core';
+} from '../links/types';
+import { transformOperationResult } from '../links/internals/transformOperationResult';
+import { createChain } from '../links/internals/createChain';
 import { httpBatchLink } from '../links/httpBatchLink';
 import { inferObservableValue, toPromise } from '../rx/observable';
 import { share } from '../rx/operators';

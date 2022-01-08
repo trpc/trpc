@@ -1,6 +1,6 @@
 import { ProcedureType } from '@trpc/server';
 import { TRPCResponse } from '@trpc/server/rpc';
-import { LinkRuntime, PromiseAndCancel } from '../links/core';
+import { LinkRuntime, PromiseAndCancel } from '../links/types';
 
 // https://github.com/trpc/trpc/pull/669
 function arrayToDict(array: unknown[]) {

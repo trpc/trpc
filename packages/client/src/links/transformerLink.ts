@@ -4,15 +4,15 @@ import {
   DataTransformer,
 } from '@trpc/server';
 import { observable } from '../rx/observable';
-import { OperationResult, TRPCLink } from './core';
+import { OperationResult, TRPCLink } from './types';
 
 /**
  * @internal
- * @deprecated will stop being exported from this file
  */
-export function transformOperationResult<
-  TResult extends OperationResult<any, any>,
->(result: TResult, transformer: DataTransformer) {
+function transformOperationResult<TResult extends OperationResult<any, any>>(
+  result: TResult,
+  transformer: DataTransformer,
+) {
   if ('error' in result.data) {
     return {
       ...result,

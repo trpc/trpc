@@ -1,6 +1,6 @@
 import { TRPCResponse } from '@trpc/server/rpc';
 import { TRPCClientError } from '../TRPCClientError';
-import { LinkRuntime } from '../links/core';
+import { LinkRuntime } from '../links/types';
 
 export function transformRPCResponse({
   envelope,

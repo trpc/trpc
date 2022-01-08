@@ -1,12 +1,11 @@
-import { createReactQueryHooks } from '@trpc/react';
+import { httpBatchLink } from '@trpc/client/links/httpBatchLink';
+import { loggerLink } from '@trpc/client/links/loggerLink';
+import { transformerLink } from '@trpc/client/links/transformerLink';
 import { setupNext } from '@trpc/next';
 import type { inferProcedureOutput } from '@trpc/server';
 // ℹ️ Type-only import:
 // https://www.typescriptlang.org/docs/handbook/release-notes/typescript-3-8.html#type-only-imports-and-export
 import type { AppRouter } from 'server/routers/_app';
-import { loggerLink } from '@trpc/client/links/loggerLink';
-import { httpBatchLink } from '@trpc/client/links/httpBatchLink';
-import { transformerLink } from '@trpc/client/links/transformerLink';
 import superjson from 'superjson';
 
 function getBaseUrl() {
@@ -26,7 +25,7 @@ function getBaseUrl() {
   // assume localhost
   return `http://localhost:${process.env.PORT ?? 3000}`;
 }
-const helpers = setupNext({
+const helpers = setupNext<AppRouter>({
   // Used for hydration/dehydration
   transformer: superjson,
   // eslint-disable-next-line @typescript-eslint/no-unused-vars

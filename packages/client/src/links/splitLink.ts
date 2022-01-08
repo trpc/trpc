@@ -1,6 +1,7 @@
 import { AnyRouter } from '@trpc/server';
 import { observable } from '../rx/observable';
-import { TRPCLink, Operation, createChain } from './core';
+import { TRPCLink, Operation } from './types';
+import { createChain } from './internals/createChain';
 
 function asArray<T>(value: T | T[]) {
   return Array.isArray(value) ? value : [value];

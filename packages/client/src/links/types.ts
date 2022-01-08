@@ -1,6 +1,5 @@
 import { AnyRouter, inferRouterError } from '@trpc/server';
 import { TRPCResponse } from '@trpc/server/rpc';
-import { observable } from '../rx/observable';
 import { Observable, Observer } from '../rx/types';
 import { TRPCClientError } from '../TRPCClientError';
 
@@ -64,55 +63,3 @@ export type OperationLink<
 export type TRPCLink<TRouter extends AnyRouter> = (
   opts: LinkRuntime,
 ) => OperationLink<TRouter>;
-
-export function createChain<
-  TRouter extends AnyRouter,
-  TInput = unknown,
-  TOutput = unknown,
->(opts: {
-  links: OperationLink<TRouter, TInput, TOutput>[];
-  op: Operation<TInput>;
-}): OperationResultObservable<TRouter, TOutput> {
-  return observable((observer) => {
-    function execute(index = 0, op = opts.op) {
-      const next$ = opts.links[index];
-      const observer = next$({
-        op,
-        next(nextOp) {
-          const observer = execute(index + 1, nextOp);
-
-          return observer;
-        },
-      });
-      return observer;
-    }
-
-    const obs = execute();
-    const subscription$ = obs.subscribe(observer);
-
-    return () => {
-      subscription$.unsubscribe();
-    };
-  });
-}
-
-/** @internal */
-export function transformOperationResult<TRouter extends AnyRouter, TOutput>(
-  result: OperationResult<TRouter, TOutput>,
-) {
-  const { meta } = result;
-  if ('error' in result.data) {
-    const error = TRPCClientError.from<TRouter>(result.data);
-    return {
-      ok: false,
-      error,
-      meta,
-    } as const;
-  }
-  const data = (result.data.result as any).data as TOutput;
-  return {
-    ok: true,
-    data,
-    meta,
-  } as const;
-}

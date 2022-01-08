@@ -1,4 +1,4 @@
-import { CancelFn, PromiseAndCancel } from '../links/core';
+import { CancelFn, PromiseAndCancel } from '../links/types';
 
 type BatchItem<TKey, TValue> = {
   cancelled: boolean;
