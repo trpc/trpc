@@ -26,10 +26,6 @@ export function createChain<
     }
 
     const obs$ = execute();
-    const subscription = obs$.subscribe(observer);
-
-    return () => {
-      subscription.unsubscribe();
-    };
+    return obs$.subscribe(observer);
   });
 }

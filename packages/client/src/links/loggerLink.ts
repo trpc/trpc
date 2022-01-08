@@ -116,7 +116,7 @@ export function loggerLink<TRouter extends AnyRouter = AnyRouter>(
           });
         const requestStartTime = Date.now();
         const next$ = next(op).subscribe({
-          ...observer,
+          complete: observer.complete,
           error(value) {
             const elapsedMs = Date.now() - requestStartTime;
 
@@ -127,6 +127,7 @@ export function loggerLink<TRouter extends AnyRouter = AnyRouter>(
                 elapsedMs,
                 result: value,
               });
+            observer.error(value);
           },
           next(value) {
             const elapsedMs = Date.now() - requestStartTime;
@@ -138,6 +139,7 @@ export function loggerLink<TRouter extends AnyRouter = AnyRouter>(
                 elapsedMs,
                 result: value,
               });
+            observer.next(value);
           },
         });
         return next$;

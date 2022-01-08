@@ -1,7 +1,7 @@
 import { httpBatchLink } from '@trpc/client/links/httpBatchLink';
 import { loggerLink } from '@trpc/client/links/loggerLink';
 import { transformerLink } from '@trpc/client/links/transformerLink';
-import { setupNext } from '@trpc/next';
+import { setupTRPC } from '@trpc/next';
 import type { inferProcedureOutput } from '@trpc/server';
 // ℹ️ Type-only import:
 // https://www.typescriptlang.org/docs/handbook/release-notes/typescript-3-8.html#type-only-imports-and-export
@@ -25,7 +25,12 @@ function getBaseUrl() {
   // assume localhost
   return `http://localhost:${process.env.PORT ?? 3000}`;
 }
-const helpers = setupNext<AppRouter>({
+
+/**
+ * A set of strongly-typed React hooks from your `AppRouter` type signature with `createReactQueryHooks`.
+ * @link https://trpc.io/docs/react#3-create-trpc-hooks
+ */
+export const trpc = setupTRPC<AppRouter>({
   // Used for hydration/dehydration
   transformer: superjson,
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -80,12 +85,6 @@ const helpers = setupNext<AppRouter>({
     return {};
   },
 });
-/**
- * A set of strongly-typed React hooks from your `AppRouter` type signature with `createReactQueryHooks`.
- * @link https://trpc.io/docs/react#3-create-trpc-hooks
- */
-export const trpc = helpers.hooks;
-export const withTRPC = helpers.withTRPC;
 
 // export const transformer = superjson;
 /**
