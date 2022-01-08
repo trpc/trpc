@@ -131,7 +131,7 @@ test('devalue up and down', async () => {
   close();
 });
 
-test('not batching: superjson up and devalue down', async () => {
+test.only('not batching: superjson up and devalue down', async () => {
   const transformer: trpc.CombinedDataTransformer = {
     input: superjson,
     output: {

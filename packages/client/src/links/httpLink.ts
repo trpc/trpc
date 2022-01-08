@@ -19,17 +19,20 @@ export function httpLink<TRouter extends AnyRouter>(
           type,
           url,
         });
-        promise.then(({ meta, json }) => {
-          observer.next(
-            transformOperationResult(
-              {
-                meta,
-                data: json as any,
-              },
-              runtime.transformer,
+        promise
+          .then(({ meta, json }) =>
+            observer.next(
+              transformOperationResult(
+                {
+                  meta,
+                  data: json as any,
+                },
+                runtime.transformer,
+              ),
             ),
-          );
-        });
+          )
+          .catch(observer.error)
+          .finally(() => observer.complete());
 
         return () => {
           cancel();
