@@ -1,6 +1,7 @@
 import { AnyRouter } from '@trpc/server';
 import { TRPCClientError } from '..';
 import { observable } from '../rx/observable';
+import { tap } from '../rx/operators';
 import { Operation, OperationResult, TRPCLink } from './types';
 
 type ConsoleEsque = {
@@ -115,34 +116,36 @@ export function loggerLink<TRouter extends AnyRouter = AnyRouter>(
             direction: 'up',
           });
         const requestStartTime = Date.now();
-        const next$ = next(op).subscribe({
-          complete: observer.complete,
-          error(value) {
-            const elapsedMs = Date.now() - requestStartTime;
+        return next(op)
+          .pipe(
+            tap({
+              next(result) {
+                const elapsedMs = Date.now() - requestStartTime;
 
-            enabled({ ...op, direction: 'down', result: value }) &&
-              logger({
-                ...op,
-                direction: 'down',
-                elapsedMs,
-                result: value,
-              });
-            observer.error(value);
-          },
-          next(value) {
-            const elapsedMs = Date.now() - requestStartTime;
+                enabled({ ...op, direction: 'down', result }) &&
+                  logger({
+                    ...op,
+                    direction: 'down',
+                    elapsedMs,
+                    result,
+                  });
+                observer.next(result);
+              },
+              error(result) {
+                const elapsedMs = Date.now() - requestStartTime;
 
-            enabled({ ...op, direction: 'down', result: value }) &&
-              logger({
-                ...op,
-                direction: 'down',
-                elapsedMs,
-                result: value,
-              });
-            observer.next(value);
-          },
-        });
-        return next$;
+                enabled({ ...op, direction: 'down', result: result }) &&
+                  logger({
+                    ...op,
+                    direction: 'down',
+                    elapsedMs,
+                    result,
+                  });
+                observer.error(result);
+              },
+            }),
+          )
+          .subscribe(observer);
       });
     };
   };
