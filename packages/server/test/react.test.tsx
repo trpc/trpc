@@ -8,7 +8,7 @@ import { trpcServer } from './_packages';
 import '@testing-library/jest-dom';
 import { render, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { httpBatchLink } from '../../client/src/links2/httpBatchLink';
+import { httpBatchLink } from '../../client/src/links/httpBatchLink';
 import { expectTypeOf } from 'expect-type';
 import hash from 'hash-sum';
 import React, { Fragment, useEffect, useState } from 'react';
@@ -29,8 +29,8 @@ import {
   wsLink,
   createWSClient,
   TRPCWebSocketClient,
-} from '../../client/src/links2/wsLink';
-import { splitLink } from '../../client/src/links2/splitLink';
+} from '../../client/src/links/wsLink';
+import { splitLink } from '../../client/src/links/splitLink';
 import { AppType } from 'next/dist/shared/lib/utils';
 import { TRPCError } from '../src/TRPCError';
 import { observable } from '../../client/src/rx/observable';

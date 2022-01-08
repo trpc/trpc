@@ -4,21 +4,13 @@ import {
   TRPCClientIncomingRequest,
   TRPCRequest,
   TRPCResponse,
-  TRPCResult,
 } from '@trpc/server/rpc';
-import { TRPCErrorResponse } from '@trpc/server/rpc';
-import { ObservableCallbacks, UnsubscribeFn } from '../internals/observable';
+import { UnsubscribeFn } from '../internals/observable';
 import { retryDelay } from '../internals/retryDelay';
-import { Observer } from '../rx/types';
+import { observable } from '../rx/observable';
 import { TRPCClientError } from '../TRPCClientError';
-import { TRPCLink } from './core';
+import { Operation, OperationResultObserver, TRPCLink } from './core2';
 
-type Operation = {
-  id: number | string;
-  type: ProcedureType;
-  input: unknown;
-  path: string;
-};
 export interface WebSocketClientOptions {
   url: string;
   WebSocket?: WebSocket;
@@ -43,9 +35,7 @@ export function createWSClient(opts: WebSocketClientOptions) {
   /**
    * pending outgoing requests that are awaiting callback
    */
-  type TCallbacks = Partial<
-    Observer<TRPCResult, TRPCClientError<AnyRouter> | TRPCErrorResponse>
-  >;
+  type TCallbacks = OperationResultObserver<AnyRouter, unknown>;
   type TRequest = {
     /**
      * Reference to the WebSocket instance this request was made to
@@ -151,18 +141,14 @@ export function createWSClient(opts: WebSocketClientOptions) {
         }
       }
     };
-    const handleIncomingResponse = (res: TRPCResponse) => {
-      const req = res.id !== null && pendingRequests[res.id];
+    const handleIncomingResponse = (data: TRPCResponse) => {
+      const req = data.id !== null && pendingRequests[data.id];
       if (!req) {
         // do something?
         return;
       }
-      if ('error' in res) {
-        req.callbacks.error?.(res);
-        return;
-      }
 
-      req.callbacks.next?.(res.result);
+      req.callbacks.next?.({ data });
       if (req.ws !== activeConnection && conn === activeConnection) {
         const oldWs = req.ws;
         // gracefully replace old connection with this
@@ -170,8 +156,12 @@ export function createWSClient(opts: WebSocketClientOptions) {
         closeIfNoPending(oldWs);
       }
 
-      if (res.result.type === 'stopped' && conn === activeConnection) {
-        req.callbacks.complete?.();
+      if (
+        'result' in data &&
+        data.result.type === 'stopped' &&
+        conn === activeConnection
+      ) {
+        req.callbacks.complete();
       }
     };
     conn.addEventListener('message', ({ data }) => {
@@ -289,63 +279,46 @@ class TRPCSubscriptionEndedError extends Error {
 export function wsLink<TRouter extends AnyRouter>(
   opts: WebSocketLinkOptions,
 ): TRPCLink<TRouter> {
-  // initialized config
   return (rt) => {
     const { client } = opts;
-
-    return ({ op, prev, onDestroy }) => {
-      const { type, input: rawInput, path, id } = op;
-      const input = rt.transformer.serialize(rawInput);
-      let isDone = false;
-      const unsub = client.request(
-        { type, path, input, id },
-        {
-          next(result) {
-            if (isDone) {
-              return;
-            }
-            if ('data' in result) {
-              const data = rt.transformer.deserialize(result.data);
-              prev({ type: 'data', data });
-            } else {
-              prev(result);
-            }
-
-            if (op.type !== 'subscription') {
-              // if it isn't a subscription we don't care about next response
+    return ({ op }) => {
+      return observable((observer) => {
+        const { type, input: rawInput, path, id, meta } = op;
+        const input = rt.transformer.serialize(rawInput);
+        let isDone = false;
+        const unsub = client.request(
+          { type, path, input, id, meta },
+          {
+            ...observer,
+            complete() {
+              if (!isDone) {
+                observer.error(
+                  TRPCClientError.from(
+                    new TRPCSubscriptionEndedError(
+                      'Operation ended prematurely',
+                    ),
+                  ),
+                );
+              }
+              observer.complete();
               isDone = true;
-              unsub();
-            }
-          },
-          error(err) {
-            if (isDone) {
-              return;
-            }
-            prev(
-              err instanceof Error
-                ? err
-                : TRPCClientError.from({
-                    ...err,
-                    error: rt.transformer.deserialize(err.error),
-                  }),
-            );
-          },
-          complete() {
-            if (isDone) {
-              return;
-            }
-            const result = new TRPCSubscriptionEndedError(
-              'Operation ended prematurely',
-            );
+            },
+            next(result) {
+              observer.next(result);
 
-            prev(TRPCClientError.from(result, { isDone: true }));
-            isDone = true;
+              if (op.type !== 'subscription') {
+                // if it isn't a subscription we don't care about next response
+
+                isDone = true;
+                unsub();
+                observer.complete();
+              }
+            },
           },
-        },
-      );
-      onDestroy(() => {
-        isDone = true;
-        unsub();
+        );
+        return () => {
+          unsub();
+        };
       });
     };
   };

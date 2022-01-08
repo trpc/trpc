@@ -4,7 +4,7 @@ import {
   DataTransformer,
 } from '@trpc/server';
 import { observable } from '../rx/observable';
-import { OperationResult, TRPCLink } from './core';
+import { OperationResult, TRPCLink } from './core2';
 
 /**
  * @internal

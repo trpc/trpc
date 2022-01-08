@@ -1,46 +1,38 @@
 import { AnyRouter } from '@trpc/server';
-import { TRPCClientError } from '../TRPCClientError';
-import { transformRPCResponse } from '../internals/transformRPCResponse';
-import { httpRequest } from '../internals/httpRequest';
-import { HTTPLinkOptions, TRPCLink } from './core';
-import { TRPCAbortError } from '../internals/TRPCAbortError';
+import { observable } from '../rx/observable';
+import { TRPCLink } from './core2';
+import { HTTPLinkOptions, httpRequest } from './httpUtils';
+import { transformOperationResult } from '../links/transformerLink';
 
 export function httpLink<TRouter extends AnyRouter>(
   opts: HTTPLinkOptions,
 ): TRPCLink<TRouter> {
   const { url } = opts;
-
-  // initialized config
-  return (runtime) => {
-    // initialized in app
-    return ({ op, prev, onDestroy }) => {
-      const { path, input, type } = op;
-      const { promise, cancel } = httpRequest({
-        runtime,
-        type,
-        input,
-        url,
-        path,
-      });
-      let isDone = false;
-      const prevOnce: typeof prev = (result) => {
-        if (isDone) {
-          return;
-        }
-        isDone = true;
-        prev(result);
-      };
-      onDestroy(() => {
-        prevOnce(TRPCClientError.from(new TRPCAbortError(), { isDone: true }));
-        cancel();
-      });
-      promise
-        .then((envelope) => {
-          prevOnce(transformRPCResponse({ envelope, runtime }));
-        })
-        .catch((cause) => {
-          prevOnce(TRPCClientError.from(cause));
+  return (runtime) =>
+    ({ op }) =>
+      observable((observer) => {
+        const { path, input, type } = op;
+        const { promise, cancel } = httpRequest({
+          runtime,
+          path,
+          input,
+          type,
+          url,
         });
-    };
-  };
+        promise.then(({ meta, json }) => {
+          observer.next(
+            transformOperationResult(
+              {
+                meta,
+                data: json as any,
+              },
+              runtime.transformer,
+            ),
+          );
+        });
+
+        return () => {
+          cancel();
+        };
+      });
 }

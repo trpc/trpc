@@ -1,5 +1,7 @@
 import { AnyRouter } from '@trpc/server';
-import { Operation, OperationResponse, TRPCLink } from './core';
+import { TRPCClientError } from '..';
+import { observable } from '../rx/observable';
+import { Operation, OperationResult, TRPCLink } from './core2';
 
 type ConsoleEsque = {
   log: (...args: any[]) => void;
@@ -12,7 +14,7 @@ type EnableFnOptions<TRouter extends AnyRouter> =
     })
   | {
       direction: 'down';
-      result: OperationResponse<TRouter>;
+      result: OperationResult<TRouter, unknown> | TRPCClientError<TRouter>;
     };
 type EnabledFn<TRouter extends AnyRouter> = (
   opts: EnableFnOptions<TRouter>,
@@ -31,7 +33,7 @@ type LogFnOptions<TRouter extends AnyRouter> = Operation &
          * Request result
          */
         direction: 'down';
-        result: OperationResponse<TRouter>;
+        result: OperationResult<TRouter, unknown> | TRPCClientError<TRouter>;
         elapsedMs: number;
       }
   );
@@ -55,7 +57,7 @@ type LoggerLinkOptions<TRouter extends AnyRouter> = {
 const defaultLogger =
   <TRouter extends AnyRouter>(c: ConsoleEsque = console): LogFn<TRouter> =>
   (props) => {
-    const { direction, input, type, path, context, id } = props;
+    const { direction, input, type, path, meta, id } = props;
     const [light, dark] = palette[type];
 
     const css = `
@@ -78,19 +80,19 @@ const defaultLogger =
       `${css}; font-weight: normal;`,
     ];
     if (props.direction === 'up') {
-      args.push({ input, context });
+      args.push({ input, meta });
     } else {
       args.push({
         input,
         result: props.result,
         elapsedMs: props.elapsedMs,
-        context,
+        meta,
       });
     }
     const fn: 'error' | 'log' =
       props.direction === 'down' &&
       props.result &&
-      props.result instanceof Error
+      (props.result instanceof Error || 'error' in props.result.data)
         ? 'error'
         : 'log';
 
@@ -102,27 +104,43 @@ export function loggerLink<TRouter extends AnyRouter = AnyRouter>(
   const { enabled = () => true } = opts;
 
   const { logger = defaultLogger(opts.console) } = opts;
-  return () => {
-    return ({ op, next, prev }) => {
-      // ->
-      enabled({ ...op, direction: 'up' }) &&
-        logger({
-          ...op,
-          direction: 'up',
-        });
-      const requestStartTime = Date.now();
-      next(op, (result) => {
-        const elapsedMs = Date.now() - requestStartTime;
 
-        enabled({ ...op, direction: 'down', result }) &&
+  return () => {
+    return ({ op, next }) => {
+      return observable((observer) => {
+        // ->
+        enabled({ ...op, direction: 'up' }) &&
           logger({
             ...op,
-            direction: 'down',
-            elapsedMs,
-            result,
+            direction: 'up',
           });
-        // <-
-        prev(result);
+        const requestStartTime = Date.now();
+        const next$ = next(op).subscribe({
+          ...observer,
+          error(value) {
+            const elapsedMs = Date.now() - requestStartTime;
+
+            enabled({ ...op, direction: 'down', result: value }) &&
+              logger({
+                ...op,
+                direction: 'down',
+                elapsedMs,
+                result: value,
+              });
+          },
+          next(value) {
+            const elapsedMs = Date.now() - requestStartTime;
+
+            enabled({ ...op, direction: 'down', result: value }) &&
+              logger({
+                ...op,
+                direction: 'down',
+                elapsedMs,
+                result: value,
+              });
+          },
+        });
+        return next$;
       });
     };
   };

@@ -7,7 +7,7 @@ import { EventEmitter } from 'events';
 import { expectTypeOf } from 'expect-type';
 import { default as WebSocket, default as ws } from 'ws';
 import { z } from 'zod';
-import { wsLink } from '../../client/src/links2/wsLink';
+import { wsLink } from '../../client/src/links/wsLink';
 import * as trpc from '../src';
 import { TRPCError } from '../src';
 import { TRPCRequest, TRPCResult } from '../src/rpc';
