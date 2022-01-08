@@ -1,6 +1,6 @@
 import { ProcedureType } from '@trpc/server';
 import { PromiseAndCancel } from './core';
-import { LinkRuntimeOptions } from './core';
+import { LinkRuntime } from './core';
 
 export interface HTTPLinkOptions {
   url: string;
@@ -29,7 +29,7 @@ export interface ResponseShape {
 }
 export function httpRequest(
   props: {
-    runtime: LinkRuntimeOptions;
+    runtime: LinkRuntime<any>;
     type: ProcedureType;
     path: string;
     url: string;

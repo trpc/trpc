@@ -6,6 +6,8 @@ import { z } from 'zod';
 import { TRPCClientError } from '../../client/src';
 import { httpBatchLink } from '../../client/src/links/httpBatchLink';
 import { httpLink } from '../../client/src/links/httpLink';
+import { transformerLink } from '../../client/src/links/transformerLink';
+
 import * as trpc from '../src';
 import { TRPCError } from '../src/TRPCError';
 import { routerToServerAndClient, waitError } from './_testHelpers';
@@ -27,7 +29,11 @@ test('superjson up and down', async () => {
         },
       }),
     {
-      client: { transformer },
+      client({ httpUrl }) {
+        return {
+          links: [transformerLink(superjson), httpBatchLink({ url: httpUrl })],
+        };
+      },
     },
   );
   const res = await client.query('hello', date);
@@ -56,7 +62,11 @@ test('empty superjson up and down', async () => {
         },
       }),
     {
-      client: { transformer },
+      client({ httpUrl }) {
+        return {
+          links: [transformerLink(superjson), httpBatchLink({ url: httpUrl })],
+        };
+      },
     },
   );
   const res1 = await client.query('empty-up');
@@ -121,7 +131,14 @@ test('devalue up and down', async () => {
         },
       }),
     {
-      client: { transformer },
+      client({ httpUrl }) {
+        return {
+          links: [
+            transformerLink(transformer),
+            httpBatchLink({ url: httpUrl }),
+          ],
+        };
+      },
     },
   );
   const res = await client.query('hello', date);
@@ -131,7 +148,7 @@ test('devalue up and down', async () => {
   close();
 });
 
-test.only('not batching: superjson up and devalue down', async () => {
+test('not batching: superjson up and devalue down', async () => {
   const transformer: trpc.CombinedDataTransformer = {
     input: superjson,
     output: {
@@ -154,46 +171,11 @@ test.only('not batching: superjson up and devalue down', async () => {
         },
       }),
     {
-      client: ({ httpUrl }) => ({
-        transformer,
-        links: [httpLink({ url: httpUrl })],
-      }),
-    },
-  );
-  const res = await client.query('hello', date);
-  expect(res.getTime()).toBe(date.getTime());
-  expect((fn.mock.calls[0][0] as Date).getTime()).toBe(date.getTime());
-
-  close();
-});
-
-test('batching: superjson up and devalue down', async () => {
-  const transformer: trpc.CombinedDataTransformer = {
-    input: superjson,
-    output: {
-      serialize: (object) => devalue(object),
-      deserialize: (object) => eval(`(${object})`),
-    },
-  };
-
-  const date = new Date();
-  const fn = jest.fn();
-  const { client, close } = routerToServerAndClient(
-    trpc
-      .router()
-      .transformer(transformer)
-      .query('hello', {
-        input: z.date(),
-        resolve({ input }) {
-          fn(input);
-          return input;
-        },
-      }),
-    {
-      client: ({ httpUrl }) => ({
-        transformer,
-        links: [httpBatchLink({ url: httpUrl })],
-      }),
+      client({ httpUrl }) {
+        return {
+          links: [transformerLink(transformer), httpLink({ url: httpUrl })],
+        };
+      },
     },
   );
   const res = await client.query('hello', date);
@@ -226,9 +208,48 @@ test('batching: superjson up and devalue down', async () => {
         },
       }),
     {
+      client({ httpUrl }) {
+        return {
+          links: [
+            transformerLink(transformer),
+            httpBatchLink({ url: httpUrl }),
+          ],
+        };
+      },
+    },
+  );
+  const res = await client.query('hello', date);
+  expect(res.getTime()).toBe(date.getTime());
+  expect((fn.mock.calls[0][0] as Date).getTime()).toBe(date.getTime());
+
+  close();
+});
+
+test('batching: superjson up and f down', async () => {
+  const transformer: trpc.CombinedDataTransformer = {
+    input: superjson,
+    output: {
+      serialize: (object) => devalue(object),
+      deserialize: (object) => eval(`(${object})`),
+    },
+  };
+
+  const date = new Date();
+  const fn = jest.fn();
+  const { client, close } = routerToServerAndClient(
+    trpc
+      .router()
+      .transformer(transformer)
+      .query('hello', {
+        input: z.date(),
+        resolve({ input }) {
+          fn(input);
+          return input;
+        },
+      }),
+    {
       client: ({ httpUrl }) => ({
-        transformer,
-        links: [httpBatchLink({ url: httpUrl })],
+        links: [transformerLink(transformer), httpBatchLink({ url: httpUrl })],
       }),
     },
   );
@@ -278,7 +299,14 @@ test('all transformers running in correct order', async () => {
         },
       }),
     {
-      client: { transformer },
+      client({ httpUrl }) {
+        return {
+          links: [
+            transformerLink(transformer),
+            httpBatchLink({ url: httpUrl }),
+          ],
+        };
+      },
     },
   );
   const res = await client.query('hello', world);
@@ -310,7 +338,14 @@ describe('transformer on router', () => {
           },
         }),
       {
-        client: { transformer },
+        client({ httpUrl }) {
+          return {
+            links: [
+              transformerLink(superjson),
+              httpBatchLink({ url: httpUrl }),
+            ],
+          };
+        },
       },
     );
     const res = await client.query('hello', date);
@@ -394,8 +429,13 @@ describe('transformer on router', () => {
         server: {
           onError,
         },
-        client: {
-          transformer,
+        client({ httpUrl }) {
+          return {
+            links: [
+              transformerLink(transformer),
+              httpBatchLink({ url: httpUrl }),
+            ],
+          };
         },
       },
     );
@@ -431,7 +471,11 @@ test('superjson - no input', async () => {
         },
       }),
     {
-      client: { transformer },
+      client({ httpUrl }) {
+        return {
+          links: [transformerLink(superjson), httpBatchLink({ url: httpUrl })],
+        };
+      },
     },
   );
   const json = await (await fetch(`${httpUrl}/hello`)).json();

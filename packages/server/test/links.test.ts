@@ -5,7 +5,7 @@ import { z } from 'zod';
 import { createTRPCClient, TRPCClientError } from '../../client/src';
 import {
   createChain,
-  LinkRuntimeOptions,
+  LinkRuntime,
   OperationLink,
 } from '@trpc/client/src/links/core';
 import { httpBatchLink } from '../../client/src/links/httpBatchLink';
@@ -17,7 +17,7 @@ import * as trpc from '../src';
 import { AnyRouter } from '../src';
 import { routerToServerAndClient } from './_testHelpers';
 
-const mockRuntime: LinkRuntimeOptions = {
+const mockRuntime: LinkRuntime = {
   transformer: {
     serialize: (obj) => obj,
     deserialize: (obj) => obj,

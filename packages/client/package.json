@@ -13,10 +13,11 @@
   "preconstruct": {
     "entrypoints": [
       "index.ts",
-      "links/httpLink.ts",
       "links/httpBatchLink.ts",
-      "links/splitLink.ts",
+      "links/httpLink.ts",
       "links/loggerLink.ts",
+      "links/splitLink.ts",
+      "links/transformerLink.ts",
       "links/wsLink.ts",
       "rx/index.ts",
       "rx/operators/index.ts"

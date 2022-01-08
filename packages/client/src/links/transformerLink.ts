@@ -36,16 +36,16 @@ export function transformOperationResult<
     },
   };
 }
-export function transformerLink<TRouter extends AnyRouter = AnyRouter>(opts: {
-  transformer: ClientDataTransformerOptions;
-}): TRPCLink<TRouter> {
-  const transformer: DataTransformer = opts.transformer
-    ? 'input' in opts.transformer
+export function transformerLink<TRouter extends AnyRouter = AnyRouter>(
+  transformer: ClientDataTransformerOptions,
+): TRPCLink<TRouter> {
+  const _transformer: DataTransformer = transformer
+    ? 'input' in transformer
       ? {
-          serialize: opts.transformer.input.serialize,
-          deserialize: opts.transformer.output.deserialize,
+          serialize: transformer.input.serialize,
+          deserialize: transformer.output.deserialize,
         }
-      : opts.transformer
+      : transformer
     : {
         serialize: (data) => data,
         deserialize: (data) => data,
@@ -53,11 +53,11 @@ export function transformerLink<TRouter extends AnyRouter = AnyRouter>(opts: {
 
   return () => {
     return (props) => {
-      const input = transformer.serialize(props.op.input);
+      const input = _transformer.serialize(props.op.input);
       return observable((observer) => {
         const next$ = props.next({ ...props.op, input }).subscribe({
           next(value) {
-            const transformed = transformOperationResult(value, transformer);
+            const transformed = transformOperationResult(value, _transformer);
             observer.next(transformed);
           },
           error: observer.error,
