@@ -1,6 +1,7 @@
 export interface Unsubscribable {
   unsubscribe(): void;
 }
+export type UnsubscribeFn = () => void;
 export interface Subscribable<TValue, TError> {
   subscribe(observer: Partial<Observer<TValue, TError>>): Unsubscribable;
 }
@@ -46,7 +47,7 @@ export interface Observer<TValue, TError> {
 
 export type TeardownLogic =
   // | SubscriptionLike
-  Unsubscribable | (() => void) | void;
+  Unsubscribable | UnsubscribeFn | void;
 
 export type UnaryFunction<T, R> = (source: T) => R;
 

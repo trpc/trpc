@@ -7,7 +7,7 @@ export function transformOperationResult<TRouter extends AnyRouter, TOutput>(
   result: OperationResult<TRouter, TOutput>,
 ) {
   const { meta } = result;
-  console.log('transform', { result });
+
   if ('error' in result.data) {
     const error = TRPCClientError.from<TRouter>(result.data);
     return {

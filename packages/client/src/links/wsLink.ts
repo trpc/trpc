@@ -5,8 +5,8 @@ import {
   TRPCRequest,
   TRPCResponse,
 } from '@trpc/server/rpc';
-import { UnsubscribeFn } from '../internals/observable';
 import { retryDelay } from '../internals/retryDelay';
+import { UnsubscribeFn } from '../rx';
 import { observable } from '../rx/observable';
 import { TRPCClientError } from '../TRPCClientError';
 import { Operation, OperationResultObserver, TRPCLink } from './types';

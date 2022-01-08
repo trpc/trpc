@@ -23,8 +23,8 @@ import { share } from '../rx/operators';
 import { Observer } from '../rx/types';
 import { TRPCClientError } from '../TRPCClientError';
 import { getAbortController } from './fetchHelpers';
-import { UnsubscribeFn } from './observable';
 import { TRPCAbortError } from './TRPCAbortError';
+import { UnsubscribeFn } from '../rx';
 
 type CancellablePromise<T = unknown> = Promise<T> & {
   cancel: CancelFn;

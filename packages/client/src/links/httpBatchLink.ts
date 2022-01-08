@@ -52,7 +52,6 @@ export function httpBatchLink<TRouter extends AnyRouter>(
 
         promise
           .then((res) => {
-            console.log('res', res);
             observer.next({
               meta: res.meta,
               data: res.json as any,
