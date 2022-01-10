@@ -1,14 +1,14 @@
 /* eslint-disable @typescript-eslint/no-empty-function */
 import { waitFor } from '@testing-library/dom';
-import { AnyRouter, TRPCError } from '../../../server/src';
 import { EventEmitter } from 'events';
 import { expectTypeOf } from 'expect-type';
-import { OperationLink, TRPCLink } from '../links/types';
-import { createChain } from '../links/internals/createChain';
+import { AnyRouter } from '../../../server/src';
 import { dedupeLink } from '../links/dedupeLink';
+import { createChain } from '../links/internals/createChain';
 import { splitLink } from '../links/splitLink';
+import { OperationLink, TRPCLink } from '../links/types';
 import { observable } from './observable';
-import { error, map } from './operators';
+import { map } from './operators';
 import { share } from './operators/share';
 
 test('vanilla observable', () => {
@@ -186,48 +186,6 @@ test('map', () => {
   expect(ee.listeners('data')).toHaveLength(1);
   subscription.unsubscribe();
   expect(ee.listeners('data')).toHaveLength(0);
-});
-
-test('error', () => {
-  class CustomError extends Error {
-    constructor(message: string) {
-      super(message);
-      this.name = 'CustomError';
-
-      Object.setPrototypeOf(this, new.target.prototype);
-    }
-  }
-  function getErrorFromUnknown(cause: unknown): TRPCError {
-    if (cause instanceof TRPCError) {
-      return cause as TRPCError;
-    }
-    const err = new TRPCError({
-      code: 'INTERNAL_SERVER_ERROR',
-      cause,
-    });
-
-    return err;
-  }
-
-  const observer = observable<number>((observer) => {
-    observer.error(new CustomError('Some error'));
-  }).pipe(error((error) => getErrorFromUnknown(error)));
-
-  const errorSpy = jest.fn();
-  const sub = observer.subscribe({
-    error(err) {
-      expectTypeOf<TRPCError>(err);
-      errorSpy(err);
-    },
-  });
-
-  expect(errorSpy).toHaveBeenCalledTimes(1);
-
-  const err = errorSpy.mock.calls[0][0];
-  expect(err).toBeInstanceOf(TRPCError);
-  expect(err.cause).toBeInstanceOf(CustomError);
-
-  sub.unsubscribe();
 });
 
 describe('chain', () => {

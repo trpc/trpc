@@ -4,13 +4,14 @@ import { createChain } from '@trpc/client/src/links/internals/createChain';
 import { LinkRuntime, OperationLink } from '@trpc/client/src/links/types';
 import AbortController from 'abort-controller';
 import fetch from 'node-fetch';
+import { observableToPromise } from '../../client/src/rx/util/observableToPromise';
 import { z } from 'zod';
 import { createTRPCClient, TRPCClientError } from '../../client/src';
 import { httpBatchLink } from '../../client/src/links/httpBatchLink';
 import { httpLink } from '../../client/src/links/httpLink';
 import { loggerLink } from '../../client/src/links/loggerLink';
 import { retryLink } from '../../client/src/links/retryLink';
-import { observable, toPromise } from '../../client/src/rx/observable';
+import { observable } from '../../client/src/rx/observable';
 import * as trpc from '../src';
 import { AnyRouter } from '../src';
 import { routerToServerAndClient } from './_testHelpers';
@@ -52,7 +53,7 @@ test('chainer', async () => {
     },
   });
 
-  const result = await toPromise(chain).promise;
+  const result = await observableToPromise(chain).promise;
   expect(result?.context?.response).toBeTruthy();
   result!.context!.response = '[redacted]' as any;
   expect(result).toMatchInlineSnapshot(`
@@ -150,8 +151,8 @@ describe('batching', () => {
     });
 
     const results = await Promise.all([
-      toPromise(chain1).promise,
-      toPromise(chain2).promise,
+      observableToPromise(chain1).promise,
+      observableToPromise(chain2).promise,
     ]);
     for (const res of results) {
       expect(res?.context?.response).toBeTruthy();

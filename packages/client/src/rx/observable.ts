@@ -10,17 +10,18 @@ export function observable<TValue, TError = unknown>(
   const self: Observable<TValue, TError> = {
     subscribe(observer) {
       let teardownRef: TeardownLogic | null = null;
-      let unsubbed = false;
-      let teardownImmediate = false;
+      let isDone = false;
+      let unsubscribed = false;
+      let teardownImmediately = false;
       function unsubscribe() {
         if (teardownRef === null) {
-          teardownImmediate = true;
+          teardownImmediately = true;
           return;
         }
-        if (unsubbed) {
+        if (unsubscribed) {
           return;
         }
-        unsubbed = true;
+        unsubscribed = true;
 
         if (typeof teardownRef === 'function') {
           teardownRef();
@@ -30,18 +31,29 @@ export function observable<TValue, TError = unknown>(
       }
       teardownRef = subscribe({
         next(value) {
+          if (isDone) {
+            return;
+          }
           observer.next?.(value);
         },
         error(err) {
+          if (isDone) {
+            return;
+          }
+          isDone = true;
           observer.error?.(err);
           unsubscribe();
         },
         complete() {
+          if (isDone) {
+            return;
+          }
+          isDone = true;
           observer.complete?.();
           unsubscribe();
         },
       });
-      if (teardownImmediate) {
+      if (teardownImmediately) {
         unsubscribe();
       }
       return {
@@ -55,31 +67,4 @@ export function observable<TValue, TError = unknown>(
     },
   };
   return self;
-}
-
-/** @internal */
-export function toPromise<TValue>(observable: Observable<TValue, unknown>) {
-  let abort: () => void;
-  const promise = new Promise<TValue | undefined>((resolve, reject) => {
-    let value: TValue | undefined = undefined;
-    const obs$ = observable.subscribe({
-      next(data) {
-        value = data;
-      },
-      error(data) {
-        reject(data);
-      },
-      complete() {
-        resolve(value);
-      },
-    });
-    abort = () => {
-      resolve(value);
-      obs$.unsubscribe();
-    };
-  });
-  return {
-    promise,
-    abort: abort!,
-  };
 }

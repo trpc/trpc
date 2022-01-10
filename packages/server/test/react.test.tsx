@@ -319,7 +319,7 @@ describe('useQuery()', () => {
     });
 
     expect(linkSpy.up).toHaveBeenCalledTimes(1);
-    expect(linkSpy.up.mock.calls[0][0].meta).toMatchObject({
+    expect(linkSpy.up.mock.calls[0][0].context).toMatchObject({
       test: '1',
     });
   });

@@ -49,23 +49,23 @@ export class TRPCClientError<TRouter extends AnyRouter>
   }
 
   public static from<TRouter extends AnyRouter>(
-    result: Error | TRPCErrorResponse<any>,
+    cause: Error | TRPCErrorResponse<any>,
     opts: { meta?: Record<string, unknown> } = {},
   ): TRPCClientError<TRouter> {
-    if (!(result instanceof Error)) {
-      return new TRPCClientError<TRouter>((result.error as any).message ?? '', {
+    if (!(cause instanceof Error)) {
+      return new TRPCClientError<TRouter>((cause.error as any).message ?? '', {
         ...opts,
         cause: null,
-        result: result,
+        result: cause,
       });
     }
-    if (result.name === 'TRPCClientError') {
-      return result as TRPCClientError<any>;
+    if (cause.name === 'TRPCClientError') {
+      return cause as TRPCClientError<any>;
     }
 
-    return new TRPCClientError<TRouter>(result.message, {
+    return new TRPCClientError<TRouter>(cause.message, {
       ...opts,
-      cause: result,
+      cause,
       result: null,
     });
   }

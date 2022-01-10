@@ -8,23 +8,23 @@ import {
 import { TRPCResult } from '@trpc/server/rpc';
 import { CancelFn } from '..';
 import { getFetch } from '../getFetch';
+import { httpBatchLink } from '../links/httpBatchLink';
+import { createChain } from '../links/internals/createChain';
+import { transformOperationResult } from '../links/internals/transformOperationResult';
 import {
   HTTPHeaders,
   LinkRuntime,
-  OperationLink,
   OperationContext,
+  OperationLink,
   TRPCLink,
 } from '../links/types';
-import { transformOperationResult } from '../links/internals/transformOperationResult';
-import { createChain } from '../links/internals/createChain';
-import { httpBatchLink } from '../links/httpBatchLink';
-import { inferObservableValue, toPromise } from '../rx/observable';
+import { UnsubscribeFn } from '../rx';
+import { inferObservableValue } from '../rx/observable';
 import { share } from '../rx/operators';
 import { Observer } from '../rx/types';
+import { observableToPromise } from '../rx/util/observableToPromise';
 import { TRPCClientError } from '../TRPCClientError';
 import { getAbortController } from './fetchHelpers';
-import { TRPCAbortError } from './TRPCAbortError';
-import { UnsubscribeFn } from '../rx';
 
 type CancellablePromise<T = unknown> = Promise<T> & {
   cancel: CancelFn;
@@ -149,18 +149,22 @@ export class TRPCClient<TRouter extends AnyRouter> {
   }): CancellablePromise<TOutput> {
     const req$ = this.$request<TInput, TOutput>(opts);
     type TValue = inferObservableValue<typeof req$>;
-    const { promise, abort } = toPromise<TValue>(req$);
-    const cancellablePromise: CancellablePromise<any> = promise.then(
-      (result) => {
-        if (result === undefined) {
-          throw TRPCClientError.from(new TRPCAbortError());
-        }
+    const { promise, abort } = observableToPromise<TValue>(req$);
 
-        const transformed = transformOperationResult(result);
-        if (transformed.ok) {
-          return transformed.data;
-        }
-        throw transformed.error;
+    const cancellablePromise: CancellablePromise<any> = new Promise<TOutput>(
+      (resolve, reject) => {
+        promise
+          .then((result) => {
+            const transformed = transformOperationResult(result);
+            if (transformed.ok) {
+              resolve(transformed.data as any);
+              return;
+            }
+            reject(transformed.error);
+          })
+          .catch((err) => {
+            reject(TRPCClientError.from(err));
+          });
       },
     ) as any;
     cancellablePromise.cancel = abort;
@@ -233,8 +237,12 @@ export class TRPCClient<TRouter extends AnyRouter> {
         }
         opts.next?.(result.data.result);
       },
-      error: opts.error,
-      complete: opts.complete,
+      error(err) {
+        opts.error?.(err);
+      },
+      complete() {
+        opts.complete?.();
+      },
     });
     return () => {
       observer.unsubscribe();

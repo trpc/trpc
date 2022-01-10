@@ -289,9 +289,14 @@ export function wsLink<TRouter extends AnyRouter>(
         const unsub = client.request(
           { type, path, input, id, context },
           {
-            ...observer,
+            error(err) {
+              isDone = true;
+              observer.error(err);
+              unsub();
+            },
             complete() {
               if (!isDone) {
+                isDone = true;
                 observer.error(
                   TRPCClientError.from(
                     new TRPCSubscriptionEndedError(
@@ -299,9 +304,9 @@ export function wsLink<TRouter extends AnyRouter>(
                     ),
                   ),
                 );
+              } else {
+                observer.complete();
               }
-              observer.complete();
-              isDone = true;
             },
             next(result) {
               observer.next(result);

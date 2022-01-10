@@ -304,8 +304,9 @@ test('server subscription ended', async () => {
   // destroy server subscription
   subRef.current.destroy();
   await waitFor(() => {
-    expect(complete).toHaveBeenCalledTimes(1);
+    expect(error).toHaveBeenCalledTimes(1);
   });
+  expect(complete).toHaveBeenCalledTimes(0);
   expect(error).toHaveBeenCalledTimes(1);
   expect(error.mock.calls[0][0]).toMatchInlineSnapshot(
     `[TRPCClientError: Operation ended prematurely]`,
