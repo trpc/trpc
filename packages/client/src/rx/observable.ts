@@ -9,27 +9,41 @@ export function observable<TValue, TError = unknown>(
 ): Observable<TValue, TError> {
   const self: Observable<TValue, TError> = {
     subscribe(observer) {
+      let teardownRef: TeardownLogic | null = null;
+      let unsubbed = false;
+      let teardownImmediate = false;
       function unsubscribe() {
-        if (typeof teardown === 'function') {
-          teardown();
-        } else if (teardown) {
-          teardown.unsubscribe();
+        if (teardownRef === null) {
+          teardownImmediate = true;
+          return;
+        }
+        if (unsubbed) {
+          return;
+        }
+        unsubbed = true;
+
+        if (typeof teardownRef === 'function') {
+          teardownRef();
+        } else if (teardownRef) {
+          teardownRef.unsubscribe();
         }
       }
-      const teardown = subscribe({
+      teardownRef = subscribe({
         next(value) {
           observer.next?.(value);
         },
         error(err) {
-          // TODO maybe unsubscribe or prevent further calls?
           observer.error?.(err);
+          unsubscribe();
         },
         complete() {
           observer.complete?.();
-          // TODO maybe unsubscribe or prevent further calls?
-          // unsubscribe();
+          unsubscribe();
         },
       });
+      if (teardownImmediate) {
+        unsubscribe();
+      }
       return {
         unsubscribe,
       };

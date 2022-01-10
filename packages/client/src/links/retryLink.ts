@@ -14,7 +14,7 @@ export function retryLink<TRouter extends AnyRouter = AnyRouter>(opts: {
       return observable((observer) => {
         let next$: Unsubscribable | null = null;
         let attempts = 0;
-
+        let isDone = false;
         function attempt() {
           attempts++;
           next$?.unsubscribe();
@@ -22,27 +22,33 @@ export function retryLink<TRouter extends AnyRouter = AnyRouter>(opts: {
             error(error) {
               if (attempts >= opts.attempts) {
                 observer.error(error);
-                observer.complete();
                 return;
               }
               attempt();
             },
             next(result) {
               if ('result' in result.data) {
+                isDone = true;
                 observer.next(result);
                 return;
               }
               if (attempts >= opts.attempts) {
+                isDone = true;
                 observer.next(result);
-                observer.complete();
                 return;
               }
               attempt();
+            },
+            complete() {
+              if (isDone) {
+                observer.complete();
+              }
             },
           });
         }
         attempt();
         return () => {
+          isDone = true;
           next$?.unsubscribe();
         };
       });

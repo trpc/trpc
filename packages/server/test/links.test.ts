@@ -1,10 +1,11 @@
+/* eslint-disable @typescript-eslint/no-non-null-assertion */
 /* eslint-disable @typescript-eslint/no-empty-function */
+import { createChain } from '@trpc/client/src/links/internals/createChain';
+import { LinkRuntime, OperationLink } from '@trpc/client/src/links/types';
 import AbortController from 'abort-controller';
 import fetch from 'node-fetch';
 import { z } from 'zod';
 import { createTRPCClient, TRPCClientError } from '../../client/src';
-import { LinkRuntime, OperationLink } from '@trpc/client/src/links/types';
-import { createChain } from '@trpc/client/src/links/internals/createChain';
 import { httpBatchLink } from '../../client/src/links/httpBatchLink';
 import { httpLink } from '../../client/src/links/httpLink';
 import { loggerLink } from '../../client/src/links/loggerLink';
@@ -51,17 +52,20 @@ test('chainer', async () => {
     },
   });
 
-  expect(await toPromise(chain).promise).toMatchInlineSnapshot(`
+  const result = await toPromise(chain).promise;
+  expect(result?.context?.response).toBeTruthy();
+  result!.context!.response = '[redacted]' as any;
+  expect(result).toMatchInlineSnapshot(`
     Object {
+      "context": Object {
+        "response": "[redacted]",
+      },
       "data": Object {
         "id": null,
         "result": Object {
           "data": "world",
           "type": "data",
         },
-      },
-      "meta": Object {
-        "response": undefined,
       },
     }
   `);
@@ -145,9 +149,42 @@ describe('batching', () => {
       },
     });
 
-    expect(
-      await Promise.all([toPromise(chain1).promise, toPromise(chain2).promise]),
-    ).toMatchInlineSnapshot();
+    const results = await Promise.all([
+      toPromise(chain1).promise,
+      toPromise(chain2).promise,
+    ]);
+    for (const res of results) {
+      expect(res?.context?.response).toBeTruthy();
+      res!.context!.response = '[redacted]';
+    }
+    expect(results).toMatchInlineSnapshot(`
+      Array [
+        Object {
+          "context": Object {
+            "response": "[redacted]",
+          },
+          "data": Object {
+            "id": null,
+            "result": Object {
+              "data": "hello world",
+              "type": "data",
+            },
+          },
+        },
+        Object {
+          "context": Object {
+            "response": "[redacted]",
+          },
+          "data": Object {
+            "id": null,
+            "result": Object {
+              "data": "hello alexdotjs",
+              "type": "data",
+            },
+          },
+        },
+      ]
+    `);
 
     expect(metaCall).toHaveBeenCalledTimes(1);
 
@@ -220,7 +257,7 @@ test('create client with links', async () => {
   close();
 });
 
-test.only('loggerLink', () => {
+test('loggerLink', () => {
   const logger = {
     error: jest.fn(),
     log: jest.fn(),
@@ -382,4 +419,61 @@ test.only('loggerLink', () => {
       }
     `);
   }
+});
+
+test('chain makes unsub', async () => {
+  const firstLinkUnsubscribeSpy = jest.fn();
+  const firstLinkCompleteSpy = jest.fn();
+
+  const secondLinkUnsubscribeSpy = jest.fn();
+
+  const router = trpc.router().query('hello', {
+    resolve() {
+      return 'world';
+    },
+  });
+  const { client, close } = routerToServerAndClient(router, {
+    client() {
+      return {
+        links: [
+          () =>
+            ({ next, op }) =>
+              observable((observer) => {
+                next(op).subscribe({
+                  ...observer,
+                  complete() {
+                    firstLinkCompleteSpy();
+                    observer.complete();
+                  },
+                });
+                return () => {
+                  firstLinkUnsubscribeSpy();
+                  observer.complete();
+                };
+              }),
+          () => () =>
+            observable((observer) => {
+              observer.next({
+                data: {
+                  id: null,
+                  result: {
+                    type: 'data',
+                    data: 'world',
+                  },
+                },
+              });
+              observer.complete();
+              return () => {
+                secondLinkUnsubscribeSpy();
+              };
+            }),
+        ],
+      };
+    },
+  });
+  expect(await client.query('hello')).toBe('world');
+  expect(firstLinkCompleteSpy).toHaveBeenCalledTimes(1);
+  expect(firstLinkUnsubscribeSpy).toHaveBeenCalledTimes(1);
+  expect(secondLinkUnsubscribeSpy).toHaveBeenCalledTimes(1);
+  close();
 });

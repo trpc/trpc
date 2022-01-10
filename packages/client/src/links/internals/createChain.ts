@@ -1,6 +1,6 @@
 import { AnyRouter } from '@trpc/server';
 import { observable } from '../../rx/observable';
-import { OperationLink, Operation, OperationResultObservable } from '../types';
+import { Operation, OperationLink, OperationResultObservable } from '../types';
 
 /** @internal */
 export function createChain<

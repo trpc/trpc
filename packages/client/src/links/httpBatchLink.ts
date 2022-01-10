@@ -56,9 +56,9 @@ export function httpBatchLink<TRouter extends AnyRouter>(
               context: res.meta,
               data: res.json as any,
             });
+            observer.complete();
           })
-          .catch((err) => observer.error(err as any))
-          .finally(() => observer.complete());
+          .catch((err) => observer.error(err as any));
 
         return () => {
           cancel();
