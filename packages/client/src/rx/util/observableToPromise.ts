@@ -43,6 +43,7 @@ export function observableToPromise<TValue>(
   });
   return {
     promise,
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     abort: abort!,
   };
 }
