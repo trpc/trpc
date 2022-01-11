@@ -8,15 +8,14 @@ export function share<TValue, TError>(
 ): MonoTypeOperatorFunction<TValue, TError> {
   return (originalObserver) => {
     let refCount = 0;
-    let running = false;
+
     let subscription: Unsubscribable | null = null;
     const observers: Partial<Observer<TValue, TError>>[] = [];
 
     function startIfNeeded() {
-      if (running) {
+      if (subscription) {
         return;
       }
-      running = true;
       subscription = originalObserver.subscribe({
         next(value) {
           for (const observer of observers) {
@@ -36,12 +35,11 @@ export function share<TValue, TError>(
       });
     }
     function resetIfNeeded() {
-      if (!running) {
-        return;
-      }
       // "resetOnRefCountZero"
       if (refCount === 0 && subscription) {
-        subscription.unsubscribe();
+        const _sub = subscription;
+        subscription = null;
+        _sub.unsubscribe();
       }
     }
 
