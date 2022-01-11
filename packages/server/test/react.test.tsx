@@ -1293,6 +1293,7 @@ describe('invalidate queries', () => {
   });
 
   test('test invalidateQueries() with different args', async () => {
+    // ref  https://github.com/trpc/trpc/issues/1383
     const { trpc, resolvers, client } = factory;
     function MyComponent() {
       const postByIdQuery = trpc.useQuery(['postById', '1'], {
@@ -1311,26 +1312,37 @@ describe('invalidate queries', () => {
               utils.invalidateQueries('postById');
             }}
           />
-
           <button
             data-testid="invalidate-2-tuple"
             onClick={() => {
               utils.invalidateQueries(['postById']);
             }}
           />
-
           <button
             data-testid="invalidate-3-exact"
             onClick={() => {
               utils.invalidateQueries(['postById', '1']);
             }}
           />
-          {/* <button
+          <button
             data-testid="invalidate-4-all"
             onClick={() => {
               utils.invalidateQueries();
             }}
-          /> */}
+          />{' '}
+          <button
+            data-testid="invalidate-5-predicate"
+            onClick={() => {
+              utils.invalidateQueries({
+                predicate(opts) {
+                  const { queryKey } = opts;
+                  const [path, input] = queryKey;
+
+                  return path === 'postById' && input === '1';
+                },
+              });
+            }}
+          />
         </>
       );
     }
@@ -1355,21 +1367,23 @@ describe('invalidate queries', () => {
       'invalidate-1-string',
       'invalidate-2-tuple',
       'invalidate-3-exact',
+      'invalidate-4-all',
     ]) {
       // click button to invalidate
       utils.getByTestId(testId).click();
 
-      //
+      // should become stale straight after the click
       await waitFor(() => {
         expect(utils.container).toHaveTextContent('postByIdQuery:stale');
       });
+      // then, eventually be not stale as it's been refetched
       await waitFor(() => {
         expect(utils.container).toHaveTextContent('postByIdQuery:not-stale');
       });
     }
 
-    // 3 clicks + initial load = 4
-    expect(resolvers.postById).toHaveBeenCalledTimes(4);
+    // 4 clicks + initial load = 5
+    expect(resolvers.postById).toHaveBeenCalledTimes(5);
   });
 });
 

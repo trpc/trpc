@@ -28,10 +28,10 @@ interface TRPCFetchInfiniteQueryOptions<TInput, TError, TOutput>
   extends FetchInfiniteQueryOptions<TInput, TError, TOutput>,
     TRPCRequestOptions {}
 
-export type TRPCContextState<
+export interface TRPCContextState<
   TRouter extends AnyRouter,
   TSSRContext = undefined,
-> = {
+> {
   queryClient: QueryClient;
   client: TRPCClient<TRouter>;
   isPrepass: boolean;
@@ -105,22 +105,26 @@ export type TRPCContextState<
     pathAndInput: [TPath, TInput?],
     options?: InvalidateOptions,
   ) => Promise<void>;
+
   /**
    * @link https://react-query.tanstack.com/guides/query-invalidation
    */
-  invalidateQueries:
-    | (<
-        TPath extends keyof TRouter['_def']['queries'] & string,
-        TInput extends inferProcedureInput<TRouter['_def']['queries'][TPath]>,
-      >(
-        pathAndInput: [TPath, TInput?] | TPath,
-        filters?: InvalidateQueryFilters,
-        options?: InvalidateOptions,
-      ) => Promise<void>)
-    | ((
-        filters?: InvalidateQueryFilters,
-        options?: InvalidateOptions,
-      ) => Promise<void>);
+  invalidateQueries<
+    TPath extends keyof TRouter['_def']['queries'] & string,
+    TInput extends inferProcedureInput<TRouter['_def']['queries'][TPath]>,
+  >(
+    pathAndInput?: [TPath, TInput?] | TPath,
+    filters?: InvalidateQueryFilters,
+    options?: InvalidateOptions,
+  ): Promise<void>;
+  /**
+   * @link https://react-query.tanstack.com/guides/query-invalidation
+   */
+  invalidateQueries(
+    filters?: InvalidateQueryFilters,
+    options?: InvalidateOptions,
+  ): Promise<void>;
+
   /**
    * @link https://react-query.tanstack.com/reference/QueryClient#queryclientrefetchqueries
    */
@@ -169,6 +173,6 @@ export type TRPCContextState<
   >(
     pathAndInput: [TPath, TInput?],
   ) => TOutput | undefined;
-};
+}
 
 export const TRPCContext = createContext(null as any);
