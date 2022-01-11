@@ -1291,6 +1291,86 @@ describe('invalidate queries', () => {
     expect(resolvers.allPosts).toHaveBeenCalledTimes(2);
     expect(resolvers.postById).toHaveBeenCalledTimes(2);
   });
+
+  test('test invalidateQueries() with different args', async () => {
+    const { trpc, resolvers, client } = factory;
+    function MyComponent() {
+      const postByIdQuery = trpc.useQuery(['postById', '1'], {
+        staleTime: Infinity,
+      });
+      const utils = trpc.useContext();
+      return (
+        <>
+          <pre>
+            postByIdQuery:{postByIdQuery.status} postByIdQuery:
+            {postByIdQuery.isStale ? 'stale' : 'not-stale'}
+          </pre>
+          <button
+            data-testid="invalidate-1-string"
+            onClick={() => {
+              utils.invalidateQueries('postById');
+            }}
+          />
+
+          <button
+            data-testid="invalidate-2-tuple"
+            onClick={() => {
+              utils.invalidateQueries(['postById']);
+            }}
+          />
+
+          <button
+            data-testid="invalidate-3-exact"
+            onClick={() => {
+              utils.invalidateQueries(['postById', '1']);
+            }}
+          />
+          {/* <button
+            data-testid="invalidate-4-all"
+            onClick={() => {
+              utils.invalidateQueries();
+            }}
+          /> */}
+        </>
+      );
+    }
+    function App() {
+      const [queryClient] = useState(() => new QueryClient());
+      return (
+        <trpc.Provider {...{ queryClient, client }}>
+          <QueryClientProvider client={queryClient}>
+            <MyComponent />
+          </QueryClientProvider>
+        </trpc.Provider>
+      );
+    }
+
+    const utils = render(<App />);
+
+    await waitFor(() => {
+      expect(utils.container).toHaveTextContent('postByIdQuery:success');
+      expect(utils.container).toHaveTextContent('postByIdQuery:not-stale');
+    });
+    for (const testId of [
+      'invalidate-1-string',
+      'invalidate-2-tuple',
+      'invalidate-3-exact',
+    ]) {
+      // click button to invalidate
+      utils.getByTestId(testId).click();
+
+      //
+      await waitFor(() => {
+        expect(utils.container).toHaveTextContent('postByIdQuery:stale');
+      });
+      await waitFor(() => {
+        expect(utils.container).toHaveTextContent('postByIdQuery:not-stale');
+      });
+    }
+
+    // 3 clicks + initial load = 4
+    expect(resolvers.postById).toHaveBeenCalledTimes(4);
+  });
 });
 
 test('formatError() react types test', async () => {
