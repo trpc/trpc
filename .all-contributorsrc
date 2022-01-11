@@ -372,6 +372,15 @@
       "contributions": [
         "financial"
       ]
+    },
+    {
+      "login": "esamattis",
+      "name": "Esa-Matti Suuronen",
+      "avatar_url": "https://avatars.githubusercontent.com/u/225712?v=4",
+      "profile": "https://esamatti.fi/",
+      "contributions": [
+        "example"
+      ]
     }
   ],
   "contributorsPerLine": 7,
