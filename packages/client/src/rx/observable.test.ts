@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-empty-function */
 import { observable } from './observable';
+import { tap } from './operators';
 import { share } from './operators/share';
 
 test('vanilla observable', () => {
@@ -22,10 +23,19 @@ test('vanilla observable', () => {
   expect(next.mock.calls[0][0]).toBe(1);
 });
 
-test('pipe', () => {
+test('pipe - combine operators', () => {
+  const taps = {
+    next: jest.fn(),
+    complete: jest.fn(),
+    error: jest.fn(),
+  };
   const obs = observable<number, Error>((observer) => {
     observer.next(1);
-  }).pipe(share());
+  }).pipe(
+    // operators:
+    share(),
+    tap(taps),
+  );
   {
     const next = jest.fn();
     const error = jest.fn();
@@ -54,4 +64,20 @@ test('pipe', () => {
     expect(complete.mock.calls).toHaveLength(0);
     expect(error.mock.calls).toHaveLength(0);
   }
+
+  expect({
+    next: taps.next.mock.calls,
+    error: taps.error.mock.calls,
+    complete: taps.complete.mock.calls,
+  }).toMatchInlineSnapshot(`
+    Object {
+      "complete": Array [],
+      "error": Array [],
+      "next": Array [
+        Array [
+          1,
+        ],
+      ],
+    }
+  `);
 });
