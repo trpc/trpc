@@ -69,6 +69,7 @@ module.exports = {
         'further/rpc',
         'further/subscriptions',
         'further/further-reading',
+        'further/awesome-trpc',
       ],
     },
   ],
