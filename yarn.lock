@@ -2632,16 +2632,16 @@
     source-map-support "^0.5.16"
 
 "@prisma/client@^3.0.1":
-  version "3.6.0"
-  resolved "https://registry.yarnpkg.com/@prisma/client/-/client-3.6.0.tgz#68a60cd4c73a369b11f72e173e86fd6789939293"
-  integrity sha512-ycSGY9EZGROtje0iCNsgC5Zqi/ttX2sO7BNMYaLsUMiTlf3F69ZPH+08pRo0hrDfkZzyimXYqeXJlaoYDH1w7A==
+  version "3.8.0"
+  resolved "https://registry.yarnpkg.com/@prisma/client/-/client-3.8.0.tgz#b92ad9e91e8a82139e0ea1d4f3266a926d1ea97f"
+  integrity sha512-odYAbzfGvVWpDxhk2Yb03DlcCg6zKgJjt5admcp4xtr7u0f76B2NppC4TSGxvdQUGzPI6G37afu2oZCb/uwGfg==
   dependencies:
-    "@prisma/engines-version" "3.6.0-24.dc520b92b1ebb2d28dc3161f9f82e875bd35d727"
+    "@prisma/engines-version" "3.8.0-43.34df67547cf5598f5a6cd3eb45f14ee70c3fb86f"
 
-"@prisma/engines-version@3.6.0-24.dc520b92b1ebb2d28dc3161f9f82e875bd35d727":
-  version "3.6.0-24.dc520b92b1ebb2d28dc3161f9f82e875bd35d727"
-  resolved "https://registry.yarnpkg.com/@prisma/engines-version/-/engines-version-3.6.0-24.dc520b92b1ebb2d28dc3161f9f82e875bd35d727.tgz#25aa447776849a774885866b998732b37ec4f4f5"
-  integrity sha512-vtoO2ys6mSfc8ONTWdcYztKN3GBU1tcKBj0aXObyjzSuGwHFcM/pEA0xF+n1W4/0TAJgfoPX2khNEit6g0jtNA==
+"@prisma/engines-version@3.8.0-43.34df67547cf5598f5a6cd3eb45f14ee70c3fb86f":
+  version "3.8.0-43.34df67547cf5598f5a6cd3eb45f14ee70c3fb86f"
+  resolved "https://registry.yarnpkg.com/@prisma/engines-version/-/engines-version-3.8.0-43.34df67547cf5598f5a6cd3eb45f14ee70c3fb86f.tgz#4c8d9744b5e54650a8ba5fde0a711399d6adba24"
+  integrity sha512-G2JH6yWt6ixGKmsRmVgaQYahfwMopim0u/XLIZUo2o/mZ5jdu7+BL+2V5lZr7XiG1axhyrpvlyqE/c0OgYSl3g==
 
 "@prisma/engines@3.7.0-31.8746e055198f517658c08a0c426c7eec87f5a85f":
   version "3.7.0-31.8746e055198f517658c08a0c426c7eec87f5a85f"
@@ -3046,9 +3046,9 @@
     "@types/react" "*"
 
 "@types/react@*", "@types/react@^17.0.20":
-  version "17.0.37"
-  resolved "https://registry.yarnpkg.com/@types/react/-/react-17.0.37.tgz#6884d0aa402605935c397ae689deed115caad959"
-  integrity sha512-2FS1oTqBGcH/s0E+CjrCCR9+JMpsu9b69RTFO+40ua43ZqP5MmQ4iUde/dMjWR909KxZwmOQIFq6AV6NjEG5xg==
+  version "17.0.38"
+  resolved "https://registry.yarnpkg.com/@types/react/-/react-17.0.38.tgz#f24249fefd89357d5fa71f739a686b8d7c7202bd"
+  integrity sha512-SI92X1IA+FMnP3qM5m4QReluXzhcmovhZnLNm3pyeQlooi02qI7sLiepEYqT678uNiyc25XfCqxREFpy3W7YhQ==
   dependencies:
     "@types/prop-types" "*"
     "@types/scheduler" "*"
