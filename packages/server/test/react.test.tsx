@@ -1368,6 +1368,7 @@ describe('invalidate queries', () => {
       'invalidate-2-tuple',
       'invalidate-3-exact',
       'invalidate-4-all',
+      'invalidate-5-predicate',
     ]) {
       // click button to invalidate
       utils.getByTestId(testId).click();
@@ -1382,8 +1383,8 @@ describe('invalidate queries', () => {
       });
     }
 
-    // 4 clicks + initial load = 5
-    expect(resolvers.postById).toHaveBeenCalledTimes(5);
+    // 5 clicks + initial load = 6
+    expect(resolvers.postById).toHaveBeenCalledTimes(6);
   });
 });
 
