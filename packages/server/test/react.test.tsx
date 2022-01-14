@@ -33,6 +33,7 @@ import {
 import { splitLink } from '../../client/src/links/splitLink';
 import { AppType } from 'next/dist/shared/lib/utils';
 import { TRPCError } from '../src/TRPCError';
+import { TRPCClientErrorLike } from '../../client';
 
 setLogger({
   log() {},
@@ -636,7 +637,7 @@ describe('useMutation()', () => {
 //     ]
 //   `);
 // });
-test('dehydrate', async () => {
+test('dehydrate - basic', async () => {
   const { db, appRouter } = factory;
   const ssg = createSSGHelpers({ router: appRouter, ctx: {} });
 
@@ -659,6 +660,49 @@ test('dehydrate', async () => {
       "createdAt": 0,
       "id": "1",
       "title": "first post",
+    }
+  `);
+});
+
+test('dehydrate - error', async () => {
+  // regression https://github.com/trpc/trpc/issues/1393
+
+  const { appRouter } = factory;
+  const ssg = createSSGHelpers({ router: appRouter, ctx: {} });
+
+  await ssg.prefetchQuery('postById', '-1'); // does not exist
+
+  const dehydrated = ssg.dehydrate();
+  expect(dehydrated.queries).toHaveLength(1);
+  const err = dehydrated.queries[0].state.error as TRPCClientErrorLike<any>;
+
+  expect(err).toHaveProperty('message');
+
+  expect(err).not.toBeInstanceOf(Error);
+  err.data.stack = '[redacted]';
+  err.shape.stack = '[redacted]';
+  expect(err).toMatchInlineSnapshot(`
+    Object {
+      "data": Object {
+        "code": "NOT_FOUND",
+        "httpStatus": 404,
+        "path": "postById",
+        "stack": "[redacted]",
+      },
+      "message": "NOT_FOUND",
+      "shape": Object {
+        "$test": "formatted",
+        "code": -32004,
+        "data": Object {
+          "code": "NOT_FOUND",
+          "httpStatus": 404,
+          "path": "postById",
+          "stack": "[redacted]",
+        },
+        "message": "NOT_FOUND",
+        "stack": "[redacted]",
+        "zodError": null,
+      },
     }
   `);
 });

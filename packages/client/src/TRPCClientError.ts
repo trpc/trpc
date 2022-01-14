@@ -1,5 +1,5 @@
-import { AnyRouter, inferRouterError, Maybe } from '@trpc/server';
-import { TRPCErrorResponse } from '@trpc/server/rpc';
+import type { AnyRouter, inferRouterError, Maybe } from '@trpc/server';
+import type { TRPCErrorResponse } from '@trpc/server/rpc';
 
 export interface TRPCClientErrorLike<TRouter extends AnyRouter> {
   readonly message: string;
