@@ -1291,6 +1291,101 @@ describe('invalidate queries', () => {
     expect(resolvers.allPosts).toHaveBeenCalledTimes(2);
     expect(resolvers.postById).toHaveBeenCalledTimes(2);
   });
+
+  test('test invalidateQueries() with different args', async () => {
+    // ref  https://github.com/trpc/trpc/issues/1383
+    const { trpc, resolvers, client } = factory;
+    function MyComponent() {
+      const postByIdQuery = trpc.useQuery(['postById', '1'], {
+        staleTime: Infinity,
+      });
+      const utils = trpc.useContext();
+      return (
+        <>
+          <pre>
+            postByIdQuery:{postByIdQuery.status} postByIdQuery:
+            {postByIdQuery.isStale ? 'stale' : 'not-stale'}
+          </pre>
+          <button
+            data-testid="invalidate-1-string"
+            onClick={() => {
+              utils.invalidateQueries('postById');
+            }}
+          />
+          <button
+            data-testid="invalidate-2-tuple"
+            onClick={() => {
+              utils.invalidateQueries(['postById']);
+            }}
+          />
+          <button
+            data-testid="invalidate-3-exact"
+            onClick={() => {
+              utils.invalidateQueries(['postById', '1']);
+            }}
+          />
+          <button
+            data-testid="invalidate-4-all"
+            onClick={() => {
+              utils.invalidateQueries();
+            }}
+          />{' '}
+          <button
+            data-testid="invalidate-5-predicate"
+            onClick={() => {
+              utils.invalidateQueries({
+                predicate(opts) {
+                  const { queryKey } = opts;
+                  const [path, input] = queryKey;
+
+                  return path === 'postById' && input === '1';
+                },
+              });
+            }}
+          />
+        </>
+      );
+    }
+    function App() {
+      const [queryClient] = useState(() => new QueryClient());
+      return (
+        <trpc.Provider {...{ queryClient, client }}>
+          <QueryClientProvider client={queryClient}>
+            <MyComponent />
+          </QueryClientProvider>
+        </trpc.Provider>
+      );
+    }
+
+    const utils = render(<App />);
+
+    await waitFor(() => {
+      expect(utils.container).toHaveTextContent('postByIdQuery:success');
+      expect(utils.container).toHaveTextContent('postByIdQuery:not-stale');
+    });
+    for (const testId of [
+      'invalidate-1-string',
+      'invalidate-2-tuple',
+      'invalidate-3-exact',
+      'invalidate-4-all',
+      'invalidate-5-predicate',
+    ]) {
+      // click button to invalidate
+      utils.getByTestId(testId).click();
+
+      // should become stale straight after the click
+      await waitFor(() => {
+        expect(utils.container).toHaveTextContent('postByIdQuery:stale');
+      });
+      // then, eventually be not stale as it's been refetched
+      await waitFor(() => {
+        expect(utils.container).toHaveTextContent('postByIdQuery:not-stale');
+      });
+    }
+
+    // 5 clicks + initial load = 6
+    expect(resolvers.postById).toHaveBeenCalledTimes(6);
+  });
 });
 
 test('formatError() react types test', async () => {
