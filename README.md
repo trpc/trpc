@@ -140,6 +140,7 @@ npx create-next-app --example https://github.com/trpc/trpc --example-path exampl
       <td align="center"><a href="https://github.com/chimon2000"><img src="https://avatars.githubusercontent.com/u/6907797?v=4?s=100" width="100px;" alt=""/><br/><sub><b>Ryan Edge</b></sub></a></td>
       <td align="center"><a href="https://www.illarionvk.com"><img src="https://avatars.githubusercontent.com/u/5012724?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Illarion Koperski</b></sub></a></td>
       <td align="center"><a href="http://abgn.me"><img src="https://avatars.githubusercontent.com/u/19674362?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Albin Groen</b></sub></a></td>
+      <td align="center"><a href="https://timcole.me"><img src="https://avatars.githubusercontent.com/u/6754577?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Timothy Cole</b></sub></a></td>
     </tr>
   </tbody>
 </table>
@@ -201,6 +202,7 @@ npx create-next-app --example https://github.com/trpc/trpc --example-path exampl
     <td align="center"><a href="https://www.illarionvk.com"><img src="https://avatars.githubusercontent.com/u/5012724?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Illarion Koperski</b></sub></a><br /><a href="#financial-illarionvk" title="Financial">💵</a></td>
     <td align="center"><a href="http://abgn.me"><img src="https://avatars.githubusercontent.com/u/19674362?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Albin Groen</b></sub></a><br /><a href="#financial-albingroen" title="Financial">💵</a></td>
     <td align="center"><a href="https://esamatti.fi/"><img src="https://avatars.githubusercontent.com/u/225712?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Esa-Matti Suuronen</b></sub></a><br /><a href="#example-esamattis" title="Examples">💡</a></td>
+    <td align="center"><a href="https://timcole.me"><img src="https://avatars.githubusercontent.com/u/6754577?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Timothy Cole</b></sub></a><br /><a href="#financial-timcole" title="Financial">💵</a></td>
   </tr>
 </table>
 
