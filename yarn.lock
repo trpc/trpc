@@ -2701,9 +2701,9 @@
     source-map-support "^0.5.16"
 
 "@prisma/client@^3.0.1":
-  version "3.8.0"
-  resolved "https://registry.yarnpkg.com/@prisma/client/-/client-3.8.0.tgz#b92ad9e91e8a82139e0ea1d4f3266a926d1ea97f"
-  integrity sha512-odYAbzfGvVWpDxhk2Yb03DlcCg6zKgJjt5admcp4xtr7u0f76B2NppC4TSGxvdQUGzPI6G37afu2oZCb/uwGfg==
+  version "3.8.1"
+  resolved "https://registry.yarnpkg.com/@prisma/client/-/client-3.8.1.tgz#c11eda8e84760867552ffde4de7b48fb2cf1e1c0"
+  integrity sha512-NxD1Xbkx1eT1mxSwo1RwZe665mqBETs0VxohuwNfFIxMqcp0g6d4TgugPxwZ4Jb4e5wCu8mQ9quMedhNWIWcZQ==
   dependencies:
     "@prisma/engines-version" "3.8.0-43.34df67547cf5598f5a6cd3eb45f14ee70c3fb86f"
 
