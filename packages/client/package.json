@@ -1,6 +1,6 @@
 {
   "name": "@trpc/client",
-  "version": "9.17.0",
+  "version": "10.0.0-alpha.1",
   "description": "tRPC Client lib",
   "author": "KATT",
   "license": "MIT",
@@ -13,11 +13,14 @@
   "preconstruct": {
     "entrypoints": [
       "index.ts",
-      "links/httpLink.ts",
       "links/httpBatchLink.ts",
-      "links/splitLink.ts",
+      "links/httpLink.ts",
       "links/loggerLink.ts",
-      "links/wsLink.ts"
+      "links/splitLink.ts",
+      "links/transformerLink.ts",
+      "links/wsLink.ts",
+      "rx/index.ts",
+      "rx/operators/index.ts"
     ]
   },
   "scripts": {},
@@ -28,7 +31,8 @@
     "README.md",
     "dist",
     "links",
-    "src"
+    "src",
+    "rx"
   ],
   "dependencies": {
     "@babel/runtime": "^7.9.0"
@@ -37,7 +41,7 @@
     "@trpc/server": "^9.12.0"
   },
   "devDependencies": {
-    "@trpc/server": "^9.17.0"
+    "@trpc/server": "^10.0.0-alpha.1"
   },
   "publishConfig": {
     "access": "public"

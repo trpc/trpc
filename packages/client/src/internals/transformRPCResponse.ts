@@ -1,13 +1,13 @@
 import { TRPCResponse } from '@trpc/server/rpc';
 import { TRPCClientError } from '../TRPCClientError';
-import { LinkRuntimeOptions } from '../links/core';
+import { LinkRuntime } from '../links/types';
 
 export function transformRPCResponse({
   envelope,
   runtime,
 }: {
   envelope: TRPCResponse;
-  runtime: LinkRuntimeOptions;
+  runtime: LinkRuntime;
 }) {
   if ('error' in envelope) {
     return TRPCClientError.from({

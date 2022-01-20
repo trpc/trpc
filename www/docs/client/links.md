@@ -130,37 +130,40 @@ const postResult = client.query('posts', null, {
 
 ### Creating a custom link
 
-```tsx
-import type { AppRouter } from 'pages/api/trpc/[trpc]';
-import { TRPCLink } from '@trpc/client';
+> Reference examples can be found in [`packages/client/src/links`](https://github.com/trpc/trpc/tree/main/packages/client/src/links).
 
-const customLink: TRPCLink<AppRouter> = (runtime) => {
+```tsx
+import { TRPCLink } from '@trpc/client';
+import { AppRouter } from 'server/routers/_app';
+import { observable } from '@trpc/client/rx';
+
+export const customLink: TRPCLink<AppRouter> = () => {
   // here we just got initialized in the app - this happens once per app
   // useful for storing cache for instance
-  return ({ prev, next, op }) => {
+  return ({ next, op }) => {
     // this is when passing the result to the next link
-    next(op, (result) => {
-      // this is when we've gotten result from the server
-      if (result instanceof Error) {
-        // maybe send to bugsnag?
-      }
-      prev(result);
+
+    // each link needs to return an observable which propagates results
+    return observable((observer) => {
+      console.log('performing operation:', op);
+      const unsubscribe = next(op).subscribe({
+        next(value) {
+          console.log('we received value', value);
+          observer.next(value);
+        },
+        error(err) {
+          console.log('we received error', err);
+          observer.error(err);
+        },
+        complete() {
+          observer.complete();
+        },
+      });
+
+      return unsubscribe;
     });
   };
 };
-
-export default withTRPC<AppRouter>({
-  config() {
-    return {
-      links: [
-        customLink,
-        // [..]
-        // ❗ Make sure to end with a `httpBatchLink` or `httpLink`
-      ],
-    };
-  },
-  // ssr: false
-})(MyApp);
 
 
 ```

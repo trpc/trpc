@@ -12,6 +12,7 @@ import type {
   inferProcedureOutput,
   inferSubscriptionOutput,
   ProcedureRecord,
+  DataTransformer,
 } from '@trpc/server';
 import React, { ReactNode, useCallback, useEffect, useMemo } from 'react';
 import {
@@ -41,6 +42,8 @@ export interface TRPCUseQueryBaseOptions extends TRPCRequestOptions {
    */
   ssr?: boolean;
 }
+
+export type { TRPCContextState, TRPCContext } from './internals/context';
 
 export interface UseTRPCQueryOptions<TPath, TInput, TOutput, TError>
   extends UseQueryOptions<TOutput, TError, TOutput, [TPath, TInput]>,
@@ -84,10 +87,21 @@ type inferProcedures<TObj extends ProcedureRecord<any, any, any, any>> = {
   };
 };
 
+export interface CreateReactQueryHooksOptions {
+  /**
+   * Data transformer used for hydration and dehydration.
+   */
+  transformer?: DataTransformer;
+}
+
 export function createReactQueryHooks<
   TRouter extends AnyRouter,
   TSSRContext = unknown,
->() {
+>(opts?: CreateReactQueryHooksOptions) {
+  const transfomer: DataTransformer = opts?.transformer ?? {
+    serialize: (v) => v,
+    deserialize: (v) => v,
+  };
   type TQueries = TRouter['_def']['queries'];
   type TSubscriptions = TRouter['_def']['subscriptions'];
   type TError = TRPCClientErrorLike<TRouter>;
@@ -282,8 +296,8 @@ export function createReactQueryHooks<
     ],
     opts: {
       enabled?: boolean;
-      onError?: (err: TError) => void;
-      onNext: (data: TOutput) => void;
+      error?: (err: TError) => void;
+      next: (data: TOutput) => void;
     },
   ) {
     const enabled = opts?.enabled ?? true;
@@ -297,14 +311,14 @@ export function createReactQueryHooks<
       const [path, input] = pathAndInput;
       let isStopped = false;
       const unsub = client.subscription(path, (input ?? undefined) as any, {
-        onError: (err) => {
+        error: (err) => {
           if (!isStopped) {
-            opts.onError?.(err);
+            opts.error?.(err);
           }
         },
-        onNext: (res) => {
+        next: (res) => {
           if (res.type === 'data' && !isStopped) {
-            opts.onNext(res.data);
+            opts.next(res.data);
           }
         },
       });
@@ -353,17 +367,14 @@ export function createReactQueryHooks<
       opts,
     );
   }
-  function useDehydratedState(
-    client: TRPCClient<TRouter>,
-    trpcState: DehydratedState | undefined,
-  ) {
+  function useDehydratedState(trpcState: DehydratedState | undefined) {
     const transformed: DehydratedState | undefined = useMemo(() => {
       if (!trpcState) {
         return trpcState;
       }
 
-      return client.runtime.transformer.deserialize(trpcState);
-    }, [client, trpcState]);
+      return transfomer.deserialize(trpcState);
+    }, [trpcState]);
     return transformed;
   }
 

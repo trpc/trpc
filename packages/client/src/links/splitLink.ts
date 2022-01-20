@@ -1,45 +1,30 @@
 import { AnyRouter } from '@trpc/server';
-import { TRPCLink, Operation } from './core';
+import { observable } from '../rx/observable';
+import { TRPCLink, Operation } from './types';
+import { createChain } from './internals/createChain';
 
-export function splitLink<TRouter extends AnyRouter = AnyRouter>(
-  opts: {
-    condition: (op: Operation) => boolean;
-  } & (
-    | {
-        /**
-         * The link to execute next if the test function returns `true`.
-         */
-        left: TRPCLink<TRouter>;
-        /**
-         * The link to execute next if the test function returns `false`.
-         */
-        right: TRPCLink<TRouter>;
-      }
-    | {
-        /**
-         * The link to execute next if the test function returns `true`.
-         */
-        true: TRPCLink<TRouter>;
-        /**
-         * The link to execute next if the test function returns `false`.
-         */
-        false: TRPCLink<TRouter>;
-      }
-  ),
-): TRPCLink<TRouter> {
+function asArray<T>(value: T | T[]) {
+  return Array.isArray(value) ? value : [value];
+}
+export function splitLink<TRouter extends AnyRouter = AnyRouter>(opts: {
+  condition: (op: Operation) => boolean;
+  /**
+   * The link to execute next if the test function returns `true`.
+   */
+  true: TRPCLink<TRouter> | TRPCLink<TRouter>[];
+  /**
+   * The link to execute next if the test function returns `false`.
+   */
+  false: TRPCLink<TRouter> | TRPCLink<TRouter>[];
+}): TRPCLink<TRouter> {
   return (rt) => {
-    const links =
-      'left' in opts
-        ? {
-            true: opts.left,
-            false: opts.right,
-          }
-        : opts;
-
-    const yes = links.true(rt);
-    const no = links.false(rt);
+    const yes = asArray(opts.true).map((link) => link(rt));
+    const no = asArray(opts.false).map((link) => link(rt));
     return (props) => {
-      opts.condition(props.op) ? yes(props) : no(props);
+      return observable((observer) => {
+        const links = opts.condition(props.op) ? yes : no;
+        return createChain({ op: props.op, links }).subscribe(observer);
+      });
     };
   };
 }

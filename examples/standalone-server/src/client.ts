@@ -50,7 +50,7 @@ async function main() {
 
   let count = 0;
   const unsub = client.subscription('randomNumber', null, {
-    onNext(data) {
+    next(data) {
       // ^ note that `data` here is inferred
       console.log('received', data);
       count++;
@@ -59,11 +59,11 @@ async function main() {
         unsub();
       }
     },
-    onError(err) {
+    error(err) {
       console.error('error', err);
     },
-    onDone() {
-      console.log('done called - closing websocket');
+    complete() {
+      console.log('completed called - closing websocket');
       wsClient.close();
     },
   });

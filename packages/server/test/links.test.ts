@@ -1,60 +1,26 @@
+/* eslint-disable @typescript-eslint/no-non-null-assertion */
 /* eslint-disable @typescript-eslint/no-empty-function */
-import { waitFor } from '@testing-library/dom';
+import { createChain } from '@trpc/client/src/links/internals/createChain';
+import { LinkRuntime, OperationLink } from '@trpc/client/src/links/types';
 import AbortController from 'abort-controller';
 import fetch from 'node-fetch';
+import { observableToPromise } from '../../client/src/rx/util/observableToPromise';
 import { z } from 'zod';
-import { createTRPCClient } from '../../client/src';
-import { TRPCClientError } from '../../client/src';
-import { executeChain } from '../../client/src/internals/executeChain';
-import { LinkRuntimeOptions, OperationLink } from '../../client/src/links/core';
+import { createTRPCClient, TRPCClientError } from '../../client/src';
 import { httpBatchLink } from '../../client/src/links/httpBatchLink';
 import { httpLink } from '../../client/src/links/httpLink';
 import { loggerLink } from '../../client/src/links/loggerLink';
 import { retryLink } from '../../client/src/links/retryLink';
-import { splitLink } from '../../client/src/links/splitLink';
+import { observable } from '../../client/src/rx/observable';
 import * as trpc from '../src';
 import { AnyRouter } from '../src';
 import { routerToServerAndClient } from './_testHelpers';
 
-const mockRuntime: LinkRuntimeOptions = {
-  transformer: {
-    serialize: (obj) => obj,
-    deserialize: (obj) => obj,
-  },
+const mockRuntime: LinkRuntime = {
   fetch: fetch as any,
   AbortController: AbortController as any,
   headers: () => ({}),
 };
-test('retrylink', () => {
-  let attempts = 0;
-  const configuredLink = retryLink({ attempts: 5 });
-
-  const ctxLink = configuredLink(mockRuntime);
-
-  const prev = jest.fn();
-  ctxLink({
-    op: {
-      id: 1,
-      type: 'query',
-      input: null,
-      path: '',
-      context: {},
-    },
-    prev: prev,
-    next: (_ctx, callback) => {
-      attempts++;
-      if (attempts < 4) {
-        callback(TRPCClientError.from(new Error('..')));
-      } else {
-        callback({ type: 'data', data: 'succeeded on attempt ' + attempts });
-      }
-    },
-    onDestroy: () => {},
-  });
-  expect(prev).toHaveBeenCalledTimes(1);
-  expect(prev.mock.calls[0][0].data).toBe('succeeded on attempt 4');
-});
-
 test('chainer', async () => {
   let attempt = 0;
   const serverCall = jest.fn();
@@ -71,7 +37,7 @@ test('chainer', async () => {
     }),
   );
 
-  const $result = executeChain({
+  const chain = createChain({
     links: [
       retryLink({ attempts: 3 })(mockRuntime),
       httpLink({
@@ -87,13 +53,21 @@ test('chainer', async () => {
     },
   });
 
-  await waitFor(() => {
-    expect($result.get()).not.toBe(null);
-  });
-  expect($result.get()).toMatchInlineSnapshot(`
+  const result = await observableToPromise(chain).promise;
+  expect(result?.context?.response).toBeTruthy();
+  result!.context!.response = '[redacted]' as any;
+  expect(result).toMatchInlineSnapshot(`
     Object {
-      "data": "world",
-      "type": "data",
+      "context": Object {
+        "response": "[redacted]",
+      },
+      "data": Object {
+        "id": null,
+        "result": Object {
+          "data": "world",
+          "type": "data",
+        },
+      },
     }
   `);
 
@@ -102,40 +76,17 @@ test('chainer', async () => {
   close();
 });
 
-test('mock cache link has immediate $result', () => {
-  const $result = executeChain({
-    links: [
-      retryLink({ attempts: 3 })(mockRuntime),
-      // mock cache link
-      ({ prev }) => {
-        prev({ type: 'data', data: 'cached' });
-      },
-      httpLink({
-        url: `void`,
-      })(mockRuntime),
-    ],
-    op: {
-      id: 1,
-    } as any,
-  });
-  expect($result.get()).toMatchInlineSnapshot(`
-    Object {
-      "data": "cached",
-      "type": "data",
-    }
-  `);
-});
-
 test('cancel request', async () => {
   const onDestroyCall = jest.fn();
 
-  const $result = executeChain({
+  const chain = createChain({
     links: [
-      ({ onDestroy }) => {
-        onDestroy(() => {
-          onDestroyCall();
-        });
-      },
+      () =>
+        observable(() => {
+          return () => {
+            onDestroyCall();
+          };
+        }),
     ],
     op: {
       id: 1,
@@ -146,14 +97,14 @@ test('cancel request', async () => {
     },
   });
 
-  $result.done();
+  chain.subscribe({}).unsubscribe();
 
   expect(onDestroyCall).toHaveBeenCalled();
 });
 
 describe('batching', () => {
   test('query batching', async () => {
-    const contextCall = jest.fn();
+    const metaCall = jest.fn();
     const { port, close } = routerToServerAndClient(
       trpc.router().query('hello', {
         input: z.string().nullish(),
@@ -164,7 +115,7 @@ describe('batching', () => {
       {
         server: {
           createContext() {
-            contextCall();
+            metaCall();
           },
           batching: {
             enabled: true,
@@ -177,7 +128,7 @@ describe('batching', () => {
         url: `http://localhost:${port}`,
       })(mockRuntime),
     ];
-    const $result1 = executeChain({
+    const chain1 = createChain({
       links,
       op: {
         id: 1,
@@ -188,7 +139,7 @@ describe('batching', () => {
       },
     });
 
-    const $result2 = executeChain({
+    const chain2 = createChain({
       links,
       op: {
         id: 2,
@@ -199,24 +150,44 @@ describe('batching', () => {
       },
     });
 
-    await waitFor(() => {
-      expect($result1.get()).not.toBe(null);
-      expect($result2.get()).not.toBe(null);
-    });
-    expect($result1.get()).toMatchInlineSnapshot(`
-      Object {
-        "data": "hello world",
-        "type": "data",
-      }
-    `);
-    expect($result2.get()).toMatchInlineSnapshot(`
-      Object {
-        "data": "hello alexdotjs",
-        "type": "data",
-      }
+    const results = await Promise.all([
+      observableToPromise(chain1).promise,
+      observableToPromise(chain2).promise,
+    ]);
+    for (const res of results) {
+      expect(res?.context?.response).toBeTruthy();
+      res!.context!.response = '[redacted]';
+    }
+    expect(results).toMatchInlineSnapshot(`
+      Array [
+        Object {
+          "context": Object {
+            "response": "[redacted]",
+          },
+          "data": Object {
+            "id": null,
+            "result": Object {
+              "data": "hello world",
+              "type": "data",
+            },
+          },
+        },
+        Object {
+          "context": Object {
+            "response": "[redacted]",
+          },
+          "data": Object {
+            "id": null,
+            "result": Object {
+              "data": "hello alexdotjs",
+              "type": "data",
+            },
+          },
+        },
+      ]
     `);
 
-    expect(contextCall).toHaveBeenCalledTimes(1);
+    expect(metaCall).toHaveBeenCalledTimes(1);
 
     close();
   });
@@ -255,57 +226,6 @@ describe('batching', () => {
     close();
   });
 });
-describe('splitLink', () => {
-  test('left/right', () => {
-    const left = jest.fn();
-    const right = jest.fn();
-    executeChain({
-      links: [
-        splitLink({
-          left: () => left,
-          right: () => right,
-          condition(op) {
-            return op.type === 'query';
-          },
-        })(mockRuntime),
-      ],
-      op: {
-        id: 1,
-        type: 'query',
-        input: null,
-        path: '',
-        context: {},
-      },
-    });
-    expect(left).toHaveBeenCalledTimes(1);
-    expect(right).toHaveBeenCalledTimes(0);
-  });
-
-  test('true/false', () => {
-    const trueLink = jest.fn();
-    const falseLink = jest.fn();
-    executeChain({
-      links: [
-        splitLink({
-          true: () => trueLink,
-          false: () => falseLink,
-          condition(op) {
-            return op.type === 'query';
-          },
-        })(mockRuntime),
-      ],
-      op: {
-        id: 1,
-        type: 'query',
-        input: null,
-        path: '',
-        context: {},
-      },
-    });
-    expect(trueLink).toHaveBeenCalledTimes(1);
-    expect(falseLink).toHaveBeenCalledTimes(0);
-  });
-});
 test('create client with links', async () => {
   let attempt = 0;
   const serverCall = jest.fn();
@@ -332,47 +252,10 @@ test('create client with links', async () => {
     headers: {},
   });
 
-  const $result = await client.query('hello');
-  expect($result).toBe('world');
+  const result = await client.query('hello');
+  expect(result).toBe('world');
 
   close();
-});
-
-test('multi down link', async () => {
-  const $result = executeChain({
-    links: [
-      // mock cache link
-      ({ prev, onDestroy }) => {
-        const timer = setTimeout(() => {
-          prev({ type: 'data', data: 'cached2' });
-        }, 1);
-        onDestroy(() => {
-          clearTimeout(timer);
-        });
-        prev({ type: 'data', data: 'cached1' });
-      },
-      httpLink({
-        url: `void`,
-      })(mockRuntime),
-    ],
-    op: {
-      id: 1,
-    } as any,
-  });
-  expect($result.get()).toMatchInlineSnapshot(`
-    Object {
-      "data": "cached1",
-      "type": "data",
-    }
-  `);
-  await waitFor(() => {
-    expect($result.get()).toMatchInlineSnapshot(`
-      Object {
-        "data": "cached1",
-        "type": "data",
-      }
-    `);
-  });
 });
 
 test('loggerLink', () => {
@@ -383,12 +266,21 @@ test('loggerLink', () => {
   const logLink = loggerLink({
     console: logger,
   })(mockRuntime);
-  const okLink: OperationLink<AnyRouter> = ({ prev }) =>
-    prev({ type: 'data', data: undefined });
-  const errorLink: OperationLink<AnyRouter> = ({ prev }) =>
-    prev(TRPCClientError.from(new Error('..')));
+  const okLink: OperationLink<AnyRouter> = () =>
+    observable((o) => {
+      o.next({
+        data: {
+          id: null,
+          result: { type: 'data', data: undefined },
+        },
+      });
+    });
+  const errorLink: OperationLink<AnyRouter> = () =>
+    observable((o) => {
+      o.error(new TRPCClientError('..'));
+    });
   {
-    executeChain({
+    createChain({
       links: [logLink, okLink],
       op: {
         id: 1,
@@ -397,20 +289,27 @@ test('loggerLink', () => {
         path: 'n/a',
         context: {},
       },
-    });
+    })
+      .subscribe({})
+      .unsubscribe();
 
+    expect(logger.log.mock.calls).toHaveLength(2);
     expect(logger.log.mock.calls[0][0]).toMatchInlineSnapshot(
       `"%c >> query #1 %cn/a%c %O"`,
     );
-    expect(logger.log.mock.calls[1][0]).toMatchInlineSnapshot(
-      `"%c << query #1 %cn/a%c %O"`,
-    );
+    expect(logger.log.mock.calls[0][1]).toMatchInlineSnapshot(`
+      "
+          background-color: #72e3ff; 
+          color: black;
+          padding: 2px;
+        "
+    `);
     logger.error.mockReset();
     logger.log.mockReset();
   }
 
   {
-    executeChain({
+    createChain({
       links: [logLink, okLink],
       op: {
         id: 1,
@@ -419,7 +318,9 @@ test('loggerLink', () => {
         path: 'n/a',
         context: {},
       },
-    });
+    })
+      .subscribe({})
+      .unsubscribe();
     expect(logger.log.mock.calls[0][0]).toMatchInlineSnapshot(
       `"%c >> subscription #1 %cn/a%c %O"`,
     );
@@ -431,7 +332,7 @@ test('loggerLink', () => {
   }
 
   {
-    executeChain({
+    createChain({
       links: [logLink, okLink],
       op: {
         id: 1,
@@ -440,7 +341,9 @@ test('loggerLink', () => {
         path: 'n/a',
         context: {},
       },
-    });
+    })
+      .subscribe({})
+      .unsubscribe();
 
     expect(logger.log.mock.calls[0][0]).toMatchInlineSnapshot(
       `"%c >> mutation #1 %cn/a%c %O"`,
@@ -453,7 +356,7 @@ test('loggerLink', () => {
   }
 
   {
-    executeChain({
+    createChain({
       links: [logLink, errorLink],
       op: {
         id: 1,
@@ -462,7 +365,10 @@ test('loggerLink', () => {
         path: 'n/a',
         context: {},
       },
-    });
+    })
+      .subscribe({})
+      .unsubscribe();
+
     expect(logger.log.mock.calls[0][0]).toMatchInlineSnapshot(
       `"%c >> query #1 %cn/a%c %O"`,
     );
@@ -476,7 +382,7 @@ test('loggerLink', () => {
   // custom logger
   {
     const logFn = jest.fn();
-    executeChain({
+    createChain({
       links: [loggerLink({ logger: logFn })(mockRuntime), errorLink],
       op: {
         id: 1,
@@ -485,7 +391,9 @@ test('loggerLink', () => {
         path: 'n/a',
         context: {},
       },
-    });
+    })
+      .subscribe({})
+      .unsubscribe();
     const [firstCall, secondCall] = logFn.mock.calls.map((args) => args[0]);
     expect(firstCall).toMatchInlineSnapshot(`
       Object {
@@ -514,46 +422,60 @@ test('loggerLink', () => {
   }
 });
 
-test('pass a context', () => {
-  const context = {
-    hello: 'there',
-  };
-  const callback = jest.fn();
-  executeChain({
-    links: [
-      ({ op }) => {
-        callback(op.context);
-      },
-    ],
-    op: {
-      id: 1,
-      type: 'query',
-      input: null,
-      path: '',
-      context,
-    },
-  });
-  expect(callback).toHaveBeenCalledWith(context);
-});
+test('chain makes unsub', async () => {
+  const firstLinkUnsubscribeSpy = jest.fn();
+  const firstLinkCompleteSpy = jest.fn();
 
-test('pass a context', () => {
-  const context = {
-    hello: 'there',
-  };
-  const callback = jest.fn();
-  executeChain({
-    links: [
-      ({ op }) => {
-        callback(op.context);
-      },
-    ],
-    op: {
-      id: 1,
-      type: 'query',
-      input: null,
-      path: '',
-      context,
+  const secondLinkUnsubscribeSpy = jest.fn();
+
+  const router = trpc.router().query('hello', {
+    resolve() {
+      return 'world';
     },
   });
-  expect(callback).toHaveBeenCalledWith(context);
+  const { client, close } = routerToServerAndClient(router, {
+    client() {
+      return {
+        links: [
+          () =>
+            ({ next, op }) =>
+              observable((observer) => {
+                next(op).subscribe({
+                  next: observer.next,
+                  error: observer.error,
+                  complete() {
+                    firstLinkCompleteSpy();
+                    observer.complete();
+                  },
+                });
+                return () => {
+                  firstLinkUnsubscribeSpy();
+                  observer.complete();
+                };
+              }),
+          () => () =>
+            observable((observer) => {
+              observer.next({
+                data: {
+                  id: null,
+                  result: {
+                    type: 'data',
+                    data: 'world',
+                  },
+                },
+              });
+              observer.complete();
+              return () => {
+                secondLinkUnsubscribeSpy();
+              };
+            }),
+        ],
+      };
+    },
+  });
+  expect(await client.query('hello')).toBe('world');
+  expect(firstLinkCompleteSpy).toHaveBeenCalledTimes(1);
+  expect(firstLinkUnsubscribeSpy).toHaveBeenCalledTimes(1);
+  expect(secondLinkUnsubscribeSpy).toHaveBeenCalledTimes(1);
+  close();
 });

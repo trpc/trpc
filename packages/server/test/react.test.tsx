@@ -8,7 +8,7 @@ import { trpcServer } from './_packages';
 import '@testing-library/jest-dom';
 import { render, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { httpBatchLink } from '@trpc/client/links/httpBatchLink';
+import { httpBatchLink } from '../../client/src/links/httpBatchLink';
 import { expectTypeOf } from 'expect-type';
 import hash from 'hash-sum';
 import React, { Fragment, useEffect, useState } from 'react';
@@ -33,6 +33,7 @@ import {
 import { splitLink } from '../../client/src/links/splitLink';
 import { AppType } from 'next/dist/shared/lib/utils';
 import { TRPCError } from '../src/TRPCError';
+import { observable } from '../../client/src/rx/observable';
 
 setLogger({
   log() {},
@@ -197,14 +198,26 @@ function createAppRouter() {
           url: wssUrl,
         });
         return {
-          // links: [wsLink({ client: ws })],
           links: [
             () =>
-              ({ op, next, prev }) => {
-                linkSpy.up(op);
-                next(op, (result) => {
-                  linkSpy.down(result);
-                  prev(result);
+              ({ op, next }) => {
+                return observable((observer) => {
+                  linkSpy.up(op);
+                  const next$ = next(op).subscribe({
+                    next(result) {
+                      linkSpy.down(result);
+                      observer.next(result);
+                    },
+                    error(result) {
+                      linkSpy.down(result);
+                      observer.error(result);
+                    },
+                    complete() {
+                      linkSpy.down('COMPLETE');
+                      observer.complete();
+                    },
+                  });
+                  return next$;
                 });
               },
             splitLink({
@@ -306,7 +319,6 @@ describe('useQuery()', () => {
     });
 
     expect(linkSpy.up).toHaveBeenCalledTimes(1);
-    expect(linkSpy.down).toHaveBeenCalledTimes(1);
     expect(linkSpy.up.mock.calls[0][0].context).toMatchObject({
       test: '1',
     });
@@ -361,7 +373,7 @@ test('mutation on mount + subscribe for it', async () => {
     );
 
     trpc.useSubscription(['newPosts', input], {
-      onNext(post) {
+      next(post) {
         addPosts([post]);
       },
     });
@@ -1623,6 +1635,7 @@ describe('withTRPC()', () => {
     const App: AppType = () => {
       const query1 = trpc.useQuery(['postById', '1']);
       const query2 = trpc.useQuery(['postById', '2']);
+
       return <>{JSON.stringify([query1.data, query2.data])}</>;
     };
 

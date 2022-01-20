@@ -1,6 +1,8 @@
 import { ProcedureType } from '@trpc/server';
-import { TRPCResponse } from '@trpc/server/rpc';
-import { LinkRuntimeOptions, PromiseAndCancel } from '../links/core';
+import { LinkRuntime, PromiseAndCancel } from './types';
+export interface HTTPLinkOptions {
+  url: string;
+}
 
 // https://github.com/trpc/trpc/pull/669
 function arrayToDict(array: unknown[]) {
@@ -11,28 +13,30 @@ function arrayToDict(array: unknown[]) {
   }
   return dict;
 }
+const METHOD = {
+  query: 'GET',
+  mutation: 'POST',
+  subscription: 'PATCH',
+} as const;
 
-export function httpRequest<TResponseShape = TRPCResponse>(
+export interface ResponseShape {
+  json: unknown;
+  meta: {
+    response: Response;
+  };
+}
+export function httpRequest(
   props: {
-    runtime: LinkRuntimeOptions;
+    runtime: LinkRuntime;
     type: ProcedureType;
     path: string;
     url: string;
   } & ({ inputs: unknown[] } | { input: unknown }),
-): PromiseAndCancel<TResponseShape> {
+): PromiseAndCancel<ResponseShape> {
   const { type, runtime: rt, path } = props;
   const ac = rt.AbortController ? new rt.AbortController() : null;
-  const method = {
-    query: 'GET',
-    mutation: 'POST',
-    subscription: 'PATCH',
-  };
-  const input =
-    'input' in props
-      ? rt.transformer.serialize(props.input)
-      : arrayToDict(
-          props.inputs.map((_input) => rt.transformer.serialize(_input)),
-        );
+
+  const input = 'input' in props ? props.input : arrayToDict(props.inputs);
 
   function getUrl() {
     let url = props.url + '/' + path;
@@ -55,13 +59,14 @@ export function httpRequest<TResponseShape = TRPCResponse>(
     return input !== undefined ? JSON.stringify(input) : undefined;
   }
 
-  const promise = new Promise<TResponseShape>((resolve, reject) => {
+  const promise = new Promise<ResponseShape>((resolve, reject) => {
     const url = getUrl();
 
+    const meta = {} as any as ResponseShape['meta'];
     Promise.resolve(rt.headers())
       .then((headers) =>
         rt.fetch(url, {
-          method: method[type],
+          method: METHOD[type],
           signal: ac?.signal,
           body: getBody(),
           headers: {
@@ -70,11 +75,15 @@ export function httpRequest<TResponseShape = TRPCResponse>(
           },
         }),
       )
-      .then((res) => {
-        return res.json();
+      .then((_res) => {
+        meta.response = _res;
+        return _res.json();
       })
       .then((json) => {
-        resolve(json);
+        resolve({
+          json,
+          meta,
+        });
       })
       .catch(reject);
   });

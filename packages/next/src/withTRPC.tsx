@@ -6,10 +6,10 @@
 import {
   createReactQueryHooks,
   createTRPCClient,
-  CreateTRPCClientOptions,
   TRPCClient,
   TRPCClientError,
   TRPCClientErrorLike,
+  CreateReactQueryHooksOptions,
 } from '@trpc/react';
 import type { AnyRouter, Dict, Maybe, ResponseMeta } from '@trpc/server';
 import {
@@ -18,6 +18,7 @@ import {
   NextComponentType,
   NextPageContext,
 } from 'next/dist/shared/lib/utils';
+import type { CreateTRPCClientOptions } from '@trpc/client/src/internals/TRPCClient';
 import React, { createElement, useState } from 'react';
 import { QueryClient, QueryClientProvider } from 'react-query';
 import { dehydrate, DehydratedState, Hydrate } from 'react-query/hydration';
@@ -52,21 +53,26 @@ export type WithTRPCConfig<TRouter extends AnyRouter> =
     queryClientConfig?: QueryClientConfig;
   };
 
+interface WithTRPCOptions<TRouter extends AnyRouter>
+  extends CreateReactQueryHooksOptions {
+  config: (info: { ctx?: NextPageContext }) => WithTRPCConfig<TRouter>;
+}
+
+export interface WithTRPCSSROptions<TRouter extends AnyRouter>
+  extends WithTRPCOptions<TRouter> {
+  ssr: true;
+  responseMeta?: (opts: {
+    ctx: NextPageContext;
+    clientErrors: TRPCClientError<TRouter>[];
+  }) => ResponseMeta;
+}
+export interface WithTRPCNoSSROptions<TRouter extends AnyRouter>
+  extends WithTRPCOptions<TRouter> {
+  ssr?: false;
+}
+
 export function withTRPC<TRouter extends AnyRouter>(
-  opts: {
-    config: (info: { ctx?: NextPageContext }) => WithTRPCConfig<TRouter>;
-  } & (
-    | {
-        ssr?: false;
-      }
-    | {
-        ssr: true;
-        responseMeta?: (opts: {
-          ctx: NextPageContext;
-          clientErrors: TRPCClientError<TRouter>[];
-        }) => ResponseMeta;
-      }
-  ),
+  opts: WithTRPCNoSSROptions<TRouter> | WithTRPCSSROptions<TRouter>,
 ) {
   const { config: getClientConfig } = opts;
 
@@ -78,7 +84,7 @@ export function withTRPC<TRouter extends AnyRouter>(
     ssrContext: NextPageContext;
   };
   return (AppOrPage: NextComponentType<any, any, any>): NextComponentType => {
-    const trpc = createReactQueryHooks<TRouter, NextPageContext>();
+    const trpc = createReactQueryHooks<TRouter, NextPageContext>(opts);
 
     const WithTRPC = (
       props: AppPropsType & {
@@ -102,10 +108,7 @@ export function withTRPC<TRouter extends AnyRouter>(
         },
       );
 
-      const hydratedState = trpc.useDehydratedState(
-        trpcClient,
-        props.pageProps?.trpcState,
-      );
+      const hydratedState = trpc.useDehydratedState(props.pageProps?.trpcState);
 
       return (
         <trpc.Provider
@@ -154,6 +157,7 @@ export function withTRPC<TRouter extends AnyRouter>(
         if (typeof window !== 'undefined' || !opts.ssr) {
           return getAppTreeProps(pageProps);
         }
+
         const config = getClientConfig({ ctx });
         const trpcClient = createTRPCClient(config);
         const queryClient = new QueryClient(config.queryClientConfig);
@@ -207,9 +211,9 @@ export function withTRPC<TRouter extends AnyRouter>(
           ),
         };
         // dehydrate query client's state and add it to the props
-        pageProps.trpcState = trpcClient.runtime.transformer.serialize(
-          dehydratedCacheWithErrors,
-        );
+        pageProps.trpcState = opts.transformer
+          ? opts.transformer.serialize(dehydratedCacheWithErrors)
+          : dehydratedCacheWithErrors;
 
         const appTreeProps = getAppTreeProps(pageProps);
 

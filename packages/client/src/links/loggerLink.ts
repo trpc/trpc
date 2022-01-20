@@ -1,5 +1,8 @@
 import { AnyRouter } from '@trpc/server';
-import { Operation, OperationResponse, TRPCLink } from './core';
+import { TRPCClientError } from '..';
+import { observable } from '../rx/observable';
+import { tap } from '../rx/operators';
+import { Operation, OperationResult, TRPCLink } from './types';
 
 type ConsoleEsque = {
   log: (...args: any[]) => void;
@@ -12,7 +15,7 @@ type EnableFnOptions<TRouter extends AnyRouter> =
     })
   | {
       direction: 'down';
-      result: OperationResponse<TRouter>;
+      result: OperationResult<TRouter, unknown> | TRPCClientError<TRouter>;
     };
 type EnabledFn<TRouter extends AnyRouter> = (
   opts: EnableFnOptions<TRouter>,
@@ -31,7 +34,7 @@ type LogFnOptions<TRouter extends AnyRouter> = Operation &
          * Request result
          */
         direction: 'down';
-        result: OperationResponse<TRouter>;
+        result: OperationResult<TRouter, unknown> | TRPCClientError<TRouter>;
         elapsedMs: number;
       }
   );
@@ -78,7 +81,7 @@ const defaultLogger =
       `${css}; font-weight: normal;`,
     ];
     if (props.direction === 'up') {
-      args.push({ input, context });
+      args.push({ input, context: context });
     } else {
       args.push({
         input,
@@ -90,7 +93,7 @@ const defaultLogger =
     const fn: 'error' | 'log' =
       props.direction === 'down' &&
       props.result &&
-      props.result instanceof Error
+      (props.result instanceof Error || 'error' in props.result.data)
         ? 'error'
         : 'log';
 
@@ -102,27 +105,42 @@ export function loggerLink<TRouter extends AnyRouter = AnyRouter>(
   const { enabled = () => true } = opts;
 
   const { logger = defaultLogger(opts.console) } = opts;
-  return () => {
-    return ({ op, next, prev }) => {
-      // ->
-      enabled({ ...op, direction: 'up' }) &&
-        logger({
-          ...op,
-          direction: 'up',
-        });
-      const requestStartTime = Date.now();
-      next(op, (result) => {
-        const elapsedMs = Date.now() - requestStartTime;
 
-        enabled({ ...op, direction: 'down', result }) &&
+  return () => {
+    return ({ op, next }) => {
+      return observable((observer) => {
+        // ->
+        enabled({ ...op, direction: 'up' }) &&
           logger({
             ...op,
-            direction: 'down',
-            elapsedMs,
-            result,
+            direction: 'up',
           });
-        // <-
-        prev(result);
+        const requestStartTime = Date.now();
+        function logResult(
+          result: OperationResult<TRouter, unknown> | TRPCClientError<TRouter>,
+        ) {
+          const elapsedMs = Date.now() - requestStartTime;
+
+          enabled({ ...op, direction: 'down', result }) &&
+            logger({
+              ...op,
+              direction: 'down',
+              elapsedMs,
+              result,
+            });
+        }
+        return next(op)
+          .pipe(
+            tap({
+              next(result) {
+                logResult(result);
+              },
+              error(result) {
+                logResult(result);
+              },
+            }),
+          )
+          .subscribe(observer);
       });
     };
   };

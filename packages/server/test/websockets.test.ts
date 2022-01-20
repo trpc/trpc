@@ -131,7 +131,7 @@ test('mutation', async () => {
   close();
 });
 
-test('$subscription()', async () => {
+test('basic subscription test', async () => {
   const { client, close, ee } = factory();
   ee.once('subscription:created', () => {
     setTimeout(() => {
@@ -143,27 +143,27 @@ test('$subscription()', async () => {
       });
     });
   });
-  const onNext = jest.fn();
+  const next = jest.fn();
   const unsub = client.subscription('onMessage', undefined, {
-    onNext(data) {
+    next(data) {
       expectTypeOf(data).not.toBeAny();
       expectTypeOf(data).toMatchTypeOf<TRPCResult<Message>>();
-      onNext(data);
+      next(data);
     },
   });
 
   await waitFor(() => {
-    expect(onNext).toHaveBeenCalledTimes(3);
+    expect(next).toHaveBeenCalledTimes(3);
   });
 
   ee.emit('server:msg', {
     id: '2',
   });
   await waitFor(() => {
-    expect(onNext).toHaveBeenCalledTimes(3);
+    expect(next).toHaveBeenCalledTimes(3);
   });
 
-  expect(onNext.mock.calls).toMatchInlineSnapshot(`
+  expect(next.mock.calls).toMatchInlineSnapshot(`
     Array [
       Array [
         Object {
@@ -217,34 +217,34 @@ test.skip('$subscription() - server randomly stop and restart (this test might b
       });
     });
   });
-  const onNext = jest.fn();
-  const onError = jest.fn();
-  const onDone = jest.fn();
+  const next = jest.fn();
+  const error = jest.fn();
+  const complete = jest.fn();
   client.subscription('onMessage', undefined, {
-    onNext,
-    onError,
-    onDone,
+    next,
+    error,
+    complete,
   });
 
   await waitFor(() => {
-    expect(onNext).toHaveBeenCalledTimes(3);
+    expect(next).toHaveBeenCalledTimes(3);
   });
   // close websocket server
   await close();
   await waitFor(() => {
-    expect(onError).toHaveBeenCalledTimes(1);
-    expect(onDone).toHaveBeenCalledTimes(0);
+    expect(error).toHaveBeenCalledTimes(1);
+    expect(complete).toHaveBeenCalledTimes(0);
   });
-  expect(onError.mock.calls[0][0]).toMatchInlineSnapshot(
+  expect(error.mock.calls[0][0]).toMatchInlineSnapshot(
     `[TRPCClientError: WebSocket closed prematurely]`,
   );
-  expect(onError.mock.calls[0][0].originalError.name).toBe(
+  expect(error.mock.calls[0][0].originalError.name).toBe(
     'TRPCWebSocketClosedError',
   );
 
   // start a new wss server on same port, and trigger a message
-  onNext.mockClear();
-  onDone.mockClear();
+  next.mockClear();
+  complete.mockClear();
 
   ee.once('subscription:created', () => {
     setTimeout(() => {
@@ -258,9 +258,9 @@ test.skip('$subscription() - server randomly stop and restart (this test might b
   applyWSSHandler({ ...applyWSSHandlerOpts, wss });
 
   await waitFor(() => {
-    expect(onNext).toHaveBeenCalledTimes(2);
+    expect(next).toHaveBeenCalledTimes(2);
   });
-  expect(onNext.mock.calls.map((args) => args[0])).toMatchInlineSnapshot(`
+  expect(next.mock.calls.map((args) => args[0])).toMatchInlineSnapshot(`
     Array [
       Object {
         "type": "started",
@@ -289,25 +289,26 @@ test('server subscription ended', async () => {
       });
     });
   });
-  const onNext = jest.fn();
-  const onError = jest.fn();
-  const onDone = jest.fn();
+  const next = jest.fn();
+  const error = jest.fn();
+  const complete = jest.fn();
   client.subscription('onMessage', undefined, {
-    onNext,
-    onError,
-    onDone,
+    next,
+    error,
+    complete,
   });
 
   await waitFor(() => {
-    expect(onNext).toHaveBeenCalledTimes(3);
+    expect(next).toHaveBeenCalledTimes(3);
   });
   // destroy server subscription
   subRef.current.destroy();
   await waitFor(() => {
-    expect(onDone).toHaveBeenCalledTimes(1);
+    expect(error).toHaveBeenCalledTimes(1);
   });
-  expect(onError).toHaveBeenCalledTimes(1);
-  expect(onError.mock.calls[0][0]).toMatchInlineSnapshot(
+  expect(complete).toHaveBeenCalledTimes(0);
+  expect(error).toHaveBeenCalledTimes(1);
+  expect(error.mock.calls[0][0]).toMatchInlineSnapshot(
     `[TRPCClientError: Operation ended prematurely]`,
   );
   close();
@@ -326,19 +327,19 @@ test('sub emits errors', async () => {
   });
   const onNewClient = jest.fn();
   wss.addListener('connection', onNewClient);
-  const onNext = jest.fn();
-  const onError = jest.fn();
-  const onDone = jest.fn();
+  const next = jest.fn();
+  const error = jest.fn();
+  const complete = jest.fn();
   client.subscription('onMessage', undefined, {
-    onNext,
-    onError,
-    onDone,
+    next,
+    error,
+    complete,
   });
 
   await waitFor(() => {
-    expect(onNext).toHaveBeenCalledTimes(2);
-    expect(onError).toHaveBeenCalledTimes(1);
-    expect(onDone).toHaveBeenCalledTimes(0);
+    expect(next).toHaveBeenCalledTimes(2);
+    expect(error).toHaveBeenCalledTimes(1);
+    expect(complete).toHaveBeenCalledTimes(0);
   });
 
   close();
@@ -372,20 +373,20 @@ test('subscriptions are automatically resumed', async () => {
     });
   });
   function createSub() {
-    const onNext = jest.fn();
-    const onError = jest.fn();
-    const onDone = jest.fn();
+    const next = jest.fn();
+    const error = jest.fn();
+    const complete = jest.fn();
     const unsub = client.subscription('onMessage', undefined, {
-      onNext,
-      onError,
-      onDone,
+      next,
+      error,
+      complete,
     });
-    return { onNext, onDone, onError, unsub };
+    return { next, complete, error, unsub };
   }
   const sub1 = createSub();
 
   await waitFor(() => {
-    expect(sub1.onNext).toHaveBeenCalledTimes(2);
+    expect(sub1.next).toHaveBeenCalledTimes(2);
   });
   wssHandler.broadcastReconnectNotification();
   await waitFor(() => {
@@ -393,16 +394,16 @@ test('subscriptions are automatically resumed', async () => {
   });
 
   await waitFor(() => {
-    expect(sub1.onNext).toHaveBeenCalledTimes(3);
+    expect(sub1.next).toHaveBeenCalledTimes(3);
   });
   ee.emit('server:msg', {
     id: '2',
   });
 
   await waitFor(() => {
-    expect(sub1.onNext).toHaveBeenCalledTimes(4);
+    expect(sub1.next).toHaveBeenCalledTimes(4);
   });
-  expect(sub1.onNext.mock.calls.map((args) => args[0])).toMatchInlineSnapshot(`
+  expect(sub1.next.mock.calls.map((args) => args[0])).toMatchInlineSnapshot(`
     Array [
       Object {
         "type": "started",

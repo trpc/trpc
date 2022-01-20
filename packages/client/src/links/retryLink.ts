@@ -1,5 +1,7 @@
 import { AnyRouter } from '@trpc/server';
-import { TRPCLink } from './core';
+import { observable } from '../rx/observable';
+import { Unsubscribable } from '../rx/types';
+import { TRPCLink } from './types';
 
 export function retryLink<TRouter extends AnyRouter = AnyRouter>(opts: {
   attempts: number;
@@ -7,20 +9,49 @@ export function retryLink<TRouter extends AnyRouter = AnyRouter>(opts: {
   // initialized config
   return () => {
     // initialized in app
-    return ({ op, next, prev }) => {
+    return ({ op, next }) => {
       // initialized for request
-      let attempts = 0;
-      const fn = () => {
-        attempts++;
-        next(op, (result) => {
-          if (result instanceof Error) {
-            attempts < opts.attempts ? fn() : prev(result);
-          } else {
-            prev(result);
-          }
-        });
-      };
-      fn();
+      return observable((observer) => {
+        let next$: Unsubscribable | null = null;
+        let attempts = 0;
+        let isDone = false;
+        function attempt() {
+          attempts++;
+          next$?.unsubscribe();
+          next$ = next(op).subscribe({
+            error(error) {
+              if (attempts >= opts.attempts) {
+                observer.error(error);
+                return;
+              }
+              attempt();
+            },
+            next(result) {
+              if ('result' in result.data) {
+                isDone = true;
+                observer.next(result);
+                return;
+              }
+              if (attempts >= opts.attempts) {
+                isDone = true;
+                observer.next(result);
+                return;
+              }
+              attempt();
+            },
+            complete() {
+              if (isDone) {
+                observer.complete();
+              }
+            },
+          });
+        }
+        attempt();
+        return () => {
+          isDone = true;
+          next$?.unsubscribe();
+        };
+      });
     };
   };
 }
