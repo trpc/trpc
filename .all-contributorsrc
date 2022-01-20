@@ -352,7 +352,44 @@
       "avatar_url": "https://avatars.githubusercontent.com/u/24906387?v=4",
       "profile": "http://guiselin.com",
       "contributions": [
-        "doc"
+        "doc",
+        "review"
+      ]
+    },
+    {
+      "login": "illarionvk",
+      "name": "Illarion Koperski",
+      "avatar_url": "https://avatars.githubusercontent.com/u/5012724?v=4",
+      "profile": "https://www.illarionvk.com",
+      "contributions": [
+        "financial"
+      ]
+    },
+    {
+      "login": "albingroen",
+      "name": "Albin Groen",
+      "avatar_url": "https://avatars.githubusercontent.com/u/19674362?v=4",
+      "profile": "http://abgn.me",
+      "contributions": [
+        "financial"
+      ]
+    },
+    {
+      "login": "esamattis",
+      "name": "Esa-Matti Suuronen",
+      "avatar_url": "https://avatars.githubusercontent.com/u/225712?v=4",
+      "profile": "https://esamatti.fi/",
+      "contributions": [
+        "example"
+      ]
+    },
+    {
+      "login": "timcole",
+      "name": "Timothy Cole",
+      "avatar_url": "https://avatars.githubusercontent.com/u/6754577?v=4",
+      "profile": "https://timcole.me",
+      "contributions": [
+        "financial"
       ]
     }
   ],
