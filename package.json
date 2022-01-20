@@ -57,7 +57,8 @@
     "commit-date": "git log -n 1 --date=format:'%Y-%m-%d-%H-%M-%S' --pretty=format:'%ad'",
     "canary-preid": "echo \"$(yarn --silent current-branch)-$(yarn --silent commit-date)\"",
     "current-branch": "echo \"$(git rev-parse --abbrev-ref HEAD)\" | sed -E 's/refs\\/heads\\///' | sed -E 's/\\W|_/-/g' | sed -e 's/\\//-/'",
-    "publish-canary": "lerna publish --force-publish --canary --preid $(yarn --silent canary-preid) --dist-tag $(yarn --silent current-branch)"
+    "publish-canary": "lerna publish --force-publish --canary --preid $(yarn --silent canary-preid) --dist-tag $(yarn --silent current-branch)",
+    "publish-prerelease": "yarn && yarn lerna publish prerelease --force-publish --no-push"
   },
   "dependencies": {
     "@babel/core": "^7.15.5",
