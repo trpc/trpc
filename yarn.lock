@@ -909,9 +909,9 @@
     "@babel/helper-plugin-utils" "^7.14.5"
 
 "@babel/plugin-transform-runtime@^7.15.0":
-  version "7.16.8"
-  resolved "https://registry.yarnpkg.com/@babel/plugin-transform-runtime/-/plugin-transform-runtime-7.16.8.tgz#3339368701103edae708f0fba9e4bfb70a3e5872"
-  integrity sha512-6Kg2XHPFnIarNweZxmzbgYnnWsXxkx9WQUVk2sksBRL80lBC1RAQV3wQagWxdCHiYHqPN+oenwNIuttlYgIbQQ==
+  version "7.16.10"
+  resolved "https://registry.yarnpkg.com/@babel/plugin-transform-runtime/-/plugin-transform-runtime-7.16.10.tgz#53d9fd3496daedce1dd99639097fa5d14f4c7c2c"
+  integrity sha512-9nwTiqETv2G7xI4RvXHNfpGdr8pAA+Q/YtN3yLK7OoK7n9OibVm/xymJ838a9A6E/IciOLPj82lZk0fW6O4O7w==
   dependencies:
     "@babel/helper-module-imports" "^7.16.7"
     "@babel/helper-plugin-utils" "^7.16.7"
@@ -10507,10 +10507,10 @@ platform@1.3.6:
   resolved "https://registry.npmjs.org/platform/-/platform-1.3.6.tgz#48b4ce983164b209c2d45a107adb31f473a6e7a7"
   integrity sha512-fnWVljUchTro6RiCFvCXBbNhJc2NijN7oIQxbwsyL0buWJPG85v81ehlHI9fXrJsMNgTofEoWIQeClKpgxFLrg==
 
-playwright-core@=1.17.2, playwright-core@>=1.2.0:
-  version "1.17.2"
-  resolved "https://registry.yarnpkg.com/playwright-core/-/playwright-core-1.17.2.tgz#916254fa8fb3eb76c160b5c2e06bc979d6ec2cf8"
-  integrity sha512-TCYIt2UNHvqGxvD79bBjBv9osDLAH1gn7AZD5kRpMNQJG6BAmJt8B4Ek8fzdKmCQOnHf9ASJmcYRszoIZxcdVA==
+playwright-core@=1.18.0, playwright-core@>=1.2.0:
+  version "1.18.0"
+  resolved "https://registry.yarnpkg.com/playwright-core/-/playwright-core-1.18.0.tgz#b4d2b9068f26357adaa952a13254796fd439f322"
+  integrity sha512-JTRlCVpfAFcC1nth+XIE07w6M5m6C8PaEoClv7wGWF97cyDMcHIij0xIVEKMKli7IG5N0mqjLDFc/akXSbMZ1g==
   dependencies:
     commander "^8.2.0"
     debug "^4.1.1"
@@ -10530,11 +10530,11 @@ playwright-core@=1.17.2, playwright-core@>=1.2.0:
     yazl "^2.5.1"
 
 playwright@^1.14.1, playwright@^1.15.2:
-  version "1.17.2"
-  resolved "https://registry.yarnpkg.com/playwright/-/playwright-1.17.2.tgz#918b9a7e43ac8640fa3e2162ce0cb8b395c55fb7"
-  integrity sha512-u1HZmVoeLCLptNcpuOyp5KfBzsdsLxE9CReK82i/p8j5i7EPqtY3fX77SMHqDGeO7tLBSYk2a6eFDVlQfSSANg==
+  version "1.18.0"
+  resolved "https://registry.yarnpkg.com/playwright/-/playwright-1.18.0.tgz#4613e19147ffa5f77ad845227f007b9b94a366f8"
+  integrity sha512-GOWvcWRtL7o6QCj6tvZCxqHKx2sIhXeEmEJAqQdOZgxzQiCkPe1hnTHab1p8R1bDvHK703fDS2oIbs3mcvg6gw==
   dependencies:
-    playwright-core "=1.17.2"
+    playwright-core "=1.18.0"
 
 pngjs@^5.0.0:
   version "5.0.0"
@@ -10929,9 +10929,9 @@ react-is@^16.8.1:
     match-sorter "^6.0.2"
 
 react-query@^3.27.0:
-  version "3.34.0"
-  resolved "https://registry.yarnpkg.com/react-query/-/react-query-3.34.0.tgz#43477ac6d117d850354e6db80dcca6d5c1b36728"
-  integrity sha512-g6L90FeCLzz6+53CbVKYJALBiZR5icOYPjqGGiNgHNeufcnddLZaQGE9wheclk10k6g+o+Dd4/jAtswhjVblXw==
+  version "3.34.8"
+  resolved "https://registry.yarnpkg.com/react-query/-/react-query-3.34.8.tgz#a3be8523fd95f766b04c32847a1b58d8231db03c"
+  integrity sha512-pl9e2VmVbgKf29Qn/WpmFVtB2g17JPqLLyOQg3GfSs/S2WABvip5xlT464vfXtilLPcJVg9bEHHlqmC38/nvDw==
   dependencies:
     "@babel/runtime" "^7.5.5"
     broadcast-channel "^3.4.1"
