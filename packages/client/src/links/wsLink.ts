@@ -322,6 +322,7 @@ export function wsLink<TRouter extends AnyRouter>(
           },
         );
         return () => {
+          isDone = true;
           unsub();
         };
       });
