@@ -391,6 +391,17 @@
       "contributions": [
         "financial"
       ]
+    },
+    {
+      "login": "reggie3-braingu",
+      "name": "reggie3-braingu",
+      "avatar_url": "https://avatars.githubusercontent.com/u/90011823?v=4",
+      "profile": "https://github.com/reggie3-braingu",
+      "contributions": [
+        "example",
+        "test",
+        "financial"
+      ]
     }
   ],
   "contributorsPerLine": 7,
