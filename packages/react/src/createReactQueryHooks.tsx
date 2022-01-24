@@ -13,7 +13,14 @@ import type {
   inferSubscriptionOutput,
   ProcedureRecord,
 } from '@trpc/server';
-import React, { ReactNode, useCallback, useEffect, useMemo } from 'react';
+import React, {
+  createContext,
+  ReactNode,
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+} from 'react';
 import {
   hashQueryKey,
   QueryClient,
@@ -29,6 +36,10 @@ import {
 } from 'react-query';
 import { DehydratedState } from 'react-query/hydration';
 import { TRPCContext, TRPCContextState } from './internals/context';
+import {
+  IsMountedOnClientProvider,
+  useIsMountedOnClient,
+} from './internals/IsMountedOnClientContext';
 
 export type OutputWithCursor<TData, TCursor extends any = any> = {
   cursor: TCursor | null;
@@ -84,6 +95,8 @@ type inferProcedures<TObj extends ProcedureRecord<any, any, any, any>> = {
   };
 };
 
+const TRPCIsMountedOnClientContext = createContext<boolean>(false);
+
 export function createReactQueryHooks<
   TRouter extends AnyRouter,
   TSSRContext = unknown,
@@ -119,99 +132,107 @@ export function createReactQueryHooks<
     ssrContext?: TSSRContext | null;
   }) {
     return (
-      <Context.Provider
-        value={{
-          queryClient,
-          client,
-          isPrepass,
-          ssrContext: ssrContext || null,
-          fetchQuery: useCallback(
-            (pathAndInput, opts) => {
-              return queryClient.fetchQuery(
-                pathAndInput,
-                () =>
-                  (client as any).query(...getClientArgs(pathAndInput, opts)),
-                opts,
-              );
-            },
-            [client, queryClient],
-          ),
-          fetchInfiniteQuery: useCallback(
-            (pathAndInput, opts) => {
-              return queryClient.fetchInfiniteQuery(
-                pathAndInput,
-                ({ pageParam }) => {
-                  const [path, input] = pathAndInput;
-                  const actualInput = { ...(input as any), cursor: pageParam };
-                  return (client as any).query(
-                    ...getClientArgs([path, actualInput], opts),
-                  );
-                },
-                opts,
-              );
-            },
-            [client, queryClient],
-          ),
-          prefetchQuery: useCallback(
-            (pathAndInput, opts) => {
-              return queryClient.prefetchQuery(
-                pathAndInput,
-                () =>
-                  (client as any).query(...getClientArgs(pathAndInput, opts)),
-                opts,
-              );
-            },
-            [client, queryClient],
-          ),
-          prefetchInfiniteQuery: useCallback(
-            (pathAndInput, opts) => {
-              return queryClient.prefetchInfiniteQuery(
-                pathAndInput,
-                ({ pageParam }) => {
-                  const [path, input] = pathAndInput;
-                  const actualInput = { ...(input as any), cursor: pageParam };
-                  return (client as any).query(
-                    ...getClientArgs([path, actualInput], opts),
-                  );
-                },
-                opts,
-              );
-            },
-            [client, queryClient],
-          ),
-          /**
-           * @deprecated use `invalidateQueries`
-           */
-          invalidateQuery: useCallback(
-            (...args: any[]) => queryClient.invalidateQueries(...args),
-            [queryClient],
-          ),
-          invalidateQueries: useCallback(
-            (...args: any[]) => queryClient.invalidateQueries(...args),
-            [queryClient],
-          ),
-          refetchQueries: useCallback(
-            (...args: any[]) => queryClient.refetchQueries(...args),
-            [queryClient],
-          ),
-          cancelQuery: useCallback(
-            (pathAndInput) => {
-              return queryClient.cancelQueries(pathAndInput);
-            },
-            [queryClient],
-          ),
-          setQueryData: useCallback(
-            (...args) => queryClient.setQueryData(...args),
-            [queryClient],
-          ),
-          getQueryData: useCallback(
-            (...args) => queryClient.getQueryData(...args),
-            [queryClient],
-          ),
-        }}
-      >
-        {children}
-      </Context.Provider>
+      <IsMountedOnClientProvider>
+        <Context.Provider
+          value={{
+            queryClient,
+            client,
+            isPrepass,
+            ssrContext: ssrContext || null,
+            fetchQuery: useCallback(
+              (pathAndInput, opts) => {
+                return queryClient.fetchQuery(
+                  pathAndInput,
+                  () =>
+                    (client as any).query(...getClientArgs(pathAndInput, opts)),
+                  opts,
+                );
+              },
+              [client, queryClient],
+            ),
+            fetchInfiniteQuery: useCallback(
+              (pathAndInput, opts) => {
+                return queryClient.fetchInfiniteQuery(
+                  pathAndInput,
+                  ({ pageParam }) => {
+                    const [path, input] = pathAndInput;
+                    const actualInput = {
+                      ...(input as any),
+                      cursor: pageParam,
+                    };
+                    return (client as any).query(
+                      ...getClientArgs([path, actualInput], opts),
+                    );
+                  },
+                  opts,
+                );
+              },
+              [client, queryClient],
+            ),
+            prefetchQuery: useCallback(
+              (pathAndInput, opts) => {
+                return queryClient.prefetchQuery(
+                  pathAndInput,
+                  () =>
+                    (client as any).query(...getClientArgs(pathAndInput, opts)),
+                  opts,
+                );
+              },
+              [client, queryClient],
+            ),
+            prefetchInfiniteQuery: useCallback(
+              (pathAndInput, opts) => {
+                return queryClient.prefetchInfiniteQuery(
+                  pathAndInput,
+                  ({ pageParam }) => {
+                    const [path, input] = pathAndInput;
+                    const actualInput = {
+                      ...(input as any),
+                      cursor: pageParam,
+                    };
+                    return (client as any).query(
+                      ...getClientArgs([path, actualInput], opts),
+                    );
+                  },
+                  opts,
+                );
+              },
+              [client, queryClient],
+            ),
+            /**
+             * @deprecated use `invalidateQueries`
+             */
+            invalidateQuery: useCallback(
+              (...args: any[]) => queryClient.invalidateQueries(...args),
+              [queryClient],
+            ),
+            invalidateQueries: useCallback(
+              (...args: any[]) => queryClient.invalidateQueries(...args),
+              [queryClient],
+            ),
+            refetchQueries: useCallback(
+              (...args: any[]) => queryClient.refetchQueries(...args),
+              [queryClient],
+            ),
+            cancelQuery: useCallback(
+              (pathAndInput) => {
+                return queryClient.cancelQueries(pathAndInput);
+              },
+              [queryClient],
+            ),
+            setQueryData: useCallback(
+              (...args) => queryClient.setQueryData(...args),
+              [queryClient],
+            ),
+            getQueryData: useCallback(
+              (...args) => queryClient.getQueryData(...args),
+              [queryClient],
+            ),
+          }}
+        >
+          {children}
+        </Context.Provider>
+      </IsMountedOnClientProvider>
     );
   }
 
@@ -231,7 +252,8 @@ export function createReactQueryHooks<
     const { client, isPrepass, queryClient, prefetchQuery } = useContext();
 
     const isServer = typeof window === 'undefined';
-    let enabled = opts?.enabled;
+    const isMounted = useIsMountedOnClient();
+    let forceDisabledOnServer = opts?.enabled;
     if (
       isServer &&
       isPrepass &&
@@ -239,12 +261,14 @@ export function createReactQueryHooks<
       opts?.enabled !== false &&
       !queryClient.getQueryCache().find(pathAndInput)
     ) {
+      // prefetch query server-side
       prefetchQuery(pathAndInput as any, opts as any);
-    } else if (isServer) {
+    } else if (isServer && opts?.enabled !== false) {
+      // if query isn't **explicitly** disabled, we need to set a flag that
       // make sure to disable queries on the server unless ssr is enabled
-      enabled = false;
+      forceDisabledOnServer = false;
     }
-    const _opts = { ...opts, enabled };
+    const _opts = { ...opts, enabled: forceDisabledOnServer && isMounted };
 
     return __useQuery(
       pathAndInput as any,
