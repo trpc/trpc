@@ -76,6 +76,7 @@ export function withTRPC<TRouter extends AnyRouter>(
     trpcClient: TRPCClient<TRouter>;
     isPrepass: true;
     ssrContext: NextPageContext;
+    ssrEnabled: true;
   };
   return (AppOrPage: NextComponentType<any, any, any>): NextComponentType => {
     const trpc = createReactQueryHooks<TRouter, NextPageContext>();
@@ -113,6 +114,7 @@ export function withTRPC<TRouter extends AnyRouter>(
           queryClient={queryClient}
           isPrepass={isPrepass}
           ssrContext={ssrContext}
+          ssrEnabled={opts.ssr}
         >
           <QueryClientProvider client={queryClient}>
             <Hydrate state={hydratedState}>
@@ -164,6 +166,7 @@ export function withTRPC<TRouter extends AnyRouter>(
           queryClient,
           isPrepass: true,
           ssrContext: ctx,
+          ssrEnabled: true,
         };
         const prepassProps = {
           pageProps,

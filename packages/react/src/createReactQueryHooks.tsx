@@ -95,8 +95,6 @@ type inferProcedures<TObj extends ProcedureRecord<any, any, any, any>> = {
   };
 };
 
-const TRPCIsMountedOnClientContext = createContext<boolean>(false);
-
 export function createReactQueryHooks<
   TRouter extends AnyRouter,
   TSSRContext = unknown,
@@ -124,12 +122,14 @@ export function createReactQueryHooks<
     children,
     isPrepass = false,
     ssrContext,
+    ssrEnabled = false,
   }: {
     queryClient: QueryClient;
     client: TRPCClient<TRouter>;
     children: ReactNode;
     isPrepass?: boolean;
     ssrContext?: TSSRContext | null;
+    ssrEnabled?: boolean;
   }) {
     return (
       <IsMountedOnClientProvider>
@@ -139,6 +139,7 @@ export function createReactQueryHooks<
             client,
             isPrepass,
             ssrContext: ssrContext || null,
+            ssrEnabled,
             fetchQuery: useCallback(
               (pathAndInput, opts) => {
                 return queryClient.fetchQuery(
@@ -249,11 +250,12 @@ export function createReactQueryHooks<
       TError
     >,
   ): UseQueryResult<TQueryValues[TPath]['output'], TError> {
-    const { client, isPrepass, queryClient, prefetchQuery } = useContext();
+    const { client, isPrepass, queryClient, prefetchQuery, ssrEnabled } =
+      useContext();
 
     const isServer = typeof window === 'undefined';
     const isMounted = useIsMountedOnClient();
-    let forceDisabledOnServer = opts?.enabled;
+
     if (
       isServer &&
       isPrepass &&
@@ -263,12 +265,11 @@ export function createReactQueryHooks<
     ) {
       // prefetch query server-side
       prefetchQuery(pathAndInput as any, opts as any);
-    } else if (isServer && opts?.enabled !== false) {
-      // if query isn't **explicitly** disabled, we need to set a flag that
-      // make sure to disable queries on the server unless ssr is enabled
-      forceDisabledOnServer = false;
     }
-    const _opts = { ...opts, enabled: forceDisabledOnServer && isMounted };
+    const _opts = { ...opts };
+    if (!ssrEnabled && !isMounted) {
+      _opts.enabled = false;
+    }
 
     return __useQuery(
       pathAndInput as any,

@@ -36,6 +36,7 @@ export interface TRPCContextState<
   client: TRPCClient<TRouter>;
   isPrepass: boolean;
   ssrContext: TSSRContext | null;
+  ssrEnabled: boolean;
 
   /**
    * @link https://react-query.tanstack.com/guides/prefetching
