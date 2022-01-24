@@ -273,7 +273,9 @@ export function createReactQueryHooks<
 
     return __useQuery(
       pathAndInput as any,
-      () => (client as any).query(...getClientArgs(pathAndInput, opts)),
+      () => {
+        return (client as any).query(...getClientArgs(pathAndInput, opts));
+      },
       _opts,
     );
   }
