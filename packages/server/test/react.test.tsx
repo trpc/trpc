@@ -1613,17 +1613,29 @@ describe('withTRPC()', () => {
     });
   });
 
-  test.skip('useQuery - ssr batching', async () => {
+  test('useQuery - ssr batching', async () => {
     // @ts-ignore
     const { window } = global;
 
     // @ts-ignore
     delete global.window;
     const { trpc, trpcClientOptions, createContext } = factory;
+
+    function Post1() {
+      const query = trpc.useQuery(['postById', '1']);
+      return <>{JSON.stringify([query.data])}</>;
+    }
+    function Post2() {
+      const query = trpc.useQuery(['postById', '2']);
+      return <>{JSON.stringify([query.data])}</>;
+    }
     const App: AppType = () => {
-      const query1 = trpc.useQuery(['postById', '1']);
-      const query2 = trpc.useQuery(['postById', '2']);
-      return <>{JSON.stringify([query1.data, query2.data])}</>;
+      return (
+        <>
+          <Post1 />
+          <Post2 />
+        </>
+      );
     };
 
     const Wrapped = withTRPC({
