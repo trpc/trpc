@@ -266,15 +266,15 @@ export function createReactQueryHooks<
       // prefetch query server-side
       prefetchQuery(pathAndInput as any, opts as any);
     }
+    const _opts = { ...opts };
     if (
       !ssrEnabled &&
       !isMounted &&
       opts?.enabled !== false &&
       opts?.suspense
     ) {
-      throw new Promise(() => {
-        // throws a promise that never resolves to enforce loading state
-      });
+      // if ssr is disabled, enforce the query to be disabled until the query has mounted on the client when doing suspense
+      _opts.enabled = false;
     }
 
     return __useQuery(
@@ -282,7 +282,7 @@ export function createReactQueryHooks<
       () => {
         return (client as any).query(...getClientArgs(pathAndInput, opts));
       },
-      opts,
+      _opts,
     );
   }
 
