@@ -14,8 +14,8 @@ type TError = TRPCClientErrorLike<TRouter>;
 type TQueries = TRouter['_def']['queries'];
 
 /**
- * This hook returns a guaranteed `{ data: TData }` & not `{ data: undefined | TData }`
- * Any errors are propagated to nearest error container and loading is propagated to closest `<Suspense />`
+ * This hook returns a guaranteed `{ data: TData | undefined }`
+ * It will only be `undefined` on the initial render on the server-side
  *
  * tRPC in it's current version was written before I started properly using Suspsense.
  * This sort of hook will come in tRPC in the next major and likely become the default behaviour.

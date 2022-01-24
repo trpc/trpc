@@ -1,3 +1,4 @@
+import { Spinner } from 'components/Spinner';
 import { useRouter } from 'next/router';
 import { NextPageWithLayout } from 'pages/_app';
 import { useSuspenseQuery } from 'utils/useSuspenseQuery';
@@ -5,6 +6,9 @@ import { useSuspenseQuery } from 'utils/useSuspenseQuery';
 const PostViewPage: NextPageWithLayout = () => {
   const id = useRouter().query.id as string;
   const [post] = useSuspenseQuery(['post.byId', { id }]);
+  if (!post) {
+    return <Spinner />;
+  }
 
   return (
     <>

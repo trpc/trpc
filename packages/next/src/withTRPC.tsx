@@ -174,25 +174,8 @@ export function withTRPC<TRouter extends AnyRouter>(
         };
 
         // Run the prepass step on AppTree. This will run all trpc queries on the server.
-        // multiple prepass ensures that we can do batching on the server
-        while (true) {
-          // render full tree
-          await ssrPrepass(createElement(AppTree, prepassProps as any));
-          if (!queryClient.isFetching()) {
-            // the render didn't cause the queryClient to fetch anything
-            break;
-          }
+        await ssrPrepass(createElement(AppTree, prepassProps as any));
 
-          // wait until the query cache has settled it's promises
-          await new Promise<void>((resolve) => {
-            const unsub = queryClient.getQueryCache().subscribe((event) => {
-              if (event?.query.getObserversCount() === 0) {
-                resolve();
-                unsub();
-              }
-            });
-          });
-        }
         const dehydratedCache = dehydrate(queryClient, {
           shouldDehydrateQuery() {
             // makes sure errors are also dehydrated
