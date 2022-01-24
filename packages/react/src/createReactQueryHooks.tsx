@@ -230,19 +230,26 @@ export function createReactQueryHooks<
   ): UseQueryResult<TQueryValues[TPath]['output'], TError> {
     const { client, isPrepass, queryClient, prefetchQuery } = useContext();
 
+    const isServer = typeof window !== 'undefined';
+    let enabled = opts?.enabled;
     if (
-      typeof window === 'undefined' &&
+      isServer &&
       isPrepass &&
       opts?.ssr !== false &&
       opts?.enabled !== false &&
       !queryClient.getQueryCache().find(pathAndInput)
     ) {
       prefetchQuery(pathAndInput as any, opts as any);
+    } else if (isServer) {
+      // make sure to disable queries on the server unless ssr is enabled
+      enabled = false;
     }
+    const _opts = { ...opts, enabled };
+
     return __useQuery(
       pathAndInput as any,
       () => (client as any).query(...getClientArgs(pathAndInput, opts)),
-      opts,
+      _opts,
     );
   }
 
