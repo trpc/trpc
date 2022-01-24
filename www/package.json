@@ -17,8 +17,8 @@
     "@docusaurus/preset-classic": "^2.0.0-beta.8",
     "@mdx-js/react": "^1.6.22",
     "clsx": "^1.1.1",
-    "react": "beta",
-    "react-dom": "beta",
+    "react": "^17.0.2",
+    "react-dom": "^17.0.2",
     "react-github-btn": "^1.2.1"
   },
   "browserslist": {
