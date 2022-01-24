@@ -267,13 +267,9 @@ export function createReactQueryHooks<
       prefetchQuery(pathAndInput as any, opts as any);
     }
     const _opts = { ...opts };
-    if (
-      !ssrEnabled &&
-      !isMounted &&
-      opts?.enabled !== false &&
-      opts?.suspense
-    ) {
-      // if ssr is disabled, enforce the query to be disabled until the query has mounted on the client when doing suspense
+    if (!ssrEnabled && !isMounted && opts?.suspense) {
+      // If SSR is disabled & we're doing a suspense'd query:
+      // Enforce the query to be disabled until the app has mounted on the client when doing suspense
       _opts.enabled = false;
     }
 
