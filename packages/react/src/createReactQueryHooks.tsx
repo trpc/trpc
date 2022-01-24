@@ -13,14 +13,7 @@ import type {
   inferSubscriptionOutput,
   ProcedureRecord,
 } from '@trpc/server';
-import React, {
-  createContext,
-  ReactNode,
-  useCallback,
-  useEffect,
-  useMemo,
-  useState,
-} from 'react';
+import React, { ReactNode, useCallback, useEffect, useMemo } from 'react';
 import {
   hashQueryKey,
   QueryClient,
@@ -250,8 +243,7 @@ export function createReactQueryHooks<
       TError
     >,
   ): UseQueryResult<TQueryValues[TPath]['output'], TError> {
-    const { client, isPrepass, queryClient, prefetchQuery, ssrEnabled } =
-      useContext();
+    const { client, isPrepass, ssrEnabled } = useContext();
 
     const isServer = typeof window === 'undefined';
     const isMounted = useIsMountedOnClient();
