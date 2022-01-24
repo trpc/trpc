@@ -230,7 +230,7 @@ export function createReactQueryHooks<
   ): UseQueryResult<TQueryValues[TPath]['output'], TError> {
     const { client, isPrepass, queryClient, prefetchQuery } = useContext();
 
-    const isServer = typeof window !== 'undefined';
+    const isServer = typeof window === 'undefined';
     let enabled = opts?.enabled;
     if (
       isServer &&
