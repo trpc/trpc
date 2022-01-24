@@ -11,7 +11,7 @@
     "db-migrate-dev": "yarn prisma migrate dev",
     "db-nuke": "docker-compose down --volumes --remove-orphans",
     "dev": "next dev",
-    "dx": "cross-env DATABASE_URL=postgresql://postgres:@localhost:5632/trpcdb run-s db-up db-migrate-dev db-seed dev",
+    "dx": "cross-env DATABASE_URL=postgresql://postgres:@localhost:5732/trpcdb run-s db-up db-migrate-dev db-seed dev",
     "start": "next start",
     "lint": "eslint src",
     "lint-fix": "yarn lint --fix",
