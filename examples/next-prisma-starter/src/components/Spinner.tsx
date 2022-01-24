@@ -1,7 +1,7 @@
 export function Spinner() {
   return (
     <div>
-      <em>Loading...</em>
+      <em>Loading....</em>
     </div>
   );
 }
