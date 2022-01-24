@@ -32,7 +32,10 @@ export function useSuspenseQuery<TPath extends keyof TQueries & string>(
   >,
 ): [
   inferProcedureOutput<TQueries[TPath]>,
-  QueryObserverSuccessResult<inferProcedureOutput<TQueries[TPath]>, TError>,
+  QueryObserverSuccessResult<
+    inferProcedureOutput<TQueries[TPath]> | undefined,
+    TError
+  >,
 ] {
   // enforce suspense
   const _opts = opts ?? {};
