@@ -245,12 +245,11 @@ export function createReactQueryHooks<
   ): UseQueryResult<TQueryValues[TPath]['output'], TError> {
     const { client, isPrepass, ssrEnabled } = useContext();
 
-    const isServer = typeof window === 'undefined';
     const isMounted = useIsMountedOnClient();
 
     const _opts = { ...opts };
     if (
-      isServer &&
+      typeof window === 'undefined' &&
       isPrepass &&
       opts?.ssr !== false &&
       opts?.enabled !== false
@@ -356,17 +355,24 @@ export function createReactQueryHooks<
     >,
   ): UseInfiniteQueryResult<TQueryValues[TPath]['output'], TError> {
     const [path, input] = pathAndInput;
-    const { client, isPrepass, prefetchInfiniteQuery, queryClient } =
-      useContext();
+    const { client, isPrepass, ssrEnabled } = useContext();
 
+    const isMounted = useIsMountedOnClient();
+
+    const _opts = { ...opts };
     if (
       typeof window === 'undefined' &&
       isPrepass &&
       opts?.ssr !== false &&
-      opts?.enabled !== false &&
-      !queryClient.getQueryCache().find(pathAndInput)
+      opts?.enabled !== false
     ) {
-      prefetchInfiniteQuery(pathAndInput as any, opts as any);
+      // Enforce suspense makes sure the query is prefetched server-side
+      _opts.suspense = true;
+    }
+    if (!ssrEnabled && !isMounted && opts?.suspense) {
+      // If SSR is disabled & we're doing a suspense'd query:
+      // Enforce the query to be disabled until the app has mounted on the client when doing suspense
+      _opts.enabled = false;
     }
 
     return __useInfiniteQuery(
@@ -377,7 +383,7 @@ export function createReactQueryHooks<
           ...getClientArgs([path, actualInput], opts),
         );
       },
-      opts,
+      _opts,
     );
   }
   function useDehydratedState(
