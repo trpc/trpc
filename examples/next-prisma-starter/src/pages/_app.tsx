@@ -2,11 +2,10 @@ import { httpBatchLink } from '@trpc/client/links/httpBatchLink';
 import { loggerLink } from '@trpc/client/links/loggerLink';
 import { withTRPC } from '@trpc/next';
 import { DefaultLayout } from 'components/DefaultLayout';
-import { ErrorBoundary } from 'components/ErrorBoundary';
 import { NextPage } from 'next';
 import { AppProps } from 'next/app';
 import { AppType } from 'next/dist/shared/lib/utils';
-import { ReactElement, ReactNode, Suspense } from 'react';
+import { ReactElement, ReactNode } from 'react';
 import { AppRouter } from 'server/routers/_app';
 import superjson from 'superjson';
 
@@ -22,13 +21,7 @@ const MyApp = (({ Component, pageProps }: AppPropsWithLayout) => {
   const getLayout =
     Component.getLayout ?? ((page) => <DefaultLayout>{page}</DefaultLayout>);
 
-  return (
-    <ErrorBoundary>
-      <Suspense fallback={<em>Loading....</em>}>
-        {getLayout(<Component {...pageProps} />)}
-      </Suspense>
-    </ErrorBoundary>
-  );
+  return <>{getLayout(<Component {...pageProps} />)}</>;
 }) as AppType;
 
 function getBaseUrl() {
