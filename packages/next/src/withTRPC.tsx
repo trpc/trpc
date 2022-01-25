@@ -226,9 +226,9 @@ export function withTRPC<TRouter extends AnyRouter>(
                   ? [err as TRPCClientError<TRouter>]
                   : [],
               ),
-          }) ?? {};
+          }) || {};
 
-        for (const [key, value] of Object.entries(meta)) {
+        for (const [key, value] of Object.entries(meta.headers || {})) {
           if (typeof value === 'string') {
             ctx.res?.setHeader(key, value);
           }
