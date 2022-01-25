@@ -404,6 +404,15 @@
         "test",
         "financial"
       ]
+    },
+    {
+      "login": "ShiftySlothe",
+      "name": "ShiftySlothe",
+      "avatar_url": "https://avatars.githubusercontent.com/u/59391676?v=4",
+      "profile": "https://github.com/ShiftySlothe",
+      "contributions": [
+        "example"
+      ]
     }
   ],
   "contributorsPerLine": 7,
