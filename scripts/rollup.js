@@ -12,6 +12,8 @@ const isWatchMode = process.argv.includes('--watch');
 
 const extensions = ['.ts', '.tsx'];
 
+// needed so directory structure is preserved
+// otherwise rollup will flatten it
 const getMultiInputPlugin = () => multiInput({ relative: 'src/' });
 
 export const getRollupConfig = ({ input }) => {
