@@ -25,6 +25,35 @@ const somePosts = await Promise.all([
 
 > The below examples assuming you use Next.js, but the same as below can be added if you use the vanilla tRPC client
 
+### Setting a maximum batch size
+
+This limits the number of requests that can be sent together in batch ( useful to prevent the url from getting too large and run into [HTTP error 413](https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/413) ).
+
+```ts
+import type { AppRouter } from 'pages/api/trpc/[trpc]';
+import { withTRPC } from '@trpc/next';
+import { AppType } from 'next/dist/shared/lib/utils';
+// 👇 import the httpBatchLink
+import { httpBatchLink } from '@trpc/client/links/httpBatchLink';
+
+const MyApp: AppType = ({ Component, pageProps }) => {
+  return <Component {...pageProps} />;
+};
+
+export default withTRPC<AppRouter>({
+  config() {
+    return {
+      links: [
+        httpBatchLink({
+          url: '/api/trpc',
+          maxBatchSize: 10 // a reasonable size
+        }),
+      ],
+    };
+  },
+})(MyApp);
+```
+
 ### Disabling request batching
 
 #### 1. Disable `batching` on your server:
@@ -48,7 +77,7 @@ export default trpcNext.createNextApiHandler({
 import type { AppRouter } from 'pages/api/trpc/[trpc]';
 import { withTRPC } from '@trpc/next';
 import { AppType } from 'next/dist/shared/lib/utils';
-// 👇 import the httpBatchLink
+// 👇 import the httpLink
 import { httpLink } from '@trpc/client/links/httpLink';
 
 const MyApp: AppType = ({ Component, pageProps }) => {
