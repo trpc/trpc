@@ -20,7 +20,10 @@ type BatchLoadFn<TKey, TValue> = (keys: TKey[]) => {
  * Less configuration, no caching, and allows you to cancel requests
  * When cancelling a single fetch the whole batch will be cancelled only when _all_ items are cancelled
  */
-export function dataLoader<TKey, TValue>(fetchMany: BatchLoadFn<TKey, TValue>) {
+export function dataLoader<TKey, TValue>(
+  fetchMany: BatchLoadFn<TKey, TValue>,
+  opts?: { maxBatchSize?: number },
+) {
   let batch: Batch<TKey, TValue> | null = null;
   let dispatchTimer: NodeJS.Timer | number | null = null;
 
@@ -69,7 +72,15 @@ export function dataLoader<TKey, TValue>(fetchMany: BatchLoadFn<TKey, TValue>) {
       item.reject = reject;
       item.resolve = resolve;
       thisBatch.items.push(item);
+
+      if (
+        typeof opts?.maxBatchSize !== 'undefined' &&
+        thisBatch.items.length >= opts.maxBatchSize
+      ) {
+        // TODO: dispatch... but how?
+      }
     });
+
     if (!dispatchTimer) {
       dispatchTimer = setTimeout(dispatch);
     }
