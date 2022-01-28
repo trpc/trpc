@@ -1,20 +1,25 @@
 import { AnyRouter, ProcedureType } from '@trpc/server';
 import { TRPCResponse } from '@trpc/server/rpc';
-import { TRPCClientError } from '../TRPCClientError';
 import { dataLoader } from '../internals/dataLoader';
-import { transformRPCResponse } from '../internals/transformRPCResponse';
 import { httpRequest } from '../internals/httpRequest';
-import { HTTPLinkOptions, TRPCLink } from './core';
+import { transformRPCResponse } from '../internals/transformRPCResponse';
 import { TRPCAbortError } from '../internals/TRPCAbortError';
+import { TRPCClientError } from '../TRPCClientError';
+import { HTTPLinkOptions, TRPCLink } from './core';
+
+export interface HttpBatchLinkOptions extends HTTPLinkOptions {
+  maxBatchSize?: number;
+}
 
 export function httpBatchLink<TRouter extends AnyRouter>(
-  opts: HTTPLinkOptions,
+  opts: HttpBatchLinkOptions,
 ): TRPCLink<TRouter> {
-  const { url } = opts;
+  const { url, maxBatchSize } = opts;
   // initialized config
   return (runtime) => {
     // initialized in app
     type Key = { id: number; path: string; input: unknown };
+
     const fetcher = (type: ProcedureType) => (keyInputPairs: Key[]) => {
       const path = keyInputPairs.map((op) => op.path).join(',');
       const inputs = keyInputPairs.map((op) => op.input);
@@ -37,11 +42,22 @@ export function httpBatchLink<TRouter extends AnyRouter>(
         cancel,
       };
     };
-    const query = dataLoader<Key, TRPCResponse>(fetcher('query'));
-    const mutation = dataLoader<Key, TRPCResponse>(fetcher('mutation'));
-    const subscription = dataLoader<Key, TRPCResponse>(fetcher('subscription'));
+
+    const query = dataLoader<Key, TRPCResponse>(fetcher('query'), {
+      maxBatchSize,
+    });
+
+    const mutation = dataLoader<Key, TRPCResponse>(fetcher('mutation'), {
+      maxBatchSize,
+    });
+
+    const subscription = dataLoader<Key, TRPCResponse>(
+      fetcher('subscription'),
+      { maxBatchSize },
+    );
 
     const loaders = { query, subscription, mutation };
+
     return ({ op, prev, onDestroy }) => {
       const loader = loaders[op.type];
       const { promise, cancel } = loader.load(op);
