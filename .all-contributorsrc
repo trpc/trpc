@@ -298,7 +298,8 @@
       "profile": "https://github.com/sachinraja",
       "contributions": [
         "review",
-        "ideas"
+        "ideas",
+        "mentoring"
       ]
     },
     {
@@ -389,7 +390,28 @@
       "avatar_url": "https://avatars.githubusercontent.com/u/6754577?v=4",
       "profile": "https://timcole.me",
       "contributions": [
+        "financial",
+        "mentoring"
+      ]
+    },
+    {
+      "login": "reggie3-braingu",
+      "name": "reggie3-braingu",
+      "avatar_url": "https://avatars.githubusercontent.com/u/90011823?v=4",
+      "profile": "https://github.com/reggie3-braingu",
+      "contributions": [
+        "example",
+        "test",
         "financial"
+      ]
+    },
+    {
+      "login": "ShiftySlothe",
+      "name": "ShiftySlothe",
+      "avatar_url": "https://avatars.githubusercontent.com/u/59391676?v=4",
+      "profile": "https://github.com/ShiftySlothe",
+      "contributions": [
+        "example"
       ]
     }
   ],
