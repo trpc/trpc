@@ -15,24 +15,55 @@
       "explicit-module-boundary-types": "off"
     }
   },
-  "preconstruct": {
-    "entrypoints": [
-      "index.ts",
-      "adapters/express.ts",
-      "adapters/next.ts",
-      "adapters/node-http/index.ts",
-      "adapters/standalone.ts",
-      "adapters/ws.ts",
-      "ws/index.ts",
-      "rpc/index.ts"
-    ]
-  },
   "scripts": {
-    "test": "jest"
+    "test": "jest",
+    "build": "rollup -c"
   },
-  "main": "dist/trpc-server.cjs.js",
-  "module": "dist/trpc-server.esm.js",
-  "typings": "dist/trpc-server.cjs.d.ts",
+  "main": "dist/index.js",
+  "module": "dist/index.mjs",
+  "typings": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js",
+      "default": "./dist/index.js"
+    },
+    "./adapters/express": {
+      "import": "./dist/adapters/express.mjs",
+      "require": "./dist/adapters/express.js",
+      "default": "./dist/adapters/express.js"
+    },
+    "./adapters/next": {
+      "import": "./dist/adapters/next.mjs",
+      "require": "./dist/adapters/next.js",
+      "default": "./dist/adapters/next.js"
+    },
+    "./adapters/node-http": {
+      "import": "./dist/adapters/node-http/index.mjs",
+      "require": "./dist/adapters/node-http/index.js",
+      "default": "./dist/adapters/node-http/index.js"
+    },
+    "./adapters/standalone": {
+      "import": "./dist/adapters/standalone.mjs",
+      "require": "./dist/adapters/standalone.js",
+      "default": "./dist/adapters/standalone.js"
+    },
+    "./adapters/ws": {
+      "import": "./dist/adapters/ws.mjs",
+      "require": "./dist/adapters/ws.js",
+      "default": "./dist/adapters/ws.js"
+    },
+    "./ws": {
+      "import": "./dist/ws/index.mjs",
+      "require": "./dist/ws/index.js",
+      "default": "./dist/ws/index.js"
+    },
+    "./rpc": {
+      "import": "./dist/rpc/index.mjs",
+      "require": "./dist/rpc/index.js",
+      "default": "./dist/rpc/index.js"
+    }
+  },
   "files": [
     "README.md",
     "dist",

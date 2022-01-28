@@ -3,6 +3,6 @@
   "include": ["src", "test"],
   "compilerOptions": {
     "target": "ES2019",
-    "lib": ["ES2020.Promise"]
+    "lib": ["es5", "es6", "dom", "dom.iterable", "ES2020.Promise"]
   }
 }

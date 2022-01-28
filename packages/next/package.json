@@ -10,15 +10,19 @@
     "url": "git+https://github.com/trpc/trpc.git",
     "directory": "packages/next"
   },
-  "preconstruct": {
-    "entrypoints": [
-      "index.ts"
-    ]
+  "scripts": {
+    "build": "rollup -c"
   },
-  "scripts": {},
-  "main": "dist/trpc-next.cjs.js",
-  "module": "dist/trpc-next.esm.js",
-  "typings": "dist/trpc-next.cjs.d.ts",
+  "main": "dist/index.js",
+  "module": "dist/index.mjs",
+  "typings": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js",
+      "default": "./dist/index.js"
+    }
+  },
   "files": [
     "README.md",
     "dist",

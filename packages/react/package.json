@@ -10,16 +10,24 @@
     "url": "git+https://github.com/trpc/trpc.git",
     "directory": "packages/react"
   },
-  "preconstruct": {
-    "entrypoints": [
-      "index.ts",
-      "ssg.ts"
-    ]
+  "scripts": {
+    "build": "rollup -c"
   },
-  "scripts": {},
-  "main": "dist/trpc-react.cjs.js",
-  "module": "dist/trpc-react.esm.js",
-  "typings": "dist/trpc-react.cjs.d.ts",
+  "main": "dist/index.js",
+  "module": "dist/index.mjs",
+  "typings": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js",
+      "default": "./dist/index.js"
+    },
+    "./ssg": {
+      "import": "./dist/ssg.mjs",
+      "require": "./dist/ssg.js",
+      "default": "./dist/ssg.js"
+    }
+  },
   "files": [
     "README.md",
     "dist",
