@@ -77,7 +77,8 @@ export function dataLoader<TKey, TValue>(
         typeof opts?.maxBatchSize !== 'undefined' &&
         thisBatch.items.length >= opts.maxBatchSize
       ) {
-        // TODO: dispatch... but how?
+        dispatch();
+        return;
       }
     });
 
