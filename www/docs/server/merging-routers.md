@@ -50,6 +50,6 @@ const users = createRouter()
 
 const appRouter = createRouter()
   .merge('user', users) // prefix user procedures with "user"
-  .merge('post.', posts) // prefix poosts procedures with "post."
+  .merge('post.', posts) // prefix posts procedures with "post."
   ;
 ```
