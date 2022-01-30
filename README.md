@@ -141,6 +141,7 @@ npx create-next-app --example https://github.com/trpc/trpc --example-path exampl
       <td align="center"><a href="https://www.illarionvk.com"><img src="https://avatars.githubusercontent.com/u/5012724?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Illarion Koperski</b></sub></a></td>
       <td align="center"><a href="http://abgn.me"><img src="https://avatars.githubusercontent.com/u/19674362?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Albin Groen</b></sub></a></td>
       <td align="center"><a href="https://timcole.me"><img src="https://avatars.githubusercontent.com/u/6754577?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Timothy Cole</b></sub></a></td>
+      <td align="center"><a href="https://github.com/utevo"><img src="https://avatars.githubusercontent.com/u/29740731?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Michał Kowieski</b></sub></a></td>
     </tr>
   </tbody>
 </table>
@@ -206,6 +207,9 @@ npx create-next-app --example https://github.com/trpc/trpc --example-path exampl
     <td align="center"><a href="https://github.com/reggie3-braingu"><img src="https://avatars.githubusercontent.com/u/90011823?v=4?s=100" width="100px;" alt=""/><br /><sub><b>reggie3-braingu</b></sub></a><br /><a href="#example-reggie3-braingu" title="Examples">💡</a> <a href="https://github.com/trpc/trpc/commits?author=reggie3-braingu" title="Tests">⚠️</a> <a href="#financial-reggie3-braingu" title="Financial">💵</a></td>
     <td align="center"><a href="https://github.com/ShiftySlothe"><img src="https://avatars.githubusercontent.com/u/59391676?v=4?s=100" width="100px;" alt=""/><br /><sub><b>ShiftySlothe</b></sub></a><br /><a href="#example-ShiftySlothe" title="Examples">💡</a></td>
     <td align="center"><a href="https://github.com/darioielardi"><img src="https://avatars.githubusercontent.com/u/19256200?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Dario Ielardi</b></sub></a><br /><a href="https://github.com/trpc/trpc/commits?author=darioielardi" title="Code">💻</a> <a href="https://github.com/trpc/trpc/commits?author=darioielardi" title="Tests">⚠️</a></td>
+  </tr>
+  <tr>
+    <td align="center"><a href="https://github.com/utevo"><img src="https://avatars.githubusercontent.com/u/29740731?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Michał Kowieski</b></sub></a><br /><a href="#financial-utevo" title="Financial">💵</a></td>
   </tr>
 </table>
 
