@@ -423,6 +423,15 @@
         "code",
         "test"
       ]
+    },
+    {
+      "login": "utevo",
+      "name": "Michał Kowieski",
+      "avatar_url": "https://avatars.githubusercontent.com/u/29740731?v=4",
+      "profile": "https://github.com/utevo",
+      "contributions": [
+        "financial"
+      ]
     }
   ],
   "contributorsPerLine": 7,
