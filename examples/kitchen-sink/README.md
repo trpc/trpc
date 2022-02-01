@@ -1,2 +1,3 @@
-# Go to https://github.com/trpc/examples-kitchen-sink
+# tRPC Kitchen Sink
 
+**Go to https://github.com/trpc/examples-kitchen-sink**
