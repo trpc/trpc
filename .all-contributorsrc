@@ -432,6 +432,15 @@
       "contributions": [
         "financial"
       ]
+    },
+    {
+      "login": "terose73",
+      "name": "Theodore Rose",
+      "avatar_url": "https://avatars.githubusercontent.com/u/34382127?v=4",
+      "profile": "https://github.com/terose73",
+      "contributions": [
+        "example"
+      ]
     }
   ],
   "contributorsPerLine": 7,
