@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { createRouter } from '../pages/api/trpc/[trpc]';
+import { createRouter } from '../createRouter';
 
 export const todoRouter = createRouter()
   .query('all', {

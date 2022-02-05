@@ -1,26 +1,10 @@
-import { PrismaClient } from '@prisma/client';
-import * as trpc from '@trpc/server';
 import * as trpcNext from '@trpc/server/adapters/next';
 import superjson from 'superjson';
-import { todoRouter } from '../../../routers/todo';
-const prisma = new PrismaClient();
+import { todoRouter } from '../../../server/routers/todo';
+import { createContext } from '../../../server/context';
+import { createRouter } from '../../../server/createRouter';
+import { prisma } from '../../../utils/prisma';
 
-// create context based of incoming request
-// set as optional here so it can also be re-used for `getStaticProps()`
-export const createContext = async (
-  opts?: trpcNext.CreateNextContextOptions,
-) => {
-  return {
-    req: opts?.req,
-    prisma,
-    task: prisma.task,
-  };
-};
-export type Context = trpc.inferAsyncReturnType<typeof createContext>;
-
-export function createRouter() {
-  return trpc.router<Context>();
-}
 const router = createRouter().transformer(superjson).merge('todo.', todoRouter);
 
 export const appRouter = router;
