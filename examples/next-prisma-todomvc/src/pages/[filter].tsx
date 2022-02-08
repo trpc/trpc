@@ -14,8 +14,8 @@ import superjson from 'superjson';
 import 'todomvc-app-css/index.css';
 import 'todomvc-common/base.css';
 import { createContext } from '../server/context';
+import { appRouter } from '../server/routers/_app';
 import { inferQueryOutput, trpc } from '../utils/trpc';
-import { appRouter } from './api/trpc/[trpc]';
 type Task = inferQueryOutput<'todo.all'>[number];
 
 /**
