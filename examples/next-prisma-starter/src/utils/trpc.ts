@@ -9,7 +9,7 @@ import type { AppRouter } from 'server/routers/_app';
 import superjson from 'superjson';
 
 function getBaseUrl() {
-  if (process.browser) {
+  if (typeof window !== 'undefined') {
     return '';
   }
   // reference for vercel.com

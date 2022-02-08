@@ -10,7 +10,7 @@ import superjson from 'superjson';
 import { AppRouter } from '../pages/api/trpc/[trpc]';
 
 function getBaseUrl() {
-  if (process.browser) {
+  if (typeof window !== 'undefined') {
     return '';
   }
   // reference for vercel.com
