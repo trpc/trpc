@@ -28,7 +28,7 @@ import {
   UseQueryOptions,
   UseQueryResult,
 } from 'react-query';
-import { DehydratedState } from 'react-query/hydration';
+import { DehydratedState } from 'react-query';
 import { TRPCContext, TRPCContextState } from './internals/context';
 
 export type OutputWithCursor<TData, TCursor extends any = any> = {

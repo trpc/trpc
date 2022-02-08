@@ -7,10 +7,10 @@ import type { inferProcedureInput, inferProcedureOutput } from '@trpc/server';
 // https://www.typescriptlang.org/docs/handbook/release-notes/typescript-3-8.html#type-only-imports-and-export
 
 import superjson from 'superjson';
-import { AppRouter } from '../pages/api/trpc/[trpc]';
+import { AppRouter } from '../server/routers/_app';
 
 function getBaseUrl() {
-  if (process.browser) {
+  if (typeof window !== 'undefined') {
     return '';
   }
   // reference for vercel.com

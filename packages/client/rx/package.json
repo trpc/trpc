@@ -1,4 +1,0 @@
-{
-  "main": "dist/trpc-client-rx.cjs.js",
-  "module": "dist/trpc-client-rx.esm.js"
-}

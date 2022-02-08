@@ -21,7 +21,7 @@ import {
 import type { CreateTRPCClientOptions } from '@trpc/client/src/internals/TRPCClient';
 import React, { createElement, useState } from 'react';
 import { QueryClient, QueryClientProvider } from 'react-query';
-import { dehydrate, DehydratedState, Hydrate } from 'react-query/hydration';
+import { dehydrate, DehydratedState, Hydrate } from 'react-query';
 import ssrPrepass from 'react-ssr-prepass';
 
 type QueryClientConfig = ConstructorParameters<typeof QueryClient>[0];

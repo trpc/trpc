@@ -18,7 +18,7 @@ import {
   setLogger,
   useQueryClient,
 } from 'react-query';
-import { dehydrate } from 'react-query/hydration';
+import { dehydrate } from 'react-query';
 import { z, ZodError } from 'zod';
 import { withTRPC } from '../../next/src';
 import { createReactQueryHooks, OutputWithCursor } from '../../react/src';
