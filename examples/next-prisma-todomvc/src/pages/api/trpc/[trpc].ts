@@ -1,17 +1,10 @@
 import * as trpcNext from '@trpc/server/adapters/next';
-import superjson from 'superjson';
-import { todoRouter } from '../../../server/routers/todo';
 import { createContext } from '../../../server/context';
-import { createRouter } from '../../../server/createRouter';
+import { appRouter } from '../../../server/routers/_app';
 import { prisma } from '../../../utils/prisma';
 
-const router = createRouter().transformer(superjson).merge('todo.', todoRouter);
-
-export const appRouter = router;
-export type AppRouter = typeof router;
-
 export default trpcNext.createNextApiHandler({
-  router,
+  router: appRouter,
   createContext,
   teardown: () => prisma.$disconnect(),
   onError({ error }) {
