@@ -30,12 +30,15 @@
 </p>
 
 ## Features 
-
-- Full static type-safety on the client.
-- No code generation, run-time bloat, or build pipeline.
-- Request batching - requests made at the same time can be Automatically combined into one.
-- React/Next.js/Express.js adapters (reach out if you want to make one for Svelte, Vue, etc).
-- Production ready.
+- 🧙‍♂️&nbsp; Full type-safety & autocompletion on the client for inputs, outputs, and errors.
+- 🐎&nbsp; Snappy DX - No code generation, run-time bloat, or build pipeline.
+- 🍃&nbsp; Light - tRPC has zero deps and a tiny client-side footprint.
+- 🐻&nbsp; Easy to add to your existing brownfield project.
+- 🔋&nbsp; Batteries included - React.js/Next.js/Express.js adapters (But it's not tied to React. reach out if you want to make a Svelte/Vue/... adapter).
+- 🥃&nbsp; Easy to use APIs for queries, mutations & subscriptions support.
+- ⚡️&nbsp; Request batching - requests made at the same time can be automatically combined into one.
+- 👀&nbsp; Quite a few examples in the [./examples](./examples) folder.
+- ✅&nbsp; Well tested and production-ready.
 
 ## Quickstart 
 
