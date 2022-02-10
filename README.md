@@ -34,7 +34,7 @@
  As TypeScript and static typing increasingly become a best practice in web programming, the API presents a major pain point. We need better ways to statically type our API endpoints and share those types between our client and server (or server-to-server). tRPC allows you to build & consume typesafe APIs, without schemas or code generation. 
 </p>
 
-## Features 
+## Features 🚀
 - 🧙‍♂️&nbsp; Full type-safety & autocompletion on the client for inputs, outputs, and errors.
 - 🐎&nbsp; Snappy DX - No code generation, run-time bloat, or build pipeline.
 - 🍃&nbsp; Light - tRPC has zero deps and a tiny client-side footprint.
@@ -45,7 +45,7 @@
 - 👀&nbsp; Quite a few examples in the [./examples](./examples) folder.
 - ✅&nbsp; Well tested and production-ready.
 
-## Quickstart 
+## Quickstart ⚡️
 
 There are a few [examples](https://trpc.io/docs/example-apps) that you can use for playing out with tRCP or bootstrapping your new project. For example, if you want a next.js app, you can use the full-stack next.js example:
 
@@ -57,7 +57,7 @@ npx create-next-app --example https://github.com/trpc/trpc --example-path exampl
 
 **You can find all the documentations [here](https://trpc.io/docs)**.
 
-## Core Team
+## Core Team 💡
 
 <table>
   <tr>
@@ -66,7 +66,7 @@ npx create-next-app --example https://github.com/trpc/trpc --example-path exampl
   </tr>
 </table>
 
-## Sponsors
+## Sponsors 💖
 
 If you enjoy working with tRPC and want to support me consider giving a token appreciation by [GitHub Sponsors](https://github.com/sponsors/KATT)!
 
