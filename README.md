@@ -20,10 +20,18 @@
 </br>
 
 <p align="center">
-  <img src="https://storage.googleapis.com/trpc/trpcgif.gif" alt="Server/client example" />
+  <figure>
+    <img src="https://storage.googleapis.com/trpc/trpcgif.gif" alt="Server/client example" />
+    <figcaption>
+      <p align="center">
+        The client above is <strong>not</strong> importing any code from the server, only it's type declarations.
+      </p>
+    </figcaption>
+  </figure>
 </p>
+<br/>
 <p>
- tRPC allows you to build & consume typesafe APIs, without schemas or code generation. As TypeScript and static typing increasingly become a best practice in web programming, the API presents a major pain point. We need better ways to statically type our API endpoints and share those types between our client and server (or server-to-server).
+ As TypeScript and static typing increasingly become a best practice in web programming, the API presents a major pain point. We need better ways to statically type our API endpoints and share those types between our client and server (or server-to-server). tRPC allows you to build & consume typesafe APIs, without schemas or code generation. 
 </p>
 
 ## Features 
