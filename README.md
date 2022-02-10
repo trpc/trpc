@@ -62,7 +62,7 @@ npx create-next-app --example https://github.com/trpc/trpc --example-path exampl
 <table>
   <tr>
     <td align="center"><a href="https://twitter.com/alexdotjs"><img src="https://avatars.githubusercontent.com/u/459267?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Alex / KATT</b></sub></a></td>
-    <td>👋 Hi, I'm Alex and I am the creator of tRPC, don't hesitate to contact me on [Twitter](https://twitter.com/alexdotjs) or [email](mailto:alex@trpc.io) if you are curious about tRPC in any way.</td>
+    <td>👋 Hi, I'm Alex and I am the creator of tRPC, don't hesitate to contact me on <a href="https://twitter.com/alexdotjs">Twitter</a> or <a href="mailto:alex@trpc.io">email</a> if you are curious about tRPC in any way.</td>
   </tr>
 </table>
 
