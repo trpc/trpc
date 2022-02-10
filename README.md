@@ -15,9 +15,6 @@
   <a href="https://github.com/trpc/trpc/blob/main/LICENSE">
     <img alt="MIT License" src="https://img.shields.io/github/license/trpc/trpc" />
   </a>
-  <a href="https://github.com/trpc/trpc">
-    <img alt="Github Stars" src="https://badgen.net/github/stars/trpc/trpc" />
-  </a>
 </p>
 
 </br>
