@@ -7,7 +7,7 @@
 </p>
 <p align="center">
   <a href="https://trpc.io/discord">
-    <img alt="Discord" src="https://img.shields.io/discord/867764511159091230?color=7389D8&label=6A7EC2&logoColor=ffffff" />
+    <img alt="Discord" src="https://img.shields.io/discord/867764511159091230?color=7389D8&label&logo=discord&logoColor=ffffff" />
   </a>
   <a href="https://codecov.io/gh/trpc/trpc">
     <img alt="codecov" src="https://codecov.io/gh/trpc/trpc/branch/main/graph/badge.svg?token=KPPS918B0G">
