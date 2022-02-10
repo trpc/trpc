@@ -47,18 +47,24 @@
 
 ## Quickstart 
 
-There are some [full-stack examples](https://trpc.io/docs/example-apps) that you can use for playing out with tRCP or bootstrapping your new project. Also, the documentation is available [here](https://trpc.io/docs).
+There are a few [examples](https://trpc.io/docs/example-apps) that you can use for playing out with tRCP or bootstrapping your new project. For example, if you want a next.js app, you can use the full-stack next.js example:
 
-**Quick start with the full-stack Next.js example:**
 ```sh
 yarn create next-app --example https://github.com/trpc/trpc --example-path examples/next-prisma-starter trpc-prisma-starter
 # or:
 npx create-next-app --example https://github.com/trpc/trpc --example-path examples/next-prisma-starter trpc-prisma-starter
 ```
 
-## About Me
+**You can find all the documentations [here](https://trpc.io/docs)**.
 
-👋 Hi, I'm Alex and I am the creator of tRPC, don't hesitate to contact me on [Twitter](https://twitter.com/alexdotjs) or [email](mailto:alex@trpc.io) if you are curious about tRPC in any way.
+## Core Team
+
+<table>
+  <tr>
+    <td align="center"><a href="https://twitter.com/alexdotjs"><img src="https://avatars.githubusercontent.com/u/459267?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Alex / KATT</b></sub></a></td>
+    <td>👋 Hi, I'm Alex and I am the creator of tRPC, don't hesitate to contact me on [Twitter](https://twitter.com/alexdotjs) or [email](mailto:alex@trpc.io) if you are curious about tRPC in any way.</td>
+  </tr>
+</table>
 
 ## Sponsors
 
