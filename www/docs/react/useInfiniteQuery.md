@@ -77,3 +77,66 @@ function MyComponent() {
 }
 
 ```
+
+## Helpers
+
+### `getInfiniteQueryData()`
+
+This helper gets the currently cached data from an exisisting infinite query
+
+```tsx
+import { trpc } from '../utils/trpc';
+
+function MyComponent() {
+  const utils = trpc.useContext();
+
+  const myMutation = trpc.useMutation('infinitePosts.add', {
+    onMutate({ post }) {
+      await utils.cancelQuery(['infinitePosts']);
+      const allPosts = utils.getInfiniteQueryData(['infinitePosts', { limit: 10 }]);
+      // [...]
+    }
+  })
+}
+
+
+```
+
+### `setInfiniteQueryData()`
+
+This helper allows you to update a queries cached data
+
+```tsx
+import { trpc } from '../utils/trpc';
+
+function MyComponent() {
+  const utils = trpc.useContext();
+
+  const myMutation = trpc.useMutation('infinitePosts.delete', {
+    onMutate({ post }) {
+      await utils.cancelQuery(['infinitePosts']);
+
+      utils.setInfiniteQueryData(['infinitePosts', { limit: 10 }] (data) => {
+        if (!data) {
+          return {
+            pages: [],
+            pageParams: []
+          }
+        }
+
+        return {
+          ...data,
+          pages: data.pages.map((page) => {
+            ...page,
+            items: page.items.filter((item) => item.status === 'published')
+          })
+        }
+      });
+    }
+  });
+
+  // [...]
+}
+
+
+```

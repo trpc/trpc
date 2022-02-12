@@ -1936,7 +1936,7 @@ describe('setQueryData()', () => {
 });
 
 describe('setInfiniteQueryData()', () => {
-  test.only('with & without callback', async () => {
+  test('with & without callback', async () => {
     const { trpc, client } = factory;
     function MyComponent() {
       const utils = trpc.useContext();
