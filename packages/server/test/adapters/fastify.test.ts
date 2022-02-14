@@ -1,5 +1,5 @@
 import { inferAsyncReturnType, router } from '@trpc/server';
-import { createTRPCClient } from '@trpc/client';
+import { createTRPCClient, HTTPHeaders } from '@trpc/client';
 import {
   CreateFastifyContextOptions,
   fastifyTRPCPlugin,
@@ -18,7 +18,7 @@ const config = {
 };
 
 function createContext({ req, res }: CreateFastifyContextOptions) {
-  const user = { name: 'anonymous' };
+  const user = { name: req.headers.username ?? 'anonymous' };
   return { req, res, user };
 }
 
@@ -37,12 +37,12 @@ const appRouter = createRouter()
   .query('hello', {
     input: z
       .object({
-        who: z.string().nullish(),
+        username: z.string().nullish(),
       })
       .nullish(),
     resolve({ input, ctx }) {
       return {
-        text: `hello ${input?.who ?? ctx.user?.name ?? 'world'}`,
+        text: `hello ${input?.username ?? ctx.user?.name ?? 'world'}`,
       };
     },
   });
@@ -71,46 +71,76 @@ function createServer() {
   return { instance, start, stop };
 }
 
-function createClient() {
+interface ClientOptions {
+  headers?: HTTPHeaders;
+}
+
+function createClient(opts: ClientOptions = {}) {
   return createTRPCClient<AppRouter>({
     url: `http://localhost:${config.port}${config.prefix}`,
+    headers: opts.headers,
     AbortController: AbortController as any,
     fetch: fetch as any,
   });
 }
 
-function createApp() {
+interface AppOptions {
+  clientOptions?: ClientOptions;
+}
+
+function createApp(opts: AppOptions = {}) {
   const { instance, start, stop } = createServer();
-  const client = createClient();
+  const client = createClient(opts.clientOptions);
 
   return { server: instance, start, stop, client };
 }
 
 let app: inferAsyncReturnType<typeof createApp>;
 
-beforeEach(async () => {
-  app = createApp();
-  await app.start();
+describe('anonymous user', () => {
+  beforeEach(async () => {
+    app = createApp();
+    await app.start();
+  });
+
+  afterEach(async () => {
+    await app.stop();
+  });
+
+  test('query', async () => {
+    expect(await app.client.query('ping')).toMatchInlineSnapshot(`"pong"`);
+    expect(await app.client.query('hello')).toMatchInlineSnapshot(`
+          Object {
+            "text": "hello anonymous",
+          }
+      `);
+    expect(
+      await app.client.query('hello', {
+        username: 'test',
+      }),
+    ).toMatchInlineSnapshot(`
+          Object {
+            "text": "hello test",
+          }
+      `);
+  });
 });
 
-afterEach(async () => {
-  await app.stop();
-});
+describe('authorized user', () => {
+  beforeEach(async () => {
+    app = createApp({ clientOptions: { headers: { username: 'nyan' } } });
+    await app.start();
+  });
 
-test('query', async () => {
-  expect(await app.client.query('ping')).toMatchInlineSnapshot(`"pong"`);
-  expect(await app.client.query('hello')).toMatchInlineSnapshot(`
-    Object {
-      "text": "hello anonymous",
-    }
-  `);
-  expect(
-    await app.client.query('hello', {
-      who: 'test',
-    }),
-  ).toMatchInlineSnapshot(`
-    Object {
-      "text": "hello test",
-    }
-  `);
+  afterEach(async () => {
+    await app.stop();
+  });
+
+  test('query', async () => {
+    expect(await app.client.query('hello')).toMatchInlineSnapshot(`
+      Object {
+        "text": "hello nyan",
+      }
+    `);
+  });
 });
