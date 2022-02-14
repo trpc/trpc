@@ -24,54 +24,59 @@ function createContext({ req, res }: CreateFastifyContextOptions) {
 
 type Context = inferAsyncReturnType<typeof createContext>;
 
-function createRouter() {
-  return router<Context>();
+function createAppRouter() {
+  const appRouter = router<Context>()
+    .query('ping', {
+      resolve() {
+        return 'pong';
+      },
+    })
+    .query('hello', {
+      input: z
+        .object({
+          username: z.string().nullish(),
+        })
+        .nullish(),
+      resolve({ input, ctx }) {
+        return {
+          text: `hello ${input?.username ?? ctx.user?.name ?? 'world'}`,
+        };
+      },
+    })
+    .mutation('post.edit', {
+      input: z.object({
+        id: z.string(),
+        data: z.object({
+          title: z.string(),
+          text: z.string(),
+        }),
+      }),
+      async resolve({ input, ctx }) {
+        if (ctx.user.name === 'anonymous') {
+          return { error: 'Unauthorized user' };
+        }
+        const { id, data } = input;
+        return { id, ...data };
+      },
+    });
+
+  return { appRouter };
 }
 
-const appRouter = createRouter()
-  .query('ping', {
-    resolve() {
-      return 'pong';
-    },
-  })
-  .query('hello', {
-    input: z
-      .object({
-        username: z.string().nullish(),
-      })
-      .nullish(),
-    resolve({ input, ctx }) {
-      return {
-        text: `hello ${input?.username ?? ctx.user?.name ?? 'world'}`,
-      };
-    },
-  })
-  .mutation('post.edit', {
-    input: z.object({
-      id: z.string(),
-      data: z.object({
-        title: z.string(),
-        text: z.string(),
-      }),
-    }),
-    async resolve({ input, ctx }) {
-      if (ctx.user.name === 'anonymous') {
-        return { error: 'Unauthorized user' };
-      }
-      const { id, data } = input;
-      return { id, ...data };
-    },
-  });
+type CreateAppRouter = inferAsyncReturnType<typeof createAppRouter>;
+type AppRouter = CreateAppRouter['appRouter'];
 
-type AppRouter = typeof appRouter;
+interface ServerOptions {
+  appRouter: AppRouter;
+}
 
-function createServer() {
+function createServer(opts: ServerOptions) {
   const instance = fastify({ logger: config.logger });
 
   instance.register(ws);
   instance.register(fp(fastifyTRPCPlugin), {
     prefix: config.prefix,
-    trpcOptions: { router: appRouter, createContext },
+    trpcOptions: { router: opts.appRouter, createContext },
   });
 
   const stop = () => instance.close();
@@ -105,7 +110,8 @@ interface AppOptions {
 }
 
 function createApp(opts: AppOptions = {}) {
-  const { instance, start, stop } = createServer();
+  const { appRouter } = createAppRouter();
+  const { instance, start, stop } = createServer({ appRouter });
   const client = createClient(opts.clientOptions);
 
   return { server: instance, start, stop, client };
