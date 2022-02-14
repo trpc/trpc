@@ -45,6 +45,22 @@ const appRouter = createRouter()
         text: `hello ${input?.username ?? ctx.user?.name ?? 'world'}`,
       };
     },
+  })
+  .mutation('post.edit', {
+    input: z.object({
+      id: z.string(),
+      data: z.object({
+        title: z.string(),
+        text: z.string(),
+      }),
+    }),
+    async resolve({ input, ctx }) {
+      if (ctx.user.name === 'anonymous') {
+        return { error: 'Unauthorized user' };
+      }
+      const { id, data } = input;
+      return { id, ...data };
+    },
   });
 
 type AppRouter = typeof appRouter;
@@ -124,6 +140,19 @@ describe('anonymous user', () => {
           }
       `);
   });
+
+  test('mutation', async () => {
+    expect(
+      await app.client.mutation('post.edit', {
+        id: '42',
+        data: { title: 'new_title', text: 'new_text' },
+      }),
+    ).toMatchInlineSnapshot(`
+      Object {
+        "error": "Unauthorized user",
+      }
+    `);
+  });
 });
 
 describe('authorized user', () => {
@@ -140,6 +169,21 @@ describe('authorized user', () => {
     expect(await app.client.query('hello')).toMatchInlineSnapshot(`
       Object {
         "text": "hello nyan",
+      }
+    `);
+  });
+
+  test('mutation', async () => {
+    expect(
+      await app.client.mutation('post.edit', {
+        id: '42',
+        data: { title: 'new_title', text: 'new_text' },
+      }),
+    ).toMatchInlineSnapshot(`
+      Object {
+        "id": "42",
+        "text": "new_text",
+        "title": "new_title",
       }
     `);
   });
