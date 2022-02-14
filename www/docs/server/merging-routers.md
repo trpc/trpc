@@ -12,7 +12,7 @@ Thanks to TypeScript 4.1 template literal types we can also prefix the procedure
 
 ## Working example
 
-- Code at [/examples/next-prisma-starter/src/server/routers/app.ts](https://github.com/trpc/trpc/blob/main/examples/next-prisma-starter/src/server/routers/app.ts)
+- Code at [/examples/next-prisma-starter/src/server/routers/app.ts](https://github.com/trpc/trpc/blob/main/examples/next-prisma-starter/src/server/routers/_app.ts)
 - All code for posts living in a separate router and namespaced with `post.`
 
 ## Example code
