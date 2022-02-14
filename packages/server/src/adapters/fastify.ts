@@ -1,4 +1,5 @@
-import { AnyRouter } from '@trpc/server';
+import { AnyRouter } from '..';
+import { applyWSSHandler, WSSHandlerOptions } from './ws';
 import { IncomingMessage, ServerResponse } from 'http';
 import { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 import {
@@ -9,6 +10,7 @@ import {
 
 export interface FastifyTRPCPluginOptions<TRouter extends AnyRouter> {
   prefix?: string;
+  useWSS?: boolean;
   trpcOptions: NodeHTTPHandlerOptions<TRouter, IncomingMessage, ServerResponse>;
 }
 
@@ -29,6 +31,15 @@ export function fastifyTRPCPlugin<TRouter extends AnyRouter>(
       path: (req.params as any).path,
     });
   });
+
+  if (opts.useWSS) {
+    applyWSSHandler<TRouter>({
+      ...(opts.trpcOptions as WSSHandlerOptions<TRouter>),
+      wss: fastify.websocketServer,
+    });
+    // eslint-disable-next-line @typescript-eslint/no-empty-function
+    fastify.get(opts.prefix ?? '/', { websocket: true }, () => {});
+  }
 
   done();
 }
