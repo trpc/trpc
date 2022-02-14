@@ -1,9 +1,9 @@
-import { inferAsyncReturnType, router } from '@trpc/server';
-import { createTRPCClient, HTTPHeaders } from '@trpc/client';
+import { inferAsyncReturnType, router } from '../../src';
+import { createTRPCClient, HTTPHeaders } from '../../../client/src';
 import {
   CreateFastifyContextOptions,
   fastifyTRPCPlugin,
-} from '@trpc/server/adapters/fastify';
+} from '../../src/adapters/fastify';
 import ws from 'fastify-websocket';
 import fp from 'fastify-plugin';
 import fastify from 'fastify';
