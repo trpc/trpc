@@ -1,0 +1,4 @@
+{
+  "main": "dist/trpc-server-adapters-fastify.cjs.js",
+  "module": "dist/trpc-server-adapters-fastify.esm.js"
+}
