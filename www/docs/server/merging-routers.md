@@ -19,6 +19,10 @@ Thanks to TypeScript 4.1 template literal types we can also prefix the procedure
 
 
 ```ts
+const createRouter = () => {
+  return trpc.router<Context>();
+}
+
 const posts = createRouter()
   .mutation('create', {
     input: z.object({
