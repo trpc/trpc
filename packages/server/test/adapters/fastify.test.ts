@@ -1,4 +1,4 @@
-import { inferAsyncReturnType, router } from '../../src';
+import { inferAsyncReturnType, router, Subscription } from '../../src';
 import { createTRPCClient, HTTPHeaders } from '../../../client/src';
 import {
   CreateFastifyContextOptions,
@@ -9,7 +9,14 @@ import fp from 'fastify-plugin';
 import fastify from 'fastify';
 import fetch from 'node-fetch';
 import AbortController from 'abort-controller';
+import { EventEmitter } from 'events';
 import { z } from 'zod';
+import { createWSClient, wsLink } from '../../../client/src/links/wsLink';
+import { splitLink } from '../../../client/src/links/splitLink';
+import { httpLink } from '../../../client/src/links/httpLink';
+import { waitFor } from '@testing-library/react';
+import { expectTypeOf } from 'expect-type';
+import { TRPCResult } from '../../src/rpc';
 
 const config = {
   port: 2022,
@@ -24,7 +31,14 @@ function createContext({ req, res }: CreateFastifyContextOptions) {
 
 type Context = inferAsyncReturnType<typeof createContext>;
 
+interface Message {
+  id: string;
+}
+
 function createAppRouter() {
+  const ee = new EventEmitter();
+  const onNewMessageSubscription = jest.fn();
+  const onSubscriptionEnded = jest.fn();
   const appRouter = router<Context>()
     .query('ping', {
       resolve() {
@@ -58,9 +72,26 @@ function createAppRouter() {
         const { id, data } = input;
         return { id, ...data };
       },
+    })
+    .subscription('onMessage', {
+      resolve() {
+        const sub = new Subscription<Message>((emit) => {
+          const onMessage = (data: Message) => {
+            emit.data(data);
+          };
+          ee.on('server:msg', onMessage);
+          return () => {
+            onSubscriptionEnded();
+            ee.off('server:msg', onMessage);
+          };
+        });
+        ee.emit('subscription:created');
+        onNewMessageSubscription();
+        return sub;
+      },
     });
 
-  return { appRouter };
+  return { appRouter, ee, onNewMessageSubscription, onSubscriptionEnded };
 }
 
 type CreateAppRouter = inferAsyncReturnType<typeof createAppRouter>;
@@ -75,6 +106,7 @@ function createServer(opts: ServerOptions) {
 
   instance.register(ws);
   instance.register(fp(fastifyTRPCPlugin), {
+    useWSS: true,
     prefix: config.prefix,
     trpcOptions: { router: opts.appRouter, createContext },
   });
@@ -97,12 +129,24 @@ interface ClientOptions {
 }
 
 function createClient(opts: ClientOptions = {}) {
-  return createTRPCClient<AppRouter>({
-    url: `http://localhost:${config.port}${config.prefix}`,
+  const host = `localhost:${config.port}${config.prefix}`;
+  const wsClient = createWSClient({ url: `ws://${host}` });
+  const client = createTRPCClient<AppRouter>({
     headers: opts.headers,
     AbortController: AbortController as any,
     fetch: fetch as any,
+    links: [
+      splitLink({
+        condition(op) {
+          return op.type === 'subscription';
+        },
+        true: wsLink({ client: wsClient }),
+        false: httpLink({ url: `http://${host}` }),
+      }),
+    ],
   });
+
+  return { client, wsClient };
 }
 
 interface AppOptions {
@@ -110,11 +154,11 @@ interface AppOptions {
 }
 
 function createApp(opts: AppOptions = {}) {
-  const { appRouter } = createAppRouter();
+  const { appRouter, ee } = createAppRouter();
   const { instance, start, stop } = createServer({ appRouter });
-  const client = createClient(opts.clientOptions);
+  const { client } = createClient(opts.clientOptions);
 
-  return { server: instance, start, stop, client };
+  return { server: instance, start, stop, client, ee };
 }
 
 let app: inferAsyncReturnType<typeof createApp>;
@@ -158,6 +202,81 @@ describe('anonymous user', () => {
         "error": "Unauthorized user",
       }
     `);
+  });
+
+  test('subscription', async () => {
+    app.ee.once('subscription:created', () => {
+      setTimeout(() => {
+        app.ee.emit('server:msg', {
+          id: '1',
+        });
+        app.ee.emit('server:msg', {
+          id: '2',
+        });
+      });
+    });
+
+    const onNext = jest.fn();
+    const unsub = app.client.subscription('onMessage', undefined, {
+      onNext(data) {
+        expectTypeOf(data).not.toBeAny();
+        expectTypeOf(data).toMatchTypeOf<TRPCResult<Message>>();
+        onNext(data);
+      },
+    });
+
+    await waitFor(() => {
+      expect(onNext).toHaveBeenCalledTimes(3);
+    });
+
+    app.ee.emit('server:msg', {
+      id: '3',
+    });
+
+    await waitFor(() => {
+      expect(onNext).toHaveBeenCalledTimes(4);
+    });
+
+    expect(onNext.mock.calls).toMatchInlineSnapshot(`
+      Array [
+        Array [
+          Object {
+            "type": "started",
+          },
+        ],
+        Array [
+          Object {
+            "data": Object {
+              "id": "1",
+            },
+            "type": "data",
+          },
+        ],
+        Array [
+          Object {
+            "data": Object {
+              "id": "2",
+            },
+            "type": "data",
+          },
+        ],
+        Array [
+          Object {
+            "data": Object {
+              "id": "3",
+            },
+            "type": "data",
+          },
+        ],
+      ]
+    `);
+
+    unsub();
+
+    await waitFor(() => {
+      expect(app.ee.listenerCount('server:msg')).toBe(0);
+      expect(app.ee.listenerCount('server:error')).toBe(0);
+    });
   });
 });
 
