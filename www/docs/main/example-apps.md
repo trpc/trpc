@@ -106,5 +106,15 @@ Here's some example apps:
         </ul>
       </td>
     </tr>
+    <tr>
+      <td>SvelteKit Example Application with Prisma.</td>
+      <td><em>n/a</em></td>
+      <td>
+        <ul>
+          <li><a href="https://codesandbox.io/s/github/icflorescu/trpc-sveltekit-example">CodeSandbox</a></li>
+          <li><a href="https://github.com/icflorescu/trpc-sveltekit-example">Source</a></li>
+        </ul>
+      </td>
+    </tr>
   </tbody>
 </table>
