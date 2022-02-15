@@ -441,6 +441,15 @@
       "contributions": [
         "example"
       ]
+    },
+    {
+      "login": "icflorescu",
+      "name": "Ionut-Cristian Florescu",
+      "avatar_url": "https://avatars.githubusercontent.com/u/581999?v=4",
+      "profile": "https://www.linkedin.com/in/icflorescu",
+      "contributions": [
+        "example"
+      ]
     }
   ],
   "contributorsPerLine": 7,
