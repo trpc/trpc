@@ -48,6 +48,11 @@
       "require": "./dist/adapters/standalone.js",
       "default": "./dist/adapters/standalone.js"
     },
+    "./adapters/fastify": {
+      "import": "./dist/adapters/fastify.mjs",
+      "require": "./dist/adapters/fastify.js",
+      "default": "./dist/adapters/fastify.js"
+    },
     "./adapters/ws": {
       "import": "./dist/adapters/ws.mjs",
       "require": "./dist/adapters/ws.js",
