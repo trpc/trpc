@@ -141,6 +141,10 @@ npx create-next-app --example https://github.com/trpc/trpc --example-path exampl
       <td align="center"><a href="https://www.illarionvk.com"><img src="https://avatars.githubusercontent.com/u/5012724?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Illarion Koperski</b></sub></a></td>
       <td align="center"><a href="http://abgn.me"><img src="https://avatars.githubusercontent.com/u/19674362?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Albin Groen</b></sub></a></td>
       <td align="center"><a href="https://timcole.me"><img src="https://avatars.githubusercontent.com/u/6754577?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Timothy Cole</b></sub></a></td>
+      <td align="center"><a href="https://github.com/utevo"><img src="https://avatars.githubusercontent.com/u/29740731?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Michał Kowieski</b></sub></a></td>
+    </tr>
+    <tr>
+      <td align="center"><a href="https://iamkhan.io"><img src="https://avatars.githubusercontent.com/u/6490268?v=4?s=100" width="100px;" alt=""/><br /><sub><b>SchlagerKhan</b></sub></a></td>
     </tr>
   </tbody>
 </table>
@@ -190,7 +194,7 @@ npx create-next-app --example https://github.com/trpc/trpc --example-path exampl
     <td align="center"><a href="https://roe.dev"><img src="https://avatars.githubusercontent.com/u/28706372?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Daniel Roe</b></sub></a><br /><a href="https://github.com/trpc/trpc/commits?author=danielroe" title="Code">💻</a></td>
   </tr>
   <tr>
-    <td align="center"><a href="https://github.com/sachinraja"><img src="https://avatars.githubusercontent.com/u/58836760?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Sachin Raja</b></sub></a><br /><a href="https://github.com/trpc/trpc/pulls?q=is%3Apr+reviewed-by%3Asachinraja" title="Reviewed Pull Requests">👀</a> <a href="#ideas-sachinraja" title="Ideas, Planning, & Feedback">🤔</a></td>
+    <td align="center"><a href="https://github.com/sachinraja"><img src="https://avatars.githubusercontent.com/u/58836760?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Sachin Raja</b></sub></a><br /><a href="https://github.com/trpc/trpc/pulls?q=is%3Apr+reviewed-by%3Asachinraja" title="Reviewed Pull Requests">👀</a> <a href="#ideas-sachinraja" title="Ideas, Planning, & Feedback">🤔</a> <a href="#mentoring-sachinraja" title="Mentoring">🧑‍🏫</a></td>
     <td align="center"><a href="https://github.com/mkreuzmayr"><img src="https://avatars.githubusercontent.com/u/20108212?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Michael Kreuzmayr</b></sub></a><br /><a href="https://github.com/trpc/trpc/commits?author=mkreuzmayr" title="Code">💻</a></td>
     <td align="center"><a href="https://github.com/kimroen"><img src="https://avatars.githubusercontent.com/u/520420?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Kim Røen</b></sub></a><br /><a href="#ideas-kimroen" title="Ideas, Planning, & Feedback">🤔</a></td>
     <td align="center"><a href="https://standardresume.co/r/ryan-edge"><img src="https://avatars.githubusercontent.com/u/6907797?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Ryan</b></sub></a><br /><a href="#financial-chimon2000" title="Financial">💵</a></td>
@@ -202,7 +206,17 @@ npx create-next-app --example https://github.com/trpc/trpc --example-path exampl
     <td align="center"><a href="https://www.illarionvk.com"><img src="https://avatars.githubusercontent.com/u/5012724?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Illarion Koperski</b></sub></a><br /><a href="#financial-illarionvk" title="Financial">💵</a></td>
     <td align="center"><a href="http://abgn.me"><img src="https://avatars.githubusercontent.com/u/19674362?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Albin Groen</b></sub></a><br /><a href="#financial-albingroen" title="Financial">💵</a></td>
     <td align="center"><a href="https://esamatti.fi/"><img src="https://avatars.githubusercontent.com/u/225712?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Esa-Matti Suuronen</b></sub></a><br /><a href="#example-esamattis" title="Examples">💡</a></td>
-    <td align="center"><a href="https://timcole.me"><img src="https://avatars.githubusercontent.com/u/6754577?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Timothy Cole</b></sub></a><br /><a href="#financial-timcole" title="Financial">💵</a></td>
+    <td align="center"><a href="https://timcole.me"><img src="https://avatars.githubusercontent.com/u/6754577?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Timothy Cole</b></sub></a><br /><a href="#financial-timcole" title="Financial">💵</a> <a href="#mentoring-timcole" title="Mentoring">🧑‍🏫</a></td>
+    <td align="center"><a href="https://github.com/reggie3-braingu"><img src="https://avatars.githubusercontent.com/u/90011823?v=4?s=100" width="100px;" alt=""/><br /><sub><b>reggie3-braingu</b></sub></a><br /><a href="#example-reggie3-braingu" title="Examples">💡</a> <a href="https://github.com/trpc/trpc/commits?author=reggie3-braingu" title="Tests">⚠️</a> <a href="#financial-reggie3-braingu" title="Financial">💵</a></td>
+    <td align="center"><a href="https://github.com/ShiftySlothe"><img src="https://avatars.githubusercontent.com/u/59391676?v=4?s=100" width="100px;" alt=""/><br /><sub><b>ShiftySlothe</b></sub></a><br /><a href="#example-ShiftySlothe" title="Examples">💡</a></td>
+    <td align="center"><a href="https://github.com/darioielardi"><img src="https://avatars.githubusercontent.com/u/19256200?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Dario Ielardi</b></sub></a><br /><a href="https://github.com/trpc/trpc/commits?author=darioielardi" title="Code">💻</a> <a href="https://github.com/trpc/trpc/commits?author=darioielardi" title="Tests">⚠️</a></td>
+  </tr>
+  <tr>
+    <td align="center"><a href="https://github.com/utevo"><img src="https://avatars.githubusercontent.com/u/29740731?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Michał Kowieski</b></sub></a><br /><a href="#financial-utevo" title="Financial">💵</a></td>
+    <td align="center"><a href="https://github.com/terose73"><img src="https://avatars.githubusercontent.com/u/34382127?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Theodore Rose</b></sub></a><br /><a href="#example-terose73" title="Examples">💡</a></td>
+    <td align="center"><a href="https://www.linkedin.com/in/icflorescu"><img src="https://avatars.githubusercontent.com/u/581999?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Ionut-Cristian Florescu</b></sub></a><br /><a href="#example-icflorescu" title="Examples">💡</a></td>
+    <td align="center"><a href="https://www.twitch.tv/skarab42/"><img src="https://avatars.githubusercontent.com/u/62928763?v=4?s=100" width="100px;" alt=""/><br /><sub><b>skarab42</b></sub></a><br /><a href="https://github.com/trpc/trpc/commits?author=skarab42" title="Documentation">📖</a> <a href="https://github.com/trpc/trpc/commits?author=skarab42" title="Code">💻</a> <a href="#example-skarab42" title="Examples">💡</a> <a href="https://github.com/trpc/trpc/commits?author=skarab42" title="Tests">⚠️</a></td>
+    <td align="center"><a href="https://iamkhan.io"><img src="https://avatars.githubusercontent.com/u/6490268?v=4?s=100" width="100px;" alt=""/><br /><sub><b>SchlagerKhan</b></sub></a><br /><a href="#financial-SchlagerKhan" title="Financial">💵</a></td>
   </tr>
 </table>
 

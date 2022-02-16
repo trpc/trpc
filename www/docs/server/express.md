@@ -98,7 +98,7 @@ app.use(
   '/trpc',
   trpcExpress.createExpressMiddleware({
     router: appRouter,
-    createContext: () => null, // no context
+    createContext,
   })
 );
 

@@ -192,6 +192,95 @@ describe('batching', () => {
     close();
   });
 
+  // FIXME
+  // test('maxBatchSize', async () => {
+  //   const contextCall = jest.fn();
+  //   const { port, close } = routerToServerAndClient(
+  //     trpc.router().query('hello', {
+  //       input: z.string().nullish(),
+  //       resolve({ input }) {
+  //         return `hello ${input ?? 'world'}`;
+  //       },
+  //     }),
+  //     {
+  //       server: {
+  //         createContext() {
+  //           contextCall();
+  //         },
+  //         batching: {
+  //           enabled: true,
+  //         },
+  //       },
+  //     },
+  //   );
+  //   const links = [
+  //     httpBatchLink({
+  //       url: `http://localhost:${port}`,
+  //       maxBatchSize: 2,
+  //     })(mockRuntime),
+  //   ];
+  //   const $result1 = executeChain({
+  //     links,
+  //     op: {
+  //       id: 1,
+  //       type: 'query',
+  //       path: 'hello',
+  //       input: null,
+  //       context: {},
+  //     },
+  //   });
+
+  //   const $result2 = executeChain({
+  //     links,
+  //     op: {
+  //       id: 2,
+  //       type: 'query',
+  //       path: 'hello',
+  //       input: 'alexdotjs',
+  //       context: {},
+  //     },
+  //   });
+
+  //   const $result3 = executeChain({
+  //     links,
+  //     op: {
+  //       id: 3,
+  //       type: 'query',
+  //       path: 'hello',
+  //       input: 'again',
+  //       context: {},
+  //     },
+  //   });
+
+  //   await waitFor(() => {
+  //     expect($result1.get()).not.toBe(null);
+  //     expect($result2.get()).not.toBe(null);
+  //     expect($result3.get()).not.toBe(null);
+  //   });
+  //   expect($result1.get()).toMatchInlineSnapshot(`
+  //     Object {
+  //       "data": "hello world",
+  //       "type": "data",
+  //     }
+  //   `);
+  //   expect($result2.get()).toMatchInlineSnapshot(`
+  //     Object {
+  //       "data": "hello alexdotjs",
+  //       "type": "data",
+  //     }
+  //   `);
+  //   expect($result3.get()).toMatchInlineSnapshot(`
+  //     Object {
+  //       "data": "hello again",
+  //       "type": "data",
+  //     }
+  //   `);
+
+  //   expect(contextCall).toHaveBeenCalledTimes(2);
+
+  //   close();
+  // });
+
   test('server not configured for batching', async () => {
     const serverCall = jest.fn();
     const { close, router, port, trpcClientOptions } = routerToServerAndClient(

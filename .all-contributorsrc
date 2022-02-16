@@ -298,7 +298,8 @@
       "profile": "https://github.com/sachinraja",
       "contributions": [
         "review",
-        "ideas"
+        "ideas",
+        "mentoring"
       ]
     },
     {
@@ -388,6 +389,85 @@
       "name": "Timothy Cole",
       "avatar_url": "https://avatars.githubusercontent.com/u/6754577?v=4",
       "profile": "https://timcole.me",
+      "contributions": [
+        "financial",
+        "mentoring"
+      ]
+    },
+    {
+      "login": "reggie3-braingu",
+      "name": "reggie3-braingu",
+      "avatar_url": "https://avatars.githubusercontent.com/u/90011823?v=4",
+      "profile": "https://github.com/reggie3-braingu",
+      "contributions": [
+        "example",
+        "test",
+        "financial"
+      ]
+    },
+    {
+      "login": "ShiftySlothe",
+      "name": "ShiftySlothe",
+      "avatar_url": "https://avatars.githubusercontent.com/u/59391676?v=4",
+      "profile": "https://github.com/ShiftySlothe",
+      "contributions": [
+        "example"
+      ]
+    },
+    {
+      "login": "darioielardi",
+      "name": "Dario Ielardi",
+      "avatar_url": "https://avatars.githubusercontent.com/u/19256200?v=4",
+      "profile": "https://github.com/darioielardi",
+      "contributions": [
+        "code",
+        "test"
+      ]
+    },
+    {
+      "login": "utevo",
+      "name": "Michał Kowieski",
+      "avatar_url": "https://avatars.githubusercontent.com/u/29740731?v=4",
+      "profile": "https://github.com/utevo",
+      "contributions": [
+        "financial"
+      ]
+    },
+    {
+      "login": "terose73",
+      "name": "Theodore Rose",
+      "avatar_url": "https://avatars.githubusercontent.com/u/34382127?v=4",
+      "profile": "https://github.com/terose73",
+      "contributions": [
+        "example"
+      ]
+    },
+    {
+      "login": "icflorescu",
+      "name": "Ionut-Cristian Florescu",
+      "avatar_url": "https://avatars.githubusercontent.com/u/581999?v=4",
+      "profile": "https://www.linkedin.com/in/icflorescu",
+      "contributions": [
+        "example"
+      ]
+    },
+    {
+      "login": "skarab42",
+      "name": "skarab42",
+      "avatar_url": "https://avatars.githubusercontent.com/u/62928763?v=4",
+      "profile": "https://www.twitch.tv/skarab42/",
+      "contributions": [
+        "doc",
+        "code",
+        "example",
+        "test"
+      ]
+    },
+    {
+      "login": "SchlagerKhan",
+      "name": "SchlagerKhan",
+      "avatar_url": "https://avatars.githubusercontent.com/u/6490268?v=4",
+      "profile": "https://iamkhan.io",
       "contributions": [
         "financial"
       ]
