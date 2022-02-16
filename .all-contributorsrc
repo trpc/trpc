@@ -462,6 +462,15 @@
         "example",
         "test"
       ]
+    },
+    {
+      "login": "SchlagerKhan",
+      "name": "SchlagerKhan",
+      "avatar_url": "https://avatars.githubusercontent.com/u/6490268?v=4",
+      "profile": "https://iamkhan.io",
+      "contributions": [
+        "financial"
+      ]
     }
   ],
   "contributorsPerLine": 7,
