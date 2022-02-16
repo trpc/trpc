@@ -1,6 +1,6 @@
 {
   "name": "@trpc/client",
-  "version": "10.0.0-alpha.5",
+  "version": "10.0.0-alpha.8",
   "description": "tRPC Client lib",
   "author": "KATT",
   "license": "MIT",
@@ -77,10 +77,10 @@
     "@trpc/server": "^9.12.0"
   },
   "devDependencies": {
-    "@trpc/server": "^10.0.0-alpha.5"
+    "@trpc/server": "^10.0.0-alpha.8"
   },
   "publishConfig": {
     "access": "public"
   },
-  "gitHead": "82bf01f8759b04f2ade69c9047e28f74f889d547"
+  "gitHead": "3b8e4ed00254f9c9816ffdc4d172c932ea62c3ae"
 }

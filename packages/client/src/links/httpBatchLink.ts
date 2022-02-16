@@ -4,12 +4,17 @@ import { observable } from '../rx/observable';
 import { TRPCLink } from './types';
 import { HTTPLinkOptions, httpRequest, ResponseShape } from './httpUtils';
 
+export interface HttpBatchLinkOptions extends HTTPLinkOptions {
+  maxBatchSize?: number;
+}
 export function httpBatchLink<TRouter extends AnyRouter>(
-  opts: HTTPLinkOptions,
+  opts: HttpBatchLinkOptions,
 ): TRPCLink<TRouter> {
   const { url } = opts;
+  // initialized config
   return (runtime) => {
     type Key = { id: number; path: string; input: unknown };
+
     const fetcher = (type: ProcedureType) => (keyInputPairs: Key[]) => {
       const path = keyInputPairs.map((op) => op.path).join(',');
       const inputs = keyInputPairs.map((op) => op.input);
@@ -38,10 +43,11 @@ export function httpBatchLink<TRouter extends AnyRouter>(
         cancel,
       };
     };
-    const query = dataLoader<Key, ResponseShape>(fetcher('query'));
-    const mutation = dataLoader<Key, ResponseShape>(fetcher('mutation'));
+    const query = dataLoader<Key, ResponseShape>(fetcher('query'), opts);
+    const mutation = dataLoader<Key, ResponseShape>(fetcher('mutation'), opts);
     const subscription = dataLoader<Key, ResponseShape>(
       fetcher('subscription'),
+      opts,
     );
 
     const loaders = { query, subscription, mutation };
