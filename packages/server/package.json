@@ -19,7 +19,7 @@
     "entrypoints": [
       "index.ts",
       "adapters/express.ts",
-      "adapters/fastify.ts",
+      "adapters/fastify/index.ts",
       "adapters/next.ts",
       "adapters/node-http/index.ts",
       "adapters/standalone.ts",
