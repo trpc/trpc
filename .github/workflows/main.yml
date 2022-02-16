@@ -22,7 +22,7 @@ jobs:
 
       - name: Install deps and build (with cache)
         uses: bahmutov/npm-install@v1
-
+      - run: yarn build
       - name: Test
         run: yarn test --ci --coverage --maxWorkers=2
         env:
