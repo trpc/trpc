@@ -7,6 +7,8 @@ slug: /fastify
 
 ## Example app
 
+The best way to start with the Fastify adapter is to take a look at the example application.
+
 <table>
   <thead>
     <tr>
@@ -32,24 +34,100 @@ slug: /fastify
   </tbody>
 </table>
 
-## From scratch
+## How to use tRPC with Fastify
 
-### Create the context and router
+### Install dependencies
 
-First you need to create the [context](context) and [router](router) for your application.
-
-```ts
-import { createContext } from './createContext';
-import { appRouter } from './router';
+```bash
+yarn add @trpc/server fastify fastify-plugin zod
 ```
 
+> [Zod](https://github.com/colinhacks/zod) isn't a required dependency, but it's used in the sample router below.
+
+### Create the router
+
+First of all you need a [router](router) to handle your queries, mutations and subscriptions.
+
+A sample router is given below, save it in a file named `router.ts`.
+
+<details>
+  <summary>router.ts</summary>
+
+```ts
+import * as trpc from '@trpc/server';
+import { z } from 'zod';
+
+type User = {
+  id: string;
+  name: string;
+  bio?: string;
+};
+
+const users: Record<string, User> = {};
+
+export const appRouter = trpc
+  .router()
+  .query('getUserById', {
+    input: z.string(),
+    async resolve({ input }) {
+      return users[input]; // input type is string
+    },
+  })
+  .mutation('createUser', {
+    // validate input with Zod
+    input: z.object({
+      name: z.string().min(3),
+      bio: z.string().max(142).optional(),
+    }),
+    async resolve({ input }) {
+      const id = Date.now().toString();
+      const user: User = { id, ...input };
+      users[user.id] = user;
+      return user;
+    },
+  });
+
+// export type definition of API
+export type AppRouter = typeof appRouter;
+```
+
+</details>
+
+If your router file starts getting too big, split your router into several subrouters each implemented in its own file. Then [merge them](/docs/merging-routers) into a single root `appRouter`.
+
+### Create the context
+
+Then you need a [context](context) that will be created for each request.
+
+A sample context is given below, save it in a file named `context.ts`:
+
+<details>
+  <summary>context.ts</summary>
+
+```ts
+import { inferAsyncReturnType } from '@trpc/server';
+import { CreateFastifyContextOptions } from '@trpc/server/adapters/fastify';
+
+export function createContext({ req, res }: CreateFastifyContextOptions) {
+  const user = { name: req.headers.username ?? 'anonymous' };
+
+  return { req, res, user };
+}
+
+export type Context = inferAsyncReturnType<typeof createContext>;
+```
+
+</details>
+
 ### Create Fastify server
+
+tRPC includes an adapter for [Fastify](https://www.fastify.io/) out of the box. This adapter lets you convert your tRPC router into an [Fastify plugin](https://www.npmjs.com/package/fastify-plugin).
 
 ```ts
 import fastify from 'fastify';
 import fp from 'fastify-plugin';
 import { fastifyTRPCPlugin } from '@trpc/server/adapters/fastify';
-import { createContext } from './createContext';
+import { createContext } from './context';
 import { appRouter } from './router';
 
 const server = fastify();
@@ -69,19 +147,66 @@ server.register(fp(fastifyTRPCPlugin), {
 })();
 ```
 
-### Add WebSocket support
+Your endpoints are now available via HTTP!
+
+| Endpoint     | HTTP URI                                                                                                       |
+| ------------ | -------------------------------------------------------------------------------------------------------------- |
+| `getUser`    | `GET http://localhost:4000/trpc/getUserById?input=INPUT` <br/><br/>where `INPUT` is a URI-encoded JSON string. |
+| `createUser` | `POST http://localhost:4000/trpc/createUser` <br/><br/>with `req.body` of type `User`                          |
+
+## How to enable subscriptions (WebSocket)
+
+The Fastify adapter supports [subscriptions](subscriptions) via the [fastify-websocket](https://www.npmjs.com/package/fastify-websocket) plugin. All you have to do in addition to the above steps is install the dependency, add some subscriptions to your router and activate the `useWSS` [option](#fastify-plugin-options) in the plugin.
+
+### Install dependencies
+
+```bash
+yarn add fastify-websocket
+```
+
+### Import and register `fastify-websocket`
 
 ```ts
 import ws from 'fastify-websocket';
 
 server.register(ws);
+```
+
+### Add some subscriptions
+
+Edit the `router.ts` file created in the previous steps and add the following code:
+
+```ts
+export const appRouter = trpc
+  .router()
+  // .query(...)
+  // .mutation(...)
+  .subscription('randomNumber', {
+    resolve() {
+      return new Subscription<{ randomNumber: number }>((emit) => {
+        const timer = setInterval(() => {
+          emit.data({ randomNumber: Math.random() });
+        }, 1000);
+        return () => {
+          clearInterval(timer);
+        };
+      });
+    },
+  });
+```
+
+### Activate the `useWSS` option
+
+```ts
 server.register(fp(fastifyTRPCPlugin), {
-  useWSS: true, // Turn on useWSS flag
-  ...
+  useWSS: true,
+  // ...
 });
 ```
 
-## Plugin options
+It's alright, you can subscribe to the topic `randomNumber` and you should receive a random number every second 🚀.
+
+## Fastify plugin options
 
 | name        | type                     | optional | default   | description |
 | ----------- | ------------------------ | -------- | --------- | ----------- |
