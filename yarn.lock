@@ -2762,20 +2762,6 @@
   resolved "https://registry.yarnpkg.com/@tootallnate/once/-/once-2.0.0.tgz#f544a148d3ab35801c1f633a7441fd87c2e484bf"
   integrity sha512-XCuKFP5PS55gnMVu3dty8KPatLqUoy/ZYzDzAGCQ8JNFCkLXzmI7vNHCR+XpbZaMWQK/vQubr7PkYq8g470J/A==
 
-"@trpc/client@^9.19.0":
-  version "9.19.0"
-  resolved "https://registry.npmjs.org/@trpc/client/-/client-9.19.0.tgz#42a2920a566629815903212d80f280cfaef90a25"
-  integrity sha512-pL7E3Bd0KrbSUosmycld2Ff+VatKhE36dLx5iNAJUMfx9XvEtWo1eVyrDQSfjTBva7qxN6jB1we0wMiy+CWqIw==
-  dependencies:
-    "@babel/runtime" "^7.9.0"
-
-"@trpc/server@^9.19.0":
-  version "9.19.0"
-  resolved "https://registry.npmjs.org/@trpc/server/-/server-9.19.0.tgz#a0510e058b9b54207fdf4faf81742a70b04e23f0"
-  integrity sha512-CV7bhwAYK7ZitkRUVbgpPHjlAM1xIFEex25sTyC8SUA9Pwwa0FDUx8IEkGDu8Tt8921J+7a6TJ2Wxg53lTgU4Q==
-  dependencies:
-    tslib "^2.1.0"
-
 "@ts-type/package-dts@^1.0.58":
   version "1.0.58"
   resolved "https://registry.yarnpkg.com/@ts-type/package-dts/-/package-dts-1.0.58.tgz#75f6fdf5f1e8f262a5081b90346439b4c4bc8d01"

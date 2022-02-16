@@ -47,7 +47,7 @@ export function httpBatchLink<TRouter extends AnyRouter>(
     const mutation = dataLoader<Key, ResponseShape>(fetcher('mutation'), opts);
     const subscription = dataLoader<Key, ResponseShape>(
       fetcher('subscription'),
-      opts
+      opts,
     );
 
     const loaders = { query, subscription, mutation };

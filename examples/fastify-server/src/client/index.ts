@@ -50,7 +50,7 @@ async function start() {
   let randomNumberCount = 0;
 
   const unsub = anon.subscription('sub:randomNumber', null, {
-    onNext(data) {
+    next(data) {
       console.log('>>> anon:sub:randomNumber:received:', data);
       randomNumberCount++;
 
@@ -58,7 +58,7 @@ async function start() {
         unsub();
       }
     },
-    onError(error) {
+    error(error) {
       console.error('>>> anon:sub:randomNumber:error:', error);
     },
     onDone() {

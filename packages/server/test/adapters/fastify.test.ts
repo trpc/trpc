@@ -216,17 +216,17 @@ describe('anonymous user', () => {
       });
     });
 
-    const onNext = jest.fn();
+    const next = jest.fn();
     const unsub = app.client.subscription('onMessage', undefined, {
-      onNext(data) {
+      next(data) {
         expectTypeOf(data).not.toBeAny();
         expectTypeOf(data).toMatchTypeOf<TRPCResult<Message>>();
-        onNext(data);
+        next(data);
       },
     });
 
     await waitFor(() => {
-      expect(onNext).toHaveBeenCalledTimes(3);
+      expect(next).toHaveBeenCalledTimes(3);
     });
 
     app.ee.emit('server:msg', {
@@ -234,10 +234,10 @@ describe('anonymous user', () => {
     });
 
     await waitFor(() => {
-      expect(onNext).toHaveBeenCalledTimes(4);
+      expect(next).toHaveBeenCalledTimes(4);
     });
 
-    expect(onNext.mock.calls).toMatchInlineSnapshot(`
+    expect(next.mock.calls).toMatchInlineSnapshot(`
       Array [
         Array [
           Object {

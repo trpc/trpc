@@ -13,8 +13,8 @@
     "start": "run-p start:* --print-label"
   },
   "dependencies": {
-    "@trpc/client": "^9.19.0",
-    "@trpc/server": "^9.19.0",
+    "@trpc/client": "^10.0.0-alpha.7",
+    "@trpc/server": "^10.0.0-alpha.7",
     "abort-controller": "^3.0.0",
     "fastify": "^3.27.1",
     "fastify-plugin": "^3.0.1",
