@@ -143,6 +143,9 @@ npx create-next-app --example https://github.com/trpc/trpc --example-path exampl
       <td align="center"><a href="https://timcole.me"><img src="https://avatars.githubusercontent.com/u/6754577?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Timothy Cole</b></sub></a></td>
       <td align="center"><a href="https://github.com/utevo"><img src="https://avatars.githubusercontent.com/u/29740731?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Michał Kowieski</b></sub></a></td>
     </tr>
+    <tr>
+      <td align="center"><a href="https://iamkhan.io"><img src="https://avatars.githubusercontent.com/u/6490268?v=4?s=100" width="100px;" alt=""/><br /><sub><b>SchlagerKhan</b></sub></a></td>
+    </tr>
   </tbody>
 </table>
 
@@ -213,6 +216,7 @@ npx create-next-app --example https://github.com/trpc/trpc --example-path exampl
     <td align="center"><a href="https://github.com/terose73"><img src="https://avatars.githubusercontent.com/u/34382127?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Theodore Rose</b></sub></a><br /><a href="#example-terose73" title="Examples">💡</a></td>
     <td align="center"><a href="https://www.linkedin.com/in/icflorescu"><img src="https://avatars.githubusercontent.com/u/581999?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Ionut-Cristian Florescu</b></sub></a><br /><a href="#example-icflorescu" title="Examples">💡</a></td>
     <td align="center"><a href="https://www.twitch.tv/skarab42/"><img src="https://avatars.githubusercontent.com/u/62928763?v=4?s=100" width="100px;" alt=""/><br /><sub><b>skarab42</b></sub></a><br /><a href="https://github.com/trpc/trpc/commits?author=skarab42" title="Documentation">📖</a> <a href="https://github.com/trpc/trpc/commits?author=skarab42" title="Code">💻</a> <a href="#example-skarab42" title="Examples">💡</a> <a href="https://github.com/trpc/trpc/commits?author=skarab42" title="Tests">⚠️</a></td>
+    <td align="center"><a href="https://iamkhan.io"><img src="https://avatars.githubusercontent.com/u/6490268?v=4?s=100" width="100px;" alt=""/><br /><sub><b>SchlagerKhan</b></sub></a><br /><a href="#financial-SchlagerKhan" title="Financial">💵</a></td>
   </tr>
 </table>
 
