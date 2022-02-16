@@ -1,6 +1,6 @@
 {
   "name": "@examples/fastify-server",
-  "version": "9.18.0",
+  "version": "9.19.0",
   "private": true,
   "scripts": {
     "build": "tsc",
@@ -13,8 +13,8 @@
     "start": "run-p start:* --print-label"
   },
   "dependencies": {
-    "@trpc/client": "^9.18.0",
-    "@trpc/server": "^9.18.0",
+    "@trpc/client": "^9.19.0",
+    "@trpc/server": "^9.19.0",
     "abort-controller": "^3.0.0",
     "fastify": "^3.27.1",
     "fastify-plugin": "^3.0.1",
