@@ -450,6 +450,18 @@
       "contributions": [
         "example"
       ]
+    },
+    {
+      "login": "skarab42",
+      "name": "skarab42",
+      "avatar_url": "https://avatars.githubusercontent.com/u/62928763?v=4",
+      "profile": "https://www.twitch.tv/skarab42/",
+      "contributions": [
+        "doc",
+        "code",
+        "example",
+        "test"
+      ]
     }
   ],
   "contributorsPerLine": 7,
