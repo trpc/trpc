@@ -31,6 +31,7 @@ module.exports = {
         'server/data-transformers',
         'server/caching',
         'server/express',
+        'server/fastify',
       ],
     },
     {
