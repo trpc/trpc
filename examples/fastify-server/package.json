@@ -11,8 +11,8 @@
     "start:server": "node dist/server/index.js",
     "start:client": "yarn wait-server && node dist/client/index.js",
     "start": "run-p start:* --print-label",
-    "test-dev": "start-server-and-test 'ts-node src/server' 2022 'ts-node src/client'",
-    "test-start": "start-server-and-test 'node dist/server' 2022 'node dist/client'"
+    "test-dev": "start-server-and-test 'ts-node src/server' http-get://localhost:2022 'ts-node src/client'",
+    "test-start": "start-server-and-test 'node dist/server' http-get://localhost:2022 'node dist/client'"
   },
   "dependencies": {
     "@trpc/client": "^9.19.0",
