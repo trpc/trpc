@@ -199,7 +199,3 @@ npx create-next-app --example https://github.com/trpc/trpc --example-path exampl
 <!-- prettier-ignore-end -->
 
 <!-- ALL-CONTRIBUTORS-LIST:END -->
-
----
-
-[![Powered by Vercel](./images/powered-by-vercel.svg 'Powered by Vercel')](https://vercel.com/?utm_source=trpc&utm_campaign=oss)
