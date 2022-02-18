@@ -1,26 +1,31 @@
-<div align="center">
-  <h1 align="center">
-    <img src="./www/static/img/logo-text-horizontal.png" alt="tRPC" height="130" />
-  </h1>
-  <p>End-to-end typesafe APIs made easy</p>
-  <p>
-    <a href="https://codecov.io/gh/trpc/trpc">
-      <img src="https://codecov.io/gh/trpc/trpc/branch/main/graph/badge.svg?token=KPPS918B0G" alt="codecov">
-    </a>
-  </p>
-  <p>
-    <figure>
-      <img src="https://storage.googleapis.com/trpc/trpcgif.gif" alt="Server/client example" />
-      <figcaption>
-        The client above is <strong>not</strong> importing any code from the server, only it's type declarations.
-        <br/>
-        <sub><sup><em><a href="https://www.typescriptlang.org/docs/handbook/release-notes/typescript-3-8.html#type-only-imports-and-export">Import type only imports declarations to be used for type annotations and declarations. It always gets fully erased, so there’s no remnant of it at runtime.</a></em></sup></sub>
-      </figcaption>
-    </figure>
-  </p>
-</div>
+<p align="center">
+  <a href="https://trpc.io/"><img src="./www/static/img/logo-text-horizontal.png" alt="tRPC" height="130"/></a>
+</p>
 
-> 💬 Join the tRPC Discord server to chat to other people using tRPC - [trpc.io/discord](https://trpc.io/discord)
+<p align="center">
+  <strong>End-to-end typesafe APIs made easy</strong>
+</p>
+
+<p align="center">
+  <a href="https://codecov.io/gh/trpc/trpc">
+    <img src="https://codecov.io/gh/trpc/trpc/branch/main/graph/badge.svg?token=KPPS918B0G" alt="codecov">
+  </a>
+</p>
+
+<p></p>
+
+<p align="center">
+  <figure>
+    <img src="https://storage.googleapis.com/trpc/trpcgif.gif" alt="Demo" />
+    <figcaption>
+      <p align="center">
+        The client above is <strong>not</strong> importing any code from the server, only it's type declarations.
+      </p>
+    </figcaption>
+  </figure>
+</p>
+
+<br/>
 
 ## Intro
 
