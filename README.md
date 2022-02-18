@@ -41,17 +41,21 @@ tRPC allows you to easily build & consume fully typesafe APIs, without schemas o
 - ⚡️&nbsp; Request batching - requests made at the same time can be automatically combined into one
 - 👀&nbsp; Quite a few examples in the [./examples](./examples)-folder
 
-## Usage
+## Quickstart
 
-**👉 See full documentation documentation on [tRPC.io](https://trpc.io/docs). 👈**
+There are a few [examples](https://trpc.io/docs/example-apps) that you can use for playing out with tRCP or bootstrapping your new project. For example, if you want a next.js app, you can use the full-stack next.js example:
 
 **Quick start with a full-stack Next.js example:**
 
 ```sh
+# yarn
 yarn create next-app --example https://github.com/trpc/trpc --example-path examples/next-prisma-starter trpc-prisma-starter
-# or:
+
+# npm
 npx create-next-app --example https://github.com/trpc/trpc --example-path examples/next-prisma-starter trpc-prisma-starter
 ```
+
+**👉 See full documentation on [tRPC.io](https://trpc.io/docs). 👈**
 
 ## Core Team
 
