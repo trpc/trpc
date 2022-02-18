@@ -51,9 +51,9 @@ yarn add @trpc/client @trpc/server @trpc/react @trpc/next zod react-query
 - React Query: `@trpc/react` provides a thin wrapper over [react-query](https://react-query.tanstack.com/overview). It is required as a peer dependency.
 - Zod: most examples use [Zod](https://github.com/colinhacks/zod) for input validation and we highly recommended it, though it isn't required. You can use a validation library of your choice ([Yup](https://github.com/jquense/yup), [Superstruct](https://github.com/ianstormtaylor/superstruct), [io-ts](https://github.com/gcanti/io-ts), etc). In fact, any object containing a `parse`, `create` or `validateSync` method will work.
 
-### 2. Enable the strict mode
+### 2. Enable strict mode
 
-If you want to use Zod for input validation, make sure you have enabled the strict mode in your `tsconfig.js`:
+If you want to use Zod for input validation, make sure you have enabled strict mode in your `tsconfig.json`:
 
 ```json
 // tsconfig.json
@@ -66,7 +66,7 @@ If you want to use Zod for input validation, make sure you have enabled the stri
 }
 ```
 
-If the strict mode is too much, at least enable `strictNullChecks`:
+If strict mode is too much, at least enable `strictNullChecks`:
 
 ```json
 // tsconfig.json
