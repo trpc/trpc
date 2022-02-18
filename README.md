@@ -20,11 +20,9 @@
   </p>
 </div>
 
-
 > 💬 Join the tRPC Discord server to chat to other people using tRPC - [trpc.io/discord](https://trpc.io/discord)
 
 ## Intro
-
 
 tRPC allows you to easily build & consume fully typesafe APIs, without schemas or code generation.
 
@@ -36,12 +34,10 @@ tRPC allows you to easily build & consume fully typesafe APIs, without schemas o
 - 🥃&nbsp; Simple to use APIs for queries, mutations, & subscriptions support.
 - ⚡️&nbsp; Request batching - requests made at the same time can be automatically combined into one
 
-
 ... and:
 
 - 👀&nbsp; Quite a few examples in the [./examples](./examples)-folder
 - ✅&nbsp; It's well-tested & running in production.
-
 
 > Still reading? Follow [**@alexdotjs** on Twitter](https://twitter.com/alexdotjs) if you have any questions or want to keep up to date what's coming next.
 
@@ -57,11 +53,9 @@ tRPC allows you to easily build & consume fully typesafe APIs, without schemas o
   - [😻 Individuals](#-individuals)
 - [All contributors ✨](#all-contributors-)
 
-
 ## Usage
 
-**👉  See full documentation documentation on [tRPC.io](https://trpc.io/docs). 👈**
-
+**👉 See full documentation documentation on [tRPC.io](https://trpc.io/docs). 👈**
 
 **Quick start with a full-stack Next.js example:**
 
@@ -79,20 +73,15 @@ npx create-next-app --example https://github.com/trpc/trpc --example-path exampl
   </tr>
 </table>
 
-
 > 👋 Hi, I'm Alex and I am the creator of tRPC, don't hesitate to contact me on [Twitter](https://twitter.com/alexdotjs) or [email](mailto:alex@trpc.io) if you are curious about tRPC in any way.
-
-
 
 ## Financial Contributors
 
 > If you like working with tRPC, consider giving a token a apprecation by [GitHub Sponsors](https://github.com/sponsors/KATT)!
 
-
 **For companies**
 
 > Is your company using tRPC, want to attract amazing TypeScript developers to your team, & support long-term maintainance of tRPC? Have a look at the [sponsorship tiers](https://github.com/sponsors/KATT) or [get in touch](mailto:alex@trpc.io) to discuss potential partnerships.
-
 
 ### 🥇 Gold Sponsors
 
@@ -100,8 +89,7 @@ npx create-next-app --example https://github.com/trpc/trpc --example-path exampl
 
 ### 🥈 Silver Sponsors
 
-<img src="https://placehold.jp/e5faff/0e3847/150x150.png?text=%3Cimg%20%2F%3E" width="150" height="150"> 
-
+<img src="https://placehold.jp/e5faff/0e3847/150x150.png?text=%3Cimg%20%2F%3E" width="150" height="150">
 
 ### 🥉 Bronze Sponsors
 
@@ -119,9 +107,7 @@ npx create-next-app --example https://github.com/trpc/trpc --example-path exampl
   </tbody>
 </table>
 
-
 ### 😻 Individuals
-
 
 <table>
   <tbody>
@@ -226,8 +212,6 @@ npx create-next-app --example https://github.com/trpc/trpc --example-path exampl
 
 <!-- ALL-CONTRIBUTORS-LIST:END -->
 
-
-
 ---
 
-[![Powered by Vercel](./images/powered-by-vercel.svg "Powered by Vercel")](https://vercel.com/?utm_source=trpc&utm_campaign=oss)
+[![Powered by Vercel](./images/powered-by-vercel.svg 'Powered by Vercel')](https://vercel.com/?utm_source=trpc&utm_campaign=oss)
