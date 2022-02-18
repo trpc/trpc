@@ -41,18 +41,6 @@ tRPC allows you to easily build & consume fully typesafe APIs, without schemas o
 
 > Still reading? Follow [**@alexdotjs** on Twitter](https://twitter.com/alexdotjs) if you have any questions or want to keep up to date what's coming next.
 
----
-
-- [Intro](#intro)
-- [Usage](#usage)
-- [Core Team](#core-team)
-- [Financial Contributors](#financial-contributors)
-  - [🥇 Gold Sponsors](#-gold-sponsors)
-  - [🥈 Silver Sponsors](#-silver-sponsors)
-  - [🥉 Bronze Sponsors](#-bronze-sponsors)
-  - [😻 Individuals](#-individuals)
-- [All contributors ✨](#all-contributors-)
-
 ## Usage
 
 **👉 See full documentation documentation on [tRPC.io](https://trpc.io/docs). 👈**
