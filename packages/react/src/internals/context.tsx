@@ -191,7 +191,7 @@ export interface TRPCContextState<
   /**
    * @link https://react-query.tanstack.com/reference/QueryClient#queryclientgetquerydata
    */
-  getInifiniteQueryData<
+  getInfiniteQueryData<
     TPath extends keyof TRouter['_def']['queries'] & string,
     TInput extends inferProcedureInput<TRouter['_def']['queries'][TPath]>,
     TOutput extends inferProcedureOutput<TRouter['_def']['queries'][TPath]>,

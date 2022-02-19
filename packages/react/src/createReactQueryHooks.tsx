@@ -214,7 +214,7 @@ export function createReactQueryHooks<
             },
             [queryClient],
           ),
-          getInifiniteQueryData: useCallback(
+          getInfiniteQueryData: useCallback(
             (...args) => queryClient.getQueryData(...args),
             [queryClient],
           ),
