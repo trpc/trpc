@@ -1,8 +1,15 @@
+#### Render Blueprint specification: https://dashboard.render.com/blueprints ####
+
+### Preview environments: https://render.com/docs/preview-environments ###
+# previewsEnabled: true
+# previewsExpireAfterDays: 2 # Automatically nuke the environment after X days of inactivity to reduce billing
 services:
   - type: web
     name: trpc-starter-app
     env: node
     plan: free
+
+    # previewPlan: starter
     buildCommand: yarn --prod=false &&
       yarn build
     startCommand: yarn start
