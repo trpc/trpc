@@ -482,6 +482,42 @@
         "test",
         "doc"
       ]
+    },
+    {
+      "login": "renderinc",
+      "name": "Render",
+      "avatar_url": "https://avatars.githubusercontent.com/u/36424661?v=4",
+      "profile": "https://render.com",
+      "contributions": [
+        "financial"
+      ]
+    },
+    {
+      "login": "8balloon",
+      "name": "Ethan Clark",
+      "avatar_url": "https://avatars.githubusercontent.com/u/8572133?v=4",
+      "profile": "https://yorick.sh",
+      "contributions": [
+        "financial"
+      ]
+    },
+    {
+      "login": "nihinihi01",
+      "name": "nihinihi01",
+      "avatar_url": "https://avatars.githubusercontent.com/u/57569287?v=4",
+      "profile": "https://github.com/nihinihi01",
+      "contributions": [
+        "financial"
+      ]
+    },
+    {
+      "login": "CommanderRoot",
+      "name": "CommanderRoot",
+      "avatar_url": "https://avatars.githubusercontent.com/u/4395417?v=4",
+      "profile": "https://github.com/CommanderRoot",
+      "contributions": [
+        "code"
+      ]
     }
   ],
   "contributorsPerLine": 7,

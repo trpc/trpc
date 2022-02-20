@@ -6,6 +6,7 @@
 import { createRouter } from 'server/createRouter';
 import { z } from 'zod';
 import { TRPCError } from '@trpc/server';
+import { prisma } from '../prisma';
 
 export const postRouter = createRouter()
   // create
@@ -15,8 +16,8 @@ export const postRouter = createRouter()
       title: z.string().min(1).max(32),
       text: z.string().min(1),
     }),
-    async resolve({ ctx, input }) {
-      const post = await ctx.prisma.post.create({
+    async resolve({ input }) {
+      const post = await prisma.post.create({
         data: input,
       });
       return post;
@@ -24,13 +25,13 @@ export const postRouter = createRouter()
   })
   // read
   .query('all', {
-    async resolve({ ctx }) {
+    async resolve() {
       /**
        * For pagination you can have a look at this docs site
        * @link https://trpc.io/docs/useInfiniteQuery
        */
 
-      return ctx.prisma.post.findMany({
+      return prisma.post.findMany({
         select: {
           id: true,
           title: true,
@@ -42,9 +43,9 @@ export const postRouter = createRouter()
     input: z.object({
       id: z.string(),
     }),
-    async resolve({ ctx, input }) {
+    async resolve({ input }) {
       const { id } = input;
-      const post = await ctx.prisma.post.findUnique({
+      const post = await prisma.post.findUnique({
         where: { id },
         select: {
           id: true,
@@ -72,9 +73,9 @@ export const postRouter = createRouter()
         text: z.string().min(1).optional(),
       }),
     }),
-    async resolve({ ctx, input }) {
+    async resolve({ input }) {
       const { id, data } = input;
-      const post = await ctx.prisma.post.update({
+      const post = await prisma.post.update({
         where: { id },
         data,
       });
@@ -83,9 +84,12 @@ export const postRouter = createRouter()
   })
   // delete
   .mutation('delete', {
-    input: z.string().uuid(),
-    async resolve({ input: id, ctx }) {
-      await ctx.prisma.post.delete({ where: { id } });
+    input: z.object({
+      id: z.string(),
+    }),
+    async resolve({ input }) {
+      const { id } = input;
+      await prisma.post.delete({ where: { id } });
       return id;
     },
   });
