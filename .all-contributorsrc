@@ -482,6 +482,24 @@
         "test",
         "doc"
       ]
+    },
+    {
+      "login": "renderinc",
+      "name": "Render",
+      "avatar_url": "https://avatars.githubusercontent.com/u/36424661?v=4",
+      "profile": "https://render.com",
+      "contributions": [
+        "financial"
+      ]
+    },
+    {
+      "login": "8balloon",
+      "name": "Ethan Clark",
+      "avatar_url": "https://avatars.githubusercontent.com/u/8572133?v=4",
+      "profile": "https://yorick.sh",
+      "contributions": [
+        "financial"
+      ]
     }
   ],
   "contributorsPerLine": 7,

@@ -29,6 +29,15 @@ yarn
 yarn dev
 ```
 
+## Deployment
+
+### Using [Render](https://render.com/)
+
+The project contains a [`render.yaml`](./render.yaml) [*"Blueprint"*](https://render.com/docs/blueprint-spec) which makes the project easily deployable on [Render](https://render.com/).
+
+Go to [dashboard.render.com/blueprints](https://dashboard.render.com/blueprints) and connect to this Blueprint and see how the app and database automatically gets deployed.
+
+
 ## Files of note
 
 <table>
