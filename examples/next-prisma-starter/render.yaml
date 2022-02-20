@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: trpc-starter
+    name: trpc-starter-app
     env: node
     plan: free
     buildCommand: yarn --prod=false &&
@@ -16,7 +16,7 @@ services:
           name: trpc-starter-db
           property: connectionString
 
-      - fromGroup: trpc-starter
+      - fromGroup: trpc-starter-env
 
 databases:
   - name: trpc-starter-db
