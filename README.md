@@ -57,8 +57,7 @@ There are a few [examples](https://trpc.io/docs/example-apps) that you can use f
 
 ```sh
 # yarn
-yarn create next-app --example https://github.com/trpc/trpc --example-path examples/next-prisma-starter trpc-prisma-starter
-
+yarn create-next-app --example https://github.com/trpc/trpc --example-path examples/next-prisma-starter trpc-prisma-starter
 # npm
 npx create-next-app --example https://github.com/trpc/trpc --example-path examples/next-prisma-starter trpc-prisma-starter
 ```
@@ -214,6 +213,7 @@ Also, if your company using tRPC and want to support long-term maintenance of tR
   <tr>
     <td align="center"><a href="https://yorick.sh"><img src="https://avatars.githubusercontent.com/u/8572133?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Ethan Clark</b></sub></a><br /><a href="#financial-8balloon" title="Financial">💵</a></td>
     <td align="center"><a href="https://github.com/nihinihi01"><img src="https://avatars.githubusercontent.com/u/57569287?v=4?s=100" width="100px;" alt=""/><br /><sub><b>nihinihi01</b></sub></a><br /><a href="#financial-nihinihi01" title="Financial">💵</a></td>
+    <td align="center"><a href="https://github.com/CommanderRoot"><img src="https://avatars.githubusercontent.com/u/4395417?v=4?s=100" width="100px;" alt=""/><br /><sub><b>CommanderRoot</b></sub></a><br /><a href="https://github.com/trpc/trpc/commits?author=CommanderRoot" title="Code">💻</a></td>
   </tr>
 </table>
 <!-- markdownlint-restore -->
