@@ -1,97 +1,84 @@
-<div align="center">
-  <h1 align="center">
-    <img src="./www/static/img/logo-text.png" alt="tRPC" height="100" />
-  </h1>
-  <p>End-to-end typesafe APIs made easy</p>
-  <p>
-    <a href="https://codecov.io/gh/trpc/trpc">
-      <img src="https://codecov.io/gh/trpc/trpc/branch/main/graph/badge.svg?token=KPPS918B0G" alt="codecov">
-    </a>
-  </p>
-  <p>
-    <figure>
-      <img src="https://storage.googleapis.com/trpc/trpcgif.gif" alt="Server/client example" />
-      <figcaption>
+<p align="center">
+  <a href="https://trpc.io/"><img src="./www/static/img/logo-text-horizontal.png" alt="tRPC" height="130"/></a>
+</p>
+
+<p align="center">
+  <strong>End-to-end typesafe APIs made easy</strong>
+</p>
+
+<p align="center">
+  <a href="https://codecov.io/gh/trpc/trpc">
+    <img alt="codecov" src="https://codecov.io/gh/trpc/trpc/branch/main/graph/badge.svg?token=KPPS918B0G">
+  </a>
+  <a href="https://github.com/trpc/trpc/blob/main/LICENSE">
+    <img alt="MIT License" src="https://img.shields.io/github/license/trpc/trpc" />
+  </a>
+  <a href="https://trpc.io/discord">
+    <img alt="Discord" src="https://img.shields.io/discord/867764511159091230?color=7389D8&label&logo=discord&logoColor=ffffff" />
+  </a>
+</p>
+
+<p></p>
+
+<p align="center">
+  <figure>
+    <img src="https://storage.googleapis.com/trpc/trpcgif.gif" alt="Demo" />
+    <figcaption>
+      <p align="center">
         The client above is <strong>not</strong> importing any code from the server, only it's type declarations.
-        <br/>
-        <sub><sup><em><a href="https://www.typescriptlang.org/docs/handbook/release-notes/typescript-3-8.html#type-only-imports-and-export">Import type only imports declarations to be used for type annotations and declarations. It always gets fully erased, so there’s no remnant of it at runtime.</a></em></sup></sub>
-      </figcaption>
-    </figure>
-  </p>
-</div>
+      </p>
+    </figcaption>
+  </figure>
+</p>
 
-
-> 💬 Join the tRPC Discord server to chat to other people using tRPC - [trpc.io/discord](https://trpc.io/discord)
+<br/>
 
 ## Intro
 
-
 tRPC allows you to easily build & consume fully typesafe APIs, without schemas or code generation.
 
-- 🧙‍♂️&nbsp; Full static typesafety & autocompletion on the client - on inputs, outputs, & errors.
-- 🐎&nbsp; Snappy DX. No code generation, run-time bloat, or build pipeline.
-- 🍃&nbsp; Light. tRPC has zero deps and a tiny client-side footprint.
+### Features
+
+- ✅&nbsp; Well-tested and production ready.
+- 🧙‍♂️&nbsp; Full static typesafety & autocompletion on the client, for inputs, outputs and errors.
+- 🐎&nbsp; Snappy DX - No code generation, run-time bloat, or build pipeline.
+- 🍃&nbsp; Light - tRPC has zero deps and a tiny client-side footprint.
 - 🐻&nbsp; Easy to add to your existing brownfield project.
-- 🔋&nbsp; Batteries included. React-library + Next.js/Express adapters. _(But tRPC is not tied to React - [reach out](https://twitter.com/alexdotjs) if you want to make a Svelte/Vue/... lib)_
-- 🥃&nbsp; Simple to use APIs for queries, mutations, & subscriptions support.
+- 🔋&nbsp; Batteries included - React.js/Next.js/Express.js adapters. _(But tRPC is not tied to React - [reach out](https://twitter.com/alexdotjs) if you want to make a Svelte/Vue/... adapter)_
+- 🥃&nbsp; Subscriptions support.
 - ⚡️&nbsp; Request batching - requests made at the same time can be automatically combined into one
-
-
-... and:
-
 - 👀&nbsp; Quite a few examples in the [./examples](./examples)-folder
-- ✅&nbsp; It's well-tested & running in production.
 
+## Quickstart
 
-> Still reading? Follow [**@alexdotjs** on Twitter](https://twitter.com/alexdotjs) if you have any questions or want to keep up to date what's coming next.
-
----
-
-- [Intro](#intro)
-- [Usage](#usage)
-- [Core Team](#core-team)
-- [Financial Contributors](#financial-contributors)
-  - [🥇 Gold Sponsors](#-gold-sponsors)
-  - [🥈 Silver Sponsors](#-silver-sponsors)
-  - [🥉 Bronze Sponsors](#-bronze-sponsors)
-  - [😻 Individuals](#-individuals)
-- [All contributors ✨](#all-contributors-)
-
-
-## Usage
-
-**👉  See full documentation documentation on [tRPC.io](https://trpc.io/docs). 👈**
-
+There are a few [examples](https://trpc.io/docs/example-apps) that you can use for playing out with tRCP or bootstrapping your new project. For example, if you want a next.js app, you can use the full-stack next.js example:
 
 **Quick start with a full-stack Next.js example:**
 
 ```sh
+# yarn
 yarn create next-app --example https://github.com/trpc/trpc --example-path examples/next-prisma-starter trpc-prisma-starter
-# or:
+
+# npm
 npx create-next-app --example https://github.com/trpc/trpc --example-path examples/next-prisma-starter trpc-prisma-starter
 ```
+
+**👉 See full documentation on [tRPC.io](https://trpc.io/docs). 👈**
 
 ## Core Team
 
 <table>
   <tr>
     <td align="center"><a href="https://twitter.com/alexdotjs"><img src="https://avatars.githubusercontent.com/u/459267?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Alex / KATT</b></sub></a></td>
+    <td>👋 Hi, I'm Alex and I am the creator of tRPC, don't hesitate to contact me on <a href="https://twitter.com/alexdotjs">Twitter</a> or <a href="mailto:alex@trpc.io">email</a> if you are curious about tRPC in any way.</td>
   </tr>
 </table>
 
+## Sponsors
 
-> 👋 Hi, I'm Alex and I am the creator of tRPC, don't hesitate to contact me on [Twitter](https://twitter.com/alexdotjs) or [email](mailto:alex@trpc.io) if you are curious about tRPC in any way.
+If you enjoy working with tRPC and want to support me consider giving a token appreciation by [GitHub Sponsors](https://github.com/sponsors/KATT)!
 
-
-
-## Financial Contributors
-
-> If you like working with tRPC, consider giving a token a apprecation by [GitHub Sponsors](https://github.com/sponsors/KATT)!
-
-
-**For companies**
-
-> Is your company using tRPC, want to attract amazing TypeScript developers to your team, & support long-term maintainance of tRPC? Have a look at the [sponsorship tiers](https://github.com/sponsors/KATT) or [get in touch](mailto:alex@trpc.io) to discuss potential partnerships.
+Also, if your company using tRPC and want to support long-term maintenance of tRPC, have a look at the [sponsorship tiers](https://github.com/sponsors/KATT) or [get in touch](mailto:alex@trpc.io) to discuss potential partnerships.
 
 ### 🥇 Gold Sponsors
 
@@ -105,7 +92,7 @@ npx create-next-app --example https://github.com/trpc/trpc --example-path exampl
 
 ### 🥈 Silver Sponsors
 
-<img src="https://placehold.jp/e5faff/0e3847/150x100.png?text=%3Cimg%20%2F%3E" width="150" height="100" /> 
+<img src="https://placehold.jp/e5faff/0e3847/160x90.png?text=%3Cimg%20%2F%3E" width="160" height="90">
 
 ### 🥉 Bronze Sponsors
 
@@ -123,9 +110,7 @@ npx create-next-app --example https://github.com/trpc/trpc --example-path exampl
   </tbody>
 </table>
 
-
 ### 😻 Individuals
-
 
 <table>
   <tbody>
@@ -231,13 +216,9 @@ npx create-next-app --example https://github.com/trpc/trpc --example-path exampl
     <td align="center"><a href="https://github.com/nihinihi01"><img src="https://avatars.githubusercontent.com/u/57569287?v=4?s=100" width="100px;" alt=""/><br /><sub><b>nihinihi01</b></sub></a><br /><a href="#financial-nihinihi01" title="Financial">💵</a></td>
   </tr>
 </table>
-
 <!-- markdownlint-restore -->
 <!-- prettier-ignore-end -->
-
 <!-- ALL-CONTRIBUTORS-LIST:END -->
-
-
 
 ---
 
