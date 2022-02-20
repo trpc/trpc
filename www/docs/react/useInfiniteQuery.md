@@ -116,7 +116,7 @@ function MyComponent() {
     onMutate({ post }) {
       await utils.cancelQuery(['infinitePosts']);
 
-      utils.setInfiniteQueryData(['infinitePosts', { limit: 10 }] (data) => {
+      utils.setInfiniteQueryData(['infinitePosts', { limit: 10 }], (data) => {
         if (!data) {
           return {
             pages: [],
