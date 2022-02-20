@@ -482,6 +482,15 @@
         "test",
         "doc"
       ]
+    },
+    {
+      "login": "renderinc",
+      "name": "Render",
+      "avatar_url": "https://avatars.githubusercontent.com/u/36424661?v=4",
+      "profile": "https://render.com",
+      "contributions": [
+        "financial"
+      ]
     }
   ],
   "contributorsPerLine": 7,
