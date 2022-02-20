@@ -1,5 +1,5 @@
 <p align="center">
-  <a href="https://trpc.io/"><img src="./www/static/img/logo-text-horizontal.png" alt="tRPC" height="130"/></a>
+  <a href="https://trpc.io/"><img src="./www/static/img/logo-text.svg" alt="tRPC" height="130"/></a>
 </p>
 
 <p align="center">
@@ -222,4 +222,4 @@ Also, if your company using tRPC and want to support long-term maintenance of tR
 
 ---
 
-[![Powered by Vercel](./images/powered-by-vercel.svg "Powered by Vercel")](https://vercel.com/?utm_source=trpc&utm_campaign=oss)
+[![Powered by Vercel](./images/powered-by-vercel.svg 'Powered by Vercel')](https://vercel.com/?utm_source=trpc&utm_campaign=oss)

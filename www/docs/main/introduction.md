@@ -9,7 +9,7 @@ author_image_url: https://avatars1.githubusercontent.com/u/459267?s=460&v=4
 ---
 
 <div align="center">
-  <img src="/img/logo-text.png" alt="tRPC" height="150" />
+  <img src="/img/logo-text.svg" alt="tRPC" height="150" />
   <p>End-to-end typesafe APIs made easy</p>
   <p>
     <a href="https://codecov.io/gh/trpc/trpc">
@@ -32,11 +32,11 @@ author_image_url: https://avatars1.githubusercontent.com/u/459267?s=460&v=4
 
 <abbr title="TypeScript Remote Procedure Call">tRPC</abbr> allows you to easily build & consume fully typesafe APIs, without schemas or code generation.
 
-As TypeScript and static typing increasingly becomes a best practice in web programming, the API presents a major pain point. We need better ways to **statically type** our API endpoints and **share those types** between our client and server (or server-to-server). 
+As TypeScript and static typing increasingly becomes a best practice in web programming, the API presents a major pain point. We need better ways to **statically type** our API endpoints and **share those types** between our client and server (or server-to-server).
 
 ### An alternative to traditional REST or GraphQL
 
-Currently GraphQL is the dominant way to implement typesafe APIs in TypeScript (and it's amazing!). Since GraphQL is designed as a language-agnostic specification for implementing APIs, it doesn't take full advantage of the power of a language like TypeScript - [further reading](../further/further-reading.md#relationship-to-graphql). 
+Currently GraphQL is the dominant way to implement typesafe APIs in TypeScript (and it's amazing!). Since GraphQL is designed as a language-agnostic specification for implementing APIs, it doesn't take full advantage of the power of a language like TypeScript - [further reading](../further/further-reading.md#relationship-to-graphql).
 
 If your project is built with full-stack TypeScript, you can share types **directly** between your client and server, without relying on code generation.
 
@@ -56,4 +56,3 @@ We set out to build a simple library for building typesafe APIs that leverages t
 
 - 👀&nbsp; Quite a few [Example Apps](example-apps.md) that you can use for reference or as a starting point.
 - ✅&nbsp; Well-tested & running in production.
-
