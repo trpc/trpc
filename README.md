@@ -92,7 +92,7 @@ Also, if your company using tRPC and want to support long-term maintenance of tR
 
 ### 🥈 Silver Sponsors
 
-<img src="https://placehold.jp/e5faff/0e3847/200x150.png?text=%3Cimg%20%2F%3E" width="200" height="150">
+<img src="https://placehold.jp/e5faff/0e3847/200x120.png?text=%3Cimg%20%2F%3E" width="200" height="120">
 
 ### 🥉 Bronze Sponsors
 
