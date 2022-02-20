@@ -177,6 +177,28 @@ export interface TRPCContextState<
   >(
     pathAndInput: [TPath, TInput?],
   ): TOutput | undefined;
+  /**
+   * @link https://react-query.tanstack.com/reference/QueryClient#queryclientgetquerydata
+   */
+  setInfiniteQueryData<
+    TPath extends keyof TRouter['_def']['queries'] & string,
+    TInput extends inferProcedureInput<TRouter['_def']['queries'][TPath]>,
+    TOutput extends inferProcedureOutput<TRouter['_def']['queries'][TPath]>,
+  >(
+    pathAndInput: [TPath, TInput?],
+    updater: Updater<InfiniteData<TOutput> | undefined, InfiniteData<TOutput>>,
+    options?: SetDataOptions,
+  ): void;
+  /**
+   * @link https://react-query.tanstack.com/reference/QueryClient#queryclientgetquerydata
+   */
+  getInfiniteQueryData<
+    TPath extends keyof TRouter['_def']['queries'] & string,
+    TInput extends inferProcedureInput<TRouter['_def']['queries'][TPath]>,
+    TOutput extends inferProcedureOutput<TRouter['_def']['queries'][TPath]>,
+  >(
+    pathAndInput: [TPath, TInput?],
+  ): InfiniteData<TOutput> | undefined;
 }
 
 export const TRPCContext = createContext(null as any);
