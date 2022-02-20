@@ -1,0 +1,23 @@
+services:
+  - type: web
+    name: trpc-starter
+    env: node
+    plan: free
+    buildCommand: yarn --prod=false &&
+      yarn build
+    startCommand: yarn start
+    healthCheckPath: /api/trpc/healthz
+    envVars:
+      - key: NODE_ENV
+        value: production
+
+      - key: DATABASE_URL
+        fromDatabase:
+          name: trpc-starter-db
+          property: connectionString
+
+      - fromGroup: trpc-starter
+
+databases:
+  - name: trpc-starter-db
+    plan: free
