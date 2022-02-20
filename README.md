@@ -26,8 +26,6 @@
     <figcaption>
       <p align="center">
         The client above is <strong>not</strong> importing any code from the server, only it's type declarations.
-        <br />
-        <sup><em><a href="https://www.typescriptlang.org/docs/handbook/release-notes/typescript-3-8.html#type-only-imports-and-export">Import type only imports declarations to be used for type annotations and declarations. It always gets fully erased, so there’s no remnant of it at runtime.</a></em></sup>
       </p>
     </figcaption>
   </figure>
