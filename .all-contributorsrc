@@ -471,6 +471,17 @@
       "contributions": [
         "financial"
       ]
+    },
+    {
+      "login": "BrockHerion",
+      "name": "Brock Herion",
+      "avatar_url": "https://avatars.githubusercontent.com/u/30359995?v=4",
+      "profile": "https://www.brockherion.dev",
+      "contributions": [
+        "code",
+        "test",
+        "doc"
+      ]
     }
   ],
   "contributorsPerLine": 7,
