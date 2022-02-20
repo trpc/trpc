@@ -24,7 +24,7 @@ Here's some example apps:
         <br/><br/>
         <details>
           <summary>Quick start with <code>create-next-app</code></summary>
-          <code>yarn create next-app --example https://github.com/trpc/trpc --example-path examples/next-prisma-starter trpc-prisma-starter</code>
+          <code>yarn create-next-app --example https://github.com/trpc/trpc --example-path examples/next-prisma-starter trpc-prisma-starter</code>
         </details>
       </td>
       <td><a href="https://nextjs.trpc.io">nextjs.trpc.io</a></td>
