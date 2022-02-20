@@ -98,7 +98,7 @@ npx create-next-app --example https://github.com/trpc/trpc --example-path exampl
 <table>
   <tbody>
     <tr>
-      <td align="center"><a href="https://render.com"><img alt="Render.com" src="https://raw.githubusercontent.com/trpc/trpc/all-contributors/add-renderinc/images/render.svg" width="273px" /><br />Render</a></td>
+      <td align="center"><a href="https://render.com"><img alt="Render.com" src="https://raw.githubusercontent.com/trpc/trpc/main/images/render.svg" width="273px" /><br />Render</a></td>
     </tr>
   </tbody>
 </table>
