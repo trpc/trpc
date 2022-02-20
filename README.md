@@ -96,7 +96,15 @@ npx create-next-app --example https://github.com/trpc/trpc --example-path exampl
 
 ### 🥇 Gold Sponsors
 
-<img src="https://placehold.jp/e5faff/0e3847/300x150.png?text=%3Cimg%20%2F%3E" width="300" height="150">
+
+<table>
+  <tbody>
+    <tr>
+      <td><a href="https://render.com"><img alt="Render.com" src="./images/render.svg" width="200px" /><br />Render.com</a></td>
+    </tr>
+  </tbody>
+</table>
+
 
 ### 🥈 Silver Sponsors
 
@@ -218,7 +226,6 @@ npx create-next-app --example https://github.com/trpc/trpc --example-path exampl
     <td align="center"><a href="https://www.twitch.tv/skarab42/"><img src="https://avatars.githubusercontent.com/u/62928763?v=4?s=100" width="100px;" alt=""/><br /><sub><b>skarab42</b></sub></a><br /><a href="https://github.com/trpc/trpc/commits?author=skarab42" title="Documentation">📖</a> <a href="https://github.com/trpc/trpc/commits?author=skarab42" title="Code">💻</a> <a href="#example-skarab42" title="Examples">💡</a> <a href="https://github.com/trpc/trpc/commits?author=skarab42" title="Tests">⚠️</a></td>
     <td align="center"><a href="https://iamkhan.io"><img src="https://avatars.githubusercontent.com/u/6490268?v=4?s=100" width="100px;" alt=""/><br /><sub><b>SchlagerKhan</b></sub></a><br /><a href="#financial-SchlagerKhan" title="Financial">💵</a></td>
     <td align="center"><a href="https://www.brockherion.dev"><img src="https://avatars.githubusercontent.com/u/30359995?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Brock Herion</b></sub></a><br /><a href="https://github.com/trpc/trpc/commits?author=BrockHerion" title="Code">💻</a> <a href="https://github.com/trpc/trpc/commits?author=BrockHerion" title="Tests">⚠️</a> <a href="https://github.com/trpc/trpc/commits?author=BrockHerion" title="Documentation">📖</a></td>
-    <td align="center"><a href="https://render.com"><img src="https://avatars.githubusercontent.com/u/36424661?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Render</b></sub></a><br /><a href="#financial-renderinc" title="Financial">💵</a></td>
   </tr>
 </table>
 
