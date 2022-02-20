@@ -16,7 +16,7 @@ export function createExpressMiddleware<TRouter extends AnyRouter>(
   opts: NodeHTTPHandlerOptions<TRouter, express.Request, express.Response>,
 ): express.Handler {
   return (req, res) => {
-    const endpoint = req.path.substr(1);
+    const endpoint = req.path.slice(1);
 
     nodeHTTPRequestHandler({
       ...opts,
