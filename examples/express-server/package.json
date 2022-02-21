@@ -3,12 +3,12 @@
   "version": "10.0.0-alpha.8",
   "private": true,
   "scripts": {
-    "dev:server": "nodemon -e ts -w . -x ts-node ./src/server.ts",
-    "dev:client": "nodemon -e ts -w . -x 'wait-on tcp:2021 && ts-node ./src/client.ts'",
+    "dev:server": "nodemon -e ts -w . -x ts-node ./src/server",
+    "dev:client": "nodemon -e ts -w . -x 'wait-on tcp:2021 && ts-node ./src/client'",
     "dev": "run-p dev:* --print-label",
     "build": "tsc",
     "start": "yarn dev",
-    "test-dev": "start-server-and-test 'ts-node src/server.ts' 2021 'ts-node src/client.ts'",
+    "test-dev": "start-server-and-test 'ts-node src/server' 2021 'ts-node src/client'",
     "test-start": "start-server-and-test 'node dist/server' 2021 'node dist/client'"
   },
   "dependencies": {

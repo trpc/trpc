@@ -17,15 +17,19 @@ slug: /sponsors
 > Is your company using tRPC, want to attract amazing TypeScript developers to your team, & support long-term maintainance of tRPC? Have a look at the [sponsorship tiers](https://github.com/sponsors/KATT) or [get in touch](mailto:alex@trpc.io) to discuss potential partnerships.
 
 
-<!-- 
-### 🥉 Gold Sponsors
+### 🥇 Gold Sponsors
 
-<img src="https://placehold.jp/e5faff/0e3847/300x150.png?text=%3Cimg%20%2F%3E" width="300" height="150">
+<table>
+  <tbody>
+    <tr>
+      <td align="center"><a href="https://render.com"><img alt="Render.com" src="https://raw.githubusercontent.com/trpc/trpc/main/images/render.svg" width="273px" /><br />Render</a></td>
+    </tr>
+  </tbody>
+</table>
 
-### 🥉 Silver Sponsors
+### 🥈 Silver Sponsors
 
-<img src="https://placehold.jp/e5faff/0e3847/150x150.png?text=%3Cimg%20%2F%3E" width="150" height="150"> 
--->
+<img src="https://placehold.jp/e5faff/0e3847/150x100.png?text=%3Cimg%20%2F%3E" width="150" height="100" /> 
 
 ### 🥉 Bronze Sponsors
 
@@ -42,6 +46,8 @@ slug: /sponsors
     </tr>
   </tbody>
 </table>
+
+
 
 
 ### 😻 Individuals
@@ -69,6 +75,8 @@ slug: /sponsors
     </tr>
     <tr>
       <td align="center"><a href="https://iamkhan.io"><img src="https://avatars.githubusercontent.com/u/6490268?v=4?s=100" width="100px;" alt=""/><br /><sub><b>SchlagerKhan</b></sub></a></td>
+      <td align="center"><a href="https://yorick.sh"><img src="https://avatars.githubusercontent.com/u/8572133?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Ethan Clark</b></sub></a></td>
+      <td align="center"><a href="https://github.com/nihinihi01"><img src="https://avatars.githubusercontent.com/u/57569287?v=4?s=100" width="100px;" alt=""/><br /><sub><b>nihinihi01</b></sub></a></td>
     </tr>
   </tbody>
 </table>
