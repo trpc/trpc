@@ -63,7 +63,7 @@ async function start() {
       error(error) {
         console.error('>>> anon:sub:randomNumber:error:', error);
       },
-      done() {
+      complete() {
         console.log('>>> anon:sub:randomNumber:', 'unsub() called');
       },
     });
