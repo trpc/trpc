@@ -9,7 +9,7 @@ slug: /react
 
 - If you're using Next.js, read the [Usage with Next.js](/docs/nextjs) guide instead.
 - In order to infer types from your Node.js backend you should have the frontend & backend in the same monorepo.
-  :::
+:::
 
 ## Add tRPC to existing React project
 
