@@ -5,8 +5,6 @@ sidebar_label: Sponsors
 slug: /sponsors
 ---
 
-> If you like working with tRPC, consider giving a token a apprecation by [GitHub Sponsors](https://github.com/sponsors/KATT)!
-
 
 ## Financial Contributors
 
