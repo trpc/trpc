@@ -37,11 +37,10 @@ jobs:
       - run: yarn test-start
       - run: yarn test-dev
 
-      - name: Upload videos
+      - name: Upload test results
         if: ${{ always() }}
         uses: actions/upload-artifact@v2
         with:
-          name: videos
+          name: test results
           path: |
-            playwright/screenshots
-            playwright/videos
+            playwright/test-results
