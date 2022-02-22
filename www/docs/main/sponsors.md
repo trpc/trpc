@@ -10,13 +10,6 @@ If you enjoy working with tRPC and want to support me consider giving a token ap
 
 Also, if your company using tRPC and want to support long-term maintenance of tRPC, have a look at the [sponsorship tiers](https://github.com/sponsors/KATT) or [get in touch](mailto:alex@trpc.io) to discuss potential partnerships.
 
-## Financial Contributors
-
-
-**For companies**
-
-> Is your company using tRPC, want to attract amazing TypeScript developers to your team, & support long-term maintainance of tRPC? Have a look at the [sponsorship tiers](https://github.com/sponsors/KATT) or [get in touch](mailto:alex@trpc.io) to discuss potential partnerships.
-
 
 ### 🥇 Gold Sponsors
 
