@@ -27,17 +27,17 @@ slug: /sponsors
   </tbody>
 </table>
 
+
 ### 🥈 Silver Sponsors
 
 <table>
   <tbody>
     <tr>
-      <td align="center"><a href="http://Youarerad.org"><img src="https://avatars.githubusercontent.com/u/22589564?v=4?s=125" width="125px;" alt=""/><br /><sub><b>Jason Docton</b></sub></td>
-      <td align="center"><a href="https://ping.gg/"><img src="https://avatars.githubusercontent.com/u/89191727?v=4?s=125" width="125px;" alt=""/><br /><sub><b>Ping Labs</b></sub></a></td>
+      <td align="center"><a href="http://Youarerad.org"><img src="https://avatars.githubusercontent.com/u/22589564?v=4?s=150" width="150px;" alt=""/><br /><sub><b>Jason Docton</b></sub></td>
+      <td align="center"><a href="https://ping.gg/"><img src="https://avatars.githubusercontent.com/u/89191727?v=4?s=150" width="150px;" alt=""/><br /><sub><b>Ping Labs</b></sub></a></td>
     </tr>
   </tbody>
 </table>
-
 
 ### 🥉 Bronze Sponsors
 
@@ -46,16 +46,14 @@ slug: /sponsors
     <tr>
       <td align="center"><a href="https://newfront.com"><img src="https://user-images.githubusercontent.com/36125/130158930-216fa212-5909-4ee1-b4b9-fd5935f51245.png" width="120" alt=""/><br />Newfront</a></td>
       <td align="center"><a href="https://hidrb.com"><img src="https://avatars.githubusercontent.com/u/77294655?v=4?s=120" width="120" alt=""/><br/>Dr. B</a></td>
-      <td align="center"><a href="https://cal.com"><img src="https://avatars.githubusercontent.com/u/79145102?s=200&v=4" width="120" alt=""/><br/>Cal.com</a></td>
       <td align="center"><a href="https://github.com/chimon2000"><img src="https://avatars.githubusercontent.com/u/6907797?v=4?s=120" width="120" alt=""/><br/>Ryan Edge</a></td>
     </tr>
     <tr>
       <td align="center"><a href="https://snaplet.dev"><img src="https://avatars.githubusercontent.com/u/69029941?v=4?s=120" width="120" alt=""/><br/>Snaplet</a></td>
+      <td align="center"><a href="https://cal.com"><img src="https://avatars.githubusercontent.com/u/79145102?s=200&v=4" width="120" alt=""/><br/>Cal.com</a></td>
     </tr>
   </tbody>
 </table>
-
-
 
 
 ### 😻 Individuals
