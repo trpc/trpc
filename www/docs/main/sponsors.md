@@ -29,7 +29,15 @@ slug: /sponsors
 
 ### 🥈 Silver Sponsors
 
-<img src="https://placehold.jp/e5faff/0e3847/150x100.png?text=%3Cimg%20%2F%3E" width="150" height="100" /> 
+<table>
+  <tbody>
+    <tr>
+      <td align="center"><a href="http://Youarerad.org"><img src="https://avatars.githubusercontent.com/u/22589564?v=4?s=150" width="150px;" alt=""/><br /><sub><b>Jason Docton</b></sub></td>
+      <td align="center"><a href="https://ping.gg/"><img src="https://avatars.githubusercontent.com/u/89191727?v=4?s=150" width="150px;" alt=""/><br /><sub><b>Ping Labs</b></sub></a></td>
+    </tr>
+  </tbody>
+</table>
+
 
 ### 🥉 Bronze Sponsors
 
