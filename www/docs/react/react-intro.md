@@ -13,8 +13,6 @@ slug: /react
 
 ## Add tRPC to existing React project
 
-> tRPC works fine with Create React App!
-
 ### Server Side
 
 #### 1. Install dependencies
@@ -58,6 +56,8 @@ If strict mode is too much, at least enable `strictNullChecks`:
 Follow the [Quickstart](/docs/quickstart) and read the [`@trpc/server` docs](/docs/router) for guidance on this. Once you have your API implemented and listening via HTTP, continue to the next step.
 
 ### Client Side
+
+> tRPC works fine with Create React App!
 
 #### 1. Install dependencies
 
