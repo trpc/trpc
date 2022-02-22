@@ -3,8 +3,7 @@ import { PlaywrightTestConfig, devices } from '@playwright/test';
 const opts = {
   // launch headless on CI, in browser locally
   headless: !!process.env.CI || !!process.env.PLAYWRIGHT_HEADLESS,
-  // collectCoverage: !!process.env.PLAYWRIGHT_HEADLESS,
-  executablePath: process.env.PLAYWRIGHT_CHROME_EXECUTABLE_PATH,
+  // collectCoverage: !!process.env.PLAYWRIGHT_HEADLESS
 };
 const config: PlaywrightTestConfig = {
   testDir: './playwright',
@@ -15,9 +14,6 @@ const config: PlaywrightTestConfig = {
   use: {
     ...devices['Desktop Chrome'],
     headless: opts.headless,
-    launchOptions: {
-      executablePath: opts.executablePath,
-    },
     video: 'on',
   },
 };
