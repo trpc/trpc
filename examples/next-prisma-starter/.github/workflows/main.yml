@@ -31,7 +31,7 @@ jobs:
           path: ${{ github.workspace }}/.next/cache
           key: ${{ runner.os }}-${{ runner.node }}-${{ hashFiles('**/yarn.lock') }}-nextjs
 
-      - run: yarn playwright install-deps
+      - run: yarn playwright install --with-deps
       - run: yarn lint
       - run: yarn build
       - run: yarn test-start
