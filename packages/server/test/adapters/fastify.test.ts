@@ -128,7 +128,7 @@ interface ClientOptions {
   headers?: HTTPHeaders;
 }
 
-function createClient(opts: ClientOptions = {}) {
+function createClients(opts: ClientOptions = {}) {
   const host = `localhost:${config.port}${config.prefix}`;
   const wsClient = createWSClient({ url: `ws://${host}` });
   const client = createTRPCClient<AppRouter>({
@@ -146,27 +146,24 @@ function createClient(opts: ClientOptions = {}) {
     ],
   });
 
-  return { client, wsClient };
+  return { httpClient: client, wsClient };
 }
 
-interface AppOptions {
-  clientOptions?: ClientOptions;
-}
-
-function createApp(opts: AppOptions = {}) {
+function createApp() {
   const { appRouter, ee } = createAppRouter();
   const { instance, start, stop } = createServer({ appRouter });
-  const { client } = createClient(opts.clientOptions);
 
-  return { server: instance, start, stop, client, ee };
+  return { server: instance, start, stop, ee };
 }
 
 let app: inferAsyncReturnType<typeof createApp>;
+let clients: inferAsyncReturnType<typeof createClients>;
 
 describe('anonymous user', () => {
   beforeEach(async () => {
     app = createApp();
     await app.start();
+    clients = createClients();
   });
 
   afterEach(async () => {
@@ -174,14 +171,16 @@ describe('anonymous user', () => {
   });
 
   test('query', async () => {
-    expect(await app.client.query('ping')).toMatchInlineSnapshot(`"pong"`);
-    expect(await app.client.query('hello')).toMatchInlineSnapshot(`
+    expect(await clients.httpClient.query('ping')).toMatchInlineSnapshot(
+      `"pong"`,
+    );
+    expect(await clients.httpClient.query('hello')).toMatchInlineSnapshot(`
           Object {
             "text": "hello anonymous",
           }
       `);
     expect(
-      await app.client.query('hello', {
+      await clients.httpClient.query('hello', {
         username: 'test',
       }),
     ).toMatchInlineSnapshot(`
@@ -193,7 +192,7 @@ describe('anonymous user', () => {
 
   test('mutation', async () => {
     expect(
-      await app.client.mutation('post.edit', {
+      await clients.httpClient.mutation('post.edit', {
         id: '42',
         data: { title: 'new_title', text: 'new_text' },
       }),
@@ -217,7 +216,7 @@ describe('anonymous user', () => {
     });
 
     const next = jest.fn();
-    const unsub = app.client.subscription('onMessage', undefined, {
+    const unsub = clients.httpClient.subscription('onMessage', undefined, {
       next(data) {
         expectTypeOf(data).not.toBeAny();
         expectTypeOf(data).toMatchTypeOf<TRPCResult<Message>>();
@@ -282,8 +281,9 @@ describe('anonymous user', () => {
 
 describe('authorized user', () => {
   beforeEach(async () => {
-    app = createApp({ clientOptions: { headers: { username: 'nyan' } } });
+    app = createApp();
     await app.start();
+    clients = createClients({ headers: { username: 'nyan' } });
   });
 
   afterEach(async () => {
@@ -291,7 +291,7 @@ describe('authorized user', () => {
   });
 
   test('query', async () => {
-    expect(await app.client.query('hello')).toMatchInlineSnapshot(`
+    expect(await clients.httpClient.query('hello')).toMatchInlineSnapshot(`
       Object {
         "text": "hello nyan",
       }
@@ -300,7 +300,7 @@ describe('authorized user', () => {
 
   test('mutation', async () => {
     expect(
-      await app.client.mutation('post.edit', {
+      await clients.httpClient.mutation('post.edit', {
         id: '42',
         data: { title: 'new_title', text: 'new_text' },
       }),

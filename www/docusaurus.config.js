@@ -28,7 +28,7 @@ module.exports = {
       title: 'tRPC',
       logo: {
         alt: 'tRPC logo',
-        src: 'img/logo-no-text.png',
+        src: 'img/logo-no-text.svg',
       },
       items: [
         {

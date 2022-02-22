@@ -3,28 +3,28 @@ import { serverConfig } from '../config';
 
 async function start() {
   const { port, prefix } = serverConfig;
-  const { client: anon } = createClient({ port, prefix });
-  const { client: auth } = createClient({
+  const anon = createClient({ port, prefix });
+  const auth = createClient({
     port,
     prefix,
     headers: { username: 'nyan' },
   });
 
-  const version = await anon.query('version');
+  const version = await anon.client.query('version');
   console.log('>>> anon:version:', version);
 
-  const anonHello = await anon.query('hello');
+  const anonHello = await anon.client.query('hello');
   console.log('>>> anon:hello:', anonHello);
 
-  const authHello = await auth.query('hello');
+  const authHello = await auth.client.query('hello');
   console.log('>>> auth:hello:', authHello);
 
-  const helloWithInput = await anon.query('hello', { username: 'you' });
+  const helloWithInput = await anon.client.query('hello', { username: 'you' });
   console.log('>>> anon:hello(with input):', helloWithInput);
 
   try {
     // Should fail
-    const anonPost = await anon.mutation('posts:create', {
+    const anonPost = await anon.client.mutation('posts:create', {
       title: '1337',
     });
     console.log('>>> anon:posts:create:success:', anonPost);
@@ -34,7 +34,7 @@ async function start() {
 
   try {
     // Should work
-    const authPost = await auth.mutation('posts:create', {
+    const authPost = await auth.client.mutation('posts:create', {
       title: 'My first post',
     });
     console.log('>>> auth:posts:create:success:', authPost);
@@ -42,29 +42,36 @@ async function start() {
     console.log('>>> auth:posts:create:error:', (error as Error).message);
   }
 
-  const anonPostsList = await anon.query('posts:list');
+  const anonPostsList = await anon.client.query('posts:list');
   console.log('>>> anon:posts:list:', anonPostsList);
 
-  await anon.query('posts:reset');
+  await anon.client.query('posts:reset');
 
   let randomNumberCount = 0;
 
-  const unsub = anon.subscription('sub:randomNumber', null, {
-    next(data) {
-      console.log('>>> anon:sub:randomNumber:received:', data);
-      randomNumberCount++;
+  await new Promise<void>((resolve) => {
+    const unsub = anon.client.subscription('sub:randomNumber', null, {
+      next(data) {
+        console.log('>>> anon:sub:randomNumber:received:', data);
+        randomNumberCount++;
 
-      if (randomNumberCount > 3) {
-        unsub();
-      }
-    },
-    error(error) {
-      console.error('>>> anon:sub:randomNumber:error:', error);
-    },
-    onDone() {
-      console.log('>>> anon:sub:randomNumber:', 'unsub() called');
-    },
+        if (randomNumberCount > 3) {
+          unsub();
+          resolve();
+        }
+      },
+      error(error) {
+        console.error('>>> anon:sub:randomNumber:error:', error);
+      },
+      complete() {
+        console.log('>>> anon:sub:randomNumber:', 'unsub() called');
+      },
+    });
   });
+
+  // we're done - make sure app closes with a clean exit
+  anon.wsClient.close();
+  auth.wsClient.close();
 }
 
 start();
