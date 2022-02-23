@@ -3,17 +3,17 @@ import { AnyRouter } from '../../../server/src';
 import { createChain } from '../links/internals/createChain';
 import { splitLink } from '../links/splitLink';
 import { OperationLink, TRPCLink } from '../links/types';
-import { observable } from '../rx';
+import { Observable } from 'rxjs';
 
 test('splitLink', () => {
   const wsLinkSpy = jest.fn();
   const wsLink: TRPCLink<any> = () => () =>
-    observable(() => {
+    new Observable(() => {
       wsLinkSpy();
     });
   const httpLinkSpy = jest.fn();
   const httpLink: TRPCLink<any> = () => () =>
-    observable(() => {
+    new Observable(() => {
       httpLinkSpy();
     });
   const links: OperationLink<AnyRouter, any, any>[] = [

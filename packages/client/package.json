@@ -48,30 +48,20 @@
       "import": "./dist/links/wsLink.mjs",
       "require": "./dist/links/wsLink.js",
       "default": "./dist/links/wsLink.js"
-    },
-    "./rx": {
-      "import": "./dist/rx/index.mjs",
-      "require": "./dist/rx/index.js",
-      "default": "./dist/rx/index.js"
-    },
-    "./rx/operators": {
-      "import": "./dist/rx/operators/index.mjs",
-      "require": "./dist/rx/operators/index.js",
-      "default": "./dist/rx/operators/index.js"
     }
   },
   "files": [
     "README.md",
     "dist",
     "links",
-    "src",
-    "rx"
+    "src"
   ],
   "scripts": {
     "build": "rollup -c"
   },
   "dependencies": {
-    "@babel/runtime": "^7.9.0"
+    "@babel/runtime": "^7.9.0",
+    "rxjs": "^7.5.4"
   },
   "peerDependencies": {
     "@trpc/server": "^9.12.0"

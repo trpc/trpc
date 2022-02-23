@@ -1,5 +1,5 @@
 import { AnyRouter } from '@trpc/server';
-import { observable } from '../rx/observable';
+import { Observable } from 'rxjs';
 import { TRPCLink, Operation } from './types';
 import { createChain } from './internals/createChain';
 
@@ -21,7 +21,7 @@ export function splitLink<TRouter extends AnyRouter = AnyRouter>(opts: {
     const yes = asArray(opts.true).map((link) => link(rt));
     const no = asArray(opts.false).map((link) => link(rt));
     return (props) => {
-      return observable((observer) => {
+      return new Observable((observer) => {
         const links = opts.condition(props.op) ? yes : no;
         return createChain({ op: props.op, links }).subscribe(observer);
       });

@@ -18,11 +18,13 @@ import {
   OperationLink,
   TRPCLink,
 } from '../links/types';
-import { UnsubscribeFn } from '../rx';
-import { inferObservableValue } from '../rx/observable';
-import { share } from '../rx/operators';
-import { Observer } from '../rx/types';
-import { observableToPromise } from '../rx/util/observableToPromise';
+import {
+  inferObservableValue,
+  observableToPromise,
+  UnsubscribeFn,
+} from '../rx';
+import { share } from 'rxjs/operators';
+import { Observer } from 'rxjs';
 import { TRPCClientError } from '../TRPCClientError';
 import { getAbortController } from './fetchHelpers';
 
@@ -216,8 +218,7 @@ export class TRPCClient<TRouter extends AnyRouter> {
   >(
     path: TPath,
     input: TInput,
-    opts: TRPCRequestOptions &
-      Partial<Observer<TRPCResult<TOutput>, TRPCClientError<TRouter>>>,
+    opts: TRPCRequestOptions & Partial<Observer<TRPCResult<TOutput>>>,
   ): UnsubscribeFn {
     const observable$ = this.$request<TInput, TOutput>({
       type: 'subscription',

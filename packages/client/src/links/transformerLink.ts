@@ -3,7 +3,7 @@ import {
   ClientDataTransformerOptions,
   DataTransformer,
 } from '@trpc/server';
-import { observable } from '../rx/observable';
+import { Observable } from 'rxjs';
 import { OperationResult, TRPCLink } from './types';
 
 /**
@@ -54,7 +54,7 @@ export function transformerLink<TRouter extends AnyRouter = AnyRouter>(
   return () => {
     return (props) => {
       const input = _transformer.serialize(props.op.input);
-      return observable((observer) => {
+      return new Observable((observer) => {
         const next$ = props.next({ ...props.op, input }).subscribe({
           next(value) {
             const transformed = transformOperationResult(value, _transformer);

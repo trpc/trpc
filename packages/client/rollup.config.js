@@ -9,8 +9,6 @@ const config = getRollupConfig({
     'src/links/splitLink.ts',
     'src/links/transformerLink.ts',
     'src/links/wsLink.ts',
-    'src/rx/index.ts',
-    'src/rx/operators/index.ts',
   ],
 });
 

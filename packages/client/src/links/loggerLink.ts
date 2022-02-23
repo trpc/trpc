@@ -1,7 +1,6 @@
 import { AnyRouter } from '@trpc/server';
 import { TRPCClientError } from '..';
-import { observable } from '../rx/observable';
-import { tap } from '../rx/operators';
+import { Observable, tap } from 'rxjs';
 import { Operation, OperationResult, TRPCLink } from './types';
 
 type ConsoleEsque = {
@@ -108,7 +107,7 @@ export function loggerLink<TRouter extends AnyRouter = AnyRouter>(
 
   return () => {
     return ({ op, next }) => {
-      return observable((observer) => {
+      return new Observable((observer) => {
         // ->
         enabled({ ...op, direction: 'up' }) &&
           logger({

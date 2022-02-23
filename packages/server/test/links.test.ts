@@ -4,14 +4,14 @@ import { createChain } from '@trpc/client/src/links/internals/createChain';
 import { LinkRuntime, OperationLink } from '@trpc/client/src/links/types';
 import AbortController from 'abort-controller';
 import fetch from 'node-fetch';
-import { observableToPromise } from '../../client/src/rx/util/observableToPromise';
+import { firstValueFrom } from 'rxjs';
 import { z } from 'zod';
 import { createTRPCClient, TRPCClientError } from '../../client/src';
 import { httpBatchLink } from '../../client/src/links/httpBatchLink';
 import { httpLink } from '../../client/src/links/httpLink';
 import { loggerLink } from '../../client/src/links/loggerLink';
 import { retryLink } from '../../client/src/links/retryLink';
-import { observable } from '../../client/src/rx/observable';
+import { Observable } from 'rxjs';
 import * as trpc from '../src';
 import { AnyRouter } from '../src';
 import { routerToServerAndClient } from './_testHelpers';
@@ -53,7 +53,7 @@ test('chainer', async () => {
     },
   });
 
-  const result = await observableToPromise(chain).promise;
+  const result = await firstValueFrom(chain);
   expect(result?.context?.response).toBeTruthy();
   result!.context!.response = '[redacted]' as any;
   expect(result).toMatchInlineSnapshot(`
@@ -82,7 +82,7 @@ test('cancel request', async () => {
   const chain = createChain({
     links: [
       () =>
-        observable(() => {
+        new Observable(() => {
           return () => {
             onDestroyCall();
           };
@@ -151,8 +151,8 @@ describe('batching', () => {
     });
 
     const results = await Promise.all([
-      observableToPromise(chain1).promise,
-      observableToPromise(chain2).promise,
+      firstValueFrom(chain1),
+      firstValueFrom(chain2),
     ]);
     for (const res of results) {
       expect(res?.context?.response).toBeTruthy();
@@ -356,7 +356,7 @@ test('loggerLink', () => {
     console: logger,
   })(mockRuntime);
   const okLink: OperationLink<AnyRouter> = () =>
-    observable((o) => {
+    new Observable((o) => {
       o.next({
         data: {
           id: null,
@@ -365,7 +365,7 @@ test('loggerLink', () => {
       });
     });
   const errorLink: OperationLink<AnyRouter> = () =>
-    observable((o) => {
+    new Observable((o) => {
       o.error(new TRPCClientError('..'));
     });
   {
@@ -528,7 +528,7 @@ test('chain makes unsub', async () => {
         links: [
           () =>
             ({ next, op }) =>
-              observable((observer) => {
+              new Observable((observer) => {
                 next(op).subscribe({
                   next: observer.next,
                   error: observer.error,
@@ -543,7 +543,7 @@ test('chain makes unsub', async () => {
                 };
               }),
           () => () =>
-            observable((observer) => {
+            new Observable((observer) => {
               observer.next({
                 data: {
                   id: null,

@@ -1,4 +1,9 @@
-import { Observable } from '../types';
+import { Observable } from 'rxjs';
+
+export type UnsubscribeFn = () => void;
+
+export type inferObservableValue<TObservable extends Observable<any>> =
+  TObservable extends Observable<infer TValue> ? TValue : never;
 
 export class ObservableAbortError extends Error {
   constructor(message: string) {
@@ -9,9 +14,7 @@ export class ObservableAbortError extends Error {
 }
 
 /** @internal */
-export function observableToPromise<TValue>(
-  observable: Observable<TValue, unknown>,
-) {
+export function observableToPromise<TValue>(observable: Observable<TValue>) {
   let abort: () => void;
   const promise = new Promise<TValue>((resolve, reject) => {
     let isDone = false;

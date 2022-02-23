@@ -1,7 +1,7 @@
 import { waitFor } from '@testing-library/dom';
 import { AnyRouter } from '@trpc/server';
 import { OperationLink } from '..';
-import { observable } from '../rx/observable';
+import { Observable } from 'rxjs';
 import { dedupeLink } from './dedupeLink';
 import { createChain } from './internals/createChain';
 
@@ -12,7 +12,7 @@ test('dedupeLink', async () => {
     // "dedupe link"
     dedupeLink()(null as any),
     ({ op }) => {
-      return observable((subscribe) => {
+      return new Observable((subscribe) => {
         endingLinkTriggered();
         const timer = setTimeout(() => {
           timerTriggered();
@@ -75,7 +75,7 @@ test('dedupe - cancel one does not cancel the other', async () => {
     // "dedupe link"
     dedupeLink()(null as any),
     ({ op }) => {
-      return observable((subscribe) => {
+      return new Observable((subscribe) => {
         endingLinkTriggered();
         const timer = setTimeout(() => {
           timerTriggered();

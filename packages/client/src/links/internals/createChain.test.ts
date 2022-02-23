@@ -1,13 +1,13 @@
 import { AnyRouter } from '@trpc/server/src';
 import { createChain } from './createChain';
-import { observable } from '../../rx/observable';
+import { Observable } from 'rxjs';
 
 describe('chain', () => {
   test('trivial', () => {
     const result$ = createChain<AnyRouter, unknown, unknown>({
       links: [
         ({ next, op }) => {
-          return observable((observer) => {
+          return new Observable((observer) => {
             const next$ = next(op).subscribe(observer);
             return () => {
               next$.unsubscribe();
@@ -15,7 +15,7 @@ describe('chain', () => {
           });
         },
         ({ op }) => {
-          return observable((observer) => {
+          return new Observable((observer) => {
             observer.next({
               context: {},
               data: {
@@ -51,7 +51,7 @@ describe('chain', () => {
     const result$ = createChain<AnyRouter, unknown, unknown>({
       links: [
         ({ next, op }) => {
-          return observable((observer) => {
+          return new Observable((observer) => {
             observer.next({
               context: {},
               data: {
@@ -69,7 +69,7 @@ describe('chain', () => {
           });
         },
         ({ op }) => {
-          return observable((observer) => {
+          return new Observable((observer) => {
             observer.next({
               data: {
                 id: null,

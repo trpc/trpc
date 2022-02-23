@@ -1,5 +1,5 @@
 import { AnyRouter } from '@trpc/server';
-import { observable } from '../rx/observable';
+import { Observable } from 'rxjs';
 import { TRPCLink } from './types';
 import { HTTPLinkOptions, httpRequest } from './httpUtils';
 
@@ -9,7 +9,7 @@ export function httpLink<TRouter extends AnyRouter>(
   const { url } = opts;
   return (runtime) =>
     ({ op }) =>
-      observable((observer) => {
+      new Observable((observer) => {
         const { path, input, type } = op;
         const { promise, cancel } = httpRequest({
           runtime,

@@ -7,7 +7,7 @@ import {
 } from '@trpc/server/rpc';
 import { retryDelay } from '../internals/retryDelay';
 import { UnsubscribeFn } from '../rx';
-import { observable } from '../rx/observable';
+import { Observable } from 'rxjs';
 import { TRPCClientError } from '../TRPCClientError';
 import { Operation, OperationResultObserver, TRPCLink } from './types';
 
@@ -282,7 +282,7 @@ export function wsLink<TRouter extends AnyRouter>(
   return () => {
     const { client } = opts;
     return ({ op }) => {
-      return observable((observer) => {
+      return new Observable((observer) => {
         const { type, input, path, id, context } = op;
 
         let isDone = false;

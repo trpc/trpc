@@ -1,7 +1,6 @@
 import { AnyRouter, inferRouterError, Dict } from '@trpc/server';
 import { TRPCResponse } from '@trpc/server/rpc';
-import { Observable, Observer } from '../rx/types';
-import { TRPCClientError } from '../TRPCClientError';
+import { Observable, Observer } from 'rxjs';
 
 export type CancelFn = () => void;
 
@@ -44,12 +43,12 @@ export interface OperationResult<TRouter extends AnyRouter, TOutput> {
 export type OperationResultObservable<
   TRouter extends AnyRouter,
   TOutput,
-> = Observable<OperationResult<TRouter, TOutput>, TRPCClientError<TRouter>>;
+> = Observable<OperationResult<TRouter, TOutput>>;
 
 export type OperationResultObserver<
   TRouter extends AnyRouter,
   TOutput,
-> = Observer<OperationResult<TRouter, TOutput>, TRPCClientError<TRouter>>;
+> = Observer<OperationResult<TRouter, TOutput>>;
 
 export type OperationLink<
   TRouter extends AnyRouter,

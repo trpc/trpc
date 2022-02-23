@@ -1,6 +1,6 @@
 import { AnyRouter, ProcedureType } from '@trpc/server';
 import { dataLoader } from '../internals/dataLoader';
-import { observable } from '../rx/observable';
+import { Observable } from 'rxjs';
 import { TRPCLink } from './types';
 import { HTTPLinkOptions, httpRequest, ResponseShape } from './httpUtils';
 
@@ -52,7 +52,7 @@ export function httpBatchLink<TRouter extends AnyRouter>(
 
     const loaders = { query, subscription, mutation };
     return ({ op }) => {
-      return observable((observer) => {
+      return new Observable((observer) => {
         const loader = loaders[op.type];
         const { promise, cancel } = loader.load(op);
 

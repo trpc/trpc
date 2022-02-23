@@ -7,7 +7,6 @@ slug: /links
 
 Similar to urql's [_exchanges_](https://formidable.com/open-source/urql/docs/architecture/) or Apollo's [links](https://www.apollographql.com/docs/react/api/link/introduction/). Links enables you to customize the flow of data between tRPC Client and the tRPC-server.
 
-
 ## Request Batching
 
 Request batching is automatically enabled which batches your requests to the server, this can make the below code produce exactly **one** HTTP request and on the server exactly **one** database query:
@@ -18,7 +17,7 @@ const somePosts = await Promise.all([
   client.query('post.byId', 1),
   client.query('post.byId', 2),
   client.query('post.byId', 3),
-])
+]);
 ```
 
 ## Customizing data flow
@@ -46,7 +45,7 @@ export default withTRPC<AppRouter>({
       links: [
         httpBatchLink({
           url: '/api/trpc',
-          maxBatchSize: 10 // a reasonable size
+          maxBatchSize: 10, // a reasonable size
         }),
       ],
     };
@@ -72,7 +71,6 @@ export default trpcNext.createNextApiHandler({
 
 #### 2. Use batch-free link in your tRPC Client
 
-
 ```ts
 import type { AppRouter } from 'pages/api/trpc/[trpc]';
 import { withTRPC } from '@trpc/next';
@@ -97,7 +95,6 @@ export default withTRPC<AppRouter>({
   // ssr: false,
 })(MyApp);
 ```
-
 
 ### Using a `splitLink` to control request flow
 
@@ -153,8 +150,7 @@ const postResult = client.query('posts', null, {
   context: {
     skipBatch: true,
   },
-})
-
+});
 ```
 
 ### Creating a custom link
@@ -164,7 +160,7 @@ const postResult = client.query('posts', null, {
 ```tsx
 import { TRPCLink } from '@trpc/client';
 import { AppRouter } from 'server/routers/_app';
-import { observable } from '@trpc/client/rx';
+import { Observable } from 'rxjs';
 
 export const customLink: TRPCLink<AppRouter> = () => {
   // here we just got initialized in the app - this happens once per app
@@ -172,8 +168,8 @@ export const customLink: TRPCLink<AppRouter> = () => {
   return ({ next, op }) => {
     // this is when passing the result to the next link
 
-    // each link needs to return an observable which propagates results
-    return observable((observer) => {
+    // each link needs to return an new Observable which propagates results
+    return new Observable((observer) => {
       console.log('performing operation:', op);
       const unsubscribe = next(op).subscribe({
         next(value) {
@@ -193,6 +189,4 @@ export const customLink: TRPCLink<AppRouter> = () => {
     });
   };
 };
-
-
 ```

@@ -1,6 +1,5 @@
 import { AnyRouter } from '@trpc/server';
-import { observable } from '../rx/observable';
-import { Unsubscribable } from '../rx/types';
+import { Observable, Unsubscribable } from 'rxjs';
 import { TRPCLink } from './types';
 
 export function retryLink<TRouter extends AnyRouter = AnyRouter>(opts: {
@@ -11,7 +10,7 @@ export function retryLink<TRouter extends AnyRouter = AnyRouter>(opts: {
     // initialized in app
     return ({ op, next }) => {
       // initialized for request
-      return observable((observer) => {
+      return new Observable((observer) => {
         let next$: Unsubscribable | null = null;
         let attempts = 0;
         let isDone = false;

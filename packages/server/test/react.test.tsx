@@ -33,7 +33,7 @@ import {
 import { splitLink } from '../../client/src/links/splitLink';
 import { AppType } from 'next/dist/shared/lib/utils';
 import { TRPCError } from '../src/TRPCError';
-import { observable } from '../../client/src/rx/observable';
+import { Observable } from 'rxjs';
 
 setLogger({
   log() {},
@@ -201,7 +201,7 @@ function createAppRouter() {
           links: [
             () =>
               ({ op, next }) => {
-                return observable((observer) => {
+                return new Observable((observer) => {
                   linkSpy.up(op);
                   const next$ = next(op).subscribe({
                     next(result) {

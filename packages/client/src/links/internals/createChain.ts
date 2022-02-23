@@ -1,5 +1,5 @@
 import { AnyRouter } from '@trpc/server';
-import { observable } from '../../rx/observable';
+import { Observable } from 'rxjs';
 import { Operation, OperationLink, OperationResultObservable } from '../types';
 
 /** @internal */
@@ -11,7 +11,7 @@ export function createChain<
   links: OperationLink<TRouter, TInput, TOutput>[];
   op: Operation<TInput>;
 }): OperationResultObservable<TRouter, TOutput> {
-  return observable((observer) => {
+  return new Observable((observer) => {
     function execute(index = 0, op = opts.op) {
       const next = opts.links[index];
       const next$ = next({
