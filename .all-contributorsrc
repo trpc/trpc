@@ -518,6 +518,24 @@
       "contributions": [
         "code"
       ]
+    },
+    {
+      "login": "JasonDocton",
+      "name": "Jason Docton",
+      "avatar_url": "https://avatars.githubusercontent.com/u/22589564?v=4",
+      "profile": "http://Youarerad.org",
+      "contributions": [
+        "financial"
+      ]
+    },
+    {
+      "login": "pingdotgg",
+      "name": "Ping Labs",
+      "avatar_url": "https://avatars.githubusercontent.com/u/89191727?v=4",
+      "profile": "https://ping.gg/",
+      "contributions": [
+        "financial"
+      ]
     }
   ],
   "contributorsPerLine": 7,
