@@ -50,4 +50,4 @@ If your project is built with full-stack TypeScript, you can share types **direc
 - 🔋&nbsp; Batteries included - React.js/Next.js/Express.js adapters. _(But tRPC is not tied to React - [reach out](https://twitter.com/alexdotjs) if you want to make a Svelte/Vue/... adapter)_
 - 🥃&nbsp; Subscriptions support.
 - ⚡️&nbsp; Request batching - requests made at the same time can be automatically combined into one.
-- 👀&nbsp; Quite a few examples in the [./examples](./examples)-folder.
+- 👀&nbsp; Quite a few [examples](example-apps.md) that you can use for reference or as a starting point.
