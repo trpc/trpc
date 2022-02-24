@@ -10703,6 +10703,13 @@ playwright@^1.14.1, playwright@^1.15.2:
   dependencies:
     playwright-core "=1.18.1"
 
+playwright@^1.19.1:
+  version "1.19.1"
+  resolved "https://registry.yarnpkg.com/playwright/-/playwright-1.19.1.tgz#5db88245932036ba208dbc2db8d5291ca50199e1"
+  integrity sha512-h1iCJ1S2eAkZ67lZCmOxhRiT3OKa1JFGtyHLaZV30znqIjcsJLuyB/dmo78V3ajpMdz8iwxIb2xjpaSh1G+8UA==
+  dependencies:
+    playwright-core "1.19.1"
+
 pngjs@6.0.0:
   version "6.0.0"
   resolved "https://registry.yarnpkg.com/pngjs/-/pngjs-6.0.0.tgz#ca9e5d2aa48db0228a52c419c3308e87720da821"
