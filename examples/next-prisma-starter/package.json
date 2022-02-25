@@ -32,6 +32,7 @@
     "singleQuote": true
   },
   "dependencies": {
+    "@playwright/test": "^1.19.2",
     "@prisma/client": "^3.0.1",
     "@trpc/client": "^9.20.0",
     "@trpc/next": "^9.20.0",
