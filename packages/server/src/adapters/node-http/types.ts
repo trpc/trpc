@@ -1,7 +1,10 @@
 import http from 'http';
 import qs from 'qs';
 import { inferRouterContext } from '../..';
-import { HTTPBaseHandlerOptions } from '../../http/internals/types';
+import {
+  HTTPBaseHandlerOptions,
+  HTTPRequest,
+} from '../../http/internals/types';
 import { AnyRouter } from '../../router';
 
 export type NodeHTTPRequest = http.IncomingMessage & {
@@ -34,7 +37,7 @@ export type NodeHTTPHandlerOptions<
   TRequest extends NodeHTTPRequest,
   TResponse extends NodeHTTPResponse,
 > = HTTPBaseHandlerOptions<TRouter, TRequest> & {
-  teardown?: () => Promise<void>;
+  teardown?: (req: HTTPRequest) => Promise<void>;
   maxBodySize?: number;
 } & NodeHTTPCreateContextOption<TRouter, TRequest, TResponse>;
 
