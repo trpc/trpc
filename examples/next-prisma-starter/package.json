@@ -32,7 +32,6 @@
     "singleQuote": true
   },
   "dependencies": {
-    "@playwright/test": "^1.19.2",
     "@prisma/client": "^3.0.1",
     "@trpc/client": "^9.20.0",
     "@trpc/next": "^9.20.0",
@@ -48,7 +47,7 @@
     "zod": "^3.0.0"
   },
   "devDependencies": {
-    "@playwright/test": "^1.19.1",
+    "@playwright/test": "^1.19.2",
     "@types/jest": "^27.0.1",
     "@types/node": "^17.0.10",
     "@types/react": "^17.0.20",
