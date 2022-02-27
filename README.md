@@ -3,7 +3,7 @@
 </p>
 
 <p align="center">
-  <strong>End-to-end typesafe APIs made easy</strong>
+  <strong>End-to-end typesafe APIs made easy!</strong>
 </p>
 
 <p align="center">
