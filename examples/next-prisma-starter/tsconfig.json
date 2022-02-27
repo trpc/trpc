@@ -20,8 +20,6 @@
     "jsx": "preserve",
     "types": [
       "@types/jest",
-      "jest-playwright-preset",
-      "expect-playwright"
     ],
     "baseUrl": "./src",
     "incremental": true
