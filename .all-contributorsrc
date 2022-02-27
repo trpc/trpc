@@ -441,6 +441,111 @@
       "contributions": [
         "example"
       ]
+    },
+    {
+      "login": "icflorescu",
+      "name": "Ionut-Cristian Florescu",
+      "avatar_url": "https://avatars.githubusercontent.com/u/581999?v=4",
+      "profile": "https://www.linkedin.com/in/icflorescu",
+      "contributions": [
+        "example"
+      ]
+    },
+    {
+      "login": "skarab42",
+      "name": "skarab42",
+      "avatar_url": "https://avatars.githubusercontent.com/u/62928763?v=4",
+      "profile": "https://www.twitch.tv/skarab42/",
+      "contributions": [
+        "doc",
+        "code",
+        "example",
+        "test"
+      ]
+    },
+    {
+      "login": "SchlagerKhan",
+      "name": "SchlagerKhan",
+      "avatar_url": "https://avatars.githubusercontent.com/u/6490268?v=4",
+      "profile": "https://iamkhan.io",
+      "contributions": [
+        "financial"
+      ]
+    },
+    {
+      "login": "BrockHerion",
+      "name": "Brock Herion",
+      "avatar_url": "https://avatars.githubusercontent.com/u/30359995?v=4",
+      "profile": "https://www.brockherion.dev",
+      "contributions": [
+        "code",
+        "test",
+        "doc"
+      ]
+    },
+    {
+      "login": "renderinc",
+      "name": "Render",
+      "avatar_url": "https://avatars.githubusercontent.com/u/36424661?v=4",
+      "profile": "https://render.com",
+      "contributions": [
+        "financial"
+      ]
+    },
+    {
+      "login": "8balloon",
+      "name": "Ethan Clark",
+      "avatar_url": "https://avatars.githubusercontent.com/u/8572133?v=4",
+      "profile": "https://yorick.sh",
+      "contributions": [
+        "financial"
+      ]
+    },
+    {
+      "login": "nihinihi01",
+      "name": "nihinihi01",
+      "avatar_url": "https://avatars.githubusercontent.com/u/57569287?v=4",
+      "profile": "https://github.com/nihinihi01",
+      "contributions": [
+        "financial"
+      ]
+    },
+    {
+      "login": "CommanderRoot",
+      "name": "CommanderRoot",
+      "avatar_url": "https://avatars.githubusercontent.com/u/4395417?v=4",
+      "profile": "https://github.com/CommanderRoot",
+      "contributions": [
+        "code"
+      ]
+    },
+    {
+      "login": "JasonDocton",
+      "name": "Jason Docton",
+      "avatar_url": "https://avatars.githubusercontent.com/u/22589564?v=4",
+      "profile": "http://Youarerad.org",
+      "contributions": [
+        "financial"
+      ]
+    },
+    {
+      "login": "pingdotgg",
+      "name": "Ping Labs",
+      "avatar_url": "https://avatars.githubusercontent.com/u/89191727?v=4",
+      "profile": "https://ping.gg/",
+      "contributions": [
+        "financial"
+      ]
+    },
+    {
+      "login": "emilbryggare",
+      "name": "Emil Bryggare",
+      "avatar_url": "https://avatars.githubusercontent.com/u/1659740?v=4",
+      "profile": "http://www.emilbryggare.com",
+      "contributions": [
+        "example",
+        "test"
+      ]
     }
   ],
   "contributorsPerLine": 7,
