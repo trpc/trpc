@@ -8,7 +8,7 @@ import { trpc } from '../utils/trpc';
 function AddMessageForm() {
   const addPost = trpc.useMutation('post.add');
   const utils = trpc.useContext();
-  const [session] = useSession();
+  const { data: session } = useSession();
 
   const userName = session?.user?.name;
   if (!userName) {
