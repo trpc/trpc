@@ -1,5 +1,5 @@
 ---
-id: intro
+id: introduction
 title: Usage with React
 sidebar_label: Usage with React
 slug: /react
