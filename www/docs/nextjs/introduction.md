@@ -1,5 +1,5 @@
 ---
-id: intro
+id: introduction
 title: Usage with Next.js
 sidebar_label: Usage with Next.js
 slug: /nextjs
