@@ -6,16 +6,16 @@ import { AppType } from 'next/dist/shared/lib/utils';
 import type { AppRouter } from 'server/routers/_app';
 import superjson from 'superjson';
 import getConfig from 'next/config';
-import { getSession, Provider } from 'next-auth/client';
+import { getSession, SessionProvider } from 'next-auth/react';
 const { publicRuntimeConfig } = getConfig();
 
 const { APP_URL, WS_URL } = publicRuntimeConfig;
 
 const MyApp: AppType = ({ Component, pageProps }) => {
   return (
-    <Provider session={pageProps.session}>
+    <SessionProvider session={pageProps.session}>
       <Component {...pageProps} />
-    </Provider>
+    </SessionProvider>
   );
 };
 
