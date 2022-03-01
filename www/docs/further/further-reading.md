@@ -51,4 +51,3 @@ Blitz is a full-stack framework & achieves this by maintaining a fork of Next.js
 - Data layer integrated with the Next.js runtime, resulting in a more integrated experience
 - Automatic integration with Blitz' auth
 - Since you import server functions directly to the frontend, you can do things like CMD+click a function to jump to definition
-- Blitzjs has a bigger community  
