@@ -574,6 +574,15 @@
       "contributions": [
         "financial"
       ]
+    },
+    {
+      "login": "mechamobau",
+      "name": "Lucas Viana",
+      "avatar_url": "https://avatars.githubusercontent.com/u/13911440?v=4",
+      "profile": "https://blog.lucasviana.dev",
+      "contributions": [
+        "financial"
+      ]
     }
   ],
   "contributorsPerLine": 7,
