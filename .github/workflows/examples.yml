@@ -5,6 +5,7 @@ jobs:
     env:
       PLAYWRIGHT_BROWSERS_PATH: ${{ github.workspace }}/playwright
       DATABASE_URL: postgresql://postgres:@localhost:5432/trpcdb
+      NEXTAUTH_SECRET: supersecret
     runs-on: ${{ matrix.os }}
     timeout-minutes: 10
     continue-on-error: true
