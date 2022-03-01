@@ -556,6 +556,15 @@
         "doc",
         "example"
       ]
+    },
+    {
+      "login": "jlalmes",
+      "name": "James Berry",
+      "avatar_url": "https://avatars.githubusercontent.com/u/69924001?v=4",
+      "profile": "https://jamesbe.com",
+      "contributions": [
+        "bug"
+      ]
     }
   ],
   "contributorsPerLine": 7,
