@@ -5,7 +5,7 @@ sidebar_label: Error Handling
 slug: /error-handling
 ---
 
-Whenever an error occurs in a procedure, tRPC responses to the client with an object that includes an "error" property. This property contains all the information that you need to handle the error in the client.
+Whenever an error occurs in a procedure, tRPC responds to the client with an object that includes an "error" property. This property contains all the information that you need to handle the error in the client.
 
 Here's an example error response caused by a bad request input:
 
