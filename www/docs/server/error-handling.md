@@ -44,7 +44,7 @@ tRPC defines a list of error codes that each represent a different type of error
 
 ## Throwing errors
 
-tRPC providers an error subclass, `TRPCError`, which you can use to represend an error that occurred inside a procedures.
+tRPC provides an error subclass, `TRPCError`, which you can use to represent an error that occurred inside a procedure.
 
 For example, throwing this error:
 
