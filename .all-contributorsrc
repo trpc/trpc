@@ -565,6 +565,15 @@
       "contributions": [
         "bug"
       ]
+    },
+    {
+      "login": "jwyce",
+      "name": "Jared Wyce",
+      "avatar_url": "https://avatars.githubusercontent.com/u/16946573?v=4",
+      "profile": "https://jwyce.github.io/portfolio/",
+      "contributions": [
+        "financial"
+      ]
     }
   ],
   "contributorsPerLine": 7,
