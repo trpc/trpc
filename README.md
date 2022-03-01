@@ -111,7 +111,6 @@ Also, if your company using tRPC and want to support long-term maintenance of tR
     </tr>
     <tr>
       <td align="center"><a href="https://snaplet.dev"><img src="https://avatars.githubusercontent.com/u/69029941?v=4?s=120" width="120" alt=""/><br/>Snaplet</a></td>
-      <td align="center"><a href="https://cal.com"><img src="https://avatars.githubusercontent.com/u/79145102?s=200&v=4" width="120" alt=""/><br/>Cal.com</a></td>
     </tr>
   </tbody>
 </table>
