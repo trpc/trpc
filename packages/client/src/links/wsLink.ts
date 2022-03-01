@@ -223,7 +223,7 @@ export function createWSClient(opts: WebSocketClientOptions) {
       jsonrpc: '2.0',
       method: type,
       params: {
-        input,
+        input: (input as () => unknown)(),
         path,
       },
     };
@@ -294,11 +294,12 @@ export function wsLink<TRouter extends AnyRouter>(
     const { client } = opts;
 
     return ({ op, prev, onDestroy }) => {
-      const { type, input: rawInput, path, id } = op;
-      const input = rt.transformer.serialize(rawInput);
+      const { type, input, path, id } = op;
+      const getInput = () =>
+        rt.transformer.serialize(typeof input === 'function' ? input() : input);
       let isDone = false;
       const unsub = client.request(
-        { type, path, input, id },
+        { type, path, input: getInput, id },
         {
           onNext(result) {
             if (isDone) {

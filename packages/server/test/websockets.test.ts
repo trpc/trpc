@@ -7,6 +7,7 @@ import { EventEmitter } from 'events';
 import { expectTypeOf } from 'expect-type';
 import { default as WebSocket, default as ws } from 'ws';
 import { z } from 'zod';
+import { nanoid } from 'nanoid';
 import { wsLink } from '../../client/src/links/wsLink';
 import * as trpc from '../src';
 import { TRPCError } from '../src';
@@ -74,6 +75,17 @@ function factory(config?: { createContext: () => Promise<any> }) {
           ee.emit('subscription:created');
           onNewMessageSubscription();
           return sub;
+        },
+      })
+      .subscription('session.presence', {
+        input: z.object({
+          sessionId: z.string().nullable().optional(),
+        }),
+        resolve: ({ input }) => {
+          return new trpc.Subscription<{ sessionId: string }>(async (emit) => {
+            emit.data({ sessionId: input.sessionId || nanoid() });
+            return () => null;
+          });
         },
       }),
     {
@@ -205,7 +217,7 @@ test('$subscription()', async () => {
   close();
 });
 
-test.skip('$subscription() - server randomly stop and restart (this test might be flaky, try re-running)', async () => {
+test('$subscription() - server randomly stop and restart', async () => {
   const { client, close, ee, wssPort, applyWSSHandlerOpts } = factory();
   ee.once('subscription:created', () => {
     setTimeout(() => {
@@ -274,6 +286,48 @@ test.skip('$subscription() - server randomly stop and restart (this test might b
     ]
   `);
 
+  wss.close();
+});
+
+test('$subscription() - resolves input function payload after each reconnect', async () => {
+  const { client, close, wssPort, applyWSSHandlerOpts } = factory();
+
+  const onError = jest.fn();
+  const onNextData = jest.fn();
+
+  let sessionId: string | null = null;
+
+  const unsub = client.subscription('session.presence', () => ({ sessionId }), {
+    onNext: async (result) => {
+      if (result.type === 'data') {
+        onNextData(sessionId, result.data);
+        sessionId = result.data.sessionId;
+      }
+    },
+    onError,
+  });
+
+  await waitFor(() => {
+    expect(onNextData).toHaveBeenCalledTimes(1);
+    expect(onNextData).toBeCalledWith(null, { sessionId });
+    onNextData.mockClear();
+  });
+
+  await close();
+  await waitFor(() => {
+    expect(onError).toHaveBeenCalledTimes(1);
+  });
+
+  const wss = new ws.Server({ port: wssPort });
+  applyWSSHandler({ ...applyWSSHandlerOpts, wss });
+
+  await waitFor(() => {
+    expect(onNextData).toHaveBeenCalledTimes(1);
+    expect(onNextData).toBeCalledWith(sessionId, { sessionId });
+  });
+
+  unsub();
+  wss.clients.forEach((ws) => ws.close());
   wss.close();
 });
 

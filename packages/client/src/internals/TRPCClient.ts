@@ -229,13 +229,14 @@ export class TRPCClient<TRouter extends AnyRouter> {
     TPath extends string & keyof TSubscriptions,
     TOutput extends inferSubscriptionOutput<TRouter, TPath>,
     TInput extends inferProcedureInput<TSubscriptions[TPath]>,
+    TGetInput extends TInput | (() => TInput),
   >(
     path: TPath,
-    input: TInput,
+    input: TGetInput,
     opts: TRPCRequestOptions &
       ObservableCallbacks<TRPCResult<TOutput>, TRPCClientError<TRouter>>,
   ): UnsubscribeFn {
-    const $res = this.$request<TInput, TOutput>({
+    const $res = this.$request<TGetInput, TOutput>({
       type: 'subscription',
       path,
       input,
