@@ -3231,7 +3231,7 @@
 
 "@typescript-eslint/parser@^5.0.0":
   version "5.13.0"
-  resolved "https://essensys-smart-packages-786267582114.d.codeartifact.eu-west-1.amazonaws.com:443/npm/platform-fe/@typescript-eslint/parser/-/parser-5.13.0.tgz#0394ed8f2f849273c0bf4b811994d177112ced5c"
+  resolved "https://registry.yarnpkg.com/@typescript-eslint/parser/-/parser-5.13.0.tgz#0394ed8f2f849273c0bf4b811994d177112ced5c"
   integrity sha512-GdrU4GvBE29tm2RqWOM0P5QfCtgCyN4hXICj/X9ibKED16136l9ZpoJvCL5pSKtmJzA+NRDzQ312wWMejCVVfg==
   dependencies:
     "@typescript-eslint/scope-manager" "5.13.0"
@@ -3249,7 +3249,7 @@
 
 "@typescript-eslint/scope-manager@5.13.0":
   version "5.13.0"
-  resolved "https://essensys-smart-packages-786267582114.d.codeartifact.eu-west-1.amazonaws.com:443/npm/platform-fe/@typescript-eslint/scope-manager/-/scope-manager-5.13.0.tgz#cf6aff61ca497cb19f0397eea8444a58f46156b6"
+  resolved "https://registry.yarnpkg.com/@typescript-eslint/scope-manager/-/scope-manager-5.13.0.tgz#cf6aff61ca497cb19f0397eea8444a58f46156b6"
   integrity sha512-T4N8UvKYDSfVYdmJq7g2IPJYCRzwtp74KyDZytkR4OL3NRupvswvmJQJ4CX5tDSurW2cvCc1Ia1qM7d0jpa7IA==
   dependencies:
     "@typescript-eslint/types" "5.13.0"
@@ -3262,7 +3262,7 @@
 
 "@typescript-eslint/types@5.13.0":
   version "5.13.0"
-  resolved "https://essensys-smart-packages-786267582114.d.codeartifact.eu-west-1.amazonaws.com:443/npm/platform-fe/@typescript-eslint/types/-/types-5.13.0.tgz#da1de4ae905b1b9ff682cab0bed6b2e3be9c04e5"
+  resolved "https://registry.yarnpkg.com/@typescript-eslint/types/-/types-5.13.0.tgz#da1de4ae905b1b9ff682cab0bed6b2e3be9c04e5"
   integrity sha512-LmE/KO6DUy0nFY/OoQU0XelnmDt+V8lPQhh8MOVa7Y5k2gGRd6U9Kp3wAjhB4OHg57tUO0nOnwYQhRRyEAyOyg==
 
 "@typescript-eslint/typescript-estree@4.33.0":
@@ -3280,7 +3280,7 @@
 
 "@typescript-eslint/typescript-estree@5.13.0":
   version "5.13.0"
-  resolved "https://essensys-smart-packages-786267582114.d.codeartifact.eu-west-1.amazonaws.com:443/npm/platform-fe/@typescript-eslint/typescript-estree/-/typescript-estree-5.13.0.tgz#b37c07b748ff030a3e93d87c842714e020b78141"
+  resolved "https://registry.yarnpkg.com/@typescript-eslint/typescript-estree/-/typescript-estree-5.13.0.tgz#b37c07b748ff030a3e93d87c842714e020b78141"
   integrity sha512-Q9cQow0DeLjnp5DuEDjLZ6JIkwGx3oYZe+BfcNuw/POhtpcxMTy18Icl6BJqTSd+3ftsrfuVb7mNHRZf7xiaNA==
   dependencies:
     "@typescript-eslint/types" "5.13.0"
@@ -3301,7 +3301,7 @@
 
 "@typescript-eslint/visitor-keys@5.13.0":
   version "5.13.0"
-  resolved "https://essensys-smart-packages-786267582114.d.codeartifact.eu-west-1.amazonaws.com:443/npm/platform-fe/@typescript-eslint/visitor-keys/-/visitor-keys-5.13.0.tgz#f45ff55bcce16403b221ac9240fbeeae4764f0fd"
+  resolved "https://registry.yarnpkg.com/@typescript-eslint/visitor-keys/-/visitor-keys-5.13.0.tgz#f45ff55bcce16403b221ac9240fbeeae4764f0fd"
   integrity sha512-HLKEAS/qA1V7d9EzcpLFykTePmOQqOFim8oCvhY3pZgQ8Hi38hYpHd9e5GN6nQBFQNecNhws5wkS9Y5XIO0s/g==
   dependencies:
     "@typescript-eslint/types" "5.13.0"
@@ -5774,7 +5774,7 @@ eslint-visitor-keys@^2.0.0:
 
 eslint-visitor-keys@^3.0.0:
   version "3.3.0"
-  resolved "https://essensys-smart-packages-786267582114.d.codeartifact.eu-west-1.amazonaws.com:443/npm/platform-fe/eslint-visitor-keys/-/eslint-visitor-keys-3.3.0.tgz#f6480fa6b1f30efe2d1968aa8ac745b862469826"
+  resolved "https://registry.yarnpkg.com/eslint-visitor-keys/-/eslint-visitor-keys-3.3.0.tgz#f6480fa6b1f30efe2d1968aa8ac745b862469826"
   integrity sha512-mQ+suqKJVyeuwGYHAdjMFqjCyfl8+Ldnxuyp3ldiMBFKkvytrXUZWaiPCEav8qDHKty44bD+qV1IP4T+w+xXRA==
 
 eslint@^7.32.0:
@@ -6139,7 +6139,7 @@ fast-glob@^3.1.1, fast-glob@^3.2.4:
 
 fast-glob@^3.2.9:
   version "3.2.11"
-  resolved "https://essensys-smart-packages-786267582114.d.codeartifact.eu-west-1.amazonaws.com:443/npm/platform-fe/fast-glob/-/fast-glob-3.2.11.tgz#a1172ad95ceb8a16e20caa5c5e56480e5129c1d9"
+  resolved "https://registry.yarnpkg.com/fast-glob/-/fast-glob-3.2.11.tgz#a1172ad95ceb8a16e20caa5c5e56480e5129c1d9"
   integrity sha512-xrO3+1bxSo3ZVHAnqzyuewYT6aMFHRAd4Kcs92MAonjwQZLsK9d0SF1IyQ3k5PoirxTW0Oe/RqFgMQ6TcNE5Ew==
   dependencies:
     "@nodelib/fs.stat" "^2.0.2"
@@ -6858,7 +6858,7 @@ globby@^11.0.0, globby@^11.0.2, globby@^11.0.3:
 
 globby@^11.0.4:
   version "11.1.0"
-  resolved "https://essensys-smart-packages-786267582114.d.codeartifact.eu-west-1.amazonaws.com:443/npm/platform-fe/globby/-/globby-11.1.0.tgz#bd4be98bb042f83d796f7e3811991fbe82a0d34b"
+  resolved "https://registry.yarnpkg.com/globby/-/globby-11.1.0.tgz#bd4be98bb042f83d796f7e3811991fbe82a0d34b"
   integrity sha512-jhIXaOzy1sb8IyocaruWSn1TjmnBVs8Ayhcy83rmxNJ8q2uWKCAj3CnJY+KpGSXCueAPc0i05kVvVKtP1t9S3g==
   dependencies:
     array-union "^2.1.0"
@@ -7233,7 +7233,7 @@ ignore@^5.1.4, ignore@^5.1.8:
 
 ignore@^5.2.0:
   version "5.2.0"
-  resolved "https://essensys-smart-packages-786267582114.d.codeartifact.eu-west-1.amazonaws.com:443/npm/platform-fe/ignore/-/ignore-5.2.0.tgz#6d3bac8fa7fe0d45d9f9be7bac2fc279577e345a"
+  resolved "https://registry.yarnpkg.com/ignore/-/ignore-5.2.0.tgz#6d3bac8fa7fe0d45d9f9be7bac2fc279577e345a"
   integrity sha512-CmxgYGiEPCLhfLnpPp1MoRmifwEIOgjcHXxOBjv7mY96c+eWScsOP9c112ZyLdWHi0FxHjI+4uVhKYp/gcdRmQ==
 
 image-size@1.0.0:
@@ -9455,7 +9455,7 @@ nanoid@^3.1.23:
 
 nanoid@^3.3.1:
   version "3.3.1"
-  resolved "https://essensys-smart-packages-786267582114.d.codeartifact.eu-west-1.amazonaws.com:443/npm/platform-fe/nanoid/-/nanoid-3.3.1.tgz#6347a18cac88af88f58af0b3594b723d5e99bb35"
+  resolved "https://registry.yarnpkg.com/nanoid/-/nanoid-3.3.1.tgz#6347a18cac88af88f58af0b3594b723d5e99bb35"
   integrity sha512-n6Vs/3KGyxPQd6uO0eH4Bv0ojGSUvuLlIHtC3Y0kEO23YRge8H9x1GCzLn28YX0H66pMkxuaeESFq4tKISKwdw==
 
 nanomatch@^1.2.9:
