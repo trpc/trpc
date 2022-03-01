@@ -496,14 +496,14 @@ describe('regression test - slow createContext', () => {
       });
     });
     expect(JSON.parse(data)).toMatchInlineSnapshot(`
-Object {
-  "id": 1,
-  "result": Object {
-    "data": "hello world",
-    "type": "data",
-  },
-}
-`);
+      Object {
+        "id": 1,
+        "result": Object {
+          "data": "hello world",
+          "type": "data",
+        },
+      }
+    `);
     rawClient.close();
     t.close();
   });
@@ -554,34 +554,34 @@ Object {
     expect(second.id).toBe(1);
 
     expect(responses).toMatchInlineSnapshot(`
-Array [
-  Object {
-    "error": Object {
-      "code": -32001,
-      "data": Object {
-        "code": "UNAUTHORIZED",
-        "httpStatus": 401,
-        "stack": "[redacted]",
-      },
-      "message": "test",
-    },
-    "id": null,
-  },
-  Object {
-    "error": Object {
-      "code": -32001,
-      "data": Object {
-        "code": "UNAUTHORIZED",
-        "httpStatus": 401,
-        "path": "greeting",
-        "stack": "[redacted]",
-      },
-      "message": "test",
-    },
-    "id": 1,
-  },
-]
-`);
+      Array [
+        Object {
+          "error": Object {
+            "code": -32001,
+            "data": Object {
+              "code": "UNAUTHORIZED",
+              "httpStatus": 401,
+              "stack": "[redacted]",
+            },
+            "message": "test",
+          },
+          "id": null,
+        },
+        Object {
+          "error": Object {
+            "code": -32001,
+            "data": Object {
+              "code": "UNAUTHORIZED",
+              "httpStatus": 401,
+              "path": "greeting",
+              "stack": "[redacted]",
+            },
+            "message": "test",
+          },
+          "id": 1,
+        },
+      ]
+    `);
 
     expect(createContext).toHaveBeenCalledTimes(1);
     t.close();
@@ -611,18 +611,60 @@ test('malformatted JSON', async () => {
   expect(res.id).toBe(null);
 
   expect(res).toMatchInlineSnapshot(`
-Object {
-  "error": Object {
-    "code": -32700,
-    "data": Object {
-      "code": "PARSE_ERROR",
-      "httpStatus": 400,
-      "stack": "[redacted]",
+    Object {
+      "error": Object {
+        "code": -32700,
+        "data": Object {
+          "code": "PARSE_ERROR",
+          "httpStatus": 400,
+          "stack": "[redacted]",
+        },
+        "message": "Unexpected token o in JSON at position 1",
+      },
+      "id": null,
+    }
+  `);
+  t.close();
+});
+
+test('regression - badly shaped request', async () => {
+  const t = factory();
+  const rawClient = new WebSocket(t.wssUrl);
+
+  const msg: TRPCRequest = {
+    id: null,
+    method: 'query',
+    params: {
+      path: 'greeting',
+      input: null,
     },
-    "message": "Unexpected token o in JSON at position 1",
-  },
-  "id": null,
-}
-`);
+  };
+  const msgStr = JSON.stringify(msg);
+  rawClient.onopen = () => {
+    rawClient.send(msgStr);
+  };
+  const result = await new Promise<string>((resolve) => {
+    rawClient.addEventListener('message', (msg) => {
+      resolve(msg.data as any);
+    });
+  });
+  const data = JSON.parse(result);
+  data.error.data.stack = '[redacted]';
+
+  expect(data).toMatchInlineSnapshot(`
+    Object {
+      "error": Object {
+        "code": -32700,
+        "data": Object {
+          "code": "PARSE_ERROR",
+          "httpStatus": 400,
+          "stack": "[redacted]",
+        },
+        "message": "\`id\` is required",
+      },
+      "id": null,
+    }
+  `);
+  rawClient.close();
   t.close();
 });
