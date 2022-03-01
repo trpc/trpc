@@ -546,6 +546,16 @@
         "example",
         "test"
       ]
+    },
+    {
+      "login": "ahhshm",
+      "name": "ahhshm",
+      "avatar_url": "https://avatars.githubusercontent.com/u/87268103?v=4",
+      "profile": "https://github.com/ahhshm",
+      "contributions": [
+        "doc",
+        "example"
+      ]
     }
   ],
   "contributorsPerLine": 7,
