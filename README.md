@@ -75,7 +75,7 @@ npx create-next-app --example https://github.com/trpc/trpc --example-path exampl
 
 **Quick start with a full-stack Nuxt example:**
 ```sh
-npx nuxi init tprc --template trpc/trpc/examples/nuxt
+npx nuxi init trpc --template trpc/trpc/examples/nuxt
 ```
 
 ## Core Team
