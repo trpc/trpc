@@ -4,7 +4,7 @@ import { createChain } from '@trpc/client/src/links/internals/createChain';
 import { LinkRuntime, OperationLink } from '@trpc/client/src/links/types';
 import AbortController from 'abort-controller';
 import fetch from 'node-fetch';
-import { firstValueFrom } from 'rxjs';
+import { observableToPromise } from '@trpc/client/rx';
 import { z } from 'zod';
 import { createTRPCClient, TRPCClientError } from '../../client/src';
 import { httpBatchLink } from '../../client/src/links/httpBatchLink';
@@ -53,7 +53,7 @@ test('chainer', async () => {
     },
   });
 
-  const result = await firstValueFrom(chain);
+  const result = await observableToPromise(chain).promise;
   expect(result?.context?.response).toBeTruthy();
   result!.context!.response = '[redacted]' as any;
   expect(result).toMatchInlineSnapshot(`
@@ -151,8 +151,8 @@ describe('batching', () => {
     });
 
     const results = await Promise.all([
-      firstValueFrom(chain1),
-      firstValueFrom(chain2),
+      observableToPromise(chain1).promise,
+      observableToPromise(chain2).promise,
     ]);
     for (const res of results) {
       expect(res?.context?.response).toBeTruthy();
