@@ -583,6 +583,15 @@
       "contributions": [
         "financial"
       ]
+    },
+    {
+      "login": "kevinlangleyjr",
+      "name": "Kevin Langley Jr.",
+      "avatar_url": "https://avatars.githubusercontent.com/u/877634?v=4",
+      "profile": "https://kevinlangleyjr.dev",
+      "contributions": [
+        "doc"
+      ]
     }
   ],
   "contributorsPerLine": 7,
