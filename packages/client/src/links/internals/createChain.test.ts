@@ -8,9 +8,9 @@ describe('chain', () => {
       links: [
         ({ next, op }) => {
           return new Observable((observer) => {
-            const next$ = next(op).subscribe(observer);
+            const subscription = next(op).subscribe(observer);
             return () => {
-              next$.unsubscribe();
+              subscription.unsubscribe();
             };
           });
         },

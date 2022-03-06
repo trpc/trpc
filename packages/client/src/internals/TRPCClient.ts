@@ -226,7 +226,7 @@ export class TRPCClient<TRouter extends AnyRouter> {
       input,
       context: opts.context,
     });
-    const observer = observable$.subscribe({
+    const subscription = observable$.subscribe({
       next(result) {
         if ('error' in result.data) {
           const err = TRPCClientError.from(result.data, {
@@ -246,7 +246,7 @@ export class TRPCClient<TRouter extends AnyRouter> {
       },
     });
     return () => {
-      observer.unsubscribe();
+      subscription.unsubscribe();
     };
   }
 }

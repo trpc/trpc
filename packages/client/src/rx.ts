@@ -24,9 +24,9 @@ export function observableToPromise<TValue>(observable: Observable<TValue>) {
       }
       isDone = true;
       reject(new ObservableAbortError('This operation was cancelled.'));
-      obs$.unsubscribe();
+      subscription.unsubscribe();
     }
-    const obs$ = observable.subscribe({
+    const subscription = observable.subscribe({
       next(data) {
         isDone = true;
         resolve(data);
