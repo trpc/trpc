@@ -7,7 +7,7 @@ export function dedupeLink<
   TRouter extends AnyRouter = AnyRouter,
 >(): TRPCLink<TRouter> {
   // initialized config
-  const hi: TRPCLink<TRouter> = () => {
+  return () => {
     // initialized in app
     const pending: Record<string, Observable<any>> = {};
     return ({ op, next }) => {
@@ -51,6 +51,4 @@ export function dedupeLink<
       return shared$;
     };
   };
-
-  return hi;
 }
