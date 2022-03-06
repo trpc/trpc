@@ -50,13 +50,13 @@ async function start() {
   let randomNumberCount = 0;
 
   await new Promise<void>((resolve) => {
-    const unsub = anon.client.subscription('sub:randomNumber', null, {
+    const subscription = anon.client.subscription('sub:randomNumber', null, {
       next(data) {
         console.log('>>> anon:sub:randomNumber:received:', data);
         randomNumberCount++;
 
         if (randomNumberCount > 3) {
-          unsub();
+          subscription.unsubscribe();
           resolve();
         }
       },
