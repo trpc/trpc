@@ -230,6 +230,7 @@ Also, if your company using tRPC and want to support long-term maintenance of tR
     <td align="center"><a href="https://jamesbe.com"><img src="https://avatars.githubusercontent.com/u/69924001?v=4?s=100" width="100px;" alt=""/><br /><sub><b>James Berry</b></sub></a><br /><a href="https://github.com/trpc/trpc/issues?q=author%3Ajlalmes" title="Bug reports">🐛</a></td>
     <td align="center"><a href="https://jwyce.github.io/portfolio/"><img src="https://avatars.githubusercontent.com/u/16946573?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Jared Wyce</b></sub></a><br /><a href="#financial-jwyce" title="Financial">💵</a></td>
     <td align="center"><a href="https://blog.lucasviana.dev"><img src="https://avatars.githubusercontent.com/u/13911440?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Lucas Viana</b></sub></a><br /><a href="#financial-mechamobau" title="Financial">💵</a></td>
+    <td align="center"><a href="https://kevinlangleyjr.dev"><img src="https://avatars.githubusercontent.com/u/877634?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Kevin Langley Jr.</b></sub></a><br /><a href="https://github.com/trpc/trpc/commits?author=kevinlangleyjr" title="Documentation">📖</a></td>
   </tr>
 </table>
 
