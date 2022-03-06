@@ -18,13 +18,9 @@ import {
   OperationLink,
   TRPCLink,
 } from '../links/types';
-import {
-  inferObservableValue,
-  observableToPromise,
-  UnsubscribeFn,
-} from '../rx';
+import { inferObservableValue, observableToPromise } from '../rx';
 import { share } from 'rxjs/operators';
-import { Observer } from 'rxjs';
+import { Observer, Subscription } from 'rxjs';
 import { TRPCClientError } from '../TRPCClientError';
 import { getAbortController } from './fetchHelpers';
 
@@ -219,14 +215,14 @@ export class TRPCClient<TRouter extends AnyRouter> {
     path: TPath,
     input: TInput,
     opts: TRPCRequestOptions & Partial<Observer<TRPCResult<TOutput>>>,
-  ): UnsubscribeFn {
+  ): Subscription {
     const observable$ = this.$request<TInput, TOutput>({
       type: 'subscription',
       path,
       input,
       context: opts.context,
     });
-    const subscription = observable$.subscribe({
+    return observable$.subscribe({
       next(result) {
         if ('error' in result.data) {
           const err = TRPCClientError.from(result.data, {
@@ -245,8 +241,5 @@ export class TRPCClient<TRouter extends AnyRouter> {
         opts.complete?.();
       },
     });
-    return () => {
-      subscription.unsubscribe();
-    };
   }
 }

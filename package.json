@@ -29,6 +29,7 @@
     "lerna": "lerna",
     "start": "yarn watch",
     "dev": "yarn start",
+    "ts": "tsc --noEmit --incremental --preserveWatchOutput --pretty",
     "test": "cd packages/server && yarn jest",
     "lint": "eslint --ext \".js,.ts,.tsx\" --ignore-path .gitignore .",
     "lint-fix": "yarn lint --fix && manypkg fix",

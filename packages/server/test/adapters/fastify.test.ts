@@ -216,13 +216,17 @@ describe('anonymous user', () => {
     });
 
     const next = jest.fn();
-    const unsub = clients.httpClient.subscription('onMessage', undefined, {
-      next(data) {
-        expectTypeOf(data).not.toBeAny();
-        expectTypeOf(data).toMatchTypeOf<TRPCResult<Message>>();
-        next(data);
+    const subscription = clients.httpClient.subscription(
+      'onMessage',
+      undefined,
+      {
+        next(data) {
+          expectTypeOf(data).not.toBeAny();
+          expectTypeOf(data).toMatchTypeOf<TRPCResult<Message>>();
+          next(data);
+        },
       },
-    });
+    );
 
     await waitFor(() => {
       expect(next).toHaveBeenCalledTimes(3);
@@ -270,8 +274,7 @@ describe('anonymous user', () => {
       ]
     `);
 
-    unsub();
-
+    subscription.unsubscribe();
     await waitFor(() => {
       expect(app.ee.listenerCount('server:msg')).toBe(0);
       expect(app.ee.listenerCount('server:error')).toBe(0);
