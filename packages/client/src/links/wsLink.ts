@@ -6,11 +6,12 @@ import {
   TRPCResponse,
 } from '@trpc/server/rpc';
 import { retryDelay } from '../internals/retryDelay';
-import { UnsubscribeFn } from '../rx';
+
 import { Observable } from 'rxjs';
 import { TRPCClientError } from '../TRPCClientError';
 import { Operation, OperationResultObserver, TRPCLink } from './types';
 
+type UnsubscribeFn = () => void;
 export interface WebSocketClientOptions {
   url: string;
   WebSocket?: WebSocket;

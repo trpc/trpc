@@ -1,7 +1,5 @@
 import { Observable } from 'rxjs';
 
-export type UnsubscribeFn = () => void;
-
 export type inferObservableValue<TObservable extends Observable<any>> =
   TObservable extends Observable<infer TValue> ? TValue : never;
 
