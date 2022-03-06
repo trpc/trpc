@@ -75,7 +75,7 @@ npx create-next-app --example https://github.com/trpc/trpc --example-path exampl
 
 ### Level 2 Maintainers
 
-> Volunteers that actively help out improving the codebase by make PRs and reviewing code
+> Volunteers who actively help out improving the codebase by making PRs and reviewing code
 
 <table>
   <tbody>
