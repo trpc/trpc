@@ -59,13 +59,7 @@ export const postRouter = createRouter()
       const { id } = input;
       const post = await prisma.post.findUnique({
         where: { id },
-        select: {
-          id: true,
-          title: true,
-          text: true,
-          createdAt: true,
-          updatedAt: true,
-        },
+        select: defaultPostSelect,
       });
       if (!post) {
         throw new TRPCError({
