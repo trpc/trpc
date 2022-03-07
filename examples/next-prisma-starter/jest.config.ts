@@ -1,8 +1,10 @@
 import type { Config } from '@jest/types';
-
 import { compilerOptions } from './tsconfig.json';
 
-// From https://stackoverflow.com/a/56792936
+/**
+ * Make `tsconfig.json`'s `paths` work in Jest
+ * @link https://stackoverflow.com/a/56792936
+ */
 function makeModuleNameMapperFromTsConfig(srcPath: string) {
   // Get paths from tsconfig
   const { paths }: { paths: Record<string, string[]> } = compilerOptions;
