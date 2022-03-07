@@ -1,3 +1,6 @@
+/**
+ * Integration test example for the `post` router
+ */
 import { inferMutationInput } from '~/utils/trpc';
 import { appRouter } from './_app';
 
