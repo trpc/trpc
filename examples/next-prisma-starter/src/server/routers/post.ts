@@ -7,6 +7,15 @@ import { createRouter } from '~/server/createRouter';
 import { z } from 'zod';
 import { TRPCError } from '@trpc/server';
 import { prisma } from '../prisma';
+import { Prisma } from '@prisma/client';
+
+const defaultPostSelect = Prisma.validator<Prisma.PostSelect>()({
+  id: true,
+  title: true,
+  text: true,
+  createdAt: true,
+  updatedAt: true,
+});
 
 export const postRouter = createRouter()
   // create
@@ -19,6 +28,7 @@ export const postRouter = createRouter()
     async resolve({ input }) {
       const post = await prisma.post.create({
         data: input,
+        select: defaultPostSelect,
       });
       return post;
     },
@@ -32,10 +42,7 @@ export const postRouter = createRouter()
        */
 
       return prisma.post.findMany({
-        select: {
-          id: true,
-          title: true,
-        },
+        select: defaultPostSelect,
       });
     },
   })
@@ -78,6 +85,7 @@ export const postRouter = createRouter()
       const post = await prisma.post.update({
         where: { id },
         data,
+        select: defaultPostSelect,
       });
       return post;
     },
@@ -90,6 +98,8 @@ export const postRouter = createRouter()
     async resolve({ input }) {
       const { id } = input;
       await prisma.post.delete({ where: { id } });
-      return id;
+      return {
+        id,
+      };
     },
   });
