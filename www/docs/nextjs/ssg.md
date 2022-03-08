@@ -28,7 +28,6 @@ import { appRouter } from 'server/routers/_app';
 import superjson from 'superjson';
 import { trpc } from 'utils/trpc';
 
-
 export async function getStaticProps(
   context: GetStaticPropsContext<{ id: string }>,
 ) {
@@ -38,7 +37,7 @@ export async function getStaticProps(
     transformer: superjson, // optional - adds superjson serialization
   });
   const id = context.params?.id as string;
-  
+
   // prefetch `post.byId`
   await ssg.fetchQuery('post.byId', {
     id,
@@ -71,7 +70,6 @@ export const getStaticPaths: GetStaticPaths = async () => {
   };
 };
 
-
 export default function PostViewPage(
   props: InferGetStaticPropsType<typeof getStaticProps>,
 ) {
@@ -96,3 +94,5 @@ export default function PostViewPage(
   );
 }
 ```
+
+Check out [here](/docs/ssg-helpers) to learn more about `createSSGHelpers`.
