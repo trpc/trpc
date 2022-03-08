@@ -5,11 +5,9 @@ sidebar_label: Server-Side Rendering (SSR)
 slug: /ssr
 ---
 
-> The only thing you need to do to get SSR on your application is to set `ssr: true` in your `_app.tsx`, but it comes with some additional considerations.
+The only thing you need to do to get SSR on your application is to set `ssr: true` in your `_app.tsx`, but it comes with some additional considerations.
 
-### Configure `_app.tsx` for SSR
-
-Server-side rendering comes with additional considerations. In order to execute queries properly during the server-side render step and customize caching behavior, we might want to add some extra logic inside our `_app.tsx`:
+In order to execute queries properly during the server-side render step and customize caching behavior, we might want to add some extra logic inside our `_app.tsx`:
 
 ```tsx
 import React from 'react';
@@ -55,3 +53,7 @@ export default withTRPC<AppRouter>({
   ssr: true,
 })(MyApp);
 ```
+
+## Caveats
+
+When you enable SSR, tRPC will use `getInitialProps` to prefetch all queries on the server. That causes problems [like this](https://github.com/trpc/trpc/issues/596) when you use `getServerSideProps` in a page and solving it is out of our hands. Though, you can use [SSG Helpers](/docs/ssg-helpers) to prefetch queries in `getStaticSiteProps` or `getServerSideProps`.
