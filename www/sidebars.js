@@ -50,6 +50,7 @@ module.exports = {
         'reactjs/mutations',
         'reactjs/useInfiniteQuery',
         'reactjs/invalidateQueries',
+        'reactjs/ssg-helpers',
       ],
     },
     {
