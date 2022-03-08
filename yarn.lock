@@ -6134,9 +6134,9 @@ fastify-warning@^0.2.0:
   integrity sha512-s1EQguBw/9qtc1p/WTY4eq9WMRIACkj+HTcOIK1in4MV5aFaQC9ZCIt0dJ7pr5bIf4lPpHvAtP2ywpTNgs7hqw==
 
 fastify-websocket@^4.0.0:
-  version "4.0.0"
-  resolved "https://registry.yarnpkg.com/fastify-websocket/-/fastify-websocket-4.0.0.tgz#7d22e0fbd15cf64628b3fb77010f65e4880942b5"
-  integrity sha512-XeeE2r4SkkLBp83NZ3BKCEdR6KFPEtiiIAUrvJhsvLJFRCV6BCnF5ZdchZ6ghPQ5rJ1VwcWlajuXHlQWwXX/YQ==
+  version "4.2.0"
+  resolved "https://registry.yarnpkg.com/fastify-websocket/-/fastify-websocket-4.2.0.tgz#058bb05b7c2510557ed255e5202dbbac31ce68dc"
+  integrity sha512-NcwkMqK6za1yR7tAtmWpfxWmCGcYg95zYfSa8+iNyfG8LjTZ3/EUCEtDLScFJ0fbPPMYf5f18ppNnl7MhZzrnQ==
   dependencies:
     fastify-plugin "^3.0.0"
     ws "^8.0.0"
