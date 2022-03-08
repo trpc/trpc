@@ -56,4 +56,4 @@ export default withTRPC<AppRouter>({
 
 ## Caveats
 
-When you enable SSR, tRPC will use `getInitialProps` to prefetch all queries on the server. That causes problems [like this](https://github.com/trpc/trpc/issues/596) when you use `getServerSideProps` in a page and solving it is out of our hands. Though, you can use [SSG Helpers](/docs/ssg-helpers) to prefetch queries in `getStaticSiteProps `or` getServerSideProps`.
+When you enable SSR, tRPC will use `getInitialProps` to prefetch all queries on the server. That causes problems [like this](https://github.com/trpc/trpc/issues/596) when you use `getServerSideProps` in a page and solving it is out of our hands. Though, you can use [SSG Helpers](/docs/ssg-helpers) to prefetch queries in `getStaticSiteProps` or `getServerSideProps`.
