@@ -1,0 +1,26 @@
+name: Format and Lint
+on: [push]
+jobs:
+  format-and-lint:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+
+      - name: Use Node.js 14.x
+        uses: actions/setup-node@v1
+        with:
+          version: 14.x
+
+      - name: Install deps and build (with cache)
+        uses: bahmutov/npm-install@v1
+
+      - name: Format
+        run: yarn format-write
+
+      - name: Lint
+        run: yarn lint
+
+      - run: yarn manypkg check
