@@ -107,7 +107,7 @@
   },
   "gitHead": "3b8e4ed00254f9c9816ffdc4d172c932ea62c3ae",
   "dependencies": {
-    "rxjs": "^7.0.0",
+    "rxjs": "^7.5.4",
     "tslib": "^2.1.0"
   }
 }

@@ -19,8 +19,7 @@ import {
   TRPCLink,
 } from '../links/types';
 import { inferObservableValue, observableToPromise } from '../rx';
-import { share } from 'rxjs/operators';
-import { Observer, Subscription } from 'rxjs';
+import { Observer, Subscription, share } from 'rxjs';
 import { TRPCClientError } from '../TRPCClientError';
 import { getAbortController } from './fetchHelpers';
 

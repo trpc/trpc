@@ -1,6 +1,5 @@
 import { AnyRouter } from '@trpc/server';
-import { Observable } from 'rxjs';
-import { share } from 'rxjs';
+import { Observable, share } from 'rxjs';
 import { OperationResult, TRPCLink } from './types';
 
 export function dedupeLink<
@@ -33,11 +32,9 @@ export function dedupeLink<
               observer.next(v);
             },
             error(e) {
-              reset();
               observer.error(e);
             },
             complete() {
-              reset();
               observer.complete();
             },
           });
