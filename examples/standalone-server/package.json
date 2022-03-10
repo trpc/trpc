@@ -16,7 +16,7 @@
     "@trpc/react": "^9.20.1",
     "@trpc/server": "^9.20.1",
     "abort-controller": "^3.0.0",
-    "node-fetch": "^2.6.1",
+    "node-fetch": "^3.2.2",
     "typescript": "4.4.4",
     "ws": "^8.0.0",
     "zod": "^3.0.0"
