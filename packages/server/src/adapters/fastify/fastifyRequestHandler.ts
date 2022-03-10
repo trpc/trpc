@@ -72,8 +72,8 @@ export async function fastifyRequestHandler<
     if (typeof value === 'undefined') {
       continue;
     }
-    res.header(key, value);
+    void res.header(key, value);
   }
 
-  res.send(result.body);
+  void res.send(result.body);
 }

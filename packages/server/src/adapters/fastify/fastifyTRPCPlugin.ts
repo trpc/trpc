@@ -32,7 +32,7 @@ export function fastifyTRPCPlugin<TRouter extends AnyRouter>(
 
   fastify.all(`${opts.prefix ?? ''}/:path`, (req, res) => {
     const path = (req.params as any).path;
-    fastifyRequestHandler({ ...opts.trpcOptions, req, res, path });
+    void fastifyRequestHandler({ ...opts.trpcOptions, req, res, path });
   });
 
   if (opts.useWSS) {

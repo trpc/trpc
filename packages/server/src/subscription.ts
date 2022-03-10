@@ -147,7 +147,7 @@ export function subscriptionPullFactory<TOutput>(opts: {
   }
 
   return new Subscription<TOutput>((emit) => {
-    _pull(emit);
+    void _pull(emit);
     return () => {
       clearTimeout(timer);
       stopped = true;
