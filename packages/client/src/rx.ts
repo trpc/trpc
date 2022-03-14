@@ -1,4 +1,9 @@
-import { Observable } from 'rxjs';
+import {
+  MonoTypeOperatorFunction,
+  Observable,
+  Subscriber,
+  Subscription,
+} from 'rxjs';
 
 export type inferObservableValue<TObservable extends Observable<any>> =
   TObservable extends Observable<infer TValue> ? TValue : never;
@@ -47,4 +52,31 @@ export function observableToPromise<TValue>(observable: Observable<TValue>) {
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     abort: abort!,
   };
+}
+
+export function share<T>(): MonoTypeOperatorFunction<T> {
+  const subscribers = new Set<Subscriber<T>>();
+  let connection: Subscription | null = null;
+
+  return (source) =>
+    new Observable((subscriber) => {
+      subscribers.add(subscriber);
+      subscriber.add(() => {
+        subscribers.delete(subscriber);
+        if (subscribers.size === 0) {
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+          connection!.unsubscribe();
+          connection = null;
+        }
+      });
+
+      if (!connection) {
+        connection = source.subscribe({
+          next: (value) => subscribers.forEach((s) => s.next(value)),
+          error: (error) => subscribers.forEach((s) => s.error(error)),
+          complete: () => subscribers.forEach((s) => s.complete()),
+        });
+        connection.add(() => subscribers.clear());
+      }
+    });
 }
