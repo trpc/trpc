@@ -320,21 +320,25 @@ export function createReactQueryHooks<
       }
       const [path, input] = pathAndInput;
       let isStopped = false;
-      const unsub = client.subscription(path, (input ?? undefined) as any, {
-        error: (err) => {
-          if (!isStopped) {
-            opts.error?.(err);
-          }
+      const subscription = client.subscription(
+        path,
+        (input ?? undefined) as any,
+        {
+          error: (err) => {
+            if (!isStopped) {
+              opts.error?.(err);
+            }
+          },
+          next: (res) => {
+            if (res.type === 'data' && !isStopped) {
+              opts.next(res.data);
+            }
+          },
         },
-        next: (res) => {
-          if (res.type === 'data' && !isStopped) {
-            opts.next(res.data);
-          }
-        },
-      });
+      );
       return () => {
         isStopped = true;
-        unsub();
+        subscription.unsubscribe();
       };
       // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [queryKey, enabled]);

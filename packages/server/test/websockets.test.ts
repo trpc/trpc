@@ -144,7 +144,7 @@ test('basic subscription test', async () => {
     });
   });
   const next = jest.fn();
-  const unsub = client.subscription('onMessage', undefined, {
+  const subscription = client.subscription('onMessage', undefined, {
     next(data) {
       expectTypeOf(data).not.toBeAny();
       expectTypeOf(data).toMatchTypeOf<TRPCResult<Message>>();
@@ -197,7 +197,7 @@ test('basic subscription test', async () => {
     ]
   `);
 
-  unsub();
+  subscription.unsubscribe();
   await waitFor(() => {
     expect(ee.listenerCount('server:msg')).toBe(0);
     expect(ee.listenerCount('server:error')).toBe(0);
