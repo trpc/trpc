@@ -530,8 +530,12 @@ test('chain makes unsub', async () => {
             ({ next, op }) =>
               observable((observer) => {
                 next(op).subscribe({
-                  next: observer.next,
-                  error: observer.error,
+                  error(err) {
+                    observer.error(err);
+                  },
+                  next(v) {
+                    observer.next(v);
+                  },
                   complete() {
                     firstLinkCompleteSpy();
                     observer.complete();

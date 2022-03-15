@@ -60,8 +60,12 @@ export function transformerLink<TRouter extends AnyRouter = AnyRouter>(
             const transformed = transformOperationResult(value, _transformer);
             observer.next(transformed);
           },
-          error: observer.error,
-          complete: observer.complete,
+          error(err) {
+            observer.error(err);
+          },
+          complete() {
+            observer.complete();
+          },
         });
         return next$;
       });
