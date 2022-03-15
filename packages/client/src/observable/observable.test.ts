@@ -3,7 +3,7 @@ import { observable } from './observable';
 import { tap } from './operators';
 import { share } from './operators/share';
 
-test('vanilla observable', () => {
+test('vanilla observable - complete()', () => {
   const obs = observable<number, Error>((observer) => {
     observer.next(1);
     observer.complete();
@@ -19,6 +19,26 @@ test('vanilla observable', () => {
   });
   expect(next.mock.calls).toHaveLength(1);
   expect(complete.mock.calls).toHaveLength(1);
+  expect(error.mock.calls).toHaveLength(0);
+  expect(next.mock.calls[0][0]).toBe(1);
+});
+
+test('vanilla observable - unsubscribe()', () => {
+  const obs$ = observable<number, Error>((observer) => {
+    observer.next(1);
+  });
+
+  const next = jest.fn();
+  const error = jest.fn();
+  const complete = jest.fn();
+  const sub = obs$.subscribe({
+    next,
+    error,
+    complete,
+  });
+  sub.unsubscribe();
+  expect(next.mock.calls).toHaveLength(1);
+  expect(complete.mock.calls).toHaveLength(0);
   expect(error.mock.calls).toHaveLength(0);
   expect(next.mock.calls[0][0]).toBe(1);
 });
