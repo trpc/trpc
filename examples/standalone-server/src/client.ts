@@ -49,14 +49,14 @@ async function main() {
   console.log('createPostResponse', createPostRes);
 
   let count = 0;
-  const unsub = client.subscription('randomNumber', null, {
+  const subscription = client.subscription('randomNumber', null, {
     next(data) {
       // ^ note that `data` here is inferred
       console.log('received', data);
       count++;
       if (count > 3) {
         // stop after 3 pulls
-        unsub();
+        subscription.unsubscribe();
       }
     },
     error(err) {
