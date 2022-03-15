@@ -1,5 +1,5 @@
 import { createTRPCClient } from '@trpc/client';
-import { httpBatchLink, loggerLink } from '@trpc/client/links';
+import { httpBatchLink, loggerLink } from '@trpc/client';
 import { tap } from '@trpc/client/observable';
 import AbortController from 'abort-controller';
 import fetch from 'node-fetch';
