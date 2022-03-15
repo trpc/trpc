@@ -1,8 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { createTRPCClient } from '@trpc/client';
-import { httpLink } from '@trpc/client/links/httpLink';
-import { splitLink } from '@trpc/client/links/splitLink';
-import { createWSClient, wsLink } from '@trpc/client/links/wsLink';
+import { httpLink } from '@trpc/client';
+import { splitLink } from '@trpc/client';
+import { createWSClient, wsLink } from '@trpc/client';
 import AbortController from 'abort-controller';
 import fetch from 'node-fetch';
 import ws from 'ws';

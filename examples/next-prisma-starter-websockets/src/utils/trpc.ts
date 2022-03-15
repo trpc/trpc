@@ -1,6 +1,6 @@
-import { httpBatchLink } from '@trpc/client/links/httpBatchLink';
-import { loggerLink } from '@trpc/client/links/loggerLink';
-import { transformerLink } from '@trpc/client/links/transformerLink';
+import { httpBatchLink } from '@trpc/client';
+import { loggerLink } from '@trpc/client';
+import { transformerLink } from '@trpc/client';
 import { setupTRPC } from '@trpc/next';
 import type { inferProcedureInput, inferProcedureOutput } from '@trpc/server';
 // ℹ️ Type-only import:
@@ -8,7 +8,7 @@ import type { inferProcedureInput, inferProcedureOutput } from '@trpc/server';
 import type { AppRouter } from 'server/routers/_app';
 import superjson from 'superjson';
 import getConfig from 'next/config';
-import { createWSClient, wsLink } from '@trpc/client/links/wsLink';
+import { createWSClient, wsLink } from '@trpc/client';
 const { publicRuntimeConfig } = getConfig();
 
 const { APP_URL, WS_URL } = publicRuntimeConfig;
