@@ -4,7 +4,7 @@ import { loggerLink } from '@trpc/client/links/loggerLink';
 import AbortController from 'abort-controller';
 import fetch from 'node-fetch';
 import type { AppRouter } from './server';
-import { tap } from '@trpc/client/observable/operators';
+import { tap } from '@trpc/client/observable';
 
 // polyfill
 global.AbortController = AbortController;
