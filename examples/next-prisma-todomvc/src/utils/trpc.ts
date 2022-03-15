@@ -1,11 +1,8 @@
-import { httpBatchLink } from '@trpc/client';
-import { loggerLink } from '@trpc/client';
-import { transformerLink } from '@trpc/client';
+import { httpBatchLink, loggerLink, transformerLink } from '@trpc/client';
 import { setupTRPC } from '@trpc/next';
 import type { inferProcedureInput, inferProcedureOutput } from '@trpc/server';
 // ℹ️ Type-only import:
 // https://www.typescriptlang.org/docs/handbook/release-notes/typescript-3-8.html#type-only-imports-and-export
-
 import superjson from 'superjson';
 import { AppRouter } from '../server/routers/_app';
 

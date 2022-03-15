@@ -1,6 +1,4 @@
-import { httpBatchLink } from '@trpc/client';
-import { loggerLink } from '@trpc/client';
-import { transformerLink } from '@trpc/client';
+import { httpBatchLink, loggerLink, transformerLink } from '@trpc/client';
 import { setupTRPC } from '@trpc/next';
 import type { inferProcedureInput, inferProcedureOutput } from '@trpc/server';
 // ℹ️ Type-only import:
