@@ -203,7 +203,7 @@ function createAppRouter() {
               ({ op, next }) => {
                 return observable((observer) => {
                   linkSpy.up(op);
-                  const next$ = next(op).subscribe({
+                  const subscription = next(op).subscribe({
                     next(result) {
                       linkSpy.down(result);
                       observer.next(result);
@@ -217,7 +217,7 @@ function createAppRouter() {
                       observer.complete();
                     },
                   });
-                  return next$;
+                  return subscription;
                 });
               },
             splitLink({

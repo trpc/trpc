@@ -28,7 +28,7 @@ export function dedupeLink<
         function reset() {
           delete pending[key];
         }
-        const next$ = next(op).subscribe({
+        const subscription = next(op).subscribe({
           next(v) {
             observer.next(v);
           },
@@ -43,7 +43,7 @@ export function dedupeLink<
         });
         return () => {
           reset();
-          next$.unsubscribe();
+          subscription.unsubscribe();
         };
       }).pipe(share());
       pending[key] = shared$;
