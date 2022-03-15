@@ -53,11 +53,6 @@
       "import": "./dist/observable/index.mjs",
       "require": "./dist/observable/index.js",
       "default": "./dist/observable/index.js"
-    },
-    "./observable/operators": {
-      "import": "./dist/observable/operators/index.mjs",
-      "require": "./dist/observable/operators/index.js",
-      "default": "./dist/observable/operators/index.js"
     }
   },
   "files": [

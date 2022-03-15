@@ -10,7 +10,6 @@ const config = getRollupConfig({
     'src/links/transformerLink.ts',
     'src/links/wsLink.ts',
     'src/observable/index.ts',
-    'src/observable/operators/index.ts',
   ],
 });
 
