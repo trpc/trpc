@@ -4,7 +4,7 @@ import { createChain } from '@trpc/client/src/links/internals/createChain';
 import { LinkRuntime, OperationLink } from '@trpc/client/src/links/types';
 import AbortController from 'abort-controller';
 import fetch from 'node-fetch';
-import { observableToPromise } from '../../client/src/observable/util/observableToPromise';
+import { observableToPromise } from '@trpc/client/src/observable/internals/observableToPromise';
 import { z } from 'zod';
 import { createTRPCClient, TRPCClientError } from '../../client/src';
 import { httpBatchLink } from '../../client/src/links/httpBatchLink';

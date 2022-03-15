@@ -22,7 +22,7 @@ import { Unsubscribable } from '../observable';
 import { inferObservableValue } from '../observable/observable';
 import { share } from '../observable/operators';
 import { Observer } from '../observable/types';
-import { observableToPromise } from '../observable/util/observableToPromise';
+import { observableToPromise } from '../observable/internals/observableToPromise';
 import { TRPCClientError } from '../TRPCClientError';
 import { getAbortController } from './fetchHelpers';
 
