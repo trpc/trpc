@@ -1,7 +1,7 @@
 import { AnyRouter } from '@trpc/server';
 import { TRPCClientError } from '..';
-import { observable } from '../rx/observable';
-import { tap } from '../rx/operators';
+import { observable } from '../observable/observable';
+import { tap } from '../observable/operators';
 import { Operation, OperationResult, TRPCLink } from './types';
 
 type ConsoleEsque = {

@@ -49,15 +49,15 @@
       "require": "./dist/links/wsLink.js",
       "default": "./dist/links/wsLink.js"
     },
-    "./rx": {
-      "import": "./dist/rx/index.mjs",
-      "require": "./dist/rx/index.js",
-      "default": "./dist/rx/index.js"
+    "./observable": {
+      "import": "./dist/observable/index.mjs",
+      "require": "./dist/observable/index.js",
+      "default": "./dist/observable/index.js"
     },
-    "./rx/operators": {
-      "import": "./dist/rx/operators/index.mjs",
-      "require": "./dist/rx/operators/index.js",
-      "default": "./dist/rx/operators/index.js"
+    "./observable/operators": {
+      "import": "./dist/observable/operators/index.mjs",
+      "require": "./dist/observable/operators/index.js",
+      "default": "./dist/observable/operators/index.js"
     }
   },
   "files": [

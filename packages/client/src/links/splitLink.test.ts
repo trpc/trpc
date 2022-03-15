@@ -3,7 +3,7 @@ import { AnyRouter } from '../../../server/src';
 import { createChain } from '../links/internals/createChain';
 import { splitLink } from '../links/splitLink';
 import { OperationLink, TRPCLink } from '../links/types';
-import { observable } from '../rx';
+import { observable } from '../observable';
 
 test('splitLink', () => {
   const wsLinkSpy = jest.fn();

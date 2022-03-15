@@ -3,7 +3,7 @@ import {
   ClientDataTransformerOptions,
   DataTransformer,
 } from '@trpc/server';
-import { observable } from '../rx/observable';
+import { observable } from '../observable/observable';
 import { OperationResult, TRPCLink } from './types';
 
 /**

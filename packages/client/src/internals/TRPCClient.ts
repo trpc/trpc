@@ -18,11 +18,11 @@ import {
   OperationLink,
   TRPCLink,
 } from '../links/types';
-import { UnsubscribeFn } from '../rx';
-import { inferObservableValue } from '../rx/observable';
-import { share } from '../rx/operators';
-import { Observer } from '../rx/types';
-import { observableToPromise } from '../rx/util/observableToPromise';
+import { UnsubscribeFn } from '../observable';
+import { inferObservableValue } from '../observable/observable';
+import { share } from '../observable/operators';
+import { Observer } from '../observable/types';
+import { observableToPromise } from '../observable/util/observableToPromise';
 import { TRPCClientError } from '../TRPCClientError';
 import { getAbortController } from './fetchHelpers';
 
