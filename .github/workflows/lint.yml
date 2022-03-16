@@ -1,5 +1,8 @@
 name: Lint
 on: [push]
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 jobs:
   lint:
     runs-on: ubuntu-latest
@@ -19,5 +22,5 @@ jobs:
 
       - name: Lint
         run: yarn lint
-      
+
       - run: yarn manypkg check
