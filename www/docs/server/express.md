@@ -1,10 +1,9 @@
 ---
 id: express
 title: Usage with Express.js
-sidebar_label: "Adapter: Express.js"
+sidebar_label: 'Adapter: Express.js'
 slug: /express
 ---
-
 
 ## Example app
 
@@ -31,8 +30,6 @@ slug: /express
 </table>
 
 ## How to add tRPC to existing Express.js project
-
-
 
 ### 1. Install deps
 

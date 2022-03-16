@@ -2,9 +2,7 @@
 
 > ℹ️ WebSockets is a beta feature & may change without major version bump ℹ️
 
-
 - Try demo http://websockets.trpc.io/
-
 
 ## Features
 
@@ -19,7 +17,6 @@
   - ✅ E2E testing with [Playwright](https://playwright.dev/)
   - ✅ Linting
 
-
 ## Setup
 
 ```bash
@@ -33,10 +30,9 @@ yarn dev
 
 ### Using [Render](https://render.com/)
 
-The project contains a [`render.yaml`](./render.yaml) [*"Blueprint"*](https://render.com/docs/blueprint-spec) which makes the project easily deployable on [Render](https://render.com/).
+The project contains a [`render.yaml`](./render.yaml) [_"Blueprint"_](https://render.com/docs/blueprint-spec) which makes the project easily deployable on [Render](https://render.com/).
 
 Go to [dashboard.render.com/blueprints](https://dashboard.render.com/blueprints) and connect to this Blueprint and see how the app and database automatically gets deployed.
-
 
 ## Files of note
 
@@ -72,6 +68,7 @@ yarn test-dev # runs e2e tests on dev
 yarn test-start # runs e2e tests on `next start` - build required before
 yarn dev-nuke # resets local db
 ```
+
 ---
 
 Created by [@alexdotjs](https://twitter.com/alexdotjs).

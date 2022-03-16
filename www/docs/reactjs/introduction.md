@@ -9,7 +9,7 @@ slug: /react
 
 - If you're using Next.js, read the [Usage with Next.js](/docs/nextjs) guide instead.
 - In order to infer types from your Node.js backend you should have the frontend & backend in the same monorepo.
-:::
+  :::
 
 ## Add tRPC to existing React project
 
@@ -64,6 +64,7 @@ Follow the [Quickstart](/docs/quickstart) and read the [`@trpc/server` docs](/do
 ```bash
 yarn add @trpc/client @trpc/server @trpc/react react-query
 ```
+
 - @trpc/server: This is a peer dependency of `@trpc/client` so you have to install it again!
 - React Query: @trpc/react provides a thin wrapper over react-query. It is required as a peer dependency.
 

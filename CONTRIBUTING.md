@@ -8,7 +8,6 @@ yarn
 
 ## Hacking around with it
 
-
 In one terminal, will run `preconstruct watch` in parallel which builds all `packages/*` on change:
 
 ```bash

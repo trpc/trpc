@@ -13,8 +13,6 @@ slug: /useInfiniteQuery
 
 :::
 
-
-
 ## Example Procedure
 
 ```tsx
@@ -55,7 +53,6 @@ trpc.router<Context>()
     })
 ```
 
-
 ## Example React Component
 
 ```tsx
@@ -75,7 +72,6 @@ function MyComponent() {
   );
   // [...]
 }
-
 ```
 
 ## Helpers
@@ -93,13 +89,14 @@ function MyComponent() {
   const myMutation = trpc.useMutation('infinitePosts.add', {
     onMutate({ post }) {
       await utils.cancelQuery(['infinitePosts']);
-      const allPosts = utils.getInfiniteQueryData(['infinitePosts', { limit: 10 }]);
+      const allPosts = utils.getInfiniteQueryData([
+        'infinitePosts',
+        { limit: 10 },
+      ]);
       // [...]
-    }
-  })
+    },
+  });
 }
-
-
 ```
 
 ### `setInfiniteQueryData()`
