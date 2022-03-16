@@ -18,7 +18,7 @@ jobs:
         uses: bahmutov/npm-install@v1
 
       - name: Format
-        run: yarn format-write
+        run: yarn format
 
       - name: Lint
         run: yarn lint
