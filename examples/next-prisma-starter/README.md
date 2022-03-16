@@ -86,7 +86,7 @@ Go to [dashboard.render.com/blueprints](https://dashboard.render.com/blueprints)
       <td>tRPC response handler</td>
     </tr>
     <tr>
-      <td><a href="./src/routers"><code>./src/routers</code></a></td>
+      <td><a href="./src/server/routers"><code>./src/server/routers</code></a></td>
       <td>Your app's different tRPC-routers</td>
     </tr>
   </tbody>
