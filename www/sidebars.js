@@ -8,8 +8,8 @@ module.exports = {
         'main/introduction',
         'main/quickstart',
         'main/example-apps',
-        'nextjs/intro',
-        'react/intro',
+        'nextjs/introduction',
+        'reactjs/introduction',
         'main/contributing',
         'main/love',
         'main/sponsors',
@@ -38,11 +38,7 @@ module.exports = {
       type: 'category',
       label: '@trpc/client',
       collapsed: false,
-      items: [
-        //
-        'client/vanilla',
-        'client/links',
-      ],
+      items: ['client/vanilla', 'client/links'],
     },
 
     {
@@ -50,10 +46,11 @@ module.exports = {
       label: '@trpc/react',
       collapsed: false,
       items: [
-        'react/queries',
-        'react/mutations',
-        'react/useInfiniteQuery',
-        'react/invalidateQueries',
+        'reactjs/queries',
+        'reactjs/mutations',
+        'reactjs/useInfiniteQuery',
+        'reactjs/invalidateQueries',
+        'reactjs/ssg-helpers',
       ],
     },
     {

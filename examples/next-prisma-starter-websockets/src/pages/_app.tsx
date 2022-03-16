@@ -1,12 +1,16 @@
-import { getSession, Provider } from 'next-auth/client';
+import { getSession, SessionProvider } from 'next-auth/react';
+import getConfig from 'next/config';
 import { AppType } from 'next/dist/shared/lib/utils';
 import { trpc } from 'utils/trpc';
+const { publicRuntimeConfig } = getConfig();
+
+const { APP_URL, WS_URL } = publicRuntimeConfig;
 
 const MyApp: AppType = ({ Component, pageProps }) => {
   return (
-    <Provider session={pageProps.session}>
+    <SessionProvider session={pageProps.session}>
       <Component {...pageProps} />
-    </Provider>
+    </SessionProvider>
   );
 };
 

@@ -16,7 +16,7 @@
 
 **yarn:**
 ```bash
-yarn create-next-app --example https://github.com/trpc/trpc --example-path examples/next-prisma-starter trpc-prisma-starter
+yarn create next-app --example https://github.com/trpc/trpc --example-path examples/next-prisma-starter trpc-prisma-starter
 cd trpc-prisma-starter
 yarn
 yarn dx
@@ -41,7 +41,7 @@ yarn dx
 ### Start project
 
 ```bash
-yarn create-next-app --example https://github.com/trpc/trpc --example-path examples/next-prisma-starter trpc-prisma-starter
+yarn create next-app --example https://github.com/trpc/trpc --example-path examples/next-prisma-starter trpc-prisma-starter
 cd trpc-prisma-starter
 yarn
 yarn dx
@@ -82,11 +82,11 @@ Go to [dashboard.render.com/blueprints](https://dashboard.render.com/blueprints)
       <td>Prisma schema</td>
     </tr>
     <tr>
-      <td><a href="./src/api/trpc/[trpc].tsx"><code>./src/api/trpc/[trpc].tsx</code></a></td>
+      <td><a href="./src/pages/api/trpc/[trpc].ts"><code>./src/pages/api/trpc/[trpc].ts</code></a></td>
       <td>tRPC response handler</td>
     </tr>
     <tr>
-      <td><a href="./src/routers"><code>./src/routers</code></a></td>
+      <td><a href="./src/server/routers"><code>./src/server/routers</code></a></td>
       <td>Your app's different tRPC-routers</td>
     </tr>
   </tbody>
