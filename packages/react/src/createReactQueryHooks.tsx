@@ -124,14 +124,12 @@ export function createReactQueryHooks<
     children,
     isPrepass = false,
     ssrContext,
-    ssrEnabled = false,
   }: {
     queryClient: QueryClient;
     client: TRPCClient<TRouter>;
     children: ReactNode;
     isPrepass?: boolean;
     ssrContext?: TSSRContext | null;
-    ssrEnabled?: boolean;
   }) {
     return (
       <Context.Provider
@@ -140,7 +138,7 @@ export function createReactQueryHooks<
           client,
           isPrepass,
           ssrContext: ssrContext || null,
-          ssrEnabled,
+
           fetchQuery: useCallback(
             (pathAndInput, opts) => {
               return queryClient.fetchQuery(

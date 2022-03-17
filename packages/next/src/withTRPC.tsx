@@ -113,7 +113,6 @@ export function withTRPC<TRouter extends AnyRouter>(
           queryClient={queryClient}
           isPrepass={isPrepass}
           ssrContext={ssrContext}
-          ssrEnabled={opts.ssr}
         >
           <QueryClientProvider client={queryClient}>
             <Hydrate state={hydratedState}>
