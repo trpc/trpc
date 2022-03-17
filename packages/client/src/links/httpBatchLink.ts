@@ -1,12 +1,12 @@
 import { AnyRouter, ProcedureType } from '@trpc/server';
 import { dataLoader } from '../internals/dataLoader';
-import { observable } from '../observable/observable';
-import { TRPCLink } from './types';
+import { observable } from '../observable';
 import {
   HTTPLinkOptions,
   httpRequest,
   ResponseShape,
 } from './internals/httpUtils';
+import { TRPCLink } from './types';
 
 export interface HttpBatchLinkOptions extends HTTPLinkOptions {
   maxBatchSize?: number;

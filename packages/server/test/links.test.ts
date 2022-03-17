@@ -14,7 +14,7 @@ import {
   retryLink,
   TRPCClientError,
 } from '../../client/src';
-import { observable } from '../../client/src/observable/observable';
+import { observable } from '../../client/src/observable';
 import * as trpc from '../src';
 import { AnyRouter } from '../src';
 import { routerToServerAndClient } from './_testHelpers';

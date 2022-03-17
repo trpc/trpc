@@ -1,7 +1,7 @@
 import { waitFor } from '@testing-library/dom';
 import { AnyRouter } from '@trpc/server';
 import { OperationLink } from '..';
-import { observable } from '../observable/observable';
+import { observable } from '../observable';
 import { dedupeLink } from './dedupeLink';
 import { createChain } from './internals/createChain';
 

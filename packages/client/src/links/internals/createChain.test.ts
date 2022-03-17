@@ -1,6 +1,6 @@
 import { AnyRouter } from '@trpc/server/src';
+import { observable } from '../../observable';
 import { createChain } from './createChain';
-import { observable } from '../../observable/observable';
 
 describe('chain', () => {
   test('trivial', () => {

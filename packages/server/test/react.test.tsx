@@ -33,7 +33,7 @@ import {
 import { splitLink } from '../../client/src/links/splitLink';
 import { AppType } from 'next/dist/shared/lib/utils';
 import { TRPCError } from '../src/TRPCError';
-import { observable } from '../../client/src/observable/observable';
+import { observable } from '../../client/src/observable';
 
 setLogger({
   log() {},
