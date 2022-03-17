@@ -3,11 +3,12 @@ import devalue from 'devalue';
 import fetch from 'node-fetch';
 import superjson from 'superjson';
 import { z } from 'zod';
-import { TRPCClientError } from '../../client/src';
-import { httpBatchLink } from '../../client/src/links/httpBatchLink';
-import { httpLink } from '../../client/src/links/httpLink';
-import { transformerLink } from '../../client/src/links/transformerLink';
-
+import {
+  httpBatchLink,
+  httpLink,
+  transformerLink,
+  TRPCClientError,
+} from '../../client/src';
 import * as trpc from '../src';
 import { TRPCError } from '../src/TRPCError';
 import { routerToServerAndClient, waitError } from './_testHelpers';

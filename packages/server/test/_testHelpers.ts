@@ -6,7 +6,7 @@ import {
   createWSClient,
   WebSocketClientOptions,
   TRPCWebSocketClient,
-} from '../../client/src/links/wsLink';
+} from '../../client/src';
 import ws from 'ws';
 import { createTRPCClient, CreateTRPCClientOptions } from '../../client/src';
 import { AnyRouter, CreateHttpHandlerOptions } from '../src';

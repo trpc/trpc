@@ -8,7 +8,7 @@ import {
 import { TRPCResult } from '@trpc/server/rpc';
 import { CancelFn } from '..';
 import { getFetch } from '../getFetch';
-import { httpBatchLink } from '../links/httpBatchLink';
+import { httpBatchLink } from '../links';
 import { createChain } from '../links/internals/createChain';
 import { transformOperationResult } from '../links/internals/transformOperationResult';
 import {

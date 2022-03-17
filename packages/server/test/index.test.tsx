@@ -8,7 +8,7 @@ import * as trpc from '../src';
 import { CreateHttpContextOptions, Maybe, TRPCError } from '../src';
 import { routerToServerAndClient, waitError } from './_testHelpers';
 import { waitFor } from '@testing-library/react';
-import { httpBatchLink } from '../../client/src/links/httpBatchLink';
+import { httpBatchLink } from '../../client/src';
 
 test('smoke test', async () => {
   const { client, close } = routerToServerAndClient(
