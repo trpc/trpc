@@ -1,6 +1,6 @@
 import { AnyRouter } from '@trpc/server/src';
+import { observable } from '../../observable';
 import { createChain } from './createChain';
-import { observable } from '../../rx/observable';
 
 describe('chain', () => {
   test('trivial', () => {
@@ -8,9 +8,9 @@ describe('chain', () => {
       links: [
         ({ next, op }) => {
           return observable((observer) => {
-            const next$ = next(op).subscribe(observer);
+            const subscription = next(op).subscribe(observer);
             return () => {
-              next$.unsubscribe();
+              subscription.unsubscribe();
             };
           });
         },
@@ -62,9 +62,9 @@ describe('chain', () => {
                 },
               },
             });
-            const next$ = next(op).subscribe(observer);
+            const subscription = next(op).subscribe(observer);
             return () => {
-              next$.unsubscribe();
+              subscription.unsubscribe();
             };
           });
         },

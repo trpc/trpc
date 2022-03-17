@@ -1,6 +1,6 @@
 {
   "name": "@examples/next-starter",
-  "version": "10.0.0-alpha.15",
+  "version": "10.0.0-alpha.18",
   "private": true,
   "scripts": {
     "build:1-migrate": "prisma migrate deploy",
@@ -33,10 +33,10 @@
   },
   "dependencies": {
     "@prisma/client": "^3.8.1",
-    "@trpc/client": "^10.0.0-alpha.15",
-    "@trpc/next": "^10.0.0-alpha.15",
-    "@trpc/react": "^10.0.0-alpha.15",
-    "@trpc/server": "^10.0.0-alpha.15",
+    "@trpc/client": "^10.0.0-alpha.18",
+    "@trpc/next": "^10.0.0-alpha.18",
+    "@trpc/react": "^10.0.0-alpha.18",
+    "@trpc/server": "^10.0.0-alpha.18",
     "clsx": "^1.1.1",
     "next": "^12.0.1",
     "react": "^17.0.2",

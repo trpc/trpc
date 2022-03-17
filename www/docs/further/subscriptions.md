@@ -101,8 +101,8 @@ You can [use Links](../client/links.md) to route queries and/or mutations to HTT
 :::
 
 ```tsx
-import { createWSClient, wsLink } from '@trpc/client/links/wsLink';
-import { httpBatchLink } from '@trpc/client/links/httpBatchLink';
+import { createWSClient, wsLink } from '@trpc/client';
+import { httpBatchLink } from '@trpc/client';
 
 // create persistent WebSocket connection
 const wsClient = createWSClient({

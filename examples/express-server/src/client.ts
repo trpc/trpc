@@ -1,10 +1,8 @@
-import { createTRPCClient } from '@trpc/client';
-import { httpBatchLink } from '@trpc/client/links/httpBatchLink';
-import { loggerLink } from '@trpc/client/links/loggerLink';
+import { createTRPCClient, httpBatchLink, loggerLink } from '@trpc/client';
+import { tap } from '@trpc/client/observable';
 import AbortController from 'abort-controller';
 import fetch from 'node-fetch';
 import type { AppRouter } from './server';
-import { tap } from '@trpc/client/rx/operators';
 
 // polyfill
 global.AbortController = AbortController;

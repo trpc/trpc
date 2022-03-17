@@ -7,7 +7,7 @@ import { EventEmitter } from 'events';
 import { expectTypeOf } from 'expect-type';
 import { default as WebSocket, default as ws } from 'ws';
 import { z } from 'zod';
-import { wsLink } from '../../client/src/links/wsLink';
+import { wsLink } from '../../client/src';
 import * as trpc from '../src';
 import { TRPCError } from '../src';
 import { TRPCRequest, TRPCResult } from '../src/rpc';
@@ -144,7 +144,7 @@ test('basic subscription test', async () => {
     });
   });
   const next = jest.fn();
-  const unsub = client.subscription('onMessage', undefined, {
+  const subscription = client.subscription('onMessage', undefined, {
     next(data) {
       expectTypeOf(data).not.toBeAny();
       expectTypeOf(data).toMatchTypeOf<TRPCResult<Message>>();
@@ -197,7 +197,7 @@ test('basic subscription test', async () => {
     ]
   `);
 
-  unsub();
+  subscription.unsubscribe();
   await waitFor(() => {
     expect(ee.listenerCount('server:msg')).toBe(0);
     expect(ee.listenerCount('server:error')).toBe(0);

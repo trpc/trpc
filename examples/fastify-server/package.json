@@ -1,6 +1,6 @@
 {
   "name": "@examples/fastify-server",
-  "version": "10.0.0-alpha.15",
+  "version": "10.0.0-alpha.18",
   "private": true,
   "scripts": {
     "build": "tsc",
@@ -15,8 +15,8 @@
     "test-start": "start-server-and-test 'node dist/server' http-get://localhost:2022 'node dist/client'"
   },
   "dependencies": {
-    "@trpc/client": "^10.0.0-alpha.15",
-    "@trpc/server": "^10.0.0-alpha.15",
+    "@trpc/client": "^10.0.0-alpha.18",
+    "@trpc/server": "^10.0.0-alpha.18",
     "abort-controller": "^3.0.0",
     "fastify": "^3.27.1",
     "fastify-plugin": "^3.0.1",

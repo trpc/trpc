@@ -34,7 +34,7 @@ import type { AppRouter } from 'pages/api/trpc/[trpc]';
 import { withTRPC } from '@trpc/next';
 import { AppType } from 'next/dist/shared/lib/utils';
 // 👇 import the httpBatchLink
-import { httpBatchLink } from '@trpc/client/links/httpBatchLink';
+import { httpBatchLink } from '@trpc/client';
 
 const MyApp: AppType = ({ Component, pageProps }) => {
   return <Component {...pageProps} />;
@@ -78,7 +78,7 @@ import type { AppRouter } from 'pages/api/trpc/[trpc]';
 import { withTRPC } from '@trpc/next';
 import { AppType } from 'next/dist/shared/lib/utils';
 // 👇 import the httpLink
-import { httpLink } from '@trpc/client/links/httpLink';
+import { httpLink } from '@trpc/client';
 
 const MyApp: AppType = ({ Component, pageProps }) => {
   return <Component {...pageProps} />;
@@ -107,9 +107,9 @@ export default withTRPC<AppRouter>({
 
 ```tsx
 import { withTRPC } from '@trpc/next';
-import { httpBatchLink } from '@trpc/client/links/httpBatchLink';
-import { httpLink } from '@trpc/client/links/httpLink';
-import { splitLink } from '@trpc/client/links/splitLink';
+import { httpBatchLink } from '@trpc/client';
+import { httpLink } from '@trpc/client';
+import { splitLink } from '@trpc/client';
 
 // [..]
 export default withTRPC<AppRouter>({
@@ -164,7 +164,7 @@ const postResult = client.query('posts', null, {
 ```tsx
 import { TRPCLink } from '@trpc/client';
 import { AppRouter } from 'server/routers/_app';
-import { observable } from '@trpc/client/rx';
+import { observable } from '@trpc/client/observable';
 
 export const customLink: TRPCLink<AppRouter> = () => {
   // here we just got initialized in the app - this happens once per app

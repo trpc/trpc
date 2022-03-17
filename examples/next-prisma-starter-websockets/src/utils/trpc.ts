@@ -1,14 +1,17 @@
-import { httpBatchLink } from '@trpc/client/links/httpBatchLink';
-import { loggerLink } from '@trpc/client/links/loggerLink';
-import { transformerLink } from '@trpc/client/links/transformerLink';
+import {
+  createWSClient,
+  httpBatchLink,
+  loggerLink,
+  transformerLink,
+  wsLink,
+} from '@trpc/client';
 import { setupTRPC } from '@trpc/next';
 import type { inferProcedureInput, inferProcedureOutput } from '@trpc/server';
+import getConfig from 'next/config';
 // ℹ️ Type-only import:
 // https://www.typescriptlang.org/docs/handbook/release-notes/typescript-3-8.html#type-only-imports-and-export
 import type { AppRouter } from 'server/routers/_app';
 import superjson from 'superjson';
-import getConfig from 'next/config';
-import { createWSClient, wsLink } from '@trpc/client/links/wsLink';
 const { publicRuntimeConfig } = getConfig();
 
 const { APP_URL, WS_URL } = publicRuntimeConfig;

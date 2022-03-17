@@ -33,7 +33,7 @@ import {
 import { splitLink } from '../../client/src/links/splitLink';
 import { AppType } from 'next/dist/shared/lib/utils';
 import { TRPCError } from '../src/TRPCError';
-import { observable } from '../../client/src/rx/observable';
+import { observable } from '../../client/src/observable';
 
 setLogger({
   log() {},
@@ -203,7 +203,7 @@ function createAppRouter() {
               ({ op, next }) => {
                 return observable((observer) => {
                   linkSpy.up(op);
-                  const next$ = next(op).subscribe({
+                  const subscription = next(op).subscribe({
                     next(result) {
                       linkSpy.down(result);
                       observer.next(result);
@@ -217,7 +217,7 @@ function createAppRouter() {
                       observer.complete();
                     },
                   });
-                  return next$;
+                  return subscription;
                 });
               },
             splitLink({

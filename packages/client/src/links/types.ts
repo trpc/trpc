@@ -1,6 +1,6 @@
 import { AnyRouter, inferRouterError, Dict } from '@trpc/server';
 import { TRPCResponse } from '@trpc/server/rpc';
-import { Observable, Observer } from '../rx/types';
+import { Observable, Observer } from '../observable/types';
 import { TRPCClientError } from '../TRPCClientError';
 
 export type CancelFn = () => void;

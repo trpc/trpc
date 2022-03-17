@@ -1,7 +1,7 @@
 import { AnyRouter } from '@trpc/server';
-import { observable } from '../rx/observable';
+import { observable } from '../observable';
+import { HTTPLinkOptions, httpRequest } from './internals/httpUtils';
 import { TRPCLink } from './types';
-import { HTTPLinkOptions, httpRequest } from './httpUtils';
 
 export function httpLink<TRouter extends AnyRouter>(
   opts: HTTPLinkOptions,

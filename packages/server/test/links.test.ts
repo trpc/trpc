@@ -1,17 +1,20 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 /* eslint-disable @typescript-eslint/no-empty-function */
+import { LinkRuntime, OperationLink } from '@trpc/client/src';
 import { createChain } from '@trpc/client/src/links/internals/createChain';
-import { LinkRuntime, OperationLink } from '@trpc/client/src/links/types';
+import { observableToPromise } from '@trpc/client/src/observable/internals/observableToPromise';
 import AbortController from 'abort-controller';
 import fetch from 'node-fetch';
-import { observableToPromise } from '../../client/src/rx/util/observableToPromise';
 import { z } from 'zod';
-import { createTRPCClient, TRPCClientError } from '../../client/src';
-import { httpBatchLink } from '../../client/src/links/httpBatchLink';
-import { httpLink } from '../../client/src/links/httpLink';
-import { loggerLink } from '../../client/src/links/loggerLink';
-import { retryLink } from '../../client/src/links/retryLink';
-import { observable } from '../../client/src/rx/observable';
+import {
+  createTRPCClient,
+  httpBatchLink,
+  httpLink,
+  loggerLink,
+  retryLink,
+  TRPCClientError,
+} from '../../client/src';
+import { observable } from '../../client/src/observable';
 import * as trpc from '../src';
 import { AnyRouter } from '../src';
 import { routerToServerAndClient } from './_testHelpers';
@@ -530,8 +533,12 @@ test('chain makes unsub', async () => {
             ({ next, op }) =>
               observable((observer) => {
                 next(op).subscribe({
-                  next: observer.next,
-                  error: observer.error,
+                  error(err) {
+                    observer.error(err);
+                  },
+                  next(v) {
+                    observer.next(v);
+                  },
                   complete() {
                     firstLinkCompleteSpy();
                     observer.complete();

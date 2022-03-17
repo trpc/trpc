@@ -8,7 +8,7 @@ import {
 import { TRPCResult } from '@trpc/server/rpc';
 import { CancelFn } from '..';
 import { getFetch } from '../getFetch';
-import { httpBatchLink } from '../links/httpBatchLink';
+import { httpBatchLink } from '../links';
 import { createChain } from '../links/internals/createChain';
 import { transformOperationResult } from '../links/internals/transformOperationResult';
 import {
@@ -18,11 +18,13 @@ import {
   OperationLink,
   TRPCLink,
 } from '../links/types';
-import { UnsubscribeFn } from '../rx';
-import { inferObservableValue } from '../rx/observable';
-import { share } from '../rx/operators';
-import { Observer } from '../rx/types';
-import { observableToPromise } from '../rx/util/observableToPromise';
+import {
+  inferObservableValue,
+  Observer,
+  share,
+  Unsubscribable,
+} from '../observable';
+import { observableToPromise } from '../observable/internals/observableToPromise';
 import { TRPCClientError } from '../TRPCClientError';
 import { getAbortController } from './fetchHelpers';
 
@@ -218,14 +220,14 @@ export class TRPCClient<TRouter extends AnyRouter> {
     input: TInput,
     opts: TRPCRequestOptions &
       Partial<Observer<TRPCResult<TOutput>, TRPCClientError<TRouter>>>,
-  ): UnsubscribeFn {
+  ): Unsubscribable {
     const observable$ = this.$request<TInput, TOutput>({
       type: 'subscription',
       path,
       input,
       context: opts.context,
     });
-    const observer = observable$.subscribe({
+    return observable$.subscribe({
       next(result) {
         if ('error' in result.data) {
           const err = TRPCClientError.from(result.data, {
@@ -244,8 +246,5 @@ export class TRPCClient<TRouter extends AnyRouter> {
         opts.complete?.();
       },
     });
-    return () => {
-      observer.unsubscribe();
-    };
   }
 }

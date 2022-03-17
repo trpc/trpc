@@ -1,11 +1,13 @@
-import { createTRPCClient, HTTPHeaders } from '@trpc/client';
-import { createWSClient, wsLink } from '@trpc/client/links/wsLink';
-import { splitLink } from '@trpc/client/links/splitLink';
-import { httpLink } from '@trpc/client/links/httpLink';
-
-import './polyfill';
-
+import {
+  createTRPCClient,
+  createWSClient,
+  HTTPHeaders,
+  httpLink,
+  splitLink,
+  wsLink,
+} from '@trpc/client';
 import type { AppRouter } from '../server/router';
+import './polyfill';
 
 export interface ClientOptions {
   port?: number;

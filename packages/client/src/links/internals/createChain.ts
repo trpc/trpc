@@ -1,5 +1,5 @@
 import { AnyRouter } from '@trpc/server';
-import { observable } from '../../rx/observable';
+import { observable } from '../../observable/observable';
 import { Operation, OperationLink, OperationResultObservable } from '../types';
 
 /** @internal */
@@ -14,7 +14,7 @@ export function createChain<
   return observable((observer) => {
     function execute(index = 0, op = opts.op) {
       const next = opts.links[index];
-      const next$ = next({
+      const subscription = next({
         op,
         next(nextOp) {
           const nextObserver = execute(index + 1, nextOp);
@@ -22,7 +22,7 @@ export function createChain<
           return nextObserver;
         },
       });
-      return next$;
+      return subscription;
     }
 
     const obs$ = execute();

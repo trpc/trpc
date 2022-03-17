@@ -3,7 +3,7 @@ import {
   ClientDataTransformerOptions,
   DataTransformer,
 } from '@trpc/server';
-import { observable } from '../rx/observable';
+import { observable } from '../observable/observable';
 import { OperationResult, TRPCLink } from './types';
 
 /**
@@ -55,15 +55,19 @@ export function transformerLink<TRouter extends AnyRouter = AnyRouter>(
     return (props) => {
       const input = _transformer.serialize(props.op.input);
       return observable((observer) => {
-        const next$ = props.next({ ...props.op, input }).subscribe({
+        const subscription = props.next({ ...props.op, input }).subscribe({
           next(value) {
             const transformed = transformOperationResult(value, _transformer);
             observer.next(transformed);
           },
-          error: observer.error,
-          complete: observer.complete,
+          error(err) {
+            observer.error(err);
+          },
+          complete() {
+            observer.complete();
+          },
         });
-        return next$;
+        return subscription;
       });
     };
   };
