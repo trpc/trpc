@@ -259,11 +259,11 @@ export function createReactQueryHooks<
     // Checking if the hook is mounted ensures we are not getting hydration errors
     const isMounted = useIsMounted();
 
-    // Check that this query is
-    // - Isn't mounted on the client
-    // - Is an actual error
+    // Check that that the query:
+    // - isn't mounted yet on the client
+    // - has an error
     // - SSR is enabled
-    // - The query originated from a SSR prepass
+    // - it originated from a SSR prepass
     if (
       !isMounted &&
       query.error &&
