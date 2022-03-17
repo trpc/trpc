@@ -252,14 +252,8 @@ export function createReactQueryHooks<
       TError
     >,
   ): UseQueryResult<TQueryValues[TPath]['output'], TError> {
-    const {
-      client,
-      isPrepass,
-      queryClient,
-      prefetchQuery,
-      ssrReady,
-      ssrEnabled,
-    } = useContext();
+    const { client, isPrepass, queryClient, prefetchQuery, ssrReady } =
+      useContext();
 
     if (
       typeof window === 'undefined' &&
@@ -275,13 +269,12 @@ export function createReactQueryHooks<
      * Hack to make sure errors return `status`='error` when doing SSR
      * @link https://github.com/trpc/trpc/pull/1645
      */
-    const actualOpts =
-      ssrEnabled && !ssrReady
-        ? {
-            retryOnMount: false,
-            ...opts,
-          }
-        : opts;
+    const actualOpts = !ssrReady
+      ? {
+          retryOnMount: false,
+          ...opts,
+        }
+      : opts;
     return __useQuery(
       pathAndInput as any,
       () => (client as any).query(...getClientArgs(pathAndInput, actualOpts)),
@@ -372,14 +365,8 @@ export function createReactQueryHooks<
     >,
   ): UseInfiniteQueryResult<TQueryValues[TPath]['output'], TError> {
     const [path, input] = pathAndInput;
-    const {
-      client,
-      isPrepass,
-      prefetchInfiniteQuery,
-      queryClient,
-      ssrEnabled,
-      ssrReady,
-    } = useContext();
+    const { client, isPrepass, prefetchInfiniteQuery, queryClient, ssrReady } =
+      useContext();
 
     if (
       typeof window === 'undefined' &&
@@ -395,13 +382,12 @@ export function createReactQueryHooks<
      * Hack to make sure errors return `status`='error` when doing SSR
      * @link https://github.com/trpc/trpc/pull/1645
      */
-    const actualOpts =
-      ssrEnabled && !ssrReady
-        ? {
-            retryOnMount: false,
-            ...opts,
-          }
-        : opts;
+    const actualOpts = !ssrReady
+      ? {
+          retryOnMount: false,
+          ...opts,
+        }
+      : opts;
 
     return __useInfiniteQuery(
       pathAndInput as any,
