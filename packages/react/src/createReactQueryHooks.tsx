@@ -127,6 +127,8 @@ export function createReactQueryHooks<
       props.ssrState || (props.isPrepass ? 'prepass' : false),
     );
     useEffect(() => {
+      // Only updating state to `mounted` if we are using SSR.
+      // This makes it so we don't have an unnecessary re-render when opting out of SSR.
       setSSRState((state) => (state ? 'mounted' : false));
     }, []);
     return (
