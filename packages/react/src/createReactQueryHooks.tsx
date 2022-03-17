@@ -126,9 +126,9 @@ export function createReactQueryHooks<
     ssrContext?: TSSRContext | null;
     ssrEnabled?: boolean;
   }) {
-    const [ssrReady, setssrReady] = useState(() => !ssrEnabled);
+    const [ssrReady, setSSRReady] = useState(() => !ssrEnabled);
     useEffect(() => {
-      setssrReady(true);
+      setSSRReady(true);
     }, []);
     return (
       <Context.Provider
