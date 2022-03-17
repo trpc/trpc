@@ -34,7 +34,7 @@ import {
   UseQueryResult,
 } from 'react-query';
 import { DehydratedState } from 'react-query/hydration';
-import { TRPCContext, TRPCContextState } from './internals/context';
+import { SSRState, TRPCContext, TRPCContextState } from './internals/context';
 
 export type OutputWithCursor<TData, TCursor extends any = any> = {
   cursor: TCursor | null;
@@ -111,34 +111,32 @@ export function createReactQueryHooks<
     return createTRPCClient(opts);
   }
 
-  function TRPCProvider({
-    client,
-    queryClient,
-    children,
-    isPrepass = false,
-    ssrContext,
-    ssrEnabled = false,
-  }: {
+  function TRPCProvider(props: {
     queryClient: QueryClient;
     client: TRPCClient<TRouter>;
     children: ReactNode;
+    /**
+     * @deprecated
+     */
     isPrepass?: boolean;
     ssrContext?: TSSRContext | null;
-    ssrEnabled?: boolean;
+    ssrState?: SSRState;
   }) {
-    const [ssrReady, setSSRReady] = useState(!ssrEnabled);
+    const { client, queryClient, ssrContext } = props;
+    const [ssrState, setSSRState] = useState<SSRState>(
+      props.ssrState || (props.isPrepass ? 'prepass' : false),
+    );
     useEffect(() => {
-      setSSRReady(true);
+      setSSRState((state) => (state ? 'mounted' : false));
     }, []);
     return (
       <Context.Provider
         value={{
           queryClient,
           client,
-          isPrepass,
+          isPrepass: ssrState === 'prepass',
           ssrContext: ssrContext || null,
-          ssrEnabled,
-          ssrReady,
+          ssrState,
           fetchQuery: useCallback(
             (pathAndInput, opts) => {
               return queryClient.fetchQuery(
@@ -234,7 +232,7 @@ export function createReactQueryHooks<
           ),
         }}
       >
-        {children}
+        {props.children}
       </Context.Provider>
     );
   }
@@ -252,7 +250,7 @@ export function createReactQueryHooks<
       TError
     >,
   ): UseQueryResult<TQueryValues[TPath]['output'], TError> {
-    const { client, isPrepass, queryClient, prefetchQuery, ssrReady } =
+    const { client, isPrepass, queryClient, prefetchQuery, ssrState } =
       useContext();
 
     if (
@@ -269,12 +267,13 @@ export function createReactQueryHooks<
      * Hack to make sure errors return `status`='error` when doing SSR
      * @link https://github.com/trpc/trpc/pull/1645
      */
-    const actualOpts = !ssrReady
-      ? {
-          retryOnMount: false,
-          ...opts,
-        }
-      : opts;
+    const actualOpts =
+      ssrState && ssrState !== 'mounted'
+        ? {
+            retryOnMount: false,
+            ...opts,
+          }
+        : opts;
     return __useQuery(
       pathAndInput as any,
       () => (client as any).query(...getClientArgs(pathAndInput, actualOpts)),
@@ -365,7 +364,7 @@ export function createReactQueryHooks<
     >,
   ): UseInfiniteQueryResult<TQueryValues[TPath]['output'], TError> {
     const [path, input] = pathAndInput;
-    const { client, isPrepass, prefetchInfiniteQuery, queryClient, ssrReady } =
+    const { client, isPrepass, prefetchInfiniteQuery, queryClient, ssrState } =
       useContext();
 
     if (
@@ -382,12 +381,13 @@ export function createReactQueryHooks<
      * Hack to make sure errors return `status`='error` when doing SSR
      * @link https://github.com/trpc/trpc/pull/1645
      */
-    const actualOpts = !ssrReady
-      ? {
-          retryOnMount: false,
-          ...opts,
-        }
-      : opts;
+    const actualOpts =
+      ssrState && ssrState !== 'mounted'
+        ? {
+            retryOnMount: false,
+            ...opts,
+          }
+        : opts;
 
     return __useInfiniteQuery(
       pathAndInput as any,
