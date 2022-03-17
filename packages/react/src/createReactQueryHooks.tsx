@@ -134,6 +134,7 @@ export function createReactQueryHooks<
     ssrContext?: TSSRContext | null;
     ssrEnabled?: boolean;
   }) {
+    const isMounted = useIsMounted();
     return (
       <Context.Provider
         value={{
@@ -142,6 +143,7 @@ export function createReactQueryHooks<
           isPrepass,
           ssrContext: ssrContext || null,
           ssrEnabled,
+          isMounted,
           fetchQuery: useCallback(
             (pathAndInput, opts) => {
               return queryClient.fetchQuery(
@@ -246,35 +248,6 @@ export function createReactQueryHooks<
     return React.useContext(Context);
   }
 
-  /**
-   * Ugly hack to make sure errors return `status`='error` when doing SSR
-   * @link https://github.com/trpc/trpc/pull/1645
-   */
-  function useSSRError<TQuery extends UseQueryResult | UseInfiniteQueryResult>(
-    queryKey: unknown[],
-    query: TQuery,
-  ): TQuery {
-    const { queryClient, ssrEnabled } = useContext();
-
-    // Checking if the hook is mounted ensures we are not getting hydration errors
-    const isMounted = useIsMounted();
-
-    // Check that that the query:
-    // - isn't mounted yet on the client
-    // - has an error
-    // - SSR is enabled
-    // - it originated from a SSR prepass
-    if (
-      !isMounted &&
-      query.error &&
-      ssrEnabled &&
-      queryClient.getQueryCache().find(queryKey)?.meta?._trpcSSR
-    ) {
-      return { ...query, status: 'error' };
-    }
-    // Default behavior
-    return query;
-  }
   function useQuery<TPath extends keyof TQueryValues & string>(
     pathAndInput: [path: TPath, ...args: inferHandlerInput<TQueries[TPath]>],
     opts?: UseTRPCQueryOptions<
@@ -284,7 +257,14 @@ export function createReactQueryHooks<
       TError
     >,
   ): UseQueryResult<TQueryValues[TPath]['output'], TError> {
-    const { client, isPrepass, queryClient, prefetchQuery } = useContext();
+    const {
+      client,
+      isPrepass,
+      queryClient,
+      prefetchQuery,
+      isMounted,
+      ssrEnabled,
+    } = useContext();
 
     if (
       typeof window === 'undefined' &&
@@ -301,13 +281,24 @@ export function createReactQueryHooks<
         },
       });
     }
-    const query = __useQuery(
-      pathAndInput as any,
-      () => (client as any).query(...getClientArgs(pathAndInput, opts)),
-      opts,
-    );
 
-    return useSSRError(pathAndInput, query);
+    /**
+     * Hack to make sure errors return `status`='error` when doing SSR
+     * @link https://github.com/trpc/trpc/pull/1645
+     */
+    const actualOpts =
+      ssrEnabled && !isMounted
+        ? {
+            ...opts,
+            retry: false,
+            retryOnMount: false,
+          }
+        : opts;
+    return __useQuery(
+      pathAndInput as any,
+      () => (client as any).query(...getClientArgs(pathAndInput, actualOpts)),
+      actualOpts,
+    );
   }
 
   function useMutation<TPath extends keyof TMutationValues & string>(
@@ -393,8 +384,14 @@ export function createReactQueryHooks<
     >,
   ): UseInfiniteQueryResult<TQueryValues[TPath]['output'], TError> {
     const [path, input] = pathAndInput;
-    const { client, isPrepass, prefetchInfiniteQuery, queryClient } =
-      useContext();
+    const {
+      client,
+      isPrepass,
+      prefetchInfiniteQuery,
+      queryClient,
+      ssrEnabled,
+      isMounted,
+    } = useContext();
 
     if (
       typeof window === 'undefined' &&
@@ -412,18 +409,29 @@ export function createReactQueryHooks<
       });
     }
 
-    const query = __useInfiniteQuery(
+    /**
+     * Hack to make sure errors return `status`='error` when doing SSR
+     * @link https://github.com/trpc/trpc/pull/1645
+     */
+    const actualOpts =
+      ssrEnabled && !isMounted
+        ? {
+            ...opts,
+            retry: false,
+            retryOnMount: false,
+          }
+        : opts;
+
+    return __useInfiniteQuery(
       pathAndInput as any,
       ({ pageParam }) => {
         const actualInput = { ...((input as any) ?? {}), cursor: pageParam };
         return (client as any).query(
-          ...getClientArgs([path, actualInput], opts),
+          ...getClientArgs([path, actualInput], actualOpts),
         );
       },
-      opts,
+      actualOpts,
     );
-
-    return useSSRError(pathAndInput, query);
   }
   function useDehydratedState(
     client: TRPCClient<TRouter>,

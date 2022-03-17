@@ -37,6 +37,7 @@ export interface TRPCContextState<
   isPrepass: boolean;
   ssrContext: TSSRContext | null;
   ssrEnabled: boolean;
+  isMounted: boolean;
 
   /**
    * @link https://react-query.tanstack.com/guides/prefetching
