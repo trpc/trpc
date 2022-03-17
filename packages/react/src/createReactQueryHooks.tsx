@@ -243,6 +243,24 @@ export function createReactQueryHooks<
     return React.useContext(Context);
   }
 
+  /**
+   * Hack to make sure errors return `status`='error` when doing SSR
+   * @link https://github.com/trpc/trpc/pull/1645
+   */
+  function useSSRQueryOptionsIfNeeded<
+    TOptions extends { retryOnMount?: boolean } | undefined,
+  >(pathAndInput: unknown[], opts: TOptions): TOptions {
+    const { queryClient, ssrState } = useContext();
+    return ssrState &&
+      ssrState !== 'mounted' &&
+      queryClient.getQueryCache().find(pathAndInput)?.state.status === 'error'
+      ? {
+          retryOnMount: false,
+          ...opts,
+        }
+      : opts;
+  }
+
   function useQuery<TPath extends keyof TQueryValues & string>(
     pathAndInput: [path: TPath, ...args: inferHandlerInput<TQueries[TPath]>],
     opts?: UseTRPCQueryOptions<
@@ -252,8 +270,7 @@ export function createReactQueryHooks<
       TError
     >,
   ): UseQueryResult<TQueryValues[TPath]['output'], TError> {
-    const { client, isPrepass, queryClient, prefetchQuery, ssrState } =
-      useContext();
+    const { client, isPrepass, queryClient, prefetchQuery } = useContext();
 
     if (
       typeof window === 'undefined' &&
@@ -264,20 +281,8 @@ export function createReactQueryHooks<
     ) {
       prefetchQuery(pathAndInput as any, opts as any);
     }
+    const actualOpts = useSSRQueryOptionsIfNeeded(pathAndInput, opts);
 
-    /**
-     * Hack to make sure errors return `status`='error` when doing SSR
-     * @link https://github.com/trpc/trpc/pull/1645
-     */
-    const actualOpts =
-      ssrState &&
-      ssrState !== 'mounted' &&
-      queryClient.getQueryCache().find(pathAndInput)?.state.status === 'error'
-        ? {
-            retryOnMount: false,
-            ...opts,
-          }
-        : opts;
     return __useQuery(
       pathAndInput as any,
       () => (client as any).query(...getClientArgs(pathAndInput, actualOpts)),
@@ -368,7 +373,7 @@ export function createReactQueryHooks<
     >,
   ): UseInfiniteQueryResult<TQueryValues[TPath]['output'], TError> {
     const [path, input] = pathAndInput;
-    const { client, isPrepass, prefetchInfiniteQuery, queryClient, ssrState } =
+    const { client, isPrepass, prefetchInfiniteQuery, queryClient } =
       useContext();
 
     if (
@@ -381,19 +386,7 @@ export function createReactQueryHooks<
       prefetchInfiniteQuery(pathAndInput as any, opts as any);
     }
 
-    /**
-     * Hack to make sure errors return `status`='error` when doing SSR
-     * @link https://github.com/trpc/trpc/pull/1645
-     */
-    const actualOpts =
-      ssrState &&
-      ssrState !== 'mounted' &&
-      queryClient.getQueryCache().find(pathAndInput)?.state.status == 'error'
-        ? {
-            retryOnMount: false,
-            ...opts,
-          }
-        : opts;
+    const actualOpts = useSSRQueryOptionsIfNeeded(pathAndInput, opts);
 
     return __useInfiniteQuery(
       pathAndInput as any,
