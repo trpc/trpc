@@ -403,9 +403,8 @@ export function createReactQueryHooks<
     const actualOpts =
       ssrEnabled && !isMounted
         ? {
-            ...opts,
-            retry: false,
             retryOnMount: false,
+            ...opts,
           }
         : opts;
 
