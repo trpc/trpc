@@ -273,13 +273,7 @@ export function createReactQueryHooks<
       opts?.enabled !== false &&
       !queryClient.getQueryCache().find(pathAndInput)
     ) {
-      prefetchQuery(pathAndInput as any, {
-        ...(opts as any),
-        meta: {
-          _trpcSSR: 1,
-          ...opts?.meta,
-        },
-      });
+      prefetchQuery(pathAndInput as any, opts as any);
     }
 
     /**
@@ -400,13 +394,7 @@ export function createReactQueryHooks<
       opts?.enabled !== false &&
       !queryClient.getQueryCache().find(pathAndInput)
     ) {
-      prefetchInfiniteQuery(pathAndInput as any, {
-        ...(opts as any),
-        meta: {
-          _trpcSSR: 1,
-          ...opts?.meta,
-        },
-      });
+      prefetchInfiniteQuery(pathAndInput as any, opts as any);
     }
 
     /**
