@@ -254,8 +254,7 @@ export function createReactQueryHooks<
       TError
     >,
   ): UseQueryResult<TQueryValues[TPath]['output'], TError> {
-    const { client, isPrepass, queryClient, prefetchQuery, ssrEnabled } =
-      useContext();
+    const { client, isPrepass, queryClient, prefetchQuery } = useContext();
 
     const isMounted = useIsMounted();
 
@@ -266,14 +265,24 @@ export function createReactQueryHooks<
       opts?.enabled !== false &&
       !queryClient.getQueryCache().find(pathAndInput)
     ) {
-      prefetchQuery(pathAndInput as any, opts as any);
+      prefetchQuery(pathAndInput as any, {
+        ...(opts as any),
+        meta: {
+          ...opts?.meta,
+          trpcSSRQuery: 1,
+        },
+      });
     }
     const query = __useQuery(
       pathAndInput as any,
       () => (client as any).query(...getClientArgs(pathAndInput, opts)),
       opts,
     );
-    if (!ssrEnabled || isMounted || !query.error) {
+    if (
+      isMounted ||
+      !query.error ||
+      !queryClient.getQueryCache().find(pathAndInput)?.meta?.trpcSSRQuery
+    ) {
       return query;
     }
 
