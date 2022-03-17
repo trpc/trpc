@@ -2030,7 +2030,7 @@ describe('setInfiniteQueryData()', () => {
 /**
  * @link https://github.com/trpc/trpc/pull/1645
  */
-test('regression ssr with error sets `status`=`error`', async () => {
+test('regression: SSR with error sets `status`=`error`', async () => {
   // @ts-ignore
   const { window } = global;
 
