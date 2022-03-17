@@ -255,18 +255,25 @@ export function createReactQueryHooks<
     query: TQuery,
   ): TQuery {
     const { queryClient, ssrEnabled } = useContext();
+
+    // Checking if the hook is mounted ensures we are not getting hydration errors
     const isMounted = useIsMounted();
 
+    // Check that this query is
+    // - Isn't mounted on the client
+    // - Is an actual error
+    // - SSR is enabled
+    // - The query originated from a SSR prepass
     if (
-      isMounted ||
-      !query.error ||
-      !ssrEnabled ||
-      !queryClient.getQueryCache().find(queryKey)?.meta?._trpcSSR
+      !isMounted &&
+      query.error &&
+      ssrEnabled &&
+      queryClient.getQueryCache().find(queryKey)?.meta?._trpcSSR
     ) {
-      return query;
+      return { ...query, status: 'error' };
     }
-
-    return { ...query, status: 'error' };
+    // Default behavior
+    return query;
   }
   function useQuery<TPath extends keyof TQueryValues & string>(
     pathAndInput: [path: TPath, ...args: inferHandlerInput<TQueries[TPath]>],
