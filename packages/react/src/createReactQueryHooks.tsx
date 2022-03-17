@@ -97,6 +97,7 @@ function useIsMounted() {
   }, []);
   return ref.current;
 }
+
 export function createReactQueryHooks<
   TRouter extends AnyRouter,
   TSSRContext = unknown,
@@ -243,6 +244,26 @@ export function createReactQueryHooks<
     return React.useContext(Context);
   }
 
+  /**
+   * Ugly hack to make sure errors return `status`='error` when doing SSR
+   * @link https://github.com/trpc/trpc/pull/1645
+   */
+  function useSSRError<TQuery extends UseQueryResult | UseInfiniteQueryResult>(
+    queryKey: unknown[],
+    query: TQuery,
+  ): TQuery {
+    const { queryClient } = useContext();
+    const isMounted = useIsMounted();
+    if (
+      isMounted ||
+      !query.error ||
+      !queryClient.getQueryCache().find(queryKey)?.meta?._trpcSSR
+    ) {
+      return query;
+    }
+    query.status = 'error';
+    return query;
+  }
   function useQuery<TPath extends keyof TQueryValues & string>(
     pathAndInput: [path: TPath, ...args: inferHandlerInput<TQueries[TPath]>],
     opts?: UseTRPCQueryOptions<
@@ -254,8 +275,6 @@ export function createReactQueryHooks<
   ): UseQueryResult<TQueryValues[TPath]['output'], TError> {
     const { client, isPrepass, queryClient, prefetchQuery } = useContext();
 
-    const isMounted = useIsMounted();
-
     if (
       typeof window === 'undefined' &&
       isPrepass &&
@@ -266,8 +285,8 @@ export function createReactQueryHooks<
       prefetchQuery(pathAndInput as any, {
         ...(opts as any),
         meta: {
+          _trpcSSR: 1,
           ...opts?.meta,
-          trpcSSRQuery: 1,
         },
       });
     }
@@ -276,18 +295,8 @@ export function createReactQueryHooks<
       () => (client as any).query(...getClientArgs(pathAndInput, opts)),
       opts,
     );
-    if (
-      isMounted ||
-      !query.error ||
-      !queryClient.getQueryCache().find(pathAndInput)?.meta?.trpcSSRQuery
-    ) {
-      return query;
-    }
 
-    // Hack to set SSR `status` to error when error in SSR
-    query.status = 'error';
-
-    return query;
+    return useSSRError(pathAndInput, query);
   }
 
   function useMutation<TPath extends keyof TMutationValues & string>(
@@ -383,10 +392,16 @@ export function createReactQueryHooks<
       opts?.enabled !== false &&
       !queryClient.getQueryCache().find(pathAndInput)
     ) {
-      prefetchInfiniteQuery(pathAndInput as any, opts as any);
+      prefetchInfiniteQuery(pathAndInput as any, {
+        ...(opts as any),
+        meta: {
+          _trpcSSR: 1,
+          ...opts?.meta,
+        },
+      });
     }
 
-    return __useInfiniteQuery(
+    const query = __useInfiniteQuery(
       pathAndInput as any,
       ({ pageParam }) => {
         const actualInput = { ...((input as any) ?? {}), cursor: pageParam };
@@ -396,6 +411,8 @@ export function createReactQueryHooks<
       },
       opts,
     );
+
+    return useSSRError(pathAndInput, query);
   }
   function useDehydratedState(
     client: TRPCClient<TRouter>,

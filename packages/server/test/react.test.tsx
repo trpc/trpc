@@ -2039,16 +2039,19 @@ test('regression: SSR with error sets `status`=`error`', async () => {
   delete global.window;
   const { trpc, trpcClientOptions } = factory;
   const App: AppType = () => {
-    const query = trpc.useQuery(['bad-query'] as any, {
-      retry() {
-        return false;
-      },
-    });
+    const query1 = trpc.useQuery(['bad-useQuery'] as any);
+    const query2 = trpc.useInfiniteQuery(['bad-useInfiniteQuery'] as any);
     queryState = {
-      status: query.status,
-      error: query.error,
+      query1: {
+        status: query1.status,
+        error: query1.error,
+      },
+      query2: {
+        status: query2.status,
+        error: query2.error,
+      },
     };
-    return <>{JSON.stringify(query.data || null)}</>;
+    return <>{JSON.stringify(query1.data || null)}</>;
   };
 
   const Wrapped = withTRPC({
@@ -2063,8 +2066,12 @@ test('regression: SSR with error sets `status`=`error`', async () => {
 
   // @ts-ignore
   global.window = window;
-  expect(queryState.error).toMatchInlineSnapshot(
-    `[TRPCClientError: No "query"-procedure on path "bad-query"]`,
+  expect(queryState.query1.error).toMatchInlineSnapshot(
+    `[TRPCClientError: No "query"-procedure on path "bad-useQuery"]`,
   );
-  expect(queryState.status).toBe('error');
+  expect(queryState.query2.error).toMatchInlineSnapshot(
+    `[TRPCClientError: No "query"-procedure on path "bad-useInfiniteQuery"]`,
+  );
+  expect(queryState.query1.status).toBe('error');
+  expect(queryState.query2.status).toBe('error');
 });
