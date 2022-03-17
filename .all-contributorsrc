@@ -518,6 +518,80 @@
       "contributions": [
         "code"
       ]
+    },
+    {
+      "login": "JasonDocton",
+      "name": "Jason Docton",
+      "avatar_url": "https://avatars.githubusercontent.com/u/22589564?v=4",
+      "profile": "http://Youarerad.org",
+      "contributions": [
+        "financial"
+      ]
+    },
+    {
+      "login": "pingdotgg",
+      "name": "Ping Labs",
+      "avatar_url": "https://avatars.githubusercontent.com/u/89191727?v=4",
+      "profile": "https://ping.gg/",
+      "contributions": [
+        "financial"
+      ]
+    },
+    {
+      "login": "emilbryggare",
+      "name": "Emil Bryggare",
+      "avatar_url": "https://avatars.githubusercontent.com/u/1659740?v=4",
+      "profile": "http://www.emilbryggare.com",
+      "contributions": [
+        "example",
+        "test"
+      ]
+    },
+    {
+      "login": "ahhshm",
+      "name": "ahhshm",
+      "avatar_url": "https://avatars.githubusercontent.com/u/87268103?v=4",
+      "profile": "https://github.com/ahhshm",
+      "contributions": [
+        "doc",
+        "example"
+      ]
+    },
+    {
+      "login": "jlalmes",
+      "name": "James Berry",
+      "avatar_url": "https://avatars.githubusercontent.com/u/69924001?v=4",
+      "profile": "https://jamesbe.com",
+      "contributions": [
+        "bug"
+      ]
+    },
+    {
+      "login": "jwyce",
+      "name": "Jared Wyce",
+      "avatar_url": "https://avatars.githubusercontent.com/u/16946573?v=4",
+      "profile": "https://jwyce.github.io/portfolio/",
+      "contributions": [
+        "financial"
+      ]
+    },
+    {
+      "login": "mechamobau",
+      "name": "Lucas Viana",
+      "avatar_url": "https://avatars.githubusercontent.com/u/13911440?v=4",
+      "profile": "https://blog.lucasviana.dev",
+      "contributions": [
+        "financial"
+      ]
+    },
+    {
+      "login": "kevinlangleyjr",
+      "name": "Kevin Langley Jr.",
+      "avatar_url": "https://avatars.githubusercontent.com/u/877634?v=4",
+      "profile": "https://kevinlangleyjr.dev",
+      "contributions": [
+        "doc"
+      ]
     }
   ],
   "contributorsPerLine": 7,

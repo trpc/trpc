@@ -7,7 +7,7 @@
 ### Setup
 
 ```bash
-yarn create-next-app --example https://github.com/trpc/trpc --example-path examples/next-prisma-todomvc trpc-todo
+yarn create next-app --example https://github.com/trpc/trpc --example-path examples/next-prisma-todomvc trpc-todo
 cd trpc-todo
 yarn
 yarn dev

@@ -5,16 +5,10 @@ sidebar_label: Sponsors
 slug: /sponsors
 ---
 
-> If you like working with tRPC, consider giving a token a apprecation by [GitHub Sponsors](https://github.com/sponsors/KATT)!
 
+If you enjoy working with tRPC and want to support me consider giving a token appreciation by [GitHub Sponsors](https://github.com/sponsors/KATT)!
 
-## Financial Contributors
-
-> If you like working with tRPC, consider giving a token a apprecation by [GitHub Sponsors](https://github.com/sponsors/KATT)!
-
-**For companies**
-
-> Is your company using tRPC, want to attract amazing TypeScript developers to your team, & support long-term maintainance of tRPC? Have a look at the [sponsorship tiers](https://github.com/sponsors/KATT) or [get in touch](mailto:alex@trpc.io) to discuss potential partnerships.
+Also, if your company using tRPC and want to support long-term maintenance of tRPC, have a look at the [sponsorship tiers](https://github.com/sponsors/KATT) or [get in touch](mailto:alex@trpc.io) to discuss potential partnerships.
 
 
 ### 🥇 Gold Sponsors
@@ -27,9 +21,17 @@ slug: /sponsors
   </tbody>
 </table>
 
+
 ### 🥈 Silver Sponsors
 
-<img src="https://placehold.jp/e5faff/0e3847/150x100.png?text=%3Cimg%20%2F%3E" width="150" height="100" /> 
+<table>
+  <tbody>
+    <tr>
+      <td align="center"><a href="http://Youarerad.org"><img src="https://avatars.githubusercontent.com/u/22589564?v=4?s=150" width="150px;" alt=""/><br /><sub><b>Jason Docton</b></sub></a></td>
+      <td align="center"><a href="https://ping.gg/"><img src="https://avatars.githubusercontent.com/u/89191727?v=4?s=150" width="150px;" alt=""/><br /><sub><b>Ping Labs</b></sub></a></td>
+    </tr>
+  </tbody>
+</table>
 
 ### 🥉 Bronze Sponsors
 
@@ -38,7 +40,6 @@ slug: /sponsors
     <tr>
       <td align="center"><a href="https://newfront.com"><img src="https://user-images.githubusercontent.com/36125/130158930-216fa212-5909-4ee1-b4b9-fd5935f51245.png" width="120" alt=""/><br />Newfront</a></td>
       <td align="center"><a href="https://hidrb.com"><img src="https://avatars.githubusercontent.com/u/77294655?v=4?s=120" width="120" alt=""/><br/>Dr. B</a></td>
-      <td align="center"><a href="https://cal.com"><img src="https://avatars.githubusercontent.com/u/79145102?s=200&v=4" width="120" alt=""/><br/>Cal.com</a></td>
       <td align="center"><a href="https://github.com/chimon2000"><img src="https://avatars.githubusercontent.com/u/6907797?v=4?s=120" width="120" alt=""/><br/>Ryan Edge</a></td>
     </tr>
     <tr>
@@ -46,8 +47,6 @@ slug: /sponsors
     </tr>
   </tbody>
 </table>
-
-
 
 
 ### 😻 Individuals
@@ -77,6 +76,7 @@ slug: /sponsors
       <td align="center"><a href="https://iamkhan.io"><img src="https://avatars.githubusercontent.com/u/6490268?v=4?s=100" width="100px;" alt=""/><br /><sub><b>SchlagerKhan</b></sub></a></td>
       <td align="center"><a href="https://yorick.sh"><img src="https://avatars.githubusercontent.com/u/8572133?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Ethan Clark</b></sub></a></td>
       <td align="center"><a href="https://github.com/nihinihi01"><img src="https://avatars.githubusercontent.com/u/57569287?v=4?s=100" width="100px;" alt=""/><br /><sub><b>nihinihi01</b></sub></a></td>
+      <td align="center"><a href="https://blog.lucasviana.dev"><img src="https://avatars.githubusercontent.com/u/13911440?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Lucas Viana</b></sub></a></td>
     </tr>
   </tbody>
 </table>

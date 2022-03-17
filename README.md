@@ -25,7 +25,7 @@
     <img src="https://storage.googleapis.com/trpc/trpcgif.gif" alt="Demo" />
     <figcaption>
       <p align="center">
-        The client above is <strong>not</strong> importing any code from the server, only it's type declarations.
+        The client above is <strong>not</strong> importing any code from the server, only its type declarations.
       </p>
     </figcaption>
   </figure>
@@ -57,7 +57,7 @@ There are a few [examples](https://trpc.io/docs/example-apps) that you can use f
 
 ```sh
 # yarn
-yarn create-next-app --example https://github.com/trpc/trpc --example-path examples/next-prisma-starter trpc-prisma-starter
+yarn create next-app --example https://github.com/trpc/trpc --example-path examples/next-prisma-starter trpc-prisma-starter
 # npm
 npx create-next-app --example https://github.com/trpc/trpc --example-path examples/next-prisma-starter trpc-prisma-starter
 ```
@@ -73,6 +73,30 @@ npx create-next-app --example https://github.com/trpc/trpc --example-path exampl
   </tr>
 </table>
 
+### Level 2 Maintainers
+
+> Volunteers who actively help out improving the codebase by making PRs and reviewing code
+
+<table>
+  <tbody>
+    <tr>
+      <td align="center"><a href="https://github.com/sachinraja"><img src="https://avatars.githubusercontent.com/u/58836760?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Sachin Raja</b></sub></a></td>
+    </tr>
+  </tbody>
+</table>
+
+### Level 1 Maintainers
+
+> Volunteers that actively help out answering questions in Discord, GitHub Discussions, etc
+
+<table>
+  <tbody>
+    <tr>
+      <td align="center"><a href="https://timcole.me"><img src="https://avatars.githubusercontent.com/u/6754577?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Timothy Cole</b></sub></a></td>
+    </tr>
+  </tbody>
+</table>
+
 ## Sponsors
 
 If you enjoy working with tRPC and want to support me consider giving a token appreciation by [GitHub Sponsors](https://github.com/sponsors/KATT)!
@@ -84,14 +108,21 @@ Also, if your company using tRPC and want to support long-term maintenance of tR
 <table>
   <tbody>
     <tr>
-      <td align="center"><a href="https://render.com"><img alt="Render.com" src="https://raw.githubusercontent.com/trpc/trpc/main/images/render.svg" width="273px" /><br />Render</a></td>
+      <td align="center"><a href="https://render.com"><img alt="Render.com" src="https://raw.githubusercontent.com/trpc/trpc/main/images/render.svg" width="312px" /><br />Render</a></td>
     </tr>
   </tbody>
 </table>
 
 ### 🥈 Silver Sponsors
 
-<img src="https://placehold.jp/e5faff/0e3847/160x90.png?text=%3Cimg%20%2F%3E" width="160" height="90">
+<table>
+  <tbody>
+    <tr>
+      <td align="center"><a href="http://Youarerad.org"><img src="https://avatars.githubusercontent.com/u/22589564?v=4?s=150" width="150px;" alt=""/><br /><sub><b>Jason Docton</b></sub></a></td>
+      <td align="center"><a href="https://ping.gg/"><img src="https://avatars.githubusercontent.com/u/89191727?v=4?s=150" width="150px;" alt=""/><br /><sub><b>Ping Labs</b></sub></a></td>
+    </tr>
+  </tbody>
+</table>
 
 ### 🥉 Bronze Sponsors
 
@@ -100,7 +131,6 @@ Also, if your company using tRPC and want to support long-term maintenance of tR
     <tr>
       <td align="center"><a href="https://newfront.com"><img src="https://user-images.githubusercontent.com/36125/130158930-216fa212-5909-4ee1-b4b9-fd5935f51245.png" width="120" alt=""/><br />Newfront</a></td>
       <td align="center"><a href="https://hidrb.com"><img src="https://avatars.githubusercontent.com/u/77294655?v=4?s=120" width="120" alt=""/><br/>Dr. B</a></td>
-      <td align="center"><a href="https://cal.com"><img src="https://avatars.githubusercontent.com/u/79145102?s=200&v=4" width="120" alt=""/><br/>Cal.com</a></td>
       <td align="center"><a href="https://github.com/chimon2000"><img src="https://avatars.githubusercontent.com/u/6907797?v=4?s=120" width="120" alt=""/><br/>Ryan Edge</a></td>
     </tr>
     <tr>
@@ -135,6 +165,7 @@ Also, if your company using tRPC and want to support long-term maintenance of tR
       <td align="center"><a href="https://iamkhan.io"><img src="https://avatars.githubusercontent.com/u/6490268?v=4?s=100" width="100px;" alt=""/><br /><sub><b>SchlagerKhan</b></sub></a></td>
       <td align="center"><a href="https://yorick.sh"><img src="https://avatars.githubusercontent.com/u/8572133?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Ethan Clark</b></sub></a></td>
       <td align="center"><a href="https://github.com/nihinihi01"><img src="https://avatars.githubusercontent.com/u/57569287?v=4?s=100" width="100px;" alt=""/><br /><sub><b>nihinihi01</b></sub></a></td>
+      <td align="center"><a href="https://blog.lucasviana.dev"><img src="https://avatars.githubusercontent.com/u/13911440?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Lucas Viana</b></sub></a></td>
     </tr>
   </tbody>
 </table>
@@ -214,10 +245,22 @@ Also, if your company using tRPC and want to support long-term maintenance of tR
     <td align="center"><a href="https://yorick.sh"><img src="https://avatars.githubusercontent.com/u/8572133?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Ethan Clark</b></sub></a><br /><a href="#financial-8balloon" title="Financial">💵</a></td>
     <td align="center"><a href="https://github.com/nihinihi01"><img src="https://avatars.githubusercontent.com/u/57569287?v=4?s=100" width="100px;" alt=""/><br /><sub><b>nihinihi01</b></sub></a><br /><a href="#financial-nihinihi01" title="Financial">💵</a></td>
     <td align="center"><a href="https://github.com/CommanderRoot"><img src="https://avatars.githubusercontent.com/u/4395417?v=4?s=100" width="100px;" alt=""/><br /><sub><b>CommanderRoot</b></sub></a><br /><a href="https://github.com/trpc/trpc/commits?author=CommanderRoot" title="Code">💻</a></td>
+    <td align="center"><a href="http://Youarerad.org"><img src="https://avatars.githubusercontent.com/u/22589564?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Jason Docton</b></sub></a><br /><a href="#financial-JasonDocton" title="Financial">💵</a></td>
+    <td align="center"><a href="https://ping.gg/"><img src="https://avatars.githubusercontent.com/u/89191727?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Ping Labs</b></sub></a><br /><a href="#financial-pingdotgg" title="Financial">💵</a></td>
+    <td align="center"><a href="http://www.emilbryggare.com"><img src="https://avatars.githubusercontent.com/u/1659740?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Emil Bryggare</b></sub></a><br /><a href="#example-emilbryggare" title="Examples">💡</a> <a href="https://github.com/trpc/trpc/commits?author=emilbryggare" title="Tests">⚠️</a></td>
+    <td align="center"><a href="https://github.com/ahhshm"><img src="https://avatars.githubusercontent.com/u/87268103?v=4?s=100" width="100px;" alt=""/><br /><sub><b>ahhshm</b></sub></a><br /><a href="https://github.com/trpc/trpc/commits?author=ahhshm" title="Documentation">📖</a> <a href="#example-ahhshm" title="Examples">💡</a></td>
+  </tr>
+  <tr>
+    <td align="center"><a href="https://jamesbe.com"><img src="https://avatars.githubusercontent.com/u/69924001?v=4?s=100" width="100px;" alt=""/><br /><sub><b>James Berry</b></sub></a><br /><a href="https://github.com/trpc/trpc/issues?q=author%3Ajlalmes" title="Bug reports">🐛</a></td>
+    <td align="center"><a href="https://jwyce.github.io/portfolio/"><img src="https://avatars.githubusercontent.com/u/16946573?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Jared Wyce</b></sub></a><br /><a href="#financial-jwyce" title="Financial">💵</a></td>
+    <td align="center"><a href="https://blog.lucasviana.dev"><img src="https://avatars.githubusercontent.com/u/13911440?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Lucas Viana</b></sub></a><br /><a href="#financial-mechamobau" title="Financial">💵</a></td>
+    <td align="center"><a href="https://kevinlangleyjr.dev"><img src="https://avatars.githubusercontent.com/u/877634?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Kevin Langley Jr.</b></sub></a><br /><a href="https://github.com/trpc/trpc/commits?author=kevinlangleyjr" title="Documentation">📖</a></td>
   </tr>
 </table>
+
 <!-- markdownlint-restore -->
 <!-- prettier-ignore-end -->
+
 <!-- ALL-CONTRIBUTORS-LIST:END -->
 
 ---
