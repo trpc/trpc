@@ -1,12 +1,12 @@
-import { getSession, Provider } from 'next-auth/client';
+import { getSession, SessionProvider } from 'next-auth/react';
 import { AppType } from 'next/dist/shared/lib/utils';
 import { trpc } from 'utils/trpc';
 
 const MyApp: AppType = ({ Component, pageProps }) => {
   return (
-    <Provider session={pageProps.session}>
+    <SessionProvider session={pageProps.session}>
       <Component {...pageProps} />
-    </Provider>
+    </SessionProvider>
   );
 };
 

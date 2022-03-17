@@ -1,5 +1,7 @@
 import NextAuth from 'next-auth';
-import Providers, { AppProviders } from 'next-auth/providers';
+import { AppProviders } from 'next-auth/providers';
+import GithubProvider from 'next-auth/providers/github';
+import CredentialsProvider from 'next-auth/providers/credentials';
 
 let useMockProvider = process.env.NODE_ENV === 'test';
 const { GITHUB_CLIENT_ID, GITHUB_SECRET, NODE_ENV, APP_ENV } = process.env;
@@ -13,14 +15,14 @@ if (
 const providers: AppProviders = [];
 if (useMockProvider) {
   providers.push(
-    Providers.Credentials({
+    CredentialsProvider({
       id: 'github',
       name: 'Mocked GitHub',
       async authorize(credentials) {
         const user = {
-          id: credentials.name,
-          name: credentials.name,
-          email: credentials.name,
+          id: credentials?.name,
+          name: credentials?.name,
+          email: credentials?.name,
         };
         return user;
       },
@@ -31,7 +33,7 @@ if (useMockProvider) {
   );
 } else {
   providers.push(
-    Providers.GitHub({
+    GithubProvider({
       clientId: GITHUB_CLIENT_ID,
       clientSecret: GITHUB_SECRET,
       profile(profile) {

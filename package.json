@@ -55,7 +55,7 @@
     "current-branch": "echo \"$(git rev-parse --abbrev-ref HEAD)\" | sed -E 's/refs\\/heads\\///' | sed -E 's/\\W|_/-/g' | sed -e 's/\\//-/'",
     "publish-canary": "lerna publish --force-publish --canary --preid $(yarn --silent canary-preid) --dist-tag $(yarn --silent current-branch)",
     "publish-prerelease": "yarn && yarn lerna publish prerelease --force-publish --dist-tag experimental --no-push && sleep 60 && git push --follow-tags",
-    "merge-main": "git checkout main && git pull && git checkout next && git pull && git checkout -b next-merge next && git merge main"
+    "merge-main": "git checkout main && git pull && git checkout next && git pull && git checkout -b next-merge-$(date '+%Y-%m-%d') next && git merge main"
   },
   "dependencies": {
     "@babel/core": "^7.15.5",
@@ -87,7 +87,7 @@
     "jest": "^27.1.0",
     "jsdom": "^19.0.0",
     "lerna": "^4.0.0",
-    "playwright": "^1.14.1",
+    "playwright": "^1.19.1",
     "prettier": "^2.5.1",
     "react": "^17.0.2",
     "react-dom": "^17.0.2",
