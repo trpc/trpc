@@ -270,7 +270,9 @@ export function createReactQueryHooks<
      * @link https://github.com/trpc/trpc/pull/1645
      */
     const actualOpts =
-      ssrState && ssrState !== 'mounted'
+      ssrState &&
+      ssrState !== 'mounted' &&
+      queryClient.getQueryCache().find(pathAndInput)?.state.status === 'error'
         ? {
             retryOnMount: false,
             ...opts,
@@ -384,7 +386,9 @@ export function createReactQueryHooks<
      * @link https://github.com/trpc/trpc/pull/1645
      */
     const actualOpts =
-      ssrState && ssrState !== 'mounted'
+      ssrState &&
+      ssrState !== 'mounted' &&
+      queryClient.getQueryCache().find(pathAndInput)?.state.status == 'error'
         ? {
             retryOnMount: false,
             ...opts,
