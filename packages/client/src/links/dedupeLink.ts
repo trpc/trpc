@@ -1,6 +1,6 @@
 import { AnyRouter } from '@trpc/server';
 import { observable } from '../observable/observable';
-import { share } from '../observable/operators';
+import { share } from '../observable';
 import { Observable } from '../observable/types';
 import { TRPCLink } from './types';
 

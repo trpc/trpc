@@ -1,7 +1,5 @@
 /* eslint-disable @typescript-eslint/no-empty-function */
-import { observable } from './observable';
-import { tap } from './operators';
-import { share } from './operators/share';
+import { observable, share, tap } from './';
 
 test('vanilla observable - complete()', () => {
   const obs = observable<number, Error>((observer) => {

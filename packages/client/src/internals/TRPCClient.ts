@@ -20,7 +20,7 @@ import {
 } from '../links/types';
 import { Unsubscribable } from '../observable';
 import { inferObservableValue } from '../observable/observable';
-import { share } from '../observable/operators';
+import { share } from '../observable';
 import { Observer } from '../observable/types';
 import { observableToPromise } from '../observable/internals/observableToPromise';
 import { TRPCClientError } from '../TRPCClientError';
