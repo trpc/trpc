@@ -38,7 +38,8 @@ export interface TRPCContextState<
   ssrContext: TSSRContext | null;
   ssrEnabled: boolean;
   /**
-   * Is SSR mounted & dehydrated? Unlesss `ssrEnabled:` is true, this will always be `true`
+   * Is SSR mounted & dehydrated?
+   * Will always be `true` if `ssrEnabled` isn't set to `true`.
    */
   ssrReady: boolean;
 
