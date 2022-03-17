@@ -40,6 +40,9 @@ export interface TRPCContextState<
    */
   isPrepass: boolean;
   ssrContext: TSSRContext | null;
+  /**
+   * State of SSR. `false` if not using ssr.
+   */
   ssrState: SSRState;
 
   /**
