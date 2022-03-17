@@ -18,6 +18,11 @@
       "import": "./dist/index.mjs",
       "require": "./dist/index.js",
       "default": "./dist/index.js"
+    },
+    "./observable": {
+      "import": "./dist/observable/index.mjs",
+      "require": "./dist/observable/index.js",
+      "default": "./dist/observable/index.js"
     }
   },
   "files": [
