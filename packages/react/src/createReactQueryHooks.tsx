@@ -19,6 +19,7 @@ import React, {
   useEffect,
   useMemo,
   useRef,
+  useState,
 } from 'react';
 import {
   hashQueryKey,
@@ -91,11 +92,11 @@ type inferProcedures<TObj extends ProcedureRecord<any, any, any, any>> = {
 };
 
 function useIsMounted() {
-  const ref = useRef(false);
+  const [state, setState] = useState(false);
   useEffect(() => {
-    ref.current = true;
+    setState(true);
   }, []);
-  return ref.current;
+  return state;
 }
 
 export function createReactQueryHooks<
