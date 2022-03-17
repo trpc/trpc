@@ -1475,45 +1475,6 @@ describe('withTRPC()', () => {
     expect(utils.container).toHaveTextContent('first post');
   });
 
-  test('ssr with error sets `status`=`error`', async () => {
-    // @ts-ignore
-    const { window } = global;
-
-    let queryState: any;
-    // @ts-ignore
-    delete global.window;
-    const { trpc, trpcClientOptions } = factory;
-    const App: AppType = () => {
-      const query = trpc.useQuery(['bad-query'] as any, {
-        retry() {
-          return false;
-        },
-      });
-      queryState = {
-        status: query.status,
-        error: query.error,
-      };
-      return <>{JSON.stringify(query.data || null)}</>;
-    };
-
-    const Wrapped = withTRPC({
-      config: () => trpcClientOptions,
-      ssr: true,
-    })(App);
-
-    await Wrapped.getInitialProps!({
-      AppTree: Wrapped,
-      Component: <div />,
-    } as any);
-
-    // @ts-ignore
-    global.window = window;
-    expect(queryState.error).toMatchInlineSnapshot(
-      `[TRPCClientError: No "query"-procedure on path "bad-query"]`,
-    );
-    expect(queryState.status).toBe('error');
-  });
-
   test('useInfiniteQuery', async () => {
     const { window } = global;
 
@@ -2064,4 +2025,46 @@ describe('setInfiniteQueryData()', () => {
       expect(utils.container).toHaveTextContent('infinitePosts.title2');
     });
   });
+});
+
+/**
+ * @link https://github.com/trpc/trpc/pull/1645
+ */
+test.only('regression ssr with error sets `status`=`error`', async () => {
+  // @ts-ignore
+  const { window } = global;
+
+  let queryState: any;
+  // @ts-ignore
+  delete global.window;
+  const { trpc, trpcClientOptions } = factory;
+  const App: AppType = () => {
+    const query = trpc.useQuery(['bad-query'] as any, {
+      retry() {
+        return false;
+      },
+    });
+    queryState = {
+      status: query.status,
+      error: query.error,
+    };
+    return <>{JSON.stringify(query.data || null)}</>;
+  };
+
+  const Wrapped = withTRPC({
+    config: () => trpcClientOptions,
+    ssr: true,
+  })(App);
+
+  await Wrapped.getInitialProps!({
+    AppTree: Wrapped,
+    Component: <div />,
+  } as any);
+
+  // @ts-ignore
+  global.window = window;
+  expect(queryState.error).toMatchInlineSnapshot(
+    `[TRPCClientError: No "query"-procedure on path "bad-query"]`,
+  );
+  expect(queryState.status).toBe('error');
 });

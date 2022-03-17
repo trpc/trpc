@@ -13,7 +13,13 @@ import type {
   inferSubscriptionOutput,
   ProcedureRecord,
 } from '@trpc/server';
-import React, { ReactNode, useCallback, useEffect, useMemo } from 'react';
+import React, {
+  ReactNode,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+} from 'react';
 import {
   hashQueryKey,
   QueryClient,
@@ -84,6 +90,13 @@ type inferProcedures<TObj extends ProcedureRecord<any, any, any, any>> = {
   };
 };
 
+function useIsMounted() {
+  const ref = useRef(false);
+  useEffect(() => {
+    ref.current = true;
+  }, []);
+  return ref.current;
+}
 export function createReactQueryHooks<
   TRouter extends AnyRouter,
   TSSRContext = unknown,
@@ -111,12 +124,14 @@ export function createReactQueryHooks<
     children,
     isPrepass = false,
     ssrContext,
+    ssrEnabled = false,
   }: {
     queryClient: QueryClient;
     client: TRPCClient<TRouter>;
     children: ReactNode;
     isPrepass?: boolean;
     ssrContext?: TSSRContext | null;
+    ssrEnabled?: boolean;
   }) {
     return (
       <Context.Provider
@@ -125,6 +140,7 @@ export function createReactQueryHooks<
           client,
           isPrepass,
           ssrContext: ssrContext || null,
+          ssrEnabled,
           fetchQuery: useCallback(
             (pathAndInput, opts) => {
               return queryClient.fetchQuery(
@@ -238,7 +254,10 @@ export function createReactQueryHooks<
       TError
     >,
   ): UseQueryResult<TQueryValues[TPath]['output'], TError> {
-    const { client, isPrepass, queryClient, prefetchQuery } = useContext();
+    const { client, isPrepass, queryClient, prefetchQuery, ssrEnabled } =
+      useContext();
+
+    const isMounted = useIsMounted();
 
     if (
       typeof window === 'undefined' &&
@@ -249,11 +268,19 @@ export function createReactQueryHooks<
     ) {
       prefetchQuery(pathAndInput as any, opts as any);
     }
-    return __useQuery(
+    const query = __useQuery(
       pathAndInput as any,
       () => (client as any).query(...getClientArgs(pathAndInput, opts)),
       opts,
     );
+    if (!ssrEnabled || isMounted || !query.error) {
+      return query;
+    }
+
+    // Hack to set SSR `status` to error when error in SSR
+    query.status = 'error';
+
+    return query;
   }
 
   function useMutation<TPath extends keyof TMutationValues & string>(
