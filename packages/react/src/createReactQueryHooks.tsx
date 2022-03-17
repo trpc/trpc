@@ -125,12 +125,14 @@ export function createReactQueryHooks<
     children,
     isPrepass = false,
     ssrContext,
+    ssrEnabled = false,
   }: {
     queryClient: QueryClient;
     client: TRPCClient<TRouter>;
     children: ReactNode;
     isPrepass?: boolean;
     ssrContext?: TSSRContext | null;
+    ssrEnabled?: boolean;
   }) {
     return (
       <Context.Provider
@@ -139,7 +141,7 @@ export function createReactQueryHooks<
           client,
           isPrepass,
           ssrContext: ssrContext || null,
-
+          ssrEnabled,
           fetchQuery: useCallback(
             (pathAndInput, opts) => {
               return queryClient.fetchQuery(
@@ -252,11 +254,12 @@ export function createReactQueryHooks<
     queryKey: unknown[],
     query: TQuery,
   ): TQuery {
-    const { queryClient } = useContext();
+    const { queryClient, ssrEnabled } = useContext();
     const isMounted = useIsMounted();
     if (
       isMounted ||
       !query.error ||
+      !ssrEnabled ||
       !queryClient.getQueryCache().find(queryKey)?.meta?._trpcSSR
     ) {
       return query;
