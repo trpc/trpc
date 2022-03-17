@@ -256,6 +256,7 @@ export function createReactQueryHooks<
   ): TQuery {
     const { queryClient, ssrEnabled } = useContext();
     const isMounted = useIsMounted();
+
     if (
       isMounted ||
       !query.error ||
@@ -264,8 +265,8 @@ export function createReactQueryHooks<
     ) {
       return query;
     }
-    query.status = 'error';
-    return query;
+
+    return { ...query, status: 'error' };
   }
   function useQuery<TPath extends keyof TQueryValues & string>(
     pathAndInput: [path: TPath, ...args: inferHandlerInput<TQueries[TPath]>],
