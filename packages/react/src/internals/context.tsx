@@ -29,14 +29,28 @@ interface TRPCFetchInfiniteQueryOptions<TInput, TError, TOutput>
     TRPCRequestOptions {}
 
 /** @internal */
+export type SSRState = false | 'prepass' | 'mounting' | 'mounted';
+
+/** @internal */
 export interface TRPCContextState<
   TRouter extends AnyRouter,
   TSSRContext = undefined,
 > {
   queryClient: QueryClient;
   client: TRPCClient<TRouter>;
+  /**
+   * @deprecated use `ssrState === 'prepass'`
+   */
   isPrepass: boolean;
   ssrContext: TSSRContext | null;
+  /**
+   * State of SSR hydration.
+   * - `false` if not using SSR.
+   * - `prepass` when doing a prepass to fetch queries' data
+   * - `mounting` before TRPCProvider has been rendered on the client
+   * - `mounted` when the TRPCProvider has been rendered on the client
+   */
+  ssrState: SSRState;
 
   /**
    * @link https://react-query.tanstack.com/guides/prefetching

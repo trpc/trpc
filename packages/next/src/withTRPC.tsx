@@ -80,7 +80,7 @@ export function withTRPC<TRouter extends AnyRouter>(
     config: WithTRPCConfig<TRouter>;
     queryClient: QueryClient;
     trpcClient: TRPCClient<TRouter>;
-    isPrepass: true;
+    ssrState: 'prepass';
     ssrContext: NextPageContext;
   };
   return (AppOrPage: NextComponentType<any, any, any>): NextComponentType => {
@@ -91,7 +91,7 @@ export function withTRPC<TRouter extends AnyRouter>(
         trpc?: TRPCPrepassProps;
       },
     ) => {
-      const [{ queryClient, trpcClient, isPrepass, ssrContext }] = useState(
+      const [{ queryClient, trpcClient, ssrState, ssrContext }] = useState(
         () => {
           if (props.trpc) {
             return props.trpc;
@@ -102,7 +102,7 @@ export function withTRPC<TRouter extends AnyRouter>(
           return {
             queryClient,
             trpcClient,
-            isPrepass: false,
+            ssrState: opts.ssr ? ('mounting' as const) : (false as const),
             ssrContext: null,
           };
         },
@@ -114,7 +114,7 @@ export function withTRPC<TRouter extends AnyRouter>(
         <trpc.Provider
           client={trpcClient}
           queryClient={queryClient}
-          isPrepass={isPrepass}
+          ssrState={ssrState}
           ssrContext={ssrContext}
         >
           <QueryClientProvider client={queryClient}>
@@ -166,7 +166,7 @@ export function withTRPC<TRouter extends AnyRouter>(
           config,
           trpcClient,
           queryClient,
-          isPrepass: true,
+          ssrState: 'prepass',
           ssrContext: ctx,
         };
         const prepassProps = {
