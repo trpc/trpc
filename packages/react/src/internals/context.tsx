@@ -37,7 +37,10 @@ export interface TRPCContextState<
   isPrepass: boolean;
   ssrContext: TSSRContext | null;
   ssrEnabled: boolean;
-  isMounted: boolean;
+  /**
+   * Is SSR mounted & dehydrated? Unlesss `ssrEnabled:` is true, this will always be `true`
+   */
+  ssrReady: boolean;
 
   /**
    * @link https://react-query.tanstack.com/guides/prefetching

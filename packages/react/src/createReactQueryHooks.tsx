@@ -90,14 +90,6 @@ type inferProcedures<TObj extends ProcedureRecord<any, any, any, any>> = {
   };
 };
 
-function useIsMounted() {
-  const [state, setState] = useState(false);
-  useEffect(() => {
-    setState(true);
-  }, []);
-  return state;
-}
-
 export function createReactQueryHooks<
   TRouter extends AnyRouter,
   TSSRContext = unknown,
@@ -134,7 +126,10 @@ export function createReactQueryHooks<
     ssrContext?: TSSRContext | null;
     ssrEnabled?: boolean;
   }) {
-    const isMounted = useIsMounted();
+    const [ssrReady, setssrReady] = useState(() => !ssrEnabled);
+    useEffect(() => {
+      setssrReady(true);
+    }, []);
     return (
       <Context.Provider
         value={{
@@ -143,7 +138,7 @@ export function createReactQueryHooks<
           isPrepass,
           ssrContext: ssrContext || null,
           ssrEnabled,
-          isMounted,
+          ssrReady,
           fetchQuery: useCallback(
             (pathAndInput, opts) => {
               return queryClient.fetchQuery(
@@ -262,7 +257,7 @@ export function createReactQueryHooks<
       isPrepass,
       queryClient,
       prefetchQuery,
-      isMounted,
+      ssrReady,
       ssrEnabled,
     } = useContext();
 
@@ -281,7 +276,7 @@ export function createReactQueryHooks<
      * @link https://github.com/trpc/trpc/pull/1645
      */
     const actualOpts =
-      ssrEnabled && !isMounted
+      ssrEnabled && !ssrReady
         ? {
             retryOnMount: false,
             ...opts,
@@ -383,7 +378,7 @@ export function createReactQueryHooks<
       prefetchInfiniteQuery,
       queryClient,
       ssrEnabled,
-      isMounted,
+      ssrReady,
     } = useContext();
 
     if (
@@ -401,7 +396,7 @@ export function createReactQueryHooks<
      * @link https://github.com/trpc/trpc/pull/1645
      */
     const actualOpts =
-      ssrEnabled && !isMounted
+      ssrEnabled && !ssrReady
         ? {
             retryOnMount: false,
             ...opts,
