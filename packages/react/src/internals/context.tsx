@@ -41,7 +41,11 @@ export interface TRPCContextState<
   isPrepass: boolean;
   ssrContext: TSSRContext | null;
   /**
-   * State of SSR. `false` if not using ssr.
+   * State of SSR.
+   * - `false` if not using ssr.
+   * - `prepass` when doing a prepass to fetch queries' data
+   * - `mounting` before TRPCProvider has been rendered on the client
+   * - `mounted` when the TRPCProvider has been rendered on the client
    */
   ssrState: SSRState;
 
