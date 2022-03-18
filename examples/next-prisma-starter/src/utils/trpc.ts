@@ -1,14 +1,29 @@
 import { createReactQueryHooks } from '@trpc/react';
 import type { inferProcedureInput, inferProcedureOutput } from '@trpc/server';
+import { NextPageContext } from 'next';
 // ℹ️ Type-only import:
 // https://www.typescriptlang.org/docs/handbook/release-notes/typescript-3-8.html#type-only-imports-and-export
 import type { AppRouter } from '~/server/routers/_app';
 
 /**
+ * Extend `NextPageContext` with meta data that can be picked up by `responseMeta()` when server-side rendering
+ */
+export interface SSRContext extends NextPageContext {
+  /**
+   * `303` redirect to another location
+   */
+  _redirectTo?: string;
+  /**
+   * Set HTTP Status code
+   */
+  _status?: number;
+}
+
+/**
  * A set of strongly-typed React hooks from your `AppRouter` type signature with `createReactQueryHooks`.
  * @link https://trpc.io/docs/react#3-create-trpc-hooks
  */
-export const trpc = createReactQueryHooks<AppRouter>();
+export const trpc = createReactQueryHooks<AppRouter, SSRContext>();
 
 // export const transformer = superjson;
 /**
