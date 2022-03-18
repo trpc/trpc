@@ -18,8 +18,8 @@ export const Redirect = (props: { pathname: string; children?: ReactNode }) => {
 
   // Server-side redirect
   if (utils.ssrContext) {
-    // This `_redirectTo` will be picked up in `_app.tsx`'s `responseMeta` function
-    utils.ssrContext._redirectTo = props.pathname;
+    // This `redirectTo` will be picked up in `_app.tsx`'s `responseMeta` function
+    utils.ssrContext.redirectTo = props.pathname;
   }
 
   // Client-side redirect

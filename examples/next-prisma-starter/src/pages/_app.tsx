@@ -85,17 +85,17 @@ export default withTRPC<AppRouter>({
   responseMeta(opts) {
     const ctx = opts.ctx as SSRContext;
 
-    if (ctx._redirectTo) {
+    if (ctx.redirectTo) {
       return {
         status: 303, // 303 See other
         headers: {
-          location: ctx._redirectTo,
+          location: ctx.redirectTo,
         },
       };
     }
-    if (ctx._status) {
+    if (ctx.status) {
       return {
-        status: ctx._status,
+        status: ctx.status,
       };
     }
 

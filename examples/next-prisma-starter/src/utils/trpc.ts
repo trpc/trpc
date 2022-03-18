@@ -12,11 +12,11 @@ export interface SSRContext extends NextPageContext {
   /**
    * `303` redirect to another location
    */
-  _redirectTo?: string;
+  redirectTo?: string;
   /**
    * Set HTTP Status code
    */
-  _status?: number;
+  status?: number;
 }
 
 /**
