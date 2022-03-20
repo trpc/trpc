@@ -10,6 +10,17 @@ function AddMessageForm({ onMessagePost }: { onMessagePost: () => void }) {
   const utils = trpc.useContext();
   const { data: session } = useSession();
   const [message, setMessage] = useState('');
+  const [enterToPostMessage, setEnterToPostMessage] = useState(true);
+  async function postMessage() {
+    const input = {
+      text: message,
+    };
+    try {
+      await addPost.mutateAsync(input);
+      setMessage('');
+      onMessagePost();
+    } catch {}
+  }
 
   const userName = session?.user?.name;
   if (!userName) {
@@ -36,15 +47,7 @@ function AddMessageForm({ onMessagePost }: { onMessagePost: () => void }) {
            * Checkout React Hook Form - it works great with tRPC
            * @link https://react-hook-form.com/
            */
-
-          const input = {
-            text: message,
-          };
-          try {
-            await addPost.mutateAsync(input);
-            setMessage('');
-            onMessagePost();
-          } catch {}
+          await postMessage();
         }}
       >
         <fieldset disabled={addPost.isLoading}>
@@ -57,12 +60,24 @@ function AddMessageForm({ onMessagePost }: { onMessagePost: () => void }) {
               id="text"
               name="text"
               autoFocus
-              onKeyDown={() => {
+              onKeyDown={async (e) => {
+                if (e.key === 'Shift') {
+                  setEnterToPostMessage(false);
+                }
+                if (e.key === 'Enter' && enterToPostMessage) {
+                  postMessage();
+                }
                 utils.client.mutation('post.isTyping', {
                   typing: true,
                 });
               }}
+              onKeyUp={(e) => {
+                if (e.key === 'Shift') {
+                  setEnterToPostMessage(true);
+                }
+              }}
               onBlur={() => {
+                setEnterToPostMessage(true);
                 utils.client.mutation('post.isTyping', {
                   typing: false,
                 });
