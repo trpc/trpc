@@ -1,7 +1,7 @@
 import { useRouter } from 'next/router';
-import { trpc } from 'utils/trpc';
+import { trpc } from '~/utils/trpc';
 import NextError from 'next/error';
-import { NextPageWithLayout } from 'pages/_app';
+import { NextPageWithLayout } from '~/pages/_app';
 
 const PostViewPage: NextPageWithLayout = () => {
   const id = useRouter().query.id as string;
