@@ -233,9 +233,9 @@ export default function IndexPage() {
           </div>
           <div className="hidden md:block h-16 flex-shrink-0"></div>
         </section>
-        <div className="md:h-screen flex-1">
+        <div className="md:h-screen flex-1 overflow-y-hidden">
           <section className="bg-gray-700 h-full p-4 flex flex-col justify-end space-y-4">
-            <div className="overflow-y-scroll">
+            <div className="overflow-y-auto">
               <h2>{postsQuery.status === 'loading' && '(loading)'}</h2>
               <button
                 data-testid="loadMore"
