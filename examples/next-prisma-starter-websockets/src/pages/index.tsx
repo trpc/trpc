@@ -150,6 +150,7 @@ export default function IndexPage() {
   }, [scrollTargetRef]);
   useEffect(() => {
     scrollToBottomOfList();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   // subscribe to new posts and add
   trpc.useSubscription(['post.onAdd'], {
@@ -221,7 +222,17 @@ export default function IndexPage() {
                   <article>
                     <h2 className="text-lg text-gray-200">User information</h2>
                     <ul className="space-y-2">
-                      <li className="text-lg">You&apos;re {userName}</li>
+                      <li className="text-lg">
+                        You&apos;re{' '}
+                        <input
+                          id="name"
+                          name="name"
+                          type="text"
+                          disabled
+                          className="bg-transparent"
+                          value={userName}
+                        />
+                      </li>
                       <li>
                         <button onClick={() => signOut()}>Sign Out</button>
                       </li>
