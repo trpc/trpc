@@ -25,7 +25,16 @@ function AddMessageForm({ onMessagePost }: { onMessagePost: () => void }) {
   if (!userName) {
     return (
       <div className="flex rounded bg-gray-800 px-3 py-2 text-lg text-gray-200 w-full justify-between">
-        <p className="font-bold">Let&apos;s sign in to write. </p>
+        <p className="font-bold">
+          You have to{' '}
+          <button
+            className="inline font-bold underline"
+            onClick={() => signIn()}
+          >
+            sign in
+          </button>{' '}
+          to write.
+        </p>
         <button
           onClick={() => signIn()}
           data-testid="signin"
@@ -188,7 +197,7 @@ export default function IndexPage() {
                   Showcases WebSocket + subscription support
                   <br />
                   <a
-                    className="text-gray-100"
+                    className="text-gray-100 underline"
                     href="https://github.com/trpc/trpc/tree/main/examples/next-prisma-starter-websockets"
                     target="_blank"
                     rel="noreferrer"
