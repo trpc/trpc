@@ -30,7 +30,7 @@ export type TRPCFetch = (
   options?: RequestInit,
 ) => Promise<Response>;
 
-export interface LinkRuntime {
+export interface TRPCClientRuntime {
   headers: () => HTTPHeaders | Promise<HTTPHeaders>;
   fetch: TRPCFetch;
   AbortController?: typeof AbortController;
@@ -61,5 +61,5 @@ export type OperationLink<
 }) => OperationResultObservable<TRouter, TOutput>;
 
 export type TRPCLink<TRouter extends AnyRouter> = (
-  opts: LinkRuntime,
+  opts: TRPCClientRuntime,
 ) => OperationLink<TRouter>;

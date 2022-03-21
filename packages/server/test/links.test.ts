@@ -2,7 +2,7 @@
 
 /* eslint-disable @typescript-eslint/no-empty-function */
 import { routerToServerAndClient } from './__testHelpers';
-import { LinkRuntime, OperationLink } from '@trpc/client/src';
+import { OperationLink, TRPCClientRuntime } from '@trpc/client/src';
 import { createChain } from '@trpc/client/src/links/internals/createChain';
 import { observableToPromise } from '@trpc/client/src/observable/internals/observableToPromise';
 import AbortController from 'abort-controller';
@@ -20,7 +20,7 @@ import { observable } from '../../client/src/observable';
 import * as trpc from '../src';
 import { AnyRouter } from '../src';
 
-const mockRuntime: LinkRuntime = {
+const mockRuntime: TRPCClientRuntime = {
   fetch: fetch as any,
   AbortController: AbortController as any,
   headers: () => ({}),

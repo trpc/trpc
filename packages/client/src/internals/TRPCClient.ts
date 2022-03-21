@@ -14,9 +14,9 @@ import { createChain } from '../links/internals/createChain';
 import { transformOperationResult } from '../links/internals/transformOperationResult';
 import {
   HTTPHeaders,
-  LinkRuntime,
   OperationContext,
   OperationLink,
+  TRPCClientRuntime,
   TRPCLink,
 } from '../links/types';
 import {
@@ -83,13 +83,13 @@ export type CreateTRPCClientOptions<TRouter extends AnyRouter> =
   | CreateTRPCClientWithURLOptions;
 export class TRPCClient<TRouter extends AnyRouter> {
   private readonly links: OperationLink<TRouter>[];
-  public readonly runtime: LinkRuntime;
+  public readonly runtime: TRPCClientRuntime;
 
   constructor(opts: CreateTRPCClientOptions<TRouter>) {
     const _fetch = getFetch(opts?.fetch);
     const AC = getAbortController(opts?.AbortController);
 
-    function getHeadersFn(): LinkRuntime['headers'] {
+    function getHeadersFn(): TRPCClientRuntime['headers'] {
       if (opts.headers) {
         const headers = opts.headers;
         return typeof headers === 'function' ? headers : () => headers;
