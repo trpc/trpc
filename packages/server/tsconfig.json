@@ -2,7 +2,7 @@
   "extends": "../../tsconfig.json",
   "include": ["src", "test"],
   "compilerOptions": {
-    "target": "ES2019",
-    "lib": ["es5", "es6", "dom", "dom.iterable", "ES2020.Promise"]
+    "lib": ["ES2020"],
+    "target": "ES2020"
   }
 }
