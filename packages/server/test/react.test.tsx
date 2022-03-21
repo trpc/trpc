@@ -68,9 +68,7 @@ function createAppRouter() {
       return {
         $test: 'formatted',
         zodError:
-          error.originalError instanceof ZodError
-            ? error.originalError.flatten()
-            : null,
+          error.cause instanceof ZodError ? error.cause.flatten() : null,
         ...shape,
       };
     })

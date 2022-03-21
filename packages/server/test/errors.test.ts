@@ -41,7 +41,7 @@ test('basic', async () => {
   if (!(serverError instanceof TRPCError)) {
     throw new Error('Wrong error');
   }
-  expect(serverError.originalError).toBeInstanceOf(MyError);
+
   expect(serverError.cause).toBeInstanceOf(MyError);
 
   close();
@@ -86,7 +86,7 @@ test('input error', async () => {
   //   console.log('err', serverError);
   //   throw new Error('Wrong error');
   // }
-  expect(serverError.originalError).toBeInstanceOf(ZodError);
+
   expect(serverError.cause).toBeInstanceOf(ZodError);
 
   close();
@@ -128,13 +128,13 @@ describe('formatError()', () => {
       trpc
         .router()
         .formatError(({ error, shape }) => {
-          if (error.originalError instanceof ZodError) {
+          if (error.cause instanceof ZodError) {
             return {
               ...shape,
               data: {
                 ...shape.data,
                 type: 'zod' as const,
-                errors: error.originalError.errors,
+                errors: error.cause.errors,
               },
             };
           }
@@ -206,7 +206,7 @@ Object {
     expect(onError).toHaveBeenCalledTimes(1);
     const serverError = onError.mock.calls[0][0].error;
 
-    expect(serverError.originalError).toBeInstanceOf(ZodError);
+    expect(serverError.cause).toBeInstanceOf(ZodError);
 
     close();
   });
@@ -232,7 +232,7 @@ Object {
       trpc
         .router()
         .formatError(({ error, shape }) => {
-          if (!(error.originalError instanceof ZodError)) {
+          if (!(error.cause instanceof ZodError)) {
             return shape;
           }
           return {
@@ -382,7 +382,7 @@ test('retain stack trace', async () => {
   const serverOnErrorOpts = onError.mock.calls[0][0];
   const serverError = serverOnErrorOpts.error;
   expect(serverError).toBeInstanceOf(TRPCError);
-  expect(serverError.originalError).toBeInstanceOf(CustomError);
+  expect(serverError.cause).toBeInstanceOf(CustomError);
 
   expect(serverError.stack).not.toContain('getErrorFromUnknown');
   const stackParts = serverError.stack!.split('\n');
