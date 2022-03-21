@@ -32,13 +32,6 @@ type CancellablePromise<T = unknown> = Promise<T> & {
   cancel: CancelFn;
 };
 
-/**
- * @deprecated no longer used
- */
-export interface FetchOptions {
-  fetch?: typeof fetch;
-  AbortController?: typeof AbortController;
-}
 let idCounter = 0;
 function getRequestId() {
   return ++idCounter;
