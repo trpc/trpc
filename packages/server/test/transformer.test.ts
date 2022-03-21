@@ -4,12 +4,7 @@ import devalue from 'devalue';
 import fetch from 'node-fetch';
 import superjson from 'superjson';
 import { z } from 'zod';
-import {
-  TRPCClientError,
-  httpBatchLink,
-  httpLink,
-  transformerLink,
-} from '../../client/src';
+import { TRPCClientError, httpBatchLink, httpLink } from '../../client/src';
 import * as trpc from '../src';
 import { TRPCError } from '../src/TRPCError';
 
@@ -32,7 +27,8 @@ test('superjson up and down', async () => {
     {
       client({ httpUrl }) {
         return {
-          links: [transformerLink(superjson), httpBatchLink({ url: httpUrl })],
+          transformer: superjson,
+          links: [httpBatchLink({ url: httpUrl })],
         };
       },
     },
@@ -65,7 +61,8 @@ test('empty superjson up and down', async () => {
     {
       client({ httpUrl }) {
         return {
-          links: [transformerLink(superjson), httpBatchLink({ url: httpUrl })],
+          transformer: superjson,
+          links: [httpBatchLink({ url: httpUrl })],
         };
       },
     },
@@ -134,10 +131,8 @@ test('devalue up and down', async () => {
     {
       client({ httpUrl }) {
         return {
-          links: [
-            transformerLink(transformer),
-            httpBatchLink({ url: httpUrl }),
-          ],
+          transformer,
+          links: [httpBatchLink({ url: httpUrl })],
         };
       },
     },
@@ -174,7 +169,8 @@ test('not batching: superjson up and devalue down', async () => {
     {
       client({ httpUrl }) {
         return {
-          links: [transformerLink(transformer), httpLink({ url: httpUrl })],
+          transformer,
+          links: [httpLink({ url: httpUrl })],
         };
       },
     },
@@ -211,10 +207,8 @@ test('batching: superjson up and devalue down', async () => {
     {
       client({ httpUrl }) {
         return {
-          links: [
-            transformerLink(transformer),
-            httpBatchLink({ url: httpUrl }),
-          ],
+          transformer,
+          links: [httpBatchLink({ url: httpUrl })],
         };
       },
     },
@@ -250,7 +244,8 @@ test('batching: superjson up and f down', async () => {
       }),
     {
       client: ({ httpUrl }) => ({
-        links: [transformerLink(transformer), httpBatchLink({ url: httpUrl })],
+        transformer,
+        links: [httpBatchLink({ url: httpUrl })],
       }),
     },
   );
@@ -302,10 +297,8 @@ test('all transformers running in correct order', async () => {
     {
       client({ httpUrl }) {
         return {
-          links: [
-            transformerLink(transformer),
-            httpBatchLink({ url: httpUrl }),
-          ],
+          transformer,
+          links: [httpBatchLink({ url: httpUrl })],
         };
       },
     },
@@ -341,10 +334,8 @@ describe('transformer on router', () => {
       {
         client({ httpUrl }) {
           return {
-            links: [
-              transformerLink(superjson),
-              httpBatchLink({ url: httpUrl }),
-            ],
+            transformer: superjson,
+            links: [httpBatchLink({ url: httpUrl })],
           };
         },
       },
@@ -432,10 +423,8 @@ describe('transformer on router', () => {
         },
         client({ httpUrl }) {
           return {
-            links: [
-              transformerLink(transformer),
-              httpBatchLink({ url: httpUrl }),
-            ],
+            transformer,
+            links: [httpBatchLink({ url: httpUrl })],
           };
         },
       },
@@ -474,7 +463,8 @@ test('superjson - no input', async () => {
     {
       client({ httpUrl }) {
         return {
-          links: [transformerLink(superjson), httpBatchLink({ url: httpUrl })],
+          transformer: superjson,
+          links: [httpBatchLink({ url: httpUrl })],
         };
       },
     },

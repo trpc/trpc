@@ -33,13 +33,12 @@ export const appRouter = trpc.router()
 
 ```ts
 import superjson from 'superjson';
-import { transformerLink } from '@trpc/client';
 import { httpBatchLink } from '@trpc/client';
 // [...]
 
 export const client = createTRPCClient<AppRouter>({
+  transformer: superjson, // <---
   links: [
-    transformerLink(superjson), // <---
     httpBatchLink({
       url: `/api/trpc`,
     }),
@@ -49,7 +48,6 @@ export const client = createTRPCClient<AppRouter>({
 ```
 ```ts
 import { httpBatchLink } from '@trpc/client';
-import { transformerLink } from '@trpc/client';
 import { setupTRPC } from '@trpc/next';
 import superjson from 'superjson';
 import type { AppRouter } from 'server/routers/_app';
@@ -57,10 +55,9 @@ import type { AppRouter } from 'server/routers/_app';
 // [...]
 
 export default setupTRPC<AppRouter>({
-  transformer: superjson, // <-- Used for hydration when server-side rendering
+  transformer: superjson, // <-- rendering
   config({ ctx }) {
     links: [
-      transformerLink(superjson), // <-- Used for the actual requests
       httpBatchLink({
         url: `${getBaseUrl()}/api/trpc`,
       }),

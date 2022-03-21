@@ -1,5 +1,7 @@
 import {
   AnyRouter,
+  ClientDataTransformerOptions,
+  DataTransformer,
   inferHandlerInput,
   inferProcedureInput,
   inferProcedureOutput,
@@ -49,6 +51,11 @@ interface CreateTRPCClientBaseOptions {
    * headers to be set on outgoing requests / callback that of said headers
    */
   headers?: HTTPHeaders | (() => HTTPHeaders | Promise<HTTPHeaders>);
+  /**
+   * Data transformer
+   * @link http://localhost:3000/docs/data-transformers
+   **/
+  transformer?: ClientDataTransformerOptions;
 }
 
 /** @internal */
@@ -86,6 +93,18 @@ export class TRPCClient<TRouter extends AnyRouter> {
   public readonly runtime: TRPCClientRuntime;
 
   constructor(opts: CreateTRPCClientOptions<TRouter>) {
+    const transformer: DataTransformer = opts.transformer
+      ? 'input' in opts.transformer
+        ? {
+            serialize: opts.transformer.input.serialize,
+            deserialize: opts.transformer.output.deserialize,
+          }
+        : opts.transformer
+      : {
+          serialize: (data) => data,
+          deserialize: (data) => data,
+        };
+
     const _fetch = getFetch(opts?.fetch);
     const AC = getAbortController(opts?.AbortController);
 
@@ -100,6 +119,7 @@ export class TRPCClient<TRouter extends AnyRouter> {
       AbortController: AC as any,
       fetch: _fetch,
       headers: getHeadersFn(),
+      transformer,
     };
 
     if ('links' in opts) {

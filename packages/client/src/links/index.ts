@@ -5,6 +5,5 @@ export * from './loggerLink';
 export * from './loggerLink';
 export * from './retryLink';
 export * from './splitLink';
-export * from './transformerLink';
 export * from './wsLink';
 export * from './types';

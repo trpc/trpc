@@ -1,4 +1,9 @@
-import { AnyRouter, Dict, inferRouterError } from '@trpc/server';
+import {
+  AnyRouter,
+  DataTransformer,
+  Dict,
+  inferRouterError,
+} from '@trpc/server';
 import { TRPCResponse } from '@trpc/server/rpc';
 import { TRPCClientError } from '../TRPCClientError';
 import { Observable, Observer } from '../observable/types';
@@ -34,6 +39,7 @@ export interface TRPCClientRuntime {
   headers: () => HTTPHeaders | Promise<HTTPHeaders>;
   fetch: TRPCFetch;
   AbortController?: typeof AbortController;
+  transformer: DataTransformer;
 }
 
 export interface OperationResult<TRouter extends AnyRouter, TOutput> {

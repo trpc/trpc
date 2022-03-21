@@ -24,6 +24,10 @@ const mockRuntime: TRPCClientRuntime = {
   fetch: fetch as any,
   AbortController: AbortController as any,
   headers: () => ({}),
+  transformer: {
+    serialize: (v) => v,
+    deserialize: (v) => v,
+  },
 };
 test('chainer', async () => {
   let attempt = 0;
