@@ -10,31 +10,36 @@
     "url": "git+https://github.com/trpc/trpc.git",
     "directory": "packages/client"
   },
-  "preconstruct": {
-    "entrypoints": [
-      "index.ts",
-      "links/httpLink.ts",
-      "links/httpBatchLink.ts",
-      "links/splitLink.ts",
-      "links/loggerLink.ts",
-      "links/wsLink.ts"
-    ]
+  "main": "dist/index.js",
+  "module": "dist/index.mjs",
+  "typings": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js",
+      "default": "./dist/index.js"
+    },
+    "./observable": {
+      "import": "./dist/observable/index.mjs",
+      "require": "./dist/observable/index.js",
+      "default": "./dist/observable/index.js"
+    }
   },
-  "scripts": {},
-  "main": "dist/trpc-client.cjs.js",
-  "module": "dist/trpc-client.esm.js",
-  "typings": "dist/trpc-client.cjs.d.ts",
   "files": [
     "README.md",
     "dist",
     "links",
-    "src"
+    "src",
+    "observable"
   ],
+  "scripts": {
+    "build": "rollup -c"
+  },
   "dependencies": {
     "@babel/runtime": "^7.9.0"
   },
   "peerDependencies": {
-    "@trpc/server": "^10.0.0-alpha.18"
+    "@trpc/server": "^9.12.0"
   },
   "devDependencies": {
     "@trpc/server": "^10.0.0-alpha.18"
