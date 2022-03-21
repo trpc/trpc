@@ -199,22 +199,14 @@ export default function IndexPage() {
                 </p>
               </header>
               <div className="hidden md:block text-gray-400 p-4 space-y-6 flex-1 overflow-y-auto">
-                <article>
+                <article className="space-y-2">
                   <h2 className="text-lg text-gray-200">Introduction</h2>
-                  <ul className="space-y-3">
+                  <ul className="space-y-2 list-disc list-inside">
                     <li>Open inspector and head to Network tab</li>
                     <li>All client requests are handled through WebSockets</li>
                     <li>
                       We have a simple backend subscription on new messages that
                       adds the newly added message to the current state
-                    </li>
-                    <li>
-                      <Link href="/about">
-                        <a className="text-gray-100">
-                          Go to other page that displays a random number
-                        </a>
-                      </Link>
-                      (cancels subscription)
                     </li>
                   </ul>
                 </article>
