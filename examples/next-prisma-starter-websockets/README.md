@@ -26,7 +26,7 @@
 yarn create next-app --example https://github.com/trpc/trpc --example-path examples/next-prisma-starter-websockets trpc-prisma-starter-websockets
 cd trpc-prisma-starter-websockets
 yarn
-yarn dev
+yarn dx
 ```
 
 ## Deployment
@@ -66,11 +66,14 @@ Go to [dashboard.render.com/blueprints](https://dashboard.render.com/blueprints)
 ## Commands
 
 ```bash
-yarn dx # runs prisma studio + next
-yarn build # runs `prisma generate` + `prisma migrate` + `next build`
-yarn test-dev # runs e2e tests on dev
+yarn build      # runs `prisma generate` + `prisma migrate` + `next build`
+yarn db-nuke    # resets local db
+yarn dev        # starts next.js + WebSocket server
+yarn dx         # starts postgres db + runs migrations + seeds + starts next.js 
+yarn test-dev   # runs e2e tests on dev
 yarn test-start # runs e2e tests on `next start` - build required before
-yarn dev-nuke # resets local db
+yarn test:unit  # runs normal jest unit tests
+yarn test:e2e   # runs e2e tests
 ```
 ---
 
