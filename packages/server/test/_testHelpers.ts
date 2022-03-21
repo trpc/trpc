@@ -83,10 +83,6 @@ export function routerToServerAndClient<TRouter extends AnyRouter>(
     },
     router,
     trpcClientOptions,
-    /**
-     * @deprecated
-     */
-    port: httpPort,
     httpPort,
     wssPort,
     httpUrl,
