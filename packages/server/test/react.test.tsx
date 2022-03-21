@@ -11,7 +11,7 @@ import userEvent from '@testing-library/user-event';
 import { httpBatchLink } from '@trpc/client/links/httpBatchLink';
 import { expectTypeOf } from 'expect-type';
 import hash from 'hash-sum';
-import React, { Fragment, useEffect, useState } from 'react';
+import React, { Fragment, ReactNode, useEffect, useState } from 'react';
 import {
   QueryClient,
   QueryClientProvider,
@@ -226,7 +226,18 @@ function createAppRouter() {
   const queryClient = new QueryClient();
   const trpc = createReactQueryHooks<typeof appRouter>();
 
+  function App(props: { children: ReactNode }) {
+    const [queryClient] = useState(() => new QueryClient());
+    return (
+      <trpc.Provider {...{ queryClient, client }}>
+        <QueryClientProvider client={queryClient}>
+          {props.children}
+        </QueryClientProvider>
+      </trpc.Provider>
+    );
+  }
   return {
+    App,
     appRouter,
     trpc,
     close,
@@ -578,6 +589,40 @@ describe('useMutation()', () => {
     await waitFor(() => {
       expect(utils.container).not.toHaveTextContent('first post');
       expect(utils.container).toHaveTextContent('second post');
+    });
+  });
+
+  test('useMutation with context', async () => {
+    const { trpc, App, linkSpy } = factory;
+
+    function MyComponent() {
+      const deletePostsMutation = trpc.useMutation(['deletePosts'], {
+        context: {
+          test: '1',
+        },
+      });
+
+      useEffect(() => {
+        deletePostsMutation.mutate();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+      }, []);
+
+      return <pre>{deletePostsMutation.isSuccess && '___FINISHED___'}</pre>;
+    }
+
+    const utils = render(
+      <App>
+        <MyComponent />
+      </App>,
+    );
+    await waitFor(() => {
+      expect(utils.container).toHaveTextContent('___FINISHED___');
+    });
+
+    expect(linkSpy.up).toHaveBeenCalledTimes(1);
+    expect(linkSpy.down).toHaveBeenCalledTimes(1);
+    expect(linkSpy.up.mock.calls[0][0].context).toMatchObject({
+      test: '1',
     });
   });
 });
