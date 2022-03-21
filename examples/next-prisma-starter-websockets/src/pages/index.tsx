@@ -1,6 +1,5 @@
 import { signIn, signOut, useSession } from 'next-auth/react';
 import Head from 'next/head';
-import Link from 'next/link';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { ReactQueryDevtools } from 'react-query/devtools';
 import { trpc } from '../utils/trpc';
