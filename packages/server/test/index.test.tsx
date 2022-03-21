@@ -537,7 +537,7 @@ describe('ObservableAbortError', () => {
     const err = onReject.mock.calls[0][0] as TRPCClientError<any>;
 
     expect(err.name).toBe('TRPCClientError');
-    expect(err.originalError?.name).toBe('ObservableAbortError');
+    expect(err.cause?.name).toBe('ObservableAbortError');
 
     close();
   });
@@ -586,7 +586,7 @@ describe('ObservableAbortError', () => {
 
     const err = onReject1.mock.calls[0][0] as TRPCClientError<any>;
     expect(err).toBeInstanceOf(TRPCClientError);
-    expect(err.originalError?.name).toBe('ObservableAbortError');
+    expect(err.cause?.name).toBe('ObservableAbortError');
 
     expect(await req2).toBe('slow2');
 
