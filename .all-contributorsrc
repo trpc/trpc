@@ -592,6 +592,15 @@
       "contributions": [
         "doc"
       ]
+    },
+    {
+      "login": "toyamarinyon",
+      "name": "toyamarinyon",
+      "avatar_url": "https://avatars.githubusercontent.com/u/535254?v=4",
+      "profile": "https://github.com/toyamarinyon",
+      "contributions": [
+        "example"
+      ]
     }
   ],
   "contributorsPerLine": 7,
