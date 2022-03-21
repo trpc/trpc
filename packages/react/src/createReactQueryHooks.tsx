@@ -200,13 +200,6 @@ export function createReactQueryHooks<
             },
             [client, queryClient],
           ),
-          /**
-           * @deprecated use `invalidateQueries`
-           */
-          invalidateQuery: useCallback(
-            (...args: any[]) => queryClient.invalidateQueries(...args),
-            [queryClient],
-          ),
           invalidateQueries: useCallback(
             (...args: any[]) => queryClient.invalidateQueries(...args),
             [queryClient],

@@ -107,17 +107,6 @@ export interface TRPCContextState<
   ): Promise<void>;
 
   /**
-   * @deprecated use `invalidateQueries`
-   */
-  invalidateQuery<
-    TPath extends keyof TRouter['_def']['queries'] & string,
-    TInput extends inferProcedureInput<TRouter['_def']['queries'][TPath]>,
-  >(
-    pathAndInput: [TPath, TInput?],
-    options?: InvalidateOptions,
-  ): Promise<void>;
-
-  /**
    * @link https://react-query.tanstack.com/guides/query-invalidation
    */
   invalidateQueries<
