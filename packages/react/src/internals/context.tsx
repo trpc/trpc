@@ -38,10 +38,6 @@ export interface TRPCContextState<
 > {
   queryClient: QueryClient;
   client: TRPCClient<TRouter>;
-  /**
-   * @deprecated use `ssrState === 'prepass'`
-   */
-  isPrepass: boolean;
   ssrContext: TSSRContext | null;
   /**
    * State of SSR hydration.

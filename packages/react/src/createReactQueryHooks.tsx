@@ -129,17 +129,11 @@ export function createReactQueryHooks<
     queryClient: QueryClient;
     client: TRPCClient<TRouter>;
     children: ReactNode;
-    /**
-     * @deprecated
-     */
-    isPrepass?: boolean;
     ssrContext?: TSSRContext | null;
     ssrState?: SSRState;
   }) {
     const { client, queryClient, ssrContext } = props;
-    const [ssrState, setSSRState] = useState<SSRState>(
-      props.ssrState || (props.isPrepass ? 'prepass' : false),
-    );
+    const [ssrState, setSSRState] = useState<SSRState>(props.ssrState ?? false);
     useEffect(() => {
       // Only updating state to `mounted` if we are using SSR.
       // This makes it so we don't have an unnecessary re-render when opting out of SSR.
@@ -150,7 +144,6 @@ export function createReactQueryHooks<
         value={{
           queryClient,
           client,
-          isPrepass: ssrState === 'prepass',
           ssrContext: ssrContext || null,
           ssrState,
           fetchQuery: useCallback(
@@ -284,11 +277,11 @@ export function createReactQueryHooks<
       TError
     >,
   ): UseQueryResult<TQueryValues[TPath]['output'], TError> {
-    const { client, isPrepass, queryClient, prefetchQuery } = useContext();
+    const { client, ssrState, queryClient, prefetchQuery } = useContext();
 
     if (
       typeof window === 'undefined' &&
-      isPrepass &&
+      ssrState === 'prepass' &&
       opts?.ssr !== false &&
       opts?.enabled !== false &&
       !queryClient.getQueryCache().find(pathAndInput)
@@ -391,12 +384,12 @@ export function createReactQueryHooks<
     >,
   ): UseInfiniteQueryResult<TQueryValues[TPath]['output'], TError> {
     const [path, input] = pathAndInput;
-    const { client, isPrepass, prefetchInfiniteQuery, queryClient } =
+    const { client, ssrState, prefetchInfiniteQuery, queryClient } =
       useContext();
 
     if (
       typeof window === 'undefined' &&
-      isPrepass &&
+      ssrState === 'prepass' &&
       opts?.ssr !== false &&
       opts?.enabled !== false &&
       !queryClient.getQueryCache().find(pathAndInput)
