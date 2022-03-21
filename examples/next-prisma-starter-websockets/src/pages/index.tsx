@@ -1,6 +1,5 @@
 import { signIn, signOut, useSession } from 'next-auth/react';
 import Head from 'next/head';
-import Link from 'next/link';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { ReactQueryDevtools } from 'react-query/devtools';
 import { trpc } from '../utils/trpc';
@@ -26,7 +25,16 @@ function AddMessageForm({ onMessagePost }: { onMessagePost: () => void }) {
   if (!userName) {
     return (
       <div className="flex rounded bg-gray-800 px-3 py-2 text-lg text-gray-200 w-full justify-between">
-        <p className="font-bold">Let&apos;s sign in to write. </p>
+        <p className="font-bold">
+          You have to{' '}
+          <button
+            className="inline font-bold underline"
+            onClick={() => signIn()}
+          >
+            sign in
+          </button>{' '}
+          to write.
+        </p>
         <button
           onClick={() => signIn()}
           data-testid="signin"
@@ -189,7 +197,7 @@ export default function IndexPage() {
                   Showcases WebSocket + subscription support
                   <br />
                   <a
-                    className="text-gray-100"
+                    className="text-gray-100 underline"
                     href="https://github.com/trpc/trpc/tree/main/examples/next-prisma-starter-websockets"
                     target="_blank"
                     rel="noreferrer"
@@ -238,13 +246,12 @@ export default function IndexPage() {
         </section>
         <div className="md:h-screen flex-1 overflow-y-hidden">
           <section className="bg-gray-700 h-full p-4 flex flex-col justify-end space-y-4">
-            <div className="overflow-y-auto">
-              <h2>{postsQuery.status === 'loading' && '(loading)'}</h2>
+            <div className="overflow-y-auto space-y-4">
               <button
                 data-testid="loadMore"
                 onClick={() => fetchPreviousPage()}
                 disabled={!hasPreviousPage || isFetchingPreviousPage}
-                className="text-gray-400"
+                className="px-4 bg-indigo-500 rounded py-2 disabled:opacity-40 text-white"
               >
                 {isFetchingPreviousPage
                   ? 'Loading more...'
