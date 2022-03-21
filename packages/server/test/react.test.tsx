@@ -8,6 +8,7 @@
 
 /* eslint-disable @typescript-eslint/ban-ts-comment */
 import { trpcServer } from './__packages';
+import { routerToServerAndClient } from './__testHelpers';
 import '@testing-library/jest-dom';
 import { render, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
@@ -36,7 +37,6 @@ import { OutputWithCursor, createReactQueryHooks } from '../../react/src';
 import { createSSGHelpers } from '../../react/ssg';
 import { DefaultErrorShape } from '../src';
 import { TRPCError } from '../src/TRPCError';
-import { routerToServerAndClient } from './_testHelpers';
 
 setLogger({
   log() {},

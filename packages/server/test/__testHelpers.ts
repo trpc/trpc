@@ -1,15 +1,16 @@
 /* eslint-disable @typescript-eslint/ban-types */
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import AbortController from 'abort-controller';
-import fetch from 'node-fetch';
-import ws from 'ws';
+import './__packages';
 import {
   TRPCWebSocketClient,
   WebSocketClientOptions,
   createWSClient,
-} from '../../client/src';
-import { CreateTRPCClientOptions, createTRPCClient } from '../../client/src';
+} from '@trpc/client/src';
+import { CreateTRPCClientOptions, createTRPCClient } from '@trpc/client/src';
+import AbortController from 'abort-controller';
+import fetch from 'node-fetch';
+import ws from 'ws';
 import { AnyRouter } from '../src';
 import {
   CreateHTTPHandlerOptions,

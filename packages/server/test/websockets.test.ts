@@ -2,6 +2,7 @@
 
 /* eslint-disable @typescript-eslint/ban-types */
 // import WebSocket from 'ws';
+import { routerToServerAndClient, waitMs } from './__testHelpers';
 import { waitFor } from '@testing-library/react';
 import { TRPCClientError } from '@trpc/client';
 import { EventEmitter } from 'events';
@@ -13,7 +14,6 @@ import * as trpc from '../src';
 import { TRPCError } from '../src';
 import { applyWSSHandler } from '../src/adapters/ws';
 import { TRPCRequest, TRPCResult } from '../src/rpc';
-import { routerToServerAndClient, waitMs } from './_testHelpers';
 
 type Message = {
   id: string;

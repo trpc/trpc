@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 
 /* eslint-disable @typescript-eslint/no-empty-function */
+import { routerToServerAndClient } from './__testHelpers';
 import { LinkRuntime, OperationLink } from '@trpc/client/src';
 import { createChain } from '@trpc/client/src/links/internals/createChain';
 import { observableToPromise } from '@trpc/client/src/observable/internals/observableToPromise';
@@ -18,7 +19,6 @@ import {
 import { observable } from '../../client/src/observable';
 import * as trpc from '../src';
 import { AnyRouter } from '../src';
-import { routerToServerAndClient } from './_testHelpers';
 
 const mockRuntime: LinkRuntime = {
   fetch: fetch as any,

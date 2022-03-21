@@ -7,6 +7,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 /* eslint-disable @typescript-eslint/ban-ts-comment */
+import { routerToServerAndClient } from '../__testHelpers';
 import '@testing-library/jest-dom';
 import { render, waitFor } from '@testing-library/react';
 import * as trpcClient from '@trpc/client/src';
@@ -15,7 +16,6 @@ import { QueryClient, QueryClientProvider } from 'react-query';
 import * as trpcReact from '../../../react/src';
 import * as trpcReact__ssg from '../../../react/src/ssg';
 import * as trpcServer from '../../src';
-import { routerToServerAndClient } from '../_testHelpers';
 
 jest.mock('@trpc/server', () => trpcServer);
 
