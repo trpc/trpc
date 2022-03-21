@@ -740,31 +740,6 @@ export class Router<
   }
 }
 
-/**
- * Subclass of `VNextRouter` with `TInputContext` and `TContext` set to the same type, for backcompat.
- *
- * @deprecated
- */
-export class LegacyRouter<
-  TContext,
-  TQueries extends ProcedureRecord<TContext, TContext>,
-  TMutations extends ProcedureRecord<TContext, TContext>,
-  TSubscriptions extends ProcedureRecord<
-    TContext,
-    TContext,
-    unknown,
-    Subscription<unknown>
-  >,
-  TErrorShape extends TRPCErrorShape<number>,
-> extends Router<
-  TContext,
-  TContext,
-  TQueries,
-  TMutations,
-  TSubscriptions,
-  TErrorShape
-> {}
-
 export function router<TContext>() {
   return new Router<TContext, TContext, {}, {}, {}, DefaultErrorShape>();
 }
