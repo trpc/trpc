@@ -11,7 +11,7 @@ import userEvent from '@testing-library/user-event';
 import { httpBatchLink } from '@trpc/client/links/httpBatchLink';
 import { expectTypeOf } from 'expect-type';
 import hash from 'hash-sum';
-import React, { Fragment, useEffect, useState } from 'react';
+import React, { Fragment, ReactNode, useEffect, useState } from 'react';
 import {
   QueryClient,
   QueryClientProvider,
@@ -226,7 +226,18 @@ function createAppRouter() {
   const queryClient = new QueryClient();
   const trpc = createReactQueryHooks<typeof appRouter>();
 
+  function App(props: { children: ReactNode }) {
+    const [queryClient] = useState(() => new QueryClient());
+    return (
+      <trpc.Provider {...{ queryClient, client }}>
+        <QueryClientProvider client={queryClient}>
+          {props.children}
+        </QueryClientProvider>
+      </trpc.Provider>
+    );
+  }
   return {
+    App,
     appRouter,
     trpc,
     close,
@@ -582,7 +593,7 @@ describe('useMutation()', () => {
   });
 
   test('useMutation with context', async () => {
-    const { trpc, client, linkSpy } = factory;
+    const { trpc, App, linkSpy } = factory;
 
     function MyComponent() {
       const deletePostsMutation = trpc.useMutation(['deletePosts'], {
@@ -599,18 +610,11 @@ describe('useMutation()', () => {
       return <pre>{deletePostsMutation.isSuccess && '___FINISHED___'}</pre>;
     }
 
-    function App() {
-      const [queryClient] = useState(() => new QueryClient());
-      return (
-        <trpc.Provider {...{ queryClient, client }}>
-          <QueryClientProvider client={queryClient}>
-            <MyComponent />
-          </QueryClientProvider>
-        </trpc.Provider>
-      );
-    }
-
-    const utils = render(<App />);
+    const utils = render(
+      <App>
+        <MyComponent />
+      </App>,
+    );
     await waitFor(() => {
       expect(utils.container).toHaveTextContent('___FINISHED___');
     });
