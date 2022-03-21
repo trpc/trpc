@@ -246,13 +246,12 @@ export default function IndexPage() {
         </section>
         <div className="md:h-screen flex-1 overflow-y-hidden">
           <section className="bg-gray-700 h-full p-4 flex flex-col justify-end space-y-4">
-            <div className="overflow-y-auto">
-              <h2>{postsQuery.status === 'loading' && '(loading)'}</h2>
+            <div className="overflow-y-auto space-y-4">
               <button
                 data-testid="loadMore"
                 onClick={() => fetchPreviousPage()}
                 disabled={!hasPreviousPage || isFetchingPreviousPage}
-                className="text-gray-400"
+                className="px-4 bg-indigo-500 rounded py-2 disabled:opacity-40"
               >
                 {isFetchingPreviousPage
                   ? 'Loading more...'
