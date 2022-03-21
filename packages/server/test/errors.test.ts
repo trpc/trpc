@@ -9,6 +9,7 @@ import { OnErrorFunction } from '../src/internals/OnErrorFunction';
 import { getMessageFromUnkownError } from '../src/internals/errors';
 import { TRPCError } from '../src/TRPCError';
 import { routerToServerAndClient, waitError } from './_testHelpers';
+import { CreateHTTPContextOptions } from '../src/adapters/standalone';
 
 test('basic', async () => {
   class MyError extends Error {
@@ -268,7 +269,7 @@ Object {
     const onError = jest.fn();
     const { close, httpUrl } = routerToServerAndClient(
       trpc
-        .router<trpc.CreateHttpContextOptions>()
+        .router<CreateHTTPContextOptions>()
         .middleware(({ ctx }) => {
           ctx.res.statusCode = TEAPOT_ERROR_CODE;
           throw new Error('Some error');

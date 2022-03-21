@@ -5,10 +5,11 @@ import { expectTypeOf } from 'expect-type';
 import { z } from 'zod';
 import { TRPCClientError } from '../../client/src';
 import * as trpc from '../src';
-import { CreateHttpContextOptions, Maybe, TRPCError } from '../src';
+import { Maybe, TRPCError } from '../src';
 import { routerToServerAndClient, waitError } from './_testHelpers';
 import { waitFor } from '@testing-library/react';
 import { httpBatchLink } from '../../client/src';
+import { CreateHTTPContextOptions } from '../src/adapters/standalone';
 
 test('smoke test', async () => {
   const { client, close } = routerToServerAndClient(
@@ -256,7 +257,7 @@ describe('integration tests', () => {
       };
       // eslint-disable-next-line prefer-const
       let headers: Record<string, string | undefined> = {};
-      function createContext({ req }: CreateHttpContextOptions): Context {
+      function createContext({ req }: CreateHTTPContextOptions): Context {
         if (req.headers.authorization !== 'kattsecret') {
           return {};
         }
