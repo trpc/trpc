@@ -105,7 +105,6 @@
     "yup": "^0.32.8",
     "zod": "^3.0.0"
   },
-  "gitHead": "3b8e4ed00254f9c9816ffdc4d172c932ea62c3ae",
   "dependencies": {
     "tslib": "^2.1.0"
   }
