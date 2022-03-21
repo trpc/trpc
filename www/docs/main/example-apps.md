@@ -24,13 +24,13 @@ Here's some example apps:
         <br/><br/>
         <details>
           <summary>Quick start with <code>create-next-app</code></summary>
-          <code>yarn create next-app --example https://github.com/trpc/trpc --example-path examples/next-prisma-starter trpc-prisma-starter</code>
+          <code>yarn create next-app --example https://github.com/trpc/examples-next-prisma-starter trpc-prisma-starter</code>
         </details>
       </td>
       <td><a href="https://nextjs.trpc.io">nextjs.trpc.io</a></td>
       <td>
         <ul>
-          <li><a href="https://github.com/trpc/trpc/tree/main/examples/next-prisma-starter">Source</a></li>
+          <li><a href="https://github.com/trpc/examples-next-prisma-starter">Source</a></li>
         </ul>
       </td>
     </tr>
@@ -58,14 +58,14 @@ Here's some example apps:
         <br/><br/>
         <details>
           <summary>Quick start with <code>create-next-app</code></summary>
-          <code>yarn create next-app --example https://github.com/trpc/trpc --example-path examples/next-prisma-starter-websockets trpc-prisma-starter-websockets</code>
+          <code>yarn create next-app --example https://github.com/trpc/examples-next-prisma-starter-websockets trpc-prisma-starter-websockets</code>
         </details>
       </td>
       <td><a href="http://websockets.trpc.io">websockets.trpc.io</a></td>
       <td>
         <ul>
           <li><a href="https://codesandbox.io/s/github/trpc/trpc/tree/main/examples/next-prisma-starter-websockets?file=/src/pages/index.tsx">CodeSandbox</a></li>
-          <li><a href="https://github.com/trpc/trpc/tree/main/examples/next-prisma-starter-websockets">Source</a></li>
+          <li><a href="https://github.com/trpc/examples-next-prisma-starter-websockets">Source</a></li>
         </ul>
       </td>
     </tr>
@@ -82,7 +82,7 @@ Here's some example apps:
       <td>
         <ul>
           <li><a href="https://codesandbox.io/s/github/trpc/trpc/tree/main/examples/next-prisma-todomvc?file=/pages/%5Bfilter%5D.tsx">CodeSandbox</a></li>
-          <li><a href="https://github.com/trpc/trpc/tree/main/examples/next-prisma-todomvc">Source</a></li>
+          <li><a href="https://github.com/trpc/examples-next-prisma-todomvc">Source</a></li>
         </ul>
       </td>
     </tr>
