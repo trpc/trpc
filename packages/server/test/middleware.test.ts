@@ -426,8 +426,8 @@ test('middleware throwing should return a union', async () => {
   }
   delete res.error.stack;
   expect(res.error).toMatchInlineSnapshot(`[TRPCError: error]`);
-  const originalError = res.error.originalError as CustomError;
-  expect(originalError).toBeInstanceOf(CustomError);
+  const cause = res.error.cause as CustomError;
+  expect(cause).toBeInstanceOf(CustomError);
 
   close();
 });

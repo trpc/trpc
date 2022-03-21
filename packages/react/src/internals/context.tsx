@@ -38,10 +38,6 @@ export interface TRPCContextState<
 > {
   queryClient: QueryClient;
   client: TRPCClient<TRouter>;
-  /**
-   * @deprecated use `ssrState === 'prepass'`
-   */
-  isPrepass: boolean;
   ssrContext: TSSRContext | null;
   /**
    * State of SSR hydration.
@@ -108,17 +104,6 @@ export interface TRPCContextState<
       TRPCClientError<TRouter>,
       TOutput
     >,
-  ): Promise<void>;
-
-  /**
-   * @deprecated use `invalidateQueries`
-   */
-  invalidateQuery<
-    TPath extends keyof TRouter['_def']['queries'] & string,
-    TInput extends inferProcedureInput<TRouter['_def']['queries'][TPath]>,
-  >(
-    pathAndInput: [TPath, TInput?],
-    options?: InvalidateOptions,
   ): Promise<void>;
 
   /**

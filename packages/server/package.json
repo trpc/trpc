@@ -1,6 +1,6 @@
 {
   "name": "@trpc/server",
-  "version": "10.0.0-alpha.18",
+  "version": "10.0.0-alpha.19",
   "description": "tRPC Server",
   "author": "KATT",
   "license": "MIT",
@@ -57,11 +57,6 @@
       "import": "./dist/adapters/ws.mjs",
       "require": "./dist/adapters/ws.js",
       "default": "./dist/adapters/ws.js"
-    },
-    "./ws": {
-      "import": "./dist/ws/index.mjs",
-      "require": "./dist/ws/index.js",
-      "default": "./dist/ws/index.js"
     },
     "./rpc": {
       "import": "./dist/rpc/index.mjs",

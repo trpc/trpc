@@ -108,7 +108,7 @@ test('cancel request', async () => {
 describe('batching', () => {
   test('query batching', async () => {
     const metaCall = jest.fn();
-    const { port, close } = routerToServerAndClient(
+    const { httpPort, close } = routerToServerAndClient(
       trpc.router().query('hello', {
         input: z.string().nullish(),
         resolve({ input }) {
@@ -128,7 +128,7 @@ describe('batching', () => {
     );
     const links = [
       httpBatchLink({
-        url: `http://localhost:${port}`,
+        url: `http://localhost:${httpPort}`,
       })(mockRuntime),
     ];
     const chain1 = createChain({
@@ -286,26 +286,27 @@ describe('batching', () => {
 
   test('server not configured for batching', async () => {
     const serverCall = jest.fn();
-    const { close, router, port, trpcClientOptions } = routerToServerAndClient(
-      trpc.router().query('hello', {
-        resolve() {
-          serverCall();
-          return 'world';
-        },
-      }),
-      {
-        server: {
-          batching: {
-            enabled: false,
+    const { close, router, httpPort, trpcClientOptions } =
+      routerToServerAndClient(
+        trpc.router().query('hello', {
+          resolve() {
+            serverCall();
+            return 'world';
+          },
+        }),
+        {
+          server: {
+            batching: {
+              enabled: false,
+            },
           },
         },
-      },
-    );
+      );
     const client = createTRPCClient<typeof router>({
       ...trpcClientOptions,
       links: [
         httpBatchLink({
-          url: `http://localhost:${port}`,
+          url: `http://localhost:${httpPort}`,
         }),
       ],
       headers: {},
@@ -321,24 +322,25 @@ describe('batching', () => {
 test('create client with links', async () => {
   let attempt = 0;
   const serverCall = jest.fn();
-  const { close, router, port, trpcClientOptions } = routerToServerAndClient(
-    trpc.router().query('hello', {
-      resolve() {
-        attempt++;
-        serverCall();
-        if (attempt < 3) {
-          throw new Error('Errr ' + attempt);
-        }
-        return 'world';
-      },
-    }),
-  );
+  const { close, router, httpPort, trpcClientOptions } =
+    routerToServerAndClient(
+      trpc.router().query('hello', {
+        resolve() {
+          attempt++;
+          serverCall();
+          if (attempt < 3) {
+            throw new Error('Errr ' + attempt);
+          }
+          return 'world';
+        },
+      }),
+    );
   const client = createTRPCClient<typeof router>({
     ...trpcClientOptions,
     links: [
       retryLink({ attempts: 3 }),
       httpLink({
-        url: `http://localhost:${port}`,
+        url: `http://localhost:${httpPort}`,
       }),
     ],
     headers: {},

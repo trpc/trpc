@@ -11,10 +11,6 @@ export class TRPCClientError<TRouter extends AnyRouter>
   extends Error
   implements TRPCClientErrorLike<TRouter>
 {
-  /**
-   * @deprecated use `cause`
-   */
-  public readonly originalError;
   public readonly cause;
   public readonly shape: Maybe<inferRouterError<TRouter>>;
   public readonly data: Maybe<inferRouterError<TRouter>['data']>;
@@ -24,15 +20,11 @@ export class TRPCClientError<TRouter extends AnyRouter>
     message: string,
     opts?: {
       result: Maybe<TRPCErrorResponse<inferRouterError<TRouter>>>;
-      /**
-       * @deprecated use `cause`
-       **/
-      originalError?: Maybe<Error>;
       cause?: Maybe<Error>;
       meta?: Record<string, unknown>;
     },
   ) {
-    const cause = opts?.cause ?? opts?.originalError;
+    const cause = opts?.cause;
 
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore https://github.com/tc39/proposal-error-cause
@@ -40,7 +32,7 @@ export class TRPCClientError<TRouter extends AnyRouter>
 
     this.meta = opts?.meta;
 
-    this.cause = this.originalError = cause;
+    this.cause = cause;
     this.shape = opts?.result?.error;
     this.data = opts?.result?.error.data;
     this.name = 'TRPCClientError';
