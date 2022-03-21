@@ -251,7 +251,7 @@ export default function IndexPage() {
                 data-testid="loadMore"
                 onClick={() => fetchPreviousPage()}
                 disabled={!hasPreviousPage || isFetchingPreviousPage}
-                className="px-4 bg-indigo-500 rounded py-2 disabled:opacity-40"
+                className="px-4 bg-indigo-500 rounded py-2 disabled:opacity-40 text-white"
               >
                 {isFetchingPreviousPage
                   ? 'Loading more...'
