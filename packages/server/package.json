@@ -58,11 +58,6 @@
       "require": "./dist/adapters/ws.js",
       "default": "./dist/adapters/ws.js"
     },
-    "./ws": {
-      "import": "./dist/ws/index.mjs",
-      "require": "./dist/ws/index.js",
-      "default": "./dist/ws/index.js"
-    },
     "./rpc": {
       "import": "./dist/rpc/index.mjs",
       "require": "./dist/rpc/index.js",

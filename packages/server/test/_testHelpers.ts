@@ -11,7 +11,7 @@ import ws from 'ws';
 import { createTRPCClient, CreateTRPCClientOptions } from '../../client/src';
 import { AnyRouter, CreateHttpHandlerOptions } from '../src';
 import { createHttpServer } from '../src';
-import { applyWSSHandler, WSSHandlerOptions } from '../src/ws';
+import { applyWSSHandler, WSSHandlerOptions } from '../src/adapters/ws';
 
 (global as any).fetch = fetch;
 (global as any).AbortController = AbortController;
