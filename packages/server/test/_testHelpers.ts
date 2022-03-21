@@ -9,25 +9,24 @@ import {
 } from '../../client/src';
 import ws from 'ws';
 import { createTRPCClient, CreateTRPCClientOptions } from '../../client/src';
-import { AnyRouter, CreateHttpHandlerOptions } from '../src';
-import { createHttpServer } from '../src';
+import { AnyRouter } from '../src';
 import { applyWSSHandler, WSSHandlerOptions } from '../src/adapters/ws';
+import {
+  CreateHTTPHandlerOptions,
+  createHTTPServer,
+} from '../src/adapters/standalone';
 
 (global as any).fetch = fetch;
 (global as any).AbortController = AbortController;
 export function routerToServerAndClient<TRouter extends AnyRouter>(
   router: TRouter,
   opts?: {
-    server?: Partial<CreateHttpHandlerOptions<TRouter>>;
+    server?: Partial<CreateHTTPHandlerOptions<TRouter>>;
     wssServer?: Partial<WSSHandlerOptions<TRouter>>;
     wsClient?: Partial<WebSocketClientOptions>;
     client?:
       | Partial<CreateTRPCClientOptions<TRouter>>
       | ((opts: {
-          /**
-           * @deprecated use `httpUrl`
-           */
-          url: string;
           httpUrl: string;
           wssUrl: string;
           wsClient: TRPCWebSocketClient;
@@ -35,7 +34,7 @@ export function routerToServerAndClient<TRouter extends AnyRouter>(
   },
 ) {
   // http
-  const httpServer = createHttpServer({
+  const httpServer = createHTTPServer({
     router,
     createContext: ({ req, res }) => ({ req, res }),
     ...(opts?.server ?? {
@@ -68,7 +67,7 @@ export function routerToServerAndClient<TRouter extends AnyRouter>(
     url: httpUrl,
     ...(opts?.client
       ? typeof opts.client === 'function'
-        ? opts.client({ url: httpUrl, httpUrl, wssUrl, wsClient })
+        ? opts.client({ httpUrl, wssUrl, wsClient })
         : opts.client
       : {}),
   };
