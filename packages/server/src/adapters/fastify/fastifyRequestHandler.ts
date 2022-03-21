@@ -1,13 +1,13 @@
-import { URLSearchParams } from 'url';
 import { FastifyReply, FastifyRequest } from 'fastify';
+import { URLSearchParams } from 'url';
 import { assertNotBrowser } from '../../assertNotBrowser';
-import { NodeHTTPCreateContextOption } from '../node-http';
-import { AnyRouter, inferRouterContext } from '../../router';
-import { resolveHTTPResponse } from '../../http/resolveHTTPResponse';
 import {
   HTTPBaseHandlerOptions,
   HTTPRequest,
 } from '../../http/internals/types';
+import { resolveHTTPResponse } from '../../http/resolveHTTPResponse';
+import { AnyRouter, inferRouterContext } from '../../router';
+import { NodeHTTPCreateContextOption } from '../node-http';
 
 assertNotBrowser();
 

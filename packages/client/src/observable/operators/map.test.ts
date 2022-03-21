@@ -1,7 +1,7 @@
-import { expectTypeOf } from 'expect-type';
-import { observable } from '../observable';
-import { map } from '.';
 import { EventEmitter } from 'events';
+import { expectTypeOf } from 'expect-type';
+import { map } from '.';
+import { observable } from '../observable';
 
 interface SubscriptionEvents<TOutput> {
   data: (data: TOutput) => void;

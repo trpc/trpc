@@ -1,11 +1,11 @@
 /**
  * This file contains the root router of your tRPC-backend
  */
-import { Subscription } from '@trpc/server';
-import { clearInterval } from 'timers';
 import { createRouter } from '../createRouter';
 import { postRouter } from './post';
+import { Subscription } from '@trpc/server';
 import superjson from 'superjson';
+import { clearInterval } from 'timers';
 
 /**
  * Create your application's root router

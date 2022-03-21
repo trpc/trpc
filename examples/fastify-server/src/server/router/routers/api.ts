@@ -1,5 +1,5 @@
-import { createRouter } from '../createRouter';
 import { z } from 'zod';
+import { createRouter } from '../createRouter';
 
 export const apiRouter = createRouter()
   .query('version', {

@@ -1,15 +1,17 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
+
 /* eslint-disable @typescript-eslint/no-empty-function */
+
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import fetch from 'node-fetch';
-import { z, ZodError } from 'zod';
+import { ZodError, z } from 'zod';
 import { TRPCClientError } from '../../client/src';
 import * as trpc from '../src';
+import { TRPCError } from '../src/TRPCError';
+import { CreateHTTPContextOptions } from '../src/adapters/standalone';
 import { OnErrorFunction } from '../src/internals/OnErrorFunction';
 import { getMessageFromUnkownError } from '../src/internals/errors';
-import { TRPCError } from '../src/TRPCError';
 import { routerToServerAndClient, waitError } from './_testHelpers';
-import { CreateHTTPContextOptions } from '../src/adapters/standalone';
 
 test('basic', async () => {
   class MyError extends Error {

@@ -4,10 +4,10 @@ import fetch from 'node-fetch';
 import superjson from 'superjson';
 import { z } from 'zod';
 import {
+  TRPCClientError,
   httpBatchLink,
   httpLink,
   transformerLink,
-  TRPCClientError,
 } from '../../client/src';
 import * as trpc from '../src';
 import { TRPCError } from '../src/TRPCError';

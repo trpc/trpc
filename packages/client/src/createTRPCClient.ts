@@ -1,8 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import type { AnyRouter } from '@trpc/server';
 import {
-  CreateTRPCClientOptions,
   TRPCClient as Client,
+  CreateTRPCClientOptions,
 } from './internals/TRPCClient';
 
 export function createTRPCClient<TRouter extends AnyRouter>(

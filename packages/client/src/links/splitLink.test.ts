@@ -1,8 +1,8 @@
 /* eslint-disable @typescript-eslint/no-empty-function */
-import { AnyRouter } from '../../../server/src';
-import { createChain } from '../links/internals/createChain';
 import { splitLink } from '../';
 import { OperationLink, TRPCLink } from '../';
+import { AnyRouter } from '../../../server/src';
+import { createChain } from '../links/internals/createChain';
 import { observable } from '../observable';
 
 test('splitLink', () => {

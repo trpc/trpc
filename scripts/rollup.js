@@ -1,12 +1,12 @@
-import path from 'path';
 import { babel } from '@rollup/plugin-babel';
-import typescript from 'rollup-plugin-typescript2';
-import { defineConfig } from 'rollup';
 import nodeResolve from '@rollup/plugin-node-resolve';
+import path from 'path';
+import { defineConfig } from 'rollup';
+import del from 'rollup-plugin-delete';
+import multiInput from 'rollup-plugin-multi-input';
 import externals from 'rollup-plugin-node-externals';
 import { terser } from 'rollup-plugin-terser';
-import multiInput from 'rollup-plugin-multi-input';
-import del from 'rollup-plugin-delete';
+import typescript from 'rollup-plugin-typescript2';
 
 const isWatchMode = process.argv.includes('--watch');
 

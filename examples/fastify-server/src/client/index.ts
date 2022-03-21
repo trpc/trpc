@@ -1,5 +1,5 @@
-import { createClient } from './client';
 import { serverConfig } from '../config';
+import { createClient } from './client';
 
 async function start() {
   const { port, prefix } = serverConfig;

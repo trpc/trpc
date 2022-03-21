@@ -1,8 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-/* eslint-disable no-native-reassign */
 
-import { getAbortController } from '../../client/src/internals/fetchHelpers';
+/* eslint-disable no-native-reassign */
 import { getFetch } from '../../client/src';
+import { getAbortController } from '../../client/src/internals/fetchHelpers';
 
 describe('getAbortController() from..', () => {
   test('passed', () => {

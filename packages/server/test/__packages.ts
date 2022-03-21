@@ -1,3 +1,5 @@
+/* eslint-disable prettier/prettier */
+
 import * as trpcServer from '../../server/src';
 jest.mock('@trpc/server', () => trpcServer);
 import * as trpcClient from '../../client/src';

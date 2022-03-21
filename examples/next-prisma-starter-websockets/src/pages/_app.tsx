@@ -1,7 +1,7 @@
+import '../styles/global.css';
 import { getSession, SessionProvider } from 'next-auth/react';
 import { AppType } from 'next/dist/shared/lib/utils';
 import { trpc } from 'utils/trpc';
-import '../styles/global.css';
 
 const MyApp: AppType = ({ Component, pageProps }) => {
   return (

@@ -16,6 +16,7 @@ import 'todomvc-common/base.css';
 import { createContext } from '../server/context';
 import { appRouter } from '../server/routers/_app';
 import { inferQueryOutput, trpc } from '../utils/trpc';
+
 type Task = inferQueryOutput<'todo.all'>[number];
 
 /**

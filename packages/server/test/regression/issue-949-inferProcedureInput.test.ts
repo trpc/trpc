@@ -1,9 +1,9 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 // IMPORTANT:
 // needs to be imported from compiled output otherwise we get a false-positive
-import * as trpc from '../..';
 import { expectTypeOf } from 'expect-type';
 import { z } from 'zod';
+import * as trpc from '../..';
 
 // https://github.com/trpc/trpc/issues/949
 // https://github.com/trpc/trpc/pull/955

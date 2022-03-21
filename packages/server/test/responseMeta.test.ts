@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/no-empty-function */
+
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import fetch from 'node-fetch';
 import * as trpc from '../src';

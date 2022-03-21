@@ -1,5 +1,5 @@
-import { waitFor } from '@testing-library/dom';
 import { AnyRouter } from '@trpc/server';
+import { waitFor } from '@testing-library/dom';
 import { OperationLink } from '..';
 import { observable } from '../observable';
 import { dedupeLink } from './dedupeLink';

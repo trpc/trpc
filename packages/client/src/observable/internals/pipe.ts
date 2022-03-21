@@ -1,5 +1,5 @@
-import { identity } from './identity';
 import { UnaryFunction } from '../types';
+import { identity } from './identity';
 
 /** @internal */
 export function pipeFromArray<T, R>(

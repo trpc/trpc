@@ -1,7 +1,7 @@
 import { createRouter } from './createRouter';
+import { apiRouter } from './routers/api';
 import { postsRouter } from './routers/posts';
 import { subRouter } from './routers/sub';
-import { apiRouter } from './routers/api';
 
 export const appRouter = createRouter()
   .merge('posts:', postsRouter)

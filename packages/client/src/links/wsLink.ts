@@ -5,9 +5,9 @@ import {
   TRPCRequest,
   TRPCResponse,
 } from '@trpc/server/rpc';
-import { retryDelay } from '../internals/retryDelay';
-import { observable, UnsubscribeFn } from '../observable';
 import { TRPCClientError } from '../TRPCClientError';
+import { retryDelay } from '../internals/retryDelay';
+import { UnsubscribeFn, observable } from '../observable';
 import { Operation, OperationResultObserver, TRPCLink } from './types';
 
 export interface WebSocketClientOptions {
