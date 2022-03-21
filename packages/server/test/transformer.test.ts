@@ -8,7 +8,7 @@ import { TRPCClientError, httpBatchLink, httpLink } from '../../client/src';
 import * as trpc from '../src';
 import { TRPCError } from '../src/TRPCError';
 
-test('superjson up and down', async () => {
+test.only('superjson up and down', async () => {
   const transformer = superjson;
 
   const date = new Date();
