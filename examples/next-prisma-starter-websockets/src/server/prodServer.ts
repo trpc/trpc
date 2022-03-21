@@ -1,10 +1,10 @@
-import http from 'http';
-import { parse } from 'url';
-import next from 'next';
-import ws from 'ws';
-import { applyWSSHandler } from '@trpc/server/adapters/ws';
-import { appRouter } from './routers/_app';
 import { createContext } from './context';
+import { appRouter } from './routers/_app';
+import { applyWSSHandler } from '@trpc/server/adapters/ws';
+import http from 'http';
+import next from 'next';
+import { parse } from 'url';
+import ws from 'ws';
 
 const port = parseInt(process.env.PORT || '3000', 10);
 const dev = process.env.NODE_ENV !== 'production';

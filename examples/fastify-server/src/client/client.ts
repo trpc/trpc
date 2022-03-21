@@ -1,7 +1,7 @@
 import {
+  HTTPHeaders,
   createTRPCClient,
   createWSClient,
-  HTTPHeaders,
   httpLink,
   splitLink,
   wsLink,

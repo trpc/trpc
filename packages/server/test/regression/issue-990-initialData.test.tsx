@@ -1,23 +1,18 @@
 /* eslint-disable @typescript-eslint/no-empty-function */
+
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
+
 /* eslint-disable @typescript-eslint/ban-types */
+
 /* eslint-disable @typescript-eslint/no-explicit-any */
+
 /* eslint-disable @typescript-eslint/ban-ts-comment */
-
-import * as trpcServer from '../../src';
-jest.mock('@trpc/server', () => trpcServer);
-import * as trpcClient from '@trpc/client/src';
-jest.mock('@trpc/client', () => trpcClient);
-import * as trpcReact from '../../../react/src';
-jest.mock('@trpc/react', () => trpcReact);
-import * as trpcReact__ssg from '../../../react/src/ssg';
-jest.mock('@trpc/react/ssg', () => trpcReact__ssg);
-
+import { trpcReact, trpcServer } from '../__packages';
+import { routerToServerAndClient } from '../__testHelpers';
 import '@testing-library/jest-dom';
 import { render, waitFor } from '@testing-library/react';
 import React, { useState } from 'react';
 import { QueryClient, QueryClientProvider } from 'react-query';
-import { routerToServerAndClient } from '../_testHelpers';
 
 test('initialData type', async () => {
   const { client, router, close } = routerToServerAndClient(

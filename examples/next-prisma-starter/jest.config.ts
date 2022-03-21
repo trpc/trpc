@@ -1,5 +1,5 @@
-import type { Config } from '@jest/types';
 import { compilerOptions } from './tsconfig.json';
+import type { Config } from '@jest/types';
 
 /**
  * Make `tsconfig.json`'s `paths` work in Jest

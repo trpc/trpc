@@ -2,14 +2,14 @@
  * Heavily based on urql's ssr
  * https://github.com/FormidableLabs/urql/blob/main/packages/next-urql/src/with-urql-client.ts
  */
-
+import type { CreateTRPCClientOptions } from '@trpc/client/src/internals/TRPCClient';
 import {
-  createReactQueryHooks,
-  createTRPCClient,
+  CreateReactQueryHooksOptions,
   TRPCClient,
   TRPCClientError,
   TRPCClientErrorLike,
-  CreateReactQueryHooksOptions,
+  createReactQueryHooks,
+  createTRPCClient,
 } from '@trpc/react';
 import type { AnyRouter, Dict, Maybe, ResponseMeta } from '@trpc/server';
 import {
@@ -18,10 +18,9 @@ import {
   NextComponentType,
   NextPageContext,
 } from 'next/dist/shared/lib/utils';
-import type { CreateTRPCClientOptions } from '@trpc/client/src/internals/TRPCClient';
 import React, { createElement, useState } from 'react';
 import { QueryClient, QueryClientProvider } from 'react-query';
-import { dehydrate, DehydratedState, Hydrate } from 'react-query';
+import { DehydratedState, Hydrate, dehydrate } from 'react-query';
 import ssrPrepass from 'react-ssr-prepass';
 
 type QueryClientConfig = ConstructorParameters<typeof QueryClient>[0];

@@ -1,10 +1,11 @@
 import http from 'http';
 import ws from 'ws';
+import { TRPCError } from '../TRPCError';
 import { BaseHandlerOptions } from '../internals/BaseHandlerOptions';
 import { callProcedure } from '../internals/callProcedure';
 import { getErrorFromUnknown } from '../internals/errors';
 import { transformTRPCResponse } from '../internals/transformTRPCResponse';
-import { AnyRouter, inferRouterContext, ProcedureType } from '../router';
+import { AnyRouter, ProcedureType, inferRouterContext } from '../router';
 import {
   TRPCErrorResponse,
   TRPCReconnectNotification,
@@ -13,7 +14,6 @@ import {
 } from '../rpc';
 import { Subscription } from '../subscription';
 import { CombinedDataTransformer } from '../transformer';
-import { TRPCError } from '../TRPCError';
 import { NodeHTTPCreateContextOption } from './node-http';
 
 /* istanbul ignore next */

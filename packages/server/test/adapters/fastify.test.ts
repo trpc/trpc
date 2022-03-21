@@ -8,14 +8,14 @@ import ws from 'fastify-websocket';
 import fetch from 'node-fetch';
 import { z } from 'zod';
 import {
+  HTTPHeaders,
   createTRPCClient,
   createWSClient,
-  HTTPHeaders,
   httpLink,
   splitLink,
   wsLink,
 } from '../../../client/src';
-import { inferAsyncReturnType, router, Subscription } from '../../src';
+import { Subscription, inferAsyncReturnType, router } from '../../src';
 import {
   CreateFastifyContextOptions,
   fastifyTRPCPlugin,

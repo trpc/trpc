@@ -1,8 +1,8 @@
+import { trpc } from '../utils/trpc';
 import { signIn, signOut, useSession } from 'next-auth/react';
 import Head from 'next/head';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { ReactQueryDevtools } from 'react-query/devtools';
-import { trpc } from '../utils/trpc';
 
 function AddMessageForm({ onMessagePost }: { onMessagePost: () => void }) {
   const addPost = trpc.useMutation('post.add');

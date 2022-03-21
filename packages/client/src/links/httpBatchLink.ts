@@ -3,8 +3,8 @@ import { dataLoader } from '../internals/dataLoader';
 import { observable } from '../observable';
 import {
   HTTPLinkOptions,
-  httpRequest,
   ResponseShape,
+  httpRequest,
 } from './internals/httpUtils';
 import { TRPCLink } from './types';
 

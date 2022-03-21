@@ -1,10 +1,11 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import { TRPCError } from '../TRPCError';
 import { assertNotBrowser } from '../assertNotBrowser';
 import { ProcedureType } from '../router';
-import { TRPCError } from '../TRPCError';
 import { getErrorFromUnknown } from './errors';
 import { MiddlewareFunction, middlewareMarker } from './middlewares';
 import { wrapCallSafe } from './wrapCallSafe';
+
 assertNotBrowser();
 
 export type ProcedureInputParserZodEsque<TInput, TParsedInput> = {

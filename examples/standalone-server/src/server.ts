@@ -1,10 +1,9 @@
 /* eslint-disable @typescript-eslint/ban-types */
-
 import * as trpc from '@trpc/server';
-import { z } from 'zod';
-import ws from 'ws';
-import { applyWSSHandler } from '@trpc/server/adapters/ws';
 import { createHTTPServer } from '@trpc/server/adapters/standalone';
+import { applyWSSHandler } from '@trpc/server/adapters/ws';
+import ws from 'ws';
+import { z } from 'zod';
 
 type Context = {};
 

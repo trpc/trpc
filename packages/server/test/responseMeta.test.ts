@@ -1,9 +1,10 @@
 /* eslint-disable @typescript-eslint/no-empty-function */
+
 /* eslint-disable @typescript-eslint/no-unused-vars */
+import { routerToServerAndClient } from './__testHelpers';
 import fetch from 'node-fetch';
 import * as trpc from '../src';
 import { CreateHTTPContextOptions } from '../src/adapters/standalone';
-import { routerToServerAndClient } from './_testHelpers';
 
 test('set custom headers in beforeEnd', async () => {
   const onError = jest.fn();

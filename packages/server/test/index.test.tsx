@@ -1,14 +1,16 @@
 /* eslint-disable @typescript-eslint/no-empty-function */
+
 /* eslint-disable @typescript-eslint/no-explicit-any */
+
 /* eslint-disable @typescript-eslint/ban-types */
+import { routerToServerAndClient, waitError } from './__testHelpers';
+import { waitFor } from '@testing-library/react';
 import { expectTypeOf } from 'expect-type';
 import { z } from 'zod';
 import { TRPCClientError } from '../../client/src';
+import { httpBatchLink } from '../../client/src';
 import * as trpc from '../src';
 import { Maybe, TRPCError } from '../src';
-import { routerToServerAndClient, waitError } from './_testHelpers';
-import { waitFor } from '@testing-library/react';
-import { httpBatchLink } from '../../client/src';
 import { CreateHTTPContextOptions } from '../src/adapters/standalone';
 
 test('smoke test', async () => {

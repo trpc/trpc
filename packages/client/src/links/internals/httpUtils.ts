@@ -1,5 +1,6 @@
 import { ProcedureType } from '@trpc/server';
 import { LinkRuntime, PromiseAndCancel } from '../types';
+
 export interface HTTPLinkOptions {
   url: string;
 }
