@@ -306,7 +306,9 @@ export function createReactQueryHooks<
 
     return __useMutation((input) => {
       const actualPath = Array.isArray(path) ? path[0] : path;
-      return (client.mutation as any)(actualPath, input);
+      return (client.mutation as any)(actualPath, input, {
+        context: opts?.context,
+      });
     }, opts);
   }
 

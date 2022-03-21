@@ -580,6 +580,47 @@ describe('useMutation()', () => {
       expect(utils.container).toHaveTextContent('second post');
     });
   });
+
+  test('useMutation with context', async () => {
+    const { trpc, client, linkSpy } = factory;
+
+    function MyComponent() {
+      const deletePostsMutation = trpc.useMutation(['deletePosts'], {
+        context: {
+          test: '1',
+        },
+      });
+
+      useEffect(() => {
+        deletePostsMutation.mutate();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+      }, []);
+
+      return <pre>{deletePostsMutation.isSuccess && '___FINISHED__'}</pre>;
+    }
+
+    function App() {
+      const [queryClient] = useState(() => new QueryClient());
+      return (
+        <trpc.Provider {...{ queryClient, client }}>
+          <QueryClientProvider client={queryClient}>
+            <MyComponent />
+          </QueryClientProvider>
+        </trpc.Provider>
+      );
+    }
+
+    const utils = render(<App />);
+    await waitFor(() => {
+      expect(utils.container).toHaveTextContent('___FINISHED__');
+    });
+
+    expect(linkSpy.up).toHaveBeenCalledTimes(1);
+    expect(linkSpy.down).toHaveBeenCalledTimes(1);
+    expect(linkSpy.up.mock.calls[0][0].context).toMatchObject({
+      test: '1',
+    });
+  });
 });
 
 // test('useLiveQuery()', async () => {
