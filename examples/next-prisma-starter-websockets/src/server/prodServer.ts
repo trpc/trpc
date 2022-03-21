@@ -5,7 +5,7 @@ import ws from 'ws';
 import { applyWSSHandler } from '@trpc/server/adapters/ws';
 import { appRouter } from './routers/_app';
 import { createContext } from './context';
-import { TRPCReconnectNotification } from '@trpc/server/rpc';
+
 const port = parseInt(process.env.PORT || '3000', 10);
 const dev = process.env.NODE_ENV !== 'production';
 const app = next({ dev });
@@ -33,25 +33,6 @@ app.prepare().then(() => {
     console.log('SIGTERM');
     handler.broadcastReconnectNotification();
   });
-
-  const msg: TRPCReconnectNotification = {
-    id: null,
-    method: 'reconnect',
-  };
-  const msgJson = JSON.stringify(msg);
-  // heroku has 55s connection timeout
-  // notifying clients to reconnect after 54s
-  wss.on('connection', (client) => {
-    const timer = setTimeout(() => {
-      if (client.readyState === ws.OPEN) {
-        client.send(msgJson);
-      }
-    }, 54e3);
-    client.once('close', () => {
-      clearTimeout(timer);
-    });
-  });
-
   server.listen(port);
 
   // tslint:disable-next-line:no-console
