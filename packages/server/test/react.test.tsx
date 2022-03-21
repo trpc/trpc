@@ -596,7 +596,7 @@ describe('useMutation()', () => {
         // eslint-disable-next-line react-hooks/exhaustive-deps
       }, []);
 
-      return <pre>{deletePostsMutation.isSuccess && '___FINISHED__'}</pre>;
+      return <pre>{deletePostsMutation.isSuccess && '___FINISHED___'}</pre>;
     }
 
     function App() {
@@ -612,7 +612,7 @@ describe('useMutation()', () => {
 
     const utils = render(<App />);
     await waitFor(() => {
-      expect(utils.container).toHaveTextContent('___FINISHED__');
+      expect(utils.container).toHaveTextContent('___FINISHED___');
     });
 
     expect(linkSpy.up).toHaveBeenCalledTimes(1);
