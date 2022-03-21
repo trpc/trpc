@@ -7,9 +7,9 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 /* eslint-disable @typescript-eslint/ban-ts-comment */
-import * as trpcClient from '@trpc/client/src';
 import '@testing-library/jest-dom';
 import { render, waitFor } from '@testing-library/react';
+import * as trpcClient from '@trpc/client/src';
 import React, { useState } from 'react';
 import { QueryClient, QueryClientProvider } from 'react-query';
 import * as trpcReact from '../../../react/src';

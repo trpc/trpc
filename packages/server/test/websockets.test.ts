@@ -2,8 +2,8 @@
 
 /* eslint-disable @typescript-eslint/ban-types */
 // import WebSocket from 'ws';
-import { TRPCClientError } from '@trpc/client';
 import { waitFor } from '@testing-library/react';
+import { TRPCClientError } from '@trpc/client';
 import { EventEmitter } from 'events';
 import { expectTypeOf } from 'expect-type';
 import { default as WebSocket, default as ws } from 'ws';
