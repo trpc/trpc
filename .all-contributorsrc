@@ -610,6 +610,15 @@
       "contributions": [
         "financial"
       ]
+    },
+    {
+      "login": "john-schmitz",
+      "name": "John Schmitz",
+      "avatar_url": "https://avatars.githubusercontent.com/u/25447051?v=4",
+      "profile": "http://johnschmitz.me",
+      "contributions": [
+        "code"
+      ]
     }
   ],
   "contributorsPerLine": 7,
