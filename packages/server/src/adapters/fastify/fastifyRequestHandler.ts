@@ -74,5 +74,5 @@ export async function fastifyRequestHandler<
 
     await res.header(key, value);
   }
-  return res.send(result.body);
+  await res.send(result.body);
 }
