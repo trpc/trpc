@@ -67,13 +67,12 @@ export async function fastifyRequestHandler<
   if ('status' in result && (!res.statusCode || res.statusCode === 200)) {
     res.statusCode = result.status;
   }
-
   for (const [key, value] of Object.entries(result.headers ?? {})) {
     if (typeof value === 'undefined') {
       continue;
     }
-    res.header(key, value);
-  }
 
-  res.send(result.body);
+    void res.header(key, value);
+  }
+  await res.send(result.body);
 }
