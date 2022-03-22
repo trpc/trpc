@@ -285,7 +285,7 @@ export function applyWSSHandler<TRouter extends AnyRouter>(
         });
       }
     }
-    createContextAsync();
+    return createContextAsync();
   });
 
   return {
