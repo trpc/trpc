@@ -1,13 +1,13 @@
-import { URLSearchParams } from 'url';
-import { FastifyReply, FastifyRequest } from 'fastify';
 import { assertNotBrowser } from '../../assertNotBrowser';
-import { NodeHTTPCreateContextOption } from '../node-http';
-import { AnyRouter, inferRouterContext } from '../../router';
-import { resolveHTTPResponse } from '../../http/resolveHTTPResponse';
 import {
   HTTPBaseHandlerOptions,
   HTTPRequest,
 } from '../../http/internals/types';
+import { resolveHTTPResponse } from '../../http/resolveHTTPResponse';
+import { AnyRouter, inferRouterContext } from '../../router';
+import { NodeHTTPCreateContextOption } from '../node-http';
+import { FastifyReply, FastifyRequest } from 'fastify';
+import { URLSearchParams } from 'url';
 
 assertNotBrowser();
 
@@ -67,13 +67,12 @@ export async function fastifyRequestHandler<
   if ('status' in result && (!res.statusCode || res.statusCode === 200)) {
     res.statusCode = result.status;
   }
-
   for (const [key, value] of Object.entries(result.headers ?? {})) {
     if (typeof value === 'undefined') {
       continue;
     }
-    res.header(key, value);
-  }
 
-  res.send(result.body);
+    void res.header(key, value);
+  }
+  await res.send(result.body);
 }

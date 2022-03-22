@@ -15,10 +15,10 @@ export type CreateExpressContextOptions = NodeHTTPCreateContextFnOptions<
 export function createExpressMiddleware<TRouter extends AnyRouter>(
   opts: NodeHTTPHandlerOptions<TRouter, express.Request, express.Response>,
 ): express.Handler {
-  return (req, res) => {
+  return async (req, res) => {
     const endpoint = req.path.slice(1);
 
-    nodeHTTPRequestHandler({
+    await nodeHTTPRequestHandler({
       ...opts,
       req,
       res,

@@ -147,7 +147,7 @@ export function subscriptionPullFactory<TOutput>(opts: {
   }
 
   return new Subscription<TOutput>((emit) => {
-    _pull(emit);
+    _pull(emit).catch((err) => emit.error(getErrorFromUnknown(err)));
     return () => {
       clearTimeout(timer);
       stopped = true;
