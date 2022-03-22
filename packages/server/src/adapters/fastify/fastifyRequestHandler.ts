@@ -72,7 +72,7 @@ export async function fastifyRequestHandler<
       continue;
     }
 
-    void res.header(key, value);
+    await res.header(key, value);
   }
   return res.send(result.body);
 }
