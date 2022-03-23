@@ -8,7 +8,8 @@
   ],
   "parserOptions": {
     "ecmaVersion": 2018, // Allows for the parsing of modern ECMAScript features
-    "sourceType": "module" // Allows for the use of imports
+    "sourceType": "module", // Allows for the use of import
+    "project": "./tsconfig.eslint.json" // Allows for the use of rules which require parserServices to be generated
   },
   "rules": {
     // Place to specify ESLint rules. Can be used to overwrite rules specified from the extended configs
@@ -16,13 +17,25 @@
     "@typescript-eslint/explicit-module-boundary-types": "off",
     "react/react-in-jsx-scope": "off",
     "react/prop-types": "off",
-    "@typescript-eslint/no-explicit-any": "off"
+    "@typescript-eslint/no-explicit-any": "off",
+    "@typescript-eslint/no-floating-promises": "error"
   },
   "overrides": [
     {
-      "files": ["examples/**/*"],
+      "files": [
+        "examples/**/*"
+      ],
       "rules": {
-        "@typescript-eslint/no-unused-vars": "off"
+        "@typescript-eslint/no-unused-vars": "off",
+        "@typescript-eslint/no-floating-promises": "off"
+      }
+    },
+    {
+      "files": [
+        "**/test/**/*"
+      ],
+      "rules": {
+        "@typescript-eslint/no-floating-promises": "off"
       }
     }
   ],
