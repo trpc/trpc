@@ -2883,9 +2883,9 @@
     pretty-format "^27.0.2"
 
 "@testing-library/jest-dom@^5.14.1":
-  version "5.16.2"
-  resolved "https://registry.yarnpkg.com/@testing-library/jest-dom/-/jest-dom-5.16.2.tgz#f329b36b44aa6149cd6ced9adf567f8b6aa1c959"
-  integrity sha512-6ewxs1MXWwsBFZXIk4nKKskWANelkdUehchEOokHsN8X7c2eKXGw+77aRV63UU8f/DTSVUPLaGxdrj4lN7D/ug==
+  version "5.16.3"
+  resolved "https://registry.yarnpkg.com/@testing-library/jest-dom/-/jest-dom-5.16.3.tgz#b76851a909586113c20486f1679ffb4d8ec27bfa"
+  integrity sha512-u5DfKj4wfSt6akfndfu1eG06jsdyA/IUrlX2n3pyq5UXgXMhXY+NJb8eNK/7pqPWAhCKsCGWDdDO0zKMKAYkEA==
   dependencies:
     "@babel/runtime" "^7.9.2"
     "@types/testing-library__jest-dom" "^5.9.1"
@@ -6293,9 +6293,9 @@ fastify-warning@^0.2.0:
   integrity sha512-s1EQguBw/9qtc1p/WTY4eq9WMRIACkj+HTcOIK1in4MV5aFaQC9ZCIt0dJ7pr5bIf4lPpHvAtP2ywpTNgs7hqw==
 
 fastify-websocket@^4.0.0:
-  version "4.2.0"
-  resolved "https://registry.yarnpkg.com/fastify-websocket/-/fastify-websocket-4.2.0.tgz#058bb05b7c2510557ed255e5202dbbac31ce68dc"
-  integrity sha512-NcwkMqK6za1yR7tAtmWpfxWmCGcYg95zYfSa8+iNyfG8LjTZ3/EUCEtDLScFJ0fbPPMYf5f18ppNnl7MhZzrnQ==
+  version "4.2.1"
+  resolved "https://registry.yarnpkg.com/fastify-websocket/-/fastify-websocket-4.2.1.tgz#684cba5857aab018a9f47b75acb40185c3663ddb"
+  integrity sha512-m1q6+ecfAd0mfrFxVmCUSHUsVxUysNVP6H8OvVkT/7HRR3bvGXeoFIJE1hEOyfTU7k8cKxmX+dL5dEMX8RTWSA==
   dependencies:
     fastify-plugin "^3.0.0"
     ws "^8.0.0"
