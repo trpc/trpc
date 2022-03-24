@@ -1,6 +1,10 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-import type { NextApiHandler, NextApiRequest, NextApiResponse } from 'next/types';
+import type {
+  NextApiHandler,
+  NextApiRequest,
+  NextApiResponse,
+} from 'next/types';
 import { AnyRouter } from '../router';
 import { TRPCErrorResponse } from '../rpc';
 import { TRPCError } from '../TRPCError';
