@@ -3,9 +3,24 @@
  * This is an example router, you can delete this file and then update `../pages/api/trpc/[trpc].tsx`
  */
 
-import { createRouter } from 'server/createRouter';
+import { createRouter } from '~/server/createRouter';
 import { z } from 'zod';
 import { TRPCError } from '@trpc/server';
+import { prisma } from '../prisma';
+import { Prisma } from '@prisma/client';
+
+/**
+ * Default selector for Post.
+ * It's important to always explicitly say which fields you want to return in order to not leak extra information
+ * @see https://github.com/prisma/prisma/issues/9353
+ */
+const defaultPostSelect = Prisma.validator<Prisma.PostSelect>()({
+  id: true,
+  title: true,
+  text: true,
+  createdAt: true,
+  updatedAt: true,
+});
 
 export const postRouter = createRouter()
   // create
@@ -15,26 +30,24 @@ export const postRouter = createRouter()
       title: z.string().min(1).max(32),
       text: z.string().min(1),
     }),
-    async resolve({ ctx, input }) {
-      const post = await ctx.prisma.post.create({
+    async resolve({ input }) {
+      const post = await prisma.post.create({
         data: input,
+        select: defaultPostSelect,
       });
       return post;
     },
   })
   // read
   .query('all', {
-    async resolve({ ctx }) {
+    async resolve() {
       /**
        * For pagination you can have a look at this docs site
        * @link https://trpc.io/docs/useInfiniteQuery
        */
 
-      return ctx.prisma.post.findMany({
-        select: {
-          id: true,
-          title: true,
-        },
+      return prisma.post.findMany({
+        select: defaultPostSelect,
       });
     },
   })
@@ -42,17 +55,11 @@ export const postRouter = createRouter()
     input: z.object({
       id: z.string(),
     }),
-    async resolve({ ctx, input }) {
+    async resolve({ input }) {
       const { id } = input;
-      const post = await ctx.prisma.post.findUnique({
+      const post = await prisma.post.findUnique({
         where: { id },
-        select: {
-          id: true,
-          title: true,
-          text: true,
-          createdAt: true,
-          updatedAt: true,
-        },
+        select: defaultPostSelect,
       });
       if (!post) {
         throw new TRPCError({
@@ -72,20 +79,26 @@ export const postRouter = createRouter()
         text: z.string().min(1).optional(),
       }),
     }),
-    async resolve({ ctx, input }) {
+    async resolve({ input }) {
       const { id, data } = input;
-      const post = await ctx.prisma.post.update({
+      const post = await prisma.post.update({
         where: { id },
         data,
+        select: defaultPostSelect,
       });
       return post;
     },
   })
   // delete
   .mutation('delete', {
-    input: z.string().uuid(),
-    async resolve({ input: id, ctx }) {
-      await ctx.prisma.post.delete({ where: { id } });
-      return id;
+    input: z.object({
+      id: z.string(),
+    }),
+    async resolve({ input }) {
+      const { id } = input;
+      await prisma.post.delete({ where: { id } });
+      return {
+        id,
+      };
     },
   });

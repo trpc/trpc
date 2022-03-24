@@ -64,7 +64,7 @@ Here's some example apps:
       <td><a href="http://websockets.trpc.io">websockets.trpc.io</a></td>
       <td>
         <ul>
-          <li><a href="https://codesandbox.io/s/github/trpc/trpc/tree/main/examples/next-prisma-starter?file=/src/pages/index.tsx">CodeSandbox</a></li>
+          <li><a href="https://codesandbox.io/s/github/trpc/trpc/tree/main/examples/next-prisma-starter-websockets?file=/src/pages/index.tsx">CodeSandbox</a></li>
           <li><a href="https://github.com/trpc/trpc/tree/main/examples/next-prisma-starter-websockets">Source</a></li>
         </ul>
       </td>
@@ -103,6 +103,16 @@ Here's some example apps:
         <ul>
           <li><a href="https://githubbox.com/trpc/trpc/tree/main/examples/express-server">CodeSandbox</a></li>
           <li><a href="https://github.com/trpc/trpc/tree/main/examples/express-server">Source</a></li>
+        </ul>
+      </td>
+    </tr>
+    <tr>
+      <td>SvelteKit Example Application with Prisma.</td>
+      <td><em>n/a</em></td>
+      <td>
+        <ul>
+          <li><a href="https://codesandbox.io/s/github/icflorescu/trpc-sveltekit-example">CodeSandbox</a></li>
+          <li><a href="https://github.com/icflorescu/trpc-sveltekit-example">Source</a></li>
         </ul>
       </td>
     </tr>

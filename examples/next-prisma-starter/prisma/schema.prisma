@@ -17,6 +17,6 @@ model Post {
 
   // To return `Date`s intact through the API we need to add data transformers
   // https://trpc.io/docs/data-transformers
-  createdAt DateTime @unique @default(now())
-  updatedAt DateTime @unique @default(now())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
 }

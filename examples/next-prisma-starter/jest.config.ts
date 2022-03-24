@@ -1,4 +1,24 @@
 import type { Config } from '@jest/types';
+import { compilerOptions } from './tsconfig.json';
+
+/**
+ * Make `tsconfig.json`'s `paths` work in Jest
+ * @link https://stackoverflow.com/a/56792936
+ */
+function makeModuleNameMapperFromTsConfig(srcPath: string) {
+  // Get paths from tsconfig
+  const { paths }: { paths: Record<string, string[]> } = compilerOptions;
+
+  const aliases: { [key: string]: string } = {};
+
+  // Iterate over paths and convert them into moduleNameMapper format
+  Object.keys(paths).forEach((item) => {
+    const key = item.replace('/*', '/(.*)');
+    const path = paths[item][0].replace('/*', '/$1');
+    aliases[key] = srcPath + '/' + path;
+  });
+  return aliases;
+}
 
 const config: Config.InitialOptions = {
   verbose: true,
@@ -16,10 +36,7 @@ const config: Config.InitialOptions = {
     '^.+\\.module\\.(css|sass|scss)$',
   ],
   testEnvironment: 'jsdom',
-  moduleNameMapper: {
-    '^@components(.*)$': '<rootDir>/components$1',
-    '^@lib(.*)$': '<rootDir>/lib$1',
-  },
+  moduleNameMapper: makeModuleNameMapperFromTsConfig('<rootDir>'),
 };
 
 export default config;

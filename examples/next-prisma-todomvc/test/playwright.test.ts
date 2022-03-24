@@ -6,7 +6,7 @@ test('add todo', async () => {
   const nonce = Math.random()
     .toString(36)
     .replace(/[^a-z]+/g, '')
-    .substr(0, 6);
+    .slice(0, 6);
   await page.type('.new-todo', nonce);
   await page.keyboard.press('Enter');
   await page.waitForResponse('**/trpc/**');

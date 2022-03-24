@@ -26,7 +26,7 @@ For making typesafe API calls from your client. Install in your client codebase.
 
 `npm install @trpc/react`
 
-For generating a powerful set of React hooks for querying your tRPC API. Recommended for non-Next.js React projects. Powered by [react-query](https://react-query.tanstack.com/).
+For generating a powerful set of React hooks for querying your tRPC API. Powered by [react-query](https://react-query.tanstack.com/).
 
 `npm install @trpc/next`
 

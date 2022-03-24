@@ -11,7 +11,7 @@ import userEvent from '@testing-library/user-event';
 import { httpBatchLink } from '@trpc/client/links/httpBatchLink';
 import { expectTypeOf } from 'expect-type';
 import hash from 'hash-sum';
-import React, { Fragment, useEffect, useState } from 'react';
+import React, { Fragment, ReactNode, useEffect, useState } from 'react';
 import {
   QueryClient,
   QueryClientProvider,
@@ -226,7 +226,18 @@ function createAppRouter() {
   const queryClient = new QueryClient();
   const trpc = createReactQueryHooks<typeof appRouter>();
 
+  function App(props: { children: ReactNode }) {
+    const [queryClient] = useState(() => new QueryClient());
+    return (
+      <trpc.Provider {...{ queryClient, client }}>
+        <QueryClientProvider client={queryClient}>
+          {props.children}
+        </QueryClientProvider>
+      </trpc.Provider>
+    );
+  }
   return {
+    App,
     appRouter,
     trpc,
     close,
@@ -578,6 +589,40 @@ describe('useMutation()', () => {
     await waitFor(() => {
       expect(utils.container).not.toHaveTextContent('first post');
       expect(utils.container).toHaveTextContent('second post');
+    });
+  });
+
+  test('useMutation with context', async () => {
+    const { trpc, App, linkSpy } = factory;
+
+    function MyComponent() {
+      const deletePostsMutation = trpc.useMutation(['deletePosts'], {
+        context: {
+          test: '1',
+        },
+      });
+
+      useEffect(() => {
+        deletePostsMutation.mutate();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+      }, []);
+
+      return <pre>{deletePostsMutation.isSuccess && '___FINISHED___'}</pre>;
+    }
+
+    const utils = render(
+      <App>
+        <MyComponent />
+      </App>,
+    );
+    await waitFor(() => {
+      expect(utils.container).toHaveTextContent('___FINISHED___');
+    });
+
+    expect(linkSpy.up).toHaveBeenCalledTimes(1);
+    expect(linkSpy.down).toHaveBeenCalledTimes(1);
+    expect(linkSpy.up.mock.calls[0][0].context).toMatchObject({
+      test: '1',
     });
   });
 });
@@ -1933,4 +1978,145 @@ describe('setQueryData()', () => {
       expect(utils.container).toHaveTextContent('postById.title');
     });
   });
+});
+
+describe('setInfiniteQueryData()', () => {
+  test('with & without callback', async () => {
+    const { trpc, client } = factory;
+    function MyComponent() {
+      const utils = trpc.useContext();
+      const allPostsQuery = trpc.useInfiniteQuery(['paginatedPosts', {}], {
+        enabled: false,
+        getNextPageParam: (next) => next.nextCursor,
+      });
+      return (
+        <>
+          <pre>
+            {JSON.stringify(
+              allPostsQuery.data?.pages.map((p) => p.items) ?? null,
+              null,
+              4,
+            )}
+          </pre>
+          <button
+            data-testid="setInfiniteQueryData"
+            onClick={async () => {
+              // Add a new post to the first page (without callback)
+              utils.setInfiniteQueryData(['paginatedPosts', {}], {
+                pages: [
+                  {
+                    items: [
+                      {
+                        id: 'id',
+                        title: 'infinitePosts.title1',
+                        createdAt: Date.now(),
+                      },
+                    ],
+                    nextCursor: null,
+                  },
+                ],
+                pageParams: [],
+              });
+
+              const newPost = {
+                id: 'id',
+                title: 'infinitePosts.title2',
+                createdAt: Date.now(),
+              };
+
+              // Add a new post to the first page (with callback)
+              utils.setInfiniteQueryData(['paginatedPosts', {}], (data) => {
+                expect(data).not.toBe(undefined);
+
+                if (!data) {
+                  return {
+                    pages: [],
+                    pageParams: [],
+                  };
+                }
+
+                return {
+                  ...data,
+                  pages: data.pages.map((page) => {
+                    return {
+                      ...page,
+                      items: [...page.items, newPost],
+                    };
+                  }),
+                };
+              });
+            }}
+          />
+        </>
+      );
+    }
+    function App() {
+      const [queryClient] = useState(() => new QueryClient());
+      return (
+        <trpc.Provider {...{ queryClient, client }}>
+          <QueryClientProvider client={queryClient}>
+            <MyComponent />
+          </QueryClientProvider>
+        </trpc.Provider>
+      );
+    }
+
+    const utils = render(<App />);
+
+    utils.getByTestId('setInfiniteQueryData').click();
+
+    await waitFor(() => {
+      expect(utils.container).toHaveTextContent('infinitePosts.title1');
+      expect(utils.container).toHaveTextContent('infinitePosts.title2');
+    });
+  });
+});
+
+/**
+ * @link https://github.com/trpc/trpc/pull/1645
+ */
+test('regression: SSR with error sets `status`=`error`', async () => {
+  // @ts-ignore
+  const { window } = global;
+
+  let queryState: any;
+  // @ts-ignore
+  delete global.window;
+  const { trpc, trpcClientOptions } = factory;
+  const App: AppType = () => {
+    const query1 = trpc.useQuery(['bad-useQuery'] as any);
+    const query2 = trpc.useInfiniteQuery(['bad-useInfiniteQuery'] as any);
+    queryState = {
+      query1: {
+        status: query1.status,
+        error: query1.error,
+      },
+      query2: {
+        status: query2.status,
+        error: query2.error,
+      },
+    };
+    return <>{JSON.stringify(query1.data || null)}</>;
+  };
+
+  const Wrapped = withTRPC({
+    config: () => trpcClientOptions,
+    ssr: true,
+  })(App);
+
+  await Wrapped.getInitialProps!({
+    AppTree: Wrapped,
+    Component: <div />,
+  } as any);
+
+  // @ts-ignore
+  global.window = window;
+  expect(queryState.query1.error).toMatchInlineSnapshot(
+    `[TRPCClientError: No "query"-procedure on path "bad-useQuery"]`,
+  );
+  expect(queryState.query2.error).toMatchInlineSnapshot(
+    `[TRPCClientError: No "query"-procedure on path "bad-useInfiniteQuery"]`,
+  );
+  expect(queryState.query1.status).toBe('error');
+  expect(queryState.query2.status).toBe('error');
 });

@@ -1,21 +1,20 @@
 {
   "name": "@examples/standalone-server",
-  "version": "9.18.0",
+  "version": "9.20.3",
   "private": true,
   "scripts": {
-    "dev:server": "nodemon -e ts -w . -x ts-node ./src/server.ts",
-    "dev:client": "nodemon -e ts -w . -x 'wait-on tcp:2022 && ts-node ./src/client.ts'",
+    "dev:server": "nodemon -e ts -w . -x ts-node ./src/server",
+    "dev:client": "nodemon -e ts -w . -x 'wait-on tcp:2022 && ts-node ./src/client'",
     "dev": "run-p dev:* --print-label",
     "start": "yarn dev",
     "build": "tsc",
-    "test-dev": "start-server-and-test 'ts-node src/server.ts' 2022 'ts-node src/client.ts'",
+    "test-dev": "start-server-and-test 'ts-node src/server' 2022 'ts-node src/client'",
     "test-start": "start-server-and-test 'node dist/server' 2022 'node dist/client'"
   },
   "dependencies": {
-    "@trpc/client": "^9.18.0",
-    "@trpc/react": "^9.18.0",
-    "@trpc/server": "^9.18.0",
-    "@types/node-fetch": "^2.5.11",
+    "@trpc/client": "^9.20.3",
+    "@trpc/react": "^9.20.3",
+    "@trpc/server": "^9.20.3",
     "abort-controller": "^3.0.0",
     "node-fetch": "^2.6.1",
     "typescript": "4.4.4",
@@ -26,6 +25,7 @@
     "scheduler/tracing": "../../node_modules/scheduler/tracing-profiling"
   },
   "devDependencies": {
+    "@types/node-fetch": "^2.5.11",
     "@types/ws": "^8.2.0",
     "nodemon": "^2.0.12",
     "npm-run-all": "^4.1.5",

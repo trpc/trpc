@@ -1,5 +1,5 @@
 ---
-id: intro
+id: introduction
 title: Usage with Next.js
 sidebar_label: Usage with Next.js
 slug: /nextjs
@@ -49,9 +49,37 @@ yarn add @trpc/client @trpc/server @trpc/react @trpc/next zod react-query
 ```
 
 - React Query: `@trpc/react` provides a thin wrapper over [react-query](https://react-query.tanstack.com/overview). It is required as a peer dependency.
-- Zod: most examples use Zod for input validation, though it isn't required. You can use a validation library of your choice (Yup, [Superstruct](https://github.com/ianstormtaylor/superstruct), io-ts, etc). In fact, any object containing a `parse`, `create` or `validateSync` method will work.
+- Zod: most examples use [Zod](https://github.com/colinhacks/zod) for input validation and we highly recommended it, though it isn't required. You can use a validation library of your choice ([Yup](https://github.com/jquense/yup), [Superstruct](https://github.com/ianstormtaylor/superstruct), [io-ts](https://github.com/gcanti/io-ts), etc). In fact, any object containing a `parse`, `create` or `validateSync` method will work.
 
-### 2. Create a tRPC router
+### 2. Enable strict mode
+
+If you want to use Zod for input validation, make sure you have enabled strict mode in your `tsconfig.json`:
+
+```json
+// tsconfig.json
+{
+  // ...
+  "compilerOptions": {
+    // ...
+    "strict": true
+  }
+}
+```
+
+If strict mode is too much, at least enable `strictNullChecks`:
+
+```json
+// tsconfig.json
+{
+  // ...
+  "compilerOptions": {
+    // ...
+    "strictNullChecks": true
+  }
+}
+```
+
+### 3. Create a tRPC router
 
 Implement your tRPC router in `./pages/api/trpc/[trpc].ts`. If you need to split your router into several subrouters, implement them in a top-level `server` directory in your project root, then import them into `./pages/api/trpc/[trpc].ts` and [merge them](/docs/merging-routers) into a single root `appRouter`.
 
@@ -87,7 +115,7 @@ export default trpcNext.createNextApiHandler({
 
 </details>
 
-### 3. Create tRPC hooks
+### 4. Create tRPC hooks
 
 Create a set of strongly-typed hooks using your API's type signature.
 
@@ -100,7 +128,7 @@ export const trpc = createReactQueryHooks<AppRouter>();
 // => { useQuery: ..., useMutation: ...}
 ```
 
-### 4. Configure `_app.tsx`
+### 5. Configure `_app.tsx`
 
 The `createReactQueryHooks` function expects certain parameters to be passed via the Context API. To set these parameters, create a custom `_app.tsx` using the `withTRPC` higher-order component:
 
@@ -138,7 +166,7 @@ export default withTRPC<AppRouter>({
 })(MyApp);
 ```
 
-### 5. Make API requests
+### 6. Make API requests
 
 ```tsx
 import { trpc } from '../utils/trpc';
@@ -157,10 +185,6 @@ const IndexPage = () => {
 
 export default IndexPage;
 ```
-
-:::caution
-If you encounter problems with the required parameters in the **hello** endpoint using useQuery (in the example above `{ text: 'client' }`), and you have used _zod_ to validate them, make sure that your tsconfig.json file contains `"strict": true` and `"strictNullChecks": true`. If not add them or change their value to `true`
-:::
 
 ## `withTRPC()` options
 
