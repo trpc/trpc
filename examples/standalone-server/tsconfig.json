@@ -6,7 +6,6 @@
     "target": "ES2019",
     "declaration": true,
     "esModuleInterop": true,
-    "skipLibCheck": true,
     "strict": true
   },
   "include": ["src"],
