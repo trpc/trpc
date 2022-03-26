@@ -260,6 +260,9 @@ Also, if your company using tRPC and want to support long-term maintenance of tR
     <td align="center"><a href="https://farazpatankar.com/"><img src="https://avatars.githubusercontent.com/u/10681116?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Faraz Patankar</b></sub></a><br /><a href="#financial-FarazPatankar" title="Financial">💵</a></td>
     <td align="center"><a href="http://johnschmitz.me"><img src="https://avatars.githubusercontent.com/u/25447051?v=4?s=100" width="100px;" alt=""/><br /><sub><b>John Schmitz</b></sub></a><br /><a href="https://github.com/trpc/trpc/commits?author=john-schmitz" title="Code">💻</a></td>
   </tr>
+  <tr>
+    <td align="center"><a href="https://github.com/okaforcj"><img src="https://avatars.githubusercontent.com/u/34102565?v=4?s=100" width="100px;" alt=""/><br /><sub><b>okaforcj</b></sub></a><br /><a href="#financial-okaforcj" title="Financial">💵</a></td>
+  </tr>
 </table>
 
 <!-- markdownlint-restore -->
