@@ -16,7 +16,6 @@
   padding-top: 15px;
   max-width: 600px;
   margin: auto;
-  font-size: 90%;
 }
 .heroBanner figcaption a {
   color: var(--ifm-hero-text-color);
@@ -27,8 +26,11 @@
 }
 
 .heroBanner figcaption code {
-  background-color: var(--ifm-color-darkest);
-  color: #222;
+  background-color: #ffffff20;
+  border-color: var(--ifm-color-darkest);
+  border-radius: 5px;
+  border-width: 1px;
+  color: var(--ifm-color-darkest);
 }
 
 @media screen and (max-width: 966px) {
@@ -38,17 +40,17 @@
 }
 .getStarted {
   display: inline-block;
-  color: white;
-  background: --ifm-color-primary;
-  border: 2px solid white;
+  color: var(--ifm-navbar-background-color);
+  background: transparent;
+  border: 2px solid var(--ifm-navbar-background-color);
   border-radius: 4px;
   padding: 10px 25px;
   margin: 50px 0px 0px 0px;
   font-size: 14pt;
 }
 .getStarted:hover {
-  background: white;
-  color: --ifm-color-primary;
+  background: var(--ifm-navbar-background-color);
+  color: var(--ifm-color-primary);
   text-decoration: none;
 }
 
