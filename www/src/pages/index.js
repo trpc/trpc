@@ -76,7 +76,7 @@ function Home() {
         />
       </Head>
       <header className={clsx('hero hero--primary', styles.heroBanner)}>
-        <div className="container">
+        <div className="container main-container">
           <h1 className="hero__title">{siteConfig.title}</h1>
           <p className="hero__subtitle">{siteConfig.tagline}</p>
           <p>
@@ -97,14 +97,14 @@ function Home() {
               alt="Server/client example"
             />
             <figcaption>
-              The client above is <strong>not</strong> importing any code from
-              the server, only its type declarations. <code>import type</code>{' '}
-              only imports declarations to be used annotations and declarations.
-              It{' '}
+              The client doesn't import <em>any code</em> from the server, only
+              a single TypeScript type. The <code>import type</code> declaration
+              is{' '}
               <a href="https://www.typescriptlang.org/docs/handbook/release-notes/typescript-3-8.html#type-only-imports-and-export">
-                always gets fully erased
-              </a>
-              , so there’s no remnant of it at runtime.
+                fully erased
+              </a>{' '}
+              at runtime. tRPC transforms this type into a fully typesafe
+              client.
             </figcaption>
           </figure>
           <p>
