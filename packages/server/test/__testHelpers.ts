@@ -80,7 +80,10 @@ export function routerToServerAndClient<TRouter extends AnyRouter>(
     close: async () => {
       await Promise.all([
         new Promise((resolve) => httpServer.server.close(resolve)),
-        new Promise((resolve) => wss.close(resolve)),
+        new Promise((resolve) => {
+          wss.clients.forEach((ws) => ws.close());
+          wss.close(resolve);
+        }),
       ]);
     },
     router,
