@@ -151,8 +151,8 @@ Your endpoints are now available via HTTP!
 
 | Endpoint     | HTTP URI                                                                                                       |
 | ------------ | -------------------------------------------------------------------------------------------------------------- |
-| `getUser`    | `GET http://localhost:4000/trpc/getUserById?input=INPUT` <br/><br/>where `INPUT` is a URI-encoded JSON string. |
-| `createUser` | `POST http://localhost:4000/trpc/createUser` <br/><br/>with `req.body` of type `User`                          |
+| `getUser`    | `GET http://localhost:3000/trpc/getUserById?input=INPUT` <br/><br/>where `INPUT` is a URI-encoded JSON string. |
+| `createUser` | `POST http://localhost:3000/trpc/createUser` <br/><br/>with `req.body` of type `User`                          |
 
 ## How to enable subscriptions (WebSocket)
 
