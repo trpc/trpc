@@ -1,8 +1,8 @@
 /**
  * Integration test example for the `post` router
  */
-import { inferMutationInput } from '~/utils/trpc';
 import { appRouter } from './_app';
+import { inferMutationInput } from '~/utils/trpc';
 
 test('add and get post', async () => {
   const caller = appRouter.createCaller({});
