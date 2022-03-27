@@ -97,9 +97,9 @@ function Home() {
               alt="Server/client example"
             />
             <figcaption>
-              The client doesn't import <em>any code</em> from the server, only
-              a single TypeScript type. The <code>import type</code> declaration
-              is{' '}
+              The client doesn&apos;t import <em>any code</em> from the server,
+              only a single TypeScript type. The <code>import type</code>{' '}
+              declaration is{' '}
               <a href="https://www.typescriptlang.org/docs/handbook/release-notes/typescript-3-8.html#type-only-imports-and-export">
                 fully erased
               </a>{' '}
