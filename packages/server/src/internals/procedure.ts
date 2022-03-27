@@ -7,8 +7,8 @@ import { MiddlewareFunction, middlewareMarker } from './middlewares';
 import { wrapCallSafe } from './wrapCallSafe';
 assertNotBrowser();
 
-export type ProcedureParserZodEsque<TInput, TParsed> = {
-  _input: TInput;
+export type ProcedureParserZodEsque<T, TParsed> = {
+  _input: T;
   _output: TParsed;
 };
 
@@ -235,12 +235,11 @@ export class Procedure<
   }
 }
 
-export type CreateProcedureWithInput<TContext, TInput, TParsedInput, TOutput> =
-  {
-    input: ProcedureParser<TInput>;
-    output?: ProcedureParser<TOutput>;
-    resolve: ProcedureResolver<TContext, TParsedInput, TOutput>;
-  };
+export type CreateProcedureWithInput<TContext, TInput, TOutput> = {
+  input: ProcedureParser<TInput>;
+  output?: ProcedureParser<TOutput>;
+  resolve: ProcedureResolver<TContext, TInput, TOutput>;
+};
 
 export type CreateProcedureWithInputOutputParser<
   TContext,
@@ -281,7 +280,7 @@ export type CreateProcedureOptions<
       TOutput,
       TParsedOutput
     >
-  | CreateProcedureWithInput<TContext, TInput, TParsedInput, TOutput>
+  | CreateProcedureWithInput<TContext, TInput, TOutput>
   | CreateProcedureWithoutInput<TContext, TOutput, TParsedOutput>;
 
 export function createProcedure<

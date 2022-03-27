@@ -331,7 +331,7 @@ export class Router<
 
   public query<TPath extends string, TInput, TOutput>(
     path: TPath,
-    procedure: CreateProcedureWithInput<TContext, TInput, TInput, TOutput>,
+    procedure: CreateProcedureWithInput<TContext, TInput, TOutput>,
   ): Router<
     TInputContext,
     TContext,
@@ -395,7 +395,7 @@ export class Router<
 
   public mutation<TPath extends string, TInput, TOutput>(
     path: TPath,
-    procedure: CreateProcedureWithInput<TContext, TInput, TInput, TOutput>,
+    procedure: CreateProcedureWithInput<TContext, TInput, TOutput>,
   ): Router<
     TInputContext,
     TContext,
@@ -440,15 +440,17 @@ export class Router<
     TInput,
     TParsedInput,
     TOutput extends Subscription<unknown>,
-    TParsedOutput,
   >(
     path: TPath,
-    procedure: CreateProcedureWithInputOutputParser<
-      TContext,
-      TInput,
-      TParsedInput,
-      TOutput,
-      TParsedOutput
+    procedure: Omit<
+      CreateProcedureWithInputOutputParser<
+        TContext,
+        TInput,
+        TParsedInput,
+        TOutput,
+        unknown
+      >,
+      'output'
     >,
   ): Router<
     TInputContext,
@@ -469,7 +471,10 @@ export class Router<
     TOutput extends Subscription<unknown>,
   >(
     path: TPath,
-    procedure: CreateProcedureWithInput<TContext, TInput, TInput, TOutput>,
+    procedure: Omit<
+      CreateProcedureWithInput<TContext, TInput, TOutput>,
+      'output'
+    >,
   ): Router<
     TInputContext,
     TContext,
@@ -486,10 +491,12 @@ export class Router<
   public subscription<
     TPath extends string,
     TOutput extends Subscription<unknown>,
-    TParsedOutput,
   >(
     path: TPath,
-    procedure: CreateProcedureWithoutInput<TContext, TOutput, TParsedOutput>,
+    procedure: Omit<
+      CreateProcedureWithoutInput<TContext, TOutput, unknown>,
+      'output'
+    >,
   ): Router<
     TInputContext,
     TContext,
@@ -502,7 +509,10 @@ export class Router<
 
   public subscription(
     path: string,
-    procedure: CreateProcedureOptions<TContext, any, any, any, any>, // TODO: omit "output"
+    procedure: Omit<
+      CreateProcedureOptions<TContext, any, any, any, any>,
+      'output'
+    >,
   ) {
     const router = new Router<TContext, TContext, {}, {}, any, any>({
       subscriptions: safeObject({
