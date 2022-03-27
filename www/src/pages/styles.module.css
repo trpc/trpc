@@ -18,11 +18,13 @@
   margin: auto;
 }
 .heroBanner figcaption a {
-  color: var(--ifm-hero-text-color);
-
-  /* font-size: 0.8rem;
-  font-style: italic; */
+  color: var(--ifm-color-gray-200);
   text-decoration: underline;
+}
+
+[data-theme='dark'] .heroBanner {
+  background-color: var(--ifm-color-primary-darkest);
+  color: var(--ifm-color-gray-200);
 }
 
 .heroBanner figcaption code {
@@ -40,16 +42,16 @@
 }
 .getStarted {
   display: inline-block;
-  color: var(--ifm-navbar-background-color);
+  color: var(--ifm-color-gray-200);
   background: transparent;
-  border: 2px solid var(--ifm-navbar-background-color);
+  border: 2px solid var(--ifm-color-gray-200);
   border-radius: 4px;
   padding: 10px 25px;
   margin: 50px 0px 0px 0px;
   font-size: 14pt;
 }
 .getStarted:hover {
-  background: var(--ifm-navbar-background-color);
+  background: var(--ifm-color-gray-200);
   color: var(--ifm-color-primary);
   text-decoration: none;
 }
