@@ -7,9 +7,9 @@ import { MiddlewareFunction, middlewareMarker } from './middlewares';
 import { wrapCallSafe } from './wrapCallSafe';
 assertNotBrowser();
 
-export type ProcedureParserZodEsque<T, TParsed> = {
-  _input: T;
-  _output: TParsed;
+export type ProcedureParserZodEsque<TInput, TOutput> = {
+  _input: TInput;
+  _output: TOutput;
 };
 
 export type ProcedureParserMyZodEsque<T> = {
@@ -27,14 +27,15 @@ export type ProcedureParserCustomValidatorEsque<T> = (
 export type ProcedureParserYupEsque<T> = {
   validateSync: (input: unknown) => T;
 };
+
 export type ProcedureParser<T> =
   | ProcedureParserYupEsque<T>
   | ProcedureParserSuperstructEsque<T>
   | ProcedureParserCustomValidatorEsque<T>
   | ProcedureParserMyZodEsque<T>;
 
-export type ProcedureParserWithInputOutput<T, TParsed> =
-  ProcedureParserZodEsque<T, TParsed>;
+export type ProcedureParserWithInputOutput<TInput, TOutput> =
+  ProcedureParserZodEsque<TInput, TOutput>;
 
 export type ProcedureResolver<TContext, TParsedInput, TOutput> = (opts: {
   ctx: TContext;
@@ -249,7 +250,7 @@ export type CreateProcedureWithInputOutputParser<
   TParsedOutput,
 > = {
   input: ProcedureParserWithInputOutput<TInput, TParsedInput>;
-  output?: ProcedureParserWithInputOutput<TOutput, TParsedOutput>;
+  output?: ProcedureParserWithInputOutput<TParsedOutput, TOutput>;
   resolve: ProcedureResolver<
     TContext,
     TParsedInput,
@@ -258,7 +259,9 @@ export type CreateProcedureWithInputOutputParser<
 };
 
 export type CreateProcedureWithoutInput<TContext, TOutput, TParsedOutput> = {
-  output?: ProcedureParserWithInputOutput<TOutput, TParsedOutput>;
+  output?:
+    | ProcedureParserWithInputOutput<TParsedOutput, TOutput>
+    | ProcedureParser<TOutput>;
   resolve: ProcedureResolver<
     TContext,
     undefined,
