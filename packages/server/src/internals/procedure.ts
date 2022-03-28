@@ -28,25 +28,25 @@ export type ProcedureParserYupEsque<T> = {
   validateSync: (input: unknown) => T;
 };
 
+export type ProcedureParserWithInputOutput<TInput, TOutput> =
+  ProcedureParserZodEsque<TInput, TOutput>;
+
 export type ProcedureParser<T> =
   | ProcedureParserYupEsque<T>
   | ProcedureParserSuperstructEsque<T>
   | ProcedureParserCustomValidatorEsque<T>
   | ProcedureParserMyZodEsque<T>;
 
-export type ProcedureParserWithInputOutput<TInput, TOutput> =
-  ProcedureParserZodEsque<TInput, TOutput>;
-
-export type ProcedureResolver<TContext, TParsedInput, TOutput> = (opts: {
+export type ProcedureResolver<TContext, TInput, TOutput> = (opts: {
   ctx: TContext;
-  input: TParsedInput;
+  input: TInput;
   type: ProcedureType;
 }) => Promise<TOutput> | TOutput;
 
-interface ProcedureOptions<TContext, TParsedInput, TOutput> {
+interface ProcedureOptions<TContext, TInput, TOutput> {
   middlewares: Array<MiddlewareFunction<any, any>>;
-  resolver: ProcedureResolver<TContext, TParsedInput, TOutput>;
-  inputParser: ProcedureParser<TParsedInput>;
+  resolver: ProcedureResolver<TContext, TInput, TOutput>;
+  inputParser: ProcedureParser<TInput>;
   outputParser: ProcedureParser<TOutput>;
 }
 
@@ -105,13 +105,13 @@ export class Procedure<
   TParsedOutput,
 > {
   private middlewares: Readonly<Array<MiddlewareFunction<any, any>>>;
-  private resolver: ProcedureResolver<TContext, TParsedInput, TOutput>;
+  private resolver: ProcedureResolver<TContext, TParsedInput, TParsedOutput>;
   private readonly inputParser: ProcedureParser<TParsedInput>;
   private parseInputFn: ParseFn<TParsedInput>;
-  private readonly outputParser: ProcedureParser<TOutput>;
-  private parseOutputFn: ParseFn<TOutput>;
+  private readonly outputParser: ProcedureParser<TParsedOutput>;
+  private parseOutputFn: ParseFn<TParsedOutput>;
 
-  constructor(opts: ProcedureOptions<TContext, TParsedInput, TOutput>) {
+  constructor(opts: ProcedureOptions<TContext, TParsedInput, TParsedOutput>) {
     this.middlewares = opts.middlewares;
     this.resolver = opts.resolver;
     this.inputParser = opts.inputParser;
@@ -131,10 +131,10 @@ export class Procedure<
     }
   }
 
-  private async parseOutput(rawOutput: unknown): Promise<TOutput> {
+  private async parseOutput(rawOutput: unknown): Promise<TParsedOutput> {
     try {
       if (process.env.TRPC_SKIP_OUTPUT_VALIDATION) {
-        return rawOutput as TOutput;
+        return rawOutput as TParsedOutput;
       }
       return await this.parseOutputFn(rawOutput);
     } catch (cause) {
@@ -215,7 +215,9 @@ export class Procedure<
     middlewares: MiddlewareFunction<TInputContext, TContext>[],
   ): this {
     const Constructor: {
-      new (opts: ProcedureOptions<TContext, TParsedInput, TOutput>): Procedure<
+      new (
+        opts: ProcedureOptions<TContext, TParsedInput, TParsedOutput>,
+      ): Procedure<
         TInputContext,
         TContext,
         TInput,
@@ -250,7 +252,7 @@ export type CreateProcedureWithInputOutputParser<
   TParsedOutput,
 > = {
   input: ProcedureParserWithInputOutput<TInput, TParsedInput>;
-  output?: ProcedureParserWithInputOutput<TParsedOutput, TOutput>;
+  output?: ProcedureParserWithInputOutput<TOutput, TParsedOutput>;
   resolve: ProcedureResolver<
     TContext,
     TParsedInput,
@@ -260,7 +262,7 @@ export type CreateProcedureWithInputOutputParser<
 
 export type CreateProcedureWithoutInput<TContext, TOutput, TParsedOutput> = {
   output?:
-    | ProcedureParserWithInputOutput<TParsedOutput, TOutput>
+    | ProcedureParserWithInputOutput<TOutput, TParsedOutput>
     | ProcedureParser<TOutput>;
   resolve: ProcedureResolver<
     TContext,
