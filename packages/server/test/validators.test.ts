@@ -128,51 +128,6 @@ test('zod transform mixed input/output', async () => {
   close();
 });
 
-test('zod transform output mixed input/output', async () => {
-  const input = z.object({
-    length: z.string().transform((s) => s.length),
-  });
-
-  const router = trpc.router().query('num', {
-    input: input,
-    resolve({ input }) {
-      expectTypeOf(input.length).toBeNumber();
-      return {
-        input,
-      };
-    },
-  });
-  const { client, close } = routerToServerAndClient(router);
-
-  await expect(client.query('num', { length: '123' })).resolves
-    .toMatchInlineSnapshot(`
-          Object {
-            "input": Object {
-              "length": 3,
-            },
-          }
-        `);
-
-  await expect(
-    // @ts-expect-error this should only accept a string
-    client.query('num', { length: 123 }),
-  ).rejects.toMatchInlineSnapshot(`
-          [TRPCClientError: [
-            {
-              "code": "invalid_type",
-              "expected": "string",
-              "received": "number",
-              "path": [
-                "length"
-              ],
-              "message": "Expected string, received number"
-            }
-          ]]
-        `);
-
-  close();
-});
-
 test('superstruct', async () => {
   const router = trpc.router().query('num', {
     input: t.number(),

@@ -141,7 +141,7 @@ test('infer subscription input & output', async () => {
       },
     })
     .subscription('noInput', {
-      async resolve({ input }) {
+      async resolve() {
         return new trpc.Subscription(() => () => null);
       },
     })
