@@ -59,8 +59,14 @@ export function httpRequest<TResponseShape = TRPCResponse>(
     const url = getUrl();
 
     Promise.resolve(rt.headers())
-      .then((headers) =>
-        rt.fetch(url, {
+      .then((headers) => {
+        Object.keys(headers).forEach((key) => {
+          if (headers[key] === undefined) {
+            delete headers[key];
+          }
+        });
+
+        return rt.fetch(url, {
           method: method[type],
           signal: ac?.signal,
           body: getBody(),
@@ -68,8 +74,8 @@ export function httpRequest<TResponseShape = TRPCResponse>(
             'content-type': 'application/json',
             ...headers,
           },
-        }),
-      )
+        });
+      })
       .then((res) => {
         return res.json();
       })

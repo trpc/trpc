@@ -13,9 +13,13 @@ test('pass headers', async () => {
   const { close, httpUrl } = routerToServerAndClient(
     trpc.router<Context>().query('hello', {
       resolve({ ctx }) {
-        return {
-          'x-special': ctx.headers['x-special'],
-        };
+        // return only custom headers
+        return Object.keys(ctx.headers).reduce((acc, key) => {
+          if (key.startsWith('x-')) {
+            return { ...acc, [key]: ctx.headers[key] };
+          }
+          return acc;
+        }, {});
       },
     }),
     {
@@ -63,6 +67,21 @@ Object {
     expect(await client.query('hello')).toMatchInlineSnapshot(`
 Object {
   "x-special": "async special header",
+}
+`);
+  }
+  {
+    // remove undefined headers
+    const client = createTRPCClient({
+      url: httpUrl,
+      headers: {
+        'x-defined': 'xyz',
+        'x-undefined': undefined,
+      },
+    });
+    expect(await client.query('hello')).toMatchInlineSnapshot(`
+Object {
+  "x-defined": "xyz",
 }
 `);
   }
