@@ -59,12 +59,13 @@ export function httpRequest<TResponseShape = TRPCResponse>(
     const url = getUrl();
 
     Promise.resolve(rt.headers())
-      .then((headers) => {
-        Object.keys(headers).forEach((key) => {
-          if (headers[key] === undefined) {
-            delete headers[key];
+      .then((rawHeaders) => {
+        const headers = Object.keys(rawHeaders).reduce((acc, key) => {
+          if (rawHeaders[key] !== undefined) {
+            return { ...acc, [key]: rawHeaders[key] };
           }
-        });
+          return acc;
+        }, {});
 
         return rt.fetch(url, {
           method: method[type],
