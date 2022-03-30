@@ -60,21 +60,22 @@ export function httpRequest<TResponseShape = TRPCResponse>(
 
     Promise.resolve(rt.headers())
       .then((rawHeaders) => {
-        const headers = Object.keys(rawHeaders).reduce((acc, key) => {
+        const headers: HeadersInit = { 'content-type': 'application/json' };
+        for (const key in rawHeaders) {
           if (rawHeaders[key] !== undefined) {
-            return { ...acc, [key]: rawHeaders[key] };
+            if (Array.isArray(rawHeaders[key])) {
+              headers[key] = (rawHeaders[key] as string[]).join(',');
+            } else {
+              headers[key] = rawHeaders[key] as string;
+            }
           }
-          return acc;
-        }, {});
+        }
 
         return rt.fetch(url, {
           method: method[type],
           signal: ac?.signal,
           body: getBody(),
-          headers: {
-            'content-type': 'application/json',
-            ...headers,
-          },
+          headers,
         });
       })
       .then((res) => {
