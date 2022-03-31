@@ -7,7 +7,7 @@ import { routerToServerAndClient, waitError } from './__testHelpers';
 import { waitFor } from '@testing-library/react';
 import { expectTypeOf } from 'expect-type';
 import { z } from 'zod';
-import { TRPCClientError } from '../../client/src';
+import { HTTPHeaders, TRPCClientError } from '../../client/src';
 import { httpBatchLink } from '../../client/src';
 import * as trpc from '../src';
 import { Maybe, TRPCError } from '../src';
@@ -257,8 +257,8 @@ describe('integration tests', () => {
           name: string;
         };
       };
-      // eslint-disable-next-line prefer-const
-      let headers: Record<string, string | undefined> = {};
+
+      const headers: HTTPHeaders = {};
       function createContext({ req }: CreateHTTPContextOptions): Context {
         if (req.headers.authorization !== 'kattsecret') {
           return {};

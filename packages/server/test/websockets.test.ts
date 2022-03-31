@@ -4,11 +4,11 @@
 // import WebSocket from 'ws';
 import { routerToServerAndClient, waitMs } from './__testHelpers';
 import { waitFor } from '@testing-library/react';
-import { TRPCClientError } from '@trpc/client';
 import { EventEmitter } from 'events';
 import { expectTypeOf } from 'expect-type';
 import { default as WebSocket, default as ws } from 'ws';
 import { z } from 'zod';
+import { TRPCClientError } from '../../client/src';
 import { wsLink } from '../../client/src';
 import * as trpc from '../src';
 import { TRPCError } from '../src';

@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import { routerToServerAndClient } from './__testHelpers';
+import { HTTPHeaders } from '@trpc/client';
 import { AsyncLocalStorage } from 'async_hooks';
 import { expectTypeOf } from 'expect-type';
 import { z } from 'zod';
@@ -106,7 +107,7 @@ test('allows you to throw an error (e.g. auth)', async () => {
   };
   const resolverMock = jest.fn();
 
-  const headers: Record<string, string | undefined> = {};
+  const headers: HTTPHeaders = {};
 
   const { client, close } = routerToServerAndClient(
     trpc
