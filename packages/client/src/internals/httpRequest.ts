@@ -62,11 +62,12 @@ export function httpRequest<TResponseShape = TRPCResponse>(
       .then((rawHeaders) => {
         const headers: HeadersInit = { 'content-type': 'application/json' };
         for (const key in rawHeaders) {
-          if (rawHeaders[key] !== undefined) {
-            if (Array.isArray(rawHeaders[key])) {
-              headers[key] = (rawHeaders[key] as string[]).join(',');
+          const header = rawHeaders[key];
+          if (header !== undefined) {
+            if (Array.isArray(header)) {
+              headers[key] = header.join(',');
             } else {
-              headers[key] = rawHeaders[key] as string;
+              headers[key] = header;
             }
           }
         }
