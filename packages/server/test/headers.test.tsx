@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-empty-function */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/ban-types */
-import { createTRPCClient } from '@trpc/client';
+import { createTRPCClient } from '../../client/src';
 import * as trpc from '../src';
 import { Dict } from '../src';
 import { routerToServerAndClient } from './_testHelpers';
@@ -15,6 +15,8 @@ test('pass headers', async () => {
       resolve({ ctx }) {
         return {
           'x-special': ctx.headers['x-special'],
+          'x-defined': ctx.headers['x-defined'],
+          'x-undefined': ctx.headers['x-undefined'],
         };
       },
     }),
@@ -33,7 +35,6 @@ test('pass headers', async () => {
     });
     expect(await client.query('hello')).toMatchInlineSnapshot(`Object {}`);
   }
-
   {
     // custom headers sent
     const client = createTRPCClient({
@@ -45,10 +46,10 @@ test('pass headers', async () => {
       },
     });
     expect(await client.query('hello')).toMatchInlineSnapshot(`
-Object {
-  "x-special": "special header",
-}
-`);
+      Object {
+        "x-special": "special header",
+      }
+    `);
   }
   {
     // async headers
@@ -61,10 +62,39 @@ Object {
       },
     });
     expect(await client.query('hello')).toMatchInlineSnapshot(`
-Object {
-  "x-special": "async special header",
-}
-`);
+      Object {
+        "x-special": "async special header",
+      }
+    `);
+  }
+  {
+    // array headers
+    const client = createTRPCClient({
+      url: httpUrl,
+      headers: {
+        'x-special': ['foo', 'bar'],
+      },
+    });
+    expect(await client.query('hello')).toMatchInlineSnapshot(`
+      Object {
+        "x-special": "foo,bar",
+      }
+    `);
+  }
+  {
+    // remove undefined headers
+    const client = createTRPCClient({
+      url: httpUrl,
+      headers: {
+        'x-defined': 'xyz',
+        'x-undefined': undefined,
+      },
+    });
+    expect(await client.query('hello')).toMatchInlineSnapshot(`
+      Object {
+        "x-defined": "xyz",
+      }
+    `);
   }
   close();
 });
