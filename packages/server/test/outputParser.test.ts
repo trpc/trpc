@@ -26,6 +26,7 @@ test('zod', async () => {
       "input": "foobar",
     }
   `);
+
   await expect(client.query('q', 1234)).rejects.toMatchInlineSnapshot(
     `[TRPCClientError: Output validation failed]`,
   );
@@ -54,6 +55,7 @@ test('zod async', async () => {
       "input": "foobar",
     }
   `);
+
   await expect(client.query('q', 1234)).rejects.toMatchInlineSnapshot(
     `[TRPCClientError: Output validation failed]`,
   );
@@ -80,6 +82,7 @@ test('zod transform', async () => {
       "input": 6,
     }
   `);
+
   await expect(client.query('q', 1234)).rejects.toMatchInlineSnapshot(
     `[TRPCClientError: Output validation failed]`,
   );
@@ -106,6 +109,7 @@ test('superstruct', async () => {
       "input": "foobar",
     }
   `);
+
   await expect(client.query('q', 1234)).rejects.toMatchInlineSnapshot(
     `[TRPCClientError: Output validation failed]`,
   );
@@ -143,6 +147,7 @@ test('yup', async () => {
       "input": "foobar",
     }
   `);
+
   await expect(client.query('q', 1234)).rejects.toMatchInlineSnapshot(
     `[TRPCClientError: Output validation failed]`,
   );
@@ -169,6 +174,7 @@ test('myzod', async () => {
       "input": "foobar",
     }
   `);
+
   await expect(client.query('q', 1234)).rejects.toMatchInlineSnapshot(
     `[TRPCClientError: Output validation failed]`,
   );
@@ -198,6 +204,7 @@ test('validator fn', async () => {
       "input": "foobar",
     }
   `);
+
   await expect(client.query('q', 1234)).rejects.toMatchInlineSnapshot(
     `[TRPCClientError: Output validation failed]`,
   );
@@ -208,9 +215,9 @@ test('validator fn', async () => {
 test('async validator fn', async () => {
   const router = trpc.router().query('q', {
     input: (value: unknown) => value as string | number,
-    output: async (value: unknown): Promise<{ input: string }> => {
-      if (typeof (value as any).input === 'string') {
-        return value as any;
+    output: async (value: any): Promise<{ input: string }> => {
+      if (value && typeof value.input === 'string') {
+        return { input: value.input };
       }
       throw new Error('Fail');
     },
@@ -227,6 +234,7 @@ test('async validator fn', async () => {
       "input": "foobar",
     }
   `);
+
   await expect(client.query('q', 1234)).rejects.toMatchInlineSnapshot(
     `[TRPCClientError: Output validation failed]`,
   );
