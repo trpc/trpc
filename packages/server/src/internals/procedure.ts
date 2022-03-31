@@ -1,10 +1,11 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import { TRPCError } from '../TRPCError';
 import { assertNotBrowser } from '../assertNotBrowser';
 import { ProcedureType } from '../router';
-import { TRPCError } from '../TRPCError';
 import { getErrorFromUnknown } from './errors';
 import { MiddlewareFunction, middlewareMarker } from './middlewares';
 import { wrapCallSafe } from './wrapCallSafe';
+
 assertNotBrowser();
 
 export type ProcedureParserZodEsque<TInput, TOutput> = {
@@ -136,9 +137,6 @@ export class Procedure<
 
   private async parseOutput(rawOutput: TOutput): Promise<TFinalOutput> {
     try {
-      if (process.env.TRPC_SKIP_OUTPUT_VALIDATION) {
-        return rawOutput as any;
-      }
       return await this.parseOutputFn(rawOutput);
     } catch (cause) {
       throw new TRPCError({
