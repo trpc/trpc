@@ -10,6 +10,23 @@ async function start() {
     headers: { username: 'nyan' },
   });
 
+  const getHello = await fetch(`http://localhost:${port}/hello`);
+  const getHelloJSON = await getHello.json();
+
+  console.log('>>> fetch:get:hello:', getHelloJSON);
+
+  const postHello = await fetch(`http://localhost:${port}/hello`, {
+    method: 'POST',
+    headers: {
+      Accept: 'application/json',
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ text: 'life', life: 42 }),
+  });
+
+  const postHelloJSON = await postHello.json();
+  console.log('>>> fetch:post:hello:', postHelloJSON);
+
   const version = await anon.client.query('version');
   console.log('>>> anon:version:', version);
 
