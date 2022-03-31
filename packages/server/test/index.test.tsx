@@ -1,17 +1,18 @@
 /* eslint-disable @typescript-eslint/no-empty-function */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/ban-types */
+import * as trpc from '../src';
+import WebSocket from 'ws';
 import { expectTypeOf } from 'expect-type';
 import { createTRPCClient } from '../../client/src';
 import { createWSClient, wsLink } from '../../client/src/links/wsLink';
 import { z } from 'zod';
 import { TRPCClientError } from '../../client/src';
-import * as trpc from '../src';
-import { CreateHttpContextOptions, Maybe, TRPCError } from '../src';
+import { Maybe, TRPCError } from '../src';
 import { routerToServerAndClient, waitError } from './_testHelpers';
-import WebSocket from 'ws';
 import { waitFor } from '@testing-library/react';
 import { httpBatchLink } from '../../client/src/links/httpBatchLink';
+import { CreateHTTPContextOptions } from '../src/adapters/standalone';
 
 test('smoke test', async () => {
   const { client, close } = routerToServerAndClient(
@@ -259,7 +260,7 @@ describe('integration tests', () => {
       };
       // eslint-disable-next-line prefer-const
       let headers: Record<string, string | undefined> = {};
-      function createContext({ req }: CreateHttpContextOptions): Context {
+      function createContext({ req }: CreateHTTPContextOptions): Context {
         if (req.headers.authorization !== 'kattsecret') {
           return {};
         }
@@ -535,7 +536,7 @@ describe('TRPCAbortError', () => {
     const err = onReject.mock.calls[0][0] as TRPCClientError<any>;
 
     expect(err.name).toBe('TRPCClientError');
-    expect(err.originalError?.name).toBe('TRPCAbortError');
+    expect(err.cause?.name).toBe('TRPCAbortError');
 
     close();
   });
@@ -583,7 +584,7 @@ describe('TRPCAbortError', () => {
     });
 
     const err = onReject1.mock.calls[0][0] as TRPCClientError<any>;
-    expect(err.originalError?.name).toBe('TRPCAbortError');
+    expect(err.cause?.name).toBe('TRPCAbortError');
 
     expect(await req2).toBe('slow2');
 

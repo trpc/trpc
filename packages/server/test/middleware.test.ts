@@ -1,10 +1,10 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import { AsyncLocalStorage } from 'async_hooks';
-import { expectTypeOf } from 'expect-type';
 import * as trpc from '../src';
 import { inferProcedureOutput, TRPCError } from '../src';
 import { MiddlewareResult } from '../src/internals/middlewares';
 import { routerToServerAndClient } from './_testHelpers';
+import { AsyncLocalStorage } from 'async_hooks';
+import { expectTypeOf } from 'expect-type';
 import { z } from 'zod';
 
 test('is called if def first', async () => {
@@ -426,7 +426,7 @@ test('middleware throwing should return a union', async () => {
   }
   delete res.error.stack;
   expect(res.error).toMatchInlineSnapshot(`[TRPCError: error]`);
-  const originalError = res.error.originalError as CustomError;
+  const originalError = res.error.cause as CustomError;
   expect(originalError).toBeInstanceOf(CustomError);
 
   close();

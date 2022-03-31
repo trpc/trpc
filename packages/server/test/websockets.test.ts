@@ -11,7 +11,7 @@ import { wsLink } from '../../client/src/links/wsLink';
 import * as trpc from '../src';
 import { TRPCError } from '../src';
 import { TRPCRequest, TRPCResult } from '../src/rpc';
-import { applyWSSHandler } from '../src/ws';
+import { applyWSSHandler } from '../src/adapters/ws';
 import { routerToServerAndClient, waitMs } from './_testHelpers';
 
 type Message = {

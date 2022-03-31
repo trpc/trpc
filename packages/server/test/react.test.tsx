@@ -67,8 +67,8 @@ function createAppRouter() {
       return {
         $test: 'formatted',
         zodError:
-          error.originalError instanceof ZodError
-            ? error.originalError.flatten()
+          error.cause instanceof ZodError
+            ? error.cause.flatten()
             : null,
         ...shape,
       };
@@ -1223,8 +1223,8 @@ describe('invalidate queries', () => {
           <button
             data-testid="refetch"
             onClick={() => {
-              utils.invalidateQuery(['allPosts']);
-              utils.invalidateQuery(['postById', '1']);
+              utils.invalidateQueries(['allPosts']);
+              utils.invalidateQueries(['postById', '1']);
             }}
           />
         </>

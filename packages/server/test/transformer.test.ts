@@ -415,7 +415,7 @@ describe('transformer on router', () => {
     if (!(serverError instanceof TRPCError)) {
       throw new Error('Wrong error');
     }
-    expect(serverError.originalError).toBeInstanceOf(MyError);
+    expect(serverError.cause).toBeInstanceOf(MyError);
 
     close();
   });

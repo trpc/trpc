@@ -1,10 +1,10 @@
 /* eslint-disable @typescript-eslint/no-empty-function */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/ban-types */
-import { z } from 'zod';
 import * as trpc from '../src';
-import { routerToServerAndClient } from './_testHelpers';
 import fetch from 'node-fetch';
+import { routerToServerAndClient } from './_testHelpers';
+import { z } from 'zod';
 
 const factory = () =>
   routerToServerAndClient(

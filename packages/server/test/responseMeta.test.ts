@@ -1,14 +1,15 @@
 /* eslint-disable @typescript-eslint/no-empty-function */
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import fetch from 'node-fetch';
 import * as trpc from '../src';
+import fetch from 'node-fetch';
+import type { CreateHTTPContextOptions } from '../src/adapters/standalone';
 import { routerToServerAndClient } from './_testHelpers';
 
 test('set custom headers in beforeEnd', async () => {
   const onError = jest.fn();
   const { close, httpUrl } = routerToServerAndClient(
     trpc
-      .router<trpc.CreateHttpContextOptions>()
+      .router<CreateHTTPContextOptions>()
       .query('public.q', {
         resolve() {
           return 'public endpoint';
