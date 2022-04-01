@@ -1,5 +1,5 @@
-import { CreateFastifyContextOptions } from '@trpc/server/adapters/fastify';
 import { inferAsyncReturnType } from '@trpc/server';
+import { CreateFastifyContextOptions } from '@trpc/server/adapters/fastify';
 
 export interface User {
   name: string | string[];

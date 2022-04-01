@@ -1,15 +1,15 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 import { URLSearchParams } from 'url';
 import { assertNotBrowser } from '../../assertNotBrowser';
-import {
-  NodeHTTPRequest,
-  NodeHTTPResponse,
-  NodeHTTPHandlerOptions,
-} from './types';
-import { AnyRouter, inferRouterContext } from '../../router';
-import { getPostBody } from './internals/getPostBody';
 import { HTTPRequest } from '../../http/internals/types';
 import { resolveHTTPResponse } from '../../http/resolveHTTPResponse';
+import { AnyRouter, inferRouterContext } from '../../router';
+import { getPostBody } from './internals/getPostBody';
+import {
+  NodeHTTPHandlerOptions,
+  NodeHTTPRequest,
+  NodeHTTPResponse,
+} from './types';
 
 assertNotBrowser();
 

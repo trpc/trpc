@@ -1,7 +1,7 @@
 import NextAuth from 'next-auth';
 import { AppProviders } from 'next-auth/providers';
-import GithubProvider from 'next-auth/providers/github';
 import CredentialsProvider from 'next-auth/providers/credentials';
+import GithubProvider from 'next-auth/providers/github';
 
 let useMockProvider = process.env.NODE_ENV === 'test';
 const { GITHUB_CLIENT_ID, GITHUB_SECRET, NODE_ENV, APP_ENV } = process.env;

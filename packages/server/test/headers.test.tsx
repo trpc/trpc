@@ -1,10 +1,12 @@
 /* eslint-disable @typescript-eslint/no-empty-function */
+
 /* eslint-disable @typescript-eslint/no-explicit-any */
+
 /* eslint-disable @typescript-eslint/ban-types */
+import { routerToServerAndClient } from './__testHelpers';
 import { createTRPCClient } from '../../client/src';
 import * as trpc from '../src';
 import { Dict } from '../src';
-import { routerToServerAndClient } from './_testHelpers';
 
 test('pass headers', async () => {
   type Context = {

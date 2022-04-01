@@ -1,9 +1,9 @@
+import type { AnyRouter } from '../';
 import {
-  nodeHTTPRequestHandler as requestHandlerInner,
   NodeHTTPCreateContextFn,
   NodeHTTPCreateContextFnOptions,
+  nodeHTTPRequestHandler as requestHandlerInner,
 } from '../adapters/node-http';
-import type { AnyRouter } from '../';
 
 /**
  * @deprecated use `nodeHTTPRequestHandler` from `@trpc/server/adapters/node-http`
