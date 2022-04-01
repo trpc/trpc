@@ -59,17 +59,26 @@ export function httpRequest<TResponseShape = TRPCResponse>(
     const url = getUrl();
 
     Promise.resolve(rt.headers())
-      .then((headers) =>
-        rt.fetch(url, {
+      .then((rawHeaders) => {
+        const headers: HeadersInit = { 'content-type': 'application/json' };
+        for (const key in rawHeaders) {
+          const header = rawHeaders[key];
+          if (header !== undefined) {
+            if (Array.isArray(header)) {
+              headers[key] = header.join(',');
+            } else {
+              headers[key] = header;
+            }
+          }
+        }
+
+        return rt.fetch(url, {
           method: method[type],
           signal: ac?.signal,
           body: getBody(),
-          headers: {
-            'content-type': 'application/json',
-            ...headers,
-          },
-        }),
-      )
+          headers,
+        });
+      })
       .then((res) => {
         return res.json();
       })
