@@ -30,7 +30,15 @@ export function fastifyTRPCPlugin<TRouter extends AnyRouter>(
     },
   );
 
-  fastify.all(`${opts.prefix ?? ''}/:path`, async (req, res) => {
+  let prefix = opts.prefix ?? '';
+
+  // https://github.com/fastify/fastify-plugin/blob/fe079bef6557a83794bf437e14b9b9edb8a74104/plugin.js#L11
+  // @ts-expect-error property 'default' does not exists on type ...
+  if (typeof fastifyTRPCPlugin.default !== 'function') {
+    prefix = ''; // handled by fastify internally
+  }
+
+  fastify.all(`${prefix}/:path`, async (req, res) => {
     const path = (req.params as any).path;
     await fastifyRequestHandler({ ...opts.trpcOptions, req, res, path });
   });
@@ -41,7 +49,7 @@ export function fastifyTRPCPlugin<TRouter extends AnyRouter>(
       wss: fastify.websocketServer,
     });
     // eslint-disable-next-line @typescript-eslint/no-empty-function
-    fastify.get(opts.prefix ?? '/', { websocket: true }, () => {});
+    fastify.get(prefix ?? '/', { websocket: true }, () => {});
   }
 
   done();

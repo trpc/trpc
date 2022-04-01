@@ -1,6 +1,6 @@
 {
   "name": "@examples/fastify-server",
-  "version": "10.0.0-alpha.19",
+  "version": "10.0.0-alpha.20",
   "private": true,
   "scripts": {
     "build": "tsc",
@@ -15,11 +15,10 @@
     "test-start": "start-server-and-test 'node dist/server' http-get://localhost:2022 'node dist/client'"
   },
   "dependencies": {
-    "@trpc/client": "^10.0.0-alpha.19",
-    "@trpc/server": "^10.0.0-alpha.19",
+    "@trpc/client": "^10.0.0-alpha.20",
+    "@trpc/server": "^10.0.0-alpha.20",
     "abort-controller": "^3.0.0",
     "fastify": "^3.27.1",
-    "fastify-plugin": "^3.0.1",
     "fastify-websocket": "^4.0.0",
     "node-fetch": "^2.6.1",
     "tslib": "^2.1.0",

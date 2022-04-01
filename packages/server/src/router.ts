@@ -41,17 +41,25 @@ export type ProcedureRecord<
   TInput = any,
   TParsedInput = any,
   TOutput = any,
+  TParsedOutput = any,
 > = Record<
   string,
-  Procedure<TInputContext, TContext, TInput, TParsedInput, TOutput>
+  Procedure<
+    TInputContext,
+    TContext,
+    TInput,
+    TParsedInput,
+    TOutput,
+    TParsedOutput
+  >
 >;
 
 /**
  * @public
  */
 export type inferProcedureInput<
-  TProcedure extends Procedure<any, any, any, any, any>,
-> = TProcedure extends Procedure<any, any, infer Input, any, any>
+  TProcedure extends Procedure<any, any, any, any, any, any>,
+> = TProcedure extends Procedure<any, any, infer Input, any, any, any>
   ? undefined extends Input
     ? Input | null | void // void is necessary to allow procedures with nullish input to be called without an input
     : Input
@@ -67,7 +75,7 @@ export type inferAsyncReturnType<TFunction extends (...args: any) => any> =
  * @public
  */
 export type inferProcedureOutput<
-  TProcedure extends Procedure<any, any, any, any, any>,
+  TProcedure extends Procedure<any, any, any, any, any, any>,
 > = inferAsyncReturnType<TProcedure['call']>;
 
 /**
@@ -95,8 +103,8 @@ function getDataTransformer(
  * @internal
  */
 export type inferHandlerInput<
-  TProcedure extends Procedure<any, any, any, any, any>,
-> = TProcedure extends Procedure<any, any, infer TInput, any, any>
+  TProcedure extends Procedure<any, any, any, any, any, any>,
+> = TProcedure extends Procedure<any, any, infer TInput, any, any, any>
   ? undefined extends TInput // ? is input optional
     ? unknown extends TInput // ? is input unset
       ? [(null | undefined)?] // -> there is no input
@@ -206,7 +214,7 @@ const defaultTransformer: CombinedDataTransformer = {
 };
 
 type SwapProcedureContext<
-  TProcedure extends Procedure<any, any, any, any, any>,
+  TProcedure extends Procedure<any, any, any, any, any, any>,
   TNewContext,
 > = TProcedure extends Procedure<
   infer TInputContext,
@@ -214,13 +222,21 @@ type SwapProcedureContext<
   infer _TOldContext,
   infer TInput,
   infer TParsedInput,
-  infer TOutput
+  infer TOutput,
+  infer TParsedOutput
 >
-  ? Procedure<TInputContext, TNewContext, TInput, TParsedInput, TOutput>
+  ? Procedure<
+      TInputContext,
+      TNewContext,
+      TInput,
+      TParsedInput,
+      TOutput,
+      TParsedOutput
+    >
   : never;
 
 type SwapContext<
-  TObj extends ProcedureRecord<any, any, any, any>,
+  TObj extends ProcedureRecord<any, any, any, any, any, any>,
   TNewContext,
 > = {
   [P in keyof TObj]: SwapProcedureContext<TObj[P], TNewContext>;
@@ -232,13 +248,22 @@ type SwapContext<
 export class Router<
   TInputContext,
   TContext,
-  TQueries extends ProcedureRecord<TInputContext, TContext>,
-  TMutations extends ProcedureRecord<TInputContext, TContext>,
+  TQueries extends ProcedureRecord<TInputContext, TContext, any, any, any, any>,
+  TMutations extends ProcedureRecord<
+    TInputContext,
+    TContext,
+    any,
+    any,
+    any,
+    any
+  >,
   TSubscriptions extends ProcedureRecord<
     TInputContext,
     TContext,
     unknown,
-    Subscription<unknown>
+    unknown,
+    Subscription<unknown>,
+    unknown
   >,
   TErrorShape extends TRPCErrorShape<number>,
 > {
@@ -280,13 +305,20 @@ export class Router<
     return eps as any;
   }
 
-  public query<TPath extends string, TInput, TParsedInput, TOutput>(
+  public query<
+    TPath extends string,
+    TInput,
+    TParsedInput,
+    TOutput,
+    TParsedOutput,
+  >(
     path: TPath,
     procedure: CreateProcedureWithInputOutputParser<
       TContext,
       TInput,
       TParsedInput,
-      TOutput
+      TOutput,
+      TParsedOutput
     >,
   ): Router<
     TInputContext,
@@ -297,9 +329,10 @@ export class Router<
     TSubscriptions,
     TErrorShape
   >;
+
   public query<TPath extends string, TInput, TOutput>(
     path: TPath,
-    procedure: CreateProcedureWithInput<TContext, TInput, TInput, TOutput>,
+    procedure: CreateProcedureWithInput<TContext, TInput, TOutput>,
   ): Router<
     TInputContext,
     TContext,
@@ -310,9 +343,9 @@ export class Router<
     TErrorShape
   >;
 
-  public query<TPath extends string, TOutput>(
+  public query<TPath extends string, TOutput, TParsedOutput>(
     path: TPath,
-    procedure: CreateProcedureWithoutInput<TContext, TOutput>,
+    procedure: CreateProcedureWithoutInput<TContext, TOutput, TParsedOutput>,
   ): Router<
     TInputContext,
     TContext,
@@ -325,7 +358,7 @@ export class Router<
 
   query(
     path: string,
-    procedure: CreateProcedureOptions<TContext, any, any, any>,
+    procedure: CreateProcedureOptions<TContext, any, any, any, any>,
   ) {
     const router = new Router<TContext, TContext, any, {}, {}, any>({
       queries: safeObject({
@@ -336,13 +369,20 @@ export class Router<
     return this.merge(router);
   }
 
-  public mutation<TPath extends string, TInput, TParsedInput, TOutput>(
+  public mutation<
+    TPath extends string,
+    TInput,
+    TParsedInput,
+    TOutput,
+    TParsedOutput,
+  >(
     path: TPath,
     procedure: CreateProcedureWithInputOutputParser<
       TContext,
       TInput,
       TParsedInput,
-      TOutput
+      TOutput,
+      TParsedOutput
     >,
   ): Router<
     TInputContext,
@@ -353,9 +393,10 @@ export class Router<
     TSubscriptions,
     TErrorShape
   >;
+
   public mutation<TPath extends string, TInput, TOutput>(
     path: TPath,
-    procedure: CreateProcedureWithInput<TContext, TInput, TInput, TOutput>,
+    procedure: CreateProcedureWithInput<TContext, TInput, TOutput>,
   ): Router<
     TInputContext,
     TContext,
@@ -366,9 +407,9 @@ export class Router<
     TErrorShape
   >;
 
-  public mutation<TPath extends string, TOutput>(
+  public mutation<TPath extends string, TOutput, TParsedOutput>(
     path: TPath,
-    procedure: CreateProcedureWithoutInput<TContext, TOutput>,
+    procedure: CreateProcedureWithoutInput<TContext, TOutput, TParsedOutput>,
   ): Router<
     TInputContext,
     TContext,
@@ -381,7 +422,7 @@ export class Router<
 
   public mutation(
     path: string,
-    procedure: CreateProcedureOptions<TContext, any, any, any>,
+    procedure: CreateProcedureOptions<TContext, any, any, any, any>,
   ) {
     const router = new Router<TContext, TContext, {}, any, {}, any>({
       mutations: safeObject({
@@ -402,11 +443,15 @@ export class Router<
     TOutput extends Subscription<unknown>,
   >(
     path: TPath,
-    procedure: CreateProcedureWithInputOutputParser<
-      TContext,
-      TInput,
-      TParsedInput,
-      TOutput
+    procedure: Omit<
+      CreateProcedureWithInputOutputParser<
+        TContext,
+        TInput,
+        TParsedInput,
+        TOutput,
+        unknown
+      >,
+      'output'
     >,
   ): Router<
     TInputContext,
@@ -427,7 +472,10 @@ export class Router<
     TOutput extends Subscription<unknown>,
   >(
     path: TPath,
-    procedure: CreateProcedureWithInput<TContext, TInput, TInput, TOutput>,
+    procedure: Omit<
+      CreateProcedureWithInput<TContext, TInput, TOutput>,
+      'output'
+    >,
   ): Router<
     TInputContext,
     TContext,
@@ -446,7 +494,10 @@ export class Router<
     TOutput extends Subscription<unknown>,
   >(
     path: TPath,
-    procedure: CreateProcedureWithoutInput<TContext, TOutput>,
+    procedure: Omit<
+      CreateProcedureWithoutInput<TContext, TOutput, unknown>,
+      'output'
+    >,
   ): Router<
     TInputContext,
     TContext,
@@ -459,7 +510,10 @@ export class Router<
 
   public subscription(
     path: string,
-    procedure: CreateProcedureOptions<TContext, any, any, any>,
+    procedure: Omit<
+      CreateProcedureOptions<TContext, any, any, any, any>,
+      'output'
+    >,
   ) {
     const router = new Router<TContext, TContext, {}, {}, any, any>({
       subscriptions: safeObject({
@@ -578,7 +632,7 @@ export class Router<
     const defTarget = PROCEDURE_DEFINITION_MAP[type];
     const defs = this._def[defTarget];
     const procedure = defs[path] as
-      | Procedure<TInputContext, TContext, any, any, any>
+      | Procedure<TInputContext, TContext, any, any, any, any>
       | undefined;
 
     if (!procedure) {

@@ -25,6 +25,7 @@ module.exports = {
         'server/context',
         'server/middlewares',
         'server/authorization',
+        'server/output-validation',
         'server/infer-types',
         'server/error-handling',
         'server/error-formatting',
