@@ -39,7 +39,7 @@ The best way to start with the Fastify adapter is to take a look at the example 
 ### Install dependencies
 
 ```bash
-yarn add @trpc/server fastify fastify-plugin zod
+yarn add @trpc/server fastify zod
 ```
 
 > [Zod](https://github.com/colinhacks/zod) isn't a required dependency, but it's used in the sample router below.
@@ -121,18 +121,17 @@ export type Context = inferAsyncReturnType<typeof createContext>;
 
 ### Create Fastify server
 
-tRPC includes an adapter for [Fastify](https://www.fastify.io/) out of the box. This adapter lets you convert your tRPC router into an [Fastify plugin](https://www.npmjs.com/package/fastify-plugin).
+tRPC includes an adapter for [Fastify](https://www.fastify.io/) out of the box. This adapter lets you convert your tRPC router into an [Fastify plugin](https://www.fastify.io/docs/latest/Reference/Plugins/).
 
 ```ts
 import fastify from 'fastify';
-import fp from 'fastify-plugin';
 import { fastifyTRPCPlugin } from '@trpc/server/adapters/fastify';
 import { createContext } from './context';
 import { appRouter } from './router';
 
 const server = fastify();
 
-server.register(fp(fastifyTRPCPlugin), {
+server.register(fastifyTRPCPlugin, {
   prefix: '/trpc',
   trpcOptions: { router: appRouter, createContext },
 });
@@ -198,7 +197,7 @@ export const appRouter = trpc
 ### Activate the `useWSS` option
 
 ```ts
-server.register(fp(fastifyTRPCPlugin), {
+server.register(fastifyTRPCPlugin, {
   useWSS: true,
   // ...
 });
