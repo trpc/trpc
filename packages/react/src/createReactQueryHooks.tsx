@@ -77,16 +77,19 @@ function getClientArgs<TPathAndInput extends unknown[], TOptions>(
   return [path, input, opts] as const;
 }
 
-type inferInfiniteQueryNames<TObj extends ProcedureRecord<any, any, any, any>> =
-  {
-    [TPath in keyof TObj]: inferProcedureInput<TObj[TPath]> extends {
-      cursor?: any;
-    }
-      ? TPath
-      : never;
-  }[keyof TObj];
+type inferInfiniteQueryNames<
+  TObj extends ProcedureRecord<any, any, any, any, any, any>,
+> = {
+  [TPath in keyof TObj]: inferProcedureInput<TObj[TPath]> extends {
+    cursor?: any;
+  }
+    ? TPath
+    : never;
+}[keyof TObj];
 
-type inferProcedures<TObj extends ProcedureRecord<any, any, any, any>> = {
+type inferProcedures<
+  TObj extends ProcedureRecord<any, any, any, any, any, any>,
+> = {
   [TPath in keyof TObj]: {
     input: inferProcedureInput<TObj[TPath]>;
     output: inferProcedureOutput<TObj[TPath]>;

@@ -19,7 +19,6 @@
     "@trpc/server": "^10.0.0-alpha.19",
     "abort-controller": "^3.0.0",
     "fastify": "^3.27.1",
-    "fastify-plugin": "^3.0.1",
     "fastify-websocket": "^4.0.0",
     "node-fetch": "^2.6.1",
     "tslib": "^2.1.0",
