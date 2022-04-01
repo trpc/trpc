@@ -3,6 +3,8 @@ import * as trpcServer from '../../server/src';
 jest.mock('@trpc/server', () => trpcServer);
 import * as trpcClient from '../../client/src';
 jest.mock('@trpc/client', () => trpcClient);
+import * as trpcClient__links__wsLink from '../../client/src/links/wsLink';
+jest.mock('@trpc/client/links/wsLink', () => trpcClient__links__wsLink);
 import * as trpcReact from '../../react/src';
 jest.mock('@trpc/react', () => trpcReact);
 import * as trpcReact__ssg from '../../react/src/ssg';
