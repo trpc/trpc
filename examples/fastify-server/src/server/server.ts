@@ -23,6 +23,10 @@ export function createServer(opts: ServerOptions) {
     trpcOptions: { router: appRouter, createContext },
   });
 
+  server.get('/', async () => {
+    return { hello: 'wait-on 💨' };
+  });
+
   server.get('/hello', async () => {
     return { hello: 'GET' };
   });
