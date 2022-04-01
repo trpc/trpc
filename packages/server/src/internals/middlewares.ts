@@ -1,5 +1,5 @@
-import { ProcedureType } from '../router';
 import { TRPCError } from '../TRPCError';
+import { ProcedureType } from '../router';
 
 export const middlewareMarker = Symbol('middlewareMarker');
 interface MiddlewareResultBase<TContext> {

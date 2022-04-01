@@ -1,8 +1,8 @@
+import { fastifyTRPCPlugin } from '@trpc/server/adapters/fastify';
 import fastify from 'fastify';
 import ws from 'fastify-websocket';
-import { fastifyTRPCPlugin } from '@trpc/server/adapters/fastify';
-import { createContext } from './router/context';
 import { appRouter } from './router';
+import { createContext } from './router/context';
 
 export interface ServerOptions {
   dev?: boolean;

@@ -1,14 +1,15 @@
+import '../styles/global.css';
 import { httpBatchLink } from '@trpc/client/links/httpBatchLink';
-import { wsLink, createWSClient } from '@trpc/client/links/wsLink';
 import { loggerLink } from '@trpc/client/links/loggerLink';
+import { wsLink, createWSClient } from '@trpc/client/links/wsLink';
 import { withTRPC } from '@trpc/next';
+import { getSession, SessionProvider } from 'next-auth/react';
+import getConfig from 'next/config';
 import { AppType } from 'next/dist/shared/lib/utils';
 import type { AppRouter } from 'server/routers/_app';
 import superjson from 'superjson';
-import getConfig from 'next/config';
-import { getSession, SessionProvider } from 'next-auth/react';
+
 const { publicRuntimeConfig } = getConfig();
-import '../styles/global.css';
 
 const { APP_URL, WS_URL } = publicRuntimeConfig;
 

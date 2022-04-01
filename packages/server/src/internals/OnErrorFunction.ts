@@ -1,5 +1,5 @@
-import { AnyRouter, inferRouterContext, ProcedureType } from '../router';
 import { TRPCError } from '../TRPCError';
+import { AnyRouter, ProcedureType, inferRouterContext } from '../router';
 
 export type OnErrorFunction<TRouter extends AnyRouter, TRequest> = (opts: {
   error: TRPCError;

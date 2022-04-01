@@ -1,3 +1,5 @@
+import { FastifyReply, FastifyRequest } from 'fastify';
+import { URLSearchParams } from 'url';
 import { assertNotBrowser } from '../../assertNotBrowser';
 import {
   HTTPBaseHandlerOptions,
@@ -6,8 +8,6 @@ import {
 import { resolveHTTPResponse } from '../../http/resolveHTTPResponse';
 import { AnyRouter, inferRouterContext } from '../../router';
 import { NodeHTTPCreateContextOption } from '../node-http';
-import { FastifyReply, FastifyRequest } from 'fastify';
-import { URLSearchParams } from 'url';
 
 assertNotBrowser();
 

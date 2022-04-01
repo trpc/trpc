@@ -1,33 +1,34 @@
 /* eslint-disable @typescript-eslint/ban-types */
+
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import './__packages';
+import { CreateTRPCClientOptions, createTRPCClient } from '@trpc/client';
+import {
+  TRPCWebSocketClient,
+  WebSocketClientOptions,
+  createWSClient,
+} from '@trpc/client/links/wsLink';
 import AbortController from 'abort-controller';
 import fetch from 'node-fetch';
-import {
-  createWSClient,
-  WebSocketClientOptions,
-  TRPCWebSocketClient,
-} from '../../client/src/links/wsLink';
 import ws from 'ws';
-import { createTRPCClient, CreateTRPCClientOptions } from '../../client/src';
-import { AnyRouter, CreateHttpHandlerOptions } from '../src';
-import { createHttpServer } from '../src';
-import { applyWSSHandler, WSSHandlerOptions } from '../src/ws';
+import { AnyRouter } from '../src';
+import {
+  CreateHTTPHandlerOptions,
+  createHTTPServer,
+} from '../src/adapters/standalone';
+import { WSSHandlerOptions, applyWSSHandler } from '../src/adapters/ws';
 
 (global as any).fetch = fetch;
 (global as any).AbortController = AbortController;
 export function routerToServerAndClient<TRouter extends AnyRouter>(
   router: TRouter,
   opts?: {
-    server?: Partial<CreateHttpHandlerOptions<TRouter>>;
+    server?: Partial<CreateHTTPHandlerOptions<TRouter>>;
     wssServer?: Partial<WSSHandlerOptions<TRouter>>;
     wsClient?: Partial<WebSocketClientOptions>;
     client?:
       | Partial<CreateTRPCClientOptions<TRouter>>
       | ((opts: {
-          /**
-           * @deprecated use `httpUrl`
-           */
-          url: string;
           httpUrl: string;
           wssUrl: string;
           wsClient: TRPCWebSocketClient;
@@ -35,7 +36,7 @@ export function routerToServerAndClient<TRouter extends AnyRouter>(
   },
 ) {
   // http
-  const httpServer = createHttpServer({
+  const httpServer = createHTTPServer({
     router,
     createContext: ({ req, res }) => ({ req, res }),
     ...(opts?.server ?? {
@@ -68,7 +69,7 @@ export function routerToServerAndClient<TRouter extends AnyRouter>(
     url: httpUrl,
     ...(opts?.client
       ? typeof opts.client === 'function'
-        ? opts.client({ url: httpUrl, httpUrl, wssUrl, wsClient })
+        ? opts.client({ httpUrl, wssUrl, wsClient })
         : opts.client
       : {}),
   };
@@ -87,11 +88,11 @@ export function routerToServerAndClient<TRouter extends AnyRouter>(
     },
     router,
     trpcClientOptions,
+    httpPort,
     /**
      * @deprecated
      */
     port: httpPort,
-    httpPort,
     wssPort,
     httpUrl,
     wssUrl,
