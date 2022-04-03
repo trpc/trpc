@@ -92,7 +92,7 @@ Here's some example apps:
       <td>
         <ul>
           <li><a href="https://githubbox.com/trpc/trpc/tree/main/examples/standalone-server">CodeSandbox</a></li>
-          <li><a href="https://stackblitz.com/edit/trpc-standalone-server?file=README.md">StackBlitz</a></li>
+          <li><a href="https://stackblitz.com/edit/trpc-standalone-server">StackBlitz</a></li>
           <li><a href="https://github.com/trpc/trpc/tree/main/examples/standalone-server">Source</a></li>
         </ul>
       </td>
@@ -103,7 +103,7 @@ Here's some example apps:
       <td>
         <ul>
           <li><a href="https://githubbox.com/trpc/trpc/tree/main/examples/express-server">CodeSandbox</a></li>
-          <li><a href="https://stackblitz.com/edit/trpc-express-server?file=README.md">StackBlitz</a></li>
+          <li><a href="https://stackblitz.com/edit/trpc-express-server">StackBlitz</a></li>
           <li><a href="https://github.com/trpc/trpc/tree/main/examples/express-server">Source</a></li>
         </ul>
       </td>
@@ -114,7 +114,7 @@ Here's some example apps:
       <td>
         <ul>
           <li><a href="https://codesandbox.io/s/github/trpc/trpc/tree/main/examples/fastify-server">CodeSandbox</a></li>
-          <li><a href="https://stackblitz.com/edit/trpc-fastify-server?file=README.md">StackBlitz</a></li>
+          <li><a href="https://stackblitz.com/edit/trpc-fastify-server">StackBlitz</a></li>
           <li><a href="https://github.com/trpc/trpc/tree/main/examples/fastify-server">Source</a></li>
         </ul>
       </td>
