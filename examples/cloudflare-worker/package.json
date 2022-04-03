@@ -1,0 +1,21 @@
+{
+  "name": "@examples/cloudflare-worker",
+  "version": "10.0.0-alpha.20",
+  "private": true,
+  "scripts": {
+    "dev": "wrangler dev"
+  },
+  "dependencies": {
+    "@trpc/client": "^10.0.0-alpha.20",
+    "@trpc/server": "^10.0.0-alpha.20",
+    "typescript": "4.4.4",
+    "zod": "^3.0.0"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^3.4.0",
+    "wrangler": "^0.0.24"
+  },
+  "publishConfig": {
+    "access": "restricted"
+  }
+}
