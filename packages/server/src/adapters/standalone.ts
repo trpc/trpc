@@ -2,6 +2,7 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import http from 'http';
+import url from 'url';
 import { AnyRouter } from '../router';
 import {
   NodeHTTPCreateContextFnOptions,
@@ -21,8 +22,8 @@ export function createHTTPHandler<TRouter extends AnyRouter>(
   opts: CreateHTTPHandlerOptions<TRouter>,
 ) {
   return async (req: http.IncomingMessage, res: http.ServerResponse) => {
-    const endpoint = new URL(req.url!).pathname.slice(1);
-
+    // cannot use WHATWG URL because it doesn't support relative paths
+    const endpoint = url.parse(req.url!).pathname!.slice(1);
     await nodeHTTPRequestHandler({
       ...opts,
       req,
