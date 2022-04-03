@@ -40,17 +40,15 @@ export function httpRequest(
   const input = 'input' in props ? props.input : arrayToDict(props.inputs);
 
   function getUrl() {
-    let url = props.url + '/' + path;
-    const queryParts: string[] = [];
+    const url = new URL(props.url + '/' + path);
+
     if ('inputs' in props) {
-      queryParts.push('batch=1');
+      url.searchParams.set('batch', '1');
     }
     if (type === 'query' && input !== undefined) {
-      queryParts.push(`input=${encodeURIComponent(JSON.stringify(input))}`);
+      url.searchParams.set('input', JSON.stringify(input));
     }
-    if (queryParts.length) {
-      url += '?' + queryParts.join('&');
-    }
+
     return url;
   }
   function getBody() {
@@ -66,7 +64,7 @@ export function httpRequest(
     const meta = {} as any as ResponseShape['meta'];
     Promise.resolve(rt.headers())
       .then((headers) =>
-        rt.fetch(url, {
+        rt.fetch(url.href, {
           method: METHOD[type],
           signal: ac?.signal,
           body: getBody(),

@@ -1,5 +1,4 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
-import { Maybe } from '@trpc/server';
 import { TRPCError } from '../TRPCError';
 import { callProcedure } from '../internals/callProcedure';
 import { getErrorFromUnknown } from '../internals/errors';
@@ -11,6 +10,7 @@ import {
   inferRouterError,
 } from '../router';
 import { TRPCErrorResponse, TRPCResponse, TRPCResultResponse } from '../rpc';
+import { Maybe } from '../types';
 import { getHTTPStatusCode } from './internals/getHTTPStatusCode';
 import {
   HTTPBaseHandlerOptions,
@@ -37,11 +37,13 @@ function getRawProcedureInputOrThrow(req: HTTPRequest) {
       return JSON.parse(raw!);
     }
     return typeof req.body === 'string' ? JSON.parse(req.body) : req.body;
-  } catch (cause) {
-    throw new TRPCError({
+  } catch (err) {
+    const trpcError = new TRPCError({
       code: 'PARSE_ERROR',
-      cause,
     });
+    if (err instanceof Error) {
+      trpcError.cause = err;
+    }
   }
 }
 

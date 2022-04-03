@@ -1,5 +1,4 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
-import { URLSearchParams } from 'url';
 import { assertNotBrowser } from '../../assertNotBrowser';
 import { HTTPRequest } from '../../http/internals/types';
 import { resolveHTTPResponse } from '../../http/resolveHTTPResponse';

@@ -20,14 +20,23 @@ export function getErrorFromUnknown(cause: unknown): TRPCError {
   if (cause instanceof Error && cause.name === 'TRPCError') {
     return cause as TRPCError;
   }
+
   const err = new TRPCError({
     code: 'INTERNAL_SERVER_ERROR',
-    cause,
   });
 
   // take stack trace from cause
   if (cause instanceof Error) {
+    err.cause = cause;
     err.stack = cause.stack;
   }
   return err;
+}
+
+export function getCauseFromUnknown(cause: unknown) {
+  if (cause instanceof Error) {
+    return cause;
+  }
+
+  return undefined;
 }
