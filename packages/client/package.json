@@ -10,6 +10,14 @@
     "url": "git+https://github.com/trpc/trpc.git",
     "directory": "packages/client"
   },
+  "eslintConfig": {
+    "rules": {
+      "no-restricted-imports": [
+        "error",
+        "@trpc/client"
+      ]
+    }
+  },
   "main": "dist/index.js",
   "module": "dist/index.mjs",
   "typings": "dist/index.d.ts",
