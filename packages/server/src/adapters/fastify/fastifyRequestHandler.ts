@@ -1,5 +1,4 @@
 import { FastifyReply, FastifyRequest } from 'fastify';
-import { URLSearchParams } from 'url';
 import { assertNotBrowser } from '../../assertNotBrowser';
 import {
   HTTPBaseHandlerOptions,

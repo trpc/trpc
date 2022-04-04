@@ -12,7 +12,11 @@
   },
   "eslintConfig": {
     "rules": {
-      "explicit-module-boundary-types": "off"
+      "explicit-module-boundary-types": "off",
+      "no-restricted-imports": [
+        "error",
+        "@trpc/server"
+      ]
     }
   },
   "scripts": {

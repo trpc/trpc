@@ -2,7 +2,7 @@
 import { TRPCError } from '../TRPCError';
 import { assertNotBrowser } from '../assertNotBrowser';
 import { ProcedureType } from '../router';
-import { getErrorFromUnknown } from './errors';
+import { getCauseFromUnknown, getErrorFromUnknown } from './errors';
 import { MiddlewareFunction, middlewareMarker } from './middlewares';
 import { wrapCallSafe } from './wrapCallSafe';
 
@@ -130,7 +130,7 @@ export class Procedure<
     } catch (cause) {
       throw new TRPCError({
         code: 'BAD_REQUEST',
-        cause,
+        cause: getCauseFromUnknown(cause),
       });
     }
   }
@@ -141,7 +141,7 @@ export class Procedure<
     } catch (cause) {
       throw new TRPCError({
         code: 'INTERNAL_SERVER_ERROR',
-        cause,
+        cause: getCauseFromUnknown(cause),
         message: 'Output validation failed',
       });
     }

@@ -34,7 +34,7 @@ import {
 import { observable } from '../../client/src/observable';
 import { withTRPC } from '../../next/src';
 import { OutputWithCursor, createReactQueryHooks } from '../../react/src';
-import { createSSGHelpers } from '../../react/ssg';
+import { createSSGHelpers } from '../../react/src/ssg';
 import { DefaultErrorShape } from '../src';
 import { TRPCError } from '../src/TRPCError';
 
