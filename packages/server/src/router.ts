@@ -1,7 +1,6 @@
 /* eslint-disable @typescript-eslint/ban-types */
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { z } from 'zod';
 import { TRPCError } from './TRPCError';
 import { assertNotBrowser } from './assertNotBrowser';
 import { getHTTPStatusCodeFromError } from './http/internals/getHTTPStatusCode';
@@ -282,7 +281,7 @@ export class Router<
     errorFormatter: ErrorFormatter<TContext, TErrorShape>;
     transformer: CombinedDataTransformer;
   };
-  routeOptions: TRouteOptions;
+  readonly routeOptions: TRouteOptions;
 
   constructor(
     defaultRouteOptions?: TRouteOptions,
@@ -790,7 +789,7 @@ export class Router<
     SwapContext<TSubscriptions, TNewContext>,
     TErrorShape
   > {
-    return new Router({
+    return new Router(this.routeOptions, {
       ...this._def,
       middlewares: [...this._def.middlewares, middleware as any],
     } as any);
@@ -903,6 +902,7 @@ export class Router<
  */
 export class LegacyRouter<
   TContext,
+  TRouteOptions,
   TQueries extends ProcedureRecord<TContext, TContext, any, any, any, any>,
   TMutations extends ProcedureRecord<TContext, TContext, any, any, any, any>,
   TSubscriptions extends ProcedureRecord<
@@ -917,14 +917,14 @@ export class LegacyRouter<
 > extends Router<
   TContext,
   TContext,
-  unknown,
+  TRouteOptions,
   TQueries,
   TMutations,
   TSubscriptions,
   TErrorShape
 > {}
 
-export function router<TContext, TRouteOptions>(
+export function router<TContext, TRouteOptions = unknown>(
   defaultOptions?: TRouteOptions,
 ) {
   return new Router<
