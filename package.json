@@ -9,7 +9,9 @@
     ],
     "nohoist": [
       "**/@prisma",
-      "**/@prisma/**"
+      "**/@prisma/**",
+      "**/tailwindcss",
+      "@tailwindcss/forms/**"
     ]
   },
   "preconstruct": {
