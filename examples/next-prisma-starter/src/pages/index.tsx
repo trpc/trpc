@@ -1,6 +1,7 @@
 import { trpc } from '../utils/trpc';
 import { NextPageWithLayout } from './_app';
 import Link from 'next/link';
+import { DefaultQueryCell } from '~/components/DefaultQueryCell';
 
 const IndexPage: NextPageWithLayout = () => {
   const utils = trpc.useContext();
@@ -32,14 +33,22 @@ const IndexPage: NextPageWithLayout = () => {
         Posts
         {postsQuery.status === 'loading' && '(loading)'}
       </h2>
-      {postsQuery.data?.map((item) => (
-        <article key={item.id}>
-          <h3>{item.title}</h3>
-          <Link href={`/post/${item.id}`}>
-            <a>View more</a>
-          </Link>
-        </article>
-      ))}
+      <DefaultQueryCell
+        query={postsQuery}
+        success={({ data }) => (
+          <>
+            {data.map((item) => (
+              <article key={item.id}>
+                <h3>{item.title}</h3>
+                <Link href={`/post/${item.id}`}>
+                  <a>View more</a>
+                </Link>
+              </article>
+            ))}
+          </>
+        )}
+        empty={() => <p>There are no posts yet - go ahead and add one!</p>}
+      />
 
       <hr />
 

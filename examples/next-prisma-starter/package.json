@@ -4,7 +4,8 @@
   "private": true,
   "scripts": {
     "build:1-migrate": "prisma migrate deploy",
-    "build:2-build": "next build",
+    "build:2-seed": "yarn db-seed",
+    "build:3-build": "next build",
     "build": "run-s build:*",
     "db-up": "docker-compose up -d",
     "db-seed": "prisma db seed",
