@@ -1,5 +1,5 @@
 /**
- * Adds seed data to your db that are required for the application to run
+ * Adds seed data to your db that is required for the application to run
  *
  * @link https://www.prisma.io/docs/guides/database/seed-database
  */
