@@ -82,10 +82,11 @@ export default withTRPC<AppRouter>({
    * Set headers or status code when doing SSR
    */
   responseMeta({ clientErrors }) {
-    if (clientErrors.length) {
+    const firstError = clientErrors[0];
+    if (firstError) {
       // propagate http first error from API calls
       return {
-        status: clientErrors[0].data?.httpStatus ?? 500,
+        status: firstError.data?.httpStatus ?? 500,
       };
     }
 
