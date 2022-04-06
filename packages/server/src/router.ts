@@ -489,7 +489,7 @@ export class Router<
         TParsedInput,
         TOutput,
         unknown,
-        any
+        TMeta
       >,
       'output'
     >,
@@ -514,7 +514,7 @@ export class Router<
   >(
     path: TPath,
     procedure: Omit<
-      CreateProcedureWithInput<TContext, TInput, TOutput, any>,
+      CreateProcedureWithInput<TContext, TInput, TOutput, TMeta>,
       'output'
     >,
   ): Router<
@@ -554,7 +554,7 @@ export class Router<
   public subscription(
     path: string,
     procedure: Omit<
-      CreateProcedureOptions<TContext, any, any, any, TMeta>,
+      CreateProcedureOptions<TContext, any, any, any, any, TMeta>,
       'output'
     >,
   ) {
