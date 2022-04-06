@@ -38,21 +38,21 @@ export type ProcedureType = 'query' | 'mutation' | 'subscription';
 export type ProcedureRecord<
   TInputContext = any,
   TContext = any,
+  TMeta = any,
   TInput = any,
   TParsedInput = any,
   TOutput = any,
   TParsedOutput = any,
-  TMeta = any,
 > = Record<
   string,
   Procedure<
     TInputContext,
     TContext,
+    TMeta,
     TInput,
     TParsedInput,
     TOutput,
-    TParsedOutput,
-    TMeta
+    TParsedOutput
   >
 >;
 
@@ -61,7 +61,7 @@ export type ProcedureRecord<
  */
 export type inferProcedureInput<
   TProcedure extends Procedure<any, any, any, any, any, any, any>,
-> = TProcedure extends Procedure<any, any, infer Input, any, any, any, any>
+> = TProcedure extends Procedure<any, any, any, infer Input, any, any, any>
   ? undefined extends Input
     ? Input | null | void // void is necessary to allow procedures with nullish input to be called without an input
     : Input
@@ -106,7 +106,7 @@ function getDataTransformer(
  */
 export type inferHandlerInput<
   TProcedure extends Procedure<any, any, any, any, any, any, any>,
-> = TProcedure extends Procedure<any, any, infer TInput, any, any, any, any>
+> = TProcedure extends Procedure<any, any, any, infer TInput, any, any, any>
   ? undefined extends TInput // ? is input optional
     ? unknown extends TInput // ? is input unset
       ? [(null | undefined)?] // -> there is no input
@@ -238,20 +238,20 @@ type SwapProcedureContext<
   infer TInputContext,
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   infer _TOldContext,
+  infer TMeta,
   infer TInput,
   infer TParsedInput,
   infer TOutput,
-  infer TParsedOutput,
-  infer TMeta
+  infer TParsedOutput
 >
   ? Procedure<
       TInputContext,
       TNewContext,
+      TMeta,
       TInput,
       TParsedInput,
       TOutput,
-      TParsedOutput,
-      TMeta
+      TParsedOutput
     >
   : never;
 
@@ -269,10 +269,19 @@ export class Router<
   TInputContext,
   TContext,
   TMeta extends Record<string, any>,
-  TQueries extends ProcedureRecord<TInputContext, TContext, any, any, any, any>,
+  TQueries extends ProcedureRecord<
+    TInputContext,
+    TContext,
+    any,
+    any,
+    any,
+    any,
+    any
+  >,
   TMutations extends ProcedureRecord<
     TInputContext,
     TContext,
+    any,
     any,
     any,
     any,
@@ -284,6 +293,7 @@ export class Router<
     unknown,
     unknown,
     Subscription<unknown>,
+    unknown,
     unknown
   >,
   TErrorShape extends TRPCErrorShape<number>,
@@ -336,11 +346,11 @@ export class Router<
     path: TPath,
     procedure: CreateProcedureWithInputOutputParser<
       TContext,
+      TMeta,
       TInput,
       TParsedInput,
       TOutput,
-      TParsedOutput,
-      TMeta
+      TParsedOutput
     >,
   ): Router<
     TInputContext,
@@ -355,7 +365,7 @@ export class Router<
 
   public query<TPath extends string, TInput, TOutput>(
     path: TPath,
-    procedure: CreateProcedureWithInput<TContext, TInput, TOutput, TMeta>,
+    procedure: CreateProcedureWithInput<TContext, TMeta, TInput, TOutput>,
   ): Router<
     TInputContext,
     TContext,
@@ -371,9 +381,9 @@ export class Router<
     path: TPath,
     procedure: CreateProcedureWithoutInput<
       TContext,
+      TMeta,
       TOutput,
-      TParsedOutput,
-      TMeta
+      TParsedOutput
     >,
   ): Router<
     TInputContext,
@@ -388,7 +398,7 @@ export class Router<
 
   query(
     path: string,
-    procedure: CreateProcedureOptions<TContext, any, any, any, any, TMeta>,
+    procedure: CreateProcedureOptions<TContext, TMeta, any, any, any, any>,
   ) {
     const router = new Router<TContext, TContext, TMeta, any, {}, {}, any>({
       queries: safeObject({
@@ -409,11 +419,11 @@ export class Router<
     path: TPath,
     procedure: CreateProcedureWithInputOutputParser<
       TContext,
+      TMeta,
       TInput,
       TParsedInput,
       TOutput,
-      TParsedOutput,
-      TMeta
+      TParsedOutput
     >,
   ): Router<
     TInputContext,
@@ -428,7 +438,7 @@ export class Router<
 
   public mutation<TPath extends string, TInput, TOutput>(
     path: TPath,
-    procedure: CreateProcedureWithInput<TContext, TInput, TOutput, TMeta>,
+    procedure: CreateProcedureWithInput<TContext, TMeta, TInput, TOutput>,
   ): Router<
     TInputContext,
     TContext,
@@ -444,9 +454,9 @@ export class Router<
     path: TPath,
     procedure: CreateProcedureWithoutInput<
       TContext,
+      TMeta,
       TOutput,
-      TParsedOutput,
-      TMeta
+      TParsedOutput
     >,
   ): Router<
     TInputContext,
@@ -461,7 +471,7 @@ export class Router<
 
   public mutation(
     path: string,
-    procedure: CreateProcedureOptions<TContext, any, any, any, any, TMeta>,
+    procedure: CreateProcedureOptions<TContext, TMeta, any, any, any, any>,
   ) {
     const router = new Router<TContext, TContext, TMeta, {}, any, {}, any>({
       mutations: safeObject({
@@ -485,11 +495,11 @@ export class Router<
     procedure: Omit<
       CreateProcedureWithInputOutputParser<
         TContext,
+        TMeta,
         TInput,
         TParsedInput,
         TOutput,
-        unknown,
-        TMeta
+        unknown
       >,
       'output'
     >,
@@ -514,7 +524,7 @@ export class Router<
   >(
     path: TPath,
     procedure: Omit<
-      CreateProcedureWithInput<TContext, TInput, TOutput, TMeta>,
+      CreateProcedureWithInput<TContext, TMeta, TInput, TOutput>,
       'output'
     >,
   ): Router<
@@ -537,7 +547,7 @@ export class Router<
   >(
     path: TPath,
     procedure: Omit<
-      CreateProcedureWithoutInput<TContext, TOutput, unknown, TMeta>,
+      CreateProcedureWithoutInput<TContext, TMeta, TOutput, unknown>,
       'output'
     >,
   ): Router<
@@ -554,7 +564,7 @@ export class Router<
   public subscription(
     path: string,
     procedure: Omit<
-      CreateProcedureOptions<TContext, any, any, any, any, TMeta>,
+      CreateProcedureOptions<TContext, TMeta, any, any, any, any>,
       'output'
     >,
   ) {
@@ -572,13 +582,13 @@ export class Router<
    * @param router
    */
   public merge<
-    TChildRouter extends Router<TContext, any, any, any, any, any, any>,
+    TChildRouter extends Router<TContext, any, TMeta, any, any, any, any>,
   >(
     router: TChildRouter,
   ): Router<
     TInputContext,
     inferRouterContext<TChildRouter>,
-    TMeta & inferRouterMeta<TChildRouter>,
+    TMeta,
     TQueries & TChildRouter['_def']['queries'],
     TMutations & TChildRouter['_def']['mutations'],
     TSubscriptions & TChildRouter['_def']['subscriptions'],
@@ -592,14 +602,14 @@ export class Router<
    */
   public merge<
     TPath extends string,
-    TChildRouter extends Router<TContext, any, any, any, any, any, any>,
+    TChildRouter extends Router<TContext, any, TMeta, any, any, any, any>,
   >(
     prefix: TPath,
     router: TChildRouter,
   ): Router<
     TInputContext,
     inferRouterContext<TChildRouter>,
-    TMeta & inferRouterMeta<TChildRouter>,
+    TMeta,
     TQueries & Prefixer<TChildRouter['_def']['queries'], `${TPath}`>,
     TMutations & Prefixer<TChildRouter['_def']['mutations'], `${TPath}`>,
     TSubscriptions &
@@ -652,7 +662,7 @@ export class Router<
       return Router.prefixProcedures(newDefs, prefix);
     };
 
-    return new Router<TInputContext, any, any, any, any, any, TErrorShape>({
+    return new Router<TInputContext, any, TMeta, any, any, any, TErrorShape>({
       ...this._def,
       queries: safeObject(
         this._def.queries,
@@ -679,7 +689,7 @@ export class Router<
     const defTarget = PROCEDURE_DEFINITION_MAP[type];
     const defs = this._def[defTarget];
     const procedure = defs[path] as
-      | Procedure<TInputContext, TContext, any, any, any, TMeta, any>
+      | Procedure<TInputContext, TContext, TMeta, any, any, any, any>
       | undefined;
 
     if (!procedure) {

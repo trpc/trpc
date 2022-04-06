@@ -44,7 +44,7 @@ export type ProcedureResolver<TContext, TInput, TOutput> = (opts: {
   type: ProcedureType;
 }) => Promise<TOutput> | TOutput;
 
-interface ProcedureOptions<TContext, TInput, TOutput, TMeta, TParsedOutput> {
+interface ProcedureOptions<TContext, TMeta, TInput, TOutput, TParsedOutput> {
   middlewares: Array<MiddlewareFunction<any, any, any>>;
   resolver: ProcedureResolver<TContext, TInput, TOutput>;
   inputParser: ProcedureParser<TInput>;
@@ -101,11 +101,11 @@ function getParseFn<T>(procedureParser: ProcedureParser<T>): ParseFn<T> {
 export class Procedure<
   TInputContext,
   TContext,
+  TMeta,
   TInput,
   TParsedInput,
   TOutput,
   TParsedOutput,
-  TMeta,
   TFinalOutput = unknown extends TParsedOutput ? TOutput : TParsedOutput,
 > {
   private middlewares: Readonly<Array<MiddlewareFunction<any, any, any>>>;
@@ -119,9 +119,9 @@ export class Procedure<
   constructor(
     opts: ProcedureOptions<
       TContext,
+      TMeta,
       TParsedInput,
       TOutput,
-      TMeta,
       TFinalOutput
     >,
   ) {
@@ -234,19 +234,19 @@ export class Procedure<
       new (
         opts: ProcedureOptions<
           TContext,
+          TMeta,
           TParsedInput,
           TOutput,
-          TMeta,
           TFinalOutput
         >,
       ): Procedure<
         TInputContext,
         TContext,
+        TMeta,
         TInput,
         TParsedInput,
         TOutput,
-        TParsedOutput,
-        TMeta
+        TParsedOutput
       >;
     } = (this as any).constructor;
 
@@ -262,7 +262,7 @@ export class Procedure<
   }
 }
 
-export type CreateProcedureWithInput<TContext, TInput, TOutput, TMeta> = {
+export type CreateProcedureWithInput<TContext, TMeta, TInput, TOutput> = {
   input: ProcedureParser<TInput>;
   output?: ProcedureParser<TOutput>;
   meta?: TMeta;
@@ -271,11 +271,11 @@ export type CreateProcedureWithInput<TContext, TInput, TOutput, TMeta> = {
 
 export type CreateProcedureWithInputOutputParser<
   TContext,
+  TMeta,
   TInput,
   TParsedInput,
   TOutput,
   TParsedOutput,
-  TMeta,
 > = {
   input: ProcedureParserWithInputOutput<TInput, TParsedInput>;
   output?: ProcedureParserWithInputOutput<TOutput, TParsedOutput>;
@@ -285,9 +285,9 @@ export type CreateProcedureWithInputOutputParser<
 
 export type CreateProcedureWithoutInput<
   TContext,
+  TMeta,
   TOutput,
   TParsedOutput,
-  TMeta,
 > = {
   output?:
     | ProcedureParserWithInputOutput<TOutput, TParsedOutput>
@@ -298,47 +298,47 @@ export type CreateProcedureWithoutInput<
 
 export type CreateProcedureOptions<
   TContext,
+  TMeta = undefined,
   TInput = undefined,
   TParsedInput = undefined,
   TOutput = undefined,
   TParsedOutput = undefined,
-  TMeta = undefined,
 > =
   | CreateProcedureWithInputOutputParser<
       TContext,
+      TMeta,
       TInput,
       TParsedInput,
       TOutput,
-      TParsedOutput,
-      TMeta
+      TParsedOutput
     >
-  | CreateProcedureWithInput<TContext, TInput, TOutput, TMeta>
-  | CreateProcedureWithoutInput<TContext, TOutput, TParsedOutput, TMeta>;
+  | CreateProcedureWithInput<TContext, TMeta, TInput, TOutput>
+  | CreateProcedureWithoutInput<TContext, TMeta, TOutput, TParsedOutput>;
 
 export function createProcedure<
   TContext,
+  TMeta,
   TInput,
   TParsedInput,
   TOutput,
   TParsedOutput,
-  TMeta,
 >(
   opts: CreateProcedureOptions<
     TContext,
+    TMeta,
     TInput,
     TParsedInput,
     TOutput,
-    TParsedOutput,
-    TMeta
+    TParsedOutput
   >,
 ): Procedure<
   unknown,
   TContext,
+  TMeta,
   TInput,
   TParsedInput,
   TOutput,
-  TParsedOutput,
-  TMeta
+  TParsedOutput
 > {
   const inputParser =
     'input' in opts
@@ -372,19 +372,19 @@ export type inferProcedureFromOptions<
   TOptions extends CreateProcedureOptions<any, any, any, any, any, any>,
 > = TOptions extends CreateProcedureOptions<
   infer TContext,
+  infer TMeta,
   infer TInput,
   infer TParsedInput,
   infer TOutput,
-  infer TParsedOutput,
-  infer TMeta
+  infer TParsedOutput
 >
   ? Procedure<
       TInputContext,
       TContext,
+      TMeta,
       unknown extends TInput ? undefined : TInput,
       unknown extends TParsedInput ? undefined : TParsedInput,
       TOutput,
-      TParsedOutput,
-      TMeta
+      TParsedOutput
     >
   : never;
