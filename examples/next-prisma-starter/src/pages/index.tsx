@@ -1,51 +1,51 @@
 import { trpc } from '../utils/trpc';
 import { NextPageWithLayout } from './_app';
+import { IncomingMessage } from 'http';
 import Link from 'next/link';
+import { useRef } from 'react';
+import { useMutation } from 'react-query';
+import { useSSRForm } from '~/utils/useSSRForm';
+
+async function getPostBody(req: IncomingMessage) {
+  return new Promise<{ data: unknown }>((resolve) => {
+    let body = '';
+    let hasBody = false;
+    req.on('data', function (data: unknown) {
+      body += data;
+      hasBody = true;
+    });
+    req.on('end', () => {
+      resolve({
+        data: hasBody ? body : undefined,
+      });
+    });
+  });
+}
 
 function PostForm() {
   const utils = trpc.useContext();
-  const addPost = trpc.useMutation('post.add', {
-    async onSuccess() {
-      // refetches posts after a post is added
-      await utils.invalidateQueries(['post.all']);
-    },
-  });
+  const form = useSSRForm('post.add');
 
   return (
-    <form
-      onSubmit={async (e) => {
-        e.preventDefault();
-        /**
-         * In a real app you probably don't want to use this manually
-         * Checkout React Hook Form - it works great with tRPC
-         * @link https://react-hook-form.com/
-         */
-
-        const $text: HTMLInputElement = (e as any).target.elements.text;
-        const $title: HTMLInputElement = (e as any).target.elements.title;
-        const input = {
-          title: $title.value,
-          text: $text.value,
-        };
-        try {
-          await addPost.mutateAsync(input);
-
-          $title.value = '';
-          $text.value = '';
-        } catch {}
-      }}
-    >
+    <form onSubmit={form.onSubmit} method="post">
       <label htmlFor="title">Title:</label>
       <br />
-      <input id="title" name="title" type="text" disabled={addPost.isLoading} />
+      <input
+        id="title"
+        name="title"
+        type="text"
+        disabled={form.mutation.isLoading}
+      />
 
       <br />
       <label htmlFor="text">Text:</label>
       <br />
-      <textarea id="text" name="text" disabled={addPost.isLoading} />
+      <textarea id="text" name="text" disabled={form.mutation.isLoading} />
       <br />
-      <input type="submit" disabled={addPost.isLoading} />
-      {addPost.error && <p style={{ color: 'red' }}>{addPost.error.message}</p>}
+      <input type="submit" disabled={form.mutation.isLoading} />
+      {form.mutation.error && (
+        <p style={{ color: 'red' }}>{form.mutation.error.message}</p>
+      )}
     </form>
   );
 }
