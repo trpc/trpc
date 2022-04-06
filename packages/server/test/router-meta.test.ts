@@ -80,7 +80,7 @@ test('route meta in middleware', async () => {
   });
 
   expect(await client.mutation('foo2')).toBe('bar2');
-  expect(calls[0][0]).toHaveProperty('meta');
+  expect(calls[1][0]).toHaveProperty('meta');
   expect(calls[1][0].meta).toEqual({
     data: 'foo2',
   });
