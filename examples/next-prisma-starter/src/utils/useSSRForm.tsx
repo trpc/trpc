@@ -1,4 +1,4 @@
-import { inferMutationInput, trpc } from './trpc';
+import { trpc } from './trpc';
 import { IncomingMessage } from 'http';
 import { useMutation } from 'react-query';
 import { AppRouter } from '~/server/routers/_app';

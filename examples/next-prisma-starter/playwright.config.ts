@@ -19,6 +19,7 @@ const config: PlaywrightTestConfig = {
     baseURL: baseUrl,
     headless: opts.headless,
     video: 'on',
+    javaScriptEnabled: false,
   },
 };
 
