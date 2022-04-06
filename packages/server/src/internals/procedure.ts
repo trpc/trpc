@@ -114,7 +114,7 @@ export class Procedure<
   private parseInputFn: ParseFn<TParsedInput>;
   private readonly outputParser: ProcedureParser<TFinalOutput>;
   private parseOutputFn: ParseFn<TFinalOutput>;
-  private readonly meta: TMeta;
+  public readonly meta: TMeta;
 
   constructor(
     opts: ProcedureOptions<
