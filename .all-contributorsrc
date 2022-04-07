@@ -628,6 +628,17 @@
       "contributions": [
         "financial"
       ]
+    },
+    {
+      "login": "LouisHaftmann",
+      "name": "Louis Haftmann",
+      "avatar_url": "https://avatars.githubusercontent.com/u/30736553?v=4",
+      "profile": "https://github.com/LouisHaftmann",
+      "contributions": [
+        "code",
+        "test",
+        "doc"
+      ]
     }
   ],
   "contributorsPerLine": 7,

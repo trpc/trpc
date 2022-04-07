@@ -27,11 +27,12 @@ export type MiddlewareResult<TContext> =
   | MiddlewareOKResult<TContext>
   | MiddlewareErrorResult<TContext>;
 
-export type MiddlewareFunction<TInputContext, TContext> = (opts: {
+export type MiddlewareFunction<TInputContext, TContext, TMeta> = (opts: {
   ctx: TInputContext;
   type: ProcedureType;
   path: string;
   rawInput: unknown;
+  meta?: TMeta;
   next: {
     (): Promise<MiddlewareResult<TInputContext>>;
     <T>(opts: { ctx: T }): Promise<MiddlewareResult<T>>;
