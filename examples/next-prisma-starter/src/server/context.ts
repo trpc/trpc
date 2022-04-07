@@ -26,6 +26,5 @@ export async function createContext(
 ): Promise<Context> {
   // for API-response caching see https://trpc.io/docs/caching
 
-  const ctx = await createContextInner({});
-  return ctx;
+  return await createContextInner({});
 }
