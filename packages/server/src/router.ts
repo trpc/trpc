@@ -120,6 +120,12 @@ type inferHandlerFn<TProcedures extends ProcedureRecord> = <
   ...args: inferHandlerInput<TProcedure>
 ) => Promise<inferProcedureOutput<TProcedures[TPath]>>;
 
+export type inferProcedureMethodInput<
+  TProcedure extends Procedure<any, any, any, any, any, any>,
+> = TProcedure extends Procedure<any, any, infer TInput, any, any, any>
+  ? TInput
+  : any;
+
 /**
  * @internal
  */
@@ -307,7 +313,7 @@ export class Router<
 
   public query<
     TPath extends string,
-    TInput,
+    TInput extends inferProcedureMethodInput<TQueries[TPath]>,
     TParsedInput,
     TOutput,
     TParsedOutput,
@@ -330,7 +336,11 @@ export class Router<
     TErrorShape
   >;
 
-  public query<TPath extends string, TInput, TOutput>(
+  public query<
+    TPath extends string,
+    TInput extends inferProcedureMethodInput<TQueries[TPath]>,
+    TOutput,
+  >(
     path: TPath,
     procedure: CreateProcedureWithInput<TContext, TInput, TOutput>,
   ): Router<
@@ -371,7 +381,7 @@ export class Router<
 
   public mutation<
     TPath extends string,
-    TInput,
+    TInput extends inferProcedureMethodInput<TMutations[TPath]>,
     TParsedInput,
     TOutput,
     TParsedOutput,
@@ -394,7 +404,11 @@ export class Router<
     TErrorShape
   >;
 
-  public mutation<TPath extends string, TInput, TOutput>(
+  public mutation<
+    TPath extends string,
+    TInput extends inferProcedureMethodInput<TMutations[TPath]>,
+    TOutput,
+  >(
     path: TPath,
     procedure: CreateProcedureWithInput<TContext, TInput, TOutput>,
   ): Router<
@@ -438,7 +452,7 @@ export class Router<
    */
   public subscription<
     TPath extends string,
-    TInput,
+    TInput extends inferProcedureMethodInput<TSubscriptions[TPath]>,
     TParsedInput,
     TOutput extends Subscription<unknown>,
   >(
@@ -468,7 +482,7 @@ export class Router<
    */
   public subscription<
     TPath extends string,
-    TInput,
+    TInput extends inferProcedureMethodInput<TSubscriptions[TPath]>,
     TOutput extends Subscription<unknown>,
   >(
     path: TPath,
@@ -825,3 +839,5 @@ export class LegacyRouter<
 export function router<TContext>() {
   return new Router<TContext, TContext, {}, {}, {}, DefaultErrorShape>();
 }
+
+export { Router as TRPCRouter };
