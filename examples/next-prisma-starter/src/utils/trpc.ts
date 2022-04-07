@@ -10,11 +10,12 @@ import type { AppRouter } from '~/server/routers/_app';
  */
 export interface SSRContext extends NextPageContext {
   /**
-   * `303` redirect to another location
-   */
-  redirectTo?: string;
-  /**
    * Set HTTP Status code
+   * @usage
+   * const utils = trpc.useContext();
+   * if (utils.ssrContext) {
+   *   utils.ssrContext.status = 404;
+   * }
    */
   status?: number;
 }
