@@ -10,9 +10,17 @@ import type {
 
 test('deprecated router type is supported', () => {
   type Context = { foo: string };
-  type RouterWithContext = TRPCRouter<Context, Context, any, any, any, any>;
+  type RouterWithContext = TRPCRouter<
+    Context,
+    Context,
+    any,
+    any,
+    any,
+    any,
+    any
+  >;
 
-  const legacyRouter = new Router<Context, any, any, any, any>();
+  const legacyRouter = new Router<Context, any, any, any, any, any>();
 
   expectTypeOf(legacyRouter).toMatchTypeOf<RouterWithContext>();
   expect(legacyRouter instanceof TRPCRouter).toEqual(true);
@@ -38,9 +46,18 @@ test('input type narrowing', () => {
   const narrowedRouter = new TRPCRouter<
     any,
     any,
-    ProcedureRecord<any, any, string, any, any, any>,
-    ProcedureRecord<any, any, string, any, any, any>,
-    ProcedureRecord<any, any, string, unknown, Subscription<any>, unknown>,
+    any,
+    ProcedureRecord<any, any, any, string, any, any, any>,
+    ProcedureRecord<any, any, any, string, any, any, any>,
+    ProcedureRecord<
+      any,
+      any,
+      any,
+      string,
+      Subscription<unknown>,
+      unknown,
+      unknown
+    >,
     any
   >()
     .query('validInput', {

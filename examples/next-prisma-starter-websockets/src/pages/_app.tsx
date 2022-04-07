@@ -30,7 +30,7 @@ MyApp.getInitialProps = async ({ ctx }) => {
 };
 
 function getEndingLink() {
-  if (!process.browser) {
+  if (typeof window === 'undefined') {
     return httpBatchLink({
       url: `${APP_URL}/api/trpc`,
     });
@@ -58,7 +58,8 @@ export default withTRPC<AppRouter>({
         // adds pretty logs to your console in development and logs errors in production
         loggerLink({
           enabled: (opts) =>
-            (process.env.NODE_ENV === 'development' && process.browser) ||
+            (process.env.NODE_ENV === 'development' &&
+              typeof window !== 'undefined') ||
             (opts.direction === 'down' && opts.result instanceof Error),
         }),
         getEndingLink(),
