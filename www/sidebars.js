@@ -24,6 +24,7 @@ module.exports = {
         'server/merging-routers',
         'server/context',
         'server/middlewares',
+        'server/metadata',
         'server/authorization',
         'server/output-validation',
         'server/infer-types',
