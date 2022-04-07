@@ -132,16 +132,16 @@ export type inferRouterContext<TRouter extends AnyRouter> = Parameters<
 /**
  * @internal
  */
-export type inferRouterMeta<C extends AnyRouter> = C extends Router<
+export type inferRouterMeta<TRouter extends AnyRouter> = TRouter extends Router<
   any,
   any,
-  infer T,
+  infer TMeta,
   any,
   any,
   any,
   any
 >
-  ? T
+  ? TMeta
   : {};
 
 /**
