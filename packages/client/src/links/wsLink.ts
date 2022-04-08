@@ -220,7 +220,6 @@ export function createWSClient(opts: WebSocketClientOptions) {
     const { type, input, path, id } = op;
     const envelope: TRPCRequest = {
       id,
-      jsonrpc: '2.0',
       method: type,
       params: {
         input,
