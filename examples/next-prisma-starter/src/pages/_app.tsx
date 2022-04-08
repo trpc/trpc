@@ -8,6 +8,7 @@ import { ReactElement, ReactNode } from 'react';
 import superjson from 'superjson';
 import { DefaultLayout } from '~/components/DefaultLayout';
 import { AppRouter } from '~/server/routers/_app';
+import { SSRContext } from '~/utils/trpc';
 
 export type NextPageWithLayout = NextPage & {
   getLayout?: (page: ReactElement) => ReactNode;
@@ -81,16 +82,24 @@ export default withTRPC<AppRouter>({
   /**
    * Set headers or status code when doing SSR
    */
-  responseMeta({ clientErrors }) {
-    if (clientErrors.length) {
-      // propagate http first error from API calls
+  responseMeta(opts) {
+    const ctx = opts.ctx as SSRContext;
+
+    if (ctx.status) {
+      // If HTTP status set, propagate that
       return {
-        status: clientErrors[0].data?.httpStatus ?? 500,
+        status: ctx.status,
       };
     }
 
-    // for app caching with SSR see https://trpc.io/docs/caching
-
+    const error = opts.clientErrors[0];
+    if (error) {
+      // Propagate http first error from API calls
+      return {
+        status: error.data?.httpStatus ?? 500,
+      };
+    }
+    // For app caching with SSR see https://trpc.io/docs/caching
     return {};
   },
 })(MyApp);
