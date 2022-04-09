@@ -23,6 +23,9 @@
     "ts-node": "ts-node --compiler-options \"{\\\"module\\\":\\\"commonjs\\\"}\"",
     "postinstall": "prisma generate"
   },
+  "stackblitz": {
+    "startCommand": "yarn dev"
+  },
   "prisma": {
     "seed": "yarn ts-node prisma/seed.ts"
   },
