@@ -28,7 +28,7 @@ The returned functions are all wrappers around react-query functions. Please che
 
 ## Next.js Example
 
-```ts
+```ts title='pages/posts/[id].tsx'
 import { createSSGHelpers } from '@trpc/react/ssg';
 import { GetServerSidePropsContext, InferGetServerSidePropsType } from 'next';
 import { prisma } from 'server/context';

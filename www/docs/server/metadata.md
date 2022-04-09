@@ -23,7 +23,7 @@ export const appRouter = trpc.router<Context, Meta>();
 
 ## Example with per route authentication settings
 
-```tsx
+```tsx title='server.ts'
 import * as trpc from '@trpc/server';
 
 // [...]

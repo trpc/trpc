@@ -9,7 +9,7 @@ The only thing you need to do to get SSR on your application is to set `ssr: tru
 
 In order to execute queries properly during the server-side render step and customize caching behavior, we might want to add some extra logic inside our `_app.tsx`:
 
-```tsx
+```tsx title='pages/_app.tsx'
 import React from 'react';
 import { withTRPC } from '@trpc/next';
 import { AppType } from 'next/dist/shared/lib/utils';

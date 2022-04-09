@@ -109,7 +109,7 @@ trpc
 
 This helper can be used anywhere in your app tree to enforce downstream procedures to be authorized.
 
-```tsx
+```tsx  title='server/createRouter.ts'
 import * as trpc from "@trpc/server";
 import { Context } from "./context";
 

@@ -9,7 +9,7 @@ The `createContext`-function is called for each incoming request so here you can
 
 ## Create context from request headers
 
-```ts
+```ts title='server/context.ts'
 import * as trpc from '@trpc/server';
 import { inferAsyncReturnType } from '@trpc/server';
 import { decodeAndVerifyJwtToken } from './somewhere/in/your/app/utils';
@@ -43,10 +43,10 @@ type Context = inferAsyncReturnType<typeof createContext>;
 
 ## Option 1: Authorize using resolver
 
-```ts
+```ts title='server/routers/_app.ts'
 import * as trpc from '@trpc/server';
 import { TRPCError } from '@trpc/server';
-import { createRouter } from './[trpc]';
+import { createRouter } from '../createRouter';
 
 export const appRouter = createRouter()
   // open for anyone
@@ -72,10 +72,10 @@ export const appRouter = createRouter()
 
 ## Option 2: Authorize using middleware
 
-```ts
+```ts title='server/routers/_app.ts'
 import * as trpc from '@trpc/server';
 import { TRPCError } from '@trpc/server';
-import { createRouter } from './[trpc]';
+import { createRouter } from '../createRouter';
 
 export const appRouter = createRouter()
   // this is accessible for everyone
