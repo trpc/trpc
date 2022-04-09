@@ -37,8 +37,8 @@ module.exports = {
           label: 'Quickstart',
         },
         {
-          to: 'docs/example-apps',
-          label: 'Example Apps',
+          to: 'docs/awesome-trpc',
+          label: 'Awesome tRPC Collection',
         },
         {
           to: 'docs/nextjs',
