@@ -2,11 +2,11 @@
  *
  * This is an example router, you can delete this file and then update `../pages/api/trpc/[trpc].tsx`
  */
-import { prisma } from '../prisma';
 import { Prisma } from '@prisma/client';
 import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
 import { createRouter } from '~/server/createRouter';
+import { prisma } from '~/server/prisma';
 
 /**
  * Default selector for Post.
