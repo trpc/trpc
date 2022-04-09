@@ -14,6 +14,7 @@ module.exports = {
       theme: require('prism-react-renderer/themes/vsDark'),
     },
     algolia: {
+      appId: 'BTGPSR4MOE',
       apiKey: '21afcd19f62cce875a67753d48f7e216',
       indexName: 'trpc',
       // contextualSearch: true,
