@@ -14,7 +14,8 @@ function makeModuleNameMapperFromTsConfig(srcPath: string) {
   // Iterate over paths and convert them into moduleNameMapper format
   Object.keys(paths).forEach((item) => {
     const key = item.replace('/*', '/(.*)');
-    const path = paths[item][0].replace('/*', '/$1');
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    const path = paths[item]![0]!.replace('/*', '/$1');
     aliases[key] = srcPath + '/' + path;
   });
   return aliases;
