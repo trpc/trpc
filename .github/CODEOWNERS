@@ -2,8 +2,8 @@
 
 * @KATT
 
-**/package.json @kodiakhq @dependabot-bot
-**/yarn.lock @kodiakhq @dependabot-bot
+**/package.json @trpc-bot
+**/yarn.lock @trpc-bot
 
 
 **/*fastify* @skarab42
