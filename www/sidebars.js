@@ -13,6 +13,7 @@ module.exports = {
         'main/contributing',
         'main/love',
         'main/sponsors',
+        'main/awesome-trpc',
       ],
     },
     {
@@ -69,7 +70,6 @@ module.exports = {
         'further/rpc',
         'further/subscriptions',
         'further/further-reading',
-        'further/awesome-trpc',
       ],
     },
   ],
