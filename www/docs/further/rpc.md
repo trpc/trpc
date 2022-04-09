@@ -26,8 +26,8 @@ When batching, we combine all parallel procedure calls of the same type in one r
 
 #### Given a router like this exposed at `/api/trpc`:
 
-```tsx
-trpc
+```tsx title='server/router.ts'
+export const appRouter = trpc
   .router<Context>()
   .query('postById', {
     input: String,
@@ -49,12 +49,23 @@ trpc
 
 #### .. And two queries defined like this in a React component:
 
-```tsx
-function MyComponent() {
+```tsx title='MyComponent.tsx'
+export function MyComponent() {
   const post1 = trpc.useQuery(['postById', '1'])
   const relatedPosts = trpc.useQuery(['relatedPosts', '1'])
 
-  // [...]
+  return (
+    <pre>{
+      JSON.stringify(
+        {
+          post1: post1.data ?? null,
+          relatedPosts: relatedPosts.data ?? null,
+        },
+        null,
+        4,
+      )
+    }</pre>
+  )
 }
 ```
 

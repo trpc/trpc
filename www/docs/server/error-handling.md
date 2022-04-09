@@ -48,7 +48,7 @@ tRPC provides an error subclass, `TRPCError`, which you can use to represent an 
 
 For example, throwing this error:
 
-```ts
+```ts title='server.ts'
 import * as trpc from '@trpc/server';
 
 const appRouter = trpc.router().query('hello', {
@@ -61,6 +61,8 @@ const appRouter = trpc.router().query('hello', {
     });
   },
 });
+
+// [...]
 ```
 
 Results to the following response:
@@ -85,7 +87,7 @@ Results to the following response:
 
 All errors that occur in a procedure go through the `onError` method before being sent to the client. Here you can handle or change errors.
 
-```ts
+```ts title='pages/api/trpc/[trpc].ts'
 export default trpcNext.createNextApiHandler({
   // ...
   onError({ error, type, path, input, ctx, req }) {

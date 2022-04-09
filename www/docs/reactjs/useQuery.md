@@ -22,11 +22,11 @@ You'll notice that you get autocompletion on the `path` and automatic typesafety
 
 <details><summary>Backend code</summary>
 
-```tsx
+```tsx title='server/routers/_app.ts'
 import * as trpc from '@trpc/server';
 import { z } from 'zod';
 
-trpc
+export const appRouter = trpc
   .router()
   // Create procedure at path 'hello'
   .query('hello', {
@@ -46,7 +46,7 @@ trpc
 
 </details>
 
-```tsx
+```tsx  title='components/MyComponent.tsx'
 import { trpc } from '../utils/trpc';
 
 export function MyComponent() {
