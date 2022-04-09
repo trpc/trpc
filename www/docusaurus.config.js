@@ -13,16 +13,16 @@ module.exports = {
     prism: {
       theme: require('prism-react-renderer/themes/vsDark'),
     },
-    googleAnalytics: {
-      trackingID: 'UA-198119985-2',
-      // Optional fields.
-      anonymizeIP: true, // Should IPs be anonymized?
-    },
     algolia: {
       apiKey: '21afcd19f62cce875a67753d48f7e216',
       indexName: 'trpc',
       // contextualSearch: true,
       // searchParameters: {},
+    },
+    googleAnalytics: {
+      trackingID: 'UA-198119985-2',
+      // Optional fields.
+      anonymizeIP: true, // Should IPs be anonymized?
     },
     navbar: {
       title: 'tRPC',
