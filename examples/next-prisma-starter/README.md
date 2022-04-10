@@ -10,6 +10,7 @@
 - 💚 CI setup using GitHub Actions:
   - ✅ E2E testing with [Playwright](https://playwright.dev/)
   - ✅ Linting
+- 🔐 Validates your env vars on build and start
 
 
 ## Setup

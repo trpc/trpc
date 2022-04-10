@@ -85,23 +85,25 @@ Implement your tRPC router in `./pages/api/trpc/[trpc].ts`. If you need to split
 
 <details><summary>View sample router</summary>
 
-```ts
+```ts title='server/_app.ts'
 import * as trpc from '@trpc/server';
 import * as trpcNext from '@trpc/server/adapters/next';
 import { z } from 'zod';
 
-const appRouter = trpc.router().query('hello', {
-  input: z
-    .object({
-      text: z.string().nullish(),
-    })
-    .nullish(),
-  resolve({ input }) {
-    return {
-      greeting: `hello ${input?.text ?? 'world'}`,
-    };
-  },
-});
+export const appRouter = trpc
+  .router()
+  .query('hello', {
+    input: z
+      .object({
+        text: z.string().nullish(),
+      })
+      .nullish(),
+    resolve({ input }) {
+      return {
+        greeting: `hello ${input?.text ?? 'world'}`,
+      };
+    },
+  });
 
 // export type definition of API
 export type AppRouter = typeof appRouter;
@@ -119,8 +121,7 @@ export default trpcNext.createNextApiHandler({
 
 Create a set of strongly-typed hooks using your API's type signature.
 
-```tsx
-// utils/trpc.ts
+```tsx title='utils/trpc.ts'
 import { setupTRPC } from '@trpc/next';
 import type { AppRouter } from '../pages/api/trpc/[trpc]';
 
@@ -152,10 +153,10 @@ export const trpc = setupTRPC<AppRouter>({
 
 ### 5. Make API requests
 
-```tsx
+```tsx title='pages/index.ts'
 import { trpc } from '../utils/trpc';
 
-const IndexPage = () => {
+export default function IndexPage() {
   const hello = trpc.useQuery(['hello', { text: 'client' }]);
   if (!hello.data) {
     return <div>Loading...</div>;
@@ -166,8 +167,6 @@ const IndexPage = () => {
     </div>
   );
 };
-
-export default IndexPage;
 ```
 
 ## `withTRPC()` options
@@ -198,7 +197,7 @@ Ability to set request headers and HTTP status when server-side rendering.
 
 #### Example
 
-```tsx
+```tsx title='pages/_app.tsx'
 export default withTRPC<AppRouter>({
   config({ ctx }) {
     /* [...] */

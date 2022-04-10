@@ -36,6 +36,7 @@ tRPC defines a list of error codes that each represent a different type of error
 | FORBIDDEN             | The server was unauthorized to access a required data source, such as a REST API.                                       | 403       |
 | NOT_FOUND             | The server cannot find the requested resource.                                                                          | 404       |
 | TIMEOUT               | The server would like to shut down this unused connection.                                                              | 408       |
+| CONFLICT               | The server request resource conflict with the current state of the target resource.                                                              | 409       |
 | PRECONDITION_FAILED   | Access to the target resource has been denied.                                                                          | 412       |
 | PAYLOAD_TOO_LARGE     | Request entity is larger than limits defined by server.                                                                 | 413       |
 | METHOD_NOT_SUPPORTED  | The server knows the request method, but the target resource doesn't support this method.                               | 405       |
@@ -48,7 +49,7 @@ tRPC provides an error subclass, `TRPCError`, which you can use to represent an 
 
 For example, throwing this error:
 
-```ts
+```ts title='server.ts'
 import * as trpc from '@trpc/server';
 
 const appRouter = trpc.router().query('hello', {
@@ -61,6 +62,8 @@ const appRouter = trpc.router().query('hello', {
     });
   },
 });
+
+// [...]
 ```
 
 Results to the following response:
@@ -85,7 +88,7 @@ Results to the following response:
 
 All errors that occur in a procedure go through the `onError` method before being sent to the client. Here you can handle or change errors.
 
-```ts
+```ts title='pages/api/trpc/[trpc].ts'
 export default trpcNext.createNextApiHandler({
   // ...
   onError({ error, type, path, input, ctx, req }) {
