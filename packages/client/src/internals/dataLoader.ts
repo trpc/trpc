@@ -43,7 +43,8 @@ export function dataLoader<TKey, TValue>(
       .then((result) => {
         for (let i = 0; i < result.length; i++) {
           const value = result[i];
-          batchCopy.items[i].resolve(value);
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+          batchCopy.items[i]!.resolve(value!);
         }
       })
       .catch((cause) => {

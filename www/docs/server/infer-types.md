@@ -17,7 +17,7 @@ It is often useful to wrap functionality of your `@trpc/client` or `@trpc/react`
 
 ## Example Code
 
-```tsx
+```tsx title='utils/trpc.ts'
 // trpc-helper.ts
 import type { AppRouter } from 'api/src/routers/_app' // Import AppRouter from your main server router
 import type { inferProcedureOutput, inferProcedureInput, inferSubscriptionOutput } from '@trpc/server'

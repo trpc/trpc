@@ -21,7 +21,7 @@ yarn add superjson
 
 #### 3. Add to your backend
 
-```ts
+```ts title='routers/router/_app..ts'
 import superjson from 'superjson';
 import * as trpc from '@trpc/server';
 
@@ -47,12 +47,12 @@ export const client = createTRPCClient<AppRouter>({
   // [...]
 });
 ```
-```ts
+```ts title='utils/trpc.ts'
 import { httpBatchLink } from '@trpc/client';
 import { transformerLink } from '@trpc/client';
 import { setupTRPC } from '@trpc/next';
 import superjson from 'superjson';
-import type { AppRouter } from 'server/routers/_app';
+import type { AppRouter } from '~/server/routers/_app';
 
 // [...]
 
@@ -87,7 +87,7 @@ yarn add superjson devalue
 
 #### 2. Add to `utils/trpc.ts`
 
-```ts
+```ts title='utils/trpc.ts'
 import superjson from 'superjson';
 import devalue from 'devalue';
 
@@ -104,7 +104,7 @@ export const transformer = {
 
 #### 3. Add to `createTRPCCLient()`
 
-```ts
+```ts title='client.ts'
 import { transformer } from '../utils/trpc';
 
 // [...]
@@ -117,7 +117,7 @@ export const client = createTRPCClient<AppRouter>({
 
 #### 4. Add to your `AppRouter`
 
-```ts
+```ts title='server/routers/_app.ts'
 import { transformer } from '../../utils/trpc';
 import * as trpc from '@trpc/server';
 
