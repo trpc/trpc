@@ -13,11 +13,11 @@ Works like react-query's mutations - [see their docs](https://react-query.tansta
 
 <details><summary>Backend code</summary>
 
-```tsx
+```tsx title='server/routers/_app.ts'
 import * as trpc from '@trpc/server';
 import { z } from 'zod';
 
-trpc.router()
+export const appRouter = trpc.router()
   // Create procedure at path 'login'
   // The syntax is identical to creating queries
   .mutation('login', {

@@ -24,7 +24,7 @@ For implementing tRPC endpoints and routers. Install in your server codebase.
 
 For making typesafe API calls from your client. Install in your client codebase.
 
-`npm install @trpc/react`
+`npm install @trpc/react react-query`
 
 For generating a powerful set of React hooks for querying your tRPC API. Powered by [react-query](https://react-query.tanstack.com/).
 
@@ -37,13 +37,13 @@ A set of utilies for integrating tRPC with [Next.js](https://nextjs.org/).
 **npm:**
 
 ```bash
-npm install @trpc/server @trpc/client @trpc/react @trpc/next
+npm install @trpc/server @trpc/client @trpc/react react-query @trpc/next
 ```
 
 **yarn:**
 
 ```bash
-yarn add @trpc/server @trpc/client @trpc/react @trpc/next
+yarn add @trpc/server @trpc/client @trpc/react react-query @trpc/next
 ```
 
 ## Defining a router
@@ -59,8 +59,7 @@ createUser(data: {name:string}) => { id: string; name: string; }
 
 First we define a router somewhere in our server codebase:
 
-```ts
-// server/index.ts
+```ts title='server.ts'
 import * as trpc from '@trpc/server';
 const appRouter = trpc.router();
 
@@ -80,8 +79,8 @@ Use the `.query()` method to add a query endpoint to the router. Arguments:
 - `params.input`: Optional. This should be a function that validates/casts the _input_ of this endpoint and either returns a strongly typed value (if valid) or throws an error (if invalid). Alternatively you can pass a [Zod](https://github.com/colinhacks/zod), [Superstruct](https://github.com/ianstormtaylor/superstruct) or [Yup](https://github.com/jquense/yup) schema.
 - `params.resolve`: This is the actual implementation of the endpoint. It's a function with a single `req` argument. The validated input is passed into `req.input` and the context is in `req.ctx` (more about context later!)
 
-```ts
-// server/index.ts
+```ts title='server.ts'
+
 import * as trpc from '@trpc/server';
 
 const appRouter = trpc.router().query('getUser', {
@@ -106,8 +105,7 @@ Similarly to GraphQL, tRPC makes a distinction between query and mutation endpoi
 createUser(payload: {name: string}) => {id: string; name: string};
 ```
 
-```ts
-// server/index.ts
+```ts title='server.ts'
 import * as trpc from '@trpc/server';
 import { z } from 'zod';
 

@@ -21,7 +21,7 @@ yarn add superjson
 
 #### 2. Add to `createTRPCCLient()` or `withTRPC()` config
 
-```ts
+```ts title='client.ts'
 import superjson from 'superjson';
 
 // [...]
@@ -31,7 +31,7 @@ export const client = createTRPCClient<AppRouter>({
   transformer: superjson,
 });
 ```
-```ts
+```ts title='pages/_app.tsx'
 import superjson from 'superjson';
 
 // [...]
@@ -48,7 +48,7 @@ export default withTRPC<AppRouter>({
 
 #### 3. Add to your `AppRouter`
 
-```ts
+```ts title='server/routers/_app.ts'
 import superjson from 'superjson';
 import * as trpc from '@trpc/server';
 
@@ -73,7 +73,7 @@ yarn add superjson devalue
 
 #### 2. Add to `utils/trpc.ts`
 
-```ts
+```ts title='utils/trpc.ts'
 import superjson from 'superjson';
 import devalue from 'devalue';
 
@@ -90,7 +90,7 @@ export const transformer = {
 
 #### 3. Add to `createTRPCCLient()`
 
-```ts
+```ts title='client.ts'
 import { transformer } from '../utils/trpc';
 
 // [...]
@@ -103,7 +103,7 @@ export const client = createTRPCClient<AppRouter>({
 
 #### 4. Add to your `AppRouter`
 
-```ts
+```ts title='server/routers/_app.ts'
 import { transformer } from '../../utils/trpc';
 import * as trpc from '@trpc/server';
 
