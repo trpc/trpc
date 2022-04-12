@@ -1,4 +1,4 @@
-import { ProcedureType } from '../deprecated/router';
+import { ProcedureType } from '../core/utils';
 import { TRPC_ERROR_CODE_NUMBER } from './codes';
 
 type JSONRPC2RequestId = number | string | null;
