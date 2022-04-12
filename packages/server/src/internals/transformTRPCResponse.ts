@@ -1,4 +1,4 @@
-import { AnyRouter } from '../router';
+import { AnyRouter } from '../deprecated/router';
 import { TRPCResponse } from '../rpc';
 
 function transformTRPCResponseItem(

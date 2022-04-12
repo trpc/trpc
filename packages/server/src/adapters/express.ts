@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import type * as express from 'express';
-import { AnyRouter } from '../router';
+import { AnyRouter } from '../deprecated/router';
 import { nodeHTTPRequestHandler } from './node-http';
 import {
   NodeHTTPCreateContextFnOptions,

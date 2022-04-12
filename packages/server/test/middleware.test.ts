@@ -6,7 +6,7 @@ import { expectTypeOf } from 'expect-type';
 import { z } from 'zod';
 import * as trpc from '../src';
 import { TRPCError, inferProcedureOutput } from '../src';
-import { MiddlewareResult } from '../src/internals/middlewares';
+import { MiddlewareResult } from '../src/deprecated/internals/middlewares';
 
 test('is called if def first', async () => {
   const middleware = jest.fn((opts) => {

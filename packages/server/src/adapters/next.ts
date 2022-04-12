@@ -6,7 +6,7 @@ import type {
   NextApiResponse,
 } from 'next/types';
 import { TRPCError } from '../TRPCError';
-import { AnyRouter } from '../router';
+import { AnyRouter } from '../deprecated/router';
 import { TRPCErrorResponse } from '../rpc';
 import { nodeHTTPRequestHandler } from './node-http';
 import {

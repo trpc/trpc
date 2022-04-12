@@ -1,14 +1,14 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 import { TRPCError } from '../TRPCError';
-import { callProcedure } from '../internals/callProcedure';
-import { getCauseFromUnknown, getErrorFromUnknown } from '../internals/errors';
-import { transformTRPCResponse } from '../internals/transformTRPCResponse';
+import { callProcedure } from '../deprecated/internals/callProcedure';
 import {
   AnyRouter,
   ProcedureType,
   inferRouterContext,
   inferRouterError,
-} from '../router';
+} from '../deprecated/router';
+import { getCauseFromUnknown, getErrorFromUnknown } from '../internals/errors';
+import { transformTRPCResponse } from '../internals/transformTRPCResponse';
 import { TRPCErrorResponse, TRPCResponse, TRPCResultResponse } from '../rpc';
 import { Maybe } from '../types';
 import { getHTTPStatusCode } from './internals/getHTTPStatusCode';

@@ -1,4 +1,4 @@
-import { router } from '../src/router';
+import { router } from '../src/deprecated/router';
 
 test('double errors', async () => {
   expect(() => {

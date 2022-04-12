@@ -1,5 +1,5 @@
+import { Subscription } from '../../subscription';
 import { AnyRouter, ProcedureType } from '../router';
-import { Subscription } from '../subscription';
 
 export async function callProcedure<
   TRouter extends AnyRouter<TContext>,

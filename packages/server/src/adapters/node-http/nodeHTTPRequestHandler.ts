@@ -1,8 +1,8 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 import { assertNotBrowser } from '../../assertNotBrowser';
+import { AnyRouter, inferRouterContext } from '../../deprecated/router';
 import { HTTPRequest } from '../../http/internals/types';
 import { resolveHTTPResponse } from '../../http/resolveHTTPResponse';
-import { AnyRouter, inferRouterContext } from '../../router';
 import { getPostBody } from './internals/getPostBody';
 import {
   NodeHTTPHandlerOptions,

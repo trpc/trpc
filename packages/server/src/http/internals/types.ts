@@ -1,11 +1,11 @@
 import { TRPCError } from '../../TRPCError';
-import { BaseHandlerOptions } from '../../internals/BaseHandlerOptions';
 import {
   AnyRouter,
   ProcedureType,
   inferRouterContext,
   inferRouterError,
-} from '../../router';
+} from '../../deprecated/router';
+import { BaseHandlerOptions } from '../../internals/BaseHandlerOptions';
 import { TRPCResponse } from '../../rpc';
 import { Dict } from '../../types';
 import { ResponseMeta } from '../ResponseMeta';

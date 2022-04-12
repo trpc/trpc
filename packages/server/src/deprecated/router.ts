@@ -1,10 +1,9 @@
 /* eslint-disable @typescript-eslint/ban-types */
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { TRPCError } from './TRPCError';
-import { assertNotBrowser } from './assertNotBrowser';
-import { getHTTPStatusCodeFromError } from './http/internals/getHTTPStatusCode';
-import { MiddlewareFunction } from './internals/middlewares';
+import { TRPCError } from '../TRPCError';
+import { assertNotBrowser } from '../assertNotBrowser';
+import { getHTTPStatusCodeFromError } from '../http/internals/getHTTPStatusCode';
 import {
   CreateProcedureOptions,
   CreateProcedureWithInput,
@@ -14,16 +13,20 @@ import {
   ProcedureCallOptions,
   createProcedure,
   inferProcedureFromOptions,
-} from './internals/procedure';
+} from '../internals/procedure';
 import {
   TRPCErrorShape,
   TRPC_ERROR_CODES_BY_KEY,
   TRPC_ERROR_CODE_KEY,
   TRPC_ERROR_CODE_NUMBER,
-} from './rpc';
-import { Subscription } from './subscription';
-import { CombinedDataTransformer, DataTransformerOptions } from './transformer';
-import { Prefixer, ThenArg, flatten } from './types';
+} from '../rpc';
+import { Subscription } from '../subscription';
+import {
+  CombinedDataTransformer,
+  DataTransformerOptions,
+} from '../transformer';
+import { Prefixer, ThenArg, flatten } from '../types';
+import { MiddlewareFunction } from './internals/middlewares';
 
 assertNotBrowser();
 
@@ -264,6 +267,7 @@ type SwapContext<
 
 /**
  * @internal The type signature of this class may change without warning.
+ * @deprecated
  */
 export class Router<
   TInputContext,

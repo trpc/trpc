@@ -1,7 +1,14 @@
-import { TRPCError } from '../TRPCError';
+import { TRPCError } from '../../TRPCError';
 import { ProcedureType } from '../router';
 
+/**
+ * @deprecated
+ */
 export const middlewareMarker = Symbol('middlewareMarker');
+
+/**
+ * @deprecated
+ */
 interface MiddlewareResultBase<TContext> {
   /**
    * All middlewares should pass through their `next()`'s output.
@@ -11,11 +18,18 @@ interface MiddlewareResultBase<TContext> {
   ctx: TContext;
 }
 
+/**
+ * @deprecated
+ */
 interface MiddlewareOKResult<TContext> extends MiddlewareResultBase<TContext> {
   ok: true;
   data: unknown;
   // this could be extended with `input`/`rawInput` later
 }
+
+/**
+ * @deprecated
+ */
 interface MiddlewareErrorResult<TContext>
   extends MiddlewareResultBase<TContext> {
   ok: false;
@@ -23,10 +37,16 @@ interface MiddlewareErrorResult<TContext>
   // we could guarantee it's always of this type
 }
 
+/**
+ * @deprecated
+ */
 export type MiddlewareResult<TContext> =
   | MiddlewareOKResult<TContext>
   | MiddlewareErrorResult<TContext>;
 
+/**
+ * @deprecated
+ */
 export type MiddlewareFunction<TInputContext, TContext, TMeta> = (opts: {
   ctx: TInputContext;
   type: ProcedureType;

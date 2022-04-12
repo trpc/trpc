@@ -1,11 +1,15 @@
 import { IncomingMessage } from 'http';
 import ws from 'ws';
 import { TRPCError } from '../TRPCError';
+import { callProcedure } from '../deprecated/internals/callProcedure';
+import {
+  AnyRouter,
+  ProcedureType,
+  inferRouterContext,
+} from '../deprecated/router';
 import { BaseHandlerOptions } from '../internals/BaseHandlerOptions';
-import { callProcedure } from '../internals/callProcedure';
 import { getCauseFromUnknown, getErrorFromUnknown } from '../internals/errors';
 import { transformTRPCResponse } from '../internals/transformTRPCResponse';
-import { AnyRouter, ProcedureType, inferRouterContext } from '../router';
 import {
   TRPCErrorResponse,
   TRPCReconnectNotification,
