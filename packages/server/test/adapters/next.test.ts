@@ -97,10 +97,8 @@ describe('ok request', () => {
     const json: any = JSON.parse((end.mock.calls[0] as any)[0]);
     expect(json).toMatchInlineSnapshot(`
       Object {
-        "id": null,
         "result": Object {
           "data": "world",
-          "type": "data",
         },
       }
     `);
@@ -120,10 +118,8 @@ describe('ok request', () => {
     const json: any = JSON.parse((end.mock.calls[0] as any)[0]);
     expect(json).toMatchInlineSnapshot(`
       Object {
-        "id": null,
         "result": Object {
           "data": "world",
-          "type": "data",
         },
       }
     `);

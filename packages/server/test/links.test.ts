@@ -66,10 +66,8 @@ test('chainer', async () => {
         "response": "[redacted]",
       },
       "data": Object {
-        "id": null,
         "result": Object {
           "data": "world",
-          "type": "data",
         },
       },
     }
@@ -169,10 +167,8 @@ describe('batching', () => {
             "response": "[redacted]",
           },
           "data": Object {
-            "id": null,
             "result": Object {
               "data": "hello world",
-              "type": "data",
             },
           },
         },
@@ -181,10 +177,8 @@ describe('batching', () => {
             "response": "[redacted]",
           },
           "data": Object {
-            "id": null,
             "result": Object {
               "data": "hello alexdotjs",
-              "type": "data",
             },
           },
         },

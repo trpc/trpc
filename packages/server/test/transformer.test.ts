@@ -484,12 +484,10 @@ test('superjson - no input', async () => {
   expect(json).not.toHaveProperty('error');
   expect(json).toMatchInlineSnapshot(`
 Object {
-  "id": null,
   "result": Object {
     "data": Object {
       "json": "world",
     },
-    "type": "data",
   },
 }
 `);

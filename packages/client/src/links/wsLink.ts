@@ -2,8 +2,9 @@ import { AnyRouter, ProcedureType } from '@trpc/server';
 import {
   TRPCClientIncomingMessage,
   TRPCClientIncomingRequest,
-  TRPCRequest,
-  TRPCResponse,
+  TRPCClientOutgoingMessage,
+  TRPCRequestMessage,
+  TRPCResponseMessage,
 } from '@trpc/server/rpc';
 import { TRPCClientError } from '../TRPCClientError';
 import { retryDelay } from '../internals/retryDelay';
@@ -30,7 +31,7 @@ export function createWSClient(opts: WebSocketClientOptions) {
   /**
    * outgoing messages buffer whilst not open
    */
-  let outgoing: TRPCRequest[] = [];
+  let outgoing: TRPCClientOutgoingMessage[] = [];
   /**
    * pending outgoing requests that are awaiting callback
    */
@@ -140,7 +141,7 @@ export function createWSClient(opts: WebSocketClientOptions) {
         }
       }
     };
-    const handleIncomingResponse = (data: TRPCResponse) => {
+    const handleIncomingResponse = (data: TRPCResponseMessage) => {
       const req = data.id !== null && pendingRequests[data.id];
       if (!req) {
         // do something?
@@ -207,7 +208,7 @@ export function createWSClient(opts: WebSocketClientOptions) {
 
   function request(op: Operation, callbacks: TCallbacks): UnsubscribeFn {
     const { type, input, path, id } = op;
-    const envelope: TRPCRequest = {
+    const envelope: TRPCRequestMessage = {
       id,
       method: type,
       params: {
@@ -236,7 +237,6 @@ export function createWSClient(opts: WebSocketClientOptions) {
         outgoing.push({
           id,
           method: 'subscription.stop',
-          params: undefined,
         });
         dispatch();
       }
