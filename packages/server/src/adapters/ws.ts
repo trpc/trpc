@@ -74,11 +74,7 @@ function parseMessage(
   const { input: rawInput, path } = params;
   assertIsString(path);
   const input = transformer.input.deserialize(rawInput);
-  return {
-    id,
-    method,
-    params: { input, path },
-  };
+  return { jsonrpc, id, method, params: { input, path } };
 }
 
 /**
