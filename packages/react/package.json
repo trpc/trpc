@@ -46,7 +46,7 @@
     "@trpc/server": "^9.22.0",
     "@types/express": "^4.17.12",
     "express": "^4.17.1",
-    "next": "^12.0.1",
+    "next": "12.1.4",
     "react": "^18.0.0",
     "react-dom": "^18.0.0",
     "react-query": "^3.27.0",
