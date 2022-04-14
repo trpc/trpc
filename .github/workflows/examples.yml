@@ -4,6 +4,7 @@ jobs:
   e2e:
     container:
       image: mcr.microsoft.com/playwright:v1.20.0-focal
+      options: --user 1001
     env:
       PLAYWRIGHT_BROWSERS_PATH: ${{ github.workspace }}/playwright
       DATABASE_URL: postgresql://postgres:@postgres:5432/trpcdb
@@ -32,7 +33,6 @@ jobs:
           POSTGRES_DB: trpcdb
         ports:
           - 5432:5432
-
     steps:
       - uses: actions/checkout@v2
       - uses: actions/setup-node@v2
