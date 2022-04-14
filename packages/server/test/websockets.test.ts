@@ -13,7 +13,7 @@ import { wsLink } from '../../client/src';
 import * as trpc from '../src';
 import { TRPCError } from '../src';
 import { applyWSSHandler } from '../src/adapters/ws';
-import { TRPCRequest, TRPCResult } from '../src/rpc';
+import { TRPCRequestMessage, TRPCResultMessage } from '../src/rpc';
 
 type Message = {
   id: string;
@@ -148,7 +148,7 @@ test('basic subscription test', async () => {
   const subscription = client.subscription('onMessage', undefined, {
     next(data) {
       expectTypeOf(data).not.toBeAny();
-      expectTypeOf(data).toMatchTypeOf<TRPCResult<Message>>();
+      expectTypeOf(data).toMatchTypeOf<TRPCResultMessage<Message>>();
       next(data);
     },
   });
@@ -480,7 +480,7 @@ describe('regression test - slow createContext', () => {
     });
     const rawClient = new WebSocket(t.wssUrl);
 
-    const msg: TRPCRequest = {
+    const msg: TRPCRequestMessage = {
       id: 1,
       method: 'query',
       params: {
@@ -522,7 +522,7 @@ describe('regression test - slow createContext', () => {
     t.wsClient.close();
     const rawClient = new WebSocket(t.wssUrl);
 
-    const msg: TRPCRequest = {
+    const msg: TRPCRequestMessage = {
       id: 1,
       method: 'query',
       params: {
@@ -633,7 +633,7 @@ test('regression - badly shaped request', async () => {
   const t = factory();
   const rawClient = new WebSocket(t.wssUrl);
 
-  const msg: TRPCRequest = {
+  const msg: TRPCRequestMessage = {
     id: null,
     method: 'query',
     params: {

@@ -7,7 +7,6 @@ import type {
 } from 'next/types';
 import { TRPCError } from '../TRPCError';
 import { AnyRouter } from '../router';
-import { TRPCErrorResponse } from '../rpc';
 import { nodeHTTPRequestHandler } from './node-http';
 import {
   NodeHTTPCreateContextFnOptions,
@@ -46,12 +45,11 @@ export function createNextApiHandler<TRouter extends AnyRouter>(
         path: undefined,
         input: undefined,
       });
-      const json: TRPCErrorResponse = {
+      res.statusCode = 500;
+      res.json({
         id: -1,
         error,
-      };
-      res.statusCode = 500;
-      res.json(json);
+      });
       return;
     }
 

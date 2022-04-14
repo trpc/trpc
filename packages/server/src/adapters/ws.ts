@@ -7,10 +7,9 @@ import { getCauseFromUnknown, getErrorFromUnknown } from '../internals/errors';
 import { transformTRPCResponse } from '../internals/transformTRPCResponse';
 import { AnyRouter, ProcedureType, inferRouterContext } from '../router';
 import {
-  TRPCErrorResponse,
+  TRPCClientOutgoingMessage,
   TRPCReconnectNotification,
-  TRPCRequest,
-  TRPCResponse,
+  TRPCResponseMessage,
 } from '../rpc';
 import { Subscription } from '../subscription';
 import { CombinedDataTransformer } from '../transformer';
@@ -58,7 +57,7 @@ function assertIsJSONRPC2OrUndefined(
 function parseMessage(
   obj: unknown,
   transformer: CombinedDataTransformer,
-): TRPCRequest {
+): TRPCClientOutgoingMessage {
   assertIsObject(obj);
   const { method, params, id, jsonrpc } = obj;
   assertIsRequestId(id);
@@ -67,7 +66,6 @@ function parseMessage(
     return {
       id,
       method,
-      params: undefined,
     };
   }
   assertIsProcedureType(method);
@@ -102,7 +100,7 @@ export function applyWSSHandler<TRouter extends AnyRouter>(
       Subscription<TRouter>
     >();
 
-    function respond(untransformedJSON: TRPCResponse) {
+    function respond(untransformedJSON: TRPCResponseMessage) {
       client.send(
         JSON.stringify(transformTRPCResponse(router, untransformedJSON)),
       );
@@ -110,7 +108,7 @@ export function applyWSSHandler<TRouter extends AnyRouter>(
     const ctxPromise = createContext?.({ req, res: client });
     let ctx: inferRouterContext<TRouter> | undefined = undefined;
 
-    async function handleRequest(msg: TRPCRequest) {
+    async function handleRequest(msg: TRPCClientOutgoingMessage) {
       const { id } = msg;
       /* istanbul ignore next */
       if (id === null) {
@@ -178,7 +176,8 @@ export function applyWSSHandler<TRouter extends AnyRouter>(
         });
         sub.on('error', (_error: unknown) => {
           const error = getErrorFromUnknown(_error);
-          const json: TRPCErrorResponse = {
+          opts.onError?.({ error, path, type, ctx, req, input });
+          respond({
             id,
             error: router.getErrorShape({
               error,
@@ -187,9 +186,7 @@ export function applyWSSHandler<TRouter extends AnyRouter>(
               input,
               ctx,
             }),
-          };
-          opts.onError?.({ error, path, type, ctx, req, input });
-          respond(json);
+          });
         });
         sub.on('destroy', () => {
           respond({
@@ -259,16 +256,6 @@ export function applyWSSHandler<TRouter extends AnyRouter>(
         ctx = await ctxPromise;
       } catch (cause) {
         const error = getErrorFromUnknown(cause);
-        const json: TRPCErrorResponse = {
-          id: null,
-          error: router.getErrorShape({
-            error,
-            type: 'unknown',
-            path: undefined,
-            input: undefined,
-            ctx,
-          }),
-        };
         opts.onError?.({
           error,
           path: undefined,
@@ -277,7 +264,16 @@ export function applyWSSHandler<TRouter extends AnyRouter>(
           req,
           input: undefined,
         });
-        respond(json);
+        respond({
+          id: null,
+          error: router.getErrorShape({
+            error,
+            type: 'unknown',
+            path: undefined,
+            input: undefined,
+            ctx,
+          }),
+        });
 
         // close in next tick
         (global.setImmediate ?? global.setTimeout)(() => {
