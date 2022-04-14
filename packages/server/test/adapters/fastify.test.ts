@@ -17,7 +17,7 @@ import {
   fastifyTRPCPlugin,
 } from '../../src/adapters/fastify';
 import { observable } from '../../src/observable';
-import { TRPCResult } from '../../src/rpc';
+import { TRPCResultMessage } from '../../src/rpc';
 
 const config = {
   port: 2022,
@@ -263,7 +263,7 @@ describe('anonymous user', () => {
     const sub = app.client.subscription('onMessage', undefined, {
       next(data) {
         expectTypeOf(data).not.toBeAny();
-        expectTypeOf(data).toMatchTypeOf<TRPCResult<Message>>();
+        expectTypeOf(data).toMatchTypeOf<TRPCResultMessage<Message>>();
         next(data);
       },
     });

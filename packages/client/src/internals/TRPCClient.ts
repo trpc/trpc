@@ -12,7 +12,7 @@ import {
   observableToPromise,
   share,
 } from '@trpc/server/observable';
-import { TRPCResult } from '@trpc/server/rpc';
+import { TRPCResultMessage } from '@trpc/server/rpc';
 import { CancelFn } from '..';
 import { TRPCClientError } from '../TRPCClientError';
 import { getFetch } from '../getFetch';
@@ -212,7 +212,7 @@ export class TRPCClient<TRouter extends AnyRouter> {
     path: TPath,
     input: TInput,
     opts: TRPCRequestOptions &
-      Partial<Observer<TRPCResult<TOutput>, TRPCClientError<TRouter>>>,
+      Partial<Observer<TRPCResultMessage<TOutput>, TRPCClientError<TRouter>>>,
   ): Unsubscribable {
     const observable$ = this.$request<TInput, TOutput>({
       type: 'subscription',
@@ -230,7 +230,7 @@ export class TRPCClient<TRouter extends AnyRouter> {
           opts.error?.(err);
           return;
         }
-        opts.next?.(result.data.result);
+        opts.next?.(result.data.result as TRPCResultMessage<TOutput>);
       },
       error(err) {
         opts.error?.(err);

@@ -139,7 +139,7 @@ See [/examples/next-prisma-starter-websockets](https://github.com/trpc/trpc/tree
 ```ts
 {
   id: number | string;
-  jsonrpc?: '2.0';
+  jsonrpc?: '2.0'; // optional
   method: 'query' | 'mutation';
   params: {
     path: string;
@@ -155,7 +155,7 @@ _... below, or an error._
 ```ts
 {
   id: number | string;
-  jsonrpc: '2.0';
+  jsonrpc?: '2.0'; // only defined if included in request
   result: {
     type: 'data'; // always 'data' for mutation / queries
     data: TOutput; // output from procedure
@@ -196,17 +196,17 @@ _... below, or an error._
 ```ts
 {
   id: number | string;
-  jsonrpc: '2.0';
+  jsonrpc?: '2.0';
   result: (
     | {
-      type: 'data';
+        type: 'data';
         data: TData; // subscription emitted data
       }
     | {
-        type: 'started'; // sub started
+        type: 'started'; // subscription started
       }
     | {
-        type: 'stopped'; // sub stopped
+        type: 'stopped'; // subscription stopped
       }
   )
 }
@@ -218,6 +218,6 @@ See https://www.jsonrpc.org/specification#error_object or [Error Formatting](../
 
 ## Notifications from Server to Client
 
-### `{id: null, type: 'reconnect' }`
+### `{ id: null, type: 'reconnect' }`
 
 Tells clients to reconnect before shutting down server. Invoked by `wssHandler.broadcastReconnectNotification()`.
