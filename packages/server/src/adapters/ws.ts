@@ -5,6 +5,7 @@ import { BaseHandlerOptions } from '../internals/BaseHandlerOptions';
 import { callProcedure } from '../internals/callProcedure';
 import { getErrorFromUnknown } from '../internals/errors';
 import { transformTRPCResponse } from '../internals/transformTRPCResponse';
+import { Observable, Unsubscribable } from '../observable';
 import { AnyRouter, ProcedureType, inferRouterContext } from '../router';
 import {
   TRPCErrorResponse,
@@ -12,7 +13,6 @@ import {
   TRPCRequest,
   TRPCResponse,
 } from '../rpc';
-import { Subscription } from '../subscription';
 import { CombinedDataTransformer } from '../transformer';
 import { NodeHTTPCreateContextOption } from './node-http';
 
@@ -97,10 +97,7 @@ export function applyWSSHandler<TRouter extends AnyRouter>(
 
   const { transformer } = router._def;
   wss.on('connection', async (client, req) => {
-    const clientSubscriptions = new Map<
-      number | string,
-      Subscription<TRouter>
-    >();
+    const clientSubscriptions = new Map<number | string, Unsubscribable>();
 
     function respond(untransformedJSON: TRPCResponse) {
       client.send(
@@ -122,7 +119,7 @@ export function applyWSSHandler<TRouter extends AnyRouter>(
       if (msg.method === 'subscription.stop') {
         const sub = clientSubscriptions.get(id);
         if (sub) {
-          sub.destroy();
+          sub.unsubscribe();
         }
         clientSubscriptions.delete(id);
         return;
@@ -139,7 +136,9 @@ export function applyWSSHandler<TRouter extends AnyRouter>(
           ctx,
         });
 
-        if (!(result instanceof Subscription)) {
+        // check if returned value is an observable
+        // otherwise just send the value as data
+        if (!(typeof result === 'object' && result && 'subscribe' in result)) {
           respond({
             id,
             result: {
@@ -150,55 +149,57 @@ export function applyWSSHandler<TRouter extends AnyRouter>(
           return;
         }
 
-        const sub = result;
+        const observable = result as Observable<unknown, unknown>;
+        const sub = observable.subscribe({
+          next(data) {
+            respond({
+              id,
+              result: {
+                type: 'data',
+                data,
+              },
+            });
+          },
+          error(err) {
+            const error = getErrorFromUnknown(err);
+            const json: TRPCErrorResponse = {
+              id,
+              error: router.getErrorShape({
+                error,
+                type,
+                path,
+                input,
+                ctx,
+              }),
+            };
+            opts.onError?.({ error, path, type, ctx, req, input });
+            respond(json);
+          },
+          complete() {
+            respond({
+              id,
+              result: {
+                type: 'stopped',
+              },
+            });
+          },
+        });
         /* istanbul ignore next */
         if (client.readyState !== client.OPEN) {
           // if the client got disconnected whilst initializing the subscription
-          sub.destroy();
+          sub.unsubscribe();
           return;
         }
         /* istanbul ignore next */
         if (clientSubscriptions.has(id)) {
           // duplicate request ids for client
-          sub.destroy();
+          sub.unsubscribe();
           throw new TRPCError({
             message: `Duplicate id ${id}`,
             code: 'BAD_REQUEST',
           });
         }
         clientSubscriptions.set(id, sub);
-        sub.on('data', (data: unknown) => {
-          respond({
-            id,
-            result: {
-              type: 'data',
-              data,
-            },
-          });
-        });
-        sub.on('error', (_error: unknown) => {
-          const error = getErrorFromUnknown(_error);
-          const json: TRPCErrorResponse = {
-            id,
-            error: router.getErrorShape({
-              error,
-              type,
-              path,
-              input,
-              ctx,
-            }),
-          };
-          opts.onError?.({ error, path, type, ctx, req, input });
-          respond(json);
-        });
-        sub.on('destroy', () => {
-          respond({
-            id,
-            result: {
-              type: 'stopped',
-            },
-          });
-        });
 
         respond({
           id,
@@ -206,7 +207,6 @@ export function applyWSSHandler<TRouter extends AnyRouter>(
             type: 'started',
           },
         });
-        await sub.start();
       } catch (cause) /* istanbul ignore next */ {
         // procedure threw an error
         const error = getErrorFromUnknown(cause);
@@ -250,7 +250,7 @@ export function applyWSSHandler<TRouter extends AnyRouter>(
 
     client.once('close', () => {
       for (const sub of clientSubscriptions.values()) {
-        sub.destroy();
+        sub.unsubscribe();
       }
       clientSubscriptions.clear();
     });

@@ -12,6 +12,7 @@ import { httpBatchLink } from '../../client/src';
 import * as trpc from '../src';
 import { Maybe, TRPCError } from '../src';
 import { CreateHTTPContextOptions } from '../src/adapters/standalone';
+import { observable } from '../src/observable';
 
 test('smoke test', async () => {
   const { client, close } = routerToServerAndClient(
@@ -393,8 +394,8 @@ describe('createCaller()', () => {
     .subscription('sub', {
       input: z.number(),
       async resolve({ input }) {
-        return new trpc.Subscription<{ input: typeof input }>((emit) => {
-          emit.data({ input });
+        return observable<{ input: typeof input }>((emit) => {
+          emit.next({ input });
           return () => {
             // noop
           };
@@ -413,15 +414,15 @@ describe('createCaller()', () => {
     expect(data).toEqual({ input: 2 });
   });
   test('subscription()', async () => {
-    const sub = await router.createCaller({}).subscription('sub', 3);
-
+    const subObservable = await router.createCaller({}).subscription('sub', 3);
     await new Promise<void>((resolve) => {
-      sub.on('data', (data: { input: number }) => {
-        expect(data).toEqual({ input: 3 });
-        expectTypeOf(data).toMatchTypeOf<{ input: number }>();
-        resolve();
+      subObservable.subscribe({
+        next(data: { input: number }) {
+          expect(data).toEqual({ input: 3 });
+          expectTypeOf(data).toMatchTypeOf<{ input: number }>();
+          resolve();
+        },
       });
-      sub.start();
     });
   });
 });
@@ -445,8 +446,8 @@ describe('createCaller()', () => {
     .subscription('sub', {
       input: z.number(),
       async resolve({ input }) {
-        return new trpc.Subscription<{ input: typeof input }>((emit) => {
-          emit.data({ input });
+        return observable<{ input: typeof input }>((emit) => {
+          emit.next({ input });
           return () => {
             // noop
           };
@@ -465,14 +466,15 @@ describe('createCaller()', () => {
     expect(data).toEqual({ input: 2 });
   });
   test('subscription()', async () => {
-    const sub = await router.createCaller({}).subscription('sub', 3);
+    const subObservable = await router.createCaller({}).subscription('sub', 3);
     await new Promise<void>((resolve) => {
-      sub.on('data', (data: { input: number }) => {
-        expect(data).toEqual({ input: 3 });
-        expectTypeOf(data).toMatchTypeOf<{ input: number }>();
-        resolve();
+      subObservable.subscribe({
+        next(data: { input: number }) {
+          expect(data).toEqual({ input: 3 });
+          expectTypeOf(data).toMatchTypeOf<{ input: number }>();
+          resolve();
+        },
       });
-      sub.start();
     });
   });
 });

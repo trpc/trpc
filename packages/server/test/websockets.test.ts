@@ -13,6 +13,7 @@ import { wsLink } from '../../client/src';
 import * as trpc from '../src';
 import { TRPCError } from '../src';
 import { applyWSSHandler } from '../src/adapters/ws';
+import { Observable, observable } from '../src/observable';
 import { TRPCRequest, TRPCResult } from '../src/rpc';
 
 type Message = {
@@ -21,7 +22,7 @@ type Message = {
 function factory(config?: { createContext: () => Promise<any> }) {
   const ee = new EventEmitter();
   const subRef: {
-    current: trpc.Subscription<Message>;
+    current: Observable<Message, unknown>;
   } = {} as any;
   const onNewMessageSubscription = jest.fn();
   const subscriptionEnded = jest.fn();
@@ -60,18 +61,16 @@ function factory(config?: { createContext: () => Promise<any> }) {
       .subscription('onMessage', {
         input: z.string().nullish(),
         resolve() {
-          const sub = (subRef.current = new trpc.Subscription<Message>(
-            (emit) => {
-              const onMessage = (data: Message) => {
-                emit.data(data);
-              };
-              ee.on('server:msg', onMessage);
-              return () => {
-                subscriptionEnded();
-                ee.off('server:msg', onMessage);
-              };
-            },
-          ));
+          const sub = (subRef.current = observable<Message>((emit) => {
+            const onMessage = (data: Message) => {
+              emit.next(data);
+            };
+            ee.on('server:msg', onMessage);
+            return () => {
+              subscriptionEnded();
+              ee.off('server:msg', onMessage);
+            };
+          }));
           ee.emit('subscription:created');
           onNewMessageSubscription();
           return sub;

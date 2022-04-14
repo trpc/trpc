@@ -62,14 +62,19 @@
       "import": "./dist/rpc/index.mjs",
       "require": "./dist/rpc/index.js",
       "default": "./dist/rpc/index.js"
+    },
+    "./observable": {
+      "import": "./dist/observable/index.mjs",
+      "require": "./dist/observable/index.js",
+      "default": "./dist/observable/index.js"
     }
   },
   "files": [
     "README.md",
     "dist",
     "adapters",
-    "ws",
     "rpc",
+    "observable",
     "src"
   ],
   "publishConfig": {

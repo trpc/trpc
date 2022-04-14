@@ -164,7 +164,7 @@ const postResult = client.query('posts', null, {
 ```tsx
 import { TRPCLink } from '@trpc/client';
 import { AppRouter } from 'server/routers/_app';
-import { observable } from '@trpc/client/observable';
+import { observable } from '@trpc/server/observable';
 
 export const customLink: TRPCLink<AppRouter> = () => {
   // here we just got initialized in the app - this happens once per app

@@ -2,6 +2,7 @@
 import * as trpc from '@trpc/server';
 import { createHTTPServer } from '@trpc/server/adapters/standalone';
 import { applyWSSHandler } from '@trpc/server/adapters/ws';
+import { observable } from '@trpc/server/observable';
 import ws from 'ws';
 import { z } from 'zod';
 
@@ -36,10 +37,10 @@ export const appRouter = trpc
   })
   .subscription('randomNumber', {
     resolve() {
-      return new trpc.Subscription<{ randomNumber: number }>((emit) => {
+      return observable<{ randomNumber: number }>((emit) => {
         const timer = setInterval(() => {
           // emits a number every second
-          emit.data({ randomNumber: Math.random() });
+          emit.next({ randomNumber: Math.random() });
         }, 200);
 
         return () => {

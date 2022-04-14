@@ -343,22 +343,23 @@ export function createReactQueryHooks<
       }
       const [path, input] = pathAndInput;
       let isStopped = false;
-      const subscription = client.subscription(
-        path,
-        (input ?? undefined) as any,
-        {
-          error: (err) => {
-            if (!isStopped) {
-              opts.error?.(err);
-            }
-          },
-          next: (res) => {
-            if (res.type === 'data' && !isStopped) {
-              opts.next(res.data);
-            }
-          },
+      const subscription = client.subscription<
+        TRouter['_def']['subscriptions'],
+        TPath,
+        TOutput,
+        inferProcedureInput<TRouter['_def']['subscriptions']>
+      >(path, (input ?? undefined) as any, {
+        error: (err) => {
+          if (!isStopped) {
+            opts.error?.(err);
+          }
         },
-      );
+        next: (res) => {
+          if (res.type === 'data' && !isStopped) {
+            opts.next(res.data);
+          }
+        },
+      });
       return () => {
         isStopped = true;
         subscription.unsubscribe();

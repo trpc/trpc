@@ -31,12 +31,13 @@ import {
   createWSClient,
   wsLink,
 } from '../../client/src/links/wsLink';
-import { observable } from '../../client/src/observable';
 import { withTRPC } from '../../next/src';
 import { OutputWithCursor, createReactQueryHooks } from '../../react/src';
 import { createSSGHelpers } from '../../react/ssg';
 import { DefaultErrorShape } from '../src';
 import { TRPCError } from '../src/TRPCError';
+import { getErrorFromUnknown } from '../src/internals/errors';
+import { Observable, Observer, observable } from '../src/observable';
 
 setLogger({
   log() {},
@@ -50,6 +51,42 @@ type Post = {
   title: string;
   createdAt: number;
 };
+
+function subscriptionPullFactory<TOutput>(opts: {
+  /**
+   * The interval of how often the function should run
+   */
+  intervalMs: number;
+  pull(emit: Observer<TOutput, unknown>): void | Promise<void>;
+}): Observable<TOutput, unknown> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let timer: any;
+  let stopped = false;
+  async function _pull(emit: Observer<TOutput, unknown>) {
+    /* istanbul ignore next */
+    if (stopped) {
+      return;
+    }
+    try {
+      await opts.pull(emit);
+    } catch (err /* istanbul ignore next */) {
+      emit.error(getErrorFromUnknown(err));
+    }
+
+    /* istanbul ignore else */
+    if (!stopped) {
+      timer = setTimeout(() => _pull(emit), opts.intervalMs);
+    }
+  }
+
+  return observable<TOutput>((emit) => {
+    _pull(emit).catch((err) => emit.error(getErrorFromUnknown(err)));
+    return () => {
+      clearTimeout(timer);
+      stopped = true;
+    };
+  });
+}
 
 function createAppRouter() {
   const db: {
@@ -153,10 +190,10 @@ function createAppRouter() {
     .subscription('newPosts', {
       input: z.number(),
       resolve({ input }) {
-        return trpcServer.subscriptionPullFactory<Post>({
+        return subscriptionPullFactory<Post>({
           intervalMs: 1,
           pull(emit) {
-            db.posts.filter((p) => p.createdAt > input).forEach(emit.data);
+            db.posts.filter((p) => p.createdAt > input).forEach(emit.next);
           },
         });
       },
@@ -169,12 +206,12 @@ function createAppRouter() {
         const { cursor } = input;
         postLiveInputs.push(input);
 
-        return trpcServer.subscriptionPullFactory<OutputWithCursor<Post[]>>({
+        return subscriptionPullFactory<OutputWithCursor<Post[]>>({
           intervalMs: 10,
           pull(emit) {
             const newCursor = hash(db.posts);
             if (newCursor !== cursor) {
-              emit.data({ data: db.posts, cursor: newCursor });
+              emit.next({ data: db.posts, cursor: newCursor });
             }
           },
         });

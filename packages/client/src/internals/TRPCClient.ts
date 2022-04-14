@@ -5,6 +5,13 @@ import {
   inferProcedureOutput,
   inferSubscriptionOutput,
 } from '@trpc/server';
+import {
+  Observer,
+  Unsubscribable,
+  inferObservableValue,
+  observableToPromise,
+  share,
+} from '@trpc/server/observable';
 import { TRPCResult } from '@trpc/server/rpc';
 import { CancelFn } from '..';
 import { TRPCClientError } from '../TRPCClientError';
@@ -19,13 +26,6 @@ import {
   OperationLink,
   TRPCLink,
 } from '../links/types';
-import {
-  Observer,
-  Unsubscribable,
-  inferObservableValue,
-  share,
-} from '../observable';
-import { observableToPromise } from '../observable/internals/observableToPromise';
 import { getAbortController } from './fetchHelpers';
 
 type CancellablePromise<T = unknown> = Promise<T> & {
