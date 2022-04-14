@@ -168,7 +168,7 @@ export function applyWSSHandler<TRouter extends AnyRouter>(
             });
           },
           error(err) {
-            const error = getErrorFromUnknown(_error);
+            const error = getErrorFromUnknown(err);
             opts.onError?.({ error, path, type, ctx, req, input });
             respond({
               id,
