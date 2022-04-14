@@ -13,7 +13,7 @@ test('test 404', async ({ page }) => {
   expect(res?.status()).toBe(404);
 });
 
-test('add a post', async ({ page }) => {
+test('add a post', async ({ page, browser }) => {
   const nonce = `${Math.random()}`;
 
   await page.goto('/');
@@ -21,7 +21,15 @@ test('add a post', async ({ page }) => {
   await page.fill(`[name=text]`, nonce);
   await page.click(`form [type=submit]`);
   await page.waitForLoadState('networkidle');
-
   await page.reload();
+
   expect(await page.content()).toContain(nonce);
+
+  const ssrContext = await browser.newContext({
+    javaScriptEnabled: false,
+  });
+  const ssrPage = await ssrContext.newPage();
+  await ssrPage.goto('/');
+
+  expect(await ssrPage.content()).toContain(nonce);
 });
