@@ -53,7 +53,7 @@ A sample router is given below, save it in a file named `router.ts`.
 <details>
   <summary>router.ts</summary>
 
-```ts
+```ts title='router.ts'
 import * as trpc from '@trpc/server';
 import { z } from 'zod';
 
@@ -104,7 +104,7 @@ A sample context is given below, save it in a file named `context.ts`:
 <details>
   <summary>context.ts</summary>
 
-```ts
+```ts title='context.ts'
 import { inferAsyncReturnType } from '@trpc/server';
 import { CreateFastifyContextOptions } from '@trpc/server/adapters/fastify';
 
@@ -123,9 +123,10 @@ export type Context = inferAsyncReturnType<typeof createContext>;
 
 tRPC includes an adapter for [Fastify](https://www.fastify.io/) out of the box. This adapter lets you convert your tRPC router into an [Fastify plugin](https://www.fastify.io/docs/latest/Reference/Plugins/).
 
-```ts
-import { fastifyTRPCPlugin } from '@trpc/server/adapters/fastify';
+````ts
+```ts title='server.ts'
 import fastify from 'fastify';
+import { fastifyTRPCPlugin } from '@trpc/server/adapters/fastify';
 import { createContext } from './context';
 import { appRouter } from './router';
 
@@ -144,7 +145,7 @@ server.register(fastifyTRPCPlugin, {
     process.exit(1);
   }
 })();
-```
+````
 
 Your endpoints are now available via HTTP!
 
@@ -175,7 +176,7 @@ server.register(ws);
 
 Edit the `router.ts` file created in the previous steps and add the following code:
 
-```tsdata
+```ts title='router.ts'
 import { observable } from '@trpc/server/observable';
 
 export const appRouter = trpc
@@ -198,7 +199,7 @@ export const appRouter = trpc
 
 ### Activate the `useWSS` option
 
-```ts
+```ts title='server.ts'
 server.register(fastifyTRPCPlugin, {
   useWSS: true,
   // ...

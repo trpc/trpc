@@ -1,6 +1,7 @@
 import { httpBatchLink, loggerLink, transformerLink } from '@trpc/client';
 import { setupTRPC } from '@trpc/next';
 import type { inferProcedureInput, inferProcedureOutput } from '@trpc/server';
+import { NextPageContext } from 'next';
 import superjson from 'superjson';
 // ℹ️ Type-only import:
 // https://www.typescriptlang.org/docs/handbook/release-notes/typescript-3-8.html#type-only-imports-and-export
@@ -25,10 +26,25 @@ function getBaseUrl() {
 }
 
 /**
+ * Extend `NextPageContext` with meta data that can be picked up by `responseMeta()` when server-side rendering
+ */
+export interface SSRContext extends NextPageContext {
+  /**
+   * Set HTTP Status code
+   * @example
+   * const utils = trpc.useContext();
+   * if (utils.ssrContext) {
+   *   utils.ssrContext.status = 404;
+   * }
+   */
+  status?: number;
+}
+
+/**
  * A set of strongly-typed React hooks from your `AppRouter` type signature with `createReactQueryHooks`.
  * @link https://trpc.io/docs/react#3-create-trpc-hooks
  */
-export const trpc = setupTRPC<AppRouter>({
+export const trpc = setupTRPC<AppRouter, SSRContext>({
   /**
    * Data transformer used for hydration and dehydration.
    */
@@ -69,11 +85,21 @@ export const trpc = setupTRPC<AppRouter>({
   /**
    * Set headers or status code when doing SSR
    */
-  responseMeta({ clientErrors }) {
-    if (clientErrors.length) {
-      // propagate http first error from API calls
+  responseMeta(opts) {
+    const ctx = opts.ctx as SSRContext;
+
+    if (ctx.status) {
+      // If HTTP status set, propagate that
       return {
-        status: clientErrors[0].data?.httpStatus ?? 500,
+        status: ctx.status,
+      };
+    }
+
+    const error = opts.clientErrors[0];
+    if (error) {
+      // Propagate http first error from API calls
+      return {
+        status: error.data?.httpStatus ?? 500,
       };
     }
 

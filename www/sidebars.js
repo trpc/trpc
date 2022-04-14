@@ -13,6 +13,7 @@ module.exports = {
         'main/contributing',
         'main/love',
         'main/sponsors',
+        'main/awesome-trpc',
       ],
     },
     {
@@ -24,6 +25,7 @@ module.exports = {
         'server/merging-routers',
         'server/context',
         'server/middlewares',
+        'server/metadata',
         'server/authorization',
         'server/output-validation',
         'server/infer-types',
@@ -68,7 +70,6 @@ module.exports = {
         'further/rpc',
         'further/subscriptions',
         'further/further-reading',
-        'further/awesome-trpc',
       ],
     },
   ],

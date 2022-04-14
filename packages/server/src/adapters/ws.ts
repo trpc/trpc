@@ -1,9 +1,9 @@
-import http from 'http';
+import { IncomingMessage } from 'http';
 import ws from 'ws';
 import { TRPCError } from '../TRPCError';
 import { BaseHandlerOptions } from '../internals/BaseHandlerOptions';
 import { callProcedure } from '../internals/callProcedure';
-import { getErrorFromUnknown } from '../internals/errors';
+import { getCauseFromUnknown, getErrorFromUnknown } from '../internals/errors';
 import { transformTRPCResponse } from '../internals/transformTRPCResponse';
 import { Observable, Unsubscribable } from '../observable';
 import { AnyRouter, ProcedureType, inferRouterContext } from '../router';
@@ -84,11 +84,11 @@ function parseMessage(
  */
 export type WSSHandlerOptions<TRouter extends AnyRouter> = BaseHandlerOptions<
   TRouter,
-  http.IncomingMessage
+  IncomingMessage
 > & {
   wss: ws.Server;
   process?: NodeJS.Process;
-} & NodeHTTPCreateContextOption<TRouter, http.IncomingMessage, ws>;
+} & NodeHTTPCreateContextOption<TRouter, IncomingMessage, ws>;
 
 export function applyWSSHandler<TRouter extends AnyRouter>(
   opts: WSSHandlerOptions<TRouter>,
@@ -232,7 +232,7 @@ export function applyWSSHandler<TRouter extends AnyRouter>(
       } catch (cause) {
         const error = new TRPCError({
           code: 'PARSE_ERROR',
-          cause,
+          cause: getCauseFromUnknown(cause),
         });
 
         respond({

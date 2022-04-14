@@ -1,6 +1,6 @@
 {
   "name": "@trpc/client",
-  "version": "10.0.0-alpha.20",
+  "version": "10.0.0-alpha.21",
   "description": "tRPC Client lib",
   "author": "KATT",
   "license": "MIT",
@@ -9,6 +9,14 @@
     "type": "git",
     "url": "git+https://github.com/trpc/trpc.git",
     "directory": "packages/client"
+  },
+  "eslintConfig": {
+    "rules": {
+      "no-restricted-imports": [
+        "error",
+        "@trpc/client"
+      ]
+    }
   },
   "main": "dist/index.js",
   "module": "dist/index.mjs",
@@ -36,7 +44,7 @@
     "@trpc/server": "^9.12.0"
   },
   "devDependencies": {
-    "@trpc/server": "^10.0.0-alpha.20"
+    "@trpc/server": "^10.0.0-alpha.21"
   },
   "publishConfig": {
     "access": "public"

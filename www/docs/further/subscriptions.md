@@ -20,14 +20,14 @@ Subscriptions & WebSockets are in beta, alpha & might change without a major ver
 
 ### Adding a subscription procedure
 
-```tsx
+```tsx title='server/router.ts'
 import * as trpc from '@trpc/server';
 import { EventEmitter } from 'events';
 
 // create a global event emitter (could be replaced by redis, etc)
 const ee = new EventEmitter();
 
-trpc
+export const appRouter = trpc
   .router()
   .subscription('onAdd', {
     resolve({ ctx }) {
@@ -70,7 +70,7 @@ trpc
 yarn add ws
 ```
 
-```ts
+```ts title='server/wsServer.ts'
 import { applyWSSHandler } from '@trpc/server/adapters/ws';
 import ws from 'ws';
 import { appRouter } from './routers/app';
@@ -102,7 +102,7 @@ process.on('SIGTERM', () => {
 You can [use Links](../client/links.md) to route queries and/or mutations to HTTP transport and subscriptions over WebSockets.
 :::
 
-```tsx
+```tsx title='client.ts'
 import { createWSClient, wsLink } from '@trpc/client';
 import { httpBatchLink } from '@trpc/client';
 

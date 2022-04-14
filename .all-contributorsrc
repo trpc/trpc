@@ -628,6 +628,26 @@
       "contributions": [
         "financial"
       ]
+    },
+    {
+      "login": "LouisHaftmann",
+      "name": "Louis Haftmann",
+      "avatar_url": "https://avatars.githubusercontent.com/u/30736553?v=4",
+      "profile": "https://github.com/LouisHaftmann",
+      "contributions": [
+        "code",
+        "test",
+        "doc"
+      ]
+    },
+    {
+      "login": "Perfect7M",
+      "name": "Perfect7M",
+      "avatar_url": "https://avatars.githubusercontent.com/u/5896181?v=4",
+      "profile": "https://marcin.page/",
+      "contributions": [
+        "code"
+      ]
     }
   ],
   "contributorsPerLine": 7,

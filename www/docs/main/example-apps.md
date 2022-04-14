@@ -9,7 +9,7 @@ You can clone trpc and play with local examples, or play with them in the CodeSa
 
 Here's some example apps:
 
-<table>
+<table width="100%">
   <thead>
     <tr>
       <th>Description</th>
