@@ -13,7 +13,11 @@ import { wsLink } from '../../client/src';
 import * as trpc from '../src';
 import { TRPCError } from '../src';
 import { applyWSSHandler } from '../src/adapters/ws';
-import { TRPCRequestMessage, TRPCResultMessage } from '../src/rpc';
+import {
+  TRPCClientOutgoingMessage,
+  TRPCRequestMessage,
+  TRPCResultMessage,
+} from '../src/rpc';
 
 type Message = {
   id: string;
@@ -669,4 +673,170 @@ test('regression - badly shaped request', async () => {
   `);
   rawClient.close();
   t.close();
+});
+
+describe('include "jsonrpc" in response if sent with message', () => {
+  test('queries & mutations', async () => {
+    const t = factory();
+    const rawClient = new WebSocket(t.wssUrl);
+
+    const queryMessageWithJsonRPC: TRPCClientOutgoingMessage = {
+      id: 1,
+      jsonrpc: '2.0',
+      method: 'query',
+      params: {
+        path: 'greeting',
+        input: null,
+      },
+    };
+
+    rawClient.onopen = () => {
+      rawClient.send(JSON.stringify(queryMessageWithJsonRPC));
+    };
+
+    const queryResult = await new Promise<string>((resolve) => {
+      rawClient.addEventListener('message', (msg) => {
+        resolve(msg.data as any);
+      });
+    });
+
+    const queryData = JSON.parse(queryResult);
+
+    expect(queryData).toMatchInlineSnapshot(`
+      Object {
+        "id": 1,
+        "jsonrpc": "2.0",
+        "result": Object {
+          "data": "hello world",
+          "type": "data",
+        },
+      }
+    `);
+
+    const mutationMessageWithJsonRPC: TRPCClientOutgoingMessage = {
+      id: 1,
+      jsonrpc: '2.0',
+      method: 'mutation',
+      params: {
+        path: 'slow',
+        input: undefined,
+      },
+    };
+
+    rawClient.send(JSON.stringify(mutationMessageWithJsonRPC));
+
+    const mutationResult = await new Promise<string>((resolve) => {
+      rawClient.addEventListener('message', (msg) => {
+        resolve(msg.data as any);
+      });
+    });
+
+    const mutationData = JSON.parse(mutationResult);
+
+    expect(mutationData).toMatchInlineSnapshot(`
+      Object {
+        "id": 1,
+        "jsonrpc": "2.0",
+        "result": Object {
+          "data": "slow query resolved",
+          "type": "data",
+        },
+      }
+    `);
+
+    rawClient.close();
+    t.close();
+  });
+
+  test('subscriptions', async () => {
+    const t = factory();
+    const rawClient = new WebSocket(t.wssUrl);
+
+    const subscriptionMessageWithJsonRPC: TRPCClientOutgoingMessage = {
+      id: 1,
+      jsonrpc: '2.0',
+      method: 'subscription',
+      params: {
+        path: 'onMessage',
+        input: null,
+      },
+    };
+
+    rawClient.onopen = () => {
+      rawClient.send(JSON.stringify(subscriptionMessageWithJsonRPC));
+    };
+
+    const startedResult = await new Promise<string>((resolve) => {
+      rawClient.addEventListener('message', (msg) => {
+        console.log({ data: msg.data });
+        resolve(msg.data as any);
+      });
+    });
+
+    const startedData = JSON.parse(startedResult);
+
+    expect(startedData).toMatchInlineSnapshot(`
+      Object {
+        "id": 1,
+        "jsonrpc": "2.0",
+        "result": Object {
+          "type": "started",
+        },
+      }
+    `);
+
+    const messageResult = await new Promise<string>((resolve) => {
+      rawClient.addEventListener('message', (msg) => {
+        console.log({ data: msg.data });
+        resolve(msg.data as any);
+      });
+
+      t.ee.emit('server:msg', { id: '1' });
+    });
+
+    const messageData = JSON.parse(messageResult);
+
+    expect(messageData).toMatchInlineSnapshot(`
+      Object {
+        "id": 1,
+        "jsonrpc": "2.0",
+        "result": Object {
+          "data": Object {
+            "id": "1",
+          },
+          "type": "data",
+        },
+      }
+    `);
+
+    const subscriptionStopNotificationWithJsonRPC: TRPCClientOutgoingMessage = {
+      id: 1,
+      jsonrpc: '2.0',
+      method: 'subscription.stop',
+    };
+
+    const stoppedResult = await new Promise<string>((resolve) => {
+      rawClient.addEventListener('message', (msg) => {
+        console.log({ data: msg.data });
+        resolve(msg.data as any);
+      });
+
+      rawClient.send(JSON.stringify(subscriptionStopNotificationWithJsonRPC));
+    });
+
+    const stoppedData = JSON.parse(stoppedResult);
+
+    expect(stoppedData).toMatchInlineSnapshot(`
+      Object {
+        "id": 1,
+        "jsonrpc": "2.0",
+        "result": Object {
+          "type": "stopped",
+        },
+      }
+    `);
+
+    rawClient.close();
+    t.close();
+  });
 });

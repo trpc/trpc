@@ -74,7 +74,15 @@ function parseMessage(
   const { input: rawInput, path } = params;
   assertIsString(path);
   const input = transformer.input.deserialize(rawInput);
-  return { jsonrpc, id, method, params: { input, path } };
+  return {
+    id,
+    jsonrpc,
+    method,
+    params: {
+      input,
+      path,
+    },
+  };
 }
 
 /**
@@ -109,7 +117,7 @@ export function applyWSSHandler<TRouter extends AnyRouter>(
     let ctx: inferRouterContext<TRouter> | undefined = undefined;
 
     async function handleRequest(msg: TRPCClientOutgoingMessage) {
-      const { id } = msg;
+      const { id, jsonrpc } = msg;
       /* istanbul ignore next */
       if (id === null) {
         throw new TRPCError({
@@ -140,6 +148,7 @@ export function applyWSSHandler<TRouter extends AnyRouter>(
         if (!(result instanceof Subscription)) {
           respond({
             id,
+            jsonrpc,
             result: {
               type: 'data',
               data: result,
@@ -168,6 +177,7 @@ export function applyWSSHandler<TRouter extends AnyRouter>(
         sub.on('data', (data: unknown) => {
           respond({
             id,
+            jsonrpc,
             result: {
               type: 'data',
               data,
@@ -179,6 +189,7 @@ export function applyWSSHandler<TRouter extends AnyRouter>(
           opts.onError?.({ error, path, type, ctx, req, input });
           respond({
             id,
+            jsonrpc,
             error: router.getErrorShape({
               error,
               type,
@@ -191,6 +202,7 @@ export function applyWSSHandler<TRouter extends AnyRouter>(
         sub.on('destroy', () => {
           respond({
             id,
+            jsonrpc,
             result: {
               type: 'stopped',
             },
@@ -199,6 +211,7 @@ export function applyWSSHandler<TRouter extends AnyRouter>(
 
         respond({
           id,
+          jsonrpc,
           result: {
             type: 'started',
           },
@@ -207,15 +220,18 @@ export function applyWSSHandler<TRouter extends AnyRouter>(
       } catch (cause) /* istanbul ignore next */ {
         // procedure threw an error
         const error = getErrorFromUnknown(cause);
-        const json = router.getErrorShape({
-          error,
-          type,
-          path,
-          input,
-          ctx,
-        });
         opts.onError?.({ error, path, type, ctx, req, input });
-        respond({ id, error: json });
+        respond({
+          id,
+          jsonrpc,
+          error: router.getErrorShape({
+            error,
+            type,
+            path,
+            input,
+            ctx,
+          }),
+        });
       }
     }
     client.on('message', async (message) => {
