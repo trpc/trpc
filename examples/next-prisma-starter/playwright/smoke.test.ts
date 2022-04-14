@@ -21,6 +21,8 @@ test('add a post', async ({ page, browser }) => {
   await page.fill(`[name=text]`, nonce);
   await page.click(`form [type=submit]`);
   await page.waitForLoadState('networkidle');
+  await page.reload();
+
   expect(await page.content()).toContain(nonce);
 
   const ssrContext = await browser.newContext({
