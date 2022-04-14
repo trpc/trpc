@@ -161,7 +161,6 @@ export function applyWSSHandler<TRouter extends AnyRouter>(
           next(data) {
             respond({
               id,
-              jsonrpc,
               result: {
                 type: 'data',
                 data,
@@ -169,11 +168,10 @@ export function applyWSSHandler<TRouter extends AnyRouter>(
             });
           },
           error(err) {
-            const error = getErrorFromUnknown(err);
+            const error = getErrorFromUnknown(_error);
             opts.onError?.({ error, path, type, ctx, req, input });
             respond({
               id,
-              jsonrpc,
               error: router.getErrorShape({
                 error,
                 type,
@@ -186,7 +184,6 @@ export function applyWSSHandler<TRouter extends AnyRouter>(
           complete() {
             respond({
               id,
-              jsonrpc,
               result: {
                 type: 'stopped',
               },
