@@ -6,7 +6,7 @@ jobs:
       image: mcr.microsoft.com/playwright:v1.20.0-focal
     env:
       PLAYWRIGHT_BROWSERS_PATH: ${{ github.workspace }}/playwright
-      DATABASE_URL: postgresql://postgres:@localhost:5432/trpcdb
+      DATABASE_URL: postgresql://postgres:@postgres:5432/trpcdb
       NEXTAUTH_SECRET: supersecret
     runs-on: ${{ matrix.os }}
     timeout-minutes: 10
