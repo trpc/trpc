@@ -2,6 +2,8 @@ name: Examples E2E
 on: [push]
 jobs:
   e2e:
+    container:
+      image: mcr.microsoft.com/playwright:v1.20.0-focal
     env:
       PLAYWRIGHT_BROWSERS_PATH: ${{ github.workspace }}/playwright
       DATABASE_URL: postgresql://postgres:@localhost:5432/trpcdb
@@ -30,6 +32,7 @@ jobs:
           POSTGRES_DB: trpcdb
         ports:
           - 5432:5432
+
     steps:
       - uses: actions/checkout@v2
       - uses: actions/setup-node@v2
@@ -44,8 +47,6 @@ jobs:
         with:
           path: ${{ github.workspace }}${{ matrix.dir }}/.next/cache
           key: ${{ matrix.dir }}-${{ runner.os }}-${{ matrix.node-start }}-${{ hashFiles('**/yarn.lock') }}-nextjs
-
-      - run: yarn playwright install --with-deps
 
       - uses: actions/setup-node@v2
         with:

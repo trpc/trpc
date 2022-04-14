@@ -2,6 +2,8 @@ name: Examples E2E
 on: [push]
 jobs:
   e2e-node12:
+    container:
+      image: mcr.microsoft.com/playwright:v1.20.0-focal
     env:
       PLAYWRIGHT_BROWSERS_PATH: ${{ github.workspace }}/playwright
       DATABASE_URL: postgresql://postgres:@localhost:5432/trpcdb
