@@ -13,7 +13,7 @@ test('test 404', async ({ page }) => {
   expect(res?.status()).toBe(404);
 });
 
-test.only('add a post', async ({ page, browser }) => {
+test('add a post', async ({ page, browser }) => {
   const nonce = `${Math.random()}`;
 
   await page.goto('/');
