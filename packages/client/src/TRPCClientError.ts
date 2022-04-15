@@ -14,8 +14,8 @@ export class TRPCClientError<TRouter extends AnyRouter>
   /**
    * @deprecated use `cause`
    */
-  public readonly originalError;
-  public readonly cause;
+  public readonly originalError?: Error | undefined;
+  public readonly cause?: Error | undefined;
   public readonly shape: Maybe<inferRouterError<TRouter>>;
   public readonly data: Maybe<inferRouterError<TRouter>['data']>;
   /**
@@ -31,8 +31,8 @@ export class TRPCClientError<TRouter extends AnyRouter>
       /**
        * @deprecated use cause
        **/
-      originalError?: Maybe<Error>;
-      cause?: Maybe<Error>;
+      originalError?: Error | undefined;
+      cause?: Error | undefined;
       isDone?: boolean;
     },
   ) {
@@ -59,7 +59,7 @@ export class TRPCClientError<TRouter extends AnyRouter>
     if (!(result instanceof Error)) {
       return new TRPCClientError<TRouter>((result.error as any).message ?? '', {
         ...opts,
-        cause: null,
+        cause: undefined,
         result: result,
       });
     }

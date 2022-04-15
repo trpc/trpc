@@ -5,8 +5,8 @@ export class TRPCError extends Error {
   /**
    * @deprecated use `cause`
    */
-  public readonly originalError?: unknown;
-  public readonly cause?: unknown;
+  public readonly originalError?: Error | undefined;
+  public readonly cause?: Error | undefined;
   public readonly code;
 
   constructor(opts: {
@@ -15,8 +15,8 @@ export class TRPCError extends Error {
     /**
      * @deprecated use `cause`
      */
-    originalError?: unknown;
-    cause?: unknown;
+    originalError?: Error | undefined;
+    cause?: Error | undefined;
   }) {
     const cause = opts.cause ?? opts.originalError;
     const code = opts.code;
