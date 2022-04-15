@@ -22,7 +22,7 @@ export function getErrorFromUnknown(cause: unknown): TRPCError {
   }
   const err = new TRPCError({
     code: 'INTERNAL_SERVER_ERROR',
-    cause,
+    cause: cause as Error,
   });
 
   // take stack trace from cause

@@ -40,7 +40,7 @@ function getRawProcedureInputOrThrow(req: HTTPRequest) {
   } catch (cause) {
     throw new TRPCError({
       code: 'PARSE_ERROR',
-      cause,
+      cause: cause as Error,
     });
   }
 }

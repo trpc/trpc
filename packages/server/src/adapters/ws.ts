@@ -232,7 +232,7 @@ export function applyWSSHandler<TRouter extends AnyRouter>(
       } catch (cause) {
         const error = new TRPCError({
           code: 'PARSE_ERROR',
-          cause,
+          cause: cause as Error,
         });
 
         respond({

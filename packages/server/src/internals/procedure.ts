@@ -140,7 +140,7 @@ export class Procedure<
     } catch (cause) {
       throw new TRPCError({
         code: 'BAD_REQUEST',
-        cause,
+        cause: cause as Error,
       });
     }
   }
@@ -151,7 +151,7 @@ export class Procedure<
     } catch (cause) {
       throw new TRPCError({
         code: 'INTERNAL_SERVER_ERROR',
-        cause,
+        cause: cause as Error,
         message: 'Output validation failed',
       });
     }
