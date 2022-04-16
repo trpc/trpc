@@ -563,7 +563,10 @@
       "avatar_url": "https://avatars.githubusercontent.com/u/69924001?v=4",
       "profile": "https://jamesbe.com",
       "contributions": [
-        "bug"
+        "bug",
+        "ideas",
+        "code",
+        "test"
       ]
     },
     {
