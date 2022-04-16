@@ -2,9 +2,12 @@ name: Examples E2E
 on: [push]
 jobs:
   e2e-node12:
+    container:
+      image: mcr.microsoft.com/playwright:v1.20.0-focal
+      options: --user 1001
     env:
       PLAYWRIGHT_BROWSERS_PATH: ${{ github.workspace }}/playwright
-      DATABASE_URL: postgresql://postgres:@localhost:5432/trpcdb
+      DATABASE_URL: postgresql://postgres:@postgres:5432/trpcdb
     runs-on: ${{ matrix.os }}
     timeout-minutes: 10
     strategy:
@@ -34,8 +37,6 @@ jobs:
         with:
           path: ${{ github.workspace }}${{ matrix.dir }}/.next/cache
           key: ${{ matrix.dir }}-${{ runner.os }}-${{ matrix.node-start }}-${{ hashFiles('**/yarn.lock') }}-nextjs
-
-      - run: yarn playwright install --with-deps
 
       - uses: actions/setup-node@v2
         with:
