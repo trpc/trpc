@@ -216,7 +216,8 @@ export function applyWSSHandler<TRouter extends AnyRouter>(
         /* istanbul ignore next */
         if (client.readyState !== client.OPEN) {
           // if the client got disconnected whilst initializing the subscription
-          stopSubscription(sub, { id, jsonrpc });
+          // no need to send stopped message if the client is disconnected
+          sub.unsubscribe();
           return;
         }
 
