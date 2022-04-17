@@ -8,6 +8,7 @@ import { transformTRPCResponse } from '../internals/transformTRPCResponse';
 import { Unsubscribable, isObservable } from '../observable';
 import { AnyRouter, ProcedureType, inferRouterContext } from '../router';
 import {
+  JSONRPC2,
   TRPCClientOutgoingMessage,
   TRPCReconnectNotification,
   TRPCResponseMessage,
@@ -112,6 +113,24 @@ export function applyWSSHandler<TRouter extends AnyRouter>(
       );
     }
 
+    function stopSubscription(
+      subscription: Unsubscribable,
+      {
+        id,
+        jsonrpc,
+      }: { id: JSONRPC2.RequestId; jsonrpc: JSONRPC2.BaseEnvelope['jsonrpc'] },
+    ) {
+      subscription.unsubscribe();
+
+      respond({
+        id,
+        jsonrpc,
+        result: {
+          type: 'stopped',
+        },
+      });
+    }
+
     const ctxPromise = createContext?.({ req, res: client });
     let ctx: inferRouterContext<TRouter> | undefined = undefined;
 
@@ -127,15 +146,7 @@ export function applyWSSHandler<TRouter extends AnyRouter>(
       if (msg.method === 'subscription.stop') {
         const sub = clientSubscriptions.get(id);
         if (sub) {
-          sub.unsubscribe();
-
-          respond({
-            id,
-            jsonrpc,
-            result: {
-              type: 'stopped',
-            },
-          });
+          stopSubscription(sub, { id, jsonrpc });
         }
         clientSubscriptions.delete(id);
         return;
@@ -205,13 +216,14 @@ export function applyWSSHandler<TRouter extends AnyRouter>(
         /* istanbul ignore next */
         if (client.readyState !== client.OPEN) {
           // if the client got disconnected whilst initializing the subscription
-          sub.unsubscribe();
+          stopSubscription(sub, { id, jsonrpc });
           return;
         }
+
         /* istanbul ignore next */
         if (clientSubscriptions.has(id)) {
           // duplicate request ids for client
-          sub.unsubscribe();
+          stopSubscription(sub, { id, jsonrpc });
           throw new TRPCError({
             message: `Duplicate id ${id}`,
             code: 'BAD_REQUEST',
