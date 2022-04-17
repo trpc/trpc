@@ -749,7 +749,7 @@ describe('include "jsonrpc" in response if sent with message', () => {
     t.close();
   });
 
-  test.only('subscriptions', async () => {
+  test('subscriptions', async () => {
     const t = factory();
     const rawClient = new WebSocket(t.wssUrl);
 
