@@ -5,6 +5,10 @@ export type inferObservableValue<
   TObservable extends Observable<unknown, unknown>,
 > = TObservable extends Observable<infer TValue, unknown> ? TValue : never;
 
+export function isObservable(x: unknown): x is Observable<unknown, unknown> {
+  return typeof x === 'object' && x !== null && 'subscribe' in x;
+}
+
 export function observable<TValue, TError = unknown>(
   subscribe: (observer: Observer<TValue, TError>) => TeardownLogic,
 ): Observable<TValue, TError> {

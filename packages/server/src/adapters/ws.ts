@@ -5,7 +5,7 @@ import { BaseHandlerOptions } from '../internals/BaseHandlerOptions';
 import { callProcedure } from '../internals/callProcedure';
 import { getCauseFromUnknown, getErrorFromUnknown } from '../internals/errors';
 import { transformTRPCResponse } from '../internals/transformTRPCResponse';
-import { Observable, Unsubscribable } from '../observable';
+import { Unsubscribable, isObservable } from '../observable';
 import { AnyRouter, ProcedureType, inferRouterContext } from '../router';
 import {
   TRPCClientOutgoingMessage,
@@ -65,6 +65,7 @@ function parseMessage(
   if (method === 'subscription.stop') {
     return {
       id,
+      jsonrpc,
       method,
     };
   }
@@ -110,6 +111,7 @@ export function applyWSSHandler<TRouter extends AnyRouter>(
         JSON.stringify(transformTRPCResponse(router, untransformedJSON)),
       );
     }
+
     const ctxPromise = createContext?.({ req, res: client });
     let ctx: inferRouterContext<TRouter> | undefined = undefined;
 
@@ -126,6 +128,14 @@ export function applyWSSHandler<TRouter extends AnyRouter>(
         const sub = clientSubscriptions.get(id);
         if (sub) {
           sub.unsubscribe();
+
+          respond({
+            id,
+            jsonrpc,
+            result: {
+              type: 'stopped',
+            },
+          });
         }
         clientSubscriptions.delete(id);
         return;
@@ -142,9 +152,8 @@ export function applyWSSHandler<TRouter extends AnyRouter>(
           ctx,
         });
 
-        // check if returned value is an observable
-        // otherwise just send the value as data
-        if (!(typeof result === 'object' && result && 'subscribe' in result)) {
+        // send the value as data if the result is not an observable
+        if (!isObservable(result)) {
           respond({
             id,
             jsonrpc,
@@ -156,11 +165,12 @@ export function applyWSSHandler<TRouter extends AnyRouter>(
           return;
         }
 
-        const observable = result as Observable<unknown, unknown>;
+        const observable = result;
         const sub = observable.subscribe({
           next(data) {
             respond({
               id,
+              jsonrpc,
               result: {
                 type: 'data',
                 data,
@@ -172,6 +182,7 @@ export function applyWSSHandler<TRouter extends AnyRouter>(
             opts.onError?.({ error, path, type, ctx, req, input });
             respond({
               id,
+              jsonrpc,
               error: router.getErrorShape({
                 error,
                 type,
@@ -184,6 +195,7 @@ export function applyWSSHandler<TRouter extends AnyRouter>(
           complete() {
             respond({
               id,
+              jsonrpc,
               result: {
                 type: 'stopped',
               },

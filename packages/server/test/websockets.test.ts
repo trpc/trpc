@@ -798,6 +798,7 @@ describe('include "jsonrpc" in response if sent with message', () => {
     expect(messageData).toMatchInlineSnapshot(`
       Object {
         "id": 1,
+        "jsonrpc": "2.0",
         "result": Object {
           "data": Object {
             "id": "1",
