@@ -48,16 +48,19 @@ module.exports = {
           href: 'https://github.com/trpc/trpc',
           label: 'GitHub',
           position: 'right',
+          className: 'flex items-center',
         },
         {
           href: 'https://twitter.com/alexdotjs',
           label: 'Twitter',
           position: 'right',
+          className: 'flex items-center',
         },
         {
           href: 'https://trpc.io/discord',
           label: 'Discord',
           position: 'right',
+          className: 'flex items-center',
         },
       ],
     },
@@ -83,14 +86,17 @@ module.exports = {
             {
               label: 'GitHub',
               href: 'https://github.com/trpc/trpc',
+              className: 'flex items-center',
             },
             {
               label: 'Twitter',
               href: 'https://twitter.com/alexdotjs',
+              className: 'flex items-center',
             },
             {
               label: 'Discord',
               href: 'https://trpc.io/discord',
+              className: 'flex items-center',
             },
           ],
         },
@@ -104,6 +110,7 @@ module.exports = {
             {
               label: 'GitHub',
               href: 'https://github.com/trpc/trpc',
+              className: 'flex items-center',
             },
           ],
         },

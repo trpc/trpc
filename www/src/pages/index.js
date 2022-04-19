@@ -10,7 +10,7 @@ import styles from './styles.module.css';
 
 const features = [
   {
-    title: <>🧙‍♂️&nbsp; Automatic typesafety</>,
+    title:<>🧙‍♂️&nbsp; Automatic typesafety</>,
     // imageUrl: 'img/undraw_docusaurus_mountain.svg',
     description: (
       <>
@@ -53,7 +53,7 @@ function Feature({ imageUrl, title, description }) {
           <img className={styles.featureImage} src={imgUrl} alt={title} />
         </div>
       )}
-      <h3>{title}</h3>
+      <h3 className="font-semibold text-lg pb-6">{title}</h3>
       <p>{description}</p>
     </div>
   );
@@ -76,8 +76,8 @@ function Home() {
         />
       </Head>
       <header className={clsx('hero hero--primary', styles.heroBanner)}>
-        <div className="container main-container">
-          <h1 className="hero__title">{siteConfig.title}</h1>
+        <div className="container flex flex-col gap-4">
+          <h1 className="font-bold text-4xl">{siteConfig.title}</h1>
           <p className="hero__subtitle">{siteConfig.tagline}</p>
           <p>
             <GitHubButton
@@ -91,8 +91,9 @@ function Home() {
             </GitHubButton>
           </p>
 
-          <figure className={styles.figure}>
+          <figure className={`${styles.figure} gap-4`}>
             <img
+            className="mx-auto"
               src="https://storage.googleapis.com/trpc/trpcgif.gif"
               alt="Server/client example"
             />
@@ -133,12 +134,12 @@ function Home() {
         )}
       </main>
       <footer className={`container ${styles.container}`}>
-        <ol className="footnotes">
+        <ol className="footnotes list-decimal">
           <li id="zero">
             <code>@trpc/client</code> depends on some babel runtime helpers +
             that a <code>fetch()</code> polyfill/ponyfill is used if the browser
             doesn&apos;t support it. <code>@trpc/react</code> is built on top of{' '}
-            <a href="https://react-query.tanstack.com/">react-query</a>.
+            <a className="text-blue-500 no-underline" href="https://react-query.tanstack.com/">react-query</a>.
           </li>
         </ol>
       </footer>
