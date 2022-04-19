@@ -15,7 +15,7 @@ module.exports = {
     },
     algolia: {
       appId: 'BTGPSR4MOE',
-      apiKey: '21afcd19f62cce875a67753d48f7e216',
+      apiKey: 'ed8b3896f8e3e2b421e4c38834b915a8',
       indexName: 'trpc',
       // contextualSearch: true,
       // searchParameters: {},
