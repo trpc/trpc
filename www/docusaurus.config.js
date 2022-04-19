@@ -119,13 +119,15 @@ module.exports = {
     },
   },
   plugins: [
-    async function myPlugin(context, options) {
+    async function myPlugin() {
       return {
-        name: "docusaurus-tailwindcss",
+        name: 'docusaurus-tailwindcss',
         configurePostCss(postcssOptions) {
           // Appends TailwindCSS and AutoPrefixer.
-          postcssOptions.plugins.push(require("tailwindcss"));
-          postcssOptions.plugins.push(require("autoprefixer"));
+          //eslint-disable-next-line
+          postcssOptions.plugins.push(require('tailwindcss'));
+          //eslint-disable-next-line
+          postcssOptions.plugins.push(require('autoprefixer'));
           return postcssOptions;
         },
       };
