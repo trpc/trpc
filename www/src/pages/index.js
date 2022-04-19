@@ -10,7 +10,7 @@ import styles from './styles.module.css';
 
 const features = [
   {
-    title:<>🧙‍♂️&nbsp; Automatic typesafety</>,
+    title: <>🧙‍♂️&nbsp; Automatic typesafety</>,
     // imageUrl: 'img/undraw_docusaurus_mountain.svg',
     description: (
       <>
@@ -93,7 +93,7 @@ function Home() {
 
           <figure className={`${styles.figure} gap-4`}>
             <img
-            className="mx-auto"
+              className="mx-auto"
               src="https://storage.googleapis.com/trpc/trpcgif.gif"
               alt="Server/client example"
             />
@@ -139,7 +139,13 @@ function Home() {
             <code>@trpc/client</code> depends on some babel runtime helpers +
             that a <code>fetch()</code> polyfill/ponyfill is used if the browser
             doesn&apos;t support it. <code>@trpc/react</code> is built on top of{' '}
-            <a className="text-blue-500 no-underline" href="https://react-query.tanstack.com/">react-query</a>.
+            <a
+              className="text-blue-500 no-underline"
+              href="https://react-query.tanstack.com/"
+            >
+              react-query
+            </a>
+            .
           </li>
         </ol>
       </footer>
