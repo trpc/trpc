@@ -164,7 +164,14 @@ export function applyWSSHandler<TRouter extends AnyRouter>(
         });
 
         // send the value as data if the result is not an observable
-        if (!isObservable(result)) {
+        if (type === 'subscription') {
+          if (!isObservable(result)) {
+            throw new TRPCError({
+              message: `Subscription ${path} did not return an observable`,
+              code: 'INTERNAL_SERVER_ERROR',
+            });
+          }
+        } else {
           respond({
             id,
             jsonrpc,
