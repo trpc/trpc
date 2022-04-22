@@ -651,6 +651,15 @@
       "contributions": [
         "code"
       ]
+    },
+    {
+      "login": "kindlyfire",
+      "name": "Tijl Van den Brugghen",
+      "avatar_url": "https://avatars.githubusercontent.com/u/10267586?v=4",
+      "profile": "https://tijlvdb.me/",
+      "contributions": [
+        "doc"
+      ]
     }
   ],
   "contributorsPerLine": 7,
