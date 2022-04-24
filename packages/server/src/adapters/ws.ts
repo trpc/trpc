@@ -115,10 +115,7 @@ export function applyWSSHandler<TRouter extends AnyRouter>(
 
     function stopSubscription(
       subscription: Unsubscribable,
-      {
-        id,
-        jsonrpc,
-      }: { id: JSONRPC2.RequestId; jsonrpc: JSONRPC2.BaseEnvelope['jsonrpc'] },
+      { id, jsonrpc }: { id: JSONRPC2.RequestId } & JSONRPC2.BaseEnvelope,
     ) {
       subscription.unsubscribe();
 
