@@ -16,6 +16,9 @@
   <a href="https://trpc.io/discord">
     <img alt="Discord" src="https://img.shields.io/discord/867764511159091230?color=7389D8&label&logo=discord&logoColor=ffffff" />
   </a>
+  <a href="https://twitter.com/alexdotjs">
+    <img alt="Twitter" src="https://img.shields.io/twitter/url.svg?label=Follow%20%40alexdotjs&style=social&url=https%3A%2F%2Ftwitter.com%2Falexdotjs" />
+  </a>
 </p>
 
 <p></p>
@@ -266,6 +269,7 @@ Also, if your company using tRPC and want to support long-term maintenance of tR
     <td align="center"><a href="https://github.com/okaforcj"><img src="https://avatars.githubusercontent.com/u/34102565?v=4?s=100" width="100px;" alt=""/><br /><sub><b>okaforcj</b></sub></a><br /><a href="#financial-okaforcj" title="Financial">💵</a></td>
     <td align="center"><a href="https://github.com/LouisHaftmann"><img src="https://avatars.githubusercontent.com/u/30736553?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Louis Haftmann</b></sub></a><br /><a href="https://github.com/trpc/trpc/commits?author=LouisHaftmann" title="Code">💻</a> <a href="https://github.com/trpc/trpc/commits?author=LouisHaftmann" title="Tests">⚠️</a> <a href="https://github.com/trpc/trpc/commits?author=LouisHaftmann" title="Documentation">📖</a></td>
     <td align="center"><a href="https://marcin.page/"><img src="https://avatars.githubusercontent.com/u/5896181?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Perfect7M</b></sub></a><br /><a href="https://github.com/trpc/trpc/commits?author=Perfect7M" title="Code">💻</a></td>
+    <td align="center"><a href="https://tijlvdb.me/"><img src="https://avatars.githubusercontent.com/u/10267586?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Tijl Van den Brugghen</b></sub></a><br /><a href="https://github.com/trpc/trpc/commits?author=kindlyfire" title="Documentation">📖</a></td>
   </tr>
 </table>
 
