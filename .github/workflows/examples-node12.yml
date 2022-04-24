@@ -1,7 +1,7 @@
 name: Examples E2E
 on: [push]
 jobs:
-  e2e-node12:
+  e2e-node16:
     env:
       PLAYWRIGHT_BROWSERS_PATH: ${{ github.workspace }}/playwright
       DATABASE_URL: postgresql://postgres:@localhost:5432/trpcdb
@@ -11,7 +11,7 @@ jobs:
       matrix:
         dir: [next-prisma-starter]
         # start example with:
-        node-start: ['12.x']
+        node-start: ['16.x']
         os: [ubuntu-latest]
     services:
       postgres:
@@ -25,7 +25,7 @@ jobs:
       - uses: actions/checkout@v2
       - uses: actions/setup-node@v2
         with:
-          node-version: 14.x
+          node-version: 16.x
       - run: node -v
       - uses: bahmutov/npm-install@v1
 
