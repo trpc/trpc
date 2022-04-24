@@ -11,6 +11,7 @@ const config = getRollupConfig({
     'src/adapters/ws.ts',
     'src/rpc/index.ts',
     'src/observable/index.ts',
+    'src/subscription.ts',
   ],
 });
 

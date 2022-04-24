@@ -163,7 +163,6 @@ export function applyWSSHandler<TRouter extends AnyRouter>(
           ctx,
         });
 
-        // send the value as data if the result is not an observable
         if (type === 'subscription') {
           if (!isObservable(result)) {
             throw new TRPCError({
@@ -172,6 +171,7 @@ export function applyWSSHandler<TRouter extends AnyRouter>(
             });
           }
         } else {
+          // send the value as data if the method is not a subscription
           respond({
             id,
             jsonrpc,

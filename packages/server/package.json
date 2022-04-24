@@ -71,6 +71,11 @@
       "import": "./dist/observable/index.mjs",
       "require": "./dist/observable/index.js",
       "default": "./dist/observable/index.js"
+    },
+    "./subscription": {
+      "import": "./dist/subscription.mjs",
+      "require": "./dist/subscription.js",
+      "default": "./dist/subscription.js"
     }
   },
   "files": [
