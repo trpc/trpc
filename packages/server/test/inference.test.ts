@@ -33,7 +33,6 @@ test('infer query input & output', async () => {
       output: z.object({
         input: z.string(),
       }),
-      // https://github.com/trpc/trpc/discussions/1817
       // @ts-expect-error - ensure type inferred from "output" is higher priority than "resolve" fn return type
       resolve() {
         return {};
@@ -114,7 +113,6 @@ test('infer mutation input & output', async () => {
       output: z.object({
         input: z.string(),
       }),
-      // https://github.com/trpc/trpc/discussions/1817
       // @ts-expect-error - ensure type inferred from "output" is higher priority than "resolve" fn return type
       resolve() {
         return {};
