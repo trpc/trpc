@@ -29,6 +29,16 @@ test('infer query input & output', async () => {
         return { input };
       },
     })
+    .query('withOutputEmptyObject', {
+      output: z.object({
+        input: z.string(),
+      }),
+      // https://github.com/trpc/trpc/discussions/1817
+      // @ts-expect-error - ensure type inferred from "output" is higher priority than "resolve" fn return type
+      resolve() {
+        return {};
+      },
+    })
     .query('withInputOutput', {
       input: z.string(),
       output: z.object({
@@ -54,6 +64,14 @@ test('infer query input & output', async () => {
   {
     const input: inferProcedureInput<TQueries['withOutput']> = null as any;
     const output: inferProcedureOutput<TQueries['withOutput']> = null as any;
+    expectTypeOf(input).toMatchTypeOf<undefined | null | void>();
+    expectTypeOf(output).toMatchTypeOf<{ input: string }>();
+  }
+  {
+    const input: inferProcedureInput<TQueries['withOutputEmptyObject']> =
+      null as any;
+    const output: inferProcedureOutput<TQueries['withOutputEmptyObject']> =
+      null as any;
     expectTypeOf(input).toMatchTypeOf<undefined | null | void>();
     expectTypeOf(output).toMatchTypeOf<{ input: string }>();
   }
@@ -92,6 +110,16 @@ test('infer mutation input & output', async () => {
         return { input };
       },
     })
+    .mutation('withOutputEmptyObject', {
+      output: z.object({
+        input: z.string(),
+      }),
+      // https://github.com/trpc/trpc/discussions/1817
+      // @ts-expect-error - ensure type inferred from "output" is higher priority than "resolve" fn return type
+      resolve() {
+        return {};
+      },
+    })
     .mutation('withInputOutput', {
       input: z.string(),
       output: z.object({
@@ -117,6 +145,14 @@ test('infer mutation input & output', async () => {
   {
     const input: inferProcedureInput<TMutations['withOutput']> = null as any;
     const output: inferProcedureOutput<TMutations['withOutput']> = null as any;
+    expectTypeOf(input).toMatchTypeOf<undefined | null | void>();
+    expectTypeOf(output).toMatchTypeOf<{ input: string }>();
+  }
+  {
+    const input: inferProcedureInput<TMutations['withOutputEmptyObject']> =
+      null as any;
+    const output: inferProcedureOutput<TMutations['withOutputEmptyObject']> =
+      null as any;
     expectTypeOf(input).toMatchTypeOf<undefined | null | void>();
     expectTypeOf(output).toMatchTypeOf<{ input: string }>();
   }

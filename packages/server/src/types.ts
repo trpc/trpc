@@ -55,3 +55,10 @@ export type ThenArg<T> = T extends PromiseLike<infer U> ? ThenArg<U> : T;
  * @public
  */
 export type Dict<T> = Record<string, T | undefined>;
+
+/**
+ * @internal
+ * Creates a "lower-priority" type inference.
+ * https://github.com/microsoft/TypeScript/issues/14829#issuecomment-320754731
+ */
+export type InferLast<T> = T & {};
