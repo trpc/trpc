@@ -22,6 +22,7 @@ Subscriptions & WebSockets are in beta, alpha & might change without a major ver
 
 ```tsx title='server/router.ts'
 import * as trpc from '@trpc/server';
+import { observable } from '@trpc/server/observable';
 import { EventEmitter } from 'events';
 
 // create a global event emitter (could be replaced by redis, etc)
