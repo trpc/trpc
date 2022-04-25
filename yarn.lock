@@ -11699,9 +11699,9 @@ styled-jsx@5.0.1:
   integrity sha512-+PIZ/6Uk40mphiQJJI1202b+/dYeTVd9ZnMPR80pgiWbjIwvN2zIp4r9et0BgqBuShh48I0gttPlAXA7WVvBxw==
 
 superjson@^1.7.4:
-  version "1.8.1"
-  resolved "https://registry.yarnpkg.com/superjson/-/superjson-1.8.1.tgz#c0fe510b8ff71c3bde5733a125623994ca9ec608"
-  integrity sha512-RaBKdbsYj29Ky+XcdE11pJAyKXPrqiCV269koH2WAlpeHh/9qnK0ET84GiVWvnutiufyDolK/vS2jtdFYr341w==
+  version "1.8.2"
+  resolved "https://registry.yarnpkg.com/superjson/-/superjson-1.8.2.tgz#6245e598baeba029902d0cdc28ceaaad2ee1e1b7"
+  integrity sha512-gVZEvpmOC11DfnLtm6i/iUNxaozU5ZI4tM7WsBsXmFJAnwj8KQPRQAYfQ4iPMquKNrG6un9VfyNf0F0iD2IWGQ==
   dependencies:
     debug "^4.3.1"
     lodash.clonedeep "^4.5.0"
