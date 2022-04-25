@@ -1,4 +1,4 @@
-name: Examples E2E
+name: Examples E2E (old nodes)
 on: [push]
 jobs:
   e2e-old-nodes:
