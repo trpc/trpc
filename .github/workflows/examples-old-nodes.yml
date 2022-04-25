@@ -1,32 +1,20 @@
-name: Examples E2E
+name: Examples E2E (old nodes)
 on: [push]
-concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
 jobs:
-  e2e:
+  e2e-old-nodes:
     container:
       image: mcr.microsoft.com/playwright:v1.20.0-focal
       options: --user 1001
     env:
       PLAYWRIGHT_BROWSERS_PATH: ${{ github.workspace }}/playwright
       DATABASE_URL: postgresql://postgres:@postgres:5432/trpcdb
-      NEXTAUTH_SECRET: supersecret
     runs-on: ${{ matrix.os }}
     timeout-minutes: 10
-    continue-on-error: true
     strategy:
       matrix:
-        dir: [
-            express-server,
-            # next-chat,
-            next-prisma-starter,
-            next-prisma-starter-websockets,
-            next-prisma-todomvc,
-            standalone-server,
-            fastify-server,
-          ]
-        node-start: ['16.x']
+        dir: [next-prisma-starter]
+        # start example with:
+        node-start: ['14.x']
         os: [ubuntu-latest]
     services:
       postgres:
@@ -41,7 +29,6 @@ jobs:
       - uses: actions/setup-node@v2
         with:
           node-version: 16.x
-
       - run: node -v
       - uses: bahmutov/npm-install@v1
 
