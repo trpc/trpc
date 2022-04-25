@@ -5,9 +5,12 @@ concurrency:
   cancel-in-progress: true
 jobs:
   e2e:
+    container:
+      image: mcr.microsoft.com/playwright:v1.20.0-focal
+      options: --user 1001
     env:
       PLAYWRIGHT_BROWSERS_PATH: ${{ github.workspace }}/playwright
-      DATABASE_URL: postgresql://postgres:@localhost:5432/trpcdb
+      DATABASE_URL: postgresql://postgres:@postgres:5432/trpcdb
       NEXTAUTH_SECRET: supersecret
     runs-on: ${{ matrix.os }}
     timeout-minutes: 10
@@ -47,8 +50,6 @@ jobs:
         with:
           path: ${{ github.workspace }}${{ matrix.dir }}/.next/cache
           key: ${{ matrix.dir }}-${{ runner.os }}-${{ matrix.node-start }}-${{ hashFiles('**/yarn.lock') }}-nextjs
-
-      - run: yarn playwright install --with-deps
 
       - uses: actions/setup-node@v2
         with:
