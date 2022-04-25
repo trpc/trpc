@@ -54,7 +54,7 @@ tRPC allows you to easily build & consume fully typesafe APIs, without schemas o
 
 ## Quickstart
 
-There are a few [examples](https://trpc.io/docs/example-apps) that you can use for playing out with tRCP or bootstrapping your new project. For example, if you want a next.js app, you can use the full-stack next.js example:
+There are a few [examples](https://trpc.io/docs/example-apps) that you can use for playing out with tRPC or bootstrapping your new project. For example, if you want a next.js app, you can use the full-stack next.js example:
 
 **Quick start with a full-stack Next.js example:**
 
