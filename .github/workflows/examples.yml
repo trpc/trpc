@@ -23,7 +23,7 @@ jobs:
             standalone-server,
             fastify-server,
           ]
-        node-start: ['14.x', '16.x']
+        node-start: ['16.x']
         os: [ubuntu-latest]
     services:
       postgres:
