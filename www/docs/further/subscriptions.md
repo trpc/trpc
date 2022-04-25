@@ -34,7 +34,7 @@ export const appRouter = trpc
       // `resolve()` is triggered for each client when they start subscribing `onAdd`
 
       // return an `observable` with a callback which is triggered immediately
-      return new observable<Post>((emit) => {
+      return observable<Post>((emit) => {
         const onAdd = (data: Post) => {
           // emit data to client
           emit.next(data);
