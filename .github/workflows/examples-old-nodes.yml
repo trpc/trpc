@@ -1,7 +1,7 @@
 name: Examples E2E
 on: [push]
 jobs:
-  e2e-node-old:
+  e2e-old-nodes:
     container:
       image: mcr.microsoft.com/playwright:v1.20.0-focal
       options: --user 1001
