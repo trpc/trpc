@@ -325,7 +325,7 @@ export function createReactQueryHooks<
   >(
     pathAndInput: [
       path: TPath,
-      ...args: inferHandlerInput<TSubscriptions[TPath]>
+      ...args: inferHandlerInput<TSubscriptions[TPath]>,
     ],
     opts: {
       enabled?: boolean;

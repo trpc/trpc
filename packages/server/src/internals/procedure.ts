@@ -2,6 +2,7 @@
 import { TRPCError } from '../TRPCError';
 import { assertNotBrowser } from '../assertNotBrowser';
 import { ProcedureType } from '../router';
+import { InferLast } from '../types';
 import { getCauseFromUnknown, getErrorFromUnknown } from './errors';
 import { MiddlewareFunction, middlewareMarker } from './middlewares';
 import { wrapCallSafe } from './wrapCallSafe';
@@ -266,7 +267,7 @@ export type CreateProcedureWithInput<TContext, TMeta, TInput, TOutput> = {
   input: ProcedureParser<TInput>;
   output?: ProcedureParser<TOutput>;
   meta?: TMeta;
-  resolve: ProcedureResolver<TContext, TInput, TOutput>;
+  resolve: ProcedureResolver<TContext, TInput, InferLast<TOutput>>;
 };
 
 export type CreateProcedureWithInputOutputParser<
@@ -280,7 +281,7 @@ export type CreateProcedureWithInputOutputParser<
   input: ProcedureParserWithInputOutput<TInput, TParsedInput>;
   output?: ProcedureParserWithInputOutput<TOutput, TParsedOutput>;
   meta?: TMeta;
-  resolve: ProcedureResolver<TContext, TParsedInput, TOutput>;
+  resolve: ProcedureResolver<TContext, TParsedInput, InferLast<TOutput>>;
 };
 
 export type CreateProcedureWithoutInput<
@@ -293,7 +294,7 @@ export type CreateProcedureWithoutInput<
     | ProcedureParserWithInputOutput<TOutput, TParsedOutput>
     | ProcedureParser<TOutput>;
   meta?: TMeta;
-  resolve: ProcedureResolver<TContext, undefined, TOutput>;
+  resolve: ProcedureResolver<TContext, undefined, InferLast<TOutput>>;
 };
 
 export type CreateProcedureOptions<

@@ -563,7 +563,10 @@
       "avatar_url": "https://avatars.githubusercontent.com/u/69924001?v=4",
       "profile": "https://jamesbe.com",
       "contributions": [
-        "bug"
+        "bug",
+        "ideas",
+        "code",
+        "test"
       ]
     },
     {
@@ -647,6 +650,15 @@
       "profile": "https://marcin.page/",
       "contributions": [
         "code"
+      ]
+    },
+    {
+      "login": "kindlyfire",
+      "name": "Tijl Van den Brugghen",
+      "avatar_url": "https://avatars.githubusercontent.com/u/10267586?v=4",
+      "profile": "https://tijlvdb.me/",
+      "contributions": [
+        "doc"
       ]
     }
   ],
