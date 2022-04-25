@@ -10,9 +10,11 @@ import { default as WebSocket, default as ws } from 'ws';
 import { z } from 'zod';
 import { TRPCClientError } from '../../client/src';
 import { wsLink } from '../../client/src';
+import { Observer } from '../observable';
 import * as trpc from '../src';
 import { TRPCError } from '../src';
 import { applyWSSHandler } from '../src/adapters/ws';
+import { observable } from '../src/observable';
 import {
   TRPCClientOutgoingMessage,
   TRPCRequestMessage,
@@ -25,7 +27,7 @@ type Message = {
 function factory(config?: { createContext: () => Promise<any> }) {
   const ee = new EventEmitter();
   const subRef: {
-    current: trpc.Subscription<Message>;
+    current: Observer<Message, unknown>;
   } = {} as any;
   const onNewMessageSubscription = jest.fn();
   const subscriptionEnded = jest.fn();
@@ -64,18 +66,17 @@ function factory(config?: { createContext: () => Promise<any> }) {
       .subscription('onMessage', {
         input: z.string().nullish(),
         resolve() {
-          const sub = (subRef.current = new trpc.Subscription<Message>(
-            (emit) => {
-              const onMessage = (data: Message) => {
-                emit.data(data);
-              };
-              ee.on('server:msg', onMessage);
-              return () => {
-                subscriptionEnded();
-                ee.off('server:msg', onMessage);
-              };
-            },
-          ));
+          const sub = observable<Message>((emit) => {
+            subRef.current = emit;
+            const onMessage = (data: Message) => {
+              emit.next(data);
+            };
+            ee.on('server:msg', onMessage);
+            return () => {
+              subscriptionEnded();
+              ee.off('server:msg', onMessage);
+            };
+          });
           ee.emit('subscription:created');
           onNewMessageSubscription();
           return sub;
@@ -307,7 +308,7 @@ test('server subscription ended', async () => {
     expect(next).toHaveBeenCalledTimes(3);
   });
   // destroy server subscription
-  subRef.current.destroy();
+  subRef.current.complete();
   await waitFor(() => {
     expect(error).toHaveBeenCalledTimes(1);
   });
@@ -324,10 +325,10 @@ test('sub emits errors', async () => {
 
   ee.once('subscription:created', () => {
     setTimeout(() => {
-      subRef.current.emitError(new Error('test'));
       ee.emit('server:msg', {
         id: '1',
       });
+      subRef.current.error(new Error('test'));
     });
   });
   const onNewClient = jest.fn();
@@ -768,7 +769,6 @@ describe('include "jsonrpc" in response if sent with message', () => {
 
     const startedResult = await new Promise<string>((resolve) => {
       rawClient.addEventListener('message', (msg) => {
-        console.log({ data: msg.data });
         resolve(msg.data as any);
       });
     });
@@ -787,7 +787,6 @@ describe('include "jsonrpc" in response if sent with message', () => {
 
     const messageResult = await new Promise<string>((resolve) => {
       rawClient.addEventListener('message', (msg) => {
-        console.log({ data: msg.data });
         resolve(msg.data as any);
       });
 
@@ -814,13 +813,10 @@ describe('include "jsonrpc" in response if sent with message', () => {
       jsonrpc: '2.0',
       method: 'subscription.stop',
     };
-
     const stoppedResult = await new Promise<string>((resolve) => {
       rawClient.addEventListener('message', (msg) => {
-        console.log({ data: msg.data });
         resolve(msg.data as any);
       });
-
       rawClient.send(JSON.stringify(subscriptionStopNotificationWithJsonRPC));
     });
 

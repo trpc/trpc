@@ -123,6 +123,7 @@ export type Context = inferAsyncReturnType<typeof createContext>;
 
 tRPC includes an adapter for [Fastify](https://www.fastify.io/) out of the box. This adapter lets you convert your tRPC router into an [Fastify plugin](https://www.fastify.io/docs/latest/Reference/Plugins/).
 
+````ts
 ```ts title='server.ts'
 import fastify from 'fastify';
 import { fastifyTRPCPlugin } from '@trpc/server/adapters/fastify';
@@ -144,7 +145,7 @@ server.register(fastifyTRPCPlugin, {
     process.exit(1);
   }
 })();
-```
+````
 
 Your endpoints are now available via HTTP!
 
@@ -176,15 +177,17 @@ server.register(ws);
 Edit the `router.ts` file created in the previous steps and add the following code:
 
 ```ts title='router.ts'
+import { observable } from '@trpc/server/observable';
+
 export const appRouter = trpc
   .router()
   // .query(...)
   // .mutation(...)
   .subscription('randomNumber', {
     resolve() {
-      return new Subscription<{ randomNumber: number }>((emit) => {
+      return observable<{ randomNumber: number }>((emit) => {
         const timer = setInterval(() => {
-          emit.data({ randomNumber: Math.random() });
+          emit.next({ randomNumber: Math.random() });
         }, 1000);
         return () => {
           clearInterval(timer);

@@ -15,13 +15,13 @@ import {
   createProcedure,
   inferProcedureFromOptions,
 } from './internals/procedure';
+import { Observable, inferObservableValue } from './observable';
 import {
   TRPCErrorShape,
   TRPC_ERROR_CODES_BY_KEY,
   TRPC_ERROR_CODE_KEY,
   TRPC_ERROR_CODE_NUMBER,
 } from './rpc';
-import { Subscription } from './subscription';
 import { CombinedDataTransformer, DataTransformerOptions } from './transformer';
 import { Prefixer, ThenArg, flatten } from './types';
 
@@ -87,10 +87,8 @@ export type inferProcedureOutput<
 export type inferSubscriptionOutput<
   TRouter extends AnyRouter,
   TPath extends keyof TRouter['_def']['subscriptions'],
-> = ReturnType<
-  inferAsyncReturnType<
-    TRouter['_def']['subscriptions'][TPath]['call']
-  >['output']
+> = inferObservableValue<
+  inferAsyncReturnType<TRouter['_def']['subscriptions'][TPath]['call']>
 >;
 
 function getDataTransformer(
@@ -292,7 +290,7 @@ export class Router<
     TContext,
     unknown,
     unknown,
-    Subscription<unknown>,
+    Observable<unknown, unknown>,
     unknown,
     unknown
   >,
@@ -489,7 +487,7 @@ export class Router<
     TPath extends string,
     TInput,
     TParsedInput,
-    TOutput extends Subscription<unknown>,
+    TOutput extends Observable<unknown, unknown>,
   >(
     path: TPath,
     procedure: Omit<
@@ -520,7 +518,7 @@ export class Router<
   public subscription<
     TPath extends string,
     TInput,
-    TOutput extends Subscription<unknown>,
+    TOutput extends Observable<unknown, unknown>,
   >(
     path: TPath,
     procedure: Omit<
@@ -543,7 +541,7 @@ export class Router<
    */
   public subscription<
     TPath extends string,
-    TOutput extends Subscription<unknown>,
+    TOutput extends Observable<unknown, unknown>,
   >(
     path: TPath,
     procedure: Omit<

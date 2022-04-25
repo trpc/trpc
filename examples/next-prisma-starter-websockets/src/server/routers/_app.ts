@@ -3,7 +3,7 @@
  */
 import { createRouter } from '../createRouter';
 import { postRouter } from './post';
-import { Subscription } from '@trpc/server';
+import { observable } from '@trpc/server/observable';
 import superjson from 'superjson';
 import { clearInterval } from 'timers';
 
@@ -32,9 +32,9 @@ export const appRouter = createRouter()
   .merge('post.', postRouter)
   .subscription('randomNumber', {
     resolve() {
-      return new Subscription<number>((emit) => {
+      return observable<number>((emit) => {
         const int = setInterval(() => {
-          emit.data(Math.random());
+          emit.next(Math.random());
         }, 500);
         return () => {
           clearInterval(int);

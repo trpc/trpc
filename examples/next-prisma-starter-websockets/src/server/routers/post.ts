@@ -5,7 +5,8 @@
 import { Context } from '../context';
 import { createRouter } from '../createRouter';
 import { Post } from '@prisma/client';
-import { Subscription, TRPCError } from '@trpc/server';
+import { TRPCError } from '@trpc/server';
+import { observable } from '@trpc/server/observable';
 import { EventEmitter } from 'events';
 import { z } from 'zod';
 
@@ -128,8 +129,8 @@ export const postRouter = createRouter()
   })
   .subscription('onAdd', {
     resolve() {
-      return new Subscription<Post>((emit) => {
-        const onAdd = (data: Post) => emit.data(data);
+      return observable<Post>((emit) => {
+        const onAdd = (data: Post) => emit.next(data);
         ee.on('add', onAdd);
         return () => {
           ee.off('add', onAdd);
@@ -140,12 +141,12 @@ export const postRouter = createRouter()
   .subscription('whoIsTyping', {
     resolve() {
       let prev: string[] | null = null;
-      return new Subscription<string[]>((emit) => {
+      return observable<string[]>((emit) => {
         const onIsTypingUpdate = () => {
           const newData = Object.keys(currentlyTyping);
 
           if (!prev || prev.toString() !== newData.toString()) {
-            emit.data(newData);
+            emit.next(newData);
           }
           prev = newData;
         };

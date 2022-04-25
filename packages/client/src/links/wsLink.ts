@@ -1,4 +1,5 @@
 import { AnyRouter, ProcedureType } from '@trpc/server';
+import { UnsubscribeFn, observable } from '@trpc/server/observable';
 import {
   TRPCClientIncomingMessage,
   TRPCClientIncomingRequest,
@@ -8,7 +9,6 @@ import {
 } from '@trpc/server/rpc';
 import { TRPCClientError } from '../TRPCClientError';
 import { retryDelay } from '../internals/retryDelay';
-import { UnsubscribeFn, observable } from '../observable';
 import { Operation, OperationResultObserver, TRPCLink } from './types';
 
 export interface WebSocketClientOptions {
