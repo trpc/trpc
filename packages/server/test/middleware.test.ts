@@ -469,6 +469,58 @@ test('omitting ctx in next() does not affect the actual ctx', async () => {
   close();
 });
 
+test('omitting ctx in next() does not affect a previous middleware', async () => {
+  type User = {
+    id: string;
+  };
+  type OriginalContext = {
+    maybeUser?: User;
+  };
+  const { client, close } = routerToServerAndClient(
+    trpc
+      .router<OriginalContext>()
+      .middleware(({ ctx, next }) => {
+        if (!ctx.maybeUser) {
+          throw new Error('No user');
+        }
+        return next({
+          ctx: {
+            ...ctx,
+            user: ctx.maybeUser,
+          },
+        });
+      })
+      .middleware(async function firstMiddleware({ next }) {
+        return next();
+      })
+      .query('test', {
+        resolve({ ctx }) {
+          expectTypeOf(ctx).toEqualTypeOf<
+            OriginalContext & {
+              user: User;
+            }
+          >();
+          return ctx.user.id;
+        },
+      }),
+    {
+      server: {
+        createContext() {
+          return {
+            maybeUser: {
+              id: 'alexdotjs',
+            },
+          };
+        },
+      },
+    },
+  );
+
+  expect(await client.query('test')).toMatchInlineSnapshot(`"alexdotjs"`);
+
+  close();
+});
+
 test('mutate context in middleware', async () => {
   type User = {
     id: string;
