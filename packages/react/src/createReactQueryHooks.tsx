@@ -21,6 +21,7 @@ import React, {
   useState,
 } from 'react';
 import {
+  DehydratedState,
   QueryClient,
   UseInfiniteQueryOptions,
   UseInfiniteQueryResult,
@@ -33,7 +34,6 @@ import {
   useQuery as __useQuery,
   hashQueryKey,
 } from 'react-query';
-import { DehydratedState } from 'react-query/hydration';
 import { SSRState, TRPCContext, TRPCContextState } from './internals/context';
 
 export type OutputWithCursor<TData, TCursor extends any = any> = {

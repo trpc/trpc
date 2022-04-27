@@ -20,10 +20,10 @@ import React, { Fragment, ReactNode, useEffect, useState } from 'react';
 import {
   QueryClient,
   QueryClientProvider,
+  dehydrate,
   setLogger,
   useQueryClient,
 } from 'react-query';
-import { dehydrate } from 'react-query/hydration';
 import { ZodError, z } from 'zod';
 import { splitLink } from '../../client/src/links/splitLink';
 import {
