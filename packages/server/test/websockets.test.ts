@@ -161,7 +161,7 @@ test('$subscription()', async () => {
     id: '2',
   });
   await waitFor(() => {
-    expect(onNext).toHaveBeenCalledTimes(3);
+    expect(onNext).toHaveBeenCalledTimes(4);
   });
 
   expect(onNext.mock.calls).toMatchInlineSnapshot(`
