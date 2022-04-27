@@ -166,7 +166,7 @@ test('basic subscription test', async () => {
     id: '2',
   });
   await waitFor(() => {
-    expect(next).toHaveBeenCalledTimes(3);
+    expect(next).toHaveBeenCalledTimes(4);
   });
 
   expect(next.mock.calls).toMatchInlineSnapshot(`
