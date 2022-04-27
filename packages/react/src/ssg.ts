@@ -6,12 +6,13 @@ import {
   inferProcedureOutput,
   inferRouterContext,
 } from '@trpc/server';
-import { InfiniteData, QueryClient } from 'react-query';
 import {
   DehydrateOptions,
   DehydratedState,
+  InfiniteData,
+  QueryClient,
   dehydrate,
-} from 'react-query/hydration';
+} from 'react-query';
 
 type QueryClientConfig = ConstructorParameters<typeof QueryClient>[0];
 
