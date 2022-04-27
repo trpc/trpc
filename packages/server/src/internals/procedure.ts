@@ -167,7 +167,7 @@ export class Procedure<
   ): Promise<TFinalOutput> {
     // wrap the actual resolver and treat as the last "middleware"
     const middlewaresWithResolver = this.middlewares.concat([
-      async ({ ctx }: { ctx: TContext }) => {
+      async ({ ctx }: { ctx: any }) => {
         const input = await this.parseInput(opts.rawInput);
         const rawOutput = await this.resolver({
           ...opts,
@@ -184,31 +184,41 @@ export class Procedure<
       },
     ]);
 
-    // create `next()` calls in resolvers
-    const nextFns = middlewaresWithResolver.map((fn, index) => {
-      return async (nextOpts?: { ctx: TContext }) => {
-        const res = await wrapCallSafe(() =>
-          fn({
-            ctx: nextOpts ? nextOpts.ctx : opts.ctx,
-            type: opts.type,
-            path: opts.path,
-            rawInput: opts.rawInput,
-            meta: this.meta,
-            next: nextFns[index + 1],
-          }),
-        );
-        if (res.ok) {
-          return res.data;
-        }
-        return {
-          ok: false as const,
-          error: getErrorFromUnknown(res.error),
-        };
+    const callRecursive = async (
+      callOpts: { ctx: any; index: number; prevResult: any } = {
+        index: 0,
+        prevResult: null,
+        ctx: opts.ctx,
+      },
+    ): Promise<any> => {
+      const result = await wrapCallSafe(() =>
+        middlewaresWithResolver[callOpts.index]({
+          ctx: callOpts.ctx,
+          type: opts.type,
+          path: opts.path,
+          rawInput: opts.rawInput,
+          meta: this.meta,
+          next: async (opts?: any) => {
+            return await callRecursive({
+              ...callOpts,
+              index: callOpts.index + 1,
+              ctx: opts?.ctx ?? callOpts.ctx,
+            });
+          },
+        }),
+      );
+      if (result.ok) {
+        return result.data;
+      }
+
+      return {
+        ok: false as const,
+        error: getErrorFromUnknown(result.error),
       };
-    });
+    };
 
     // there's always at least one "next" since we wrap this.resolver in a middleware
-    const result = await nextFns[0]();
+    const result = await callRecursive();
     if (!result) {
       throw new TRPCError({
         code: 'INTERNAL_SERVER_ERROR',
