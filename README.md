@@ -54,7 +54,7 @@ tRPC allows you to easily build & consume fully typesafe APIs, without schemas o
 
 ## Quickstart
 
-There are a few [examples](https://trpc.io/docs/example-apps) that you can use for playing out with tRCP or bootstrapping your new project. For example, if you want a next.js app, you can use the full-stack next.js example:
+There are a few [examples](https://trpc.io/docs/example-apps) that you can use for playing out with tRPC or bootstrapping your new project. For example, if you want a next.js app, you can use the full-stack next.js example:
 
 **Quick start with a full-stack Next.js example:**
 
@@ -270,6 +270,8 @@ Also, if your company using tRPC and want to support long-term maintenance of tR
     <td align="center"><a href="https://github.com/LouisHaftmann"><img src="https://avatars.githubusercontent.com/u/30736553?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Louis Haftmann</b></sub></a><br /><a href="https://github.com/trpc/trpc/commits?author=LouisHaftmann" title="Code">💻</a> <a href="https://github.com/trpc/trpc/commits?author=LouisHaftmann" title="Tests">⚠️</a> <a href="https://github.com/trpc/trpc/commits?author=LouisHaftmann" title="Documentation">📖</a></td>
     <td align="center"><a href="https://marcin.page/"><img src="https://avatars.githubusercontent.com/u/5896181?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Perfect7M</b></sub></a><br /><a href="https://github.com/trpc/trpc/commits?author=Perfect7M" title="Code">💻</a></td>
     <td align="center"><a href="https://tijlvdb.me/"><img src="https://avatars.githubusercontent.com/u/10267586?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Tijl Van den Brugghen</b></sub></a><br /><a href="https://github.com/trpc/trpc/commits?author=kindlyfire" title="Documentation">📖</a></td>
+    <td align="center"><a href="https://github.com/matthijscollabai"><img src="https://avatars.githubusercontent.com/u/89927222?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Matthijs Wolting</b></sub></a><br /><a href="https://github.com/trpc/trpc/issues?q=author%3Amatthijscollabai" title="Bug reports">🐛</a></td>
+    <td align="center"><a href="https://lukahartwig.de"><img src="https://avatars.githubusercontent.com/u/7414521?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Luka Hartwig</b></sub></a><br /><a href="https://github.com/trpc/trpc/commits?author=lukahartwig" title="Code">💻</a></td>
   </tr>
 </table>
 

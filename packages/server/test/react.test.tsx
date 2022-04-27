@@ -19,10 +19,10 @@ import React, { Fragment, ReactNode, useEffect, useState } from 'react';
 import {
   QueryClient,
   QueryClientProvider,
+  dehydrate,
   setLogger,
   useQueryClient,
 } from 'react-query';
-import { dehydrate } from 'react-query';
 import { ZodError, z } from 'zod';
 import { httpBatchLink } from '../../client/src/links/httpBatchLink';
 import { splitLink } from '../../client/src/links/splitLink';
