@@ -85,7 +85,7 @@ Implement your tRPC router in `./pages/api/trpc/[trpc].ts`. If you need to split
 
 <details><summary>View sample router</summary>
 
-```ts title='server/_app.ts'
+```ts title='./pages/api/trpc/[trpc].ts'
 import * as trpc from '@trpc/server';
 import * as trpcNext from '@trpc/server/adapters/next';
 import { z } from 'zod';
