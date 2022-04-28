@@ -39,7 +39,7 @@ The best way to start with the Fastify adapter is to take a look at the example 
 ### Install dependencies
 
 ```bash
-yarn add @trpc/server fastify fastify-plugin zod
+yarn add @trpc/server fastify zod
 ```
 
 > [Zod](https://github.com/colinhacks/zod) isn't a required dependency, but it's used in the sample router below.
@@ -53,7 +53,7 @@ A sample router is given below, save it in a file named `router.ts`.
 <details>
   <summary>router.ts</summary>
 
-```ts
+```ts title='router.ts'
 import * as trpc from '@trpc/server';
 import { z } from 'zod';
 
@@ -104,7 +104,7 @@ A sample context is given below, save it in a file named `context.ts`:
 <details>
   <summary>context.ts</summary>
 
-```ts
+```ts title='context.ts'
 import { inferAsyncReturnType } from '@trpc/server';
 import { CreateFastifyContextOptions } from '@trpc/server/adapters/fastify';
 
@@ -121,18 +121,19 @@ export type Context = inferAsyncReturnType<typeof createContext>;
 
 ### Create Fastify server
 
-tRPC includes an adapter for [Fastify](https://www.fastify.io/) out of the box. This adapter lets you convert your tRPC router into an [Fastify plugin](https://www.npmjs.com/package/fastify-plugin).
+tRPC includes an adapter for [Fastify](https://www.fastify.io/) out of the box. This adapter lets you convert your tRPC router into an [Fastify plugin](https://www.fastify.io/docs/latest/Reference/Plugins/). In order to prevent errors during large batch requests, make sure to set the `maxParamLength` Fastify option to a suitable value, as shown.
 
-```ts
+```ts title='server.ts'
 import fastify from 'fastify';
-import fp from 'fastify-plugin';
 import { fastifyTRPCPlugin } from '@trpc/server/adapters/fastify';
 import { createContext } from './context';
 import { appRouter } from './router';
 
-const server = fastify();
+const server = fastify({
+  maxParamLength: 5000
+});
 
-server.register(fp(fastifyTRPCPlugin), {
+server.register(fastifyTRPCPlugin, {
   prefix: '/trpc',
   trpcOptions: { router: appRouter, createContext },
 });
@@ -151,8 +152,8 @@ Your endpoints are now available via HTTP!
 
 | Endpoint     | HTTP URI                                                                                                       |
 | ------------ | -------------------------------------------------------------------------------------------------------------- |
-| `getUser`    | `GET http://localhost:4000/trpc/getUserById?input=INPUT` <br/><br/>where `INPUT` is a URI-encoded JSON string. |
-| `createUser` | `POST http://localhost:4000/trpc/createUser` <br/><br/>with `req.body` of type `User`                          |
+| `getUser`    | `GET http://localhost:3000/trpc/getUserById?input=INPUT` <br/><br/>where `INPUT` is a URI-encoded JSON string. |
+| `createUser` | `POST http://localhost:3000/trpc/createUser` <br/><br/>with `req.body` of type `User`                          |
 
 ## How to enable subscriptions (WebSocket)
 
@@ -176,7 +177,7 @@ server.register(ws);
 
 Edit the `router.ts` file created in the previous steps and add the following code:
 
-```ts
+```ts title='router.ts'
 export const appRouter = trpc
   .router()
   // .query(...)
@@ -197,8 +198,8 @@ export const appRouter = trpc
 
 ### Activate the `useWSS` option
 
-```ts
-server.register(fp(fastifyTRPCPlugin), {
+```ts title='server.ts'
+server.register(fastifyTRPCPlugin, {
   useWSS: true,
   // ...
 });

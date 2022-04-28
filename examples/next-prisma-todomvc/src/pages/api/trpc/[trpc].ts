@@ -3,6 +3,7 @@ import * as trpc from '@trpc/server';
 import * as trpcNext from '@trpc/server/adapters/next';
 import superjson from 'superjson';
 import { todoRouter } from '../../../routers/todo';
+
 const prisma = new PrismaClient();
 
 // create context based of incoming request

@@ -12,7 +12,7 @@ The error formatting in your router will be inferred all the way to your client 
 
 ### Adding custom formatting
 
-```ts
+```ts title='server.ts'
 
 const router = trpc.router<Context>()
   .formatError(({ shape, error }) => {
@@ -33,8 +33,8 @@ const router = trpc.router<Context>()
 
 ### Usage in React
 
-```tsx
-function MyComponent() {
+```tsx title='components/MyComponent.tsx'
+export function MyComponent() {
   const mutation = trpc.useMutation('addPost');
 
   useEffect(() => {

@@ -13,13 +13,9 @@ module.exports = {
     prism: {
       theme: require('prism-react-renderer/themes/vsDark'),
     },
-    googleAnalytics: {
-      trackingID: 'UA-198119985-2',
-      // Optional fields.
-      anonymizeIP: true, // Should IPs be anonymized?
-    },
     algolia: {
-      apiKey: '21afcd19f62cce875a67753d48f7e216',
+      appId: 'BTGPSR4MOE',
+      apiKey: 'ed8b3896f8e3e2b421e4c38834b915a8',
       indexName: 'trpc',
       // contextualSearch: true,
       // searchParameters: {},
@@ -41,8 +37,8 @@ module.exports = {
           label: 'Quickstart',
         },
         {
-          to: 'docs/example-apps',
-          label: 'Example Apps',
+          to: 'docs/awesome-trpc',
+          label: 'Awesome tRPC Collection',
         },
         {
           to: 'docs/nextjs',
@@ -131,6 +127,11 @@ module.exports = {
         },
         theme: {
           customCss: require.resolve('./src/css/custom.css'),
+        },
+        googleAnalytics: {
+          trackingID: 'UA-198119985-2',
+          // Optional fields.
+          anonymizeIP: true, // Should IPs be anonymized?
         },
       },
     ],

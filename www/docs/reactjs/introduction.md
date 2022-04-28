@@ -71,7 +71,7 @@ yarn add @trpc/client @trpc/server @trpc/react react-query
 
 Create a set of strongly-typed React hooks from your `AppRouter` type signature with `createReactQueryHooks`.
 
-```tsx
+```tsx title='utils/trpc.ts'
 // utils/trpc.ts
 import { createReactQueryHooks } from '@trpc/react';
 import type { AppRouter } from '../path/to/router.ts';
@@ -84,13 +84,13 @@ export const trpc = createReactQueryHooks<AppRouter>();
 
 In your `App.tsx`
 
-```tsx
+```tsx title='App.tsx'
 import React from 'react';
 import { useState } from 'react';
 import { QueryClient, QueryClientProvider } from 'react-query';
 import { trpc } from './utils/trpc';
 
-function App() {
+export function App() {
   const [queryClient] = useState(() => new QueryClient());
   const [trpcClient] = useState(() =>
     trpc.createClient({
@@ -116,10 +116,10 @@ function App() {
 
 #### 4. Fetch data
 
-```tsx
+```tsx title='pages/IndexPage.tsx'
 import { trpc } from '../utils/trpc';
 
-const IndexPage = () => {
+export default function IndexPage() {
   const hello = trpc.useQuery(['hello', { text: 'client' }]);
   if (!hello.data) return <div>Loading...</div>;
   return (
@@ -128,6 +128,4 @@ const IndexPage = () => {
     </div>
   );
 };
-
-export default IndexPage;
 ```

@@ -1,6 +1,6 @@
-import Link from 'next/link';
 import { trpc } from '../utils/trpc';
 import { NextPageWithLayout } from './_app';
+import Link from 'next/link';
 
 const IndexPage: NextPageWithLayout = () => {
   const utils = trpc.useContext();

@@ -1,17 +1,19 @@
 /* eslint-disable @typescript-eslint/no-empty-function */
+
 /* eslint-disable @typescript-eslint/no-explicit-any */
+
 /* eslint-disable @typescript-eslint/ban-types */
+import { routerToServerAndClient, waitError } from './__testHelpers';
+import { waitFor } from '@testing-library/react';
 import { expectTypeOf } from 'expect-type';
-import { createTRPCClient } from '../../client/src';
-import { createWSClient, wsLink } from '../../client/src/links/wsLink';
+import WebSocket from 'ws';
 import { z } from 'zod';
+import { createTRPCClient } from '../../client/src';
 import { TRPCClientError } from '../../client/src';
+import { httpBatchLink } from '../../client/src/links/httpBatchLink';
+import { createWSClient, wsLink } from '../../client/src/links/wsLink';
 import * as trpc from '../src';
 import { CreateHttpContextOptions, Maybe, TRPCError } from '../src';
-import { routerToServerAndClient, waitError } from './_testHelpers';
-import WebSocket from 'ws';
-import { waitFor } from '@testing-library/react';
-import { httpBatchLink } from '../../client/src/links/httpBatchLink';
 
 test('smoke test', async () => {
   const { client, close } = routerToServerAndClient(

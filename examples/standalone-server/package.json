@@ -1,10 +1,10 @@
 {
   "name": "@examples/standalone-server",
-  "version": "9.20.2",
+  "version": "9.23.2",
   "private": true,
   "scripts": {
     "dev:server": "nodemon -e ts -w . -x ts-node ./src/server",
-    "dev:client": "nodemon -e ts -w . -x 'wait-on tcp:2022 && ts-node ./src/client'",
+    "dev:client": "nodemon -e ts -w . -x 'wait-port 2022 && ts-node ./src/client'",
     "dev": "run-p dev:* --print-label",
     "start": "yarn dev",
     "build": "tsc",
@@ -12,9 +12,9 @@
     "test-start": "start-server-and-test 'node dist/server' 2022 'node dist/client'"
   },
   "dependencies": {
-    "@trpc/client": "^9.20.2",
-    "@trpc/react": "^9.20.2",
-    "@trpc/server": "^9.20.2",
+    "@trpc/client": "^9.23.2",
+    "@trpc/react": "^9.23.2",
+    "@trpc/server": "^9.23.2",
     "abort-controller": "^3.0.0",
     "node-fetch": "^2.6.1",
     "typescript": "4.4.4",
@@ -31,7 +31,7 @@
     "npm-run-all": "^4.1.5",
     "start-server-and-test": "^1.12.0",
     "ts-node": "^10.3.0",
-    "wait-on": "^6.0.0"
+    "wait-port": "^0.2.9"
   },
   "publishConfig": {
     "access": "restricted"

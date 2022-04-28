@@ -1,17 +1,17 @@
 import {
-  createTRPCClient,
   CreateTRPCClientOptions,
   TRPCClient,
   TRPCClientErrorLike,
   TRPCRequestOptions,
+  createTRPCClient,
 } from '@trpc/client';
 import type {
   AnyRouter,
+  ProcedureRecord,
   inferHandlerInput,
   inferProcedureInput,
   inferProcedureOutput,
   inferSubscriptionOutput,
-  ProcedureRecord,
 } from '@trpc/server';
 import React, {
   ReactNode,
@@ -21,19 +21,19 @@ import React, {
   useState,
 } from 'react';
 import {
-  hashQueryKey,
+  DehydratedState,
   QueryClient,
-  useInfiniteQuery as __useInfiniteQuery,
   UseInfiniteQueryOptions,
   UseInfiniteQueryResult,
-  useMutation as __useMutation,
   UseMutationOptions,
   UseMutationResult,
-  useQuery as __useQuery,
   UseQueryOptions,
   UseQueryResult,
+  useInfiniteQuery as __useInfiniteQuery,
+  useMutation as __useMutation,
+  useQuery as __useQuery,
+  hashQueryKey,
 } from 'react-query';
-import { DehydratedState } from 'react-query/hydration';
 import { SSRState, TRPCContext, TRPCContextState } from './internals/context';
 
 export type OutputWithCursor<TData, TCursor extends any = any> = {
@@ -74,16 +74,19 @@ function getClientArgs<TPathAndInput extends unknown[], TOptions>(
   return [path, input, opts] as const;
 }
 
-type inferInfiniteQueryNames<TObj extends ProcedureRecord<any, any, any, any>> =
-  {
-    [TPath in keyof TObj]: inferProcedureInput<TObj[TPath]> extends {
-      cursor?: any;
-    }
-      ? TPath
-      : never;
-  }[keyof TObj];
+type inferInfiniteQueryNames<
+  TObj extends ProcedureRecord<any, any, any, any, any, any>,
+> = {
+  [TPath in keyof TObj]: inferProcedureInput<TObj[TPath]> extends {
+    cursor?: any;
+  }
+    ? TPath
+    : never;
+}[keyof TObj];
 
-type inferProcedures<TObj extends ProcedureRecord<any, any, any, any>> = {
+type inferProcedures<
+  TObj extends ProcedureRecord<any, any, any, any, any, any>,
+> = {
   [TPath in keyof TObj]: {
     input: inferProcedureInput<TObj[TPath]>;
     output: inferProcedureOutput<TObj[TPath]>;
@@ -306,7 +309,7 @@ export function createReactQueryHooks<
 
     return __useMutation((input) => {
       const actualPath = Array.isArray(path) ? path[0] : path;
-      return (client.mutation as any)(actualPath, input);
+      return (client.mutation as any)(actualPath, input, opts);
     }, opts);
   }
 
@@ -322,7 +325,7 @@ export function createReactQueryHooks<
   >(
     pathAndInput: [
       path: TPath,
-      ...args: inferHandlerInput<TSubscriptions[TPath]>
+      ...args: inferHandlerInput<TSubscriptions[TPath]>,
     ],
     opts: {
       enabled?: boolean;

@@ -87,3 +87,26 @@ article {
 .footnotes :target {
   background: yellow;
 }
+
+.docs-wrapper main > .container > .row {
+  justify-content: center;
+}
+.docs-wrapper main > .container > .row > .col:first-child {
+  /* max-width: 650px !important; */
+}
+@media only screen and (min-width: 997px) {
+  .docs-wrapper main > .container > .row > .col:first-child {
+    /* max-width: min(75%, 650px) !important; */
+  }
+}
+
+@media only screen and (min-width: 1496px) {
+  .docs-wrapper main > .container > .row > .col:first-child {
+    /* max-width: min(75%, 850px) !important; */
+  }
+}
+
+.theme-doc-markdown.markdown table {
+  display: table;
+  /* width: 100%; */
+}

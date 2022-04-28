@@ -1,5 +1,6 @@
-import { getPostBody } from './getPostBody';
 import { EventEmitter } from 'events';
+import { getPostBody } from './getPostBody';
+
 test('has body', async () => {
   const body = {};
   const resolvedBody = await getPostBody({ req: { body } } as any);

@@ -1,17 +1,19 @@
 import {
   AnyRouter,
-  assertNotBrowser,
   ClientDataTransformerOptions,
+  assertNotBrowser,
   inferHandlerInput,
   inferProcedureOutput,
   inferRouterContext,
 } from '@trpc/server';
-import { InfiniteData, QueryClient } from 'react-query';
 import {
-  dehydrate,
-  DehydratedState,
   DehydrateOptions,
-} from 'react-query/hydration';
+  DehydratedState,
+  InfiniteData,
+  QueryClient,
+  dehydrate,
+} from 'react-query';
+
 type QueryClientConfig = ConstructorParameters<typeof QueryClient>[0];
 
 assertNotBrowser();

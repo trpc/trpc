@@ -9,7 +9,7 @@ You can clone trpc and play with local examples, or play with them in the CodeSa
 
 Here's some example apps:
 
-<table>
+<table width="100%">
   <thead>
     <tr>
       <th>Description</th>
@@ -103,6 +103,16 @@ Here's some example apps:
         <ul>
           <li><a href="https://githubbox.com/trpc/trpc/tree/main/examples/express-server">CodeSandbox</a></li>
           <li><a href="https://github.com/trpc/trpc/tree/main/examples/express-server">Source</a></li>
+        </ul>
+      </td>
+    </tr>
+    <tr>
+      <td>Fastify server with WebSocket &amp; procedure calls with node.js.</td>
+      <td><em>n/a</em></td>
+      <td>
+        <ul>
+          <li><a href="https://codesandbox.io/s/github/trpc/trpc/tree/main/examples/fastify-server">CodeSandbox</a></li>
+          <li><a href="https://github.com/trpc/trpc/tree/main/examples/fastify-server">Source</a></li>
         </ul>
       </td>
     </tr>

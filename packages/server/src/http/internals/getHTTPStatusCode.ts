@@ -1,6 +1,6 @@
-import { TRPCResponse, TRPC_ERROR_CODES_BY_KEY } from '../../rpc';
 import { TRPCError } from '../../TRPCError';
 import { invert } from '../../internals/invert';
+import { TRPCResponse, TRPC_ERROR_CODES_BY_KEY } from '../../rpc';
 
 export const TRPC_ERROR_CODES_BY_NUMBER = invert(TRPC_ERROR_CODES_BY_KEY);
 type ValueOf<T> = T[keyof T];
@@ -17,6 +17,7 @@ const JSONRPC2_TO_HTTP_CODE: Record<
   UNAUTHORIZED: 401,
   FORBIDDEN: 403,
   TIMEOUT: 408,
+  CONFLICT: 409,
   CLIENT_CLOSED_REQUEST: 499,
   PRECONDITION_FAILED: 412,
   PAYLOAD_TOO_LARGE: 413,

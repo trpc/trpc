@@ -563,7 +563,10 @@
       "avatar_url": "https://avatars.githubusercontent.com/u/69924001?v=4",
       "profile": "https://jamesbe.com",
       "contributions": [
-        "bug"
+        "bug",
+        "ideas",
+        "code",
+        "test"
       ]
     },
     {
@@ -591,6 +594,89 @@
       "profile": "https://kevinlangleyjr.dev",
       "contributions": [
         "doc"
+      ]
+    },
+    {
+      "login": "toyamarinyon",
+      "name": "toyamarinyon",
+      "avatar_url": "https://avatars.githubusercontent.com/u/535254?v=4",
+      "profile": "https://github.com/toyamarinyon",
+      "contributions": [
+        "example"
+      ]
+    },
+    {
+      "login": "FarazPatankar",
+      "name": "Faraz Patankar",
+      "avatar_url": "https://avatars.githubusercontent.com/u/10681116?v=4",
+      "profile": "https://farazpatankar.com/",
+      "contributions": [
+        "financial"
+      ]
+    },
+    {
+      "login": "john-schmitz",
+      "name": "John Schmitz",
+      "avatar_url": "https://avatars.githubusercontent.com/u/25447051?v=4",
+      "profile": "http://johnschmitz.me",
+      "contributions": [
+        "code"
+      ]
+    },
+    {
+      "login": "okaforcj",
+      "name": "okaforcj",
+      "avatar_url": "https://avatars.githubusercontent.com/u/34102565?v=4",
+      "profile": "https://github.com/okaforcj",
+      "contributions": [
+        "financial"
+      ]
+    },
+    {
+      "login": "LouisHaftmann",
+      "name": "Louis Haftmann",
+      "avatar_url": "https://avatars.githubusercontent.com/u/30736553?v=4",
+      "profile": "https://github.com/LouisHaftmann",
+      "contributions": [
+        "code",
+        "test",
+        "doc"
+      ]
+    },
+    {
+      "login": "Perfect7M",
+      "name": "Perfect7M",
+      "avatar_url": "https://avatars.githubusercontent.com/u/5896181?v=4",
+      "profile": "https://marcin.page/",
+      "contributions": [
+        "code"
+      ]
+    },
+    {
+      "login": "kindlyfire",
+      "name": "Tijl Van den Brugghen",
+      "avatar_url": "https://avatars.githubusercontent.com/u/10267586?v=4",
+      "profile": "https://tijlvdb.me/",
+      "contributions": [
+        "doc"
+      ]
+    },
+    {
+      "login": "matthijscollabai",
+      "name": "Matthijs Wolting",
+      "avatar_url": "https://avatars.githubusercontent.com/u/89927222?v=4",
+      "profile": "https://github.com/matthijscollabai",
+      "contributions": [
+        "bug"
+      ]
+    },
+    {
+      "login": "lukahartwig",
+      "name": "Luka Hartwig",
+      "avatar_url": "https://avatars.githubusercontent.com/u/7414521?v=4",
+      "profile": "https://lukahartwig.de",
+      "contributions": [
+        "code"
       ]
     }
   ],

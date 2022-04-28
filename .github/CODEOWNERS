@@ -1,0 +1,9 @@
+# https://help.github.com/en/github/creating-cloning-and-archiving-repositories/about-code-owners
+
+* @KATT
+
+**/package.json @trpc-bot
+**/yarn.lock @trpc-bot
+
+
+**/*fastify* @skarab42

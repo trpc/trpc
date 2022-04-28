@@ -1,11 +1,11 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
+import { routerToServerAndClient } from './__testHelpers';
 import { AsyncLocalStorage } from 'async_hooks';
 import { expectTypeOf } from 'expect-type';
-import * as trpc from '../src';
-import { inferProcedureOutput, TRPCError } from '../src';
-import { MiddlewareResult } from '../src/internals/middlewares';
-import { routerToServerAndClient } from './_testHelpers';
 import { z } from 'zod';
+import * as trpc from '../src';
+import { TRPCError, inferProcedureOutput } from '../src';
+import { MiddlewareResult } from '../src/internals/middlewares';
 
 test('is called if def first', async () => {
   const middleware = jest.fn((opts) => {
@@ -449,6 +449,58 @@ test('omitting ctx in next() does not affect the actual ctx', async () => {
         resolve({ ctx }) {
           expectTypeOf(ctx).toEqualTypeOf<OriginalContext>();
           return ctx.maybeUser?.id;
+        },
+      }),
+    {
+      server: {
+        createContext() {
+          return {
+            maybeUser: {
+              id: 'alexdotjs',
+            },
+          };
+        },
+      },
+    },
+  );
+
+  expect(await client.query('test')).toMatchInlineSnapshot(`"alexdotjs"`);
+
+  close();
+});
+
+test('omitting ctx in next() does not affect a previous middleware', async () => {
+  type User = {
+    id: string;
+  };
+  type OriginalContext = {
+    maybeUser?: User;
+  };
+  const { client, close } = routerToServerAndClient(
+    trpc
+      .router<OriginalContext>()
+      .middleware(({ ctx, next }) => {
+        if (!ctx.maybeUser) {
+          throw new Error('No user');
+        }
+        return next({
+          ctx: {
+            ...ctx,
+            user: ctx.maybeUser,
+          },
+        });
+      })
+      .middleware(async function firstMiddleware({ next }) {
+        return next();
+      })
+      .query('test', {
+        resolve({ ctx }) {
+          expectTypeOf(ctx).toEqualTypeOf<
+            OriginalContext & {
+              user: User;
+            }
+          >();
+          return ctx.user.id;
         },
       }),
     {

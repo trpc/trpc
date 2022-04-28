@@ -10,6 +10,7 @@
 - 💚 CI setup using GitHub Actions:
   - ✅ E2E testing with [Playwright](https://playwright.dev/)
   - ✅ Linting
+- 🔐 Validates your env vars on build and start
 
 
 ## Setup
@@ -52,6 +53,7 @@ yarn dx
 ```bash
 yarn build      # runs `prisma generate` + `prisma migrate` + `next build`
 yarn db-nuke    # resets local db
+yarn dev        # starts next.js
 yarn dx         # starts postgres db + runs migrations + seeds + starts next.js 
 yarn test-dev   # runs e2e tests on dev
 yarn test-start # runs e2e tests on `next start` - build required before

@@ -1,37 +1,40 @@
 /* eslint-disable @typescript-eslint/no-empty-function */
-/* eslint-disable @typescript-eslint/no-non-null-assertion */
-/* eslint-disable @typescript-eslint/ban-types */
-/* eslint-disable @typescript-eslint/no-explicit-any */
-/* eslint-disable @typescript-eslint/ban-ts-comment */
 
-import { trpcServer } from './_packages';
+/* eslint-disable @typescript-eslint/no-non-null-assertion */
+
+/* eslint-disable @typescript-eslint/ban-types */
+
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
+/* eslint-disable @typescript-eslint/ban-ts-comment */
+import { trpcServer } from './__packages';
+import { routerToServerAndClient } from './__testHelpers';
 import '@testing-library/jest-dom';
 import { render, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { httpBatchLink } from '@trpc/client/links/httpBatchLink';
 import { expectTypeOf } from 'expect-type';
 import hash from 'hash-sum';
-import React, { Fragment, useEffect, useState } from 'react';
+import { AppType } from 'next/dist/shared/lib/utils';
+import React, { Fragment, ReactNode, useEffect, useState } from 'react';
 import {
   QueryClient,
   QueryClientProvider,
+  dehydrate,
   setLogger,
   useQueryClient,
 } from 'react-query';
-import { dehydrate } from 'react-query/hydration';
-import { z, ZodError } from 'zod';
+import { ZodError, z } from 'zod';
+import { splitLink } from '../../client/src/links/splitLink';
+import {
+  TRPCWebSocketClient,
+  createWSClient,
+  wsLink,
+} from '../../client/src/links/wsLink';
 import { withTRPC } from '../../next/src';
-import { createReactQueryHooks, OutputWithCursor } from '../../react/src';
+import { OutputWithCursor, createReactQueryHooks } from '../../react/src';
 import { createSSGHelpers } from '../../react/ssg';
 import { DefaultErrorShape } from '../src';
-import { routerToServerAndClient } from './_testHelpers';
-import {
-  wsLink,
-  createWSClient,
-  TRPCWebSocketClient,
-} from '../../client/src/links/wsLink';
-import { splitLink } from '../../client/src/links/splitLink';
-import { AppType } from 'next/dist/shared/lib/utils';
 import { TRPCError } from '../src/TRPCError';
 
 setLogger({
@@ -226,7 +229,18 @@ function createAppRouter() {
   const queryClient = new QueryClient();
   const trpc = createReactQueryHooks<typeof appRouter>();
 
+  function App(props: { children: ReactNode }) {
+    const [queryClient] = useState(() => new QueryClient());
+    return (
+      <trpc.Provider {...{ queryClient, client }}>
+        <QueryClientProvider client={queryClient}>
+          {props.children}
+        </QueryClientProvider>
+      </trpc.Provider>
+    );
+  }
   return {
+    App,
     appRouter,
     trpc,
     close,
@@ -578,6 +592,40 @@ describe('useMutation()', () => {
     await waitFor(() => {
       expect(utils.container).not.toHaveTextContent('first post');
       expect(utils.container).toHaveTextContent('second post');
+    });
+  });
+
+  test('useMutation with context', async () => {
+    const { trpc, App, linkSpy } = factory;
+
+    function MyComponent() {
+      const deletePostsMutation = trpc.useMutation(['deletePosts'], {
+        context: {
+          test: '1',
+        },
+      });
+
+      useEffect(() => {
+        deletePostsMutation.mutate();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+      }, []);
+
+      return <pre>{deletePostsMutation.isSuccess && '___FINISHED___'}</pre>;
+    }
+
+    const utils = render(
+      <App>
+        <MyComponent />
+      </App>,
+    );
+    await waitFor(() => {
+      expect(utils.container).toHaveTextContent('___FINISHED___');
+    });
+
+    expect(linkSpy.up).toHaveBeenCalledTimes(1);
+    expect(linkSpy.down).toHaveBeenCalledTimes(1);
+    expect(linkSpy.up.mock.calls[0][0].context).toMatchObject({
+      test: '1',
     });
   });
 });

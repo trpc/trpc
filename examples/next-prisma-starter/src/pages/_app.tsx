@@ -1,13 +1,14 @@
 import { httpBatchLink } from '@trpc/client/links/httpBatchLink';
 import { loggerLink } from '@trpc/client/links/loggerLink';
 import { withTRPC } from '@trpc/next';
-import { DefaultLayout } from '~/components/DefaultLayout';
 import { NextPage } from 'next';
 import { AppProps } from 'next/app';
 import { AppType } from 'next/dist/shared/lib/utils';
 import { ReactElement, ReactNode } from 'react';
-import { AppRouter } from '~/server/routers/_app';
 import superjson from 'superjson';
+import { DefaultLayout } from '~/components/DefaultLayout';
+import { AppRouter } from '~/server/routers/_app';
+import { SSRContext } from '~/utils/trpc';
 
 export type NextPageWithLayout = NextPage & {
   getLayout?: (page: ReactElement) => ReactNode;
@@ -25,7 +26,7 @@ const MyApp = (({ Component, pageProps }: AppPropsWithLayout) => {
 }) as AppType;
 
 function getBaseUrl() {
-  if (process.browser) {
+  if (typeof window !== 'undefined') {
     return '';
   }
   // reference for vercel.com
@@ -81,16 +82,24 @@ export default withTRPC<AppRouter>({
   /**
    * Set headers or status code when doing SSR
    */
-  responseMeta({ clientErrors }) {
-    if (clientErrors.length) {
-      // propagate http first error from API calls
+  responseMeta(opts) {
+    const ctx = opts.ctx as SSRContext;
+
+    if (ctx.status) {
+      // If HTTP status set, propagate that
       return {
-        status: clientErrors[0].data?.httpStatus ?? 500,
+        status: ctx.status,
       };
     }
 
-    // for app caching with SSR see https://trpc.io/docs/caching
-
+    const error = opts.clientErrors[0];
+    if (error) {
+      // Propagate http first error from API calls
+      return {
+        status: error.data?.httpStatus ?? 500,
+      };
+    }
+    // For app caching with SSR see https://trpc.io/docs/caching
     return {};
   },
 })(MyApp);

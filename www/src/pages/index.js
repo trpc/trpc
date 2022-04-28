@@ -1,12 +1,12 @@
-import React from 'react';
-import clsx from 'clsx';
-import Layout from '@theme/Layout';
-import Link from '@docusaurus/Link';
-import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
-import useBaseUrl from '@docusaurus/useBaseUrl';
-import styles from './styles.module.css';
-import GitHubButton from 'react-github-btn';
 import Head from '@docusaurus/Head';
+import Link from '@docusaurus/Link';
+import useBaseUrl from '@docusaurus/useBaseUrl';
+import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
+import Layout from '@theme/Layout';
+import clsx from 'clsx';
+import React from 'react';
+import GitHubButton from 'react-github-btn';
+import styles from './styles.module.css';
 
 const features = [
   {
@@ -76,7 +76,7 @@ function Home() {
         />
       </Head>
       <header className={clsx('hero hero--primary', styles.heroBanner)}>
-        <div className="container">
+        <div className="container main-container">
           <h1 className="hero__title">{siteConfig.title}</h1>
           <p className="hero__subtitle">{siteConfig.tagline}</p>
           <p>
@@ -97,14 +97,14 @@ function Home() {
               alt="Server/client example"
             />
             <figcaption>
-              The client above is <strong>not</strong> importing any code from
-              the server, only its type declarations. <code>import type</code>{' '}
-              only imports declarations to be used annotations and declarations.
-              It{' '}
+              The client doesn&apos;t import <em>any code</em> from the server,
+              only a single TypeScript type. The <code>import type</code>{' '}
+              declaration is{' '}
               <a href="https://www.typescriptlang.org/docs/handbook/release-notes/typescript-3-8.html#type-only-imports-and-export">
-                always gets fully erased
-              </a>
-              , so there’s no remnant of it at runtime.
+                fully erased
+              </a>{' '}
+              at runtime. tRPC transforms this type into a fully typesafe
+              client.
             </figcaption>
           </figure>
           <p>
