@@ -4,8 +4,11 @@ import { assertNotBrowser } from '../assertNotBrowser';
 import { ProcedureType } from '../router';
 import { InferLast } from '../types';
 import { getErrorFromUnknown } from './errors';
-import { MiddlewareFunction, middlewareMarker } from './middlewares';
-import { wrapCallSafe } from './wrapCallSafe';
+import {
+  MiddlewareFunction,
+  MiddlewareResult,
+  middlewareMarker,
+} from './middlewares';
 
 assertNotBrowser();
 
@@ -190,31 +193,31 @@ export class Procedure<
         prevResult: null,
         ctx: opts.ctx,
       },
-    ): Promise<any> => {
-      const result = await wrapCallSafe(() =>
-        middlewaresWithResolver[callOpts.index]({
+    ): Promise<MiddlewareResult<any>> => {
+      try {
+        const result = await middlewaresWithResolver[callOpts.index]({
           ctx: callOpts.ctx,
           type: opts.type,
           path: opts.path,
           rawInput: opts.rawInput,
           meta: this.meta,
-          next: async (opts?: any) => {
+          next: async (nextOpts?: any) => {
             return await callRecursive({
               ...callOpts,
               index: callOpts.index + 1,
-              ctx: opts?.ctx ?? callOpts.ctx,
+              ctx: nextOpts ? nextOpts.ctx : callOpts.ctx,
             });
           },
-        }),
-      );
-      if (result.ok) {
-        return result.data;
+        });
+        return result;
+      } catch (cause) {
+        return {
+          ctx: callOpts.ctx,
+          ok: false,
+          error: getErrorFromUnknown(cause),
+          marker: middlewareMarker,
+        };
       }
-
-      return {
-        ok: false as const,
-        error: getErrorFromUnknown(result.error),
-      };
     };
 
     // there's always at least one "next" since we wrap this.resolver in a middleware
