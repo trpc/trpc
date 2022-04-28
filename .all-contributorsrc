@@ -660,6 +660,24 @@
       "contributions": [
         "doc"
       ]
+    },
+    {
+      "login": "matthijscollabai",
+      "name": "Matthijs Wolting",
+      "avatar_url": "https://avatars.githubusercontent.com/u/89927222?v=4",
+      "profile": "https://github.com/matthijscollabai",
+      "contributions": [
+        "bug"
+      ]
+    },
+    {
+      "login": "lukahartwig",
+      "name": "Luka Hartwig",
+      "avatar_url": "https://avatars.githubusercontent.com/u/7414521?v=4",
+      "profile": "https://lukahartwig.de",
+      "contributions": [
+        "code"
+      ]
     }
   ],
   "contributorsPerLine": 7,

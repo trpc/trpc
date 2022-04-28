@@ -18,8 +18,13 @@ import {
   NextPageContext,
 } from 'next/dist/shared/lib/utils';
 import React, { createElement, useState } from 'react';
-import { QueryClient, QueryClientProvider } from 'react-query';
-import { DehydratedState, Hydrate, dehydrate } from 'react-query/hydration';
+import {
+  DehydratedState,
+  Hydrate,
+  QueryClient,
+  QueryClientProvider,
+  dehydrate,
+} from 'react-query';
 import ssrPrepass from 'react-ssr-prepass';
 
 type QueryClientConfig = ConstructorParameters<typeof QueryClient>[0];
