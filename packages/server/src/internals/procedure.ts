@@ -187,6 +187,7 @@ export class Procedure<
       },
     ]);
 
+    // run the middlewares recursively with the resolver as the last one
     const callRecursive = async (
       callOpts: { ctx: any; index: number; prevResult: any } = {
         index: 0,
@@ -201,7 +202,7 @@ export class Procedure<
           path: opts.path,
           rawInput: opts.rawInput,
           meta: this.meta,
-          next: async (nextOpts?: any) => {
+          next: async (nextOpts?: { ctx: any }) => {
             return await callRecursive({
               ...callOpts,
               index: callOpts.index + 1,
