@@ -12,7 +12,7 @@ Similar to urql's [_exchanges_](https://formidable.com/open-source/urql/docs/arc
 
 Request batching is automatically enabled which batches your requests to the server, this can make the below code produce exactly **one** HTTP request and on the server exactly **one** database query:
 
-```tsx
+```ts
 // below will be done in the same request when batching is enabled
 const somePosts = await Promise.all([
   client.query('post.byId', 1),
@@ -29,7 +29,7 @@ const somePosts = await Promise.all([
 
 This limits the number of requests that can be sent together in batch ( useful to prevent the url from getting too large and run into [HTTP error 413](https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/413) ).
 
-```ts
+```ts title='server.ts'
 import type { AppRouter } from 'pages/api/trpc/[trpc]';
 import { withTRPC } from '@trpc/next';
 import { AppType } from 'next/dist/shared/lib/utils';
@@ -60,7 +60,7 @@ export default withTRPC<AppRouter>({
 
 In your `[trpc].ts`:
 
-```ts
+```ts title='pages/api/trpc/[trpc].ts'
 export default trpcNext.createNextApiHandler({
   // [...]
   // 👇 disable batching
@@ -73,7 +73,7 @@ export default trpcNext.createNextApiHandler({
 #### 2. Use batch-free link in your tRPC Client
 
 
-```ts
+```tsx title='pages/_app.tsx'
 import type { AppRouter } from 'pages/api/trpc/[trpc]';
 import { withTRPC } from '@trpc/next';
 import { AppType } from 'next/dist/shared/lib/utils';
@@ -105,7 +105,7 @@ export default withTRPC<AppRouter>({
 
 ##### 1. Configure client / `_app.tsx`
 
-```tsx
+```tsx title='pages/_app.tsx'
 import { withTRPC } from '@trpc/next';
 import { httpBatchLink } from '@trpc/client';
 import { httpLink } from '@trpc/client';
@@ -140,31 +140,38 @@ export default withTRPC<AppRouter>({
 
 ##### 2. Perform request without batching
 
-```tsx
-const postsQuery = trpc.useQuery(['posts'], {
-  context: {
-    skipBatch: true,
-  },
-});
+```tsx title='MyComponent.tsx'
+export function MyComponent() {
+  const postsQuery = trpc.useQuery(['posts'], {
+    context: {
+      skipBatch: true,
+    },
+  });
+  return (
+    <pre>{JSON.stringify(postsQuery.data ?? null, null, 4)}</pre>
+  )
+})
+```
 
-// or
+or:
 
+```ts title='client.ts'
 const postResult = client.query('posts', null, {
   context: {
     skipBatch: true,
   },
 })
-
 ```
+
 
 ### Creating a custom link
 
 > Reference examples can be found in [`packages/client/src/links`](https://github.com/trpc/trpc/tree/main/packages/client/src/links).
 
-```tsx
+```tsx title='utils/customLink.ts'
 import { TRPCLink } from '@trpc/client';
 import { AppRouter } from 'server/routers/_app';
-import { observable } from '@trpc/client/observable';
+import { observable } from '@trpc/server/observable';
 
 export const customLink: TRPCLink<AppRouter> = () => {
   // here we just got initialized in the app - this happens once per app

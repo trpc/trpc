@@ -12,6 +12,7 @@ Subscriptions & WebSockets are in beta, alpha & might change without a major ver
 ## Using Subscriptions
 
 :::tip
+
 - For a full-stack example have a look at [/examples/next-prisma-starter-websockets](https://github.com/trpc/trpc/tree/main/examples/next-prisma-starter-websockets).
 - For a bare-minumum Node.js example see [/examples/standalone-server](https://github.com/trpc/trpc/tree/main/examples/standalone-server).
 
@@ -19,24 +20,25 @@ Subscriptions & WebSockets are in beta, alpha & might change without a major ver
 
 ### Adding a subscription procedure
 
-
-```tsx
+```tsx title='server/router.ts'
 import * as trpc from '@trpc/server';
+import { observable } from '@trpc/server/observable';
 import { EventEmitter } from 'events';
 
 // create a global event emitter (could be replaced by redis, etc)
-const ee = new EventEmitter()
+const ee = new EventEmitter();
 
-trpc.router()
+export const appRouter = trpc
+  .router()
   .subscription('onAdd', {
     resolve({ ctx }) {
       // `resolve()` is triggered for each client when they start subscribing `onAdd`
 
-      // return a `Subscription` with a callback which is triggered immediately
-      return new trpc.Subscription<Post>((emit) => {
+      // return an `observable` with a callback which is triggered immediately
+      return observable<Post>((emit) => {
         const onAdd = (data: Post) => {
           // emit data to client
-          emit.data(data)
+          emit.next(data);
         };
 
         // trigger `onAdd()` when `add` is triggered in our event emitter
@@ -55,12 +57,12 @@ trpc.router()
       text: z.string().min(1),
     }),
     async resolve({ ctx, input }) {
-      const post = { ...input } /* [..] add to db */
+      const post = { ...input }; /* [..] add to db */
 
       ee.emit('add', post);
       return post;
     },
-  })
+  });
 ```
 
 ### Creating a WebSocket-server
@@ -69,11 +71,12 @@ trpc.router()
 yarn add ws
 ```
 
-```ts
-import ws from 'ws';
+```ts title='server/wsServer.ts'
 import { applyWSSHandler } from '@trpc/server/adapters/ws';
+import ws from 'ws';
 import { appRouter } from './routers/app';
 import { createContext } from './trpc';
+
 const wss = new ws.Server({
   port: 3001,
 });
@@ -100,7 +103,7 @@ process.on('SIGTERM', () => {
 You can [use Links](../client/links.md) to route queries and/or mutations to HTTP transport and subscriptions over WebSockets.
 :::
 
-```tsx
+```tsx title='client.ts'
 import { createWSClient, wsLink } from '@trpc/client';
 import { httpBatchLink } from '@trpc/client';
 
@@ -119,30 +122,25 @@ const client = createTRPCClient<AppRouter>({
 });
 ```
 
-
-
-
 ### Using React
 
 See [/examples/next-prisma-starter-websockets](https://github.com/trpc/trpc/tree/main/examples/next-prisma-starter-websockets).
 
 ## WebSockets RPC Specification
 
-> You can read more details by drilling into the TypeScript definitions: 
+> You can read more details by drilling into the TypeScript definitions:
 >
->- [/packages/server/src/rpc/envelopes.ts](https://github.com/trpc/trpc/tree/main/packages/server/src/rpc/envelopes.ts)
->- [/packages/server/src/rpc/codes.ts](https://github.com/trpc/trpc/tree/main/packages/server/src/rpc/codes.ts).
-
+> - [/packages/server/src/rpc/envelopes.ts](https://github.com/trpc/trpc/tree/main/packages/server/src/rpc/envelopes.ts)
+> - [/packages/server/src/rpc/codes.ts](https://github.com/trpc/trpc/tree/main/packages/server/src/rpc/codes.ts).
 
 ### `query` / `mutation`
-
 
 #### Request
 
 ```ts
 {
   id: number | string;
-  jsonrpc?: '2.0';
+  jsonrpc?: '2.0'; // optional
   method: 'query' | 'mutation';
   params: {
     path: string;
@@ -158,17 +156,15 @@ _... below, or an error._
 ```ts
 {
   id: number | string;
-  jsonrpc: '2.0';
+  jsonrpc?: '2.0'; // only defined if included in request
   result: {
     type: 'data'; // always 'data' for mutation / queries
     data: TOutput; // output from procedure
-  };
+  }
 }
 ```
 
-
 ### `subscription` / `subscription.stop`
-
 
 #### Start a subscription
 
@@ -201,17 +197,17 @@ _... below, or an error._
 ```ts
 {
   id: number | string;
-  jsonrpc: '2.0';
+  jsonrpc?: '2.0';
   result: (
     | {
-      type: 'data';
+        type: 'data';
         data: TData; // subscription emitted data
       }
     | {
-        type: 'started'; // sub started
+        type: 'started'; // subscription started
       }
     | {
-        type: 'stopped'; // sub stopped
+        type: 'stopped'; // subscription stopped
       }
   )
 }
@@ -221,10 +217,8 @@ _... below, or an error._
 
 See https://www.jsonrpc.org/specification#error_object or [Error Formatting](../server/error-formatting.md).
 
-
 ## Notifications from Server to Client
 
-
-### `{id: null, type: 'reconnect' }`
+### `{ id: null, type: 'reconnect' }`
 
 Tells clients to reconnect before shutting down server. Invoked by `wssHandler.broadcastReconnectNotification()`.

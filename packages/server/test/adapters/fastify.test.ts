@@ -11,12 +11,13 @@ import { HTTPHeaders, createTRPCClient } from '../../../client/src';
 import { httpLink } from '../../../client/src/links/httpLink';
 import { splitLink } from '../../../client/src/links/splitLink';
 import { createWSClient, wsLink } from '../../../client/src/links/wsLink';
-import { Subscription, inferAsyncReturnType, router } from '../../src';
+import { inferAsyncReturnType, router } from '../../src';
 import {
   CreateFastifyContextOptions,
   fastifyTRPCPlugin,
 } from '../../src/adapters/fastify';
-import { TRPCResult } from '../../src/rpc';
+import { observable } from '../../src/observable';
+import { TRPCResultMessage } from '../../src/rpc';
 
 const config = {
   port: 2022,
@@ -75,9 +76,9 @@ function createAppRouter() {
     })
     .subscription('onMessage', {
       resolve() {
-        const sub = new Subscription<Message>((emit) => {
+        const sub = observable<Message>((emit) => {
           const onMessage = (data: Message) => {
-            emit.data(data);
+            emit.next(data);
           };
           ee.on('server:msg', onMessage);
           return () => {
@@ -262,7 +263,7 @@ describe('anonymous user', () => {
     const sub = app.client.subscription('onMessage', undefined, {
       next(data) {
         expectTypeOf(data).not.toBeAny();
-        expectTypeOf(data).toMatchTypeOf<TRPCResult<Message>>();
+        expectTypeOf(data).toMatchTypeOf<TRPCResultMessage<Message>>();
         next(data);
       },
     });

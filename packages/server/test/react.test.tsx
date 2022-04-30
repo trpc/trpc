@@ -19,10 +19,10 @@ import React, { Fragment, ReactNode, useEffect, useState } from 'react';
 import {
   QueryClient,
   QueryClientProvider,
+  dehydrate,
   setLogger,
   useQueryClient,
 } from 'react-query';
-import { dehydrate } from 'react-query';
 import { ZodError, z } from 'zod';
 import { httpBatchLink } from '../../client/src/links/httpBatchLink';
 import { splitLink } from '../../client/src/links/splitLink';
@@ -31,12 +31,13 @@ import {
   createWSClient,
   wsLink,
 } from '../../client/src/links/wsLink';
-import { observable } from '../../client/src/observable';
 import { withTRPC } from '../../next/src';
 import { OutputWithCursor, createReactQueryHooks } from '../../react/src';
-import { createSSGHelpers } from '../../react/ssg';
-import { DefaultErrorShape } from '../src';
+import { createSSGHelpers } from '../../react/src/ssg';
 import { TRPCError } from '../src/TRPCError';
+import { observable } from '../src/observable';
+import { DefaultErrorShape } from '../src/router';
+import { subscriptionPullFactory } from '../src/subscription';
 
 setLogger({
   log() {},
@@ -153,10 +154,10 @@ function createAppRouter() {
     .subscription('newPosts', {
       input: z.number(),
       resolve({ input }) {
-        return trpcServer.subscriptionPullFactory<Post>({
+        return subscriptionPullFactory<Post>({
           intervalMs: 1,
           pull(emit) {
-            db.posts.filter((p) => p.createdAt > input).forEach(emit.data);
+            db.posts.filter((p) => p.createdAt > input).forEach(emit.next);
           },
         });
       },
@@ -169,12 +170,12 @@ function createAppRouter() {
         const { cursor } = input;
         postLiveInputs.push(input);
 
-        return trpcServer.subscriptionPullFactory<OutputWithCursor<Post[]>>({
+        return subscriptionPullFactory<OutputWithCursor<Post[]>>({
           intervalMs: 10,
           pull(emit) {
             const newCursor = hash(db.posts);
             if (newCursor !== cursor) {
-              emit.data({ data: db.posts, cursor: newCursor });
+              emit.next({ data: db.posts, cursor: newCursor });
             }
           },
         });

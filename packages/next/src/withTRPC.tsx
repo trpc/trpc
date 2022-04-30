@@ -19,8 +19,13 @@ import {
   NextPageContext,
 } from 'next/dist/shared/lib/utils';
 import React, { createElement, useState } from 'react';
-import { QueryClient, QueryClientProvider } from 'react-query';
-import { DehydratedState, Hydrate, dehydrate } from 'react-query';
+import {
+  DehydratedState,
+  Hydrate,
+  QueryClient,
+  QueryClientProvider,
+  dehydrate,
+} from 'react-query';
 import ssrPrepass from 'react-ssr-prepass';
 
 type QueryClientConfig = ConstructorParameters<typeof QueryClient>[0];
@@ -70,9 +75,10 @@ export interface WithTRPCNoSSROptions<TRouter extends AnyRouter>
   ssr?: false;
 }
 
-export function withTRPC<TRouter extends AnyRouter>(
-  opts: WithTRPCNoSSROptions<TRouter> | WithTRPCSSROptions<TRouter>,
-) {
+export function withTRPC<
+  TRouter extends AnyRouter,
+  TSSRContext extends NextPageContext = NextPageContext,
+>(opts: WithTRPCNoSSROptions<TRouter> | WithTRPCSSROptions<TRouter>) {
   const { config: getClientConfig } = opts;
 
   type TRPCPrepassProps = {
@@ -80,10 +86,10 @@ export function withTRPC<TRouter extends AnyRouter>(
     queryClient: QueryClient;
     trpcClient: TRPCClient<TRouter>;
     ssrState: 'prepass';
-    ssrContext: NextPageContext;
+    ssrContext: TSSRContext;
   };
   return (AppOrPage: NextComponentType<any, any, any>): NextComponentType => {
-    const trpc = createReactQueryHooks<TRouter, NextPageContext>(opts);
+    const trpc = createReactQueryHooks<TRouter, TSSRContext>(opts);
 
     const WithTRPC = (
       props: AppPropsType & {
@@ -166,7 +172,7 @@ export function withTRPC<TRouter extends AnyRouter>(
           trpcClient,
           queryClient,
           ssrState: 'prepass',
-          ssrContext: ctx,
+          ssrContext: ctx as TSSRContext,
         };
         const prepassProps = {
           pageProps,

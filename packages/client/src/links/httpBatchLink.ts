@@ -1,6 +1,6 @@
 import { AnyRouter, ProcedureType } from '@trpc/server';
+import { observable } from '@trpc/server/observable';
 import { dataLoader } from '../internals/dataLoader';
-import { observable } from '../observable';
 import {
   HTTPLinkOptions,
   ResponseShape,

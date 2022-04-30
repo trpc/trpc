@@ -26,8 +26,8 @@ When batching, we combine all parallel procedure calls of the same type in one r
 
 #### Given a router like this exposed at `/api/trpc`:
 
-```tsx
-trpc
+```tsx title='server/router.ts'
+export const appRouter = trpc
   .router<Context>()
   .query('postById', {
     input: String,
@@ -49,12 +49,23 @@ trpc
 
 #### .. And two queries defined like this in a React component:
 
-```tsx
-function MyComponent() {
+```tsx title='MyComponent.tsx'
+export function MyComponent() {
   const post1 = trpc.useQuery(['postById', '1'])
   const relatedPosts = trpc.useQuery(['relatedPosts', '1'])
 
-  // [...]
+  return (
+    <pre>{
+      JSON.stringify(
+        {
+          post1: post1.data ?? null,
+          relatedPosts: relatedPosts.data ?? null,
+        },
+        null,
+        4,
+      )
+    }</pre>
+  )
 }
 ```
 
@@ -85,9 +96,7 @@ encodeURIComponent(
   [
     // result for `postById`
     {
-      "id": null,
       "result": {
-        "type": "data",
         "data": {
           "id": "1",
           "title": "Hello tRPC",
@@ -98,9 +107,7 @@ encodeURIComponent(
     },
     // result for `relatedPosts`
     {
-      "id": null,
       "result": {
-        "type": "data",
         "data": [
           /* ... */
         ]
@@ -122,9 +129,7 @@ In order to have a specification that works regardless of the transport layer we
 
 ```json
 {
-  "id": null,
   "result": {
-    "type": "data",
     "data": {
       "id": "1",
       "title": "Hello tRPC",
@@ -138,9 +143,7 @@ In order to have a specification that works regardless of the transport layer we
 
 ```ts
 {
-  id: null;
   result: {
-    type: 'data';
     data: TOutput; // output from procedure
   };
 }
@@ -155,7 +158,6 @@ In order to have a specification that works regardless of the transport layer we
 ```json
 [
   {
-    "id": null,
     "error": {
       "json": {
         "message": "Something went wrong",
@@ -192,6 +194,7 @@ INTERNAL_SERVER_ERROR: 500,
 UNAUTHORIZED: 401,
 FORBIDDEN: 403,
 TIMEOUT: 408,
+CONFLICT: 409,
 CLIENT_CLOSED_REQUEST: 499,
 PRECONDITION_FAILED: 412,
 PAYLOAD_TOO_LARGE: 413,
@@ -230,6 +233,7 @@ export const TRPC_ERROR_CODES_BY_KEY = {
   NOT_FOUND: -32004, // 404
   METHOD_NOT_SUPPORTED: -32005, // 405
   TIMEOUT: -32008, // 408
+  CONFLICT: -32009, // 409
   PRECONDITION_FAILED: -32012, // 412
   PAYLOAD_TOO_LARGE: -32013, // 413
   CLIENT_CLOSED_REQUEST: -32099, // 499

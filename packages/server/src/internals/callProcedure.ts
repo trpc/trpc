@@ -1,5 +1,5 @@
+import { Observable } from '../observable';
 import { AnyRouter, ProcedureType } from '../router';
-import { Subscription } from '../subscription';
 
 export async function callProcedure<
   TRouter extends AnyRouter<TContext>,
@@ -10,7 +10,7 @@ export async function callProcedure<
   router: TRouter;
   ctx: TContext;
   type: ProcedureType;
-}): Promise<unknown | Subscription<TRouter>> {
+}): Promise<unknown | Observable<TRouter, any>> {
   const { type, path, input } = opts;
 
   const caller = opts.router.createCaller(opts.ctx);
@@ -21,7 +21,10 @@ export async function callProcedure<
     return caller.mutation(path, input as any);
   }
   if (type === 'subscription') {
-    const sub = (await caller.subscription(path, input as any)) as Subscription;
+    const sub = (await caller.subscription(path, input as any)) as Observable<
+      any,
+      any
+    >;
     return sub;
   }
   /* istanbul ignore next */

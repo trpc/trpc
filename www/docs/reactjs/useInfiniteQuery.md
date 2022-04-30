@@ -17,11 +17,11 @@ slug: /useInfiniteQuery
 
 ## Example Procedure
 
-```tsx
+```tsx title='server/routers/_app.ts'
 import * as trpc from '@trpc/server';
 import { Context } from './[trpc]';
 
-trpc.router<Context>()
+export const appRouter = trpc.router<Context>()
   .query('infinitePosts', {
     input: z.object({
       limit: z.number().min(1).max(100).nullish(),
@@ -58,10 +58,10 @@ trpc.router<Context>()
 
 ## Example React Component
 
-```tsx
+```tsx title='components/MyComponent.tsx'
 import { trpc } from '../utils/trpc';
 
-function MyComponent() {
+export function MyComponent() {
   const myQuery = trpc.useInfiniteQuery(
     [
       'infinitePosts',
@@ -84,10 +84,10 @@ function MyComponent() {
 
 This helper gets the currently cached data from an exisisting infinite query
 
-```tsx
+```tsx title='components/MyComponent.tsx'
 import { trpc } from '../utils/trpc';
 
-function MyComponent() {
+export function MyComponent() {
   const utils = trpc.useContext();
 
   const myMutation = trpc.useMutation('infinitePosts.add', {
@@ -98,18 +98,16 @@ function MyComponent() {
     }
   })
 }
-
-
 ```
 
 ### `setInfiniteQueryData()`
 
 This helper allows you to update a queries cached data
 
-```tsx
+```tsx title='components/MyComponent.tsx'
 import { trpc } from '../utils/trpc';
 
-function MyComponent() {
+export function MyComponent() {
   const utils = trpc.useContext();
 
   const myMutation = trpc.useMutation('infinitePosts.delete', {
