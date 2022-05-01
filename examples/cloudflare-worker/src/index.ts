@@ -13,7 +13,7 @@ import { appRouter, createContext } from './server';
 export default {
   async fetch(request: Request): Promise<Response> {
     return fetchRequestHandler({
-      endpoint: '/',
+      endpoint: '',
       req: request,
       router: appRouter,
       createContext,
