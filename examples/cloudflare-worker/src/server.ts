@@ -35,7 +35,7 @@ export const appRouter = trpc
   .router()
   .query('hello', {
     input: z.string().nullish(),
-    resolve: ({ input, ctx }) => {
+    resolve: ({ input }) => {
       return `hello ${input ?? 'world'}`;
     },
   })
