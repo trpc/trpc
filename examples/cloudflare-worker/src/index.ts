@@ -1,20 +1,22 @@
 /**
- * Welcome to Cloudflare Workers! This is your first worker.
+ * Welcome to Cloudflare Workers!
  *
- * - Run `wrangler dev src/index.ts` in your terminal to start a development server
+ * - Run `yarn dev` in your terminal to start a development server
  * - Open a browser tab at http://localhost:8787/ to see your worker in action
- * - Run `wrangler publish src/index.ts --name my-worker` to publish your worker
+ * - Run `wrangler publish --name my-worker` to publish your worker
  *
  * Learn more at https://developers.cloudflare.com/workers/
  */
-import { resolveHTTPResponse } from '@trpc/server';
+import { fetchRequestHandler } from '@trpc/server/adapters/fetch';
+import { appRouter, createContext } from './server';
 
 export default {
   async fetch(request: Request): Promise<Response> {
-    resolveHTTPResponse({
-      createContext: async () => ({}),
-      path: request.url.lastIndexOf('/'),
+    return fetchRequestHandler({
+      endpoint: '/',
+      req: request,
+      router: appRouter,
+      createContext,
     });
-    return new Response('Hello World!');
   },
 };

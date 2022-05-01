@@ -1,16 +1,11 @@
 import * as trpc from '@trpc/server';
 import { TRPCError } from '@trpc/server';
-import * as trpcExpress from '@trpc/server/adapters/express';
-import { EventEmitter } from 'events';
-import express from 'express';
+import { FetchCreateContextFnOptions } from '@trpc/server/adapters/fetch';
 import { z } from 'zod';
 
-const createContext = ({
-  req,
-  res,
-}: trpcExpress.CreateExpressContextOptions) => {
+export const createContext = ({ req }: FetchCreateContextFnOptions) => {
   const getUser = () => {
-    if (req.headers.authorization !== 'secret') {
+    if (req.headers.get('authorization') !== 'secret') {
       return null;
     }
     return {
@@ -20,7 +15,6 @@ const createContext = ({
 
   return {
     req,
-    res,
     user: getUser(),
   };
 };
@@ -34,7 +28,6 @@ function createRouter() {
 
 let id = 0;
 
-const ee = new EventEmitter();
 const db = {
   posts: [
     {
@@ -51,7 +44,7 @@ function createMessage(text: string) {
     createdAt: Date.now(),
     updatedAt: Date.now(),
   };
-  ee.emit('newMessage', msg);
+
   return msg;
 }
 
@@ -116,29 +109,3 @@ export const appRouter = createRouter()
   .merge('messages.', messages);
 
 export type AppRouter = typeof appRouter;
-
-async function main() {
-  // express implementation
-  const app = express();
-
-  app.use((req, _res, next) => {
-    // request logger
-    console.log('⬅️ ', req.method, req.path, req.body ?? req.query);
-
-    next();
-  });
-
-  app.use(
-    '/trpc',
-    trpcExpress.createExpressMiddleware({
-      router: appRouter,
-      createContext,
-    }),
-  );
-  app.get('/', (_req, res) => res.send('hello'));
-  app.listen(2021, () => {
-    console.log('listening on port 2021');
-  });
-}
-
-main();

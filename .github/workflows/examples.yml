@@ -25,6 +25,7 @@ jobs:
             next-prisma-todomvc,
             standalone-server,
             fastify-server,
+            cloudflare-worker,
           ]
         node-start: ['16.x']
         os: [ubuntu-latest]
@@ -58,7 +59,7 @@ jobs:
       - run: node -v
 
       - name: if exists, run yarn lint
-        run: cd examples/${{ matrix.dir }} && cat package.json | if grep --silent '"lint"'; then yarn lint; fi
-      - run: yarn --cwd examples/${{ matrix.dir }} build
-      - run: yarn --cwd examples/${{ matrix.dir }} test-start
-      - run: yarn --cwd examples/${{ matrix.dir }} test-dev
+        run: cd examples/${{ matrix.dir }} && [[ $(cat package.json | jq .scripts.lint) != null ]] && yarn lint
+      - run: cd examples/${{ matrix.dir }} && [[ $(cat package.json | jq .scripts.build) != null ]] && yarn build
+      - run: cd examples/${{ matrix.dir }} && [[ $(cat package.json | jq '.scripts."test-start"') != null ]] && yarn test-start
+      - run: cd examples/${{ matrix.dir }} && [[ $(cat package.json | jq '.scripts."test-dev"') != null ]] && yarn test-dev

@@ -1,5 +1,5 @@
 import { createTRPCClient, httpBatchLink, loggerLink } from '@trpc/client';
-import { tap } from '@trpc/client/observable';
+import { tap } from '@trpc/server/observable';
 import AbortController from 'abort-controller';
 import fetch from 'node-fetch';
 import type { AppRouter } from './server';
@@ -11,7 +11,7 @@ global.fetch = fetch as any;
 const sleep = (ms = 100) => new Promise((resolve) => setTimeout(resolve, ms));
 
 async function main() {
-  const url = `http://localhost:2021/trpc`;
+  const url = 'http://localhost:8787';
 
   const client = createTRPCClient<AppRouter>({
     links: [

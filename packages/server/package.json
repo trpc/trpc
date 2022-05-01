@@ -62,6 +62,11 @@
       "require": "./dist/adapters/ws.js",
       "default": "./dist/adapters/ws.js"
     },
+    "./adapters/fetch": {
+      "import": "./dist/adapters/fetch/index.mjs",
+      "require": "./dist/adapters/fetch/index.js",
+      "default": "./dist/adapters/fetch/index.js"
+    },
     "./rpc": {
       "import": "./dist/rpc/index.mjs",
       "require": "./dist/rpc/index.js",
@@ -106,7 +111,7 @@
     "next": "12.1.4",
     "node-fetch": "^2.6.1",
     "superstruct": "^0.15.2",
-    "typescript": "4.4.4",
+    "typescript": "4.6.4",
     "ws": "^8.0.0",
     "yup": "^0.32.8",
     "zod": "^3.0.0"
