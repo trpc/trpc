@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "wrangler dev",
-    "test-dev": "start-server-and-test dev 8787 'node --loader ts-node/esm --experimental-fetch src/client.ts'"
+    "test-dev": "start-server-and-test 'wrangler dev --local' 8787 'node --loader ts-node/esm --experimental-fetch src/client.ts'"
   },
   "dependencies": {
     "@trpc/client": "^10.0.0-alpha.21",
