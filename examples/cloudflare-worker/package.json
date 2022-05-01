@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "wrangler dev",
-    "test-dev": "start-server-and-test 'wrangler dev --local' 8787 'node --loader ts-node/esm --experimental-fetch src/client.ts'"
+    "test-dev": "start-server-and-test 'wrangler dev --local' 8787 'node --loader ts-node/esm src/client.ts'"
   },
   "dependencies": {
     "@trpc/client": "^10.0.0-alpha.21",
@@ -14,6 +14,7 @@
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^3.8.0",
+    "node-fetch": "^2.6.1",
     "start-server-and-test": "^1.12.0",
     "ts-node": "^10.3.0",
     "typescript": "4.4.4",
