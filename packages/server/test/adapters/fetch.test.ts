@@ -2,24 +2,19 @@
  * @jest-environment miniflare
  */
 /// <reference types="@cloudflare/workers-types" />
+import { Context, router } from './__router';
 import { Response as MiniflareResponse } from '@miniflare/core';
 import { Miniflare } from 'miniflare';
 import fetch from 'node-fetch';
-import { z } from 'zod';
 import { createTRPCClient } from '../../../client/src';
 import * as trpc from '../../src';
 import * as trpcFetch from '../../src/adapters/fetch';
 
-// polyfill
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-ignore
-global.Response = MiniflareResponse;
+// miniflare does an instanceof check
+global.Response = MiniflareResponse as any;
 
-export type Context = {
-  user: {
-    name: string;
-  } | null;
-};
+const port = 8787;
+const url = `http://localhost:${port}`;
 
 const createContext = ({
   req,
@@ -38,19 +33,6 @@ const createContext = ({
   };
 };
 
-export const router = trpc.router<Context>().query('hello', {
-  input: z
-    .object({
-      who: z.string().nullish(),
-    })
-    .nullish(),
-  resolve({ input, ctx }) {
-    return {
-      text: `hello ${input?.who ?? ctx.user?.name ?? 'world'}`,
-    };
-  },
-});
-
 export async function handleRequest(request: Request): Promise<Response> {
   return trpcFetch.fetchRequestHandler({
     endpoint: '',
@@ -61,8 +43,6 @@ export async function handleRequest(request: Request): Promise<Response> {
 }
 
 async function startServer() {
-  const port = 8787;
-
   const mf = new Miniflare({
     script: '//',
     port,
@@ -74,9 +54,7 @@ async function startServer() {
   const server = await mf.startServer();
 
   const client = createTRPCClient<typeof router>({
-    url: `http://localhost:${port}`,
-
-    AbortController: AbortController as any,
+    url,
     fetch: fetch as any,
   });
 
@@ -87,7 +65,6 @@ async function startServer() {
           err ? reject(err) : resolve();
         }),
       ),
-    port,
     router,
     client,
   };
@@ -115,6 +92,22 @@ test('simple query', async () => {
   expect(await t.client.query('hello')).toMatchInlineSnapshot(`
     Object {
       "text": "hello world",
+    }
+  `);
+});
+
+test('query with headers', async () => {
+  const client = createTRPCClient<typeof router>({
+    url,
+    fetch: fetch as any,
+    headers: {
+      authorization: 'meow',
+    },
+  });
+
+  expect(await client.query('hello')).toMatchInlineSnapshot(`
+    Object {
+      "text": "hello KATT",
     }
   `);
 });
