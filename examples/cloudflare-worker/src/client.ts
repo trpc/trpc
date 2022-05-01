@@ -1,6 +1,6 @@
 import { createTRPCClient, httpBatchLink, loggerLink } from '@trpc/client';
 import fetch from 'node-fetch';
-import type { AppRouter } from './server';
+import type { AppRouter } from './router';
 
 // polyfill
 global.fetch = fetch as any;

@@ -1,4 +1,4 @@
-- [Cloudflare worker](https://workers.cloudflare.com)
+- [Cloudflare Workers](https://workers.cloudflare.com)
 - Vanilla TRPCClient in node
 
 ---

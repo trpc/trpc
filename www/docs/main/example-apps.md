@@ -127,7 +127,7 @@ Here's some example apps:
       </td>
     </tr>
     <tr>
-      <td>Cloudflare worker example</td>
+      <td>Cloudflare Workers example</td>
       <td><em>n/a</em></td>
       <td>
         <ul>

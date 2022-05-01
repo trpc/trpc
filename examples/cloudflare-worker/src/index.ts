@@ -8,7 +8,7 @@
  * Learn more at https://developers.cloudflare.com/workers/
  */
 import { fetchRequestHandler } from '@trpc/server/adapters/fetch';
-import { appRouter } from './server';
+import { appRouter } from './router';
 
 export default {
   async fetch(request: Request): Promise<Response> {
