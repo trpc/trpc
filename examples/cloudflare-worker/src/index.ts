@@ -8,7 +8,7 @@
  * Learn more at https://developers.cloudflare.com/workers/
  */
 import { fetchRequestHandler } from '@trpc/server/adapters/fetch';
-import { appRouter, createContext } from './server';
+import { appRouter } from './server';
 
 export default {
   async fetch(request: Request): Promise<Response> {
@@ -16,7 +16,6 @@ export default {
       endpoint: '',
       req: request,
       router: appRouter,
-      createContext,
     });
   },
 };
