@@ -20,7 +20,6 @@ export async function fetchRequestHandler<TRouter extends AnyRouter>(
 
   const url = new URL(opts.req.url);
   const path = url.pathname.slice(opts.endpoint.length + 1);
-  console.log(path);
   const req: HTTPRequest = {
     query: url.searchParams,
     method: opts.req.method,
