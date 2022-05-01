@@ -135,7 +135,7 @@ export default {
 };
 ```
 
-Your endpoints are now available via HTTP!
+Run `wrangler dev` and your endpoints will be available via HTTP!
 
 | Endpoint     | HTTP URI                                                                                                       |
 | ------------ | -------------------------------------------------------------------------------------------------------------- |
