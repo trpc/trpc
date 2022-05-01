@@ -37,7 +37,7 @@
     {
       "files": ["packages/**/*"],
       "rules": {
-        "no-console": "warn"
+        "no-console": "error"
       }
     }
   ],
