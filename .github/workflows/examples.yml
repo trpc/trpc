@@ -25,7 +25,7 @@ jobs:
             next-prisma-todomvc,
             standalone-server,
             fastify-server,
-            cloudflare-worker,
+            cloudflare-workers,
           ]
         node-start: ['16.x']
         os: [ubuntu-latest]
