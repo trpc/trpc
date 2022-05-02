@@ -116,10 +116,10 @@ export interface ProcedureBuilder<TParams extends Params> {
 
 export interface ProcedureBuilderInternal {
   _def: {
-    input: null | Parser;
-    output: null | Parser;
-    meta: null | Record<string, unknown>;
-    resolver: null | ((opts: ResolveOptions<any>) => Promise<unknown>);
+    input?: Parser;
+    output?: Parser;
+    meta?: Record<string, unknown>;
+    resolver?: (opts: ResolveOptions<any>) => Promise<unknown>;
     middlewares: MiddlewareFunction<any, any>[];
   };
   /**
@@ -151,16 +151,13 @@ export interface ProcedureBuilderInternal {
 /**
  * Ensures there are no duplicate keys when building a procedure.
  */
-function assertNoDuplicates<T extends Record<string, unknown>>(
+function mergeWithoutOverrides<T extends Record<string, unknown>>(
   obj1: T,
   obj2: Partial<T>,
 ): T {
   for (const key in obj2) {
-    if (
-      obj1[key as keyof typeof obj1] !== null &&
-      obj2[key as keyof typeof obj2] !== null
-    ) {
-      throw new Error(`Duplicate ${key}`);
+    if (key in obj1) {
+      throw new Error(`Duplicate key ${key}`);
     }
   }
   return {
@@ -175,10 +172,34 @@ function createNewInternalBuilder(
 ): ProcedureBuilderInternal {
   const { middlewares = [], ...rest } = def2;
 
+  // TODO: maybe have a fn here to warn about calls
   return createInternalBuilder({
-    ...assertNoDuplicates(def1, rest),
+    ...mergeWithoutOverrides(def1, rest),
     middlewares: [...def1.middlewares, ...middlewares],
   });
+}
+
+/**
+ * Wrap the builder in a function to block users from calling the builder directly.
+ * From a usage point of view, it looks like you can call a procedure, when in fact you can't
+ */
+function wrapInternalBuilderInFn(
+  result: ProcedureBuilderInternal,
+): ProcedureBuilderInternal {
+  const fn: ProcedureBuilderInternal = (() => {
+    const error = [
+      'This is a client-only function.',
+      'If you want to call this function on the server, you must first wrap the function',
+      'TODO - add explanation',
+    ];
+    throw new Error(error.join('\n'));
+  }) as any;
+
+  for (const _key in result) {
+    const key = _key as keyof ProcedureBuilderInternal;
+    fn[key] = result[key] as any;
+  }
+  return fn;
 }
 
 /**
@@ -188,15 +209,10 @@ export function createInternalBuilder(
   initDef?: ProcedureBuilderInternal['_def'],
 ): ProcedureBuilderInternal {
   const _def: ProcedureBuilderInternal['_def'] = initDef || {
-    input: null,
-    output: null,
-    meta: null,
-    resolver: null,
     middlewares: [],
   };
 
-  // TODO: maybe wrap in Proxy to prevent server-side calls since
-  return {
+  return wrapInternalBuilderInFn({
     _def,
     input(input: Parser) {
       return createNewInternalBuilder(_def, { input });
@@ -218,7 +234,7 @@ export function createInternalBuilder(
         middlewares: [middleware],
       });
     },
-  };
+  });
 }
 
 export function createBuilder<TContext, TMeta>(): ProcedureBuilder<{
@@ -232,22 +248,3 @@ export function createBuilder<TContext, TMeta>(): ProcedureBuilder<{
 }> {
   return createInternalBuilder() as any;
 }
-
-// FIXME: Delete or use me
-// interface UnwrappedProcedure<TParams extends Params> {
-//   _params: TParams;
-//   meta: TParams['_meta'];
-//   call(opts: {
-//     ctx: TParams['_ctx_in'];
-//     input: TParams['_input_in'];
-//   }): Promise<TParams['_output_out']>;
-// }
-
-// /**
-//  * For server-side calls
-//  */
-// export function unwrapProcedure<TParams extends Params>(
-//   procedure: Procedure<TParams>,
-// ) {
-//   return procedure as any as UnwrappedProcedure<TParams>;
-// }
