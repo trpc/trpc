@@ -5,9 +5,13 @@ import {
   getCauseFromUnknown,
   getErrorFromUnknown,
 } from '../../internals/errors';
-import { wrapCallSafe } from '../../internals/wrapCallSafe';
+import { InferLast } from '../../types';
 import { ProcedureType } from '../router';
-import { MiddlewareFunction, middlewareMarker } from './middlewares';
+import {
+  MiddlewareFunction,
+  MiddlewareResult,
+  middlewareMarker,
+} from './middlewares';
 
 assertNotBrowser();
 
@@ -169,7 +173,7 @@ export class Procedure<
   ): Promise<TFinalOutput> {
     // wrap the actual resolver and treat as the last "middleware"
     const middlewaresWithResolver = this.middlewares.concat([
-      async ({ ctx }: { ctx: TContext }) => {
+      async ({ ctx }: { ctx: any }) => {
         const input = await this.parseInput(opts.rawInput);
         const rawOutput = await this.resolver({
           ...opts,
@@ -186,31 +190,40 @@ export class Procedure<
       },
     ]);
 
-    // create `next()` calls in resolvers
-    const nextFns = middlewaresWithResolver.map((fn, index) => {
-      return async (nextOpts?: { ctx: TContext }) => {
-        const res = await wrapCallSafe(() =>
-          fn({
-            ctx: nextOpts ? nextOpts.ctx : opts.ctx,
-            type: opts.type,
-            path: opts.path,
-            rawInput: opts.rawInput,
-            meta: this.meta,
-            next: nextFns[index + 1],
-          }),
-        );
-        if (res.ok) {
-          return res.data;
-        }
+    // run the middlewares recursively with the resolver as the last one
+    const callRecursive = async (
+      callOpts: { ctx: any; index: number } = {
+        index: 0,
+        ctx: opts.ctx,
+      },
+    ): Promise<MiddlewareResult<any>> => {
+      try {
+        const result = await middlewaresWithResolver[callOpts.index]({
+          ctx: callOpts.ctx,
+          type: opts.type,
+          path: opts.path,
+          rawInput: opts.rawInput,
+          meta: this.meta,
+          next: async (nextOpts?: { ctx: any }) => {
+            return await callRecursive({
+              index: callOpts.index + 1,
+              ctx: nextOpts ? nextOpts.ctx : callOpts.ctx,
+            });
+          },
+        });
+        return result;
+      } catch (cause) {
         return {
-          ok: false as const,
-          error: getErrorFromUnknown(res.error),
+          ctx: callOpts.ctx,
+          ok: false,
+          error: getErrorFromUnknown(cause),
+          marker: middlewareMarker,
         };
-      };
-    });
+      }
+    };
 
     // there's always at least one "next" since we wrap this.resolver in a middleware
-    const result = await nextFns[0]();
+    const result = await callRecursive();
     if (!result) {
       throw new TRPCError({
         code: 'INTERNAL_SERVER_ERROR',
@@ -269,7 +282,7 @@ export type CreateProcedureWithInput<TContext, TMeta, TInput, TOutput> = {
   input: ProcedureParser<TInput>;
   output?: ProcedureParser<TOutput>;
   meta?: TMeta;
-  resolve: ProcedureResolver<TContext, TInput, TOutput>;
+  resolve: ProcedureResolver<TContext, TInput, InferLast<TOutput>>;
 };
 
 export type CreateProcedureWithInputOutputParser<
@@ -283,7 +296,7 @@ export type CreateProcedureWithInputOutputParser<
   input: ProcedureParserWithInputOutput<TInput, TParsedInput>;
   output?: ProcedureParserWithInputOutput<TOutput, TParsedOutput>;
   meta?: TMeta;
-  resolve: ProcedureResolver<TContext, TParsedInput, TOutput>;
+  resolve: ProcedureResolver<TContext, TParsedInput, InferLast<TOutput>>;
 };
 
 export type CreateProcedureWithoutInput<
@@ -296,7 +309,7 @@ export type CreateProcedureWithoutInput<
     | ProcedureParserWithInputOutput<TOutput, TParsedOutput>
     | ProcedureParser<TOutput>;
   meta?: TMeta;
-  resolve: ProcedureResolver<TContext, undefined, TOutput>;
+  resolve: ProcedureResolver<TContext, undefined, InferLast<TOutput>>;
 };
 
 export type CreateProcedureOptions<

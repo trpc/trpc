@@ -1,7 +1,7 @@
 import { AnyRouter, inferRouterError } from '@trpc/server';
-import { TRPCResponse } from '@trpc/server/rpc';
+import { Observable, Observer } from '@trpc/server/observable';
+import { TRPCResponse, TRPCResponseMessage } from '@trpc/server/rpc';
 import { TRPCClientError } from '../TRPCClientError';
-import { Observable, Observer } from '../observable/types';
 
 export type CancelFn = () => void;
 
@@ -36,8 +36,12 @@ export interface LinkRuntime {
   AbortController?: typeof AbortController;
 }
 
+type OperationResultData<TRouter extends AnyRouter, TOutput> =
+  | TRPCResponse<TOutput, inferRouterError<TRouter>>
+  | TRPCResponseMessage<TOutput, inferRouterError<TRouter>>;
+
 export interface OperationResult<TRouter extends AnyRouter, TOutput> {
-  data: TRPCResponse<TOutput, inferRouterError<TRouter>>;
+  data: OperationResultData<TRouter, TOutput>;
   context?: OperationContext;
 }
 

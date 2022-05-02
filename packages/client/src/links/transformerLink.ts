@@ -3,7 +3,7 @@ import {
   ClientDataTransformerOptions,
   DataTransformer,
 } from '@trpc/server';
-import { observable } from '../observable/observable';
+import { observable } from '@trpc/server/observable';
 import { OperationResult, TRPCLink } from './types';
 
 /**
@@ -22,19 +22,21 @@ function transformOperationResult<TResult extends OperationResult<any, any>>(
       },
     };
   }
-  if (result.data.result.type !== 'data') {
-    return result;
-  }
-  return {
-    ...result,
-    data: {
-      ...result.data,
-      result: {
-        ...result.data.result,
-        data: transformer.deserialize(result.data.result.data),
+
+  if ('data' in result.data.result) {
+    return {
+      ...result,
+      data: {
+        ...result.data,
+        result: {
+          ...result.data.result,
+          data: transformer.deserialize(result.data.result.data),
+        },
       },
-    },
-  };
+    };
+  }
+
+  return result;
 }
 export function transformerLink<TRouter extends AnyRouter = AnyRouter>(
   transformer: ClientDataTransformerOptions,

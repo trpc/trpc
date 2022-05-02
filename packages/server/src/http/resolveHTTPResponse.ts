@@ -9,7 +9,7 @@ import {
 } from '../deprecated/router';
 import { getCauseFromUnknown, getErrorFromUnknown } from '../internals/errors';
 import { transformTRPCResponse } from '../internals/transformTRPCResponse';
-import { TRPCErrorResponse, TRPCResponse, TRPCResultResponse } from '../rpc';
+import { TRPCResponse } from '../rpc';
 import { Maybe } from '../types';
 import { getHTTPStatusCode } from './internals/getHTTPStatusCode';
 import {
@@ -196,12 +196,11 @@ export async function resolveHTTPResponse<
       }),
     );
     const errors = rawResults.flatMap((obj) => (obj.error ? [obj.error] : []));
-    const resultEnvelopes = rawResults.map((obj) => {
+    const resultEnvelopes = rawResults.map((obj): TRouterResponse => {
       const { path, input } = obj;
 
       if (obj.error) {
-        const json: TRPCErrorResponse<TRouterError> = {
-          id: null,
+        return {
           error: router.getErrorShape({
             error: obj.error,
             type,
@@ -210,16 +209,12 @@ export async function resolveHTTPResponse<
             ctx,
           }),
         };
-        return json;
       } else {
-        const json: TRPCResultResponse<unknown> = {
-          id: null,
+        return {
           result: {
-            type: 'data',
             data: obj.data,
           },
         };
-        return json;
       }
     });
 
@@ -233,16 +228,6 @@ export async function resolveHTTPResponse<
     // - input deserialization fails
     const error = getErrorFromUnknown(cause);
 
-    const json: TRPCErrorResponse<TRouterError> = {
-      id: null,
-      error: router.getErrorShape({
-        error,
-        type,
-        path: undefined,
-        input: undefined,
-        ctx,
-      }),
-    };
     onError?.({
       error,
       path: undefined,
@@ -251,6 +236,17 @@ export async function resolveHTTPResponse<
       type: type,
       req,
     });
-    return endResponse(json, [error]);
+    return endResponse(
+      {
+        error: router.getErrorShape({
+          error,
+          type,
+          path: undefined,
+          input: undefined,
+          ctx,
+        }),
+      },
+      [error],
+    );
   }
 }

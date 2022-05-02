@@ -5,7 +5,14 @@ import {
   inferProcedureOutput,
   inferSubscriptionOutput,
 } from '@trpc/server';
-import { TRPCResult } from '@trpc/server/rpc';
+import {
+  Observer,
+  Unsubscribable,
+  inferObservableValue,
+  observableToPromise,
+  share,
+} from '@trpc/server/observable';
+import { TRPCResultMessage } from '@trpc/server/rpc';
 import { CancelFn } from '..';
 import { TRPCClientError } from '../TRPCClientError';
 import { getFetch } from '../getFetch';
@@ -19,13 +26,6 @@ import {
   OperationLink,
   TRPCLink,
 } from '../links/types';
-import {
-  Observer,
-  Unsubscribable,
-  inferObservableValue,
-  share,
-} from '../observable';
-import { observableToPromise } from '../observable/internals/observableToPromise';
 import { getAbortController } from './fetchHelpers';
 
 type CancellablePromise<T = unknown> = Promise<T> & {
@@ -212,7 +212,7 @@ export class TRPCClient<TRouter extends AnyRouter> {
     path: TPath,
     input: TInput,
     opts: TRPCRequestOptions &
-      Partial<Observer<TRPCResult<TOutput>, TRPCClientError<TRouter>>>,
+      Partial<Observer<TRPCResultMessage<TOutput>, TRPCClientError<TRouter>>>,
   ): Unsubscribable {
     const observable$ = this.$request<TInput, TOutput>({
       type: 'subscription',
@@ -230,7 +230,7 @@ export class TRPCClient<TRouter extends AnyRouter> {
           opts.error?.(err);
           return;
         }
-        opts.next?.(result.data.result);
+        opts.next?.(result.data.result as TRPCResultMessage<TOutput>);
       },
       error(err) {
         opts.error?.(err);

@@ -1,31 +1,10 @@
-import { ProcedureType } from '../core/utils';
+/* eslint-disable @typescript-eslint/no-namespace */
+import { ProcedureType } from '../deprecated/router';
 import { TRPC_ERROR_CODE_NUMBER } from './codes';
 
-type JSONRPC2RequestId = number | string | null;
-
 /**
- * All requests/responses extends this shape
+ * Error response
  */
-interface JSONRPC2BaseEnvelope {
-  id: JSONRPC2RequestId;
-  jsonrpc?: '2.0';
-}
-
-interface JSONRPC2BaseRequest<TMethod extends string = string>
-  extends JSONRPC2BaseEnvelope {
-  method: TMethod;
-}
-interface JSONRPC2Request<TMethod extends string = string, TParams = unknown>
-  extends JSONRPC2BaseRequest<TMethod> {
-  params: TParams;
-}
-
-interface JSONRPC2ResultResponse<TResult = unknown>
-  extends JSONRPC2BaseEnvelope {
-  result: TResult;
-}
-
-// inner types
 export interface TRPCErrorShape<
   TCode extends number = TRPC_ERROR_CODE_NUMBER,
   TData extends Record<string, unknown> = Record<string, unknown>,
@@ -36,74 +15,114 @@ export interface TRPCErrorShape<
 }
 
 /**
- * The result data wrapped
+ * JSON-RPC 2.0 Specification
  */
-export type TRPCResult<TData = unknown> =
-  | {
-      type: 'data';
-      data: TData;
-    }
-  | {
-      type: 'started';
-    }
-  | {
-      type: 'stopped';
-    };
+export namespace JSONRPC2 {
+  export type RequestId = number | string | null;
+
+  /**
+   * All requests/responses extends this shape
+   */
+  export interface BaseEnvelope {
+    id?: RequestId;
+    jsonrpc?: '2.0';
+  }
+
+  export interface BaseRequest<TMethod extends string = string>
+    extends BaseEnvelope {
+    method: TMethod;
+  }
+
+  export interface Request<TMethod extends string = string, TParams = unknown>
+    extends BaseRequest<TMethod> {
+    params: TParams;
+  }
+
+  export interface ResultResponse<TResult = unknown> extends BaseEnvelope {
+    result: TResult;
+  }
+
+  export interface ErrorResponse<TError extends TRPCErrorShape = TRPCErrorShape>
+    extends BaseEnvelope {
+    error: TError;
+  }
+}
 
 /**
- * Request envelope
+ * TRPC HTTP Envelopes
  */
-export type TRPCRequest =
-  | JSONRPC2Request<'subscription.stop'>
-  | JSONRPC2Request<
-      ProcedureType,
-      {
-        path: string;
-        input: unknown;
-      }
-    >;
 
-/**
- * OK response
- */
-export type TRPCResultResponse<TData = unknown> = JSONRPC2ResultResponse<
-  TRPCResult<TData>
+export type TRPCRequest = JSONRPC2.Request<
+  ProcedureType,
+  { path: string; input: unknown }
 >;
 
-/**
- * Generic response wrapper that is either a result or error
- */
+export type TRPCResult<TData = unknown> = { data: TData };
+
+export type TRPCErrorResponse<TError extends TRPCErrorShape = TRPCErrorShape> =
+  JSONRPC2.ErrorResponse<TError>;
+
 export type TRPCResponse<
-  TData = unknown,
+  TResult = unknown,
   TError extends TRPCErrorShape = TRPCErrorShape,
-> = TRPCResultResponse<TData> | TRPCErrorResponse<TError>;
+> = JSONRPC2.ResultResponse<TRPCResult<TResult>> | TRPCErrorResponse<TError>;
 
 /**
- * Error response
+ * HTTP WS Envelopes
  */
-export interface TRPCErrorResponse<
+
+export type TRPCRequestMessage = {
+  id: JSONRPC2.RequestId;
+} & TRPCRequest;
+
+/**
+ * The client asked the server to unsubscribe
+ */
+export type TRPCSubscriptionStopNotification = {
+  id: null;
+} & JSONRPC2.BaseRequest<'subscription.stop'>;
+
+/**
+ * The client's outgoing request types
+ */
+export type TRPCClientOutgoingRequest = TRPCSubscriptionStopNotification;
+
+/**
+ * The client's sent messages shape
+ */
+export type TRPCClientOutgoingMessage =
+  | TRPCRequestMessage
+  | ({ id: JSONRPC2.RequestId } & JSONRPC2.BaseRequest<'subscription.stop'>);
+
+export type TRPCResultMessage<TData = unknown> =
+  | ({ type: 'data' } & TRPCResult<TData>)
+  | { type: 'started' }
+  | { type: 'stopped' };
+
+export type TRPCResponseMessage<
+  TResult = unknown,
   TError extends TRPCErrorShape = TRPCErrorShape,
-> extends JSONRPC2BaseEnvelope {
-  error: TError;
-}
+> = { id: JSONRPC2.RequestId } & (
+  | JSONRPC2.ResultResponse<TRPCResultMessage<TResult>>
+  | TRPCErrorResponse<TError>
+);
 
 /**
  * The server asked the client to reconnect - useful when restarting/redeploying service
  */
-export interface TRPCReconnectNotification
-  extends JSONRPC2BaseRequest<'reconnect'> {
-  id: null;
-}
+export type TRPCReconnectNotification = {
+  id: JSONRPC2.RequestId;
+} & JSONRPC2.BaseRequest<'reconnect'>;
 
 /**
  * The client's incoming request types
  */
-export type TRPCClientIncomingRequest =
-  TRPCReconnectNotification /* could be extended in future */;
+export type TRPCClientIncomingRequest = TRPCReconnectNotification;
 
 /**
  * The client's received messages shape
  */
-export type TRPCClientIncomingMessage =
-  | TRPCResponse
-  | TRPCClientIncomingRequest;
+export type TRPCClientIncomingMessage<
+  TResult = unknown,
+  TError extends TRPCErrorShape = TRPCErrorShape,
+> = TRPCResponseMessage<TResult, TError> | TRPCClientIncomingRequest;

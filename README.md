@@ -16,6 +16,9 @@
   <a href="https://trpc.io/discord">
     <img alt="Discord" src="https://img.shields.io/discord/867764511159091230?color=7389D8&label&logo=discord&logoColor=ffffff" />
   </a>
+  <a href="https://twitter.com/alexdotjs">
+    <img alt="Twitter" src="https://img.shields.io/twitter/url.svg?label=Follow%20%40alexdotjs&style=social&url=https%3A%2F%2Ftwitter.com%2Falexdotjs" />
+  </a>
 </p>
 
 <p></p>
@@ -51,7 +54,7 @@ tRPC allows you to easily build & consume fully typesafe APIs, without schemas o
 
 ## Quickstart
 
-There are a few [examples](https://trpc.io/docs/example-apps) that you can use for playing out with tRCP or bootstrapping your new project. For example, if you want a next.js app, you can use the full-stack next.js example:
+There are a few [examples](https://trpc.io/docs/example-apps) that you can use for playing out with tRPC or bootstrapping your new project. For example, if you want a next.js app, you can use the full-stack next.js example:
 
 **Quick start with a full-stack Next.js example:**
 
@@ -81,6 +84,7 @@ npx create-next-app --example https://github.com/trpc/trpc --example-path exampl
   <tbody>
     <tr>
       <td align="center"><a href="https://github.com/sachinraja"><img src="https://avatars.githubusercontent.com/u/58836760?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Sachin Raja</b></sub></a></td>
+      <td align="center"><a href="https://twitter.com/jlalmes"><img src="https://avatars.githubusercontent.com/u/69924001?v=4?s=100" width="100px;" alt=""/><br /><sub><b>James Berry</b></sub></a></td>
     </tr>
   </tbody>
 </table>
@@ -253,7 +257,7 @@ Also, if your company using tRPC and want to support long-term maintenance of tR
     <td align="center"><a href="https://github.com/ahhshm"><img src="https://avatars.githubusercontent.com/u/87268103?v=4?s=100" width="100px;" alt=""/><br /><sub><b>ahhshm</b></sub></a><br /><a href="https://github.com/trpc/trpc/commits?author=ahhshm" title="Documentation">📖</a> <a href="#example-ahhshm" title="Examples">💡</a></td>
   </tr>
   <tr>
-    <td align="center"><a href="https://jamesbe.com"><img src="https://avatars.githubusercontent.com/u/69924001?v=4?s=100" width="100px;" alt=""/><br /><sub><b>James Berry</b></sub></a><br /><a href="https://github.com/trpc/trpc/issues?q=author%3Ajlalmes" title="Bug reports">🐛</a></td>
+    <td align="center"><a href="https://jamesbe.com"><img src="https://avatars.githubusercontent.com/u/69924001?v=4?s=100" width="100px;" alt=""/><br /><sub><b>James Berry</b></sub></a><br /><a href="https://github.com/trpc/trpc/issues?q=author%3Ajlalmes" title="Bug reports">🐛</a> <a href="#ideas-jlalmes" title="Ideas, Planning, & Feedback">🤔</a> <a href="https://github.com/trpc/trpc/commits?author=jlalmes" title="Code">💻</a> <a href="https://github.com/trpc/trpc/commits?author=jlalmes" title="Tests">⚠️</a></td>
     <td align="center"><a href="https://jwyce.github.io/portfolio/"><img src="https://avatars.githubusercontent.com/u/16946573?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Jared Wyce</b></sub></a><br /><a href="#financial-jwyce" title="Financial">💵</a></td>
     <td align="center"><a href="https://blog.lucasviana.dev"><img src="https://avatars.githubusercontent.com/u/13911440?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Lucas Viana</b></sub></a><br /><a href="#financial-mechamobau" title="Financial">💵</a></td>
     <td align="center"><a href="https://kevinlangleyjr.dev"><img src="https://avatars.githubusercontent.com/u/877634?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Kevin Langley Jr.</b></sub></a><br /><a href="https://github.com/trpc/trpc/commits?author=kevinlangleyjr" title="Documentation">📖</a></td>
@@ -265,6 +269,9 @@ Also, if your company using tRPC and want to support long-term maintenance of tR
     <td align="center"><a href="https://github.com/okaforcj"><img src="https://avatars.githubusercontent.com/u/34102565?v=4?s=100" width="100px;" alt=""/><br /><sub><b>okaforcj</b></sub></a><br /><a href="#financial-okaforcj" title="Financial">💵</a></td>
     <td align="center"><a href="https://github.com/LouisHaftmann"><img src="https://avatars.githubusercontent.com/u/30736553?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Louis Haftmann</b></sub></a><br /><a href="https://github.com/trpc/trpc/commits?author=LouisHaftmann" title="Code">💻</a> <a href="https://github.com/trpc/trpc/commits?author=LouisHaftmann" title="Tests">⚠️</a> <a href="https://github.com/trpc/trpc/commits?author=LouisHaftmann" title="Documentation">📖</a></td>
     <td align="center"><a href="https://marcin.page/"><img src="https://avatars.githubusercontent.com/u/5896181?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Perfect7M</b></sub></a><br /><a href="https://github.com/trpc/trpc/commits?author=Perfect7M" title="Code">💻</a></td>
+    <td align="center"><a href="https://tijlvdb.me/"><img src="https://avatars.githubusercontent.com/u/10267586?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Tijl Van den Brugghen</b></sub></a><br /><a href="https://github.com/trpc/trpc/commits?author=kindlyfire" title="Documentation">📖</a></td>
+    <td align="center"><a href="https://github.com/matthijscollabai"><img src="https://avatars.githubusercontent.com/u/89927222?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Matthijs Wolting</b></sub></a><br /><a href="https://github.com/trpc/trpc/issues?q=author%3Amatthijscollabai" title="Bug reports">🐛</a></td>
+    <td align="center"><a href="https://lukahartwig.de"><img src="https://avatars.githubusercontent.com/u/7414521?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Luka Hartwig</b></sub></a><br /><a href="https://github.com/trpc/trpc/commits?author=lukahartwig" title="Code">💻</a></td>
   </tr>
 </table>
 

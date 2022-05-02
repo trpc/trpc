@@ -52,10 +52,8 @@ test('set custom headers in beforeEnd', async () => {
 
     expect(await res.json()).toMatchInlineSnapshot(`
 Object {
-  "id": null,
   "result": Object {
     "data": "public endpoint",
-    "type": "data",
   },
 }
 `);
@@ -69,10 +67,8 @@ Object {
 
     expect(await res.json()).toMatchInlineSnapshot(`
 Object {
-  "id": null,
   "result": Object {
     "data": "not cached endpoint",
-    "type": "data",
   },
 }
 `);

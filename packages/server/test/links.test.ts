@@ -4,7 +4,6 @@
 import { routerToServerAndClient } from './__testHelpers';
 import { LinkRuntime, OperationLink } from '@trpc/client/src';
 import { createChain } from '@trpc/client/src/links/internals/createChain';
-import { observableToPromise } from '@trpc/client/src/observable/internals/observableToPromise';
 import AbortController from 'abort-controller';
 import fetch from 'node-fetch';
 import { z } from 'zod';
@@ -16,9 +15,9 @@ import {
   loggerLink,
   retryLink,
 } from '../../client/src';
-import { observable } from '../../client/src/observable';
 import * as trpc from '../src';
 import { AnyRouter } from '../src';
+import { observable, observableToPromise } from '../src/observable';
 
 const mockRuntime: LinkRuntime = {
   fetch: fetch as any,
@@ -66,10 +65,8 @@ test('chainer', async () => {
         "response": "[redacted]",
       },
       "data": Object {
-        "id": null,
         "result": Object {
           "data": "world",
-          "type": "data",
         },
       },
     }
@@ -169,10 +166,8 @@ describe('batching', () => {
             "response": "[redacted]",
           },
           "data": Object {
-            "id": null,
             "result": Object {
               "data": "hello world",
-              "type": "data",
             },
           },
         },
@@ -181,10 +176,8 @@ describe('batching', () => {
             "response": "[redacted]",
           },
           "data": Object {
-            "id": null,
             "result": Object {
               "data": "hello alexdotjs",
-              "type": "data",
             },
           },
         },
