@@ -1,13 +1,13 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { TRPCError } from '../TRPCError';
-import { assertNotBrowser } from '../assertNotBrowser';
+import { TRPCError } from '../../TRPCError';
+import { assertNotBrowser } from '../../assertNotBrowser';
 import {
-  MiddlewareFunction,
-  middlewareMarker,
-} from '../deprecated/internals/middlewares';
-import { ProcedureType } from '../deprecated/router';
-import { getCauseFromUnknown, getErrorFromUnknown } from './errors';
-import { wrapCallSafe } from './wrapCallSafe';
+  getCauseFromUnknown,
+  getErrorFromUnknown,
+} from '../../internals/errors';
+import { wrapCallSafe } from '../../internals/wrapCallSafe';
+import { ProcedureType } from '../router';
+import { MiddlewareFunction, middlewareMarker } from './middlewares';
 
 assertNotBrowser();
 

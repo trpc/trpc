@@ -5,16 +5,6 @@ import { TRPCError } from '../TRPCError';
 import { assertNotBrowser } from '../assertNotBrowser';
 import { getHTTPStatusCodeFromError } from '../http/internals/getHTTPStatusCode';
 import {
-  CreateProcedureOptions,
-  CreateProcedureWithInput,
-  CreateProcedureWithInputOutputParser,
-  CreateProcedureWithoutInput,
-  Procedure,
-  ProcedureCallOptions,
-  createProcedure,
-  inferProcedureFromOptions,
-} from '../internals/procedure';
-import {
   TRPCErrorShape,
   TRPC_ERROR_CODES_BY_KEY,
   TRPC_ERROR_CODE_KEY,
@@ -27,6 +17,16 @@ import {
 } from '../transformer';
 import { Prefixer, ThenArg, flatten } from '../types';
 import { MiddlewareFunction } from './internals/middlewares';
+import {
+  CreateProcedureOptions,
+  CreateProcedureWithInput,
+  CreateProcedureWithInputOutputParser,
+  CreateProcedureWithoutInput,
+  Procedure,
+  ProcedureCallOptions,
+  createProcedure,
+  inferProcedureFromOptions,
+} from './internals/procedure';
 
 assertNotBrowser();
 
