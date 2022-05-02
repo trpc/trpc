@@ -79,3 +79,11 @@ export interface Params<
    */
   _input_out: TInputOut;
 }
+
+/**
+ * @internal
+ */
+export interface ResolveOptions<TParams extends Params> {
+  ctx: TParams['_ctx_out'];
+  input: TParams['_input_out'];
+}

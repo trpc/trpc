@@ -46,3 +46,8 @@ export type ThenArg<T> = T extends PromiseLike<infer U> ? ThenArg<U> : T;
  * @public
  */
 export type Dict<T> = Record<string, T | undefined>;
+
+/**
+ * @public
+ */
+export type MaybePromise<T> = T | Promise<T>;
