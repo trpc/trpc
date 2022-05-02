@@ -114,6 +114,113 @@ export interface ProcedureBuilder<TParams extends Params> {
     : Procedure<TParams>;
 }
 
+export interface ProcedureBuilderInternal {
+  _def: {
+    input: null | Parser;
+    output: null | Parser;
+    meta: null | Record<string, unknown>;
+    resolver: null | ((opts: ResolveOptions<any>) => Promise<unknown>);
+    middlewares: MiddlewareFunction<any, any>[];
+  };
+  /**
+   * @internal
+   */
+  input: (parser: Parser) => ProcedureBuilderInternal;
+  /**
+   * @internal
+   */
+  output: (parser: Parser) => ProcedureBuilderInternal;
+  /**
+   * @internal
+   */
+  concat: (proc: ProcedureBuilderInternal) => ProcedureBuilderInternal;
+  /**
+   * @internal
+   */
+  use: (fn: MiddlewareFunction<any, any>) => ProcedureBuilderInternal;
+  /**
+   * @internal
+   */
+  meta: (meta: Record<string, unknown>) => ProcedureBuilderInternal;
+  /**
+   * @internal
+   */
+  resolve: (resolver: () => MaybePromise<any>) => ProcedureBuilderInternal;
+}
+
+/**
+ * Ensures there are no duplicate keys when building a procedure.
+ */
+function assertNoDuplicates<T extends Record<string, unknown>>(
+  obj1: T,
+  obj2: Partial<T>,
+): T {
+  for (const key in obj2) {
+    if (
+      obj1[key as keyof typeof obj1] !== null &&
+      obj2[key as keyof typeof obj2] !== null
+    ) {
+      throw new Error(`Duplicate ${key}`);
+    }
+  }
+  return {
+    ...obj1,
+    ...obj2,
+  };
+}
+
+function createNewInternalBuilder(
+  def1: ProcedureBuilderInternal['_def'],
+  def2: Partial<ProcedureBuilderInternal['_def']>,
+): ProcedureBuilderInternal {
+  const { middlewares = [], ...rest } = def2;
+
+  return createInternalBuilder({
+    ...assertNoDuplicates(def1, rest),
+    middlewares: [...def1.middlewares, ...middlewares],
+  });
+}
+
+/**
+ * @internal
+ */
+export function createInternalBuilder(
+  initDef?: ProcedureBuilderInternal['_def'],
+): ProcedureBuilderInternal {
+  const _def: ProcedureBuilderInternal['_def'] = initDef || {
+    input: null,
+    output: null,
+    meta: null,
+    resolver: null,
+    middlewares: [],
+  };
+
+  // TODO: maybe wrap in Proxy to prevent server-side calls since
+  return {
+    _def,
+    input(input: Parser) {
+      return createNewInternalBuilder(_def, { input });
+    },
+    output(output: Parser) {
+      return createNewInternalBuilder(_def, { output });
+    },
+    meta(meta) {
+      return createNewInternalBuilder(_def, { meta });
+    },
+    resolve(resolver) {
+      return createNewInternalBuilder(_def, { resolver });
+    },
+    concat(builder) {
+      return createNewInternalBuilder(_def, builder._def);
+    },
+    use(middleware) {
+      return createNewInternalBuilder(_def, {
+        middlewares: [middleware],
+      });
+    },
+  };
+}
+
 export function createBuilder<TContext, TMeta>(): ProcedureBuilder<{
   _ctx_in: TContext;
   _ctx_out: TContext;
@@ -123,5 +230,24 @@ export function createBuilder<TContext, TMeta>(): ProcedureBuilder<{
   _output_out: UnsetMarker;
   _meta: TMeta;
 }> {
-  throw new Error('unimplemented');
+  return createInternalBuilder() as any;
 }
+
+// FIXME: Delete or use me
+// interface UnwrappedProcedure<TParams extends Params> {
+//   _params: TParams;
+//   meta: TParams['_meta'];
+//   call(opts: {
+//     ctx: TParams['_ctx_in'];
+//     input: TParams['_input_in'];
+//   }): Promise<TParams['_output_out']>;
+// }
+
+// /**
+//  * For server-side calls
+//  */
+// export function unwrapProcedure<TParams extends Params>(
+//   procedure: Procedure<TParams>,
+// ) {
+//   return procedure as any as UnwrappedProcedure<TParams>;
+// }

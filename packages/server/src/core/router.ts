@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/ban-types */
 import { ErrorFormatter } from '../error/formatter';
+import { CombinedDataTransformer } from '../transformer';
 import { Procedure } from './procedure';
 
 // FIXME this should properly use TContext
@@ -13,6 +14,7 @@ export interface Router<TContext> {
   mutations?: ProcedureRecord<TContext>;
   subscriptions?: ProcedureRecord<TContext>;
   errorFormatter?: ErrorFormatter<TContext, any>;
+  transformer?: CombinedDataTransformer;
 }
 
 export type AnyRouter = Router<any>;
