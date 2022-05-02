@@ -59,6 +59,13 @@ function createNewInternalBuilder(
     middlewares: [...def1.middlewares, ...middlewares],
   });
 }
+
+const codeblock = `
+const myContext = {};
+const caller = appRouter.createCaller(myContext);
+
+const result = await caller.call('myProcedure', input);
+`.trim();
 /**
  * Wrap the builder in a function to block users from calling the builder directly.
  * From a usage point of view, it looks like you can call a procedure, when in fact you can't
@@ -69,8 +76,8 @@ function wrapInternalBuilderInFn(
   const fn: ProcedureBuilderInternal = (() => {
     const error = [
       'This is a client-only function.',
-      'If you want to call this function on the server, you must first wrap the function',
-      'FIXME - add explanation',
+      'If you want to call this function on the server, you do the following:',
+      codeblock,
     ];
     throw new Error(error.join('\n'));
   }) as any;
