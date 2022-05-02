@@ -1,9 +1,12 @@
 /**
  * This is the actual internal representation of a builder
  */
+import { TRPCError } from '../../TRPCError';
+import { getCauseFromUnknown } from '../../error/utils';
 import { MaybePromise } from '../../types';
 import { MiddlewareFunction } from '../middleware';
 import { Parser } from '../parser';
+import { getParseFn } from './getParseFn';
 import { mergeWithoutOverrides } from './mergeWithoutOverrides';
 import { ResolveOptions } from './utils';
 
@@ -15,6 +18,8 @@ interface ProcedureBuilderInternal {
     resolver?: (opts: ResolveOptions<any>) => Promise<unknown>;
     middlewares: MiddlewareFunction<any, any>[];
   };
+  // FIXME
+  // _call: (opts: ResolveOptions<any>) => Promise<unknown>;
   /**
    * @internal
    */
@@ -74,6 +79,7 @@ function wrapInternalBuilderInFn(
   }
   return fn;
 }
+
 /**
  * @internal
  */
@@ -87,11 +93,53 @@ export function createInternalBuilder(
 
   return wrapInternalBuilderInFn({
     _def,
+    // _call: createProcedureCaller(_def),
     input(input: Parser) {
-      return createNewInternalBuilder(_def, { input });
+      const parseInput = getParseFn(input);
+      return createNewInternalBuilder(_def, {
+        input,
+        middlewares: [
+          ..._def.middlewares,
+          async function inputMiddleware({ next, rawInput }) {
+            let input: ReturnType<typeof parseInput>;
+            try {
+              input = await parseInput(rawInput);
+            } catch (cause) {
+              throw new TRPCError({
+                code: 'BAD_REQUEST',
+                cause: getCauseFromUnknown(cause),
+              });
+            }
+            // TODO fix this typing?
+            return next({ input } as any);
+          },
+        ],
+      });
     },
     output(output: Parser) {
-      return createNewInternalBuilder(_def, { output });
+      const parseOutput = getParseFn(output);
+      return createNewInternalBuilder(_def, {
+        output,
+        middlewares: [
+          ..._def.middlewares,
+          async function outputMiddleware({ next }) {
+            const result = await next();
+            if (!result.ok) {
+              // pass through failures without validating
+              return result;
+            }
+            try {
+              await parseOutput(result.data);
+            } catch (cause) {
+              throw new TRPCError({
+                code: 'BAD_REQUEST',
+                cause: getCauseFromUnknown(cause),
+              });
+            }
+            return result;
+          },
+        ],
+      });
     },
     meta(meta) {
       return createNewInternalBuilder(_def, { meta });
