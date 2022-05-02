@@ -32,11 +32,13 @@ assertNotBrowser();
 
 /**
  * @public
+ * @deprecated
  */
 export type ProcedureType = 'query' | 'mutation' | 'subscription';
 
 /**
  * @internal
+ * @deprecated
  */
 export type ProcedureRecord<
   TInputContext = any,
@@ -61,6 +63,7 @@ export type ProcedureRecord<
 
 /**
  * @public
+ * @deprecated
  */
 export type inferProcedureInput<
   TProcedure extends Procedure<any, any, any, any, any, any, any>,
@@ -72,12 +75,14 @@ export type inferProcedureInput<
 
 /**
  * @public
+ * @deprecated
  */
 export type inferAsyncReturnType<TFunction extends (...args: any) => any> =
   ThenArg<ReturnType<TFunction>>;
 
 /**
  * @public
+ * @deprecated
  */
 export type inferProcedureOutput<
   TProcedure extends Procedure<any, any, any, any, any, any, any>,
@@ -86,6 +91,7 @@ export type inferProcedureOutput<
 /**
  * @public
  * @beta
+ * @deprecated
  */
 export type inferSubscriptionOutput<
   TRouter extends AnyRouter,
@@ -106,6 +112,7 @@ function getDataTransformer(
 }
 /**
  * @internal
+ * @deprecated
  */
 export type inferHandlerInput<
   TProcedure extends Procedure<any, any, any, any, any, any, any>,
@@ -127,6 +134,7 @@ type inferHandlerFn<TProcedures extends ProcedureRecord> = <
 
 /**
  * @internal
+ * @deprecated
  */
 export type inferRouterContext<TRouter extends AnyRouter> = Parameters<
   TRouter['createCaller']
@@ -162,6 +170,7 @@ export type AnyRouter<TContext = any> = Router<
 
 /**
  * @internal
+ * @deprecated
  */
 export type inferRouterError<TRouter extends AnyRouter> = ReturnType<
   TRouter['getErrorShape']
@@ -177,6 +186,7 @@ const PROCEDURE_DEFINITION_MAP: Record<
 
 /**
  * @internal
+ * @deprecated
  */
 export type ErrorFormatter<TContext, TShape extends TRPCErrorShape<number>> = ({
   error,
@@ -198,6 +208,7 @@ type DefaultErrorData = {
 
 /**
  * @internal
+ * @deprecated
  */
 export interface DefaultErrorShape
   extends TRPCErrorShape<TRPC_ERROR_CODE_NUMBER, DefaultErrorData> {

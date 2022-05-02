@@ -1,6 +1,6 @@
 import { IncomingMessage, ServerResponse } from 'http';
 import qs from 'qs';
-import { inferRouterContext } from '../..';
+import { inferRouterContext } from '../../deprecated/router';
 import { AnyRouter } from '../../deprecated/router';
 import { HTTPBaseHandlerOptions } from '../../http/internals/types';
 

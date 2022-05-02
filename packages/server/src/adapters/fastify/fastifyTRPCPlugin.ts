@@ -1,7 +1,7 @@
 /// <reference types="fastify-websocket" />
 import { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 import { FastifyHandlerOptions } from '.';
-import { AnyRouter } from '../..';
+import { AnyRouter } from '../../deprecated/router';
 import { NodeHTTPCreateContextFnOptions } from '../node-http';
 import { WSSHandlerOptions, applyWSSHandler } from '../ws';
 import { fastifyRequestHandler } from './fastifyRequestHandler';

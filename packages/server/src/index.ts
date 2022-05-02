@@ -4,6 +4,7 @@ export * from './subscription';
 export * from './transformer';
 export * from './TRPCError';
 export * from './types';
-export * from './deprecated/router';
+export { router } from './deprecated/router';
 
-export { initTRPC } from './core/initTRPC';
+export type { ProcedureType } from './core/utils';
+export * from './core';

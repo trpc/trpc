@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/ban-types */
 import { ErrorFormatter } from '../error/formatter';
 import { Procedure } from './procedure';
 
@@ -13,6 +14,8 @@ export interface Router<TContext> {
   subscriptions?: ProcedureRecord<TContext>;
   errorFormatter?: ErrorFormatter<TContext, any>;
 }
+
+export type AnyRouter = Router<any>;
 
 /**
  * @internal

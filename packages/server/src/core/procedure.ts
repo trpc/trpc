@@ -1,6 +1,6 @@
 import { MiddlewareFunction } from './middleware';
-import { Params } from './utils';
 import { Parser, inferParser } from './parser';
+import { Params } from './utils';
 import {
   DefaultValue as FallbackValue,
   Overwrite,
