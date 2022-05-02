@@ -2,15 +2,16 @@
 import { ZodError } from 'zod';
 import { initTRPC } from '../../core';
 
+export type User = {
+  id: string;
+  memberships: {
+    organizationId: string;
+  }[];
+};
 ////////// app bootstrap & middlewares ////////
 export type Context = {
   db?: {};
-  user?: {
-    id: string;
-    memberships: {
-      organizationId: string;
-    }[];
-  };
+  user?: User;
 };
 export const trpc = initTRPC<Context>()({
   errorFormatter({ error, shape }) {

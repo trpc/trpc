@@ -25,7 +25,10 @@ export const mixedRouter = trpc.router({
     viewerWhoAmi: procedure.use(isAuthed).resolve(({ ctx }) => {
       // `isAuthed()` will propagate new `ctx`
       // `ctx.user` is now `NonNullable`
-      return `your id is ${ctx.user.id}`;
+      return {
+        text: `your id is ${ctx.user.id}`,
+        user: ctx.user,
+      };
     }),
   },
 

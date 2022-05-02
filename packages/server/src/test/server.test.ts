@@ -1,6 +1,7 @@
 // FIXME tmp - delete me asap
 import { expectTypeOf } from 'expect-type';
 import { appRouter } from './server';
+import { User } from './server/context';
 
 ///////////// this below are just tests that the type checking is doing it's thing right ////////////
 async function main() {
@@ -9,7 +10,10 @@ async function main() {
     const output = await appRouter.queries.viewerWhoAmi();
     console.log({ output });
     expectTypeOf(output).not.toBeAny();
-    expectTypeOf(output).toBeString();
+    expectTypeOf(output).toMatchTypeOf<{
+      text: string;
+      user: User;
+    }>();
 
     // should work
     await appRouter.queries.viewerWhoAmi({});
