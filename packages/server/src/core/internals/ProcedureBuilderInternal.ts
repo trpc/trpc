@@ -8,7 +8,7 @@ import { MiddlewareFunction } from '../middleware';
 import { Parser } from '../parser';
 import { getParseFn } from './getParseFn';
 import { mergeWithoutOverrides } from './mergeWithoutOverrides';
-import { ResolveOptions } from './utils';
+import { ResolveOptions, middlewareMarker } from './utils';
 
 interface ProcedureBuilderInternal {
   _def: {
@@ -43,7 +43,9 @@ interface ProcedureBuilderInternal {
   /**
    * @internal
    */
-  resolve: (resolver: () => MaybePromise<any>) => ProcedureBuilderInternal;
+  resolve: (
+    resolver: (opts: ResolveOptions<any>) => MaybePromise<any>,
+  ) => ProcedureBuilderInternal;
 }
 function createNewInternalBuilder(
   def1: ProcedureBuilderInternal['_def'],
@@ -145,7 +147,21 @@ export function createInternalBuilder(
       return createNewInternalBuilder(_def, { meta });
     },
     resolve(resolver) {
-      return createNewInternalBuilder(_def, { resolver });
+      return createNewInternalBuilder(_def, {
+        resolver,
+        middlewares: [
+          ..._def.middlewares,
+          async function resolveMiddleware(opts) {
+            const data = await resolver(opts);
+            return {
+              marker: middlewareMarker,
+              ok: true,
+              data,
+              ctx: opts.ctx,
+            } as const;
+          },
+        ],
+      });
     },
     concat(builder) {
       return createNewInternalBuilder(_def, builder._def);
