@@ -4,7 +4,8 @@
 import { MaybePromise } from '../../types';
 import { MiddlewareFunction } from '../middleware';
 import { Parser } from '../parser';
-import { ResolveOptions } from '../utils';
+import { mergeWithoutOverrides } from './mergeWithoutOverrides';
+import { ResolveOptions } from './utils';
 
 interface ProcedureBuilderInternal {
   _def: {
@@ -39,23 +40,6 @@ interface ProcedureBuilderInternal {
    */
   resolve: (resolver: () => MaybePromise<any>) => ProcedureBuilderInternal;
 }
-/**
- * Ensures there are no duplicate keys when building a procedure.
- */
-function mergeWithoutOverrides<T extends Record<string, unknown>>(
-  obj1: T,
-  obj2: Partial<T>,
-): T {
-  for (const key in obj2) {
-    if (key in obj1) {
-      throw new Error(`Duplicate key ${key}`);
-    }
-  }
-  return {
-    ...obj1,
-    ...obj2,
-  };
-}
 function createNewInternalBuilder(
   def1: ProcedureBuilderInternal['_def'],
   def2: Partial<ProcedureBuilderInternal['_def']>,
@@ -79,7 +63,7 @@ function wrapInternalBuilderInFn(
     const error = [
       'This is a client-only function.',
       'If you want to call this function on the server, you must first wrap the function',
-      'TODO - add explanation',
+      'FIXME - add explanation',
     ];
     throw new Error(error.join('\n'));
   }) as any;

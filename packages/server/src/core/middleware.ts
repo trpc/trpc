@@ -1,6 +1,6 @@
-import { Params } from './utils';
-import { ProcedureType } from './utils';
-import { MiddlewareMarker } from './utils';
+import { ProcedureType } from '../types';
+import { ProcedureParams } from './internals/utils';
+import { MiddlewareMarker } from './internals/utils';
 
 /**
  * @internal
@@ -16,7 +16,7 @@ interface MiddlewareResultBase {
 /**
  * @internal
  */
-interface MiddlewareOKResult<_TParams extends Params>
+interface MiddlewareOKResult<_TParams extends ProcedureParams>
   extends MiddlewareResultBase {
   ok: true;
   data: unknown;
@@ -26,7 +26,7 @@ interface MiddlewareOKResult<_TParams extends Params>
 /**
  * @internal
  */
-interface MiddlewareErrorResult<_TParams extends Params>
+interface MiddlewareErrorResult<_TParams extends ProcedureParams>
   extends MiddlewareResultBase {
   ok: false;
   error: Error;
@@ -36,7 +36,7 @@ interface MiddlewareErrorResult<_TParams extends Params>
 /**
  * @internal
  */
-export type MiddlewareResult<TParams extends Params> =
+export type MiddlewareResult<TParams extends ProcedureParams> =
   | MiddlewareOKResult<TParams>
   | MiddlewareErrorResult<TParams>;
 
@@ -44,8 +44,8 @@ export type MiddlewareResult<TParams extends Params> =
  * @internal
  */
 export type MiddlewareFunction<
-  TParams extends Params,
-  TParamsAfter extends Params,
+  TParams extends ProcedureParams,
+  TParamsAfter extends ProcedureParams,
 > = (opts: {
   ctx: TParams['_ctx_out'];
   type: ProcedureType;
@@ -73,7 +73,7 @@ export type MiddlewareFunction<
  * @internal
  */
 export function createMiddlewareFactory<TContext, TMeta>() {
-  return function createMiddleware<$TNewParams extends Params>(
+  return function createMiddleware<$TNewParams extends ProcedureParams>(
     fn: MiddlewareFunction<
       {
         _ctx_in: TContext;

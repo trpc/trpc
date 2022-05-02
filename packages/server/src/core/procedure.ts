@@ -1,21 +1,21 @@
 import { MaybePromise } from '../types';
 import { createInternalBuilder } from './internals/ProcedureBuilderInternal';
-import { MiddlewareFunction } from './middleware';
-import { Parser, inferParser } from './parser';
-import { Params, ResolveOptions } from './utils';
+import { ProcedureParams, ResolveOptions } from './internals/utils';
 import {
   DefaultValue as FallbackValue,
   Overwrite,
   ProcedureMarker,
   UnsetMarker,
-} from './utils';
+} from './internals/utils';
+import { MiddlewareFunction } from './middleware';
+import { Parser, inferParser } from './parser';
 
 type ClientContext = Record<string, unknown>;
 type ProcedureOptions<TInput extends { input?: unknown }> = {
   context?: ClientContext;
 } & TInput;
 
-export type Procedure<TParams extends Params> =
+export type Procedure<TParams extends ProcedureParams> =
   (TParams['_input_in'] extends UnsetMarker
     ? (
         opts?: ProcedureOptions<{ input?: undefined }>,
@@ -30,8 +30,8 @@ export type Procedure<TParams extends Params> =
     ProcedureMarker;
 
 type CreateProcedureReturnInput<
-  TPrev extends Params,
-  TNext extends Params,
+  TPrev extends ProcedureParams,
+  TNext extends ProcedureParams,
 > = ProcedureBuilder<{
   _meta: TPrev['_meta'];
   _ctx_in: TPrev['_ctx_in'];
@@ -42,7 +42,7 @@ type CreateProcedureReturnInput<
   _output_out: FallbackValue<TNext['_output_out'], TPrev['_output_out']>;
 }>;
 
-export interface ProcedureBuilder<TParams extends Params> {
+export interface ProcedureBuilder<TParams extends ProcedureParams> {
   /**
    * Add an input parser to the procedure.
    */
@@ -78,7 +78,7 @@ export interface ProcedureBuilder<TParams extends Params> {
   /**
    * Add a middleware to the procedure.
    */
-  use<$TParams extends Params>(
+  use<$TParams extends ProcedureParams>(
     fn: MiddlewareFunction<TParams, $TParams>,
   ): CreateProcedureReturnInput<TParams, $TParams>;
   /**

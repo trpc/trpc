@@ -1,5 +1,3 @@
-export type ProcedureType = 'query' | 'mutation' | 'subscription';
-
 /**
  * @internal
  */
@@ -41,7 +39,7 @@ export type ProcedureMarker = typeof procedureMarker;
 /**
  * @internal
  */
-export interface Params<
+export interface ProcedureParams<
   TContextIn = unknown,
   TContextOut = unknown,
   TInputIn = unknown,
@@ -83,7 +81,26 @@ export interface Params<
 /**
  * @internal
  */
-export interface ResolveOptions<TParams extends Params> {
+export interface ResolveOptions<TParams extends ProcedureParams> {
   ctx: TParams['_ctx_out'];
   input: TParams['_input_out'];
 }
+
+/**
+ * @internal
+ */
+export type ValidateShape<TActualShape, TExpectedShape> =
+  TActualShape extends TExpectedShape
+    ? Exclude<keyof TActualShape, keyof TExpectedShape> extends never
+      ? TActualShape
+      : TExpectedShape
+    : never;
+
+/**
+ * @internal
+ */
+export type PickFirstDefined<T, K> = undefined extends T
+  ? undefined extends K
+    ? never
+    : K
+  : T;

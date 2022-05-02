@@ -52,9 +52,15 @@ export type Dict<T> = Record<string, T | undefined>;
  */
 export type MaybePromise<T> = T | Promise<T>;
 
-/*
+/**
+ * @internal
+ *
  * Creates a "lower-priority" type inference.
  * https://github.com/microsoft/TypeScript/issues/14829#issuecomment-322267089
- * @internal
  */
 export type InferLast<T> = T & { [K in keyof T]: T[K] };
+
+/**
+ * @public
+ */
+export type ProcedureType = 'query' | 'mutation' | 'subscription';
