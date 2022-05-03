@@ -15,13 +15,11 @@ export function transformOperationResult<TRouter extends AnyRouter, TOutput>(
       ...result.data,
       error: runtime.transformer.deserialize(result.data.error),
     });
-
     return { ok: false, error, context } as const;
   }
 
   const data = runtime.transformer.deserialize(
     (result.data.result as any).data,
   ) as TOutput;
-
   return { ok: true, data, context } as const;
 }
