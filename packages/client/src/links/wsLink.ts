@@ -277,11 +277,13 @@ class TRPCSubscriptionEndedError extends Error {
 export function wsLink<TRouter extends AnyRouter>(
   opts: WebSocketLinkOptions,
 ): TRPCLink<TRouter> {
-  return () => {
+  return (runtime) => {
     const { client } = opts;
     return ({ op }) => {
       return observable((observer) => {
-        const { type, input, path, id, context } = op;
+        const { type, path, id, context } = op;
+
+        const input = runtime.transformer.serialize(op.input);
 
         let isDone = false;
         const unsub = client.request(

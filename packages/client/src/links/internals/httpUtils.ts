@@ -1,5 +1,5 @@
 import { ProcedureType } from '@trpc/server';
-import { LinkRuntime, PromiseAndCancel } from '../types';
+import { PromiseAndCancel, TRPCClientRuntime } from '../types';
 
 export interface HTTPLinkOptions {
   url: string;
@@ -28,16 +28,21 @@ export interface ResponseShape {
 }
 export function httpRequest(
   props: {
-    runtime: LinkRuntime;
+    runtime: TRPCClientRuntime;
     type: ProcedureType;
     path: string;
     url: string;
   } & ({ inputs: unknown[] } | { input: unknown }),
 ): PromiseAndCancel<ResponseShape> {
-  const { type, runtime: rt, path } = props;
-  const ac = rt.AbortController ? new rt.AbortController() : null;
+  const { type, runtime, path } = props;
+  const ac = runtime.AbortController ? new runtime.AbortController() : null;
 
-  const input = 'input' in props ? props.input : arrayToDict(props.inputs);
+  const input =
+    'input' in props
+      ? runtime.transformer.serialize(props.input)
+      : arrayToDict(
+          props.inputs.map((_input) => runtime.transformer.serialize(_input)),
+        );
 
   function getUrl() {
     let url = props.url + '/' + path;
@@ -64,9 +69,9 @@ export function httpRequest(
     const url = getUrl();
 
     const meta = {} as any as ResponseShape['meta'];
-    Promise.resolve(rt.headers())
+    Promise.resolve(runtime.headers())
       .then((headers) =>
-        rt.fetch(url, {
+        runtime.fetch(url, {
           method: METHOD[type],
           signal: ac?.signal,
           body: getBody(),
