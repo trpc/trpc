@@ -20,7 +20,10 @@ import { TRPCClientError } from '../TRPCClientError';
 import { getFetch } from '../getFetch';
 import { httpBatchLink } from '../links';
 import { createChain } from '../links/internals/createChain';
-import { transformOperationResult } from '../links/internals/transformOperationResult';
+import {
+  transformOperationResult,
+  transformSubscriptionOperationResult,
+} from '../links/internals/transformOperationResult';
 import {
   HTTPHeaders,
   OperationContext,
@@ -173,7 +176,7 @@ export class TRPCClient<TRouter extends AnyRouter> {
           .then((result) => {
             const transformed = transformOperationResult(result, this.runtime);
             if (transformed.ok) {
-              resolve(transformed.data as any);
+              resolve(transformed.data);
               return;
             }
             reject(transformed.error);
@@ -205,7 +208,6 @@ export class TRPCClient<TRouter extends AnyRouter> {
       context,
     });
   }
-
   public mutation<
     TMutations extends TRouter['_def']['mutations'],
     TPath extends string & keyof TMutations,
@@ -241,17 +243,18 @@ export class TRPCClient<TRouter extends AnyRouter> {
       input,
       context: opts.context,
     });
+    const runtime = this.runtime;
     return observable$.subscribe({
       next(result) {
-        if ('error' in result.data) {
-          const err = TRPCClientError.from(result.data, {
-            meta: result.context,
-          });
-
-          opts.error?.(err);
+        const transformed = transformSubscriptionOperationResult(
+          result,
+          runtime,
+        );
+        if (transformed.ok) {
+          opts.next?.(transformed.data);
           return;
         }
-        opts.next?.(result.data.result as TRPCResultMessage<TOutput>);
+        opts.error?.(transformed.error);
       },
       error(err) {
         opts.error?.(err);

@@ -12,11 +12,6 @@ export default trpcNext.createNextApiHandler<AppRouter>({
    */
   createContext,
   /**
-   * Data transformer
-   * @link https://trpc.io/docs/data-transformers
-   */
-
-  /**
    * @link https://trpc.io/docs/error-handling
    */
   onError({ error }) {

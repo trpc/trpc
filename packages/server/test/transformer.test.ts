@@ -13,6 +13,7 @@ import {
 } from '../../client/src';
 import * as trpc from '../src';
 import { TRPCError } from '../src/TRPCError';
+import { observable } from '../src/observable';
 
 test('superjson up and down', async () => {
   const transformer = superjson;
@@ -387,6 +388,56 @@ describe('transformer on router', () => {
 
     const res = await client.query('hello', date);
     expect(res.getTime()).toBe(date.getTime());
+    expect((fn.mock.calls[0][0] as Date).getTime()).toBe(date.getTime());
+
+    wsClient.close();
+    close();
+  });
+
+  test('subscription', async () => {
+    let wsClient: any;
+    const date = new Date();
+    const fn = jest.fn();
+    const transformer = superjson;
+    const { client, close } = routerToServerAndClient(
+      trpc
+        .router()
+        .transformer(transformer)
+        .subscription('hello', {
+          input: z.date(),
+          resolve({ input }) {
+            return observable<Date>((emit) => {
+              fn(input);
+              emit.next(input);
+              return () => null;
+            });
+          },
+        }),
+      {
+        client({ wssUrl }) {
+          wsClient = createWSClient({
+            url: wssUrl,
+          });
+          return {
+            transformer,
+            links: [wsLink({ client: wsClient })],
+          };
+        },
+      },
+    );
+
+    const data = await new Promise<Date>((resolve) => {
+      const subscription = client.subscription('hello', date, {
+        next: (result) => {
+          if (result.type === 'data') {
+            subscription.unsubscribe();
+            resolve(result.data);
+          }
+        },
+      });
+    });
+
+    expect(data.getTime()).toBe(date.getTime());
     expect((fn.mock.calls[0][0] as Date).getTime()).toBe(date.getTime());
 
     wsClient.close();
