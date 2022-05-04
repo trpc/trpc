@@ -287,7 +287,6 @@ test('all transformers running in correct order', async () => {
         return object;
       },
       deserialize: (object) => {
-        console.log({ object });
         fn('client:deserialized');
         return object;
       },
@@ -316,7 +315,6 @@ test('all transformers running in correct order', async () => {
   );
   const res = await client.query('hello', world);
   expect(res).toBe(world);
-  console.log(fn.mock.calls);
   expect(fn.mock.calls[0][0]).toBe('client:serialized'); // batchLoader.validate
   expect(fn.mock.calls[1][0]).toBe('client:serialized'); // batchLoader.fetch
   expect(fn.mock.calls[2][0]).toBe('server:deserialized');

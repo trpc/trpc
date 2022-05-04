@@ -252,7 +252,6 @@ describe('batching', () => {
 
       expect(res).toEqual([1024, 1024]);
       expect(createContextFn).toBeCalledTimes(1);
-      createContextFn.mockClear();
     }
 
     close();
