@@ -193,94 +193,70 @@ describe('batching', () => {
     close();
   });
 
-  // FIXME
-  // test('maxBatchSize', async () => {
-  //   const contextCall = jest.fn();
-  //   const { port, close } = routerToServerAndClient(
-  //     trpc.router().query('hello', {
-  //       input: z.string().nullish(),
-  //       resolve({ input }) {
-  //         return `hello ${input ?? 'world'}`;
-  //       },
-  //     }),
-  //     {
-  //       server: {
-  //         createContext() {
-  //           contextCall();
-  //         },
-  //         batching: {
-  //           enabled: true,
-  //         },
-  //       },
-  //     },
-  //   );
-  //   const links = [
-  //     httpBatchLink({
-  //       url: `http://localhost:${port}`,
-  //       maxBatchSize: 2,
-  //     })(mockRuntime),
-  //   ];
-  //   const $result1 = executeChain({
-  //     links,
-  //     op: {
-  //       id: 1,
-  //       type: 'query',
-  //       path: 'hello',
-  //       input: null,
-  //       context: {},
-  //     },
-  //   });
+  test('batching on maxURLLength', async () => {
+    const createContextFn = jest.fn();
+    const { client, httpUrl, close, router } = routerToServerAndClient(
+      trpc.router().query('big-input', {
+        input: z.string(),
+        resolve({ input }) {
+          return input.length;
+        },
+      }),
+      {
+        server: {
+          createContext() {
+            createContextFn();
+          },
+          batching: {
+            enabled: true,
+          },
+        },
+        client: (opts) => ({
+          links: [httpBatchLink({ url: opts.httpUrl })],
+        }),
+      },
+    );
 
-  //   const $result2 = executeChain({
-  //     links,
-  //     op: {
-  //       id: 2,
-  //       type: 'query',
-  //       path: 'hello',
-  //       input: 'alexdotjs',
-  //       context: {},
-  //     },
-  //   });
+    {
+      // queries should be batched into a single request (url length: 118)
+      const res = await Promise.all([
+        client.query('big-input', '*'.repeat(10)),
+        client.query('big-input', '*'.repeat(10)),
+      ]);
 
-  //   const $result3 = executeChain({
-  //     links,
-  //     op: {
-  //       id: 3,
-  //       type: 'query',
-  //       path: 'hello',
-  //       input: 'again',
-  //       context: {},
-  //     },
-  //   });
+      expect(res).toEqual([10, 10]);
+      expect(createContextFn).toBeCalledTimes(1);
+      createContextFn.mockClear();
+    }
+    {
+      // queries should be sent and indivdual requests (url length: 2146)
+      const res = await Promise.all([
+        client.query('big-input', '*'.repeat(1024)),
+        client.query('big-input', '*'.repeat(1024)),
+      ]);
 
-  //   await waitFor(() => {
-  //     expect($result1.get()).not.toBe(null);
-  //     expect($result2.get()).not.toBe(null);
-  //     expect($result3.get()).not.toBe(null);
-  //   });
-  //   expect($result1.get()).toMatchInlineSnapshot(`
-  //     Object {
-  //       "data": "hello world",
-  //       "type": "data",
-  //     }
-  //   `);
-  //   expect($result2.get()).toMatchInlineSnapshot(`
-  //     Object {
-  //       "data": "hello alexdotjs",
-  //       "type": "data",
-  //     }
-  //   `);
-  //   expect($result3.get()).toMatchInlineSnapshot(`
-  //     Object {
-  //       "data": "hello again",
-  //       "type": "data",
-  //     }
-  //   `);
+      expect(res).toEqual([1024, 1024]);
+      expect(createContextFn).toBeCalledTimes(2);
+      createContextFn.mockClear();
+    }
+    {
+      // queries should be batched into a single request because of increased maxURLLength (url length: 2146)
+      const clientWithBigMaxURLLength = createTRPCClient<typeof router>({
+        links: [httpBatchLink({ url: httpUrl, maxURLLength: 9999 })],
+      });
 
-  //   expect(contextCall).toHaveBeenCalledTimes(2);
+      const res = await Promise.all([
+        clientWithBigMaxURLLength.query('big-input', '*'.repeat(1024)),
+        clientWithBigMaxURLLength.query('big-input', '*'.repeat(1024)),
+      ]);
 
-  //   close();
-  // });
+      expect(res).toEqual([1024, 1024]);
+      expect(createContextFn).toBeCalledTimes(1);
+      createContextFn.mockClear();
+    }
+
+    close();
+  });
 
   test('server not configured for batching', async () => {
     const serverCall = jest.fn();
