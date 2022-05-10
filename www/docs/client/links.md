@@ -25,9 +25,9 @@ const somePosts = await Promise.all([
 
 > The below examples assuming you use Next.js, but the same as below can be added if you use the vanilla tRPC client
 
-### Setting a maximum batch size
+### Setting a maximum URL length
 
-This limits the number of requests that can be sent together in batch ( useful to prevent the url from getting too large and run into [HTTP error 413](https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/413) ).
+When sending batch requests, sometimes the URL can become too large causing [HTTP error 413](https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/413). The `maxURLLength` option will limit the number of requests that can be sent together in a batch. This value defaults to 2,083 but you may wish to increase or decrease this dependent on your deployment environment & use case. You can read more about URL lengths [here](https://www.sistrix.com/ask-sistrix/technical-seo/site-structure/url-length-how-long-can-a-url-be).
 
 ```ts title='server.ts'
 import type { AppRouter } from 'pages/api/trpc/[trpc]';
@@ -46,7 +46,7 @@ export default withTRPC<AppRouter>({
       links: [
         httpBatchLink({
           url: '/api/trpc',
-          maxBatchSize: 10 // a reasonable size
+          maxURLLength: 2083 // a suitable size for your deployment environment & use case.
         }),
       ],
     };
