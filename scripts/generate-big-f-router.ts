@@ -1,7 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 
-const NUM_PROCEDURES_TO_GENERATE = 550;
+const NUM_PROCEDURES_TO_GENERATE = 200;
 
 // Big F̶u̶c̶ Fantastic Router
 function getBFR() {
