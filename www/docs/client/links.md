@@ -45,8 +45,8 @@ export default withTRPC<AppRouter>({
     return {
       links: [
         httpBatchLink({
-          url: '/api/trpc',
-          maxURLLength: 2083 // a suitable size for your deployment environment & use case.
+          url: 'http://localhost:3000/api/trpc',
+          maxURLLength: 2083 // a suitable size
         }),
       ],
     };
