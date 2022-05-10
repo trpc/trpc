@@ -1,5 +1,7 @@
 import {
   AnyRouter,
+  ClientDataTransformerOptions,
+  DataTransformer,
   inferHandlerInput,
   inferProcedureInput,
   inferProcedureOutput,
@@ -18,12 +20,15 @@ import { TRPCClientError } from '../TRPCClientError';
 import { getFetch } from '../getFetch';
 import { httpBatchLink } from '../links';
 import { createChain } from '../links/internals/createChain';
-import { transformOperationResult } from '../links/internals/transformOperationResult';
+import {
+  transformOperationResult,
+  transformSubscriptionOperationResult,
+} from '../links/internals/transformOperationResult';
 import {
   HTTPHeaders,
-  LinkRuntime,
   OperationContext,
   OperationLink,
+  TRPCClientRuntime,
   TRPCLink,
 } from '../links/types';
 import { getAbortController } from './fetchHelpers';
@@ -49,6 +54,11 @@ interface CreateTRPCClientBaseOptions {
    * headers to be set on outgoing requests / callback that of said headers
    */
   headers?: HTTPHeaders | (() => HTTPHeaders | Promise<HTTPHeaders>);
+  /**
+   * Data transformer
+   * @link https://trpc.io/docs/data-transformers
+   **/
+  transformer?: ClientDataTransformerOptions;
 }
 
 /** @internal */
@@ -64,7 +74,7 @@ export interface CreateTRPCClientWithURLOptions
 export interface CreateTRPCClientWithLinksOptions<TRouter extends AnyRouter>
   extends CreateTRPCClientBaseOptions {
   /**
-   * @link http://localhost:3000/docs/links
+   * @link https://trpc.io/docs/links
    **/
   links: TRPCLink<TRouter>[];
 }
@@ -83,23 +93,37 @@ export type CreateTRPCClientOptions<TRouter extends AnyRouter> =
   | CreateTRPCClientWithURLOptions;
 export class TRPCClient<TRouter extends AnyRouter> {
   private readonly links: OperationLink<TRouter>[];
-  public readonly runtime: LinkRuntime;
+  public readonly runtime: TRPCClientRuntime;
 
   constructor(opts: CreateTRPCClientOptions<TRouter>) {
     const _fetch = getFetch(opts?.fetch);
     const AC = getAbortController(opts?.AbortController);
 
-    function getHeadersFn(): LinkRuntime['headers'] {
+    function getHeadersFn(): TRPCClientRuntime['headers'] {
       if (opts.headers) {
         const headers = opts.headers;
         return typeof headers === 'function' ? headers : () => headers;
       }
       return () => ({});
     }
+
+    const transformer: DataTransformer = opts.transformer
+      ? 'input' in opts.transformer
+        ? {
+            serialize: opts.transformer.input.serialize,
+            deserialize: opts.transformer.output.deserialize,
+          }
+        : opts.transformer
+      : {
+          serialize: (data) => data,
+          deserialize: (data) => data,
+        };
+
     this.runtime = {
       AbortController: AC as any,
       fetch: _fetch,
       headers: getHeadersFn(),
+      transformer,
     };
 
     if ('links' in opts) {
@@ -150,9 +174,9 @@ export class TRPCClient<TRouter extends AnyRouter> {
       (resolve, reject) => {
         promise
           .then((result) => {
-            const transformed = transformOperationResult(result);
+            const transformed = transformOperationResult(result, this.runtime);
             if (transformed.ok) {
-              resolve(transformed.data as any);
+              resolve(transformed.data);
               return;
             }
             reject(transformed.error);
@@ -184,7 +208,6 @@ export class TRPCClient<TRouter extends AnyRouter> {
       context,
     });
   }
-
   public mutation<
     TMutations extends TRouter['_def']['mutations'],
     TPath extends string & keyof TMutations,
@@ -220,17 +243,18 @@ export class TRPCClient<TRouter extends AnyRouter> {
       input,
       context: opts.context,
     });
+    const runtime = this.runtime;
     return observable$.subscribe({
       next(result) {
-        if ('error' in result.data) {
-          const err = TRPCClientError.from(result.data, {
-            meta: result.context,
-          });
-
-          opts.error?.(err);
+        const transformed = transformSubscriptionOperationResult(
+          result,
+          runtime,
+        );
+        if (transformed.ok) {
+          opts.next?.(transformed.data);
           return;
         }
-        opts.next?.(result.data.result as TRPCResultMessage<TOutput>);
+        opts.error?.(transformed.error);
       },
       error(err) {
         opts.error?.(err);
