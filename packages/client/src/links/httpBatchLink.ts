@@ -17,7 +17,7 @@ export interface HttpBatchLinkOptions extends HTTPLinkOptions {
  * A sensible default max URL length
  * @link https://www.sistrix.com/ask-sistrix/technical-seo/site-structure/url-length-how-long-can-a-url-be
  */
-const DEFAULT_MAX_URL_LENGTH = 2048;
+const DEFAULT_MAX_URL_LENGTH = 2083;
 
 export function httpBatchLink<TRouter extends AnyRouter>(
   opts: HttpBatchLinkOptions,
