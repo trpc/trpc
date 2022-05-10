@@ -38,24 +38,53 @@ export function dataLoader<TKey, TValue>(
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     const thisBatch = batch!;
     destroyTimerAndBatch();
-    const { promise, cancel } = batchLoader.fetch(
-      thisBatch.items.map((v) => v.key),
-    );
+
+    const itemBatches: BatchItem<TKey, TValue>[][] = [[]];
+
+    for (const item of thisBatch.items) {
+      const lastItemBatch = itemBatches[itemBatches.length - 1];
+      const isValid = batchLoader.validate(
+        lastItemBatch.concat(item).map((_item) => _item.key),
+      );
+      if (isValid) {
+        lastItemBatch.push(item);
+      } else {
+        itemBatches.push([item]);
+        if (lastItemBatch.length === 0) {
+          itemBatches.push([]);
+        }
+      }
+    }
+
+    const promises: Promise<void>[] = [];
+    const cancels: CancelFn[] = [];
+
+    for (const itemBatch of itemBatches) {
+      if (itemBatch.length > 0) {
+        const { promise, cancel } = batchLoader.fetch(
+          itemBatch.map((_item) => _item.key),
+        );
+        const thenPromise = promise.then((result) => {
+          for (let i = 0; i < result.length; i++) {
+            const value = result[i];
+            itemBatch[i].resolve(value);
+          }
+        });
+        promises.push(thenPromise);
+        cancels.push(cancel);
+      }
+    }
+
+    const promise = Promise.all(promises);
+    const cancel = () => cancels.forEach((_cancel) => _cancel());
+
     thisBatch.cancel = cancel;
 
-    promise
-      .then((result) => {
-        for (let i = 0; i < result.length; i++) {
-          const value = result[i];
-          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-          thisBatch.items[i]!.resolve(value!);
-        }
-      })
-      .catch((cause) => {
-        for (const item of thisBatch.items) {
-          item.reject(cause);
-        }
-      });
+    promise.catch((cause) => {
+      for (const item of thisBatch.items) {
+        item.reject(cause);
+      }
+    });
   }
   function load(key: TKey): PromiseAndCancel<TValue> {
     const batchItem = {
@@ -71,50 +100,13 @@ export function dataLoader<TKey, TValue>(
         },
       };
     }
-    let thisBatch = batch;
+    const thisBatch = batch;
     const promise = new Promise<TValue>((resolve, reject) => {
       const item = batchItem as any as BatchItem<TKey, TValue>;
       item.reject = reject;
       item.resolve = resolve;
 
-      const isNextBatchItemsValid = batchLoader.validate(
-        thisBatch.items.concat(item).map((item) => item.key),
-      );
-
-      // check if the batch will be valid before adding to it
-      if (isNextBatchItemsValid) {
-        thisBatch.items.push(item);
-        return;
-      }
-
-      // if batch is empty dispatch immediately with item
-      if (thisBatch.items.length === 0) {
-        thisBatch.items.push(item);
-        dispatch();
-        return;
-      }
-
-      // dispatch the existing batch
-      dispatch();
-
-      // create a new batch with item
-      batch = {
-        items: [],
-        cancel() {
-          destroyTimerAndBatch();
-        },
-      };
-      thisBatch = batch;
       thisBatch.items.push(item);
-
-      const isThisBatchValid = batchLoader.validate(
-        thisBatch.items.map((item) => item.key),
-      );
-
-      // if current batch is invalid dispatch immediately
-      if (!isThisBatchValid) {
-        dispatch();
-      }
     });
 
     if (!dispatchTimer) {

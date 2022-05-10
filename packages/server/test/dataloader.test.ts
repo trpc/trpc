@@ -48,9 +48,14 @@ test('basic', async () => {
 
 test('cancellation', async () => {
   const fetchFn = jest.fn();
+  const validateFn = jest.fn();
   const cancelFn = jest.fn();
   const loader = dataLoader<number, number>({
-    validate: () => true,
+    validate: (keys) => {
+      validateFn(keys);
+      const sum = keys.reduce((acc, key) => acc + key, 0);
+      return sum < 10;
+    },
     fetch: (keys) => {
       fetchFn();
       const promise = new Promise<number[]>((resolve) => {
@@ -70,8 +75,10 @@ test('cancellation', async () => {
     res2.cancel();
 
     expect(fetchFn).toHaveBeenCalledTimes(0);
+    expect(validateFn).toHaveBeenCalledTimes(0);
     expect(cancelFn).toHaveBeenCalledTimes(0);
     fetchFn.mockClear();
+    validateFn.mockClear();
     cancelFn.mockClear();
   }
   {
@@ -86,8 +93,21 @@ test('cancellation', async () => {
 
     await waitFor(() => {
       expect(fetchFn).toHaveBeenCalledTimes(1);
+      expect(validateFn).toHaveBeenCalledTimes(2);
       expect(cancelFn).toHaveBeenCalledTimes(1);
     });
+    fetchFn.mockClear();
+    validateFn.mockClear();
+    cancelFn.mockClear();
+  }
+  {
+    const res1 = loader.load(10);
+
+    res1.cancel();
+
+    expect(fetchFn).toHaveBeenCalledTimes(0);
+    expect(validateFn).toHaveBeenCalledTimes(0);
+    expect(cancelFn).toHaveBeenCalledTimes(0);
   }
 });
 
@@ -137,11 +157,10 @@ test('validation', async () => {
       loader.load(0).promise,
     ]);
     expect($result).toEqual([2, 10, 1]);
-    expect(validateFn).toHaveBeenCalledTimes(4);
+    expect(validateFn).toHaveBeenCalledTimes(3);
     expect(validateFn).toHaveBeenNthCalledWith(1, [1]);
     expect(validateFn).toHaveBeenNthCalledWith(2, [1, 9]);
-    expect(validateFn).toHaveBeenNthCalledWith(3, [9]);
-    expect(validateFn).toHaveBeenNthCalledWith(4, [9, 0]);
+    expect(validateFn).toHaveBeenNthCalledWith(3, [9, 0]);
     expect(fetchFn).toHaveBeenCalledTimes(2);
     expect(fetchFn).toHaveBeenNthCalledWith(1, [1]);
     expect(fetchFn).toHaveBeenNthCalledWith(2, [9, 0]);
@@ -158,15 +177,13 @@ test('validation', async () => {
       loader.load(1).promise,
     ]);
     expect($result).toEqual([3, 12, 4, 5, 6, 2]);
-    expect(validateFn).toHaveBeenCalledTimes(8);
+    expect(validateFn).toHaveBeenCalledTimes(6);
     expect(validateFn).toHaveBeenNthCalledWith(1, [2]);
     expect(validateFn).toHaveBeenNthCalledWith(2, [2, 11]);
-    expect(validateFn).toHaveBeenNthCalledWith(3, [11]);
-    expect(validateFn).toHaveBeenNthCalledWith(4, [3]);
-    expect(validateFn).toHaveBeenNthCalledWith(5, [3, 4]);
-    expect(validateFn).toHaveBeenNthCalledWith(6, [3, 4, 5]);
-    expect(validateFn).toHaveBeenNthCalledWith(7, [5]);
-    expect(validateFn).toHaveBeenNthCalledWith(8, [5, 1]);
+    expect(validateFn).toHaveBeenNthCalledWith(3, [11, 3]);
+    expect(validateFn).toHaveBeenNthCalledWith(4, [3, 4]);
+    expect(validateFn).toHaveBeenNthCalledWith(5, [3, 4, 5]);
+    expect(validateFn).toHaveBeenNthCalledWith(6, [5, 1]);
     expect(fetchFn).toHaveBeenCalledTimes(4);
     expect(fetchFn).toHaveBeenNthCalledWith(1, [2]);
     expect(fetchFn).toHaveBeenNthCalledWith(2, [11]);
@@ -182,11 +199,10 @@ test('validation', async () => {
       loader.load(14).promise,
     ]);
     expect($result).toEqual([14, 7, 15]);
-    expect(validateFn).toHaveBeenCalledTimes(4);
+    expect(validateFn).toHaveBeenCalledTimes(3);
     expect(validateFn).toHaveBeenNthCalledWith(1, [13]);
     expect(validateFn).toHaveBeenNthCalledWith(2, [6]);
     expect(validateFn).toHaveBeenNthCalledWith(3, [6, 14]);
-    expect(validateFn).toHaveBeenNthCalledWith(4, [14]);
     expect(fetchFn).toHaveBeenCalledTimes(3);
     expect(fetchFn).toHaveBeenNthCalledWith(1, [13]);
     expect(fetchFn).toHaveBeenNthCalledWith(2, [6]);
