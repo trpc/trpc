@@ -212,13 +212,19 @@ describe('batching', () => {
           },
         },
         client: (opts) => ({
-          links: [httpBatchLink({ url: opts.httpUrl })],
+          links: [
+            httpBatchLink({
+              url: opts.httpUrl,
+              maxURLLength: 2083,
+            }),
+          ],
         }),
       },
     );
 
     {
-      // queries should be batched into a single request (url length: 118)
+      // queries should be batched into a single request
+      // url length: 118 < 2083
       const res = await Promise.all([
         client.query('big-input', '*'.repeat(10)),
         client.query('big-input', '*'.repeat(10)),
@@ -229,7 +235,8 @@ describe('batching', () => {
       createContextFn.mockClear();
     }
     {
-      // queries should be sent and indivdual requests (url length: 2146)
+      // queries should be sent and indivdual requests
+      // url length: 2146 > 2083
       const res = await Promise.all([
         client.query('big-input', '*'.repeat(1024)),
         client.query('big-input', '*'.repeat(1024)),
@@ -240,7 +247,8 @@ describe('batching', () => {
       createContextFn.mockClear();
     }
     {
-      // queries should be batched into a single request because of increased maxURLLength (url length: 2146)
+      // queries should be batched into a single request
+      // url length: 2146 < 9999
       const clientWithBigMaxURLLength = createTRPCClient<typeof router>({
         links: [httpBatchLink({ url: httpUrl, maxURLLength: 9999 })],
       });
