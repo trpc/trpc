@@ -22,20 +22,22 @@
   },
   "overrides": [
     {
-      "files": [
-        "examples/**/*"
-      ],
+      "files": ["examples/**/*"],
       "rules": {
         "@typescript-eslint/no-unused-vars": "off",
         "@typescript-eslint/no-floating-promises": "off"
       }
     },
     {
-      "files": [
-        "**/test/**/*"
-      ],
+      "files": ["**/test/**/*"],
       "rules": {
         "@typescript-eslint/no-floating-promises": "off"
+      }
+    },
+    {
+      "files": ["packages/**/*"],
+      "rules": {
+        "no-console": "error"
       }
     }
   ],

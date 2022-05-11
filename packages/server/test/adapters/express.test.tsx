@@ -1,18 +1,13 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import { Context, router } from './__router';
 import AbortController from 'abort-controller';
 import express from 'express';
 import http from 'http';
 import fetch from 'node-fetch';
-import { z } from 'zod';
 import { createTRPCClient } from '../../../client/src';
 import * as trpc from '../../src';
 import * as trpcExpress from '../../src/adapters/express';
 
-type Context = {
-  user: {
-    name: string;
-  } | null;
-};
 async function startServer() {
   const createContext = (
     _opts: trpcExpress.CreateExpressContextOptions,
@@ -30,19 +25,6 @@ async function startServer() {
       user: getUser(),
     };
   };
-
-  const router = trpc.router<Context>().query('hello', {
-    input: z
-      .object({
-        who: z.string().nullish(),
-      })
-      .nullish(),
-    resolve({ input, ctx }) {
-      return {
-        text: `hello ${input?.who ?? ctx.user?.name ?? 'world'}`,
-      };
-    },
-  });
 
   // express implementation
   const app = express();

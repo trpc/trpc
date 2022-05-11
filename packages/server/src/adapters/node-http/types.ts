@@ -1,8 +1,7 @@
 import { IncomingMessage, ServerResponse } from 'http';
 import qs from 'qs';
-import { inferRouterContext } from '../..';
 import { HTTPBaseHandlerOptions } from '../../http/internals/types';
-import { AnyRouter } from '../../router';
+import { AnyRouter, inferRouterContext } from '../../router';
 
 export type NodeHTTPRequest = IncomingMessage & {
   method?: string;
