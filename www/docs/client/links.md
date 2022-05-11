@@ -27,7 +27,7 @@ const somePosts = await Promise.all([
 
 ### Setting a maximum URL length
 
-When sending batch requests, sometimes the URL can become too large causing [HTTP error 413](https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/413). The `maxURLLength` option will limit the number of requests that can be sent together in a batch. This value defaults to 2,083 but you may wish to increase or decrease this dependent on your deployment environment & use case. You can read more about URL lengths [here](https://www.sistrix.com/ask-sistrix/technical-seo/site-structure/url-length-how-long-can-a-url-be).
+When sending batch requests, sometimes the URL can become too large causing HTTP errors like [`413 Payload Too Large`](https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/413), [`414 URI Too Long`](https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/414), and [`404 Not Found`](https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/404). The `maxURLLength` option will limit the number of requests that can be sent together in a batch.
 
 ```ts title='server.ts'
 import type { AppRouter } from 'pages/api/trpc/[trpc]';

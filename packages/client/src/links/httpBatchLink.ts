@@ -13,12 +13,6 @@ export interface HttpBatchLinkOptions extends HTTPLinkOptions {
   maxURLLength?: number;
 }
 
-/**
- * A sensible default max URL length
- * @link https://www.sistrix.com/ask-sistrix/technical-seo/site-structure/url-length-how-long-can-a-url-be
- */
-const DEFAULT_MAX_URL_LENGTH = 2083;
-
 export function httpBatchLink<TRouter extends AnyRouter>(
   opts: HttpBatchLinkOptions,
 ): TRPCLink<TRouter> {
@@ -26,7 +20,7 @@ export function httpBatchLink<TRouter extends AnyRouter>(
   return (runtime) => {
     type BatchOperation = { id: number; path: string; input: unknown };
 
-    const maxURLLength = opts.maxURLLength || DEFAULT_MAX_URL_LENGTH;
+    const maxURLLength = opts.maxURLLength || Infinity;
 
     const batchLoader = (type: ProcedureType) => {
       const validate = (batchOps: BatchOperation[]) => {
