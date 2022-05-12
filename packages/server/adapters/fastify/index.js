@@ -1,1 +1,1 @@
-module.exports = require('../../dist/adapters/fastify');
+module.exports = require('../../dist/adapters/fastify/index');

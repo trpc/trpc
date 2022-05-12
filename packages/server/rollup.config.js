@@ -9,6 +9,7 @@ const config = getRollupConfig({
     'src/adapters/node-http/index.ts',
     'src/adapters/standalone.ts',
     'src/adapters/ws.ts',
+    'src/adapters/fetch/index.ts',
     'src/rpc/index.ts',
     'src/observable/index.ts',
     'src/subscription.ts',

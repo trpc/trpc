@@ -1,4 +1,4 @@
-import { httpBatchLink, loggerLink, transformerLink } from '@trpc/client';
+import { httpBatchLink, loggerLink } from '@trpc/client';
 import { setupTRPC } from '@trpc/next';
 import type { inferProcedureInput, inferProcedureOutput } from '@trpc/server';
 // ℹ️ Type-only import:
@@ -41,6 +41,10 @@ export const trpc = setupTRPC<AppRouter>({
      */
     return {
       /**
+       * @link https://trpc.io/docs/data-transformers
+       */
+      transformer: superjson,
+      /**
        * @link https://trpc.io/docs/links
        */
       links: [
@@ -50,7 +54,6 @@ export const trpc = setupTRPC<AppRouter>({
             process.env.NODE_ENV === 'development' ||
             (opts.direction === 'down' && opts.result instanceof Error),
         }),
-        transformerLink(superjson),
         httpBatchLink({
           url: `${getBaseUrl()}/api/trpc`,
         }),

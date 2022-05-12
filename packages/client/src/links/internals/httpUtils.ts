@@ -1,5 +1,5 @@
 import { ProcedureType } from '@trpc/server';
-import { LinkRuntime, PromiseAndCancel } from '../types';
+import { PromiseAndCancel, TRPCClientRuntime } from '../types';
 
 export interface HTTPLinkOptions {
   url: string;
@@ -14,6 +14,7 @@ function arrayToDict(array: unknown[]) {
   }
   return dict;
 }
+
 const METHOD = {
   query: 'GET',
   mutation: 'POST',
@@ -26,50 +27,70 @@ export interface ResponseShape {
     response: Response;
   };
 }
-export function httpRequest(
-  props: {
-    runtime: LinkRuntime;
+
+type GetInputOptions = {
+  runtime: TRPCClientRuntime;
+} & ({ inputs: unknown[] } | { input: unknown });
+
+function getInput(opts: GetInputOptions) {
+  return 'input' in opts
+    ? opts.runtime.transformer.serialize(opts.input)
+    : arrayToDict(
+        opts.inputs.map((_input) => opts.runtime.transformer.serialize(_input)),
+      );
+}
+
+export type HTTPRequestOptions = HTTPLinkOptions &
+  GetInputOptions & {
     type: ProcedureType;
     path: string;
-    url: string;
-  } & ({ inputs: unknown[] } | { input: unknown }),
-): PromiseAndCancel<ResponseShape> {
-  const { type, runtime: rt, path } = props;
-  const ac = rt.AbortController ? new rt.AbortController() : null;
+  };
 
-  const input = 'input' in props ? props.input : arrayToDict(props.inputs);
-
-  function getUrl() {
-    let url = props.url + '/' + path;
-    const queryParts: string[] = [];
-    if ('inputs' in props) {
-      queryParts.push('batch=1');
-    }
-    if (type === 'query' && input !== undefined) {
+export function getUrl(opts: HTTPRequestOptions) {
+  let url = opts.url + '/' + opts.path;
+  const queryParts: string[] = [];
+  if ('inputs' in opts) {
+    queryParts.push('batch=1');
+  }
+  if (opts.type === 'query') {
+    const input = getInput(opts);
+    if (input !== undefined) {
       queryParts.push(`input=${encodeURIComponent(JSON.stringify(input))}`);
     }
-    if (queryParts.length) {
-      url += '?' + queryParts.join('&');
-    }
-    return url;
   }
-  function getBody() {
-    if (type === 'query') {
-      return undefined;
-    }
-    return input !== undefined ? JSON.stringify(input) : undefined;
+  if (queryParts.length) {
+    url += '?' + queryParts.join('&');
   }
+  return url;
+}
+
+type GetBodyOptions = { type: ProcedureType } & GetInputOptions;
+
+export function getBody(opts: GetBodyOptions) {
+  if (opts.type === 'query') {
+    return undefined;
+  }
+  const input = getInput(opts);
+  return input !== undefined ? JSON.stringify(input) : undefined;
+}
+
+export function httpRequest(
+  opts: HTTPRequestOptions,
+): PromiseAndCancel<ResponseShape> {
+  const { type, runtime } = opts;
+  const ac = runtime.AbortController ? new runtime.AbortController() : null;
 
   const promise = new Promise<ResponseShape>((resolve, reject) => {
-    const url = getUrl();
+    const url = getUrl(opts);
+    const body = getBody(opts);
 
     const meta = {} as any as ResponseShape['meta'];
-    Promise.resolve(rt.headers())
+    Promise.resolve(runtime.headers())
       .then((headers) =>
-        rt.fetch(url, {
+        runtime.fetch(url, {
           method: METHOD[type],
           signal: ac?.signal,
-          body: getBody(),
+          body: body,
           headers: {
             'content-type': 'application/json',
             ...headers,

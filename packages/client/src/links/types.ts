@@ -1,4 +1,4 @@
-import { AnyRouter, inferRouterError } from '@trpc/server';
+import { AnyRouter, DataTransformer, inferRouterError } from '@trpc/server';
 import { Observable, Observer } from '@trpc/server/observable';
 import { TRPCResponse, TRPCResponseMessage } from '@trpc/server/rpc';
 import { TRPCClientError } from '../TRPCClientError';
@@ -30,10 +30,11 @@ export type TRPCFetch = (
   options?: RequestInit,
 ) => Promise<Response>;
 
-export interface LinkRuntime {
-  headers: () => HTTPHeaders | Promise<HTTPHeaders>;
+export interface TRPCClientRuntime {
   fetch: TRPCFetch;
   AbortController?: typeof AbortController;
+  headers: () => HTTPHeaders | Promise<HTTPHeaders>;
+  transformer: DataTransformer;
 }
 
 type OperationResultData<TRouter extends AnyRouter, TOutput> =
@@ -65,5 +66,5 @@ export type OperationLink<
 }) => OperationResultObservable<TRouter, TOutput>;
 
 export type TRPCLink<TRouter extends AnyRouter> = (
-  opts: LinkRuntime,
+  opts: TRPCClientRuntime,
 ) => OperationLink<TRouter>;

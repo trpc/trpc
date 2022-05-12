@@ -17,9 +17,9 @@ export function splitLink<TRouter extends AnyRouter = AnyRouter>(opts: {
    */
   false: TRPCLink<TRouter> | TRPCLink<TRouter>[];
 }): TRPCLink<TRouter> {
-  return (rt) => {
-    const yes = asArray(opts.true).map((link) => link(rt));
-    const no = asArray(opts.false).map((link) => link(rt));
+  return (runtime) => {
+    const yes = asArray(opts.true).map((link) => link(runtime));
+    const no = asArray(opts.false).map((link) => link(runtime));
     return (props) => {
       return observable((observer) => {
         const links = opts.condition(props.op) ? yes : no;

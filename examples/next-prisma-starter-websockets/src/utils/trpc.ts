@@ -2,7 +2,6 @@ import {
   createWSClient,
   httpBatchLink,
   loggerLink,
-  transformerLink,
   wsLink,
 } from '@trpc/client';
 import { setupTRPC } from '@trpc/next';
@@ -48,6 +47,10 @@ export const trpc = setupTRPC<AppRouter>({
      */
     return {
       /**
+       * @link https://trpc.io/docs/data-transformers
+       */
+      transformer: superjson,
+      /**
        * @link https://trpc.io/docs/links
        */
       links: [
@@ -57,7 +60,6 @@ export const trpc = setupTRPC<AppRouter>({
             process.env.NODE_ENV === 'development' ||
             (opts.direction === 'down' && opts.result instanceof Error),
         }),
-        transformerLink(superjson),
         getEndingLink(),
       ],
       /**

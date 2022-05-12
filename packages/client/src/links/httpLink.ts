@@ -12,11 +12,11 @@ export function httpLink<TRouter extends AnyRouter>(
       observable((observer) => {
         const { path, input, type } = op;
         const { promise, cancel } = httpRequest({
+          url,
           runtime,
+          type,
           path,
           input,
-          type,
-          url,
         });
         promise
           .then((res) => {
