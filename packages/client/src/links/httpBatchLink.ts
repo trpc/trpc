@@ -24,11 +24,15 @@ export function httpBatchLink<TRouter extends AnyRouter>(
 
     const batchLoader = (type: ProcedureType) => {
       const validate = (batchOps: BatchOperation[]) => {
+        if (maxURLLength === Infinity) {
+          // escape hatch for quick calcs
+          return true;
+        }
         const path = batchOps.map((op) => op.path).join(',');
         const inputs = batchOps.map((op) => op.input);
 
         const url = getUrl({ url: opts.url, runtime, type, path, inputs });
-        return url.length < maxURLLength;
+        return url.length <= maxURLLength;
       };
 
       const fetch = (batchOps: BatchOperation[]) => {
