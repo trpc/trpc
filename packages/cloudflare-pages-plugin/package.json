@@ -2,16 +2,16 @@
   "name": "@trpc/cloudflare-pages-plugin",
   "version": "0.0.1",
   "description": "Cloudflare page plugin for tRPC",
-  "main": "index.js",
+  "main": "dist/index.js",
   "types": "index.d.ts",
   "files": [
-    "index.js",
+    "dist/index.js",
     "index.d.ts",
     "tsconfig.json"
   ],
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "build": "npx wrangler pages functions build --plugin --outfile=index.js",
+    "build": "npx wrangler pages functions build --plugin --outfile=dist/index.js",
     "prepare": "npm run build"
   },
   "author": "@toyamarinyon",
