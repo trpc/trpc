@@ -36,7 +36,7 @@
     "next": "*",
     "react": ">=16.8.0",
     "react-dom": ">=16.8.0",
-    "react-query": "^3.31.0 || ^4.0.0-alpha.4"
+    "react-query": "^3.37.0 || ^4.0.0-alpha.4"
   },
   "dependencies": {
     "@babel/runtime": "^7.9.0",
@@ -51,7 +51,7 @@
     "next": "^12.1.6",
     "react": "^18.0.0",
     "react-dom": "^18.0.0",
-    "react-query": "^3.27.0",
+    "react-query": "^3.37.0",
     "zod": "^3.0.0"
   },
   "publishConfig": {
