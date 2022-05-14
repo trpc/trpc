@@ -9,28 +9,28 @@
     "preview": "vite preview"
   },
   "devDependencies": {
-    "@cloudflare/workers-types": "^3.10.0",
-    "@types/react": "^18.0.9",
-    "@types/react-dom": "^18.0.4",
+    "@cloudflare/workers-types": "^3.8.0",
+    "@types/react": "^17.0.20",
+    "@types/react-dom": "^17.0.9",
     "@vitejs/plugin-react": "^1.3.2",
-    "autoprefixer": "^10.4.7",
-    "postcss": "^8.4.13",
-    "prettier": "^2.6.2",
-    "tailwindcss": "^3.0.24",
+    "autoprefixer": "^10.4.4",
+    "postcss": "^8.4.12",
+    "prettier": "^2.5.1",
+    "tailwindcss": "^3.0.23",
     "ts-loader": "^9.3.0",
-    "typescript": "^4.6.4",
+    "typescript": "4.4.4",
     "vite": "^2.9.9",
     "webpack": "^5.72.1",
     "webpack-cli": "^4.9.2",
-    "wrangler": "2"
+    "wrangler": "^2.0.3"
   },
   "dependencies": {
     "@tailwindcss/forms": "^0.5.1",
     "@trpc/client": "^10.0.0-alpha.21",
     "@trpc/cloudflare-pages-plugin": "*",
     "@trpc/react": "^10.0.0-alpha.21",
-    "react": "^18.1.0",
-    "react-dom": "^18.1.0",
+    "react": "^18.0.0",
+    "react-dom": "^18.0.0",
     "react-query": "^3.27.0"
   }
 }
