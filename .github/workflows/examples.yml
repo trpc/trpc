@@ -26,6 +26,7 @@ jobs:
             standalone-server,
             fastify-server,
             cloudflare-workers,
+            cloudflare-pages-plugin,
           ]
         node-start: ['16.x']
         os: [ubuntu-latest]
