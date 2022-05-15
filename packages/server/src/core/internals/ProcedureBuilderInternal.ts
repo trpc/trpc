@@ -9,6 +9,8 @@ import { Parser } from '../parser';
 import { getParseFn } from './getParseFn';
 import { mergeWithoutOverrides } from './mergeWithoutOverrides';
 import { ResolveOptions, middlewareMarker } from './utils';
+import { Procedure } from '../procedure';
+
 
 interface ProcedureBuilderInternal {
   _def: {
@@ -45,7 +47,7 @@ interface ProcedureBuilderInternal {
    */
   resolve: (
     resolver: (opts: ResolveOptions<any>) => MaybePromise<any>,
-  ) => ProcedureBuilderInternal;
+  ) => (opts: {ctx: Record<string, unknown>, rawInput: unknown}) => unknown;
 }
 function createNewInternalBuilder(
   def1: ProcedureBuilderInternal['_def'],
@@ -67,31 +69,12 @@ const caller = appRouter.createCaller(myContext);
 const result = await caller.call('myProcedure', input);
 `.trim();
 /**
- * Wrap the builder in a function to block users from calling the builder directly.
- * From a usage point of view, it looks like you can call a procedure, when in fact you can't
- */
-function wrapInternalBuilderInFn(
-  result: ProcedureBuilderInternal,
-): ProcedureBuilderInternal {
-  const fn: ProcedureBuilderInternal = (() => {
-    const error = [
-      'This is a client-only function.',
-      'If you want to call this function on the server, you do the following:',
-      codeblock,
-    ];
-    throw new Error(error.join('\n'));
-  }) as any;
-
-  for (const _key in result) {
-    const key = _key as keyof ProcedureBuilderInternal;
-    fn[key] = result[key] as any;
-  }
-  return fn;
-}
-
-/**
  * @internal
  */
+
+function createProcedureCaller(_def: ProcedureBuilderInternal['_def']) {
+  
+}
 
 export function createInternalBuilder(
   initDef?: ProcedureBuilderInternal['_def'],
@@ -100,7 +83,7 @@ export function createInternalBuilder(
     middlewares: [],
   };
 
-  return wrapInternalBuilderInFn({
+  return {
     _def,
     // _call: createProcedureCaller(_def),
     input(input: Parser) {
@@ -154,7 +137,7 @@ export function createInternalBuilder(
       return createNewInternalBuilder(_def, { meta });
     },
     resolve(resolver) {
-      return createNewInternalBuilder(_def, {
+      const completed = createNewInternalBuilder(_def, {
         resolver,
         middlewares: [
           ..._def.middlewares,
@@ -169,6 +152,16 @@ export function createInternalBuilder(
           },
         ],
       });
+      return async (opts) => {
+        if (!opts.ctx) {
+          const error = [
+            'This is a client-only function.',
+            'If you want to call this function on the server, you do the following:',
+            codeblock,
+          ];
+          throw new Error(error.join('\n'));
+        }
+      }
     },
     concat(builder) {
       return createNewInternalBuilder(_def, builder._def);
@@ -178,5 +171,5 @@ export function createInternalBuilder(
         middlewares: [middleware],
       });
     },
-  });
+  };
 }
