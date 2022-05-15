@@ -32,8 +32,8 @@ test('useQuery()', async () => {
     expectTypeOf(query1.data!).toMatchTypeOf<'1'>();
     const query20 = trpc.useQuery(['20']);
     expectTypeOf(query20.data!).toMatchTypeOf<'20'>();
-    const query500 = trpc.useQuery(['500']);
-    expectTypeOf(query500.data!).toMatchTypeOf<'500'>();
+    const query200 = trpc.useQuery(['200']);
+    expectTypeOf(query200.data!).toMatchTypeOf<'200'>();
 
     return <pre>{JSON.stringify(query20.data ?? 'n/a', null, 4)}</pre>;
   }
