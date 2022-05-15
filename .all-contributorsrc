@@ -679,6 +679,15 @@
       "contributions": [
         "code"
       ]
+    },
+    {
+      "login": "flylance-apps",
+      "name": "Flylance",
+      "avatar_url": "https://avatars.githubusercontent.com/u/67534310?v=4",
+      "profile": "http://flylance.com",
+      "contributions": [
+        "financial"
+      ]
     }
   ],
   "contributorsPerLine": 7,

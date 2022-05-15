@@ -139,6 +139,7 @@ Also, if your company using tRPC and want to support long-term maintenance of tR
     </tr>
     <tr>
       <td align="center"><a href="https://snaplet.dev"><img src="https://avatars.githubusercontent.com/u/69029941?v=4?s=120" width="120" alt=""/><br/>Snaplet</a></td>
+      <td align="center"><a href="http://flylance.com"><img src="https://avatars.githubusercontent.com/u/67534310?v=4?s=100" width="120px;" alt=""/><br />Flylance</a></td>
     </tr>
   </tbody>
 </table>
@@ -272,6 +273,7 @@ Also, if your company using tRPC and want to support long-term maintenance of tR
     <td align="center"><a href="https://tijlvdb.me/"><img src="https://avatars.githubusercontent.com/u/10267586?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Tijl Van den Brugghen</b></sub></a><br /><a href="https://github.com/trpc/trpc/commits?author=kindlyfire" title="Documentation">📖</a></td>
     <td align="center"><a href="https://github.com/matthijscollabai"><img src="https://avatars.githubusercontent.com/u/89927222?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Matthijs Wolting</b></sub></a><br /><a href="https://github.com/trpc/trpc/issues?q=author%3Amatthijscollabai" title="Bug reports">🐛</a></td>
     <td align="center"><a href="https://lukahartwig.de"><img src="https://avatars.githubusercontent.com/u/7414521?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Luka Hartwig</b></sub></a><br /><a href="https://github.com/trpc/trpc/commits?author=lukahartwig" title="Code">💻</a></td>
+    <td align="center"><a href="http://flylance.com"><img src="https://avatars.githubusercontent.com/u/67534310?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Flylance</b></sub></a><br /><a href="#financial-flylance-apps" title="Financial">💵</a></td>
   </tr>
 </table>
 
