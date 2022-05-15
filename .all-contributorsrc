@@ -602,7 +602,8 @@
       "avatar_url": "https://avatars.githubusercontent.com/u/535254?v=4",
       "profile": "https://github.com/toyamarinyon",
       "contributions": [
-        "example"
+        "example",
+        "code"
       ]
     },
     {
@@ -678,6 +679,15 @@
       "contributions": [
         "code",
         "maintenance"
+      ]
+    },
+    {
+      "login": "flylance-apps",
+      "name": "Flylance",
+      "avatar_url": "https://avatars.githubusercontent.com/u/67534310?v=4",
+      "profile": "http://flylance.com",
+      "contributions": [
+        "financial"
       ]
     }
   ],
