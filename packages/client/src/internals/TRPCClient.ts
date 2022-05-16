@@ -55,7 +55,7 @@ export type CreateTRPCClientOptions<TRouter extends AnyRouter> = {
   headers?: HTTPHeaders | (() => HTTPHeaders | Promise<HTTPHeaders>);
   /**
    * Data transformer
-   * @link http://localhost:3000/docs/data-transformers
+   * @link https://trpc.io/docs/data-transformers
    **/
   transformer?: ClientDataTransformerOptions;
 } & (
@@ -67,7 +67,7 @@ export type CreateTRPCClientOptions<TRouter extends AnyRouter> = {
     }
   | {
       /**
-       * @link http://localhost:3000/docs/links
+       * @link https://trpc.io/docs/links
        **/
       links: TRPCLink<TRouter>[];
     }
