@@ -139,6 +139,7 @@ Also, if your company using tRPC and want to support long-term maintenance of tR
     </tr>
     <tr>
       <td align="center"><a href="https://snaplet.dev"><img src="https://avatars.githubusercontent.com/u/69029941?v=4?s=120" width="120" alt=""/><br/>Snaplet</a></td>
+      <td align="center"><a href="http://flylance.com"><img src="https://avatars.githubusercontent.com/u/67534310?v=4?s=100" width="120px;" alt=""/><br />Flylance</a></td>
     </tr>
   </tbody>
 </table>
@@ -261,7 +262,7 @@ Also, if your company using tRPC and want to support long-term maintenance of tR
     <td align="center"><a href="https://jwyce.github.io/portfolio/"><img src="https://avatars.githubusercontent.com/u/16946573?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Jared Wyce</b></sub></a><br /><a href="#financial-jwyce" title="Financial">💵</a></td>
     <td align="center"><a href="https://blog.lucasviana.dev"><img src="https://avatars.githubusercontent.com/u/13911440?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Lucas Viana</b></sub></a><br /><a href="#financial-mechamobau" title="Financial">💵</a></td>
     <td align="center"><a href="https://kevinlangleyjr.dev"><img src="https://avatars.githubusercontent.com/u/877634?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Kevin Langley Jr.</b></sub></a><br /><a href="https://github.com/trpc/trpc/commits?author=kevinlangleyjr" title="Documentation">📖</a></td>
-    <td align="center"><a href="https://github.com/toyamarinyon"><img src="https://avatars.githubusercontent.com/u/535254?v=4?s=100" width="100px;" alt=""/><br /><sub><b>toyamarinyon</b></sub></a><br /><a href="#example-toyamarinyon" title="Examples">💡</a></td>
+    <td align="center"><a href="https://github.com/toyamarinyon"><img src="https://avatars.githubusercontent.com/u/535254?v=4?s=100" width="100px;" alt=""/><br /><sub><b>toyamarinyon</b></sub></a><br /><a href="#example-toyamarinyon" title="Examples">💡</a> <a href="https://github.com/trpc/trpc/commits?author=toyamarinyon" title="Code">💻</a></td>
     <td align="center"><a href="https://farazpatankar.com/"><img src="https://avatars.githubusercontent.com/u/10681116?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Faraz Patankar</b></sub></a><br /><a href="#financial-FarazPatankar" title="Financial">💵</a></td>
     <td align="center"><a href="http://johnschmitz.me"><img src="https://avatars.githubusercontent.com/u/25447051?v=4?s=100" width="100px;" alt=""/><br /><sub><b>John Schmitz</b></sub></a><br /><a href="https://github.com/trpc/trpc/commits?author=john-schmitz" title="Code">💻</a></td>
   </tr>
@@ -271,7 +272,7 @@ Also, if your company using tRPC and want to support long-term maintenance of tR
     <td align="center"><a href="https://marcin.page/"><img src="https://avatars.githubusercontent.com/u/5896181?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Perfect7M</b></sub></a><br /><a href="https://github.com/trpc/trpc/commits?author=Perfect7M" title="Code">💻</a></td>
     <td align="center"><a href="https://tijlvdb.me/"><img src="https://avatars.githubusercontent.com/u/10267586?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Tijl Van den Brugghen</b></sub></a><br /><a href="https://github.com/trpc/trpc/commits?author=kindlyfire" title="Documentation">📖</a></td>
     <td align="center"><a href="https://github.com/matthijscollabai"><img src="https://avatars.githubusercontent.com/u/89927222?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Matthijs Wolting</b></sub></a><br /><a href="https://github.com/trpc/trpc/issues?q=author%3Amatthijscollabai" title="Bug reports">🐛</a></td>
-    <td align="center"><a href="https://lukahartwig.de"><img src="https://avatars.githubusercontent.com/u/7414521?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Luka Hartwig</b></sub></a><br /><a href="https://github.com/trpc/trpc/commits?author=lukahartwig" title="Code">💻</a></td>
+    <td align="center"><a href="https://lukahartwig.de"><img src="https://avatars.githubusercontent.com/u/7414521?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Luka Hartwig</b></sub></a><br /><a href="https://github.com/trpc/trpc/commits?author=lukahartwig" title="Code">💻</a> <a href="#maintenance-lukahartwig" title="Maintenance">🚧</a></td>
   </tr>
 </table>
 
