@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/ban-types */
-import { ErrorFormatter } from '../error/formatter';
+import { ErrorFormatter, ErrorFormatterShape } from '../error/formatter';
 import { TRPCErrorShape } from '../rpc';
 import { CombinedDataTransformer } from '../transformer';
 import { mergeWithoutOverrides } from './internals/mergeWithoutOverrides';
@@ -176,13 +176,13 @@ type mergeRouters<
   A extends Partial<AnyRouter>,
   B extends Partial<AnyRouter>,
 > = {
+  _ctx: NonNullable<A['_def']>;
   queries: EnsureRecord<A['queries']> & EnsureRecord<B['queries']>;
   mutations: EnsureRecord<A['mutations']> & EnsureRecord<B['mutations']>;
   subscriptions: EnsureRecord<A['subscriptions']> &
     EnsureRecord<B['subscriptions']>;
   errorFormatter: PickFirstDefined<B['errorFormatter'], A['errorFormatter']>;
   transformer: PickFirstDefined<B['transformer'], A['transformer']>;
-  createCaller: A['createCaller'];
 };
 
 type mergeRoutersVariadic<Routers extends Partial<AnyRouter>[]> =
@@ -196,8 +196,69 @@ type mergeRoutersVariadic<Routers extends Partial<AnyRouter>[]> =
       : never
     : never;
 
-export function mergeRouters<TRouters extends RouterOptions<any>[]>(
-  ..._routers: TRouters
-): mergeRoutersVariadic<TRouters> {
-  throw new Error('Unimplemnted');
+export function mergeRouters<TRouterItems extends RouterOptions<any>[]>(
+  ...routerList: TRouterItems
+) {
+  type TMergedRouters = mergeRoutersVariadic<TRouterItems>;
+  type TRouterParams = TMergedRouters extends {
+    _ctx: infer Ctx;
+    queries: infer Queries;
+    mutations: infer Mutations;
+    subscriptions: infer Subscriptions;
+    errorFormatter: infer ErrorFormatter;
+  }
+    ? RouterParams<
+        Ctx,
+        ErrorFormatterShape<ErrorFormatter>,
+        Queries extends ProcedureRecord<any> ? Queries : never,
+        Mutations extends ProcedureRecord<any> ? Mutations : never,
+        Subscriptions extends ProcedureRecord<any> ? Subscriptions : never
+      >
+    : never;
+
+  const queries = mergeWithoutOverrides(
+    {},
+    ...routerList.map((r) => r.queries),
+  ) as TRouterParams['queries'];
+  const mutations = mergeWithoutOverrides(
+    {},
+    ...routerList.map((r) => r.mutations),
+  );
+  const subscriptions = mergeWithoutOverrides(
+    {},
+    ...routerList.map((r) => r.subscriptions),
+  );
+  const errorFormatter = routerList.reduce((prev, current) => {
+    if (
+      current.errorFormatter &&
+      current.errorFormatter !== defaultErrorFormatter
+    ) {
+      if (prev !== defaultErrorFormatter) {
+        throw new Error('You seem to have duplicate error formatters');
+      }
+      return current.errorFormatter;
+    }
+    return prev;
+  }, defaultErrorFormatter);
+
+  const transformer = routerList.reduce((prev, current) => {
+    if (current.transformer && current.transformer !== defaultTransformer) {
+      if (prev !== defaultTransformer) {
+        throw new Error('You seem to have duplicate error formatters');
+      }
+      return current.transformer;
+    }
+    return prev;
+  }, defaultTransformer);
+
+  const router = createRouterWithContext<TRouterParams['_ctx']>({
+    errorFormatter,
+    transformer,
+  })({
+    queries,
+    mutations,
+    subscriptions,
+  });
+
+  return router as any as Router<TRouterParams>;
 }

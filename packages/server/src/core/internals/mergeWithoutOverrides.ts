@@ -3,15 +3,17 @@
  */
 export function mergeWithoutOverrides<T extends Record<string, unknown>>(
   obj1: T,
-  obj2: Partial<T>,
+  ...objs: Partial<T>[]
 ): T {
-  for (const key in obj2) {
-    if (key in obj1 && obj1[key] !== obj2[key]) {
-      throw new Error(`Duplicate key ${key}`);
+  const newObj: T = Object.assign(Object.create(null), obj1);
+
+  for (const overrides of objs) {
+    for (const key in overrides) {
+      if (key in newObj && newObj[key] !== overrides[key]) {
+        throw new Error(`Duplicate key ${key}`);
+      }
+      newObj[key as keyof T] = overrides[key] as T[keyof T];
     }
   }
-  return {
-    ...obj1,
-    ...obj2,
-  };
+  return newObj;
 }
