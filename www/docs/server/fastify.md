@@ -124,13 +124,13 @@ export type Context = inferAsyncReturnType<typeof createContext>;
 tRPC includes an adapter for [Fastify](https://www.fastify.io/) out of the box. This adapter lets you convert your tRPC router into an [Fastify plugin](https://www.fastify.io/docs/latest/Reference/Plugins/). In order to prevent errors during large batch requests, make sure to set the `maxParamLength` Fastify option to a suitable value, as shown.
 
 ```ts title='server.ts'
-import fastify from 'fastify';
 import { fastifyTRPCPlugin } from '@trpc/server/adapters/fastify';
+import fastify from 'fastify';
 import { createContext } from './context';
 import { appRouter } from './router';
 
 const server = fastify({
-  maxParamLength: 5000
+  maxParamLength: 5000,
 });
 
 server.register(fastifyTRPCPlugin, {
@@ -157,18 +157,18 @@ Your endpoints are now available via HTTP!
 
 ## How to enable subscriptions (WebSocket)
 
-The Fastify adapter supports [subscriptions](subscriptions) via the [fastify-websocket](https://www.npmjs.com/package/fastify-websocket) plugin. All you have to do in addition to the above steps is install the dependency, add some subscriptions to your router and activate the `useWSS` [option](#fastify-plugin-options) in the plugin.
+The Fastify adapter supports [subscriptions](subscriptions) via the [@fastify/websocket](https://www.npmjs.com/package/@fastify/websocket) plugin. All you have to do in addition to the above steps is install the dependency, add some subscriptions to your router and activate the `useWSS` [option](#fastify-plugin-options) in the plugin. The minimum Fastify version required for `@fastify/websocket` is `3.11.0`.
 
 ### Install dependencies
 
 ```bash
-yarn add fastify-websocket
+yarn add @fastify/websocket
 ```
 
-### Import and register `fastify-websocket`
+### Import and register `@fastify/websocket`
 
 ```ts
-import ws from 'fastify-websocket';
+import ws from '@fastify/websocket';
 
 server.register(ws);
 ```

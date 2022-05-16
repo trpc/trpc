@@ -1,4 +1,4 @@
-/// <reference types="fastify-websocket" />
+/// <reference types="@fastify/websocket" />
 import { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 import { FastifyHandlerOptions } from '.';
 import { AnyRouter } from '../..';
