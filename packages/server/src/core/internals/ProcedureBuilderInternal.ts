@@ -3,15 +3,25 @@
  */
 import { TRPCError } from '../../TRPCError';
 import { getCauseFromUnknown } from '../../error/utils';
-import { MaybePromise } from '../../types';
-import { MiddlewareFunction } from '../middleware';
+import { getErrorFromUnknown } from '../../internals/errors';
+import { MaybePromise, ProcedureType } from '../../types';
+import { MiddlewareFunction, MiddlewareResult } from '../middleware';
 import { Parser } from '../parser';
 import { getParseFn } from './getParseFn';
 import { mergeWithoutOverrides } from './mergeWithoutOverrides';
 import { ResolveOptions, middlewareMarker } from './utils';
-import { Procedure } from '../procedure';
 
-
+interface InternalProcedureCallOptions {
+  ctx: unknown;
+  rawInput: unknown;
+  input: unknown;
+  path: string;
+  type: ProcedureType;
+}
+interface InternalProcedure {
+  _def: ProcedureBuilderInternal['_def'];
+  (opts: InternalProcedureCallOptions): Promise<void>;
+}
 interface ProcedureBuilderInternal {
   _def: {
     input?: Parser;
@@ -47,7 +57,7 @@ interface ProcedureBuilderInternal {
    */
   resolve: (
     resolver: (opts: ResolveOptions<any>) => MaybePromise<any>,
-  ) => (opts: {ctx: Record<string, unknown>, rawInput: unknown}) => unknown;
+  ) => InternalProcedure;
 }
 function createNewInternalBuilder(
   def1: ProcedureBuilderInternal['_def'],
@@ -63,17 +73,79 @@ function createNewInternalBuilder(
 }
 
 const codeblock = `
-const myContext = {};
-const caller = appRouter.createCaller(myContext);
+const caller = appRouter.createCaller({
+  /* ... your context */
+});
 
 const result = await caller.call('myProcedure', input);
 `.trim();
-/**
- * @internal
- */
 
-function createProcedureCaller(_def: ProcedureBuilderInternal['_def']) {
-  
+function createProcedureCaller(
+  _def: InternalProcedure['_def'],
+): InternalProcedure {
+  const procedure = async function resolve(opts: InternalProcedureCallOptions) {
+    if (!opts || !('rawInput' in opts)) {
+      const error = [
+        'This is a client-only function.',
+        'If you want to call this function on the server, you do the following:',
+        codeblock,
+      ];
+      throw new Error(error.join('\n'));
+    }
+
+    // run the middlewares recursively with the resolver as the last one
+    const callRecursive = async (
+      callOpts: { ctx: any; index: number; input?: unknown } = {
+        index: 0,
+        ctx: opts.ctx,
+      },
+    ): Promise<MiddlewareResult<any>> => {
+      try {
+        const result = await _def.middlewares[callOpts.index]({
+          ctx: callOpts.ctx,
+          type: opts.type,
+          path: opts.path,
+          rawInput: opts.rawInput,
+          meta: _def.meta,
+          input: callOpts.input,
+          next: async (nextOpts?: { ctx: any; input?: any }) => {
+            return await callRecursive({
+              index: callOpts.index + 1,
+              ctx: nextOpts && 'ctx' in nextOpts ? nextOpts.ctx : callOpts.ctx,
+              input:
+                nextOpts && 'input' in nextOpts.input
+                  ? nextOpts.input
+                  : callOpts.input,
+            });
+          },
+        });
+        return result;
+      } catch (cause) {
+        return {
+          ok: false,
+          error: getErrorFromUnknown(cause),
+          marker: middlewareMarker,
+        };
+      }
+    };
+
+    // there's always at least one "next" since we wrap this.resolver in a middleware
+    const result = await callRecursive();
+    if (!result) {
+      throw new TRPCError({
+        code: 'INTERNAL_SERVER_ERROR',
+        message:
+          'No result from middlewares - did you forget to `return next()`?',
+      });
+    }
+    if (!result.ok) {
+      // re-throw original error
+      throw result.error;
+    }
+  };
+  procedure._def = _def;
+
+  return procedure;
 }
 
 export function createInternalBuilder(
@@ -137,7 +209,7 @@ export function createInternalBuilder(
       return createNewInternalBuilder(_def, { meta });
     },
     resolve(resolver) {
-      const completed = createNewInternalBuilder(_def, {
+      const finalBuilder = createNewInternalBuilder(_def, {
         resolver,
         middlewares: [
           ..._def.middlewares,
@@ -152,16 +224,8 @@ export function createInternalBuilder(
           },
         ],
       });
-      return async (opts) => {
-        if (!opts.ctx) {
-          const error = [
-            'This is a client-only function.',
-            'If you want to call this function on the server, you do the following:',
-            codeblock,
-          ];
-          throw new Error(error.join('\n'));
-        }
-      }
+
+      return createProcedureCaller(finalBuilder._def);
     },
     concat(builder) {
       return createNewInternalBuilder(_def, builder._def);
