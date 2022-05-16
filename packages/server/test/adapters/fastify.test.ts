@@ -1,10 +1,10 @@
+import ws from '@fastify/websocket';
 import { waitFor } from '@testing-library/react';
 import AbortController from 'abort-controller';
 import { EventEmitter } from 'events';
 import { expectTypeOf } from 'expect-type';
 import fastify from 'fastify';
 import fp from 'fastify-plugin';
-import ws from 'fastify-websocket';
 import fetch from 'node-fetch';
 import { z } from 'zod';
 import { HTTPHeaders, createTRPCClient } from '../../../client/src';

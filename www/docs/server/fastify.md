@@ -157,18 +157,18 @@ Your endpoints are now available via HTTP!
 
 ## How to enable subscriptions (WebSocket)
 
-The Fastify adapter supports [subscriptions](subscriptions) via the [fastify-websocket](https://www.npmjs.com/package/fastify-websocket) plugin. All you have to do in addition to the above steps is install the dependency, add some subscriptions to your router and activate the `useWSS` [option](#fastify-plugin-options) in the plugin.
+The Fastify adapter supports [subscriptions](subscriptions) via the [@fastify/websocket](https://www.npmjs.com/package/@fastify/websocket) plugin. All you have to do in addition to the above steps is install the dependency, add some subscriptions to your router and activate the `useWSS` [option](#fastify-plugin-options) in the plugin. The minimum Fastify version required for `@fastify/websocket` is `3.11.0`.
 
 ### Install dependencies
 
 ```bash
-yarn add fastify-websocket
+yarn add @fastify/websocket
 ```
 
-### Import and register `fastify-websocket`
+### Import and register `@fastify/websocket`
 
 ```ts
-import ws from 'fastify-websocket';
+import ws from '@fastify/websocket';
 
 server.register(ws);
 ```
