@@ -2,9 +2,17 @@ import type { APIGatewayProxyEvent } from 'aws-lambda';
 import type { ResponseMetaFn } from '../http/internals/types';
 import type { AnyRouter, inferRouterContext } from '../router';
 
-export type LambdaCreateContextFn<TRouter extends AnyRouter> = (
-  opts: APIGatewayProxyEvent,
-) => inferRouterContext<TRouter> | Promise<inferRouterContext<TRouter>>;
+export type LambdaContext = Record<string, unknown>;
+export type CreateLambdaContextOptions = {
+  event: APIGatewayProxyEvent;
+  context: LambdaContext;
+};
+export type LambdaCreateContextFn<TRouter extends AnyRouter> = ({
+  event,
+  context,
+}: CreateLambdaContextOptions) =>
+  | inferRouterContext<TRouter>
+  | Promise<inferRouterContext<TRouter>>;
 
 export type AWSLambdaOptions<TRouter extends AnyRouter> = {
   router: TRouter;
