@@ -3,10 +3,10 @@ import { createApiGatewayHandler } from '@trpc/server/adapters/aws-lambda';
 import type { APIGatewayProxyEvent } from 'aws-lambda';
 import { z } from 'zod';
 
-function createContext(opts: APIGatewayProxyEvent) {
+function createContext(event: APIGatewayProxyEvent) {
   return {
-    event: opts,
-    user: opts.headers['x-user'],
+    event: event,
+    user: event.headers['x-user'],
   };
 }
 type Context = trpc.inferAsyncReturnType<typeof createContext>;

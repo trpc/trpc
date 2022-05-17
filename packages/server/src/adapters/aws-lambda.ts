@@ -3,9 +3,9 @@ import { URLSearchParams } from 'url';
 import { resolveHTTPResponse } from '..';
 import { HTTPHeaders, HTTPRequest } from '../http/internals/types';
 import { AnyRouter, inferRouterContext } from '../router';
-import type { AWSLambdaOptions } from './lambda-utils';
+import type { AWSLambdaOptions, LambdaContext } from './lambda-utils';
 
-export type { AWSLambdaOptions } from './lambda-utils';
+export type { CreateLambdaContextOptions } from './lambda-utils';
 
 function lambdaEventToHTTPRequest(event: APIGatewayProxyEvent): HTTPRequest {
   const query = new URLSearchParams();
@@ -24,10 +24,6 @@ function lambdaEventToHTTPRequest(event: APIGatewayProxyEvent): HTTPRequest {
   };
 }
 
-export type CreateLambdaContextOptions = {
-  event: APIGatewayProxyEvent;
-};
-
 function transformHeaders(
   headers: HTTPHeaders,
 ): APIGatewayProxyResult['headers'] {
@@ -44,15 +40,18 @@ function transformHeaders(
 
 export function createApiGatewayHandler<TRouter extends AnyRouter>(
   opts: AWSLambdaOptions<TRouter>,
-): (event: APIGatewayProxyEvent) => Promise<APIGatewayProxyResult> {
-  return async (event: APIGatewayProxyEvent) => {
+): (
+  event: APIGatewayProxyEvent,
+  context: LambdaContext,
+) => Promise<APIGatewayProxyResult> {
+  return async (event: APIGatewayProxyEvent, context: LambdaContext) => {
     const req = lambdaEventToHTTPRequest(event);
     const path = event.path;
 
     const createContext = async function _createContext(): Promise<
       inferRouterContext<TRouter>
     > {
-      return await opts.createContext?.(event);
+      return await opts.createContext?.({ event, context });
     };
 
     const response = await resolveHTTPResponse({
