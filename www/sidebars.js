@@ -35,6 +35,7 @@ module.exports = {
         'server/caching',
         'server/express',
         'server/fastify',
+        'server/api-gateway',
       ],
     },
     {
