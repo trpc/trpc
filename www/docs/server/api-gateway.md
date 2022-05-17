@@ -75,13 +75,10 @@ const createContext = ({
 }: trpcAPIGW.CreateLambdaContextOptions) => ({}) // no context
 type Context = trpc.inferAsyncReturnType<typeof createContext>;
 
-app.use(
-  '/trpc',
-  trpcExpress.createApiGatewayHandler({
-    router: appRouter,
-    createContext,
-  })
-);
+export const handler = trpcExpress.createApiGatewayHandler({
+  router: appRouter,
+  createContext,
+})
 
 app.listen(4000);
 ```
