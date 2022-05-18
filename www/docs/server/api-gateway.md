@@ -80,11 +80,10 @@ export const handler = trpcExpress.createApiGatewayHandler({
   createContext,
 })
 
-app.listen(4000);
 ```
 
-Your endpoints are now available via HTTP!
+Build & deploy your code, now use your API Gateway URL to call your function.
 
-| Endpoint  | HTTP URI                                                                                                   |
-| --------- | ---------------------------------------------------------------------------------------------------------- |
-| `getUser` | `GET http://localhost:4000/trpc/getUser?input=INPUT` <br/><br/>where `INPUT` is a URI-encoded JSON string. |
+| Endpoint  | HTTP URI                                                                                                     |
+| --------- | ------------------------------------------------------------------------------------------------------------ |
+| `getUser` | `GET https://<execution-api-link>/getUser?input=INPUT` <br/><br/>where `INPUT` is a URI-encoded JSON string. |
