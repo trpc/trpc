@@ -7,8 +7,8 @@
     "@funnel-io/lalr": "0.0.11",
     "@trpc/client": "^9.23.3",
     "@trpc/server": "^9.23.3",
-    "node-fetch": "2.6.1",
-    "ts-node": "10.3.0",
+    "node-fetch": "^2.6.1",
+    "ts-node": "^10.3.0",
     "typescript": "4.4.4"
   },
   "devDependencies": {},
