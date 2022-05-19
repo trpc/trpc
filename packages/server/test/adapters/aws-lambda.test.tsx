@@ -6,9 +6,8 @@ import * as trpcLambda from '../../src/adapters/aws-lambda';
 import { mockAPIGatewayProxyEvent } from './aws-lambda.utils';
 
 const createContext = async ({
-    event,
-}: trpcLambda.CreateLambdaContextOptions
-) => {
+  event,
+}: trpcLambda.CreateLambdaContextOptions) => {
   return {
     user: event.headers['X-USER'],
   };
@@ -52,8 +51,8 @@ test('basic test', async () => {
       headers: { 'Content-Type': 'application/json', 'X-USER': 'Lilja' },
       method: 'GET',
       path: 'hello',
-    })
-    ,{}
+    }),
+    {},
   );
   const body = JSON.parse(result.body);
   delete (result as any).body;
@@ -85,7 +84,7 @@ test('bad type', async () => {
       method: 'GET',
       path: 'echo',
     }),
-    {}
+    {},
   );
   const body = JSON.parse(result.body);
   delete (result as any).body;
