@@ -277,6 +277,7 @@ Also, if your company using tRPC and want to support long-term maintenance of tR
   </tr>
   <tr>
     <td align="center"><a href="https://github.com/BWsix"><img src="https://avatars.githubusercontent.com/u/57709309?v=4?s=100" width="100px;" alt=""/><br /><sub><b>VFLC</b></sub></a><br /><a href="https://github.com/trpc/trpc/commits?author=BWsix" title="Documentation">📖</a></td>
+    <td align="center"><a href="https://robsoriano.com"><img src="https://avatars.githubusercontent.com/u/13049130?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Robert Soriano</b></sub></a><br /><a href="#example-wobsoriano" title="Examples">💡</a> <a href="#tool-wobsoriano" title="Tools">🔧</a></td>
   </tr>
 </table>
 
