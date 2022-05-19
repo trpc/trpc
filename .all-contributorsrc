@@ -708,6 +708,16 @@
         "example",
         "tool"
       ]
+    },
+    {
+      "login": "lukevella",
+      "name": "Luke Vella",
+      "avatar_url": "https://avatars.githubusercontent.com/u/676849?v=4",
+      "profile": "https://lukevella.com",
+      "contributions": [
+        "example",
+        "tool"
+      ]
     }
   ],
   "contributorsPerLine": 7,
