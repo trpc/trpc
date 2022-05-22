@@ -1,6 +1,6 @@
 {
   "name": "@trpc/client",
-  "version": "9.23.5",
+  "version": "9.23.6",
   "description": "tRPC Client lib",
   "author": "KATT",
   "license": "MIT",
@@ -37,7 +37,7 @@
     "@trpc/server": "^9.12.0"
   },
   "devDependencies": {
-    "@trpc/server": "^9.23.5"
+    "@trpc/server": "^9.23.6"
   },
   "publishConfig": {
     "access": "public"
