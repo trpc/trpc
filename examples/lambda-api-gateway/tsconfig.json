@@ -1,6 +1,6 @@
 {
   "compilerOptions": {
-    "target": "es5",
+    "target": "ES2017",
     "lib": ["dom", "dom.iterable", "esnext"],
     "noErrorTruncation": true,
     "allowJs": true,
@@ -9,7 +9,7 @@
     "strictNullChecks": true,
     "forceConsistentCasingInFileNames": true,
     "esModuleInterop": true,
-    "module": "CommonJS",
+    "module": "ES2020",
     "outDir": "dist",
     "moduleResolution": "node",
     "resolveJsonModule": true,

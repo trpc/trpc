@@ -1,9 +1,13 @@
 import * as trpc from '@trpc/server';
-import { createApiGatewayHandler } from '@trpc/server/adapters/aws-lambda';
+import { lambdaRequestHandler } from '@trpc/server/adapters/aws-lambda';
+import type { CreateLambdaContextOptions } from '@trpc/server/adapters/aws-lambda';
 import type { APIGatewayProxyEvent } from 'aws-lambda';
 import { z } from 'zod';
 
-function createContext(event: APIGatewayProxyEvent) {
+function createContext({
+  event,
+  context,
+}: CreateLambdaContextOptions<APIGatewayProxyEvent>) {
   return {
     event: event,
     user: event.headers['x-user'],
@@ -21,7 +25,7 @@ const appRouter = trpc.router<Context>().query('/greet', {
 });
 export type AppRouter = typeof appRouter;
 
-export const handler = createApiGatewayHandler<AppRouter>({
+export const handler = lambdaRequestHandler({
   router: appRouter,
   createContext: createContext,
 });
