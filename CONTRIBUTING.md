@@ -1,4 +1,9 @@
-# Contributing / Development workflow
+# Contributing
+
+So excited to have you here! If you want **any** guidance whatsoever with contributing to tRPC, don't hesitate to reach out on [Discord](https://trpc.io/discord)!
+
+
+## Development workflow
 
 ```bash
 git clone git@github.com:trpc/trpc.git
@@ -6,21 +11,29 @@ cd trpc
 yarn
 ```
 
-## Hacking around with it
-
-
-In one terminal, will run `preconstruct watch` in parallel which builds all `packages/*` on change:
+### Get it running
 
 ```bash
+# in project root directory
 yarn dev
 ```
 
+This will start a watcher in parallel which builds all `packages/*` on any file change.
+
 In another terminal, you can for instance navigate to `examples/next-prisma-starter` and run `yarn dev` & it will update whenever code is changed in the packages.
 
-## Testing
+### Testing
 
 ```bash
+# in project root directory
 yarn test --watch
 ```
 
-Testing is currently coalesced in [./packages/server/test](./packages/server/test) - we import the different libs from here, this makes it easier for us to do integration testing + getting test coverage on the whole codebase.
+Testing is currently coalesced in [./packages/server/test](./packages/server/test); we import the different libs from here, this makes it easier for us to do integration testing + getting test coverage on the whole codebase.
+
+
+### Documentation
+
+```bash
+cd www/ && yarn dev
+```
