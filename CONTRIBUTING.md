@@ -28,6 +28,8 @@ In another terminal, you can for instance navigate to `examples/next-prisma-star
 
 ### Testing
 
+> Note: you will want to have `yarn dev` running in parallel in another terminal
+
 ```bash
 # in project root directory
 yarn test --watch
