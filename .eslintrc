@@ -30,7 +30,7 @@
           "HTTP",
           "\\.config\\.js",
           "\\.d\\.ts$",
-          "issue-\\d+-.*\\.test\\.ts$"
+          "issue-\\d+-.*\\.test\\.tsx?$"
         ]
       }
     ]
