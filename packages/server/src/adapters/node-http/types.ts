@@ -1,12 +1,14 @@
 import http from 'http';
-import qs from 'qs';
 import { inferRouterContext } from '../..';
 import { HTTPBaseHandlerOptions } from '../../http/internals/types';
 import { AnyRouter } from '../../router';
 
+interface ParsedQs {
+  [key: string]: undefined | string | string[] | ParsedQs | ParsedQs[];
+}
+
 export type NodeHTTPRequest = http.IncomingMessage & {
-  method?: string;
-  query?: qs.ParsedQs;
+  query?: ParsedQs;
   body?: unknown;
 };
 export type NodeHTTPResponse = http.ServerResponse;
