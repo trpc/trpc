@@ -13,7 +13,7 @@ yarn
 
 ### Get it running
 
-### Terminal 1
+**Terminal 1:**
 
 ```bash
 # in project root directory
@@ -22,8 +22,7 @@ yarn dev
 
 This will start a watcher in parallel which builds all `packages/*` on any file change.
 
-
-### Terminal 2
+**Terminal 2:**
 
 In another terminal, you can for instance navigate to `examples/next-prisma-starter` and run `yarn dev` & it will update whenever code is changed in the packages.
 
