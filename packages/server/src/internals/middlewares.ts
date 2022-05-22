@@ -1,7 +1,10 @@
 import { TRPCError } from '../TRPCError';
 import { ProcedureType } from '../router';
 
-export const middlewareMarker = Symbol('middlewareMarker');
+export const middlewareMarker = 'middlewareMarker' as 'middlewareMarker' & {
+  __brand: 'middlewareMarker';
+};
+
 interface MiddlewareResultBase<TContext> {
   /**
    * All middlewares should pass through their `next()`'s output.
