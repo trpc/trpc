@@ -28,7 +28,6 @@ function lambdaEventToHTTPRequest(event: APIGatewayEvent): HTTPRequest {
     event.queryStringParameters ?? {},
   )) {
     if (value) {
-      console.log('Q', key, value);
       query.append(key, value);
     }
   }

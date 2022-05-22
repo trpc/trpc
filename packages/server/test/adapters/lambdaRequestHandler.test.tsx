@@ -3,7 +3,7 @@ import type { APIGatewayProxyEvent, APIGatewayProxyEventV2 } from 'aws-lambda';
 import { z } from 'zod';
 import * as trpc from '../../src';
 import { inferAsyncReturnType } from '../../src';
-import * as trpcLambda from '../../src/adapters/lambda/lambdaRequestHandler';
+import * as trpcLambda from '../../src/adapters/lambda/index';
 import {
   mockAPIGatewayProxyEvent,
   mockAPIGatewayProxyEventV2,

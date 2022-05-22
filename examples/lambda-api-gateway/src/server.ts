@@ -1,6 +1,6 @@
 import * as trpc from '@trpc/server';
-import { lambdaRequestHandler } from '@trpc/server/adapters/aws-lambda';
-import type { CreateLambdaContextOptions } from '@trpc/server/adapters/aws-lambda';
+import { lambdaRequestHandler } from '@trpc/server/adapters/lambda/index';
+import type { CreateLambdaContextOptions } from '@trpc/server/adapters/lambda/index';
 import type { APIGatewayProxyEvent } from 'aws-lambda';
 import { z } from 'zod';
 

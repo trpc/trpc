@@ -26,7 +26,7 @@
       "adapters/ws.ts",
       "ws/index.ts",
       "rpc/index.ts",
-      "adapters/lambda/lambdaRequestHandler.ts"
+      "adapters/lambda/index.ts"
     ]
   },
   "scripts": {
