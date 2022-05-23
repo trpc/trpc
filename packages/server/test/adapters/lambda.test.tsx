@@ -3,11 +3,11 @@ import type { APIGatewayProxyEvent, APIGatewayProxyEventV2 } from 'aws-lambda';
 import { z } from 'zod';
 import * as trpc from '../../src';
 import { inferAsyncReturnType } from '../../src';
-import * as trpcLambda from '../../src/adapters/lambda/index';
+import * as trpcLambda from '../../src/adapters/lambda';
 import {
   mockAPIGatewayProxyEvent,
   mockAPIGatewayProxyEventV2,
-} from './lambdaRequestHandler.utils';
+} from './lambda.utils';
 
 const createContext = async ({
   event,

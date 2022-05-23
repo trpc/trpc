@@ -4,6 +4,7 @@ import type {
   APIGatewayProxyResult,
   APIGatewayProxyStructuredResultV2,
 } from 'aws-lambda';
+import { TRPCError } from '../../TRPCError';
 import type { ResponseMetaFn } from '../../http/internals/types';
 import type { AnyRouter, inferRouterContext } from '../../router';
 
@@ -94,7 +95,9 @@ export type APIGatewayPayloadFormatVersion =
   | DefinedAPIGatewayPayloadFormats
   | 'custom';
 
-export const UNKNOWN_PAYLOAD_FORMAT_VERSION = new Error(
-  'Custom payload format version not handled by this adapter. Please use either 1.0 or 2.0. More information here' +
+export const UNKNOWN_PAYLOAD_FORMAT_VERSION = new TRPCError({
+  code: 'INTERNAL_SERVER_ERROR',
+  message:
+    'Custom payload format version not handled by this adapter. Please use either 1.0 or 2.0. More information here' +
     'https://docs.aws.amazon.com/apigateway/latest/developerguide/http-api-develop-integrations-lambda.html',
-);
+});

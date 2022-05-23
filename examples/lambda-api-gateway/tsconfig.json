@@ -9,14 +9,14 @@
     "strictNullChecks": true,
     "forceConsistentCasingInFileNames": true,
     "esModuleInterop": true,
-    "module": "ES2020",
-    "outDir": "dist",
+    "module": "CommonJS",
     "moduleResolution": "node",
     "resolveJsonModule": true,
     "isolatedModules": true,
     "types": ["@types/jest", "jest-playwright-preset", "expect-playwright"],
     "jsx": "preserve",
-    "baseUrl": "./"
+    "outDir": ".build",
+    "rootDir": "./"
   },
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx"],
   "exclude": ["node_modules"]

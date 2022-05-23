@@ -5,6 +5,10 @@ sidebar_label: 'Adapter: API Gateway'
 slug: /api-gateway
 ---
 
+## Amazon API Gateway adapter
+
+The API Gateway adapter is supported for both Rest API(v1) and HTTP API(v2) use cases.
+
 ## Example app
 
 <table>
@@ -106,4 +110,4 @@ function createContext({
 // CreateLambdaContextOptions<APIGatewayProxyEvent> or CreateLambdaContextOptions<APIGatewayProxyEventV2>
 ```
 
-[Read more here about payload format version ](https://docs.aws.amazon.com/apigateway/latest/developerguide/http-api-develop-integrations-lambda.html)
+[Read more here about payload format version](https://docs.aws.amazon.com/apigateway/latest/developerguide/http-api-develop-integrations-lambda.html)

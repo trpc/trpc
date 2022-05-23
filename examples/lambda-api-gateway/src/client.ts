@@ -1,20 +1,15 @@
-import { CreateTRPCClientOptions, createTRPCClient } from '@trpc/client';
+import { createTRPCClient } from '@trpc/client';
 import fetch from 'node-fetch';
 import type { AppRouter } from './server';
 
 global.fetch = fetch as any;
 
-const opts: CreateTRPCClientOptions<AppRouter> = {
-  url: 'http://127.0.0.1:8080',
-};
-const client = createTRPCClient<AppRouter>(opts);
+const client = createTRPCClient<AppRouter>({ url: 'http://127.0.0.1:4050' });
 
 (async () => {
   try {
-    const q = client.query('/greet', {
-      name: 'Erik',
-    });
-    console.log(await q);
+    const q = await client.query('greet', { name: 'Erik' });
+    console.log(q);
   } catch (error) {
     console.log('error', error);
   }

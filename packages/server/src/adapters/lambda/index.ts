@@ -51,9 +51,9 @@ function getHTTPMethod(event: APIGatewayEvent) {
 }
 function getPath(event: APIGatewayEvent) {
   if (isPayloadV1(event)) {
-    return event.path;
+    return event.path.slice(1);
   } else if (isPayloadV2(event)) {
-    return event.rawPath;
+    return event.rawPath.slice(1);
   } else {
     throw UNKNOWN_PAYLOAD_FORMAT_VERSION;
   }
