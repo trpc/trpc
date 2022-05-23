@@ -18,8 +18,12 @@
     "react/react-in-jsx-scope": "off",
     "react/prop-types": "off",
     "@typescript-eslint/no-explicit-any": "off",
-    "@typescript-eslint/no-floating-promises": "error"
+    "@typescript-eslint/no-floating-promises": "error",
+    "no-only-tests/no-only-tests": "error"
   },
+  "plugins": [
+    "no-only-tests"
+  ],
   "overrides": [
     {
       "files": [
