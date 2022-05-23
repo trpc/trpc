@@ -58,10 +58,8 @@ function getPath(event: APIGatewayEvent) {
     throw UNKNOWN_PAYLOAD_FORMAT_VERSION;
   }
 }
-function transformHeadersV1(
-  headers: HTTPHeaders,
-): APIGatewayProxyResult['headers'] {
-  const obj: APIGatewayProxyResult['headers'] = {};
+function transformHeaders(headers: HTTPHeaders): APIGatewayResult['headers'] {
+  const obj: APIGatewayResult['headers'] = {};
 
   for (const [key, value] of Object.entries(headers)) {
     if (typeof value === 'undefined') {
@@ -71,20 +69,6 @@ function transformHeadersV1(
   }
   return obj;
 }
-function transformHeadersV2(
-  headers: HTTPHeaders,
-): APIGatewayProxyStructuredResultV2['headers'] {
-  const obj: APIGatewayProxyStructuredResultV2['headers'] = {};
-
-  for (const [key, value] of Object.entries(headers)) {
-    if (typeof value === 'undefined') {
-      continue;
-    }
-    obj[key] = Array.isArray(value) ? value.join(',') : value;
-  }
-  return obj;
-}
-
 function tRPCOutputToAPIGatewayOutput<
   TEvent extends APIGatewayEvent,
   TResult extends APIGatewayResult,
@@ -93,14 +77,14 @@ function tRPCOutputToAPIGatewayOutput<
     const resp: APIGatewayProxyResult = {
       statusCode: response.status,
       body: response.body ?? '',
-      headers: transformHeadersV1(response.headers ?? {}),
+      headers: transformHeaders(response.headers ?? {}),
     };
     return resp as TResult;
   } else if (isPayloadV2(event)) {
     const resp: APIGatewayProxyStructuredResultV2 = {
       statusCode: response.status,
-      body: response.body ?? '',
-      headers: transformHeadersV2(response.headers ?? {}),
+      body: response.body ?? undefined,
+      headers: transformHeaders(response.headers ?? {}),
     };
     return resp as TResult;
   } else {

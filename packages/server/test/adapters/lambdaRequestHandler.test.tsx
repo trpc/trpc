@@ -183,7 +183,7 @@ Object {
 `);
 });
 
-test.only('router with no context', async () => {
+test('router with no context', async () => {
   const handler2 = trpcLambda.lambdaRequestHandler({
     router: contextlessApp,
   });
