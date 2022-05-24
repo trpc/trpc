@@ -1,4 +1,5 @@
 import type {
+  Context as APIGWContext,
   APIGatewayProxyEvent,
   APIGatewayProxyEventV2,
   APIGatewayProxyResult,
@@ -12,7 +13,6 @@ import type {
   APIGatewayEvent,
   APIGatewayResult,
   AWSLambdaOptions,
-  LambdaContext,
 } from './utils';
 import {
   UNKNOWN_PAYLOAD_FORMAT_VERSION,
@@ -20,7 +20,7 @@ import {
   isPayloadV2,
 } from './utils';
 
-export type { CreateLambdaContextOptions } from './utils';
+export type { CreateLambdaContextOptions, AWSLambdaOptions } from './utils';
 
 function lambdaEventToHTTPRequest(event: APIGatewayEvent): HTTPRequest {
   const query = new URLSearchParams();
@@ -92,18 +92,33 @@ function tRPCOutputToAPIGatewayOutput<
   }
 }
 
-type APIGWReturn<T> = T extends APIGatewayProxyEvent
+/** Will check the createContext of the TRouter and get the parameter of event.
+ * @internal
+ **/
+type DeduceAPIGWEventType<
+  TRouter extends AnyRouter,
+  TEvent extends APIGatewayEvent,
+> = AWSLambdaOptions<TRouter, TEvent>['createContext'] extends NonNullable<
+  AWSLambdaOptions<TRouter, TEvent>['createContext']
+>
+  ? Parameters<AWSLambdaOptions<TRouter, TEvent>['createContext']>[0]['event']
+  : APIGatewayEvent;
+
+/** 1:1 mapping of v1 or v2 input events, deduces which is which.
+ * @internal
+ **/
+type DeduceAPIGWReturnType<T> = T extends APIGatewayProxyEvent
   ? APIGatewayProxyResult
   : T extends APIGatewayProxyEventV2
   ? APIGatewayProxyStructuredResultV2
   : never;
 export function lambdaRequestHandler<
   TRouter extends AnyRouter,
-  TEvent extends APIGatewayEvent,
-  TResult extends APIGWReturn<TEvent>,
+  TEvent extends DeduceAPIGWEventType<TRouter, TEvent>,
+  TResult extends DeduceAPIGWReturnType<TEvent>,
 >(
   opts: AWSLambdaOptions<TRouter, TEvent>,
-): (event: TEvent, context: LambdaContext) => Promise<TResult> {
+): (event: TEvent, context: APIGWContext) => Promise<TResult> {
   return async (event, context) => {
     const req = lambdaEventToHTTPRequest(event);
     const path = getPath(event);

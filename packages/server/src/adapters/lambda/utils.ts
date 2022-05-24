@@ -1,4 +1,5 @@
 import type {
+  Context as APIGWContext,
   APIGatewayProxyEvent,
   APIGatewayProxyEventV2,
   APIGatewayProxyResult,
@@ -13,10 +14,9 @@ export type APIGatewayResult =
   | APIGatewayProxyResult
   | APIGatewayProxyStructuredResultV2;
 
-export type LambdaContext = Record<string, unknown>;
 export type CreateLambdaContextOptions<T extends APIGatewayEvent> = {
   event: T;
-  context: LambdaContext;
+  context: APIGWContext;
 };
 export type LambdaCreateContextFn<
   TRouter extends AnyRouter,

@@ -5,6 +5,7 @@ import * as trpc from '../../src';
 import { inferAsyncReturnType } from '../../src';
 import * as trpcLambda from '../../src/adapters/lambda';
 import {
+  mockAPIGatewayContext,
   mockAPIGatewayProxyEvent,
   mockAPIGatewayProxyEventV2,
 } from './lambda.utils';
@@ -67,10 +68,9 @@ test('basic test', async () => {
       path: 'hello',
       queryStringParameters: {},
     }),
-    {},
+    mockAPIGatewayContext(),
   );
   const parsedBody = JSON.parse(body || '');
-  delete (result as any).body;
   expect(result).toMatchInlineSnapshot(`
 Object {
   "headers": Object {
@@ -100,10 +100,9 @@ test('bad type', async () => {
       path: 'echo',
       queryStringParameters: {},
     }),
-    {},
+    mockAPIGatewayContext(),
   );
   const parsedBody = JSON.parse(body || '');
-  delete (result as any).body;
   expect(result).toMatchInlineSnapshot(`
 Object {
   "headers": Object {
@@ -159,7 +158,7 @@ test('test v2 format', async () => {
       path: 'hello',
       queryStringParameters: {},
     }),
-    {},
+    mockAPIGatewayContext(),
   );
   expect(result).toMatchInlineSnapshot(`
 Object {
@@ -197,7 +196,7 @@ test('router with no context', async () => {
         input: JSON.stringify({ who: 'kATT' }),
       },
     }),
-    {},
+    mockAPIGatewayContext(),
   );
   expect(result).toMatchInlineSnapshot(`
 Object {

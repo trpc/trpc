@@ -24,9 +24,9 @@
       "adapters/node-http/index.ts",
       "adapters/standalone.ts",
       "adapters/ws.ts",
+      "adapters/lambda/index.ts",
       "ws/index.ts",
-      "rpc/index.ts",
-      "adapters/lambda/index.ts"
+      "rpc/index.ts"
     ]
   },
   "scripts": {

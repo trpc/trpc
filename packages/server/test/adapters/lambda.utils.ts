@@ -1,4 +1,8 @@
-import type { APIGatewayProxyEvent, APIGatewayProxyEventV2 } from 'aws-lambda';
+import type {
+  APIGatewayProxyEvent,
+  APIGatewayProxyEventV2,
+  Context,
+} from 'aws-lambda';
 
 export const mockAPIGatewayProxyEvent = ({
   body,
@@ -101,5 +105,25 @@ export const mockAPIGatewayProxyEventV2 = ({
       time: 'mock',
       timeEpoch: 0,
     },
+  };
+};
+
+export const mockAPIGatewayContext = (): Context => {
+  return {
+    functionName: 'mock',
+    callbackWaitsForEmptyEventLoop: true,
+    functionVersion: 'mock',
+    invokedFunctionArn: 'mock',
+    memoryLimitInMB: 'mock',
+    awsRequestId: 'mock',
+    logGroupName: 'mock',
+    logStreamName: 'mock',
+    getRemainingTimeInMillis: () => -1,
+    // eslint-disable-next-line @typescript-eslint/no-empty-function
+    done: () => {},
+    // eslint-disable-next-line @typescript-eslint/no-empty-function
+    fail: () => {},
+    // eslint-disable-next-line @typescript-eslint/no-empty-function
+    succeed: () => {},
   };
 };
