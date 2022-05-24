@@ -126,5 +126,14 @@ Here's some example apps:
         </ul>
       </td>
     </tr>
+    <tr>
+      <td>Express server with OpenAPI support.</td>
+      <td><em>n/a</em></td>
+      <td>
+        <ul>
+          <li><a href="https://github.com/jlalmes/trpc-openapi/tree/master/examples/with-express">Source</a></li>
+        </ul>
+      </td>
+    </tr>
   </tbody>
 </table>
