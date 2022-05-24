@@ -718,6 +718,15 @@
         "example",
         "tool"
       ]
+    },
+    {
+      "login": "jld-adriano",
+      "name": "João Adriano",
+      "avatar_url": "https://avatars.githubusercontent.com/u/98129582?v=4",
+      "profile": "https://github.com/jld-adriano",
+      "contributions": [
+        "bug"
+      ]
     }
   ],
   "contributorsPerLine": 7,
