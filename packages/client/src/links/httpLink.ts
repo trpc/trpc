@@ -14,10 +14,17 @@ export function httpLink<TRouter extends AnyRouter>(
   return (runtime) => {
     // initialized in app
     return ({ op, prev, onDestroy }) => {
-      const { path, input, type } = op;
+      const { path, input, type, method } = op;
+      if (type === 'subscription' || method === 'subscription') {
+        throw new Error(
+          'Subscriptions are not supported over HTTP, please add a Websocket link',
+        );
+      }
+
       const { promise, cancel } = httpRequest({
         runtime,
         type,
+        method: method ?? type,
         input,
         url,
         path,

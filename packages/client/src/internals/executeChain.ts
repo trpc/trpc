@@ -32,6 +32,7 @@ export function executeChain<
       $result.next(result);
     }
   };
+
   function walk({
     index,
     op,
@@ -62,6 +63,8 @@ export function executeChain<
       },
     });
   }
+
   walk({ index: 0, op: opts.op, stack: [] });
+
   return $result;
 }

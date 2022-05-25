@@ -1,11 +1,12 @@
-import { AnyRouter, DataTransformer } from '@trpc/server';
+import { AnyRouter, DataTransformer, ProcedureType } from '@trpc/server';
 import { TRPCResult } from '@trpc/server/rpc';
 import { TRPCClientError } from '../TRPCClientError';
 
 export type OperationContext = Record<string, unknown>;
 export type Operation<TInput = unknown> = {
   id: number;
-  type: 'query' | 'mutation' | 'subscription';
+  type: ProcedureType;
+  method?: ProcedureType;
   input: TInput;
   path: string;
   context: OperationContext;

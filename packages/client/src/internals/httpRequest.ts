@@ -1,4 +1,3 @@
-import { ProcedureType } from '@trpc/server';
 import { TRPCResponse } from '@trpc/server/rpc';
 import { LinkRuntimeOptions, PromiseAndCancel } from '../links/core';
 
@@ -15,17 +14,17 @@ function arrayToDict(array: unknown[]) {
 export function httpRequest<TResponseShape = TRPCResponse>(
   props: {
     runtime: LinkRuntimeOptions;
-    type: ProcedureType;
+    type: 'query' | 'mutation';
+    method: 'query' | 'mutation';
     path: string;
     url: string;
   } & ({ inputs: unknown[] } | { input: unknown }),
 ): PromiseAndCancel<TResponseShape> {
-  const { type, runtime: rt, path } = props;
+  const { type, method, runtime: rt, path } = props;
   const ac = rt.AbortController ? new rt.AbortController() : null;
-  const method = {
+  const httpMethods = {
     query: 'GET',
     mutation: 'POST',
-    subscription: 'PATCH',
   };
   const input =
     'input' in props
@@ -37,10 +36,13 @@ export function httpRequest<TResponseShape = TRPCResponse>(
   function getUrl() {
     let url = props.url + '/' + path;
     const queryParts: string[] = [];
+    if (type !== method) {
+      queryParts.push(`type=${type}`);
+    }
     if ('inputs' in props) {
       queryParts.push('batch=1');
     }
-    if (type === 'query' && input !== undefined) {
+    if (method === 'query' && input !== undefined) {
       queryParts.push(`input=${encodeURIComponent(JSON.stringify(input))}`);
     }
     if (queryParts.length) {
@@ -49,7 +51,7 @@ export function httpRequest<TResponseShape = TRPCResponse>(
     return url;
   }
   function getBody() {
-    if (type === 'query') {
+    if (method === 'query') {
       return undefined;
     }
     return input !== undefined ? JSON.stringify(input) : undefined;
@@ -73,7 +75,7 @@ export function httpRequest<TResponseShape = TRPCResponse>(
         }
 
         return rt.fetch(url, {
-          method: method[type],
+          method: httpMethods[method],
           signal: ac?.signal,
           body: getBody(),
           headers,
