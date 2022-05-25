@@ -23,7 +23,7 @@
     "react/prop-types": "off",
     "@typescript-eslint/no-explicit-any": "off",
     "@typescript-eslint/no-floating-promises": "error",
-    "no-only-tests/no-only-tests": "error"
+    "no-only-tests/no-only-tests": "error",
     "unicorn/filename-case": [
       "error",
       {
