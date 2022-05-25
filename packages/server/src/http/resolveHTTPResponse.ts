@@ -68,7 +68,9 @@ export async function resolveHTTPResponse<
     };
   }
   const type =
-    HTTP_METHOD_PROCEDURE_TYPE_MAP[req.method] ?? ('unknown' as const);
+    (req.query.get('type') as ProcedureType | null) ??
+    HTTP_METHOD_PROCEDURE_TYPE_MAP[req.method] ??
+    ('unknown' as const);
   let ctx: inferRouterContext<TRouter> | undefined = undefined;
   let paths: string[] | undefined = undefined;
 
