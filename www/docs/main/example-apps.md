@@ -132,7 +132,7 @@ Here's some example apps:
         <br/><br/>
         <details>
           <summary>Quick start with <code>create-trpc-appx</code></summary>
-          <code>npx create-trpc-appx --example express-trpc-shield</code>
+          <code>npx create-trpc-appx --example https://github.com/omar-dulaimi/trpc-shield/tree/master/example</code>
         </details>
       </td>
       <td><em>n/a</em></td>      
