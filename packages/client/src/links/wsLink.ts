@@ -258,6 +258,8 @@ export function createWSClient(opts: WebSocketClientOptions) {
     close: () => {
       state = 'closed';
       closeIfNoPending(activeConnection);
+      clearTimeout(connectTimer as any);
+      connectTimer = null;
     },
     request,
     getConnection() {
