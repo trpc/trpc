@@ -37,7 +37,6 @@ export type AWSLambdaOptions<
       batching?: {
         enabled: boolean;
       };
-      // TODO: Hack 1.
       onError?: (options: Record<string, unknown>) => void;
       responseMeta?: ResponseMetaFn<TRouter>;
     } & (

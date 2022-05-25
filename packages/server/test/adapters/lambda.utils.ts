@@ -75,7 +75,6 @@ export const mockAPIGatewayProxyEventV2 = ({
   path: string;
   method: string;
 }): APIGatewayProxyEventV2 => {
-  // version, routeKey, rawQueryString
   return {
     version: '2.0',
     routeKey: 'mock',
