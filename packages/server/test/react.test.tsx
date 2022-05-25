@@ -20,10 +20,10 @@ import React, { Fragment, ReactNode, useEffect, useState } from 'react';
 import {
   QueryClient,
   QueryClientProvider,
+  dehydrate,
   setLogger,
   useQueryClient,
 } from 'react-query';
-import { dehydrate } from 'react-query/hydration';
 import { ZodError, z } from 'zod';
 import { splitLink } from '../../client/src/links/splitLink';
 import {
@@ -64,6 +64,8 @@ function createAppRouter() {
   const allPosts = jest.fn();
   const postById = jest.fn();
   let wsClient: TRPCWebSocketClient = null as any;
+
+  let count = 0;
   const appRouter = trpcServer
     .router<Context>()
     .formatError(({ shape, error }) => {
@@ -75,6 +77,12 @@ function createAppRouter() {
             : null,
         ...shape,
       };
+    })
+    .query('count', {
+      input: z.string(),
+      resolve({ input }) {
+        return `${input}:${++count}`;
+      },
     })
     .query('allPosts', {
       resolve() {
@@ -1340,36 +1348,33 @@ describe('invalidate queries', () => {
     expect(resolvers.postById).toHaveBeenCalledTimes(2);
   });
 
-  test('test invalidateQueries() with different args', async () => {
+  test('test invalidateQueries() with different args - flaky', async () => {
     // ref  https://github.com/trpc/trpc/issues/1383
-    const { trpc, resolvers, client } = factory;
+    const { trpc, client } = factory;
     function MyComponent() {
-      const postByIdQuery = trpc.useQuery(['postById', '1'], {
+      const countQuery = trpc.useQuery(['count', 'test'], {
         staleTime: Infinity,
       });
       const utils = trpc.useContext();
       return (
         <>
-          <pre>
-            postByIdQuery:{postByIdQuery.status} postByIdQuery:
-            {postByIdQuery.isStale ? 'stale' : 'not-stale'}
-          </pre>
+          <pre>count:{countQuery.data}</pre>
           <button
             data-testid="invalidate-1-string"
             onClick={() => {
-              utils.invalidateQueries('postById');
+              utils.invalidateQueries('count');
             }}
           />
           <button
             data-testid="invalidate-2-tuple"
             onClick={() => {
-              utils.invalidateQueries(['postById']);
+              utils.invalidateQueries(['count']);
             }}
           />
           <button
             data-testid="invalidate-3-exact"
             onClick={() => {
-              utils.invalidateQueries(['postById', '1']);
+              utils.invalidateQueries(['count', 'test']);
             }}
           />
           <button
@@ -1386,7 +1391,7 @@ describe('invalidate queries', () => {
                   const { queryKey } = opts;
                   const [path, input] = queryKey;
 
-                  return path === 'postById' && input === '1';
+                  return path === 'count' && input === 'test';
                 },
               });
             }}
@@ -1408,9 +1413,9 @@ describe('invalidate queries', () => {
     const utils = render(<App />);
 
     await waitFor(() => {
-      expect(utils.container).toHaveTextContent('postByIdQuery:success');
-      expect(utils.container).toHaveTextContent('postByIdQuery:not-stale');
+      expect(utils.container).toHaveTextContent('count:test:1');
     });
+    let count = 1;
     for (const testId of [
       'invalidate-1-string',
       'invalidate-2-tuple',
@@ -1418,21 +1423,15 @@ describe('invalidate queries', () => {
       'invalidate-4-all',
       'invalidate-5-predicate',
     ]) {
+      count++;
       // click button to invalidate
       utils.getByTestId(testId).click();
 
       // should become stale straight after the click
       await waitFor(() => {
-        expect(utils.container).toHaveTextContent('postByIdQuery:stale');
-      });
-      // then, eventually be not stale as it's been refetched
-      await waitFor(() => {
-        expect(utils.container).toHaveTextContent('postByIdQuery:not-stale');
+        expect(utils.container).toHaveTextContent(`count:test:${count}`);
       });
     }
-
-    // 5 clicks + initial load = 6
-    expect(resolvers.postById).toHaveBeenCalledTimes(6);
   });
 });
 

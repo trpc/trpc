@@ -165,5 +165,5 @@ module.exports = {
       charSet: 'utf-8',
     },
   ],
-  clientModules: [require.resolve('./docusaurus.twitter-reload.js')],
+  clientModules: [require.resolve('./docusaurus.twitterReload.js')],
 };

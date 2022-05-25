@@ -602,7 +602,8 @@
       "avatar_url": "https://avatars.githubusercontent.com/u/535254?v=4",
       "profile": "https://github.com/toyamarinyon",
       "contributions": [
-        "example"
+        "example",
+        "code"
       ]
     },
     {
@@ -650,6 +651,81 @@
       "profile": "https://marcin.page/",
       "contributions": [
         "code"
+      ]
+    },
+    {
+      "login": "kindlyfire",
+      "name": "Tijl Van den Brugghen",
+      "avatar_url": "https://avatars.githubusercontent.com/u/10267586?v=4",
+      "profile": "https://tijlvdb.me/",
+      "contributions": [
+        "doc"
+      ]
+    },
+    {
+      "login": "matthijscollabai",
+      "name": "Matthijs Wolting",
+      "avatar_url": "https://avatars.githubusercontent.com/u/89927222?v=4",
+      "profile": "https://github.com/matthijscollabai",
+      "contributions": [
+        "bug"
+      ]
+    },
+    {
+      "login": "lukahartwig",
+      "name": "Luka Hartwig",
+      "avatar_url": "https://avatars.githubusercontent.com/u/7414521?v=4",
+      "profile": "https://lukahartwig.de",
+      "contributions": [
+        "code",
+        "maintenance"
+      ]
+    },
+    {
+      "login": "flylance-apps",
+      "name": "Flylance",
+      "avatar_url": "https://avatars.githubusercontent.com/u/67534310?v=4",
+      "profile": "http://flylance.com",
+      "contributions": [
+        "financial"
+      ]
+    },
+    {
+      "login": "BWsix",
+      "name": "VFLC",
+      "avatar_url": "https://avatars.githubusercontent.com/u/57709309?v=4",
+      "profile": "https://github.com/BWsix",
+      "contributions": [
+        "doc"
+      ]
+    },
+    {
+      "login": "wobsoriano",
+      "name": "Robert Soriano",
+      "avatar_url": "https://avatars.githubusercontent.com/u/13049130?v=4",
+      "profile": "https://robsoriano.com",
+      "contributions": [
+        "example",
+        "tool"
+      ]
+    },
+    {
+      "login": "lukevella",
+      "name": "Luke Vella",
+      "avatar_url": "https://avatars.githubusercontent.com/u/676849?v=4",
+      "profile": "https://lukevella.com",
+      "contributions": [
+        "example",
+        "tool"
+      ]
+    },
+    {
+      "login": "jld-adriano",
+      "name": "João Adriano",
+      "avatar_url": "https://avatars.githubusercontent.com/u/98129582?v=4",
+      "profile": "https://github.com/jld-adriano",
+      "contributions": [
+        "bug"
       ]
     }
   ],
