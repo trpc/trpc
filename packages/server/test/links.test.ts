@@ -644,3 +644,40 @@ test('pass a context', () => {
   });
   expect(callback).toHaveBeenCalledWith(context);
 });
+
+test('subscriptions throw error on httpLinks', () => {
+  {
+    // httpLink
+    expect(() => {
+      executeChain({
+        links: [httpLink({ url: 'void' })(mockRuntime)],
+        op: {
+          id: 1,
+          type: 'subscription',
+          input: null,
+          path: '',
+          context: {},
+        },
+      });
+    }).toThrowError(
+      'Subscriptions are not supported over HTTP, please add a Websocket link',
+    );
+  }
+  {
+    // httpBatchLink
+    expect(() => {
+      executeChain({
+        links: [httpBatchLink({ url: 'void' })(mockRuntime)],
+        op: {
+          id: 1,
+          type: 'subscription',
+          input: null,
+          path: '',
+          context: {},
+        },
+      });
+    }).toThrowError(
+      'Subscriptions are not supported over HTTP, please add a Websocket link',
+    );
+  }
+});
