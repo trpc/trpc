@@ -718,6 +718,24 @@
         "example",
         "tool"
       ]
+    },
+    {
+      "login": "jld-adriano",
+      "name": "João Adriano",
+      "avatar_url": "https://avatars.githubusercontent.com/u/98129582?v=4",
+      "profile": "https://github.com/jld-adriano",
+      "contributions": [
+        "bug"
+      ]
+    },
+    {
+      "login": "nilskj",
+      "name": "Nils Kjellman",
+      "avatar_url": "https://avatars.githubusercontent.com/u/495782?v=4",
+      "profile": "http://www.nisse.tech",
+      "contributions": [
+        "doc"
+      ]
     }
   ],
   "contributorsPerLine": 7,

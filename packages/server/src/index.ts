@@ -8,4 +8,4 @@ export * from './types';
 // deprecated
 export * from './deprecated/createHttpServer';
 export * from './deprecated/requestHandler';
-export * from './deprecated/LegacyRouter';
+export * from './deprecated/legacyRouter';
