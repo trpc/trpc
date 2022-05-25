@@ -9,7 +9,7 @@ import { expectTypeOf } from 'expect-type';
 import { default as WebSocket, default as ws } from 'ws';
 import { z } from 'zod';
 import { TRPCClientError } from '../../client/src';
-import { wsLink } from '../../client/src/links/wsLink';
+import { createWSClient, wsLink } from '../../client/src/links/wsLink';
 import * as trpc from '../src';
 import { TRPCError } from '../src';
 import { TRPCRequest, TRPCResult } from '../src/rpc';
@@ -668,4 +668,21 @@ test('regression - badly shaped request', async () => {
   `);
   rawClient.close();
   t.close();
+});
+
+test('wsClient stops reconnecting after .close()', async () => {
+  const badWsUrl = 'ws://localhost:9999';
+  const retryDelayMsMock = jest.fn();
+  retryDelayMsMock.mockReturnValue(100);
+
+  const wsClient = createWSClient({
+    url: badWsUrl,
+    retryDelayMs: retryDelayMsMock,
+  });
+
+  await waitFor(() => expect(retryDelayMsMock).toHaveBeenCalledTimes(1));
+  await waitFor(() => expect(retryDelayMsMock).toHaveBeenCalledTimes(2));
+  wsClient.close();
+  await waitMs(100);
+  expect(retryDelayMsMock).toHaveBeenCalledTimes(2);
 });

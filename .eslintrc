@@ -1,5 +1,9 @@
 {
   "parser": "@typescript-eslint/parser", // Specifies the ESLint parser
+  "plugins": [
+    "no-only-tests",
+    "unicorn"
+  ],
   "extends": [
     "plugin:@typescript-eslint/recommended", // Uses the recommended rules from the @typescript-eslint/eslint-plugin
     "plugin:react/recommended",
@@ -20,24 +24,31 @@
     "@typescript-eslint/no-explicit-any": "off",
     "@typescript-eslint/no-floating-promises": "error",
     "no-only-tests/no-only-tests": "error"
+    "unicorn/filename-case": [
+      "error",
+      {
+        "case": "camelCase",
+        "ignore": [
+          "TRPC",
+          "RPC",
+          "HTTP",
+          "\\.config\\.js",
+          "\\.d\\.ts$",
+          "issue-\\d+-.*\\.test\\.tsx?$"
+        ]
+      }
+    ]
   },
-  "plugins": [
-    "no-only-tests"
-  ],
   "overrides": [
     {
-      "files": [
-        "examples/**/*"
-      ],
+      "files": ["examples/**/*"],
       "rules": {
         "@typescript-eslint/no-unused-vars": "off",
         "@typescript-eslint/no-floating-promises": "off"
       }
     },
     {
-      "files": [
-        "**/test/**/*"
-      ],
+      "files": ["**/test/**/*"],
       "rules": {
         "@typescript-eslint/no-floating-promises": "off"
       }

@@ -8,7 +8,7 @@ import {
   inferRouterError,
 } from '@trpc/server';
 import { URLSearchParams } from 'url';
-import { BaseHandlerOptions } from '../../internals/BaseHandlerOptions';
+import { BaseHandlerOptions } from '../../internals/baseHandlerOptions';
 import { TRPCResponse } from '../../rpc';
 
 export type HTTPHeaders = Dict<string | string[]>;
