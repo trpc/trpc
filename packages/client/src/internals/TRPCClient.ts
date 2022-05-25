@@ -17,6 +17,7 @@ import {
   LinkRuntimeOptions,
   OperationContext,
   OperationLink,
+  OperationMethodOverride,
   TRPCLink,
 } from '../links/core';
 import { httpBatchLink } from '../links/httpBatchLink';
@@ -79,9 +80,9 @@ export interface TRPCRequestOptions {
    */
   context?: OperationContext;
   /**
-   * Override procedure method type
+   * Override procedure method
    */
-  method?: ProcedureType;
+  method?: OperationMethodOverride;
 }
 
 export class TRPCClient<TRouter extends AnyRouter> {
@@ -137,7 +138,7 @@ export class TRPCClient<TRouter extends AnyRouter> {
     context = {},
   }: {
     type: ProcedureType;
-    method?: ProcedureType;
+    method?: OperationMethodOverride;
     input: TInput;
     path: string;
     context?: OperationContext;
@@ -158,7 +159,7 @@ export class TRPCClient<TRouter extends AnyRouter> {
   }
   private requestAsPromise<TInput = unknown, TOutput = unknown>(opts: {
     type: ProcedureType;
-    method?: ProcedureType;
+    method?: OperationMethodOverride;
     input: TInput;
     path: string;
     context?: OperationContext;

@@ -15,7 +15,7 @@ export function httpLink<TRouter extends AnyRouter>(
     // initialized in app
     return ({ op, prev, onDestroy }) => {
       const { path, input, type, method } = op;
-      if (type === 'subscription' || method === 'subscription') {
+      if (type === 'subscription') {
         throw new Error(
           'Subscriptions are not supported over HTTP, please add a Websocket link',
         );
@@ -24,7 +24,7 @@ export function httpLink<TRouter extends AnyRouter>(
       const { promise, cancel } = httpRequest({
         runtime,
         type,
-        method: method ?? type,
+        method,
         input,
         url,
         path,

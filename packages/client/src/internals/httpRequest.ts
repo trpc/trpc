@@ -1,5 +1,9 @@
 import { TRPCResponse } from '@trpc/server/rpc';
-import { LinkRuntimeOptions, PromiseAndCancel } from '../links/core';
+import {
+  LinkRuntimeOptions,
+  OperationMethodOverride,
+  PromiseAndCancel,
+} from '../links/core';
 
 // https://github.com/trpc/trpc/pull/669
 function arrayToDict(array: unknown[]) {
@@ -11,21 +15,23 @@ function arrayToDict(array: unknown[]) {
   return dict;
 }
 
+export const httpMethods = {
+  query: 'GET',
+  mutation: 'POST',
+} as const;
+
 export function httpRequest<TResponseShape = TRPCResponse>(
   props: {
     runtime: LinkRuntimeOptions;
     type: 'query' | 'mutation';
-    method: 'query' | 'mutation';
+    method?: OperationMethodOverride;
     path: string;
     url: string;
   } & ({ inputs: unknown[] } | { input: unknown }),
 ): PromiseAndCancel<TResponseShape> {
   const { type, method, runtime: rt, path } = props;
   const ac = rt.AbortController ? new rt.AbortController() : null;
-  const httpMethods = {
-    query: 'GET',
-    mutation: 'POST',
-  };
+  const httpMethod = method ?? httpMethods[type];
   const input =
     'input' in props
       ? rt.transformer.serialize(props.input)
@@ -36,13 +42,13 @@ export function httpRequest<TResponseShape = TRPCResponse>(
   function getUrl() {
     let url = props.url + '/' + path;
     const queryParts: string[] = [];
-    if (type !== method) {
+    if (method !== httpMethods[type]) {
       queryParts.push(`type=${type}`);
     }
     if ('inputs' in props) {
       queryParts.push('batch=1');
     }
-    if (method === 'query' && input !== undefined) {
+    if (httpMethod === 'GET' && input !== undefined) {
       queryParts.push(`input=${encodeURIComponent(JSON.stringify(input))}`);
     }
     if (queryParts.length) {
@@ -51,10 +57,10 @@ export function httpRequest<TResponseShape = TRPCResponse>(
     return url;
   }
   function getBody() {
-    if (method === 'query') {
-      return undefined;
+    if (httpMethod === 'POST') {
+      return JSON.stringify(input);
     }
-    return input !== undefined ? JSON.stringify(input) : undefined;
+    return undefined;
   }
 
   const promise = new Promise<TResponseShape>((resolve, reject) => {
@@ -75,7 +81,7 @@ export function httpRequest<TResponseShape = TRPCResponse>(
         }
 
         return rt.fetch(url, {
-          method: httpMethods[method],
+          method: httpMethod,
           signal: ac?.signal,
           body: getBody(),
           headers,
