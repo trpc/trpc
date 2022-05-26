@@ -76,6 +76,7 @@ export function httpBatchLink<TRouter extends AnyRouter>(
           'Subscriptions are not supported over HTTP, please add a Websocket link',
         );
       }
+
       const loader = loaders[type][method ?? httpMethods[type]];
       const { promise, cancel } = loader.load(op);
       let isDone = false;
