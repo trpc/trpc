@@ -6,7 +6,7 @@ import * as trpc from '../src';
 type Context = { method: 'GET' | 'POST' };
 
 const createContext = ({ req }: { req: IncomingMessage }): Context => {
-  return { method: req.method! as Context['method'] };
+  return { method: req.method as Context['method'] };
 };
 
 const router = trpc
