@@ -636,6 +636,23 @@ describe('useMutation()', () => {
       test: '1',
     });
   });
+
+  test('useMutation with mutation context', async () => {
+    const { trpc } = factory;
+
+    trpc.useMutation(['deletePosts'], {
+      onMutate: () => 'foo' as const,
+      onSuccess: (_data, _variables, context) => {
+        expectTypeOf(context).toMatchTypeOf<'foo'>();
+      },
+      onError: (_error, _variables, context) => {
+        expectTypeOf(context).toMatchTypeOf<'foo' | undefined>();
+      },
+      onSettled: (_data, _error, _variables, context) => {
+        expectTypeOf(context).toMatchTypeOf<'foo' | undefined>();
+      },
+    });
+  });
 });
 
 // test('useLiveQuery()', async () => {
