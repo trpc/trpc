@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 // FIXME tmp - delete me asap
 import { expectTypeOf } from 'expect-type';
 import { appRouter } from './server';

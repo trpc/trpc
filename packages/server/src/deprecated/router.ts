@@ -155,6 +155,7 @@ export type inferRouterMeta<TRouter extends AnyRouter> = TRouter extends Router<
 
 /**
  * @public
+ * @deprecated
  */
 export type AnyRouter<TContext = any> = Router<
   any,
