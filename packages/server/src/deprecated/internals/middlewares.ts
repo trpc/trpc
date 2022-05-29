@@ -4,11 +4,10 @@ import { ProcedureType } from '../router';
 /**
  * @deprecated
  */
-export const middlewareMarker = Symbol('middlewareMarker');
+export const middlewareMarker = 'middlewareMarker' as 'middlewareMarker' & {
+  __brand: 'middlewareMarker';
+};
 
-/**
- * @deprecated
- */
 interface MiddlewareResultBase<TContext> {
   /**
    * All middlewares should pass through their `next()`'s output.
