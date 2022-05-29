@@ -11,21 +11,27 @@ import { MiddlewareFunction } from './middleware';
 import { Parser, inferParser } from './parser';
 
 type ClientContext = Record<string, unknown>;
-type ProcedureOptions<TInput extends { input?: unknown }> = {
+interface ProcedureOptions {
+  /**
+   * Client-side context
+   */
   context?: ClientContext;
-} & TInput;
+}
 
 export type Procedure<TParams extends ProcedureParams> =
   (TParams['_input_in'] extends UnsetMarker
     ? (
-        opts?: ProcedureOptions<{ input?: undefined }>,
+        input?: undefined | null,
+        opts?: ProcedureOptions,
       ) => Promise<TParams['_output_out']>
     : TParams['_input_in'] extends undefined
     ? (
-        opts?: ProcedureOptions<{ input?: TParams['_input_in'] }>,
+        input?: TParams['_input_in'],
+        opts?: ProcedureOptions,
       ) => Promise<TParams['_output_out']>
     : (
-        opts: ProcedureOptions<{ input: TParams['_input_in'] }>,
+        input: TParams['_input_in'],
+        opts?: ProcedureOptions,
       ) => Promise<TParams['_output_out']>) &
     ProcedureMarker;
 

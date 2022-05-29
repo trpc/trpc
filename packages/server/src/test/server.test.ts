@@ -16,23 +16,18 @@ async function main() {
     }>();
 
     // should work
-    await appRouter.queries.viewerWhoAmi({});
-    await appRouter.queries.viewerWhoAmi({
-      input: undefined,
-    });
+    await appRouter.queries.viewerWhoAmi(undefined);
   }
   {
-    const output = await appRouter.mutations.updateToken({ input: 'asd' });
+    const output = await appRouter.mutations.updateToken('asd');
     expectTypeOf(output).toMatchTypeOf<string>();
   }
 
   {
     const output = await appRouter.mutations.editOrg({
-      input: {
-        organizationId: '123',
-        data: {
-          name: 'asd',
-        },
+      organizationId: '123',
+      data: {
+        name: 'asd',
       },
     });
     expectTypeOf(output).toMatchTypeOf<{
@@ -41,16 +36,14 @@ async function main() {
     }>();
   }
   {
-    const output = await appRouter.mutations.updateToken({ input: 'hey' });
+    const output = await appRouter.mutations.updateToken('hey');
 
     expectTypeOf(output).toMatchTypeOf<'ok'>();
   }
   {
     const output = await appRouter.mutations.postAdd({
-      input: {
-        title: 'asd',
-        body: 'asd',
-      },
+      title: 'asd',
+      body: 'asd',
     });
 
     expectTypeOf(output).toMatchTypeOf<{
@@ -60,52 +53,6 @@ async function main() {
       userId: string;
     }>();
   }
-
-  {
-    // if you hover result we can see that we can infer both the result and every possible expected error
-    // const result = await appRouter.queries.greeting({ hello: 'there' });
-    // if ('error' in result && result.error) {
-    //   if ('zod' in result.error) {
-    //     // zod error inferred - useful for forms w/o libs
-    //     console.log(result.error.zod.hello?._errors);
-    //   }
-    // } else {
-    //   console.log(result);
-    // }
-    // // some type testing below
-    // type MyProcedure = inferProcedure<typeof appRouter['queries']['greeting']>;
-    // expectTypeOf<MyProcedure['ctx']>().toMatchTypeOf<{
-    //   user?: { id: string };
-    // }>();
-    // expectTypeOf<MyProcedure['data']>().toMatchTypeOf<{
-    //   greeting: string;
-    // }>();
-    // expectTypeOf<MyProcedure['_input_in']>().toMatchTypeOf<{
-    //   hello: string;
-    //   lengthOf?: string;
-    // }>();
-    // expectTypeOf<MyProcedure['_input_out']>().toMatchTypeOf<{
-    //   hello: string;
-    //   lengthOf: number;
-    // }>();
-  }
-  // {
-  //   // no leaky
-  //   const trpc = initTRPC();
-  //   trpc.router({
-  //     queries: {
-  //       test: trpc.resolver(() => {
-  //         return 'ok';
-  //       }),
-  //     },
-  //     // @ts-expect-error should error
-  //     doesNotExist: {},
-  //   });
-  // }
-  // {
-  //   const result = await appRouter.mutations['fireAndForget']('hey');
-  //   console.log(result);
-  // }
 }
 
 main();
