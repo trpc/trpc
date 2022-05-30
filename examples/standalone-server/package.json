@@ -1,0 +1,16 @@
+{
+  "name": "trpc-minimal-example",
+  "workspaces": [
+    "client",
+    "server"
+  ],
+  "devDependencies": {
+    "@types/node": "^17.0.36",
+    "@types/node-fetch": "^2.6.1",
+    "typescript": "^4.7.2"
+  },
+  "scripts": {
+    "server": "tsc && node server",
+    "client": "tsc && node client"
+  }
+}

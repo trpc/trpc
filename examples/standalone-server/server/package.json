@@ -1,0 +1,5 @@
+{
+  "dependencies": {
+    "@trpc/server": "^9.23.6"
+  }
+}
