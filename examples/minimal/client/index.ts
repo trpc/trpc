@@ -1,9 +1,7 @@
 import { createTRPCClient } from '@trpc/client';
-
+import fetch from 'node-fetch';
 import type { AppRouter } from '../server';
 
-// polyfill fetch
-import fetch from 'node-fetch';
 global.fetch = fetch as any;
 
 const client = createTRPCClient<AppRouter>({
