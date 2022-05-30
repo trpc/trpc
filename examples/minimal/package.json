@@ -1,5 +1,6 @@
 {
   "name": "trpc-minimal-example",
+  "private": true,
   "workspaces": [
     "client",
     "server"

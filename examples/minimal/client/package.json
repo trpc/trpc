@@ -1,4 +1,6 @@
 {
+  "name": "trpc-minimal-client",
+  "version": "0.1.0",
   "dependencies": {
     "@trpc/client": "^9.23.6",
     "node-fetch": "^2.6.7"

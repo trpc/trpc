@@ -9,7 +9,7 @@ const appRouter = trpc.router().query("hello", {
     throw new Error(`Invalid input: ${typeof val}`);
   },
   async resolve(req) {
-    return { message: `hello ${req.input}!` };
+    return { message: `hello, ${req.input}!` };
   },
 });
 

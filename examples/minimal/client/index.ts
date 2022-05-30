@@ -11,4 +11,4 @@ const client = createTRPCClient<AppRouter>({
 });
 
 // Type safe
-client.query("hello", "bob").then((res) => console.log(res.message));
+client.query("hello", "world").then((res) => console.log(res.message));

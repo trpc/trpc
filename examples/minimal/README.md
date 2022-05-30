@@ -3,11 +3,12 @@
 Requires node.
 
 ```
-npm i
-npm run server
+yarn install
+tsc
+node server
 
 # New terminal
-npm run client
+node client
 ```
 
 Try editing the ts files to see the type checking in action :)
