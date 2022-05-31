@@ -36,6 +36,7 @@ import { OutputWithCursor, createReactQueryHooks } from '../../react/src';
 import { createSSGHelpers } from '../../react/ssg';
 import { DefaultErrorShape } from '../src';
 import { TRPCError } from '../src/TRPCError';
+import { NodeHTTPRequest } from '../src/adapters/node-http';
 
 setLogger({
   log() {},
@@ -43,7 +44,6 @@ setLogger({
   error() {},
 });
 
-type Context = {};
 type Post = {
   id: string;
   title: string;
@@ -60,14 +60,14 @@ function createAppRouter() {
     ],
   };
   const postLiveInputs: unknown[] = [];
-  const createContext = jest.fn(() => ({}));
+  const createContext = jest.fn();
   const allPosts = jest.fn();
   const postById = jest.fn();
   let wsClient: TRPCWebSocketClient = null as any;
 
   let count = 0;
   const appRouter = trpcServer
-    .router<Context>()
+    .router<any>()
     .formatError(({ shape, error }) => {
       return {
         $test: 'formatted',
@@ -188,6 +188,26 @@ function createAppRouter() {
           },
         });
       },
+    })
+    .query('methodOverrideQuery', {
+      input: z.string(),
+      resolve: ({ ctx, input }) => {
+        return {
+          type: 'query',
+          method: ctx.method,
+          payload: input,
+        };
+      },
+    })
+    .mutation('methodOverrideMutation', {
+      input: z.string(),
+      resolve: ({ ctx, input }) => {
+        return {
+          type: 'mutation',
+          method: ctx.method,
+          payload: input,
+        };
+      },
     });
 
   const linkSpy = {
@@ -198,7 +218,10 @@ function createAppRouter() {
     appRouter,
     {
       server: {
-        createContext,
+        createContext: ({ req }: { req: NodeHTTPRequest }) => {
+          createContext();
+          return { method: req.method as string };
+        },
         batching: {
           enabled: true,
         },
@@ -357,6 +380,50 @@ describe('useQuery()', () => {
       expect(utils.container).toHaveTextContent('first post');
     });
     expect(utils.container).not.toHaveTextContent('second post');
+  });
+
+  test('with method override', async () => {
+    const { trpc, client } = factory;
+    function MyComponent() {
+      const { data: queryData } = trpc.useQuery(
+        ['methodOverrideQuery', 'query-POST'],
+        { method: 'POST' },
+      );
+      const { data: mutationData, mutate } = trpc.useMutation(
+        'methodOverrideMutation',
+        { method: 'GET' },
+      );
+      useEffect(() => mutate('mutation-GET'), []);
+      return <pre>{JSON.stringify({ queryData, mutationData })}</pre>;
+    }
+    function App() {
+      const [queryClient] = useState(() => new QueryClient());
+      return (
+        <trpc.Provider {...{ queryClient, client }}>
+          <QueryClientProvider client={queryClient}>
+            <MyComponent />
+          </QueryClientProvider>
+        </trpc.Provider>
+      );
+    }
+
+    const utils = render(<App />);
+    await waitFor(() => {
+      expect(utils.container).toHaveTextContent(
+        JSON.stringify({
+          queryData: {
+            type: 'query',
+            method: 'POST',
+            payload: 'query-POST',
+          },
+          mutationData: {
+            type: 'mutation',
+            method: 'GET',
+            payload: 'mutation-GET',
+          },
+        }),
+      );
+    });
   });
 });
 
