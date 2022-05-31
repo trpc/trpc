@@ -1,12 +1,15 @@
 import { routerToServerAndClient } from './__testHelpers';
-import { IncomingMessage } from 'http';
 import { z } from 'zod';
 import * as trpc from '../src';
+import { NodeHTTPRequest } from '../src/adapters/node-http';
 
-type Context = { method: 'GET' | 'POST' };
+const urlMock = jest.fn();
 
-const createContext = ({ req }: { req: IncomingMessage }): Context => {
-  return { method: req.method as Context['method'] };
+type Context = { method: string };
+
+const createContext = ({ req }: { req: NodeHTTPRequest }): Context => {
+  urlMock(req.url);
+  return { method: req.method as string };
 };
 
 const router = trpc
@@ -46,6 +49,11 @@ test('query as GET', async () => {
       method: 'GET',
       payload: 'query-GET',
     });
+    expect(urlMock).toHaveBeenCalledTimes(1);
+    expect(urlMock).toHaveBeenCalledWith(
+      '/query?batch=1&input=%7B%220%22%3A%22query-GET%22%7D',
+    );
+    urlMock.mockClear();
   }
   {
     const res = await client.query('query', 'query-undefined');
@@ -54,6 +62,11 @@ test('query as GET', async () => {
       method: 'GET',
       payload: 'query-undefined',
     });
+    expect(urlMock).toHaveBeenCalledTimes(1);
+    expect(urlMock).toHaveBeenCalledWith(
+      '/query?batch=1&input=%7B%220%22%3A%22query-undefined%22%7D',
+    );
+    urlMock.mockClear();
   }
 
   close();
@@ -73,6 +86,9 @@ test('query as POST', async () => {
       method: 'POST',
       payload: 'query-POST',
     });
+    expect(urlMock).toHaveBeenCalledTimes(1);
+    expect(urlMock).toHaveBeenCalledWith('/query?type=query&batch=1');
+    urlMock.mockClear();
   }
 
   close();
@@ -92,6 +108,11 @@ test('mutation as GET', async () => {
       method: 'GET',
       payload: 'mutation-GET',
     });
+    expect(urlMock).toHaveBeenCalledTimes(1);
+    expect(urlMock).toHaveBeenCalledWith(
+      '/mutation?type=mutation&batch=1&input=%7B%220%22%3A%22mutation-GET%22%7D',
+    );
+    urlMock.mockClear();
   }
 
   close();
@@ -111,6 +132,9 @@ test('mutation as POST', async () => {
       method: 'POST',
       payload: 'mutation-POST',
     });
+    expect(urlMock).toHaveBeenCalledTimes(1);
+    expect(urlMock).toHaveBeenCalledWith('/mutation?batch=1');
+    urlMock.mockClear();
   }
   {
     const res = await client.mutation('mutation', 'mutation-undefined');
@@ -119,6 +143,9 @@ test('mutation as POST', async () => {
       method: 'POST',
       payload: 'mutation-undefined',
     });
+    expect(urlMock).toHaveBeenCalledTimes(1);
+    expect(urlMock).toHaveBeenCalledWith('/mutation?batch=1');
+    urlMock.mockClear();
   }
 
   close();
