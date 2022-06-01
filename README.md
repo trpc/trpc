@@ -281,6 +281,7 @@ Also, if your company using tRPC and want to support long-term maintenance of tR
     <td align="center"><a href="https://lukevella.com"><img src="https://avatars.githubusercontent.com/u/676849?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Luke Vella</b></sub></a><br /><a href="#example-lukevella" title="Examples">💡</a> <a href="#tool-lukevella" title="Tools">🔧</a></td>
     <td align="center"><a href="https://github.com/jld-adriano"><img src="https://avatars.githubusercontent.com/u/98129582?v=4?s=100" width="100px;" alt=""/><br /><sub><b>João Adriano</b></sub></a><br /><a href="https://github.com/trpc/trpc/issues?q=author%3Ajld-adriano" title="Bug reports">🐛</a></td>
     <td align="center"><a href="http://www.nisse.tech"><img src="https://avatars.githubusercontent.com/u/495782?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Nils Kjellman</b></sub></a><br /><a href="https://github.com/trpc/trpc/commits?author=nilskj" title="Documentation">📖</a></td>
+    <td align="center"><a href="https://github.com/luixo"><img src="https://avatars.githubusercontent.com/u/1051134?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Alexey Immoreev</b></sub></a><br /><a href="https://github.com/trpc/trpc/commits?author=luixo" title="Code">💻</a></td>
   </tr>
 </table>
 
