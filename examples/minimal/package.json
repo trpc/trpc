@@ -3,8 +3,8 @@
   "private": true,
   "version": "0.1.0",
   "scripts": {
-    "dev:server": "nodemon -e ts -w . -x ts-node ./server/index",
-    "dev:client": "nodemon -e ts -w . -x 'wait-port 2022 && ts-node ./client'",
+    "dev:server": "nodemon -e ts -w . -x ts-node ./server/index.ts",
+    "dev:client": "nodemon -e ts -w . -x 'wait-port 2022 && ts-node ./client/index.ts'",
     "dev": "run-p dev:* --print-label",
     "start": "node server",
     "build": "tsc",
