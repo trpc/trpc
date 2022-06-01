@@ -13,7 +13,6 @@
   },
   "dependencies": {
     "@trpc/client": "^9.23.6",
-    "@trpc/react": "^9.23.6",
     "@trpc/server": "^9.23.6",
     "abort-controller": "^3.0.0",
     "node-fetch": "^2.6.1",
