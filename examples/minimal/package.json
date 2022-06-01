@@ -6,10 +6,10 @@
     "dev:server": "nodemon -e ts -w . -x ts-node ./server/index",
     "dev:client": "nodemon -e ts -w . -x 'wait-port 2022 && ts-node ./client'",
     "dev": "run-p dev:* --print-label",
-    "start": "yarn dev",
+    "start": "node server",
     "build": "tsc",
     "test-dev": "start-server-and-test 'ts-node server' 2022 'ts-node client'",
-    "test-start": "start-server-and-test 'node dist/server' 2022 'node dist/client'"
+    "test-start": "start-server-and-test 'node server' 2022 'node client'"
   },
   "workspaces": [
     "client",
@@ -18,11 +18,11 @@
   "devDependencies": {
     "@types/node": "^17.0.10",
     "@types/node-fetch": "^2.5.11",
-    "typescript": "4.4.4",
     "nodemon": "^2.0.12",
     "npm-run-all": "^4.1.5",
     "start-server-and-test": "^1.12.0",
     "ts-node": "^10.3.0",
+    "typescript": "^4.4.4",
     "wait-port": "^0.2.9"
   }
 }
