@@ -2,8 +2,7 @@
   "compilerOptions": {
     "moduleResolution": "node",
     "esModuleInterop": true,
-    "strict": true,
-    "strictNullChecks": true
+    "strict": true
   },
   "include": ["server", "client"],
   "exclude": ["**/node_modules"]
