@@ -5,6 +5,7 @@ Requires node.
 ## Playing around
 
 ```
+yarn
 yarn dev
 ```
 
