@@ -62,8 +62,12 @@ export interface UseTRPCInfiniteQueryOptions<TPath, TInput, TOutput, TError>
     >,
     TRPCUseQueryBaseOptions {}
 
-export interface UseTRPCMutationOptions<TInput, TError, TOutput>
-  extends UseMutationOptions<TOutput, TError, TInput>,
+export interface UseTRPCMutationOptions<
+  TInput,
+  TError,
+  TOutput,
+  TContext = unknown,
+> extends UseMutationOptions<TOutput, TError, TInput, TContext>,
     TRPCUseQueryBaseOptions {}
 
 function getClientArgs<TPathAndInput extends unknown[], TOptions>(
@@ -298,17 +302,22 @@ export function createReactQueryHooks<
     );
   }
 
-  function useMutation<TPath extends keyof TMutationValues & string>(
+  function useMutation<
+    TPath extends keyof TMutationValues & string,
+    TContext = unknown,
+  >(
     path: TPath | [TPath],
     opts?: UseTRPCMutationOptions<
       TMutationValues[TPath]['input'],
       TError,
-      TMutationValues[TPath]['output']
+      TMutationValues[TPath]['output'],
+      TContext
     >,
   ): UseMutationResult<
     TMutationValues[TPath]['output'],
     TError,
-    TMutationValues[TPath]['input']
+    TMutationValues[TPath]['input'],
+    TContext
   > {
     const { client } = useContext();
 
