@@ -3,12 +3,12 @@
   "version": "9.23.6",
   "private": true,
   "scripts": {
-    "dev:server": "nodemon -e ts -w . -x ts-node ./server",
-    "dev:client": "nodemon -e ts -w . -x 'wait-port 2022 && ts-node ./client'",
+    "dev:server": "nodemon -e ts -w . -x ts-node ./src/server",
+    "dev:client": "nodemon -e ts -w . -x 'wait-port 2022 && ts-node ./src/client'",
     "dev": "run-p dev:* --print-label",
     "start": "yarn dev",
     "build": "tsc",
-    "test-dev": "start-server-and-test 'ts-node server' 2022 'ts-node client'",
+    "test-dev": "start-server-and-test 'ts-node src/server' 2022 'ts-node src/client'",
     "test-start": "start-server-and-test 'node dist/server' 2022 'node dist/client'"
   },
   "dependencies": {
