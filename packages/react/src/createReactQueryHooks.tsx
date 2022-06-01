@@ -48,8 +48,8 @@ export interface TRPCUseQueryBaseOptions extends TRPCRequestOptions {
   ssr?: boolean;
 }
 
-export interface UseTRPCQueryOptions<TPath, TInput, TOutput, TError>
-  extends UseQueryOptions<TOutput, TError, TOutput, [TPath, TInput]>,
+export interface UseTRPCQueryOptions<TPath, TInput, TOutput, TData, TError>
+  extends UseQueryOptions<TOutput, TError, TData, [TPath, TInput]>,
     TRPCUseQueryBaseOptions {}
 
 export interface UseTRPCInfiniteQueryOptions<TPath, TInput, TOutput, TError>
@@ -268,15 +268,20 @@ export function createReactQueryHooks<
       : opts;
   }
 
-  function useQuery<TPath extends keyof TQueryValues & string>(
+  function useQuery<
+    TPath extends keyof TQueryValues & string,
+    TQueryFnData = TQueryValues[TPath]['output'],
+    TData = TQueryValues[TPath]['output'],
+  >(
     pathAndInput: [path: TPath, ...args: inferHandlerInput<TQueries[TPath]>],
     opts?: UseTRPCQueryOptions<
       TPath,
       TQueryValues[TPath]['input'],
-      TQueryValues[TPath]['output'],
+      TQueryFnData,
+      TData,
       TError
     >,
-  ): UseQueryResult<TQueryValues[TPath]['output'], TError> {
+  ): UseQueryResult<TData, TError> {
     const { client, isPrepass, queryClient, prefetchQuery } = useContext();
 
     if (

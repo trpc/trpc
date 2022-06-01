@@ -358,6 +358,35 @@ describe('useQuery()', () => {
     });
     expect(utils.container).not.toHaveTextContent('second post');
   });
+
+  test('select fn', async () => {
+    const { trpc, client } = factory;
+    function MyComponent() {
+      const allPostsQuery = trpc.useQuery(['paginatedPosts', { limit: 1 }], {
+        select: () => ({
+          hello: 'world' as const,
+        }),
+      });
+      expectTypeOf(allPostsQuery.data!).toMatchTypeOf<{ hello: 'world' }>();
+
+      return <pre>{JSON.stringify(allPostsQuery.data ?? 'n/a', null, 4)}</pre>;
+    }
+    function App() {
+      const [queryClient] = useState(() => new QueryClient());
+      return (
+        <trpc.Provider {...{ queryClient, client }}>
+          <QueryClientProvider client={queryClient}>
+            <MyComponent />
+          </QueryClientProvider>
+        </trpc.Provider>
+      );
+    }
+
+    const utils = render(<App />);
+    await waitFor(() => {
+      expect(utils.container).toHaveTextContent('"hello": "world"');
+    });
+  });
 });
 
 test('mutation on mount + subscribe for it', async () => {
