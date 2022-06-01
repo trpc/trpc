@@ -9,4 +9,10 @@ const client = createTRPCClient<AppRouter>({
 });
 
 // Type safe
-client.query('hello', 'world').then((res) => console.log(res.message));
+async function main() {
+  const result = await client.query('hello', 'there');
+
+  console.log(result);
+}
+
+main();
