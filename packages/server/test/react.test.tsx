@@ -667,7 +667,7 @@ describe('useMutation()', () => {
   });
 
   test('useMutation with mutation context', async () => {
-    const { trpc } = factory;
+    const { trpc, client } = factory;
 
     function MyComponent() {
       trpc.useMutation(['deletePosts'], {
