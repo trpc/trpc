@@ -3,7 +3,7 @@ import { createHTTPServer } from '@trpc/server/adapters/standalone';
 
 export type AppRouter = typeof appRouter;
 
-const appRouter = trpc.router().query('hello', {
+const appRouter = trpc.router().query('greeting', {
   input: (val: unknown) => {
     if (typeof val === 'string') return val;
     throw new Error(`Invalid input: ${typeof val}`);
