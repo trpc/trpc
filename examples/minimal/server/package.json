@@ -1,5 +1,5 @@
 {
-  "name": "trpc-minimal-server",
+  "name": "@examples/minimal-server",
   "version": "0.1.0",
   "dependencies": {
     "@trpc/server": "^9.23.6"

@@ -5,7 +5,7 @@ import type { AppRouter } from '../server';
 global.fetch = fetch as any;
 
 const client = createTRPCClient<AppRouter>({
-  url: 'http://localhost:2021',
+  url: 'http://localhost:2022',
 });
 
 // Type safe
