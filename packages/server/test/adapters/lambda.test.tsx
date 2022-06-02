@@ -6,7 +6,7 @@ import { inferAsyncReturnType } from '../../src';
 import * as trpcLambda from '../../src/adapters/lambda';
 import {
   mockAPIGatewayContext,
-  mockAPIGatewayProxyEvent,
+  mockAPIGatewayProxyEventV1,
   mockAPIGatewayProxyEventV2,
 } from './lambda.utils';
 
@@ -61,7 +61,7 @@ const handler = trpcLambda.lambdaRequestHandler({
 
 test('basic test', async () => {
   const { body, ...result } = await handler(
-    mockAPIGatewayProxyEvent({
+    mockAPIGatewayProxyEventV1({
       body: JSON.stringify({}),
       headers: { 'Content-Type': 'application/json', 'X-USER': 'Lilja' },
       method: 'GET',
@@ -93,7 +93,7 @@ Object {
 });
 test('bad type', async () => {
   const { body, ...result } = await handler(
-    mockAPIGatewayProxyEvent({
+    mockAPIGatewayProxyEventV1({
       body: JSON.stringify({ who: [[]] }),
       headers: { 'Content-Type': 'application/json' },
       method: 'GET',
@@ -187,7 +187,7 @@ test('router with no context', async () => {
     router: contextlessApp,
   });
   const { body, ...result } = await handler2(
-    mockAPIGatewayProxyEvent({
+    mockAPIGatewayProxyEventV1({
       body: JSON.stringify({}),
       headers: { 'Content-Type': 'application/json', 'X-USER': 'Lilja' },
       method: 'GET',

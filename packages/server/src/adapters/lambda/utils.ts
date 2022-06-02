@@ -5,7 +5,6 @@ import type {
   APIGatewayProxyResult,
   APIGatewayProxyStructuredResultV2,
 } from 'aws-lambda';
-import { TRPCError } from '../../TRPCError';
 import type { ResponseMetaFn } from '../../http/internals/types';
 import type { AnyRouter, inferRouterContext } from '../../router';
 
@@ -61,7 +60,7 @@ export function isPayloadV1(
 }
 export function isPayloadV2(
   event: APIGatewayEvent,
-): event is APIGatewayProxyEvent {
+): event is APIGatewayProxyEventV2 {
   return determinePayloadFormat(event) == '2.0';
 }
 
@@ -73,30 +72,20 @@ function determinePayloadFormat(
   // If there is no version property, then the version is implied as 1.0
   const unknownEvent = event as { version?: string };
   if (typeof unknownEvent.version === 'undefined') {
-    return DefinedAPIGatewayPayloadFormats['1.0'];
+    return '1.0';
   } else {
-    if (
-      Object.values<string>(DefinedAPIGatewayPayloadFormats).includes(
-        unknownEvent.version,
-      )
-    ) {
+    if (['1.0', '2.0'].includes(unknownEvent.version)) {
       return unknownEvent.version as APIGatewayPayloadFormatVersion;
     } else {
       return 'custom';
     }
   }
 }
-export enum DefinedAPIGatewayPayloadFormats {
-  '1.0' = '1.0',
-  '2.0' = '2.0',
-}
+export type DefinedAPIGatewayPayloadFormats = '1.0' | '2.0';
 export type APIGatewayPayloadFormatVersion =
   | DefinedAPIGatewayPayloadFormats
   | 'custom';
 
-export const UNKNOWN_PAYLOAD_FORMAT_VERSION = new TRPCError({
-  code: 'INTERNAL_SERVER_ERROR',
-  message:
-    'Custom payload format version not handled by this adapter. Please use either 1.0 or 2.0. More information here' +
-    'https://docs.aws.amazon.com/apigateway/latest/developerguide/http-api-develop-integrations-lambda.html',
-});
+export const UNKNOWN_PAYLOAD_FORMAT_VERSION_ERROR_MESSAGE =
+  'Custom payload format version not handled by this adapter. Please use either 1.0 or 2.0. More information here' +
+  'https://docs.aws.amazon.com/apigateway/latest/developerguide/http-api-develop-integrations-lambda.html';

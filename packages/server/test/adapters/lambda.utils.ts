@@ -4,7 +4,7 @@ import type {
   Context,
 } from 'aws-lambda';
 
-export const mockAPIGatewayProxyEvent = ({
+export const mockAPIGatewayProxyEventV1 = ({
   body,
   headers,
   path,

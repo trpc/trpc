@@ -5,17 +5,15 @@ import type {
   APIGatewayProxyResult,
   APIGatewayProxyStructuredResultV2,
 } from 'aws-lambda';
-import { resolveHTTPResponse } from '../..';
+import { TRPCError, resolveHTTPResponse } from '../..';
 import { HTTPHeaders, HTTPRequest } from '../../http/internals/types';
 import type { HTTPResponse } from '../../http/internals/types';
 import { AnyRouter, inferRouterContext } from '../../router';
-import type {
+import {
   APIGatewayEvent,
   APIGatewayResult,
   AWSLambdaOptions,
-} from './utils';
-import {
-  UNKNOWN_PAYLOAD_FORMAT_VERSION,
+  UNKNOWN_PAYLOAD_FORMAT_VERSION_ERROR_MESSAGE,
   isPayloadV1,
   isPayloadV2,
 } from './utils';
@@ -27,7 +25,7 @@ function lambdaEventToHTTPRequest(event: APIGatewayEvent): HTTPRequest {
   for (const [key, value] of Object.entries(
     event.queryStringParameters ?? {},
   )) {
-    if (value) {
+    if (typeof value !== 'undefined') {
       query.append(key, value);
     }
   }
@@ -46,7 +44,10 @@ function getHTTPMethod(event: APIGatewayEvent) {
   } else if (isPayloadV2(event)) {
     return event.requestContext.http.method;
   } else {
-    throw UNKNOWN_PAYLOAD_FORMAT_VERSION;
+    throw new TRPCError({
+      code: 'INTERNAL_SERVER_ERROR',
+      message: UNKNOWN_PAYLOAD_FORMAT_VERSION_ERROR_MESSAGE,
+    });
   }
 }
 function getPath(event: APIGatewayEvent) {
@@ -55,7 +56,10 @@ function getPath(event: APIGatewayEvent) {
   } else if (isPayloadV2(event)) {
     return event.rawPath.slice(1);
   } else {
-    throw UNKNOWN_PAYLOAD_FORMAT_VERSION;
+    throw new TRPCError({
+      code: 'INTERNAL_SERVER_ERROR',
+      message: UNKNOWN_PAYLOAD_FORMAT_VERSION_ERROR_MESSAGE,
+    });
   }
 }
 function transformHeaders(headers: HTTPHeaders): APIGatewayResult['headers'] {
@@ -88,14 +92,17 @@ function tRPCOutputToAPIGatewayOutput<
     };
     return resp as TResult;
   } else {
-    throw UNKNOWN_PAYLOAD_FORMAT_VERSION;
+    throw new TRPCError({
+      code: 'INTERNAL_SERVER_ERROR',
+      message: UNKNOWN_PAYLOAD_FORMAT_VERSION_ERROR_MESSAGE,
+    });
   }
 }
 
 /** Will check the createContext of the TRouter and get the parameter of event.
  * @internal
  **/
-type DeduceAPIGWEventType<
+type inferAPIGWEvent<
   TRouter extends AnyRouter,
   TEvent extends APIGatewayEvent,
 > = AWSLambdaOptions<TRouter, TEvent>['createContext'] extends NonNullable<
@@ -107,15 +114,15 @@ type DeduceAPIGWEventType<
 /** 1:1 mapping of v1 or v2 input events, deduces which is which.
  * @internal
  **/
-type DeduceAPIGWReturnType<T> = T extends APIGatewayProxyEvent
+type inferAPIGWReturn<T> = T extends APIGatewayProxyEvent
   ? APIGatewayProxyResult
   : T extends APIGatewayProxyEventV2
   ? APIGatewayProxyStructuredResultV2
   : never;
 export function lambdaRequestHandler<
   TRouter extends AnyRouter,
-  TEvent extends DeduceAPIGWEventType<TRouter, TEvent>,
-  TResult extends DeduceAPIGWReturnType<TEvent>,
+  TEvent extends inferAPIGWEvent<TRouter, TEvent>,
+  TResult extends inferAPIGWReturn<TEvent>,
 >(
   opts: AWSLambdaOptions<TRouter, TEvent>,
 ): (event: TEvent, context: APIGWContext) => Promise<TResult> {
