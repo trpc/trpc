@@ -1,4 +1,4 @@
-import { AnyRouter, inferRouterContext } from '../../deprecated/router';
+import { AnyRouter, inferRouterContext } from '../../core';
 import { HTTPBaseHandlerOptions } from '../../http/internals/types';
 
 export type FetchCreateContextFnOptions = {

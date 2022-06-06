@@ -1,4 +1,4 @@
-import { AnyRouter } from '../deprecated/router';
+import { AnyRouter } from '../core/router';
 import { OnErrorFunction } from './OnErrorFunction';
 
 /**

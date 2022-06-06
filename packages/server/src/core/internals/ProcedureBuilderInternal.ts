@@ -4,9 +4,10 @@
 import { TRPCError } from '../../TRPCError';
 import { getCauseFromUnknown } from '../../error/utils';
 import { getErrorFromUnknown } from '../../internals/errors';
-import { MaybePromise, ProcedureType } from '../../types';
+import { MaybePromise } from '../../types';
 import { MiddlewareFunction, MiddlewareResult } from '../middleware';
 import { Parser } from '../parser';
+import { ProcedureType } from '../types';
 import { getParseFn } from './getParseFn';
 import { mergeWithoutOverrides } from './mergeWithoutOverrides';
 import { ResolveOptions, middlewareMarker } from './utils';

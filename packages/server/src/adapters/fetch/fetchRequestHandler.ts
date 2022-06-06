@@ -1,5 +1,5 @@
 import { assertNotBrowser } from '../../assertNotBrowser';
-import { AnyRouter } from '../../deprecated/router';
+import { AnyRouter } from '../../core';
 import { HTTPRequest } from '../../http/internals/types';
 import { resolveHTTPResponse } from '../../http/resolveHTTPResponse';
 import { FetchHandlerOptions } from './types';

@@ -1,6 +1,6 @@
-import { ProcedureType } from '../types';
 import { ProcedureParams } from './internals/utils';
 import { MiddlewareMarker } from './internals/utils';
+import { ProcedureType } from './types';
 
 /**
  * @internal

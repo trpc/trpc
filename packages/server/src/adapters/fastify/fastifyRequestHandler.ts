@@ -1,6 +1,6 @@
 import { FastifyReply, FastifyRequest } from 'fastify';
 import { assertNotBrowser } from '../../assertNotBrowser';
-import { AnyRouter, inferRouterContext } from '../../deprecated/router';
+import { AnyRouter, inferRouterContext } from '../../core';
 import {
   HTTPBaseHandlerOptions,
   HTTPRequest,

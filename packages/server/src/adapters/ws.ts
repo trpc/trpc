@@ -1,12 +1,7 @@
 import { IncomingMessage } from 'http';
 import ws from 'ws';
 import { TRPCError } from '../TRPCError';
-import { callProcedure } from '../deprecated/internals/callProcedure';
-import {
-  AnyRouter,
-  ProcedureType,
-  inferRouterContext,
-} from '../deprecated/router';
+import { AnyRouter, ProcedureType, inferRouterContext } from '../core';
 import { BaseHandlerOptions } from '../internals/BaseHandlerOptions';
 import { getCauseFromUnknown, getErrorFromUnknown } from '../internals/errors';
 import { transformTRPCResponse } from '../internals/transformTRPCResponse';
@@ -156,13 +151,9 @@ export function applyWSSHandler<TRouter extends AnyRouter>(
       const type = msg.method;
       try {
         await ctxPromise; // asserts context has been set
-        const result = await callProcedure({
-          path,
-          input,
-          type,
-          router,
-          ctx,
-        });
+
+        const caller = router.createCaller(ctx);
+        const result = await caller[type](path, input as any);
 
         if (type === 'subscription') {
           if (!isObservable(result)) {

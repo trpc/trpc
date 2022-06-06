@@ -1,6 +1,9 @@
 import { Observable } from '../../observable';
 import { AnyRouter, ProcedureType } from '../router';
 
+/**
+ * @deprecated
+ */
 export async function callProcedure<
   TRouter extends AnyRouter<TContext>,
   TContext,

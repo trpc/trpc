@@ -1,15 +1,17 @@
 /* eslint-disable @typescript-eslint/ban-types */
+import { TRPCError } from '../TRPCError';
 import { ErrorFormatter, ErrorFormatterShape } from '../error/formatter';
 import { TRPCErrorShape } from '../rpc';
 import { CombinedDataTransformer } from '../transformer';
 import { mergeWithoutOverrides } from './internals/mergeWithoutOverrides';
 import { Overwrite, PickFirstDefined, ValidateShape } from './internals/utils';
 import { Procedure } from './procedure';
+import { ProcedureType } from './types';
 
 // FIXME this should properly use TContext
 type ProcedureRecord<_TContext> = Record<string, Procedure<any>>;
 
-interface RouterParams<
+export interface RouterParams<
   TContext,
   TErrorShape extends TRPCErrorShape<number>,
   TQueries extends ProcedureRecord<TContext>,
@@ -31,7 +33,7 @@ interface RouterParams<
   transformer: CombinedDataTransformer;
 }
 
-type AnyRouterParams<TContext = any> = RouterParams<
+export type AnyRouterParams<TContext = any> = RouterParams<
   TContext,
   any,
   any,
@@ -91,6 +93,13 @@ export interface Router<TParams extends AnyRouterParams> {
   transformer: TParams['transformer'];
 
   createCaller: RouterCaller<TParams>;
+  getErrorShape(opts: {
+    error: TRPCError;
+    type: ProcedureType | 'unknown';
+    path: string | undefined;
+    input: unknown;
+    ctx: undefined | TParams['_ctx'];
+  }): TParams['_errorShape'];
 }
 
 /**
@@ -162,7 +171,10 @@ export function createRouterWithContext<TContext>(
     const router: AnyRouter = {
       _def,
       ..._def,
-      createCaller: () => {
+      createCaller() {
+        throw new Error('Unimpl');
+      },
+      getErrorShape() {
         throw new Error('Unimpl');
       },
     };

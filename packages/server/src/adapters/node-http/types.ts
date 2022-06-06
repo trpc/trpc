@@ -1,6 +1,6 @@
 import { IncomingMessage, ServerResponse } from 'http';
-import { inferRouterContext } from '../../deprecated/router';
-import { AnyRouter } from '../../deprecated/router';
+import { AnyRouter } from '../../core';
+import { inferRouterParams } from '../../core';
 import { HTTPBaseHandlerOptions } from '../../http/internals/types';
 
 interface ParsedQs {
@@ -18,7 +18,7 @@ export type NodeHTTPCreateContextOption<
   TRouter extends AnyRouter,
   TRequest,
   TResponse,
-> = unknown extends inferRouterContext<TRouter>
+> = unknown extends inferRouterParams<TRouter>
   ? {
       /**
        * @link https://trpc.io/docs/context
@@ -51,4 +51,6 @@ export type NodeHTTPCreateContextFn<
   TResponse,
 > = (
   opts: NodeHTTPCreateContextFnOptions<TRequest, TResponse>,
-) => inferRouterContext<TRouter> | Promise<inferRouterContext<TRouter>>;
+) =>
+  | inferRouterParams<TRouter>['_ctx']
+  | Promise<inferRouterParams<TRouter>['_ctx']>;
