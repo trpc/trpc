@@ -11,7 +11,7 @@ import { MiddlewareFunction } from './middleware';
 import { Parser, inferParser } from './parser';
 
 type ClientContext = Record<string, unknown>;
-interface ProcedureOptions {
+export interface ProcedureOptions {
   /**
    * Client-side context
    */

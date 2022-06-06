@@ -59,3 +59,9 @@ export type MaybePromise<T> = T | Promise<T>;
  * https://github.com/microsoft/TypeScript/issues/14829#issuecomment-322267089
  */
 export type InferLast<T> = T & { [K in keyof T]: T[K] };
+
+/**
+ * @public
+ */
+export type inferAsyncReturnType<TFunction extends (...args: any) => any> =
+  ThenArg<ReturnType<TFunction>>;
