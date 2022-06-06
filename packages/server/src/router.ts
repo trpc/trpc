@@ -27,6 +27,8 @@ import { Prefixer, ThenArg, flatten } from './types';
 
 assertNotBrowser();
 
+export type { Procedure } from './internals/procedure';
+
 /**
  * @public
  */
