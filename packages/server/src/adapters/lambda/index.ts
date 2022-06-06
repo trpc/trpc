@@ -41,26 +41,26 @@ function lambdaEventToHTTPRequest(event: APIGatewayEvent): HTTPRequest {
 function getHTTPMethod(event: APIGatewayEvent) {
   if (isPayloadV1(event)) {
     return event.httpMethod;
-  } else if (isPayloadV2(event)) {
-    return event.requestContext.http.method;
-  } else {
-    throw new TRPCError({
-      code: 'INTERNAL_SERVER_ERROR',
-      message: UNKNOWN_PAYLOAD_FORMAT_VERSION_ERROR_MESSAGE,
-    });
   }
+  if (isPayloadV2(event)) {
+    return event.requestContext.http.method;
+  }
+  throw new TRPCError({
+    code: 'INTERNAL_SERVER_ERROR',
+    message: UNKNOWN_PAYLOAD_FORMAT_VERSION_ERROR_MESSAGE,
+  });
 }
 function getPath(event: APIGatewayEvent) {
   if (isPayloadV1(event)) {
     return event.path.slice(1);
-  } else if (isPayloadV2(event)) {
-    return event.rawPath.slice(1);
-  } else {
-    throw new TRPCError({
-      code: 'INTERNAL_SERVER_ERROR',
-      message: UNKNOWN_PAYLOAD_FORMAT_VERSION_ERROR_MESSAGE,
-    });
   }
+  if (isPayloadV2(event)) {
+    return event.rawPath.slice(1);
+  }
+  throw new TRPCError({
+    code: 'INTERNAL_SERVER_ERROR',
+    message: UNKNOWN_PAYLOAD_FORMAT_VERSION_ERROR_MESSAGE,
+  });
 }
 function transformHeaders(headers: HTTPHeaders): APIGatewayResult['headers'] {
   const obj: APIGatewayResult['headers'] = {};
