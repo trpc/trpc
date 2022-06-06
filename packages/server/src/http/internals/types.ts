@@ -8,7 +8,7 @@ import {
   inferRouterError,
 } from '@trpc/server';
 import { URLSearchParams } from 'url';
-import { BaseHandlerOptions } from '../../internals/BaseHandlerOptions';
+import { BaseHandlerOptions } from '../../internals/baseHandlerOptions';
 import { TRPCResponse } from '../../rpc';
 
 export type HTTPHeaders = Dict<string | string[]>;
@@ -26,7 +26,6 @@ export interface HTTPRequest {
   body: unknown;
 }
 
-// TODO: Hack 2.
 export type ResponseMetaFn<TRouter extends AnyRouter> = (opts: {
   data: TRPCResponse<unknown, inferRouterError<TRouter>>[];
   ctx?: inferRouterContext<TRouter>;

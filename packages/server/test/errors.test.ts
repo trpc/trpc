@@ -9,8 +9,8 @@ import { ZodError, z } from 'zod';
 import { TRPCClientError } from '../../client/src';
 import * as trpc from '../src';
 import { TRPCError } from '../src/TRPCError';
-import { OnErrorFunction } from '../src/internals/OnErrorFunction';
 import { getMessageFromUnkownError } from '../src/internals/errors';
+import { OnErrorFunction } from '../src/internals/onErrorFunction';
 
 test('basic', async () => {
   class MyError extends Error {

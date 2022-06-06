@@ -5,17 +5,21 @@
   "main": "index.js",
   "license": "MIT",
   "dependencies": {
-    "@funnel-io/lalr": "0.0.11",
     "@trpc/client": "^9.23.3",
     "@trpc/server": "^9.23.3",
     "node-fetch": "^2.6.1",
     "ts-node": "^10.3.0",
     "typescript": "4.4.4"
   },
-  "devDependencies": {},
+  "devDependencies": {
+    "serverless": "^3.18.1",
+    "serverless-offline": "^8.8.0",
+    "serverless-plugin-typescript": "^2.1.2"
+  },
   "scripts": {
     "build": "yarn tsc",
-    "start-server": "yarn lalr --lambda-path dist/server.js --lambda-handler handler --build-language ts --build \"yarn tsc\" --port 8080",
-    "start-client": "yarn ts-node src/client.ts"
+    "start-server": "npx serverless offline --httpPort 4050",
+    "start-client": "yarn ts-node src/client.ts",
+    "http-rest-client": "yarn ts-node src/payloadFormatVersionClient.ts"
   }
 }

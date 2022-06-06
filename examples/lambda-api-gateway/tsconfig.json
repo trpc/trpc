@@ -1,6 +1,6 @@
 {
   "compilerOptions": {
-    "target": "es5",
+    "target": "ES2017",
     "lib": ["dom", "dom.iterable", "esnext"],
     "noErrorTruncation": true,
     "allowJs": true,
@@ -10,13 +10,13 @@
     "forceConsistentCasingInFileNames": true,
     "esModuleInterop": true,
     "module": "CommonJS",
-    "outDir": "dist",
     "moduleResolution": "node",
     "resolveJsonModule": true,
     "isolatedModules": true,
     "types": ["@types/jest", "jest-playwright-preset", "expect-playwright"],
     "jsx": "preserve",
-    "baseUrl": "./"
+    "outDir": ".build",
+    "rootDir": "./"
   },
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx"],
   "exclude": ["node_modules"]

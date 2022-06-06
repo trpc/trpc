@@ -5,6 +5,10 @@ sidebar_label: 'Adapter: API Gateway'
 slug: /api-gateway
 ---
 
+## Amazon API Gateway adapter
+
+The API Gateway adapter is supported for both Rest API(v1) and HTTP API(v2) use cases.
+
 ## Example app
 
 <table>
@@ -66,8 +70,6 @@ import * as trpcAPIGW from '@trpc/server/adapters/api-gateway';
 
 const appRouter = /* ... */;
 
-const app = express();
-
 // created for each request
 const createContext = ({
   event,
@@ -75,7 +77,7 @@ const createContext = ({
 }: trpcAPIGW.CreateLambdaContextOptions) => ({}) // no context
 type Context = trpc.inferAsyncReturnType<typeof createContext>;
 
-export const handler = trpcExpress.createApiGatewayHandler({
+export const handler = trpcAPIGW.lambdaRequestHandler({
   router: appRouter,
   createContext,
 })
@@ -87,3 +89,25 @@ Build & deploy your code, now use your API Gateway URL to call your function.
 | Endpoint  | HTTP URI                                                                                                     |
 | --------- | ------------------------------------------------------------------------------------------------------------ |
 | `getUser` | `GET https://<execution-api-link>/getUser?input=INPUT` <br/><br/>where `INPUT` is a URI-encoded JSON string. |
+
+#### A word about payload format version
+
+API Gateway has two different event data formats when it invokes a Lambda. For REST APIs they should be version "1.0"(`APIGatewayProxyEvent`), but you can chose which for HTTP APIs by stating either version "1.0" or "2.0".
+
+- Version 1.0: `APIGatewayProxyEvent`
+- Version 2.0: `APIGatewayProxyEventV2`
+
+To infer what version you might have, supply the context as following:
+
+```TypeScript
+function createContext({
+  event,
+  context,
+}: CreateLambdaContextOptions<APIGatewayProxyEvent>) {
+  ...
+}
+
+// CreateLambdaContextOptions<APIGatewayProxyEvent> or CreateLambdaContextOptions<APIGatewayProxyEventV2>
+```
+
+[Read more here about payload format version](https://docs.aws.amazon.com/apigateway/latest/developerguide/http-api-develop-integrations-lambda.html)
