@@ -150,3 +150,30 @@ test('mutation as POST', async () => {
 
   close();
 });
+
+test('with methodOverride disabled', async () => {
+  const { client, close } = routerToServerAndClient(router, {
+    server: { createContext, methodOverride: { enabled: false } },
+  });
+
+  {
+    await expect(async () => {
+      await client.query('query', 'query-POST', { method: 'POST' });
+    }).rejects.toThrowError('No "mutation"-procedure on path "query"');
+    expect(urlMock).toHaveBeenCalledTimes(1);
+    expect(urlMock).toHaveBeenCalledWith('/query?type=query&batch=1');
+    urlMock.mockClear();
+  }
+  {
+    await expect(async () => {
+      await client.mutation('mutation', 'mutation-GET', { method: 'GET' });
+    }).rejects.toThrowError('No "query"-procedure on path "mutation"');
+    expect(urlMock).toHaveBeenCalledTimes(1);
+    expect(urlMock).toHaveBeenCalledWith(
+      '/mutation?type=mutation&batch=1&input=%7B%220%22%3A%22mutation-GET%22%7D',
+    );
+    urlMock.mockClear();
+  }
+
+  close();
+});

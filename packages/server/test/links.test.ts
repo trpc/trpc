@@ -35,6 +35,7 @@ test('retrylink', () => {
     op: {
       id: 1,
       type: 'query',
+      method: 'GET',
       input: null,
       path: '',
       context: {},
@@ -80,6 +81,7 @@ test('chainer', async () => {
     op: {
       id: 1,
       type: 'query',
+      method: 'GET',
       path: 'hello',
       input: null,
       context: {},
@@ -139,6 +141,7 @@ test('cancel request', async () => {
     op: {
       id: 1,
       type: 'query',
+      method: 'GET',
       path: 'hello',
       input: null,
       context: {},
@@ -181,6 +184,7 @@ describe('batching', () => {
       op: {
         id: 1,
         type: 'query',
+        method: 'GET',
         path: 'hello',
         input: null,
         context: {},
@@ -192,6 +196,7 @@ describe('batching', () => {
       op: {
         id: 2,
         type: 'query',
+        method: 'GET',
         path: 'hello',
         input: 'alexdotjs',
         context: {},
@@ -251,6 +256,7 @@ describe('batching', () => {
       op: {
         id: 1,
         type: 'query',
+        method: 'GET',
         path: 'hello',
         input: null,
         context: {},
@@ -262,6 +268,7 @@ describe('batching', () => {
       op: {
         id: 2,
         type: 'query',
+        method: 'GET',
         path: 'hello',
         input: 'alexdotjs',
         context: {},
@@ -273,6 +280,7 @@ describe('batching', () => {
       op: {
         id: 3,
         type: 'query',
+        method: 'GET',
         path: 'hello',
         input: 'again',
         context: {},
@@ -359,6 +367,7 @@ describe('splitLink', () => {
       op: {
         id: 1,
         type: 'query',
+        method: 'GET',
         input: null,
         path: '',
         context: {},
@@ -384,6 +393,7 @@ describe('splitLink', () => {
       op: {
         id: 1,
         type: 'query',
+        method: 'GET',
         input: null,
         path: '',
         context: {},
@@ -480,6 +490,7 @@ test('loggerLink', () => {
       op: {
         id: 1,
         type: 'query',
+        method: 'GET',
         input: null,
         path: 'n/a',
         context: {},
@@ -502,6 +513,7 @@ test('loggerLink', () => {
       op: {
         id: 1,
         type: 'subscription',
+        method: undefined,
         input: null,
         path: 'n/a',
         context: {},
@@ -523,6 +535,7 @@ test('loggerLink', () => {
       op: {
         id: 1,
         type: 'mutation',
+        method: 'POST',
         input: null,
         path: 'n/a',
         context: {},
@@ -545,6 +558,7 @@ test('loggerLink', () => {
       op: {
         id: 1,
         type: 'query',
+        method: 'GET',
         input: null,
         path: 'n/a',
         context: {},
@@ -568,6 +582,7 @@ test('loggerLink', () => {
       op: {
         id: 1,
         type: 'query',
+        method: 'GET',
         input: null,
         path: 'n/a',
         context: {},
@@ -580,6 +595,7 @@ test('loggerLink', () => {
         "direction": "up",
         "id": 1,
         "input": null,
+        "method": "GET",
         "path": "n/a",
         "type": "query",
       }
@@ -593,6 +609,7 @@ test('loggerLink', () => {
         "direction": "down",
         "id": 1,
         "input": null,
+        "method": "GET",
         "path": "n/a",
         "result": [TRPCClientError: ..],
         "type": "query",
@@ -615,6 +632,7 @@ test('pass a context', () => {
     op: {
       id: 1,
       type: 'query',
+      method: 'GET',
       input: null,
       path: '',
       context,
@@ -637,6 +655,7 @@ test('pass a context', () => {
     op: {
       id: 1,
       type: 'query',
+      method: 'GET',
       input: null,
       path: '',
       context,
@@ -654,13 +673,14 @@ test('subscriptions throw error on httpLinks', () => {
         op: {
           id: 1,
           type: 'subscription',
+          method: undefined,
           input: null,
           path: '',
           context: {},
         },
       });
     }).toThrowError(
-      'Subscriptions are not supported over HTTP, please add a Websocket link',
+      'Subscriptions are not supported over HTTP, please add a wsLink',
     );
   }
   {
@@ -671,13 +691,14 @@ test('subscriptions throw error on httpLinks', () => {
         op: {
           id: 1,
           type: 'subscription',
+          method: undefined,
           input: null,
           path: '',
           context: {},
         },
       });
     }).toThrowError(
-      'Subscriptions are not supported over HTTP, please add a Websocket link',
+      'Subscriptions are not supported over HTTP, please add a wsLink',
     );
   }
 });

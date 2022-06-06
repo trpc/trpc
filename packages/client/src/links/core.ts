@@ -3,11 +3,11 @@ import { TRPCResult } from '@trpc/server/rpc';
 import { TRPCClientError } from '../TRPCClientError';
 
 export type OperationContext = Record<string, unknown>;
-export type OperationMethodOverride = 'GET' | 'POST';
+export type OperationMethod = 'GET' | 'POST';
 export type Operation<TInput = unknown> = {
   id: number;
   type: ProcedureType;
-  method?: OperationMethodOverride;
+  method: OperationMethod | undefined;
   input: TInput;
   path: string;
   context: OperationContext;

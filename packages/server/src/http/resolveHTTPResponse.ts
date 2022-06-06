@@ -22,11 +22,8 @@ import {
 const HTTP_METHOD_PROCEDURE_TYPE_MAP: Record<
   string,
   ProcedureType | undefined
-> = {
-  GET: 'query',
-  POST: 'mutation',
-  PATCH: 'subscription',
-};
+> = { GET: 'query', POST: 'mutation' };
+
 function getRawProcedureInputOrThrow(req: HTTPRequest) {
   try {
     if (req.method === 'GET') {
@@ -61,6 +58,7 @@ export async function resolveHTTPResponse<
 >(opts: ResolveHTTPRequestOptions<TRouter, TRequest>): Promise<HTTPResponse> {
   const { createContext, onError, router, req } = opts;
   const batchingEnabled = opts.batching?.enabled ?? true;
+  const methodOverrideEnabled = opts.methodOverride?.enabled ?? true;
   if (req.method === 'HEAD') {
     // can be used for lambda warmup
     return {
@@ -68,7 +66,9 @@ export async function resolveHTTPResponse<
     };
   }
   const type =
-    (req.query.get('type') as ProcedureType | null) ??
+    (methodOverrideEnabled
+      ? (req.query.get('type') as ProcedureType | null)
+      : undefined) ??
     HTTP_METHOD_PROCEDURE_TYPE_MAP[req.method] ??
     ('unknown' as const);
   let ctx: inferRouterContext<TRouter> | undefined = undefined;

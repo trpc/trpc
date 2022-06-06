@@ -1,7 +1,11 @@
 import { AnyRouter } from '@trpc/server';
 import { TRPCClientError } from '../TRPCClientError';
 import { TRPCAbortError } from '../internals/TRPCAbortError';
-import { httpRequest } from '../internals/httpRequest';
+import {
+  HTTP_SUBSCRIPTION_UNSUPPORTED_ERROR_MESSAGE,
+  HTTP_UNDEFINED_METHOD_ERROR_MESSAGE,
+  httpRequest,
+} from '../internals/httpRequest';
 import { transformRPCResponse } from '../internals/transformRPCResponse';
 import { HTTPLinkOptions, TRPCLink } from './core';
 
@@ -16,9 +20,11 @@ export function httpLink<TRouter extends AnyRouter>(
     return ({ op, prev, onDestroy }) => {
       const { path, input, type, method } = op;
       if (type === 'subscription') {
-        throw new Error(
-          'Subscriptions are not supported over HTTP, please add a Websocket link',
-        );
+        throw new Error(HTTP_SUBSCRIPTION_UNSUPPORTED_ERROR_MESSAGE);
+      }
+      if (!method) {
+        // this should never happen
+        throw new Error(HTTP_UNDEFINED_METHOD_ERROR_MESSAGE);
       }
 
       const { promise, cancel } = httpRequest({

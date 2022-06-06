@@ -1,7 +1,7 @@
 import { TRPCResponse } from '@trpc/server/rpc';
 import {
   LinkRuntimeOptions,
-  OperationMethodOverride,
+  OperationMethod,
   PromiseAndCancel,
 } from '../links/core';
 
@@ -20,18 +20,22 @@ export const httpMethods = {
   mutation: 'POST',
 } as const;
 
+export const HTTP_SUBSCRIPTION_UNSUPPORTED_ERROR_MESSAGE =
+  'Subscriptions are not supported over HTTP, please add a wsLink';
+export const HTTP_UNDEFINED_METHOD_ERROR_MESSAGE =
+  'httpLinks require that Operations define a method property';
+
 export function httpRequest<TResponseShape = TRPCResponse>(
   props: {
     runtime: LinkRuntimeOptions;
     type: 'query' | 'mutation';
-    method?: OperationMethodOverride;
+    method: OperationMethod;
     path: string;
     url: string;
   } & ({ inputs: unknown[] } | { input: unknown }),
 ): PromiseAndCancel<TResponseShape> {
   const { type, method, runtime: rt, path } = props;
   const ac = rt.AbortController ? new rt.AbortController() : null;
-  const httpMethod = method ?? httpMethods[type];
   const input =
     'input' in props
       ? rt.transformer.serialize(props.input)
@@ -48,7 +52,7 @@ export function httpRequest<TResponseShape = TRPCResponse>(
     if ('inputs' in props) {
       queryParts.push('batch=1');
     }
-    if (httpMethod === 'GET' && input !== undefined) {
+    if (method === 'GET' && input !== undefined) {
       queryParts.push(`input=${encodeURIComponent(JSON.stringify(input))}`);
     }
     if (queryParts.length) {
@@ -57,7 +61,7 @@ export function httpRequest<TResponseShape = TRPCResponse>(
     return url;
   }
   function getBody() {
-    if (httpMethod === 'POST') {
+    if (method === 'POST' && input !== undefined) {
       return JSON.stringify(input);
     }
     return undefined;
@@ -81,7 +85,7 @@ export function httpRequest<TResponseShape = TRPCResponse>(
         }
 
         return rt.fetch(url, {
-          method: httpMethod,
+          method,
           signal: ac?.signal,
           body: getBody(),
           headers,

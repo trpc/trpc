@@ -48,6 +48,7 @@ export async function nodeHTTPRequestHandler<
   };
   const result = await resolveHTTPResponse({
     batching: opts.batching,
+    methodOverride: opts.methodOverride,
     responseMeta: opts.responseMeta,
     path,
     createContext,

@@ -17,7 +17,7 @@ import {
   LinkRuntimeOptions,
   OperationContext,
   OperationLink,
-  OperationMethodOverride,
+  OperationMethod,
   TRPCLink,
 } from '../links/core';
 import { httpBatchLink } from '../links/httpBatchLink';
@@ -82,7 +82,7 @@ export interface TRPCRequestOptions {
   /**
    * Override procedure method
    */
-  method?: OperationMethodOverride;
+  method?: OperationMethod;
 }
 
 export class TRPCClient<TRouter extends AnyRouter> {
@@ -138,7 +138,7 @@ export class TRPCClient<TRouter extends AnyRouter> {
     context = {},
   }: {
     type: ProcedureType;
-    method?: OperationMethodOverride;
+    method: OperationMethod | undefined;
     input: TInput;
     path: string;
     context?: OperationContext;
@@ -159,7 +159,7 @@ export class TRPCClient<TRouter extends AnyRouter> {
   }
   private requestAsPromise<TInput = unknown, TOutput = unknown>(opts: {
     type: ProcedureType;
-    method?: OperationMethodOverride;
+    method: OperationMethod;
     input: TInput;
     path: string;
     context?: OperationContext;
@@ -212,7 +212,7 @@ export class TRPCClient<TRouter extends AnyRouter> {
       inferProcedureOutput<TQueries[TPath]>
     >({
       type: 'query',
-      method,
+      method: method ?? 'GET',
       path,
       input: args[0] as any,
       context,
@@ -233,7 +233,7 @@ export class TRPCClient<TRouter extends AnyRouter> {
       inferProcedureOutput<TMutations[TPath]>
     >({
       type: 'mutation',
-      method,
+      method: method ?? 'POST',
       path,
       input: args[0] as any,
       context,
@@ -254,6 +254,7 @@ export class TRPCClient<TRouter extends AnyRouter> {
     const { context } = opts;
     const $res = this.$request<TInput, TOutput>({
       type: 'subscription',
+      method: undefined,
       path,
       input,
       context,
