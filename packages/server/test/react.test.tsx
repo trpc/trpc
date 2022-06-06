@@ -732,6 +732,40 @@ describe('useMutation()', () => {
       test: '1',
     });
   });
+
+  test('useMutation with mutation context', async () => {
+    const { trpc, client } = factory;
+
+    function MyComponent() {
+      trpc.useMutation(['deletePosts'], {
+        onMutate: () => 'foo' as const,
+        onSuccess: (_data, _variables, context) => {
+          expectTypeOf(context).toMatchTypeOf<'foo'>();
+        },
+        onError: (_error, _variables, context) => {
+          expectTypeOf(context).toMatchTypeOf<'foo' | undefined>();
+        },
+        onSettled: (_data, _error, _variables, context) => {
+          expectTypeOf(context).toMatchTypeOf<'foo' | undefined>();
+        },
+      });
+
+      return null;
+    }
+
+    function App() {
+      const [queryClient] = useState(() => new QueryClient());
+      return (
+        <trpc.Provider {...{ queryClient, client }}>
+          <QueryClientProvider client={queryClient}>
+            <MyComponent />
+          </QueryClientProvider>
+        </trpc.Provider>
+      );
+    }
+
+    render(<App />);
+  });
 });
 
 // test('useLiveQuery()', async () => {
