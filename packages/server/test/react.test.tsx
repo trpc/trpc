@@ -39,9 +39,9 @@ import { TRPCError } from '../src/TRPCError';
 import { NodeHTTPRequest } from '../src/adapters/node-http';
 
 setLogger({
-  log() { },
-  warn() { },
-  error() { },
+  log() {},
+  warn() {},
+  error() {},
 });
 
 type Post = {
@@ -926,8 +926,8 @@ test('useInfiniteQuery()', async () => {
             {q.isFetchingNextPage
               ? 'Loading more...'
               : q.hasNextPage
-                ? 'Load More'
-                : 'Nothing more to load'}
+              ? 'Load More'
+              : 'Nothing more to load'}
           </button>
         </div>
         <div>
@@ -1029,8 +1029,8 @@ test('useInfiniteQuery and prefetchInfiniteQuery', async () => {
             {q.isFetchingNextPage
               ? 'Loading more...'
               : q.hasNextPage
-                ? 'Load More'
-                : 'Nothing more to load'}
+              ? 'Load More'
+              : 'Nothing more to load'}
           </button>
         </div>
         <div>
@@ -1164,8 +1164,8 @@ test('useInfiniteQuery and fetchInfiniteQuery', async () => {
             {q.isFetchingNextPage
               ? 'Loading more...'
               : q.hasNextPage
-                ? 'Load More'
-                : 'Nothing more to load'}
+              ? 'Load More'
+              : 'Nothing more to load'}
           </button>
         </div>
         <div>
