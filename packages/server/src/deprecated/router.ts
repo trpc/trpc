@@ -27,6 +27,7 @@ import {
   createProcedure,
   inferProcedureFromOptions,
 } from './internals/procedure';
+import { MigrateProcedureRecord, MigrateRouter } from './interop';
 
 assertNotBrowser();
 
@@ -867,6 +868,21 @@ export class Router<
     TErrorShape
   > {
     return this as any;
+  }
+
+  /**
+   * Interop mode for v9.x -> v10.x
+   */
+  public interop(): MigrateRouter<
+    TInputContext,
+    TContext,
+    TMeta,
+    TQueries,
+    TMutations,
+    TSubscriptions,
+    TErrorShape
+  > {
+    throw new Error('Unimplemented');
   }
 }
 
