@@ -23,7 +23,7 @@ export const httpMethods = {
 export const HTTP_SUBSCRIPTION_UNSUPPORTED_ERROR_MESSAGE =
   'Subscriptions are not supported over HTTP, please add a wsLink';
 export const HTTP_UNDEFINED_METHOD_ERROR_MESSAGE =
-  'httpLinks require that Operations define a method property';
+  'Operations processed by httpLinks must define a method property';
 
 export function httpRequest<TResponseShape = TRPCResponse>(
   props: {
