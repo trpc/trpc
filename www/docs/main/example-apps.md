@@ -135,5 +135,21 @@ Here's some example apps:
         </ul>
       </td>
     </tr>
+    <tr>
+      <td>
+        Express server with tRPC Shield + Prisma
+        <br/><br/>
+        <details>
+          <summary>Quick start with <code>create-trpc-appx</code></summary>
+          <code>npx create-trpc-appx --example https://github.com/omar-dulaimi/trpc-shield/tree/master/example</code>
+        </details>
+      </td>
+      <td><em>n/a</em></td>      
+      <td>
+        <ul>
+          <li><a href="https://github.com/omar-dulaimi/trpc-shield/tree/master/example">Source</a></li>
+        </ul>
+      </td>
+    </tr>
   </tbody>
 </table>
