@@ -44,6 +44,8 @@ setLogger({
   error() {},
 });
 
+type Context = any;
+
 type Post = {
   id: string;
   title: string;
@@ -67,7 +69,7 @@ function createAppRouter() {
 
   let count = 0;
   const appRouter = trpcServer
-    .router<any>()
+    .router<Context>()
     .formatError(({ shape, error }) => {
       return {
         $test: 'formatted',
