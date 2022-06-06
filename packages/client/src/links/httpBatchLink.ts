@@ -6,7 +6,6 @@ import { TRPCAbortError } from '../internals/TRPCAbortError';
 import { dataLoader } from '../internals/dataLoader';
 import {
   HTTP_SUBSCRIPTION_UNSUPPORTED_ERROR_MESSAGE,
-  HTTP_UNDEFINED_METHOD_ERROR_MESSAGE,
   httpRequest,
 } from '../internals/httpRequest';
 import { transformRPCResponse } from '../internals/transformRPCResponse';
@@ -77,7 +76,9 @@ export function httpBatchLink<TRouter extends AnyRouter>(
       }
       if (!method) {
         // this should never happen
-        throw new Error(HTTP_UNDEFINED_METHOD_ERROR_MESSAGE);
+        throw new Error(
+          'Operation processed by httpBatchLink must define a method property',
+        );
       }
 
       const loader = loaders[type][method];

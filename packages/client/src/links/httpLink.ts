@@ -3,7 +3,6 @@ import { TRPCClientError } from '../TRPCClientError';
 import { TRPCAbortError } from '../internals/TRPCAbortError';
 import {
   HTTP_SUBSCRIPTION_UNSUPPORTED_ERROR_MESSAGE,
-  HTTP_UNDEFINED_METHOD_ERROR_MESSAGE,
   httpRequest,
 } from '../internals/httpRequest';
 import { transformRPCResponse } from '../internals/transformRPCResponse';
@@ -21,10 +20,6 @@ export function httpLink<TRouter extends AnyRouter>(
       const { path, input, type, method } = op;
       if (type === 'subscription') {
         throw new Error(HTTP_SUBSCRIPTION_UNSUPPORTED_ERROR_MESSAGE);
-      }
-      if (!method) {
-        // this should never happen
-        throw new Error(HTTP_UNDEFINED_METHOD_ERROR_MESSAGE);
       }
 
       const { promise, cancel } = httpRequest({

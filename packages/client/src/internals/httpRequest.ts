@@ -22,19 +22,19 @@ export const httpMethods = {
 
 export const HTTP_SUBSCRIPTION_UNSUPPORTED_ERROR_MESSAGE =
   'Subscriptions are not supported over HTTP, please add a wsLink';
-export const HTTP_UNDEFINED_METHOD_ERROR_MESSAGE =
-  'Operations processed by httpLinks must define a method property';
 
 export function httpRequest<TResponseShape = TRPCResponse>(
   props: {
     runtime: LinkRuntimeOptions;
     type: 'query' | 'mutation';
-    method: OperationMethod;
+    method: OperationMethod | undefined;
     path: string;
     url: string;
   } & ({ inputs: unknown[] } | { input: unknown }),
 ): PromiseAndCancel<TResponseShape> {
-  const { type, method, runtime: rt, path } = props;
+  const { type, runtime: rt, path } = props;
+  const originalMethod = httpMethods[type];
+  const method = props.method ?? originalMethod;
   const ac = rt.AbortController ? new rt.AbortController() : null;
   const input =
     'input' in props
@@ -46,7 +46,7 @@ export function httpRequest<TResponseShape = TRPCResponse>(
   function getUrl() {
     let url = props.url + '/' + path;
     const queryParts: string[] = [];
-    if (method !== httpMethods[type]) {
+    if (method !== originalMethod) {
       queryParts.push(`type=${type}`);
     }
     if ('inputs' in props) {
