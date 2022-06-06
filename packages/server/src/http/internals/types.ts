@@ -1,5 +1,5 @@
 import { TRPCError } from '../../TRPCError';
-import { BaseHandlerOptions } from '../../internals/BaseHandlerOptions';
+import { BaseHandlerOptions } from '../../internals/baseHandlerOptions';
 import {
   AnyRouter,
   ProcedureType,
@@ -8,7 +8,7 @@ import {
 } from '../../router';
 import { TRPCResponse } from '../../rpc';
 import { Dict } from '../../types';
-import { ResponseMeta } from '../ResponseMeta';
+import { ResponseMeta } from '../responseMeta';
 
 export type HTTPHeaders = Dict<string | string[]>;
 

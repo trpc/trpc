@@ -369,6 +369,35 @@ describe('useQuery()', () => {
     });
     expect(utils.container).not.toHaveTextContent('second post');
   });
+
+  test('select fn', async () => {
+    const { trpc, client } = factory;
+    function MyComponent() {
+      const allPostsQuery = trpc.useQuery(['paginatedPosts', { limit: 1 }], {
+        select: () => ({
+          hello: 'world' as const,
+        }),
+      });
+      expectTypeOf(allPostsQuery.data!).toMatchTypeOf<{ hello: 'world' }>();
+
+      return <pre>{JSON.stringify(allPostsQuery.data ?? 'n/a', null, 4)}</pre>;
+    }
+    function App() {
+      const [queryClient] = useState(() => new QueryClient());
+      return (
+        <trpc.Provider {...{ queryClient, client }}>
+          <QueryClientProvider client={queryClient}>
+            <MyComponent />
+          </QueryClientProvider>
+        </trpc.Provider>
+      );
+    }
+
+    const utils = render(<App />);
+    await waitFor(() => {
+      expect(utils.container).toHaveTextContent('"hello": "world"');
+    });
+  });
 });
 
 test('mutation on mount + subscribe for it', async () => {
@@ -645,6 +674,40 @@ describe('useMutation()', () => {
     expect(linkSpy.up.mock.calls[0][0].context).toMatchObject({
       test: '1',
     });
+  });
+
+  test('useMutation with mutation context', async () => {
+    const { trpc, client } = factory;
+
+    function MyComponent() {
+      trpc.useMutation(['deletePosts'], {
+        onMutate: () => 'foo' as const,
+        onSuccess: (_data, _variables, context) => {
+          expectTypeOf(context).toMatchTypeOf<'foo' | undefined>();
+        },
+        onError: (_error, _variables, context) => {
+          expectTypeOf(context).toMatchTypeOf<'foo' | undefined>();
+        },
+        onSettled: (_data, _error, _variables, context) => {
+          expectTypeOf(context).toMatchTypeOf<'foo' | undefined>();
+        },
+      });
+
+      return null;
+    }
+
+    function App() {
+      const [queryClient] = useState(() => new QueryClient());
+      return (
+        <trpc.Provider {...{ queryClient, client }}>
+          <QueryClientProvider client={queryClient}>
+            <MyComponent />
+          </QueryClientProvider>
+        </trpc.Provider>
+      );
+    }
+
+    render(<App />);
   });
 });
 
