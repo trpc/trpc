@@ -53,8 +53,8 @@ export interface TRPCUseQueryBaseOptions extends TRPCRequestOptions {
 
 export type { TRPCContext, TRPCContextState } from './internals/context';
 
-export interface UseTRPCQueryOptions<TPath, TInput, TOutput, TError>
-  extends UseQueryOptions<TOutput, TError, TOutput, [TPath, TInput]>,
+export interface UseTRPCQueryOptions<TPath, TInput, TOutput, TData, TError>
+  extends UseQueryOptions<TOutput, TError, TData, [TPath, TInput]>,
     TRPCUseQueryBaseOptions {}
 
 export interface UseTRPCInfiniteQueryOptions<TPath, TInput, TOutput, TError>
@@ -67,8 +67,12 @@ export interface UseTRPCInfiniteQueryOptions<TPath, TInput, TOutput, TError>
     >,
     TRPCUseQueryBaseOptions {}
 
-export interface UseTRPCMutationOptions<TInput, TError, TOutput>
-  extends UseMutationOptions<TOutput, TError, TInput>,
+export interface UseTRPCMutationOptions<
+  TInput,
+  TError,
+  TOutput,
+  TContext = unknown,
+> extends UseMutationOptions<TOutput, TError, TInput, TContext>,
     TRPCUseQueryBaseOptions {}
 
 function getClientArgs<TPathAndInput extends unknown[], TOptions>(
@@ -262,15 +266,20 @@ export function createReactQueryHooks<
       : opts;
   }
 
-  function useQuery<TPath extends keyof TQueryValues & string>(
+  function useQuery<
+    TPath extends keyof TQueryValues & string,
+    TQueryFnData = TQueryValues[TPath]['output'],
+    TData = TQueryValues[TPath]['output'],
+  >(
     pathAndInput: [path: TPath, ...args: inferHandlerInput<TQueries[TPath]>],
     opts?: UseTRPCQueryOptions<
       TPath,
       TQueryValues[TPath]['input'],
-      TQueryValues[TPath]['output'],
+      TQueryFnData,
+      TData,
       TError
     >,
-  ): UseQueryResult<TQueryValues[TPath]['output'], TError> {
+  ): UseQueryResult<TData, TError> {
     const { client, ssrState, queryClient, prefetchQuery } = useContext();
 
     if (
@@ -291,17 +300,22 @@ export function createReactQueryHooks<
     );
   }
 
-  function useMutation<TPath extends keyof TMutationValues & string>(
+  function useMutation<
+    TPath extends keyof TMutationValues & string,
+    TContext = unknown,
+  >(
     path: TPath | [TPath],
     opts?: UseTRPCMutationOptions<
       TMutationValues[TPath]['input'],
       TError,
-      TMutationValues[TPath]['output']
+      TMutationValues[TPath]['output'],
+      TContext
     >,
   ): UseMutationResult<
     TMutationValues[TPath]['output'],
     TError,
-    TMutationValues[TPath]['input']
+    TMutationValues[TPath]['input'],
+    TContext
   > {
     const { client } = useContext();
 

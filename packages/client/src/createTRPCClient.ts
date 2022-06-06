@@ -11,9 +11,8 @@ export function createTRPCClient<TRouter extends AnyRouter>(
   return new Client<TRouter>(opts);
 }
 
-export type TRPCClient<TRouter extends AnyRouter> = Client<TRouter>;
-
 export type {
   TRPCRequestOptions,
   CreateTRPCClientOptions,
+  TRPCClient,
 } from './internals/TRPCClient';

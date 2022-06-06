@@ -8,7 +8,6 @@ interface ParsedQs {
 }
 
 export type NodeHTTPRequest = IncomingMessage & {
-  method?: string;
   query?: ParsedQs;
   body?: unknown;
 };

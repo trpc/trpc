@@ -31,6 +31,8 @@ import { MigrateProcedureRecord, MigrateRouter } from './interop';
 
 assertNotBrowser();
 
+export type { Procedure } from './internals/procedure';
+
 /**
  * @public
  * @deprecated
