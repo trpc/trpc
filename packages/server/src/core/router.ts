@@ -9,7 +9,7 @@ import { Procedure } from './procedure';
 import { ProcedureType } from './types';
 
 // FIXME this should properly use TContext
-type ProcedureRecord<_TContext> = Record<string, Procedure<any>>;
+export type ProcedureRecord<_TContext> = Record<string, Procedure<any>>;
 
 export interface RouterParams<
   TContext,

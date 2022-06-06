@@ -8,7 +8,7 @@ import {
 import type {
   AnyRouter,
   DataTransformer,
-  ProcedureRecord,
+  Procedure,
   inferHandlerInput,
   inferProcedureInput,
   inferProcedureOutput,
@@ -41,6 +41,8 @@ export type OutputWithCursor<TData, TCursor extends any = any> = {
   cursor: TCursor | null;
   data: TData;
 };
+
+type ProcedureRecord = Record<string, Procedure<any>>;
 
 export interface TRPCUseQueryBaseOptions extends TRPCRequestOptions {
   /**
@@ -77,9 +79,7 @@ function getClientArgs<TPathAndInput extends unknown[], TOptions>(
   return [path, input, opts] as const;
 }
 
-type inferInfiniteQueryNames<
-  TObj extends ProcedureRecord<any, any, any, any, any, any>,
-> = {
+type inferInfiniteQueryNames<TObj extends ProcedureRecord> = {
   [TPath in keyof TObj]: inferProcedureInput<TObj[TPath]> extends {
     cursor?: any;
   }
@@ -87,9 +87,7 @@ type inferInfiniteQueryNames<
     : never;
 }[keyof TObj];
 
-type inferProcedures<
-  TObj extends ProcedureRecord<any, any, any, any, any, any>,
-> = {
+type inferProcedures<TObj extends ProcedureRecord> = {
   [TPath in keyof TObj]: {
     input: inferProcedureInput<TObj[TPath]>;
     output: inferProcedureOutput<TObj[TPath]>;
