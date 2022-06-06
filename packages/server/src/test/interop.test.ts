@@ -23,6 +23,10 @@ export async function main() {
   const newRouter = appRouter.interop();
   const caller = newRouter.createCaller({});
   {
+    const res = await newRouter.queries.foo();
+    expectTypeOf(res).toMatchTypeOf<'bar'>();
+  }
+  {
     // @ts-expect-error does not exist
     await caller.query('nope');
   }
