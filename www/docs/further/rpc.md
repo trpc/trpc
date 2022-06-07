@@ -96,9 +96,7 @@ encodeURIComponent(
   [
     // result for `postById`
     {
-      "id": null,
       "result": {
-        "type": "data",
         "data": {
           "id": "1",
           "title": "Hello tRPC",
@@ -109,9 +107,7 @@ encodeURIComponent(
     },
     // result for `relatedPosts`
     {
-      "id": null,
       "result": {
-        "type": "data",
         "data": [
           /* ... */
         ]
@@ -133,9 +129,7 @@ In order to have a specification that works regardless of the transport layer we
 
 ```json
 {
-  "id": null,
   "result": {
-    "type": "data",
     "data": {
       "id": "1",
       "title": "Hello tRPC",
@@ -149,9 +143,7 @@ In order to have a specification that works regardless of the transport layer we
 
 ```ts
 {
-  id: null;
   result: {
-    type: 'data';
     data: TOutput; // output from procedure
   };
 }
@@ -166,7 +158,6 @@ In order to have a specification that works regardless of the transport layer we
 ```json
 [
   {
-    "id": null,
     "error": {
       "json": {
         "message": "Something went wrong",

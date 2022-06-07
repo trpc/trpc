@@ -4,7 +4,7 @@
 
 /* eslint-disable @typescript-eslint/ban-types */
 import { routerToServerAndClient } from './__testHelpers';
-import { createTRPCClient } from '../../client/src';
+import { createTRPCClient } from '@trpc/client';
 import * as trpc from '../src';
 import { Dict } from '../src';
 
@@ -17,8 +17,6 @@ test('pass headers', async () => {
       resolve({ ctx }) {
         return {
           'x-special': ctx.headers['x-special'],
-          'x-defined': ctx.headers['x-defined'],
-          'x-undefined': ctx.headers['x-undefined'],
         };
       },
     }),
@@ -37,6 +35,7 @@ test('pass headers', async () => {
     });
     expect(await client.query('hello')).toMatchInlineSnapshot(`Object {}`);
   }
+
   {
     // custom headers sent
     const client = createTRPCClient({
@@ -48,10 +47,10 @@ test('pass headers', async () => {
       },
     });
     expect(await client.query('hello')).toMatchInlineSnapshot(`
-      Object {
-        "x-special": "special header",
-      }
-    `);
+Object {
+  "x-special": "special header",
+}
+`);
   }
   {
     // async headers
@@ -64,39 +63,10 @@ test('pass headers', async () => {
       },
     });
     expect(await client.query('hello')).toMatchInlineSnapshot(`
-      Object {
-        "x-special": "async special header",
-      }
-    `);
-  }
-  {
-    // array headers
-    const client = createTRPCClient({
-      url: httpUrl,
-      headers: {
-        'x-special': ['foo', 'bar'],
-      },
-    });
-    expect(await client.query('hello')).toMatchInlineSnapshot(`
-      Object {
-        "x-special": "foo,bar",
-      }
-    `);
-  }
-  {
-    // remove undefined headers
-    const client = createTRPCClient({
-      url: httpUrl,
-      headers: {
-        'x-defined': 'xyz',
-        'x-undefined': undefined,
-      },
-    });
-    expect(await client.query('hello')).toMatchInlineSnapshot(`
-      Object {
-        "x-defined": "xyz",
-      }
-    `);
+Object {
+  "x-special": "async special header",
+}
+`);
   }
   close();
 });

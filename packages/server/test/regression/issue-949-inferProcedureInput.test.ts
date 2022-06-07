@@ -3,7 +3,7 @@
 // needs to be imported from compiled output otherwise we get a false-positive
 import { expectTypeOf } from 'expect-type';
 import { z } from 'zod';
-import * as trpc from '../../dist/trpc-server.cjs';
+import * as trpc from '../..';
 
 // https://github.com/trpc/trpc/issues/949
 // https://github.com/trpc/trpc/pull/955

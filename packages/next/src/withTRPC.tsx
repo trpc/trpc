@@ -2,8 +2,9 @@
  * Heavily based on urql's ssr
  * https://github.com/FormidableLabs/urql/blob/main/packages/next-urql/src/with-urql-client.ts
  */
+import type { CreateTRPCClientOptions } from '@trpc/client/src/internals/TRPCClient';
 import {
-  CreateTRPCClientOptions,
+  CreateReactQueryHooksOptions,
   TRPCClient,
   TRPCClientError,
   TRPCClientErrorLike,
@@ -56,22 +57,28 @@ export type WithTRPCConfig<TRouter extends AnyRouter> =
     queryClientConfig?: QueryClientConfig;
   };
 
-export function withTRPC<TRouter extends AnyRouter>(
-  opts: {
-    config: (info: { ctx?: NextPageContext }) => WithTRPCConfig<TRouter>;
-  } & (
-    | {
-        ssr?: false;
-      }
-    | {
-        ssr: true;
-        responseMeta?: (opts: {
-          ctx: NextPageContext;
-          clientErrors: TRPCClientError<TRouter>[];
-        }) => ResponseMeta;
-      }
-  ),
-) {
+interface WithTRPCOptions<TRouter extends AnyRouter>
+  extends CreateReactQueryHooksOptions {
+  config: (info: { ctx?: NextPageContext }) => WithTRPCConfig<TRouter>;
+}
+
+export interface WithTRPCSSROptions<TRouter extends AnyRouter>
+  extends WithTRPCOptions<TRouter> {
+  ssr: true;
+  responseMeta?: (opts: {
+    ctx: NextPageContext;
+    clientErrors: TRPCClientError<TRouter>[];
+  }) => ResponseMeta;
+}
+export interface WithTRPCNoSSROptions<TRouter extends AnyRouter>
+  extends WithTRPCOptions<TRouter> {
+  ssr?: false;
+}
+
+export function withTRPC<
+  TRouter extends AnyRouter,
+  TSSRContext extends NextPageContext = NextPageContext,
+>(opts: WithTRPCNoSSROptions<TRouter> | WithTRPCSSROptions<TRouter>) {
   const { config: getClientConfig } = opts;
 
   type TRPCPrepassProps = {
@@ -79,10 +86,10 @@ export function withTRPC<TRouter extends AnyRouter>(
     queryClient: QueryClient;
     trpcClient: TRPCClient<TRouter>;
     ssrState: 'prepass';
-    ssrContext: NextPageContext;
+    ssrContext: TSSRContext;
   };
   return (AppOrPage: NextComponentType<any, any, any>): NextComponentType => {
-    const trpc = createReactQueryHooks<TRouter, NextPageContext>();
+    const trpc = createReactQueryHooks<TRouter, TSSRContext>(opts);
 
     const WithTRPC = (
       props: AppPropsType & {
@@ -106,10 +113,7 @@ export function withTRPC<TRouter extends AnyRouter>(
         },
       );
 
-      const hydratedState = trpc.useDehydratedState(
-        trpcClient,
-        props.pageProps?.trpcState,
-      );
+      const hydratedState = trpc.useDehydratedState(props.pageProps?.trpcState);
 
       return (
         <trpc.Provider
@@ -158,6 +162,7 @@ export function withTRPC<TRouter extends AnyRouter>(
         if (typeof window !== 'undefined' || !opts.ssr) {
           return getAppTreeProps(pageProps);
         }
+
         const config = getClientConfig({ ctx });
         const trpcClient = createTRPCClient(config);
         const queryClient = new QueryClient(config.queryClientConfig);
@@ -167,7 +172,7 @@ export function withTRPC<TRouter extends AnyRouter>(
           trpcClient,
           queryClient,
           ssrState: 'prepass',
-          ssrContext: ctx,
+          ssrContext: ctx as TSSRContext,
         };
         const prepassProps = {
           pageProps,
@@ -211,9 +216,9 @@ export function withTRPC<TRouter extends AnyRouter>(
           ),
         };
         // dehydrate query client's state and add it to the props
-        pageProps.trpcState = trpcClient.runtime.transformer.serialize(
-          dehydratedCacheWithErrors,
-        );
+        pageProps.trpcState = opts.transformer
+          ? opts.transformer.serialize(dehydratedCacheWithErrors)
+          : dehydratedCacheWithErrors;
 
         const appTreeProps = getAppTreeProps(pageProps);
 

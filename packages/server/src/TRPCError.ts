@@ -2,23 +2,15 @@ import { getMessageFromUnkownError } from './internals/errors';
 import { TRPC_ERROR_CODE_KEY } from './rpc/codes';
 
 export class TRPCError extends Error {
-  /**
-   * @deprecated use `cause`
-   */
-  public readonly originalError?: unknown;
-  public readonly cause?: unknown;
+  public readonly cause?: Error | undefined;
   public readonly code;
 
   constructor(opts: {
     message?: string;
     code: TRPC_ERROR_CODE_KEY;
-    /**
-     * @deprecated use `cause`
-     */
-    originalError?: unknown;
-    cause?: unknown;
+    cause?: Error;
   }) {
-    const cause = opts.cause ?? opts.originalError;
+    const cause = opts.cause;
     const code = opts.code;
     const message = opts.message ?? getMessageFromUnkownError(cause, code);
 
@@ -27,7 +19,7 @@ export class TRPCError extends Error {
     super(message, { cause });
 
     this.code = code;
-    this.cause = this.originalError = cause;
+    this.cause = cause;
     this.name = 'TRPCError';
 
     Object.setPrototypeOf(this, new.target.prototype);

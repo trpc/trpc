@@ -11,12 +11,13 @@ import { HTTPHeaders, createTRPCClient } from '../../../client/src';
 import { httpLink } from '../../../client/src/links/httpLink';
 import { splitLink } from '../../../client/src/links/splitLink';
 import { createWSClient, wsLink } from '../../../client/src/links/wsLink';
-import { Subscription, inferAsyncReturnType, router } from '../../src';
+import { inferAsyncReturnType, router } from '../../src';
 import {
   CreateFastifyContextOptions,
   fastifyTRPCPlugin,
 } from '../../src/adapters/fastify';
-import { TRPCResult } from '../../src/rpc';
+import { observable } from '../../src/observable';
+import { TRPCResultMessage } from '../../src/rpc';
 
 const config = {
   port: 2022,
@@ -75,9 +76,9 @@ function createAppRouter() {
     })
     .subscription('onMessage', {
       resolve() {
-        const sub = new Subscription<Message>((emit) => {
+        const sub = observable<Message>((emit) => {
           const onMessage = (data: Message) => {
-            emit.data(data);
+            emit.next(data);
           };
           ee.on('server:msg', onMessage);
           return () => {
@@ -258,17 +259,17 @@ describe('anonymous user', () => {
       });
     });
 
-    const onNext = jest.fn();
-    const unsub = app.client.subscription('onMessage', undefined, {
-      onNext(data) {
+    const next = jest.fn();
+    const sub = app.client.subscription('onMessage', undefined, {
+      next(data) {
         expectTypeOf(data).not.toBeAny();
-        expectTypeOf(data).toMatchTypeOf<TRPCResult<Message>>();
-        onNext(data);
+        expectTypeOf(data).toMatchTypeOf<TRPCResultMessage<Message>>();
+        next(data);
       },
     });
 
     await waitFor(() => {
-      expect(onNext).toHaveBeenCalledTimes(3);
+      expect(next).toHaveBeenCalledTimes(3);
     });
 
     app.ee.emit('server:msg', {
@@ -276,10 +277,10 @@ describe('anonymous user', () => {
     });
 
     await waitFor(() => {
-      expect(onNext).toHaveBeenCalledTimes(4);
+      expect(next).toHaveBeenCalledTimes(4);
     });
 
-    expect(onNext.mock.calls).toMatchInlineSnapshot(`
+    expect(next.mock.calls).toMatchInlineSnapshot(`
       Array [
         Array [
           Object {
@@ -313,7 +314,7 @@ describe('anonymous user', () => {
       ]
     `);
 
-    unsub();
+    sub.unsubscribe();
 
     await waitFor(() => {
       expect(app.ee.listenerCount('server:msg')).toBe(0);

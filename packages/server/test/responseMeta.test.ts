@@ -4,12 +4,13 @@
 import { routerToServerAndClient } from './__testHelpers';
 import fetch from 'node-fetch';
 import * as trpc from '../src';
+import { CreateHTTPContextOptions } from '../src/adapters/standalone';
 
 test('set custom headers in beforeEnd', async () => {
   const onError = jest.fn();
   const { close, httpUrl } = routerToServerAndClient(
     trpc
-      .router<trpc.CreateHttpContextOptions>()
+      .router<CreateHTTPContextOptions>()
       .query('public.q', {
         resolve() {
           return 'public endpoint';
@@ -51,10 +52,8 @@ test('set custom headers in beforeEnd', async () => {
 
     expect(await res.json()).toMatchInlineSnapshot(`
 Object {
-  "id": null,
   "result": Object {
     "data": "public endpoint",
-    "type": "data",
   },
 }
 `);
@@ -68,10 +67,8 @@ Object {
 
     expect(await res.json()).toMatchInlineSnapshot(`
 Object {
-  "id": null,
   "result": Object {
     "data": "not cached endpoint",
-    "type": "data",
   },
 }
 `);

@@ -1,75 +1,106 @@
 import { AnyRouter } from '@trpc/server';
-import { TRPCResponse } from '@trpc/server/rpc';
-import { OperationMethod } from '..';
-import { TRPCClientError } from '../TRPCClientError';
-import { TRPCAbortError } from '../internals/TRPCAbortError';
+import { observable } from '@trpc/server/observable';
 import { dataLoader } from '../internals/dataLoader';
 import {
+  HTTPLinkOptions,
+  HTTPRequestOptions,
   HTTP_SUBSCRIPTION_UNSUPPORTED_ERROR_MESSAGE,
+  ResponseShape,
+  getUrl,
   httpRequest,
-} from '../internals/httpRequest';
-import { transformRPCResponse } from '../internals/transformRPCResponse';
-import { HTTPLinkOptions, TRPCLink } from './core';
+} from './internals/httpUtils';
+import { TRPCLink } from './types';
 
 export interface HttpBatchLinkOptions extends HTTPLinkOptions {
-  maxBatchSize?: number;
+  maxURLLength?: number;
 }
 
 export function httpBatchLink<TRouter extends AnyRouter>(
   opts: HttpBatchLinkOptions,
 ): TRPCLink<TRouter> {
-  const { url, maxBatchSize } = opts;
   // initialized config
   return (runtime) => {
-    // initialized in app
-    type Key = { id: number; path: string; input: unknown };
+    type BatchOperation = { id: number; path: string; input: unknown };
 
-    const fetcher = (type: 'query' | 'mutation', method: OperationMethod) => {
-      return (keyInputPairs: Key[]) => {
-        const path = keyInputPairs.map((op) => op.path).join(',');
-        const inputs = keyInputPairs.map((op) => op.input);
+    const maxURLLength = opts.maxURLLength || Infinity;
 
-        const { promise, cancel } = httpRequest({
-          url,
-          inputs,
-          path,
+    const batchLoader = (
+      type: HTTPRequestOptions['type'],
+      method: HTTPRequestOptions['method'],
+    ) => {
+      const validate = (batchOps: BatchOperation[]) => {
+        if (maxURLLength === Infinity) {
+          // escape hatch for quick calcs
+          return true;
+        }
+
+        const path = batchOps.map((op) => op.path).join(',');
+        const inputs = batchOps.map((op) => op.input);
+
+        const url = getUrl({
+          url: opts.url,
           runtime,
           type,
           method,
+          path,
+          inputs,
+        });
+        return url.length <= maxURLLength;
+      };
+
+      const fetch = (batchOps: BatchOperation[]) => {
+        const path = batchOps.map((op) => op.path).join(',');
+        const inputs = batchOps.map((op) => op.input);
+
+        const { promise, cancel } = httpRequest({
+          url: opts.url,
+          runtime,
+          type,
+          method,
+          path,
+          inputs,
         });
 
         return {
-          promise: promise.then((res: unknown[] | unknown) => {
-            if (!Array.isArray(res)) {
-              return keyInputPairs.map(() => res);
-            }
-            return res;
+          promise: promise.then((res) => {
+            const resJSON = Array.isArray(res.json)
+              ? res.json
+              : batchOps.map(() => res.json);
+
+            const result = resJSON.map((item) => ({
+              meta: res.meta,
+              json: item,
+            }));
+
+            return result;
           }),
           cancel,
         };
       };
+
+      return { validate, fetch };
     };
 
     const loaders = {
       query: {
-        GET: dataLoader<Key, TRPCResponse>(fetcher('query', 'GET'), {
-          maxBatchSize,
-        }),
-        POST: dataLoader<Key, TRPCResponse>(fetcher('query', 'POST'), {
-          maxBatchSize,
-        }),
+        GET: dataLoader<BatchOperation, ResponseShape>(
+          batchLoader('query', 'GET'),
+        ),
+        POST: dataLoader<BatchOperation, ResponseShape>(
+          batchLoader('query', 'POST'),
+        ),
       },
       mutation: {
-        GET: dataLoader<Key, TRPCResponse>(fetcher('mutation', 'GET'), {
-          maxBatchSize,
-        }),
-        POST: dataLoader<Key, TRPCResponse>(fetcher('mutation', 'POST'), {
-          maxBatchSize,
-        }),
+        GET: dataLoader<BatchOperation, ResponseShape>(
+          batchLoader('mutation', 'GET'),
+        ),
+        POST: dataLoader<BatchOperation, ResponseShape>(
+          batchLoader('mutation', 'POST'),
+        ),
       },
     };
 
-    return ({ op, prev, onDestroy }) => {
+    return ({ op }) => {
       const { type, method } = op;
       if (type === 'subscription') {
         throw new Error(HTTP_SUBSCRIPTION_UNSUPPORTED_ERROR_MESSAGE);
@@ -81,27 +112,24 @@ export function httpBatchLink<TRouter extends AnyRouter>(
         );
       }
 
-      const loader = loaders[type][method];
-      const { promise, cancel } = loader.load(op);
-      let isDone = false;
-      const prevOnce: typeof prev = (result) => {
-        if (isDone) {
-          return;
-        }
-        isDone = true;
-        prev(result);
-      };
-      onDestroy(() => {
-        prevOnce(TRPCClientError.from(new TRPCAbortError(), { isDone: true }));
-        cancel();
+      return observable((observer) => {
+        const loader = loaders[type][method];
+        const { promise, cancel } = loader.load(op);
+
+        promise
+          .then((res) => {
+            observer.next({
+              context: res.meta,
+              data: res.json as any,
+            });
+            observer.complete();
+          })
+          .catch((err) => observer.error(err as any));
+
+        return () => {
+          cancel();
+        };
       });
-      promise
-        .then((envelope) => {
-          prevOnce(transformRPCResponse({ envelope, runtime }));
-        })
-        .catch((cause) => {
-          prevOnce(TRPCClientError.from<TRouter>(cause));
-        });
     };
   };
 }

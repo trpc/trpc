@@ -1,17 +1,16 @@
-import http from 'http';
-import { inferRouterContext } from '../..';
+import { IncomingMessage, ServerResponse } from 'http';
 import { HTTPBaseHandlerOptions } from '../../http/internals/types';
-import { AnyRouter } from '../../router';
+import { AnyRouter, inferRouterContext } from '../../router';
 
 interface ParsedQs {
   [key: string]: undefined | string | string[] | ParsedQs | ParsedQs[];
 }
 
-export type NodeHTTPRequest = http.IncomingMessage & {
+export type NodeHTTPRequest = IncomingMessage & {
   query?: ParsedQs;
   body?: unknown;
 };
-export type NodeHTTPResponse = http.ServerResponse;
+export type NodeHTTPResponse = ServerResponse;
 
 export type NodeHTTPCreateContextOption<
   TRouter extends AnyRouter,

@@ -1,5 +1,8 @@
 name: Lint
 on: [push]
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 jobs:
   lint:
     runs-on: ubuntu-latest
@@ -9,8 +12,7 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Use Node.js 16.x
-        uses: actions/setup-node@v1
+      - uses: actions/setup-node@v1
         with:
           version: 16.x
 

@@ -7,6 +7,7 @@ import {
 } from '@trpc/client';
 import type {
   AnyRouter,
+  DataTransformer,
   ProcedureRecord,
   inferHandlerInput,
   inferProcedureInput,
@@ -47,6 +48,8 @@ export interface TRPCUseQueryBaseOptions extends TRPCRequestOptions {
    */
   ssr?: boolean;
 }
+
+export type { TRPCContext, TRPCContextState } from './internals/context';
 
 export interface UseTRPCQueryOptions<TPath, TInput, TOutput, TData, TError>
   extends UseQueryOptions<TOutput, TError, TData, [TPath, TInput]>,
@@ -97,10 +100,21 @@ type inferProcedures<
   };
 };
 
+export interface CreateReactQueryHooksOptions {
+  /**
+   * Data transformer used for hydration and dehydration.
+   */
+  transformer?: DataTransformer;
+}
+
 export function createReactQueryHooks<
   TRouter extends AnyRouter,
   TSSRContext = unknown,
->() {
+>(opts?: CreateReactQueryHooksOptions) {
+  const transfomer: DataTransformer = opts?.transformer ?? {
+    serialize: (v) => v,
+    deserialize: (v) => v,
+  };
   type TQueries = TRouter['_def']['queries'];
   type TSubscriptions = TRouter['_def']['subscriptions'];
   type TError = TRPCClientErrorLike<TRouter>;
@@ -122,17 +136,11 @@ export function createReactQueryHooks<
     queryClient: QueryClient;
     client: TRPCClient<TRouter>;
     children: ReactNode;
-    /**
-     * @deprecated
-     */
-    isPrepass?: boolean;
     ssrContext?: TSSRContext | null;
     ssrState?: SSRState;
   }) {
     const { client, queryClient, ssrContext } = props;
-    const [ssrState, setSSRState] = useState<SSRState>(
-      props.ssrState || (props.isPrepass ? 'prepass' : false),
-    );
+    const [ssrState, setSSRState] = useState<SSRState>(props.ssrState ?? false);
     useEffect(() => {
       // Only updating state to `mounted` if we are using SSR.
       // This makes it so we don't have an unnecessary re-render when opting out of SSR.
@@ -143,7 +151,6 @@ export function createReactQueryHooks<
         value={{
           queryClient,
           client,
-          isPrepass: ssrState === 'prepass',
           ssrContext: ssrContext || null,
           ssrState,
           fetchQuery: useCallback(
@@ -199,13 +206,6 @@ export function createReactQueryHooks<
               );
             },
             [client, queryClient],
-          ),
-          /**
-           * @deprecated use `invalidateQueries`
-           */
-          invalidateQuery: useCallback(
-            (...args: any[]) => queryClient.invalidateQueries(...args),
-            [queryClient],
           ),
           invalidateQueries: useCallback(
             (...args: any[]) => queryClient.invalidateQueries(...args),
@@ -282,11 +282,11 @@ export function createReactQueryHooks<
       TError
     >,
   ): UseQueryResult<TData, TError> {
-    const { client, isPrepass, queryClient, prefetchQuery } = useContext();
+    const { client, ssrState, queryClient, prefetchQuery } = useContext();
 
     if (
       typeof window === 'undefined' &&
-      isPrepass &&
+      ssrState === 'prepass' &&
       opts?.ssr !== false &&
       opts?.enabled !== false &&
       !queryClient.getQueryCache().find(pathAndInput)
@@ -343,8 +343,8 @@ export function createReactQueryHooks<
     ],
     opts: {
       enabled?: boolean;
-      onError?: (err: TError) => void;
-      onNext: (data: TOutput) => void;
+      error?: (err: TError) => void;
+      next: (data: TOutput) => void;
     },
   ) {
     const enabled = opts?.enabled ?? true;
@@ -357,21 +357,26 @@ export function createReactQueryHooks<
       }
       const [path, input] = pathAndInput;
       let isStopped = false;
-      const unsub = client.subscription(path, (input ?? undefined) as any, {
-        onError: (err) => {
+      const subscription = client.subscription<
+        TRouter['_def']['subscriptions'],
+        TPath,
+        TOutput,
+        inferProcedureInput<TRouter['_def']['subscriptions']>
+      >(path, (input ?? undefined) as any, {
+        error: (err) => {
           if (!isStopped) {
-            opts.onError?.(err);
+            opts.error?.(err);
           }
         },
-        onNext: (res) => {
+        next: (res) => {
           if (res.type === 'data' && !isStopped) {
-            opts.onNext(res.data);
+            opts.next(res.data);
           }
         },
       });
       return () => {
         isStopped = true;
-        unsub();
+        subscription.unsubscribe();
       };
       // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [queryKey, enabled]);
@@ -390,12 +395,12 @@ export function createReactQueryHooks<
     >,
   ): UseInfiniteQueryResult<TQueryValues[TPath]['output'], TError> {
     const [path, input] = pathAndInput;
-    const { client, isPrepass, prefetchInfiniteQuery, queryClient } =
+    const { client, ssrState, prefetchInfiniteQuery, queryClient } =
       useContext();
 
     if (
       typeof window === 'undefined' &&
-      isPrepass &&
+      ssrState === 'prepass' &&
       opts?.ssr !== false &&
       opts?.enabled !== false &&
       !queryClient.getQueryCache().find(pathAndInput)
@@ -416,17 +421,14 @@ export function createReactQueryHooks<
       actualOpts,
     );
   }
-  function useDehydratedState(
-    client: TRPCClient<TRouter>,
-    trpcState: DehydratedState | undefined,
-  ) {
+  function useDehydratedState(trpcState: DehydratedState | undefined) {
     const transformed: DehydratedState | undefined = useMemo(() => {
       if (!trpcState) {
         return trpcState;
       }
 
-      return client.runtime.transformer.deserialize(trpcState);
-    }, [client, trpcState]);
+      return transfomer.deserialize(trpcState);
+    }, [trpcState]);
     return transformed;
   }
 

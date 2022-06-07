@@ -2,6 +2,7 @@ import { expectTypeOf } from 'expect-type';
 import { z } from 'zod';
 import * as trpc from '../src';
 import { inferProcedureInput, inferProcedureOutput } from '../src';
+import { Observable, observable } from '../src/observable';
 
 test('infer query input & output', async () => {
   const router = trpc
@@ -169,21 +170,21 @@ test('infer subscription input & output', async () => {
   const router = trpc
     .router()
     .subscription('noSubscription', {
-      // @ts-expect-error - ensure Subscription is expected as "resolve" fn return type
+      // @ts-expect-error - ensure Observable is expected as "resolve" fn return type
       async resolve({ input }) {
         return { input };
       },
     })
     .subscription('noInput', {
       async resolve() {
-        return new trpc.Subscription(() => () => null);
+        return observable(() => () => null);
       },
     })
     .subscription('withInput', {
       input: z.string(),
       async resolve({ input }) {
-        return new trpc.Subscription<typeof input>((emit) => {
-          emit.data(input);
+        return observable<typeof input>((emit) => {
+          emit.next(input);
           return () => null;
         });
       },
@@ -192,8 +193,8 @@ test('infer subscription input & output', async () => {
       input: z.string(),
       output: z.null(),
       async resolve({ input }) {
-        return new trpc.Subscription<typeof input>((emit) => {
-          emit.data(input);
+        return observable<typeof input>((emit) => {
+          emit.next(input);
           return () => null;
         });
       },
@@ -203,13 +204,13 @@ test('infer subscription input & output', async () => {
     const input: inferProcedureInput<TSubscriptions['noInput']> = null as any;
     const output: inferProcedureOutput<TSubscriptions['noInput']> = null as any;
     expectTypeOf(input).toMatchTypeOf<undefined | null | void>();
-    expectTypeOf(output).toMatchTypeOf<trpc.Subscription<unknown>>();
+    expectTypeOf(output).toMatchTypeOf<Observable<unknown, unknown>>();
   }
   {
     const input: inferProcedureInput<TSubscriptions['withInput']> = null as any;
     const output: inferProcedureOutput<TSubscriptions['withInput']> =
       null as any;
     expectTypeOf(input).toMatchTypeOf<string>();
-    expectTypeOf(output).toMatchTypeOf<trpc.Subscription<string>>();
+    expectTypeOf(output).toMatchTypeOf<Observable<string, unknown>>();
   }
 });

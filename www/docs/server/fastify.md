@@ -178,15 +178,17 @@ server.register(ws);
 Edit the `router.ts` file created in the previous steps and add the following code:
 
 ```ts title='router.ts'
+import { observable } from '@trpc/server/observable';
+
 export const appRouter = trpc
   .router()
   // .query(...)
   // .mutation(...)
   .subscription('randomNumber', {
     resolve() {
-      return new Subscription<{ randomNumber: number }>((emit) => {
+      return observable<{ randomNumber: number }>((emit) => {
         const timer = setInterval(() => {
-          emit.data({ randomNumber: Math.random() });
+          emit.next({ randomNumber: Math.random() });
         }, 1000);
         return () => {
           clearInterval(timer);

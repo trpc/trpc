@@ -1,7 +1,11 @@
-import { HTTPHeaders, createTRPCClient } from '@trpc/client';
-import { httpLink } from '@trpc/client/links/httpLink';
-import { splitLink } from '@trpc/client/links/splitLink';
-import { createWSClient, wsLink } from '@trpc/client/links/wsLink';
+import {
+  HTTPHeaders,
+  createTRPCClient,
+  createWSClient,
+  httpLink,
+  splitLink,
+  wsLink,
+} from '@trpc/client';
 import type { AppRouter } from '../server/router';
 import './polyfill';
 

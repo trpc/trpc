@@ -67,20 +67,20 @@ async function start() {
   let randomNumberCount = 0;
 
   await new Promise<void>((resolve) => {
-    const unsub = anon.client.subscription('sub:randomNumber', null, {
-      onNext(data) {
+    const sub = anon.client.subscription('sub:randomNumber', null, {
+      next(data) {
         console.log('>>> anon:sub:randomNumber:received:', data);
         randomNumberCount++;
 
         if (randomNumberCount > 3) {
-          unsub();
+          sub.unsubscribe();
           resolve();
         }
       },
-      onError(error) {
+      error(error) {
         console.error('>>> anon:sub:randomNumber:error:', error);
       },
-      onDone() {
+      complete() {
         console.log('>>> anon:sub:randomNumber:', 'unsub() called');
       },
     });

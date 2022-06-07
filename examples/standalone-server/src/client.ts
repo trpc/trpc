@@ -1,8 +1,11 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { createTRPCClient } from '@trpc/client';
-import { httpLink } from '@trpc/client/links/httpLink';
-import { splitLink } from '@trpc/client/links/splitLink';
-import { createWSClient, wsLink } from '@trpc/client/links/wsLink';
+import {
+  createTRPCClient,
+  createWSClient,
+  httpLink,
+  splitLink,
+  wsLink,
+} from '@trpc/client';
 import AbortController from 'abort-controller';
 import fetch from 'node-fetch';
 import ws from 'ws';
@@ -49,24 +52,24 @@ async function main() {
   console.log('createPostResponse', createPostRes);
 
   let count = 0;
-  const unsub = client.subscription('randomNumber', null, {
-    onNext(data) {
-      // ^ note that `data` here is inferred
-      console.log('received', data);
-      count++;
-      if (count > 3) {
-        // stop after 3 pulls
-        unsub();
-      }
-    },
-    onError(err) {
-      console.error('error', err);
-    },
-    onDone() {
-      console.log('done called - closing websocket');
-      wsClient.close();
-    },
+  await new Promise<void>((resolve) => {
+    const subscription = client.subscription('randomNumber', null, {
+      next(data) {
+        // ^ note that `data` here is inferred
+        console.log('received', data);
+        count++;
+        if (count > 3) {
+          // stop after 3 pulls
+          subscription.unsubscribe();
+          resolve();
+        }
+      },
+      error(err) {
+        console.error('error', err);
+      },
+    });
   });
+  wsClient.close();
 }
 
 main();

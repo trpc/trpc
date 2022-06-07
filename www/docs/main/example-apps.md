@@ -127,6 +127,15 @@ Here's some example apps:
       </td>
     </tr>
     <tr>
+      <td>Cloudflare Workers example</td>
+      <td><em>n/a</em></td>
+      <td>
+        <ul>
+          <li><a href="https://github.com/trpc/trpc/tree/next/examples/cloudflare-workers">Source</a></li>
+        </ul>
+      </td>
+    </tr>
+    <tr>
       <td>
         Express server with tRPC Shield + Prisma
         <br/><br/>

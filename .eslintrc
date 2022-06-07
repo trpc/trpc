@@ -48,6 +48,12 @@
       "rules": {
         "@typescript-eslint/no-floating-promises": "off"
       }
+    },
+    {
+      "files": ["packages/**/*"],
+      "rules": {
+        "no-console": "error"
+      }
     }
   ],
   "settings": {

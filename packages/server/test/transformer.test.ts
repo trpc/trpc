@@ -4,16 +4,16 @@ import devalue from 'devalue';
 import fetch from 'node-fetch';
 import superjson from 'superjson';
 import { z } from 'zod';
-import { TRPCClientError } from '../../client/src';
-import { httpBatchLink } from '../../client/src/links/httpBatchLink';
-import { httpLink } from '../../client/src/links/httpLink';
 import {
-  TRPCWebSocketClient,
+  TRPCClientError,
   createWSClient,
+  httpBatchLink,
+  httpLink,
   wsLink,
-} from '../../client/src/links/wsLink';
+} from '../../client/src';
 import * as trpc from '../src';
 import { TRPCError } from '../src/TRPCError';
+import { observable } from '../src/observable';
 
 test('superjson up and down', async () => {
   const transformer = superjson;
@@ -32,7 +32,12 @@ test('superjson up and down', async () => {
         },
       }),
     {
-      client: { transformer },
+      client({ httpUrl }) {
+        return {
+          transformer,
+          links: [httpBatchLink({ url: httpUrl })],
+        };
+      },
     },
   );
   const res = await client.query('hello', date);
@@ -61,7 +66,12 @@ test('empty superjson up and down', async () => {
         },
       }),
     {
-      client: { transformer },
+      client({ httpUrl }) {
+        return {
+          transformer,
+          links: [httpBatchLink({ url: httpUrl })],
+        };
+      },
     },
   );
   const res1 = await client.query('empty-up');
@@ -93,7 +103,10 @@ test('wsLink: empty superjson up and down', async () => {
     {
       client({ wssUrl }) {
         ws = createWSClient({ url: wssUrl });
-        return { transformer, links: [wsLink({ client: ws })] };
+        return {
+          transformer,
+          links: [wsLink({ client: ws })],
+        };
       },
     },
   );
@@ -126,7 +139,12 @@ test('devalue up and down', async () => {
         },
       }),
     {
-      client: { transformer },
+      client({ httpUrl }) {
+        return {
+          transformer,
+          links: [httpBatchLink({ url: httpUrl })],
+        };
+      },
     },
   );
   const res = await client.query('hello', date);
@@ -159,10 +177,12 @@ test('not batching: superjson up and devalue down', async () => {
         },
       }),
     {
-      client: ({ httpUrl }) => ({
-        transformer,
-        links: [httpLink({ url: httpUrl })],
-      }),
+      client({ httpUrl }) {
+        return {
+          transformer,
+          links: [httpLink({ url: httpUrl })],
+        };
+      },
     },
   );
   const res = await client.query('hello', date);
@@ -195,10 +215,12 @@ test('batching: superjson up and devalue down', async () => {
         },
       }),
     {
-      client: ({ httpUrl }) => ({
-        transformer,
-        links: [httpBatchLink({ url: httpUrl })],
-      }),
+      client({ httpUrl }) {
+        return {
+          transformer,
+          links: [httpBatchLink({ url: httpUrl })],
+        };
+      },
     },
   );
   const res = await client.query('hello', date);
@@ -208,7 +230,7 @@ test('batching: superjson up and devalue down', async () => {
   close();
 });
 
-test('batching: superjson up and devalue down', async () => {
+test('batching: superjson up and f down', async () => {
   const transformer: trpc.CombinedDataTransformer = {
     input: superjson,
     output: {
@@ -283,7 +305,12 @@ test('all transformers running in correct order', async () => {
         },
       }),
     {
-      client: { transformer },
+      client({ httpUrl }) {
+        return {
+          transformer,
+          links: [httpBatchLink({ url: httpUrl })],
+        };
+      },
     },
   );
   const res = await client.query('hello', world);
@@ -315,7 +342,12 @@ describe('transformer on router', () => {
           },
         }),
       {
-        client: { transformer },
+        client({ httpUrl }) {
+          return {
+            transformer,
+            links: [httpBatchLink({ url: httpUrl })],
+          };
+        },
       },
     );
     const res = await client.query('hello', date);
@@ -326,7 +358,7 @@ describe('transformer on router', () => {
   });
 
   test('ws', async () => {
-    let wsClient: TRPCWebSocketClient = null as any;
+    let wsClient: any;
     const date = new Date();
     const fn = jest.fn();
     const transformer = superjson;
@@ -356,6 +388,56 @@ describe('transformer on router', () => {
 
     const res = await client.query('hello', date);
     expect(res.getTime()).toBe(date.getTime());
+    expect((fn.mock.calls[0][0] as Date).getTime()).toBe(date.getTime());
+
+    wsClient.close();
+    close();
+  });
+
+  test('subscription', async () => {
+    let wsClient: any;
+    const date = new Date();
+    const fn = jest.fn();
+    const transformer = superjson;
+    const { client, close } = routerToServerAndClient(
+      trpc
+        .router()
+        .transformer(transformer)
+        .subscription('hello', {
+          input: z.date(),
+          resolve({ input }) {
+            return observable<Date>((emit) => {
+              fn(input);
+              emit.next(input);
+              return () => null;
+            });
+          },
+        }),
+      {
+        client({ wssUrl }) {
+          wsClient = createWSClient({
+            url: wssUrl,
+          });
+          return {
+            transformer,
+            links: [wsLink({ client: wsClient })],
+          };
+        },
+      },
+    );
+
+    const data = await new Promise<Date>((resolve) => {
+      const subscription = client.subscription('hello', date, {
+        next: (result) => {
+          if (result.type === 'data') {
+            subscription.unsubscribe();
+            resolve(result.data);
+          }
+        },
+      });
+    });
+
+    expect(data.getTime()).toBe(date.getTime());
     expect((fn.mock.calls[0][0] as Date).getTime()).toBe(date.getTime());
 
     wsClient.close();
@@ -399,8 +481,11 @@ describe('transformer on router', () => {
         server: {
           onError,
         },
-        client: {
-          transformer,
+        client({ httpUrl }) {
+          return {
+            transformer,
+            links: [httpBatchLink({ url: httpUrl })],
+          };
         },
       },
     );
@@ -415,7 +500,7 @@ describe('transformer on router', () => {
     if (!(serverError instanceof TRPCError)) {
       throw new Error('Wrong error');
     }
-    expect(serverError.originalError).toBeInstanceOf(MyError);
+    expect(serverError.cause).toBeInstanceOf(MyError);
 
     close();
   });
@@ -436,7 +521,12 @@ test('superjson - no input', async () => {
         },
       }),
     {
-      client: { transformer },
+      client({ httpUrl }) {
+        return {
+          transformer,
+          links: [httpBatchLink({ url: httpUrl })],
+        };
+      },
     },
   );
   const json = await (await fetch(`${httpUrl}/hello`)).json();
@@ -444,12 +534,10 @@ test('superjson - no input', async () => {
   expect(json).not.toHaveProperty('error');
   expect(json).toMatchInlineSnapshot(`
 Object {
-  "id": null,
   "result": Object {
     "data": Object {
       "json": "world",
     },
-    "type": "data",
   },
 }
 `);

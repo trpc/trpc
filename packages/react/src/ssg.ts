@@ -37,6 +37,9 @@ export function createSSGHelpers<TRouter extends AnyRouter>({
   type TQueries = TRouter['_def']['queries'];
   const queryClient = new QueryClient(queryClientConfig);
 
+  const serialize = transformer
+    ? ('input' in transformer ? transformer.input : transformer).serialize
+    : (obj: unknown) => obj;
   const caller = router.createCaller(ctx) as ReturnType<
     TRouter['createCaller']
   >;
@@ -102,11 +105,9 @@ export function createSSGHelpers<TRouter extends AnyRouter>({
       },
     },
   ): DehydratedState {
-    const serialize = transformer
-      ? ('input' in transformer ? transformer.input : transformer).serialize
-      : (obj: unknown) => obj;
-
-    return serialize(dehydrate(queryClient, opts));
+    const before = dehydrate(queryClient, opts);
+    const after = serialize(before);
+    return after;
   }
 
   return {

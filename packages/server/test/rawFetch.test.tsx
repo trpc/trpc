@@ -47,7 +47,6 @@ test('batching with raw batch', async () => {
     expect(json[0].result).toMatchInlineSnapshot(`
 Object {
   "data": "alexdotjs",
-  "type": "data",
 }
 `);
   }

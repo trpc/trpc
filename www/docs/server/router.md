@@ -9,7 +9,7 @@ slug: /router
 
 - A procedure can be viewed as the equivalent of a REST-endpoint.
 - There's no internal difference between queries and mutations apart from semantics.
-- Defining router is the same for queries, mutations, and subscription with the exception that subscriptions need to return a `Subscription`-instance.
+- Defining router is the same for queries, mutations, and subscription with the exception that subscriptions need to return an `observable` instance.
 
 :::
 

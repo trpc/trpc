@@ -1,54 +1,50 @@
 import { AnyRouter } from '@trpc/server';
-import { TRPCClientError } from '../TRPCClientError';
-import { TRPCAbortError } from '../internals/TRPCAbortError';
+import { observable } from '@trpc/server/observable';
 import {
+  HTTPLinkOptions,
   HTTP_SUBSCRIPTION_UNSUPPORTED_ERROR_MESSAGE,
   httpRequest,
-} from '../internals/httpRequest';
-import { transformRPCResponse } from '../internals/transformRPCResponse';
-import { HTTPLinkOptions, TRPCLink } from './core';
+} from './internals/httpUtils';
+import { TRPCLink } from './types';
 
 export function httpLink<TRouter extends AnyRouter>(
   opts: HTTPLinkOptions,
 ): TRPCLink<TRouter> {
   const { url } = opts;
-
-  // initialized config
-  return (runtime) => {
-    // initialized in app
-    return ({ op, prev, onDestroy }) => {
-      const { path, input, type, method } = op;
-      if (type === 'subscription') {
-        throw new Error(HTTP_SUBSCRIPTION_UNSUPPORTED_ERROR_MESSAGE);
-      }
-
-      const { promise, cancel } = httpRequest({
-        runtime,
-        type,
-        method,
-        input,
-        url,
-        path,
-      });
-      let isDone = false;
-      const prevOnce: typeof prev = (result) => {
-        if (isDone) {
-          return;
+  return (runtime) =>
+    ({ op }) =>
+      observable((observer) => {
+        const { path, input, type, method } = op;
+        if (type === 'subscription') {
+          throw new Error(HTTP_SUBSCRIPTION_UNSUPPORTED_ERROR_MESSAGE);
         }
-        isDone = true;
-        prev(result);
-      };
-      onDestroy(() => {
-        prevOnce(TRPCClientError.from(new TRPCAbortError(), { isDone: true }));
-        cancel();
-      });
-      promise
-        .then((envelope) => {
-          prevOnce(transformRPCResponse({ envelope, runtime }));
-        })
-        .catch((cause) => {
-          prevOnce(TRPCClientError.from(cause));
+        if (!method) {
+          // this should never happen
+          throw new Error(
+            'Operation processed by httpLink must define a method property',
+          );
+        }
+
+        const { promise, cancel } = httpRequest({
+          url,
+          runtime,
+          type,
+          method,
+          path,
+          input,
         });
-    };
-  };
+        promise
+          .then((res) => {
+            observer.next({
+              context: res.meta,
+              data: res.json as any,
+            });
+            observer.complete();
+          })
+          .catch(observer.error);
+
+        return () => {
+          cancel();
+        };
+      });
 }

@@ -12,7 +12,6 @@ import { routerToServerAndClient } from './__testHelpers';
 import '@testing-library/jest-dom';
 import { render, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { httpBatchLink } from '@trpc/client/links/httpBatchLink';
 import { expectTypeOf } from 'expect-type';
 import hash from 'hash-sum';
 import { AppType } from 'next/dist/shared/lib/utils';
@@ -25,6 +24,7 @@ import {
   useQueryClient,
 } from 'react-query';
 import { ZodError, z } from 'zod';
+import { httpBatchLink } from '../../client/src/links/httpBatchLink';
 import { splitLink } from '../../client/src/links/splitLink';
 import {
   TRPCWebSocketClient,
@@ -33,10 +33,12 @@ import {
 } from '../../client/src/links/wsLink';
 import { withTRPC } from '../../next/src';
 import { OutputWithCursor, createReactQueryHooks } from '../../react/src';
-import { createSSGHelpers } from '../../react/ssg';
-import { DefaultErrorShape } from '../src';
+import { createSSGHelpers } from '../../react/src/ssg';
 import { TRPCError } from '../src/TRPCError';
 import { NodeHTTPRequest } from '../src/adapters/node-http';
+import { observable } from '../src/observable';
+import { DefaultErrorShape } from '../src/router';
+import { subscriptionPullFactory } from '../src/subscription';
 
 setLogger({
   log() {},
@@ -74,9 +76,7 @@ function createAppRouter() {
       return {
         $test: 'formatted',
         zodError:
-          error.originalError instanceof ZodError
-            ? error.originalError.flatten()
-            : null,
+          error.cause instanceof ZodError ? error.cause.flatten() : null,
         ...shape,
       };
     })
@@ -164,10 +164,10 @@ function createAppRouter() {
     .subscription('newPosts', {
       input: z.number(),
       resolve({ input }) {
-        return trpcServer.subscriptionPullFactory<Post>({
+        return subscriptionPullFactory<Post>({
           intervalMs: 1,
           pull(emit) {
-            db.posts.filter((p) => p.createdAt > input).forEach(emit.data);
+            db.posts.filter((p) => p.createdAt > input).forEach(emit.next);
           },
         });
       },
@@ -180,12 +180,12 @@ function createAppRouter() {
         const { cursor } = input;
         postLiveInputs.push(input);
 
-        return trpcServer.subscriptionPullFactory<OutputWithCursor<Post[]>>({
+        return subscriptionPullFactory<OutputWithCursor<Post[]>>({
           intervalMs: 10,
           pull(emit) {
             const newCursor = hash(db.posts);
             if (newCursor !== cursor) {
-              emit.data({ data: db.posts, cursor: newCursor });
+              emit.next({ data: db.posts, cursor: newCursor });
             }
           },
         });
@@ -233,14 +233,26 @@ function createAppRouter() {
           url: wssUrl,
         });
         return {
-          // links: [wsLink({ client: ws })],
           links: [
             () =>
-              ({ op, next, prev }) => {
-                linkSpy.up(op);
-                next(op, (result) => {
-                  linkSpy.down(result);
-                  prev(result);
+              ({ op, next }) => {
+                return observable((observer) => {
+                  linkSpy.up(op);
+                  const subscription = next(op).subscribe({
+                    next(result) {
+                      linkSpy.down(result);
+                      observer.next(result);
+                    },
+                    error(result) {
+                      linkSpy.down(result);
+                      observer.error(result);
+                    },
+                    complete() {
+                      linkSpy.down('COMPLETE');
+                      observer.complete();
+                    },
+                  });
+                  return subscription;
                 });
               },
             splitLink({
@@ -353,7 +365,6 @@ describe('useQuery()', () => {
     });
 
     expect(linkSpy.up).toHaveBeenCalledTimes(1);
-    expect(linkSpy.down).toHaveBeenCalledTimes(1);
     expect(linkSpy.up.mock.calls[0][0].context).toMatchObject({
       test: '1',
     });
@@ -483,7 +494,7 @@ test('mutation on mount + subscribe for it', async () => {
     );
 
     trpc.useSubscription(['newPosts', input], {
-      onNext(post) {
+      next(post) {
         addPosts([post]);
       },
     });
@@ -731,7 +742,6 @@ describe('useMutation()', () => {
     });
 
     expect(linkSpy.up).toHaveBeenCalledTimes(1);
-    expect(linkSpy.down).toHaveBeenCalledTimes(1);
     expect(linkSpy.up.mock.calls[0][0].context).toMatchObject({
       test: '1',
     });
@@ -744,7 +754,7 @@ describe('useMutation()', () => {
       trpc.useMutation(['deletePosts'], {
         onMutate: () => 'foo' as const,
         onSuccess: (_data, _variables, context) => {
-          expectTypeOf(context).toMatchTypeOf<'foo'>();
+          expectTypeOf(context).toMatchTypeOf<'foo' | undefined>();
         },
         onError: (_error, _variables, context) => {
           expectTypeOf(context).toMatchTypeOf<'foo' | undefined>();
@@ -1345,74 +1355,6 @@ describe('invalidate queries', () => {
     expect(resolvers.postById).toHaveBeenCalledTimes(2);
   });
 
-  test('invalidateQuery()', async () => {
-    const { trpc, resolvers, client } = factory;
-    function MyComponent() {
-      const allPostsQuery = trpc.useQuery(['allPosts'], {
-        staleTime: Infinity,
-      });
-      const postByIdQuery = trpc.useQuery(['postById', '1'], {
-        staleTime: Infinity,
-      });
-      const utils = trpc.useContext();
-      return (
-        <>
-          <pre>
-            allPostsQuery:{allPostsQuery.status} allPostsQuery:
-            {allPostsQuery.isStale ? 'stale' : 'not-stale'}{' '}
-          </pre>
-          <pre>
-            postByIdQuery:{postByIdQuery.status} postByIdQuery:
-            {postByIdQuery.isStale ? 'stale' : 'not-stale'}
-          </pre>
-          <button
-            data-testid="refetch"
-            onClick={() => {
-              utils.invalidateQuery(['allPosts']);
-              utils.invalidateQuery(['postById', '1']);
-            }}
-          />
-        </>
-      );
-    }
-    function App() {
-      const [queryClient] = useState(() => new QueryClient());
-      return (
-        <trpc.Provider {...{ queryClient, client }}>
-          <QueryClientProvider client={queryClient}>
-            <MyComponent />
-          </QueryClientProvider>
-        </trpc.Provider>
-      );
-    }
-
-    const utils = render(<App />);
-
-    await waitFor(() => {
-      expect(utils.container).toHaveTextContent('postByIdQuery:success');
-      expect(utils.container).toHaveTextContent('allPostsQuery:success');
-
-      expect(utils.container).toHaveTextContent('postByIdQuery:not-stale');
-      expect(utils.container).toHaveTextContent('allPostsQuery:not-stale');
-    });
-
-    expect(resolvers.allPosts).toHaveBeenCalledTimes(1);
-    expect(resolvers.postById).toHaveBeenCalledTimes(1);
-
-    utils.getByTestId('refetch').click();
-
-    await waitFor(() => {
-      expect(utils.container).toHaveTextContent('postByIdQuery:stale');
-      expect(utils.container).toHaveTextContent('allPostsQuery:stale');
-    });
-    await waitFor(() => {
-      expect(utils.container).toHaveTextContent('postByIdQuery:not-stale');
-      expect(utils.container).toHaveTextContent('allPostsQuery:not-stale');
-    });
-
-    expect(resolvers.allPosts).toHaveBeenCalledTimes(2);
-    expect(resolvers.postById).toHaveBeenCalledTimes(2);
-  });
   test('invalidateQueries()', async () => {
     const { trpc, resolvers, client } = factory;
     function MyComponent() {
@@ -1804,6 +1746,7 @@ describe('withTRPC()', () => {
     const App: AppType = () => {
       const query1 = trpc.useQuery(['postById', '1']);
       const query2 = trpc.useQuery(['postById', '2']);
+
       return <>{JSON.stringify([query1.data, query2.data])}</>;
     };
 

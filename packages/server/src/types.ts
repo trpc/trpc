@@ -8,17 +8,8 @@ export type Prefix<K extends string, T extends string> = `${K}${T}`;
 
 /**
  * @internal
- * @deprecated will be removed in next major
  */
 export type identity<T> = T;
-
-/**
- * @internal
- * @deprecated will be removed in next major
- */
-export type format<T> = {
-  [k in keyof T]: T[k];
-};
 
 /**
  * @internal

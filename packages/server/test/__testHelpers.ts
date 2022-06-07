@@ -2,12 +2,12 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import './__packages';
-import { CreateTRPCClientOptions, createTRPCClient } from '@trpc/client';
 import {
   TRPCWebSocketClient,
   WebSocketClientOptions,
   createWSClient,
-} from '@trpc/client/links/wsLink';
+} from '@trpc/client/src';
+import { CreateTRPCClientOptions, createTRPCClient } from '@trpc/client/src';
 import AbortController from 'abort-controller';
 import fetch from 'node-fetch';
 import ws from 'ws';
@@ -89,10 +89,6 @@ export function routerToServerAndClient<TRouter extends AnyRouter>(
     router,
     trpcClientOptions,
     httpPort,
-    /**
-     * @deprecated
-     */
-    port: httpPort,
     wssPort,
     httpUrl,
     wssUrl,

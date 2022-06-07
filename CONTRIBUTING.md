@@ -2,7 +2,6 @@
 
 So excited to have you here! If you want **any** guidance whatsoever with contributing to tRPC, don't hesitate to reach out on [Discord](https://trpc.io/discord)!
 
-
 ## Development workflow
 
 ```bash

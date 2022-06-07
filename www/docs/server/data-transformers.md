@@ -19,42 +19,44 @@ SuperJSON allows us to transparently use e.g. standard `Date`/`Map`/`Set`s over 
 yarn add superjson
 ```
 
-#### 2. Add to `createTRPCCLient()` or `withTRPC()` config
+#### 2. Add to your `AppRouter`
 
-```ts title='client.ts'
-import superjson from 'superjson';
-
-// [...]
-
-export const client = createTRPCClient<AppRouter>({
-  // [...]
-  transformer: superjson,
-});
-```
-```ts title='pages/_app.tsx'
-import superjson from 'superjson';
-
-// [...]
-
-export default withTRPC<AppRouter>({
-  config({ ctx }) {
-    return {
-      // [...]
-      transformer: superjson,
-    }
-  }
-})(MyApp);
-```
-
-#### 3. Add to your `AppRouter`
-
-```ts title='server/routers/_app.ts'
-import superjson from 'superjson';
+```ts title='routers/router/_app..ts'
 import * as trpc from '@trpc/server';
+import superjson from 'superjson';
 
 export const appRouter = trpc.router()
-  .transformer(superjson)
+  .transformer(superjson) // <--
   // .query(...)
+```
+
+#### 3. Add to `createTRPCClient()` or `setupNext()`
+
+```ts
+import { createTRPCClient } from '@trpc/client';
+import superjson from 'superjson';
+import type { AppRouter } from '~/server/routers/_app';
+
+export const client = createTRPCClient<AppRouter>({
+  transformer: superjson, // <--
+  // [...]
+});
+```
+
+```ts title='utils/trpc.ts'
+import { setupTRPC } from '@trpc/next';
+import superjson from 'superjson';
+import type { AppRouter } from '~/server/routers/_app';
+
+// [...]
+
+export default setupTRPC<AppRouter>({
+  transformer: superjson, // <-- Used for hydration when server-side rendering
+  config({ ctx }) {
+    transformer: superjson, // <-- Used for the actual requests
+  },
+  // [...]
+})(MyApp);
 ```
 
 ## Different transformers for upload and download
@@ -74,8 +76,8 @@ yarn add superjson devalue
 #### 2. Add to `utils/trpc.ts`
 
 ```ts title='utils/trpc.ts'
-import superjson from 'superjson';
 import devalue from 'devalue';
+import superjson from 'superjson';
 
 // [...]
 
@@ -88,30 +90,28 @@ export const transformer = {
 };
 ```
 
-#### 3. Add to `createTRPCCLient()`
-
-```ts title='client.ts'
-import { transformer } from '../utils/trpc';
-
-// [...]
-
-export const client = createTRPCClient<AppRouter>({
-  // [...]
-  transformer: transformer,
-});
-```
-
-#### 4. Add to your `AppRouter`
+#### 3. Add to your `AppRouter`
 
 ```ts title='server/routers/_app.ts'
-import { transformer } from '../../utils/trpc';
 import * as trpc from '@trpc/server';
+import { transformer } from '../../utils/trpc';
 
 export const appRouter = trpc.router()
-  .transformer(transformer)
+  .transformer(transformer) // <--
   // .query(...)
 ```
 
+#### 4. Add to `createTRPCClient()`
+
+```ts title='client.ts'
+import { createTRPCClient } from '@trpc/client';
+import { transformer } from '../utils/trpc';
+
+export const client = createTRPCClient<AppRouter>({
+  transformer: transformer, // <--
+  // [...]
+});
+```
 
 ## `DataTransformer` interface
 

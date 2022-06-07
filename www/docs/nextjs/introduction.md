@@ -122,27 +122,10 @@ export default trpcNext.createNextApiHandler({
 Create a set of strongly-typed hooks using your API's type signature.
 
 ```tsx title='utils/trpc.ts'
-import { createReactQueryHooks } from '@trpc/react';
+import { setupTRPC } from '@trpc/next';
 import type { AppRouter } from '../pages/api/trpc/[trpc]';
 
-export const trpc = createReactQueryHooks<AppRouter>();
-// => { useQuery: ..., useMutation: ...}
-```
-
-### 5. Configure `_app.tsx`
-
-The `createReactQueryHooks` function expects certain parameters to be passed via the Context API. To set these parameters, create a custom `_app.tsx` using the `withTRPC` higher-order component:
-
-```tsx title='pages/_app.tsx'
-import { withTRPC } from '@trpc/next';
-import { AppType } from 'next/dist/shared/lib/utils';
-import { AppRouter } from './api/trpc/[trpc]';
-
-const MyApp: AppType = ({ Component, pageProps }) => {
-  return <Component {...pageProps} />;
-};
-
-export default withTRPC<AppRouter>({
+export const trpc = setupTRPC<AppRouter>({
   config({ ctx }) {
     /**
      * If you want to use SSR, you need to use the server's full URL
@@ -164,10 +147,11 @@ export default withTRPC<AppRouter>({
    * @link https://trpc.io/docs/ssr
    */
   ssr: true,
-})(MyApp);
+});
+// => { useQuery: ..., useMutation: ...}
 ```
 
-### 6. Make API requests
+### 5. Make API requests
 
 ```tsx title='pages/index.ts'
 import { trpc } from '../utils/trpc';

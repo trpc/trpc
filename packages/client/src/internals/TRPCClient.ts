@@ -8,41 +8,43 @@ import {
   inferProcedureOutput,
   inferSubscriptionOutput,
 } from '@trpc/server';
-import { TRPCResult } from '@trpc/server/rpc';
+import {
+  Observer,
+  Unsubscribable,
+  inferObservableValue,
+  observableToPromise,
+  share,
+} from '@trpc/server/observable';
+import { TRPCResultMessage } from '@trpc/server/rpc';
+import { CancelFn } from '..';
 import { TRPCClientError } from '../TRPCClientError';
 import { getFetch } from '../getFetch';
+import { httpBatchLink } from '../links';
+import { createChain } from '../links/internals/createChain';
+import { HTTP_METHODS } from '../links/internals/httpUtils';
 import {
-  CancelFn,
+  transformOperationResult,
+  transformSubscriptionOperationResult,
+} from '../links/internals/transformOperationResult';
+import {
   HTTPHeaders,
-  LinkRuntimeOptions,
   OperationContext,
   OperationLink,
   OperationMethod,
+  TRPCClientRuntime,
   TRPCLink,
-} from '../links/core';
-import { httpBatchLink } from '../links/httpBatchLink';
-import { TRPCAbortError } from './TRPCAbortError';
-import { executeChain } from './executeChain';
+} from '../links/types';
 import { getAbortController } from './fetchHelpers';
-import { ObservableCallbacks, UnsubscribeFn } from './observable';
 
 type CancellablePromise<T = unknown> = Promise<T> & {
   cancel: CancelFn;
 };
 
-/**
- * @deprecated no longer used
- */
-export interface FetchOptions {
-  fetch?: typeof fetch;
-  AbortController?: typeof AbortController;
-}
 let idCounter = 0;
 function getRequestId() {
   return ++idCounter;
 }
-
-export type CreateTRPCClientOptions<TRouter extends AnyRouter> = {
+interface CreateTRPCClientBaseOptions {
   /**
    * Add ponyfill for fetch
    */
@@ -60,20 +62,26 @@ export type CreateTRPCClientOptions<TRouter extends AnyRouter> = {
    * @link https://trpc.io/docs/data-transformers
    **/
   transformer?: ClientDataTransformerOptions;
-} & (
-  | {
-      /**
-       * HTTP URL of API
-       **/
-      url: string;
-    }
-  | {
-      /**
-       * @link https://trpc.io/docs/links
-       **/
-      links: TRPCLink<TRouter>[];
-    }
-);
+}
+
+/** @internal */
+export interface CreateTRPCClientWithURLOptions
+  extends CreateTRPCClientBaseOptions {
+  /**
+   * HTTP URL of API
+   **/
+  url: string;
+}
+
+/** @internal */
+export interface CreateTRPCClientWithLinksOptions<TRouter extends AnyRouter>
+  extends CreateTRPCClientBaseOptions {
+  /**
+   * @link https://trpc.io/docs/links
+   **/
+  links: TRPCLink<TRouter>[];
+}
+
 export interface TRPCRequestOptions {
   /**
    * Pass additional context to links
@@ -85,11 +93,26 @@ export interface TRPCRequestOptions {
   method?: OperationMethod;
 }
 
+/** @internal */
+export type CreateTRPCClientOptions<TRouter extends AnyRouter> =
+  | CreateTRPCClientWithURLOptions
+  | CreateTRPCClientWithLinksOptions<TRouter>;
 export class TRPCClient<TRouter extends AnyRouter> {
   private readonly links: OperationLink<TRouter>[];
-  public readonly runtime: LinkRuntimeOptions;
+  public readonly runtime: TRPCClientRuntime;
 
   constructor(opts: CreateTRPCClientOptions<TRouter>) {
+    const _fetch = getFetch(opts?.fetch);
+    const AC = getAbortController(opts?.AbortController);
+
+    function getHeadersFn(): TRPCClientRuntime['headers'] {
+      if (opts.headers) {
+        const headers = opts.headers;
+        return typeof headers === 'function' ? headers : () => headers;
+      }
+      return () => ({});
+    }
+
     const transformer: DataTransformer = opts.transformer
       ? 'input' in opts.transformer
         ? {
@@ -102,21 +125,11 @@ export class TRPCClient<TRouter extends AnyRouter> {
           deserialize: (data) => data,
         };
 
-    const _fetch = getFetch(opts?.fetch);
-    const AC = getAbortController(opts?.AbortController);
-
-    function getHeadersFn(): LinkRuntimeOptions['headers'] {
-      if (opts.headers) {
-        const headers = opts.headers;
-        return typeof headers === 'function' ? headers : () => headers;
-      }
-      return () => ({});
-    }
     this.runtime = {
-      transformer,
       AbortController: AC as any,
       fetch: _fetch,
       headers: getHeadersFn(),
+      transformer,
     };
 
     if ('links' in opts) {
@@ -143,8 +156,8 @@ export class TRPCClient<TRouter extends AnyRouter> {
     path: string;
     context?: OperationContext;
   }) {
-    const $result = executeChain<TRouter, TInput, TOutput>({
-      links: this.links as any,
+    const chain$ = createChain<TRouter, TInput, TOutput>({
+      links: this.links as OperationLink<any, any, any>[],
       op: {
         id: getRequestId(),
         type,
@@ -154,8 +167,7 @@ export class TRPCClient<TRouter extends AnyRouter> {
         context,
       },
     });
-
-    return $result;
+    return chain$.pipe(share());
   }
   private requestAsPromise<TInput = unknown, TOutput = unknown>(opts: {
     type: ProcedureType;
@@ -164,38 +176,29 @@ export class TRPCClient<TRouter extends AnyRouter> {
     path: string;
     context?: OperationContext;
   }): CancellablePromise<TOutput> {
-    const $result = this.$request<TInput, TOutput>(opts);
+    const observable$ = this.$request<TInput, TOutput>(opts);
+    type TValue = inferObservableValue<typeof observable$>;
+    const { promise, abort } = observableToPromise<TValue>(observable$);
 
-    const promise = new Promise<TOutput>((resolve, reject) => {
-      const res = $result.get();
-      if (res?.type === 'data') {
-        resolve(res.data);
-        $result.done();
-        return;
-      }
-      $result.subscribe({
-        onNext: (result) => {
-          if (result?.type !== 'data') {
-            return;
-          }
-          resolve(result.data);
+    const cancellablePromise: CancellablePromise<any> = new Promise<TOutput>(
+      (resolve, reject) => {
+        promise
+          .then((result) => {
+            const transformed = transformOperationResult(result, this.runtime);
+            if (transformed.ok) {
+              resolve(transformed.data);
+              return;
+            }
+            reject(transformed.error);
+          })
+          .catch((err) => {
+            reject(TRPCClientError.from(err));
+          });
+      },
+    ) as any;
+    cancellablePromise.cancel = abort;
 
-          $result.done();
-        },
-        onError(err) {
-          reject(err);
-          $result.done();
-        },
-        onDone() {
-          reject(TRPCClientError.from(new TRPCAbortError()));
-        },
-      });
-    }) as CancellablePromise<TOutput>;
-    promise.cancel = () => {
-      $result.done();
-    };
-
-    return promise;
+    return cancellablePromise;
   }
 
   public query<
@@ -212,7 +215,7 @@ export class TRPCClient<TRouter extends AnyRouter> {
       inferProcedureOutput<TQueries[TPath]>
     >({
       type: 'query',
-      method: method ?? 'GET',
+      method: method ?? HTTP_METHODS['query'],
       path,
       input: args[0] as any,
       context,
@@ -233,7 +236,7 @@ export class TRPCClient<TRouter extends AnyRouter> {
       inferProcedureOutput<TMutations[TPath]>
     >({
       type: 'mutation',
-      method: method ?? 'POST',
+      method: method ?? HTTP_METHODS['mutation'],
       path,
       input: args[0] as any,
       context,
@@ -249,29 +252,35 @@ export class TRPCClient<TRouter extends AnyRouter> {
     path: TPath,
     input: TInput,
     opts: Omit<TRPCRequestOptions, 'method'> &
-      ObservableCallbacks<TRPCResult<TOutput>, TRPCClientError<TRouter>>,
-  ): UnsubscribeFn {
+      Partial<Observer<TRPCResultMessage<TOutput>, TRPCClientError<TRouter>>>,
+  ): Unsubscribable {
     const { context } = opts;
-    const $res = this.$request<TInput, TOutput>({
+    const observable$ = this.$request<TInput, TOutput>({
       type: 'subscription',
       method: undefined,
       path,
       input,
       context,
     });
-    $res.subscribe({
-      onNext(output) {
-        if (output) {
-          opts.onNext?.(output);
+    const runtime = this.runtime;
+    return observable$.subscribe({
+      next(result) {
+        const transformed = transformSubscriptionOperationResult(
+          result,
+          runtime,
+        );
+        if (transformed.ok) {
+          opts.next?.(transformed.data);
+          return;
         }
+        opts.error?.(transformed.error);
       },
-      onError(err) {
-        opts.onError?.(err);
+      error(err) {
+        opts.error?.(err);
       },
-      onDone: opts.onDone,
+      complete() {
+        opts.complete?.();
+      },
     });
-    return () => {
-      $res.done();
-    };
   }
 }

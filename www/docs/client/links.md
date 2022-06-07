@@ -25,16 +25,16 @@ const somePosts = await Promise.all([
 
 > The below examples assuming you use Next.js, but the same as below can be added if you use the vanilla tRPC client
 
-### Setting a maximum batch size
+### Setting a maximum URL length
 
-This limits the number of requests that can be sent together in batch ( useful to prevent the url from getting too large and run into [HTTP error 413](https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/413) ).
+When sending batch requests, sometimes the URL can become too large causing HTTP errors like [`413 Payload Too Large`](https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/413), [`414 URI Too Long`](https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/414), and [`404 Not Found`](https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/404). The `maxURLLength` option will limit the number of requests that can be sent together in a batch.
 
 ```ts title='server.ts'
 import type { AppRouter } from 'pages/api/trpc/[trpc]';
 import { withTRPC } from '@trpc/next';
 import { AppType } from 'next/dist/shared/lib/utils';
 // 👇 import the httpBatchLink
-import { httpBatchLink } from '@trpc/client/links/httpBatchLink';
+import { httpBatchLink } from '@trpc/client';
 
 const MyApp: AppType = ({ Component, pageProps }) => {
   return <Component {...pageProps} />;
@@ -45,8 +45,8 @@ export default withTRPC<AppRouter>({
     return {
       links: [
         httpBatchLink({
-          url: '/api/trpc',
-          maxBatchSize: 10 // a reasonable size
+          url: 'http://localhost:3000/api/trpc',
+          maxURLLength: 2083 // a suitable size
         }),
       ],
     };
@@ -78,7 +78,7 @@ import type { AppRouter } from 'pages/api/trpc/[trpc]';
 import { withTRPC } from '@trpc/next';
 import { AppType } from 'next/dist/shared/lib/utils';
 // 👇 import the httpLink
-import { httpLink } from '@trpc/client/links/httpLink';
+import { httpLink } from '@trpc/client';
 
 const MyApp: AppType = ({ Component, pageProps }) => {
   return <Component {...pageProps} />;
@@ -107,9 +107,9 @@ export default withTRPC<AppRouter>({
 
 ```tsx title='pages/_app.tsx'
 import { withTRPC } from '@trpc/next';
-import { httpBatchLink } from '@trpc/client/links/httpBatchLink';
-import { httpLink } from '@trpc/client/links/httpLink';
-import { splitLink } from '@trpc/client/links/splitLink';
+import { httpBatchLink } from '@trpc/client';
+import { httpLink } from '@trpc/client';
+import { splitLink } from '@trpc/client';
 
 // [..]
 export default withTRPC<AppRouter>({
@@ -166,37 +166,40 @@ const postResult = client.query('posts', null, {
 
 ### Creating a custom link
 
-```tsx title='pages/_app.tsx'
-import type { AppRouter } from 'pages/api/trpc/[trpc]';
-import { TRPCLink } from '@trpc/client';
+> Reference examples can be found in [`packages/client/src/links`](https://github.com/trpc/trpc/tree/main/packages/client/src/links).
 
-const customLink: TRPCLink<AppRouter> = (runtime) => {
+```tsx title='utils/customLink.ts'
+import { TRPCLink } from '@trpc/client';
+import { AppRouter } from 'server/routers/_app';
+import { observable } from '@trpc/server/observable';
+
+export const customLink: TRPCLink<AppRouter> = () => {
   // here we just got initialized in the app - this happens once per app
   // useful for storing cache for instance
-  return ({ prev, next, op }) => {
+  return ({ next, op }) => {
     // this is when passing the result to the next link
-    next(op, (result) => {
-      // this is when we've gotten result from the server
-      if (result instanceof Error) {
-        // maybe send to bugsnag?
-      }
-      prev(result);
+
+    // each link needs to return an observable which propagates results
+    return observable((observer) => {
+      console.log('performing operation:', op);
+      const unsubscribe = next(op).subscribe({
+        next(value) {
+          console.log('we received value', value);
+          observer.next(value);
+        },
+        error(err) {
+          console.log('we received error', err);
+          observer.error(err);
+        },
+        complete() {
+          observer.complete();
+        },
+      });
+
+      return unsubscribe;
     });
   };
 };
-
-export default withTRPC<AppRouter>({
-  config() {
-    return {
-      links: [
-        customLink,
-        // [..]
-        // ❗ Make sure to end with a `httpBatchLink` or `httpLink`
-      ],
-    };
-  },
-  // ssr: false
-})(MyApp);
 
 
 ```
