@@ -2,6 +2,7 @@ import { AnyRouter } from '@trpc/server';
 import { observable } from '@trpc/server/observable';
 import {
   HTTPLinkOptions,
+  HTTP_METHOD_UNDEFINED_ERROR_MESSAGE,
   HTTP_SUBSCRIPTION_UNSUPPORTED_ERROR_MESSAGE,
   httpRequest,
 } from './internals/httpUtils';
@@ -20,9 +21,7 @@ export function httpLink<TRouter extends AnyRouter>(
         }
         if (!method) {
           // this should never happen
-          throw new Error(
-            'Operation processed by httpLink must define a method property',
-          );
+          throw new Error(HTTP_METHOD_UNDEFINED_ERROR_MESSAGE);
         }
 
         const { promise, cancel } = httpRequest({

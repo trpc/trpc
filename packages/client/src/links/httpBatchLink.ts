@@ -4,6 +4,7 @@ import { dataLoader } from '../internals/dataLoader';
 import {
   HTTPLinkOptions,
   HTTPRequestOptions,
+  HTTP_METHOD_UNDEFINED_ERROR_MESSAGE,
   HTTP_SUBSCRIPTION_UNSUPPORTED_ERROR_MESSAGE,
   ResponseShape,
   getUrl,
@@ -107,9 +108,7 @@ export function httpBatchLink<TRouter extends AnyRouter>(
       }
       if (!method) {
         // this should never happen
-        throw new Error(
-          'Operation processed by httpBatchLink must define a method property',
-        );
+        throw new Error(HTTP_METHOD_UNDEFINED_ERROR_MESSAGE);
       }
 
       return observable((observer) => {

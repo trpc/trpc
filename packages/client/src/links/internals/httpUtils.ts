@@ -21,6 +21,8 @@ export const HTTP_METHODS = {
 
 export const HTTP_SUBSCRIPTION_UNSUPPORTED_ERROR_MESSAGE =
   'Subscriptions are not supported over HTTP, please add a wsLink';
+export const HTTP_METHOD_UNDEFINED_ERROR_MESSAGE =
+  'Operation processed by httpLinks must define a method property';
 
 export interface ResponseShape {
   json: unknown;
