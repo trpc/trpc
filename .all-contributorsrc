@@ -755,6 +755,15 @@
         "code",
         "test"
       ]
+    },
+    {
+      "login": "bautistaaa",
+      "name": "bautistaaa",
+      "avatar_url": "https://avatars.githubusercontent.com/u/3660667?v=4",
+      "profile": "http://www.big-sir.com",
+      "contributions": [
+        "doc"
+      ]
     }
   ],
   "contributorsPerLine": 7,
