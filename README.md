@@ -284,6 +284,9 @@ Also, if your company using tRPC and want to support long-term maintenance of tR
     <td align="center"><a href="https://github.com/luixo"><img src="https://avatars.githubusercontent.com/u/1051134?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Alexey Immoreev</b></sub></a><br /><a href="https://github.com/trpc/trpc/commits?author=luixo" title="Code">💻</a></td>
     <td align="center"><a href="https://github.com/bradennapier"><img src="https://avatars.githubusercontent.com/u/15365418?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Braden Napier</b></sub></a><br /><a href="https://github.com/trpc/trpc/commits?author=bradennapier" title="Code">💻</a> <a href="https://github.com/trpc/trpc/commits?author=bradennapier" title="Tests">⚠️</a></td>
   </tr>
+  <tr>
+    <td align="center"><a href="http://www.big-sir.com"><img src="https://avatars.githubusercontent.com/u/3660667?v=4?s=100" width="100px;" alt=""/><br /><sub><b>bautistaaa</b></sub></a><br /><a href="https://github.com/trpc/trpc/commits?author=bautistaaa" title="Documentation">📖</a></td>
+  </tr>
 </table>
 
 <!-- markdownlint-restore -->
