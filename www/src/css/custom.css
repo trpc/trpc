@@ -30,6 +30,10 @@
   padding: 0 var(--ifm-pre-padding);
 }
 
+a {
+  color: var(--ifm-link-color);
+  text-decoration: var(--ifm-link-decoration);
+}
 /**
  * Initialiazing a `footnotes` counter on the wrapper
  */
