@@ -20,6 +20,18 @@
   "main": "dist/trpc-react.cjs.js",
   "module": "dist/trpc-react.esm.js",
   "typings": "dist/trpc-react.cjs.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/trpc-react.esm.js",
+      "require": "./dist/trpc-react.cjs.js",
+      "types": "./dist/trpc-react.cjs.d.ts"
+    },
+    "./ssg": {
+      "import": "./ssg/dist/trpc-react-ssg.esm.js",
+      "require": "./ssg/dist/trpc-react-ssg.cjs.js",
+      "types": "./ssg/dist/trpc-react-ssg.cjs.d.js"
+    }
+  },
   "files": [
     "README.md",
     "dist",

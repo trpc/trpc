@@ -24,6 +24,38 @@
   "main": "dist/trpc-client.cjs.js",
   "module": "dist/trpc-client.esm.js",
   "typings": "dist/trpc-client.cjs.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/trpc-client.esm.js",
+      "require": "./dist/trpc-client.cjs.js",
+      "types": "./dist/trpc-client.cjs.d.ts"
+    },
+    "./links/httpBatchLink": {
+      "import": "./links/dist/trpc-client-links-httpBatchLink.esm.js",
+      "require": "./links/dist/trpc-client-links-httpBatchLink.cjs.js",
+      "types": "./links/dist/trpc-client-links-httpBatchLink.cjs.d.js"
+    },
+    "./links/httpLink": {
+      "import": "./links/dist/trpc-client-links-httpLink.esm.js",
+      "require": "./links/dist/trpc-client-links-httpLink.cjs.js",
+      "types": "./links/dist/trpc-client-links-httpLink.cjs.d.js"
+    },
+    "./links/loggerLink": {
+      "import": "./links/dist/trpc-client-links-loggerLink.esm.js",
+      "require": "./links/dist/trpc-client-links-loggerLink.cjs.js",
+      "types": "./links/dist/trpc-client-links-loggerLink.cjs.d.js"
+    },
+    "./links/splitLink": {
+      "import": "./links/dist/trpc-client-links-splitLink.esm.js",
+      "require": "./links/dist/trpc-client-links-splitLink.cjs.js",
+      "types": "./links/dist/trpc-client-links-splitLink.cjs.d.js"
+    },
+    "./links/wsLink": {
+      "import": "./links/dist/trpc-client-links-wsLink.esm.js",
+      "require": "./links/dist/trpc-client-links-wsLink.cjs.js",
+      "types": "./links/dist/trpc-client-links-wsLink.cjs.d.js"
+    }
+  },
   "files": [
     "README.md",
     "dist",

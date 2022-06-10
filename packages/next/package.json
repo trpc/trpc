@@ -19,6 +19,11 @@
   "main": "dist/trpc-next.cjs.js",
   "module": "dist/trpc-next.esm.js",
   "typings": "dist/trpc-next.cjs.d.ts",
+  "exports": {
+    "import": "./dist/trpc-next.esm.js",
+    "require": "./dist/trpc-next.cjs.js",
+    "types": "./dist/trpc-next.cjs.d.ts"
+  },
   "files": [
     "README.md",
     "dist",

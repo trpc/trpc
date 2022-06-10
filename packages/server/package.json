@@ -34,6 +34,53 @@
   "main": "dist/trpc-server.cjs.js",
   "module": "dist/trpc-server.esm.js",
   "typings": "dist/trpc-server.cjs.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/trpc-server.esm.js",
+      "require": "./dist/trpc-server.cjs.js",
+      "types": "./dist/trpc-server.cjs.d.ts"
+    },
+    "./adapters/express": {
+      "import": "./adapters/express/dist/trpc-server-adapters-express.esm.js",
+      "require": "./adapters/express/dist/trpc-server-adapters-express.cjs.js",
+      "types": "./adapters/express/dist/trpc-server-adapters-express.cjs.d.js"
+    },
+    "./adapters/fastify": {
+      "import": "./adapters/fastify/dist/trpc-server-adapters-fastify.esm.js",
+      "require": "./adapters/fastify/dist/trpc-server-adapters-fastify.cjs.js",
+      "types": "./adapters/fastify/dist/trpc-server-adapters-fastify.cjs.d.js"
+    },
+    "./adapters/next": {
+      "import": "./adapters/next/dist/trpc-server-adapters-next.esm.js",
+      "require": "./adapters/next/dist/trpc-server-adapters-next.cjs.js",
+      "types": "./adapters/next/dist/trpc-server-adapters-next.cjs.d.js"
+    },
+    "./adapters/node-http": {
+      "import": "./adapters/node-http/dist/trpc-server-adapters-node-http.esm.js",
+      "require": "./adapters/node-http/dist/trpc-server-adapters-node-http.cjs.js",
+      "types": "./adapters/node-http/dist/trpc-server-adapters-node-http.cjs.d.js"
+    },
+    "./adapters/standalone": {
+      "import": "./adapters/standalone/dist/trpc-server-adapters-standalone.esm.js",
+      "require": "./adapters/standalone/dist/trpc-server-adapters-standalone.cjs.js",
+      "types": "./adapters/standalone/dist/trpc-server-adapters-standalone.cjs.d.js"
+    },
+    "./adapters/ws": {
+      "import": "./adapters/ws/dist/trpc-server-adapters-ws.esm.js",
+      "require": "./adapters/ws/dist/trpc-server-adapters-ws.cjs.js",
+      "types": "./adapters/ws/dist/trpc-server-adapters-ws.cjs.d.js"
+    },
+    "./rpc": {
+      "import": "./rpc/dist/trpc-server-rpc.esm.js",
+      "require": "./rpc/dist/trpc-server-rpc.cjs.js",
+      "types": "./rpc/dist/trpc-server-rpc.cjs.d.js"
+    },
+    "./ws": {
+      "import": "./ws/dist/trpc-server-ws.esm.js",
+      "require": "./ws/dist/trpc-server-ws.cjs.js",
+      "types": "./ws/dist/trpc-server-ws.cjs.d.js"
+    }
+  },
   "files": [
     "README.md",
     "dist",
