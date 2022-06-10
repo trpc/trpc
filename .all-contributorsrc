@@ -727,6 +727,43 @@
       "contributions": [
         "bug"
       ]
+    },
+    {
+      "login": "nilskj",
+      "name": "Nils Kjellman",
+      "avatar_url": "https://avatars.githubusercontent.com/u/495782?v=4",
+      "profile": "http://www.nisse.tech",
+      "contributions": [
+        "doc"
+      ]
+    },
+    {
+      "login": "luixo",
+      "name": "Alexey Immoreev",
+      "avatar_url": "https://avatars.githubusercontent.com/u/1051134?v=4",
+      "profile": "https://github.com/luixo",
+      "contributions": [
+        "code"
+      ]
+    },
+    {
+      "login": "bradennapier",
+      "name": "Braden Napier",
+      "avatar_url": "https://avatars.githubusercontent.com/u/15365418?v=4",
+      "profile": "https://github.com/bradennapier",
+      "contributions": [
+        "code",
+        "test"
+      ]
+    },
+    {
+      "login": "bautistaaa",
+      "name": "bautistaaa",
+      "avatar_url": "https://avatars.githubusercontent.com/u/3660667?v=4",
+      "profile": "http://www.big-sir.com",
+      "contributions": [
+        "doc"
+      ]
     }
   ],
   "contributorsPerLine": 7,
