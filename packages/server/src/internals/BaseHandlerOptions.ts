@@ -1,5 +1,5 @@
 import { AnyRouter } from '../core/router';
-import { OnErrorFunction } from './OnErrorFunction2';
+import { OnErrorFunction } from './OnErrorFunction';
 
 /**
  * Base interface for any response handler

@@ -10,7 +10,7 @@ import { TRPCClientError } from '../../client/src';
 import * as trpc from '../src';
 import { TRPCError } from '../src/TRPCError';
 import { CreateHTTPContextOptions } from '../src/adapters/standalone';
-import { OnErrorFunction } from '../src/internals/OnErrorFunction2';
+import { OnErrorFunction } from '../src/internals/OnErrorFunction';
 import { getMessageFromUnkownError } from '../src/internals/errors';
 
 test('basic', async () => {
