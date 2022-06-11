@@ -24,7 +24,7 @@ export type Procedure<TParams extends ProcedureParams> =
         input?: undefined | null,
         opts?: ProcedureOptions,
       ) => Promise<TParams['_output_out']>
-    : TParams['_input_in'] extends undefined
+    : undefined extends TParams['_input_in']
     ? (
         input?: TParams['_input_in'],
         opts?: ProcedureOptions,

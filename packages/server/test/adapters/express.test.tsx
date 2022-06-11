@@ -86,8 +86,8 @@ test('simple query', async () => {
       "text": "hello test",
     }
   `);
-
-  expect(await t.client.query('hello')).toMatchInlineSnapshot(`
+  const res = await t.client.query('hello');
+  expect(res).toMatchInlineSnapshot(`
     Object {
       "text": "hello world",
     }

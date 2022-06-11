@@ -54,9 +54,12 @@ function mockRes() {
   return { res, json, setHeader, end };
 }
 test('bad setup', async () => {
-  const router = trpc.router().query('hello', {
-    resolve: () => 'world',
-  });
+  const router = trpc
+    .router()
+    .query('hello', {
+      resolve: () => 'world',
+    })
+    .interop();
 
   const handler = trpcNext.createNextApiHandler({
     router,
@@ -76,9 +79,12 @@ test('bad setup', async () => {
 });
 
 describe('ok request', () => {
-  const router = trpc.router().query('hello', {
-    resolve: () => 'world',
-  });
+  const router = trpc
+    .router()
+    .query('hello', {
+      resolve: () => 'world',
+    })
+    .interop();
 
   const handler = trpcNext.createNextApiHandler({
     router,
@@ -127,9 +133,12 @@ describe('ok request', () => {
 });
 
 test('404', async () => {
-  const router = trpc.router().query('hello', {
-    resolve: () => 'world',
-  });
+  const router = trpc
+    .router()
+    .query('hello', {
+      resolve: () => 'world',
+    })
+    .interop();
 
   const handler = trpcNext.createNextApiHandler({
     router,
@@ -153,9 +162,12 @@ test('404', async () => {
 });
 
 test('payload too large', async () => {
-  const router = trpc.router().mutation('hello', {
-    resolve: () => 'world',
-  });
+  const router = trpc
+    .router()
+    .mutation('hello', {
+      resolve: () => 'world',
+    })
+    .interop();
 
   const handler = trpcNext.createNextApiHandler({
     router,
@@ -180,9 +192,12 @@ test('payload too large', async () => {
 });
 
 test('HEAD request', async () => {
-  const router = trpc.router().query('hello', {
-    resolve: () => 'world',
-  });
+  const router = trpc
+    .router()
+    .query('hello', {
+      resolve: () => 'world',
+    })
+    .interop();
 
   const handler = trpcNext.createNextApiHandler({
     router,
@@ -202,9 +217,12 @@ test('HEAD request', async () => {
 });
 
 test('PUT request (fails)', async () => {
-  const router = trpc.router().query('hello', {
-    resolve: () => 'world',
-  });
+  const router = trpc
+    .router()
+    .query('hello', {
+      resolve: () => 'world',
+    })
+    .interop();
 
   const handler = trpcNext.createNextApiHandler({
     router,

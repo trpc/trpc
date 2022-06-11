@@ -620,7 +620,8 @@ test('mutate context and combine with other routes', async () => {
       resolve({ ctx }) {
         expectTypeOf(ctx).toMatchTypeOf<Context>();
       },
-    });
+    })
+    .interop();
 
   type AppRouter = typeof appRouter;
 

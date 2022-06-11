@@ -1,5 +1,5 @@
 import { IncomingMessage, ServerResponse } from 'http';
-import { AnyRouter } from '../../core';
+import { AnyRouter, inferRouterContext } from '../../core';
 import { inferRouterParams } from '../../core';
 import { HTTPBaseHandlerOptions } from '../../http/internals/types';
 
@@ -17,7 +17,7 @@ export type NodeHTTPCreateContextOption<
   TRouter extends AnyRouter,
   TRequest,
   TResponse,
-> = unknown extends inferRouterParams<TRouter>
+> = unknown extends inferRouterContext<TRouter>
   ? {
       /**
        * @link https://trpc.io/docs/context

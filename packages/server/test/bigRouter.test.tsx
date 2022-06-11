@@ -8,12 +8,13 @@ import { konn } from 'konn';
 import React, { useState } from 'react';
 import { QueryClient, QueryClientProvider } from 'react-query';
 import { createReactQueryHooks } from '../../react/src';
+import { MigrateOldRouter } from '../src/deprecated/interop';
 
 const ctx = konn()
   .beforeEach(() => {
     const server = routerToServerAndClient(bigRouter, {});
     const queryClient = new QueryClient();
-    const trpc = createReactQueryHooks<typeof bigRouter>();
+    const trpc = createReactQueryHooks<MigrateOldRouter<typeof bigRouter>>();
     return {
       server,
       queryClient,

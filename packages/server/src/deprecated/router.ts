@@ -888,6 +888,9 @@ export class Router<
   }
 }
 
+/**
+ * @deprecated
+ */
 export function router<TContext, TMeta extends Record<string, any> = {}>() {
   return new Router<TContext, TContext, TMeta, {}, {}, {}, DefaultErrorShape>();
 }

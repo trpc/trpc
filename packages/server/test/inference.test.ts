@@ -47,7 +47,8 @@ test('infer query input & output', async () => {
       async resolve({ input }) {
         return { input };
       },
-    });
+    })
+    .interop();
   type TQueries = typeof router['_def']['queries'];
   {
     const input: inferProcedureInput<TQueries['noInput']> = null as any;
@@ -127,7 +128,8 @@ test('infer mutation input & output', async () => {
       async resolve({ input }) {
         return { input };
       },
-    });
+    })
+    .interop();
   type TMutations = typeof router['_def']['mutations'];
   {
     const input: inferProcedureInput<TMutations['noInput']> = null as any;
@@ -198,7 +200,8 @@ test('infer subscription input & output', async () => {
           return () => null;
         });
       },
-    });
+    })
+    .interop();
   type TSubscriptions = typeof router['_def']['subscriptions'];
   {
     const input: inferProcedureInput<TSubscriptions['noInput']> = null as any;

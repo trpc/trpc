@@ -25,8 +25,11 @@ export type inferHandlerInput<TProcedure extends Procedure<any>> =
   TProcedure extends Procedure<infer TParams>
     ? TParams['_input_in'] extends UnsetMarker
       ? [input?: undefined | null, opts?: ProcedureOptions]
-      : TParams['_input_in'] extends undefined
-      ? [input?: TParams['_input_in'], opts?: ProcedureOptions]
+      : undefined extends TParams['_input_in']
+      ? [
+          input?: TParams['_input_in'] | undefined | null | void, // void is necessary to allow procedures with nullish input to be called without an input
+          opts?: ProcedureOptions,
+        ]
       : [input: TParams['_input_in'], opts?: ProcedureOptions]
     : never;
 

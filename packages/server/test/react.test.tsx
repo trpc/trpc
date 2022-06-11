@@ -35,8 +35,8 @@ import { withTRPC } from '../../next/src';
 import { OutputWithCursor, createReactQueryHooks } from '../../react/src';
 import { createSSGHelpers } from '../../react/src/ssg';
 import { TRPCError } from '../src/TRPCError';
+import { DefaultErrorShape } from '../src/error/formatter';
 import { observable } from '../src/observable';
-import { DefaultErrorShape } from '../src/router';
 import { subscriptionPullFactory } from '../src/subscription';
 
 setLogger({
@@ -247,7 +247,8 @@ function createAppRouter() {
     },
   );
   const queryClient = new QueryClient();
-  const trpc = createReactQueryHooks<typeof appRouter>();
+  const interopAppRouter = appRouter.interop();
+  const trpc = createReactQueryHooks<typeof interopAppRouter>();
 
   function App(props: { children: ReactNode }) {
     const [queryClient] = useState(() => new QueryClient());
@@ -261,7 +262,7 @@ function createAppRouter() {
   }
   return {
     App,
-    appRouter,
+    appRouter: interopAppRouter,
     trpc,
     close,
     db,

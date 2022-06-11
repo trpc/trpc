@@ -11,16 +11,18 @@ import { CreateTRPCClientOptions, createTRPCClient } from '@trpc/client/src';
 import AbortController from 'abort-controller';
 import fetch from 'node-fetch';
 import ws from 'ws';
-import { AnyRouter } from '../src';
+import { AnyRouter as AnyNewRouter } from '../src';
 import {
   CreateHTTPHandlerOptions,
   createHTTPServer,
 } from '../src/adapters/standalone';
 import { WSSHandlerOptions, applyWSSHandler } from '../src/adapters/ws';
+import { MigrateOldRouter } from '../src/deprecated/interop';
+import { AnyRouter as OldRouter } from '../src/deprecated/router';
 
 (global as any).fetch = fetch;
 (global as any).AbortController = AbortController;
-export function routerToServerAndClient<TRouter extends AnyRouter>(
+export function routerToServerAndClientNew<TRouter extends AnyNewRouter>(
   router: TRouter,
   opts?: {
     server?: Partial<CreateHTTPHandlerOptions<TRouter>>;
@@ -32,12 +34,12 @@ export function routerToServerAndClient<TRouter extends AnyRouter>(
           httpUrl: string;
           wssUrl: string;
           wsClient: TRPCWebSocketClient;
-        }) => Partial<CreateTRPCClientOptions<TRouter>>);
+        }) => Partial<CreateTRPCClientOptions<AnyNewRouter>>);
   },
 ) {
   // http
   const httpServer = createHTTPServer({
-    router,
+    router: router,
     createContext: ({ req, res }) => ({ req, res }),
     ...(opts?.server ?? {
       batching: {
@@ -52,6 +54,84 @@ export function routerToServerAndClient<TRouter extends AnyRouter>(
   const wss = new ws.Server({ port: 0 });
   const wssPort = (wss.address() as any).port as number;
   const applyWSSHandlerOpts: WSSHandlerOptions<TRouter> = {
+    wss,
+    router,
+    createContext: ({ req, res }) => ({ req, res }),
+    ...((opts?.wssServer as any) ?? {}),
+  };
+  const wssHandler = applyWSSHandler(applyWSSHandlerOpts);
+  const wssUrl = `ws://localhost:${wssPort}`;
+
+  // client
+  const wsClient = createWSClient({
+    url: wssUrl,
+    ...opts?.wsClient,
+  });
+  const trpcClientOptions: CreateTRPCClientOptions<typeof router> = {
+    url: httpUrl,
+    ...(opts?.client
+      ? typeof opts.client === 'function'
+        ? opts.client({ httpUrl, wssUrl, wsClient })
+        : opts.client
+      : {}),
+  };
+  const client = createTRPCClient<typeof router>(trpcClientOptions);
+  return {
+    wsClient,
+    client,
+    close: async () => {
+      await Promise.all([
+        new Promise((resolve) => httpServer.server.close(resolve)),
+        new Promise((resolve) => {
+          wss.clients.forEach((ws) => ws.close());
+          wss.close(resolve);
+        }),
+      ]);
+    },
+    router,
+    trpcClientOptions,
+    httpPort,
+    wssPort,
+    httpUrl,
+    wssUrl,
+    applyWSSHandlerOpts,
+    wssHandler,
+    wss,
+  };
+}
+export function routerToServerAndClient<TOldRouter extends OldRouter>(
+  _router: TOldRouter,
+  opts?: {
+    server?: Partial<CreateHTTPHandlerOptions<MigrateOldRouter<TOldRouter>>>;
+    wssServer?: Partial<WSSHandlerOptions<MigrateOldRouter<TOldRouter>>>;
+    wsClient?: Partial<WebSocketClientOptions>;
+    client?:
+      | Partial<CreateTRPCClientOptions<MigrateOldRouter<TOldRouter>>>
+      | ((opts: {
+          httpUrl: string;
+          wssUrl: string;
+          wsClient: TRPCWebSocketClient;
+        }) => Partial<CreateTRPCClientOptions<MigrateOldRouter<TOldRouter>>>);
+  },
+) {
+  const router = _router.interop() as MigrateOldRouter<TOldRouter>;
+  // http
+  const httpServer = createHTTPServer({
+    router: router,
+    createContext: ({ req, res }) => ({ req, res }),
+    ...(opts?.server ?? {
+      batching: {
+        enabled: true,
+      },
+    }),
+  });
+  const { port: httpPort } = httpServer.listen(0);
+  const httpUrl = `http://localhost:${httpPort}`;
+
+  // wss
+  const wss = new ws.Server({ port: 0 });
+  const wssPort = (wss.address() as any).port as number;
+  const applyWSSHandlerOpts: WSSHandlerOptions<MigrateOldRouter<TOldRouter>> = {
     wss,
     router,
     createContext: ({ req, res }) => ({ req, res }),

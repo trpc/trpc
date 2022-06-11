@@ -90,7 +90,8 @@ function createAppRouter() {
         onNewMessageSubscription();
         return sub;
       },
-    });
+    })
+    .interop();
 
   return { appRouter, ee, onNewMessageSubscription, onSubscriptionEnded };
 }

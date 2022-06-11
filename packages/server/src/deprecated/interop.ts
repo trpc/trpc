@@ -1,5 +1,9 @@
 import { Procedure as NewProcedure } from '../core/procedure';
 import { Router as NewRouter } from '../core/router';
+import {
+  AnyRouter as AnyOldRouter,
+  Router as OldRouter,
+} from '../deprecated/router';
 import { Observable } from '../observable';
 import { TRPCErrorShape } from '../rpc';
 import { CombinedDataTransformer } from '../transformer';
@@ -60,7 +64,7 @@ export type MigrateRouter<
     TContext,
     unknown,
     unknown,
-    Observable<unknown, unknown>,
+    any,
     unknown,
     unknown
   >,
@@ -74,3 +78,24 @@ export type MigrateRouter<
   subscriptions: MigrateProcedureRecord<TSubscriptions>;
   transformer: CombinedDataTransformer;
 }>;
+
+export type MigrateOldRouter<TRouter extends AnyOldRouter> =
+  TRouter extends OldRouter<
+    infer TInputContext,
+    infer TContext,
+    infer _TMeta,
+    infer TQueries,
+    infer TMutations,
+    infer TSubscriptions,
+    infer TErrorShape
+  >
+    ? MigrateRouter<
+        TInputContext,
+        TContext,
+        _TMeta,
+        TQueries,
+        TMutations,
+        TSubscriptions,
+        TErrorShape
+      >
+    : never;

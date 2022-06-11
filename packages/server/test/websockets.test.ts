@@ -2,7 +2,11 @@
 
 /* eslint-disable @typescript-eslint/ban-types */
 // import WebSocket from 'ws';
-import { routerToServerAndClient, waitMs } from './__testHelpers';
+import {
+  routerToServerAndClient,
+  routerToServerAndClientNew,
+  waitMs,
+} from './__testHelpers';
 import { waitFor } from '@testing-library/react';
 import { EventEmitter } from 'events';
 import { expectTypeOf } from 'expect-type';
@@ -32,73 +36,73 @@ function factory(config?: { createContext: () => Promise<any> }) {
   const onNewMessageSubscription = jest.fn();
   const subscriptionEnded = jest.fn();
   const onNewClient = jest.fn();
-  const opts = routerToServerAndClient(
-    trpc
-      .router()
-      .query('greeting', {
-        input: z.string().nullish(),
-        resolve({ input }) {
-          return `hello ${input ?? 'world'}`;
-        },
-      })
-      .mutation('slow', {
-        async resolve() {
-          await waitMs(50);
-          return 'slow query resolved';
-        },
-      })
-      .mutation('post.edit', {
-        input: z.object({
-          id: z.string(),
-          data: z.object({
-            title: z.string(),
-            text: z.string(),
-          }),
-        }),
-        async resolve({ input }) {
-          const { id, data } = input;
-          return {
-            id,
-            ...data,
-          };
-        },
-      })
-      .subscription('onMessage', {
-        input: z.string().nullish(),
-        resolve() {
-          const sub = observable<Message>((emit) => {
-            subRef.current = emit;
-            const onMessage = (data: Message) => {
-              emit.next(data);
-            };
-            ee.on('server:msg', onMessage);
-            return () => {
-              subscriptionEnded();
-              ee.off('server:msg', onMessage);
-            };
-          });
-          ee.emit('subscription:created');
-          onNewMessageSubscription();
-          return sub;
-        },
-      }),
-    {
-      wsClient: {
-        retryDelayMs: () => 10,
+  const oldRouter = trpc
+    .router<any>()
+    .query('greeting', {
+      input: z.string().nullish(),
+      resolve({ input }) {
+        return `hello ${input ?? 'world'}`;
       },
-      client({ wsClient }) {
+    })
+    .mutation('slow', {
+      async resolve() {
+        await waitMs(50);
+        return 'slow query resolved';
+      },
+    })
+    .mutation('post.edit', {
+      input: z.object({
+        id: z.string(),
+        data: z.object({
+          title: z.string(),
+          text: z.string(),
+        }),
+      }),
+      async resolve({ input }) {
+        const { id, data } = input;
         return {
-          links: [wsLink({ client: wsClient })],
+          id,
+          ...data,
         };
       },
-      server: {
-        ...(config ?? {}),
+    })
+    .subscription('onMessage', {
+      input: z.string().nullish(),
+      resolve() {
+        const sub = observable<Message>((emit) => {
+          subRef.current = emit;
+          const onMessage = (data: Message) => {
+            emit.next(data);
+          };
+          ee.on('server:msg', onMessage);
+          return () => {
+            subscriptionEnded();
+            ee.off('server:msg', onMessage);
+          };
+        });
+        ee.emit('subscription:created');
+        onNewMessageSubscription();
+        return sub;
       },
-      wssServer: {
-        ...(config ?? {}),
-      },
+    })
+    .interop();
+
+  const opts = routerToServerAndClientNew(oldRouter, {
+    wsClient: {
+      retryDelayMs: () => 10,
     },
-  );
+    client({ wsClient }) {
+      return {
+        links: [wsLink({ client: wsClient })],
+      };
+    },
+    server: {
+      ...(config ?? {}),
+    },
+    wssServer: {
+      ...(config ?? {}),
+    },
+  });
 
   opts.wss.addListener('connection', onNewClient);
   return {
