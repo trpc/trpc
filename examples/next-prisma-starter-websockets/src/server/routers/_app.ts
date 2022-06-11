@@ -41,6 +41,7 @@ export const appRouter = createRouter()
         };
       });
     },
-  });
+  })
+  .interop();
 
 export type AppRouter = typeof appRouter;

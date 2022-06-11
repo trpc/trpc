@@ -6,6 +6,7 @@ import { subRouter } from './routers/sub';
 export const appRouter = createRouter()
   .merge('posts:', postsRouter)
   .merge('sub:', subRouter)
-  .merge(apiRouter);
+  .merge(apiRouter)
+  .interop();
 
 export type AppRouter = typeof appRouter;

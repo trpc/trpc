@@ -39,6 +39,7 @@ export const appRouter = trpc
       return `hello ${input ?? 'world'}`;
     },
   })
-  .merge('post.', posts);
+  .merge('post.', posts)
+  .interop();
 
 export type AppRouter = typeof appRouter;

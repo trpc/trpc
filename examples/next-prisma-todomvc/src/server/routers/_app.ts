@@ -4,6 +4,7 @@ import { todoRouter } from './todo';
 
 export const appRouter = createRouter()
   .transformer(superjson)
-  .merge('todo.', todoRouter);
+  .merge('todo.', todoRouter)
+  .interop();
 
 export type AppRouter = typeof appRouter;

@@ -113,7 +113,8 @@ export const appRouter = createRouter()
       },
     }),
   )
-  .merge('messages.', messages);
+  .merge('messages.', messages)
+  .interop();
 
 export type AppRouter = typeof appRouter;
 
