@@ -1,9 +1,9 @@
 import { TRPCError } from '../../TRPCError';
 import { AnyRouter, ProcedureType, inferRouterParams } from '../../core';
-import { BaseHandlerOptions } from '../../internals/BaseHandlerOptions';
+import { BaseHandlerOptions } from '../../internals/types';
 import { TRPCResponse } from '../../rpc';
 import { Dict } from '../../types';
-import { ResponseMeta } from '../responseMeta';
+import { ResponseMeta } from '../types';
 
 export type HTTPHeaders = Dict<string | string[]>;
 

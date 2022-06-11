@@ -27,7 +27,7 @@ import {
   createProcedure,
   inferProcedureFromOptions,
 } from './internals/procedure';
-import { MigrateProcedureRecord, MigrateRouter } from './interop';
+import { MigrateRouter } from './interop';
 
 assertNotBrowser();
 

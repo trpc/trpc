@@ -2,9 +2,9 @@ import { IncomingMessage } from 'http';
 import ws from 'ws';
 import { TRPCError } from '../TRPCError';
 import { AnyRouter, ProcedureType, inferRouterContext } from '../core';
-import { BaseHandlerOptions } from '../internals/BaseHandlerOptions';
 import { getCauseFromUnknown, getErrorFromUnknown } from '../internals/errors';
 import { transformTRPCResponse } from '../internals/transformTRPCResponse';
+import { BaseHandlerOptions } from '../internals/types';
 import { Unsubscribable, isObservable } from '../observable';
 import {
   JSONRPC2,

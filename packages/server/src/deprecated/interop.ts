@@ -15,7 +15,7 @@ type MigrateProcedure<
   infer TInput,
   infer TParsedInput,
   infer TOutput,
-  infer TParsedOutput,
+  infer _TParsedOutput,
   infer TFinalInput
 >
   ? NewProcedure<{
@@ -36,7 +36,7 @@ export type MigrateProcedureRecord<T extends ProcedureRecord<any>> = {
 export type MigrateRouter<
   TInputContext,
   TContext,
-  TMeta extends Record<string, any>,
+  _TMeta extends Record<string, any>,
   TQueries extends ProcedureRecord<
     TInputContext,
     TContext,

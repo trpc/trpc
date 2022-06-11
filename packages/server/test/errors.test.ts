@@ -3,7 +3,6 @@
 /* eslint-disable @typescript-eslint/no-empty-function */
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { OnErrorFunction } from '../src/internals/OnErrorFunction__tmp';
 import { routerToServerAndClient, waitError } from './__testHelpers';
 import fetch from 'node-fetch';
 import { ZodError, z } from 'zod';
@@ -12,6 +11,7 @@ import * as trpc from '../src';
 import { TRPCError } from '../src/TRPCError';
 import { CreateHTTPContextOptions } from '../src/adapters/standalone';
 import { getMessageFromUnkownError } from '../src/internals/errors';
+import { OnErrorFunction } from '../src/internals/types';
 
 test('basic', async () => {
   class MyError extends Error {
