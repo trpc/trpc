@@ -21,6 +21,11 @@
   --ifm-code-font-size: 95%;
   --ifm-container-width: 1140px;
   --ifm-container-width-xl: 1320px;
+  --ifm-link-hover-color: ;
+}
+
+.markdown a {
+  @apply text-primary-normal hover:text-primary-dark;
 }
 
 .docusaurus-highlight-code-line {
@@ -82,7 +87,7 @@ article {
 
 .footnotes {
   font-size: 0.9em;
-  max-width: 600px;
+  max-width: 605px;
   margin: auto;
   padding: 10px 0px 60px 0px;
 }
@@ -115,6 +120,10 @@ article {
 .theme-doc-markdown.markdown table {
   display: table;
   /* width: 100%; */
+}
+
+.theme-edit-this-page {
+  @apply text-primary-normal hover:text-primary-dark;
 }
 
 .navbar-external-link,
@@ -152,6 +161,14 @@ h5 {
 .markdown h4,
 h5 {
   @apply text-xl;
+}
+
+.markdown ul {
+  @apply list-disc pl-8;
+}
+
+.pagination-nav__label {
+  @apply text-primary-normal;
 }
 
 .admonition-heading h5 {

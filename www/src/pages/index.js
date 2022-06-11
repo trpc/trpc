@@ -136,7 +136,7 @@ function Home() {
             that a <code>fetch()</code> polyfill/ponyfill is used if the browser
             doesn&apos;t support it. <code>@trpc/react</code> is built on top of{' '}
             <a
-              className="text-blue-500 no-underline"
+              className="text-primary-normal no-underline"
               href="https://react-query.tanstack.com/"
             >
               react-query
