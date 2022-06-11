@@ -33,6 +33,7 @@ export const appRouter = createRouter()
   /**
    * Merge `postRouter` under `post.`
    */
-  .merge('post.', postRouter);
+  .merge('post.', postRouter)
+  .interop();
 
 export type AppRouter = typeof appRouter;
