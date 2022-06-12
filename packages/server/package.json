@@ -98,6 +98,7 @@
     "@cloudflare/workers-types": "^3.8.0",
     "@fastify/websocket": "^5.0.0",
     "@miniflare/core": "^2.4.0",
+    "@types/aws-lambda": "^8.10.97",
     "@types/express": "^4.17.12",
     "@types/hash-sum": "^1.0.0",
     "@types/ws": "^8.2.0",

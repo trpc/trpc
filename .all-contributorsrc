@@ -755,6 +755,24 @@
         "code",
         "test"
       ]
+    },
+    {
+      "login": "bautistaaa",
+      "name": "bautistaaa",
+      "avatar_url": "https://avatars.githubusercontent.com/u/3660667?v=4",
+      "profile": "http://www.big-sir.com",
+      "contributions": [
+        "doc"
+      ]
+    },
+    {
+      "login": "blntrsz",
+      "name": "Balint Orosz",
+      "avatar_url": "https://avatars.githubusercontent.com/u/81449016?v=4",
+      "profile": "https://github.com/blntrsz",
+      "contributions": [
+        "doc"
+      ]
     }
   ],
   "contributorsPerLine": 7,
