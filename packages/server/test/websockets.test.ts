@@ -2,11 +2,7 @@
 
 /* eslint-disable @typescript-eslint/ban-types */
 // import WebSocket from 'ws';
-import {
-  routerToServerAndClient,
-  routerToServerAndClientNew,
-  waitMs,
-} from './__testHelpers';
+import { routerToServerAndClientNew, waitMs } from './__testHelpers';
 import { waitFor } from '@testing-library/react';
 import { EventEmitter } from 'events';
 import { expectTypeOf } from 'expect-type';

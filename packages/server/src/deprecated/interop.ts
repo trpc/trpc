@@ -4,7 +4,6 @@ import {
   AnyRouter as AnyOldRouter,
   Router as OldRouter,
 } from '../deprecated/router';
-import { Observable } from '../observable';
 import { TRPCErrorShape } from '../rpc';
 import { CombinedDataTransformer } from '../transformer';
 import { Procedure as OldProcedure } from './internals/procedure';

@@ -115,67 +115,7 @@ export function routerToServerAndClient<TOldRouter extends OldRouter>(
   },
 ) {
   const router = _router.interop() as MigrateOldRouter<TOldRouter>;
-  // http
-  const httpServer = createHTTPServer({
-    router: router,
-    createContext: ({ req, res }) => ({ req, res }),
-    ...(opts?.server ?? {
-      batching: {
-        enabled: true,
-      },
-    }),
-  });
-  const { port: httpPort } = httpServer.listen(0);
-  const httpUrl = `http://localhost:${httpPort}`;
-
-  // wss
-  const wss = new ws.Server({ port: 0 });
-  const wssPort = (wss.address() as any).port as number;
-  const applyWSSHandlerOpts: WSSHandlerOptions<MigrateOldRouter<TOldRouter>> = {
-    wss,
-    router,
-    createContext: ({ req, res }) => ({ req, res }),
-    ...((opts?.wssServer as any) ?? {}),
-  };
-  const wssHandler = applyWSSHandler(applyWSSHandlerOpts);
-  const wssUrl = `ws://localhost:${wssPort}`;
-
-  // client
-  const wsClient = createWSClient({
-    url: wssUrl,
-    ...opts?.wsClient,
-  });
-  const trpcClientOptions: CreateTRPCClientOptions<typeof router> = {
-    url: httpUrl,
-    ...(opts?.client
-      ? typeof opts.client === 'function'
-        ? opts.client({ httpUrl, wssUrl, wsClient })
-        : opts.client
-      : {}),
-  };
-  const client = createTRPCClient<typeof router>(trpcClientOptions);
-  return {
-    wsClient,
-    client,
-    close: async () => {
-      await Promise.all([
-        new Promise((resolve) => httpServer.server.close(resolve)),
-        new Promise((resolve) => {
-          wss.clients.forEach((ws) => ws.close());
-          wss.close(resolve);
-        }),
-      ]);
-    },
-    router,
-    trpcClientOptions,
-    httpPort,
-    wssPort,
-    httpUrl,
-    wssUrl,
-    applyWSSHandlerOpts,
-    wssHandler,
-    wss,
-  };
+  return routerToServerAndClientNew(router, opts);
 }
 
 export async function waitMs(ms: number) {
