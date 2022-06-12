@@ -1,8 +1,8 @@
 import { expectTypeOf } from 'expect-type';
 import { z } from 'zod';
-import * as trpc from '../src';
-import { inferProcedureInput, inferProcedureOutput } from '../src';
-import { Observable, observable } from '../src/observable';
+import * as trpc from '../../src';
+import { inferProcedureInput, inferProcedureOutput } from '../../src';
+import { Observable, observable } from '../../src/observable';
 
 test('infer query input & output', async () => {
   const router = trpc

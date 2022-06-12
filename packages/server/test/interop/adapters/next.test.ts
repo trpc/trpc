@@ -2,8 +2,8 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { EventEmitter } from 'events';
-import * as trpc from '../../src';
-import * as trpcNext from '../../src/adapters/next';
+import * as trpc from '../../../src';
+import * as trpcNext from '../../../src/adapters/next';
 
 function mockReq({
   query,

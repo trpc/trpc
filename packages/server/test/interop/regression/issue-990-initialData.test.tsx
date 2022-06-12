@@ -7,8 +7,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 /* eslint-disable @typescript-eslint/ban-ts-comment */
-import { trpcReact, trpcServer } from '../__packages';
-import { routerToServerAndClient } from '../__testHelpers';
+import { trpcReact, trpcServer } from '../../__packages';
+import { routerToServerAndClient } from '../../__testHelpers';
 import '@testing-library/jest-dom';
 import { render, waitFor } from '@testing-library/react';
 import React, { useState } from 'react';

@@ -1,14 +1,14 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 /* eslint-disable @typescript-eslint/ban-types */
-import { routerToServerAndClient } from './__testHelpers';
+import { routerToServerAndClient } from '../__testHelpers';
 import '@testing-library/jest-dom';
 import { expectTypeOf } from 'expect-type';
 import myzod from 'myzod';
 import * as t from 'superstruct';
 import * as yup from 'yup';
 import { z } from 'zod';
-import * as trpc from '../src';
+import * as trpc from '../../src';
 
 test('no validator', async () => {
   const router = trpc.router().query('hello', {

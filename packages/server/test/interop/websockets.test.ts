@@ -2,24 +2,24 @@
 
 /* eslint-disable @typescript-eslint/ban-types */
 // import WebSocket from 'ws';
-import { routerToServerAndClientNew, waitMs } from './__testHelpers';
+import { routerToServerAndClientNew, waitMs } from '../__testHelpers';
 import { waitFor } from '@testing-library/react';
 import { EventEmitter } from 'events';
 import { expectTypeOf } from 'expect-type';
 import { default as WebSocket, default as ws } from 'ws';
 import { z } from 'zod';
-import { TRPCClientError } from '../../client/src';
-import { createWSClient, wsLink } from '../../client/src';
-import { Observer } from '../observable';
-import * as trpc from '../src';
-import { TRPCError } from '../src';
-import { applyWSSHandler } from '../src/adapters/ws';
-import { observable } from '../src/observable';
+import { TRPCClientError } from '../../../client/src';
+import { createWSClient, wsLink } from '../../../client/src';
+import { Observer } from '../../observable';
+import * as trpc from '../../src';
+import { TRPCError } from '../../src';
+import { applyWSSHandler } from '../../src/adapters/ws';
+import { observable } from '../../src/observable';
 import {
   TRPCClientOutgoingMessage,
   TRPCRequestMessage,
   TRPCResultMessage,
-} from '../src/rpc';
+} from '../../src/rpc';
 
 type Message = {
   id: string;

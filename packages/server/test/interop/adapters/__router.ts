@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import * as trpc from '../../src';
+import * as trpc from '../../../src';
 
 export type Context = {
   user: {

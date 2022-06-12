@@ -3,16 +3,16 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 /* eslint-disable @typescript-eslint/ban-types */
-import { routerToServerAndClient, waitError } from './__testHelpers';
+import { routerToServerAndClient, waitError } from '../__testHelpers';
 import { waitFor } from '@testing-library/react';
 import { expectTypeOf } from 'expect-type';
 import { z } from 'zod';
-import { HTTPHeaders, TRPCClientError } from '../../client/src';
-import { httpBatchLink } from '../../client/src';
-import * as trpc from '../src';
-import { Maybe, TRPCError } from '../src';
-import { CreateHTTPContextOptions } from '../src/adapters/standalone';
-import { observable } from '../src/observable';
+import { HTTPHeaders, TRPCClientError } from '../../../client/src';
+import { httpBatchLink } from '../../../client/src';
+import * as trpc from '../../src';
+import { Maybe, TRPCError } from '../../src';
+import { CreateHTTPContextOptions } from '../../src/adapters/standalone';
+import { observable } from '../../src/observable';
 
 test('smoke test', async () => {
   const { client, close } = routerToServerAndClient(

@@ -4,11 +4,11 @@
 /// <reference types="@cloudflare/workers-types" />
 import { Context, router } from './__router';
 import { Response as MiniflareResponse } from '@miniflare/core';
+import { createTRPCClient } from '@trpc/client/src';
 import { Miniflare } from 'miniflare';
 import fetch from 'node-fetch';
-import { createTRPCClient } from '../../../client/src';
-import * as trpc from '../../src';
-import * as trpcFetch from '../../src/adapters/fetch';
+import * as trpc from '../../../src';
+import * as trpcFetch from '../../../src/adapters/fetch';
 
 // miniflare does an instanceof check
 global.Response = MiniflareResponse as any;

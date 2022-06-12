@@ -1,12 +1,12 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import { routerToServerAndClient } from './__testHelpers';
+import { routerToServerAndClient } from '../__testHelpers';
 import { HTTPHeaders } from '@trpc/client';
 import { AsyncLocalStorage } from 'async_hooks';
 import { expectTypeOf } from 'expect-type';
 import { z } from 'zod';
-import * as trpc from '../src';
-import { TRPCError, inferProcedureOutput } from '../src';
-import { MiddlewareResult } from '../src/deprecated/internals/middlewares';
+import * as trpc from '../../src';
+import { TRPCError, inferProcedureOutput } from '../../src';
+import { MiddlewareResult } from '../../src/deprecated/internals/middlewares';
 
 test('is called if def first', async () => {
   const middleware = jest.fn((opts) => {

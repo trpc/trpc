@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-empty-function */
-import { waitError } from './__testHelpers';
-import { dataLoader } from '../../client/src/internals/dataLoader';
+import { waitError } from '../__testHelpers';
+import { dataLoader } from '../../../client/src/internals/dataLoader';
 
 test('basic', async () => {
   const fetchFn = jest.fn();

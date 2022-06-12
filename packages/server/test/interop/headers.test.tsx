@@ -3,10 +3,10 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 /* eslint-disable @typescript-eslint/ban-types */
-import { routerToServerAndClient } from './__testHelpers';
+import { routerToServerAndClient } from '../__testHelpers';
 import { createTRPCClient } from '@trpc/client';
-import * as trpc from '../src';
-import { Dict } from '../src';
+import * as trpc from '../../src';
+import { Dict } from '../../src';
 
 test('pass headers', async () => {
   type Context = {

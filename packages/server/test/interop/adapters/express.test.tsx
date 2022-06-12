@@ -1,12 +1,12 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { Context, router } from './__router';
+import { createTRPCClient } from '@trpc/client/src';
 import AbortController from 'abort-controller';
 import express from 'express';
 import http from 'http';
 import fetch from 'node-fetch';
-import { createTRPCClient } from '../../../client/src';
-import * as trpc from '../../src';
-import * as trpcExpress from '../../src/adapters/express';
+import * as trpc from '../../../src';
+import * as trpcExpress from '../../../src/adapters/express';
 
 async function startServer() {
   const createContext = (

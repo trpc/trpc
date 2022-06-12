@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import { routerToServerAndClient, waitError } from './__testHelpers';
+import { routerToServerAndClient, waitError } from '../__testHelpers';
 import devalue from 'devalue';
 import fetch from 'node-fetch';
 import superjson from 'superjson';
@@ -10,10 +10,10 @@ import {
   httpBatchLink,
   httpLink,
   wsLink,
-} from '../../client/src';
-import * as trpc from '../src';
-import { TRPCError } from '../src/TRPCError';
-import { observable } from '../src/observable';
+} from '../../../client/src';
+import * as trpc from '../../src';
+import { TRPCError } from '../../src/TRPCError';
+import { observable } from '../../src/observable';
 
 test('superjson up and down', async () => {
   const transformer = superjson;

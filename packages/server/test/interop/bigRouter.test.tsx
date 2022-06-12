@@ -1,14 +1,14 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
-import { bigRouter } from './__generated__/bigRouter';
-import { routerToServerAndClient } from './__testHelpers';
+import { bigRouter } from '../__generated__/bigRouter';
+import { routerToServerAndClient } from '../__testHelpers';
 import '@testing-library/jest-dom';
 import { render, waitFor } from '@testing-library/react';
 import { expectTypeOf } from 'expect-type';
 import { konn } from 'konn';
 import React, { useState } from 'react';
 import { QueryClient, QueryClientProvider } from 'react-query';
-import { createReactQueryHooks } from '../../react/src';
-import { MigrateOldRouter } from '../src/deprecated/interop';
+import { createReactQueryHooks } from '../../../react/src';
+import { MigrateOldRouter } from '../../src/deprecated/interop';
 
 const ctx = konn()
   .beforeEach(() => {

@@ -7,8 +7,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 /* eslint-disable @typescript-eslint/ban-ts-comment */
-import { trpcServer } from './__packages';
-import { routerToServerAndClient } from './__testHelpers';
+import { trpcServer } from '../__packages';
+import { routerToServerAndClientNew } from '../__testHelpers';
 import '@testing-library/jest-dom';
 import { render, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
@@ -24,20 +24,20 @@ import {
   useQueryClient,
 } from 'react-query';
 import { ZodError, z } from 'zod';
-import { httpBatchLink } from '../../client/src/links/httpBatchLink';
-import { splitLink } from '../../client/src/links/splitLink';
+import { httpBatchLink } from '../../../client/src/links/httpBatchLink';
+import { splitLink } from '../../../client/src/links/splitLink';
 import {
   TRPCWebSocketClient,
   createWSClient,
   wsLink,
-} from '../../client/src/links/wsLink';
-import { withTRPC } from '../../next/src';
-import { OutputWithCursor, createReactQueryHooks } from '../../react/src';
-import { createSSGHelpers } from '../../react/src/ssg';
-import { TRPCError } from '../src/TRPCError';
-import { DefaultErrorShape } from '../src/error/formatter';
-import { observable } from '../src/observable';
-import { subscriptionPullFactory } from '../src/subscription';
+} from '../../../client/src/links/wsLink';
+import { withTRPC } from '../../../next/src';
+import { OutputWithCursor, createReactQueryHooks } from '../../../react/src';
+import { createSSGHelpers } from '../../../react/src/ssg';
+import { TRPCError } from '../../src/TRPCError';
+import { DefaultErrorShape } from '../../src/error/formatter';
+import { observable } from '../../src/observable';
+import { subscriptionPullFactory } from '../../src/subscription';
 
 setLogger({
   log() {},
@@ -188,13 +188,14 @@ function createAppRouter() {
           },
         });
       },
-    });
+    })
+    .interop();
 
   const linkSpy = {
     up: jest.fn(),
     down: jest.fn(),
   };
-  const { client, trpcClientOptions, close } = routerToServerAndClient(
+  const { client, trpcClientOptions, close } = routerToServerAndClientNew(
     appRouter,
     {
       server: {
@@ -247,8 +248,8 @@ function createAppRouter() {
     },
   );
   const queryClient = new QueryClient();
-  const interopAppRouter = appRouter.interop();
-  const trpc = createReactQueryHooks<typeof interopAppRouter>();
+
+  const trpc = createReactQueryHooks<typeof appRouter>();
 
   function App(props: { children: ReactNode }) {
     const [queryClient] = useState(() => new QueryClient());
@@ -262,7 +263,7 @@ function createAppRouter() {
   }
   return {
     App,
-    appRouter: interopAppRouter,
+    appRouter,
     trpc,
     close,
     db,
