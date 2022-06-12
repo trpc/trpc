@@ -39,7 +39,7 @@ export type MigrateProcedureRecord<T extends ProcedureRecord<any>> = {
 export type MigrateRouter<
   TInputContext,
   TContext,
-  _TMeta extends Record<string, any>,
+  TMeta extends Record<string, any>,
   TQueries extends ProcedureRecord<
     TInputContext,
     TContext,
@@ -71,6 +71,7 @@ export type MigrateRouter<
 > = NewRouter<{
   _ctx: TInputContext;
   _errorShape: TErrorShape;
+  _meta: TMeta;
   errorFormatter: never;
   mutations: MigrateProcedureRecord<TMutations>;
   queries: MigrateProcedureRecord<TQueries>;
@@ -82,7 +83,7 @@ export type MigrateOldRouter<TRouter extends AnyOldRouter> =
   TRouter extends OldRouter<
     infer TInputContext,
     infer TContext,
-    infer _TMeta,
+    infer TMeta,
     infer TQueries,
     infer TMutations,
     infer TSubscriptions,
@@ -91,7 +92,7 @@ export type MigrateOldRouter<TRouter extends AnyOldRouter> =
     ? MigrateRouter<
         TInputContext,
         TContext,
-        _TMeta,
+        TMeta,
         TQueries,
         TMutations,
         TSubscriptions,

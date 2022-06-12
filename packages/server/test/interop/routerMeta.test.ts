@@ -29,9 +29,11 @@ test('route meta types', async () => {
       async resolve({ input }) {
         return { input };
       },
-    });
+    })
+    .interop();
 
   type TMeta = inferRouterMeta<typeof router>;
+  expectTypeOf<TMeta>().toMatchTypeOf(testMeta);
 
   const queryMeta = router['_def']['queries']['query']['meta'];
   expectTypeOf(queryMeta).toMatchTypeOf<TMeta>();

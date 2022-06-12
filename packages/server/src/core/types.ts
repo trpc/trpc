@@ -15,6 +15,8 @@ export type inferRouterContext<TRouter extends AnyRouter> =
   inferRouterParams<TRouter>['_ctx'];
 export type inferRouterError<TRouter extends AnyRouter> =
   inferRouterParams<TRouter>['_errorShape'];
+export type inferRouterMeta<TRouter extends AnyRouter> =
+  inferRouterParams<TRouter>['_meta'];
 
 /**
  * @public

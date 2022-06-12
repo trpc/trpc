@@ -33,7 +33,12 @@ export type Procedure<TParams extends ProcedureParams> =
         input: TParams['_input_in'],
         opts?: ProcedureOptions,
       ) => Promise<TParams['_output_out']>) &
-    ProcedureMarker;
+    ProcedureMarker & {
+      /**
+       * @deprecated
+       */
+      meta: TParams['_meta'];
+    };
 
 type CreateProcedureReturnInput<
   TPrev extends ProcedureParams,

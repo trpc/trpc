@@ -14,6 +14,7 @@ export type ProcedureRecord<_TContext> = Record<string, Procedure<any>>;
 export interface RouterParams<
   TContext,
   TErrorShape extends TRPCErrorShape<number>,
+  TMeta extends Record<string, unknown>,
   TQueries extends ProcedureRecord<TContext>,
   TMutations extends ProcedureRecord<TContext>,
   TSubscriptions extends ProcedureRecord<TContext>,
@@ -26,6 +27,10 @@ export interface RouterParams<
    * @internal
    */
   _errorShape: TErrorShape;
+  /**
+   * @internal
+   */
+  _meta: TMeta;
   queries: TQueries;
   mutations: TMutations;
   subscriptions: TSubscriptions;
@@ -35,6 +40,7 @@ export interface RouterParams<
 
 export type AnyRouterParams<TContext = any> = RouterParams<
   TContext,
+  any,
   any,
   any,
   any,
@@ -76,12 +82,10 @@ type RouterCaller<TParams extends AnyRouterParams> = (ctx: TParams['_ctx']) => {
 };
 
 export interface Router<TParams extends AnyRouterParams> {
-  /**
-   * @deprecated Deprecated since v10
-   */
   _def: RouterParams<
     TParams['_ctx'],
     TParams['_errorShape'],
+    TParams['_meta'],
     TParams['queries'],
     TParams['mutations'],
     TParams['subscriptions']
@@ -137,6 +141,7 @@ const defaultErrorFormatter: ErrorFormatter<any, any> = ({ shape }) => {
 const emptyRouter = {
   _ctx: null as any,
   _errorShape: null as any,
+  _meta: null as any,
   queries: {},
   mutations: {},
   subscriptions: {},
@@ -188,7 +193,8 @@ type mergeRouters<
   A extends Partial<AnyRouter>,
   B extends Partial<AnyRouter>,
 > = {
-  _ctx: NonNullable<A['_def']>;
+  _ctx: NonNullable<A['_def']>['_ctx'];
+  _meta: NonNullable<A['_def']>['_meta'];
   queries: EnsureRecord<A['queries']> & EnsureRecord<B['queries']>;
   mutations: EnsureRecord<A['mutations']> & EnsureRecord<B['mutations']>;
   subscriptions: EnsureRecord<A['subscriptions']> &
@@ -214,6 +220,7 @@ export function mergeRouters<TRouterItems extends RouterOptions<any>[]>(
   type TMergedRouters = mergeRoutersVariadic<TRouterItems>;
   type TRouterParams = TMergedRouters extends {
     _ctx: infer Ctx;
+    _meta: infer Meta;
     queries: infer Queries;
     mutations: infer Mutations;
     subscriptions: infer Subscriptions;
@@ -222,6 +229,7 @@ export function mergeRouters<TRouterItems extends RouterOptions<any>[]>(
     ? RouterParams<
         Ctx,
         ErrorFormatterShape<ErrorFormatter>,
+        Meta extends {} ? Meta : {},
         Queries extends ProcedureRecord<any> ? Queries : never,
         Mutations extends ProcedureRecord<any> ? Mutations : never,
         Subscriptions extends ProcedureRecord<any> ? Subscriptions : never
