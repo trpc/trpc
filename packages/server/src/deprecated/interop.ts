@@ -1,5 +1,6 @@
+import { createInternalBuilder } from '../core/internals/ProcedureBuilderInternal';
 import { Procedure as NewProcedure } from '../core/procedure';
-import { Router as NewRouter } from '../core/router';
+import { Router as NewRouter, createRouterWithContext } from '../core/router';
 import {
   AnyRouter as AnyOldRouter,
   Router as OldRouter,
@@ -9,28 +10,28 @@ import { CombinedDataTransformer } from '../transformer';
 import { Procedure as OldProcedure } from './internals/procedure';
 import { ProcedureRecord } from './router';
 
-type MigrateProcedure<
-  TProcedure extends OldProcedure<any, any, any, any, any, any, any, any>,
-> = TProcedure extends OldProcedure<
-  infer TInputContext,
-  infer TContext,
-  infer TMeta,
-  infer TInput,
-  infer TParsedInput,
-  infer TOutput,
-  infer _TParsedOutput,
-  infer TFinalInput
->
-  ? NewProcedure<{
-      _ctx_in: TInputContext;
-      _ctx_out: TContext;
-      _meta: TMeta;
-      _input_in: TInput;
-      _input_out: TParsedInput;
-      _output_in: TOutput;
-      _output_out: TFinalInput;
-    }>
-  : null;
+type AnyOldProcedure = OldProcedure<any, any, any, any, any, any, any, any>;
+type MigrateProcedure<TProcedure extends AnyOldProcedure> =
+  TProcedure extends OldProcedure<
+    infer TInputContext,
+    infer TContext,
+    infer TMeta,
+    infer TInput,
+    infer TParsedInput,
+    infer TOutput,
+    infer _TParsedOutput,
+    infer TFinalInput
+  >
+    ? NewProcedure<{
+        _ctx_in: TInputContext;
+        _ctx_out: TContext;
+        _meta: TMeta;
+        _input_in: TInput;
+        _input_out: TParsedInput;
+        _output_in: TOutput;
+        _output_out: TFinalInput;
+      }>
+    : never;
 
 export type MigrateProcedureRecord<T extends ProcedureRecord<any>> = {
   [K in keyof T]: MigrateProcedure<T[K]>;
@@ -99,3 +100,56 @@ export type MigrateOldRouter<TRouter extends AnyOldRouter> =
         TErrorShape
       >
     : never;
+
+function migrateProcedure<TProcedure extends AnyOldProcedure>(
+  oldProc: TProcedure,
+): MigrateProcedure<TProcedure> {
+  const def = oldProc._def();
+
+  const builder = createInternalBuilder({
+    input: def.inputParser,
+    middlewares: def.middlewares as any,
+    meta: def.meta,
+    output: def.outputParser,
+  });
+
+  const proc = builder.resolve((opts) => def.resolver(opts as any));
+
+  return proc as any;
+}
+export function migrateRouter<TOldRouter extends AnyOldRouter>(
+  oldRouter: TOldRouter,
+): MigrateOldRouter<TOldRouter> {
+  const errorFormatter = oldRouter._def.errorFormatter;
+  const transformer = oldRouter._def.transformer;
+
+  type ProcRecord = Record<string, NewProcedure<any>>;
+
+  const queries: ProcRecord = {};
+  const mutations: ProcRecord = {};
+  const subscriptions: ProcRecord = {};
+  for (const [name, procedure] of Object.entries(oldRouter._def.queries)) {
+    queries[name] = migrateProcedure(procedure as any);
+  }
+
+  for (const [name, procedure] of Object.entries(oldRouter._def.mutations)) {
+    mutations[name] = migrateProcedure(procedure as any);
+  }
+
+  for (const [name, procedure] of Object.entries(
+    oldRouter._def.subscriptions,
+  )) {
+    subscriptions[name] = migrateProcedure(procedure as any);
+  }
+
+  const newRouter = createRouterWithContext<any>({
+    transformer,
+    errorFormatter,
+  })({
+    mutations,
+    queries,
+    subscriptions,
+  });
+
+  return newRouter as any;
+}

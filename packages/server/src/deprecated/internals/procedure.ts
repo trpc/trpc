@@ -141,6 +141,16 @@ export class Procedure<
     this.meta = opts.meta;
   }
 
+  public _def() {
+    return {
+      middlewares: this.middlewares,
+      resolver: this.resolver,
+      inputParser: this.inputParser,
+      outputParser: this.outputParser,
+      meta: this.meta,
+    };
+  }
+
   private async parseInput(rawInput: unknown): Promise<TParsedInput> {
     try {
       return await this.parseInputFn(rawInput);

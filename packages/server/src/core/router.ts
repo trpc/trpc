@@ -129,7 +129,7 @@ type RouterBuildOptions<TContext> = Pick<
 
 export type AnyRouter = Router<any>;
 
-const defaultTransformer: CombinedDataTransformer = {
+export const defaultTransformer: CombinedDataTransformer = {
   input: { serialize: (obj) => obj, deserialize: (obj) => obj },
   output: { serialize: (obj) => obj, deserialize: (obj) => obj },
 };

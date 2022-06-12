@@ -120,6 +120,7 @@ export interface ProcedureBuilder<TParams extends ProcedureParams> {
     : Procedure<TParams>;
 }
 
+// TODO make this into a callbag?
 export function createBuilder<TContext, TMeta>(): ProcedureBuilder<{
   _ctx_in: TContext;
   _ctx_out: TContext;

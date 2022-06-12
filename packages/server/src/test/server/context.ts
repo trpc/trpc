@@ -13,7 +13,9 @@ export type Context = {
   db?: {};
   user?: User;
 };
-export const trpc = initTRPC<Context>()({
+export const trpc = initTRPC<{
+  ctx: Context;
+}>()({
   errorFormatter({ error, shape }) {
     if (error.cause instanceof ZodError) {
       return {

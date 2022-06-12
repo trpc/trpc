@@ -1,18 +1,28 @@
 /* eslint-disable @typescript-eslint/ban-types */
+import { defaultFormatter } from '../error/formatter';
 import { ValidateShape } from './internals/utils';
 import { createMiddlewareFactory } from './middleware';
 import { createBuilder as createProcedure } from './procedure';
 import {
   RouterDefaultOptions,
   createRouterWithContext,
+  defaultTransformer,
   mergeRouters,
 } from './router';
 
 export function initTRPC<
-  TContext,
-  TMeta extends Record<string, unknown> = {},
+  TParams extends {
+    ctx?: Record<string, unknown>;
+    meta?: Record<string, unknown>;
+  },
 >() {
-  type DefaultOptions = RouterDefaultOptions<TContext>;
+  type $Context = TParams['ctx'] extends undefined ? {} : TParams['ctx'];
+  type $Meta = TParams['meta'] extends undefined ? {} : TParams['meta'];
+  // type $Params = {
+  //   ctx: $Context;
+  //   meta: $Meta;
+  // };
+  type DefaultOptions = RouterDefaultOptions<$Context>;
   return function initTRPCInner<TDefaults extends DefaultOptions>(
     defaults?: ValidateShape<TDefaults, DefaultOptions>,
   ) {
@@ -20,16 +30,19 @@ export function initTRPC<
       /**
        * Builder object for creating procedures
        */
-      procedure: createProcedure<TContext, TMeta>(),
+      procedure: createProcedure<$Context, $Meta>(),
       /**
        * Create reusable middlewares
        */
-      middleware: createMiddlewareFactory<TContext, TMeta>(),
+      middleware: createMiddlewareFactory<$Context, $Meta>(),
       /**
        * Create a router
        * FIXME this should also use error formatter
        */
-      router: createRouterWithContext<TContext>(defaults),
+      router: createRouterWithContext<$Context>({
+        errorFormatter: defaults?.errorFormatter || defaultFormatter,
+        transformer: defaults?.transformer || defaultTransformer,
+      }),
       /**
        * Merge Routers
        */

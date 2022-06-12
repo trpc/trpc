@@ -27,7 +27,7 @@ import {
   createProcedure,
   inferProcedureFromOptions,
 } from './internals/procedure';
-import { MigrateRouter } from './interop';
+import { MigrateRouter, migrateRouter } from './interop';
 
 assertNotBrowser();
 
@@ -884,7 +884,7 @@ export class Router<
     TSubscriptions,
     TErrorShape
   > {
-    throw new Error('Unimplemented');
+    return migrateRouter(this);
   }
 }
 
