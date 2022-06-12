@@ -18,13 +18,13 @@
   "preconstruct": {
     "entrypoints": [
       "index.ts",
+      "adapters/aws-lambda/index.ts",
       "adapters/express.ts",
       "adapters/fastify/index.ts",
       "adapters/next.ts",
       "adapters/node-http/index.ts",
       "adapters/standalone.ts",
       "adapters/ws.ts",
-      "adapters/lambda/index.ts",
       "ws/index.ts",
       "rpc/index.ts"
     ]

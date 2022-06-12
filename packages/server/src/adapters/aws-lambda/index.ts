@@ -18,7 +18,7 @@ import {
   isPayloadV2,
 } from './utils';
 
-export type { CreateLambdaContextOptions, AWSLambdaOptions } from './utils';
+export type { CreateAwsLambdaContextOptions, AWSLambdaOptions } from './utils';
 
 function lambdaEventToHTTPRequest(event: APIGatewayEvent): HTTPRequest {
   const query = new URLSearchParams();
@@ -119,7 +119,7 @@ type inferAPIGWReturn<T> = T extends APIGatewayProxyEvent
   : T extends APIGatewayProxyEventV2
   ? APIGatewayProxyStructuredResultV2
   : never;
-export function lambdaRequestHandler<
+export function awsLambdaRequestHandler<
   TRouter extends AnyRouter,
   TEvent extends inferAPIGWEvent<TRouter, TEvent>,
   TResult extends inferAPIGWReturn<TEvent>,

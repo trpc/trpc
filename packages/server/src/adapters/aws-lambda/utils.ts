@@ -13,7 +13,7 @@ export type APIGatewayResult =
   | APIGatewayProxyResult
   | APIGatewayProxyStructuredResultV2;
 
-export type CreateLambdaContextOptions<T extends APIGatewayEvent> = {
+export type CreateAwsLambdaContextOptions<T extends APIGatewayEvent> = {
   event: T;
   context: APIGWContext;
 };
@@ -23,7 +23,7 @@ export type LambdaCreateContextFn<
 > = ({
   event,
   context,
-}: CreateLambdaContextOptions<TEvent>) =>
+}: CreateAwsLambdaContextOptions<TEvent>) =>
   | inferRouterContext<TRouter>
   | Promise<inferRouterContext<TRouter>>;
 
