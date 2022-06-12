@@ -66,7 +66,7 @@ export type AppRouter = typeof appRouter;
 tRPC includes an adapter for API Gateway out of the box. This adapter lets you run your routes through the API Gateway handler.
 
 ```ts title='server.ts'
-import * as trpcAPIGW from '@trpc/server/adapters/api-gateway';
+import { CreateLambdaContextOptions, lambdaRequestHandler } from '@trpc/server/adapters/lambda';
 
 const appRouter = /* ... */;
 
@@ -74,10 +74,10 @@ const appRouter = /* ... */;
 const createContext = ({
   event,
   context,
-}: trpcAPIGW.CreateLambdaContextOptions) => ({}) // no context
+}: CreateLambdaContextOptions) => ({}) // no context
 type Context = trpc.inferAsyncReturnType<typeof createContext>;
 
-export const handler = trpcAPIGW.lambdaRequestHandler({
+export const handler = lambdaRequestHandler({
   router: appRouter,
   createContext,
 })
