@@ -9,7 +9,7 @@ if (
   (NODE_ENV !== 'production' || APP_ENV === 'test') &&
   (!GITHUB_CLIENT_ID || !GITHUB_SECRET)
 ) {
-  console.log('⚠️ Using mocked GitHub auth correct credentails were not added');
+  console.log('⚠️ Using mocked GitHub auth correct credentials were not added');
   useMockProvider = true;
 }
 const providers: AppProviders = [];
