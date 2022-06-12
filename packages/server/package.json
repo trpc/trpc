@@ -24,6 +24,7 @@
       "adapters/node-http/index.ts",
       "adapters/standalone.ts",
       "adapters/ws.ts",
+      "adapters/lambda/index.ts",
       "ws/index.ts",
       "rpc/index.ts"
     ]
@@ -47,6 +48,7 @@
   },
   "devDependencies": {
     "@fastify/websocket": "^5.0.0",
+    "@types/aws-lambda": "^8.10.97",
     "@types/express": "^4.17.12",
     "@types/hash-sum": "^1.0.0",
     "@types/ws": "^8.2.0",
