@@ -286,6 +286,7 @@ Also, if your company using tRPC and want to support long-term maintenance of tR
   </tr>
   <tr>
     <td align="center"><a href="http://www.big-sir.com"><img src="https://avatars.githubusercontent.com/u/3660667?v=4?s=100" width="100px;" alt=""/><br /><sub><b>bautistaaa</b></sub></a><br /><a href="https://github.com/trpc/trpc/commits?author=bautistaaa" title="Documentation">📖</a></td>
+    <td align="center"><a href="https://github.com/blntrsz"><img src="https://avatars.githubusercontent.com/u/81449016?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Balint Orosz</b></sub></a><br /><a href="https://github.com/trpc/trpc/commits?author=blntrsz" title="Documentation">📖</a></td>
   </tr>
 </table>
 
