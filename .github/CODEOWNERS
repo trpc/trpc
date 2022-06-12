@@ -7,4 +7,5 @@
 
 
 **/*fastify* @skarab42
-**/*lambda*,**/*api-gateway* @Lilja
+**/*lambda* @Lilja
+**/*api-gateway* @Lilja
