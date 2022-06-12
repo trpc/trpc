@@ -128,7 +128,7 @@ article {
 
 .navbar-external-link,
 .theme-edit-this-page {
-  @apply flex items-center;
+  @apply hidden xl:flex items-center;
 }
 .footer__item {
   @apply h-8;
