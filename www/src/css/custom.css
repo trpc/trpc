@@ -25,7 +25,7 @@
 }
 
 .markdown a {
-  @apply text-primary-normal hover:text-primary-dark;
+  @apply text-primary hover:text-primary-dark;
 }
 
 .docusaurus-highlight-code-line {
@@ -123,7 +123,7 @@ article {
 }
 
 .theme-edit-this-page {
-  @apply text-primary-normal hover:text-primary-dark;
+  @apply text-primary hover:text-primary-dark;
 }
 
 .navbar-external-link,
@@ -168,7 +168,7 @@ h5 {
 }
 
 .pagination-nav__label {
-  @apply text-primary-normal;
+  @apply text-primary;
 }
 
 .admonition-heading h5 {
