@@ -5,8 +5,8 @@
   "main": "index.js",
   "license": "MIT",
   "dependencies": {
-    "@trpc/client": "^9.25.0",
-    "@trpc/server": "^9.25.0",
+    "@trpc/client": "^10.0.0-alpha.25",
+    "@trpc/server": "^10.0.0-alpha.25",
     "node-fetch": "^2.6.1",
     "ts-node": "^10.3.0",
     "typescript": "4.4.4"

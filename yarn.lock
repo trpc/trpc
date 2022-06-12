@@ -3487,18 +3487,6 @@
     javascript-natural-sort "0.7.1"
     lodash "4.17.21"
 
-"@trpc/client@^9.23.3":
-  version "9.24.0"
-  resolved "https://registry.npmjs.org/@trpc/client/-/client-9.24.0.tgz#39b86e4c89dfe43a3afd15003f8a7bbeedbb8011"
-  integrity sha512-ECrn/h8c4Af1ubY9XgNpTZf84mUzDPZRVBhgkgBQXZsvTO3FWkVKcYRoJV6w/sOs3PkaNjQuv2fjzgIErXN6QA==
-  dependencies:
-    "@babel/runtime" "^7.9.0"
-
-"@trpc/server@^9.23.3":
-  version "9.24.0"
-  resolved "https://registry.npmjs.org/@trpc/server/-/server-9.24.0.tgz#4b02090af8283600a0237457968997d1c7f55aca"
-  integrity sha512-yrWMXl6kTgd3o1zE8zkw10KttY8xeilZRvxlpXhLGeeGaBqfvWdU+ljpBK1eSC5j9uDJrMc1gaNqtA++B8Zoqg==
-
 "@ts-type/package-dts@^1.0.58":
   version "1.0.58"
   resolved "https://registry.yarnpkg.com/@ts-type/package-dts/-/package-dts-1.0.58.tgz#75f6fdf5f1e8f262a5081b90346439b4c4bc8d01"
