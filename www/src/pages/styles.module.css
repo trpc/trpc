@@ -56,13 +56,6 @@
   text-decoration: none;
 }
 
-.features {
-  display: flex;
-  align-items: center;
-  padding: 2rem 0;
-  width: 100%;
-}
-
 @media screen and (max-width: 800px) {
   .figure {
     display: none;
@@ -74,7 +67,4 @@
   width: 200px;
 }
 
-footer.container {
-  /* margin: 0 var(--ifm-spacing-horizontal); */
-  padding-left: 40px;
-}
+
