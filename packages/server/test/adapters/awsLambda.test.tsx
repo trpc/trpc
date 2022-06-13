@@ -71,24 +71,22 @@ test('basic test', async () => {
   );
   const parsedBody = JSON.parse(body || '');
   expect(result).toMatchInlineSnapshot(`
-Object {
-  "headers": Object {
-    "Content-Type": "application/json",
-  },
-  "statusCode": 200,
-}
-`);
+    Object {
+      "headers": Object {
+        "Content-Type": "application/json",
+      },
+      "statusCode": 200,
+    }
+  `);
   expect(parsedBody).toMatchInlineSnapshot(`
-Object {
-  "id": null,
-  "result": Object {
-    "data": Object {
-      "text": "hello Lilja",
-    },
-    "type": "data",
-  },
-}
-`);
+    Object {
+      "result": Object {
+        "data": Object {
+          "text": "hello Lilja",
+        },
+      },
+    }
+  `);
 });
 test('bad type', async () => {
   const { body, ...result } = await handler(
@@ -103,38 +101,37 @@ test('bad type', async () => {
   );
   const parsedBody = JSON.parse(body || '');
   expect(result).toMatchInlineSnapshot(`
-Object {
-  "headers": Object {
-    "Content-Type": "application/json",
-  },
-  "statusCode": 400,
-}
-`);
+    Object {
+      "headers": Object {
+        "Content-Type": "application/json",
+      },
+      "statusCode": 400,
+    }
+  `);
   parsedBody.error.data.stack = '[redacted]';
 
   expect(parsedBody).toMatchInlineSnapshot(`
-Object {
-  "error": Object {
-    "code": -32600,
-    "data": Object {
-      "code": "BAD_REQUEST",
-      "httpStatus": 400,
-      "path": "echo",
-      "stack": "[redacted]",
-    },
-    "message": "[
-  {
-    \\"code\\": \\"invalid_type\\",
-    \\"expected\\": \\"object\\",
-    \\"received\\": \\"undefined\\",
-    \\"path\\": [],
-    \\"message\\": \\"Required\\"
-  }
-]",
-  },
-  "id": null,
-}
-`);
+    Object {
+      "error": Object {
+        "code": -32600,
+        "data": Object {
+          "code": "BAD_REQUEST",
+          "httpStatus": 400,
+          "path": "echo",
+          "stack": "[redacted]",
+        },
+        "message": "[
+      {
+        \\"code\\": \\"invalid_type\\",
+        \\"expected\\": \\"object\\",
+        \\"received\\": \\"undefined\\",
+        \\"path\\": [],
+        \\"message\\": \\"Required\\"
+      }
+    ]",
+      },
+    }
+  `);
 });
 
 test('test v2 format', async () => {
@@ -160,25 +157,23 @@ test('test v2 format', async () => {
     mockAPIGatewayContext(),
   );
   expect(result).toMatchInlineSnapshot(`
-Object {
-  "headers": Object {
-    "Content-Type": "application/json",
-  },
-  "statusCode": 200,
-}
-`);
+    Object {
+      "headers": Object {
+        "Content-Type": "application/json",
+      },
+      "statusCode": 200,
+    }
+  `);
   const parsedBody = JSON.parse(body || '');
   expect(parsedBody).toMatchInlineSnapshot(`
-Object {
-  "id": null,
-  "result": Object {
-    "data": Object {
-      "text": "hello Lilja",
-    },
-    "type": "data",
-  },
-}
-`);
+    Object {
+      "result": Object {
+        "data": Object {
+          "text": "hello Lilja",
+        },
+      },
+    }
+  `);
 });
 
 test('router with no context', async () => {
@@ -198,23 +193,21 @@ test('router with no context', async () => {
     mockAPIGatewayContext(),
   );
   expect(result).toMatchInlineSnapshot(`
-Object {
-  "headers": Object {
-    "Content-Type": "application/json",
-  },
-  "statusCode": 200,
-}
-`);
+    Object {
+      "headers": Object {
+        "Content-Type": "application/json",
+      },
+      "statusCode": 200,
+    }
+  `);
   const parsedBody = JSON.parse(body || '');
   expect(parsedBody).toMatchInlineSnapshot(`
-Object {
-  "id": null,
-  "result": Object {
-    "data": Object {
-      "text": "hello kATT",
-    },
-    "type": "data",
-  },
-}
-`);
+    Object {
+      "result": Object {
+        "data": Object {
+          "text": "hello kATT",
+        },
+      },
+    }
+  `);
 });
