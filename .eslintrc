@@ -1,9 +1,6 @@
 {
   "parser": "@typescript-eslint/parser", // Specifies the ESLint parser
-  "plugins": [
-    "no-only-tests",
-    "unicorn"
-  ],
+  "plugins": ["no-only-tests", "unicorn"],
   "extends": [
     "plugin:@typescript-eslint/recommended", // Uses the recommended rules from the @typescript-eslint/eslint-plugin
     "plugin:react/recommended",
@@ -34,7 +31,8 @@
           "HTTP",
           "\\.config\\.js",
           "\\.d\\.ts$",
-          "issue-\\d+-.*\\.test\\.tsx?$"
+          "issue-\\d+-.*\\.test\\.tsx?$",
+          "\\.(t|j)sx$"
         ]
       }
     ]
