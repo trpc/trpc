@@ -32,7 +32,7 @@
           "\\.config\\.js",
           "\\.d\\.ts$",
           "issue-\\d+-.*\\.test\\.tsx?$",
-          "\\.tsx$"
+          "\\.(t|j)sx$"
         ]
       }
     ]
