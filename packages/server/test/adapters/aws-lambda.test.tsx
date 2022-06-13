@@ -11,7 +11,7 @@ import {
 
 const createContext = async ({
   event,
-}: trpcLambda.CreateAwsLambdaContextOptions<APIGatewayProxyEvent>) => {
+}: trpcLambda.CreateAWSLambdaContextOptions<APIGatewayProxyEvent>) => {
   return {
     user: event.headers['X-USER'],
   };
@@ -140,7 +140,7 @@ Object {
 test('test v2 format', async () => {
   const createContext = async ({
     event,
-  }: trpcLambda.CreateAwsLambdaContextOptions<APIGatewayProxyEventV2>) => {
+  }: trpcLambda.CreateAWSLambdaContextOptions<APIGatewayProxyEventV2>) => {
     return {
       user: event.headers['X-USER'],
     };
