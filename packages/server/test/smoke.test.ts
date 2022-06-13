@@ -6,7 +6,7 @@ import { z } from 'zod';
 const trpc = initTRPC()();
 const { procedure } = trpc;
 
-test('smoke test - happy', async () => {
+test('old client - happy path w/o input', async () => {
   const router = trpc.router({
     queries: {
       hello: procedure.resolve(() => 'world'),
@@ -17,7 +17,7 @@ test('smoke test - happy', async () => {
   close();
 });
 
-test('smoke test - happy with input', async () => {
+test('old client - happy path with input', async () => {
   const router = trpc.router({
     queries: {
       greeting: procedure
@@ -29,7 +29,21 @@ test('smoke test - happy with input', async () => {
   expect(await client.query('greeting', 'KATT')).toBe('hello KATT');
   close();
 });
-test('smoke test - sad', async () => {
+
+test('very happy path', async () => {
+  const router = trpc.router({
+    queries: {
+      greeting: procedure
+        .input(z.string())
+        .resolve(({ input }) => `hello ${input}`),
+    },
+  });
+  const { client, close } = routerToServerAndClientNew(router);
+  expect(await client.queries.greeting('KATT')).toBe('hello KATT');
+  close();
+});
+
+test('sad path', async () => {
   const router = trpc.router({
     queries: {
       hello: procedure.resolve(() => 'world'),
