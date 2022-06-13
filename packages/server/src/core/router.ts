@@ -115,7 +115,7 @@ export type RouterOptions<TContext> = Partial<AnyRouterParams<TContext>>;
  * @internal
  */
 export type RouterDefaultOptions<TContext> = Pick<
-  RouterOptions<TContext>,
+  AnyRouterParams<TContext>,
   'transformer' | 'errorFormatter'
 >;
 
@@ -165,12 +165,16 @@ export function createRouterWithContext<TContext>(
   ): Overwrite<AnyRouter, Overwrite<TDefaults, TProcedures>> {
     const result = mergeWithoutOverrides<
       RouterDefaultOptions<TContext> & RouterBuildOptions<TContext>
-    >(defaults || {}, procedures);
+    >(
+      defaults || {
+        transformer: defaultTransformer,
+        errorFormatter: defaultErrorFormatter,
+      },
+      procedures,
+    );
 
     const _def: AnyRouterParams<TContext> = {
       ...emptyRouter,
-      errorFormatter: result.errorFormatter || emptyRouter.errorFormatter,
-      transformer: result.transformer || emptyRouter.transformer,
       ...result,
     };
     const router: AnyRouter = {
