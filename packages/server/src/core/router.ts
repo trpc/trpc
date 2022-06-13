@@ -15,7 +15,7 @@ import {
 import { mergeWithoutOverrides } from './internals/mergeWithoutOverrides';
 import { Overwrite, PickFirstDefined, ValidateShape } from './internals/utils';
 import { Procedure } from './procedure';
-import { ProcedureCallOptions, ProcedureType } from './types';
+import { ProcedureType } from './types';
 
 // FIXME this should properly use TContext
 export type ProcedureRecord<_TContext> = Record<string, Procedure<any>>;
@@ -171,6 +171,8 @@ const PROCEDURE_DEFINITION_MAP: Record<
  *
  * @internal
  */
+
+// FIXME add error formatting
 export function createRouterWithContext<TContext>(
   defaults?: RouterDefaultOptions<TContext>,
 ) {
@@ -179,7 +181,19 @@ export function createRouterWithContext<TContext>(
     TProcedures extends RouterBuildOptions<TContext>,
   >(
     procedures: ValidateShape<TProcedures, RouterBuildOptions<TContext>>,
-  ): Overwrite<AnyRouter, Overwrite<TDefaults, TProcedures>> {
+  ): Router<{
+    _ctx: TContext;
+    // FIXME:
+    _errorShape: ErrorFormatterShape<TDefaults['errorFormatter']>;
+    // FIXME:
+    _meta: {};
+    queries: TProcedures['queries'];
+    mutations: TProcedures['mutations'];
+    subscriptions: TProcedures['subscriptions'];
+    // FIXME:
+    errorFormatter: TDefaults['errorFormatter'];
+    transformer: TDefaults['transformer'];
+  }> {
     const result = mergeWithoutOverrides<
       RouterDefaultOptions<TContext> & RouterBuildOptions<TContext>
     >(
