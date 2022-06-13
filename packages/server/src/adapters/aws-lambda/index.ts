@@ -18,7 +18,7 @@ import {
   isPayloadV2,
 } from './utils';
 
-export type { CreateAwsLambdaContextOptions, AWSLambdaOptions } from './utils';
+export type { CreateAWSLambdaContextOptions, AWSLambdaOptions } from './utils';
 
 function lambdaEventToHTTPRequest(event: APIGatewayEvent): HTTPRequest {
   const query = new URLSearchParams();

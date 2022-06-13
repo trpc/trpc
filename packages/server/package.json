@@ -19,6 +19,7 @@
     "entrypoints": [
       "index.ts",
       "adapters/aws-lambda/index.ts",
+      "adapters/lambda/index.ts",
       "adapters/express.ts",
       "adapters/fastify/index.ts",
       "adapters/next.ts",

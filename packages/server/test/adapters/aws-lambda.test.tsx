@@ -1,14 +1,8 @@
-/**
- * @deprecated
- * TODO: remove in next major
- */
-
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import type { APIGatewayProxyEvent, APIGatewayProxyEventV2 } from 'aws-lambda';
 import { z } from 'zod';
 import * as trpc from '../../src';
 import { inferAsyncReturnType } from '../../src';
-import * as trpcLambda from '../../src/adapters/lambda';
+import * as trpcLambda from '../../src/adapters/aws-lambda';
 import {
   mockAPIGatewayContext,
   mockAPIGatewayProxyEventV1,
@@ -17,7 +11,7 @@ import {
 
 const createContext = async ({
   event,
-}: trpcLambda.CreateLambdaContextOptions<APIGatewayProxyEvent>) => {
+}: trpcLambda.CreateAwsLambdaContextOptions<APIGatewayProxyEvent>) => {
   return {
     user: event.headers['X-USER'],
   };
@@ -59,7 +53,7 @@ const contextlessApp = trpc.router().query('hello', {
   },
 });
 
-const handler = trpcLambda.lambdaRequestHandler({
+const handler = trpcLambda.awsLambdaRequestHandler({
   router,
   createContext,
 });
@@ -146,12 +140,12 @@ Object {
 test('test v2 format', async () => {
   const createContext = async ({
     event,
-  }: trpcLambda.CreateLambdaContextOptions<APIGatewayProxyEventV2>) => {
+  }: trpcLambda.CreateAwsLambdaContextOptions<APIGatewayProxyEventV2>) => {
     return {
       user: event.headers['X-USER'],
     };
   };
-  const handler2 = trpcLambda.lambdaRequestHandler({
+  const handler2 = trpcLambda.awsLambdaRequestHandler({
     router,
     createContext,
   });
@@ -188,7 +182,7 @@ Object {
 });
 
 test('router with no context', async () => {
-  const handler2 = trpcLambda.lambdaRequestHandler({
+  const handler2 = trpcLambda.awsLambdaRequestHandler({
     router: contextlessApp,
   });
   const { body, ...result } = await handler2(

@@ -13,17 +13,17 @@ export type APIGatewayResult =
   | APIGatewayProxyResult
   | APIGatewayProxyStructuredResultV2;
 
-export type CreateAwsLambdaContextOptions<T extends APIGatewayEvent> = {
+export type CreateAWSLambdaContextOptions<T extends APIGatewayEvent> = {
   event: T;
   context: APIGWContext;
 };
-export type LambdaCreateContextFn<
+export type AWSLambdaCreateContextFn<
   TRouter extends AnyRouter,
   TEvent extends APIGatewayEvent,
 > = ({
   event,
   context,
-}: CreateAwsLambdaContextOptions<TEvent>) =>
+}: CreateAWSLambdaContextOptions<TEvent>) =>
   | inferRouterContext<TRouter>
   | Promise<inferRouterContext<TRouter>>;
 
@@ -43,13 +43,13 @@ export type AWSLambdaOptions<
           /**
            * @link https://trpc.io/docs/context
            **/
-          createContext: LambdaCreateContextFn<TRouter, TEvent>;
+          createContext: AWSLambdaCreateContextFn<TRouter, TEvent>;
         }
       | {
           /**
            * @link https://trpc.io/docs/context
            **/
-          createContext?: LambdaCreateContextFn<TRouter, TEvent>;
+          createContext?: AWSLambdaCreateContextFn<TRouter, TEvent>;
         }
     );
 
