@@ -13,7 +13,7 @@ import {
   InternalProcedureCallOptions,
 } from './internals/ProcedureBuilderInternal';
 import { mergeWithoutOverrides } from './internals/mergeWithoutOverrides';
-import { Overwrite, PickFirstDefined, ValidateShape } from './internals/utils';
+import { PickFirstDefined, ValidateShape } from './internals/utils';
 import { Procedure } from './procedure';
 import { ProcedureType } from './types';
 

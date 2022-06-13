@@ -1,4 +1,8 @@
-import { createInternalBuilder } from '../core/internals/ProcedureBuilderInternal';
+import {
+  createInputMiddleware,
+  createInternalBuilder,
+} from '../core/internals/ProcedureBuilderInternal';
+import { getParseFnOrPassThrough } from '../core/internals/getParseFn';
 import { Procedure as NewProcedure } from '../core/procedure';
 import { Router as NewRouter, createRouterWithContext } from '../core/router';
 import {
@@ -106,9 +110,13 @@ function migrateProcedure<TProcedure extends AnyOldProcedure>(
 ): MigrateProcedure<TProcedure> {
   const def = oldProc._def();
 
+  const inputParser = getParseFnOrPassThrough(def.inputParser);
+
+  const inputMiddleware = createInputMiddleware(inputParser);
+
   const builder = createInternalBuilder({
     input: def.inputParser,
-    middlewares: def.middlewares as any,
+    middlewares: [inputMiddleware, ...(def.middlewares as any)],
     meta: def.meta,
     output: def.outputParser,
   });

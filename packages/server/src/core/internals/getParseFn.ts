@@ -32,3 +32,16 @@ export function getParseFn<T>(procedureParser: Parser): ParseFn<T> {
 
   throw new Error('Could not find a validator fn');
 }
+
+/**
+ * @deprecated only for backwards compat
+ * @internal
+ */
+export function getParseFnOrPassThrough<T>(
+  procedureParser: Parser | undefined,
+): ParseFn<T> {
+  if (!procedureParser) {
+    return (v) => v as T;
+  }
+  return getParseFn(procedureParser);
+}

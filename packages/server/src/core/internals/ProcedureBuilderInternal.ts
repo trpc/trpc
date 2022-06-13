@@ -8,7 +8,7 @@ import { MaybePromise } from '../../types';
 import { MiddlewareFunction, MiddlewareResult } from '../middleware';
 import { Parser } from '../parser';
 import { ProcedureType } from '../types';
-import { getParseFn } from './getParseFn';
+import { ParseFn, getParseFn } from './getParseFn';
 import { mergeWithoutOverrides } from './mergeWithoutOverrides';
 import { ResolveOptions, middlewareMarker } from './utils';
 
@@ -27,13 +27,15 @@ export interface InternalProcedure {
 type ProcedureBuilderInternalResolver = (
   opts: ResolveOptions<any>,
 ) => Promise<unknown>;
+
+export type ProcedureBuilderInternalMiddleware = MiddlewareFunction<any, any>;
 interface ProcedureBuilderInternal {
   _def: {
     input?: Parser;
     output?: Parser;
     meta?: Record<string, unknown>;
     resolver?: ProcedureBuilderInternalResolver;
-    middlewares: MiddlewareFunction<any, any>[];
+    middlewares: ProcedureBuilderInternalMiddleware[];
   };
   // FIXME
   // _call: (opts: ResolveOptions<any>) => Promise<unknown>;
@@ -156,6 +158,24 @@ function createProcedureCaller(
   return procedure;
 }
 
+export function createInputMiddleware<T>(
+  parse: ParseFn<T>,
+): ProcedureBuilderInternalMiddleware {
+  return async function inputMiddleware({ next, rawInput }) {
+    let input: ReturnType<typeof parse>;
+    try {
+      input = await parse(rawInput);
+    } catch (cause) {
+      throw new TRPCError({
+        code: 'BAD_REQUEST',
+        cause: getCauseFromUnknown(cause),
+      });
+    }
+    // TODO fix this typing?
+    return next({ input } as any);
+  };
+}
+
 export function createInternalBuilder(
   initDef?: ProcedureBuilderInternal['_def'],
 ): ProcedureBuilderInternal {
@@ -167,25 +187,10 @@ export function createInternalBuilder(
     _def,
     // _call: createProcedureCaller(_def),
     input(input: Parser) {
-      const parseInput = getParseFn(input);
+      const parser = getParseFn(input);
       return createNewInternalBuilder(_def, {
         input,
-        middlewares: [
-          ..._def.middlewares,
-          async function inputMiddleware({ next, rawInput }) {
-            let input: ReturnType<typeof parseInput>;
-            try {
-              input = await parseInput(rawInput);
-            } catch (cause) {
-              throw new TRPCError({
-                code: 'BAD_REQUEST',
-                cause: getCauseFromUnknown(cause),
-              });
-            }
-            // TODO fix this typing?
-            return next({ input } as any);
-          },
-        ],
+        middlewares: [..._def.middlewares, createInputMiddleware(parser)],
       });
     },
     output(output: Parser) {

@@ -3,7 +3,9 @@ import { TRPCClientError } from '@trpc/client';
 import { initTRPC } from '@trpc/server';
 import { z } from 'zod';
 
-const trpc = initTRPC()();
+const trpc = initTRPC<{
+  ctx: {};
+}>()();
 const { procedure } = trpc;
 
 test('old client - happy path w/o input', async () => {
@@ -40,6 +42,25 @@ test('very happy path', async () => {
   });
   const { client, close } = routerToServerAndClientNew(router);
   expect(await client.queries.greeting('KATT')).toBe('hello KATT');
+  close();
+});
+
+test('middleware', async () => {
+  const router = trpc.router({
+    queries: {
+      greeting: procedure
+        .use(({ next }) => {
+          return next({
+            ctx: {
+              user: 'KATT',
+            },
+          });
+        })
+        .resolve(({ ctx }) => `hello ${ctx.user}`),
+    },
+  });
+  const { client, close } = routerToServerAndClientNew(router);
+  expect(await client.queries.greeting()).toBe('hello KATT');
   close();
 });
 
