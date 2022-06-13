@@ -1,6 +1,5 @@
 import { routerToServerAndClientNew } from './__testHelpers';
 import { initTRPC } from '@trpc/server';
-import { z } from 'zod';
 
 const trpc = initTRPC()();
 const { procedure } = trpc;

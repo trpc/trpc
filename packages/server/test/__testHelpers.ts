@@ -22,6 +22,7 @@ import { AnyRouter as OldRouter } from '../src/deprecated/router';
 
 (global as any).fetch = fetch;
 (global as any).AbortController = AbortController;
+(global as any).WebSocket = ws;
 export function routerToServerAndClientNew<TRouter extends AnyNewRouter>(
   router: TRouter,
   opts?: {
