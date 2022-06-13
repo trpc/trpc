@@ -146,11 +146,11 @@ export class TRPCClient<TRouter extends AnyRouter> {
       ];
     }
 
-    this.queries = createRouterProxy((path, ...args) => 
+    this.queries = createRouterProxy((path, ...args) =>
       this.query(path, ...(args as any)),
     );
-    this.mutations = createRouterProxy((path, ...args) => 
-      this.mutation(path, ...(args as any));
+    this.mutations = createRouterProxy((path, ...args) =>
+      this.mutation(path, ...(args as any)),
     );
   }
 
