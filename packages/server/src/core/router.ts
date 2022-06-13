@@ -1,12 +1,21 @@
 /* eslint-disable @typescript-eslint/ban-types */
 import { TRPCError } from '../TRPCError';
-import { ErrorFormatter, ErrorFormatterShape } from '../error/formatter';
-import { TRPCErrorShape } from '../rpc';
+import {
+  DefaultErrorShape,
+  ErrorFormatter,
+  ErrorFormatterShape,
+} from '../error/formatter';
+import { getHTTPStatusCodeFromError } from '../http/internals/getHTTPStatusCode';
+import { TRPCErrorShape, TRPC_ERROR_CODES_BY_KEY } from '../rpc';
 import { CombinedDataTransformer } from '../transformer';
+import {
+  InternalProcedure,
+  InternalProcedureCallOptions,
+} from './internals/ProcedureBuilderInternal';
 import { mergeWithoutOverrides } from './internals/mergeWithoutOverrides';
 import { Overwrite, PickFirstDefined, ValidateShape } from './internals/utils';
 import { Procedure } from './procedure';
-import { ProcedureType } from './types';
+import { ProcedureCallOptions, ProcedureType } from './types';
 
 // FIXME this should properly use TContext
 export type ProcedureRecord<_TContext> = Record<string, Procedure<any>>;
@@ -150,6 +159,14 @@ const emptyRouter = {
 };
 // type EmptyRouter = typeof emptyRouter;
 
+const PROCEDURE_DEFINITION_MAP: Record<
+  ProcedureType,
+  'queries' | 'mutations' | 'subscriptions'
+> = {
+  query: 'queries',
+  mutation: 'mutations',
+  subscription: 'subscriptions',
+};
 /**
  *
  * @internal
@@ -177,14 +194,74 @@ export function createRouterWithContext<TContext>(
       ...emptyRouter,
       ...result,
     };
-    const router: AnyRouter = {
+    const def = {
       _def,
       ..._def,
-      createCaller() {
-        throw new Error('Unimpl');
+    };
+
+    function callProcedure(opts: InternalProcedureCallOptions) {
+      const { type, path } = opts;
+      const defTarget = PROCEDURE_DEFINITION_MAP[type];
+      const defs = def[defTarget];
+      const procedure = defs[path] as InternalProcedure | undefined;
+
+      if (!procedure) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: `No "${type}"-procedure on path "${path}"`,
+        });
+      }
+
+      return procedure(opts);
+    }
+    const router: AnyRouter = {
+      ...def,
+      createCaller(ctx) {
+        return {
+          query: (path, ...args) =>
+            callProcedure({
+              path,
+              rawInput: args[0],
+              ctx,
+              type: 'query',
+            }) as any,
+          mutation: (path, ...args) =>
+            callProcedure({
+              path,
+              rawInput: args[0],
+              ctx,
+              type: 'mutation',
+            }) as any,
+          subscription: (path, ...args) =>
+            callProcedure({
+              path,
+              rawInput: args[0],
+              ctx,
+              type: 'subscription',
+            }) as any,
+        };
       },
-      getErrorShape() {
-        throw new Error('Unimpl');
+      getErrorShape(opts) {
+        const { path, error } = opts;
+        const { code } = opts.error;
+        const shape: DefaultErrorShape = {
+          message: error.message,
+          code: TRPC_ERROR_CODES_BY_KEY[code],
+          data: {
+            code,
+            httpStatus: getHTTPStatusCodeFromError(error),
+          },
+        };
+        if (
+          process.env.NODE_ENV !== 'production' &&
+          typeof opts.error.stack === 'string'
+        ) {
+          shape.data.stack = opts.error.stack;
+        }
+        if (typeof path === 'string') {
+          shape.data.path = path;
+        }
+        return this._def.errorFormatter({ ...opts, shape });
       },
     };
     return router as any;

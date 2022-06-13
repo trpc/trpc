@@ -61,6 +61,7 @@ interface ProcedureOptions<TContext, TMeta, TInput, TOutput, TParsedOutput> {
 
 /**
  * @internal
+ * @deprecated
  */
 export interface ProcedureCallOptions<TContext> {
   ctx: TContext;

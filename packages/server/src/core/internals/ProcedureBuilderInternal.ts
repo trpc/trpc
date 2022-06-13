@@ -12,23 +12,27 @@ import { getParseFn } from './getParseFn';
 import { mergeWithoutOverrides } from './mergeWithoutOverrides';
 import { ResolveOptions, middlewareMarker } from './utils';
 
-interface InternalProcedureCallOptions {
+export interface InternalProcedureCallOptions {
   ctx: unknown;
   rawInput: unknown;
-  input: unknown;
+  input?: unknown;
   path: string;
   type: ProcedureType;
 }
-interface InternalProcedure {
+export interface InternalProcedure {
   _def: ProcedureBuilderInternal['_def'];
-  (opts: InternalProcedureCallOptions): Promise<void>;
+  (opts: InternalProcedureCallOptions): Promise<unknown>;
 }
+
+type ProcedureBuilderInternalResolver = (
+  opts: ResolveOptions<any>,
+) => Promise<unknown>;
 interface ProcedureBuilderInternal {
   _def: {
     input?: Parser;
     output?: Parser;
     meta?: Record<string, unknown>;
-    resolver?: (opts: ResolveOptions<any>) => Promise<unknown>;
+    resolver?: ProcedureBuilderInternalResolver;
     middlewares: MiddlewareFunction<any, any>[];
   };
   // FIXME
@@ -102,7 +106,8 @@ function createProcedureCaller(
       },
     ): Promise<MiddlewareResult<any>> => {
       try {
-        const result = await _def.middlewares[callOpts.index]({
+        const middleware = _def.middlewares[callOpts.index];
+        const result = await middleware({
           ctx: callOpts.ctx,
           type: opts.type,
           path: opts.path,
@@ -114,7 +119,7 @@ function createProcedureCaller(
               index: callOpts.index + 1,
               ctx: nextOpts && 'ctx' in nextOpts ? nextOpts.ctx : callOpts.ctx,
               input:
-                nextOpts && 'input' in nextOpts.input
+                nextOpts && 'input' in nextOpts
                   ? nextOpts.input
                   : callOpts.input,
             });
@@ -132,6 +137,7 @@ function createProcedureCaller(
 
     // there's always at least one "next" since we wrap this.resolver in a middleware
     const result = await callRecursive();
+
     if (!result) {
       throw new TRPCError({
         code: 'INTERNAL_SERVER_ERROR',
@@ -143,6 +149,7 @@ function createProcedureCaller(
       // re-throw original error
       throw result.error;
     }
+    return result.data;
   };
   procedure._def = _def;
 
