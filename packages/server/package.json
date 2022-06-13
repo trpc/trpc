@@ -25,6 +25,7 @@
       "adapters/standalone.ts",
       "adapters/ws.ts",
       "adapters/lambda/index.ts",
+      "adapters/aws-lambda/index.ts",
       "ws/index.ts",
       "rpc/index.ts"
     ]
