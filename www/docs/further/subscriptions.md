@@ -12,8 +12,7 @@ Subscriptions & WebSockets are in beta, alpha & might change without a major ver
 ## Using Subscriptions
 
 :::tip
-
-- For a full-stack example have a look at [/examples/next-prisma-starter-websockets](https://github.com/trpc/trpc/tree/main/examples/next-prisma-starter-websockets).
+- For a full-stack example have a look at [/examples/next-prisma-starter-websockets](https://github.com/trpc/examples-next-prisma-starter-websockets).
 - For a bare-minumum Node.js example see [/examples/standalone-server](https://github.com/trpc/trpc/tree/main/examples/standalone-server).
 
 :::
@@ -124,7 +123,7 @@ const client = createTRPCClient<AppRouter>({
 
 ### Using React
 
-See [/examples/next-prisma-starter-websockets](https://github.com/trpc/trpc/tree/main/examples/next-prisma-starter-websockets).
+See [/examples/next-prisma-starter-websockets](https://github.com/trpc/examples-next-prisma-starter-websockets).
 
 ## WebSockets RPC Specification
 

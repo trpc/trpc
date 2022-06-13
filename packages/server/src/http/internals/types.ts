@@ -25,7 +25,7 @@ export interface HTTPRequest {
   body: unknown;
 }
 
-type ResponseMetaFn<TRouter extends AnyRouter> = (opts: {
+export type ResponseMetaFn<TRouter extends AnyRouter> = (opts: {
   data: TRPCResponse<unknown, inferRouterError<TRouter>>[];
   ctx?: inferRouterContext<TRouter>;
   /**

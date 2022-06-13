@@ -29,7 +29,7 @@ Get started quickly with one of the sample projects! Copy the snippet from _Quic
       <td>
         <ul>
           <li><a href="https://codesandbox.io/s/github/trpc/trpc/tree/main/examples/next-prisma-starter?file=/src/pages/index.tsx">CodeSandbox</a></li>
-          <li><a href="https://github.com/trpc/trpc/tree/main/examples/next-prisma-starter">Source</a></li>
+          <li><a href="https://github.com/trpc/examples-next-prisma-starter">Source</a></li>
         </ul>
       </td>
     </tr>
@@ -64,7 +64,7 @@ Get started quickly with one of the sample projects! Copy the snippet from _Quic
       <td>
         <ul>
           <li><a href="https://codesandbox.io/s/github/trpc/trpc/tree/main/examples/next-prisma-todomvc?file=/pages/%5Bfilter%5D.tsx">CodeSandbox</a></li>
-          <li><a href="https://github.com/trpc/trpc/tree/main/examples/next-prisma-todomvc">Source</a></li>
+          <li><a href="https://github.com/trpc/examples-next-prisma-todomvc">Source</a></li>
         </ul>
       </td>
     </tr>
