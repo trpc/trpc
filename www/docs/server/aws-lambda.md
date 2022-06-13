@@ -1,13 +1,13 @@
 ---
-id: api-gateway
-title: Usage with Amazon API Gateway
-sidebar_label: 'Adapter: API Gateway'
-slug: /api-gateway
+id: aws-lambda
+title: Usage with Amazon Lambda through the API Gateway
+sidebar_label: 'Adapter: Amazon Lambda'
+slug: /aws-lambda
 ---
 
-## Amazon API Gateway adapter
+## Amazon Lambda adapter
 
-The API Gateway adapter is supported for both Rest API(v1) and HTTP API(v2) use cases.
+The AWS Lambda adapter is supported for API Gateway Rest API(v1) and HTTP API(v2) use cases.
 
 ## Example app
 
@@ -66,7 +66,7 @@ export type AppRouter = typeof appRouter;
 tRPC includes an adapter for API Gateway out of the box. This adapter lets you run your routes through the API Gateway handler.
 
 ```ts title='server.ts'
-import * as trpcAPIGW from '@trpc/server/adapters/api-gateway';
+import { CreateAWSLambdaContextOptions, awsLambdaRequestHandler } from '@trpc/server/adapters/aws-lambda';
 
 const appRouter = /* ... */;
 
@@ -74,10 +74,10 @@ const appRouter = /* ... */;
 const createContext = ({
   event,
   context,
-}: trpcAPIGW.CreateLambdaContextOptions) => ({}) // no context
+}: CreateAWSLambdaContextOptions) => ({}) // no context
 type Context = trpc.inferAsyncReturnType<typeof createContext>;
 
-export const handler = trpcAPIGW.lambdaRequestHandler({
+export const handler = awsLambdaRequestHandler({
   router: appRouter,
   createContext,
 })
@@ -103,11 +103,11 @@ To infer what version you might have, supply the context as following:
 function createContext({
   event,
   context,
-}: CreateLambdaContextOptions<APIGatewayProxyEvent>) {
+}: CreateAWSLambdaContextOptions<APIGatewayProxyEvent>) {
   ...
 }
 
-// CreateLambdaContextOptions<APIGatewayProxyEvent> or CreateLambdaContextOptions<APIGatewayProxyEventV2>
+// CreateAWSLambdaContextOptions<APIGatewayProxyEvent> or CreateAWSLambdaContextOptions<APIGatewayProxyEventV2>
 ```
 
 [Read more here about payload format version](https://docs.aws.amazon.com/apigateway/latest/developerguide/http-api-develop-integrations-lambda.html)

@@ -32,6 +32,11 @@
       "require": "./dist/index.js",
       "default": "./dist/index.js"
     },
+    "./adapters/aws-lambda": {
+      "import": "./dist/adapters/aws-lambda.mjs",
+      "require": "./dist/adapters/aws-lambda.js",
+      "default": "./dist/adapters/aws-lambda.js"
+    },
     "./adapters/express": {
       "import": "./dist/adapters/express.mjs",
       "require": "./dist/adapters/express.js",

@@ -36,7 +36,7 @@ module.exports = {
         'server/express',
         'server/fastify',
         'server/fetch',
-        'server/api-gateway',
+        'server/aws-lambda',
       ],
     },
     {
