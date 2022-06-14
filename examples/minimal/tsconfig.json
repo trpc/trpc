@@ -4,6 +4,5 @@
     "esModuleInterop": true,
     "strict": true
   },
-  "include": ["server", "client"],
-  "exclude": ["**/node_modules"]
+  "include": ["server", "client"]
 }
