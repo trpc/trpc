@@ -25,6 +25,10 @@ tRPC is a lot simpler and couples your server & website/app more tightly togethe
 
 ## Differences to [Blitz.js](https://blitzjs.com/)
 
+> **Update June 14th 2022:** Blitz.js in it's current form is undergoing big changes, this section will be updated once that has gotten stable.
+
+<details><summary>View outdated content</summary>
+
 > I've gotten asked several times about differences with Blitz.js and started outlining some differences [on Twitter](https://twitter.com/alexdotjs/status/1436654002477969411). If you think the below comparison is wrong in any way, please don't hesitate to reach&nbsp;out.   
 > &mdash; [Alex&nbsp;/&nbsp;KATT](https://twitter.com/alexdotjs)
 
@@ -52,6 +56,4 @@ Blitz is a full-stack framework & achieves this by maintaining a fork of Next.js
 - Automatic integration with Blitz's auth
 - Since you import server functions directly to the frontend, you can do things like CMD+click a function to jump to definition
 
-### Potential Collaboration between Blitz and tRPC
-
-Toward the end of 2021, Blitz creator Brandon Bayer announced a major pivot to a [framework agnostic toolkit](https://github.com/blitz-js/blitz/discussions/3075). This lead to a proposal from Alex on [ways for Blitz and tRPC to collaborate](https://github.com/blitz-js/blitz/discussions/3075#discussioncomment-1840918). Discussions around a potential integration with tRPC for the next iteration of Blitz has continued in [[RFC] New Blitz Toolkit Standalone Zero API Data Layer](https://github.com/blitz-js/blitz/discussions/3083).
+</details>
