@@ -783,6 +783,17 @@
         "doc",
         "code"
       ]
+    },
+    {
+      "login": "lilja",
+      "name": "Erik Lilja",
+      "avatar_url": "https://avatars.githubusercontent.com/u/6134511?v=4",
+      "profile": "https://github.com/Lilja",
+      "contributions": [
+        "doc",
+        "code",
+        "test"
+      ]
     }
   ],
   "contributorsPerLine": 7,
