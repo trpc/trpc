@@ -773,6 +773,16 @@
       "contributions": [
         "doc"
       ]
+    },
+    {
+      "login": "skovhus",
+      "name": "Kenneth Skovhus",
+      "avatar_url": "https://avatars.githubusercontent.com/u/1260305?v=4",
+      "profile": "https://skovhus.dev",
+      "contributions": [
+        "doc",
+        "code"
+      ]
     }
   ],
   "contributorsPerLine": 7,
