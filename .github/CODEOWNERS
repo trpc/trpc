@@ -8,3 +8,5 @@
 
 **/*fastify* @skarab42
 examples/minimal/**/* @Crazytieguy
+**/*lambda* @Lilja
+**/*aws-lambda* @Lilja

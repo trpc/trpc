@@ -1,6 +1,6 @@
 {
   "name": "@examples/standalone-server",
-  "version": "9.23.6",
+  "version": "9.25.2",
   "private": true,
   "scripts": {
     "dev:server": "nodemon -e ts -w . -x ts-node ./src/server",

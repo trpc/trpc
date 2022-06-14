@@ -322,7 +322,7 @@ export default function TodosPage({
           <a href="https://twitter.com/alexdotjs">alexdotjs / KATT</a>.
         </p>
         <p>
-          <a href="https://github.com/trpc/trpc/tree/main/examples/next-prisma-todomvc">
+          <a href="https://github.com/trpc/examples-next-prisma-todomvc">
             Source code
           </a>{' '}
           -{' '}

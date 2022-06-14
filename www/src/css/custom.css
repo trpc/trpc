@@ -1,3 +1,7 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
 /* stylelint-disable docusaurus/copyright-header */
 /**
  * Any CSS included here will be global. The classic template
@@ -15,6 +19,13 @@
   --ifm-color-primary-lighter: #58c9f1;
   --ifm-color-primary-lightest: #72e3ff;
   --ifm-code-font-size: 95%;
+  --ifm-container-width: 1140px;
+  --ifm-container-width-xl: 1320px;
+  --ifm-link-hover-color: ;
+}
+
+.markdown a {
+  @apply text-primary hover:text-primary-dark;
 }
 
 .docusaurus-highlight-code-line {
@@ -24,6 +35,10 @@
   padding: 0 var(--ifm-pre-padding);
 }
 
+a {
+  color: var(--ifm-link-color);
+  text-decoration: var(--ifm-link-decoration);
+}
 /**
  * Initialiazing a `footnotes` counter on the wrapper
  */
@@ -76,7 +91,7 @@ article {
 
 .footnotes {
   font-size: 0.9em;
-  max-width: 600px;
+  max-width: 605px;
   margin: auto;
   padding: 10px 0px 60px 0px;
 }
@@ -109,4 +124,57 @@ article {
 .theme-doc-markdown.markdown table {
   display: table;
   /* width: 100%; */
+}
+
+.theme-edit-this-page {
+  @apply text-primary hover:text-primary-dark;
+}
+
+.navbar-external-link,
+.theme-edit-this-page {
+  @apply hidden xl:flex items-center;
+}
+.footer__item {
+  @apply h-8;
+}
+
+.container {
+  @apply w-full max-w-[var(--ifm-container-width-xl)] mx-auto;
+}
+
+.markdown h1,
+h2,
+h3,
+h4,
+h5 {
+  @apply font-bold mb-1 leading-normal;
+}
+
+.markdown h1 {
+  @apply text-5xl;
+}
+
+.markdown h2 {
+  @apply text-[2rem];
+}
+
+.markdown h3 {
+  @apply text-2xl;
+}
+
+.markdown h4,
+h5 {
+  @apply text-xl;
+}
+
+.markdown ul {
+  @apply list-disc pl-8;
+}
+
+.pagination-nav__label {
+  @apply text-primary;
+}
+
+.admonition-heading h5 {
+  @apply flex items-center text-lg;
 }

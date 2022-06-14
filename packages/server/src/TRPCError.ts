@@ -6,7 +6,7 @@ export class TRPCError extends Error {
    * @deprecated use `cause`
    */
   public readonly originalError?: unknown;
-  public readonly cause?: unknown;
+  public readonly cause?;
   public readonly code;
 
   constructor(opts: {
@@ -16,6 +16,8 @@ export class TRPCError extends Error {
      * @deprecated use `cause`
      */
     originalError?: unknown;
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore This will be `Error` in next major version
     cause?: unknown;
   }) {
     const cause = opts.cause ?? opts.originalError;
