@@ -23,6 +23,9 @@ We've taken a lot of inspiration from GraphQL. If you've made GraphQL-servers be
 
 tRPC is a lot simpler and couples your server & website/app more tightly together (for good and for bad). It makes it easy to move quickly, do changes without updating a schema & there's no thinking about the ever-traversable graph.
 
+
+<!--- 
+
 ## Differences to [Blitz.js](https://blitzjs.com/)
 
 > I've gotten asked several times about differences with Blitz.js and started outlining some differences [on Twitter](https://twitter.com/alexdotjs/status/1436654002477969411). If you think the below comparison is wrong in any way, please don't hesitate to reach&nbsp;out.   
@@ -31,6 +34,7 @@ tRPC is a lot simpler and couples your server & website/app more tightly togethe
 The philosophy of the _"Zero-API data layer"_ is the main common denominator in tRPC & Blitz. 
 
 Blitz is a full-stack framework & achieves this by maintaining a fork of Next.js and adding it into core - resulting in a more integrated developer experience. tRPC is a set of libraries that mainly focuses on the API-layer that can be used with any app or framework, resulting in no framework lock-in of React or Blitz's fork of Next.js.
+
 
 ### Benefits with tRPC
 
@@ -46,6 +50,7 @@ Blitz is a full-stack framework & achieves this by maintaining a fork of Next.js
 - Configurable data flow between client/server with links
 - Single API-endpoint which reduces amounts of cold starts in serverless environments
 
+
 ### Benefits with Blitz.js
 
 - Data layer integrated with the Next.js runtime, resulting in a more integrated experience
@@ -55,3 +60,5 @@ Blitz is a full-stack framework & achieves this by maintaining a fork of Next.js
 ### Potential Collaboration between Blitz and tRPC
 
 Toward the end of 2021, Blitz creator Brandon Bayer announced a major pivot to a [framework agnostic toolkit](https://github.com/blitz-js/blitz/discussions/3075). This lead to a proposal from Alex on [ways for Blitz and tRPC to collaborate](https://github.com/blitz-js/blitz/discussions/3075#discussioncomment-1840918). Discussions around a potential integration with tRPC for the next iteration of Blitz has continued in [[RFC] New Blitz Toolkit Standalone Zero API Data Layer](https://github.com/blitz-js/blitz/discussions/3083).
+
+-->
