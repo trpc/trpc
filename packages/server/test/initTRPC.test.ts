@@ -31,6 +31,7 @@ describe('setup - inference', () => {
         bar,
       },
     });
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore FIXME we probably want to have these equal
     expectTypeOf(router1).toMatchTypeOf(router2);
   });

@@ -12,7 +12,7 @@ import { CombinedDataTransformer } from '../transformer';
 import {
   InternalProcedure,
   InternalProcedureCallOptions,
-} from './internals/ProcedureBuilderInternal';
+} from './internals/internalProcedure';
 import { mergeWithoutOverrides } from './internals/mergeWithoutOverrides';
 import { omitPrototype } from './internals/omitPrototype';
 import { PickFirstDefined, ValidateShape } from './internals/utils';
@@ -351,11 +351,6 @@ export function mergeRouters<TRouterItems extends RouterOptions<any>[]>(
         nextRouter.errorFormatter !== defaultFormatter
       ) {
         if (currentErrorFormatter !== defaultFormatter) {
-          console.log({
-            currentErrorFormatter,
-            defaultFormatter,
-            nextRouter,
-          });
           throw new Error('You seem to have duplicate error formatters');
         }
         return nextRouter.errorFormatter;

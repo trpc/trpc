@@ -1,9 +1,9 @@
+import { getParseFnOrPassThrough } from '../core/internals/getParseFn';
 import {
   createInputMiddleware,
   createInternalBuilder,
   createOutputMiddleware,
-} from '../core/internals/ProcedureBuilderInternal';
-import { getParseFnOrPassThrough } from '../core/internals/getParseFn';
+} from '../core/internals/internalProcedure';
 import { Procedure as NewProcedure } from '../core/procedure';
 import { Router as NewRouter, createRouterWithContext } from '../core/router';
 import {

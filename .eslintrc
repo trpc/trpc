@@ -31,7 +31,7 @@
           "\\.config\\.js",
           "\\.d\\.ts$",
           "issue-\\d+-.*\\.test\\.tsx?$",
-          "**/components/**"
+          "\\.(t|j)sx$"
         ]
       }
     ]

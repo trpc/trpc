@@ -1,5 +1,5 @@
 import { MaybePromise } from '../types';
-import { createInternalBuilder } from './internals/ProcedureBuilderInternal';
+import { createInternalBuilder } from './internals/internalProcedure';
 import { ProcedureParams, ResolveOptions } from './internals/utils';
 import {
   DefaultValue as FallbackValue,
