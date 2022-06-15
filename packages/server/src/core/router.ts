@@ -14,6 +14,7 @@ import {
   InternalProcedureCallOptions,
 } from './internals/ProcedureBuilderInternal';
 import { mergeWithoutOverrides } from './internals/mergeWithoutOverrides';
+import { omitPrototype } from './internals/omitPrototype';
 import { PickFirstDefined, ValidateShape } from './internals/utils';
 import { Procedure } from './procedure';
 import { ProcedureType } from './types';
@@ -198,7 +199,11 @@ export function createRouterWithContext<TContext>(
         transformer: defaults?.transformer ?? defaultTransformer,
         errorFormatter: defaults?.errorFormatter ?? defaultFormatter,
       },
-      procedures,
+      {
+        queries: omitPrototype(procedures.queries),
+        mutations: omitPrototype(procedures.mutations),
+        subscriptions: omitPrototype(procedures.subscriptions),
+      },
     );
 
     const _def: AnyRouterParams<TContext> = {
@@ -215,7 +220,7 @@ export function createRouterWithContext<TContext>(
       const defTarget = PROCEDURE_DEFINITION_MAP[type];
       const defs = def[defTarget];
 
-      if (!def.hasOwnProperty(path)) {
+      if (!(path in defs)) {
         throw new TRPCError({
           code: 'NOT_FOUND',
           message: `No "${type}"-procedure on path "${path}"`,

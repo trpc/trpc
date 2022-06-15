@@ -100,6 +100,10 @@ export function routerToServerAndClientNew<TRouter extends AnyNewRouter>(
     wss,
   };
 }
+
+/**
+ * @deprecated v9 router
+ */
 export function routerToServerAndClient<TOldRouter extends OldRouter>(
   _router: TOldRouter,
   opts?: {

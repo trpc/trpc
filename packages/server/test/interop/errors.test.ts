@@ -277,7 +277,6 @@ Object {
           throw new Error('Some error');
         })
         .query('q', {
-          input: z.string(),
           resolve() {
             return null;
           },
