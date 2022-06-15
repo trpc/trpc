@@ -1,5 +1,9 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import { routerToServerAndClient, waitError } from '../__testHelpers';
+import {
+  routerToServerAndClient,
+  routerToServerAndClientNew,
+  waitError,
+} from '../__testHelpers';
 import devalue from 'devalue';
 import fetch from 'node-fetch';
 import superjson from 'superjson';
@@ -399,7 +403,7 @@ describe('transformer on router', () => {
     const date = new Date();
     const fn = jest.fn();
     const transformer = superjson;
-    const { client, close } = routerToServerAndClient(
+    const { client, close } = routerToServerAndClientNew(
       trpc
         .router()
         .transformer(transformer)
@@ -409,10 +413,13 @@ describe('transformer on router', () => {
             return observable<Date>((emit) => {
               fn(input);
               emit.next(input);
-              return () => null;
+              return () => {
+                // noop
+              };
             });
           },
-        }),
+        })
+        .interop(),
       {
         client({ wssUrl }) {
           wsClient = createWSClient({
