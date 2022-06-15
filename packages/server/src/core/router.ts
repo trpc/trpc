@@ -4,6 +4,7 @@ import {
   DefaultErrorShape,
   ErrorFormatter,
   ErrorFormatterShape,
+  defaultFormatter,
 } from '../error/formatter';
 import { getHTTPStatusCodeFromError } from '../http/internals/getHTTPStatusCode';
 import { TRPCErrorShape, TRPC_ERROR_CODES_BY_KEY } from '../rpc';
@@ -143,10 +144,6 @@ export const defaultTransformer: CombinedDataTransformer = {
   output: { serialize: (obj) => obj, deserialize: (obj) => obj },
 };
 
-const defaultErrorFormatter: ErrorFormatter<any, any> = ({ shape }) => {
-  return shape;
-};
-
 const emptyRouter = {
   _ctx: null as any,
   _errorShape: null as any,
@@ -154,7 +151,7 @@ const emptyRouter = {
   queries: {},
   mutations: {},
   subscriptions: {},
-  errorFormatter: defaultErrorFormatter,
+  errorFormatter: defaultFormatter,
   transformer: defaultTransformer,
 };
 // type EmptyRouter = typeof emptyRouter;
@@ -197,9 +194,9 @@ export function createRouterWithContext<TContext>(
     const result = mergeWithoutOverrides<
       RouterDefaultOptions<TContext> & RouterBuildOptions<TContext>
     >(
-      defaults || {
-        transformer: defaultTransformer,
-        errorFormatter: defaultErrorFormatter,
+      {
+        transformer: defaults?.transformer ?? defaultTransformer,
+        errorFormatter: defaults?.errorFormatter ?? defaultFormatter,
       },
       procedures,
     );
@@ -343,18 +340,26 @@ export function mergeRouters<TRouterItems extends RouterOptions<any>[]>(
     {},
     ...routerList.map((r) => r.subscriptions),
   );
-  const errorFormatter = routerList.reduce((prev, current) => {
-    if (
-      current.errorFormatter &&
-      current.errorFormatter !== defaultErrorFormatter
-    ) {
-      if (prev !== defaultErrorFormatter) {
-        throw new Error('You seem to have duplicate error formatters');
+  const errorFormatter = routerList.reduce(
+    (currentErrorFormatter, nextRouter) => {
+      if (
+        nextRouter.errorFormatter &&
+        nextRouter.errorFormatter !== defaultFormatter
+      ) {
+        if (currentErrorFormatter !== defaultFormatter) {
+          console.log({
+            currentErrorFormatter,
+            defaultFormatter,
+            nextRouter,
+          });
+          throw new Error('You seem to have duplicate error formatters');
+        }
+        return nextRouter.errorFormatter;
       }
-      return current.errorFormatter;
-    }
-    return prev;
-  }, defaultErrorFormatter);
+      return currentErrorFormatter;
+    },
+    defaultFormatter,
+  );
 
   const transformer = routerList.reduce((prev, current) => {
     if (current.transformer && current.transformer !== defaultTransformer) {
