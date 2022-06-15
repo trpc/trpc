@@ -190,7 +190,7 @@ export function createInternalBuilder(
       const parser = getParseFn(input);
       return createNewInternalBuilder(_def, {
         input,
-        middlewares: [..._def.middlewares, createInputMiddleware(parser)],
+        middlewares: [createInputMiddleware(parser)],
       });
     },
     output(output: Parser) {
@@ -198,7 +198,6 @@ export function createInternalBuilder(
       return createNewInternalBuilder(_def, {
         output,
         middlewares: [
-          ..._def.middlewares,
           async function outputMiddleware({ next }) {
             const result = await next();
             if (!result.ok) {
@@ -225,7 +224,6 @@ export function createInternalBuilder(
       const finalBuilder = createNewInternalBuilder(_def, {
         resolver,
         middlewares: [
-          ..._def.middlewares,
           async function resolveMiddleware(opts) {
             const data = await resolver(opts);
             return {

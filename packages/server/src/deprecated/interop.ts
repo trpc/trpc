@@ -116,7 +116,7 @@ function migrateProcedure<TProcedure extends AnyOldProcedure>(
 
   const builder = createInternalBuilder({
     input: def.inputParser,
-    middlewares: [inputMiddleware, ...(def.middlewares as any)],
+    middlewares: [...(def.middlewares as any), inputMiddleware],
     meta: def.meta,
     output: def.outputParser,
   });

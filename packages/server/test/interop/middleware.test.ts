@@ -33,6 +33,7 @@ test('is called if def first', async () => {
   expect(calls[0][0]).toHaveProperty('type');
   expect(calls[0][0]).toHaveProperty('ctx');
   expect(calls[0][0].type).toBe('query');
+  expect(middleware).toHaveBeenCalledTimes(1);
 
   expect(await client.mutation('foo2')).toBe('bar2');
   expect(calls[1][0].type).toBe('mutation');

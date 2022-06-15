@@ -296,6 +296,7 @@ Object {
   });
 });
 
+// FIXME: make sure this is the case for new V10 merged routers
 test('make sure object is ignoring prototype', async () => {
   const onError = jest.fn();
   const { client, close } = routerToServerAndClient(
