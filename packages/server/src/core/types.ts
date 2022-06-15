@@ -29,7 +29,7 @@ export type inferHandlerInput<TProcedure extends Procedure<any>> =
       ? [input?: undefined | null, opts?: ProcedureOptions]
       : undefined extends TParams['_input_in']
       ? [
-          input?: TParams['_input_in'] | undefined | null | void, // void is necessary to allow procedures with nullish input to be called without an input
+          input?: TParams['_input_in'] | undefined | void, // void is necessary to allow procedures with nullish input to be called without an input
           opts?: ProcedureOptions,
         ]
       : [input: TParams['_input_in'], opts?: ProcedureOptions]
