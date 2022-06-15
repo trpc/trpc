@@ -15,12 +15,16 @@ export interface WebSocketClientOptions {
   url: string;
   WebSocket?: WebSocket;
   retryDelayMs?: typeof retryDelay;
+  onOpen?: () => void;
+  onClose?: () => void;
 }
 export function createWSClient(opts: WebSocketClientOptions) {
   const {
     url,
     WebSocket: WebSocketImpl = WebSocket,
     retryDelayMs: retryDelayFn = retryDelay,
+    onOpen,
+    onClose,
   } = opts;
   /* istanbul ignore next */
   if (!WebSocketImpl) {
@@ -123,6 +127,7 @@ export function createWSClient(opts: WebSocketClientOptions) {
       }
       connectAttempt = 0;
       state = 'open';
+      onOpen?.();
       dispatch();
     });
     conn.addEventListener('error', () => {
@@ -180,6 +185,7 @@ export function createWSClient(opts: WebSocketClientOptions) {
 
     conn.addEventListener('close', () => {
       if (activeConnection === conn) {
+        onClose?.();
         // connection might have been replaced already
         tryReconnect();
       }

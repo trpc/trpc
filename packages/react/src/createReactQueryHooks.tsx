@@ -9,6 +9,7 @@ import type {
   AnyRouter,
   DataTransformer,
   ProcedureRecord,
+  TRPCResultMessage,
   inferHandlerInput,
   inferProcedureInput,
   inferProcedureOutput,
@@ -343,8 +344,11 @@ export function createReactQueryHooks<
     ],
     opts: {
       enabled?: boolean;
-      error?: (err: TError) => void;
-      next: (data: TOutput) => void;
+      onError?: (err: TError) => void;
+      onStarted?: () => void;
+      onStopped?: () => void;
+      onData: (data: TOutput) => void;
+      onCompleted?: () => void;
     },
   ) {
     const enabled = opts?.enabled ?? true;
@@ -363,15 +367,16 @@ export function createReactQueryHooks<
         TOutput,
         inferProcedureInput<TRouter['_def']['subscriptions']>
       >(path, (input ?? undefined) as any, {
+        complete: opts?.onCompleted,
         error: (err) => {
-          if (!isStopped) {
-            opts.error?.(err);
-          }
+          if (isStopped) return;
+          opts.onError?.(err);
         },
-        next: (res) => {
-          if (res.type === 'data' && !isStopped) {
-            opts.next(res.data);
-          }
+        next: (res: TRPCResultMessage<TOutput>) => {
+          if (isStopped) return;
+          if (res.type === 'data') opts.onData(res.data);
+          if (res.type === 'started') opts.onStarted?.();
+          if (res.type === 'stopped') opts.onStopped?.();
         },
       });
       return () => {
