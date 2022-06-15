@@ -214,15 +214,14 @@ export function createRouterWithContext<TContext>(
       const { type, path } = opts;
       const defTarget = PROCEDURE_DEFINITION_MAP[type];
       const defs = def[defTarget];
-      const procedure = defs[path] as InternalProcedure | undefined;
 
-      if (!procedure) {
+      if (!def.hasOwnProperty(path)) {
         throw new TRPCError({
           code: 'NOT_FOUND',
           message: `No "${type}"-procedure on path "${path}"`,
         });
       }
-
+      const procedure = defs[path] as InternalProcedure;
       return procedure(opts);
     }
     const router: AnyRouter = {
