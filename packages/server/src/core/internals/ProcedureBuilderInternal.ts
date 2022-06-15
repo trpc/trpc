@@ -176,6 +176,31 @@ export function createInputMiddleware<T>(
   };
 }
 
+export function createOutputMiddleware<T>(
+  parse: ParseFn<T>,
+): ProcedureBuilderInternalMiddleware {
+  return async function outputMiddleware({ next }) {
+    const result = await next();
+    if (!result.ok) {
+      // pass through failures without validating
+      return result;
+    }
+    try {
+      const data = await parse(result.data);
+      return {
+        ...result,
+        data,
+      };
+    } catch (cause) {
+      throw new TRPCError({
+        message: 'Output validation failed',
+        code: 'INTERNAL_SERVER_ERROR',
+        cause: getCauseFromUnknown(cause),
+      });
+    }
+  };
+}
+
 export function createInternalBuilder(
   initDef?: ProcedureBuilderInternal['_def'],
 ): ProcedureBuilderInternal {
@@ -197,24 +222,7 @@ export function createInternalBuilder(
       const parseOutput = getParseFn(output);
       return createNewInternalBuilder(_def, {
         output,
-        middlewares: [
-          async function outputMiddleware({ next }) {
-            const result = await next();
-            if (!result.ok) {
-              // pass through failures without validating
-              return result;
-            }
-            try {
-              await parseOutput(result.data);
-            } catch (cause) {
-              throw new TRPCError({
-                code: 'BAD_REQUEST',
-                cause: getCauseFromUnknown(cause),
-              });
-            }
-            return result;
-          },
-        ],
+        middlewares: [createOutputMiddleware(parseOutput)],
       });
     },
     meta(meta) {
