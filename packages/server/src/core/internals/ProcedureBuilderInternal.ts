@@ -21,6 +21,10 @@ export interface InternalProcedureCallOptions {
 }
 export interface InternalProcedure {
   _def: ProcedureBuilderInternal['_def'];
+  /**
+   * @deprecated use `._def.meta` instead
+   */
+  meta: ProcedureBuilderInternal['_def']['meta'];
   (opts: InternalProcedureCallOptions): Promise<unknown>;
 }
 
@@ -154,6 +158,7 @@ function createProcedureCaller(
     return result.data;
   };
   procedure._def = _def;
+  procedure.meta = _def.meta;
 
   return procedure;
 }

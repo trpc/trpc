@@ -35,7 +35,7 @@ export type Procedure<TParams extends ProcedureParams> =
       ) => Promise<TParams['_output_out']>) &
     ProcedureMarker & {
       /**
-       * @deprecated
+       * @deprecated use `._def.meta` instead
        */
       meta: TParams['_meta'];
     };

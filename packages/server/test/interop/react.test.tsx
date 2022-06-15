@@ -472,7 +472,7 @@ describe('useMutation()', () => {
       useEffect(() => {
         (async () => {
           await new Promise((resolve) =>
-            mutation.mutate(null, {
+            mutation.mutate(undefined, {
               onSettled: resolve,
             }),
           );
@@ -482,6 +482,7 @@ describe('useMutation()', () => {
             }),
           );
 
+          // @ts-expect-error
           await mutation.mutateAsync(null);
 
           await mutation.mutateAsync(undefined);
