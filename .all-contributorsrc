@@ -803,6 +803,15 @@
       "contributions": [
         "financial"
       ]
+    },
+    {
+      "login": "jokull",
+      "name": "Jökull Sólberg Auðunsson",
+      "avatar_url": "https://avatars.githubusercontent.com/u/701?v=4",
+      "profile": "http://solberg.is",
+      "contributions": [
+        "financial"
+      ]
     }
   ],
   "contributorsPerLine": 7,
