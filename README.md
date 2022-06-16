@@ -290,6 +290,7 @@ Also, if your company using tRPC and want to support long-term maintenance of tR
     <td align="center"><a href="https://skovhus.dev"><img src="https://avatars.githubusercontent.com/u/1260305?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Kenneth Skovhus</b></sub></a><br /><a href="https://github.com/trpc/trpc/commits?author=skovhus" title="Documentation">📖</a> <a href="https://github.com/trpc/trpc/commits?author=skovhus" title="Code">💻</a></td>
     <td align="center"><a href="https://github.com/Lilja"><img src="https://avatars.githubusercontent.com/u/6134511?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Erik Lilja</b></sub></a><br /><a href="https://github.com/trpc/trpc/commits?author=lilja" title="Documentation">📖</a> <a href="https://github.com/trpc/trpc/commits?author=lilja" title="Code">💻</a> <a href="https://github.com/trpc/trpc/commits?author=lilja" title="Tests">⚠️</a></td>
     <td align="center"><a href="http://www.ivanbuncic.com"><img src="https://avatars.githubusercontent.com/u/29887111?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Ivan Buncic</b></sub></a><br /><a href="#financial-ivanbuncic" title="Financial">💵</a></td>
+    <td align="center"><a href="http://solberg.is"><img src="https://avatars.githubusercontent.com/u/701?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Jökull Sólberg Auðunsson</b></sub></a><br /><a href="#financial-jokull" title="Financial">💵</a></td>
   </tr>
 </table>
 
