@@ -80,6 +80,10 @@ Also, if your company using tRPC and want to support long-term maintenance of tR
       <td align="center"><a href="https://blog.lucasviana.dev"><img src="https://avatars.githubusercontent.com/u/13911440?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Lucas Viana</b></sub></a></td>
       <td align="center"><a href="https://farazpatankar.com/"><img src="https://avatars.githubusercontent.com/u/10681116?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Faraz Patankar</b></sub></a></td>
       <td align="center"><a href="https://github.com/okaforcj"><img src="https://avatars.githubusercontent.com/u/34102565?v=4?s=100" width="100px;" alt=""/><br /><sub><b>okaforcj</b></sub></a></td>
+      <td align="center"><a href="http://www.ivanbuncic.com"><img src="https://avatars.githubusercontent.com/u/29887111?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Ivan Buncic</b></sub></a></td>
+    </tr>
+    <tr>
+      <td align="center"><a href="http://solberg.is"><img src="https://avatars.githubusercontent.com/u/701?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Jökull Sólberg Auðunsson</b></sub></a></td>
     </tr>
   </tbody>
 </table>
