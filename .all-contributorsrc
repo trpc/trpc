@@ -794,6 +794,15 @@
         "code",
         "test"
       ]
+    },
+    {
+      "login": "ivanbuncic",
+      "name": "Ivan Buncic",
+      "avatar_url": "https://avatars.githubusercontent.com/u/29887111?v=4",
+      "profile": "http://www.ivanbuncic.com",
+      "contributions": [
+        "financial"
+      ]
     }
   ],
   "contributorsPerLine": 7,
