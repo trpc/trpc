@@ -1,0 +1,3 @@
+{
+  "extends": "@tsconfig/docusaurus/tsconfig.json"
+}
