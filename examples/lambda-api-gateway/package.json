@@ -9,7 +9,7 @@
     "@trpc/server": "^9.25.2",
     "node-fetch": "^2.6.1",
     "ts-node": "^10.3.0",
-    "typescript": "4.4.4"
+    "typescript": "4.7.3"
   },
   "devDependencies": {
     "serverless": "^3.18.1",

@@ -65,7 +65,7 @@
     "next": "^12.1.6",
     "node-fetch": "^2.6.1",
     "superstruct": "^0.15.2",
-    "typescript": "4.4.4",
+    "typescript": "4.7.3",
     "ws": "^8.0.0",
     "yup": "^0.32.8",
     "zod": "^3.0.0"
