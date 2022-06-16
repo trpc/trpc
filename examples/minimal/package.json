@@ -3,13 +3,13 @@
   "private": true,
   "version": "0.1.0",
   "scripts": {
-    "dev:server": "nodemon -e ts -w . -x ts-node ./server/index.ts",
-    "dev:client": "nodemon -e ts -w . -x 'wait-port 2022 && ts-node ./client/index.ts'",
+    "dev:server": "nodemon -e ts -w . -x ts-node server",
+    "dev:client": "nodemon -e ts -w . -x 'wait-port 2022 && ts-node client'",
     "dev": "run-p dev:* --print-label",
-    "start": "node server",
+    "start": "node dist/server",
     "build": "tsc",
     "test-dev": "start-server-and-test 'ts-node server' 2022 'ts-node client'",
-    "test-start": "start-server-and-test 'node server' 2022 'node client'"
+    "test-start": "start-server-and-test 'node dist/server' 2022 'node dist/client'"
   },
   "workspaces": [
     "client",
