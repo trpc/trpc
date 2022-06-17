@@ -19,7 +19,7 @@ import { PickFirstDefined, ValidateShape } from './internals/utils';
 import { Procedure } from './procedure';
 import { ProcedureType } from './types';
 
-// FIXME this should properly use TContext
+// FIXME this should properly use TContext maybe?
 export type ProcedureRecord<_TContext> = Record<string, Procedure<any>>;
 
 export interface RouterParams<

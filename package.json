@@ -5,7 +5,8 @@
     "packages": [
       "packages/*",
       "examples/*",
-      "examples/.wip/*"
+      "examples/.wip/*",
+      "examples/.interop/*"
     ],
     "nohoist": [
       "**/@prisma",
