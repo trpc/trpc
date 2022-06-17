@@ -25,20 +25,18 @@ const client = createTRPCClient<AppRouter>({
     // call subscriptions through websockets and the rest over http
     splitLink({
       condition(op) {
-        // check for context property `skipBatch`
-        return op.context.skipBatch === true;
+        return op.type === 'subscription';
       },
-      // when condition is true, use normal request
-      true: httpLink({
-        url,
+      true: wsLink({
+        client: wsClient,
       }),
-      // when condition is false, use batching
-      false: httpBatchLink({
-        url,
+      false: httpLink({
+        url: `http://localhost:2022`,
       }),
     }),
   ],
 });
+
 async function main() {
   const helloResponse = await client.query('hello', {
     name: 'world',
