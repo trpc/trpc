@@ -13,8 +13,6 @@ const IndexPage: NextPageWithLayout = () => {
     },
   });
 
-  trpc.queries.healthz.use();
-
   // prefetch all posts for instant navigation
   // useEffect(() => {
   //   for (const { id } of postsQuery.data ?? []) {
