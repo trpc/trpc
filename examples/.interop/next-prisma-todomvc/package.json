@@ -1,5 +1,5 @@
 {
-  "name": "@examples/todo-web",
+  "name": "@examples/interop-todo-web",
   "version": "10.0.0-alpha.25",
   "private": true,
   "scripts": {

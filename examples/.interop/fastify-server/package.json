@@ -1,5 +1,5 @@
 {
-  "name": "@examples/fastify-server",
+  "name": "@examples/interop-fastify-server",
   "version": "10.0.0-alpha.25",
   "private": true,
   "scripts": {

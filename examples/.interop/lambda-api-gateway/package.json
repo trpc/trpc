@@ -1,5 +1,5 @@
 {
-  "name": "@examples/lambda-api-gateway",
+  "name": "@examples/interop-lambda-api-gateway",
   "private": true,
   "version": "9.25.0",
   "main": "index.js",
