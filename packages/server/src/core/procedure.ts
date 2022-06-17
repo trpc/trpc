@@ -4,7 +4,6 @@ import { ResolveOptions } from './internals/utils';
 import {
   DefaultValue as FallbackValue,
   Overwrite,
-  ProcedureMarker,
   UnsetMarker,
 } from './internals/utils';
 import { MiddlewareFunction } from './middleware';
@@ -60,28 +59,20 @@ export interface ProcedureParams<
   _input_out: TInputOut;
 }
 
-export type Procedure<TParams extends ProcedureParams> =
-  (TParams['_input_in'] extends UnsetMarker
-    ? (
-        input?: undefined | null,
-        opts?: ProcedureOptions,
-      ) => Promise<TParams['_output_out']>
+type ProcedureArgs<TParams extends ProcedureParams> =
+  TParams['_input_in'] extends UnsetMarker
+    ? [input?: undefined | null, opts?: ProcedureOptions]
     : undefined extends TParams['_input_in']
-    ? (
-        input?: TParams['_input_in'],
-        opts?: ProcedureOptions,
-      ) => Promise<TParams['_output_out']>
-    : (
-        input: TParams['_input_in'],
-        opts?: ProcedureOptions,
-      ) => Promise<TParams['_output_out']>) &
-    ProcedureMarker & {
-      /**
-       * @deprecated use `._def.meta` instead
-       */
-      meta: TParams['_meta'];
-    };
+    ? [input?: TParams['_input_in'], opts?: ProcedureOptions]
+    : [input: TParams['_input_in'], opts?: ProcedureOptions];
 
+export interface Procedure<TParams extends ProcedureParams> {
+  (...args: ProcedureArgs<TParams>): Promise<TParams['_output_out']>;
+  /**
+   * @deprecated use `._def.meta` instead
+   */
+  meta: TParams['_meta'];
+}
 type CreateProcedureReturnInput<
   TPrev extends ProcedureParams,
   TNext extends ProcedureParams,

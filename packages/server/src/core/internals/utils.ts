@@ -35,15 +35,6 @@ export type UnsetMarker = typeof unsetMarker;
 /**
  * @internal
  */
-export const procedureMarker = Symbol('procedureMarker');
-/**
- * @internal
- */
-export type ProcedureMarker = typeof procedureMarker;
-
-/**
- * @internal
- */
 export interface ResolveOptions<TParams extends ProcedureParams> {
   ctx: TParams['_ctx_out'];
   input: TParams['_input_out'];

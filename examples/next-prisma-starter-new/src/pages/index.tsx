@@ -4,18 +4,21 @@ import Link from 'next/link';
 
 const IndexPage: NextPageWithLayout = () => {
   const utils = trpc.useContext();
-  const postsQuery = trpc.useQuery(['post.all']);
-  const addPost = trpc.useMutation('post.add', {
+  const postsQuery = trpc.useQuery(['postList']);
+
+  const addPost = trpc.useMutation('postAdd', {
     async onSuccess() {
       // refetches posts after a post is added
-      await utils.invalidateQueries(['post.all']);
+      await utils.invalidateQueries(['postList']);
     },
   });
+
+  trpc.queries.healthz.use();
 
   // prefetch all posts for instant navigation
   // useEffect(() => {
   //   for (const { id } of postsQuery.data ?? []) {
-  //     utils.prefetchQuery(['post.byId', { id }]);
+  //     utils.prefetchQuery(['postbyId', { id }]);
   //   }
   // }, [postsQuery.data, utils]);
 

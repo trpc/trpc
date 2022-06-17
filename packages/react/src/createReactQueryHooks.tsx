@@ -105,6 +105,18 @@ export interface CreateReactQueryHooksOptions {
   transformer?: DataTransformer;
 }
 
+function createHookProxy(callback: (...args: [string, ...unknown[]]) => any) {
+  return new Proxy({} as any, {
+    get(_, path: string) {
+      function myProxy() {
+        throw new Error('Faulty usage');
+      }
+      myProxy.use = (...args: unknown[]) => callback(path, ...args);
+      return myProxy;
+    },
+  });
+}
+
 export function createReactQueryHooks<
   TRouter extends AnyRouter,
   TSSRContext = unknown,
@@ -430,6 +442,11 @@ export function createReactQueryHooks<
     return transformed;
   }
 
+  // FIXME: delete or fix this
+  const queries = createHookProxy((path, input, opts) =>
+    useQuery([path, input] as any, opts as any),
+  ) as TRouter['queries'];
+
   return {
     Provider: TRPCProvider,
     createClient,
@@ -439,5 +456,6 @@ export function createReactQueryHooks<
     useSubscription,
     useDehydratedState,
     useInfiniteQuery,
+    queries,
   };
 }

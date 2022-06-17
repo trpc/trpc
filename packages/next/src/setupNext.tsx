@@ -11,6 +11,7 @@ export function setupTRPC<
 
   // TODO: maybe set TSSRContext to `never` when using `WithTRPCNoSSROptions`
   const _withTRPC = withTRPC<TRouter, TSSRContext>(opts);
+
   return {
     useContext: hooks.useContext,
     useInfiniteQuery: hooks.useInfiniteQuery,
@@ -18,5 +19,6 @@ export function setupTRPC<
     useQuery: hooks.useQuery,
     useSubscription: hooks.useSubscription,
     withTRPC: _withTRPC,
+    queries: hooks.queries,
   };
 }
