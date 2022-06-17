@@ -1,0 +1,27 @@
+#### Render Blueprint specification: https://dashboard.render.com/blueprints ####
+## 👇 Preview environments: https://render.com/docs/preview-environments ###
+# previewsEnabled: true
+## 👇 Automatically nuke the environment after X days of inactivity to reduce billing:
+# previewsExpireAfterDays: 2
+services:
+  - type: web
+    name: trpc-starter-app
+    env: node
+    plan: free
+    ## 👇 Specify the plan for the PR deployment:
+    # previewPlan: starter
+    ## 👇 Preview Environment Initialization script:
+    # initialDeployHook: yarn db-seed
+    buildCommand: yarn --prod=false &&
+      yarn build
+    startCommand: yarn start
+    healthCheckPath: /api/trpc/healthz
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: trpc-starter-db
+          property: connectionString
+
+databases:
+  - name: trpc-starter-db
+    plan: free
