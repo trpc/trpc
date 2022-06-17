@@ -99,7 +99,7 @@ test('maxBatchSize', async () => {
       return { promise, cancel: () => {} };
     },
     {
-      maxBatchSize: 2,
+      maxBatchSize: 3,
     },
   );
   {
@@ -109,7 +109,7 @@ test('maxBatchSize', async () => {
       loader.load(3).promise,
     ]);
     expect($result).toEqual([2, 3, 4]);
-    expect(fetchManyCalled).toHaveBeenCalledTimes(2);
+    expect(fetchManyCalled).toHaveBeenCalledTimes(1);
     fetchManyCalled.mockClear();
   }
   {
@@ -122,5 +122,5 @@ test('maxBatchSize', async () => {
     ]);
     expect($result).toEqual([2, 3, 4, 5, 6]);
   }
-  expect(fetchManyCalled).toHaveBeenCalledTimes(3);
+  expect(fetchManyCalled).toHaveBeenCalledTimes(2);
 });
