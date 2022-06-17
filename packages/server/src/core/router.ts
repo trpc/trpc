@@ -24,6 +24,7 @@ import { ProcedureType } from './types';
 export type ProcedureRecord<_TContext> = Record<string, Procedure<any>>;
 
 export interface RouterParams<
+  // FIXME this should use RootConfig
   TContext,
   TErrorShape extends TRPCErrorShape<number>,
   TMeta extends Record<string, unknown>,

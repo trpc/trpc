@@ -72,6 +72,7 @@ export type MiddlewareFunction<
 /**
  * @internal
  */
+// FIXME this should use RootConfig
 export function createMiddlewareFactory<TContext, TMeta>() {
   return function createMiddleware<$TNewParams extends ProcedureParams>(
     fn: MiddlewareFunction<
