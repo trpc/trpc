@@ -105,6 +105,7 @@ function getParseFn<T>(procedureParser: ProcedureParser<T>): ParseFn<T> {
 
 /**
  * @internal
+ * @deprecated
  */
 export class Procedure<
   TInputContext,

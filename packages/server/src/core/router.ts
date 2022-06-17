@@ -8,7 +8,7 @@ import {
 } from '../error/formatter';
 import { getHTTPStatusCodeFromError } from '../http/internals/getHTTPStatusCode';
 import { TRPCErrorShape, TRPC_ERROR_CODES_BY_KEY } from '../rpc';
-import { CombinedDataTransformer } from '../transformer';
+import { CombinedDataTransformer, defaultTransformer } from '../transformer';
 import {
   InternalProcedure,
   InternalProcedureCallOptions,
@@ -139,11 +139,6 @@ type RouterBuildOptions<TContext> = Pick<
 >;
 
 export type AnyRouter = Router<any>;
-
-export const defaultTransformer: CombinedDataTransformer = {
-  input: { serialize: (obj) => obj, deserialize: (obj) => obj },
-  output: { serialize: (obj) => obj, deserialize: (obj) => obj },
-};
 
 const emptyRouter = {
   _ctx: null as any,
@@ -368,7 +363,7 @@ export function mergeRouters<TRouterItems extends RouterOptions<any>[]>(
       return current.transformer;
     }
     return prev;
-  }, defaultTransformer);
+  }, defaultTransformer as CombinedDataTransformer);
 
   const router = createRouterWithContext<TRouterParams['_ctx']>({
     errorFormatter,

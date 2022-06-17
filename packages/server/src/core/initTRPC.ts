@@ -1,12 +1,12 @@
 /* eslint-disable @typescript-eslint/ban-types */
 import { defaultFormatter } from '../error/formatter';
+import { defaultTransformer } from '../transformer';
 import { ValidateShape } from './internals/utils';
 import { createMiddlewareFactory } from './middleware';
 import { createBuilder as createProcedure } from './procedure';
 import {
   RouterDefaultOptions,
   createRouterWithContext,
-  defaultTransformer,
   mergeRouters,
 } from './router';
 

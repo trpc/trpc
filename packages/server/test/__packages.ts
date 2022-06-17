@@ -7,7 +7,6 @@ jest.mock('@trpc/server/observable', () => mock_trpcServer__observable);
 import * as mock_trpcClient from '../../client/src';
 jest.mock('@trpc/client', () => mock_trpcClient);
 
-
 import * as mock_trpcReact from '../../react/src';
 jest.mock('@trpc/react', () => mock_trpcReact);
 import * as mock_trpcReact__ssg from '../../react/src/ssg';
