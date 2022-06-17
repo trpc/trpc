@@ -23,8 +23,8 @@ export function initTRPC<
   //   meta: $Meta;
   // };
   type DefaultOptions = RouterDefaultOptions<$Context>;
-  return function initTRPCInner<TDefaults extends DefaultOptions>(
-    defaults?: ValidateShape<TDefaults, DefaultOptions>,
+  return function initTRPCInner<TDefaults extends Partial<DefaultOptions>>(
+    defaults?: ValidateShape<TDefaults, Partial<DefaultOptions>>,
   ) {
     return {
       /**
