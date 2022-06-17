@@ -17,9 +17,8 @@ import {
   CreateRootConfig,
   InitGenerics,
   InitOptions,
-  PickFirstDefined,
-  ValidateShape,
-} from './internals/utils';
+} from './internals/config';
+import { PickFirstDefined, ValidateShape } from './internals/utils';
 import { createMiddlewareFactory } from './middleware';
 import { createBuilder as createProcedure } from './procedure';
 import { createRouterFactory, mergeRoutersFactory } from './router';

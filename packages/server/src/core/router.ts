@@ -9,13 +9,14 @@ import {
 import { getHTTPStatusCodeFromError } from '../http/internals/getHTTPStatusCode';
 import { TRPCErrorShape, TRPC_ERROR_CODES_BY_KEY } from '../rpc';
 import { CombinedDataTransformer, defaultTransformer } from '../transformer';
+import { RootConfig } from './internals/config';
 import {
   InternalProcedure,
   InternalProcedureCallOptions,
 } from './internals/internalProcedure';
 import { mergeWithoutOverrides } from './internals/mergeWithoutOverrides';
 import { omitPrototype } from './internals/omitPrototype';
-import { PickFirstDefined, RootConfig, ValidateShape } from './internals/utils';
+import { PickFirstDefined, ValidateShape } from './internals/utils';
 import { Procedure } from './procedure';
 import { ProcedureType } from './types';
 
