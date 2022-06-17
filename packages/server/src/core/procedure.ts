@@ -1,6 +1,6 @@
 import { MaybePromise } from '../types';
 import { createInternalBuilder } from './internals/internalProcedure';
-import { ProcedureParams, ResolveOptions } from './internals/utils';
+import { ResolveOptions } from './internals/utils';
 import {
   DefaultValue as FallbackValue,
   Overwrite,
@@ -16,6 +16,48 @@ export interface ProcedureOptions {
    * Client-side context
    */
   context?: ClientContext;
+}
+
+/**
+ * @internal
+ */
+export interface ProcedureParams<
+  TContextIn = unknown,
+  TContextOut = unknown,
+  TInputIn = unknown,
+  TInputOut = unknown,
+  TOutputIn = unknown,
+  TOutputOut = unknown,
+  TMeta = unknown,
+> {
+  /**
+   * @internal
+   */
+  _meta: TMeta;
+  /**
+   * @internal
+   */
+  _ctx_in: TContextIn;
+  /**
+   * @internal
+   */
+  _ctx_out: TContextOut;
+  /**
+   * @internal
+   */
+  _output_in: TOutputIn;
+  /**
+   * @internal
+   */
+  _output_out: TOutputOut;
+  /**
+   * @internal
+   */
+  _input_in: TInputIn;
+  /**
+   * @internal
+   */
+  _input_out: TInputOut;
 }
 
 export type Procedure<TParams extends ProcedureParams> =
