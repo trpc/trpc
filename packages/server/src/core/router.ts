@@ -15,7 +15,7 @@ import {
 } from './internals/internalProcedure';
 import { mergeWithoutOverrides } from './internals/mergeWithoutOverrides';
 import { omitPrototype } from './internals/omitPrototype';
-import { PickFirstDefined, ValidateShape } from './internals/utils';
+import { PickFirstDefined, RootConfig, ValidateShape } from './internals/utils';
 import { Procedure } from './procedure';
 import { ProcedureType } from './types';
 
@@ -166,29 +166,32 @@ const PROCEDURE_DEFINITION_MAP: Record<
  */
 
 // FIXME add error formatting
-export function createRouterWithContext<TContext>(
-  defaults?: RouterDefaultOptions<TContext>,
+export function createRouterWithContext<TSettings extends RootConfig>(
+  defaults?: RouterDefaultOptions<TSettings['ctx']>,
 ) {
-  type TDefaults = RouterDefaultOptions<TContext>;
   return function createRouter<
-    TProcedures extends RouterBuildOptions<TContext>,
+    TProcedures extends RouterBuildOptions<TSettings['ctx']>,
   >(
-    procedures: ValidateShape<TProcedures, RouterBuildOptions<TContext>>,
+    procedures: ValidateShape<
+      TProcedures,
+      RouterBuildOptions<TSettings['ctx']>
+    >,
   ): Router<{
-    _ctx: TContext;
+    _ctx: TSettings['ctx'];
     // FIXME:
-    _errorShape: ErrorFormatterShape<TDefaults['errorFormatter']>;
+    _errorShape: TSettings['errorShape'];
     // FIXME:
     _meta: {};
     queries: TProcedures['queries'];
     mutations: TProcedures['mutations'];
     subscriptions: TProcedures['subscriptions'];
     // FIXME:
-    errorFormatter: TDefaults['errorFormatter'];
-    transformer: TDefaults['transformer'];
+    errorFormatter: ErrorFormatter<TSettings['ctx'], TSettings['errorShape']>;
+    transformer: TSettings['transformer'];
   }> {
     const result = mergeWithoutOverrides<
-      RouterDefaultOptions<TContext> & RouterBuildOptions<TContext>
+      RouterDefaultOptions<TSettings['ctx']> &
+        RouterBuildOptions<TSettings['ctx']>
     >(
       {
         transformer: defaults?.transformer ?? defaultTransformer,
@@ -201,7 +204,7 @@ export function createRouterWithContext<TContext>(
       },
     );
 
-    const _def: AnyRouterParams<TContext> = {
+    const _def: AnyRouterParams<TSettings['ctx']> = {
       ...emptyRouter,
       ...result,
     };
@@ -294,7 +297,10 @@ type mergeRouters<
   transformer: PickFirstDefined<B['transformer'], A['transformer']>;
 };
 
-type mergeRoutersVariadic<Routers extends Partial<AnyRouter>[]> =
+/**
+ * @internal
+ */
+export type mergeRoutersVariadic<Routers extends Partial<AnyRouter>[]> =
   Routers extends []
     ? {}
     : Routers extends [infer First, ...infer Rest]
@@ -305,74 +311,79 @@ type mergeRoutersVariadic<Routers extends Partial<AnyRouter>[]> =
       : never
     : never;
 
-export function mergeRouters<TRouterItems extends RouterOptions<any>[]>(
-  ...routerList: TRouterItems
-) {
-  type TMergedRouters = mergeRoutersVariadic<TRouterItems>;
-  type TRouterParams = TMergedRouters extends {
-    _ctx: infer Ctx;
-    _meta: infer Meta;
-    queries: infer Queries;
-    mutations: infer Mutations;
-    subscriptions: infer Subscriptions;
-    errorFormatter: infer ErrorFormatter;
-  }
-    ? RouterParams<
-        Ctx,
-        ErrorFormatterShape<ErrorFormatter>,
-        Meta extends {} ? Meta : {},
-        Queries extends ProcedureRecord<any> ? Queries : never,
-        Mutations extends ProcedureRecord<any> ? Mutations : never,
-        Subscriptions extends ProcedureRecord<any> ? Subscriptions : never
-      >
-    : never;
+/**
+ * @internal
+ */
+export function createMergeRouters<TSettings extends RootConfig>() {
+  return function mergeRouters<TRouterItems extends RouterOptions<any>[]>(
+    ...routerList: TRouterItems
+  ) {
+    type TMergedRouters = mergeRoutersVariadic<TRouterItems>;
+    type TRouterParams = TMergedRouters extends {
+      _ctx: infer Ctx;
+      _meta: infer Meta;
+      queries: infer Queries;
+      mutations: infer Mutations;
+      subscriptions: infer Subscriptions;
+      errorFormatter: infer ErrorFormatter;
+    }
+      ? RouterParams<
+          Ctx,
+          ErrorFormatterShape<ErrorFormatter>,
+          Meta extends {} ? Meta : {},
+          Queries extends ProcedureRecord<any> ? Queries : never,
+          Mutations extends ProcedureRecord<any> ? Mutations : never,
+          Subscriptions extends ProcedureRecord<any> ? Subscriptions : never
+        >
+      : never;
 
-  const queries = mergeWithoutOverrides(
-    {},
-    ...routerList.map((r) => r.queries),
-  ) as TRouterParams['queries'];
-  const mutations = mergeWithoutOverrides(
-    {},
-    ...routerList.map((r) => r.mutations),
-  );
-  const subscriptions = mergeWithoutOverrides(
-    {},
-    ...routerList.map((r) => r.subscriptions),
-  );
-  const errorFormatter = routerList.reduce(
-    (currentErrorFormatter, nextRouter) => {
-      if (
-        nextRouter.errorFormatter &&
-        nextRouter.errorFormatter !== defaultFormatter
-      ) {
-        if (currentErrorFormatter !== defaultFormatter) {
+    const queries = mergeWithoutOverrides(
+      {},
+      ...routerList.map((r) => r.queries),
+    ) as TRouterParams['queries'];
+    const mutations = mergeWithoutOverrides(
+      {},
+      ...routerList.map((r) => r.mutations),
+    );
+    const subscriptions = mergeWithoutOverrides(
+      {},
+      ...routerList.map((r) => r.subscriptions),
+    );
+    const errorFormatter = routerList.reduce(
+      (currentErrorFormatter, nextRouter) => {
+        if (
+          nextRouter.errorFormatter &&
+          nextRouter.errorFormatter !== defaultFormatter
+        ) {
+          if (currentErrorFormatter !== defaultFormatter) {
+            throw new Error('You seem to have duplicate error formatters');
+          }
+          return nextRouter.errorFormatter;
+        }
+        return currentErrorFormatter;
+      },
+      defaultFormatter,
+    );
+
+    const transformer = routerList.reduce((prev, current) => {
+      if (current.transformer && current.transformer !== defaultTransformer) {
+        if (prev !== defaultTransformer) {
           throw new Error('You seem to have duplicate error formatters');
         }
-        return nextRouter.errorFormatter;
+        return current.transformer;
       }
-      return currentErrorFormatter;
-    },
-    defaultFormatter,
-  );
+      return prev;
+    }, defaultTransformer as CombinedDataTransformer);
 
-  const transformer = routerList.reduce((prev, current) => {
-    if (current.transformer && current.transformer !== defaultTransformer) {
-      if (prev !== defaultTransformer) {
-        throw new Error('You seem to have duplicate error formatters');
-      }
-      return current.transformer;
-    }
-    return prev;
-  }, defaultTransformer as CombinedDataTransformer);
+    const router = createRouterWithContext<TSettings>({
+      errorFormatter,
+      transformer,
+    })({
+      queries,
+      mutations,
+      subscriptions,
+    });
 
-  const router = createRouterWithContext<TRouterParams['_ctx']>({
-    errorFormatter,
-    transformer,
-  })({
-    queries,
-    mutations,
-    subscriptions,
-  });
-
-  return router as any as Router<TRouterParams>;
+    return router as any as Router<TRouterParams>;
+  };
 }

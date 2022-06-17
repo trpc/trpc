@@ -1,13 +1,31 @@
 import './__packages';
 import { expectTypeOf } from 'expect-type';
 import { initTRPC } from '../src/core';
-import { CombinedDataTransformer } from '../src/transformer';
+import {
+  CombinedDataTransformer,
+  DataTransformerOptions,
+  DefaultDataTransformer,
+} from '../src/transformer';
 
 describe('setup - inference', () => {
-  test('transformer', () => {
+  test('default transformer', () => {
     const t = initTRPC()();
     const router = t.router({});
+    expectTypeOf(router.transformer).toMatchTypeOf<DefaultDataTransformer>();
+  });
+  test('custom transformer', () => {
+    const transformer: DataTransformerOptions = {
+      deserialize: (v) => v,
+      serialize: (v) => v,
+    };
+    const t = initTRPC()({
+      transformer,
+    });
+    const router = t.router({});
     expectTypeOf(router.transformer).toMatchTypeOf<CombinedDataTransformer>();
+    expectTypeOf(
+      router.transformer,
+    ).not.toMatchTypeOf<DefaultDataTransformer>();
   });
 
   test('merging routers', () => {
@@ -31,20 +49,20 @@ describe('setup - inference', () => {
         bar,
       },
     });
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-    // @ts-ignore FIXME we probably want to have these equal
-    expectTypeOf(router1).toMatchTypeOf(router2);
+    expectTypeOf(router1.queries.foo).toMatchTypeOf(router2.queries.foo);
+    expectTypeOf(router1.queries.bar).toMatchTypeOf(router2.queries.bar);
   });
-  // FIXME:
-  // test('meta', async () => {
-  //   const t = initTRPC<{
-  //     meta: {
-  //       foo: 'bar';
-  //     };
-  //   }>()();
-  //   const router = t.router({});
-  //   expectTypeOf(router._def._meta).toMatchTypeOf<{
-  //     foo: 'bar';
-  //   }>();
-  // });
+
+  test('meta', async () => {
+    const t = initTRPC<{
+      meta: {
+        foo: string;
+      };
+    }>()();
+
+    const router = t.router({});
+    expectTypeOf(router._def._meta).toMatchTypeOf<{
+      foo: 'bar';
+    }>();
+  });
 });

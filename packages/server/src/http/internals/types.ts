@@ -20,7 +20,10 @@ export interface HTTPRequest {
   body: unknown;
 }
 
-type ResponseMetaFn<TRouter extends AnyRouter> = (opts: {
+/**
+ * @internal
+ */
+export type ResponseMetaFn<TRouter extends AnyRouter> = (opts: {
   data: TRPCResponse<unknown, inferRouterParams<TRouter>['_error']>[];
   ctx?: inferRouterParams<TRouter>['_ctx'];
   /**
