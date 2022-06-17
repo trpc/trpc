@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 
 /* eslint-disable @typescript-eslint/no-empty-function */
+import { legacyRouterToServerAndClient } from './__legacyRouterToServerAndClient';
 import { OperationLink, TRPCClientRuntime } from '@trpc/client/src';
 import { createChain } from '@trpc/client/src/links/internals/createChain';
 import AbortController from 'abort-controller';
@@ -17,7 +18,6 @@ import {
 import * as trpc from '../../src';
 import { AnyRouter } from '../../src';
 import { observable, observableToPromise } from '../../src/observable';
-import { legacyRouterToServerAndClient } from '../legacyRouterToServerAndClient';
 
 const mockRuntime: TRPCClientRuntime = {
   fetch: fetch as any,

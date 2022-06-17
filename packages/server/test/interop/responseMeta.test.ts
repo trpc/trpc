@@ -1,10 +1,10 @@
 /* eslint-disable @typescript-eslint/no-empty-function */
 
 /* eslint-disable @typescript-eslint/no-unused-vars */
+import { legacyRouterToServerAndClient } from './__legacyRouterToServerAndClient';
 import fetch from 'node-fetch';
 import * as trpc from '../../src';
 import { CreateHTTPContextOptions } from '../../src/adapters/standalone';
-import { legacyRouterToServerAndClient } from '../legacyRouterToServerAndClient';
 
 test('set custom headers in beforeEnd', async () => {
   const onError = jest.fn();

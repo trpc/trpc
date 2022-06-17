@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import { routerToServerAndClientNew, waitError } from '../__testHelpers';
+import { legacyRouterToServerAndClient } from './__legacyRouterToServerAndClient';
 import devalue from 'devalue';
 import fetch from 'node-fetch';
 import superjson from 'superjson';
@@ -14,7 +15,6 @@ import {
 import * as trpc from '../../src';
 import { TRPCError } from '../../src/TRPCError';
 import { observable } from '../../src/observable';
-import { legacyRouterToServerAndClient } from '../legacyRouterToServerAndClient';
 
 test('superjson up and down', async () => {
   const transformer = superjson;

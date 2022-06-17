@@ -4,6 +4,7 @@
 
 /* eslint-disable @typescript-eslint/ban-types */
 import { waitError } from '../__testHelpers';
+import { legacyRouterToServerAndClient } from './__legacyRouterToServerAndClient';
 import { waitFor } from '@testing-library/react';
 import { expectTypeOf } from 'expect-type';
 import { z } from 'zod';
@@ -13,7 +14,6 @@ import * as trpc from '../../src';
 import { Maybe, TRPCError } from '../../src';
 import { CreateHTTPContextOptions } from '../../src/adapters/standalone';
 import { observable } from '../../src/observable';
-import { legacyRouterToServerAndClient } from '../legacyRouterToServerAndClient';
 
 test('smoke test', async () => {
   const { client, close } = legacyRouterToServerAndClient(

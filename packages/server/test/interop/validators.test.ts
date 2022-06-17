@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 /* eslint-disable @typescript-eslint/ban-types */
+import { legacyRouterToServerAndClient } from './__legacyRouterToServerAndClient';
 import '@testing-library/jest-dom';
 import { expectTypeOf } from 'expect-type';
 import myzod from 'myzod';
@@ -8,7 +9,6 @@ import * as t from 'superstruct';
 import * as yup from 'yup';
 import { z } from 'zod';
 import * as trpc from '../../src';
-import { legacyRouterToServerAndClient } from '../legacyRouterToServerAndClient';
 
 test('no validator', async () => {
   const router = trpc.router().query('hello', {

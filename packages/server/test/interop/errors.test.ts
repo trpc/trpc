@@ -4,6 +4,7 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { waitError } from '../__testHelpers';
+import { legacyRouterToServerAndClient } from './__legacyRouterToServerAndClient';
 import fetch from 'node-fetch';
 import { ZodError, z } from 'zod';
 import { TRPCClientError } from '../../../client/src';
@@ -12,7 +13,6 @@ import { TRPCError } from '../../src/TRPCError';
 import { CreateHTTPContextOptions } from '../../src/adapters/standalone';
 import { getMessageFromUnkownError } from '../../src/internals/errors';
 import { OnErrorFunction } from '../../src/internals/types';
-import { legacyRouterToServerAndClient } from '../legacyRouterToServerAndClient';
 
 test('basic', async () => {
   class MyError extends Error {

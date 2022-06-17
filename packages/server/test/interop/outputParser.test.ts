@@ -1,3 +1,4 @@
+import { legacyRouterToServerAndClient } from './__legacyRouterToServerAndClient';
 import '@testing-library/jest-dom';
 import { expectTypeOf } from 'expect-type';
 import myzod from 'myzod';
@@ -5,7 +6,6 @@ import * as t from 'superstruct';
 import * as yup from 'yup';
 import { z } from 'zod';
 import * as trpc from '../../src';
-import { legacyRouterToServerAndClient } from '../legacyRouterToServerAndClient';
 
 test('zod', async () => {
   const router = trpc.router().query('q', {

@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 import { bigRouter } from '../__generated__/bigRouter';
+import { legacyRouterToServerAndClient } from './__legacyRouterToServerAndClient';
 import '@testing-library/jest-dom';
 import { render, waitFor } from '@testing-library/react';
 import { expectTypeOf } from 'expect-type';
@@ -8,7 +9,6 @@ import React, { useState } from 'react';
 import { QueryClient, QueryClientProvider } from 'react-query';
 import { createReactQueryHooks } from '../../../react/src';
 import { MigrateOldRouter } from '../../src/deprecated/interop';
-import { legacyRouterToServerAndClient } from '../legacyRouterToServerAndClient';
 
 const ctx = konn()
   .beforeEach(() => {
