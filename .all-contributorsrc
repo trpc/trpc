@@ -773,6 +773,45 @@
       "contributions": [
         "doc"
       ]
+    },
+    {
+      "login": "skovhus",
+      "name": "Kenneth Skovhus",
+      "avatar_url": "https://avatars.githubusercontent.com/u/1260305?v=4",
+      "profile": "https://skovhus.dev",
+      "contributions": [
+        "doc",
+        "code"
+      ]
+    },
+    {
+      "login": "lilja",
+      "name": "Erik Lilja",
+      "avatar_url": "https://avatars.githubusercontent.com/u/6134511?v=4",
+      "profile": "https://github.com/Lilja",
+      "contributions": [
+        "doc",
+        "code",
+        "test"
+      ]
+    },
+    {
+      "login": "ivanbuncic",
+      "name": "Ivan Buncic",
+      "avatar_url": "https://avatars.githubusercontent.com/u/29887111?v=4",
+      "profile": "http://www.ivanbuncic.com",
+      "contributions": [
+        "financial"
+      ]
+    },
+    {
+      "login": "jokull",
+      "name": "Jökull Sólberg Auðunsson",
+      "avatar_url": "https://avatars.githubusercontent.com/u/701?v=4",
+      "profile": "http://solberg.is",
+      "contributions": [
+        "financial"
+      ]
     }
   ],
   "contributorsPerLine": 7,
