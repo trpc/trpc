@@ -36,16 +36,16 @@ test('route meta types', async () => {
   expectTypeOf<TMeta>().toMatchTypeOf(testMeta);
 
   const queryMeta = router['_def']['queries']['query']['meta'];
-  expectTypeOf(queryMeta).toMatchTypeOf<TMeta>();
+  expectTypeOf(queryMeta).toMatchTypeOf<TMeta | undefined>();
   expect(queryMeta).toEqual(testMeta);
 
   const mutationMeta = router['_def']['mutations']['mutation']['meta'];
-  expectTypeOf(mutationMeta).toMatchTypeOf<TMeta>();
+  expectTypeOf(mutationMeta).toMatchTypeOf<TMeta | undefined>();
   expect(mutationMeta).toEqual(testMeta);
 
   const subscriptionMeta =
     router['_def']['subscriptions']['subscription']['meta'];
-  expectTypeOf(subscriptionMeta).toMatchTypeOf<TMeta>();
+  expectTypeOf(subscriptionMeta).toMatchTypeOf<TMeta | undefined>();
   expect(subscriptionMeta).toEqual(testMeta);
 });
 

@@ -166,10 +166,10 @@ const PROCEDURE_DEFINITION_MAP: Record<
  */
 
 // FIXME add error formatting
-export function createRouterWithContext<TSettings extends RootConfig>(
+export function createRouter<TSettings extends RootConfig>(
   defaults?: RouterDefaultOptions<TSettings['ctx']>,
 ) {
-  return function createRouter<
+  return function createRouterInner<
     TProcedures extends RouterBuildOptions<TSettings['ctx']>,
   >(
     procedures: ValidateShape<
@@ -178,14 +178,11 @@ export function createRouterWithContext<TSettings extends RootConfig>(
     >,
   ): Router<{
     _ctx: TSettings['ctx'];
-    // FIXME:
     _errorShape: TSettings['errorShape'];
-    // FIXME:
-    _meta: {};
+    _meta: TSettings['meta'];
     queries: TProcedures['queries'];
     mutations: TProcedures['mutations'];
     subscriptions: TProcedures['subscriptions'];
-    // FIXME:
     errorFormatter: ErrorFormatter<TSettings['ctx'], TSettings['errorShape']>;
     transformer: TSettings['transformer'];
   }> {
@@ -375,7 +372,7 @@ export function createMergeRouters<TSettings extends RootConfig>() {
       return prev;
     }, defaultTransformer as CombinedDataTransformer);
 
-    const router = createRouterWithContext<TSettings>({
+    const router = createRouter<TSettings>({
       errorFormatter,
       transformer,
     })({

@@ -60,9 +60,24 @@ describe('setup - inference', () => {
       };
     }>()();
 
-    const router = t.router({});
+    const router = t.router({
+      queries: {
+        good: t.procedure.meta({ foo: 'bar' }).resolve(() => 'good'),
+        // @ts-expect-error this doesn't match the meta defined
+        bad: t.procedure.meta({ bar: 'z' }).resolve(() => 'bad'),
+      },
+    });
+
     expectTypeOf(router._def._meta).toMatchTypeOf<{
-      foo: 'bar';
+      foo: string;
     }>();
+
+    type ProcMeta =
+      | undefined
+      | {
+          foo: string;
+        };
+    expectTypeOf(router.queries.good.meta).toMatchTypeOf<ProcMeta>();
+    expectTypeOf(router.queries.good.meta).toMatchTypeOf<ProcMeta>();
   });
 });

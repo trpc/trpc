@@ -74,7 +74,7 @@ export interface Procedure<TParams extends ProcedureParams> {
   /**
    * @deprecated use `._def.meta` instead
    */
-  meta: TParams['_meta'];
+  meta?: TParams['_meta'];
 }
 type CreateProcedureReturnInput<
   TPrev extends ProcedureParams,
