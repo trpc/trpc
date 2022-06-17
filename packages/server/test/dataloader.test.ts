@@ -87,3 +87,40 @@ test('errors', async () => {
     `[Error: Some error]`,
   );
 });
+
+test('maxBatchSize', async () => {
+  const fetchManyCalled = jest.fn();
+  const loader = dataLoader<number, number>(
+    function fetchMany(keys) {
+      fetchManyCalled();
+      const promise = new Promise<number[]>((resolve) => {
+        resolve(keys.map((v) => v + 1));
+      });
+      return { promise, cancel: () => {} };
+    },
+    {
+      maxBatchSize: 2,
+    },
+  );
+  {
+    const $result = await Promise.all([
+      loader.load(1).promise,
+      loader.load(2).promise,
+      loader.load(3).promise,
+    ]);
+    expect($result).toEqual([2, 3, 4]);
+    expect(fetchManyCalled).toHaveBeenCalledTimes(2);
+    fetchManyCalled.mockClear();
+  }
+  {
+    const $result = await Promise.all([
+      loader.load(1).promise,
+      loader.load(2).promise,
+      loader.load(3).promise,
+      loader.load(4).promise,
+      loader.load(5).promise,
+    ]);
+    expect($result).toEqual([2, 3, 4, 5, 6]);
+  }
+  expect(fetchManyCalled).toHaveBeenCalledTimes(3);
+});
