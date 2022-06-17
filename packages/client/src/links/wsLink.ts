@@ -20,7 +20,7 @@ type Operation = {
 };
 export interface WebSocketClientOptions {
   url: string;
-  WebSocket?: WebSocket;
+  WebSocket?: typeof WebSocket;
   retryDelayMs?: typeof retryDelay;
 }
 export function createWSClient(opts: WebSocketClientOptions) {
@@ -122,7 +122,7 @@ export function createWSClient(opts: WebSocketClientOptions) {
   }
 
   function createWS() {
-    const conn = new WebSocket(url);
+    const conn = new WebSocketImpl(url);
     clearTimeout(connectTimer as any);
     connectTimer = null;
 

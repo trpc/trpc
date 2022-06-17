@@ -812,6 +812,15 @@
       "contributions": [
         "financial"
       ]
+    },
+    {
+      "login": "futpib",
+      "name": "futpib",
+      "avatar_url": "https://avatars.githubusercontent.com/u/4330357?v=4",
+      "profile": "https://github.com/futpib",
+      "contributions": [
+        "bug"
+      ]
     }
   ],
   "contributorsPerLine": 7,
