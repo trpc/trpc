@@ -16,14 +16,18 @@ function createContext({
 }
 type Context = trpc.inferAsyncReturnType<typeof createContext>;
 
-const appRouter = trpc.router<Context>().query('greet', {
-  input: z.object({
-    name: z.string(),
-  }),
-  async resolve(req) {
-    return `Greetings, ${req.input.name}. x-user?: ${req.ctx.user}. `;
-  },
-});
+const appRouter = trpc
+  .router<Context>()
+  .query('greet', {
+    input: z.object({
+      name: z.string(),
+    }),
+    async resolve(req) {
+      return `Greetings, ${req.input.name}. x-user?: ${req.ctx.user}. `;
+    },
+  })
+  .interop();
+
 export type AppRouter = typeof appRouter;
 
 export const handler = awsLambdaRequestHandler({
