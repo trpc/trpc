@@ -301,7 +301,7 @@ export function createReactQueryHooks<
       opts?.enabled !== false &&
       !queryClient.getQueryCache().find(pathAndInput)
     ) {
-      prefetchQuery(pathAndInput as any, opts as any);
+      void prefetchQuery(pathAndInput as any, opts as any);
     }
     const actualOpts = useSSRQueryOptionsIfNeeded(pathAndInput, opts);
 
@@ -415,7 +415,7 @@ export function createReactQueryHooks<
       opts?.enabled !== false &&
       !queryClient.getQueryCache().find(pathAndInput)
     ) {
-      prefetchInfiniteQuery(pathAndInput as any, opts as any);
+      void prefetchInfiniteQuery(pathAndInput as any, opts as any);
     }
 
     const actualOpts = useSSRQueryOptionsIfNeeded(pathAndInput, opts);
