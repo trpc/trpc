@@ -1,7 +1,6 @@
 import { inferObservableValue } from '../observable';
 import { inferAsyncReturnType } from '../types';
-import { UnsetMarker } from './internals/utils';
-import { Procedure, ProcedureOptions } from './procedure';
+import { Procedure, ProcedureArgs } from './procedure';
 import { AnyRouter, AnyRouterParams, Router } from './router';
 
 export type inferRouterParams<TRouter extends AnyRouter> =
@@ -24,16 +23,7 @@ export type inferRouterMeta<TRouter extends AnyRouter> =
 export type ProcedureType = 'query' | 'mutation' | 'subscription';
 
 export type inferHandlerInput<TProcedure extends Procedure<any>> =
-  TProcedure extends Procedure<infer TParams>
-    ? TParams['_input_in'] extends UnsetMarker
-      ? [input?: undefined | null, opts?: ProcedureOptions]
-      : undefined extends TParams['_input_in']
-      ? [
-          input?: TParams['_input_in'] | undefined | void, // void is necessary to allow procedures with nullish input to be called without an input
-          opts?: ProcedureOptions,
-        ]
-      : [input: TParams['_input_in'], opts?: ProcedureOptions]
-    : never;
+  TProcedure extends Procedure<infer TParams> ? ProcedureArgs<TParams> : never;
 
 export type inferProcedureInput<TProcedure extends Procedure<any>> =
   inferHandlerInput<TProcedure>[0];

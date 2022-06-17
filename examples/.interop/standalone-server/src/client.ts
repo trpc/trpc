@@ -52,7 +52,7 @@ async function main() {
 
   let count = 0;
   await new Promise<void>((resolve) => {
-    const subscription = client.subscription('randomNumber', null, {
+    const subscription = client.subscription('randomNumber', undefined, {
       next(data) {
         // ^ note that `data` here is inferred
         console.log('received', data);

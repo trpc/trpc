@@ -59,11 +59,14 @@ export interface ProcedureParams<
   _input_out: TInputOut;
 }
 
-type ProcedureArgs<TParams extends ProcedureParams> =
+/**
+ * @internal
+ */
+export type ProcedureArgs<TParams extends ProcedureParams> =
   TParams['_input_in'] extends UnsetMarker
-    ? [input?: undefined | null, opts?: ProcedureOptions]
+    ? [input?: undefined | void, opts?: ProcedureOptions]
     : undefined extends TParams['_input_in']
-    ? [input?: TParams['_input_in'], opts?: ProcedureOptions]
+    ? [input?: TParams['_input_in'] | void, opts?: ProcedureOptions]
     : [input: TParams['_input_in'], opts?: ProcedureOptions];
 
 /**
