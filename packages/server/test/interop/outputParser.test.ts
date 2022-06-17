@@ -1,4 +1,3 @@
-import { routerToServerAndClient } from '../__testHelpers';
 import '@testing-library/jest-dom';
 import { expectTypeOf } from 'expect-type';
 import myzod from 'myzod';
@@ -6,6 +5,7 @@ import * as t from 'superstruct';
 import * as yup from 'yup';
 import { z } from 'zod';
 import * as trpc from '../../src';
+import { legacyRouterToServerAndClient } from '../legacyRouterToServerAndClient';
 
 test('zod', async () => {
   const router = trpc.router().query('q', {
@@ -17,7 +17,7 @@ test('zod', async () => {
       return { input: input as string };
     },
   });
-  const { client, close } = routerToServerAndClient(router);
+  const { client, close } = legacyRouterToServerAndClient(router);
 
   const output = await client.query('q', 'foobar');
   expectTypeOf(output.input).toBeString();
@@ -46,7 +46,7 @@ test('zod async', async () => {
       return { input: input as string };
     },
   });
-  const { client, close } = routerToServerAndClient(router);
+  const { client, close } = legacyRouterToServerAndClient(router);
 
   const output = await client.query('q', 'foobar');
   expectTypeOf(output.input).toBeString();
@@ -73,7 +73,7 @@ test('zod transform', async () => {
       return { input: input as string };
     },
   });
-  const { client, close } = routerToServerAndClient(router);
+  const { client, close } = legacyRouterToServerAndClient(router);
 
   const output = await client.query('q', 'foobar');
   expectTypeOf(output.input).toBeNumber();
@@ -100,7 +100,7 @@ test('superstruct', async () => {
       return { input: input as string };
     },
   });
-  const { client, close } = routerToServerAndClient(router);
+  const { client, close } = legacyRouterToServerAndClient(router);
 
   const output = await client.query('q', 'foobar');
   expectTypeOf(output.input).toBeString();
@@ -138,7 +138,7 @@ test('yup', async () => {
       return { input: input as string };
     },
   });
-  const { client, close } = routerToServerAndClient(router);
+  const { client, close } = legacyRouterToServerAndClient(router);
 
   const output = await client.query('q', 'foobar');
   expectTypeOf(output.input).toBeString();
@@ -165,7 +165,7 @@ test('myzod', async () => {
       return { input: input as string };
     },
   });
-  const { client, close } = routerToServerAndClient(router);
+  const { client, close } = legacyRouterToServerAndClient(router);
 
   const output = await client.query('q', 'foobar');
   expectTypeOf(output.input).toBeString();
@@ -195,7 +195,7 @@ test('validator fn', async () => {
       return { input: input as string };
     },
   });
-  const { client, close } = routerToServerAndClient(router);
+  const { client, close } = legacyRouterToServerAndClient(router);
 
   const output = await client.query('q', 'foobar');
   expectTypeOf(output.input).toBeString();
@@ -225,7 +225,7 @@ test('async validator fn', async () => {
       return { input: input as string };
     },
   });
-  const { client, close } = routerToServerAndClient(router);
+  const { client, close } = legacyRouterToServerAndClient(router);
 
   const output = await client.query('q', 'foobar');
   expectTypeOf(output.input).toBeString();

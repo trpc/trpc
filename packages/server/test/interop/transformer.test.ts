@@ -1,9 +1,5 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import {
-  routerToServerAndClient,
-  routerToServerAndClientNew,
-  waitError,
-} from '../__testHelpers';
+import { routerToServerAndClientNew, waitError } from '../__testHelpers';
 import devalue from 'devalue';
 import fetch from 'node-fetch';
 import superjson from 'superjson';
@@ -18,13 +14,14 @@ import {
 import * as trpc from '../../src';
 import { TRPCError } from '../../src/TRPCError';
 import { observable } from '../../src/observable';
+import { legacyRouterToServerAndClient } from '../legacyRouterToServerAndClient';
 
 test('superjson up and down', async () => {
   const transformer = superjson;
 
   const date = new Date();
   const fn = jest.fn();
-  const { client, close } = routerToServerAndClient(
+  const { client, close } = legacyRouterToServerAndClient(
     trpc
       .router()
       .transformer(transformer)
@@ -54,7 +51,7 @@ test('superjson up and down', async () => {
 test('empty superjson up and down', async () => {
   const transformer = superjson;
 
-  const { client, close } = routerToServerAndClient(
+  const { client, close } = legacyRouterToServerAndClient(
     trpc
       .router()
       .transformer(transformer)
@@ -89,7 +86,7 @@ test('empty superjson up and down', async () => {
 test('wsLink: empty superjson up and down', async () => {
   const transformer = superjson;
   let ws: any = null;
-  const { client, close } = routerToServerAndClient(
+  const { client, close } = legacyRouterToServerAndClient(
     trpc
       .router()
       .transformer(transformer)
@@ -131,7 +128,7 @@ test('devalue up and down', async () => {
 
   const date = new Date();
   const fn = jest.fn();
-  const { client, close } = routerToServerAndClient(
+  const { client, close } = legacyRouterToServerAndClient(
     trpc
       .router()
       .transformer(transformer)
@@ -169,7 +166,7 @@ test('not batching: superjson up and devalue down', async () => {
 
   const date = new Date();
   const fn = jest.fn();
-  const { client, close } = routerToServerAndClient(
+  const { client, close } = legacyRouterToServerAndClient(
     trpc
       .router()
       .transformer(transformer)
@@ -207,7 +204,7 @@ test('batching: superjson up and devalue down', async () => {
 
   const date = new Date();
   const fn = jest.fn();
-  const { client, close } = routerToServerAndClient(
+  const { client, close } = legacyRouterToServerAndClient(
     trpc
       .router()
       .transformer(transformer)
@@ -245,7 +242,7 @@ test('batching: superjson up and f down', async () => {
 
   const date = new Date();
   const fn = jest.fn();
-  const { client, close } = routerToServerAndClient(
+  const { client, close } = legacyRouterToServerAndClient(
     trpc
       .router()
       .transformer(transformer)
@@ -297,7 +294,7 @@ test('all transformers running in correct order', async () => {
     },
   };
 
-  const { client, close } = routerToServerAndClient(
+  const { client, close } = legacyRouterToServerAndClient(
     trpc
       .router()
       .transformer(transformer)
@@ -334,7 +331,7 @@ describe('transformer on router', () => {
 
     const date = new Date();
     const fn = jest.fn();
-    const { client, close } = routerToServerAndClient(
+    const { client, close } = legacyRouterToServerAndClient(
       trpc
         .router()
         .transformer(transformer)
@@ -366,7 +363,7 @@ describe('transformer on router', () => {
     const date = new Date();
     const fn = jest.fn();
     const transformer = superjson;
-    const { client, close } = routerToServerAndClient(
+    const { client, close } = legacyRouterToServerAndClient(
       trpc
         .router()
         .transformer(transformer)
@@ -475,7 +472,7 @@ describe('transformer on router', () => {
       }
     }
     const onError = jest.fn();
-    const { client, close } = routerToServerAndClient(
+    const { client, close } = legacyRouterToServerAndClient(
       trpc
         .router()
         .transformer(transformer)
@@ -517,7 +514,7 @@ test('superjson - no input', async () => {
   const transformer = superjson;
 
   const fn = jest.fn();
-  const { close, httpUrl } = routerToServerAndClient(
+  const { close, httpUrl } = legacyRouterToServerAndClient(
     trpc
       .router()
       .transformer(transformer)

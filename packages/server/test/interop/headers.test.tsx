@@ -3,16 +3,16 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 /* eslint-disable @typescript-eslint/ban-types */
-import { routerToServerAndClient } from '../__testHelpers';
 import { createTRPCClient } from '@trpc/client';
 import * as trpc from '../../src';
 import { Dict } from '../../src';
+import { legacyRouterToServerAndClient } from '../legacyRouterToServerAndClient';
 
 test('pass headers', async () => {
   type Context = {
     headers: Dict<string | string[]>;
   };
-  const { close, httpUrl } = routerToServerAndClient(
+  const { close, httpUrl } = legacyRouterToServerAndClient(
     trpc.router<Context>().query('hello', {
       resolve({ ctx }) {
         return {

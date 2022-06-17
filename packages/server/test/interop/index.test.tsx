@@ -3,7 +3,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 /* eslint-disable @typescript-eslint/ban-types */
-import { routerToServerAndClient, waitError } from '../__testHelpers';
+import { waitError } from '../__testHelpers';
 import { waitFor } from '@testing-library/react';
 import { expectTypeOf } from 'expect-type';
 import { z } from 'zod';
@@ -13,9 +13,10 @@ import * as trpc from '../../src';
 import { Maybe, TRPCError } from '../../src';
 import { CreateHTTPContextOptions } from '../../src/adapters/standalone';
 import { observable } from '../../src/observable';
+import { legacyRouterToServerAndClient } from '../legacyRouterToServerAndClient';
 
 test('smoke test', async () => {
-  const { client, close } = routerToServerAndClient(
+  const { client, close } = legacyRouterToServerAndClient(
     trpc.router().query('hello', {
       resolve() {
         return 'world';
@@ -90,7 +91,7 @@ test('merge', async () => {
 
 describe('integration tests', () => {
   test('not found procedure', async () => {
-    const { client, close } = routerToServerAndClient(
+    const { client, close } = legacyRouterToServerAndClient(
       trpc.router().query('hello', {
         input: z
           .object({
@@ -118,7 +119,7 @@ describe('integration tests', () => {
   });
 
   test('invalid input', async () => {
-    const { client, close } = routerToServerAndClient(
+    const { client, close } = legacyRouterToServerAndClient(
       trpc.router().query('hello', {
         input: z
           .object({
@@ -155,7 +156,7 @@ describe('integration tests', () => {
   });
 
   test('passing input to input w/o input', async () => {
-    const { client, close } = routerToServerAndClient(
+    const { client, close } = legacyRouterToServerAndClient(
       trpc
         .router()
         .query('q', {
@@ -194,7 +195,7 @@ describe('integration tests', () => {
   describe('type testing', () => {
     test('basic', async () => {
       type Input = { who: string };
-      const { client, close } = routerToServerAndClient(
+      const { client, close } = legacyRouterToServerAndClient(
         trpc.router().query('hello', {
           input: z.object({
             who: z.string(),
@@ -221,7 +222,7 @@ describe('integration tests', () => {
     });
 
     test('mixed response', async () => {
-      const { client, close } = routerToServerAndClient(
+      const { client, close } = legacyRouterToServerAndClient(
         trpc.router().query('postById', {
           input: z.number(),
           async resolve({ input }) {
@@ -271,7 +272,7 @@ describe('integration tests', () => {
           },
         };
       }
-      const { client, close } = routerToServerAndClient(
+      const { client, close } = legacyRouterToServerAndClient(
         trpc.router<Context>().query('whoami', {
           async resolve({ ctx }) {
             if (!ctx.user) {
@@ -311,7 +312,7 @@ describe('integration tests', () => {
 
     test('optional input', async () => {
       type Input = Maybe<{ who: string }>;
-      const { client, close } = routerToServerAndClient(
+      const { client, close } = legacyRouterToServerAndClient(
         trpc.router().query('hello', {
           input: z
             .object({
@@ -347,7 +348,7 @@ describe('integration tests', () => {
 
     test('mutation', async () => {
       type Input = Maybe<{ who: string }>;
-      const { client, close } = routerToServerAndClient(
+      const { client, close } = legacyRouterToServerAndClient(
         trpc.router().mutation('hello', {
           input: z
             .object({
@@ -486,7 +487,7 @@ test('void mutation response', async () => {
     close,
     // wssPort,
     // router
-  } = routerToServerAndClient(
+  } = legacyRouterToServerAndClient(
     trpc
       .router()
       .mutation('undefined', {
@@ -520,7 +521,7 @@ test('void mutation response', async () => {
 // https://github.com/trpc/trpc/issues/559
 describe('ObservableAbortError', () => {
   test('cancelling request should throw ObservableAbortError', async () => {
-    const { client, close } = routerToServerAndClient(
+    const { client, close } = legacyRouterToServerAndClient(
       trpc.router().query('slow', {
         async resolve() {
           await new Promise((resolve) => setTimeout(resolve, 500));
@@ -550,7 +551,7 @@ describe('ObservableAbortError', () => {
   test('cancelling batch request should throw AbortError', async () => {
     // aborting _one_ batch request doesn't necessarily mean we cancel the reqs part of that batch
 
-    const { client, close } = routerToServerAndClient(
+    const { client, close } = legacyRouterToServerAndClient(
       trpc
         .router()
         .query('slow1', {
@@ -600,7 +601,7 @@ describe('ObservableAbortError', () => {
 });
 
 test('regression: JSON.stringify([undefined]) gives [null] causes wrong type to procedure input', async () => {
-  const { client, close } = routerToServerAndClient(
+  const { client, close } = legacyRouterToServerAndClient(
     trpc.router().query('q', {
       input: z.string().optional(),
       async resolve({ input }) {

@@ -8,14 +8,14 @@
 
 /* eslint-disable @typescript-eslint/ban-ts-comment */
 import { trpcReact, trpcServer } from '../../__packages';
-import { routerToServerAndClient } from '../../__testHelpers';
 import '@testing-library/jest-dom';
 import { render, waitFor } from '@testing-library/react';
 import React, { useState } from 'react';
 import { QueryClient, QueryClientProvider } from 'react-query';
+import { legacyRouterToServerAndClient } from '../../legacyRouterToServerAndClient';
 
 test('initialData type', async () => {
-  const { client, router, close } = routerToServerAndClient(
+  const { client, router, close } = legacyRouterToServerAndClient(
     trpcServer.router().query('hello', {
       resolve() {
         return {

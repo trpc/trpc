@@ -1,8 +1,8 @@
-import { routerToServerAndClient } from '../__testHelpers';
 import { expectTypeOf } from 'expect-type';
 import * as trpc from '../../src';
 import { inferRouterMeta } from '../../src';
 import { observable } from '../../src/observable';
+import { legacyRouterToServerAndClient } from '../legacyRouterToServerAndClient';
 
 test('route meta types', async () => {
   const testMeta = { data: 'foo' };
@@ -53,7 +53,7 @@ test('route meta in middleware', async () => {
   const middleware = jest.fn((opts) => {
     return opts.next();
   });
-  const { client, close } = routerToServerAndClient(
+  const { client, close } = legacyRouterToServerAndClient(
     trpc
       .router<any, { data: string }>()
       .middleware(middleware)

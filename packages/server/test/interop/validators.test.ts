@@ -1,7 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 /* eslint-disable @typescript-eslint/ban-types */
-import { routerToServerAndClient } from '../__testHelpers';
 import '@testing-library/jest-dom';
 import { expectTypeOf } from 'expect-type';
 import myzod from 'myzod';
@@ -9,6 +8,7 @@ import * as t from 'superstruct';
 import * as yup from 'yup';
 import { z } from 'zod';
 import * as trpc from '../../src';
+import { legacyRouterToServerAndClient } from '../legacyRouterToServerAndClient';
 
 test('no validator', async () => {
   const router = trpc.router().query('hello', {
@@ -17,7 +17,7 @@ test('no validator', async () => {
       return 'test';
     },
   });
-  const { client, close } = routerToServerAndClient(router);
+  const { client, close } = legacyRouterToServerAndClient(router);
   const res = await client.query('hello');
   expect(res).toBe('test');
   close();
@@ -33,7 +33,7 @@ test('zod', async () => {
       };
     },
   });
-  const { client, close } = routerToServerAndClient(router);
+  const { client, close } = legacyRouterToServerAndClient(router);
   const res = await client.query('num', 123);
 
   await expect(client.query('num', '123' as any)).rejects
@@ -64,7 +64,7 @@ test('zod async', async () => {
       };
     },
   });
-  const { client, close } = routerToServerAndClient(router);
+  const { client, close } = legacyRouterToServerAndClient(router);
 
   await expect(client.query('q', 'bar')).rejects.toMatchInlineSnapshot(`
           [TRPCClientError: [
@@ -98,7 +98,7 @@ test('zod transform mixed input/output', async () => {
       };
     },
   });
-  const { client, close } = routerToServerAndClient(router);
+  const { client, close } = legacyRouterToServerAndClient(router);
 
   await expect(client.query('num', { length: '123' })).resolves
     .toMatchInlineSnapshot(`
@@ -139,7 +139,7 @@ test('superstruct', async () => {
       };
     },
   });
-  const { client, close } = routerToServerAndClient(router);
+  const { client, close } = legacyRouterToServerAndClient(router);
   const res = await client.query('num', 123);
 
   // @ts-expect-error this only accepts a `number`
@@ -160,7 +160,7 @@ test('yup', async () => {
       };
     },
   });
-  const { client, close } = routerToServerAndClient(router);
+  const { client, close } = legacyRouterToServerAndClient(router);
   const res = await client.query('num', 123);
 
   // @ts-expect-error this only accepts a `number`
@@ -181,7 +181,7 @@ test('myzod', async () => {
       };
     },
   });
-  const { client, close } = routerToServerAndClient(router);
+  const { client, close } = legacyRouterToServerAndClient(router);
   const res = await client.query('num', 123);
   await expect(client.query('num', '123' as any)).rejects.toMatchInlineSnapshot(
     `[TRPCClientError: expected type to be number but got string]`,
@@ -206,7 +206,7 @@ test('validator fn', async () => {
       };
     },
   });
-  const { client, close } = routerToServerAndClient(router);
+  const { client, close } = legacyRouterToServerAndClient(router);
   const res = await client.query('num', 123);
   await expect(client.query('num', '123' as any)).rejects.toMatchInlineSnapshot(
     `[TRPCClientError: Not a number]`,
@@ -231,7 +231,7 @@ test('async validator fn', async () => {
       };
     },
   });
-  const { client, close } = routerToServerAndClient(router);
+  const { client, close } = legacyRouterToServerAndClient(router);
   const res = await client.query('num', 123);
   await expect(client.query('num', '123' as any)).rejects.toMatchInlineSnapshot(
     `[TRPCClientError: Not a number]`,

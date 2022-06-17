@@ -1,7 +1,6 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 
 /* eslint-disable @typescript-eslint/no-empty-function */
-import { routerToServerAndClient } from '../__testHelpers';
 import { OperationLink, TRPCClientRuntime } from '@trpc/client/src';
 import { createChain } from '@trpc/client/src/links/internals/createChain';
 import AbortController from 'abort-controller';
@@ -18,6 +17,7 @@ import {
 import * as trpc from '../../src';
 import { AnyRouter } from '../../src';
 import { observable, observableToPromise } from '../../src/observable';
+import { legacyRouterToServerAndClient } from '../legacyRouterToServerAndClient';
 
 const mockRuntime: TRPCClientRuntime = {
   fetch: fetch as any,
@@ -31,7 +31,7 @@ const mockRuntime: TRPCClientRuntime = {
 test('chainer', async () => {
   let attempt = 0;
   const serverCall = jest.fn();
-  const { httpPort, close } = routerToServerAndClient(
+  const { httpPort, close } = legacyRouterToServerAndClient(
     trpc.router().query('hello', {
       resolve() {
         attempt++;
@@ -110,7 +110,7 @@ test('cancel request', async () => {
 describe('batching', () => {
   test('query batching', async () => {
     const metaCall = jest.fn();
-    const { httpPort, close } = routerToServerAndClient(
+    const { httpPort, close } = legacyRouterToServerAndClient(
       trpc.router().query('hello', {
         input: z.string().nullish(),
         resolve({ input }) {
@@ -195,7 +195,7 @@ describe('batching', () => {
 
   test('batching on maxURLLength', async () => {
     const createContextFn = jest.fn();
-    const { client, httpUrl, close, router } = routerToServerAndClient(
+    const { client, httpUrl, close, router } = legacyRouterToServerAndClient(
       trpc.router().query('big-input', {
         input: z.string(),
         resolve({ input }) {
@@ -268,7 +268,7 @@ describe('batching', () => {
   test('server not configured for batching', async () => {
     const serverCall = jest.fn();
     const { close, router, httpPort, trpcClientOptions } =
-      routerToServerAndClient(
+      legacyRouterToServerAndClient(
         trpc.router().query('hello', {
           resolve() {
             serverCall();
@@ -304,7 +304,7 @@ test('create client with links', async () => {
   let attempt = 0;
   const serverCall = jest.fn();
   const { close, router, httpPort, trpcClientOptions } =
-    routerToServerAndClient(
+    legacyRouterToServerAndClient(
       trpc.router().query('hello', {
         resolve() {
           attempt++;
@@ -508,7 +508,7 @@ test('chain makes unsub', async () => {
       return 'world';
     },
   });
-  const { client, close } = routerToServerAndClient(router, {
+  const { client, close } = legacyRouterToServerAndClient(router, {
     client() {
       return {
         links: [

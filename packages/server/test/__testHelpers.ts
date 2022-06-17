@@ -17,8 +17,6 @@ import {
   createHTTPServer,
 } from '../src/adapters/standalone';
 import { WSSHandlerOptions, applyWSSHandler } from '../src/adapters/ws';
-import { MigrateOldRouter } from '../src/deprecated/interop';
-import { AnyRouter as OldRouter } from '../src/deprecated/router';
 
 (global as any).fetch = fetch;
 (global as any).AbortController = AbortController;
@@ -99,28 +97,6 @@ export function routerToServerAndClientNew<TRouter extends AnyNewRouter>(
     wssHandler,
     wss,
   };
-}
-
-/**
- * @deprecated v9 router
- */
-export function routerToServerAndClient<TOldRouter extends OldRouter>(
-  _router: TOldRouter,
-  opts?: {
-    server?: Partial<CreateHTTPHandlerOptions<MigrateOldRouter<TOldRouter>>>;
-    wssServer?: Partial<WSSHandlerOptions<MigrateOldRouter<TOldRouter>>>;
-    wsClient?: Partial<WebSocketClientOptions>;
-    client?:
-      | Partial<CreateTRPCClientOptions<MigrateOldRouter<TOldRouter>>>
-      | ((opts: {
-          httpUrl: string;
-          wssUrl: string;
-          wsClient: TRPCWebSocketClient;
-        }) => Partial<CreateTRPCClientOptions<MigrateOldRouter<TOldRouter>>>);
-  },
-) {
-  const router = _router.interop() as MigrateOldRouter<TOldRouter>;
-  return routerToServerAndClientNew(router, opts);
 }
 
 export async function waitMs(ms: number) {

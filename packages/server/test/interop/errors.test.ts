@@ -3,7 +3,7 @@
 /* eslint-disable @typescript-eslint/no-empty-function */
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { routerToServerAndClient, waitError } from '../__testHelpers';
+import { waitError } from '../__testHelpers';
 import fetch from 'node-fetch';
 import { ZodError, z } from 'zod';
 import { TRPCClientError } from '../../../client/src';
@@ -12,6 +12,7 @@ import { TRPCError } from '../../src/TRPCError';
 import { CreateHTTPContextOptions } from '../../src/adapters/standalone';
 import { getMessageFromUnkownError } from '../../src/internals/errors';
 import { OnErrorFunction } from '../../src/internals/types';
+import { legacyRouterToServerAndClient } from '../legacyRouterToServerAndClient';
 
 test('basic', async () => {
   class MyError extends Error {
@@ -21,7 +22,7 @@ test('basic', async () => {
     }
   }
   const onError = jest.fn();
-  const { client, close } = routerToServerAndClient(
+  const { client, close } = legacyRouterToServerAndClient(
     trpc.router().query('err', {
       resolve() {
         throw new MyError('woop');
@@ -52,7 +53,7 @@ test('basic', async () => {
 
 test('input error', async () => {
   const onError = jest.fn();
-  const { client, close } = routerToServerAndClient(
+  const { client, close } = legacyRouterToServerAndClient(
     trpc.router().mutation('err', {
       input: z.string(),
       resolve() {
@@ -97,7 +98,7 @@ test('input error', async () => {
 
 test('unauthorized()', async () => {
   const onError = jest.fn();
-  const { client, close } = routerToServerAndClient(
+  const { client, close } = legacyRouterToServerAndClient(
     trpc.router().query('err', {
       resolve() {
         throw new TRPCError({ code: 'UNAUTHORIZED' });
@@ -127,7 +128,7 @@ test('getMessageFromUnkownError()', () => {
 describe('formatError()', () => {
   test('simple', async () => {
     const onError = jest.fn();
-    const { client, close } = routerToServerAndClient(
+    const { client, close } = legacyRouterToServerAndClient(
       trpc
         .router()
         .formatError(({ error, shape }) => {
@@ -231,7 +232,7 @@ Object {
   test('setting custom http response code', async () => {
     const TEAPOT_ERROR_CODE = 418;
     const onError = jest.fn();
-    const { close, httpUrl } = routerToServerAndClient(
+    const { close, httpUrl } = legacyRouterToServerAndClient(
       trpc
         .router()
         .formatError(({ error, shape }) => {
@@ -269,7 +270,7 @@ Object {
   test('do not override response status set by middleware or resolver', async () => {
     const TEAPOT_ERROR_CODE = 418;
     const onError = jest.fn();
-    const { close, httpUrl } = routerToServerAndClient(
+    const { close, httpUrl } = legacyRouterToServerAndClient(
       trpc
         .router<CreateHTTPContextOptions>()
         .middleware(({ ctx }) => {
@@ -299,7 +300,7 @@ Object {
 // FIXME: make sure this is the case for new V10 merged routers
 test('make sure object is ignoring prototype', async () => {
   const onError = jest.fn();
-  const { client, close } = routerToServerAndClient(
+  const { client, close } = legacyRouterToServerAndClient(
     trpc.router().query('hello', {
       resolve() {
         return 'there';
@@ -327,7 +328,7 @@ test('make sure object is ignoring prototype', async () => {
 });
 
 test('allow using built-in Object-properties', async () => {
-  const { client, close } = routerToServerAndClient(
+  const { client, close } = legacyRouterToServerAndClient(
     trpc
       .router()
       .query('toString', {
@@ -361,7 +362,7 @@ test('retain stack trace', async () => {
 
   const onError = jest.fn(onErrorFn);
 
-  const { client, close } = routerToServerAndClient(
+  const { client, close } = legacyRouterToServerAndClient(
     trpc.router().query('hello', {
       resolve() {
         if (true) {

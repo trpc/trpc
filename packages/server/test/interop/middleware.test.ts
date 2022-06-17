@@ -1,5 +1,4 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import { routerToServerAndClient } from '../__testHelpers';
 import { HTTPHeaders } from '@trpc/client';
 import { AsyncLocalStorage } from 'async_hooks';
 import { expectTypeOf } from 'expect-type';
@@ -7,12 +6,13 @@ import { z } from 'zod';
 import * as trpc from '../../src';
 import { TRPCError, inferProcedureOutput } from '../../src';
 import { MiddlewareResult } from '../../src/deprecated/internals/middlewares';
+import { legacyRouterToServerAndClient } from '../legacyRouterToServerAndClient';
 
 test('is called if def first', async () => {
   const middleware = jest.fn((opts) => {
     return opts.next();
   });
-  const { client, close } = routerToServerAndClient(
+  const { client, close } = legacyRouterToServerAndClient(
     trpc
       .router()
       .middleware(middleware)
@@ -44,7 +44,7 @@ test('is called if def first', async () => {
 
 test('is not called if def last', async () => {
   const middleware = jest.fn();
-  const { client, close } = routerToServerAndClient(
+  const { client, close } = legacyRouterToServerAndClient(
     trpc
       .router()
       .query('foo', {
@@ -70,7 +70,7 @@ test('receives rawInput as param', async () => {
     return opts.next({ ctx: { userId } });
   });
 
-  const { client, close } = routerToServerAndClient(
+  const { client, close } = legacyRouterToServerAndClient(
     trpc
       .router()
       .middleware(middleware)
@@ -110,7 +110,7 @@ test('allows you to throw an error (e.g. auth)', async () => {
 
   const headers: HTTPHeaders = {};
 
-  const { client, close } = routerToServerAndClient(
+  const { client, close } = legacyRouterToServerAndClient(
     trpc
       .router<Context>()
       .query('foo', {
@@ -178,7 +178,7 @@ test('child routers + hook call order', async () => {
   const middlewareInGrandChild = jest.fn((opts) => {
     return opts.next();
   });
-  const { client, close } = routerToServerAndClient(
+  const { client, close } = legacyRouterToServerAndClient(
     trpc
       .router()
       .middleware(middlewareInParent)
@@ -232,7 +232,7 @@ test('child routers + hook call order', async () => {
 });
 
 test('not returning next result is an error at compile-time', async () => {
-  const { client, close } = routerToServerAndClient(
+  const { client, close } = legacyRouterToServerAndClient(
     trpc
       .router()
       // @ts-expect-error Compiler makes sure we actually return the `next()` result.
@@ -257,7 +257,7 @@ test('async hooks', async () => {
   const storage = new AsyncLocalStorage<{ requestId: number }>();
   let requestCount = 0;
   const log = jest.fn();
-  const { client, close } = routerToServerAndClient(
+  const { client, close } = legacyRouterToServerAndClient(
     trpc
       .router()
       .middleware((opts) => {
@@ -347,7 +347,7 @@ test('equiv', () => {
 test('measure time middleware', async () => {
   let durationMs = -1;
   const logMock = jest.fn();
-  const { client, close } = routerToServerAndClient(
+  const { client, close } = legacyRouterToServerAndClient(
     trpc
       .router()
       .middleware(async ({ next, path, type }) => {
@@ -399,7 +399,7 @@ test('middleware throwing should return a union', async () => {
   const fn = jest.fn((res: MiddlewareResult<unknown>) => {
     return res;
   });
-  const { client, close } = routerToServerAndClient(
+  const { client, close } = legacyRouterToServerAndClient(
     trpc
       .router()
       .middleware(async function firstMiddleware({ next }) {
@@ -441,7 +441,7 @@ test('omitting ctx in next() does not affect the actual ctx', async () => {
   type OriginalContext = {
     maybeUser?: User;
   };
-  const { client, close } = routerToServerAndClient(
+  const { client, close } = legacyRouterToServerAndClient(
     trpc
       .router<OriginalContext>()
       .middleware(async function firstMiddleware({ next }) {
@@ -478,7 +478,7 @@ test('omitting ctx in next() does not affect a previous middleware', async () =>
   type OriginalContext = {
     maybeUser?: User;
   };
-  const { client, close } = routerToServerAndClient(
+  const { client, close } = legacyRouterToServerAndClient(
     trpc
       .router<OriginalContext>()
       .middleware(({ ctx, next }) => {
@@ -530,7 +530,7 @@ test('mutate context in middleware', async () => {
   type OriginalContext = {
     maybeUser?: User;
   };
-  const { client, close } = routerToServerAndClient(
+  const { client, close } = legacyRouterToServerAndClient(
     trpc
       .router<OriginalContext>()
       .middleware(async function firstMiddleware({ next }) {
