@@ -17,28 +17,26 @@ globalAny.AbortController = AbortController;
 globalAny.fetch = fetch;
 globalAny.WebSocket = ws;
 
-async function main() {
-  // http calls
-  const wsClient = createWSClient({
-    url: `ws://localhost:2022`,
-  });
-  const client = createTRPCClient<AppRouter>({
-    links: [
-      // call subscriptions through websockets and the rest over http
-      splitLink({
-        condition(op) {
-          return op.type === 'subscription';
-        },
-        true: wsLink({
-          client: wsClient,
-        }),
-        false: httpLink({
-          url: `http://localhost:2022`,
-        }),
+const wsClient = createWSClient({
+  url: `ws://localhost:2022`,
+});
+const client = createTRPCClient<AppRouter>({
+  links: [
+    // call subscriptions through websockets and the rest over http
+    splitLink({
+      condition(op) {
+        return op.type === 'subscription';
+      },
+      true: wsLink({
+        client: wsClient,
       }),
-    ],
-  });
-
+      false: httpLink({
+        url: `http://localhost:2022`,
+      }),
+    }),
+  ],
+});
+async function main() {
   const helloResponse = await client.query('hello', {
     name: 'world',
   });
