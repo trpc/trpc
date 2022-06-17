@@ -11,7 +11,6 @@ import styles from './styles.module.css';
 const features = [
   {
     title: <>🧙‍♂️&nbsp; Automatic typesafety</>,
-    // imageUrl: 'img/undraw_docusaurus_mountain.svg',
     description: (
       <>
         Automatic typesafety & autocompletion inferred from your API-paths,
@@ -21,7 +20,6 @@ const features = [
   },
   {
     title: <>🍃&nbsp; Light &amp; Snappy DX</>,
-    // imageUrl: 'img/undraw_docusaurus_react.svg',
     description: (
       <>
         No code generation, run-time bloat, or build pipeline.{' '}
@@ -34,7 +32,6 @@ const features = [
   },
   {
     title: <>🐻&nbsp; Add to existing brownfield project</>,
-    // imageUrl: 'img/undraw_docusaurus_tree.svg',
     description: (
       <>
         Easy to add to your existing brownfield project with adapters for
@@ -44,15 +41,9 @@ const features = [
   },
 ];
 
-function Feature({ imageUrl, title, description }) {
-  const imgUrl = useBaseUrl(imageUrl);
+function Feature({ title, description }) {
   return (
     <div className={'col col-4 p-4'}>
-      {imgUrl && (
-        <div className="text--center">
-          <img className={styles.featureImage} src={imgUrl} alt={title} />
-        </div>
-      )}
       <h3 className="font-semibold text-xl pb-6">{title}</h3>
       <p>{description}</p>
     </div>
@@ -61,7 +52,7 @@ function Feature({ imageUrl, title, description }) {
 
 function Home() {
   const context = useDocusaurusContext();
-  const { siteConfig = {} } = context;
+  const { siteConfig } = context;
 
   return (
     <Layout
