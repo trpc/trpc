@@ -66,6 +66,9 @@ type ProcedureArgs<TParams extends ProcedureParams> =
     ? [input?: TParams['_input_in'], opts?: ProcedureOptions]
     : [input: TParams['_input_in'], opts?: ProcedureOptions];
 
+/**
+ * @internal
+ */
 export interface Procedure<TParams extends ProcedureParams> {
   (...args: ProcedureArgs<TParams>): Promise<TParams['_output_out']>;
   /**
