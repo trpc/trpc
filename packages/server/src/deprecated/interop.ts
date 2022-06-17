@@ -5,7 +5,7 @@ import {
   createOutputMiddleware,
 } from '../core/internals/internalProcedure';
 import { Procedure as NewProcedure } from '../core/procedure';
-import { Router as NewRouter, createRouter } from '../core/router';
+import { Router as NewRouter, createRouterFactory } from '../core/router';
 import {
   AnyRouter as AnyOldRouter,
   Router as OldRouter,
@@ -156,7 +156,7 @@ export function migrateRouter<TOldRouter extends AnyOldRouter>(
     subscriptions[name] = migrateProcedure(procedure as any);
   }
 
-  const newRouter = createRouter<any>({
+  const newRouter = createRouterFactory<any>({
     transformer,
     errorFormatter,
   })({

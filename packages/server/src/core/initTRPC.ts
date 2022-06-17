@@ -22,7 +22,7 @@ import {
 } from './internals/utils';
 import { createMiddlewareFactory } from './middleware';
 import { createBuilder as createProcedure } from './procedure';
-import { createMergeRouters, createRouter } from './router';
+import { createRouterFactory, mergeRoutersFactory } from './router';
 
 export function initTRPC<TParams extends Partial<InitGenerics> = {}>() {
   type $Generics = CreateInitGenerics<{
@@ -55,9 +55,9 @@ export function initTRPC<TParams extends Partial<InitGenerics> = {}>() {
       transformer: $Transformer;
     }>;
 
-    const errorFormatter = options?.errorFormatter || defaultFormatter;
+    const errorFormatter = options?.errorFormatter ?? defaultFormatter;
     const transformer = getDataTransformer(
-      options?.transformer || defaultTransformer,
+      options?.transformer ?? defaultTransformer,
     );
     return {
       /**
@@ -77,14 +77,14 @@ export function initTRPC<TParams extends Partial<InitGenerics> = {}>() {
        * Create a router
        * FIXME this should also use error formatter
        */
-      router: createRouter<$Config>({
+      router: createRouterFactory<$Config>({
         errorFormatter,
         transformer,
       }),
       /**
        * Merge Routers
        */
-      mergeRouters: createMergeRouters<$Config>(),
+      mergeRouters: mergeRoutersFactory<$Config>(),
     };
   };
 }

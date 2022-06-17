@@ -164,9 +164,7 @@ const PROCEDURE_DEFINITION_MAP: Record<
  *
  * @internal
  */
-
-// FIXME add error formatting
-export function createRouter<TSettings extends RootConfig>(
+export function createRouterFactory<TSettings extends RootConfig>(
   defaults?: RouterDefaultOptions<TSettings['ctx']>,
 ) {
   return function createRouterInner<
@@ -311,7 +309,7 @@ export type mergeRoutersVariadic<Routers extends Partial<AnyRouter>[]> =
 /**
  * @internal
  */
-export function createMergeRouters<TSettings extends RootConfig>() {
+export function mergeRoutersFactory<TSettings extends RootConfig>() {
   return function mergeRouters<TRouterItems extends RouterOptions<any>[]>(
     ...routerList: TRouterItems
   ) {
@@ -352,8 +350,11 @@ export function createMergeRouters<TSettings extends RootConfig>() {
           nextRouter.errorFormatter &&
           nextRouter.errorFormatter !== defaultFormatter
         ) {
-          if (currentErrorFormatter !== defaultFormatter) {
-            throw new Error('You seem to have duplicate error formatters');
+          if (
+            currentErrorFormatter !== defaultFormatter &&
+            currentErrorFormatter !== nextRouter.errorFormatter
+          ) {
+            throw new Error('You seem to have several error formatters');
           }
           return nextRouter.errorFormatter;
         }
@@ -364,15 +365,15 @@ export function createMergeRouters<TSettings extends RootConfig>() {
 
     const transformer = routerList.reduce((prev, current) => {
       if (current.transformer && current.transformer !== defaultTransformer) {
-        if (prev !== defaultTransformer) {
-          throw new Error('You seem to have duplicate error formatters');
+        if (prev !== defaultTransformer && prev !== current.transformer) {
+          throw new Error('You seem to have several transformers');
         }
         return current.transformer;
       }
       return prev;
     }, defaultTransformer as CombinedDataTransformer);
 
-    const router = createRouter<TSettings>({
+    const router = createRouterFactory<TSettings>({
       errorFormatter,
       transformer,
     })({
