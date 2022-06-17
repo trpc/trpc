@@ -11,7 +11,6 @@ import styles from './styles.module.css';
 const features = [
   {
     title: <>🧙‍♂️&nbsp; Automatic typesafety</>,
-    // imageUrl: 'img/undraw_docusaurus_mountain.svg',
     description: (
       <>
         Automatic typesafety & autocompletion inferred from your API-paths,
@@ -21,7 +20,6 @@ const features = [
   },
   {
     title: <>🍃&nbsp; Light &amp; Snappy DX</>,
-    // imageUrl: 'img/undraw_docusaurus_react.svg',
     description: (
       <>
         No code generation, run-time bloat, or build pipeline.{' '}
@@ -34,7 +32,6 @@ const features = [
   },
   {
     title: <>🐻&nbsp; Add to existing brownfield project</>,
-    // imageUrl: 'img/undraw_docusaurus_tree.svg',
     description: (
       <>
         Easy to add to your existing brownfield project with adapters for
@@ -44,16 +41,10 @@ const features = [
   },
 ];
 
-function Feature({ imageUrl, title, description }) {
-  const imgUrl = useBaseUrl(imageUrl);
+function Feature({ title, description }) {
   return (
-    <div className={clsx('col col--4', styles.feature)}>
-      {imgUrl && (
-        <div className="text--center">
-          <img className={styles.featureImage} src={imgUrl} alt={title} />
-        </div>
-      )}
-      <h3>{title}</h3>
+    <div className={'col col-4 p-4'}>
+      <h3 className="font-semibold text-xl pb-6">{title}</h3>
       <p>{description}</p>
     </div>
   );
@@ -61,7 +52,7 @@ function Feature({ imageUrl, title, description }) {
 
 function Home() {
   const context = useDocusaurusContext();
-  const { siteConfig = {} } = context;
+  const { siteConfig } = context;
 
   return (
     <Layout
@@ -76,8 +67,8 @@ function Home() {
         />
       </Head>
       <header className={clsx('hero hero--primary', styles.heroBanner)}>
-        <div className="container main-container">
-          <h1 className="hero__title">{siteConfig.title}</h1>
+        <div className="container flex flex-col gap-6">
+          <h1 className="font-bold text-5xl">{siteConfig.title}</h1>
           <p className="hero__subtitle">{siteConfig.tagline}</p>
           <p>
             <GitHubButton
@@ -91,8 +82,9 @@ function Home() {
             </GitHubButton>
           </p>
 
-          <figure className={styles.figure}>
+          <figure className={`${styles.figure} gap-4`}>
             <img
+              className="mx-auto"
               src="https://storage.googleapis.com/trpc/trpcgif.gif"
               alt="Server/client example"
             />
@@ -119,26 +111,28 @@ function Home() {
       </header>
       <main>
         {features && features.length > 0 && (
-          <>
-            <section className={styles.features}>
-              <div className="container">
-                <div className="row">
-                  {features.map((props, idx) => (
-                    <Feature key={idx} {...props} />
-                  ))}
-                </div>
-              </div>
-            </section>
-          </>
+          <section className="flex items-center py-8 px-0 w-full max-w-[var(--ifm-container-width-xl)] mx-auto">
+            {features.map((props, idx) => (
+              <Feature key={idx} {...props} />
+            ))}
+          </section>
         )}
       </main>
-      <footer className={`container ${styles.container}`}>
-        <ol className="footnotes">
+      <footer
+        className={`container w-full max-w-[var(--ifm-container-width)] mx-auto`}
+      >
+        <ol className="footnotes list-decimal">
           <li id="zero">
             <code>@trpc/client</code> depends on some babel runtime helpers +
             that a <code>fetch()</code> polyfill/ponyfill is used if the browser
             doesn&apos;t support it. <code>@trpc/react</code> is built on top of{' '}
-            <a href="https://react-query.tanstack.com/">react-query</a>.
+            <a
+              className="text-primary no-underline"
+              href="https://react-query.tanstack.com/"
+            >
+              react-query
+            </a>
+            .
           </li>
         </ol>
       </footer>

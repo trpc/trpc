@@ -198,7 +198,7 @@ export default function IndexPage() {
                   <br />
                   <a
                     className="text-gray-100 underline"
-                    href="https://github.com/trpc/trpc/tree/main/examples/next-prisma-starter-websockets"
+                    href="https://github.com/trpc/examples-next-prisma-starter-websockets"
                     target="_blank"
                     rel="noreferrer"
                   >
