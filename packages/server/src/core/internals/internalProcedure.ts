@@ -85,6 +85,9 @@ function createNewInternalBuilder(
 }
 
 const codeblock = `
+If you want to call this function on the server, you do the following:
+This is a client-only function.
+
 const caller = appRouter.createCaller({
   /* ... your context */
 });
@@ -97,12 +100,7 @@ function createProcedureCaller(
 ): InternalProcedure {
   const procedure = async function resolve(opts: InternalProcedureCallOptions) {
     if (!opts || !('rawInput' in opts)) {
-      const error = [
-        'This is a client-only function.',
-        'If you want to call this function on the server, you do the following:',
-        codeblock,
-      ];
-      throw new Error(error.join('\n'));
+      throw new Error(codeblock);
     }
 
     // run the middlewares recursively with the resolver as the last one
