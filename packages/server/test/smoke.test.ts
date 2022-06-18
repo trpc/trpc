@@ -53,11 +53,18 @@ test('middleware', async () => {
         .use(({ next }) => {
           return next({
             ctx: {
+              prefix: 'hello',
+            },
+          });
+        })
+        .use(({ next }) => {
+          return next({
+            ctx: {
               user: 'KATT',
             },
           });
         })
-        .resolve(({ ctx }) => `hello ${ctx.user}`),
+        .resolve(({ ctx }) => `${ctx.prefix} ${ctx.user}`),
     },
   });
   const { client, close } = routerToServerAndClientNew(router);

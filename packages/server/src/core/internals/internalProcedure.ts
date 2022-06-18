@@ -124,7 +124,10 @@ function createProcedureCaller(
           next: async (nextOpts?: { ctx: any; input?: any }) => {
             return await callRecursive({
               index: callOpts.index + 1,
-              ctx: nextOpts && 'ctx' in nextOpts ? nextOpts.ctx : callOpts.ctx,
+              ctx:
+                nextOpts && 'ctx' in nextOpts
+                  ? { ...callOpts.ctx, ...nextOpts.ctx }
+                  : callOpts.ctx,
               input:
                 nextOpts && 'input' in nextOpts
                   ? nextOpts.input
