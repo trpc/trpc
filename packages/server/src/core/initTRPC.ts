@@ -19,9 +19,9 @@ import {
   InitGenerics,
   InitOptions,
 } from './internals/config';
+import { createBuilder } from './internals/procedureBuilder';
 import { PickFirstDefined, ValidateShape } from './internals/utils';
 import { createMiddlewareFactory } from './middleware';
-import { createBuilder as createProcedure } from './procedure';
 import { createRouterFactory } from './router';
 
 export function initTRPC<TParams extends Partial<InitGenerics> = {}>() {
@@ -68,7 +68,7 @@ export function initTRPC<TParams extends Partial<InitGenerics> = {}>() {
       /**
        * Builder object for creating procedures
        */
-      procedure: createProcedure<$Context, $Meta>(),
+      procedure: createBuilder<$Context, $Meta>(),
       /**
        * Create reusable middlewares
        */
