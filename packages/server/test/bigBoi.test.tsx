@@ -13,6 +13,7 @@ const ctx = konn()
     const queryClient = new QueryClient();
     const react = createReactQueryHooks<typeof appRouter>();
     const client = opts.client;
+
     return {
       close: opts.close,
       client,

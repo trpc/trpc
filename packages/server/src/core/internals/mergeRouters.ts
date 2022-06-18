@@ -2,8 +2,10 @@ import { defaultFormatter } from '../../error/formatter';
 import { CombinedDataTransformer, defaultTransformer } from '../../transformer';
 import {
   AnyRouter,
+  AnyRouterParams,
   ProcedureStructure,
   Router,
+  RouterParams,
   createRouterFactory,
   mergeProcedureRecordsVariadic,
 } from '../router';
@@ -35,6 +37,46 @@ type CreateNewRouter<
   subscriptions: EnsureProcedureStructure<
     mergeProcedureRecordsVariadic<[TMain, ...TChildren]>
   >['subscriptions'];
+}>;
+
+function mergeRoutersNew<RP1 extends AnyRouterParams>(
+  router1: Router<RP1>,
+): Router<RP1>;
+function mergeRoutersNew<
+  RP1 extends AnyRouterParams,
+  RP2 extends AnyRouterParams,
+>(
+  router1: Router<RP1>,
+  router2: Router<RP2>,
+): Router<{
+  _ctx: RP1['_ctx'];
+  _errorShape: RP1['_errorShape'];
+  _meta: RP1['_meta'];
+  transformer: RP1['transformer'];
+  errorFormatter: RP1['errorFormatter'];
+  queries: RP1['queries'] & RP2['queries'];
+  mutations: RP1['mutations'] & RP2['mutations'];
+  subscriptions: RP1['subscriptions'] & RP2['subscriptions'];
+}>;
+function mergeRoutersNew<
+  RP1 extends AnyRouterParams,
+  RP2 extends AnyRouterParams,
+  RP3 extends AnyRouterParams,
+>(
+  router1: Router<RP1>,
+  router2: Router<RP2>,
+  router3: Router<RP3>,
+): Router<{
+  _ctx: RP1['_ctx'];
+  _errorShape: RP1['_errorShape'];
+  _meta: RP1['_meta'];
+  transformer: RP1['transformer'];
+  errorFormatter: RP1['errorFormatter'];
+  queries: RP1['queries'] & RP2['queries'] & RP3['queries'];
+  mutations: RP1['mutations'] & RP2['mutations'] & RP3['mutations'];
+  subscriptions: RP1['subscriptions'] &
+    RP2['subscriptions'] &
+    RP3['subscriptions'];
 }>;
 
 function mergeRouters<

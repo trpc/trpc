@@ -1,6 +1,6 @@
 import fs from 'fs';
 
-const NUM_ROUTERS = 2;
+const NUM_ROUTERS = 20;
 const NUM_PROCEDURES_PER_ROUTER = 10;
 
 const TRPC_FILE = `
@@ -11,10 +11,11 @@ export const t = initTRPC()();
 
 const INDEX = `
 import { t } from './_trpc';
+import { mergeRoutersNew } from '../../src/core/internals/mergeRoutersNew';
 
 __IMPORTS__
 
-export const appRouter = t.mergeRouters(
+export const appRouter = mergeRoutersNew(
   __CONTENT__
 );
 
