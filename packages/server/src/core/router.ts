@@ -287,6 +287,9 @@ export function createRouterFactory<TSettings extends RootConfig>(
 
 type EnsureRecord<T> = undefined extends T ? {} : T;
 
+/**
+ * @deprecated FIXME DELETE
+ */
 type mergeRouters<
   A extends Partial<AnyRouter>,
   B extends Partial<AnyRouter>,
@@ -303,6 +306,7 @@ type mergeRouters<
 
 /**
  * @internal
+ * @deprecated FIXME DELETE ME
  */
 export type mergeRoutersVariadic<Routers extends Partial<AnyRouter>[]> =
   Routers extends []
