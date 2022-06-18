@@ -48,7 +48,7 @@ test('vanilla', async () => {
 test('useQuery()', async () => {
   const { react, client } = ctx;
   function MyComponent() {
-    const query1 = react.useQuery(['r0q0', { who: 'KATT' }]);
+    const query1 = react.useQuery(['r17q5', { who: 'katt' }]);
     if (!query1.data) {
       return <>...</>;
     }

@@ -1,7 +1,7 @@
 import fs from 'fs';
 
 const NUM_ROUTERS = 20;
-const NUM_PROCEDURES_PER_ROUTER = 10;
+const NUM_PROCEDURES_PER_ROUTER = 100;
 
 const TRPC_FILE = `
 import { initTRPC } from '../../src';
@@ -11,11 +11,10 @@ export const t = initTRPC()();
 
 const INDEX = `
 import { t } from './_trpc';
-import { mergeRoutersNew } from '../../src/core/internals/mergeRoutersNew';
 
 __IMPORTS__
 
-export const appRouter = mergeRoutersNew(
+export const appRouter = t.mergeRouters(
   __CONTENT__
 );
 
@@ -34,6 +33,8 @@ export const __ROUTER_NAME__ = t.router({
 `.trim();
 
 const SERVER_DIR = __dirname + '/../packages/server/test/__generated__';
+
+fs.mkdirSync(SERVER_DIR, { recursive: true });
 
 // first cleanup all routers
 const files = fs.readdirSync(SERVER_DIR);

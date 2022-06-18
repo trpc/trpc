@@ -3,21 +3,14 @@ import fs from 'fs';
 const NUM_ARGS = 20;
 
 const BASE = `
-import { AnyRouter, AnyRouterParams, Router } from "../router";
-
-`.trim();
-
-const END = `
-
-export function mergeRoutersNew(..._args: AnyRouter[]): AnyRouter {
-  throw new Error('Not implemented');
-}
+import { AnyRouter, AnyRouterParams, Router } from "../../router";
+import { mergeRouters } from '../mergeRouters';
 
 `.trim();
 
 const TEMPLATE = `
 
-export function mergeRoutersNew<
+export function mergeRoutersGeneric<
   __GENERICS__
 >(
   __ARGS__
@@ -33,8 +26,16 @@ export function mergeRoutersNew<
 }>;
 `.trim();
 
-const TARGET_FILE =
-  __dirname + '/../packages/server/src/core/internals/mergeRoutersNew.ts';
+const END = `
+
+export function mergeRoutersGeneric(...args: AnyRouter[]): AnyRouter {
+  return mergeRouters(...args) as any;
+}
+
+`.trim();
+
+const TARGET_DIR =
+  __dirname + '/../packages/server/src/core/internals/__generated__';
 
 const partList: string[] = [];
 for (let index = 0; index < NUM_ARGS; index++) {
@@ -67,6 +68,8 @@ for (let index = 0; index < NUM_ARGS; index++) {
   partList.push(part);
 }
 
-console.log({ TARGET_FILE, BASE });
-
-fs.writeFileSync(TARGET_FILE, [BASE, ...partList, END].join('\n\n'));
+fs.mkdirSync(TARGET_DIR, { recursive: true });
+fs.writeFileSync(
+  `${TARGET_DIR}/mergeRoutersGeneric.ts`,
+  [BASE, ...partList, END].join('\n\n'),
+);

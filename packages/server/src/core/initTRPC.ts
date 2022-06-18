@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/ban-types */
+import { mergeRoutersGeneric } from './internals/__generated__/mergeRoutersGeneric';
 import {
   DefaultErrorShape,
   ErrorFormatter,
@@ -18,7 +19,6 @@ import {
   InitGenerics,
   InitOptions,
 } from './internals/config';
-import { mergeRoutersFactory } from './internals/mergeRouters';
 import { PickFirstDefined, ValidateShape } from './internals/utils';
 import { createMiddlewareFactory } from './middleware';
 import { createBuilder as createProcedure } from './procedure';
@@ -84,7 +84,7 @@ export function initTRPC<TParams extends Partial<InitGenerics> = {}>() {
       /**
        * Merge Routers
        */
-      mergeRouters: mergeRoutersFactory<$Config>(),
+      mergeRouters: mergeRoutersGeneric,
     };
   };
 }
