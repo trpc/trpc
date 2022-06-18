@@ -42,6 +42,7 @@
     "lint-fix": "yarn lint --fix && manypkg fix",
     "codegen:generateMergeRouters": "yarn ts-node scripts/generateMergeRouters.ts",
     "codegen:generateBigFRouter": "yarn ts-node scripts/generateBigFRouter.ts",
+    "codegen:entrypoints": "yarn ts-node scripts/entrypoints.ts",
     "codegen": "run-p codegen:*",
     "ts-node": "ts-node --compiler-options '{\"module\":\"commonjs\"}'",
     "postinstall": "yarn codegen",
