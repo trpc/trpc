@@ -1,4 +1,4 @@
-import './__packages';
+import './___packages';
 import { initTRPC } from '../src';
 
 test('with error formatter', () => {

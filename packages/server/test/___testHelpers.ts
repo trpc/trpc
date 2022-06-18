@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/ban-types */
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import './__packages';
+import './___packages';
 import {
   TRPCWebSocketClient,
   WebSocketClientOptions,

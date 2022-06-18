@@ -4,7 +4,10 @@ module.exports = {
   rootDir: '../',
   moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json'],
   collectCoverageFrom: ['./*/src/**/*.{ts,tsx,js,jsx}'],
-  setupFilesAfterEnv: ['./server/jest.setup.js'],
+  setupFilesAfterEnv: [
+    './server/jest.setup.js',
+    '@testing-library/jest-dom/extend-expect',
+  ],
   globals: {
     'ts-jest': {
       tsconfig: {

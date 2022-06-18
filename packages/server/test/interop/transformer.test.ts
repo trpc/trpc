@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import { routerToServerAndClientNew, waitError } from '../__testHelpers';
+import { routerToServerAndClientNew, waitError } from '../___testHelpers';
 import { legacyRouterToServerAndClient } from './__legacyRouterToServerAndClient';
 import devalue from 'devalue';
 import fetch from 'node-fetch';

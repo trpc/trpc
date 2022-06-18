@@ -19,6 +19,7 @@
     "endOfLine": "auto",
     "singleQuote": true,
     "importOrder": [
+      "___",
       "__",
       "<THIRD_PARTY_MODULES>",
       "^[./]"

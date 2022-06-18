@@ -7,7 +7,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 /* eslint-disable @typescript-eslint/ban-ts-comment */
-import { trpcReact, trpcServer } from '../../__packages';
+import { trpcReact, trpcServer } from '../../___packages';
 import { legacyRouterToServerAndClient } from '../__legacyRouterToServerAndClient';
 import '@testing-library/jest-dom';
 import { render, waitFor } from '@testing-library/react';

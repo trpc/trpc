@@ -1,4 +1,4 @@
-import { routerToServerAndClientNew } from '../__testHelpers';
+import { routerToServerAndClientNew } from '../___testHelpers';
 import { TRPCWebSocketClient, WebSocketClientOptions } from '@trpc/client/src';
 import { CreateTRPCClientOptions } from '@trpc/client/src';
 import { CreateHTTPHandlerOptions } from '../../src/adapters/standalone';

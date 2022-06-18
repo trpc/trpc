@@ -3,7 +3,7 @@
 /* eslint-disable @typescript-eslint/no-empty-function */
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { waitError } from '../__testHelpers';
+import { waitError } from '../___testHelpers';
 import { legacyRouterToServerAndClient } from './__legacyRouterToServerAndClient';
 import fetch from 'node-fetch';
 import { ZodError, z } from 'zod';

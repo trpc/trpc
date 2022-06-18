@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/ban-types */
-import { routerToServerAndClientNew, waitError } from './__testHelpers';
+import { routerToServerAndClientNew, waitError } from './___testHelpers';
 import { TRPCClientError } from '@trpc/client';
 import { z } from 'zod';
 import { initTRPC } from '../src';

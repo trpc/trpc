@@ -7,8 +7,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 /* eslint-disable @typescript-eslint/ban-ts-comment */
-import { trpcServer } from '../__packages';
-import { routerToServerAndClientNew } from '../__testHelpers';
+import { trpcServer } from '../___packages';
+import { routerToServerAndClientNew } from '../___testHelpers';
 import '@testing-library/jest-dom';
 import { render, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';

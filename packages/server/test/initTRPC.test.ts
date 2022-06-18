@@ -1,4 +1,4 @@
-import './__packages';
+import './___packages';
 import { expectTypeOf } from 'expect-type';
 import { initTRPC } from '../src/core';
 import {

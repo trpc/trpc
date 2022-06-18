@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-empty-function */
-import { waitError } from '../__testHelpers';
+import { waitError } from '../___testHelpers';
 import { dataLoader } from '../../../client/src/internals/dataLoader';
 
 test('basic', async () => {

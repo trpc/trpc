@@ -3,7 +3,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 /* eslint-disable @typescript-eslint/ban-types */
-import { waitError } from '../__testHelpers';
+import { waitError } from '../___testHelpers';
 import { legacyRouterToServerAndClient } from './__legacyRouterToServerAndClient';
 import { waitFor } from '@testing-library/react';
 import { expectTypeOf } from 'expect-type';
