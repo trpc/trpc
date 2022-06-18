@@ -5,8 +5,9 @@ import fetch from 'node-fetch';
 import type { AppRouter } from './server';
 
 // polyfill
-global.AbortController = AbortController;
-global.fetch = fetch as any;
+const globalAny = global as any;
+globalAny.AbortController = AbortController;
+globalAny.fetch = fetch as any;
 
 const sleep = (ms = 100) => new Promise((resolve) => setTimeout(resolve, ms));
 
