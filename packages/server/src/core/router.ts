@@ -22,6 +22,12 @@ import { ProcedureType } from './types';
 
 // FIXME this should properly use TContext maybe?
 export type ProcedureRecord<_TContext> = Record<string, Procedure<any>>;
+type AnyProcedureRecord = ProcedureRecord<any>;
+export interface ProcedureStructure {
+  queries: AnyProcedureRecord;
+  mutations: AnyProcedureRecord;
+  subscriptions: AnyProcedureRecord;
+}
 
 export interface RouterParams<
   // FIXME this should use RootConfig
@@ -31,7 +37,7 @@ export interface RouterParams<
   TQueries extends ProcedureRecord<TContext>,
   TMutations extends ProcedureRecord<TContext>,
   TSubscriptions extends ProcedureRecord<TContext>,
-> {
+> extends ProcedureStructure {
   /**
    * @internal
    */
@@ -94,7 +100,8 @@ type RouterCaller<TParams extends AnyRouterParams> = (ctx: TParams['_ctx']) => {
   subscription: inferHandlerFn<TParams['subscriptions']>;
 };
 
-export interface Router<TParams extends AnyRouterParams> {
+export interface Router<TParams extends AnyRouterParams>
+  extends ProcedureStructure {
   _def: RouterParams<
     TParams['_ctx'],
     TParams['_errorShape'],
@@ -308,14 +315,59 @@ export type mergeRoutersVariadic<Routers extends Partial<AnyRouter>[]> =
       : never
     : never;
 
+type combineProcedureRecords<
+  A extends Partial<AnyRouter>,
+  B extends Partial<AnyRouter>,
+> = {
+  queries: EnsureRecord<A['queries']> & EnsureRecord<B['queries']>;
+  mutations: EnsureRecord<A['mutations']> & EnsureRecord<B['mutations']>;
+  subscriptions: EnsureRecord<A['subscriptions']> &
+    EnsureRecord<B['subscriptions']>;
+};
+/**
+ * @internal
+ */
+export type mergeProcedureRecordsVariadic<
+  Routers extends Partial<AnyRouter>[],
+> = Routers extends []
+  ? {
+      queries: {};
+      mutations: {};
+      subscriptions: {};
+    }
+  : Routers extends [infer First, ...infer Rest]
+  ? First extends Partial<AnyRouter>
+    ? Rest extends Partial<AnyRouter>[]
+      ? combineProcedureRecords<First, mergeProcedureRecordsVariadic<Rest>>
+      : never
+    : never
+  : never;
+
+type EnsureProcedureStructure<T> = T extends ProcedureStructure ? T : never;
+type CreateNewRouter<
+  TMain extends AnyRouter,
+  TChildren extends AnyRouter[],
+> = Router<
+  EnsureProcedureStructure<mergeRoutersVariadic<[TMain, ...TChildren]>> & {
+    _ctx: TMain['_def']['_ctx'];
+    _errorShape: TMain['_def']['_errorShape'];
+    _meta: TMain['_def']['_meta'];
+    transformer: TMain['_def']['transformer'];
+    errorFormatter: TMain['errorFormatter'];
+  }
+>;
 /**
  * @internal
  */
 export function mergeRoutersFactory<TSettings extends RootConfig>() {
-  return function mergeRouters<TRouterItems extends RouterOptions<any>[]>(
-    ...routerList: TRouterItems
-  ) {
-    type TMergedRouters = mergeRoutersVariadic<TRouterItems>;
+  return function mergeRouters<
+    TMain extends AnyRouter,
+    TChildren extends AnyRouter[],
+  >(
+    mainRouter: TMain,
+    ..._routerList: TChildren
+  ): CreateNewRouter<TMain, TChildren> {
+    type TMergedRouters = mergeRoutersVariadic<TChildren>;
     type TRouterParams = TMergedRouters extends {
       _ctx: infer Ctx;
       _meta: infer Meta;
@@ -333,6 +385,7 @@ export function mergeRoutersFactory<TSettings extends RootConfig>() {
           Subscriptions extends ProcedureRecord<any> ? Subscriptions : never
         >
       : never;
+    const routerList = [mainRouter, ..._routerList];
 
     const queries = mergeWithoutOverrides(
       {},
@@ -384,6 +437,6 @@ export function mergeRoutersFactory<TSettings extends RootConfig>() {
       subscriptions,
     });
 
-    return router as any as Router<TRouterParams>;
+    return router as any as CreateNewRouter<TMain, TChildren>;
   };
 }

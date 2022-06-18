@@ -27,10 +27,18 @@ const ctx = konn()
 
 test('vanilla', async () => {
   const { client } = ctx;
-  const result = await client.queries.r0q0({
-    who: 'KATT',
-  });
-  expect(result).toBe('hello KATT');
+  {
+    const result = await client.queries.r0q0({
+      who: 'KATT',
+    });
+    expect(result).toBe('hello KATT');
+  }
+  {
+    const result = await client.queries.r1q2({
+      who: 'KATT',
+    });
+    expect(result).toBe('hello KATT');
+  }
 });
 
 test('useQuery()', async () => {
