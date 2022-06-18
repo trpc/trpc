@@ -104,7 +104,16 @@ test('stupidly simple', async () => {
       ...r2.queries,
       ...r3.queries,
     },
-    mutations: {},
+    mutations: {
+      ...r1.mutations,
+      ...r2.mutations,
+      ...r3.mutations,
+    },
+    subscriptions: {
+      ...r1.subscriptions,
+      ...r2.subscriptions,
+      ...r3.subscriptions,
+    },
   });
   const opts = routerToServerAndClientNew(appRouter, {});
 

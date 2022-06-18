@@ -18,10 +18,11 @@ import {
   InitGenerics,
   InitOptions,
 } from './internals/config';
+import { mergeRoutersFactory } from './internals/mergeRouters';
 import { PickFirstDefined, ValidateShape } from './internals/utils';
 import { createMiddlewareFactory } from './middleware';
 import { createBuilder as createProcedure } from './procedure';
-import { createRouterFactory, mergeRoutersFactory } from './router';
+import { createRouterFactory } from './router';
 
 export function initTRPC<TParams extends Partial<InitGenerics> = {}>() {
   type $Generics = CreateInitGenerics<{

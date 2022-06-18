@@ -58,3 +58,7 @@ export type PickFirstDefined<T, K> = undefined extends T
     ? never
     : K
   : T;
+
+export type EnsureRecord<T> = T extends Record<string, any>
+  ? T
+  : Record<string, never>;

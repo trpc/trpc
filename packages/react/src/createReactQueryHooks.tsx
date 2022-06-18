@@ -125,13 +125,13 @@ export function createReactQueryHooks<
     serialize: (v) => v,
     deserialize: (v) => v,
   };
-  type TQueries = TRouter['_def']['queries'];
-  type TSubscriptions = TRouter['_def']['subscriptions'];
+  type TQueries = TRouter['queries'];
+  type TSubscriptions = TRouter['subscriptions'];
   type TError = TRPCClientErrorLike<TRouter>;
   type TInfiniteQueryNames = inferInfiniteQueryNames<TQueries>;
 
-  type TQueryValues = inferProcedures<TRouter['_def']['queries']>;
-  type TMutationValues = inferProcedures<TRouter['_def']['mutations']>;
+  type TQueryValues = inferProcedures<TRouter['queries']>;
+  type TMutationValues = inferProcedures<TRouter['mutations']>;
 
   type ProviderContext = TRPCContextState<TRouter, TSSRContext>;
   const Context = TRPCContext as React.Context<ProviderContext>;
@@ -368,10 +368,10 @@ export function createReactQueryHooks<
       const [path, input] = pathAndInput;
       let isStopped = false;
       const subscription = client.subscription<
-        TRouter['_def']['subscriptions'],
+        TRouter['subscriptions'],
         TPath,
         TOutput,
-        inferProcedureInput<TRouter['_def']['subscriptions']>
+        inferProcedureInput<TRouter['subscriptions']>
       >(path, (input ?? undefined) as any, {
         error: (err) => {
           if (!isStopped) {

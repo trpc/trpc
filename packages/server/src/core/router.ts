@@ -3,7 +3,6 @@ import { TRPCError } from '../TRPCError';
 import {
   DefaultErrorShape,
   ErrorFormatter,
-  ErrorFormatterShape,
   defaultFormatter,
 } from '../error/formatter';
 import { getHTTPStatusCodeFromError } from '../http/internals/getHTTPStatusCode';
@@ -16,7 +15,7 @@ import {
 } from './internals/internalProcedure';
 import { mergeWithoutOverrides } from './internals/mergeWithoutOverrides';
 import { omitPrototype } from './internals/omitPrototype';
-import { PickFirstDefined, ValidateShape } from './internals/utils';
+import { EnsureRecord, ValidateShape } from './internals/utils';
 import { Procedure } from './procedure';
 import { ProcedureType } from './types';
 
@@ -169,6 +168,7 @@ const PROCEDURE_DEFINITION_MAP: Record<
   mutation: 'mutations',
   subscription: 'subscriptions',
 };
+
 /**
  *
  * @internal
@@ -187,9 +187,9 @@ export function createRouterFactory<TSettings extends RootConfig>(
     _ctx: TSettings['ctx'];
     _errorShape: TSettings['errorShape'];
     _meta: TSettings['meta'];
-    queries: TProcedures['queries'];
-    mutations: TProcedures['mutations'];
-    subscriptions: TProcedures['subscriptions'];
+    queries: EnsureRecord<TProcedures['queries']>;
+    mutations: EnsureRecord<TProcedures['mutations']>;
+    subscriptions: EnsureRecord<TProcedures['subscriptions']>;
     errorFormatter: ErrorFormatter<TSettings['ctx'], TSettings['errorShape']>;
     transformer: TSettings['transformer'];
   }> {
@@ -285,48 +285,13 @@ export function createRouterFactory<TSettings extends RootConfig>(
   };
 }
 
-type EnsureRecord<T> = undefined extends T ? {} : T;
-
-/**
- * @deprecated FIXME DELETE
- */
-type mergeRouters<
-  A extends Partial<AnyRouter>,
-  B extends Partial<AnyRouter>,
-> = {
-  _ctx: NonNullable<A['_def']>['_ctx'];
-  _meta: NonNullable<A['_def']>['_meta'];
-  queries: EnsureRecord<A['queries']> & EnsureRecord<B['queries']>;
-  mutations: EnsureRecord<A['mutations']> & EnsureRecord<B['mutations']>;
-  subscriptions: EnsureRecord<A['subscriptions']> &
-    EnsureRecord<B['subscriptions']>;
-  errorFormatter: PickFirstDefined<B['errorFormatter'], A['errorFormatter']>;
-  transformer: PickFirstDefined<B['transformer'], A['transformer']>;
-};
-
-/**
- * @internal
- * @deprecated FIXME DELETE ME
- */
-export type mergeRoutersVariadic<Routers extends Partial<AnyRouter>[]> =
-  Routers extends []
-    ? {}
-    : Routers extends [infer First, ...infer Rest]
-    ? First extends Partial<AnyRouter>
-      ? Rest extends Partial<AnyRouter>[]
-        ? mergeRouters<First, mergeRoutersVariadic<Rest>>
-        : never
-      : never
-    : never;
-
 type combineProcedureRecords<
   A extends Partial<AnyRouter>,
   B extends Partial<AnyRouter>,
 > = {
-  queries: EnsureRecord<A['queries']> & EnsureRecord<B['queries']>;
-  mutations: EnsureRecord<A['mutations']> & EnsureRecord<B['mutations']>;
-  subscriptions: EnsureRecord<A['subscriptions']> &
-    EnsureRecord<B['subscriptions']>;
+  queries: A['queries'] & B['queries'];
+  mutations: A['mutations'] & B['mutations'];
+  subscriptions: A['subscriptions'] & B['subscriptions'];
 };
 /**
  * @internal
@@ -346,101 +311,3 @@ export type mergeProcedureRecordsVariadic<
       : never
     : never
   : never;
-
-type EnsureProcedureStructure<T> = T extends ProcedureStructure ? T : never;
-type CreateNewRouter<
-  TMain extends AnyRouter,
-  TChildren extends AnyRouter[],
-> = Router<
-  EnsureProcedureStructure<mergeRoutersVariadic<[TMain, ...TChildren]>> & {
-    _ctx: TMain['_def']['_ctx'];
-    _errorShape: TMain['_def']['_errorShape'];
-    _meta: TMain['_def']['_meta'];
-    transformer: TMain['_def']['transformer'];
-    errorFormatter: TMain['errorFormatter'];
-  }
->;
-/**
- * @internal
- */
-export function mergeRoutersFactory<TSettings extends RootConfig>() {
-  return function mergeRouters<
-    TMain extends AnyRouter,
-    TChildren extends AnyRouter[],
-  >(
-    mainRouter: TMain,
-    ..._routerList: TChildren
-  ): CreateNewRouter<TMain, TChildren> {
-    type TMergedRouters = mergeRoutersVariadic<TChildren>;
-    type TRouterParams = TMergedRouters extends {
-      _ctx: infer Ctx;
-      _meta: infer Meta;
-      queries: infer Queries;
-      mutations: infer Mutations;
-      subscriptions: infer Subscriptions;
-      errorFormatter: infer ErrorFormatter;
-    }
-      ? RouterParams<
-          Ctx,
-          ErrorFormatterShape<ErrorFormatter>,
-          Meta extends {} ? Meta : {},
-          Queries extends ProcedureRecord<any> ? Queries : never,
-          Mutations extends ProcedureRecord<any> ? Mutations : never,
-          Subscriptions extends ProcedureRecord<any> ? Subscriptions : never
-        >
-      : never;
-    const routerList = [mainRouter, ..._routerList];
-
-    const queries = mergeWithoutOverrides(
-      {},
-      ...routerList.map((r) => r.queries),
-    ) as TRouterParams['queries'];
-    const mutations = mergeWithoutOverrides(
-      {},
-      ...routerList.map((r) => r.mutations),
-    );
-    const subscriptions = mergeWithoutOverrides(
-      {},
-      ...routerList.map((r) => r.subscriptions),
-    );
-    const errorFormatter = routerList.reduce(
-      (currentErrorFormatter, nextRouter) => {
-        if (
-          nextRouter.errorFormatter &&
-          nextRouter.errorFormatter !== defaultFormatter
-        ) {
-          if (
-            currentErrorFormatter !== defaultFormatter &&
-            currentErrorFormatter !== nextRouter.errorFormatter
-          ) {
-            throw new Error('You seem to have several error formatters');
-          }
-          return nextRouter.errorFormatter;
-        }
-        return currentErrorFormatter;
-      },
-      defaultFormatter,
-    );
-
-    const transformer = routerList.reduce((prev, current) => {
-      if (current.transformer && current.transformer !== defaultTransformer) {
-        if (prev !== defaultTransformer && prev !== current.transformer) {
-          throw new Error('You seem to have several transformers');
-        }
-        return current.transformer;
-      }
-      return prev;
-    }, defaultTransformer as CombinedDataTransformer);
-
-    const router = createRouterFactory<TSettings>({
-      errorFormatter,
-      transformer,
-    })({
-      queries,
-      mutations,
-      subscriptions,
-    });
-
-    return router as any as CreateNewRouter<TMain, TChildren>;
-  };
-}

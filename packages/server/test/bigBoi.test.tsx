@@ -31,7 +31,10 @@ test('vanilla', async () => {
     const result = await client.queries.r0q0({
       who: 'KATT',
     });
+
     expect(result).toBe('hello KATT');
+    expectTypeOf(result).not.toBeAny();
+    expectTypeOf(result).toMatchTypeOf<string>();
   }
   {
     const result = await client.queries.r1q2({
