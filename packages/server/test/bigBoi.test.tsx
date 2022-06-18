@@ -43,12 +43,18 @@ test('vanilla', async () => {
     });
     expect(result).toBe('hello KATT');
   }
+  {
+    const result = await client.queries.r19q9({
+      who: 'KATT',
+    });
+    expect(result).toBe('hello KATT');
+  }
 });
 
 test('useQuery()', async () => {
   const { react, client } = ctx;
   function MyComponent() {
-    const query1 = react.useQuery(['r17q5', { who: 'katt' }]);
+    const query1 = react.useQuery(['r17q5', { who: 'KATT' }]);
     if (!query1.data) {
       return <>...</>;
     }
