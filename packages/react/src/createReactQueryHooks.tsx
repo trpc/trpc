@@ -7,7 +7,6 @@ import {
 } from '@trpc/client';
 import type {
   AnyRouter,
-  DataTransformer,
   Procedure,
   inferHandlerInput,
   inferProcedureInput,
@@ -98,13 +97,6 @@ type inferProcedures<TObj extends ProcedureRecord> = {
   };
 };
 
-export interface CreateReactQueryHooksOptions {
-  /**
-   * Data transformer used for hydration and dehydration.
-   */
-  transformer?: DataTransformer;
-}
-
 function createHookProxy(callback: (...args: [string, ...unknown[]]) => any) {
   return new Proxy({} as any, {
     get(_, path: string) {
@@ -120,11 +112,7 @@ function createHookProxy(callback: (...args: [string, ...unknown[]]) => any) {
 export function createReactQueryHooks<
   TRouter extends AnyRouter,
   TSSRContext = unknown,
->(opts?: CreateReactQueryHooksOptions) {
-  const transfomer: DataTransformer = opts?.transformer ?? {
-    serialize: (v) => v,
-    deserialize: (v) => v,
-  };
+>() {
   type TQueries = TRouter['queries'];
   type TSubscriptions = TRouter['subscriptions'];
   type TError = TRPCClientErrorLike<TRouter>;
@@ -431,14 +419,17 @@ export function createReactQueryHooks<
       actualOpts,
     );
   }
-  function useDehydratedState(trpcState: DehydratedState | undefined) {
+  function useDehydratedState(
+    client: TRPCClient<TRouter>,
+    trpcState: DehydratedState | undefined,
+  ) {
     const transformed: DehydratedState | undefined = useMemo(() => {
       if (!trpcState) {
         return trpcState;
       }
 
-      return transfomer.deserialize(trpcState);
-    }, [trpcState]);
+      return client.runtime.transformer.deserialize(trpcState);
+    }, [trpcState, client]);
     return transformed;
   }
 
