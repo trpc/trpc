@@ -43,7 +43,7 @@
 - **More ergonomic API for creating procedures** and building out your backend
 - **CMD+Click** from a your frontend and jump straight into the backend procedure. This will work with `react-query` as well!
 - **Enabling having a file**-based structure - as you see, that `createRouter()` could easily be automatically generated from a file/folder structure.
-- **Better scaling** than current structure - the TypeScript server starts choking a bit when you get close to 100 procedures in your backend. The current version has been tested with 2,000 procedures still acts alright (Note: with very basic procedures, for large projects you still have to use [Project References](https://www.typescriptlang.org/docs/handbook/project-references.html#:~:text=Project%20references%20are%20a%20new,in%20new%20and%20better%20ways.))
+- **Better scaling** than current structure! The new version has been tested with 2,000 procedures still acts alright, where the current V9.x version starts slowing doing noticeably at ~100 procedures. *(Note: this testing with very basic procedures, for large projects you still have to use [Project References](https://github.com/microsoft/TypeScript/wiki/Performance#using-project-references))*
 - ~**Infer expected errors** as well as data - unsure if this is useful yet or if it'll make it, but pretty sure it'll be nice to have.~ Skipped this because of it's complexity - it can still be added later.
 
 ## New router API! 
