@@ -6,6 +6,8 @@ dist
 node_modules
 package-lock.json
 
+.next
+
 .yalc
 yalc.lock
 
