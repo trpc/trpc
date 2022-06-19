@@ -46,7 +46,7 @@ async function main() {
 
   const createPostRes = await client.mutation('createPost', {
     title: 'hello world',
-    text: 'check out tRPC.io',
+    text: 'check out https://tRPC.io',
   });
   console.log('createPostResponse', createPostRes);
 
