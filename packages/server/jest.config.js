@@ -3,7 +3,11 @@ module.exports = {
   testEnvironment: 'jest-environment-jsdom',
   rootDir: '../',
   moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json'],
-  collectCoverageFrom: ['./*/src/**/*.{ts,tsx,js,jsx}'],
+  collectCoverageFrom: [
+    './*/src/**/*.{ts,tsx,js,jsx}',
+    // Ignore deprecated from codecov
+    '!**/deprecated/**',
+  ],
   setupFilesAfterEnv: [
     './server/jest.setup.js',
     '@testing-library/jest-dom/extend-expect',
