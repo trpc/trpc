@@ -26,6 +26,7 @@ jobs:
             .interop/standalone-server,
             .interop/fastify-server,
             .interop/cloudflare-workers,
+            next-prisma-starter,
           ]
         node-start: ['16.x']
         os: [ubuntu-latest]
