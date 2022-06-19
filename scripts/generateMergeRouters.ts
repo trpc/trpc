@@ -15,9 +15,6 @@ import { mergeRouters } from '../mergeRouters';
 const TEMPLATE = `
 
 
-/**
- * @deprecated Only keeping this for future reference if our testing was a false-positive
- */
 export function mergeRoutersGeneric<
   __GENERICS__
 >(
