@@ -7,6 +7,7 @@ How the the future [tRPC](https://trpc.io)-version will look like.
   - [Play with it!](#play-with-it)
   - [Goals & features](#goals--features)
   - [New router API!](#new-router-api)
+    - [⚠️ Known drawbacks ⚠️](#️-known-drawbacks-️)
     - [§1 Basics](#1-basics)
       - [§1.0 Setting up tRPC](#10-setting-up-trpc)
       - [§1.1 Creating a router](#11-creating-a-router)
@@ -31,7 +32,7 @@ How the the future [tRPC](https://trpc.io)-version will look like.
 **Playground link:** https://stackblitz.com/github/trpc/trpc/tree/next/examples/standalone-server
 
 
-1. Go to `src/server.ts` in CodeSandbox
+1. Go to `src/server.ts` in sandbox
 2. Try adding/removing/changing queries and mutations.
 3. Go to `src/client.ts` and play around
 
@@ -39,11 +40,17 @@ How the the future [tRPC](https://trpc.io)-version will look like.
 
 - **More ergonomic API for creating procedures** and building out your backend
 - **CMD+Click** from a your frontend and jump straight into the backend procedure. This will work with `react-query` as well!
-- **Enabling having a watchers**-based structure - as you see, that `createRouter()` could easily be automatically generated from a file/folder structure.
-- **Better scaling** than current structure - the TypeScript server starts choking a bit when you get close to 100 procedures in your backend
+- **Enabling having a file**-based structure - as you see, that `createRouter()` could easily be automatically generated from a file/folder structure.
+- **Better scaling** than current structure - the TypeScript server starts choking a bit when you get close to 100 procedures in your backend. The current version has been tested with 2,000 procedures still acts alright (Note: with very basic procedures, for large projects you still have to use [Project References](https://www.typescriptlang.org/docs/handbook/project-references.html#:~:text=Project%20references%20are%20a%20new,in%20new%20and%20better%20ways.))
 - ~**Infer expected errors** as well as data - unsure if this is useful yet or if it'll make it, but pretty sure it'll be nice to have.~ Skipped this because of it's complexity - it can still be added later.
 
 ## New router API! 
+
+### ⚠️ Known drawbacks ⚠️
+
+Router merging with a prefix in the new API will **not** be supported. All queries a mutations will lie flat on one big object.
+
+We might revisit this decision in the future, the reason here is that it **breaks jump-to-definition** (CMD+Clicking from client to server).
 
 ### §1 Basics
 
