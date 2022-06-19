@@ -59,7 +59,8 @@ export interface ProcedureBuilder<TParams extends ProcedureParams> {
     fn: MiddlewareFunction<TParams, $TParams>,
   ): CreateProcedureReturnInput<TParams, $TParams>;
   /**
-   * Extend the procedure with another procedure
+   * Extend the procedure with another procedure.
+   * @warning The TypeScript inference fails when chaining concatenated procedures.
    */
   unstable_concat<$ProcedureReturnInput extends ProcedureBuilder<any>>(
     proc: $ProcedureReturnInput,
