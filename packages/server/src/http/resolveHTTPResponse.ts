@@ -6,7 +6,7 @@ import {
   inferRouterError,
 } from '../core';
 import { TRPCError } from '../error/TRPCError';
-import { getCauseFromUnknown, getErrorFromUnknown } from '../internals/errors';
+import { getCauseFromUnknown, getErrorFromUnknown } from '../error/utils';
 import { transformTRPCResponse } from '../internals/transformTRPCResponse';
 import { TRPCResponse } from '../rpc';
 import { Maybe } from '../types';

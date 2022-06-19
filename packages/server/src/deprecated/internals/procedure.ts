@@ -1,10 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { assertNotBrowser } from '../../assertNotBrowser';
 import { TRPCError } from '../../error/TRPCError';
-import {
-  getCauseFromUnknown,
-  getErrorFromUnknown,
-} from '../../internals/errors';
+import { getCauseFromUnknown, getErrorFromUnknown } from '../../error/utils';
 import { InferLast } from '../../types';
 import { ProcedureType } from '../router';
 import {

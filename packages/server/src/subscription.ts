@@ -1,4 +1,4 @@
-import { getErrorFromUnknown } from './internals/errors';
+import { getErrorFromUnknown } from './error/utils';
 import { Observable, Observer, observable } from './observable';
 
 export function subscriptionPullFactory<TOutput>(opts: {

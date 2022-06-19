@@ -2,7 +2,7 @@ import { IncomingMessage } from 'http';
 import ws from 'ws';
 import { AnyRouter, ProcedureType, inferRouterContext } from '../core';
 import { TRPCError } from '../error/TRPCError';
-import { getCauseFromUnknown, getErrorFromUnknown } from '../internals/errors';
+import { getCauseFromUnknown, getErrorFromUnknown } from '../error/utils';
 import { transformTRPCResponse } from '../internals/transformTRPCResponse';
 import { BaseHandlerOptions } from '../internals/types';
 import { Unsubscribable, isObservable } from '../observable';

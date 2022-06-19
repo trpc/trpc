@@ -11,7 +11,7 @@ import { TRPCClientError } from '../../../client/src';
 import * as trpc from '../../src';
 import { CreateHTTPContextOptions } from '../../src/adapters/standalone';
 import { TRPCError } from '../../src/error/TRPCError';
-import { getMessageFromUnkownError } from '../../src/internals/errors';
+import { getMessageFromUnkownError } from '../../src/error/utils';
 import { OnErrorFunction } from '../../src/internals/types';
 
 test('basic', async () => {

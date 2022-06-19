@@ -4,7 +4,7 @@
  */
 import { TRPCError } from '../../error/TRPCError';
 import { getCauseFromUnknown } from '../../error/utils';
-import { getErrorFromUnknown } from '../../internals/errors';
+import { getErrorFromUnknown } from '../../error/utils';
 import { MaybePromise } from '../../types';
 import { MiddlewareFunction, MiddlewareResult } from '../middleware';
 import { Parser } from '../parser';
