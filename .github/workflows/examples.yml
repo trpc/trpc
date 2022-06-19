@@ -27,7 +27,7 @@ jobs:
             .interop/fastify-server,
             .interop/cloudflare-workers,
             next-prisma-starter,
-            next-prisma-websockets,
+            next-prisma-starter-websockets,
             next-prisma-todomvc,
           ]
         node-start: ['16.x']
