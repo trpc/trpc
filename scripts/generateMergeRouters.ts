@@ -1,8 +1,6 @@
 /**
+ * @deprecated Only keeping this for future reference if our testing was a false-positive
  * Generates a big `mergeRouters`-file that can take a bunch of different number of generics.
- *
- * Ideally, this would be using tail recursion, but it doesn't seem to scale very well.
- * See this thread for more info: https://twitter.com/phry/status/1538516854058242048
  */
 import fs from 'fs';
 
@@ -16,6 +14,10 @@ import { mergeRouters } from '../mergeRouters';
 
 const TEMPLATE = `
 
+
+/**
+ * @deprecated Only keeping this for future reference if our testing was a false-positive
+ */
 export function mergeRoutersGeneric<
   __GENERICS__
 >(

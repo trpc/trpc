@@ -1,3 +1,9 @@
+/**
+ * Thanks to @phryneas!
+ * 
+ * @link https://twitter.com/phry/status/1538516854058242048
+ */
+
 /* eslint-disable prettier/prettier */
 import { AnyRouterParams, AnyRouter, Router } from "../router";
 import { mergeRouters } from "./mergeRouters";
