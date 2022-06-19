@@ -1,6 +1,6 @@
 # [tRPC](https://trpc.io) V10
 
-How the the future [tRPC](https://trpc.io)-version will look like.
+> How the the future [tRPC V10](https://trpc.io) will look like.
 
 
 - [tRPC V10](#trpc-v10)
@@ -456,4 +456,39 @@ async function main() {
 ## New React-API *(🚧 coming soon)*
 
 
+
 🚧🚧
+
+
+The running idea is to be able to do something similar to this:
+
+```ts
+import { trpc } from '~/utils/trpc';
+
+function MyComponent() {
+  // You'll be able to CMD+Click `postById` below
+  const query = trpc.queries.postById.use(
+    { id: 1 },
+    {
+      trpc: {
+        /* [...] trpc specific options */
+        context: {
+          batching: false,
+        },
+        ssr: true,
+      },
+      enabled: true,
+      /* [...] react-query specific options */
+    }
+  )
+
+}
+
+```
+
+**Outstanding questions:**
+
+- Still some unclarity about React 18 
+- Should this be renamed to `@trpc/react-query`? With React 18 & RSC, `react-query` might become less of the norm.
+- Is the above API good? Unfortunately, it won't work to CMD+Click without something like that because of this missing feature in TypeScript: https://github.com/microsoft/TypeScript/issues/49033
+- [...]
