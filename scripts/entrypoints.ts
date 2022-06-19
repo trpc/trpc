@@ -31,7 +31,7 @@ for (const pkg of packages) {
   for (const key of keys) {
     // const file = `${packagesDir}/${pkg}/src/${name}.ts`;
     const entrypoint = getEntrypoint(key);
-    console.log({ name: key, entrypoint });
+    // console.log({ name: key, entrypoint });
 
     fs.mkdirSync(`${pkgDir}/${entrypoint.dir}/${entrypoint.name}`, {
       recursive: true,
