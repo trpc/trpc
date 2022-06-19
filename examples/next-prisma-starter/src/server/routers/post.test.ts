@@ -13,8 +13,9 @@ test('add and get post', async () => {
     text: 'hello test',
     title: 'hello test',
   };
-  const post = await caller.mutation('postAdd', input);
-  const byId = await caller.query('postById', {
+
+  const post = await caller.mutations.postAdd(input);
+  const byId = await caller.queries.postById({
     id: post.id,
   });
 

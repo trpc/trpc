@@ -94,9 +94,22 @@ type inferHandlerFn<TProcedures extends ProcedureRecord<any>> = <
  */
 
 type RouterCaller<TParams extends AnyRouterParams> = (ctx: TParams['_ctx']) => {
+  /**
+   * @deprecated
+   */
   query: inferHandlerFn<TParams['queries']>;
+  /**
+   * @deprecated
+   */
   mutation: inferHandlerFn<TParams['mutations']>;
+  /**
+   * @deprecated
+   */
   subscription: inferHandlerFn<TParams['subscriptions']>;
+
+  queries: TParams['queries'];
+  mutations: TParams['mutations'];
+  subscriptions: TParams['subscriptions'];
 };
 
 export interface Router<TParams extends AnyRouterParams>
@@ -148,6 +161,13 @@ type RouterBuildOptions<TContext> = Pick<
 
 export type AnyRouter = Router<any>;
 
+function createRouterProxy(callback: (...args: [string, ...unknown[]]) => any) {
+  return new Proxy({} as any, {
+    get(_, path: string) {
+      return (...args: unknown[]) => callback(path, ...args);
+    },
+  });
+}
 const emptyRouter = {
   _ctx: null as any,
   _errorShape: null as any,
@@ -256,6 +276,31 @@ export function createRouterFactory<TSettings extends RootConfig>(
               ctx,
               type: 'subscription',
             }) as any,
+
+          queries: createRouterProxy((path, rawInput) =>
+            callProcedure({
+              path,
+              rawInput,
+              ctx,
+              type: 'query',
+            }),
+          ),
+          mutations: createRouterProxy((path, rawInput) =>
+            callProcedure({
+              path,
+              rawInput,
+              ctx,
+              type: 'mutation',
+            }),
+          ),
+          subscriptions: createRouterProxy((path, rawInput) =>
+            callProcedure({
+              path,
+              rawInput,
+              ctx,
+              type: 'subscription',
+            }),
+          ),
         };
       },
       getErrorShape(opts) {
