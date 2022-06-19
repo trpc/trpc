@@ -48,8 +48,20 @@ export type ThenArg<T> = T extends PromiseLike<infer U> ? ThenArg<U> : T;
 export type Dict<T> = Record<string, T | undefined>;
 
 /**
+ * @public
+ */
+export type MaybePromise<T> = T | Promise<T>;
+
+/**
  * @internal
+ *
  * Creates a "lower-priority" type inference.
  * https://github.com/microsoft/TypeScript/issues/14829#issuecomment-322267089
  */
 export type InferLast<T> = T & { [K in keyof T]: T[K] };
+
+/**
+ * @public
+ */
+export type inferAsyncReturnType<TFunction extends (...args: any) => any> =
+  ThenArg<ReturnType<TFunction>>;

@@ -45,11 +45,6 @@ export interface SSRContext extends NextPageContext {
  * @link https://trpc.io/docs/react#3-create-trpc-hooks
  */
 export const trpc = setupTRPC<AppRouter, SSRContext>({
-  /**
-   * Data transformer used for hydration and dehydration.
-   */
-  transformer: superjson,
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   config() {
     /**
      * If you want to use SSR, you need to use the server's full URL
@@ -116,18 +111,15 @@ export const trpc = setupTRPC<AppRouter, SSRContext>({
  * This is a helper method to infer the output of a query resolver
  * @example type HelloOutput = inferQueryOutput<'hello'>
  */
-export type inferQueryOutput<
-  TRouteKey extends keyof AppRouter['_def']['queries'],
-> = inferProcedureOutput<AppRouter['_def']['queries'][TRouteKey]>;
+export type inferQueryOutput<TRouteKey extends keyof AppRouter['queries']> =
+  inferProcedureOutput<AppRouter['queries'][TRouteKey]>;
 
-export type inferQueryInput<
-  TRouteKey extends keyof AppRouter['_def']['queries'],
-> = inferProcedureInput<AppRouter['_def']['queries'][TRouteKey]>;
+export type inferQueryInput<TRouteKey extends keyof AppRouter['queries']> =
+  inferProcedureInput<AppRouter['queries'][TRouteKey]>;
 
 export type inferMutationOutput<
-  TRouteKey extends keyof AppRouter['_def']['mutations'],
-> = inferProcedureOutput<AppRouter['_def']['mutations'][TRouteKey]>;
+  TRouteKey extends keyof AppRouter['mutations'],
+> = inferProcedureOutput<AppRouter['mutations'][TRouteKey]>;
 
-export type inferMutationInput<
-  TRouteKey extends keyof AppRouter['_def']['mutations'],
-> = inferProcedureInput<AppRouter['_def']['mutations'][TRouteKey]>;
+export type inferMutationInput<TRouteKey extends keyof AppRouter['mutations']> =
+  inferProcedureInput<AppRouter['mutations'][TRouteKey]>;

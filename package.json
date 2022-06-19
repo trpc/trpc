@@ -5,7 +5,8 @@
     "packages": [
       "packages/*",
       "examples/*",
-      "examples/.wip/*"
+      "examples/.wip/*",
+      "examples/.interop/*"
     ],
     "nohoist": [
       "**/@prisma",
@@ -18,6 +19,7 @@
     "endOfLine": "auto",
     "singleQuote": true,
     "importOrder": [
+      "___",
       "__",
       "<THIRD_PARTY_MODULES>",
       "^[./]"
@@ -38,7 +40,10 @@
     "test": "cd packages/server && yarn jest",
     "lint": "eslint --ext \".js,.ts,.tsx\" --ignore-path .gitignore .",
     "lint-fix": "yarn lint --fix && manypkg fix",
-    "codegen": "yarn ts-node scripts/generateBigFRouter.ts",
+    "codegen:generateMergeRouters": "yarn ts-node scripts/generateMergeRouters.ts",
+    "codegen:generateBigFRouter": "yarn ts-node scripts/generateBigFRouter.ts",
+    "codegen:entrypoints": "yarn ts-node scripts/entrypoints.ts",
+    "codegen": "run-p codegen:*",
     "ts-node": "ts-node --compiler-options '{\"module\":\"commonjs\"}'",
     "postinstall": "yarn codegen",
     "build": "lerna run build --scope=\"@trpc/*\" --stream",
@@ -108,6 +113,6 @@
     "rollup-plugin-terser": "^7.0.2",
     "rollup-plugin-typescript2": "^0.31.1",
     "ts-jest": "^27.0.5",
-    "typescript": "4.4.4"
+    "typescript": "4.7.4"
   }
 }

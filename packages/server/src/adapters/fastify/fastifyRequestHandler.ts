@@ -1,11 +1,11 @@
 import { FastifyReply, FastifyRequest } from 'fastify';
 import { assertNotBrowser } from '../../assertNotBrowser';
+import { AnyRouter, inferRouterContext } from '../../core';
 import {
   HTTPBaseHandlerOptions,
   HTTPRequest,
 } from '../../http/internals/types';
 import { resolveHTTPResponse } from '../../http/resolveHTTPResponse';
-import { AnyRouter, inferRouterContext } from '../../router';
 import { NodeHTTPCreateContextOption } from '../node-http';
 
 assertNotBrowser();

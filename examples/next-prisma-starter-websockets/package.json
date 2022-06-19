@@ -1,23 +1,21 @@
 {
   "name": "@examples/next-starter-websockets",
-  "version": "10.0.0-alpha.25",
+  "version": "10.0.0-alpha.27",
   "private": true,
   "scripts": {
-    "build:1-generate": "prisma generate",
-    "build:2-migrate": "prisma migrate deploy",
-    "build:3-next": "cross-env NODE_ENV=production next build",
-    "build:4-server": "tsc --project tsconfig.server.json",
+    "build:1-migrate": "prisma migrate deploy",
+    "build:2-next": "cross-env NODE_ENV=production next build",
+    "build:3-server": "tsc --project tsconfig.server.json",
     "build": "run-s build:*",
     "dev:wss": "cross-env PORT=3001 nodemon --watch src --ext .ts,.tsx,js,jsx --signal SIGTERM --exec \"ts-node --project tsconfig.server.json src/server/wssDevServer.ts\"",
     "dev:next": "next dev",
-    "dev": "run-p dev:*",
+    "dev:db": "yarn migrate-dev",
+    "dev:generate": "prisma generate",
+    "dev": "run-p dev:* --print-label",
     "db-up": "docker-compose up -d",
     "db-seed": "prisma db seed",
     "db-migrate-dev": "yarn prisma migrate dev",
-    "db-nuke": "docker-compose down --volumes --remove-orphans",
-    "dx": "run-s db-up db-migrate-dev db-seed dev",
-    "dev-nuke": "rm -rf prisma/*.db**",
-    "generate": "prisma generate",
+    "db-reset": "prisma migrate reset",
     "migrate-dev": "prisma migrate dev",
     "migrate": "prisma migrate deploy",
     "start": "cross-env NODE_ENV=production node dist/server/prodServer.js",
@@ -27,7 +25,8 @@
     "test-dev": "cross-env APP_ENV=test start-server-and-test dev 3000 test",
     "test-start": "cross-env APP_ENV=test WS_URL=ws://localhost:3000 start-server-and-test start 3000 test",
     "ts-node": "ts-node --compiler-options \"{\\\"module\\\":\\\"commonjs\\\"}\"",
-    "test": "jest"
+    "test": "jest",
+    "postinstall": "prisma generate"
   },
   "prisma": {
     "seed": "yarn ts-node prisma/seed.ts"
@@ -39,10 +38,10 @@
   },
   "dependencies": {
     "@prisma/client": "^3.0.1",
-    "@trpc/client": "^10.0.0-alpha.25",
-    "@trpc/next": "^10.0.0-alpha.25",
-    "@trpc/react": "^10.0.0-alpha.25",
-    "@trpc/server": "^10.0.0-alpha.25",
+    "@trpc/client": "^10.0.0-alpha.27",
+    "@trpc/next": "^10.0.0-alpha.27",
+    "@trpc/react": "^10.0.0-alpha.27",
+    "@trpc/server": "^10.0.0-alpha.27",
     "clsx": "^1.1.1",
     "next": "^12.1.6",
     "next-auth": "^4.2.0",
@@ -83,7 +82,7 @@
     "prisma": "^3.7.0",
     "tailwindcss": "^3.0.23",
     "ts-jest": "^27.0.5",
-    "typescript": "4.4.4"
+    "typescript": "4.7.4"
   },
   "publishConfig": {
     "access": "restricted"

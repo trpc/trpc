@@ -1,6 +1,6 @@
 {
   "name": "@trpc/client",
-  "version": "10.0.0-alpha.25",
+  "version": "10.0.0-alpha.27",
   "description": "tRPC Client lib",
   "author": "KATT",
   "license": "MIT",
@@ -26,6 +26,31 @@
       "import": "./dist/index.mjs",
       "require": "./dist/index.js",
       "default": "./dist/index.js"
+    },
+    "./links/httpLink": {
+      "import": "./dist/links/httpLink.mjs",
+      "require": "./dist/links/httpLink.js",
+      "default": "./dist/links/httpLink.js"
+    },
+    "./links/httpBatchLink": {
+      "import": "./dist/links/httpBatchLink.mjs",
+      "require": "./dist/links/httpBatchLink.js",
+      "default": "./dist/links/httpBatchLink.js"
+    },
+    "./links/splitLink": {
+      "import": "./dist/links/splitLink.mjs",
+      "require": "./dist/links/splitLink.js",
+      "default": "./dist/links/splitLink.js"
+    },
+    "./links/loggerLink": {
+      "import": "./dist/links/loggerLink.mjs",
+      "require": "./dist/links/loggerLink.js",
+      "default": "./dist/links/loggerLink.js"
+    },
+    "./links/wsLink": {
+      "import": "./dist/links/wsLink.mjs",
+      "require": "./dist/links/wsLink.js",
+      "default": "./dist/links/wsLink.js"
     }
   },
   "files": [
@@ -35,7 +60,8 @@
     "src"
   ],
   "scripts": {
-    "build": "rollup -c"
+    "build": "rollup -c",
+    "ts-watch": "tsc --project tsconfig.watch.json"
   },
   "dependencies": {
     "@babel/runtime": "^7.9.0"
@@ -44,7 +70,7 @@
     "@trpc/server": "^9.12.0"
   },
   "devDependencies": {
-    "@trpc/server": "^10.0.0-alpha.25"
+    "@trpc/server": "^10.0.0-alpha.27"
   },
   "publishConfig": {
     "access": "public"

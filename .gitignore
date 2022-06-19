@@ -11,3 +11,5 @@ yalc.lock
 
 coverage/
 __generated__
+
+*.tsbuildinfo

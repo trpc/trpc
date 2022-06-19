@@ -1,6 +1,6 @@
 {
   "name": "@trpc/server",
-  "version": "10.0.0-alpha.25",
+  "version": "10.0.0-alpha.27",
   "description": "tRPC Server",
   "author": "KATT",
   "license": "MIT",
@@ -21,7 +21,9 @@
   },
   "scripts": {
     "test": "jest",
-    "build": "rollup -c"
+    "build": "rollup -c",
+    "benchmark": "yarn tsc --project tsconfig.benchmark.json",
+    "ts-watch": "tsc --project tsconfig.watch.json"
   },
   "main": "dist/index.js",
   "module": "dist/index.mjs",
@@ -123,7 +125,7 @@
     "next": "^12.1.6",
     "node-fetch": "^2.6.1",
     "superstruct": "^0.15.2",
-    "typescript": "4.4.4",
+    "typescript": "4.7.4",
     "ws": "^8.0.0",
     "yup": "^0.32.8",
     "zod": "^3.0.0"
