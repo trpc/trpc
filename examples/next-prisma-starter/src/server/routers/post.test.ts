@@ -9,12 +9,12 @@ test('add and get post', async () => {
   const ctx = await createContextInner({});
   const caller = appRouter.createCaller(ctx);
 
-  const input: inferMutationInput<'post.add'> = {
+  const input: inferMutationInput<'postAdd'> = {
     text: 'hello test',
     title: 'hello test',
   };
-  const post = await caller.mutation('post.add', input);
-  const byId = await caller.query('post.byId', {
+  const post = await caller.mutation('postAdd', input);
+  const byId = await caller.query('postById', {
     id: post.id,
   });
 
