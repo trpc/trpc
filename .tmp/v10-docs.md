@@ -60,6 +60,7 @@ We might revisit this decision in the future, the reason here is that it **break
 #### §1.0 Setting up tRPC
 
 ```tsx
+// server/trpc.ts
 type Context = {
   user?: {
     id: string;
@@ -69,7 +70,13 @@ type Context = {
   };
 };
 
-const trpc = initTRPC<Context>();
+export const t = initTRPC<{
+  ctx: Context;
+}>()({
+  /* optional */
+  transformer: superjson,
+  // errorFormatter: [...]
+});
 
 const {
   /**
@@ -94,7 +101,7 @@ const {
 #### §1.1 Creating a router
 
 ```tsx
-export const appRouter = trpc.router({
+export const appRouter = t.router({
   queries: {
     // [...]
   },
@@ -107,7 +114,7 @@ export const appRouter = trpc.router({
 #### §1.2 Defining a procedure
 
 ```tsx
-export const appRouter = trpc.router({
+export const appRouter = t.router({
   queries: {
     // simple procedure without args avialable at postAll`
     postList: procedure.resolve(() => postsDb),
@@ -156,7 +163,7 @@ interface ProcedureBuilder {
 
 #### §1.3 Adding input parser
 
-> Note that I'll skip the `trpc.router({ queries: /*...*/})` below here
+> Note that I'll skip the `t.router({ queries: /*...*/})` below here
 
 ```tsx
 
@@ -207,7 +214,7 @@ const whoami = procedure
 
 ```tsx
 
-const isAuthed = trpc.middleware((params) => {
+const isAuthed = t.middleware((params) => {
   if (!params.ctx.user) {
     throw new Error('zup');
   }
@@ -234,7 +241,7 @@ const whoami = procedure
 ```tsx
 const protectedProcedure = procedure.use(isAuthed);
 
-export const appRouter = trpc.router({
+export const appRouter = t.router({
   queries: {
     postList: protectedProcedure.resolve(() => postsDb),
     postById: protectedProcedure
@@ -272,7 +279,7 @@ procedure
 #### §2.4 Merging routers
 
 ```ts
-const postRouter = trpc.router({
+const postRouter = t.router({
   queries: {
     postList: protectedProcedure.resolve(() => postsDb),
     postById: protectedProcedure
@@ -293,13 +300,13 @@ const postRouter = trpc.router({
   }
 })
 
-const health = trpc.router({
+const health = t.router({
   query: {
-    healthz: trpc.resolve(() => 'I am alive')
+    healthz: t.resolve(() => 'I am alive')
   }
 })
 
-export const appRouter = trpc.mergeRouters(
+export const appRouter = t.mergeRouters(
   postRouter,
   health
 );
