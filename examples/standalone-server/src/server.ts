@@ -1,0 +1,93 @@
+/* eslint-disable @typescript-eslint/ban-types */
+import { inferAsyncReturnType, initTRPC } from '@trpc/server';
+import {
+  CreateHTTPContextOptions,
+  createHTTPServer,
+} from '@trpc/server/adapters/standalone';
+import {
+  CreateWSSContextFnOptions,
+  applyWSSHandler,
+} from '@trpc/server/adapters/ws';
+import { observable } from '@trpc/server/observable';
+import ws from 'ws';
+import { z } from 'zod';
+
+// This is how you initialize a context for the server
+function createContext(
+  opts: CreateHTTPContextOptions | CreateWSSContextFnOptions,
+) {
+  return {};
+}
+type Context = inferAsyncReturnType<typeof createContext>;
+
+const t = initTRPC<{ ctx: Context }>()();
+
+const greetingRouter = t.router({
+  queries: {
+    greeting: t.procedure
+      .input(
+        z.object({
+          name: z.string(),
+        }),
+      )
+      .resolve(({ input }) => `Hello, ${input.name}!`),
+  },
+});
+
+const postRouter = t.router({
+  queries: {},
+  mutations: {
+    createPost: t.procedure
+      .input(
+        z.object({
+          title: z.string(),
+          text: z.string(),
+        }),
+      )
+      .resolve(({ input }) => {
+        // imagine db call here
+        return {
+          id: `${Math.random()}`,
+          ...input,
+        };
+      }),
+  },
+  subscriptions: {
+    randomNumber: t.procedure.resolve(() => {
+      return observable<{ randomNumber: number }>((emit) => {
+        const timer = setInterval(() => {
+          // emits a number every second
+          emit.next({ randomNumber: Math.random() });
+        }, 200);
+
+        return () => {
+          clearInterval(timer);
+        };
+      });
+    }),
+  },
+});
+
+// Merge routers together
+const appRouter = t.mergeRouters(greetingRouter, postRouter);
+
+export type AppRouter = typeof appRouter;
+
+// http server
+const { server, listen } = createHTTPServer({
+  router: appRouter,
+  createContext,
+});
+
+// ws server
+const wss = new ws.Server({ server });
+applyWSSHandler<AppRouter>({
+  wss,
+  router: appRouter,
+  createContext,
+});
+
+// setInterval(() => {
+//   console.log('Connected clients', wss.clients.size);
+// }, 1000);
+listen(2022);
