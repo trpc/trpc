@@ -37,7 +37,7 @@ for (const pkg of packages) {
       recursive: true,
     });
     const dotdot = new Array(entrypoint.depth).fill('../').join('');
-    const distTarget = `${dotdot}dist/${entrypoint.dir}${entrypoint.name}`;
+    const distTarget = `${dotdot}dist/${entrypoint.dir}/${entrypoint.name}`;
     fs.writeFileSync(
       `${pkgDir}/${entrypoint.dir}/${entrypoint.name}/index.js`,
       `module.exports = require('${new Array(entrypoint.depth).fill(

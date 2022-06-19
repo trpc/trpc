@@ -1,1 +1,1 @@
-module.exports = require('../../dist/./linksloggerLink');
+module.exports = require('../../dist/./links/loggerLink');

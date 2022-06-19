@@ -1,1 +1,1 @@
-module.exports = require('../../dist/./linkshttpLink');
+module.exports = require('../../dist/./links/httpLink');

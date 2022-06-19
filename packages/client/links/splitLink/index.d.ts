@@ -1,1 +1,1 @@
-export * from '../../dist/./linkssplitLink';
+export * from '../../dist/./links/splitLink';

@@ -1,1 +1,1 @@
-export * from '../../dist/./linkshttpBatchLink';
+export * from '../../dist/./links/httpBatchLink';
