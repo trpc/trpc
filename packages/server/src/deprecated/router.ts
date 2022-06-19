@@ -3,6 +3,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { TRPCError } from '../TRPCError';
 import { assertNotBrowser } from '../assertNotBrowser';
+import { defaultFormatter } from '../error/formatter';
 import { getHTTPStatusCodeFromError } from '../http/internals/getHTTPStatusCode';
 import { Observable, inferObservableValue } from '../observable';
 import {
@@ -14,6 +15,7 @@ import {
 import {
   CombinedDataTransformer,
   DataTransformerOptions,
+  defaultTransformer,
 } from '../transformer';
 import { Prefixer, ThenArg, flatten } from '../types';
 import { MiddlewareFunction } from './internals/middlewares';
@@ -235,18 +237,6 @@ function safeObject<TObj1, TObj2>(obj1: TObj1, obj2: TObj2): TObj1 & TObj2;
 function safeObject(...args: unknown[]) {
   return Object.assign(Object.create(null), ...args);
 }
-const defaultFormatter: ErrorFormatter<any, any> = ({
-  shape,
-}: {
-  shape: DefaultErrorShape;
-}) => {
-  return shape;
-};
-const defaultTransformer: CombinedDataTransformer = {
-  input: { serialize: (obj) => obj, deserialize: (obj) => obj },
-  output: { serialize: (obj) => obj, deserialize: (obj) => obj },
-};
-
 type SwapProcedureContext<
   TProcedure extends Procedure<any, any, any, any, any, any, any>,
   TNewContext,

@@ -2,10 +2,11 @@
  * This file contains the root router of your tRPC-backend
  */
 import { createRouter } from '../createRouter';
+import { t } from '../trpc';
 import { postRouter } from './post';
 import { observable } from '@trpc/server/observable';
-import superjson from 'superjson';
-import { clearInterval } from 'timers';
+
+export const rootRouter = t.router({});
 
 /**
  * Create your application's root router
@@ -13,12 +14,7 @@ import { clearInterval } from 'timers';
  * @link https://trpc.io/docs/ssg
  * @link https://trpc.io/docs/router
  */
-export const appRouter = createRouter()
-  /**
-   * Add data transformers
-   * @link https://trpc.io/docs/data-transformers
-   */
-  .transformer(superjson)
+export const appRouterOld = createRouter()
   /**
    * Optionally do custom error (type safe!) formatting
    * @link https://trpc.io/docs/error-formatting
@@ -43,5 +39,7 @@ export const appRouter = createRouter()
     },
   })
   .interop();
+
+export const appRouter = t.mergeRouters(rootRouter, appRouterOld);
 
 export type AppRouter = typeof appRouter;
