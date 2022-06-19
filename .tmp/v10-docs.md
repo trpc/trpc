@@ -24,7 +24,9 @@
       - [Compose dynamic combos of middlewares/input parsers](#compose-dynamic-combos-of-middlewaresinput-parsers)
     - [Interopability mode for old routers](#interopability-mode-for-old-routers)
   - [New Raw client API!](#new-raw-client-api)
-  - [New React-API *(🚧 coming soon)*](#new-react-api--coming-soon)
+  - [New React-API (🚧🚧)](#new-react-api-)
+    - [Outstanding questions](#outstanding-questions)
+    - [New `@trpc/next`-API (🚧🚧)](#new-trpcnext-api-)
 
 ## Play with it!
 
@@ -453,7 +455,7 @@ async function main() {
 }
 ```
 
-## New React-API *(🚧 coming soon)*
+## New React-API (🚧🚧)
 
 
 
@@ -486,9 +488,15 @@ function MyComponent() {
 
 ```
 
-**Outstanding questions:**
+### Outstanding questions
 
-- Still some unclarity about React 18 
+- Still some unclarity about React 18, RSC, `Suspense` and stuff
 - Should this be renamed to `@trpc/react-query`? With React 18 & RSC, `react-query` might become less of the norm.
 - Is the above API good? Unfortunately, it won't work to CMD+Click without something like that because of this missing feature in TypeScript: https://github.com/microsoft/TypeScript/issues/49033
 - [...]
+
+
+### New `@trpc/next`-API (🚧🚧)
+
+
+🚧🚧
