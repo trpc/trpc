@@ -45,11 +45,6 @@ export interface SSRContext extends NextPageContext {
  * @link https://trpc.io/docs/react#3-create-trpc-hooks
  */
 export const trpc = setupTRPC<AppRouter, SSRContext>({
-  /**
-   * Data transformer used for hydration and dehydration.
-   */
-  transformer: superjson,
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   config() {
     /**
      * If you want to use SSR, you need to use the server's full URL
