@@ -25,13 +25,13 @@
     - [Interopability mode for old routers](#interopability-mode-for-old-routers)
   - [New Raw client API!](#new-raw-client-api)
   - [New React-API (🚧🚧)](#new-react-api-)
-    - [Outstanding questions](#outstanding-questions)
+    - [Open questions](#open-questions)
     - [New `@trpc/next`-API (🚧🚧)](#new-trpcnext-api-)
 
 ## Play with it!
 
 
-**Playground link:** https://stackblitz.com/github/trpc/trpc/tree/next/examples/standalone-server
+**Playground link:** https://codesandbox.io/s/github/trpc/trpc/tree/next/examples/standalone-server?file=/src/client.ts
 
 
 1. Go to `src/server.ts` in sandbox
@@ -488,9 +488,9 @@ function MyComponent() {
 
 ```
 
-### Outstanding questions
+### Open questions
 
-- Still some unclarity about React 18, RSC, `Suspense` and stuff
+- Still some unclarity about React 18, RSC, `Suspense` and stuff? Hard to predict the future.
 - Should this be renamed to `@trpc/react-query`? With React 18 & RSC, `react-query` might become less of the norm.
 - Is the above API good? Unfortunately, it won't work to CMD+Click without something like that because of this missing feature in TypeScript: https://github.com/microsoft/TypeScript/issues/49033
 - [...]
