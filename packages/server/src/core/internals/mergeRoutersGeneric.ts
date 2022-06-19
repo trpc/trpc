@@ -16,7 +16,7 @@ export function mergeRoutersGeneric<
 Routers extends [...AnyRouter[]],
 >(
     ...routers: Routers
-): {
+): Router<{
     _ctx: RouterToParam<Routers[0]>['_ctx'];
     _errorShape: RouterToParam<Routers[0]>['_errorShape'];
     _meta: RouterToParam<Routers[0]>['_meta'];
@@ -25,7 +25,6 @@ Routers extends [...AnyRouter[]],
     queries: TailIntersectProperty<RoutersToParams<Routers>, 'queries'>;
     mutations: TailIntersectProperty<RoutersToParams<Routers>, 'mutations'>;
     subscriptions: TailIntersectProperty<RoutersToParams<Routers>, 'subscriptions'>;
-} { 
-  
+}> {
   return mergeRouters(...routers) as any;
  }
