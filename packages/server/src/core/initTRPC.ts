@@ -1,5 +1,4 @@
 /* eslint-disable @typescript-eslint/ban-types */
-import { mergeRoutersGeneric } from './internals/__generated__/mergeRoutersGeneric';
 import {
   DefaultErrorShape,
   ErrorFormatter,
@@ -19,6 +18,7 @@ import {
   InitGenerics,
   InitOptions,
 } from './internals/config';
+import { mergeRoutersGeneric } from './internals/mergeRoutersGeneric';
 import { createBuilder } from './internals/procedureBuilder';
 import { PickFirstDefined, ValidateShape } from './internals/utils';
 import { createMiddlewareFactory } from './middleware';

@@ -29,6 +29,7 @@ jobs:
             next-prisma-starter,
             next-prisma-starter-websockets,
             next-prisma-todomvc,
+            standalone-server,
           ]
         node-start: ['16.x']
         os: [ubuntu-latest]
