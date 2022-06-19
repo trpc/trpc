@@ -1,12 +1,12 @@
 {
   "name": "@examples/interop-lambda-api-gateway",
   "private": true,
-  "version": "9.25.0",
+  "version": "10.0.0-alpha.26",
   "main": "index.js",
   "license": "MIT",
   "dependencies": {
-    "@trpc/client": "^10.0.0-alpha.25",
-    "@trpc/server": "^10.0.0-alpha.25",
+    "@trpc/client": "^10.0.0-alpha.26",
+    "@trpc/server": "^10.0.0-alpha.26",
     "node-fetch": "^2.6.1",
     "ts-node": "^10.3.0",
     "typescript": "4.7.4"
