@@ -12,6 +12,8 @@
     "test:ci": "jest --ci"
   },
   "dependencies": {
+    "@mdx-js/loader": "^2.1.2",
+    "@next/mdx": "^12.1.6",
     "next": "12.1.6",
     "react": "18.2.0",
     "react-dom": "18.2.0"
