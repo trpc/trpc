@@ -31,7 +31,7 @@
 ## Play with it!
 
 
-**Playground link:** https://stackblitz.com/github/trpc/trpc/tree/next/examples/standalone-server?file=src%2Fserver.ts,src%2Fclient.ts
+**Playground link:** https://stackblitz.com/github/trpc/trpc/tree/next/examples/standalone-server?file=src%2Fserver.ts,src%2Fclient.ts&view=editor
 
 
 1. Go to `src/server.ts` in sandbox
