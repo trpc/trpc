@@ -55,7 +55,7 @@ interface ProcedureBuilderInternal {
   /**
    * @internal
    */
-  concat: (proc: ProcedureBuilderInternal) => ProcedureBuilderInternal;
+  unstable_concat: (proc: ProcedureBuilderInternal) => ProcedureBuilderInternal;
   /**
    * @internal
    */
@@ -253,7 +253,7 @@ export function createInternalBuilder(
 
       return createProcedureCaller(finalBuilder._def);
     },
-    concat(builder) {
+    unstable_concat(builder) {
       return createNewInternalBuilder(_def, builder._def);
     },
     use(middleware) {

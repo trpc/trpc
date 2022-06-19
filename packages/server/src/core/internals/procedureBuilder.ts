@@ -61,7 +61,7 @@ export interface ProcedureBuilder<TParams extends ProcedureParams> {
   /**
    * Extend the procedure with another procedure
    */
-  concat<$ProcedureReturnInput extends ProcedureBuilder<any>>(
+  unstable_concat<$ProcedureReturnInput extends ProcedureBuilder<any>>(
     proc: $ProcedureReturnInput,
   ): $ProcedureReturnInput extends ProcedureBuilder<infer $TParams>
     ? CreateProcedureReturnInput<TParams, $TParams>
