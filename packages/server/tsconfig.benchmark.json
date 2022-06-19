@@ -3,7 +3,8 @@
   "compilerOptions": {
     "noEmit": true,
     "extendedDiagnostics": true,
-    "emitDeclarationOnly": true
+    "emitDeclarationOnly": false,
+    "incremental": true
   },
   "include": ["src"],
   "exclude": ["**/*.test.ts"]
