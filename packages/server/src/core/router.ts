@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/ban-types */
-import { TRPCError } from '../TRPCError';
+import { TRPCError } from '../error/TRPCError';
 import {
   DefaultErrorShape,
   ErrorFormatter,

@@ -1,5 +1,5 @@
-import { TRPCError } from '../../TRPCError';
 import { AnyRouter, ProcedureType, inferRouterParams } from '../../core';
+import { TRPCError } from '../../error/TRPCError';
 import { BaseHandlerOptions } from '../../internals/types';
 import { TRPCResponse } from '../../rpc';
 import { Dict } from '../../types';

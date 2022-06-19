@@ -5,8 +5,8 @@ import type {
   NextApiRequest,
   NextApiResponse,
 } from 'next/types';
-import { TRPCError } from '../TRPCError';
 import { AnyRouter } from '../core';
+import { TRPCError } from '../error/TRPCError';
 import { nodeHTTPRequestHandler } from './node-http';
 import {
   NodeHTTPCreateContextFnOptions,

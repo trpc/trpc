@@ -34,7 +34,7 @@ import {
 import { withTRPC } from '../../../next/src';
 import { OutputWithCursor, createReactQueryHooks } from '../../../react/src';
 import { createSSGHelpers } from '../../../react/src/ssg';
-import { TRPCError } from '../../src/TRPCError';
+import { TRPCError } from '../../src/error/TRPCError';
 import { DefaultErrorShape } from '../../src/error/formatter';
 import { observable } from '../../src/observable';
 import { subscriptionPullFactory } from '../../src/subscription';

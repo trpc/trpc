@@ -9,8 +9,8 @@ import fetch from 'node-fetch';
 import { ZodError, z } from 'zod';
 import { TRPCClientError } from '../../../client/src';
 import * as trpc from '../../src';
-import { TRPCError } from '../../src/TRPCError';
 import { CreateHTTPContextOptions } from '../../src/adapters/standalone';
+import { TRPCError } from '../../src/error/TRPCError';
 import { getMessageFromUnkownError } from '../../src/internals/errors';
 import { OnErrorFunction } from '../../src/internals/types';
 

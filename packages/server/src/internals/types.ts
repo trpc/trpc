@@ -1,7 +1,7 @@
-import { TRPCError } from '../TRPCError';
 import { inferRouterParams } from '../core';
 import { ProcedureType } from '../core';
 import { AnyRouter } from '../core/router';
+import { TRPCError } from '../error/TRPCError';
 
 /**
  * Base interface for any response handler

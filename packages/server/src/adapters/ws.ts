@@ -1,7 +1,7 @@
 import { IncomingMessage } from 'http';
 import ws from 'ws';
-import { TRPCError } from '../TRPCError';
 import { AnyRouter, ProcedureType, inferRouterContext } from '../core';
+import { TRPCError } from '../error/TRPCError';
 import { getCauseFromUnknown, getErrorFromUnknown } from '../internals/errors';
 import { transformTRPCResponse } from '../internals/transformTRPCResponse';
 import { BaseHandlerOptions } from '../internals/types';

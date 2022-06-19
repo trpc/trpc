@@ -1,11 +1,11 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
-import { TRPCError } from '../TRPCError';
 import {
   AnyRouter,
   ProcedureType,
   inferRouterContext,
   inferRouterError,
 } from '../core';
+import { TRPCError } from '../error/TRPCError';
 import { getCauseFromUnknown, getErrorFromUnknown } from '../internals/errors';
 import { transformTRPCResponse } from '../internals/transformTRPCResponse';
 import { TRPCResponse } from '../rpc';

@@ -1,4 +1,4 @@
-import { TRPCError } from '../../TRPCError';
+import { TRPCError } from '../../error/TRPCError';
 import { invert } from '../../internals/invert';
 import { TRPCResponse, TRPC_ERROR_CODES_BY_KEY } from '../../rpc';
 

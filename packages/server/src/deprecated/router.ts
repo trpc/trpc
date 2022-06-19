@@ -1,8 +1,8 @@
 /* eslint-disable @typescript-eslint/ban-types */
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { TRPCError } from '../TRPCError';
 import { assertNotBrowser } from '../assertNotBrowser';
+import { TRPCError } from '../error/TRPCError';
 import { defaultFormatter } from '../error/formatter';
 import { getHTTPStatusCodeFromError } from '../http/internals/getHTTPStatusCode';
 import { Observable, inferObservableValue } from '../observable';

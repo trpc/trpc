@@ -13,7 +13,7 @@ import {
   wsLink,
 } from '../../../client/src';
 import * as trpc from '../../src';
-import { TRPCError } from '../../src/TRPCError';
+import { TRPCError } from '../../src/error/TRPCError';
 import { observable } from '../../src/observable';
 
 test('superjson up and down', async () => {

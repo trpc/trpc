@@ -2,7 +2,7 @@
  * This is the actual internal representation of a builder
  * FIXME - I want to get rid of this and use the public API instead
  */
-import { TRPCError } from '../../TRPCError';
+import { TRPCError } from '../../error/TRPCError';
 import { getCauseFromUnknown } from '../../error/utils';
 import { getErrorFromUnknown } from '../../internals/errors';
 import { MaybePromise } from '../../types';
