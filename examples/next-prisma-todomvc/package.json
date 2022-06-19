@@ -11,7 +11,7 @@
     "prisma-studio-sqlite": "prisma studio --schema=./prisma/_sqlite/schema.prisma",
     "dev:db": "yarn migrate-sqlite && yarn generate-sqlite",
     "dev:next": "next dev",
-    "dev": "run-p dev:*",
+    "dev": "run-p dev:* --print-label",
     "build": "prisma generate && yarn migrate && next build",
     "start": "next start",
     "studio": "prisma studio",

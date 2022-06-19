@@ -6,7 +6,23 @@ import { t } from '../trpc';
 import { postRouter } from './post';
 import { observable } from '@trpc/server/observable';
 
-export const rootRouter = t.router({});
+export const rootRouter = t.router({
+  queries: {
+    healthz: t.procedure.resolve(() => 'yay!'),
+  },
+  subscriptions: {
+    randomnumber: t.procedure.resolve(() => {
+      return observable<number>((emit) => {
+        const int = setInterval(() => {
+          emit.next(Math.random());
+        }, 500);
+        return () => {
+          clearInterval(int);
+        };
+      });
+    }),
+  },
+});
 
 /**
  * Create your application's root router
@@ -20,24 +36,7 @@ export const appRouterOld = createRouter()
    * @link https://trpc.io/docs/error-formatting
    */
   // .formatError(({ shape, error }) => { })
-  .query('healthz', {
-    resolve() {
-      return 'yay!';
-    },
-  })
   .merge('post.', postRouter)
-  .subscription('randomNumber', {
-    resolve() {
-      return observable<number>((emit) => {
-        const int = setInterval(() => {
-          emit.next(Math.random());
-        }, 500);
-        return () => {
-          clearInterval(int);
-        };
-      });
-    },
-  })
   .interop();
 
 export const appRouter = t.mergeRouters(rootRouter, appRouterOld);
