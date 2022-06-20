@@ -7,7 +7,7 @@
   - [Play with it!](#play-with-it)
   - [Goals & features](#goals--features)
   - [New router API!](#new-router-api)
-    - [⚠️ Known drawbacks ⚠️](#️-known-drawbacks-️)
+    - [ℹ️ Known limitations ℹ️](#ℹ️-known-limitations-ℹ️)
     - [§1 Basics](#1-basics)
       - [§1.0 Setting up tRPC](#10-setting-up-trpc)
       - [§1.1 Creating a router](#11-creating-a-router)
@@ -27,6 +27,7 @@
   - [New React-API (🚧🚧)](#new-react-api-)
     - [Open questions](#open-questions)
     - [New `@trpc/next`-API (🚧🚧)](#new-trpcnext-api-)
+    - [New Links architecture](#new-links-architecture)
 
 ## Play with it!
 
