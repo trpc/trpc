@@ -54,6 +54,8 @@ export interface RouterParams<
   subscriptions: TSubscriptions;
   errorFormatter: ErrorFormatter<TContext, TErrorShape>;
   transformer: CombinedDataTransformer;
+  // Maybe a better impl would be `Record<string, Partial<ProcedureStructure>>`? not sure
+  children?: Record<string, Router<any>>;
 }
 
 export type AnyRouterParams<TContext = any> = RouterParams<
@@ -154,9 +156,9 @@ export type RouterDefaultOptions<TContext> = Pick<
 /**
  * @internal
  */
-type RouterBuildOptions<TContext> = Pick<
+export type RouterBuildOptions<TContext> = Pick<
   RouterOptions<TContext>,
-  'queries' | 'subscriptions' | 'mutations'
+  'queries' | 'subscriptions' | 'mutations' | 'children'
 >;
 
 export type AnyRouter = Router<any>;
@@ -212,7 +214,21 @@ export function createRouterFactory<TSettings extends RootConfig>(
     subscriptions: EnsureRecord<TProcedures['subscriptions']>;
     errorFormatter: ErrorFormatter<TSettings['ctx'], TSettings['errorShape']>;
     transformer: TSettings['transformer'];
+    children: TProcedures['children'];
   }> {
+    // TODO
+    // Goal here is to generally flatten the underlying Router to a single level together with the queries
+    // - use `prefixObjectKeys()` of the "children" and mix them together with the parent router which wil flatten them
+    // - check that there are no duplicate procedures
+    // - check that there are no duplicate transformers in the child router
+    // - check that there are no duplicate errorFormatter in the child router
+    const routerProcedures = mergeWithoutOverrides(
+      omitPrototype({
+        queries: omitPrototype(procedures.queries),
+        mutations: omitPrototype(procedures.mutations),
+        subscriptions: omitPrototype(procedures.subscriptions),
+      }),
+    );
     const result = mergeWithoutOverrides<
       RouterDefaultOptions<TSettings['ctx']> &
         RouterBuildOptions<TSettings['ctx']>
@@ -221,11 +237,7 @@ export function createRouterFactory<TSettings extends RootConfig>(
         transformer: defaults?.transformer ?? defaultTransformer,
         errorFormatter: defaults?.errorFormatter ?? defaultFormatter,
       },
-      {
-        queries: omitPrototype(procedures.queries),
-        mutations: omitPrototype(procedures.mutations),
-        subscriptions: omitPrototype(procedures.subscriptions),
-      },
+      routerProcedures,
     );
 
     const _def: AnyRouterParams<TSettings['ctx']> = {
