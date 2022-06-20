@@ -48,11 +48,13 @@
 
 ## New router API! 
 
-### ⚠️ Known drawbacks ⚠️
+### ℹ️ Known limitations ℹ️
 
 Router merging with a prefix in the new API will **not** be supported. All queries a mutations will lie flat on one big object.
 
 We might revisit this decision in the future, the reason here is that it **breaks jump-to-definition** (CMD+Clicking from client to server).
+
+> Is this a deal-breaker to you? Please tell us!
 
 ### §1 Basics
 
