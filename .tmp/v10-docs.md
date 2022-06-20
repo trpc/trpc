@@ -507,3 +507,8 @@ function MyComponent() {
 
 
 🚧🚧
+
+### New Links architecture
+
+
+https://www-git-next-trpc.vercel.app/docs/links
