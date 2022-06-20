@@ -513,4 +513,4 @@ function MyComponent() {
 
 Only relevant if you're making custom links, but it's a more flexible structure that will allow us to write slimmer React-wrappers, etc.
 
-https://www-git-next-trpc.vercel.app/docs/links#creating-a-custom-link
+https://alpha.trpc.io/docs/links#creating-a-custom-link
