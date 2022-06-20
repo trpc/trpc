@@ -5,10 +5,15 @@ import { TRPCAbortError } from '../internals/TRPCAbortError';
 import { dataLoader } from '../internals/dataLoader';
 import { httpRequest } from '../internals/httpRequest';
 import { transformRPCResponse } from '../internals/transformRPCResponse';
-import { HTTPLinkOptions, TRPCLink } from './core';
+import { HTTPHeaders, HTTPLinkBaseOptions, Operation, TRPCLink } from './core';
 
-export interface HttpBatchLinkOptions extends HTTPLinkOptions {
+export interface HttpBatchLinkOptions extends HTTPLinkBaseOptions {
   maxBatchSize?: number;
+  headers?:
+    | HTTPHeaders
+    | ((opts: {
+        opts: Operation<unknown>[];
+      }) => HTTPHeaders | Promise<HTTPHeaders>);
 }
 
 export function httpBatchLink<TRouter extends AnyRouter>(

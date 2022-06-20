@@ -1,6 +1,10 @@
 import { ProcedureType } from '@trpc/server';
 import { TRPCResponse } from '@trpc/server/rpc';
-import { LinkRuntimeOptions, PromiseAndCancel } from '../links/core';
+import {
+  HTTPHeaders,
+  LinkRuntimeOptions,
+  PromiseAndCancel,
+} from '../links/core';
 
 // https://github.com/trpc/trpc/pull/669
 function arrayToDict(array: unknown[]) {
@@ -14,10 +18,11 @@ function arrayToDict(array: unknown[]) {
 
 export function httpRequest<TResponseShape = TRPCResponse>(
   props: {
-    runtime: LinkRuntimeOptions;
+    runtime: Pick<LinkRuntimeOptions, 'transformer'>;
     type: ProcedureType;
     path: string;
     url: string;
+    headers: () => Promise<HTTPHeaders>;
   } & ({ inputs: unknown[] } | { input: unknown }),
 ): PromiseAndCancel<TResponseShape> {
   const { type, runtime: rt, path } = props;

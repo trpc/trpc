@@ -36,14 +36,21 @@ export type TRPCLink<TRouter extends AnyRouter> = (
   opts: LinkRuntimeOptions,
 ) => OperationLink<TRouter>;
 
-export interface HTTPLinkOptions {
+export interface HTTPLinkBaseOptions {
   url: string;
+  AbortController?: typeof AbortController;
+  fetch?: typeof fetch;
 }
+
+/**
+ * @deprecated use `HTTPLinkBaseOptions`
+ */
+export type HTTPLinkOptions = HTTPLinkBaseOptions;
 
 /**
  * @deprecated use `HTTPLinkOptions`
  */
-export type HttpLinkOptions = HTTPLinkOptions;
+export type HttpLinkOptions = HTTPLinkBaseOptions;
 
 export type HTTPHeaders = Record<string, string | string[] | undefined>;
 
@@ -58,8 +65,17 @@ export type TRPCFetch = (
 
 export type LinkRuntimeOptions = Readonly<{
   transformer: DataTransformer;
+  /**
+   * @deprecated use `headers` on your `httpLink` / `httpBatchLink` instead
+   */
   headers: () => HTTPHeaders | Promise<HTTPHeaders>;
+  /**
+   * @deprecated  use `fetch` on your `httpLink` / `httpBatchLink` instead
+   */
   fetch: TRPCFetch;
+  /**
+   * @deprecated  use `AbortController` on your `httpLink` / `httpBatchLink` instead
+   */
   AbortController?: typeof AbortController;
 }>;
 
