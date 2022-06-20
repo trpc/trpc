@@ -13,6 +13,8 @@ export function createTRPCClient<TRouter extends AnyRouter>(
   return new Client<TRouter>(opts);
 }
 
+// Also the client created above needs to somehow be like `TRPCClient<Router> & Omit<Router, 'createCaller' | 'createProcedure' | '_def' | 'transformer' | 'errorFormatter' | 'getErrorShape>`
+
 export type {
   TRPCRequestOptions,
   CreateTRPCClientOptions,
