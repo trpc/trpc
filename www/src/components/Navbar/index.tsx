@@ -2,13 +2,14 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { FaDiscord } from 'react-icons/fa';
 import { FiGithub, FiTwitter } from 'react-icons/fi';
+import { Logo } from '../Logo';
 import { NavLink } from '../NavLink';
 
 export const Navbar = () => (
   <nav className="flex items-center justify-between">
     <Link href="/">
       <a className="flex items-center gap-3">
-        <Image src="/logo.svg" alt="logo" width={35} height={35} />
+        <Logo size={35} />
         <span>tRPC</span>
       </a>
     </Link>
