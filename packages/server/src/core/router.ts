@@ -215,9 +215,7 @@ export function createRouterFactory<TSettings extends RootConfig>(
     subscriptions: EnsureRecord<TProcedures['subscriptions']>;
     errorFormatter: ErrorFormatter<TSettings['ctx'], TSettings['errorShape']>;
     transformer: TSettings['transformer'];
-    children: TProcedures['children'] extends unknown | undefined
-      ? null
-      : TProcedures['children'];
+    children: TProcedures['children'];
   }> {
     // TODO
     // Goal here is to generally flatten the underlying Router to a single level together with the queries
