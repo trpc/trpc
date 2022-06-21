@@ -55,7 +55,7 @@ export interface RouterParams<
   errorFormatter: ErrorFormatter<TContext, TErrorShape>;
   transformer: CombinedDataTransformer;
   // Maybe a better impl would be `Record<string, Partial<ProcedureStructure>>`? not sure
-  children?: Record<string, Router<any>>;
+  children?: Record<string, Router<any>> | null;
 }
 
 export type AnyRouterParams<TContext = any> = RouterParams<
@@ -129,6 +129,7 @@ export interface Router<TParams extends AnyRouterParams>
   subscriptions: TParams['subscriptions'];
   errorFormatter: TParams['errorFormatter'];
   transformer: TParams['transformer'];
+  children: TParams['children'];
 
   createCaller: RouterCaller<TParams>;
   getErrorShape(opts: {
@@ -214,7 +215,9 @@ export function createRouterFactory<TSettings extends RootConfig>(
     subscriptions: EnsureRecord<TProcedures['subscriptions']>;
     errorFormatter: ErrorFormatter<TSettings['ctx'], TSettings['errorShape']>;
     transformer: TSettings['transformer'];
-    children: TProcedures['children'];
+    children: TProcedures['children'] extends unknown | undefined
+      ? null
+      : TProcedures['children'];
   }> {
     // TODO
     // Goal here is to generally flatten the underlying Router to a single level together with the queries
@@ -265,6 +268,7 @@ export function createRouterFactory<TSettings extends RootConfig>(
     }
     const router: AnyRouter = {
       ...def,
+      children: procedures.children,
       createCaller(ctx) {
         return {
           query: (path, ...args) =>
