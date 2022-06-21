@@ -1,6 +1,7 @@
+import { TRPCFetch } from '.';
 import { getWindow } from './internals/fetchHelpers';
 
-export function getFetch(f?: typeof fetch): typeof fetch {
+export function getFetch(f?: TRPCFetch): TRPCFetch {
   if (f) {
     return f;
   }

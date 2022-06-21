@@ -39,7 +39,7 @@ export type TRPCLink<TRouter extends AnyRouter> = (
 export interface HTTPLinkBaseOptions {
   url: string;
   AbortController?: typeof AbortController;
-  fetch?: typeof fetch;
+  fetch?: TRPCFetch;
 }
 
 /**

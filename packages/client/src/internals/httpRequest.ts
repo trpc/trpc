@@ -1,10 +1,6 @@
-import { ProcedureType } from '@trpc/server';
+import { DataTransformer, ProcedureType } from '@trpc/server';
 import { TRPCResponse } from '@trpc/server/rpc';
-import {
-  HTTPHeaders,
-  LinkRuntimeOptions,
-  PromiseAndCancel,
-} from '../links/core';
+import { HTTPHeaders, PromiseAndCancel, TRPCFetch } from '../links/core';
 
 // https://github.com/trpc/trpc/pull/669
 function arrayToDict(array: unknown[]) {
@@ -18,15 +14,17 @@ function arrayToDict(array: unknown[]) {
 
 export function httpRequest<TResponseShape = TRPCResponse>(
   props: {
-    runtime: Pick<LinkRuntimeOptions, 'transformer'>;
+    transformer: DataTransformer;
     type: ProcedureType;
     path: string;
     url: string;
-    headers: () => Promise<HTTPHeaders>;
+    AbortController?: typeof AbortController;
+    fetch: TRPCFetch;
+    headers: () => HTTPHeaders | Promise<HTTPHeaders>;
   } & ({ inputs: unknown[] } | { input: unknown }),
 ): PromiseAndCancel<TResponseShape> {
-  const { type, runtime: rt, path } = props;
-  const ac = rt.AbortController ? new rt.AbortController() : null;
+  const { type, transformer, path } = props;
+  const ac = props.AbortController ? new props.AbortController() : null;
   const method = {
     query: 'GET',
     mutation: 'POST',
@@ -34,9 +32,9 @@ export function httpRequest<TResponseShape = TRPCResponse>(
   };
   const input =
     'input' in props
-      ? rt.transformer.serialize(props.input)
+      ? transformer.serialize(props.input)
       : arrayToDict(
-          props.inputs.map((_input) => rt.transformer.serialize(_input)),
+          props.inputs.map((_input) => transformer.serialize(_input)),
         );
 
   function getUrl() {
@@ -63,7 +61,7 @@ export function httpRequest<TResponseShape = TRPCResponse>(
   const promise = new Promise<TResponseShape>((resolve, reject) => {
     const url = getUrl();
 
-    Promise.resolve(rt.headers())
+    Promise.resolve(props.headers())
       .then((rawHeaders) => {
         const headers: HeadersInit = { 'content-type': 'application/json' };
         for (const key in rawHeaders) {
@@ -77,7 +75,7 @@ export function httpRequest<TResponseShape = TRPCResponse>(
           }
         }
 
-        return rt.fetch(url, {
+        return props.fetch(url, {
           method: method[type],
           signal: ac?.signal,
           body: getBody(),

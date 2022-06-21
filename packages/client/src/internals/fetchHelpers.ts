@@ -6,7 +6,7 @@ export function getWindow() {
 }
 export function getAbortController(
   ac?: typeof AbortController,
-): typeof AbortController | null {
+): typeof AbortController | undefined {
   const win = getWindow();
-  return ac || win.AbortController || null;
+  return ac || win.AbortController;
 }
