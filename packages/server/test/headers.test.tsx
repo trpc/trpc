@@ -5,6 +5,9 @@
 /* eslint-disable @typescript-eslint/ban-types */
 import { routerToServerAndClient } from './__testHelpers';
 import { createTRPCClient } from '../../client/src';
+import { httpBatchLink } from '../../client/src/links/httpBatchLink';
+import { httpLink } from '../../client/src/links/httpLink';
+import { splitLink } from '../../client/src/links/splitLink';
 import * as trpc from '../src';
 import { Dict } from '../src';
 
@@ -15,11 +18,13 @@ test('pass headers', async () => {
   const { close, httpUrl } = routerToServerAndClient(
     trpc.router<Context>().query('hello', {
       resolve({ ctx }) {
-        return {
-          'x-special': ctx.headers['x-special'],
-          'x-defined': ctx.headers['x-defined'],
-          'x-undefined': ctx.headers['x-undefined'],
-        };
+        const xHeaders: Record<string, unknown> = {};
+        Object.entries(ctx.headers)
+          .filter(([key]) => key.startsWith('x'))
+          .forEach(([key, value]) => {
+            xHeaders[key] = value;
+          });
+        return xHeaders;
       },
     }),
     {
@@ -95,6 +100,73 @@ test('pass headers', async () => {
     expect(await client.query('hello')).toMatchInlineSnapshot(`
       Object {
         "x-defined": "xyz",
+      }
+    `);
+  }
+
+  {
+    // aconditional header batch link
+    const client = createTRPCClient({
+      url: httpUrl,
+      async headers() {
+        return {
+          'x-1': '1',
+          'x-2': '2',
+          'x-3': '3',
+        };
+      },
+      links: [
+        splitLink({
+          condition: (op) => op.context.batch === true,
+
+          true: httpBatchLink({
+            url: httpUrl,
+            headers: () => {
+              return {
+                'x-batch': '1',
+              };
+            },
+          }),
+          false: httpLink({
+            url: httpUrl,
+            headers: ({ op }) => {
+              return (op.context as any)?.headers;
+            },
+          }),
+        }),
+      ],
+    });
+    expect(
+      await client.query('hello', undefined, {
+        context: {
+          headers: {
+            'x-3': 'overriden',
+          },
+        },
+      }),
+    ).toMatchInlineSnapshot(`
+      Object {
+        "x-1": "1",
+        "x-2": "2",
+        "x-3": "overriden",
+      }
+    `);
+
+    expect(
+      await client.query('hello', undefined, {
+        context: {
+          batch: true,
+          headers: {
+            'x-3': 'i-will-not-make-it',
+          },
+        },
+      }),
+    ).toMatchInlineSnapshot(`
+      Object {
+        "x-1": "1",
+        "x-2": "2",
+        "x-3": "3",
+        "x-batch": "1",
       }
     `);
   }
