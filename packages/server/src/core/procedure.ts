@@ -65,8 +65,33 @@ export type ProcedureArgs<TParams extends ProcedureParams> =
  */
 export interface Procedure<TParams extends ProcedureParams> {
   (...args: ProcedureArgs<TParams>): Promise<TParams['_output_out']>;
+
   /**
    * @deprecated use `._def.meta` instead
    */
   meta?: TParams['_meta'];
 }
+
+export interface QueryProcedure<TParams extends ProcedureParams>
+  extends Procedure<TParams> {
+  type: 'query';
+  query(...args: ProcedureArgs<TParams>): Promise<TParams['_output_out']>;
+}
+
+export interface MutationProcedure<TParams extends ProcedureParams>
+  extends Procedure<TParams> {
+  type: 'mutation';
+  mutate(...args: ProcedureArgs<TParams>): Promise<TParams['_output_out']>;
+}
+
+export interface SubscriptionProcedure<TParams extends ProcedureParams>
+  extends Procedure<TParams> {
+  type: 'subscription';
+  subscription(
+    ...args: ProcedureArgs<TParams>
+  ): Promise<TParams['_output_out']>;
+}
+export type ExplicitProcedure<TParams extends ProcedureParams> =
+  | QueryProcedure<TParams>
+  | MutationProcedure<TParams>
+  | SubscriptionProcedure<TParams>;

@@ -18,16 +18,18 @@ const TEMPLATE = `
 export function mergeRoutersGeneric<
   __GENERICS__
 >(
-  __ARGS__
+  __args__
 ): Router<{
   _ctx: RP0['_ctx'];
   _errorShape: RP0['_errorShape'];
   _meta: RP0['_meta'];
   transformer: RP0['transformer'];
   errorFormatter: RP0['errorFormatter'];
-  queries: __QUERIES__;
-  mutations: __MUTATIONS__;
-  subscriptions: __SUBSCRIPTIONS__;
+  queries: __queries__;
+  mutations: __mutations__;
+  subscriptions: __subscriptions__;
+  children: __children__;
+  procedures: __procedures__;
 }>;
 `.trim();
 
@@ -49,6 +51,8 @@ for (let index = 0; index < NUM_ARGS; index++) {
   const queries: string[] = [];
   const mutations: string[] = [];
   const subscriptions: string[] = [];
+  const procedures: string[] = [];
+  const children: string[] = [];
 
   for (let j = 0; j < index + 1; j++) {
     generics.push(`RP${j} extends AnyRouterParams`);
@@ -56,19 +60,26 @@ for (let index = 0; index < NUM_ARGS; index++) {
     queries.push(`RP${j}['queries']`);
     mutations.push(`RP${j}['mutations']`);
     subscriptions.push(`RP${j}['subscriptions']`);
+    children.push(`RP${j}['children']`);
+    procedures.push(`RP${j}['children']`);
   }
+  const ARGS = args.join(', ');
 
   const GENERICS = generics.join(', ');
-  const ARGS = args.join(', ');
-  const QUERIES = queries.join(' & ');
-  const MUTATIONS = mutations.join(' & ');
-  const SUBSCRIPTIONS = subscriptions.join(' & ');
 
+  const make = (str: string) =>
+    new Array(index + 1)
+      .fill('')
+      .map((_, index) => `RP${index}['${str}']`)
+      .join(' & ');
+  console.log(make('queries'));
   const part = TEMPLATE.replace('__GENERICS__', GENERICS)
-    .replace('__ARGS__', ARGS)
-    .replace('__QUERIES__', QUERIES)
-    .replace('__MUTATIONS__', MUTATIONS)
-    .replace('__SUBSCRIPTIONS__', SUBSCRIPTIONS);
+    .replace('__args__', ARGS)
+    .replace('__queries__', make('queries'))
+    .replace('__mutations__', make('mutations'))
+    .replace('__subscriptions__', make('subscriptions'))
+    .replace('__children__', make('children'))
+    .replace('__procedures__', make('procedures'));
 
   partList.push(part);
 }

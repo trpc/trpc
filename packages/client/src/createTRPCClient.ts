@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import type { AnyRouter, ProcedureType } from '@trpc/server';
+import type { AnyRouter } from '@trpc/server';
 import {
   TRPCClient as Client,
   CreateTRPCClientOptions,
@@ -11,9 +11,12 @@ export type EnsureRecord<T> = T extends Record<string, any>
   ? T
   : Record<string, never>;
 
-type FlattenRouter<TRouter extends AnyRouter> = Pick<TRouter, 'queries'> & {
-  [TKey in keyof TRouter['children']]: FlattenRouter<TRouter['children'][TKey]>;
-};
+type FlattenRouter<TRouter extends AnyRouter> =
+  TRouter['_def']['procedures'] & {
+    [TKey in keyof TRouter['_def']['children']]: FlattenRouter<
+      TRouter['_def']['children'][TKey]
+    >;
+  };
 
 function makeProxy<TRouter extends AnyRouter>(
   client: Client<TRouter>,
@@ -37,17 +40,13 @@ function makeProxy<TRouter extends AnyRouter>(
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
       apply(_1, _2, args) {
         const pathCopy = [...path];
-        const procedureName = pathCopy.pop()!;
-        const procedureType = pathCopy.pop()!;
-        const fullPath = [...pathCopy, procedureName].join('.');
-        const map: Record<string, ProcedureType> = {
-          queries: 'query',
-          mutations: 'mutation',
-          subscriptions: 'subscription',
-        };
+        let type = pathCopy.pop()!;
+        if (type === 'mutate') {
+          type = 'mutation';
+        }
+        const fullPath = pathCopy.join('.');
 
-        const target = map[procedureType];
-        return (client[target] as any)(fullPath, ...args);
+        return (client as any)[type](fullPath, ...args);
       },
     },
   );

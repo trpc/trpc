@@ -63,9 +63,9 @@ describe('setup - inference', () => {
 
     const router = t.router({
       queries: {
-        good: t.procedure.meta({ foo: 'bar' }).resolve(() => 'good'),
+        good: t.procedure.meta({ foo: 'bar' }).query(() => 'good'),
         // @ts-expect-error this doesn't match the meta defined
-        bad: t.procedure.meta({ bar: 'z' }).resolve(() => 'bad'),
+        bad: t.procedure.meta({ bar: 'z' }).query(() => 'bad'),
       },
     });
 
@@ -78,7 +78,7 @@ describe('setup - inference', () => {
       | {
           foo: string;
         };
-    expectTypeOf(router.queries.good.meta).toMatchTypeOf<ProcMeta>();
-    expectTypeOf(router.queries.good.meta).toMatchTypeOf<ProcMeta>();
+    expectTypeOf(router._def.queries.good.meta).toMatchTypeOf<ProcMeta>();
+    expectTypeOf(router._def.queries.good.meta).toMatchTypeOf<ProcMeta>();
   });
 });

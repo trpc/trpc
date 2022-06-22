@@ -16,7 +16,7 @@ import {
 import { mergeWithoutOverrides } from './internals/mergeWithoutOverrides';
 import { prefixObjectKeys } from './internals/prefixObjectKeys';
 import { EnsureRecord, ValidateShape } from './internals/utils';
-import { Procedure } from './procedure';
+import { ExplicitProcedure, Procedure } from './procedure';
 import { ProcedureType } from './types';
 
 // FIXME this should properly use TContext maybe?
@@ -26,6 +26,7 @@ export interface ProcedureStructure {
   queries: AnyProcedureRecord;
   mutations: AnyProcedureRecord;
   subscriptions: AnyProcedureRecord;
+  procedures: Record<string, ExplicitProcedure<any>>;
 }
 
 export interface RouterParams<
@@ -36,6 +37,8 @@ export interface RouterParams<
   TQueries extends ProcedureRecord<TContext>,
   TMutations extends ProcedureRecord<TContext>,
   TSubscriptions extends ProcedureRecord<TContext>,
+  TChildren extends Record<string, AnyRouter>,
+  TProcedures extends Record<string, ExplicitProcedure<any>>,
 > extends ProcedureStructure {
   /**
    * @internal
@@ -49,17 +52,23 @@ export interface RouterParams<
    * @internal
    */
   _meta: TMeta;
+  /** @deprecated **/
   queries: TQueries;
+  /** @deprecated **/
   mutations: TMutations;
+  /** @deprecated **/
   subscriptions: TSubscriptions;
   errorFormatter: ErrorFormatter<TContext, TErrorShape>;
   transformer: CombinedDataTransformer;
   // Maybe a better impl would be `Record<string, Partial<ProcedureStructure>>`? not sure
-  children?: Record<string, Router<any>> | null;
+  children: TChildren;
+  procedures: TProcedures;
 }
 
 export type AnyRouterParams<TContext = any> = RouterParams<
   TContext,
+  any,
+  any,
   any,
   any,
   any,
@@ -122,16 +131,26 @@ export interface Router<TParams extends AnyRouterParams>
     TParams['_meta'],
     TParams['queries'],
     TParams['mutations'],
-    TParams['subscriptions']
+    TParams['subscriptions'],
+    TParams['children'],
+    TParams['procedures']
   >;
+  /** @deprecated **/
   queries: TParams['queries'];
+  /** @deprecated **/
   mutations: TParams['mutations'];
+  /** @deprecated **/
   subscriptions: TParams['subscriptions'];
+  /** @deprecated **/
   errorFormatter: TParams['errorFormatter'];
+  /** @deprecated **/
   transformer: TParams['transformer'];
+  /** @deprecated **/
   children: TParams['children'];
 
+  // FIXME rename me
   createCaller: RouterCaller<TParams>;
+  // FIXME rename me
   getErrorShape(opts: {
     error: TRPCError;
     type: ProcedureType | 'unknown';
@@ -159,7 +178,7 @@ export type RouterDefaultOptions<TContext> = Pick<
  */
 export type RouterBuildOptions<TContext> = Pick<
   RouterOptions<TContext>,
-  'queries' | 'subscriptions' | 'mutations' | 'children'
+  'queries' | 'subscriptions' | 'mutations' | 'children' | 'procedures'
 >;
 
 export type AnyRouter = Router<any>;
@@ -181,16 +200,6 @@ const emptyRouter = {
   errorFormatter: defaultFormatter,
   transformer: defaultTransformer,
 };
-// type EmptyRouter = typeof emptyRouter;
-
-const PROCEDURE_DEFINITION_MAP: Record<
-  ProcedureType,
-  'queries' | 'mutations' | 'subscriptions'
-> = {
-  query: 'queries',
-  mutation: 'mutations',
-  subscription: 'subscriptions',
-};
 
 /**
  *
@@ -202,10 +211,7 @@ export function createRouterFactory<TSettings extends RootConfig>(
   return function createRouterInner<
     TProcedures extends RouterBuildOptions<TSettings['ctx']>,
   >(
-    procedures: ValidateShape<
-      TProcedures,
-      RouterBuildOptions<TSettings['ctx']>
-    >,
+    opts: ValidateShape<TProcedures, RouterBuildOptions<TSettings['ctx']>>,
   ): Router<{
     _ctx: TSettings['ctx'];
     _errorShape: TSettings['errorShape'];
@@ -215,31 +221,59 @@ export function createRouterFactory<TSettings extends RootConfig>(
     subscriptions: EnsureRecord<TProcedures['subscriptions']>;
     errorFormatter: ErrorFormatter<TSettings['ctx'], TSettings['errorShape']>;
     transformer: TSettings['transformer'];
-    children: unknown extends TProcedures['children']
-      ? undefined
-      : TProcedures['children'];
+    children: EnsureRecord<TProcedures['children']>;
+    procedures: EnsureRecord<TProcedures['procedures']>;
   }> {
-    const prefixedChildren = Object.entries(procedures.children ?? {}).map(
-      ([key, childRouter]) => ({
-        queries: prefixObjectKeys(childRouter.queries, `${key}.`),
-        mutations: prefixObjectKeys(childRouter.mutations, `${key}.`),
-        subscriptions: prefixObjectKeys(childRouter.subscriptions, `${key}.`),
-      }),
+    const prefixedChildren = Object.entries(opts.children ?? {}).map(
+      ([key, childRouter]) => {
+        const queries = prefixObjectKeys(
+          (childRouter as any).queries,
+          `${key}.`,
+        );
+        const mutations = prefixObjectKeys(
+          (childRouter as any).mutations,
+          `${key}.`,
+        );
+        const subscriptions = prefixObjectKeys(
+          (childRouter as any).subscriptions,
+          `${key}.`,
+        );
+        const procedures = prefixObjectKeys(
+          (childRouter as any).procedures,
+          `${key}.`,
+        );
+
+        return {
+          queries,
+          mutations,
+          subscriptions,
+          procedures,
+        };
+      },
     );
     const routerProcedures = {
       queries: mergeWithoutOverrides(
-        procedures.queries,
+        opts.queries,
         ...prefixedChildren.map((child) => child.queries),
       ),
       mutations: mergeWithoutOverrides(
-        procedures.mutations,
+        opts.mutations,
         ...prefixedChildren.map((child) => child.mutations),
       ),
       subscriptions: mergeWithoutOverrides(
-        procedures.subscriptions,
+        opts.subscriptions,
         ...prefixedChildren.map((child) => child.subscriptions),
       ),
+      procedures: mergeWithoutOverrides(
+        opts.procedures,
+        opts.subscriptions,
+        opts.queries,
+        ...prefixedChildren.map((child) => child.procedures),
+      ),
+
+      children: opts.children || {},
     };
+
     const result = mergeWithoutOverrides<
       RouterDefaultOptions<TSettings['ctx']> &
         RouterBuildOptions<TSettings['ctx']>
@@ -252,6 +286,8 @@ export function createRouterFactory<TSettings extends RootConfig>(
     );
 
     const _def: AnyRouterParams<TSettings['ctx']> = {
+      children: {},
+      procedures: {},
       ...emptyRouter,
       ...result,
     };
@@ -262,21 +298,20 @@ export function createRouterFactory<TSettings extends RootConfig>(
 
     function callProcedure(opts: InternalProcedureCallOptions) {
       const { type, path } = opts;
-      const defTarget = PROCEDURE_DEFINITION_MAP[type];
-      const defs = def[defTarget];
 
-      if (!(path in defs)) {
+      if (!(path in def.procedures)) {
         throw new TRPCError({
           code: 'NOT_FOUND',
           message: `No "${type}"-procedure on path "${path}"`,
         });
       }
-      const procedure = defs[path] as InternalProcedure;
+
+      const procedure = def.procedures[path] as InternalProcedure;
       return procedure(opts);
     }
     const router: AnyRouter = {
       ...def,
-      children: procedures.children,
+      children: opts.children,
       createCaller(ctx) {
         return {
           query: (path, ...args) =>

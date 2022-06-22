@@ -26,6 +26,7 @@ export interface InternalProcedure {
    * @deprecated use `._def.meta` instead
    */
   meta: ProcedureBuilderInternal['_def']['meta'];
+  type: ProcedureType;
   (opts: InternalProcedureCallOptions): Promise<unknown>;
 }
 
@@ -34,6 +35,8 @@ type ProcedureBuilderInternalResolver = (
 ) => Promise<unknown>;
 
 export type ProcedureBuilderInternalMiddleware = MiddlewareFunction<any, any>;
+type TResolver = (opts: ResolveOptions<any>) => MaybePromise<any>;
+
 interface ProcedureBuilderInternal {
   _def: {
     input?: Parser;
@@ -41,6 +44,7 @@ interface ProcedureBuilderInternal {
     meta?: Record<string, unknown>;
     resolver?: ProcedureBuilderInternalResolver;
     middlewares: ProcedureBuilderInternalMiddleware[];
+    type?: ProcedureType;
   };
   // FIXME
   // _call: (opts: ResolveOptions<any>) => Promise<unknown>;
@@ -64,12 +68,21 @@ interface ProcedureBuilderInternal {
    * @internal
    */
   meta: (meta: Record<string, unknown>) => ProcedureBuilderInternal;
+  /** @deprecated **/
+  resolve: (resolver: TResolver) => InternalProcedure;
   /**
    * @internal
    */
-  resolve: (
-    resolver: (opts: ResolveOptions<any>) => MaybePromise<any>,
-  ) => InternalProcedure;
+  query: (resolver: TResolver) => InternalProcedure;
+  /**
+   * @internal
+   */
+  mutation: (resolver: TResolver) => InternalProcedure;
+
+  /**
+   * @internal
+   */
+  subscription: (resolver: TResolver) => InternalProcedure;
 }
 function createNewInternalBuilder(
   def1: ProcedureBuilderInternal['_def'],
@@ -161,6 +174,7 @@ function createProcedureCaller(
   };
   procedure._def = _def;
   procedure.meta = _def.meta;
+  procedure.type = _def.type!;
 
   return procedure;
 }
@@ -208,6 +222,29 @@ export function createOutputMiddleware<T>(
   };
 }
 
+function createResolver(
+  _def: ProcedureBuilderInternal['_def'],
+  resolver: TResolver,
+  type: ProcedureType,
+) {
+  const finalBuilder = createNewInternalBuilder(_def, {
+    resolver,
+    type,
+    middlewares: [
+      async function resolveMiddleware(opts) {
+        const data = await resolver(opts);
+        return {
+          marker: middlewareMarker,
+          ok: true,
+          data,
+          ctx: opts.ctx,
+        } as const;
+      },
+    ],
+  });
+
+  return createProcedureCaller(finalBuilder._def);
+}
 export function createInternalBuilder(
   initDef?: ProcedureBuilderInternal['_def'],
 ): ProcedureBuilderInternal {
@@ -235,23 +272,9 @@ export function createInternalBuilder(
     meta(meta) {
       return createNewInternalBuilder(_def, { meta });
     },
+    /** @deprecated **/
     resolve(resolver) {
-      const finalBuilder = createNewInternalBuilder(_def, {
-        resolver,
-        middlewares: [
-          async function resolveMiddleware(opts) {
-            const data = await resolver(opts);
-            return {
-              marker: middlewareMarker,
-              ok: true,
-              data,
-              ctx: opts.ctx,
-            } as const;
-          },
-        ],
-      });
-
-      return createProcedureCaller(finalBuilder._def);
+      return createResolver(_def, resolver, null as never);
     },
     unstable_concat(builder) {
       return createNewInternalBuilder(_def, builder._def);
@@ -260,6 +283,15 @@ export function createInternalBuilder(
       return createNewInternalBuilder(_def, {
         middlewares: [middleware],
       });
+    },
+    query(resolver) {
+      return createResolver(_def, resolver, 'query');
+    },
+    mutation(resolver) {
+      return createResolver(_def, resolver, 'mutation');
+    },
+    subscription(resolver) {
+      return createResolver(_def, resolver, 'subscription');
     },
   };
 }

@@ -1,7 +1,13 @@
 import { MaybePromise } from '../../types';
 import { MiddlewareFunction } from '../middleware';
 import { Parser, inferParser } from '../parser';
-import { Procedure, ProcedureParams } from '../procedure';
+import {
+  MutationProcedure,
+  Procedure,
+  ProcedureParams,
+  QueryProcedure,
+  SubscriptionProcedure,
+} from '../procedure';
 import { createInternalBuilder } from './internalProcedure';
 import { ResolveOptions } from './utils';
 import { DefaultValue as FallbackValue, Overwrite, UnsetMarker } from './utils';
@@ -67,9 +73,8 @@ export interface ProcedureBuilder<TParams extends ProcedureParams> {
   ): $ProcedureReturnInput extends ProcedureBuilder<infer $TParams>
     ? CreateProcedureReturnInput<TParams, $TParams>
     : never;
-  /**
-   * Resolve the procedure
-   */
+
+  /** @deprecated **/
   resolve<$TOutput>(
     resolver: (
       opts: ResolveOptions<TParams>,
@@ -85,6 +90,80 @@ export interface ProcedureBuilder<TParams extends ProcedureParams> {
         >
       >
     : Procedure<TParams>;
+  /**
+   * Query procedure
+   */
+  query<$TOutput>(
+    resolver: (
+      opts: ResolveOptions<TParams>,
+    ) => MaybePromise<FallbackValue<TParams['_output_in'], $TOutput>>,
+  ): UnsetMarker extends TParams['_output_out']
+    ? QueryProcedure<
+        Overwrite<
+          TParams,
+          {
+            _output_in: $TOutput;
+            _output_out: $TOutput;
+          }
+        >
+      >
+    : QueryProcedure<TParams>;
+  /**
+   * Query procedure
+   */
+  query<$TOutput>(
+    resolver: (
+      opts: ResolveOptions<TParams>,
+    ) => MaybePromise<FallbackValue<TParams['_output_in'], $TOutput>>,
+  ): UnsetMarker extends TParams['_output_out']
+    ? QueryProcedure<
+        Overwrite<
+          TParams,
+          {
+            _output_in: $TOutput;
+            _output_out: $TOutput;
+          }
+        >
+      >
+    : QueryProcedure<TParams>;
+
+  /**
+   * Mutation procedure
+   */
+  mutation<$TOutput>(
+    resolver: (
+      opts: ResolveOptions<TParams>,
+    ) => MaybePromise<FallbackValue<TParams['_output_in'], $TOutput>>,
+  ): UnsetMarker extends TParams['_output_out']
+    ? MutationProcedure<
+        Overwrite<
+          TParams,
+          {
+            _output_in: $TOutput;
+            _output_out: $TOutput;
+          }
+        >
+      >
+    : MutationProcedure<TParams>;
+
+  /**
+   * Mutation procedure
+   */
+  subscription<$TOutput>(
+    resolver: (
+      opts: ResolveOptions<TParams>,
+    ) => MaybePromise<FallbackValue<TParams['_output_in'], $TOutput>>,
+  ): UnsetMarker extends TParams['_output_out']
+    ? SubscriptionProcedure<
+        Overwrite<
+          TParams,
+          {
+            _output_in: $TOutput;
+            _output_out: $TOutput;
+          }
+        >
+      >
+    : SubscriptionProcedure<TParams>;
 }
 
 // TODO make this into a callbag?

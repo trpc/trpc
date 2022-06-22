@@ -6,18 +6,19 @@ test('children', async () => {
   const t = initTRPC()();
 
   const router = t.router({
-    queries: {
-      foo: t.procedure.resolve(() => 'bar'),
+    procedures: {
+      foo: t.procedure.query(() => 'bar'),
     },
     children: {
       child: t.router({
-        queries: {
-          childQuery: t.procedure.resolve(() => 'asd'),
+        procedures: {
+          childQuery: t.procedure.query(() => 'asd'),
         },
         children: {
           grandchild: t.router({
-            queries: {
-              foo: t.procedure.resolve(() => 'grandchild' as const),
+            procedures: {
+              foo: t.procedure.query(() => 'grandchild' as const),
+              mut: t.procedure.mutation(() => 'mut'),
             },
           }),
         },
@@ -25,24 +26,28 @@ test('children', async () => {
     },
   });
 
-  const { queries, mutations, subscriptions } = router;
-  expect({ queries, mutations, subscriptions }).toMatchInlineSnapshot(`
+  const { queries, mutations, subscriptions, procedures } = router._def;
+  expect({ queries, mutations, subscriptions, procedures })
+    .toMatchInlineSnapshot(`
     Object {
       "mutations": Object {},
-      "queries": Object {
+      "procedures": Object {
         "child.childQuery": [Function],
         "child.grandchild.foo": [Function],
+        "child.grandchild.mut": [Function],
         "foo": [Function],
       },
+      "queries": Object {},
       "subscriptions": Object {},
     }
   `);
 
   const { client, close } = routerToServerAndClientNew(router);
 
-  expect(await client.queries.foo()).toBe('bar');
+  expect(await client.foo.query()).toBe('bar');
 
-  expect(await client.child.grandchild.queries.foo()).toBe('grandchild');
+  expect(await client.child.grandchild.foo.query()).toBe('grandchild');
+  expect(await client.child.grandchild.mut.mutate()).toBe('mut');
 
   return close();
 });
@@ -50,12 +55,15 @@ test('children', async () => {
 test('w/o children', async () => {
   const t = initTRPC()();
 
+  const foo = t.procedure.query(() => 'bar');
   const router = t.router({
-    queries: {
-      foo: t.procedure.resolve(() => 'bar'),
+    procedures: {
+      foo,
     },
   });
   const children = router.children;
   //     ^?
-  expectTypeOf(children).toBeUndefined();
+  expectTypeOf(children).toEqualTypeOf<Record<string, never>>();
+
+  expectTypeOf(router._def.procedures.foo).toMatchTypeOf(foo);
 });

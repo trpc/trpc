@@ -83,6 +83,8 @@ export type MigrateRouter<
   queries: MigrateProcedureRecord<TQueries>;
   subscriptions: MigrateProcedureRecord<TSubscriptions>;
   transformer: CombinedDataTransformer;
+  children: Record<string, never>;
+  procedures: Record<string, never>;
 }>;
 
 export type MigrateOldRouter<TRouter extends AnyOldRouter> =
