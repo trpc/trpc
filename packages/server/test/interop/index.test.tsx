@@ -23,6 +23,7 @@ test('smoke test', async () => {
       },
     }),
   );
+
   expect(await client.query('hello')).toBe('world');
   close();
 });

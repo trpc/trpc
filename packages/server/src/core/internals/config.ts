@@ -31,9 +31,7 @@ export type CreateInitGenerics<T extends InitGenerics> = T;
  * Combination of `InitTOptions` + `InitGenerics`
  * @internal
  */
-export interface RootConfig {
-  ctx: Record<string, unknown>;
-  meta: Record<string, unknown>;
+export interface RootConfig extends InitGenerics {
   transformer: CombinedDataTransformer;
   errorShape: DefaultErrorShape;
 }

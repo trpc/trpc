@@ -113,13 +113,13 @@ export function createReactQueryHooks<
   TRouter extends AnyRouter,
   TSSRContext = unknown,
 >() {
-  type TQueries = TRouter['queries'];
-  type TSubscriptions = TRouter['subscriptions'];
+  type TQueries = TRouter['_def']['queries'];
+  type TSubscriptions = TRouter['_def']['subscriptions'];
   type TError = TRPCClientErrorLike<TRouter>;
   type TInfiniteQueryNames = inferInfiniteQueryNames<TQueries>;
 
-  type TQueryValues = inferProcedures<TRouter['queries']>;
-  type TMutationValues = inferProcedures<TRouter['mutations']>;
+  type TQueryValues = inferProcedures<TRouter['_def']['queries']>;
+  type TMutationValues = inferProcedures<TRouter['_def']['mutations']>;
 
   type ProviderContext = TRPCContextState<TRouter, TSSRContext>;
   const Context = TRPCContext as React.Context<ProviderContext>;
@@ -356,10 +356,10 @@ export function createReactQueryHooks<
       const [path, input] = pathAndInput;
       let isStopped = false;
       const subscription = client.subscription<
-        TRouter['subscriptions'],
+        TRouter['_def']['subscriptions'],
         TPath,
         TOutput,
-        inferProcedureInput<TRouter['subscriptions']>
+        inferProcedureInput<TRouter['_def']['subscriptions'][TPath]>
       >(path, (input ?? undefined) as any, {
         error: (err) => {
           if (!isStopped) {
@@ -436,7 +436,7 @@ export function createReactQueryHooks<
   // FIXME: delete or fix this
   const queries = createHookProxy((path, input, opts) =>
     useQuery([path, input] as any, opts as any),
-  ) as TRouter['queries'];
+  ) as TRouter['_def']['queries'];
 
   return {
     Provider: TRPCProvider,

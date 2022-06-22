@@ -11,8 +11,8 @@ const { procedure } = trpc;
 
 test('old client - happy path w/o input', async () => {
   const router = trpc.router({
-    queries: {
-      hello: procedure.resolve(() => 'world'),
+    procedures: {
+      hello: procedure.query(() => 'world'),
     },
   });
   const { client, close } = routerToServerAndClientNew(router);
@@ -22,10 +22,10 @@ test('old client - happy path w/o input', async () => {
 
 test('old client - happy path with input', async () => {
   const router = trpc.router({
-    queries: {
+    procedures: {
       greeting: procedure
         .input(z.string())
-        .resolve(({ input }) => `hello ${input}`),
+        .query(({ input }) => `hello ${input}`),
     },
   });
   const { client, close } = routerToServerAndClientNew(router);
@@ -35,20 +35,20 @@ test('old client - happy path with input', async () => {
 
 test('very happy path', async () => {
   const router = trpc.router({
-    queries: {
+    procedures: {
       greeting: procedure
         .input(z.string())
-        .resolve(({ input }) => `hello ${input}`),
+        .query(({ input }) => `hello ${input}`),
     },
   });
   const { client, close } = routerToServerAndClientNew(router);
-  expect(await client.queries.greeting('KATT')).toBe('hello KATT');
+  expect(await client.greeting.query('KATT')).toBe('hello KATT');
   close();
 });
 
 test('middleware', async () => {
   const router = trpc.router({
-    queries: {
+    procedures: {
       greeting: procedure
         .use(({ next }) => {
           return next({
@@ -64,18 +64,18 @@ test('middleware', async () => {
             },
           });
         })
-        .resolve(({ ctx }) => `${ctx.prefix} ${ctx.user}`),
+        .query(({ ctx }) => `${ctx.prefix} ${ctx.user}`),
     },
   });
   const { client, close } = routerToServerAndClientNew(router);
-  expect(await client.queries.greeting()).toBe('hello KATT');
+  expect(await client.greeting.query()).toBe('hello KATT');
   close();
 });
 
 test('sad path', async () => {
   const router = trpc.router({
-    queries: {
-      hello: procedure.resolve(() => 'world'),
+    procedures: {
+      hello: procedure.query(() => 'world'),
     },
   });
   const { client, close } = routerToServerAndClientNew(router);

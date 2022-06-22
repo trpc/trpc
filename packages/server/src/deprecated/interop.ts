@@ -1,22 +1,33 @@
+import { ProcedureParams, ProcedureType } from '..';
 import { getParseFnOrPassThrough } from '../core/internals/getParseFn';
 import {
   createInputMiddleware,
   createInternalBuilder,
   createOutputMiddleware,
 } from '../core/internals/internalProcedure';
-import { Procedure as NewProcedure } from '../core/procedure';
-import { Router as NewRouter, createRouterFactory } from '../core/router';
+import { mergeWithoutOverrides } from '../core/internals/mergeWithoutOverrides';
+import {
+  MutationProcedure,
+  Procedure as NewProcedure,
+  QueryProcedure,
+  SubscriptionProcedure,
+} from '../core/procedure';
+import {
+  Router as NewRouter,
+  RouterDef,
+  createRouterFactory,
+} from '../core/router';
 import {
   AnyRouter as AnyOldRouter,
   Router as OldRouter,
 } from '../deprecated/router';
 import { TRPCErrorShape } from '../rpc';
-import { CombinedDataTransformer } from '../transformer';
 import { Procedure as OldProcedure } from './internals/procedure';
 import { ProcedureRecord } from './router';
 
 type AnyOldProcedure = OldProcedure<any, any, any, any, any, any, any, any>;
-type MigrateProcedure<TProcedure extends AnyOldProcedure> =
+
+type convertProcedureParams<TProcedure extends AnyOldProcedure> =
   TProcedure extends OldProcedure<
     infer TInputContext,
     infer TContext,
@@ -27,19 +38,33 @@ type MigrateProcedure<TProcedure extends AnyOldProcedure> =
     infer _TParsedOutput,
     infer TFinalInput
   >
-    ? NewProcedure<{
-        _ctx_in: TInputContext;
-        _ctx_out: TContext;
-        _meta: TMeta;
-        _input_in: TInput;
-        _input_out: TParsedInput;
-        _output_in: TOutput;
-        _output_out: TFinalInput;
-      }>
+    ? ProcedureParams<
+        TInputContext,
+        TContext,
+        TInput,
+        TParsedInput,
+        TOutput,
+        TFinalInput,
+        TMeta
+      >
     : never;
 
-export type MigrateProcedureRecord<T extends ProcedureRecord<any>> = {
-  [K in keyof T]: MigrateProcedure<T[K]>;
+type MigrateProcedure<
+  TProcedure extends AnyOldProcedure,
+  TType extends ProcedureType,
+> = TType extends 'query'
+  ? QueryProcedure<convertProcedureParams<TProcedure>>
+  : TType extends 'mutation'
+  ? MutationProcedure<convertProcedureParams<TProcedure>>
+  : TType extends 'subscriptions'
+  ? SubscriptionProcedure<convertProcedureParams<TProcedure>>
+  : never;
+
+export type MigrateProcedureRecord<
+  T extends ProcedureRecord<any>,
+  TType extends ProcedureType,
+> = {
+  [K in keyof T]: MigrateProcedure<T[K], TType>;
 };
 
 export type MigrateRouter<
@@ -74,18 +99,17 @@ export type MigrateRouter<
     unknown
   >,
   TErrorShape extends TRPCErrorShape<number>,
-> = NewRouter<{
-  _ctx: TInputContext;
-  _errorShape: TErrorShape;
-  _meta: TMeta;
-  errorFormatter: never;
-  mutations: MigrateProcedureRecord<TMutations>;
-  queries: MigrateProcedureRecord<TQueries>;
-  subscriptions: MigrateProcedureRecord<TSubscriptions>;
-  transformer: CombinedDataTransformer;
-  children: Record<string, never>;
-  procedures: Record<string, never>;
-}>;
+> = NewRouter<
+  RouterDef<
+    TInputContext,
+    TErrorShape,
+    TMeta,
+    Record<string, never>,
+    MigrateProcedureRecord<TQueries, 'query'> &
+      MigrateProcedureRecord<TMutations, 'mutation'> &
+      MigrateProcedureRecord<TSubscriptions, 'subscription'>
+  >
+>;
 
 export type MigrateOldRouter<TRouter extends AnyOldRouter> =
   TRouter extends OldRouter<
@@ -108,9 +132,10 @@ export type MigrateOldRouter<TRouter extends AnyOldRouter> =
       >
     : never;
 
-function migrateProcedure<TProcedure extends AnyOldProcedure>(
-  oldProc: TProcedure,
-): MigrateProcedure<TProcedure> {
+function migrateProcedure<
+  TProcedure extends AnyOldProcedure,
+  TType extends ProcedureType,
+>(oldProc: TProcedure): MigrateProcedure<TProcedure, TType> {
   const def = oldProc._def();
 
   const inputParser = getParseFnOrPassThrough(def.inputParser);
@@ -158,13 +183,13 @@ export function migrateRouter<TOldRouter extends AnyOldRouter>(
     subscriptions[name] = migrateProcedure(procedure as any);
   }
 
+  const procedures = mergeWithoutOverrides(queries, mutations, subscriptions);
+
   const newRouter = createRouterFactory<any>({
     transformer,
     errorFormatter,
   })({
-    mutations,
-    queries,
-    subscriptions,
+    procedures,
   });
 
   return newRouter as any;

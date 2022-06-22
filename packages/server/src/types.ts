@@ -65,3 +65,10 @@ export type InferLast<T> = T & { [K in keyof T]: T[K] };
  */
 export type inferAsyncReturnType<TFunction extends (...args: any) => any> =
   ThenArg<ReturnType<TFunction>>;
+
+/**
+ * @internal
+ */
+export type Filter<T extends Record<any, any> | any[], K> = {
+  [TKey in keyof T]: T[TKey] extends K ? T[TKey] : never;
+};

@@ -1,4 +1,6 @@
 /* eslint-disable @typescript-eslint/ban-types */
+import { inferProcedureOutput } from '.';
+import { Filter } from '..';
 import { TRPCError } from '../error/TRPCError';
 import {
   DefaultErrorShape,
@@ -16,30 +18,32 @@ import {
 import { mergeWithoutOverrides } from './internals/mergeWithoutOverrides';
 import { prefixObjectKeys } from './internals/prefixObjectKeys';
 import { EnsureRecord, ValidateShape } from './internals/utils';
-import { ExplicitProcedure, Procedure } from './procedure';
+import {
+  MutationProcedure,
+  Procedure,
+  QueryProcedure,
+  SubscriptionProcedure,
+} from './procedure';
 import { ProcedureType } from './types';
 
 // FIXME this should properly use TContext maybe?
 export type ProcedureRecord<_TContext> = Record<string, Procedure<any>>;
 type AnyProcedureRecord = ProcedureRecord<any>;
 export interface ProcedureStructure {
-  queries: AnyProcedureRecord;
-  mutations: AnyProcedureRecord;
-  subscriptions: AnyProcedureRecord;
-  procedures: Record<string, ExplicitProcedure<any>>;
+  queries: Record<string, QueryProcedure<any>>;
+  mutations: Record<string, MutationProcedure<any>>;
+  subscriptions: Record<string, SubscriptionProcedure<any>>;
+  procedures: AnyProcedureRecord;
 }
 
-export interface RouterParams<
+export interface RouterDef<
   // FIXME this should use RootConfig
   TContext,
   TErrorShape extends TRPCErrorShape<number>,
   TMeta extends Record<string, unknown>,
-  TQueries extends ProcedureRecord<TContext>,
-  TMutations extends ProcedureRecord<TContext>,
-  TSubscriptions extends ProcedureRecord<TContext>,
   TChildren extends Record<string, AnyRouter>,
-  TProcedures extends Record<string, ExplicitProcedure<any>>,
-> extends ProcedureStructure {
+  TProcedures extends AnyProcedureRecord,
+> {
   /**
    * @internal
    */
@@ -52,24 +56,19 @@ export interface RouterParams<
    * @internal
    */
   _meta: TMeta;
-  /** @deprecated **/
-  queries: TQueries;
-  /** @deprecated **/
-  mutations: TMutations;
-  /** @deprecated **/
-  subscriptions: TSubscriptions;
   errorFormatter: ErrorFormatter<TContext, TErrorShape>;
   transformer: CombinedDataTransformer;
   // Maybe a better impl would be `Record<string, Partial<ProcedureStructure>>`? not sure
   children: TChildren;
   procedures: TProcedures;
+  // FIXME decide if these are deprecated
+  subscriptions: Filter<TProcedures, SubscriptionProcedure<any>>;
+  queries: Filter<TProcedures, QueryProcedure<any>>;
+  mutations: Filter<TProcedures, MutationProcedure<any>>;
 }
 
-export type AnyRouterParams<TContext = any> = RouterParams<
+export type AnyRouterDef<TContext = any> = RouterDef<
   TContext,
-  any,
-  any,
-  any,
   any,
   any,
   any,
@@ -80,12 +79,12 @@ export type AnyRouterParams<TContext = any> = RouterParams<
  * @internal
  */
 export type inferHandlerInput<TProcedure extends Procedure<any>> =
-  TProcedure extends Procedure<infer TParams>
-    ? undefined extends TParams['_input_in'] // ? is input optional
-      ? unknown extends TParams['_input_in'] // ? is input unset
+  TProcedure extends Procedure<infer TDef>
+    ? undefined extends TDef['_input_in'] // ? is input optional
+      ? unknown extends TDef['_input_in'] // ? is input unset
         ? [(null | undefined)?] // -> there is no input
-        : [(TParams['_input_in'] | null | undefined)?] // -> there is optional input
-      : [TParams['_input_in']] // -> input is required
+        : [(TDef['_input_in'] | null | undefined)?] // -> there is optional input
+      : [TDef['_input_in']] // -> input is required
     : [(undefined | null)?]; // -> there is no input
 
 /**
@@ -97,79 +96,65 @@ type inferHandlerFn<TProcedures extends ProcedureRecord<any>> = <
 >(
   path: TPath,
   ...args: inferHandlerInput<TProcedure>
-) => ReturnType<TProcedure>;
+) => inferProcedureOutput<TProcedure>;
 
 /**
  * This only exists b/c of interop mode
  * @internal
  */
 
-type RouterCaller<TParams extends AnyRouterParams> = (ctx: TParams['_ctx']) => {
+type RouterCaller<TDef extends AnyRouterDef> = (ctx: TDef['_ctx']) => {
   /**
    * @deprecated
    */
-  query: inferHandlerFn<TParams['queries']>;
+  query: inferHandlerFn<TDef['queries']>;
   /**
    * @deprecated
    */
-  mutation: inferHandlerFn<TParams['mutations']>;
+  mutation: inferHandlerFn<TDef['mutations']>;
   /**
    * @deprecated
    */
-  subscription: inferHandlerFn<TParams['subscriptions']>;
-
-  queries: TParams['queries'];
-  mutations: TParams['mutations'];
-  subscriptions: TParams['subscriptions'];
+  subscription: inferHandlerFn<TDef['subscriptions']>;
 };
 
-export interface Router<TParams extends AnyRouterParams>
-  extends ProcedureStructure {
-  _def: RouterParams<
-    TParams['_ctx'],
-    TParams['_errorShape'],
-    TParams['_meta'],
-    TParams['queries'],
-    TParams['mutations'],
-    TParams['subscriptions'],
-    TParams['children'],
-    TParams['procedures']
+export interface Router<TDef extends AnyRouterDef> {
+  _def: RouterDef<
+    TDef['_ctx'],
+    TDef['_errorShape'],
+    TDef['_meta'],
+    TDef['children'],
+    TDef['procedures']
   >;
   /** @deprecated **/
-  queries: TParams['queries'];
+  errorFormatter: TDef['errorFormatter'];
   /** @deprecated **/
-  mutations: TParams['mutations'];
+  transformer: TDef['transformer'];
   /** @deprecated **/
-  subscriptions: TParams['subscriptions'];
-  /** @deprecated **/
-  errorFormatter: TParams['errorFormatter'];
-  /** @deprecated **/
-  transformer: TParams['transformer'];
-  /** @deprecated **/
-  children: TParams['children'];
+  children: TDef['children'];
 
-  // FIXME rename me
-  createCaller: RouterCaller<TParams>;
-  // FIXME rename me
+  // FIXME rename me and deprecate
+  createCaller: RouterCaller<TDef>;
+  // FIXME rename me and deprecate
   getErrorShape(opts: {
     error: TRPCError;
     type: ProcedureType | 'unknown';
     path: string | undefined;
     input: unknown;
-    ctx: undefined | TParams['_ctx'];
-  }): TParams['_errorShape'];
+    ctx: undefined | TDef['_ctx'];
+  }): TDef['_errorShape'];
 }
 
 /**
  * @internal
  */
-export type RouterOptions<TContext> = Partial<AnyRouterParams<TContext>>;
+export type RouterOptions<TContext> = Partial<AnyRouterDef<TContext>>;
 
 /**
  * @internal
  */
 export type RouterDefaultOptions<TContext> = Pick<
-  AnyRouterParams<TContext>,
+  AnyRouterDef<TContext>,
   'transformer' | 'errorFormatter'
 >;
 
@@ -178,7 +163,7 @@ export type RouterDefaultOptions<TContext> = Pick<
  */
 export type RouterBuildOptions<TContext> = Pick<
   RouterOptions<TContext>,
-  'queries' | 'subscriptions' | 'mutations' | 'children' | 'procedures'
+  'children' | 'procedures'
 >;
 
 export type AnyRouter = Router<any>;
@@ -212,18 +197,15 @@ export function createRouterFactory<TSettings extends RootConfig>(
     TProcedures extends RouterBuildOptions<TSettings['ctx']>,
   >(
     opts: ValidateShape<TProcedures, RouterBuildOptions<TSettings['ctx']>>,
-  ): Router<{
-    _ctx: TSettings['ctx'];
-    _errorShape: TSettings['errorShape'];
-    _meta: TSettings['meta'];
-    queries: EnsureRecord<TProcedures['queries']>;
-    mutations: EnsureRecord<TProcedures['mutations']>;
-    subscriptions: EnsureRecord<TProcedures['subscriptions']>;
-    errorFormatter: ErrorFormatter<TSettings['ctx'], TSettings['errorShape']>;
-    transformer: TSettings['transformer'];
-    children: EnsureRecord<TProcedures['children']>;
-    procedures: EnsureRecord<TProcedures['procedures']>;
-  }> {
+  ): Router<
+    RouterDef<
+      TSettings['ctx'],
+      TSettings['errorShape'],
+      TSettings['meta'],
+      EnsureRecord<TProcedures['children']>,
+      EnsureRecord<TProcedures['procedures']>
+    >
+  > {
     const prefixedChildren = Object.entries(opts.children ?? {}).map(
       ([key, childRouter]) => {
         const queries = prefixObjectKeys(
@@ -252,23 +234,8 @@ export function createRouterFactory<TSettings extends RootConfig>(
       },
     );
     const routerProcedures = {
-      queries: mergeWithoutOverrides(
-        opts.queries,
-        ...prefixedChildren.map((child) => child.queries),
-      ),
-      mutations: mergeWithoutOverrides(
-        opts.mutations,
-        ...prefixedChildren.map((child) => child.mutations),
-      ),
-      subscriptions: mergeWithoutOverrides(
-        opts.subscriptions,
-        ...prefixedChildren.map((child) => child.subscriptions),
-      ),
       procedures: mergeWithoutOverrides(
         opts.procedures,
-        opts.subscriptions,
-        opts.queries,
-        opts.mutations,
         ...prefixedChildren.map((child) => child.procedures),
       ),
 
@@ -286,7 +253,7 @@ export function createRouterFactory<TSettings extends RootConfig>(
       routerProcedures,
     );
 
-    const _def: AnyRouterParams<TSettings['ctx']> = {
+    const _def: AnyRouterDef<TSettings['ctx']> = {
       children: {},
       procedures: {},
       ...emptyRouter,
@@ -389,30 +356,3 @@ export function createRouterFactory<TSettings extends RootConfig>(
     return router as any;
   };
 }
-
-type combineProcedureRecords<
-  A extends Partial<AnyRouter>,
-  B extends Partial<AnyRouter>,
-> = {
-  queries: A['queries'] & B['queries'];
-  mutations: A['mutations'] & B['mutations'];
-  subscriptions: A['subscriptions'] & B['subscriptions'];
-};
-/**
- * @internal
- */
-export type mergeProcedureRecordsVariadic<
-  Routers extends Partial<AnyRouter>[],
-> = Routers extends []
-  ? {
-      queries: {};
-      mutations: {};
-      subscriptions: {};
-    }
-  : Routers extends [infer First, ...infer Rest]
-  ? First extends Partial<AnyRouter>
-    ? Rest extends Partial<AnyRouter>[]
-      ? combineProcedureRecords<First, mergeProcedureRecordsVariadic<Rest>>
-      : never
-    : never
-  : never;

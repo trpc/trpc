@@ -10,7 +10,7 @@ import {
 test('default transformer', () => {
   const t = initTRPC()();
   const router = t.router({});
-  expectTypeOf(router.transformer).toMatchTypeOf<DefaultDataTransformer>();
+  expectTypeOf(router._def.transformer).toMatchTypeOf<DefaultDataTransformer>();
 });
 test('custom transformer', () => {
   const transformer: DataTransformerOptions = {
