@@ -19,7 +19,6 @@ test('default transformer', () => {
     foo: 'bar';
   }>();
   expectTypeOf(t._config.transformer).toMatchTypeOf<DefaultDataTransformer>();
-  expectTypeOf(router._def.transformer).toMatchTypeOf<DefaultDataTransformer>();
 });
 test('custom transformer', () => {
   const transformer: DataTransformerOptions = {

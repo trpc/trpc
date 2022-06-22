@@ -58,12 +58,18 @@ export function initTRPC<TParams extends Partial<InitGenerics> = {}>() {
     const transformer = getDataTransformer(
       options?.transformer ?? defaultTransformer,
     ) as $Transformer;
+    const _config: $Config = {
+      transformer,
+      errorShape: null as any,
+      ctx: null as any,
+      meta: null as any,
+    };
     return {
       /**
        * These are just types, they can't be used
        * @internal
        */
-      _config: null as unknown as $Config,
+      _config,
       /**
        * Builder object for creating procedures
        */
