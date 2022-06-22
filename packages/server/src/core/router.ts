@@ -190,18 +190,18 @@ const emptyRouter = {
  *
  * @internal
  */
-export function createRouterFactory<TSettings extends RootConfig>(
-  defaults?: RouterDefaultOptions<TSettings['ctx']>,
+export function createRouterFactory<TConfig extends RootConfig>(
+  defaults?: RouterDefaultOptions<TConfig['ctx']>,
 ) {
   return function createRouterInner<
-    TProcedures extends RouterBuildOptions<TSettings['ctx']>,
+    TProcedures extends RouterBuildOptions<TConfig['ctx']>,
   >(
-    opts: ValidateShape<TProcedures, RouterBuildOptions<TSettings['ctx']>>,
+    opts: ValidateShape<TProcedures, RouterBuildOptions<TConfig['ctx']>>,
   ): Router<
     RouterDef<
-      TSettings['ctx'],
-      TSettings['errorShape'],
-      TSettings['meta'],
+      TConfig['ctx'],
+      TConfig['errorShape'],
+      TConfig['meta'],
       EnsureRecord<TProcedures['children']>,
       EnsureRecord<TProcedures['procedures']>
     >
@@ -243,8 +243,7 @@ export function createRouterFactory<TSettings extends RootConfig>(
     };
 
     const result = mergeWithoutOverrides<
-      RouterDefaultOptions<TSettings['ctx']> &
-        RouterBuildOptions<TSettings['ctx']>
+      RouterDefaultOptions<TConfig['ctx']> & RouterBuildOptions<TConfig['ctx']>
     >(
       {
         transformer: defaults?.transformer ?? defaultTransformer,
@@ -253,7 +252,7 @@ export function createRouterFactory<TSettings extends RootConfig>(
       routerProcedures,
     );
 
-    const _def: AnyRouterDef<TSettings['ctx']> = {
+    const _def: AnyRouterDef<TConfig['ctx']> = {
       children: {},
       procedures: {},
       ...emptyRouter,

@@ -27,17 +27,27 @@ test('children', async () => {
   });
 
   const { queries, mutations, subscriptions, procedures } = router._def;
-  expect({ queries, mutations, subscriptions, procedures })
-    .toMatchInlineSnapshot(`
+  expect({
+    queries,
+    mutations,
+    subscriptions,
+    procedures,
+  }).toMatchInlineSnapshot(`
     Object {
-      "mutations": Object {},
+      "mutations": Object {
+        "child.grandchild.mut": [Function],
+      },
       "procedures": Object {
         "child.childQuery": [Function],
         "child.grandchild.foo": [Function],
         "child.grandchild.mut": [Function],
         "foo": [Function],
       },
-      "queries": Object {},
+      "queries": Object {
+        "child.childQuery": [Function],
+        "child.grandchild.foo": [Function],
+        "foo": [Function],
+      },
       "subscriptions": Object {},
     }
   `);

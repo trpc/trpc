@@ -41,9 +41,9 @@ export function initTRPC<TParams extends Partial<InitGenerics> = {}>() {
       ErrorFormatter<$Context, DefaultErrorShape>
     >;
     type $Transformer = TOptions['transformer'] extends DataTransformerOptions
-      ? TOptions['transformer'] extends undefined
-        ? DefaultDataTransformer
-        : CombinedDataTransformer
+      ? TOptions['transformer'] extends DataTransformerOptions
+        ? CombinedDataTransformer
+        : DefaultDataTransformer
       : DefaultDataTransformer;
     type $ErrorShape = ErrorFormatterShape<$Formatter>;
 
@@ -57,7 +57,7 @@ export function initTRPC<TParams extends Partial<InitGenerics> = {}>() {
     const errorFormatter = options?.errorFormatter ?? defaultFormatter;
     const transformer = getDataTransformer(
       options?.transformer ?? defaultTransformer,
-    );
+    ) as $Transformer;
     return {
       /**
        * These are just types, they can't be used

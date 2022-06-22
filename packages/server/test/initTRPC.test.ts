@@ -8,8 +8,17 @@ import {
 } from '../src/transformer';
 
 test('default transformer', () => {
-  const t = initTRPC()();
+  const t = initTRPC<{
+    ctx: {
+      foo: 'bar';
+    };
+  }>()();
   const router = t.router({});
+
+  expectTypeOf(router._def._ctx).toMatchTypeOf<{
+    foo: 'bar';
+  }>();
+  expectTypeOf(t._config.transformer).toMatchTypeOf<DefaultDataTransformer>();
   expectTypeOf(router._def.transformer).toMatchTypeOf<DefaultDataTransformer>();
 });
 test('custom transformer', () => {
@@ -21,6 +30,10 @@ test('custom transformer', () => {
     transformer,
   });
   const router = t.router({});
-  expectTypeOf(router.transformer).toMatchTypeOf<CombinedDataTransformer>();
-  expectTypeOf(router.transformer).not.toMatchTypeOf<DefaultDataTransformer>();
+  expectTypeOf(
+    router._def.transformer,
+  ).toMatchTypeOf<CombinedDataTransformer>();
+  expectTypeOf(
+    router._def.transformer,
+  ).not.toMatchTypeOf<DefaultDataTransformer>();
 });
