@@ -275,7 +275,7 @@ export function createRouterFactory<TConfig extends RootConfig>(
     function callProcedure(opts: InternalProcedureCallOptions) {
       const { type, path } = opts;
 
-      if (!(path in def.procedures)) {
+      if (!(path in def.procedures) || !def.procedures[path]['_def'][type]) {
         throw new TRPCError({
           code: 'NOT_FOUND',
           message: `No "${type}"-procedure on path "${path}"`,
@@ -283,6 +283,7 @@ export function createRouterFactory<TConfig extends RootConfig>(
       }
 
       const procedure = def.procedures[path] as InternalProcedure;
+
       return procedure(opts);
     }
     const router: AnyRouter = {

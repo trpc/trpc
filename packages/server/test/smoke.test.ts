@@ -87,3 +87,18 @@ test('sad path', async () => {
   );
   close();
 });
+
+test('call a mutation as a query', async () => {
+  const router = trpc.router({
+    procedures: {
+      hello: procedure.query(() => 'world'),
+    },
+  });
+  const { client, close } = routerToServerAndClientNew(router);
+
+  await expect((client.hello as any).mutation()).rejects.toMatchInlineSnapshot(
+    `[TRPCClientError: No "mutation"-procedure on path "hello"]`,
+  );
+
+  close();
+});
