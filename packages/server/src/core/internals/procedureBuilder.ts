@@ -8,6 +8,7 @@ import {
   QueryProcedure,
   SubscriptionProcedure,
 } from '../procedure';
+import { RootConfig } from './config';
 import { createInternalBuilder } from './internalProcedure';
 import { ResolveOptions } from './utils';
 import { DefaultValue as FallbackValue, Overwrite, UnsetMarker } from './utils';
@@ -166,15 +167,14 @@ export interface ProcedureBuilder<TParams extends ProcedureParams> {
     : SubscriptionProcedure<TParams>;
 }
 
-// TODO make this into a callbag?
-export function createBuilder<TContext, TMeta>(): ProcedureBuilder<{
-  _ctx_in: TContext;
-  _ctx_out: TContext;
+export function createBuilder<TConfig extends RootConfig>(): ProcedureBuilder<{
+  _ctx_in: TConfig['ctx'];
+  _ctx_out: TConfig['ctx'];
   _input_out: UnsetMarker;
   _input_in: UnsetMarker;
   _output_in: UnsetMarker;
   _output_out: UnsetMarker;
-  _meta: TMeta;
+  _meta: TConfig['meta'];
 }> {
   return createInternalBuilder() as any;
 }

@@ -73,7 +73,7 @@ export function initTRPC<TParams extends Partial<InitGenerics> = {}>() {
       /**
        * Builder object for creating procedures
        */
-      procedure: createBuilder<$Context, $Meta>(),
+      procedure: createBuilder<$Config>(),
       /**
        * Create reusable middlewares
        */
