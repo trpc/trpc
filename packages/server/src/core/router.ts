@@ -14,7 +14,6 @@ import {
   InternalProcedureCallOptions,
 } from './internals/internalProcedure';
 import { mergeWithoutOverrides } from './internals/mergeWithoutOverrides';
-import { omitPrototype } from './internals/omitPrototype';
 import { prefixObjectKeys } from './internals/prefixObjectKeys';
 import { EnsureRecord, ValidateShape } from './internals/utils';
 import { Procedure } from './procedure';
@@ -227,7 +226,7 @@ export function createRouterFactory<TSettings extends RootConfig>(
         subscriptions: prefixObjectKeys(childRouter.subscriptions, `${key}.`),
       }),
     );
-    const routerProcedures = omitPrototype({
+    const routerProcedures = {
       queries: mergeWithoutOverrides(
         procedures.queries,
         ...prefixedChildren.map((child) => child.queries),
@@ -240,7 +239,7 @@ export function createRouterFactory<TSettings extends RootConfig>(
         procedures.subscriptions,
         ...prefixedChildren.map((child) => child.subscriptions),
       ),
-    });
+    };
     const result = mergeWithoutOverrides<
       RouterDefaultOptions<TSettings['ctx']> &
         RouterBuildOptions<TSettings['ctx']>
