@@ -229,15 +229,15 @@ export function createRouterFactory<TSettings extends RootConfig>(
     );
     const routerProcedures = omitPrototype({
       queries: mergeWithoutOverrides(
-        omitPrototype(procedures.queries),
+        procedures.queries,
         ...prefixedChildren.map((child) => child.queries),
       ),
       mutations: mergeWithoutOverrides(
-        omitPrototype(procedures.mutations),
+        procedures.mutations,
         ...prefixedChildren.map((child) => child.mutations),
       ),
       subscriptions: mergeWithoutOverrides(
-        omitPrototype(procedures.subscriptions),
+        procedures.subscriptions,
         ...prefixedChildren.map((child) => child.subscriptions),
       ),
     });
