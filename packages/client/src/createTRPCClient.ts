@@ -46,6 +46,10 @@ function makeProxy<TRouter extends AnyRouter>(
         }
         const fullPath = pathCopy.join('.');
 
+        if (type.startsWith('use')) {
+          throw new Error(`Invalid hook call`);
+        }
+
         return (client as any)[type](fullPath, ...args);
       },
     },
