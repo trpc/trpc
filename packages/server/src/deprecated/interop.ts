@@ -56,7 +56,7 @@ type MigrateProcedure<
   ? QueryProcedure<convertProcedureParams<TProcedure>>
   : TType extends 'mutation'
   ? MutationProcedure<convertProcedureParams<TProcedure>>
-  : TType extends 'subscriptions'
+  : TType extends 'subscription'
   ? SubscriptionProcedure<convertProcedureParams<TProcedure>>
   : never;
 
