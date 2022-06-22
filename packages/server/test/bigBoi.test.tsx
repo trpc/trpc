@@ -52,6 +52,7 @@ test('vanilla', async () => {
 test('useQuery()', async () => {
   const { react, client } = ctx;
   function MyComponent() {
+    // FIXME
     // const query1 = react.useQuery(['r17q5', { who: 'KATT' }]);
     // if (!query1.data) {
     //   return <>...</>;
