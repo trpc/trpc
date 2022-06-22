@@ -1,4 +1,5 @@
 import { routerToServerAndClientNew } from './___testHelpers';
+import { expectTypeOf } from 'expect-type';
 import { initTRPC } from '../src';
 
 test('children', async () => {
@@ -6,7 +7,7 @@ test('children', async () => {
 
   const router = t.router({
     queries: {
-      ttt: t.procedure.resolve(() => 'asd'),
+      foo: t.procedure.resolve(() => 'bar'),
     },
     children: {
       child: t.router({
@@ -16,7 +17,7 @@ test('children', async () => {
         children: {
           grandchild: t.router({
             queries: {
-              foo: t.procedure.resolve(() => 'bar' as const),
+              foo: t.procedure.resolve(() => 'grandchild' as const),
             },
           }),
         },
@@ -24,9 +25,37 @@ test('children', async () => {
     },
   });
 
+  const { queries, mutations, subscriptions } = router;
+  expect({ queries, mutations, subscriptions }).toMatchInlineSnapshot(`
+    Object {
+      "mutations": Object {},
+      "queries": Object {
+        "child.childQuery": [Function],
+        "child.grandchild.foo": [Function],
+        "foo": [Function],
+      },
+      "subscriptions": Object {},
+    }
+  `);
+
   const { client, close } = routerToServerAndClientNew(router);
 
-  expect(await client.child.grandchild.queries.foo()).toBe('bar');
-  client.child.grandchild.queries.foo();
+  expect(await client.queries.foo()).toBe('bar');
+
+  expect(await client.child.grandchild.queries.foo()).toBe('grandchild');
+
   return close();
+});
+
+test('w/o children', async () => {
+  const t = initTRPC()();
+
+  const router = t.router({
+    queries: {
+      foo: t.procedure.resolve(() => 'bar'),
+    },
+  });
+  const children = router.children;
+  //     ^?
+  expectTypeOf(children).toBeUndefined();
 });

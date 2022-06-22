@@ -42,6 +42,7 @@ describe('setup - inference', () => {
         bar,
       },
     });
+
     const router1 = t.mergeRouters(fooRouter, barRouter);
     const router2 = t.router({
       queries: {

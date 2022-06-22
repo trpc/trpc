@@ -15,6 +15,7 @@ import {
 } from './internals/internalProcedure';
 import { mergeWithoutOverrides } from './internals/mergeWithoutOverrides';
 import { omitPrototype } from './internals/omitPrototype';
+import { prefixObjectKeys } from './internals/prefixObjectKeys';
 import { EnsureRecord, ValidateShape } from './internals/utils';
 import { Procedure } from './procedure';
 import { ProcedureType } from './types';
@@ -215,21 +216,31 @@ export function createRouterFactory<TSettings extends RootConfig>(
     subscriptions: EnsureRecord<TProcedures['subscriptions']>;
     errorFormatter: ErrorFormatter<TSettings['ctx'], TSettings['errorShape']>;
     transformer: TSettings['transformer'];
-    children: TProcedures['children'];
+    children: unknown extends TProcedures['children']
+      ? undefined
+      : TProcedures['children'];
   }> {
-    // TODO
-    // Goal here is to generally flatten the underlying Router to a single level together with the queries
-    // - use `prefixObjectKeys()` of the "children" and mix them together with the parent router which wil flatten them
-    // - check that there are no duplicate procedures
-    // - check that there are no duplicate transformers in the child router
-    // - check that there are no duplicate errorFormatter in the child router
-    const routerProcedures = mergeWithoutOverrides(
-      omitPrototype({
-        queries: omitPrototype(procedures.queries),
-        mutations: omitPrototype(procedures.mutations),
-        subscriptions: omitPrototype(procedures.subscriptions),
+    const prefixedChildren = Object.entries(procedures.children ?? {}).map(
+      ([key, childRouter]) => ({
+        queries: prefixObjectKeys(childRouter.queries, `${key}.`),
+        mutations: prefixObjectKeys(childRouter.mutations, `${key}.`),
+        subscriptions: prefixObjectKeys(childRouter.subscriptions, `${key}.`),
       }),
     );
+    const routerProcedures = omitPrototype({
+      queries: mergeWithoutOverrides(
+        omitPrototype(procedures.queries),
+        ...prefixedChildren.map((child) => child.queries),
+      ),
+      mutations: mergeWithoutOverrides(
+        omitPrototype(procedures.mutations),
+        ...prefixedChildren.map((child) => child.mutations),
+      ),
+      subscriptions: mergeWithoutOverrides(
+        omitPrototype(procedures.subscriptions),
+        ...prefixedChildren.map((child) => child.subscriptions),
+      ),
+    });
     const result = mergeWithoutOverrides<
       RouterDefaultOptions<TSettings['ctx']> &
         RouterBuildOptions<TSettings['ctx']>
