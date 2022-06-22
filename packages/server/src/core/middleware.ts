@@ -1,3 +1,4 @@
+import { RootConfig } from './internals/config';
 import { MiddlewareMarker } from './internals/utils';
 import { ProcedureParams } from './procedure';
 import { ProcedureType } from './types';
@@ -73,17 +74,17 @@ export type MiddlewareFunction<
  * @internal
  */
 // FIXME this should use RootConfig
-export function createMiddlewareFactory<TContext, TMeta>() {
+export function createMiddlewareFactory<TConfig extends RootConfig>() {
   return function createMiddleware<$TNewParams extends ProcedureParams>(
     fn: MiddlewareFunction<
       {
-        _ctx_in: TContext;
-        _ctx_out: TContext;
+        _ctx_in: TConfig['ctx'];
+        _ctx_out: TConfig['ctx'];
         _input_out: unknown;
         _input_in: unknown;
         _output_in: unknown;
         _output_out: unknown;
-        _meta: TMeta;
+        _meta: TConfig['meta'];
       },
       $TNewParams
     >,

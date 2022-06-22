@@ -77,7 +77,7 @@ export function initTRPC<TParams extends Partial<InitGenerics> = {}>() {
       /**
        * Create reusable middlewares
        */
-      middleware: createMiddlewareFactory<$Context, $Meta>(),
+      middleware: createMiddlewareFactory<$Config>(),
       /**
        * Create a router
        * FIXME this should also use error formatter
