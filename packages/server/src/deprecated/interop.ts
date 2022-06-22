@@ -135,7 +135,7 @@ export type MigrateOldRouter<TRouter extends AnyOldRouter> =
 function migrateProcedure<
   TProcedure extends AnyOldProcedure,
   TType extends ProcedureType,
->(oldProc: TProcedure): MigrateProcedure<TProcedure, TType> {
+>(oldProc: TProcedure, type: TType): MigrateProcedure<TProcedure, TType> {
   const def = oldProc._def();
 
   const inputParser = getParseFnOrPassThrough(def.inputParser);
@@ -152,9 +152,12 @@ function migrateProcedure<
     ],
     meta: def.meta,
     output: def.outputParser,
+    mutation: type === 'mutation',
+    query: type === 'query',
+    subscription: type === 'subscription',
   });
 
-  const proc = builder.resolve((opts) => def.resolver(opts as any));
+  const proc = builder[type]((opts) => def.resolver(opts as any));
 
   return proc as any;
 }
@@ -170,17 +173,17 @@ export function migrateRouter<TOldRouter extends AnyOldRouter>(
   const mutations: ProcRecord = {};
   const subscriptions: ProcRecord = {};
   for (const [name, procedure] of Object.entries(oldRouter._def.queries)) {
-    queries[name] = migrateProcedure(procedure as any);
+    queries[name] = migrateProcedure(procedure as any, 'query');
   }
 
   for (const [name, procedure] of Object.entries(oldRouter._def.mutations)) {
-    mutations[name] = migrateProcedure(procedure as any);
+    mutations[name] = migrateProcedure(procedure as any, 'mutation');
   }
 
   for (const [name, procedure] of Object.entries(
     oldRouter._def.subscriptions,
   )) {
-    subscriptions[name] = migrateProcedure(procedure as any);
+    subscriptions[name] = migrateProcedure(procedure as any, 'subscription');
   }
 
   const procedures = mergeWithoutOverrides(queries, mutations, subscriptions);

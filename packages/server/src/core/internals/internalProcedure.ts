@@ -26,7 +26,9 @@ export interface InternalProcedure {
    * @deprecated use `._def.meta` instead
    */
   meta: ProcedureBuilderInternal['_def']['meta'];
-  type: ProcedureType;
+  mutation?: boolean;
+  query?: boolean;
+  subscription?: boolean;
   (opts: InternalProcedureCallOptions): Promise<unknown>;
 }
 
@@ -44,7 +46,9 @@ interface ProcedureBuilderInternal {
     meta?: Record<string, unknown>;
     resolver?: ProcedureBuilderInternalResolver;
     middlewares: ProcedureBuilderInternalMiddleware[];
-    type?: ProcedureType;
+    mutation?: boolean;
+    query?: boolean;
+    subscription?: boolean;
   };
   // FIXME
   // _call: (opts: ResolveOptions<any>) => Promise<unknown>;
@@ -174,7 +178,6 @@ function createProcedureCaller(
   };
   procedure._def = _def;
   procedure.meta = _def.meta;
-  procedure.type = _def.type!;
 
   return procedure;
 }
@@ -225,11 +228,9 @@ export function createOutputMiddleware<T>(
 function createResolver(
   _def: ProcedureBuilderInternal['_def'],
   resolver: TResolver,
-  type: ProcedureType,
 ) {
   const finalBuilder = createNewInternalBuilder(_def, {
     resolver,
-    type,
     middlewares: [
       async function resolveMiddleware(opts) {
         const data = await resolver(opts);
@@ -274,7 +275,7 @@ export function createInternalBuilder(
     },
     /** @deprecated **/
     resolve(resolver) {
-      return createResolver(_def, resolver, null as never);
+      return createResolver(_def, resolver);
     },
     unstable_concat(builder) {
       return createNewInternalBuilder(_def, builder._def);
@@ -285,13 +286,13 @@ export function createInternalBuilder(
       });
     },
     query(resolver) {
-      return createResolver(_def, resolver, 'query');
+      return createResolver({ ..._def, query: true }, resolver);
     },
     mutation(resolver) {
-      return createResolver(_def, resolver, 'mutation');
+      return createResolver({ ..._def, mutation: true }, resolver);
     },
     subscription(resolver) {
-      return createResolver(_def, resolver, 'subscription');
+      return createResolver({ ..._def, subscription: true }, resolver);
     },
   };
 }

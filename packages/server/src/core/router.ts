@@ -258,6 +258,15 @@ export function createRouterFactory<TSettings extends RootConfig>(
       procedures: {},
       ...emptyRouter,
       ...result,
+      queries: Object.entries(result.procedures || {})
+        .filter((pair) => (pair[1] as any)._def.query)
+        .reduce((acc, [key, val]) => ({ ...acc, [key]: val }), {}),
+      mutations: Object.entries(result.procedures || {})
+        .filter((pair) => (pair[1] as any)._def.mutation)
+        .reduce((acc, [key, val]) => ({ ...acc, [key]: val }), {}),
+      subscriptions: Object.entries(result.procedures || {})
+        .filter((pair) => (pair[1] as any)._def.subscription)
+        .reduce((acc, [key, val]) => ({ ...acc, [key]: val }), {}),
     };
     const def = {
       _def,
