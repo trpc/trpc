@@ -16,7 +16,39 @@ function createRouter(routerName: string) {
             who: z.string()
           })
         )
-        .query(({input}) => \`hello \${input.who}\`)
+        .query(({input}) => \`hello \${input.who}\`),
+      greeting2: t
+        .procedure
+        .input(
+          z.object({
+            who: z.string()
+          })
+        )
+        .query(({input}) => \`hello \${input.who}\`),
+        greeting3: t
+          .procedure
+          .input(
+            z.object({
+              who: z.string()
+            })
+          )
+          .query(({input}) => \`hello \${input.who}\`),
+        greeting4: t
+          .procedure
+          .input(
+            z.object({
+              who: z.string()
+            })
+          )
+          .query(({input}) => \`hello \${input.who}\`),
+        greeting5: t
+          .procedure
+          .input(
+            z.object({
+              who: z.string()
+            })
+          )
+          .query(({input}) => \`hello \${input.who}\`),
     },
     children: {
       grandchild: t.router({
