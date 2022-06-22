@@ -1,5 +1,4 @@
 /* eslint-disable @typescript-eslint/ban-types */
-import { mergeRoutersGeneric } from './internals/__generated__/mergeRoutersGeneric';
 import {
   DefaultErrorShape,
   ErrorFormatter,
@@ -81,10 +80,6 @@ export function initTRPC<TParams extends Partial<InitGenerics> = {}>() {
         errorFormatter,
         transformer,
       }),
-      /**
-       * Merge Routers
-       */
-      mergeRouters: mergeRoutersGeneric,
     };
   };
 }
