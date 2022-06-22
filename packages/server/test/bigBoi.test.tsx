@@ -1,5 +1,5 @@
 import { routerToServerAndClientNew } from './___testHelpers';
-import { appRouter } from './__generated__/_app';
+import { appRouter } from './__generated__/bigBoi/_app';
 import { render, waitFor } from '@testing-library/react';
 import { createReactQueryHooks } from '@trpc/react';
 import { expectTypeOf } from 'expect-type';

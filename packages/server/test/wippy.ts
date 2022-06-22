@@ -18,7 +18,7 @@ type CreateProcedure<
   ? MutationProcedure<TProcedureCall>
   : never;
 
-function createProcedure<
+export function createProcedure<
   TType extends ProcedureType,
   TProcedureCall extends ProcedureCall,
 >(type: TType, call: TProcedureCall): CreateProcedure<TType, TProcedureCall> {
@@ -40,7 +40,7 @@ export type EnsureRecord<T> = T extends Record<string, any>
   ? T
   : Record<string, never>;
 
-function createRouter<TDef extends Partial<RouterDef>>(
+export function createRouter<TDef extends Partial<RouterDef>>(
   router: TDef,
 ): Router<{
   procedures: EnsureRecord<TDef['procedures']>;
@@ -65,7 +65,26 @@ const router = createRouter({
     foo: createProcedure('query', () => 'foo' as const),
   },
   children: {
-    child: createRouter({
+    child1: createRouter({
+      procedures: {
+        childFoo: createProcedure('query', () => 'childFoo' as const),
+      },
+      children: {
+        grandchild: createRouter({
+          procedures: {
+            grandChildFoo: createProcedure(
+              'query',
+              () => 'grandChildFoo' as const,
+            ),
+            grandChildMut: createProcedure(
+              'mutation',
+              () => 'grandChildFoo' as const,
+            ),
+          },
+        }),
+      },
+    }),
+    child2: createRouter({
       procedures: {
         childFoo: createProcedure('query', () => 'childFoo' as const),
       },
@@ -87,16 +106,12 @@ const router = createRouter({
   },
 });
 
-const res1 = router._def.procedures.foo;
-//     ^?
-function createClient<TRouter extends AnyRouter>(): FlattenRouter<TRouter> {
+export function createClient<
+  TRouter extends AnyRouter,
+>(): FlattenRouter<TRouter> {
   throw new Error('');
 }
 
 const client = createClient<typeof router>();
-//     ^?
 
-client.child.childFoo.query();
-client.child.grandchild.grandChildFoo.query();
-const res = client.child.grandchild.grandChildMut.mutation();
-///    ^?
+client.child1.childFoo.query();

@@ -4,7 +4,7 @@ const NUM_ROUTERS = 20;
 const NUM_PROCEDURES_PER_ROUTER = 100;
 
 const TRPC_FILE = `
-import { initTRPC } from '../../src';
+import { initTRPC } from '../../../src';
 
 export const t = initTRPC()();
 `.trim();
@@ -32,7 +32,7 @@ export const __ROUTER_NAME__ = t.router({
 
 `.trim();
 
-const SERVER_DIR = __dirname + '/../packages/server/test/__generated__';
+const SERVER_DIR = __dirname + '/../packages/server/test/__generated__/bigBoi';
 
 fs.mkdirSync(SERVER_DIR, { recursive: true });
 
