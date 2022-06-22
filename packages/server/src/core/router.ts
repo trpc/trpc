@@ -268,6 +268,7 @@ export function createRouterFactory<TSettings extends RootConfig>(
         opts.procedures,
         opts.subscriptions,
         opts.queries,
+        opts.mutations,
         ...prefixedChildren.map((child) => child.procedures),
       ),
 
