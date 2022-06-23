@@ -131,7 +131,7 @@ const isAuthed = t.middleware(({next, ctx}) => {
 const authedProcedure = t.procedure.use(isAuthed)
 
 const appRouter = t.router({
-  queries: {
+  procedures: {
     greeting: authedProcedure.query(({ ctx }) => `hello ${ctx.name}!`)
   }
 })
