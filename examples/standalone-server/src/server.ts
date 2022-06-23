@@ -23,20 +23,19 @@ type Context = inferAsyncReturnType<typeof createContext>;
 const t = initTRPC<{ ctx: Context }>()();
 
 const greetingRouter = t.router({
-  queries: {
+  procedures: {
     greeting: t.procedure
       .input(
         z.object({
           name: z.string(),
         }),
       )
-      .resolve(({ input }) => `Hello, ${input.name}!`),
+      .query(({ input }) => `Hello, ${input.name}!`),
   },
 });
 
 const postRouter = t.router({
-  queries: {},
-  mutations: {
+  procedures: {
     createPost: t.procedure
       .input(
         z.object({
@@ -44,16 +43,14 @@ const postRouter = t.router({
           text: z.string(),
         }),
       )
-      .resolve(({ input }) => {
+      .mutation(({ input }) => {
         // imagine db call here
         return {
           id: `${Math.random()}`,
           ...input,
         };
       }),
-  },
-  subscriptions: {
-    randomNumber: t.procedure.resolve(() => {
+    randomNumber: t.procedure.subscription(() => {
       return observable<{ randomNumber: number }>((emit) => {
         const timer = setInterval(() => {
           // emits a number every second
@@ -69,7 +66,12 @@ const postRouter = t.router({
 });
 
 // Merge routers together
-const appRouter = t.mergeRouters(greetingRouter, postRouter);
+const appRouter = t.router({
+  children: {
+    greeting: greetingRouter,
+    post: postRouter,
+  },
+});
 
 export type AppRouter = typeof appRouter;
 

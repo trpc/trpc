@@ -38,13 +38,13 @@ const client = createTRPCClient<AppRouter>({
 });
 
 async function main() {
-  const helloResponse = await client.queries.greeting({
+  const helloResponse = await client.greeting.greeting.query({
     name: 'world',
   });
 
   console.log('helloResponse', helloResponse);
 
-  const createPostRes = await client.mutation('createPost', {
+  const createPostRes = await client.post.createPost.mutate({
     title: 'hello world',
     text: 'check out https://tRPC.io',
   });
