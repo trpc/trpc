@@ -137,8 +137,6 @@ export interface Router<TDef extends AnyRouterDef> {
   errorFormatter: TDef['errorFormatter'];
   /** @deprecated **/
   transformer: TDef['transformer'];
-  /** @deprecated **/
-  children: TDef['children'];
 
   // FIXME rename me and deprecate
   createCaller: RouterCaller<TDef>;
@@ -281,7 +279,6 @@ export function createRouterFactory<TConfig extends RootConfig>(
     }
     const router: AnyRouter = {
       ...def,
-      children: opts.children,
       createCaller(ctx) {
         return {
           query: (path, ...args) =>
