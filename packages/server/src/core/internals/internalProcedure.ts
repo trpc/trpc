@@ -50,8 +50,6 @@ interface ProcedureBuilderInternal {
     query?: boolean;
     subscription?: boolean;
   };
-  // FIXME
-  // _call: (opts: ResolveOptions<any>) => Promise<unknown>;
   /**
    * @internal
    */

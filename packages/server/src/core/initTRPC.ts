@@ -80,7 +80,6 @@ export function initTRPC<TParams extends Partial<InitGenerics> = {}>() {
       middleware: createMiddlewareFactory<$Config>(),
       /**
        * Create a router
-       * FIXME this should also use error formatter
        */
       router: createRouterFactory<$Config>({
         errorFormatter,

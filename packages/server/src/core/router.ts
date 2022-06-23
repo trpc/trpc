@@ -26,14 +26,12 @@ import {
 } from './procedure';
 import { ProcedureType } from './types';
 
-// FIXME this should properly use TContext maybe?
-export type ProcedureRecord<_TContext> = Record<string, Procedure<any>>;
-type AnyProcedureRecord = ProcedureRecord<any>;
+export type ProcedureRecord = Record<string, Procedure<any>>;
 export interface ProcedureStructure {
   queries: Record<string, QueryProcedure<any>>;
   mutations: Record<string, MutationProcedure<any>>;
   subscriptions: Record<string, SubscriptionProcedure<any>>;
-  procedures: AnyProcedureRecord;
+  procedures: ProcedureRecord;
 }
 
 export interface RouterDef<
@@ -42,7 +40,7 @@ export interface RouterDef<
   TErrorShape extends TRPCErrorShape<number>,
   TMeta extends Record<string, unknown>,
   TChildren extends Record<string, AnyRouter>,
-  TProcedures extends AnyProcedureRecord,
+  TProcedures extends ProcedureRecord,
 > {
   /**
    * @internal
@@ -62,8 +60,17 @@ export interface RouterDef<
   children: TChildren;
   procedures: TProcedures;
   // FIXME decide if these are deprecated
+  /**
+   * @deprecated
+   */
   subscriptions: Filter<TProcedures, SubscriptionProcedure<any>>;
+  /**
+   * @deprecated
+   */
   queries: Filter<TProcedures, QueryProcedure<any>>;
+  /**
+   * @deprecated
+   */
   mutations: Filter<TProcedures, MutationProcedure<any>>;
 }
 
@@ -90,7 +97,7 @@ export type inferHandlerInput<TProcedure extends Procedure<any>> =
 /**
  * @internal
  */
-type inferHandlerFn<TProcedures extends ProcedureRecord<any>> = <
+type inferHandlerFn<TProcedures extends ProcedureRecord> = <
   TProcedure extends TProcedures[TPath],
   TPath extends keyof TProcedures & string,
 >(
