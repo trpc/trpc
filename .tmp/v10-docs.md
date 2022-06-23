@@ -11,7 +11,6 @@
     - [Calling procedures](#calling-procedures)
     - [Middlewares](#middlewares)
   - [New router API!](#new-router-api)
-    - [ℹ️ Known limitations ℹ️](#ℹ️-known-limitations-ℹ️)
     - [§1 Basics](#1-basics)
       - [§1.0 Setting up tRPC](#10-setting-up-trpc)
       - [§1.1 Creating a router](#11-creating-a-router)
@@ -70,11 +69,11 @@ const appRouter = trpc
 
 // NEW:
 const appRouter = t.router({
-  queries: {
+  procedures: {
     greeting: t
       .procedure
       .input(z.string())
-      .resolve(({ input }) => `hello ${input}!`)
+      .query(({ input }) => `hello ${input}!`)
   }
 })
 ```
@@ -87,8 +86,8 @@ client.query('hello', 'KATT')
 trpc.useQuery(['hello', 'KATT'])
 
 // NEW - you'll be able to CMD+click `hello` below and jump straight to your backend code
-client.queries.hello('KATT')
-trpc.queries.hello.use('KATT')
+client.hello('KATT')
+trpc.greeting.useQuery('KATT')
 ```
 
 ### Middlewares
@@ -133,20 +132,12 @@ const authedProcedure = t.procedure.use(isAuthed)
 
 const appRouter = t.router({
   queries: {
-    greeting: authedProcedure.resolve(({ ctx }) => `hello ${ctx.name}!`)
+    greeting: authedProcedure.query(({ ctx }) => `hello ${ctx.name}!`)
   }
 })
 ```
 
 ## New router API! 
-
-### ℹ️ Known limitations ℹ️
-
-Router merging with a prefix in the new API will **not** be supported. All queries a mutations will lie flat on one big object.
-
-We might revisit this decision in the future, the reason here is that it **breaks jump-to-definition** (CMD+Clicking from client to server).
-
-> Is this a deal-breaker to you? Please tell us!
 
 ### §1 Basics
 
@@ -196,10 +187,7 @@ const {
 
 ```tsx
 export const appRouter = t.router({
-  queries: {
-    // [...]
-  },
-  mutations: {
+  procedures: {
     // [...]
   },
 })
@@ -211,7 +199,7 @@ export const appRouter = t.router({
 export const appRouter = t.router({
   queries: {
     // simple procedure without args avialable at postAll`
-    postList: procedure.resolve(() => postsDb),
+    postList: procedure.query(() => postsDb),
   }
 });
 ```
@@ -268,7 +256,7 @@ const postById = procedure
       id: z.string(),
     }),
   )
-  .resolve(({ input }) => {
+  .query(({ input }) => {
     const post = postsDb.find((post) => post.id === input.id);
     if (!post) {
       throw new Error('NOT_FOUND');
@@ -294,7 +282,7 @@ const whoami = procedure
       },
     });
   })
-  .resolve(({ ctx }) => {
+  .query(({ ctx }) => {
     // `isAuthed()` will propagate new `ctx`
     // `ctx.user` is now `NonNullable`
     return `your id is ${ctx.user.id}`;
@@ -322,7 +310,7 @@ const isAuthed = t.middleware((params) => {
 // Use in procedure:
 const whoami = procedure
   .use(isAuthed)
-  .resolve(({ ctx }) => {
+  .query(({ ctx }) => {
     // `isAuthed()` will propagate new `ctx`
     // `ctx.user` is now `NonNullable`
     return `your id is ${ctx.user.id}`;
@@ -337,14 +325,14 @@ const protectedProcedure = procedure.use(isAuthed);
 
 export const appRouter = t.router({
   queries: {
-    postList: protectedProcedure.resolve(() => postsDb),
+    postList: protectedProcedure.query(() => postsDb),
     postById: protectedProcedure
       .input(
         z.object({
           id: z.string(),
         }),
       )
-      .resolve(({ input }) => {
+      .query(({ input }) => {
         const post = postsDb.find((post) => post.id === input.id);
         if (!post) {
           throw new Error('NOT_FOUND');
@@ -363,11 +351,11 @@ export const appRouter = t.router({
 
 ```tsx
 procedure
-      .output(z.void())
-      // This will fail because we've explicitly said this procedure is `void`
-      .resolve(({ input }) => {
-        return'hello';
-      })
+  .output(z.void())
+  // This will fail because we've explicitly said this procedure is `void`
+  .query(({ input }) => {
+    return'hello';
+  })
 ```
 
 #### §2.4 Merging routers
@@ -375,14 +363,14 @@ procedure
 ```ts
 const postRouter = t.router({
   queries: {
-    postList: protectedProcedure.resolve(() => postsDb),
+    postList: protectedProcedure.query(() => postsDb),
     postById: protectedProcedure
       .input(
         z.object({
           id: z.string(),
         }),
       )
-      .resolve(({ input }) => {
+      .query(({ input }) => {
         const post = postsDb.find((post) => post.id === input.id);
         if (!post) {
           throw new Error('NOT_FOUND');
@@ -396,7 +384,7 @@ const postRouter = t.router({
 
 const health = t.router({
   query: {
-    healthz: t.resolve(() => 'I am alive')
+    healthz: t.query(() => 'I am alive')
   }
 })
 
@@ -456,7 +444,7 @@ const editOrganization = procedure
       }),
     ),
   )
-  .resolve(({ ctx, input }) => {
+  .mutation(({ ctx, input }) => {
     // - User is guaranteed to be part of the organization queried
     // - `input` is of type:
       // {
@@ -516,7 +504,7 @@ export const t = initTRPC<{
   ```ts
   const greetingRouter = t.router({
     query: {
-      greeting: t.procedure.resolve(() => 'world')
+      greeting: t.procedure.query(() => 'world')
     }
   })
   ```
