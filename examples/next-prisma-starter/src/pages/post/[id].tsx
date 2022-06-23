@@ -5,7 +5,7 @@ import { trpc } from '~/utils/trpc';
 
 const PostViewPage: NextPageWithLayout = () => {
   const id = useRouter().query.id as string;
-  const postQuery = trpc.useQuery(['postById', { id }]);
+  const postQuery = trpc.hooks.post.postById.useQuery({ id });
 
   if (postQuery.error) {
     return (

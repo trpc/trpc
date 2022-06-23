@@ -5,6 +5,11 @@ import { t } from '../trpc';
 import { healthRouter } from './health';
 import { postRouter } from './post';
 
-export const appRouter = t.mergeRouters(postRouter, healthRouter);
+export const appRouter = t.router({
+  children: {
+    post: postRouter,
+    health: healthRouter,
+  },
+});
 
 export type AppRouter = typeof appRouter;

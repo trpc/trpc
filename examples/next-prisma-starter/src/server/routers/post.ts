@@ -22,8 +22,8 @@ const defaultPostSelect = Prisma.validator<Prisma.PostSelect>()({
 });
 
 export const postRouter = t.router({
-  queries: {
-    postList: t.procedure.resolve(() => {
+  procedures: {
+    postList: t.procedure.query(() => {
       /**
        * For pagination you can have a look at this docs site
        * @link https://trpc.io/docs/useInfiniteQuery
@@ -39,7 +39,7 @@ export const postRouter = t.router({
           id: z.string(),
         }),
       )
-      .resolve(async ({ input }) => {
+      .query(async ({ input }) => {
         const { id } = input;
         const post = await prisma.post.findUnique({
           where: { id },
@@ -53,8 +53,6 @@ export const postRouter = t.router({
         }
         return post;
       }),
-  },
-  mutations: {
     postAdd: t.procedure
       .input(
         z.object({
@@ -63,7 +61,7 @@ export const postRouter = t.router({
           text: z.string().min(1),
         }),
       )
-      .resolve(async ({ input }) => {
+      .mutation(async ({ input }) => {
         const post = await prisma.post.create({
           data: input,
           select: defaultPostSelect,
