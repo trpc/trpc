@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-non-null-assertion */
 import {
   CreateTRPCClientOptions,
   TRPCClient,
@@ -449,4 +450,88 @@ export function createReactQueryHooks<
     useInfiniteQuery,
     queries,
   };
+}
+type Join<T extends ReadonlyArray<any>, D extends string> = T extends []
+  ? ''
+  : T extends [string]
+  ? `${T[0]}`
+  : T extends [string, ...infer R]
+  ? `${T[0]}${D}${Join<R, D>}`
+  : string;
+
+type DecorateProcedures<T extends ProcedureRecord, TPath extends string[]> = {
+  [K in keyof T]: T[K] extends { _query: true }
+    ? {
+        useQuery<
+          TQueryFnData = inferProcedureOutput<T[K]>,
+          TData = inferProcedureOutput<T[K]>,
+        >(
+          ...args: [
+            inferProcedureInput<T[K]>,
+            void | UseTRPCQueryOptions<
+              Join<[...TPath, K], '.'>,
+              inferProcedureInput<T[K]>,
+              TQueryFnData,
+              TData,
+              TRPCClientErrorLike<never>
+            >,
+          ]
+        ): UseQueryResult<TData, never>;
+      }
+    : {};
+};
+type FlattenRouter<
+  TRouter extends AnyRouter,
+  TPath extends string[] = [],
+> = DecorateProcedures<TRouter['_def']['procedures'], TPath> & {
+  [TKey in keyof TRouter['_def']['children']]: FlattenRouter<
+    TRouter['_def']['children'][TKey],
+    [...TPath, TKey & string]
+  >;
+};
+
+function makeProxy<TRouter extends AnyRouter, TClient>(
+  client: TClient,
+  ...path: string[]
+) {
+  const proxy: any = new Proxy(
+    function () {
+      // noop
+    },
+    {
+      get(_obj, name) {
+        if (name in client && !path.length) {
+          return client[name as keyof typeof client];
+        }
+        if (typeof name === 'string') {
+          return makeProxy(client, ...path, name);
+        }
+
+        return client;
+      },
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      apply(_1, _2, args) {
+        const pathCopy = [...path];
+        const type = pathCopy.pop()!;
+        const fullPath = pathCopy.join('.');
+
+        if (!type.startsWith('use')) {
+          throw new Error(`Invalid hook call`);
+        }
+        const [input, ...rest] = args;
+
+        return (client as any)[type]([fullPath, input], ...rest);
+      },
+    },
+  );
+
+  return proxy as TClient & FlattenRouter<TRouter>;
+}
+export function createReactQueryHooksNew<
+  TRouter extends AnyRouter,
+  TSSRContext = unknown,
+>() {
+  const trpc = createReactQueryHooks<TRouter, TSSRContext>();
+
+  return makeProxy<TRouter, typeof trpc>(trpc);
 }
