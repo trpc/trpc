@@ -6,6 +6,10 @@
 - [tRPC V10](#trpc-v10)
   - [Play with it!](#play-with-it)
   - [Goals & features](#goals--features)
+  - [The Gist / tl;dr](#the-gist--tldr)
+    - [Defining routers & procedures](#defining-routers--procedures)
+    - [Calling procedures](#calling-procedures)
+    - [Middlewares](#middlewares)
   - [New router API!](#new-router-api)
     - [ℹ️ Known limitations ℹ️](#ℹ️-known-limitations-ℹ️)
     - [§1 Basics](#1-basics)
@@ -46,6 +50,93 @@
 - **Enabling having a file**-based structure - as you see, that `createRouter()` could easily be automatically generated from a file/folder structure.
 - **Better scaling** than current structure! The new version has been tested with 2,000 procedures still acts alright, where the current V9.x version starts slowing doing noticeably at ~100 procedures. *(Note: this testing with very basic procedures, for large projects you still have to use [Project References](https://github.com/microsoft/TypeScript/wiki/Performance#using-project-references))*
 - ~**Infer expected errors** as well as data - unsure if this is useful yet or if it'll make it, but pretty sure it'll be nice to have.~ Skipped this because of it's complexity - it can still be added later.
+
+## The Gist / tl;dr
+
+The main difference between the old and the new router is that "the chaining" is shifted from the Router to each Procedure.
+
+### Defining routers & procedures
+
+```ts
+// OLD:
+const appRouter = trpc
+  .router()
+  .query('greeting', {
+    input: z.string(),
+    resolve({input}) {
+      return `hello ${input}!`
+    }
+  })
+
+// NEW:
+const appRouter = t.router({
+  queries: {
+    greeting: t
+      .procedure
+      .input(z.string())
+      .resolve(({ input }) => `hello ${input}!`)
+  }
+})
+```
+
+### Calling procedures
+
+```ts
+// OLD
+client.query('hello', 'KATT')
+trpc.useQuery(['hello', 'KATT'])
+
+// NEW - you'll be able to CMD+click `hello` below and jump straight to your backend code
+client.queries.hello('KATT')
+trpc.queries.hello.use('KATT')
+```
+
+### Middlewares
+
+```ts
+// OLD
+const appRouter = trpc
+  .router()
+  .middleware(({next, ctx}) => {
+    if (!ctx.user) {
+      throw new TRPCError({ code: "UNAUTHORIZED" }) 
+    }
+
+    return next({
+      ctx: {
+        ...ctx,
+        user: ctx.user,
+      }
+    })
+  })
+  .query('greeting', {
+    resolve({input}) {
+      return `hello ${ctx.user.name}!`
+    }
+  })
+
+// NEW
+const isAuthed = t.middleware(({next, ctx}) => {
+  if (!ctx.user) {
+    throw new TRPCError({ code: "UNAUTHORIZED" }) 
+  }
+
+  return next({
+    ctx: {
+      user: ctx.user,
+    }
+  })
+})
+
+// Reusable:
+const authedProcedure = t.procedure.use(isAuthed)
+
+const appRouter = t.router({
+  queries: {
+    greeting: authedProcedure.resolve(({ ctx }) => `hello ${ctx.name}!`)
+  }
+})
+```
 
 ## New router API! 
 
