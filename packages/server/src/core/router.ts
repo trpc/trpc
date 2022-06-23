@@ -215,27 +215,12 @@ export function createRouterFactory<TConfig extends RootConfig>(
   > {
     const prefixedChildren = Object.entries(opts.children ?? {}).map(
       ([key, childRouter]) => {
-        const queries = prefixObjectKeys(
-          (childRouter as any).queries,
-          `${key}.`,
-        );
-        const mutations = prefixObjectKeys(
-          (childRouter as any).mutations,
-          `${key}.`,
-        );
-        const subscriptions = prefixObjectKeys(
-          (childRouter as any).subscriptions,
-          `${key}.`,
-        );
         const procedures = prefixObjectKeys(
-          (childRouter as any).procedures,
+          (childRouter as any)._def.procedures,
           `${key}.`,
         );
 
         return {
-          queries,
-          mutations,
-          subscriptions,
           procedures,
         };
       },
@@ -243,7 +228,7 @@ export function createRouterFactory<TConfig extends RootConfig>(
     const routerProcedures = {
       procedures: mergeWithoutOverrides(
         opts.procedures,
-        ...prefixedChildren.map((child) => child.procedures),
+        ...prefixedChildren.map((child) => (child as any).procedures),
       ),
 
       children: opts.children || {},
@@ -276,20 +261,21 @@ export function createRouterFactory<TConfig extends RootConfig>(
     };
     const def = {
       _def,
-      ..._def,
+      transformer: _def.transformer,
+      errorFormatter: _def.errorFormatter,
     };
 
     function callProcedure(opts: InternalProcedureCallOptions) {
       const { type, path } = opts;
 
-      if (!(path in def.procedures) || !def.procedures[path]['_def'][type]) {
+      if (!(path in _def.procedures) || !_def.procedures[path]['_def'][type]) {
         throw new TRPCError({
           code: 'NOT_FOUND',
           message: `No "${type}"-procedure on path "${path}"`,
         });
       }
 
-      const procedure = def.procedures[path] as InternalProcedure;
+      const procedure = _def.procedures[path] as InternalProcedure;
 
       return procedure(opts);
     }
