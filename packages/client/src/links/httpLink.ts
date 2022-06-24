@@ -1,5 +1,5 @@
 import { AnyRouter } from '@trpc/server';
-import { getFetch } from '..';
+import { getFetch } from '../getFetch';
 import { TRPCClientError } from '../TRPCClientError';
 import { TRPCAbortError } from '../internals/TRPCAbortError';
 import { getAbortController } from '../internals/fetchHelpers';
