@@ -40,7 +40,7 @@ export type inferProcedureInput<TProcedure extends Procedure<any>> =
 //     ? TProcedure['mutate']
 //     : never;
 
-type inferProcedureParams<TProcedure extends Procedure<any>> =
+export type inferProcedureParams<TProcedure extends Procedure<any>> =
   TProcedure extends Procedure<infer $Params> ? $Params : never;
 export type inferProcedureOutput<TProcedure extends Procedure<any>> =
   inferProcedureParams<TProcedure>['_output_out'];

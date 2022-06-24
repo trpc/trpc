@@ -30,6 +30,9 @@ const ctx = konn()
                 }),
               )
               .query(() => '__infResult' as const),
+            /**
+             * @deprecated
+             */
             create: t.procedure
               .input(
                 z.object({

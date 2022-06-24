@@ -1,6 +1,6 @@
-import { TRPCClientErrorLike } from '@trpc/client';
 import {
   AnyRouter,
+  Procedure,
   inferProcedureInput,
   inferProcedureOutput,
 } from '@trpc/server';
@@ -16,6 +16,9 @@ import {
   UseTRPCQueryOptions,
   createReactQueryHooks,
 } from './createReactQueryHooks';
+
+type FIXME_GET_ERROR = never;
+type inferProcedureClientError<_T extends Procedure<any>> = FIXME_GET_ERROR;
 
 type Join<T extends ReadonlyArray<any>, D extends string> = T extends []
   ? ''
@@ -45,23 +48,23 @@ type DecorateProcedures<
               inferProcedureInput<TRecord[TPath]>,
               TQueryFnData,
               TData,
-              TRPCClientErrorLike<never>
+              inferProcedureClientError<TRecord[TPath]>
             >,
           ]
-        ) => UseQueryResult<TData, never>
+        ) => UseQueryResult<TData, inferProcedureClientError<TRecord[TPath]>>
       : never;
 
     useMutation: TRecord[TPath] extends { _mutation: true }
       ? <TContext = unknown>(
           opts?: UseTRPCMutationOptions<
             inferProcedureInput<TRecord[TPath]>,
-            TRPCClientErrorLike<never>,
+            inferProcedureClientError<TRecord[TPath]>,
             inferProcedureOutput<TRecord[TPath]>,
             TContext
           >,
         ) => UseMutationResult<
           inferProcedureOutput<TRecord[TPath]>,
-          TRPCClientErrorLike<never>,
+          inferProcedureClientError<TRecord[TPath]>,
           inferProcedureInput<TRecord[TPath]>,
           TContext
         >
@@ -81,10 +84,13 @@ type DecorateProcedures<
                 Join<[...TPrefix, TPath], '.'>,
                 inferProcedureInput<TRecord[TPath]>,
                 TData,
-                TRPCClientErrorLike<never>
+                inferProcedureClientError<TRecord[TPath]>
               >,
             ]
-          ) => UseInfiniteQueryResult<TData, never>
+          ) => UseInfiniteQueryResult<
+            TData,
+            inferProcedureClientError<TRecord[TPath]>
+          >
         : never
       : never;
   }>;
