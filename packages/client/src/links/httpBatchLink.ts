@@ -1,6 +1,6 @@
 import { AnyRouter, ProcedureType } from '@trpc/server';
 import { TRPCResponse } from '@trpc/server/rpc';
-import { getFetch } from '..';
+import { getFetch } from '../getFetch';
 import { TRPCClientError } from '../TRPCClientError';
 import { TRPCAbortError } from '../internals/TRPCAbortError';
 import { dataLoader } from '../internals/dataLoader';
