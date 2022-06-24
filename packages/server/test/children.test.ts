@@ -71,7 +71,7 @@ test('w/o children', async () => {
       foo,
     },
   });
-  const children = router.children;
+  const children = router._def.children;
   //     ^?
   expectTypeOf(children).toEqualTypeOf<Record<string, never>>();
 
