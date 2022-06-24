@@ -1,7 +1,7 @@
 import { routerToServerAndClientNew } from './___testHelpers';
 import { appRouter } from './__generated__/bigBoi/_app';
 import { render, waitFor } from '@testing-library/react';
-import { createReactQueryHooksNew } from '@trpc/react';
+import { createReactQueryProxy } from '@trpc/react';
 import { expectTypeOf } from 'expect-type';
 import { konn } from 'konn';
 import React, { useState } from 'react';
@@ -11,7 +11,7 @@ const ctx = konn()
   .beforeEach(() => {
     const opts = routerToServerAndClientNew(appRouter, {});
     const queryClient = new QueryClient();
-    const react = createReactQueryHooksNew<typeof appRouter>();
+    const react = createReactQueryProxy<typeof appRouter>();
     const client = opts.client;
 
     return {

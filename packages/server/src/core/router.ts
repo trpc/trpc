@@ -153,11 +153,6 @@ export interface Router<TDef extends AnyRouterDef> {
 /**
  * @internal
  */
-export type RouterOptions<TContext> = Partial<AnyRouterDef<TContext>>;
-
-/**
- * @internal
- */
 export type RouterDefaultOptions<TContext> = Pick<
   AnyRouterDef<TContext>,
   'transformer' | 'errorFormatter'
@@ -166,9 +161,8 @@ export type RouterDefaultOptions<TContext> = Pick<
 /**
  * @internal
  */
-export type RouterBuildOptions<TContext> = Pick<
-  RouterOptions<TContext>,
-  'children' | 'procedures'
+export type RouterBuildOptions<TContext> = Partial<
+  Pick<AnyRouterDef<TContext>, 'children' | 'procedures'>
 >;
 
 export type AnyRouter = Router<any>;
@@ -199,9 +193,9 @@ export function createRouterFactory<TConfig extends RootConfig>(
   defaults?: RouterDefaultOptions<TConfig['ctx']>,
 ) {
   return function createRouterInner<
-    TProcedures extends RouterBuildOptions<TConfig['ctx']>,
+    TProcedures extends RouterBuildOptions<TConfig>,
   >(
-    opts: ValidateShape<TProcedures, RouterBuildOptions<TConfig['ctx']>>,
+    opts: ValidateShape<TProcedures, RouterBuildOptions<TConfig>>,
   ): Router<
     RouterDef<
       TConfig['ctx'],
