@@ -67,7 +67,7 @@ The most complex types are also in this area because we must keep track of the c
 
 #### Handling a Request and Forming a Response
 
-The core implementation for HTTP handling is contained in [`resolveHTTPResponse`](packages/server/src/http/resolveHTTPResponse.ts) where requests are handled and an object representing a response is created. This function deals with handling different methods (`query` and `mutation` have different sepcs), batching, etc. so it is an excellent place to get an overview of the complete process of handling a request and forming a response. If you want to learn more about the specification that we implement, read [this docs page](https://trpc.io/docs/rpc).
+The core implementation for HTTP handling is contained in [`resolveHTTPResponse`](packages/server/src/http/resolveHTTPResponse.ts) where requests are handled and an object representing a response is created. This function deals with handling different methods (`query` and `mutation` have different specs), batching, etc. so it is an excellent place to get an overview of the complete process of handling a request and forming a response. If you want to learn more about the specification that we implement, read [this docs page](https://trpc.io/docs/rpc).
 
 #### Adapting Requests and Responses
 
@@ -79,7 +79,7 @@ This is where we use the router types to build a typesafe _vanilla_ client that 
 
 #### Proxy API
 
-In our client packages, we use [proxies](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Proxy) to offer the most intuitive API for users. They simply type the path of the procedure that they created in their `Router` and it is called as transparently as a regular function, enabling TypeScript features like jump to definition and easy refactors.
+In our client packages, we use [proxies](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Proxy) to offer the most intuitive API for users. They simply type the path of the procedure that they created in their `Router` and it is called as transparently as a regular function, enabling TypeScript features like jump to definition and easy refactors.
 
 #### Links
 
