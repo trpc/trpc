@@ -142,7 +142,7 @@ function makeProxy<
     },
   );
 
-  return proxy as typeof client & FlattenRouter<TRouter>;
+  return proxy as FlattenRouter<TRouter>;
 }
 export function createReactQueryProxy<
   TRouter extends AnyRouter,
