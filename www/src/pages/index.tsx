@@ -1,13 +1,12 @@
-import { Navbar } from '@/components/Navbar';
+import { Landing } from '@/components/Landing';
 import { Spotlight } from '@/components/Spotlight';
 import { SpotlightItem } from '@/components/SpotlightItem';
 import { NextPage } from 'next';
 
-
 const Home: NextPage = () => {
   return (
-    <div className="px-12 py-8">
-      <Navbar />
+    <div>
+      <Landing />
       <Spotlight header="Next Generation APIs">
         <SpotlightItem
           imageSrc="/wizard.svg"

@@ -1,4 +1,3 @@
-import Image from 'next/image';
 import Link from 'next/link';
 import { FaDiscord } from 'react-icons/fa';
 import { FiGithub, FiTwitter } from 'react-icons/fi';
