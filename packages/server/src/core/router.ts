@@ -199,29 +199,17 @@ export function createRouterFactory<TConfig extends RootConfig>(
       EnsureRecord<TProcedures['procedures']>
     >
   > {
-    // const prefixedChildren = Object.entries(opts.children ?? {}).map(
-    //   ([key, childRouter]) => {
-    //     const procedures = prefixObjectKeys(
-    //       (childRouter as any)._def.procedures,
-    //       `${key}.`,
-    //     );
-
-    //     return {
-    //       procedures,
-    //     };
-    //   },
-    // );
-
     const routerProcedures: Record<string, Procedure<any>> = omitPrototype({});
     function recursiveGetPaths(procedures: Record<string, any>, path = '') {
-      for (const [key, procedure] of Object.entries(procedures)) {
+      for (const [key, procedureOrObject] of Object.entries(procedures ?? {})) {
         const newPath = `${path}${key}`;
-        if (typeof procedure === 'object') {
-          recursiveGetPaths(procedure, `${newPath}.`);
-          return;
+
+        if (typeof procedureOrObject === 'object') {
+          recursiveGetPaths(procedureOrObject, `${newPath}.`);
+          continue;
         }
 
-        routerProcedures[newPath] = procedure;
+        routerProcedures[newPath] = procedureOrObject;
       }
     }
 

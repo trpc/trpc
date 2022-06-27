@@ -94,14 +94,14 @@ type assertProcedure<T> = T extends Procedure<any> ? T : never;
 type DecoratedProcedureRecord<
   TProcedures extends RecursiveProcedureRecord,
   TPath extends string = '',
-> = OmitNeverKeys<{
+> = {
   [TKey in keyof TProcedures]: TProcedures[TKey] extends RecursiveProcedureRecord
     ? DecoratedProcedureRecord<TProcedures[TKey], `${TPath}${TKey & string}.`>
     : DecorateProcedure<
         assertProcedure<TProcedures[TKey & string]>,
         `${TPath}${TKey & string}`
       >;
-}>;
+};
 
 function makeProxy<
   TRouter extends AnyRouter,
@@ -117,8 +117,7 @@ function makeProxy<
           return client[name as keyof typeof client];
         }
         if (typeof name === 'string') {
-          // @ts-expect-error "excessively infinite"
-          return makeProxy(client, ...path, name) as any;
+          return makeProxy(client, ...path, name);
         }
 
         return client;
