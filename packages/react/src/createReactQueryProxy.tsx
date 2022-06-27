@@ -142,7 +142,8 @@ function makeProxy<
     },
   );
 
-  return proxy as DecoratedProcedureRecord<TRouter['_def']['procedures']>;
+  return proxy as DecoratedProcedureRecord<TRouter['_def']['procedures']> &
+    Pick<TClient, 'Provider'>;
 }
 export function createReactQueryProxy<
   TRouter extends AnyRouter,
