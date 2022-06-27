@@ -7,12 +7,12 @@ import { NavLink } from '../NavLink';
 
 export const Hero = () => {
   return (
-    <div className="px-4 sm:px-6 md:px-8 max-w-screen-xl mx-auto flex justify-between items-center mt-20">
+    <div className="px-4 py-12 sm:px-6 md:px-8 max-w-screen-xl mx-auto flex justify-between items-center">
       <div className="flex-1">
         <div className="hidden lg:block">
           <Logo size={86} />
         </div>
-        <h1 className="font-bold text-4xl sm:text-5xl lg:text-6xl py-3">
+        <h1 className="font-bold text-3xl sm:text-4xl lg:text-5xl py-3">
           Build fully typesafe <br /> APIs easily.
         </h1>
         <p className="text-zinc-500 max-w-[80ch]">
