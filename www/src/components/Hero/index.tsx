@@ -1,12 +1,17 @@
 import Image from 'next/image';
 import Link from 'next/link';
+import { FaDiscord } from 'react-icons/fa';
+import { FiGithub, FiTwitter } from 'react-icons/fi';
 import { Logo } from '../Logo';
+import { NavLink } from '../NavLink';
 
 export const Hero = () => {
   return (
     <div className="px-4 sm:px-6 md:px-8 max-w-screen-xl mx-auto flex justify-between items-center mt-20">
       <div className="flex-1">
-        <Logo size={86} />
+        <div className="hidden lg:block">
+          <Logo size={86} />
+        </div>
         <h1 className="font-bold text-4xl sm:text-5xl lg:text-6xl py-3">
           Build fully typesafe <br /> APIs easily.
         </h1>
@@ -27,6 +32,18 @@ export const Hero = () => {
             </a>
           </Link>
         </div>
+
+        <ul className="flex gap-6 md:hidden pt-6">
+          <NavLink href="https://github.com/trpc/trpc" external>
+            <FiGithub />
+          </NavLink>
+          <NavLink href="https://twitter.com/alexdotjs" external>
+            <FiTwitter />
+          </NavLink>
+          <NavLink href="https://discord.com/invite/wzaMgEJkcf" external>
+            <FaDiscord />
+          </NavLink>
+        </ul>
       </div>
       <div className="hidden lg:block flex-1 shadow-lg rounded-xl overflow-hidden">
         <Image

@@ -13,20 +13,24 @@ export const Navbar = () => (
           <span>tRPC</span>
         </a>
       </Link>
-      <ul className="flex gap-6 text-sm">
-        <NavLink href="/docs">Docs</NavLink>
-        <NavLink href="/quickstart">Quickstart</NavLink>
-        <NavLink href="/examples">Examples</NavLink>
-        <NavLink href="https://github.com/trpc/trpc" external>
-          <FiGithub />
-        </NavLink>
-        {/* <NavLink href="https://twitter.com/alexdotjs" external>
-          <FiTwitter />
-        </NavLink>
-        <NavLink href="https://discord.com/invite/wzaMgEJkcf" external>
-          <FaDiscord />
-        </NavLink> */}
-      </ul>
+      <div className="flex gap-6">
+        <ul className="flex gap-6 text-sm">
+          <NavLink href="/docs">Docs</NavLink>
+          <NavLink href="/quickstart">Quickstart</NavLink>
+          <NavLink href="/examples">Examples</NavLink>
+        </ul>
+        <ul className="hidden md:flex gap-6">
+          <NavLink href="https://github.com/trpc/trpc" external>
+            <FiGithub />
+          </NavLink>
+          <NavLink href="https://twitter.com/alexdotjs" external>
+            <FiTwitter />
+          </NavLink>
+          <NavLink href="https://discord.com/invite/wzaMgEJkcf" external>
+            <FaDiscord />
+          </NavLink>
+        </ul>
+      </div>
     </nav>
   </div>
 );
