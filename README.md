@@ -297,6 +297,9 @@ Also, if your company using tRPC and want to support long-term maintenance of tR
     <td align="center"><a href="http://solberg.is"><img src="https://avatars.githubusercontent.com/u/701?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Jökull Sólberg Auðunsson</b></sub></a><br /><a href="#financial-jokull" title="Financial">💵</a></td>
     <td align="center"><a href="https://github.com/futpib"><img src="https://avatars.githubusercontent.com/u/4330357?v=4?s=100" width="100px;" alt=""/><br /><sub><b>futpib</b></sub></a><br /><a href="https://github.com/trpc/trpc/issues?q=author%3Afutpib" title="Bug reports">🐛</a></td>
   </tr>
+  <tr>
+    <td align="center"><a href="https://github.com/lmatheus"><img src="https://avatars.githubusercontent.com/u/8514703?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Luis Matheus</b></sub></a><br /><a href="#financial-lmatheus" title="Financial">💵</a></td>
+  </tr>
 </table>
 
 <!-- markdownlint-restore -->
