@@ -821,6 +821,15 @@
       "contributions": [
         "bug"
       ]
+    },
+    {
+      "login": "lmatheus",
+      "name": "Luis Matheus",
+      "avatar_url": "https://avatars.githubusercontent.com/u/8514703?v=4",
+      "profile": "https://github.com/lmatheus",
+      "contributions": [
+        "financial"
+      ]
     }
   ],
   "contributorsPerLine": 7,
