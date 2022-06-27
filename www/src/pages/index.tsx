@@ -1,12 +1,15 @@
-import { Landing } from '@/components/Landing';
+import { Hero } from '@/components/Hero';
+import { Navbar } from '@/components/Navbar';
+import { Sponsors } from '@/components/Sponsors';
 import { Spotlight } from '@/components/Spotlight';
 import { SpotlightItem } from '@/components/SpotlightItem';
 import { NextPage } from 'next';
 
 const Home: NextPage = () => {
   return (
-    <div>
-      <Landing />
+    <>
+      <Navbar />
+      <Hero />
       <Spotlight header="Next Generation APIs">
         <SpotlightItem
           imageSrc="/wizard.svg"
@@ -24,7 +27,8 @@ const Home: NextPage = () => {
           description="Easy to add to your existing brownfield project with adapters for Connect/Express/Next.js."
         />
       </Spotlight>
-    </div>
+      <Sponsors />
+    </>
   );
 };
 
