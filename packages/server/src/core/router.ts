@@ -44,7 +44,7 @@ export interface RouterDef<
   TContext,
   TErrorShape extends TRPCErrorShape<number>,
   TMeta extends Record<string, unknown>,
-  TProcedures extends RecursiveRecord<Procedure<any>>,
+  TProcedures extends RecursiveProcedureRecord,
 > {
   /**
    * @internal
