@@ -26,17 +26,15 @@ import {
 } from './procedure';
 import { ProcedureType } from './types';
 
-export type RecursiveRecord<T> = {
-  [key: string]: T | RecursiveRecord<T>;
-};
+type ProcedureRecord = Record<string, Procedure<any>>;
 
-export type RecursiveProcedureRecord = RecursiveRecord<Procedure<any>>;
+export type ProcedureRouterRecord = Record<string, Procedure<any> | AnyRouter>;
 
 export interface ProcedureStructure {
-  queries: RecursiveRecord<QueryProcedure<any>>;
-  mutations: RecursiveRecord<MutationProcedure<any>>;
-  subscriptions: RecursiveRecord<SubscriptionProcedure<any>>;
-  procedures: RecursiveProcedureRecord;
+  queries: Record<string, QueryProcedure<any>>;
+  mutations: Record<string, MutationProcedure<any>>;
+  subscriptions: Record<string, SubscriptionProcedure<any>>;
+  procedures: ProcedureRecord;
 }
 
 export interface RouterDef<
@@ -44,7 +42,7 @@ export interface RouterDef<
   TContext,
   TErrorShape extends TRPCErrorShape<number>,
   TMeta extends Record<string, unknown>,
-  TProcedures extends RecursiveProcedureRecord,
+  TProcedures extends ProcedureRouterRecord,
 > {
   /**
    * @internal
@@ -200,16 +198,17 @@ export function createRouterFactory<TConfig extends RootConfig>(
     >
   > {
     const routerProcedures: Record<string, Procedure<any>> = omitPrototype({});
-    function recursiveGetPaths(procedures: Record<string, any>, path = '') {
-      for (const [key, procedureOrObject] of Object.entries(procedures ?? {})) {
+    function recursiveGetPaths(procedures: ProcedureRouterRecord, path = '') {
+      for (const [key, procedureOrRouter] of Object.entries(procedures ?? {})) {
         const newPath = `${path}${key}`;
 
-        if (typeof procedureOrObject === 'object') {
-          recursiveGetPaths(procedureOrObject, `${newPath}.`);
+        if (typeof procedureOrRouter === 'object') {
+          const router = procedureOrRouter as AnyRouter;
+          recursiveGetPaths(router._def.procedures, `${newPath}.`);
           continue;
         }
 
-        routerProcedures[newPath] = procedureOrObject;
+        routerProcedures[newPath] = procedureOrRouter;
       }
     }
 

@@ -8,13 +8,17 @@ test('children', async () => {
   const router = t.router({
     procedures: {
       foo: t.procedure.query(() => 'bar'),
-      child: {
-        childQuery: t.procedure.query(() => 'asd'),
-        grandchild: {
-          foo: t.procedure.query(() => 'grandchild' as const),
-          mut: t.procedure.mutation(() => 'mut'),
+      child: t.router({
+        procedures: {
+          childQuery: t.procedure.query(() => 'asd'),
+          grandchild: t.router({
+            procedures: {
+              foo: t.procedure.query(() => 'grandchild' as const),
+              mut: t.procedure.mutation(() => 'mut'),
+            },
+          }),
         },
-      },
+      }),
     },
   });
 
@@ -48,6 +52,7 @@ test('children', async () => {
 
   expect(await client.foo.query()).toBe('bar');
 
+  client.child.grandchild;
   expect(await client.child.grandchild.foo.query()).toBe('grandchild');
   expect(await client.child.grandchild.mut.mutate()).toBe('mut');
 

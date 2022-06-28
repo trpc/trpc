@@ -1,7 +1,7 @@
 import {
   AnyRouter,
   Procedure,
-  RecursiveProcedureRecord,
+  ProcedureRouterRecord,
   inferProcedureInput,
   inferProcedureOutput,
 } from '@trpc/server';
@@ -92,11 +92,14 @@ type DecorateProcedure<
 type assertProcedure<T> = T extends Procedure<any> ? T : never;
 
 type DecoratedProcedureRecord<
-  TProcedures extends RecursiveProcedureRecord,
+  TProcedures extends ProcedureRouterRecord,
   TPath extends string = '',
 > = {
-  [TKey in keyof TProcedures]: TProcedures[TKey] extends RecursiveProcedureRecord
-    ? DecoratedProcedureRecord<TProcedures[TKey], `${TPath}${TKey & string}.`>
+  [TKey in keyof TProcedures]: TProcedures[TKey] extends AnyRouter
+    ? DecoratedProcedureRecord<
+        TProcedures[TKey]['_def']['procedures'],
+        `${TPath}${TKey & string}.`
+      >
     : DecorateProcedure<
         assertProcedure<TProcedures[TKey & string]>,
         `${TPath}${TKey & string}`

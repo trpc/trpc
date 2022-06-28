@@ -14,41 +14,31 @@ const ctx = konn()
     const t = initTRPC()();
     const appRouter = t.router({
       procedures: {
-        post: {
-          byId: t.procedure
-            .input(
-              z.object({
-                id: z.string(),
-              }),
-            )
-            .query(() => '__result' as const),
-          list: t.procedure
-            .input(
-              z.object({
-                cursor: z.string().optional(),
-              }),
-            )
-            .query(() => '__infResult' as const),
-          create: t.procedure
-            .input(
-              z.object({
-                text: z.string(),
-              }),
-            )
-            .mutation(() => `__mutationResult` as const),
-        },
-        item: {
-          one: {
-            two: {
-              hello: t.procedure.query(() => '__result' as const),
-              three: {
-                four: t.procedure.query(() => '__result' as const),
-                five: t.procedure.query(() => '__result' as const),
-              },
-              nine: t.procedure.mutation(() => `__mutationResult` as const),
-            },
+        post: t.router({
+          procedures: {
+            byId: t.procedure
+              .input(
+                z.object({
+                  id: z.string(),
+                }),
+              )
+              .query(() => '__result' as const),
+            list: t.procedure
+              .input(
+                z.object({
+                  cursor: z.string().optional(),
+                }),
+              )
+              .query(() => '__infResult' as const),
+            create: t.procedure
+              .input(
+                z.object({
+                  text: z.string(),
+                }),
+              )
+              .mutation(() => `__mutationResult` as const),
           },
-        },
+        }),
       },
     });
     const opts = routerToServerAndClientNew(appRouter);

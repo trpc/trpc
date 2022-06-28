@@ -22,50 +22,54 @@ type Context = inferAsyncReturnType<typeof createContext>;
 
 const t = initTRPC<{ ctx: Context }>()();
 
-const greetingProcedures = {
-  greeting: t.procedure
-    .input(
-      z.object({
-        name: z.string(),
-      }),
-    )
-    .query(({ input }) => `Hello, ${input.name}!`),
-};
+const greetingRouter = t.router({
+  procedures: {
+    greeting: t.procedure
+      .input(
+        z.object({
+          name: z.string(),
+        }),
+      )
+      .query(({ input }) => `Hello, ${input.name}!`),
+  },
+});
 
-const postProcedures = {
-  createPost: t.procedure
-    .input(
-      z.object({
-        title: z.string(),
-        text: z.string(),
+const postRouter = t.router({
+  procedures: {
+    createPost: t.procedure
+      .input(
+        z.object({
+          title: z.string(),
+          text: z.string(),
+        }),
+      )
+      .mutation(({ input }) => {
+        // imagine db call here
+        return {
+          id: `${Math.random()}`,
+          ...input,
+        };
       }),
-    )
-    .mutation(({ input }) => {
-      // imagine db call here
-      return {
-        id: `${Math.random()}`,
-        ...input,
-      };
+    randomNumber: t.procedure.subscription(() => {
+      return observable<{ randomNumber: number }>((emit) => {
+        const timer = setInterval(() => {
+          // emits a number every second
+          emit.next({ randomNumber: Math.random() });
+        }, 200);
+
+        return () => {
+          clearInterval(timer);
+        };
+      });
     }),
-  randomNumber: t.procedure.subscription(() => {
-    return observable<{ randomNumber: number }>((emit) => {
-      const timer = setInterval(() => {
-        // emits a number every second
-        emit.next({ randomNumber: Math.random() });
-      }, 200);
-
-      return () => {
-        clearInterval(timer);
-      };
-    });
-  }),
-};
+  },
+});
 
 // Merge routers together
 const appRouter = t.router({
   procedures: {
-    greeting: greetingProcedures,
-    post: postProcedures,
+    greeting: greetingRouter,
+    post: postRouter,
   },
 });
 

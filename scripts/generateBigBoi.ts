@@ -7,7 +7,8 @@ function createProcedureObject(procedureObjectName: string) {
   import { z } from 'zod';
   import { t } from './_trpc';
   
-  export const ${procedureObjectName} = {
+  export const ${procedureObjectName} = t.router({
+    procedures: {
     greeting: t
       .procedure
       .input(
@@ -48,11 +49,14 @@ function createProcedureObject(procedureObjectName: string) {
           })
         )
         .query(({input}) => \`hello \${input.who}\`),
-      grandchild: {
-        grandChildQuery: t.procedure.query(() => 'grandChildQuery'),
-        grandChildMutation: t.procedure.mutation(() => 'grandChildMutation'),
-      }
-  }`.trim();
+      grandchild: t.router({
+        procedures: {
+          grandChildQuery: t.procedure.query(() => 'grandChildQuery'),
+          grandChildMutation: t.procedure.mutation(() => 'grandChildMutation'),
+        }
+      })
+    }
+  })`.trim();
 }
 
 const SERVER_DIR = __dirname + '/../packages/server/test/__generated__/bigBoi';
