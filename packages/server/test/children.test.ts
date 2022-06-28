@@ -6,20 +6,14 @@ test('children', async () => {
   const t = initTRPC()();
 
   const router = t.router({
-    procedures: {
-      foo: t.procedure.query(() => 'bar'),
-      child: t.router({
-        procedures: {
-          childQuery: t.procedure.query(() => 'asd'),
-          grandchild: t.router({
-            procedures: {
-              foo: t.procedure.query(() => 'grandchild' as const),
-              mut: t.procedure.mutation(() => 'mut'),
-            },
-          }),
-        },
+    foo: t.procedure.query(() => 'bar'),
+    child: t.router({
+      childQuery: t.procedure.query(() => 'asd'),
+      grandchild: t.router({
+        foo: t.procedure.query(() => 'grandchild' as const),
+        mut: t.procedure.mutation(() => 'mut'),
       }),
-    },
+    }),
   });
 
   const { queries, mutations, subscriptions, procedures } = router._def;
@@ -64,9 +58,7 @@ test('w/o children', async () => {
 
   const foo = t.procedure.query(() => 'bar');
   const router = t.router({
-    procedures: {
-      foo,
-    },
+    foo,
   });
 
   expectTypeOf(router._def.procedures.foo).toMatchTypeOf(foo);

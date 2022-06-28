@@ -17,7 +17,6 @@ import {
 } from './internals/internalProcedure';
 import { mergeWithoutOverrides } from './internals/mergeWithoutOverrides';
 import { omitPrototype } from './internals/omitPrototype';
-import { EnsureRecord, ValidateShape } from './internals/utils';
 import {
   MutationProcedure,
   Procedure,
@@ -185,16 +184,14 @@ const emptyRouter = {
 export function createRouterFactory<TConfig extends RootConfig>(
   defaults?: RouterDefaultOptions<TConfig['ctx']>,
 ) {
-  return function createRouterInner<
-    TProcedures extends RouterBuildOptions<TConfig>,
-  >(
-    opts: ValidateShape<TProcedures, RouterBuildOptions<TConfig>>,
+  return function createRouterInner<TProcedures extends ProcedureRouterRecord>(
+    procedures: TProcedures,
   ): Router<
     RouterDef<
       TConfig['ctx'],
       TConfig['errorShape'],
       TConfig['meta'],
-      EnsureRecord<TProcedures['procedures']>
+      TProcedures
     >
   > {
     const routerProcedures: Record<string, Procedure<any>> = omitPrototype({});
@@ -212,7 +209,7 @@ export function createRouterFactory<TConfig extends RootConfig>(
       }
     }
 
-    recursiveGetPaths(opts.procedures);
+    recursiveGetPaths(procedures);
 
     const result = mergeWithoutOverrides<
       RouterDefaultOptions<TConfig['ctx']> & RouterBuildOptions<TConfig['ctx']>

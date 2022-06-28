@@ -46,11 +46,9 @@ const ctx = konn()
     const combined = t.procedure.unstable_concat(proc1).unstable_concat(proc2);
 
     const appRouter = t.router({
-      procedures: {
-        getContext: combined.mutation(({ ctx }) => {
-          return ctx;
-        }),
-      },
+      getContext: combined.mutation(({ ctx }) => {
+        return ctx;
+      }),
     });
 
     const opts = routerToServerAndClientNew(appRouter, {

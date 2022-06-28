@@ -1,7 +1,5 @@
 import { t } from '../trpc';
 
 export const healthRouter = t.router({
-  queries: {
-    healthz: t.procedure.resolve(() => 'yay!'),
-  },
+  healthz: t.procedure.query(() => 'yay!'),
 });

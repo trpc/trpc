@@ -8,7 +8,6 @@ function createProcedureObject(procedureObjectName: string) {
   import { t } from './_trpc';
   
   export const ${procedureObjectName} = t.router({
-    procedures: {
     greeting: t
       .procedure
       .input(
@@ -50,12 +49,9 @@ function createProcedureObject(procedureObjectName: string) {
         )
         .query(({input}) => \`hello \${input.who}\`),
       grandchild: t.router({
-        procedures: {
-          grandChildQuery: t.procedure.query(() => 'grandChildQuery'),
-          grandChildMutation: t.procedure.mutation(() => 'grandChildMutation'),
-        }
+        grandChildQuery: t.procedure.query(() => 'grandChildQuery'),
+        grandChildMutation: t.procedure.mutation(() => 'grandChildMutation'),
       })
-    }
   })`.trim();
 }
 
@@ -83,9 +79,7 @@ import { t } from './_trpc';
 ${indexBuf.map((name) => `import { ${name} } from './${name}';`).join('\n')}
 
 export const appRouter = t.router({
-  procedures: {
-    ${indexBuf.join(',\n    ')}
-  }
+  ${indexBuf.join(',\n    ')}
 })
 
 `.trim();

@@ -11,9 +11,7 @@ const { procedure } = trpc;
 
 test('old client - happy path w/o input', async () => {
   const router = trpc.router({
-    procedures: {
-      hello: procedure.query(() => 'world'),
-    },
+    hello: procedure.query(() => 'world'),
   });
   const { client, close } = routerToServerAndClientNew(router);
   expect(await client.query('hello')).toBe('world');
@@ -22,11 +20,9 @@ test('old client - happy path w/o input', async () => {
 
 test('old client - happy path with input', async () => {
   const router = trpc.router({
-    procedures: {
-      greeting: procedure
-        .input(z.string())
-        .query(({ input }) => `hello ${input}`),
-    },
+    greeting: procedure
+      .input(z.string())
+      .query(({ input }) => `hello ${input}`),
   });
   const { client, close } = routerToServerAndClientNew(router);
   expect(await client.query('greeting', 'KATT')).toBe('hello KATT');
@@ -35,11 +31,9 @@ test('old client - happy path with input', async () => {
 
 test('very happy path', async () => {
   const router = trpc.router({
-    procedures: {
-      greeting: procedure
-        .input(z.string())
-        .query(({ input }) => `hello ${input}`),
-    },
+    greeting: procedure
+      .input(z.string())
+      .query(({ input }) => `hello ${input}`),
   });
   const { client, close } = routerToServerAndClientNew(router);
   expect(await client.greeting.query('KATT')).toBe('hello KATT');
@@ -48,24 +42,22 @@ test('very happy path', async () => {
 
 test('middleware', async () => {
   const router = trpc.router({
-    procedures: {
-      greeting: procedure
-        .use(({ next }) => {
-          return next({
-            ctx: {
-              prefix: 'hello',
-            },
-          });
-        })
-        .use(({ next }) => {
-          return next({
-            ctx: {
-              user: 'KATT',
-            },
-          });
-        })
-        .query(({ ctx }) => `${ctx.prefix} ${ctx.user}`),
-    },
+    greeting: procedure
+      .use(({ next }) => {
+        return next({
+          ctx: {
+            prefix: 'hello',
+          },
+        });
+      })
+      .use(({ next }) => {
+        return next({
+          ctx: {
+            user: 'KATT',
+          },
+        });
+      })
+      .query(({ ctx }) => `${ctx.prefix} ${ctx.user}`),
   });
   const { client, close } = routerToServerAndClientNew(router);
   expect(await client.greeting.query()).toBe('hello KATT');
@@ -74,9 +66,7 @@ test('middleware', async () => {
 
 test('sad path', async () => {
   const router = trpc.router({
-    procedures: {
-      hello: procedure.query(() => 'world'),
-    },
+    hello: procedure.query(() => 'world'),
   });
   const { client, close } = routerToServerAndClientNew(router);
 
@@ -90,9 +80,7 @@ test('sad path', async () => {
 
 test('call a mutation as a query', async () => {
   const router = trpc.router({
-    procedures: {
-      hello: procedure.query(() => 'world'),
-    },
+    hello: procedure.query(() => 'world'),
   });
   const { client, close } = routerToServerAndClientNew(router);
 

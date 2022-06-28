@@ -6,10 +6,8 @@ import { healthRouter } from './health';
 import { postRouter } from './post';
 
 export const appRouter = t.router({
-  procedures: {
-    post: postRouter,
-    health: healthRouter,
-  },
+  post: postRouter,
+  health: healthRouter,
 });
 
 export type AppRouter = typeof appRouter;

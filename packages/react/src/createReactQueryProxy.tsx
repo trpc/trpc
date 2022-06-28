@@ -101,7 +101,7 @@ type DecoratedProcedureRecord<
         `${TPath}${TKey & string}.`
       >
     : DecorateProcedure<
-        assertProcedure<TProcedures[TKey & string]>,
+        assertProcedure<TProcedures[TKey]>,
         `${TPath}${TKey & string}`
       >;
 };

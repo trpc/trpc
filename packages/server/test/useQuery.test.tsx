@@ -13,34 +13,31 @@ const ctx = konn()
   .beforeEach(() => {
     const t = initTRPC()();
     const appRouter = t.router({
-      procedures: {
-        post: t.router({
-          procedures: {
-            byId: t.procedure
-              .input(
-                z.object({
-                  id: z.string(),
-                }),
-              )
-              .query(() => '__result' as const),
-            list: t.procedure
-              .input(
-                z.object({
-                  cursor: z.string().optional(),
-                }),
-              )
-              .query(() => '__infResult' as const),
-            create: t.procedure
-              .input(
-                z.object({
-                  text: z.string(),
-                }),
-              )
-              .mutation(() => `__mutationResult` as const),
-          },
-        }),
-      },
+      post: t.router({
+        byId: t.procedure
+          .input(
+            z.object({
+              id: z.string(),
+            }),
+          )
+          .query(() => '__result' as const),
+        list: t.procedure
+          .input(
+            z.object({
+              cursor: z.string().optional(),
+            }),
+          )
+          .query(() => '__infResult' as const),
+        create: t.procedure
+          .input(
+            z.object({
+              text: z.string(),
+            }),
+          )
+          .mutation(() => `__mutationResult` as const),
+      }),
     });
+
     const opts = routerToServerAndClientNew(appRouter);
     const queryClient = new QueryClient();
     const react = createReactQueryProxy<typeof appRouter>();

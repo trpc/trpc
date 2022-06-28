@@ -22,51 +22,49 @@ const defaultPostSelect = Prisma.validator<Prisma.PostSelect>()({
 });
 
 export const postRouter = t.router({
-  procedures: {
-    postList: t.procedure.query(() => {
-      /**
-       * For pagination you can have a look at this docs site
-       * @link https://trpc.io/docs/useInfiniteQuery
-       */
+  postList: t.procedure.query(() => {
+    /**
+     * For pagination you can have a look at this docs site
+     * @link https://trpc.io/docs/useInfiniteQuery
+     */
 
-      return prisma.post.findMany({
+    return prisma.post.findMany({
+      select: defaultPostSelect,
+    });
+  }),
+  postById: t.procedure
+    .input(
+      z.object({
+        id: z.string(),
+      }),
+    )
+    .query(async ({ input }) => {
+      const { id } = input;
+      const post = await prisma.post.findUnique({
+        where: { id },
         select: defaultPostSelect,
       });
+      if (!post) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: `No post with id '${id}'`,
+        });
+      }
+      return post;
     }),
-    postById: t.procedure
-      .input(
-        z.object({
-          id: z.string(),
-        }),
-      )
-      .query(async ({ input }) => {
-        const { id } = input;
-        const post = await prisma.post.findUnique({
-          where: { id },
-          select: defaultPostSelect,
-        });
-        if (!post) {
-          throw new TRPCError({
-            code: 'NOT_FOUND',
-            message: `No post with id '${id}'`,
-          });
-        }
-        return post;
+  postAdd: t.procedure
+    .input(
+      z.object({
+        id: z.string().uuid().optional(),
+        title: z.string().min(1).max(32),
+        text: z.string().min(1),
       }),
-    postAdd: t.procedure
-      .input(
-        z.object({
-          id: z.string().uuid().optional(),
-          title: z.string().min(1).max(32),
-          text: z.string().min(1),
-        }),
-      )
-      .mutation(async ({ input }) => {
-        const post = await prisma.post.create({
-          data: input,
-          select: defaultPostSelect,
-        });
-        return post;
-      }),
-  },
+    )
+    .mutation(async ({ input }) => {
+      const post = await prisma.post.create({
+        data: input,
+        select: defaultPostSelect,
+      });
+      return post;
+    }),
 });

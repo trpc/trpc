@@ -190,9 +190,7 @@ export function migrateRouter<TOldRouter extends AnyOldRouter>(
   const newRouter = createRouterFactory<any>({
     transformer,
     errorFormatter,
-  })({
-    procedures,
-  });
+  })(procedures);
 
   return newRouter as any;
 }
