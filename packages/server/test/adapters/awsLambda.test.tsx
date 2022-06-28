@@ -218,3 +218,47 @@ Object {
 }
 `);
 });
+
+test('test v2 prefix path', async () => {
+  const createContext = async ({
+    event,
+  }: trpcLambda.CreateAWSLambdaContextOptions<APIGatewayProxyEventV2>) => {
+    return {
+      user: event.headers['X-USER'],
+    };
+  };
+  const handler2 = trpcLambda.awsLambdaRequestHandler({
+    router,
+    createContext,
+  });
+  const { body, ...result } = await handler2(
+    mockAPIGatewayProxyEventV2({
+      body: JSON.stringify({}),
+      headers: { 'Content-Type': 'application/json', 'X-USER': 'Lilja' },
+      method: 'GET',
+      path: '/trpc/hello',
+      queryStringParameters: {},
+    }),
+    mockAPIGatewayContext(),
+  );
+  expect(result).toMatchInlineSnapshot(`
+Object {
+  "headers": Object {
+    "Content-Type": "application/json",
+  },
+  "statusCode": 200,
+}
+`);
+  const parsedBody = JSON.parse(body || '');
+  expect(parsedBody).toMatchInlineSnapshot(`
+Object {
+  "id": null,
+  "result": Object {
+    "data": Object {
+      "text": "hello Lilja",
+    },
+    "type": "data",
+  },
+}
+`);
+});
