@@ -1,23 +1,11 @@
 {
   "compilerOptions": {
-    "target": "ES2017",
-    "lib": ["dom", "dom.iterable", "esnext"],
-    "noErrorTruncation": true,
-    "allowJs": true,
-    "skipLibCheck": true,
-    "strict": true,
-    "strictNullChecks": true,
-    "forceConsistentCasingInFileNames": true,
-    "esModuleInterop": true,
-    "module": "CommonJS",
-    "moduleResolution": "node",
-    "resolveJsonModule": true,
-    "isolatedModules": true,
-    "types": ["@types/jest", "jest-playwright-preset", "expect-playwright"],
-    "jsx": "preserve",
-    "outDir": ".build",
-    "rootDir": "./"
+      "module": "commonjs",
+      "esModuleInterop": true,
+      "target": "es6",
+      "skipLibCheck": true,
+      "outDir": "dist"
   },
-  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx"],
+  "include": ["src"],
   "exclude": ["node_modules"]
 }
