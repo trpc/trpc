@@ -13,7 +13,7 @@ const ctx = konn()
   .beforeEach(() => {
     const t = initTRPC()();
     const appRouter = t.router({
-      children: {
+      procedures: {
         post: t.router({
           procedures: {
             byId: t.procedure
@@ -30,9 +30,6 @@ const ctx = konn()
                 }),
               )
               .query(() => '__infResult' as const),
-            /**
-             * @deprecated
-             */
             create: t.procedure
               .input(
                 z.object({

@@ -104,7 +104,6 @@ export type MigrateRouter<
     TInputContext,
     TErrorShape,
     TMeta,
-    Record<string, never>,
     MigrateProcedureRecord<TQueries, 'query'> &
       MigrateProcedureRecord<TMutations, 'mutation'> &
       MigrateProcedureRecord<TSubscriptions, 'subscription'>

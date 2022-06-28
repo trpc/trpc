@@ -1,15 +1,31 @@
 import fs from 'fs';
 
-const NUM_ROUTERS = 500;
+const NUM_PROCEDURE_OBJECTS = 500;
 
-function createRouter(routerName: string) {
+function createProcedureObject(procedureObjectName: string) {
   return `
   import { z } from 'zod';
   import { t } from './_trpc';
   
-  export const ${routerName} = t.router({
+  export const ${procedureObjectName} = t.router({
     procedures: {
-      greeting: t
+    greeting: t
+      .procedure
+      .input(
+        z.object({
+          who: z.string()
+        })
+      )
+      .query(({input}) => \`hello \${input.who}\`),
+    greeting2: t
+      .procedure
+      .input(
+        z.object({
+          who: z.string()
+        })
+      )
+      .query(({input}) => \`hello \${input.who}\`),
+      greeting3: t
         .procedure
         .input(
           z.object({
@@ -17,7 +33,7 @@ function createRouter(routerName: string) {
           })
         )
         .query(({input}) => \`hello \${input.who}\`),
-      greeting2: t
+      greeting4: t
         .procedure
         .input(
           z.object({
@@ -25,39 +41,21 @@ function createRouter(routerName: string) {
           })
         )
         .query(({input}) => \`hello \${input.who}\`),
-        greeting3: t
-          .procedure
-          .input(
-            z.object({
-              who: z.string()
-            })
-          )
-          .query(({input}) => \`hello \${input.who}\`),
-        greeting4: t
-          .procedure
-          .input(
-            z.object({
-              who: z.string()
-            })
-          )
-          .query(({input}) => \`hello \${input.who}\`),
-        greeting5: t
-          .procedure
-          .input(
-            z.object({
-              who: z.string()
-            })
-          )
-          .query(({input}) => \`hello \${input.who}\`),
-    },
-    children: {
+      greeting5: t
+        .procedure
+        .input(
+          z.object({
+            who: z.string()
+          })
+        )
+        .query(({input}) => \`hello \${input.who}\`),
       grandchild: t.router({
         procedures: {
           grandChildQuery: t.procedure.query(() => 'grandChildQuery'),
           grandChildMutation: t.procedure.mutation(() => 'grandChildMutation'),
-        },
-      }),
-    },
+        }
+      })
+    }
   })`.trim();
 }
 
@@ -65,10 +63,13 @@ const SERVER_DIR = __dirname + '/../packages/server/test/__generated__/bigBoi';
 fs.mkdirSync(SERVER_DIR, { recursive: true });
 
 const indexBuf: string[] = [];
-for (let i = 0; i < NUM_ROUTERS; i++) {
-  const routerName = `r${i}`;
-  indexBuf.push(routerName);
-  fs.writeFileSync(`${SERVER_DIR}/${routerName}.ts`, createRouter(routerName));
+for (let i = 0; i < NUM_PROCEDURE_OBJECTS; i++) {
+  const procedureObjectName = `r${i}`;
+  indexBuf.push(procedureObjectName);
+  fs.writeFileSync(
+    `${SERVER_DIR}/${procedureObjectName}.ts`,
+    createProcedureObject(procedureObjectName),
+  );
 }
 
 const trpcFile = `
@@ -82,7 +83,7 @@ import { t } from './_trpc';
 ${indexBuf.map((name) => `import { ${name} } from './${name}';`).join('\n')}
 
 export const appRouter = t.router({
-  children: {
+  procedures: {
     ${indexBuf.join(',\n    ')}
   }
 })

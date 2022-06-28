@@ -11,12 +11,11 @@ export type EnsureRecord<T> = T extends Record<string, any>
   ? T
   : Record<string, never>;
 
-type FlattenRouter<TRouter extends AnyRouter> =
-  TRouter['_def']['procedures'] & {
-    [TKey in keyof TRouter['_def']['children']]: FlattenRouter<
-      TRouter['_def']['children'][TKey]
-    >;
-  };
+type FlattenRouter<TRouter extends AnyRouter> = {
+  [Key in keyof TRouter['_def']['procedures']]: TRouter['_def']['procedures'][Key] extends AnyRouter
+    ? FlattenRouter<TRouter['_def']['procedures'][Key]>
+    : TRouter['_def']['procedures'][Key];
+};
 
 function makeProxy<TRouter extends AnyRouter>(
   client: Client<TRouter>,

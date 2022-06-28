@@ -8,13 +8,9 @@ test('children', async () => {
   const router = t.router({
     procedures: {
       foo: t.procedure.query(() => 'bar'),
-    },
-    children: {
       child: t.router({
         procedures: {
           childQuery: t.procedure.query(() => 'asd'),
-        },
-        children: {
           grandchild: t.router({
             procedures: {
               foo: t.procedure.query(() => 'grandchild' as const),
@@ -56,6 +52,7 @@ test('children', async () => {
 
   expect(await client.foo.query()).toBe('bar');
 
+  client.child.grandchild;
   expect(await client.child.grandchild.foo.query()).toBe('grandchild');
   expect(await client.child.grandchild.mut.mutate()).toBe('mut');
 
@@ -71,9 +68,6 @@ test('w/o children', async () => {
       foo,
     },
   });
-  const children = router._def.children;
-  //     ^?
-  expectTypeOf(children).toEqualTypeOf<Record<string, never>>();
 
   expectTypeOf(router._def.procedures.foo).toMatchTypeOf(foo);
 });

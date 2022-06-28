@@ -1,16 +1,17 @@
 import {
   AnyRouter,
   Procedure,
+  ProcedureRouterRecord,
   inferProcedureInput,
   inferProcedureOutput,
 } from '@trpc/server';
+// import { RecursiveRecord } from 'packages/server/src/core/router';
 import {
   UseInfiniteQueryResult,
   UseMutationResult,
   UseQueryResult,
 } from 'react-query';
 import {
-  ProcedureRecord,
   UseTRPCInfiniteQueryOptions,
   UseTRPCMutationOptions,
   UseTRPCQueryOptions,
@@ -20,90 +21,91 @@ import {
 type FIXME_GET_ERROR = never;
 type inferProcedureClientError<_T extends Procedure<any>> = FIXME_GET_ERROR;
 
-type Join<T extends ReadonlyArray<any>, D extends string> = T extends []
-  ? ''
-  : T extends [string]
-  ? `${T[0]}`
-  : T extends [string, ...infer R]
-  ? `${T[0]}${D}${Join<R, D>}`
-  : string;
 type NeverKeys<T> = {
   [TKey in keyof T]: T[TKey] extends never ? TKey : never;
 }[keyof T];
 type OmitNeverKeys<T> = Omit<T, NeverKeys<T>>;
-type DecorateProcedures<
-  TRecord extends ProcedureRecord,
-  TPrefix extends string[],
-> = {
-  [TPath in keyof TRecord]: OmitNeverKeys<{
-    useQuery: TRecord[TPath] extends { _query: true }
+
+type DecorateProcedure<
+  TProcedure extends Procedure<any>,
+  TPath extends string,
+> = OmitNeverKeys<{
+  useQuery: TProcedure extends { _query: true }
+    ? <
+        TQueryFnData = inferProcedureOutput<TProcedure>,
+        TData = inferProcedureOutput<TProcedure>,
+      >(
+        ...args: [
+          inferProcedureInput<TProcedure>,
+          void | UseTRPCQueryOptions<
+            TPath,
+            inferProcedureInput<TProcedure>,
+            TQueryFnData,
+            TData,
+            inferProcedureClientError<TProcedure>
+          >,
+        ]
+      ) => UseQueryResult<TData, inferProcedureClientError<TProcedure>>
+    : never;
+
+  useMutation: TProcedure extends { _mutation: true }
+    ? <TContext = unknown>(
+        opts?: UseTRPCMutationOptions<
+          inferProcedureInput<TProcedure>,
+          inferProcedureClientError<TProcedure>,
+          inferProcedureOutput<TProcedure>,
+          TContext
+        >,
+      ) => UseMutationResult<
+        inferProcedureOutput<TProcedure>,
+        inferProcedureClientError<TProcedure>,
+        inferProcedureInput<TProcedure>,
+        TContext
+      >
+    : never;
+
+  useInfiniteQuery: TProcedure extends { _query: true }
+    ? inferProcedureInput<TProcedure> extends {
+        cursor?: any;
+      }
       ? <
-          TQueryFnData = inferProcedureOutput<TRecord[TPath]>,
-          TData = inferProcedureOutput<TRecord[TPath]>,
+          _TQueryFnData = inferProcedureOutput<TProcedure>,
+          TData = inferProcedureOutput<TProcedure>,
         >(
           ...args: [
-            inferProcedureInput<TRecord[TPath]>,
-            void | UseTRPCQueryOptions<
-              Join<[...TPrefix, TPath], '.'>,
-              inferProcedureInput<TRecord[TPath]>,
-              TQueryFnData,
+            Omit<inferProcedureInput<TProcedure>, 'cursor'>,
+            void | UseTRPCInfiniteQueryOptions<
+              TPath,
+              inferProcedureInput<TProcedure>,
               TData,
-              inferProcedureClientError<TRecord[TPath]>
+              inferProcedureClientError<TProcedure>
             >,
           ]
-        ) => UseQueryResult<TData, inferProcedureClientError<TRecord[TPath]>>
-      : never;
-
-    useMutation: TRecord[TPath] extends { _mutation: true }
-      ? <TContext = unknown>(
-          opts?: UseTRPCMutationOptions<
-            inferProcedureInput<TRecord[TPath]>,
-            inferProcedureClientError<TRecord[TPath]>,
-            inferProcedureOutput<TRecord[TPath]>,
-            TContext
-          >,
-        ) => UseMutationResult<
-          inferProcedureOutput<TRecord[TPath]>,
-          inferProcedureClientError<TRecord[TPath]>,
-          inferProcedureInput<TRecord[TPath]>,
-          TContext
+        ) => UseInfiniteQueryResult<
+          TData,
+          inferProcedureClientError<TProcedure>
         >
-      : never;
+      : never
+    : never;
+}>;
 
-    useInfiniteQuery: TRecord[TPath] extends { _query: true }
-      ? inferProcedureInput<TRecord[TPath]> extends {
-          cursor?: any;
-        }
-        ? <
-            _TQueryFnData = inferProcedureOutput<TRecord[TPath]>,
-            TData = inferProcedureOutput<TRecord[TPath]>,
-          >(
-            ...args: [
-              Omit<inferProcedureInput<TRecord[TPath]>, 'cursor'>,
-              void | UseTRPCInfiniteQueryOptions<
-                Join<[...TPrefix, TPath], '.'>,
-                inferProcedureInput<TRecord[TPath]>,
-                TData,
-                inferProcedureClientError<TRecord[TPath]>
-              >,
-            ]
-          ) => UseInfiniteQueryResult<
-            TData,
-            inferProcedureClientError<TRecord[TPath]>
-          >
-        : never
-      : never;
-  }>;
+type assertProcedure<T> = T extends Procedure<any> ? T : never;
+
+type DecoratedProcedureRecord<
+  TProcedures extends ProcedureRouterRecord,
+  TPath extends string = '',
+> = {
+  [TKey in keyof TProcedures]: TProcedures[TKey] extends AnyRouter
+    ? DecoratedProcedureRecord<
+        TProcedures[TKey]['_def']['procedures'],
+        `${TPath}${TKey & string}.`
+      >
+    : DecorateProcedure<
+        assertProcedure<TProcedures[TKey & string]>,
+        `${TPath}${TKey & string}`
+      >;
 };
-type FlattenRouter<
-  TRouter extends AnyRouter,
-  TPath extends string[] = [],
-> = DecorateProcedures<TRouter['_def']['procedures'], TPath> & {
-  [TKey in keyof TRouter['_def']['children']]: FlattenRouter<
-    TRouter['_def']['children'][TKey],
-    [...TPath, TKey & string]
-  >;
-};
+
 function makeProxy<
   TRouter extends AnyRouter,
   TClient extends { useContext: any; Provider: any },
@@ -142,7 +144,8 @@ function makeProxy<
     },
   );
 
-  return proxy as FlattenRouter<TRouter> & Pick<TClient, 'Provider'>;
+  return proxy as DecoratedProcedureRecord<TRouter['_def']['procedures']> &
+    Pick<TClient, 'Provider'>;
 }
 export function createReactQueryProxy<
   TRouter extends AnyRouter,

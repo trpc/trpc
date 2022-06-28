@@ -67,7 +67,7 @@ const postRouter = t.router({
 
 // Merge routers together
 const appRouter = t.router({
-  children: {
+  procedures: {
     greeting: greetingRouter,
     post: postRouter,
   },
