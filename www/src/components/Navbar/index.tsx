@@ -5,10 +5,10 @@ import { Logo } from '../Logo';
 import { NavLink } from '../NavLink';
 
 export const Navbar = () => (
-  <div className="px-4 sm:px-6 md:px-8 py-6 max-w-screen-xl mx-auto">
-    <nav className="flex items-center justify-between">
+  <div className="px-4 py-6 mx-auto max-w-screen-xl sm:px-6 md:px-8">
+    <nav className="flex justify-between items-center">
       <Link href="/">
-        <a className="flex items-center gap-3">
+        <a className="flex gap-3 items-center">
           <Logo size={35} />
           <span>tRPC</span>
         </a>
@@ -19,7 +19,7 @@ export const Navbar = () => (
           <NavLink href="/quickstart">Quickstart</NavLink>
           <NavLink href="/examples">Examples</NavLink>
         </ul>
-        <ul className="hidden md:flex gap-6">
+        <ul className="hidden gap-6 md:flex">
           <NavLink href="https://github.com/trpc/trpc" external>
             <FiGithub />
           </NavLink>
