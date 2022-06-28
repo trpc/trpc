@@ -236,7 +236,7 @@ test('test v2 prefix path', async () => {
       body: JSON.stringify({}),
       headers: { 'Content-Type': 'application/json', 'X-USER': 'Lilja' },
       method: 'GET',
-      path: '/trpc/hello',
+      path: 'trpc/hello',
       queryStringParameters: {},
     }),
     mockAPIGatewayContext(),

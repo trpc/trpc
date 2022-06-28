@@ -52,10 +52,10 @@ function getHTTPMethod(event: APIGatewayEvent) {
 }
 function getPath(event: APIGatewayEvent) {
   if (isPayloadV1(event)) {
-    return event.path.slice(1);
+    return event.path.split('/')[event.path.split('/').length - 1];
   }
   if (isPayloadV2(event)) {
-    return event.rawPath.slice(1);
+    return event.rawPath.split('/')[event.rawPath.split('/').length - 1];
   }
   throw new TRPCError({
     code: 'INTERNAL_SERVER_ERROR',
