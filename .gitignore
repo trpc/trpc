@@ -11,3 +11,4 @@ yalc.lock
 
 coverage/
 __generated__
+.serverless
