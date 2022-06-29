@@ -15,7 +15,7 @@ export const Hero = () => {
         <h1 className="py-6 text-3xl font-bold sm:text-4xl lg:text-5xl">
           Build fully typesafe <br /> APIs easily.
         </h1>
-        <p className="text-zinc-500 max-w-[80ch]">
+        <p className="text-zinc-400 max-w-[80ch]">
           The client doesn&apos;t import any code from the server, only a single
           TypeScript type. The import type declaration is fully erased at
           runtime. tRPC transforms this type into a fully typesafe client.
