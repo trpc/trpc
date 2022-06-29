@@ -7,7 +7,7 @@ interface Props {
 
 export const Spotlight = ({ children, header }: Props) => {
   return (
-    <section className="flex flex-col items-center justify-center max-w-screen-xl px-4 mx-auto sm:px-6 md:px-8 md:pt-56">
+    <section className="flex flex-col items-center justify-center max-w-screen-xl px-4 mx-auto sm:px-6 md:px-8 pt-28 md:pt-56">
       <h2 className="w-full text-2xl font-bold text-center mb-11 sm:text-3xl lg:text-4xl">
         {header}
       </h2>
