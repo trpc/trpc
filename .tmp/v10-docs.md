@@ -69,12 +69,10 @@ const appRouter = trpc
 
 // NEW:
 const appRouter = t.router({
-  procedures: {
-    greeting: t
-      .procedure
-      .input(z.string())
-      .query(({ input }) => `hello ${input}!`)
-  }
+  greeting: t
+    .procedure
+    .input(z.string())
+    .query(({ input }) => `hello ${input}!`)
 })
 ```
 
@@ -131,9 +129,7 @@ const isAuthed = t.middleware(({next, ctx}) => {
 const authedProcedure = t.procedure.use(isAuthed)
 
 const appRouter = t.router({
-  procedures: {
-    greeting: authedProcedure.query(({ ctx }) => `hello ${ctx.name}!`)
-  }
+  greeting: authedProcedure.query(({ ctx }) => `hello ${ctx.name}!`)
 })
 ```
 
@@ -187,9 +183,7 @@ const {
 
 ```tsx
 export const appRouter = t.router({
-  procedures: {
-    // [...]
-  },
+  // [...]
 })
 ```
 
@@ -197,10 +191,8 @@ export const appRouter = t.router({
 
 ```tsx
 export const appRouter = t.router({
-  queries: {
-    // simple procedure without args avialable at postAll`
-    postList: procedure.query(() => postsDb),
-  }
+  // simple procedure without args avialable at postAll`
+  postList: procedure.query(() => postsDb),
 });
 ```
 
@@ -245,7 +237,7 @@ interface ProcedureBuilder {
 
 #### §1.3 Adding input parser
 
-> Note that I'll skip the `t.router({ queries: /*...*/})` below here
+> Note that I'll skip the `t.router({ /*...*/})` below here
 
 ```tsx
 
@@ -324,24 +316,22 @@ const whoami = procedure
 const protectedProcedure = procedure.use(isAuthed);
 
 export const appRouter = t.router({
-  queries: {
-    postList: protectedProcedure.query(() => postsDb),
-    postById: protectedProcedure
-      .input(
-        z.object({
-          id: z.string(),
-        }),
-      )
-      .query(({ input }) => {
-        const post = postsDb.find((post) => post.id === input.id);
-        if (!post) {
-          throw new Error('NOT_FOUND');
-        }
-        return {
-          data: postsDb,
-        };
-      })
- }
+  postList: protectedProcedure.query(() => postsDb),
+  postById: protectedProcedure
+    .input(
+      z.object({
+        id: z.string(),
+      }),
+    )
+    .query(({ input }) => {
+      const post = postsDb.find((post) => post.id === input.id);
+      if (!post) {
+        throw new Error('NOT_FOUND');
+      }
+      return {
+        data: postsDb,
+      };
+    })
 })
 ```
 
@@ -362,24 +352,22 @@ procedure
 
 ```ts
 const postRouter = t.router({
-  queries: {
-    postList: protectedProcedure.query(() => postsDb),
-    postById: protectedProcedure
-      .input(
-        z.object({
-          id: z.string(),
-        }),
-      )
-      .query(({ input }) => {
-        const post = postsDb.find((post) => post.id === input.id);
-        if (!post) {
-          throw new Error('NOT_FOUND');
-        }
-        return {
-          data: postsDb,
-        };
-      })
-  }
+  postList: protectedProcedure.query(() => postsDb),
+  postById: protectedProcedure
+    .input(
+      z.object({
+        id: z.string(),
+      }),
+    )
+    .query(({ input }) => {
+      const post = postsDb.find((post) => post.id === input.id);
+      if (!post) {
+        throw new Error('NOT_FOUND');
+      }
+      return {
+        data: postsDb,
+      };
+    })
 })
 
 const health = t.router({
