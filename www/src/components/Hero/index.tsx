@@ -7,7 +7,7 @@ import { NavLink } from '../NavLink';
 
 export const Hero = () => {
   return (
-    <div className="flex justify-between items-center px-4 py-24 mx-auto max-w-screen-xl md:py-36 sm:px-6 md:px-8">
+    <div className="flex items-center justify-between max-w-screen-xl px-4 pt-24 mx-auto md:pt-56 sm:px-6 md:px-8">
       <div className="flex-1">
         <div className="hidden lg:block">
           <Logo size={86} />
@@ -20,14 +20,14 @@ export const Hero = () => {
           TypeScript type. The import type declaration is fully erased at
           runtime. tRPC transforms this type into a fully typesafe client.
         </p>
-        <div className="flex gap-6 items-center pt-6">
+        <div className="flex items-center gap-6 pt-6">
           <Link href="/quickstart">
-            <a className="inline-block px-4 py-2 font-bold bg-cyan-500 rounded-md transition-colors text-zinc-900 hover:bg-cyan-400">
+            <a className="inline-block px-4 py-2 font-bold transition-colors rounded-md bg-cyan-500 text-zinc-900 hover:bg-cyan-400">
               Quickstart
             </a>
           </Link>
           <Link href="/docs">
-            <a className="inline-block px-4 py-2 font-bold rounded-md border-2 border-white transition-colors hover:bg-white hover:text-zinc-900">
+            <a className="inline-block px-4 py-2 font-bold transition-colors border-2 border-white rounded-md hover:bg-white hover:text-zinc-900">
               Read docs
             </a>
           </Link>
@@ -45,7 +45,7 @@ export const Hero = () => {
           </NavLink>
         </ul>
       </div>
-      <div className="hidden overflow-hidden flex-1 rounded-xl shadow-lg lg:block">
+      <div className="flex-1 hidden overflow-hidden shadow-lg rounded-xl lg:block">
         <Image
           src="/trpcgif.gif"
           alt="preview"
