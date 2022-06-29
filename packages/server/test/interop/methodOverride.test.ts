@@ -1,7 +1,7 @@
-import { routerToServerAndClientNew } from './___testHelpers';
+import { routerToServerAndClientNew } from '../___testHelpers';
 import { z } from 'zod';
-import * as trpc from '../src';
-import { NodeHTTPRequest } from '../src/adapters/node-http';
+import * as trpc from '../../src';
+import { NodeHTTPRequest } from '../../src/adapters/node-http';
 
 const urlMock = jest.fn();
 
