@@ -1,9 +1,9 @@
 import Image from 'next/image';
-import Link from 'next/link';
 import { FaDiscord } from 'react-icons/fa';
 import { FiGithub, FiTwitter } from 'react-icons/fi';
 import { Logo } from '../Logo';
 import { NavLink } from '../NavLink';
+import { Button } from '../shared';
 
 export const Hero = () => {
   return (
@@ -21,16 +21,10 @@ export const Hero = () => {
           runtime. tRPC transforms this type into a fully typesafe client.
         </p>
         <div className="flex items-center gap-6 pt-6">
-          <Link href="/quickstart">
-            <a className="inline-block px-4 py-2 font-bold transition-colors rounded-md bg-cyan-500 text-zinc-900 hover:bg-cyan-400">
-              Quickstart
-            </a>
-          </Link>
-          <Link href="/docs">
-            <a className="inline-block px-4 py-2 font-bold transition-colors border-2 border-white rounded-md hover:bg-white hover:text-zinc-900">
-              Read docs
-            </a>
-          </Link>
+          <Button href="/quickstart">Quickstart</Button>
+          <Button href="/docs" variant="secondary">
+            Read docs
+          </Button>
         </div>
 
         <ul className="flex gap-6 pt-6 md:hidden">
