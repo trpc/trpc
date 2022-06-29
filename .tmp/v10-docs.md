@@ -18,6 +18,7 @@
         - [Details about the procedure builder](#details-about-the-procedure-builder)
       - [§1.3 Adding input parser](#13-adding-input-parser)
       - [§1.4 Procedure with middleware](#14-procedure-with-middleware)
+      - [§1.4 Child / sub routers](#14-child--sub-routers)
     - [§2 Intermediate 🍿](#2-intermediate-)
       - [§2.1 Define a reusable middleware](#21-define-a-reusable-middleware)
       - [§2.2 Create a bunch of procedures that are all protected](#22-create-a-bunch-of-procedures-that-are-all-protected)
@@ -282,6 +283,33 @@ const whoami = procedure
  
 ```
 
+#### §1.4 Child / sub routers
+
+```ts
+const appRouter = t.router({
+  // A procedure on the `appRouter`
+  health: t.procedure.query(() => 'healthy')
+  post: t.router({
+    byId: t
+      .procedure
+      .input(
+        z.object({ id: z.string( )})
+      )
+      .query(() => '....'),
+  }),
+  user: t.router({
+    byId: t
+      .procedure
+      .input(
+        z.object({ id: z.string( )})
+      )
+      .query(() => '....'),
+  }),
+})
+
+```
+
+
 ### §2 Intermediate 🍿 
 
 #### §2.1 Define a reusable middleware
@@ -371,9 +399,7 @@ const postRouter = t.router({
 })
 
 const health = t.router({
-  query: {
-    healthz: t.query(() => 'I am alive')
-  }
+  healthz: t.query(() => 'I am alive')
 })
 
 export const appRouter = t.mergeRouters(
@@ -491,9 +517,7 @@ export const t = initTRPC<{
 4. Create a a test router:
   ```ts
   const greetingRouter = t.router({
-    query: {
-      greeting: t.procedure.query(() => 'world')
-    }
+    greeting: t.procedure.query(() => 'world')
   })
   ```
 5. Merge it in:
