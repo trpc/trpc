@@ -23,7 +23,7 @@ export type Operation<TInput = unknown> = {
   method: OperationMethod | undefined;
   input: TInput;
   path: string;
-  context?: OperationContext;
+  context: OperationContext;
 };
 
 export type HTTPHeaders = Record<string, string | string[]>;

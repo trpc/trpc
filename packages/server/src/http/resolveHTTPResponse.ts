@@ -1,14 +1,13 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
-import { TRPCError } from '../TRPCError';
-import { callProcedure } from '../internals/callProcedure';
-import { getCauseFromUnknown, getErrorFromUnknown } from '../internals/errors';
-import { transformTRPCResponse } from '../internals/transformTRPCResponse';
 import {
   AnyRouter,
   ProcedureType,
   inferRouterContext,
   inferRouterError,
-} from '../router';
+} from '../core';
+import { TRPCError } from '../error/TRPCError';
+import { getCauseFromUnknown, getErrorFromUnknown } from '../error/utils';
+import { transformTRPCResponse } from '../internals/transformTRPCResponse';
 import { TRPCResponse } from '../rpc';
 import { Maybe } from '../types';
 import { getHTTPStatusCode } from './internals/getHTTPStatusCode';
@@ -172,14 +171,10 @@ export async function resolveHTTPResponse<
     const rawResults = await Promise.all(
       paths.map(async (path, index) => {
         const input = inputs[index];
+
         try {
-          const output = await callProcedure({
-            ctx,
-            router,
-            path,
-            input,
-            type,
-          });
+          const caller = router.createCaller(ctx);
+          const output = await caller[type](path, input as any);
           return {
             input,
             path,

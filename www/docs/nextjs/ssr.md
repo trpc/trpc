@@ -13,6 +13,7 @@ In order to execute queries properly during the server-side render step and cust
 import React from 'react';
 import { withTRPC } from '@trpc/next';
 import { AppType } from 'next/dist/shared/lib/utils';
+import superjson from 'superjson';
 import type { AppRouter } from './api/trpc/[trpc]';
 
 const MyApp: AppType = ({ Component, pageProps }) => {
@@ -24,6 +25,7 @@ export default withTRPC<AppRouter>({
     if (typeof window !== 'undefined') {
       // during client requests
       return {
+        transformer: superjson, // optional - adds superjson serialization
         url: '/api/trpc',
       };
     }
@@ -43,6 +45,7 @@ export default withTRPC<AppRouter>({
       : 'http://localhost:3000/api/trpc';
 
     return {
+      transformer: superjson, // optional - adds superjson serialization
       url,
       headers: {
         // optional - inform server that it's an ssr request

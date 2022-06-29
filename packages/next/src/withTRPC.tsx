@@ -4,7 +4,6 @@
  */
 import type { CreateTRPCClientOptions } from '@trpc/client/src/internals/TRPCClient';
 import {
-  CreateReactQueryHooksOptions,
   TRPCClient,
   TRPCClientError,
   TRPCClientErrorLike,
@@ -57,8 +56,7 @@ export type WithTRPCConfig<TRouter extends AnyRouter> =
     queryClientConfig?: QueryClientConfig;
   };
 
-interface WithTRPCOptions<TRouter extends AnyRouter>
-  extends CreateReactQueryHooksOptions {
+interface WithTRPCOptions<TRouter extends AnyRouter> {
   config: (info: { ctx?: NextPageContext }) => WithTRPCConfig<TRouter>;
 }
 
@@ -89,7 +87,7 @@ export function withTRPC<
     ssrContext: TSSRContext;
   };
   return (AppOrPage: NextComponentType<any, any, any>): NextComponentType => {
-    const trpc = createReactQueryHooks<TRouter, TSSRContext>(opts);
+    const trpc = createReactQueryHooks<TRouter, TSSRContext>();
 
     const WithTRPC = (
       props: AppPropsType & {
@@ -101,6 +99,7 @@ export function withTRPC<
           if (props.trpc) {
             return props.trpc;
           }
+
           const config = getClientConfig({});
           const queryClient = new QueryClient(config.queryClientConfig);
           const trpcClient = trpc.createClient(config);
@@ -113,7 +112,10 @@ export function withTRPC<
         },
       );
 
-      const hydratedState = trpc.useDehydratedState(props.pageProps?.trpcState);
+      const hydratedState = trpc.useDehydratedState(
+        trpcClient,
+        props.pageProps?.trpcState,
+      );
 
       return (
         <trpc.Provider
@@ -215,10 +217,11 @@ export function withTRPC<
             transformQueryOrMutationCacheErrors,
           ),
         };
+
         // dehydrate query client's state and add it to the props
-        pageProps.trpcState = opts.transformer
-          ? opts.transformer.serialize(dehydratedCacheWithErrors)
-          : dehydratedCacheWithErrors;
+        pageProps.trpcState = trpcClient.runtime.transformer.serialize(
+          dehydratedCacheWithErrors,
+        );
 
         const appTreeProps = getAppTreeProps(pageProps);
 

@@ -1,6 +1,11 @@
 {
   "redirects": [
     {
+      "source": "/docs/api-gateway",
+      "destination": "/docs/aws-lambda",
+      "permanent": true
+    },
+    {
       "source": "/docs/procedures",
       "destination": "/docs/router",
       "permanent": true

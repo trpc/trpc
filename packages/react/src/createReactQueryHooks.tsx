@@ -7,8 +7,7 @@ import {
 } from '@trpc/client';
 import type {
   AnyRouter,
-  DataTransformer,
-  ProcedureRecord,
+  Procedure,
   inferHandlerInput,
   inferProcedureInput,
   inferProcedureOutput,
@@ -41,6 +40,8 @@ export type OutputWithCursor<TData, TCursor extends any = any> = {
   cursor: TCursor | null;
   data: TData;
 };
+
+type ProcedureRecord = Record<string, Procedure<any>>;
 
 export interface TRPCUseQueryBaseOptions extends TRPCRequestOptions {
   /**
@@ -81,9 +82,7 @@ function getClientArgs<TPathAndInput extends unknown[], TOptions>(
   return [path, input, opts] as const;
 }
 
-type inferInfiniteQueryNames<
-  TObj extends ProcedureRecord<any, any, any, any, any, any>,
-> = {
+type inferInfiniteQueryNames<TObj extends ProcedureRecord> = {
   [TPath in keyof TObj]: inferProcedureInput<TObj[TPath]> extends {
     cursor?: any;
   }
@@ -91,37 +90,36 @@ type inferInfiniteQueryNames<
     : never;
 }[keyof TObj];
 
-type inferProcedures<
-  TObj extends ProcedureRecord<any, any, any, any, any, any>,
-> = {
+type inferProcedures<TObj extends ProcedureRecord> = {
   [TPath in keyof TObj]: {
     input: inferProcedureInput<TObj[TPath]>;
     output: inferProcedureOutput<TObj[TPath]>;
   };
 };
 
-export interface CreateReactQueryHooksOptions {
-  /**
-   * Data transformer used for hydration and dehydration.
-   */
-  transformer?: DataTransformer;
+function createHookProxy(callback: (...args: [string, ...unknown[]]) => any) {
+  return new Proxy({} as any, {
+    get(_, path: string) {
+      function myProxy() {
+        throw new Error('Faulty usage');
+      }
+      myProxy.use = (...args: unknown[]) => callback(path, ...args);
+      return myProxy;
+    },
+  });
 }
 
 export function createReactQueryHooks<
   TRouter extends AnyRouter,
   TSSRContext = unknown,
->(opts?: CreateReactQueryHooksOptions) {
-  const transfomer: DataTransformer = opts?.transformer ?? {
-    serialize: (v) => v,
-    deserialize: (v) => v,
-  };
-  type TQueries = TRouter['_def']['queries'];
-  type TSubscriptions = TRouter['_def']['subscriptions'];
+>() {
+  type TQueries = TRouter['queries'];
+  type TSubscriptions = TRouter['subscriptions'];
   type TError = TRPCClientErrorLike<TRouter>;
   type TInfiniteQueryNames = inferInfiniteQueryNames<TQueries>;
 
-  type TQueryValues = inferProcedures<TRouter['_def']['queries']>;
-  type TMutationValues = inferProcedures<TRouter['_def']['mutations']>;
+  type TQueryValues = inferProcedures<TRouter['queries']>;
+  type TMutationValues = inferProcedures<TRouter['mutations']>;
 
   type ProviderContext = TRPCContextState<TRouter, TSSRContext>;
   const Context = TRPCContext as React.Context<ProviderContext>;
@@ -291,7 +289,7 @@ export function createReactQueryHooks<
       opts?.enabled !== false &&
       !queryClient.getQueryCache().find(pathAndInput)
     ) {
-      prefetchQuery(pathAndInput as any, opts as any);
+      void prefetchQuery(pathAndInput as any, opts as any);
     }
     const actualOpts = useSSRQueryOptionsIfNeeded(pathAndInput, opts);
 
@@ -358,10 +356,10 @@ export function createReactQueryHooks<
       const [path, input] = pathAndInput;
       let isStopped = false;
       const subscription = client.subscription<
-        TRouter['_def']['subscriptions'],
+        TRouter['subscriptions'],
         TPath,
         TOutput,
-        inferProcedureInput<TRouter['_def']['subscriptions']>
+        inferProcedureInput<TRouter['subscriptions']>
       >(path, (input ?? undefined) as any, {
         error: (err) => {
           if (!isStopped) {
@@ -405,7 +403,7 @@ export function createReactQueryHooks<
       opts?.enabled !== false &&
       !queryClient.getQueryCache().find(pathAndInput)
     ) {
-      prefetchInfiniteQuery(pathAndInput as any, opts as any);
+      void prefetchInfiniteQuery(pathAndInput as any, opts as any);
     }
 
     const actualOpts = useSSRQueryOptionsIfNeeded(pathAndInput, opts);
@@ -421,16 +419,24 @@ export function createReactQueryHooks<
       actualOpts,
     );
   }
-  function useDehydratedState(trpcState: DehydratedState | undefined) {
+  function useDehydratedState(
+    client: TRPCClient<TRouter>,
+    trpcState: DehydratedState | undefined,
+  ) {
     const transformed: DehydratedState | undefined = useMemo(() => {
       if (!trpcState) {
         return trpcState;
       }
 
-      return transfomer.deserialize(trpcState);
-    }, [trpcState]);
+      return client.runtime.transformer.deserialize(trpcState);
+    }, [trpcState, client]);
     return transformed;
   }
+
+  // FIXME: delete or fix this
+  const queries = createHookProxy((path, input, opts) =>
+    useQuery([path, input] as any, opts as any),
+  ) as TRouter['queries'];
 
   return {
     Provider: TRPCProvider,
@@ -441,5 +447,6 @@ export function createReactQueryHooks<
     useSubscription,
     useDehydratedState,
     useInfiniteQuery,
+    queries,
   };
 }

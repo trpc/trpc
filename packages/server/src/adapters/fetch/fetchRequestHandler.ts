@@ -1,7 +1,7 @@
 import { assertNotBrowser } from '../../assertNotBrowser';
+import { AnyRouter } from '../../core';
 import { HTTPRequest } from '../../http/internals/types';
 import { resolveHTTPResponse } from '../../http/resolveHTTPResponse';
-import { AnyRouter } from '../../router';
 import { FetchHandlerOptions } from './types';
 
 assertNotBrowser();

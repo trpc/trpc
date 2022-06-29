@@ -5,7 +5,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { ReactQueryDevtools } from 'react-query/devtools';
 
 function AddMessageForm({ onMessagePost }: { onMessagePost: () => void }) {
-  const addPost = trpc.useMutation('post.add');
+  const addPost = trpc.useMutation('postAdd');
   const utils = trpc.useContext();
   const { data: session } = useSession();
   const [message, setMessage] = useState('');
@@ -75,7 +75,7 @@ function AddMessageForm({ onMessagePost }: { onMessagePost: () => void }) {
                 if (e.key === 'Enter' && enterToPostMessage) {
                   postMessage();
                 }
-                utils.client.mutation('post.isTyping', {
+                utils.client.mutation('postIsTypingUpdate', {
                   typing: true,
                 });
               }}
@@ -86,7 +86,7 @@ function AddMessageForm({ onMessagePost }: { onMessagePost: () => void }) {
               }}
               onBlur={() => {
                 setEnterToPostMessage(true);
-                utils.client.mutation('post.isTyping', {
+                utils.client.mutation('postIsTypingUpdate', {
                   typing: false,
                 });
               }}
@@ -107,7 +107,7 @@ function AddMessageForm({ onMessagePost }: { onMessagePost: () => void }) {
 }
 
 export default function IndexPage() {
-  const postsQuery = trpc.useInfiniteQuery(['post.infinite', {}], {
+  const postsQuery = trpc.useInfiniteQuery(['postList', {}], {
     getPreviousPageParam: (d) => d.prevCursor,
   });
   const utils = trpc.useContext();
@@ -161,7 +161,7 @@ export default function IndexPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   // subscribe to new posts and add
-  trpc.useSubscription(['post.onAdd'], {
+  trpc.useSubscription(['postOnAdd'], {
     next(post) {
       addMessages([post]);
     },
@@ -173,7 +173,7 @@ export default function IndexPage() {
   });
 
   const [currentlyTyping, setCurrentlyTyping] = useState<string[]>([]);
-  trpc.useSubscription(['post.whoIsTyping'], {
+  trpc.useSubscription(['postWhoIsTyping'], {
     next(data) {
       setCurrentlyTyping(data);
     },
@@ -198,7 +198,7 @@ export default function IndexPage() {
                   <br />
                   <a
                     className="text-gray-100 underline"
-                    href="https://github.com/trpc/trpc/tree/main/examples/next-prisma-starter-websockets"
+                    href="https://github.com/trpc/examples-next-prisma-starter-websockets"
                     target="_blank"
                     rel="noreferrer"
                   >

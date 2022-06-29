@@ -1,0 +1,11 @@
+{
+  "extends": "./tsconfig.build.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "extendedDiagnostics": true,
+    "emitDeclarationOnly": false,
+    "incremental": true
+  },
+  "include": ["src"],
+  "exclude": ["**/*.test.ts"]
+}

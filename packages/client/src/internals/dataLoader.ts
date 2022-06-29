@@ -58,7 +58,7 @@ export function dataLoader<TKey, TValue>(
         // we're done
         break;
       }
-      const lastGroup = groupedItems[groupedItems.length - 1];
+      const lastGroup = groupedItems[groupedItems.length - 1]!;
 
       if (item.aborted) {
         // Item was aborted before it was dispatched

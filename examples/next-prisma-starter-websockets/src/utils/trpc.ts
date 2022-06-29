@@ -7,10 +7,10 @@ import {
 import { setupTRPC } from '@trpc/next';
 import type { inferProcedureInput, inferProcedureOutput } from '@trpc/server';
 import getConfig from 'next/config';
+import superjson from 'superjson';
 // ℹ️ Type-only import:
 // https://www.typescriptlang.org/docs/handbook/release-notes/typescript-3-8.html#type-only-imports-and-export
-import type { AppRouter } from 'server/routers/_app';
-import superjson from 'superjson';
+import type { AppRouter } from '~/server/routers/_app';
 
 const { publicRuntimeConfig } = getConfig();
 
@@ -35,10 +35,6 @@ function getEndingLink() {
  * @link https://trpc.io/docs/react#3-create-trpc-hooks
  */
 export const trpc = setupTRPC<AppRouter>({
-  /**
-   * Data transformer used for hydration and dehydration.
-   */
-  transformer: superjson,
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   config() {
     /**

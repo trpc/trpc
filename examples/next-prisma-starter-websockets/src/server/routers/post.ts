@@ -3,7 +3,7 @@
  * This is an example router, you can delete this file and then update `../pages/api/trpc/[trpc].tsx`
  */
 import { Context } from '../context';
-import { createRouter } from '../createRouter';
+import { t } from '../trpc';
 import { Post } from '@prisma/client';
 import { TRPCError } from '@trpc/server';
 import { observable } from '@trpc/server/observable';
@@ -12,7 +12,7 @@ import { z } from 'zod';
 
 interface MyEvents {
   add: (data: Post) => void;
-  isTypingUpdate: () => void;
+  postIsTypingUpdateUpdate: () => void;
 }
 declare interface MyEventEmitter {
   on<U extends keyof MyEvents>(event: U, listener: MyEvents[U]): this;
@@ -31,7 +31,7 @@ const ee = new MyEventEmitter();
 const currentlyTyping: Record<string, { lastTyped: Date }> =
   Object.create(null);
 
-// every 1s, clear old "isTyping"
+// every 1s, clear old "postIsTypingUpdate"
 const interval = setInterval(() => {
   let updated = false;
   const now = Date.now();
@@ -42,7 +42,7 @@ const interval = setInterval(() => {
     }
   }
   if (updated) {
-    ee.emit('isTypingUpdate');
+    ee.emit('postIsTypingUpdateUpdate');
   }
 }, 3e3);
 process.on('SIGTERM', () => clearInterval(interval));
@@ -54,81 +54,88 @@ const getNameOrThrow = (ctx: Context) => {
   }
   return name;
 };
-export const postRouter = createRouter()
-  // create
-  .mutation('add', {
-    input: z.object({
-      id: z.string().uuid().optional(),
-      text: z.string().min(1),
-    }),
-    async resolve({ ctx, input }) {
-      const name = getNameOrThrow(ctx);
-      const post = await ctx.prisma.post.create({
-        data: {
-          ...input,
-          name,
-          source: 'GITHUB',
-        },
-      });
-      ee.emit('add', post);
-      delete currentlyTyping[name];
-      ee.emit('isTypingUpdate');
-      return post;
-    },
-  })
-  .mutation('isTyping', {
-    input: z.object({
-      typing: z.boolean(),
-    }),
-    resolve({ input, ctx }) {
-      const name = getNameOrThrow(ctx);
-      if (!input.typing) {
-        delete currentlyTyping[name];
-      } else {
-        currentlyTyping[name] = {
-          lastTyped: new Date(),
+
+export const postRouter = t.router({
+  queries: {
+    postList: t.procedure
+      .input(
+        z.object({
+          cursor: z.date().nullish(),
+          take: z.number().min(1).max(50).nullish(),
+        }),
+      )
+      .resolve(async ({ input, ctx }) => {
+        const take = input.take ?? 10;
+        const cursor = input.cursor;
+        // `cursor` is of type `Date | undefined`
+        // `take` is of type `number | undefined`
+        const page = await ctx.prisma.post.findMany({
+          orderBy: {
+            createdAt: 'desc',
+          },
+          cursor: cursor
+            ? {
+                createdAt: cursor,
+              }
+            : undefined,
+          take: take + 1,
+          skip: 0,
+        });
+        const items = page.reverse();
+        let prevCursor: null | typeof cursor = null;
+        if (items.length > take) {
+          const prev = items.shift();
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+          prevCursor = prev!.createdAt;
+        }
+        return {
+          items,
+          prevCursor,
         };
-      }
-      ee.emit('isTypingUpdate');
-    },
-  })
-  .query('infinite', {
-    input: z.object({
-      cursor: z.date().nullish(),
-      take: z.number().min(1).max(50).nullish(),
-    }),
-    async resolve({ input, ctx }) {
-      const take = input.take ?? 10;
-      const cursor = input.cursor;
-      // `cursor` is of type `Date | undefined`
-      // `take` is of type `number | undefined`
-      const page = await ctx.prisma.post.findMany({
-        orderBy: {
-          createdAt: 'desc',
-        },
-        cursor: cursor
-          ? {
-              createdAt: cursor,
-            }
-          : undefined,
-        take: take + 1,
-        skip: 0,
-      });
-      const items = page.reverse();
-      let prevCursor: null | typeof cursor = null;
-      if (items.length > take) {
-        const prev = items.shift();
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        prevCursor = prev!.createdAt;
-      }
-      return {
-        items,
-        prevCursor,
-      };
-    },
-  })
-  .subscription('onAdd', {
-    resolve() {
+      }),
+  },
+  mutations: {
+    postAdd: t.procedure
+      .input(
+        z.object({
+          id: z.string().uuid().optional(),
+          text: z.string().min(1),
+        }),
+      )
+      .resolve(async ({ ctx, input }) => {
+        const name = getNameOrThrow(ctx);
+        const post = await ctx.prisma.post.create({
+          data: {
+            ...input,
+            name,
+            source: 'GITHUB',
+          },
+        });
+        ee.emit('add', post);
+        delete currentlyTyping[name];
+        ee.emit('postIsTypingUpdateUpdate');
+        return post;
+      }),
+    postIsTypingUpdate: t.procedure
+      .input(
+        z.object({
+          typing: z.boolean(),
+        }),
+      )
+      .resolve(({ ctx, input }) => {
+        const name = getNameOrThrow(ctx);
+        if (!input.typing) {
+          delete currentlyTyping[name];
+        } else {
+          currentlyTyping[name] = {
+            lastTyped: new Date(),
+          };
+        }
+        ee.emit('postIsTypingUpdateUpdate');
+      }),
+  },
+  subscriptions: {
+    postOnAdd: t.procedure.resolve(() => {
       return observable<Post>((emit) => {
         const onAdd = (data: Post) => emit.next(data);
         ee.on('add', onAdd);
@@ -136,13 +143,11 @@ export const postRouter = createRouter()
           ee.off('add', onAdd);
         };
       });
-    },
-  })
-  .subscription('whoIsTyping', {
-    resolve() {
+    }),
+    postWhoIsTyping: t.procedure.resolve(() => {
       let prev: string[] | null = null;
       return observable<string[]>((emit) => {
-        const onIsTypingUpdate = () => {
+        const onpostIsTypingUpdateUpdate = () => {
           const newData = Object.keys(currentlyTyping);
 
           if (!prev || prev.toString() !== newData.toString()) {
@@ -150,10 +155,11 @@ export const postRouter = createRouter()
           }
           prev = newData;
         };
-        ee.on('isTypingUpdate', onIsTypingUpdate);
+        ee.on('postIsTypingUpdateUpdate', onpostIsTypingUpdateUpdate);
         return () => {
-          ee.off('isTypingUpdate', onIsTypingUpdate);
+          ee.off('postIsTypingUpdateUpdate', onpostIsTypingUpdateUpdate);
         };
       });
-    },
-  });
+    }),
+  },
+});
