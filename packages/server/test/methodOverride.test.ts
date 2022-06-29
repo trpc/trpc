@@ -1,4 +1,4 @@
-import { routerToServerAndClient } from './__testHelpers';
+import { routerToServerAndClientNew } from './___testHelpers';
 import { z } from 'zod';
 import * as trpc from '../src';
 import { NodeHTTPRequest } from '../src/adapters/node-http';
@@ -33,15 +33,16 @@ const router = trpc
         payload: input,
       };
     },
-  });
+  })
+  .interop();
 
 test('query as GET', async () => {
-  const { client, close } = routerToServerAndClient(router, {
+  const { client, close } = routerToServerAndClientNew(router, {
     server: { createContext },
   });
 
   {
-    const res = await client.query('query', 'query-GET', {
+    const res = await client.query('query', 'query-GET', undefined, {
       method: 'GET',
     });
     expect(res).toEqual({
@@ -73,12 +74,12 @@ test('query as GET', async () => {
 });
 
 test('query as POST', async () => {
-  const { client, close } = routerToServerAndClient(router, {
+  const { client, close } = routerToServerAndClientNew(router, {
     server: { createContext },
   });
 
   {
-    const res = await client.query('query', 'query-POST', {
+    const res = await client.query('query', 'query-POST', undefined, {
       method: 'POST',
     });
     expect(res).toEqual({
@@ -95,12 +96,12 @@ test('query as POST', async () => {
 });
 
 test('mutation as GET', async () => {
-  const { client, close } = routerToServerAndClient(router, {
+  const { client, close } = routerToServerAndClientNew(router, {
     server: { createContext },
   });
 
   {
-    const res = await client.mutation('mutation', 'mutation-GET', {
+    const res = await client.mutation('mutation', 'mutation-GET', undefined, {
       method: 'GET',
     });
     expect(res).toEqual({
@@ -119,12 +120,12 @@ test('mutation as GET', async () => {
 });
 
 test('mutation as POST', async () => {
-  const { client, close } = routerToServerAndClient(router, {
+  const { client, close } = routerToServerAndClientNew(router, {
     server: { createContext },
   });
 
   {
-    const res = await client.mutation('mutation', 'mutation-POST', {
+    const res = await client.mutation('mutation', 'mutation-POST', undefined, {
       method: 'POST',
     });
     expect(res).toEqual({
@@ -152,13 +153,13 @@ test('mutation as POST', async () => {
 });
 
 test('with methodOverride disabled', async () => {
-  const { client, close } = routerToServerAndClient(router, {
+  const { client, close } = routerToServerAndClientNew(router, {
     server: { createContext, methodOverride: { enabled: false } },
   });
 
   {
     await expect(async () => {
-      await client.query('query', 'query-POST', { method: 'POST' });
+      await client.query('query', 'query-POST', undefined, { method: 'POST' });
     }).rejects.toThrowError('No "mutation"-procedure on path "query"');
     expect(urlMock).toHaveBeenCalledTimes(1);
     expect(urlMock).toHaveBeenCalledWith('/query?type=query&batch=1');
@@ -166,7 +167,9 @@ test('with methodOverride disabled', async () => {
   }
   {
     await expect(async () => {
-      await client.mutation('mutation', 'mutation-GET', { method: 'GET' });
+      await client.mutation('mutation', 'mutation-GET', undefined, {
+        method: 'GET',
+      });
     }).rejects.toThrowError('No "query"-procedure on path "mutation"');
     expect(urlMock).toHaveBeenCalledTimes(1);
     expect(urlMock).toHaveBeenCalledWith(

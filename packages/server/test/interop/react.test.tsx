@@ -34,11 +34,11 @@ import {
 import { withTRPC } from '../../../next/src';
 import { OutputWithCursor, createReactQueryHooks } from '../../../react/src';
 import { createSSGHelpers } from '../../../react/src/ssg';
+import { NodeHTTPRequest } from '../../src/adapters/node-http';
 import { TRPCError } from '../../src/error/TRPCError';
 import { DefaultErrorShape } from '../../src/error/formatter';
 import { observable } from '../../src/observable';
 import { subscriptionPullFactory } from '../../src/subscription';
-import { NodeHTTPRequest } from 'packages/server/src/adapters/node-http';
 
 setLogger({
   log() {},
@@ -210,7 +210,7 @@ function createAppRouter() {
           payload: input,
         };
       },
-    });
+    })
     .interop();
 
   const linkSpy = {
