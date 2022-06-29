@@ -25,7 +25,7 @@
       - [§2.4 Merging routers](#24-merging-routers)
     - [§3 Advanced 🧙](#3-advanced-)
       - [Compose dynamic combos of middlewares/input parsers](#compose-dynamic-combos-of-middlewaresinput-parsers)
-    - [Interopability mode for old routers](#interopability-mode-for-old-routers)
+    - [Interopability mode for old routers / Migration path](#interopability-mode-for-old-routers--migration-path)
   - [New Raw client API!](#new-raw-client-api)
   - [New React-API (🚧🚧)](#new-react-api-)
     - [Open questions](#open-questions)
@@ -446,7 +446,7 @@ const editOrganization = procedure
   });
 ```
 
-### Interopability mode for old routers
+### Interopability mode for old routers / Migration path
 
 If you are migrating from V9->V10, the transition will be very simple. 
 
