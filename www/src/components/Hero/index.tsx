@@ -10,9 +10,9 @@ export const Hero = () => {
     <div className="flex items-center justify-between max-w-screen-xl px-4 pt-24 mx-auto md:pt-56 sm:px-6 md:px-8">
       <div className="flex-1">
         <div className="hidden lg:block">
-          <Logo size={86} />
+          <Logo size={64} />
         </div>
-        <h1 className="py-3 text-3xl font-bold sm:text-4xl lg:text-5xl">
+        <h1 className="py-6 text-3xl font-bold sm:text-4xl lg:text-5xl">
           Build fully typesafe <br /> APIs easily.
         </h1>
         <p className="text-zinc-500 max-w-[80ch]">
