@@ -42,7 +42,7 @@ test('query as GET', async () => {
   });
 
   {
-    const res = await client.query('query', 'query-GET', undefined, {
+    const res = await client.query('query', 'query-GET', {
       method: 'GET',
     });
     expect(res).toEqual({
@@ -79,7 +79,7 @@ test('query as POST', async () => {
   });
 
   {
-    const res = await client.query('query', 'query-POST', undefined, {
+    const res = await client.query('query', 'query-POST', {
       method: 'POST',
     });
     expect(res).toEqual({
@@ -101,7 +101,7 @@ test('mutation as GET', async () => {
   });
 
   {
-    const res = await client.mutation('mutation', 'mutation-GET', undefined, {
+    const res = await client.mutation('mutation', 'mutation-GET', {
       method: 'GET',
     });
     expect(res).toEqual({
@@ -125,7 +125,7 @@ test('mutation as POST', async () => {
   });
 
   {
-    const res = await client.mutation('mutation', 'mutation-POST', undefined, {
+    const res = await client.mutation('mutation', 'mutation-POST', {
       method: 'POST',
     });
     expect(res).toEqual({
@@ -159,7 +159,7 @@ test('with methodOverride disabled', async () => {
 
   {
     await expect(async () => {
-      await client.query('query', 'query-POST', undefined, { method: 'POST' });
+      await client.query('query', 'query-POST', { method: 'POST' });
     }).rejects.toThrowError('No "mutation"-procedure on path "query"');
     expect(urlMock).toHaveBeenCalledTimes(1);
     expect(urlMock).toHaveBeenCalledWith('/query?type=query&batch=1');
@@ -167,9 +167,7 @@ test('with methodOverride disabled', async () => {
   }
   {
     await expect(async () => {
-      await client.mutation('mutation', 'mutation-GET', undefined, {
-        method: 'GET',
-      });
+      await client.mutation('mutation', 'mutation-GET', { method: 'GET' });
     }).rejects.toThrowError('No "query"-procedure on path "mutation"');
     expect(urlMock).toHaveBeenCalledTimes(1);
     expect(urlMock).toHaveBeenCalledWith(

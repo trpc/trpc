@@ -1,11 +1,17 @@
 import { UnsetMarker } from './internals/utils';
 
-type ClientContext = Record<string, unknown>;
+export type ClientContext = Record<string, unknown>;
+export type OperationMethod = 'GET' | 'POST';
+
 export interface ProcedureOptions {
   /**
    * Client-side context
    */
   context?: ClientContext;
+  /**
+   * Override procedure method
+   */
+  method?: OperationMethod;
 }
 
 /**

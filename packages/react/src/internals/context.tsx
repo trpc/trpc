@@ -1,6 +1,7 @@
-import { TRPCClient, TRPCClientError, TRPCRequestOptions } from '@trpc/client';
+import { TRPCClient, TRPCClientError } from '@trpc/client';
 import type {
   AnyRouter,
+  ProcedureOptions,
   inferHandlerInput,
   inferProcedureInput,
   inferProcedureOutput,
@@ -22,11 +23,11 @@ import { Updater } from 'react-query/types/core/utils';
 
 interface TRPCFetchQueryOptions<TInput, TError, TOutput>
   extends FetchQueryOptions<TInput, TError, TOutput>,
-    TRPCRequestOptions {}
+    ProcedureOptions {}
 
 interface TRPCFetchInfiniteQueryOptions<TInput, TError, TOutput>
   extends FetchInfiniteQueryOptions<TInput, TError, TOutput>,
-    TRPCRequestOptions {}
+    ProcedureOptions {}
 
 /** @internal */
 export type SSRState = false | 'prepass' | 'mounting' | 'mounted';

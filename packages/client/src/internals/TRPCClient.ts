@@ -2,6 +2,7 @@ import {
   AnyRouter,
   ClientDataTransformerOptions,
   DataTransformer,
+  ProcedureOptions,
   ProcedureType,
   inferHandlerInput,
   inferProcedureInput,
@@ -88,17 +89,6 @@ export interface CreateTRPCClientWithLinksOptions<TRouter extends AnyRouter>
    * @link https://trpc.io/docs/links
    **/
   links: TRPCLink<TRouter>[];
-}
-
-export interface TRPCRequestOptions {
-  /**
-   * Pass additional context to links
-   */
-  context?: OperationContext;
-  /**
-   * Override procedure method
-   */
-  method?: OperationMethod;
 }
 
 /** @internal */
@@ -221,11 +211,8 @@ export class TRPCClient<TRouter extends AnyRouter> {
   public query<
     TQueries extends TRouter['_def']['queries'],
     TPath extends string & keyof TQueries,
-  >(
-    path: TPath,
-    ...args: [...inferHandlerInput<TQueries[TPath]>, TRPCRequestOptions?]
-  ) {
-    const opts = args[1] as TRPCRequestOptions | undefined;
+  >(path: TPath, ...args: inferHandlerInput<TQueries[TPath]>) {
+    const opts = args[1];
     const { context, method } = opts || {};
     return this.requestAsPromise<
       inferHandlerInput<TQueries[TPath]>,
@@ -242,11 +229,8 @@ export class TRPCClient<TRouter extends AnyRouter> {
   public mutation<
     TMutations extends TRouter['_def']['mutations'],
     TPath extends string & keyof TMutations,
-  >(
-    path: TPath,
-    ...args: [...inferHandlerInput<TMutations[TPath]>, TRPCRequestOptions?]
-  ) {
-    const opts = args[1] as TRPCRequestOptions | undefined;
+  >(path: TPath, ...args: inferHandlerInput<TMutations[TPath]>) {
+    const opts = args[1];
     const { context, method } = opts || {};
     return this.requestAsPromise<
       inferHandlerInput<TMutations[TPath]>,
@@ -268,7 +252,7 @@ export class TRPCClient<TRouter extends AnyRouter> {
   >(
     path: TPath,
     input: TInput,
-    opts: Omit<TRPCRequestOptions, 'method'> &
+    opts: Omit<ProcedureOptions, 'method'> &
       Partial<Observer<TRPCResultMessage<TOutput>, TRPCClientError<TRouter>>>,
   ): Unsubscribable {
     const { context } = opts;

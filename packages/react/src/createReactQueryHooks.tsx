@@ -2,12 +2,12 @@ import {
   CreateTRPCClientOptions,
   TRPCClient,
   TRPCClientErrorLike,
-  TRPCRequestOptions,
   createTRPCClient,
 } from '@trpc/client';
 import type {
   AnyRouter,
   Procedure,
+  ProcedureOptions,
   inferHandlerInput,
   inferProcedureInput,
   inferProcedureOutput,
@@ -43,7 +43,7 @@ export type OutputWithCursor<TData, TCursor extends any = any> = {
 
 type ProcedureRecord = Record<string, Procedure<any>>;
 
-export interface TRPCUseQueryBaseOptions extends TRPCRequestOptions {
+export interface TRPCUseQueryBaseOptions extends ProcedureOptions {
   /**
    * Opt out of SSR for this query by passing `ssr: false`
    */
