@@ -536,26 +536,19 @@ async function main() {
 
 
 
-🚧🚧
-
-
-The running idea is to be able to do something similar to this:
-
 ```ts
 import { trpc } from '~/utils/trpc';
 
 function MyComponent() {
   // You'll be able to CMD+Click `postById` below
-  const query = trpc.queries.postById.use(
+  const query = trpc.queries.postById.useQuery(
     { id: 1 },
     {
-      trpc: {
-        /* [...] trpc specific options */
-        context: {
-          batching: false,
-        },
-        ssr: true,
+      /* [...] trpc specific options */
+      context: {
+        batching: false,
       },
+      ssr: true,
       enabled: true,
       /* [...] react-query specific options */
     }
