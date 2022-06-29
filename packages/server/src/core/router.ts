@@ -57,6 +57,7 @@ export interface RouterDef<
   _meta: TMeta;
   errorFormatter: ErrorFormatter<TContext, TErrorShape>;
   transformer: CombinedDataTransformer;
+  // FIXME: separate `procedures` and `children`-routers
   procedures: TProcedures;
   // FIXME decide if these are deprecated
   /**
