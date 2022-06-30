@@ -16,11 +16,12 @@ Also, if your company using tRPC and want to support long-term maintenance of tR
 <table>
   <tbody>
     <tr>
-      <td align="center"><a href="https://render.com"><img alt="Render.com" src="https://raw.githubusercontent.com/trpc/trpc/main/images/render.svg" width="273px" /><br />Render</a></td>
+      <td align="center"><a href="https://render.com"><img src="https://avatars.githubusercontent.com/u/36424661?v=4?s=180" width="180px;" alt=""/><br /><sub><b>Render</b></sub></a></td>
+      <td align="center"><a href="https://cal.com"><img src="https://avatars.githubusercontent.com/u/79145102?v=4?s=180" width="180px;" alt=""/><br /><b>Cal.com, Inc.</b></a></td>
+      <td align="center"><a href="https://cal.com/peer"><img src="https://avatars.githubusercontent.com/u/8019099?v=4?s=180" width="180px;" alt=""/><br /><b>Peer Richelsen</b></a></td>
     </tr>
   </tbody>
 </table>
-
 
 ### 🥈 Silver Sponsors
 
@@ -49,9 +50,7 @@ Also, if your company using tRPC and want to support long-term maintenance of tR
   </tbody>
 </table>
 
-
 ### 😻 Individuals
-
 
 <table>
   <tbody>
@@ -83,6 +82,9 @@ Also, if your company using tRPC and want to support long-term maintenance of tR
       <td align="center"><a href="http://www.ivanbuncic.com"><img src="https://avatars.githubusercontent.com/u/29887111?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Ivan Buncic</b></sub></a></td>
     </tr>
     <tr>
+      <td align="center"><a href="http://solberg.is"><img src="https://avatars.githubusercontent.com/u/701?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Jökull Sólberg Auðunsson</b></sub></a></td>
+      <td align="center"><a href="https://github.com/lmatheus"><img src="https://avatars.githubusercontent.com/u/8514703?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Luis Matheus</b></sub></a></td>
+      <td align="center"><a href="https://github.com/dmaykov"><img src="https://avatars.githubusercontent.com/u/6147048?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Dmitry Maykov</b></sub></a></td>
       <td align="center"><a href="http://solberg.is"><img src="https://avatars.githubusercontent.com/u/701?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Jökull Sólberg Auðunsson</b></sub></a></td>
     </tr>
   </tbody>
