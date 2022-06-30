@@ -875,6 +875,15 @@
       "contributions": [
         "financial"
       ]
+    },
+    {
+      "login": "carlbarrdahl",
+      "name": "Carl Barrdahl",
+      "avatar_url": "https://avatars.githubusercontent.com/u/2961337?v=4",
+      "profile": "https://github.com/carlbarrdahl",
+      "contributions": [
+        "financial"
+      ]
     }
   ],
   "contributorsPerLine": 7,
