@@ -67,6 +67,10 @@ npx create-next-app --example https://github.com/trpc/trpc --example-path exampl
 
 **👉 See full documentation on [tRPC.io](https://trpc.io/docs). 👈**
 
+## Star History
+
+[![Star History Chart](https://api.star-history.com/svg?repos=trpc/trpc&type=Date)](https://star-history.com/#trpc/trpc)
+
 ## Core Team
 
 <table>
