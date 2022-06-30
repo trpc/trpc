@@ -304,6 +304,7 @@ Also, if your company using tRPC and want to support long-term maintenance of tR
     <td align="center"><a href="https://diego-slicecode.dev/"><img src="https://avatars.githubusercontent.com/u/63283003?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Diego Massarini</b></sub></a><br /><a href="#financial-webdiego" title="Financial">💵</a></td>
     <td align="center"><a href="https://github.com/dmaykov"><img src="https://avatars.githubusercontent.com/u/6147048?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Dmitry Maykov</b></sub></a><br /><a href="#financial-dmaykov" title="Financial">💵</a></td>
     <td align="center"><a href="https://riccardogiorato.com/"><img src="https://avatars.githubusercontent.com/u/4527364?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Riccardo Giorato</b></sub></a><br /><a href="#financial-riccardogiorato" title="Financial">💵</a></td>
+    <td align="center"><a href="https://github.com/carlbarrdahl"><img src="https://avatars.githubusercontent.com/u/2961337?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Carl Barrdahl</b></sub></a><br /><a href="#financial-carlbarrdahl" title="Financial">💵</a></td>
   </tr>
 </table>
 
