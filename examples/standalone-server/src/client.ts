@@ -50,24 +50,24 @@ async function main() {
   });
   console.log('createPostResponse', createPostRes);
 
-  let count = 0;
-  await new Promise<void>((resolve) => {
-    const subscription = client.subscription('randomNumber', undefined, {
-      next(data) {
-        // ^ note that `data` here is inferred
-        console.log('received', data);
-        count++;
-        if (count > 3) {
-          // stop after 3 pulls
-          subscription.unsubscribe();
-          resolve();
-        }
-      },
-      error(err) {
-        console.error('error', err);
-      },
-    });
-  });
+  // let count = 0;
+  // await new Promise<void>((resolve) => {
+  //   const subscription = client.subscription('randomNumber', undefined, {
+  //     next(data) {
+  //       // ^ note that `data` here is inferred
+  //       console.log('received', data);
+  //       count++;
+  //       if (count > 3) {
+  //         // stop after 3 pulls
+  //         subscription.unsubscribe();
+  //         resolve();
+  //       }
+  //     },
+  //     error(err) {
+  //       console.error('error', err);
+  //     },
+  //   });
+  // });
   wsClient.close();
 }
 
