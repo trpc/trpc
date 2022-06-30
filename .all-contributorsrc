@@ -857,6 +857,15 @@
       "contributions": [
         "financial"
       ]
+    },
+    {
+      "login": "dmaykov",
+      "name": "Dmitry Maykov",
+      "avatar_url": "https://avatars.githubusercontent.com/u/6147048?v=4",
+      "profile": "https://github.com/dmaykov",
+      "contributions": [
+        "financial"
+      ]
     }
   ],
   "contributorsPerLine": 7,

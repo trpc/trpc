@@ -302,6 +302,7 @@ Also, if your company using tRPC and want to support long-term maintenance of tR
     <td align="center"><a href="http://franklinjara.dev"><img src="https://avatars.githubusercontent.com/u/65879341?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Franklin</b></sub></a><br /><a href="https://github.com/trpc/trpc/commits?author=makyfj" title="Documentation">📖</a></td>
     <td align="center"><a href="https://www.linkedin.com/in/zomars/"><img src="https://avatars.githubusercontent.com/u/3504472?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Omar López</b></sub></a><br /><a href="#financial-zomars" title="Financial">💵</a></td>
     <td align="center"><a href="https://diego-slicecode.dev/"><img src="https://avatars.githubusercontent.com/u/63283003?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Diego Massarini</b></sub></a><br /><a href="#financial-webdiego" title="Financial">💵</a></td>
+    <td align="center"><a href="https://github.com/dmaykov"><img src="https://avatars.githubusercontent.com/u/6147048?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Dmitry Maykov</b></sub></a><br /><a href="#financial-dmaykov" title="Financial">💵</a></td>
   </tr>
 </table>
 
