@@ -848,6 +848,15 @@
       "contributions": [
         "financial"
       ]
+    },
+    {
+      "login": "webdiego",
+      "name": "Diego Massarini",
+      "avatar_url": "https://avatars.githubusercontent.com/u/63283003?v=4",
+      "profile": "https://diego-slicecode.dev/",
+      "contributions": [
+        "financial"
+      ]
     }
   ],
   "contributorsPerLine": 7,
