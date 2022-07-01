@@ -27,6 +27,8 @@ type CreateProcedureReturnInput<
   _output_out: FallbackValue<TNext['_output_out'], TPrev['_output_out']>;
 }>;
 
+type Error<Message> = { _error: Message };
+
 export interface ProcedureBuilder<TParams extends ProcedureParams> {
   /**
    * Add an input parser to the procedure.
@@ -61,16 +63,14 @@ export interface ProcedureBuilder<TParams extends ProcedureParams> {
   /**
    * Add a meta data to the procedure.
    */
-  meta(meta: TParams['_meta']): ProcedureBuilder<{
-    _meta: TParams['_meta'];
-    _meta_in: TParams['_meta'];
-    _ctx_in: TParams['_ctx_in'];
-    _ctx_out: TParams['_ctx_out'];
-    _input_in: TParams['_input_in'];
-    _input_out: TParams['_input_out'];
-    _output_in: TParams['_output_in'];
-    _output_out: TParams['_output_out'];
-  }>;
+  meta(meta: TParams['_meta']): ProcedureBuilder<
+    Overwrite<
+      TParams,
+      {
+        _meta_in: TParams['_meta'];
+      }
+    >
+  >;
   /**
    * Add a middleware to the procedure.
    */
@@ -124,26 +124,8 @@ export interface ProcedureBuilder<TParams extends ProcedureParams> {
             >
           >
         : QueryProcedure<TParams>
-      : 'META NOT SET'
+      : Error<'META NOT SET'>
     : UnsetMarker extends TParams['_output_out']
-    ? QueryProcedure<
-        Overwrite<
-          TParams,
-          {
-            _output_in: $TOutput;
-            _output_out: $TOutput;
-          }
-        >
-      >
-    : QueryProcedure<TParams>;
-  /**
-   * Query procedure
-   */
-  query<$TOutput>(
-    resolver: (
-      opts: ResolveOptions<TParams>,
-    ) => MaybePromise<FallbackValue<TParams['_output_in'], $TOutput>>,
-  ): UnsetMarker extends TParams['_output_out']
     ? QueryProcedure<
         Overwrite<
           TParams,
