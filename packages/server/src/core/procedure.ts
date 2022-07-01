@@ -19,11 +19,16 @@ export interface ProcedureParams<
   TOutputIn = unknown,
   TOutputOut = unknown,
   TMeta = unknown,
+  TMetaIn = unknown,
 > {
   /**
    * @internal
    */
   _meta: TMeta;
+  /**
+   * @internal
+   */
+  _meta_in: TMetaIn;
   /**
    * @internal
    */
