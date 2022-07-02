@@ -20,7 +20,7 @@ const TEMPLATE = `
  >(
    __args__
  ): Router<{
-  _router: true;
+  router: true;
   _ctx: RP0['_ctx'];
   _errorShape: RP0['_errorShape'];
   _meta: RP0['_meta'];

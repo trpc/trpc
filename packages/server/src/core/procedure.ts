@@ -68,6 +68,7 @@ export interface ProcedureBase<TParams extends ProcedureParams> {
    * @deprecated use `._def.meta` instead
    */
   meta?: TParams['_meta'];
+  _procedure: true;
 }
 
 export interface QueryProcedure<TParams extends ProcedureParams>

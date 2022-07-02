@@ -66,12 +66,11 @@ export type InferLast<T> = T & { [K in keyof T]: T[K] };
 export type inferAsyncReturnType<TFunction extends (...args: any) => any> =
   ThenArg<ReturnType<TFunction>>;
 
+type FilterKeys<T extends object, K> = {
+  [TKey in keyof T]: T[TKey] extends K ? TKey : never;
+}[keyof T];
+
 /**
  * @internal
  */
-export type Filter<T extends object, K> = Pick<
-  T,
-  keyof {
-    [TKey in keyof T]: T[TKey] extends K ? T[TKey] : never;
-  }
->;
+export type Filter<T extends object, K> = Pick<T, FilterKeys<T, K>>;

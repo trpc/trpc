@@ -43,7 +43,7 @@ export interface RouterDef<
   TMeta extends Record<string, unknown>,
   TProcedures extends ProcedureRouterRecord,
 > {
-  _router: true;
+  router: true;
   /**
    * @internal
    */
@@ -228,7 +228,7 @@ export function createRouterFactory<TConfig extends RootConfig>(
     );
 
     const _def: AnyRouterDef<TConfig['ctx']> = {
-      _router: true,
+      router: true,
       procedures: {},
       ...emptyRouter,
       ...result,
