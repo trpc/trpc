@@ -112,7 +112,9 @@ Also, if your company using tRPC and want to support long-term maintenance of tR
 <table>
   <tbody>
     <tr>
-      <td align="center"><a href="https://render.com"><img alt="Render.com" src="https://raw.githubusercontent.com/trpc/trpc/main/images/render.svg" width="312px" /><br />Render</a></td>
+      <td align="center"><a href="https://render.com"><img src="https://avatars.githubusercontent.com/u/36424661?v=4?s=180" width="180px;" alt=""/><br /><sub><b>Render</b></sub></a></td>
+      <td align="center"><a href="https://cal.com"><img src="https://avatars.githubusercontent.com/u/79145102?v=4?s=180" width="180px;" alt=""/><br /><b>Cal.com, Inc.</b></a></td>
+      <td align="center"><a href="https://cal.com/peer"><img src="https://avatars.githubusercontent.com/u/8019099?v=4?s=180" width="180px;" alt=""/><br /><b>Peer Richelsen</b></a></td>
     </tr>
   </tbody>
 </table>
@@ -177,6 +179,9 @@ Also, if your company using tRPC and want to support long-term maintenance of tR
     </tr>
     <tr>
       <td align="center"><a href="http://solberg.is"><img src="https://avatars.githubusercontent.com/u/701?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Jökull Sólberg Auðunsson</b></sub></a></td>
+      <td align="center"><a href="https://github.com/lmatheus"><img src="https://avatars.githubusercontent.com/u/8514703?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Luis Matheus</b></sub></a></td>
+      <td align="center"><a href="https://github.com/dmaykov"><img src="https://avatars.githubusercontent.com/u/6147048?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Dmitry Maykov</b></sub></a></td>
+      <td align="center"><a href="https://www.linkedin.com/in/zomars/"><img src="https://avatars.githubusercontent.com/u/3504472?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Omar López</b></sub></a></td>
     </tr>
   </tbody>
 </table>
@@ -300,6 +305,15 @@ Also, if your company using tRPC and want to support long-term maintenance of tR
   <tr>
     <td align="center"><a href="https://github.com/lmatheus"><img src="https://avatars.githubusercontent.com/u/8514703?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Luis Matheus</b></sub></a><br /><a href="#financial-lmatheus" title="Financial">💵</a></td>
     <td align="center"><a href="http://franklinjara.dev"><img src="https://avatars.githubusercontent.com/u/65879341?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Franklin</b></sub></a><br /><a href="https://github.com/trpc/trpc/commits?author=makyfj" title="Documentation">📖</a></td>
+    <td align="center"><a href="https://www.linkedin.com/in/zomars/"><img src="https://avatars.githubusercontent.com/u/3504472?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Omar López</b></sub></a><br /><a href="#financial-zomars" title="Financial">💵</a></td>
+    <td align="center"><a href="https://diego-slicecode.dev/"><img src="https://avatars.githubusercontent.com/u/63283003?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Diego Massarini</b></sub></a><br /><a href="#financial-webdiego" title="Financial">💵</a></td>
+    <td align="center"><a href="https://github.com/dmaykov"><img src="https://avatars.githubusercontent.com/u/6147048?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Dmitry Maykov</b></sub></a><br /><a href="#financial-dmaykov" title="Financial">💵</a></td>
+    <td align="center"><a href="https://riccardogiorato.com/"><img src="https://avatars.githubusercontent.com/u/4527364?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Riccardo Giorato</b></sub></a><br /><a href="#financial-riccardogiorato" title="Financial">💵</a></td>
+    <td align="center"><a href="https://github.com/carlbarrdahl"><img src="https://avatars.githubusercontent.com/u/2961337?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Carl Barrdahl</b></sub></a><br /><a href="#financial-carlbarrdahl" title="Financial">💵</a></td>
+  </tr>
+  <tr>
+    <td align="center"><a href="https://cal.com/peer"><img src="https://avatars.githubusercontent.com/u/8019099?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Peer Richelsen</b></sub></a><br /><a href="#financial-PeerRich" title="Financial">💵</a></td>
+    <td align="center"><a href="https://cal.com"><img src="https://avatars.githubusercontent.com/u/79145102?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Cal.com, Inc.</b></sub></a><br /><a href="#financial-calcom" title="Financial">💵</a></td>
   </tr>
 </table>
 
