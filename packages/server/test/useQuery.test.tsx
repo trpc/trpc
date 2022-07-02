@@ -2,11 +2,11 @@ import { routerToServerAndClientNew } from './___testHelpers';
 import { render, waitFor } from '@testing-library/react';
 import { expectTypeOf } from 'expect-type';
 import { konn } from 'konn';
-import React, { useEffect, useState } from 'react';
+import React, { ReactNode, useEffect, useState } from 'react';
 import { QueryClient, QueryClientProvider } from 'react-query';
 import { InfiniteData } from 'react-query';
 import { z } from 'zod';
-import { createReactQueryProxy } from '../../react/src';
+import { createReactQueryHooks, createReactQueryProxy } from '../../react/src';
 import { initTRPC } from '../src';
 
 const ctx = konn()
@@ -36,18 +36,40 @@ const ctx = konn()
           )
           .mutation(() => `__mutationResult` as const),
       }),
+      /**
+       * @deprecated
+       */
+      deprecatedRouter: t.router({
+        /**
+         * @deprecated
+         */
+        deprecatedProcedure: t.procedure.query(() => '..'),
+      }),
     });
 
     const opts = routerToServerAndClientNew(appRouter);
     const queryClient = new QueryClient();
-    const react = createReactQueryProxy<typeof appRouter>();
+    const react = createReactQueryHooks<typeof appRouter>();
+    const proxy = createReactQueryProxy<typeof appRouter>();
     const client = opts.client;
 
+    function App(props: { children: ReactNode }) {
+      const [queryClient] = useState(() => new QueryClient());
+      return (
+        <react.Provider {...{ queryClient, client }}>
+          <QueryClientProvider client={queryClient}>
+            {props.children}
+          </QueryClientProvider>
+        </react.Provider>
+      );
+    }
     return {
       close: opts.close,
       client,
       queryClient,
       react,
+      proxy,
+      App,
     };
   })
   .afterEach(async (ctx) => {
@@ -56,14 +78,21 @@ const ctx = konn()
   .done();
 
 test('useQuery()', async () => {
-  const { react, client } = ctx;
+  const { react, proxy, App } = ctx;
   function MyComponent() {
-    const query1 = react.post.byId.useQuery({
+    const query1 = proxy.post.byId.useQuery({
       id: '1',
     });
 
     // @ts-expect-error Should not exist
-    react.post.byId.useInfiniteQuery;
+    proxy.post.byId.useInfiniteQuery;
+    const utils = react.useContext();
+
+    useEffect(() => {
+      // utils.invalidateQueries(['post.byId']);
+      // @ts-expect-error Should not exist
+      utils.invalidateQueries(['doesNotExist']);
+    }, [utils]);
 
     if (!query1.data) {
       return <>...</>;
@@ -74,27 +103,21 @@ test('useQuery()', async () => {
 
     return <pre>{JSON.stringify(query1.data ?? 'n/a', null, 4)}</pre>;
   }
-  function App() {
-    const [queryClient] = useState(() => new QueryClient());
-    return (
-      <react.Provider {...{ queryClient, client }}>
-        <QueryClientProvider client={queryClient}>
-          <MyComponent />
-        </QueryClientProvider>
-      </react.Provider>
-    );
-  }
 
-  const utils = render(<App />);
+  const utils = render(
+    <App>
+      <MyComponent />
+    </App>,
+  );
   await waitFor(() => {
     expect(utils.container).toHaveTextContent(`__result`);
   });
 });
 
 test('useInfiniteQuery()', async () => {
-  const { react, client } = ctx;
+  const { App, proxy } = ctx;
   function MyComponent() {
-    const query1 = react.post.list.useInfiniteQuery({});
+    const query1 = proxy.post.list.useInfiniteQuery({});
 
     if (!query1.data) {
       return <>...</>;
@@ -105,27 +128,21 @@ test('useInfiniteQuery()', async () => {
 
     return <pre>{JSON.stringify(query1.data ?? 'n/a', null, 4)}</pre>;
   }
-  function App() {
-    const [queryClient] = useState(() => new QueryClient());
-    return (
-      <react.Provider {...{ queryClient, client }}>
-        <QueryClientProvider client={queryClient}>
-          <MyComponent />
-        </QueryClientProvider>
-      </react.Provider>
-    );
-  }
 
-  const utils = render(<App />);
+  const utils = render(
+    <App>
+      <MyComponent />
+    </App>,
+  );
   await waitFor(() => {
     expect(utils.container).toHaveTextContent(`__infResult`);
   });
 });
 
 test('useMutation', async () => {
-  const { react, client } = ctx;
+  const { App, proxy } = ctx;
   function MyComponent() {
-    const mutation = react.post.create.useMutation();
+    const mutation = proxy.post.create.useMutation();
 
     useEffect(() => {
       mutation.mutate({
@@ -143,19 +160,29 @@ test('useMutation', async () => {
     return <pre>{JSON.stringify(mutation.data ?? 'n/a', null, 4)}</pre>;
   }
 
-  function App() {
-    const [queryClient] = useState(() => new QueryClient());
-    return (
-      <react.Provider {...{ queryClient, client }}>
-        <QueryClientProvider client={queryClient}>
-          <MyComponent />
-        </QueryClientProvider>
-      </react.Provider>
-    );
-  }
-
-  const utils = render(<App />);
+  const utils = render(
+    <App>
+      <MyComponent />
+    </App>,
+  );
   await waitFor(() => {
     expect(utils.container).toHaveTextContent(`__mutationResult`);
   });
+});
+
+test('deprecated routers', async () => {
+  const { proxy, App } = ctx;
+
+  function MyComponent() {
+    // FIXME this should have strike-through
+    proxy.deprecatedRouter.deprecatedProcedure.useQuery();
+
+    return null;
+  }
+
+  render(
+    <App>
+      <MyComponent />
+    </App>,
+  );
 });

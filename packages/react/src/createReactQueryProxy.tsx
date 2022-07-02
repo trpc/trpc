@@ -106,10 +106,10 @@ type DecoratedProcedureRecord<
       >;
 };
 
-function makeProxy<
-  TRouter extends AnyRouter,
-  TClient extends { useContext: any; Provider: any },
->(client: TClient, ...path: string[]) {
+function makeProxy<TRouter extends AnyRouter, TClient>(
+  client: TClient,
+  ...path: string[]
+) {
   const proxy: any = new Proxy(
     function () {
       // noop
@@ -144,8 +144,7 @@ function makeProxy<
     },
   );
 
-  return proxy as DecoratedProcedureRecord<TRouter['_def']['record']> &
-    Pick<TClient, 'Provider'>;
+  return proxy as DecoratedProcedureRecord<TRouter['_def']['record']>;
 }
 export function createReactQueryProxy<
   TRouter extends AnyRouter,

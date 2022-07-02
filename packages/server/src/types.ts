@@ -69,6 +69,9 @@ export type inferAsyncReturnType<TFunction extends (...args: any) => any> =
 /**
  * @internal
  */
-export type Filter<T extends Record<any, any> | any[], K> = {
-  [TKey in keyof T]: T[TKey] extends K ? T[TKey] : never;
-};
+export type Filter<T extends object, K> = Pick<
+  T,
+  keyof {
+    [TKey in keyof T]: T[TKey] extends K ? T[TKey] : never;
+  }
+>;
