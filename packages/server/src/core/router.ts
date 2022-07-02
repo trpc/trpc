@@ -43,6 +43,7 @@ export interface RouterDef<
   TMeta extends Record<string, unknown>,
   TProcedures extends ProcedureRouterRecord,
 > {
+  _router: true;
   /**
    * @internal
    */
@@ -57,8 +58,9 @@ export interface RouterDef<
   _meta: TMeta;
   errorFormatter: ErrorFormatter<TContext, TErrorShape>;
   transformer: CombinedDataTransformer;
-  // FIXME: separate `procedures` and `children`-routers
-  procedures: TProcedures;
+  procedures: Filter<TProcedures, Procedure<any>>;
+  routers: Filter<TProcedures, Router<any>>;
+  record: TProcedures;
   // FIXME decide if these are deprecated
   /**
    * @deprecated
@@ -124,7 +126,7 @@ export interface Router<TDef extends AnyRouterDef> {
     TDef['_ctx'],
     TDef['_errorShape'],
     TDef['_meta'],
-    TDef['procedures']
+    TDef['record']
   >;
   /** @deprecated **/
   errorFormatter: TDef['errorFormatter'];
@@ -185,16 +187,19 @@ const emptyRouter = {
 export function createRouterFactory<TConfig extends RootConfig>(
   defaults?: RouterDefaultOptions<TConfig['ctx']>,
 ) {
-  return function createRouterInner<TProcedures extends ProcedureRouterRecord>(
-    procedures: TProcedures,
+  return function createRouterInner<
+    TProcRouterRecord extends ProcedureRouterRecord,
+  >(
+    opts: TProcRouterRecord,
   ): Router<
     RouterDef<
       TConfig['ctx'],
       TConfig['errorShape'],
       TConfig['meta'],
-      TProcedures
+      TProcRouterRecord
     >
-  > {
+  > &
+    TProcRouterRecord {
     const routerProcedures: Record<string, Procedure<any>> = omitPrototype({});
     function recursiveGetPaths(procedures: ProcedureRouterRecord, path = '') {
       for (const [key, procedureOrRouter] of Object.entries(procedures ?? {})) {
@@ -210,7 +215,7 @@ export function createRouterFactory<TConfig extends RootConfig>(
       }
     }
 
-    recursiveGetPaths(procedures);
+    recursiveGetPaths(opts);
 
     const result = mergeWithoutOverrides<
       RouterDefaultOptions<TConfig['ctx']> & RouterBuildOptions<TConfig['ctx']>
@@ -223,9 +228,11 @@ export function createRouterFactory<TConfig extends RootConfig>(
     );
 
     const _def: AnyRouterDef<TConfig['ctx']> = {
+      _router: true,
       procedures: {},
       ...emptyRouter,
       ...result,
+      record: opts,
       queries: Object.entries(result.procedures || {})
         .filter((pair) => (pair[1] as any)._def.query)
         .reduce((acc, [key, val]) => ({ ...acc, [key]: val }), {}),
@@ -235,11 +242,9 @@ export function createRouterFactory<TConfig extends RootConfig>(
       subscriptions: Object.entries(result.procedures || {})
         .filter((pair) => (pair[1] as any)._def.subscription)
         .reduce((acc, [key, val]) => ({ ...acc, [key]: val }), {}),
-    };
-    const def = {
-      _def,
-      transformer: _def.transformer,
-      errorFormatter: _def.errorFormatter,
+      routers: Object.entries(result.procedures || {})
+        .filter((pair) => (pair[1] as any)._def._router)
+        .reduce((acc, [key, val]) => ({ ...acc, [key]: val }), {}),
     };
 
     function callProcedure(opts: InternalProcedureCallOptions) {
@@ -257,7 +262,10 @@ export function createRouterFactory<TConfig extends RootConfig>(
       return procedure(opts);
     }
     const router: AnyRouter = {
-      ...def,
+      ...opts,
+      _def,
+      transformer: _def.transformer,
+      errorFormatter: _def.errorFormatter,
       createCaller(ctx) {
         return {
           query: (path, ...args) =>

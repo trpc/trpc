@@ -4,9 +4,9 @@ import { AnyRouter, createRouterFactory } from '../router';
 import { mergeWithoutOverrides } from './mergeWithoutOverrides';
 
 export function mergeRouters(...routerList: AnyRouter[]): AnyRouter {
-  const procedures = mergeWithoutOverrides(
+  const record = mergeWithoutOverrides(
     {},
-    ...routerList.map((r) => r._def.procedures),
+    ...routerList.map((r) => r._def.record),
   );
   const errorFormatter = routerList.reduce(
     (currentErrorFormatter, nextRouter) => {
@@ -40,6 +40,6 @@ export function mergeRouters(...routerList: AnyRouter[]): AnyRouter {
   const router = createRouterFactory({
     errorFormatter,
     transformer,
-  })(procedures);
+  })(record);
   return router;
 }

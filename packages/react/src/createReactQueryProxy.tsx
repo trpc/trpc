@@ -97,7 +97,7 @@ type DecoratedProcedureRecord<
 > = {
   [TKey in keyof TProcedures]: TProcedures[TKey] extends AnyRouter
     ? DecoratedProcedureRecord<
-        TProcedures[TKey]['_def']['procedures'],
+        TProcedures[TKey]['_def']['record'],
         `${TPath}${TKey & string}.`
       >
     : DecorateProcedure<
@@ -144,7 +144,7 @@ function makeProxy<
     },
   );
 
-  return proxy as DecoratedProcedureRecord<TRouter['_def']['procedures']> &
+  return proxy as DecoratedProcedureRecord<TRouter['_def']['record']> &
     Pick<TClient, 'Provider'>;
 }
 export function createReactQueryProxy<

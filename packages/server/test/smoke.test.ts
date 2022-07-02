@@ -1,16 +1,17 @@
 /* eslint-disable @typescript-eslint/ban-types */
 import { routerToServerAndClientNew, waitError } from './___testHelpers';
 import { TRPCClientError } from '@trpc/client';
+import { expectTypeOf } from 'expect-type';
 import { z } from 'zod';
 import { initTRPC } from '../src';
 
-const trpc = initTRPC<{
+const t = initTRPC<{
   ctx: {};
 }>()();
-const { procedure } = trpc;
+const { procedure } = t;
 
 test('old client - happy path w/o input', async () => {
-  const router = trpc.router({
+  const router = t.router({
     hello: procedure.query(() => 'world'),
   });
   const { client, close } = routerToServerAndClientNew(router);
@@ -19,7 +20,7 @@ test('old client - happy path w/o input', async () => {
 });
 
 test('old client - happy path with input', async () => {
-  const router = trpc.router({
+  const router = t.router({
     greeting: procedure
       .input(z.string())
       .query(({ input }) => `hello ${input}`),
@@ -30,7 +31,7 @@ test('old client - happy path with input', async () => {
 });
 
 test('very happy path', async () => {
-  const router = trpc.router({
+  const router = t.router({
     greeting: procedure
       .input(z.string())
       .query(({ input }) => `hello ${input}`),
@@ -41,7 +42,7 @@ test('very happy path', async () => {
 });
 
 test('middleware', async () => {
-  const router = trpc.router({
+  const router = t.router({
     greeting: procedure
       .use(({ next }) => {
         return next({
@@ -65,7 +66,7 @@ test('middleware', async () => {
 });
 
 test('sad path', async () => {
-  const router = trpc.router({
+  const router = t.router({
     hello: procedure.query(() => 'world'),
   });
   const { client, close } = routerToServerAndClientNew(router);
@@ -79,7 +80,7 @@ test('sad path', async () => {
 });
 
 test('call a mutation as a query', async () => {
-  const router = trpc.router({
+  const router = t.router({
     hello: procedure.query(() => 'world'),
   });
   const { client, close } = routerToServerAndClientNew(router);
@@ -89,4 +90,33 @@ test('call a mutation as a query', async () => {
   );
 
   close();
+});
+
+test('flat router', async () => {
+  const hello = procedure.query(() => 'world');
+  const bye = procedure.query(() => 'bye');
+  const router1 = t.router({
+    hello,
+    child: t.router({
+      bye,
+    }),
+  });
+
+  expect(router1.hello).toBe(hello);
+  expect(router1.child.bye).toBe(bye);
+  expectTypeOf(router1.hello).toMatchTypeOf(hello);
+  expectTypeOf(router1.child.bye).toMatchTypeOf(bye);
+
+  const router2 = t.router({
+    router2hello: hello,
+  });
+  const merged = t.mergeRouters(router1, router2);
+
+  expectTypeOf(merged.hello).toMatchTypeOf(hello);
+  expectTypeOf(merged.child.bye).toMatchTypeOf(bye);
+
+  expectTypeOf(merged.router2hello).toMatchTypeOf(hello);
+
+  expect(merged.hello).toBe(hello);
+  expect(merged.child.bye).toBe(bye);
 });
