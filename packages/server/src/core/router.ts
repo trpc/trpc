@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/ban-types */
 import { inferProcedureOutput } from '.';
-import { Filter } from '..';
+import { Filter, Prefixer } from '..';
 import { TRPCError } from '../error/TRPCError';
 import {
   DefaultErrorShape,
@@ -36,12 +36,34 @@ export interface ProcedureStructure {
   procedures: ProcedureRecord;
 }
 
+type ObjKeyof<T> = T extends object ? keyof T : never;
+type KeyofKeyof<T> = ObjKeyof<T> | { [K in keyof T]: ObjKeyof<T[K]> }[keyof T];
+type StripNever<T> = Pick<
+  T,
+  { [K in keyof T]: [T[K]] extends [never] ? never : K }[keyof T]
+>;
+type Lookup<T, K> = T extends any ? (K extends keyof T ? T[K] : never) : never;
+type SimpleFlatten<T> = T extends object
+  ? StripNever<{
+      [K in KeyofKeyof<T>]:
+        | Exclude<K extends keyof T ? T[K] : never, object>
+        | { [P in keyof T]: Lookup<T[P], K> }[keyof T];
+    }>
+  : T;
+
+type PrefixedProcedures<T extends ProcedureRouterRecord> = {
+  [K in keyof T]: T[K] extends AnyRouter
+    ? T[K] extends Procedure<any>
+      ? never
+      : Prefixer<T[K]['_def']['procedures'], `${K & string}.`>
+    : never;
+};
 export interface RouterDef<
   // FIXME this should use RootConfig
   TContext,
   TErrorShape extends TRPCErrorShape<number>,
   TMeta extends Record<string, unknown>,
-  TProcedures extends ProcedureRouterRecord,
+  TRecord extends ProcedureRouterRecord,
 > {
   router: true;
   /**
@@ -58,22 +80,29 @@ export interface RouterDef<
   _meta: TMeta;
   errorFormatter: ErrorFormatter<TContext, TErrorShape>;
   transformer: CombinedDataTransformer;
-  procedures: Filter<TProcedures, Procedure<any>>;
-  routers: Filter<TProcedures, Router<any>>;
-  record: TProcedures;
+  procedures: Filter<TRecord, Procedure<any>> &
+    SimpleFlatten<PrefixedProcedures<TRecord>>;
+  routers: Filter<TRecord, Router<any>>;
+  record: TRecord;
   // FIXME decide if these are deprecated
   /**
    * @deprecated
    */
-  subscriptions: Filter<TProcedures, SubscriptionProcedure<any>>;
+  subscriptions: Filter<TRecord, SubscriptionProcedure<any>> &
+    Filter<
+      SimpleFlatten<PrefixedProcedures<TRecord>>,
+      SubscriptionProcedure<any>
+    >;
   /**
    * @deprecated
    */
-  queries: Filter<TProcedures, QueryProcedure<any>>;
+  queries: Filter<TRecord, QueryProcedure<any>> &
+    Filter<SimpleFlatten<PrefixedProcedures<TRecord>>, QueryProcedure<any>>;
   /**
    * @deprecated
    */
-  mutations: Filter<TProcedures, MutationProcedure<any>>;
+  mutations: Filter<TRecord, MutationProcedure<any>> &
+    Filter<SimpleFlatten<PrefixedProcedures<TRecord>>, MutationProcedure<any>>;
 }
 
 export type AnyRouterDef<TContext = any> = RouterDef<TContext, any, any, any>;

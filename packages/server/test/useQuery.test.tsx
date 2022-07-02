@@ -13,6 +13,7 @@ const ctx = konn()
   .beforeEach(() => {
     const t = initTRPC()();
     const appRouter = t.router({
+      rootProc: t.procedure.query(() => null),
       post: t.router({
         byId: t.procedure
           .input(
@@ -53,6 +54,7 @@ const ctx = konn()
     const proxy = createReactQueryProxy<typeof appRouter>();
     const client = opts.client;
 
+    appRouter._def.procedures;
     function App(props: { children: ReactNode }) {
       const [queryClient] = useState(() => new QueryClient());
       return (
@@ -89,7 +91,7 @@ test('useQuery()', async () => {
     const utils = react.useContext();
 
     useEffect(() => {
-      // utils.invalidateQueries(['post.byId']);
+      utils.invalidateQueries(['post.byId']);
       // @ts-expect-error Should not exist
       utils.invalidateQueries(['doesNotExist']);
     }, [utils]);
