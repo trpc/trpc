@@ -80,27 +80,19 @@ export interface RouterDef<
   _meta: TMeta;
   errorFormatter: ErrorFormatter<TContext, TErrorShape>;
   transformer: CombinedDataTransformer;
+  // FIXME this is slow
   procedures: Filter<TRecord, Procedure<any>> &
     SimpleFlatten<PrefixedProcedures<TRecord>>;
   routers: Filter<TRecord, Router<any>>;
   record: TRecord;
-  // FIXME decide if these are deprecated
-  /**
-   * @deprecated
-   */
+  // FIXME this is slow
   subscriptions: Filter<TRecord, SubscriptionProcedure<any>> &
     Filter<
       SimpleFlatten<PrefixedProcedures<TRecord>>,
       SubscriptionProcedure<any>
     >;
-  /**
-   * @deprecated
-   */
   queries: Filter<TRecord, QueryProcedure<any>> &
     Filter<SimpleFlatten<PrefixedProcedures<TRecord>>, QueryProcedure<any>>;
-  /**
-   * @deprecated
-   */
   mutations: Filter<TRecord, MutationProcedure<any>> &
     Filter<SimpleFlatten<PrefixedProcedures<TRecord>>, MutationProcedure<any>>;
 }
