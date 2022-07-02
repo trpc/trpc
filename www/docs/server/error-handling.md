@@ -57,7 +57,7 @@ const appRouter = trpc.router().query('hello', {
     throw new trpc.TRPCError({
       code: 'INTERNAL_SERVER_ERROR',
       message: 'An unexpected error occurred, please try again later.',
-      // optional: pass the oroginal error to retain stack trace
+      // optional: pass the original error to retain stack trace
       cause: theError,
     });
   },
