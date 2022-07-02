@@ -7,6 +7,7 @@
   - [Play with it!](#play-with-it)
   - [Goals & features](#goals--features)
   - [The Gist / tl;dr](#the-gist--tldr)
+    - [Install now!](#install-now)
     - [Defining routers & procedures](#defining-routers--procedures)
     - [Calling procedures](#calling-procedures)
     - [Middlewares](#middlewares)
@@ -49,11 +50,16 @@
 - **CMD+Click** from a your frontend and jump straight into the backend procedure. This will work with `react-query` as well!
 - **Enabling having a file**-based structure - as you see, that `createRouter()` could easily be automatically generated from a file/folder structure.
 - **Better scaling** than current structure! The new version has been tested with 2,000 procedures still acts alright, where the current V9.x version starts slowing doing noticeably at ~100 procedures. *(Note: this testing with very basic procedures, for large projects you still have to use [Project References](https://github.com/microsoft/TypeScript/wiki/Performance#using-project-references))*
-- ~**Infer expected errors** as well as data - unsure if this is useful yet or if it'll make it, but pretty sure it'll be nice to have.~ Skipped this because of it's complexity - it can still be added later.
 
 ## The Gist / tl;dr
 
 The main difference between the old and the new router is that "the chaining" is shifted from the Router to each Procedure.
+
+### Install now!
+
+```bash
+npm install @trpc/server@experimental @trpc/client@experimental @trpc/react@experimental @trpc/next@experimental 
+```
 
 ### Defining routers & procedures
 
