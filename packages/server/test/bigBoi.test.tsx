@@ -1,24 +1,36 @@
 import { routerToServerAndClientNew } from './___testHelpers';
 import { appRouter } from './__generated__/bigBoi/_app';
 import { render, waitFor } from '@testing-library/react';
-import { createReactQueryProxy } from '@trpc/react';
+import { createReactQueryHooks, createReactQueryProxy } from '@trpc/react';
 import { expectTypeOf } from 'expect-type';
 import { konn } from 'konn';
-import React, { useState } from 'react';
+import React, { ReactNode, useState } from 'react';
 import { QueryClient, QueryClientProvider } from 'react-query';
 
 const ctx = konn()
   .beforeEach(() => {
     const opts = routerToServerAndClientNew(appRouter, {});
     const queryClient = new QueryClient();
-    const react = createReactQueryProxy<typeof appRouter>();
+    const react = createReactQueryHooks<typeof appRouter>();
+    const proxy = createReactQueryProxy<typeof appRouter>();
     const client = opts.client;
+    function App(props: { children: ReactNode }) {
+      const [queryClient] = useState(() => new QueryClient());
+      return (
+        <react.Provider {...{ queryClient, client }}>
+          <QueryClientProvider client={queryClient}>
+            {props.children}
+          </QueryClientProvider>
+        </react.Provider>
+      );
+    }
 
     return {
+      App,
       close: opts.close,
       client,
       queryClient,
-      react,
+      proxy,
     };
   })
   .afterEach(async (ctx) => {
@@ -50,9 +62,9 @@ test('vanilla', async () => {
 });
 
 test('useQuery()', async () => {
-  const { react, client } = ctx;
+  const { proxy, App } = ctx;
   function MyComponent() {
-    const query1 = react.r499.greeting.useQuery({ who: 'KATT' });
+    const query1 = proxy.r499.greeting.useQuery({ who: 'KATT' });
 
     if (!query1.data) {
       return <>...</>;
@@ -61,18 +73,12 @@ test('useQuery()', async () => {
     expectTypeOf(query1.data).toMatchTypeOf<string>();
     return <pre>{JSON.stringify(query1.data ?? 'n/a', null, 4)}</pre>;
   }
-  function App() {
-    const [queryClient] = useState(() => new QueryClient());
-    return (
-      <react.Provider {...{ queryClient, client }}>
-        <QueryClientProvider client={queryClient}>
-          <MyComponent />
-        </QueryClientProvider>
-      </react.Provider>
-    );
-  }
 
-  const utils = render(<App />);
+  const utils = render(
+    <App>
+      <MyComponent />
+    </App>,
+  );
   await waitFor(() => {
     expect(utils.container).toHaveTextContent(`hello KATT`);
   });
