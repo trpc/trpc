@@ -43,7 +43,7 @@ const features = [
 
 function Feature({ title, description }) {
   return (
-    <div className={'col col-4 p-4 basis-0'}>
+    <div className={'col col-4 p-4'}>
       <h3 className="font-semibold text-xl pb-6">{title}</h3>
       <p>{description}</p>
     </div>
