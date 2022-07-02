@@ -43,7 +43,7 @@ const features = [
 
 function Feature({ title, description }) {
   return (
-    <div className={'col col-4 p-4'}>
+    <div className={'col col-4 p-4 basis-0'}>
       <h3 className="font-semibold text-xl pb-6">{title}</h3>
       <p>{description}</p>
     </div>
@@ -111,7 +111,7 @@ function Home() {
       </header>
       <main>
         {features && features.length > 0 && (
-          <section className="flex items-center py-8 px-0 w-full max-w-[var(--ifm-container-width-xl)] mx-auto">
+          <section className="flex flex-col md:flex-row items-center py-8 px-8 md:px-0 w-full max-w-[var(--ifm-container-width-xl)] mx-auto">
             {features.map((props, idx) => (
               <Feature key={idx} {...props} />
             ))}
@@ -119,7 +119,7 @@ function Home() {
         )}
       </main>
       <footer
-        className={`container w-full max-w-[var(--ifm-container-width)] mx-auto`}
+        className={`container px-8 md:px-0 w-full max-w-[var(--ifm-container-width)] mx-auto`}
       >
         <ol className="footnotes list-decimal">
           <li id="zero">
