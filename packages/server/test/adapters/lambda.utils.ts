@@ -68,21 +68,25 @@ export const mockAPIGatewayProxyEventV2 = ({
   path,
   queryStringParameters,
   method,
+  routeKey,
+  pathParameters,
 }: {
   body: string;
   headers: { [key: string]: string };
   queryStringParameters: Record<string, string>;
   path: string;
   method: string;
+  routeKey: string;
+  pathParameters?: { [key: string]: string };
 }): APIGatewayProxyEventV2 => {
   return {
     version: '2.0',
-    routeKey: 'mock',
+    routeKey,
     rawQueryString: path,
     body,
     headers,
     rawPath: `/${path}`,
-    pathParameters: {},
+    pathParameters,
     isBase64Encoded: false,
     queryStringParameters: queryStringParameters,
     stageVariables: {},
