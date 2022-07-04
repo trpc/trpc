@@ -120,7 +120,7 @@ type inferHandlerFn<TProcedures extends Record<string, Procedure<any>>> = <
 >(
   path: TPath,
   ...args: inferHandlerInput<TProcedure>
-) => inferProcedureOutput<TProcedure>;
+) => Promise<inferProcedureOutput<TProcedure>>;
 
 /**
  * This only exists b/c of interop mode

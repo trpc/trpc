@@ -22,7 +22,7 @@ const defaultPostSelect = Prisma.validator<Prisma.PostSelect>()({
 });
 
 export const postRouter = t.router({
-  postList: t.procedure.query(() => {
+  list: t.procedure.query(() => {
     /**
      * For pagination you can have a look at this docs site
      * @link https://trpc.io/docs/useInfiniteQuery
@@ -32,7 +32,7 @@ export const postRouter = t.router({
       select: defaultPostSelect,
     });
   }),
-  postById: t.procedure
+  byId: t.procedure
     .input(
       z.object({
         id: z.string(),
@@ -52,7 +52,7 @@ export const postRouter = t.router({
       }
       return post;
     }),
-  postAdd: t.procedure
+  add: t.procedure
     .input(
       z.object({
         id: z.string().uuid().optional(),
