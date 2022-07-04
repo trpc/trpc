@@ -17,8 +17,7 @@ jobs:
     continue-on-error: true
     strategy:
       matrix:
-        dir:
-          [
+        dir: [
             .interop/express-server,
             .interop/next-prisma-starter,
             .interop/next-prisma-starter-websockets,
@@ -27,8 +26,8 @@ jobs:
             .interop/fastify-server,
             .interop/cloudflare-workers,
             next-prisma-starter,
-            next-prisma-starter-websockets,
-            next-prisma-todomvc,
+            # next-prisma-starter-websockets,
+            # next-prisma-todomvc,
             standalone-server,
           ]
         node-start: ['16.x']
