@@ -2,6 +2,7 @@ import { MDXProvider } from '@mdx-js/react';
 import Head from 'next/head';
 import { FC, ReactNode } from 'react';
 import { components } from '../../MDXComponents';
+import { DocsSidebar } from '../DocsSidebar';
 
 interface DocsLayoutProps {
   children: ReactNode;
@@ -17,11 +18,11 @@ export const DocsLayout: FC<DocsLayoutProps> = ({ children, meta }) => {
         <title>{meta.title} | tRPC</title>
       </Head>
       <MDXProvider components={components as any}>
-        <div>
-          <nav>Navbar</nav>
-          <div className="grid grid-cols-[256px_1fr] px-12 py-8">
-            <ul>Sidebar</ul>
-            <div>{children}</div>
+        <div className="">
+          <nav className="px-16 py-6">Navbar</nav>
+          <div className="grid grid-cols-[256px_1fr] px-12">
+            <DocsSidebar />
+            <div className="px-12 pt-6">{children}</div>
           </div>
         </div>
       </MDXProvider>
