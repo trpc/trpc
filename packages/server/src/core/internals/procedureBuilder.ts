@@ -17,6 +17,7 @@ type CreateProcedureReturnInput<
   TPrev extends ProcedureParams,
   TNext extends ProcedureParams,
 > = ProcedureBuilder<{
+  _config: TPrev['_config'];
   _meta: TPrev['_meta'];
   _ctx_in: TPrev['_ctx_in'];
   _ctx_out: Overwrite<TPrev['_ctx_out'], TNext['_ctx_out']>;
@@ -33,6 +34,7 @@ export interface ProcedureBuilder<TParams extends ProcedureParams> {
   input<$TParser extends Parser>(
     schema: $TParser,
   ): ProcedureBuilder<{
+    _config: TParams['_config'];
     _meta: TParams['_meta'];
     _ctx_in: TParams['_ctx_in'];
     _ctx_out: TParams['_ctx_out'];
@@ -47,6 +49,7 @@ export interface ProcedureBuilder<TParams extends ProcedureParams> {
   output<$TParser extends Parser>(
     schema: $TParser,
   ): ProcedureBuilder<{
+    _config: TParams['_config'];
     _meta: TParams['_meta'];
     _ctx_in: TParams['_ctx_in'];
     _ctx_out: TParams['_ctx_out'];
@@ -168,6 +171,7 @@ export interface ProcedureBuilder<TParams extends ProcedureParams> {
 }
 
 export function createBuilder<TConfig extends RootConfig>(): ProcedureBuilder<{
+  _config: TConfig;
   _ctx_in: TConfig['ctx'];
   _ctx_out: TConfig['ctx'];
   _input_out: UnsetMarker;

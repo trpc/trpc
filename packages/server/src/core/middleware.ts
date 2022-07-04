@@ -58,6 +58,7 @@ export type MiddlewareFunction<
     (): Promise<MiddlewareResult<TParams>>;
     <$TContext>(opts: { ctx: $TContext }): Promise<
       MiddlewareResult<{
+        _config: any;
         _ctx_in: TParams['_ctx_in'];
         _ctx_out: $TContext;
         _input_in: TParams['_input_in'];
@@ -78,6 +79,7 @@ export function createMiddlewareFactory<TConfig extends RootConfig>() {
   return function createMiddleware<$TNewParams extends ProcedureParams>(
     fn: MiddlewareFunction<
       {
+        _config: TConfig;
         _ctx_in: TConfig['ctx'];
         _ctx_out: TConfig['ctx'];
         _input_out: unknown;

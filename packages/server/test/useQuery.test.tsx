@@ -11,7 +11,17 @@ import { initTRPC } from '../src';
 
 const ctx = konn()
   .beforeEach(() => {
-    const t = initTRPC()();
+    const t = initTRPC()({
+      errorFormatter({ shape }) {
+        return {
+          ...shape,
+          data: {
+            ...shape.data,
+            foo: 'bar' as const,
+          },
+        };
+      },
+    });
     const appRouter = t.router({
       rootProc: t.procedure.query(() => null),
       post: t.router({
@@ -72,6 +82,7 @@ const ctx = konn()
       react,
       proxy,
       App,
+      appRouter,
     };
   })
   .afterEach(async (ctx) => {
@@ -95,6 +106,10 @@ test('useQuery()', async () => {
       // @ts-expect-error Should not exist
       utils.invalidateQueries(['doesNotExist']);
     }, [utils]);
+
+    if (query1.error) {
+      expectTypeOf(query1.error['data']).toMatchTypeOf<{ foo: 'bar' }>();
+    }
 
     if (!query1.data) {
       return <>...</>;

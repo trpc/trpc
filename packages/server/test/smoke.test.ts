@@ -3,11 +3,23 @@ import { routerToServerAndClientNew, waitError } from './___testHelpers';
 import { TRPCClientError } from '@trpc/client';
 import { expectTypeOf } from 'expect-type';
 import { z } from 'zod';
-import { initTRPC } from '../src';
+import { inferProcedureParams, initTRPC } from '../src';
 
 const t = initTRPC<{
-  ctx: {};
-}>()();
+  ctx: {
+    foo?: 'bar';
+  };
+}>()({
+  errorFormatter({ shape }) {
+    return {
+      ...shape,
+      data: {
+        ...shape.data,
+        foo: 'bar' as const,
+      },
+    };
+  },
+});
 const { procedure } = t;
 
 test('old client - happy path w/o input', async () => {
@@ -31,11 +43,30 @@ test('old client - happy path with input', async () => {
 });
 
 test('very happy path', async () => {
+  const greeting = t.procedure
+    .input(z.string())
+    .use(({ next }) => {
+      return next();
+    })
+    .query(({ input }) => `hello ${input}`);
   const router = t.router({
-    greeting: procedure
-      .input(z.string())
-      .query(({ input }) => `hello ${input}`),
+    greeting,
   });
+
+  {
+    type TContext = typeof greeting._def._config.ctx;
+    expectTypeOf<TContext>().toMatchTypeOf<{
+      foo?: 'bar';
+    }>();
+  }
+  {
+    type TParams = inferProcedureParams<typeof router['greeting']>;
+    type TConfig = TParams['_config'];
+    type TContext = TConfig['ctx'];
+    type TError = TConfig['errorShape'];
+    expectTypeOf<NonNullable<TContext['foo']>>().toMatchTypeOf<'bar'>();
+    expectTypeOf<TError['data']['foo']>().toMatchTypeOf<'bar'>();
+  }
   const { client, close } = routerToServerAndClientNew(router);
   expect(await client.greeting.query('KATT')).toBe('hello KATT');
   close();

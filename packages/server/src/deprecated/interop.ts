@@ -39,6 +39,7 @@ type convertProcedureParams<TProcedure extends AnyOldProcedure> =
     infer TFinalInput
   >
     ? ProcedureParams<
+        any,
         TInputContext,
         TContext,
         TInput,

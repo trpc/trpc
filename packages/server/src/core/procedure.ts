@@ -1,3 +1,6 @@
+import { DefaultErrorShape } from '../error/formatter';
+import { CombinedDataTransformer } from '../transformer';
+import { RootConfig } from './internals/config';
 import { UnsetMarker } from './internals/utils';
 
 type ClientContext = Record<string, unknown>;
@@ -12,6 +15,12 @@ export interface ProcedureOptions {
  * @internal
  */
 export interface ProcedureParams<
+  TConfig extends RootConfig = {
+    transformer: CombinedDataTransformer;
+    errorShape: DefaultErrorShape;
+    ctx: Record<string, unknown>;
+    meta: Record<string, unknown>;
+  },
   TContextIn = unknown,
   TContextOut = unknown,
   TInputIn = unknown,
@@ -20,6 +29,8 @@ export interface ProcedureParams<
   TOutputOut = unknown,
   TMeta = unknown,
 > {
+  // FIXME make non-optional
+  _config: TConfig;
   /**
    * @internal
    */
@@ -64,6 +75,7 @@ export type ProcedureArgs<TParams extends ProcedureParams> =
  * @internal
  */
 export interface ProcedureBase<TParams extends ProcedureParams> {
+  _def: TParams;
   /**
    * @deprecated use `._def.meta` instead
    */

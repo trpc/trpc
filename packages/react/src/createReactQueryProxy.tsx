@@ -4,6 +4,7 @@ import {
   ProcedureRouterRecord,
   inferProcedureInput,
   inferProcedureOutput,
+  inferProcedureParams,
 } from '@trpc/server';
 // import { RecursiveRecord } from 'packages/server/src/core/router';
 import {
@@ -18,8 +19,8 @@ import {
   createReactQueryHooks,
 } from './createReactQueryHooks';
 
-type FIXME_GET_ERROR = never;
-type inferProcedureClientError<_T extends Procedure<any>> = FIXME_GET_ERROR;
+type inferProcedureClientError<T extends Procedure<any>> =
+  inferProcedureParams<T>['_config']['errorShape'];
 
 type NeverKeys<T> = {
   [TKey in keyof T]: T[TKey] extends never ? TKey : never;
