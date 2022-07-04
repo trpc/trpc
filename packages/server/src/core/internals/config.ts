@@ -1,4 +1,4 @@
-import { DefaultErrorShape, ErrorFormatter } from '../../error/formatter';
+import { ErrorFormatter } from '../../error/formatter';
 import {
   CombinedDataTransformer,
   DataTransformerOptions,
@@ -33,7 +33,8 @@ export type CreateInitGenerics<T extends InitGenerics> = T;
  */
 export interface RootConfig extends InitGenerics {
   transformer: CombinedDataTransformer;
-  errorShape: DefaultErrorShape;
+  // FIXME this should probably be restricted
+  errorShape: any;
 }
 
 /**

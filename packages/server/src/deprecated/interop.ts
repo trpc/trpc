@@ -1,4 +1,5 @@
-import { ProcedureParams, ProcedureType } from '..';
+import { CombinedDataTransformer, ProcedureParams, ProcedureType } from '..';
+import { CreateRootConfig, RootConfig } from '../core/internals/config';
 import { getParseFnOrPassThrough } from '../core/internals/getParseFn';
 import {
   createInputMiddleware,
@@ -27,49 +28,53 @@ import { ProcedureRecord } from './router';
 
 type AnyOldProcedure = OldProcedure<any, any, any, any, any, any, any, any>;
 
-type convertProcedureParams<TProcedure extends AnyOldProcedure> =
-  TProcedure extends OldProcedure<
-    infer TInputContext,
-    infer TContext,
-    infer TMeta,
-    infer TInput,
-    infer TParsedInput,
-    infer TOutput,
-    infer _TParsedOutput,
-    infer TFinalInput
-  >
-    ? ProcedureParams<
-        any,
-        TInputContext,
-        TContext,
-        TInput,
-        TParsedInput,
-        TOutput,
-        TFinalInput,
-        TMeta
-      >
-    : never;
+type convertProcedureParams<
+  TConfig extends RootConfig,
+  TProcedure extends AnyOldProcedure,
+> = TProcedure extends OldProcedure<
+  infer TInputContext,
+  infer TContext,
+  infer TMeta,
+  infer TInput,
+  infer TParsedInput,
+  infer TOutput,
+  infer _TParsedOutput,
+  infer TFinalInput
+>
+  ? ProcedureParams<
+      TConfig,
+      TInputContext,
+      TContext,
+      TInput,
+      TParsedInput,
+      TOutput,
+      TFinalInput,
+      TMeta
+    >
+  : never;
 
 type MigrateProcedure<
+  TConfig extends RootConfig,
   TProcedure extends AnyOldProcedure,
   TType extends ProcedureType,
 > = TType extends 'query'
-  ? QueryProcedure<convertProcedureParams<TProcedure>>
+  ? QueryProcedure<convertProcedureParams<TConfig, TProcedure>>
   : TType extends 'mutation'
-  ? MutationProcedure<convertProcedureParams<TProcedure>>
+  ? MutationProcedure<convertProcedureParams<TConfig, TProcedure>>
   : TType extends 'subscription'
-  ? SubscriptionProcedure<convertProcedureParams<TProcedure>>
+  ? SubscriptionProcedure<convertProcedureParams<TConfig, TProcedure>>
   : never;
 
 export type MigrateProcedureRecord<
+  TConfig extends RootConfig,
   T extends ProcedureRecord<any>,
   TType extends ProcedureType,
 > = {
-  [K in keyof T]: MigrateProcedure<T[K], TType>;
+  [K in keyof T]: MigrateProcedure<TConfig, T[K], TType>;
 };
 
 export type MigrateRouter<
-  TInputContext,
+  TInputContext extends Record<string, any>,
   TContext,
   TMeta extends Record<string, any>,
   TQueries extends ProcedureRecord<
@@ -99,15 +104,42 @@ export type MigrateRouter<
     unknown,
     unknown
   >,
-  TErrorShape extends TRPCErrorShape<number>,
+  TErrorShape extends TRPCErrorShape<any>,
 > = NewRouter<
   RouterDef<
     TInputContext,
     TErrorShape,
     TMeta,
-    MigrateProcedureRecord<TQueries, 'query'> &
-      MigrateProcedureRecord<TMutations, 'mutation'> &
-      MigrateProcedureRecord<TSubscriptions, 'subscription'>
+    MigrateProcedureRecord<
+      CreateRootConfig<{
+        ctx: TInputContext;
+        errorShape: TErrorShape;
+        meta: TMeta;
+        transformer: CombinedDataTransformer;
+      }>,
+      TQueries,
+      'query'
+    > &
+      MigrateProcedureRecord<
+        CreateRootConfig<{
+          ctx: TInputContext;
+          errorShape: TErrorShape;
+          meta: TMeta;
+          transformer: CombinedDataTransformer;
+        }>,
+        TMutations,
+        'mutation'
+      > &
+      MigrateProcedureRecord<
+        CreateRootConfig<{
+          ctx: TInputContext;
+          errorShape: TErrorShape;
+          meta: TMeta;
+          transformer: CombinedDataTransformer;
+        }>,
+        TSubscriptions,
+        'subscription'
+      >
   >
 >;
 
@@ -135,7 +167,7 @@ export type MigrateOldRouter<TRouter extends AnyOldRouter> =
 function migrateProcedure<
   TProcedure extends AnyOldProcedure,
   TType extends ProcedureType,
->(oldProc: TProcedure, type: TType): MigrateProcedure<TProcedure, TType> {
+>(oldProc: TProcedure, type: TType): MigrateProcedure<any, TProcedure, TType> {
   const def = oldProc._def();
 
   const inputParser = getParseFnOrPassThrough(def.inputParser);
