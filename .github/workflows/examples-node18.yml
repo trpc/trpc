@@ -1,0 +1,53 @@
+name: Examples E2E
+on: [push]
+jobs:
+  e2e:
+    container:
+      image: mcr.microsoft.com/playwright:v1.20.0-focal
+      options: --user 1001
+    env:
+      PLAYWRIGHT_BROWSERS_PATH: ${{ github.workspace }}/playwright
+      DATABASE_URL: postgresql://postgres:@postgres:5432/trpcdb
+      NEXTAUTH_SECRET: supersecret
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 10
+    continue-on-error: true
+    strategy:
+      matrix:
+        dir: [standalone-server-node18]
+        node-start: ['18.x']
+        os: [ubuntu-latest]
+    services:
+      postgres:
+        image: postgres:12.1
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_DB: trpcdb
+        ports:
+          - 5432:5432
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-node@v2
+        with:
+          node-version: 16.x
+
+      - run: node -v
+      - uses: bahmutov/npm-install@v1
+
+      - name: Next.js cache
+        uses: actions/cache@v2
+        with:
+          path: ${{ github.workspace }}${{ matrix.dir }}/.next/cache
+          key: ${{ matrix.dir }}-${{ runner.os }}-${{ matrix.node-start }}-${{ hashFiles('**/yarn.lock') }}-nextjs
+
+      - uses: actions/setup-node@v2
+        with:
+          node-version: ${{ matrix.node-start }}
+
+      - run: node -v
+
+      - name: if exists, run yarn lint
+        run: cd examples/${{ matrix.dir }} && cat package.json | if grep --silent '"lint"'; then yarn lint; fi
+      - run: yarn --cwd examples/${{ matrix.dir }} build
+      - run: yarn --cwd examples/${{ matrix.dir }} test-start
+      - run: yarn --cwd examples/${{ matrix.dir }} test-dev
