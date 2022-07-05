@@ -314,6 +314,7 @@ Also, if your company using tRPC and want to support long-term maintenance of tR
   <tr>
     <td align="center"><a href="https://cal.com/peer"><img src="https://avatars.githubusercontent.com/u/8019099?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Peer Richelsen</b></sub></a><br /><a href="#financial-PeerRich" title="Financial">💵</a></td>
     <td align="center"><a href="https://cal.com"><img src="https://avatars.githubusercontent.com/u/79145102?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Cal.com, Inc.</b></sub></a><br /><a href="#financial-calcom" title="Financial">💵</a></td>
+    <td align="center"><a href="https://github.com/TomAngle"><img src="https://avatars.githubusercontent.com/u/44090883?v=4?s=100" width="100px;" alt=""/><br /><sub><b>tomangle</b></sub></a><br /><a href="#video-tomangle" title="Videos">📹</a> <a href="#talk-tomangle" title="Talks">📢</a> <a href="#tutorial-tomangle" title="Tutorials">✅</a></td>
   </tr>
 </table>
 
