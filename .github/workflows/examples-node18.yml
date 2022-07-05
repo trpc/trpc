@@ -4,7 +4,7 @@ jobs:
   e2e:
     strategy:
       matrix:
-        dir: [standalone-server-node18]
+        dir: [next-prisma-starter-websockets]
         node-start: [18]
         os: [ubuntu-latest]
     container:

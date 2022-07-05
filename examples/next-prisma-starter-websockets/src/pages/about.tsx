@@ -9,9 +9,12 @@ export default function AboutPage() {
       setNumber(n);
     },
   });
+  const healthz = trpc.useQuery(['healthz']);
+
   return (
     <div>
       Here&apos;s a random number from a sub: {num} <br />
+      Here&apos;s a query result ({healthz.status}): {healthz.data} <br />
       <Link href="/">
         <a>Index</a>
       </Link>

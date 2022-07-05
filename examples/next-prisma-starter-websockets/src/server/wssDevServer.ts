@@ -1,11 +1,10 @@
 import { createContext } from './context';
 import { appRouter } from './routers/_app';
 import { applyWSSHandler } from '@trpc/server/adapters/ws';
-import fetch from 'node-fetch';
 import ws from 'ws';
 
 if (!global.fetch) {
-  (global as any).fetch = fetch;
+  (global as any).fetch = require('node-fetch');
 }
 const wss = new ws.Server({
   port: 3001,
