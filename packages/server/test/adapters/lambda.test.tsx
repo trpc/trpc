@@ -162,6 +162,7 @@ test('test v2 format', async () => {
       method: 'GET',
       path: 'hello',
       queryStringParameters: {},
+      routeKey: '$default',
     }),
     mockAPIGatewayContext(),
   );
