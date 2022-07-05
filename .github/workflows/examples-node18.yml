@@ -26,16 +26,18 @@ jobs:
         ports:
           - 5432:5432
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-node@v2
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
         with:
           node-version: ${{ matrix.node-start }}
-      - uses: bahmutov/npm-install@v1
+          cache: yarn
+      - name: Install
+        run: yarn --frozen-lockfile --ignore-engines
       - name: Next.js cache
         uses: actions/cache@v2
         with:
-          path: ${{ github.workspace }}${{ matrix.dir }}/.next/cache
-          key: ${{ matrix.dir }}-${{ runner.os }}-${{ matrix.node-start }}-${{ hashFiles('**/yarn.lock') }}-nextjs
+          path: ${{ github.workspace }}/examples/${{ matrix.dir }}/.next/cache
+          key: ${{ matrix.dir }}-${{ runner.os }}-${{ matrix.node-start }}-${{ hashFiles('examples/${{ matrix.dir }}/yarn.lock') }}-nextjs
       - name: if exists, run yarn lint
         run: cd examples/${{ matrix.dir }} && cat package.json | if grep --silent '"lint"'; then yarn lint; fi
       - run: yarn --cwd examples/${{ matrix.dir }} build
