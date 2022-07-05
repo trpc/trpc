@@ -902,6 +902,17 @@
       "contributions": [
         "financial"
       ]
+    },
+    {
+      "login": "tomangle",
+      "name": "tomangle",
+      "avatar_url": "https://avatars.githubusercontent.com/u/44090883?v=4",
+      "profile": "https://github.com/TomAngle",
+      "contributions": [
+        "video",
+        "talk",
+        "tutorial"
+      ]
     }
   ],
   "contributorsPerLine": 7,
