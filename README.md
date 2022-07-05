@@ -100,7 +100,7 @@ npx create-next-app --example https://github.com/trpc/trpc --example-path exampl
 
 > Volunteers that actively help out answering questions in Discord, GitHub Discussions, etc
 
-*n/a* - do you want to contribute? Feel free to write to us on Discord.
+*n/a* - do you want to contribute? Feel free to write to us on <a href="https://trpc.io/discord">Discord</a>.
 
 ## Sponsors
 
