@@ -1,11 +1,14 @@
 # Prisma + tRPC
 
-- V10 Preview of tRPC.
-- See docs here: https://github.com/trpc/trpc/blob/next/.tmp/v10-docs.md
-- Open in CodeSandbox: https://codesandbox.io/s/github/trpc/examples-v10-next-prisma-starter-sqlite?file=/src/pages/post/%5Bid%5D.tsx
-- Feel free to open issues in this repo to give feedback!
 
+> V10 Preview of tRPC!
 
+- 📚 See docs here: https://github.com/trpc/trpc/blob/next/.tmp/v10-docs.md
+- 🙏 Feel free to open issues in this repo to give feedback!
+- ❓ Search the project for `QUESTION` for open API discussions, but don't feel limited to *only* give feedback on those!
+- ⚡ ~~Open in CodeSandbox: [https://codesandbox.io/s/github/trpc/examples-v10-next-prisma-starter-sqlite](https://codesandbox.io/s/github/trpc/examples-v10-next-prisma-starter-sqlite?file=/src/pages/post/%5Bid%5D.tsx)~~ Inference on CodeSandbox currently doesn't work, so you'll have to open the project locally
+
+<!-- 
 
 ## Features
 
@@ -19,7 +22,6 @@
   - ✅ Linting
 - 🔐 Validates your env vars on build and start
 
-<!-- 
 ## Setup
 
 **yarn:**
@@ -48,7 +50,7 @@ yarn dx
 
 ## Development
 
-### Start project
+### Clone & start project
 
 ```bash
 yarn create next-app --example https://github.com/trpc/examples-v10-next-prisma-starter-sqlite trpc-prisma-starter
