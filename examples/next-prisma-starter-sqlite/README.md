@@ -51,10 +51,10 @@ yarn dx
 ### Start project
 
 ```bash
-yarn create next-app --example https://github.com/trpc/trpc --example-path examples/next-prisma-starter trpc-prisma-starter
+yarn create next-app --example https://github.com/trpc/examples-v10-next-prisma-starter-sqlite trpc-prisma-starter
 cd trpc-prisma-starter
 yarn
-yarn dx
+yarn dev
 ```
 
 ### Commands
@@ -62,8 +62,7 @@ yarn dx
 ```bash
 yarn build      # runs `prisma generate` + `prisma migrate` + `next build`
 yarn db-reset   # resets local db
-yarn dev        # starts next.js
-yarn dx         # runs migrations + seeds + starts next.js 
+yarn dev        # does db changes + starts next.js
 yarn test-dev   # runs e2e tests on dev
 yarn test-start # runs e2e tests on `next start` - build required before
 yarn test:unit  # runs normal jest unit tests
