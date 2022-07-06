@@ -10,6 +10,23 @@ const IndexPage: NextPageWithLayout = () => {
     async onSuccess() {
       // refetches posts after a post is added
       await utils.invalidateQueries(['post.list']);
+
+      /**
+       * ❓ QUESTION: How should query invalidations look like?
+       * Some alternatives:
+       * ```ts
+       * // 1. Strings
+       * const utils = trpc.useContext();
+       * utils.invalidateQueries(['post.list', input]);
+       *
+       * // 2. Tuple of strings, each part of tuple is optional
+       * const utils = trpc.useContext();
+       * utils.invalidateQueries(['post', 'list', input]);
+       *
+       *
+       * // 3. Use context for specific query
+       * const postListContext = trpc.proxy.post.list.useContext();
+       */
     },
   });
 

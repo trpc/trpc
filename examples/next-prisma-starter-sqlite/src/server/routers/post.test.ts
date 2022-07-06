@@ -18,4 +18,14 @@ test('add and get post', async () => {
   const byId = await caller.query('post.byId', { id: post.id });
 
   expect(byId).toMatchObject(input);
+
+  /**
+   * ❓ QUESTION: How should we do server-side calls?
+   * The plan is to make this API possible:
+   * ```ts
+   * await appRouter.post.add.call({ input, ctx })
+   * await appRouter.post.byId.call({ input, ctx })
+   * ```
+   * Is this good? If not, what's a good alternative?
+   */
 });
