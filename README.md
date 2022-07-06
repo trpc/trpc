@@ -67,6 +67,12 @@ npx create-next-app --example https://github.com/trpc/trpc --example-path exampl
 
 **👉 See full documentation on [tRPC.io](https://trpc.io/docs). 👈**
 
+## Star History
+
+> tRPC is rapidly gaining momentum!
+
+<a href="https://star-history.com/#trpc/trpc"><img src="https://api.star-history.com/svg?repos=trpc/trpc&type=Date" alt="Star History Chart" width="600" /></a>
+
 ## Core Team
 
 <table>
@@ -75,6 +81,7 @@ npx create-next-app --example https://github.com/trpc/trpc --example-path exampl
     <td>👋 Hi, I'm Alex and I am the creator of tRPC, don't hesitate to contact me on <a href="https://twitter.com/alexdotjs">Twitter</a> or <a href="mailto:alex@trpc.io">email</a> if you are curious about tRPC in any way.</td>
   </tr>
 </table>
+
 
 ### Level 2 Maintainers
 
@@ -93,13 +100,7 @@ npx create-next-app --example https://github.com/trpc/trpc --example-path exampl
 
 > Volunteers that actively help out answering questions in Discord, GitHub Discussions, etc
 
-<table>
-  <tbody>
-    <tr>
-      <td align="center"><a href="https://timcole.me"><img src="https://avatars.githubusercontent.com/u/6754577?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Timothy Cole</b></sub></a></td>
-    </tr>
-  </tbody>
-</table>
+*n/a* - do you want to contribute? Feel free to write to us on <a href="https://trpc.io/discord">Discord</a>.
 
 ## Sponsors
 
