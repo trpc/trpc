@@ -4,6 +4,9 @@
 import type { AnyRouter } from '@trpc/server';
 import { TRPCClient as Client } from './internals/TRPCClient';
 
+/**
+ * @internal
+ */
 export type FlattenRouter<TRouter extends AnyRouter> = {
   [Key in keyof TRouter['_def']['record']]: TRouter['_def']['record'][Key] extends AnyRouter
     ? FlattenRouter<TRouter['_def']['record'][Key]>
