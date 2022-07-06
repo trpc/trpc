@@ -234,7 +234,12 @@ interface ProcedureBuilder {
   concat(
     proc: ProcedureBuilder,
   ): ProcedureBuilder;
-  resolve(
+  query(
+    resolver: (
+      opts: ResolveOptions<TParams>,
+    ) => $TOutput,
+  ): Procedure;
+  mutation(
     resolver: (
       opts: ResolveOptions<TParams>,
     ) => $TOutput,
