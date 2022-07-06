@@ -599,7 +599,74 @@ function MyComponent() {
 ### New `@trpc/next`-API (🚧🚧)
 
 
-🚧🚧
+Simpler setup:
+
+```ts
+// `utils/trpc.ts`
+
+/**
+ * A set of strongly-typed React hooks from your `AppRouter` type signature with `createReactQueryHooks`.
+ * @link https://trpc.io/docs/react#3-create-trpc-hooks
+ */
+export const trpc = setupTRPC<AppRouter>({
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  config() {
+    /**
+     * If you want to use SSR, you need to use the server's full URL
+     * @link https://trpc.io/docs/ssr
+     */
+    return {
+      /**
+       * @link https://trpc.io/docs/data-transformers
+       */
+      transformer: superjson,
+      /**
+       * @link https://trpc.io/docs/links
+       */
+      links: [
+        // adds pretty logs to your console in development and logs errors in production
+        loggerLink({
+          enabled: (opts) =>
+            process.env.NODE_ENV === 'development' ||
+            (opts.direction === 'down' && opts.result instanceof Error),
+        }),
+        getEndingLink(),
+      ],
+      /**
+       * @link https://react-query.tanstack.com/reference/QueryClient
+       */
+      // queryClientConfig: { defaultOptions: { queries: { staleTime: 60 } } },
+    };
+  },
+  /**
+   * @link https://trpc.io/docs/ssr
+   */
+  ssr: true,
+  /**
+   * Set headers or status code when doing SSR
+   */
+  responseMeta(opts) {
+    // [...]
+    return {};
+  },
+});
+```
+
+
+```ts
+// _app.tsx
+import { AppType } from 'next/dist/shared/lib/utils';
+import { ReactElement, ReactNode } from 'react';
+import { trpc } from '~/utils/trpc';
+
+const MyApp: AppType = (({ Component, pageProps }) => {
+  return <Component {...pageProps} />;
+})
+
+export default trpc.withTRPC(MyApp);
+```
+
+
 
 ### New Links architecture
 
