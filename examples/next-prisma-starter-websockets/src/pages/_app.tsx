@@ -1,4 +1,5 @@
 import '../styles/global.css';
+import { stripHeaders } from '@trpc/client';
 import { httpBatchLink } from '@trpc/client/links/httpBatchLink';
 import { loggerLink } from '@trpc/client/links/loggerLink';
 import { wsLink, createWSClient } from '@trpc/client/links/wsLink';
@@ -72,16 +73,17 @@ export default withTRPC<AppRouter>({
        * @link https://react-query.tanstack.com/reference/QueryClient
        */
       queryClientConfig: { defaultOptions: { queries: { staleTime: 60 } } },
-      headers: () => {
-        if (ctx?.req) {
-          // on ssr, forward client's headers to the server
-          return {
-            ...ctx.req.headers,
-            'x-ssr': '1',
-          };
-        }
-        return {};
-      },
+      headers: () =>
+        stripHeaders(() => {
+          if (ctx?.req) {
+            // on ssr, forward client's headers to the server
+            return {
+              ...ctx.req.headers,
+              'x-ssr': '1',
+            };
+          }
+          return {};
+        }),
     };
   },
   /**
