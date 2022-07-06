@@ -18,13 +18,13 @@ jobs:
     strategy:
       matrix:
         dir: [
-            # .interop/express-server,
-            # .interop/next-prisma-starter,
-            # .interop/next-prisma-starter-websockets,
-            # .interop/next-prisma-todomvc,
-            # .interop/standalone-server,
-            # .interop/fastify-server,
-            # .interop/cloudflare-workers,
+            .interop/express-server,
+            .interop/next-prisma-starter,
+            .interop/next-prisma-starter-websockets,
+            .interop/next-prisma-todomvc,
+            .interop/standalone-server,
+            .interop/fastify-server,
+            .interop/cloudflare-workers,
             next-prisma-starter-sqlite,
             # next-prisma-starter-websockets,
             # next-prisma-todomvc,
