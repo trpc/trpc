@@ -31,7 +31,7 @@
   - [New Raw client API!](#new-raw-client-api)
   - [New React-API (🚧🚧)](#new-react-api-)
     - [Open questions](#open-questions)
-    - [New `@trpc/next`-API (🚧🚧)](#new-trpcnext-api-)
+    - [New `@trpc/next`-APIs (🚧🚧)](#new-trpcnext-apis-)
     - [New Links architecture](#new-links-architecture)
 
 ## Play with it!
@@ -571,7 +571,7 @@ import { trpc } from '~/utils/trpc';
 
 function MyComponent() {
   // You'll be able to CMD+Click `postById` below
-  const query = trpc.queries.postById.useQuery(
+  const query = trpc.proxy.queries.postById.useQuery(
     { id: 1 },
     {
       /* [...] trpc specific options */
@@ -596,7 +596,7 @@ function MyComponent() {
 - [...]
 
 
-### New `@trpc/next`-API (🚧🚧)
+### New `@trpc/next`-APIs (🚧🚧)
 
 
 Simpler setup:
