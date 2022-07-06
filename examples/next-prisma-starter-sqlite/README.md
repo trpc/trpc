@@ -3,6 +3,9 @@
 - V10 Preview of tRPC.
 - See docs here: https://github.com/trpc/trpc/blob/next/.tmp/v10-docs.md
 
+[![Open in StackBlitz](https://developer.stackblitz.com/img/open_in_stackblitz.svg)](https://stackblitz.com/github/trpc/examples-v10-next-prisma-starter-sqlite)
+
+
 
 ## Features
 
