@@ -1,4 +1,6 @@
 /* eslint-disable @typescript-eslint/ban-types */
+import { inferProcedureOutput } from '.';
+import { Filter, Prefixer } from '..';
 import { TRPCError } from '../error/TRPCError';
 import {
   DefaultErrorShape,
@@ -15,28 +17,55 @@ import {
 } from './internals/internalProcedure';
 import { mergeWithoutOverrides } from './internals/mergeWithoutOverrides';
 import { omitPrototype } from './internals/omitPrototype';
-import { EnsureRecord, ValidateShape } from './internals/utils';
-import { Procedure } from './procedure';
+import {
+  MutationProcedure,
+  Procedure,
+  QueryProcedure,
+  SubscriptionProcedure,
+} from './procedure';
 import { ProcedureType } from './types';
 
-// FIXME this should properly use TContext maybe?
-export type ProcedureRecord<_TContext> = Record<string, Procedure<any>>;
-type AnyProcedureRecord = ProcedureRecord<any>;
+type ProcedureRecord = Record<string, Procedure<any>>;
+
+export type ProcedureRouterRecord = Record<string, Procedure<any> | AnyRouter>;
+
 export interface ProcedureStructure {
-  queries: AnyProcedureRecord;
-  mutations: AnyProcedureRecord;
-  subscriptions: AnyProcedureRecord;
+  queries: Record<string, QueryProcedure<any>>;
+  mutations: Record<string, MutationProcedure<any>>;
+  subscriptions: Record<string, SubscriptionProcedure<any>>;
+  procedures: ProcedureRecord;
 }
 
-export interface RouterParams<
+type ObjKeyof<T> = T extends object ? keyof T : never;
+type KeyofKeyof<T> = ObjKeyof<T> | { [K in keyof T]: ObjKeyof<T[K]> }[keyof T];
+type StripNever<T> = Pick<
+  T,
+  { [K in keyof T]: [T[K]] extends [never] ? never : K }[keyof T]
+>;
+type Lookup<T, K> = T extends any ? (K extends keyof T ? T[K] : never) : never;
+type SimpleFlatten<T> = T extends object
+  ? StripNever<{
+      [K in KeyofKeyof<T>]:
+        | Exclude<K extends keyof T ? T[K] : never, object>
+        | { [P in keyof T]: Lookup<T[P], K> }[keyof T];
+    }>
+  : T;
+
+type PrefixedProcedures<T extends ProcedureRouterRecord> = {
+  [K in keyof T]: T[K] extends AnyRouter
+    ? T[K] extends Procedure<any>
+      ? never
+      : Prefixer<T[K]['_def']['procedures'], `${K & string}.`>
+    : never;
+};
+export interface RouterDef<
   // FIXME this should use RootConfig
   TContext,
   TErrorShape extends TRPCErrorShape<number>,
   TMeta extends Record<string, unknown>,
-  TQueries extends ProcedureRecord<TContext>,
-  TMutations extends ProcedureRecord<TContext>,
-  TSubscriptions extends ProcedureRecord<TContext>,
-> extends ProcedureStructure {
+  TRecord extends ProcedureRouterRecord,
+> {
+  router: true;
   /**
    * @internal
    */
@@ -49,114 +78,107 @@ export interface RouterParams<
    * @internal
    */
   _meta: TMeta;
-  queries: TQueries;
-  mutations: TMutations;
-  subscriptions: TSubscriptions;
   errorFormatter: ErrorFormatter<TContext, TErrorShape>;
   transformer: CombinedDataTransformer;
+  // FIXME this is slow
+  procedures: Filter<TRecord, Procedure<any>> &
+    SimpleFlatten<PrefixedProcedures<TRecord>>;
+  routers: Filter<TRecord, Router<any>>;
+  record: TRecord;
+  // FIXME this is slow
+  subscriptions: Filter<TRecord, SubscriptionProcedure<any>> &
+    Filter<
+      SimpleFlatten<PrefixedProcedures<TRecord>>,
+      SubscriptionProcedure<any>
+    >;
+  queries: Filter<TRecord, QueryProcedure<any>> &
+    Filter<SimpleFlatten<PrefixedProcedures<TRecord>>, QueryProcedure<any>>;
+  mutations: Filter<TRecord, MutationProcedure<any>> &
+    Filter<SimpleFlatten<PrefixedProcedures<TRecord>>, MutationProcedure<any>>;
 }
 
-export type AnyRouterParams<TContext = any> = RouterParams<
-  TContext,
-  any,
-  any,
-  any,
-  any,
-  any
->;
+export type AnyRouterDef<TContext = any> = RouterDef<TContext, any, any, any>;
 
 /**
  * @internal
  */
 export type inferHandlerInput<TProcedure extends Procedure<any>> =
-  TProcedure extends Procedure<infer TParams>
-    ? undefined extends TParams['_input_in'] // ? is input optional
-      ? unknown extends TParams['_input_in'] // ? is input unset
+  TProcedure extends Procedure<infer TDef>
+    ? undefined extends TDef['_input_in'] // ? is input optional
+      ? unknown extends TDef['_input_in'] // ? is input unset
         ? [(null | undefined)?] // -> there is no input
-        : [(TParams['_input_in'] | null | undefined)?] // -> there is optional input
-      : [TParams['_input_in']] // -> input is required
+        : [(TDef['_input_in'] | null | undefined)?] // -> there is optional input
+      : [TDef['_input_in']] // -> input is required
     : [(undefined | null)?]; // -> there is no input
 
 /**
  * @internal
  */
-type inferHandlerFn<TProcedures extends ProcedureRecord<any>> = <
+type inferHandlerFn<TProcedures extends Record<string, Procedure<any>>> = <
   TProcedure extends TProcedures[TPath],
   TPath extends keyof TProcedures & string,
 >(
   path: TPath,
   ...args: inferHandlerInput<TProcedure>
-) => ReturnType<TProcedure>;
+) => Promise<inferProcedureOutput<TProcedure>>;
 
 /**
  * This only exists b/c of interop mode
  * @internal
  */
 
-type RouterCaller<TParams extends AnyRouterParams> = (ctx: TParams['_ctx']) => {
+type RouterCaller<TDef extends AnyRouterDef> = (ctx: TDef['_ctx']) => {
   /**
    * @deprecated
    */
-  query: inferHandlerFn<TParams['queries']>;
+  query: inferHandlerFn<TDef['queries']>;
   /**
    * @deprecated
    */
-  mutation: inferHandlerFn<TParams['mutations']>;
+  mutation: inferHandlerFn<TDef['mutations']>;
   /**
    * @deprecated
    */
-  subscription: inferHandlerFn<TParams['subscriptions']>;
-
-  queries: TParams['queries'];
-  mutations: TParams['mutations'];
-  subscriptions: TParams['subscriptions'];
+  subscription: inferHandlerFn<TDef['subscriptions']>;
 };
 
-export interface Router<TParams extends AnyRouterParams>
-  extends ProcedureStructure {
-  _def: RouterParams<
-    TParams['_ctx'],
-    TParams['_errorShape'],
-    TParams['_meta'],
-    TParams['queries'],
-    TParams['mutations'],
-    TParams['subscriptions']
+export interface Router<TDef extends AnyRouterDef> {
+  _def: RouterDef<
+    TDef['_ctx'],
+    TDef['_errorShape'],
+    TDef['_meta'],
+    TDef['record']
   >;
-  queries: TParams['queries'];
-  mutations: TParams['mutations'];
-  subscriptions: TParams['subscriptions'];
-  errorFormatter: TParams['errorFormatter'];
-  transformer: TParams['transformer'];
+  /** @deprecated **/
+  errorFormatter: TDef['errorFormatter'];
+  /** @deprecated **/
+  transformer: TDef['transformer'];
 
-  createCaller: RouterCaller<TParams>;
+  // FIXME rename me and deprecate
+  createCaller: RouterCaller<TDef>;
+  // FIXME rename me and deprecate
   getErrorShape(opts: {
     error: TRPCError;
     type: ProcedureType | 'unknown';
     path: string | undefined;
     input: unknown;
-    ctx: undefined | TParams['_ctx'];
-  }): TParams['_errorShape'];
+    ctx: undefined | TDef['_ctx'];
+  }): TDef['_errorShape'];
 }
 
 /**
  * @internal
  */
-export type RouterOptions<TContext> = Partial<AnyRouterParams<TContext>>;
-
-/**
- * @internal
- */
 export type RouterDefaultOptions<TContext> = Pick<
-  AnyRouterParams<TContext>,
+  AnyRouterDef<TContext>,
   'transformer' | 'errorFormatter'
 >;
 
 /**
  * @internal
  */
-type RouterBuildOptions<TContext> = Pick<
-  RouterOptions<TContext>,
-  'queries' | 'subscriptions' | 'mutations'
+export type RouterBuildOptions<TContext> = Partial<
+  Pick<AnyRouterDef<TContext>, 'procedures'>
 >;
 
 export type AnyRouter = Router<any>;
@@ -178,81 +200,93 @@ const emptyRouter = {
   errorFormatter: defaultFormatter,
   transformer: defaultTransformer,
 };
-// type EmptyRouter = typeof emptyRouter;
-
-const PROCEDURE_DEFINITION_MAP: Record<
-  ProcedureType,
-  'queries' | 'mutations' | 'subscriptions'
-> = {
-  query: 'queries',
-  mutation: 'mutations',
-  subscription: 'subscriptions',
-};
 
 /**
  *
  * @internal
  */
-export function createRouterFactory<TSettings extends RootConfig>(
-  defaults?: RouterDefaultOptions<TSettings['ctx']>,
+export function createRouterFactory<TConfig extends RootConfig>(
+  defaults?: RouterDefaultOptions<TConfig['ctx']>,
 ) {
   return function createRouterInner<
-    TProcedures extends RouterBuildOptions<TSettings['ctx']>,
+    TProcRouterRecord extends ProcedureRouterRecord,
   >(
-    procedures: ValidateShape<
-      TProcedures,
-      RouterBuildOptions<TSettings['ctx']>
-    >,
-  ): Router<{
-    _ctx: TSettings['ctx'];
-    _errorShape: TSettings['errorShape'];
-    _meta: TSettings['meta'];
-    queries: EnsureRecord<TProcedures['queries']>;
-    mutations: EnsureRecord<TProcedures['mutations']>;
-    subscriptions: EnsureRecord<TProcedures['subscriptions']>;
-    errorFormatter: ErrorFormatter<TSettings['ctx'], TSettings['errorShape']>;
-    transformer: TSettings['transformer'];
-  }> {
+    opts: TProcRouterRecord,
+  ): Router<
+    RouterDef<
+      TConfig['ctx'],
+      TConfig['errorShape'],
+      TConfig['meta'],
+      TProcRouterRecord
+    >
+  > &
+    TProcRouterRecord {
+    const routerProcedures: Record<string, Procedure<any>> = omitPrototype({});
+    function recursiveGetPaths(procedures: ProcedureRouterRecord, path = '') {
+      for (const [key, procedureOrRouter] of Object.entries(procedures ?? {})) {
+        const newPath = `${path}${key}`;
+
+        if (typeof procedureOrRouter === 'object') {
+          const router = procedureOrRouter as AnyRouter;
+          recursiveGetPaths(router._def.procedures, `${newPath}.`);
+          continue;
+        }
+
+        routerProcedures[newPath] = procedureOrRouter;
+      }
+    }
+
+    recursiveGetPaths(opts);
+
     const result = mergeWithoutOverrides<
-      RouterDefaultOptions<TSettings['ctx']> &
-        RouterBuildOptions<TSettings['ctx']>
+      RouterDefaultOptions<TConfig['ctx']> & RouterBuildOptions<TConfig['ctx']>
     >(
       {
         transformer: defaults?.transformer ?? defaultTransformer,
         errorFormatter: defaults?.errorFormatter ?? defaultFormatter,
       },
-      {
-        queries: omitPrototype(procedures.queries),
-        mutations: omitPrototype(procedures.mutations),
-        subscriptions: omitPrototype(procedures.subscriptions),
-      },
+      { procedures: routerProcedures },
     );
 
-    const _def: AnyRouterParams<TSettings['ctx']> = {
+    const _def: AnyRouterDef<TConfig['ctx']> = {
+      router: true,
+      procedures: {},
       ...emptyRouter,
       ...result,
-    };
-    const def = {
-      _def,
-      ..._def,
+      record: opts,
+      queries: Object.entries(result.procedures || {})
+        .filter((pair) => (pair[1] as any)._def.query)
+        .reduce((acc, [key, val]) => ({ ...acc, [key]: val }), {}),
+      mutations: Object.entries(result.procedures || {})
+        .filter((pair) => (pair[1] as any)._def.mutation)
+        .reduce((acc, [key, val]) => ({ ...acc, [key]: val }), {}),
+      subscriptions: Object.entries(result.procedures || {})
+        .filter((pair) => (pair[1] as any)._def.subscription)
+        .reduce((acc, [key, val]) => ({ ...acc, [key]: val }), {}),
+      routers: Object.entries(result.procedures || {})
+        .filter((pair) => (pair[1] as any)._def._router)
+        .reduce((acc, [key, val]) => ({ ...acc, [key]: val }), {}),
     };
 
     function callProcedure(opts: InternalProcedureCallOptions) {
       const { type, path } = opts;
-      const defTarget = PROCEDURE_DEFINITION_MAP[type];
-      const defs = def[defTarget];
 
-      if (!(path in defs)) {
+      if (!(path in _def.procedures) || !_def.procedures[path]['_def'][type]) {
         throw new TRPCError({
           code: 'NOT_FOUND',
           message: `No "${type}"-procedure on path "${path}"`,
         });
       }
-      const procedure = defs[path] as InternalProcedure;
+
+      const procedure = _def.procedures[path] as InternalProcedure;
+
       return procedure(opts);
     }
     const router: AnyRouter = {
-      ...def,
+      ...opts,
+      _def,
+      transformer: _def.transformer,
+      errorFormatter: _def.errorFormatter,
       createCaller(ctx) {
         return {
           query: (path, ...args) =>
@@ -329,30 +363,3 @@ export function createRouterFactory<TSettings extends RootConfig>(
     return router as any;
   };
 }
-
-type combineProcedureRecords<
-  A extends Partial<AnyRouter>,
-  B extends Partial<AnyRouter>,
-> = {
-  queries: A['queries'] & B['queries'];
-  mutations: A['mutations'] & B['mutations'];
-  subscriptions: A['subscriptions'] & B['subscriptions'];
-};
-/**
- * @internal
- */
-export type mergeProcedureRecordsVariadic<
-  Routers extends Partial<AnyRouter>[],
-> = Routers extends []
-  ? {
-      queries: {};
-      mutations: {};
-      subscriptions: {};
-    }
-  : Routers extends [infer First, ...infer Rest]
-  ? First extends Partial<AnyRouter>
-    ? Rest extends Partial<AnyRouter>[]
-      ? combineProcedureRecords<First, mergeProcedureRecordsVariadic<Rest>>
-      : never
-    : never
-  : never;

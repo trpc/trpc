@@ -7,11 +7,11 @@
   - [Play with it!](#play-with-it)
   - [Goals & features](#goals--features)
   - [The Gist / tl;dr](#the-gist--tldr)
+    - [Install now!](#install-now)
     - [Defining routers & procedures](#defining-routers--procedures)
     - [Calling procedures](#calling-procedures)
     - [Middlewares](#middlewares)
   - [New router API!](#new-router-api)
-    - [ℹ️ Known limitations ℹ️](#ℹ️-known-limitations-ℹ️)
     - [§1 Basics](#1-basics)
       - [§1.0 Setting up tRPC](#10-setting-up-trpc)
       - [§1.1 Creating a router](#11-creating-a-router)
@@ -19,6 +19,7 @@
         - [Details about the procedure builder](#details-about-the-procedure-builder)
       - [§1.3 Adding input parser](#13-adding-input-parser)
       - [§1.4 Procedure with middleware](#14-procedure-with-middleware)
+      - [§1.4 Child / sub routers](#14-child--sub-routers)
     - [§2 Intermediate 🍿](#2-intermediate-)
       - [§2.1 Define a reusable middleware](#21-define-a-reusable-middleware)
       - [§2.2 Create a bunch of procedures that are all protected](#22-create-a-bunch-of-procedures-that-are-all-protected)
@@ -26,11 +27,11 @@
       - [§2.4 Merging routers](#24-merging-routers)
     - [§3 Advanced 🧙](#3-advanced-)
       - [Compose dynamic combos of middlewares/input parsers](#compose-dynamic-combos-of-middlewaresinput-parsers)
-    - [Interopability mode for old routers](#interopability-mode-for-old-routers)
+    - [Interopability mode for old routers / Migration path](#interopability-mode-for-old-routers--migration-path)
   - [New Raw client API!](#new-raw-client-api)
   - [New React-API (🚧🚧)](#new-react-api-)
     - [Open questions](#open-questions)
-    - [New `@trpc/next`-API (🚧🚧)](#new-trpcnext-api-)
+    - [New `@trpc/next`-APIs (🚧🚧)](#new-trpcnext-apis-)
     - [New Links architecture](#new-links-architecture)
 
 ## Play with it!
@@ -49,11 +50,16 @@
 - **CMD+Click** from a your frontend and jump straight into the backend procedure. This will work with `react-query` as well!
 - **Enabling having a file**-based structure - as you see, that `createRouter()` could easily be automatically generated from a file/folder structure.
 - **Better scaling** than current structure! The new version has been tested with 2,000 procedures still acts alright, where the current V9.x version starts slowing doing noticeably at ~100 procedures. *(Note: this testing with very basic procedures, for large projects you still have to use [Project References](https://github.com/microsoft/TypeScript/wiki/Performance#using-project-references))*
-- ~**Infer expected errors** as well as data - unsure if this is useful yet or if it'll make it, but pretty sure it'll be nice to have.~ Skipped this because of it's complexity - it can still be added later.
 
 ## The Gist / tl;dr
 
 The main difference between the old and the new router is that "the chaining" is shifted from the Router to each Procedure.
+
+### Install now!
+
+```bash
+npm install @trpc/server@experimental @trpc/client@experimental @trpc/react@experimental @trpc/next@experimental 
+```
 
 ### Defining routers & procedures
 
@@ -70,12 +76,10 @@ const appRouter = trpc
 
 // NEW:
 const appRouter = t.router({
-  queries: {
-    greeting: t
-      .procedure
-      .input(z.string())
-      .resolve(({ input }) => `hello ${input}!`)
-  }
+  greeting: t
+    .procedure
+    .input(z.string())
+    .query(({ input }) => `hello ${input}!`)
 })
 ```
 
@@ -87,8 +91,8 @@ client.query('hello', 'KATT')
 trpc.useQuery(['hello', 'KATT'])
 
 // NEW - you'll be able to CMD+click `hello` below and jump straight to your backend code
-client.queries.hello('KATT')
-trpc.queries.hello.use('KATT')
+client.hello('KATT')
+trpc.greeting.useQuery('KATT')
 ```
 
 ### Middlewares
@@ -132,21 +136,11 @@ const isAuthed = t.middleware(({next, ctx}) => {
 const authedProcedure = t.procedure.use(isAuthed)
 
 const appRouter = t.router({
-  queries: {
-    greeting: authedProcedure.resolve(({ ctx }) => `hello ${ctx.name}!`)
-  }
+  greeting: authedProcedure.query(({ ctx }) => `hello ${ctx.name}!`)
 })
 ```
 
 ## New router API! 
-
-### ℹ️ Known limitations ℹ️
-
-Router merging with a prefix in the new API will **not** be supported. All queries a mutations will lie flat on one big object.
-
-We might revisit this decision in the future, the reason here is that it **breaks jump-to-definition** (CMD+Clicking from client to server).
-
-> Is this a deal-breaker to you? Please tell us!
 
 ### §1 Basics
 
@@ -196,12 +190,7 @@ const {
 
 ```tsx
 export const appRouter = t.router({
-  queries: {
-    // [...]
-  },
-  mutations: {
-    // [...]
-  },
+  // [...]
 })
 ```
 
@@ -209,10 +198,8 @@ export const appRouter = t.router({
 
 ```tsx
 export const appRouter = t.router({
-  queries: {
-    // simple procedure without args avialable at postAll`
-    postList: procedure.resolve(() => postsDb),
-  }
+  // simple procedure without args avialable at postAll`
+  postList: procedure.query(() => postsDb),
 });
 ```
 
@@ -257,7 +244,7 @@ interface ProcedureBuilder {
 
 #### §1.3 Adding input parser
 
-> Note that I'll skip the `t.router({ queries: /*...*/})` below here
+> Note that I'll skip the `t.router({ /*...*/})` below here
 
 ```tsx
 
@@ -268,7 +255,7 @@ const postById = procedure
       id: z.string(),
     }),
   )
-  .resolve(({ input }) => {
+  .query(({ input }) => {
     const post = postsDb.find((post) => post.id === input.id);
     if (!post) {
       throw new Error('NOT_FOUND');
@@ -294,13 +281,40 @@ const whoami = procedure
       },
     });
   })
-  .resolve(({ ctx }) => {
+  .query(({ ctx }) => {
     // `isAuthed()` will propagate new `ctx`
     // `ctx.user` is now `NonNullable`
     return `your id is ${ctx.user.id}`;
   });
  
 ```
+
+#### §1.4 Child / sub routers
+
+```ts
+const appRouter = t.router({
+  // A procedure on the `appRouter`
+  health: t.procedure.query(() => 'healthy')
+  post: t.router({
+    byId: t
+      .procedure
+      .input(
+        z.object({ id: z.string( )})
+      )
+      .query(() => '....'),
+  }),
+  user: t.router({
+    byId: t
+      .procedure
+      .input(
+        z.object({ id: z.string( )})
+      )
+      .query(() => '....'),
+  }),
+})
+
+```
+
 
 ### §2 Intermediate 🍿 
 
@@ -322,7 +336,7 @@ const isAuthed = t.middleware((params) => {
 // Use in procedure:
 const whoami = procedure
   .use(isAuthed)
-  .resolve(({ ctx }) => {
+  .query(({ ctx }) => {
     // `isAuthed()` will propagate new `ctx`
     // `ctx.user` is now `NonNullable`
     return `your id is ${ctx.user.id}`;
@@ -336,24 +350,22 @@ const whoami = procedure
 const protectedProcedure = procedure.use(isAuthed);
 
 export const appRouter = t.router({
-  queries: {
-    postList: protectedProcedure.resolve(() => postsDb),
-    postById: protectedProcedure
-      .input(
-        z.object({
-          id: z.string(),
-        }),
-      )
-      .resolve(({ input }) => {
-        const post = postsDb.find((post) => post.id === input.id);
-        if (!post) {
-          throw new Error('NOT_FOUND');
-        }
-        return {
-          data: postsDb,
-        };
-      })
- }
+  postList: protectedProcedure.query(() => postsDb),
+  postById: protectedProcedure
+    .input(
+      z.object({
+        id: z.string(),
+      }),
+    )
+    .query(({ input }) => {
+      const post = postsDb.find((post) => post.id === input.id);
+      if (!post) {
+        throw new Error('NOT_FOUND');
+      }
+      return {
+        data: postsDb,
+      };
+    })
 })
 ```
 
@@ -363,41 +375,37 @@ export const appRouter = t.router({
 
 ```tsx
 procedure
-      .output(z.void())
-      // This will fail because we've explicitly said this procedure is `void`
-      .resolve(({ input }) => {
-        return'hello';
-      })
+  .output(z.void())
+  // This will fail because we've explicitly said this procedure is `void`
+  .query(({ input }) => {
+    return'hello';
+  })
 ```
 
 #### §2.4 Merging routers
 
 ```ts
 const postRouter = t.router({
-  queries: {
-    postList: protectedProcedure.resolve(() => postsDb),
-    postById: protectedProcedure
-      .input(
-        z.object({
-          id: z.string(),
-        }),
-      )
-      .resolve(({ input }) => {
-        const post = postsDb.find((post) => post.id === input.id);
-        if (!post) {
-          throw new Error('NOT_FOUND');
-        }
-        return {
-          data: postsDb,
-        };
-      })
-  }
+  postList: protectedProcedure.query(() => postsDb),
+  postById: protectedProcedure
+    .input(
+      z.object({
+        id: z.string(),
+      }),
+    )
+    .query(({ input }) => {
+      const post = postsDb.find((post) => post.id === input.id);
+      if (!post) {
+        throw new Error('NOT_FOUND');
+      }
+      return {
+        data: postsDb,
+      };
+    })
 })
 
 const health = t.router({
-  query: {
-    healthz: t.resolve(() => 'I am alive')
-  }
+  healthz: t.query(() => 'I am alive')
 })
 
 export const appRouter = t.mergeRouters(
@@ -456,7 +464,7 @@ const editOrganization = procedure
       }),
     ),
   )
-  .resolve(({ ctx, input }) => {
+  .mutation(({ ctx, input }) => {
     // - User is guaranteed to be part of the organization queried
     // - `input` is of type:
       // {
@@ -470,7 +478,7 @@ const editOrganization = procedure
   });
 ```
 
-### Interopability mode for old routers
+### Interopability mode for old routers / Migration path
 
 If you are migrating from V9->V10, the transition will be very simple. 
 
@@ -515,9 +523,7 @@ export const t = initTRPC<{
 4. Create a a test router:
   ```ts
   const greetingRouter = t.router({
-    query: {
-      greeting: t.procedure.resolve(() => 'world')
-    }
+    greeting: t.procedure.query(() => 'world')
   })
   ```
 5. Merge it in:
@@ -560,26 +566,19 @@ async function main() {
 
 
 
-🚧🚧
-
-
-The running idea is to be able to do something similar to this:
-
 ```ts
 import { trpc } from '~/utils/trpc';
 
 function MyComponent() {
   // You'll be able to CMD+Click `postById` below
-  const query = trpc.queries.postById.use(
+  const query = trpc.proxy.queries.postById.useQuery(
     { id: 1 },
     {
-      trpc: {
-        /* [...] trpc specific options */
-        context: {
-          batching: false,
-        },
-        ssr: true,
+      /* [...] trpc specific options */
+      context: {
+        batching: false,
       },
+      ssr: true,
       enabled: true,
       /* [...] react-query specific options */
     }
@@ -597,10 +596,77 @@ function MyComponent() {
 - [...]
 
 
-### New `@trpc/next`-API (🚧🚧)
+### New `@trpc/next`-APIs (🚧🚧)
 
 
-🚧🚧
+Simpler setup:
+
+```ts
+// `utils/trpc.ts`
+
+/**
+ * A set of strongly-typed React hooks from your `AppRouter` type signature with `createReactQueryHooks`.
+ * @link https://trpc.io/docs/react#3-create-trpc-hooks
+ */
+export const trpc = setupTRPC<AppRouter>({
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  config() {
+    /**
+     * If you want to use SSR, you need to use the server's full URL
+     * @link https://trpc.io/docs/ssr
+     */
+    return {
+      /**
+       * @link https://trpc.io/docs/data-transformers
+       */
+      transformer: superjson,
+      /**
+       * @link https://trpc.io/docs/links
+       */
+      links: [
+        // adds pretty logs to your console in development and logs errors in production
+        loggerLink({
+          enabled: (opts) =>
+            process.env.NODE_ENV === 'development' ||
+            (opts.direction === 'down' && opts.result instanceof Error),
+        }),
+        getEndingLink(),
+      ],
+      /**
+       * @link https://react-query.tanstack.com/reference/QueryClient
+       */
+      // queryClientConfig: { defaultOptions: { queries: { staleTime: 60 } } },
+    };
+  },
+  /**
+   * @link https://trpc.io/docs/ssr
+   */
+  ssr: true,
+  /**
+   * Set headers or status code when doing SSR
+   */
+  responseMeta(opts) {
+    // [...]
+    return {};
+  },
+});
+```
+
+
+```ts
+// _app.tsx
+import { AppType } from 'next/dist/shared/lib/utils';
+import { ReactElement, ReactNode } from 'react';
+import { trpc } from '~/utils/trpc';
+
+const MyApp: AppType = (({ Component, pageProps }) => {
+  return <Component {...pageProps} />;
+})
+
+export default trpc.withTRPC(MyApp);
+```
+
+
 
 ### New Links architecture
 

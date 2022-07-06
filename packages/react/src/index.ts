@@ -1,3 +1,4 @@
 export * from '@trpc/client';
 
-export * from './createReactQueryHooks';
+export { createReactQueryHooks } from './createReactQueryHooks';
+export { createReactQueryProxy } from './createReactQueryProxy';

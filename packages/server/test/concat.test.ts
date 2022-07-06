@@ -46,11 +46,9 @@ const ctx = konn()
     const combined = t.procedure.unstable_concat(proc1).unstable_concat(proc2);
 
     const appRouter = t.router({
-      mutations: {
-        getContext: combined.resolve(({ ctx }) => {
-          return ctx;
-        }),
-      },
+      getContext: combined.mutation(({ ctx }) => {
+        return ctx;
+      }),
     });
 
     const opts = routerToServerAndClientNew(appRouter, {
@@ -75,7 +73,7 @@ const ctx = konn()
   .done();
 
 test('decorate independently', async () => {
-  const result = await ctx.client.mutations.getContext();
+  const result = await ctx.client.getContext.mutate();
   // This is correct
   expect(result).toEqual({
     user: mockUser,

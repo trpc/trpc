@@ -32,7 +32,10 @@ import {
   wsLink,
 } from '../../../client/src/links/wsLink';
 import { withTRPC } from '../../../next/src';
-import { OutputWithCursor, createReactQueryHooks } from '../../../react/src';
+import {
+  OutputWithCursor,
+  createReactQueryHooks,
+} from '../../../react/src/createReactQueryHooks';
 import { createSSGHelpers } from '../../../react/src/ssg';
 import { TRPCError } from '../../src/error/TRPCError';
 import { DefaultErrorShape } from '../../src/error/formatter';

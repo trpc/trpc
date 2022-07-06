@@ -1,3 +1,10 @@
+**This is the next major of tRPC, use it if you're brave and can stomach breaking changes**
+
+👉👉👉👉👉 See WIP docs at [`/.tmp/v10-docs.md`](./.tmp/v10-docs.md)
+
+
+---
+
 <p align="center">
   <a href="https://trpc.io/"><img src="./www/static/img/logo-text.svg" alt="tRPC" height="130"/></a>
 </p>

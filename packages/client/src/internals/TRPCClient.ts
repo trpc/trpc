@@ -61,14 +61,6 @@ interface CreateTRPCClientBaseOptions {
   transformer?: ClientDataTransformerOptions;
 }
 
-function createRouterProxy(callback: (...args: [string, ...unknown[]]) => any) {
-  return new Proxy({} as any, {
-    get(_, path: string) {
-      return (...args: unknown[]) => callback(path, ...args);
-    },
-  });
-}
-
 /** @internal */
 export interface CreateTRPCClientWithURLOptions
   extends CreateTRPCClientBaseOptions {
@@ -102,8 +94,6 @@ export type CreateTRPCClientOptions<TRouter extends AnyRouter> =
 export class TRPCClient<TRouter extends AnyRouter> {
   private readonly links: OperationLink<TRouter>[];
   public readonly runtime: TRPCClientRuntime;
-  public readonly queries: TRouter['queries'];
-  public readonly mutations: TRouter['mutations'];
 
   constructor(opts: CreateTRPCClientOptions<TRouter>) {
     const _fetch = getFetch(opts?.fetch);
@@ -145,13 +135,6 @@ export class TRPCClient<TRouter extends AnyRouter> {
         })(this.runtime),
       ];
     }
-
-    this.queries = createRouterProxy((path, ...args) =>
-      this.query(path, ...(args as any)),
-    );
-    this.mutations = createRouterProxy((path, ...args) =>
-      this.mutation(path, ...(args as any)),
-    );
   }
 
   private $request<TInput = unknown, TOutput = unknown>({

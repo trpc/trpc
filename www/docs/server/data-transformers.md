@@ -30,7 +30,7 @@ export const appRouter = trpc.router()
   // .query(...)
 ```
 
-#### 3. Add to `createTRPCClient()` or `setupNext()`
+#### 3. Add to `createTRPCClient()` or `setupTRPC()`
 
 ```ts
 import { createTRPCClient } from '@trpc/client';

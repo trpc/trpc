@@ -4,17 +4,9 @@ import { AnyRouter, createRouterFactory } from '../router';
 import { mergeWithoutOverrides } from './mergeWithoutOverrides';
 
 export function mergeRouters(...routerList: AnyRouter[]): AnyRouter {
-  const queries = mergeWithoutOverrides(
+  const record = mergeWithoutOverrides(
     {},
-    ...routerList.map((r) => r.queries),
-  );
-  const mutations = mergeWithoutOverrides(
-    {},
-    ...routerList.map((r) => r.mutations),
-  );
-  const subscriptions = mergeWithoutOverrides(
-    {},
-    ...routerList.map((r) => r.subscriptions),
+    ...routerList.map((r) => r._def.record),
   );
   const errorFormatter = routerList.reduce(
     (currentErrorFormatter, nextRouter) => {
@@ -48,10 +40,6 @@ export function mergeRouters(...routerList: AnyRouter[]): AnyRouter {
   const router = createRouterFactory({
     errorFormatter,
     transformer,
-  })({
-    queries,
-    mutations,
-    subscriptions,
-  });
+  })(record);
   return router;
 }
