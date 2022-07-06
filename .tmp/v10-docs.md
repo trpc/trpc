@@ -264,7 +264,7 @@ const appRouter = t.router({
   .query(({ input }) => {
     const post = postsDb.find((post) => post.id === input.id);
     if (!post) {
-      throw new Error('NOT_FOUND');
+      throw new TRPCError({ code: 'NOT_FOUND' });
     }
     return {
       data: postsDb,
@@ -280,7 +280,7 @@ t.router({
   whoami: t.procedure
     .use((params) => {
       if (!params.ctx.user) {
-        throw new Error('UNAUTHORIZED');
+        throw new TRPCError({ code: 'UNAUTHORIZED' });
       }
       return params.next({
         ctx: {
@@ -333,7 +333,7 @@ const appRouter = t.router({
 
 const isAuthed = t.middleware((params) => {
   if (!params.ctx.user) {
-    throw new Error('zup');
+    throw new TRPCError({ code: 'UNAUTHORIZED' });
   }
   return params.next({
     ctx: {
@@ -371,7 +371,7 @@ export const appRouter = t.router({
     .query(({ input }) => {
       const post = postsDb.find((post) => post.id === input.id);
       if (!post) {
-        throw new Error('NOT_FOUND');
+        throw new TRPCError({ code: 'NOT_FOUND' });
       }
       return {
         data: postsDb,
@@ -407,7 +407,7 @@ const postRouter = t.router({
     .query(({ input }) => {
       const post = postsDb.find((post) => post.id === input.id);
       if (!post) {
-        throw new Error('NOT_FOUND');
+        throw new TRPCError({ code: 'NOT_FOUND' });
       }
       return {
         data: postsDb,
@@ -445,7 +445,7 @@ function isPartOfOrg<
     const { ctx, input } = params;
     const { user } = ctx;
     if (!user) {
-      throw new Error('UNAUTHORIZED');
+      throw new TRPCError({ code: 'UNAUTHORIZED' });
     }
 
     if (
@@ -453,7 +453,7 @@ function isPartOfOrg<
         (membership) => membership.organizationId !== input.organizationId,
       )
     ) {
-      throw new Error('FORBIDDEN');
+      throw new TRPCError({ code: 'FORBIDDEN' });
     }
 
     return params.next({
