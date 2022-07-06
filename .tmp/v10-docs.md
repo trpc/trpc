@@ -592,7 +592,6 @@ function MyComponent() {
 
 - Still some unclarity about React 18, RSC, `Suspense` and stuff? Hard to predict the future.
 - Should this be renamed to `@trpc/react-query`? With React 18 & RSC, `react-query` might become less of the norm.
-- Is the above API good? Unfortunately, it won't work to CMD+Click without something like that because of this missing feature in TypeScript: https://github.com/microsoft/TypeScript/issues/49033
 - [...]
 
 
