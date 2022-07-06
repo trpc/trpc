@@ -1,3 +1,4 @@
+/* eslint-disable react/display-name -- invalid error */
 import { expectTypeOf } from 'expect-type';
 import { z } from 'zod';
 import * as trpc from '../src';
