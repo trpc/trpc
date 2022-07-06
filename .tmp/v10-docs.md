@@ -254,7 +254,8 @@ interface ProcedureBuilder {
 ```tsx
 
 // get post by id or 404 if it's not found
-const postById = procedure
+const appRouter = t.router({
+  postById: procedure
   .input(
     z.object({
       id: z.string(),
@@ -268,30 +269,33 @@ const postById = procedure
     return {
       data: postsDb,
     };
-  });
+  })
+});
 ```
 
 #### §1.4 Procedure with middleware
 
 ```tsx
-const whoami = procedure
-  .use((params) => {
-    if (!params.ctx.user) {
-      throw new Error('UNAUTHORIZED');
-    }
-    return params.next({
-      ctx: {
-        // User is now set on the ctx object
-        user: params.ctx.user,
-      },
+t.router({
+  whoami: t.procedure
+    .use((params) => {
+      if (!params.ctx.user) {
+        throw new Error('UNAUTHORIZED');
+      }
+      return params.next({
+        ctx: {
+          // User is now set on the ctx object
+          user: params.ctx.user,
+        },
+      });
+    })
+    .query(({ ctx }) => {
+      // `isAuthed()` will propagate new `ctx`
+      // `ctx.user` is now `NonNullable`
+      return `your id is ${ctx.user.id}`;
     });
-  })
-  .query(({ ctx }) => {
-    // `isAuthed()` will propagate new `ctx`
-    // `ctx.user` is now `NonNullable`
-    return `your id is ${ctx.user.id}`;
-  });
- 
+});
+
 ```
 
 #### §1.4 Child / sub routers
@@ -339,13 +343,15 @@ const isAuthed = t.middleware((params) => {
 });
 
 // Use in procedure:
-const whoami = procedure
-  .use(isAuthed)
-  .query(({ ctx }) => {
-    // `isAuthed()` will propagate new `ctx`
-    // `ctx.user` is now `NonNullable`
-    return `your id is ${ctx.user.id}`;
-  });
+t.router({
+  whoami: procedure
+    .use(isAuthed)
+    .query(({ ctx }) => {
+      // `isAuthed()` will propagate new `ctx`
+      // `ctx.user` is now `NonNullable`
+      return `your id is ${ctx.user.id}`;
+    });
+});
 ```
 
 
@@ -423,6 +429,8 @@ export const appRouter = t.mergeRouters(
 ### §3 Advanced 🧙 
 
 #### Compose dynamic combos of middlewares/input parsers
+
+> Not for the faint-hearted. This will likely be removed
 
 ```tsx
 
