@@ -2,7 +2,8 @@
 
 - V10 Preview of tRPC.
 - See docs here: https://github.com/trpc/trpc/blob/next/.tmp/v10-docs.md
-- Open in CodeSandbox: https://githubbox.com/trpc/examples-v10-next-prisma-starter-sqlite
+- Open in CodeSandbox: https://codesandbox.io/s/github/trpc/examples-v10-next-prisma-starter-sqlite?file=/src/pages/post/%5Bid%5D.tsx
+- Feel free to open issues in this repo to give feedback!
 
 
 
