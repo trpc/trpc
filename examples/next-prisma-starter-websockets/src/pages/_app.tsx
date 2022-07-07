@@ -74,16 +74,16 @@ export default withTRPC<AppRouter>({
        */
       queryClientConfig: { defaultOptions: { queries: { staleTime: 60 } } },
       headers: () =>
-      headers: () => {
-        if (ctx?.req) {
-          // on ssr, forward client's headers to the server
-          return {
-            ...stripHeaders(ctx.req.headers),
-            'x-ssr': '1',
-          };
-        }
-        return {};
-      },
+        stripHeaders(() => {
+          if (ctx?.req) {
+            // on ssr, forward client's headers to the server
+            return {
+              ...ctx.req.headers,
+              'x-ssr': '1',
+            };
+          }
+          return {};
+        }),
     };
   },
   /**
