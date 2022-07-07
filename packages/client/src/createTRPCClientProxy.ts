@@ -17,17 +17,14 @@ export type FlattenRouter<TRouter extends AnyRouter> = {
 export function createTRPCClientProxy<TRouter extends AnyRouter>(
   client: Client<TRouter>,
 ) {
-  const proxy = createProxy({
-    target: client,
-    callback({ path, args }) {
-      const pathCopy = [...path];
-      let type = pathCopy.pop()!;
-      if (type === 'mutate') {
-        type = 'mutation';
-      }
-      const fullPath = pathCopy.join('.');
-      return (client as any)[type](fullPath, ...args);
-    },
+  const proxy = createProxy(({ path, args }) => {
+    const pathCopy = [...path];
+    let type = pathCopy.pop()!;
+    if (type === 'mutate') {
+      type = 'mutation';
+    }
+    const fullPath = pathCopy.join('.');
+    return (client as any)[type](fullPath, ...args);
   });
   return proxy as FlattenRouter<TRouter>;
 }

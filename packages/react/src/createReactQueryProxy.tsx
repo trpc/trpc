@@ -112,24 +112,21 @@ export function createReactQueryProxy<
   TRouter extends AnyRouter,
   TSSRContext = unknown,
 >(trpc: CreateReactQueryHooks<TRouter, TSSRContext>) {
-  const proxy = createProxy({
-    target: trpc,
-    callback(opts) {
-      const args = opts.args;
-      const pathCopy = [...opts.path];
+  const proxy = createProxy((opts) => {
+    const args = opts.args;
+    const pathCopy = [...opts.path];
 
-      // The last arg is for instance `.useMutation` or `.useQuery()`
-      const lastArg = pathCopy.pop()!;
+    // The last arg is for instance `.useMutation` or `.useQuery()`
+    const lastArg = pathCopy.pop()!;
 
-      // The `path` ends up being something like `post.byId`
-      const path = pathCopy.join('.');
-      if (lastArg === 'useMutation') {
-        return (trpc as any)[lastArg](path, ...args);
-      }
-      const [input, ...rest] = args;
+    // The `path` ends up being something like `post.byId`
+    const path = pathCopy.join('.');
+    if (lastArg === 'useMutation') {
+      return (trpc as any)[lastArg](path, ...args);
+    }
+    const [input, ...rest] = args;
 
-      return (trpc as any)[lastArg]([path, input], ...rest);
-    },
+    return (trpc as any)[lastArg]([path, input], ...rest);
   });
 
   return proxy as DecoratedProcedureRecord<TRouter['_def']['record']>;

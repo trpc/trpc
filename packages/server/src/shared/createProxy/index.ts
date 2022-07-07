@@ -4,18 +4,7 @@ interface ProxyCallbackOptions {
 }
 type ProxyCallback = (opts: ProxyCallbackOptions) => unknown;
 
-interface CreateProxyOptionsGeneric {
-  target: unknown;
-}
-interface CreateProxyOptions<TOpts extends CreateProxyOptionsGeneric> {
-  target: TOpts['target'];
-  callback: ProxyCallback;
-}
-
-function createProxyInner<TOptions extends CreateProxyOptionsGeneric>(
-  opts: CreateProxyOptions<TOptions>,
-  ...path: string[]
-) {
+function createProxyInner(callback: ProxyCallback, ...path: string[]) {
   const proxy: any = new Proxy(
     () => {
       // noop
@@ -23,14 +12,14 @@ function createProxyInner<TOptions extends CreateProxyOptionsGeneric>(
     {
       get(_obj, name) {
         if (typeof name === 'string') {
-          return createProxyInner(opts, ...path, name);
+          return createProxyInner(callback, ...path, name);
         }
 
-        return opts.target;
+        throw new Error('Not supported');
       },
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
       apply(_1, _2, args) {
-        return opts.callback({
+        return callback({
           args,
           path,
         });
@@ -45,8 +34,5 @@ function createProxyInner<TOptions extends CreateProxyOptionsGeneric>(
  * Creates a proxy that calls the callback with the path and arguments
  * @internal
  */
-export function createProxy<TOptions extends CreateProxyOptionsGeneric>(
-  opts: CreateProxyOptions<TOptions>,
-) {
-  return createProxyInner(opts);
-}
+export const createProxy = (callback: ProxyCallback) =>
+  createProxyInner(callback);
