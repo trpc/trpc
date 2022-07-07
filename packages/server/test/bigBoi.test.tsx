@@ -12,7 +12,7 @@ const ctx = konn()
     const opts = routerToServerAndClientNew(appRouter, {});
     const queryClient = new QueryClient();
     const react = createReactQueryHooks<typeof appRouter>();
-    const proxy = createReactQueryProxy<typeof appRouter>();
+    const proxy = createReactQueryProxy<typeof appRouter>(react);
     const client = opts.client;
     function App(props: { children: ReactNode }) {
       const [queryClient] = useState(() => new QueryClient());

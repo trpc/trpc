@@ -451,3 +451,30 @@ export function createReactQueryHooks<
     queries,
   };
 }
+
+/**
+ * Hack to infer the type of `createReactQueryHooks`
+ * @link https://stackoverflow.com/a/59072991
+ */
+class GnClass<TRouter extends AnyRouter, TSSRContext = unknown> {
+  createReactQueryHooks() {
+    return createReactQueryHooks<TRouter, TSSRContext>();
+  }
+}
+
+type returnTypeInferer<T> = T extends (a: Record<string, string>) => infer U
+  ? U
+  : never;
+type fooType<TRouter extends AnyRouter, TSSRContext = unknown> = GnClass<
+  TRouter,
+  TSSRContext
+>['createReactQueryHooks'];
+
+/**
+ * Infer the type of a `createReactQueryHooks` function
+ * @intenral
+ */
+export type CreateReactQueryHooks<
+  TRouter extends AnyRouter,
+  TSSRContext = unknown,
+> = returnTypeInferer<fooType<TRouter, TSSRContext>>;

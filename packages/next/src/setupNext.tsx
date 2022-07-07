@@ -8,7 +8,7 @@ export function setupTRPC<
   TSSRContext extends NextPageContext = NextPageContext,
 >(opts: WithTRPCNoSSROptions<TRouter> | WithTRPCSSROptions<TRouter>) {
   const hooks = createReactQueryHooks<TRouter, TSSRContext>();
-  const proxy = createReactQueryProxy<TRouter, TSSRContext>();
+  const proxy = createReactQueryProxy<TRouter, TSSRContext>(hooks);
 
   // TODO: maybe set TSSRContext to `never` when using `WithTRPCNoSSROptions`
   const _withTRPC = withTRPC<TRouter, TSSRContext>(opts);

@@ -93,7 +93,7 @@ test('useQuery()', async () => {
 
 test("we can use new router's procedures too", async () => {
   const { react, client, appRouter } = ctx;
-  const proxy = createReactQueryProxy<typeof appRouter>();
+  const proxy = createReactQueryProxy<typeof appRouter>(react);
   function MyComponent() {
     const query1 = proxy.whoami.useQuery();
     if (!query1.data) {

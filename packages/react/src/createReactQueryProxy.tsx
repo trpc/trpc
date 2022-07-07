@@ -14,10 +14,10 @@ import {
   UseQueryResult,
 } from 'react-query';
 import {
+  CreateReactQueryHooks,
   UseTRPCInfiniteQueryOptions,
   UseTRPCMutationOptions,
   UseTRPCQueryOptions,
-  createReactQueryHooks,
 } from './createReactQueryHooks';
 
 type inferProcedureClientError<T extends Procedure<any>> =
@@ -111,9 +111,7 @@ type DecoratedProcedureRecord<
 export function createReactQueryProxy<
   TRouter extends AnyRouter,
   TSSRContext = unknown,
->() {
-  const trpc = createReactQueryHooks<TRouter, TSSRContext>();
-
+>(trpc: CreateReactQueryHooks<TRouter, TSSRContext>) {
   const proxy = createProxy({
     target: trpc,
     callback(opts) {
