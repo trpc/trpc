@@ -1,6 +1,6 @@
 {
   "name": "@trpc/react",
-  "version": "10.0.0-alpha.25",
+  "version": "10.0.0-alpha.36",
   "description": "tRPC React lib",
   "author": "KATT",
   "license": "MIT",
@@ -11,7 +11,8 @@
     "directory": "packages/react"
   },
   "scripts": {
-    "build": "rollup -c"
+    "build": "rollup -c",
+    "ts-watch": "tsc --project tsconfig.watch.json"
   },
   "main": "dist/index.js",
   "module": "dist/index.mjs",
@@ -54,8 +55,8 @@
     "@babel/runtime": "^7.9.0"
   },
   "devDependencies": {
-    "@trpc/client": "^10.0.0-alpha.25",
-    "@trpc/server": "^10.0.0-alpha.25",
+    "@trpc/client": "^10.0.0-alpha.36",
+    "@trpc/server": "^10.0.0-alpha.36",
     "@types/express": "^4.17.12",
     "express": "^4.17.1",
     "next": "^12.1.6",

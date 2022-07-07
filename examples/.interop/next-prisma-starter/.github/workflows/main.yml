@@ -1,0 +1,48 @@
+name: E2E-testing
+on: [push]
+jobs:
+  e2e:
+    env:
+      DATABASE_URL: postgresql://postgres:@localhost:5432/trpcdb
+      NODE_ENV: test
+      NEXTAUTH_SECRET: supersecret
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        node: ['14.x']
+        os: [ubuntu-latest]
+    services:
+      postgres:
+        image: postgres:12.1
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_DB: trpcdb
+        ports:
+          - 5432:5432
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v2
+
+      # - name: Install deps and build (with cache)
+      #   uses: bahmutov/npm-install@v1
+      - run: yarn install
+
+      - name: Next.js cache
+        uses: actions/cache@v2
+        with:
+          path: ${{ github.workspace }}/.next/cache
+          key: ${{ runner.os }}-${{ runner.node }}-${{ hashFiles('**/yarn.lock') }}-nextjs
+
+      - run: yarn playwright install --with-deps
+      - run: yarn lint
+      - run: yarn build
+      - run: yarn test-start
+      - run: yarn test-dev
+
+      - name: Upload test results
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v2
+        with:
+          name: test results
+          path: |
+            playwright/test-results

@@ -5,8 +5,8 @@ import type {
   APIGatewayProxyResult,
   APIGatewayProxyStructuredResultV2,
 } from 'aws-lambda';
+import type { AnyRouter, inferRouterContext } from '../../core';
 import type { ResponseMetaFn } from '../../http/internals/types';
-import type { AnyRouter, inferRouterContext } from '../../router';
 
 export type APIGatewayEvent = APIGatewayProxyEvent | APIGatewayProxyEventV2;
 export type APIGatewayResult =

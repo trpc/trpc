@@ -16,7 +16,7 @@ export type Operation<TInput = unknown> = {
   type: 'query' | 'mutation' | 'subscription';
   input: TInput;
   path: string;
-  context?: OperationContext;
+  context: OperationContext;
 };
 
 export type HTTPHeaders = Record<string, string | string[]>;

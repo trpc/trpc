@@ -1,12 +1,11 @@
 import { IncomingMessage } from 'http';
 import ws from 'ws';
-import { TRPCError } from '../TRPCError';
-import { BaseHandlerOptions } from '../internals/baseHandlerOptions';
-import { callProcedure } from '../internals/callProcedure';
-import { getCauseFromUnknown, getErrorFromUnknown } from '../internals/errors';
+import { AnyRouter, ProcedureType, inferRouterContext } from '../core';
+import { TRPCError } from '../error/TRPCError';
+import { getCauseFromUnknown, getErrorFromUnknown } from '../error/utils';
 import { transformTRPCResponse } from '../internals/transformTRPCResponse';
+import { BaseHandlerOptions } from '../internals/types';
 import { Unsubscribable, isObservable } from '../observable';
-import { AnyRouter, ProcedureType, inferRouterContext } from '../router';
 import {
   JSONRPC2,
   TRPCClientOutgoingMessage,
@@ -14,7 +13,10 @@ import {
   TRPCResponseMessage,
 } from '../rpc';
 import { CombinedDataTransformer } from '../transformer';
-import { NodeHTTPCreateContextOption } from './node-http';
+import {
+  NodeHTTPCreateContextFnOptions,
+  NodeHTTPCreateContextOption,
+} from './node-http';
 
 /* istanbul ignore next */
 function assertIsObject(obj: unknown): asserts obj is Record<string, unknown> {
@@ -98,6 +100,11 @@ export type WSSHandlerOptions<TRouter extends AnyRouter> = BaseHandlerOptions<
   process?: NodeJS.Process;
 } & NodeHTTPCreateContextOption<TRouter, IncomingMessage, ws>;
 
+export type CreateWSSContextFnOptions = NodeHTTPCreateContextFnOptions<
+  IncomingMessage,
+  ws
+>;
+
 export function applyWSSHandler<TRouter extends AnyRouter>(
   opts: WSSHandlerOptions<TRouter>,
 ) {
@@ -152,13 +159,9 @@ export function applyWSSHandler<TRouter extends AnyRouter>(
       const type = msg.method;
       try {
         await ctxPromise; // asserts context has been set
-        const result = await callProcedure({
-          path,
-          input,
-          type,
-          router,
-          ctx,
-        });
+
+        const caller = router.createCaller(ctx);
+        const result = await caller[type](path, input as any);
 
         if (type === 'subscription') {
           if (!isObservable(result)) {

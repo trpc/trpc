@@ -18,14 +18,18 @@ jobs:
     strategy:
       matrix:
         dir: [
-            express-server,
-            # next-chat,
+            .interop/express-server,
+            .interop/next-prisma-starter,
+            .interop/next-prisma-starter-websockets,
+            .interop/next-prisma-todomvc,
+            .interop/standalone-server,
+            .interop/fastify-server,
+            .interop/cloudflare-workers,
             next-prisma-starter,
-            next-prisma-starter-websockets,
-            next-prisma-todomvc,
+            next-prisma-starter-sqlite,
+            # next-prisma-starter-websockets,
+            # next-prisma-todomvc,
             standalone-server,
-            fastify-server,
-            cloudflare-workers,
           ]
         node-start: ['16.x']
         os: [ubuntu-latest]

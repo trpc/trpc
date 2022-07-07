@@ -1,0 +1,26 @@
+{
+  "name": "@examples/interop-cloudflare-workers",
+  "version": "10.0.0-alpha.36",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev",
+    "test-dev": "start-server-and-test 'wrangler dev --local' 8787 'node --loader ts-node/esm src/client.ts'"
+  },
+  "dependencies": {
+    "@trpc/client": "^10.0.0-alpha.36",
+    "@trpc/server": "^10.0.0-alpha.36",
+    "zod": "^3.0.0"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^3.8.0",
+    "node-fetch": "^2.6.1",
+    "start-server-and-test": "^1.12.0",
+    "ts-node": "^10.3.0",
+    "typescript": "4.7.4",
+    "wrangler": "^0.0.27"
+  },
+  "publishConfig": {
+    "access": "restricted"
+  }
+}

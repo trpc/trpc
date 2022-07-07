@@ -24,6 +24,7 @@ yarn dx
 ```
 
 **npm:**
+
 ```bash
 npx create-next-app --example https://github.com/trpc/trpc --example-path examples/next-prisma-starter trpc-prisma-starter
 cd trpc-prisma-starter
@@ -35,7 +36,7 @@ yarn dx
 ### Requirements
 
 - Node >= 14
-- Docker (for running Postgres)
+- Postgres
 
 ## Development
 

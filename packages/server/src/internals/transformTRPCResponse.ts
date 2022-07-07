@@ -1,4 +1,4 @@
-import { AnyRouter } from '../router';
+import { AnyRouter } from '../core/router';
 import { TRPCResponse, TRPCResponseMessage } from '../rpc';
 
 function transformTRPCResponseItem<

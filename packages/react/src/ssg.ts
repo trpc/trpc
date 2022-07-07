@@ -50,7 +50,7 @@ export function createSSGHelpers<TRouter extends AnyRouter>({
     ...pathAndInput: [path: TPath, ...args: inferHandlerInput<TProcedure>]
   ) => {
     return queryClient.prefetchQuery(pathAndInput, async () => {
-      const data = await caller.query(...pathAndInput);
+      const data = await (caller.query as any)(...pathAndInput);
 
       return data;
     });
@@ -63,7 +63,7 @@ export function createSSGHelpers<TRouter extends AnyRouter>({
     ...pathAndInput: [path: TPath, ...args: inferHandlerInput<TProcedure>]
   ) => {
     return queryClient.prefetchInfiniteQuery(pathAndInput, async () => {
-      const data = await caller.query(...pathAndInput);
+      const data = await (caller.query as any)(...pathAndInput);
 
       return data;
     });
@@ -77,7 +77,7 @@ export function createSSGHelpers<TRouter extends AnyRouter>({
     ...pathAndInput: [path: TPath, ...args: inferHandlerInput<TProcedure>]
   ): Promise<TOutput> => {
     return queryClient.fetchQuery(pathAndInput, async () => {
-      const data = await caller.query(...pathAndInput);
+      const data = await (caller.query as any)(...pathAndInput);
 
       return data;
     });
@@ -91,7 +91,7 @@ export function createSSGHelpers<TRouter extends AnyRouter>({
     ...pathAndInput: [path: TPath, ...args: inferHandlerInput<TProcedure>]
   ): Promise<InfiniteData<TOutput>> => {
     return queryClient.fetchInfiniteQuery(pathAndInput, async () => {
-      const data = await caller.query(...pathAndInput);
+      const data = await (caller.query as any)(...pathAndInput);
 
       return data;
     });

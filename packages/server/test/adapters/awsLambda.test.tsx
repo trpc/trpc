@@ -41,17 +41,21 @@ const router = trpc
         text: `hello ${input.who.name}`,
       };
     },
-  });
-const contextlessApp = trpc.router().query('hello', {
-  input: z.object({
-    who: z.string(),
-  }),
-  resolve({ input }) {
-    return {
-      text: `hello ${input.who}`,
-    };
-  },
-});
+  })
+  .interop();
+const contextlessApp = trpc
+  .router()
+  .query('hello', {
+    input: z.object({
+      who: z.string(),
+    }),
+    resolve({ input }) {
+      return {
+        text: `hello ${input.who}`,
+      };
+    },
+  })
+  .interop();
 
 const handler = trpcLambda.awsLambdaRequestHandler({
   router,
