@@ -73,17 +73,16 @@ export default withTRPC<AppRouter>({
        * @link https://react-query.tanstack.com/reference/QueryClient
        */
       queryClientConfig: { defaultOptions: { queries: { staleTime: 60 } } },
-      headers: () =>
-        stripHeaders(() => {
-          if (ctx?.req) {
-            // on ssr, forward client's headers to the server
-            return {
-              ...ctx.req.headers,
-              'x-ssr': '1',
-            };
-          }
-          return {};
-        }),
+      headers: () => {
+        if (ctx?.req) {
+          // on ssr, forward client's headers to the server
+          return {
+            ...stripHeaders(ctx.req.headers),
+            'x-ssr': '1',
+          };
+        }
+        return {};
+      },
     };
   },
   /**
