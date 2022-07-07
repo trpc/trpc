@@ -38,6 +38,7 @@ export const appRouter = trpc
     }
   })
 
+export type AppRouter = typeof appRouter;
 ```
 
 ## Documentation
