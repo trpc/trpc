@@ -1,0 +1,20 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model Task {
+  id        String  @id @default(uuid())
+  text      String
+  completed Boolean @default(value: false)
+
+  createdAt DateTime @unique @default(now())
+  // updatedAt DateTime @unique @default(now())
+}
