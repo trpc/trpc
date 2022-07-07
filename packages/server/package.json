@@ -90,9 +90,9 @@
       "default": "./dist/subscription.js"
     },
     "./shared": {
-      "import": "./dist/shared.mjs",
-      "require": "./dist/shared.js",
-      "default": "./dist/shared.js"
+      "import": "./dist/shared/index.mjs",
+      "require": "./dist/shared/index.js",
+      "default": "./dist/shared/index.js"
     }
   },
   "files": [

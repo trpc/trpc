@@ -1,1 +1,1 @@
-export { createProxy } from './createProxy';
+export * from './createProxy';
