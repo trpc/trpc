@@ -27,33 +27,33 @@ const ctx = konn()
 
     return {
       App,
-      close: opts.close,
-      client,
       queryClient,
       proxy,
+      opts,
     };
   })
   .afterEach(async (ctx) => {
-    await ctx?.close?.();
+    await ctx?.opts?.close?.();
   })
   .done();
 
 test('vanilla', async () => {
-  const { client } = ctx;
+  const { opts } = ctx;
+  const proxy = opts.proxy;
   {
-    const result = await client.r0.greeting.query({ who: 'KATT' });
+    const result = await proxy.r0.greeting.query({ who: 'KATT' });
 
     expect(result).toBe('hello KATT');
     expectTypeOf(result).not.toBeAny();
     expectTypeOf(result).toMatchTypeOf<string>();
   }
   {
-    const result = await client.r10.grandchild.grandChildMutation.mutate();
+    const result = await proxy.r10.grandchild.grandChildMutation.mutate();
     expect(result).toBe('grandChildMutation');
   }
 
   {
-    const result = await client.r499.greeting.query({ who: 'KATT' });
+    const result = await proxy.r499.greeting.query({ who: 'KATT' });
 
     expect(result).toBe('hello KATT');
     expectTypeOf(result).not.toBeAny();

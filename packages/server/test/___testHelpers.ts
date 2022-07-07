@@ -5,6 +5,7 @@ import './___packages';
 import {
   TRPCWebSocketClient,
   WebSocketClientOptions,
+  createTRPCClientProxy,
   createWSClient,
 } from '@trpc/client/src';
 import { CreateTRPCClientOptions, createTRPCClient } from '@trpc/client/src';
@@ -76,9 +77,11 @@ export function routerToServerAndClientNew<TRouter extends AnyNewRouter>(
   };
 
   const client = createTRPCClient<typeof router>(trpcClientOptions);
+  const proxy = createTRPCClientProxy<typeof router>(client);
   return {
     wsClient,
     client,
+    proxy,
     close: async () => {
       await Promise.all([
         new Promise((resolve) => httpServer.server.close(resolve)),

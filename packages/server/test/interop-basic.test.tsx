@@ -34,6 +34,7 @@ const ctx = konn()
     expectTypeOf<Return>().toMatchTypeOf<string>();
 
     return {
+      opts,
       close: opts.close,
       client,
       queryClient,
@@ -42,15 +43,15 @@ const ctx = konn()
     };
   })
   .afterEach(async (ctx) => {
-    await ctx?.close?.();
+    await ctx?.opts?.close?.();
   })
   .done();
 
 test('interop inference', async () => {
-  const { client } = ctx;
+  const { opts } = ctx;
 
-  expect(await client.query('greeting')).toBe('hello world');
-  expect(await client.greeting.query()).toBe('hello world');
+  expect(await opts.client.query('greeting')).toBe('hello world');
+  expect(await opts.proxy.greeting.query()).toBe('hello world');
 });
 
 test('useQuery()', async () => {
