@@ -6,7 +6,8 @@
   "files": [
     "README.md"
   ],
-  "imageSize": 100,
+  "imageSize": 60,
+  "contributorsPerLine": 10,
   "commit": false,
   "commitConvention": "none",
   "contributors": [
@@ -917,7 +918,5 @@
         "tutorial"
       ]
     }
-  ],
-  "contributorsPerLine": 7,
-  "skipCi": true
+  ]
 }
