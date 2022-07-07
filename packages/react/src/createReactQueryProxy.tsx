@@ -6,6 +6,7 @@ import {
   inferProcedureOutput,
   inferProcedureParams,
 } from '@trpc/server';
+import { createProxy } from '@trpc/server/shared';
 // import { RecursiveRecord } from 'packages/server/src/core/router';
 import {
   UseInfiniteQueryResult,
@@ -107,51 +108,31 @@ type DecoratedProcedureRecord<
       >;
 };
 
-function makeProxy<TRouter extends AnyRouter, TClient>(
-  client: TClient,
-  ...path: string[]
-) {
-  const proxy: any = new Proxy(
-    function () {
-      // noop
-    },
-    {
-      get(_obj, name) {
-        if (name in client && !path.length) {
-          return client[name as keyof typeof client];
-        }
-        if (typeof name === 'string') {
-          return makeProxy(client, ...path, name);
-        }
-
-        return client;
-      },
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      apply(_1, _2, args) {
-        const pathCopy = [...path];
-        const type = pathCopy.pop()!;
-        const fullPath = pathCopy.join('.');
-
-        if (type === 'useMutation') {
-          return (client as any)[type](fullPath, ...args);
-        }
-        if (!type.startsWith('use')) {
-          throw new Error(`Invalid hook call`);
-        }
-        const [input, ...rest] = args;
-
-        return (client as any)[type]([fullPath, input], ...rest);
-      },
-    },
-  );
-
-  return proxy as DecoratedProcedureRecord<TRouter['_def']['record']>;
-}
 export function createReactQueryProxy<
   TRouter extends AnyRouter,
   TSSRContext = unknown,
 >() {
   const trpc = createReactQueryHooks<TRouter, TSSRContext>();
 
-  return makeProxy<TRouter, typeof trpc>(trpc);
+  const proxy = createProxy({
+    target: trpc,
+    callback(opts) {
+      const args = opts.args;
+      const pathCopy = [...opts.path];
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      const type = pathCopy.pop()!;
+      const fullPath = pathCopy.join('.');
+      if (type === 'useMutation') {
+        return (trpc as any)[type](fullPath, ...args);
+      }
+      if (!type.startsWith('use')) {
+        throw new Error(`Invalid hook call`);
+      }
+      const [input, ...rest] = args;
+
+      return (trpc as any)[type]([fullPath, input], ...rest);
+    },
+  });
+
+  return proxy as DecoratedProcedureRecord<TRouter['_def']['record']>;
 }

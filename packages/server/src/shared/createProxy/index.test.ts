@@ -15,7 +15,7 @@ test('createProxy', () => {
     },
   });
   expect(proxy.deeply.nested.function(1, 2, 3)).toEqual({
-    path: 'deeply.nested.function',
+    path: ['deeply', 'nested', 'function'],
     args: [1, 2, 3],
   });
 });

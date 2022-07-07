@@ -1,5 +1,5 @@
 interface ProxyCallbackOptions {
-  path: string;
+  path: string[];
   args: unknown[];
 }
 type ProxyCallback = (opts: ProxyCallbackOptions) => unknown;
@@ -30,12 +30,9 @@ function createProxyInner<TOptions extends CreateProxyOptionsGeneric>(
       },
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
       apply(_1, _2, args) {
-        const pathCopy = [...path];
-        const fullPath = pathCopy.join('.');
-
         return opts.callback({
           args,
-          path: fullPath,
+          path,
         });
       },
     },
