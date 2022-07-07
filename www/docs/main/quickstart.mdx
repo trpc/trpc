@@ -102,7 +102,7 @@ export type AppRouter = typeof appRouter;
 Similarly to GraphQL, tRPC makes a distinction between query and mutation endpoints. Let's add a `createUser` mutation:
 
 ```ts
-createUser(payload: {name: string}) => {id: string; name: string};
+createUser(data: {name:string}) => { id: string; name: string; }
 ```
 
 ```ts title='server.ts'
