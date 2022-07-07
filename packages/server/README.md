@@ -1,4 +1,10 @@
-# `@trpc/server`
+<p align="center">
+  <a href="https://trpc.io/"><img src="../../www/static/img/logo-text.svg" alt="tRPC" height="130"/></a>
+</p>
+
+<p align="center">
+  <strong>End-to-end typesafe APIs made easy</strong>
+</p>
 
 > The `@trpc/server` package is responsible for creating tRPC servers and creating the API to then be consumed by the client. It lets you define routers, queries, mutations...etc on your server and export a type from your main router that provides the typesafety for your client. 
 
