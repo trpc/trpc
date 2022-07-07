@@ -13,6 +13,8 @@ const config = getRollupConfig({
     'src/rpc/index.ts',
     'src/observable/index.ts',
     'src/subscription.ts',
+    // Utils that can be shared with clients
+    'src/shared/index.ts',
   ],
 });
 

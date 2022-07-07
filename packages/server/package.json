@@ -88,6 +88,11 @@
       "import": "./dist/subscription.mjs",
       "require": "./dist/subscription.js",
       "default": "./dist/subscription.js"
+    },
+    "./shared": {
+      "import": "./dist/shared.mjs",
+      "require": "./dist/shared.js",
+      "default": "./dist/shared.js"
     }
   },
   "files": [
@@ -96,7 +101,8 @@
     "adapters",
     "rpc",
     "observable",
-    "src"
+    "src",
+    "shared"
   ],
   "publishConfig": {
     "access": "public"
