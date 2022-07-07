@@ -4,7 +4,14 @@ jobs:
   e2e:
     strategy:
       matrix:
-        dir: [next-prisma-starter-websockets]
+        dir: [
+            # express-server,
+            # next-prisma-starter,
+            next-prisma-starter-websockets,
+            # next-prisma-todomvc,
+            standalone-server,
+            # fastify-server,
+          ]
         node-start: [18]
         os: [ubuntu-latest]
     container:
