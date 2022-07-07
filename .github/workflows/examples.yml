@@ -25,6 +25,7 @@ jobs:
             .interop/standalone-server,
             .interop/fastify-server,
             .interop/cloudflare-workers,
+            next-prisma-starter,
             next-prisma-starter-sqlite,
             # next-prisma-starter-websockets,
             # next-prisma-todomvc,
