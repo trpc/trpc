@@ -8,7 +8,6 @@ import {
   inferProcedureParams,
 } from '@trpc/server';
 import { createProxy } from '@trpc/server/shared';
-// import { RecursiveRecord } from 'packages/server/src/core/router';
 import {
   UseInfiniteQueryResult,
   UseMutationResult,

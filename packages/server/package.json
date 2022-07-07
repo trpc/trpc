@@ -101,8 +101,8 @@
     "adapters",
     "rpc",
     "observable",
-    "src",
-    "shared"
+    "shared",
+    "src"
   ],
   "publishConfig": {
     "access": "public"
