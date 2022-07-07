@@ -26,16 +26,11 @@ const forbiddenHeaderNames = [
 
 /**
  * Strips an HTTP header object of internally reserved keys (for undici/Node.js built-in fetch since v18)
- * @param headers Your HTTP header function/object
+ * @param headers Your HTTP header object
  * @returns Stripped headers without blacklisted keys
  */
-export const stripHeaders = async (
-  headers: HTTPHeaders | (() => HTTPHeaders | Promise<HTTPHeaders>),
-): Promise<HTTPHeaders> =>
+export const stripHeaders = (headers: HTTPHeaders): HTTPHeaders =>
   Object.fromEntries(
-    // wrap tuple array back into an object
-    Object.entries(
-      // unwrap object into tuple array so we can iterate/map over it
-      typeof headers === 'function' ? await headers() : headers, // resolve headers (call function if necessary)
-    ).filter(([k]) => !forbiddenHeaderNames.includes(k)), // filter out all keys `k` which are included in `forbiddenHeaderNames`
+    // unwrap and re-wrap object to tuple array so we can iterate/map over it
+    Object.entries(headers).filter(([k]) => !forbiddenHeaderNames.includes(k)), // filter out all keys `k` which are included in `forbiddenHeaderNames`
   );
