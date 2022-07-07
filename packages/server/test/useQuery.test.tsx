@@ -6,7 +6,10 @@ import React, { ReactNode, useEffect, useState } from 'react';
 import { QueryClient, QueryClientProvider } from 'react-query';
 import { InfiniteData } from 'react-query';
 import { z } from 'zod';
-import { createReactQueryHooks, createReactQueryProxy } from '../../react/src';
+import {
+  createReactQueryHooks,
+  createReactQueryHooksProxy,
+} from '../../react/src';
 import { initTRPC } from '../src';
 
 const ctx = konn()
@@ -61,7 +64,7 @@ const ctx = konn()
     const opts = routerToServerAndClientNew(appRouter);
     const queryClient = new QueryClient();
     const react = createReactQueryHooks<typeof appRouter>();
-    const proxy = createReactQueryProxy<typeof appRouter>(react);
+    const proxy = createReactQueryHooksProxy<typeof appRouter>(react);
     const client = opts.client;
 
     appRouter._def.procedures;

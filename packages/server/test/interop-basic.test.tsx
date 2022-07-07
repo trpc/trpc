@@ -1,6 +1,6 @@
 import { routerToServerAndClientNew } from './___testHelpers';
 import { render, waitFor } from '@testing-library/react';
-import { createReactQueryHooks, createReactQueryProxy } from '@trpc/react';
+import { createReactQueryHooks, createReactQueryHooksProxy } from '@trpc/react';
 import { expectTypeOf } from 'expect-type';
 import { konn } from 'konn';
 import React, { useState } from 'react';
@@ -94,7 +94,7 @@ test('useQuery()', async () => {
 
 test("we can use new router's procedures too", async () => {
   const { react, client, appRouter } = ctx;
-  const proxy = createReactQueryProxy<typeof appRouter>(react);
+  const proxy = createReactQueryHooksProxy<typeof appRouter>(react);
   function MyComponent() {
     const query1 = proxy.whoami.useQuery();
     if (!query1.data) {

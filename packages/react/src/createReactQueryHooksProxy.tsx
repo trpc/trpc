@@ -108,7 +108,7 @@ type DecoratedProcedureRecord<
       >;
 };
 
-export function createReactQueryProxy<
+export function createReactQueryHooksProxy<
   TRouter extends AnyRouter,
   TSSRContext = unknown,
 >(trpc: CreateReactQueryHooks<TRouter, TSSRContext>) {
