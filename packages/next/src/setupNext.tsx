@@ -6,7 +6,11 @@ import { WithTRPCNoSSROptions, WithTRPCSSROptions, withTRPC } from './withTRPC';
 export function setupTRPC<
   TRouter extends AnyRouter,
   TSSRContext extends NextPageContext = NextPageContext,
->(opts: WithTRPCNoSSROptions<TRouter> | WithTRPCSSROptions<TRouter>) {
+>(
+  opts:
+    | WithTRPCNoSSROptions<TRouter, TSSRContext>
+    | WithTRPCSSROptions<TRouter, TSSRContext>,
+) {
   const hooks = createReactQueryHooks<TRouter, TSSRContext>();
   const proxy = createReactQueryHooksProxy<TRouter, TSSRContext>(hooks);
 

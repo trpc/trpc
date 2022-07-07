@@ -4,10 +4,10 @@
  */
 import type { CreateTRPCClientOptions } from '@trpc/client/src/internals/TRPCClient';
 import {
+  CreateReactQueryHooks,
   TRPCClient,
   TRPCClientError,
   TRPCClientErrorLike,
-  createReactQueryHooks,
   createTRPCClient,
 } from '@trpc/react';
 import type { AnyRouter, Dict, Maybe, ResponseMeta } from '@trpc/server';
@@ -56,27 +56,36 @@ export type WithTRPCConfig<TRouter extends AnyRouter> =
     queryClientConfig?: QueryClientConfig;
   };
 
-interface WithTRPCOptions<TRouter extends AnyRouter> {
+interface WithTRPCOptions<TRouter extends AnyRouter, TSSRContext = unknown> {
+  trpc: CreateReactQueryHooks<TRouter, TSSRContext>;
   config: (info: { ctx?: NextPageContext }) => WithTRPCConfig<TRouter>;
 }
 
-export interface WithTRPCSSROptions<TRouter extends AnyRouter>
-  extends WithTRPCOptions<TRouter> {
+export interface WithTRPCSSROptions<
+  TRouter extends AnyRouter,
+  TSSRContext = unknown,
+> extends WithTRPCOptions<TRouter, TSSRContext> {
   ssr: true;
   responseMeta?: (opts: {
     ctx: NextPageContext;
     clientErrors: TRPCClientError<TRouter>[];
   }) => ResponseMeta;
 }
-export interface WithTRPCNoSSROptions<TRouter extends AnyRouter>
-  extends WithTRPCOptions<TRouter> {
+export interface WithTRPCNoSSROptions<
+  TRouter extends AnyRouter,
+  TSSRContext = unknown,
+> extends WithTRPCOptions<TRouter, TSSRContext> {
   ssr?: false;
 }
 
 export function withTRPC<
   TRouter extends AnyRouter,
   TSSRContext extends NextPageContext = NextPageContext,
->(opts: WithTRPCNoSSROptions<TRouter> | WithTRPCSSROptions<TRouter>) {
+>(
+  opts:
+    | WithTRPCNoSSROptions<TRouter, TSSRContext>
+    | WithTRPCSSROptions<TRouter, TSSRContext>,
+) {
   const { config: getClientConfig } = opts;
 
   type TRPCPrepassProps = {
@@ -87,7 +96,7 @@ export function withTRPC<
     ssrContext: TSSRContext;
   };
   return (AppOrPage: NextComponentType<any, any, any>): NextComponentType => {
-    const trpc = createReactQueryHooks<TRouter, TSSRContext>();
+    const { trpc } = opts;
 
     const WithTRPC = (
       props: AppPropsType & {

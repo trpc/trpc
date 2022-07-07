@@ -16,6 +16,7 @@ import type {
 } from '@trpc/server';
 import React, {
   ReactNode,
+  createContext,
   useCallback,
   useEffect,
   useMemo,
@@ -35,7 +36,7 @@ import {
   useQuery as __useQuery,
   hashQueryKey,
 } from 'react-query';
-import { SSRState, TRPCContext, TRPCContextState } from './internals/context';
+import { SSRState, TRPCContextState } from './internals/context';
 
 export type OutputWithCursor<TData, TCursor extends any = any> = {
   cursor: TCursor | null;
@@ -51,7 +52,7 @@ export interface TRPCUseQueryBaseOptions extends TRPCRequestOptions {
   ssr?: boolean;
 }
 
-export type { TRPCContext, TRPCContextState } from './internals/context';
+export type { TRPCContextState } from './internals/context';
 
 export interface UseTRPCQueryOptions<TPath, TInput, TOutput, TData, TError>
   extends UseQueryOptions<TOutput, TError, TData, [TPath, TInput]>,
@@ -123,7 +124,7 @@ export function createReactQueryHooks<
   type TMutationValues = inferProcedures<TRouter['_def']['mutations']>;
 
   type ProviderContext = TRPCContextState<TRouter, TSSRContext>;
-  const Context = TRPCContext as React.Context<ProviderContext>;
+  const Context = createContext(null as any) as React.Context<ProviderContext>;
 
   function createClient(
     opts: CreateTRPCClientOptions<TRouter>,
@@ -440,6 +441,7 @@ export function createReactQueryHooks<
   ) as TRouter['_def']['queries'];
 
   return {
+    Context,
     Provider: TRPCProvider,
     createClient,
     useContext,

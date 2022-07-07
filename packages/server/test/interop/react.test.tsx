@@ -14,7 +14,7 @@ import { render, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { expectTypeOf } from 'expect-type';
 import hash from 'hash-sum';
-import { AppType } from 'next/dist/shared/lib/utils';
+import { AppType, NextPageContext } from 'next/dist/shared/lib/utils';
 import React, { Fragment, ReactNode, useEffect, useState } from 'react';
 import {
   QueryClient,
@@ -252,7 +252,7 @@ function createAppRouter() {
   );
   const queryClient = new QueryClient();
 
-  const trpc = createReactQueryHooks<typeof appRouter>();
+  const trpc = createReactQueryHooks<typeof appRouter, NextPageContext>();
 
   function App(props: { children: ReactNode }) {
     const [queryClient] = useState(() => new QueryClient());
@@ -1517,6 +1517,7 @@ describe('withTRPC()', () => {
     };
 
     const Wrapped = withTRPC({
+      trpc,
       config: () => trpcClientOptions,
       ssr: true,
     })(App);
@@ -1555,6 +1556,7 @@ describe('withTRPC()', () => {
     };
 
     const Wrapped = withTRPC({
+      trpc,
       config: () => trpcClientOptions,
       ssr: true,
     })(App);
@@ -1578,6 +1580,7 @@ describe('withTRPC()', () => {
     };
 
     const Wrapped = withTRPC({
+      trpc,
       config: () => trpcClientOptions,
       ssr: true,
     })(App);
@@ -1607,6 +1610,7 @@ describe('withTRPC()', () => {
       };
 
       const Wrapped = withTRPC({
+        trpc,
         config: () => trpcClientOptions,
         ssr: true,
       })(App);
@@ -1650,6 +1654,7 @@ describe('withTRPC()', () => {
       };
 
       const Wrapped = withTRPC({
+        trpc,
         config: () => trpcClientOptions,
         ssr: true,
       })(App);
@@ -1686,6 +1691,7 @@ describe('withTRPC()', () => {
     };
 
     const Wrapped = withTRPC({
+      trpc,
       config: () => trpcClientOptions,
       ssr: true,
     })(App);
@@ -1729,6 +1735,7 @@ describe('withTRPC()', () => {
         };
 
         const Wrapped = withTRPC({
+          trpc,
           config: () => trpcClientOptions,
           ssr: true,
         })(App);
@@ -1782,6 +1789,7 @@ describe('withTRPC()', () => {
         };
 
         const Wrapped = withTRPC({
+          trpc,
           config: () => trpcClientOptions,
           ssr: true,
         })(App);
@@ -1837,6 +1845,7 @@ describe('withTRPC()', () => {
         };
 
         const Wrapped = withTRPC({
+          trpc,
           config: () => trpcClientOptions,
           ssr: true,
         })(App);
@@ -1893,6 +1902,7 @@ describe('withTRPC()', () => {
         };
 
         const Wrapped = withTRPC({
+          trpc,
           config: () => trpcClientOptions,
           ssr: true,
         })(App);
@@ -2114,6 +2124,7 @@ test('regression: SSR with error sets `status`=`error`', async () => {
   };
 
   const Wrapped = withTRPC({
+    trpc,
     config: () => trpcClientOptions,
     ssr: true,
   })(App);
