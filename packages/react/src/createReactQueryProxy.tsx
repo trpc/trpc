@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-non-null-assertion */
 import {
   AnyRouter,
   Procedure,
@@ -119,18 +120,18 @@ export function createReactQueryProxy<
     callback(opts) {
       const args = opts.args;
       const pathCopy = [...opts.path];
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      const type = pathCopy.pop()!;
-      const fullPath = pathCopy.join('.');
-      if (type === 'useMutation') {
-        return (trpc as any)[type](fullPath, ...args);
-      }
-      if (!type.startsWith('use')) {
-        throw new Error(`Invalid hook call`);
+
+      // The last arg is for instance `.useMutation` or `.useQuery()`
+      const lastArg = pathCopy.pop()!;
+
+      // The `path` ends up being something like `post.byId`
+      const path = pathCopy.join('.');
+      if (lastArg === 'useMutation') {
+        return (trpc as any)[lastArg](path, ...args);
       }
       const [input, ...rest] = args;
 
-      return (trpc as any)[type]([fullPath, input], ...rest);
+      return (trpc as any)[lastArg]([path, input], ...rest);
     },
   });
 
