@@ -1,6 +1,6 @@
 import { routerToServerAndClientNew } from './___testHelpers';
 import { render, waitFor } from '@testing-library/react';
-import { createReactQueryHooks, createReactQueryProxy } from '@trpc/react';
+import { createReactQueryHooks, createReactQueryHooksProxy } from '@trpc/react';
 import { expectTypeOf } from 'expect-type';
 import { konn } from 'konn';
 import React, { useState } from 'react';
@@ -34,6 +34,7 @@ const ctx = konn()
     expectTypeOf<Return>().toMatchTypeOf<string>();
 
     return {
+      opts,
       close: opts.close,
       client,
       queryClient,
@@ -42,15 +43,15 @@ const ctx = konn()
     };
   })
   .afterEach(async (ctx) => {
-    await ctx?.close?.();
+    await ctx?.opts?.close?.();
   })
   .done();
 
 test('interop inference', async () => {
-  const { client } = ctx;
+  const { opts } = ctx;
 
-  expect(await client.query('greeting')).toBe('hello world');
-  expect(await client.greeting.query()).toBe('hello world');
+  expect(await opts.client.query('greeting')).toBe('hello world');
+  expect(await opts.proxy.greeting.query()).toBe('hello world');
 });
 
 test('useQuery()', async () => {
@@ -93,7 +94,7 @@ test('useQuery()', async () => {
 
 test("we can use new router's procedures too", async () => {
   const { react, client, appRouter } = ctx;
-  const proxy = createReactQueryProxy<typeof appRouter>();
+  const proxy = createReactQueryHooksProxy<typeof appRouter>(react);
   function MyComponent() {
     const query1 = proxy.whoami.useQuery();
     if (!query1.data) {

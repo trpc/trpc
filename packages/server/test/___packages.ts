@@ -3,6 +3,8 @@ import * as mock_trpcServer from '../../server/src';
 jest.mock('@trpc/server', () => mock_trpcServer);
 import * as mock_trpcServer__observable from '../../server/src/observable';
 jest.mock('@trpc/server/observable', () => mock_trpcServer__observable);
+import * as mock_trpcServer__shared from '../../server/src/shared';
+jest.mock('@trpc/server/shared', () => mock_trpcServer__shared);
 
 import * as mock_trpcClient from '../../client/src';
 jest.mock('@trpc/client', () => mock_trpcClient);

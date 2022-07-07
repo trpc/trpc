@@ -67,8 +67,8 @@ test('very happy path', async () => {
     expectTypeOf<NonNullable<TContext['foo']>>().toMatchTypeOf<'bar'>();
     expectTypeOf<TError['data']['foo']>().toMatchTypeOf<'bar'>();
   }
-  const { client, close } = routerToServerAndClientNew(router);
-  expect(await client.greeting.query('KATT')).toBe('hello KATT');
+  const { proxy, close } = routerToServerAndClientNew(router);
+  expect(await proxy.greeting.query('KATT')).toBe('hello KATT');
   close();
 });
 
@@ -91,8 +91,8 @@ test('middleware', async () => {
       })
       .query(({ ctx }) => `${ctx.prefix} ${ctx.user}`),
   });
-  const { client, close } = routerToServerAndClientNew(router);
-  expect(await client.greeting.query()).toBe('hello KATT');
+  const { proxy, close } = routerToServerAndClientNew(router);
+  expect(await proxy.greeting.query()).toBe('hello KATT');
   close();
 });
 
@@ -100,12 +100,12 @@ test('sad path', async () => {
   const router = t.router({
     hello: procedure.query(() => 'world'),
   });
-  const { client, close } = routerToServerAndClientNew(router);
+  const { proxy, close } = routerToServerAndClientNew(router);
 
   // @ts-expect-error this procedure does not exist
-  const result = await waitError(client.query('not-found'), TRPCClientError);
+  const result = await waitError(proxy.not.found.query(), TRPCClientError);
   expect(result).toMatchInlineSnapshot(
-    `[TRPCClientError: No "query"-procedure on path "not-found"]`,
+    `[TRPCClientError: No "query"-procedure on path "not.found"]`,
   );
   close();
 });
@@ -114,9 +114,9 @@ test('call a mutation as a query', async () => {
   const router = t.router({
     hello: procedure.query(() => 'world'),
   });
-  const { client, close } = routerToServerAndClientNew(router);
+  const { proxy, close } = routerToServerAndClientNew(router);
 
-  await expect((client.hello as any).mutation()).rejects.toMatchInlineSnapshot(
+  await expect((proxy.hello as any).mutation()).rejects.toMatchInlineSnapshot(
     `[TRPCClientError: No "mutation"-procedure on path "hello"]`,
   );
 

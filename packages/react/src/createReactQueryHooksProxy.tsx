@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-non-null-assertion */
 import {
   AnyRouter,
   Procedure,
@@ -6,17 +7,17 @@ import {
   inferProcedureOutput,
   inferProcedureParams,
 } from '@trpc/server';
-// import { RecursiveRecord } from 'packages/server/src/core/router';
+import { createProxy } from '@trpc/server/shared';
 import {
   UseInfiniteQueryResult,
   UseMutationResult,
   UseQueryResult,
 } from 'react-query';
 import {
+  CreateReactQueryHooks,
   UseTRPCInfiniteQueryOptions,
   UseTRPCMutationOptions,
   UseTRPCQueryOptions,
-  createReactQueryHooks,
 } from './createReactQueryHooks';
 
 type inferProcedureClientError<T extends Procedure<any>> =
@@ -107,51 +108,26 @@ type DecoratedProcedureRecord<
       >;
 };
 
-function makeProxy<TRouter extends AnyRouter, TClient>(
-  client: TClient,
-  ...path: string[]
-) {
-  const proxy: any = new Proxy(
-    function () {
-      // noop
-    },
-    {
-      get(_obj, name) {
-        if (name in client && !path.length) {
-          return client[name as keyof typeof client];
-        }
-        if (typeof name === 'string') {
-          return makeProxy(client, ...path, name);
-        }
-
-        return client;
-      },
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      apply(_1, _2, args) {
-        const pathCopy = [...path];
-        const type = pathCopy.pop()!;
-        const fullPath = pathCopy.join('.');
-
-        if (type === 'useMutation') {
-          return (client as any)[type](fullPath, ...args);
-        }
-        if (!type.startsWith('use')) {
-          throw new Error(`Invalid hook call`);
-        }
-        const [input, ...rest] = args;
-
-        return (client as any)[type]([fullPath, input], ...rest);
-      },
-    },
-  );
-
-  return proxy as DecoratedProcedureRecord<TRouter['_def']['record']>;
-}
-export function createReactQueryProxy<
+export function createReactQueryHooksProxy<
   TRouter extends AnyRouter,
   TSSRContext = unknown,
->() {
-  const trpc = createReactQueryHooks<TRouter, TSSRContext>();
+>(trpc: CreateReactQueryHooks<TRouter, TSSRContext>) {
+  const proxy = createProxy((opts) => {
+    const args = opts.args;
+    const pathCopy = [...opts.path];
 
-  return makeProxy<TRouter, typeof trpc>(trpc);
+    // The last arg is for instance `.useMutation` or `.useQuery()`
+    const lastArg = pathCopy.pop()!;
+
+    // The `path` ends up being something like `post.byId`
+    const path = pathCopy.join('.');
+    if (lastArg === 'useMutation') {
+      return (trpc as any)[lastArg](path, ...args);
+    }
+    const [input, ...rest] = args;
+
+    return (trpc as any)[lastArg]([path, input], ...rest);
+  });
+
+  return proxy as DecoratedProcedureRecord<TRouter['_def']['record']>;
 }

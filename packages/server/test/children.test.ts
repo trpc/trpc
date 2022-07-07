@@ -42,13 +42,12 @@ test('children', async () => {
     }
   `);
 
-  const { client, close } = routerToServerAndClientNew(router);
+  const { close, proxy } = routerToServerAndClientNew(router);
 
-  expect(await client.foo.query()).toBe('bar');
+  expect(await proxy.foo.query()).toBe('bar');
 
-  client.child.grandchild;
-  expect(await client.child.grandchild.foo.query()).toBe('grandchild');
-  expect(await client.child.grandchild.mut.mutate()).toBe('mut');
+  expect(await proxy.child.grandchild.foo.query()).toBe('grandchild');
+  expect(await proxy.child.grandchild.mut.mutate()).toBe('mut');
 
   return close();
 });

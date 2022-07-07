@@ -2,7 +2,6 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import type { AnyRouter } from '@trpc/server';
-import { createTRPCClientProxy } from './createTRPCClientProxy';
 import {
   TRPCClient as Client,
   CreateTRPCClientOptions,
@@ -12,7 +11,7 @@ export function createTRPCClient<TRouter extends AnyRouter>(
   opts: CreateTRPCClientOptions<TRouter>,
 ) {
   const client = new Client<TRouter>(opts);
-  return createTRPCClientProxy(client);
+  return client;
 }
 
 // Also the client created above needs to somehow be like `TRPCClient<Router> & Omit<Router, 'createCaller' | 'createProcedure' | '_def' | 'transformer' | 'errorFormatter' | 'getErrorShape>`

@@ -552,16 +552,17 @@ Client API Proposal with `Proxy`. Jump from the client to the and jump straight 
 
 ```ts
 import type { appRouter } from './server';
-import { createClient } from '@trpc/client';
+import { createClient, createClientProxy } from '@trpc/client';
 
 const client = createClient<typeof appRouter>();
+const proxy = createClientProxy(client);
 
 async function main() {
   // you can CMD+click `postById` here and jump straight into your backend
-  const byId1 = await client.queries.postById({  id: '1' });
+  const byId1 = await proxy.postById.query({  id: '1' });
 
   // with meta data:
-  const byId2 = await client.queries.postById({ 
+  const byId2 = await proxy.postById.query({ 
     { id: '2' },
     context: {
       batch: false,
@@ -583,7 +584,7 @@ import { trpc } from '~/utils/trpc';
 
 function MyComponent() {
   // You'll be able to CMD+Click `postById` below
-  const query = trpc.proxy.queries.postById.useQuery(
+  const query = trpc.proxy.postById.useQuery(
     { id: 1 },
     {
       /* [...] trpc specific options */
