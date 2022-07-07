@@ -5,7 +5,7 @@ interface ProxyCallbackOptions {
 type ProxyCallback = (opts: ProxyCallbackOptions) => unknown;
 
 function createProxyInner(callback: ProxyCallback, ...path: string[]) {
-  const proxy: any = new Proxy(
+  const proxy: unknown = new Proxy(
     () => {
       // noop
     },
