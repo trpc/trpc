@@ -6,7 +6,8 @@
   "files": [
     "README.md"
   ],
-  "imageSize": 100,
+  "imageSize": 60,
+  "contributorsPerLine": 10,
   "commit": false,
   "commitConvention": "none",
   "contributors": [
@@ -192,7 +193,10 @@
       "profile": "http://t3.gg",
       "contributions": [
         "review",
-        "financial"
+        "financial",
+        "video",
+        "talk",
+        "tutorial"
       ]
     },
     {
@@ -812,8 +816,107 @@
       "contributions": [
         "financial"
       ]
+    },
+    {
+      "login": "futpib",
+      "name": "futpib",
+      "avatar_url": "https://avatars.githubusercontent.com/u/4330357?v=4",
+      "profile": "https://github.com/futpib",
+      "contributions": [
+        "bug"
+      ]
+    },
+    {
+      "login": "lmatheus",
+      "name": "Luis Matheus",
+      "avatar_url": "https://avatars.githubusercontent.com/u/8514703?v=4",
+      "profile": "https://github.com/lmatheus",
+      "contributions": [
+        "financial"
+      ]
+    },
+    {
+      "login": "makyfj",
+      "name": "Franklin",
+      "avatar_url": "https://avatars.githubusercontent.com/u/65879341?v=4",
+      "profile": "http://franklinjara.dev",
+      "contributions": [
+        "doc"
+      ]
+    },
+    {
+      "login": "zomars",
+      "name": "Omar López",
+      "avatar_url": "https://avatars.githubusercontent.com/u/3504472?v=4",
+      "profile": "https://www.linkedin.com/in/zomars/",
+      "contributions": [
+        "financial"
+      ]
+    },
+    {
+      "login": "webdiego",
+      "name": "Diego Massarini",
+      "avatar_url": "https://avatars.githubusercontent.com/u/63283003?v=4",
+      "profile": "https://diego-slicecode.dev/",
+      "contributions": [
+        "financial"
+      ]
+    },
+    {
+      "login": "dmaykov",
+      "name": "Dmitry Maykov",
+      "avatar_url": "https://avatars.githubusercontent.com/u/6147048?v=4",
+      "profile": "https://github.com/dmaykov",
+      "contributions": [
+        "financial"
+      ]
+    },
+    {
+      "login": "riccardogiorato",
+      "name": "Riccardo Giorato",
+      "avatar_url": "https://avatars.githubusercontent.com/u/4527364?v=4",
+      "profile": "https://riccardogiorato.com/",
+      "contributions": [
+        "financial"
+      ]
+    },
+    {
+      "login": "carlbarrdahl",
+      "name": "Carl Barrdahl",
+      "avatar_url": "https://avatars.githubusercontent.com/u/2961337?v=4",
+      "profile": "https://github.com/carlbarrdahl",
+      "contributions": [
+        "financial"
+      ]
+    },
+    {
+      "login": "PeerRich",
+      "name": "Peer Richelsen",
+      "avatar_url": "https://avatars.githubusercontent.com/u/8019099?v=4",
+      "profile": "https://cal.com/peer",
+      "contributions": [
+        "financial"
+      ]
+    },
+    {
+      "login": "calcom",
+      "name": "Cal.com, Inc.",
+      "avatar_url": "https://avatars.githubusercontent.com/u/79145102?v=4",
+      "profile": "https://cal.com",
+      "contributions": [
+        "financial"
+      ]
+    },
+    {
+      "login": "tomanagle",
+      "name": "Tom",
+      "avatar_url": "https://avatars.githubusercontent.com/u/8683577?v=4",
+      "profile": "https://github.com/tomanagle",
+      "contributions": [
+        "video",
+        "talk",
+        "tutorial"
+      ]
     }
-  ],
-  "contributorsPerLine": 7,
-  "skipCi": true
+  ]
 }
