@@ -917,6 +917,17 @@
         "talk",
         "tutorial"
       ]
+    },
+    {
+      "login": "3x071c",
+      "name": "Victor Homic",
+      "avatar_url": "https://avatars.githubusercontent.com/u/87198856?v=4",
+      "profile": "https://github.com/3x071c",
+      "contributions": [
+        "code",
+        "test"
+      ]
     }
-  ]
+  ],
+  "skipCi": true
 }
