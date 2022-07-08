@@ -6,6 +6,7 @@ import {
   TRPCRequestOptions,
   createTRPCClient,
 } from '@trpc/client';
+import { SubscriptionOptions } from '@trpc/client/src/internals/TRPCClient';
 import type {
   AnyRouter,
   Procedure,
@@ -340,11 +341,7 @@ export function createReactQueryHooks<
       path: TPath,
       ...args: inferHandlerInput<TSubscriptions[TPath]>,
     ],
-    opts: {
-      enabled?: boolean;
-      error?: (err: TError) => void;
-      next: (data: TOutput) => void;
-    },
+    opts: { enabled?: boolean } & SubscriptionOptions<TOutput, TError>,
   ) {
     const enabled = opts?.enabled ?? true;
     const queryKey = hashQueryKey(pathAndInput);
@@ -362,15 +359,20 @@ export function createReactQueryHooks<
         TOutput,
         inferProcedureInput<TRouter['_def']['subscriptions'][TPath]>
       >(path, (input ?? undefined) as any, {
-        error: (err) => {
-          if (!isStopped) {
-            opts.error?.(err);
-          }
+        onStarted: () => {
+          if (!isStopped) opts?.onStarted?.();
         },
-        next: (res) => {
-          if (res.type === 'data' && !isStopped) {
-            opts.next(res.data);
-          }
+        onData: (data) => {
+          if (!isStopped) opts?.onData(data);
+        },
+        onError: (err) => {
+          if (!isStopped) opts.onError?.(err);
+        },
+        onStopped: () => {
+          if (!isStopped) opts?.onStopped?.();
+        },
+        onCompleted: () => {
+          if (!isStopped) opts?.onCompleted?.();
         },
       });
       return () => {

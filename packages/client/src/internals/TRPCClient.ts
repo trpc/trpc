@@ -8,14 +8,12 @@ import {
   inferSubscriptionOutput,
 } from '@trpc/server';
 import {
-  Observer,
   Unsubscribable,
   inferObservableValue,
   observableToPromise,
   share,
 } from '@trpc/server/observable';
-import { TRPCResultMessage } from '@trpc/server/rpc';
-import { CancelFn } from '..';
+import { CancelFn, TRPCClientErrorLike } from '..';
 import { TRPCClientError } from '../TRPCClientError';
 import { getFetch } from '../getFetch';
 import { httpBatchLink } from '../links';
@@ -85,6 +83,14 @@ export interface TRPCRequestOptions {
    * Pass additional context to links
    */
   context?: OperationContext;
+}
+
+export interface SubscriptionOptions<TData, TError> {
+  onStarted?: () => void;
+  onData: (data: TData) => void;
+  onError?: (err: TError) => void;
+  onStopped?: () => void;
+  onCompleted?: () => void;
 }
 
 /** @internal */
@@ -235,7 +241,7 @@ export class TRPCClient<TRouter extends AnyRouter> {
     path: TPath,
     input: TInput,
     opts: TRPCRequestOptions &
-      Partial<Observer<TRPCResultMessage<TOutput>, TRPCClientError<TRouter>>>,
+      SubscriptionOptions<TOutput, TRPCClientErrorLike<TRouter>>,
   ): Unsubscribable {
     const observable$ = this.$request<TInput, TOutput>({
       type: 'subscription',
@@ -251,16 +257,24 @@ export class TRPCClient<TRouter extends AnyRouter> {
           runtime,
         );
         if (transformed.ok) {
-          opts.next?.(transformed.data);
+          if (transformed.data.type === 'started') {
+            opts.onStarted?.();
+          }
+          if (transformed.data.type === 'data') {
+            opts.onData(transformed.data.data);
+          }
+          if (transformed.data.type === 'stopped') {
+            opts.onStopped?.();
+          }
           return;
         }
-        opts.error?.(transformed.error);
+        opts.onError?.(transformed.error);
       },
       error(err) {
-        opts.error?.(err);
+        opts.onError?.(err);
       },
       complete() {
-        opts.complete?.();
+        opts.onCompleted?.();
       },
     });
   }
