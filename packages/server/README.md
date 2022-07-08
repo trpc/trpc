@@ -65,6 +65,9 @@ const appRouter = t.router({
     .query(({ input }) => `Hello, ${input.name}!`),
 });
 
+// Exporting the app router type to be importing on the client side.
+export type AppRouter = typeof appRouter;
+
 // Create HTTP server
 const { listen } = createHTTPServer({
   router: appRouter,
