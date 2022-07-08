@@ -1,5 +1,5 @@
 import '../styles/global.css';
-import { stripHeaders } from '@trpc/client';
+import { omitForbiddenHeaders } from '@trpc/client';
 import { httpBatchLink } from '@trpc/client/links/httpBatchLink';
 import { loggerLink } from '@trpc/client/links/loggerLink';
 import { wsLink, createWSClient } from '@trpc/client/links/wsLink';
@@ -77,7 +77,7 @@ export default withTRPC<AppRouter>({
         if (ctx?.req) {
           // on ssr, forward client's headers to the server
           return {
-            ...stripHeaders(ctx.req.headers),
+            ...omitForbiddenHeaders(ctx.req.headers),
             'x-ssr': '1',
           };
         }

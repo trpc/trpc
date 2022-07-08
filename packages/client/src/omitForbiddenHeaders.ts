@@ -29,7 +29,7 @@ const forbiddenHeaderNames = [
  * @param headers Your HTTP header object
  * @returns Stripped headers without reservered names
  */
-export const stripHeaders = (headers: HTTPHeaders): HTTPHeaders =>
+export const omitForbiddenHeaders = (headers: HTTPHeaders): HTTPHeaders =>
   Object.fromEntries(
     // unwrap and re-wrap object to tuple array so we can iterate/map over it
     // filter out all names which are included in `forbiddenHeaderNames`

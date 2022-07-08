@@ -1,21 +1,23 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 /* eslint-disable no-native-reassign */
-import { stripHeaders } from './stripHeaders';
+import { omitForbiddenHeaders } from './omitForbiddenHeaders';
 
-describe('stripHeaders', () => {
+describe('omitForbiddenHeaders', () => {
   test('works', () => {
-    expect(stripHeaders({})).toStrictEqual({});
+    expect(omitForbiddenHeaders({})).toStrictEqual({});
   });
   test('processes clean input correctly', () => {
-    expect(stripHeaders({ 'x-foo': 'bar', 'x-baz': 'foobar' })).toStrictEqual({
+    expect(
+      omitForbiddenHeaders({ 'x-foo': 'bar', 'x-baz': 'foobar' }),
+    ).toStrictEqual({
       'x-foo': 'bar',
       'x-baz': 'foobar',
     });
   });
   test('processes dirty input correctly', () => {
     expect(
-      stripHeaders({
+      omitForbiddenHeaders({
         connection: 'keep-alive',
         'x-foo': 'bar',
         'x-baz': 'foobar',
@@ -29,7 +31,7 @@ describe('stripHeaders', () => {
 
 test('omits proxy- headers', () => {
   expect(
-    stripHeaders({
+    omitForbiddenHeaders({
       'proxy-xxxx': 'keep-alive',
       'x-foo': 'bar',
     }),
@@ -40,7 +42,7 @@ test('omits proxy- headers', () => {
 
 test('omits sec- headers', () => {
   expect(
-    stripHeaders({
+    omitForbiddenHeaders({
       'sec-xxxx': 'keep-alive',
       'x-foo': 'bar',
     }),
