@@ -15,6 +15,10 @@
 
 > The `@trpc/client` package is responsible for communicating with a tRPC server on the client side.
 
+## Documentation
+
+Full documentation for `@trpc/client` can be found [here](https://trpc.io/docs/vanilla)
+
 ## Installation
 
 ```bash
@@ -55,7 +59,3 @@ async function main() {
 
 main();
 ```
-
-## Documentation
-
-Full documentation for `@trpc/client` can be found [here](https://trpc.io/docs/vanilla)

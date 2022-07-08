@@ -15,6 +15,10 @@
 
 > The `@trpc/server` package is responsible for creating trpc APIs on the server.
 
+## Documentation
+
+Full documentation for `@trpc/server` can be found [here](https://trpc.io/docs/router)
+
 ## Installation
 
 ```bash
@@ -77,7 +81,3 @@ const { listen } = createHTTPServer({
 // Listen on port 2022
 listen(2022);
 ```
-
-## Documentation
-
-Full documentation for `@trpc/server` can be found [here](https://trpc.io/docs/router)
