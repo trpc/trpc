@@ -74,6 +74,12 @@ npx create-next-app --example https://github.com/trpc/trpc --example-path exampl
 
 **👉 See full documentation on [tRPC.io](https://trpc.io/docs). 👈**
 
+## Star History
+
+> tRPC is rapidly gaining momentum!
+
+<a href="https://star-history.com/#trpc/trpc"><img src="https://api.star-history.com/svg?repos=trpc/trpc&type=Date" alt="Star History Chart" width="600" /></a>
+
 ## Core Team
 
 <table>
@@ -82,6 +88,7 @@ npx create-next-app --example https://github.com/trpc/trpc --example-path exampl
     <td>👋 Hi, I'm Alex and I am the creator of tRPC, don't hesitate to contact me on <a href="https://twitter.com/alexdotjs">Twitter</a> or <a href="mailto:alex@trpc.io">email</a> if you are curious about tRPC in any way.</td>
   </tr>
 </table>
+
 
 ### Level 2 Maintainers
 
@@ -100,13 +107,7 @@ npx create-next-app --example https://github.com/trpc/trpc --example-path exampl
 
 > Volunteers that actively help out answering questions in Discord, GitHub Discussions, etc
 
-<table>
-  <tbody>
-    <tr>
-      <td align="center"><a href="https://timcole.me"><img src="https://avatars.githubusercontent.com/u/6754577?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Timothy Cole</b></sub></a></td>
-    </tr>
-  </tbody>
-</table>
+*n/a* - do you want to contribute? Feel free to write to us on <a href="https://trpc.io/discord">Discord</a>.
 
 ## Sponsors
 
@@ -119,7 +120,9 @@ Also, if your company using tRPC and want to support long-term maintenance of tR
 <table>
   <tbody>
     <tr>
-      <td align="center"><a href="https://render.com"><img alt="Render.com" src="https://raw.githubusercontent.com/trpc/trpc/main/images/render.svg" width="312px" /><br />Render</a></td>
+      <td align="center"><a href="https://render.com"><img src="https://avatars.githubusercontent.com/u/36424661?v=4?s=180" width="180px;" alt=""/><br /><sub><b>Render</b></sub></a></td>
+      <td align="center"><a href="https://cal.com"><img src="https://avatars.githubusercontent.com/u/79145102?v=4?s=180" width="180px;" alt=""/><br /><b>Cal.com, Inc.</b></a></td>
+      <td align="center"><a href="https://cal.com/peer"><img src="https://avatars.githubusercontent.com/u/8019099?v=4?s=180" width="180px;" alt=""/><br /><b>Peer Richelsen</b></a></td>
     </tr>
   </tbody>
 </table>
@@ -184,6 +187,9 @@ Also, if your company using tRPC and want to support long-term maintenance of tR
     </tr>
     <tr>
       <td align="center"><a href="http://solberg.is"><img src="https://avatars.githubusercontent.com/u/701?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Jökull Sólberg Auðunsson</b></sub></a></td>
+      <td align="center"><a href="https://github.com/lmatheus"><img src="https://avatars.githubusercontent.com/u/8514703?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Luis Matheus</b></sub></a></td>
+      <td align="center"><a href="https://github.com/dmaykov"><img src="https://avatars.githubusercontent.com/u/6147048?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Dmitry Maykov</b></sub></a></td>
+      <td align="center"><a href="https://www.linkedin.com/in/zomars/"><img src="https://avatars.githubusercontent.com/u/3504472?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Omar López</b></sub></a></td>
     </tr>
   </tbody>
 </table>
@@ -218,7 +224,7 @@ Also, if your company using tRPC and want to support long-term maintenance of tR
     <td align="center"><a href="https://github.com/lostfictions"><img src="https://avatars.githubusercontent.com/u/567041?v=4?s=100" width="100px;" alt=""/><br /><sub><b>s</b></sub></a><br /><a href="https://github.com/trpc/trpc/commits?author=lostfictions" title="Documentation">📖</a></td>
     <td align="center"><a href="https://github.com/jzimmek"><img src="https://avatars.githubusercontent.com/u/40382?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Jan Zimmek</b></sub></a><br /><a href="#financial-jzimmek" title="Financial">💵</a></td>
     <td align="center"><a href="https://www.alaisteryoung.com"><img src="https://avatars.githubusercontent.com/u/10985857?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Alaister Young</b></sub></a><br /><a href="https://github.com/trpc/trpc/commits?author=alaister" title="Code">💻</a> <a href="https://github.com/trpc/trpc/commits?author=alaister" title="Tests">⚠️</a></td>
-    <td align="center"><a href="http://t3.gg"><img src="https://avatars.githubusercontent.com/u/6751787?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Theo Browne</b></sub></a><br /><a href="https://github.com/trpc/trpc/pulls?q=is%3Apr+reviewed-by%3Atheobr" title="Reviewed Pull Requests">👀</a> <a href="#financial-theobr" title="Financial">💵</a></td>
+    <td align="center"><a href="http://t3.gg"><img src="https://avatars.githubusercontent.com/u/6751787?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Theo Browne</b></sub></a><br /><a href="https://github.com/trpc/trpc/pulls?q=is%3Apr+reviewed-by%3Atheobr" title="Reviewed Pull Requests">👀</a> <a href="#financial-theobr" title="Financial">💵</a> <a href="#video-theobr" title="Videos">📹</a> <a href="#talk-theobr" title="Talks">📢</a> <a href="#tutorial-theobr" title="Tutorials">✅</a></td>
     <td align="center"><a href="https://maxgreenwald.me"><img src="https://avatars.githubusercontent.com/u/2615374?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Max Greenwald</b></sub></a><br /><a href="#financial-mgreenw" title="Financial">💵</a> <a href="https://github.com/trpc/trpc/commits?author=mgreenw" title="Code">💻</a> <a href="https://github.com/trpc/trpc/commits?author=mgreenw" title="Documentation">📖</a> <a href="https://github.com/trpc/trpc/commits?author=mgreenw" title="Tests">⚠️</a> <a href="https://github.com/trpc/trpc/issues?q=author%3Amgreenw" title="Bug reports">🐛</a></td>
     <td align="center"><a href="https://ste.london"><img src="https://avatars.githubusercontent.com/u/150512?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Stephen Mount</b></sub></a><br /><a href="#financial-stemount" title="Financial">💵</a></td>
     <td align="center"><a href="https://github.com/infix"><img src="https://avatars.githubusercontent.com/u/40860821?v=4?s=100" width="100px;" alt=""/><br /><sub><b>amr</b></sub></a><br /><a href="https://github.com/trpc/trpc/commits?author=infix" title="Code">💻</a></td>
@@ -302,6 +308,21 @@ Also, if your company using tRPC and want to support long-term maintenance of tR
     <td align="center"><a href="https://github.com/Lilja"><img src="https://avatars.githubusercontent.com/u/6134511?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Erik Lilja</b></sub></a><br /><a href="https://github.com/trpc/trpc/commits?author=lilja" title="Documentation">📖</a> <a href="https://github.com/trpc/trpc/commits?author=lilja" title="Code">💻</a> <a href="https://github.com/trpc/trpc/commits?author=lilja" title="Tests">⚠️</a></td>
     <td align="center"><a href="http://www.ivanbuncic.com"><img src="https://avatars.githubusercontent.com/u/29887111?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Ivan Buncic</b></sub></a><br /><a href="#financial-ivanbuncic" title="Financial">💵</a></td>
     <td align="center"><a href="http://solberg.is"><img src="https://avatars.githubusercontent.com/u/701?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Jökull Sólberg Auðunsson</b></sub></a><br /><a href="#financial-jokull" title="Financial">💵</a></td>
+    <td align="center"><a href="https://github.com/futpib"><img src="https://avatars.githubusercontent.com/u/4330357?v=4?s=100" width="100px;" alt=""/><br /><sub><b>futpib</b></sub></a><br /><a href="https://github.com/trpc/trpc/issues?q=author%3Afutpib" title="Bug reports">🐛</a></td>
+  </tr>
+  <tr>
+    <td align="center"><a href="https://github.com/lmatheus"><img src="https://avatars.githubusercontent.com/u/8514703?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Luis Matheus</b></sub></a><br /><a href="#financial-lmatheus" title="Financial">💵</a></td>
+    <td align="center"><a href="http://franklinjara.dev"><img src="https://avatars.githubusercontent.com/u/65879341?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Franklin</b></sub></a><br /><a href="https://github.com/trpc/trpc/commits?author=makyfj" title="Documentation">📖</a></td>
+    <td align="center"><a href="https://www.linkedin.com/in/zomars/"><img src="https://avatars.githubusercontent.com/u/3504472?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Omar López</b></sub></a><br /><a href="#financial-zomars" title="Financial">💵</a></td>
+    <td align="center"><a href="https://diego-slicecode.dev/"><img src="https://avatars.githubusercontent.com/u/63283003?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Diego Massarini</b></sub></a><br /><a href="#financial-webdiego" title="Financial">💵</a></td>
+    <td align="center"><a href="https://github.com/dmaykov"><img src="https://avatars.githubusercontent.com/u/6147048?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Dmitry Maykov</b></sub></a><br /><a href="#financial-dmaykov" title="Financial">💵</a></td>
+    <td align="center"><a href="https://riccardogiorato.com/"><img src="https://avatars.githubusercontent.com/u/4527364?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Riccardo Giorato</b></sub></a><br /><a href="#financial-riccardogiorato" title="Financial">💵</a></td>
+    <td align="center"><a href="https://github.com/carlbarrdahl"><img src="https://avatars.githubusercontent.com/u/2961337?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Carl Barrdahl</b></sub></a><br /><a href="#financial-carlbarrdahl" title="Financial">💵</a></td>
+  </tr>
+  <tr>
+    <td align="center"><a href="https://cal.com/peer"><img src="https://avatars.githubusercontent.com/u/8019099?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Peer Richelsen</b></sub></a><br /><a href="#financial-PeerRich" title="Financial">💵</a></td>
+    <td align="center"><a href="https://cal.com"><img src="https://avatars.githubusercontent.com/u/79145102?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Cal.com, Inc.</b></sub></a><br /><a href="#financial-calcom" title="Financial">💵</a></td>
+    <td align="center"><a href="https://github.com/tomanagle"><img src="https://avatars.githubusercontent.com/u/8683577?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Tom</b></sub></a><br /><a href="#video-tomanagle" title="Videos">📹</a> <a href="#talk-tomanagle" title="Talks">📢</a> <a href="#tutorial-tomanagle" title="Tutorials">✅</a></td>
   </tr>
 </table>
 

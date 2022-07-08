@@ -18,7 +18,6 @@
     "@types/node-fetch": "^2.5.11",
     "abort-controller": "^3.0.0",
     "node-fetch": "^2.6.1",
-    "typescript": "4.7.4",
     "ws": "^8.0.0",
     "zod": "^3.0.0"
   },
@@ -31,6 +30,7 @@
     "npm-run-all": "^4.1.5",
     "start-server-and-test": "^1.12.0",
     "ts-node": "^10.3.0",
+    "typescript": "4.7.4",
     "wait-port": "^0.2.9"
   },
   "publishConfig": {

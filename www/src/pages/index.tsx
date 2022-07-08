@@ -111,7 +111,7 @@ function Home() {
       </header>
       <main>
         {features && features.length > 0 && (
-          <section className="flex items-center py-8 px-0 w-full max-w-[var(--ifm-container-width-xl)] mx-auto">
+          <section className="flex flex-col md:flex-row items-center py-8 px-8 md:px-0 w-full max-w-[var(--ifm-container-width-xl)] mx-auto">
             {features.map((props, idx) => (
               <Feature key={idx} {...props} />
             ))}
@@ -119,7 +119,7 @@ function Home() {
         )}
       </main>
       <footer
-        className={`container w-full max-w-[var(--ifm-container-width)] mx-auto`}
+        className={`container px-8 md:px-0 w-full max-w-[var(--ifm-container-width)] mx-auto`}
       >
         <ol className="footnotes list-decimal">
           <li id="zero">
