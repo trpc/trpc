@@ -25,12 +25,18 @@ const forbiddenHeaderNames = [
 ];
 
 /**
- * Strips an HTTP header object of internally reserved keys (for undici/Node.js built-in fetch since v18)
+ * Strips an HTTP header object of internally reserved names (for undici/Node.js built-in fetch since v18)
  * @param headers Your HTTP header object
- * @returns Stripped headers without blacklisted keys
+ * @returns Stripped headers without reservered names
  */
 export const stripHeaders = (headers: HTTPHeaders): HTTPHeaders =>
   Object.fromEntries(
     // unwrap and re-wrap object to tuple array so we can iterate/map over it
-    Object.entries(headers).filter(([k]) => !forbiddenHeaderNames.includes(k)), // filter out all keys `k` which are included in `forbiddenHeaderNames`
+    // filter out all names which are included in `forbiddenHeaderNames`
+    Object.entries(headers).filter(
+      ([name]) =>
+        !forbiddenHeaderNames.includes(name) &&
+        !name.startsWith('sec-') &&
+        !name.startsWith('proxy-'),
+    ),
   );
