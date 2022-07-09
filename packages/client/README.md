@@ -22,7 +22,7 @@ Full documentation for `@trpc/client` can be found [here](https://trpc.io/docs/v
 ## Installation
 
 ```bash
-# NPM
+# npm
 npm install @trpc/client
 
 # Yarn
