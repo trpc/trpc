@@ -13,7 +13,7 @@
 
 # `@trpc/client`
 
-> The `@trpc/client` package is responsible for communicating with a tRPC server on the client side.
+> Communicate with a tRPC server on the client side.
 
 ## Documentation
 
