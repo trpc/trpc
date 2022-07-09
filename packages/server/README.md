@@ -13,7 +13,7 @@
 
 # `@trpc/server`
 
-> The `@trpc/server` package is responsible for creating trpc APIs on the server.
+> Create tRPC routers and connect them to a server.
 
 ## Documentation
 
