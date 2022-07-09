@@ -13,7 +13,7 @@
 
 # `@trpc/next`
 
-> The `@trpc/next` package is responsible for connecting a trpc server to a Next.js application.
+> Connect a tRPC router to Next.js.
 
 ## Documentation
 
