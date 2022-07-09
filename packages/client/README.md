@@ -28,7 +28,7 @@ npm install @trpc/client
 # Yarn
 yarn add @trpc/client
 
-# Pnpm
+# pnpm
 pnpm install @trpc/client
 ```
 
