@@ -13,7 +13,7 @@
 
 # `@trpc/react`
 
-> The `@trpc/react` package is responsible for connecting a trpc server to a react application.
+> Connect a tRPC server to React.
 
 ## Documentation
 
