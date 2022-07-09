@@ -29,7 +29,7 @@ npm install @trpc/client
 yarn add @trpc/client
 
 # pnpm
-pnpm install @trpc/client
+pnpm add @trpc/client
 ```
 
 ## Basic Example
