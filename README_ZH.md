@@ -3,7 +3,7 @@
 </p>
 
 <p align="center">
-  <strong>End-to-end typesafe APIs made easy</strong>
+  <strong>使端到端的类型安全 API 变得简单</strong>
 </p>
 
 <p align="center">
@@ -21,8 +21,6 @@
   </a>
 </p>
 
-> These docs have been translated into [Chinese](./README_ZH.md).
-
 <p></p>
 
 <p align="center">
@@ -30,7 +28,7 @@
     <img src="https://storage.googleapis.com/trpc/trpcgif.gif" alt="Demo" />
     <figcaption>
       <p align="center">
-        The client above is <strong>not</strong> importing any code from the server, only its type declarations.
+        上述客户端 <strong>没有</strong> 从服务端导入任何代码，只有他的类型声明。
       </p>
     </figcaption>
   </figure>
@@ -38,27 +36,27 @@
 
 <br/>
 
-## Intro
+## 介绍
 
-tRPC allows you to easily build & consume fully typesafe APIs, without schemas or code generation.
+tRPC 允许您轻松构建和使用完全类型安全的 API，无需模式或代码生成。
 
 ### Features
 
-- ✅&nbsp; Well-tested and production ready.
-- 🧙‍♂️&nbsp; Full static typesafety & autocompletion on the client, for inputs, outputs and errors.
-- 🐎&nbsp; Snappy DX - No code generation, run-time bloat, or build pipeline.
-- 🍃&nbsp; Light - tRPC has zero deps and a tiny client-side footprint.
-- 🐻&nbsp; Easy to add to your existing brownfield project.
-- 🔋&nbsp; Batteries included - React.js/Next.js/Express.js/Fastify adapters. _(But tRPC is not tied to React - [reach out](https://twitter.com/alexdotjs) if you want to make a Svelte/Vue/... adapter)_
-- 🥃&nbsp; Subscriptions support.
-- ⚡️&nbsp; Request batching - requests made at the same time can be automatically combined into one
-- 👀&nbsp; Quite a few examples in the [./examples](./examples)-folder
+- ✅&nbsp; 测试完备，可用于生产环境。
+- 🧙‍♂️&nbsp; 在客户端对输入、输出和错误进行完全的静态类型安全检查和自动补全。
+- 🐎&nbsp; 极速体验 - 没有代码生成，没有运行时阻塞，也没有构建流程。
+- 🍃&nbsp; 轻量 - tRPC 没有任何依赖，对客户端的影响微乎其微。
+- 🐻&nbsp; 易于添加到现有的棕地项目中（译者注：「棕地项目」指对原有代码、环境等有依赖的项目）。
+- 🔋&nbsp; 内置兼容 - 内置 React.js/Next.js/Express.js/Fastify 适配器. _(但是 tRPC 并不依赖 React - 如果您想构建一个 Svelte/Vue/... 适配器，请 [联系我们](https://twitter.com/alexdotjs))_
+- 🥃&nbsp; 订阅模式支持.
+- ⚡️&nbsp; 请求批处理 - 同一时间发出的请求会被自动聚合成一个。
+- 👀&nbsp; 在 [./examples](./examples)-folder 目录下有非常多的例子！
 
-## Quickstart
+## 快速开始
 
-There are a few [examples](https://trpc.io/docs/example-apps) that you can use for playing out with tRPC or bootstrapping your new project. For example, if you want a next.js app, you can use the full-stack next.js example:
+这里有几个 [例子](https://trpc.io/docs/example-apps) 可以用来尝试 tRPC 或搭建您的新项目。例如，如果您想要一个 next.js 应用程序，您可以使用全栈 next.js 例子。
 
-**Quick start with a full-stack Next.js example:**
+**从一个全栈 Next.js 例子快速开始:**
 
 ```sh
 # yarn
@@ -67,27 +65,27 @@ yarn create next-app --example https://github.com/trpc/trpc --example-path examp
 npx create-next-app --example https://github.com/trpc/trpc --example-path examples/next-prisma-starter trpc-prisma-starter
 ```
 
-**👉 See full documentation on [tRPC.io](https://trpc.io/docs). 👈**
+**👉 在 [tRPC.io](https://trpc.io/docs) 查看完整文档 👈**
 
-## Star History
+## Star 历史
 
-> tRPC is rapidly gaining momentum!
+> tRPC 正在快速发展!
 
-<a href="https://star-history.com/#trpc/trpc"><img src="https://api.star-history.com/svg?repos=trpc/trpc&type=Date" alt="Star History Chart" width="600" /></a>
+<a href="https://star-history.com/#trpc/trpc"><img src="https://api.star-history.com/svg?repos=trpc/trpc&type=Date" alt="Star 历史表格" width="600" /></a>
 
-## Core Team
+## 核心团队
 
 <table>
   <tr>
     <td align="center"><a href="https://twitter.com/alexdotjs"><img src="https://avatars.githubusercontent.com/u/459267?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Alex / KATT</b></sub></a></td>
-    <td>👋 Hi, I'm Alex and I am the creator of tRPC, don't hesitate to contact me on <a href="https://twitter.com/alexdotjs">Twitter</a> or <a href="mailto:alex@trpc.io">email</a> if you are curious about tRPC in any way.</td>
+    <td>👋 Hi， 我是 Alex，tRPC 的创建者, 如果您对 tRPC 有任何疑问，请不要犹豫，在  <a href="https://twitter.com/alexdotjs">Twitter</a> 或 <a href="mailto:alex@trpc.io">email</a> 上联系我。</td>
   </tr>
 </table>
 
 
-### Level 2 Maintainers
+### 2 级维护者
 
-> Volunteers who actively help out improving the codebase by making PRs and reviewing code
+> 积极帮助改进代码库的志愿者，他们通过做PR和审查代码来帮助改进代码库
 
 <table>
   <tbody>
@@ -98,19 +96,21 @@ npx create-next-app --example https://github.com/trpc/trpc --example-path exampl
   </tbody>
 </table>
 
-### Level 1 Maintainers
+### 1 级维护者
 
-> Volunteers that actively help out answering questions in Discord, GitHub Discussions, etc
+> 在 Discord、GitHub 讨论中积极回答问题的志愿者，等等
 
-*n/a* - do you want to contribute? Feel free to write to us on <a href="https://trpc.io/discord">Discord</a>.
+*n/a* - 你想做出贡献吗？欢迎在 <a href="https://trpc.io/discord">Discord</a> 上给我们写信。
 
 ## Sponsors
 
-If you enjoy working with tRPC and want to support me consider giving a token appreciation by [GitHub Sponsors](https://github.com/sponsors/KATT)!
+如果你喜欢用 tRPC 工作，并想支持我，可以考虑通过 [GitHub 赞助商](https://github.com/sponsors/KATT) 给予象征性的感谢!
+
+另外，如果你的公司在使用 tRPC，并希望支持 tRPC 的长期维护，请看一下 [赞助](https://github.com/sponsors/KATT) 或 [联系我们](mailto:alex@trpc.io) 讨论潜在的合作关系。
 
 Also, if your company using tRPC and want to support long-term maintenance of tRPC, have a look at the [sponsorship tiers](https://github.com/sponsors/KATT) or [get in touch](mailto:alex@trpc.io) to discuss potential partnerships.
 
-### 🥇 Gold Sponsors
+### 🥇 金牌赞助商
 
 <table>
   <tbody>
@@ -122,7 +122,7 @@ Also, if your company using tRPC and want to support long-term maintenance of tR
   </tbody>
 </table>
 
-### 🥈 Silver Sponsors
+### 🥈 银牌赞助商
 
 <table>
   <tbody>
@@ -133,7 +133,7 @@ Also, if your company using tRPC and want to support long-term maintenance of tR
   </tbody>
 </table>
 
-### 🥉 Bronze Sponsors
+### 🥉 铜牌赞助商
 
 <table>
   <tbody>
@@ -149,7 +149,7 @@ Also, if your company using tRPC and want to support long-term maintenance of tR
   </tbody>
 </table>
 
-### 😻 Individuals
+### 😻 个人
 
 <table>
   <tbody>
@@ -189,9 +189,9 @@ Also, if your company using tRPC and want to support long-term maintenance of tR
   </tbody>
 </table>
 
-## All contributors ✨
+## 全部贡献者 ✨
 
-> tRPC is developed by [KATT](https://twitter.com/alexdotjs), originally based on a proof-of-concept by [colinhacks](https://github.com/colinhacks).
+> tRPC 由 [KATT](https://twitter.com/alexdotjs)开发， 最初是基于 [colinhacks](https://github.com/colinhacks) 的一个概念。
 
 <!-- ALL-CONTRIBUTORS-LIST:START - Do not remove or modify this section -->
 <!-- prettier-ignore-start -->
