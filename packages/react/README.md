@@ -22,21 +22,21 @@ Full documentation for `@trpc/react` can be found [here](https://trpc.io/docs/re
 ## Installation
 
 ```bash
-# NPM
+# npm
 npm install @trpc/react react-query
 
 # Yarn
 yarn add @trpc/react react-query
 
-# Pnpm
-pnpm install @trpc/react react-query
+# pnpm
+pnpm add @trpc/react react-query
 ```
 
 ## Basic Example
 
-Create a trpc utils file that exports react hooks and providers.
+Create a utils file that exports tRPC hooks and providers.
 
-```typescript
+```ts
 import { createReactQueryHooks, createReactQueryHooksProxy } from '@trpc/react';
 import type { AppRouter } from './server';
 
@@ -44,13 +44,13 @@ export const trpc = createReactQueryHooks<AppRouter>();
 export const proxy = createReactQueryHooksProxy(trpc);
 ```
 
-Use the trpc provider to connect to the trpc server url.
+Use the provider to connect to your API.
 
-```typescript
+```ts
 import React from 'react';
 import { useState } from 'react';
 import { QueryClient, QueryClientProvider } from 'react-query';
-import { trpc } from './utils/trpc';
+import { trpc } from '~/utils/trpc';
 
 export function App() {
   const [queryClient] = useState(() => new QueryClient());
@@ -71,7 +71,7 @@ export function App() {
 
 Now in any component, you can query your API using the proxy exported from the utils file.
 
-```typescript
+```ts
 import { proxy } from '~/utils/trpc';
 
 export function Hello() {

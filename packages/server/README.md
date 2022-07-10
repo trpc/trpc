@@ -22,22 +22,22 @@ Full documentation for `@trpc/server` can be found [here](https://trpc.io/docs/r
 ## Installation
 
 ```bash
-# NPM
+# npm
 npm install @trpc/server
 
 # Yarn
 yarn add @trpc/server
 
-# Pnpm
-pnpm install @trpc/server
+# pnpm
+pnpm add @trpc/server
 ```
 
 We also recommend installing `zod` to validate procedure inputs.
 
 ## Basic Example
 
-```typescript
-import { initTRPC, inferAsyncReturnType } from '@trpc/server';
+```ts
+import { inferAsyncReturnType, initTRPC } from '@trpc/server';
 import {
   CreateHTTPContextOptions,
   createHTTPServer,
@@ -45,16 +45,14 @@ import {
 import { z } from 'zod';
 
 // Initialize a context for the server
-function createContext(
-  opts: CreateHTTPContextOptions,
-) {
+function createContext(opts: CreateHTTPContextOptions) {
   return {};
 }
 
 // Get the context type
 type Context = inferAsyncReturnType<typeof createContext>;
 
-// Initialize trpc
+// Initialize tRPC
 const t = initTRPC<{ ctx: Context }>()();
 
 // Create main router
@@ -69,7 +67,7 @@ const appRouter = t.router({
     .query(({ input }) => `Hello, ${input.name}!`),
 });
 
-// Exporting the app router type to be importing on the client side.
+// Export the app router type to be imported on the client side
 export type AppRouter = typeof appRouter;
 
 // Create HTTP server

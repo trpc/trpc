@@ -22,21 +22,21 @@ Full documentation for `@trpc/next` can be found [here](https://trpc.io/docs/nex
 ## Installation
 
 ```bash
-# NPM
+# npm
 npm install @trpc/next @trpc/react react-query
 
 # Yarn
 yarn add @trpc/next @trpc/react react-query
 
-# Pnpm
-pnpm install @trpc/next @trpc/react react-query
+# pnpm
+pnpm add @trpc/next @trpc/react react-query
 ```
 
 ## Basic Example
 
-Setup trpc in `utils/trpc.ts` file
+Setup tRPC in `utils/trpc.ts`.
 
-```typescript
+```ts
 import { setupTRPC } from '@trpc/next';
 // Import the router type from your server file
 import type { AppRouter } from '../pages/api/[trpc].ts';
@@ -44,17 +44,17 @@ import type { AppRouter } from '../pages/api/[trpc].ts';
 export const trpc = setupTRPC<AppRouter>({
   config() {
     return {
-      url: 'http://localhost:2022/trpc',
+      url: 'http://localhost:3000/api/trpc',
     };
   },
   ssr: true,
 });
 ```
 
-Hook up trpc inside `_app.tsx`
+Hook up tRPC inside `_app.tsx`.
 
-```typescript
-import { trpc } from '~/utils/trpc.ts';
+```ts
+import { trpc } from '~/utils/trpc';
 
 const App = ({ Component, pageProps }) => {
   return <Component {...pageProps} />;
@@ -63,10 +63,10 @@ const App = ({ Component, pageProps }) => {
 export default trpc.withTRPC(App);
 ```
 
-Now you can query the trpc API in any component
+Now you can query your API in any component.
 
-```typescript
-import { trpc } from '~/utils/trpc.ts';
+```ts
+import { trpc } from '~/utils/trpc';
 
 export function Hello() {
   const { data, error, status } = trpc.proxy.greeting.useQuery({

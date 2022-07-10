@@ -34,15 +34,14 @@ pnpm add @trpc/client
 
 ## Basic Example
 
-```typescript
+```ts
 import { createTRPCClient, createTRPCClientProxy } from '@trpc/client';
-
 // Importing the router type from the server file
 import type { AppRouter } from './server';
 
 // Initializing the tRPC client
 const client = createTRPCClient<AppRouter>({
-  url: `http://localhost:3000`,
+  url: 'http://localhost:2022',
 });
 
 // Creating a proxy, this allows for cmd+click to the backend function.
