@@ -78,24 +78,24 @@ test('basic test', async () => {
   );
   const parsedBody = JSON.parse(body || '');
   expect(result).toMatchInlineSnapshot(`
-Object {
-  "headers": Object {
-    "Content-Type": "application/json",
-  },
-  "statusCode": 200,
-}
-`);
+    Object {
+      "headers": Object {
+        "Content-Type": "application/json",
+      },
+      "statusCode": 200,
+    }
+  `);
   expect(parsedBody).toMatchInlineSnapshot(`
-Object {
-  "id": null,
-  "result": Object {
-    "data": Object {
-      "text": "hello Lilja",
-    },
-    "type": "data",
-  },
-}
-`);
+    Object {
+      "id": null,
+      "result": Object {
+        "data": Object {
+          "text": "hello Lilja",
+        },
+        "type": "data",
+      },
+    }
+  `);
 });
 test('bad type', async () => {
   const { body, ...result } = await handler(
@@ -110,38 +110,38 @@ test('bad type', async () => {
   );
   const parsedBody = JSON.parse(body || '');
   expect(result).toMatchInlineSnapshot(`
-Object {
-  "headers": Object {
-    "Content-Type": "application/json",
-  },
-  "statusCode": 400,
-}
-`);
+    Object {
+      "headers": Object {
+        "Content-Type": "application/json",
+      },
+      "statusCode": 400,
+    }
+  `);
   parsedBody.error.data.stack = '[redacted]';
 
   expect(parsedBody).toMatchInlineSnapshot(`
-Object {
-  "error": Object {
-    "code": -32600,
-    "data": Object {
-      "code": "BAD_REQUEST",
-      "httpStatus": 400,
-      "path": "echo",
-      "stack": "[redacted]",
-    },
-    "message": "[
-  {
-    \\"code\\": \\"invalid_type\\",
-    \\"expected\\": \\"object\\",
-    \\"received\\": \\"undefined\\",
-    \\"path\\": [],
-    \\"message\\": \\"Required\\"
-  }
-]",
-  },
-  "id": null,
-}
-`);
+    Object {
+      "error": Object {
+        "code": -32600,
+        "data": Object {
+          "code": "BAD_REQUEST",
+          "httpStatus": 400,
+          "path": "echo",
+          "stack": "[redacted]",
+        },
+        "message": "[
+      {
+        \\"code\\": \\"invalid_type\\",
+        \\"expected\\": \\"object\\",
+        \\"received\\": \\"undefined\\",
+        \\"path\\": [],
+        \\"message\\": \\"Required\\"
+      }
+    ]",
+      },
+      "id": null,
+    }
+  `);
 });
 
 test('test v2 format', async () => {
@@ -168,25 +168,25 @@ test('test v2 format', async () => {
     mockAPIGatewayContext(),
   );
   expect(result).toMatchInlineSnapshot(`
-Object {
-  "headers": Object {
-    "Content-Type": "application/json",
-  },
-  "statusCode": 200,
-}
-`);
+    Object {
+      "headers": Object {
+        "Content-Type": "application/json",
+      },
+      "statusCode": 200,
+    }
+  `);
   const parsedBody = JSON.parse(body || '');
   expect(parsedBody).toMatchInlineSnapshot(`
-Object {
-  "id": null,
-  "result": Object {
-    "data": Object {
-      "text": "hello Lilja",
-    },
-    "type": "data",
-  },
-}
-`);
+    Object {
+      "id": null,
+      "result": Object {
+        "data": Object {
+          "text": "hello Lilja",
+        },
+        "type": "data",
+      },
+    }
+  `);
 });
 
 test('test v2 format with multiple / in query key', async () => {
@@ -213,25 +213,25 @@ test('test v2 format with multiple / in query key', async () => {
     mockAPIGatewayContext(),
   );
   expect(result).toMatchInlineSnapshot(`
-Object {
-  "headers": Object {
-    "Content-Type": "application/json",
-  },
-  "statusCode": 200,
-}
-`);
+    Object {
+      "headers": Object {
+        "Content-Type": "application/json",
+      },
+      "statusCode": 200,
+    }
+  `);
   const parsedBody = JSON.parse(body || '');
   expect(parsedBody).toMatchInlineSnapshot(`
-Object {
-  "id": null,
-  "result": Object {
-    "data": Object {
-      "text": "I've come to talk with you again",
-    },
-    "type": "data",
-  },
-}
-`);
+    Object {
+      "id": null,
+      "result": Object {
+        "data": Object {
+          "text": "I've come to talk with you again",
+        },
+        "type": "data",
+      },
+    }
+  `);
 });
 
 test('test v2 format with non default routeKey', async () => {
@@ -259,25 +259,70 @@ test('test v2 format with non default routeKey', async () => {
     mockAPIGatewayContext(),
   );
   expect(result).toMatchInlineSnapshot(`
-Object {
-  "headers": Object {
-    "Content-Type": "application/json",
-  },
-  "statusCode": 200,
-}
-`);
+    Object {
+      "headers": Object {
+        "Content-Type": "application/json",
+      },
+      "statusCode": 200,
+    }
+  `);
   const parsedBody = JSON.parse(body || '');
   expect(parsedBody).toMatchInlineSnapshot(`
-Object {
-  "id": null,
-  "result": Object {
-    "data": Object {
-      "text": "hello Lilja",
-    },
-    "type": "data",
-  },
-}
-`);
+    Object {
+      "id": null,
+      "result": Object {
+        "data": Object {
+          "text": "hello Lilja",
+        },
+        "type": "data",
+      },
+    }
+  `);
+});
+test('test v2 format with non default routeKey and nested router', async () => {
+  const createContext = async ({
+    event,
+  }: trpcLambda.CreateAWSLambdaContextOptions<APIGatewayProxyEventV2>) => {
+    return {
+      user: event.headers['X-USER'],
+    };
+  };
+  const handler2 = trpcLambda.awsLambdaRequestHandler({
+    router,
+    createContext,
+  });
+  const { body, ...result } = await handler2(
+    mockAPIGatewayProxyEventV2({
+      body: JSON.stringify({}),
+      headers: { 'Content-Type': 'application/json', 'X-USER': 'Lilja' },
+      method: 'GET',
+      routeKey: 'ANY /trpc/{a}/{path+}',
+      path: 'trpc/abc/hello/darkness/my/old/friend',
+      queryStringParameters: {},
+      pathParameters: { a: 'abc', path: 'hello/darkness/my/old/friend' },
+    }),
+    mockAPIGatewayContext(),
+  );
+  expect(result).toMatchInlineSnapshot(`
+    Object {
+      "headers": Object {
+        "Content-Type": "application/json",
+      },
+      "statusCode": 200,
+    }
+  `);
+  const parsedBody = JSON.parse(body || '');
+  expect(parsedBody).toMatchInlineSnapshot(`
+    Object {
+      "id": null,
+      "result": Object {
+        "data": Object {
+          "text": "I've come to talk with you again",
+        },
+        "type": "data",
+      },
+    }
+  `);
 });
 test('router with no context', async () => {
   const handler2 = trpcLambda.awsLambdaRequestHandler({
@@ -296,23 +341,23 @@ test('router with no context', async () => {
     mockAPIGatewayContext(),
   );
   expect(result).toMatchInlineSnapshot(`
-Object {
-  "headers": Object {
-    "Content-Type": "application/json",
-  },
-  "statusCode": 200,
-}
-`);
+    Object {
+      "headers": Object {
+        "Content-Type": "application/json",
+      },
+      "statusCode": 200,
+    }
+  `);
   const parsedBody = JSON.parse(body || '');
   expect(parsedBody).toMatchInlineSnapshot(`
-Object {
-  "id": null,
-  "result": Object {
-    "data": Object {
-      "text": "hello kATT",
-    },
-    "type": "data",
-  },
-}
-`);
+    Object {
+      "id": null,
+      "result": Object {
+        "data": Object {
+          "text": "hello kATT",
+        },
+        "type": "data",
+      },
+    }
+  `);
 });
