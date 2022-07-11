@@ -936,6 +936,15 @@
       "contributions": [
         "doc"
       ]
+    },
+    {
+      "login": "EnderSpirit",
+      "name": "EnderSpirit",
+      "avatar_url": "https://avatars.githubusercontent.com/u/28017013?v=4",
+      "profile": "https://github.com/EnderSpirit",
+      "contributions": [
+        "doc"
+      ]
     }
   ],
   "skipCi": true
