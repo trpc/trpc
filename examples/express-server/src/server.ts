@@ -52,40 +52,6 @@ function createMessage(text: string) {
   return msg;
 }
 
-/*const posts = createRouter()
-  .mutation('create', {
-    input: z.object({
-      title: z.string(),
-    }),
-    resolve: ({ input }) => {
-      const post = {
-        id: ++id,
-        ...input,
-      };
-      db.posts.push(post);
-      return post;
-    },
-  })
-  .query('list', {
-    resolve: () => db.posts,
-  });
-
-const messages = createRouter()
-  .query('list', {
-    resolve: () => db.messages,
-  })
-  .mutation('add', {
-    input: z.string(),
-    resolve: async ({ input }) => {
-      const msg = createMessage(input);
-
-      db.messages.push(msg);
-
-      return msg;
-    },
-  });
-  */
-
 const postRouter = t.router({
   createPost: t.procedure
     .input(z.object({ title: z.string() }))
