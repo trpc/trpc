@@ -108,7 +108,7 @@
     "access": "public"
   },
   "devDependencies": {
-    "@cloudflare/workers-types": "^3.8.0",
+    "@cloudflare/workers-types": "^3.14.1",
     "@fastify/websocket": "^5.0.0",
     "@miniflare/core": "^2.4.0",
     "@types/aws-lambda": "^8.10.97",
