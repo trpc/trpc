@@ -42,12 +42,7 @@ module.exports = {
       type: 'category',
       label: '@trpc/client',
       collapsed: false,
-      items: [
-        'client/vanilla',
-        'client/links',
-        'client/header',
-        'client/cors'
-      ],
+      items: ['client/vanilla', 'client/links', 'client/header', 'client/cors'],
     },
     {
       type: 'category',
@@ -65,11 +60,7 @@ module.exports = {
       type: 'category',
       label: '@trpc/next',
       collapsed: false,
-      items: [
-        'nextjs/ssr',
-        'nextjs/ssg',
-        'nextjs/starter-projects'
-      ],
+      items: ['nextjs/ssr', 'nextjs/ssg', 'nextjs/starter-projects'],
     },
     {
       type: 'category',
