@@ -23,6 +23,7 @@ jobs:
             .interop/next-prisma-starter-websockets,
             .interop/next-prisma-todomvc,
             .interop/standalone-server,
+            fastify-server,
             .interop/fastify-server,
             cloudflare-workers,
             .interop/cloudflare-workers,
