@@ -82,7 +82,7 @@ export function MyComponent() {
 
 ### `getInfiniteQueryData()`
 
-This helper gets the currently cached data from an exisisting infinite query
+This helper gets the currently cached data from an existing infinite query
 
 ```tsx title='components/MyComponent.tsx'
 import { trpc } from '../utils/trpc';
