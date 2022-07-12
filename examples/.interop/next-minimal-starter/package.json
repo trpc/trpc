@@ -1,5 +1,5 @@
 {
-  "name": "@examples/next-minimal",
+  "name": "@examples/interop-next-minimal",
   "version": "1.0.0",
   "private": true,
   "scripts": {
