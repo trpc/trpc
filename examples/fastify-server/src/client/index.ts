@@ -67,6 +67,7 @@ async function start() {
 
   await anon.proxy.posts.reset.query();
 
+  // FIXME: Pending API update for Subscriptions (https://github.com/trpc/trpc/issues/2114)
   /*const randomNumberCount = 0;
 
   await new Promise<void>((resolve) => {
