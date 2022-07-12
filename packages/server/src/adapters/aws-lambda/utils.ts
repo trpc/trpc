@@ -6,6 +6,7 @@ import type {
   APIGatewayProxyStructuredResultV2,
 } from 'aws-lambda';
 import type { ResponseMetaFn } from '../../http/internals/types';
+import type { OnErrorFunction } from '../../internals/onErrorFunction';
 import type { AnyRouter, inferRouterContext } from '../../router';
 
 export type APIGatewayEvent = APIGatewayProxyEvent | APIGatewayProxyEventV2;
@@ -36,7 +37,7 @@ export type AWSLambdaOptions<
       batching?: {
         enabled: boolean;
       };
-      onError?: (options: Record<string, unknown>) => void;
+      onError?: OnErrorFunction<TRouter, TEvent>;
       responseMeta?: ResponseMetaFn<TRouter>;
     } & (
       | {
