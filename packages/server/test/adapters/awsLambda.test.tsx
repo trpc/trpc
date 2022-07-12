@@ -108,7 +108,7 @@ test('test v1 with leading prefix', async () => {
       path: '/leading/prefix/hello',
       queryStringParameters: {},
       pathParameters: { proxy: 'hello' },
-      resource: '/leading/prefix/{proxy*}',
+      resource: '/leading/prefix/{proxy+}',
     }),
     mockAPIGatewayContext(),
   );

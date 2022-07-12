@@ -50,13 +50,14 @@ function getHTTPMethod(event: APIGatewayEvent) {
     message: UNKNOWN_PAYLOAD_FORMAT_VERSION_ERROR_MESSAGE,
   });
 }
+
 function getPath(event: APIGatewayEvent) {
   if (isPayloadV1(event)) {
     const matches = event.resource.matchAll(/\{(.*?)\}/g);
     for (const match of matches) {
       const group = match[1];
-      if (group.includes('*') && event.pathParameters) {
-        return event.pathParameters[group.replace('*', '')] || '';
+      if (group.includes('+') && event.pathParameters) {
+        return event.pathParameters[group.replace('+', '')] || '';
       }
     }
     return event.path.slice(1);
