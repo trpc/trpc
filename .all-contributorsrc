@@ -945,6 +945,15 @@
       "contributions": [
         "doc"
       ]
+    },
+    {
+      "login": "juliusmarminge",
+      "name": "Julius Marminge",
+      "avatar_url": "https://avatars.githubusercontent.com/u/51714798?v=4",
+      "profile": "http://www.jumr.dev",
+      "contributions": [
+        "example"
+      ]
     }
   ],
   "skipCi": true
