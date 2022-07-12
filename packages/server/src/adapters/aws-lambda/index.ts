@@ -52,6 +52,13 @@ function getHTTPMethod(event: APIGatewayEvent) {
 }
 function getPath(event: APIGatewayEvent) {
   if (isPayloadV1(event)) {
+    const matches = event.resource.matchAll(/\{(.*?)\}/g);
+    for (const match of matches) {
+      const group = match[1];
+      if (group.includes('*') && event.pathParameters) {
+        return event.pathParameters[group.replace('*', '')] || '';
+      }
+    }
     return event.path.slice(1);
   }
   if (isPayloadV2(event)) {
