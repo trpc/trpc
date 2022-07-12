@@ -18,6 +18,7 @@ jobs:
     strategy:
       matrix:
         dir: [
+            express-server,
             .interop/express-server,
             .interop/next-prisma-starter,
             .interop/next-prisma-starter-websockets,
