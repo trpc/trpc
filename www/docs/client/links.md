@@ -15,9 +15,9 @@ Request batching is automatically enabled which batches your requests to the ser
 ```ts
 // below will be done in the same request when batching is enabled
 const somePosts = await Promise.all([
-  client.query('post.byId', 1),
-  client.query('post.byId', 2),
-  client.query('post.byId', 3),
+  proxy.post.byId.query(1);
+  proxy.post.byId.query(2);
+  proxy.post.byId.query(3);
 ])
 ```
 
@@ -29,18 +29,11 @@ const somePosts = await Promise.all([
 
 When sending batch requests, sometimes the URL can become too large causing HTTP errors like [`413 Payload Too Large`](https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/413), [`414 URI Too Long`](https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/414), and [`404 Not Found`](https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/404). The `maxURLLength` option will limit the number of requests that can be sent together in a batch.
 
-```ts title='server.ts'
-import type { AppRouter } from 'pages/api/trpc/[trpc]';
-import { withTRPC } from '@trpc/next';
-import { AppType } from 'next/dist/shared/lib/utils';
-// 👇 import the httpBatchLink
-import { httpBatchLink } from '@trpc/client';
+```ts title="utils/trpc.ts"
+import { setupTRPC } from '@trpc/next';
+import type { AppRouter } from "@/server/routers/app";
 
-const MyApp: AppType = ({ Component, pageProps }) => {
-  return <Component {...pageProps} />;
-};
-
-export default withTRPC<AppRouter>({
+export const trpc = setupTRPC<AppRouter>({
   config() {
     return {
       links: [
@@ -51,7 +44,7 @@ export default withTRPC<AppRouter>({
       ],
     };
   },
-})(MyApp);
+});
 ```
 
 ### Disabling request batching
@@ -72,19 +65,12 @@ export default trpcNext.createNextApiHandler({
 
 #### 2. Use batch-free link in your tRPC Client
 
-
-```tsx title='pages/_app.tsx'
-import type { AppRouter } from 'pages/api/trpc/[trpc]';
-import { withTRPC } from '@trpc/next';
-import { AppType } from 'next/dist/shared/lib/utils';
-// 👇 import the httpLink
+```tsx title='utils/trpc.ts'
+import { setupTRPC } from '@trpc/next';
+import type { AppRouter } from "@/server/routers/app";
 import { httpLink } from '@trpc/client';
 
-const MyApp: AppType = ({ Component, pageProps }) => {
-  return <Component {...pageProps} />;
-};
-
-export default withTRPC<AppRouter>({
+export const trpc = setupTRPC<AppRouter>({
   config() {
     return {
       links: [
@@ -94,25 +80,20 @@ export default withTRPC<AppRouter>({
       ],
     };
   },
-  // ssr: false,
-})(MyApp);
+});
 ```
-
 
 ### Using a `splitLink` to control request flow
 
 #### Disable batching for certain requests
 
-##### 1. Configure client / `_app.tsx`
+##### 1. Configure client / `utils/trpc.ts`
 
-```tsx title='pages/_app.tsx'
-import { withTRPC } from '@trpc/next';
-import { httpBatchLink } from '@trpc/client';
-import { httpLink } from '@trpc/client';
-import { splitLink } from '@trpc/client';
+```tsx title='utils/trpc.ts'
+import { setupTRPC } from '@trpc/next';
+import { httpBatchLink, httpLink, splitLink } from '@trpc/client';
 
-// [..]
-export default withTRPC<AppRouter>({
+export default setupTRPC<AppRouter>({
   config() {
     const url = `http://localhost:3000`;
 
@@ -135,14 +116,14 @@ export default withTRPC<AppRouter>({
       ],
     };
   },
-})(MyApp);
+});
 ```
 
 ##### 2. Perform request without batching
 
 ```tsx title='MyComponent.tsx'
 export function MyComponent() {
-  const postsQuery = trpc.useQuery(['posts'], {
+  const postsQuery = proxy.posts.useQuery({
     context: {
       skipBatch: true,
     },
@@ -156,7 +137,7 @@ export function MyComponent() {
 or:
 
 ```ts title='client.ts'
-const postResult = client.query('posts', null, {
+const postResult = proxy.posts.query(null, {
   context: {
     skipBatch: true,
   },

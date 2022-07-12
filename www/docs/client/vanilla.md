@@ -26,16 +26,19 @@ import { createTRPCClient } from '@trpc/client';
 
 const client = createTRPCClient<AppRouter>({
   url: 'http://localhost:5000/trpc',
+  proxy: true
 });
+
+const proxy = createTRPCClientProxy(client);
 ```
 
-As you can see, we passed `AppRouter` as a **type argument** of `createTRPCClient`. This returns a strongly typed `client` instance:
+As you can see, we passed `AppRouter` as a **type argument** of `createTRPCClient`. This returns a strongly typed `client` instance, we also create a client `proxy` which mirrors the structure of your `AppRouter` on the client:
 
 ```ts title='client.ts'
-const bilbo = await client.query('getUser', 'id_bilbo');
+const bilbo = await proxy.getUser.query('id_bilbo');
 // => { id: 'id_bilbo', name: 'Bilbo' };
 
-const frodo = await client.mutation('createUser', { name: 'Frodo' });
+const frodo = await proxy.createUser.mutation({ name: 'Frodo' });
 // => { id: 'id_frodo', name: 'Frodo' };
 ```
 
