@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/ban-types */
 import { DefaultErrorShape } from '../error/formatter';
 import { CombinedDataTransformer } from '../transformer';
 import { RootConfig } from './internals/config';
@@ -19,14 +20,16 @@ export interface ProcedureParams<
     transformer: CombinedDataTransformer;
     errorShape: DefaultErrorShape;
     ctx: Record<string, unknown>;
-    meta: Record<string, unknown>;
+    meta: Record<string, unknown> | UnsetMarker;
   },
   TContextIn = unknown,
   TContextOut = unknown,
   TInputIn = unknown,
   TInputOut = unknown,
+  TInputParser = unknown,
   TOutputIn = unknown,
   TOutputOut = unknown,
+  TOutputParser = unknown,
   TMeta = unknown,
 > {
   // FIXME make non-optional
@@ -46,6 +49,18 @@ export interface ProcedureParams<
   /**
    * @internal
    */
+  _input_in: TInputIn;
+  /**
+   * @internal
+   */
+  _input_out: TInputOut;
+  /**
+   * @internal
+   */
+  _input_parser: TInputParser;
+  /**
+   * @internal
+   */
   _output_in: TOutputIn;
   /**
    * @internal
@@ -54,11 +69,7 @@ export interface ProcedureParams<
   /**
    * @internal
    */
-  _input_in: TInputIn;
-  /**
-   * @internal
-   */
-  _input_out: TInputOut;
+  _output_parser: TOutputParser;
 }
 
 /**
@@ -71,37 +82,60 @@ export type ProcedureArgs<TParams extends ProcedureParams> =
     ? [input?: TParams['_input_in'] | void, opts?: ProcedureOptions]
     : [input: TParams['_input_in'], opts?: ProcedureOptions];
 
+type AddParamToObject<
+  TObject,
+  TProperty extends string,
+  TParam,
+> = TParam extends UnsetMarker
+  ? TObject & { [p in TProperty]?: undefined | void }
+  : undefined extends TParam
+  ? TObject & { [p in TProperty]?: TParam | void }
+  : TObject & { [p in TProperty]: TParam };
+
+type UndefinedIfUnsetMarker<TParam> = TParam extends UnsetMarker
+  ? undefined
+  : TParam;
+
 /**
+ *
  * @internal
  */
 export interface ProcedureBase<TParams extends ProcedureParams> {
-  _def: TParams;
+  _def: TParams & {
+    input: UndefinedIfUnsetMarker<TParams['_input_parser']>;
+    output: UndefinedIfUnsetMarker<TParams['_output_parser']>;
+    meta: UndefinedIfUnsetMarker<TParams['_meta']>;
+  };
   /**
    * @deprecated use `._def.meta` instead
    */
   meta?: TParams['_meta'];
   _procedure: true;
+  (
+    inputAndCtx: AddParamToObject<
+      AddParamToObject<{}, 'input', TParams['_input_in']>,
+      'ctx',
+      TParams['_config']['ctx']
+    >,
+    opts?: ProcedureOptions,
+  ): Promise<TParams['_output_out']>;
 }
 
 export interface QueryProcedure<TParams extends ProcedureParams>
   extends ProcedureBase<TParams> {
   _query: true;
-  query(...args: ProcedureArgs<TParams>): Promise<TParams['_output_out']>;
 }
 
 export interface MutationProcedure<TParams extends ProcedureParams>
   extends ProcedureBase<TParams> {
   _mutation: true;
-  mutate(...args: ProcedureArgs<TParams>): Promise<TParams['_output_out']>;
 }
 
 export interface SubscriptionProcedure<TParams extends ProcedureParams>
   extends ProcedureBase<TParams> {
   _subscription: true;
-  subscription(
-    ...args: ProcedureArgs<TParams>
-  ): Promise<TParams['_output_out']>;
 }
+
 export type Procedure<TParams extends ProcedureParams> =
   | QueryProcedure<TParams>
   | MutationProcedure<TParams>

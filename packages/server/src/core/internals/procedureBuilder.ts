@@ -21,10 +21,15 @@ type CreateProcedureReturnInput<
   _meta: TPrev['_meta'];
   _ctx_in: TPrev['_ctx_in'];
   _ctx_out: Overwrite<TPrev['_ctx_out'], TNext['_ctx_out']>;
-  _input_out: FallbackValue<TNext['_input_out'], TPrev['_input_out']>;
   _input_in: FallbackValue<TNext['_input_in'], TPrev['_input_in']>;
+  _input_out: FallbackValue<TNext['_input_out'], TPrev['_input_out']>;
+  _input_parser: FallbackValue<TNext['_input_parser'], TPrev['_input_parser']>;
   _output_in: FallbackValue<TNext['_output_in'], TPrev['_output_in']>;
   _output_out: FallbackValue<TNext['_output_out'], TPrev['_output_out']>;
+  _output_parser: FallbackValue<
+    TNext['_output_parser'],
+    TPrev['_output_parser']
+  >;
 }>;
 
 export interface ProcedureBuilder<TParams extends ProcedureParams> {
@@ -38,10 +43,12 @@ export interface ProcedureBuilder<TParams extends ProcedureParams> {
     _meta: TParams['_meta'];
     _ctx_in: TParams['_ctx_in'];
     _ctx_out: TParams['_ctx_out'];
-    _output_in: TParams['_output_in'];
-    _output_out: TParams['_output_out'];
     _input_in: inferParser<$TParser>['in'];
     _input_out: inferParser<$TParser>['out'];
+    _input_parser: $TParser;
+    _output_in: TParams['_output_in'];
+    _output_out: TParams['_output_out'];
+    _output_parser: TParams['_output_parser'];
   }>;
   /**
    * Add an output parser to the procedure.
@@ -55,13 +62,28 @@ export interface ProcedureBuilder<TParams extends ProcedureParams> {
     _ctx_out: TParams['_ctx_out'];
     _input_in: TParams['_input_in'];
     _input_out: TParams['_input_out'];
+    _input_parser: TParams['_input_parser'];
     _output_in: inferParser<$TParser>['in'];
     _output_out: inferParser<$TParser>['out'];
+    _output_parser: $TParser;
   }>;
   /**
    * Add a meta data to the procedure.
    */
-  meta(meta: TParams['_meta']): ProcedureBuilder<TParams>;
+  meta<$TMeta extends TParams['_meta']>(
+    meta: $TMeta,
+  ): ProcedureBuilder<{
+    _config: TParams['_config'];
+    _meta: $TMeta;
+    _ctx_in: TParams['_ctx_in'];
+    _ctx_out: TParams['_ctx_out'];
+    _input_in: TParams['_input_in'];
+    _input_out: TParams['_input_out'];
+    _input_parser: TParams['_input_parser'];
+    _output_in: TParams['_output_in'];
+    _output_out: TParams['_output_out'];
+    _output_parser: TParams['_output_parser'];
+  }>;
   /**
    * Add a middleware to the procedure.
    */
@@ -174,10 +196,12 @@ export function createBuilder<TConfig extends RootConfig>(): ProcedureBuilder<{
   _config: TConfig;
   _ctx_in: TConfig['ctx'];
   _ctx_out: TConfig['ctx'];
-  _input_out: UnsetMarker;
   _input_in: UnsetMarker;
+  _input_out: UnsetMarker;
+  _input_parser: UnsetMarker;
   _output_in: UnsetMarker;
   _output_out: UnsetMarker;
+  _output_parser: UnsetMarker;
   _meta: TConfig['meta'];
 }> {
   return createInternalBuilder() as any;

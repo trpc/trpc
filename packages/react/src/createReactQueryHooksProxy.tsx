@@ -1,11 +1,12 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 import {
   AnyRouter,
+  OmitNeverKeys,
   Procedure,
   ProcedureRouterRecord,
+  inferProcedureClientError,
   inferProcedureInput,
   inferProcedureOutput,
-  inferProcedureParams,
 } from '@trpc/server';
 import { createProxy } from '@trpc/server/shared';
 import {
@@ -19,14 +20,6 @@ import {
   UseTRPCMutationOptions,
   UseTRPCQueryOptions,
 } from './createReactQueryHooks';
-
-type inferProcedureClientError<T extends Procedure<any>> =
-  inferProcedureParams<T>['_config']['errorShape'];
-
-type NeverKeys<T> = {
-  [TKey in keyof T]: T[TKey] extends never ? TKey : never;
-}[keyof T];
-type OmitNeverKeys<T> = Omit<T, NeverKeys<T>>;
 
 type DecorateProcedure<
   TProcedure extends Procedure<any>,
