@@ -14,13 +14,25 @@ In the example below any call to a `protectedProcedure` will ensure that the use
 ```ts
 import { initTRPC } from '@trpc/server';
 
+interface Context {
+  user?: {
+    id: string;
+    isAdmin: boolean;
+    // [..]
+  };
+}
+
 export const t = initTRPC<{ ctx: Context }>()();
 
 const isAuthed = t.middleware(async ({ ctx, next }) => {
   if (!ctx.user?.isAdmin) {
     throw new TRPCError({ code: 'UNAUTHORIZED' });
   }
-  return next();
+  return next({
+    ctx: {
+      user: ctx.user,
+    }
+  });
 });
 
 export const protectedProcedure = t.procedure.use(isAuthed);
@@ -90,7 +102,6 @@ const isAuthed = t.middleware(({ ctx, next }) => {
 
   return next({
     ctx: {
-      ...ctx,
       user: ctx.user, // user value is known to be non-null now
     },
   });
