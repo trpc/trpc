@@ -19,15 +19,15 @@ SuperJSON allows us to transparently use e.g. standard `Date`/`Map`/`Set`s over 
 yarn add superjson
 ```
 
-#### 2. Add to your `AppRouter`
+#### 2. Add to your `initTRPC`
 
-```ts title='routers/router/_app..ts'
-import * as trpc from '@trpc/server';
+```ts title='routers/router/_app.ts'
+import { initTRPC } from '@trpc/server';
 import superjson from 'superjson';
 
-export const appRouter = trpc.router()
-  .transformer(superjson) // <--
-  // .query(...)
+export const t = initTRPC()({
+  transformer: superjson,
+});
 ```
 
 #### 3. Add to `createTRPCClient()` or `setupTRPC()`
@@ -56,7 +56,7 @@ export default setupTRPC<AppRouter>({
     transformer: superjson, // <-- Used for the actual requests
   },
   // [...]
-})(MyApp);
+});
 ```
 
 ## Different transformers for upload and download
@@ -93,12 +93,14 @@ export const transformer = {
 #### 3. Add to your `AppRouter`
 
 ```ts title='server/routers/_app.ts'
-import * as trpc from '@trpc/server';
+import { initTRPC } from '@trpc/server';
 import { transformer } from '../../utils/trpc';
 
-export const appRouter = trpc.router()
-  .transformer(transformer) // <--
-  // .query(...)
+export const t = initTRPC()({
+  transformer,
+});
+
+export const appRouter = t.router({});
 ```
 
 #### 4. Add to `createTRPCClient()`
@@ -108,7 +110,7 @@ import { createTRPCClient } from '@trpc/client';
 import { transformer } from '../utils/trpc';
 
 export const client = createTRPCClient<AppRouter>({
-  transformer: transformer, // <--
+  transformer, // <--
   // [...]
 });
 ```
