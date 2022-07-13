@@ -48,7 +48,7 @@ module.exports = {
           label: 'Usage with Next.js',
         },
         {
-          href: 'https://github.com/trpc/trpc',
+          href: 'https://github.com/trpc/trpc/tree/next',
           label: 'GitHub',
           position: 'right',
           className: 'navbar-external-link',
@@ -88,7 +88,7 @@ module.exports = {
           items: [
             {
               label: 'GitHub',
-              href: 'https://github.com/trpc/trpc',
+              href: 'https://github.com/trpc/trpc/tree/next',
               className: 'flex items-center',
             },
             {
@@ -112,7 +112,7 @@ module.exports = {
             // },
             {
               label: 'GitHub',
-              href: 'https://github.com/trpc/trpc',
+              href: 'https://github.com/trpc/trpc/tree/next',
               className: 'flex items-center',
             },
           ],
@@ -143,12 +143,12 @@ module.exports = {
         docs: {
           sidebarPath: require.resolve('./sidebars.js'),
           // Please change this to your repo.
-          editUrl: 'https://github.com/trpc/trpc/tree/main/www/',
+          editUrl: 'https://github.com/trpc/trpc/tree/next/www/',
         },
         blog: {
           showReadingTime: true,
           // Please change this to your repo.
-          editUrl: 'https://github.com/trpc/trpc/tree/main/www/blog/',
+          editUrl: 'https://github.com/trpc/trpc/tree/next/www/blog/',
         },
         theme: {
           customCss: require.resolve('./src/css/custom.css'),
