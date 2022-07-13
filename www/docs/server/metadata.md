@@ -5,7 +5,7 @@ sidebar_label: Route Metadata
 slug: /metadata
 ---
 
-Procedure metadata allows you to add an optional procedure specific `meta` property which will be available in all [middleware](middleware) function parameters.
+Procedure metadata allows you to add an optional procedure specific `meta` property which will be available in all [middleware](middlewares) function parameters.
 
 ## Create router with typed metadata
 
