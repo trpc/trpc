@@ -14,19 +14,31 @@ In the example below any call to a `protectedProcedure` will ensure that the use
 ```ts
 import { initTRPC } from '@trpc/server';
 
+interface Context {
+  user?: {
+    id: string;
+    isAdmin: boolean;
+    // [..]
+  };
+}
+
 export const t = initTRPC<{ ctx: Context }>()();
 
-const isAuthed = t.middleware(async ({ ctx, next }) => {
+const isAdmin = t.middleware(async ({ ctx, next }) => {
   if (!ctx.user?.isAdmin) {
     throw new TRPCError({ code: 'UNAUTHORIZED' });
   }
-  return next();
+  return next({
+    ctx: {
+      user: ctx.user,
+    }
+  });
 });
 
-export const protectedProcedure = t.procedure.use(isAuthed);
+const adminProcedure = t.procedure.use(isAdmin);
 
 const adminRouter = t.router({
-  secretPlace: protectedProcedure.query(() => 'a key'),
+  secretPlace: adminProcedure.query(() => 'a key'),
 });
 
 export const appRouter = t.router({
@@ -69,7 +81,7 @@ export const appRouter = t.router({
 
 ## Context Swapping
 
-A middleware can replace the context, and procedures will receive the new context value:
+A middleware can change properties of the context, and procedures will receive the new context value:
 
 ```ts
 import { initTRPC } from '@trpc/server';
@@ -90,7 +102,6 @@ const isAuthed = t.middleware(({ ctx, next }) => {
 
   return next({
     ctx: {
-      ...ctx,
       user: ctx.user, // user value is known to be non-null now
     },
   });
@@ -120,10 +131,16 @@ const inputSchema = z.object({ userId: z.string() });
 
 const isUserIdChecked = t.middleware(async ({ next, rawInput, ctx }) => {
   const result = inputSchema.safeParse(rawInput);
-  if (!result.success) throw new TRPCError({ code: 'BAD_REQUEST' });
+  if (!result.success) {
+    throw new TRPCError({ code: 'BAD_REQUEST' });
+  }
   const { userId } = result.data;
   // Check user id auth
-  return next({ ctx: { ...ctx, userId } });
+  return next({
+    ctx: { 
+      userId,
+    },
+  });
 });
 
 export const userProtectedProcedure = t.procedure.use(isUserIdChecked);
