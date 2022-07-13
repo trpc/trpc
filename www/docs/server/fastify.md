@@ -54,7 +54,7 @@ A sample router is given below, save it in a file named `router.ts`.
   <summary>router.ts</summary>
 
 ```ts title='router.ts'
-import * as trpc from '@trpc/server';
+import { initTRPC } from '@trpc/server';
 import { z } from 'zod';
 
 type User = {
@@ -65,27 +65,26 @@ type User = {
 
 const users: Record<string, User> = {};
 
-export const appRouter = trpc
-  .router()
-  .query('getUserById', {
-    input: z.string(),
-    async resolve({ input }) {
-      return users[input]; // input type is string
-    },
-  })
-  .mutation('createUser', {
-    // validate input with Zod
-    input: z.object({
-      name: z.string().min(3),
-      bio: z.string().max(142).optional(),
-    }),
-    async resolve({ input }) {
+export const t = initTRPC()();
+
+export const appRouter = t.router({
+  getUserById: t.procedure.input(z.string()).query(({ input }) => {
+    return users[input]; // input type is string
+  }),
+  createUser: t.procedure
+    .input(
+      z.object({
+        name: z.string().min(3),
+        bio: z.string().max(142).optional(),
+      }),
+    )
+    .mutation(({ input }) => {
       const id = Date.now().toString();
       const user: User = { id, ...input };
       users[user.id] = user;
       return user;
-    },
-  });
+    }),
+});
 
 // export type definition of API
 export type AppRouter = typeof appRouter;

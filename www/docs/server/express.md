@@ -1,10 +1,9 @@
 ---
 id: express
-title: Usage with Express.js
-sidebar_label: "Adapter: Express.js"
+title: Usage with Express
+sidebar_label: 'Adapter: Express'
 slug: /express
 ---
-
 
 ## Example app
 
@@ -18,7 +17,7 @@ slug: /express
   </thead>
   <tbody>
     <tr>
-      <td>Express server &amp; procedure calls with node.js.</td>
+      <td>Express server &amp; procedure calls with Node.js.</td>
       <td><em>n/a</em></td>
       <td>
         <ul>
@@ -30,9 +29,7 @@ slug: /express
   </tbody>
 </table>
 
-## How to add tRPC to existing Express.js project
-
-
+## How to add tRPC to existing Express project
 
 ### 1. Install deps
 
@@ -47,28 +44,25 @@ yarn add @trpc/server zod
 Implement your tRPC router. A sample router is given below:
 
 ```ts title='server.ts'
-import * as trpc from '@trpc/server';
+import { initTRPC } from '@trpc/server';
 import { z } from 'zod';
 
-const appRouter = trpc
-  .router()
-  .query('getUser', {
-    input: z.string(),
-    async resolve(req) {
-      req.input; // string
-      return { id: req.input, name: 'Bilbo' };
-    },
-  })
-  .mutation('createUser', {
-    // validate input with Zod
-    input: z.object({ name: z.string().min(5) }),
-    async resolve(req) {
+export const t = initTRPC()();
+
+export const appRouter = t.router({
+  getUser: t.procedure.input(z.string()).query((req) => {
+    req.input; // string
+    return { id: req.input, name: 'Bilbo' };
+  }),
+  createUser: t.procedure
+    .input(z.object({ name: z.string().min(5) }))
+    .mutation(async (req) => {
       // use your ORM of choice
       return await UserModel.create({
         data: req.input,
       });
-    },
-  });
+    }),
+});
 
 // export type definition of API
 export type AppRouter = typeof appRouter;
@@ -76,30 +70,34 @@ export type AppRouter = typeof appRouter;
 
 If your router file starts getting too big, split your router into several subrouters each implemented in its own file. Then [merge them](/docs/merging-routers) into a single root `appRouter`.
 
-### 3. Use the Express.js adapter
+### 3. Use the Express adapter
 
-tRPC includes an adapter for Express.js out of the box. This adapter lets you convert your tRPC router into an Express.js middleware.
+tRPC includes an adapter for Express out of the box. This adapter lets you convert your tRPC router into an Express middleware.
 
 ```ts title='server.ts'
+import { inferAsyncReturnType, initTRPC } from '@trpc/server';
 import * as trpcExpress from '@trpc/server/adapters/express';
-
-const appRouter = /* ... */;
-
-const app = express();
 
 // created for each request
 const createContext = ({
   req,
   res,
-}: trpcExpress.CreateExpressContextOptions) => ({}) // no context
-type Context = trpc.inferAsyncReturnType<typeof createContext>;
+}: trpcExpress.CreateExpressContextOptions) => ({}); // no context
+type Context = inferAsyncReturnType<typeof createContext>;
+
+const t = initTRPC<{ ctx: Context }>()();
+const appRouter = t.router({
+  // [...]
+});
+
+const app = express();
 
 app.use(
   '/trpc',
   trpcExpress.createExpressMiddleware({
     router: appRouter,
     createContext,
-  })
+  }),
 );
 
 app.listen(4000);
