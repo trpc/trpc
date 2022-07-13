@@ -3,7 +3,7 @@
 /** @type {import('@docusaurus/types').Config} */
 module.exports = {
   title: 'tRPC',
-  tagline: 'End-to-end typesafe APIs made easy',
+  tagline: 'Move Fast and Break Nothing.\nEnd-to-end typesafe APIs made easy.',
   url: 'https://trpc.io',
   baseUrl: '/',
   onBrokenLinks: 'throw',
