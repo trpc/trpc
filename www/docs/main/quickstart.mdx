@@ -85,7 +85,7 @@ The following would create a query procedure called `getUser` that takes a singl
 import { initTRPC } from '@trpc/server';
 import { z } from 'zod';
 
-const t = initTPRC()();
+const t = initTRPC()();
 
 const appRouter = t.router({
   getUser: t.procedure
