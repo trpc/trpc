@@ -46,11 +46,9 @@ const ctx = konn()
     const combined = t.procedure.unstable_concat(proc1).unstable_concat(proc2);
 
     const appRouter = t.router({
-      mutations: {
-        getContext: combined.resolve(({ ctx }) => {
-          return ctx;
-        }),
-      },
+      getContext: combined.mutation(({ ctx }) => {
+        return ctx;
+      }),
     });
 
     const opts = routerToServerAndClientNew(appRouter, {
@@ -67,6 +65,7 @@ const ctx = konn()
     return {
       close: opts.close,
       client,
+      proxy: opts.proxy,
     };
   })
   .afterEach(async (ctx) => {
@@ -75,7 +74,7 @@ const ctx = konn()
   .done();
 
 test('decorate independently', async () => {
-  const result = await ctx.client.mutations.getContext();
+  const result = await ctx.proxy.getContext.mutate();
   // This is correct
   expect(result).toEqual({
     user: mockUser,
@@ -84,7 +83,7 @@ test('decorate independently', async () => {
 
   // This is not correct
   expectTypeOf(result).toMatchTypeOf<{
-    // TODO FIXME: this is a bug in the type checker
+    // TODO FIXME: this is a bug in the type inference
     // user: User;
     foo: 'bar';
   }>();

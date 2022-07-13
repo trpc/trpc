@@ -1,21 +1,21 @@
 import { inferObservableValue } from '../observable';
-import { inferAsyncReturnType } from '../types';
 import { Procedure, ProcedureArgs } from './procedure';
-import { AnyRouter, AnyRouterParams, Router } from './router';
+import { AnyRouter, AnyRouterDef, Router } from './router';
 
-export type inferRouterParams<TRouter extends AnyRouter> =
-  TRouter extends Router<infer TParams>
-    ? TParams extends AnyRouterParams<any>
-      ? TParams
-      : never
-    : never;
+export type inferRouterDef<TRouter extends AnyRouter> = TRouter extends Router<
+  infer TParams
+>
+  ? TParams extends AnyRouterDef<any>
+    ? TParams
+    : never
+  : never;
 
 export type inferRouterContext<TRouter extends AnyRouter> =
-  inferRouterParams<TRouter>['_ctx'];
+  inferRouterDef<TRouter>['_ctx'];
 export type inferRouterError<TRouter extends AnyRouter> =
-  inferRouterParams<TRouter>['_errorShape'];
+  inferRouterDef<TRouter>['_errorShape'];
 export type inferRouterMeta<TRouter extends AnyRouter> =
-  inferRouterParams<TRouter>['_meta'];
+  inferRouterDef<TRouter>['_meta'];
 
 /**
  * @public
@@ -23,15 +23,32 @@ export type inferRouterMeta<TRouter extends AnyRouter> =
 export type ProcedureType = 'query' | 'mutation' | 'subscription';
 
 export type inferHandlerInput<TProcedure extends Procedure<any>> =
-  TProcedure extends Procedure<infer TParams> ? ProcedureArgs<TParams> : never;
+  ProcedureArgs<inferProcedureParams<TProcedure>>;
 
 export type inferProcedureInput<TProcedure extends Procedure<any>> =
   inferHandlerInput<TProcedure>[0];
 
-export type inferProcedureOutput<TProcedure extends Procedure<any>> =
-  inferAsyncReturnType<TProcedure>;
+// /**
+//  * @internal
+//  */
+// type inferProcedureFn<TProcedure extends Procedure<any>> =
+//   TProcedure extends QueryProcedure<any>
+//     ? TProcedure['query']
+//     : TProcedure extends SubscriptionProcedure<any>
+//     ? TProcedure['subscription']
+//     : TProcedure extends MutationProcedure<any>
+//     ? TProcedure['mutate']
+//     : never;
+
+export type inferProcedureParams<TProcedure> = TProcedure extends Procedure<any>
+  ? TProcedure['_def']
+  : never;
+export type inferProcedureOutput<TProcedure> =
+  inferProcedureParams<TProcedure>['_output_out'];
 
 export type inferSubscriptionOutput<
   TRouter extends AnyRouter,
-  TPath extends keyof TRouter['subscriptions'] & string,
-> = inferObservableValue<inferProcedureOutput<TRouter['subscriptions'][TPath]>>;
+  TPath extends keyof TRouter['_def']['subscriptions'] & string,
+> = inferObservableValue<
+  inferProcedureOutput<TRouter['_def']['subscriptions'][TPath]>
+>;

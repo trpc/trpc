@@ -10,7 +10,7 @@ The magic of tRPC is making _strongly typed_ API calls without relying on code g
 Import the `AppRouter` type into your client from the file your root tRPC router is defined. This single type represents the type signature of your entire API.
 
 ```ts title='client.ts'
-import type { AppRouter } from '../path/to/server/trpc.ts';
+import type { AppRouter } from '../path/to/server/trpc';
 ```
 
 The `import type` keywords let you import from _any TypeScript file_ on your filesystem. Plus `import type` can only import types, **NOT** code. So there's no danger of accidentally importing server-side code into your client. All calls to `import type` are _always fully erased_ from your compiled JavaScript bundle ([source](https://www.typescriptlang.org/docs/handbook/release-notes/typescript-3-8.html#type-only-imports-and-export)).
@@ -21,21 +21,23 @@ Create a typesafe client with the `createTRPCClient` method from `@trpc/client`:
 
 ```ts title='client.ts'
 // pages/index.tsx
-import type { AppRouter } from '../path/to/server/trpc.ts';
+import type { AppRouter } from '../path/to/server/trpc';
 import { createTRPCClient } from '@trpc/client';
 
 const client = createTRPCClient<AppRouter>({
-  url: 'http://localhost:5000/trpc',
+  url: 'http://localhost:5000/trpc'
 });
+
+const proxy = createTRPCClientProxy(client);
 ```
 
-As you can see, we passed `AppRouter` as a **type argument** of `createTRPCClient`. This returns a strongly typed `client` instance:
+As you can see, we passed `AppRouter` as a **type argument** of `createTRPCClient`. This returns a strongly typed `client` instance, we also create a client `proxy` which mirrors the structure of your `AppRouter` on the client:
 
 ```ts title='client.ts'
-const bilbo = await client.query('getUser', 'id_bilbo');
+const bilbo = await proxy.getUser.query('id_bilbo');
 // => { id: 'id_bilbo', name: 'Bilbo' };
 
-const frodo = await client.mutation('createUser', { name: 'Frodo' });
+const frodo = await proxy.createUser.mutation({ name: 'Frodo' });
 // => { id: 'id_frodo', name: 'Frodo' };
 ```
 

@@ -31,7 +31,7 @@ export function initTRPC<TParams extends Partial<InitGenerics> = {}>() {
   }>;
 
   type $Context = $Generics['ctx'];
-  type $Meta = $Generics['meta'];
+  type $Meta = PickFirstDefined<$Generics['meta'], undefined>;
   type $Options = Partial<InitOptions<$Generics>>;
 
   return function initTRPCInner<TOptions extends $Options>(
@@ -42,9 +42,9 @@ export function initTRPC<TParams extends Partial<InitGenerics> = {}>() {
       ErrorFormatter<$Context, DefaultErrorShape>
     >;
     type $Transformer = TOptions['transformer'] extends DataTransformerOptions
-      ? TOptions['transformer'] extends undefined
-        ? DefaultDataTransformer
-        : CombinedDataTransformer
+      ? TOptions['transformer'] extends DataTransformerOptions
+        ? CombinedDataTransformer
+        : DefaultDataTransformer
       : DefaultDataTransformer;
     type $ErrorShape = ErrorFormatterShape<$Formatter>;
 
@@ -58,24 +58,29 @@ export function initTRPC<TParams extends Partial<InitGenerics> = {}>() {
     const errorFormatter = options?.errorFormatter ?? defaultFormatter;
     const transformer = getDataTransformer(
       options?.transformer ?? defaultTransformer,
-    );
+    ) as $Transformer;
+    const _config: $Config = {
+      transformer,
+      errorShape: null as any,
+      ctx: null as any,
+      meta: null as any,
+    };
     return {
       /**
        * These are just types, they can't be used
        * @internal
        */
-      _config: null as unknown as $Config,
+      _config,
       /**
        * Builder object for creating procedures
        */
-      procedure: createBuilder<$Context, $Meta>(),
+      procedure: createBuilder<$Config>(),
       /**
        * Create reusable middlewares
        */
-      middleware: createMiddlewareFactory<$Context, $Meta>(),
+      middleware: createMiddlewareFactory<$Config>(),
       /**
        * Create a router
-       * FIXME this should also use error formatter
        */
       router: createRouterFactory<$Config>({
         errorFormatter,

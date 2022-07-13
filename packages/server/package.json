@@ -1,6 +1,6 @@
 {
   "name": "@trpc/server",
-  "version": "10.0.0-alpha.29",
+  "version": "10.0.0-alpha.36",
   "description": "tRPC Server",
   "author": "KATT",
   "license": "MIT",
@@ -88,6 +88,11 @@
       "import": "./dist/subscription.mjs",
       "require": "./dist/subscription.js",
       "default": "./dist/subscription.js"
+    },
+    "./shared": {
+      "import": "./dist/shared/index.mjs",
+      "require": "./dist/shared/index.js",
+      "default": "./dist/shared/index.js"
     }
   },
   "files": [
@@ -96,13 +101,14 @@
     "adapters",
     "rpc",
     "observable",
+    "shared",
     "src"
   ],
   "publishConfig": {
     "access": "public"
   },
   "devDependencies": {
-    "@cloudflare/workers-types": "^3.8.0",
+    "@cloudflare/workers-types": "^3.14.1",
     "@fastify/websocket": "^5.0.0",
     "@miniflare/core": "^2.4.0",
     "@types/aws-lambda": "^8.10.97",

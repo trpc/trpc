@@ -1,0 +1,7 @@
+{
+  "template": "next",
+  "container": {
+    "node": "16",
+    "startScript": "dev"
+  }
+}

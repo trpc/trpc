@@ -3,6 +3,7 @@
     "yzhang.markdown-all-in-one",
     "esbenp.prettier-vscode",
     "dbaeumer.vscode-eslint",
-    "bungcip.better-toml"
+    "bungcip.better-toml",
+    "Orta.vscode-twoslash-queries"
   ]
 }

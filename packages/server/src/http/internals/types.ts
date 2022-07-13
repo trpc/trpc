@@ -1,4 +1,4 @@
-import { AnyRouter, ProcedureType, inferRouterParams } from '../../core';
+import { AnyRouter, ProcedureType, inferRouterDef } from '../../core';
 import { TRPCError } from '../../error/TRPCError';
 import { BaseHandlerOptions } from '../../internals/types';
 import { TRPCResponse } from '../../rpc';
@@ -24,8 +24,8 @@ export interface HTTPRequest {
  * @internal
  */
 export type ResponseMetaFn<TRouter extends AnyRouter> = (opts: {
-  data: TRPCResponse<unknown, inferRouterParams<TRouter>['_error']>[];
-  ctx?: inferRouterParams<TRouter>['_ctx'];
+  data: TRPCResponse<unknown, inferRouterDef<TRouter>['_error']>[];
+  ctx?: inferRouterDef<TRouter>['_ctx'];
   /**
    * The different tRPC paths requested
    **/

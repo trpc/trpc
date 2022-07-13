@@ -13,6 +13,11 @@ yarn
 yarn dev
 ```
 
+### Useful commands
+
+```bash
+yarn dx # runs prisma studio + next
+```
 
 ### ℹ️ This example contains _both_ Postgres _and_ SQLite
 

@@ -1,0 +1,7 @@
+{
+  "installDependencies": true,
+  "startCommand": "yarn dx",
+  "env": {
+    "NODE_ENV": "development"
+  }
+}

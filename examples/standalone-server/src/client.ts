@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import {
   createTRPCClient,
+  createTRPCClientProxy,
   createWSClient,
   httpLink,
   splitLink,
@@ -36,15 +37,16 @@ const client = createTRPCClient<AppRouter>({
     }),
   ],
 });
+const proxy = createTRPCClientProxy(client);
 
 async function main() {
-  const helloResponse = await client.queries.greeting({
+  const helloResponse = await proxy.greeting.greeting.query({
     name: 'world',
   });
 
   console.log('helloResponse', helloResponse);
 
-  const createPostRes = await client.mutation('createPost', {
+  const createPostRes = await proxy.post.createPost.mutate({
     title: 'hello world',
     text: 'check out https://tRPC.io',
   });
@@ -52,7 +54,7 @@ async function main() {
 
   let count = 0;
   await new Promise<void>((resolve) => {
-    const subscription = client.subscription('randomNumber', undefined, {
+    const subscription = client.subscription('post.randomNumber', undefined, {
       next(data) {
         // ^ note that `data` here is inferred
         console.log('received', data);

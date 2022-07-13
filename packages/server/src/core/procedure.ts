@@ -1,3 +1,6 @@
+import { DefaultErrorShape } from '../error/formatter';
+import { CombinedDataTransformer } from '../transformer';
+import { RootConfig } from './internals/config';
 import { UnsetMarker } from './internals/utils';
 
 type ClientContext = Record<string, unknown>;
@@ -12,6 +15,12 @@ export interface ProcedureOptions {
  * @internal
  */
 export interface ProcedureParams<
+  TConfig extends RootConfig = {
+    transformer: CombinedDataTransformer;
+    errorShape: DefaultErrorShape;
+    ctx: Record<string, unknown>;
+    meta: Record<string, unknown>;
+  },
   TContextIn = unknown,
   TContextOut = unknown,
   TInputIn = unknown,
@@ -20,6 +29,8 @@ export interface ProcedureParams<
   TOutputOut = unknown,
   TMeta = unknown,
 > {
+  // FIXME make non-optional
+  _config: TConfig;
   /**
    * @internal
    */
@@ -63,10 +74,35 @@ export type ProcedureArgs<TParams extends ProcedureParams> =
 /**
  * @internal
  */
-export interface Procedure<TParams extends ProcedureParams> {
-  (...args: ProcedureArgs<TParams>): Promise<TParams['_output_out']>;
+export interface ProcedureBase<TParams extends ProcedureParams> {
+  _def: TParams;
   /**
    * @deprecated use `._def.meta` instead
    */
   meta?: TParams['_meta'];
+  _procedure: true;
 }
+
+export interface QueryProcedure<TParams extends ProcedureParams>
+  extends ProcedureBase<TParams> {
+  _query: true;
+  query(...args: ProcedureArgs<TParams>): Promise<TParams['_output_out']>;
+}
+
+export interface MutationProcedure<TParams extends ProcedureParams>
+  extends ProcedureBase<TParams> {
+  _mutation: true;
+  mutate(...args: ProcedureArgs<TParams>): Promise<TParams['_output_out']>;
+}
+
+export interface SubscriptionProcedure<TParams extends ProcedureParams>
+  extends ProcedureBase<TParams> {
+  _subscription: true;
+  subscription(
+    ...args: ProcedureArgs<TParams>
+  ): Promise<TParams['_output_out']>;
+}
+export type Procedure<TParams extends ProcedureParams> =
+  | QueryProcedure<TParams>
+  | MutationProcedure<TParams>
+  | SubscriptionProcedure<TParams>;
