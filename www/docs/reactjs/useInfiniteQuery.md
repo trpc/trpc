@@ -18,16 +18,19 @@ slug: /useInfiniteQuery
 ## Example Procedure
 
 ```tsx title='server/routers/_app.ts'
-import * as trpc from '@trpc/server';
+import { initTRPC } from '@trpc/server'
 import { Context } from './[trpc]';
 
-export const appRouter = trpc.router<Context>()
-  .query('infinitePosts', {
-    input: z.object({
+export const t = initTRPC()()
+
+export const appRouter = t.router({
+  infinitePosts: t
+    .procedure
+    .input(z.object({
       limit: z.number().min(1).max(100).nullish(),
       cursor: z.number().nullish(), // <-- "cursor" needs to exist, but can be any type
-    }),
-    async resolve({ input }) {
+    })),
+    .query(({ input }) => {
       const limit = input.limit ?? 50;
       const { cursor } = input;
       const items = await prisma.post.findMany({
@@ -53,6 +56,7 @@ export const appRouter = trpc.router<Context>()
         nextCursor,
       };
     })
+})
 ```
 
 
@@ -62,13 +66,10 @@ export const appRouter = trpc.router<Context>()
 import { trpc } from '../utils/trpc';
 
 export function MyComponent() {
-  const myQuery = trpc.useInfiniteQuery(
-    [
-      'infinitePosts',
-      {
-        limit: 10,
-      },
-    ],
+  const myQuery = trpc.proxy.infinitePosts.useInfiniteQuery(
+    {
+      limit: 10,
+    },
     {
       getNextPageParam: (lastPage) => lastPage.nextCursor,
     },
@@ -90,7 +91,7 @@ import { trpc } from '../utils/trpc';
 export function MyComponent() {
   const utils = trpc.useContext();
 
-  const myMutation = trpc.useMutation('infinitePosts.add', {
+  const myMutation = trpc.proxy.infinitePosts.add.useMutation({
     onMutate({ post }) {
       await utils.cancelQuery(['infinitePosts']);
       const allPosts = utils.getInfiniteQueryData(['infinitePosts', { limit: 10 }]);
@@ -110,7 +111,7 @@ import { trpc } from '../utils/trpc';
 export function MyComponent() {
   const utils = trpc.useContext();
 
-  const myMutation = trpc.useMutation('infinitePosts.delete', {
+  const myMutation = trpc.proxy.infinitePosts.delete.useMutation({
     onMutate({ post }) {
       await utils.cancelQuery(['infinitePosts']);
 
