@@ -1,7 +1,7 @@
 ---
 id: express
-title: Usage with Express.js
-sidebar_label: 'Adapter: Express.js'
+title: Usage with Express
+sidebar_label: 'Adapter: Express'
 slug: /express
 ---
 
@@ -17,7 +17,7 @@ slug: /express
   </thead>
   <tbody>
     <tr>
-      <td>Express server &amp; procedure calls with node.js.</td>
+      <td>Express server &amp; procedure calls with Node.js.</td>
       <td><em>n/a</em></td>
       <td>
         <ul>
@@ -29,7 +29,7 @@ slug: /express
   </tbody>
 </table>
 
-## How to add tRPC to existing Express.js project
+## How to add tRPC to existing Express project
 
 ### 1. Install deps
 
@@ -70,9 +70,9 @@ export type AppRouter = typeof appRouter;
 
 If your router file starts getting too big, split your router into several subrouters each implemented in its own file. Then [merge them](/docs/merging-routers) into a single root `appRouter`.
 
-### 3. Use the Express.js adapter
+### 3. Use the Express adapter
 
-tRPC includes an adapter for Express.js out of the box. This adapter lets you convert your tRPC router into an Express.js middleware.
+tRPC includes an adapter for Express out of the box. This adapter lets you convert your tRPC router into an Express middleware.
 
 ```ts title='server.ts'
 import { inferAsyncReturnType, initTRPC } from '@trpc/server';
@@ -87,7 +87,7 @@ type Context = inferAsyncReturnType<typeof createContext>;
 
 const t = initTRPC<{ ctx: Context }>()();
 const appRouter = t.router({
-  /* ... */
+  // [...]
 });
 
 const app = express();

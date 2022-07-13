@@ -15,7 +15,8 @@ When an `output` validator is defined, its inferred type is expected as the retu
 
 - This is entirely optional and only if you want to validate your output at runtime. This can be useful to ensure you do not accidentally leak any unexpected data.
 - If output validation fails, the server will respond with a `INTERNAL_SERVER_ERROR`.
-  :::
+
+:::
 
 ## Examples
 

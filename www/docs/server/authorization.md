@@ -47,12 +47,7 @@ type Context = inferAsyncReturnType<typeof createContext>;
 import { TRPCError, initTRPC } from '@trpc/server';
 import { Context } from '../context';
 
-export const t = initTRPC<{ ctx: Context }>()({
-  transformer: superjson,
-  errorFormatter({ shape }) {
-    return shape;
-  },
-});
+export const t = initTRPC<{ ctx: Context }>()();
 
 const appRouter = t.router({
   // open for anyone
@@ -98,6 +93,7 @@ t.router({
     .input(z.string().nullish())
     .query(({ input, ctx }) => `hello ${input ?? ctx.user?.name ?? 'world'}`),
   admin: t.router({
+    // this is accessible only to admins
     secret: protectedProcedure.query(({ ctx }) => {
       return {
         secret: 'sauce',

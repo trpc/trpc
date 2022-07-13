@@ -50,10 +50,12 @@ import type { AppRouter } from '~/server/routers/_app';
 
 // [...]
 
-export default setupTRPC<AppRouter>({
+export const trpc = setupTRPC<AppRouter>({
   transformer: superjson, // <-- Used for hydration when server-side rendering
   config({ ctx }) {
-    transformer: superjson, // <-- Used for the actual requests
+    return {
+      transformer: superjson, // <-- Used for the actual requests
+    };
   },
   // [...]
 });
@@ -100,7 +102,9 @@ export const t = initTRPC()({
   transformer,
 });
 
-export const appRouter = t.router({});
+export const appRouter = t.router({
+  // [...]
+});
 ```
 
 #### 4. Add to `createTRPCClient()`

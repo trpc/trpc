@@ -46,15 +46,15 @@ const isAuthed = t.middleware(async ({ meta, next, ctx }) => {
   return next();
 });
 
-export const protectedProcedure = t.procedure.use(isAuthed);
+export const authedProcedure = t.procedure.use(isAuthed);
 
 export const appRouter = t.router({
-  hello: t.procedure.meta({ hasAuth: false }).query(() => {
+  hello: authedProcedure.meta({ hasAuth: false }).query(() => {
     return {
       greeting: 'hello world',
     };
   }),
-  protectedHello: protectedProcedure.meta({ hasAuth: true }).query(() => {
+  protectedHello: authedProcedure.meta({ hasAuth: true }).query(() => {
     return {
       greeting: 'hello-world',
     };

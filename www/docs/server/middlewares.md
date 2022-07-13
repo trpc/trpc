@@ -99,7 +99,7 @@ const isAuthed = t.middleware(({ ctx, next }) => {
 const protectedProcedure = t.procedure.use(isAuthed);
 
 export const appRouter = t.router({
-  userId: t.procedure.query(({ ctx }) => ctx.user.id),
+  userId: protectedProcedure.query(({ ctx }) => ctx.user.id),
 });
 ```
 
@@ -126,10 +126,10 @@ const isUserIdChecked = t.middleware(async ({ next, rawInput, ctx }) => {
   return next({ ctx: { ...ctx, userId } });
 });
 
-export const userIdProtectedProcedure = t.procedure.use(isUserIdChecked);
+export const userProtectedProcedure = t.procedure.use(isUserIdChecked);
 
 export const appRouter = t.router({
-  userId: userIdProtectedProcedure
+  userId: userProtectedProcedure
     .input(inputSchema)
     .query(({ ctx }) => ctx.userId),
 });

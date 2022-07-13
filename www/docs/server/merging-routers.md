@@ -29,14 +29,14 @@ const postRouter = t.router({
       }),
     )
     .mutation(({ input }) => {
-      // ..
+      // ...
       return {
         id: 'xxxx',
         ...input,
       };
     }),
   list: t.procedure.query(() => {
-    // ..
+    // ...
     return [];
   }),
 });
