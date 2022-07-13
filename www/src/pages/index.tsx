@@ -82,6 +82,8 @@ function Home() {
             </GitHubButton>
           </p>
 
+          {/* The below is temporarily commented out as this GIF is out-of-date */}
+          {/* 
           <figure className={`${styles.figure} gap-4`}>
             <img
               className="mx-auto"
@@ -98,7 +100,8 @@ function Home() {
               at runtime. tRPC transforms this type into a fully typesafe
               client.
             </figcaption>
-          </figure>
+          </figure> 
+          */}
           <p>
             <Link
               className={clsx('getStarted', styles.getStarted)}
