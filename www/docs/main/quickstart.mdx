@@ -60,8 +60,11 @@ createUser(data: {name:string}) => { id: string; name: string; }
 First we define a router somewhere in our server codebase:
 
 ```ts title='server.ts'
-import * as trpc from '@trpc/server';
-const appRouter = trpc.router();
+import { initTRPC } from '@trpc/server';
+
+const t = initTPRC()();
+
+const appRouter = t.router({});
 
 // only export *type signature* of router!
 // to avoid accidentally importing your API
@@ -71,27 +74,33 @@ export type AppRouter = typeof appRouter;
 
 ### Add a query endpoint
 
-Use the `.query()` method to add a query endpoint to the router. Arguments:
+Add an attribute to the router using `t.procedure.query()` to add a query endpoint to the router. Arguments:
 
-`.query(name: string, params: QueryParams)`
+`name: t.procedure.input(parser).query(resolver)`
 
-- `name: string`: The name of this endpoint
-- `params.input`: Optional. This should be a function that validates/casts the _input_ of this endpoint and either returns a strongly typed value (if valid) or throws an error (if invalid). Alternatively you can pass a [Zod](https://github.com/colinhacks/zod), [Superstruct](https://github.com/ianstormtaylor/superstruct) or [Yup](https://github.com/jquense/yup) schema.
-- `params.resolve`: This is the actual implementation of the endpoint. It's a function with a single `req` argument. The validated input is passed into `req.input` and the context is in `req.ctx` (more about context later!)
+- `name`: The name of this enpdpoint
+- `input`: Optional. Chain this function if your endpoint takes arguments.
+- `parser`: Required only if `input` is chained. This should be a function that validates/casts the _input_ of this endpoint and either returns a strongly typed value (if valid) or throws an error (if invalid). Alternatively you can pass a [Zod](https://github.com/colinhacks/zod), [Superstruct](https://github.com/ianstormtaylor/superstruct) or [Yup](https://github.com/jquense/yup) schema.
+- `resolver`: This is the actual implementation of the endpoint. It's a function with a single `req` argument. The validated input is passed into `req.input` and the context is in `req.ctx` (more about context later!)
+
+The following would create a query endpoint called `getUser` that takes a single string argument and returns a user object:
 
 ```ts title='server.ts'
+import { initTRPC } from '@trpc/server';
+import { z } from 'zod';
 
-import * as trpc from '@trpc/server';
+const t = initTPRC()();
 
-const appRouter = trpc.router().query('getUser', {
-  input: (val: unknown) => {
-    if (typeof val === 'string') return val;
-    throw new Error(`Invalid input: ${typeof val}`);
-  },
-  async resolve(req) {
-    req.input; // string
-    return { id: req.input, name: 'Bilbo' };
-  },
+const appRouter = t.router({
+  getUser: t.procedure
+    .input((val: unknown) => {
+      if (typeof val === 'string') return val;
+      throw new Error(`Invalid input: ${typeof val}`);
+    })
+    .query((req) => {
+      req.input; // string
+      return { id: req.input, name: 'Bilbo' };
+    }),
 });
 
 export type AppRouter = typeof appRouter;
@@ -106,31 +115,30 @@ createUser(payload: {name: string}) => {id: string; name: string};
 ```
 
 ```ts title='server.ts'
-import * as trpc from '@trpc/server';
+import { initTRPC } from '@trpc/server';
 import { z } from 'zod';
 
-const appRouter = trpc
-  .router()
-  .query('getUser', {
-    input: (val: unknown) => {
+const t = initTPRC()();
+
+const appRouter = t.router({
+  getUser: t.procedure
+    .input((val: unknown) => {
       if (typeof val === 'string') return val;
       throw new Error(`Invalid input: ${typeof val}`);
-    },
-    async resolve(req) {
+    })
+    .query((req) => {
       req.input; // string
       return { id: req.input, name: 'Bilbo' };
-    },
-  })
-  .mutation('createUser', {
-    // validate input with Zod
-    input: z.object({ name: z.string().min(5) }),
-    async resolve(req) {
+    }),
+  createUser: t.procedure
+    .input(z.object({ name: z.string() }))
+    .mutation((req) => {
       // use your ORM of choice
       return await UserModel.create({
         data: req.input,
       });
-    },
-  });
+    })
+});
 
 export type AppRouter = typeof appRouter;
 ```
