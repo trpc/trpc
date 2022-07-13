@@ -86,24 +86,27 @@ Implement your tRPC router in `./pages/api/trpc/[trpc].ts`. If you need to split
 <details><summary>View sample router</summary>
 
 ```ts title='./pages/api/trpc/[trpc].ts'
-import * as trpc from '@trpc/server';
+import { initTRPC } from '@trpc/server';
 import * as trpcNext from '@trpc/server/adapters/next';
 import { z } from 'zod';
 
-export const appRouter = trpc
-  .router()
-  .query('hello', {
-    input: z
-      .object({
-        text: z.string().nullish(),
-      })
-      .nullish(),
-    resolve({ input }) {
+export const t = initTRPC()();
+
+export const appRouter = t.router({
+  hello: t.procedure
+    .input(
+      z
+        .object({
+          text: z.string().nullish(),
+        })
+        .nullish(),
+    )
+    .query(({ input }) => {
       return {
         greeting: `hello ${input?.text ?? 'world'}`,
       };
-    },
-  });
+    }),
+});
 
 // export type definition of API
 export type AppRouter = typeof appRouter;
@@ -166,10 +169,10 @@ export default function IndexPage() {
       <p>{hello.data.greeting}</p>
     </div>
   );
-};
+}
 ```
 
-## `withTRPC()` options
+## `setupTRPC()` options
 
 ### `config`-callback
 
@@ -198,25 +201,14 @@ Ability to set request headers and HTTP status when server-side rendering.
 #### Example
 
 ```tsx title='pages/_app.tsx'
-export default withTRPC<AppRouter>({
-  config({ ctx }) {
-    /* [...] */
-  },
-  ssr: true,
-  responseMeta({ clientErrors, ctx }) {
-    if (clientErrors.length) {
-      // propagate first http error from API calls
-      return {
-        status: clientErrors[0].data?.httpStatus ?? 500,
-      };
-    }
-    // cache full page for 1 day + revalidate once every second
-    const ONE_DAY_IN_SECONDS = 60 * 60 * 24;
-    return {
-      'Cache-Control': `s-maxage=1, stale-while-revalidate=${ONE_DAY_IN_SECONDS}`,
-    };
-  },
-})(MyApp);
+import type { AppProps } from 'next/app';
+import { trpc } from '~/utils/trpc';
+
+const MyApp: AppType = ({ Component, pageProps }: AppProps) => {
+  return <Component {...pageProps} />;
+};
+
+export default trpc.withTRPC(MyApp);
 ```
 
 ## Next steps
