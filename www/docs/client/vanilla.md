@@ -25,8 +25,7 @@ import type { AppRouter } from '../path/to/server/trpc';
 import { createTRPCClient } from '@trpc/client';
 
 const client = createTRPCClient<AppRouter>({
-  url: 'http://localhost:5000/trpc',
-  proxy: true
+  url: 'http://localhost:5000/trpc'
 });
 
 const proxy = createTRPCClientProxy(client);
