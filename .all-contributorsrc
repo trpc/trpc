@@ -955,6 +955,15 @@
       "contributions": [
         "example"
       ]
+    },
+    {
+      "login": "system32uwu",
+      "name": "Mateo Carriquí",
+      "avatar_url": "https://avatars.githubusercontent.com/u/29718978?v=4",
+      "profile": "https://tryhackme.com/p/zast99",
+      "contributions": [
+        "financial"
+      ]
     }
   ],
   "skipCi": true
