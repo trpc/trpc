@@ -174,27 +174,30 @@ server.register(ws);
 
 ### Add some subscriptions
 
+:::caution
+Work in progress: https://github.com/trpc/trpc/issues/2114
+:::
+
 Edit the `router.ts` file created in the previous steps and add the following code:
 
 ```ts title='router.ts'
+import { initTRPC } from '@trpc/server';
 import { observable } from '@trpc/server/observable';
 
-export const appRouter = trpc
-  .router()
-  // .query(...)
-  // .mutation(...)
-  .subscription('randomNumber', {
-    resolve() {
-      return observable<{ randomNumber: number }>((emit) => {
-        const timer = setInterval(() => {
-          emit.next({ randomNumber: Math.random() });
-        }, 1000);
-        return () => {
-          clearInterval(timer);
-        };
-      });
-    },
-  });
+const t = initTRPC()();
+
+export const appRouter = t.router({
+  randomNumber: t.procedure.subscription(() => {
+    return observable<{ randomNumber: number }>((emit) => {
+      const timer = setInterval(() => {
+        emit.next({ randomNumber: Math.random() });
+      }, 1000);
+      return () => {
+        clearInterval(timer);
+      };
+    });
+  })
+});
 ```
 
 ### Activate the `useWSS` option

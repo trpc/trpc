@@ -50,18 +50,20 @@ tRPC provides an error subclass, `TRPCError`, which you can use to represent an 
 For example, throwing this error:
 
 ```ts title='server.ts'
-import * as trpc from '@trpc/server';
+import { initTRPC } from '@trpc/server';
 
-const appRouter = trpc.router().query('hello', {
-  resolve: () => {
+const t = initTRPC()();
+
+const appRouter = trpc.router({
+  hello: t.procedure.query(() => {
     throw new trpc.TRPCError({
       code: 'INTERNAL_SERVER_ERROR',
       message: 'An unexpected error occurred, please try again later.',
       // optional: pass the original error to retain stack trace
       cause: theError,
     });
-  },
-});
+  })
+})
 
 // [...]
 ```
