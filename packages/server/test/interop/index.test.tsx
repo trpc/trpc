@@ -541,7 +541,7 @@ describe('ObservableAbortError', () => {
       expect(onReject).toHaveBeenCalledTimes(1);
     });
 
-    const err = onReject.mock.calls[0][0] as TRPCClientError<any>;
+    const err = onReject.mock.calls[0]![0]! as TRPCClientError<any>;
 
     expect(err.name).toBe('TRPCClientError');
     expect(err.cause?.name).toBe('ObservableAbortError');
@@ -591,7 +591,7 @@ describe('ObservableAbortError', () => {
       expect(onReject1).toHaveBeenCalledTimes(1);
     });
 
-    const err = onReject1.mock.calls[0][0] as TRPCClientError<any>;
+    const err = onReject1.mock.calls[0]![0]! as TRPCClientError<any>;
     expect(err).toBeInstanceOf(TRPCClientError);
     expect(err.cause?.name).toBe('ObservableAbortError');
 

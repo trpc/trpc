@@ -17,9 +17,10 @@ export function dedupeLink<
         return next(op);
       }
       const key = JSON.stringify([op.path, op.input]);
-      if (pending[key]) {
+      const obs$ = pending[key];
+      if (obs$) {
         // console.log('hooking into pending', { op });
-        return observable((observer) => pending[key].subscribe(observer));
+        return observable((observer) => obs$.subscribe(observer));
       }
 
       const shared$ = observable((observer) => {

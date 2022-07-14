@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
 import { legacyRouterToServerAndClient } from './__legacyRouterToServerAndClient';
 import { HTTPHeaders } from '@trpc/client';
 import { AsyncLocalStorage } from 'async_hooks';
@@ -30,13 +29,13 @@ test('is called if def first', async () => {
 
   const calls = middleware.mock.calls;
   expect(await client.query('foo1')).toBe('bar1');
-  expect(calls[0][0]).toHaveProperty('type');
-  expect(calls[0][0]).toHaveProperty('ctx');
-  expect(calls[0][0].type).toBe('query');
+  expect(calls[0]![0]!).toHaveProperty('type');
+  expect(calls[0]![0]!).toHaveProperty('ctx');
+  expect(calls[0]![0]!.type).toBe('query');
   expect(middleware).toHaveBeenCalledTimes(1);
 
   expect(await client.mutation('foo2')).toBe('bar2');
-  expect(calls[1][0].type).toBe('mutation');
+  expect(calls[1]![0]!.type).toBe('mutation');
 
   expect(middleware).toHaveBeenCalledTimes(2);
   close();
@@ -85,10 +84,10 @@ test('receives rawInput as param', async () => {
   const calls = middleware.mock.calls;
 
   expect(await client.query('userId', { userId: 'ABCD' })).toBe('ABCD');
-  expect(calls[0][0]).toHaveProperty('type');
-  expect(calls[0][0]).toHaveProperty('ctx');
-  expect(calls[0][0].type).toBe('query');
-  expect(calls[0][0].rawInput).toStrictEqual({ userId: 'ABCD' });
+  expect(calls[0]![0]!).toHaveProperty('type');
+  expect(calls[0]![0]!).toHaveProperty('ctx');
+  expect(calls[0]![0]!.type).toBe('query');
+  expect(calls[0]![0]!.rawInput).toStrictEqual({ userId: 'ABCD' });
 
   await expect(client.query('userId', { userId: 123 as any })).rejects.toThrow(
     'BAD_REQUEST',
@@ -218,10 +217,10 @@ test('child routers + hook call order', async () => {
 
   // check call order
   expect(middlewareInParent.mock.invocationCallOrder[0]).toBeLessThan(
-    middlewareInChild.mock.invocationCallOrder[0],
+    middlewareInChild.mock.invocationCallOrder[0]!,
   );
-  expect(middlewareInChild.mock.invocationCallOrder[0]).toBeLessThan(
-    middlewareInGrandChild.mock.invocationCallOrder[0],
+  expect(middlewareInChild.mock.invocationCallOrder[0]!).toBeLessThan(
+    middlewareInGrandChild.mock.invocationCallOrder[0]!,
   );
 
   expect(await client.query('name')).toBe('Child');
@@ -421,7 +420,7 @@ test('middleware throwing should return a union', async () => {
     await client.query('test');
   } catch {}
   expect(fn).toHaveBeenCalledTimes(1);
-  const res = fn.mock.calls[0][0];
+  const res = fn.mock.calls[0]![0]!;
 
   if (res.ok) {
     throw new Error('wrong state');
