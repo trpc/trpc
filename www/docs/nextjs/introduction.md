@@ -154,7 +154,20 @@ export const trpc = setupTRPC<AppRouter>({
 // => { useQuery: ..., useMutation: ...}
 ```
 
-### 5. Make API requests
+### 5. Configure `_app.tsx`
+
+```tsx title='pages/_app.tsx'
+import type { AppProps } from 'next/app';
+import { trpc } from '../utils/trpc';
+
+const MyApp: AppType = ({ Component, pageProps }: AppProps) => {
+  return <Component {...pageProps} />;
+};
+
+export default trpc.withTRPC(MyApp);
+```
+
+### 6. Make API requests
 
 ```tsx title='pages/index.ts'
 import { trpc } from '../utils/trpc';
@@ -200,15 +213,29 @@ Ability to set request headers and HTTP status when server-side rendering.
 
 #### Example
 
-```tsx title='pages/_app.tsx'
-import type { AppProps } from 'next/app';
-import { trpc } from '~/utils/trpc';
+```tsx title='utils/trpc.ts'
+import { setupTRPC } from '@trpc/next';
+import type { AppRouter } from '../pages/api/trpc/[trpc]';
 
-const MyApp: AppType = ({ Component, pageProps }: AppProps) => {
-  return <Component {...pageProps} />;
-};
-
-export default trpc.withTRPC(MyApp);
+export const trpc = setupTRPC({
+  config({ ctx }) {
+    /* [...] */
+  },
+  ssr: true,
+  responseMeta({ clientErrors, ctx }) {
+    if (clientErrors.length) {
+      // propagate first http error from API calls
+      return {
+        status: clientErrors[0].data?.httpStatus ?? 500,
+      };
+    }
+    // cache full page for 1 day + revalidate once every second
+    const ONE_DAY_IN_SECONDS = 60 * 60 * 24;
+    return {
+      'Cache-Control': `s-maxage=1, stale-while-revalidate=${ONE_DAY_IN_SECONDS}`,
+    };
+  },
+});
 ```
 
 ## Next steps
