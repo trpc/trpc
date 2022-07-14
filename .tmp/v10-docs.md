@@ -27,12 +27,12 @@
       - [§2.4 Merging routers](#24-merging-routers)
     - [§3 Advanced 🧙](#3-advanced-)
       - [Compose dynamic combos of middlewares/input parsers](#compose-dynamic-combos-of-middlewaresinput-parsers)
-    - [Migration path & Interopability mode](#migration-path--interopability-mode)
   - [New Raw client API!](#new-raw-client-api)
   - [New React-API (🚧🚧)](#new-react-api-)
     - [Open questions](#open-questions)
     - [New `@trpc/next`-APIs (🚧🚧)](#new-trpcnext-apis-)
     - [New Links architecture](#new-links-architecture)
+  - [Migration path & Interopability mode](#migration-path--interopability-mode)
 
 ## Play with it!
 
@@ -490,9 +490,6 @@ const editOrganization = procedure
   });
 ```
 
-### Migration path & Interopability mode
-
-👉 Moved to [alpha.trpc.io/docs/migrate-from-v9-to-v10](https://alpha.trpc.io/docs/migrate-from-v9-to-v10)
 
 
 ## New Raw client API!
@@ -637,3 +634,8 @@ export default trpc.withTRPC(MyApp);
 Only relevant if you're making custom links, but it's a more flexible structure that will allow us to write slimmer React-wrappers, etc.
 
 https://alpha.trpc.io/docs/links#creating-a-custom-link
+
+
+## Migration path & Interopability mode
+
+👉 Moved to [alpha.trpc.io/docs/migrate-from-v9-to-v10](https://alpha.trpc.io/docs/migrate-from-v9-to-v10)
