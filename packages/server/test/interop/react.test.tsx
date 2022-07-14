@@ -115,8 +115,8 @@ function createAppRouter() {
         const { cursor } = input;
         let nextCursor: typeof cursor = null;
         for (let index = 0; index < db.posts.length; index++) {
-          const element = db.posts[index];
-          if (cursor != null && element.createdAt < cursor) {
+          const element = db.posts[index]!;
+          if (cursor != null && element!.createdAt < cursor) {
             continue;
           }
           items.push(element);
@@ -127,7 +127,7 @@ function createAppRouter() {
         const last = items[items.length - 1];
         const nextIndex = db.posts.findIndex((item) => item === last) + 1;
         if (db.posts[nextIndex]) {
-          nextCursor = db.posts[nextIndex].createdAt;
+          nextCursor = db.posts[nextIndex]!.createdAt;
         }
         return {
           items,
@@ -345,7 +345,7 @@ describe('useQuery()', () => {
     });
 
     expect(linkSpy.up).toHaveBeenCalledTimes(1);
-    expect(linkSpy.up.mock.calls[0][0].context).toMatchObject({
+    expect(linkSpy.up.mock.calls[0]![0]!.context).toMatchObject({
       test: '1',
     });
   });
@@ -677,7 +677,7 @@ describe('useMutation()', () => {
     });
 
     expect(linkSpy.up).toHaveBeenCalledTimes(1);
-    expect(linkSpy.up.mock.calls[0][0].context).toMatchObject({
+    expect(linkSpy.up.mock.calls[0]![0]!.context).toMatchObject({
       test: '1',
     });
   });
@@ -782,14 +782,14 @@ test('dehydrate', async () => {
   expect(dehydrated).toHaveLength(2);
 
   const [cache, cache2] = dehydrated;
-  expect(cache.queryHash).toMatchInlineSnapshot(`"[\\"allPosts\\"]"`);
-  expect(cache.queryKey).toMatchInlineSnapshot(`
+  expect(cache!.queryHash).toMatchInlineSnapshot(`"[\\"allPosts\\"]"`);
+  expect(cache!.queryKey).toMatchInlineSnapshot(`
     Array [
       "allPosts",
     ]
   `);
-  expect(cache.state.data).toEqual(db.posts);
-  expect(cache2.state.data).toMatchInlineSnapshot(`
+  expect(cache!.state.data).toEqual(db.posts);
+  expect(cache2!.state.data).toMatchInlineSnapshot(`
     Object {
       "createdAt": 0,
       "id": "1",
@@ -847,7 +847,7 @@ test('useInfiniteQuery()', async () => {
         getNextPageParam: (lastPage) => lastPage.nextCursor,
       },
     );
-    expectTypeOf(q.data?.pages[0].items).toMatchTypeOf<undefined | Post[]>();
+    expectTypeOf(q.data?.pages[0]!.items).toMatchTypeOf<undefined | Post[]>();
 
     return q.status === 'loading' ? (
       <p>Loading...</p>
@@ -950,7 +950,7 @@ test('useInfiniteQuery and prefetchInfiniteQuery', async () => {
         getNextPageParam: (lastPage) => lastPage.nextCursor,
       },
     );
-    expectTypeOf(q.data?.pages[0].items).toMatchTypeOf<undefined | Post[]>();
+    expectTypeOf(q.data?.pages[0]?.items).toMatchTypeOf<undefined | Post[]>();
 
     return q.status === 'loading' ? (
       <p>Loading...</p>
@@ -1085,7 +1085,7 @@ test('useInfiniteQuery and fetchInfiniteQuery', async () => {
         getNextPageParam: (lastPage) => lastPage.nextCursor,
       },
     );
-    expectTypeOf(q.data?.pages[0].items).toMatchTypeOf<undefined | Post[]>();
+    expectTypeOf(q.data?.pages[0]?.items).toMatchTypeOf<undefined | Post[]>();
 
     return q.status === 'loading' ? (
       <p>Loading...</p>

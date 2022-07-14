@@ -39,7 +39,7 @@ test('basic', async () => {
   expect(clientError.shape.code).toMatchInlineSnapshot(`-32603`);
 
   expect(onError).toHaveBeenCalledTimes(1);
-  const serverError = onError.mock.calls[0][0].error;
+  const serverError = onError.mock.calls[0]![0]!.error;
 
   expect(serverError).toBeInstanceOf(TRPCError);
   if (!(serverError instanceof TRPCError)) {
@@ -84,7 +84,7 @@ test('input error', async () => {
   expect(clientError.shape.code).toMatchInlineSnapshot(`-32600`);
 
   expect(onError).toHaveBeenCalledTimes(1);
-  const serverError = onError.mock.calls[0][0].error;
+  const serverError = onError.mock.calls[0]![0]!.error;
 
   // if (!(serverError instanceof TRPCError)) {
   //   console.log('err', serverError);
@@ -113,7 +113,7 @@ test('unauthorized()', async () => {
   const clientError = await waitError(client.query('err'), TRPCClientError);
   expect(clientError).toMatchInlineSnapshot(`[TRPCClientError: UNAUTHORIZED]`);
   expect(onError).toHaveBeenCalledTimes(1);
-  const serverError = onError.mock.calls[0][0].error;
+  const serverError = onError.mock.calls[0]![0]!.error;
 
   expect(serverError).toBeInstanceOf(TRPCError);
 
@@ -208,7 +208,7 @@ Object {
 }
 `);
     expect(onError).toHaveBeenCalledTimes(1);
-    const serverError = onError.mock.calls[0][0].error;
+    const serverError = onError.mock.calls[0]![0]!.error;
 
     expect(serverError.cause).toBeInstanceOf(ZodError);
 
@@ -320,7 +320,7 @@ test('make sure object is ignoring prototype', async () => {
   );
   expect(clientError.shape.code).toMatchInlineSnapshot(`-32004`);
   expect(onError).toHaveBeenCalledTimes(1);
-  const serverError = onError.mock.calls[0][0].error;
+  const serverError = onError.mock.calls[0]![0]!.error;
   expect(serverError.code).toMatchInlineSnapshot(`"NOT_FOUND"`);
 
   close();
@@ -382,7 +382,7 @@ test('retain stack trace', async () => {
 
   expect(onError).toHaveBeenCalledTimes(1);
 
-  const serverOnErrorOpts = onError.mock.calls[0][0];
+  const serverOnErrorOpts = onError.mock.calls[0]![0]!;
   const serverError = serverOnErrorOpts.error;
   expect(serverError).toBeInstanceOf(TRPCError);
   expect(serverError.cause).toBeInstanceOf(CustomError);

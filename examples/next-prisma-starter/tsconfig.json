@@ -12,6 +12,7 @@
     "module": "esnext",
     "moduleResolution": "node",
     "resolveJsonModule": true,
+    "noUncheckedIndexedAccess": true,
     "isolatedModules": true,
     "jsx": "preserve",
     "types": ["@types/jest"],

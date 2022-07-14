@@ -337,8 +337,8 @@ export class Router<
     TPrefix extends string,
   >(procedures: TProcedures, prefix: TPrefix): Prefixer<TProcedures, TPrefix> {
     const eps: ProcedureRecord = safeObject();
-    for (const key in procedures) {
-      eps[prefix + key] = procedures[key];
+    for (const [key, procedure] of Object.entries(procedures)) {
+      eps[prefix + key] = procedure;
     }
     return eps as any;
   }
@@ -658,8 +658,7 @@ export class Router<
 
     const mergeProcedures = (defs: ProcedureRecord) => {
       const newDefs = safeObject() as typeof defs;
-      for (const key in defs) {
-        const procedure = defs[key];
+      for (const [key, procedure] of Object.entries(defs)) {
         const newProcedure = procedure.inheritMiddlewares(
           this._def.middlewares,
         );

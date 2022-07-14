@@ -14,6 +14,11 @@ export function createChain<
   return observable((observer) => {
     function execute(index = 0, op = opts.op) {
       const next = opts.links[index];
+      if (!next) {
+        throw new Error(
+          'No more links to execute - did you forget to add an ending link?',
+        );
+      }
       const subscription = next({
         op,
         next(nextOp) {
