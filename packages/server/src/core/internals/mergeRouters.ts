@@ -37,9 +37,14 @@ export function mergeRouters(...routerList: AnyRouter[]): AnyRouter {
     return prev;
   }, defaultTransformer as CombinedDataTransformer);
 
+  const poweredByHeader = !routerList.some(
+    (router) => !router._def.poweredByHeader,
+  );
+
   const router = createRouterFactory({
     errorFormatter,
     transformer,
+    poweredByHeader,
   })(record);
   return router;
 }

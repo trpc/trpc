@@ -1,4 +1,3 @@
-import { CombinedDataTransformer, ProcedureParams, ProcedureType } from '..';
 import { CreateRootConfig, RootConfig } from '../core/internals/config';
 import { getParseFnOrPassThrough } from '../core/internals/getParseFn';
 import {
@@ -22,6 +21,13 @@ import {
   AnyRouter as AnyOldRouter,
   Router as OldRouter,
 } from '../deprecated/router';
+import {
+  CombinedDataTransformer,
+  PoweredByHeader,
+  ProcedureParams,
+  ProcedureType,
+  defaultPoweredByHeader,
+} from '../index';
 import { TRPCErrorShape } from '../rpc';
 import { Procedure as OldProcedure } from './internals/procedure';
 import { ProcedureRecord } from './router';
@@ -116,6 +122,7 @@ export type MigrateRouter<
         errorShape: TErrorShape;
         meta: TMeta;
         transformer: CombinedDataTransformer;
+        poweredByHeader: PoweredByHeader;
       }>,
       TQueries,
       'query'
@@ -126,6 +133,7 @@ export type MigrateRouter<
           errorShape: TErrorShape;
           meta: TMeta;
           transformer: CombinedDataTransformer;
+          poweredByHeader: PoweredByHeader;
         }>,
         TMutations,
         'mutation'
@@ -136,6 +144,7 @@ export type MigrateRouter<
           errorShape: TErrorShape;
           meta: TMeta;
           transformer: CombinedDataTransformer;
+          poweredByHeader: PoweredByHeader;
         }>,
         TSubscriptions,
         'subscription'
@@ -198,6 +207,7 @@ export function migrateRouter<TOldRouter extends AnyOldRouter>(
 ): MigrateOldRouter<TOldRouter> {
   const errorFormatter = oldRouter._def.errorFormatter;
   const transformer = oldRouter._def.transformer;
+  const poweredByHeader = defaultPoweredByHeader;
 
   type ProcRecord = Record<string, NewProcedure<any>>;
 
@@ -223,6 +233,7 @@ export function migrateRouter<TOldRouter extends AnyOldRouter>(
   const newRouter = createRouterFactory<any>({
     transformer,
     errorFormatter,
+    poweredByHeader,
   })(procedures);
 
   return newRouter as any;

@@ -10,6 +10,7 @@ import {
   CombinedDataTransformer,
   DataTransformerOptions,
   DefaultDataTransformer,
+  defaultPoweredByHeader,
   defaultTransformer,
   getDataTransformer,
 } from '../transformer';
@@ -47,21 +48,25 @@ export function initTRPC<TParams extends Partial<InitGenerics> = {}>() {
         : DefaultDataTransformer
       : DefaultDataTransformer;
     type $ErrorShape = ErrorFormatterShape<$Formatter>;
+    type $PoweredByHeader = NonNullable<$Options['poweredByHeader']>;
 
     type $Config = CreateRootConfig<{
       ctx: $Context;
       meta: $Meta;
       errorShape: $ErrorShape;
       transformer: $Transformer;
+      poweredByHeader: $PoweredByHeader;
     }>;
 
     const errorFormatter = options?.errorFormatter ?? defaultFormatter;
     const transformer = getDataTransformer(
       options?.transformer ?? defaultTransformer,
     ) as $Transformer;
+    const poweredByHeader = options?.poweredByHeader ?? defaultPoweredByHeader;
     const _config: $Config = {
       transformer,
       errorShape: null as any,
+      poweredByHeader,
       ctx: null as any,
       meta: null as any,
     };
@@ -85,6 +90,7 @@ export function initTRPC<TParams extends Partial<InitGenerics> = {}>() {
       router: createRouterFactory<$Config>({
         errorFormatter,
         transformer,
+        poweredByHeader,
       }),
       /**
        * Merge Routers

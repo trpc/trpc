@@ -78,6 +78,7 @@ test('basic test', async () => {
     Object {
       "headers": Object {
         "Content-Type": "application/json",
+        "X-Powered-By": "tRPC <trpc.io>",
       },
       "statusCode": 200,
     }
@@ -108,6 +109,7 @@ test('bad type', async () => {
     Object {
       "headers": Object {
         "Content-Type": "application/json",
+        "X-Powered-By": "tRPC <trpc.io>",
       },
       "statusCode": 400,
     }
@@ -164,6 +166,7 @@ test('test v2 format', async () => {
     Object {
       "headers": Object {
         "Content-Type": "application/json",
+        "X-Powered-By": "tRPC <trpc.io>",
       },
       "statusCode": 200,
     }
@@ -200,6 +203,7 @@ test('router with no context', async () => {
     Object {
       "headers": Object {
         "Content-Type": "application/json",
+        "X-Powered-By": "tRPC <trpc.io>",
       },
       "statusCode": 200,
     }

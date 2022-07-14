@@ -9,7 +9,12 @@ import {
 } from '../error/formatter';
 import { getHTTPStatusCodeFromError } from '../http/internals/getHTTPStatusCode';
 import { TRPCErrorShape, TRPC_ERROR_CODES_BY_KEY } from '../rpc';
-import { CombinedDataTransformer, defaultTransformer } from '../transformer';
+import {
+  CombinedDataTransformer,
+  PoweredByHeader,
+  defaultPoweredByHeader,
+  defaultTransformer,
+} from '../transformer';
 import { RootConfig } from './internals/config';
 import {
   InternalProcedure,
@@ -80,6 +85,7 @@ export interface RouterDef<
   _meta: TMeta;
   errorFormatter: ErrorFormatter<TContext, TErrorShape>;
   transformer: CombinedDataTransformer;
+  poweredByHeader: PoweredByHeader;
   // FIXME this is slow
   procedures: Filter<TRecord, Procedure<any>> &
     SimpleFlatten<PrefixedProcedures<TRecord>>;
@@ -153,6 +159,8 @@ export interface Router<TDef extends AnyRouterDef> {
   errorFormatter: TDef['errorFormatter'];
   /** @deprecated **/
   transformer: TDef['transformer'];
+  /** @deprecated **/
+  poweredByHeader: TDef['poweredByHeader'];
 
   // FIXME rename me and deprecate
   createCaller: RouterCaller<TDef>;
@@ -171,7 +179,7 @@ export interface Router<TDef extends AnyRouterDef> {
  */
 export type RouterDefaultOptions<TContext> = Pick<
   AnyRouterDef<TContext>,
-  'transformer' | 'errorFormatter'
+  'transformer' | 'errorFormatter' | 'poweredByHeader'
 >;
 
 /**
@@ -199,6 +207,7 @@ const emptyRouter = {
   subscriptions: {},
   errorFormatter: defaultFormatter,
   transformer: defaultTransformer,
+  poweredByHeader: defaultPoweredByHeader,
 };
 
 /**
@@ -244,6 +253,7 @@ export function createRouterFactory<TConfig extends RootConfig>(
       {
         transformer: defaults?.transformer ?? defaultTransformer,
         errorFormatter: defaults?.errorFormatter ?? defaultFormatter,
+        poweredByHeader: defaults?.poweredByHeader ?? defaultPoweredByHeader,
       },
       { procedures: routerProcedures },
     );
@@ -287,6 +297,7 @@ export function createRouterFactory<TConfig extends RootConfig>(
       _def,
       transformer: _def.transformer,
       errorFormatter: _def.errorFormatter,
+      poweredByHeader: _def.poweredByHeader,
       createCaller(ctx) {
         return {
           query: (path, ...args) =>

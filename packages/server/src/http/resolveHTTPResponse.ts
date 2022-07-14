@@ -82,6 +82,7 @@ export async function resolveHTTPResponse<
     let status = getHTTPStatusCode(untransformedJSON);
     const headers: HTTPHeaders = {
       'Content-Type': 'application/json',
+      ...(router._def.poweredByHeader && { 'X-Powered-By': 'tRPC <trpc.io>' }),
     };
 
     const meta =

@@ -2,6 +2,7 @@ import { ErrorFormatter } from '../../error/formatter';
 import {
   CombinedDataTransformer,
   DataTransformerOptions,
+  PoweredByHeader,
 } from '../../transformer';
 
 /**
@@ -19,6 +20,7 @@ export interface InitGenerics {
 export interface InitOptions<T extends InitGenerics> {
   transformer: DataTransformerOptions;
   errorFormatter: ErrorFormatter<T['ctx'], any>;
+  poweredByHeader: PoweredByHeader;
 }
 
 /**
@@ -35,6 +37,7 @@ export interface RootConfig extends InitGenerics {
   transformer: CombinedDataTransformer;
   // FIXME this should probably be restricted
   errorShape: any;
+  poweredByHeader: PoweredByHeader;
 }
 
 /**

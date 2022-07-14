@@ -63,3 +63,12 @@ export const defaultTransformer: DefaultDataTransformer = {
   input: { serialize: (obj) => obj, deserialize: (obj) => obj },
   output: { serialize: (obj) => obj, deserialize: (obj) => obj },
 };
+
+/**
+ * @internal
+ */
+export type PoweredByHeader = boolean;
+/**
+ * @internal
+ */
+export const defaultPoweredByHeader = true;

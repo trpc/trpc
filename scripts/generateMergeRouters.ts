@@ -26,6 +26,7 @@ const TEMPLATE = `
   _meta: RP0['_meta'];
   transformer: RP0['transformer'];
   errorFormatter: RP0['errorFormatter'];
+  poweredByHeader: RP0['poweredByHeader'];
   queries: __queries__;
   mutations: __mutations__;
   subscriptions: __subscriptions__;
