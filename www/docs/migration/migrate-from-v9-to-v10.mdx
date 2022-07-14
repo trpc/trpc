@@ -1,0 +1,72 @@
+---
+id: migrate-from-v9-to-v10
+title: Migrate from V9 to V10
+sidebar_label: Migrate from V9 to V10
+slug: /migrate-from-v9-to-v10
+---
+
+### Interopability mode for old routers / Migration path for the 95%
+
+If you are migrating from V9->V10, the transition is pretty simple for the 95% use-cases.
+
+**1. Add `.interop()`**
+
+All you'll need to do is to add an `.interop()` at the end of your `appRouter`. Example: https://github.com/trpc/trpc/blob/ad25239cefd972494bfff49a869b9432fd2f403f/examples/.interop/next-prisma-starter/src/server/routers/_app.ts#L37
+
+When you've done this, you can start migrating to the new way of doing things.
+
+**2. Create the `t`-object**
+
+```ts
+// src/server/trpc.ts
+import superjson from 'superjson';
+import { Context } from './context';
+
+export const t = initTRPC<{
+  ctx: Context;
+}>()({
+  // Optional:
+  transformer: superjson,
+});
+```
+
+**3. Create a new `appRouter`**
+
+1. Rename your old `appRouter` to `legacyRouter`
+2. Create a new app router:
+
+```ts
+import { t } from './trpc';
+
+const legacyRouter = trpc
+  .router()
+  /* [...] */
+  .interop();
+
+export const appRouter = t.merge(legacyRouter);
+```
+
+3. See if your app still builds
+4. Create a a test router:
+
+```ts
+const greetingRouter = t.router({
+  greeting: t.procedure.query(() => 'world'),
+});
+```
+
+5. Merge it in:
+
+```ts
+export const appRouter = t.merge(legacyRouter, greetingRouter);
+```
+
+## Further, for the 5%
+
+### Subscriptions
+
+🚧
+
+### Custom [Links](https://trpc.io/docs/links)
+
+🚧
