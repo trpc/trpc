@@ -5,7 +5,11 @@ sidebar_label: Migrate from V9 to V10
 slug: /migrate-from-v9-to-v10
 ---
 
-### Interopability mode for old routers / Migration path for the 95%
+> You're on V9 and are worried about the migration path and massive breaking changing? Don't worry, we got your back!
+>
+> We have an interopability mode for old routers which allows you to easily incrementally adopt V10.
+
+### Migration path for the 95%
 
 If you are migrating from V9->V10, the transition is pretty simple for the 95% use-cases.
 
@@ -61,7 +65,7 @@ const greetingRouter = t.router({
 export const appRouter = t.merge(legacyRouter, greetingRouter);
 ```
 
-## Further, for the 5%
+## For the remainding 5%
 
 ### Subscriptions
 
@@ -70,3 +74,19 @@ export const appRouter = t.merge(legacyRouter, greetingRouter);
 ### Custom [Links](https://trpc.io/docs/links)
 
 🚧
+
+## Optional DX improvements
+
+### `setupNext()`
+
+🚧
+
+### [...]
+
+## Extras
+
+### Migrate custom error formatters
+
+🚧
+
+### [...]
