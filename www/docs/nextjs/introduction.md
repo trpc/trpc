@@ -157,10 +157,10 @@ export const trpc = setupTRPC<AppRouter>({
 ### 5. Configure `_app.tsx`
 
 ```tsx title='pages/_app.tsx'
-import type { AppProps } from 'next/app';
+import { AppType } from 'next/dist/shared/lib/utils';
 import { trpc } from '../utils/trpc';
 
-const MyApp: AppType = ({ Component, pageProps }: AppProps) => {
+const MyApp: AppType = ({ Component, pageProps }) => {
   return <Component {...pageProps} />;
 };
 
