@@ -766,7 +766,8 @@
       "avatar_url": "https://avatars.githubusercontent.com/u/3660667?v=4",
       "profile": "http://www.big-sir.com",
       "contributions": [
-        "doc"
+        "doc",
+        "example"
       ]
     },
     {
@@ -934,7 +935,8 @@
       "avatar_url": "https://avatars.githubusercontent.com/u/20271968?v=4",
       "profile": "https://ixahmedxi.me",
       "contributions": [
-        "doc"
+        "doc",
+        "financial"
       ]
     },
     {
@@ -953,6 +955,15 @@
       "profile": "http://www.jumr.dev",
       "contributions": [
         "example"
+      ]
+    },
+    {
+      "login": "system32uwu",
+      "name": "Mateo Carriquí",
+      "avatar_url": "https://avatars.githubusercontent.com/u/29718978?v=4",
+      "profile": "https://tryhackme.com/p/zast99",
+      "contributions": [
+        "financial"
       ]
     }
   ],
