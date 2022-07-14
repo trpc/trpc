@@ -1,0 +1,46 @@
+/* eslint-disable @typescript-eslint/no-empty-function */
+import { createAppRouter } from './__testHelpers';
+import '@testing-library/jest-dom';
+import { setLogger } from 'react-query';
+import { createSSGHelpers } from '../../../../react/src/ssg';
+
+setLogger({
+  log() {},
+  warn() {},
+  error() {},
+});
+
+let factory: ReturnType<typeof createAppRouter>;
+beforeEach(() => {
+  factory = createAppRouter();
+});
+afterEach(() => {
+  factory.close();
+});
+
+test('dehydrate', async () => {
+  const { db, appRouter } = factory;
+  const ssg = createSSGHelpers({ router: appRouter, ctx: {} });
+
+  await ssg.prefetchQuery('allPosts');
+  await ssg.fetchQuery('postById', '1');
+
+  const dehydrated = ssg.dehydrate().queries;
+  expect(dehydrated).toHaveLength(2);
+
+  const [cache, cache2] = dehydrated;
+  expect(cache!.queryHash).toMatchInlineSnapshot(`"[\\"allPosts\\"]"`);
+  expect(cache!.queryKey).toMatchInlineSnapshot(`
+    Array [
+      "allPosts",
+    ]
+  `);
+  expect(cache!.state.data).toEqual(db.posts);
+  expect(cache2!.state.data).toMatchInlineSnapshot(`
+    Object {
+      "createdAt": 0,
+      "id": "1",
+      "title": "first post",
+    }
+  `);
+});
