@@ -89,7 +89,7 @@ const appRouter = t.router({
 client.query('greeting', 'KATT')
 trpc.useQuery(['greeting', 'KATT'])
 
-// NEW - you'll be able to CMD+click `hello` below and jump straight to your backend code
+// NEW - you'll be able to CMD+click `greeting` below and jump straight to your backend code
 client.greeting('KATT')
 trpc.greeting.useQuery('KATT')
 ```
