@@ -273,7 +273,7 @@ export function createBuilder<TConfig extends RootConfig>(
   };
 }
 
-function createInputMiddleware<T>(
+export function createInputMiddleware<T>(
   parse: ParseFn<T>,
 ): ProcedureBuilderMiddleware {
   return async function inputMiddleware({ next, rawInput }) {
@@ -291,7 +291,7 @@ function createInputMiddleware<T>(
   };
 }
 
-function createOutputMiddleware<T>(
+export function createOutputMiddleware<T>(
   parse: ParseFn<T>,
 ): ProcedureBuilderMiddleware {
   return async function outputMiddleware({ next }) {

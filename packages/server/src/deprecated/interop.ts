@@ -1,12 +1,12 @@
-import {
-  createInputMiddleware,
-  createOutputMiddleware,
-} from 'packages/server/dist/core/internals/internalProcedure';
 import { CombinedDataTransformer, ProcedureParams, ProcedureType } from '..';
 import { CreateRootConfig, RootConfig } from '../core/internals/config';
 import { getParseFnOrPassThrough } from '../core/internals/getParseFn';
 import { mergeWithoutOverrides } from '../core/internals/mergeWithoutOverrides';
-import { createBuilder } from '../core/internals/procedureBuilder';
+import {
+  createBuilder,
+  createInputMiddleware,
+  createOutputMiddleware,
+} from '../core/internals/procedureBuilder';
 import {
   MutationProcedure,
   Procedure as NewProcedure,
