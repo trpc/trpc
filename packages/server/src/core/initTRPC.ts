@@ -18,7 +18,6 @@ import {
   CreateRootConfig,
   InitGenerics,
   InitOptions,
-  RootConfig,
 } from './internals/config';
 import { createBuilder } from './internals/procedureBuilder';
 import { PickFirstDefined, ValidateShape } from './internals/utils';
@@ -33,7 +32,6 @@ export function initTRPC<TParams extends Partial<InitGenerics> = {}>() {
 
   type $Context = $Generics['ctx'];
   type $Meta = PickFirstDefined<TParams['meta'], undefined>;
-
   type $Options = Partial<InitOptions<$Generics>>;
 
   return function initTRPCInner<TOptions extends $Options>(
