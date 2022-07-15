@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-empty-function */
-import { createAppRouter } from './__testHelpers';
+import { createLegacyAppRouter } from './__testHelpers';
 import '@testing-library/jest-dom';
 import { setLogger } from 'react-query';
 import { createSSGHelpers } from '../../../../react/src/ssg';
@@ -10,9 +10,9 @@ setLogger({
   error() {},
 });
 
-let factory: ReturnType<typeof createAppRouter>;
+let factory: ReturnType<typeof createLegacyAppRouter>;
 beforeEach(() => {
-  factory = createAppRouter();
+  factory = createLegacyAppRouter();
 });
 afterEach(() => {
   factory.close();

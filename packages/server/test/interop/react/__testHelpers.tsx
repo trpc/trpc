@@ -36,7 +36,8 @@ export type Post = {
   createdAt: number;
 };
 
-export function createAppRouter() {
+/** @deprecated **/
+export function createLegacyAppRouter() {
   const db: {
     posts: Post[];
   } = {

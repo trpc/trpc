@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-empty-function */
 
 /* eslint-disable @typescript-eslint/ban-ts-comment */
-import { createAppRouter } from './__testHelpers';
+import { createLegacyAppRouter } from './__testHelpers';
 import '@testing-library/jest-dom';
 import { render, waitFor } from '@testing-library/react';
 import { AppType } from 'next/dist/shared/lib/utils';
@@ -15,9 +15,9 @@ setLogger({
   error() {},
 });
 
-let factory: ReturnType<typeof createAppRouter>;
+let factory: ReturnType<typeof createLegacyAppRouter>;
 beforeEach(() => {
-  factory = createAppRouter();
+  factory = createLegacyAppRouter();
 });
 afterEach(() => {
   factory.close();
