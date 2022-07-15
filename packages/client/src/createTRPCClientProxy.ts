@@ -5,16 +5,16 @@ import type {
   AnyRouter,
   OmitNeverKeys,
   Procedure,
+  ProcedureArgs,
   ProcedureRouterRecord,
   ProcedureType,
-  inferProcedureInput,
   inferProcedureOutput,
 } from '@trpc/server';
 import { createProxy } from '@trpc/server/shared';
 import { TRPCClient as Client } from './internals/TRPCClient';
 
 type Resolver<TProcedure extends Procedure<any>> = (
-  input: inferProcedureInput<TProcedure>,
+  ...args: ProcedureArgs<TProcedure['_def']>
 ) => Promise<inferProcedureOutput<TProcedure>>;
 
 type DecorateProcedure<TProcedure extends Procedure<any>> = OmitNeverKeys<{
