@@ -31,7 +31,7 @@ export function initTRPC<TParams extends Partial<InitGenerics> = {}>() {
   }>;
 
   type $Context = $Generics['ctx'];
-  type $Meta = PickFirstDefined<TParams['meta'], undefined>;
+  type $Meta = PickFirstDefined<$Generics['meta'], undefined>;
   type $Options = Partial<InitOptions<$Generics>>;
 
   return function initTRPCInner<TOptions extends $Options>(
