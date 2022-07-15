@@ -11,13 +11,12 @@ import { getHTTPStatusCodeFromError } from '../http/internals/getHTTPStatusCode'
 import { TRPCErrorShape, TRPC_ERROR_CODES_BY_KEY } from '../rpc';
 import { CombinedDataTransformer, defaultTransformer } from '../transformer';
 import { RootConfig } from './internals/config';
-import {
-  InternalProcedure,
-  InternalProcedureCallOptions,
-} from './internals/internalProcedure';
 import { mergeWithoutOverrides } from './internals/mergeWithoutOverrides';
 import { omitPrototype } from './internals/omitPrototype';
+import { ProcedureCallOptions } from './internals/procedureBuilder';
+import { UnsetMarker } from './internals/utils';
 import {
+  AnyProcedure,
   MutationProcedure,
   Procedure,
   QueryProcedure,
@@ -62,7 +61,7 @@ export interface RouterDef<
   // FIXME this should use RootConfig
   TContext,
   TErrorShape extends TRPCErrorShape<number>,
-  TMeta extends Record<string, unknown>,
+  TMeta extends Record<string, unknown> | UnsetMarker,
   TRecord extends ProcedureRouterRecord,
 > {
   router: true;
@@ -268,7 +267,7 @@ export function createRouterFactory<TConfig extends RootConfig>(
         .reduce((acc, [key, val]) => ({ ...acc, [key]: val }), {}),
     };
 
-    function callProcedure(opts: InternalProcedureCallOptions) {
+    function callProcedure(opts: ProcedureCallOptions) {
       const { type, path } = opts;
 
       if (!(path in _def.procedures) || !_def.procedures[path]['_def'][type]) {
@@ -278,7 +277,7 @@ export function createRouterFactory<TConfig extends RootConfig>(
         });
       }
 
-      const procedure = _def.procedures[path] as InternalProcedure;
+      const procedure = _def.procedures[path] as AnyProcedure;
 
       return procedure(opts);
     }

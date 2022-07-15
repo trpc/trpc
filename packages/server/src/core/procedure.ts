@@ -2,6 +2,7 @@
 import { DefaultErrorShape } from '../error/formatter';
 import { CombinedDataTransformer } from '../transformer';
 import { RootConfig } from './internals/config';
+import { ProcedureBuilderDef } from './internals/procedureBuilder';
 import { UnsetMarker } from './internals/utils';
 
 type ClientContext = Record<string, unknown>;
@@ -26,10 +27,8 @@ export interface ProcedureParams<
   TContextOut = unknown,
   TInputIn = unknown,
   TInputOut = unknown,
-  TInputParser = unknown,
   TOutputIn = unknown,
   TOutputOut = unknown,
-  TOutputParser = unknown,
   TMeta = unknown,
 > {
   // FIXME make non-optional
@@ -57,19 +56,11 @@ export interface ProcedureParams<
   /**
    * @internal
    */
-  _input_parser: TInputParser;
-  /**
-   * @internal
-   */
   _output_in: TOutputIn;
   /**
    * @internal
    */
   _output_out: TOutputOut;
-  /**
-   * @internal
-   */
-  _output_parser: TOutputParser;
 }
 
 /**
@@ -92,20 +83,16 @@ type AddParamToObject<
   ? TObject & { [p in TProperty]?: TParam | void }
   : TObject & { [p in TProperty]: TParam };
 
-type UndefinedIfUnsetMarker<TParam> = TParam extends UnsetMarker
-  ? undefined
-  : TParam;
+// type UndefinedIfUnsetMarker<TParam> = TParam extends UnsetMarker
+//   ? undefined
+//   : TParam;
 
 /**
  *
  * @internal
  */
 export interface ProcedureBase<TParams extends ProcedureParams> {
-  _def: TParams & {
-    input: UndefinedIfUnsetMarker<TParams['_input_parser']>;
-    output: UndefinedIfUnsetMarker<TParams['_output_parser']>;
-    meta: UndefinedIfUnsetMarker<TParams['_meta']>;
-  };
+  _def: TParams & ProcedureBuilderDef;
   /**
    * @deprecated use `._def.meta` instead
    */
@@ -140,3 +127,5 @@ export type Procedure<TParams extends ProcedureParams> =
   | QueryProcedure<TParams>
   | MutationProcedure<TParams>
   | SubscriptionProcedure<TParams>;
+
+export type AnyProcedure = Procedure<any>;

@@ -1,12 +1,12 @@
+import {
+  createInputMiddleware,
+  createOutputMiddleware,
+} from 'packages/server/dist/core/internals/internalProcedure';
 import { CombinedDataTransformer, ProcedureParams, ProcedureType } from '..';
 import { CreateRootConfig, RootConfig } from '../core/internals/config';
 import { getParseFnOrPassThrough } from '../core/internals/getParseFn';
-import {
-  createInputMiddleware,
-  createInternalBuilder,
-  createOutputMiddleware,
-} from '../core/internals/internalProcedure';
 import { mergeWithoutOverrides } from '../core/internals/mergeWithoutOverrides';
+import { createBuilder } from '../core/internals/procedureBuilder';
 import {
   MutationProcedure,
   Procedure as NewProcedure,
@@ -175,7 +175,7 @@ function migrateProcedure<
 
   const inputMiddleware = createInputMiddleware(inputParser);
 
-  const builder = createInternalBuilder({
+  const builder = createBuilder({
     input: def.inputParser,
     middlewares: [
       ...(def.middlewares as any),
