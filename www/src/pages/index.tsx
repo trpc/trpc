@@ -4,7 +4,7 @@ import useBaseUrl from '@docusaurus/useBaseUrl';
 import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
 import Layout from '@theme/Layout';
 import clsx from 'clsx';
-import React from 'react';
+import React, { Fragment } from 'react';
 import GitHubButton from 'react-github-btn';
 import styles from './styles.module.css';
 
@@ -56,8 +56,8 @@ function Home() {
 
   return (
     <Layout
-      title={`${siteConfig.title} - End-to-end typesafe APIs made easy`}
-      description="Automatic typesafety & autocompletion inferred from your API-paths, their input data, &amp; outputs 🧙‍♂️"
+      title={`${siteConfig.title} - ${siteConfig.tagline}`}
+      description="End-to-end typesafe APIs made easy. Automatic typesafety & autocompletion inferred from your API-paths, their input data, &amp; outputs 🧙‍♂️"
     >
       <Head>
         <script
@@ -69,7 +69,11 @@ function Home() {
       <header className={clsx('hero hero--primary', styles.heroBanner)}>
         <div className="container flex flex-col gap-6">
           <h1 className="font-bold text-5xl">{siteConfig.title}</h1>
-          <p className="hero__subtitle">{siteConfig.tagline}</p>
+          <p className="hero__subtitle">
+            {siteConfig.tagline.split('\n').map((text) => (
+              <div key={text}>{text}</div>
+            ))}
+          </p>
           <p>
             <GitHubButton
               href="https://github.com/trpc/trpc"
@@ -82,6 +86,8 @@ function Home() {
             </GitHubButton>
           </p>
 
+          {/* The below is temporarily commented out as this GIF is out-of-date */}
+          {/* 
           <figure className={`${styles.figure} gap-4`}>
             <img
               className="mx-auto"
@@ -98,7 +104,8 @@ function Home() {
               at runtime. tRPC transforms this type into a fully typesafe
               client.
             </figcaption>
-          </figure>
+          </figure> 
+          */}
           <p>
             <Link
               className={clsx('getStarted', styles.getStarted)}

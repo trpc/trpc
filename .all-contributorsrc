@@ -7,7 +7,7 @@
     "README.md"
   ],
   "imageSize": 60,
-  "contributorsPerLine": 10,
+  "contributorsPerLine": 8,
   "commit": false,
   "commitConvention": "none",
   "contributors": [
@@ -766,7 +766,8 @@
       "avatar_url": "https://avatars.githubusercontent.com/u/3660667?v=4",
       "profile": "http://www.big-sir.com",
       "contributions": [
-        "doc"
+        "doc",
+        "example"
       ]
     },
     {
@@ -917,6 +918,44 @@
         "talk",
         "tutorial"
       ]
+    },
+    {
+      "login": "3x071c",
+      "name": "Victor Homic",
+      "avatar_url": "https://avatars.githubusercontent.com/u/87198856?v=4",
+      "profile": "https://github.com/3x071c",
+      "contributions": [
+        "code",
+        "test"
+      ]
+    },
+    {
+      "login": "ixahmedxi",
+      "name": "Ahmed Elsakaan",
+      "avatar_url": "https://avatars.githubusercontent.com/u/20271968?v=4",
+      "profile": "https://ixahmedxi.me",
+      "contributions": [
+        "doc"
+      ]
+    },
+    {
+      "login": "EnderSpirit",
+      "name": "EnderSpirit",
+      "avatar_url": "https://avatars.githubusercontent.com/u/28017013?v=4",
+      "profile": "https://github.com/EnderSpirit",
+      "contributions": [
+        "doc"
+      ]
+    },
+    {
+      "login": "juliusmarminge",
+      "name": "Julius Marminge",
+      "avatar_url": "https://avatars.githubusercontent.com/u/51714798?v=4",
+      "profile": "http://www.jumr.dev",
+      "contributions": [
+        "example"
+      ]
     }
-  ]
+  ],
+  "skipCi": true
 }

@@ -43,9 +43,8 @@ module.exports = {
       type: 'category',
       label: '@trpc/client',
       collapsed: false,
-      items: ['client/vanilla', 'client/links', 'client/header'],
+      items: ['client/vanilla', 'client/links', 'client/header', 'client/cors'],
     },
-
     {
       type: 'category',
       label: '@trpc/react',
@@ -73,6 +72,10 @@ module.exports = {
         'further/subscriptions',
         'further/further-reading',
       ],
+    },
+    {
+      type: 'doc',
+      id: 'migration/migrate-from-v9-to-v10',
     },
   ],
 };

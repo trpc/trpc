@@ -43,7 +43,7 @@ test('superjson up and down', async () => {
   );
   const res = await client.query('hello', date);
   expect(res.getTime()).toBe(date.getTime());
-  expect((fn.mock.calls[0][0] as Date).getTime()).toBe(date.getTime());
+  expect((fn.mock.calls[0]![0]! as Date).getTime()).toBe(date.getTime());
 
   close();
 });
@@ -150,7 +150,7 @@ test('devalue up and down', async () => {
   );
   const res = await client.query('hello', date);
   expect(res.getTime()).toBe(date.getTime());
-  expect((fn.mock.calls[0][0] as Date).getTime()).toBe(date.getTime());
+  expect((fn.mock.calls[0]![0]! as Date).getTime()).toBe(date.getTime());
 
   close();
 });
@@ -188,7 +188,7 @@ test('not batching: superjson up and devalue down', async () => {
   );
   const res = await client.query('hello', date);
   expect(res.getTime()).toBe(date.getTime());
-  expect((fn.mock.calls[0][0] as Date).getTime()).toBe(date.getTime());
+  expect((fn.mock.calls[0]![0]! as Date).getTime()).toBe(date.getTime());
 
   close();
 });
@@ -226,7 +226,7 @@ test('batching: superjson up and devalue down', async () => {
   );
   const res = await client.query('hello', date);
   expect(res.getTime()).toBe(date.getTime());
-  expect((fn.mock.calls[0][0] as Date).getTime()).toBe(date.getTime());
+  expect((fn.mock.calls[0]![0]! as Date).getTime()).toBe(date.getTime());
 
   close();
 });
@@ -262,7 +262,7 @@ test('batching: superjson up and f down', async () => {
   );
   const res = await client.query('hello', date);
   expect(res.getTime()).toBe(date.getTime());
-  expect((fn.mock.calls[0][0] as Date).getTime()).toBe(date.getTime());
+  expect((fn.mock.calls[0]![0]! as Date).getTime()).toBe(date.getTime());
 
   close();
 });
@@ -316,9 +316,9 @@ test('all transformers running in correct order', async () => {
   );
   const res = await client.query('hello', world);
   expect(res).toBe(world);
-  expect(fn.mock.calls[0][0]).toBe('client:serialized');
-  expect(fn.mock.calls[1][0]).toBe('server:deserialized');
-  expect(fn.mock.calls[2][0]).toBe(world);
+  expect(fn.mock.calls[0]![0]!).toBe('client:serialized');
+  expect(fn.mock.calls[1]![0]!).toBe('server:deserialized');
+  expect(fn.mock.calls[2]![0]!).toBe(world);
   expect(fn.mock.calls[3][0]).toBe('server:serialized');
   expect(fn.mock.calls[4][0]).toBe('client:deserialized');
 
@@ -353,7 +353,7 @@ describe('transformer on router', () => {
     );
     const res = await client.query('hello', date);
     expect(res.getTime()).toBe(date.getTime());
-    expect((fn.mock.calls[0][0] as Date).getTime()).toBe(date.getTime());
+    expect((fn.mock.calls[0]![0]! as Date).getTime()).toBe(date.getTime());
 
     close();
   });
@@ -389,7 +389,7 @@ describe('transformer on router', () => {
 
     const res = await client.query('hello', date);
     expect(res.getTime()).toBe(date.getTime());
-    expect((fn.mock.calls[0][0] as Date).getTime()).toBe(date.getTime());
+    expect((fn.mock.calls[0]![0]! as Date).getTime()).toBe(date.getTime());
 
     wsClient.close();
     close();
@@ -442,7 +442,7 @@ describe('transformer on router', () => {
     });
 
     expect(data.getTime()).toBe(date.getTime());
-    expect((fn.mock.calls[0][0] as Date).getTime()).toBe(date.getTime());
+    expect((fn.mock.calls[0]![0]! as Date).getTime()).toBe(date.getTime());
 
     wsClient.close();
     close();
@@ -498,7 +498,7 @@ describe('transformer on router', () => {
     expect(clientError.shape.code).toMatchInlineSnapshot(`-32603`);
 
     expect(onError).toHaveBeenCalledTimes(1);
-    const serverError = onError.mock.calls[0][0].error;
+    const serverError = onError.mock.calls[0]![0]!.error;
 
     expect(serverError).toBeInstanceOf(TRPCError);
     if (!(serverError instanceof TRPCError)) {

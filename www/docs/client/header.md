@@ -5,39 +5,36 @@ sidebar_label: Create Custom Header
 slug: /header
 ---
 
-The headers option can be customize in config when using `withTRPC` in nextjs or `createClient` in react.js.
+The headers option can be customize in config when using `setupTRPC` in nextjs or `createClient` in react.js.
 
 `headers` can be both an object or a function. If it's a function it will gets called dynamically every http request.
 
-```ts title='_app.tsx'
-import { AppType } from "next/dist/shared/lib/utils";
-import { withTRPC } from "@trpc/next";
-import { AppRouter } from "@/server/routers/app";
+```ts title='utils/trpc.ts'
+import { setupTRPC } from '@trpc/next';
+
+// Import the router type from your server file
+import type { AppRouter } from "@/server/routers/app";
 
 export let token: string;
 
-const MyApp: AppType = ({ Component, pageProps }) => {
-  return <Component {...pageProps} />;
-};
-
-export default withTRPC<AppRouter>({
-    config({ ctx }) {
-      /** 
-      * Headers will be called on each request.
-      */
-        headers() {
-            return {
-                Authorization: token
-              }
-          }
+export const trpc = setupTRPC<AppRouter>({
+  config({ ctx }) {
+    /** 
+    * Headers will be called on each request.
+    */
+    headers() {
+      return {
+        Authorization: token
       }
-  })(MyApp)
+    }
+  }
+});
 ```
 
 ### Example with auth login
 
 ```ts title='pages/auth.tsx'
-const loginMut = trpc.useMutation(['auth.login'], {
+const loginMut = trpc.proxy.auth.login.useMutation({
   onSuccess({ accessToken }) {
     token = accessToken;
   },

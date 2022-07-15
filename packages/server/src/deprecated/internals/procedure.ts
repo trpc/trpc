@@ -207,7 +207,7 @@ export class Procedure<
       },
     ): Promise<MiddlewareResult<any>> => {
       try {
-        const result = await middlewaresWithResolver[callOpts.index]({
+        const result = await middlewaresWithResolver[callOpts.index]!({
           ctx: callOpts.ctx,
           type: opts.type,
           path: opts.path,

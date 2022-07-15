@@ -20,41 +20,42 @@ tRPC works out-of-the-box with yup/superstruct/zod/myzod/custom validators/[..] 
 ### Example without input
 
 ```tsx
-import * as trpc from '@trpc/server';
+import { initTRPC } from '@trpc/server';
 
-// [...]
+export const t = initTRPC()();
 
-export const appRouter = trpc
-  .router<Context>()
+export const appRouter = t.router({
   // Create procedure at path 'hello'
-  .query('hello', {
-    resolve({ ctx }) {
-      return {
-        greeting: `hello world`,
-      };
-    },
-  });
+  hello: t.query(() => {
+    return {
+      greeting: 'hello world',
+    };
+  }),
+});
 ```
 
 ### With [Zod](https://github.com/colinhacks/zod)
 
 ```tsx
-import * as trpc from '@trpc/server';
+import { initTRPC } from '@trpc/server';
 import { z } from 'zod';
 
-// [...]
+export const t = initTRPC()();
 
-export const appRouter = trpc.router<Context>().query('hello', {
-  input: z
-    .object({
-      text: z.string().nullish(),
-    })
-    .nullish(),
-  resolve({ input }) {
-    return {
-      greeting: `hello ${input?.text ?? 'world'}`,
-    };
-  },
+export const appRouter = t.router({
+  hello: t.procedure
+    .input(
+      z
+        .object({
+          text: z.string().nullish(),
+        })
+        .nullish(),
+    )
+    .query(({ input }) => {
+      return {
+        greeting: `hello ${input?.text ?? 'world'}`,
+      };
+    }),
 });
 
 export type AppRouter = typeof appRouter;
@@ -63,20 +64,23 @@ export type AppRouter = typeof appRouter;
 ### With [Yup](https://github.com/jquense/yup)
 
 ```tsx
-import * as trpc from '@trpc/server';
+import { initTRPC } from '@trpc/server';
 import * as yup from 'yup';
 
-// [...]
+export const t = initTRPC()();
 
-export const appRouter = trpc.router<Context>().query('hello', {
-  input: yup.object({
-    text: yup.string().required(),
-  }),
-  resolve({ input }) {
-    return {
-      greeting: `hello ${input?.text ?? 'world'}`,
-    };
-  },
+export const appRouter = t.router({
+  hello: t.procedure
+    .input(
+      yup.object({
+        text: yup.string().required(),
+      }),
+    )
+    .query(({ input }) => {
+      return {
+        greeting: `hello ${input?.text ?? 'world'}`,
+      };
+    }),
 });
 
 export type AppRouter = typeof appRouter;
@@ -85,53 +89,52 @@ export type AppRouter = typeof appRouter;
 ### With [Superstruct](https://github.com/ianstormtaylor/superstruct)
 
 ```tsx
-import * as trpc from '@trpc/server';
-import * as t from 'superstruct';
+import { initTRPC } from '@trpc/server';
+import { defaulted, object, string } from 'superstruct';
 
-// [...]
+export const t = initTRPC()();
 
-export const appRouter = trpc.router<Context>().query('hello', {
-  input: t.object({
-    /**
-     * Also supports inline doc strings when referencing the type.
-     */
-    text: t.defaulted(t.string(), 'world'),
-  }),
-  resolve({ input }) {
-    return {
-      greeting: `hello ${input.text}`,
-    };
-  },
+export const appRouter = t.router({
+  hello: t.procedure
+    .input(
+      object({
+        /**
+         * Also supports inline doc strings when referencing the type.
+         */
+        text: defaulted(string(), 'world'),
+      }),
+    )
+    .query(({ input }) => {
+      return {
+        greeting: `hello ${input.text}`,
+      };
+    }),
 });
 
 export type AppRouter = typeof appRouter;
 ```
 
-## Method chaining
+## Multiple Procedures
 
-To add multiple endpoints, you must chain the calls
+To add multiple procedures, you can define them as properties on the object passed to `t.router()`.
 
 ```tsx
-import * as trpc from '@trpc/server';
+import { initTRPC } from '@trpc/server';
 
-// [...]
+export const t = initTRPC()();
 
-export const appRouter = trpc
-  .router<Context>()
-  .query('hello', {
-    resolve() {
-      return {
-        text: `hello world`,
-      };
-    },
-  })
-  .query('bye', {
-    resolve() {
-      return {
-        text: `goodbye`,
-      };
-    },
-  });
+export const appRouter = t.router({
+  hello: t.procedure.query(() => {
+    return {
+      text: 'hello world',
+    };
+  }),
+  bye: t.procedure.query(() => {
+    return {
+      text: 'goodbye',
+    };
+  }),
+});
 
 export type AppRouter = typeof appRouter;
 ```

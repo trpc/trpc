@@ -27,12 +27,12 @@
       - [§2.4 Merging routers](#24-merging-routers)
     - [§3 Advanced 🧙](#3-advanced-)
       - [Compose dynamic combos of middlewares/input parsers](#compose-dynamic-combos-of-middlewaresinput-parsers)
-    - [Interopability mode for old routers / Migration path](#interopability-mode-for-old-routers--migration-path)
   - [New Raw client API!](#new-raw-client-api)
   - [New React-API (🚧🚧)](#new-react-api-)
     - [Open questions](#open-questions)
     - [New `@trpc/next`-APIs (🚧🚧)](#new-trpcnext-apis-)
     - [New Links architecture](#new-links-architecture)
+  - [Migration path & Interopability mode](#migration-path--interopability-mode)
 
 ## Play with it!
 
@@ -86,11 +86,11 @@ const appRouter = t.router({
 
 ```ts
 // OLD
-client.query('hello', 'KATT')
-trpc.useQuery(['hello', 'KATT'])
+client.query('greeting', 'KATT')
+trpc.useQuery(['greeting', 'KATT'])
 
-// NEW - you'll be able to CMD+click `hello` below and jump straight to your backend code
-client.hello('KATT')
+// NEW - you'll be able to CMD+click `greeting` below and jump straight to your backend code
+client.greeting('KATT')
 trpc.greeting.useQuery('KATT')
 ```
 
@@ -490,58 +490,6 @@ const editOrganization = procedure
   });
 ```
 
-### Interopability mode for old routers / Migration path
-
-If you are migrating from V9->V10, the transition will be very simple. 
-
-**1. Add `.interop()`**
-
-All you'll need to do is to add an `.interop()` at the end of your `appRouter`. Example: https://github.com/trpc/trpc/blob/ad25239cefd972494bfff49a869b9432fd2f403f/examples/.interop/next-prisma-starter/src/server/routers/_app.ts#L37
-
-When you've done this, you can start migrating to the new way of doing things.
-
-**2. Create the `t`-object**
-
-```ts
-// src/server/trpc.ts
-import { Context } from './context';
-import superjson from 'superjson';
-
-export const t = initTRPC<{
-  ctx: Context
-}>()({
-  // Optional:
-  transformer: superjson,
-});
-```
-
-**3. Create a new `appRouter`**
-
-
-1. Rename your old `appRouter` to `legacyRouter`
-2. Create a new app router: 
-  ```ts
-  import { t } from './trpc';
-
-  const legacyRouter = trpc
-    .router()
-    /* [...] */
-    .interop()
-
-  export const appRouter = t.merge(legacyRouter);
-
-  ```
-3. See if your app still builds
-4. Create a a test router:
-  ```ts
-  const greetingRouter = t.router({
-    greeting: t.procedure.query(() => 'world')
-  })
-  ```
-5. Merge it in:
-  ```ts
-  export const appRouter = t.merge(legacyRouter, greetingRouter)
-  ```
 
 
 ## New Raw client API!
@@ -686,3 +634,8 @@ export default trpc.withTRPC(MyApp);
 Only relevant if you're making custom links, but it's a more flexible structure that will allow us to write slimmer React-wrappers, etc.
 
 https://alpha.trpc.io/docs/links#creating-a-custom-link
+
+
+## Migration path & Interopability mode
+
+👉 Moved to [alpha.trpc.io/docs/migrate-from-v9-to-v10](https://alpha.trpc.io/docs/migrate-from-v9-to-v10)
