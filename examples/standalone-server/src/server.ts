@@ -1,5 +1,4 @@
 /* eslint-disable @typescript-eslint/ban-types */
-import { createTRPCClient, createTRPCClientProxy } from '@trpc/client';
 import { inferAsyncReturnType, initTRPC } from '@trpc/server';
 import {
   CreateHTTPContextOptions,
@@ -88,7 +87,3 @@ applyWSSHandler<AppRouter>({
 //   console.log('Connected clients', wss.clients.size);
 // }, 1000);
 listen(2022);
-
-const trpcClient = createTRPCClient<AppRouter>({ url: '' });
-const client = createTRPCClientProxy<AppRouter>(trpcClient);
-const result = client.greeting.greeting({ name: 'Title' });
