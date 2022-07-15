@@ -61,7 +61,7 @@ export interface RouterDef<
   // FIXME this should use RootConfig
   TContext,
   TErrorShape extends TRPCErrorShape<number>,
-  TMeta extends Record<string, unknown> | UnsetMarker,
+  TMeta extends Record<string, unknown>,
   TRecord extends ProcedureRouterRecord,
 > {
   router: true;

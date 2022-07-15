@@ -65,18 +65,7 @@ export interface ProcedureBuilder<TParams extends ProcedureParams> {
   /**
    * Add a meta data to the procedure.
    */
-  meta<$TMeta extends TParams['_meta']>(
-    meta: $TMeta,
-  ): ProcedureBuilder<{
-    _config: TParams['_config'];
-    _meta: $TMeta;
-    _ctx_in: TParams['_ctx_in'];
-    _ctx_out: TParams['_ctx_out'];
-    _input_in: TParams['_input_in'];
-    _input_out: TParams['_input_out'];
-    _output_in: TParams['_output_in'];
-    _output_out: TParams['_output_out'];
-  }>;
+  meta(meta: TParams['_meta']): ProcedureBuilder<TParams>;
   /**
    * Add a middleware to the procedure.
    */

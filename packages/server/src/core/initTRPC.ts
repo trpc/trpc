@@ -21,11 +21,7 @@ import {
   RootConfig,
 } from './internals/config';
 import { createBuilder } from './internals/procedureBuilder';
-import {
-  PickFirstDefined,
-  UnsetMarker,
-  ValidateShape,
-} from './internals/utils';
+import { PickFirstDefined, ValidateShape } from './internals/utils';
 import { createMiddlewareFactory } from './middleware';
 import { createRouterFactory } from './router';
 
@@ -36,7 +32,7 @@ export function initTRPC<TParams extends Partial<InitGenerics> = {}>() {
   }>;
 
   type $Context = $Generics['ctx'];
-  type $Meta = PickFirstDefined<TParams['meta'], UnsetMarker>;
+  type $Meta = PickFirstDefined<TParams['meta'], undefined>;
 
   type $Options = Partial<InitOptions<$Generics>>;
 
@@ -56,7 +52,7 @@ export function initTRPC<TParams extends Partial<InitGenerics> = {}>() {
 
     type $Config = CreateRootConfig<{
       ctx: $Context;
-      meta: $Meta extends RootConfig['meta'] ? $Meta : never;
+      meta: $Meta;
       errorShape: $ErrorShape;
       transformer: $Transformer;
     }>;

@@ -3,7 +3,6 @@ import {
   CombinedDataTransformer,
   DataTransformerOptions,
 } from '../../transformer';
-import { UnsetMarker } from './utils';
 
 /**
  * The initial generics that are used in the init function
@@ -11,7 +10,7 @@ import { UnsetMarker } from './utils';
  */
 export interface InitGenerics {
   ctx: Record<string, unknown>;
-  meta: Record<string, unknown> | UnsetMarker;
+  meta: Record<string, unknown>;
 }
 /**
  * The initial params that are used and actually represents real values underneath

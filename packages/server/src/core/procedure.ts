@@ -21,7 +21,7 @@ export interface ProcedureParams<
     transformer: CombinedDataTransformer;
     errorShape: DefaultErrorShape;
     ctx: Record<string, unknown>;
-    meta: Record<string, unknown> | UnsetMarker;
+    meta: Record<string, unknown>;
   },
   TContextIn = unknown,
   TContextOut = unknown,
