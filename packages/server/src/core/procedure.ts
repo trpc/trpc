@@ -1,8 +1,10 @@
-/* eslint-disable @typescript-eslint/ban-types */
 import { DefaultErrorShape } from '../error/formatter';
 import { CombinedDataTransformer } from '../transformer';
 import { RootConfig } from './internals/config';
-import { ProcedureBuilderDef } from './internals/procedureBuilder';
+import {
+  ProcedureBuilderDef,
+  ProcedureCallOptions,
+} from './internals/procedureBuilder';
 import { UnsetMarker } from './internals/utils';
 
 type ClientContext = Record<string, unknown>;
@@ -73,20 +75,6 @@ export type ProcedureArgs<TParams extends ProcedureParams> =
     ? [input?: TParams['_input_in'] | void, opts?: ProcedureOptions]
     : [input: TParams['_input_in'], opts?: ProcedureOptions];
 
-type AddParamToObject<
-  TObject,
-  TProperty extends string,
-  TParam,
-> = TParam extends UnsetMarker
-  ? TObject & { [p in TProperty]?: undefined | void }
-  : undefined extends TParam
-  ? TObject & { [p in TProperty]?: TParam | void }
-  : TObject & { [p in TProperty]: TParam };
-
-// type UndefinedIfUnsetMarker<TParam> = TParam extends UnsetMarker
-//   ? undefined
-//   : TParam;
-
 /**
  *
  * @internal
@@ -98,14 +86,10 @@ export interface ProcedureBase<TParams extends ProcedureParams> {
    */
   meta?: TParams['_meta'];
   _procedure: true;
-  (
-    inputAndCtx: AddParamToObject<
-      AddParamToObject<{}, 'input', TParams['_input_in']>,
-      'ctx',
-      TParams['_config']['ctx']
-    >,
-    opts?: ProcedureOptions,
-  ): Promise<TParams['_output_out']>;
+  /**
+   * @internal
+   */
+  (opts: ProcedureCallOptions): Promise<unknown>;
 }
 
 export interface QueryProcedure<TParams extends ProcedureParams>

@@ -14,7 +14,6 @@ import { RootConfig } from './internals/config';
 import { mergeWithoutOverrides } from './internals/mergeWithoutOverrides';
 import { omitPrototype } from './internals/omitPrototype';
 import { ProcedureCallOptions } from './internals/procedureBuilder';
-import { UnsetMarker } from './internals/utils';
 import {
   AnyProcedure,
   MutationProcedure,
@@ -182,6 +181,12 @@ export type RouterBuildOptions<TContext> = Partial<
 
 export type AnyRouter = Router<any>;
 
+function isRouter(
+  procedureOrRouter: AnyProcedure | AnyRouter,
+): procedureOrRouter is AnyRouter {
+  return 'router' in procedureOrRouter._def;
+}
+
 function createRouterProxy(callback: (...args: [string, ...unknown[]]) => any) {
   return new Proxy({} as any, {
     get(_, path: string) {
@@ -225,9 +230,8 @@ export function createRouterFactory<TConfig extends RootConfig>(
       for (const [key, procedureOrRouter] of Object.entries(procedures ?? {})) {
         const newPath = `${path}${key}`;
 
-        if (typeof procedureOrRouter === 'object') {
-          const router = procedureOrRouter as AnyRouter;
-          recursiveGetPaths(router._def.procedures, `${newPath}.`);
+        if (isRouter(procedureOrRouter)) {
+          recursiveGetPaths(procedureOrRouter._def.procedures, `${newPath}.`);
           continue;
         }
 
