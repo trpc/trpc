@@ -1,7 +1,6 @@
 import { expectTypeOf } from 'expect-type';
 import { z } from 'zod';
-import { TRPCError, initTRPC } from '../src';
-import { createCaller } from '../src/core/internals/caller';
+import { TRPCError, createCaller, initTRPC } from '../src';
 
 const t = initTRPC<{
   ctx: {

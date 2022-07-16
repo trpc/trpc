@@ -2,10 +2,10 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { createProxy } from '@trpc/server/shared';
-import { AnyProcedure, Procedure, ProcedureOptions } from '../procedure';
-import { AnyRouter, ProcedureRouterRecord } from '../router';
-import { ProcedureType } from '../types';
-import { UnsetMarker } from './utils';
+import { UnsetMarker } from './internals/utils';
+import { AnyProcedure, Procedure, ProcedureOptions } from './procedure';
+import { AnyRouter, ProcedureRouterRecord } from './router';
+import { ProcedureType } from './types';
 
 type AddParamToObject<
   TObject,
