@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { createProxy } from '@trpc/server/shared';
+import { createProxy } from '../shared';
 import { UnsetMarker } from './internals/utils';
 import { AnyProcedure, Procedure, ProcedureOptions } from './procedure';
 import { AnyRouter, ProcedureRouterRecord } from './router';
