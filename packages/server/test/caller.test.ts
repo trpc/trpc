@@ -1,3 +1,4 @@
+import { waitError } from './___testHelpers';
 import { expectTypeOf } from 'expect-type';
 import { z } from 'zod';
 import { TRPCError, createCaller, initTRPC } from '../src';
@@ -64,6 +65,7 @@ test('context with middleware', async () => {
     if (!ctx.foo) {
       throw new TRPCError({
         code: 'UNAUTHORIZED',
+        message: 'You are not authorized',
       });
     }
 
@@ -77,7 +79,9 @@ test('context with middleware', async () => {
   });
 
   const caller = createCaller(router);
-  expect(caller.secret({ ctx: {} })).rejects.toThrow(TRPCError);
+  const error = await waitError(caller.secret({ ctx: {} }), TRPCError);
+  expect(error.code).toBe('UNAUTHORIZED');
+  expect(error.message).toBe('You are not authorized');
 
   const result = await caller.secret({ ctx: { foo: 'bar' } });
   expect(result).toBe('bar');
