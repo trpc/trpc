@@ -22,7 +22,7 @@ Create a typesafe client with the `createTRPCClient` method from `@trpc/client`:
 ```ts title='client.ts'
 // pages/index.tsx
 import type { AppRouter } from '../path/to/server/trpc';
-import { createTRPCClient } from '@trpc/client';
+import { createTRPCClient, createTRPCClientProxy } from '@trpc/client';
 
 const client = createTRPCClient<AppRouter>({
   url: 'http://localhost:5000/trpc'
