@@ -116,7 +116,7 @@ test('call a mutation as a query', async () => {
   });
   const { proxy, close } = routerToServerAndClientNew(router);
 
-  await expect((proxy.hello as any).mutation()).rejects.toMatchInlineSnapshot(
+  await expect((proxy.hello as any).mutate()).rejects.toMatchInlineSnapshot(
     `[TRPCClientError: No "mutation"-procedure on path "hello"]`,
   );
 

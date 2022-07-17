@@ -76,6 +76,7 @@ test('basic test', async () => {
       method: 'GET',
       path: 'hello',
       queryStringParameters: {},
+      resource: '/hello',
     }),
     mockAPIGatewayContext(),
   );
@@ -106,6 +107,7 @@ test('bad type', async () => {
       method: 'GET',
       path: 'echo',
       queryStringParameters: {},
+      resource: '/echo',
     }),
     mockAPIGatewayContext(),
   );
@@ -163,6 +165,7 @@ test('test v2 format', async () => {
       method: 'GET',
       path: 'hello',
       queryStringParameters: {},
+      routeKey: '$default',
     }),
     mockAPIGatewayContext(),
   );
@@ -199,6 +202,7 @@ test('router with no context', async () => {
       queryStringParameters: {
         input: JSON.stringify({ who: 'kATT' }),
       },
+      resource: '/hello',
     }),
     mockAPIGatewayContext(),
   );

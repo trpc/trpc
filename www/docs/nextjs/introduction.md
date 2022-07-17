@@ -86,24 +86,27 @@ Implement your tRPC router in `./pages/api/trpc/[trpc].ts`. If you need to split
 <details><summary>View sample router</summary>
 
 ```ts title='./pages/api/trpc/[trpc].ts'
-import * as trpc from '@trpc/server';
+import { initTRPC } from '@trpc/server';
 import * as trpcNext from '@trpc/server/adapters/next';
 import { z } from 'zod';
 
-export const appRouter = trpc
-  .router()
-  .query('hello', {
-    input: z
-      .object({
-        text: z.string().nullish(),
-      })
-      .nullish(),
-    resolve({ input }) {
+export const t = initTRPC()();
+
+export const appRouter = t.router({
+  hello: t.procedure
+    .input(
+      z
+        .object({
+          text: z.string().nullish(),
+        })
+        .nullish(),
+    )
+    .query(({ input }) => {
       return {
         greeting: `hello ${input?.text ?? 'world'}`,
       };
-    },
-  });
+    }),
+});
 
 // export type definition of API
 export type AppRouter = typeof appRouter;
@@ -151,7 +154,20 @@ export const trpc = setupTRPC<AppRouter>({
 // => { useQuery: ..., useMutation: ...}
 ```
 
-### 5. Make API requests
+### 5. Configure `_app.tsx`
+
+```tsx title='pages/_app.tsx'
+import { AppType } from 'next/dist/shared/lib/utils';
+import { trpc } from '../utils/trpc';
+
+const MyApp: AppType = ({ Component, pageProps }) => {
+  return <Component {...pageProps} />;
+};
+
+export default trpc.withTRPC(MyApp);
+```
+
+### 6. Make API requests
 
 ```tsx title='pages/index.ts'
 import { trpc } from '../utils/trpc';
@@ -166,10 +182,10 @@ export default function IndexPage() {
       <p>{hello.data.greeting}</p>
     </div>
   );
-};
+}
 ```
 
-## `withTRPC()` options
+## `setupTRPC()` options
 
 ### `config`-callback
 
@@ -197,8 +213,11 @@ Ability to set request headers and HTTP status when server-side rendering.
 
 #### Example
 
-```tsx title='pages/_app.tsx'
-export default withTRPC<AppRouter>({
+```tsx title='utils/trpc.ts'
+import { setupTRPC } from '@trpc/next';
+import type { AppRouter } from '../pages/api/trpc/[trpc]';
+
+export const trpc = setupTRPC({
   config({ ctx }) {
     /* [...] */
   },
@@ -216,7 +235,7 @@ export default withTRPC<AppRouter>({
       'Cache-Control': `s-maxage=1, stale-while-revalidate=${ONE_DAY_IN_SECONDS}`,
     };
   },
-})(MyApp);
+});
 ```
 
 ## Next steps

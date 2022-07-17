@@ -184,8 +184,7 @@ export function createWSClient(opts: WebSocketClientOptions) {
         tryReconnect();
       }
 
-      for (const key in pendingRequests) {
-        const req = pendingRequests[key];
+      for (const [key, req] of Object.entries(pendingRequests)) {
         if (req.ws !== conn) {
           continue;
         }

@@ -83,14 +83,14 @@ test('route meta in middleware', async () => {
 
   const calls = middleware.mock.calls;
   expect(await client.query('foo1')).toBe('bar1');
-  expect(calls[0][0]).toHaveProperty('meta');
-  expect(calls[0][0].meta).toEqual({
+  expect(calls[0]![0]!).toHaveProperty('meta');
+  expect(calls[0]![0]!.meta).toEqual({
     data: 'foo1',
   });
 
   expect(await client.mutation('foo2')).toBe('bar2');
-  expect(calls[1][0]).toHaveProperty('meta');
-  expect(calls[1][0].meta).toEqual({
+  expect(calls[1]![0]!).toHaveProperty('meta');
+  expect(calls[1]![0]!.meta).toEqual({
     data: 'foo2',
   });
 

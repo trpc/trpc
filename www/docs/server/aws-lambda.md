@@ -1,11 +1,11 @@
 ---
 id: aws-lambda
-title: Usage with Amazon Lambda through the API Gateway
-sidebar_label: 'Adapter: Amazon Lambda'
+title: Usage with AWS Lambda through the API Gateway
+sidebar_label: 'Adapter: AWS Lambda'
 slug: /aws-lambda
 ---
 
-## Amazon Lambda adapter
+## AWS Lambda adapter
 
 The AWS Lambda adapter is supported for API Gateway Rest API(v1) and HTTP API(v2) use cases.
 
@@ -46,15 +46,16 @@ yarn add @trpc/server
 Implement your tRPC router. A sample router is given below:
 
 ```ts title='server.ts'
-import * as trpc from '@trpc/server';
+import { initTRPC } from '@trpc/server';
 import { z } from 'zod';
 
-const appRouter = trpc.router().query('getUser', {
-  input: z.string(),
-  async resolve(req) {
+export const t = initTRPC()();
+
+const appRouter = t.router({
+  getUser: t.procedure.input(z.string()).query((req) => {
     req.input; // string
     return { id: req.input, name: 'Bilbo' };
-  },
+  }),
 });
 
 // export type definition of API
@@ -81,7 +82,6 @@ export const handler = awsLambdaRequestHandler({
   router: appRouter,
   createContext,
 })
-
 ```
 
 Build & deploy your code, now use your API Gateway URL to call your function.
@@ -99,7 +99,7 @@ API Gateway has two different event data formats when it invokes a Lambda. For R
 
 To infer what version you might have, supply the context as following:
 
-```TypeScript
+```ts
 function createContext({
   event,
   context,

@@ -5,6 +5,11 @@ sidebar_label: Example Apps
 slug: /example-apps
 ---
 
+
+:::caution
+Most of the examples on this page are out-of-date since V10. We'll update this soon.
+:::
+
 You can clone trpc and play with local examples, or play with them in the CodeSandbox link below.
 
 Here's some example apps:
