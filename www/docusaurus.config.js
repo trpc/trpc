@@ -146,7 +146,14 @@ module.exports = {
       '@docusaurus/preset-classic',
       {
         docs: {
-          includeCurrentVersion: false,
+          lastVersion: 'current',
+          versions: {
+            current: {
+              label: '10.x',
+              // path: '1.0.0',
+            },
+          },
+          includeCurrentVersion: true,
           sidebarPath: require.resolve('./sidebars.js'),
           // Please change this to your repo.
           editUrl: 'https://github.com/trpc/trpc/tree/next/www/',
