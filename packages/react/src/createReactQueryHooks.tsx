@@ -16,7 +16,6 @@ import type {
 } from '@trpc/server';
 import React, {
   ReactNode,
-  createContext,
   useCallback,
   useEffect,
   useMemo,
@@ -36,7 +35,7 @@ import {
   useQuery as __useQuery,
   hashQueryKey,
 } from 'react-query';
-import { SSRState, TRPCContextState } from './internals/context';
+import { SSRState, TRPCContext, TRPCContextState } from './internals/context';
 
 export type OutputWithCursor<TData, TCursor extends any = any> = {
   cursor: TCursor | null;
@@ -111,10 +110,29 @@ function createHookProxy(callback: (...args: [string, ...unknown[]]) => any) {
   });
 }
 
+/**
+ * @deprecated Use `setupReact` instead.
+ */
 export function createReactQueryHooks<
   TRouter extends AnyRouter,
   TSSRContext = unknown,
 >() {
+  return _createReactQueryHooks<TRouter, TSSRContext>({
+    Context: TRPCContext as React.Context<
+      TRPCContextState<TRouter, TSSRContext>
+    >,
+  });
+}
+
+/**
+ * The same as public `createReactQueryHooks` but requires Context to be passed in.
+ * @internal
+ */
+export function _createReactQueryHooks<
+  TRouter extends AnyRouter,
+  TSSRContext = unknown,
+>(opts: { Context: React.Context<TRPCContextState<TRouter, TSSRContext>> }) {
+  const { Context } = opts;
   type TQueries = TRouter['_def']['queries'];
   type TSubscriptions = TRouter['_def']['subscriptions'];
   type TError = TRPCClientErrorLike<TRouter>;
@@ -122,9 +140,6 @@ export function createReactQueryHooks<
 
   type TQueryValues = inferProcedures<TRouter['_def']['queries']>;
   type TMutationValues = inferProcedures<TRouter['_def']['mutations']>;
-
-  type ProviderContext = TRPCContextState<TRouter, TSSRContext>;
-  const Context = createContext(null as any) as React.Context<ProviderContext>;
 
   function createClient(
     opts: CreateTRPCClientOptions<TRouter>,

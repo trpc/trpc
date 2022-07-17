@@ -199,3 +199,8 @@ export interface TRPCContextState<
     pathAndInput: [TPath, TInput?],
   ): InfiniteData<TOutput> | undefined;
 }
+
+/**
+ * @deprecated
+ */
+export const TRPCContext = createContext(null as any);

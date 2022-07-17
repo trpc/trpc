@@ -1,21 +1,21 @@
-import { createReactQueryHooks, createReactQueryHooksProxy } from '@trpc/react';
+import { createReactQueryHooksProxy, setupReact } from '@trpc/react';
 import { AnyRouter } from '@trpc/server';
 import { NextPageContext } from 'next/types';
-import { WithTRPCNoSSROptions, WithTRPCSSROptions, withTRPC } from './withTRPC';
+import {
+  WithTRPCNoSSROptions,
+  WithTRPCSSROptions,
+  _withTRPC,
+} from './withTRPC';
 
-export function setupTRPC<
+export function setupTrpcNext<
   TRouter extends AnyRouter,
   TSSRContext extends NextPageContext = NextPageContext,
->(
-  opts:
-    | WithTRPCNoSSROptions<TRouter, TSSRContext>
-    | WithTRPCSSROptions<TRouter, TSSRContext>,
-) {
-  const hooks = createReactQueryHooks<TRouter, TSSRContext>();
+>(opts: WithTRPCNoSSROptions<TRouter> | WithTRPCSSROptions<TRouter>) {
+  const hooks = setupReact<TRouter, TSSRContext>();
   const proxy = createReactQueryHooksProxy<TRouter, TSSRContext>(hooks);
 
   // TODO: maybe set TSSRContext to `never` when using `WithTRPCNoSSROptions`
-  const _withTRPC = withTRPC<TRouter, TSSRContext>(opts);
+  const withTRPC = _withTRPC<TRouter, TSSRContext>(hooks, opts);
 
   return {
     proxy,
@@ -24,7 +24,7 @@ export function setupTRPC<
     useMutation: hooks.useMutation,
     useQuery: hooks.useQuery,
     useSubscription: hooks.useSubscription,
-    withTRPC: _withTRPC,
+    withTRPC,
     queries: hooks.queries,
   };
 }

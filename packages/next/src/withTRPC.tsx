@@ -8,6 +8,7 @@ import {
   TRPCClient,
   TRPCClientError,
   TRPCClientErrorLike,
+  createReactQueryHooks,
   createTRPCClient,
 } from '@trpc/react';
 import type { AnyRouter, Dict, Maybe, ResponseMeta } from '@trpc/server';
@@ -56,35 +57,41 @@ export type WithTRPCConfig<TRouter extends AnyRouter> =
     queryClientConfig?: QueryClientConfig;
   };
 
-interface WithTRPCOptions<TRouter extends AnyRouter, TSSRContext = unknown> {
-  trpc: CreateReactQueryHooks<TRouter, TSSRContext>;
+interface WithTRPCOptions<TRouter extends AnyRouter> {
   config: (info: { ctx?: NextPageContext }) => WithTRPCConfig<TRouter>;
 }
 
-export interface WithTRPCSSROptions<
-  TRouter extends AnyRouter,
-  TSSRContext = unknown,
-> extends WithTRPCOptions<TRouter, TSSRContext> {
+export interface WithTRPCSSROptions<TRouter extends AnyRouter>
+  extends WithTRPCOptions<TRouter> {
   ssr: true;
   responseMeta?: (opts: {
     ctx: NextPageContext;
     clientErrors: TRPCClientError<TRouter>[];
   }) => ResponseMeta;
 }
-export interface WithTRPCNoSSROptions<
-  TRouter extends AnyRouter,
-  TSSRContext = unknown,
-> extends WithTRPCOptions<TRouter, TSSRContext> {
+export interface WithTRPCNoSSROptions<TRouter extends AnyRouter>
+  extends WithTRPCOptions<TRouter> {
   ssr?: false;
 }
 
+/**
+ * @deprecated Use `setupNext` instead.
+ */
 export function withTRPC<
   TRouter extends AnyRouter,
   TSSRContext extends NextPageContext = NextPageContext,
+>(opts: WithTRPCNoSSROptions<TRouter> | WithTRPCSSROptions<TRouter>) {
+  const trpc = createReactQueryHooks<TRouter, TSSRContext>();
+  return _withTRPC<TRouter, TSSRContext>(trpc, opts);
+}
+
+// The same as `withTRPC` but takes `trpc` via arg rather than initializing its own.
+export function _withTRPC<
+  TRouter extends AnyRouter,
+  TSSRContext extends NextPageContext = NextPageContext,
 >(
-  opts:
-    | WithTRPCNoSSROptions<TRouter, TSSRContext>
-    | WithTRPCSSROptions<TRouter, TSSRContext>,
+  trpc: CreateReactQueryHooks<TRouter, TSSRContext>,
+  opts: WithTRPCNoSSROptions<TRouter> | WithTRPCSSROptions<TRouter>,
 ) {
   const { config: getClientConfig } = opts;
 
@@ -96,8 +103,6 @@ export function withTRPC<
     ssrContext: TSSRContext;
   };
   return (AppOrPage: NextComponentType<any, any, any>): NextComponentType => {
-    const { trpc } = opts;
-
     const WithTRPC = (
       props: AppPropsType & {
         trpc?: TRPCPrepassProps;
