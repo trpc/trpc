@@ -974,6 +974,15 @@
       "contributions": [
         "doc"
       ]
+    },
+    {
+      "login": "joaosamouco",
+      "name": "João Samouco",
+      "avatar_url": "https://avatars.githubusercontent.com/u/6799006?v=4",
+      "profile": "https://github.com/joaosamouco",
+      "contributions": [
+        "test"
+      ]
     }
   ],
   "skipCi": true
