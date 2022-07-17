@@ -1,5 +1,6 @@
 import type {
   APIGatewayProxyEvent,
+  APIGatewayProxyEventPathParameters,
   APIGatewayProxyEventV2,
   Context,
 } from 'aws-lambda';
@@ -10,12 +11,16 @@ export const mockAPIGatewayProxyEventV1 = ({
   path,
   queryStringParameters,
   method,
+  resource,
+  pathParameters,
 }: {
   body: string;
   headers: { [key: string]: string };
   queryStringParameters: Record<string, string>;
   path: string;
   method: string;
+  resource: string;
+  pathParameters?: APIGatewayProxyEventPathParameters;
 }): APIGatewayProxyEvent => {
   return {
     body,
@@ -23,11 +28,11 @@ export const mockAPIGatewayProxyEventV1 = ({
     multiValueHeaders: {},
     path: `/${path}`,
     httpMethod: method,
-    pathParameters: {},
     isBase64Encoded: false,
     queryStringParameters,
     multiValueQueryStringParameters: null,
-    resource: 'mock',
+    resource,
+    pathParameters: pathParameters || null,
     stageVariables: {},
     requestContext: {
       accountId: 'mock',
@@ -68,21 +73,25 @@ export const mockAPIGatewayProxyEventV2 = ({
   path,
   queryStringParameters,
   method,
+  routeKey,
+  pathParameters,
 }: {
   body: string;
   headers: { [key: string]: string };
   queryStringParameters: Record<string, string>;
   path: string;
   method: string;
+  routeKey: string;
+  pathParameters?: { [key: string]: string };
 }): APIGatewayProxyEventV2 => {
   return {
     version: '2.0',
-    routeKey: 'mock',
+    routeKey,
     rawQueryString: path,
     body,
     headers,
     rawPath: `/${path}`,
-    pathParameters: {},
+    pathParameters,
     isBase64Encoded: false,
     queryStringParameters: queryStringParameters,
     stageVariables: {},

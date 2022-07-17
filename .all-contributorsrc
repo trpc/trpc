@@ -954,7 +954,8 @@
       "avatar_url": "https://avatars.githubusercontent.com/u/51714798?v=4",
       "profile": "http://www.jumr.dev",
       "contributions": [
-        "example"
+        "example",
+        "doc"
       ]
     },
     {
@@ -973,6 +974,15 @@
       "profile": "https://github.com/OlegGulevskyy",
       "contributions": [
         "doc"
+      ]
+    },
+    {
+      "login": "joaosamouco",
+      "name": "João Samouco",
+      "avatar_url": "https://avatars.githubusercontent.com/u/6799006?v=4",
+      "profile": "https://github.com/joaosamouco",
+      "contributions": [
+        "test"
       ]
     }
   ],
