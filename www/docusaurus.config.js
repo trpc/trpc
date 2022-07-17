@@ -153,7 +153,7 @@ module.exports = {
               // path: '1.0.0',
             },
           },
-          includeCurrentVersion: true,
+          includeCurrentVersion: false,
           sidebarPath: require.resolve('./sidebars.js'),
           // Please change this to your repo.
           editUrl: 'https://github.com/trpc/trpc/tree/next/www/',
