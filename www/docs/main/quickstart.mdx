@@ -18,11 +18,11 @@ We highly encourage you to check out [the Example Apps](example-apps.md) to get 
 
 `npm install @trpc/server`
 
-For implementing tRPC endpoints and routers. Install in your server codebase.
+For implementing tRPC endpoints and routers. Install `@trpc/server` in your server codebase.
 
-`npm install @trpc/client`
+`npm install @trpc/client @trpc/server`
 
-For making typesafe API calls from your client. Install in your client codebase.
+For making typesafe API calls from your client. Install `@trpc/client` and `@trpc/server` in your client codebase (the server is a peer dependency of the client).
 
 `npm install @trpc/react react-query`
 
@@ -80,7 +80,6 @@ Use the `.query()` method to add a query endpoint to the router. Arguments:
 - `params.resolve`: This is the actual implementation of the endpoint. It's a function with a single `req` argument. The validated input is passed into `req.input` and the context is in `req.ctx` (more about context later!)
 
 ```ts title='server.ts'
-
 import * as trpc from '@trpc/server';
 
 const appRouter = trpc.router().query('getUser', {
