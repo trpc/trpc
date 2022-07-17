@@ -31,11 +31,6 @@ module.exports = {
       },
       items: [
         {
-          type: 'docsVersionDropdown',
-          position: 'left',
-          dropdownActiveClassDisabled: true,
-        },
-        {
           to: 'docs',
           label: 'Docs',
           activeBaseRegex: 'docs(/?)$',
@@ -51,6 +46,11 @@ module.exports = {
         {
           to: 'docs/nextjs',
           label: 'Usage with Next.js',
+        },
+        {
+          type: 'docsVersionDropdown',
+          position: 'right',
+          dropdownActiveClassDisabled: true,
         },
         {
           href: 'https://github.com/trpc/trpc/tree/next',
