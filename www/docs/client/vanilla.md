@@ -37,7 +37,7 @@ As you can see, we passed `AppRouter` as a **type argument** of `createTRPCClien
 const bilbo = await proxy.getUser.query('id_bilbo');
 // => { id: 'id_bilbo', name: 'Bilbo' };
 
-const frodo = await proxy.createUser.mutation({ name: 'Frodo' });
+const frodo = await proxy.createUser.mutate({ name: 'Frodo' });
 // => { id: 'id_frodo', name: 'Frodo' };
 ```
 
