@@ -11,13 +11,11 @@ import { getHTTPStatusCodeFromError } from '../http/internals/getHTTPStatusCode'
 import { TRPCErrorShape, TRPC_ERROR_CODES_BY_KEY } from '../rpc';
 import { CombinedDataTransformer, defaultTransformer } from '../transformer';
 import { RootConfig } from './internals/config';
-import {
-  InternalProcedure,
-  InternalProcedureCallOptions,
-} from './internals/internalProcedure';
 import { mergeWithoutOverrides } from './internals/mergeWithoutOverrides';
 import { omitPrototype } from './internals/omitPrototype';
+import { ProcedureCallOptions } from './internals/procedureBuilder';
 import {
+  AnyProcedure,
   MutationProcedure,
   Procedure,
   QueryProcedure,
@@ -183,6 +181,12 @@ export type RouterBuildOptions<TContext> = Partial<
 
 export type AnyRouter = Router<any>;
 
+function isRouter(
+  procedureOrRouter: AnyProcedure | AnyRouter,
+): procedureOrRouter is AnyRouter {
+  return 'router' in procedureOrRouter._def;
+}
+
 function createRouterProxy(callback: (...args: [string, ...unknown[]]) => any) {
   return new Proxy({} as any, {
     get(_, path: string) {
@@ -226,9 +230,8 @@ export function createRouterFactory<TConfig extends RootConfig>(
       for (const [key, procedureOrRouter] of Object.entries(procedures ?? {})) {
         const newPath = `${path}${key}`;
 
-        if (typeof procedureOrRouter === 'object') {
-          const router = procedureOrRouter as AnyRouter;
-          recursiveGetPaths(router._def.procedures, `${newPath}.`);
+        if (isRouter(procedureOrRouter)) {
+          recursiveGetPaths(procedureOrRouter._def.procedures, `${newPath}.`);
           continue;
         }
 
@@ -268,7 +271,7 @@ export function createRouterFactory<TConfig extends RootConfig>(
         .reduce((acc, [key, val]) => ({ ...acc, [key]: val }), {}),
     };
 
-    function callProcedure(opts: InternalProcedureCallOptions) {
+    function callProcedure(opts: ProcedureCallOptions) {
       const { type, path } = opts;
 
       if (!(path in _def.procedures) || !_def.procedures[path]['_def'][type]) {
@@ -278,7 +281,7 @@ export function createRouterFactory<TConfig extends RootConfig>(
         });
       }
 
-      const procedure = _def.procedures[path] as InternalProcedure;
+      const procedure = _def.procedures[path] as AnyProcedure;
 
       return procedure(opts);
     }

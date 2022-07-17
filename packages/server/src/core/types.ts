@@ -52,3 +52,6 @@ export type inferSubscriptionOutput<
 > = inferObservableValue<
   inferProcedureOutput<TRouter['_def']['subscriptions'][TPath]>
 >;
+
+export type inferProcedureClientError<T extends Procedure<any>> =
+  inferProcedureParams<T>['_config']['errorShape'];
