@@ -200,13 +200,6 @@ function isRouter(
   return 'router' in procedureOrRouter._def;
 }
 
-// function createRouterProxy(callback: (...args: [string, ...unknown[]]) => any) {
-//   return new Proxy({} as any, {
-//     get(_, path: string) {
-//       return (...args: unknown[]) => callback(path, ...args);
-//     },
-//   });
-// }
 const emptyRouter = {
   _ctx: null as any,
   _errorShape: null as any,
