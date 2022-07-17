@@ -415,7 +415,7 @@ const postRouter = t.router({
 })
 
 const health = t.router({
-  healthz: t.query(() => 'I am alive')
+  healthz: t.procedure.query(() => 'I am alive')
 })
 
 export const appRouter = t.mergeRouters(
