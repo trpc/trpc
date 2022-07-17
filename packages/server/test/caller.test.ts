@@ -1,7 +1,7 @@
 import { waitError } from './___testHelpers';
 import { expectTypeOf } from 'expect-type';
 import { z } from 'zod';
-import { TRPCError, createCaller, initTRPC } from '../src';
+import { TRPCError, initTRPC } from '../src';
 
 const t = initTRPC<{
   ctx: {
@@ -16,10 +16,8 @@ test('undefined input query', async () => {
     hello: procedure.query(() => 'world'),
   });
 
-  const caller = createCaller(router);
-  const result = await caller.hello({
-    ctx: {},
-  });
+  const caller = router.createCaller({});
+  const result = await caller.hello();
 
   expectTypeOf<string>(result);
 });
@@ -31,11 +29,8 @@ test('input query', async () => {
       .query(({ input }) => `Hello ${input.name}`),
   });
 
-  const caller = createCaller(router);
-  const result = await caller.greeting({
-    input: { name: 'Sachin' },
-    ctx: {},
-  });
+  const caller = router.createCaller({});
+  const result = await caller.greeting({ name: 'Sachin' });
 
   expectTypeOf<string>(result);
 });
@@ -51,11 +46,8 @@ test('input mutation', async () => {
     }),
   });
 
-  const caller = createCaller(router);
-  await caller.post.delete({
-    input: 0,
-    ctx: {},
-  });
+  const caller = router.createCaller({});
+  await caller.post.delete(0);
 
   expect(posts).toStrictEqual(['Two', 'Three']);
 });
@@ -78,11 +70,12 @@ test('context with middleware', async () => {
     secret: protectedProcedure.query(({ ctx }) => ctx.foo),
   });
 
-  const caller = createCaller(router);
-  const error = await waitError(caller.secret({ ctx: {} }), TRPCError);
+  const caller = router.createCaller({});
+  const error = await waitError(caller.secret(), TRPCError);
   expect(error.code).toBe('UNAUTHORIZED');
   expect(error.message).toBe('You are not authorized');
 
-  const result = await caller.secret({ ctx: { foo: 'bar' } });
+  const authorizedCaller = router.createCaller({ foo: 'bar' });
+  const result = await authorizedCaller.secret();
   expect(result).toBe('bar');
 });
