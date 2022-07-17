@@ -52,6 +52,8 @@ Also, if your company using tRPC and want to support long-term maintenance of tR
 
 ### 😻 Individuals
 
+### 😻 Individuals
+
 <table>
   <tbody>
     <tr>
@@ -86,6 +88,8 @@ Also, if your company using tRPC and want to support long-term maintenance of tR
       <td align="center"><a href="https://github.com/lmatheus"><img src="https://avatars.githubusercontent.com/u/8514703?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Luis Matheus</b></sub></a></td>
       <td align="center"><a href="https://github.com/dmaykov"><img src="https://avatars.githubusercontent.com/u/6147048?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Dmitry Maykov</b></sub></a></td>
       <td align="center"><a href="https://www.linkedin.com/in/zomars/"><img src="https://avatars.githubusercontent.com/u/3504472?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Omar López</b></sub></a></td>
+      <td align="center"><a href="https://tryhackme.com/p/zast99"><img src="https://avatars.githubusercontent.com/u/29718978?v=4?s=60" width="60px;" alt=""/><br /><sub><b>Mateo Carriquí</b></sub></a></td>
+      <td align="center"><a href="https://ixahmedxi.me"><img src="https://avatars.githubusercontent.com/u/20271968?v=4?s=60" width="60px;" alt=""/><br /><sub><b>Ahmed Elsakaan</b></sub></a></td>
     </tr>
   </tbody>
 </table>
