@@ -965,6 +965,15 @@
       "contributions": [
         "financial"
       ]
+    },
+    {
+      "login": "OlegGulevskyy",
+      "name": "Oleg Gulevskyy",
+      "avatar_url": "https://avatars.githubusercontent.com/u/43781031?v=4",
+      "profile": "https://github.com/OlegGulevskyy",
+      "contributions": [
+        "doc"
+      ]
     }
   ],
   "skipCi": true
