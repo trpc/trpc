@@ -17,10 +17,11 @@ export type inferRouterError<TRouter extends AnyRouter> =
 export type inferRouterMeta<TRouter extends AnyRouter> =
   inferRouterDef<TRouter>['_meta'];
 
+export const procedureTypes = ['query', 'mutation', 'subscription'] as const;
 /**
  * @public
  */
-export type ProcedureType = 'query' | 'mutation' | 'subscription';
+export type ProcedureType = typeof procedureTypes[number];
 
 export type inferHandlerInput<TProcedure extends Procedure<any>> =
   ProcedureArgs<inferProcedureParams<TProcedure>>;
