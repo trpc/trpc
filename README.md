@@ -321,6 +321,7 @@ Also, if your company using tRPC and want to support long-term maintenance of tR
     <td align="center"><a href="https://github.com/EnderSpirit"><img src="https://avatars.githubusercontent.com/u/28017013?v=4?s=60" width="60px;" alt=""/><br /><sub><b>EnderSpirit</b></sub></a><br /><a href="https://github.com/trpc/trpc/commits?author=EnderSpirit" title="Documentation">📖</a></td>
     <td align="center"><a href="http://www.jumr.dev"><img src="https://avatars.githubusercontent.com/u/51714798?v=4?s=60" width="60px;" alt=""/><br /><sub><b>Julius Marminge</b></sub></a><br /><a href="#example-juliusmarminge" title="Examples">💡</a></td>
     <td align="center"><a href="https://tryhackme.com/p/zast99"><img src="https://avatars.githubusercontent.com/u/29718978?v=4?s=60" width="60px;" alt=""/><br /><sub><b>Mateo Carriquí</b></sub></a><br /><a href="#financial-system32uwu" title="Financial">💵</a></td>
+    <td align="center"><a href="https://github.com/OlegGulevskyy"><img src="https://avatars.githubusercontent.com/u/43781031?v=4?s=60" width="60px;" alt=""/><br /><sub><b>Oleg Gulevskyy</b></sub></a><br /><a href="https://github.com/trpc/trpc/commits?author=OlegGulevskyy" title="Documentation">📖</a></td>
   </tr>
 </table>
 
