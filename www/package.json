@@ -13,8 +13,8 @@
     "clear": "docusaurus clear"
   },
   "dependencies": {
-    "@docusaurus/core": "^2.0.0-beta.18",
-    "@docusaurus/preset-classic": "^2.0.0-beta.18",
+    "@docusaurus/core": "^2.0.0-rc.1",
+    "@docusaurus/preset-classic": "^2.0.0-rc.1",
     "@mdx-js/react": "^1.6.22",
     "clsx": "^1.1.1",
     "react": "^17.0.2",
@@ -34,7 +34,7 @@
     ]
   },
   "devDependencies": {
-    "@docusaurus/module-type-aliases": "^2.0.0-beta.21",
+    "@docusaurus/module-type-aliases": "^2.0.0-rc.1",
     "@tsconfig/docusaurus": "^1.0.6",
     "autoprefixer": "^10.4.4",
     "postcss": "^8.4.12",

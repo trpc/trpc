@@ -31,6 +31,11 @@ module.exports = {
       },
       items: [
         {
+          type: 'docsVersionDropdown',
+          position: 'left',
+          dropdownActiveClassDisabled: true,
+        },
+        {
           to: 'docs',
           label: 'Docs',
           activeBaseRegex: 'docs(/?)$',
@@ -141,6 +146,7 @@ module.exports = {
       '@docusaurus/preset-classic',
       {
         docs: {
+          includeCurrentVersion: false,
           sidebarPath: require.resolve('./sidebars.js'),
           // Please change this to your repo.
           editUrl: 'https://github.com/trpc/trpc/tree/next/www/',
