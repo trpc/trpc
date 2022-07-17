@@ -213,7 +213,7 @@ export async function resolveHTTPResponse<
       }
     });
 
-    const result = isBatchCall ? resultEnvelopes : resultEnvelopes[0];
+    const result = isBatchCall ? resultEnvelopes : resultEnvelopes[0]!;
     return endResponse(result, errors);
   } catch (cause) {
     // we get here if

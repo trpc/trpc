@@ -10,8 +10,8 @@ The `createContext()` function is called for each request and the result is prop
 ## Example code
 
 ```ts title='server/context.ts'
-import * as trpc from "@trpc/server";
-import * as trpcNext from "@trpc/server/adapters/next";
+import * as trpc from '@trpc/server';
+import * as trpcNext from '@trpc/server/adapters/next';
 
 // The app's context - is generated for each incoming request
 export async function createContext(opts?: trpcNext.CreateNextContextOptions) {
@@ -33,9 +33,11 @@ export async function createContext(opts?: trpcNext.CreateNextContextOptions) {
   };
 }
 type Context = trpc.inferAsyncReturnType<typeof createContext>;
+```
 
-// Helper function to create a router with your app's context
-export function createRouter() {
-  return trpc.router<Context>();
-}
+```ts title='server/routers/_app.ts'
+import { TRPCError, initTRPC } from '@trpc/server';
+import { Context } from '../context';
+
+export const t = initTRPC<{ ctx: Context }>()();
 ```

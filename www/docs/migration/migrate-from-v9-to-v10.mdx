@@ -1,0 +1,235 @@
+---
+id: migrate-from-v9-to-v10
+title: Migrate from V9 to V10
+sidebar_label: Migrate from V9 to V10
+slug: /migrate-from-v9-to-v10
+---
+
+> Are you on V9 and are worried about the migration path and massive breaking changing? Don't worry, we got your back!
+>
+> We have an **interopability mode** for old routers which allows you to easily incrementally adopt V10.
+
+## Summary of changes
+
+In a gist, what has changed?
+
+### The `t` variable
+
+> If you don't like the variable name `t`, you can call it whatever you want
+
+The way you initialize tRPC on the server has been update, we now create a root `t` variable to contains the root information about your app:
+
+- [Context](/docs/context)
+- [Meta data](/docs/metadata)
+- [Error formatter](/docs/error-formatting)
+- [Data Transformer](/docs/error-formatting)
+
+The way the `t` variable is defined is simply like this:
+
+```ts title='/src/server/trpc.ts'
+import { initTRPC } from '@trpc/server';
+
+// Beware of the double `()()`
+export t = initTRPC()();
+```
+
+Here's a full example of how the `t` variable may look like:
+
+```ts title='/src/server/trpc.ts'
+import { initTRPC } from '@trpc/server';
+import superjson from 'superjson';
+
+// This is usually inferred
+interface Context {
+  user?: {
+    id: string;
+    name: string;
+  };
+}
+
+interface Meta {
+  openapi: {
+    enabled: boolean;
+    method: string;
+    path: string;
+  };
+}
+
+export const t = initTRPC<{ ctx: Context; meta: Meta }>()({
+  errorFormatter({ shape, error }) {
+    return {
+      ...shape,
+      data: {
+        ...shape.data,
+        zodError:
+          error.code === 'BAD_USER_INPUT' &&
+          error.cause instanceof ZodError
+            ? error.cause.flatten()
+            : null,
+      };
+    };
+  },
+  transformer: superjson,
+})
+```
+
+### Defining routers & procedures
+
+```ts
+// OLD:
+const appRouter = trpc
+  .router()
+  .query('greeting', {
+    input: z.string(),
+    resolve({input}) {
+      return `hello ${input}!`
+    }
+  })
+
+// NEW:
+const appRouter = t.router({
+  greeting: t
+    .procedure
+    .input(z.string())
+    .query(({ input }) => `hello ${input}!`)
+})
+```
+
+### Calling procedures
+
+```ts
+// OLD
+client.query('greeting', 'KATT');
+trpc.useQuery(['greeting', 'KATT']);
+
+// NEW - you'll be able to CMD+click `greeting` below and jump straight to your backend code
+client.greeting('KATT');
+trpc.greeting.useQuery('KATT');
+```
+
+### Middlewares
+
+```ts
+// OLD
+const appRouter = trpc
+  .router()
+  .middleware(({next, ctx}) => {
+    if (!ctx.user) {
+      throw new TRPCError({ code: "UNAUTHORIZED" })
+    }
+
+    return next({
+      ctx: {
+        ...ctx,
+        user: ctx.user,
+      }
+    })
+  })
+  .query('greeting', {
+    resolve({input}) {
+      return `hello ${ctx.user.name}!`
+    }
+  })
+
+// NEW
+const isAuthed = t.middleware(({next, ctx}) => {
+  if (!ctx.user) {
+    throw new TRPCError({ code: "UNAUTHORIZED" })
+  }
+
+  return next({
+    ctx: {
+      user: ctx.user,
+    }
+  })
+})
+
+// Reusable:
+const authedProcedure = t.procedure.use(isAuthed)
+
+const appRouter = t.router({
+  greeting: authedProcedure.query(({ ctx }) => `hello ${ctx.name}!`)
+})
+```
+
+## Migration path for the 95%
+
+If you are migrating from V9->V10, the transition is pretty simple for the 95% use-cases.
+
+**1. Add `.interop()`**
+
+All you'll need to do is to add an `.interop()` at the end of your `appRouter`. Example: https://github.com/trpc/trpc/blob/ad25239cefd972494bfff49a869b9432fd2f403f/examples/.interop/next-prisma-starter/src/server/routers/_app.ts#L37
+
+When you've done this, you can start migrating to the new way of doing things.
+
+**2. Create the `t`-object**
+
+```ts
+// src/server/trpc.ts
+import superjson from 'superjson';
+import { Context } from './context';
+
+export const t = initTRPC<{
+  ctx: Context;
+}>()({
+  // Optional:
+  transformer: superjson,
+});
+```
+
+**3. Create a new `appRouter`**
+
+1. Rename your old `appRouter` to `legacyRouter`
+2. Create a new app router:
+
+```ts
+import { t } from './trpc';
+
+const legacyRouter = trpc
+  .router()
+  /* [...] */
+  .interop();
+
+export const appRouter = t.merge(legacyRouter);
+```
+
+3. See if your app still builds
+4. Create a a test router:
+
+```ts
+const greetingRouter = t.router({
+  greeting: t.procedure.query(() => 'world'),
+});
+```
+
+5. Merge it in:
+
+```ts
+export const appRouter = t.merge(legacyRouter, greetingRouter);
+```
+
+## For the remaining 5%
+
+### Subscriptions
+
+🚧
+
+### Custom [Links](/docs/links)
+
+🚧
+
+## Optional DX improvements
+
+### `@trpc/next`: `setupNext()`
+
+🚧
+
+### [...]
+
+## Extras
+
+### Migrate custom error formatters
+
+🚧
+
+### [...]

@@ -10,7 +10,8 @@ export function pipeFromArray<T, R>(
   }
 
   if (fns.length === 1) {
-    return fns[0];
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    return fns[0]!;
   }
 
   return function piped(input: T): R {

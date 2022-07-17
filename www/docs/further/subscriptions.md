@@ -5,6 +5,11 @@ sidebar_label: Subscriptions / WebSockets
 slug: /subscriptions
 ---
 
+
+:::caution
+Work in progress: https://github.com/trpc/trpc/issues/2114
+:::
+
 :::info
 Subscriptions & WebSockets are in beta, alpha & might change without a major version bump. However, feel free to use them and report any issue you may find on [GitHub](https://github.com/trpc/trpc)
 :::
@@ -20,48 +25,50 @@ Subscriptions & WebSockets are in beta, alpha & might change without a major ver
 ### Adding a subscription procedure
 
 ```tsx title='server/router.ts'
-import * as trpc from '@trpc/server';
+import { initTRPC } from '@trpc/server';
 import { observable } from '@trpc/server/observable';
 import { EventEmitter } from 'events';
+import { z } from 'zod';
 
 // create a global event emitter (could be replaced by redis, etc)
 const ee = new EventEmitter();
 
-export const appRouter = trpc
-  .router()
-  .subscription('onAdd', {
-    resolve({ ctx }) {
-      // `resolve()` is triggered for each client when they start subscribing `onAdd`
+const t = initTRPC()();
 
-      // return an `observable` with a callback which is triggered immediately
-      return observable<Post>((emit) => {
-        const onAdd = (data: Post) => {
-          // emit data to client
-          emit.next(data);
-        };
+export const appRouter = t.router({
+  onAdd: t.procedure.subscription(() => {
+    // `resolve()` is triggered for each client when they start subscribing `onAdd`
 
-        // trigger `onAdd()` when `add` is triggered in our event emitter
-        ee.on('add', onAdd);
+    // return an `observable` with a callback which is triggered immediately
+    return observable<Post>((emit) => {
+      const onAdd = (data: Post) => {
+        // emit data to client
+        emit.next(data);
+      };
 
-        // unsubscribe function when client disconnects or stops subscribing
-        return () => {
-          ee.off('add', onAdd);
-        };
-      });
-    },
-  })
-  .mutation('add', {
-    input: z.object({
-      id: z.string().uuid().optional(),
-      text: z.string().min(1),
-    }),
-    async resolve({ ctx, input }) {
+      // trigger `onAdd()` when `add` is triggered in our event emitter
+      ee.on('add', onAdd);
+
+      // unsubscribe function when client disconnects or stops subscribing
+      return () => {
+        ee.off('add', onAdd);
+      };
+    });
+  }),
+  add: t.procedure
+    .input(
+      z.object({
+        id: z.string().uuid().optional(),
+        text: z.string().min(1),
+      }),
+    )
+    .mutation(async ({ input }) => {
       const post = { ...input }; /* [..] add to db */
 
       ee.emit('add', post);
       return post;
-    },
-  });
+    }),
+});
 ```
 
 ### Creating a WebSocket-server
@@ -119,6 +126,9 @@ const client = createTRPCClient<AppRouter>({
     }),
   ],
 });
+
+// create a proxy function for ease of use
+const proxy = createTRPCClientProxy(client);
 ```
 
 ### Using React

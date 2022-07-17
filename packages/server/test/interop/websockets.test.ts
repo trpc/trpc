@@ -241,10 +241,10 @@ test.skip('$subscription() - server randomly stop and restart (this test might b
     expect(error).toHaveBeenCalledTimes(1);
     expect(complete).toHaveBeenCalledTimes(0);
   });
-  expect(error.mock.calls[0][0]).toMatchInlineSnapshot(
+  expect(error.mock.calls[0]![0]!).toMatchInlineSnapshot(
     `[TRPCClientError: WebSocket closed prematurely]`,
   );
-  expect(error.mock.calls[0][0].originalError.name).toBe(
+  expect(error.mock.calls[0]![0]!.originalError.name).toBe(
     'TRPCWebSocketClosedError',
   );
 
@@ -314,7 +314,7 @@ test('server subscription ended', async () => {
   });
   expect(complete).toHaveBeenCalledTimes(0);
   expect(error).toHaveBeenCalledTimes(1);
-  expect(error.mock.calls[0][0]).toMatchInlineSnapshot(
+  expect(error.mock.calls[0]![0]!).toMatchInlineSnapshot(
     `[TRPCClientError: Operation ended prematurely]`,
   );
   close();

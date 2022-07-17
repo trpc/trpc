@@ -23,25 +23,28 @@ You'll notice that you get autocompletion on the `path` and automatic typesafety
 <details><summary>Backend code</summary>
 
 ```tsx title='server/routers/_app.ts'
-import * as trpc from '@trpc/server';
+import { initTRPC } from '@trpc/server'
 import { z } from 'zod';
 
-export const appRouter = trpc
-  .router()
+export const t = initTRPC()()
+
+export const appRouter = t.router({
   // Create procedure at path 'hello'
-  .query('hello', {
+  hello: t
+    .procedure
     // using zod schema to validate and infer input values
-    input: z
-      .object({
+    .input(
+      z.object({
         text: z.string().nullish(),
       })
-      .nullish(),
-    resolve({ input }) {
+      .nullish() 
+    )
+    .query(({ input }) => {
       return {
         greeting: `hello ${input?.text ?? 'world'}`,
       };
-    },
-  });
+    })
+})
 ```
 
 </details>
@@ -51,8 +54,8 @@ import { trpc } from '../utils/trpc';
 
 export function MyComponent() {
   // input is optional, so we don't have to pass second argument
-  const helloNoArgs = trpc.useQuery(['hello']);
-  const helloWithArgs = trpc.useQuery(['hello', { text: 'client' }]);
+  const helloNoArgs = trpc.proxy.hello.useQuery();
+  const helloWithArgs = trpc.proxy.hello.useQuery({ text: 'client' });
 
   return (
     <div>

@@ -7,7 +7,6 @@ slug: /caching
 
 The below examples uses [Vercel's edge caching](https://vercel.com/docs/serverless-functions/edge-caching) to serve data to your users as fast as possible.
 
-
 ## :warning: A word of caution :warning:
 
 Always be careful with caching - especially if you handle personal information.
@@ -16,15 +15,17 @@ Since batching is enabled by default, it's recommended to set your cache headers
 
 You can also use a [`splitLink`](../client/links.md) to split your requests that are public and those that should be private and uncached.
 
-
 ## App Caching
 
 If you turn on SSR in your app you might discover that your app loads slow on for instance Vercel, but you can actually statically render your whole app without using SSG; [read this Twitter thread](https://twitter.com/alexdotjs/status/1386274093041950722) for more insights.
 
 ### Example code
 
-```tsx title='pages/_app.tsx'
-export default withTRPC({
+```tsx title='utils/trpc.tsx'
+import { setupTRPC } from '@trpc/next';
+import { AppRouter } from '../server/routers/_app';
+
+export const trpc = setupTRPC<AppRouter>({
   config({ ctx }) {
     if (typeof window !== 'undefined') {
       return {
@@ -54,14 +55,11 @@ export default withTRPC({
     return {
       headers: {
         'cache-control': `s-maxage=1, stale-while-revalidate=${ONE_DAY_IN_SECONDS}`,
-      }
+      },
     };
   },
-})(MyApp);
-
+});
 ```
-
-
 
 ## API Response caching
 
@@ -72,8 +70,7 @@ Since all queries are normal HTTP `GET`s we can use normal HTTP headers to cache
 > Assuming you're deploying your API somewhere that can handle stale-while-revalidate cache headers like Vercel.
 
 ```tsx title='server.ts'
-import * as trpc from '@trpc/server';
-import { inferAsyncReturnType } from '@trpc/server';
+import { inferAsyncReturnType, initTRPC } from '@trpc/server';
 import * as trpcNext from '@trpc/server/adapters/next';
 
 export const createContext = async ({
@@ -89,23 +86,22 @@ export const createContext = async ({
 
 type Context = inferAsyncReturnType<typeof createContext>;
 
-export function createRouter() {
-  return trpc.router<Context>();
-}
+export const t = initTRPC<{ ctx: Context }>()();
 
 const waitFor = async (ms: number) =>
   new Promise((resolve) => setTimeout(resolve, ms));
 
-export const appRouter = createRouter()
-  .query('public.slow-query-cached', {
-    async resolve({ ctx }) {
+export const appRouter = t.router({
+  public: t.router({
+    slowQueryCached: t.procedure.query(async ({ ctx }) => {
       await waitFor(5000); // wait for 5s
 
       return {
         lastUpdated: new Date().toJSON(),
       };
-    },
-  });
+    }),
+  }),
+});
 
 // Exporting type _type_ AppRouter only exposes types that can be used for inference
 // https://www.typescriptlang.org/docs/handbook/release-notes/typescript-3-8.html#type-only-imports-and-export
@@ -117,8 +113,7 @@ export default trpcNext.createNextApiHandler({
   createContext,
   responseMeta({ ctx, paths, type, errors }) {
     // assuming you have all your public routes with the keyword `public` in them
-    const allPublic =
-      paths && paths.every((path) => path.includes('public'));
+    const allPublic = paths && paths.every((path) => path.includes('public'));
     // checking that no procedures errored
     const allOk = errors.length === 0;
     // checking we're doing a query request

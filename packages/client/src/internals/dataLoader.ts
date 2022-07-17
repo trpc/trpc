@@ -112,8 +112,8 @@ export function dataLoader<TKey, TValue>(
       promise
         .then((result) => {
           for (let i = 0; i < result.length; i++) {
-            const value = result[i];
-            const item = batch.items[i];
+            const value = result[i]!;
+            const item = batch.items[i]!;
             item.resolve(value);
             item.batch = null;
           }

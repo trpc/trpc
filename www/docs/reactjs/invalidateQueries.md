@@ -19,7 +19,7 @@ import { trpc } from '../utils/trpc'
 // In component:
 const utils = trpc.useContext();
 
-const mutation = trpc.useMutation('post.edit', {
+const mutation = trpc.proxy.post.edit.useMutation({
   onSuccess(input) {
     utils.invalidateQueries(['post.all']);
     utils.invalidateQueries(['post.byId', input.id]);

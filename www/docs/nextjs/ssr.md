@@ -9,18 +9,11 @@ The only thing you need to do to get SSR on your application is to set `ssr: tru
 
 In order to execute queries properly during the server-side render step and customize caching behavior, we might want to add some extra logic inside our `_app.tsx`:
 
-```tsx title='pages/_app.tsx'
-import React from 'react';
-import { withTRPC } from '@trpc/next';
-import { AppType } from 'next/dist/shared/lib/utils';
+```tsx title='utils/trpc.ts'
 import superjson from 'superjson';
 import type { AppRouter } from './api/trpc/[trpc]';
 
-const MyApp: AppType = ({ Component, pageProps }) => {
-  return <Component {...pageProps} />;
-};
-
-export default withTRPC<AppRouter>({
+export const trpc = setupTRPC<AppRouter>({
   config({ ctx }) {
     if (typeof window !== 'undefined') {
       // during client requests
@@ -54,9 +47,21 @@ export default withTRPC<AppRouter>({
     };
   },
   ssr: true,
-})(MyApp);
+});
+```
+
+```tsx title='pages/_app.tsx'
+import type { AppProps } from 'next/app';
+import React from 'react';
+import { trpc } from '~/utils/trpc';
+
+const MyApp: AppType = ({ Component, pageProps }: AppProps) => {
+  return <Component {...pageProps} />;
+};
+
+export default trpc.withTRPC(MyApp);
 ```
 
 ## Caveats
 
-When you enable SSR, tRPC will use `getInitialProps` to prefetch all queries on the server. That causes problems [like this](https://github.com/trpc/trpc/issues/596) when you use `getServerSideProps` in a page and solving it is out of our hands. Though, you can use [SSG Helpers](/docs/ssg-helpers) to prefetch queries in `getStaticSiteProps` or `getServerSideProps`.
+When you enable SSR, tRPC will use `getInitialProps` to prefetch all queries on the server. That causes problems [like this](https://github.com/trpc/trpc/issues/596) when you use `getServerSideProps` in a page and solving it is out of our hands. Though, you can use [SSG Helpers](/docs/ssg-helpers) to prefetch queries in `getStaticProps` or `getServerSideProps`.

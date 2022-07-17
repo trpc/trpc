@@ -766,7 +766,8 @@
       "avatar_url": "https://avatars.githubusercontent.com/u/3660667?v=4",
       "profile": "http://www.big-sir.com",
       "contributions": [
-        "doc"
+        "doc",
+        "example"
       ]
     },
     {
@@ -934,7 +935,8 @@
       "avatar_url": "https://avatars.githubusercontent.com/u/20271968?v=4",
       "profile": "https://ixahmedxi.me",
       "contributions": [
-        "doc"
+        "doc",
+        "financial"
       ]
     },
     {
@@ -952,7 +954,35 @@
       "avatar_url": "https://avatars.githubusercontent.com/u/51714798?v=4",
       "profile": "http://www.jumr.dev",
       "contributions": [
-        "example"
+        "example",
+        "doc"
+      ]
+    },
+    {
+      "login": "system32uwu",
+      "name": "Mateo Carriquí",
+      "avatar_url": "https://avatars.githubusercontent.com/u/29718978?v=4",
+      "profile": "https://tryhackme.com/p/zast99",
+      "contributions": [
+        "financial"
+      ]
+    },
+    {
+      "login": "OlegGulevskyy",
+      "name": "Oleg Gulevskyy",
+      "avatar_url": "https://avatars.githubusercontent.com/u/43781031?v=4",
+      "profile": "https://github.com/OlegGulevskyy",
+      "contributions": [
+        "doc"
+      ]
+    },
+    {
+      "login": "joaosamouco",
+      "name": "João Samouco",
+      "avatar_url": "https://avatars.githubusercontent.com/u/6799006?v=4",
+      "profile": "https://github.com/joaosamouco",
+      "contributions": [
+        "test"
       ]
     }
   ],
