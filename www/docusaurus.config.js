@@ -23,6 +23,12 @@ module.exports = {
       // contextualSearch: true,
       // searchParameters: {},
     },
+    // announcementBar: {
+    //   content:
+    //     "<b>🚀 Hey, we just released v10 update, read <a href='/docs/quickstart'>the documentation guide</a></b>",
+    //   backgroundColor: 'var(--ifm-color-primary-dark)',
+    //   textColor: 'var(--ifm-color-light)',
+    // },
     navbar: {
       title: 'tRPC',
       logo: {
