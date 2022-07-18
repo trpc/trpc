@@ -139,6 +139,7 @@ function Home() {
               className="twitter-timeline"
               data-width="500"
               data-height="1000"
+              data-theme="dark"
               href="https://twitter.com/alexdotjs/timelines/1441435105910796291?ref_src=twsrc%5Etfw"
             >
               tRPC love
