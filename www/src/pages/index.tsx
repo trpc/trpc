@@ -117,10 +117,7 @@ function Home() {
             ))}
           </section>
         )}
-      </main>
-      <footer
-        className={`container px-8 md:px-0 w-full max-w-[var(--ifm-container-width)] mx-auto`}
-      >
+
         <ol className="footnotes list-decimal">
           <li id="zero">
             <code>@trpc/client</code> depends on some babel runtime helpers +
@@ -135,7 +132,25 @@ function Home() {
             .
           </li>
         </ol>
-      </footer>
+        <section className="flex flex-col justify-center items-center p-4">
+          <h3 className="text-2xl mb-4">What people are saying</h3>
+          <div className="w-[500px] max-w-full">
+            <a
+              className="twitter-timeline"
+              data-width="500"
+              data-height="1000"
+              href="https://twitter.com/alexdotjs/timelines/1441435105910796291?ref_src=twsrc%5Etfw"
+            >
+              tRPC love
+            </a>{' '}
+            <script
+              async
+              src="https://platform.twitter.com/widgets.js"
+              charSet="utf-8"
+            ></script>
+          </div>
+        </section>
+      </main>
     </Layout>
   );
 }
