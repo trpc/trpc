@@ -23,6 +23,12 @@ module.exports = {
       // contextualSearch: true,
       // searchParameters: {},
     },
+    announcementBar: {
+      content:
+        "🚀 You are looking at a pre-prelease of tRPC v10! See <a href='https://github.com/trpc/trpc/blob/next/.tmp/v10-docs.md'>this document</a> for a summary of what is changing &amp; <a href='https://github.com/trpc/examples-v10-next-prisma-starter-sqlite'>go here</a> to try out a real project using this version.",
+      backgroundColor: 'var(--ifm-color-primary-dark)',
+      textColor: '#ffffff',
+    },
     navbar: {
       title: 'tRPC',
       logo: {

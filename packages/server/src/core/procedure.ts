@@ -1,6 +1,10 @@
 import { DefaultErrorShape } from '../error/formatter';
 import { CombinedDataTransformer } from '../transformer';
 import { RootConfig } from './internals/config';
+import {
+  ProcedureBuilderDef,
+  ProcedureCallOptions,
+} from './internals/procedureBuilder';
 import { UnsetMarker } from './internals/utils';
 
 type ClientContext = Record<string, unknown>;
@@ -46,19 +50,19 @@ export interface ProcedureParams<
   /**
    * @internal
    */
-  _output_in: TOutputIn;
-  /**
-   * @internal
-   */
-  _output_out: TOutputOut;
-  /**
-   * @internal
-   */
   _input_in: TInputIn;
   /**
    * @internal
    */
   _input_out: TInputOut;
+  /**
+   * @internal
+   */
+  _output_in: TOutputIn;
+  /**
+   * @internal
+   */
+  _output_out: TOutputOut;
 }
 
 /**
@@ -72,37 +76,40 @@ export type ProcedureArgs<TParams extends ProcedureParams> =
     : [input: TParams['_input_in'], opts?: ProcedureOptions];
 
 /**
+ *
  * @internal
  */
 export interface ProcedureBase<TParams extends ProcedureParams> {
-  _def: TParams;
+  _def: TParams & ProcedureBuilderDef;
   /**
    * @deprecated use `._def.meta` instead
    */
   meta?: TParams['_meta'];
   _procedure: true;
+  /**
+   * @internal
+   */
+  (opts: ProcedureCallOptions): Promise<unknown>;
 }
 
 export interface QueryProcedure<TParams extends ProcedureParams>
   extends ProcedureBase<TParams> {
   _query: true;
-  query(...args: ProcedureArgs<TParams>): Promise<TParams['_output_out']>;
 }
 
 export interface MutationProcedure<TParams extends ProcedureParams>
   extends ProcedureBase<TParams> {
   _mutation: true;
-  mutate(...args: ProcedureArgs<TParams>): Promise<TParams['_output_out']>;
 }
 
 export interface SubscriptionProcedure<TParams extends ProcedureParams>
   extends ProcedureBase<TParams> {
   _subscription: true;
-  subscription(
-    ...args: ProcedureArgs<TParams>
-  ): Promise<TParams['_output_out']>;
 }
+
 export type Procedure<TParams extends ProcedureParams> =
   | QueryProcedure<TParams>
   | MutationProcedure<TParams>
   | SubscriptionProcedure<TParams>;
+
+export type AnyProcedure = Procedure<any>;

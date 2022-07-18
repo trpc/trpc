@@ -22,7 +22,7 @@ Create a typesafe client with the `createTRPCClient` method from `@trpc/client`:
 ```ts title='client.ts'
 // pages/index.tsx
 import type { AppRouter } from '../path/to/server/trpc';
-import { createTRPCClient } from '@trpc/client';
+import { createTRPCClient, createTRPCClientProxy } from '@trpc/client';
 
 const client = createTRPCClient<AppRouter>({
   url: 'http://localhost:5000/trpc'
@@ -37,7 +37,7 @@ As you can see, we passed `AppRouter` as a **type argument** of `createTRPCClien
 const bilbo = await proxy.getUser.query('id_bilbo');
 // => { id: 'id_bilbo', name: 'Bilbo' };
 
-const frodo = await proxy.createUser.mutation({ name: 'Frodo' });
+const frodo = await proxy.createUser.mutate({ name: 'Frodo' });
 // => { id: 'id_frodo', name: 'Frodo' };
 ```
 

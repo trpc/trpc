@@ -190,6 +190,8 @@ Also, if your company using tRPC and want to support long-term maintenance of tR
       <td align="center"><a href="https://github.com/lmatheus"><img src="https://avatars.githubusercontent.com/u/8514703?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Luis Matheus</b></sub></a></td>
       <td align="center"><a href="https://github.com/dmaykov"><img src="https://avatars.githubusercontent.com/u/6147048?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Dmitry Maykov</b></sub></a></td>
       <td align="center"><a href="https://www.linkedin.com/in/zomars/"><img src="https://avatars.githubusercontent.com/u/3504472?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Omar López</b></sub></a></td>
+      <td align="center"><a href="https://tryhackme.com/p/zast99"><img src="https://avatars.githubusercontent.com/u/29718978?v=4?s=60" width="60px;" alt=""/><br /><sub><b>Mateo Carriquí</b></sub></a></td>
+      <td align="center"><a href="https://ixahmedxi.me"><img src="https://avatars.githubusercontent.com/u/20271968?v=4?s=60" width="60px;" alt=""/><br /><sub><b>Ahmed Elsakaan</b></sub></a></td>
     </tr>
   </tbody>
 </table>
@@ -320,11 +322,14 @@ Also, if your company using tRPC and want to support long-term maintenance of tR
     <td align="center"><a href="https://cal.com"><img src="https://avatars.githubusercontent.com/u/79145102?v=4?s=60" width="60px;" alt=""/><br /><sub><b>Cal.com, Inc.</b></sub></a><br /><a href="#financial-calcom" title="Financial">💵</a></td>
     <td align="center"><a href="https://github.com/tomanagle"><img src="https://avatars.githubusercontent.com/u/8683577?v=4?s=60" width="60px;" alt=""/><br /><sub><b>Tom</b></sub></a><br /><a href="#video-tomanagle" title="Videos">📹</a> <a href="#talk-tomanagle" title="Talks">📢</a> <a href="#tutorial-tomanagle" title="Tutorials">✅</a></td>
     <td align="center"><a href="https://github.com/3x071c"><img src="https://avatars.githubusercontent.com/u/87198856?v=4?s=60" width="60px;" alt=""/><br /><sub><b>Victor Homic</b></sub></a><br /><a href="https://github.com/trpc/trpc/commits?author=3x071c" title="Code">💻</a> <a href="https://github.com/trpc/trpc/commits?author=3x071c" title="Tests">⚠️</a></td>
-    <td align="center"><a href="https://ixahmedxi.me"><img src="https://avatars.githubusercontent.com/u/20271968?v=4?s=60" width="60px;" alt=""/><br /><sub><b>Ahmed Elsakaan</b></sub></a><br /><a href="https://github.com/trpc/trpc/commits?author=ixahmedxi" title="Documentation">📖</a></td>
+    <td align="center"><a href="https://ixahmedxi.me"><img src="https://avatars.githubusercontent.com/u/20271968?v=4?s=60" width="60px;" alt=""/><br /><sub><b>Ahmed Elsakaan</b></sub></a><br /><a href="https://github.com/trpc/trpc/commits?author=ixahmedxi" title="Documentation">📖</a> <a href="#financial-ixahmedxi" title="Financial">💵</a></td>
   </tr>
   <tr>
     <td align="center"><a href="https://github.com/EnderSpirit"><img src="https://avatars.githubusercontent.com/u/28017013?v=4?s=60" width="60px;" alt=""/><br /><sub><b>EnderSpirit</b></sub></a><br /><a href="https://github.com/trpc/trpc/commits?author=EnderSpirit" title="Documentation">📖</a></td>
-    <td align="center"><a href="http://www.jumr.dev"><img src="https://avatars.githubusercontent.com/u/51714798?v=4?s=60" width="60px;" alt=""/><br /><sub><b>Julius Marminge</b></sub></a><br /><a href="#example-juliusmarminge" title="Examples">💡</a></td>
+    <td align="center"><a href="http://www.jumr.dev"><img src="https://avatars.githubusercontent.com/u/51714798?v=4?s=60" width="60px;" alt=""/><br /><sub><b>Julius Marminge</b></sub></a><br /><a href="#example-juliusmarminge" title="Examples">💡</a> <a href="https://github.com/trpc/trpc/commits?author=juliusmarminge" title="Documentation">📖</a></td>
+    <td align="center"><a href="https://tryhackme.com/p/zast99"><img src="https://avatars.githubusercontent.com/u/29718978?v=4?s=60" width="60px;" alt=""/><br /><sub><b>Mateo Carriquí</b></sub></a><br /><a href="#financial-system32uwu" title="Financial">💵</a></td>
+    <td align="center"><a href="https://github.com/OlegGulevskyy"><img src="https://avatars.githubusercontent.com/u/43781031?v=4?s=60" width="60px;" alt=""/><br /><sub><b>Oleg Gulevskyy</b></sub></a><br /><a href="https://github.com/trpc/trpc/commits?author=OlegGulevskyy" title="Documentation">📖</a></td>
+    <td align="center"><a href="https://github.com/joaosamouco"><img src="https://avatars.githubusercontent.com/u/6799006?v=4?s=60" width="60px;" alt=""/><br /><sub><b>João Samouco</b></sub></a><br /><a href="https://github.com/trpc/trpc/commits?author=joaosamouco" title="Tests">⚠️</a></td>
   </tr>
 </table>
 

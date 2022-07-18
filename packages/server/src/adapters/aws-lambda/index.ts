@@ -50,11 +50,28 @@ function getHTTPMethod(event: APIGatewayEvent) {
     message: UNKNOWN_PAYLOAD_FORMAT_VERSION_ERROR_MESSAGE,
   });
 }
+
 function getPath(event: APIGatewayEvent) {
   if (isPayloadV1(event)) {
+    const matches = event.resource.matchAll(/\{(.*?)\}/g);
+    for (const match of matches) {
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      const group = match[1]!;
+      if (group.includes('+') && event.pathParameters) {
+        return event.pathParameters[group.replace('+', '')] || '';
+      }
+    }
     return event.path.slice(1);
   }
   if (isPayloadV2(event)) {
+    const matches = event.routeKey.matchAll(/\{(.*?)\}/g);
+    for (const match of matches) {
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      const group = match[1]!;
+      if (group.includes('+') && event.pathParameters) {
+        return event.pathParameters[group.replace('+', '')] || '';
+      }
+    }
     return event.rawPath.slice(1);
   }
   throw new TRPCError({

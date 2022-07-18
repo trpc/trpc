@@ -1,17 +1,47 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import type { AnyRouter } from '@trpc/server';
+import type {
+  AnyRouter,
+  OmitNeverKeys,
+  Procedure,
+  ProcedureArgs,
+  ProcedureRouterRecord,
+  ProcedureType,
+  inferProcedureOutput,
+} from '@trpc/server';
 import { createProxy } from '@trpc/server/shared';
 import { TRPCClient as Client } from './internals/TRPCClient';
+
+type Resolver<TProcedure extends Procedure<any>> = (
+  ...args: ProcedureArgs<TProcedure['_def']>
+) => Promise<inferProcedureOutput<TProcedure>>;
+
+type DecorateProcedure<TProcedure extends Procedure<any>> = OmitNeverKeys<{
+  query: TProcedure extends { _query: true } ? Resolver<TProcedure> : never;
+
+  mutate: TProcedure extends { _mutation: true } ? Resolver<TProcedure> : never;
+
+  subscribe: TProcedure extends { _subscription: true }
+    ? Resolver<TProcedure>
+    : never;
+}>;
+
+type assertProcedure<T> = T extends Procedure<any> ? T : never;
 
 /**
  * @internal
  */
-export type FlattenRouter<TRouter extends AnyRouter> = {
-  [Key in keyof TRouter['_def']['record']]: TRouter['_def']['record'][Key] extends AnyRouter
-    ? FlattenRouter<TRouter['_def']['record'][Key]>
-    : TRouter['_def']['record'][Key];
+type DecoratedProcedureRecord<TProcedures extends ProcedureRouterRecord> = {
+  [TKey in keyof TProcedures]: TProcedures[TKey] extends AnyRouter
+    ? DecoratedProcedureRecord<TProcedures[TKey]['_def']['record']>
+    : DecorateProcedure<assertProcedure<TProcedures[TKey]>>;
+};
+
+const clientCallTypeMap: Record<keyof DecorateProcedure<any>, ProcedureType> = {
+  query: 'query',
+  mutate: 'mutation',
+  subscribe: 'subscription',
 };
 
 export function createTRPCClientProxy<TRouter extends AnyRouter>(
@@ -19,12 +49,11 @@ export function createTRPCClientProxy<TRouter extends AnyRouter>(
 ) {
   const proxy = createProxy(({ path, args }) => {
     const pathCopy = [...path];
-    let type = pathCopy.pop()!;
-    if (type === 'mutate') {
-      type = 'mutation';
-    }
+    const clientCallType = pathCopy.pop()! as keyof DecorateProcedure<any>;
+    const procedureType = clientCallTypeMap[clientCallType];
+
     const fullPath = pathCopy.join('.');
-    return (client as any)[type](fullPath, ...args);
+    return (client as any)[procedureType](fullPath, ...args);
   });
-  return proxy as FlattenRouter<TRouter>;
+  return proxy as DecoratedProcedureRecord<TRouter['_def']['record']>;
 }
