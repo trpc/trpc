@@ -54,6 +54,11 @@ module.exports = {
           label: 'Usage with Next.js',
         },
         {
+          type: 'docsVersionDropdown',
+          position: 'right',
+          dropdownActiveClassDisabled: true,
+        },
+        {
           href: 'https://github.com/trpc/trpc/tree/next',
           label: 'GitHub',
           position: 'right',
@@ -147,6 +152,14 @@ module.exports = {
       '@docusaurus/preset-classic',
       {
         docs: {
+          lastVersion: 'current',
+          versions: {
+            current: {
+              label: '10.x',
+              // path: '1.0.0',
+            },
+          },
+          includeCurrentVersion: false,
           sidebarPath: require.resolve('./sidebars.js'),
           // Please change this to your repo.
           editUrl: 'https://github.com/trpc/trpc/tree/next/www/',
