@@ -45,7 +45,7 @@ Recommended but not enforced file structure. This is what you get when starting 
 ### 1. Install deps
 
 ```bash
-yarn add @trpc/client @trpc/server @trpc/react @trpc/next zod react-query
+yarn add @trpc/client @trpc/server @trpc/react @trpc/next zod react-query@3
 ```
 
 - React Query: `@trpc/react` provides a thin wrapper over [react-query](https://react-query.tanstack.com/overview). It is required as a peer dependency.
