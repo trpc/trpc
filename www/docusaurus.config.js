@@ -12,6 +12,10 @@ module.exports = {
   organizationName: 'trpc', // Usually your GitHub org/user name.
   projectName: 'trpc', // Usually your repo name.
   themeConfig: {
+    colorMode: {
+      disableSwitch: true,
+      respectPrefersColorScheme: true,
+    },
     image: 'img/facebook_cover_photo_2.png',
     prism: {
       theme: require('prism-react-renderer/themes/vsDark'),
