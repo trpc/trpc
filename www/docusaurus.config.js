@@ -39,24 +39,13 @@ module.exports = {
         {
           to: 'docs',
           label: 'Docs',
+          position: 'right',
           activeBaseRegex: 'docs(/?)$',
         },
         {
           to: 'docs/quickstart',
-          label: 'Quickstart',
-        },
-        {
-          to: 'docs/awesome-trpc',
-          label: 'Awesome tRPC Collection',
-        },
-        {
-          to: 'docs/nextjs',
-          label: 'Usage with Next.js',
-        },
-        {
-          type: 'docsVersionDropdown',
           position: 'right',
-          dropdownActiveClassDisabled: true,
+          label: 'Quickstart',
         },
         {
           href: 'https://github.com/trpc/trpc/tree/next',
@@ -65,16 +54,9 @@ module.exports = {
           className: 'navbar-external-link',
         },
         {
-          href: 'https://twitter.com/alexdotjs',
-          label: 'Twitter',
+          type: 'docsVersionDropdown',
           position: 'right',
-          className: 'navbar-external-link',
-        },
-        {
-          href: 'https://trpc.io/discord',
-          label: 'Discord',
-          position: 'right',
-          className: 'navbar-external-link',
+          dropdownActiveClassDisabled: true,
         },
       ],
     },

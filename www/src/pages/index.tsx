@@ -60,6 +60,7 @@ function Home() {
       description="End-to-end typesafe APIs made easy. Automatic typesafety & autocompletion inferred from your API-paths, their input data, &amp; outputs 🧙‍♂️"
     >
       <Head>
+        <body className="homepage" />
         <script
           async
           src="https://platform.twitter.com/widgets.js"
