@@ -4,7 +4,7 @@ import useBaseUrl from '@docusaurus/useBaseUrl';
 import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
 import Layout from '@theme/Layout';
 import clsx from 'clsx';
-import React, { Fragment } from 'react';
+import React from 'react';
 import GitHubButton from 'react-github-btn';
 import styles from './styles.module.css';
 
@@ -44,7 +44,7 @@ const features = [
 function Feature({ title, description }) {
   return (
     <div className={'col col-4 p-4'}>
-      <h3 className="font-semibold text-xl pb-6">{title}</h3>
+      <h3 className="pb-6 text-xl font-semibold">{title}</h3>
       <p>{description}</p>
     </div>
   );
@@ -68,7 +68,7 @@ function Home() {
       </Head>
       <header className={clsx('hero hero--primary', styles.heroBanner)}>
         <div className="container flex flex-col gap-6">
-          <h1 className="font-bold text-5xl">{siteConfig.title}</h1>
+          <h1 className="text-5xl font-bold">{siteConfig.title}</h1>
           <p className="hero__subtitle">
             {siteConfig.tagline.split('\n').map((text) => (
               <div key={text}>{text}</div>
@@ -128,13 +128,13 @@ function Home() {
       <footer
         className={`container px-8 md:px-0 w-full max-w-[var(--ifm-container-width)] mx-auto`}
       >
-        <ol className="footnotes list-decimal">
+        <ol className="list-decimal footnotes">
           <li id="zero">
             <code>@trpc/client</code> depends on some babel runtime helpers +
             that a <code>fetch()</code> polyfill/ponyfill is used if the browser
             doesn&apos;t support it. <code>@trpc/react</code> is built on top of{' '}
             <a
-              className="text-primary no-underline"
+              className="no-underline text-primary"
               href="https://react-query.tanstack.com/"
             >
               react-query
