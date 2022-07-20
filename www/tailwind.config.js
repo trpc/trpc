@@ -19,6 +19,6 @@ module.exports = {
       },
     },
   },
-  darkMode: ['media'],
+  darkMode: ['class', '[data-theme="dark"]'],
   plugins: [],
 };
