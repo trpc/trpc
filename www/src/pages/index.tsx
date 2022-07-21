@@ -63,7 +63,7 @@ function Home() {
           charSet="utf-8"
         />
       </Head>
-      <main className="container py-40 mx-auto md:py-48 lg:py-64 xl:py-80">
+      <main className="container mx-auto py-28 md:py-40 lg:py-48 xl:py-64">
         <header className="flex flex-col lg:flex-row">
           <div className="flex-1">
             <h1 className="pb-3 text-2xl font-bold whitespace-pre-wrap lg:text-3xl">
