@@ -36,7 +36,7 @@
     "next": "*",
     "react": ">=16.8.0",
     "react-dom": ">=16.8.0",
-    "react-query": "^3.39.2"
+    "react-query": "^3.37.0"
   },
   "dependencies": {
     "@babel/runtime": "^7.9.0",
