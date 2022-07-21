@@ -9,7 +9,7 @@ module.exports = {
     '!**/deprecated/**',
   ],
   setupFilesAfterEnv: [
-    './server/jest.setup.js',
+    // './server/jest.setup.js',
     '@testing-library/jest-dom/extend-expect',
   ],
   globals: {

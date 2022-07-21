@@ -15,7 +15,7 @@
     "next": "latest",
     "react": "^18.1.0",
     "react-dom": "^18.1.0",
-    "react-query": "^3.37.0",
+    "react-query": "^3.39.2",
     "zod": "^3.0.0"
   },
   "devDependencies": {
