@@ -8,6 +8,8 @@ import * as trpc from '../../src';
 import { TRPCError } from '../../src';
 import * as trpcUws from '../../src/adapters/uWebSockets';
 
+const testPort = 8005;
+
 type Context = {
   user: {
     name: string;
@@ -15,7 +17,7 @@ type Context = {
 };
 async function startServer() {
   const createContext: any = (
-    _opts: trpcUws.UWebSocketsContextOptions,
+    _opts: trpcUws.UWebSocketsCreateContextOptions,
   ): Context => {
     const getUser = () => {
       if (_opts.req.headers.authorization === 'meow') {
@@ -83,27 +85,23 @@ async function startServer() {
 
   // need to register everything on the app object,
   // as uWebSockets does not have middleware
-  trpcUws.registerTRPCasUWebSocketsEndpoint(app, '/trpc', {
+  trpcUws.createUWebSocketsHandler(app, '/trpc', {
     router,
     createContext,
   });
 
-  const { socket, port } = await new Promise<{
-    server: uWs.TemplatedApp;
+  const { socket } = await new Promise<{
     socket: uWs.us_listen_socket;
-    port: number;
   }>((resolve) => {
-    app.listen('0.0.0.0', 8005, (socket) => {
+    app.listen('0.0.0.0', testPort, (socket) => {
       resolve({
-        server: app,
         socket,
-        port: 8005,
       });
     });
   });
 
   const client = createTRPCClient<typeof router>({
-    url: `http://localhost:${port}/trpc`,
+    url: `http://localhost:${testPort}/trpc`,
 
     AbortController: AbortController as any,
     fetch: fetch as any,
@@ -122,7 +120,7 @@ async function startServer() {
         }
         resolve();
       }),
-    port,
+    port: testPort,
     router,
     client,
   };

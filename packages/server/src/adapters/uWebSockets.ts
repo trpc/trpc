@@ -3,13 +3,12 @@ import { TRPCError } from '../TRPCError';
 import { HTTPRequest } from '../http/internals/types';
 import { resolveHTTPResponse } from '../http/resolveHTTPResponse';
 import { AnyRouter, inferRouterContext } from '../router';
-import { NodeHTTPCreateContextFnOptions } from './node-http/types';
 
 export type UWebSocketsRegisterEndpointOptions<TRouter extends AnyRouter> = {
   router: TRouter;
   createContext?: (
-    opts: UWebSocketsContextOptions,
-  ) => Promise<inferRouterContext<TRouter>>;
+    opts: UWebSocketsCreateContextOptions,
+  ) => Promise<inferRouterContext<TRouter>> | inferRouterContext<TRouter>;
 };
 
 export type UWebSocketsRequestObject = {
@@ -22,23 +21,24 @@ export type UWebSocketsRequestObject = {
 // if this to be used, it needs to be proxied
 export type UWebSocketsResponseObject = uWs.HttpResponse;
 
-export type UWebSocketsContextOptions = NodeHTTPCreateContextFnOptions<
-  UWebSocketsRequestObject,
-  UWebSocketsResponseObject
->;
+export type UWebSocketsCreateContextOptions = {
+  req: UWebSocketsRequestObject;
+  // res: UWebSocketsResponseObject;
+};
 
 /**
  * Adapter for uWebSockets.js https://github.com/uNetworking/uWebSockets.js
  *
- * Notes: res object inside the context must not be used.
+ * Notes: if res object inside the context is used, we have no easy way to
+ * know what happened (the socket may have been closed),
  * To fix this, it would possible to proxy it. Or can just remove it and
- * force library consumer to either return or throw inside resolver/context
+ * force library consumer to either return or throw inside the resolver
  *
  * @param uWsApp uWebsockets server instance
  * @param pathPrefix The path to endpoint without trailing slash (ex: "/trpc")
- * @param opts
+ * @param opts router and createContext functions
  */
-export function registerTRPCasUWebSocketsEndpoint<TRouter extends AnyRouter>(
+export function createUWebSocketsHandler<TRouter extends AnyRouter>(
   uWsApp: uWs.TemplatedApp,
   pathPrefix: string,
   opts: UWebSocketsRegisterEndpointOptions<TRouter>,
@@ -62,7 +62,7 @@ export function registerTRPCasUWebSocketsEndpoint<TRouter extends AnyRouter>(
     });
 
     // new request object needs to be created, because socket
-    // can only be accessed synchronously, after await it cannot be accessed
+    // can only be accessed synchronously, after await it will complain
     const requestObj: UWebSocketsRequestObject = {
       headers,
       method,
@@ -78,7 +78,10 @@ export function registerTRPCasUWebSocketsEndpoint<TRouter extends AnyRouter>(
       inferRouterContext<TRouter>
     > {
       //res could be proxied here
-      return await opts.createContext?.({ res, req: requestObj });
+      return await opts.createContext?.({
+        // res,
+        req: requestObj,
+      });
     };
 
     const fakeReqObject: HTTPRequest = {
@@ -102,9 +105,7 @@ export function registerTRPCasUWebSocketsEndpoint<TRouter extends AnyRouter>(
       res.writeStatus(result.status.toString()); //temp
     } else {
       // assume something went bad, should never happen?
-      // there is no way to know from res object that something was send to the socket
-      // can proxy it to detect res calls during createContext and resolve
-      // then will need to exit from here
+      // if response was not sent prior to this point, there should be no error
 
       res.cork(() => {
         res.writeStatus('500 INTERNAL SERVER ERROR');
