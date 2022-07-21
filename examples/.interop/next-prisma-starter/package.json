@@ -41,7 +41,7 @@
     "next": "^12.1.6",
     "react": "^18.1.0",
     "react-dom": "^18.1.0",
-    "react-query": "^3.37.0",
+    "react-query": "^3.39.2",
     "start-server-and-test": "^1.12.0",
     "superjson": "^1.7.4",
     "zod": "^3.0.0"

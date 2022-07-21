@@ -984,6 +984,15 @@
       "contributions": [
         "test"
       ]
+    },
+    {
+      "login": "carstenlebek",
+      "name": "Carsten Lebek",
+      "avatar_url": "https://avatars.githubusercontent.com/u/59960385?v=4",
+      "profile": "https://clebek.dev",
+      "contributions": [
+        "example"
+      ]
     }
   ],
   "skipCi": true

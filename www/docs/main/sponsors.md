@@ -52,8 +52,6 @@ Also, if your company using tRPC and want to support long-term maintenance of tR
 
 ### 😻 Individuals
 
-### 😻 Individuals
-
 <table>
   <tbody>
     <tr>
