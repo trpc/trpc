@@ -3,49 +3,9 @@ import Link from '@docusaurus/Link';
 import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
 import Layout from '@theme/Layout';
 import React from 'react';
+import { Features } from '../components/Features';
 import { GithubStarCountButton } from '../components/GithubStarCountButton';
-
-const features = [
-  {
-    title: <>🧙‍♂️&nbsp; Automatic typesafety</>,
-    description: (
-      <>
-        Automatic typesafety & autocompletion inferred from your API-paths,
-        their input&nbsp;data, &amp;&nbsp;outputs.
-      </>
-    ),
-  },
-  {
-    title: <>🍃&nbsp; Light &amp; Snappy DX</>,
-    description: (
-      <>
-        No code generation, run-time bloat, or build pipeline.{' '}
-        <a href="#zero" aria-describedby="footnote-label" id="footnotes-ref">
-          Zero dependencies
-        </a>{' '}
-        &amp; a tiny client-side footprint.
-      </>
-    ),
-  },
-  {
-    title: <>🐻&nbsp; Add to existing brownfield project</>,
-    description: (
-      <>
-        Easy to add to your existing brownfield project with adapters for
-        Connect/Express/Next.js.
-      </>
-    ),
-  },
-];
-
-function Feature({ title, description }) {
-  return (
-    <div className={'col col-4 p-4'}>
-      <h3 className="pb-6 text-xl font-semibold">{title}</h3>
-      <p>{description}</p>
-    </div>
-  );
-}
+import { SectionTitle } from '../components/SectionTitle';
 
 function Home() {
   const context = useDocusaurusContext();
@@ -88,33 +48,13 @@ function Home() {
           <div className="flex-1">{/* TODO: Add new GIF here */}</div>
         </header>
       </main>
-      <section>
-        {features && features.length > 0 && (
-          <section className="flex flex-col md:flex-row items-center py-8 px-8 md:px-0 w-full max-w-[var(--ifm-container-width-xl)] mx-auto">
-            {features.map((props, idx) => (
-              <Feature key={idx} {...props} />
-            ))}
-          </section>
-        )}
+      <section className="pb-28">
+        <SectionTitle
+          title="The easy way to build typesafe APIs"
+          description="If your project is built with full-stack TypeScript, you can share types directly between your client and server, without relying on code generation."
+        />
+        <Features />
       </section>
-      <footer
-        className={`container px-8 md:px-0 w-full max-w-[var(--ifm-container-width)] mx-auto`}
-      >
-        <ol className="list-decimal footnotes">
-          <li id="zero">
-            <code>@trpc/client</code> depends on some babel runtime helpers +
-            that a <code>fetch()</code> polyfill/ponyfill is used if the browser
-            doesn&apos;t support it. <code>@trpc/react</code> is built on top of{' '}
-            <a
-              className="no-underline text-primary"
-              href="https://react-query.tanstack.com/"
-            >
-              react-query
-            </a>
-            .
-          </li>
-        </ol>
-      </footer>
     </Layout>
   );
 }
