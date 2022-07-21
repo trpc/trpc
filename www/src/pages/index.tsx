@@ -70,9 +70,10 @@ function Home() {
               {siteConfig.tagline}
             </h1>
             <p className="text-sm text-gray-600 dark:text-gray-400 md:text-base">
-              The client doesn't import any code from the server, only a single
-              TypeScript type. The import type declaration is fully erased at
-              runtime. tRPC transforms this type into a fully typesafe client.
+              The client doesn&apos;t import any code from the server, only a
+              single TypeScript type. The import type declaration is fully
+              erased at runtime. tRPC transforms this type into a fully typesafe
+              client.
             </p>
             <div className="flex items-center gap-4 mt-6">
               <Link

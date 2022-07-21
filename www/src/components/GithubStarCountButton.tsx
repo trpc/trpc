@@ -5,7 +5,7 @@ export const GithubStarCountButton = () => {
   const [starCount, setStarCount] = React.useState(0);
 
   React.useEffect(() => {
-    fetch('https://api.github.com/repos/tRPC/tRPC')
+    void fetch('https://api.github.com/repos/tRPC/tRPC')
       .then((res) => res.json())
       .then((data) => setStarCount(data.stargazers_count));
   }, []);
