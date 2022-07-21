@@ -673,7 +673,7 @@ describe('useMutation()', () => {
       trpc.useMutation(['deletePosts'], {
         onMutate: () => 'foo' as const,
         onSuccess: (_data, _variables, context) => {
-          expectTypeOf(context).toMatchTypeOf<'foo'>();
+          expectTypeOf(context).toMatchTypeOf<'foo' | undefined>();
         },
         onError: (_error, _variables, context) => {
           expectTypeOf(context).toMatchTypeOf<'foo' | undefined>();
