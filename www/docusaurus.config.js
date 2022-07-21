@@ -33,7 +33,7 @@ module.exports = {
       title: 'tRPC',
       logo: {
         alt: 'tRPC logo',
-        src: 'img/logo.png',
+        src: 'img/logo.svg',
       },
       items: [
         {
