@@ -1,12 +1,9 @@
 import Head from '@docusaurus/Head';
 import Link from '@docusaurus/Link';
-import useBaseUrl from '@docusaurus/useBaseUrl';
 import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
 import Layout from '@theme/Layout';
-import clsx from 'clsx';
 import React from 'react';
-import GitHubButton from 'react-github-btn';
-import styles from './styles.module.css';
+import { GithubStarCountButton } from '../components/GithubStarCountButton';
 
 const features = [
   {
@@ -66,57 +63,31 @@ function Home() {
           charSet="utf-8"
         />
       </Head>
-      <header className={clsx('hero hero--primary', styles.heroBanner)}>
-        <div className="container flex flex-col gap-6">
-          <h1 className="text-5xl font-bold">{siteConfig.title}</h1>
-          <p className="hero__subtitle">
-            {siteConfig.tagline.split('\n').map((text) => (
-              <div key={text}>{text}</div>
-            ))}
-          </p>
-          <p>
-            <GitHubButton
-              href="https://github.com/trpc/trpc"
-              data-icon="octicon-star"
-              data-size="large"
-              data-show-count="true"
-              aria-label="Star trpc/trpc on GitHub"
-            >
-              Star
-            </GitHubButton>
-          </p>
-
-          {/* The below is temporarily commented out as this GIF is out-of-date */}
-          {/* 
-          <figure className={`${styles.figure} gap-4`}>
-            <img
-              className="mx-auto"
-              src="https://storage.googleapis.com/trpc/trpcgif.gif"
-              alt="Server/client example"
-            />
-            <figcaption>
-              The client doesn&apos;t import <em>any code</em> from the server,
-              only a single TypeScript type. The <code>import type</code>{' '}
-              declaration is{' '}
-              <a href="https://www.typescriptlang.org/docs/handbook/release-notes/typescript-3-8.html#type-only-imports-and-export">
-                fully erased
-              </a>{' '}
-              at runtime. tRPC transforms this type into a fully typesafe
-              client.
-            </figcaption>
-          </figure> 
-          */}
-          <p>
-            <Link
-              className={clsx('getStarted', styles.getStarted)}
-              to={useBaseUrl('docs/')}
-            >
-              Get Started
-            </Link>
-          </p>
-        </div>
-      </header>
-      <main>
+      <main className="container py-40 mx-auto md:py-48 lg:py-64 xl:py-80">
+        <header className="flex flex-col lg:flex-row">
+          <div className="flex-1">
+            <h1 className="pb-3 text-2xl font-bold whitespace-pre-wrap lg:text-3xl">
+              {siteConfig.tagline}
+            </h1>
+            <p className="text-sm text-gray-600 dark:text-gray-400 md:text-base">
+              The client doesn't import any code from the server, only a single
+              TypeScript type. The import type declaration is fully erased at
+              runtime. tRPC transforms this type into a fully typesafe client.
+            </p>
+            <div className="flex items-center gap-4 mt-6">
+              <Link
+                href="/docs/quickstart"
+                className="inline-block px-4 py-2 text-sm font-bold text-black transition-colors rounded-lg md:text-base hover:bg-cyan-600 hover:no-underline hover:text-black bg-cyan-500"
+              >
+                Quickstart
+              </Link>
+              <GithubStarCountButton />
+            </div>
+          </div>
+          <div className="flex-1">{/* TODO: Add new GIF here */}</div>
+        </header>
+      </main>
+      <section>
         {features && features.length > 0 && (
           <section className="flex flex-col md:flex-row items-center py-8 px-8 md:px-0 w-full max-w-[var(--ifm-container-width-xl)] mx-auto">
             {features.map((props, idx) => (
@@ -124,7 +95,7 @@ function Home() {
             ))}
           </section>
         )}
-      </main>
+      </section>
       <footer
         className={`container px-8 md:px-0 w-full max-w-[var(--ifm-container-width)] mx-auto`}
       >
