@@ -1,4 +1,5 @@
 import React from 'react';
+import AnimatedNumbers from 'react-animated-numbers';
 import { FiStar } from 'react-icons/fi';
 
 export const GithubStarCountButton = () => {
@@ -15,9 +16,17 @@ export const GithubStarCountButton = () => {
       href="https://github.com/trpc/trpc/stargazers"
       target="_blank"
       rel="noopener noreferrer"
-      className="flex items-center gap-2 px-4 py-2 text-sm font-bold text-black transition-colors rounded-lg md:text-base hover:no-underline hover:text-black bg-gradient-to-r from-cyan-100 via-cyan-200 to-cyan-300"
+      className="flex items-center gap-2 px-4 text-sm font-bold text-black transition-colors rounded-lg md:text-base hover:no-underline hover:text-black bg-gradient-to-r from-cyan-100 via-cyan-200 to-cyan-300"
     >
-      <FiStar strokeWidth={3} /> Star {starCount}
+      <div className="flex gap-2 items-center py-2">
+        <FiStar strokeWidth={3} /> Star
+      </div>
+      <AnimatedNumbers
+        includeComma
+        animateToNumber={starCount}
+        fontStyle={{ paddingTop: '0.5rem', paddingBottom: '0.5rem' }}
+        configs={[{ mass: 1, tension: 220, friction: 100 }]}
+      ></AnimatedNumbers>
     </a>
   );
 };
