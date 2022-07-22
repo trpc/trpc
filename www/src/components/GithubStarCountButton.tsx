@@ -1,6 +1,8 @@
-import React from 'react';
-import AnimatedNumbers from 'react-animated-numbers';
+import BrowserOnly from '@docusaurus/BrowserOnly';
+import React, { Suspense } from 'react';
 import { FiStar } from 'react-icons/fi';
+
+const AnimatedNumbers = React.lazy(() => import('react-animated-numbers'));
 
 let starCountStart = 0;
 
@@ -37,12 +39,18 @@ export const GithubStarCountButton = () => {
           starCount ? 'w-14' : 'w-0'
         }`}
       >
-        <AnimatedNumbers
-          includeComma
-          animateToNumber={starCount}
-          fontStyle={{ paddingTop: '0.5rem', paddingBottom: '0.5rem' }}
-          configs={[{ mass: 1, tension: 220, friction: 100 }]}
-        />
+        <BrowserOnly>
+          {() => (
+            <Suspense fallback={null}>
+              <AnimatedNumbers
+                includeComma
+                animateToNumber={starCount}
+                fontStyle={{ paddingTop: '0.5rem', paddingBottom: '0.5rem' }}
+                configs={[{ mass: 1, tension: 220, friction: 100 }]}
+              />
+            </Suspense>
+          )}
+        </BrowserOnly>
       </div>
     </a>
   );
