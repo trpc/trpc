@@ -48,10 +48,10 @@ function Home() {
           <div className="flex-1">{/* TODO: Add new GIF here */}</div>
         </header>
       </main>
-      <section className="pb-28">
+      <section className="px-3 md:px-0 pb-28">
         <SectionTitle
-          title="The easy way to build typesafe APIs"
-          description="If your project is built with full-stack TypeScript, you can share types directly between your client and server, without relying on code generation."
+          title="Build typesafe APIs easily"
+          description="Share types directly between your client and server, without relying on code generation."
         />
         <Features />
       </section>
