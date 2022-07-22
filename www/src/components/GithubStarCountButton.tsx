@@ -2,12 +2,10 @@ import React from 'react';
 import AnimatedNumbers from 'react-animated-numbers';
 import { FiStar } from 'react-icons/fi';
 
-const starCountStart: number | null = null;
+let starCountStart = 0;
 
 export const GithubStarCountButton = () => {
-  const [starCount, setStarCount] = React.useState<number | null>(
-    starCountStart,
-  );
+  const [starCount, setStarCount] = React.useState(starCountStart);
 
   React.useEffect(() => {
     // setTimeout(() => {
@@ -17,6 +15,7 @@ export const GithubStarCountButton = () => {
       .then((res) => res.json())
       .then((data) => {
         if (typeof data.stargazers_count === 'number') {
+          starCountStart = data.stargazers_count;
           setStarCount(data.stargazers_count);
         }
       });
@@ -38,14 +37,12 @@ export const GithubStarCountButton = () => {
           starCount ? 'w-14' : 'w-0'
         }`}
       >
-        {starCount && (
-          <AnimatedNumbers
-            includeComma
-            animateToNumber={starCount}
-            fontStyle={{ paddingTop: '0.5rem', paddingBottom: '0.5rem' }}
-            configs={[{ mass: 1, tension: 220, friction: 100 }]}
-          ></AnimatedNumbers>
-        )}
+        <AnimatedNumbers
+          includeComma
+          animateToNumber={starCount}
+          fontStyle={{ paddingTop: '0.5rem', paddingBottom: '0.5rem' }}
+          configs={[{ mass: 1, tension: 220, friction: 100 }]}
+        />
       </div>
     </a>
   );
