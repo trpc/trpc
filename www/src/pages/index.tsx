@@ -23,7 +23,7 @@ function Home() {
           charSet="utf-8"
         />
       </Head>
-      <main className="container mx-auto py-28 md:py-40 lg:py-48 xl:py-64">
+      <main className="container px-6 mx-auto py-28 md:py-40 lg:py-48 xl:py-64">
         <header className="flex flex-col lg:flex-row">
           <div className="flex-1">
             <h1 className="pb-3 text-2xl font-bold whitespace-pre-wrap lg:text-3xl">
@@ -54,6 +54,43 @@ function Home() {
           description="If your project is built with full-stack TypeScript, you can share types directly between your client and server, without relying on code generation."
         />
         <Features />
+      </section>
+      <section className="max-w-[80ch] px-6 mx-auto md:px-0 pb-28">
+        <SectionTitle title="Typesafety without the boilerplate" />
+        <p className="pt-3 text-sm text-gray-600 md:text-base dark:text-gray-400">
+          Diam volutpat commodo sed egestas egestas fringilla phasellus
+          faucibus. Vitae sapien pellentesque habitant morbi tristique. Dapibus
+          ultrices in iaculis nunc sed. Risus sed vulputate odio ut enim blandit
+          volutpat maecenas volutpat. Amet consectetur adipiscing elit ut
+          aliquam purus sit. Condimentum mattis pellentesque id nibh. Odio morbi
+          quis commodo odio aenean.
+          <div className="block h-4" />
+          Consectetur adipiscing elit pellentesque habitant morbi tristique
+          senectus. Eget mi proin sed libero enim sed. Faucibus et molestie ac
+          feugiat sed lectus vestibulum mattis. Praesent semper feugiat nibh sed
+          pulvinar proin gravida hendrerit lectus. Eu turpis egestas pretium
+          aenean pharetra magna. Volutpat blandit aliquam etiapm erat velit
+          scelerisque in dictum non. <div className="block h-4" />
+          <strong className="text-cyan-500">
+            tRPC is the solution you&apos;ve been looking for
+          </strong>{' '}
+          pellentesque eu tincidunt tortor aliquam. Placerat orci nulla
+          pellentesque dignissim.
+        </p>
+        <div className="flex items-center gap-3 pt-6">
+          <img
+            src="https://avatars.githubusercontent.com/u/459267?v=4"
+            alt="Alex/KATT"
+            loading="lazy"
+            className="w-12 h-12 mr-2 rounded-full md:w-14 md:h-14"
+          />
+          <div>
+            <h3 className="mb-0 text-base font-bold md:text-lg">Alex/KATT</h3>
+            <p className="text-xs text-gray-600 md:text-sm dark:text-gray-400">
+              Creator of tRPC
+            </p>
+          </div>
+        </div>
       </section>
     </Layout>
   );
