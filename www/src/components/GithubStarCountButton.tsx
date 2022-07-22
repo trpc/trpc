@@ -11,7 +11,7 @@ export const GithubStarCountButton = () => {
 
   React.useEffect(() => {
     // setTimeout(() => {
-    //   setStarCount(10000);
+    //   setStarCount(10_000);
     // }, 1000);
     void fetch('https://api.github.com/repos/tRPC/tRPC')
       .then((res) => res.json())
@@ -35,7 +35,7 @@ export const GithubStarCountButton = () => {
 
       <div
         className={`transition-all overflow-hidden font-mono ${
-          starCount ? 'w-12' : 'w-0'
+          starCount ? 'w-14' : 'w-0'
         }`}
       >
         {starCount && (
