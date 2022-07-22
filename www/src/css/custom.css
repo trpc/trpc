@@ -132,7 +132,7 @@ article {
 
 .navbar-external-link,
 .theme-edit-this-page {
-  @apply hidden xl:flex items-center;
+  @apply items-center hidden xl:flex;
 }
 .footer__item {
   @apply h-8;
@@ -147,7 +147,7 @@ h2,
 h3,
 h4,
 h5 {
-  @apply font-bold mb-1 leading-normal;
+  @apply mb-1 font-bold leading-normal;
 }
 
 .markdown h1 {
@@ -168,7 +168,7 @@ h5 {
 }
 
 .markdown ul {
-  @apply list-disc pl-8;
+  @apply pl-8 list-disc;
 }
 
 .pagination-nav__label {
