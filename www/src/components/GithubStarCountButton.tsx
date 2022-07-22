@@ -34,7 +34,7 @@ export const GithubStarCountButton = () => {
       </div>
 
       <div
-        className={`transition-all overflow-hidden font-mono ${
+        className={`transition-all duration-1000 overflow-hidden font-mono ${
           starCount ? 'w-14' : 'w-0'
         }`}
       >
