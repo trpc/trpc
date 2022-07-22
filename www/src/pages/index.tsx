@@ -64,13 +64,13 @@ function Home() {
           volutpat maecenas volutpat. Amet consectetur adipiscing elit ut
           aliquam purus sit. Condimentum mattis pellentesque id nibh. Odio morbi
           quis commodo odio aenean.
-          <div className="block h-4" />
+          <br /> <br />
           Consectetur adipiscing elit pellentesque habitant morbi tristique
           senectus. Eget mi proin sed libero enim sed. Faucibus et molestie ac
           feugiat sed lectus vestibulum mattis. Praesent semper feugiat nibh sed
           pulvinar proin gravida hendrerit lectus. Eu turpis egestas pretium
           aenean pharetra magna. Volutpat blandit aliquam etiapm erat velit
-          scelerisque in dictum non. <div className="block h-4" />
+          scelerisque in dictum non. <br /> <br />
           <strong className="text-cyan-500">
             tRPC is the solution you&apos;ve been looking for
           </strong>{' '}
