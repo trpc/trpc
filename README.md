@@ -116,7 +116,7 @@ Also, if your company using tRPC and want to support long-term maintenance of tR
     <tr>
       <td align="center"><a href="https://render.com"><img src="https://avatars.githubusercontent.com/u/36424661?v=4?s=180" width="180px;" alt=""/><br /><sub><b>Render</b></sub></a></td>
       <td align="center"><a href="https://cal.com"><img src="https://avatars.githubusercontent.com/u/79145102?v=4?s=180" width="180px;" alt=""/><br /><b>Cal.com, Inc.</b></a></td>
-      <td align="center"><a href="https://cal.com/peer"><img src="https://avatars.githubusercontent.com/u/8019099?v=4?s=180" width="180px;" alt=""/><br /><b>Peer Richelsen</b></a></td>
+      <td align="center"><a href="https://twitter.com/peer_rich"><img src="https://avatars.githubusercontent.com/u/8019099?v=4?s=180" width="180px;" alt=""/><br /><b>Peer Richelsen</b></a></td>
     </tr>
   </tbody>
 </table>
