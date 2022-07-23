@@ -1,8 +1,8 @@
-import React, { FC } from 'react';
+import React, { FC, ReactNode } from 'react';
 
 type SectionTitleProps = {
-  readonly title: string;
-  readonly description?: string;
+  readonly title: ReactNode;
+  readonly description?: ReactNode;
 };
 
 export const SectionTitle: FC<SectionTitleProps> = ({ title, description }) => {
