@@ -13,10 +13,8 @@ test('add and get post', async () => {
     text: 'hello test',
     title: 'hello test',
   };
-  const post = await caller.mutation('post.add', input);
-  const byId = await caller.query('post.byId', {
-    id: post.id,
-  });
+  const post = await caller['post.add'](input);
+  const byId = await caller['post.byId']({ id: post.id });
 
   expect(byId).toMatchObject(input);
 });
