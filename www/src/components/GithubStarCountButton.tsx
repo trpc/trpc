@@ -28,7 +28,7 @@ export const GithubStarCountButton = () => {
       href="https://github.com/trpc/trpc/stargazers"
       target="_blank"
       rel="noopener noreferrer"
-      className="flex items-center gap-[5px] px-4 text-sm font-bold text-black transition rounded-lg md:text-base hover:no-underline hover:text-black bg-gradient-to-r from-cyan-100 via-cyan-200 to-cyan-300 hover:bg-slate-100 hover:from-cyan-300 hover:to-cyan-300"
+      className="flex items-center gap-[5px] px-4 text-sm font-bold text-black transition rounded-lg md:text-base hover:no-underline hover:text-black bg-gradient-to-r from-cyan-100 via-cyan-200 to-cyan-300 hover:from-cyan-300 hover:via-cyan-300 hover:to-cyan-300"
     >
       <div className="flex items-center gap-2">
         <FiStar strokeWidth={3} /> Star
