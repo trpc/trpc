@@ -36,7 +36,7 @@ export const GithubStarCountButton = () => {
 
       <div
         className={`transition-all duration-1000 overflow-hidden font-mono ${
-          starCount ? 'w-9 md:w-11' : 'w-0'
+          starCount ? 'w-10 md:w-12' : 'w-0'
         }`}
       >
         {/* This little thing is an awful hack and any OSS-contributor is welcome to come up / implement another idea for how we deal with loading state of the stars */}
