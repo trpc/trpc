@@ -46,5 +46,5 @@ export type User = inferProcedureOutput<AppRouter['user']['me']>;
 //           ^? { id: number, name: string }}
 
 export type PostInput = inferProcedureInput<AppRouter['post']>;
-//            ^? string
+//           ^? string
 ```
