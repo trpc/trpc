@@ -23,8 +23,8 @@ function Home() {
           charSet="utf-8"
         />
       </Head>
-      <main className="container px-6 mx-auto py-28 md:py-40 lg:py-48 xl:py-64">
-        <header className="flex flex-col lg:flex-row pb-28">
+      <main className="container px-6 mx-auto py-28 md:py-40 lg:py-48 xl:py-64 space-y-28">
+        <header className="flex flex-col lg:flex-row">
           <div className="flex-1">
             <h1 className="pb-3 text-2xl font-bold whitespace-pre-wrap lg:text-3xl">
               {siteConfig.tagline}
@@ -47,7 +47,7 @@ function Home() {
           <div className="flex-1">{/* TODO: Add new GIF here */}</div>
         </header>
 
-        <section className="pb-28">
+        <section>
           {/* <SectionTitle
           title="The easy way to build typesafe APIs"
           description={
@@ -60,7 +60,7 @@ function Home() {
         /> */}
           <Features />
         </section>
-        <section className="max-w-[80ch] px-6 mx-auto md:px-0 pb-28">
+        <section className="max-w-[80ch] px-6 mx-auto md:px-0">
           <blockquote cite="https://twitter.com/alexdotjs">
             <SectionTitle title={<>You may not need a traditional API</>} />
             <p className="pt-3 text-sm text-gray-600 md:text-base dark:text-gray-400">
