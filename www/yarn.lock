@@ -1716,6 +1716,92 @@
   resolved "https://registry.npmjs.org/@polka/url/-/url-1.0.0-next.21.tgz#5de5a2385a35309427f6011992b544514d559aa1"
   integrity sha512-a5Sab1C4/icpTZVzZc5Ghpz88yQtGOyNqYXcZgOssB2uuAr+wF/MvN6bgtW32q7HHrvBki+BsZ0OuNv6EV3K9g==
 
+"@react-spring/animated@~9.5.1":
+  version "9.5.1"
+  resolved "https://registry.npmjs.org/@react-spring/animated/-/animated-9.5.1.tgz#663aa587ea83cd16fb8fa650dc0966a226bbc8b2"
+  integrity sha512-Q3p5XkpaRj/d1rmWmunPo0g0QOU7QCI/lBrk0xEmRROElIUUTIrhDxwlSV6OgmP5Meil3crQ255I/CiUzCONKQ==
+  dependencies:
+    "@react-spring/shared" "~9.5.1"
+    "@react-spring/types" "~9.5.1"
+
+"@react-spring/core@~9.5.1":
+  version "9.5.1"
+  resolved "https://registry.npmjs.org/@react-spring/core/-/core-9.5.1.tgz#378ffc74a131b8c476673dfe1efed28bcfb8d2ca"
+  integrity sha512-rGJSUFvbVGA50cnKEBb869LkaT+fm+4jm5O3B6w6Sx9YN3oKLpfcl/zw5Ltbav9qYnELOQlk2xx1ccUQPFHYpA==
+  dependencies:
+    "@react-spring/animated" "~9.5.1"
+    "@react-spring/rafz" "~9.5.1"
+    "@react-spring/shared" "~9.5.1"
+    "@react-spring/types" "~9.5.1"
+
+"@react-spring/konva@~9.5.1":
+  version "9.5.1"
+  resolved "https://registry.npmjs.org/@react-spring/konva/-/konva-9.5.1.tgz#ba2377dd6dae40eafb9de0c1c40f514f782a9f60"
+  integrity sha512-YkIGnsz2GfaR32pWQVblHDgsViNVMl5gJb6vN2oxWHHVZ9impod/sDsoXNYn1nscfH3ygi7ewBmJ70QTmjYVJQ==
+  dependencies:
+    "@react-spring/animated" "~9.5.1"
+    "@react-spring/core" "~9.5.1"
+    "@react-spring/shared" "~9.5.1"
+    "@react-spring/types" "~9.5.1"
+
+"@react-spring/native@~9.5.1":
+  version "9.5.1"
+  resolved "https://registry.npmjs.org/@react-spring/native/-/native-9.5.1.tgz#0feffe5e32076ce1244b7cea3fff86fd8bd2f365"
+  integrity sha512-SbYvIty7ihVDfxzXS3RWNnFocrzvTwMZ1EpkN51RyWdaPhV8TMwffY5HvghXcwSG90xyvjJ3ZMvA7YejQcjpAg==
+  dependencies:
+    "@react-spring/animated" "~9.5.1"
+    "@react-spring/core" "~9.5.1"
+    "@react-spring/shared" "~9.5.1"
+    "@react-spring/types" "~9.5.1"
+
+"@react-spring/rafz@~9.5.1":
+  version "9.5.1"
+  resolved "https://registry.npmjs.org/@react-spring/rafz/-/rafz-9.5.1.tgz#4b885b0ff3d8c4afdf5fe4d19e607f9189d35d48"
+  integrity sha512-sCqRZUdJRCmkBxyDoTDQZ0xTQU8aJZoVAy/VJcY44JcYBimoPtQevaT2yNRc8tW2ZQlbqK/O78yffy9e/U9gTQ==
+
+"@react-spring/shared@~9.5.1":
+  version "9.5.1"
+  resolved "https://registry.npmjs.org/@react-spring/shared/-/shared-9.5.1.tgz#82c65bfbcc31cba194921187220ff503c85c4fc9"
+  integrity sha512-c7aB74XPtzvtJfzsLlxesKg9+eZTkyo6et+1BCTJ9Jwvk9v6zrTxZqs9VmywDsLhFeBdVhx2mKrxY03WiuA+Jg==
+  dependencies:
+    "@react-spring/rafz" "~9.5.1"
+    "@react-spring/types" "~9.5.1"
+
+"@react-spring/three@~9.5.1":
+  version "9.5.1"
+  resolved "https://registry.npmjs.org/@react-spring/three/-/three-9.5.1.tgz#66c04c26b17c64bf000c15de9d945a6874ae4910"
+  integrity sha512-cA2vYpwhV9oqe/pb/yGYuvZPxiKquU/kEy2tQoSTcnnPyy2EzQ2D9LfWKqQGnMph73TpeYlJuxDJt82vYOXK4g==
+  dependencies:
+    "@react-spring/animated" "~9.5.1"
+    "@react-spring/core" "~9.5.1"
+    "@react-spring/shared" "~9.5.1"
+    "@react-spring/types" "~9.5.1"
+
+"@react-spring/types@~9.5.1":
+  version "9.5.1"
+  resolved "https://registry.npmjs.org/@react-spring/types/-/types-9.5.1.tgz#00514faf8f655f46c8c15c98c89ddb59d3acff66"
+  integrity sha512-rDppRFYFmLnscvXJC5G/plJdHpEWHzaPA3cTk2NDieVFhAJEZUTzsxYgpnvyrGJ8AmsMRkWflDrKqCXFhHm0+A==
+
+"@react-spring/web@~9.5.1":
+  version "9.5.1"
+  resolved "https://registry.npmjs.org/@react-spring/web/-/web-9.5.1.tgz#b0af65a81294d648d35f2201e18d1189db1c547c"
+  integrity sha512-sk8STUg8Fny94AC6g8KVRUAzIP3kVITrPGKKoVz+9/gSzLZBksOrTIQUElVsybrYvV0QVtpsbRv5dazZeTpRzA==
+  dependencies:
+    "@react-spring/animated" "~9.5.1"
+    "@react-spring/core" "~9.5.1"
+    "@react-spring/shared" "~9.5.1"
+    "@react-spring/types" "~9.5.1"
+
+"@react-spring/zdog@~9.5.1":
+  version "9.5.1"
+  resolved "https://registry.npmjs.org/@react-spring/zdog/-/zdog-9.5.1.tgz#cd01c639a710cc15ab1d919f8795a8752db2c1d9"
+  integrity sha512-k7JLIZZD4SWbEBqZ3rBQGmhygtBQa4oRLIEt/o1e8YuGxllfjCuCzBX8guPo8Lg/CBPNg/CGudyt5JXCFNeZ2A==
+  dependencies:
+    "@react-spring/animated" "~9.5.1"
+    "@react-spring/core" "~9.5.1"
+    "@react-spring/shared" "~9.5.1"
+    "@react-spring/types" "~9.5.1"
+
 "@sideway/address@^4.1.3":
   version "4.1.4"
   resolved "https://registry.npmjs.org/@sideway/address/-/address-4.1.4.tgz#03dccebc6ea47fdc226f7d3d1ad512955d4783f0"
@@ -5973,6 +6059,14 @@ rc@1.2.8, rc@^1.2.8:
     minimist "^1.2.0"
     strip-json-comments "~2.0.1"
 
+react-animated-numbers@^0.13.0:
+  version "0.13.0"
+  resolved "https://registry.npmjs.org/react-animated-numbers/-/react-animated-numbers-0.13.0.tgz#79acb58a9504393b0e1c722c6de7f9f602661dfe"
+  integrity sha512-xoKrTMbhFKzZqdF0gWM7B3ueXpcXVQbwfylXFKpIZIKFNmO598LKT/7Gq3QlBb2+lp9E22DgFm5vfY79cMir4w==
+  dependencies:
+    react-intersection-observer "^8.33.1"
+    react-spring "^9.4.5"
+
 react-base16-styling@^0.6.0:
   version "0.6.0"
   resolved "https://registry.npmjs.org/react-base16-styling/-/react-base16-styling-0.6.0.tgz#ef2156d66cf4139695c8a167886cb69ea660792c"
@@ -6047,6 +6141,11 @@ react-icons@^4.4.0:
   resolved "https://registry.yarnpkg.com/react-icons/-/react-icons-4.4.0.tgz#a13a8a20c254854e1ec9aecef28a95cdf24ef703"
   integrity sha512-fSbvHeVYo/B5/L4VhB7sBA1i2tS8MkT0Hb9t2H1AVPkwGfVHLJCqyr2Py9dKMxsyM63Eng1GkdZfbWj+Fmv8Rg==
 
+react-intersection-observer@^8.33.1:
+  version "8.34.0"
+  resolved "https://registry.npmjs.org/react-intersection-observer/-/react-intersection-observer-8.34.0.tgz#6f6e67831c52e6233f6b6cc7eb55814820137c42"
+  integrity sha512-TYKh52Zc0Uptp5/b4N91XydfSGKubEhgZRtcg1rhTKABXijc4Sdr1uTp5lJ8TN27jwUsdXxjHXtHa0kPj704sw==
+
 react-is@^16.13.1, react-is@^16.6.0, react-is@^16.7.0:
   version "16.13.1"
   resolved "https://registry.npmjs.org/react-is/-/react-is-16.13.1.tgz#789729a4dc36de2999dc156dd6c1d9c18cea56a4"
@@ -6109,6 +6208,18 @@ react-router@5.3.3, react-router@^5.3.3:
     react-is "^16.6.0"
     tiny-invariant "^1.0.2"
     tiny-warning "^1.0.0"
+
+react-spring@^9.4.5:
+  version "9.5.1"
+  resolved "https://registry.npmjs.org/react-spring/-/react-spring-9.5.1.tgz#adad49d3d69e4e3b325faf65a05bf4b9e46d859b"
+  integrity sha512-mytJyNNqP/xdEjbkxYU4X58341yMton2imgFUL7Voxjr4ItY2Yl3rtXAFZAYFbGDaM8L/Y6JNGOUgo3+ng9Oww==
+  dependencies:
+    "@react-spring/core" "~9.5.1"
+    "@react-spring/konva" "~9.5.1"
+    "@react-spring/native" "~9.5.1"
+    "@react-spring/three" "~9.5.1"
+    "@react-spring/web" "~9.5.1"
+    "@react-spring/zdog" "~9.5.1"
 
 react-textarea-autosize@^8.3.2:
   version "8.3.4"
