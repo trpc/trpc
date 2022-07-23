@@ -327,6 +327,9 @@ Also, if your company using tRPC and want to support long-term maintenance of tR
     <td align="center"><a href="https://chrisbradley.dev"><img src="https://avatars.githubusercontent.com/u/11767079?v=4?s=60" width="60px;" alt=""/><br /><sub><b>Chris Bradley</b></sub></a><br /><a href="#financial-chrisbradleydev" title="Financial">💵</a></td>
     <td align="center"><a href="https://github.com/Sven1106"><img src="https://avatars.githubusercontent.com/u/28002895?v=4?s=60" width="60px;" alt=""/><br /><sub><b>Svend Aage Roperos Nielsen</b></sub></a><br /><a href="#financial-Sven1106" title="Financial">💵</a></td>
   </tr>
+  <tr>
+    <td align="center"><a href="https://github.com/iway1"><img src="https://avatars.githubusercontent.com/u/12774588?v=4?s=60" width="60px;" alt=""/><br /><sub><b>iway1</b></sub></a><br /><a href="#financial-iway1" title="Financial">💵</a></td>
+  </tr>
 </table>
 
 <!-- markdownlint-restore -->

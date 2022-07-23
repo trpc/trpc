@@ -1011,6 +1011,15 @@
       "contributions": [
         "financial"
       ]
+    },
+    {
+      "login": "iway1",
+      "name": "iway1",
+      "avatar_url": "https://avatars.githubusercontent.com/u/12774588?v=4",
+      "profile": "https://github.com/iway1",
+      "contributions": [
+        "financial"
+      ]
     }
   ],
   "skipCi": true
