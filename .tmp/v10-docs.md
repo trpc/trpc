@@ -197,7 +197,7 @@ export const appRouter = t.router({
 
 ```tsx
 export const appRouter = t.router({
-  // simple procedure without args avialable at postAll`
+  // simple procedure without args available at postAll`
   postList: procedure.query(() => postsDb),
 });
 ```
