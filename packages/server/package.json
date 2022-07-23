@@ -74,6 +74,11 @@
       "require": "./dist/adapters/fetch/index.js",
       "default": "./dist/adapters/fetch/index.js"
     },
+    "./adapters/remix": {
+      "import": "./dist/adapters/remix.mjs",
+      "require": "./dist/adapters/remix.js",
+      "default": "./dist/adapters/remix.js"
+    },
     "./rpc": {
       "import": "./dist/rpc/index.mjs",
       "require": "./dist/rpc/index.js",
