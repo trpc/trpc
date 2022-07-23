@@ -119,7 +119,13 @@ export function createReactQueryHooksProxy<
     }
     const [input, ...rest] = args;
 
-    return (trpc as any)[lastArg]([path, input], ...rest);
+    /**
+     * We treat `undefined` as an input the same as omitting an `input`
+     * https://github.com/trpc/trpc/issues/2290
+     */
+    const queryKey = input === undefined ? [path] : [path, input];
+
+    return (trpc as any)[lastArg](queryKey, ...rest);
   });
 
   return proxy as DecoratedProcedureRecord<TRouter['_def']['record']>;
