@@ -52,8 +52,9 @@ export const GithubStarCountButton = () => {
             </Suspense>
           )}
         </BrowserOnly>
-        <span className="py-2"> </span>
       </div>
+      {/* Fix height jank */}
+      <span className="py-2">&nbsp;</span>
     </a>
   );
 };
