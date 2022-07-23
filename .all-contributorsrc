@@ -1020,6 +1020,15 @@
       "contributions": [
         "financial"
       ]
+    },
+    {
+      "login": "prisma",
+      "name": "Prisma",
+      "avatar_url": "https://avatars.githubusercontent.com/u/17219288?v=4",
+      "profile": "https://www.prisma.io",
+      "contributions": [
+        "financial"
+      ]
     }
   ],
   "skipCi": true
