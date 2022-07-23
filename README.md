@@ -329,6 +329,7 @@ Also, if your company using tRPC and want to support long-term maintenance of tR
   </tr>
   <tr>
     <td align="center"><a href="https://github.com/iway1"><img src="https://avatars.githubusercontent.com/u/12774588?v=4?s=60" width="60px;" alt=""/><br /><sub><b>iway1</b></sub></a><br /><a href="#financial-iway1" title="Financial">💵</a></td>
+    <td align="center"><a href="https://www.prisma.io"><img src="https://avatars.githubusercontent.com/u/17219288?v=4?s=60" width="60px;" alt=""/><br /><sub><b>Prisma</b></sub></a><br /><a href="#financial-prisma" title="Financial">💵</a></td>
   </tr>
 </table>
 
