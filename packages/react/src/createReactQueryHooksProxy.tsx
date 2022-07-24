@@ -9,6 +9,7 @@ import {
   inferProcedureOutput,
 } from '@trpc/server';
 import { createProxy } from '@trpc/server/shared';
+import { useMemo } from 'react';
 import {
   UseInfiniteQueryResult,
   UseMutationResult,
@@ -118,7 +119,10 @@ export function createReactQueryHooksProxy<
 
     if (opts.path[0] === 'useContext') {
       const context = trpc.useContext();
-      return createReactQueryUtilsProxy(context);
+      // create a stable reference of the utils context
+      return useMemo(() => {
+        return createReactQueryUtilsProxy(context);
+      }, [context]);
     }
 
     const pathCopy = [...opts.path];

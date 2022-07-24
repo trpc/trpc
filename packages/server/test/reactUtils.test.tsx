@@ -1,5 +1,6 @@
 import { getServerAndReactClient } from './__reactHelpers';
 import { render, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { konn } from 'konn';
 import { useEffect } from 'react';
 import React from 'react';
@@ -67,6 +68,8 @@ const ctx = konn()
 
 test('invalidate', async () => {
   const { proxy, App } = ctx;
+  const stableProxySpy = jest.fn();
+
   function MyComponent() {
     const allPosts = proxy.post.all.useQuery();
     const createPostMutation = proxy.post.create.useMutation();
@@ -74,27 +77,31 @@ test('invalidate', async () => {
     const utils = proxy.useContext();
 
     useEffect(() => {
-      createPostMutation.mutate(
-        { text: 'invalidate' },
-        {
-          onSuccess() {
-            utils.post.all.invalidate();
-
-            // @ts-expect-error Should not exist
-            utils.post.create.invalidate;
-          },
-        },
-      );
-    }, [createPostMutation, utils]);
+      stableProxySpy(proxy);
+    }, [proxy]);
 
     if (!allPosts.data) {
       return <>...</>;
     }
-    console.log(allPosts.data);
     return (
       <>
+        <button
+          data-testid="add-post"
+          onClick={() => {
+            createPostMutation.mutate(
+              { text: 'invalidate' },
+              {
+                onSuccess() {
+                  utils.post.all.invalidate();
+
+                  // // @ts-expect-error Should not exist
+                  // utils.post.create.invalidate;
+                },
+              },
+            );
+          }}
+        />
         {allPosts.data.map((post) => {
-          console.log(post);
           return <div key={post.id}>{post.text}</div>;
         })}
       </>
@@ -106,9 +113,14 @@ test('invalidate', async () => {
       <MyComponent />
     </App>,
   );
+
+  const addPostButton = await utils.findByTestId('add-post');
+
+  await userEvent.click(addPostButton);
   await waitFor(() => {
     expect(utils.container).toHaveTextContent('invalidate');
   });
+  expect(stableProxySpy).toHaveBeenCalledTimes(1);
 });
 
 test('setData', async () => {
