@@ -32,10 +32,10 @@ export interface TRPCFetchInfiniteQueryOptions<TInput, TError, TOutput>
 export type SSRState = false | 'prepass' | 'mounting' | 'mounted';
 
 /** @internal */
-export type TRPCContextState<
+export interface TRPCContextState<
   TRouter extends AnyRouter,
   TSSRContext = undefined,
-> = {
+> {
   queryClient: QueryClient;
   client: TRPCClient<TRouter>;
   ssrContext: TSSRContext | null;
@@ -198,6 +198,6 @@ export type TRPCContextState<
   >(
     pathAndInput: [TPath, TInput?],
   ): InfiniteData<TOutput> | undefined;
-};
+}
 
 export const TRPCContext = createContext(null as any);

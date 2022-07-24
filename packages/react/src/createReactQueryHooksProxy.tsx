@@ -137,7 +137,7 @@ export function createReactQueryHooksProxy<
     return (trpc as any)[lastArg](queryKey, ...rest);
   });
 
-  return proxy as DecoratedProcedureRecord<TRouter['_def']['record']> & {
+  return proxy as {
     useContext(): DecoratedProcedureUtilsRecord<TRouter>;
-  };
+  } & DecoratedProcedureRecord<TRouter['_def']['record']>;
 }
