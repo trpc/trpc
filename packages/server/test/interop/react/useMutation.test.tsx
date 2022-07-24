@@ -87,8 +87,8 @@ describe('useMutation()', () => {
     const { trpc, client } = factory;
 
     function MyComponent() {
-      const allPostsQuery = trpc.useQuery(['allPosts']);
-      const deletePostsMutation = trpc.useMutation('deletePosts');
+      const allPostsQuery = trpc.useQuery([trpc.paths.allPosts]);
+      const deletePostsMutation = trpc.useMutation(trpc.paths.deletePosts);
 
       useEffect(() => {
         allPostsQuery.refetch().then(async (allPosts) => {

@@ -98,6 +98,73 @@ type inferProcedures<TObj extends ProcedureRecord> = {
   };
 };
 
+/** e.g. `a.b.c` => `['a', 'b', 'c'] */
+export type Split<
+  S extends string,
+  Separator extends string = '.',
+> = S extends `${infer Head}${Separator}${infer Tail}`
+  ? [Head, ...Split<Tail>]
+  : [S];
+
+/** Proxies mean we might need to explicitly call `toString()` to get an actual string */
+type Stringable<S> = S | { toString: () => S };
+
+/**
+ * e.g. `StringBuilder<['a', 'b', 'c']`
+ *
+ * => `{ a: { b: { c: {toString: () => 'c'} } } }`
+ */
+type StringBuilder<
+  Segments extends string[],
+  Value extends string = '',
+> = Segments extends []
+  ? Stringable<Value>
+  : Segments extends [string, ...infer Tail]
+  ? {
+      [K in Segments[0]]: StringBuilder<
+        Extract<Tail, string[]>,
+        Value extends '' ? Segments[0] : `${Value}.${Segments[0]}`
+      >;
+    }
+  : never;
+
+/** e.g. `{a: 1} | {b: 2}` => `{a: 1; b: 2}` (more or less) */
+type UnionToIntersection<T> = (T extends any ? (x: T) => any : never) extends (
+  x: infer R,
+) => any
+  ? R
+  : never;
+
+/**
+ * create a proxy object that can be used to build string paths dynamically, but in
+ * a strongly typed way:
+ * @example
+ * ```
+ * const paths = createStringProxy<'a.b.c' | 'd.e'>()
+ *
+ * paths.a.b.c // `{toString: () => 'a.b.c.'}` at compile time and runtime
+ * paths.d.e.zzzz // compile time error, 'zzz' not found
+ * ```
+ */
+function createStringProxy<S extends string>(
+  path: string[] = [],
+): UnionToIntersection<StringBuilder<Split<S>>> {
+  return new Proxy(
+    {},
+    {
+      get(_, key) {
+        if (typeof key !== 'string') {
+          return;
+        }
+        if (key === 'toString') {
+          return () => path.join('.');
+        }
+        return createStringProxy(path.concat([key as string]));
+      },
+    },
+  ) as any;
+}
+
 function createHookProxy(callback: (...args: [string, ...unknown[]]) => any) {
   return new Proxy({} as any, {
     get(_, path: string) {
@@ -272,7 +339,10 @@ export function createReactQueryHooks<
     TQueryFnData = TQueryValues[TPath]['output'],
     TData = TQueryValues[TPath]['output'],
   >(
-    pathAndInput: [path: TPath, ...args: inferHandlerInput<TQueries[TPath]>],
+    _pathAndInput: [
+      path: Stringable<TPath>,
+      ...args: inferHandlerInput<TQueries[TPath]>
+    ],
     opts?: UseTRPCQueryOptions<
       TPath,
       TQueryValues[TPath]['input'],
@@ -281,6 +351,10 @@ export function createReactQueryHooks<
       TError
     >,
   ): UseQueryResult<TData, TError> {
+    const pathAndInput: typeof _pathAndInput = [
+      _pathAndInput[0].toString(),
+      ..._pathAndInput.slice(1),
+    ] as any;
     const { client, ssrState, queryClient, prefetchQuery } = useContext();
 
     if (
@@ -305,7 +379,7 @@ export function createReactQueryHooks<
     TPath extends keyof TMutationValues & string,
     TContext = unknown,
   >(
-    path: TPath | [TPath],
+    path: Stringable<TPath> | [Stringable<TPath>],
     opts?: UseTRPCMutationOptions<
       TMutationValues[TPath]['input'],
       TError,
@@ -322,7 +396,7 @@ export function createReactQueryHooks<
 
     return __useMutation((input) => {
       const actualPath = Array.isArray(path) ? path[0] : path;
-      return (client.mutation as any)(actualPath, input, opts);
+      return (client.mutation as any)(actualPath.toString(), input, opts);
     }, opts);
   }
 
@@ -338,7 +412,7 @@ export function createReactQueryHooks<
   >(
     pathAndInput: [
       path: TPath,
-      ...args: inferHandlerInput<TSubscriptions[TPath]>,
+      ...args: inferHandlerInput<TSubscriptions[TPath]>
     ],
     opts: {
       enabled?: boolean;
@@ -439,7 +513,12 @@ export function createReactQueryHooks<
     useQuery([path, input] as any, opts as any),
   ) as TRouter['_def']['queries'];
 
+  const paths = createStringProxy<
+    (keyof TQueryValues & string) | (keyof TMutationValues & string)
+  >();
+
   return {
+    paths,
     Provider: TRPCProvider,
     createClient,
     useContext,
