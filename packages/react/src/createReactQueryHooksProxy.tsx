@@ -24,7 +24,7 @@ import { getQueryKey } from './internals/getQueryKey';
 import {
   DecoratedProcedureUtilsRecord,
   createReactQueryUtilsProxy,
-} from './utilsProxy';
+} from './internals/utilsProxy';
 
 export type DecorateProcedure<
   TProcedure extends Procedure<any>,

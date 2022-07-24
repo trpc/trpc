@@ -1,7 +1,9 @@
 import { TRPCClientError } from '@trpc/client';
 import {
   AnyRouter,
+  OmitNeverKeys,
   Procedure,
+  QueryProcedure,
   inferHandlerInput,
   inferProcedureInput,
   inferProcedureOutput,
@@ -21,8 +23,8 @@ import {
   TRPCContextState,
   TRPCFetchInfiniteQueryOptions,
   TRPCFetchQueryOptions,
-} from './internals/context';
-import { getQueryKey } from './internals/getQueryKey';
+} from './context';
+import { getQueryKey } from './getQueryKey';
 
 type DecorateProcedure<
   TRouter extends AnyRouter,
@@ -144,11 +146,15 @@ type DecorateProcedure<
 /**
  * @internal
  */
-export type DecoratedProcedureUtilsRecord<TRouter extends AnyRouter> = {
-  [TKey in keyof TRouter['_def']['record']]: TRouter['_def']['record'][TKey] extends AnyRouter
-    ? DecoratedProcedureUtilsRecord<TRouter['_def']['record'][TKey]>
-    : DecorateProcedure<TRouter, TRouter['_def']['record'][TKey]>;
-};
+export type DecoratedProcedureUtilsRecord<TRouter extends AnyRouter> =
+  OmitNeverKeys<{
+    [TKey in keyof TRouter['_def']['record']]: TRouter['_def']['record'][TKey] extends AnyRouter
+      ? DecoratedProcedureUtilsRecord<TRouter['_def']['record'][TKey]>
+      : // utils only apply to queries
+      TRouter['_def']['record'][TKey] extends QueryProcedure<any>
+      ? DecorateProcedure<TRouter, TRouter['_def']['record'][TKey]>
+      : never;
+  }>;
 
 type UtilName = keyof DecorateProcedure<any, any>;
 
