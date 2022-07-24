@@ -2,26 +2,26 @@ import { Pack, hierarchy } from '@visx/hierarchy';
 import { ParentSize } from '@visx/responsive';
 import React from 'react';
 import { twMerge } from 'tailwind-merge';
-import { sponsors } from './data';
+import { sponsors } from './script.output';
+
+const pack = {
+  children: sponsors,
+  name: 'root',
+  radius: 0,
+  distance: 0,
+};
 
 export function Sponsors() {
-  const pack = {
-    children: sponsors,
-    name: 'root',
-    radius: 0,
-    distance: 0,
-  };
-
   const root = React.useMemo(
     () =>
       hierarchy(pack)
-        .sum((d) => 1 + d?.monthlyPriceInDollars)
+        .sum((d) => 1 + d?.monthlyPriceInDollars * d?.multiplier)
         .sort(
           (a, b) =>
-            (b.data.monthlyPriceInDollars ?? 0) -
-            (a.data.monthlyPriceInDollars ?? 0),
+            (b.data.monthlyPriceInDollars * b.data.multiplier ?? 0) -
+            (a.data.monthlyPriceInDollars * a.data.multiplier ?? 0),
         ),
-    [pack],
+    [],
   );
 
   return (
