@@ -65,13 +65,7 @@ function Home() {
           <blockquote cite="https://twitter.com/alexdotjs">
             <SectionTitle title={<>You may not need a traditional API</>} />
             <p className="pt-3 text-sm text-gray-600 md:text-base dark:text-gray-400">
-              I started working on tRPC to scratch my own itch. I&apos;ve making
-              web &amp; mobile applications for many years &amp; the complexity
-              of the backend/frontend communication started to poke my eye more
-              and more for every year that went by.
-            </p>
-            <p className="pt-3 text-sm text-gray-600 md:text-base dark:text-gray-400">
-              If you have a project that is built with the same language
+              If we have a project that is built with the same language
               end-to-end, why should we need to bring in <em>another</em>{' '}
               language into the mix, like <code>.yaml</code> or{' '}
               <code>.graphql</code>, when all the type information is already
