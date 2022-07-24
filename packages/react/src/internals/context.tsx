@@ -20,11 +20,11 @@ import {
 } from 'react-query';
 import { Updater } from 'react-query/types/core/utils';
 
-interface TRPCFetchQueryOptions<TInput, TError, TOutput>
+export interface TRPCFetchQueryOptions<TInput, TError, TOutput>
   extends FetchQueryOptions<TInput, TError, TOutput>,
     TRPCRequestOptions {}
 
-interface TRPCFetchInfiniteQueryOptions<TInput, TError, TOutput>
+export interface TRPCFetchInfiniteQueryOptions<TInput, TError, TOutput>
   extends FetchInfiniteQueryOptions<TInput, TError, TOutput>,
     TRPCRequestOptions {}
 
@@ -32,10 +32,10 @@ interface TRPCFetchInfiniteQueryOptions<TInput, TError, TOutput>
 export type SSRState = false | 'prepass' | 'mounting' | 'mounted';
 
 /** @internal */
-export interface TRPCContextState<
+export type TRPCContextState<
   TRouter extends AnyRouter,
   TSSRContext = undefined,
-> {
+> = {
   queryClient: QueryClient;
   client: TRPCClient<TRouter>;
   ssrContext: TSSRContext | null;
@@ -198,6 +198,6 @@ export interface TRPCContextState<
   >(
     pathAndInput: [TPath, TInput?],
   ): InfiniteData<TOutput> | undefined;
-}
+};
 
 export const TRPCContext = createContext(null as any);

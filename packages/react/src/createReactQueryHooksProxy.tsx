@@ -20,8 +20,13 @@ import {
   UseTRPCMutationOptions,
   UseTRPCQueryOptions,
 } from './createReactQueryHooks';
+import { getQueryKey } from './internals/getQueryKey';
+import {
+  DecoratedProcedureUtilsRecord,
+  createReactQueryUtilsProxy,
+} from './utilsProxy';
 
-type DecorateProcedure<
+export type DecorateProcedure<
   TProcedure extends Procedure<any>,
   TPath extends string,
 > = OmitNeverKeys<{
@@ -86,7 +91,10 @@ type DecorateProcedure<
 
 type assertProcedure<T> = T extends Procedure<any> ? T : never;
 
-type DecoratedProcedureRecord<
+/**
+ * @internal
+ */
+export type DecoratedProcedureRecord<
   TProcedures extends ProcedureRouterRecord,
   TPath extends string = '',
 > = {
@@ -107,6 +115,12 @@ export function createReactQueryHooksProxy<
 >(trpc: CreateReactQueryHooks<TRouter, TSSRContext>) {
   const proxy = createProxy((opts) => {
     const args = opts.args;
+
+    if (opts.path[0] === 'useContext') {
+      const context = trpc.useContext();
+      return createReactQueryUtilsProxy(context);
+    }
+
     const pathCopy = [...opts.path];
 
     // The last arg is for instance `.useMutation` or `.useQuery()`
@@ -119,8 +133,11 @@ export function createReactQueryHooksProxy<
     }
     const [input, ...rest] = args;
 
-    return (trpc as any)[lastArg]([path, input], ...rest);
+    const queryKey = getQueryKey(path, input);
+    return (trpc as any)[lastArg](queryKey, ...rest);
   });
 
-  return proxy as DecoratedProcedureRecord<TRouter['_def']['record']>;
+  return proxy as DecoratedProcedureRecord<TRouter['_def']['record']> & {
+    useContext(): DecoratedProcedureUtilsRecord<TRouter>;
+  };
 }

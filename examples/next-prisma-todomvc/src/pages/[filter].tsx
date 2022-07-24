@@ -58,7 +58,7 @@ function ListItem({ task }: { task: Task }) {
   const wrapperRef = useRef(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const utils = trpc.useContext();
+  const utils = trpc.proxy.useContext();
   const [text, setText] = useState(task.text);
   const [completed, setCompleted] = useState(task.completed);
   useEffect(() => {
@@ -70,13 +70,12 @@ function ListItem({ task }: { task: Task }) {
 
   const editTask = trpc.useMutation('todo.edit', {
     async onMutate({ id, data }) {
-      await utils.cancelQuery(['todo.all']);
-      const allTasks = utils.getQueryData(['todo.all']);
+      await utils['todo.all'].cancel();
+      const allTasks = utils['todo.all'].getData();
       if (!allTasks) {
         return;
       }
-      utils.setQueryData(
-        ['todo.all'],
+      utils['todo.all'].setData(
         allTasks.map((t) =>
           t.id === id
             ? {
@@ -90,15 +89,12 @@ function ListItem({ task }: { task: Task }) {
   });
   const deleteTask = trpc.useMutation('todo.delete', {
     async onMutate() {
-      await utils.cancelQuery(['todo.all']);
-      const allTasks = utils.getQueryData(['todo.all']);
+      await utils['todo.all'].cancel();
+      const allTasks = utils['todo.all'].getData();
       if (!allTasks) {
         return;
       }
-      utils.setQueryData(
-        ['todo.all'],
-        allTasks.filter((t) => t.id != task.id),
-      );
+      utils['todo.all'].setData(allTasks.filter((t) => t.id != task.id));
     },
   });
 
