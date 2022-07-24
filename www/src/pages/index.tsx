@@ -6,6 +6,7 @@ import React from 'react';
 import { Features } from '../components/Features';
 import { GithubStarCountButton } from '../components/GithubStarCountButton';
 import { SectionTitle } from '../components/SectionTitle';
+import { Sponsors } from '../components/sponsors';
 
 function Home() {
   const context = useDocusaurusContext();
@@ -106,6 +107,11 @@ function Home() {
             </div>
           </a>
         </section>
+        <div className="lg:max-w-screen-lg px-4 mx-auto">
+          <div className="aspect-square">
+            <Sponsors />
+          </div>
+        </div>
       </main>
     </Layout>
   );
