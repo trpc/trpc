@@ -9,7 +9,8 @@ import {
 } from '@trpc/server/rpc';
 import { TRPCClientError } from '../TRPCClientError';
 import { retryDelay } from '../internals/retryDelay';
-import { Operation, OperationResultObserver, TRPCLink } from './types';
+import { Operation, OperationResultObserver, TRPCLink, TRPCClientRuntime } from './types';
+import { transformSubscriptionOperationResult } from "./internals/transformOperationResult";
 
 export interface WebSocketClientOptions {
   url: string;
@@ -148,7 +149,16 @@ export function createWSClient(opts: WebSocketClientOptions) {
         return;
       }
 
-      req.callbacks.next?.({ data });
+      const transformed = transformSubscriptionOperationResult(
+        { data },
+        req.op.context.runtime as TRPCClientRuntime,
+      );
+      if (transformed.ok) {
+        req.callbacks.next?.({ data });
+      } else {
+        req.callbacks.error?.(transformed.error);
+      }
+
       if (req.ws !== activeConnection && conn === activeConnection) {
         const oldWs = req.ws;
         // gracefully replace old connection with this
@@ -283,7 +293,7 @@ export function wsLink<TRouter extends AnyRouter>(
     return ({ op }) => {
       return observable((observer) => {
         const { type, path, id, context } = op;
-
+        context.runtime = runtime;
         const input = runtime.transformer.serialize(op.input);
 
         let isDone = false;

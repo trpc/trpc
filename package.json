@@ -45,7 +45,7 @@
     "codegen:entrypoints": "yarn ts-node scripts/entrypoints.ts",
     "codegen:generateMergeRouters": "yarn ts-node scripts/generateMergeRouters.ts",
     "codegen": "run-p codegen:*",
-    "ts-node": "ts-node --compiler-options '{\"module\":\"commonjs\"}'",
+    "ts-node": "ts-node --compiler-options {\\\"module\\\":\\\"commonjs\\\"}",
     "postinstall": "yarn codegen",
     "build": "lerna run build --scope=\"@trpc/*\" --stream",
     "watch": "lerna run build --scope \"@trpc/*\" --stream --parallel -- --watch",
