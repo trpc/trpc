@@ -36,16 +36,14 @@ type DecorateProcedure<
         TQueryFnData = inferProcedureOutput<TProcedure>,
         TData = inferProcedureOutput<TProcedure>,
       >(
-        ...args: [
+        input: inferProcedureInput<TProcedure>,
+        opts?: UseTRPCQueryOptions<
+          TPath,
           inferProcedureInput<TProcedure>,
-          void | UseTRPCQueryOptions<
-            TPath,
-            inferProcedureInput<TProcedure>,
-            TQueryFnData,
-            TData,
-            inferProcedureClientError<TProcedure>
-          >,
-        ]
+          TQueryFnData,
+          TData,
+          inferProcedureClientError<TProcedure>
+        >,
       ) => UseQueryResult<TData, inferProcedureClientError<TProcedure>>
     : never;
 
@@ -73,15 +71,13 @@ type DecorateProcedure<
           _TQueryFnData = inferProcedureOutput<TProcedure>,
           TData = inferProcedureOutput<TProcedure>,
         >(
-          ...args: [
-            Omit<inferProcedureInput<TProcedure>, 'cursor'>,
-            void | UseTRPCInfiniteQueryOptions<
-              TPath,
-              inferProcedureInput<TProcedure>,
-              TData,
-              inferProcedureClientError<TProcedure>
-            >,
-          ]
+          input: Omit<inferProcedureInput<TProcedure>, 'cursor'>,
+          opts?: UseTRPCInfiniteQueryOptions<
+            TPath,
+            inferProcedureInput<TProcedure>,
+            TData,
+            inferProcedureClientError<TProcedure>
+          >,
         ) => UseInfiniteQueryResult<
           TData,
           inferProcedureClientError<TProcedure>

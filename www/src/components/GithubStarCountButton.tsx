@@ -16,9 +16,6 @@ export const GithubStarCountButton = () => {
         if (typeof data.stargazers_count === 'number') {
           starCountStart = data.stargazers_count;
           setStarCount(data.stargazers_count);
-        } else {
-          // For testing:
-          // setStarCount(10_000);
         }
       });
   }, []);
@@ -36,7 +33,7 @@ export const GithubStarCountButton = () => {
 
       <div
         className={`transition-all duration-1000 overflow-hidden font-mono ${
-          starCount ? 'w-10 md:w-12' : 'w-0'
+          starCount ? 'w-12 md:w-14' : 'w-0'
         }`}
       >
         {/* This little thing is an awful hack and any OSS-contributor is welcome to come up / implement another idea for how we deal with loading state of the stars */}
