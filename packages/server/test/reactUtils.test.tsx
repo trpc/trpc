@@ -2,7 +2,7 @@ import { getServerAndReactClient } from './__reactHelpers';
 import { render, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { konn } from 'konn';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import React from 'react';
 import { z } from 'zod';
 import { initTRPC } from '../src/core';
@@ -12,6 +12,7 @@ type Post = {
   text: string;
 };
 
+const defaultPost = { id: 0, text: 'new post' };
 const ctx = konn()
   .beforeEach(() => {
     const t = initTRPC()({
@@ -26,7 +27,7 @@ const ctx = konn()
       },
     });
 
-    const posts: Post[] = [];
+    const posts: Post[] = [defaultPost];
 
     const appRouter = t.router({
       post: t.router({
@@ -66,6 +67,69 @@ const ctx = konn()
   })
   .done();
 
+test('fetch', async () => {
+  const { proxy, App } = ctx;
+
+  function MyComponent() {
+    const utils = proxy.useContext();
+    const [posts, setPosts] = useState<Post[]>([]);
+
+    useEffect(() => {
+      utils.post.all.fetch().then((allPosts) => setPosts(allPosts));
+    }, [utils]);
+
+    return <p>{posts[0]?.text}</p>;
+  }
+
+  const utils = render(
+    <App>
+      <MyComponent />
+    </App>,
+  );
+  await waitFor(() => {
+    expect(utils.container).toHaveTextContent('new post');
+  });
+});
+
+test('prefetch', async () => {
+  const { proxy, App } = ctx;
+  const renderProxy = jest.fn();
+
+  function Posts() {
+    const allPosts = proxy.post.all.useQuery();
+    renderProxy(allPosts.data);
+    return (
+      <>
+        {allPosts!.data!.map((post) => {
+          return <div key={post.id}>{post.text}</div>;
+        })}
+      </>
+    );
+  }
+
+  function MyComponent() {
+    const utils = proxy.useContext();
+    const [hasPrefetched, setHasPrefetched] = useState(false);
+    useEffect(() => {
+      utils.post.all.prefetch().then(() => {
+        setHasPrefetched(true);
+      });
+    }, [utils]);
+
+    return hasPrefetched ? <Posts /> : null;
+  }
+
+  render(
+    <App>
+      <MyComponent />
+    </App>,
+  );
+
+  await waitFor(() => {
+    expect(renderProxy).toHaveBeenNthCalledWith<[Post[]]>(1, [defaultPost]);
+  });
+});
+
 test('invalidate', async () => {
   const { proxy, App } = ctx;
   const stableProxySpy = jest.fn();
@@ -78,7 +142,7 @@ test('invalidate', async () => {
 
     useEffect(() => {
       stableProxySpy(proxy);
-    }, [proxy]);
+    }, []);
 
     if (!allPosts.data) {
       return <>...</>;
@@ -94,8 +158,8 @@ test('invalidate', async () => {
                 onSuccess() {
                   utils.post.all.invalidate();
 
-                  // // @ts-expect-error Should not exist
-                  // utils.post.create.invalidate;
+                  // @ts-expect-error Should not exist
+                  utils.post.create.invalidate;
                 },
               },
             );
@@ -123,6 +187,37 @@ test('invalidate', async () => {
   expect(stableProxySpy).toHaveBeenCalledTimes(1);
 });
 
+test('refetch', async () => {
+  const { proxy, App } = ctx;
+  const querySuccessSpy = jest.fn();
+
+  function MyComponent() {
+    const utils = proxy.useContext();
+    const allPosts = proxy.post.all.useQuery(undefined, {
+      onSuccess() {
+        querySuccessSpy();
+      },
+    });
+
+    useEffect(() => {
+      if (allPosts.data) {
+        utils.post.all.refetch();
+      }
+    }, [allPosts.data, utils]);
+
+    return null;
+  }
+
+  render(
+    <App>
+      <MyComponent />
+    </App>,
+  );
+  await waitFor(() => {
+    expect(querySuccessSpy).toHaveBeenCalledTimes(2);
+  });
+});
+
 test('setData', async () => {
   const { proxy, App } = ctx;
   function MyComponent() {
@@ -148,5 +243,44 @@ test('setData', async () => {
   );
   await waitFor(() => {
     expect(utils.container).toHaveTextContent('setData');
+  });
+});
+
+test('getData', async () => {
+  const { proxy, App } = ctx;
+  function MyComponent() {
+    const allPosts = proxy.post.all.useQuery();
+    const [posts, setPosts] = useState<Post[]>([]);
+    const utils = proxy.useContext();
+
+    useEffect(() => {
+      if (allPosts.data) {
+        const getDataPosts = utils.post.all.getData();
+        if (getDataPosts) {
+          setPosts(getDataPosts);
+        }
+      }
+    }, [allPosts.data, utils]);
+
+    if (!allPosts.data) {
+      return <>...</>;
+    }
+
+    return (
+      <>
+        {posts.map((post) => {
+          return <div key={post.id}>{post.text}</div>;
+        })}
+      </>
+    );
+  }
+
+  const utils = render(
+    <App>
+      <MyComponent />
+    </App>,
+  );
+  await waitFor(() => {
+    expect(utils.container).toHaveTextContent('new post');
   });
 });

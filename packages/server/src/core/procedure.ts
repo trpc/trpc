@@ -8,6 +8,10 @@ import {
 import { UnsetMarker } from './internals/utils';
 
 type ClientContext = Record<string, unknown>;
+
+/**
+ * @internal
+ */
 export interface ProcedureOptions {
   /**
    * Client-side context
