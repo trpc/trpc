@@ -27,7 +27,7 @@ import {
   createReactQueryUtilsProxy,
 } from './internals/utilsProxy';
 
-export type DecorateProcedure<
+type DecorateProcedure<
   TProcedure extends Procedure<any>,
   TPath extends string,
 > = OmitNeverKeys<{
