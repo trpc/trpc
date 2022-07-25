@@ -35,7 +35,6 @@ describe('prefetchQuery()', () => {
 
       useEffect(() => {
         async function prefetch() {
-          utils.prefetchQuery(['allPosts', undefined]);
           await utils.prefetchQuery(['postById', '1']);
           setState(JSON.stringify(dehydrate(queryClient)));
         }
