@@ -7,8 +7,8 @@ import {
   getUrl,
   httpRequest,
 } from './internals/httpUtils';
-import { OperationResult, TRPCLink } from "./types";
-import { transformOperationResult } from "./internals/transformOperationResult";
+import { transformOperationResult } from './internals/transformOperationResult';
+import { OperationResult, TRPCLink } from './types';
 
 export interface HttpBatchLinkOptions extends HTTPLinkOptions {
   maxURLLength?: number;
@@ -86,7 +86,10 @@ export function httpBatchLink<TRouter extends AnyRouter>(
 
         promise
           .then((res) => {
-            const result = { context: res.meta, data: res.json } as OperationResult<TRouter, any>;
+            const result = {
+              context: res.meta,
+              data: res.json,
+            } as OperationResult<TRouter, any>;
             const transformed = transformOperationResult(result, runtime);
             if (transformed.ok) {
               observer.next({

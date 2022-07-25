@@ -9,8 +9,13 @@ import {
 } from '@trpc/server/rpc';
 import { TRPCClientError } from '../TRPCClientError';
 import { retryDelay } from '../internals/retryDelay';
-import { Operation, OperationResultObserver, TRPCLink, TRPCClientRuntime } from './types';
-import { transformSubscriptionOperationResult } from "./internals/transformOperationResult";
+import { transformSubscriptionOperationResult } from './internals/transformOperationResult';
+import {
+  Operation,
+  OperationResultObserver,
+  TRPCClientRuntime,
+  TRPCLink,
+} from './types';
 
 export interface WebSocketClientOptions {
   url: string;
