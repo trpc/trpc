@@ -113,7 +113,7 @@ export function createReactQueryHooksProxy<
   const proxy = createProxy((opts) => {
     const args = opts.args;
 
-    if (opts.path[0] === 'useContext') {
+    if (opts.path.length === 1 && opts.path[0] === 'useContext') {
       const context = trpc.useContext();
       // create a stable reference of the utils context
       return useMemo(() => {
