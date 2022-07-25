@@ -112,7 +112,7 @@ type Stringable<S> = S | { toString: () => S };
 /**
  * e.g. `StringBuilder<['a', 'b', 'c']`
  *
- * => `{ a: { b: { c: {toString: () => 'c'} } } }`
+ * => `{ a: { b: { c: {toString: () => 'a.b.c'} } } }`
  */
 type StringBuilder<
   Segments extends string[],
@@ -341,7 +341,7 @@ export function createReactQueryHooks<
   >(
     _pathAndInput: [
       path: Stringable<TPath>,
-      ...args: inferHandlerInput<TQueries[TPath]>
+      ...args: inferHandlerInput<TQueries[TPath]>,
     ],
     opts?: UseTRPCQueryOptions<
       TPath,
@@ -412,7 +412,7 @@ export function createReactQueryHooks<
   >(
     pathAndInput: [
       path: TPath,
-      ...args: inferHandlerInput<TSubscriptions[TPath]>
+      ...args: inferHandlerInput<TSubscriptions[TPath]>,
     ],
     opts: {
       enabled?: boolean;
