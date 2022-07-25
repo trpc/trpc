@@ -16,7 +16,7 @@ const IndexPage: NextPageWithLayout = () => {
   // prefetch all posts for instant navigation
   // useEffect(() => {
   //   for (const { id } of postsQuery.data ?? []) {
-  //     utils.post.byId.prefetch([{ id }])
+  //     utils.post.byId.prefetch({ id })
   //   }
   // }, [postsQuery.data, utils]);
 
