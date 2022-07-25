@@ -6,8 +6,8 @@ import React from 'react';
 import { Features } from '../components/Features';
 import { GithubStarCountButton } from '../components/GithubStarCountButton';
 import { SectionTitle } from '../components/SectionTitle';
-import { Sponsors } from '../components/sponsors';
 import { TwitterWall } from '../components/TwitterWall';
+import { Sponsors } from '../components/sponsors';
 
 function Home() {
   const context = useDocusaurusContext();
