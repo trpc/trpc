@@ -7,6 +7,7 @@ import { Features } from '../components/Features';
 import { GithubStarCountButton } from '../components/GithubStarCountButton';
 import { SectionTitle } from '../components/SectionTitle';
 import { Sponsors } from '../components/sponsors';
+import { TwitterWall } from '../components/TwitterWall';
 
 function Home() {
   const context = useDocusaurusContext();
@@ -101,7 +102,11 @@ function Home() {
             </div>
           </a>
         </section>
-        <div className="lg:max-w-screen-lg px-4 mx-auto">
+        <section>
+          <SectionTitle title="Don't take our word for it!" />
+          <TwitterWall />
+        </section>
+        <div className="px-4 mx-auto lg:max-w-screen-lg">
           <div className="aspect-square">
             <Sponsors />
           </div>
