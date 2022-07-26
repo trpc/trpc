@@ -1,4 +1,3 @@
-import BrowserOnly from '@docusaurus/BrowserOnly';
 import React, { Suspense } from 'react';
 import { FiStar } from 'react-icons/fi';
 
@@ -37,18 +36,14 @@ export const GithubStarCountButton = () => {
         }`}
       >
         {/* This little thing is an awful hack and any OSS-contributor is welcome to come up / implement another idea for how we deal with loading state of the stars */}
-        <BrowserOnly>
-          {() => (
-            <Suspense fallback={null}>
-              <AnimatedNumbers
-                includeComma
-                animateToNumber={starCount}
-                fontStyle={{ paddingTop: '0.5rem', paddingBottom: '0.5rem' }}
-                configs={[{ mass: 1, tension: 220, friction: 100 }]}
-              />
-            </Suspense>
-          )}
-        </BrowserOnly>
+        <Suspense fallback={null}>
+          <AnimatedNumbers
+            //includeComma={true} // <-- buggy on some i18n systems. See https://github.com/heyman333/react-animated-numbers/issues/34
+            animateToNumber={starCount}
+            fontStyle={{ paddingTop: '0.5rem', paddingBottom: '0.5rem' }}
+            configs={[{ mass: 1, tension: 220, friction: 100 }]}
+          />
+        </Suspense>
       </div>
       {/* Fix height jank */}
       <span className="py-2">&nbsp;</span>
