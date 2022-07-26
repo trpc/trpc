@@ -13,13 +13,12 @@ The arguments provided to the fetch function used by tRPC can be modified as fol
 import { createTRPCClient } from '@trpc/client';
 
 const client = createTRPCClient<AppRouter>({
-  url: 'YOUR_SERVER_URL',
+  url: "YOUR_SERVER_URL",
   fetch(url, options) {
     return fetch(url, {
       ...options,
       credentials: "include",
     });
-   }, 
-  }
+  },
 });
 ```
