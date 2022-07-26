@@ -3,20 +3,20 @@ import { NextPageWithLayout } from './_app';
 import Link from 'next/link';
 
 const IndexPage: NextPageWithLayout = () => {
-  const utils = trpc.useContext();
+  const utils = trpc.proxy.useContext();
   const postsQuery = trpc.proxy.post.list.useQuery();
 
   const addPost = trpc.proxy.post.add.useMutation({
     async onSuccess() {
       // refetches posts after a post is added
-      await utils.invalidateQueries(['post.list']);
+      await utils.post.list.invalidate();
     },
   });
 
   // prefetch all posts for instant navigation
   // useEffect(() => {
   //   for (const { id } of postsQuery.data ?? []) {
-  //     utils.prefetchQuery(['postbyId', { id }]);
+  //     utils.post.byId.prefetch({ id })
   //   }
   // }, [postsQuery.data, utils]);
 

@@ -20,11 +20,11 @@ import {
 } from 'react-query';
 import { Updater } from 'react-query/types/core/utils';
 
-interface TRPCFetchQueryOptions<TInput, TError, TOutput>
+export interface TRPCFetchQueryOptions<TInput, TError, TOutput>
   extends FetchQueryOptions<TInput, TError, TOutput>,
     TRPCRequestOptions {}
 
-interface TRPCFetchInfiniteQueryOptions<TInput, TError, TOutput>
+export interface TRPCFetchInfiniteQueryOptions<TInput, TError, TOutput>
   extends FetchInfiniteQueryOptions<TInput, TError, TOutput>,
     TRPCRequestOptions {}
 

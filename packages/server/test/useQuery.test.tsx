@@ -1,15 +1,10 @@
-import { routerToServerAndClientNew } from './___testHelpers';
+import { getServerAndReactClient } from './__reactHelpers';
 import { render, waitFor } from '@testing-library/react';
 import { expectTypeOf } from 'expect-type';
 import { konn } from 'konn';
-import React, { ReactNode, useEffect, useState } from 'react';
-import { QueryClient, QueryClientProvider } from 'react-query';
+import React, { useEffect } from 'react';
 import { InfiniteData } from 'react-query';
 import { z } from 'zod';
-import {
-  createReactQueryHooks,
-  createReactQueryHooksProxy,
-} from '../../react/src';
 import { initTRPC } from '../src';
 
 const ctx = konn()
@@ -61,32 +56,7 @@ const ctx = konn()
       }),
     });
 
-    const opts = routerToServerAndClientNew(appRouter);
-    const queryClient = new QueryClient();
-    const react = createReactQueryHooks<typeof appRouter>();
-    const proxy = createReactQueryHooksProxy<typeof appRouter>(react);
-    const client = opts.client;
-
-    appRouter._def.procedures;
-    function App(props: { children: ReactNode }) {
-      const [queryClient] = useState(() => new QueryClient());
-      return (
-        <react.Provider {...{ queryClient, client }}>
-          <QueryClientProvider client={queryClient}>
-            {props.children}
-          </QueryClientProvider>
-        </react.Provider>
-      );
-    }
-    return {
-      close: opts.close,
-      client,
-      queryClient,
-      react,
-      proxy,
-      App,
-      appRouter,
-    };
+    return getServerAndReactClient(appRouter);
   })
   .afterEach(async (ctx) => {
     await ctx?.close?.();
@@ -94,7 +64,7 @@ const ctx = konn()
   .done();
 
 test('useQuery()', async () => {
-  const { react, proxy, App } = ctx;
+  const { proxy, App } = ctx;
   function MyComponent() {
     const query1 = proxy.post.byId.useQuery({
       id: '1',
@@ -102,12 +72,12 @@ test('useQuery()', async () => {
 
     // @ts-expect-error Should not exist
     proxy.post.byId.useInfiniteQuery;
-    const utils = react.useContext();
+    const utils = proxy.useContext();
 
     useEffect(() => {
-      utils.invalidateQueries(['post.byId']);
+      utils.post.byId.invalidate();
       // @ts-expect-error Should not exist
-      utils.invalidateQueries(['doesNotExist']);
+      utils.doesNotExist.invalidate();
     }, [utils]);
 
     if (query1.error) {

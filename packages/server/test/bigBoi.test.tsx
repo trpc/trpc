@@ -1,45 +1,23 @@
-import { routerToServerAndClientNew } from './___testHelpers';
 import { appRouter } from './__generated__/bigBoi/_app';
+import { getServerAndReactClient } from './__reactHelpers';
 import { render, waitFor } from '@testing-library/react';
-import { createReactQueryHooks, createReactQueryHooksProxy } from '@trpc/react';
 import { expectTypeOf } from 'expect-type';
 import { konn } from 'konn';
-import React, { ReactNode, useState } from 'react';
-import { QueryClient, QueryClientProvider } from 'react-query';
+import React from 'react';
 
 const ctx = konn()
   .beforeEach(() => {
-    const opts = routerToServerAndClientNew(appRouter, {});
-    const queryClient = new QueryClient();
-    const react = createReactQueryHooks<typeof appRouter>();
-    const proxy = createReactQueryHooksProxy<typeof appRouter>(react);
-    const client = opts.client;
-    function App(props: { children: ReactNode }) {
-      const [queryClient] = useState(() => new QueryClient());
-      return (
-        <react.Provider {...{ queryClient, client }}>
-          <QueryClientProvider client={queryClient}>
-            {props.children}
-          </QueryClientProvider>
-        </react.Provider>
-      );
-    }
-
-    return {
-      App,
-      queryClient,
-      proxy,
-      opts,
-    };
+    return getServerAndReactClient(appRouter);
   })
   .afterEach(async (ctx) => {
-    await ctx?.opts?.close?.();
+    await ctx?.close?.();
   })
   .done();
 
 test('vanilla', async () => {
   const { opts } = ctx;
-  const proxy = opts.proxy;
+  const { proxy } = opts;
+
   {
     const result = await proxy.r0.greeting.query({ who: 'KATT' });
 

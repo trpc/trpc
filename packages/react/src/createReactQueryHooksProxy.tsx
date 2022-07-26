@@ -9,6 +9,7 @@ import {
   inferProcedureOutput,
 } from '@trpc/server';
 import { createProxy } from '@trpc/server/shared';
+import { useMemo } from 'react';
 import {
   UseInfiniteQueryResult,
   UseMutationResult,
@@ -20,6 +21,11 @@ import {
   UseTRPCMutationOptions,
   UseTRPCQueryOptions,
 } from './createReactQueryHooks';
+import { getQueryKey } from './internals/getQueryKey';
+import {
+  DecoratedProcedureUtilsRecord,
+  createReactQueryUtilsProxy,
+} from './internals/utilsProxy';
 
 type DecorateProcedure<
   TProcedure extends Procedure<any>,
@@ -82,7 +88,10 @@ type DecorateProcedure<
 
 type assertProcedure<T> = T extends Procedure<any> ? T : never;
 
-type DecoratedProcedureRecord<
+/**
+ * @internal
+ */
+export type DecoratedProcedureRecord<
   TProcedures extends ProcedureRouterRecord,
   TPath extends string = '',
 > = {
@@ -103,6 +112,15 @@ export function createReactQueryHooksProxy<
 >(trpc: CreateReactQueryHooks<TRouter, TSSRContext>) {
   const proxy = createProxy((opts) => {
     const args = opts.args;
+
+    if (opts.path.length === 1 && opts.path[0] === 'useContext') {
+      const context = trpc.useContext();
+      // create a stable reference of the utils context
+      return useMemo(() => {
+        return createReactQueryUtilsProxy(context);
+      }, [context]);
+    }
+
     const pathCopy = [...opts.path];
 
     // The last arg is for instance `.useMutation` or `.useQuery()`
@@ -115,14 +133,11 @@ export function createReactQueryHooksProxy<
     }
     const [input, ...rest] = args;
 
-    /**
-     * We treat `undefined` as an input the same as omitting an `input`
-     * https://github.com/trpc/trpc/issues/2290
-     */
-    const queryKey = input === undefined ? [path] : [path, input];
-
+    const queryKey = getQueryKey(path, input);
     return (trpc as any)[lastArg](queryKey, ...rest);
   });
 
-  return proxy as DecoratedProcedureRecord<TRouter['_def']['record']>;
+  return proxy as {
+    useContext(): DecoratedProcedureUtilsRecord<TRouter>;
+  } & DecoratedProcedureRecord<TRouter['_def']['record']>;
 }
