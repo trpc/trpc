@@ -39,8 +39,31 @@ export async function fetchRequestHandler<TRouter extends AnyRouter>(
     },
   });
 
+  const headers: Record<string, string> = {};
+  if ('Set-Cookie' in (result.headers ?? {})) {
+    const value = result.headers?.['Set-Cookie'];
+
+    switch (typeof value) {
+      case 'undefined':
+        break;
+      case 'string':
+        headers['Set-Cookie'] = value;
+        break;
+      default:
+        if (value.length > 0) {
+          const firstValue = value[0];
+
+          if (typeof firstValue === 'string') {
+            headers['Set-Cookie'] = firstValue;
+          }
+        }
+        break;
+    }
+  }
+
   const res = new Response(result.body, {
     status: result.status,
+    headers,
   });
 
   for (const [key, value] of Object.entries(result.headers ?? {})) {
