@@ -13,8 +13,6 @@ slug: /useInfiniteQuery
 
 :::
 
-
-
 ## Example Procedure
 
 ```tsx title='server/routers/_app.ts'
@@ -59,7 +57,6 @@ export const appRouter = t.router({
 })
 ```
 
-
 ## Example React Component
 
 ```tsx title='components/MyComponent.tsx'
@@ -76,12 +73,11 @@ export function MyComponent() {
   );
   // [...]
 }
-
 ```
 
 ## Helpers
 
-### `getInfiniteQueryData()`
+### `getInfiniteData()`
 
 This helper gets the currently cached data from an existing infinite query
 
@@ -89,53 +85,54 @@ This helper gets the currently cached data from an existing infinite query
 import { trpc } from '../utils/trpc';
 
 export function MyComponent() {
-  const utils = trpc.useContext();
+  const utils = trpc.proxy.useContext();
 
   const myMutation = trpc.proxy.infinitePosts.add.useMutation({
-    onMutate({ post }) {
-      await utils.cancelQuery(['infinitePosts']);
-      const allPosts = utils.getInfiniteQueryData(['infinitePosts', { limit: 10 }]);
+    async onMutate({ post }) {
+      await utils.infinitePosts.cancel();
+      const allPosts = await utils.infinitePosts.getInfiniteData({ limit: 10 });
       // [...]
-    }
-  })
+    },
+  });
 }
 ```
 
-### `setInfiniteQueryData()`
+### `setInfiniteData()`
 
-This helper allows you to update a queries cached data
+This helper allows you to update a query's cached data
 
 ```tsx title='components/MyComponent.tsx'
 import { trpc } from '../utils/trpc';
 
 export function MyComponent() {
-  const utils = trpc.useContext();
+  const utils = trpc.proxy.useContext();
 
   const myMutation = trpc.proxy.infinitePosts.delete.useMutation({
-    onMutate({ post }) {
-      await utils.cancelQuery(['infinitePosts']);
+    async onMutate({ post }) {
+      await utils.infinitePosts.cancel();
 
-      utils.setInfiniteQueryData(['infinitePosts', { limit: 10 }], (data) => {
-        if (!data) {
-          return {
-            pages: [],
-            pageParams: []
+      await utils.infinitePosts.setInfiniteData(
+        (data) => {
+          if (!data) {
+            return {
+              pages: [],
+              pageParams: [],
+            };
           }
-        }
 
-        return {
-          ...data,
-          pages: data.pages.map((page) => {
-            ...page,
-            items: page.items.filter((item) => item.status === 'published')
-          })
-        }
-      });
-    }
+          return {
+            ...data,
+            pages: data.pages.map((page) => ({
+              ...page,
+              items: page.items.filter((item) => item.status === 'published'),
+            })),
+          };
+        },
+        { limit: 10 },
+      );
+    },
   });
 
   // [...]
 }
-
-
 ```
