@@ -90,7 +90,7 @@ export function MyComponent() {
   const myMutation = trpc.proxy.infinitePosts.add.useMutation({
     async onMutate({ post }) {
       await utils.infinitePosts.cancel();
-      const allPosts = await utils.infinitePosts.getInfiniteData({ limit: 10 });
+      const allPosts = utils.infinitePosts.getInfiniteData({ limit: 10 });
       // [...]
     },
   });
@@ -111,7 +111,7 @@ export function MyComponent() {
     async onMutate({ post }) {
       await utils.infinitePosts.cancel();
 
-      await utils.infinitePosts.setInfiniteData(
+      utils.infinitePosts.setInfiniteData(
         (data) => {
           if (!data) {
             return {
