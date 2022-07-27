@@ -5,7 +5,7 @@ export const TwitterWall = () => {
   return (
     <div className="grid grid-cols-1 gap-4 mt-6 lg:grid-cols-3">
       {tweets.map((column, index) => (
-        <div key={`column-${index}`} className="flex flex-col gap-4 group">
+        <div key={`column-${index}`} className="flex flex-col gap-4">
           {column.map((tweet) => (
             <a
               href={`https://twitter.com/${tweet.handle}/status/${tweet.id}`}
@@ -20,13 +20,13 @@ export const TwitterWall = () => {
                   className="cursor-pointer"
                 >
                   <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-3 group">
                       <img
                         src={tweet.avatar}
                         alt={tweet.name}
                         className="w-12 h-12 rounded-full"
                       />
-                      <div>
+                      <div className="group-hover:underline">
                         <p className="text-base font-bold">{tweet.name}</p>
                         <p className="text-sm text-zinc-600 dark:text-zinc-400">
                           {tweet.handle}

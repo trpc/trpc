@@ -180,3 +180,10 @@ h5 {
 .admonition-heading h5 {
   @apply flex items-center text-lg;
 }
+
+/**
+ * Tweet Wall
+ **/
+#tweet {
+  --ifm-link-hover-decoration: none;
+}
