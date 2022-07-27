@@ -8,13 +8,20 @@ import fetch from 'node-fetch';
  * Script has shitty typesafety but hey, it works :)
  */
 
+const {
+  OAUTH_CONSUMER_KEY,
+  OAUTH_NONCE,
+  OAUTH_SIGNATURE,
+  OAUTH_TIMESTAMP,
+  OAUTH_TOKEN,
+} = process.env;
+
 const url =
   'https://api.twitter.com/1.1/collections/entries.json?id=custom-1441435105910796291';
 const options = {
   headers: {
     accept: '*/*',
-    Authorization:
-      'OAuth oauth_consumer_key="4aJCALBY6XjEqtenOXezrZ3gd", oauth_nonce="K3eAOJzdFOX6YR6ntRHkcyZkRvyOQHAf", oauth_signature="4jZhFHzKg%2Bt3u%2Bu2S%2FWA0B4WBgM%3D", oauth_signature_method="HMAC-SHA1", oauth_timestamp="1658926579", oauth_token="3557533403-z4skJ8HQxgYSIguXOuhmHyLj918LrB8EdXkVgjo", oauth_version="1.0"',
+    Authorization: `OAuth oauth_consumer_key="${OAUTH_CONSUMER_KEY}", oauth_nonce="${OAUTH_NONCE}", oauth_signature="${OAUTH_SIGNATURE}", oauth_signature_method="HMAC-SHA1", oauth_timestamp="${OAUTH_TIMESTAMP}", oauth_token="${OAUTH_TOKEN}", oauth_version="1.0"`,
   },
 };
 
