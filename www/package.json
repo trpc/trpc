@@ -12,6 +12,7 @@
     "serve": "docusaurus serve",
     "clear": "docusaurus clear",
     "sponsors-pull": "yarn ts-node ./src/components/sponsors/script.ts",
+    "tweetwall-pull": "yarn ts-node ./src/components/TwitterWall/script.ts",
     "ts-node": "ts-node --compiler-options '{\"module\":\"commonjs\"}'"
   },
   "dependencies": {
