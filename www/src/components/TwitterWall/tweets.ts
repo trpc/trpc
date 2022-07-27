@@ -1,7 +1,7 @@
 export const tweets = [
   [
     {
-      id: 1,
+      id: '1549812970594545664',
       name: 'Theo - ping.gg',
       handle: '@t3dotgg',
       date: 'Jul 20',
@@ -11,7 +11,7 @@ export const tweets = [
         'My new favorite thing is introducing startups to tRPC and waiting two weeks to hear back from them about how it changed everything',
     },
     {
-      id: 4,
+      id: '1488149257383198725',
       name: 'Sunny Singh',
       handle: '@sunnysinghio',
       date: 'Jan 31',
@@ -21,7 +21,7 @@ export const tweets = [
         'I am extremely impressed with @trpcio. It provides a great experience for developing full stack apps with @nextjs, and notable projects like @calcom are using it.',
     },
     {
-      id: 7,
+      id: '1422111411422040068',
       name: 'Peter Cilliers-Pistorius 🇺🇦',
       handle: '@appfactory',
       date: 'Aug 2',
@@ -33,7 +33,7 @@ export const tweets = [
   ],
   [
     {
-      id: 2,
+      id: '1549140656752234496',
       name: 'Minko Gechev',
       handle: '@mgechev',
       date: 'Jul 19',
@@ -43,7 +43,7 @@ export const tweets = [
         "tRPC - Safe API between your client and server 🔥\n\nI LOVE this project!\n\nIf you're building your client and server with TypeScript, tRPC allows you to have static verification of your communication protocol with zero overhead on the client.",
     },
     {
-      id: 5,
+      id: '1459572282116902915',
       name: 'Nick Schrock',
       handle: '@schrockn',
       date: 'Nov 13',
@@ -53,7 +53,7 @@ export const tweets = [
         "https://trpc.io Looks super nice. Great lightweight alternative to @GraphQL when you don't need the full power of the language and just to build endpoints. Vertical integration of server- and client-side TS also really slick.",
     },
     {
-      id: 9,
+      id: '1444402124901781506',
       name: 'Lori Karikari',
       handle: '@LoriKarikari',
       date: 'Oct 2',
@@ -65,7 +65,7 @@ export const tweets = [
   ],
   [
     {
-      id: 3,
+      id: '1508383436863541250',
       name: 'Tobias Lins',
       handle: '@linstobias',
       date: 'Mar 28',
@@ -75,7 +75,7 @@ export const tweets = [
         "I just tried out http://trpc.io for the first time and I'm impressed. Sharing types between my backend and frontend has never been so easy.",
     },
     {
-      id: 6,
+      id: '1457100617818779656',
       name: 'Ryan Edge',
       handle: '@chimon1984',
       date: 'Nov 7',
@@ -85,7 +85,7 @@ export const tweets = [
         "I have a strong affinity for technologies that don't rely heavily on code generation. In that regard, TRPC is the only library that I have used that allows you to build a Full Stack API without it (albeit only with JavaScript).",
     },
     {
-      id: 8,
+      id: '1403008330641989637',
       name: 'anthonyshort',
       handle: '@anthonyshort',
       date: 'Jun 10',
