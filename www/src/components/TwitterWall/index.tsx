@@ -8,6 +8,7 @@ export const TwitterWall = () => {
         <div key={`column-${index}`} className="flex flex-col gap-4">
           {column.map((tweet) => (
             <a
+              id="tweet"
               href={`https://twitter.com/${tweet.handle}/status/${tweet.id}`}
               key={tweet.id}
             >
