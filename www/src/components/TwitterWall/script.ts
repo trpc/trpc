@@ -36,13 +36,19 @@ const flattenTweets = (tweets: any, users: any) => {
     const date = new Date(tweetData.created_at);
     const userId = tweetData.user.id_str;
 
-    const content = tweetData.text;
-
-    // this removes the trailing line at the end of the tweet's content
-    const contentWithoutTrailingLink = content.replace(
-      /\b(http(s|):\/\/.+)\W*$/,
-      '',
-    );
+    /**
+     * Twitter API returns the text with HTML escaped characters
+     * so we un-escape these so that they can be rendered properly
+     *
+     * We also remove the trailing link if the tweet was truncated
+     */
+    const content = tweetData.text
+      .replaceAll(/&amp;/g, '&')
+      .replaceAll(/&lt;/g, '<')
+      .replaceAll(/&gt;/g, '>')
+      .replaceAll(/&quot;/g, '"')
+      .replaceAll(/&#39;/g, "'")
+      .replace(/\b(http(s|):\/\/.+)\W*$/, '');
 
     return {
       id: tweetId,
@@ -50,7 +56,7 @@ const flattenTweets = (tweets: any, users: any) => {
       handle: users[userId].screen_name,
       date: dateFormatter.format(date),
       avatar: users[userId].profile_image_url_https,
-      content: contentWithoutTrailingLink,
+      content: content,
     };
   });
 };

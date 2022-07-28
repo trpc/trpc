@@ -53,13 +53,13 @@ export const tweets = [
     },
     {
       id: '1548607105934004227',
-      name: 'Ben 🏳️‍🌈',
+      name: 'Ben',
       handle: 'nurodev',
       date: 'Jul 17',
       avatar:
         'https://pbs.twimg.com/profile_images/1542996607083462659/sTlPB-kO_normal.jpg',
       content:
-        '@alexdotjs @trpcio @github Amazing &amp; much well deserved!\nPeople are starting to see how awesome tRPC is &amp; I love it! 👏',
+        '@alexdotjs @trpcio @github Amazing & much well deserved!\nPeople are starting to see how awesome tRPC is & I love it! 👏',
     },
   ],
   [
