@@ -34,10 +34,10 @@ export const GithubStarCountButton = () => {
 
       <div
         className={`transition-all duration-1000 inline-block overflow-hidden font-mono whitespace-nowrap ${
-          starCount ? 'w-[58px] opacity-100' : 'w-0 opacity-0'
+          starCountStr ? 'w-[58px] opacity-100' : 'w-0 opacity-0'
         }`}
       >
-        {starCount ? new Intl.NumberFormat().format(starCount) : null}
+        {starCountStr}
       </div>
     </a>
   );
