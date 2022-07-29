@@ -18,7 +18,7 @@ Also, if your company using tRPC and want to support long-term maintenance of tR
     <tr>
       <td align="center"><a href="https://render.com"><img src="https://avatars.githubusercontent.com/u/36424661?v=4?s=180" width="180px;" alt=""/><br /><sub><b>Render</b></sub></a></td>
       <td align="center"><a href="https://cal.com"><img src="https://avatars.githubusercontent.com/u/79145102?v=4?s=180" width="180px;" alt=""/><br /><b>Cal.com, Inc.</b></a></td>
-      <td align="center"><a href="https://cal.com/peer"><img src="https://avatars.githubusercontent.com/u/8019099?v=4?s=180" width="180px;" alt=""/><br /><b>Peer Richelsen</b></a></td>
+      <td align="center"><a href="https://twitter.com/peer_rich"><img src="https://avatars.githubusercontent.com/u/8019099?v=4?s=180" width="180px;" alt=""/><br /><b>Peer Richelsen</b></a></td>
     </tr>
   </tbody>
 </table>
@@ -30,6 +30,7 @@ Also, if your company using tRPC and want to support long-term maintenance of tR
     <tr>
       <td align="center"><a href="http://Youarerad.org"><img src="https://avatars.githubusercontent.com/u/22589564?v=4?s=150" width="150px;" alt=""/><br /><sub><b>Jason Docton</b></sub></a></td>
       <td align="center"><a href="https://ping.gg/"><img src="https://avatars.githubusercontent.com/u/89191727?v=4?s=150" width="150px;" alt=""/><br /><sub><b>Ping Labs</b></sub></a></td>
+      <td align="center"><a href="https://www.prisma.io"><img src="https://avatars.githubusercontent.com/u/17219288?v=4?s=150" width="150px;" alt=""/><br /><sub><b>Prisma</b></sub></a></td>
     </tr>
   </tbody>
 </table>
@@ -49,8 +50,6 @@ Also, if your company using tRPC and want to support long-term maintenance of tR
     </tr>
   </tbody>
 </table>
-
-### 😻 Individuals
 
 ### 😻 Individuals
 
@@ -90,6 +89,12 @@ Also, if your company using tRPC and want to support long-term maintenance of tR
       <td align="center"><a href="https://www.linkedin.com/in/zomars/"><img src="https://avatars.githubusercontent.com/u/3504472?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Omar López</b></sub></a></td>
       <td align="center"><a href="https://tryhackme.com/p/zast99"><img src="https://avatars.githubusercontent.com/u/29718978?v=4?s=60" width="60px;" alt=""/><br /><sub><b>Mateo Carriquí</b></sub></a></td>
       <td align="center"><a href="https://ixahmedxi.me"><img src="https://avatars.githubusercontent.com/u/20271968?v=4?s=60" width="60px;" alt=""/><br /><sub><b>Ahmed Elsakaan</b></sub></a></td>
+      <td align="center"><a href="https://github.com/iway1"><img src="https://avatars.githubusercontent.com/u/12774588?v=4?s=60" width="60px;" alt=""/><br /><sub><b>iway1</b></sub></a><br /><a href="#financial-iway1" title="Financial">💵</a></td>
+    </tr>
+    <tr>
+      <td align="center"><a href="https://clebek.dev"><img src="https://avatars.githubusercontent.com/u/59960385?v=4?s=60" width="60px;" alt=""/><br /><sub><b>Carsten Lebek</b></sub></a><br /><a href="#example-carstenlebek" title="Examples">💡</a></td>
+      <td align="center"><a href="https://chrisbradley.dev"><img src="https://avatars.githubusercontent.com/u/11767079?v=4?s=60" width="60px;" alt=""/><br /><sub><b>Chris Bradley</b></sub></a><br /><a href="#financial-chrisbradleydev" title="Financial">💵</a></td>
+      <td align="center"><a href="https://github.com/Sven1106"><img src="https://avatars.githubusercontent.com/u/28002895?v=4?s=60" width="60px;" alt=""/><br /><sub><b>Svend Aage Roperos Nielsen</b></sub></a><br /><a href="#financial-Sven1106" title="Financial">💵</a></td>
     </tr>
   </tbody>
 </table>
