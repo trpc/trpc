@@ -1,4 +1,5 @@
-import { CombinedDataTransformer, ProcedureParams, ProcedureType } from '..';
+import { ProcedureParams, ProcedureType } from '..';
+import { ContentType, DefaultContentTypes } from '../content-type';
 import { CreateRootConfig, RootConfig } from '../core/internals/config';
 import { getParseFnOrPassThrough } from '../core/internals/getParseFn';
 import { mergeWithoutOverrides } from '../core/internals/mergeWithoutOverrides';
@@ -115,7 +116,7 @@ export type MigrateRouter<
         ctx: TInputContext;
         errorShape: TErrorShape;
         meta: TMeta;
-        transformer: CombinedDataTransformer;
+        contentTypes: ContentType[];
       }>,
       TQueries,
       'query'
@@ -125,7 +126,7 @@ export type MigrateRouter<
           ctx: TInputContext;
           errorShape: TErrorShape;
           meta: TMeta;
-          transformer: CombinedDataTransformer;
+          contentTypes: ContentType[];
         }>,
         TMutations,
         'mutation'
@@ -135,7 +136,7 @@ export type MigrateRouter<
           ctx: TInputContext;
           errorShape: TErrorShape;
           meta: TMeta;
-          transformer: CombinedDataTransformer;
+          contentTypes: ContentType[];
         }>,
         TSubscriptions,
         'subscription'
@@ -220,8 +221,18 @@ export function migrateRouter<TOldRouter extends AnyOldRouter>(
 
   const procedures = mergeWithoutOverrides(queries, mutations, subscriptions);
 
+  const contentType: ContentType = {
+    key: '_default',
+    headerValue: 'application/json',
+    fromResponse: async (res) =>
+      transformer.output.deserialize(JSON.parse(await res.text())),
+    toBody: (data) => JSON.stringify(transformer.output.serialize(data)),
+    fromString: (str) => transformer.input.deserialize(JSON.parse(str)),
+    toString: (data) => JSON.stringify(transformer.input.serialize(data)),
+  };
+
   const newRouter = createRouterFactory<any>({
-    transformer,
+    contentTypes: [contentType],
     errorFormatter,
   })(procedures);
 

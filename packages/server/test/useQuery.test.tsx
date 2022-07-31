@@ -6,10 +6,14 @@ import React, { useEffect } from 'react';
 import { InfiniteData } from 'react-query';
 import { z } from 'zod';
 import { initTRPC } from '../src';
+import { jsonContentType } from '../src/content-type';
 
 const ctx = konn()
   .beforeEach(() => {
     const t = initTRPC()({
+      contentTypes: {
+        json: jsonContentType,
+      },
       errorFormatter({ shape }) {
         return {
           ...shape,

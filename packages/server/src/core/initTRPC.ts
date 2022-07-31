@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/ban-types */
 import { mergeRoutersGeneric } from './internals/__generated__/mergeRoutersGeneric';
+import { ContentType, defaultContentTypes } from '../content-type';
 import {
   DefaultErrorShape,
   ErrorFormatter,
@@ -41,30 +42,30 @@ export function initTRPC<TParams extends Partial<InitGenerics> = {}>() {
       TOptions['errorFormatter'],
       ErrorFormatter<$Context, DefaultErrorShape>
     >;
-    type $Transformer = TOptions['transformer'] extends DataTransformerOptions
-      ? TOptions['transformer'] extends DataTransformerOptions
-        ? CombinedDataTransformer
-        : DefaultDataTransformer
-      : DefaultDataTransformer;
+    // type $Transformer = TOptions['transformer'] extends DataTransformerOptions
+    //   ? TOptions['transformer'] extends DataTransformerOptions
+    //     ? CombinedDataTransformer
+    //     : DefaultDataTransformer
+    //   : DefaultDataTransformer;
     type $ErrorShape = ErrorFormatterShape<$Formatter>;
 
     type $Config = CreateRootConfig<{
       ctx: $Context;
       meta: $Meta;
       errorShape: $ErrorShape;
-      transformer: $Transformer;
+      contentTypes: ContentType[];
     }>;
 
+    const contentTypes = options?.contentTypes ?? defaultContentTypes;
     const errorFormatter = options?.errorFormatter ?? defaultFormatter;
-    const transformer = getDataTransformer(
-      options?.transformer ?? defaultTransformer,
-    ) as $Transformer;
+
     const _config: $Config = {
-      transformer,
+      contentTypes,
       errorShape: null as any,
       ctx: null as any,
       meta: null as any,
     };
+
     return {
       /**
        * These are just types, they can't be used
@@ -84,7 +85,7 @@ export function initTRPC<TParams extends Partial<InitGenerics> = {}>() {
        */
       router: createRouterFactory<$Config>({
         errorFormatter,
-        transformer,
+        contentTypes,
       }),
       /**
        * Merge Routers

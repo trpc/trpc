@@ -33,11 +33,9 @@ type GetInputOptions = {
 } & ({ inputs: unknown[] } | { input: unknown });
 
 function getInput(opts: GetInputOptions) {
-  return 'input' in opts
-    ? opts.runtime.transformer.serialize(opts.input)
-    : arrayToDict(
-        opts.inputs.map((_input) => opts.runtime.transformer.serialize(_input)),
-      );
+  const input = 'input' in opts ? opts.input : arrayToDict(opts.inputs);
+
+  return opts.runtime.contentType.toString(input);
 }
 
 export type HTTPRequestOptions = HTTPLinkOptions &
@@ -55,7 +53,7 @@ export function getUrl(opts: HTTPRequestOptions) {
   if (opts.type === 'query') {
     const input = getInput(opts);
     if (input !== undefined) {
-      queryParts.push(`input=${encodeURIComponent(JSON.stringify(input))}`);
+      queryParts.push(`input=${encodeURIComponent(input)}`);
     }
   }
   if (queryParts.length) {
@@ -71,7 +69,7 @@ export function getBody(opts: GetBodyOptions) {
     return undefined;
   }
   const input = getInput(opts);
-  return input !== undefined ? JSON.stringify(input) : undefined;
+  return input;
 }
 
 export function httpRequest(

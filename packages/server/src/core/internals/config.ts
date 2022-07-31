@@ -1,3 +1,4 @@
+import { ContentType } from '../../content-type';
 import { ErrorFormatter } from '../../error/formatter';
 import {
   CombinedDataTransformer,
@@ -17,7 +18,7 @@ export interface InitGenerics {
  * @internal
  */
 export interface InitOptions<T extends InitGenerics> {
-  transformer: DataTransformerOptions;
+  contentTypes: ContentType[];
   errorFormatter: ErrorFormatter<T['ctx'], any>;
 }
 
@@ -32,7 +33,7 @@ export type CreateInitGenerics<T extends InitGenerics> = T;
  * @internal
  */
 export interface RootConfig extends InitGenerics {
-  transformer: CombinedDataTransformer;
+  contentTypes: ContentType[];
   // FIXME this should probably be restricted
   errorShape: any;
 }

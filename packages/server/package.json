@@ -93,6 +93,11 @@
       "import": "./dist/shared/index.mjs",
       "require": "./dist/shared/index.js",
       "default": "./dist/shared/index.js"
+    },
+    "./content-type": {
+      "import": "./dist/content-type/index.mjs",
+      "require": "./dist/content-type/index.js",
+      "default": "./dist/content-type/index.js"
     }
   },
   "files": [

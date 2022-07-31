@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/ban-types */
 import { inferProcedureOutput } from '.';
 import { Filter, Prefixer } from '..';
+import { ContentType } from '../content-type';
 import { TRPCError } from '../error/TRPCError';
 import {
   DefaultErrorShape,
@@ -10,7 +11,7 @@ import {
 import { getHTTPStatusCodeFromError } from '../http/internals/getHTTPStatusCode';
 import { TRPCErrorShape, TRPC_ERROR_CODES_BY_KEY } from '../rpc';
 import { createProxy } from '../shared';
-import { CombinedDataTransformer, defaultTransformer } from '../transformer';
+import { defaultTransformer } from '../transformer';
 import { RootConfig } from './internals/config';
 import { mergeWithoutOverrides } from './internals/mergeWithoutOverrides';
 import { omitPrototype } from './internals/omitPrototype';
@@ -79,7 +80,7 @@ export interface RouterDef<
    */
   _meta: TMeta;
   errorFormatter: ErrorFormatter<TContext, TErrorShape>;
-  transformer: CombinedDataTransformer;
+  contentTypes: ContentType[];
   // FIXME this is slow
   procedures: Filter<TRecord, Procedure<any>> &
     SimpleFlatten<PrefixedProcedures<TRecord>>;
@@ -164,8 +165,6 @@ export interface Router<TDef extends AnyRouterDef> {
   >;
   /** @deprecated **/
   errorFormatter: TDef['errorFormatter'];
-  /** @deprecated **/
-  transformer: TDef['transformer'];
   createCaller: RouterCaller<TDef>;
   // FIXME rename me and deprecate
   getErrorShape(opts: {
@@ -182,7 +181,7 @@ export interface Router<TDef extends AnyRouterDef> {
  */
 export type RouterDefaultOptions<TContext> = Pick<
   AnyRouterDef<TContext>,
-  'transformer' | 'errorFormatter'
+  'contentTypes' | 'errorFormatter'
 >;
 
 /**
@@ -216,7 +215,7 @@ const emptyRouter = {
  * @internal
  */
 export function createRouterFactory<TConfig extends RootConfig>(
-  defaults?: RouterDefaultOptions<TConfig['ctx']>,
+  defaults: RouterDefaultOptions<TConfig['ctx']>,
 ) {
   return function createRouterInner<
     TProcRouterRecord extends ProcedureRouterRecord,
@@ -251,8 +250,8 @@ export function createRouterFactory<TConfig extends RootConfig>(
       RouterDefaultOptions<TConfig['ctx']> & RouterBuildOptions<TConfig['ctx']>
     >(
       {
-        transformer: defaults?.transformer ?? defaultTransformer,
-        errorFormatter: defaults?.errorFormatter ?? defaultFormatter,
+        contentTypes: defaults.contentTypes,
+        errorFormatter: defaults.errorFormatter,
       },
       { procedures: routerProcedures },
     );
@@ -280,7 +279,6 @@ export function createRouterFactory<TConfig extends RootConfig>(
     const router: AnyRouter = {
       ...opts,
       _def,
-      transformer: _def.transformer,
       errorFormatter: _def.errorFormatter,
       createCaller(ctx) {
         const proxy = createProxy(({ path, args }) => {

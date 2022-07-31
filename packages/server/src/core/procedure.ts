@@ -1,3 +1,4 @@
+import { ContentType } from '../content-type';
 import { DefaultErrorShape } from '../error/formatter';
 import { CombinedDataTransformer } from '../transformer';
 import { RootConfig } from './internals/config';
@@ -24,7 +25,7 @@ export interface ProcedureOptions {
  */
 export interface ProcedureParams<
   TConfig extends RootConfig = {
-    transformer: CombinedDataTransformer;
+    contentTypes: ContentType[];
     errorShape: DefaultErrorShape;
     ctx: Record<string, unknown>;
     meta: Record<string, unknown>;

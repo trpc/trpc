@@ -1,12 +1,12 @@
 import {
   AnyRouter,
   ClientDataTransformerOptions,
-  DataTransformer,
   inferHandlerInput,
   inferProcedureInput,
   inferProcedureOutput,
   inferSubscriptionOutput,
 } from '@trpc/server';
+import { ContentType, jsonContentType } from '@trpc/server/content-type';
 import {
   Observer,
   Unsubscribable,
@@ -59,6 +59,7 @@ interface CreateTRPCClientBaseOptions {
    * @link https://trpc.io/docs/data-transformers
    **/
   transformer?: ClientDataTransformerOptions;
+  contentType?: ContentType;
 }
 
 /** @internal */
@@ -107,23 +108,24 @@ export class TRPCClient<TRouter extends AnyRouter> {
       return () => ({});
     }
 
-    const transformer: DataTransformer = opts.transformer
-      ? 'input' in opts.transformer
-        ? {
-            serialize: opts.transformer.input.serialize,
-            deserialize: opts.transformer.output.deserialize,
-          }
-        : opts.transformer
-      : {
-          serialize: (data) => data,
-          deserialize: (data) => data,
-        };
+    // const transformer: DataTransformer = opts.transformer
+    //   ? 'input' in opts.transformer
+    //     ? {
+    //         serialize: opts.transformer.input.serialize,
+    //         deserialize: opts.transformer.output.deserialize,
+    //       }
+    //     : opts.transformer
+    //   : {
+    //       serialize: (data) => data,
+    //       deserialize: (data) => data,
+    //     };
 
     this.runtime = {
       AbortController: AC as any,
       fetch: _fetch,
       headers: getHeadersFn(),
-      transformer,
+      // transformer,
+      contentType: opts.contentType ?? jsonContentType,
     };
 
     if ('links' in opts) {
