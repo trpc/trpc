@@ -1,13 +1,13 @@
-import { AnyRouter } from '../core/router';
+import { ContentType } from '../content-type';
 import { TRPCResponse, TRPCResponseMessage } from '../rpc';
 
 function transformTRPCResponseItem<
   TResponseItem extends TRPCResponse | TRPCResponseMessage,
->(router: AnyRouter, item: TResponseItem): TResponseItem {
+>(contentType: ContentType, item: TResponseItem): TResponseItem {
   if ('error' in item) {
     return {
       ...item,
-      error: router._def.transformer.output.serialize(item.error),
+      error: contentType.toString(item.error),
     };
   }
 
@@ -16,7 +16,7 @@ function transformTRPCResponseItem<
       ...item,
       result: {
         ...item.result,
-        data: router._def.transformer.output.serialize(item.result.data),
+        data: contentType.toString(item.result.data),
       },
     };
   }
@@ -33,8 +33,8 @@ export function transformTRPCResponse<
     | TRPCResponse[]
     | TRPCResponseMessage
     | TRPCResponseMessage[],
->(router: AnyRouter, itemOrItems: TResponse) {
+>(contentType: ContentType, itemOrItems: TResponse) {
   return Array.isArray(itemOrItems)
-    ? itemOrItems.map((item) => transformTRPCResponseItem(router, item))
-    : transformTRPCResponseItem(router, itemOrItems);
+    ? itemOrItems.map((item) => transformTRPCResponseItem(contentType, item))
+    : transformTRPCResponseItem(contentType, itemOrItems);
 }

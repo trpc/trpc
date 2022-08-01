@@ -1,5 +1,5 @@
 import { ProcedureParams, ProcedureType } from '..';
-import { ContentType, DefaultContentTypes } from '../content-type';
+import { ContentType } from '../content-type';
 import { CreateRootConfig, RootConfig } from '../core/internals/config';
 import { getParseFnOrPassThrough } from '../core/internals/getParseFn';
 import { mergeWithoutOverrides } from '../core/internals/mergeWithoutOverrides';

@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
+import { ContentType } from '../content-type';
 import {
   AnyRouter,
   ProcedureType,
@@ -7,7 +8,6 @@ import {
 } from '../core';
 import { TRPCError } from '../error/TRPCError';
 import { getCauseFromUnknown, getErrorFromUnknown } from '../error/utils';
-import { transformTRPCResponse } from '../internals/transformTRPCResponse';
 import { TRPCResponse } from '../rpc';
 import { Maybe } from '../types';
 import { getHTTPStatusCode } from './internals/getHTTPStatusCode';
@@ -26,16 +26,22 @@ const HTTP_METHOD_PROCEDURE_TYPE_MAP: Record<
   POST: 'mutation',
   PATCH: 'subscription',
 };
-function getRawProcedureInputOrThrow(req: HTTPRequest) {
+function getRawProcedureInputOrThrow(opts: {
+  req: HTTPRequest;
+  contentType: ContentType;
+}) {
+  const { req, contentType } = opts;
   try {
     if (req.method === 'GET') {
       if (!req.query.has('input')) {
         return undefined;
       }
       const raw = req.query.get('input');
-      return JSON.parse(raw!);
+      return contentType.fromString(raw!);
     }
-    return typeof req.body === 'string' ? JSON.parse(req.body) : req.body;
+    return typeof req.body === 'string'
+      ? contentType.fromString(req.body)
+      : req.body;
   } catch (err) {
     throw new TRPCError({
       code: 'PARSE_ERROR',
@@ -68,6 +74,18 @@ export async function resolveHTTPResponse<
   }
   const type =
     HTTP_METHOD_PROCEDURE_TYPE_MAP[req.method] ?? ('unknown' as const);
+
+  const contentTypeKey = req.query.get('content') ?? '_default';
+  const contentType = router._def.contentTypes.find(
+    (contentType) => contentType.key === contentTypeKey,
+  );
+  if (!contentType) {
+    throw new TRPCError({
+      code: 'BAD_REQUEST',
+      message: `Unknown content type ${contentTypeKey}`,
+    });
+  }
+
   let ctx: inferRouterContext<TRouter> | undefined = undefined;
   let paths: string[] | undefined = undefined;
 
@@ -75,13 +93,13 @@ export async function resolveHTTPResponse<
   type TRouterError = inferRouterError<TRouter>;
   type TRouterResponse = TRPCResponse<unknown, TRouterError>;
 
-  function endResponse(
-    untransformedJSON: TRouterResponse | TRouterResponse[],
+  const endResponse = (
+    response: TRouterResponse | TRouterResponse[],
     errors: TRPCError[],
-  ): HTTPResponse {
-    let status = getHTTPStatusCode(untransformedJSON);
+  ): HTTPResponse => {
+    let status = getHTTPStatusCode(response);
     const headers: HTTPHeaders = {
-      'Content-Type': 'application/json',
+      'Content-Type': contentType.headerValue,
     };
 
     const meta =
@@ -89,9 +107,7 @@ export async function resolveHTTPResponse<
         ctx,
         paths,
         type,
-        data: Array.isArray(untransformedJSON)
-          ? untransformedJSON
-          : [untransformedJSON],
+        data: Array.isArray(response) ? response : [response],
         errors,
       }) ?? {};
 
@@ -102,16 +118,14 @@ export async function resolveHTTPResponse<
       status = meta.status;
     }
 
-    const transformedJSON = transformTRPCResponse(router, untransformedJSON);
-
-    const body = JSON.stringify(transformedJSON);
+    const body = contentType.toString(response);
 
     return {
       body,
       status,
       headers,
     };
-  }
+  };
 
   try {
     if (opts.error) {
@@ -126,20 +140,15 @@ export async function resolveHTTPResponse<
         code: 'METHOD_NOT_SUPPORTED',
       });
     }
-    const rawInput = getRawProcedureInputOrThrow(req);
+    const rawInput = getRawProcedureInputOrThrow({ req, contentType });
 
     paths = isBatchCall ? opts.path.split(',') : [opts.path];
     ctx = await createContext();
 
-    const deserializeInputValue = (rawValue: unknown) => {
-      return typeof rawValue !== 'undefined'
-        ? router._def.transformer.input.deserialize(rawValue)
-        : rawValue;
-    };
     const getInputs = (): Record<number, unknown> => {
       if (!isBatchCall) {
         return {
-          0: deserializeInputValue(rawInput),
+          0: rawInput,
         };
       }
 
@@ -153,16 +162,8 @@ export async function resolveHTTPResponse<
           message: '"input" needs to be an object when doing a batch call',
         });
       }
-      const input: Record<number, unknown> = {};
-      for (const key in rawInput) {
-        const k = key as any as number;
-        const rawValue = (rawInput as any)[k];
 
-        const value = deserializeInputValue(rawValue);
-
-        input[k] = value;
-      }
-      return input;
+      return rawInput;
     };
     const inputs = getInputs();
 

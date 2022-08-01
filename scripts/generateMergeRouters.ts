@@ -9,6 +9,7 @@ const NUM_ARGS = 20;
 const BASE = `
  import { AnyRouter, AnyRouterDef, Router } from "../../router";
  import { mergeRouters } from '../mergeRouters';
+ import { ContentType } from '../../../content-type';
  
  `.trim();
 
@@ -24,7 +25,7 @@ const TEMPLATE = `
   _ctx: RP0['_ctx'];
   _errorShape: RP0['_errorShape'];
   _meta: RP0['_meta'];
-  transformer: RP0['transformer'];
+  contentTypes: ContentType[];
   errorFormatter: RP0['errorFormatter'];
   queries: __queries__;
   mutations: __mutations__;

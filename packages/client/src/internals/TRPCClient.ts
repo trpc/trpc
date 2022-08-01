@@ -108,23 +108,10 @@ export class TRPCClient<TRouter extends AnyRouter> {
       return () => ({});
     }
 
-    // const transformer: DataTransformer = opts.transformer
-    //   ? 'input' in opts.transformer
-    //     ? {
-    //         serialize: opts.transformer.input.serialize,
-    //         deserialize: opts.transformer.output.deserialize,
-    //       }
-    //     : opts.transformer
-    //   : {
-    //       serialize: (data) => data,
-    //       deserialize: (data) => data,
-    //     };
-
     this.runtime = {
       AbortController: AC as any,
       fetch: _fetch,
       headers: getHeadersFn(),
-      // transformer,
       contentType: opts.contentType ?? jsonContentType,
     };
 
@@ -176,7 +163,7 @@ export class TRPCClient<TRouter extends AnyRouter> {
       (resolve, reject) => {
         promise
           .then((result) => {
-            const transformed = transformOperationResult(result, this.runtime);
+            const transformed = transformOperationResult(result);
             if (transformed.ok) {
               resolve(transformed.data);
               return;
@@ -245,13 +232,9 @@ export class TRPCClient<TRouter extends AnyRouter> {
       input,
       context: opts.context,
     });
-    const runtime = this.runtime;
     return observable$.subscribe({
       next(result) {
-        const transformed = transformSubscriptionOperationResult(
-          result,
-          runtime,
-        );
+        const transformed = transformSubscriptionOperationResult(result);
         if (transformed.ok) {
           opts.next?.(transformed.data);
           return;

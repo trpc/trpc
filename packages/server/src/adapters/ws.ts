@@ -109,13 +109,14 @@ export function applyWSSHandler<TRouter extends AnyRouter>(
   opts: WSSHandlerOptions<TRouter>,
 ) {
   const { wss, createContext, router } = opts;
-  // @ts-ignore
+  // @ts-expect-errorr rea
   const { transformer } = router._def;
   wss.on('connection', async (client, req) => {
     const clientSubscriptions = new Map<number | string, Unsubscribable>();
 
     function respond(untransformedJSON: TRPCResponseMessage) {
       client.send(
+        // @ts-expect-errorr rea
         JSON.stringify(transformTRPCResponse(router, untransformedJSON)),
       );
     }

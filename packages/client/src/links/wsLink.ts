@@ -1,4 +1,5 @@
 import { AnyRouter, ProcedureType } from '@trpc/server';
+import { ContentType, jsonContentType } from '@trpc/server/content-type';
 import { UnsubscribeFn, observable } from '@trpc/server/observable';
 import {
   TRPCClientIncomingMessage,
@@ -15,12 +16,14 @@ export interface WebSocketClientOptions {
   url: string;
   WebSocket?: typeof WebSocket;
   retryDelayMs?: typeof retryDelay;
+  contentType?: ContentType;
 }
 export function createWSClient(opts: WebSocketClientOptions) {
   const {
     url,
     WebSocket: WebSocketImpl = WebSocket,
     retryDelayMs: retryDelayFn = retryDelay,
+    contentType = jsonContentType,
   } = opts;
   /* istanbul ignore next */
   if (!WebSocketImpl) {
@@ -64,10 +67,10 @@ export function createWSClient(opts: WebSocketClientOptions) {
 
       if (outgoing.length === 1) {
         // single send
-        activeConnection.send(JSON.stringify(outgoing.pop()));
+        activeConnection.send(contentType.toString(outgoing.pop()));
       } else {
         // batch send
-        activeConnection.send(JSON.stringify(outgoing));
+        activeConnection.send(contentType.toString(outgoing));
       }
       // clear
       outgoing = [];
@@ -165,7 +168,7 @@ export function createWSClient(opts: WebSocketClientOptions) {
       }
     };
     conn.addEventListener('message', ({ data }) => {
-      const msg = JSON.parse(data) as TRPCClientIncomingMessage;
+      const msg = contentType.fromString(data) as TRPCClientIncomingMessage;
 
       if ('method' in msg) {
         handleIncomingRequest(msg);
@@ -284,7 +287,7 @@ export function wsLink<TRouter extends AnyRouter>(
       return observable((observer) => {
         const { type, path, id, context } = op;
 
-        const input = runtime.transformer.serialize(op.input);
+        const input = runtime.contentType.toString(op.input);
 
         let isDone = false;
         const unsub = client.request(

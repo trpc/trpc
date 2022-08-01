@@ -219,7 +219,7 @@ export function withTRPC<
         };
 
         // dehydrate query client's state and add it to the props
-        pageProps.trpcState = trpcClient.runtime.transformer.serialize(
+        pageProps.trpcState = trpcClient.runtime.contentType.toString(
           dehydratedCacheWithErrors,
         );
 

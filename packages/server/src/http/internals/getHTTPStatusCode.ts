@@ -28,8 +28,8 @@ function getStatusCodeFromKey(code: keyof typeof TRPC_ERROR_CODES_BY_KEY) {
   return JSONRPC2_TO_HTTP_CODE[code] ?? 500;
 }
 
-export function getHTTPStatusCode(json: TRPCResponse | TRPCResponse[]) {
-  const arr = Array.isArray(json) ? json : [json];
+export function getHTTPStatusCode(response: TRPCResponse | TRPCResponse[]) {
+  const arr = Array.isArray(response) ? response : [response];
   const httpStatuses = new Set(
     arr.map((res) => {
       if ('error' in res) {

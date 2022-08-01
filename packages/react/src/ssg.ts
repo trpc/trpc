@@ -1,15 +1,14 @@
 import {
   AnyRouter,
-  ClientDataTransformerOptions,
   assertNotBrowser,
   callProcedure,
   inferHandlerInput,
   inferProcedureOutput,
   inferRouterContext,
 } from '@trpc/server';
+import { ContentType, jsonContentType } from '@trpc/server/content-type';
 import {
   DehydrateOptions,
-  DehydratedState,
   InfiniteData,
   QueryClient,
   dehydrate,
@@ -22,7 +21,7 @@ assertNotBrowser();
 export interface CreateSSGHelpersOptions<TRouter extends AnyRouter> {
   router: TRouter;
   ctx: inferRouterContext<TRouter>;
-  transformer?: ClientDataTransformerOptions;
+  contentType?: ContentType;
   queryClientConfig?: QueryClientConfig;
 }
 
@@ -31,16 +30,12 @@ export interface CreateSSGHelpersOptions<TRouter extends AnyRouter> {
  */
 export function createSSGHelpers<TRouter extends AnyRouter>({
   router,
-  transformer,
+  contentType = jsonContentType,
   ctx,
   queryClientConfig,
 }: CreateSSGHelpersOptions<TRouter>) {
   type TQueries = TRouter['_def']['queries'];
   const queryClient = new QueryClient(queryClientConfig);
-
-  const serialize = transformer
-    ? ('input' in transformer ? transformer.input : transformer).serialize
-    : (obj: unknown) => obj;
 
   const prefetchQuery = async <
     TPath extends keyof TQueries & string,
@@ -119,9 +114,9 @@ export function createSSGHelpers<TRouter extends AnyRouter>({
         return true;
       },
     },
-  ): DehydratedState {
+  ): string {
     const before = dehydrate(queryClient, opts);
-    const after = serialize(before);
+    const after = contentType.toString(before);
     return after;
   }
 

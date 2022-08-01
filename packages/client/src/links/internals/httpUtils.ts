@@ -22,7 +22,7 @@ const METHOD = {
 } as const;
 
 export interface ResponseShape {
-  json: unknown;
+  data: unknown;
   meta: {
     response: Response;
   };
@@ -90,18 +90,18 @@ export function httpRequest(
           signal: ac?.signal,
           body: body,
           headers: {
-            'content-type': 'application/json',
+            'content-type': runtime.contentType.headerValue,
             ...headers,
           },
         }),
       )
       .then((_res) => {
         meta.response = _res;
-        return _res.json();
+        return runtime.contentType.fromResponse(_res);
       })
-      .then((json) => {
+      .then((data) => {
         resolve({
-          json,
+          data,
           meta,
         });
       })

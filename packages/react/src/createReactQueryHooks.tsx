@@ -422,14 +422,14 @@ export function createReactQueryHooks<
   }
   function useDehydratedState(
     client: TRPCClient<TRouter>,
-    trpcState: DehydratedState | undefined,
+    trpcState: string | undefined,
   ) {
-    const transformed: DehydratedState | undefined = useMemo(() => {
+    const transformed = useMemo<DehydratedState | undefined>(() => {
       if (!trpcState) {
         return trpcState;
       }
 
-      return client.runtime.transformer.deserialize(trpcState);
+      return client.runtime.contentType.fromString(trpcState);
     }, [trpcState, client]);
     return transformed;
   }

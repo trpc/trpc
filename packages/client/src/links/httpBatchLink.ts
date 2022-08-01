@@ -49,13 +49,13 @@ export function httpBatchLink<TRouter extends AnyRouter>(
 
         return {
           promise: promise.then((res) => {
-            const resJSON = Array.isArray(res.json)
-              ? res.json
-              : batchOps.map(() => res.json);
+            const resData = Array.isArray(res.data)
+              ? res.data
+              : batchOps.map(() => res.data);
 
-            const result = resJSON.map((item) => ({
+            const result = resData.map((item) => ({
               meta: res.meta,
-              json: item,
+              data: item,
             }));
 
             return result;
@@ -87,7 +87,7 @@ export function httpBatchLink<TRouter extends AnyRouter>(
           .then((res) => {
             observer.next({
               context: res.meta,
-              data: res.json as any,
+              data: res.data as any,
             });
             observer.complete();
           })
