@@ -81,6 +81,7 @@ const hooks = createReactQueryHooks<AppRouter>();
 
 const proxy = createReactQueryHooksProxy<AppRouter>(hooks);
 // => proxy.<router>.<query>.useQuery(...), 
+
 export const trpc = {
   proxy,
   ...hooks,
