@@ -108,6 +108,7 @@ If you enjoy working with tRPC and want to support me consider giving a token ap
 
 Also, if your company using tRPC and want to support long-term maintenance of tRPC, have a look at the [sponsorship tiers](https://github.com/sponsors/KATT) or [get in touch](mailto:alex@trpc.io) to discuss potential partnerships.
 
+<!-- SPONSORS:LIST:START -->
 
 ### 🥇 Gold Sponsors
 
@@ -196,6 +197,8 @@ Also, if your company using tRPC and want to support long-term maintenance of tR
     </tr>
   </tbody>
 </table>
+
+<!-- SPONSORS:LIST:START -->
 
 
 ## All contributors ✨

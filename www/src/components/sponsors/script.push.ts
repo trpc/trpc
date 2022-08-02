@@ -139,9 +139,20 @@ for (const file of files) {
   const start = '<!-- SPONSORS:LIST:START -->';
   const end = '<!-- SPONSORS:LIST:END -->';
 
+  if (str.indexOf(start) <= str.indexOf(end)) {
+    throw new Error(`Not working for ${file}`);
+  }
+
   const newContents = str.replace(
     str.substring(str.indexOf(start) + start.length, str.lastIndexOf(end)),
-    `\n\n${markdownStr}\n\n`,
+    [
+      '',
+      '<!-- prettier-ignore-start -->',
+      '<!-- markdownlint-disable -->',
+      markdownStr,
+      '<!-- markdownlint-restore -->',
+      '<!-- prettier-ignore-end -->',
+    ].join('\n'),
   );
   fs.writeFileSync(file, newContents);
 }
