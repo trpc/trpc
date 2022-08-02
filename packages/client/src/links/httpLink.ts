@@ -22,7 +22,7 @@ export function httpLink<TRouter extends AnyRouter>(
           .then((res) => {
             observer.next({
               context: res.meta,
-              data: res.json as any,
+              data: res.data as any,
             });
             observer.complete();
           })

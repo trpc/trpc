@@ -1,9 +1,9 @@
 import { IncomingMessage } from 'http';
 import ws from 'ws';
+import { ContentType, jsonContentType } from '../content-type';
 import { AnyRouter, ProcedureType, inferRouterContext } from '../core';
 import { TRPCError } from '../error/TRPCError';
 import { getCauseFromUnknown, getErrorFromUnknown } from '../error/utils';
-import { transformTRPCResponse } from '../internals/transformTRPCResponse';
 import { BaseHandlerOptions } from '../internals/types';
 import { Unsubscribable, isObservable } from '../observable';
 import {
@@ -12,7 +12,6 @@ import {
   TRPCReconnectNotification,
   TRPCResponseMessage,
 } from '../rpc';
-import { CombinedDataTransformer } from '../transformer';
 import {
   NodeHTTPCreateContextFnOptions,
   NodeHTTPCreateContextOption,
@@ -57,10 +56,7 @@ function assertIsJSONRPC2OrUndefined(
     throw new Error('Must be JSONRPC 2.0');
   }
 }
-function parseMessage(
-  obj: unknown,
-  transformer: CombinedDataTransformer,
-): TRPCClientOutgoingMessage {
+function parseMessage(obj: unknown): TRPCClientOutgoingMessage {
   assertIsObject(obj);
   const { method, params, id, jsonrpc } = obj;
   assertIsRequestId(id);
@@ -75,9 +71,8 @@ function parseMessage(
   assertIsProcedureType(method);
   assertIsObject(params);
 
-  const { input: rawInput, path } = params;
+  const { input, path } = params;
   assertIsString(path);
-  const input = transformer.input.deserialize(rawInput);
   return {
     id,
     jsonrpc,
@@ -98,6 +93,7 @@ export type WSSHandlerOptions<TRouter extends AnyRouter> = BaseHandlerOptions<
 > & {
   wss: ws.Server;
   process?: NodeJS.Process;
+  contentType?: ContentType;
 } & NodeHTTPCreateContextOption<TRouter, IncomingMessage, ws>;
 
 export type CreateWSSContextFnOptions = NodeHTTPCreateContextFnOptions<
@@ -108,17 +104,12 @@ export type CreateWSSContextFnOptions = NodeHTTPCreateContextFnOptions<
 export function applyWSSHandler<TRouter extends AnyRouter>(
   opts: WSSHandlerOptions<TRouter>,
 ) {
-  const { wss, createContext, router } = opts;
-  // @ts-expect-errorr rea
-  const { transformer } = router._def;
+  const { wss, createContext, router, contentType = jsonContentType } = opts;
   wss.on('connection', async (client, req) => {
     const clientSubscriptions = new Map<number | string, Unsubscribable>();
 
-    function respond(untransformedJSON: TRPCResponseMessage) {
-      client.send(
-        // @ts-expect-errorr rea
-        JSON.stringify(transformTRPCResponse(router, untransformedJSON)),
-      );
+    function respond(untransformed: TRPCResponseMessage) {
+      client.send(contentType.toString(untransformed));
     }
 
     function stopSubscription(
@@ -266,10 +257,10 @@ export function applyWSSHandler<TRouter extends AnyRouter>(
     }
     client.on('message', async (message) => {
       try {
-        const msgJSON: unknown = JSON.parse(message.toString());
-        const msgs: unknown[] = Array.isArray(msgJSON) ? msgJSON : [msgJSON];
+        const msgData: unknown = contentType.fromString(message.toString());
+        const msgs: unknown[] = Array.isArray(msgData) ? msgData : [msgData];
         const promises = msgs
-          .map((raw) => parseMessage(raw, transformer))
+          .map((raw) => parseMessage(raw))
           .map(handleRequest);
         await Promise.all(promises);
       } catch (cause) {

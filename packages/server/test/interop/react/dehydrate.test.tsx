@@ -3,6 +3,7 @@ import { createLegacyAppRouter } from './__testHelpers';
 import '@testing-library/jest-dom';
 import { setLogger } from 'react-query';
 import { createSSGHelpers } from '../../../../react/src/ssg';
+import { jsonContentType } from '../../../src/content-type';
 
 setLogger({
   log() {},
@@ -25,7 +26,7 @@ test('dehydrate', async () => {
   await ssg.prefetchQuery('allPosts');
   await ssg.fetchQuery('postById', '1');
 
-  const dehydrated = ssg.dehydrate().queries;
+  const dehydrated = jsonContentType.fromString(ssg.dehydrate()).queries;
   expect(dehydrated).toHaveLength(2);
 
   const [cache, cache2] = dehydrated;

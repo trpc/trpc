@@ -16,6 +16,7 @@ const config = getRollupConfig({
     // Utils that can be shared with clients
     'src/shared/index.ts',
     'src/content-type/index.ts',
+    'src/content-type/superjson.ts',
   ],
 });
 
