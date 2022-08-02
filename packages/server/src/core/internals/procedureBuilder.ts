@@ -81,24 +81,6 @@ export interface ProcedureBuilder<TParams extends ProcedureParams> {
   ): $ProcedureReturnInput extends ProcedureBuilder<infer $TParams>
     ? CreateProcedureReturnInput<TParams, $TParams>
     : never;
-
-  /** @deprecated **/
-  resolve<$TOutput>(
-    resolver: (
-      opts: ResolveOptions<TParams>,
-    ) => MaybePromise<FallbackValue<TParams['_output_in'], $TOutput>>,
-  ): UnsetMarker extends TParams['_output_out']
-    ? Procedure<
-        Overwrite<
-          TParams,
-          {
-            _output_in: $TOutput;
-            _output_out: $TOutput;
-          }
-        >
-      >
-    : Procedure<TParams>;
-
   /**
    * Query procedure
    */
@@ -228,10 +210,6 @@ export function createBuilder<TConfig extends RootConfig>(
       return createNewBuilder(_def, {
         meta: meta as Record<string, unknown>,
       }) as AnyProcedureBuilder;
-    },
-    /** @deprecated **/
-    resolve(resolver) {
-      return createResolver(_def, resolver);
     },
     unstable_concat(builder) {
       return createNewBuilder(_def, builder._def) as any;
