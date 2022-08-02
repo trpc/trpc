@@ -5,15 +5,14 @@ sidebar_label: Sponsors
 slug: /sponsors
 ---
 
-
 If you enjoy working with tRPC and want to support me consider giving a token appreciation by [GitHub Sponsors](https://github.com/sponsors/KATT)!
 
 Also, if your company using tRPC and want to support long-term maintenance of tRPC, have a look at the [sponsorship tiers](https://github.com/sponsors/KATT) or [get in touch](mailto:alex@trpc.io) to discuss potential partnerships.
 
-
 <!-- SPONSORS:LIST:START -->
 <!-- prettier-ignore-start -->
 <!-- markdownlint-disable -->
+
 ### 🥇 Gold Sponsors
 
 <table>
@@ -96,6 +95,7 @@ Also, if your company using tRPC and want to support long-term maintenance of tR
    <td align="center"><a href="https://dyaa.me"><img src="https://avatars.githubusercontent.com/u/4283185?u=c0eefe0bfb37b34dedb7765ba2a061cfac30be55&v=4&s=100" width="100" alt="Dyaa"/><br />Dyaa</a></td>
   </tr>
 </table>
+
 <!-- markdownlint-restore -->
 <!-- prettier-ignore-end -->
 <!-- SPONSORS:LIST:END -->

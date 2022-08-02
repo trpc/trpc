@@ -111,6 +111,7 @@ Also, if your company using tRPC and want to support long-term maintenance of tR
 <!-- SPONSORS:LIST:START -->
 <!-- prettier-ignore-start -->
 <!-- markdownlint-disable -->
+
 ### 🥇 Gold Sponsors
 
 <table>
@@ -193,6 +194,7 @@ Also, if your company using tRPC and want to support long-term maintenance of tR
    <td align="center"><a href="https://dyaa.me"><img src="https://avatars.githubusercontent.com/u/4283185?u=c0eefe0bfb37b34dedb7765ba2a061cfac30be55&v=4&s=100" width="100" alt="Dyaa"/><br />Dyaa</a></td>
   </tr>
 </table>
+
 <!-- markdownlint-restore -->
 <!-- prettier-ignore-end -->
 <!-- SPONSORS:LIST:END -->
