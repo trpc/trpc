@@ -35,6 +35,8 @@ function flattenSponsor(node: Node) {
     link,
     privacyLevel: node.privacyLevel,
     multiplier: 1 + getMultiplier(Date.parse(node.createdAt)),
+    login: node.sponsorEntity.login,
+    createdAt: Date.parse(node.createdAt),
   };
 }
 async function getGithubSponsors() {
@@ -111,7 +113,7 @@ async function main() {
   const sponsors = await getGithubSponsors();
   const json = JSON.stringify(sponsors, null, 2);
 
-  const text = `export const sponsors = ${json}`;
+  const text = `export const sponsors = ${json} as const`;
 
   fs.writeFileSync(__dirname + '/script.output.ts', text);
 }

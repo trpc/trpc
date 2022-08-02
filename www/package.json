@@ -11,7 +11,10 @@
     "deploy": "docusaurus deploy",
     "serve": "docusaurus serve",
     "clear": "docusaurus clear",
-    "sponsors-pull": "yarn ts-node ./src/components/sponsors/script.ts",
+    "sponsors-sync:pull": "yarn ts-node ./src/components/sponsors/script.pull.ts",
+    "sponsors-sync:push": "yarn ts-node ./src/components/sponsors/script.push.ts",
+    "sponsors-sync:lint-fix": "cd .. && yarn lint-fix",
+    "sponsors-sync": "run-s sponsors-sync:*",
     "tweetwall-pull": "yarn ts-node ./src/components/TwitterWall/script.ts",
     "ts-node": "ts-node --compiler-options '{\"module\":\"commonjs\"}'"
   },
