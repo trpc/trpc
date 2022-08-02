@@ -5,7 +5,7 @@ export const sponsors = [
     "monthlyPriceInDollars": 10,
     "link": "https://react-hook-form.com",
     "privacyLevel": "PUBLIC",
-    "multiplier": 11.046087805555556,
+    "multiplier": 11.047110775077162,
     "login": "bluebill1049",
     "createdAt": 1633435620000
   },
@@ -15,7 +15,7 @@ export const sponsors = [
     "monthlyPriceInDollars": 15,
     "link": "https://dyaa.me",
     "privacyLevel": "PUBLIC",
-    "multiplier": 1.0106414320987653,
+    "multiplier": 1.0116644016203704,
     "login": "dyaa",
     "createdAt": 1659447497000
   },
@@ -25,7 +25,7 @@ export const sponsors = [
     "monthlyPriceInDollars": 3,
     "link": "https://hampuskraft.com",
     "privacyLevel": "PUBLIC",
-    "multiplier": 14.61322823765432,
+    "multiplier": 14.614251207175926,
     "login": "hampuskraft",
     "createdAt": 1624189592000
   },
@@ -35,7 +35,7 @@ export const sponsors = [
     "monthlyPriceInDollars": 10,
     "link": "https://solberg.is",
     "privacyLevel": "PUBLIC",
-    "multiplier": 2.583605938271605,
+    "multiplier": 2.58462890779321,
     "login": "jokull",
     "createdAt": 1655370373000
   },
@@ -45,7 +45,7 @@ export const sponsors = [
     "monthlyPriceInDollars": 10,
     "link": "https://anthonyshort.me",
     "privacyLevel": "PUBLIC",
-    "multiplier": 14.940820444444444,
+    "multiplier": 14.94184341396605,
     "login": "anthonyshort",
     "createdAt": 1623340473000
   },
@@ -55,7 +55,7 @@ export const sponsors = [
     "monthlyPriceInDollars": 3,
     "link": "https://github.com/jzimmek",
     "privacyLevel": "PUBLIC",
-    "multiplier": 12.467758716049383,
+    "multiplier": 12.468781685570988,
     "login": "jzimmek",
     "createdAt": 1629750649000
   },
@@ -65,7 +65,7 @@ export const sponsors = [
     "monthlyPriceInDollars": 10,
     "link": "https://patrickjs.com",
     "privacyLevel": "PUBLIC",
-    "multiplier": 3.8887178209876545,
+    "multiplier": 3.889740790509259,
     "login": "PatrickJS",
     "createdAt": 1651987523000
   },
@@ -75,7 +75,7 @@ export const sponsors = [
     "monthlyPriceInDollars": 3,
     "link": "https://github.com/danielyogel",
     "privacyLevel": "PUBLIC",
-    "multiplier": 13.932747913580247,
+    "multiplier": 13.933770883101852,
     "login": "danielyogel",
     "createdAt": 1625953397000
   },
@@ -85,7 +85,7 @@ export const sponsors = [
     "monthlyPriceInDollars": 10,
     "link": "https://maxgreenwald.me",
     "privacyLevel": "PUBLIC",
-    "multiplier": 11.544574688271606,
+    "multiplier": 11.545597657793211,
     "login": "mgreenw",
     "createdAt": 1632143542000
   },
@@ -95,7 +95,7 @@ export const sponsors = [
     "monthlyPriceInDollars": 5,
     "link": "https://www.linkedin.com/in/zomars/",
     "privacyLevel": "PUBLIC",
-    "multiplier": 2.110520290123457,
+    "multiplier": 2.111543259645062,
     "login": "zomars",
     "createdAt": 1656596611000
   },
@@ -105,7 +105,7 @@ export const sponsors = [
     "monthlyPriceInDollars": 5,
     "link": "https://www.illarionvk.com",
     "privacyLevel": "PUBLIC",
-    "multiplier": 7.907664580246913,
+    "multiplier": 7.908687549768519,
     "login": "illarionvk",
     "createdAt": 1641570413000
   },
@@ -115,7 +115,7 @@ export const sponsors = [
     "monthlyPriceInDollars": 10,
     "link": "https://github.com/dmaykov",
     "privacyLevel": "PUBLIC",
-    "multiplier": 2.1417270802469135,
+    "multiplier": 2.1427500497685186,
     "login": "dmaykov",
     "createdAt": 1656515723000
   },
@@ -125,7 +125,7 @@ export const sponsors = [
     "monthlyPriceInDollars": 5,
     "link": "https://iamkhan.io",
     "privacyLevel": "PUBLIC",
-    "multiplier": 6.717087419753087,
+    "multiplier": 6.718110389274692,
     "login": "SchlagerKhan",
     "createdAt": 1644656389000
   },
@@ -135,7 +135,7 @@ export const sponsors = [
     "monthlyPriceInDollars": 5,
     "link": "https://t3.gg",
     "privacyLevel": "PUBLIC",
-    "multiplier": 11.720235953703703,
+    "multiplier": 11.721258923225308,
     "login": "TheoBr",
     "createdAt": 1631688228000
   },
@@ -145,7 +145,7 @@ export const sponsors = [
     "monthlyPriceInDollars": 10,
     "link": "https://timcole.me",
     "privacyLevel": "PUBLIC",
-    "multiplier": 7.648229780864198,
+    "multiplier": 7.649252750385803,
     "login": "timcole",
     "createdAt": 1642242868000
   },
@@ -155,7 +155,7 @@ export const sponsors = [
     "monthlyPriceInDollars": 50,
     "link": "https://standardresume.co/r/ryan-edge",
     "privacyLevel": "PUBLIC",
-    "multiplier": 9.975033407407407,
+    "multiplier": 9.976056376929012,
     "login": "chimon2000",
     "createdAt": 1636211793000
   },
@@ -165,7 +165,7 @@ export const sponsors = [
     "monthlyPriceInDollars": 10,
     "link": "https://github.com/LoriKarikari",
     "privacyLevel": "PUBLIC",
-    "multiplier": 1.3476692098765433,
+    "multiplier": 1.3486921793981481,
     "login": "LoriKarikari",
     "createdAt": 1658573921000
   },
@@ -175,7 +175,7 @@ export const sponsors = [
     "monthlyPriceInDollars": 10,
     "link": "https://samholmes.net",
     "privacyLevel": "PUBLIC",
-    "multiplier": 13.585828546296296,
+    "multiplier": 13.586851515817902,
     "login": "sam3d",
     "createdAt": 1626852612000
   },
@@ -185,7 +185,7 @@ export const sponsors = [
     "monthlyPriceInDollars": 10,
     "link": "https://github.com/lmatheus",
     "privacyLevel": "PUBLIC",
-    "multiplier": 2.2290025432098766,
+    "multiplier": 2.2300255127314816,
     "login": "lmatheus",
     "createdAt": 1656289505000
   },
@@ -195,7 +195,7 @@ export const sponsors = [
     "monthlyPriceInDollars": 20,
     "link": "https://yorick.sh",
     "privacyLevel": "PUBLIC",
-    "multiplier": 7.273114811728395,
+    "multiplier": 7.27413778125,
     "login": "ethangclark",
     "createdAt": 1643215166000
   },
@@ -205,7 +205,7 @@ export const sponsors = [
     "monthlyPriceInDollars": 10,
     "link": "https://farazpatankar.com/",
     "privacyLevel": "PUBLIC",
-    "multiplier": 5.480517975308642,
+    "multiplier": 5.481540944830247,
     "login": "FarazPatankar",
     "createdAt": 1647861577000
   },
@@ -215,7 +215,7 @@ export const sponsors = [
     "monthlyPriceInDollars": 10,
     "link": "https://chrisbradley.dev",
     "privacyLevel": "PUBLIC",
-    "multiplier": 1.832958175925926,
+    "multiplier": 1.833981145447531,
     "login": "chrisbradleydev",
     "createdAt": 1657316052000
   },
@@ -225,7 +225,7 @@ export const sponsors = [
     "monthlyPriceInDollars": 10,
     "link": "https://github.com/iway1",
     "privacyLevel": "PUBLIC",
-    "multiplier": 1.5599400432098767,
+    "multiplier": 1.5609630127314813,
     "login": "iway1",
     "createdAt": 1658023715000
   },
@@ -235,7 +235,7 @@ export const sponsors = [
     "monthlyPriceInDollars": 10,
     "link": "https://blog.lucasviana.dev",
     "privacyLevel": "PUBLIC",
-    "multiplier": 6.192333561728395,
+    "multiplier": 6.19335653125,
     "login": "mechamobau",
     "createdAt": 1646016551000
   },
@@ -245,7 +245,7 @@ export const sponsors = [
     "monthlyPriceInDollars": 5,
     "link": "https://jwyce.gg",
     "privacyLevel": "PUBLIC",
-    "multiplier": 6.192928083333333,
+    "multiplier": 6.193951052854938,
     "login": "jwyce",
     "createdAt": 1646015010000
   },
@@ -255,7 +255,7 @@ export const sponsors = [
     "monthlyPriceInDollars": 250,
     "link": "https://www.prisma.io",
     "privacyLevel": "PUBLIC",
-    "multiplier": 1.3817023888888889,
+    "multiplier": 1.382725358410494,
     "login": "prisma",
     "createdAt": 1658485707000
   },
@@ -265,7 +265,7 @@ export const sponsors = [
     "monthlyPriceInDollars": 10,
     "link": "https://ixahmedxi.me",
     "privacyLevel": "PUBLIC",
-    "multiplier": 1.6482070185185185,
+    "multiplier": 1.6492299880401236,
     "login": "ixahmedxi",
     "createdAt": 1657794927000
   },
@@ -275,7 +275,7 @@ export const sponsors = [
     "monthlyPriceInDollars": 250,
     "link": "https://Youarerad.org",
     "privacyLevel": "PUBLIC",
-    "multiplier": 6.399576231481482,
+    "multiplier": 6.400599201003087,
     "login": "JasonDocton",
     "createdAt": 1645479378000
   },
@@ -285,7 +285,7 @@ export const sponsors = [
     "monthlyPriceInDollars": 10,
     "link": "https://github.com/Sven1106",
     "privacyLevel": "PUBLIC",
-    "multiplier": 1.6000897345679013,
+    "multiplier": 1.6011127040895061,
     "login": "Sven1106",
     "createdAt": 1657919647000
   },
@@ -295,7 +295,7 @@ export const sponsors = [
     "monthlyPriceInDollars": 10,
     "link": "https://tryhackme.com/p/zast99",
     "privacyLevel": "PUBLIC",
-    "multiplier": 1.6643135,
+    "multiplier": 1.665336469521605,
     "login": "system32uwu",
     "createdAt": 1657753179000
   },
@@ -305,7 +305,7 @@ export const sponsors = [
     "monthlyPriceInDollars": 5,
     "link": "https://github.com/utevo",
     "privacyLevel": "PUBLIC",
-    "multiplier": 7.24548286728395,
+    "multiplier": 7.2465058368055555,
     "login": "utevo",
     "createdAt": 1643286788000
   },
@@ -315,7 +315,7 @@ export const sponsors = [
     "monthlyPriceInDollars": 5,
     "link": "http://www.ivanbuncic.com",
     "privacyLevel": "PUBLIC",
-    "multiplier": 2.635431555555556,
+    "multiplier": 2.6364545250771605,
     "login": "ivanbuncic",
     "createdAt": 1655236041000
   },
@@ -325,7 +325,7 @@ export const sponsors = [
     "monthlyPriceInDollars": 10,
     "link": "https://lindeneg.org/",
     "privacyLevel": "PUBLIC",
-    "multiplier": 6.537568515432099,
+    "multiplier": 6.538591484953704,
     "login": "Lindeneg",
     "createdAt": 1645121702000
   },
@@ -335,7 +335,7 @@ export const sponsors = [
     "monthlyPriceInDollars": 5,
     "link": "https://github.com/okaforcj",
     "privacyLevel": "PUBLIC",
-    "multiplier": 5.365585490740741,
+    "multiplier": 5.366608460262346,
     "login": "okaforcj",
     "createdAt": 1648159482000
   },
@@ -345,7 +345,7 @@ export const sponsors = [
     "monthlyPriceInDollars": 500,
     "link": "https://render.com",
     "privacyLevel": "PUBLIC",
-    "multiplier": 6.497028006172839,
+    "multiplier": 6.4980509756944445,
     "login": "renderinc",
     "createdAt": 1645226783000
   },
@@ -355,7 +355,7 @@ export const sponsors = [
     "monthlyPriceInDollars": 50,
     "link": "https://www.newfront.com",
     "privacyLevel": "PUBLIC",
-    "multiplier": 12.596348608024691,
+    "multiplier": 12.597371577546296,
     "login": "newfront-insurance",
     "createdAt": 1629417344000
   },
@@ -365,7 +365,7 @@ export const sponsors = [
     "monthlyPriceInDollars": 10,
     "link": "https://github.com/aslaker",
     "privacyLevel": "PUBLIC",
-    "multiplier": 2.543853237654321,
+    "multiplier": 2.544876207175926,
     "login": "aslaker",
     "createdAt": 1655473412000
   },
@@ -375,7 +375,7 @@ export const sponsors = [
     "monthlyPriceInDollars": 20,
     "link": "https://github.com/nihinihi01",
     "privacyLevel": "PUBLIC",
-    "multiplier": 6.44369737345679,
+    "multiplier": 6.444720342978395,
     "login": "nihinihi01",
     "createdAt": 1645365016000
   },
@@ -385,7 +385,7 @@ export const sponsors = [
     "monthlyPriceInDollars": 5,
     "link": "https://github.com/zzacong",
     "privacyLevel": "PUBLIC",
-    "multiplier": 1.1611503055555557,
+    "multiplier": 1.1621732750771605,
     "login": "zzacong",
     "createdAt": 1659057378000
   },
@@ -395,7 +395,7 @@ export const sponsors = [
     "monthlyPriceInDollars": 10,
     "link": "https://github.com/Memory-Lane-Games",
     "privacyLevel": "PUBLIC",
-    "multiplier": 11.077397219135802,
+    "multiplier": 11.078420188657407,
     "login": "Memory-Lane-Games",
     "createdAt": 1633354466000
   },
@@ -405,7 +405,7 @@ export const sponsors = [
     "monthlyPriceInDollars": 50,
     "link": "https://flylance.com",
     "privacyLevel": "PUBLIC",
-    "multiplier": 4.188167666666667,
+    "multiplier": 4.189190636188272,
     "login": "flylance-apps",
     "createdAt": 1651211349000
   },
@@ -415,7 +415,7 @@ export const sponsors = [
     "monthlyPriceInDollars": 50,
     "link": "https://www.snaplet.dev",
     "privacyLevel": "PUBLIC",
-    "multiplier": 9.737459333333334,
+    "multiplier": 9.738482302854939,
     "login": "snaplet",
     "createdAt": 1636827585000
   },
@@ -425,7 +425,7 @@ export const sponsors = [
     "monthlyPriceInDollars": 50,
     "link": "https://github.com/hidrb",
     "privacyLevel": "PUBLIC",
-    "multiplier": 11.200772604938273,
+    "multiplier": 11.201795574459878,
     "login": "hidrb",
     "createdAt": 1633034677000
   },
@@ -435,7 +435,7 @@ export const sponsors = [
     "monthlyPriceInDollars": 1000,
     "link": "https://cal.com",
     "privacyLevel": "PUBLIC",
-    "multiplier": 2.1162610308641976,
+    "multiplier": 2.1172840003858022,
     "login": "calcom",
     "createdAt": 1656581731000
   },
@@ -445,7 +445,7 @@ export const sponsors = [
     "monthlyPriceInDollars": 250,
     "link": "https://ping.gg/",
     "privacyLevel": "PUBLIC",
-    "multiplier": 6.3958663549382715,
+    "multiplier": 6.396889324459877,
     "login": "pingdotgg",
     "createdAt": 1645488994000
   }
