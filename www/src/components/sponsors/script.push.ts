@@ -94,7 +94,7 @@ const markdown: string[] = [];
 
 for (const [k, config] of Object.entries(bucketConfig)) {
   const key = k as keyof Buckets;
-  markdown.push(`## ${config.title}`);
+  markdown.push(`### ${config.title}`);
 
   const cols = buckets[key].map(
     (sponsor) =>
