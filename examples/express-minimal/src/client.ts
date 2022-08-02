@@ -7,7 +7,7 @@ global.fetch = fetch as any;
 
 async function main() {
   const client = createTRPCClient<AppRouter>({
-    url: 'http://localhost:2021/trpc',
+    url: 'http://localhost:3000/trpc',
   });
   const proxy = createTRPCClientProxy(client);
 

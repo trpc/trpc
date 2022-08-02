@@ -6,6 +6,9 @@ async function main() {
   // express implementation
   const app = express();
 
+  // For testing purposes, wait-on requests '/'
+  app.get('/', (_req, res) => res.send('Server is running!'));
+
   app.use(
     '/trpc',
     createExpressMiddleware({
@@ -13,7 +16,7 @@ async function main() {
       createContext: () => ({}),
     }),
   );
-  app.listen(2021);
+  app.listen(3000);
 }
 
 main();
