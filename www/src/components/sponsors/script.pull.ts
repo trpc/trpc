@@ -113,7 +113,11 @@ async function main() {
   const sponsors = await getGithubSponsors();
   const json = JSON.stringify(sponsors, null, 2);
 
-  const text = `export const sponsors = ${json} as const`;
+  const text = [
+    '// prettier-ignore',
+    '',
+    `export const sponsors = ${json} as const`,
+  ].join('\n');
 
   fs.writeFileSync(__dirname + '/script.output.ts', text);
 }
