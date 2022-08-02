@@ -111,7 +111,7 @@ Also, if your company using tRPC and want to support long-term maintenance of tR
 <!-- SPONSORS:LIST:START -->
 <!-- prettier-ignore-start -->
 <!-- markdownlint-disable -->
-## 🥇 Gold Sponsors
+### 🥇 Gold Sponsors
 
 <table>
   <tr>
@@ -120,7 +120,7 @@ Also, if your company using tRPC and want to support long-term maintenance of tR
   </tr>
 </table>
 
-## 🥈 Silver Sponsors
+### 🥈 Silver Sponsors
 
 <table>
   <tr>
@@ -130,7 +130,7 @@ Also, if your company using tRPC and want to support long-term maintenance of tR
   </tr>
 </table>
 
-## 🥉 Bronze Sponsors
+### 🥉 Bronze Sponsors
 
 <table>
   <tr>
@@ -142,7 +142,7 @@ Also, if your company using tRPC and want to support long-term maintenance of tR
   </tr>
 </table>
 
-## 😻 Individuals
+### 😻 Individuals
 
 <table>
   <tr>
