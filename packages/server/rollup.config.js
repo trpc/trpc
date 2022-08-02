@@ -3,6 +3,7 @@ import { getRollupConfig } from '../../scripts/rollup';
 const config = getRollupConfig({
   input: [
     'src/index.ts',
+    'src/adapters/aws-lambda/index.ts',
     'src/adapters/express.ts',
     'src/adapters/fastify/index.ts',
     'src/adapters/next.ts',

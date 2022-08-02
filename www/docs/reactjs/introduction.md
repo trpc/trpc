@@ -73,11 +73,19 @@ Create a set of strongly-typed React hooks from your `AppRouter` type signature 
 
 ```tsx title='utils/trpc.ts'
 // utils/trpc.ts
-import { createReactQueryHooks } from '@trpc/react';
+import { createReactQueryHooks, createReactQueryHooksProxy } from '@trpc/react';
 import type { AppRouter } from '../path/to/router.ts';
 
-export const trpc = createReactQueryHooks<AppRouter>();
+const hooks = createReactQueryHooks<AppRouter>();
 // => { useQuery: ..., useMutation: ...}
+
+const proxy = createReactQueryHooksProxy<AppRouter>(hooks);
+// => proxy.<router>.<query>.useQuery(...), 
+
+export const trpc = {
+  proxy,
+  ...hooks,
+}
 ```
 
 #### 3. Add tRPC providers

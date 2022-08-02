@@ -173,7 +173,7 @@ export default trpc.withTRPC(MyApp);
 import { trpc } from '../utils/trpc';
 
 export default function IndexPage() {
-  const hello = trpc.useQuery(['hello', { text: 'client' }]);
+  const hello = trpc.proxy.hello.useQuery({ text: 'client' });
   if (!hello.data) {
     return <div>Loading...</div>;
   }
