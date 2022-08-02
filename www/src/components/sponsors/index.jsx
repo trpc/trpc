@@ -15,7 +15,7 @@ export function Sponsors() {
   const root = React.useMemo(
     () =>
       hierarchy(pack)
-        .sum((d) => 1 + d?.monthlyPriceInDollars * d?.multiplier)
+        .sum((d) => d?.monthlyPriceInDollars * Math.max(d?.multiplier, 1))
         .sort(
           (a, b) =>
             (b.data.monthlyPriceInDollars * b.data.multiplier ?? 0) -
