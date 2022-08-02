@@ -113,12 +113,15 @@ for (const [k, config] of Object.entries(bucketConfig)) {
     rowsMatrix[rowsMatrix.length - 1].push(col);
   }
 
-  const table = `<table>\n${rowsMatrix
-    .map(
-      (cols) =>
-        `  <tr>\n${cols.map((col) => `    ${col}`).join('\n')}\n  </tr>`,
-    )
-    .join('\n')}\n</table>`;
+  let table = '<table>';
+  for (const row of rowsMatrix) {
+    table += '\n  <tr>';
+    for (const col of row) {
+      table += `\n   ${col}`;
+    }
+    table += '\n  </tr>';
+  }
+  table += '\n</table>';
 
   markdown.push(table);
 }
