@@ -20,6 +20,7 @@ export interface ProcedureOptions {
 }
 
 /**
+ * FIXME: this should only take 1 generic argument instead of a list
  * @internal
  */
 export interface ProcedureParams<
