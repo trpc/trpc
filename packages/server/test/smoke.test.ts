@@ -1,9 +1,12 @@
 /* eslint-disable @typescript-eslint/ban-types */
 import { routerToServerAndClientNew, waitError } from './___testHelpers';
-import { TRPCClientError } from '@trpc/client';
+import { waitFor } from '@testing-library/react';
+import { TRPCClientError, wsLink } from '@trpc/client';
+import { EventEmitter } from 'events';
 import { expectTypeOf } from 'expect-type';
 import { z } from 'zod';
 import { inferProcedureParams, initTRPC } from '../src';
+import { Unsubscribable, observable } from '../src/observable';
 
 const t = initTRPC<{
   ctx: {
@@ -150,4 +153,54 @@ test('flat router', async () => {
 
   expect(merged.hello).toBe(hello);
   expect(merged.child.bye).toBe(bye);
+});
+
+test('subscriptions', async () => {
+  const ee = new EventEmitter();
+
+  const subscriptionMock = jest.fn();
+  const startedMock = jest.fn();
+  const dataMock = jest.fn();
+  const completeMock = jest.fn();
+
+  const router = t.router({
+    onEvent: t.procedure.input(z.number()).subscription(({ input }) => {
+      subscriptionMock(input);
+      return observable<number>((emit) => {
+        const onData = (data: number) => emit.next(data + input);
+        ee.on('data', onData);
+        return () => {
+          ee.off('data', onData);
+        };
+      });
+    }),
+  });
+
+  const { proxy, close } = routerToServerAndClientNew(router, {
+    client: ({ wsClient }) => ({
+      links: [wsLink({ client: wsClient })],
+    }),
+  });
+
+  const subscription = proxy.onEvent.subscribe(10, {
+    next: (result) => {
+      if (result.type === 'started') startedMock();
+      if (result.type === 'data') dataMock(result.data);
+    },
+    complete: completeMock,
+  });
+
+  expectTypeOf(subscription).toMatchTypeOf<Unsubscribable>();
+  await waitFor(() => expect(startedMock).toBeCalledTimes(1));
+  await waitFor(() => expect(subscriptionMock).toBeCalledTimes(1));
+  await waitFor(() => expect(subscriptionMock).toHaveBeenNthCalledWith(1, 10));
+
+  ee.emit('data', 20);
+  await waitFor(() => expect(dataMock).toBeCalledTimes(1));
+  await waitFor(() => expect(dataMock).toHaveBeenNthCalledWith(1, 30));
+
+  subscription.unsubscribe();
+  await waitFor(() => expect(completeMock).toBeCalledTimes(1));
+
+  close();
 });
