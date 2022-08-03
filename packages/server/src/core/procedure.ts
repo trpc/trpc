@@ -80,6 +80,16 @@ export type ProcedureArgs<TParams extends ProcedureParams> =
     : [input: TParams['_input_in'], opts?: ProcedureOptions];
 
 /**
+ * @internal
+ */
+export type SubscriptionProcedureArgs<TParams extends ProcedureParams> =
+  TParams['_input_in'] extends UnsetMarker
+    ? [input?: undefined | void, opts?: ProcedureOptions]
+    : undefined extends TParams['_input_in']
+    ? [input?: TParams['_input_in'] | void, opts?: ProcedureOptions]
+    : [input: TParams['_input_in'], opts?: ProcedureOptions];
+
+/**
  *
  * @internal
  */
