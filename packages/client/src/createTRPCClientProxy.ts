@@ -64,8 +64,11 @@ type DecoratedProcedureRecord<
   TProcedures extends ProcedureRouterRecord,
   TRouter extends AnyRouter,
 > = {
-  [TKey in keyof TProcedures]: TProcedures[TKey] extends TRouter
-    ? DecoratedProcedureRecord<TProcedures[TKey]['_def']['record'], TRouter>
+  [TKey in keyof TProcedures]: TProcedures[TKey] extends AnyRouter
+    ? DecoratedProcedureRecord<
+        TProcedures[TKey]['_def']['record'],
+        TProcedures[TKey]
+      >
     : DecorateProcedure<assertProcedure<TProcedures[TKey]>, TRouter>;
 };
 
