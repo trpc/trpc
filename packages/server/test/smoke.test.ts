@@ -164,23 +164,15 @@ test('subscriptions', async () => {
   const onCompleteMock = jest.fn();
 
   const router = t.router({
-    // onEvent: t.procedure.input(z.number()).subscription(({ input }) => {
-    //   subscriptionMock(input);
-    //   return observable<number>((emit) => {
-    //     const onData = (data: number) => emit.next(data + input);
-    //     ee.on('data', onData);
-    //     return () => {
-    //       ee.off('data', onData);
-    //     };
-    //   });
-    // }),
-    onEvent: t.procedure.input(z.number()).subscription(({ input, emit }) => {
+    onEvent: t.procedure.input(z.number()).subscription(({ input }) => {
       subscriptionMock(input);
-      const onData = (data: number) => emit.next(data + input);
-      ee.on('data', onData);
-      return () => {
-        ee.off('data', onData);
-      };
+      return observable<number>((emit) => {
+        const onData = (data: number) => emit.next(data + input);
+        ee.on('data', onData);
+        return () => {
+          ee.off('data', onData);
+        };
+      });
     }),
   });
 
