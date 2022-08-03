@@ -75,6 +75,12 @@ export interface UseTRPCMutationOptions<
 > extends UseMutationOptions<TOutput, TError, TInput, TContext>,
     TRPCUseQueryBaseOptions {}
 
+export interface UseTRPCSubscriptionOptions<TOutput, TError> {
+  enabled?: boolean;
+  error?: (err: TError) => void;
+  next: (data: TOutput) => void;
+}
+
 function getClientArgs<TPathAndInput extends unknown[], TOptions>(
   pathAndInput: TPathAndInput,
   opts: TOptions,
