@@ -11,14 +11,16 @@ import type {
   inferProcedureOutput,
 } from '@trpc/server';
 import type {
-  Observer,
   Unsubscribable,
   inferObservableValue,
 } from '@trpc/server/observable';
 import type { TRPCResultMessage } from '@trpc/server/rpc';
 import { createProxy } from '@trpc/server/shared';
 import { TRPCClientError } from './TRPCClientError';
-import { TRPCClient as Client } from './internals/TRPCClient';
+import {
+  TRPCClient as Client,
+  TRPCSubscriptionObserver,
+} from './internals/TRPCClient';
 
 type Resolver<TProcedure extends Procedure<any>> = (
   ...args: ProcedureArgs<TProcedure['_def']>
@@ -32,7 +34,7 @@ type SubscriptionResolver<
     input: ProcedureArgs<TProcedure['_def']>[0],
     opts: ProcedureArgs<TProcedure['_def']>[1] &
       Partial<
-        Observer<
+        TRPCSubscriptionObserver<
           TRPCResultMessage<
             inferObservableValue<inferProcedureOutput<TProcedure>>
           >,

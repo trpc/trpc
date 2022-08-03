@@ -159,20 +159,28 @@ test('subscriptions', async () => {
   const ee = new EventEmitter();
 
   const subscriptionMock = jest.fn();
-  const startedMock = jest.fn();
-  const dataMock = jest.fn();
-  const completeMock = jest.fn();
+  const onStartedMock = jest.fn();
+  const onDataMock = jest.fn();
+  const onCompleteMock = jest.fn();
 
   const router = t.router({
-    onEvent: t.procedure.input(z.number()).subscription(({ input }) => {
+    // onEvent: t.procedure.input(z.number()).subscription(({ input }) => {
+    //   subscriptionMock(input);
+    //   return observable<number>((emit) => {
+    //     const onData = (data: number) => emit.next(data + input);
+    //     ee.on('data', onData);
+    //     return () => {
+    //       ee.off('data', onData);
+    //     };
+    //   });
+    // }),
+    onEvent: t.procedure.input(z.number()).subscription(({ input, emit }) => {
       subscriptionMock(input);
-      return observable<number>((emit) => {
-        const onData = (data: number) => emit.next(data + input);
-        ee.on('data', onData);
-        return () => {
-          ee.off('data', onData);
-        };
-      });
+      const onData = (data: number) => emit.next(data + input);
+      ee.on('data', onData);
+      return () => {
+        ee.off('data', onData);
+      };
     }),
   });
 
@@ -183,24 +191,22 @@ test('subscriptions', async () => {
   });
 
   const subscription = proxy.onEvent.subscribe(10, {
-    next: (result) => {
-      if (result.type === 'started') startedMock();
-      if (result.type === 'data') dataMock(result.data);
-    },
-    complete: completeMock,
+    onStarted: onStartedMock,
+    onData: onDataMock,
+    onComplete: onCompleteMock,
   });
 
   expectTypeOf(subscription).toMatchTypeOf<Unsubscribable>();
-  await waitFor(() => expect(startedMock).toBeCalledTimes(1));
+  await waitFor(() => expect(onStartedMock).toBeCalledTimes(1));
   await waitFor(() => expect(subscriptionMock).toBeCalledTimes(1));
   await waitFor(() => expect(subscriptionMock).toHaveBeenNthCalledWith(1, 10));
 
   ee.emit('data', 20);
-  await waitFor(() => expect(dataMock).toBeCalledTimes(1));
-  await waitFor(() => expect(dataMock).toHaveBeenNthCalledWith(1, 30));
+  await waitFor(() => expect(onDataMock).toBeCalledTimes(1));
+  await waitFor(() => expect(onDataMock).toHaveBeenNthCalledWith(1, 30));
 
   subscription.unsubscribe();
-  await waitFor(() => expect(completeMock).toBeCalledTimes(1));
+  await waitFor(() => expect(onCompleteMock).toBeCalledTimes(1));
 
   close();
 });

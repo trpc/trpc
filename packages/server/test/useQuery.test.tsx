@@ -49,10 +49,9 @@ const ctx = konn()
           )
           .mutation(() => `__mutationResult` as const),
         onEvent: t.procedure.input(z.number()).subscription(({ input }) => {
-          return observable<number | 'opened'>((emit) => {
+          return observable<number>((emit) => {
             const onData = (data: number) => emit.next(data + input);
             ee.on('data', onData);
-            emit.next('opened');
             return () => {
               ee.off('data', onData);
             };
@@ -192,8 +191,9 @@ test('deprecated routers', async () => {
 });
 
 test('useSubscription', async () => {
-  const nextMock = jest.fn();
-  const errorMock = jest.fn();
+  const onStartedMock = jest.fn();
+  const onDataMock = jest.fn();
+  const onErrorMock = jest.fn();
 
   const { App, proxy } = ctx;
 
@@ -203,15 +203,15 @@ test('useSubscription', async () => {
 
     proxy.post.onEvent.useSubscription(10, {
       enabled: true,
-      next: (result) => {
-        nextMock(result);
-        if (result === 'opened') {
-          setIsOpen(true);
-        } else {
-          setValue(result);
-        }
+      onStarted: () => {
+        onStartedMock();
+        setIsOpen(true);
       },
-      error: errorMock,
+      onData: (result) => {
+        onDataMock(result);
+        setValue(result);
+      },
+      onError: onErrorMock,
     });
 
     if (!isOpen) {
@@ -234,11 +234,12 @@ test('useSubscription', async () => {
   await waitFor(() =>
     expect(utils.container).toHaveTextContent(`__connecting`),
   );
-  expect(nextMock).toHaveBeenCalledTimes(0);
+  expect(onDataMock).toHaveBeenCalledTimes(0);
+  expect(onStartedMock).toHaveBeenCalledTimes(0);
   await waitFor(() => expect(utils.container).toHaveTextContent(`__connected`));
-  expect(nextMock).toHaveBeenCalledTimes(1);
+  expect(onStartedMock).toHaveBeenCalledTimes(1);
   ee.emit('data', 20);
   await waitFor(() => expect(utils.container).toHaveTextContent(`__value:30`));
-  expect(nextMock).toHaveBeenCalledTimes(2);
-  expect(errorMock).toHaveBeenCalledTimes(0);
+  expect(onDataMock).toHaveBeenCalledTimes(1);
+  expect(onErrorMock).toHaveBeenCalledTimes(0);
 });
