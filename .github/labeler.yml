@@ -1,6 +1,9 @@
 '📚 documentation / examples':
-  - www/**
+  - www/docs/**
   - examples/**
+'🕸 www':
+  - www/**
+  - !www/docs/**
 '@trpc/server':
   - packages/server/**
 '@trpc/client':
