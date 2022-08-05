@@ -44,7 +44,6 @@
     "lint": "eslint --ext \".js,.ts,.tsx\" --ignore-path .gitignore .",
     "lint-fix": "yarn lint --fix && manypkg fix",
     "codegen:generateBigBoi": "yarn ts-node scripts/generateBigBoi.ts",
-    "codegen:entrypoints": "yarn ts-node scripts/entrypoints.ts",
     "codegen:generateMergeRouters": "yarn ts-node scripts/generateMergeRouters.ts",
     "codegen": "run-p codegen:*",
     "ts-node": "ts-node --compiler-options '{\"module\":\"commonjs\"}'",
