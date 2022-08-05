@@ -1,9 +1,15 @@
 import { httpBatchLink } from '@trpc/client/links/httpBatchLink';
 import { loggerLink } from '@trpc/client/links/loggerLink';
 import { withTRPC } from '@trpc/next';
+import { inferAsyncReturnType } from '@trpc/server';
 import { NextPage } from 'next';
 import { AppProps } from 'next/app';
-import { AppType } from 'next/dist/shared/lib/utils';
+import {
+  AppContextType,
+  AppType,
+  NextPageContext,
+} from 'next/dist/shared/lib/utils';
+import { NextRouter } from 'next/router';
 import { ReactElement, ReactNode } from 'react';
 import superjson from 'superjson';
 import { DefaultLayout } from '~/components/DefaultLayout';
@@ -14,7 +20,22 @@ export type NextPageWithLayout = NextPage & {
   getLayout?: (page: ReactElement) => ReactNode;
 };
 
-type AppPropsWithLayout = AppProps & {
+type MyCustomProps = inferAsyncReturnType<typeof getInitialProps>['pageProps'];
+type MyAppProps = AppProps &
+  inferAsyncReturnType<typeof getInitialProps>['pageProps'];
+
+const getInitialProps = async (props: AppContextType<NextRouter>) => {
+  return {
+    pageProps: {
+      myCustomProps: {
+        __hello_From_initial_props: '__hello_From_initial_props',
+        userAgent: props.ctx.req?.headers['user-agent'],
+      },
+    },
+  };
+};
+
+type AppPropsWithLayout = MyAppProps & {
   Component: NextPageWithLayout;
 };
 
@@ -22,8 +43,19 @@ const MyApp = (({ Component, pageProps }: AppPropsWithLayout) => {
   const getLayout =
     Component.getLayout ?? ((page) => <DefaultLayout>{page}</DefaultLayout>);
 
-  return getLayout(<Component {...pageProps} />);
+  const props = pageProps as MyCustomProps;
+  return (
+    <>
+      {getLayout(<Component {...pageProps} />)}
+      <h2>
+        <code>getInitialProps</code> test
+        <pre>{JSON.stringify(props.myCustomProps, null, 4)}</pre>
+      </h2>
+    </>
+  );
 }) as AppType;
+
+MyApp.getInitialProps = getInitialProps;
 
 function getBaseUrl() {
   if (typeof window !== 'undefined') {
