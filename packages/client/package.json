@@ -18,39 +18,39 @@
       ]
     }
   },
-  "main": "dist/index.js",
-  "module": "dist/index.mjs",
-  "typings": "dist/index.d.ts",
+  "main": "dist/cjs/index.js",
+  "module": "dist/esm/index.js",
+  "typings": "dist/types/index.d.ts",
   "exports": {
     ".": {
-      "import": "./dist/index.mjs",
-      "require": "./dist/index.js",
-      "default": "./dist/index.js"
+      "import": "./dist/esm/index.js",
+      "require": "./dist/cjs/index.js",
+      "default": "./dist/cjs/index.js"
     },
     "./links/httpLink": {
-      "import": "./dist/links/httpLink.mjs",
-      "require": "./dist/links/httpLink.js",
-      "default": "./dist/links/httpLink.js"
+      "import": "./dist/esm/links/httpLink.js",
+      "require": "./dist/cjs/links/httpLink.js",
+      "default": "./dist/cjs/links/httpLink.js"
     },
     "./links/httpBatchLink": {
-      "import": "./dist/links/httpBatchLink.mjs",
-      "require": "./dist/links/httpBatchLink.js",
-      "default": "./dist/links/httpBatchLink.js"
+      "import": "./dist/esm/links/httpBatchLink.js",
+      "require": "./dist/cjs/links/httpBatchLink.js",
+      "default": "./dist/cjs/links/httpBatchLink.js"
     },
     "./links/splitLink": {
-      "import": "./dist/links/splitLink.mjs",
-      "require": "./dist/links/splitLink.js",
-      "default": "./dist/links/splitLink.js"
+      "import": "./dist/esm/links/splitLink.js",
+      "require": "./dist/cjs/links/splitLink.js",
+      "default": "./dist/cjs/links/splitLink.js"
     },
     "./links/loggerLink": {
-      "import": "./dist/links/loggerLink.mjs",
-      "require": "./dist/links/loggerLink.js",
-      "default": "./dist/links/loggerLink.js"
+      "import": "./dist/esm/links/loggerLink.js",
+      "require": "./dist/cjs/links/loggerLink.js",
+      "default": "./dist/cjs/links/loggerLink.js"
     },
     "./links/wsLink": {
-      "import": "./dist/links/wsLink.mjs",
-      "require": "./dist/links/wsLink.js",
-      "default": "./dist/links/wsLink.js"
+      "import": "./dist/esm/links/wsLink.js",
+      "require": "./dist/cjs/links/wsLink.js",
+      "default": "./dist/cjs/links/wsLink.js"
     }
   },
   "files": [

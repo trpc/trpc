@@ -1,9 +1,9 @@
 {
+  "composite": true,
   "extends": "./tsconfig.json",
   "compilerOptions": {
-    "declarationDir": "dist",
-    "declarationMap": true
+    "outDir": "./dist/types"
   },
   "include": ["src"],
-  "exclude": ["**/*.test.ts"]
+  "exclude": ["**/*.test.ts", "**/*.test.tsx"]
 }
