@@ -1029,6 +1029,42 @@
       "contributions": [
         "financial"
       ]
+    },
+    {
+      "login": "francisprovost",
+      "name": "Francis Provost",
+      "avatar_url": "https://avatars.githubusercontent.com/u/6840361?v=4",
+      "profile": "http://francisprovost.com",
+      "contributions": [
+        "financial"
+      ]
+    },
+    {
+      "login": "dyaa",
+      "name": "Dyaa",
+      "avatar_url": "https://avatars.githubusercontent.com/u/4283185?v=4",
+      "profile": "https://dyaa.me",
+      "contributions": [
+        "financial"
+      ]
+    },
+    {
+      "login": "zzacong",
+      "name": "Zac Ong",
+      "avatar_url": "https://avatars.githubusercontent.com/u/61817066?v=4",
+      "profile": "https://github.com/zzacong",
+      "contributions": [
+        "financial"
+      ]
+    },
+    {
+      "login": "LoriKarikari",
+      "name": "Lori Karikari",
+      "avatar_url": "https://avatars.githubusercontent.com/u/7902980?v=4",
+      "profile": "https://github.com/LoriKarikari",
+      "contributions": [
+        "financial"
+      ]
     }
   ],
   "skipCi": true

@@ -100,7 +100,9 @@ async function getGithubSponsors() {
 
   await fetchPage();
 
-  return sponsors.filter((it) => it.privacyLevel === 'PUBLIC');
+  return sponsors
+    .filter((it) => it.privacyLevel === 'PUBLIC')
+    .sort((a, b) => a.createdAt - b.createdAt);
 }
 
 async function main() {
