@@ -1056,6 +1056,15 @@
       "contributions": [
         "financial"
       ]
+    },
+    {
+      "login": "LoriKarikari",
+      "name": "Lori Karikari",
+      "avatar_url": "https://avatars.githubusercontent.com/u/7902980?v=4",
+      "profile": "https://github.com/LoriKarikari",
+      "contributions": [
+        "financial"
+      ]
     }
   ],
   "skipCi": true
