@@ -1038,6 +1038,15 @@
       "contributions": [
         "financial"
       ]
+    },
+    {
+      "login": "dyaa",
+      "name": "Dyaa",
+      "avatar_url": "https://avatars.githubusercontent.com/u/4283185?v=4",
+      "profile": "https://dyaa.me",
+      "contributions": [
+        "financial"
+      ]
     }
   ],
   "skipCi": true
