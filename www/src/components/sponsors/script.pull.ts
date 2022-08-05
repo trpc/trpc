@@ -109,6 +109,7 @@ async function main() {
 
   const text = [
     '// prettier-ignore',
+    '// eslint-ignore',
     '',
     `export const sponsors = ${json} as const`,
     '',
