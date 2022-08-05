@@ -1,4 +1,5 @@
 // prettier-ignore
+// eslint-disable
 
 export const sponsors = [
   {
@@ -135,6 +136,15 @@ export const sponsors = [
     "privacyLevel": "PUBLIC",
     "login": "timcole",
     "createdAt": 1642242868000
+  },
+  {
+    "name": "Francis Provost",
+    "imgSrc": "https://avatars.githubusercontent.com/u/6840361?v=4",
+    "monthlyPriceInDollars": 10,
+    "link": "https://francisprovost.com",
+    "privacyLevel": "PUBLIC",
+    "login": "francisprovost",
+    "createdAt": 1659711715000
   },
   {
     "name": "Ryan",
