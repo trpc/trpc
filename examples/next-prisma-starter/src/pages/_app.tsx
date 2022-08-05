@@ -46,11 +46,11 @@ const MyApp = (({ Component, pageProps }: AppPropsWithLayout) => {
   const props = pageProps as MyCustomProps;
   return (
     <>
-      {getLayout(<Component {...pageProps} />)}
       <h2>
         <code>getInitialProps</code> test
         <pre>{JSON.stringify(props.myCustomProps, null, 4)}</pre>
       </h2>
+      {getLayout(<Component {...pageProps} />)}
     </>
   );
 }) as AppType;
