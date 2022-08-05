@@ -13,19 +13,19 @@
   "scripts": {
     "ts-watch": "tsc --project tsconfig.watch.json"
   },
-  "main": "dist/cjs/index.js",
-  "module": "dist/esm/indexjs",
-  "typings": "dist/types/index.d.ts",
+  "main": "dist/index.js",
+  "module": "dist/index.mjs",
+  "typings": "dist/index.d.ts",
   "exports": {
     ".": {
-      "import": "./dist/esm/index.js",
-      "require": "./dist/cjs/index.js",
-      "default": "./dist/cjs/index.js"
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js",
+      "default": "./dist/index.js"
     },
     "./ssg": {
-      "import": "./dist/esm/ssg.js",
-      "require": "./dist/cjs/ssg.js",
-      "default": "./dist/cjs/ssg.js"
+      "import": "./dist/ssg.mjs",
+      "require": "./dist/ssg.js",
+      "default": "./dist/ssg.js"
     }
   },
   "files": [

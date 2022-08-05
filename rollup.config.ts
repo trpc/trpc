@@ -1,7 +1,7 @@
 import { babel } from '@rollup/plugin-babel';
 import nodeResolve from '@rollup/plugin-node-resolve';
 import path from 'path';
-import { RollupOptions } from 'rollup';
+import type { RollupOptions } from 'rollup';
 import dts from 'rollup-plugin-dts';
 import externals from 'rollup-plugin-node-externals';
 
@@ -108,7 +108,8 @@ function esm({ external, input, packageDir }: Options): RollupOptions {
       format: 'esm',
       preserveModules: true,
       exports: 'named',
-      dir: `${packageDir}/dist/esm`,
+      dir: `${packageDir}/dist`,
+      entryFileNames: '[name].mjs',
     },
     plugins: [
       babelPlugin,
@@ -126,7 +127,8 @@ function cjs({ external, input, packageDir }: Options): RollupOptions {
       format: 'cjs',
       preserveModules: true,
       exports: 'named',
-      dir: `${packageDir}/dist/cjs`,
+      dir: `${packageDir}/dist`,
+      entryFileNames: '[name].js',
     },
     plugins: [
       babelPlugin,
@@ -144,7 +146,7 @@ function types({ external, input, packageDir }: Options): RollupOptions {
       format: 'esm',
       preserveModules: true,
       exports: 'named',
-      dir: `${packageDir}/dist/types`,
+      dir: `${packageDir}/dist`,
     },
     plugins: [
       babelPlugin,

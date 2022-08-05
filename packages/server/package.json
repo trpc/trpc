@@ -21,77 +21,76 @@
   },
   "scripts": {
     "test": "jest",
-    "benchmark": "yarn tsc --project tsconfig.benchmark.json",
-    "ts-watch": "tsc --project tsconfig.watch.json"
+    "benchmark": "yarn tsc --project tsconfig.benchmark.json"
   },
-  "main": "dist/cjs/index.js",
-  "module": "dist/esm/index.js",
-  "typings": "dist/typea/index.d.ts",
+  "main": "dist/index.js",
+  "module": "dist/index.mjs",
+  "typings": "dist/index.d.ts",
   "exports": {
     ".": {
-      "import": "./dist/esm/index.js",
-      "require": "./dist/cjs/index.js",
-      "default": "./dist/cjs/index.js"
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js",
+      "default": "./dist/index.js"
     },
     "./adapters/aws-lambda": {
-      "import": "./dist/esm/adapters/aws-lambda/index.js",
-      "require": "./dist/cjs/adapters/aws-lambda/index.js",
-      "default": "./dist/cjs/adapters/aws-lambda/index.js"
+      "import": "./dist/adapters/aws-lambda/index.mjs",
+      "require": "./dist/adapters/aws-lambda/index.js",
+      "default": "./dist/adapters/aws-lambda/index.js"
     },
     "./adapters/express": {
-      "import": "./dist/esm/adapters/express.js",
-      "require": "./dist/cjs/adapters/express.js",
-      "default": "./dist/cjs/adapters/express.js"
+      "import": "./dist/adapters/express.mjs",
+      "require": "./dist/adapters/express.js",
+      "default": "./dist/adapters/express.js"
     },
     "./adapters/next": {
-      "import": "./dist/esm/adapters/next.js",
-      "require": "./dist/cjs/adapters/next.js",
-      "default": "./dist/cjs/adapters/next.js"
+      "import": "./dist/adapters/next.mjs",
+      "require": "./dist/adapters/next.js",
+      "default": "./dist/adapters/next.js"
     },
     "./adapters/node-http": {
-      "import": "./dist/esm/adapters/node-http/index.js",
-      "require": "./dist/cjs/adapters/node-http/index.js",
-      "default": "./dist/cjs/adapters/node-http/index.js"
+      "import": "./dist/adapters/node-http/index.mjs",
+      "require": "./dist/adapters/node-http/index.js",
+      "default": "./dist/adapters/node-http/index.js"
     },
     "./adapters/standalone": {
-      "import": "./dist/esm/adapters/standalone.js",
-      "require": "./dist/cjs/adapters/standalone.js",
-      "default": "./dist/cjs/adapters/standalone.js"
+      "import": "./dist/adapters/standalone.mjs",
+      "require": "./dist/adapters/standalone.js",
+      "default": "./dist/adapters/standalone.js"
     },
     "./adapters/fastify": {
-      "import": "./dist/esm/adapters/fastify/index.js",
-      "require": "./dist/cjs/adapters/fastify/index.js",
-      "default": "./dist/cjs/adapters/fastify/index.js"
+      "import": "./dist/adapters/fastify/index.mjs",
+      "require": "./dist/adapters/fastify/index.js",
+      "default": "./dist/adapters/fastify/index.js"
     },
     "./adapters/ws": {
-      "import": "./dist/esm/adapters/ws.js",
-      "require": "./dist/cjs/adapters/ws.js",
-      "default": "./dist/cjs/adapters/ws.js"
+      "import": "./dist/adapters/ws.mjs",
+      "require": "./dist/adapters/ws.js",
+      "default": "./dist/adapters/ws.js"
     },
     "./adapters/fetch": {
-      "import": "./dist/esm/adapters/fetch/index.js",
-      "require": "./dist/cjs/adapters/fetch/index.js",
+      "import": "./dist/adapters/fetch/index.mjs",
+      "require": "./dist/adapters/fetch/index.js",
       "default": "./dist/adapters/fetch/index.js"
     },
     "./rpc": {
-      "import": "./dist/esm/rpc/index.js",
-      "require": "./dist/cjs/rpc/index.js",
-      "default": "./dist/cjs/rpc/index.js"
+      "import": "./dist/rpc/index.mjs",
+      "require": "./dist/rpc/index.js",
+      "default": "./dist/rpc/index.js"
     },
     "./observable": {
-      "import": "./dist/esm/observable/index.js",
-      "require": "./dist/cjs/observable/index.js",
-      "default": "./dist/cjs/observable/index.js"
+      "import": "./dist/observable/index.mjs",
+      "require": "./dist/observable/index.js",
+      "default": "./dist/observable/index.js"
     },
     "./subscription": {
-      "import": "./dist/esm/subscription.js",
-      "require": "./dist/cjs/subscription.js",
-      "default": "./dist/cjs/subscription.js"
+      "import": "./dist/subscription.mjs",
+      "require": "./dist/subscription.js",
+      "default": "./dist/subscription.js"
     },
     "./shared": {
-      "import": "./dist/esm/shared/index.js",
-      "require": "./dist/cjs/shared/index.js",
-      "default": "./dist/cjs/shared/index.js"
+      "import": "./dist/shared/index.mjs",
+      "require": "./dist/shared/index.js",
+      "default": "./dist/shared/index.js"
     }
   },
   "files": [
