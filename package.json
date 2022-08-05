@@ -36,6 +36,8 @@
   "packageManager": "yarn@1.22.19",
   "scripts": {
     "lerna": "lerna",
+    "clean": "find . -name dist -type d -prune | xargs rm -rf",
+    "clean:full": "find . -name node_modules -o -name dist -type d -prune | xargs rm -rf",
     "start": "yarn watch",
     "dev": "yarn start",
     "test": "cd packages/server && yarn jest",
