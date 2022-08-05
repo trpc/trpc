@@ -102,6 +102,15 @@ export const sponsors = [
     "createdAt": 1633435620000
   },
   {
+    "name": "Francis Provost",
+    "imgSrc": "https://avatars.githubusercontent.com/u/6840361?v=4",
+    "monthlyPriceInDollars": 10,
+    "link": "https://francisprovost.com",
+    "privacyLevel": "PUBLIC",
+    "login": "francisprovost",
+    "createdAt": 1659711715000
+  },
+  {
     "name": "Ryan",
     "imgSrc": "https://avatars.githubusercontent.com/u/6907797?u=71aca5cb761c401b4abbf100057978a76f2f5e22&v=4",
     "monthlyPriceInDollars": 50,
