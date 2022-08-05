@@ -111,6 +111,7 @@ async function main() {
     '// prettier-ignore',
     '',
     `export const sponsors = ${json} as const`,
+    '',
   ].join('\n');
 
   fs.writeFileSync(__dirname + '/script.output.ts', text);
