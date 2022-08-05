@@ -57,7 +57,6 @@ for (const sponsor of sponsors) {
     : 'other';
 
   buckets[section].push(sponsor);
-  buckets[section].sort((a, b) => a.createdAt - b.createdAt);
 }
 
 const bucketConfig: Record<
