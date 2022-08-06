@@ -1,7 +1,7 @@
 import { babel } from '@rollup/plugin-babel';
 import nodeResolve from '@rollup/plugin-node-resolve';
 import path from 'path';
-import { RollupOptions, defineConfig } from 'rollup';
+import { RollupOptions } from 'rollup';
 import del from 'rollup-plugin-delete';
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore - no typedefs exist for this plugin
@@ -14,19 +14,13 @@ const isWatchMode = process.argv.includes('--watch');
 const isProd = process.env.NODE_ENV === 'production';
 const extensions = ['.ts', '.tsx'];
 
+const babelPlugin = babel({
+  babelHelpers: 'runtime',
+  extensions,
+});
 const getMultiInputPlugin = (packageDir: string) =>
-  multiInput({ relative: path.join(packageDir, 'src/') });
+  multiInput({ relative: path.resolve(packageDir, 'src/') });
 
-const clientInput = [
-  'src/index.ts',
-  'src/links/httpLink.ts',
-  'src/links/httpBatchLink.ts',
-  'src/links/splitLink.ts',
-  'src/links/loggerLink.ts',
-  'src/links/wsLink.ts',
-];
-const nextInput = ['src/index.ts'];
-const reactInput = ['src/index.ts', 'src/ssg.ts'];
 const serverInput = [
   'src/index.ts',
   'src/adapters/aws-lambda/index.ts',
@@ -43,9 +37,19 @@ const serverInput = [
   // Utils that can be shared with clients
   'src/shared/index.ts',
 ];
+const clientInput = [
+  'src/index.ts',
+  'src/links/httpLink.ts',
+  'src/links/httpBatchLink.ts',
+  'src/links/splitLink.ts',
+  'src/links/loggerLink.ts',
+  'src/links/wsLink.ts',
+];
+const reactInput = ['src/index.ts', 'src/ssg.ts'];
+const nextInput = ['src/index.ts'];
 
 export default function rollup(): RollupOptions[] {
-  return defineConfig([
+  return [
     ...buildConfig({
       input: serverInput,
       packageDir: 'packages/server',
@@ -62,7 +66,7 @@ export default function rollup(): RollupOptions[] {
       input: nextInput,
       packageDir: 'packages/next',
     }),
-  ]);
+  ];
 }
 
 type Options = {
@@ -85,7 +89,6 @@ function types({ input, packageDir }: Options): RollupOptions {
     input,
     output: {
       dir: `${packageDir}/dist`,
-      entryFileNames: '[name].ts.js',
     },
     plugins: [
       !isWatchMode &&
@@ -96,7 +99,6 @@ function types({ input, packageDir }: Options): RollupOptions {
       typescript({
         tsconfig: path.resolve(packageDir, 'tsconfig.build.json'),
         abortOnError: !isWatchMode,
-        exclude: ['**/*.test.ts', '**/*.test.tsx'],
       }),
     ],
   };
@@ -114,17 +116,12 @@ function cjs({ input, packageDir }: Options): RollupOptions {
     plugins: [
       getMultiInputPlugin(packageDir),
       externals({
-        deps: true,
         packagePath: path.resolve(packageDir, 'package.json'),
       }),
       nodeResolve({
         extensions,
       }),
-      babel({
-        babelHelpers: 'runtime',
-        configFile: path.join(__dirname, 'babel.config.js'),
-        extensions,
-      }),
+      babelPlugin,
     ],
   };
 }
@@ -142,17 +139,12 @@ function esm({ input, packageDir }: Options): RollupOptions {
     plugins: [
       getMultiInputPlugin(packageDir),
       externals({
-        deps: true,
         packagePath: path.resolve(packageDir, 'package.json'),
       }),
       nodeResolve({
         extensions,
       }),
-      babel({
-        babelHelpers: 'runtime',
-        configFile: path.join(__dirname, 'babel.config.js'),
-        extensions,
-      }),
+      babelPlugin,
     ],
   };
 }

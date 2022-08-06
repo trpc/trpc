@@ -112,7 +112,7 @@
     "rollup": "^2.66.1",
     "rollup-plugin-delete": "^2.0.0",
     "rollup-plugin-multi-input": "^1.3.1",
-    "rollup-plugin-node-externals": "^3.1.2",
+    "rollup-plugin-node-externals": "^4.1.1",
     "rollup-plugin-terser": "^7.0.2",
     "rollup-plugin-typescript2": "^0.31.1",
     "ts-jest": "^27.0.5",
