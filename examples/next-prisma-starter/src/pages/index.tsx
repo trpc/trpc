@@ -19,6 +19,20 @@ const IndexPage: NextPageWithLayout = () => {
   //   }
   // }, [postsQuery.data, utils]);
 
+  const deleteTask = trpc.useMutation('post.delete', {
+    async onMutate({ id }) {
+      await utils.cancelQuery(['post.all']);
+      const allPosts = utils.getQueryData(['post.all']);
+      if (!allPosts) {
+        return;
+      }
+      utils.setQueryData(
+        ['post.all'],
+        allPosts.filter((p) => p.id !== id),
+      );
+    },
+  });
+
   return (
     <>
       <h1>Welcome to your tRPC starter!</h1>
@@ -38,6 +52,14 @@ const IndexPage: NextPageWithLayout = () => {
           <Link href={`/post/${item.id}`}>
             <a>View more</a>
           </Link>
+          <br />
+          <button
+            onClick={() => {
+              deleteTask.mutate({ id: item.id });
+            }}
+          >
+            Delete
+          </button>
         </article>
       ))}
 
