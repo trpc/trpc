@@ -12,6 +12,7 @@
   },
   "scripts": {
     "build": "rollup -c",
+    "clean": "rm -rf dist node_modules",
     "ts-watch": "tsc --project tsconfig.watch.json"
   },
   "main": "dist/index.js",
@@ -30,7 +31,6 @@
     }
   },
   "files": [
-    "README.md",
     "dist",
     "ssg",
     "src"

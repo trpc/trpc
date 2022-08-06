@@ -11,7 +11,8 @@
     "directory": "packages/next"
   },
   "scripts": {
-    "build": "rollup -c"
+    "build": "rollup -c",
+    "clean": "rm -rf dist node_modules"
   },
   "main": "dist/index.js",
   "module": "dist/index.mjs",
@@ -24,7 +25,6 @@
     }
   },
   "files": [
-    "README.md",
     "dist",
     "src"
   ],
