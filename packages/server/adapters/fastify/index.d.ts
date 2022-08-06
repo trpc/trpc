@@ -1,1 +1,1 @@
-export * from '../../dist/adapters/fastify';
+export * from '../../dist/adapters/fastify/index';

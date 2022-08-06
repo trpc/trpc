@@ -1,1 +1,1 @@
-export * from '../../dist/./links/httpLink';
+export * from '../../dist/links/httpLink';

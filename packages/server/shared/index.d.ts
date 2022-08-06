@@ -1,1 +1,1 @@
-export * from '../dist/shared';
+export * from '../dist/shared/index';

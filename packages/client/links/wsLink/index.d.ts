@@ -1,1 +1,1 @@
-export * from '../../dist/./links/wsLink';
+export * from '../../dist/links/wsLink';

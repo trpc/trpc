@@ -1,1 +1,1 @@
-export * from '../dist/rpc';
+export * from '../dist/rpc/index';

@@ -1,1 +1,1 @@
-export * from '../../dist/adapters/fetch';
+export * from '../../dist/adapters/fetch/index';

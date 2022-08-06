@@ -1,1 +1,1 @@
-export * from '../../dist/./links/loggerLink';
+export * from '../../dist/links/loggerLink';

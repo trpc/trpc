@@ -1,1 +1,1 @@
-module.exports = require('../../dist/./links/httpBatchLink');
+module.exports = require('../../dist/links/httpBatchLink');

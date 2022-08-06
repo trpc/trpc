@@ -1,1 +1,1 @@
-export * from '../dist/observable';
+export * from '../dist/observable/index';

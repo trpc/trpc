@@ -1,1 +1,1 @@
-module.exports = require('../../dist/./links/wsLink');
+module.exports = require('../../dist/links/wsLink');

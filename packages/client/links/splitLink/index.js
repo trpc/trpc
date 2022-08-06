@@ -1,1 +1,1 @@
-module.exports = require('../../dist/./links/splitLink');
+module.exports = require('../../dist/links/splitLink');

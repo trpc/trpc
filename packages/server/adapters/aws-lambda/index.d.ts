@@ -1,1 +1,1 @@
-export * from '../../dist/adapters/aws-lambda';
+export * from '../../dist/adapters/aws-lambda/index';
