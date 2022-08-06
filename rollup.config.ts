@@ -18,8 +18,6 @@ const babelPlugin = babel({
   babelHelpers: 'runtime',
   extensions,
 });
-const getMultiInputPlugin = (packageDir: string) =>
-  multiInput({ relative: path.resolve(packageDir, 'src/') });
 
 const serverInput = [
   'src/index.ts',
@@ -89,13 +87,15 @@ function types({ input, packageDir }: Options): RollupOptions {
     input,
     output: {
       dir: `${packageDir}/dist`,
+      entryFileNames: '[name].ts.js',
+      chunkFileNames: '[name]-[hash].ts.js',
     },
     plugins: [
       !isWatchMode &&
         del({
-          targets: ['dist'],
+          targets: [`${packageDir}/dist`],
         }),
-      getMultiInputPlugin(packageDir),
+      multiInput({ relative: path.resolve(packageDir, 'src/') }),
       typescript({
         tsconfig: path.resolve(packageDir, 'tsconfig.build.json'),
         abortOnError: !isWatchMode,
@@ -111,10 +111,11 @@ function cjs({ input, packageDir }: Options): RollupOptions {
       dir: `${packageDir}/dist`,
       format: 'cjs',
       entryFileNames: '[name].js',
+      chunkFileNames: '[name]-[hash].js',
       plugins: [isProd && terser({ module: false })],
     },
     plugins: [
-      getMultiInputPlugin(packageDir),
+      multiInput({ relative: path.resolve(packageDir, 'src/') }),
       externals({
         packagePath: path.resolve(packageDir, 'package.json'),
       }),
@@ -137,7 +138,7 @@ function esm({ input, packageDir }: Options): RollupOptions {
       plugins: [isProd && terser({ module: true })],
     },
     plugins: [
-      getMultiInputPlugin(packageDir),
+      multiInput({ relative: path.resolve(packageDir, 'src/') }),
       externals({
         packagePath: path.resolve(packageDir, 'package.json'),
       }),
