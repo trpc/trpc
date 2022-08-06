@@ -1,71 +1,72 @@
-/**
- * This file is a huge mess.
- */
-import fs from 'fs';
+import fs from 'fs-extra';
+import path from 'path';
 
-const packages = [
-  'client',
-  // This script doesn't really work right yet with all the other packages b/c naming of `index.ts` is a bit of mess
-];
+const packagesDir = path.resolve(__dirname, '..', 'packages');
+const packages = ['client', 'server', 'next', 'react'] as const;
 
-const packagesDir = `${__dirname}/../packages`;
+// minimal version of PackageJson type necessary
+type PackageJson = {
+  exports: Record<string, { default: string }>;
+};
 
-function getEntrypoint(filename: string) {
-  const parts = filename.split('/');
-  const name = parts.pop();
+function getEntrypoints(pkg: typeof packages[number]) {
+  // get entrypoints from package.json
+  const pkgJson = fs.readJSONSync(
+    path.resolve(packagesDir, pkg, 'package.json'),
+  ) as PackageJson;
+  const exports = pkgJson.exports;
 
-  parts.shift();
-  const dir = parts.join();
-  return {
-    name,
-    dir: `./${dir}`,
-    depth: parts.length + 1,
-  };
-}
-for (const pkg of packages) {
-  const pkgDir = `${packagesDir}/${pkg}`;
-  const packageJsonStr = fs.readFileSync(`${pkgDir}/package.json`, 'utf8');
-  const pJson = JSON.parse(packageJsonStr.toString());
+  /**
+   * transform the exports field to <entrypoint, distpath> pairs,
+   * where entrypoint is the file we need to generate, and distpath is the
+   * path to the file that we need to export in the generated file.
+   */
+  const entrypoints = Object.entries(exports)
+    .filter(([entryPoint]) => entryPoint !== '.')
+    .map(([entrypoint, paths]) => {
+      // distFile is relative to package root: ./dist/...
+      const distFile = paths.default;
 
-  const keys = Object.keys(pJson.exports).filter((v) => v !== '.');
-  for (const key of keys) {
-    // const file = `${packagesDir}/${pkg}/src/${name}.ts`;
-    const entrypoint = getEntrypoint(key);
-    // console.log({ name: key, entrypoint });
+      // how deep the path is relative to package root: ./src/...
+      const depth = entrypoint.split('/').length - 1;
 
-    fs.mkdirSync(`${pkgDir}/${entrypoint.dir}/${entrypoint.name}`, {
-      recursive: true,
+      // traverse up the path to the package root
+      const distPathRelativeEntrypoint = path.join(
+        ...Array(depth).fill('..'),
+        distFile,
+      );
+
+      // remove file extension for importing
+      const parsed = path.parse(distPathRelativeEntrypoint);
+      const importPath = `${parsed.dir}/${parsed.name}`;
+      return [entrypoint, importPath] as const;
     });
-    const dotdot = new Array(entrypoint.depth).fill('../').join('');
-    const distTarget = `${dotdot}dist/${entrypoint.dir}/${entrypoint.name}`;
-    fs.writeFileSync(
-      `${pkgDir}/${entrypoint.dir}/${entrypoint.name}/index.js`,
-      `module.exports = require('${new Array(entrypoint.depth).fill(
-        '../',
-      )}/dist/${entrypoint.dir}/${entrypoint.name}');\n`,
-    );
-    fs.writeFileSync(
-      `${pkgDir}/${entrypoint.dir}/${entrypoint.name}/index.js`,
-      `module.exports = require('${distTarget}');\n`,
-    );
-    fs.writeFileSync(
-      `${pkgDir}/${entrypoint.dir}/${entrypoint.name}/index.d.ts`,
-      `export * from '${distTarget}';\n`,
-    );
+
+  return entrypoints;
+}
+
+// create directories on the way if they dont exist
+const writeFileSyncRecursive = (filePath: string, content: string) => {
+  const dir = path.dirname(filePath);
+  if (!fs.existsSync(dir)) {
+    fs.mkdirSync(dir, { recursive: true });
   }
-  fs.writeFileSync(
-    `${pkgDir}/rollup.config.js`,
-    `
-import { getRollupConfig } from '../../scripts/rollup';
+  fs.writeFileSync(filePath, content);
+};
 
-const config = getRollupConfig({
-  input: [
-    'src/index.ts',
-    ${keys.map((v) => `'src/${v}.ts'`).join(',\n    ')},
-  ],
-});
+for (const pkg of packages) {
+  const pkgRoot = path.resolve(packagesDir, pkg);
+  const entrypoints = getEntrypoints(pkg);
 
-export default config;
-`.trimStart(),
-  );
+  for (const [entrypoint, importPath] of entrypoints) {
+    // index.js
+    const indexFile = path.resolve(pkgRoot, entrypoint, 'index.js');
+    const indexFileContent = `module.exports = require('${importPath}');\n`;
+    writeFileSyncRecursive(indexFile, indexFileContent);
+
+    // index.d.ts
+    const typePath = path.resolve(pkgRoot, entrypoint, 'index.d.ts');
+    const typeContent = `export * from '${importPath}';\n`;
+    writeFileSyncRecursive(typePath, typeContent);
+  }
 }
