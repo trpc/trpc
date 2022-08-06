@@ -59,7 +59,6 @@
     "src"
   ],
   "scripts": {
-    "build": "rollup -c",
     "clean": "rm -rf dist node_modules",
     "ts-watch": "tsc --project tsconfig.watch.json"
   },
