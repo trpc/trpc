@@ -1,5 +1,5 @@
 name: 🐞 Bug Report
-description: Create a bug report for the tRPC core
+description: Create a bug report for the core packages
 title: 'bug: '
 labels: ['🐛 bug: unconfirmed']
 body:
@@ -48,6 +48,6 @@ body:
   - type: checkboxes
     attributes:
       label: 👨‍👧‍👦 Contributing
-      description: We love contributors in any shape or form. Would you be willing to implement a bugfix?
+      description: We love contributors in any shape or form. Would you be willing to implement a fix?
       options:
         - label: 🙋‍♂️ Yes, I'd be down to file a PR fixing this bug!

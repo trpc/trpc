@@ -2,7 +2,7 @@
 # See here: https://github.com/vercel/next.js/blob/canary/.github/ISSUE_TEMPLATE/3.feature_request.yml
 
 name: 🛠 Feature Request
-description: Create a feature request for tRPC
+description: Create a feature request for the core packages
 title: 'feat: '
 labels: ['✨ enhancement']
 body:
@@ -27,7 +27,7 @@ body:
       label: Desribe alternate solutions
       description: |
         Please describe alternate solutions you have considered. What makes your suggested feature better?
-        Do you currently have a workaround to get a similar experience, add that here.
+        If you currently have a workaround to get a similar experience, add that here.
     validations:
       required: true
   - type: textarea
@@ -37,10 +37,10 @@ body:
   - type: textarea
     attributes:
       label: Additional information
-      description: Add any other information related to the bug here.
+      description: Add any other information related to the feature here.
   - type: checkboxes
     attributes:
       label: 👨‍👧‍👦 Contributing
-      description: We love contributors in any shape or form. Would you be willing to implement a bugfix?
+      description: We love contributors in any shape or form. Would you be willing to implement this feature?
       options:
         - label: 🙋‍♂️ Yes, I'd be down to file a PR implementing this feature!
