@@ -26,13 +26,7 @@ body:
   - type: textarea
     attributes:
       label: Describe the bug
-      description: Please describe the bug as clear and concise as possible.
-    validations:
-      required: true
-  - type: textarea
-    attributes:
-      label: Expected behavior
-      description: Please describe the behavior you were expecting when encountering the bug.
+      description: Please describe the bug as clear and concise as possible, as well as the behavior you were expecting whilst encountering the bug.
     validations:
       required: true
   - type: textarea

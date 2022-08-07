@@ -32,12 +32,8 @@ body:
       required: true
   - type: textarea
     attributes:
-      label: Related Issues and Discussions
-      description: Is your feature request related to an Issue or a Discussion? Link them here.
-  - type: textarea
-    attributes:
       label: Additional information
-      description: Add any other information related to the feature here.
+      description: Add any other information related to the feature here. If your feature request is related to any issues or discussions, link them here.
   - type: checkboxes
     attributes:
       label: 👨‍👧‍👦 Contributing
