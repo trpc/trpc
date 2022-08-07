@@ -193,6 +193,7 @@ Also, if your company using tRPC and want to support long-term maintenance of tR
    <td align="center"><a href="https://github.com/LoriKarikari"><img src="https://avatars.githubusercontent.com/u/7902980?u=d016e5a9c337fbd4c60a7ea61352185f8b88b585&v=4&s=100" width="100" alt="Lori%20Karikari"/><br />Lori Karikari</a></td>
    <td align="center"><a href="https://github.com/zzacong"><img src="https://avatars.githubusercontent.com/u/61817066?u=2b8d6fe70742b39a8bee1475ceea3105716168cf&v=4&s=100" width="100" alt="Zac%20Ong"/><br />Zac Ong</a></td>
    <td align="center"><a href="https://dyaa.me"><img src="https://avatars.githubusercontent.com/u/4283185?u=c0eefe0bfb37b34dedb7765ba2a061cfac30be55&v=4&s=100" width="100" alt="Dyaa"/><br />Dyaa</a></td>
+   <td align="center"><a href="https://francisprovost.com"><img src="https://avatars.githubusercontent.com/u/6840361?v=4&s=100" width="100" alt="Francis%20Provost"/><br />Francis Provost</a></td>
   </tr>
 </table>
 
@@ -341,6 +342,10 @@ Also, if your company using tRPC and want to support long-term maintenance of tR
   <tr>
     <td align="center"><a href="https://github.com/iway1"><img src="https://avatars.githubusercontent.com/u/12774588?v=4?s=60" width="60px;" alt=""/><br /><sub><b>iway1</b></sub></a><br /><a href="#financial-iway1" title="Financial">💵</a></td>
     <td align="center"><a href="https://www.prisma.io"><img src="https://avatars.githubusercontent.com/u/17219288?v=4?s=60" width="60px;" alt=""/><br /><sub><b>Prisma</b></sub></a><br /><a href="#financial-prisma" title="Financial">💵</a></td>
+    <td align="center"><a href="http://francisprovost.com"><img src="https://avatars.githubusercontent.com/u/6840361?v=4?s=60" width="60px;" alt=""/><br /><sub><b>Francis Provost</b></sub></a><br /><a href="#financial-francisprovost" title="Financial">💵</a></td>
+    <td align="center"><a href="https://dyaa.me"><img src="https://avatars.githubusercontent.com/u/4283185?v=4?s=60" width="60px;" alt=""/><br /><sub><b>Dyaa</b></sub></a><br /><a href="#financial-dyaa" title="Financial">💵</a></td>
+    <td align="center"><a href="https://github.com/zzacong"><img src="https://avatars.githubusercontent.com/u/61817066?v=4?s=60" width="60px;" alt=""/><br /><sub><b>Zac Ong</b></sub></a><br /><a href="#financial-zzacong" title="Financial">💵</a></td>
+    <td align="center"><a href="https://github.com/LoriKarikari"><img src="https://avatars.githubusercontent.com/u/7902980?v=4?s=60" width="60px;" alt=""/><br /><sub><b>Lori Karikari</b></sub></a><br /><a href="#financial-LoriKarikari" title="Financial">💵</a></td>
   </tr>
 </table>
 
