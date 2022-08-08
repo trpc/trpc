@@ -25,7 +25,7 @@ function Home() {
           charSet="utf-8"
         />
       </Head>
-      <main className="container px-6 mx-auto py-28 md:py-40 lg:py-48 xl:py-64 space-y-28">
+      <main className="container px-6 mx-auto pt-28 md:pt-40 lg:pt-48 xl:pt-64 space-y-28">
         <header className="flex flex-col lg:flex-row">
           <div className="flex-1">
             <h1 className="pb-3 text-2xl font-bold whitespace-pre-wrap lg:text-3xl">
@@ -39,7 +39,7 @@ function Home() {
             <div className="flex items-center gap-4 mt-6">
               <Link
                 href="/docs/quickstart"
-                className="inline-block px-4 py-2 text-sm font-bold text-black transition-colors rounded-lg md:text-base hover:bg-cyan-600 hover:no-underline hover:text-black bg-cyan-500"
+                className="inline-block px-4 py-2 text-sm font-bold text-black transition-colors rounded-lg md:text-base hover:bg-primary-darker hover:no-underline hover:text-black bg-primary shadow-xl"
               >
                 Quickstart
               </Link>
@@ -50,22 +50,12 @@ function Home() {
         </header>
 
         <section>
-          {/* <SectionTitle
-          title="The easy way to build typesafe APIs"
-          description={
-            <>
-              If your project is built with TypeScript end-to-end, you can share
-              types directly between your client and server, without relying on
-              code generation.
-            </>
-          }
-        /> */}
           <Features />
         </section>
         <section className="max-w-[80ch] px-6 mx-auto md:px-0">
-          <blockquote cite="https://twitter.com/alexdotjs">
-            <SectionTitle title={<>You may not need a traditional API</>} />
-            <p className="pt-3 text-sm text-gray-600 md:text-base dark:text-gray-400">
+          <SectionTitle title={<>You may not need a traditional API</>} />
+          <blockquote cite="https://twitter.com/alexdotjs" className="mt-6">
+            <p className="text-sm text-gray-600 md:text-base dark:text-gray-400">
               If we have a project that is built with the same language
               end-to-end, why should we need to bring in <em>another</em>{' '}
               language into the mix, like <code>.yaml</code> or{' '}
@@ -106,11 +96,29 @@ function Home() {
           <SectionTitle title="Don't take our word for it!" />
           <TwitterWall />
         </section>
-        <div className="px-4 mx-auto lg:max-w-screen-lg">
-          <div className="aspect-square">
-            <Sponsors />
+        <section className="pb-12">
+          <SectionTitle
+            title="Sponsors"
+            description={
+              <>
+                We couldn&apos;t have done it without all of our amazing{' '}
+                <a
+                  href="https://github.com/sponsors/KATT"
+                  target="_blank"
+                  rel="noreferrer noopener"
+                >
+                  sponsors
+                </a>
+                , who help us to keep tRPC alive and well-funded.
+              </>
+            }
+          />
+          <div className="max-w-screen-md mx-auto">
+            <div className="aspect-square mt-3">
+              <Sponsors />
+            </div>
           </div>
-        </div>
+        </section>
       </main>
     </Layout>
   );
