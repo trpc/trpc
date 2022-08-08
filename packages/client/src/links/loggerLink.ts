@@ -1,7 +1,7 @@
 import { AnyRouter } from '@trpc/server';
 import { observable, tap } from '@trpc/server/observable';
 import { TRPCClientError } from '..';
-import { Operation, OperationResult, TRPCLink } from './types';
+import { Operation, OperationResultEnvelope, TRPCLink } from './types';
 
 type ConsoleEsque = {
   log: (...args: any[]) => void;
@@ -14,7 +14,9 @@ type EnableFnOptions<TRouter extends AnyRouter> =
     })
   | {
       direction: 'down';
-      result: OperationResult<TRouter, unknown> | TRPCClientError<TRouter>;
+      result:
+        | OperationResultEnvelope<TRouter, unknown>
+        | TRPCClientError<TRouter>;
     };
 type EnabledFn<TRouter extends AnyRouter> = (
   opts: EnableFnOptions<TRouter>,
@@ -33,7 +35,9 @@ type LogFnOptions<TRouter extends AnyRouter> = Operation &
          * Request result
          */
         direction: 'down';
-        result: OperationResult<TRouter, unknown> | TRPCClientError<TRouter>;
+        result:
+          | OperationResultEnvelope<TRouter, unknown>
+          | TRPCClientError<TRouter>;
         elapsedMs: number;
       }
   );
@@ -116,7 +120,9 @@ export function loggerLink<TRouter extends AnyRouter = AnyRouter>(
           });
         const requestStartTime = Date.now();
         function logResult(
-          result: OperationResult<TRouter, unknown> | TRPCClientError<TRouter>,
+          result:
+            | OperationResultEnvelope<TRouter, unknown>
+            | TRPCClientError<TRouter>,
         ) {
           const elapsedMs = Date.now() - requestStartTime;
 

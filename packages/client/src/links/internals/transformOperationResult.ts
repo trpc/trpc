@@ -2,11 +2,11 @@ import { AnyRouter } from '@trpc/server';
 import { TRPCResultMessage } from '@trpc/server/rpc';
 import { TRPCClientRuntime } from '..';
 import { TRPCClientError } from '../../TRPCClientError';
-import { OperationResult } from '../types';
+import { OperationResultEnvelope } from '../types';
 
 /** @internal */
 export function transformOperationResult<TRouter extends AnyRouter, TOutput>(
-  result: OperationResult<TRouter, TOutput>,
+  result: OperationResultEnvelope<TRouter, TOutput>,
   runtime: TRPCClientRuntime,
 ) {
   const { context } = result;
@@ -29,7 +29,10 @@ export function transformOperationResult<TRouter extends AnyRouter, TOutput>(
 export function transformSubscriptionOperationResult<
   TRouter extends AnyRouter,
   TOutput,
->(result: OperationResult<TRouter, TOutput>, runtime: TRPCClientRuntime) {
+>(
+  result: OperationResultEnvelope<TRouter, TOutput>,
+  runtime: TRPCClientRuntime,
+) {
   const { context } = result;
 
   if ('error' in result.data) {

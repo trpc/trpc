@@ -41,7 +41,7 @@ type OperationResultData<TRouter extends AnyRouter, TOutput> =
   | TRPCResponse<TOutput, inferRouterError<TRouter>>
   | TRPCResponseMessage<TOutput, inferRouterError<TRouter>>;
 
-export interface OperationResult<TRouter extends AnyRouter, TOutput> {
+export interface OperationResultEnvelope<TRouter extends AnyRouter, TOutput> {
   data: OperationResultData<TRouter, TOutput>;
   context?: OperationContext;
 }
@@ -49,12 +49,18 @@ export interface OperationResult<TRouter extends AnyRouter, TOutput> {
 export type OperationResultObservable<
   TRouter extends AnyRouter,
   TOutput,
-> = Observable<OperationResult<TRouter, TOutput>, TRPCClientError<TRouter>>;
+> = Observable<
+  OperationResultEnvelope<TRouter, TOutput>,
+  TRPCClientError<TRouter>
+>;
 
 export type OperationResultObserver<
   TRouter extends AnyRouter,
   TOutput,
-> = Observer<OperationResult<TRouter, TOutput>, TRPCClientError<TRouter>>;
+> = Observer<
+  OperationResultEnvelope<TRouter, TOutput>,
+  TRPCClientError<TRouter>
+>;
 
 export type OperationLink<
   TRouter extends AnyRouter,
