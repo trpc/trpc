@@ -2,17 +2,11 @@
 
 /* eslint-disable @typescript-eslint/ban-ts-comment */
 import { createLegacyAppRouter } from './__testHelpers';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import '@testing-library/jest-dom';
 import { render, waitFor } from '@testing-library/react';
 import { expectTypeOf } from 'expect-type';
 import React, { useEffect, useState } from 'react';
-import { QueryClient, QueryClientProvider, setLogger } from 'react-query';
-
-setLogger({
-  log() {},
-  warn() {},
-  error() {},
-});
 
 let factory: ReturnType<typeof createLegacyAppRouter>;
 beforeEach(() => {
@@ -213,7 +207,7 @@ describe('useMutation()', () => {
 
     function MyComponent() {
       const deletePostsMutation = trpc.useMutation(['deletePosts'], {
-        context: {
+        requestContext: {
           test: '1',
         },
       });

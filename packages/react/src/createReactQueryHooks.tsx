@@ -1,5 +1,19 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 import {
+  DehydratedState,
+  QueryClient,
+  UseInfiniteQueryOptions,
+  UseInfiniteQueryResult,
+  UseMutationOptions,
+  UseMutationResult,
+  UseQueryOptions,
+  UseQueryResult,
+  useInfiniteQuery as __useInfiniteQuery,
+  useMutation as __useMutation,
+  useQuery as __useQuery,
+  hashQueryKey,
+} from '@tanstack/react-query';
+import {
   CreateTRPCClientOptions,
   TRPCClient,
   TRPCClientErrorLike,
@@ -23,20 +37,6 @@ import React, {
   useMemo,
   useState,
 } from 'react';
-import {
-  DehydratedState,
-  QueryClient,
-  UseInfiniteQueryOptions,
-  UseInfiniteQueryResult,
-  UseMutationOptions,
-  UseMutationResult,
-  UseQueryOptions,
-  UseQueryResult,
-  useInfiniteQuery as __useInfiniteQuery,
-  useMutation as __useMutation,
-  useQuery as __useQuery,
-  hashQueryKey,
-} from 'react-query';
 import { SSRState, TRPCContext, TRPCContextState } from './internals/context';
 
 export type OutputWithCursor<TData, TCursor extends any = any> = {

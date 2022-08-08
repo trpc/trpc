@@ -82,7 +82,7 @@ export interface TRPCRequestOptions {
   /**
    * Pass additional context to links
    */
-  context?: OperationContext;
+  requestContext?: OperationContext;
 }
 
 export interface TRPCSubscriptionObserver<TValue, TError> {
@@ -203,7 +203,7 @@ export class TRPCClient<TRouter extends AnyRouter> {
     path: TPath,
     ...args: [...inferHandlerInput<TQueries[TPath]>, TRPCRequestOptions?]
   ) {
-    const context = (args[1] as TRPCRequestOptions | undefined)?.context;
+    const context = (args[1] as TRPCRequestOptions | undefined)?.requestContext;
     return this.requestAsPromise<
       inferHandlerInput<TQueries[TPath]>,
       inferProcedureOutput<TQueries[TPath]>
@@ -221,7 +221,7 @@ export class TRPCClient<TRouter extends AnyRouter> {
     path: TPath,
     ...args: [...inferHandlerInput<TMutations[TPath]>, TRPCRequestOptions?]
   ) {
-    const context = (args[1] as TRPCRequestOptions | undefined)?.context;
+    const context = (args[1] as TRPCRequestOptions | undefined)?.requestContext;
     return this.requestAsPromise<
       inferHandlerInput<TMutations[TPath]>,
       inferProcedureOutput<TMutations[TPath]>
@@ -247,7 +247,7 @@ export class TRPCClient<TRouter extends AnyRouter> {
       type: 'subscription',
       path,
       input,
-      context: opts.context,
+      context: opts.requestContext,
     });
     const runtime = this.runtime;
     return observable$.subscribe({

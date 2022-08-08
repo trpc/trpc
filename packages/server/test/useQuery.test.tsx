@@ -1,11 +1,11 @@
+import { getServerAndReactClient } from './__reactHelpers';
+import { InfiniteData } from '@tanstack/react-query';
 import { render, waitFor } from '@testing-library/react';
 import { expectTypeOf } from 'expect-type';
 import { konn } from 'konn';
 import React, { useEffect } from 'react';
-import { InfiniteData } from 'react-query';
 import { z } from 'zod';
 import { initTRPC } from '../src';
-import { getServerAndReactClient } from './__reactHelpers';
 
 const ctx = konn()
   .beforeEach(() => {

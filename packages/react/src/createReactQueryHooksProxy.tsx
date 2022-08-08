@@ -1,5 +1,10 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 import {
+  UseInfiniteQueryResult,
+  UseMutationResult,
+  UseQueryResult,
+} from '@tanstack/react-query';
+import {
   AnyRouter,
   OmitNeverKeys,
   Procedure,
@@ -11,11 +16,6 @@ import {
 import { inferObservableValue } from '@trpc/server/observable';
 import { createProxy } from '@trpc/server/shared';
 import { useMemo } from 'react';
-import {
-  UseInfiniteQueryResult,
-  UseMutationResult,
-  UseQueryResult,
-} from 'react-query';
 import {
   CreateReactQueryHooks,
   UseTRPCInfiniteQueryOptions,
