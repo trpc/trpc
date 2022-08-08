@@ -1,5 +1,4 @@
 export * from './assertNotBrowser';
-export * from './core';
 export * from './http';
 export * from './subscription';
 export * from './transformer';

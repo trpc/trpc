@@ -1,10 +1,10 @@
 import { AnyRouter, ProcedureType } from '@trpc/server';
 import { TRPCResponse } from '@trpc/server/rpc';
 import { TRPCClientError } from '../TRPCClientError';
-import { TRPCAbortError } from '../core/TRPCAbortError';
-import { transformRPCResponse } from '../core/transformRPCResponse';
+import { TRPCAbortError } from '../internals/TRPCAbortError';
 import { dataLoader } from '../internals/dataLoader';
 import { httpRequest } from '../internals/httpRequest';
+import { transformRPCResponse } from '../internals/transformRPCResponse';
 import { HTTPLinkOptions, TRPCLink } from './core';
 
 export interface HttpBatchLinkOptions extends HTTPLinkOptions {

@@ -9,7 +9,6 @@ import {
 } from '@trpc/server';
 import { TRPCResult } from '@trpc/server/rpc';
 import { TRPCClientError } from '../TRPCClientError';
-import { TRPCAbortError } from '../core/TRPCAbortError';
 import { getFetch } from '../getFetch';
 import {
   CancelFn,
@@ -20,6 +19,7 @@ import {
   TRPCLink,
 } from '../links/core';
 import { httpBatchLink } from '../links/httpBatchLink';
+import { TRPCAbortError } from './TRPCAbortError';
 import { executeChain } from './executeChain';
 import { getAbortController } from './fetchHelpers';
 import { ObservableCallbacks, UnsubscribeFn } from './observable';
