@@ -80,7 +80,7 @@ const hooks = createReactQueryHooks<AppRouter>();
 // => { useQuery: ..., useMutation: ...}
 
 const proxy = createReactQueryHooksProxy<AppRouter>(hooks);
-// => proxy.<router>.<query>.useQuery(...), 
+// => proxy.<router>.<query>.useQuery(...),
 
 export const trpc = {
   proxy,
@@ -95,7 +95,7 @@ In your `App.tsx`
 ```tsx title='App.tsx'
 import React from 'react';
 import { useState } from 'react';
-import { QueryClient, QueryClientProvider } from 'react-query';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { trpc } from './utils/trpc';
 
 export function App() {

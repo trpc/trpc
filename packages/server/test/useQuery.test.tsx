@@ -1,10 +1,10 @@
 import { getServerAndReactClient } from './__reactHelpers';
+import { InfiniteData } from '@tanstack/react-query';
 import { render, waitFor } from '@testing-library/react';
 import { EventEmitter } from 'events';
 import { expectTypeOf } from 'expect-type';
 import { konn } from 'konn';
 import React, { useEffect, useState } from 'react';
-import { InfiniteData } from 'react-query';
 import { z } from 'zod';
 import { initTRPC } from '../src';
 import { observable } from '../src/observable';

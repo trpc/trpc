@@ -6,14 +6,7 @@ import '@testing-library/jest-dom';
 import { render, waitFor } from '@testing-library/react';
 import { AppType } from 'next/dist/shared/lib/utils';
 import React from 'react';
-import { setLogger } from 'react-query';
 import { withTRPC } from '../../../../next/src';
-
-setLogger({
-  log() {},
-  warn() {},
-  error() {},
-});
 
 let factory: ReturnType<typeof createLegacyAppRouter>;
 beforeEach(() => {

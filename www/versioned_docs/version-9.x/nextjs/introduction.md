@@ -45,10 +45,10 @@ Recommended but not enforced file structure. This is what you get when starting 
 ### 1. Install deps
 
 ```bash
-yarn add @trpc/client @trpc/server @trpc/react @trpc/next zod react-query
+yarn add @trpc/client @trpc/server @trpc/react @trpc/next zod @tanstack/react-query
 ```
 
-- React Query: `@trpc/react` provides a thin wrapper over [react-query](https://react-query.tanstack.com/overview). It is required as a peer dependency.
+- React Query: `@trpc/react` provides a thin wrapper over [@tanstack/react-query](https://react-query.tanstack.com/overview). It is required as a peer dependency.
 - Zod: most examples use [Zod](https://github.com/colinhacks/zod) for input validation and we highly recommended it, though it isn't required. You can use a validation library of your choice ([Yup](https://github.com/jquense/yup), [Superstruct](https://github.com/ianstormtaylor/superstruct), [io-ts](https://github.com/gcanti/io-ts), etc). In fact, any object containing a `parse`, `create` or `validateSync` method will work.
 
 ### 2. Enable strict mode

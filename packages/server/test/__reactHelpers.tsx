@@ -1,7 +1,7 @@
 import { routerToServerAndClientNew } from './___testHelpers';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { httpBatchLink, splitLink, wsLink } from '@trpc/client';
 import React, { ReactNode, useState } from 'react';
-import { QueryClient, QueryClientProvider } from 'react-query';
 import {
   createReactQueryHooks,
   createReactQueryHooksProxy,

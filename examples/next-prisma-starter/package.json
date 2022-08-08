@@ -1,6 +1,6 @@
 {
   "name": "@examples/trpc-next-prisma-starter",
-  "version": "10.0.0-alpha.41",
+  "version": "10.0.0-alpha.42",
   "private": true,
   "scripts": {
     "build:1-migrate": "prisma migrate deploy",
@@ -32,21 +32,22 @@
   },
   "dependencies": {
     "@prisma/client": "^3.0.1",
-    "@trpc/client": "^10.0.0-alpha.41",
-    "@trpc/next": "^10.0.0-alpha.41",
-    "@trpc/react": "^10.0.0-alpha.41",
-    "@trpc/server": "^10.0.0-alpha.41",
+    "@tanstack/react-query": "^4.0.10",
+    "@trpc/client": "^10.0.0-alpha.42",
+    "@trpc/next": "^10.0.0-alpha.42",
+    "@trpc/react": "^10.0.0-alpha.42",
+    "@trpc/server": "^10.0.0-alpha.42",
     "clsx": "^1.1.1",
     "next": "^12.1.6",
     "react": "^18.1.0",
     "react-dom": "^18.1.0",
-    "react-query": "^3.39.2",
     "start-server-and-test": "^1.12.0",
     "superjson": "^1.7.4",
     "zod": "^3.0.0"
   },
   "devDependencies": {
     "@playwright/test": "^1.19.2",
+    "@tanstack/react-query-devtools": "^4.0.10",
     "@types/jest": "^27.0.1",
     "@types/node": "^17.0.10",
     "@types/react": "^18.0.9",

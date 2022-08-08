@@ -1,11 +1,11 @@
 import { routerToServerAndClientNew } from './___testHelpers';
+import { QueryClient } from '@tanstack/react-query';
+import { QueryClientProvider } from '@tanstack/react-query';
 import { render, waitFor } from '@testing-library/react';
 import { createReactQueryHooks, createReactQueryHooksProxy } from '@trpc/react';
 import { expectTypeOf } from 'expect-type';
 import { konn } from 'konn';
 import React, { useState } from 'react';
-import { QueryClient } from 'react-query';
-import { QueryClientProvider } from 'react-query';
 import { z } from 'zod';
 import * as trpc from '../src';
 import { inferProcedureOutput, initTRPC } from '../src';

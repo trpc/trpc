@@ -1,4 +1,11 @@
 import {
+  DehydrateOptions,
+  DehydratedState,
+  InfiniteData,
+  QueryClient,
+  dehydrate,
+} from '@tanstack/react-query';
+import {
   AnyRouter,
   ClientDataTransformerOptions,
   assertNotBrowser,
@@ -7,13 +14,6 @@ import {
   inferProcedureOutput,
   inferRouterContext,
 } from '@trpc/server';
-import {
-  DehydrateOptions,
-  DehydratedState,
-  InfiniteData,
-  QueryClient,
-  dehydrate,
-} from 'react-query';
 
 type QueryClientConfig = ConstructorParameters<typeof QueryClient>[0];
 
