@@ -8,6 +8,7 @@
     "start": "next start"
   },
   "dependencies": {
+    "@tanstack/react-query": "^4.0.10",
     "@trpc/client": "^10.0.0-alpha.41",
     "@trpc/next": "^10.0.0-alpha.41",
     "@trpc/react": "^10.0.0-alpha.41",
@@ -15,7 +16,6 @@
     "next": "latest",
     "react": "^18.1.0",
     "react-dom": "^18.1.0",
-    "react-query": "^3.39.2",
     "zod": "^3.0.0"
   },
   "devDependencies": {

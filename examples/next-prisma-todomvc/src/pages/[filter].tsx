@@ -1,3 +1,5 @@
+import { useIsMutating } from '@tanstack/react-query';
+import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import { createSSGHelpers } from '@trpc/react/ssg';
 import clsx from 'clsx';
 import {
@@ -8,8 +10,6 @@ import {
 import Head from 'next/head';
 import Link from 'next/link';
 import { RefObject, useEffect, useRef, useState } from 'react';
-import { useIsMutating } from 'react-query';
-import { ReactQueryDevtools } from 'react-query/devtools';
 import superjson from 'superjson';
 import 'todomvc-app-css/index.css';
 import 'todomvc-common/base.css';

@@ -87,7 +87,7 @@ In your `App.tsx`
 ```tsx title='App.tsx'
 import React from 'react';
 import { useState } from 'react';
-import { QueryClient, QueryClientProvider } from 'react-query';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { trpc } from './utils/trpc';
 
 export function App() {
