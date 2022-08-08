@@ -3,7 +3,7 @@ import { observable } from '@trpc/server/observable';
 import { dataLoader } from '../internals/dataLoader';
 import {
   HTTPLinkOptions,
-  ResponseShape,
+  HTTPResult,
   getUrl,
   httpRequest,
 } from './internals/httpUtils';
@@ -67,13 +67,11 @@ export function httpBatchLink<TRouter extends AnyRouter>(
       return { validate, fetch };
     };
 
-    const query = dataLoader<BatchOperation, ResponseShape>(
-      batchLoader('query'),
-    );
-    const mutation = dataLoader<BatchOperation, ResponseShape>(
+    const query = dataLoader<BatchOperation, HTTPResult>(batchLoader('query'));
+    const mutation = dataLoader<BatchOperation, HTTPResult>(
       batchLoader('mutation'),
     );
-    const subscription = dataLoader<BatchOperation, ResponseShape>(
+    const subscription = dataLoader<BatchOperation, HTTPResult>(
       batchLoader('subscription'),
     );
 
