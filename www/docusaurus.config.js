@@ -54,11 +54,6 @@ module.exports = {
           label: 'Usage with Next.js',
         },
         {
-          type: 'docsVersionDropdown',
-          position: 'right',
-          dropdownActiveClassDisabled: true,
-        },
-        {
           href: 'https://github.com/trpc/trpc/tree/next',
           label: 'GitHub',
           position: 'right',
@@ -75,6 +70,11 @@ module.exports = {
           label: 'Discord',
           position: 'right',
           className: 'navbar-external-link',
+        },
+        {
+          type: 'docsVersionDropdown',
+          position: 'right',
+          dropdownActiveClassDisabled: true,
         },
       ],
     },

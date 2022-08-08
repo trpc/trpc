@@ -24,6 +24,16 @@
 }
 :root[data-theme='dark'] {
   --ifm-footer-background-color: #242526;
+  --ifm-navbar-background-color: #18181b;
+  --ifm-background-color: #18181b;
+}
+
+.homepage .navbar {
+  @apply container mx-auto shadow-none h-20;
+}
+
+.navbar-external-link svg {
+  display: none;
 }
 
 .markdown a {
