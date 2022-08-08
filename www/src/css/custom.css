@@ -32,10 +32,6 @@
   @apply container mx-auto shadow-none h-20;
 }
 
-.homepage .DocSearch {
-  display: none;
-}
-
 .navbar-external-link svg {
   display: none;
 }
