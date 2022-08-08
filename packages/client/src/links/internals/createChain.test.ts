@@ -19,12 +19,9 @@ describe('chain', () => {
             observer.next({
               context: {},
               result: {
-                id: null,
-                result: {
-                  type: 'data',
-                  data: {
-                    input: op.input,
-                  },
+                type: 'data',
+                data: {
+                  input: op.input,
                 },
               },
             });
@@ -55,11 +52,8 @@ describe('chain', () => {
             observer.next({
               context: {},
               result: {
-                id: null,
-                result: {
-                  type: 'data',
-                  data: 'from cache',
-                },
+                type: 'data',
+                data: 'from cache',
               },
             });
             const subscription = next(op).subscribe(observer);
@@ -72,12 +66,9 @@ describe('chain', () => {
           return observable((observer) => {
             observer.next({
               result: {
-                id: null,
-                result: {
-                  type: 'data',
-                  data: {
-                    input: op.input,
-                  },
+                type: 'data',
+                data: {
+                  input: op.input,
                 },
               },
             });
@@ -104,11 +95,8 @@ describe('chain', () => {
         Object {
           "context": Object {},
           "result": Object {
-            "id": null,
-            "result": Object {
-              "data": "from cache",
-              "type": "data",
-            },
+            "data": "from cache",
+            "type": "data",
           },
         },
       ]
@@ -117,13 +105,10 @@ describe('chain', () => {
       Array [
         Object {
           "result": Object {
-            "id": null,
-            "result": Object {
-              "data": Object {
-                "input": "world",
-              },
-              "type": "data",
+            "data": Object {
+              "input": "world",
             },
+            "type": "data",
           },
         },
       ]

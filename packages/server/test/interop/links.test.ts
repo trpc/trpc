@@ -69,9 +69,8 @@ test('chainer', async () => {
         "response": "[redacted]",
       },
       "result": Object {
-        "result": Object {
-          "data": "world",
-        },
+        "data": "world",
+        "type": "data",
       },
     }
   `);
@@ -170,9 +169,8 @@ describe('batching', () => {
             "response": "[redacted]",
           },
           "result": Object {
-            "result": Object {
-              "data": "hello world",
-            },
+            "data": "hello world",
+            "type": "data",
           },
         },
         Object {
@@ -180,9 +178,8 @@ describe('batching', () => {
             "response": "[redacted]",
           },
           "result": Object {
-            "result": Object {
-              "data": "hello alexdotjs",
-            },
+            "data": "hello alexdotjs",
+            "type": "data",
           },
         },
       ]
@@ -345,8 +342,8 @@ test('loggerLink', () => {
     observable((o) => {
       o.next({
         result: {
-          id: null,
-          result: { type: 'data', data: undefined },
+          type: 'data',
+          data: undefined,
         },
       });
     });
@@ -536,11 +533,8 @@ test('chain makes unsub', async () => {
             observable((observer) => {
               observer.next({
                 result: {
-                  id: null,
-                  result: {
-                    type: 'data',
-                    data: 'world',
-                  },
+                  type: 'data',
+                  data: 'world',
                 },
               });
               observer.complete();

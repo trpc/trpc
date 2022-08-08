@@ -1,6 +1,6 @@
-import { AnyRouter, DataTransformer, inferRouterError } from '@trpc/server';
+import { AnyRouter, DataTransformer } from '@trpc/server';
 import { Observable, Observer } from '@trpc/server/observable';
-import { TRPCResponse, TRPCResponseMessage } from '@trpc/server/rpc';
+import { TRPCResultMessage, TRPCSuccessResponse } from '@trpc/server/rpc';
 import { TRPCClientError } from '../TRPCClientError';
 
 export type CancelFn = () => void;
@@ -37,9 +37,9 @@ export interface TRPCClientRuntime {
   transformer: DataTransformer;
 }
 
-type OperationResultData<TRouter extends AnyRouter, TOutput> =
-  | TRPCResponse<TOutput, inferRouterError<TRouter>>
-  | TRPCResponseMessage<TOutput, inferRouterError<TRouter>>;
+type OperationResultData<_TRouter extends AnyRouter, TOutput> =
+  | TRPCSuccessResponse<TOutput>['result']
+  | TRPCResultMessage<TOutput>['result'];
 
 export interface OperationResultEnvelope<TRouter extends AnyRouter, TOutput> {
   result: OperationResultData<TRouter, TOutput>;

@@ -23,7 +23,7 @@ const METHOD = {
 } as const;
 
 export interface HTTPResult {
-  json: TRPCResponse | TRPCResponse[];
+  json: TRPCResponse;
   meta: {
     response: Response;
   };

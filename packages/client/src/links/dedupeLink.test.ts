@@ -18,12 +18,9 @@ test('dedupeLink', async () => {
           timerTriggered();
           subscribe.next({
             result: {
-              id: null,
-              result: {
-                type: 'data',
-                data: {
-                  input: op.input,
-                },
+              type: 'data',
+              data: {
+                input: op.input,
               },
             },
           });
@@ -81,12 +78,9 @@ test('dedupe - cancel one does not cancel the other', async () => {
           timerTriggered();
           subscribe.next({
             result: {
-              id: null,
-              result: {
-                type: 'data',
-                data: {
-                  input: op.input,
-                },
+              type: 'data',
+              data: {
+                input: op.input,
               },
             },
           });

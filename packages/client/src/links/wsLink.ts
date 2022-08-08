@@ -1,5 +1,5 @@
-import { AnyRouter, ProcedureType } from '@trpc/server';
-import { UnsubscribeFn, observable } from '@trpc/server/observable';
+import { AnyRouter, ProcedureType, inferRouterError } from '@trpc/server';
+import { Observer, UnsubscribeFn, observable } from '@trpc/server/observable';
 import {
   TRPCClientIncomingMessage,
   TRPCClientIncomingRequest,
@@ -9,7 +9,18 @@ import {
 } from '@trpc/server/rpc';
 import { TRPCClientError } from '../TRPCClientError';
 import { retryDelay } from '../internals/retryDelay';
-import { Operation, OperationResultObserver, TRPCLink } from './types';
+import { transformSubscriptionResult } from './internals/transformResult';
+import { Operation, TRPCLink } from './types';
+
+type WSCallbackResult<TRouter extends AnyRouter, TOutput> = TRPCResponseMessage<
+  TOutput,
+  inferRouterError<TRouter>
+>;
+
+type WSCallbackObserver<TRouter extends AnyRouter, TOutput> = Observer<
+  WSCallbackResult<TRouter, TOutput>,
+  TRPCClientError<TRouter>
+>;
 
 export interface WebSocketClientOptions {
   url: string;
@@ -40,7 +51,7 @@ export function createWSClient(opts: WebSocketClientOptions) {
   /**
    * pending outgoing requests that are awaiting callback
    */
-  type TCallbacks = OperationResultObserver<AnyRouter, unknown>;
+  type TCallbacks = WSCallbackObserver<AnyRouter, unknown>;
   type TRequest = {
     /**
      * Reference to the WebSocket instance this request was made to
@@ -157,7 +168,7 @@ export function createWSClient(opts: WebSocketClientOptions) {
         return;
       }
 
-      req.callbacks.next?.({ result: data });
+      req.callbacks.next?.(data);
       if (req.ws !== activeConnection && conn === activeConnection) {
         const oldWs = req.ws;
         // gracefully replace old connection with this
@@ -323,8 +334,21 @@ export function wsLink<TRouter extends AnyRouter>(
                 observer.complete();
               }
             },
-            next(result) {
-              observer.next(result);
+            next(message) {
+              const transformed = transformSubscriptionResult(message, runtime);
+
+              if (!transformed.ok) {
+                observer.error(
+                  TRPCClientError.from({
+                    ...message,
+                    error: transformed.error,
+                  }),
+                );
+                return;
+              }
+              observer.next({
+                result: transformed.result,
+              });
 
               if (op.type !== 'subscription') {
                 // if it isn't a subscription we don't care about next response

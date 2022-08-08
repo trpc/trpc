@@ -58,7 +58,11 @@ export interface TRPCResult<TData = unknown> {
 }
 
 export interface TRPCSuccessResponse<TData>
-  extends JSONRPC2.ResultResponse<TRPCResult<TData>> {}
+  extends JSONRPC2.ResultResponse<
+    TRPCResult<TData> & {
+      type?: 'data';
+    }
+  > {}
 export interface TRPCErrorResponse<
   TError extends TRPCErrorShape = TRPCErrorShape,
 > extends JSONRPC2.ErrorResponse<TError> {}
@@ -94,16 +98,18 @@ export type TRPCClientOutgoingMessage =
   | TRPCRequestMessage
   | ({ id: JSONRPC2.RequestId } & JSONRPC2.BaseRequest<'subscription.stop'>);
 
-export type TRPCResultMessage<TData = unknown> =
-  | ({ type: 'data' } & TRPCResult<TData>)
-  | { type: 'started' }
-  | { type: 'stopped' };
+export interface TRPCResultMessage<TData>
+  extends JSONRPC2.ResultResponse<
+    | (TRPCResult<TData> & { type: 'data' })
+    | { type: 'started' }
+    | { type: 'stopped' }
+  > {}
 
 export type TRPCResponseMessage<
-  TResult = unknown,
+  TData = unknown,
   TError extends TRPCErrorShape = TRPCErrorShape,
 > = { id: JSONRPC2.RequestId } & (
-  | JSONRPC2.ResultResponse<TRPCResultMessage<TResult>>
+  | TRPCResultMessage<TData>
   | TRPCErrorResponse<TError>
 );
 
