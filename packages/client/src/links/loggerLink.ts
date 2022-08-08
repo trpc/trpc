@@ -14,9 +14,7 @@ type EnableFnOptions<TRouter extends AnyRouter> =
     })
   | {
       direction: 'down';
-      result:
-        | OperationResultEnvelope<TRouter, unknown>
-        | TRPCClientError<TRouter>;
+      result: OperationResultEnvelope<unknown> | TRPCClientError<TRouter>;
     };
 type EnabledFn<TRouter extends AnyRouter> = (
   opts: EnableFnOptions<TRouter>,
@@ -35,9 +33,7 @@ type LogFnOptions<TRouter extends AnyRouter> = Operation &
          * Request result
          */
         direction: 'down';
-        result:
-          | OperationResultEnvelope<TRouter, unknown>
-          | TRPCClientError<TRouter>;
+        result: OperationResultEnvelope<unknown> | TRPCClientError<TRouter>;
         elapsedMs: number;
       }
   );
@@ -120,9 +116,7 @@ export function loggerLink<TRouter extends AnyRouter = AnyRouter>(
           });
         const requestStartTime = Date.now();
         function logResult(
-          result:
-            | OperationResultEnvelope<TRouter, unknown>
-            | TRPCClientError<TRouter>,
+          result: OperationResultEnvelope<unknown> | TRPCClientError<TRouter>,
         ) {
           const elapsedMs = Date.now() - requestStartTime;
 

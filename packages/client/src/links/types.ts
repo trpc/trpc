@@ -37,30 +37,22 @@ export interface TRPCClientRuntime {
   transformer: DataTransformer;
 }
 
-type OperationResultData<_TRouter extends AnyRouter, TOutput> =
-  | TRPCSuccessResponse<TOutput>['result']
-  | TRPCResultMessage<TOutput>['result'];
-
-export interface OperationResultEnvelope<TRouter extends AnyRouter, TOutput> {
-  result: OperationResultData<TRouter, TOutput>;
+export interface OperationResultEnvelope<TOutput> {
+  result:
+    | TRPCSuccessResponse<TOutput>['result']
+    | TRPCResultMessage<TOutput>['result'];
   context?: OperationContext;
 }
 
 export type OperationResultObservable<
   TRouter extends AnyRouter,
   TOutput,
-> = Observable<
-  OperationResultEnvelope<TRouter, TOutput>,
-  TRPCClientError<TRouter>
->;
+> = Observable<OperationResultEnvelope<TOutput>, TRPCClientError<TRouter>>;
 
 export type OperationResultObserver<
   TRouter extends AnyRouter,
   TOutput,
-> = Observer<
-  OperationResultEnvelope<TRouter, TOutput>,
-  TRPCClientError<TRouter>
->;
+> = Observer<OperationResultEnvelope<TOutput>, TRPCClientError<TRouter>>;
 
 export type OperationLink<
   TRouter extends AnyRouter,
