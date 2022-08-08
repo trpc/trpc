@@ -1,6 +1,6 @@
 {
   "name": "@examples/interop-next-minimal",
-  "version": "10.0.0-alpha.38",
+  "version": "10.0.0-alpha.42",
   "private": true,
   "scripts": {
     "dev": "next dev",
