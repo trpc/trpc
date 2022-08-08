@@ -1,18 +1,19 @@
 import {
-  AnyRouter,
-  ClientDataTransformerOptions,
-  assertNotBrowser,
-  inferHandlerInput,
-  inferProcedureOutput,
-  inferRouterContext,
-} from '@trpc/server';
-import {
   DehydrateOptions,
   DehydratedState,
   InfiniteData,
   QueryClient,
   dehydrate,
-} from 'react-query';
+} from '@tanstack/react-query';
+import {
+  AnyRouter,
+  ClientDataTransformerOptions,
+  assertNotBrowser,
+  callProcedure,
+  inferHandlerInput,
+  inferProcedureOutput,
+  inferRouterContext,
+} from '@trpc/server';
 
 type QueryClientConfig = ConstructorParameters<typeof QueryClient>[0];
 
@@ -40,19 +41,21 @@ export function createSSGHelpers<TRouter extends AnyRouter>({
   const serialize = transformer
     ? ('input' in transformer ? transformer.input : transformer).serialize
     : (obj: unknown) => obj;
-  const caller = router.createCaller(ctx) as ReturnType<
-    TRouter['createCaller']
-  >;
+
   const prefetchQuery = async <
     TPath extends keyof TQueries & string,
     TProcedure extends TQueries[TPath],
   >(
     ...pathAndInput: [path: TPath, ...args: inferHandlerInput<TProcedure>]
   ) => {
-    return queryClient.prefetchQuery(pathAndInput, async () => {
-      const data = await (caller.query as any)(...pathAndInput);
-
-      return data;
+    return queryClient.prefetchQuery(pathAndInput, () => {
+      return callProcedure({
+        procedures: router._def.procedures,
+        path: pathAndInput[0],
+        rawInput: pathAndInput[1],
+        ctx,
+        type: 'query',
+      });
     });
   };
 
@@ -62,10 +65,14 @@ export function createSSGHelpers<TRouter extends AnyRouter>({
   >(
     ...pathAndInput: [path: TPath, ...args: inferHandlerInput<TProcedure>]
   ) => {
-    return queryClient.prefetchInfiniteQuery(pathAndInput, async () => {
-      const data = await (caller.query as any)(...pathAndInput);
-
-      return data;
+    return queryClient.prefetchInfiniteQuery(pathAndInput, () => {
+      return callProcedure({
+        procedures: router._def.procedures,
+        path: pathAndInput[0],
+        rawInput: pathAndInput[1],
+        ctx,
+        type: 'query',
+      });
     });
   };
 
@@ -76,10 +83,14 @@ export function createSSGHelpers<TRouter extends AnyRouter>({
   >(
     ...pathAndInput: [path: TPath, ...args: inferHandlerInput<TProcedure>]
   ): Promise<TOutput> => {
-    return queryClient.fetchQuery(pathAndInput, async () => {
-      const data = await (caller.query as any)(...pathAndInput);
-
-      return data;
+    return queryClient.fetchQuery(pathAndInput, () => {
+      return callProcedure({
+        procedures: router._def.procedures,
+        path: pathAndInput[0],
+        rawInput: pathAndInput[1],
+        ctx,
+        type: 'query',
+      });
     });
   };
 
@@ -90,10 +101,14 @@ export function createSSGHelpers<TRouter extends AnyRouter>({
   >(
     ...pathAndInput: [path: TPath, ...args: inferHandlerInput<TProcedure>]
   ): Promise<InfiniteData<TOutput>> => {
-    return queryClient.fetchInfiniteQuery(pathAndInput, async () => {
-      const data = await (caller.query as any)(...pathAndInput);
-
-      return data;
+    return queryClient.fetchInfiniteQuery(pathAndInput, () => {
+      return callProcedure({
+        procedures: router._def.procedures,
+        path: pathAndInput[0],
+        rawInput: pathAndInput[1],
+        ctx,
+        type: 'query',
+      });
     });
   };
 

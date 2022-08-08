@@ -27,13 +27,13 @@ module.exports = {
       content:
         "🚀 You are looking at a pre-prelease of tRPC v10! See <a href='https://github.com/trpc/trpc/blob/next/.tmp/v10-docs.md'>this document</a> for a summary of what is changing &amp; <a href='https://github.com/trpc/examples-v10-next-prisma-starter-sqlite'>go here</a> to try out a real project using this version.",
       backgroundColor: 'var(--ifm-color-primary-dark)',
-      textColor: 'var(--ifm-color-light)',
+      textColor: '#ffffff',
     },
     navbar: {
       title: 'tRPC',
       logo: {
         alt: 'tRPC logo',
-        src: 'img/logo-no-text.svg',
+        src: 'img/logo.svg',
       },
       items: [
         {
@@ -52,6 +52,11 @@ module.exports = {
         {
           to: 'docs/nextjs',
           label: 'Usage with Next.js',
+        },
+        {
+          type: 'docsVersionDropdown',
+          position: 'right',
+          dropdownActiveClassDisabled: true,
         },
         {
           href: 'https://github.com/trpc/trpc/tree/next',
@@ -74,7 +79,6 @@ module.exports = {
       ],
     },
     footer: {
-      style: 'dark',
       links: [
         {
           title: 'Docs',
@@ -147,6 +151,14 @@ module.exports = {
       '@docusaurus/preset-classic',
       {
         docs: {
+          lastVersion: 'current',
+          versions: {
+            current: {
+              label: '10.x',
+              // path: '1.0.0',
+            },
+          },
+          includeCurrentVersion: false,
           sidebarPath: require.resolve('./sidebars.js'),
           // Please change this to your repo.
           editUrl: 'https://github.com/trpc/trpc/tree/next/www/',

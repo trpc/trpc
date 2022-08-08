@@ -8,13 +8,11 @@ import {
   inferSubscriptionOutput,
 } from '@trpc/server';
 import {
-  Observer,
   Unsubscribable,
   inferObservableValue,
   observableToPromise,
   share,
 } from '@trpc/server/observable';
-import { TRPCResultMessage } from '@trpc/server/rpc';
 import { CancelFn } from '..';
 import { TRPCClientError } from '../TRPCClientError';
 import { getFetch } from '../getFetch';
@@ -84,7 +82,15 @@ export interface TRPCRequestOptions {
   /**
    * Pass additional context to links
    */
-  context?: OperationContext;
+  requestContext?: OperationContext;
+}
+
+export interface TRPCSubscriptionObserver<TValue, TError> {
+  onStarted: () => void;
+  onData: (value: TValue) => void;
+  onError: (err: TError) => void;
+  onStopped: () => void;
+  onComplete: () => void;
 }
 
 /** @internal */
@@ -197,7 +203,7 @@ export class TRPCClient<TRouter extends AnyRouter> {
     path: TPath,
     ...args: [...inferHandlerInput<TQueries[TPath]>, TRPCRequestOptions?]
   ) {
-    const context = (args[1] as TRPCRequestOptions | undefined)?.context;
+    const context = (args[1] as TRPCRequestOptions | undefined)?.requestContext;
     return this.requestAsPromise<
       inferHandlerInput<TQueries[TPath]>,
       inferProcedureOutput<TQueries[TPath]>
@@ -215,7 +221,7 @@ export class TRPCClient<TRouter extends AnyRouter> {
     path: TPath,
     ...args: [...inferHandlerInput<TMutations[TPath]>, TRPCRequestOptions?]
   ) {
-    const context = (args[1] as TRPCRequestOptions | undefined)?.context;
+    const context = (args[1] as TRPCRequestOptions | undefined)?.requestContext;
     return this.requestAsPromise<
       inferHandlerInput<TMutations[TPath]>,
       inferProcedureOutput<TMutations[TPath]>
@@ -235,13 +241,13 @@ export class TRPCClient<TRouter extends AnyRouter> {
     path: TPath,
     input: TInput,
     opts: TRPCRequestOptions &
-      Partial<Observer<TRPCResultMessage<TOutput>, TRPCClientError<TRouter>>>,
+      Partial<TRPCSubscriptionObserver<TOutput, TRPCClientError<TRouter>>>,
   ): Unsubscribable {
     const observable$ = this.$request<TInput, TOutput>({
       type: 'subscription',
       path,
       input,
-      context: opts.context,
+      context: opts.requestContext,
     });
     const runtime = this.runtime;
     return observable$.subscribe({
@@ -251,16 +257,22 @@ export class TRPCClient<TRouter extends AnyRouter> {
           runtime,
         );
         if (transformed.ok) {
-          opts.next?.(transformed.data);
+          if (transformed.data.type === 'started') {
+            opts.onStarted?.();
+          } else if (transformed.data.type === 'stopped') {
+            opts.onStopped?.();
+          } else if (transformed.data.type === 'data') {
+            opts.onData?.(transformed.data.data);
+          }
           return;
         }
-        opts.error?.(transformed.error);
+        opts.onError?.(transformed.error);
       },
       error(err) {
-        opts.error?.(err);
+        opts.onError?.(err);
       },
       complete() {
-        opts.complete?.();
+        opts.onComplete?.();
       },
     });
   }

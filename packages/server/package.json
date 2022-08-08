@@ -1,6 +1,6 @@
 {
   "name": "@trpc/server",
-  "version": "10.0.0-alpha.38",
+  "version": "10.0.0-alpha.42",
   "description": "tRPC Server",
   "author": "KATT",
   "license": "MIT",
@@ -35,9 +35,9 @@
       "default": "./dist/index.js"
     },
     "./adapters/aws-lambda": {
-      "import": "./dist/adapters/aws-lambda.mjs",
-      "require": "./dist/adapters/aws-lambda.js",
-      "default": "./dist/adapters/aws-lambda.js"
+      "import": "./dist/adapters/aws-lambda/index.mjs",
+      "require": "./dist/adapters/aws-lambda/index.js",
+      "default": "./dist/adapters/aws-lambda/index.js"
     },
     "./adapters/express": {
       "import": "./dist/adapters/express.mjs",
@@ -116,6 +116,7 @@
     "@types/hash-sum": "^1.0.0",
     "@types/ws": "^8.2.0",
     "abort-controller": "^3.0.0",
+    "aws-lambda": "^1.0.7",
     "devalue": "^2.0.1",
     "esbuild": "^0.14.38",
     "express": "^4.17.1",

@@ -8,6 +8,10 @@ import {
 import { UnsetMarker } from './internals/utils';
 
 type ClientContext = Record<string, unknown>;
+
+/**
+ * @internal
+ */
 export interface ProcedureOptions {
   /**
    * Client-side context
@@ -16,6 +20,7 @@ export interface ProcedureOptions {
 }
 
 /**
+ * FIXME: this should only take 1 generic argument instead of a list
  * @internal
  */
 export interface ProcedureParams<

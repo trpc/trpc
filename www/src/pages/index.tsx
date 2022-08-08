@@ -1,54 +1,13 @@
 import Head from '@docusaurus/Head';
 import Link from '@docusaurus/Link';
-import useBaseUrl from '@docusaurus/useBaseUrl';
 import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
 import Layout from '@theme/Layout';
-import clsx from 'clsx';
-import React, { Fragment } from 'react';
-import GitHubButton from 'react-github-btn';
-import styles from './styles.module.css';
-
-const features = [
-  {
-    title: <>🧙‍♂️&nbsp; Automatic typesafety</>,
-    description: (
-      <>
-        Automatic typesafety & autocompletion inferred from your API-paths,
-        their input&nbsp;data, &amp;&nbsp;outputs.
-      </>
-    ),
-  },
-  {
-    title: <>🍃&nbsp; Light &amp; Snappy DX</>,
-    description: (
-      <>
-        No code generation, run-time bloat, or build pipeline.{' '}
-        <a href="#zero" aria-describedby="footnote-label" id="footnotes-ref">
-          Zero dependencies
-        </a>{' '}
-        &amp; a tiny client-side footprint.
-      </>
-    ),
-  },
-  {
-    title: <>🐻&nbsp; Add to existing brownfield project</>,
-    description: (
-      <>
-        Easy to add to your existing brownfield project with adapters for
-        Connect/Express/Next.js.
-      </>
-    ),
-  },
-];
-
-function Feature({ title, description }) {
-  return (
-    <div className={'col col-4 p-4'}>
-      <h3 className="font-semibold text-xl pb-6">{title}</h3>
-      <p>{description}</p>
-    </div>
-  );
-}
+import React from 'react';
+import { Features } from '../components/Features';
+import { GithubStarCountButton } from '../components/GithubStarCountButton';
+import { SectionTitle } from '../components/SectionTitle';
+import { TwitterWall } from '../components/TwitterWall';
+import { Sponsors } from '../components/sponsors';
 
 function Home() {
   const context = useDocusaurusContext();
@@ -66,83 +25,93 @@ function Home() {
           charSet="utf-8"
         />
       </Head>
-      <header className={clsx('hero hero--primary', styles.heroBanner)}>
-        <div className="container flex flex-col gap-6">
-          <h1 className="font-bold text-5xl">{siteConfig.title}</h1>
-          <p className="hero__subtitle">
-            {siteConfig.tagline.split('\n').map((text) => (
-              <div key={text}>{text}</div>
-            ))}
-          </p>
-          <p>
-            <GitHubButton
-              href="https://github.com/trpc/trpc"
-              data-icon="octicon-star"
-              data-size="large"
-              data-show-count="true"
-              aria-label="Star trpc/trpc on GitHub"
-            >
-              Star
-            </GitHubButton>
-          </p>
+      <main className="container px-6 mx-auto py-28 md:py-40 lg:py-48 xl:py-64 space-y-28">
+        <header className="flex flex-col lg:flex-row">
+          <div className="flex-1">
+            <h1 className="pb-3 text-2xl font-bold whitespace-pre-wrap lg:text-3xl">
+              {siteConfig.tagline}
+            </h1>
+            <p className="text-sm text-gray-600 dark:text-gray-400 md:text-base">
+              Leverage the full power of TypeScript whilst allowing your code to
+              be simpler.
+              {/* FIXME: write something good */}
+            </p>
+            <div className="flex items-center gap-4 mt-6">
+              <Link
+                href="/docs/quickstart"
+                className="inline-block px-4 py-2 text-sm font-bold text-black transition-colors rounded-lg md:text-base hover:bg-cyan-600 hover:no-underline hover:text-black bg-cyan-500"
+              >
+                Quickstart
+              </Link>
+              <GithubStarCountButton />
+            </div>
+          </div>
+          <div className="flex-1">{/* TODO: Add new GIF here */}</div>
+        </header>
 
-          {/* The below is temporarily commented out as this GIF is out-of-date */}
-          {/* 
-          <figure className={`${styles.figure} gap-4`}>
+        <section>
+          {/* <SectionTitle
+          title="The easy way to build typesafe APIs"
+          description={
+            <>
+              If your project is built with TypeScript end-to-end, you can share
+              types directly between your client and server, without relying on
+              code generation.
+            </>
+          }
+        /> */}
+          <Features />
+        </section>
+        <section className="max-w-[80ch] px-6 mx-auto md:px-0">
+          <blockquote cite="https://twitter.com/alexdotjs">
+            <SectionTitle title={<>You may not need a traditional API</>} />
+            <p className="pt-3 text-sm text-gray-600 md:text-base dark:text-gray-400">
+              If we have a project that is built with the same language
+              end-to-end, why should we need to bring in <em>another</em>{' '}
+              language into the mix, like <code>.yaml</code> or{' '}
+              <code>.graphql</code>, when all the type information is already
+              there? At the end of the day, what you want to achieve with an
+              &quot;API contract&quot;, whether it&apos;s a REST or a GraphQL,
+              is to provide a consistent, typesafe, and secure way to
+              communicate between your client and server &mdash; tRPC enables
+              that without glueing together tooling from a number of different
+              projects.
+            </p>
+
+            <p className="pt-3 text-sm text-gray-600 md:text-base dark:text-gray-400">
+              I built tRPC to allow me to <strong>move faster</strong> by
+              removing the need of a traditional API-layer, while still having
+              confidence that my apps won&apos;t break as I rapidly iterate.
+            </p>
+          </blockquote>
+          <a
+            className="flex items-center gap-3 pt-6 group hover:no-underline"
+            href="http://twitter.com/alexdotjs"
+          >
             <img
-              className="mx-auto"
-              src="https://storage.googleapis.com/trpc/trpcgif.gif"
-              alt="Server/client example"
+              src="https://avatars.githubusercontent.com/u/459267?v=4"
+              alt="Alex/KATT"
+              loading="lazy"
+              className="w-12 h-12 mr-2 rounded-full md:w-14 md:h-14"
             />
-            <figcaption>
-              The client doesn&apos;t import <em>any code</em> from the server,
-              only a single TypeScript type. The <code>import type</code>{' '}
-              declaration is{' '}
-              <a href="https://www.typescriptlang.org/docs/handbook/release-notes/typescript-3-8.html#type-only-imports-and-export">
-                fully erased
-              </a>{' '}
-              at runtime. tRPC transforms this type into a fully typesafe
-              client.
-            </figcaption>
-          </figure> 
-          */}
-          <p>
-            <Link
-              className={clsx('getStarted', styles.getStarted)}
-              to={useBaseUrl('docs/')}
-            >
-              Get Started
-            </Link>
-          </p>
+            <div>
+              <h3 className="mb-0 text-base font-bold md:text-lg">Alex/KATT</h3>
+              <p className="text-xs text-gray-600 md:text-sm dark:text-gray-400">
+                Creator of tRPC
+              </p>
+            </div>
+          </a>
+        </section>
+        <section>
+          <SectionTitle title="Don't take our word for it!" />
+          <TwitterWall />
+        </section>
+        <div className="px-4 mx-auto lg:max-w-screen-lg">
+          <div className="aspect-square">
+            <Sponsors />
+          </div>
         </div>
-      </header>
-      <main>
-        {features && features.length > 0 && (
-          <section className="flex flex-col md:flex-row items-center py-8 px-8 md:px-0 w-full max-w-[var(--ifm-container-width-xl)] mx-auto">
-            {features.map((props, idx) => (
-              <Feature key={idx} {...props} />
-            ))}
-          </section>
-        )}
       </main>
-      <footer
-        className={`container px-8 md:px-0 w-full max-w-[var(--ifm-container-width)] mx-auto`}
-      >
-        <ol className="footnotes list-decimal">
-          <li id="zero">
-            <code>@trpc/client</code> depends on some babel runtime helpers +
-            that a <code>fetch()</code> polyfill/ponyfill is used if the browser
-            doesn&apos;t support it. <code>@trpc/react</code> is built on top of{' '}
-            <a
-              className="text-primary no-underline"
-              href="https://react-query.tanstack.com/"
-            >
-              react-query
-            </a>
-            .
-          </li>
-        </ol>
-      </footer>
     </Layout>
   );
 }

@@ -1,5 +1,10 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 import {
+  UseInfiniteQueryResult,
+  UseMutationResult,
+  UseQueryResult,
+} from '@tanstack/react-query';
+import {
   AnyRouter,
   OmitNeverKeys,
   Procedure,
@@ -8,18 +13,21 @@ import {
   inferProcedureInput,
   inferProcedureOutput,
 } from '@trpc/server';
+import { inferObservableValue } from '@trpc/server/observable';
 import { createProxy } from '@trpc/server/shared';
-import {
-  UseInfiniteQueryResult,
-  UseMutationResult,
-  UseQueryResult,
-} from 'react-query';
+import { useMemo } from 'react';
 import {
   CreateReactQueryHooks,
   UseTRPCInfiniteQueryOptions,
   UseTRPCMutationOptions,
   UseTRPCQueryOptions,
+  UseTRPCSubscriptionOptions,
 } from './createReactQueryHooks';
+import { getQueryKey } from './internals/getQueryKey';
+import {
+  DecoratedProcedureUtilsRecord,
+  createReactQueryUtilsProxy,
+} from './internals/utilsProxy';
 
 type DecorateProcedure<
   TProcedure extends Procedure<any>,
@@ -30,17 +38,37 @@ type DecorateProcedure<
         TQueryFnData = inferProcedureOutput<TProcedure>,
         TData = inferProcedureOutput<TProcedure>,
       >(
-        ...args: [
+        input: inferProcedureInput<TProcedure>,
+        opts?: UseTRPCQueryOptions<
+          TPath,
           inferProcedureInput<TProcedure>,
-          void | UseTRPCQueryOptions<
+          TQueryFnData,
+          TData,
+          inferProcedureClientError<TProcedure>
+        >,
+      ) => UseQueryResult<TData, inferProcedureClientError<TProcedure>>
+    : never;
+
+  useInfiniteQuery: TProcedure extends { _query: true }
+    ? inferProcedureInput<TProcedure> extends {
+        cursor?: any;
+      }
+      ? <
+          _TQueryFnData = inferProcedureOutput<TProcedure>,
+          TData = inferProcedureOutput<TProcedure>,
+        >(
+          input: Omit<inferProcedureInput<TProcedure>, 'cursor'>,
+          opts?: UseTRPCInfiniteQueryOptions<
             TPath,
             inferProcedureInput<TProcedure>,
-            TQueryFnData,
             TData,
             inferProcedureClientError<TProcedure>
           >,
-        ]
-      ) => UseQueryResult<TData, inferProcedureClientError<TProcedure>>
+        ) => UseInfiniteQueryResult<
+          TData,
+          inferProcedureClientError<TProcedure>
+        >
+      : never
     : never;
 
   useMutation: TProcedure extends { _mutation: true }
@@ -59,34 +87,23 @@ type DecorateProcedure<
       >
     : never;
 
-  useInfiniteQuery: TProcedure extends { _query: true }
-    ? inferProcedureInput<TProcedure> extends {
-        cursor?: any;
-      }
-      ? <
-          _TQueryFnData = inferProcedureOutput<TProcedure>,
-          TData = inferProcedureOutput<TProcedure>,
-        >(
-          ...args: [
-            Omit<inferProcedureInput<TProcedure>, 'cursor'>,
-            void | UseTRPCInfiniteQueryOptions<
-              TPath,
-              inferProcedureInput<TProcedure>,
-              TData,
-              inferProcedureClientError<TProcedure>
-            >,
-          ]
-        ) => UseInfiniteQueryResult<
-          TData,
+  useSubscription: TProcedure extends { _subscription: true }
+    ? (
+        input: inferProcedureInput<TProcedure>,
+        opts?: UseTRPCSubscriptionOptions<
+          inferObservableValue<inferProcedureOutput<TProcedure>>,
           inferProcedureClientError<TProcedure>
-        >
-      : never
+        >,
+      ) => void
     : never;
 }>;
 
 type assertProcedure<T> = T extends Procedure<any> ? T : never;
 
-type DecoratedProcedureRecord<
+/**
+ * @internal
+ */
+export type DecoratedProcedureRecord<
   TProcedures extends ProcedureRouterRecord,
   TPath extends string = '',
 > = {
@@ -107,6 +124,15 @@ export function createReactQueryHooksProxy<
 >(trpc: CreateReactQueryHooks<TRouter, TSSRContext>) {
   const proxy = createProxy((opts) => {
     const args = opts.args;
+
+    if (opts.path.length === 1 && opts.path[0] === 'useContext') {
+      const context = trpc.useContext();
+      // create a stable reference of the utils context
+      return useMemo(() => {
+        return createReactQueryUtilsProxy(context);
+      }, [context]);
+    }
+
     const pathCopy = [...opts.path];
 
     // The last arg is for instance `.useMutation` or `.useQuery()`
@@ -119,8 +145,11 @@ export function createReactQueryHooksProxy<
     }
     const [input, ...rest] = args;
 
-    return (trpc as any)[lastArg]([path, input], ...rest);
+    const queryKey = getQueryKey(path, input);
+    return (trpc as any)[lastArg](queryKey, ...rest);
   });
 
-  return proxy as DecoratedProcedureRecord<TRouter['_def']['record']>;
+  return proxy as {
+    useContext(): DecoratedProcedureUtilsRecord<TRouter>;
+  } & DecoratedProcedureRecord<TRouter['_def']['record']>;
 }

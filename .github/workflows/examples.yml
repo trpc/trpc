@@ -20,6 +20,7 @@ jobs:
         dir: [
             express-server,
             .interop/express-server,
+            express-minimal,
             .interop/next-prisma-starter,
             .interop/next-prisma-starter-websockets,
             .interop/next-prisma-todomvc,

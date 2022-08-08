@@ -984,6 +984,89 @@
       "contributions": [
         "test"
       ]
+    },
+    {
+      "login": "carstenlebek",
+      "name": "Carsten Lebek",
+      "avatar_url": "https://avatars.githubusercontent.com/u/59960385?v=4",
+      "profile": "https://clebek.dev",
+      "contributions": [
+        "example"
+      ]
+    },
+    {
+      "login": "chrisbradleydev",
+      "name": "Chris Bradley",
+      "avatar_url": "https://avatars.githubusercontent.com/u/11767079?v=4",
+      "profile": "https://chrisbradley.dev",
+      "contributions": [
+        "financial"
+      ]
+    },
+    {
+      "login": "Sven1106",
+      "name": "Svend Aage Roperos Nielsen",
+      "avatar_url": "https://avatars.githubusercontent.com/u/28002895?v=4",
+      "profile": "https://github.com/Sven1106",
+      "contributions": [
+        "financial"
+      ]
+    },
+    {
+      "login": "iway1",
+      "name": "iway1",
+      "avatar_url": "https://avatars.githubusercontent.com/u/12774588?v=4",
+      "profile": "https://github.com/iway1",
+      "contributions": [
+        "financial"
+      ]
+    },
+    {
+      "login": "prisma",
+      "name": "Prisma",
+      "avatar_url": "https://avatars.githubusercontent.com/u/17219288?v=4",
+      "profile": "https://www.prisma.io",
+      "contributions": [
+        "financial"
+      ]
+    },
+    {
+      "login": "francisprovost",
+      "name": "Francis Provost",
+      "avatar_url": "https://avatars.githubusercontent.com/u/6840361?v=4",
+      "profile": "http://francisprovost.com",
+      "contributions": [
+        "financial"
+      ]
+    },
+    {
+      "login": "dyaa",
+      "name": "Dyaa",
+      "avatar_url": "https://avatars.githubusercontent.com/u/4283185?v=4",
+      "profile": "https://dyaa.me",
+      "contributions": [
+        "financial",
+        "code",
+        "test"
+      ]
+    },
+    {
+      "login": "zzacong",
+      "name": "Zac Ong",
+      "avatar_url": "https://avatars.githubusercontent.com/u/61817066?v=4",
+      "profile": "https://github.com/zzacong",
+      "contributions": [
+        "financial"
+      ]
+    },
+    {
+      "login": "LoriKarikari",
+      "name": "Lori Karikari",
+      "avatar_url": "https://avatars.githubusercontent.com/u/7902980?v=4",
+      "profile": "https://github.com/LoriKarikari",
+      "contributions": [
+        "financial"
+      ]
     }
   ],
   "skipCi": true

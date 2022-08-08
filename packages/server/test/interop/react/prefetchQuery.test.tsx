@@ -1,21 +1,14 @@
 /* eslint-disable @typescript-eslint/no-empty-function */
 import { createLegacyAppRouter } from './__testHelpers';
-import '@testing-library/jest-dom';
-import { render, waitFor } from '@testing-library/react';
-import React, { useEffect, useState } from 'react';
 import {
   QueryClient,
   QueryClientProvider,
   dehydrate,
-  setLogger,
   useQueryClient,
-} from 'react-query';
-
-setLogger({
-  log() {},
-  warn() {},
-  error() {},
-});
+} from '@tanstack/react-query';
+import '@testing-library/jest-dom';
+import { render, waitFor } from '@testing-library/react';
+import React, { useEffect, useState } from 'react';
 
 let factory: ReturnType<typeof createLegacyAppRouter>;
 beforeEach(() => {

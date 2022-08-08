@@ -2,6 +2,13 @@
  * Heavily based on urql's ssr
  * https://github.com/FormidableLabs/urql/blob/main/packages/next-urql/src/with-urql-client.ts
  */
+import {
+  DehydratedState,
+  Hydrate,
+  QueryClient,
+  QueryClientProvider,
+  dehydrate,
+} from '@tanstack/react-query';
 import type { CreateTRPCClientOptions } from '@trpc/client/src/internals/TRPCClient';
 import {
   TRPCClient,
@@ -18,13 +25,6 @@ import {
   NextPageContext,
 } from 'next/dist/shared/lib/utils';
 import React, { createElement, useState } from 'react';
-import {
-  DehydratedState,
-  Hydrate,
-  QueryClient,
-  QueryClientProvider,
-  dehydrate,
-} from 'react-query';
 import ssrPrepass from 'react-ssr-prepass';
 
 type QueryClientConfig = ConstructorParameters<typeof QueryClient>[0];

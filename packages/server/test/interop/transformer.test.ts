@@ -432,11 +432,9 @@ describe('transformer on router', () => {
 
     const data = await new Promise<Date>((resolve) => {
       const subscription = client.subscription('hello', date, {
-        next: (result) => {
-          if (result.type === 'data') {
-            subscription.unsubscribe();
-            resolve(result.data);
-          }
+        onData: (data) => {
+          subscription.unsubscribe();
+          resolve(data);
         },
       });
     });

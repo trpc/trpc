@@ -62,7 +62,7 @@ Follow the [Quickstart](/docs/quickstart) and read the [`@trpc/server` docs](/do
 #### 1. Install dependencies
 
 ```bash
-yarn add @trpc/client @trpc/server @trpc/react react-query
+yarn add @trpc/client @trpc/server @trpc/react react-query@3
 ```
 - @trpc/server: This is a peer dependency of `@trpc/client` so you have to install it again!
 - React Query: @trpc/react provides a thin wrapper over react-query. It is required as a peer dependency.
@@ -73,11 +73,19 @@ Create a set of strongly-typed React hooks from your `AppRouter` type signature 
 
 ```tsx title='utils/trpc.ts'
 // utils/trpc.ts
-import { createReactQueryHooks } from '@trpc/react';
+import { createReactQueryHooks, createReactQueryHooksProxy } from '@trpc/react';
 import type { AppRouter } from '../path/to/router.ts';
 
-export const trpc = createReactQueryHooks<AppRouter>();
+const hooks = createReactQueryHooks<AppRouter>();
 // => { useQuery: ..., useMutation: ...}
+
+const proxy = createReactQueryHooksProxy<AppRouter>(hooks);
+// => proxy.<router>.<query>.useQuery(...),
+
+export const trpc = {
+  proxy,
+  ...hooks,
+}
 ```
 
 #### 3. Add tRPC providers
@@ -87,7 +95,7 @@ In your `App.tsx`
 ```tsx title='App.tsx'
 import React from 'react';
 import { useState } from 'react';
-import { QueryClient, QueryClientProvider } from 'react-query';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { trpc } from './utils/trpc';
 
 export function App() {
