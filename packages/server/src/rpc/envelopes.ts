@@ -59,13 +59,16 @@ export type TRPCRequest = JSONRPC2.Request<
 
 export type TRPCResult<TData = unknown> = { data: TData };
 
+export type TRPCSuccessResponse<TData> = JSONRPC2.ResultResponse<
+  TRPCResult<TData>
+>;
 export type TRPCErrorResponse<TError extends TRPCErrorShape = TRPCErrorShape> =
   JSONRPC2.ErrorResponse<TError>;
 
 export type TRPCResponse<
-  TResult = unknown,
+  TData = unknown,
   TError extends TRPCErrorShape = TRPCErrorShape,
-> = JSONRPC2.ResultResponse<TRPCResult<TResult>> | TRPCErrorResponse<TError>;
+> = TRPCSuccessResponse<TData> | TRPCErrorResponse<TError>;
 
 /**
  * HTTP WS Envelopes
