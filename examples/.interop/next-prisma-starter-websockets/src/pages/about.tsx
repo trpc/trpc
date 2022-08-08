@@ -5,7 +5,7 @@ import { trpc } from 'utils/trpc';
 export default function AboutPage() {
   const [num, setNumber] = useState<number>();
   trpc.useSubscription(['randomNumber', undefined], {
-    next(n) {
+    onData(n) {
       setNumber(n);
     },
   });

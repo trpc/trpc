@@ -17,7 +17,6 @@ import {
   fastifyTRPCPlugin,
 } from '../../../src/adapters/fastify';
 import { observable } from '../../../src/observable';
-import { TRPCResultMessage } from '../../../src/rpc';
 
 const config = {
   port: 2022,
@@ -260,17 +259,20 @@ describe('anonymous user', () => {
       });
     });
 
-    const next = jest.fn();
+    const onStartedMock = jest.fn();
+    const onDataMock = jest.fn();
     const sub = app.client.subscription('onMessage', undefined, {
-      next(data) {
+      onStarted: onStartedMock,
+      onData(data) {
         expectTypeOf(data).not.toBeAny();
-        expectTypeOf(data).toMatchTypeOf<TRPCResultMessage<Message>>();
-        next(data);
+        expectTypeOf(data).toMatchTypeOf<Message>();
+        onDataMock(data);
       },
     });
 
     await waitFor(() => {
-      expect(next).toHaveBeenCalledTimes(3);
+      expect(onStartedMock).toHaveBeenCalledTimes(1);
+      expect(onDataMock).toHaveBeenCalledTimes(2);
     });
 
     app.ee.emit('server:msg', {
@@ -278,38 +280,24 @@ describe('anonymous user', () => {
     });
 
     await waitFor(() => {
-      expect(next).toHaveBeenCalledTimes(4);
+      expect(onDataMock).toHaveBeenCalledTimes(3);
     });
 
-    expect(next.mock.calls).toMatchInlineSnapshot(`
+    expect(onDataMock.mock.calls).toMatchInlineSnapshot(`
       Array [
         Array [
           Object {
-            "type": "started",
+            "id": "1",
           },
         ],
         Array [
           Object {
-            "data": Object {
-              "id": "1",
-            },
-            "type": "data",
+            "id": "2",
           },
         ],
         Array [
           Object {
-            "data": Object {
-              "id": "2",
-            },
-            "type": "data",
-          },
-        ],
-        Array [
-          Object {
-            "data": Object {
-              "id": "3",
-            },
-            "type": "data",
+            "id": "3",
           },
         ],
       ]

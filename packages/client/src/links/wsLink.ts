@@ -21,12 +21,17 @@ export interface WebSocketClientOptions {
   url: string;
   WebSocket?: typeof WebSocket;
   retryDelayMs?: typeof retryDelay;
+  onOpen?: () => void;
+  onClose?: () => void;
 }
+
 export function createWSClient(opts: WebSocketClientOptions) {
   const {
     url,
     WebSocket: WebSocketImpl = WebSocket,
     retryDelayMs: retryDelayFn = retryDelay,
+    onOpen,
+    onClose,
   } = opts;
   /* istanbul ignore next */
   if (!WebSocketImpl) {
@@ -129,6 +134,7 @@ export function createWSClient(opts: WebSocketClientOptions) {
       }
       connectAttempt = 0;
       state = 'open';
+      onOpen?.();
       dispatch();
     });
     conn.addEventListener('error', () => {
@@ -138,6 +144,9 @@ export function createWSClient(opts: WebSocketClientOptions) {
     });
     const handleIncomingRequest = (req: TRPCClientIncomingRequest) => {
       if (req.method === 'reconnect' && conn === activeConnection) {
+        if (state === 'open') {
+          onClose?.();
+        }
         reconnect();
         // notify subscribers
         for (const pendingReq of Object.values(pendingRequests)) {
@@ -194,6 +203,10 @@ export function createWSClient(opts: WebSocketClientOptions) {
     });
 
     conn.addEventListener('close', () => {
+      if (state === 'open') {
+        onClose?.();
+      }
+
       if (activeConnection === conn) {
         // connection might have been replaced already
         tryReconnect();
@@ -259,6 +272,7 @@ export function createWSClient(opts: WebSocketClientOptions) {
   return {
     close: () => {
       state = 'closed';
+      onClose?.();
       closeIfNoPending(activeConnection);
       clearTimeout(connectTimer as any);
       connectTimer = null;

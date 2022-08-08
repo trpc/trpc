@@ -43,7 +43,7 @@ test('decorate independently', () => {
   t.procedure
     .use(isAuthed)
     .use(addService)
-    .resolve(({ ctx }) => {
+    .query(({ ctx }) => {
       expectTypeOf(ctx.doSomething).toMatchTypeOf<() => string>();
       expectTypeOf(ctx.user).toMatchTypeOf<User>();
     });

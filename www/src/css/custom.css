@@ -21,7 +21,9 @@
   --ifm-code-font-size: 95%;
   --ifm-container-width: 1140px;
   --ifm-container-width-xl: 1320px;
-  --ifm-link-hover-color: ;
+}
+:root[data-theme='dark'] {
+  --ifm-footer-background-color: #242526;
 }
 
 .markdown a {
@@ -177,4 +179,11 @@ h5 {
 
 .admonition-heading h5 {
   @apply flex items-center text-lg;
+}
+
+/**
+ * Tweet Wall
+ **/
+#tweet {
+  --ifm-link-hover-decoration: none;
 }
