@@ -48,31 +48,27 @@ export namespace JSONRPC2 {
   }
 }
 
-/**
- * TRPC HTTP Envelopes
- */
+/////////////////////////// HTTP envelopes ///////////////////////
 
-export type TRPCRequest = JSONRPC2.Request<
-  ProcedureType,
-  { path: string; input: unknown }
->;
+export interface TRPCRequest
+  extends JSONRPC2.Request<ProcedureType, { path: string; input: unknown }> {}
 
-export type TRPCResult<TData = unknown> = { data: TData };
+export interface TRPCResult<TData = unknown> {
+  data: TData;
+}
 
-export type TRPCSuccessResponse<TData> = JSONRPC2.ResultResponse<
-  TRPCResult<TData>
->;
-export type TRPCErrorResponse<TError extends TRPCErrorShape = TRPCErrorShape> =
-  JSONRPC2.ErrorResponse<TError>;
+export interface TRPCSuccessResponse<TData>
+  extends JSONRPC2.ResultResponse<TRPCResult<TData>> {}
+export interface TRPCErrorResponse<
+  TError extends TRPCErrorShape = TRPCErrorShape,
+> extends JSONRPC2.ErrorResponse<TError> {}
 
 export type TRPCResponse<
   TData = unknown,
   TError extends TRPCErrorShape = TRPCErrorShape,
 > = TRPCSuccessResponse<TData> | TRPCErrorResponse<TError>;
 
-/**
- * HTTP WS Envelopes
- */
+/////////////////////////// WebSocket envelopes ///////////////////////
 
 export type TRPCRequestMessage = {
   id: JSONRPC2.RequestId;
@@ -81,9 +77,10 @@ export type TRPCRequestMessage = {
 /**
  * The client asked the server to unsubscribe
  */
-export type TRPCSubscriptionStopNotification = {
+export interface TRPCSubscriptionStopNotification
+  extends JSONRPC2.BaseRequest<'subscription.stop'> {
   id: null;
-} & JSONRPC2.BaseRequest<'subscription.stop'>;
+}
 
 /**
  * The client's outgoing request types
@@ -113,9 +110,10 @@ export type TRPCResponseMessage<
 /**
  * The server asked the client to reconnect - useful when restarting/redeploying service
  */
-export type TRPCReconnectNotification = {
+export interface TRPCReconnectNotification
+  extends JSONRPC2.BaseRequest<'reconnect'> {
   id: JSONRPC2.RequestId;
-} & JSONRPC2.BaseRequest<'reconnect'>;
+}
 
 /**
  * The client's incoming request types
