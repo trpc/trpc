@@ -42,38 +42,34 @@ const ctx = konn()
   .done();
 
 test('useSubscription', async () => {
-  const onStartedMock = jest.fn();
   const onDataMock = jest.fn();
   const onErrorMock = jest.fn();
 
   const { App, proxy } = ctx;
 
   function MyComponent() {
-    const [isOpen, setIsOpen] = useState(false);
-    const [value, setValue] = useState<number | null>(null);
+    const [isStarted, setIsStarted] = useState(false);
+    const [data, setData] = useState<number>();
 
     proxy.onEvent.useSubscription(10, {
       enabled: true,
-      onStarted: () => {
-        onStartedMock();
-        setIsOpen(true);
-      },
-      onData: (result) => {
-        onDataMock(result);
-        setValue(result);
+      onStarted: () => setIsStarted(true),
+      onData: (data) => {
+        onDataMock(data);
+        setData(data);
       },
       onError: onErrorMock,
     });
 
-    if (!isOpen) {
+    if (!isStarted) {
       return <>{'__connecting'}</>;
     }
 
-    if (!value) {
+    if (!data) {
       return <>{'__connected'}</>;
     }
 
-    return <pre>{`__value:${value}`}</pre>;
+    return <pre>{`__data:${data}`}</pre>;
   }
 
   const utils = render(
@@ -86,11 +82,9 @@ test('useSubscription', async () => {
     expect(utils.container).toHaveTextContent(`__connecting`),
   );
   expect(onDataMock).toHaveBeenCalledTimes(0);
-  expect(onStartedMock).toHaveBeenCalledTimes(0);
   await waitFor(() => expect(utils.container).toHaveTextContent(`__connected`));
-  expect(onStartedMock).toHaveBeenCalledTimes(1);
   ee.emit('data', 20);
-  await waitFor(() => expect(utils.container).toHaveTextContent(`__value:30`));
+  await waitFor(() => expect(utils.container).toHaveTextContent(`__data:30`));
   expect(onDataMock).toHaveBeenCalledTimes(1);
   expect(onErrorMock).toHaveBeenCalledTimes(0);
 });
