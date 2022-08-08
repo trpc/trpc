@@ -3,7 +3,7 @@
   - examples/**
 '🕸 www':
   - www/**
-  - !www/docs/**
+  - '!www/docs/**'
 '@trpc/server':
   - packages/server/**
 '@trpc/client':
