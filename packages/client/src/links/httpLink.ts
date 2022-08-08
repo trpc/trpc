@@ -1,8 +1,8 @@
 import { AnyRouter } from '@trpc/server';
 import { TRPCClientError } from '../TRPCClientError';
-import { TRPCAbortError } from '../internals/TRPCAbortError';
+import { TRPCAbortError } from '../core/TRPCAbortError';
+import { transformRPCResponse } from '../core/transformRPCResponse';
 import { httpRequest } from '../internals/httpRequest';
-import { transformRPCResponse } from '../internals/transformRPCResponse';
 import { HTTPLinkOptions, TRPCLink } from './core';
 
 export function httpLink<TRouter extends AnyRouter>(
