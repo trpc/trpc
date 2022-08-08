@@ -68,7 +68,7 @@ async function start() {
 
   await new Promise<void>((resolve) => {
     const sub = anon.client.subscription('sub:randomNumber', undefined, {
-      next(data) {
+      onData(data) {
         console.log('>>> anon:sub:randomNumber:received:', data);
         randomNumberCount++;
 
@@ -77,10 +77,10 @@ async function start() {
           resolve();
         }
       },
-      error(error) {
+      onError(error) {
         console.error('>>> anon:sub:randomNumber:error:', error);
       },
-      complete() {
+      onComplete() {
         console.log('>>> anon:sub:randomNumber:', 'unsub() called');
       },
     });

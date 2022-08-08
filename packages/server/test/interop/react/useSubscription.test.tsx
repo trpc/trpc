@@ -43,7 +43,7 @@ describe('useSubscription', () => {
       );
 
       trpc.useSubscription(['newPosts', input], {
-        next(post) {
+        onData(post) {
           addPosts([post]);
         },
       });

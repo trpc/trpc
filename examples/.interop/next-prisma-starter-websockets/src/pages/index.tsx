@@ -24,7 +24,7 @@ function AddMessageForm({ onMessagePost }: { onMessagePost: () => void }) {
   const userName = session?.user?.name;
   if (!userName) {
     return (
-      <div className="flex rounded bg-gray-800 px-3 py-2 text-lg text-gray-200 w-full justify-between">
+      <div className="flex justify-between w-full px-3 py-2 text-lg text-gray-200 bg-gray-800 rounded">
         <p className="font-bold">
           You have to{' '}
           <button
@@ -38,7 +38,7 @@ function AddMessageForm({ onMessagePost }: { onMessagePost: () => void }) {
         <button
           onClick={() => signIn()}
           data-testid="signin"
-          className="px-4 bg-indigo-500 rounded h-full"
+          className="h-full px-4 bg-indigo-500 rounded"
         >
           Sign In
         </button>
@@ -59,11 +59,11 @@ function AddMessageForm({ onMessagePost }: { onMessagePost: () => void }) {
         }}
       >
         <fieldset disabled={addPost.isLoading} className="min-w-0">
-          <div className="flex rounded bg-gray-500 px-3 py-2 text-lg text-gray-200 w-full items-end">
+          <div className="flex items-end w-full px-3 py-2 text-lg text-gray-200 bg-gray-500 rounded">
             <textarea
               value={message}
               onChange={(e) => setMessage(e.target.value)}
-              className="bg-transparent flex-1 outline-0"
+              className="flex-1 bg-transparent outline-0"
               rows={message.split(/\r|\n/).length}
               id="text"
               name="text"
@@ -92,7 +92,7 @@ function AddMessageForm({ onMessagePost }: { onMessagePost: () => void }) {
               }}
             />
             <div>
-              <button type="submit" className="px-4 bg-indigo-500 rounded py-1">
+              <button type="submit" className="px-4 py-1 bg-indigo-500 rounded">
                 Submit
               </button>
             </div>
@@ -162,10 +162,10 @@ export default function IndexPage() {
   }, []);
   // subscribe to new posts and add
   trpc.useSubscription(['post.onAdd'], {
-    next(post) {
+    onData(post) {
       addMessages([post]);
     },
-    error(err) {
+    onError(err) {
       console.error('Subscription error:', err);
       // we might have missed a message - invalidate cache
       utils.queryClient.invalidateQueries();
@@ -174,7 +174,7 @@ export default function IndexPage() {
 
   const [currentlyTyping, setCurrentlyTyping] = useState<string[]>([]);
   trpc.useSubscription(['post.whoIsTyping'], {
-    next(data) {
+    onData(data) {
       setCurrentlyTyping(data);
     },
   });
@@ -185,8 +185,8 @@ export default function IndexPage() {
         <title>Prisma Starter</title>
         <link rel="icon" href="/favicon.ico" />
       </Head>
-      <div className="flex h-screen md:flex-row flex-col">
-        <section className="w-full md:w-72 bg-gray-800 flex flex-col">
+      <div className="flex flex-col h-screen md:flex-row">
+        <section className="flex flex-col w-full bg-gray-800 md:w-72">
           <div className="flex-1 overflow-y-hidden">
             <div className="flex flex-col h-full divide-y divide-gray-700">
               <header className="p-4">
@@ -206,7 +206,7 @@ export default function IndexPage() {
                   </a>
                 </p>
               </header>
-              <div className="hidden md:block text-gray-400 p-4 space-y-6 flex-1 overflow-y-auto">
+              <div className="flex-1 hidden p-4 space-y-6 overflow-y-auto text-gray-400 md:block">
                 <article className="space-y-2">
                   <h2 className="text-lg text-gray-200">Introduction</h2>
                   <ul className="space-y-2 list-disc list-inside">
@@ -242,16 +242,16 @@ export default function IndexPage() {
               </div>
             </div>
           </div>
-          <div className="hidden md:block h-16 flex-shrink-0"></div>
+          <div className="flex-shrink-0 hidden h-16 md:block"></div>
         </section>
-        <div className="md:h-screen flex-1 overflow-y-hidden">
-          <section className="bg-gray-700 h-full p-4 flex flex-col justify-end space-y-4">
-            <div className="overflow-y-auto space-y-4">
+        <div className="flex-1 overflow-y-hidden md:h-screen">
+          <section className="flex flex-col justify-end h-full p-4 space-y-4 bg-gray-700">
+            <div className="space-y-4 overflow-y-auto">
               <button
                 data-testid="loadMore"
                 onClick={() => fetchPreviousPage()}
                 disabled={!hasPreviousPage || isFetchingPreviousPage}
-                className="px-4 bg-indigo-500 rounded py-2 disabled:opacity-40 text-white"
+                className="px-4 py-2 text-white bg-indigo-500 rounded disabled:opacity-40"
               >
                 {isFetchingPreviousPage
                   ? 'Loading more...'
