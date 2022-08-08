@@ -42,7 +42,7 @@ type OperationResultData<TRouter extends AnyRouter, TOutput> =
   | TRPCResponseMessage<TOutput, inferRouterError<TRouter>>;
 
 export interface OperationResultEnvelope<TRouter extends AnyRouter, TOutput> {
-  data: OperationResultData<TRouter, TOutput>;
+  result: OperationResultData<TRouter, TOutput>;
   context?: OperationContext;
 }
 

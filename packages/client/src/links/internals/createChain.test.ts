@@ -18,7 +18,7 @@ describe('chain', () => {
           return observable((observer) => {
             observer.next({
               context: {},
-              data: {
+              result: {
                 id: null,
                 result: {
                   type: 'data',
@@ -54,7 +54,7 @@ describe('chain', () => {
           return observable((observer) => {
             observer.next({
               context: {},
-              data: {
+              result: {
                 id: null,
                 result: {
                   type: 'data',
@@ -71,7 +71,7 @@ describe('chain', () => {
         ({ op }) => {
           return observable((observer) => {
             observer.next({
-              data: {
+              result: {
                 id: null,
                 result: {
                   type: 'data',
@@ -103,7 +103,7 @@ describe('chain', () => {
       Array [
         Object {
           "context": Object {},
-          "data": Object {
+          "result": Object {
             "id": null,
             "result": Object {
               "data": "from cache",
@@ -116,7 +116,7 @@ describe('chain', () => {
     expect(next.mock.calls[1]).toMatchInlineSnapshot(`
       Array [
         Object {
-          "data": Object {
+          "result": Object {
             "id": null,
             "result": Object {
               "data": Object {

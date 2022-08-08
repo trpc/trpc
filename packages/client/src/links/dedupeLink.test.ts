@@ -17,7 +17,7 @@ test('dedupeLink', async () => {
         const timer = setTimeout(() => {
           timerTriggered();
           subscribe.next({
-            data: {
+            result: {
               id: null,
               result: {
                 type: 'data',
@@ -80,7 +80,7 @@ test('dedupe - cancel one does not cancel the other', async () => {
         const timer = setTimeout(() => {
           timerTriggered();
           subscribe.next({
-            data: {
+            result: {
               id: null,
               result: {
                 type: 'data',

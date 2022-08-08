@@ -68,7 +68,7 @@ test('chainer', async () => {
       "context": Object {
         "response": "[redacted]",
       },
-      "data": Object {
+      "result": Object {
         "result": Object {
           "data": "world",
         },
@@ -169,7 +169,7 @@ describe('batching', () => {
           "context": Object {
             "response": "[redacted]",
           },
-          "data": Object {
+          "result": Object {
             "result": Object {
               "data": "hello world",
             },
@@ -179,7 +179,7 @@ describe('batching', () => {
           "context": Object {
             "response": "[redacted]",
           },
-          "data": Object {
+          "result": Object {
             "result": Object {
               "data": "hello alexdotjs",
             },
@@ -344,7 +344,7 @@ test('loggerLink', () => {
   const okLink: OperationLink<AnyRouter> = () =>
     observable((o) => {
       o.next({
-        data: {
+        result: {
           id: null,
           result: { type: 'data', data: undefined },
         },
@@ -535,7 +535,7 @@ test('chain makes unsub', async () => {
           () => () =>
             observable((observer) => {
               observer.next({
-                data: {
+                result: {
                   id: null,
                   result: {
                     type: 'data',

@@ -11,16 +11,16 @@ export function transformOperationResult<TRouter extends AnyRouter, TOutput>(
 ) {
   const { context } = result;
 
-  if ('error' in result.data) {
+  if ('error' in result.result) {
     const error = TRPCClientError.from<TRouter>({
-      ...result.data,
-      error: runtime.transformer.deserialize(result.data.error),
+      ...result.result,
+      error: runtime.transformer.deserialize(result.result.error),
     });
     return { ok: false, error, context } as const;
   }
 
   const data = runtime.transformer.deserialize(
-    (result.data.result as any).data,
+    (result.result.result as any).data,
   ) as TOutput;
   return { ok: true, data, context } as const;
 }
@@ -35,11 +35,11 @@ export function transformSubscriptionOperationResult<
 ) {
   const { context } = result;
 
-  if ('error' in result.data) {
+  if ('error' in result.result) {
     const error = TRPCClientError.from<TRouter>(
       {
-        ...result.data,
-        error: runtime.transformer.deserialize(result.data.error),
+        ...result.result,
+        error: runtime.transformer.deserialize(result.result.error),
       },
       { meta: context },
     );
@@ -47,9 +47,9 @@ export function transformSubscriptionOperationResult<
   }
 
   const data = {
-    ...result.data.result,
-    ...((result.data.result as any).type === 'data' && {
-      data: runtime.transformer.deserialize((result.data.result as any).data),
+    ...result.result.result,
+    ...((result.result.result as any).type === 'data' && {
+      data: runtime.transformer.deserialize((result.result.result as any).data),
     }),
   } as TRPCResultMessage<TOutput>;
   return { ok: true, data, context } as const;

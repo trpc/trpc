@@ -157,7 +157,7 @@ export function createWSClient(opts: WebSocketClientOptions) {
         return;
       }
 
-      req.callbacks.next?.({ data });
+      req.callbacks.next?.({ result: data });
       if (req.ws !== activeConnection && conn === activeConnection) {
         const oldWs = req.ws;
         // gracefully replace old connection with this
