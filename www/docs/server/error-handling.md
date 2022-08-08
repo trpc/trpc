@@ -25,6 +25,8 @@ Here's an example error response caused by a bad request input:
 }
 ```
 
+**Note**: the returned stack trace is only available in the development environment.
+
 ## Error codes
 
 tRPC defines a list of error codes that each represent a different type of error and response with a different HTTP code.

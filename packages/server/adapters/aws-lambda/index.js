@@ -1,1 +1,1 @@
-module.exports = require('../../dist/adapters/aws-lambda');
+module.exports = require('../../dist/adapters/aws-lambda/index');

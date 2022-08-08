@@ -4,8 +4,16 @@ import React from 'react';
 import { twMerge } from 'tailwind-merge';
 import { sponsors } from './script.output';
 
+const MONTH_AS_SECONDS = 30 * 24 * 60 * 60;
+function getMultiplier(since) {
+  return (Date.now() - since) / 1000 / MONTH_AS_SECONDS;
+}
+
 const pack = {
-  children: sponsors,
+  children: sponsors.map((sponsor) => ({
+    ...sponsor,
+    multiplier: Math.max(getMultiplier(sponsor.createdAt), 1),
+  })),
   name: 'root',
   radius: 0,
   distance: 0,
@@ -15,7 +23,7 @@ export function Sponsors() {
   const root = React.useMemo(
     () =>
       hierarchy(pack)
-        .sum((d) => 1 + d?.monthlyPriceInDollars * d?.multiplier)
+        .sum((d) => d?.monthlyPriceInDollars * d?.multiplier, 1)
         .sort(
           (a, b) =>
             (b.data.monthlyPriceInDollars * b.data.multiplier ?? 0) -

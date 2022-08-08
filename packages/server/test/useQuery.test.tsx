@@ -25,7 +25,6 @@ const ctx = konn()
       },
     });
     const appRouter = t.router({
-      rootProc: t.procedure.query(() => null),
       post: t.router({
         byId: t.procedure
           .input(
@@ -49,10 +48,9 @@ const ctx = konn()
           )
           .mutation(() => `__mutationResult` as const),
         onEvent: t.procedure.input(z.number()).subscription(({ input }) => {
-          return observable<number | 'opened'>((emit) => {
+          return observable<number>((emit) => {
             const onData = (data: number) => emit.next(data + input);
             ee.on('data', onData);
-            emit.next('opened');
             return () => {
               ee.off('data', onData);
             };
@@ -143,37 +141,6 @@ test('useInfiniteQuery()', async () => {
   });
 });
 
-test('useMutation', async () => {
-  const { App, proxy } = ctx;
-  function MyComponent() {
-    const mutation = proxy.post.create.useMutation();
-
-    useEffect(() => {
-      mutation.mutate({
-        text: 'hello',
-      });
-      // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []);
-    if (!mutation.data) {
-      return <>...</>;
-    }
-
-    type TData = typeof mutation['data'];
-    expectTypeOf<TData>().toMatchTypeOf<'__mutationResult'>();
-
-    return <pre>{JSON.stringify(mutation.data ?? 'n/a', null, 4)}</pre>;
-  }
-
-  const utils = render(
-    <App>
-      <MyComponent />
-    </App>,
-  );
-  await waitFor(() => {
-    expect(utils.container).toHaveTextContent(`__mutationResult`);
-  });
-});
-
 test('deprecated routers', async () => {
   const { proxy, App } = ctx;
 
@@ -192,37 +159,34 @@ test('deprecated routers', async () => {
 });
 
 test('useSubscription', async () => {
-  const nextMock = jest.fn();
-  const errorMock = jest.fn();
+  const onDataMock = jest.fn();
+  const onErrorMock = jest.fn();
 
   const { App, proxy } = ctx;
 
   function MyComponent() {
-    const [isOpen, setIsOpen] = useState(false);
-    const [value, setValue] = useState<number | null>(null);
+    const [isStarted, setIsStarted] = useState(false);
+    const [data, setData] = useState<number>();
 
     proxy.post.onEvent.useSubscription(10, {
       enabled: true,
-      next: (result) => {
-        nextMock(result);
-        if (result === 'opened') {
-          setIsOpen(true);
-        } else {
-          setValue(result);
-        }
+      onStarted: () => setIsStarted(true),
+      onData: (data) => {
+        onDataMock(data);
+        setData(data);
       },
-      error: errorMock,
+      onError: onErrorMock,
     });
 
-    if (!isOpen) {
+    if (!isStarted) {
       return <>{'__connecting'}</>;
     }
 
-    if (!value) {
+    if (!data) {
       return <>{'__connected'}</>;
     }
 
-    return <pre>{`__value:${value}`}</pre>;
+    return <pre>{`__data:${data}`}</pre>;
   }
 
   const utils = render(
@@ -234,11 +198,10 @@ test('useSubscription', async () => {
   await waitFor(() =>
     expect(utils.container).toHaveTextContent(`__connecting`),
   );
-  expect(nextMock).toHaveBeenCalledTimes(0);
+  expect(onDataMock).toHaveBeenCalledTimes(0);
   await waitFor(() => expect(utils.container).toHaveTextContent(`__connected`));
-  expect(nextMock).toHaveBeenCalledTimes(1);
   ee.emit('data', 20);
-  await waitFor(() => expect(utils.container).toHaveTextContent(`__value:30`));
-  expect(nextMock).toHaveBeenCalledTimes(2);
-  expect(errorMock).toHaveBeenCalledTimes(0);
+  await waitFor(() => expect(utils.container).toHaveTextContent(`__data:30`));
+  expect(onDataMock).toHaveBeenCalledTimes(1);
+  expect(onErrorMock).toHaveBeenCalledTimes(0);
 });

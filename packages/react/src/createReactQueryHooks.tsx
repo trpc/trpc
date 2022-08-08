@@ -10,10 +10,12 @@ import type {
   AnyRouter,
   Procedure,
   inferHandlerInput,
+  inferProcedureClientError,
   inferProcedureInput,
   inferProcedureOutput,
   inferSubscriptionOutput,
 } from '@trpc/server';
+import { inferObservableValue } from '@trpc/server/observable';
 import React, {
   ReactNode,
   useCallback,
@@ -77,8 +79,9 @@ export interface UseTRPCMutationOptions<
 
 export interface UseTRPCSubscriptionOptions<TOutput, TError> {
   enabled?: boolean;
-  error?: (err: TError) => void;
-  next: (data: TOutput) => void;
+  onStarted?: () => void;
+  onData: (data: TOutput) => void;
+  onError?: (err: TError) => void;
 }
 
 function getClientArgs<TPathAndInput extends unknown[], TOptions>(
@@ -346,11 +349,10 @@ export function createReactQueryHooks<
       path: TPath,
       ...args: inferHandlerInput<TSubscriptions[TPath]>,
     ],
-    opts: {
-      enabled?: boolean;
-      error?: (err: TError) => void;
-      next: (data: TOutput) => void;
-    },
+    opts: UseTRPCSubscriptionOptions<
+      inferObservableValue<inferProcedureOutput<TSubscriptions[TPath]>>,
+      inferProcedureClientError<TSubscriptions[TPath]>
+    >,
   ) {
     const enabled = opts?.enabled ?? true;
     const queryKey = hashQueryKey(pathAndInput);
@@ -368,14 +370,19 @@ export function createReactQueryHooks<
         TOutput,
         inferProcedureInput<TRouter['_def']['subscriptions'][TPath]>
       >(path, (input ?? undefined) as any, {
-        error: (err) => {
+        onStarted: () => {
           if (!isStopped) {
-            opts.error?.(err);
+            opts.onStarted?.();
           }
         },
-        next: (res) => {
-          if (res.type === 'data' && !isStopped) {
-            opts.next(res.data);
+        onData: (data) => {
+          if (!isStopped) {
+            opts.onData(data);
+          }
+        },
+        onError: (err) => {
+          if (!isStopped) {
+            opts.onError?.(err);
           }
         },
       });

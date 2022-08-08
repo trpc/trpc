@@ -13,11 +13,6 @@ const graphqlWithAuth = graphql.defaults({
   },
 });
 
-const MONTH_AS_SECONDS = 30 * 24 * 60 * 60;
-function getMultiplier(since: number) {
-  return (Date.now() - since) / 1000 / MONTH_AS_SECONDS;
-}
-
 function ensureHttp(url: string) {
   if (url.startsWith('http')) {
     return url;
@@ -34,7 +29,8 @@ function flattenSponsor(node: Node) {
     monthlyPriceInDollars: node.tier.monthlyPriceInDollars,
     link,
     privacyLevel: node.privacyLevel,
-    multiplier: 1 + getMultiplier(Date.parse(node.createdAt)),
+    login: node.sponsorEntity.login,
+    createdAt: Date.parse(node.createdAt),
   };
 }
 async function getGithubSponsors() {
@@ -104,14 +100,22 @@ async function getGithubSponsors() {
 
   await fetchPage();
 
-  return sponsors.filter((it) => it.privacyLevel === 'PUBLIC');
+  return sponsors
+    .filter((it) => it.privacyLevel === 'PUBLIC')
+    .sort((a, b) => a.createdAt - b.createdAt);
 }
 
 async function main() {
   const sponsors = await getGithubSponsors();
   const json = JSON.stringify(sponsors, null, 2);
 
-  const text = `export const sponsors = ${json}`;
+  const text = [
+    '// prettier-ignore',
+    '// eslint-disable',
+    '',
+    `export const sponsors = ${json} as const`,
+    '',
+  ].join('\n');
 
   fs.writeFileSync(__dirname + '/script.output.ts', text);
 }
