@@ -40,13 +40,6 @@ const ctx = konn()
             }),
           )
           .query(() => '__infResult' as const),
-        create: t.procedure
-          .input(
-            z.object({
-              text: z.string(),
-            }),
-          )
-          .mutation(() => `__mutationResult` as const),
         onEvent: t.procedure.input(z.number()).subscription(({ input }) => {
           return observable<number>((emit) => {
             const onData = (data: number) => emit.next(data + input);
