@@ -6,6 +6,9 @@ import {
 } from '@trpc/server/rpc';
 import { TRPCClientRuntime } from '..';
 
+// FIXME:
+// - the generics here are probably unnecessary
+// - the RPC-spec could probably be simplified to combine HTTP + WS
 /** @internal */
 export function transformResult<TRouter extends AnyRouter, TOutput>(
   response:
