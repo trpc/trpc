@@ -32,6 +32,9 @@ if (useMockProvider) {
     }),
   );
 } else {
+  if (!GITHUB_CLIENT_ID || !GITHUB_SECRET) {
+    throw new Error('GITHUB_CLIENT_ID and GITHUB_SECRET must be set');
+  }
   providers.push(
     GithubProvider({
       clientId: GITHUB_CLIENT_ID,
