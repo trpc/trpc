@@ -124,9 +124,18 @@ export function createReactQueryHooks<
   TRouter extends AnyRouter,
   TSSRContext = unknown,
 >() {
-  type TQueries = AssertLegacyDef<TRouter>['queries'];
-  type TSubscriptions = AssertLegacyDef<TRouter>['subscriptions'];
-  type TMutations = AssertLegacyDef<TRouter>['mutations'];
+  type TQueries = AssertType<
+    AssertLegacyDef<TRouter>['queries'],
+    ProcedureRecord
+  >;
+  type TSubscriptions = AssertType<
+    AssertLegacyDef<TRouter>['subscriptions'],
+    ProcedureRecord
+  >;
+  type TMutations = AssertType<
+    AssertLegacyDef<TRouter>['mutations'],
+    ProcedureRecord
+  >;
 
   type TError = TRPCClientErrorLike<TRouter>;
   type TInfiniteQueryNames = inferInfiniteQueryNames<TQueries>;
@@ -284,10 +293,7 @@ export function createReactQueryHooks<
     TQueryFnData = TQueryValues[TPath]['output'],
     TData = TQueryValues[TPath]['output'],
   >(
-    pathAndInput: [
-      path: TPath,
-      ...args: inferHandlerInput<AssertType<TQueries, ProcedureRecord>[TPath]>,
-    ],
+    pathAndInput: [path: TPath, ...args: inferHandlerInput<TQueries[TPath]>],
     opts?: UseTRPCQueryOptions<
       TPath,
       TQueryValues[TPath]['input'],
@@ -353,15 +359,11 @@ export function createReactQueryHooks<
   >(
     pathAndInput: [
       path: TPath,
-      ...args: inferHandlerInput<
-        AssertType<TSubscriptions, ProcedureRecord>[TPath]
-      >,
+      ...args: inferHandlerInput<TSubscriptions[TPath]>,
     ],
     opts: UseTRPCSubscriptionOptions<
       inferObservableValue<inferProcedureOutput<TSubscriptions[TPath]>>,
-      inferProcedureClientError<
-        AssertType<TSubscriptions, ProcedureRecord>[TPath]
-      >
+      inferProcedureClientError<TSubscriptions[TPath]>
     >,
   ) {
     const enabled = opts?.enabled ?? true;
