@@ -20,7 +20,6 @@
     }
   },
   "scripts": {
-    "test": "jest",
     "clean": "rm -rf dist node_modules",
     "benchmark": "yarn tsc --project tsconfig.benchmark.json",
     "ts-watch": "tsc --project tsconfig.watch.json"

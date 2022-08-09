@@ -6,6 +6,7 @@
     "build:1-migrate": "prisma migrate deploy",
     "build:2-build": "next build",
     "build": "run-s build:*",
+    "clean": "rm -rf .next node_modules",
     "db-seed": "prisma db seed",
     "db-migrate-dev": "yarn prisma migrate dev",
     "db-reset": "yarn prisma migrate reset",

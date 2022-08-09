@@ -18,6 +18,7 @@
   },
   "scripts": {
     "build": "yarn tsc",
+    "clean": "rm -rf .build node_modules",
     "start-server": "npx serverless offline --httpPort 4050",
     "start-client": "yarn ts-node src/client.ts",
     "http-rest-client": "yarn ts-node src/payloadFormatVersionClient.ts"
