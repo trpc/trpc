@@ -15,3 +15,6 @@ __generated__
 *.tsbuildinfo
 
 packages/**
+!packages/*/package.json
+!packages/*/src
+!packages/*/README.md
