@@ -3,13 +3,13 @@ import { NextPageWithLayout } from './_app';
 import Link from 'next/link';
 
 const IndexPage: NextPageWithLayout = () => {
-  const utils = trpc.useContext();
+  const utils = trpc.proxy.useContext();
   const postsQuery = trpc.proxy.post.list.useQuery();
 
   const addPost = trpc.proxy.post.add.useMutation({
     async onSuccess() {
       // refetches posts after a post is added
-      await utils.invalidateQueries(['post.list']);
+      await utils.post.list.invalidate();
 
       /**
        * ❓ QUESTION: How should query invalidations look like?

@@ -17,6 +17,7 @@ import type {
 import type { TRPCResultMessage } from '@trpc/server/rpc';
 import { createProxy } from '@trpc/server/shared';
 import { TRPCClientError } from './TRPCClientError';
+import { CreateTRPCClientOptions, createTRPCClient } from './createTRPCClient';
 import {
   TRPCClient as Client,
   TRPCSubscriptionObserver,
@@ -65,14 +66,16 @@ type assertProcedure<T> = T extends Procedure<any> ? T : never;
 type DecoratedProcedureRecord<
   TProcedures extends ProcedureRouterRecord,
   TRouter extends AnyRouter,
-> = {
+> = OmitNeverKeys<{
   [TKey in keyof TProcedures]: TProcedures[TKey] extends AnyRouter
     ? DecoratedProcedureRecord<
         TProcedures[TKey]['_def']['record'],
         TProcedures[TKey]
       >
+    : assertProcedure<TProcedures[TKey]>['_def']['_old'] extends true
+    ? never
     : DecorateProcedure<assertProcedure<TProcedures[TKey]>, TRouter>;
-};
+}>;
 
 const clientCallTypeMap: Record<
   keyof DecorateProcedure<any, any>,
@@ -83,6 +86,10 @@ const clientCallTypeMap: Record<
   subscribe: 'subscription',
 };
 
+/**
+ * @deprecated use createTRPCProxyClient instead
+ * @internal
+ */
 export function createTRPCClientProxy<TRouter extends AnyRouter>(
   client: Client<TRouter>,
 ) {
@@ -95,4 +102,12 @@ export function createTRPCClientProxy<TRouter extends AnyRouter>(
     return (client as any)[procedureType](fullPath, ...args);
   });
   return proxy as DecoratedProcedureRecord<TRouter['_def']['record'], TRouter>;
+}
+
+export function createTRPCProxyClient<TRouter extends AnyRouter>(
+  opts: CreateTRPCClientOptions<TRouter>,
+) {
+  const client = createTRPCClient<TRouter>(opts);
+  const proxy = createTRPCClientProxy(client);
+  return proxy;
 }

@@ -54,7 +54,7 @@ async function main() {
 
   let count = 0;
   await new Promise<void>((resolve) => {
-    const subscription = client.subscription('post.randomNumber', undefined, {
+    const subscription = proxy.post.randomNumber.subscribe(undefined, {
       onData(data) {
         // ^ note that `data` here is inferred
         console.log('received', data);

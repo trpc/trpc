@@ -22,6 +22,7 @@ const TEMPLATE = `
  ): Router<{
   router: true;
   _ctx: RP0['_ctx'];
+  legacy: __legacy__;
   _errorShape: RP0['_errorShape'];
   _meta: RP0['_meta'];
   transformer: RP0['transformer'];
@@ -48,6 +49,7 @@ const TARGET_DIR =
 
 const partList: string[] = [];
 for (let index = 0; index < NUM_ARGS; index++) {
+  const legacy: string[] = [];
   const generics: string[] = [];
   const args: string[] = [];
   const queries: string[] = [];
@@ -66,6 +68,7 @@ for (let index = 0; index < NUM_ARGS; index++) {
     procedures.push(`RP${j}['procedures']`);
     routers.push(`RP${j}['routers']`);
     records.push(`RP${j}['record']`);
+    legacy.push(`RP${j}['legacy']`);
   }
 
   const part = TEMPLATE.replace('', '')
@@ -76,7 +79,8 @@ for (let index = 0; index < NUM_ARGS; index++) {
     .replace(/__subscriptions__/g, subscriptions.join(' & '))
     .replace(/__procedures__/g, procedures.join(' & '))
     .replace(/__routers__/g, routers.join(' & '))
-    .replace(/__records__/g, records.join(' & '));
+    .replace(/__records__/g, records.join(' & '))
+    .replace(/__legacy__/g, legacy.join(' & '));
 
   partList.push(part);
 }

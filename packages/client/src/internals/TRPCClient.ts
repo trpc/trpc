@@ -7,6 +7,7 @@ import {
   inferProcedureOutput,
   inferSubscriptionOutput,
 } from '@trpc/server';
+import { ProcedureRecord } from '@trpc/server';
 import {
   Unsubscribable,
   inferObservableValue,
@@ -93,6 +94,23 @@ export interface TRPCSubscriptionObserver<TValue, TError> {
 export type CreateTRPCClientOptions<TRouter extends AnyRouter> =
   | CreateTRPCClientWithLinksOptions<TRouter>
   | CreateTRPCClientWithURLOptions;
+
+export type AssertType<T, K> = T extends K ? T : never;
+/**
+ * @deprecated
+ */
+export type AssertLegacyDef<TRouter extends AnyRouter> =
+  TRouter['_def']['legacy'] extends Record<
+    'subscriptions' | 'queries' | 'mutations',
+    ProcedureRecord
+  >
+    ? TRouter['_def']['legacy']
+    : {
+        subscriptions: {};
+        queries: {};
+        mutations: {};
+      };
+
 export class TRPCClient<TRouter extends AnyRouter> {
   private readonly links: OperationLink<TRouter>[];
   public readonly runtime: TRPCClientRuntime;
@@ -188,15 +206,18 @@ export class TRPCClient<TRouter extends AnyRouter> {
     return cancellablePromise;
   }
   public query<
-    TQueries extends TRouter['_def']['queries'],
+    TQueries extends AssertLegacyDef<TRouter>['queries'],
     TPath extends string & keyof TQueries,
   >(
     path: TPath,
-    ...args: [...inferHandlerInput<TQueries[TPath]>, TRPCRequestOptions?]
+    ...args: [
+      ...inferHandlerInput<AssertType<TQueries, ProcedureRecord>[TPath]>,
+      TRPCRequestOptions?,
+    ]
   ) {
     const context = (args[1] as TRPCRequestOptions | undefined)?.requestContext;
     return this.requestAsPromise<
-      inferHandlerInput<TQueries[TPath]>,
+      inferHandlerInput<AssertType<TQueries, ProcedureRecord>[TPath]>,
       inferProcedureOutput<TQueries[TPath]>
     >({
       type: 'query',
@@ -206,15 +227,18 @@ export class TRPCClient<TRouter extends AnyRouter> {
     });
   }
   public mutation<
-    TMutations extends TRouter['_def']['mutations'],
+    TMutations extends AssertLegacyDef<TRouter>['mutations'],
     TPath extends string & keyof TMutations,
   >(
     path: TPath,
-    ...args: [...inferHandlerInput<TMutations[TPath]>, TRPCRequestOptions?]
+    ...args: [
+      ...inferHandlerInput<AssertType<TMutations, ProcedureRecord>[TPath]>,
+      TRPCRequestOptions?,
+    ]
   ) {
     const context = (args[1] as TRPCRequestOptions | undefined)?.requestContext;
     return this.requestAsPromise<
-      inferHandlerInput<TMutations[TPath]>,
+      inferHandlerInput<AssertType<TMutations, ProcedureRecord>[TPath]>,
       inferProcedureOutput<TMutations[TPath]>
     >({
       type: 'mutation',
@@ -224,10 +248,12 @@ export class TRPCClient<TRouter extends AnyRouter> {
     });
   }
   public subscription<
-    TSubscriptions extends TRouter['_def']['subscriptions'],
+    TSubscriptions extends AssertLegacyDef<TRouter>['subscriptions'],
     TPath extends string & keyof TSubscriptions,
     TOutput extends inferSubscriptionOutput<TRouter, TPath>,
-    TInput extends inferProcedureInput<TSubscriptions[TPath]>,
+    TInput extends inferProcedureInput<
+      AssertType<TSubscriptions, ProcedureRecord>[TPath]
+    >,
   >(
     path: TPath,
     input: TInput,

@@ -1,5 +1,3 @@
-/* eslint-disable @typescript-eslint/ban-types */
-
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { assertNotBrowser } from '../assertNotBrowser';
 import { TRPCError } from '../error/TRPCError';
