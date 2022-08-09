@@ -11,19 +11,29 @@
 
 /* You can override the default Infima variables here. */
 :root {
-  --ifm-color-primary: #2596be;
-  --ifm-color-primary-dark: #0c7da5;
-  --ifm-color-primary-darker: #00638b;
-  --ifm-color-primary-darkest: #004a72;
-  --ifm-color-primary-light: #3fb0d8;
-  --ifm-color-primary-lighter: #58c9f1;
-  --ifm-color-primary-lightest: #72e3ff;
+  --ifm-color-primary: #398ccb;
+  --ifm-color-primary-dark: #317eb9;
+  --ifm-color-primary-darker: #2e77af;
+  --ifm-color-primary-darkest: #266290;
+  --ifm-color-primary-light: #4e98d0;
+  --ifm-color-primary-lighter: #589ed3;
+  --ifm-color-primary-lightest: #77b0db;
   --ifm-code-font-size: 95%;
   --ifm-container-width: 1140px;
   --ifm-container-width-xl: 1320px;
 }
 :root[data-theme='dark'] {
   --ifm-footer-background-color: #242526;
+  --ifm-navbar-background-color: #18181b;
+  --ifm-background-color: #18181b;
+}
+
+.homepage .navbar {
+  @apply container mx-auto shadow-none h-20;
+}
+
+.navbar-external-link svg {
+  display: none;
 }
 
 .markdown a {
