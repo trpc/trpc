@@ -40,7 +40,7 @@ import React, {
 } from 'react';
 import { SSRState, TRPCContext, TRPCContextState } from './internals/context';
 
-type AssertType<T, K> = T extends K ? T : never;
+export type AssertType<T, K> = T extends K ? T : never;
 
 export type OutputWithCursor<TData, TCursor extends any = any> = {
   cursor: TCursor | null;

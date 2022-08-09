@@ -7,13 +7,13 @@ import {
   inferProcedureOutput,
   inferSubscriptionOutput,
 } from '@trpc/server';
+import { ProcedureRecord } from '@trpc/server';
 import {
   Unsubscribable,
   inferObservableValue,
   observableToPromise,
   share,
 } from '@trpc/server/observable';
-import { ProcedureRecord } from 'packages/server/src/core/router';
 import { CancelFn } from '..';
 import { TRPCClientError } from '../TRPCClientError';
 import { getFetch } from '../getFetch';
@@ -99,7 +99,7 @@ export type CreateTRPCClientOptions<TRouter extends AnyRouter> =
   | CreateTRPCClientWithLinksOptions<TRouter>
   | CreateTRPCClientWithURLOptions;
 
-type AssertType<T, K> = T extends K ? T : never;
+export type AssertType<T, K> = T extends K ? T : never;
 /**
  * @deprecated
  */
