@@ -81,7 +81,7 @@ export interface RouterDef<
   errorFormatter: ErrorFormatter<TContext, TErrorShape>;
   transformer: CombinedDataTransformer;
   // FIXME this is slow:
-  // - I think this has to go
+  // - I think this has to go & be replaced by something by only using `TRecord` without `& SimpleFlatten...`
   // - Potentially, we have a `legacyProcedures` record where we only register the old things that are availble by string path
   procedures: Filter<TRecord, Procedure<any>> &
     SimpleFlatten<PrefixedProcedures<TRecord>>;
