@@ -19,49 +19,53 @@ const babelPlugin = babel({
   extensions,
 });
 
-const serverInput = [
-  'src/index.ts',
-  'src/adapters/aws-lambda/index.ts',
-  'src/adapters/express.ts',
-  'src/adapters/fastify/index.ts',
-  'src/adapters/next.ts',
-  'src/adapters/node-http/index.ts',
-  'src/adapters/standalone.ts',
-  'src/adapters/ws.ts',
-  'src/adapters/fetch/index.ts',
-  'src/rpc/index.ts',
-  'src/observable/index.ts',
-  'src/subscription.ts',
-  // Utils that can be shared with clients
-  'src/shared/index.ts',
-];
-const clientInput = [
-  'src/index.ts',
-  'src/links/httpLink.ts',
-  'src/links/httpBatchLink.ts',
-  'src/links/splitLink.ts',
-  'src/links/loggerLink.ts',
-  'src/links/wsLink.ts',
-];
-const reactInput = ['src/index.ts', 'src/ssg.ts'];
-const nextInput = ['src/index.ts'];
+// Exporting this for generating barrel-files in scripts/entrypoints.ts
+export const PACKAGES = ['server', 'client', 'react', 'next'] as const;
+export const INPUTS: Record<typeof PACKAGES[number], string[]> = {
+  server: [
+    'src/index.ts',
+    'src/adapters/aws-lambda/index.ts',
+    'src/adapters/express.ts',
+    'src/adapters/fastify/index.ts',
+    'src/adapters/next.ts',
+    'src/adapters/node-http/index.ts',
+    'src/adapters/standalone.ts',
+    'src/adapters/ws.ts',
+    'src/adapters/fetch/index.ts',
+    'src/rpc/index.ts',
+    'src/observable/index.ts',
+    'src/subscription.ts',
+    // Utils that can be shared with clients
+    'src/shared/index.ts',
+  ],
+  client: [
+    'src/index.ts',
+    'src/links/httpLink.ts',
+    'src/links/httpBatchLink.ts',
+    'src/links/splitLink.ts',
+    'src/links/loggerLink.ts',
+    'src/links/wsLink.ts',
+  ],
+  react: ['src/index.ts', 'src/ssg.ts'],
+  next: ['src/index.ts'],
+};
 
 export default function rollup(): RollupOptions[] {
   return [
     ...buildConfig({
-      input: serverInput,
+      input: INPUTS.server,
       packageDir: 'packages/server',
     }),
     ...buildConfig({
-      input: clientInput,
+      input: INPUTS.client,
       packageDir: 'packages/client',
     }),
     ...buildConfig({
-      input: reactInput,
+      input: INPUTS.react,
       packageDir: 'packages/react',
     }),
     ...buildConfig({
-      input: nextInput,
+      input: INPUTS.next,
       packageDir: 'packages/next',
     }),
   ];

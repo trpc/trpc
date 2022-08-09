@@ -43,6 +43,11 @@
       "require": "./dist/adapters/express.js",
       "default": "./dist/adapters/express.js"
     },
+    "./adapters/fastify": {
+      "import": "./dist/adapters/fastify/index.mjs",
+      "require": "./dist/adapters/fastify/index.js",
+      "default": "./dist/adapters/fastify/index.js"
+    },
     "./adapters/next": {
       "import": "./dist/adapters/next.mjs",
       "require": "./dist/adapters/next.js",
@@ -57,11 +62,6 @@
       "import": "./dist/adapters/standalone.mjs",
       "require": "./dist/adapters/standalone.js",
       "default": "./dist/adapters/standalone.js"
-    },
-    "./adapters/fastify": {
-      "import": "./dist/adapters/fastify/index.mjs",
-      "require": "./dist/adapters/fastify/index.js",
-      "default": "./dist/adapters/fastify/index.js"
     },
     "./adapters/ws": {
       "import": "./dist/adapters/ws.mjs",
@@ -96,13 +96,13 @@
   },
   "files": [
     "dist",
+    "src",
+    "README.md",
     "adapters",
     "rpc",
     "observable",
-    "shared",
     "subscription",
-    "src",
-    "README.md"
+    "shared"
   ],
   "publishConfig": {
     "access": "public"

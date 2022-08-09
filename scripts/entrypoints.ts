@@ -1,72 +1,103 @@
 import fs from 'fs-extra';
 import path from 'path';
+import { INPUTS, PACKAGES } from '../rollup.config';
 
 const packagesDir = path.resolve(__dirname, '..', 'packages');
-const packages = ['client', 'server', 'next', 'react'] as const;
 
 // minimal version of PackageJson type necessary
 type PackageJson = {
-  exports: Record<string, { default: string }>;
+  exports: Record<string, { import: string; require: string; default: string }>;
+  files: string[];
 };
 
-function getEntrypoints(pkg: typeof packages[number]) {
-  // get entrypoints from package.json
-  const pkgJson = fs.readJSONSync(
-    path.resolve(packagesDir, pkg, 'package.json'),
-  ) as PackageJson;
-  const exports = pkgJson.exports;
-
-  /**
-   * transform the exports field to <entrypoint, distpath> pairs,
-   * where entrypoint is the file we need to generate, and distpath is the
-   * path to the file that we need to export in the generated file.
-   */
-  const entrypoints = Object.entries(exports)
-    .filter(([entryPoint]) => entryPoint !== '.')
-    .map(([entrypoint, paths]) => {
-      // distFile is relative to package root: ./dist/...
-      const distFile = paths.default;
-
-      // how deep the path is relative to package root: ./src/...
-      const depth = entrypoint.split('/').length - 1;
-
-      // traverse up the path to the package root
-      const distPathRelativeEntrypoint = path.join(
-        ...Array(depth).fill('..'),
-        distFile,
-      );
-
-      // remove file extension for importing
-      const parsed = path.parse(distPathRelativeEntrypoint);
-      const importPath = `${parsed.dir}/${parsed.name}`;
-      return [entrypoint, importPath] as const;
-    });
-
-  return entrypoints;
-}
-
 // create directories on the way if they dont exist
-const writeFileSyncRecursive = (filePath: string, content: string) => {
+function writeFileSyncRecursive(filePath: string, content: string) {
   const dir = path.dirname(filePath);
   if (!fs.existsSync(dir)) {
     fs.mkdirSync(dir, { recursive: true });
   }
   fs.writeFileSync(filePath, content);
-};
+}
 
-for (const pkg of packages) {
+// ACTUAL SCRIPT
+
+for (const pkg of PACKAGES) {
   const pkgRoot = path.resolve(packagesDir, pkg);
-  const entrypoints = getEntrypoints(pkg);
+  const inputs = INPUTS[pkg];
 
-  for (const [entrypoint, importPath] of entrypoints) {
-    // index.js
-    const indexFile = path.resolve(pkgRoot, entrypoint, 'index.js');
-    const indexFileContent = `module.exports = require('${importPath}');\n`;
-    writeFileSyncRecursive(indexFile, indexFileContent);
+  // set some defaults for the package.json
+  const pkgJson = fs.readJsonSync(
+    path.resolve(pkgRoot, 'package.json'),
+  ) as PackageJson;
+  pkgJson.files = ['dist', 'src', 'README.md'];
+  pkgJson.exports = {
+    '.': {
+      import: './dist/index.mjs',
+      require: './dist/index.js',
+      default: './dist/index.js',
+    },
+  };
 
-    // index.d.ts
-    const typePath = path.resolve(pkgRoot, entrypoint, 'index.d.ts');
-    const typeContent = `export * from '${importPath}';\n`;
-    writeFileSyncRecursive(typePath, typeContent);
-  }
+  /** Parse the inputs to get the user-import-paths, e.g.
+   *   src/adapters/aws-lambda/index.ts -> adapters/aws-lambda
+   *   src/adapters/express.ts -> adapters/express
+   *
+   *  Also, write to the package.json exports field, e.g.
+   *   src/adapters/aws-lambda/index.ts -> exports['adapters/aws-lambda'] = { import: './dist/adapters/aws-lambda/index.mjs', ... }
+   *   src/adapters/express.ts -> exports['adapters/express'] = { import: './dist/adapters/express.mjs', ... }
+   */
+  inputs
+    .filter((i) => i !== 'src/index.ts')
+    .forEach((i) => {
+      // first, exclude 'src' part of the path
+      const parts = i.split('/').slice(1);
+      const pathWithoutSrc = parts.join('/');
+
+      // if filename is index.ts, importPath is path until index.ts,
+      // otherwise, importPath is the path without the fileextension
+      const importPath =
+        parts.at(-1) === 'index.ts'
+          ? parts.slice(0, -1).join('/')
+          : pathWithoutSrc.replace(/\.ts$/, '');
+
+      // write this entrypoint to the package.json exports field
+      const esm = './dist/' + pathWithoutSrc.replace(/\.ts$/, '.mjs');
+      const cjs = './dist/' + pathWithoutSrc.replace(/\.ts$/, '.js');
+      pkgJson.exports[`./${importPath}`] = {
+        import: esm,
+        require: cjs,
+        default: cjs,
+      };
+
+      // create the barrelfile, linking the declared exports to the compiled files in dist
+      const importDepth = importPath.split('/').length || 1;
+      const resolvedImport = path.join(
+        ...Array(importDepth).fill('..'),
+        'dist',
+        importPath,
+      );
+      // index.js
+      const indexFile = path.resolve(pkgRoot, resolvedImport, 'index.js');
+      const indexFileContent = `module.exports = require('${importPath}');\n`;
+      writeFileSyncRecursive(indexFile, indexFileContent);
+
+      // index.d.ts
+      const typePath = path.resolve(pkgRoot, resolvedImport, 'index.d.ts');
+      const typeContent = `export * from '${importPath}';\n`;
+      writeFileSyncRecursive(typePath, typeContent);
+    });
+
+  // write top-level directories to package.json 'files' field
+  Object.keys(pkgJson.exports).forEach((entrypoint) => {
+    // get the top-level directory of the entrypoint, e.g. 'adapters/aws-lambda' -> 'adapters'
+    const topLevel = entrypoint.split('/')[1];
+    console.log(topLevel);
+
+    if (!topLevel) return;
+    if (pkgJson.files.includes(topLevel)) return;
+    pkgJson.files.push(topLevel);
+  });
+
+  // write package.json
+  fs.writeJsonSync(path.resolve(pkgRoot, 'package.json'), pkgJson);
 }

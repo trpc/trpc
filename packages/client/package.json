@@ -55,9 +55,9 @@
   },
   "files": [
     "dist",
-    "links",
     "src",
-    "README.md"
+    "README.md",
+    "links"
   ],
   "scripts": {
     "clean": "rm -rf dist node_modules",
