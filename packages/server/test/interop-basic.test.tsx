@@ -13,14 +13,14 @@ import { inferProcedureOutput, initTRPC } from '../src';
 const ctx = konn()
   .beforeEach(() => {
     const t = initTRPC()();
-    const legacyRouter = trpc.router().query('greeting', {
+    const legacyRouter = trpc.router().query('oldProcedure', {
       input: z.string().optional(),
       resolve({ input }) {
-        return `hello ${input ?? 'world'}`;
+        return `oldProcedureOutput__input:${input ?? 'n/a'}`;
       },
     });
     const newAppRouter = t.router({
-      whoami: t.procedure.query(() => "I am just a test, I don't know! "),
+      newProcedure: t.procedure.query(() => 'newProcedureOutput'),
     });
     const appRouter = t.mergeRouters(legacyRouter.interop(), newAppRouter);
     const opts = routerToServerAndClientNew(appRouter, {});
@@ -28,7 +28,7 @@ const ctx = konn()
     const react = createReactQueryHooks<typeof opts['router']>();
     const client = opts.client;
     type Return = inferProcedureOutput<
-      typeof opts.router._def.queries.greeting
+      typeof opts.router._def.queries.oldProcedure
     >;
 
     expectTypeOf<Return>().toMatchTypeOf<string>();
@@ -50,15 +50,26 @@ const ctx = konn()
 test('interop inference', async () => {
   const { opts } = ctx;
 
-  expect(await opts.client.query('greeting')).toBe('hello world');
-  expect(await opts.proxy.greeting.query()).toBe('hello world');
+  expect(await opts.client.query('oldProcedure')).toBe(
+    'oldProcedureOutput__input:n/a',
+  );
+
+  // FIXME @ts-expect-error we can't call oldProcedure with proxy
+  expect(await opts.proxy.oldProcedure.query()).toBe(
+    'oldProcedureOutput__input:n/a',
+  );
+
+  // @ts-expect-error we can't call new procedures without proxy
+  expect(await opts.client.query('newProcedure')).toBe('newProcedureOutput');
+
+  expect(await opts.proxy.newProcedure.query()).toBe('newProcedureOutput');
 });
 
 test('useQuery()', async () => {
   const { react, client } = ctx;
   function MyComponent() {
-    const query1 = react.useQuery(['greeting']);
-    const query2 = react.useQuery(['greeting', 'KATT']);
+    const query1 = react.useQuery(['oldProcedure']);
+    const query2 = react.useQuery(['oldProcedure', 'KATT']);
     if (!query1.data || !query2.data) {
       return <>...</>;
     }
@@ -87,8 +98,8 @@ test('useQuery()', async () => {
 
   const utils = render(<App />);
   await waitFor(() => {
-    expect(utils.container).toHaveTextContent(`hello world`);
-    expect(utils.container).toHaveTextContent(`hello KATT`);
+    expect(utils.container).toHaveTextContent(`oldProcedureOutput__input:n/a`);
+    expect(utils.container).toHaveTextContent(`oldProcedureOutput__input:KATT`);
   });
 });
 
@@ -96,7 +107,7 @@ test("we can use new router's procedures too", async () => {
   const { react, client, appRouter } = ctx;
   const proxy = createReactQueryHooksProxy<typeof appRouter>(react);
   function MyComponent() {
-    const query1 = proxy.whoami.useQuery();
+    const query1 = proxy.newProcedure.useQuery();
     if (!query1.data) {
       return <>...</>;
     }
@@ -119,6 +130,6 @@ test("we can use new router's procedures too", async () => {
 
   const utils = render(<App />);
   await waitFor(() => {
-    expect(utils.container).toHaveTextContent(`I am just a test`);
+    expect(utils.container).toHaveTextContent(`newProcedureOutput`);
   });
 });
