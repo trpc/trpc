@@ -1,29 +1,30 @@
-import fs from 'fs';
-import fetch from 'node-fetch';
-
 /**
  * Script to generate a JSON file of tweets from the Twitter API.
  * Fetches the tweeets from this timeline: https://twitter.com/alexdotjs/timelines/1441435105910796291
  *
  * Script has shitty typesafety but hey, it works :)
  */
+import 'dotenv/config';
+import fs from 'fs';
+import OAuth from 'oauth';
 
+// Get these keys from dev.twitter.com, create an application and go to 'Keys and tokens'
 const {
-  OAUTH_CONSUMER_KEY,
-  OAUTH_NONCE,
-  OAUTH_SIGNATURE,
-  OAUTH_TIMESTAMP,
-  OAUTH_TOKEN,
+  TWITTER_API_KEY,
+  TWITTER_API_KEY_SECRET,
+  TWITTER_ACCESS_TOKEN,
+  TWITTER_ACCESS_TOKEN_SECRET,
 } = process.env;
 
-const url =
-  'https://api.twitter.com/1.1/collections/entries.json?id=custom-1441435105910796291';
-const options = {
-  headers: {
-    accept: '*/*',
-    Authorization: `OAuth oauth_consumer_key="${OAUTH_CONSUMER_KEY}", oauth_nonce="${OAUTH_NONCE}", oauth_signature="${OAUTH_SIGNATURE}", oauth_signature_method="HMAC-SHA1", oauth_timestamp="${OAUTH_TIMESTAMP}", oauth_token="${OAUTH_TOKEN}", oauth_version="1.0"`,
-  },
-};
+const oauth = new OAuth.OAuth(
+  'https://api.twitter.com/oauth/request_token',
+  'https://api.twitter.com/oauth/access_token',
+  TWITTER_API_KEY,
+  TWITTER_API_KEY_SECRET,
+  '1.0A',
+  null,
+  'HMAC-SHA1',
+);
 
 /** Formats a date to mmm DD e.g. Jul 27 */
 const dateFormatter = new Intl.DateTimeFormat('en-US', {
@@ -72,19 +73,29 @@ const columnify = (tweets: Tweets, columns = 3) => {
   return cols;
 };
 
-const main = async () => {
-  const {
-    objects: { tweets, users },
-  } = await (await fetch(url, options)).json();
+oauth.get(
+  'https://api.twitter.com/1.1/collections/entries.json?id=custom-1441435105910796291',
+  TWITTER_ACCESS_TOKEN,
+  TWITTER_ACCESS_TOKEN_SECRET,
+  (err: any, data: any) => {
+    const jsonParsed = JSON.parse(data);
+    const tweets = jsonParsed?.objects?.tweets;
+    const users = jsonParsed?.objects?.users;
 
-  const flattenedTweets = flattenTweets(tweets, users);
+    if (!tweets || !users) {
+      console.log(jsonParsed);
+      console.log('Error', err);
+      console.log('An error occurred while fetching the tweets, exiting...');
+      process.exit(1);
+    }
 
-  const columnifiedTweets = columnify(flattenedTweets);
+    const flattenedTweets = flattenTweets(tweets, users);
 
-  const json = JSON.stringify(columnifiedTweets, null, 2);
-  const text = `export const tweets = ${json}`;
+    const columnifiedTweets = columnify(flattenedTweets);
 
-  fs.writeFileSync(__dirname + '/script.output.ts', text);
-};
+    const json = JSON.stringify(columnifiedTweets, null, 2);
+    const text = `export const tweets = ${json}`;
 
-void main();
+    fs.writeFileSync(__dirname + '/script.output.ts', text);
+  },
+);
