@@ -2,7 +2,7 @@ name: Examples E2E
 on: [push]
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: false
+  cancel-in-progress: true
 jobs:
   e2e:
     container:
