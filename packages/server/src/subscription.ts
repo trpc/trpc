@@ -1,5 +1,5 @@
 import { EventEmitter } from 'events';
-import { getErrorFromUnknown } from './internals/errors';
+import { getErrorFromUnknown } from './core/errors';
 
 interface SubscriptionEvents<TOutput> {
   data: (data: TOutput) => void;

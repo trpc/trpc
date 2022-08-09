@@ -1,9 +1,9 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 import { Maybe } from '@trpc/server';
 import { TRPCError } from '../TRPCError';
-import { callProcedure } from '../internals/callProcedure';
-import { getErrorFromUnknown } from '../internals/errors';
-import { transformTRPCResponse } from '../internals/transformTRPCResponse';
+import { callProcedure } from '../core/callProcedure';
+import { getErrorFromUnknown } from '../core/errors';
+import { transformTRPCResponse } from '../core/transformTRPCResponse';
 import {
   AnyRouter,
   ProcedureType,

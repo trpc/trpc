@@ -1,10 +1,10 @@
 import http from 'http';
 import ws from 'ws';
 import { TRPCError } from '../TRPCError';
+import { callProcedure } from '../core/callProcedure';
+import { getErrorFromUnknown } from '../core/errors';
+import { transformTRPCResponse } from '../core/transformTRPCResponse';
 import { BaseHandlerOptions } from '../internals/baseHandlerOptions';
-import { callProcedure } from '../internals/callProcedure';
-import { getErrorFromUnknown } from '../internals/errors';
-import { transformTRPCResponse } from '../internals/transformTRPCResponse';
 import { AnyRouter, ProcedureType, inferRouterContext } from '../router';
 import {
   TRPCErrorResponse,
