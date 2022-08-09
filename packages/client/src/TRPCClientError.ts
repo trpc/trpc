@@ -19,7 +19,7 @@ export class TRPCClientError<TRouter extends AnyRouter>
   constructor(
     message: string,
     opts?: {
-      result: Maybe<TRPCErrorResponse<inferRouterError<TRouter>>>;
+      result?: Maybe<TRPCErrorResponse<inferRouterError<TRouter>>>;
       cause?: Error;
       meta?: Record<string, unknown>;
     },
