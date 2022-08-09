@@ -1,5 +1,5 @@
 import { inferProcedureOutput } from '.';
-import { Filter, Prefixer } from '..';
+import { Filter } from '..';
 import { TRPCError } from '../error/TRPCError';
 import {
   DefaultErrorShape,
@@ -36,28 +36,6 @@ export interface ProcedureStructure {
   procedures: ProcedureRecord;
 }
 
-type ObjKeyof<T> = T extends object ? keyof T : never;
-type KeyofKeyof<T> = ObjKeyof<T> | { [K in keyof T]: ObjKeyof<T[K]> }[keyof T];
-type StripNever<T> = Pick<
-  T,
-  { [K in keyof T]: [T[K]] extends [never] ? never : K }[keyof T]
->;
-type Lookup<T, K> = T extends any ? (K extends keyof T ? T[K] : never) : never;
-type SimpleFlatten<T> = T extends object
-  ? StripNever<{
-      [K in KeyofKeyof<T>]:
-        | Exclude<K extends keyof T ? T[K] : never, object>
-        | { [P in keyof T]: Lookup<T[P], K> }[keyof T];
-    }>
-  : T;
-
-type PrefixedProcedures<T extends ProcedureRouterRecord> = {
-  [K in keyof T]: T[K] extends AnyRouter
-    ? T[K] extends Procedure<any>
-      ? never
-      : Prefixer<T[K]['_def']['procedures'], `${K & string}.`>
-    : never;
-};
 export interface RouterDef<
   // FIXME this should use RootConfig
   TContext,
@@ -83,8 +61,7 @@ export interface RouterDef<
   // FIXME this is slow:
   // - I think this has to go & be replaced by something by only using `TRecord` without `& SimpleFlatten...`
   // - Potentially, we have a `legacyProcedures` record where we only register the old things that are availble by string path
-  procedures: Filter<TRecord, Procedure<any>> &
-    SimpleFlatten<PrefixedProcedures<TRecord>>;
+  procedures: TRecord;
   /**
    * V9 procedures
    * @deprecated
@@ -92,22 +69,21 @@ export interface RouterDef<
   legacy: {};
   routers: Filter<TRecord, Router<any>>;
   record: TRecord;
-  // FIXME this is slow
-  subscriptions: Filter<TRecord, SubscriptionProcedure<any> & { _old: true }> &
-    Filter<
-      SimpleFlatten<PrefixedProcedures<TRecord>>,
-      SubscriptionProcedure<any> & { _old: true }
-    >;
-  queries: Filter<TRecord, QueryProcedure<any> & { _old: true }> &
-    Filter<
-      SimpleFlatten<PrefixedProcedures<TRecord>>,
-      QueryProcedure<any> & { _old: true }
-    >;
-  mutations: Filter<TRecord, MutationProcedure<any> & { _old: true }> &
-    Filter<
-      SimpleFlatten<PrefixedProcedures<TRecord>>,
-      MutationProcedure<any> & { _old: true }
-    >;
+  /**
+   * FIXME remove?
+   * @deprecated
+   */
+  subscriptions: Filter<TRecord, SubscriptionProcedure<any> & { _old: true }>;
+  /**
+   * FIXME remove?
+   * @deprecated
+   */
+  queries: Filter<TRecord, QueryProcedure<any> & { _old: true }>;
+  /**
+   * FIXME remove?
+   * @deprecated
+   */
+  mutations: Filter<TRecord, MutationProcedure<any> & { _old: true }>;
 }
 
 export type AnyRouterDef<TContext = any> = RouterDef<TContext, any, any, any>;
