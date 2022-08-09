@@ -80,7 +80,9 @@ export interface RouterDef<
   _meta: TMeta;
   errorFormatter: ErrorFormatter<TContext, TErrorShape>;
   transformer: CombinedDataTransformer;
-  // FIXME this is slow
+  // FIXME this is slow:
+  // - I think this has to go
+  // - Potentially, we have a `legacyProcedures` record where we only register the old things that are availble by string path
   procedures: Filter<TRecord, Procedure<any>> &
     SimpleFlatten<PrefixedProcedures<TRecord>>;
   routers: Filter<TRecord, Router<any>>;
