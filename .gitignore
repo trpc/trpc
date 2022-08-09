@@ -13,3 +13,5 @@ coverage/
 __generated__
 
 *.tsbuildinfo
+
+packages/**

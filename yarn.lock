@@ -11055,14 +11055,6 @@ map-visit@^1.0.0:
   dependencies:
     object-visit "^1.0.0"
 
-match-sorter@^6.0.2:
-  version "6.3.0"
-  resolved "https://registry.npmjs.org/match-sorter/-/match-sorter-6.3.0.tgz#454a1b31ed218cddbce6231a0ecb5fdc549fed01"
-  integrity sha512-efYOf/wUpNb8FgNY+cOD2EIJI1S5I7YPKsw0LBp7wqPh5pmMS6i/wr3ZWwfwrAw1NvqTA2KUReVRWDX84lUcOQ==
-  dependencies:
-    "@babel/runtime" "^7.12.5"
-    remove-accents "0.4.2"
-
 matched@^5.0.0:
   version "5.0.1"
   resolved "https://registry.yarnpkg.com/matched/-/matched-5.0.1.tgz#620606d9dac6b7f4e955354b82e02ef4e3a62dc3"
