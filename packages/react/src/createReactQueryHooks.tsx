@@ -23,7 +23,7 @@ import {
 } from '@trpc/client';
 import type {
   AnyRouter,
-  Procedure,
+  ProcedureRecord,
   inferHandlerInput,
   inferProcedureClientError,
   inferProcedureInput,
@@ -46,8 +46,6 @@ export type OutputWithCursor<TData, TCursor extends any = any> = {
   cursor: TCursor | null;
   data: TData;
 };
-
-export type ProcedureRecord = Record<string, Procedure<any>>;
 
 export interface TRPCUseQueryBaseOptions extends TRPCRequestOptions {
   /**
