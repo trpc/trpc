@@ -100,7 +100,8 @@
     "rpc",
     "observable",
     "shared",
-    "src"
+    "src",
+    "README.md"
   ],
   "publishConfig": {
     "access": "public"

@@ -25,7 +25,8 @@
   },
   "files": [
     "dist",
-    "src"
+    "src",
+    "README.md"
   ],
   "eslintConfig": {
     "rules": {
