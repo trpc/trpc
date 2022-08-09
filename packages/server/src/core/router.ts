@@ -86,15 +86,21 @@ export interface RouterDef<
   routers: Filter<TRecord, Router<any>>;
   record: TRecord;
   // FIXME this is slow
-  subscriptions: Filter<TRecord, SubscriptionProcedure<any>> &
+  subscriptions: Filter<TRecord, SubscriptionProcedure<any> & { _old: true }> &
     Filter<
       SimpleFlatten<PrefixedProcedures<TRecord>>,
-      SubscriptionProcedure<any>
+      SubscriptionProcedure<any> & { _old: true }
     >;
-  queries: Filter<TRecord, QueryProcedure<any>> &
-    Filter<SimpleFlatten<PrefixedProcedures<TRecord>>, QueryProcedure<any>>;
-  mutations: Filter<TRecord, MutationProcedure<any>> &
-    Filter<SimpleFlatten<PrefixedProcedures<TRecord>>, MutationProcedure<any>>;
+  queries: Filter<TRecord, QueryProcedure<any> & { _old: true }> &
+    Filter<
+      SimpleFlatten<PrefixedProcedures<TRecord>>,
+      QueryProcedure<any> & { _old: true }
+    >;
+  mutations: Filter<TRecord, MutationProcedure<any> & { _old: true }> &
+    Filter<
+      SimpleFlatten<PrefixedProcedures<TRecord>>,
+      MutationProcedure<any> & { _old: true }
+    >;
 }
 
 export type AnyRouterDef<TContext = any> = RouterDef<TContext, any, any, any>;

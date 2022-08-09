@@ -58,11 +58,15 @@ type MigrateProcedure<
   TProcedure extends AnyOldProcedure,
   TType extends ProcedureType,
 > = TType extends 'query'
-  ? QueryProcedure<convertProcedureParams<TConfig, TProcedure>>
+  ? QueryProcedure<convertProcedureParams<TConfig, TProcedure>> & { _old: true }
   : TType extends 'mutation'
-  ? MutationProcedure<convertProcedureParams<TConfig, TProcedure>>
+  ? MutationProcedure<convertProcedureParams<TConfig, TProcedure>> & {
+      _old: true;
+    }
   : TType extends 'subscription'
-  ? SubscriptionProcedure<convertProcedureParams<TConfig, TProcedure>>
+  ? SubscriptionProcedure<convertProcedureParams<TConfig, TProcedure>> & {
+      _old: true;
+    }
   : never;
 
 export type MigrateProcedureRecord<

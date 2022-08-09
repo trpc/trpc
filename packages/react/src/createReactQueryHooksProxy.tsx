@@ -22,6 +22,7 @@ import {
   UseTRPCMutationOptions,
   UseTRPCQueryOptions,
   UseTRPCSubscriptionOptions,
+  createReactQueryHooks,
 } from './createReactQueryHooks';
 import { getQueryKey } from './internals/getQueryKey';
 import {
@@ -118,38 +119,72 @@ export type DecoratedProcedureRecord<
       >;
 };
 
+/**
+ * @deprecated use createTRPCReact instead
+ * @internal
+ */
 export function createReactQueryHooksProxy<
   TRouter extends AnyRouter,
   TSSRContext = unknown,
 >(trpc: CreateReactQueryHooks<TRouter, TSSRContext>) {
-  const proxy = createProxy((opts) => {
-    const args = opts.args;
+  const proxy: unknown = new Proxy(
+    () => {
+      // noop
+    },
+    {
+      get(_obj, name) {
+        if (name === 'useContext') {
+          return () => {
+            const context = trpc.useContext();
+            // create a stable reference of the utils context
+            return useMemo(() => {
+              return createReactQueryUtilsProxy(context);
+            }, [context]);
+          };
+        }
 
-    if (opts.path.length === 1 && opts.path[0] === 'useContext') {
-      const context = trpc.useContext();
-      // create a stable reference of the utils context
-      return useMemo(() => {
-        return createReactQueryUtilsProxy(context);
-      }, [context]);
-    }
+        if (name in trpc) {
+          return (trpc as any)[name];
+        }
 
-    const pathCopy = [...opts.path];
+        if (typeof name === 'string') {
+          return createProxy((opts) => {
+            const args = opts.args;
 
-    // The last arg is for instance `.useMutation` or `.useQuery()`
-    const lastArg = pathCopy.pop()!;
+            const pathCopy = [name, ...opts.path];
 
-    // The `path` ends up being something like `post.byId`
-    const path = pathCopy.join('.');
-    if (lastArg === 'useMutation') {
-      return (trpc as any)[lastArg](path, ...args);
-    }
-    const [input, ...rest] = args;
+            // The last arg is for instance `.useMutation` or `.useQuery()`
+            const lastArg = pathCopy.pop()!;
 
-    const queryKey = getQueryKey(path, input);
-    return (trpc as any)[lastArg](queryKey, ...rest);
-  });
+            // The `path` ends up being something like `post.byId`
+            const path = pathCopy.join('.');
+            if (lastArg === 'useMutation') {
+              return (trpc as any)[lastArg](path, ...args);
+            }
+            const [input, ...rest] = args;
+
+            const queryKey = getQueryKey(path, input);
+            return (trpc as any)[lastArg](queryKey, ...rest);
+          });
+        }
+
+        throw new Error('Not supported');
+      },
+    },
+  );
 
   return proxy as {
     useContext(): DecoratedProcedureUtilsRecord<TRouter>;
-  } & DecoratedProcedureRecord<TRouter['_def']['record']>;
+  } & CreateReactQueryHooks<TRouter> &
+    DecoratedProcedureRecord<TRouter['_def']['record']>;
+}
+
+export function createTRPCReact<
+  TRouter extends AnyRouter,
+  TSSRContext = unknown,
+>() {
+  const hooks = createReactQueryHooks<TRouter, TSSRContext>();
+  const proxy = createReactQueryHooksProxy(hooks);
+
+  return proxy;
 }
