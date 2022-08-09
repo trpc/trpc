@@ -1,6 +1,4 @@
 /* eslint-disable @typescript-eslint/no-empty-function */
-
-/* eslint-disable @typescript-eslint/ban-types */
 import { trpcServer } from '../../___packages';
 import { routerToServerAndClientNew } from '../../___testHelpers';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';

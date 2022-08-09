@@ -53,20 +53,26 @@ type convertProcedureParams<
     >
   : never;
 
+/**
+ * @deprecated
+ */
+export type OldProcedureTag = {
+  _old: true;
+};
+
 type MigrateProcedure<
   TConfig extends RootConfig,
   TProcedure extends AnyOldProcedure,
   TType extends ProcedureType,
 > = TType extends 'query'
-  ? QueryProcedure<convertProcedureParams<TConfig, TProcedure>> & { _old: true }
+  ? QueryProcedure<convertProcedureParams<TConfig, TProcedure>> &
+      OldProcedureTag
   : TType extends 'mutation'
-  ? MutationProcedure<convertProcedureParams<TConfig, TProcedure>> & {
-      _old: true;
-    }
+  ? MutationProcedure<convertProcedureParams<TConfig, TProcedure>> &
+      OldProcedureTag
   : TType extends 'subscription'
-  ? SubscriptionProcedure<convertProcedureParams<TConfig, TProcedure>> & {
-      _old: true;
-    }
+  ? SubscriptionProcedure<convertProcedureParams<TConfig, TProcedure>> &
+      OldProcedureTag
   : never;
 
 export type MigrateProcedureRecord<
@@ -110,7 +116,40 @@ export type MigrateRouter<
   >,
   TErrorShape extends TRPCErrorShape<any>,
 > = NewRouter<
-  RouterDef<
+  {
+    legacy: {
+      queries: MigrateProcedureRecord<
+        CreateRootConfig<{
+          ctx: TInputContext;
+          errorShape: TErrorShape;
+          meta: TMeta;
+          transformer: CombinedDataTransformer;
+        }>,
+        TQueries,
+        'query'
+      >;
+      mutations: MigrateProcedureRecord<
+        CreateRootConfig<{
+          ctx: TInputContext;
+          errorShape: TErrorShape;
+          meta: TMeta;
+          transformer: CombinedDataTransformer;
+        }>,
+        TMutations,
+        'mutation'
+      >;
+      subscriptions: MigrateProcedureRecord<
+        CreateRootConfig<{
+          ctx: TInputContext;
+          errorShape: TErrorShape;
+          meta: TMeta;
+          transformer: CombinedDataTransformer;
+        }>,
+        TSubscriptions,
+        'subscription'
+      >;
+    };
+  } & RouterDef<
     TInputContext,
     TErrorShape,
     TMeta,

@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/ban-types */
 import { inferProcedureOutput } from '.';
 import { Filter, Prefixer } from '..';
 import { TRPCError } from '../error/TRPCError';
@@ -25,7 +24,8 @@ import {
 } from './procedure';
 import { ProcedureType, procedureTypes } from './types';
 
-type ProcedureRecord = Record<string, Procedure<any>>;
+/** @internal **/
+export type ProcedureRecord = Record<string, Procedure<any>>;
 
 export type ProcedureRouterRecord = Record<string, Procedure<any> | AnyRouter>;
 
@@ -85,8 +85,11 @@ export interface RouterDef<
   // - Potentially, we have a `legacyProcedures` record where we only register the old things that are availble by string path
   procedures: Filter<TRecord, Procedure<any>> &
     SimpleFlatten<PrefixedProcedures<TRecord>>;
-  // Suggestion:
-  // _interopRouter: Record<ProcedureType, ProcedureRouterRecord>,
+  /**
+   * V9 procedures
+   * @deprecated
+   */
+  legacy: {};
   routers: Filter<TRecord, Router<any>>;
   record: TRecord;
   // FIXME this is slow
@@ -166,12 +169,7 @@ type RouterCaller<TDef extends AnyRouterDef> = (ctx: TDef['_ctx']) => {
 } & DecoratedProcedureRecord<TDef['record']>;
 
 export interface Router<TDef extends AnyRouterDef> {
-  _def: RouterDef<
-    TDef['_ctx'],
-    TDef['_errorShape'],
-    TDef['_meta'],
-    TDef['record']
-  >;
+  _def: TDef;
   /** @deprecated **/
   errorFormatter: TDef['errorFormatter'];
   /** @deprecated **/
@@ -269,6 +267,7 @@ export function createRouterFactory<TConfig extends RootConfig>(
 
     const _def: AnyRouterDef<TConfig['ctx']> = {
       router: true,
+      legacy: {},
       procedures: {},
       ...emptyRouter,
       ...result,

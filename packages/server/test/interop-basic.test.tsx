@@ -19,10 +19,13 @@ const ctx = konn()
         return `oldProcedureOutput__input:${input ?? 'n/a'}`;
       },
     });
+
+    const legacyRouterInterop = legacyRouter.interop();
     const newAppRouter = t.router({
       newProcedure: t.procedure.query(() => 'newProcedureOutput'),
     });
-    const appRouter = t.mergeRouters(legacyRouter.interop(), newAppRouter);
+
+    const appRouter = t.mergeRouters(legacyRouterInterop, newAppRouter);
     const opts = routerToServerAndClientNew(appRouter, {});
     const queryClient = new QueryClient();
     const react = createReactQueryHooks<typeof opts['router']>();
@@ -54,7 +57,7 @@ test('interop inference', async () => {
     'oldProcedureOutput__input:n/a',
   );
 
-  // FIXME @ts-expect-error we can't call oldProcedure with proxy
+  // FIXME // @ts-expect-error we can't call oldProcedure with proxy
   expect(await opts.proxy.oldProcedure.query()).toBe(
     'oldProcedureOutput__input:n/a',
   );

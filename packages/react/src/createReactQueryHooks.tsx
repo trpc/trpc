@@ -14,6 +14,7 @@ import {
   hashQueryKey,
 } from '@tanstack/react-query';
 import {
+  AssertLegacyDef,
   CreateTRPCClientOptions,
   TRPCClient,
   TRPCClientErrorLike,
@@ -38,6 +39,8 @@ import React, {
   useState,
 } from 'react';
 import { SSRState, TRPCContext, TRPCContextState } from './internals/context';
+
+type AssertType<T, K> = T extends K ? T : never;
 
 export type OutputWithCursor<TData, TCursor extends any = any> = {
   cursor: TCursor | null;
@@ -123,13 +126,15 @@ export function createReactQueryHooks<
   TRouter extends AnyRouter,
   TSSRContext = unknown,
 >() {
-  type TQueries = TRouter['_def']['queries'];
-  type TSubscriptions = TRouter['_def']['subscriptions'];
+  type TQueries = AssertLegacyDef<TRouter>['queries'];
+  type TSubscriptions = AssertLegacyDef<TRouter>['subscriptions'];
+  type TMutations = AssertLegacyDef<TRouter>['mutations'];
+
   type TError = TRPCClientErrorLike<TRouter>;
   type TInfiniteQueryNames = inferInfiniteQueryNames<TQueries>;
 
-  type TQueryValues = inferProcedures<TRouter['_def']['queries']>;
-  type TMutationValues = inferProcedures<TRouter['_def']['mutations']>;
+  type TQueryValues = inferProcedures<TQueries>;
+  type TMutationValues = inferProcedures<TMutations>;
 
   type ProviderContext = TRPCContextState<TRouter, TSSRContext>;
   const Context = TRPCContext as React.Context<ProviderContext>;
@@ -281,7 +286,10 @@ export function createReactQueryHooks<
     TQueryFnData = TQueryValues[TPath]['output'],
     TData = TQueryValues[TPath]['output'],
   >(
-    pathAndInput: [path: TPath, ...args: inferHandlerInput<TQueries[TPath]>],
+    pathAndInput: [
+      path: TPath,
+      ...args: inferHandlerInput<AssertType<TQueries, ProcedureRecord>[TPath]>,
+    ],
     opts?: UseTRPCQueryOptions<
       TPath,
       TQueryValues[TPath]['input'],
@@ -347,11 +355,15 @@ export function createReactQueryHooks<
   >(
     pathAndInput: [
       path: TPath,
-      ...args: inferHandlerInput<TSubscriptions[TPath]>,
+      ...args: inferHandlerInput<
+        AssertType<TSubscriptions, ProcedureRecord>[TPath]
+      >,
     ],
     opts: UseTRPCSubscriptionOptions<
       inferObservableValue<inferProcedureOutput<TSubscriptions[TPath]>>,
-      inferProcedureClientError<TSubscriptions[TPath]>
+      inferProcedureClientError<
+        AssertType<TSubscriptions, ProcedureRecord>[TPath]
+      >
     >,
   ) {
     const enabled = opts?.enabled ?? true;
