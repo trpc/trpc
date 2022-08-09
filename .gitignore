@@ -14,7 +14,11 @@ __generated__
 
 *.tsbuildinfo
 
-packages/**
-!packages/*/package.json
-!packages/*/src
-!packages/*/README.md
+# Barrel files
+packages/client/links
+packages/react/ssg
+packages/server/adapters
+packages/server/observable
+packages/server/rpc
+packages/server/shared
+packages/server/subscription
