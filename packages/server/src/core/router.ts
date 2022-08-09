@@ -85,6 +85,8 @@ export interface RouterDef<
   // - Potentially, we have a `legacyProcedures` record where we only register the old things that are availble by string path
   procedures: Filter<TRecord, Procedure<any>> &
     SimpleFlatten<PrefixedProcedures<TRecord>>;
+  // Suggestion:
+  // _interopRouter: Record<ProcedureType, ProcedureRouterRecord>,
   routers: Filter<TRecord, Router<any>>;
   record: TRecord;
   // FIXME this is slow
