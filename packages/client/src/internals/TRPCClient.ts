@@ -20,10 +20,6 @@ import { getFetch } from '../getFetch';
 import { httpBatchLink } from '../links';
 import { createChain } from '../links/internals/createChain';
 import {
-  transformOperationResult,
-  transformSubscriptionOperationResult,
-} from '../links/internals/transformOperationResult';
-import {
   HTTPHeaders,
   OperationContext,
   OperationLink,
@@ -197,13 +193,8 @@ export class TRPCClient<TRouter extends AnyRouter> {
     const cancellablePromise: CancellablePromise<any> = new Promise<TOutput>(
       (resolve, reject) => {
         promise
-          .then((result) => {
-            const transformed = transformOperationResult(result, this.runtime);
-            if (transformed.ok) {
-              resolve(transformed.data);
-              return;
-            }
-            reject(transformed.error);
+          .then((envelope) => {
+            resolve((envelope.result as any).data);
           })
           .catch((err) => {
             reject(TRPCClientError.from(err));
@@ -275,24 +266,15 @@ export class TRPCClient<TRouter extends AnyRouter> {
       input,
       context: opts.requestContext,
     });
-    const runtime = this.runtime;
     return observable$.subscribe({
-      next(result) {
-        const transformed = transformSubscriptionOperationResult(
-          result,
-          runtime,
-        );
-        if (transformed.ok) {
-          if (transformed.data.type === 'started') {
-            opts.onStarted?.();
-          } else if (transformed.data.type === 'stopped') {
-            opts.onStopped?.();
-          } else if (transformed.data.type === 'data') {
-            opts.onData?.(transformed.data.data);
-          }
-          return;
+      next(envelope) {
+        if (envelope.result.type === 'started') {
+          opts.onStarted?.();
+        } else if (envelope.result.type === 'stopped') {
+          opts.onStopped?.();
+        } else {
+          opts.onData?.((envelope.result as any).data);
         }
-        opts.onError?.(transformed.error);
       },
       error(err) {
         opts.onError?.(err);

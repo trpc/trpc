@@ -18,13 +18,10 @@ describe('chain', () => {
           return observable((observer) => {
             observer.next({
               context: {},
-              data: {
-                id: null,
-                result: {
-                  type: 'data',
-                  data: {
-                    input: op.input,
-                  },
+              result: {
+                type: 'data',
+                data: {
+                  input: op.input,
                 },
               },
             });
@@ -54,12 +51,9 @@ describe('chain', () => {
           return observable((observer) => {
             observer.next({
               context: {},
-              data: {
-                id: null,
-                result: {
-                  type: 'data',
-                  data: 'from cache',
-                },
+              result: {
+                type: 'data',
+                data: 'from cache',
               },
             });
             const subscription = next(op).subscribe(observer);
@@ -71,13 +65,10 @@ describe('chain', () => {
         ({ op }) => {
           return observable((observer) => {
             observer.next({
-              data: {
-                id: null,
-                result: {
-                  type: 'data',
-                  data: {
-                    input: op.input,
-                  },
+              result: {
+                type: 'data',
+                data: {
+                  input: op.input,
                 },
               },
             });
@@ -103,12 +94,9 @@ describe('chain', () => {
       Array [
         Object {
           "context": Object {},
-          "data": Object {
-            "id": null,
-            "result": Object {
-              "data": "from cache",
-              "type": "data",
-            },
+          "result": Object {
+            "data": "from cache",
+            "type": "data",
           },
         },
       ]
@@ -116,14 +104,11 @@ describe('chain', () => {
     expect(next.mock.calls[1]).toMatchInlineSnapshot(`
       Array [
         Object {
-          "data": Object {
-            "id": null,
-            "result": Object {
-              "data": Object {
-                "input": "world",
-              },
-              "type": "data",
+          "result": Object {
+            "data": Object {
+              "input": "world",
             },
+            "type": "data",
           },
         },
       ]

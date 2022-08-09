@@ -1,6 +1,16 @@
 export const tweets = [
   [
     {
+      id: '1556619478556876802',
+      name: 'R. Alex Anderson 🚀',
+      handle: 'ralex1993',
+      date: 'Aug 08',
+      avatar:
+        'https://pbs.twimg.com/profile_images/1529879227918561292/8ujpSdLe_normal.jpg',
+      content:
+        "I've used @trpcio for exactly 5 seconds, and I can already tell - it is the _best_ way to consume first-party APIs… ",
+    },
+    {
       id: '1549163530439606272',
       name: 'Dominik Vít',
       handle: 'dominik__vit',
@@ -10,14 +20,26 @@ export const tweets = [
       content: 'tRPC is probably the best thing since React was invented.',
     },
     {
-      id: '1548451691472699398',
-      name: 'Drew Bredvick',
-      handle: 'DBredvick',
-      date: 'Jul 17',
+      id: '1553580714591158272',
+      name: 'Emilia Zapata',
+      handle: 'synecdokey',
+      date: 'Jul 31',
       avatar:
-        'https://pbs.twimg.com/profile_images/1462081803745775623/T539s4P6_normal.jpg',
+        'https://pbs.twimg.com/profile_images/1426010455055638531/xUFu5JP7_normal.jpg',
       content:
-        '#bootstrap1000 update day 103:\n\nSpent a decent amount of time getting this table just right.\n\n› basic CRUD\n› cron e… ',
+        "Finally had the chance to play with @trpcio and it's scary how easy it makes to make your data flow, with full type… ",
+    },
+  ],
+  [
+    {
+      id: '1553191258771841024',
+      name: 'Roy Anger',
+      handle: 'royanger',
+      date: 'Jul 30',
+      avatar:
+        'https://pbs.twimg.com/profile_images/1346968887/dsc652499-2_normal.jpg',
+      content:
+        'create-t3-app is amazing. I worked on a MVP over the last 10 days on the side, and easily built it out using the st… ',
     },
     {
       id: '1549185453517144064',
@@ -29,28 +51,18 @@ export const tweets = [
       content:
         '@alexdotjs @t3dotgg @trpcio Didn’t know of it’s existence until @t3dotgg I’m so grateful to have found it. The tool… ',
     },
+    {
+      id: '1555390516723740672',
+      name: 'Justin Ahinon',
+      handle: 'iamsegbedji',
+      date: 'Aug 05',
+      avatar:
+        'https://pbs.twimg.com/profile_images/1544269477805694977/XStiKvfe_normal.jpg',
+      content:
+        'After hearing about @trpcio literally every for the last two months, I’ve decided to give it a try on my SvelteKit… ',
+    },
   ],
   [
-    {
-      id: '1548624789874835456',
-      name: 'Ravi’s Perfect Base',
-      handle: 'my_perfect_base',
-      date: 'Jul 17',
-      avatar:
-        'https://pbs.twimg.com/profile_images/1539124588067672066/Ho6wdgQo_normal.jpg',
-      content:
-        'I was able to convince the team on my company to use tRPC for a new project!\nIt was actually kind of easy, when I s… ',
-    },
-    {
-      id: '1542160797136199680',
-      name: 'Riccardo Giorato',
-      handle: 'riccardogiorato',
-      date: 'Jun 29',
-      avatar:
-        'https://pbs.twimg.com/profile_images/1484484122005409794/JTwc4KgN_normal.jpg',
-      content:
-        '@alexdotjs @trpcio I was using previously SWR but having to create manually types for the API endpoints was too slo… ',
-    },
     {
       id: '1548607105934004227',
       name: 'Ben',
@@ -61,37 +73,25 @@ export const tweets = [
       content:
         '@alexdotjs @trpcio @github Amazing & much well deserved!\nPeople are starting to see how awesome tRPC is & I love it! 👏',
     },
-  ],
-  [
     {
-      id: '1548181439950123009',
-      name: 'Adrián Mato 🐙',
-      handle: 'adrianmg',
-      date: 'Jul 16',
+      id: '1555310243382525952',
+      name: 'David Dunn',
+      handle: 'DunnCoding',
+      date: 'Aug 04',
       avatar:
-        'https://pbs.twimg.com/profile_images/941124154685714432/u0BYUtWR_normal.jpg',
+        'https://pbs.twimg.com/profile_images/1543131000422780933/_ABVqRY0_normal.jpg',
       content:
-        "Learning about @trpcio for the first time today and I'm blown away by it 🤯\n\nCheck it out: ",
+        'Day 34 of #100DaysOfCode \n\nSpent some time building an app using the #t3 stack, which uses: #nextjs #TypeScript… ',
     },
     {
-      id: '1541926497396658178',
-      name: 'Davy | Live stream every week',
-      handle: 'davyengone',
-      date: 'Jun 29',
+      id: '1556633535678763011',
+      name: 'Laurens Lavaert',
+      handle: 'Pruxis',
+      date: 'Aug 08',
       avatar:
-        'https://pbs.twimg.com/profile_images/1487182094459621380/o-0bPCgo_normal.png',
+        'https://pbs.twimg.com/profile_images/1318502785529380864/E2Bjx32E_normal.jpg',
       content:
-        '@alexdotjs @trpcio You built something dope Alex! I’m in love with @trpcio \nBe ready for a wilde industry adoption 🚀🚀🚀🚀',
-    },
-    {
-      id: '1541934709432885248',
-      name: 'Noah 🧩',
-      handle: 'noahflk',
-      date: 'Jun 29',
-      avatar:
-        'https://pbs.twimg.com/profile_images/1517622132032819201/BwOj2lrf_normal.png',
-      content:
-        'If you’re a TypeScript dev, go check out https://t.co/EDn15XUpeF now. \n\nI can see it being an industry household na… ',
+        "@alexdotjs We've been using it in two projects now and it's the best choice I could ever make. v10 API looking real… ",
     },
   ],
   [
@@ -116,57 +116,34 @@ export const tweets = [
         "tRPC - Safe API between your client and server 🔥\n\nI *LOVE* this project!\n\nIf you're building your client and server… ",
     },
     {
-      id: '1542409109399535616',
-      name: 'Ivan Dalmet 🐻',
-      handle: 'IvanDalmet',
-      date: 'Jun 30',
-      avatar:
-        'https://pbs.twimg.com/profile_images/741930557475573760/ur4w4dZV_normal.jpg',
-      content:
-        'New idea? Need some code refactoring? Before it always been like "Yes but it will be hard to update the code so let… ',
-    },
-  ],
-  [
-    {
       id: '1550693404102762496',
       name: 'The Last Code Bender 💨💻',
       handle: 'code_savant',
       date: 'Jul 23',
       avatar:
-        'https://pbs.twimg.com/profile_images/1552220074978820096/DMqS5kWh_normal.png',
+        'https://pbs.twimg.com/profile_images/1555265969899053058/L-PnKAHz_normal.jpg',
       content: 'My god, what a pleasurable dev experience @trpcio',
-    },
-    {
-      id: '1542442042923573251',
-      name: 'Cal.com',
-      handle: 'calcom',
-      date: 'Jun 30',
-      avatar:
-        'https://pbs.twimg.com/profile_images/1438155897528803374/K-vJq8bm_normal.jpg',
-      content:
-        "We're now the official Gold Sponsor of @alexdotjs' @trpcio for his amazing work in the open-source industry.\n\nWe he… ",
-    },
-    {
-      id: '1547220479601422337',
-      name: 'Ravi’s Perfect Base',
-      handle: 'my_perfect_base',
-      date: 'Jul 13',
-      avatar:
-        'https://pbs.twimg.com/profile_images/1539124588067672066/Ho6wdgQo_normal.jpg',
-      content:
-        'Today I finally got the time to try tRPC!\nIt was awesome! Better than I could have expected!\nThat’s what actual typ… ',
     },
   ],
   [
     {
-      id: '1547669884342915074',
-      name: 'Scott Macdonald 🏳️‍⚧️🏳️‍🌈🇵🇸🇨🇺',
-      handle: 'scott_eff',
-      date: 'Jul 14',
+      id: '1552972265276542978',
+      name: 'Hackages',
+      handle: 'hackages',
+      date: 'Jul 29',
       avatar:
-        'https://pbs.twimg.com/profile_images/1525187661899628544/nLRS7MMs_normal.jpg',
+        'https://pbs.twimg.com/profile_images/1435220042371768320/_kkK84lh_normal.jpg',
       content:
-        'This is my new favourite thing. Type-safe APIs from both sides.\n\n',
+        "This is how I felt the first time I tried https://t.co/xreEutecuB\n\nAnd I guarantee, you'll feel the same way once y… ",
+    },
+    {
+      id: '1555470079462359040',
+      name: 'Sahil Rajput 🤺',
+      handle: 'freakstarrocks',
+      date: 'Aug 05',
+      avatar:
+        'https://pbs.twimg.com/profile_images/1273236846940577793/eyVpUsas_normal.jpg',
+      content: '@trpcio @t3dotgg I tried ',
     },
     {
       id: '1549813177101213699',
@@ -178,27 +155,49 @@ export const tweets = [
       content:
         '@t3dotgg It’s literally changed how I build pretty much everything. Can’t imagine building something without it now!',
     },
+  ],
+  [
     {
       id: '1548614945859932161',
-      name: 'agnosticoder',
+      name: 'Satinder Singh',
       handle: 'agnosticoder',
       date: 'Jul 17',
       avatar:
-        'https://pbs.twimg.com/profile_images/1480252734502756361/iOZMMkVH_normal.jpg',
+        'https://pbs.twimg.com/profile_images/1556804075764813824/Y1nGBVaj_normal.jpg',
       content:
         '@trpcio is a well-thought-out library. @alexdotjs is becoming my second favourite developer after @tannerlinsley 😀',
+    },
+    {
+      id: '1555966973959213057',
+      name: 'Gabe Kirkley',
+      handle: 'GabeKirkley',
+      date: 'Aug 06',
+      avatar:
+        'https://pbs.twimg.com/profile_images/1153548632206872576/fmweRrMx_normal.jpg',
+      content:
+        'Trying out a totally new stack this morning: @SST_dev with @trpcio @prisma, @planetscaledata, CASL, zod, and… ',
+    },
+    {
+      id: '1555363055524950016',
+      name: 'Toxocious',
+      handle: 'toxocious',
+      date: 'Aug 05',
+      avatar:
+        'https://pbs.twimg.com/profile_images/1514744232447160322/d898QZrD_normal.png',
+      content:
+        "Recently picked up #tRPC, and it's made a massive difference in implementing easy to use and cleanly readable code… ",
     },
   ],
   [
     {
-      id: '1543651511749808128',
-      name: 'Adam Slaker',
-      handle: 'adamjslaker',
-      date: 'Jul 03',
+      id: '1555639764711358469',
+      name: 'jon',
+      handle: 'jonlinkens',
+      date: 'Aug 05',
       avatar:
-        'https://pbs.twimg.com/profile_images/1487490818973831180/pf0RIIwJ_normal.png',
+        'https://pbs.twimg.com/profile_images/1550304923572633601/vVRoCH15_normal.jpg',
       content:
-        '@stolinski @wesbos @trpcio @syntaxfm I’ve been using it in production for about 2 months now and the DX is through… ',
+        "told myself I wouldn't touch an IDE while on holiday but gave in to finally try @trpcio and wow.. I understand now",
     },
     {
       id: '1551914661968285696',
