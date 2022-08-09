@@ -1,0 +1,27 @@
+{
+  "name": "@examples/next-minimal",
+  "version": "10.0.0-alpha.42",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start"
+  },
+  "dependencies": {
+    "@tanstack/react-query": "^4.0.10",
+    "@trpc/client": "^10.0.0-alpha.42",
+    "@trpc/next": "^10.0.0-alpha.42",
+    "@trpc/react": "^10.0.0-alpha.42",
+    "@trpc/server": "^10.0.0-alpha.42",
+    "next": "latest",
+    "react": "^18.1.0",
+    "react-dom": "^18.1.0",
+    "zod": "^3.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^17.0.10",
+    "@types/react": "^18.0.9",
+    "@types/react-dom": "^18.0.5",
+    "typescript": "4.7.4"
+  }
+}

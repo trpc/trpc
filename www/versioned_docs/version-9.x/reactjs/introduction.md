@@ -62,10 +62,10 @@ Follow the [Quickstart](/docs/quickstart) and read the [`@trpc/server` docs](/do
 #### 1. Install dependencies
 
 ```bash
-yarn add @trpc/client @trpc/server @trpc/react react-query
+yarn add @trpc/client @trpc/server @trpc/react @tanstack/react-query
 ```
 - @trpc/server: This is a peer dependency of `@trpc/client` so you have to install it again!
-- React Query: @trpc/react provides a thin wrapper over react-query. It is required as a peer dependency.
+- Tanstack's React Query: @trpc/react provides a thin wrapper over @tanstack/react-query. It is required as a peer dependency.
 
 #### 2. Create tRPC hooks
 
@@ -87,7 +87,7 @@ In your `App.tsx`
 ```tsx title='App.tsx'
 import React from 'react';
 import { useState } from 'react';
-import { QueryClient, QueryClientProvider } from 'react-query';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { trpc } from './utils/trpc';
 
 export function App() {

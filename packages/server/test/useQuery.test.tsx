@@ -1,9 +1,9 @@
 import { getServerAndReactClient } from './__reactHelpers';
+import { InfiniteData } from '@tanstack/react-query';
 import { render, waitFor } from '@testing-library/react';
 import { expectTypeOf } from 'expect-type';
 import { konn } from 'konn';
 import React, { useEffect } from 'react';
-import { InfiniteData } from 'react-query';
 import { z } from 'zod';
 import { initTRPC } from '../src';
 
@@ -21,7 +21,6 @@ const ctx = konn()
       },
     });
     const appRouter = t.router({
-      rootProc: t.procedure.query(() => null),
       post: t.router({
         byId: t.procedure
           .input(
@@ -37,13 +36,6 @@ const ctx = konn()
             }),
           )
           .query(() => '__infResult' as const),
-        create: t.procedure
-          .input(
-            z.object({
-              text: z.string(),
-            }),
-          )
-          .mutation(() => `__mutationResult` as const),
       }),
       /**
        * @deprecated
@@ -126,37 +118,6 @@ test('useInfiniteQuery()', async () => {
   );
   await waitFor(() => {
     expect(utils.container).toHaveTextContent(`__infResult`);
-  });
-});
-
-test('useMutation', async () => {
-  const { App, proxy } = ctx;
-  function MyComponent() {
-    const mutation = proxy.post.create.useMutation();
-
-    useEffect(() => {
-      mutation.mutate({
-        text: 'hello',
-      });
-      // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []);
-    if (!mutation.data) {
-      return <>...</>;
-    }
-
-    type TData = typeof mutation['data'];
-    expectTypeOf<TData>().toMatchTypeOf<'__mutationResult'>();
-
-    return <pre>{JSON.stringify(mutation.data ?? 'n/a', null, 4)}</pre>;
-  }
-
-  const utils = render(
-    <App>
-      <MyComponent />
-    </App>,
-  );
-  await waitFor(() => {
-    expect(utils.container).toHaveTextContent(`__mutationResult`);
   });
 });
 

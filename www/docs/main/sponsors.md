@@ -93,6 +93,7 @@ Also, if your company using tRPC and want to support long-term maintenance of tR
    <td align="center"><a href="https://github.com/LoriKarikari"><img src="https://avatars.githubusercontent.com/u/7902980?u=d016e5a9c337fbd4c60a7ea61352185f8b88b585&v=4&s=100" width="100" alt="Lori%20Karikari"/><br />Lori Karikari</a></td>
    <td align="center"><a href="https://github.com/zzacong"><img src="https://avatars.githubusercontent.com/u/61817066?u=2b8d6fe70742b39a8bee1475ceea3105716168cf&v=4&s=100" width="100" alt="Zac%20Ong"/><br />Zac Ong</a></td>
    <td align="center"><a href="https://dyaa.me"><img src="https://avatars.githubusercontent.com/u/4283185?u=c0eefe0bfb37b34dedb7765ba2a061cfac30be55&v=4&s=100" width="100" alt="Dyaa"/><br />Dyaa</a></td>
+   <td align="center"><a href="https://francisprovost.com"><img src="https://avatars.githubusercontent.com/u/6840361?v=4&s=100" width="100" alt="Francis%20Provost"/><br />Francis Provost</a></td>
   </tr>
 </table>
 

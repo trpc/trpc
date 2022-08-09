@@ -1,3 +1,13 @@
+import {
+  CancelOptions,
+  InfiniteData,
+  InvalidateOptions,
+  InvalidateQueryFilters,
+  RefetchOptions,
+  RefetchQueryFilters,
+  SetDataOptions,
+} from '@tanstack/react-query';
+import { Updater } from '@tanstack/react-query/build/types/packages/query-core/src/utils';
 import { TRPCClientError } from '@trpc/client';
 import {
   AnyRouter,
@@ -9,16 +19,6 @@ import {
   inferProcedureOutput,
 } from '@trpc/server';
 import { createProxy } from '@trpc/server/shared';
-import {
-  CancelOptions,
-  InfiniteData,
-  InvalidateOptions,
-  InvalidateQueryFilters,
-  RefetchOptions,
-  RefetchQueryFilters,
-  SetDataOptions,
-} from 'react-query';
-import { Updater } from 'react-query/types/core/utils';
 import {
   TRPCContextState,
   TRPCFetchInfiniteQueryOptions,

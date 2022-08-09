@@ -1,6 +1,7 @@
 import { routerToServerAndClientNew } from './___testHelpers';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { httpBatchLink, splitLink, wsLink } from '@trpc/client';
 import React, { ReactNode, useState } from 'react';
-import { QueryClient, QueryClientProvider } from 'react-query';
 import {
   createReactQueryHooks,
   createReactQueryHooksProxy,
@@ -10,7 +11,17 @@ import { AnyRouter } from '../src/core';
 export function getServerAndReactClient<TRouter extends AnyRouter>(
   appRouter: TRouter,
 ) {
-  const opts = routerToServerAndClientNew(appRouter);
+  const opts = routerToServerAndClientNew(appRouter, {
+    client: ({ wsClient, httpUrl }) => ({
+      links: [
+        splitLink({
+          condition: (op) => op.type === 'subscription',
+          true: wsLink({ client: wsClient }),
+          false: httpBatchLink({ url: httpUrl }),
+        }),
+      ],
+    }),
+  });
 
   const queryClient = new QueryClient();
   const react = createReactQueryHooks<typeof appRouter>();

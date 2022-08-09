@@ -1,5 +1,10 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 import {
+  UseInfiniteQueryResult,
+  UseMutationResult,
+  UseQueryResult,
+} from '@tanstack/react-query';
+import {
   AnyRouter,
   OmitNeverKeys,
   Procedure,
@@ -8,18 +13,15 @@ import {
   inferProcedureInput,
   inferProcedureOutput,
 } from '@trpc/server';
+import { inferObservableValue } from '@trpc/server/observable';
 import { createProxy } from '@trpc/server/shared';
 import { useMemo } from 'react';
-import {
-  UseInfiniteQueryResult,
-  UseMutationResult,
-  UseQueryResult,
-} from 'react-query';
 import {
   CreateReactQueryHooks,
   UseTRPCInfiniteQueryOptions,
   UseTRPCMutationOptions,
   UseTRPCQueryOptions,
+  UseTRPCSubscriptionOptions,
 } from './createReactQueryHooks';
 import { getQueryKey } from './internals/getQueryKey';
 import {
@@ -47,22 +49,6 @@ type DecorateProcedure<
       ) => UseQueryResult<TData, inferProcedureClientError<TProcedure>>
     : never;
 
-  useMutation: TProcedure extends { _mutation: true }
-    ? <TContext = unknown>(
-        opts?: UseTRPCMutationOptions<
-          inferProcedureInput<TProcedure>,
-          inferProcedureClientError<TProcedure>,
-          inferProcedureOutput<TProcedure>,
-          TContext
-        >,
-      ) => UseMutationResult<
-        inferProcedureOutput<TProcedure>,
-        inferProcedureClientError<TProcedure>,
-        inferProcedureInput<TProcedure>,
-        TContext
-      >
-    : never;
-
   useInfiniteQuery: TProcedure extends { _query: true }
     ? inferProcedureInput<TProcedure> extends {
         cursor?: any;
@@ -83,6 +69,32 @@ type DecorateProcedure<
           inferProcedureClientError<TProcedure>
         >
       : never
+    : never;
+
+  useMutation: TProcedure extends { _mutation: true }
+    ? <TContext = unknown>(
+        opts?: UseTRPCMutationOptions<
+          inferProcedureInput<TProcedure>,
+          inferProcedureClientError<TProcedure>,
+          inferProcedureOutput<TProcedure>,
+          TContext
+        >,
+      ) => UseMutationResult<
+        inferProcedureOutput<TProcedure>,
+        inferProcedureClientError<TProcedure>,
+        inferProcedureInput<TProcedure>,
+        TContext
+      >
+    : never;
+
+  useSubscription: TProcedure extends { _subscription: true }
+    ? (
+        input: inferProcedureInput<TProcedure>,
+        opts?: UseTRPCSubscriptionOptions<
+          inferObservableValue<inferProcedureOutput<TProcedure>>,
+          inferProcedureClientError<TProcedure>
+        >,
+      ) => void
     : never;
 }>;
 

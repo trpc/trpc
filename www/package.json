@@ -13,7 +13,6 @@
     "clear": "docusaurus clear",
     "sponsors-sync:pull": "yarn ts-node ./src/components/sponsors/script.pull.ts",
     "sponsors-sync:push": "yarn ts-node ./src/components/sponsors/script.push.ts",
-    "sponsors-sync:lint-fix": "cd .. && yarn lint-fix",
     "sponsors-sync": "run-s sponsors-sync:*",
     "tweetwall-pull": "yarn ts-node ./src/components/TwitterWall/script.ts",
     "ts-node": "ts-node --compiler-options '{\"module\":\"commonjs\"}'"
@@ -51,6 +50,8 @@
     "@octokit/graphql-schema": "^10.74.2",
     "@tsconfig/docusaurus": "^1.0.6",
     "autoprefixer": "^10.4.7",
+    "dotenv": "^16.0.1",
+    "oauth": "^0.10.0",
     "postcss": "^8.4.14",
     "prettier": "^2.7.1",
     "tailwindcss": "^3.1.6",

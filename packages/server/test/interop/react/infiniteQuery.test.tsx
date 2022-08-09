@@ -1,18 +1,12 @@
 /* eslint-disable @typescript-eslint/no-empty-function */
 import { Post, createLegacyAppRouter } from './__testHelpers';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import '@testing-library/jest-dom';
 import { render, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { expectTypeOf } from 'expect-type';
 import React, { Fragment, useState } from 'react';
-import { QueryClient, QueryClientProvider, setLogger } from 'react-query';
 import { createSSGHelpers } from '../../../../react/src/ssg';
-
-setLogger({
-  log() {},
-  warn() {},
-  error() {},
-});
 
 let factory: ReturnType<typeof createLegacyAppRouter>;
 beforeEach(() => {
