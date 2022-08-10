@@ -18,4 +18,4 @@ __generated__
 packages/*/*
 !packages/*/package.json
 !packages/*/src
-!pacakges/*/README.md
+!packages/*/README.md
