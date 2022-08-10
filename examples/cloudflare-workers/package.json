@@ -5,7 +5,6 @@
   "type": "module",
   "scripts": {
     "dev": "wrangler dev",
-    "clean": "rm -rf dist node_modules",
     "test-dev": "start-server-and-test 'wrangler dev --local' 8787 'node --loader ts-node/esm src/client.ts'"
   },
   "dependencies": {
