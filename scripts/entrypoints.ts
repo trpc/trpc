@@ -77,21 +77,20 @@ for (const pkg of PACKAGES) {
         importPath,
       );
       // index.js
-      const indexFile = path.resolve(pkgRoot, resolvedImport, 'index.js');
-      const indexFileContent = `module.exports = require('${importPath}');\n`;
+      const indexFile = path.resolve(pkgRoot, importPath, 'index.js');
+      const indexFileContent = `module.exports = require('${resolvedImport}');\n`;
       writeFileSyncRecursive(indexFile, indexFileContent);
 
       // index.d.ts
-      const typePath = path.resolve(pkgRoot, resolvedImport, 'index.d.ts');
-      const typeContent = `export * from '${importPath}';\n`;
-      writeFileSyncRecursive(typePath, typeContent);
+      const typeFile = path.resolve(pkgRoot, importPath, 'index.d.ts');
+      const typeFileContent = `export * from '${resolvedImport}';\n`;
+      writeFileSyncRecursive(typeFile, typeFileContent);
     });
 
   // write top-level directories to package.json 'files' field
   Object.keys(pkgJson.exports).forEach((entrypoint) => {
     // get the top-level directory of the entrypoint, e.g. 'adapters/aws-lambda' -> 'adapters'
     const topLevel = entrypoint.split('/')[1];
-    console.log(topLevel);
 
     if (!topLevel) return;
     if (pkgJson.files.includes(topLevel)) return;
