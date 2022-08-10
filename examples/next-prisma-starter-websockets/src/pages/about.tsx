@@ -12,7 +12,6 @@ export default function AboutPage() {
   return (
     <div>
       Here&apos;s a random number from a sub: {num} <br />
-      Here&apos;s a query result ({healthz.status}): {healthz.data} <br />
       <Link href="/">
         <a>Index</a>
       </Link>
