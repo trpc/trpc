@@ -64,9 +64,9 @@ describe('custom error formatter', () => {
 
       if (query1.error) {
         expectTypeOf(query1.error['data'].foo).toMatchTypeOf<'bar'>();
-        // expectTypeOf(query1.error).toMatchTypeOf<
-        //   TRPCClientErrorLike<typeof appRouter>
-        // >();
+        expectTypeOf(query1.error).toMatchTypeOf<
+          TRPCClientErrorLike<typeof appRouter>
+        >();
         queryErrorCallback(query1.error);
         return (
           <>
