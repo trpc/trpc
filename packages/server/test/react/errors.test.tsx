@@ -36,15 +36,6 @@ describe('custom error formatter', () => {
               return '__result' as const;
             }),
         }),
-        /**
-         * @deprecated
-         */
-        deprecatedRouter: t.router({
-          /**
-           * @deprecated
-           */
-          deprecatedProcedure: t.procedure.query(() => '..'),
-        }),
       });
 
       return getServerAndReactClient(appRouter);
@@ -129,15 +120,6 @@ describe('no custom formatter', () => {
               return '__result' as const;
             }),
         }),
-        /**
-         * @deprecated
-         */
-        deprecatedRouter: t.router({
-          /**
-           * @deprecated
-           */
-          deprecatedProcedure: t.procedure.query(() => '..'),
-        }),
       });
 
       return getServerAndReactClient(appRouter);
@@ -196,4 +178,27 @@ describe('no custom formatter', () => {
       ]]
     `);
   });
+});
+
+test('types', async () => {
+  const t = initTRPC()();
+  const appRouter = t.router({
+    post: t.router({
+      byId: t.procedure
+        .input(
+          z.object({
+            // Minimum post id 1
+            id: z.number().min(1),
+          }),
+        )
+        .query(() => {
+          return '__result' as const;
+        }),
+    }),
+  });
+
+  // FIXME: this would be nice
+  // expectTypeOf<TRPCClientErrorLike<typeof appRouter>>().toMatchTypeOf<
+  //   TRPCClientErrorLike<typeof appRouter['post']['byId']>
+  // >();
 });
