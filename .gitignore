@@ -15,7 +15,10 @@ __generated__
 *.tsbuildinfo
 
 # Barrel files
+## Ignore all folders
 packages/*/*
-!packages/*/package.json
+## Dont ignore files
+!packages/*/*.*
+## Dont ignore src or test
 !packages/*/src
-!pacakges/*/README.md
+!pacakges/*/test
