@@ -4,6 +4,7 @@ import {
   UseMutationResult,
   UseQueryResult,
 } from '@tanstack/react-query';
+import { TRPCClientErrorLike } from '@trpc/client';
 import {
   AnyRouter,
   OmitNeverKeys,
@@ -45,9 +46,9 @@ type DecorateProcedure<
           inferProcedureInput<TProcedure>,
           TQueryFnData,
           TData,
-          inferProcedureClientError<TProcedure>
+          TRPCClientErrorLike<TProcedure>
         >,
-      ) => UseQueryResult<TData, inferProcedureClientError<TProcedure>>
+      ) => UseQueryResult<TData, TRPCClientErrorLike<TProcedure>>
     : never;
 
   useInfiniteQuery: TProcedure extends { _query: true }
@@ -63,12 +64,9 @@ type DecorateProcedure<
             TPath,
             inferProcedureInput<TProcedure>,
             TData,
-            inferProcedureClientError<TProcedure>
+            TRPCClientErrorLike<TProcedure>
           >,
-        ) => UseInfiniteQueryResult<
-          TData,
-          inferProcedureClientError<TProcedure>
-        >
+        ) => UseInfiniteQueryResult<TData, TRPCClientErrorLike<TProcedure>>
       : never
     : never;
 
@@ -76,13 +74,13 @@ type DecorateProcedure<
     ? <TContext = unknown>(
         opts?: UseTRPCMutationOptions<
           inferProcedureInput<TProcedure>,
-          inferProcedureClientError<TProcedure>,
+          TRPCClientErrorLike<TProcedure>,
           inferProcedureOutput<TProcedure>,
           TContext
         >,
       ) => UseMutationResult<
         inferProcedureOutput<TProcedure>,
-        inferProcedureClientError<TProcedure>,
+        TRPCClientErrorLike<TProcedure>,
         inferProcedureInput<TProcedure>,
         TContext
       >
@@ -93,7 +91,7 @@ type DecorateProcedure<
         input: inferProcedureInput<TProcedure>,
         opts?: UseTRPCSubscriptionOptions<
           inferObservableValue<inferProcedureOutput<TProcedure>>,
-          inferProcedureClientError<TProcedure>
+          TRPCClientErrorLike<TProcedure>
         >,
       ) => void
     : never;
@@ -138,7 +136,7 @@ export function createReactQueryHooksProxy<
             const context = trpc.useContext();
             // create a stable reference of the utils context
             return useMemo(() => {
-              return createReactQueryUtilsProxy(context);
+              return createReactQueryUtilsProxy(context as any);
             }, [context]);
           };
         }
