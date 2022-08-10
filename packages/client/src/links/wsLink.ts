@@ -317,7 +317,7 @@ export function wsLink<TRouter extends AnyRouter>(
           {
             error(err) {
               isDone = true;
-              observer.error(err as any);
+              observer.error(err);
               unsub();
             },
             complete() {
