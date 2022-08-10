@@ -25,7 +25,18 @@ export function getServerAndReactClient<TRouter extends AnyRouter>(
   const client = opts.client;
 
   function App(props: { children: ReactNode }) {
-    const [queryClient] = useState(() => new QueryClient());
+    const [queryClient] = useState(
+      () =>
+        new QueryClient({
+          defaultOptions: {
+            queries: {
+              retryDelay() {
+                return 1;
+              },
+            },
+          },
+        }),
+    );
     return (
       <proxy.Provider {...{ queryClient, client }}>
         <QueryClientProvider client={queryClient}>
