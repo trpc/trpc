@@ -1,0 +1,13 @@
+'📚 documentation / examples':
+  - www/docs/**
+  - examples/**
+'🕸 www':
+  - www/**
+'@trpc/server':
+  - packages/server/**
+'@trpc/client':
+  - packages/client/**
+'@trpc/next':
+  - packages/next/**
+'@trpc/react':
+  - packages/react/**

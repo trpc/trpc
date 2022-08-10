@@ -6,7 +6,8 @@
   "files": [
     "README.md"
   ],
-  "imageSize": 100,
+  "imageSize": 60,
+  "contributorsPerLine": 8,
   "commit": false,
   "commitConvention": "none",
   "contributors": [
@@ -765,7 +766,8 @@
       "avatar_url": "https://avatars.githubusercontent.com/u/3660667?v=4",
       "profile": "http://www.big-sir.com",
       "contributions": [
-        "doc"
+        "doc",
+        "example"
       ]
     },
     {
@@ -916,8 +918,156 @@
         "talk",
         "tutorial"
       ]
+    },
+    {
+      "login": "3x071c",
+      "name": "Victor Homic",
+      "avatar_url": "https://avatars.githubusercontent.com/u/87198856?v=4",
+      "profile": "https://github.com/3x071c",
+      "contributions": [
+        "code",
+        "test"
+      ]
+    },
+    {
+      "login": "ixahmedxi",
+      "name": "Ahmed Elsakaan",
+      "avatar_url": "https://avatars.githubusercontent.com/u/20271968?v=4",
+      "profile": "https://ixahmedxi.me",
+      "contributions": [
+        "doc",
+        "financial"
+      ]
+    },
+    {
+      "login": "EnderSpirit",
+      "name": "EnderSpirit",
+      "avatar_url": "https://avatars.githubusercontent.com/u/28017013?v=4",
+      "profile": "https://github.com/EnderSpirit",
+      "contributions": [
+        "doc"
+      ]
+    },
+    {
+      "login": "juliusmarminge",
+      "name": "Julius Marminge",
+      "avatar_url": "https://avatars.githubusercontent.com/u/51714798?v=4",
+      "profile": "http://www.jumr.dev",
+      "contributions": [
+        "example",
+        "doc"
+      ]
+    },
+    {
+      "login": "system32uwu",
+      "name": "Mateo Carriquí",
+      "avatar_url": "https://avatars.githubusercontent.com/u/29718978?v=4",
+      "profile": "https://tryhackme.com/p/zast99",
+      "contributions": [
+        "financial"
+      ]
+    },
+    {
+      "login": "OlegGulevskyy",
+      "name": "Oleg Gulevskyy",
+      "avatar_url": "https://avatars.githubusercontent.com/u/43781031?v=4",
+      "profile": "https://github.com/OlegGulevskyy",
+      "contributions": [
+        "doc"
+      ]
+    },
+    {
+      "login": "joaosamouco",
+      "name": "João Samouco",
+      "avatar_url": "https://avatars.githubusercontent.com/u/6799006?v=4",
+      "profile": "https://github.com/joaosamouco",
+      "contributions": [
+        "test"
+      ]
+    },
+    {
+      "login": "carstenlebek",
+      "name": "Carsten Lebek",
+      "avatar_url": "https://avatars.githubusercontent.com/u/59960385?v=4",
+      "profile": "https://clebek.dev",
+      "contributions": [
+        "example"
+      ]
+    },
+    {
+      "login": "chrisbradleydev",
+      "name": "Chris Bradley",
+      "avatar_url": "https://avatars.githubusercontent.com/u/11767079?v=4",
+      "profile": "https://chrisbradley.dev",
+      "contributions": [
+        "financial"
+      ]
+    },
+    {
+      "login": "Sven1106",
+      "name": "Svend Aage Roperos Nielsen",
+      "avatar_url": "https://avatars.githubusercontent.com/u/28002895?v=4",
+      "profile": "https://github.com/Sven1106",
+      "contributions": [
+        "financial"
+      ]
+    },
+    {
+      "login": "iway1",
+      "name": "iway1",
+      "avatar_url": "https://avatars.githubusercontent.com/u/12774588?v=4",
+      "profile": "https://github.com/iway1",
+      "contributions": [
+        "financial"
+      ]
+    },
+    {
+      "login": "prisma",
+      "name": "Prisma",
+      "avatar_url": "https://avatars.githubusercontent.com/u/17219288?v=4",
+      "profile": "https://www.prisma.io",
+      "contributions": [
+        "financial"
+      ]
+    },
+    {
+      "login": "francisprovost",
+      "name": "Francis Provost",
+      "avatar_url": "https://avatars.githubusercontent.com/u/6840361?v=4",
+      "profile": "http://francisprovost.com",
+      "contributions": [
+        "financial"
+      ]
+    },
+    {
+      "login": "dyaa",
+      "name": "Dyaa",
+      "avatar_url": "https://avatars.githubusercontent.com/u/4283185?v=4",
+      "profile": "https://dyaa.me",
+      "contributions": [
+        "financial",
+        "code",
+        "test"
+      ]
+    },
+    {
+      "login": "zzacong",
+      "name": "Zac Ong",
+      "avatar_url": "https://avatars.githubusercontent.com/u/61817066?v=4",
+      "profile": "https://github.com/zzacong",
+      "contributions": [
+        "financial"
+      ]
+    },
+    {
+      "login": "LoriKarikari",
+      "name": "Lori Karikari",
+      "avatar_url": "https://avatars.githubusercontent.com/u/7902980?v=4",
+      "profile": "https://github.com/LoriKarikari",
+      "contributions": [
+        "financial"
+      ]
     }
   ],
-  "contributorsPerLine": 7,
   "skipCi": true
 }

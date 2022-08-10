@@ -62,7 +62,7 @@ Follow the [Quickstart](/docs/quickstart) and read the [`@trpc/server` docs](/do
 #### 1. Install dependencies
 
 ```bash
-yarn add @trpc/client @trpc/server @trpc/react react-query
+yarn add @trpc/client @trpc/server @trpc/react react-query@3
 ```
 - @trpc/server: This is a peer dependency of `@trpc/client` so you have to install it again!
 - React Query: @trpc/react provides a thin wrapper over react-query. It is required as a peer dependency.

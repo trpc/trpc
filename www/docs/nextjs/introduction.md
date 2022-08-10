@@ -45,7 +45,7 @@ Recommended but not enforced file structure. This is what you get when starting 
 ### 1. Install deps
 
 ```bash
-yarn add @trpc/client @trpc/server @trpc/react @trpc/next zod react-query
+yarn add @trpc/client @trpc/server @trpc/react @trpc/next zod react-query@3
 ```
 
 - React Query: `@trpc/react` provides a thin wrapper over [react-query](https://react-query.tanstack.com/overview). It is required as a peer dependency.
@@ -142,20 +142,34 @@ const MyApp: AppType = ({ Component, pageProps }) => {
   return <Component {...pageProps} />;
 };
 
+function getBaseUrl() {
+  if (typeof window !== 'undefined') {
+    return '';
+  }
+  // reference for vercel.com
+  if (process.env.VERCEL_URL) {
+    return `https://${process.env.VERCEL_URL}`;
+  }
+
+  // reference for render.com
+  if (process.env.RENDER_INTERNAL_HOSTNAME) {
+    return `http://${process.env.RENDER_INTERNAL_HOSTNAME}:${process.env.PORT}`;
+  }
+
+  // assume localhost
+  return `http://localhost:${process.env.PORT ?? 3000}`;
+}
+
 export default withTRPC<AppRouter>({
   config({ ctx }) {
     /**
      * If you want to use SSR, you need to use the server's full URL
      * @link https://trpc.io/docs/ssr
      */
-    const url = process.env.VERCEL_URL
-      ? `https://${process.env.VERCEL_URL}/api/trpc`
-      : 'http://localhost:3000/api/trpc';
-
     return {
-      url,
+      url: `${getBaseUrl()}/api/trpc`,
       /**
-       * @link https://react-query.tanstack.com/reference/QueryClient
+       * @link https://react-query-v3.tanstack.com/reference/QueryClient
        */
       // queryClientConfig: { defaultOptions: { queries: { staleTime: 60 } } },
     };

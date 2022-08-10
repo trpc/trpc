@@ -1,4 +1,4 @@
-import { getMessageFromUnkownError } from './internals/errors';
+import { getMessageFromUnkownError } from './core/errors';
 import { TRPC_ERROR_CODE_KEY } from './rpc/codes';
 
 export class TRPCError extends Error {

@@ -10,7 +10,10 @@
     "swizzle": "docusaurus swizzle",
     "deploy": "docusaurus deploy",
     "serve": "docusaurus serve",
-    "clear": "docusaurus clear"
+    "clear": "docusaurus clear",
+    "sponsors-sync:pull": "yarn ts-node ./src/components/sponsors/script.pull.ts",
+    "sponsors-sync:push": "yarn ts-node ./src/components/sponsors/script.push.ts",
+    "sponsors-sync": "run-s sponsors-sync:*"
   },
   "dependencies": {
     "@docusaurus/core": "^2.0.0-beta.18",
