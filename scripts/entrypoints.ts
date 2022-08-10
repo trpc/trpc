@@ -47,7 +47,7 @@ for (const pkg of PACKAGES) {
    *   src/adapters/express.ts -> exports['adapters/express'] = { import: './dist/adapters/express.mjs', ... }
    */
   inputs
-    .filter((i) => i !== 'src/index.ts')
+    .filter((i) => i !== 'src/index.ts') // index included by default above
     .forEach((i) => {
       // first, exclude 'src' part of the path
       const parts = i.split('/').slice(1);
