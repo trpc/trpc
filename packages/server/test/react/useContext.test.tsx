@@ -4,7 +4,7 @@ import userEvent from '@testing-library/user-event';
 import { konn } from 'konn';
 import React, { useEffect, useState } from 'react';
 import { z } from 'zod';
-import { initTRPC } from '../src/core';
+import { initTRPC } from '../../src/core';
 
 type Post = {
   id: number;
