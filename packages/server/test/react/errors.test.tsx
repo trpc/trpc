@@ -215,4 +215,5 @@ test('types', async () => {
   expectTypeOf<TRouterError__shape>().toMatchTypeOf<TProcedureError__shape>();
 
   expectTypeOf<TRouterError>().toEqualTypeOf<TProcedureError>();
+  expectTypeOf<TRouterError>().toMatchTypeOf<TProcedureError>();
 });
