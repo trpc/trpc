@@ -60,7 +60,6 @@
     "links"
   ],
   "scripts": {
-    "clean": "rm -rf dist node_modules",
     "ts-watch": "tsc --project tsconfig.watch.json"
   },
   "dependencies": {

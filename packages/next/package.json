@@ -10,9 +10,6 @@
     "url": "git+https://github.com/trpc/trpc.git",
     "directory": "packages/next"
   },
-  "scripts": {
-    "clean": "rm -rf dist node_modules"
-  },
   "main": "dist/index.js",
   "module": "dist/index.mjs",
   "typings": "dist/index.d.ts",
