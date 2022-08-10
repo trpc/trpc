@@ -72,10 +72,6 @@ test('useQuery()', async () => {
       utils.doesNotExist.invalidate();
     }, [utils]);
 
-    if (query1.error) {
-      expectTypeOf(query1.error['data']).toMatchTypeOf<{ foo: 'bar' }>();
-    }
-
     if (!query1.data) {
       return <>...</>;
     }
