@@ -37,10 +37,6 @@
   "scripts": {
     "lerna": "lerna",
     "start": "yarn watch",
-    "clean:packages": "lerna run clean --scope=@trpc/*",
-    "clean:examples": "lerna run clean --scope=@examples/*",
-    "clean:root": "rm -rf node_modules",
-    "clean": "run-p clean:*",
     "dev": "yarn start",
     "test": "cd packages/server && yarn jest",
     "lint": "eslint --ext \".js,.ts,.tsx\" --ignore-path .gitignore .",
