@@ -197,8 +197,22 @@ test('types', async () => {
     }),
   });
 
-  // FIXME: this would be nice
-  // expectTypeOf<TRPCClientErrorLike<typeof appRouter>>().toMatchTypeOf<
-  //   TRPCClientErrorLike<typeof appRouter['post']['byId']>
-  // >();
+  type TRouterError = TRPCClientErrorLike<typeof appRouter>;
+  type TProcedureError = TRPCClientErrorLike<typeof appRouter['post']['byId']>;
+
+  type TRouterError__data = TRouterError['data'];
+  //      ^?
+  type TProcedureError__data = TProcedureError['data'];
+  //     ^?
+
+  expectTypeOf<TRouterError__data>().toMatchTypeOf<TProcedureError__data>();
+
+  type TRouterError__shape = TRouterError['shape'];
+  //      ^?
+  type TProcedureError__shape = TProcedureError['shape'];
+  //     ^?
+
+  expectTypeOf<TRouterError__shape>().toMatchTypeOf<TProcedureError__shape>();
+
+  expectTypeOf<TRouterError>().toEqualTypeOf<TProcedureError>();
 });
