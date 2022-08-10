@@ -14,7 +14,6 @@
     "dx": "run-p dx:* --print-label",
     "dev": "yarn dx:next",
     "build": "prisma generate && yarn migrate && next build",
-    "clean": "rm -rf .next node_modules",
     "start": "next start",
     "studio": "prisma studio",
     "migrate-dev": "prisma migrate dev",
