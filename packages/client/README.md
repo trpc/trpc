@@ -1,52 +1,60 @@
 <p align="center">
-   <a href="https://trpc.io/"><img src="../../www/static/img/logo-text.svg" alt="tRPC" height="130"/></a>
- </p>
+  <a href="https://trpc.io/"><img src="../../www/static/img/logo-text.svg" alt="tRPC" height="130"/></a>
+</p>
 
- <p align="center">
-   <strong>End-to-end typesafe APIs made easy</strong>
- </p>
+<p align="center">
+  <strong>End-to-end typesafe APIs made easy</strong>
+</p>
 
- <p align="center">
-   <!-- TODO: replace with new version GIF -->
-   <img src="https://storage.googleapis.com/trpc/trpcgif.gif" alt="Demo" />
- </p>
+<p align="center">
+  <!-- TODO: replace with new version GIF -->
+  <img src="https://storage.googleapis.com/trpc/trpcgif.gif" alt="Demo" />
+</p>
 
- # `@trpc/client`
+# `@trpc/client`
 
- > Communicate with a tRPC server on the client side.
- ## Documentation
+> Communicate with a tRPC server on the client side.
 
- Full documentation for `@trpc/client` can be found [here](https://trpc.io/docs/vanilla)
+## Documentation
 
- ## Installation
+Full documentation for `@trpc/client` can be found [here](https://trpc.io/docs/vanilla)
 
- ```bash
- # npm
- npm install @trpc/client
- # Yarn
- yarn add @trpc/client
- # pnpm
- pnpm add @trpc/client
- ```
+## Installation
 
- ## Basic Example
+```bash
+# npm
+npm install @trpc/client
 
- ```ts
- import { createTRPCClient, createTRPCClientProxy } from '@trpc/client';
- // Importing the router type from the server file
- import type { AppRouter } from './server';
- // Initializing the tRPC client
- const client = createTRPCClient<AppRouter>({
-   url: 'http://localhost:2022',
- });
- // Creating a proxy, this allows for cmd+click to the backend function.
- const proxy = createTRPCClientProxy(client);
- async function main() {
-   // Querying the greeting
-   const helloResponse = await proxy.greeting.query({
-     name: 'world',
-   });
-   console.log('helloResponse', helloResponse); // Hello world
- }
- main();
- ```
+# Yarn
+yarn add @trpc/client
+
+# pnpm
+pnpm add @trpc/client
+```
+
+## Basic Example
+
+```ts
+import { createTRPCClient, createTRPCClientProxy } from '@trpc/client';
+// Importing the router type from the server file
+import type { AppRouter } from './server';
+
+// Initializing the tRPC client
+const client = createTRPCClient<AppRouter>({
+  url: 'http://localhost:2022',
+});
+
+// Creating a proxy, this allows for cmd+click to the backend function.
+const proxy = createTRPCClientProxy(client);
+
+async function main() {
+  // Querying the greeting
+  const helloResponse = await proxy.greeting.query({
+    name: 'world',
+  });
+
+  console.log('helloResponse', helloResponse); // Hello world
+}
+
+main();
+```
