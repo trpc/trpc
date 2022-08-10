@@ -91,8 +91,6 @@ function types({ input, packageDir }: Options): RollupOptions {
     input,
     output: {
       dir: `${packageDir}/dist`,
-      entryFileNames: '[name].ts.js',
-      chunkFileNames: '[name]-[hash].ts.js',
     },
     plugins: [
       !isWatchMode &&
@@ -102,6 +100,7 @@ function types({ input, packageDir }: Options): RollupOptions {
       multiInput({ relative: path.resolve(packageDir, 'src/') }),
       typescript({
         tsconfig: path.resolve(packageDir, 'tsconfig.build.json'),
+        tsconfigOverride: { emitDeclarationOnly: true },
         abortOnError: !isWatchMode,
       }),
     ],
