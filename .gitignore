@@ -21,4 +21,4 @@ packages/*/*
 !packages/*/*.*
 ## Dont ignore src or test
 !packages/*/src
-!pacakges/*/test
+!packages/*/test
