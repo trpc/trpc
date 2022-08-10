@@ -9,8 +9,6 @@ export default function AboutPage() {
       setNumber(n);
     },
   });
-  const healthz = trpc.useQuery(['healthz']);
-
   return (
     <div>
       Here&apos;s a random number from a sub: {num} <br />
