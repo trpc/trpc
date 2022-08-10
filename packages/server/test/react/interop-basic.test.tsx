@@ -1,4 +1,4 @@
-import { routerToServerAndClientNew } from './___testHelpers';
+import { routerToServerAndClientNew } from '../___testHelpers';
 import { QueryClient } from '@tanstack/react-query';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { render, waitFor } from '@testing-library/react';
@@ -7,8 +7,8 @@ import { expectTypeOf } from 'expect-type';
 import { konn } from 'konn';
 import React, { useState } from 'react';
 import { z } from 'zod';
-import * as trpc from '../src';
-import { inferProcedureOutput, initTRPC } from '../src';
+import * as trpc from '../../src';
+import { inferProcedureOutput, initTRPC } from '../../src';
 
 const ctx = konn()
   .beforeEach(() => {
