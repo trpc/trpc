@@ -1,4 +1,10 @@
-import { AnyRouter, Maybe, Procedure, inferRouterError } from '@trpc/server';
+import {
+  AnyRouter,
+  DefaultErrorShape,
+  Maybe,
+  Procedure,
+  inferRouterError,
+} from '@trpc/server';
 import { TRPCErrorResponse } from '@trpc/server/rpc';
 
 type RouterOrProcedure = AnyRouter | Procedure<any>;
@@ -8,21 +14,21 @@ type inferErrorShape<TRouterOrProcedure extends AnyRouter | Procedure<any>> =
     ? inferRouterError<TRouterOrProcedure>
     : TRouterOrProcedure['_def']['_config']['errorShape'];
 
-export interface TRPCClientErrorLike<
-  TRouterOrProcedure extends RouterOrProcedure,
-> {
+export interface TRPCClientErrorBase<TShape extends DefaultErrorShape> {
   readonly message: string;
-  readonly shape: Maybe<inferErrorShape<TRouterOrProcedure>>;
-  readonly data: Maybe<inferErrorShape<TRouterOrProcedure>['data']>;
+  readonly shape: Maybe<TShape>;
+  readonly data: Maybe<TShape['data']>;
 }
+export type TRPCClientErrorLike<TRouterOrProcedure extends RouterOrProcedure> =
+  TRPCClientErrorBase<inferErrorShape<TRouterOrProcedure>>;
 
 export class TRPCClientError<TRouterOrProcedure extends RouterOrProcedure>
   extends Error
-  implements TRPCClientErrorLike<TRouterOrProcedure>
+  implements TRPCClientErrorBase<inferErrorShape<TRouterOrProcedure>>
 {
   public readonly cause;
-  public readonly shape: Maybe<inferErrorShape<TRouterOrProcedure>>;
-  public readonly data: Maybe<inferErrorShape<TRouterOrProcedure>['data']>;
+  public readonly shape;
+  public readonly data;
   public readonly meta;
 
   constructor(
