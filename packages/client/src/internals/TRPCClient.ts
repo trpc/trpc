@@ -76,10 +76,12 @@ export interface CreateTRPCClientWithLinksOptions<TRouter extends AnyRouter>
 
 type TRPCType = 'subscription' | 'query' | 'mutation';
 export interface TRPCRequestOptions {
-  /**
-   * Pass additional context to links
-   */
-  requestContext?: OperationContext;
+  trpc?: {
+    /**
+     * Pass additional context to links
+     */
+    context?: OperationContext;
+  };
 }
 
 export interface TRPCSubscriptionObserver<TValue, TError> {
@@ -215,7 +217,7 @@ export class TRPCClient<TRouter extends AnyRouter> {
       TRPCRequestOptions?,
     ]
   ) {
-    const context = (args[1] as TRPCRequestOptions | undefined)?.requestContext;
+    const context = (args[1] as TRPCRequestOptions | undefined)?.trpc?.context;
     return this.requestAsPromise<
       inferHandlerInput<AssertType<TQueries, ProcedureRecord>[TPath]>,
       inferProcedureOutput<TQueries[TPath]>
@@ -236,7 +238,7 @@ export class TRPCClient<TRouter extends AnyRouter> {
       TRPCRequestOptions?,
     ]
   ) {
-    const context = (args[1] as TRPCRequestOptions | undefined)?.requestContext;
+    const context = (args[1] as TRPCRequestOptions | undefined)?.trpc?.context;
     return this.requestAsPromise<
       inferHandlerInput<AssertType<TMutations, ProcedureRecord>[TPath]>,
       inferProcedureOutput<TMutations[TPath]>
@@ -264,7 +266,7 @@ export class TRPCClient<TRouter extends AnyRouter> {
       type: 'subscription',
       path,
       input,
-      context: opts.requestContext,
+      context: opts.trpc?.context,
     });
     return observable$.subscribe({
       next(envelope) {

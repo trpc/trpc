@@ -44,8 +44,8 @@ describe('useQuery()', () => {
     const { trpc, client, linkSpy } = factory;
     function MyComponent() {
       const allPostsQuery = trpc.useQuery(['allPosts'], {
-        requestContext: {
-          test: '1',
+        trpc: {
+          context: { test: '1' },
         },
       });
       expectTypeOf(allPostsQuery.data!).toMatchTypeOf<Post[]>();
