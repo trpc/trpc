@@ -1,6 +1,4 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-
-/* eslint-disable @typescript-eslint/ban-types */
 // import WebSocket from 'ws';
 import { routerToServerAndClientNew, waitMs } from '../___testHelpers';
 import { waitFor } from '@testing-library/react';
@@ -10,16 +8,11 @@ import { default as WebSocket, default as ws } from 'ws';
 import { z } from 'zod';
 import { TRPCClientError } from '../../../client/src';
 import { createWSClient, wsLink } from '../../../client/src';
-import { Observer } from '../../observable';
 import * as trpc from '../../src';
 import { TRPCError } from '../../src';
 import { applyWSSHandler } from '../../src/adapters/ws';
-import { observable } from '../../src/observable';
-import {
-  TRPCClientOutgoingMessage,
-  TRPCRequestMessage,
-  TRPCResultMessage,
-} from '../../src/rpc';
+import { Observer, observable } from '../../src/observable';
+import { TRPCClientOutgoingMessage, TRPCRequestMessage } from '../../src/rpc';
 
 type Message = {
   id: string;
@@ -83,9 +76,14 @@ function factory(config?: { createContext: () => Promise<any> }) {
     })
     .interop();
 
+  const onOpenMock = jest.fn();
+  const onCloseMock = jest.fn();
+
   const opts = routerToServerAndClientNew(oldRouter, {
     wsClient: {
       retryDelayMs: () => 10,
+      onOpen: onOpenMock,
+      onClose: onCloseMock,
     },
     client({ wsClient }) {
       return {
@@ -107,6 +105,8 @@ function factory(config?: { createContext: () => Promise<any> }) {
     subRef,
     onNewMessageSubscription,
     onNewClient,
+    onOpenMock,
+    onCloseMock,
   };
 }
 
@@ -149,55 +149,46 @@ test('basic subscription test', async () => {
       });
     });
   });
-  const next = jest.fn();
+  const onStartedMock = jest.fn();
+  const onDataMock = jest.fn();
   const subscription = client.subscription('onMessage', undefined, {
-    next(data) {
+    onStarted() {
+      onStartedMock();
+    },
+    onData(data) {
       expectTypeOf(data).not.toBeAny();
-      expectTypeOf(data).toMatchTypeOf<TRPCResultMessage<Message>>();
-      next(data);
+      expectTypeOf(data).toMatchTypeOf<Message>();
+      onDataMock(data);
     },
   });
 
   await waitFor(() => {
-    expect(next).toHaveBeenCalledTimes(3);
+    expect(onStartedMock).toHaveBeenCalledTimes(1);
+    expect(onDataMock).toHaveBeenCalledTimes(2);
   });
 
   ee.emit('server:msg', {
     id: '2',
   });
   await waitFor(() => {
-    expect(next).toHaveBeenCalledTimes(4);
+    expect(onDataMock).toHaveBeenCalledTimes(3);
   });
 
-  expect(next.mock.calls).toMatchInlineSnapshot(`
+  expect(onDataMock.mock.calls).toMatchInlineSnapshot(`
     Array [
       Array [
         Object {
-          "type": "started",
+          "id": "1",
         },
       ],
       Array [
         Object {
-          "data": Object {
-            "id": "1",
-          },
-          "type": "data",
+          "id": "2",
         },
       ],
       Array [
         Object {
-          "data": Object {
-            "id": "2",
-          },
-          "type": "data",
-        },
-      ],
-      Array [
-        Object {
-          "data": Object {
-            "id": "2",
-          },
-          "type": "data",
+          "id": "2",
         },
       ],
     ]
@@ -223,34 +214,38 @@ test.skip('$subscription() - server randomly stop and restart (this test might b
       });
     });
   });
-  const next = jest.fn();
-  const error = jest.fn();
-  const complete = jest.fn();
+  const onStartedMock = jest.fn();
+  const onDataMock = jest.fn();
+  const onErrorMock = jest.fn();
+  const onCompleteMock = jest.fn();
   client.subscription('onMessage', undefined, {
-    next,
-    error,
-    complete,
+    onStarted: onStartedMock,
+    onData: onDataMock,
+    onError: onErrorMock,
+    onComplete: onCompleteMock,
   });
 
   await waitFor(() => {
-    expect(next).toHaveBeenCalledTimes(3);
+    expect(onStartedMock).toHaveBeenCalledTimes(1);
+    expect(onDataMock).toHaveBeenCalledTimes(2);
   });
   // close websocket server
   await close();
   await waitFor(() => {
-    expect(error).toHaveBeenCalledTimes(1);
-    expect(complete).toHaveBeenCalledTimes(0);
+    expect(onErrorMock).toHaveBeenCalledTimes(1);
+    expect(onCompleteMock).toHaveBeenCalledTimes(0);
   });
-  expect(error.mock.calls[0]![0]!).toMatchInlineSnapshot(
+  expect(onErrorMock.mock.calls[0]![0]!).toMatchInlineSnapshot(
     `[TRPCClientError: WebSocket closed prematurely]`,
   );
-  expect(error.mock.calls[0]![0]!.originalError.name).toBe(
+  expect(onErrorMock.mock.calls[0]![0]!.originalError.name).toBe(
     'TRPCWebSocketClosedError',
   );
 
   // start a new wss server on same port, and trigger a message
-  next.mockClear();
-  complete.mockClear();
+  onStartedMock.mockClear();
+  onDataMock.mockClear();
+  onCompleteMock.mockClear();
 
   ee.once('subscription:created', () => {
     setTimeout(() => {
@@ -264,18 +259,13 @@ test.skip('$subscription() - server randomly stop and restart (this test might b
   applyWSSHandler({ ...applyWSSHandlerOpts, wss });
 
   await waitFor(() => {
-    expect(next).toHaveBeenCalledTimes(2);
+    expect(onStartedMock).toHaveBeenCalledTimes(1);
+    expect(onDataMock).toHaveBeenCalledTimes(1);
   });
-  expect(next.mock.calls.map((args) => args[0])).toMatchInlineSnapshot(`
+  expect(onDataMock.mock.calls.map((args) => args[0])).toMatchInlineSnapshot(`
     Array [
       Object {
-        "type": "started",
-      },
-      Object {
-        "data": Object {
-          "id": "3",
-        },
-        "type": "data",
+        "id": "3",
       },
     ]
   `);
@@ -295,26 +285,28 @@ test('server subscription ended', async () => {
       });
     });
   });
-  const next = jest.fn();
-  const error = jest.fn();
-  const complete = jest.fn();
+  const onStartedMock = jest.fn();
+  const onDataMock = jest.fn();
+  const onErrorMock = jest.fn();
+  const onCompleteMock = jest.fn();
   client.subscription('onMessage', undefined, {
-    next,
-    error,
-    complete,
+    onStarted: onStartedMock,
+    onData: onDataMock,
+    onError: onErrorMock,
+    onComplete: onCompleteMock,
   });
 
   await waitFor(() => {
-    expect(next).toHaveBeenCalledTimes(3);
+    expect(onStartedMock).toHaveBeenCalledTimes(1);
+    expect(onDataMock).toHaveBeenCalledTimes(2);
   });
   // destroy server subscription
   subRef.current.complete();
   await waitFor(() => {
-    expect(error).toHaveBeenCalledTimes(1);
+    expect(onErrorMock).toHaveBeenCalledTimes(1);
   });
-  expect(complete).toHaveBeenCalledTimes(0);
-  expect(error).toHaveBeenCalledTimes(1);
-  expect(error.mock.calls[0]![0]!).toMatchInlineSnapshot(
+  expect(onCompleteMock).toHaveBeenCalledTimes(0);
+  expect(onErrorMock.mock.calls[0]![0]!).toMatchInlineSnapshot(
     `[TRPCClientError: Operation ended prematurely]`,
   );
   close();
@@ -333,19 +325,22 @@ test('sub emits errors', async () => {
   });
   const onNewClient = jest.fn();
   wss.addListener('connection', onNewClient);
-  const next = jest.fn();
-  const error = jest.fn();
-  const complete = jest.fn();
+  const onStartedMock = jest.fn();
+  const onDataMock = jest.fn();
+  const onErrorMock = jest.fn();
+  const onCompleteMock = jest.fn();
   client.subscription('onMessage', undefined, {
-    next,
-    error,
-    complete,
+    onStarted: onStartedMock,
+    onData: onDataMock,
+    onError: onErrorMock,
+    onComplete: onCompleteMock,
   });
 
   await waitFor(() => {
-    expect(next).toHaveBeenCalledTimes(2);
-    expect(error).toHaveBeenCalledTimes(1);
-    expect(complete).toHaveBeenCalledTimes(0);
+    expect(onStartedMock).toHaveBeenCalledTimes(1);
+    expect(onDataMock).toHaveBeenCalledTimes(1);
+    expect(onErrorMock).toHaveBeenCalledTimes(1);
+    expect(onCompleteMock).toHaveBeenCalledTimes(0);
   });
 
   close();
@@ -370,7 +365,8 @@ test('wait for slow queries/mutations before disconnecting', async () => {
 });
 
 test('subscriptions are automatically resumed', async () => {
-  const { client, close, ee, wssHandler, wss } = factory();
+  const { client, close, ee, wssHandler, wss, onOpenMock, onCloseMock } =
+    factory();
   ee.once('subscription:created', () => {
     setTimeout(() => {
       ee.emit('server:msg', {
@@ -379,55 +375,61 @@ test('subscriptions are automatically resumed', async () => {
     });
   });
   function createSub() {
-    const next = jest.fn();
-    const error = jest.fn();
-    const complete = jest.fn();
+    const onStartedMock = jest.fn();
+    const onDataMock = jest.fn();
+    const onErrorMock = jest.fn();
+    const onStoppedMock = jest.fn();
+    const onCompleteMock = jest.fn();
     const unsub = client.subscription('onMessage', undefined, {
-      next,
-      error,
-      complete,
+      onStarted: onStartedMock(),
+      onData: onDataMock,
+      onError: onErrorMock,
+      onStopped: onStoppedMock,
+      onComplete: onCompleteMock,
     });
-    return { next, complete, error, unsub };
+    return {
+      onStartedMock,
+      onDataMock,
+      onErrorMock,
+      onStoppedMock,
+      onCompleteMock,
+      unsub,
+    };
   }
   const sub1 = createSub();
 
   await waitFor(() => {
-    expect(sub1.next).toHaveBeenCalledTimes(2);
+    expect(sub1.onStartedMock).toHaveBeenCalledTimes(1);
+    expect(sub1.onDataMock).toHaveBeenCalledTimes(1);
+    expect(onOpenMock).toHaveBeenCalledTimes(1);
+    expect(onCloseMock).toHaveBeenCalledTimes(0);
   });
   wssHandler.broadcastReconnectNotification();
   await waitFor(() => {
     expect(wss.clients.size).toBe(1);
+    expect(onOpenMock).toHaveBeenCalledTimes(2);
+    expect(onCloseMock).toHaveBeenCalledTimes(1);
   });
 
   await waitFor(() => {
-    expect(sub1.next).toHaveBeenCalledTimes(3);
+    expect(sub1.onStartedMock).toHaveBeenCalledTimes(1);
+    expect(sub1.onDataMock).toHaveBeenCalledTimes(1);
   });
   ee.emit('server:msg', {
     id: '2',
   });
 
   await waitFor(() => {
-    expect(sub1.next).toHaveBeenCalledTimes(4);
+    expect(sub1.onDataMock).toHaveBeenCalledTimes(2);
   });
-  expect(sub1.next.mock.calls.map((args) => args[0])).toMatchInlineSnapshot(`
+  expect(sub1.onDataMock.mock.calls.map((args) => args[0]))
+    .toMatchInlineSnapshot(`
     Array [
       Object {
-        "type": "started",
+        "id": "1",
       },
       Object {
-        "data": Object {
-          "id": "1",
-        },
-        "type": "data",
-      },
-      Object {
-        "type": "started",
-      },
-      Object {
-        "data": Object {
-          "id": "2",
-        },
-        "type": "data",
+        "id": "2",
       },
     ]
   `);
@@ -436,6 +438,10 @@ test('subscriptions are automatically resumed', async () => {
   });
 
   close();
+
+  await waitFor(() => {
+    expect(onCloseMock).toHaveBeenCalledTimes(2);
+  });
 });
 
 test('not found error', async () => {

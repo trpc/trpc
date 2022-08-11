@@ -2,17 +2,15 @@
 
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 
-/* eslint-disable @typescript-eslint/ban-types */
-
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 /* eslint-disable @typescript-eslint/ban-ts-comment */
 import { trpcReact, trpcServer } from '../../___packages';
 import { legacyRouterToServerAndClient } from '../__legacyRouterToServerAndClient';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import '@testing-library/jest-dom';
 import { render, waitFor } from '@testing-library/react';
 import React, { useState } from 'react';
-import { QueryClient, QueryClientProvider } from 'react-query';
 
 test('initialData type', async () => {
   const { client, router, close } = legacyRouterToServerAndClient(

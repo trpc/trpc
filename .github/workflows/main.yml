@@ -1,8 +1,5 @@
 name: Build & Test
 on: [push]
-concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
 jobs:
   test:
     name: Build and test on Node ${{ matrix.node }} and ${{ matrix.os }}

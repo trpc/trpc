@@ -20,4 +20,5 @@ export type {
   TRPCRequestOptions,
   CreateTRPCClientOptions,
   TRPCClient,
+  AssertLegacyDef,
 } from './internals/TRPCClient';

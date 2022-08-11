@@ -1,27 +1,5 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 import {
-  CreateTRPCClientOptions,
-  TRPCClient,
-  TRPCClientErrorLike,
-  TRPCRequestOptions,
-  createTRPCClient,
-} from '@trpc/client';
-import type {
-  AnyRouter,
-  Procedure,
-  inferHandlerInput,
-  inferProcedureInput,
-  inferProcedureOutput,
-  inferSubscriptionOutput,
-} from '@trpc/server';
-import React, {
-  ReactNode,
-  useCallback,
-  useEffect,
-  useMemo,
-  useState,
-} from 'react';
-import {
   DehydratedState,
   QueryClient,
   UseInfiniteQueryOptions,
@@ -34,15 +12,40 @@ import {
   useMutation as __useMutation,
   useQuery as __useQuery,
   hashQueryKey,
-} from 'react-query';
+} from '@tanstack/react-query';
+import {
+  AssertLegacyDef,
+  CreateTRPCClientOptions,
+  TRPCClient,
+  TRPCClientErrorLike,
+  TRPCRequestOptions,
+  createTRPCClient,
+} from '@trpc/client';
+import type {
+  AnyRouter,
+  ProcedureRecord,
+  inferHandlerInput,
+  inferProcedureClientError,
+  inferProcedureInput,
+  inferProcedureOutput,
+  inferSubscriptionOutput,
+} from '@trpc/server';
+import { inferObservableValue } from '@trpc/server/observable';
+import React, {
+  ReactNode,
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+} from 'react';
 import { SSRState, TRPCContext, TRPCContextState } from './internals/context';
+
+export type AssertType<T, K> = T extends K ? T : never;
 
 export type OutputWithCursor<TData, TCursor extends any = any> = {
   cursor: TCursor | null;
   data: TData;
 };
-
-export type ProcedureRecord = Record<string, Procedure<any>>;
 
 export interface TRPCUseQueryBaseOptions extends TRPCRequestOptions {
   /**
@@ -74,6 +77,13 @@ export interface UseTRPCMutationOptions<
   TContext = unknown,
 > extends UseMutationOptions<TOutput, TError, TInput, TContext>,
     TRPCUseQueryBaseOptions {}
+
+export interface UseTRPCSubscriptionOptions<TOutput, TError> {
+  enabled?: boolean;
+  onStarted?: () => void;
+  onData: (data: TOutput) => void;
+  onError?: (err: TError) => void;
+}
 
 function getClientArgs<TPathAndInput extends unknown[], TOptions>(
   pathAndInput: TPathAndInput,
@@ -114,13 +124,24 @@ export function createReactQueryHooks<
   TRouter extends AnyRouter,
   TSSRContext = unknown,
 >() {
-  type TQueries = TRouter['_def']['queries'];
-  type TSubscriptions = TRouter['_def']['subscriptions'];
+  type TQueries = AssertType<
+    AssertLegacyDef<TRouter>['queries'],
+    ProcedureRecord
+  >;
+  type TSubscriptions = AssertType<
+    AssertLegacyDef<TRouter>['subscriptions'],
+    ProcedureRecord
+  >;
+  type TMutations = AssertType<
+    AssertLegacyDef<TRouter>['mutations'],
+    ProcedureRecord
+  >;
+
   type TError = TRPCClientErrorLike<TRouter>;
   type TInfiniteQueryNames = inferInfiniteQueryNames<TQueries>;
 
-  type TQueryValues = inferProcedures<TRouter['_def']['queries']>;
-  type TMutationValues = inferProcedures<TRouter['_def']['mutations']>;
+  type TQueryValues = inferProcedures<TQueries>;
+  type TMutationValues = inferProcedures<TMutations>;
 
   type ProviderContext = TRPCContextState<TRouter, TSSRContext>;
   const Context = TRPCContext as React.Context<ProviderContext>;
@@ -340,11 +361,10 @@ export function createReactQueryHooks<
       path: TPath,
       ...args: inferHandlerInput<TSubscriptions[TPath]>,
     ],
-    opts: {
-      enabled?: boolean;
-      error?: (err: TError) => void;
-      next: (data: TOutput) => void;
-    },
+    opts: UseTRPCSubscriptionOptions<
+      inferObservableValue<inferProcedureOutput<TSubscriptions[TPath]>>,
+      inferProcedureClientError<TSubscriptions[TPath]>
+    >,
   ) {
     const enabled = opts?.enabled ?? true;
     const queryKey = hashQueryKey(pathAndInput);
@@ -362,14 +382,19 @@ export function createReactQueryHooks<
         TOutput,
         inferProcedureInput<TRouter['_def']['subscriptions'][TPath]>
       >(path, (input ?? undefined) as any, {
-        error: (err) => {
+        onStarted: () => {
           if (!isStopped) {
-            opts.error?.(err);
+            opts.onStarted?.();
           }
         },
-        next: (res) => {
-          if (res.type === 'data' && !isStopped) {
-            opts.next(res.data);
+        onData: (data) => {
+          if (!isStopped) {
+            opts.onData(data);
+          }
+        },
+        onError: (err) => {
+          if (!isStopped) {
+            opts.onError?.(err);
           }
         },
       });

@@ -7,6 +7,7 @@
     "declaration": true,
     "emitDeclarationOnly": true,
     "declarationMap": true,
+    "outDir": "./dist",
     "strict": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,

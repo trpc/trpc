@@ -23,13 +23,13 @@ Full documentation for `@trpc/react` can be found [here](https://trpc.io/docs/re
 
 ```bash
 # npm
-npm install @trpc/react react-query
+npm install @trpc/react @tanstack/react-query
 
 # Yarn
-yarn add @trpc/react react-query
+yarn add @trpc/react @tanstack/react-query
 
 # pnpm
-pnpm add @trpc/react react-query
+pnpm add @trpc/react @tanstack/react-query
 ```
 
 ## Basic Example
@@ -49,7 +49,7 @@ Use the provider to connect to your API.
 ```ts
 import React from 'react';
 import { useState } from 'react';
-import { QueryClient, QueryClientProvider } from 'react-query';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { trpc } from '~/utils/trpc';
 
 export function App() {

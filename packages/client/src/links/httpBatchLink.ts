@@ -1,12 +1,14 @@
 import { AnyRouter, ProcedureType } from '@trpc/server';
 import { observable } from '@trpc/server/observable';
+import { TRPCClientError } from '../TRPCClientError';
 import { dataLoader } from '../internals/dataLoader';
 import {
   HTTPLinkOptions,
-  ResponseShape,
+  HTTPResult,
   getUrl,
   httpRequest,
 } from './internals/httpUtils';
+import { transformResult } from './internals/transformResult';
 import { TRPCLink } from './types';
 
 export interface HttpBatchLinkOptions extends HTTPLinkOptions {
@@ -67,13 +69,11 @@ export function httpBatchLink<TRouter extends AnyRouter>(
       return { validate, fetch };
     };
 
-    const query = dataLoader<BatchOperation, ResponseShape>(
-      batchLoader('query'),
-    );
-    const mutation = dataLoader<BatchOperation, ResponseShape>(
+    const query = dataLoader<BatchOperation, HTTPResult>(batchLoader('query'));
+    const mutation = dataLoader<BatchOperation, HTTPResult>(
       batchLoader('mutation'),
     );
-    const subscription = dataLoader<BatchOperation, ResponseShape>(
+    const subscription = dataLoader<BatchOperation, HTTPResult>(
       batchLoader('subscription'),
     );
 
@@ -85,9 +85,19 @@ export function httpBatchLink<TRouter extends AnyRouter>(
 
         promise
           .then((res) => {
+            const transformed = transformResult(res.json, runtime);
+
+            if (!transformed.ok) {
+              observer.error(
+                TRPCClientError.from(transformed.error, {
+                  meta: res.meta,
+                }),
+              );
+              return;
+            }
             observer.next({
               context: res.meta,
-              data: res.json as any,
+              result: transformed.result,
             });
             observer.complete();
           })

@@ -1,4 +1,8 @@
-export type { AnyRouter, ProcedureRouterRecord } from './router';
+export type {
+  AnyRouter,
+  ProcedureRecord,
+  ProcedureRouterRecord,
+} from './router';
 export { callProcedure } from './router';
 export type {
   Procedure,

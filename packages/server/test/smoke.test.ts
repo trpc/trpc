@@ -1,9 +1,11 @@
-/* eslint-disable @typescript-eslint/ban-types */
 import { routerToServerAndClientNew, waitError } from './___testHelpers';
-import { TRPCClientError } from '@trpc/client';
+import { waitFor } from '@testing-library/react';
+import { TRPCClientError, wsLink } from '@trpc/client';
+import { EventEmitter } from 'events';
 import { expectTypeOf } from 'expect-type';
 import { z } from 'zod';
 import { inferProcedureParams, initTRPC } from '../src';
+import { Unsubscribable, observable } from '../src/observable';
 
 const t = initTRPC<{
   ctx: {
@@ -27,6 +29,8 @@ test('old client - happy path w/o input', async () => {
     hello: procedure.query(() => 'world'),
   });
   const { client, close } = routerToServerAndClientNew(router);
+
+  // @ts-expect-error cannot call new procedure with old client
   expect(await client.query('hello')).toBe('world');
   close();
 });
@@ -38,6 +42,7 @@ test('old client - happy path with input', async () => {
       .query(({ input }) => `hello ${input}`),
   });
   const { client, close } = routerToServerAndClientNew(router);
+  // @ts-expect-error cannot call new procedure with old client
   expect(await client.query('greeting', 'KATT')).toBe('hello KATT');
   close();
 });
@@ -150,4 +155,52 @@ test('flat router', async () => {
 
   expect(merged.hello).toBe(hello);
   expect(merged.child.bye).toBe(bye);
+});
+
+test('subscriptions', async () => {
+  const ee = new EventEmitter();
+
+  const subscriptionMock = jest.fn();
+  const onStartedMock = jest.fn();
+  const onDataMock = jest.fn();
+  const onCompleteMock = jest.fn();
+
+  const router = t.router({
+    onEvent: t.procedure.input(z.number()).subscription(({ input }) => {
+      subscriptionMock(input);
+      return observable<number>((emit) => {
+        const onData = (data: number) => emit.next(data + input);
+        ee.on('data', onData);
+        return () => {
+          ee.off('data', onData);
+        };
+      });
+    }),
+  });
+
+  const { proxy, close } = routerToServerAndClientNew(router, {
+    client: ({ wsClient }) => ({
+      links: [wsLink({ client: wsClient })],
+    }),
+  });
+
+  const subscription = proxy.onEvent.subscribe(10, {
+    onStarted: onStartedMock,
+    onData: onDataMock,
+    onComplete: onCompleteMock,
+  });
+
+  expectTypeOf(subscription).toMatchTypeOf<Unsubscribable>();
+  await waitFor(() => expect(onStartedMock).toBeCalledTimes(1));
+  await waitFor(() => expect(subscriptionMock).toBeCalledTimes(1));
+  await waitFor(() => expect(subscriptionMock).toHaveBeenNthCalledWith(1, 10));
+
+  ee.emit('data', 20);
+  await waitFor(() => expect(onDataMock).toBeCalledTimes(1));
+  await waitFor(() => expect(onDataMock).toHaveBeenNthCalledWith(1, 30));
+
+  subscription.unsubscribe();
+  await waitFor(() => expect(onCompleteMock).toBeCalledTimes(1));
+
+  close();
 });

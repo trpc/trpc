@@ -1,6 +1,6 @@
 {
   "name": "@trpc/server",
-  "version": "10.0.0-alpha.41",
+  "version": "10.0.0-alpha.45",
   "description": "tRPC Server",
   "author": "KATT",
   "license": "MIT",
@@ -20,8 +20,6 @@
     }
   },
   "scripts": {
-    "test": "jest",
-    "build": "rollup -c",
     "benchmark": "yarn tsc --project tsconfig.benchmark.json",
     "ts-watch": "tsc --project tsconfig.watch.json"
   },
@@ -44,6 +42,11 @@
       "require": "./dist/adapters/express.js",
       "default": "./dist/adapters/express.js"
     },
+    "./adapters/fastify": {
+      "import": "./dist/adapters/fastify/index.mjs",
+      "require": "./dist/adapters/fastify/index.js",
+      "default": "./dist/adapters/fastify/index.js"
+    },
     "./adapters/next": {
       "import": "./dist/adapters/next.mjs",
       "require": "./dist/adapters/next.js",
@@ -58,11 +61,6 @@
       "import": "./dist/adapters/standalone.mjs",
       "require": "./dist/adapters/standalone.js",
       "default": "./dist/adapters/standalone.js"
-    },
-    "./adapters/fastify": {
-      "import": "./dist/adapters/fastify/index.mjs",
-      "require": "./dist/adapters/fastify/index.js",
-      "default": "./dist/adapters/fastify/index.js"
     },
     "./adapters/ws": {
       "import": "./dist/adapters/ws.mjs",
@@ -96,13 +94,14 @@
     }
   },
   "files": [
-    "README.md",
     "dist",
+    "src",
+    "README.md",
     "adapters",
     "rpc",
     "observable",
-    "shared",
-    "src"
+    "subscription",
+    "shared"
   ],
   "publishConfig": {
     "access": "public"
@@ -118,7 +117,6 @@
     "abort-controller": "^3.0.0",
     "aws-lambda": "^1.0.7",
     "devalue": "^2.0.1",
-    "esbuild": "^0.14.38",
     "express": "^4.17.1",
     "fastify": "^3.27.1",
     "fastify-plugin": "^3.0.1",
@@ -136,8 +134,5 @@
     "ws": "^8.0.0",
     "yup": "^0.32.8",
     "zod": "^3.0.0"
-  },
-  "dependencies": {
-    "tslib": "^2.1.0"
   }
 }

@@ -1,8 +1,7 @@
 /* eslint-disable @typescript-eslint/no-empty-function */
-
-/* eslint-disable @typescript-eslint/ban-types */
 import { trpcServer } from '../../___packages';
 import { routerToServerAndClientNew } from '../../___testHelpers';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import '@testing-library/jest-dom';
 import { httpBatchLink } from '@trpc/client/src/links/httpBatchLink';
 import { splitLink } from '@trpc/client/src/links/splitLink';
@@ -13,7 +12,6 @@ import {
 } from '@trpc/client/src/links/wsLink';
 import hash from 'hash-sum';
 import React, { ReactNode, useState } from 'react';
-import { QueryClient, QueryClientProvider, setLogger } from 'react-query';
 import { ZodError, z } from 'zod';
 import {
   OutputWithCursor,
@@ -22,12 +20,6 @@ import {
 import { TRPCError } from '../../../src/error/TRPCError';
 import { observable } from '../../../src/observable';
 import { subscriptionPullFactory } from '../../../src/subscription';
-
-setLogger({
-  log() {},
-  warn() {},
-  error() {},
-});
 
 type Context = {};
 export type Post = {

@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/ban-types */
 import { inferAsyncReturnType, initTRPC } from '@trpc/server';
 import {
   CreateHTTPContextOptions,

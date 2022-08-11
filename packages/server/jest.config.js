@@ -17,6 +17,8 @@ module.exports = {
       tsconfig: {
         jsx: 'react',
         target: 'ES2020',
+        noUnusedLocals: false,
+        noUnusedParameters: false,
       },
     },
   },

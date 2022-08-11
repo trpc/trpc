@@ -13,3 +13,12 @@ coverage/
 __generated__
 
 *.tsbuildinfo
+
+# Barrel files
+## Ignore all folders
+packages/*/*
+## Dont ignore files
+!packages/*/*.*
+## Dont ignore src or test
+!packages/*/src
+!packages/*/test

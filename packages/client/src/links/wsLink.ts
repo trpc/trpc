@@ -1,5 +1,5 @@
-import { AnyRouter, ProcedureType } from '@trpc/server';
-import { UnsubscribeFn, observable } from '@trpc/server/observable';
+import { AnyRouter, ProcedureType, inferRouterError } from '@trpc/server';
+import { Observer, UnsubscribeFn, observable } from '@trpc/server/observable';
 import {
   TRPCClientIncomingMessage,
   TRPCClientIncomingRequest,
@@ -9,18 +9,34 @@ import {
 } from '@trpc/server/rpc';
 import { TRPCClientError } from '../TRPCClientError';
 import { retryDelay } from '../internals/retryDelay';
-import { Operation, OperationResultObserver, TRPCLink } from './types';
+import { transformResult } from './internals/transformResult';
+import { Operation, TRPCLink } from './types';
+
+type WSCallbackResult<TRouter extends AnyRouter, TOutput> = TRPCResponseMessage<
+  TOutput,
+  inferRouterError<TRouter>
+>;
+
+type WSCallbackObserver<TRouter extends AnyRouter, TOutput> = Observer<
+  WSCallbackResult<TRouter, TOutput>,
+  TRPCClientError<TRouter>
+>;
 
 export interface WebSocketClientOptions {
   url: string;
   WebSocket?: typeof WebSocket;
   retryDelayMs?: typeof retryDelay;
+  onOpen?: () => void;
+  onClose?: () => void;
 }
+
 export function createWSClient(opts: WebSocketClientOptions) {
   const {
     url,
     WebSocket: WebSocketImpl = WebSocket,
     retryDelayMs: retryDelayFn = retryDelay,
+    onOpen,
+    onClose,
   } = opts;
   /* istanbul ignore next */
   if (!WebSocketImpl) {
@@ -35,7 +51,7 @@ export function createWSClient(opts: WebSocketClientOptions) {
   /**
    * pending outgoing requests that are awaiting callback
    */
-  type TCallbacks = OperationResultObserver<AnyRouter, unknown>;
+  type TCallbacks = WSCallbackObserver<AnyRouter, unknown>;
   type TRequest = {
     /**
      * Reference to the WebSocket instance this request was made to
@@ -123,6 +139,7 @@ export function createWSClient(opts: WebSocketClientOptions) {
       }
       connectAttempt = 0;
       state = 'open';
+      onOpen?.();
       dispatch();
     });
     conn.addEventListener('error', () => {
@@ -132,6 +149,9 @@ export function createWSClient(opts: WebSocketClientOptions) {
     });
     const handleIncomingRequest = (req: TRPCClientIncomingRequest) => {
       if (req.method === 'reconnect' && conn === activeConnection) {
+        if (state === 'open') {
+          onClose?.();
+        }
         reconnect();
         // notify subscribers
         for (const pendingReq of Object.values(pendingRequests)) {
@@ -148,7 +168,7 @@ export function createWSClient(opts: WebSocketClientOptions) {
         return;
       }
 
-      req.callbacks.next?.({ data });
+      req.callbacks.next?.(data);
       if (req.ws !== activeConnection && conn === activeConnection) {
         const oldWs = req.ws;
         // gracefully replace old connection with this
@@ -179,6 +199,10 @@ export function createWSClient(opts: WebSocketClientOptions) {
     });
 
     conn.addEventListener('close', () => {
+      if (state === 'open') {
+        onClose?.();
+      }
+
       if (activeConnection === conn) {
         // connection might have been replaced already
         tryReconnect();
@@ -244,6 +268,7 @@ export function createWSClient(opts: WebSocketClientOptions) {
   return {
     close: () => {
       state = 'closed';
+      onClose?.();
       closeIfNoPending(activeConnection);
       clearTimeout(connectTimer as any);
       connectTimer = null;
@@ -309,8 +334,16 @@ export function wsLink<TRouter extends AnyRouter>(
                 observer.complete();
               }
             },
-            next(result) {
-              observer.next(result);
+            next(message) {
+              const transformed = transformResult(message, runtime);
+
+              if (!transformed.ok) {
+                observer.error(TRPCClientError.from(transformed.error));
+                return;
+              }
+              observer.next({
+                result: transformed.result,
+              });
 
               if (op.type !== 'subscription') {
                 // if it isn't a subscription we don't care about next response

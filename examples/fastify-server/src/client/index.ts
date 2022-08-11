@@ -67,12 +67,11 @@ async function start() {
 
   await anon.proxy.posts.reset.query();
 
-  // FIXME: Pending API update for Subscriptions (https://github.com/trpc/trpc/issues/2114)
-  /*const randomNumberCount = 0;
+  let randomNumberCount = 0;
 
   await new Promise<void>((resolve) => {
-    const sub = anon.proxy.sub.randomNumber.subscription(undefined, {
-      next(data) {
+    const sub = anon.proxy.sub.randomNumber.subscribe(undefined, {
+      onData(data) {
         console.log('>>> anon:sub:randomNumber:received:', data);
         randomNumberCount++;
 
@@ -81,14 +80,14 @@ async function start() {
           resolve();
         }
       },
-      error(error) {
+      onError(error) {
         console.error('>>> anon:sub:randomNumber:error:', error);
       },
-      complete() {
+      onComplete() {
         console.log('>>> anon:sub:randomNumber:', 'unsub() called');
       },
     });
-  });*/
+  });
 
   // we're done - make sure app closes with a clean exit
   anon.wsClient.close();

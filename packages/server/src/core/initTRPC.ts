@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/ban-types */
 import { mergeRoutersGeneric } from './internals/__generated__/mergeRoutersGeneric';
 import {
   DefaultErrorShape,

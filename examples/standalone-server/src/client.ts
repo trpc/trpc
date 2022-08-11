@@ -54,8 +54,8 @@ async function main() {
 
   let count = 0;
   await new Promise<void>((resolve) => {
-    const subscription = client.subscription('post.randomNumber', undefined, {
-      next(data) {
+    const subscription = proxy.post.randomNumber.subscribe(undefined, {
+      onData(data) {
         // ^ note that `data` here is inferred
         console.log('received', data);
         count++;
@@ -65,7 +65,7 @@ async function main() {
           resolve();
         }
       },
-      error(err) {
+      onError(err) {
         console.error('error', err);
       },
     });

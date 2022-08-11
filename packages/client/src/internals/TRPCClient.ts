@@ -7,23 +7,18 @@ import {
   inferProcedureOutput,
   inferSubscriptionOutput,
 } from '@trpc/server';
+import { ProcedureRecord } from '@trpc/server';
 import {
-  Observer,
   Unsubscribable,
   inferObservableValue,
   observableToPromise,
   share,
 } from '@trpc/server/observable';
-import { TRPCResultMessage } from '@trpc/server/rpc';
 import { CancelFn } from '..';
 import { TRPCClientError } from '../TRPCClientError';
 import { getFetch } from '../getFetch';
 import { httpBatchLink } from '../links';
 import { createChain } from '../links/internals/createChain';
-import {
-  transformOperationResult,
-  transformSubscriptionOperationResult,
-} from '../links/internals/transformOperationResult';
 import {
   HTTPHeaders,
   OperationContext,
@@ -84,13 +79,38 @@ export interface TRPCRequestOptions {
   /**
    * Pass additional context to links
    */
-  context?: OperationContext;
+  requestContext?: OperationContext;
+}
+
+export interface TRPCSubscriptionObserver<TValue, TError> {
+  onStarted: () => void;
+  onData: (value: TValue) => void;
+  onError: (err: TError) => void;
+  onStopped: () => void;
+  onComplete: () => void;
 }
 
 /** @internal */
 export type CreateTRPCClientOptions<TRouter extends AnyRouter> =
   | CreateTRPCClientWithLinksOptions<TRouter>
   | CreateTRPCClientWithURLOptions;
+
+export type AssertType<T, K> = T extends K ? T : never;
+/**
+ * @deprecated
+ */
+export type AssertLegacyDef<TRouter extends AnyRouter> =
+  TRouter['_def']['legacy'] extends Record<
+    'subscriptions' | 'queries' | 'mutations',
+    ProcedureRecord
+  >
+    ? TRouter['_def']['legacy']
+    : {
+        subscriptions: {};
+        queries: {};
+        mutations: {};
+      };
+
 export class TRPCClient<TRouter extends AnyRouter> {
   private readonly links: OperationLink<TRouter>[];
   public readonly runtime: TRPCClientRuntime;
@@ -173,13 +193,8 @@ export class TRPCClient<TRouter extends AnyRouter> {
     const cancellablePromise: CancellablePromise<any> = new Promise<TOutput>(
       (resolve, reject) => {
         promise
-          .then((result) => {
-            const transformed = transformOperationResult(result, this.runtime);
-            if (transformed.ok) {
-              resolve(transformed.data);
-              return;
-            }
-            reject(transformed.error);
+          .then((envelope) => {
+            resolve((envelope.result as any).data);
           })
           .catch((err) => {
             reject(TRPCClientError.from(err));
@@ -191,15 +206,18 @@ export class TRPCClient<TRouter extends AnyRouter> {
     return cancellablePromise;
   }
   public query<
-    TQueries extends TRouter['_def']['queries'],
+    TQueries extends AssertLegacyDef<TRouter>['queries'],
     TPath extends string & keyof TQueries,
   >(
     path: TPath,
-    ...args: [...inferHandlerInput<TQueries[TPath]>, TRPCRequestOptions?]
+    ...args: [
+      ...inferHandlerInput<AssertType<TQueries, ProcedureRecord>[TPath]>,
+      TRPCRequestOptions?,
+    ]
   ) {
-    const context = (args[1] as TRPCRequestOptions | undefined)?.context;
+    const context = (args[1] as TRPCRequestOptions | undefined)?.requestContext;
     return this.requestAsPromise<
-      inferHandlerInput<TQueries[TPath]>,
+      inferHandlerInput<AssertType<TQueries, ProcedureRecord>[TPath]>,
       inferProcedureOutput<TQueries[TPath]>
     >({
       type: 'query',
@@ -209,15 +227,18 @@ export class TRPCClient<TRouter extends AnyRouter> {
     });
   }
   public mutation<
-    TMutations extends TRouter['_def']['mutations'],
+    TMutations extends AssertLegacyDef<TRouter>['mutations'],
     TPath extends string & keyof TMutations,
   >(
     path: TPath,
-    ...args: [...inferHandlerInput<TMutations[TPath]>, TRPCRequestOptions?]
+    ...args: [
+      ...inferHandlerInput<AssertType<TMutations, ProcedureRecord>[TPath]>,
+      TRPCRequestOptions?,
+    ]
   ) {
-    const context = (args[1] as TRPCRequestOptions | undefined)?.context;
+    const context = (args[1] as TRPCRequestOptions | undefined)?.requestContext;
     return this.requestAsPromise<
-      inferHandlerInput<TMutations[TPath]>,
+      inferHandlerInput<AssertType<TMutations, ProcedureRecord>[TPath]>,
       inferProcedureOutput<TMutations[TPath]>
     >({
       type: 'mutation',
@@ -227,40 +248,39 @@ export class TRPCClient<TRouter extends AnyRouter> {
     });
   }
   public subscription<
-    TSubscriptions extends TRouter['_def']['subscriptions'],
+    TSubscriptions extends AssertLegacyDef<TRouter>['subscriptions'],
     TPath extends string & keyof TSubscriptions,
     TOutput extends inferSubscriptionOutput<TRouter, TPath>,
-    TInput extends inferProcedureInput<TSubscriptions[TPath]>,
+    TInput extends inferProcedureInput<
+      AssertType<TSubscriptions, ProcedureRecord>[TPath]
+    >,
   >(
     path: TPath,
     input: TInput,
     opts: TRPCRequestOptions &
-      Partial<Observer<TRPCResultMessage<TOutput>, TRPCClientError<TRouter>>>,
+      Partial<TRPCSubscriptionObserver<TOutput, TRPCClientError<TRouter>>>,
   ): Unsubscribable {
     const observable$ = this.$request<TInput, TOutput>({
       type: 'subscription',
       path,
       input,
-      context: opts.context,
+      context: opts.requestContext,
     });
-    const runtime = this.runtime;
     return observable$.subscribe({
-      next(result) {
-        const transformed = transformSubscriptionOperationResult(
-          result,
-          runtime,
-        );
-        if (transformed.ok) {
-          opts.next?.(transformed.data);
-          return;
+      next(envelope) {
+        if (envelope.result.type === 'started') {
+          opts.onStarted?.();
+        } else if (envelope.result.type === 'stopped') {
+          opts.onStopped?.();
+        } else {
+          opts.onData?.((envelope.result as any).data);
         }
-        opts.error?.(transformed.error);
       },
       error(err) {
-        opts.error?.(err);
+        opts.onError?.(err);
       },
       complete() {
-        opts.complete?.();
+        opts.onComplete?.();
       },
     });
   }

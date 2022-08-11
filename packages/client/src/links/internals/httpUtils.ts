@@ -1,4 +1,5 @@
 import { ProcedureType } from '@trpc/server';
+import { TRPCResponse } from '@trpc/server/rpc';
 import { PromiseAndCancel, TRPCClientRuntime } from '../types';
 
 export interface HTTPLinkOptions {
@@ -21,8 +22,8 @@ const METHOD = {
   subscription: 'PATCH',
 } as const;
 
-export interface ResponseShape {
-  json: unknown;
+export interface HTTPResult {
+  json: TRPCResponse;
   meta: {
     response: Response;
   };
@@ -76,15 +77,15 @@ export function getBody(opts: GetBodyOptions) {
 
 export function httpRequest(
   opts: HTTPRequestOptions,
-): PromiseAndCancel<ResponseShape> {
+): PromiseAndCancel<HTTPResult> {
   const { type, runtime } = opts;
   const ac = runtime.AbortController ? new runtime.AbortController() : null;
 
-  const promise = new Promise<ResponseShape>((resolve, reject) => {
+  const promise = new Promise<HTTPResult>((resolve, reject) => {
     const url = getUrl(opts);
     const body = getBody(opts);
 
-    const meta = {} as any as ResponseShape['meta'];
+    const meta = {} as any as HTTPResult['meta'];
     Promise.resolve(runtime.headers())
       .then((headers) =>
         runtime.fetch(url, {
