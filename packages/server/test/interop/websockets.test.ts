@@ -10,11 +10,10 @@ import { default as WebSocket, default as ws } from 'ws';
 import { z } from 'zod';
 import { TRPCClientError } from '../../../client/src';
 import { createWSClient, wsLink } from '../../../client/src';
-import { Observer } from '../../observable';
 import * as trpc from '../../src';
 import { TRPCError } from '../../src';
 import { applyWSSHandler } from '../../src/adapters/ws';
-import { observable } from '../../src/observable';
+import { Observer, observable } from '../../src/observable';
 import { TRPCClientOutgoingMessage, TRPCRequestMessage } from '../../src/rpc';
 
 type Message = {

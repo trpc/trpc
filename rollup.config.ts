@@ -1,5 +1,6 @@
 import { babel } from '@rollup/plugin-babel';
 import nodeResolve from '@rollup/plugin-node-resolve';
+import typescript from '@rollup/plugin-typescript';
 import path from 'path';
 import { RollupOptions } from 'rollup';
 import del from 'rollup-plugin-delete';
@@ -8,7 +9,6 @@ import del from 'rollup-plugin-delete';
 import multiInput from 'rollup-plugin-multi-input';
 import externals from 'rollup-plugin-node-externals';
 import { terser } from 'rollup-plugin-terser';
-import typescript from 'rollup-plugin-typescript2';
 
 const isWatchMode = process.argv.includes('--watch');
 const isProd = process.env.NODE_ENV === 'production';
@@ -83,7 +83,7 @@ function buildConfig({ input, packageDir }: Options): RollupOptions[] {
     packageDir,
   };
 
-  return [types(options), esm(options), cjs(options)];
+  return [types(options), lib(options)];
 }
 
 function types({ input, packageDir }: Options): RollupOptions {
@@ -95,51 +95,37 @@ function types({ input, packageDir }: Options): RollupOptions {
     plugins: [
       !isWatchMode &&
         del({
-          targets: [`${packageDir}/dist`],
+          targets: `${packageDir}/dist`,
         }),
       multiInput({ relative: path.resolve(packageDir, 'src/') }),
       typescript({
         tsconfig: path.resolve(packageDir, 'tsconfig.build.json'),
-        tsconfigOverride: { emitDeclarationOnly: true },
-        abortOnError: !isWatchMode,
+        outDir: path.resolve(packageDir, 'dist'),
+        noEmitOnError: !isWatchMode,
       }),
     ],
   };
 }
 
-function cjs({ input, packageDir }: Options): RollupOptions {
+function lib({ input, packageDir }: Options): RollupOptions {
   return {
     input,
-    output: {
-      dir: `${packageDir}/dist`,
-      format: 'cjs',
-      entryFileNames: '[name].js',
-      chunkFileNames: '[name]-[hash].js',
-      plugins: [isProd && terser({ module: false })],
-    },
-    plugins: [
-      multiInput({ relative: path.resolve(packageDir, 'src/') }),
-      externals({
-        packagePath: path.resolve(packageDir, 'package.json'),
-      }),
-      nodeResolve({
-        extensions,
-      }),
-      babelPlugin,
+    output: [
+      {
+        dir: `${packageDir}/dist`,
+        format: 'cjs',
+        entryFileNames: '[name].js',
+        chunkFileNames: '[name]-[hash].js',
+        plugins: [isProd && terser({ module: false })],
+      },
+      {
+        dir: `${packageDir}/dist`,
+        format: 'esm',
+        entryFileNames: '[name].mjs',
+        chunkFileNames: '[name]-[hash].mjs',
+        plugins: [isProd && terser({ module: true })],
+      },
     ],
-  };
-}
-
-function esm({ input, packageDir }: Options): RollupOptions {
-  return {
-    input,
-    output: {
-      dir: `${packageDir}/dist`,
-      format: 'esm',
-      entryFileNames: '[name].mjs',
-      chunkFileNames: '[name]-[hash].mjs',
-      plugins: [isProd && terser({ module: true })],
-    },
     plugins: [
       multiInput({ relative: path.resolve(packageDir, 'src/') }),
       externals({
