@@ -26,7 +26,7 @@ export function retryLink<TRouter extends AnyRouter = AnyRouter>(opts: {
               attempt();
             },
             next(result) {
-              if ('result' in result.data) {
+              if ('result' in result.result) {
                 isDone = true;
                 observer.next(result);
                 return;

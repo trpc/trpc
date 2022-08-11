@@ -1,8 +1,6 @@
 /* eslint-disable @typescript-eslint/no-empty-function */
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
-
-/* eslint-disable @typescript-eslint/ban-types */
 import { legacyRouterToServerAndClient } from './__legacyRouterToServerAndClient';
 import fetch from 'node-fetch';
 import { z } from 'zod';

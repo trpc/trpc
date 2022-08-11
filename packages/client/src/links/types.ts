@@ -1,6 +1,6 @@
-import { AnyRouter, DataTransformer, inferRouterError } from '@trpc/server';
+import { AnyRouter, DataTransformer } from '@trpc/server';
 import { Observable, Observer } from '@trpc/server/observable';
-import { TRPCResponse, TRPCResponseMessage } from '@trpc/server/rpc';
+import { TRPCResultMessage, TRPCSuccessResponse } from '@trpc/server/rpc';
 import { TRPCClientError } from '../TRPCClientError';
 
 export type CancelFn = () => void;
@@ -37,24 +37,22 @@ export interface TRPCClientRuntime {
   transformer: DataTransformer;
 }
 
-type OperationResultData<TRouter extends AnyRouter, TOutput> =
-  | TRPCResponse<TOutput, inferRouterError<TRouter>>
-  | TRPCResponseMessage<TOutput, inferRouterError<TRouter>>;
-
-export interface OperationResult<TRouter extends AnyRouter, TOutput> {
-  data: OperationResultData<TRouter, TOutput>;
+export interface OperationResultEnvelope<TOutput> {
+  result:
+    | TRPCSuccessResponse<TOutput>['result']
+    | TRPCResultMessage<TOutput>['result'];
   context?: OperationContext;
 }
 
 export type OperationResultObservable<
   TRouter extends AnyRouter,
   TOutput,
-> = Observable<OperationResult<TRouter, TOutput>, TRPCClientError<TRouter>>;
+> = Observable<OperationResultEnvelope<TOutput>, TRPCClientError<TRouter>>;
 
 export type OperationResultObserver<
   TRouter extends AnyRouter,
   TOutput,
-> = Observer<OperationResult<TRouter, TOutput>, TRPCClientError<TRouter>>;
+> = Observer<OperationResultEnvelope<TOutput>, TRPCClientError<TRouter>>;
 
 export type OperationLink<
   TRouter extends AnyRouter,

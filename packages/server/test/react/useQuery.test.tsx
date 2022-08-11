@@ -5,7 +5,7 @@ import { expectTypeOf } from 'expect-type';
 import { konn } from 'konn';
 import React, { useEffect } from 'react';
 import { z } from 'zod';
-import { initTRPC } from '../src';
+import { initTRPC } from '../../src';
 
 const ctx = konn()
   .beforeEach(() => {
@@ -71,10 +71,6 @@ test('useQuery()', async () => {
       // @ts-expect-error Should not exist
       utils.doesNotExist.invalidate();
     }, [utils]);
-
-    if (query1.error) {
-      expectTypeOf(query1.error['data']).toMatchTypeOf<{ foo: 'bar' }>();
-    }
 
     if (!query1.data) {
       return <>...</>;

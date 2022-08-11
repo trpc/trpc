@@ -1,25 +1,40 @@
-import { AnyRouter, Maybe, inferRouterError } from '@trpc/server';
+import {
+  AnyRouter,
+  DefaultErrorShape,
+  Maybe,
+  Procedure,
+  inferRouterError,
+} from '@trpc/server';
 import { TRPCErrorResponse } from '@trpc/server/rpc';
 
-export interface TRPCClientErrorLike<TRouter extends AnyRouter> {
-  readonly message: string;
-  readonly shape: Maybe<inferRouterError<TRouter>>;
-  readonly data: Maybe<inferRouterError<TRouter>['data']>;
-}
+type RouterOrProcedure = AnyRouter | Procedure<any>;
 
-export class TRPCClientError<TRouter extends AnyRouter>
+type inferErrorShape<TRouterOrProcedure extends AnyRouter | Procedure<any>> =
+  TRouterOrProcedure extends AnyRouter
+    ? inferRouterError<TRouterOrProcedure>
+    : TRouterOrProcedure['_def']['_config']['errorShape'];
+
+export interface TRPCClientErrorBase<TShape extends DefaultErrorShape> {
+  readonly message: string;
+  readonly shape: Maybe<TShape>;
+  readonly data: Maybe<TShape['data']>;
+}
+export type TRPCClientErrorLike<TRouterOrProcedure extends RouterOrProcedure> =
+  TRPCClientErrorBase<inferErrorShape<TRouterOrProcedure>>;
+
+export class TRPCClientError<TRouterOrProcedure extends RouterOrProcedure>
   extends Error
-  implements TRPCClientErrorLike<TRouter>
+  implements TRPCClientErrorBase<inferErrorShape<TRouterOrProcedure>>
 {
   public readonly cause;
-  public readonly shape: Maybe<inferRouterError<TRouter>>;
-  public readonly data: Maybe<inferRouterError<TRouter>['data']>;
+  public readonly shape;
+  public readonly data;
   public readonly meta;
 
   constructor(
     message: string,
     opts?: {
-      result: Maybe<TRPCErrorResponse<inferRouterError<TRouter>>>;
+      result?: Maybe<inferErrorShape<TRouterOrProcedure>>;
       cause?: Error;
       meta?: Record<string, unknown>;
     },
@@ -40,22 +55,25 @@ export class TRPCClientError<TRouter extends AnyRouter>
     Object.setPrototypeOf(this, TRPCClientError.prototype);
   }
 
-  public static from<TRouter extends AnyRouter>(
+  public static from<TRouterOrProcedure extends RouterOrProcedure>(
     cause: Error | TRPCErrorResponse<any>,
     opts: { meta?: Record<string, unknown> } = {},
-  ): TRPCClientError<TRouter> {
+  ): TRPCClientError<TRouterOrProcedure> {
     if (!(cause instanceof Error)) {
-      return new TRPCClientError<TRouter>((cause.error as any).message ?? '', {
-        ...opts,
-        cause: undefined,
-        result: cause,
-      });
+      return new TRPCClientError<TRouterOrProcedure>(
+        (cause.error as any).message ?? '',
+        {
+          ...opts,
+          cause: undefined,
+          result: cause as any,
+        },
+      );
     }
     if (cause.name === 'TRPCClientError') {
       return cause as TRPCClientError<any>;
     }
 
-    return new TRPCClientError<TRouter>(cause.message, {
+    return new TRPCClientError<TRouterOrProcedure>(cause.message, {
       ...opts,
       cause,
       result: null,

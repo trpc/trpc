@@ -4,8 +4,8 @@ import { EventEmitter } from 'events';
 import { konn } from 'konn';
 import React, { useState } from 'react';
 import { z } from 'zod';
-import { initTRPC } from '../src';
-import { observable } from '../src/observable';
+import { initTRPC } from '../../src';
+import { observable } from '../../src/observable';
 
 const ee = new EventEmitter();
 

@@ -1,6 +1,4 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-
-/* eslint-disable @typescript-eslint/ban-types */
 // import WebSocket from 'ws';
 import { routerToServerAndClientNew, waitMs } from '../___testHelpers';
 import { waitFor } from '@testing-library/react';

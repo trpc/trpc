@@ -14,6 +14,7 @@ import {
   hashQueryKey,
 } from '@tanstack/react-query';
 import {
+  AssertLegacyDef,
   CreateTRPCClientOptions,
   TRPCClient,
   TRPCClientErrorLike,
@@ -22,7 +23,7 @@ import {
 } from '@trpc/client';
 import type {
   AnyRouter,
-  Procedure,
+  ProcedureRecord,
   inferHandlerInput,
   inferProcedureClientError,
   inferProcedureInput,
@@ -39,12 +40,12 @@ import React, {
 } from 'react';
 import { SSRState, TRPCContext, TRPCContextState } from './internals/context';
 
+export type AssertType<T, K> = T extends K ? T : never;
+
 export type OutputWithCursor<TData, TCursor extends any = any> = {
   cursor: TCursor | null;
   data: TData;
 };
-
-export type ProcedureRecord = Record<string, Procedure<any>>;
 
 export interface TRPCUseQueryBaseOptions extends TRPCRequestOptions {
   /**
@@ -123,13 +124,24 @@ export function createReactQueryHooks<
   TRouter extends AnyRouter,
   TSSRContext = unknown,
 >() {
-  type TQueries = TRouter['_def']['queries'];
-  type TSubscriptions = TRouter['_def']['subscriptions'];
+  type TQueries = AssertType<
+    AssertLegacyDef<TRouter>['queries'],
+    ProcedureRecord
+  >;
+  type TSubscriptions = AssertType<
+    AssertLegacyDef<TRouter>['subscriptions'],
+    ProcedureRecord
+  >;
+  type TMutations = AssertType<
+    AssertLegacyDef<TRouter>['mutations'],
+    ProcedureRecord
+  >;
+
   type TError = TRPCClientErrorLike<TRouter>;
   type TInfiniteQueryNames = inferInfiniteQueryNames<TQueries>;
 
-  type TQueryValues = inferProcedures<TRouter['_def']['queries']>;
-  type TMutationValues = inferProcedures<TRouter['_def']['mutations']>;
+  type TQueryValues = inferProcedures<TQueries>;
+  type TMutationValues = inferProcedures<TMutations>;
 
   type ProviderContext = TRPCContextState<TRouter, TSSRContext>;
   const Context = TRPCContext as React.Context<ProviderContext>;
