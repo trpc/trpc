@@ -10,7 +10,6 @@ import {
   OmitNeverKeys,
   Procedure,
   ProcedureRouterRecord,
-  inferProcedureClientError,
   inferProcedureInput,
   inferProcedureOutput,
 } from '@trpc/server';

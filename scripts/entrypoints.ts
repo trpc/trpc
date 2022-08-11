@@ -1,71 +1,102 @@
-/**
- * This file is a huge mess.
- */
-import fs from 'fs';
+import fs from 'fs-extra';
+import path from 'path';
+import { INPUTS, PACKAGES } from '../rollup.config';
 
-const packages = [
-  'client',
-  // This script doesn't really work right yet with all the other packages b/c naming of `index.ts` is a bit of mess
-];
+const packagesDir = path.resolve(__dirname, '..', 'packages');
 
-const packagesDir = `${__dirname}/../packages`;
+// minimal version of PackageJson type necessary
+type PackageJson = {
+  exports: Record<string, { import: string; require: string; default: string }>;
+  files: string[];
+};
 
-function getEntrypoint(filename: string) {
-  const parts = filename.split('/');
-  const name = parts.pop();
-
-  parts.shift();
-  const dir = parts.join();
-  return {
-    name,
-    dir: `./${dir}`,
-    depth: parts.length + 1,
-  };
-}
-for (const pkg of packages) {
-  const pkgDir = `${packagesDir}/${pkg}`;
-  const packageJsonStr = fs.readFileSync(`${pkgDir}/package.json`, 'utf8');
-  const pJson = JSON.parse(packageJsonStr.toString());
-
-  const keys = Object.keys(pJson.exports).filter((v) => v !== '.');
-  for (const key of keys) {
-    // const file = `${packagesDir}/${pkg}/src/${name}.ts`;
-    const entrypoint = getEntrypoint(key);
-    // console.log({ name: key, entrypoint });
-
-    fs.mkdirSync(`${pkgDir}/${entrypoint.dir}/${entrypoint.name}`, {
-      recursive: true,
-    });
-    const dotdot = new Array(entrypoint.depth).fill('../').join('');
-    const distTarget = `${dotdot}dist/${entrypoint.dir}/${entrypoint.name}`;
-    fs.writeFileSync(
-      `${pkgDir}/${entrypoint.dir}/${entrypoint.name}/index.js`,
-      `module.exports = require('${new Array(entrypoint.depth).fill(
-        '../',
-      )}/dist/${entrypoint.dir}/${entrypoint.name}');\n`,
-    );
-    fs.writeFileSync(
-      `${pkgDir}/${entrypoint.dir}/${entrypoint.name}/index.js`,
-      `module.exports = require('${distTarget}');\n`,
-    );
-    fs.writeFileSync(
-      `${pkgDir}/${entrypoint.dir}/${entrypoint.name}/index.d.ts`,
-      `export * from '${distTarget}';\n`,
-    );
+// create directories on the way if they dont exist
+function writeFileSyncRecursive(filePath: string, content: string) {
+  const dir = path.dirname(filePath);
+  if (!fs.existsSync(dir)) {
+    fs.mkdirSync(dir, { recursive: true });
   }
-  fs.writeFileSync(
-    `${pkgDir}/rollup.config.js`,
-    `
-import { getRollupConfig } from '../../scripts/rollup';
+  fs.writeFileSync(filePath, content);
+}
 
-const config = getRollupConfig({
-  input: [
-    'src/index.ts',
-    ${keys.map((v) => `'src/${v}.ts'`).join(',\n    ')},
-  ],
-});
+// ACTUAL SCRIPT
 
-export default config;
-`.trimStart(),
-  );
+for (const pkg of PACKAGES) {
+  const pkgRoot = path.resolve(packagesDir, pkg);
+  const inputs = INPUTS[pkg];
+
+  // set some defaults for the package.json
+  const pkgJson = fs.readJsonSync(
+    path.resolve(pkgRoot, 'package.json'),
+  ) as PackageJson;
+  pkgJson.files = ['dist', 'src', 'README.md'];
+  pkgJson.exports = {
+    '.': {
+      import: './dist/index.mjs',
+      require: './dist/index.js',
+      default: './dist/index.js',
+    },
+  };
+
+  /** Parse the inputs to get the user-import-paths, e.g.
+   *   src/adapters/aws-lambda/index.ts -> adapters/aws-lambda
+   *   src/adapters/express.ts -> adapters/express
+   *
+   *  Also, write to the package.json exports field, e.g.
+   *   src/adapters/aws-lambda/index.ts -> exports['adapters/aws-lambda'] = { import: './dist/adapters/aws-lambda/index.mjs', ... }
+   *   src/adapters/express.ts -> exports['adapters/express'] = { import: './dist/adapters/express.mjs', ... }
+   */
+  inputs
+    .filter((i) => i !== 'src/index.ts') // index included by default above
+    .forEach((i) => {
+      // first, exclude 'src' part of the path
+      const parts = i.split('/').slice(1);
+      const pathWithoutSrc = parts.join('/');
+
+      // if filename is index.ts, importPath is path until index.ts,
+      // otherwise, importPath is the path without the fileextension
+      const importPath =
+        parts.at(-1) === 'index.ts'
+          ? parts.slice(0, -1).join('/')
+          : pathWithoutSrc.replace(/\.ts$/, '');
+
+      // write this entrypoint to the package.json exports field
+      const esm = './dist/' + pathWithoutSrc.replace(/\.ts$/, '.mjs');
+      const cjs = './dist/' + pathWithoutSrc.replace(/\.ts$/, '.js');
+      pkgJson.exports[`./${importPath}`] = {
+        import: esm,
+        require: cjs,
+        default: cjs,
+      };
+
+      // create the barrelfile, linking the declared exports to the compiled files in dist
+      const importDepth = importPath.split('/').length || 1;
+      const resolvedImport = path.join(
+        ...Array(importDepth).fill('..'),
+        'dist',
+        importPath,
+      );
+      // index.js
+      const indexFile = path.resolve(pkgRoot, importPath, 'index.js');
+      const indexFileContent = `module.exports = require('${resolvedImport}');\n`;
+      writeFileSyncRecursive(indexFile, indexFileContent);
+
+      // index.d.ts
+      const typeFile = path.resolve(pkgRoot, importPath, 'index.d.ts');
+      const typeFileContent = `export * from '${resolvedImport}';\n`;
+      writeFileSyncRecursive(typeFile, typeFileContent);
+    });
+
+  // write top-level directories to package.json 'files' field
+  Object.keys(pkgJson.exports).forEach((entrypoint) => {
+    // get the top-level directory of the entrypoint, e.g. 'adapters/aws-lambda' -> 'adapters'
+    const topLevel = entrypoint.split('/')[1];
+
+    if (!topLevel) return;
+    if (pkgJson.files.includes(topLevel)) return;
+    pkgJson.files.push(topLevel);
+  });
+
+  // write package.json
+  fs.writeJsonSync(path.resolve(pkgRoot, 'package.json'), pkgJson);
 }

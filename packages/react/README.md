@@ -23,13 +23,13 @@ Full documentation for `@trpc/react` can be found [here](https://trpc.io/docs/re
 
 ```bash
 # npm
-npm install @trpc/react react-query
+npm install @trpc/react @tanstack/react-query
 
 # Yarn
-yarn add @trpc/react react-query
+yarn add @trpc/react @tanstack/react-query
 
 # pnpm
-pnpm add @trpc/react react-query
+pnpm add @trpc/react @tanstack/react-query
 ```
 
 ## Basic Example

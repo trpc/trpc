@@ -54,17 +54,13 @@
     }
   },
   "files": [
-    "README.md",
     "dist",
-    "links",
-    "src"
+    "src",
+    "README.md",
+    "links"
   ],
   "scripts": {
-    "build": "rollup -c",
     "ts-watch": "tsc --project tsconfig.watch.json"
-  },
-  "dependencies": {
-    "@babel/runtime": "^7.9.0"
   },
   "peerDependencies": {
     "@trpc/server": "^9.12.0"
