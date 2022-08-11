@@ -7,10 +7,8 @@ import del from 'rollup-plugin-delete';
 import multiInput from 'rollup-plugin-multi-input';
 import externals from 'rollup-plugin-node-externals';
 import { swc } from 'rollup-plugin-swc3';
-import { terser } from 'rollup-plugin-terser';
 
 const isWatchMode = process.argv.includes('--watch');
-const isProd = process.env.NODE_ENV === 'production';
 const extensions = ['.ts', '.tsx'];
 
 // Exporting this for generating barrel-files in scripts/entrypoints.ts
@@ -113,14 +111,12 @@ function lib({ input, packageDir }: Options): RollupOptions {
         format: 'cjs',
         entryFileNames: '[name].js',
         chunkFileNames: '[name]-[hash].js',
-        plugins: [isProd && terser({ module: false })],
       },
       {
         dir: `${packageDir}/dist`,
         format: 'esm',
         entryFileNames: '[name].mjs',
         chunkFileNames: '[name]-[hash].mjs',
-        plugins: [isProd && terser({ module: true })],
       },
     ],
     plugins: [
