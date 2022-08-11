@@ -62,9 +62,6 @@
   "scripts": {
     "ts-watch": "tsc --project tsconfig.watch.json"
   },
-  "dependencies": {
-    "@babel/runtime": "^7.9.0"
-  },
   "peerDependencies": {
     "@trpc/server": "^9.12.0"
   },
