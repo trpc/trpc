@@ -1,23 +1,17 @@
-import { babel } from '@rollup/plugin-babel';
 import nodeResolve from '@rollup/plugin-node-resolve';
 import typescript from '@rollup/plugin-typescript';
 import path from 'path';
 import { RollupOptions } from 'rollup';
 import del from 'rollup-plugin-delete';
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-ignore - no typedefs exist for this plugin
+// @ts-expect-error no typedefs exist for this plugin
 import multiInput from 'rollup-plugin-multi-input';
 import externals from 'rollup-plugin-node-externals';
+import { swc } from 'rollup-plugin-swc3';
 import { terser } from 'rollup-plugin-terser';
 
 const isWatchMode = process.argv.includes('--watch');
 const isProd = process.env.NODE_ENV === 'production';
 const extensions = ['.ts', '.tsx'];
-
-const babelPlugin = babel({
-  babelHelpers: 'runtime',
-  extensions,
-});
 
 // Exporting this for generating barrel-files in scripts/entrypoints.ts
 export const PACKAGES = ['server', 'client', 'react', 'next'] as const;
@@ -98,6 +92,9 @@ function types({ input, packageDir }: Options): RollupOptions {
           targets: `${packageDir}/dist`,
         }),
       multiInput({ relative: path.resolve(packageDir, 'src/') }),
+      externals({
+        packagePath: path.resolve(packageDir, 'package.json'),
+      }),
       typescript({
         tsconfig: path.resolve(packageDir, 'tsconfig.build.json'),
         outDir: path.resolve(packageDir, 'dist'),
@@ -134,7 +131,12 @@ function lib({ input, packageDir }: Options): RollupOptions {
       nodeResolve({
         extensions,
       }),
-      babelPlugin,
+      swc({
+        jsc: {
+          target: 'es2020',
+          externalHelpers: true,
+        },
+      }),
     ],
   };
 }
