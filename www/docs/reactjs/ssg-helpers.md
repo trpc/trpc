@@ -32,6 +32,7 @@ The returned functions are all wrappers around react-query functions. Please che
 import { createSSGHelpers } from '@trpc/react/ssg';
 import { GetServerSidePropsContext, InferGetServerSidePropsType } from 'next';
 import { prisma } from 'server/context';
+import { createContext } from 'server/context';
 import { appRouter } from 'server/routers/_app';
 import { trpc } from 'utils/trpc';
 import superjson from 'superjson';
@@ -41,7 +42,7 @@ export async function getServerSideProps(
 ) {
   const ssg = await createSSGHelpers({
     router: appRouter,
-    ctx: {},
+    ctx: await createContext(),
     transformer: superjson,
   });
   const id = context.params?.id as string;
