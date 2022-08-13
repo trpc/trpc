@@ -53,7 +53,7 @@ export async function getServerSideProps(
    */
   await ssg.prefetchQuery('post.byId', {
     id,
-  })
+  });
 
   // Make sure to return { props: { trpcState: ssg.dehydrate() } }
   return {
