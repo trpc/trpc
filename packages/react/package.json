@@ -23,9 +23,9 @@
       "default": "./dist/index.js"
     },
     "./ssg": {
-      "import": "./dist/ssg.mjs",
-      "require": "./dist/ssg.js",
-      "default": "./dist/ssg.js"
+      "import": "./dist/ssg/index.mjs",
+      "require": "./dist/ssg/index.js",
+      "default": "./dist/ssg/index.js"
     }
   },
   "files": [
