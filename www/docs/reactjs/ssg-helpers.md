@@ -40,7 +40,7 @@ import superjson from 'superjson';
 export async function getServerSideProps(
   context: GetServerSidePropsContext<{ id: string }>,
 ) {
-  const ssg = await createSSGHelpers({
+  const ssg = createSSGHelpers({
     router: appRouter,
     ctx: await createContext(),
     transformer: superjson,
