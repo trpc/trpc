@@ -35,7 +35,7 @@ const ctx = konn()
 test('useQuery()', async () => {
   const { proxy, App } = ctx;
   function MyComponent() {
-    const query1 = proxy.greeting.useQuery(
+    const greetingQuery = proxy.greeting.useQuery(
       {
         id: '1',
       },
@@ -48,7 +48,7 @@ test('useQuery()', async () => {
       },
     );
 
-    return <pre>{JSON.stringify(query1.data ?? 'n/a', null, 4)}</pre>;
+    return <pre>{JSON.stringify(greetingQuery.data ?? 'n/a', null, 4)}</pre>;
   }
 
   const utils = render(
