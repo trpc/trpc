@@ -8,6 +8,8 @@ import React from 'react';
 import { ZodError, z } from 'zod';
 import { initTRPC } from '../../src';
 
+jest.retryTimes(3);
+
 describe('custom error formatter', () => {
   const ctx = konn()
     .beforeEach(() => {

@@ -121,20 +121,7 @@ export default setupTRPC<AppRouter>({
 
 ##### 2. Perform request without batching
 
-```tsx title='MyComponent.tsx'
-export function MyComponent() {
-  const postsQuery = proxy.posts.useQuery({
-    context: {
-      skipBatch: true,
-    },
-  });
-  return (
-    <pre>{JSON.stringify(postsQuery.data ?? null, null, 4)}</pre>
-  )
-})
-```
 
-or:
 
 ```ts title='client.ts'
 const postResult = proxy.posts.query(null, {
@@ -144,6 +131,22 @@ const postResult = proxy.posts.query(null, {
 })
 ```
 
+or:
+
+```tsx title='MyComponent.tsx'
+export function MyComponent() {
+  const postsQuery = proxy.posts.useQuery(undefined, {
+    trpc: {
+      context: {
+        skipBatch: true,
+      },
+    }
+  });
+  return (
+    <pre>{JSON.stringify(postsQuery.data ?? null, null, 4)}</pre>
+  )
+})
+```
 
 ### Creating a custom link
 

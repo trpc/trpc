@@ -6,6 +6,8 @@ import React, { useEffect, useState } from 'react';
 import { z } from 'zod';
 import { initTRPC } from '../../src/core';
 
+jest.retryTimes(3);
+
 type Post = {
   id: number;
   text: string;

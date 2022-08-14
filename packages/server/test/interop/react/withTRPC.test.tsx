@@ -115,7 +115,9 @@ describe('withTRPC()', () => {
       delete global.window;
       const { trpc, trpcClientOptions } = factory;
       const App: AppType = () => {
-        const query = trpc.useQuery(['allPosts'], { ssr: false });
+        const query = trpc.useQuery(['allPosts'], {
+          trpc: { ssr: false },
+        });
         return <>{JSON.stringify(query.data)}</>;
       };
 
@@ -156,7 +158,9 @@ describe('withTRPC()', () => {
           ],
           {
             getNextPageParam: (lastPage) => lastPage.nextCursor,
-            ssr: false,
+            trpc: {
+              ssr: false,
+            },
           },
         );
         return <>{JSON.stringify(query.data || query.error)}</>;
