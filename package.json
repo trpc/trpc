@@ -94,7 +94,7 @@
     "expect-type": "^0.13.0",
     "fs-extra": "^10.1.0",
     "jest": "^27.1.0",
-    "jsdom": "^19.0.0",
+    "jsdom": "^20.0.0",
     "lerna": "^4.0.0",
     "playwright": "^1.19.1",
     "prettier": "^2.5.1",
