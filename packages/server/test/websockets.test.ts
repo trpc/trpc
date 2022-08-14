@@ -15,6 +15,8 @@ import { TRPCError } from '../src';
 import { TRPCRequest, TRPCResult } from '../src/rpc';
 import { applyWSSHandler } from '../src/ws';
 
+jest.retryTimes(3);
+
 type Message = {
   id: string;
 };
