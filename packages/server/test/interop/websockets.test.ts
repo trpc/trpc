@@ -14,6 +14,8 @@ import { applyWSSHandler } from '../../src/adapters/ws';
 import { Observer, observable } from '../../src/observable';
 import { TRPCClientOutgoingMessage, TRPCRequestMessage } from '../../src/rpc';
 
+jest.retryTimes(3);
+
 type Message = {
   id: string;
 };
