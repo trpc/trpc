@@ -32,10 +32,6 @@ type CancellablePromise<T = unknown> = Promise<T> & {
   cancel: CancelFn;
 };
 
-let idCounter = 0;
-function getRequestId() {
-  return ++idCounter;
-}
 interface CreateTRPCClientBaseOptions {
   /**
    * Add ponyfill for fetch
@@ -116,10 +112,15 @@ export type AssertLegacyDef<TRouter extends AnyRouter> =
 export class TRPCClient<TRouter extends AnyRouter> {
   private readonly links: OperationLink<TRouter>[];
   public readonly runtime: TRPCClientRuntime;
+  private requestId: number;
+  private getRequestId() {
+    return ++this.requestId;
+  }
 
   constructor(opts: CreateTRPCClientOptions<TRouter>) {
     const _fetch = getFetch(opts?.fetch);
     const AC = getAbortController(opts?.AbortController);
+    this.requestId = 0;
 
     function getHeadersFn(): TRPCClientRuntime['headers'] {
       if (opts.headers) {
@@ -173,7 +174,7 @@ export class TRPCClient<TRouter extends AnyRouter> {
     const chain$ = createChain<TRouter, TInput, TOutput>({
       links: this.links as OperationLink<any, any, any>[],
       op: {
-        id: getRequestId(),
+        id: this.getRequestId(),
         type,
         path,
         input,
