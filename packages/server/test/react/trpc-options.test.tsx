@@ -9,15 +9,13 @@ const ctx = konn()
   .beforeEach(() => {
     const t = initTRPC()();
     const appRouter = t.router({
-      post: t.router({
-        byId: t.procedure
-          .input(
-            z.object({
-              id: z.string(),
-            }),
-          )
-          .query(() => '__result' as const),
-      }),
+      greeting: t.procedure
+        .input(
+          z.object({
+            id: z.string(),
+          }),
+        )
+        .query(() => '__result' as const),
     });
 
     return getServerAndReactClient(appRouter);
@@ -30,7 +28,7 @@ const ctx = konn()
 test('useQuery()', async () => {
   const { proxy, App } = ctx;
   function MyComponent() {
-    const query1 = proxy.post.byId.useQuery(
+    const query1 = proxy.greeting.useQuery(
       {
         id: '1',
       },
@@ -57,5 +55,17 @@ test('useQuery()', async () => {
   expect(ctx.spyLink).toHaveBeenCalledTimes(1);
   const firstCall = ctx.spyLink.mock.calls[0]![0]!;
   expect(firstCall.context.foo).toBe('bar');
-  expect(firstCall).toMatchInlineSnapshot();
+  expect(firstCall).toMatchInlineSnapshot(`
+    Object {
+      "context": Object {
+        "foo": "bar",
+      },
+      "id": 1,
+      "input": Object {
+        "id": "1",
+      },
+      "path": "greeting",
+      "type": "query",
+    }
+  `);
 });
