@@ -6,6 +6,8 @@ import { render, waitFor } from '@testing-library/react';
 import { expectTypeOf } from 'expect-type';
 import React, { useState } from 'react';
 
+jest.retryTimes(3);
+
 let factory: ReturnType<typeof createLegacyAppRouter>;
 beforeEach(() => {
   factory = createLegacyAppRouter();
@@ -44,8 +46,8 @@ describe('useQuery()', () => {
     const { trpc, client, linkSpy } = factory;
     function MyComponent() {
       const allPostsQuery = trpc.useQuery(['allPosts'], {
-        requestContext: {
-          test: '1',
+        trpc: {
+          context: { test: '1' },
         },
       });
       expectTypeOf(allPostsQuery.data!).toMatchTypeOf<Post[]>();

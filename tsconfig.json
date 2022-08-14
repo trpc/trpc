@@ -1,6 +1,6 @@
 {
   "extends": "./tsconfig.build.json",
-  "include": ["packages", "types", "scripts", "examples"],
+  "include": ["packages", "types", "scripts", "examples", "rollup.config.ts"],
   "compilerOptions": {
     "allowJs": false,
     "baseUrl": ".",
@@ -11,6 +11,12 @@
       "@trpc/client": ["packages/client/src"],
       "@trpc/next": ["packages/next/src"],
       "$test/*": ["test/*"]
+    }
+  },
+  "ts-node": {
+    "swc": true,
+    "compilerOptions": {
+      "module": "commonjs"
     }
   }
 }

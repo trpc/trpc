@@ -5,19 +5,12 @@ sidebar_label: SSG Helpers
 slug: /ssg-helpers
 ---
 
-`createSSGHelpers` providers you a set of helper functions that you can use to prefetch queries on the server.
+`createProxySSGHelpers` providers you a set of helper functions that you can use to prefetch queries on the server.
 
 ```ts
-import { createSSGHelpers } from '@trpc/react/ssg';
+import { createProxySSGHelpers } from '@trpc/react/ssg';
 
-const {
-  prefetchQuery,
-  prefetchInfiniteQuery,
-  fetchQuery,
-  fetchInfiniteQuery,
-  dehydrate,
-  queryClient,
-} = await createSSGHelpers({
+const ssg = await createProxySSGHelpers({
   router: appRouter,
   ctx: createContext,
   transformer: superjson, // optional - adds superjson serialization
@@ -29,7 +22,7 @@ The returned functions are all wrappers around react-query functions. Please che
 ## Next.js Example
 
 ```ts title='pages/posts/[id].tsx'
-import { createSSGHelpers } from '@trpc/react/ssg';
+import { createProxySSGHelpers } from '@trpc/react/ssg';
 import { GetServerSidePropsContext, InferGetServerSidePropsType } from 'next';
 import { prisma } from 'server/context';
 import { appRouter } from 'server/routers/_app';
@@ -39,7 +32,7 @@ import superjson from 'superjson';
 export async function getServerSideProps(
   context: GetServerSidePropsContext<{ id: string }>,
 ) {
-  const ssg = await createSSGHelpers({
+  const ssg = await createProxySSGHelpers({
     router: appRouter,
     ctx: {},
     transformer: superjson,
@@ -47,9 +40,7 @@ export async function getServerSideProps(
   const id = context.params?.id as string;
 
   // Prefetch `post.byId`
-  await ssg.fetchQuery('post.byId', {
-    id,
-  });
+  await ssg.post.ById.fetch({ id });
 
   // Make sure to return { props: { trpcState: ssg.dehydrate() } }
   return {

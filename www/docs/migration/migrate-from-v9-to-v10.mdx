@@ -30,7 +30,7 @@ The way the `t` variable is defined is simply like this:
 import { initTRPC } from '@trpc/server';
 
 // Beware of the double `()()`
-export t = initTRPC()();
+export const t = initTRPC()();
 ```
 
 Here's a full example of how the `t` variable may look like:
@@ -77,22 +77,19 @@ export const t = initTRPC<{ ctx: Context; meta: Meta }>()({
 
 ```ts
 // OLD:
-const appRouter = trpc
-  .router()
-  .query('greeting', {
-    input: z.string(),
-    resolve({input}) {
-      return `hello ${input}!`
-    }
-  })
+const appRouter = trpc.router().query('greeting', {
+  input: z.string(),
+  resolve({ input }) {
+    return `hello ${input}!`;
+  },
+});
 
 // NEW:
 const appRouter = t.router({
-  greeting: t
-    .procedure
+  greeting: t.procedure
     .input(z.string())
-    .query(({ input }) => `hello ${input}!`)
-})
+    .query(({ input }) => `hello ${input}!`),
+});
 ```
 
 ### Calling procedures
@@ -113,43 +110,43 @@ trpc.greeting.useQuery('KATT');
 // OLD
 const appRouter = trpc
   .router()
-  .middleware(({next, ctx}) => {
+  .middleware(({ next, ctx }) => {
     if (!ctx.user) {
-      throw new TRPCError({ code: "UNAUTHORIZED" })
+      throw new TRPCError({ code: 'UNAUTHORIZED' });
     }
 
     return next({
       ctx: {
         ...ctx,
         user: ctx.user,
-      }
-    })
+      },
+    });
   })
   .query('greeting', {
-    resolve({input}) {
-      return `hello ${ctx.user.name}!`
-    }
-  })
+    resolve({ input }) {
+      return `hello ${ctx.user.name}!`;
+    },
+  });
 
 // NEW
-const isAuthed = t.middleware(({next, ctx}) => {
+const isAuthed = t.middleware(({ next, ctx }) => {
   if (!ctx.user) {
-    throw new TRPCError({ code: "UNAUTHORIZED" })
+    throw new TRPCError({ code: 'UNAUTHORIZED' });
   }
 
   return next({
     ctx: {
       user: ctx.user,
-    }
-  })
-})
+    },
+  });
+});
 
 // Reusable:
-const authedProcedure = t.procedure.use(isAuthed)
+const authedProcedure = t.procedure.use(isAuthed);
 
 const appRouter = t.router({
-  greeting: authedProcedure.query(({ ctx }) => `hello ${ctx.name}!`)
-})
+  greeting: authedProcedure.query(({ ctx }) => `hello ${ctx.name}!`),
+});
 ```
 
 ## Migration path for the 95%
@@ -217,6 +214,39 @@ export const appRouter = t.merge(legacyRouter, greetingRouter);
 ### Custom [Links](/docs/links)
 
 🚧
+
+### React-specific
+
+#### Upgrade of `react-query`
+
+We've upgraded `peerDependencies` from `react-query@^3` to `@tanstack/react-query@^4`, [see their migration guide](https://tanstack.com/query/v4/docs/guides/migrating-to-react-query-4).
+
+#### tRPC-specific options on hooks moved to `trpc`
+
+In order to avoid mix-up with the built-in react-query properties, we have moved all of the tRPC-specific options to under a property called `trpc`.
+
+```tsx
+// Before
+useQuery(['post.byId', '1'], {
+  context: {
+    batching: false,
+  },
+});
+// After:
+useQuery(['post.byId', '1'], {
+  trpc: {
+    context: {
+      batching: false,
+    },
+  },
+});
+// or:
+trpc.post.byId.useQuery('1', {
+  trpc: {
+    batching: false,
+  },
+});
+```
 
 ## Optional DX improvements
 

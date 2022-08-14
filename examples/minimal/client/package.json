@@ -3,6 +3,6 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
-    "@trpc/client": "^10.0.0-alpha.45"
+    "@trpc/client": "^10.0.0-alpha.46"
   }
 }

@@ -207,8 +207,8 @@ describe('useMutation()', () => {
 
     function MyComponent() {
       const deletePostsMutation = trpc.useMutation(['deletePosts'], {
-        requestContext: {
-          test: '1',
+        trpc: {
+          context: { test: '1' },
         },
       });
 

@@ -32,10 +32,6 @@ type CancellablePromise<T = unknown> = Promise<T> & {
   cancel: CancelFn;
 };
 
-let idCounter = 0;
-function getRequestId() {
-  return ++idCounter;
-}
 interface CreateTRPCClientBaseOptions {
   /**
    * Add ponyfill for fetch
@@ -79,7 +75,7 @@ export interface TRPCRequestOptions {
   /**
    * Pass additional context to links
    */
-  requestContext?: OperationContext;
+  context?: OperationContext;
 }
 
 export interface TRPCSubscriptionObserver<TValue, TError> {
@@ -114,10 +110,15 @@ export type AssertLegacyDef<TRouter extends AnyRouter> =
 export class TRPCClient<TRouter extends AnyRouter> {
   private readonly links: OperationLink<TRouter>[];
   public readonly runtime: TRPCClientRuntime;
+  private requestId: number;
+  private getRequestId() {
+    return ++this.requestId;
+  }
 
   constructor(opts: CreateTRPCClientOptions<TRouter>) {
     const _fetch = getFetch(opts?.fetch);
     const AC = getAbortController(opts?.AbortController);
+    this.requestId = 0;
 
     function getHeadersFn(): TRPCClientRuntime['headers'] {
       if (opts.headers) {
@@ -171,7 +172,7 @@ export class TRPCClient<TRouter extends AnyRouter> {
     const chain$ = createChain<TRouter, TInput, TOutput>({
       links: this.links as OperationLink<any, any, any>[],
       op: {
-        id: getRequestId(),
+        id: this.getRequestId(),
         type,
         path,
         input,
@@ -215,7 +216,7 @@ export class TRPCClient<TRouter extends AnyRouter> {
       TRPCRequestOptions?,
     ]
   ) {
-    const context = (args[1] as TRPCRequestOptions | undefined)?.requestContext;
+    const context = (args[1] as TRPCRequestOptions | undefined)?.context;
     return this.requestAsPromise<
       inferHandlerInput<AssertType<TQueries, ProcedureRecord>[TPath]>,
       inferProcedureOutput<TQueries[TPath]>
@@ -236,7 +237,7 @@ export class TRPCClient<TRouter extends AnyRouter> {
       TRPCRequestOptions?,
     ]
   ) {
-    const context = (args[1] as TRPCRequestOptions | undefined)?.requestContext;
+    const context = (args[1] as TRPCRequestOptions | undefined)?.context;
     return this.requestAsPromise<
       inferHandlerInput<AssertType<TMutations, ProcedureRecord>[TPath]>,
       inferProcedureOutput<TMutations[TPath]>
@@ -264,7 +265,7 @@ export class TRPCClient<TRouter extends AnyRouter> {
       type: 'subscription',
       path,
       input,
-      context: opts.requestContext,
+      context: opts?.context,
     });
     return observable$.subscribe({
       next(envelope) {

@@ -1,6 +1,6 @@
 {
   "name": "@trpc/react",
-  "version": "10.0.0-alpha.45",
+  "version": "10.0.0-alpha.46",
   "description": "tRPC React lib",
   "author": "KATT",
   "license": "MIT",
@@ -11,7 +11,6 @@
     "directory": "packages/react"
   },
   "scripts": {
-    "build": "rollup -c",
     "ts-watch": "tsc --project tsconfig.watch.json"
   },
   "main": "dist/index.js",
@@ -24,16 +23,16 @@
       "default": "./dist/index.js"
     },
     "./ssg": {
-      "import": "./dist/ssg.mjs",
-      "require": "./dist/ssg.js",
-      "default": "./dist/ssg.js"
+      "import": "./dist/ssg/index.mjs",
+      "require": "./dist/ssg/index.js",
+      "default": "./dist/ssg/index.js"
     }
   },
   "files": [
-    "README.md",
     "dist",
-    "ssg",
-    "src"
+    "src",
+    "README.md",
+    "ssg"
   ],
   "eslintConfig": {
     "rules": {
@@ -51,13 +50,10 @@
     "react": ">=16.8.0",
     "react-dom": ">=16.8.0"
   },
-  "dependencies": {
-    "@babel/runtime": "^7.9.0"
-  },
   "devDependencies": {
     "@tanstack/react-query": "^4.0.10",
-    "@trpc/client": "^10.0.0-alpha.45",
-    "@trpc/server": "^10.0.0-alpha.45",
+    "@trpc/client": "^10.0.0-alpha.46",
+    "@trpc/server": "^10.0.0-alpha.46",
     "@types/express": "^4.17.12",
     "express": "^4.17.1",
     "next": "^12.1.6",
