@@ -21,7 +21,7 @@ export const t = initTRPC<{ ctx: Context }>()({
       data: {
         ...shape.data,
         zodError:
-          error.code === 'BAD_USER_INPUT' &&
+          error.code === 'BAD_REQUEST' &&
           error.cause instanceof ZodError
             ? error.cause.flatten()
             : null,
