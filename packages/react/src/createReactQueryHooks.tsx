@@ -55,6 +55,9 @@ export interface TPCReactRequestOptions extends TRPCRequestOptions {
 }
 
 export interface TRPCUseQueryBaseOptions {
+  /**
+   * tRPC-related options
+   */
   trpc?: TPCReactRequestOptions;
 }
 
