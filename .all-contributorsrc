@@ -1067,6 +1067,15 @@
       "contributions": [
         "financial"
       ]
+    },
+    {
+      "login": "gioboa",
+      "name": "Giorgio Boa",
+      "avatar_url": "https://avatars.githubusercontent.com/u/35845425?v=4",
+      "profile": "https://it.linkedin.com/in/giorgio-boa",
+      "contributions": [
+        "doc"
+      ]
     }
   ],
   "skipCi": true
