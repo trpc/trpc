@@ -1,5 +1,4 @@
 import nodeResolve from '@rollup/plugin-node-resolve';
-import typescript from '@rollup/plugin-typescript';
 import path from 'path';
 import { RollupOptions } from 'rollup';
 import del from 'rollup-plugin-delete';
@@ -7,6 +6,7 @@ import del from 'rollup-plugin-delete';
 import multiInput from 'rollup-plugin-multi-input';
 import externals from 'rollup-plugin-node-externals';
 import { swc } from 'rollup-plugin-swc3';
+import typescript from 'rollup-plugin-typescript2';
 
 const isWatchMode = process.argv.includes('--watch');
 const extensions = ['.ts', '.tsx'];
@@ -38,7 +38,7 @@ export const INPUTS: Record<typeof PACKAGES[number], string[]> = {
     'src/links/loggerLink.ts',
     'src/links/wsLink.ts',
   ],
-  react: ['src/index.ts', 'src/ssg.ts'],
+  react: ['src/index.ts', 'src/ssg/index.ts'],
   next: ['src/index.ts'],
 };
 
@@ -95,8 +95,8 @@ function types({ input, packageDir }: Options): RollupOptions {
       }),
       typescript({
         tsconfig: path.resolve(packageDir, 'tsconfig.build.json'),
-        outDir: path.resolve(packageDir, 'dist'),
-        noEmitOnError: !isWatchMode,
+        tsconfigOverride: { emitDeclarationOnly: true },
+        abortOnError: !isWatchMode,
       }),
     ],
   };
