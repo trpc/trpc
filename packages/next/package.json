@@ -10,9 +10,6 @@
     "url": "git+https://github.com/trpc/trpc.git",
     "directory": "packages/next"
   },
-  "scripts": {
-    "build": "rollup -c"
-  },
   "main": "dist/index.js",
   "module": "dist/index.mjs",
   "typings": "dist/index.d.ts",
@@ -24,9 +21,9 @@
     }
   },
   "files": [
-    "README.md",
     "dist",
-    "src"
+    "src",
+    "README.md"
   ],
   "eslintConfig": {
     "rules": {
@@ -47,7 +44,6 @@
     "react-dom": ">=16.8.0"
   },
   "dependencies": {
-    "@babel/runtime": "^7.9.0",
     "react-ssr-prepass": "^1.5.0"
   },
   "devDependencies": {

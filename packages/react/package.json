@@ -11,7 +11,6 @@
     "directory": "packages/react"
   },
   "scripts": {
-    "build": "rollup -c",
     "ts-watch": "tsc --project tsconfig.watch.json"
   },
   "main": "dist/index.js",
@@ -24,16 +23,16 @@
       "default": "./dist/index.js"
     },
     "./ssg": {
-      "import": "./dist/ssg.mjs",
-      "require": "./dist/ssg.js",
-      "default": "./dist/ssg.js"
+      "import": "./dist/ssg/index.mjs",
+      "require": "./dist/ssg/index.js",
+      "default": "./dist/ssg/index.js"
     }
   },
   "files": [
-    "README.md",
     "dist",
-    "ssg",
-    "src"
+    "src",
+    "README.md",
+    "ssg"
   ],
   "eslintConfig": {
     "rules": {
@@ -50,9 +49,6 @@
     "@trpc/server": "^9.12.0",
     "react": ">=16.8.0",
     "react-dom": ">=16.8.0"
-  },
-  "dependencies": {
-    "@babel/runtime": "^7.9.0"
   },
   "devDependencies": {
     "@tanstack/react-query": "^4.0.10",

@@ -28,7 +28,7 @@ import { trpc } from 'utils/trpc';
 export async function getStaticProps(
   context: GetStaticPropsContext<{ id: string }>,
 ) {
-  const ssg = await createSSGHelpers({
+  const ssg = await createProxySSGHelpers({
     router: appRouter,
     ctx: {},
     transformer: superjson, // optional - adds superjson serialization
@@ -36,9 +36,7 @@ export async function getStaticProps(
   const id = context.params?.id as string;
 
   // prefetch `post.byId`
-  await ssg.fetchQuery('post.byId', {
-    id,
-  });
+  await ssg.post.byId.fetch({ id });
 
   return {
     props: {
