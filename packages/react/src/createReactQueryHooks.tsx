@@ -47,7 +47,7 @@ export type OutputWithCursor<TData, TCursor extends any = any> = {
   data: TData;
 };
 
-export interface TPCReactRequestOptions extends TRPCRequestOptions {
+export interface TRPCReactRequestOptions extends TRPCRequestOptions {
   /**
    * Opt out of SSR for this query by passing `ssr: false`
    */
@@ -58,7 +58,7 @@ export interface TRPCUseQueryBaseOptions {
   /**
    * tRPC-related options
    */
-  trpc?: TPCReactRequestOptions;
+  trpc?: TRPCReactRequestOptions;
 }
 
 export type { TRPCContext, TRPCContextState } from './internals/context';
