@@ -47,11 +47,15 @@ export type OutputWithCursor<TData, TCursor extends any = any> = {
   data: TData;
 };
 
-export interface TRPCUseQueryBaseOptions extends TRPCRequestOptions {
+export interface TPCReactRequestOptions extends TRPCRequestOptions {
   /**
    * Opt out of SSR for this query by passing `ssr: false`
    */
   ssr?: boolean;
+}
+
+export interface TRPCUseQueryBaseOptions {
+  trpc?: TPCReactRequestOptions;
 }
 
 export type { TRPCContext, TRPCContextState } from './internals/context';
@@ -90,7 +94,7 @@ function getClientArgs<TPathAndInput extends unknown[], TOptions>(
   opts: TOptions,
 ) {
   const [path, input] = pathAndInput;
-  return [path, input, opts] as const;
+  return [path, input, (opts as any)?.trpc] as const;
 }
 
 type inferInfiniteQueryNames<TObj extends ProcedureRecord> = {
@@ -307,7 +311,7 @@ export function createReactQueryHooks<
     if (
       typeof window === 'undefined' &&
       ssrState === 'prepass' &&
-      opts?.ssr !== false &&
+      opts?.trpc?.ssr !== false &&
       opts?.enabled !== false &&
       !queryClient.getQueryCache().find(pathAndInput)
     ) {
@@ -343,7 +347,10 @@ export function createReactQueryHooks<
 
     return __useMutation((input) => {
       const actualPath = Array.isArray(path) ? path[0] : path;
-      return (client.mutation as any)(actualPath, input, opts);
+
+      return (client.mutation as any)(
+        ...getClientArgs([actualPath, input], opts),
+      );
     }, opts);
   }
 
@@ -425,7 +432,7 @@ export function createReactQueryHooks<
     if (
       typeof window === 'undefined' &&
       ssrState === 'prepass' &&
-      opts?.ssr !== false &&
+      opts?.trpc?.ssr !== false &&
       opts?.enabled !== false &&
       !queryClient.getQueryCache().find(pathAndInput)
     ) {
