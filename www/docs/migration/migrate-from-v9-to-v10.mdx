@@ -30,7 +30,7 @@ The way the `t` variable is defined is simply like this:
 import { initTRPC } from '@trpc/server';
 
 // Beware of the double `()()`
-export t = initTRPC()();
+export const t = initTRPC()();
 ```
 
 Here's a full example of how the `t` variable may look like:
