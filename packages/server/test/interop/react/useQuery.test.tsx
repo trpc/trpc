@@ -6,6 +6,8 @@ import { render, waitFor } from '@testing-library/react';
 import { expectTypeOf } from 'expect-type';
 import React, { useState } from 'react';
 
+jest.retryTimes(3);
+
 let factory: ReturnType<typeof createLegacyAppRouter>;
 beforeEach(() => {
   factory = createLegacyAppRouter();
