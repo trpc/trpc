@@ -1,4 +1,4 @@
-import { AnyRouter, ProcedureType, inferRouterDef } from '../../core';
+import { AnyRouter, ProcedureTypeOrUnknown, inferRouterDef } from '../../core';
 import { TRPCError } from '../../error/TRPCError';
 import { BaseHandlerOptions } from '../../internals/types';
 import { TRPCResponse } from '../../rpc';
@@ -30,7 +30,7 @@ export type ResponseMetaFn<TRouter extends AnyRouter> = (opts: {
    * The different tRPC paths requested
    **/
   paths?: string[];
-  type: ProcedureType | 'unknown';
+  type: ProcedureTypeOrUnknown;
   errors: TRPCError[];
 }) => ResponseMeta;
 

@@ -1,5 +1,5 @@
 import { inferRouterDef } from '../core';
-import { ProcedureType } from '../core';
+import { ProcedureTypeOrUnknown } from '../core';
 import { AnyRouter } from '../core/router';
 import { TRPCError } from '../error/TRPCError';
 
@@ -16,7 +16,7 @@ export interface BaseHandlerOptions<TRouter extends AnyRouter, TRequest> {
 
 export type OnErrorFunction<TRouter extends AnyRouter, TRequest> = (opts: {
   error: TRPCError;
-  type: ProcedureType | 'unknown';
+  type: ProcedureTypeOrUnknown;
   path: string | undefined;
   req: TRequest;
   input: unknown;

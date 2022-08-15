@@ -1,4 +1,4 @@
-import { inferProcedureOutput } from '.';
+import { ProcedureTypeOrUnknown, inferProcedureOutput } from '.';
 import { Filter } from '..';
 import { TRPCError } from '../error/TRPCError';
 import {
@@ -154,7 +154,7 @@ export interface Router<TDef extends AnyRouterDef> {
   // FIXME rename me and deprecate
   getErrorShape(opts: {
     error: TRPCError;
-    type: ProcedureType | 'unknown';
+    type: ProcedureTypeOrUnknown;
     path: string | undefined;
     input: unknown;
     ctx: undefined | TDef['_ctx'];
