@@ -1,4 +1,4 @@
-import { AnyRouter, DataTransformer } from '@trpc/server';
+import { AnyRouter, DataTransformer, ProcedureType } from '@trpc/server';
 import { Observable, Observer } from '@trpc/server/observable';
 import { TRPCResultMessage, TRPCSuccessResponse } from '@trpc/server/rpc';
 import { TRPCClientError } from '../TRPCClientError';
@@ -13,7 +13,7 @@ export type PromiseAndCancel<TValue> = {
 export type OperationContext = Record<string, unknown>;
 export type Operation<TInput = unknown> = {
   id: number;
-  type: 'query' | 'mutation' | 'subscription';
+  type: ProcedureType;
   input: TInput;
   path: string;
   context: OperationContext;
@@ -30,11 +30,14 @@ export type TRPCFetch = (
   options?: RequestInit,
 ) => Promise<Response>;
 
+export type ProcedureTypeSwitch = (op: { path: string }) => ProcedureType;
+
 export interface TRPCClientRuntime {
   fetch: TRPCFetch;
   AbortController?: typeof AbortController;
   headers: () => HTTPHeaders | Promise<HTTPHeaders>;
   transformer: DataTransformer;
+  operationTypeSwitch: ProcedureTypeSwitch;
 }
 
 export interface OperationResultEnvelope<TOutput> {

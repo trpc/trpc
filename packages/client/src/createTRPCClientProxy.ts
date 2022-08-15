@@ -48,15 +48,27 @@ type SubscriptionResolver<
 type DecorateProcedure<
   TProcedure extends Procedure<any>,
   TRouter extends AnyRouter,
-> = OmitNeverKeys<{
-  query: TProcedure extends { _query: true } ? Resolver<TProcedure> : never;
+> = Resolver<TProcedure> &
+  OmitNeverKeys<{
+    /**
+     * @deprecated
+     */
+    query: TProcedure extends { _query: true } ? Resolver<TProcedure> : never;
 
-  mutate: TProcedure extends { _mutation: true } ? Resolver<TProcedure> : never;
+    /**
+     * @deprecated
+     */
+    mutate: TProcedure extends { _mutation: true }
+      ? Resolver<TProcedure>
+      : never;
 
-  subscribe: TProcedure extends { _subscription: true }
-    ? SubscriptionResolver<TProcedure, TRouter>
-    : never;
-}>;
+    /**
+     * @deprecated
+     */
+    subscribe: TProcedure extends { _subscription: true }
+      ? SubscriptionResolver<TProcedure, TRouter>
+      : never;
+  }>;
 
 type assertProcedure<T> = T extends Procedure<any> ? T : never;
 
@@ -95,11 +107,23 @@ export function createTRPCClientProxy<TRouter extends AnyRouter>(
 ) {
   const proxy = createProxy(({ path, args }) => {
     const pathCopy = [...path];
-    const clientCallType = pathCopy.pop()! as keyof DecorateProcedure<any, any>;
-    const procedureType = clientCallTypeMap[clientCallType];
+    const lastPart = path[pathCopy.length - 1];
 
-    const fullPath = pathCopy.join('.');
-    return (client as any)[procedureType](fullPath, ...args);
+    // FIXME remove me
+    if (['query', 'mutate', 'subscribe'].includes(lastPart as string)) {
+      const clientCallType = pathCopy.pop()! as keyof DecorateProcedure<
+        any,
+        any
+      >;
+      const procedureType = clientCallTypeMap[clientCallType];
+      const fullPath = pathCopy.join('.');
+      return (client as any)[procedureType](fullPath, ...args);
+    }
+    return client.procedureCall({
+      path: pathCopy.join('.'),
+      input: args[0],
+      context: (args[1] as any)?.context,
+    });
   });
   return proxy as DecoratedProcedureRecord<TRouter['_def']['record'], TRouter>;
 }

@@ -15,6 +15,7 @@ import {
   loggerLink,
   retryLink,
 } from '../../../client/src';
+import { defaultProcedureTypeSwitch } from '../../../client/src/internals/defaultProcedureTypeSwitch';
 import * as trpc from '../../src';
 import { AnyRouter } from '../../src';
 import { observable, observableToPromise } from '../../src/observable';
@@ -27,6 +28,7 @@ const mockRuntime: TRPCClientRuntime = {
     serialize: (v) => v,
     deserialize: (v) => v,
   },
+  operationTypeSwitch: defaultProcedureTypeSwitch,
 };
 test('chainer', async () => {
   let attempt = 0;

@@ -73,7 +73,7 @@ test('very happy path', async () => {
     expectTypeOf<TError['data']['foo']>().toMatchTypeOf<'bar'>();
   }
   const { proxy, close } = routerToServerAndClientNew(router);
-  expect(await proxy.greeting.query('KATT')).toBe('hello KATT');
+  expect(await proxy.greeting('KATT')).toBe('hello KATT');
   close();
 });
 
@@ -97,7 +97,7 @@ test('middleware', async () => {
       .query(({ ctx }) => `${ctx.prefix} ${ctx.user}`),
   });
   const { proxy, close } = routerToServerAndClientNew(router);
-  expect(await proxy.greeting.query()).toBe('hello KATT');
+  expect(await proxy.greeting()).toBe('hello KATT');
   close();
 });
 
@@ -108,7 +108,7 @@ test('sad path', async () => {
   const { proxy, close } = routerToServerAndClientNew(router);
 
   // @ts-expect-error this procedure does not exist
-  const result = await waitError(proxy.not.found.query(), TRPCClientError);
+  const result = await waitError(proxy.not.found(), TRPCClientError);
   expect(result).toMatchInlineSnapshot(
     `[TRPCClientError: No "query"-procedure on path "not.found"]`,
   );
@@ -117,12 +117,12 @@ test('sad path', async () => {
 
 test('call a mutation as a query', async () => {
   const router = t.router({
-    hello: procedure.query(() => 'world'),
+    editWorld: procedure.query(() => 'world'),
   });
   const { proxy, close } = routerToServerAndClientNew(router);
 
-  await expect((proxy.hello as any).mutate()).rejects.toMatchInlineSnapshot(
-    `[TRPCClientError: No "mutation"-procedure on path "hello"]`,
+  await expect((proxy.editWorld as any)()).rejects.toMatchInlineSnapshot(
+    `[TRPCClientError: No "mutation"-procedure on path "editWorld"]`,
   );
 
   close();

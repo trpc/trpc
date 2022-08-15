@@ -7,14 +7,14 @@ import {
   inferProcedureOutput,
   inferSubscriptionOutput,
 } from '@trpc/server';
-import { ProcedureRecord } from '@trpc/server';
+import { ProcedureRecord, ProcedureType } from '@trpc/server';
 import {
   Unsubscribable,
   inferObservableValue,
   observableToPromise,
   share,
 } from '@trpc/server/observable';
-import { CancelFn } from '..';
+import { CancelFn, ProcedureTypeSwitch } from '..';
 import { TRPCClientError } from '../TRPCClientError';
 import { getFetch } from '../getFetch';
 import { httpBatchLink } from '../links';
@@ -26,6 +26,7 @@ import {
   TRPCClientRuntime,
   TRPCLink,
 } from '../links/types';
+import { defaultProcedureTypeSwitch } from './defaultProcedureTypeSwitch';
 import { getAbortController } from './fetchHelpers';
 
 type CancellablePromise<T = unknown> = Promise<T> & {
@@ -50,6 +51,11 @@ interface CreateTRPCClientBaseOptions {
    * @link https://trpc.io/docs/data-transformers
    **/
   transformer?: ClientDataTransformerOptions;
+
+  /**
+   * Decide if this operation is a subscription, query, or mutation
+   */
+  operationTypeSwitch?: ProcedureTypeSwitch;
 }
 
 /** @internal */
@@ -70,7 +76,6 @@ export interface CreateTRPCClientWithLinksOptions<TRouter extends AnyRouter>
   links: TRPCLink<TRouter>[];
 }
 
-type TRPCType = 'subscription' | 'query' | 'mutation';
 export interface TRPCRequestOptions {
   /**
    * Pass additional context to links
@@ -145,6 +150,8 @@ export class TRPCClient<TRouter extends AnyRouter> {
       fetch: _fetch,
       headers: getHeadersFn(),
       transformer,
+      operationTypeSwitch:
+        opts.operationTypeSwitch ?? defaultProcedureTypeSwitch,
     };
 
     if ('links' in opts) {
@@ -164,7 +171,7 @@ export class TRPCClient<TRouter extends AnyRouter> {
     path,
     context = {},
   }: {
-    type: TRPCType;
+    type: ProcedureType;
     input: TInput;
     path: string;
     context?: OperationContext;
@@ -182,7 +189,7 @@ export class TRPCClient<TRouter extends AnyRouter> {
     return chain$.pipe(share());
   }
   private requestAsPromise<TInput = unknown, TOutput = unknown>(opts: {
-    type: TRPCType;
+    type: ProcedureType;
     input: TInput;
     path: string;
     context?: OperationContext;
@@ -246,6 +253,20 @@ export class TRPCClient<TRouter extends AnyRouter> {
       path,
       input: args[0] as any,
       context,
+    });
+  }
+
+  public procedureCall(opts: {
+    path: string;
+    input: unknown;
+    context: unknown;
+  }) {
+    const type = this.runtime.operationTypeSwitch(opts);
+    return this.requestAsPromise({
+      type,
+      path: opts.path as any,
+      input: opts.input,
+      context: opts.context as any,
     });
   }
   public subscription<
