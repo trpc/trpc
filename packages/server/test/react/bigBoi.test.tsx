@@ -19,19 +19,19 @@ test('vanilla', async () => {
   const { proxy } = opts;
 
   {
-    const result = await proxy.r0.greeting.query({ who: 'KATT' });
+    const result = await proxy.r0.greeting({ who: 'KATT' });
 
     expect(result).toBe('hello KATT');
     expectTypeOf(result).not.toBeAny();
     expectTypeOf(result).toMatchTypeOf<string>();
   }
   {
-    const result = await proxy.r10.grandchild.grandChildMutation.mutate();
+    const result = await proxy.r10.grandchild.grandChildMutation();
     expect(result).toBe('grandChildMutation');
   }
 
   {
-    const result = await proxy.r499.greeting.query({ who: 'KATT' });
+    const result = await proxy.r499.greeting({ who: 'KATT' });
 
     expect(result).toBe('hello KATT');
     expectTypeOf(result).not.toBeAny();

@@ -46,7 +46,7 @@ const ctx = konn()
     const combined = t.procedure.unstable_concat(proc1).unstable_concat(proc2);
 
     const appRouter = t.router({
-      getContext: combined.mutation(({ ctx }) => {
+      getContext: combined.query(({ ctx }) => {
         return ctx;
       }),
     });
@@ -74,7 +74,7 @@ const ctx = konn()
   .done();
 
 test('decorate independently', async () => {
-  const result = await ctx.proxy.getContext.mutate();
+  const result = await ctx.proxy.getContext();
   // This is correct
   expect(result).toEqual({
     user: mockUser,

@@ -184,7 +184,7 @@ test('subscriptions', async () => {
     }),
   });
 
-  const subscription = proxy.onEvent.subscribe(10, {
+  const subscription = proxy.onEvent(10, {
     onStarted: onStartedMock,
     onData: onDataMock,
     onComplete: onCompleteMock,

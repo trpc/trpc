@@ -256,17 +256,20 @@ export class TRPCClient<TRouter extends AnyRouter> {
     });
   }
 
-  public procedureCall(opts: {
+  public procedureCall(params: {
     path: string;
     input: unknown;
-    context: unknown;
+    opts: unknown;
   }) {
-    const type = this.runtime.operationTypeSwitch(opts);
+    const type = this.runtime.operationTypeSwitch(params);
+    if (type === 'subscription') {
+      return (this.subscription as any)(params.path, params.input, params.opts);
+    }
     return this.requestAsPromise({
+      ...(params.path as any),
       type,
-      path: opts.path as any,
-      input: opts.input,
-      context: opts.context as any,
+      path: params.path as any,
+      input: params.input,
     });
   }
   public subscription<

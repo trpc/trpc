@@ -58,14 +58,12 @@ test('interop inference', async () => {
   );
 
   // FIXME // @ts-expect-error we can't call oldProcedure with proxy
-  expect(await opts.proxy.oldProcedure.query()).toBe(
-    'oldProcedureOutput__input:n/a',
-  );
+  expect(await opts.proxy.oldProcedure()).toBe('oldProcedureOutput__input:n/a');
 
   // @ts-expect-error we can't call new procedures without proxy
   expect(await opts.client.query('newProcedure')).toBe('newProcedureOutput');
 
-  expect(await opts.proxy.newProcedure.query()).toBe('newProcedureOutput');
+  expect(await opts.proxy.newProcedure()).toBe('newProcedureOutput');
 });
 
 test('useQuery()', async () => {

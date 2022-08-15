@@ -10,8 +10,8 @@ test('children', async () => {
     child: t.router({
       childQuery: t.procedure.query(() => 'asd'),
       grandchild: t.router({
-        foo: t.procedure.query(() => 'grandchild' as const),
-        mut: t.procedure.mutation(() => 'mut'),
+        getSomething: t.procedure.query(() => 'grandchild' as const),
+        doSomething: t.procedure.mutation(() => 'mut'),
       }),
     }),
   });
@@ -25,17 +25,17 @@ test('children', async () => {
   }).toMatchInlineSnapshot(`
     Object {
       "mutations": Object {
-        "child.grandchild.mut": [Function],
+        "child.grandchild.doSomething": [Function],
       },
       "procedures": Object {
         "child.childQuery": [Function],
-        "child.grandchild.foo": [Function],
-        "child.grandchild.mut": [Function],
+        "child.grandchild.doSomething": [Function],
+        "child.grandchild.getSomething": [Function],
         "foo": [Function],
       },
       "queries": Object {
         "child.childQuery": [Function],
-        "child.grandchild.foo": [Function],
+        "child.grandchild.getSomething": [Function],
         "foo": [Function],
       },
       "subscriptions": Object {},
@@ -44,10 +44,10 @@ test('children', async () => {
 
   const { close, proxy } = routerToServerAndClientNew(router);
 
-  expect(await proxy.foo.query()).toBe('bar');
+  expect(await proxy.foo()).toBe('bar');
 
-  expect(await proxy.child.grandchild.foo.query()).toBe('grandchild');
-  expect(await proxy.child.grandchild.mut.mutate()).toBe('mut');
+  expect(await proxy.child.grandchild.getSomething()).toBe('grandchild');
+  expect(await proxy.child.grandchild.doSomething()).toBe('mut');
 
   return close();
 });
