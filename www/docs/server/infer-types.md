@@ -48,3 +48,37 @@ export type User = inferProcedureOutput<AppRouter['user']['me']>;
 export type PostInput = inferProcedureInput<AppRouter['post']>;
 //           ^? string
 ```
+
+## Infer `TRPClientError`s based on your router
+
+```ts title='src/client.ts'
+import type {
+  AppRouter
+} from '~/server/routers/_app';
+import { TRPCClientError } from '@trpc/client';
+
+export function isTRPCClientError(
+  cause: unknown,
+): cause is TRPCClientError<TRouter> {
+  if (cause instanceof TRPCClientError) {
+    return true;
+  }
+  return false;
+}
+
+async function main() {
+  try {
+    await proxy.postById.query({ id: 1 })
+  } catch (cause) {
+    if (isTRPCClientError(cause)) {
+      // `cause` is now typed as your router's `TRPCClientError`
+      console.log('data', cause.data);
+    } else {
+      // [...]
+    }
+  }
+}
+
+
+main();
+```
