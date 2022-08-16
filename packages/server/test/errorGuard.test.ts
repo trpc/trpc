@@ -2,8 +2,17 @@ import { routerToServerAndClientNew, waitError } from './___testHelpers';
 import { TRPCClientError } from '@trpc/client';
 import { expectTypeOf } from 'expect-type';
 import { konn } from 'konn';
-import { DefaultErrorShape, initTRPC } from '../src';
+import { AnyRouter, DefaultErrorShape, initTRPC } from '../src';
 import { DefaultErrorData } from '../src/error/formatter';
+
+function isTRPCClientError<TRouter extends AnyRouter>(
+  cause: unknown,
+): cause is TRPCClientError<TRouter> {
+  if (cause instanceof TRPCClientError) {
+    return true;
+  }
+  return false;
+}
 
 describe('no custom error formatter', () => {
   const t = initTRPC()();
@@ -33,19 +42,10 @@ describe('no custom error formatter', () => {
     })
     .done();
 
-  function isTRPCClientError(
-    cause: unknown,
-  ): cause is TRPCClientError<typeof appRouter> {
-    if (cause instanceof TRPCClientError) {
-      return true;
-    }
-    return false;
-  }
-
   test('infer errors with type guard', async () => {
     const err = await waitError(ctx.proxy.greeting.query());
 
-    if (!isTRPCClientError(err)) {
+    if (!isTRPCClientError<typeof appRouter>(err)) {
       throw new Error('Bad');
     }
     expectTypeOf(err.data).not.toBeAny();
@@ -88,19 +88,10 @@ describe('with custom error formatter', () => {
     })
     .done();
 
-  function isTRPCClientError(
-    cause: unknown,
-  ): cause is TRPCClientError<typeof appRouter> {
-    if (cause instanceof TRPCClientError) {
-      return true;
-    }
-    return false;
-  }
-
   test('infer errors with type guard', async () => {
     const err = await waitError(ctx.proxy.greeting.query());
 
-    if (!isTRPCClientError(err)) {
+    if (!isTRPCClientError<typeof appRouter>(err)) {
       throw new Error('Bad');
     }
     expectTypeOf(err.data).not.toBeAny();
