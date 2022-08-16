@@ -1,9 +1,9 @@
 # https://help.github.com/en/github/creating-cloning-and-archiving-repositories/about-code-owners
 
 
-* @KATT @trpc-bot
+* @KATT @trpc-bot @sachinraja
 
 **/*fastify* @skarab42 @KATT
 **/*lambda* @Lilja @KATT
 
-**/package.json @KATT @trpc-bot
+**/package.json @KATT
