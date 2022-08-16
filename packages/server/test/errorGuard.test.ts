@@ -98,6 +98,7 @@ describe('with custom error formatter', () => {
     expectTypeOf(err.shape).not.toBeAny();
     expectTypeOf(err.data!).toMatchTypeOf<DefaultErrorData>();
     expectTypeOf(err.shape!).toMatchTypeOf<DefaultErrorShape>();
+    expectTypeOf(err.data!.foo).toEqualTypeOf<'bar'>();
 
     err.data!.stack = '[redacted]';
 
