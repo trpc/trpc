@@ -56,6 +56,7 @@ import type {
   AppRouter
 } from '~/server/routers/_app';
 import { TRPCClientError } from '@trpc/client';
+import { proxy } from './trpc';
 
 export function isTRPCClientError(
   cause: unknown,
@@ -73,6 +74,7 @@ async function main() {
     if (isTRPCClientError(cause)) {
       // `cause` is now typed as your router's `TRPCClientError`
       console.log('data', cause.data);
+      //                   ^?
     } else {
       // [...]
     }
