@@ -71,11 +71,12 @@ export interface CreateTRPCClientWithLinksOptions<TRouter extends AnyRouter>
 }
 
 type TRPCType = 'subscription' | 'query' | 'mutation';
-export interface TRPCRequestOptions {
+export interface TRPCRequestOptions<TType extends TRPCType> {
   /**
    * Pass additional context to links
    */
   context?: OperationContext;
+  signal?: TType extends 'query' ? AbortSignal : never;
 }
 
 export interface TRPCSubscriptionObserver<TValue, TError> {
@@ -186,6 +187,7 @@ export class TRPCClient<TRouter extends AnyRouter> {
     input: TInput;
     path: string;
     context?: OperationContext;
+    signal?: AbortSignal;
   }): CancellablePromise<TOutput> {
     const req$ = this.$request<TInput, TOutput>(opts);
     type TValue = inferObservableValue<typeof req$>;
@@ -193,13 +195,8 @@ export class TRPCClient<TRouter extends AnyRouter> {
 
     const abortablePromise = new Promise((resolve, reject) => {
       // Listen for signal events if a signal is
-      if (
-        opts.type === 'query' &&
-        opts.context &&
-        'signal' in opts.context
-        // && opts.context.signal instanceof AbortSignal
-      ) {
-        (opts.context.signal as AbortSignal).addEventListener('abort', () => {
+      if (opts.type === 'query' && opts.signal) {
+        opts.signal.addEventListener('abort', () => {
           abort();
           reject(new TRPCClientError('The procedure was aborted'));
         });
@@ -224,10 +221,13 @@ export class TRPCClient<TRouter extends AnyRouter> {
     path: TPath,
     ...args: [
       ...inferHandlerInput<AssertType<TQueries, ProcedureRecord>[TPath]>,
-      TRPCRequestOptions?,
+      TRPCRequestOptions<'query'>?,
     ]
   ) {
-    const context = (args[1] as TRPCRequestOptions | undefined)?.context;
+    // FIXME: Should be inferred from `args`
+    const context = (args[1] as TRPCRequestOptions<'query'> | undefined)
+      ?.context;
+    const signal = (args[1] as TRPCRequestOptions<'query'> | undefined)?.signal;
 
     return this.requestAsPromise<
       inferHandlerInput<AssertType<TQueries, ProcedureRecord>[TPath]>,
@@ -237,6 +237,7 @@ export class TRPCClient<TRouter extends AnyRouter> {
       path,
       input: args[0] as any,
       context,
+      signal,
     });
   }
   public mutation<
@@ -246,10 +247,12 @@ export class TRPCClient<TRouter extends AnyRouter> {
     path: TPath,
     ...args: [
       ...inferHandlerInput<AssertType<TMutations, ProcedureRecord>[TPath]>,
-      TRPCRequestOptions?,
+      TRPCRequestOptions<'mutation'>?,
     ]
   ) {
-    const context = (args[1] as TRPCRequestOptions | undefined)?.context;
+    // FIXME: Should be inferred from `args`
+    const context = (args[1] as TRPCRequestOptions<'mutation'> | undefined)
+      ?.context;
     return this.requestAsPromise<
       inferHandlerInput<AssertType<TMutations, ProcedureRecord>[TPath]>,
       inferProcedureOutput<TMutations[TPath]>
@@ -270,7 +273,7 @@ export class TRPCClient<TRouter extends AnyRouter> {
   >(
     path: TPath,
     input: TInput,
-    opts: TRPCRequestOptions &
+    opts: TRPCRequestOptions<'subscription'> &
       Partial<TRPCSubscriptionObserver<TOutput, TRPCClientError<TRouter>>>,
   ): Unsubscribable {
     const observable$ = this.$request<TInput, TOutput>({
