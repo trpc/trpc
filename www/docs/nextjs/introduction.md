@@ -128,7 +128,6 @@ Create a set of strongly-typed hooks using your API's type signature.
 import { setupTRPC } from '@trpc/next';
 import type { AppRouter } from '../pages/api/trpc/[trpc]';
 
-
 function getBaseUrl() {
   if (typeof window !== 'undefined') {
     return '';

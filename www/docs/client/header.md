@@ -19,7 +19,7 @@ export let token: string;
 
 export const trpc = setupTRPC<AppRouter>({
   config({ ctx }) {
-    /** 
+    /**
     * Headers will be called on each request.
     */
     headers() {
