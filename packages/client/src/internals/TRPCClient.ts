@@ -71,12 +71,12 @@ export interface CreateTRPCClientWithLinksOptions<TRouter extends AnyRouter>
 }
 
 type TRPCType = 'subscription' | 'query' | 'mutation';
-export interface TRPCRequestOptions<TType extends TRPCType> {
+export interface TRPCRequestOptions {
   /**
    * Pass additional context to links
    */
   context?: OperationContext;
-  signal?: TType extends 'query' ? AbortSignal : never;
+  signal?: AbortSignal; // FIXME: Only for query
 }
 
 export interface TRPCSubscriptionObserver<TValue, TError> {
@@ -221,13 +221,12 @@ export class TRPCClient<TRouter extends AnyRouter> {
     path: TPath,
     ...args: [
       ...inferHandlerInput<AssertType<TQueries, ProcedureRecord>[TPath]>,
-      TRPCRequestOptions<'query'>?,
+      TRPCRequestOptions?,
     ]
   ) {
     // FIXME: Should be inferred from `args`
-    const context = (args[1] as TRPCRequestOptions<'query'> | undefined)
-      ?.context;
-    const signal = (args[1] as TRPCRequestOptions<'query'> | undefined)?.signal;
+    const context = (args[1] as TRPCRequestOptions | undefined)?.context;
+    const signal = (args[1] as TRPCRequestOptions | undefined)?.signal;
 
     return this.requestAsPromise<
       inferHandlerInput<AssertType<TQueries, ProcedureRecord>[TPath]>,
@@ -247,12 +246,11 @@ export class TRPCClient<TRouter extends AnyRouter> {
     path: TPath,
     ...args: [
       ...inferHandlerInput<AssertType<TMutations, ProcedureRecord>[TPath]>,
-      TRPCRequestOptions<'mutation'>?,
+      TRPCRequestOptions?,
     ]
   ) {
     // FIXME: Should be inferred from `args`
-    const context = (args[1] as TRPCRequestOptions<'mutation'> | undefined)
-      ?.context;
+    const context = (args[1] as TRPCRequestOptions | undefined)?.context;
     return this.requestAsPromise<
       inferHandlerInput<AssertType<TMutations, ProcedureRecord>[TPath]>,
       inferProcedureOutput<TMutations[TPath]>
@@ -273,7 +271,7 @@ export class TRPCClient<TRouter extends AnyRouter> {
   >(
     path: TPath,
     input: TInput,
-    opts: TRPCRequestOptions<'subscription'> &
+    opts: TRPCRequestOptions &
       Partial<TRPCSubscriptionObserver<TOutput, TRPCClientError<TRouter>>>,
   ): Unsubscribable {
     const observable$ = this.$request<TInput, TOutput>({
