@@ -309,7 +309,18 @@ export function createReactQueryHooks<
       TError
     >,
   ): UseQueryResult<TData, TError> {
-    const { client, ssrState, queryClient, prefetchQuery } = useContext();
+    const { client, ssrState, queryClient, prefetchQuery, cancelQuery } =
+      useContext();
+
+    React.useEffect(() => {
+      const abortQuery = () => {
+        void cancelQuery([pathAndInput[0]]);
+      };
+      opts?.trpc?.signal?.addEventListener('abort', abortQuery);
+      return () => {
+        opts?.trpc?.signal?.removeEventListener('abort', abortQuery);
+      };
+    });
 
     if (
       typeof window === 'undefined' &&
