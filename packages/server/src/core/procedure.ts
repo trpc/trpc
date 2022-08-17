@@ -17,7 +17,7 @@ export interface ProcedureOptions {
    * Client-side context
    */
   context?: ClientContext;
-  signal?: AbortSignal;
+  signal?: AbortSignal; // FIXME: Only for query
 }
 
 /**
