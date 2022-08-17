@@ -58,13 +58,10 @@ import type {
 import { TRPCClientError } from '@trpc/client';
 import { proxy } from './trpc';
 
-export function isTRPCClientError(
+export function isTRPCClientError<TRouter extends AnyRouter>(
   cause: unknown,
 ): cause is TRPCClientError<TRouter> {
-  if (cause instanceof TRPCClientError) {
-    return true;
-  }
-  return false;
+  return cause instanceof TRPCClientError;
 }
 
 async function main() {
