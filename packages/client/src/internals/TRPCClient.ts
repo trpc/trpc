@@ -196,10 +196,10 @@ export class TRPCClient<TRouter extends AnyRouter> {
       if (
         opts.type === 'query' &&
         opts.context &&
-        'signal' in opts.context &&
-        opts.context.signal instanceof AbortSignal
+        'signal' in opts.context
+        // && opts.context.signal instanceof AbortSignal
       ) {
-        opts.context.signal.addEventListener('abort', () => {
+        (opts.context.signal as AbortSignal).addEventListener('abort', () => {
           abort();
           reject(new TRPCClientError('The procedure was aborted'));
         });

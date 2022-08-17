@@ -14,8 +14,9 @@ type Router = typeof router;
 describe('queries can be aborted by passing a signal', () => {
   test('abort', async () => {
     const abortController = new AbortController();
+    const signal = abortController.signal;
 
-    const { client } = routerToServerAndClientNew<Router>(router);
+    const { close, client } = routerToServerAndClientNew<Router>(router);
 
     const promise = client.query(
       // @ts-expect-error cannot call new procedure with old client
@@ -23,12 +24,12 @@ describe('queries can be aborted by passing a signal', () => {
       {},
       {
         context: {
-          signal: abortController.signal,
+          signal,
         },
       },
     );
-
     abortController.abort();
-    await expect(promise).rejects.toThrowError(/aborted/);
+    expect(promise).rejects.toThrowError(/aborted/);
+    close();
   });
 });
