@@ -26,8 +26,8 @@ import { createProxySSGHelpers } from '@trpc/react/ssg';
 import { GetServerSidePropsContext, InferGetServerSidePropsType } from 'next';
 import { prisma } from 'server/context';
 import { appRouter } from 'server/routers/_app';
-import { trpc } from 'utils/trpc';
 import superjson from 'superjson';
+import { trpc } from 'utils/trpc';
 
 export async function getServerSideProps(
   context: GetServerSidePropsContext<{ id: string }>,
@@ -40,7 +40,7 @@ export async function getServerSideProps(
   const id = context.params?.id as string;
 
   // Prefetch `post.byId`
-  await ssg.post.ById.fetch({ id });
+  await ssg.post.byId.fetch({ id });
 
   // Make sure to return { props: { trpcState: ssg.dehydrate() } }
   return {
