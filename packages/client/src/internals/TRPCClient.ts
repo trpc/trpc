@@ -141,7 +141,7 @@ export class TRPCClient<TRouter extends AnyRouter> {
         };
 
     this.runtime = {
-      AbortController: AC as any,
+      AbortController: AC,
       fetch: _fetch,
       headers: getHeadersFn(),
       transformer,
@@ -191,20 +191,31 @@ export class TRPCClient<TRouter extends AnyRouter> {
     type TValue = inferObservableValue<typeof req$>;
     const { promise, abort } = observableToPromise<TValue>(req$);
 
-    const cancellablePromise: CancellablePromise<any> = new Promise<TOutput>(
-      (resolve, reject) => {
-        promise
-          .then((envelope) => {
-            resolve((envelope.result as any).data);
-          })
-          .catch((err) => {
-            reject(TRPCClientError.from(err));
-          });
-      },
-    ) as any;
-    cancellablePromise.cancel = abort;
+    const abortablePromise = new Promise((resolve, reject) => {
+      // Listen for signal events if a signal is
+      if (
+        opts.type === 'query' &&
+        opts.context &&
+        'signal' in opts.context &&
+        opts.context.signal instanceof AbortSignal
+      ) {
+        opts.context.signal.addEventListener('abort', () => {
+          abort();
+          reject(new TRPCClientError('The procedure was aborted'));
+        });
+      }
 
-    return cancellablePromise;
+      promise
+        .then((envelope) => {
+          resolve((envelope.result as any).data);
+        })
+        .catch((err) => {
+          reject(TRPCClientError.from(err));
+        });
+    }) as CancellablePromise<any>;
+    abortablePromise.cancel = abort;
+
+    return abortablePromise;
   }
   public query<
     TQueries extends AssertLegacyDef<TRouter>['queries'],
@@ -217,6 +228,7 @@ export class TRPCClient<TRouter extends AnyRouter> {
     ]
   ) {
     const context = (args[1] as TRPCRequestOptions | undefined)?.context;
+
     return this.requestAsPromise<
       inferHandlerInput<AssertType<TQueries, ProcedureRecord>[TPath]>,
       inferProcedureOutput<TQueries[TPath]>
