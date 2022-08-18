@@ -326,8 +326,9 @@ export function createReactQueryHooks<
       pathAndInput as any,
       ({ signal }) => {
         const actualOpts = { ...ssrOpts, trpc: { ...ssrOpts?.trpc, signal } };
-        const args = getClientArgs(pathAndInput, actualOpts);
-        return (client as any).query(...args);
+        return (client as any).query(
+          ...getClientArgs(pathAndInput, actualOpts),
+        );
       },
       ssrOpts,
     );
