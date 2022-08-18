@@ -529,18 +529,20 @@ describe('ObservableAbortError', () => {
       }),
     );
     const onReject = jest.fn();
-    const req = client.query('slow');
+    const ac = new AbortController();
+    const req = client.query('slow', undefined, {
+      signal: ac.signal,
+    });
     req.catch(onReject);
     // cancel after 10ms
     await new Promise((resolve) => setTimeout(resolve, 5));
-    req.cancel();
+    ac.abort();
 
     await waitFor(() => {
       expect(onReject).toHaveBeenCalledTimes(1);
     });
 
     const err = onReject.mock.calls[0]![0]! as TRPCClientError<any>;
-
     expect(err.name).toBe('TRPCClientError');
     expect(err.cause?.name).toBe('ObservableAbortError');
 
@@ -578,13 +580,14 @@ describe('ObservableAbortError', () => {
         },
       },
     );
-    const req1 = client.query('slow1');
+    const ac = new AbortController();
+    const req1 = client.query('slow1', undefined, { signal: ac.signal });
     const req2 = client.query('slow2');
     const onReject1 = jest.fn();
     req1.catch(onReject1);
 
     await new Promise((resolve) => setTimeout(resolve, 5));
-    req1.cancel();
+    ac.abort();
     await waitFor(() => {
       expect(onReject1).toHaveBeenCalledTimes(1);
     });

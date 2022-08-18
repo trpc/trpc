@@ -14,7 +14,6 @@ import {
   observableToPromise,
   share,
 } from '@trpc/server/observable';
-import { CancelFn } from '..';
 import { TRPCClientError } from '../TRPCClientError';
 import { getFetch } from '../getFetch';
 import { httpBatchLink } from '../links';
@@ -27,10 +26,6 @@ import {
   TRPCLink,
 } from '../links/types';
 import { getAbortController } from './fetchHelpers';
-
-type CancellablePromise<T = unknown> = Promise<T> & {
-  cancel: CancelFn;
-};
 
 interface CreateTRPCClientBaseOptions {
   /**
@@ -188,18 +183,15 @@ export class TRPCClient<TRouter extends AnyRouter> {
     path: string;
     context?: OperationContext;
     signal?: AbortSignal;
-  }): CancellablePromise<TOutput> {
+  }): Promise<TOutput> {
     const req$ = this.$request<TInput, TOutput>(opts);
     type TValue = inferObservableValue<typeof req$>;
     const { promise, abort } = observableToPromise<TValue>(req$);
 
-    const abortablePromise = new Promise((resolve, reject) => {
+    const abortablePromise = new Promise<TOutput>((resolve, reject) => {
       // Listen for signal events if a signal is
       if (opts.type === 'query' && opts.signal) {
-        opts.signal.addEventListener('abort', () => {
-          abort();
-          reject(new TRPCClientError('The procedure was aborted'));
-        });
+        opts.signal.addEventListener('abort', abort);
       }
 
       promise
@@ -209,8 +201,7 @@ export class TRPCClient<TRouter extends AnyRouter> {
         .catch((err) => {
           reject(TRPCClientError.from(err));
         });
-    }) as CancellablePromise<any>;
-    abortablePromise.cancel = abort;
+    });
 
     return abortablePromise;
   }
