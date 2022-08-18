@@ -59,7 +59,7 @@ createUser(data: {name:string}) => { id: string; name: string; }
 
 First we define a router somewhere in our server codebase:
 
-```ts title='server.ts'
+```ts twoslash title='server.ts'
 import { initTRPC } from '@trpc/server';
 
 const t = initTRPC()();
@@ -81,7 +81,7 @@ Use `t.procedure.query()` to add a query procedure/endpoint to the router. Metho
 
 The following would create a query procedure called `getUser` that takes a single string argument and returns a user object:
 
-```ts title='server.ts'
+```ts twoslash title='server.ts'
 import { initTRPC } from '@trpc/server';
 
 const t = initTRPC()();
@@ -109,30 +109,49 @@ Similarly to GraphQL, tRPC makes a distinction between query and mutation proced
 createUser(payload: {name: string}) => {id: string; name: string};
 ```
 
-```ts title='server.ts'
+```ts twoslash title='server.ts'
 import { initTRPC } from '@trpc/server';
 import { z } from 'zod';
 
-const t = initTPRC()();
+const t = initTRPC()();
+
+interface User {
+  id: string;
+  name: string;
+}
+
+const userList: User[] = [
+  {
+    id: '1',
+    name: 'KATT',
+  },
+];
 
 const appRouter = t.router({
-  getUser: t.procedure
+  getUserById: t.procedure
     .input((val: unknown) => {
       if (typeof val === 'string') return val;
       throw new Error(`Invalid input: ${typeof val}`);
     })
-    .query((req) => {
-      req.input; // string
-      return { id: req.input, name: 'Bilbo' };
+    .query(({ input }) => {
+      //      ^?
+
+      const user = userList.find((user) => user.id === input);
+      //     ^?
+      return user;
     }),
   createUser: t.procedure
     .input(z.object({ name: z.string() }))
-    .mutation((req) => {
-      // use your ORM of choice
-      return await UserModel.create({
-        data: req.input,
-      });
-    })
+    .mutation(({ input }) => {
+      //          ^?
+      const id = `${Math.random()}`;
+      const user: User = {
+        id,
+        name: input.name,
+      };
+      userList.push(user);
+      return user;
+    }),
 });
 
 export type AppRouter = typeof appRouter;

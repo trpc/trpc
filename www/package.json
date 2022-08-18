@@ -24,6 +24,7 @@
     "@visx/hierarchy": "^2.10.0",
     "@visx/responsive": "^2.10.0",
     "clsx": "^1.2.1",
+    "docusaurus-preset-shiki-twoslash": "^1.1.38",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-github-btn": "^1.3.0",
