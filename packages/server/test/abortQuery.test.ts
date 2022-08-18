@@ -46,7 +46,7 @@ describe('mutations should not be aborted', () => {
       // @ts-expect-error cannot call new procedure with old client
       'testMutation',
       undefined,
-      { signal },
+      { signal }, // Maybe even type-error when passing a signal to a mutation
     );
     abortController.abort();
 

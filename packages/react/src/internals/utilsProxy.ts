@@ -98,7 +98,6 @@ type DecorateProcedure<
   ): Promise<void>;
 
   /**
-   * @deprecated - pass an AbortSignal to the query instead
    * @link https://react-query.tanstack.com/guides/query-cancellation
    */
   cancel(
