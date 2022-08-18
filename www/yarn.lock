@@ -1133,7 +1133,7 @@
     core-js-pure "^3.20.2"
     regenerator-runtime "^0.13.4"
 
-"@babel/runtime@^7.1.2", "@babel/runtime@^7.10.2", "@babel/runtime@^7.10.3", "@babel/runtime@^7.12.1", "@babel/runtime@^7.12.13", "@babel/runtime@^7.12.5", "@babel/runtime@^7.18.6", "@babel/runtime@^7.8.4":
+"@babel/runtime@^7.1.2", "@babel/runtime@^7.10.2", "@babel/runtime@^7.10.3", "@babel/runtime@^7.12.1", "@babel/runtime@^7.12.13", "@babel/runtime@^7.12.5", "@babel/runtime@^7.18.6", "@babel/runtime@^7.8.4", "@babel/runtime@^7.9.0":
   version "7.18.9"
   resolved "https://registry.npmjs.org/@babel/runtime/-/runtime-7.18.9.tgz#b4fcfce55db3d2e5e080d2490f608a3b9f407f4a"
   integrity sha512-lkqXDcvlFT5rvEjiu6+QYO+1GXrEHRo2LOtS7E4GtX5ESIZOgepqsZBVIj6Pv+a6zqsya9VCgiK1KAK4BvJDAw==
@@ -1936,6 +1936,35 @@
   integrity sha512-XIB2XbzHTN6ieIjfIMV9hlVcfPU26s2vafYWQcZHWXHOxiaRZYEDKEwdl129Zyg50+foYV2jCgtrqSA6qNuNSA==
   dependencies:
     defer-to-connect "^1.0.1"
+
+"@trpc/client@^10.0.0-alpha.47":
+  version "10.0.0-katt-fix-error-inference-2022-08-10-15-04-30.0"
+  resolved "https://registry.npmjs.org/@trpc/client/-/client-10.0.0-katt-fix-error-inference-2022-08-10-15-04-30.0.tgz#48f67e6b81ba2785f9fe886e9bad3bb6949ceea5"
+  integrity sha512-TdcTxtnr/qEs1InkaYLQC6taTZBOrb4rvRQaOkPpEpDVKDxFlpIm4D6r5LBrpgGkQppMq6kBChP8e4Y0BfpTHg==
+  dependencies:
+    "@babel/runtime" "^7.9.0"
+
+"@trpc/next@^10.0.0-alpha.47":
+  version "10.0.0-katt-fix-error-inference-2022-08-10-15-04-30.0"
+  resolved "https://registry.npmjs.org/@trpc/next/-/next-10.0.0-katt-fix-error-inference-2022-08-10-15-04-30.0.tgz#cc5b63928fecdb62dfe76f1053c8940340bc65e0"
+  integrity sha512-0D+i1VG33GTsaJikaVIvXQJR0auZM0ZHNAn6/3xwKCcmzb4WGzZhDo4xSE4rrr32lYr73eKqeRb+3Zk0+7ratw==
+  dependencies:
+    "@babel/runtime" "^7.9.0"
+    react-ssr-prepass "^1.5.0"
+
+"@trpc/react@^10.0.0-alpha.47":
+  version "10.0.0-katt-fix-error-inference-2022-08-10-15-04-30.0"
+  resolved "https://registry.npmjs.org/@trpc/react/-/react-10.0.0-katt-fix-error-inference-2022-08-10-15-04-30.0.tgz#c62f859d059052390975354de5a8d932269b4539"
+  integrity sha512-wwgvpGD51h+rCT5izUggqBFmSmRPqTtQj+D9X07y9pUodiigd1Om6Ud/H31Mx8DLVod6/txFdZ4WQLEyU0LAGA==
+  dependencies:
+    "@babel/runtime" "^7.9.0"
+
+"@trpc/server@^10.0.0-alpha.47":
+  version "10.0.0-katt-fix-error-inference-2022-08-10-15-04-30.0"
+  resolved "https://registry.npmjs.org/@trpc/server/-/server-10.0.0-katt-fix-error-inference-2022-08-10-15-04-30.0.tgz#3c07678b52cea0b3ee1251166dfbe663721de066"
+  integrity sha512-ByKJmqpaiEu8STdqN2nMcBSdIt3POj/Pm/g2oB8b7pvlA5U8RO/R+8+AE0k5jaU1zx8HWZ7J3vmL27e6hCyS+A==
+  dependencies:
+    tslib "^2.1.0"
 
 "@trysound/sax@0.2.0":
   version "0.2.0"
@@ -6371,6 +6400,11 @@ react-router@5.3.3, react-router@^5.3.3:
     react-is "^16.6.0"
     tiny-invariant "^1.0.2"
     tiny-warning "^1.0.0"
+
+react-ssr-prepass@^1.5.0:
+  version "1.5.0"
+  resolved "https://registry.npmjs.org/react-ssr-prepass/-/react-ssr-prepass-1.5.0.tgz#bc4ca7fcb52365e6aea11cc254a3d1bdcbd030c5"
+  integrity sha512-yFNHrlVEReVYKsLI5lF05tZoHveA5pGzjFbFJY/3pOqqjGOmMmqx83N4hIjN2n6E1AOa+eQEUxs3CgRnPmT0RQ==
 
 react-textarea-autosize@^8.3.2:
   version "8.3.4"
