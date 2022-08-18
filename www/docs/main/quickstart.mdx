@@ -12,6 +12,59 @@ author_image_url: https://avatars.githubusercontent.com/u/3084745?v=4
 We highly encourage you to check out [the Example Apps](example-apps.md) to get a feel of tRPC and getting up & running as seamless as possible.
 :::
 
+<!-- Reusable snippet for a full backend -->
+
+```twoslash include simple-backend
+// @module: esnext
+
+// @filename: server.ts
+import { initTRPC } from '@trpc/server';
+import { z } from 'zod';
+
+const t = initTRPC()();
+
+interface User {
+  id: string;
+  name: string;
+}
+
+const userList: User[] = [
+  {
+    id: '1',
+    name: 'KATT',
+  },
+];
+
+const appRouter = t.router({
+  userById: t.procedure
+    .input((val: unknown) => {
+      if (typeof val === 'string') return val;
+      throw new Error(`Invalid input: ${typeof val}`);
+    })
+    .query((req) => {
+      const input = req.input;
+      //     ^?
+      const user = userList.find((it) => it.id === input);
+
+      return user;
+      //     ^?
+    }),
+  userCreate: t.procedure
+    .input(z.object({ name: z.string() }))
+    .mutation((req) => {
+      const id = `${Math.random()}`;
+      const user: User = {
+        id,
+        name: req.input.name,
+      };
+      userList.push(user);
+      return user;
+    }),
+});
+
+export type AppRouter = typeof appRouter;
+```
+
 ## Installation
 
 **⚠️ Requirements**: tRPC requires TypeScript > 4.1 as it relies on [Template Literal Types](https://www.typescriptlang.org/docs/handbook/2/template-literal-types.html).
@@ -82,101 +135,6 @@ Use `t.procedure.query()` to add a query procedure/endpoint to the router. Metho
 The following would create a query procedure called `userById` that takes a single string argument and returns a user object:
 
 ```ts twoslash title='server.ts'
-import { initTRPC } from '@trpc/server';
-import { z } from 'zod';
-
-const t = initTRPC()();
-
-interface User {
-  id: string;
-  name: string;
-}
-
-const userList: User[] = [
-  {
-    id: '1',
-    name: 'KATT',
-  },
-];
-
-const appRouter = t.router({
-  userById: t.procedure
-    .input((val: unknown) => {
-      if (typeof val === 'string') return val;
-      throw new Error(`Invalid input: ${typeof val}`);
-    })
-    .query(({ input }) => {
-      //      ^?
-      const user = userList.find((user) => user.id === input);
-      //     ^?
-      return user;
-    }),
-});
-
-export type AppRouter = typeof appRouter;
-```
-
-### Add a mutation procedure
-
-Similarly to GraphQL, tRPC makes a distinction between query and mutation procedures. Let's add a `userCreate` mutation:
-
-```ts
-userCreate(payload: {name: string}) => {id: string; name: string};
-```
-
-```ts twoslash title='server.ts'
-import { initTRPC } from '@trpc/server';
-import { z } from 'zod';
-
-const t = initTRPC()();
-
-interface User {
-  id: string;
-  name: string;
-}
-
-const userList: User[] = [
-  {
-    id: '1',
-    name: 'KATT',
-  },
-];
-
-const appRouter = t.router({
-  userById: t.procedure
-    .input((val: unknown) => {
-      if (typeof val === 'string') return val;
-      throw new Error(`Invalid input: ${typeof val}`);
-    })
-    .query(({ input }) => {
-      //      ^?
-      // The `input` is inferred
-      const user = userList.find((user) => user.id === input);
-      //     ^?
-      return user;
-    }),
-  userCreate: t.procedure
-    .input(z.object({ name: z.string() }))
-    .mutation(({ input }) => {
-      //          ^?
-      const id = `${Math.random()}`;
-      const user: User = {
-        id,
-        name: input.name,
-      };
-      userList.push(user);
-      return user;
-    }),
-});
-
-export type AppRouter = typeof appRouter;
-```
-
-### Using your new backend
-
-```ts twoslash
-// @module: esnext
-
 // @filename: server.ts
 import { initTRPC } from '@trpc/server';
 import { z } from 'zod';
@@ -201,42 +159,45 @@ const appRouter = t.router({
       if (typeof val === 'string') return val;
       throw new Error(`Invalid input: ${typeof val}`);
     })
-    .query(({ input }) => {
-      //      ^?
-      // The `input` is inferred
-      const user = userList.find((user) => user.id === input);
-      //     ^?
-      return user;
-    }),
-  userCreate: t.procedure
-    .input(z.object({ name: z.string() }))
-    .mutation(({ input }) => {
-      //          ^?
-      const id = `${Math.random()}`;
-      const user: User = {
-        id,
-        name: input.name,
-      };
-      userList.push(user);
+    .query((req) => {
+      const { input } = req;
+      //       ^?
+      const user = userList.find((u) => u.id === input);
+
       return user;
     }),
 });
 
 export type AppRouter = typeof appRouter;
+```
 
-// @filename: client.ts
+### Add a mutation procedure
+
+Similarly to GraphQL, tRPC makes a distinction between query and mutation procedures. Let's add a `userCreate` mutation:
+
+```ts
+userCreate(payload: {name: string}) => {id: string; name: string};
+```
+
+```ts twoslash title='server.ts'
+// @include: simple-backend
+```
+
+## Using your new backend
+
+```ts twoslash title="client.ts"
+// @module: esnext
+
+// @include: simple-backend
+
 // ---cut---
+// @filename: client.ts
 import type { AppRouter } from './server';
 import { createTRPCProxyClient } from '@trpc/client';
 
 const trpc = createTRPCProxyClient<AppRouter>({
-  url: 'http://localhost:3000',
+  url: 'http://localhost:3000/api/trpc',
 });
-
-// @noErrors
-// Full autocompletion on your routes
-trpc.u;
-//    ^|
 
 // Inferred types
 const user = await trpc.userById.query('1');
@@ -244,6 +205,11 @@ const user = await trpc.userById.query('1');
 
 const createdUser = await trpc.userCreate.mutate({ name: 'sachinraja' });
 //    ^?
+
+// @noErrors
+// Full autocompletion on your routes
+trpc.u;
+//    ^|
 ```
 
 ## Next steps
