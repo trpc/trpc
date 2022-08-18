@@ -320,15 +320,16 @@ export function createReactQueryHooks<
     ) {
       void prefetchQuery(pathAndInput as any, opts as any);
     }
-    const actualOpts = useSSRQueryOptionsIfNeeded(pathAndInput, opts);
+    const ssrOpts = useSSRQueryOptionsIfNeeded(pathAndInput, opts);
 
     return __useQuery(
       pathAndInput as any,
-      ({ signal }) =>
-        (client as any).query(
-          ...getClientArgs(pathAndInput, { ...actualOpts, signal }),
-        ),
-      actualOpts,
+      ({ signal }) => {
+        const actualOpts = { ...ssrOpts, trpc: { ...ssrOpts?.trpc, signal } };
+        const args = getClientArgs(pathAndInput, actualOpts);
+        return (client as any).query(...args);
+      },
+      ssrOpts,
     );
   }
 
