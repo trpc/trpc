@@ -15,7 +15,8 @@
     "sponsors-sync:push": "yarn ts-node ./src/components/sponsors/script.push.ts",
     "sponsors-sync": "run-s sponsors-sync:*",
     "tweetwall-pull": "yarn ts-node ./src/components/TwitterWall/script.ts",
-    "ts-node": "ts-node --compiler-options '{\"module\":\"commonjs\"}'"
+    "ts-node": "ts-node --compiler-options '{\"module\":\"commonjs\"}'",
+    "postinstall": "cd .. && yarn postinstall"
   },
   "dependencies": {
     "@docusaurus/core": "^2.0.0-rc.1",
