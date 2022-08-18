@@ -14,7 +14,7 @@ We highly encourage you to check out [the Example Apps](example-apps.md) to get 
 
 <!-- Reusable snippet for a full backend -->
 
-```twoslash include simple-backend
+```twoslash include server
 // @module: esnext
 
 // @filename: server.ts
@@ -180,15 +180,17 @@ userCreate(payload: {name: string}) => {id: string; name: string};
 ```
 
 ```ts twoslash title='server.ts'
-// @include: simple-backend
+// @include: server
 ```
 
-## Using your new backend
+## Using your new backend on the client
+
+### Setup the tRPC Client
 
 ```ts twoslash title="client.ts"
 // @module: esnext
 
-// @include: simple-backend
+// @include: server
 
 // ---cut---
 // @filename: client.ts
@@ -198,13 +200,49 @@ import { createTRPCProxyClient } from '@trpc/client';
 const trpc = createTRPCProxyClient<AppRouter>({
   url: 'http://localhost:3000/api/trpc',
 });
+```
+
+### Querying & mutating
+
+```ts twoslash title="client.ts"
+// @module: esnext
+
+// @include: server
+
+// @filename: client.ts
+import type { AppRouter } from './server';
+import { createTRPCProxyClient } from '@trpc/client';
+
+const trpc = createTRPCProxyClient<AppRouter>({
+  url: 'http://localhost:3000/api/trpc',
+});
+
+// ---cut---
 
 // Inferred types
-const user = await trpc.userById.query('1');
+const user = trpc.userById.query('1');
 //    ^?
 
-const createdUser = await trpc.userCreate.mutate({ name: 'sachinraja' });
+const createdUser = trpc.userCreate.mutate({ name: 'sachinraja' });
 //    ^?
+```
+
+### Full autocompletion
+
+```ts twoslash title="client.ts"
+// @module: esnext
+
+// @include: server
+
+// @filename: client.ts
+import type { AppRouter } from './server';
+import { createTRPCProxyClient } from '@trpc/client';
+
+const trpc = createTRPCProxyClient<AppRouter>({
+  url: 'http://localhost:3000/api/trpc',
+});
+
+// ---cut---
 
 // @noErrors
 // Full autocompletion on your routes
