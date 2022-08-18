@@ -33,7 +33,8 @@
     "react-dom": "^18.1.0",
     "react-github-btn": "^1.3.0",
     "react-icons": "^4.4.0",
-    "tailwind-merge": "^1.5.1"
+    "tailwind-merge": "^1.5.1",
+    "zod": "^3.0.0"
   },
   "browserslist": {
     "production": [
