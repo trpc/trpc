@@ -2,12 +2,9 @@ import React from 'react';
 import { trpc } from '../utils/trpc';
 
 export default function IndexPage() {
-  const ac = new AbortController();
   const utils = trpc.proxy.useContext();
 
-  const longQuery = trpc.proxy.longQuery.useQuery('Julius', {
-    trpc: { signal: ac.signal },
-  });
+  const longQuery = trpc.proxy.longQuery.useQuery('Julius');
 
   return (
     <div style={styles}>
@@ -21,7 +18,6 @@ export default function IndexPage() {
         Refetch longQuery
       </button>
       <button onClick={() => utils.longQuery.cancel()}>Cancel longQuery</button>
-      <button onClick={() => ac.abort()}>Abort longQuery</button>
     </div>
   );
 }
