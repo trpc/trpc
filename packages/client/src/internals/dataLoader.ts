@@ -67,6 +67,7 @@ export function dataLoader<TKey, TValue>(
       };
     }
     const thisBatch = batch;
+    let dispatchImmediately = false;
     const promise = new Promise<TValue>((resolve, reject) => {
       const item = batchItem as any as BatchItem<TKey, TValue>;
       item.reject = reject;
@@ -77,14 +78,10 @@ export function dataLoader<TKey, TValue>(
         typeof opts?.maxBatchSize !== 'undefined' &&
         thisBatch.items.length >= opts.maxBatchSize
       ) {
-        dispatch();
-        return;
+        dispatchImmediately = true;
       }
     });
 
-    if (!dispatchTimer) {
-      dispatchTimer = setTimeout(dispatch);
-    }
     const cancel = () => {
       batchItem.cancelled = true;
 
@@ -94,6 +91,12 @@ export function dataLoader<TKey, TValue>(
       }
       thisBatch.cancel();
     };
+
+    if (dispatchImmediately) {
+      dispatch();
+    } else if (!dispatchTimer) {
+      dispatchTimer = setTimeout(dispatch);
+    }
 
     return { promise, cancel };
   }
