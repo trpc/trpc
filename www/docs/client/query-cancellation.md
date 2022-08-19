@@ -9,10 +9,27 @@ _If you're looking for how to cancel queries and is using @trpc/react, please re
 
 tRPC adheres to the industry standard when it comes to aborting queries. All you have to do is pass an `AbortSignal` to the query-options and then call its parent `AbortController`'s `abort` method.
 
-```tsx title='client.ts'
+```ts twoslash title="client.ts"
+// @module: esnext
+
+// ---cut---
+// @filename: server.ts
+import { createTRPCProxyClient } from "@trpc/client";
+
+// @noErrors
+import type { AppRouter } from "routers/_app";
+
+const proxy = createTRPCProxyClient({
+  url: "http://localhost:3000/trpc",
+});
+
 const ac = new AbortController();
 const query = proxy.userById.query('id_bilbo', { signal: ac.signal });
+//    ^?
 
-// ...
-<button onClick={() => ac.abort()}>Cancel</button>
+// Cancelling
+ac.abort();
+
+console.log(query.status);
+//                ^?
 ```
