@@ -1,12 +1,13 @@
 {
-  "name": "trpcroot",
+  "name": "@examples/www",
   "private": true,
   "workspaces": {
     "packages": [
       "packages/*",
       "examples/*",
       "examples/.wip/*",
-      "examples/.interop/*"
+      "examples/.interop/*",
+      "www"
     ],
     "nohoist": [
       "**/@prisma",
