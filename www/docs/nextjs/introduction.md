@@ -135,12 +135,12 @@ The `createReactQueryHooks` function expects certain parameters to be passed via
 
 ```tsx title='pages/_app.tsx'
 import { withTRPC } from '@trpc/next';
-import { AppType } from 'next/dist/shared/lib/utils';
+import type { AppProps } from 'next/app';
 import { AppRouter } from './api/trpc/[trpc]';
 
-const MyApp: AppType = ({ Component, pageProps }) => {
+function MyApp({ Component, pageProps }: AppProps) {
   return <Component {...pageProps} />;
-};
+}
 
 function getBaseUrl() {
   if (typeof window !== 'undefined') {
