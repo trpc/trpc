@@ -316,7 +316,7 @@ Also, if your company using tRPC and want to support long-term maintenance of tR
     <td align="center"><a href="https://github.com/futpib"><img src="https://avatars.githubusercontent.com/u/4330357?v=4?s=60" width="60px;" alt=""/><br /><sub><b>futpib</b></sub></a><br /><a href="https://github.com/trpc/trpc/issues?q=author%3Afutpib" title="Bug reports">🐛</a></td>
     <td align="center"><a href="https://github.com/lmatheus"><img src="https://avatars.githubusercontent.com/u/8514703?v=4?s=60" width="60px;" alt=""/><br /><sub><b>Luis Matheus</b></sub></a><br /><a href="#financial-lmatheus" title="Financial">💵</a></td>
     <td align="center"><a href="http://franklinjara.dev"><img src="https://avatars.githubusercontent.com/u/65879341?v=4?s=60" width="60px;" alt=""/><br /><sub><b>Franklin</b></sub></a><br /><a href="https://github.com/trpc/trpc/commits?author=makyfj" title="Documentation">📖</a></td>
-    <td align="center"><a href="https://www.linkedin.com/in/zomars/"><img src="https://avatars.githubusercontent.com/u/3504472?v=4?s=60" width="60px;" alt=""/><br /><sub><b>Omar López</b></sub></a><br /><a href="#financial-zomars" title="Financial">💵</a></td>
+    <td align="center"><a href="https://www.linkedin.com/in/zomars/"><img src="https://avatars.githubusercontent.com/u/3504472?v=4?s=60" width="60px;" alt=""/><br /><sub><b>Omar López</b></sub></a><br /><a href="#financial-zomars" title="Financial">💵</a> <a href="https://github.com/trpc/trpc/issues?q=author%3Azomars" title="Bug reports">🐛</a></td>
     <td align="center"><a href="https://diego-slicecode.dev/"><img src="https://avatars.githubusercontent.com/u/63283003?v=4?s=60" width="60px;" alt=""/><br /><sub><b>Diego Massarini</b></sub></a><br /><a href="#financial-webdiego" title="Financial">💵</a></td>
   </tr>
   <tr>
@@ -347,6 +347,7 @@ Also, if your company using tRPC and want to support long-term maintenance of tR
     <td align="center"><a href="https://github.com/zzacong"><img src="https://avatars.githubusercontent.com/u/61817066?v=4?s=60" width="60px;" alt=""/><br /><sub><b>Zac Ong</b></sub></a><br /><a href="#financial-zzacong" title="Financial">💵</a></td>
     <td align="center"><a href="https://github.com/LoriKarikari"><img src="https://avatars.githubusercontent.com/u/7902980?v=4?s=60" width="60px;" alt=""/><br /><sub><b>Lori Karikari</b></sub></a><br /><a href="#financial-LoriKarikari" title="Financial">💵</a></td>
     <td align="center"><a href="https://it.linkedin.com/in/giorgio-boa"><img src="https://avatars.githubusercontent.com/u/35845425?v=4?s=60" width="60px;" alt=""/><br /><sub><b>Giorgio Boa</b></sub></a><br /><a href="https://github.com/trpc/trpc/commits?author=gioboa" title="Documentation">📖</a></td>
+    <td align="center"><a href="https://github.com/relm923"><img src="https://avatars.githubusercontent.com/u/1347066?v=4?s=60" width="60px;" alt=""/><br /><sub><b>Reagan Elm</b></sub></a><br /><a href="https://github.com/trpc/trpc/commits?author=relm923" title="Tests">⚠️</a></td>
   </tr>
 </table>
 
