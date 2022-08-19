@@ -87,3 +87,46 @@ test('errors', async () => {
     `[Error: Some error]`,
   );
 });
+
+/**
+ * Regression https://github.com/trpc/trpc/pull/2484
+ */
+test('maxBatchSize', async () => {
+  const fetchManyCalled = jest.fn();
+  const loader = dataLoader<number, number>(
+    function fetchMany(keys) {
+      fetchManyCalled();
+      const promise = new Promise<number[]>((resolve) => {
+        setTimeout(() => {
+          resolve(keys.map((v) => v + 1));
+        }, 500);
+      });
+      return { promise, cancel: () => {} };
+    },
+    {
+      maxBatchSize: 3,
+    },
+  );
+  {
+    const $result = await Promise.all([
+      loader.load(1).promise,
+      loader.load(2).promise,
+      loader.load(3).promise,
+    ]);
+    expect($result).toEqual([2, 3, 4]);
+    expect(fetchManyCalled).toHaveBeenCalledTimes(1);
+    fetchManyCalled.mockClear();
+  }
+  {
+    const $result = await Promise.all([
+      loader.load(1).promise,
+      loader.load(2).promise,
+      loader.load(3).promise,
+      loader.load(4).promise,
+      loader.load(5).promise,
+      loader.load(6).promise,
+    ]);
+    expect($result).toEqual([2, 3, 4, 5, 6, 7]);
+  }
+  expect(fetchManyCalled).toHaveBeenCalledTimes(2);
+});
