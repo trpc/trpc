@@ -15,11 +15,10 @@ tRPC adheres to the industry standard when it comes to aborting queries. All you
 // ---cut---
 // @filename: server.ts
 import { createTRPCProxyClient } from "@trpc/client";
-
 // @noErrors
-import type { AppRouter } from "routers/_app";
+import type { AppRouter } from "server.ts";
 
-const proxy = createTRPCProxyClient({
+const proxy = createTRPCProxyClient<AppRouter>({
   url: "http://localhost:3000/trpc",
 });
 
