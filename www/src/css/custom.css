@@ -206,3 +206,11 @@ h5 {
 [data-theme='dark'] .shiki.min-light {
   display: none;
 }
+
+.markdown ul {
+  @apply list-disc list-inside;
+}
+
+.markdown ol {
+  @apply list-decimal list-inside;
+}
