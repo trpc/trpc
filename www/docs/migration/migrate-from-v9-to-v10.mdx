@@ -6,6 +6,29 @@ slug: /migrate-from-v9-to-v10
 ---
 
 
+```twoslash include trpc
+// @filename: context.ts
+export type Context = {
+  user?: {
+    id: string;
+    username: string;
+  };
+};
+
+// @filename: trpc.ts
+// ---cut---
+import { initTRPC } from '@trpc/server';
+import { Context } from './context';
+import superjson from 'superjson';
+
+
+export const t = initTRPC<{ ctx: Context; }>()({
+  // Optional: 
+  transformer: superjson,
+});
+```
+
+
 > Are you on V9 and are worried about the migration path and massive breaking changing? Don't worry, we got your back!
 >
 > We have an **interopability mode** for old routers which allows you to easily incrementally adopt V10.
@@ -184,7 +207,6 @@ If you are migrating from V9->V10, the transition is pretty simple for the 95% u
 All you'll need to do is to add an `.interop()` at the end of your `appRouter`:
 
 ```ts twoslash title='src/server/routers/_app.ts'
-
 // @filename: context.ts
 export type Context = {
   user?: {
@@ -196,14 +218,13 @@ export type Context = {
 
 // @filename: _app.ts
 
-
 // ---cut---
 
 import trpc from '@trpc/server';
 import { Context } from './context';
 
 
-const appRouter = trpc.router()
+const appRouter = trpc.router<Context>()
   .query('greeting', {
     resolve({ input }) {
       return `hello ${input}!`;
@@ -218,17 +239,10 @@ When you've done this, you can start migrating to the new way of doing things.
 
 **2. Create the `t`-object**
 
-```ts
-// src/server/trpc.ts
-import superjson from 'superjson';
-import { Context } from './context';
+```ts twoslash title='src/server/trpc.ts'
 
-export const t = initTRPC<{
-  ctx: Context;
-}>()({
-  // Optional:
-  transformer: superjson,
-});
+// @include: trpc
+
 ```
 
 **3. Create a new `appRouter`**
@@ -236,22 +250,27 @@ export const t = initTRPC<{
 1. Rename your old `appRouter` to `legacyRouter`
 2. Create a new app router:
 
-```ts
+```ts twoslash
+// @include: trpc
+
+// @filename: app.ts
+// ---cut---
 import { t } from './trpc';
+import trpc from '@trpc/server';
 
-const legacyRouter = trpc
-  .router()
-  /* [...] */
-  .interop();
 
-export const appRouter = t.merge(legacyRouter);
+const legacyRouter = trpc.router()
+  /* .... */
+  .interop(); // <--- Add this
+
+export const appRouter = t.mergeRouters(legacyRouter);
 ```
 
 3. See if your app still builds
 4. Create a a test router:
 
 ```ts
-const greetingRouter = t.router({
+const mainRouter = t.router({
   greeting: t.procedure.query(() => 'world'),
 });
 ```
@@ -259,7 +278,7 @@ const greetingRouter = t.router({
 5. Merge it in:
 
 ```ts
-export const appRouter = t.merge(legacyRouter, greetingRouter);
+export const appRouter = t.merge(legacyRouter, mainRouter);
 ```
 
 ## For the remaining 5%
