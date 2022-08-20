@@ -56,17 +56,17 @@ import type {
   AppRouter
 } from '~/server/routers/_app';
 import { TRPCClientError } from '@trpc/client';
-import { proxy } from './trpc';
+import { trpc } from './trpc';
 
-export function isTRPCClientError<TRouter extends AnyRouter>(
+export function isTRPCClientError(
   cause: unknown,
-): cause is TRPCClientError<TRouter> {
+): cause is TRPCClientError<AppRouter> {
   return cause instanceof TRPCClientError;
 }
 
 async function main() {
   try {
-    await proxy.postById.query({ id: 1 })
+    await trpc.postById.query({ id: 1 })
   } catch (cause) {
     if (isTRPCClientError(cause)) {
       // `cause` is now typed as your router's `TRPCClientError`
