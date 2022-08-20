@@ -22,10 +22,6 @@
     "@docusaurus/core": "^2.0.0-rc.1",
     "@docusaurus/preset-classic": "^2.0.0-rc.1",
     "@mdx-js/react": "^1.6.22",
-    "@trpc/client": "^10.0.0-alpha.47",
-    "@trpc/next": "^10.0.0-alpha.47",
-    "@trpc/react": "^10.0.0-alpha.47",
-    "@trpc/server": "^10.0.0-alpha.47",
     "@visx/hierarchy": "^2.10.0",
     "@visx/responsive": "^2.10.0",
     "clsx": "^1.1.1",
@@ -34,8 +30,7 @@
     "react-dom": "^18.1.0",
     "react-github-btn": "^1.3.0",
     "react-icons": "^4.4.0",
-    "tailwind-merge": "^1.5.1",
-    "zod": "^3.0.0"
+    "tailwind-merge": "^1.5.1"
   },
   "browserslist": {
     "production": [
@@ -50,6 +45,10 @@
     ]
   },
   "devDependencies": {
+    "@trpc/client": "^10.0.0-alpha.47",
+    "@trpc/next": "^10.0.0-alpha.47",
+    "@trpc/react": "^10.0.0-alpha.47",
+    "@trpc/server": "^10.0.0-alpha.47",
     "@babel/core": "^7.18.6",
     "@babel/preset-env": "^7.18.6",
     "@docusaurus/module-type-aliases": "^2.0.0-rc.1",
@@ -61,8 +60,10 @@
     "oauth": "^0.10.0",
     "postcss": "^8.4.14",
     "prettier": "^2.5.1",
+    "superjson": "^1.7.4",
     "tailwindcss": "^3.1.6",
     "ts-node": "^10.3.0",
-    "typescript": "4.7.4"
+    "typescript": "4.7.4",
+    "zod": "^3.0.0"
   }
 }

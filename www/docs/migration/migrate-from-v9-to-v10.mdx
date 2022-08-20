@@ -5,6 +5,42 @@ sidebar_label: Migrate from V9 to V10
 slug: /migrate-from-v9-to-v10
 ---
 
+```twoslash include context
+// @module: esnext
+
+// @filename: context.ts
+import * as trpc from '@trpc/server';
+import * as trpcNext from '@trpc/server/adapters/next';
+
+// eslint-disable-next-line @typescript-eslint/no-empty-interface
+interface CreateContextOptions {
+  // session: Session | null
+}
+
+/**
+ * Inner function for `createContext` where we create the context.
+ * This is useful for testing when we don't want to mock Next.js' request/response
+ */
+export async function createContextInner(_opts: CreateContextOptions) {
+  return {};
+}
+
+
+/**
+ * Creates context for an incoming request
+ * @link https://trpc.io/docs/context
+ */
+export async function createContext(
+  opts: trpcNext.CreateNextContextOptions,
+): Promise<Context> {
+  // for API-response caching see https://trpc.io/docs/caching
+
+  return await createContextInner({});
+}
+
+export type Context = trpc.inferAsyncReturnType<typeof createContextInner>;
+```
+
 > Are you on V9 and are worried about the migration path and massive breaking changing? Don't worry, we got your back!
 >
 > We have an **interopability mode** for old routers which allows you to easily incrementally adopt V10.
@@ -26,7 +62,7 @@ The way you initialize tRPC on the server has been update, we now create a root 
 
 The way the `t` variable is defined is simply like this:
 
-```ts title='/src/server/trpc.ts'
+```ts twoslash title='/src/server/trpc.ts'
 import { initTRPC } from '@trpc/server';
 
 // Beware of the double `()()`
@@ -35,19 +71,24 @@ export const t = initTRPC()();
 
 Here's a full example of how the `t` variable may look like:
 
-```ts title='/src/server/trpc.ts'
-import { initTRPC } from '@trpc/server';
-import superjson from 'superjson';
-
-// This is usually inferred
-interface Context {
+```ts twoslash title='/src/server/trpc.ts'
+// @filename: context.ts
+export type Context = {
   user?: {
     id: string;
-    name: string;
+    username: string;
   };
-}
+};
 
-interface Meta {
+
+// @filename: trpc.ts
+// ---cut---
+import { initTRPC } from '@trpc/server';
+import superjson from 'superjson';
+import type { Context } from './context';
+import { ZodError } from 'zod'
+
+type Meta = {
   openapi: {
     enabled: boolean;
     method: string;
@@ -62,22 +103,28 @@ export const t = initTRPC<{ ctx: Context; meta: Meta }>()({
       data: {
         ...shape.data,
         zodError:
-          error.code === 'BAD_USER_INPUT' &&
+          error.code === 'BAD_REQUEST' &&
           error.cause instanceof ZodError
             ? error.cause.flatten()
             : null,
-      };
+      },
     };
   },
   transformer: superjson,
-})
+});
 ```
 
 ### Defining routers & procedures
 
-```ts
-// OLD:
-const appRouter = trpc.router().query('greeting', {
+```ts twoslash
+import trpc, { initTRPC } from '@trpc/server';
+export const t = initTRPC()();
+import { z } from 'zod';
+
+// ---cut---
+
+// OLD
+const legacyRouter = trpc.router().query('greeting', {
   input: z.string(),
   resolve({ input }) {
     return `hello ${input}!`;
@@ -93,6 +140,7 @@ const appRouter = t.router({
 ```
 
 ### Calling procedures
+
 
 ```ts
 // OLD
