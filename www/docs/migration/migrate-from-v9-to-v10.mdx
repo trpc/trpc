@@ -5,41 +5,6 @@ sidebar_label: Migrate from V9 to V10
 slug: /migrate-from-v9-to-v10
 ---
 
-```twoslash include context
-// @module: esnext
-
-// @filename: context.ts
-import * as trpc from '@trpc/server';
-import * as trpcNext from '@trpc/server/adapters/next';
-
-// eslint-disable-next-line @typescript-eslint/no-empty-interface
-interface CreateContextOptions {
-  // session: Session | null
-}
-
-/**
- * Inner function for `createContext` where we create the context.
- * This is useful for testing when we don't want to mock Next.js' request/response
- */
-export async function createContextInner(_opts: CreateContextOptions) {
-  return {};
-}
-
-
-/**
- * Creates context for an incoming request
- * @link https://trpc.io/docs/context
- */
-export async function createContext(
-  opts: trpcNext.CreateNextContextOptions,
-): Promise<Context> {
-  // for API-response caching see https://trpc.io/docs/caching
-
-  return await createContextInner({});
-}
-
-export type Context = trpc.inferAsyncReturnType<typeof createContextInner>;
-```
 
 > Are you on V9 and are worried about the migration path and massive breaking changing? Don't worry, we got your back!
 >
@@ -154,10 +119,23 @@ trpc.greeting.useQuery('KATT');
 
 ### Middlewares
 
-```ts
+```ts twoslash
+import trpc, { initTRPC, TRPCError } from '@trpc/server';
+
+type Context = {
+  user?: {
+    id: string;
+    name: string;
+  }
+};
+export const t = initTRPC<{
+  ctx: Context;
+}>()();
+
+// ---cut---
 // OLD
-const appRouter = trpc
-  .router()
+const legacyRouter = trpc
+  .router<Context>()
   .middleware(({ next, ctx }) => {
     if (!ctx.user) {
       throw new TRPCError({ code: 'UNAUTHORIZED' });
@@ -171,7 +149,7 @@ const appRouter = trpc
     });
   })
   .query('greeting', {
-    resolve({ input }) {
+    resolve({ ctx }) {
       return `hello ${ctx.user.name}!`;
     },
   });
@@ -193,7 +171,7 @@ const isAuthed = t.middleware(({ next, ctx }) => {
 const authedProcedure = t.procedure.use(isAuthed);
 
 const appRouter = t.router({
-  greeting: authedProcedure.query(({ ctx }) => `hello ${ctx.name}!`),
+  greeting: authedProcedure.query(({ ctx }) => `hello ${ctx.user.name}!`),
 });
 ```
 
@@ -203,7 +181,38 @@ If you are migrating from V9->V10, the transition is pretty simple for the 95% u
 
 **1. Add `.interop()`**
 
-All you'll need to do is to add an `.interop()` at the end of your `appRouter`. Example: https://github.com/trpc/trpc/blob/ad25239cefd972494bfff49a869b9432fd2f403f/examples/.interop/next-prisma-starter/src/server/routers/_app.ts#L37
+All you'll need to do is to add an `.interop()` at the end of your `appRouter`:
+
+```ts twoslash title='src/server/routers/_app.ts'
+
+// @filename: context.ts
+export type Context = {
+  user?: {
+    id: string;
+    username: string;
+  };
+};
+
+
+// @filename: _app.ts
+
+
+// ---cut---
+
+import trpc from '@trpc/server';
+import { Context } from './context';
+
+
+const appRouter = trpc.router()
+  .query('greeting', {
+    resolve({ input }) {
+      return `hello ${input}!`;
+    },
+  })
+  .interop(); // <--- Add this
+
+export type AppRouter = typeof appRouter;
+```
 
 When you've done this, you can start migrating to the new way of doing things.
 
