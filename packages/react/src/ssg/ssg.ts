@@ -135,5 +135,3 @@ export function createSSGHelpers<TRouter extends AnyRouter>({
     queryClient,
   };
 }
-
-export type CreateSSGHelpers = ReturnType<typeof createSSGHelpers>;

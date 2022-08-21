@@ -1,6 +1,6 @@
 import { useIsMutating } from '@tanstack/react-query';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
-import { createProxySSGHelpers, createSSGHelpers } from '@trpc/react/ssg';
+import { createProxySSGHelpers } from '@trpc/react/ssg';
 import { inferProcedureOutput } from '@trpc/server';
 import clsx from 'clsx';
 import {
@@ -370,7 +370,7 @@ export const getStaticProps = async (
 
   await ssg.todo.all.fetch();
 
-  // console.log('state', ssr.dehydrate());
+  // console.log('state', ssg.dehydrate());
   return {
     props: {
       trpcState: ssg.dehydrate(),
