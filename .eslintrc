@@ -12,6 +12,7 @@
     "sourceType": "module", // Allows for the use of import
     "project": "./tsconfig.eslint.json" // Allows for the use of rules which require parserServices to be generated
   },
+  "ignorePatterns": ["www/build/**"],
   "rules": {
     // Place to specify ESLint rules. Can be used to overwrite rules specified from the extended configs
     "@typescript-eslint/explicit-function-return-type": "off",
