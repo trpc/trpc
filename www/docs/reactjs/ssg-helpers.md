@@ -5,7 +5,7 @@ sidebar_label: SSG Helpers
 slug: /ssg-helpers
 ---
 
-`createSSGHelpers` providers you a set of helper functions that you can use to prefetch queries on the server.
+`createSSGHelpers` provides you a set of helper functions that you can use to prefetch queries on the server.
 
 ```ts
 import { createSSGHelpers } from '@trpc/react/ssg';
