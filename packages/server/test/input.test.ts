@@ -95,3 +95,33 @@ describe('double input validator', () => {
     }
   });
 });
+
+test('only allow double input validator for object-like inputs', () => {
+  const t = initTRPC()();
+
+  try {
+    t.procedure
+      .input(z.literal('hello'))
+
+      // @ts-expect-error first one wasn't an object-like thingy
+      .input(
+        z.object({
+          foo: z.string(),
+        }),
+      );
+  } catch {
+    // whatever
+  }
+  try {
+    t.procedure
+      .input(
+        z.object({
+          foo: z.string(),
+        }),
+      )
+      // @ts-expect-error second one wasn't an object-like thingy
+      .input(z.literal('bar'));
+  } catch {
+    // whatever
+  }
+});
