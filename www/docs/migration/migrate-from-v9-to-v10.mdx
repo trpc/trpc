@@ -5,7 +5,7 @@ sidebar_label: Migrate from V9 to V10
 slug: /migrate-from-v9-to-v10
 ---
 
-> Are you on V9 and are worried about the migration path and massive breaking changing? Don't worry, we got your back!
+> Are you on V9 and are worried about the migration path and massive breaking changes? Don't worry, we got your back!
 >
 > We have an **interopability mode** for old routers which allows you to easily incrementally adopt V10.
 
@@ -62,7 +62,7 @@ export const t = initTRPC<{ ctx: Context; meta: Meta }>()({
       data: {
         ...shape.data,
         zodError:
-          error.code === 'BAD_USER_INPUT' &&
+          error.code === 'BAD_REQUEST' &&
           error.cause instanceof ZodError
             ? error.cause.flatten()
             : null,
@@ -159,10 +159,17 @@ All you'll need to do is to add an `.interop()` at the end of your `appRouter`. 
 
 When you've done this, you can start migrating to the new way of doing things.
 
+```ts title='src/server/routers/_app.ts'
+const appRouter = trpc
+  .router<Context>()
+  /* ... */
+  .interop(); // <--- Add this
+export type AppRouter = typeof appRouter;
+```
+
 **2. Create the `t`-object**
 
-```ts
-// src/server/trpc.ts
+```ts title='src/server/trpc.ts'
 import superjson from 'superjson';
 import { Context } from './context';
 
@@ -171,6 +178,15 @@ export const t = initTRPC<{
 }>()({
   // Optional:
   transformer: superjson,
+  // Optional:
+  errorFormatter({ shape }) {
+    return {
+      ...shape,
+      data: {
+        ...shape.data,
+      },
+    };
+  },
 });
 ```
 
@@ -187,11 +203,11 @@ const legacyRouter = trpc
   /* [...] */
   .interop();
 
-export const appRouter = t.merge(legacyRouter);
+export const appRouter = t.mergeRouters(legacyRouter);
 ```
 
 3. See if your app still builds
-4. Create a a test router:
+4. Create a test router:
 
 ```ts
 const greetingRouter = t.router({
@@ -202,7 +218,7 @@ const greetingRouter = t.router({
 5. Merge it in:
 
 ```ts
-export const appRouter = t.merge(legacyRouter, greetingRouter);
+export const appRouter = t.mergeRouters(legacyRouter, greetingRouter);
 ```
 
 ## For the remaining 5%
