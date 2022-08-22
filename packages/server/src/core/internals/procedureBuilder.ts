@@ -272,8 +272,8 @@ export function createInputMiddleware<T>(
     const combinedInput =
       isPlainObject(input) && isPlainObject(parsedInput)
         ? {
-            ...parsedInput,
             ...input,
+            ...parsedInput,
           }
         : parsedInput;
 
