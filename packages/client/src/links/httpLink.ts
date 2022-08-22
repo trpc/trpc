@@ -38,7 +38,9 @@ export function httpLink<TRouter extends AnyRouter>(
             });
             observer.complete();
           })
-          .catch((cause) => TRPCClientError.from(cause));
+          .catch((cause) => observer.error(
+            TRPCClientError.from(cause),
+          ));
 
         return () => {
           cancel();
