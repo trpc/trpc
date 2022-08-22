@@ -214,3 +214,13 @@ h5 {
 .markdown ol {
   @apply list-decimal list-inside;
 }
+
+/** Hide noisy shiki stuff */
+
+data-lsp {
+  border-bottom: 0 !important;
+}
+
+data-lsp::before {
+  display: none;
+}
