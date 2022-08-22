@@ -63,7 +63,7 @@
     "ts-watch": "tsc --project tsconfig.watch.json"
   },
   "peerDependencies": {
-    "@trpc/server": "^10.0.0-alpha.47"
+    "@trpc/server": "^10.0.0-alpha.48"
   },
   "devDependencies": {
     "@trpc/server": "^10.0.0-alpha.48"
