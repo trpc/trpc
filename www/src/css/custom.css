@@ -174,9 +174,12 @@ h5 {
   @apply text-2xl;
 }
 
-.markdown h4,
-h5 {
+.markdown h4 {
   @apply text-xl;
+}
+
+.markdown h5 {
+  @apply text-lg;
 }
 
 .markdown ul {
