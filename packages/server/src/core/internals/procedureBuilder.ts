@@ -1,6 +1,6 @@
 import { TRPCError } from '../../error/TRPCError';
 import { getCauseFromUnknown, getErrorFromUnknown } from '../../error/utils';
-import { MaybePromise } from '../../types';
+import { FlatOverwrite, MaybePromise } from '../../types';
 import { MiddlewareFunction, MiddlewareResult } from '../middleware';
 import { Parser, inferParser } from '../parser';
 import {
@@ -31,7 +31,7 @@ type CreateProcedureReturnInput<
   _output_out: FallbackValue<TNext['_output_out'], TPrev['_output_out']>;
 }>;
 
-type OverwriteIfDefined<T, K> = UnsetMarker extends T ? K : Overwrite<T, K>;
+type OverwriteIfDefined<T, K> = UnsetMarker extends T ? K : FlatOverwrite<T, K>;
 
 export interface ProcedureBuilder<TParams extends ProcedureParams> {
   /**
