@@ -4,9 +4,6 @@ import { z } from 'zod';
 
 const t = initTRPC()();
 
-const waitMs = (ms: number) =>
-  new Promise((resolve) => setTimeout(resolve, ms));
-
 export const appRouter = t.router({
   hello: t.procedure
     .input(z.object({ text: z.string().nullish() }).nullish())
@@ -14,12 +11,6 @@ export const appRouter = t.router({
       return {
         greeting: `hello ${input?.text ?? 'world'}`,
       };
-    }),
-  longQuery: t.procedure
-    .input(z.string().nullish())
-    .query(async ({ input }) => {
-      await waitMs(5000);
-      return `Hello ${input ?? 'world'}`;
     }),
 });
 
