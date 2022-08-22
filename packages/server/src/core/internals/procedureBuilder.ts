@@ -250,6 +250,10 @@ export function createBuilder<TConfig extends RootConfig>(
   };
 }
 
+function isPlainObject(obj: unknown) {
+  return obj && typeof obj === 'object' && !Array.isArray(obj);
+}
+
 export function createInputMiddleware<T>(
   parse: ParseFn<T>,
 ): ProcedureBuilderMiddleware {
@@ -263,10 +267,14 @@ export function createInputMiddleware<T>(
         cause: getCauseFromUnknown(cause),
       });
     }
-    const combinedInput = {
-      ...parsedInput,
-      ...(input ?? {}),
-    };
+
+    const combinedInput =
+      isPlainObject(input) && isPlainObject(parsedInput)
+        ? {
+            ...parsedInput,
+            ...input,
+          }
+        : parsedInput;
     // TODO fix this typing?
     return next({ input: combinedInput } as any);
   };
