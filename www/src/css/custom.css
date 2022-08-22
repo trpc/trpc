@@ -217,10 +217,10 @@ h5 {
 
 /** Hide noisy shiki stuff */
 
-data-lsp {
+.shiki data-lsp {
   border-bottom: 0 !important;
 }
 
-data-lsp::before {
+.shiki data-lsp::before {
   display: none;
 }
