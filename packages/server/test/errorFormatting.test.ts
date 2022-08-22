@@ -8,10 +8,7 @@ import { DefaultErrorData } from '../src/error/formatter';
 function isTRPCClientError<TRouter extends AnyRouter>(
   cause: unknown,
 ): cause is TRPCClientError<TRouter> {
-  if (cause instanceof TRPCClientError) {
-    return true;
-  }
-  return false;
+  return cause instanceof TRPCClientError;
 }
 
 describe('no custom error formatter', () => {
