@@ -17,13 +17,13 @@ describe('double input validator', () => {
       };
     },
   });
-  const roomQuery = t.procedure.input(
+  const roomProcedure = t.procedure.input(
     z.object({
       roomId: z.string(),
     }),
   );
   const appRouter = t.router({
-    sendMessage: roomQuery
+    sendMessage: roomProcedure
       .input(
         z.object({
           text: z.string(),
