@@ -33,7 +33,7 @@ type CreateProcedureReturnInput<
 
 type OverwriteIfDefined<T, K> = UnsetMarker extends T ? K : FlatOverwrite<T, K>;
 
-type ErrorMessage<T extends string> = { __error: T };
+type ErrorMessage<T extends string> = T;
 
 export interface ProcedureBuilder<TParams extends ProcedureParams> {
   /**
@@ -45,8 +45,8 @@ export interface ProcedureBuilder<TParams extends ProcedureParams> {
       : inferParser<$TParser>['out'] extends Record<string, unknown>
       ? TParams['_input_out'] extends Record<string, unknown>
         ? $TParser
-        : ErrorMessage<'Both inputs parsers must resolve to objects'>
-      : ErrorMessage<'Both input parsers must resolve to objects'>,
+        : ErrorMessage<'Both input parsers did not resolve to an object'>
+      : ErrorMessage<'Both input parsers did not resolve to an object'>,
   ): ProcedureBuilder<{
     _config: TParams['_config'];
     _meta: TParams['_meta'];
