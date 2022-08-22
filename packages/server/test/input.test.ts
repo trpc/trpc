@@ -100,15 +100,12 @@ test('only allow double input validator for object-like inputs', () => {
   const t = initTRPC()();
 
   try {
-    t.procedure
-      .input(z.literal('hello'))
-
+    t.procedure.input(z.literal('hello')).input(
       // @ts-expect-error first one wasn't an object-like thingy
-      .input(
-        z.object({
-          foo: z.string(),
-        }),
-      );
+      z.object({
+        foo: z.string(),
+      }),
+    );
   } catch {
     // whatever
   }
@@ -119,8 +116,10 @@ test('only allow double input validator for object-like inputs', () => {
           foo: z.string(),
         }),
       )
-      // @ts-expect-error second one wasn't an object-like thingy
-      .input(z.literal('bar'));
+      .input(
+        // @ts-expect-error second one wasn't an object-like thingy
+        z.literal('bar'),
+      );
   } catch {
     // whatever
   }
