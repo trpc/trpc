@@ -9,9 +9,6 @@ const helloRouter = t.router({
     .query(({ input }) => {
       return `Hello ${input?.name ?? 'World'}`;
     }),
-  addTodo: t.procedure.input(z.string()).mutation(({ input }) => {
-    return input;
-  }),
 });
 
 export const appRouter = t.router({
