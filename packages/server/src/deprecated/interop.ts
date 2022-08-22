@@ -219,7 +219,7 @@ function migrateProcedure<
   const inputMiddleware = createInputMiddleware(inputParser);
 
   const builder = createBuilder({
-    input: def.inputParser,
+    inputs: [def.inputParser],
     middlewares: [
       ...(def.middlewares as any),
       inputMiddleware,
