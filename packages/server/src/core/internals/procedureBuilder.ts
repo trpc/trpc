@@ -268,6 +268,7 @@ export function createInputMiddleware<T>(
       });
     }
 
+    // Multiple input parsers
     const combinedInput =
       isPlainObject(input) && isPlainObject(parsedInput)
         ? {
@@ -275,6 +276,7 @@ export function createInputMiddleware<T>(
             ...input,
           }
         : parsedInput;
+
     // TODO fix this typing?
     return next({ input: combinedInput } as any);
   };
