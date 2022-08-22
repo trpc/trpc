@@ -45,8 +45,8 @@ export interface ProcedureBuilder<TParams extends ProcedureParams> {
       : inferParser<$TParser>['out'] extends Record<string, unknown>
       ? TParams['_input_out'] extends Record<string, unknown>
         ? $TParser
-        : ErrorMessage<'Both input parsers did not resolve to an object'>
-      : ErrorMessage<'Both input parsers did not resolve to an object'>,
+        : ErrorMessage<'All input parsers did not resolve to an object'>
+      : ErrorMessage<'All input parsers did not resolve to an object'>,
   ): ProcedureBuilder<{
     _config: TParams['_config'];
     _meta: TParams['_meta'];
