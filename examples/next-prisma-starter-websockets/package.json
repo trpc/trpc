@@ -58,7 +58,7 @@
   },
   "devDependencies": {
     "@types/jest": "^27.0.1",
-    "@types/node": "^17.0.10",
+    "@types/node": "^18.7.11",
     "@types/node-fetch": "^2.5.11",
     "@types/react": "^18.0.9",
     "@types/ws": "^8.2.0",
