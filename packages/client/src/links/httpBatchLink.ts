@@ -101,7 +101,7 @@ export function httpBatchLink<TRouter extends AnyRouter>(
             });
             observer.complete();
           })
-          .catch((err) => observer.error(err as any));
+          .catch((err) => observer.error(TRPCClientError.from(err)));
 
         return () => {
           cancel();
