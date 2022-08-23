@@ -1,8 +1,8 @@
-import { routerToServerAndClientNew, waitError } from './___testHelpers';
+import { routerToServerAndClientNew, waitError } from '../___testHelpers';
 import { TRPCClientError, httpLink } from '@trpc/client';
 import { konn } from 'konn';
 import { z } from 'zod';
-import { initTRPC } from '../src';
+import { initTRPC } from '../../src';
 
 const t = initTRPC()();
 const appRouter = t.router({
@@ -44,5 +44,5 @@ test('httpLink failure', async () => {
     TRPCClientError,
   )) as any as TRPCClientError<typeof appRouter>;
 
-  expect(error).toMatchInlineSnapshot();
+  expect(error).toMatchInlineSnapshot(`[TRPCClientError: Bad headers fn]`);
 });
