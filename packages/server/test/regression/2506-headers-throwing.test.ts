@@ -1,5 +1,5 @@
 import { routerToServerAndClientNew, waitError } from '../___testHelpers';
-import { TRPCClientError, httpLink } from '@trpc/client';
+import { TRPCClientError, httpBatchLink, httpLink } from '@trpc/client';
 import { konn } from 'konn';
 import { z } from 'zod';
 import { initTRPC } from '../../src';
@@ -14,35 +14,72 @@ const appRouter = t.router({
   }),
 });
 
-const ctx = konn()
-  .beforeEach(() => {
-    const opts = routerToServerAndClientNew(appRouter, {
-      client({ httpUrl }) {
-        return {
-          links: [
-            httpLink({
-              url: httpUrl,
-            }),
-          ],
-          headers() {
-            throw new Error('Bad headers fn');
-          },
-        };
-      },
-    });
+describe('httpLink', () => {
+  const ctx = konn()
+    .beforeEach(() => {
+      const opts = routerToServerAndClientNew(appRouter, {
+        client({ httpUrl }) {
+          return {
+            links: [
+              httpLink({
+                url: httpUrl,
+              }),
+            ],
+            headers() {
+              throw new Error('Bad headers fn');
+            },
+          };
+        },
+      });
 
-    return opts;
-  })
-  .afterEach(async (ctx) => {
-    await ctx?.close?.();
-  })
-  .done();
+      return opts;
+    })
+    .afterEach(async (ctx) => {
+      await ctx?.close?.();
+    })
+    .done();
 
-test('httpLink failure', async () => {
-  const error = (await waitError(
-    ctx.proxy.q.query('bad'),
-    TRPCClientError,
-  )) as any as TRPCClientError<typeof appRouter>;
+  test('headers() failure', async () => {
+    const error = (await waitError(
+      ctx.proxy.q.query('bad'),
+      TRPCClientError,
+    )) as any as TRPCClientError<typeof appRouter>;
 
-  expect(error).toMatchInlineSnapshot(`[TRPCClientError: Bad headers fn]`);
+    expect(error).toMatchInlineSnapshot(`[TRPCClientError: Bad headers fn]`);
+  });
+});
+
+describe('httpBatchLink', () => {
+  const ctx = konn()
+    .beforeEach(() => {
+      const opts = routerToServerAndClientNew(appRouter, {
+        client({ httpUrl }) {
+          return {
+            links: [
+              httpBatchLink({
+                url: httpUrl,
+              }),
+            ],
+            headers() {
+              throw new Error('Bad headers fn');
+            },
+          };
+        },
+      });
+
+      return opts;
+    })
+    .afterEach(async (ctx) => {
+      await ctx?.close?.();
+    })
+    .done();
+
+  test('headers() failure', async () => {
+    const error = (await waitError(
+      ctx.proxy.q.query('bad'),
+      TRPCClientError,
+    )) as any as TRPCClientError<typeof appRouter>;
+
+    expect(error).toMatchInlineSnapshot(`[TRPCClientError: Bad headers fn]`);
+  });
 });
