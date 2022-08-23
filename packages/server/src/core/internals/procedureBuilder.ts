@@ -1,6 +1,6 @@
 import { TRPCError } from '../../error/TRPCError';
 import { getCauseFromUnknown, getErrorFromUnknown } from '../../error/utils';
-import { MaybePromise } from '../../types';
+import { FlatOverwrite, MaybePromise } from '../../types';
 import { MiddlewareFunction, MiddlewareResult } from '../middleware';
 import { Parser, inferParser } from '../parser';
 import {
@@ -31,19 +31,35 @@ type CreateProcedureReturnInput<
   _output_out: FallbackValue<TNext['_output_out'], TPrev['_output_out']>;
 }>;
 
+type OverwriteIfDefined<T, K> = UnsetMarker extends T ? K : FlatOverwrite<T, K>;
+
+type ErrorMessage<T extends string> = T;
+
 export interface ProcedureBuilder<TParams extends ProcedureParams> {
   /**
    * Add an input parser to the procedure.
    */
   input<$TParser extends Parser>(
-    schema: $TParser,
+    schema: TParams['_input_out'] extends UnsetMarker
+      ? $TParser
+      : inferParser<$TParser>['out'] extends Record<string, unknown>
+      ? TParams['_input_out'] extends Record<string, unknown>
+        ? $TParser
+        : ErrorMessage<'All input parsers did not resolve to an object'>
+      : ErrorMessage<'All input parsers did not resolve to an object'>,
   ): ProcedureBuilder<{
     _config: TParams['_config'];
     _meta: TParams['_meta'];
     _ctx_in: TParams['_ctx_in'];
     _ctx_out: TParams['_ctx_out'];
-    _input_in: inferParser<$TParser>['in'];
-    _input_out: inferParser<$TParser>['out'];
+    _input_in: OverwriteIfDefined<
+      TParams['_input_in'],
+      inferParser<$TParser>['in']
+    >;
+    _input_out: OverwriteIfDefined<
+      TParams['_input_out'],
+      inferParser<$TParser>['out']
+    >;
     _output_in: TParams['_output_in'];
     _output_out: TParams['_output_out'];
   }>;
@@ -141,7 +157,7 @@ export interface ProcedureBuilder<TParams extends ProcedureParams> {
    * @internal
    */
   _def: {
-    input?: Parser;
+    inputs: Parser[];
     output?: Parser;
     meta?: Record<string, unknown>;
     resolver?: ProcedureBuilderResolver;
@@ -165,11 +181,12 @@ function createNewBuilder(
   def1: ProcedureBuilderDef,
   def2: Partial<ProcedureBuilderDef>,
 ) {
-  const { middlewares = [], ...rest } = def2;
+  const { middlewares = [], inputs, ...rest } = def2;
 
   // TODO: maybe have a fn here to warn about calls
   return createBuilder({
     ...mergeWithoutOverrides(def1, rest),
+    inputs: [...def1.inputs, ...(inputs ?? [])],
     middlewares: [...def1.middlewares, ...middlewares],
   } as any);
 }
@@ -187,6 +204,7 @@ export function createBuilder<TConfig extends RootConfig>(
   _meta: TConfig['meta'];
 }> {
   const _def: ProcedureBuilderDef = initDef || {
+    inputs: [],
     middlewares: [],
   };
 
@@ -195,7 +213,7 @@ export function createBuilder<TConfig extends RootConfig>(
     input(input) {
       const parser = getParseFn(input);
       return createNewBuilder(_def, {
-        input,
+        inputs: [input],
         middlewares: [createInputMiddleware(parser)],
       }) as AnyProcedureBuilder;
     },
@@ -240,21 +258,35 @@ export function createBuilder<TConfig extends RootConfig>(
   };
 }
 
+function isPlainObject(obj: unknown) {
+  return obj && typeof obj === 'object' && !Array.isArray(obj);
+}
+
 export function createInputMiddleware<T>(
   parse: ParseFn<T>,
 ): ProcedureBuilderMiddleware {
-  return async function inputMiddleware({ next, rawInput }) {
-    let input: ReturnType<typeof parse>;
+  return async function inputMiddleware({ next, rawInput, input }) {
+    let parsedInput: ReturnType<typeof parse>;
     try {
-      input = await parse(rawInput);
+      parsedInput = await parse(rawInput);
     } catch (cause) {
       throw new TRPCError({
         code: 'BAD_REQUEST',
         cause: getCauseFromUnknown(cause),
       });
     }
+
+    // Multiple input parsers
+    const combinedInput =
+      isPlainObject(input) && isPlainObject(parsedInput)
+        ? {
+            ...input,
+            ...parsedInput,
+          }
+        : parsedInput;
+
     // TODO fix this typing?
-    return next({ input } as any);
+    return next({ input: combinedInput } as any);
   };
 }
 
