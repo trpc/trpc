@@ -1,60 +1,48 @@
-import { waitError } from './___testHelpers';
-import {
-  TRPCClientError,
-  createTRPCClient,
-  createTRPCClientProxy,
-  httpLink,
-} from '@trpc/client';
-import http from 'http';
+import { routerToServerAndClientNew, waitError } from './___testHelpers';
+import { TRPCClientError, httpLink } from '@trpc/client';
 import { konn } from 'konn';
+import { z } from 'zod';
 import { initTRPC } from '../src';
 
-describe('faulty HTTP response', () => {
-  const t = initTRPC()();
-  const appRouter = t.router({
-    q: t.procedure.query(() => {
-      return 'this is never actualy called';
-    }),
-  });
+const t = initTRPC()();
+const appRouter = t.router({
+  q: t.procedure.input(z.enum(['good', 'bad'])).query(({ input }) => {
+    if (input === 'bad') {
+      throw new Error('Bad');
+    }
+    return 'good';
+  }),
+});
 
-  const ctx = konn()
-    .beforeEach(() => {
-      const server = http.createServer((_req, res) => {
-        res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(
-          JSON.stringify({
-            message: 'Bad formatted',
-          }),
-        );
-      });
-      server.listen(0);
-      const port = (server.address() as any).port as number;
+const ctx = konn()
+  .beforeEach(() => {
+    const opts = routerToServerAndClientNew(appRouter, {
+      client({ httpUrl }) {
+        return {
+          links: [
+            httpLink({
+              url: httpUrl,
+            }),
+          ],
+          headers() {
+            throw new Error('Bad headers fn');
+          },
+        };
+      },
+    });
 
-      const client = createTRPCClient<typeof appRouter>({
-        links: [
-          httpLink({
-            url: `http://localhost:${port}`,
-          }),
-        ],
-      });
-      const proxy = createTRPCClientProxy(client);
+    return opts;
+  })
+  .afterEach(async (ctx) => {
+    await ctx?.close?.();
+  })
+  .done();
 
-      return {
-        close: () => server.close(),
-        proxy,
-      };
-    })
-    .afterEach(async (ctx) => {
-      ctx?.close?.();
-    })
-    .done();
+test('httpLink failure', async () => {
+  const error = (await waitError(
+    ctx.proxy.q.query('bad'),
+    TRPCClientError,
+  )) as any as TRPCClientError<typeof appRouter>;
 
-  test('httpLink failure', async () => {
-    const error = (await waitError(
-      ctx.proxy.q.query(),
-      TRPCClientError,
-    )) as any as TRPCClientError<typeof appRouter>;
-
-    expect(error).toMatchInlineSnapshot();
-  });
+  expect(error).toMatchInlineSnapshot();
 });
