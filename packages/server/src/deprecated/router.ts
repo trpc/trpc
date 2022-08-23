@@ -15,7 +15,7 @@ import {
   DataTransformerOptions,
   defaultTransformer,
 } from '../transformer';
-import { Prefixer, ThenArg, flatten } from '../types';
+import { FlatOverwrite, Prefixer, ThenArg } from '../types';
 import { MiddlewareFunction } from './internals/middlewares';
 import {
   CreateProcedureOptions,
@@ -851,9 +851,9 @@ export class Router<
     TInputContext,
     TContext,
     TMeta,
-    flatten<{}, TQueries>,
-    flatten<{}, TMutations>,
-    flatten<{}, TSubscriptions>,
+    FlatOverwrite<{}, TQueries>,
+    FlatOverwrite<{}, TMutations>,
+    FlatOverwrite<{}, TSubscriptions>,
     TErrorShape
   > {
     return this as any;

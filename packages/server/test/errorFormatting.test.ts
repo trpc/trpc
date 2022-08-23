@@ -26,13 +26,8 @@ describe('no custom error formatter', () => {
   const ctx = konn()
     .beforeEach(() => {
       const opts = routerToServerAndClientNew(appRouter);
-      const client = opts.client;
 
-      return {
-        close: opts.close,
-        client,
-        proxy: opts.proxy,
-      };
+      return opts;
     })
     .afterEach(async (ctx) => {
       await ctx?.close?.();
