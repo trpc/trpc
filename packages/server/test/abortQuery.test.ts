@@ -15,8 +15,8 @@ const router = t.router({
 });
 type Router = typeof router;
 
-describe('queries can be aborted by passing a signal', () => {
-  test('abort', async () => {
+describe('vanilla client procedure abortion', () => {
+  test('query', async () => {
     const abortController = new AbortController();
     const signal = abortController.signal;
 
@@ -33,10 +33,8 @@ describe('queries can be aborted by passing a signal', () => {
     expect(promise).rejects.toThrowError(/aborted/);
     close();
   });
-});
 
-describe('mutations should not be aborted', () => {
-  test.skip('abort', async () => {
+  test.skip('mutation', async () => {
     const abortController = new AbortController();
     const signal = abortController.signal;
 
@@ -46,11 +44,11 @@ describe('mutations should not be aborted', () => {
       // @ts-expect-error cannot call new procedure with old client
       'testMutation',
       undefined,
-      { signal }, // Maybe even type-error when passing a signal to a mutation
+      { signal },
     );
     abortController.abort();
 
-    expect(promise).resolves.toBe('hello');
+    expect(promise).rejects.toThrowError(/aborted/);
     close();
   });
 });

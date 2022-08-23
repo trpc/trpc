@@ -71,7 +71,7 @@ export interface TRPCRequestOptions {
    * Pass additional context to links
    */
   context?: OperationContext;
-  signal?: AbortSignal; // FIXME: Only for query
+  signal?: AbortSignal;
 }
 
 export interface TRPCSubscriptionObserver<TValue, TError> {
@@ -189,10 +189,7 @@ export class TRPCClient<TRouter extends AnyRouter> {
     const { promise, abort } = observableToPromise<TValue>(req$);
 
     const abortablePromise = new Promise<TOutput>((resolve, reject) => {
-      // Listen for signal events if a signal is
-      if (opts.type === 'query' && opts.signal) {
-        opts.signal.addEventListener('abort', abort);
-      }
+      opts.signal?.addEventListener('abort', abort);
 
       promise
         .then((envelope) => {
@@ -242,6 +239,8 @@ export class TRPCClient<TRouter extends AnyRouter> {
   ) {
     // FIXME: Should be inferred from `args`
     const context = (args[1] as TRPCRequestOptions | undefined)?.context;
+    const signal = (args[1] as TRPCRequestOptions | undefined)?.signal;
+
     return this.requestAsPromise<
       inferHandlerInput<AssertType<TMutations, ProcedureRecord>[TPath]>,
       inferProcedureOutput<TMutations[TPath]>
@@ -250,6 +249,7 @@ export class TRPCClient<TRouter extends AnyRouter> {
       path,
       input: args[0] as any,
       context,
+      signal,
     });
   }
   public subscription<
