@@ -1,8 +1,8 @@
 ---
-id: query-cancellation
-title: Query Cancellation
-sidebar_label: Query Cancellation
-slug: /query-cancellation
+id: aborting-procedures
+title: Aborting Procedures
+sidebar_label: Aborting Procedures
+slug: /aborting-procedures
 ---
 
 _If you're looking for how to abort queries and is using @trpc/react, please refer to @tanstack/react-query's [documentation](https://tanstack.com/query/v4/docs/guides/query-cancellation?from=reactQueryV3&original=https://react-query-v3.tanstack.com/guides/query-cancellation#manual-cancellation)._
