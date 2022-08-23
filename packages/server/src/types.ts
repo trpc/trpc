@@ -13,11 +13,11 @@ export type identity<T> = T;
 /**
  * @internal
  */
-export type flatten<T, Q> = identity<{
-  [k in keyof T | keyof Q]: k extends keyof T
-    ? T[k]
-    : k extends keyof Q
-    ? Q[k]
+export type FlatOverwrite<T, K> = identity<{
+  [TKey in keyof K | keyof T]: TKey extends keyof K
+    ? K[TKey]
+    : TKey extends keyof T
+    ? T[TKey]
     : never;
 }>;
 

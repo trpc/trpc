@@ -1,7 +1,7 @@
 ---
 id: router
-title: Define Router
-sidebar_label: Define Router
+title: Define Router & Procedures
+sidebar_label: Define Router & Procedures
 slug: /router
 ---
 
@@ -36,7 +36,7 @@ export const appRouter = t.router({
 
 ### With [Zod](https://github.com/colinhacks/zod)
 
-```tsx
+```ts twoslash
 import { initTRPC } from '@trpc/server';
 import { z } from 'zod';
 
@@ -47,11 +47,12 @@ export const appRouter = t.router({
     .input(
       z
         .object({
-          text: z.string().nullish(),
+          text: z.string(),
         })
-        .nullish(),
+        .optional(),
     )
     .query(({ input }) => {
+      //      ^?
       return {
         greeting: `hello ${input?.text ?? 'world'}`,
       };
@@ -61,6 +62,38 @@ export const appRouter = t.router({
 export type AppRouter = typeof appRouter;
 ```
 
+### Multiple input parsers
+
+> You're able to chain multiple parsers
+
+
+```ts twoslash title='server.ts'
+import { initTRPC } from '@trpc/server';
+import { z } from 'zod';
+
+export const t = initTRPC()();
+
+const roomProcedure = t.procedure.input(
+  z.object({
+    roomId: z.string(),
+  }),
+);
+
+const appRouter = t.router({
+  sendMessage: roomProcedure
+    .input(
+      z.object({
+        text: z.string(),
+      }),
+    )
+    .mutation(({ input }) => {
+      //         ^?
+      return input;
+    }),
+});
+
+export type AppRouter = typeof appRouter;
+```
 ### With [Yup](https://github.com/jquense/yup)
 
 ```tsx
