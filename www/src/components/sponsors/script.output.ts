@@ -102,15 +102,6 @@ export const sponsors = [
     "createdAt": 1633435620000
   },
   {
-    "name": "Francis Provost",
-    "imgSrc": "https://avatars.githubusercontent.com/u/6840361?v=4",
-    "monthlyPriceInDollars": 10,
-    "link": "https://francisprovost.com",
-    "privacyLevel": "PUBLIC",
-    "login": "francisprovost",
-    "createdAt": 1659711715000
-  },
-  {
     "name": "Ryan",
     "imgSrc": "https://avatars.githubusercontent.com/u/6907797?u=71aca5cb761c401b4abbf100057978a76f2f5e22&v=4",
     "monthlyPriceInDollars": 50,
@@ -123,7 +114,7 @@ export const sponsors = [
     "name": "Snaplet",
     "imgSrc": "https://avatars.githubusercontent.com/u/69029941?v=4",
     "monthlyPriceInDollars": 50,
-    "link": "https://www.snaplet.dev",
+    "link": "https://snaplet.dev",
     "privacyLevel": "PUBLIC",
     "login": "snaplet",
     "createdAt": 1636827585000
@@ -176,7 +167,7 @@ export const sponsors = [
   {
     "name": "Christian",
     "imgSrc": "https://avatars.githubusercontent.com/u/30244485?u=70f85b684ede25d672974d81a42049b718fd33af&v=4",
-    "monthlyPriceInDollars": 10,
+    "monthlyPriceInDollars": 5,
     "link": "https://lindeneg.org/",
     "privacyLevel": "PUBLIC",
     "login": "Lindeneg",
@@ -210,7 +201,7 @@ export const sponsors = [
     "createdAt": 1645479378000
   },
   {
-    "name": "Ping Labs",
+    "name": "Ping.gg",
     "imgSrc": "https://avatars.githubusercontent.com/u/89191727?v=4",
     "monthlyPriceInDollars": 250,
     "link": "https://ping.gg/",
@@ -357,7 +348,7 @@ export const sponsors = [
     "name": "Ahmed Elsakaan",
     "imgSrc": "https://avatars.githubusercontent.com/u/20271968?u=ab95f47bb661569e9b4ab1dadfdb802b77f9d1c6&v=4",
     "monthlyPriceInDollars": 10,
-    "link": "https://ixahmedxi.me",
+    "link": "https://elsakaan.dev",
     "privacyLevel": "PUBLIC",
     "login": "ixahmedxi",
     "createdAt": 1657794927000
@@ -372,8 +363,8 @@ export const sponsors = [
     "createdAt": 1657919647000
   },
   {
-    "name": "iway1",
-    "imgSrc": "https://avatars.githubusercontent.com/u/12774588?v=4",
+    "name": "Isaac Way",
+    "imgSrc": "https://avatars.githubusercontent.com/u/12774588?u=e664ed8bd364b3e9103d080d72087e25904c6cab&v=4",
     "monthlyPriceInDollars": 10,
     "link": "https://github.com/iway1",
     "privacyLevel": "PUBLIC",
@@ -424,5 +415,32 @@ export const sponsors = [
     "privacyLevel": "PUBLIC",
     "login": "francisprovost",
     "createdAt": 1659711715000
+  },
+  {
+    "name": "Jirka Svoboda",
+    "imgSrc": "https://avatars.githubusercontent.com/u/761766?u=1771454e0852904ddf71fe74e493e228331dd27a&v=4",
+    "monthlyPriceInDollars": 5,
+    "link": "https://github.com/svobik7",
+    "privacyLevel": "PUBLIC",
+    "login": "svobik7",
+    "createdAt": 1661061502000
+  },
+  {
+    "name": "Martin",
+    "imgSrc": "https://avatars.githubusercontent.com/u/17379661?u=2dc0effef1464639ae9ff98795cd29bb772bcce3&v=4",
+    "monthlyPriceInDollars": 10,
+    "link": "https://github.com/mshd",
+    "privacyLevel": "PUBLIC",
+    "login": "mshd",
+    "createdAt": 1661238661000
+  },
+  {
+    "name": "Fanvue",
+    "imgSrc": "https://avatars.githubusercontent.com/u/72873652?v=4",
+    "monthlyPriceInDollars": 10,
+    "link": "https://github.com/fanvue",
+    "privacyLevel": "PUBLIC",
+    "login": "fanvue",
+    "createdAt": 1661242015000
   }
 ] as const
