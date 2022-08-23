@@ -46,7 +46,7 @@ module.exports = {
       collapsed: false,
       items: [
         'client/vanilla',
-        'client/query-cancellation',
+        'client/aborting-procedures',
         'client/links',
         'client/header',
         'client/cors',
