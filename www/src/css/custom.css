@@ -206,7 +206,7 @@ h5 {
   display: none;
 }
 
-[data-theme='dark'] .shiki.min-light {
+[data-theme='dark'] .shiki.min-light-with-diff {
   display: none;
 }
 
