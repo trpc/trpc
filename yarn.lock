@@ -5455,6 +5455,11 @@ commander@^5.1.0:
   resolved "https://registry.npmjs.org/commander/-/commander-5.1.0.tgz#46abbd1652f8e059bddaef99bbdcb2ad9cf179ae"
   integrity sha512-P0CysNDQ7rtVw4QIQtm+MRxV66vKFSvlsQvGYXZWR3qFU0jlMKHZZZgw8e+8DSah4UDKMqnknRDQz+xuQXQ/Zg==
 
+commander@^9.3.0:
+  version "9.4.0"
+  resolved "https://registry.yarnpkg.com/commander/-/commander-9.4.0.tgz#bc4a40918fefe52e22450c111ecd6b7acce6f11c"
+  integrity sha512-sRPT+umqkz90UA8M1yqYfnHlZA7fF6nSphDtxeywPZ49ysjxDQybzk13CL+mXekDRG92skbcqCLVovuCusNmFw==
+
 commander@~4.1.1:
   version "4.1.1"
   resolved "https://registry.yarnpkg.com/commander/-/commander-4.1.1.tgz#9fd602bd936294e9e9ef46a3f4d6964044b18068"
@@ -6754,9 +6759,9 @@ eslint-plugin-prettier@^4.0.0:
     prettier-linter-helpers "^1.0.0"
 
 eslint-plugin-react-hooks@^4.2.0, eslint-plugin-react-hooks@^4.5.0:
-  version "4.5.0"
-  resolved "https://registry.yarnpkg.com/eslint-plugin-react-hooks/-/eslint-plugin-react-hooks-4.5.0.tgz#5f762dfedf8b2cf431c689f533c9d3fa5dcf25ad"
-  integrity sha512-8k1gRt7D7h03kd+SAAlzXkQwWK22BnK6GKZG+FJA6BAGy22CFvl8kCIXKpVux0cCxMWDQUPqSok0LKaZ0aOcCw==
+  version "4.6.0"
+  resolved "https://registry.yarnpkg.com/eslint-plugin-react-hooks/-/eslint-plugin-react-hooks-4.6.0.tgz#4c3e697ad95b77e93f8646aaa1630c1ba607edd3"
+  integrity sha512-oFc7Itz9Qxh2x4gNHStv3BqJq54ExXmfC+a1NjAta66IAN87Wu0R/QArgIS9qKzX3dXKPI9H5crl9QchNMY9+g==
 
 eslint-plugin-react@^7.25.1, eslint-plugin-react@^7.29.4:
   version "7.29.4"
@@ -15202,6 +15207,15 @@ wait-port@^0.2.9:
     chalk "^2.4.2"
     commander "^3.0.2"
     debug "^4.1.1"
+
+wait-port@^0.3.0:
+  version "0.3.0"
+  resolved "https://registry.yarnpkg.com/wait-port/-/wait-port-0.3.0.tgz#b76e3d518ab9894f9448e014a0ef6c2dee5b0aa1"
+  integrity sha512-seNQ7j92tG5uaylFK3RrAajajzpNMOr96pcCsD8cWGtVn4XXsFUMf9vzNcZSXVaMEfuZT/0t/Wc0KN+m74QYkw==
+  dependencies:
+    chalk "^4.1.2"
+    commander "^9.3.0"
+    debug "^4.3.4"
 
 walker@^1.0.7:
   version "1.0.7"
