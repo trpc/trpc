@@ -1,6 +1,6 @@
 {
   "name": "@examples/next-minimal",
-  "version": "9.27.1",
+  "version": "9.27.2",
   "private": true,
   "scripts": {
     "dev": "next dev",
@@ -8,10 +8,10 @@
     "start": "next start"
   },
   "dependencies": {
-    "@trpc/client": "^9.27.1",
-    "@trpc/next": "^9.27.1",
-    "@trpc/react": "^9.27.1",
-    "@trpc/server": "^9.27.1",
+    "@trpc/client": "^9.27.2",
+    "@trpc/next": "^9.27.2",
+    "@trpc/react": "^9.27.2",
+    "@trpc/server": "^9.27.2",
     "next": "latest",
     "react": "^18.1.0",
     "react-dom": "^18.1.0",
