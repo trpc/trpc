@@ -249,7 +249,7 @@ When you've done this, you can start migrating to the new way of doing things.
 
 ### Limitations of interopability mode
 
-Any procedures defined using `t.procedure` must be called on the client using the [new way of calling procedures](#calling-procedures) and vice-versa for old procedures. This means you have to move over an entire router on both the backend and frontend at once.
+Any procedures defined using `t.procedure` must be called on the client using the [new way of calling procedures](#calling-procedures). What this means is that when you migrate the `legacyRouter` over to be a "v10-`t.router`", you'll have to update the frontend-usage of this router to use the new way of calling procedures.
 
 ## For the remaining 5%
 
@@ -296,9 +296,9 @@ trpc.post.byId.useQuery('1', {
 });
 ```
 
-## Optional DX improvements
+### `@trpc/next`
 
-### `@trpc/next`: `setupNext()`
+#### `setupNext()` - Optional DX Improvement
 
 Setting up tRPC for Next.js is now easier than ever! Here's all you need to get going:
 
@@ -325,7 +325,7 @@ const MyApp = ({ Component, pageProps }) => {
 export default trpc.withTRPC(MyApp);
 ```
 
-As you can see, we no longer have to setup the react-query hooks and Next.js separately. The `trpc` object here contains all you need for your frontend application.
+As you can see, we no longer have to setup the React-Query hooks and tRPC context provider separately. Previously we setup the tPRC provider in `_app.tsx` and the React-Query hooks in `utils/trpc.ts` separately. Now, define the `trpc` object once and it will contain all you need for your frontend application.
 
 ### [...]
 
