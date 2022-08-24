@@ -37,7 +37,7 @@ function getRawProcedureInputOrThrow(req: HTTPRequest) {
     }
     if (typeof req.body === 'string') {
       // A mutation with no inputs will have req.body === ''
-      return req.body.length === 0 ? undefined : JSON.parse(req.body)
+      return req.body.length === 0 ? undefined : JSON.parse(req.body);
     }
     return req.body;
   } catch (err) {
