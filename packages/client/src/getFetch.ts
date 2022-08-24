@@ -5,7 +5,7 @@ export function getFetch(f?: typeof fetch): typeof fetch {
     return f;
   }
   const win = getWindow();
-  if (win.fetch) {
+  if (win?.fetch) {
     return typeof win.fetch.bind === 'function'
       ? win.fetch.bind(win)
       : win.fetch;
