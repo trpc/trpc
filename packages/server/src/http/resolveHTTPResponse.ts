@@ -35,7 +35,11 @@ function getRawProcedureInputOrThrow(req: HTTPRequest) {
       const raw = req.query.get('input');
       return JSON.parse(raw!);
     }
-    return typeof req.body === 'string' ? JSON.parse(req.body) : req.body;
+    if (typeof req.body === 'string') {
+      // A mutation with no inputs will have req.body === ''
+      return req.body.length === 0 ? undefined : JSON.parse(req.body)
+    }
+    return req.body;
   } catch (err) {
     throw new TRPCError({
       code: 'PARSE_ERROR',
