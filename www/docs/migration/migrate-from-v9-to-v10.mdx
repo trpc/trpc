@@ -33,7 +33,7 @@ import { initTRPC } from '@trpc/server';
 export const t = initTRPC()();
 ```
 
-Here's a full example of how the `t` variable may look like:
+Here's a full example of how the `t` variable may look like with a data-transformer, openapi metadata and error formatter:
 
 ```ts title='/src/server/trpc.ts'
 import { initTRPC } from '@trpc/server';
@@ -104,7 +104,7 @@ client.query('greeting', 'KATT');
 trpc.useQuery(['greeting', 'KATT']);
 
 // NEW - you'll be able to CMD+click `greeting` below and jump straight to your backend code
-client.greeting('KATT');
+client.greeting.query('KATT');
 trpc.greeting.useQuery('KATT');
 ```
 
@@ -154,6 +154,7 @@ const isAuthed = t.middleware(({ next, ctx }) => {
 
   return next({
     ctx: {
+      // <-- auto-spreading old context, modify only what's changed
       user: ctx.user,
     },
   });
@@ -163,7 +164,9 @@ const isAuthed = t.middleware(({ next, ctx }) => {
 const authedProcedure = t.procedure.use(isAuthed);
 
 const appRouter = t.router({
-  greeting: authedProcedure.query(({ ctx }) => `hello ${ctx.name}!`),
+  greeting: authedProcedure.query(({ ctx }) => {
+    return `Hello ${ctx.user.name}!`
+  }),
 });
 ```
 
@@ -187,25 +190,25 @@ When you've done this, you can start migrating to the new way of doing things.
 
 **2. Create the `t`-object**
 
-```diff title='src/server/trpc.ts'
-+ import superjson from 'superjson';
-+ import { Context } from './context';
-+
-+ export const t = initTRPC<{
-+   ctx: Context;
-+ }>()({
-+   // Optional:
-+   transformer: superjson,
-+   // Optional:
-+   errorFormatter({ shape }) {
-+     return {
-+       ...shape,
-+       data: {
-+         ...shape.data,
-+       },
-+     };
-+   },
-+ });
+```ts title='src/server/trpc.ts'
+import superjson from 'superjson';
+import { Context } from './context';
+
+export const t = initTRPC<{
+  ctx: Context;
+}>()({
+  // Optional:
+  transformer: superjson,
+  // Optional:
+  errorFormatter({ shape }) {
+    return {
+      ...shape,
+      data: {
+        ...shape.data,
+      },
+    };
+  },
+});
 ```
 
 **3. Create a new `appRouter`**
@@ -228,28 +231,25 @@ When you've done this, you can start migrating to the new way of doing things.
 ```
 
 3. See if your app still builds
-4. Create a test router:
+4. Create a test router and merge it in:
 
-```diff title="/src/routers/greeting.ts"
-+ const greetingRouter = t.router({
-+   greeting: t.procedure.query(() => 'world'),
-+ });
+```ts title="/src/routers/greeting.ts"
+const greetingRouter = t.router({
+  greeting: t.procedure.query(() => 'world'),
+});
 ```
 
-5. Merge it in:
+```ts title="src/server/routers/_app.ts"
+import { greetingRouter } from './greeting';
 
-```diff title="src/server/routers/_app.ts"
-+ import { greetingRouter } from "./routers/greeting";
+/* [...] */
 
-  /* [...] */
-
-- export const appRouter = t.mergeRouters(legacyRouter);
-+ export const appRouter = t.mergeRouters(legacyRouter, greetingRouter);
+export const appRouter = t.mergeRouters(legacyRouter, greetingRouter);
 ```
 
 ### Limitations of interopability mode
 
-Any procedures defined using `t.procedure` must be called on the client using the [new way of calling procedures](#calling-procedures) and vice-versa for old procedures. This means you have to move over an entire router on both the backend and frontend at once.
+Any procedures defined using `t.procedure` must be called on the client using the [new way of calling procedures](#calling-procedures). What this means is that when you migrate the `legacyRouter` over to be a "v10-`t.router`", you'll have to update the frontend-usage of this router to use the new way of calling procedures.
 
 ## For the remaining 5%
 
@@ -296,9 +296,9 @@ trpc.post.byId.useQuery('1', {
 });
 ```
 
-## Optional DX improvements
+### `@trpc/next`
 
-### `@trpc/next`: `setupNext()`
+#### `setupNext()` - Optional DX Improvement
 
 Setting up tRPC for Next.js is now easier than ever! Here's all you need to get going:
 
@@ -325,7 +325,21 @@ const MyApp = ({ Component, pageProps }) => {
 export default trpc.withTRPC(MyApp);
 ```
 
-As you can see, we no longer have to setup the react-query hooks and Next.js separately. The `trpc` object here contains all you need for your frontend application.
+As you can see, we no longer have to setup the React-Query hooks and tRPC context provider separately. Previously we setup the tPRC provider in `_app.tsx` and the React-Query hooks in `utils/trpc.ts` separately. Now, define the `trpc` object once and it will contain all you need for your frontend application.
+
+### `@trpc/client`
+
+#### Aborting procedures
+
+We've moved to the industry standards when it comes to aborting procedures. Instead of calling a `.cancel()`, you now give the query an `AbortSignal` and call `.abort()` on its parent `AbortController`.
+
+```tsx
+const ac = new AbortController();
+const helloQuery = client.greeting.query('KATT', { signal: ac.signal });
+
+// Aborting
+ac.abort();
+```
 
 ### [...]
 
