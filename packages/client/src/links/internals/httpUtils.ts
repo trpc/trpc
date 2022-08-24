@@ -85,7 +85,7 @@ export function httpRequest(
     const url = getUrl(opts);
     const body = getBody(opts);
 
-    const meta = {} as any as HTTPResult['meta'];
+    const meta = {} as HTTPResult['meta'];
     Promise.resolve(runtime.headers())
       .then((headers) =>
         runtime.fetch(url, {

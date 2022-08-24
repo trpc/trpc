@@ -44,7 +44,13 @@ module.exports = {
       type: 'category',
       label: '@trpc/client',
       collapsed: false,
-      items: ['client/vanilla', 'client/links', 'client/header', 'client/cors'],
+      items: [
+        'client/vanilla',
+        'client/aborting-procedures',
+        'client/links',
+        'client/header',
+        'client/cors',
+      ],
     },
     {
       type: 'category',
