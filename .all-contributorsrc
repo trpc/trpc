@@ -1086,6 +1086,15 @@
       "contributions": [
         "test"
       ]
+    },
+    {
+      "login": "colelawrence",
+      "name": "Cole Lawrence",
+      "avatar_url": "https://avatars.githubusercontent.com/u/2925395?v=4",
+      "profile": "https://colelawrence.com",
+      "contributions": [
+        "bug"
+      ]
     }
   ],
   "skipCi": true

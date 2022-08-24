@@ -23,16 +23,19 @@ export function getErrorFromUnknown(cause: unknown): TRPCError {
 
   let errorCause: Error | undefined = undefined;
   let stack: string | undefined = undefined;
+  let message: string | undefined = undefined;
 
   if (cause instanceof Error) {
     errorCause = cause;
     // take stack trace from cause
     stack = cause.stack;
+    message = cause.message;
   }
 
   const err = new TRPCError({
     code: 'INTERNAL_SERVER_ERROR',
     cause: errorCause,
+    message,
   });
 
   err.stack = stack;
