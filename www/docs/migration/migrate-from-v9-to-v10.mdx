@@ -190,25 +190,25 @@ When you've done this, you can start migrating to the new way of doing things.
 
 **2. Create the `t`-object**
 
-```diff title='src/server/trpc.ts'
-+ import superjson from 'superjson';
-+ import { Context } from './context';
-+
-+ export const t = initTRPC<{
-+   ctx: Context;
-+ }>()({
-+   // Optional:
-+   transformer: superjson,
-+   // Optional:
-+   errorFormatter({ shape }) {
-+     return {
-+       ...shape,
-+       data: {
-+         ...shape.data,
-+       },
-+     };
-+   },
-+ });
+```ts title='src/server/trpc.ts'
+import superjson from 'superjson';
+import { Context } from './context';
+
+export const t = initTRPC<{
+  ctx: Context;
+}>()({
+  // Optional:
+  transformer: superjson,
+  // Optional:
+  errorFormatter({ shape }) {
+    return {
+      ...shape,
+      data: {
+        ...shape.data,
+      },
+    };
+  },
+});
 ```
 
 **3. Create a new `appRouter`**
@@ -233,21 +233,20 @@ When you've done this, you can start migrating to the new way of doing things.
 3. See if your app still builds
 4. Create a test router:
 
-```diff title="/src/routers/greeting.ts"
-+ const greetingRouter = t.router({
-+   greeting: t.procedure.query(() => 'world'),
-+ });
+```ts title="/src/routers/greeting.ts"
+const greetingRouter = t.router({
+  greeting: t.procedure.query(() => 'world'),
+});
 ```
 
 5. Merge it in:
 
-```diff title="src/server/routers/_app.ts"
-+ import { greetingRouter } from "./routers/greeting";
+```ts title="src/server/routers/_app.ts"
+import { greetingRouter } from './routers/greeting';
 
-  /* [...] */
+/* [...] */
 
-- export const appRouter = t.mergeRouters(legacyRouter);
-+ export const appRouter = t.mergeRouters(legacyRouter, greetingRouter);
+export const appRouter = t.mergeRouters(legacyRouter, greetingRouter);
 ```
 
 ### Limitations of interopability mode
