@@ -252,7 +252,16 @@ export function applyWSSHandler<TRouter extends AnyRouter>(
     // This line was introduced after the following error brought down production systems:
     // "RangeError: Invalid WebSocket frame: RSV2 and RSV3 must be clear"
     // Here is the relevant discussion: https://github.com/websockets/ws/issues/1354#issuecomment-774616962
-    client.on('error', console.error);
+    client.on('error', (cause) => {
+      opts.onError?.({
+        ctx,
+        error: getErrorFromUnknown(cause),
+        input: undefined,
+        path: undefined,
+        type: 'unknown',
+        req,
+      });
+    });
 
     client.once('close', () => {
       for (const sub of clientSubscriptions.values()) {
