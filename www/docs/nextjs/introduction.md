@@ -183,7 +183,7 @@ export default withTRPC<AppRouter>({
 
 ### 6. Make API requests
 
-```tsx title='pages/index.ts'
+```tsx title='pages/index.tsx'
 import { trpc } from '../utils/trpc';
 
 export default function IndexPage() {
