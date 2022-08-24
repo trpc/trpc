@@ -28,6 +28,7 @@ export function getErrorFromUnknown(cause: unknown): TRPCError {
   // take stack trace from cause
   if (cause instanceof Error) {
     err.stack = cause.stack;
+    err.message = cause.message;
   }
   return err;
 }
