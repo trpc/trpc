@@ -33,7 +33,7 @@ import { initTRPC } from '@trpc/server';
 export const t = initTRPC()();
 ```
 
-Here's a full example of how the `t` variable may look like:
+Here's a full example of how the `t` variable may look like with a data-transformer, openapi metadata and error formatter:
 
 ```ts title='/src/server/trpc.ts'
 import { initTRPC } from '@trpc/server';
@@ -104,7 +104,7 @@ client.query('greeting', 'KATT');
 trpc.useQuery(['greeting', 'KATT']);
 
 // NEW - you'll be able to CMD+click `greeting` below and jump straight to your backend code
-client.greeting('KATT');
+client.greeting.query('KATT');
 trpc.greeting.useQuery('KATT');
 ```
 
@@ -154,6 +154,7 @@ const isAuthed = t.middleware(({ next, ctx }) => {
 
   return next({
     ctx: {
+      // <-- auto-spreading old context, modify only what's changed
       user: ctx.user,
     },
   });
@@ -163,7 +164,9 @@ const isAuthed = t.middleware(({ next, ctx }) => {
 const authedProcedure = t.procedure.use(isAuthed);
 
 const appRouter = t.router({
-  greeting: authedProcedure.query(({ ctx }) => `hello ${ctx.name}!`),
+  greeting: authedProcedure.query(({ ctx }) => {
+    return `Hello ${ctx.user.name}!`
+  }),
 });
 ```
 
@@ -326,6 +329,20 @@ export default trpc.withTRPC(MyApp);
 ```
 
 As you can see, we no longer have to setup the React-Query hooks and tRPC context provider separately. Previously we setup the tPRC provider in `_app.tsx` and the React-Query hooks in `utils/trpc.ts` separately. Now, define the `trpc` object once and it will contain all you need for your frontend application.
+
+### `@trpc/client`
+
+#### Aborting procedures
+
+We've moved to the industry standards when it comes to aborting procedures. Instead of calling a `.cancel()`, you now give the query an `AbortSignal` and call `.abort()` on its parent `AbortController`.
+
+```tsx
+const ac = new AbortController();
+const helloQuery = client.greeting.query('KATT', { signal: ac.signal });
+
+// Aborting
+ac.abort();
+```
 
 ### [...]
 
