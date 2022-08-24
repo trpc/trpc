@@ -231,7 +231,7 @@ export const t = initTRPC<{
 ```
 
 3. See if your app still builds
-4. Create a test router:
+4. Create a test router and merge it in:
 
 ```ts title="/src/routers/greeting.ts"
 const greetingRouter = t.router({
@@ -239,10 +239,8 @@ const greetingRouter = t.router({
 });
 ```
 
-5. Merge it in:
-
 ```ts title="src/server/routers/_app.ts"
-import { greetingRouter } from './routers/greeting';
+import { greetingRouter } from './greeting';
 
 /* [...] */
 
