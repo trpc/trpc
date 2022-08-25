@@ -117,7 +117,7 @@ export type DecoratedProcedureRecord<
 };
 
 /**
- * @deprecated use createTRPCReact instead
+ * @deprecated use `createTRPCReact` instead
  * @internal
  */
 export function createReactQueryHooksProxy<
