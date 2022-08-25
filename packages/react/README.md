@@ -37,19 +37,18 @@ pnpm add @trpc/react @tanstack/react-query
 Create a utils file that exports tRPC hooks and providers.
 
 ```ts
-import { createReactQueryHooks, createReactQueryHooksProxy } from '@trpc/react';
+import { createReactQueryHooks, createTRPCReact } from '@trpc/react';
 import type { AppRouter } from './server';
 
-export const trpc = createReactQueryHooks<AppRouter>();
-export const proxy = createReactQueryHooksProxy(trpc);
+export const trpc = createTRPCReact<AppRouter>();
 ```
 
 Use the provider to connect to your API.
 
 ```ts
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import React from 'react';
 import { useState } from 'react';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { trpc } from '~/utils/trpc';
 
 export function App() {

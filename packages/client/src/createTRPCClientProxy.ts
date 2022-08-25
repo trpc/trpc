@@ -87,7 +87,7 @@ const clientCallTypeMap: Record<
 };
 
 /**
- * @deprecated use createTRPCProxyClient instead
+ * @deprecated use `createTRPCProxyClient` instead
  * @internal
  */
 export function createTRPCClientProxy<TRouter extends AnyRouter>(

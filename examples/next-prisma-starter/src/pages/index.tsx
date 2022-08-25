@@ -102,12 +102,12 @@ export default IndexPage;
 // export const getStaticProps = async (
 //   context: GetStaticPropsContext<{ filter: string }>,
 // ) => {
-//   const ssg = createSSGHelpers({
+//   const ssg = createProxySSGHelpers({
 //     router: appRouter,
 //     ctx: await createContext(),
 //   });
 //
-//   await ssg.fetchQuery('post.all');
+//   await ssg.post.all.fetch();
 //
 //   return {
 //     props: {

@@ -1,4 +1,9 @@
-import { InfiniteData } from '@tanstack/react-query';
+import {
+  DehydrateOptions,
+  DehydratedState,
+  InfiniteData,
+  QueryClient,
+} from '@tanstack/react-query';
 import {
   AnyRouter,
   OmitNeverKeys,
@@ -8,11 +13,7 @@ import {
   inferProcedureOutput,
 } from '@trpc/server';
 import { createProxy } from '@trpc/server/shared';
-import {
-  CreateSSGHelpers,
-  CreateSSGHelpersOptions,
-  createSSGHelpers,
-} from './ssg';
+import { CreateSSGHelpersOptions, createSSGHelpers } from './ssg';
 
 type DecorateProcedure<TProcedure extends Procedure<any>> = {
   /**
@@ -112,6 +113,8 @@ export function createProxySSGHelpers<TRouter extends AnyRouter>(
     },
   );
 
-  return proxy as Pick<CreateSSGHelpers, 'queryClient' | 'dehydrate'> &
-    DecoratedProcedureSSGRecord<TRouter>;
+  return proxy as {
+    queryClient: QueryClient;
+    dehydrate: (opts?: DehydrateOptions) => DehydratedState;
+  } & DecoratedProcedureSSGRecord<TRouter>;
 }

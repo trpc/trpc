@@ -129,6 +129,9 @@ function createHookProxy(callback: (...args: [string, ...unknown[]]) => any) {
   });
 }
 
+/**
+ * @deprecated use `createTRPCReact` instead
+ */
 export function createReactQueryHooks<
   TRouter extends AnyRouter,
   TSSRContext = unknown,
@@ -514,7 +517,7 @@ type fooType<TRouter extends AnyRouter, TSSRContext = unknown> = GnClass<
 
 /**
  * Infer the type of a `createReactQueryHooks` function
- * @intenral
+ * @internal
  */
 export type CreateReactQueryHooks<
   TRouter extends AnyRouter,
