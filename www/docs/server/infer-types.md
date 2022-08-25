@@ -16,17 +16,20 @@ import { z } from "zod";
 const t = initTRPC()();
 
 const appRouter = t.router({
-  user: t.router({
-    me: t.procedure.query(() => {
-      // imaginary query for current user
-      return { id: 1, name: 'John' };
+  post: t.router({
+    byId: t.procedure
+      .input(z.string())
+      .query(({ input }) => {
+        // imaginary db call
+        return { id: 1, title: 'tRPC is the best!' };
+    }),
+    create: t.procedure
+      .input(z.object({ content: z.string() }))
+      .mutation(({ input }) => {
+        // imaginary db call
+        return { id: 1, title: input.content };
     }),
   }),
-  postCreate: t.procedure.input(z.string())
-    .mutation(({ input }) => {
-      // imaginary db call
-      return { id: 1, title: 'tRPC is the best!' };
-    }),
 });
 
 export type AppRouter = typeof appRouter;
@@ -58,15 +61,15 @@ import type { inferProcedureInput, inferProcedureOutput } from '@trpc/server';
 import type { AppRouter } from './server';
 
 // @noErrors
-type UserOutput = inferProcedureOutput<AppRouter['user']['me']>;
+type Post = inferProcedureOutput<AppRouter['post']['byId']>;
 //   ^?
-type PostInput = inferProcedureInput<AppRouter['postCreate']>;
+type PostInput = inferProcedureInput<AppRouter['post']['create']>;
 //   ^?
 ```
 
 ### Additional DX Helper Type
 
-if you don't like the double-import of first the inferance helper, then your `AppRouter` everytime you want to infer a type, `@trpc/server` also exports a type `GetInferanceHelpers<TRouter>`. This lets you pass your router at initialization then import a single helper type when inferring types:
+If you don't like the double-import from the above snippet, `@trpc/server` also exports a type `GetInferenceHelpers<TRouter>`. This lets you pass your router once at initialization, then import a single helper type when inferring types:
 
 ```ts twoslash title='utils/trpc.ts'
 // @include: server
@@ -89,17 +92,29 @@ export type InferTRPC = GetInferenceHelpers<AppRouter>;
 // ---cut---
 import { InferTRPC } from './utils';
 
-type UserOutput = InferTRPC['user']['me']['output'];
+type Post = InferTRPC['post']['byId']['output'];
 //   ^?
-type PostInput = InferTRPC['postCreate']['input'];
+type PostInput = InferTRPC['post']['create']['input'];
 //   ^?
 ```
 
+
+
 ## Infer `TRPClientError`s based on your router
 
-```ts title='src/client.ts'
+```ts twoslash title='client.ts'
+// @module: esnext
+// @include: server
+
+// @filename: trpc.ts
+import { createTRPCProxyClient } from "@trpc/client";
+import type { AppRouter } from "./server";
+
+export const trpc = createTRPCProxyClient<AppRouter>({ url: 'http://localhost:3000/api/trpc' });
+// ---cut---
+// @filename: client.ts
 import { TRPCClientError } from '@trpc/client';
-import type { AppRouter } from '~/server/routers/_app';
+import type { AppRouter } from './server';
 import { trpc } from './trpc';
 
 export function isTRPCClientError(
@@ -110,7 +125,7 @@ export function isTRPCClientError(
 
 async function main() {
   try {
-    await trpc.postById.query({ id: 1 });
+    await trpc.post.byId.query('1');
   } catch (cause) {
     if (isTRPCClientError(cause)) {
       // `cause` is now typed as your router's `TRPCClientError`
