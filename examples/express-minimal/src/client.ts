@@ -1,4 +1,4 @@
-import { createTRPCClient, createTRPCClientProxy } from '@trpc/client';
+import { createTRPCProxyClient } from '@trpc/client';
 import fetch from 'node-fetch';
 import type { AppRouter } from './router';
 
@@ -6,15 +6,14 @@ import type { AppRouter } from './router';
 global.fetch = fetch as any;
 
 async function main() {
-  const client = createTRPCClient<AppRouter>({
+  const client = createTRPCProxyClient<AppRouter>({
     url: 'http://localhost:3000/trpc',
   });
-  const proxy = createTRPCClientProxy(client);
 
-  const withoutInputQuery = await proxy.hello.greeting.query();
+  const withoutInputQuery = await client.hello.greeting.query();
   console.log(withoutInputQuery);
 
-  const withInputQuery = await proxy.hello.greeting.query({ name: 'Alex' });
+  const withInputQuery = await client.hello.greeting.query({ name: 'Alex' });
   console.log(withInputQuery);
 }
 

@@ -14,7 +14,6 @@ import {
   observableToPromise,
   share,
 } from '@trpc/server/observable';
-import { CancelFn } from '..';
 import { TRPCClientError } from '../TRPCClientError';
 import { getFetch } from '../getFetch';
 import { httpBatchLink } from '../links';
@@ -27,10 +26,6 @@ import {
   TRPCLink,
 } from '../links/types';
 import { getAbortController } from './fetchHelpers';
-
-type CancellablePromise<T = unknown> = Promise<T> & {
-  cancel: CancelFn;
-};
 
 interface CreateTRPCClientBaseOptions {
   /**
@@ -76,6 +71,7 @@ export interface TRPCRequestOptions {
    * Pass additional context to links
    */
   context?: OperationContext;
+  signal?: AbortSignal;
 }
 
 export interface TRPCSubscriptionObserver<TValue, TError> {
@@ -141,7 +137,7 @@ export class TRPCClient<TRouter extends AnyRouter> {
         };
 
     this.runtime = {
-      AbortController: AC as any,
+      AbortController: AC,
       fetch: _fetch,
       headers: getHeadersFn(),
       transformer,
@@ -186,25 +182,25 @@ export class TRPCClient<TRouter extends AnyRouter> {
     input: TInput;
     path: string;
     context?: OperationContext;
-  }): CancellablePromise<TOutput> {
+    signal?: AbortSignal;
+  }): Promise<TOutput> {
     const req$ = this.$request<TInput, TOutput>(opts);
     type TValue = inferObservableValue<typeof req$>;
     const { promise, abort } = observableToPromise<TValue>(req$);
 
-    const cancellablePromise: CancellablePromise<any> = new Promise<TOutput>(
-      (resolve, reject) => {
-        promise
-          .then((envelope) => {
-            resolve((envelope.result as any).data);
-          })
-          .catch((err) => {
-            reject(TRPCClientError.from(err));
-          });
-      },
-    ) as any;
-    cancellablePromise.cancel = abort;
+    const abortablePromise = new Promise<TOutput>((resolve, reject) => {
+      opts.signal?.addEventListener('abort', abort);
 
-    return cancellablePromise;
+      promise
+        .then((envelope) => {
+          resolve((envelope.result as any).data);
+        })
+        .catch((err) => {
+          reject(TRPCClientError.from(err));
+        });
+    });
+
+    return abortablePromise;
   }
   public query<
     TQueries extends AssertLegacyDef<TRouter>['queries'],
@@ -216,7 +212,10 @@ export class TRPCClient<TRouter extends AnyRouter> {
       TRPCRequestOptions?,
     ]
   ) {
+    // FIXME: Should be inferred from `args`
     const context = (args[1] as TRPCRequestOptions | undefined)?.context;
+    const signal = (args[1] as TRPCRequestOptions | undefined)?.signal;
+
     return this.requestAsPromise<
       inferHandlerInput<AssertType<TQueries, ProcedureRecord>[TPath]>,
       inferProcedureOutput<TQueries[TPath]>
@@ -225,6 +224,7 @@ export class TRPCClient<TRouter extends AnyRouter> {
       path,
       input: args[0] as any,
       context,
+      signal,
     });
   }
   public mutation<
@@ -237,7 +237,10 @@ export class TRPCClient<TRouter extends AnyRouter> {
       TRPCRequestOptions?,
     ]
   ) {
+    // FIXME: Should be inferred from `args`
     const context = (args[1] as TRPCRequestOptions | undefined)?.context;
+    const signal = (args[1] as TRPCRequestOptions | undefined)?.signal;
+
     return this.requestAsPromise<
       inferHandlerInput<AssertType<TMutations, ProcedureRecord>[TPath]>,
       inferProcedureOutput<TMutations[TPath]>
@@ -246,6 +249,7 @@ export class TRPCClient<TRouter extends AnyRouter> {
       path,
       input: args[0] as any,
       context,
+      signal,
     });
   }
   public subscription<

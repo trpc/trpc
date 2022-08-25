@@ -27,7 +27,7 @@ describe('getAbortController() from..', () => {
   test('neither', () => {
     (global as any).AbortController = undefined;
     (global as any).window = undefined;
-    expect(getAbortController()).toBe(null);
+    expect(getAbortController()).toBe(undefined);
   });
 });
 

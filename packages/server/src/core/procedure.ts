@@ -17,6 +17,7 @@ export interface ProcedureOptions {
    * Client-side context
    */
   context?: ClientContext;
+  signal?: AbortSignal;
 }
 
 /**
