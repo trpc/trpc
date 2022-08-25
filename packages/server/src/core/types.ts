@@ -56,3 +56,20 @@ export type inferSubscriptionOutput<
 
 export type inferProcedureClientError<T extends Procedure<any>> =
   inferProcedureParams<T>['_config']['errorShape'];
+
+type HandleInferenceHelpers<
+  TRouterOrProcedure extends AnyRouter | Procedure<any>,
+> = TRouterOrProcedure extends AnyRouter
+  ? GetInferenceHelpers<TRouterOrProcedure>
+  : TRouterOrProcedure extends Procedure<any>
+  ? {
+      input: inferProcedureInput<TRouterOrProcedure>;
+      output: inferProcedureOutput<TRouterOrProcedure>;
+    }
+  : never;
+
+export type GetInferenceHelpers<TRouter extends AnyRouter> = {
+  [TKey in keyof TRouter['_def']['record']]: HandleInferenceHelpers<
+    TRouter['_def']['record'][TKey]
+  >;
+};
