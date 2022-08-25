@@ -5,6 +5,9 @@ export function getWindow() {
   if (typeof global !== 'undefined') {
     return global;
   }
+  if (typeof globalThis !== 'undefined') {
+    return globalThis;
+  }
   return undefined;
 }
 export function getAbortController(
