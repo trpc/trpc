@@ -59,17 +59,21 @@ export type inferProcedureClientError<T extends Procedure<any>> =
 
 type HandleInferenceHelpers<
   TRouterOrProcedure extends AnyRouter | Procedure<any>,
+  TType extends 'input' | 'output',
 > = TRouterOrProcedure extends AnyRouter
-  ? GetInferenceHelpers<TRouterOrProcedure>
+  ? GetInferenceHelpers<TRouterOrProcedure, TType>
   : TRouterOrProcedure extends Procedure<any>
-  ? {
-      input: inferProcedureInput<TRouterOrProcedure>;
-      output: inferProcedureOutput<TRouterOrProcedure>;
-    }
+  ? TType extends 'input'
+    ? inferProcedureInput<TRouterOrProcedure>
+    : inferProcedureOutput<TRouterOrProcedure>
   : never;
 
-export type GetInferenceHelpers<TRouter extends AnyRouter> = {
+export type GetInferenceHelpers<
+  TRouter extends AnyRouter,
+  TType extends 'input' | 'output',
+> = {
   [TKey in keyof TRouter['_def']['record']]: HandleInferenceHelpers<
-    TRouter['_def']['record'][TKey]
+    TRouter['_def']['record'][TKey],
+    TType
   >;
 };

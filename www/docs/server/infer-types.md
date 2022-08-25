@@ -69,7 +69,7 @@ type PostInput = inferProcedureInput<AppRouter['post']['create']>;
 
 ### Additional DX Helper Type
 
-If you don't like the double-import from the above snippet, `@trpc/server` also exports a type `GetInferenceHelpers<TRouter>`. This lets you pass your router once at initialization, then import a single helper type when inferring types:
+If you don't like the double-import from the above snippet, `@trpc/server` also exports a type `GetInferenceHelpers<TRouter, 'input' | 'output'>`. This lets you pass your router once at initialization, then import a single helper type when inferring types:
 
 ```ts twoslash title='utils/trpc.ts'
 // @include: server
@@ -78,23 +78,27 @@ import type { GetInferenceHelpers } from '@trpc/server';
 import type { AppRouter } from './server';
 
 // @noErrors
-export type InferTRPC = GetInferenceHelpers<AppRouter>;
+export type InferProcedureInput = GetInferenceHelpers<AppRouter, 'input'>;
+export type InferProcedureOutput = GetInferenceHelpers<AppRouter, 'output'>;
 ```
 
+<!-- FIXME: reuse above snippet -->
 ```ts twoslash
 // @module: esnext
 // @include: server
 // @filename: utils.ts
 import type { GetInferenceHelpers } from '@trpc/server';
 import type { AppRouter } from './server';
-export type InferTRPC = GetInferenceHelpers<AppRouter>;
+
+export type InferProcedureInput = GetInferenceHelpers<AppRouter, 'input'>;
+export type InferProcedureOutput = GetInferenceHelpers<AppRouter, 'output'>;
 // @filename: index.ts
 // ---cut---
-import { InferTRPC } from './utils';
+import { InferProcedureInput, InferProcedureOutput } from './utils';
 
-type Post = InferTRPC['post']['byId']['output'];
+type Post = InferProcedureOutput['post']['byId'];
 //   ^?
-type PostInput = InferTRPC['post']['create']['input'];
+type PostInput = InferProcedureInput['post']['create'];
 //   ^?
 ```
 
