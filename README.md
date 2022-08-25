@@ -1,3 +1,8 @@
+> **🚀 You are looking at a pre-prelease of tRPC v10!**
+> See our [v10-docs.md](./.tmp/v10-docs.md) for a summary of what is changing or take a look at [the **v10 docs website**](https://alpha.trpc.io/).
+> There is also [the `examples-v10-next-prisma-starter-sqlite` project](https://github.com/trpc/examples-v10-next-prisma-starter-sqlite) to try out a real project using this version.
+
+
 <p align="center">
   <a href="https://trpc.io/"><img src="./www/static/img/logo-text.svg" alt="tRPC" height="130"/></a>
 </p>
