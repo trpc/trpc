@@ -148,7 +148,7 @@ function Home() {
             title="Sponsors"
             description={
               <>
-                We couldn&apos;t have done it without all of our amazing{' '}
+                We really love all of our amazing{' '}
                 <a
                   href="https://github.com/sponsors/KATT"
                   target="_blank"
@@ -156,7 +156,7 @@ function Home() {
                 >
                   sponsors
                 </a>
-                , who help us to keep tRPC alive and well-funded.
+                , who help make sure tRPC is here to stay.
               </>
             }
           />
