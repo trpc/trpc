@@ -108,8 +108,11 @@ function Home() {
         </section>
         <section className="max-w-[80ch] px-6 mx-auto md:px-0">
           <SectionTitle title={<>You may not need a traditional API</>} />
-          <blockquote cite="https://twitter.com/alexdotjs" className="mt-6">
-            <p className="pt-3 text-sm text-gray-600 md:text-base dark:text-gray-400">
+          <blockquote
+            cite="https://twitter.com/alexdotjs"
+            className="mt-6 space-y-2 py-2"
+          >
+            <p className="text-sm text-gray-600 md:text-base dark:text-gray-400">
               I built tRPC to allow me to <strong>move faster</strong> by
               removing the need of a traditional API-layer, while still having
               confidence that my apps won&apos;t break as I rapidly iterate.
