@@ -231,3 +231,20 @@ h5 {
 .theme-doc-version-badge {
   margin-bottom: 1rem;
 }
+
+/* Hide announcement bar for v9 */
+html:not(.docs-version-current) [role='banner'] {
+  display: none !important;
+}
+
+/* Toggle different gifs depending on version */
+.trpcgif {
+  display: none;
+}
+
+html.v10 .trpcgif--v10 {
+  display: block;
+}
+html.v9 .trpcgif--v9 {
+  display: block;
+}

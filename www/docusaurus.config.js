@@ -12,6 +12,9 @@ module.exports = {
   organizationName: 'trpc', // Usually your GitHub org/user name.
   projectName: 'trpc', // Usually your repo name.
   themeConfig: {
+    defaultMode: 'darkMode',
+    disableSwitch: false,
+    respectPrefersColorScheme: true,
     image: 'img/facebook_cover_photo_2.png',
     prism: {
       theme: require('prism-react-renderer/themes/vsDark'),
@@ -24,10 +27,12 @@ module.exports = {
       // searchParameters: {},
     },
     announcementBar: {
+      id: 'v10',
       content:
-        "🚀 You are looking at a pre-release of tRPC v10! See <a href='https://alpha.trpc.io/docs/migrate-from-v9-to-v10'>the migration guide</a> for a summary of what is changing &amp; <a href='https://github.com/trpc/examples-v10-next-prisma-starter-sqlite'>go here</a> to try out a real project using this version.",
+        "🚀 You are looking at a pre-release of tRPC v10! See <a href='https://alpha.trpc.io/docs/v10/migrate-from-v9-to-v10'>the migration guide</a> for a summary of what is changing &amp; <a href='https://github.com/trpc/examples-v10-next-prisma-starter-sqlite'>go here</a> to try out a real project using this version.",
       backgroundColor: 'var(--ifm-color-primary-dark)',
       textColor: '#ffffff',
+      isCloseable: false,
     },
     navbar: {
       title: 'tRPC',
@@ -37,20 +42,23 @@ module.exports = {
       },
       items: [
         {
-          to: 'docs',
+          type: 'doc',
+          docId: 'main/introduction',
           label: 'Docs',
-          activeBaseRegex: 'docs(/?)$',
         },
         {
-          to: 'docs/quickstart',
+          type: 'doc',
+          docId: 'main/quickstart',
           label: 'Quickstart',
         },
         {
-          to: 'docs/awesome-trpc',
+          type: 'doc',
+          docId: 'main/awesome-trpc',
           label: 'Awesome tRPC Collection',
         },
         {
-          to: 'docs/nextjs',
+          type: 'doc',
+          docId: 'nextjs/introduction',
           label: 'Usage with Next.js',
         },
         {
@@ -85,11 +93,11 @@ module.exports = {
           items: [
             {
               label: 'Docs',
-              to: 'docs',
+              to: 'docs/v9',
             },
             {
               label: 'Usage with Next.js',
-              to: 'docs/nextjs',
+              to: 'docs/v9/nextjs',
             },
           ],
         },
@@ -151,14 +159,23 @@ module.exports = {
       '@docusaurus/preset-classic',
       {
         docs: {
-          lastVersion: 'current',
+          lastVersion: '9.x',
+          // disableVersioning: true,
+          // onlyIncludeVersions: ['9.x'],
           versions: {
             current: {
               label: '10.x',
-              // path: '1.0.0',
+              path: 'v10',
+              badge: true,
+              className: 'v10',
+            },
+            '9.x': {
+              label: '9.x',
+              path: 'v9',
+              className: 'v9',
             },
           },
-          includeCurrentVersion: false,
+          // includeCurrentVersion: false,
           sidebarPath: require.resolve('./sidebars.js'),
           // Please change this to your repo.
           editUrl: 'https://github.com/trpc/trpc/tree/next/www/',
