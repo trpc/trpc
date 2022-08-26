@@ -1,29 +1,51 @@
 import Head from '@docusaurus/Head';
 import Link from '@docusaurus/Link';
+import { useLocation } from '@docusaurus/router';
 import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
 import Layout from '@theme/Layout';
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Features } from '../components/Features';
 import { GithubStarCountButton } from '../components/GithubStarCountButton';
 import { SectionTitle } from '../components/SectionTitle';
 import { TwitterWall } from '../components/TwitterWall';
 import { Sponsors } from '../components/sponsors';
 
+type Version = 'current' | '9.x';
+
 /**
  * Hack to get the selected version of the page from local storage
  */
-function getCurrentVersion() {
-  if (typeof window === 'undefined') {
-    return '9.x';
-  }
-  return window.localStorage.getItem('docs-preferred-version-default') || '9.x';
+function useLocalStorageVersion() {
+  const [version, setVersion] = useState<Version>(() => {
+    if (typeof window === 'undefined') {
+      return '9.x';
+    }
+    return (window.localStorage.getItem('docs-preferred-version-default') ||
+      '9.x') as Version;
+  });
+
+  return {
+    active: version,
+    set(value: Version) {
+      setVersion(value as Version);
+      window.localStorage.setItem('docs-preferred-version-default', value);
+    },
+  };
 }
 
 function Home() {
   const context = useDocusaurusContext();
   const { siteConfig } = context;
 
-  const activeVersion = getCurrentVersion();
+  const version = useLocalStorageVersion();
+
+  const location = useLocation();
+  useEffect(() => {
+    if (location.search.includes('v10') && version.active !== 'current') {
+      version.set('current');
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.search, version.active]);
 
   return (
     <Layout
@@ -32,7 +54,7 @@ function Home() {
     >
       <Head>
         <body className="homepage" />
-        <html className={activeVersion === 'current' ? 'v10' : 'v9'} />
+        <html className={version.active === 'current' ? 'v10' : 'v9'} />
         <script
           async
           src="https://platform.twitter.com/widgets.js"
