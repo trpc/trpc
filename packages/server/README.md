@@ -7,8 +7,7 @@
 </p>
 
 <p align="center">
-  <!-- TODO: replace with new version GIF -->
-  <img src="https://storage.googleapis.com/trpc/trpcgif.gif" alt="Demo" />
+  <img src="https://user-images.githubusercontent.com/51714798/186850605-7cb9f6b2-2230-4eb7-981b-0b90ee1f8ffa.gif" alt="Demo" />
 </p>
 
 # `@trpc/server`
