@@ -233,7 +233,7 @@ h5 {
 }
 
 /* Hide announcement bar for v9 */
-html:not(.docs-version-current) [role='banner'] {
+html:not(.v10) [role='banner'] {
   display: none !important;
 }
 
