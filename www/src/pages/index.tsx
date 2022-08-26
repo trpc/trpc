@@ -61,23 +61,13 @@ function Home() {
         <section className="max-w-[80ch] px-6 mx-auto md:px-0">
           <SectionTitle title={<>You may not need a traditional API</>} />
           <blockquote cite="https://twitter.com/alexdotjs" className="mt-6">
-            <p className="text-sm text-gray-600 md:text-base dark:text-gray-400">
-              If we have a project that is built with the same language
-              end-to-end, why should we need to bring in <em>another</em>{' '}
-              language into the mix, like <code>.yaml</code> or{' '}
-              <code>.graphql</code>, when all the type information is already
-              there? At the end of the day, what you want to achieve with an
-              &quot;API contract&quot;, whether it&apos;s a REST or a GraphQL,
-              is to provide a consistent, typesafe, and secure way to
-              communicate between your client and server &mdash; tRPC enables
-              that without glueing together tooling from a number of different
-              projects.
-            </p>
-
             <p className="pt-3 text-sm text-gray-600 md:text-base dark:text-gray-400">
               I built tRPC to allow me to <strong>move faster</strong> by
               removing the need of a traditional API-layer, while still having
               confidence that my apps won&apos;t break as I rapidly iterate.
+            </p>
+            <p className="text-sm text-gray-600 md:text-base dark:text-gray-400">
+              Try it out for yourself and let us know what you think!
             </p>
           </blockquote>
           <a
