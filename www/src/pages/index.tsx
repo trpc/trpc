@@ -61,45 +61,44 @@ function Home() {
           charSet="utf-8"
         />
       </Head>
-      <main className="container px-6 mx-auto pt-28 md:pt-40 lg:pt-48 xl:pt-64 space-y-28">
-        <header className="flex flex-col lg:flex-row">
-          <div className="flex-1">
-            <h1 className="pb-3 text-2xl font-bold whitespace-pre-wrap lg:text-3xl">
+      <main className="container px-6 mx-auto space-y-28">
+        <header className="pt-12 lg:pt-16 xl:pt-28">
+          <div>
+            <h1 className="text-2xl font-extrabold leading-tight text-center whitespace-pre-wrap md:text-3xl lg:text-4xl xl:text-5xl">
               {siteConfig.tagline}
             </h1>
-            <p className="text-sm text-gray-600 dark:text-gray-400 md:text-base">
+            <p className="pt-3 text-sm text-center text-gray-600 md:text-base dark:text-gray-400">
               Leverage the full power of TypeScript whilst allowing your code to
               be simpler.
-              {/* FIXME: write something good */}
             </p>
-            <div className="flex items-center gap-4 mt-6">
+            <div className="flex items-center justify-center gap-4 mt-6">
               <Link
                 href="/docs/v9/quickstart"
-                className="inline-block px-4 py-2 text-sm font-bold text-black transition-colors rounded-lg md:text-base hover:bg-primary-darker hover:no-underline hover:text-black bg-primary shadow-xl"
+                className="inline-block px-4 py-2 text-sm font-bold text-black transition-colors rounded-lg shadow-xl md:text-base hover:bg-primary-darker hover:no-underline hover:text-black bg-primary"
               >
                 Quickstart
               </Link>
               <GithubStarCountButton />
             </div>
-          </div>
-          <div className="flex-1 py-4 lg:p-0 group">
-            <figure>
-              {/* V10 */}
-              <img
-                src="https://user-images.githubusercontent.com/51714798/186850605-7cb9f6b2-2230-4eb7-981b-0b90ee1f8ffa.gif"
-                alt="Demo"
-                className="trpcgif trpcgif--v10"
-              />
-              <img
-                src="https://storage.googleapis.com/trpc/trpcgif.gif"
-                alt="Demo"
-                className="trpcgif trpcgif--v9"
-              />
-              <figcaption className="text-sm text-center text-gray-400 group-hover:text-gray-900 transition">
-                The client above is <strong>not</strong> importing any code from
-                the server, only its type declarations.
-              </figcaption>
-            </figure>
+            <div className="flex justify-center pt-12">
+              <figure>
+                <img
+                  src="/img/preview.gif"
+                  alt="Demo"
+                  width="600px"
+                  className="trpcgif trpcgif--v10"
+                />
+                <img
+                  src="https://storage.googleapis.com/trpc/trpcgif.gif"
+                  alt="Demo"
+                  className="trpcgif trpcgif--v9"
+                />
+                <figcaption className="pt-3 text-sm text-center text-gray-400 transition group-hover:text-gray-900">
+                  The client above is <strong>not</strong> importing any code
+                  from the server, only its type declarations.
+                </figcaption>
+              </figure>
+            </div>
           </div>
         </header>
 
@@ -110,7 +109,7 @@ function Home() {
           <SectionTitle title={<>You may not need a traditional API</>} />
           <blockquote
             cite="https://twitter.com/alexdotjs"
-            className="mt-6 space-y-2 py-2"
+            className="py-2 mt-6 space-y-2"
           >
             <p className="text-sm text-gray-600 md:text-base dark:text-gray-400">
               I built tRPC to allow me to <strong>move faster</strong> by
@@ -161,7 +160,7 @@ function Home() {
             }
           />
           <div className="max-w-screen-md mx-auto">
-            <div className="aspect-square mt-3">
+            <div className="mt-3 aspect-square">
               <Sponsors />
             </div>
           </div>
