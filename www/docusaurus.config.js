@@ -12,6 +12,9 @@ module.exports = {
   organizationName: 'trpc', // Usually your GitHub org/user name.
   projectName: 'trpc', // Usually your repo name.
   themeConfig: {
+    defaultMode: 'darkMode',
+    disableSwitch: false,
+    respectPrefersColorScheme: true,
     image: 'img/facebook_cover_photo_2.png',
     prism: {
       theme: require('prism-react-renderer/themes/vsDark'),
@@ -24,6 +27,7 @@ module.exports = {
       // searchParameters: {},
     },
     announcementBar: {
+      id: 'v10',
       content:
         "🚀 You are looking at a pre-release of tRPC v10! See <a href='https://alpha.trpc.io/docs/v10/migrate-from-v9-to-v10'>the migration guide</a> for a summary of what is changing &amp; <a href='https://github.com/trpc/examples-v10-next-prisma-starter-sqlite'>go here</a> to try out a real project using this version.",
       backgroundColor: 'var(--ifm-color-primary-dark)',
