@@ -1,6 +1,6 @@
 # ⚠️ Potentially outdated doc
 
-See https://alpha.trpc.io/docs/v10/migrate-from-v9-to-v10
+See https://trpc.io/docs/v10/migrate-from-v9-to-v10
 
 
 
@@ -645,4 +645,4 @@ https://alpha.trpc.io/docs/links#creating-a-custom-link
 
 ## Migration path & Interopability mode
 
-👉 Moved to [alpha.trpc.io/docs/migrate-from-v9-to-v10](https://alpha.trpc.io/docs/v10/migrate-from-v9-to-v10)
+👉 Moved to [alpha.trpc.io/docs/migrate-from-v9-to-v10](https://trpc.io/docs/v10/migrate-from-v9-to-v10)
