@@ -167,10 +167,12 @@ module.exports = {
               label: '10.x',
               path: 'v10',
               badge: true,
+              className: 'v10',
             },
             '9.x': {
               label: '9.x',
               path: 'v9',
+              className: 'v9',
             },
           },
           // includeCurrentVersion: false,

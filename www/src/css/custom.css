@@ -233,7 +233,18 @@ h5 {
 }
 
 /* Hide announcement bar for v9 */
-html:not(.docs-version-current)
-  .announcementBar_---node_modules-\@docusaurus-theme-classic-lib-theme-AnnouncementBar-styles-module {
+html:not(.docs-version-current) [role='banner'] {
   display: none !important;
+}
+
+/* Toggle different gifs depending on version */
+.trpcgif {
+  display: none;
+}
+
+html.v10 .trpcgif--v10 {
+  display: block;
+}
+html.v9 .trpcgif--v9 {
+  display: block;
 }

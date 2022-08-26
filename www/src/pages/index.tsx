@@ -2,16 +2,28 @@ import Head from '@docusaurus/Head';
 import Link from '@docusaurus/Link';
 import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
 import Layout from '@theme/Layout';
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Features } from '../components/Features';
 import { GithubStarCountButton } from '../components/GithubStarCountButton';
 import { SectionTitle } from '../components/SectionTitle';
 import { TwitterWall } from '../components/TwitterWall';
 import { Sponsors } from '../components/sponsors';
 
+/**
+ * Hack to get the selected version of the page from local storage
+ */
+function getCurrentVersion() {
+  if (typeof window === 'undefined') {
+    return '9.x';
+  }
+  return window.localStorage.getItem('docs-preferred-version-default') || '9.x';
+}
+
 function Home() {
   const context = useDocusaurusContext();
   const { siteConfig } = context;
+
+  const activeVersion = getCurrentVersion();
 
   return (
     <Layout
@@ -20,6 +32,7 @@ function Home() {
     >
       <Head>
         <body className="homepage" />
+        <html className={activeVersion === 'current' ? 'v10' : 'v9'} />
         <script
           async
           src="https://platform.twitter.com/widgets.js"
@@ -47,11 +60,24 @@ function Home() {
               <GithubStarCountButton />
             </div>
           </div>
-          <div className="flex-1 py-4 lg:p-0">
-            <img
-              src="https://user-images.githubusercontent.com/51714798/186850605-7cb9f6b2-2230-4eb7-981b-0b90ee1f8ffa.gif"
-              alt="Demo"
-            />
+          <div className="flex-1 py-4 lg:p-0 group">
+            <figure>
+              {/* V10 */}
+              <img
+                src="https://user-images.githubusercontent.com/51714798/186850605-7cb9f6b2-2230-4eb7-981b-0b90ee1f8ffa.gif"
+                alt="Demo"
+                className="trpcgif trpcgif--v10"
+              />
+              <img
+                src="https://storage.googleapis.com/trpc/trpcgif.gif"
+                alt="Demo"
+                className="trpcgif trpcgif--v9"
+              />
+              <figcaption className="text-sm text-center text-gray-400 group-hover:text-gray-900 transition">
+                The client above is <strong>not</strong> importing any code from
+                the server, only its type declarations.
+              </figcaption>
+            </figure>
           </div>
         </header>
 
