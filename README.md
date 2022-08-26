@@ -1,4 +1,4 @@
-> **🚀 You are looking at a pre-prelease of tRPC v10!**
+> **🚀 You are looking at a pre-release of tRPC v10!**
 > 
 > You might be looking for the [`main`](https://github.com/trpc/trpc/tree/main)-branch which is the stable v9-version. 
 >
