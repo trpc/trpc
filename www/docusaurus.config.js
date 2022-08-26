@@ -168,11 +168,13 @@ module.exports = {
               path: 'v10',
               badge: true,
               className: 'v10',
+              banner: 'unreleased',
             },
             '9.x': {
               label: '9.x',
               path: 'v9',
               className: 'v9',
+              banner: 'none',
             },
           },
           // includeCurrentVersion: false,
