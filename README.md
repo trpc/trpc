@@ -33,17 +33,17 @@
 
 <p></p>
 
-<!-- 
+ 
 <p align="center">
   <figure>
-    <img src="https://storage.googleapis.com/trpc/trpcgif.gif" alt="Demo" />
+    <img src="https://user-images.githubusercontent.com/51714798/186850605-7cb9f6b2-2230-4eb7-981b-0b90ee1f8ffa.gif" alt="Demo" />
     <figcaption>
       <p align="center">
         The client above is <strong>not</strong> importing any code from the server, only its type declarations.
       </p>
     </figcaption>
   </figure>
-</p> -->
+</p>
 
 <br/>
 

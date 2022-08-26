@@ -47,7 +47,12 @@ function Home() {
               <GithubStarCountButton />
             </div>
           </div>
-          <div className="flex-1">{/* TODO: Add new GIF here */}</div>
+          <div className="flex-1 py-4 lg:p-0">
+            <img
+              src="https://user-images.githubusercontent.com/51714798/186850605-7cb9f6b2-2230-4eb7-981b-0b90ee1f8ffa.gif"
+              alt="Demo"
+            />
+          </div>
         </header>
 
         <section>

@@ -131,6 +131,7 @@ const rootPath = __dirname + '/../../../..';
 const files = [
   `${rootPath}/README.md`,
   `${rootPath}/www/docs/main/sponsors.md`,
+  `${rootPath}/www/versioned_docs/version-9.x/main/sponsors.md`,
 ];
 
 for (const file of files) {
