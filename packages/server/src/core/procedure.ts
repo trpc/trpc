@@ -6,6 +6,7 @@ import {
   ProcedureCallOptions,
 } from './internals/procedureBuilder';
 import { UnsetMarker } from './internals/utils';
+import { ItemKind, TRPCRouterItem } from './types';
 
 type ClientContext = Record<string, unknown>;
 
@@ -85,7 +86,14 @@ export type ProcedureArgs<TParams extends ProcedureParams> =
  *
  * @internal
  */
-export interface ProcedureBase<TParams extends ProcedureParams> {
+export interface ProcedureBase<
+  TParams extends ProcedureParams,
+  Kind extends string,
+> extends TRPCRouterItem<ItemKind.Procedure> {
+  /**
+   * @internal
+   */
+  _procedureKind: Kind;
   _def: TParams & ProcedureBuilderDef;
   /**
    * @deprecated use `._def.meta` instead
@@ -99,17 +107,17 @@ export interface ProcedureBase<TParams extends ProcedureParams> {
 }
 
 export interface QueryProcedure<TParams extends ProcedureParams>
-  extends ProcedureBase<TParams> {
+  extends ProcedureBase<TParams, 'query'> {
   _query: true;
 }
 
 export interface MutationProcedure<TParams extends ProcedureParams>
-  extends ProcedureBase<TParams> {
+  extends ProcedureBase<TParams, 'mutation'> {
   _mutation: true;
 }
 
 export interface SubscriptionProcedure<TParams extends ProcedureParams>
-  extends ProcedureBase<TParams> {
+  extends ProcedureBase<TParams, 'subscription'> {
   _subscription: true;
 }
 

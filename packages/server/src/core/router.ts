@@ -22,12 +22,18 @@ import {
   QueryProcedure,
   SubscriptionProcedure,
 } from './procedure';
-import { ProcedureType, procedureTypes } from './types';
+import {
+  $$itemKind,
+  ItemKind,
+  ProcedureType,
+  TRPCRouterItem,
+  procedureTypes,
+} from './types';
 
 /** @internal **/
-export type ProcedureRecord = Record<string, Procedure<any>>;
+export type ProcedureRecord = Record<string, AnyProcedure>;
 
-export type ProcedureRouterRecord = Record<string, Procedure<any> | AnyRouter>;
+export type ProcedureRouterRecord = Record<string, AnyProcedure | AnyRouter>;
 
 export interface ProcedureStructure {
   queries: Record<string, QueryProcedure<any>>;
@@ -144,7 +150,8 @@ type RouterCaller<TDef extends AnyRouterDef> = (ctx: TDef['_ctx']) => {
   subscription: inferHandlerFn<TDef['subscriptions']>;
 } & DecoratedProcedureRecord<TDef['record']>;
 
-export interface Router<TDef extends AnyRouterDef> {
+export interface Router<TDef extends AnyRouterDef>
+  extends TRPCRouterItem<ItemKind.Router> {
   _def: TDef;
   /** @deprecated **/
   errorFormatter: TDef['errorFormatter'];
@@ -264,6 +271,7 @@ export function createRouterFactory<TConfig extends RootConfig>(
 
     const router: AnyRouter = {
       ...opts,
+      [$$itemKind]: ItemKind.Router,
       _def,
       transformer: _def.transformer,
       errorFormatter: _def.errorFormatter,
