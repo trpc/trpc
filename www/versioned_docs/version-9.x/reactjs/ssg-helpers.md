@@ -5,7 +5,7 @@ sidebar_label: SSG Helpers
 slug: /ssg-helpers
 ---
 
-`createSSGHelpers` providers you a set of helper functions that you can use to prefetch queries on the server.
+`createSSGHelpers` provides you a set of helper functions that you can use to prefetch queries on the server.
 
 ```ts
 import { createSSGHelpers } from '@trpc/react/ssg';
@@ -31,7 +31,7 @@ The returned functions are all wrappers around react-query functions. Please che
 ```ts title='pages/posts/[id].tsx'
 import { createSSGHelpers } from '@trpc/react/ssg';
 import { GetServerSidePropsContext, InferGetServerSidePropsType } from 'next';
-import { prisma } from 'server/context';
+import { createContext, prisma } from 'server/context';
 import { appRouter } from 'server/routers/_app';
 import { trpc } from 'utils/trpc';
 import superjson from 'superjson';
@@ -39,15 +39,18 @@ import superjson from 'superjson';
 export async function getServerSideProps(
   context: GetServerSidePropsContext<{ id: string }>,
 ) {
-  const ssg = await createSSGHelpers({
+  const ssg = createSSGHelpers({
     router: appRouter,
-    ctx: {},
+    ctx: await createContext(),
     transformer: superjson,
   });
   const id = context.params?.id as string;
 
-  // Prefetch `post.byId`
-  await ssg.fetchQuery('post.byId', {
+  /*
+   * Prefetching the `post.byId` query here.
+   * `prefetchQuery` does not return the result - if you need that, use `fetchQuery` instead.
+   */
+  await ssg.prefetchQuery('post.byId', {
     id,
   });
 
