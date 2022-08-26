@@ -1,4 +1,4 @@
-import { getMessageFromUnkownError } from '../error/utils';
+import { getErrorFromUnknown, getMessageFromUnkownError } from '../error/utils';
 import { TRPC_ERROR_CODE_KEY } from '../rpc/codes';
 
 export class TRPCError extends Error {
@@ -8,11 +8,16 @@ export class TRPCError extends Error {
   constructor(opts: {
     message?: string;
     code: TRPC_ERROR_CODE_KEY;
-    cause?: Error;
+    cause?: unknown;
   }) {
-    const cause = opts.cause;
+    const cause: Error | undefined =
+      opts !== undefined ? getErrorFromUnknown(opts.cause) : undefined;
+
     const code = opts.code;
-    const message = opts.message ?? getMessageFromUnkownError(cause, code);
+    const message =
+      opts.message ??
+      cause?.message ??
+      getMessageFromUnkownError(cause, 'Unknown error');
 
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore https://github.com/tc39/proposal-error-cause
