@@ -231,3 +231,9 @@ h5 {
 .theme-doc-version-badge {
   margin-bottom: 1rem;
 }
+
+/* Hide announcement bar for v9 */
+html:not(.docs-version-current)
+  .announcementBar_---node_modules-\@docusaurus-theme-classic-lib-theme-AnnouncementBar-styles-module {
+  display: none !important;
+}

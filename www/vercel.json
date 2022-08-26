@@ -29,6 +29,10 @@
       "source": "/discord",
       "destination": "https://discord.gg/wzaMgEJkcf",
       "permanent": false
+    },
+    {
+      "source": "/docs/((?!v[0-9]+/).*)",
+      "destination": "/docs/v9/*"
     }
   ]
 }
