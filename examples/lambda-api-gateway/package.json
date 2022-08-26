@@ -1,12 +1,12 @@
 {
   "name": "@examples/lambda-api-gateway",
   "private": true,
-  "version": "10.0.0-proxy-alpha.56",
+  "version": "10.0.0-proxy-alpha.57",
   "main": "index.js",
   "license": "MIT",
   "dependencies": {
-    "@trpc/client": "^10.0.0-proxy-alpha.56",
-    "@trpc/server": "^10.0.0-proxy-alpha.56",
+    "@trpc/client": "^10.0.0-proxy-alpha.57",
+    "@trpc/server": "^10.0.0-proxy-alpha.57",
     "node-fetch": "^2.6.1",
     "ts-node": "^10.3.0"
   },
