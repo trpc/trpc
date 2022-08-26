@@ -1,5 +1,8 @@
 > **🚀 You are looking at a pre-prelease of tRPC v10!**
-> See our [v10-docs.md](./.tmp/v10-docs.md) for a summary of what is changing or take a look at [the **v10 docs website**](https://alpha.trpc.io/).
+> 
+> You might be looking for the [`main`](https://github.com/trpc/trpc/tree/main) branch which is the current stable v9-version. 
+>
+> See our [migration guide](https://alpha.trpc.io/docs/migrate-from-v9-to-v10) for a summary of what is changing or take a look at [the **v10 docs website**](https://alpha.trpc.io/).
 > There is also [the `examples-v10-next-prisma-starter-sqlite` project](https://github.com/trpc/examples-v10-next-prisma-starter-sqlite) to try out a real project using this version.
 
 
@@ -52,7 +55,7 @@ tRPC allows you to easily build & consume fully typesafe APIs, without schemas o
 - 🐎&nbsp; Snappy DX - No code generation, run-time bloat, or build pipeline.
 - 🍃&nbsp; Light - tRPC has zero deps and a tiny client-side footprint.
 - 🐻&nbsp; Easy to add to your existing brownfield project.
-- 🔋&nbsp; Batteries included - React.js/Next.js/Express.js/Fastify adapters. _(But tRPC is not tied to React - [reach out](https://twitter.com/alexdotjs) if you want to make a Svelte/Vue/... adapter)_
+- 🔋&nbsp; Batteries included - React.js/Next.js/Express.js/Fastify adapters. _(But tRPC is not tied to React and there are many [community adapters](https://trpc.io/docs/awesome-trpc#-extensions--community-add-ons) for other libraries)_
 - 🥃&nbsp; Subscriptions support.
 - ⚡️&nbsp; Request batching - requests made at the same time can be automatically combined into one
 - 👀&nbsp; Quite a few examples in the [./examples](./examples)-folder
