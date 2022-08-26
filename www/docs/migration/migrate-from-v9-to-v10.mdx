@@ -19,10 +19,10 @@ In a gist, what has changed?
 
 The way you initialize tRPC on the server has been update, we now create a root `t` variable that contains the root information about your app:
 
-- [Context](/docs/context)
-- [Meta data](/docs/metadata)
-- [Error formatter](/docs/error-formatting)
-- [Data Transformer](/docs/error-formatting)
+- [Context](context)
+- [Meta data](metadata)
+- [Error formatter](error-formatting)
+- [Data Transformer](error-formatting)
 
 The way the `t` variable is defined is simply like this:
 
@@ -122,7 +122,7 @@ type GreetingOutput = inferProcedureOutput<AppRouter['greeting']>;
 
 ### Middlewares
 
-Middlewares are now reusable and can be chained, see [middleware](/docs/middlewares) docs.
+Middlewares are now reusable and can be chained, see [middleware](middlewares) docs.
 
 ```ts
 // OLD
@@ -257,7 +257,7 @@ Any procedures defined using `t.procedure` must be called on the client using th
 
 🚧
 
-### Custom [Links](/docs/links)
+### Custom [Links](links)
 
 🚧
 

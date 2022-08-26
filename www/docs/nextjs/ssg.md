@@ -90,4 +90,4 @@ export default function PostViewPage(
 }
 ```
 
-Check out [here](/docs/ssg-helpers) to learn more about `createSSGHelpers`.
+Check out [here](ssg-helpers) to learn more about `createSSGHelpers`.
