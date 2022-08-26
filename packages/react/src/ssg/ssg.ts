@@ -28,6 +28,7 @@ export interface CreateSSGHelpersOptions<TRouter extends AnyRouter> {
 
 /**
  * Create functions you can use for server-side rendering / static generation
+ * @deprecated use `createProxySSGHelpers` instead
  */
 export function createSSGHelpers<TRouter extends AnyRouter>({
   router,
@@ -134,5 +135,3 @@ export function createSSGHelpers<TRouter extends AnyRouter>({
     queryClient,
   };
 }
-
-export type CreateSSGHelpers = ReturnType<typeof createSSGHelpers>;

@@ -9,7 +9,7 @@ slug: /react
 
 - If you're using Next.js, read the [Usage with Next.js](/docs/nextjs) guide instead.
 - In order to infer types from your Node.js backend you should have the frontend & backend in the same monorepo.
-:::
+  :::
 
 ## Add tRPC to existing React project
 
@@ -64,6 +64,7 @@ Follow the [Quickstart](/docs/quickstart) and read the [`@trpc/server` docs](/do
 ```bash
 yarn add @trpc/client @trpc/server @trpc/react react-query@3
 ```
+
 - @trpc/server: This is a peer dependency of `@trpc/client` so you have to install it again!
 - React Query: @trpc/react provides a thin wrapper over react-query. It is required as a peer dependency.
 
@@ -73,19 +74,11 @@ Create a set of strongly-typed React hooks from your `AppRouter` type signature 
 
 ```tsx title='utils/trpc.ts'
 // utils/trpc.ts
-import { createReactQueryHooks, createReactQueryHooksProxy } from '@trpc/react';
+import { createReactQueryHooks, createTRPCReact } from '@trpc/react';
 import type { AppRouter } from '../path/to/router.ts';
 
-const hooks = createReactQueryHooks<AppRouter>();
-// => { useQuery: ..., useMutation: ...}
-
-const proxy = createReactQueryHooksProxy<AppRouter>(hooks);
-// => proxy.<router>.<query>.useQuery(...),
-
-export const trpc = {
-  proxy,
-  ...hooks,
-}
+const trpc = createTRPCReact<AppRouter>();
+// => trpc.<router>.<query>.useQuery(...),
 ```
 
 #### 3. Add tRPC providers
@@ -93,9 +86,9 @@ export const trpc = {
 In your `App.tsx`
 
 ```tsx title='App.tsx'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import React from 'react';
 import { useState } from 'react';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { trpc } from './utils/trpc';
 
 export function App() {
@@ -135,5 +128,5 @@ export default function IndexPage() {
       <p>{hello.data.greeting}</p>
     </div>
   );
-};
+}
 ```

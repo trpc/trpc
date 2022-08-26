@@ -65,7 +65,7 @@
     "commit-date": "git log -n 1 --date=format:'%Y-%m-%d-%H-%M-%S' --pretty=format:'%ad'",
     "canary-preid": "echo \"$(yarn --silent current-branch)-$(yarn --silent commit-date)\"",
     "current-branch": "echo \"$(git rev-parse --abbrev-ref HEAD)\" | sed -E 's/refs\\/heads\\///' | sed -E 's/\\W|_/-/g' | sed -e 's/\\//-/'",
-    "publish-canary": "lerna publish --force-publish --canary --preid $(yarn --silent canary-preid) --dist-tag $(yarn --silent current-branch)",
+    "publish-canary": "lerna publish --force-publish --canary --preid alpha-$(yarn --silent canary-preid) --dist-tag $(yarn --silent current-branch)",
     "publish-prerelease": "yarn && yarn lerna publish prerelease --force-publish --dist-tag next --no-push && sleep 60 && git push --follow-tags",
     "merge-main": "git checkout main && git pull && git checkout next && git pull && git checkout -b next-merge-$(date '+%Y-%m-%d') next && git merge main"
   },

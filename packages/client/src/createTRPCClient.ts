@@ -7,6 +7,9 @@ import {
   CreateTRPCClientOptions,
 } from './internals/TRPCClient';
 
+/**
+ * @deprecated use `createTRPCProxyClient` instead
+ */
 export function createTRPCClient<TRouter extends AnyRouter>(
   opts: CreateTRPCClientOptions<TRouter>,
 ) {
