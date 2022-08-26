@@ -227,3 +227,7 @@ h5 {
 .shiki data-lsp::before {
   display: none;
 }
+
+.theme-doc-version-badge {
+  margin-bottom: 1rem;
+}
