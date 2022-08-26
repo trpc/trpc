@@ -42,20 +42,23 @@ module.exports = {
       },
       items: [
         {
-          to: 'docs/v9',
+          type: 'doc',
+          docId: 'main/introduction',
           label: 'Docs',
-          activeBaseRegex: 'docs(/?)$',
         },
         {
-          to: 'docs/v9/quickstart',
+          type: 'doc',
+          docId: 'main/quickstart',
           label: 'Quickstart',
         },
         {
-          to: 'docs/v9/awesome-trpc',
+          type: 'doc',
+          docId: 'main/awesome-trpc',
           label: 'Awesome tRPC Collection',
         },
         {
-          to: 'docs/v9/nextjs',
+          type: 'doc',
+          docId: 'nextjs/introduction',
           label: 'Usage with Next.js',
         },
         {
