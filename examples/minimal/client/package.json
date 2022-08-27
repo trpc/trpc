@@ -3,6 +3,10 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
-    "@trpc/client": "^10.0.0-alpha.46"
+    "@trpc/client": "^10.0.0-alpha.46",
+    "node-fetch": "^2.6.7"
+  },
+  "devDependencies": {
+    "@types/node-fetch": "^2.5.11"
   }
 }
