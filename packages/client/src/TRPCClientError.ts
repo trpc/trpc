@@ -27,8 +27,8 @@ export class TRPCClientError<TRouterOrProcedure extends RouterOrProcedure>
   implements TRPCClientErrorBase<inferErrorShape<TRouterOrProcedure>>
 {
   public readonly cause;
-  public readonly shape;
-  public readonly data;
+  public readonly shape: Maybe<inferErrorShape<TRouterOrProcedure>>;
+  public readonly data: Maybe<inferErrorShape<TRouterOrProcedure>['data']>;
   public readonly meta;
 
   constructor(

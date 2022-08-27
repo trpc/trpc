@@ -20,7 +20,7 @@ export function observableToPromise<TValue>(
         return;
       }
       isDone = true;
-      reject(new ObservableAbortError('This operation was cancelled.'));
+      reject(new ObservableAbortError('This operation was aborted.'));
       obs$.unsubscribe();
     }
     const obs$ = observable.subscribe({

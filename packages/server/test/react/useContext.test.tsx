@@ -285,3 +285,79 @@ test('getData', async () => {
     expect(utils.container).toHaveTextContent('new post');
   });
 });
+
+describe('cancel', () => {
+  test('aborts with utils', async () => {
+    const { proxy, App } = ctx;
+    function MyComponent() {
+      const allPosts = proxy.post.all.useQuery();
+      const utils = proxy.useContext();
+
+      useEffect(() => {
+        utils.post.all.cancel();
+      });
+
+      return (
+        <div>
+          <p data-testid="data">
+            {allPosts.data ? 'data loaded' : 'undefined'}
+          </p>
+          <p data-testid="isFetching">
+            {allPosts.isFetching ? 'fetching' : 'idle'}
+          </p>
+          <p data-testid="isPaused">
+            {allPosts.isPaused ? 'paused' : 'not paused'}
+          </p>
+        </div>
+      );
+    }
+
+    const utils = render(
+      <App>
+        <MyComponent />
+      </App>,
+    );
+
+    await waitFor(() => {
+      expect(utils.getByTestId('data')).toHaveTextContent('undefined');
+      expect(utils.getByTestId('isFetching')).toHaveTextContent('idle');
+      expect(utils.getByTestId('isPaused')).toHaveTextContent('paused');
+    });
+  });
+
+  test('typeerrors and continues with signal', async () => {
+    const { proxy, App } = ctx;
+
+    function MyComponent() {
+      const ac = new AbortController();
+      const allPosts = proxy.post.all.useQuery(undefined, {
+        // @ts-expect-error Signal not allowed for React Query. We use the internal signal instead
+        trpc: { signal: ac.signal },
+      });
+
+      // this is not how you cancel a query in @trpc/react, so query should still be valid
+      ac.abort();
+
+      if (!allPosts.data) {
+        return <>...</>;
+      }
+
+      return (
+        <ul>
+          {allPosts.data.map((post) => (
+            <li key={post.id}>{post.text}</li>
+          ))}
+        </ul>
+      );
+    }
+
+    const utils = render(
+      <App>
+        <MyComponent />
+      </App>,
+    );
+    await waitFor(() => {
+      expect(utils.container).toHaveTextContent('new post');
+    });
+  });
+});

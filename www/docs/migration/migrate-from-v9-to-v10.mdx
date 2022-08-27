@@ -5,7 +5,7 @@ sidebar_label: Migrate from V9 to V10
 slug: /migrate-from-v9-to-v10
 ---
 
-> Are you on V9 and are worried about the migration path and massive breaking changing? Don't worry, we got your back!
+> Are you on V9 and are worried about the migration path and massive breaking changes? Don't worry, we got your back!
 >
 > We have an **interopability mode** for old routers which allows you to easily incrementally adopt V10.
 
@@ -17,12 +17,12 @@ In a gist, what has changed?
 
 > If you don't like the variable name `t`, you can call it whatever you want
 
-The way you initialize tRPC on the server has been update, we now create a root `t` variable to contains the root information about your app:
+The way you initialize tRPC on the server has been update, we now create a root `t` variable that contains the root information about your app:
 
-- [Context](/docs/context)
-- [Meta data](/docs/metadata)
-- [Error formatter](/docs/error-formatting)
-- [Data Transformer](/docs/error-formatting)
+- [Context](context)
+- [Meta data](metadata)
+- [Error formatter](error-formatting)
+- [Data Transformer](error-formatting)
 
 The way the `t` variable is defined is simply like this:
 
@@ -33,7 +33,7 @@ import { initTRPC } from '@trpc/server';
 export const t = initTRPC()();
 ```
 
-Here's a full example of how the `t` variable may look like:
+Here's a full example of how the `t` variable may look like with a data-transformer, openapi metadata and error formatter:
 
 ```ts title='/src/server/trpc.ts'
 import { initTRPC } from '@trpc/server';
@@ -55,18 +55,21 @@ interface Meta {
   };
 }
 
-export const t = initTRPC<{ ctx: Context; meta: Meta }>()({
+export const t = initTRPC<{
+  ctx: Context;
+  meta: Meta;
+}>()({
   errorFormatter({ shape, error }) {
     return {
       ...shape,
       data: {
         ...shape.data,
         zodError:
-          error.code === 'BAD_USER_INPUT' &&
+          error.code === 'BAD_REQUEST' &&
           error.cause instanceof ZodError
             ? error.cause.flatten()
             : null,
-      };
+      },
     };
   },
   transformer: superjson,
@@ -77,12 +80,13 @@ export const t = initTRPC<{ ctx: Context; meta: Meta }>()({
 
 ```ts
 // OLD:
-const appRouter = trpc.router().query('greeting', {
-  input: z.string(),
-  resolve({ input }) {
-    return `hello ${input}!`;
-  },
-});
+const appRouter = trpc.router()
+  .query('greeting', {
+    input: z.string(),
+    resolve({ input }) {
+      return `hello ${input}!`;
+    },
+  });
 
 // NEW:
 const appRouter = t.router({
@@ -100,11 +104,25 @@ client.query('greeting', 'KATT');
 trpc.useQuery(['greeting', 'KATT']);
 
 // NEW - you'll be able to CMD+click `greeting` below and jump straight to your backend code
-client.greeting('KATT');
+client.greeting.query('KATT');
 trpc.greeting.useQuery('KATT');
 ```
 
+### Inferring types
+
+```ts
+// OLD - you had to make multiple complex helper types yourself
+type GreetingInput = InferQueryInput<'greeting'>;
+type GreetingOutput = InferQueryOutput<'greeting'>;
+
+// NEW - same helper for all procedure types which are shipped out of the box
+type GreetingInput = inferProcedureInput<AppRouter['greeting']>;
+type GreetingOutput = inferProcedureOutput<AppRouter['greeting']>;
+```
+
 ### Middlewares
+
+Middlewares are now reusable and can be chained, see [middleware](middlewares) docs.
 
 ```ts
 // OLD
@@ -136,6 +154,7 @@ const isAuthed = t.middleware(({ next, ctx }) => {
 
   return next({
     ctx: {
+      // <-- auto-spreading old context, modify only what's changed
       user: ctx.user,
     },
   });
@@ -145,7 +164,9 @@ const isAuthed = t.middleware(({ next, ctx }) => {
 const authedProcedure = t.procedure.use(isAuthed);
 
 const appRouter = t.router({
-  greeting: authedProcedure.query(({ ctx }) => `hello ${ctx.name}!`),
+  greeting: authedProcedure.query(({ ctx }) => {
+    return `Hello ${ctx.user.name}!`
+  }),
 });
 ```
 
@@ -157,12 +178,19 @@ If you are migrating from V9->V10, the transition is pretty simple for the 95% u
 
 All you'll need to do is to add an `.interop()` at the end of your `appRouter`. Example: https://github.com/trpc/trpc/blob/ad25239cefd972494bfff49a869b9432fd2f403f/examples/.interop/next-prisma-starter/src/server/routers/_app.ts#L37
 
+```diff title='src/server/routers/_app.ts'
+  const appRouter = trpc
+    .router<Context>()
+    /* ... */
++ .interop();
+  export type AppRouter = typeof appRouter;
+```
+
 When you've done this, you can start migrating to the new way of doing things.
 
 **2. Create the `t`-object**
 
-```ts
-// src/server/trpc.ts
+```ts title='src/server/trpc.ts'
 import superjson from 'superjson';
 import { Context } from './context';
 
@@ -171,6 +199,15 @@ export const t = initTRPC<{
 }>()({
   // Optional:
   transformer: superjson,
+  // Optional:
+  errorFormatter({ shape }) {
+    return {
+      ...shape,
+      data: {
+        ...shape.data,
+      },
+    };
+  },
 });
 ```
 
@@ -179,31 +216,40 @@ export const t = initTRPC<{
 1. Rename your old `appRouter` to `legacyRouter`
 2. Create a new app router:
 
-```ts
-import { t } from './trpc';
+```diff title="src/server/routers/_app.ts"
+  import * as trpc from "@trpc/server";
++ import { t } from "./trpc";
 
-const legacyRouter = trpc
-  .router()
-  /* [...] */
-  .interop();
+- const appRouter = trpc
++ const legacyRouter = trpc
+    .router()
+    /* [...] */
+    .interop();
 
-export const appRouter = t.merge(legacyRouter);
++ export const appRouter = t.mergeRouters(legacyRouter);
+  export type AppRouter = typeof appRouter;
 ```
 
 3. See if your app still builds
-4. Create a a test router:
+4. Create a test router and merge it in:
 
-```ts
+```ts title="/src/routers/greeting.ts"
 const greetingRouter = t.router({
   greeting: t.procedure.query(() => 'world'),
 });
 ```
 
-5. Merge it in:
+```ts title="src/server/routers/_app.ts"
+import { greetingRouter } from './greeting';
 
-```ts
-export const appRouter = t.merge(legacyRouter, greetingRouter);
+/* [...] */
+
+export const appRouter = t.mergeRouters(legacyRouter, greetingRouter);
 ```
+
+### Limitations of interopability mode
+
+Any procedures defined using `t.procedure` must be called on the client using the [new way of calling procedures](#calling-procedures). What this means is that when you migrate the `legacyRouter` over to be a "v10-`t.router`", you'll have to update the frontend-usage of this router to use the new way of calling procedures.
 
 ## For the remaining 5%
 
@@ -211,11 +257,13 @@ export const appRouter = t.merge(legacyRouter, greetingRouter);
 
 🚧
 
-### Custom [Links](/docs/links)
+### Custom [Links](links)
 
 🚧
 
-### React-specific
+## Package Specific Changes
+
+### `@trpc/react`
 
 #### Upgrade of `react-query`
 
@@ -248,11 +296,50 @@ trpc.post.byId.useQuery('1', {
 });
 ```
 
-## Optional DX improvements
+### `@trpc/next`
 
-### `@trpc/next`: `setupNext()`
+#### `setupNext()` - Optional DX Improvement
 
-🚧
+Setting up tRPC for Next.js is now easier than ever! Here's all you need to get going:
+
+```ts title="utils/trpc.ts"
+import { setupTRPC } from '@trpc/next';
+import type { AppRouter } from 'routers/_app';
+
+export const trpc = setupTRPC<AppRouter>({
+  config() {
+    return {
+      url: '/api/trpc',
+    };
+  },
+});
+```
+
+```tsx title="pages/_app.tsx"
+import { trpc } from '../utils/trpc';
+
+const MyApp = ({ Component, pageProps }) => {
+  return <Component {...pageProps} />;
+};
+
+export default trpc.withTRPC(MyApp);
+```
+
+As you can see, we no longer have to setup the React-Query hooks and tRPC context provider separately. Previously we setup the tPRC provider in `_app.tsx` and the React-Query hooks in `utils/trpc.ts` separately. Now, define the `trpc` object once and it will contain all you need for your frontend application.
+
+### `@trpc/client`
+
+#### Aborting procedures
+
+We've moved to the industry standards when it comes to aborting procedures. Instead of calling a `.cancel()`, you now give the query an `AbortSignal` and call `.abort()` on its parent `AbortController`.
+
+```tsx
+const ac = new AbortController();
+const helloQuery = client.greeting.query('KATT', { signal: ac.signal });
+
+// Aborting
+ac.abort();
+```
 
 ### [...]
 

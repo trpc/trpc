@@ -7,9 +7,9 @@ slug: /react
 
 :::info
 
-- If you're using Next.js, read the [Usage with Next.js](/docs/nextjs) guide instead.
+- If you're using Next.js, read the [Usage with Next.js](nextjs) guide instead.
 - In order to infer types from your Node.js backend you should have the frontend & backend in the same monorepo.
-:::
+  :::
 
 ## Add tRPC to existing React project
 
@@ -17,43 +17,49 @@ slug: /react
 
 #### 1. Install dependencies
 
+**npm**
+
+```bash
+npm install @trpc/server zod
+```
+
+**yarn**
+
 ```bash
 yarn add @trpc/server zod
 ```
 
-- Zod: most examples use [Zod](https://github.com/colinhacks/zod) for input validation and we highly recommended it, though it isn't required. You can use a validation library of your choice ([Yup](https://github.com/jquense/yup), [Superstruct](https://github.com/ianstormtaylor/superstruct), [io-ts](https://github.com/gcanti/io-ts), etc). In fact, any object containing a `parse`, `create` or `validateSync` method will work.
+**pnpm**
+
+```bash
+pnpm add @trpc/server zod
+```
+
+##### Why Zod?
+
+Most examples use [Zod](https://github.com/colinhacks/zod) for input validation and we highly recommended it, though it isn't required. You can use a validation library of your choice ([Yup](https://github.com/jquense/yup), [Superstruct](https://github.com/ianstormtaylor/superstruct), [io-ts](https://github.com/gcanti/io-ts), etc). In fact, any object containing a `parse`, `create` or `validateSync` method will work.
 
 #### 2. Enable strict mode
 
 If you want to use Zod for input validation, make sure you have enabled strict mode in your `tsconfig.json`:
 
-```json
-// tsconfig.json
-{
-  // ...
+```diff title="tsconfig.json"
   "compilerOptions": {
-    // ...
-    "strict": true
++   "strict": true
   }
-}
 ```
 
 If strict mode is too much, at least enable `strictNullChecks`:
 
-```json
-// tsconfig.json
-{
-  // ...
+```diff title="tsconfig.json"
   "compilerOptions": {
-    // ...
-    "strictNullChecks": true
++   "strictNullChecks": true
   }
-}
 ```
 
 #### 3. Implement your `appRouter`
 
-Follow the [Quickstart](/docs/quickstart) and read the [`@trpc/server` docs](/docs/router) for guidance on this. Once you have your API implemented and listening via HTTP, continue to the next step.
+Follow the [Quickstart](quickstart) and read the [`@trpc/server` docs](router) for guidance on this. Once you have your API implemented and listening via HTTP, continue to the next step.
 
 ### Client Side
 
@@ -61,11 +67,29 @@ Follow the [Quickstart](/docs/quickstart) and read the [`@trpc/server` docs](/do
 
 #### 1. Install dependencies
 
+**npm**
+
 ```bash
-yarn add @trpc/client @trpc/server @trpc/react react-query@3
+npm install @trpc/client @trpc/server @trpc/react @tanstack/react-query
 ```
-- @trpc/server: This is a peer dependency of `@trpc/client` so you have to install it again!
-- React Query: @trpc/react provides a thin wrapper over react-query. It is required as a peer dependency.
+
+**yarn**
+
+```bash
+yarn add @trpc/client @trpc/server @trpc/react @tanstack/react-query
+```
+
+**pnpm**
+
+```bash
+pnpm add @trpc/client @trpc/server @trpc/react @tanstack/react-query
+```
+
+##### Why `@trpc/server`?
+This is a peer dependency of `@trpc/client` so you have to install it again!
+
+##### Why `@tanstack/react-query`?
+`@trpc/react` provides a thin wrapper over `@tanstack/react-query`. It is required as a peer dependency.
 
 #### 2. Create tRPC hooks
 
@@ -73,28 +97,16 @@ Create a set of strongly-typed React hooks from your `AppRouter` type signature 
 
 ```tsx title='utils/trpc.ts'
 // utils/trpc.ts
-import { createReactQueryHooks, createReactQueryHooksProxy } from '@trpc/react';
+import { createTRPCReact } from '@trpc/react';
 import type { AppRouter } from '../path/to/router.ts';
 
-const hooks = createReactQueryHooks<AppRouter>();
-// => { useQuery: ..., useMutation: ...}
-
-const proxy = createReactQueryHooksProxy<AppRouter>(hooks);
-// => proxy.<router>.<query>.useQuery(...),
-
-export const trpc = {
-  proxy,
-  ...hooks,
-}
+export const trpc = createTRPCReact<AppRouter>();
 ```
 
 #### 3. Add tRPC providers
 
-In your `App.tsx`
-
 ```tsx title='App.tsx'
-import React from 'react';
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { trpc } from './utils/trpc';
 
@@ -135,5 +147,5 @@ export default function IndexPage() {
       <p>{hello.data.greeting}</p>
     </div>
   );
-};
+}
 ```

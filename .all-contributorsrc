@@ -851,7 +851,8 @@
       "avatar_url": "https://avatars.githubusercontent.com/u/3504472?v=4",
       "profile": "https://www.linkedin.com/in/zomars/",
       "contributions": [
-        "financial"
+        "financial",
+        "bug"
       ]
     },
     {
@@ -1066,6 +1067,33 @@
       "profile": "https://github.com/LoriKarikari",
       "contributions": [
         "financial"
+      ]
+    },
+    {
+      "login": "gioboa",
+      "name": "Giorgio Boa",
+      "avatar_url": "https://avatars.githubusercontent.com/u/35845425?v=4",
+      "profile": "https://it.linkedin.com/in/giorgio-boa",
+      "contributions": [
+        "doc"
+      ]
+    },
+    {
+      "login": "relm923",
+      "name": "Reagan Elm",
+      "avatar_url": "https://avatars.githubusercontent.com/u/1347066?v=4",
+      "profile": "https://github.com/relm923",
+      "contributions": [
+        "test"
+      ]
+    },
+    {
+      "login": "colelawrence",
+      "name": "Cole Lawrence",
+      "avatar_url": "https://avatars.githubusercontent.com/u/2925395?v=4",
+      "profile": "https://colelawrence.com",
+      "contributions": [
+        "bug"
       ]
     }
   ],

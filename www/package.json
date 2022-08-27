@@ -1,6 +1,6 @@
 {
   "name": "www",
-  "version": "0.0.0",
+  "version": "10.0.0-proxy-alpha.54",
   "private": true,
   "scripts": {
     "docusaurus": "docusaurus",
@@ -15,20 +15,27 @@
     "sponsors-sync:push": "yarn ts-node ./src/components/sponsors/script.push.ts",
     "sponsors-sync": "run-s sponsors-sync:*",
     "tweetwall-pull": "yarn ts-node ./src/components/TwitterWall/script.ts",
-    "ts-node": "ts-node --compiler-options '{\"module\":\"commonjs\"}'"
+    "ts-node": "ts-node --compiler-options '{\"module\":\"commonjs\"}'",
+    "postinstall": "cd .. && run-s postinstall build"
   },
   "dependencies": {
-    "@docusaurus/core": "^2.0.0-rc.1",
-    "@docusaurus/preset-classic": "^2.0.0-rc.1",
+    "@docusaurus/core": "^2.0.1",
+    "@docusaurus/preset-classic": "^2.0.1",
     "@mdx-js/react": "^1.6.22",
+    "@trpc/client": "^10.0.0-proxy-alpha.54",
+    "@trpc/next": "^10.0.0-proxy-alpha.54",
+    "@trpc/react": "^10.0.0-proxy-alpha.54",
+    "@trpc/server": "^10.0.0-proxy-alpha.54",
     "@visx/hierarchy": "^2.10.0",
     "@visx/responsive": "^2.10.0",
-    "clsx": "^1.2.1",
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0",
+    "clsx": "^1.1.1",
+    "docusaurus-preset-shiki-twoslash": "^1.1.38",
+    "react": "^18.1.0",
+    "react-dom": "^18.1.0",
     "react-github-btn": "^1.3.0",
     "react-icons": "^4.4.0",
-    "tailwind-merge": "^1.5.1"
+    "tailwind-merge": "^1.5.1",
+    "zod": "^3.0.0"
   },
   "browserslist": {
     "production": [
@@ -45,7 +52,7 @@
   "devDependencies": {
     "@babel/core": "^7.18.6",
     "@babel/preset-env": "^7.18.6",
-    "@docusaurus/module-type-aliases": "^2.0.0-rc.1",
+    "@docusaurus/module-type-aliases": "^2.0.1",
     "@octokit/graphql": "^5.0.0",
     "@octokit/graphql-schema": "^10.74.2",
     "@tsconfig/docusaurus": "^1.0.6",
@@ -53,9 +60,9 @@
     "dotenv": "^16.0.1",
     "oauth": "^0.10.0",
     "postcss": "^8.4.14",
-    "prettier": "^2.7.1",
+    "prettier": "^2.5.1",
     "tailwindcss": "^3.1.6",
-    "ts-node": "^10.9.1",
-    "typescript": "^4.7.4"
+    "ts-node": "^10.3.0",
+    "typescript": "4.7.4"
   }
 }

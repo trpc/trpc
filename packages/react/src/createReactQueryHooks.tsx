@@ -47,7 +47,9 @@ export type OutputWithCursor<TData, TCursor extends any = any> = {
   data: TData;
 };
 
-export interface TRPCReactRequestOptions extends TRPCRequestOptions {
+export interface TRPCReactRequestOptions
+  // For RQ, we use their internal AbortSignals instead of letting the user pass their own
+  extends Omit<TRPCRequestOptions, 'signal'> {
   /**
    * Opt out of SSR for this query by passing `ssr: false`
    */
@@ -127,6 +129,9 @@ function createHookProxy(callback: (...args: [string, ...unknown[]]) => any) {
   });
 }
 
+/**
+ * @deprecated use `createTRPCReact` instead
+ */
 export function createReactQueryHooks<
   TRouter extends AnyRouter,
   TSSRContext = unknown,
@@ -320,12 +325,17 @@ export function createReactQueryHooks<
     ) {
       void prefetchQuery(pathAndInput as any, opts as any);
     }
-    const actualOpts = useSSRQueryOptionsIfNeeded(pathAndInput, opts);
+    const ssrOpts = useSSRQueryOptionsIfNeeded(pathAndInput, opts);
 
     return __useQuery(
       pathAndInput as any,
-      () => (client as any).query(...getClientArgs(pathAndInput, actualOpts)),
-      actualOpts,
+      ({ signal }) => {
+        const actualOpts = { ...ssrOpts, trpc: { ...ssrOpts?.trpc, signal } };
+        return (client as any).query(
+          ...getClientArgs(pathAndInput, actualOpts),
+        );
+      },
+      ssrOpts,
     );
   }
 
@@ -507,7 +517,7 @@ type fooType<TRouter extends AnyRouter, TSSRContext = unknown> = GnClass<
 
 /**
  * Infer the type of a `createReactQueryHooks` function
- * @intenral
+ * @internal
  */
 export type CreateReactQueryHooks<
   TRouter extends AnyRouter,

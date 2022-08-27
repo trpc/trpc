@@ -1,17 +1,51 @@
 import Head from '@docusaurus/Head';
 import Link from '@docusaurus/Link';
+import { useLocation } from '@docusaurus/router';
 import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
 import Layout from '@theme/Layout';
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Features } from '../components/Features';
 import { GithubStarCountButton } from '../components/GithubStarCountButton';
 import { SectionTitle } from '../components/SectionTitle';
 import { TwitterWall } from '../components/TwitterWall';
 import { Sponsors } from '../components/sponsors';
 
+type Version = 'current' | '9.x';
+
+/**
+ * Hack to get the selected version of the page from local storage
+ */
+function useLocalStorageVersion() {
+  const [version, setVersion] = useState<Version>(() => {
+    if (typeof window === 'undefined') {
+      return '9.x';
+    }
+    return (window.localStorage.getItem('docs-preferred-version-default') ||
+      '9.x') as Version;
+  });
+
+  return {
+    active: version,
+    set(value: Version) {
+      setVersion(value as Version);
+      window.localStorage.setItem('docs-preferred-version-default', value);
+    },
+  };
+}
+
 function Home() {
   const context = useDocusaurusContext();
   const { siteConfig } = context;
+
+  const version = useLocalStorageVersion();
+
+  const location = useLocation();
+  useEffect(() => {
+    if (location.search.includes('v10') && version.active !== 'current') {
+      version.set('current');
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.search, version.active]);
 
   return (
     <Layout
@@ -20,6 +54,7 @@ function Home() {
     >
       <Head>
         <body className="homepage" />
+        <html className={version.active === 'current' ? 'v10' : 'v9'} />
         <script
           async
           src="https://platform.twitter.com/widgets.js"
@@ -39,7 +74,7 @@ function Home() {
             </p>
             <div className="flex items-center gap-4 mt-6">
               <Link
-                href="/docs/quickstart"
+                href="/docs/v9/quickstart"
                 className="inline-block px-4 py-2 text-sm font-bold text-black transition-colors rounded-lg md:text-base hover:bg-primary-darker hover:no-underline hover:text-black bg-primary shadow-xl"
               >
                 Quickstart
@@ -47,7 +82,25 @@ function Home() {
               <GithubStarCountButton />
             </div>
           </div>
-          <div className="flex-1">{/* TODO: Add new GIF here */}</div>
+          <div className="flex-1 py-4 lg:p-0 group">
+            <figure>
+              {/* V10 */}
+              <img
+                src="https://user-images.githubusercontent.com/51714798/186850605-7cb9f6b2-2230-4eb7-981b-0b90ee1f8ffa.gif"
+                alt="Demo"
+                className="trpcgif trpcgif--v10"
+              />
+              <img
+                src="https://storage.googleapis.com/trpc/trpcgif.gif"
+                alt="Demo"
+                className="trpcgif trpcgif--v9"
+              />
+              <figcaption className="text-sm text-center text-gray-400 group-hover:text-gray-900 transition">
+                The client above is <strong>not</strong> importing any code from
+                the server, only its type declarations.
+              </figcaption>
+            </figure>
+          </div>
         </header>
 
         <section>
@@ -55,24 +108,17 @@ function Home() {
         </section>
         <section className="max-w-[80ch] px-6 mx-auto md:px-0">
           <SectionTitle title={<>You may not need a traditional API</>} />
-          <blockquote cite="https://twitter.com/alexdotjs" className="mt-6">
+          <blockquote
+            cite="https://twitter.com/alexdotjs"
+            className="mt-6 space-y-2 py-2"
+          >
             <p className="text-sm text-gray-600 md:text-base dark:text-gray-400">
-              If we have a project that is built with the same language
-              end-to-end, why should we need to bring in <em>another</em>{' '}
-              language into the mix, like <code>.yaml</code> or{' '}
-              <code>.graphql</code>, when all the type information is already
-              there? At the end of the day, what you want to achieve with an
-              &quot;API contract&quot;, whether it&apos;s a REST or a GraphQL,
-              is to provide a consistent, typesafe, and secure way to
-              communicate between your client and server &mdash; tRPC enables
-              that without glueing together tooling from a number of different
-              projects.
-            </p>
-
-            <p className="pt-3 text-sm text-gray-600 md:text-base dark:text-gray-400">
               I built tRPC to allow me to <strong>move faster</strong> by
               removing the need of a traditional API-layer, while still having
               confidence that my apps won&apos;t break as I rapidly iterate.
+            </p>
+            <p className="text-sm text-gray-600 md:text-base dark:text-gray-400">
+              Try it out for yourself and let us know what you think!
             </p>
           </blockquote>
           <a
@@ -102,7 +148,7 @@ function Home() {
             title="Sponsors"
             description={
               <>
-                We couldn&apos;t have done it without all of our amazing{' '}
+                We really love all of our amazing{' '}
                 <a
                   href="https://github.com/sponsors/KATT"
                   target="_blank"
@@ -110,7 +156,7 @@ function Home() {
                 >
                   sponsors
                 </a>
-                , who help us to keep tRPC alive and well-funded.
+                , who help make sure tRPC is here to stay.
               </>
             }
           />

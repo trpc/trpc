@@ -2,11 +2,10 @@ export function getWindow() {
   if (typeof window !== 'undefined') {
     return window;
   }
-  return global;
+  return globalThis;
 }
 export function getAbortController(
   ac?: typeof AbortController,
-): typeof AbortController | null {
-  const win = getWindow();
-  return ac || win.AbortController || null;
+): typeof AbortController | undefined {
+  return ac ?? getWindow().AbortController ?? undefined;
 }

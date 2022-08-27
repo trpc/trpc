@@ -23,6 +23,9 @@ import {
   TRPCSubscriptionObserver,
 } from './internals/TRPCClient';
 
+export type inferRouterProxyClient<TRouter extends AnyRouter> =
+  DecoratedProcedureRecord<TRouter['_def']['record'], TRouter>;
+
 type Resolver<TProcedure extends Procedure<any>> = (
   ...args: ProcedureArgs<TProcedure['_def']>
 ) => Promise<inferProcedureOutput<TProcedure>>;
@@ -87,7 +90,7 @@ const clientCallTypeMap: Record<
 };
 
 /**
- * @deprecated use createTRPCProxyClient instead
+ * @deprecated use `createTRPCProxyClient` instead
  * @internal
  */
 export function createTRPCClientProxy<TRouter extends AnyRouter>(
@@ -101,7 +104,7 @@ export function createTRPCClientProxy<TRouter extends AnyRouter>(
     const fullPath = pathCopy.join('.');
     return (client as any)[procedureType](fullPath, ...args);
   });
-  return proxy as DecoratedProcedureRecord<TRouter['_def']['record'], TRouter>;
+  return proxy as inferRouterProxyClient<TRouter>;
 }
 
 export function createTRPCProxyClient<TRouter extends AnyRouter>(

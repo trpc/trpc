@@ -174,9 +174,12 @@ h5 {
   @apply text-2xl;
 }
 
-.markdown h4,
-h5 {
+.markdown h4 {
   @apply text-xl;
+}
+
+.markdown h5 {
+  @apply text-lg;
 }
 
 .markdown ul {
@@ -196,4 +199,52 @@ h5 {
  **/
 #tweet {
   --ifm-link-hover-decoration: none;
+}
+
+/* https://github.com/shikijs/twoslash/tree/main/packages/docusaurus-preset-shiki-twoslash */
+[data-theme='light'] .shiki.nord {
+  display: none;
+}
+
+[data-theme='dark'] .shiki.min-light-with-diff {
+  display: none;
+}
+
+.markdown ul {
+  @apply list-disc list-inside;
+}
+
+.markdown ol {
+  @apply list-decimal list-inside;
+}
+
+/** Hide noisy shiki stuff */
+
+.shiki data-lsp {
+  border-bottom: 0 !important;
+}
+
+.shiki data-lsp::before {
+  display: none;
+}
+
+.theme-doc-version-badge {
+  margin-bottom: 1rem;
+}
+
+/* Hide announcement bar for v9 */
+html:not(.v10) [role='banner'] {
+  display: none !important;
+}
+
+/* Toggle different gifs depending on version */
+.trpcgif {
+  display: none;
+}
+
+html.v10 .trpcgif--v10 {
+  display: block;
+}
+html.v9 .trpcgif--v9 {
+  display: block;
 }

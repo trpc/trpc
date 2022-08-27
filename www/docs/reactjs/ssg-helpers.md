@@ -5,7 +5,7 @@ sidebar_label: SSG Helpers
 slug: /ssg-helpers
 ---
 
-`createProxySSGHelpers` providers you a set of helper functions that you can use to prefetch queries on the server.
+`createProxySSGHelpers` provides you a set of helper functions that you can use to prefetch queries on the server.
 
 ```ts
 import { createProxySSGHelpers } from '@trpc/react/ssg';
@@ -26,8 +26,8 @@ import { createProxySSGHelpers } from '@trpc/react/ssg';
 import { GetServerSidePropsContext, InferGetServerSidePropsType } from 'next';
 import { prisma } from 'server/context';
 import { appRouter } from 'server/routers/_app';
-import { trpc } from 'utils/trpc';
 import superjson from 'superjson';
+import { trpc } from 'utils/trpc';
 
 export async function getServerSideProps(
   context: GetServerSidePropsContext<{ id: string }>,
@@ -40,7 +40,7 @@ export async function getServerSideProps(
   const id = context.params?.id as string;
 
   // Prefetch `post.byId`
-  await ssg.post.ById.fetch({ id });
+  await ssg.post.byId.fetch({ id });
 
   // Make sure to return { props: { trpcState: ssg.dehydrate() } }
   return {

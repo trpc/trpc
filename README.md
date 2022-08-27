@@ -1,3 +1,13 @@
+> **🚀 You are looking at a pre-release of tRPC v10!**
+> 
+> You might be looking for the [`main`](https://github.com/trpc/trpc/tree/main)-branch which is the stable v9-version. 
+>
+> See our [migration guide](https://trpc.io/docs/v10/migrate-from-v9-to-v10) for a summary of what is changing or take a look at [the **v10 docs website**](https://alpha.trpc.io/).
+> There is also [the `examples-v10-next-prisma-starter-sqlite` project](https://github.com/trpc/examples-v10-next-prisma-starter-sqlite) to try out a real project using this version.
+
+
+---
+
 <p align="center">
   <a href="https://trpc.io/"><img src="./www/static/img/logo-text.svg" alt="tRPC" height="130"/></a>
 </p>
@@ -23,9 +33,10 @@
 
 <p></p>
 
+ 
 <p align="center">
   <figure>
-    <img src="https://storage.googleapis.com/trpc/trpcgif.gif" alt="Demo" />
+    <img src="https://user-images.githubusercontent.com/51714798/186850605-7cb9f6b2-2230-4eb7-981b-0b90ee1f8ffa.gif" alt="Demo" />
     <figcaption>
       <p align="center">
         The client above is <strong>not</strong> importing any code from the server, only its type declarations.
@@ -47,7 +58,7 @@ tRPC allows you to easily build & consume fully typesafe APIs, without schemas o
 - 🐎&nbsp; Snappy DX - No code generation, run-time bloat, or build pipeline.
 - 🍃&nbsp; Light - tRPC has zero deps and a tiny client-side footprint.
 - 🐻&nbsp; Easy to add to your existing brownfield project.
-- 🔋&nbsp; Batteries included - React.js/Next.js/Express.js/Fastify adapters. _(But tRPC is not tied to React - [reach out](https://twitter.com/alexdotjs) if you want to make a Svelte/Vue/... adapter)_
+- 🔋&nbsp; Batteries included - React.js/Next.js/Express.js/Fastify adapters. _(But tRPC is not tied to React and there are many [community adapters](https://trpc.io/docs/awesome-trpc#-extensions--community-add-ons) for other libraries)_
 - 🥃&nbsp; Subscriptions support.
 - ⚡️&nbsp; Request batching - requests made at the same time can be automatically combined into one
 - 👀&nbsp; Quite a few examples in the [./examples](./examples)-folder
@@ -126,7 +137,7 @@ Also, if your company using tRPC and want to support long-term maintenance of tR
 <table>
   <tr>
    <td align="center"><a href="https://Youarerad.org"><img src="https://avatars.githubusercontent.com/u/22589564?u=00737f7066b9bb06314a1ad7ca099ab252e101eb&v=4&s=150" width="150" alt="Jason%20Docton"/><br />Jason Docton</a></td>
-   <td align="center"><a href="https://ping.gg/"><img src="https://avatars.githubusercontent.com/u/89191727?v=4&s=150" width="150" alt="Ping%20Labs"/><br />Ping Labs</a></td>
+   <td align="center"><a href="https://ping.gg/"><img src="https://avatars.githubusercontent.com/u/89191727?v=4&s=150" width="150" alt="Ping.gg"/><br />Ping.gg</a></td>
    <td align="center"><a href="https://www.prisma.io"><img src="https://avatars.githubusercontent.com/u/17219288?v=4&s=150" width="150" alt="Prisma"/><br />Prisma</a></td>
   </tr>
 </table>
@@ -138,7 +149,7 @@ Also, if your company using tRPC and want to support long-term maintenance of tR
    <td align="center"><a href="https://www.newfront.com"><img src="https://avatars.githubusercontent.com/u/44950377?v=4&s=120" width="120" alt="Newfront"/><br />Newfront</a></td>
    <td align="center"><a href="https://github.com/hidrb"><img src="https://avatars.githubusercontent.com/u/77294655?v=4&s=120" width="120" alt="Dr.%20B"/><br />Dr. B</a></td>
    <td align="center"><a href="https://standardresume.co/r/ryan-edge"><img src="https://avatars.githubusercontent.com/u/6907797?u=71aca5cb761c401b4abbf100057978a76f2f5e22&v=4&s=120" width="120" alt="Ryan"/><br />Ryan</a></td>
-   <td align="center"><a href="https://www.snaplet.dev"><img src="https://avatars.githubusercontent.com/u/69029941?v=4&s=120" width="120" alt="Snaplet"/><br />Snaplet</a></td>
+   <td align="center"><a href="https://snaplet.dev"><img src="https://avatars.githubusercontent.com/u/69029941?v=4&s=120" width="120" alt="Snaplet"/><br />Snaplet</a></td>
    <td align="center"><a href="https://flylance.com"><img src="https://avatars.githubusercontent.com/u/67534310?v=4&s=120" width="120" alt="Flylance"/><br />Flylance</a></td>
   </tr>
 </table>
@@ -184,15 +195,20 @@ Also, if your company using tRPC and want to support long-term maintenance of tR
    <td align="center"><a href="https://www.linkedin.com/in/zomars/"><img src="https://avatars.githubusercontent.com/u/3504472?u=e0fa7d7acefff37b6735387dc45d448717dbf8e2&v=4&s=100" width="100" alt="Omar%20L%C3%B3pez"/><br />Omar López</a></td>
    <td align="center"><a href="https://chrisbradley.dev"><img src="https://avatars.githubusercontent.com/u/11767079?u=e64f67faffd350af19aa896ff89a0708829e9a2a&v=4&s=100" width="100" alt="Chris%20Bradley"/><br />Chris Bradley</a></td>
    <td align="center"><a href="https://tryhackme.com/p/zast99"><img src="https://avatars.githubusercontent.com/u/29718978?u=b9dd3b8f5f77bffb47e98ad0084bd94198d266c0&v=4&s=100" width="100" alt="Mateo%20Carriqu%C3%AD"/><br />Mateo Carriquí</a></td>
-   <td align="center"><a href="https://ixahmedxi.me"><img src="https://avatars.githubusercontent.com/u/20271968?u=ab95f47bb661569e9b4ab1dadfdb802b77f9d1c6&v=4&s=100" width="100" alt="Ahmed%20Elsakaan"/><br />Ahmed Elsakaan</a></td>
+   <td align="center"><a href="https://elsakaan.dev"><img src="https://avatars.githubusercontent.com/u/20271968?u=ab95f47bb661569e9b4ab1dadfdb802b77f9d1c6&v=4&s=100" width="100" alt="Ahmed%20Elsakaan"/><br />Ahmed Elsakaan</a></td>
   </tr>
   <tr>
    <td align="center"><a href="https://github.com/Sven1106"><img src="https://avatars.githubusercontent.com/u/28002895?v=4&s=100" width="100" alt="Svend%20Aage%20Roperos%20Nielsen"/><br />Svend Aage Roperos Nielsen</a></td>
-   <td align="center"><a href="https://github.com/iway1"><img src="https://avatars.githubusercontent.com/u/12774588?v=4&s=100" width="100" alt="iway1"/><br />iway1</a></td>
+   <td align="center"><a href="https://github.com/iway1"><img src="https://avatars.githubusercontent.com/u/12774588?u=e664ed8bd364b3e9103d080d72087e25904c6cab&v=4&s=100" width="100" alt="Isaac%20Way"/><br />Isaac Way</a></td>
    <td align="center"><a href="https://github.com/LoriKarikari"><img src="https://avatars.githubusercontent.com/u/7902980?u=d016e5a9c337fbd4c60a7ea61352185f8b88b585&v=4&s=100" width="100" alt="Lori%20Karikari"/><br />Lori Karikari</a></td>
    <td align="center"><a href="https://github.com/zzacong"><img src="https://avatars.githubusercontent.com/u/61817066?u=2b8d6fe70742b39a8bee1475ceea3105716168cf&v=4&s=100" width="100" alt="Zac%20Ong"/><br />Zac Ong</a></td>
    <td align="center"><a href="https://dyaa.me"><img src="https://avatars.githubusercontent.com/u/4283185?u=c0eefe0bfb37b34dedb7765ba2a061cfac30be55&v=4&s=100" width="100" alt="Dyaa"/><br />Dyaa</a></td>
    <td align="center"><a href="https://francisprovost.com"><img src="https://avatars.githubusercontent.com/u/6840361?v=4&s=100" width="100" alt="Francis%20Provost"/><br />Francis Provost</a></td>
+  </tr>
+  <tr>
+   <td align="center"><a href="https://github.com/svobik7"><img src="https://avatars.githubusercontent.com/u/761766?u=1771454e0852904ddf71fe74e493e228331dd27a&v=4&s=100" width="100" alt="Jirka%20Svoboda"/><br />Jirka Svoboda</a></td>
+   <td align="center"><a href="https://github.com/mshd"><img src="https://avatars.githubusercontent.com/u/17379661?u=2dc0effef1464639ae9ff98795cd29bb772bcce3&v=4&s=100" width="100" alt="Martin"/><br />Martin</a></td>
+   <td align="center"><a href="https://github.com/fanvue"><img src="https://avatars.githubusercontent.com/u/72873652?v=4&s=100" width="100" alt="Fanvue"/><br />Fanvue</a></td>
   </tr>
 </table>
 
@@ -316,7 +332,7 @@ Also, if your company using tRPC and want to support long-term maintenance of tR
     <td align="center"><a href="https://github.com/futpib"><img src="https://avatars.githubusercontent.com/u/4330357?v=4?s=60" width="60px;" alt=""/><br /><sub><b>futpib</b></sub></a><br /><a href="https://github.com/trpc/trpc/issues?q=author%3Afutpib" title="Bug reports">🐛</a></td>
     <td align="center"><a href="https://github.com/lmatheus"><img src="https://avatars.githubusercontent.com/u/8514703?v=4?s=60" width="60px;" alt=""/><br /><sub><b>Luis Matheus</b></sub></a><br /><a href="#financial-lmatheus" title="Financial">💵</a></td>
     <td align="center"><a href="http://franklinjara.dev"><img src="https://avatars.githubusercontent.com/u/65879341?v=4?s=60" width="60px;" alt=""/><br /><sub><b>Franklin</b></sub></a><br /><a href="https://github.com/trpc/trpc/commits?author=makyfj" title="Documentation">📖</a></td>
-    <td align="center"><a href="https://www.linkedin.com/in/zomars/"><img src="https://avatars.githubusercontent.com/u/3504472?v=4?s=60" width="60px;" alt=""/><br /><sub><b>Omar López</b></sub></a><br /><a href="#financial-zomars" title="Financial">💵</a></td>
+    <td align="center"><a href="https://www.linkedin.com/in/zomars/"><img src="https://avatars.githubusercontent.com/u/3504472?v=4?s=60" width="60px;" alt=""/><br /><sub><b>Omar López</b></sub></a><br /><a href="#financial-zomars" title="Financial">💵</a> <a href="https://github.com/trpc/trpc/issues?q=author%3Azomars" title="Bug reports">🐛</a></td>
     <td align="center"><a href="https://diego-slicecode.dev/"><img src="https://avatars.githubusercontent.com/u/63283003?v=4?s=60" width="60px;" alt=""/><br /><sub><b>Diego Massarini</b></sub></a><br /><a href="#financial-webdiego" title="Financial">💵</a></td>
   </tr>
   <tr>
@@ -346,6 +362,11 @@ Also, if your company using tRPC and want to support long-term maintenance of tR
     <td align="center"><a href="https://dyaa.me"><img src="https://avatars.githubusercontent.com/u/4283185?v=4?s=60" width="60px;" alt=""/><br /><sub><b>Dyaa</b></sub></a><br /><a href="#financial-dyaa" title="Financial">💵</a> <a href="https://github.com/trpc/trpc/commits?author=dyaa" title="Code">💻</a> <a href="https://github.com/trpc/trpc/commits?author=dyaa" title="Tests">⚠️</a></td>
     <td align="center"><a href="https://github.com/zzacong"><img src="https://avatars.githubusercontent.com/u/61817066?v=4?s=60" width="60px;" alt=""/><br /><sub><b>Zac Ong</b></sub></a><br /><a href="#financial-zzacong" title="Financial">💵</a></td>
     <td align="center"><a href="https://github.com/LoriKarikari"><img src="https://avatars.githubusercontent.com/u/7902980?v=4?s=60" width="60px;" alt=""/><br /><sub><b>Lori Karikari</b></sub></a><br /><a href="#financial-LoriKarikari" title="Financial">💵</a></td>
+    <td align="center"><a href="https://it.linkedin.com/in/giorgio-boa"><img src="https://avatars.githubusercontent.com/u/35845425?v=4?s=60" width="60px;" alt=""/><br /><sub><b>Giorgio Boa</b></sub></a><br /><a href="https://github.com/trpc/trpc/commits?author=gioboa" title="Documentation">📖</a></td>
+    <td align="center"><a href="https://github.com/relm923"><img src="https://avatars.githubusercontent.com/u/1347066?v=4?s=60" width="60px;" alt=""/><br /><sub><b>Reagan Elm</b></sub></a><br /><a href="https://github.com/trpc/trpc/commits?author=relm923" title="Tests">⚠️</a></td>
+  </tr>
+  <tr>
+    <td align="center"><a href="https://colelawrence.com"><img src="https://avatars.githubusercontent.com/u/2925395?v=4?s=60" width="60px;" alt=""/><br /><sub><b>Cole Lawrence</b></sub></a><br /><a href="https://github.com/trpc/trpc/issues?q=author%3Acolelawrence" title="Bug reports">🐛</a></td>
   </tr>
 </table>
 
