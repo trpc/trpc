@@ -10,6 +10,23 @@ import Tabs from '@theme/Tabs';
 
 Nearly all of the concepts from tRPC v9 will carry over to tRPC v10. Most of the changes for v10 are syntax based.
 
+```ts
+// v9
+const legacyRouter = trpc.router().query('greeting', {
+  input: z.string(),
+  resolve({ input }) {
+    return `hello ${input}!`;
+  },
+});
+
+// v10
+const appRouter = t.router({
+  greeting: t.procedure
+    .input(z.string())
+    .query(({ input }) => `hello ${input}!`),
+});
+```
+
 Under the hood, we are unlocking performance improvements, bringing you quality of life enhancements, and creating room for us to build new features in the future.
 
 tRPC v10 features a compatibility layer for users coming from v9. `.interop()` allows you to incrementally adopt v10 so that you can continue building the rest of your project while still enjoying v10's new features.
