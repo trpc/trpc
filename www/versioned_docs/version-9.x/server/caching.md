@@ -12,7 +12,7 @@ The below examples uses [Vercel's edge caching](https://vercel.com/docs/serverle
 
 Always be careful with caching - especially if you handle personal information.
 
-Since batching is enabled by default, it's recommended to set your cache headers in the `responseMeta`-function and make sure that there are not any concurrent calls that may include personal data - or to omit cache headers completely if there is an auth headers or cookie.
+Since batching is enabled by default, it's recommended to set your cache headers in the `responseMeta` function and make sure that there are not any concurrent calls that may include personal data - or to omit cache headers completely if there is an auth headers or cookie.
 
 You can also use a [`splitLink`](../client/links.md) to split your requests that are public and those that should be private and uncached.
 
@@ -67,7 +67,7 @@ export default withTRPC({
 
 Since all queries are normal HTTP `GET`s we can use normal HTTP headers to cache responses, make the responses snappy, give your database a rest, and easier scale your API to gazillions of users.
 
-### Using `responseMeta ` to cache responses
+### Using `responseMeta` to cache responses
 
 > Assuming you're deploying your API somewhere that can handle stale-while-revalidate cache headers like Vercel.
 

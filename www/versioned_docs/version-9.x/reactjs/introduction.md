@@ -7,7 +7,7 @@ slug: /react
 
 :::info
 
-- If you're using Next.js, read the [Usage with Next.js](/docs/nextjs) guide instead.
+- If you're using Next.js, read the [Usage with Next.js](nextjs) guide instead.
 - In order to infer types from your Node.js backend you should have the frontend & backend in the same monorepo.
 :::
 
@@ -53,7 +53,7 @@ If strict mode is too much, at least enable `strictNullChecks`:
 
 #### 3. Implement your `appRouter`
 
-Follow the [Quickstart](/docs/quickstart) and read the [`@trpc/server` docs](/docs/router) for guidance on this. Once you have your API implemented and listening via HTTP, continue to the next step.
+Follow the [Quickstart](quickstart) and read the [`@trpc/server` docs](router) for guidance on this. Once you have your API implemented and listening via HTTP, continue to the next step.
 
 ### Client Side
 

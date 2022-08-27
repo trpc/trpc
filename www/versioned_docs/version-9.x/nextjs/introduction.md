@@ -6,7 +6,7 @@ slug: /nextjs
 ---
 
 :::tip
-If you're using tRPC in a new project, consider using one of the example projects as a starting point or for reference: [tRPC Example Projects](/docs/example-apps)
+If you're using tRPC in a new project, consider using one of the example projects as a starting point or for reference: [tRPC Example Projects](example-apps)
 :::
 
 tRPC and Next.js are a match made in heaven! Next.js makes it easy for you to build your client and server together in one codebase. This makes it easy to share types between them.
@@ -81,7 +81,7 @@ If strict mode is too much, at least enable `strictNullChecks`:
 
 ### 3. Create a tRPC router
 
-Implement your tRPC router in `./pages/api/trpc/[trpc].ts`. If you need to split your router into several subrouters, implement them in a top-level `server` directory in your project root, then import them into `./pages/api/trpc/[trpc].ts` and [merge them](/docs/merging-routers) into a single root `appRouter`.
+Implement your tRPC router in `./pages/api/trpc/[trpc].ts`. If you need to split your router into several subrouters, implement them in a top-level `server` directory in your project root, then import them into `./pages/api/trpc/[trpc].ts` and [merge them](merging-routers) into a single root `appRouter`.
 
 <details><summary>View sample router</summary>
 
@@ -169,7 +169,7 @@ export default withTRPC<AppRouter>({
 
 ### 6. Make API requests
 
-```tsx title='pages/index.ts'
+```tsx title='pages/index.tsx'
 import { trpc } from '../utils/trpc';
 
 export default function IndexPage() {
@@ -199,7 +199,7 @@ The `config`-argument is a function that returns an object that configures the t
 - Optional:
   - `queryClientConfig`: a configuration object for the React Query `QueryClient` used internally by the tRPC React hooks: [QueryClient docs](https://react-query.tanstack.com/reference/QueryClient)
   - `headers`: an object or a function that returns an object of outgoing tRPC requests
-  - `transformer`: a transformer applied to outgoing payloads. Read more about [Data Transformers](/docs/data-transformers)
+  - `transformer`: a transformer applied to outgoing payloads. Read more about [Data Transformers](data-transformers)
   - `fetch`: customize the implementation of `fetch` used by tRPC internally
   - `AbortController`: customize the implementation of `AbortController` used by tRPC internally
 
@@ -237,4 +237,4 @@ export default withTRPC<AppRouter>({
 
 ## Next steps
 
-Refer to the `@trpc/react` docs for additional information on executing [Queries](/docs/react-queries) and [Mutations](/docs/react-mutations) inside your components.
+Refer to the `@trpc/react` docs for additional information on executing [Queries](react-queries) and [Mutations](react-mutations) inside your components.
