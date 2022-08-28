@@ -42,20 +42,27 @@ module.exports = {
       },
       items: [
         {
+          to: 'docs/v10',
+          label: 'Docs',
+          activeBaseRegex: 'docs/(v10|v9)/',
+        },
+        {
           type: 'doc',
           docId: 'main/introduction',
           label: 'Docs',
+          activeBaseRegex: 'docs/(v10|v9)/introduction',
         },
         {
           type: 'doc',
           docId: 'main/quickstart',
           label: 'Quickstart',
         },
-        {
-          type: 'doc',
-          docId: 'main/awesome-trpc',
-          label: 'Awesome tRPC Collection',
-        },
+        // {
+        //   type: 'doc',
+        //   docId: 'main/awesome-trpc',
+        //   label: 'Awesome tRPC Collection',
+        //   sidebarId: 'unversioned',
+        // },
         {
           type: 'doc',
           docId: 'nextjs/introduction',
@@ -153,6 +160,16 @@ module.exports = {
         },
       };
     },
+    [
+      '@docusaurus/plugin-content-docs',
+      {
+        id: 'unversioned',
+        path: 'unversioned',
+        routeBasePath: 'docs',
+        sidebarPath: require.resolve('./otherSidebar.js'),
+        editUrl: 'https://github.com/trpc/trpc/tree/next/www/',
+      },
+    ],
   ],
   presets: [
     [
@@ -178,7 +195,7 @@ module.exports = {
             },
           },
           // includeCurrentVersion: false,
-          sidebarPath: require.resolve('./sidebars.js'),
+          sidebarPath: require.resolve('./docsSidebar.js'),
           // Please change this to your repo.
           editUrl: 'https://github.com/trpc/trpc/tree/next/www/',
         },
@@ -202,7 +219,7 @@ module.exports = {
       {
         // Not sure how reliable this path is (it's relative from the preset package)?
         // None of the light themes had good support for `diff` mode, so had to patch my own theme
-        themes: ['../../../www/min-light-with-diff', 'nord'],
+        themes: ['../../../www/shikiThemes/min-light-with-diff', 'nord'],
       },
     ],
   ],

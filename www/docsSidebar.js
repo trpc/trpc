@@ -10,10 +10,6 @@ module.exports = {
         'main/example-apps',
         'nextjs/introduction',
         'reactjs/introduction',
-        'main/contributing',
-        'main/love',
-        'main/sponsors',
-        'main/awesome-trpc',
       ],
     },
     {
