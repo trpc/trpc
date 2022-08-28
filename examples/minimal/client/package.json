@@ -1,8 +1,8 @@
 {
   "name": "@examples/minimal-client",
-  "version": "0.1.0",
+  "version": "10.0.0-proxy-alpha.59",
   "private": true,
   "dependencies": {
-    "@trpc/client": "^10.0.0-proxy-alpha.58"
+    "@trpc/client": "^10.0.0-proxy-alpha.59"
   }
 }
