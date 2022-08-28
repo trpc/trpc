@@ -69,7 +69,7 @@ export const t = initTRPC<{
           error.cause instanceof ZodError
             ? error.cause.flatten()
             : null,
-      };
+      },
     };
   },
   transformer: superjson,
