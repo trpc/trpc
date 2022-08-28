@@ -5,7 +5,7 @@ export const Preview = () => {
     <div className="flex justify-center pt-12">
       <figure>
         <img
-          src="/img/preview-dark.gif"
+          src="https://assets.trpc.io/www/v9/preview-dark.gif"
           alt="Demo"
           width="550px"
           className="rounded-md shadow-xl trpcgif trpcgif--v10-dark"
@@ -17,7 +17,7 @@ export const Preview = () => {
           className="rounded-md shadow-xl trpcgif trpcgif--v10-light"
         />
         <img
-          src="https://storage.googleapis.com/trpc/trpcgif.gif"
+          src="https://assets.trpc.io/www/v9/trpcgif.gif"
           alt="Demo"
           className="trpcgif trpcgif--v9"
         />
