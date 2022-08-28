@@ -3,6 +3,6 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
-    "@trpc/server": "^10.0.0-proxy-alpha.54"
+    "@trpc/server": "^10.0.0-proxy-alpha.58"
   }
 }
