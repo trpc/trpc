@@ -29,7 +29,7 @@
 }
 
 .homepage .navbar {
-  @apply container mx-auto shadow-none h-20;
+  @apply container h-20 mx-auto shadow-none;
 }
 
 .navbar-external-link svg {
@@ -242,9 +242,22 @@ html:not(.v10) [role='banner'] {
   display: none;
 }
 
-html.v10 .trpcgif--v10 {
+html.v10[data-theme='light'] .trpcgif--v10-light {
   display: block;
 }
+
+html.v10[data-theme='dark'] .trpcgif--v10-light {
+  display: none;
+}
+
+html.v10[data-theme='light'] .trpcgif--v10-dark {
+  display: none;
+}
+
+html.v10[data-theme='dark'] .trpcgif--v10-dark {
+  display: block;
+}
+
 html.v9 .trpcgif--v9 {
   display: block;
 }

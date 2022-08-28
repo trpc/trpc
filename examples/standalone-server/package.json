@@ -1,6 +1,6 @@
 {
   "name": "@examples/standalone-server",
-  "version": "10.0.0-proxy-alpha.54",
+  "version": "10.0.0-proxy-alpha.55",
   "private": true,
   "scripts": {
     "dev:server": "nodemon -e ts -w . -x ts-node ./src/server",
@@ -14,6 +14,8 @@
   "dependencies": {
     "@trpc/client": "^10.0.0-proxy-alpha.54",
     "@trpc/server": "^10.0.0-proxy-alpha.54",
+    "@trpc/client": "^10.0.0-proxy-alpha.55",
+    "@trpc/server": "^10.0.0-proxy-alpha.55",
     "@types/node-fetch": "^2.5.11",
     "abort-controller": "^3.0.0",
     "node-fetch": "^2.6.1",
