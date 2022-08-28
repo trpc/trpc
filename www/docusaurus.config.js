@@ -11,141 +11,140 @@ module.exports = {
   favicon: 'img/favicon.ico',
   organizationName: 'trpc', // Usually your GitHub org/user name.
   projectName: 'trpc', // Usually your repo name.
-  themeConfig: {
-    defaultMode: 'darkMode',
-    disableSwitch: false,
-    respectPrefersColorScheme: true,
-    image: 'img/facebook_cover_photo_2.png',
-    prism: {
-      theme: require('prism-react-renderer/themes/vsDark'),
-    },
-    algolia: {
-      appId: 'BTGPSR4MOE',
-      apiKey: 'ed8b3896f8e3e2b421e4c38834b915a8',
-      indexName: 'trpc',
-      // contextualSearch: true,
-      // searchParameters: {},
-    },
-    announcementBar: {
-      id: 'v10',
-      content:
-        "🚀 You are looking at a pre-release of tRPC v10! See <a href='https://trpc.io/docs/v10/migrate-from-v9-to-v10'>the migration guide</a> for a summary of what is changing &amp; <a href='https://github.com/trpc/examples-v10-next-prisma-starter-sqlite'>go here</a> to try out a real project using this version.",
-      backgroundColor: 'var(--ifm-color-primary-dark)',
-      textColor: '#ffffff',
-      isCloseable: false,
-    },
-    navbar: {
-      title: 'tRPC',
-      logo: {
-        alt: 'tRPC logo',
-        src: 'img/logo.svg',
+  themeConfig:
+    /** @type {import('@docusaurus/preset-classic').ThemeConfig} */
+    ({
+      colorMode: {
+        defaultMode: 'dark',
+        disableSwitch: false,
+        respectPrefersColorScheme: true,
       },
-      items: [
-        {
-          to: 'docs/v10',
-          label: 'Docs',
-          activeBaseRegex: 'docs/(v10|v9)/',
+      image: 'img/facebook_cover_photo_2.png',
+      prism: {
+        theme: require('prism-react-renderer/themes/vsDark'),
+      },
+      algolia: {
+        appId: 'BTGPSR4MOE',
+        apiKey: 'ed8b3896f8e3e2b421e4c38834b915a8',
+        indexName: 'trpc',
+        // contextualSearch: true,
+        // searchParameters: {},
+      },
+      announcementBar: {
+        id: 'v10',
+        content:
+          "🚀 You are looking at a pre-release of tRPC v10! See <a href='https://trpc.io/docs/v10/migrate-from-v9-to-v10'>the migration guide</a> for a summary of what is changing &amp; <a href='https://github.com/trpc/examples-v10-next-prisma-starter-sqlite'>go here</a> to try out a real project using this version.",
+        backgroundColor: 'var(--ifm-color-primary-dark)',
+        textColor: '#ffffff',
+        isCloseable: false,
+      },
+      navbar: {
+        title: 'tRPC',
+        logo: {
+          alt: 'tRPC logo',
+          src: 'img/logo.svg',
         },
-        {
-          type: 'doc',
-          docId: 'main/introduction',
-          label: 'Docs',
-          activeBaseRegex: 'docs/(v10|v9)/introduction',
-        },
-        {
-          type: 'doc',
-          docId: 'main/quickstart',
-          label: 'Quickstart',
-        },
-        // {
-        //   type: 'doc',
-        //   docId: 'main/awesome-trpc',
-        //   label: 'Awesome tRPC Collection',
-        //   sidebarId: 'unversioned',
-        // },
-        {
-          type: 'doc',
-          docId: 'nextjs/introduction',
-          label: 'Usage with Next.js',
-        },
-        {
-          href: 'https://github.com/trpc/trpc/tree/next',
-          label: 'GitHub',
-          position: 'right',
-          className: 'navbar-external-link',
-        },
-        {
-          href: 'https://twitter.com/alexdotjs',
-          label: 'Twitter',
-          position: 'right',
-          className: 'navbar-external-link',
-        },
-        {
-          href: 'https://trpc.io/discord',
-          label: 'Discord',
-          position: 'right',
-          className: 'navbar-external-link',
-        },
-        {
-          type: 'docsVersionDropdown',
-          position: 'right',
-          dropdownActiveClassDisabled: true,
-        },
-      ],
-    },
-    footer: {
-      links: [
-        {
-          title: 'Docs',
-          items: [
-            {
-              label: 'Docs',
-              to: 'docs/v9',
-            },
-            {
-              label: 'Usage with Next.js',
-              to: 'docs/v9/nextjs',
-            },
-          ],
-        },
-        {
-          title: 'Community',
-          items: [
-            {
-              label: 'GitHub',
-              href: 'https://github.com/trpc/trpc/tree/next',
-              className: 'flex items-center',
-            },
-            {
-              label: 'Twitter',
-              href: 'https://twitter.com/alexdotjs',
-              className: 'flex items-center',
-            },
-            {
-              label: 'Discord',
-              href: 'https://trpc.io/discord',
-              className: 'flex items-center',
-            },
-          ],
-        },
-        {
-          title: 'More',
-          items: [
-            // {
-            //   label: 'Blog',
-            //   to: 'blog',
-            // },
-            {
-              label: 'GitHub',
-              href: 'https://github.com/trpc/trpc/tree/next',
-              className: 'flex items-center',
-            },
-          ],
-        },
-      ],
-      // copyright: `Copyright © ${new Date().getFullYear()} My Project, Inc. Built with Docusaurus.`,
-    },
-  },
+        items: [
+          {
+            type: 'doc',
+            docId: 'main/introduction',
+            label: 'Docs',
+            activeBaseRegex: '(.*)introduction',
+          },
+          {
+            type: 'doc',
+            docId: 'main/quickstart',
+            label: 'Quickstart',
+            activeBaseRegex: '(*)/quickstart',
+          },
+          {
+            to: 'docs/awesome-trpc',
+            label: 'Awesome tRPC Collection',
+            activeBasePath: 'docs/awesome-trpc',
+          },
+          {
+            type: 'doc',
+            docId: 'nextjs/introduction',
+            label: 'Usage with Next.js',
+          },
+          {
+            href: 'https://github.com/trpc/trpc/tree/next',
+            label: 'GitHub',
+            position: 'right',
+            className: 'navbar-external-link',
+          },
+          {
+            href: 'https://twitter.com/alexdotjs',
+            label: 'Twitter',
+            position: 'right',
+            className: 'navbar-external-link',
+          },
+          {
+            href: 'https://trpc.io/discord',
+            label: 'Discord',
+            position: 'right',
+            className: 'navbar-external-link',
+          },
+          {
+            type: 'docsVersionDropdown',
+            position: 'right',
+            dropdownActiveClassDisabled: true,
+          },
+        ],
+      },
+      footer: {
+        links: [
+          {
+            title: 'Docs',
+            items: [
+              {
+                label: 'Docs',
+                to: 'docs/v9',
+              },
+              {
+                label: 'Usage with Next.js',
+                to: 'docs/v9/nextjs',
+              },
+            ],
+          },
+          {
+            title: 'Community',
+            items: [
+              {
+                label: 'GitHub',
+                href: 'https://github.com/trpc/trpc/tree/next',
+                className: 'flex items-center',
+              },
+              {
+                label: 'Twitter',
+                href: 'https://twitter.com/alexdotjs',
+                className: 'flex items-center',
+              },
+              {
+                label: 'Discord',
+                href: 'https://trpc.io/discord',
+                className: 'flex items-center',
+              },
+            ],
+          },
+          {
+            title: 'More',
+            items: [
+              // {
+              //   label: 'Blog',
+              //   to: 'blog',
+              // },
+              {
+                label: 'GitHub',
+                href: 'https://github.com/trpc/trpc/tree/next',
+                className: 'flex items-center',
+              },
+            ],
+          },
+        ],
+        // copyright: `Copyright © ${new Date().getFullYear()} My Project, Inc. Built with Docusaurus.`,
+      },
+    }),
   plugins: [
     async function myPlugin() {
       return {
@@ -162,19 +161,21 @@ module.exports = {
     },
     [
       '@docusaurus/plugin-content-docs',
-      {
+      /** @type {import('@docusaurus/plugin-content-docs').Options} */
+      ({
         id: 'unversioned',
         path: 'unversioned',
         routeBasePath: 'docs',
         sidebarPath: require.resolve('./otherSidebar.js'),
         editUrl: 'https://github.com/trpc/trpc/tree/next/www/',
-      },
+      }),
     ],
   ],
   presets: [
     [
       '@docusaurus/preset-classic',
-      {
+      /** @type {import('@docusaurus/preset-classic').Options} */
+      ({
         docs: {
           lastVersion: '9.x',
           // disableVersioning: true,
@@ -194,6 +195,7 @@ module.exports = {
               banner: 'none',
             },
           },
+          routeBasePath: '/',
           // includeCurrentVersion: false,
           sidebarPath: require.resolve('./docsSidebar.js'),
           // Please change this to your repo.
@@ -212,7 +214,7 @@ module.exports = {
           // Optional fields.
           anonymizeIP: true, // Should IPs be anonymized?
         },
-      },
+      }),
     ],
     [
       'docusaurus-preset-shiki-twoslash',
