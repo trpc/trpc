@@ -1,5 +1,8 @@
 import { TRPCError } from '../../error/TRPCError';
-import { getCauseFromUnknown, getErrorFromUnknown } from '../../error/utils';
+import {
+  getCauseFromUnknown,
+  getTRPCErrorFromUnknown,
+} from '../../error/utils';
 import { FlatOverwrite, MaybePromise } from '../../types';
 import { MiddlewareFunction, MiddlewareResult } from '../middleware';
 import { Parser, inferParser } from '../parser';
@@ -401,7 +404,7 @@ function createProcedureCaller(_def: ProcedureBuilderDef): Procedure<any> {
       } catch (cause) {
         return {
           ok: false,
-          error: getErrorFromUnknown(cause),
+          error: getTRPCErrorFromUnknown(cause),
           marker: middlewareMarker,
         };
       }
