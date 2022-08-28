@@ -91,7 +91,7 @@ function Home() {
                 className="trpcgif trpcgif--v10"
               />
               <img
-                src="https://assets.trpc.io/www/v9/preview-dark.gif"
+                src="https://assets.trpc.io/www/v9/trpcgif.gif"
                 alt="Demo"
                 className="trpcgif trpcgif--v9"
               />
