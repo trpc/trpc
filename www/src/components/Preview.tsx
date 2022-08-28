@@ -4,18 +4,32 @@ export const Preview = () => {
   return (
     <div className="flex justify-center pt-12">
       <figure>
-        <img
-          src="https://assets.trpc.io/www/v10/preview-dark-new.gif"
-          alt="Demo"
+        <video
+          autoPlay
+          loop
+          muted
           width="550px"
           className="rounded-md shadow-xl trpcgif trpcgif--v10-dark"
-        />
-        <img
-          src="https://assets.trpc.io/www/v10/preview-light.gif"
-          alt="Demo"
+        >
+          <source
+            src="https://assets.trpc.io/www/v10/preview-dark.mp4"
+            type="video/mp4"
+          />
+          You need a browser that supports HTML5 video to view this video.
+        </video>
+        <video
+          autoPlay
+          loop
+          muted
           width="550px"
           className="rounded-md shadow-xl trpcgif trpcgif--v10-light"
-        />
+        >
+          <source
+            src="https://assets.trpc.io/www/v10/preview-light.mp4"
+            type="video/mp4"
+          />
+          You need a browser that supports HTML5 video to view this video.
+        </video>
         <img
           src="https://assets.trpc.io/www/v9/trpcgif.gif"
           alt="Demo"
