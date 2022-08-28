@@ -23,6 +23,9 @@ import {
   TRPCSubscriptionObserver,
 } from './internals/TRPCClient';
 
+export type inferRouterProxyClient<TRouter extends AnyRouter> =
+  DecoratedProcedureRecord<TRouter['_def']['record'], TRouter>;
+
 type Resolver<TProcedure extends Procedure<any>> = (
   ...args: ProcedureArgs<TProcedure['_def']>
 ) => Promise<inferProcedureOutput<TProcedure>>;
@@ -36,9 +39,7 @@ type SubscriptionResolver<
     opts: ProcedureArgs<TProcedure['_def']>[1] &
       Partial<
         TRPCSubscriptionObserver<
-          TRPCResultMessage<
-            inferObservableValue<inferProcedureOutput<TProcedure>>
-          >,
+          inferObservableValue<inferProcedureOutput<TProcedure>>,
           TRPCClientError<TRouter>
         >
       >,
@@ -101,7 +102,7 @@ export function createTRPCClientProxy<TRouter extends AnyRouter>(
     const fullPath = pathCopy.join('.');
     return (client as any)[procedureType](fullPath, ...args);
   });
-  return proxy as DecoratedProcedureRecord<TRouter['_def']['record'], TRouter>;
+  return proxy as inferRouterProxyClient<TRouter>;
 }
 
 export function createTRPCProxyClient<TRouter extends AnyRouter>(

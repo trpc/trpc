@@ -7,8 +7,7 @@
 </p>
 
 <p align="center">
-  <!-- TODO: replace with new version GIF -->
-  <img src="https://storage.googleapis.com/trpc/trpcgif.gif" alt="Demo" />
+  <img src="https://assets.trpc.io/www/v10/preview-dark.gif" alt="Demo" />
 </p>
 
 # `@trpc/react`

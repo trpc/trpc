@@ -3,9 +3,6 @@ id: quickstart
 title: Quickstart
 sidebar_label: Quickstart
 slug: /quickstart
-author: colinhacks
-author_url: https://twitter.com/colinhacks
-author_image_url: https://avatars.githubusercontent.com/u/3084745?v=4
 ---
 
 :::tip
@@ -20,13 +17,13 @@ We highly encourage you to check out [the Example Apps](example-apps.md) to get 
 
 For implementing tRPC endpoints and routers. Install in your server codebase.
 
-`npm install @trpc/client`
+`npm install @trpc/client @trpc/server`
 
-For making typesafe API calls from your client. Install in your client codebase.
+For making typesafe API calls from your client. Install in your client codebase (`@trpc/server` is a peer dependency of `@trpc/client`).
 
-`npm install @trpc/react @tanstack/react-query`
+`npm install @trpc/react react-query@3`
 
-For generating a powerful set of React hooks for querying your tRPC API. Powered by [@tanstack/react-query](https://react-query.tanstack.com/).
+For generating a powerful set of React hooks for querying your tRPC API. Powered by [react-query](https://react-query.tanstack.com/).
 
 `npm install @trpc/next`
 
@@ -37,13 +34,13 @@ A set of utilies for integrating tRPC with [Next.js](https://nextjs.org/).
 **npm:**
 
 ```bash
-npm install @trpc/server @trpc/client @trpc/react @tanstack/react-query @trpc/next
+npm install @trpc/server @trpc/client @trpc/react react-query@3 @trpc/next
 ```
 
 **yarn:**
 
 ```bash
-yarn add @trpc/server @trpc/client @trpc/react @tanstack/react-query @trpc/next
+yarn add @trpc/server @trpc/client @trpc/react react-query@3 @trpc/next
 ```
 
 ## Defining a router
@@ -61,7 +58,6 @@ First we define a router somewhere in our server codebase:
 
 ```ts title='server.ts'
 import * as trpc from '@trpc/server';
-
 const appRouter = trpc.router();
 
 // only export *type signature* of router!
@@ -139,6 +135,6 @@ export type AppRouter = typeof appRouter;
 
 tRPC includes more sophisticated client-side tooling designed for React projects generally and Next.js specifically. Read the appropriate guide next:
 
-- [Usage with Next.js](/docs/nextjs)
-- [Usage with Express.js (server-side)](/docs/express)
-- [Usage with React (client-side)](/docs/react)
+- [Usage with Next.js](nextjs)
+- [Usage with Express.js (server-side)](express)
+- [Usage with React (client-side)](react)

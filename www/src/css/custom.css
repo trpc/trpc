@@ -29,7 +29,7 @@
 }
 
 .homepage .navbar {
-  @apply container mx-auto shadow-none h-20;
+  @apply container h-20 mx-auto shadow-none;
 }
 
 .navbar-external-link svg {
@@ -226,4 +226,38 @@ h5 {
 
 .shiki data-lsp::before {
   display: none;
+}
+
+.theme-doc-version-badge {
+  margin-bottom: 1rem;
+}
+
+/* Hide announcement bar for v9 */
+html:not(.v10) [role='banner'] {
+  display: none !important;
+}
+
+/* Toggle different gifs depending on version */
+.trpcgif {
+  display: none;
+}
+
+html.v10[data-theme='light'] .trpcgif--v10-light {
+  display: block;
+}
+
+html.v10[data-theme='dark'] .trpcgif--v10-light {
+  display: none;
+}
+
+html.v10[data-theme='light'] .trpcgif--v10-dark {
+  display: none;
+}
+
+html.v10[data-theme='dark'] .trpcgif--v10-dark {
+  display: block;
+}
+
+html.v9 .trpcgif--v9 {
+  display: block;
 }
