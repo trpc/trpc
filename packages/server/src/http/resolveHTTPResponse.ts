@@ -6,7 +6,7 @@ import {
   inferRouterError,
 } from '../core';
 import { TRPCError } from '../error/TRPCError';
-import { getCauseFromUnknown, getErrorFromUnknown } from '../error/utils';
+import { getCauseFromUnknown, getTRPCErrorFromUnknown } from '../error/utils';
 import { transformTRPCResponse } from '../internals/transformTRPCResponse';
 import { TRPCResponse } from '../rpc';
 import { Maybe } from '../types';
@@ -183,7 +183,7 @@ export async function resolveHTTPResponse<
             data: output,
           };
         } catch (cause) {
-          const error = getErrorFromUnknown(cause);
+          const error = getTRPCErrorFromUnknown(cause);
 
           onError?.({ error, path, input, ctx, type: type, req });
           return {
@@ -225,7 +225,7 @@ export async function resolveHTTPResponse<
     // - `createContext()` throws
     // - post body is too large
     // - input deserialization fails
-    const error = getErrorFromUnknown(cause);
+    const error = getTRPCErrorFromUnknown(cause);
 
     onError?.({
       error,

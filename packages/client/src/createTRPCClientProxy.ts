@@ -39,9 +39,7 @@ type SubscriptionResolver<
     opts: ProcedureArgs<TProcedure['_def']>[1] &
       Partial<
         TRPCSubscriptionObserver<
-          TRPCResultMessage<
-            inferObservableValue<inferProcedureOutput<TProcedure>>
-          >,
+          inferObservableValue<inferProcedureOutput<TProcedure>>,
           TRPCClientError<TRouter>
         >
       >,

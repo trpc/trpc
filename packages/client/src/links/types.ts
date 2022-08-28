@@ -19,7 +19,7 @@ export type Operation<TInput = unknown> = {
   context: OperationContext;
 };
 
-export type HTTPHeaders = Record<string, string | string[]>;
+export type HTTPHeaders = Record<string, string | string[] | undefined>;
 
 /**
  * The default `fetch` implementation has an overloaded signature. By convention this library
