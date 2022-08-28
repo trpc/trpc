@@ -13,6 +13,7 @@
   },
   "dependencies": {
     "@trpc/client": "^10.0.0-proxy-alpha.58",
+    "@trpc/react": "^10.0.0-proxy-alpha.58",
     "@trpc/server": "^10.0.0-proxy-alpha.58",
     "@types/node-fetch": "^2.5.11",
     "abort-controller": "^3.0.0",
