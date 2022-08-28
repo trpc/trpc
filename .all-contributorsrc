@@ -1095,6 +1095,15 @@
       "contributions": [
         "bug"
       ]
+    },
+    {
+      "login": "Grubba27",
+      "name": "Gabriel Grubba",
+      "avatar_url": "https://avatars.githubusercontent.com/u/70247653?v=4",
+      "profile": "https://grubba.vercel.app/",
+      "contributions": [
+        "code"
+      ]
     }
   ],
   "skipCi": true
