@@ -19,7 +19,6 @@ function arrayToDict(array: unknown[]) {
 const METHOD = {
   query: 'GET',
   mutation: 'POST',
-  subscription: 'PATCH',
 } as const;
 
 export interface HTTPResult {
@@ -87,8 +86,11 @@ export function httpRequest(
 
     const meta = {} as HTTPResult['meta'];
     Promise.resolve(runtime.headers())
-      .then((headers) =>
-        runtime.fetch(url, {
+      .then((headers) => {
+        if (type === 'subscription') {
+          throw new Error('Subscriptions should use wsLink');
+        }
+        return runtime.fetch(url, {
           method: METHOD[type],
           signal: ac?.signal,
           body: body,
@@ -96,8 +98,8 @@ export function httpRequest(
             'content-type': 'application/json',
             ...headers,
           },
-        }),
-      )
+        });
+      })
       .then((_res) => {
         meta.response = _res;
         return _res.json();
