@@ -85,7 +85,7 @@ function Home() {
           <figure className={`${styles.figure} gap-4`}>
             <img
               className="mx-auto"
-              src="https://storage.googleapis.com/trpc/trpcgif.gif"
+              src="https://assets.trpc.io/www/v9/trpcgif.gif"
               alt="Server/client example"
             />
             <figcaption>
