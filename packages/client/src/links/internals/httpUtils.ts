@@ -87,20 +87,19 @@ export function httpRequest(
     const meta = {} as HTTPResult['meta'];
     Promise.resolve(runtime.headers())
       .then((headers) => {
-          if (type === 'subscription') {
-            throw new Error('Subscriptions should use wsLink');
-          }
-          return runtime.fetch(url, {
-            method: METHOD[type],
-            signal: ac?.signal,
-            body: body,
-            headers: {
-              'content-type': 'application/json',
-              ...headers,
-            },
-          });
-        },
-      )
+        if (type === 'subscription') {
+          throw new Error('Subscriptions should use wsLink');
+        }
+        return runtime.fetch(url, {
+          method: METHOD[type],
+          signal: ac?.signal,
+          body: body,
+          headers: {
+            'content-type': 'application/json',
+            ...headers,
+          },
+        });
+      })
       .then((_res) => {
         meta.response = _res;
         return _res.json();
