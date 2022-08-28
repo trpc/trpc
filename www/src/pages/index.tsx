@@ -6,6 +6,7 @@ import Layout from '@theme/Layout';
 import React, { useEffect, useState } from 'react';
 import { Features } from '../components/Features';
 import { GithubStarCountButton } from '../components/GithubStarCountButton';
+import { Preview } from '../components/Preview';
 import { SectionTitle } from '../components/SectionTitle';
 import { TwitterWall } from '../components/TwitterWall';
 import { Sponsors } from '../components/sponsors';
@@ -62,7 +63,7 @@ function Home() {
         />
       </Head>
       <main className="container px-6 mx-auto space-y-28">
-        <header className="pt-12 lg:pt-16 xl:pt-28">
+        <header className="pt-12 lg:pt-16 xl:pt-24">
           <div>
             <h1 className="text-2xl font-extrabold leading-tight text-center whitespace-pre-wrap md:text-3xl lg:text-4xl xl:text-5xl">
               {siteConfig.tagline}
@@ -80,25 +81,7 @@ function Home() {
               </Link>
               <GithubStarCountButton />
             </div>
-            <div className="flex justify-center pt-12">
-              <figure>
-                <img
-                  src="/img/preview.gif"
-                  alt="Demo"
-                  width="600px"
-                  className="trpcgif trpcgif--v10"
-                />
-                <img
-                  src="https://storage.googleapis.com/trpc/trpcgif.gif"
-                  alt="Demo"
-                  className="trpcgif trpcgif--v9"
-                />
-                <figcaption className="pt-3 text-sm text-center text-gray-400 transition group-hover:text-gray-900">
-                  The client above is <strong>not</strong> importing any code
-                  from the server, only its type declarations.
-                </figcaption>
-              </figure>
-            </div>
+            <Preview />
           </div>
         </header>
 
