@@ -10,7 +10,7 @@ slug: /ssg-helpers
 ```ts
 import { createProxySSGHelpers } from '@trpc/react/ssg';
 
-const ssg = await createProxySSGHelpers({
+const ssg = createProxySSGHelpers({
   router: appRouter,
   ctx: createContext,
   transformer: superjson, // optional - adds superjson serialization
@@ -32,7 +32,7 @@ import { trpc } from 'utils/trpc';
 export async function getServerSideProps(
   context: GetServerSidePropsContext<{ id: string }>,
 ) {
-  const ssg = await createProxySSGHelpers({
+  const ssg = createProxySSGHelpers({
     router: appRouter,
     ctx: {},
     transformer: superjson,
