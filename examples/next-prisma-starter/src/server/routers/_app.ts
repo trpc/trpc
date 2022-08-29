@@ -2,7 +2,9 @@
  * This file contains the root router of your tRPC-backend
  */
 import { createRouter } from '../createRouter';
-import { postRouter } from './post';
+import { postAdd } from './post.add';
+import { postAll } from './post.all';
+import { postById } from './post.byId';
 import superjson from 'superjson';
 
 /**
@@ -30,9 +32,8 @@ export const appRouter = createRouter()
       return 'yay!';
     },
   })
-  /**
-   * Merge `postRouter` under `post.`
-   */
-  .merge('post.', postRouter);
+  .merge(postAdd)
+  .merge(postAll)
+  .merge(postById);
 
 export type AppRouter = typeof appRouter;
