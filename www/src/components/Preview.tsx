@@ -8,6 +8,7 @@ export const Preview = () => {
           autoPlay
           loop
           muted
+          playsInline
           width="550px"
           className="rounded-md shadow-xl trpcgif trpcgif--v10-dark"
         >
@@ -21,6 +22,7 @@ export const Preview = () => {
           autoPlay
           loop
           muted
+          playsInline
           width="550px"
           className="rounded-md shadow-xl trpcgif trpcgif--v10-light"
         >
