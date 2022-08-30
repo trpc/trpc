@@ -3,6 +3,7 @@
 
 * @KATT @trpc-bot @sachinraja
 
+www/**/* @trpc/website-docs
 **/*fastify* @skarab42 @KATT
 **/*lambda* @Lilja @KATT
 
