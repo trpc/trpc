@@ -2,37 +2,37 @@
   "redirects": [
     {
       "source": "/docs/api-gateway",
-      "destination": "/v9/aws-lambda",
+      "destination": "/docs/v9/aws-lambda",
       "permanent": true
     },
     {
       "source": "/docs/procedures",
-      "destination": "/v9/router",
+      "destination": "/docs/v9/router",
       "permanent": true
     },
     {
       "source": "/docs/create-react-app",
-      "destination": "/v9/react",
+      "destination": "/docs/v9/react",
       "permanent": true
     },
     {
       "source": "/docs/react-queries-and-mutations",
-      "destination": "/v9/react-queries",
+      "destination": "/docs/v9/react-queries",
       "permanent": true
     },
     {
       "source": "/docs/invalidateQuery",
-      "destination": "/v9/invalidate-queries",
+      "destination": "/docs/v9/invalidate-queries",
       "permanent": true
     },
     {
       "source": "/docs/invalidateQueries",
-      "destination": "/v9/invalidate-queries",
+      "destination": "/docs/v9/invalidate-queries",
       "permanent": true
     },
     {
       "source": "/docs/useInfiniteQuery",
-      "destination": "/v9/use-infinite-query",
+      "destination": "/docs/v9/use-infinite-query",
       "permanent": true
     },
     {

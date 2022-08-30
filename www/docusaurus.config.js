@@ -168,6 +168,9 @@ module.exports = {
         routeBasePath: 'community', // http-path
         sidebarPath: require.resolve('./communitySidebar.js'),
         editUrl: 'https://github.com/trpc/trpc/tree/next/www/',
+        editCurrentVersion: true,
+        showLastUpdateAuthor: true,
+        showLastUpdateTime: true,
       }),
     ],
   ],
@@ -195,11 +198,14 @@ module.exports = {
               banner: 'none',
             },
           },
-          routeBasePath: 'docs',
+          //routeBasePath: 'docs',
+          path: 'docs',
           // includeCurrentVersion: false,
           sidebarPath: require.resolve('./docsSidebar.js'),
           // Please change this to your repo.
           editUrl: 'https://github.com/trpc/trpc/tree/next/www/',
+          showLastUpdateAuthor: true,
+          showLastUpdateTime: true,
         },
         blog: {
           showReadingTime: true,
