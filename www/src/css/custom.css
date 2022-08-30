@@ -267,3 +267,6 @@ html.v9 .trpcgif--v9 {
 .breadcrumbs {
   @apply flex items-center;
 }
+.breadcrumbs__item {
+  @apply flex items-center;
+}
