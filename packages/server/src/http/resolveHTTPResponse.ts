@@ -6,7 +6,7 @@ import {
   inferRouterError,
 } from '../core';
 import { TRPCError } from '../error/TRPCError';
-import { getCauseFromUnknown, getErrorFromUnknown } from '../error/utils';
+import { getCauseFromUnknown, getTRPCErrorFromUnknown } from '../error/utils';
 import { transformTRPCResponse } from '../internals/transformTRPCResponse';
 import { TRPCResponse } from '../rpc';
 import { Maybe } from '../types';
@@ -24,7 +24,6 @@ const HTTP_METHOD_PROCEDURE_TYPE_MAP: Record<
 > = {
   GET: 'query',
   POST: 'mutation',
-  PATCH: 'subscription',
 };
 function getRawProcedureInputOrThrow(req: HTTPRequest) {
   try {
@@ -124,7 +123,13 @@ export async function resolveHTTPResponse<
     if (isBatchCall && !batchingEnabled) {
       throw new Error(`Batching is not enabled on the server`);
     }
-    if (type === 'unknown' || type === 'subscription') {
+    if (type === 'subscription') {
+      throw new TRPCError({
+        message: 'Subscriptions should use wsLink',
+        code: 'METHOD_NOT_SUPPORTED',
+      });
+    }
+    if (type === 'unknown') {
       throw new TRPCError({
         message: `Unexpected request method ${req.method}`,
         code: 'METHOD_NOT_SUPPORTED',
@@ -183,7 +188,7 @@ export async function resolveHTTPResponse<
             data: output,
           };
         } catch (cause) {
-          const error = getErrorFromUnknown(cause);
+          const error = getTRPCErrorFromUnknown(cause);
 
           onError?.({ error, path, input, ctx, type: type, req });
           return {
@@ -225,7 +230,7 @@ export async function resolveHTTPResponse<
     // - `createContext()` throws
     // - post body is too large
     // - input deserialization fails
-    const error = getErrorFromUnknown(cause);
+    const error = getTRPCErrorFromUnknown(cause);
 
     onError?.({
       error,

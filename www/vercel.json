@@ -31,7 +31,7 @@
       "permanent": false
     },
     {
-      "source": "/docs/:path((?!v[0-9]+/).*)",
+      "source": "/docs/:path((?!v[0-9]).*)",
       "destination": "/docs/v9/:path*"
     }
   ]

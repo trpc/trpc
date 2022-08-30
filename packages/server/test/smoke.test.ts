@@ -186,7 +186,10 @@ test('subscriptions', async () => {
 
   const subscription = proxy.onEvent.subscribe(10, {
     onStarted: onStartedMock,
-    onData: onDataMock,
+    onData: (data) => {
+      expectTypeOf(data).toMatchTypeOf<number>();
+      onDataMock(data);
+    },
     onComplete: onCompleteMock,
   });
 

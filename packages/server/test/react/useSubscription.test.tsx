@@ -1,6 +1,7 @@
 import { getServerAndReactClient } from './__reactHelpers';
 import { render, waitFor } from '@testing-library/react';
 import { EventEmitter } from 'events';
+import { expectTypeOf } from 'expect-type';
 import { konn } from 'konn';
 import React, { useState } from 'react';
 import { z } from 'zod';
@@ -55,6 +56,7 @@ test('useSubscription', async () => {
       enabled: true,
       onStarted: () => setIsStarted(true),
       onData: (data) => {
+        expectTypeOf(data).toMatchTypeOf<number>();
         onDataMock(data);
         setData(data);
       },

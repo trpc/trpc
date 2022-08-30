@@ -92,6 +92,15 @@ Here's some example apps:
       </td>
     </tr>
     <tr>
+      <td>Minimal (Hello world) server and client in node.js</td>
+      <td><em>n/a</em></td>
+      <td>
+        <ul>
+          <li><a href="https://github.com/trpc/trpc/tree/main/examples/minimal">Source</a></li>
+        </ul>
+      </td>
+    </tr>
+    <tr>
       <td>Vanilla standalone server &amp; procedure calls with node.js</td>
       <td><em>n/a</em></td>
       <td>

@@ -1,6 +1,6 @@
 {
   "name": "www",
-  "version": "10.0.0-proxy-alpha.55",
+  "version": "10.0.0-proxy-alpha.59",
   "private": true,
   "scripts": {
     "docusaurus": "docusaurus",
@@ -23,10 +23,10 @@
     "@docusaurus/plugin-content-docs": "^2.0.1",
     "@docusaurus/preset-classic": "^2.0.1",
     "@mdx-js/react": "^1.6.22",
-    "@trpc/client": "^10.0.0-proxy-alpha.55",
-    "@trpc/next": "^10.0.0-proxy-alpha.55",
-    "@trpc/react": "^10.0.0-proxy-alpha.55",
-    "@trpc/server": "^10.0.0-proxy-alpha.55",
+    "@trpc/client": "^10.0.0-proxy-alpha.59",
+    "@trpc/next": "^10.0.0-proxy-alpha.59",
+    "@trpc/react": "^10.0.0-proxy-alpha.59",
+    "@trpc/server": "^10.0.0-proxy-alpha.59",
     "@visx/hierarchy": "^2.10.0",
     "@visx/responsive": "^2.10.0",
     "clsx": "^1.1.1",
@@ -53,7 +53,7 @@
   "devDependencies": {
     "@babel/core": "^7.18.6",
     "@babel/preset-env": "^7.18.6",
-    "@docusaurus/module-type-aliases": "^2.0.1",
+    "@docusaurus/module-type-aliases": "^2.0.0-rc.1",
     "@octokit/graphql": "^5.0.0",
     "@octokit/graphql-schema": "^10.74.2",
     "@tsconfig/docusaurus": "^1.0.6",
