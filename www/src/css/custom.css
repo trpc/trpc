@@ -262,3 +262,12 @@ html.v10[data-theme='dark'] .trpcgif--v10-dark {
 html.v9 .trpcgif--v9 {
   display: block;
 }
+
+/* Breadcrumbs */
+.breadcrumbs {
+  @apply flex items-center;
+}
+
+.breadcrumbs__item {
+  @apply flex items-center;
+}
