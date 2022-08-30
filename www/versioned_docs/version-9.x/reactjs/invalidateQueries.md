@@ -2,7 +2,7 @@
 id: invalidateQueries
 title: invalidateQueries
 sidebar_label: invalidateQueries()
-slug: /invalidateQueries
+slug: /invalidate-queries
 ---
 
 

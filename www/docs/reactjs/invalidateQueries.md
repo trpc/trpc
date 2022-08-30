@@ -2,7 +2,7 @@
 id: invalidateQueries
 title: invalidateQueries
 sidebar_label: invalidateQueries()
-slug: /invalidateQueries
+slug: /invalidate-queries
 ---
 
 A typesafe wrapper around calling `queryClient.invalidateQueries()`, all it does is to call `queryClient.invalidateQueries()` with the passed args. [See react-query docs](https://react-query.tanstack.com/guides/query-invalidation) if you want more fine-grained control.
