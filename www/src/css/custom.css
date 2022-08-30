@@ -195,9 +195,10 @@ h5 {
 }
 
 /**
- * Tweet Wall
+ * Disable underline for some links
  **/
-#tweet {
+#tweet,
+#sponsor-button {
   --ifm-link-hover-decoration: none;
 }
 
