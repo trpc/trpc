@@ -195,7 +195,7 @@ module.exports = {
               banner: 'none',
             },
           },
-          routeBasePath: '/',
+          routeBasePath: 'docs',
           // includeCurrentVersion: false,
           sidebarPath: require.resolve('./docsSidebar.js'),
           // Please change this to your repo.
