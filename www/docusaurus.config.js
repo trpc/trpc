@@ -50,11 +50,11 @@ module.exports = {
             docId: 'main/introduction',
             label: 'Docs',
           },
-          // {
-          //   type: 'doc',
-          //   docId: 'main/quickstart',
-          //   label: 'Quickstart',
-          // },
+          {
+            type: 'doc',
+            docId: 'main/quickstart',
+            label: 'Quickstart',
+          },
           {
             to: '/community/awesome-trpc',
             label: 'Awesome tRPC Collection',
