@@ -49,18 +49,16 @@ module.exports = {
             type: 'doc',
             docId: 'main/introduction',
             label: 'Docs',
-            activeBaseRegex: '(.*)introduction',
           },
+          // {
+          //   type: 'doc',
+          //   docId: 'main/quickstart',
+          //   label: 'Quickstart',
+          // },
           {
-            type: 'doc',
-            docId: 'main/quickstart',
-            label: 'Quickstart',
-            activeBaseRegex: '(*)/quickstart',
-          },
-          {
-            to: 'docs/awesome-trpc',
+            to: '/community/awesome-trpc',
             label: 'Awesome tRPC Collection',
-            activeBasePath: 'docs/awesome-trpc',
+            activeBasePath: '/community/awesome-trpc',
           },
           {
             type: 'doc',
@@ -94,19 +92,21 @@ module.exports = {
       },
       footer: {
         links: [
-          {
-            title: 'Docs',
-            items: [
-              {
-                label: 'Docs',
-                to: 'docs/v9',
-              },
-              {
-                label: 'Usage with Next.js',
-                to: 'docs/v9/nextjs',
-              },
-            ],
-          },
+          // {
+          //   title: 'Docs',
+          //   items: [
+          //     {
+          //       label: 'Docs',
+          //       type: 'doc',
+          //       docId: 'main/introduction',
+          //     },
+          //     {
+          //       label: 'Usage with Next.js',
+          //       type: 'doc',
+          //       docId: 'nextjs/introduction',
+          //     },
+          //   ],
+          // },
           {
             title: 'Community',
             items: [
@@ -163,10 +163,10 @@ module.exports = {
       '@docusaurus/plugin-content-docs',
       /** @type {import('@docusaurus/plugin-content-docs').Options} */
       ({
-        id: 'unversioned',
-        path: 'unversioned',
-        routeBasePath: 'docs',
-        sidebarPath: require.resolve('./otherSidebar.js'),
+        id: 'community',
+        path: 'community', // fs-path
+        routeBasePath: 'community', // http-path
+        sidebarPath: require.resolve('./communitySidebar.js'),
         editUrl: 'https://github.com/trpc/trpc/tree/next/www/',
       }),
     ],
