@@ -14,7 +14,7 @@
     "sponsors-sync:pull": "yarn ts-node ./src/components/sponsors/script.pull.ts",
     "sponsors-sync:push": "yarn ts-node ./src/components/sponsors/script.push.ts",
     "sponsors-sync": "run-s sponsors-sync:*",
-    "tweetwall-pull": "yarn ts-node ./src/components/TwitterWall/script.ts",
+    "tweetwall-pull": "yarn ts-node ./src/components/TwitterWall/script.ts && prettier --write src/components/TwitterWall/script.output.ts",
     "ts-node": "ts-node --compiler-options '{\"module\":\"commonjs\"}'",
     "postinstall": "cd .. && run-s postinstall build"
   },
