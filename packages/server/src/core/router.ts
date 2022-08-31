@@ -61,6 +61,7 @@ export interface RouterDef<
   // FIXME this is slow:
   // - I think this has to go & be replaced by something by only using `TRecord` without `& SimpleFlatten...`
   // - Potentially, we have a `legacyProcedures` record where we only register the old things that are available by string path
+  // - I am currently casting this to `ProcedureRecord` in `trpc-openapi`. Would be great to have a less hacky solution though.
   procedures: TRecord;
   /**
    * V9 procedures
