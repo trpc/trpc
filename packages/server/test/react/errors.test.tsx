@@ -6,7 +6,7 @@ import { expectTypeOf } from 'expect-type';
 import { konn } from 'konn';
 import React from 'react';
 import { ZodError, z } from 'zod';
-import { trpc as t } from '../../src';
+import { trpc } from '../../src';
 
 jest.retryTimes(3);
 
@@ -109,6 +109,7 @@ describe('custom error formatter', () => {
 describe('no custom formatter', () => {
   const ctx = konn()
     .beforeEach(() => {
+      const t = trpc;
       const appRouter = t.router({
         post: t.router({
           byId: t.procedure
@@ -188,6 +189,7 @@ describe('no custom formatter', () => {
 });
 
 test('types', async () => {
+  const t = trpc;
   const appRouter = t.router({
     post: t.router({
       byId: t.procedure
