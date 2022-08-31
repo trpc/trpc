@@ -12,9 +12,9 @@ The error formatting in your router will be inferred all the way to your client 
 ### Adding custom formatting
 
 ```ts title='server.ts'
-import { initTRPC } from '@trpc/server';
+import { trpc } from '@trpc/server';
 
-export const t = initTRPC<{ ctx: Context }>()({
+export const t = trpc.context<Context>().create({
   errorFormatter({ shape, error }) {
     return {
       ...shape,

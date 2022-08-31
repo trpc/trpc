@@ -36,8 +36,8 @@ type Context = trpc.inferAsyncReturnType<typeof createContext>;
 ```
 
 ```ts title='server/routers/_app.ts'
-import { TRPCError, initTRPC } from '@trpc/server';
+import { TRPCError, trpc } from '@trpc/server';
 import { Context } from '../context';
 
-export const t = initTRPC<{ ctx: Context }>()();
+export const t = trpc.context<Context>.create();
 ```

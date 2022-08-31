@@ -1,4 +1,4 @@
-import { inferAsyncReturnType, initTRPC } from '@trpc/server';
+import { inferAsyncReturnType, trpc } from '@trpc/server';
 import {
   CreateHTTPContextOptions,
   createHTTPServer,
@@ -19,7 +19,7 @@ function createContext(
 }
 type Context = inferAsyncReturnType<typeof createContext>;
 
-const t = initTRPC<{ ctx: Context }>()();
+const t = trpc.context<Context>.create();
 
 const greetingRouter = t.router({
   greeting: t.procedure

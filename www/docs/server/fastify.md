@@ -54,7 +54,7 @@ A sample router is given below, save it in a file named `router.ts`.
   <summary>router.ts</summary>
 
 ```ts title='router.ts'
-import { initTRPC } from '@trpc/server';
+import { trpc } from '@trpc/server';
 import { z } from 'zod';
 
 type User = {
@@ -65,7 +65,7 @@ type User = {
 
 const users: Record<string, User> = {};
 
-export const t = initTRPC()();
+export const t = trpc.create();
 
 export const appRouter = t.router({
   getUserById: t.procedure.input(z.string()).query(({ input }) => {
@@ -181,10 +181,10 @@ Work in progress: https://github.com/trpc/trpc/issues/2114
 Edit the `router.ts` file created in the previous steps and add the following code:
 
 ```ts title='router.ts'
-import { initTRPC } from '@trpc/server';
+import { trpc } from '@trpc/server';
 import { observable } from '@trpc/server/observable';
 
-const t = initTRPC()();
+const t = trpc.create();
 
 export const appRouter = t.router({
   randomNumber: t.procedure.subscription(() => {

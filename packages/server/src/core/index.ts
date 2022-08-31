@@ -11,5 +11,5 @@ export type {
   ProcedureOptions,
 } from './procedure';
 
-export { initTRPC } from './initTRPC';
+export { trpc } from './initTRPC';
 export * from './types';

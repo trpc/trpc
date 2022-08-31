@@ -1,9 +1,9 @@
-import { initTRPC } from '@trpc/server';
+import { trpc } from '@trpc/server';
 import { createHTTPServer } from '@trpc/server/adapters/standalone';
 
 export type AppRouter = typeof appRouter;
 
-const t = initTRPC()();
+const t = trpc.create();
 
 const appRouter = t.router({
   greet: t.procedure

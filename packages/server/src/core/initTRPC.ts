@@ -23,7 +23,48 @@ import { PickFirstDefined, ValidateShape } from './internals/utils';
 import { createMiddlewareFactory } from './middleware';
 import { createRouterFactory } from './router';
 
-export function initTRPC<TParams extends Partial<InitGenerics> = {}>() {
+export class TRPCBuilder<TParams extends Partial<InitGenerics> = {}> {
+  context<TNewContext extends InitGenerics['ctx']>() {
+    return new TRPCBuilder<Omit<TParams, 'ctx'> & { ctx: TNewContext }>();
+  }
+  meta<TNewMeta extends InitGenerics['meta']>() {
+    return new TRPCBuilder<Omit<TParams, 'meta'> & { meta: TNewMeta }>();
+  }
+  create<
+    TOptions extends Partial<
+      InitOptions<{
+        ctx: TParams['ctx'] extends undefined
+          ? {}
+          : NonNullable<TParams['ctx']>;
+        meta: TParams['meta'] extends undefined
+          ? {}
+          : NonNullable<TParams['meta']>;
+      }>
+    >,
+  >(
+    options?:
+      | ValidateShape<
+          TOptions,
+          Partial<
+            InitOptions<{
+              ctx: TParams['ctx'] extends undefined
+                ? {}
+                : NonNullable<TParams['ctx']>;
+              meta: TParams['meta'] extends undefined
+                ? {}
+                : NonNullable<TParams['meta']>;
+            }>
+          >
+        >
+      | undefined,
+  ) {
+    return initTRPC<TParams>()<TOptions>(options);
+  }
+}
+
+export const trpc = new TRPCBuilder();
+
+function initTRPC<TParams extends Partial<InitGenerics>>() {
   type $Generics = CreateInitGenerics<{
     ctx: TParams['ctx'] extends undefined ? {} : NonNullable<TParams['ctx']>;
     meta: TParams['meta'] extends undefined ? {} : NonNullable<TParams['meta']>;

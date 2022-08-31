@@ -1,6 +1,6 @@
 import './___packages';
 import { expectTypeOf } from 'expect-type';
-import { initTRPC } from '../src/core';
+import { trpc } from '../src/core';
 import {
   CombinedDataTransformer,
   DataTransformerOptions,
@@ -8,11 +8,11 @@ import {
 } from '../src/transformer';
 
 test('default transformer', () => {
-  const t = initTRPC<{
-    ctx: {
+  const t = trpc
+    .context<{
       foo: 'bar';
-    };
-  }>()();
+    }>()
+    .create();
   const router = t.router({});
 
   expectTypeOf(router._def._ctx).toMatchTypeOf<{

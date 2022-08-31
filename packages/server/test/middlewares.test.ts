@@ -1,5 +1,5 @@
 import { expectTypeOf } from 'expect-type';
-import { TRPCError, initTRPC } from '../src';
+import { TRPCError, trpc } from '../src';
 
 test('decorate independently', () => {
   type User = {
@@ -9,9 +9,7 @@ test('decorate independently', () => {
   type Context = {
     user: User | null;
   };
-  const t = initTRPC<{
-    ctx: Context;
-  }>()();
+  const t = trpc.context<Context>().create();
 
   const isAuthed = t.middleware(({ next, ctx }) => {
     if (!ctx.user) {

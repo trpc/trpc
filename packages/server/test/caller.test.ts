@@ -1,13 +1,15 @@
 import { waitError } from './___testHelpers';
 import { expectTypeOf } from 'expect-type';
 import { z } from 'zod';
-import { TRPCError, initTRPC } from '../src';
+import { TRPCError, trpc } from '../src';
 
-const t = initTRPC<{
-  ctx: {
-    foo?: 'bar';
-  };
-}>()();
+const t = trpc
+  .context<{
+    ctx: {
+      foo?: 'bar';
+    };
+  }>()
+  .create();
 
 const { procedure } = t;
 

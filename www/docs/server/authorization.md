@@ -44,10 +44,10 @@ type Context = inferAsyncReturnType<typeof createContext>;
 ## Option 1: Authorize using resolver
 
 ```ts title='server/routers/_app.ts'
-import { TRPCError, initTRPC } from '@trpc/server';
+import { TRPCError, trpc } from '@trpc/server';
 import { Context } from '../context';
 
-export const t = initTRPC<{ ctx: Context }>()();
+export const t = trpc.context<Context>.create();
 
 const appRouter = t.router({
   // open for anyone
@@ -69,7 +69,7 @@ const appRouter = t.router({
 ## Option 2: Authorize using middleware
 
 ```ts title='server/routers/_app.ts'
-import { TRPCError, initTRPC } from '@trpc/server';
+import { TRPCError, trpc } from '@trpc/server';
 
 const isAuthed = t.middleware(({ next, ctx }) => {
   if (!params.ctx.user?.isAdmin) {
@@ -82,7 +82,7 @@ const isAuthed = t.middleware(({ next, ctx }) => {
   });
 });
 
-export const t = initTRPC<{ ctx: Context }>()();
+export const t = trpc.context<Context>.create();
 
 // you can reuse this for any procedure
 const protectedProcedure = t.procedure.use(isAuthed);

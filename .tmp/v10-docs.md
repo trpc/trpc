@@ -164,13 +164,13 @@ type Context = {
   };
 };
 
-export const t = initTRPC<{
-  ctx: Context;
-}>()({
-  /* optional */
-  transformer: superjson,
-  // errorFormatter: [...]
-});
+export const t = trpc
+  .context<Context>()
+  .create({
+    /* optional */
+    transformer: superjson,
+    // errorFormatter: [...]
+  });
 
 const {
   /**

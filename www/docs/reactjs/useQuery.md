@@ -23,10 +23,10 @@ You'll notice that you get autocompletion on the `path` and automatic typesafety
 <details><summary>Backend code</summary>
 
 ```tsx title='server/routers/_app.ts'
-import { initTRPC } from '@trpc/server'
+import { trpc } from '@trpc/server'
 import { z } from 'zod';
 
-export const t = initTRPC()()
+export const t = trpc.create()
 
 export const appRouter = t.router({
   // Create procedure at path 'hello'

@@ -2,7 +2,7 @@ import { routerToServerAndClientNew, waitError } from './___testHelpers';
 import { TRPCClientError } from '@trpc/client';
 import { expectTypeOf } from 'expect-type';
 import { konn } from 'konn';
-import { AnyRouter, DefaultErrorShape, initTRPC } from '../src';
+import { AnyRouter, DefaultErrorShape, trpc } from '../src';
 import { DefaultErrorData } from '../src/error/formatter';
 
 function isTRPCClientError<TRouter extends AnyRouter>(
@@ -12,7 +12,7 @@ function isTRPCClientError<TRouter extends AnyRouter>(
 }
 
 describe('no custom error formatter', () => {
-  const t = initTRPC()();
+  const t = trpc.create();
 
   const appRouter = t.router({
     greeting: t.procedure.query(() => {

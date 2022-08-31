@@ -3,7 +3,7 @@ import { TRPCClientError } from '@trpc/client';
 import { expectTypeOf } from 'expect-type';
 import { konn } from 'konn';
 import { ZodError, z } from 'zod';
-import { inferProcedureInput, initTRPC } from '../src/core';
+import { inferProcedureInput, trpc } from '../src/core';
 
 describe('double input validator', () => {
   const t = initTRPC()({
@@ -97,7 +97,7 @@ describe('double input validator', () => {
 });
 
 test('only allow double input validator for object-like inputs', () => {
-  const t = initTRPC()();
+  const t = trpc.create();
 
   try {
     t.procedure.input(z.literal('hello')).input(

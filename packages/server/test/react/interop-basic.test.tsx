@@ -8,11 +8,11 @@ import { konn } from 'konn';
 import React, { useState } from 'react';
 import { z } from 'zod';
 import * as trpc from '../../src';
-import { inferProcedureOutput, initTRPC } from '../../src';
+import { inferProcedureOutput, trpc } from '../../src';
 
 const ctx = konn()
   .beforeEach(() => {
-    const t = initTRPC()();
+    const t = trpc.create();
     const legacyRouter = trpc.router().query('oldProcedure', {
       input: z.string().optional(),
       resolve({ input }) {
