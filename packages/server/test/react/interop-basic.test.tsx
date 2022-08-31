@@ -7,13 +7,13 @@ import { expectTypeOf } from 'expect-type';
 import { konn } from 'konn';
 import React, { useState } from 'react';
 import { z } from 'zod';
-import * as trpc from '../../src';
+import * as interop from '../../src';
 import { inferProcedureOutput, trpc } from '../../src';
 
 const ctx = konn()
   .beforeEach(() => {
     const t = trpc.create();
-    const legacyRouter = trpc.router().query('oldProcedure', {
+    const legacyRouter = interop.router().query('oldProcedure', {
       input: z.string().optional(),
       resolve({ input }) {
         return `oldProcedureOutput__input:${input ?? 'n/a'}`;

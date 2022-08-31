@@ -5,9 +5,7 @@ import { TRPCError, trpc } from '../src';
 
 const t = trpc
   .context<{
-    ctx: {
-      foo?: 'bar';
-    };
+    foo?: 'bar';
   }>()
   .create();
 
