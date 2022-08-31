@@ -30,53 +30,13 @@ export class TRPCBuilder<TParams extends Partial<InitGenerics> = {}> {
   meta<TNewMeta extends InitGenerics['meta']>() {
     return new TRPCBuilder<Omit<TParams, 'meta'> & { meta: TNewMeta }>();
   }
-  create<
-    TOptions extends Partial<
-      InitOptions<{
-        ctx: TParams['ctx'] extends undefined
-          ? {}
-          : NonNullable<TParams['ctx']>;
-        meta: TParams['meta'] extends undefined
-          ? {}
-          : NonNullable<TParams['meta']>;
-      }>
-    >,
-  >(
-    options?:
-      | ValidateShape<
-          TOptions,
-          Partial<
-            InitOptions<{
-              ctx: TParams['ctx'] extends undefined
-                ? {}
-                : NonNullable<TParams['ctx']>;
-              meta: TParams['meta'] extends undefined
-                ? {}
-                : NonNullable<TParams['meta']>;
-            }>
-          >
-        >
-      | undefined,
+
+  create<TOptions extends $Helpers<TParams>['$Options']>(
+    options?: ValidateShape<TOptions, $Helpers<TParams>['$Options']>,
   ) {
-    return initTRPC<TParams>()<TOptions>(options);
-  }
-}
-
-export const trpc = new TRPCBuilder();
-
-function initTRPC<TParams extends Partial<InitGenerics>>() {
-  type $Generics = CreateInitGenerics<{
-    ctx: TParams['ctx'] extends undefined ? {} : NonNullable<TParams['ctx']>;
-    meta: TParams['meta'] extends undefined ? {} : NonNullable<TParams['meta']>;
-  }>;
-
-  type $Context = $Generics['ctx'];
-  type $Meta = PickFirstDefined<$Generics['meta'], undefined>;
-  type $Options = Partial<InitOptions<$Generics>>;
-
-  return function initTRPCInner<TOptions extends $Options>(
-    options?: ValidateShape<TOptions, $Options>,
-  ) {
+    type $HelperTypes = $Helpers<TParams>;
+    type $Context = $HelperTypes['$Generics']['ctx'];
+    type $Meta = $HelperTypes['$Generics']['meta'];
     type $Formatter = PickFirstDefined<
       TOptions['errorFormatter'],
       ErrorFormatter<$Context, DefaultErrorShape>
@@ -131,5 +91,20 @@ function initTRPC<TParams extends Partial<InitGenerics>>() {
        */
       mergeRouters: mergeRoutersGeneric,
     };
-  };
+  }
 }
+
+type $Generics<TParams extends Partial<InitGenerics>> = CreateInitGenerics<{
+  ctx: TParams['ctx'] extends undefined ? {} : NonNullable<TParams['ctx']>;
+  meta: TParams['meta'] extends undefined ? {} : NonNullable<TParams['meta']>;
+}>;
+
+type $Helpers<TParams extends Partial<InitGenerics>> = {
+  $Generics: $Generics<TParams>;
+
+  $Context: $Generics<TParams>['ctx'];
+  $Meta: PickFirstDefined<$Generics<TParams>['meta'], undefined>;
+  $Options: Partial<InitOptions<$Generics<TParams>>>;
+};
+
+export const trpc = new TRPCBuilder();
