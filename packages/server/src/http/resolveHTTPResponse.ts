@@ -57,6 +57,45 @@ interface ResolveHTTPRequestOptions<
   error?: Maybe<TRPCError>;
 }
 
+class Timing {
+  constructor(
+    public name: string,
+    public startTime = performance.now(),
+    public endTime = startTime,
+  ) {}
+  setEnd() {
+    this.endTime = performance.now();
+  }
+  get duration() {
+    return this.endTime - this.startTime;
+  }
+}
+
+class Timings {
+  private map = new Map<string, Timing>();
+  start(name: string) {
+    this.map.set(name, new Timing(name));
+  }
+  end(name: string) {
+    this.map.get(name)?.setEnd();
+  }
+  getAll() {
+    return Array.from(this.map.values());
+  }
+}
+
+/**
+ * Check if an option is enabled when option value is either a boolean or a function that returns a boolean
+ */
+async function isOptionEnabled(
+  value?: boolean | (() => boolean) | (() => Promise<boolean>),
+) {
+  if (typeof value === 'function') {
+    return value();
+  }
+  return value === true;
+}
+
 export async function resolveHTTPResponse<
   TRouter extends AnyRouter,
   TRequest extends HTTPRequest,
@@ -74,6 +113,9 @@ export async function resolveHTTPResponse<
   let ctx: inferRouterContext<TRouter> | undefined = undefined;
   let paths: string[] | undefined = undefined;
 
+  const serverTimingEnabled = await isOptionEnabled(opts.serverTiming);
+  const timings = serverTimingEnabled ? new Timings() : undefined;
+
   const isBatchCall = !!req.query.get('batch');
   type TRouterError = inferRouterError<TRouter>;
   type TRouterResponse = TRPCResponse<unknown, TRouterError>;
@@ -81,6 +123,7 @@ export async function resolveHTTPResponse<
   function endResponse(
     untransformedJSON: TRouterResponse | TRouterResponse[],
     errors: TRPCError[],
+    timings?: Timings,
   ): HTTPResponse {
     let status = getHTTPStatusCode(untransformedJSON);
     const headers: HTTPHeaders = {
@@ -100,6 +143,12 @@ export async function resolveHTTPResponse<
 
     for (const [key, value] of Object.entries(meta.headers ?? {})) {
       headers[key] = value;
+    }
+
+    if (timings) {
+      headers['Server-Timing'] = timings.getAll().map(({ name, duration }) => {
+        return `${name};${duration.toFixed(3)}ms`;
+      });
     }
     if (meta.status) {
       status = meta.status;
@@ -138,7 +187,9 @@ export async function resolveHTTPResponse<
     const rawInput = getRawProcedureInputOrThrow(req);
 
     paths = isBatchCall ? opts.path.split(',') : [opts.path];
+    timings?.start('get-context');
     ctx = await createContext();
+    timings?.end('get-context');
 
     const deserializeInputValue = (rawValue: unknown) => {
       return typeof rawValue !== 'undefined'
@@ -175,13 +226,16 @@ export async function resolveHTTPResponse<
     };
     const inputs = getInputs();
 
+    timings?.start('resolve');
     const rawResults = await Promise.all(
       paths.map(async (path, index) => {
         const input = inputs[index];
 
         try {
           const caller = router.createCaller(ctx);
+          timings?.start(`resolve-${path}`);
           const output = await caller[type](path, input as any);
+          timings?.end(`resolve-${path}`);
           return {
             input,
             path,
@@ -199,6 +253,7 @@ export async function resolveHTTPResponse<
         }
       }),
     );
+    timings?.end('resolve');
     const errors = rawResults.flatMap((obj) => (obj.error ? [obj.error] : []));
     const resultEnvelopes = rawResults.map((obj): TRouterResponse => {
       const { path, input } = obj;
@@ -223,7 +278,7 @@ export async function resolveHTTPResponse<
     });
 
     const result = isBatchCall ? resultEnvelopes : resultEnvelopes[0]!;
-    return endResponse(result, errors);
+    return endResponse(result, errors, timings);
   } catch (cause) {
     // we get here if
     // - batching is called when it's not enabled
@@ -251,6 +306,7 @@ export async function resolveHTTPResponse<
         }),
       },
       [error],
+      timings,
     );
   }
 }

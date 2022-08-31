@@ -45,4 +45,10 @@ export interface HTTPBaseHandlerOptions<TRouter extends AnyRouter, TRequest>
    * @link https://trpc.io/docs/caching
    */
   responseMeta?: ResponseMetaFn<TRouter>;
+
+  /**
+   * Append server timing API to the response
+   * @see https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Server-Timing
+   */
+  serverTiming?: boolean | (() => boolean) | (() => Promise<boolean>);
 }
