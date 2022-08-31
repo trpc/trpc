@@ -19,13 +19,13 @@ SuperJSON allows us to transparently use e.g. standard `Date`/`Map`/`Set`s over 
 yarn add superjson
 ```
 
-#### 2. Add to your `initTRPC`
+#### 2. Add to your `trpc`
 
 ```ts title='routers/router/_app.ts'
 import { trpc } from '@trpc/server';
 import superjson from 'superjson';
 
-export const t = initTRPC()({
+export const t = trpc.create({
   transformer: superjson,
 });
 ```
@@ -97,7 +97,7 @@ export const transformer = {
 import { trpc } from '@trpc/server';
 import { transformer } from '../../utils/trpc';
 
-export const t = initTRPC()({
+export const t = trpc.create({
   transformer,
 });
 

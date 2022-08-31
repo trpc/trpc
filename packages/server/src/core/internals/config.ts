@@ -27,7 +27,7 @@ export interface InitOptions<T extends InitGenerics> {
 export type CreateInitGenerics<T extends InitGenerics> = T;
 
 /**
- * The config that is resolved after both calls of `initTRPC()` has been called
+ * The config that is resolved after `trpc.create()` has been called
  * Combination of `InitTOptions` + `InitGenerics`
  * @internal
  */

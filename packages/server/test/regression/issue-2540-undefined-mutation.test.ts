@@ -169,7 +169,7 @@ describe('no transformer', () => {
 });
 
 describe('with superjson', () => {
-  const t = initTRPC()({
+  const t = trpc.create({
     transformer: superjson,
   });
   const appRouter = t.router({

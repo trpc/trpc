@@ -25,7 +25,7 @@ test('custom transformer', () => {
     deserialize: (v) => v,
     serialize: (v) => v,
   };
-  const t = initTRPC()({
+  const t = trpc.create({
     transformer,
   });
   const router = t.router({});

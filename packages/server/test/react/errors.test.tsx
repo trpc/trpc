@@ -13,7 +13,7 @@ jest.retryTimes(3);
 describe('custom error formatter', () => {
   const ctx = konn()
     .beforeEach(() => {
-      const t = initTRPC()({
+      const t = trpc.create({
         errorFormatter({ shape, error }) {
           return {
             ...shape,

@@ -48,7 +48,7 @@ describe('no custom error formatter', () => {
 });
 
 describe('with custom error formatter', () => {
-  const t = initTRPC()({
+  const t = trpc.create({
     errorFormatter({ shape }) {
       return {
         ...shape,
