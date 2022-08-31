@@ -1,8 +1,6 @@
-import { trpc } from '@trpc/server';
+import { trpc as t } from '@trpc/server';
 import * as trpcNext from '@trpc/server/adapters/next';
 import { z } from 'zod';
-
-const t = trpc.create();
 
 export const appRouter = t.router({
   hello: t.procedure

@@ -6,7 +6,7 @@ import { ZodError, z } from 'zod';
 import { inferProcedureInput, trpc } from '../src/core';
 
 describe('double input validator', () => {
-  const t = trpc.create({
+  const t = trpc.options({
     errorFormatter({ shape, error }) {
       return {
         ...shape,
@@ -97,7 +97,7 @@ describe('double input validator', () => {
 });
 
 test('only allow double input validator for object-like inputs', () => {
-  const t = trpc.create();
+  const t = trpc;
 
   try {
     t.procedure.input(z.literal('hello')).input(

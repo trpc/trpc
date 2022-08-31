@@ -9,7 +9,7 @@ import { trpc } from '../../src';
 
 const ctx = konn()
   .beforeEach(() => {
-    const t = trpc.create({
+    const t = trpc.options({
       errorFormatter({ shape }) {
         return {
           ...shape,

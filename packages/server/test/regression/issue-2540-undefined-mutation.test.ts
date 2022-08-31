@@ -6,7 +6,7 @@ import superjson from 'superjson';
 import { trpc } from '../../src';
 
 describe('no transformer', () => {
-  const t = trpc.create();
+  const t = trpc;
   const appRouter = t.router({
     goodQuery: t.procedure.query(async () => {
       return 'good' as const;
@@ -169,7 +169,7 @@ describe('no transformer', () => {
 });
 
 describe('with superjson', () => {
-  const t = trpc.create({
+  const t = trpc.options({
     transformer: superjson,
   });
   const appRouter = t.router({

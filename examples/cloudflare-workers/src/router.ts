@@ -1,4 +1,4 @@
-import { trpc } from '@trpc/server';
+import { trpc as t } from '@trpc/server';
 import { z } from 'zod';
 
 let id = 0;
@@ -11,8 +11,6 @@ const db = {
     },
   ],
 };
-
-const t = trpc.create();
 
 const postRouter = t.router({
   createPost: t.procedure

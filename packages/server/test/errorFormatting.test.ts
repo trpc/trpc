@@ -12,7 +12,7 @@ function isTRPCClientError<TRouter extends AnyRouter>(
 }
 
 describe('no custom error formatter', () => {
-  const t = trpc.create();
+  const t = trpc;
 
   const appRouter = t.router({
     greeting: t.procedure.query(() => {
@@ -48,7 +48,7 @@ describe('no custom error formatter', () => {
 });
 
 describe('with custom error formatter', () => {
-  const t = trpc.create({
+  const t = trpc.options({
     errorFormatter({ shape }) {
       return {
         ...shape,

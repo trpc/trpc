@@ -1,7 +1,5 @@
 import { routerToServerAndClientNew, waitMs } from './___testHelpers';
-import { trpc } from '../src/core';
-
-const t = trpc.create();
+import { trpc as t } from '../src/core';
 
 const router = t.router({
   testQuery: t.procedure.query(async () => {

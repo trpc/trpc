@@ -14,7 +14,7 @@ The error formatting in your router will be inferred all the way to your client 
 ```ts title='server.ts'
 import { trpc } from '@trpc/server';
 
-export const t = trpc.context<Context>().create({
+export const t = trpc.context<Context>().options({
   errorFormatter({ shape, error }) {
     return {
       ...shape,

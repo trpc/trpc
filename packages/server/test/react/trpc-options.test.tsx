@@ -3,11 +3,10 @@ import { render, waitFor } from '@testing-library/react';
 import { konn } from 'konn';
 import React, { useEffect } from 'react';
 import { z } from 'zod';
-import { trpc } from '../../src';
+import { trpc as t } from '../../src';
 
 const ctx = konn()
   .beforeEach(() => {
-    const t = trpc.create();
     const appRouter = t.router({
       greeting: t.procedure
         .input(

@@ -21,15 +21,13 @@ Subscriptions & WebSockets are in beta & might change without a major version bu
 ### Adding a subscription procedure
 
 ```tsx title='server/router.ts'
-import { trpc } from '@trpc/server';
+import { trpc as t } from '@trpc/server';
 import { observable } from '@trpc/server/observable';
 import { EventEmitter } from 'events';
 import { z } from 'zod';
 
 // create a global event emitter (could be replaced by redis, etc)
 const ee = new EventEmitter();
-
-const t = trpc.create();
 
 export const appRouter = t.router({
   onAdd: t.procedure.subscription(() => {

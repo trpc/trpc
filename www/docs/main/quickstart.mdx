@@ -19,10 +19,8 @@ We highly encourage you to check out [the Example Apps](example-apps.md) to get 
 // @module: esnext
 
 // @filename: server.ts
-import { trpc } from '@trpc/server';
+import { trpc as t } from '@trpc/server';
 import { z } from 'zod';
-
-const t = trpc.create();
 
 interface User {
   id: string;
@@ -122,9 +120,7 @@ userCreate(data: {name:string}) => { id: string; name: string; }
 First we define a router somewhere in our server codebase:
 
 ```ts twoslash title='server.ts'
-import { trpc } from '@trpc/server';
-
-const t = trpc.create();
+import { trpc as t } from '@trpc/server';
 
 const appRouter = t.router({});
 
@@ -145,10 +141,8 @@ The following would create a query procedure called `userById` that takes a sing
 
 ```ts twoslash title='server.ts'
 // @filename: server.ts
-import { trpc } from '@trpc/server';
+import { trpc as t } from '@trpc/server';
 import { z } from 'zod';
-
-const t = trpc.create();
 
 interface User {
   id: string;

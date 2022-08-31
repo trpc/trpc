@@ -166,7 +166,7 @@ type Context = {
 
 export const t = trpc
   .context<Context>()
-  .create({
+  .options({
     /* optional */
     transformer: superjson,
     // errorFormatter: [...]

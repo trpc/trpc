@@ -11,7 +11,7 @@ const t = trpc
   .context<{
     foo?: 'bar';
   }>()
-  .create({
+  .options({
     errorFormatter({ shape }) {
       return {
         ...shape,

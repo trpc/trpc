@@ -9,7 +9,7 @@ test('decorate independently', () => {
   type Context = {
     user: User | null;
   };
-  const t = trpc.context<Context>().create();
+  const t = trpc.context<Context>();
 
   const isAuthed = t.middleware(({ next, ctx }) => {
     if (!ctx.user) {

@@ -23,88 +23,101 @@ import { PickFirstDefined, ValidateShape } from './internals/utils';
 import { createMiddlewareFactory } from './middleware';
 import { createRouterFactory } from './router';
 
-export class TRPCBuilder<TParams extends Partial<InitGenerics> = {}> {
-  context<TNewContext extends InitGenerics['ctx']>() {
-    return new TRPCBuilder<Omit<TParams, 'ctx'> & { ctx: TNewContext }>();
-  }
-  meta<TNewMeta extends InitGenerics['meta']>() {
-    return new TRPCBuilder<Omit<TParams, 'meta'> & { meta: TNewMeta }>();
-  }
+export class TRPC<
+  TParams extends Partial<InitGenerics> = {},
+  TOptions extends WithGenerics<TParams>['options'] = {},
+> {
+  constructor(
+    public $options?: ValidateShape<TOptions, WithGenerics<TParams>['options']>,
+  ) {}
 
-  create<TOptions extends $Helpers<TParams>['$Options']>(
-    options?: ValidateShape<TOptions, $Helpers<TParams>['$Options']>,
+  options<TNewOptions extends WithGenerics<TParams>['options']>(
+    options: ValidateShape<TNewOptions, WithGenerics<TParams>['options']>,
   ) {
-    type $HelperTypes = $Helpers<TParams>;
-    type $Context = $HelperTypes['$Generics']['ctx'];
-    type $Meta = $HelperTypes['$Generics']['meta'];
-    type $Formatter = PickFirstDefined<
-      TOptions['errorFormatter'],
-      ErrorFormatter<$Context, DefaultErrorShape>
-    >;
-    type $Transformer = TOptions['transformer'] extends DataTransformerOptions
-      ? TOptions['transformer'] extends DataTransformerOptions
-        ? CombinedDataTransformer
-        : DefaultDataTransformer
-      : DefaultDataTransformer;
-    type $ErrorShape = ErrorFormatterShape<$Formatter>;
-
-    type $Config = CreateRootConfig<{
-      ctx: $Context;
-      meta: $Meta;
-      errorShape: $ErrorShape;
-      transformer: $Transformer;
-    }>;
-
-    const errorFormatter = options?.errorFormatter ?? defaultFormatter;
-    const transformer = getDataTransformer(
-      options?.transformer ?? defaultTransformer,
-    ) as $Transformer;
-    const _config: $Config = {
-      transformer,
-      errorShape: null as any,
-      ctx: null as any,
-      meta: null as any,
-    };
-    return {
-      /**
-       * These are just types, they can't be used
-       * @internal
-       */
-      _config,
-      /**
-       * Builder object for creating procedures
-       */
-      procedure: createBuilder<$Config>(),
-      /**
-       * Create reusable middlewares
-       */
-      middleware: createMiddlewareFactory<$Config>(),
-      /**
-       * Create a router
-       */
-      router: createRouterFactory<$Config>({
-        errorFormatter,
-        transformer,
-      }),
-      /**
-       * Merge Routers
-       */
-      mergeRouters: mergeRoutersGeneric,
-    };
+    return new TRPC(options);
   }
+
+  context<TNewContext extends InitGenerics['ctx']>() {
+    return new TRPC<Omit<TParams, 'ctx'> & { ctx: TNewContext }>();
+  }
+
+  meta<TNewMeta extends InitGenerics['meta']>() {
+    return new TRPC<Omit<TParams, 'meta'> & { meta: TNewMeta }>();
+  }
+
+  /**
+   * These are just types, they can't be used
+   * @internal
+   */
+  _config: HelpersWithConfig<TParams, TOptions>['config'] = {} as any;
+  /**
+   * Builder object for creating procedures
+   */
+  procedure = createBuilder<typeof this._config>();
+  /**
+   * Create reusable middlewares
+   */
+  middleware = createMiddlewareFactory<typeof this._config>();
+
+  private errorFormatter = this.$options?.errorFormatter ?? defaultFormatter;
+
+  private transformer = getDataTransformer(
+    this.$options?.transformer ?? defaultTransformer,
+  ) as typeof this._config.transformer;
+  /**
+   * Create a router
+   */
+  router = createRouterFactory<typeof this._config>({
+    errorFormatter: this.errorFormatter,
+    transformer: this.transformer,
+  });
+  /**
+   * Merge Routers
+   */
+  mergeRouters = mergeRoutersGeneric;
 }
 
-type $Generics<TParams extends Partial<InitGenerics>> = CreateInitGenerics<{
+// internal helper types
+
+type Generics<TParams extends Partial<InitGenerics>> = CreateInitGenerics<{
   ctx: TParams['ctx'] extends undefined ? {} : NonNullable<TParams['ctx']>;
   meta: TParams['meta'] extends undefined ? {} : NonNullable<TParams['meta']>;
 }>;
 
-type $Helpers<TParams extends Partial<InitGenerics>> = {
-  $Generics: $Generics<TParams>;
+interface WithGenerics<TParams extends Partial<InitGenerics>> {
+  ctx: Generics<TParams>['ctx'];
+  meta: PickFirstDefined<Generics<TParams>['meta'], undefined>;
+  options: Partial<InitOptions<Generics<TParams>>>;
+}
 
-  $Context: $Generics<TParams>['ctx'];
-  $Meta: PickFirstDefined<$Generics<TParams>['meta'], undefined>;
-  $Options: Partial<InitOptions<$Generics<TParams>>>;
-};
+interface WithFormatters<
+  TParams extends Partial<InitGenerics>,
+  TOptions extends WithGenerics<TParams>['options'],
+> extends WithGenerics<TParams> {
+  formatter: PickFirstDefined<
+    TOptions['errorFormatter'],
+    ErrorFormatter<WithGenerics<TParams>['ctx'], DefaultErrorShape>
+  >;
 
-export const trpc = new TRPCBuilder();
+  transformer: TOptions['transformer'] extends DataTransformerOptions
+    ? TOptions['transformer'] extends DataTransformerOptions
+      ? CombinedDataTransformer
+      : DefaultDataTransformer
+    : DefaultDataTransformer;
+}
+
+interface HelpersWithConfig<
+  TParams extends Partial<InitGenerics>,
+  TOptions extends WithGenerics<TParams>['options'],
+> extends WithFormatters<TParams, TOptions> {
+  config: CreateRootConfig<{
+    ctx: WithGenerics<TParams>['ctx'];
+    meta: WithGenerics<TParams>['meta'];
+    errorShape: ErrorFormatterShape<
+      WithFormatters<TParams, TOptions>['formatter']
+    >;
+    transformer: WithFormatters<TParams, TOptions>['transformer'];
+  }>;
+}
+
+export const trpc = new TRPC();

@@ -18,7 +18,7 @@ interface Meta {
   hasAuth: boolean;
 }
 
-export const t = trpc.context<Context; meta: Meta>.create();
+export const t = trpc.context<Context>().meta<Meta>();
 
 export const appRouter = t.router({
   // [...]
@@ -36,7 +36,7 @@ interface Meta {
   hasAuth: boolean;
 }
 
-export const t = trpc.context<Context; meta: Meta>.create();
+export const t = trpc.context<Context>().meta<Meta>();
 
 const isAuthed = t.middleware(async ({ meta, next, ctx }) => {
   // only check authorization if enabled

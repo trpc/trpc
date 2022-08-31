@@ -2,9 +2,8 @@ import { routerToServerAndClientNew, waitError } from '../___testHelpers';
 import { TRPCClientError, httpBatchLink, httpLink } from '@trpc/client';
 import { konn } from 'konn';
 import { z } from 'zod';
-import { trpc } from '../../src';
+import { trpc as t } from '../../src';
 
-const t = trpc.create();
 const appRouter = t.router({
   q: t.procedure.input(z.enum(['good', 'bad'])).query(({ input }) => {
     if (input === 'bad') {

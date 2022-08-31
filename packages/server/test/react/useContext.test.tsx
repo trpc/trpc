@@ -16,7 +16,7 @@ type Post = {
 const defaultPost = { id: 0, text: 'new post' };
 const ctx = konn()
   .beforeEach(() => {
-    const t = trpc.create({
+    const t = trpc.options({
       errorFormatter({ shape }) {
         return {
           ...shape,

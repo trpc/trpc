@@ -71,7 +71,7 @@ for (let i = 0; i < NUM_PROCEDURE_OBJECTS; i++) {
 const trpcFile = `
 import { trpc } from '../../../src';
 
-export const t = trpc.create();
+export const t = trpc;
 `.trim();
 const indexFile = `
 import { t } from './_trpc';

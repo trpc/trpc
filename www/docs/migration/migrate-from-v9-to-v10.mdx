@@ -27,10 +27,7 @@ The way you initialize tRPC on the server has been update, we now create a root 
 The way the `t` variable is defined is simply like this:
 
 ```ts title='/src/server/trpc.ts'
-import { trpc } from '@trpc/server';
-
-// Beware of the double `()()`
-export const t = trpc.create();
+import { trpc as t } from '@trpc/server';
 ```
 
 Here's a full example of how the `t` variable may look like with a data-transformer, openapi metadata and error formatter:
@@ -55,7 +52,7 @@ interface Meta {
   };
 }
 
-export const t = trpc.context<Context>().meta<Meta>().create({
+export const t = trpc.context<Context>().meta<Meta>().options({
   errorFormatter({ shape, error }) {
     return {
       ...shape,
@@ -191,7 +188,7 @@ When you've done this, you can start migrating to the new way of doing things.
 import superjson from 'superjson';
 import { Context } from './context';
 
-export const t = trpc.context<Context>().create({
+export const t = trpc.context<Context>().options({
   // Optional:
   transformer: superjson,
   // Optional:

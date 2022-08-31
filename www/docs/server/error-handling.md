@@ -52,9 +52,7 @@ tRPC provides an error subclass, `TRPCError`, which you can use to represent an 
 For example, throwing this error:
 
 ```ts title='server.ts'
-import { trpc } from '@trpc/server';
-
-const t = trpc.create();
+import { trpc as t } from '@trpc/server';
 
 const appRouter = trpc.router({
   hello: t.procedure.query(() => {

@@ -17,9 +17,7 @@ Thanks to TypeScript 4.1 template literal types we can also prefix the procedure
 ## Example code
 
 ```ts title='server.ts'
-import { trpc } from '@trpc/server';
-
-export const t = trpc.create();
+import { trpc as t } from '@trpc/server';
 
 const postRouter = t.router({
   create: t.procedure

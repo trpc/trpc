@@ -25,7 +25,7 @@ yarn add superjson
 import { trpc } from '@trpc/server';
 import superjson from 'superjson';
 
-export const t = trpc.create({
+export const t = trpc.options({
   transformer: superjson,
 });
 ```
@@ -97,7 +97,7 @@ export const transformer = {
 import { trpc } from '@trpc/server';
 import { transformer } from '../../utils/trpc';
 
-export const t = trpc.create({
+export const t = trpc.options({
   transformer,
 });
 

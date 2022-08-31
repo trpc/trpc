@@ -16,10 +16,8 @@ slug: /useInfiniteQuery
 ## Example Procedure
 
 ```tsx title='server/routers/_app.ts'
-import { trpc } from '@trpc/server'
+import { trpc as t } from '@trpc/server'
 import { Context } from './[trpc]';
-
-export const t = trpc.create()
 
 export const appRouter = t.router({
   infinitePosts: t

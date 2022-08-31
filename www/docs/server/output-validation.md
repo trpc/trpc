@@ -25,10 +25,8 @@ tRPC works out-of-the-box with yup/superstruct/zod/myzod/custom validators/[..] 
 ### With [Zod](https://github.com/colinhacks/zod)
 
 ```tsx
-import { trpc } from '@trpc/server';
+import { trpc as t } from '@trpc/server';
 import { z } from 'zod';
-
-export const t = trpc.create();
 
 export const appRouter = t.router({
   hello: t.procedure
@@ -51,10 +49,8 @@ export type AppRouter = typeof appRouter;
 ### With [Yup](https://github.com/jquense/yup)
 
 ```tsx
-import { trpc } from '@trpc/server';
+import { trpc as t } from '@trpc/server';
 import * as yup from 'yup';
-
-export const t = trpc.create();
 
 export const appRouter = t.router({
   hello: t.procedure
@@ -76,10 +72,8 @@ export type AppRouter = typeof appRouter;
 ### With [Superstruct](https://github.com/ianstormtaylor/superstruct)
 
 ```tsx
-import { trpc } from '@trpc/server';
+import { trpc as t } from '@trpc/server';
 import { object, string } from 'superstruct';
-
-export const t = trpc.create();
 
 export const appRouter = t.router({
   hello: t.procedure
@@ -98,9 +92,7 @@ export type AppRouter = typeof appRouter;
 ### With custom validator
 
 ```tsx
-import { trpc } from '@trpc/server';
-
-export const t = trpc.create();
+import { trpc as t } from '@trpc/server';
 
 export const appRouter = t.router({
   hello: t.procedure

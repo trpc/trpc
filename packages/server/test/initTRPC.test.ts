@@ -8,11 +8,9 @@ import {
 } from '../src/transformer';
 
 test('default transformer', () => {
-  const t = trpc
-    .context<{
-      foo: 'bar';
-    }>()
-    .create();
+  const t = trpc.context<{
+    foo: 'bar';
+  }>();
   const router = t.router({});
 
   expectTypeOf(router._def._ctx).toMatchTypeOf<{
@@ -25,7 +23,7 @@ test('custom transformer', () => {
     deserialize: (v) => v,
     serialize: (v) => v,
   };
-  const t = trpc.create({
+  const t = trpc.options({
     transformer,
   });
   const router = t.router({});

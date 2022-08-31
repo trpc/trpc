@@ -1,7 +1,5 @@
-import { trpc } from '@trpc/server';
+import { trpc as t } from '@trpc/server';
 import { z } from 'zod';
-
-const t = trpc.create();
 
 const helloRouter = t.router({
   greeting: t.procedure

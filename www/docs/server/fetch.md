@@ -63,7 +63,7 @@ type User = {
 
 const users: Record<string, User> = {};
 
-export const t = trpc.context<Context>.create();
+export const t = trpc.context<Context>();
 
 export const appRouter = t.router({
   getUserById: t.procedure.input(z.string()).query(({ input }) => {
