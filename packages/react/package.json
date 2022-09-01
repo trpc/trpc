@@ -26,13 +26,19 @@
       "import": "./dist/ssg/index.mjs",
       "require": "./dist/ssg/index.js",
       "default": "./dist/ssg/index.js"
+    },
+    "./shared": {
+      "import": "./dist/shared/index.mjs",
+      "require": "./dist/shared/index.js",
+      "default": "./dist/shared/index.js"
     }
   },
   "files": [
     "dist",
     "src",
     "README.md",
-    "ssg"
+    "ssg",
+    "shared"
   ],
   "eslintConfig": {
     "rules": {
