@@ -3,8 +3,8 @@ import {
   DecoratedProcedureRecord,
   DecoratedProcedureUtilsRecord,
   createReactProxyDecoration,
+  createReactQueryUtilsProxy,
 } from '@trpc/react/shared';
-import { createReactQueryUtilsProxy } from '@trpc/react/shared';
 import { AnyRouter } from '@trpc/server';
 import { NextPageContext } from 'next/types';
 import { useMemo } from 'react';
