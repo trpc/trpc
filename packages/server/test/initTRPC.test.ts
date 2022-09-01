@@ -36,3 +36,15 @@ test('custom transformer', () => {
     router._def.transformer,
   ).not.toMatchTypeOf<DefaultDataTransformer>();
 });
+
+test('meta typings', () => {
+  type Meta = { __META__: true };
+  const meta: Meta = { __META__: true };
+
+  const t = initTRPC<{ meta: Meta }>()();
+
+  const procedure = t.procedure.meta(meta);
+
+  expect(procedure._def.meta).toBe(meta);
+  expectTypeOf(procedure._def.meta).toMatchTypeOf<Meta | undefined>();
+});

@@ -162,7 +162,7 @@ export interface ProcedureBuilder<TParams extends ProcedureParams> {
   _def: {
     inputs: Parser[];
     output?: Parser;
-    meta?: Record<string, unknown>;
+    meta?: TParams['_meta'];
     resolver?: ProcedureBuilderResolver;
     middlewares: ProcedureBuilderMiddleware[];
     mutation?: boolean;
@@ -172,7 +172,7 @@ export interface ProcedureBuilder<TParams extends ProcedureParams> {
 }
 
 type AnyProcedureBuilder = ProcedureBuilder<any>;
-export type ProcedureBuilderDef = AnyProcedureBuilder['_def'];
+export type AnyProcedureBuilderDef = AnyProcedureBuilder['_def'];
 
 export type ProcedureBuilderMiddleware = MiddlewareFunction<any, any>;
 
@@ -181,8 +181,8 @@ export type ProcedureBuilderResolver = (
 ) => Promise<unknown>;
 
 function createNewBuilder(
-  def1: ProcedureBuilderDef,
-  def2: Partial<ProcedureBuilderDef>,
+  def1: AnyProcedureBuilderDef,
+  def2: Partial<AnyProcedureBuilderDef>,
 ) {
   const { middlewares = [], inputs, ...rest } = def2;
 
@@ -195,7 +195,7 @@ function createNewBuilder(
 }
 
 export function createBuilder<TConfig extends RootConfig>(
-  initDef?: ProcedureBuilderDef,
+  initDef?: AnyProcedureBuilderDef,
 ): ProcedureBuilder<{
   _config: TConfig;
   _ctx_in: TConfig['ctx'];
@@ -206,7 +206,7 @@ export function createBuilder<TConfig extends RootConfig>(
   _output_out: UnsetMarker;
   _meta: TConfig['meta'];
 }> {
-  const _def: ProcedureBuilderDef = initDef || {
+  const _def: AnyProcedureBuilderDef = initDef || {
     inputs: [],
     middlewares: [],
   };
@@ -319,7 +319,7 @@ export function createOutputMiddleware<T>(
 }
 
 function createResolver(
-  _def: ProcedureBuilderDef,
+  _def: AnyProcedureBuilderDef,
   resolver: (opts: ResolveOptions<any>) => MaybePromise<any>,
 ) {
   const finalBuilder = createNewBuilder(_def, {
@@ -362,7 +362,7 @@ const caller = appRouter.createCaller({
 const result = await caller.call('myProcedure', input);
 `.trim();
 
-function createProcedureCaller(_def: ProcedureBuilderDef): Procedure<any> {
+function createProcedureCaller(_def: AnyProcedureBuilderDef): Procedure<any> {
   const procedure = async function resolve(opts: ProcedureCallOptions) {
     // is direct server-side call
     if (!opts || !('rawInput' in opts)) {
