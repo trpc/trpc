@@ -209,6 +209,7 @@ Also, if your company using tRPC and want to support long-term maintenance of tR
    <td align="center"><a href="https://github.com/svobik7"><img src="https://avatars.githubusercontent.com/u/761766?u=1771454e0852904ddf71fe74e493e228331dd27a&v=4&s=100" width="100" alt="Jirka%20Svoboda"/><br />Jirka Svoboda</a></td>
    <td align="center"><a href="https://github.com/mshd"><img src="https://avatars.githubusercontent.com/u/17379661?u=2dc0effef1464639ae9ff98795cd29bb772bcce3&v=4&s=100" width="100" alt="Martin"/><br />Martin</a></td>
    <td align="center"><a href="https://github.com/fanvue"><img src="https://avatars.githubusercontent.com/u/72873652?v=4&s=100" width="100" alt="Fanvue"/><br />Fanvue</a></td>
+   <td align="center"><a href="https://midu.dev"><img src="https://avatars.githubusercontent.com/u/1561955?u=9ebfec769d2505d88ee746b7389353c23312bca1&v=4&s=100" width="100" alt="Miguel%20%C3%81ngel%20Dur%C3%A1n"/><br />Miguel Ángel Durán</a></td>
   </tr>
 </table>
 
