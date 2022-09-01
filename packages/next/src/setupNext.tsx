@@ -1,12 +1,13 @@
 import { createReactQueryHooks } from '@trpc/react';
 import type {
-  CreateReactQueryHooks,
   DecoratedProcedureRecord,
   DecoratedProcedureUtilsRecord,
 } from '@trpc/react/shared';
+import { createReactQueryUtilsProxy } from '@trpc/react/shared';
 import { AnyRouter } from '@trpc/server';
 import { createProxy } from '@trpc/server/shared';
 import { NextPageContext } from 'next/types';
+import { useMemo } from 'react';
 import { WithTRPCNoSSROptions, WithTRPCSSROptions, withTRPC } from './withTRPC';
 
 export function setupTRPC<
@@ -26,7 +27,14 @@ export function setupTRPC<
       get(_obj, name) {
         switch (name) {
           case 'useProxyContext':
-            return hooks.useContext;
+            // FIXME: Code duplication from `createReactQueryHooksProxy`
+            return () => {
+              const context = hooks.useContext();
+              // create a stable reference of the utils context
+              return useMemo(() => {
+                return createReactQueryUtilsProxy(context as any);
+              }, [context]);
+            };
           case 'useContext':
             return hooks.useContext;
           case 'useInfiniteQuery':
