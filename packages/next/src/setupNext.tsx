@@ -1,4 +1,4 @@
-import { type CreateReactQueryHooks, createReactQueryHooks } from '@trpc/react';
+import { createReactQueryHooks } from '@trpc/react';
 import {
   DecoratedProcedureRecord,
   DecoratedProcedureUtilsRecord,
