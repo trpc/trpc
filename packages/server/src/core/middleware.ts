@@ -1,4 +1,8 @@
+import { TRPCError } from '../error/TRPCError';
+import { getCauseFromUnknown } from '../error/utils';
 import { RootConfig } from './internals/config';
+import { ParseFn } from './internals/getParseFn';
+import { ProcedureBuilderMiddleware } from './internals/procedureBuilder';
 import { MiddlewareMarker } from './internals/utils';
 import { ProcedureParams } from './procedure';
 import { ProcedureType } from './types';
@@ -96,4 +100,72 @@ export function createMiddlewareFactory<TConfig extends RootConfig>() {
   ) {
     return fn;
   };
+}
+
+function isPlainObject(obj: unknown) {
+  return obj && typeof obj === 'object' && !Array.isArray(obj);
+}
+
+/**
+ * @internal
+ * Please note, `trpc-openapi` uses this function.
+ */
+export function createInputMiddleware<T>(parse: ParseFn<T>) {
+  const inputMiddleware: ProcedureBuilderMiddleware = async ({
+    next,
+    rawInput,
+    input,
+  }) => {
+    let parsedInput: ReturnType<typeof parse>;
+    try {
+      parsedInput = await parse(rawInput);
+    } catch (cause) {
+      throw new TRPCError({
+        code: 'BAD_REQUEST',
+        cause: getCauseFromUnknown(cause),
+      });
+    }
+
+    // Multiple input parsers
+    const combinedInput =
+      isPlainObject(input) && isPlainObject(parsedInput)
+        ? {
+            ...input,
+            ...parsedInput,
+          }
+        : parsedInput;
+
+    // TODO fix this typing?
+    return next({ input: combinedInput } as any);
+  };
+  inputMiddleware._type = 'input';
+  return inputMiddleware;
+}
+
+/**
+ * @internal
+ */
+export function createOutputMiddleware<T>(parse: ParseFn<T>) {
+  const outputMiddleware: ProcedureBuilderMiddleware = async ({ next }) => {
+    const result = await next();
+    if (!result.ok) {
+      // pass through failures without validating
+      return result;
+    }
+    try {
+      const data = await parse(result.data);
+      return {
+        ...result,
+        data,
+      };
+    } catch (cause) {
+      throw new TRPCError({
+        message: 'Output validation failed',
+        code: 'INTERNAL_SERVER_ERROR',
+        cause: getCauseFromUnknown(cause),
+      });
+    }
+  };
+  outputMiddleware._type = 'output';
+  return outputMiddleware;
 }
