@@ -442,5 +442,14 @@ export const sponsors = [
     "privacyLevel": "PUBLIC",
     "login": "fanvue",
     "createdAt": 1661242015000
+  },
+  {
+    "name": "Miguel Ángel Durán",
+    "imgSrc": "https://avatars.githubusercontent.com/u/1561955?u=9ebfec769d2505d88ee746b7389353c23312bca1&v=4",
+    "monthlyPriceInDollars": 50,
+    "link": "https://midu.dev",
+    "privacyLevel": "PUBLIC",
+    "login": "midudev",
+    "createdAt": 1661889789000
   }
 ] as const
