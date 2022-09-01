@@ -1,6 +1,13 @@
-import { createReactQueryHooks, createReactQueryHooksProxy } from '@trpc/react';
+import { createReactQueryHooks } from '@trpc/react';
+import {
+  DecoratedProcedureRecord,
+  DecoratedProcedureUtilsRecord,
+  createReactProxyDecoration,
+  createReactQueryUtilsProxy,
+} from '@trpc/react/shared';
 import { AnyRouter } from '@trpc/server';
 import { NextPageContext } from 'next/types';
+import { useMemo } from 'react';
 import { WithTRPCNoSSROptions, WithTRPCSSROptions, withTRPC } from './withTRPC';
 
 export function setupTRPC<
@@ -8,19 +15,41 @@ export function setupTRPC<
   TSSRContext extends NextPageContext = NextPageContext,
 >(opts: WithTRPCNoSSROptions<TRouter> | WithTRPCSSROptions<TRouter>) {
   const hooks = createReactQueryHooks<TRouter, TSSRContext>();
-  const proxy = createReactQueryHooksProxy<TRouter, TSSRContext>(hooks);
 
   // TODO: maybe set TSSRContext to `never` when using `WithTRPCNoSSROptions`
   const _withTRPC = withTRPC<TRouter, TSSRContext>(opts);
 
-  return {
-    proxy,
-    useContext: hooks.useContext,
-    useInfiniteQuery: hooks.useInfiniteQuery,
-    useMutation: hooks.useMutation,
-    useQuery: hooks.useQuery,
-    useSubscription: hooks.useSubscription,
-    withTRPC: _withTRPC,
-    queries: hooks.queries,
-  };
+  const proxy: unknown = new Proxy(
+    () => {
+      // no-op
+    },
+    {
+      get(_obj, name) {
+        if (name === 'useContext') {
+          return () => {
+            const context = hooks.useContext();
+            // create a stable reference of the utils context
+            return useMemo(() => {
+              return createReactQueryUtilsProxy(context as any);
+            }, [context]);
+          };
+        }
+
+        if (name === 'withTRPC') {
+          return _withTRPC;
+        }
+
+        if (typeof name === 'string') {
+          return createReactProxyDecoration(name, hooks);
+        }
+
+        throw new Error('Not supported');
+      },
+    },
+  );
+
+  return proxy as {
+    useContext(): DecoratedProcedureUtilsRecord<TRouter>;
+    withTRPC: typeof _withTRPC;
+  } & DecoratedProcedureRecord<TRouter['_def']['record']>;
 }

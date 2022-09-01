@@ -35,7 +35,7 @@ export const t = initTRPC<{ ctx: Context }>()({
 
 ```tsx title='components/MyComponent.tsx'
 export function MyComponent() {
-  const mutation = trpc.proxy.addPost.useMutation();
+  const mutation = trpc.addPost.useMutation();
 
   useEffect(() => {
     mutation.mutate({ title: 'example' });

@@ -68,7 +68,7 @@ Now you can query your API in any component.
 import { trpc } from '~/utils/trpc';
 
 export function Hello() {
-  const { data, error, status } = trpc.proxy.greeting.useQuery({
+  const { data, error, status } = trpc.greeting.useQuery({
     name: 'tRPC',
   });
 

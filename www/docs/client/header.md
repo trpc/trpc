@@ -34,7 +34,7 @@ export const trpc = setupTRPC<AppRouter>({
 ### Example with auth login
 
 ```ts title='pages/auth.tsx'
-const loginMut = trpc.proxy.auth.login.useMutation({
+const loginMut = trpc.auth.login.useMutation({
   onSuccess({ accessToken }) {
     token = accessToken;
   },

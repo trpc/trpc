@@ -190,7 +190,7 @@ export default trpc.withTRPC(MyApp);
 import { trpc } from '../utils/trpc';
 
 export default function IndexPage() {
-  const hello = trpc.proxy.hello.useQuery({ text: 'client' });
+  const hello = trpc.hello.useQuery({ text: 'client' });
   if (!hello.data) {
     return <div>Loading...</div>;
   }
@@ -234,7 +234,7 @@ Ability to set request headers and HTTP status when server-side rendering.
 import { setupTRPC } from '@trpc/next';
 import type { AppRouter } from '../pages/api/trpc/[trpc]';
 
-export const trpc = setupTRPC({
+export const trpc = setupTRPC<AppRouter>({
   config({ ctx }) {
     /* [...] */
   },

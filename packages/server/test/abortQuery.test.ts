@@ -34,7 +34,7 @@ describe('vanilla client procedure abortion', () => {
     close();
   });
 
-  test.skip('mutation', async () => {
+  test('mutation', async () => {
     const abortController = new AbortController();
     const signal = abortController.signal;
 

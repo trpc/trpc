@@ -539,7 +539,7 @@ import { trpc } from '~/utils/trpc';
 
 function MyComponent() {
   // You'll be able to CMD+Click `postById` below
-  const query = trpc.proxy.postById.useQuery(
+  const query = trpc.postById.useQuery(
     { id: 1 },
     {
       /* [...] trpc specific options */
