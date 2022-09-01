@@ -1,10 +1,12 @@
 import { TRPCError } from '../../error/TRPCError';
-import {
-  getCauseFromUnknown,
-  getTRPCErrorFromUnknown,
-} from '../../error/utils';
+import { getTRPCErrorFromUnknown } from '../../error/utils';
 import { FlatOverwrite, MaybePromise } from '../../types';
-import { MiddlewareFunction, MiddlewareResult } from '../middleware';
+import {
+  MiddlewareFunction,
+  MiddlewareResult,
+  createInputMiddleware,
+  createOutputMiddleware,
+} from '../middleware';
 import { Parser, inferParser } from '../parser';
 import {
   MutationProcedure,
@@ -15,7 +17,7 @@ import {
 } from '../procedure';
 import { ProcedureType } from '../types';
 import { RootConfig } from './config';
-import { ParseFn, getParseFn } from './getParseFn';
+import { getParseFn } from './getParseFn';
 import { mergeWithoutOverrides } from './mergeWithoutOverrides';
 import { ResolveOptions, middlewareMarker } from './utils';
 import { DefaultValue as FallbackValue, Overwrite, UnsetMarker } from './utils';
@@ -258,63 +260,6 @@ export function createBuilder<TConfig extends RootConfig>(
         resolver,
       ) as SubscriptionProcedure<any>;
     },
-  };
-}
-
-function isPlainObject(obj: unknown) {
-  return obj && typeof obj === 'object' && !Array.isArray(obj);
-}
-
-export function createInputMiddleware<T>(
-  parse: ParseFn<T>,
-): ProcedureBuilderMiddleware {
-  return async function inputMiddleware({ next, rawInput, input }) {
-    let parsedInput: ReturnType<typeof parse>;
-    try {
-      parsedInput = await parse(rawInput);
-    } catch (cause) {
-      throw new TRPCError({
-        code: 'BAD_REQUEST',
-        cause: getCauseFromUnknown(cause),
-      });
-    }
-
-    // Multiple input parsers
-    const combinedInput =
-      isPlainObject(input) && isPlainObject(parsedInput)
-        ? {
-            ...input,
-            ...parsedInput,
-          }
-        : parsedInput;
-
-    // TODO fix this typing?
-    return next({ input: combinedInput } as any);
-  };
-}
-
-export function createOutputMiddleware<T>(
-  parse: ParseFn<T>,
-): ProcedureBuilderMiddleware {
-  return async function outputMiddleware({ next }) {
-    const result = await next();
-    if (!result.ok) {
-      // pass through failures without validating
-      return result;
-    }
-    try {
-      const data = await parse(result.data);
-      return {
-        ...result,
-        data,
-      };
-    } catch (cause) {
-      throw new TRPCError({
-        message: 'Output validation failed',
-        code: 'INTERNAL_SERVER_ERROR',
-        cause: getCauseFromUnknown(cause),
-      });
-    }
   };
 }
 
