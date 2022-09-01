@@ -6,3 +6,4 @@ export {
 } from '../internals/utilsProxy';
 export type { CreateReactQueryHooks } from '../createReactQueryHooks';
 export type { DecoratedProcedureRecord } from '../createReactQueryHooksProxy';
+export * from './createReactProxyDecoration';
