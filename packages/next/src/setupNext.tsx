@@ -25,7 +25,7 @@ export function setupTRPC<
     },
     {
       get(_obj, name) {
-        if (name === 'useUtilsContext') {
+        if (name === 'useContext') {
           return () => {
             const context = hooks.useContext();
             // create a stable reference of the utils context
@@ -33,14 +33,6 @@ export function setupTRPC<
               return createReactQueryUtilsProxy(context as any);
             }, [context]);
           };
-        }
-
-        if (
-          name in hooks &&
-          name !== 'Provider' &&
-          name !== 'useDehydratedState'
-        ) {
-          return (hooks as any)[name];
         }
 
         if (name === 'withTRPC') {
@@ -57,8 +49,7 @@ export function setupTRPC<
   );
 
   return proxy as {
-    useUtilsContext(): DecoratedProcedureUtilsRecord<TRouter>;
+    useContext(): DecoratedProcedureUtilsRecord<TRouter>;
     withTRPC: typeof _withTRPC;
-  } & Omit<CreateReactQueryHooks<TRouter>, 'Provider' | 'useDehydratedState'> &
-    DecoratedProcedureRecord<TRouter['_def']['record']>;
+  } & DecoratedProcedureRecord<TRouter['_def']['record']>;
 }

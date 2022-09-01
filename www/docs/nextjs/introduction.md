@@ -258,36 +258,3 @@ export const trpc = setupTRPC<AppRouter>({
 ## Next steps
 
 Refer to the `@trpc/react` docs for additional information on executing [Queries](react-queries) and [Mutations](react-mutations) inside your components.
-
-:::tip
-For `@trpc/next`, `useContext` on new procedures is moved to `useUtilsContext`. This is to preserve backwards compatibility with existing code.
-
-```ts twoslash
-// @filename: utils.ts
-import { initTRPC } from '@trpc/server';
-import { setupTRPC } from "@trpc/next";
-
-const t = initTRPC()();
-
-const appRouter = t.router({
-  hello: t.procedure.query(() => {
-    return 'Hello World!';
-  }),
-});
-type AppRouter = typeof appRouter;
-
-export const trpc = setupTRPC<AppRouter>({
-  config() {
-    return {
-      url: '/api/trpc',
-    };
-  },
-});
-// ---cut---
-// @noErrors
-import { trpc } from './utils';
-const utils = trpc.useUtilsContext();
-utils.hello.s;
-//           ^|
-```
-:::
