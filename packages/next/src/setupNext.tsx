@@ -16,7 +16,7 @@ export function setupTRPC<
 >(opts: WithTRPCNoSSROptions<TRouter> | WithTRPCSSROptions<TRouter>) {
   const hooks = createReactQueryHooks<TRouter, TSSRContext>();
 
-  //type SSRContext = typeof opts.ssr extends true ? TSSRContext : never;
+  // TODO: maybe set TSSRContext to `never` when using `WithTRPCNoSSROptions`
   const _withTRPC = withTRPC<TRouter, TSSRContext>(opts);
 
   const proxy: unknown = new Proxy(
