@@ -59,7 +59,7 @@ function ListItem({ task }: { task: Task }) {
   const wrapperRef = useRef(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const utils = trpc.useProxyContext();
+  const utils = trpc.useUtilsContext();
   const [text, setText] = useState(task.text);
   const [completed, setCompleted] = useState(task.completed);
   useEffect(() => {
@@ -174,7 +174,7 @@ export default function TodosPage({
   const allTasks = trpc.todo.all.useQuery(undefined, {
     staleTime: 3000,
   });
-  const utils = trpc.useProxyContext();
+  const utils = trpc.useUtilsContext();
   const addTask = trpc.todo.add.useMutation({
     async onMutate({ text }) {
       await utils.todo.all.cancel();

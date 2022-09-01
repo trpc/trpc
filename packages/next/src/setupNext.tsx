@@ -26,7 +26,7 @@ export function setupTRPC<
     {
       get(_obj, name) {
         switch (name) {
-          case 'useProxyContext':
+          case 'useUtilsContext':
             // FIXME: Code duplication from `createReactQueryHooksProxy`
             return () => {
               const context = hooks.useContext();
@@ -79,8 +79,9 @@ export function setupTRPC<
     },
   );
 
+  // FIXME: Look into using `CreateReactQueryHooks` here?
   return proxy as {
-    useProxyContext(): DecoratedProcedureUtilsRecord<TRouter>;
+    useUtilsContext(): DecoratedProcedureUtilsRecord<TRouter>;
     useContext(): typeof hooks.useContext;
     useInfiniteQuery: typeof hooks.useInfiniteQuery;
     useMutation: typeof hooks.useMutation;

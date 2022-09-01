@@ -2,7 +2,7 @@ import { trpc } from '../utils/trpc';
 
 export default function IndexPage() {
   const hello = trpc.hello.useQuery({ text: 'client' });
-  const utils = trpc.useProxyContext();
+  const utils = trpc.useUtilsContext();
   utils.hello.invalidate();
 
   if (!hello.data) {

@@ -3,7 +3,7 @@ import { NextPageWithLayout } from './_app';
 import Link from 'next/link';
 
 const IndexPage: NextPageWithLayout = () => {
-  const utils = trpc.useProxyContext();
+  const utils = trpc.useUtilsContext();
   const postsQuery = trpc.post.list.useQuery();
 
   const addPost = trpc.post.add.useMutation({
