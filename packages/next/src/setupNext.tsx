@@ -35,6 +35,8 @@ export function setupTRPC<
                 return createReactQueryUtilsProxy(context as any);
               }, [context]);
             };
+          // We can't just do a generic hooks[name] since we don't (or atleast didn't export all hooks)
+          // Maybe ['useContext', ...].includes(name) would work and decrease the big switch
           case 'useContext':
             return hooks.useContext;
           case 'useInfiniteQuery':
@@ -80,6 +82,7 @@ export function setupTRPC<
   );
 
   // FIXME: Look into using `CreateReactQueryHooks` here?
+  // We are not returning the full object I don't think
   return proxy as {
     useUtilsContext(): DecoratedProcedureUtilsRecord<TRouter>;
     useContext(): typeof hooks.useContext;
@@ -88,6 +91,7 @@ export function setupTRPC<
     useQuery: typeof hooks.useQuery;
     useSubscription: typeof hooks.useSubscription;
     withTRPC: typeof _withTRPC;
+    queries: typeof hooks.queries;
   } & DecoratedProcedureRecord<TRouter['_def']['record']>;
 
   /*return {
