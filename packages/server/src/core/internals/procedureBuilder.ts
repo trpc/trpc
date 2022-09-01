@@ -269,12 +269,12 @@ function isPlainObject(obj: unknown) {
  * @internal
  * Please note, `trpc-openapi` uses this function.
  */
-export function createInputMiddleware<T>(
-  parse: ParseFn<T>,
-): ProcedureBuilderMiddleware {
-  return async function inputMiddleware({ next, rawInput, input }) {
-    (inputMiddleware as any)._input = true;
-
+export function createInputMiddleware<T>(parse: ParseFn<T>) {
+  const inputMiddleware: ProcedureBuilderMiddleware = async ({
+    next,
+    rawInput,
+    input,
+  }) => {
     let parsedInput: ReturnType<typeof parse>;
     try {
       parsedInput = await parse(rawInput);
@@ -297,14 +297,12 @@ export function createInputMiddleware<T>(
     // TODO fix this typing?
     return next({ input: combinedInput } as any);
   };
+  inputMiddleware._type = 'input';
+  return inputMiddleware;
 }
 
-export function createOutputMiddleware<T>(
-  parse: ParseFn<T>,
-): ProcedureBuilderMiddleware {
-  return async function outputMiddleware({ next }) {
-    (outputMiddleware as any)._output = true;
-
+export function createOutputMiddleware<T>(parse: ParseFn<T>) {
+  const outputMiddleware: ProcedureBuilderMiddleware = async ({ next }) => {
     const result = await next();
     if (!result.ok) {
       // pass through failures without validating
@@ -324,6 +322,8 @@ export function createOutputMiddleware<T>(
       });
     }
   };
+  outputMiddleware._type = 'output';
+  return outputMiddleware;
 }
 
 function createResolver(

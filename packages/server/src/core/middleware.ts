@@ -47,29 +47,32 @@ export type MiddlewareResult<TParams extends ProcedureParams> =
 export type MiddlewareFunction<
   TParams extends ProcedureParams,
   TParamsAfter extends ProcedureParams,
-> = (opts: {
-  ctx: TParams['_ctx_out'];
-  type: ProcedureType;
-  path: string;
-  input: TParams['_input_out'];
-  rawInput: unknown;
-  meta: TParams['_meta'];
-  next: {
-    (): Promise<MiddlewareResult<TParams>>;
-    <$TContext>(opts: { ctx: $TContext }): Promise<
-      MiddlewareResult<{
-        _config: any;
-        _ctx_in: TParams['_ctx_in'];
-        _ctx_out: $TContext;
-        _input_in: TParams['_input_in'];
-        _input_out: TParams['_input_out'];
-        _output_in: TParams['_output_in'];
-        _output_out: TParams['_output_out'];
-        _meta: TParams['_meta'];
-      }>
-    >;
-  };
-}) => Promise<MiddlewareResult<TParamsAfter>>;
+> = {
+  (opts: {
+    ctx: TParams['_ctx_out'];
+    type: ProcedureType;
+    path: string;
+    input: TParams['_input_out'];
+    rawInput: unknown;
+    meta: TParams['_meta'];
+    next: {
+      (): Promise<MiddlewareResult<TParams>>;
+      <$TContext>(opts: { ctx: $TContext }): Promise<
+        MiddlewareResult<{
+          _config: any;
+          _ctx_in: TParams['_ctx_in'];
+          _ctx_out: $TContext;
+          _input_in: TParams['_input_in'];
+          _input_out: TParams['_input_out'];
+          _output_in: TParams['_output_in'];
+          _output_out: TParams['_output_out'];
+          _meta: TParams['_meta'];
+        }>
+      >;
+    };
+  }): Promise<MiddlewareResult<TParamsAfter>>;
+  _type?: string | undefined;
+};
 
 /**
  * @internal
