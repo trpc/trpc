@@ -265,10 +265,16 @@ function isPlainObject(obj: unknown) {
   return obj && typeof obj === 'object' && !Array.isArray(obj);
 }
 
+/**
+ * @internal
+ * Please note, `trpc-openapi` uses this function.
+ */
 export function createInputMiddleware<T>(
   parse: ParseFn<T>,
 ): ProcedureBuilderMiddleware {
   return async function inputMiddleware({ next, rawInput, input }) {
+    (inputMiddleware as any)._input = true;
+
     let parsedInput: ReturnType<typeof parse>;
     try {
       parsedInput = await parse(rawInput);
@@ -297,6 +303,8 @@ export function createOutputMiddleware<T>(
   parse: ParseFn<T>,
 ): ProcedureBuilderMiddleware {
   return async function outputMiddleware({ next }) {
+    (outputMiddleware as any)._output = true;
+
     const result = await next();
     if (!result.ok) {
       // pass through failures without validating

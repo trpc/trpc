@@ -10,6 +10,7 @@ export type {
   ProcedureArgs,
   ProcedureOptions,
 } from './procedure';
+export { createInputMiddleware } from './internals/procedureBuilder';
 
 export { initTRPC } from './initTRPC';
 export * from './types';
