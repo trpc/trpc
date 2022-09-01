@@ -24,9 +24,9 @@ import {
 } from './createReactQueryHooks';
 import {
   DecoratedProcedureUtilsRecord,
+  createReactProxyDecoration,
   createReactQueryUtilsProxy,
-} from './internals/utilsProxy';
-import { createReactProxyDecoration } from './shared/createReactProxyDecoration';
+} from './shared';
 
 type DecorateProcedure<
   TProcedure extends Procedure<any>,

@@ -1,8 +1,3 @@
-export * from '../internals/getQueryKey';
-
-export {
-  createReactQueryUtilsProxy,
-  type DecoratedProcedureUtilsRecord,
-} from '../internals/utilsProxy';
+export * from './proxy/decorationProxy';
+export * from './proxy/utilsProxy';
 export type { DecoratedProcedureRecord } from '../createReactQueryHooksProxy';
-export * from './createReactProxyDecoration';

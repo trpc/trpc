@@ -8,5 +8,7 @@ export {
   createReactQueryHooksProxy,
   createTRPCReact,
 } from './createReactQueryHooksProxy';
-export type { DecoratedProcedureUtilsRecord } from './internals/utilsProxy';
-export type { DecoratedProcedureRecord } from './createReactQueryHooksProxy';
+export type {
+  DecoratedProcedureUtilsRecord,
+  DecoratedProcedureRecord,
+} from './shared';
