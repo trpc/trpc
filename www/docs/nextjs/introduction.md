@@ -260,7 +260,7 @@ export const trpc = setupTRPC<AppRouter>({
 Refer to the `@trpc/react` docs for additional information on executing [Queries](react-queries) and [Mutations](react-mutations) inside your components.
 
 :::tip
-For `@trpc/next`, `useContext` on new procedures are moved to `useUtilsContext`. This is to preserve backwards compatibility with existing code.
+For `@trpc/next`, `useContext` on new procedures is moved to `useUtilsContext`. This is to preserve backwards compatibility with existing code.
 
 ```ts twoslash
 // @filename: utils.ts
