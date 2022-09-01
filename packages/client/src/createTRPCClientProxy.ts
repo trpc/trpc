@@ -14,7 +14,6 @@ import type {
   Unsubscribable,
   inferObservableValue,
 } from '@trpc/server/observable';
-import type { TRPCResultMessage } from '@trpc/server/rpc';
 import { createProxy } from '@trpc/server/shared';
 import { TRPCClientError } from './TRPCClientError';
 import { CreateTRPCClientOptions, createTRPCClient } from './createTRPCClient';
