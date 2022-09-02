@@ -22,7 +22,7 @@ jobs:
             .interop/express-server,
             express-minimal,
             .interop/next-prisma-starter,
-            .interop/next-prisma-starter-migration,
+            .interop/next-minimal-starter-migration,
             .interop/next-prisma-starter-websockets,
             .interop/next-prisma-todomvc,
             next-minimal-starter,
