@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-empty-function */
 import { trpcServer } from '../../___packages';
 import { routerToServerAndClientNew } from '../../___testHelpers';
+import { createQueryClient } from '../../__queryClient';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import '@testing-library/jest-dom';
 import { httpBatchLink } from '@trpc/client/src/links/httpBatchLink';
@@ -224,12 +225,12 @@ export function createLegacyAppRouter() {
       },
     },
   );
-  const queryClient = new QueryClient();
+
+  const queryClient = createQueryClient();
 
   const trpc = createReactQueryHooks<typeof appRouter>();
 
   function App(props: { children: ReactNode }) {
-    const [queryClient] = useState(() => new QueryClient());
     return (
       <trpc.Provider {...{ queryClient, client }}>
         <QueryClientProvider client={queryClient}>

@@ -1,16 +1,10 @@
 import { routerToServerAndClientNew } from '../___testHelpers';
+import { createQueryClient } from '../__queryClient';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import {
-  Operation,
-  TRPCLink,
-  httpBatchLink,
-  splitLink,
-  wsLink,
-} from '@trpc/client';
+import { Operation, httpBatchLink, splitLink, wsLink } from '@trpc/client';
 import React, { ReactNode, useState } from 'react';
 import { createTRPCReact } from '../../../react/src';
 import { AnyRouter } from '../../src/core';
-import { observable } from '../../src/observable';
 
 export function getServerAndReactClient<TRouter extends AnyRouter>(
   appRouter: TRouter,
@@ -41,7 +35,7 @@ export function getServerAndReactClient<TRouter extends AnyRouter>(
     }),
   });
 
-  const queryClient = new QueryClient();
+  const queryClient = createQueryClient();
   const proxy = createTRPCReact<typeof appRouter>();
   const client = opts.client;
 

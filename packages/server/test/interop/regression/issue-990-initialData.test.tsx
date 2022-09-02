@@ -6,6 +6,7 @@
 
 /* eslint-disable @typescript-eslint/ban-ts-comment */
 import { trpcReact, trpcServer } from '../../___packages';
+import { createQueryClient } from '../../__queryClient';
 import { legacyRouterToServerAndClient } from '../__legacyRouterToServerAndClient';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import '@testing-library/jest-dom';
@@ -35,7 +36,7 @@ test('initialData type', async () => {
     return <pre>{JSON.stringify(query.data ?? 'n/a', null, 4)}</pre>;
   }
   function App() {
-    const [queryClient] = useState(() => new QueryClient());
+    const [queryClient] = useState(() => createQueryClient());
     return (
       <trpc.Provider {...{ queryClient, client }}>
         <QueryClientProvider client={queryClient}>
