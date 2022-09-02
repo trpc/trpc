@@ -39,7 +39,7 @@ type CreateInitGenericsFromPartial<T extends PartialInitGenerics> =
  * - Doesn't need to be a class but it doesn't really hurt either
  */
 
-class TRPCBuilder<TParams extends Partial<InitGenerics> = {}> {
+export class TRPCBuilder<TParams extends Partial<InitGenerics> = {}> {
   context<TNewContext extends InitGenerics['ctx']>() {
     return new TRPCBuilder<FlatOverwrite<TParams, { ctx: TNewContext }>>();
   }

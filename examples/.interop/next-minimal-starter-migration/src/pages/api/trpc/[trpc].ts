@@ -1,12 +1,10 @@
-import * as trpc from '@trpc/server';
-import { initTRPC } from '@trpc/server';
+import { initTRPC, router } from '@trpc/server';
 import * as trpcNext from '@trpc/server/adapters/next';
 import { z } from 'zod';
 
-const t = initTRPC.caller();
+const t = initTRPC.create();
 
-const legacyRouter = trpc
-  .router()
+const legacyRouter = router()
   .query('hello', {
     input: z
       .object({
@@ -22,9 +20,9 @@ const legacyRouter = trpc
   .interop();
 
 const v10Router = t.router({
-  foo: t.query(() => 'bar' as const),
+  foo: t.procedure.query(() => 'bar' as const),
 });
-const appRouter = t.merge(legacyRouter, legacyRouter);
+const appRouter = t.mergeRouters(legacyRouter, v10Router);
 
 // export type definition of API
 export type AppRouter = typeof appRouter;
