@@ -55,7 +55,7 @@ interface Meta {
   };
 }
 
-export const t = trpc
+export const t = initTRPC
   .context<Context>()
   .meta<Meta>()
   .create({
