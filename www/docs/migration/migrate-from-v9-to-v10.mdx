@@ -15,7 +15,8 @@ In a gist, what has changed?
 
 ### The `t` variable
 
-> If you don't like the variable name `t`, you can call it whatever you want
+> - If you don't like the variable name `t`, you can call it whatever you want
+> - You should create your root `t`-variable **exactly once** per application
 
 The way you initialize tRPC on the server has been update, we now create a root `t` variable that contains the root information about your app:
 
@@ -29,7 +30,6 @@ The way the `t` variable is defined is simply like this:
 ```ts title='/src/server/trpc.ts'
 import { initTRPC } from '@trpc/server';
 
-// Beware of the double `()()`
 export const t = initTRPC.create();
 ```
 
