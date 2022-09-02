@@ -58,7 +58,7 @@ test('interop inference', async () => {
     'oldProcedureOutput__input:n/a',
   );
 
-  // FIXME // @ts-expect-error we can't call oldProcedure with proxy
+  // @ts-expect-error we can't call oldProcedure with proxy
   expect(await opts.proxy.oldProcedure.query()).toBe(
     'oldProcedureOutput__input:n/a',
   );
