@@ -18,7 +18,7 @@ interface Meta {
   hasAuth: boolean;
 }
 
-export const t = initTRPC.context<Context; meta: Meta>.create();
+export const t = initTRPC.context<Context>().meta<Meta>().create();
 
 export const appRouter = t.router({
   // [...]
