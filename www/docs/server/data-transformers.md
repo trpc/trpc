@@ -19,7 +19,7 @@ SuperJSON allows us to transparently use e.g. standard `Date`/`Map`/`Set`s over 
 yarn add superjson
 ```
 
-#### 2. Add to your `trpc`
+#### 2. Add to your `initTRPC`
 
 ```ts title='routers/router/_app.ts'
 import { initTRPC } from '@trpc/server';
