@@ -1,4 +1,5 @@
 import { mergeRoutersGeneric } from './internals/__generated__/mergeRoutersGeneric';
+import { Simplify } from '..';
 import {
   DefaultErrorShape,
   ErrorFormatter,
@@ -65,7 +66,7 @@ class TRPCBuilder<TParams extends Partial<InitGenerics> = {}> {
         >
       | undefined,
   ) {
-    return createTRPCInner<TParams>()<TOptions>(options);
+    return createTRPCInner<Simplify<TParams>>()<Simplify<TOptions>>(options);
   }
 }
 

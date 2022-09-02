@@ -42,6 +42,11 @@ export type Maybe<T> = T | undefined | null;
 export type ThenArg<T> = T extends PromiseLike<infer U> ? ThenArg<U> : T;
 
 /**
+ * @internal
+ */
+export type Simplify<T> = { [KeyType in keyof T]: T[KeyType] };
+
+/**
  * @public
  */
 export type Dict<T> = Record<string, T | undefined>;
