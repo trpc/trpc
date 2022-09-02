@@ -1,6 +1,6 @@
 import './___packages';
 import { expectTypeOf } from 'expect-type';
-import { trpc } from '../src/core';
+import { trpc } from '../src';
 import {
   CombinedDataTransformer,
   DataTransformerOptions,
@@ -41,7 +41,7 @@ test('meta typings', () => {
   type Meta = { __META__: true };
   const meta: Meta = { __META__: true };
 
-  const t = initTRPC<{ meta: Meta }>()();
+  const t = trpc.meta<Meta>().create();
 
   const procedure = t.procedure.meta(meta);
 
