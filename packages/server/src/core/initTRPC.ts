@@ -23,7 +23,7 @@ import { PickFirstDefined, ValidateShape } from './internals/utils';
 import { createMiddlewareFactory } from './middleware';
 import { createRouterFactory } from './router';
 
-export class TRPCBuilder<TParams extends Partial<InitGenerics> = {}> {
+class TRPCBuilder<TParams extends Partial<InitGenerics> = {}> {
   context<TNewContext extends InitGenerics['ctx']>() {
     return new TRPCBuilder<Omit<TParams, 'ctx'> & { ctx: TNewContext }>();
   }
