@@ -20,7 +20,7 @@ export default function IndexPage() {
       {/* the type is define, it can be autocompleted */}
       <h1>{helloQuery.data.greeting}</h1>
 
-      <pre>{JSON.stringify(fooQuery2, null, 4)}</pre>
+      <pre>{JSON.stringify(fooQuery2.data, null, 4)}</pre>
     </div>
   );
 }
