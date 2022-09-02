@@ -1,6 +1,7 @@
-import { Logger, QueryClient } from '@tanstack/react-query';
+import { Logger, QueryClient, QueryClientConfig } from '@tanstack/react-query';
 
-export function createQueryClient() {
+type Config = Omit<Partial<QueryClientConfig>, 'logger'>;
+export function createQueryClientOptions(config: Config | undefined) {
   type LogFn = Logger['error'];
   const noopLogFn: LogFn = () => {
     // noop
@@ -10,13 +11,27 @@ export function createQueryClient() {
     warn: jest.fn(noopLogFn),
     log: jest.fn(noopLogFn),
   };
-
-  const queryClient = new QueryClient({
+  return {
+    ...config,
     logger,
-  }) as QueryClient & {
-    $logger: typeof logger;
+    defaultOptions: {
+      ...config?.defaultOptions,
+      queries: {
+        retryDelay() {
+          return 1;
+        },
+        ...config?.defaultOptions?.queries,
+      },
+    },
   };
-  queryClient.$logger = logger;
+}
+
+export function createQueryClient(config?: Config) {
+  const options = createQueryClientOptions(config);
+  const queryClient = new QueryClient(options) as QueryClient & {
+    $logger: typeof options.logger;
+  };
+  queryClient.$logger = options.logger;
 
   return queryClient;
 }
