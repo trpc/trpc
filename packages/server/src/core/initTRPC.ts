@@ -23,6 +23,13 @@ import { PickFirstDefined, ValidateShape } from './internals/utils';
 import { createMiddlewareFactory } from './middleware';
 import { createRouterFactory } from './router';
 
+/**
+ * TODO: This can be improved:
+ * - We should be able to chain `.meta()`/`.context()` only once
+ * - Simplify typings
+ * - Doesn't need to be a class but it doesn't really hurt either
+ */
+
 class TRPCBuilder<TParams extends Partial<InitGenerics> = {}> {
   context<TNewContext extends InitGenerics['ctx']>() {
     return new TRPCBuilder<Omit<TParams, 'ctx'> & { ctx: TNewContext }>();
