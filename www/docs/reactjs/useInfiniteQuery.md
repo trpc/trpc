@@ -19,7 +19,7 @@ slug: /useInfiniteQuery
 import { initTRPC } from '@trpc/server'
 import { Context } from './[trpc]';
 
-export const t = initTRPC()()
+export const t = initTRPC.create()
 
 export const appRouter = t.router({
   infinitePosts: t

@@ -26,7 +26,7 @@ You'll notice that you get autocompletion on the `path` and automatic typesafety
 import { initTRPC } from '@trpc/server'
 import { z } from 'zod';
 
-export const t = initTRPC()()
+export const t = initTRPC.create()
 
 export const appRouter = t.router({
   // Create procedure at path 'hello'

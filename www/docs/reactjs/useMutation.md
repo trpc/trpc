@@ -17,7 +17,7 @@ Works like react-query's mutations - [see their docs](https://react-query.tansta
 import { initTRPC } from '@trpc/server'
 import { z } from 'zod';
 
-export const t = initTRPC()()
+export const t = initTRPC.create()
 
 export const appRouter = t.router({
   // Create procedure at path 'login'

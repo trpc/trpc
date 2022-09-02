@@ -65,7 +65,7 @@ type User = {
 
 const users: Record<string, User> = {};
 
-export const t = initTRPC()();
+export const t = initTRPC.create();
 
 export const appRouter = t.router({
   getUserById: t.procedure.input(z.string()).query(({ input }) => {
@@ -184,7 +184,7 @@ Edit the `router.ts` file created in the previous steps and add the following co
 import { initTRPC } from '@trpc/server';
 import { observable } from '@trpc/server/observable';
 
-const t = initTRPC()();
+const t = initTRPC.create();
 
 export const appRouter = t.router({
   randomNumber: t.procedure.subscription(() => {

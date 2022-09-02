@@ -164,13 +164,13 @@ type Context = {
   };
 };
 
-export const t = initTRPC<{
-  ctx: Context;
-}>()({
-  /* optional */
-  transformer: superjson,
-  // errorFormatter: [...]
-});
+export const t = initTRPC
+  .context<Context>()
+  .create({
+    /* optional */
+    transformer: superjson,
+    // errorFormatter: [...]
+  });
 
 const {
   /**
@@ -189,7 +189,7 @@ const {
    * Merge Routers
    */
   mergeRouters,
-} = trpc;
+} = t;
 ```
 
 #### §1.1 Creating a router

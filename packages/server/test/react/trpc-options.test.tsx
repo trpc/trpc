@@ -7,7 +7,7 @@ import { initTRPC } from '../../src';
 
 const ctx = konn()
   .beforeEach(() => {
-    const t = initTRPC()();
+    const t = initTRPC.create();
     const appRouter = t.router({
       greeting: t.procedure
         .input(

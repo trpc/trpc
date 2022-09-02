@@ -39,5 +39,5 @@ type Context = trpc.inferAsyncReturnType<typeof createContext>;
 import { TRPCError, initTRPC } from '@trpc/server';
 import { Context } from '../context';
 
-export const t = initTRPC<{ ctx: Context }>()();
+export const t = initTRPC.context<Context>.create();
 ```
