@@ -6,6 +6,10 @@ export default function IndexPage() {
   // @ts-expect-error this shouldn't work
   trpc.useQuery(['foo']);
 
+  // @ts-expect-error this shouldn't work
+  const { data: helloProxyData } = proxy.hello.useQuery();
+  //             ^?
+
   const fooQuery2 = proxy.foo.useQuery();
 
   if (!helloQuery.data || !fooQuery2.data) {
