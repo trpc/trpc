@@ -38,7 +38,11 @@ export const postRouter = t.router({
         id: z.string(),
       }),
     )
-    .query(async ({ input }) => {
+    .query(async ({ input, ctx }) => {
+      console.log(
+        '-------------------------------- query hit ---------------',
+        { ctx },
+      );
       const { id } = input;
       const post = await prisma.post.findUnique({
         where: { id },

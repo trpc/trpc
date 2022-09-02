@@ -45,7 +45,7 @@ export interface SSRContext extends NextPageContext {
  * @link https://trpc.io/docs/react#3-create-trpc-hooks
  */
 export const trpc = setupTRPC<AppRouter, SSRContext>({
-  config() {
+  config(opts) {
     /**
      * If you want to use SSR, you need to use the server's full URL
      * @link https://trpc.io/docs/ssr
@@ -70,6 +70,11 @@ export const trpc = setupTRPC<AppRouter, SSRContext>({
           url: `${getBaseUrl()}/api/trpc`,
         }),
       ],
+      headers() {
+        return {
+          'x-ssr': opts.ctx?.req ? '1' : '0',
+        };
+      },
       /**
        * @link https://react-query.tanstack.com/reference/QueryClient
        */
