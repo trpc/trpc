@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-empty-function */
 
 /* eslint-disable @typescript-eslint/ban-ts-comment */
+import { createQueryClient } from '../../__queryClient';
 import { createLegacyAppRouter } from './__testHelpers';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import '@testing-library/jest-dom';
@@ -60,7 +61,7 @@ describe('useMutation()', () => {
     }
 
     function App() {
-      const [queryClient] = useState(() => new QueryClient());
+      const [queryClient] = useState(() => createQueryClient());
       return (
         <trpc.Provider {...{ queryClient, client }}>
           <QueryClientProvider client={queryClient}>
@@ -98,7 +99,7 @@ describe('useMutation()', () => {
     }
 
     function App() {
-      const [queryClient] = useState(() => new QueryClient());
+      const [queryClient] = useState(() => createQueryClient());
       return (
         <trpc.Provider {...{ queryClient, client }}>
           <QueryClientProvider client={queryClient}>
@@ -139,7 +140,7 @@ describe('useMutation()', () => {
     }
 
     function App() {
-      const [queryClient] = useState(() => new QueryClient());
+      const [queryClient] = useState(() => createQueryClient());
       return (
         <trpc.Provider {...{ queryClient, client }}>
           <QueryClientProvider client={queryClient}>
@@ -180,7 +181,7 @@ describe('useMutation()', () => {
     }
 
     function App() {
-      const [queryClient] = useState(() => new QueryClient());
+      const [queryClient] = useState(() => createQueryClient());
       return (
         <trpc.Provider {...{ queryClient, client }}>
           <QueryClientProvider client={queryClient}>
@@ -256,7 +257,7 @@ describe('useMutation()', () => {
     }
 
     function App() {
-      const [queryClient] = useState(() => new QueryClient());
+      const [queryClient] = useState(() => createQueryClient());
       return (
         <trpc.Provider {...{ queryClient, client }}>
           <QueryClientProvider client={queryClient}>
