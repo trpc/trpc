@@ -5,14 +5,14 @@ import { expectTypeOf } from 'expect-type';
 import { konn } from 'konn';
 import React, { useState } from 'react';
 import { z } from 'zod';
-import { trpc } from '../../src';
+import { initTRPC } from '../../src';
 import { observable } from '../../src/observable';
 
 const ee = new EventEmitter();
 
 const ctx = konn()
   .beforeEach(() => {
-    const t = trpc.create({
+    const t = initTRPC.create({
       errorFormatter({ shape }) {
         return {
           ...shape,

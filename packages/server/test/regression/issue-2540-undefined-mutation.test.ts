@@ -3,10 +3,10 @@ import { routerToServerAndClientNew } from '../___testHelpers';
 import { httpBatchLink, httpLink } from '@trpc/client';
 import { konn } from 'konn';
 import superjson from 'superjson';
-import { trpc } from '../../src';
+import { initTRPC } from '../../src';
 
 describe('no transformer', () => {
-  const t = trpc.create();
+  const t = initTRPC.create();
   const appRouter = t.router({
     goodQuery: t.procedure.query(async () => {
       return 'good' as const;
@@ -169,7 +169,7 @@ describe('no transformer', () => {
 });
 
 describe('with superjson', () => {
-  const t = trpc.create({
+  const t = initTRPC.create({
     transformer: superjson,
   });
   const appRouter = t.router({

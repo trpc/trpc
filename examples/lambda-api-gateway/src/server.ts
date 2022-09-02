@@ -1,4 +1,4 @@
-import { inferAsyncReturnType, trpc } from '@trpc/server';
+import { inferAsyncReturnType, initTRPC } from '@trpc/server';
 import { awsLambdaRequestHandler } from '@trpc/server/adapters/aws-lambda';
 import type { CreateAWSLambdaContextOptions } from '@trpc/server/adapters/aws-lambda';
 import type { APIGatewayProxyEvent } from 'aws-lambda';
@@ -16,7 +16,7 @@ function createContext({
 }
 type Context = inferAsyncReturnType<typeof createContext>;
 
-const t = trpc.context<Context>().create();
+const t = initTRPC.context<Context>().create();
 
 const appRouter = t.router({
   greet: t.procedure

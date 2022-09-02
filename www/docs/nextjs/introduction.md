@@ -93,11 +93,11 @@ Implement your tRPC router in `./pages/api/trpc/[trpc].ts`. If you need to split
 <details><summary>View sample router</summary>
 
 ```ts title='./pages/api/trpc/[trpc].ts'
-import { trpc } from '@trpc/server';
+import { initTRPC } from '@trpc/server';
 import * as trpcNext from '@trpc/server/adapters/next';
 import { z } from 'zod';
 
-export const t = trpc.create();
+export const t = initTRPC.create();
 
 export const appRouter = t.router({
   hello: t.procedure

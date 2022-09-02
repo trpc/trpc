@@ -62,7 +62,10 @@ class TRPCBuilder<TParams extends Partial<InitGenerics> = {}> {
   }
 }
 
-export const trpc = new TRPCBuilder();
+/**
+ * Initialize tRPC - be done exactly once per backend
+ */
+export const initTRPC = new TRPCBuilder();
 
 function createTRPCInner<TParams extends Partial<InitGenerics>>() {
   type $Generics = CreateInitGenerics<{

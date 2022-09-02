@@ -36,7 +36,7 @@ We also recommend installing `zod` to validate procedure inputs.
 ## Basic Example
 
 ```ts
-import { inferAsyncReturnType, trpc } from '@trpc/server';
+import { inferAsyncReturnType, initTRPC } from '@trpc/server';
 import {
   CreateHTTPContextOptions,
   createHTTPServer,
@@ -52,7 +52,7 @@ function createContext(opts: CreateHTTPContextOptions) {
 type Context = inferAsyncReturnType<typeof createContext>;
 
 // Initialize tRPC
-const t = trpc.context<Context>.create();
+const t = initTRPC.context<Context>.create();
 
 // Create main router
 const appRouter = t.router({

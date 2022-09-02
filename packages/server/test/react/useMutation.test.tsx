@@ -4,11 +4,11 @@ import { expectTypeOf } from 'expect-type';
 import { konn } from 'konn';
 import React, { useEffect } from 'react';
 import { z } from 'zod';
-import { trpc } from '../../src';
+import { initTRPC } from '../../src';
 
 const ctx = konn()
   .beforeEach(() => {
-    const t = trpc.create({
+    const t = initTRPC.create({
       errorFormatter({ shape }) {
         return {
           ...shape,

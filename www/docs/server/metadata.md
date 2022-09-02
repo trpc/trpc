@@ -10,7 +10,7 @@ Procedure metadata allows you to add an optional procedure specific `meta` prope
 ## Create router with typed metadata
 
 ```tsx
-import { trpc } from '@trpc/server';
+import { initTRPC } from '@trpc/server';
 
 // [...]
 
@@ -18,7 +18,7 @@ interface Meta {
   hasAuth: boolean;
 }
 
-export const t = trpc.context<Context; meta: Meta>.create();
+export const t = initTRPC.context<Context; meta: Meta>.create();
 
 export const appRouter = t.router({
   // [...]
@@ -28,7 +28,7 @@ export const appRouter = t.router({
 ## Example with per route authentication settings
 
 ```tsx title='server.ts'
-import { trpc } from '@trpc/server';
+import { initTRPC } from '@trpc/server';
 
 // [...]
 
@@ -36,7 +36,7 @@ interface Meta {
   hasAuth: boolean;
 }
 
-export const t = trpc.context<Context; meta: Meta>.create();
+export const t = initTRPC.context<Context; meta: Meta>.create();
 
 const isAuthed = t.middleware(async ({ meta, next, ctx }) => {
   // only check authorization if enabled

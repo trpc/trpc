@@ -1,4 +1,4 @@
-import { TRPCError, inferAsyncReturnType, trpc } from '@trpc/server';
+import { TRPCError, inferAsyncReturnType, initTRPC } from '@trpc/server';
 import * as trpcExpress from '@trpc/server/adapters/express';
 import { EventEmitter } from 'events';
 import express from 'express';
@@ -25,7 +25,7 @@ const createContext = ({
 };
 type Context = inferAsyncReturnType<typeof createContext>;
 
-const t = trpc.context<Context>().create();
+const t = initTRPC.context<Context>().create();
 
 // --------- create procedures etc
 

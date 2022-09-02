@@ -45,10 +45,10 @@ yarn add @trpc/server@next
 Implement your tRPC router. A sample router is given below:
 
 ```ts title='server.ts'
-import { trpc } from '@trpc/server';
+import { initTRPC } from '@trpc/server';
 import { z } from 'zod';
 
-export const t = trpc.create();
+export const t = initTRPC.create();
 
 const appRouter = t.router({
   getUser: t.procedure.input(z.string()).query((req) => {

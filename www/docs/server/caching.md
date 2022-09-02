@@ -70,7 +70,7 @@ Since all queries are normal HTTP `GET`s we can use normal HTTP headers to cache
 > Assuming you're deploying your API somewhere that can handle stale-while-revalidate cache headers like Vercel.
 
 ```tsx title='server.ts'
-import { inferAsyncReturnType, trpc } from '@trpc/server';
+import { inferAsyncReturnType, initTRPC } from '@trpc/server';
 import * as trpcNext from '@trpc/server/adapters/next';
 
 export const createContext = async ({
@@ -86,7 +86,7 @@ export const createContext = async ({
 
 type Context = inferAsyncReturnType<typeof createContext>;
 
-export const t = trpc.context<Context>.create();
+export const t = initTRPC.context<Context>.create();
 
 const waitFor = async (ms: number) =>
   new Promise((resolve) => setTimeout(resolve, ms));

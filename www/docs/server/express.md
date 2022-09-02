@@ -44,10 +44,10 @@ yarn add @trpc/server@next zod
 Implement your tRPC router. A sample router is given below:
 
 ```ts title='server.ts'
-import { trpc } from '@trpc/server';
+import { initTRPC } from '@trpc/server';
 import { z } from 'zod';
 
-export const t = trpc.create();
+export const t = initTRPC.create();
 
 export const appRouter = t.router({
   getUser: t.procedure.input(z.string()).query((req) => {
@@ -75,7 +75,7 @@ If your router file starts getting too big, split your router into several subro
 tRPC includes an adapter for Express out of the box. This adapter lets you convert your tRPC router into an Express middleware.
 
 ```ts title='server.ts'
-import { inferAsyncReturnType, trpc } from '@trpc/server';
+import { inferAsyncReturnType, initTRPC } from '@trpc/server';
 import * as trpcExpress from '@trpc/server/adapters/express';
 
 // created for each request
@@ -85,7 +85,7 @@ const createContext = ({
 }: trpcExpress.CreateExpressContextOptions) => ({}); // no context
 type Context = inferAsyncReturnType<typeof createContext>;
 
-const t = trpc.context<Context>.create();
+const t = initTRPC.context<Context>.create();
 const appRouter = t.router({
   // [...]
 });

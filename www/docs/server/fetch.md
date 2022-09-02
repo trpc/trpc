@@ -51,7 +51,7 @@ A sample router is given below, save it in a file named `router.ts`.
   <summary>router.ts</summary>
 
 ```ts title='router.ts'
-import { trpc } from '@trpc/server';
+import { initTRPC } from '@trpc/server';
 import { z } from 'zod';
 import { Context } from './context';
 
@@ -63,7 +63,7 @@ type User = {
 
 const users: Record<string, User> = {};
 
-export const t = trpc.context<Context>.create();
+export const t = initTRPC.context<Context>.create();
 
 export const appRouter = t.router({
   getUserById: t.procedure.input(z.string()).query(({ input }) => {

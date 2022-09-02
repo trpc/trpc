@@ -12,5 +12,5 @@ export type {
 } from './procedure';
 export { createInputMiddleware, createOutputMiddleware } from './middleware';
 
-export { trpc } from './initTRPC';
+export { initTRPC } from './initTRPC';
 export * from './types';

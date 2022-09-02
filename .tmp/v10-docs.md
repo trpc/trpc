@@ -164,7 +164,7 @@ type Context = {
   };
 };
 
-export const t = trpc
+export const t = initTRPC
   .context<Context>()
   .create({
     /* optional */
@@ -189,7 +189,7 @@ const {
    * Merge Routers
    */
   mergeRouters,
-} = trpc;
+} = t;
 ```
 
 #### §1.1 Creating a router

@@ -1,6 +1,6 @@
 import './___packages';
 import { expectTypeOf } from 'expect-type';
-import { trpc } from '../src';
+import { initTRPC } from '../src';
 import {
   CombinedDataTransformer,
   DataTransformerOptions,
@@ -8,7 +8,7 @@ import {
 } from '../src/transformer';
 
 test('default transformer', () => {
-  const t = trpc
+  const t = initTRPC
     .context<{
       foo: 'bar';
     }>()
@@ -25,7 +25,7 @@ test('custom transformer', () => {
     deserialize: (v) => v,
     serialize: (v) => v,
   };
-  const t = trpc.create({
+  const t = initTRPC.create({
     transformer,
   });
   const router = t.router({});
@@ -41,7 +41,7 @@ test('meta typings', () => {
   type Meta = { __META__: true };
   const meta: Meta = { __META__: true };
 
-  const t = trpc.meta<Meta>().create();
+  const t = initTRPC.meta<Meta>().create();
 
   const procedure = t.procedure.meta(meta);
 

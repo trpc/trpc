@@ -1,9 +1,9 @@
 import { waitError } from './___testHelpers';
 import { expectTypeOf } from 'expect-type';
 import { z } from 'zod';
-import { TRPCError, trpc } from '../src';
+import { TRPCError, initTRPC } from '../src';
 
-const t = trpc
+const t = initTRPC
   .context<{
     foo?: 'bar';
   }>()

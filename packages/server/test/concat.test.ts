@@ -1,7 +1,7 @@
 import { routerToServerAndClientNew } from './___testHelpers';
 import { expectTypeOf } from 'expect-type';
 import { konn } from 'konn';
-import { TRPCError, trpc } from '../src';
+import { TRPCError, initTRPC } from '../src';
 
 type User = {
   id: string;
@@ -16,7 +16,7 @@ const mockUser: User = {
 };
 const ctx = konn()
   .beforeEach(() => {
-    const t = trpc.context<Context>().create();
+    const t = initTRPC.context<Context>().create();
 
     const isAuthed = t.middleware(({ next, ctx }) => {
       if (!ctx.user) {

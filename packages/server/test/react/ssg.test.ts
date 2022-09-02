@@ -2,9 +2,9 @@ import { InfiniteData } from '@tanstack/react-query';
 import { expectTypeOf } from 'expect-type';
 import { z } from 'zod';
 import { createProxySSGHelpers } from '../../../react/src/ssg/ssgProxy';
-import { trpc } from '../../src';
+import { initTRPC } from '../../src';
 
-const t = trpc.create();
+const t = initTRPC.create();
 
 const appRouter = t.router({
   post: t.router({

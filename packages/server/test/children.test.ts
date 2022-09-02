@@ -1,9 +1,9 @@
 import { routerToServerAndClientNew } from './___testHelpers';
 import { expectTypeOf } from 'expect-type';
-import { trpc } from '../src';
+import { initTRPC } from '../src';
 
 test('children', async () => {
-  const t = trpc.create();
+  const t = initTRPC.create();
 
   const router = t.router({
     foo: t.procedure.query(() => 'bar'),
@@ -53,7 +53,7 @@ test('children', async () => {
 });
 
 test('w/o children', async () => {
-  const t = trpc.create();
+  const t = initTRPC.create();
 
   const foo = t.procedure.query(() => 'bar');
   const router = t.router({

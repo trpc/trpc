@@ -6,14 +6,14 @@ import { expectTypeOf } from 'expect-type';
 import { konn } from 'konn';
 import React from 'react';
 import { ZodError, z } from 'zod';
-import { trpc } from '../../src';
+import { initTRPC } from '../../src';
 
 jest.retryTimes(3);
 
 describe('custom error formatter', () => {
   const ctx = konn()
     .beforeEach(() => {
-      const t = trpc.create({
+      const t = initTRPC.create({
         errorFormatter({ shape, error }) {
           return {
             ...shape,
@@ -109,7 +109,7 @@ describe('custom error formatter', () => {
 describe('no custom formatter', () => {
   const ctx = konn()
     .beforeEach(() => {
-      const t = trpc.create();
+      const t = initTRPC.create();
       const appRouter = t.router({
         post: t.router({
           byId: t.procedure
@@ -189,7 +189,7 @@ describe('no custom formatter', () => {
 });
 
 test('types', async () => {
-  const t = trpc.create();
+  const t = initTRPC.create();
   const appRouter = t.router({
     post: t.router({
       byId: t.procedure

@@ -22,10 +22,10 @@ yarn add superjson
 #### 2. Add to your `trpc`
 
 ```ts title='routers/router/_app.ts'
-import { trpc } from '@trpc/server';
+import { initTRPC } from '@trpc/server';
 import superjson from 'superjson';
 
-export const t = trpc.create({
+export const t = initTRPC.create({
   transformer: superjson,
 });
 ```
@@ -94,10 +94,10 @@ export const transformer = {
 #### 3. Add to your `AppRouter`
 
 ```ts title='server/routers/_app.ts'
-import { trpc } from '@trpc/server';
+import { initTRPC } from '@trpc/server';
 import { transformer } from '../../utils/trpc';
 
-export const t = trpc.create({
+export const t = initTRPC.create({
   transformer,
 });
 

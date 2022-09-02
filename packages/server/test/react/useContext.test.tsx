@@ -4,7 +4,7 @@ import userEvent from '@testing-library/user-event';
 import { konn } from 'konn';
 import React, { useEffect, useState } from 'react';
 import { z } from 'zod';
-import { trpc } from '../../src/core';
+import { initTRPC } from '../../src/core';
 
 jest.retryTimes(3);
 
@@ -16,7 +16,7 @@ type Post = {
 const defaultPost = { id: 0, text: 'new post' };
 const ctx = konn()
   .beforeEach(() => {
-    const t = trpc.create({
+    const t = initTRPC.create({
       errorFormatter({ shape }) {
         return {
           ...shape,

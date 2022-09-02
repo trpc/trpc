@@ -52,11 +52,11 @@ tRPC provides an error subclass, `TRPCError`, which you can use to represent an 
 For example, throwing this error:
 
 ```ts title='server.ts'
-import { trpc } from '@trpc/server';
+import { initTRPC } from '@trpc/server';
 
-const t = trpc.create();
+const t = initTRPC.create();
 
-const appRouter = trpc.router({
+const appRouter = t.router({
   hello: t.procedure.query(() => {
     throw new trpc.TRPCError({
       code: 'INTERNAL_SERVER_ERROR',

@@ -12,7 +12,7 @@ You are able to add middleware(s) to a procedure with the `t.procedure.use()` me
 In the example below any call to a `protectedProcedure` will ensure that the user is an "admin" before executing.
 
 ```ts
-import { trpc } from '@trpc/server';
+import { initTRPC } from '@trpc/server';
 
 interface Context {
   user?: {
@@ -22,7 +22,7 @@ interface Context {
   };
 }
 
-export const t = trpc.context<Context>.create();
+export const t = initTRPC.context<Context>.create();
 
 const isAdmin = t.middleware(async ({ ctx, next }) => {
   if (!ctx.user?.isAdmin) {
@@ -56,9 +56,9 @@ See [Error Handling](error-handling.md) to learn more about the `TRPCError` thro
 In the example below timings for queries are logged automatically.
 
 ```ts
-import { trpc } from '@trpc/server';
+import { initTRPC } from '@trpc/server';
 
-export const t = trpc.context<Context>.create();
+export const t = initTRPC.context<Context>.create();
 
 const logger = t.middleware(async ({ path, type, next }) => {
   const start = Date.now();
@@ -84,7 +84,7 @@ export const appRouter = t.router({
 A middleware can change properties of the context, and procedures will receive the new context value:
 
 ```ts
-import { trpc } from '@trpc/server';
+import { initTRPC } from '@trpc/server';
 
 interface Context {
   // user is nullable
@@ -93,7 +93,7 @@ interface Context {
   };
 }
 
-export const t = trpc.context<Context>.create();
+export const t = initTRPC.context<Context>.create();
 
 const isAuthed = t.middleware(({ ctx, next }) => {
   if (!ctx.user) {
@@ -123,9 +123,9 @@ The `rawInput` passed to a middleware has not yet been validated by a procedure'
 :::
 
 ```ts
-import { trpc } from '@trpc/server';
+import { initTRPC } from '@trpc/server';
 
-export const t = trpc.create();
+export const t = initTRPC.create();
 
 const inputSchema = z.object({ userId: z.string() });
 
