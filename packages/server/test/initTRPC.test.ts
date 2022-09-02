@@ -1,6 +1,6 @@
 import './___packages';
 import { expectTypeOf } from 'expect-type';
-import { initTRPC } from '../src';
+import { DefaultErrorShape, initTRPC } from '../src';
 import {
   CombinedDataTransformer,
   DataTransformerOptions,
@@ -47,4 +47,37 @@ test('meta typings', () => {
 
   expect(procedure._def.meta).toBe(meta);
   expectTypeOf(procedure._def.meta).toMatchTypeOf<Meta | undefined>();
+});
+
+test('config types', () => {
+  {
+    const t = initTRPC.create();
+
+    t._config;
+    // ^?
+    expectTypeOf(t._config['ctx']).toEqualTypeOf<{}>();
+    expectTypeOf(t._config['meta']).toEqualTypeOf<{}>();
+  }
+
+  {
+    type Meta = {
+      foo: 'bar';
+    };
+    type Context = {
+      bar: 'foo';
+    };
+    const t = initTRPC.meta<Meta>().context<Context>().create();
+
+    t._config;
+    // ^?
+    expectTypeOf(t._config['ctx']).toEqualTypeOf<Context>();
+    expectTypeOf(t._config['meta']).toEqualTypeOf<Meta>();
+
+    expectTypeOf(t._config).toEqualTypeOf<{
+      ctx: Context;
+      meta: Meta;
+      errorShape: DefaultErrorShape;
+      transformer: DefaultDataTransformer;
+    }>();
+  }
 });

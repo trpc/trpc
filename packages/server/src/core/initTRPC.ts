@@ -1,5 +1,4 @@
 import { mergeRoutersGeneric } from './internals/__generated__/mergeRoutersGeneric';
-import { Simplify } from '..';
 import {
   DefaultErrorShape,
   ErrorFormatter,
@@ -13,6 +12,7 @@ import {
   defaultTransformer,
   getDataTransformer,
 } from '../transformer';
+import { FlatOverwrite } from '../types';
 import {
   CreateInitGenerics,
   CreateRootConfig,
@@ -24,6 +24,14 @@ import { PickFirstDefined, ValidateShape } from './internals/utils';
 import { createMiddlewareFactory } from './middleware';
 import { createRouterFactory } from './router';
 
+type PartialInitGenerics = Partial<InitGenerics>;
+
+type CreateInitGenericsFromPartial<T extends PartialInitGenerics> =
+  CreateInitGenerics<{
+    ctx: T['ctx'] extends InitGenerics['ctx'] ? T['ctx'] : {};
+    meta: T['meta'] extends InitGenerics['meta'] ? T['meta'] : {};
+  }>;
+
 /**
  * TODO: This can be improved:
  * - We should be able to chain `.meta()`/`.context()` only once
@@ -33,40 +41,24 @@ import { createRouterFactory } from './router';
 
 class TRPCBuilder<TParams extends Partial<InitGenerics> = {}> {
   context<TNewContext extends InitGenerics['ctx']>() {
-    return new TRPCBuilder<Omit<TParams, 'ctx'> & { ctx: TNewContext }>();
+    return new TRPCBuilder<FlatOverwrite<TParams, { ctx: TNewContext }>>();
   }
   meta<TNewMeta extends InitGenerics['meta']>() {
-    return new TRPCBuilder<Omit<TParams, 'meta'> & { meta: TNewMeta }>();
+    return new TRPCBuilder<FlatOverwrite<TParams, { meta: TNewMeta }>>();
   }
   create<
     TOptions extends Partial<
-      InitOptions<{
-        ctx: TParams['ctx'] extends undefined
-          ? {}
-          : NonNullable<TParams['ctx']>;
-        meta: TParams['meta'] extends undefined
-          ? {}
-          : NonNullable<TParams['meta']>;
-      }>
+      InitOptions<CreateInitGenericsFromPartial<TParams>>
     >,
   >(
     options?:
       | ValidateShape<
           TOptions,
-          Partial<
-            InitOptions<{
-              ctx: TParams['ctx'] extends undefined
-                ? {}
-                : NonNullable<TParams['ctx']>;
-              meta: TParams['meta'] extends undefined
-                ? {}
-                : NonNullable<TParams['meta']>;
-            }>
-          >
+          Partial<InitOptions<CreateInitGenericsFromPartial<TParams>>>
         >
       | undefined,
   ) {
-    return createTRPCInner<Simplify<TParams>>()<Simplify<TOptions>>(options);
+    return createTRPCInner<TParams>()<TOptions>(options);
   }
 }
 
@@ -76,13 +68,10 @@ class TRPCBuilder<TParams extends Partial<InitGenerics> = {}> {
 export const initTRPC = new TRPCBuilder();
 
 function createTRPCInner<TParams extends Partial<InitGenerics>>() {
-  type $Generics = CreateInitGenerics<{
-    ctx: TParams['ctx'] extends undefined ? {} : NonNullable<TParams['ctx']>;
-    meta: TParams['meta'] extends undefined ? {} : NonNullable<TParams['meta']>;
-  }>;
+  type $Generics = CreateInitGenericsFromPartial<TParams>;
 
   type $Context = $Generics['ctx'];
-  type $Meta = PickFirstDefined<$Generics['meta'], undefined>;
+  type $Meta = $Generics['meta'];
   type $Options = Partial<InitOptions<$Generics>>;
 
   return function initTRPCInner<TOptions extends $Options>(
