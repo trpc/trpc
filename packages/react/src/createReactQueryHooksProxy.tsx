@@ -13,9 +13,10 @@ import {
   inferProcedureOutput,
 } from '@trpc/server';
 import { inferObservableValue } from '@trpc/server/observable';
-import { useMemo } from 'react';
+import { ReactNode, useMemo } from 'react';
 import {
   CreateReactQueryHooks,
+  TRPCProviderProps,
   UseTRPCInfiniteQueryOptions,
   UseTRPCMutationOptions,
   UseTRPCQueryOptions,
@@ -153,8 +154,8 @@ export function createReactQueryHooksProxy<
 
   return proxy as {
     useContext(): DecoratedProcedureUtilsRecord<TRouter>;
-  } & CreateReactQueryHooks<TRouter> &
-    DecoratedProcedureRecord<TRouter['_def']['record']>;
+    Provider(props: TRPCProviderProps<TRouter, TSSRContext>): JSX.Element;
+  } & DecoratedProcedureRecord<TRouter['_def']['record']>;
 }
 
 export function createTRPCReact<
@@ -162,7 +163,7 @@ export function createTRPCReact<
   TSSRContext = unknown,
 >() {
   const hooks = createReactQueryHooks<TRouter, TSSRContext>();
-  const proxy = createReactQueryHooksProxy(hooks);
+  const proxy = createReactQueryHooksProxy<TRouter, TSSRContext>(hooks);
 
   return proxy;
 }
