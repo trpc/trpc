@@ -54,6 +54,7 @@ function transformQueryOrMutationCacheErrors<
 export type WithTRPCConfig<TRouter extends AnyRouter> =
   CreateTRPCClientOptions<TRouter> & {
     queryClientConfig?: QueryClientConfig;
+    abortOnUnmount?: boolean;
   };
 
 interface WithTRPCOptions<TRouter extends AnyRouter> {
@@ -94,23 +95,36 @@ export function withTRPC<
         trpc?: TRPCPrepassProps;
       },
     ) => {
-      const [{ queryClient, trpcClient, ssrState, ssrContext }] = useState(
-        () => {
-          if (props.trpc) {
-            return props.trpc;
-          }
+      const [
+        /**
+         * this shouldn't need to be part of prepass props? below fails though
+         *  TRPCPressProps |  {
+         *    abortOnUnmount: boolean;
+         *    queryClient: QueryClient;
+         *    trpcClient: TRPCClient<TRouter>;
+         *    ssrState: false | "mounting";
+         *    ssrContext: null;
+         *  }
+         *  */
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+        // @ts-ignore
+        { abortOnUnmount, queryClient, trpcClient, ssrState, ssrContext },
+      ] = useState(() => {
+        if (props.trpc) {
+          return props.trpc;
+        }
 
-          const config = getClientConfig({});
-          const queryClient = new QueryClient(config.queryClientConfig);
-          const trpcClient = trpc.createClient(config);
-          return {
-            queryClient,
-            trpcClient,
-            ssrState: opts.ssr ? ('mounting' as const) : (false as const),
-            ssrContext: null,
-          };
-        },
-      );
+        const config = getClientConfig({});
+        const queryClient = new QueryClient(config.queryClientConfig);
+        const trpcClient = trpc.createClient(config);
+        return {
+          abortOnUnmount: config.abortOnUnmount ?? false,
+          queryClient,
+          trpcClient,
+          ssrState: opts.ssr ? ('mounting' as const) : (false as const),
+          ssrContext: null,
+        };
+      });
 
       const hydratedState = trpc.useDehydratedState(
         trpcClient,
@@ -119,6 +133,7 @@ export function withTRPC<
 
       return (
         <trpc.Provider
+          abortOnUnmount={abortOnUnmount}
           client={trpcClient}
           queryClient={queryClient}
           ssrState={ssrState}

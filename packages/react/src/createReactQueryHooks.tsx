@@ -54,6 +54,10 @@ export interface TRPCReactRequestOptions
    * Opt out of SSR for this query by passing `ssr: false`
    */
   ssr?: boolean;
+  /**
+   * Opt out or into aborting request on unmount
+   */
+  cancellable?: boolean;
 }
 
 export interface TRPCUseQueryBaseOptions {
@@ -165,13 +169,14 @@ export function createReactQueryHooks<
   }
 
   function TRPCProvider(props: {
+    abortOnUnmount: boolean;
     queryClient: QueryClient;
     client: TRPCClient<TRouter>;
     children: ReactNode;
     ssrContext?: TSSRContext | null;
     ssrState?: SSRState;
   }) {
-    const { client, queryClient, ssrContext } = props;
+    const { abortOnUnmount, client, queryClient, ssrContext } = props;
     const [ssrState, setSSRState] = useState<SSRState>(props.ssrState ?? false);
     useEffect(() => {
       // Only updating state to `mounted` if we are using SSR.
@@ -181,6 +186,7 @@ export function createReactQueryHooks<
     return (
       <Context.Provider
         value={{
+          abortOnUnmount: abortOnUnmount,
           queryClient,
           client,
           ssrContext: ssrContext || null,
@@ -314,7 +320,8 @@ export function createReactQueryHooks<
       TError
     >,
   ): UseQueryResult<TData, TError> {
-    const { client, ssrState, queryClient, prefetchQuery } = useContext();
+    const { abortOnUnmount, client, ssrState, queryClient, prefetchQuery } =
+      useContext();
 
     if (
       typeof window === 'undefined' &&
@@ -326,11 +333,18 @@ export function createReactQueryHooks<
       void prefetchQuery(pathAndInput as any, opts as any);
     }
     const ssrOpts = useSSRQueryOptionsIfNeeded(pathAndInput, opts);
+    // request option should take priority over global
+    const shouldAbortOnUnmount = opts?.trpc?.cancellable ?? abortOnUnmount;
 
     return __useQuery(
       pathAndInput as any,
       ({ signal }) => {
-        const actualOpts = { ...ssrOpts, trpc: { ...ssrOpts?.trpc, signal } };
+        const actualOpts = {
+          ...ssrOpts,
+          trpc: { ...ssrOpts?.trpc },
+          ...(shouldAbortOnUnmount ? { signal } : {}),
+        };
+
         return (client as any).query(
           ...getClientArgs(pathAndInput, actualOpts),
         );

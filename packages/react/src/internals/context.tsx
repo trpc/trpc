@@ -36,6 +36,7 @@ export interface TRPCContextState<
   TRouter extends AnyRouter,
   TSSRContext = undefined,
 > {
+  abortOnUnmount: boolean;
   queryClient: QueryClient;
   client: TRPCClient<TRouter>;
   ssrContext: TSSRContext | null;
