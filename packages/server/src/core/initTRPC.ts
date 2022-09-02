@@ -58,13 +58,13 @@ class TRPCBuilder<TParams extends Partial<InitGenerics> = {}> {
         >
       | undefined,
   ) {
-    return initTRPC<TParams>()<TOptions>(options);
+    return createTRPCInner<TParams>()<TOptions>(options);
   }
 }
 
 export const trpc = new TRPCBuilder();
 
-function initTRPC<TParams extends Partial<InitGenerics>>() {
+function createTRPCInner<TParams extends Partial<InitGenerics>>() {
   type $Generics = CreateInitGenerics<{
     ctx: TParams['ctx'] extends undefined ? {} : NonNullable<TParams['ctx']>;
     meta: TParams['meta'] extends undefined ? {} : NonNullable<TParams['meta']>;
