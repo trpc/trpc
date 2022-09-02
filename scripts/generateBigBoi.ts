@@ -69,7 +69,7 @@ for (let i = 0; i < NUM_PROCEDURE_OBJECTS; i++) {
 }
 
 const trpcFile = `
-import { trpc } from '../../../src';
+import { initTRPC } from '../../../src';
 
 export const t = initTRPC.create();
 `.trim();
