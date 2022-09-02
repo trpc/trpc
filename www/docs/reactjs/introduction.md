@@ -9,7 +9,8 @@ slug: /react
 
 - If you're using Next.js, read the [Usage with Next.js](nextjs) guide instead.
 - In order to infer types from your Node.js backend you should have the frontend & backend in the same monorepo.
-  :::
+
+:::
 
 ## Add tRPC to existing React project
 
@@ -20,19 +21,19 @@ slug: /react
 **npm**
 
 ```bash
-npm install @trpc/server zod
+npm install @trpc/server@next zod
 ```
 
 **yarn**
 
 ```bash
-yarn add @trpc/server zod
+yarn add @trpc/server@next zod
 ```
 
 **pnpm**
 
 ```bash
-pnpm add @trpc/server zod
+pnpm add @trpc/server@next zod
 ```
 
 ##### Why Zod?
@@ -70,19 +71,19 @@ Follow the [Quickstart](quickstart) and read the [`@trpc/server` docs](router) f
 **npm**
 
 ```bash
-npm install @trpc/client @trpc/server @trpc/react @tanstack/react-query
+npm install @trpc/client@next @trpc/server@next @trpc/react@next @tanstack/react-query
 ```
 
 **yarn**
 
 ```bash
-yarn add @trpc/client @trpc/server @trpc/react @tanstack/react-query
+yarn add @trpc/client@next @trpc/server@next @trpc/react@next @tanstack/react-query
 ```
 
 **pnpm**
 
 ```bash
-pnpm add @trpc/client @trpc/server @trpc/react @tanstack/react-query
+pnpm add @trpc/client@next @trpc/server@next @trpc/react@next @tanstack/react-query
 ```
 
 ##### Why `@trpc/server`?
@@ -140,7 +141,7 @@ export function App() {
 import { trpc } from '../utils/trpc';
 
 export default function IndexPage() {
-  const hello = trpc.proxy.hello.useQuery({ text: 'client' });
+  const hello = trpc.hello.useQuery({ text: 'client' });
   if (!hello.data) return <div>Loading...</div>;
   return (
     <div>

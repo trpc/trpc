@@ -47,19 +47,19 @@ Recommended but not enforced file structure. This is what you get when starting 
 **npm**
 
 ```bash
-npm install @trpc/server @trpc/client @trpc/react @trpc/next @tanstack/react-query
+npm install @trpc/server@next @trpc/client@next @trpc/react@next @trpc/next@next @tanstack/react-query
 ```
 
 **yarn**
 
 ```bash
-yarn add @trpc/server @trpc/client @trpc/react @trpc/next @tanstack/react-query
+yarn add @trpc/server@next @trpc/client@next @trpc/react@next @trpc/next@next @tanstack/react-query
 ```
 
 **pnpm**
 
 ```bash
-pnpm add @trpc/server @trpc/client @trpc/react @trpc/next @tanstack/react-query
+pnpm add @trpc/server@next @trpc/client@next @trpc/react@next @trpc/next@next @tanstack/react-query
 ```
 
 #### Why @tanstack/react-query?
@@ -190,7 +190,7 @@ export default trpc.withTRPC(MyApp);
 import { trpc } from '../utils/trpc';
 
 export default function IndexPage() {
-  const hello = trpc.proxy.hello.useQuery({ text: 'client' });
+  const hello = trpc.hello.useQuery({ text: 'client' });
   if (!hello.data) {
     return <div>Loading...</div>;
   }
@@ -234,7 +234,7 @@ Ability to set request headers and HTTP status when server-side rendering.
 import { setupTRPC } from '@trpc/next';
 import type { AppRouter } from '../pages/api/trpc/[trpc]';
 
-export const trpc = setupTRPC({
+export const trpc = setupTRPC<AppRouter>({
   config({ ctx }) {
     /* [...] */
   },

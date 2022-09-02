@@ -7,6 +7,7 @@ import {
   createWSClient,
 } from '@trpc/client/src';
 import { CreateTRPCClientOptions, createTRPCClient } from '@trpc/client/src';
+import { WithTRPCConfig } from '@trpc/next';
 import AbortController from 'abort-controller';
 import fetch from 'node-fetch';
 import ws from 'ws';
@@ -27,12 +28,12 @@ export function routerToServerAndClientNew<TRouter extends AnyNewRouter>(
     wssServer?: Partial<WSSHandlerOptions<TRouter>>;
     wsClient?: Partial<WebSocketClientOptions>;
     client?:
-      | Partial<CreateTRPCClientOptions<TRouter>>
+      | Partial<WithTRPCConfig<TRouter>>
       | ((opts: {
           httpUrl: string;
           wssUrl: string;
           wsClient: TRPCWebSocketClient;
-        }) => Partial<CreateTRPCClientOptions<AnyNewRouter>>);
+        }) => Partial<WithTRPCConfig<AnyNewRouter>>);
   },
 ) {
   // http
@@ -65,7 +66,7 @@ export function routerToServerAndClientNew<TRouter extends AnyNewRouter>(
     url: wssUrl,
     ...opts?.wsClient,
   });
-  const trpcClientOptions: CreateTRPCClientOptions<typeof router> = {
+  const trpcClientOptions: WithTRPCConfig<typeof router> = {
     url: httpUrl,
     ...(opts?.client
       ? typeof opts.client === 'function'

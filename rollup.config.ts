@@ -38,7 +38,7 @@ export const INPUTS: Record<typeof PACKAGES[number], string[]> = {
     'src/links/loggerLink.ts',
     'src/links/wsLink.ts',
   ],
-  react: ['src/index.ts', 'src/ssg/index.ts'],
+  react: ['src/index.ts', 'src/ssg/index.ts', 'src/shared/index.ts'],
   next: ['src/index.ts'],
 };
 

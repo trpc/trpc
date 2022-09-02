@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-non-null-assertion */
 import {
   UseInfiniteQueryResult,
   UseMutationResult,
@@ -14,7 +13,6 @@ import {
   inferProcedureOutput,
 } from '@trpc/server';
 import { inferObservableValue } from '@trpc/server/observable';
-import { createProxy } from '@trpc/server/shared';
 import { useMemo } from 'react';
 import {
   CreateReactQueryHooks,
@@ -24,11 +22,11 @@ import {
   UseTRPCSubscriptionOptions,
   createReactQueryHooks,
 } from './createReactQueryHooks';
-import { getQueryKey } from './internals/getQueryKey';
 import {
   DecoratedProcedureUtilsRecord,
+  createReactProxyDecoration,
   createReactQueryUtilsProxy,
-} from './internals/utilsProxy';
+} from './shared';
 
 type DecorateProcedure<
   TProcedure extends Procedure<any>,
@@ -145,24 +143,7 @@ export function createReactQueryHooksProxy<
         }
 
         if (typeof name === 'string') {
-          return createProxy((opts) => {
-            const args = opts.args;
-
-            const pathCopy = [name, ...opts.path];
-
-            // The last arg is for instance `.useMutation` or `.useQuery()`
-            const lastArg = pathCopy.pop()!;
-
-            // The `path` ends up being something like `post.byId`
-            const path = pathCopy.join('.');
-            if (lastArg === 'useMutation') {
-              return (trpc as any)[lastArg](path, ...args);
-            }
-            const [input, ...rest] = args;
-
-            const queryKey = getQueryKey(path, input);
-            return (trpc as any)[lastArg](queryKey, ...rest);
-          });
+          return createReactProxyDecoration(name, trpc);
         }
 
         throw new Error('Not supported');

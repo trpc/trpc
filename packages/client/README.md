@@ -22,13 +22,13 @@ Full documentation for `@trpc/client` can be found [here](https://trpc.io/docs/v
 
 ```bash
 # npm
-npm install @trpc/client
+npm install @trpc/client@next
 
 # Yarn
-yarn add @trpc/client
+yarn add @trpc/client@next
 
 # pnpm
-pnpm add @trpc/client
+pnpm add @trpc/client@next
 ```
 
 ## Basic Example

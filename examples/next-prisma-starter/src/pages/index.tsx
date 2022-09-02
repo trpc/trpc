@@ -3,10 +3,10 @@ import { NextPageWithLayout } from './_app';
 import Link from 'next/link';
 
 const IndexPage: NextPageWithLayout = () => {
-  const utils = trpc.proxy.useContext();
-  const postsQuery = trpc.proxy.post.list.useQuery();
+  const utils = trpc.useContext();
+  const postsQuery = trpc.post.list.useQuery();
 
-  const addPost = trpc.proxy.post.add.useMutation({
+  const addPost = trpc.post.add.useMutation({
     async onSuccess() {
       // refetches posts after a post is added
       await utils.post.list.invalidate();

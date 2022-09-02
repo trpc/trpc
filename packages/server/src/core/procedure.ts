@@ -2,7 +2,7 @@ import { DefaultErrorShape } from '../error/formatter';
 import { CombinedDataTransformer } from '../transformer';
 import { RootConfig } from './internals/config';
 import {
-  ProcedureBuilderDef,
+  ProcedureBuilder,
   ProcedureCallOptions,
 } from './internals/procedureBuilder';
 import { UnsetMarker } from './internals/utils';
@@ -86,7 +86,7 @@ export type ProcedureArgs<TParams extends ProcedureParams> =
  * @internal
  */
 export interface ProcedureBase<TParams extends ProcedureParams> {
-  _def: TParams & ProcedureBuilderDef;
+  _def: TParams & ProcedureBuilder<TParams>['_def'];
   /**
    * @deprecated use `._def.meta` instead
    */

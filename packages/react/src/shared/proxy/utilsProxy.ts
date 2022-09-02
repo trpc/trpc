@@ -23,8 +23,8 @@ import {
   TRPCContextState,
   TRPCFetchInfiniteQueryOptions,
   TRPCFetchQueryOptions,
-} from './context';
-import { getQueryKey } from './getQueryKey';
+} from '../../internals/context';
+import { getQueryKey } from '../../internals/getQueryKey';
 
 type DecorateProcedure<
   TRouter extends AnyRouter,
@@ -159,6 +159,9 @@ export type DecoratedProcedureUtilsRecord<TRouter extends AnyRouter> =
 
 type AnyDecoratedProcedure = DecorateProcedure<any, any>;
 
+/**
+ * @internal
+ */
 export function createReactQueryUtilsProxy<TRouter extends AnyRouter>(
   context: TRPCContextState<AnyRouter, unknown>,
 ) {

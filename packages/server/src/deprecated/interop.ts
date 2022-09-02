@@ -2,11 +2,11 @@ import { CombinedDataTransformer, ProcedureParams, ProcedureType } from '..';
 import { CreateRootConfig, RootConfig } from '../core/internals/config';
 import { getParseFnOrPassThrough } from '../core/internals/getParseFn';
 import { mergeWithoutOverrides } from '../core/internals/mergeWithoutOverrides';
+import { createBuilder } from '../core/internals/procedureBuilder';
 import {
-  createBuilder,
   createInputMiddleware,
   createOutputMiddleware,
-} from '../core/internals/procedureBuilder';
+} from '../core/middleware';
 import {
   MutationProcedure,
   Procedure as NewProcedure,

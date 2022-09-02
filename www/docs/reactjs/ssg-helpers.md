@@ -57,7 +57,7 @@ export default function PostViewPage(
   const { id } = props;
 
   // This query will be immediately available as it's prefetched.
-  const postQuery = trpc.proxy.post.byId.useQuery({ id });
+  const postQuery = trpc.post.byId.useQuery({ id });
 
   const { data } = postQuery;
 
