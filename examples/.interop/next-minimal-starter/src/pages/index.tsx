@@ -1,9 +1,7 @@
-import { proxy, trpc } from '../utils/trpc';
+import { trpc } from '../utils/trpc';
 
 export default function IndexPage() {
   const hello = trpc.useQuery(['hello', { text: 'client' }]);
-  const helloWithProxy = proxy.hello.useQuery({ text: 'client' });
-
   if (!hello.data) {
     return (
       <div style={styles}>
