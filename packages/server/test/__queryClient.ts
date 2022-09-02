@@ -1,7 +1,7 @@
 import { Logger, QueryClient, QueryClientConfig } from '@tanstack/react-query';
 
 type Config = Omit<Partial<QueryClientConfig>, 'logger'>;
-export function createQueryClientOptions(config: Config | undefined) {
+export function createQueryClientConfig(config: Config | undefined) {
   type LogFn = Logger['error'];
   const noopLogFn: LogFn = () => {
     // noop
@@ -26,8 +26,11 @@ export function createQueryClientOptions(config: Config | undefined) {
   };
 }
 
+/**
+ * Create a QueryClient with default config
+ */
 export function createQueryClient(config?: Config) {
-  const options = createQueryClientOptions(config);
+  const options = createQueryClientConfig(config);
   const queryClient = new QueryClient(options) as QueryClient & {
     $logger: typeof options.logger;
   };
