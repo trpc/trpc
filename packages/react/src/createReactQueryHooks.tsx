@@ -169,14 +169,14 @@ export function createReactQueryHooks<
   }
 
   function TRPCProvider(props: {
-    abortOnUnmount: boolean;
+    abortOnUnmount?: boolean;
     queryClient: QueryClient;
     client: TRPCClient<TRouter>;
     children: ReactNode;
     ssrContext?: TSSRContext | null;
     ssrState?: SSRState;
   }) {
-    const { abortOnUnmount, client, queryClient, ssrContext } = props;
+    const { abortOnUnmount = false, client, queryClient, ssrContext } = props;
     const [ssrState, setSSRState] = useState<SSRState>(props.ssrState ?? false);
     useEffect(() => {
       // Only updating state to `mounted` if we are using SSR.
@@ -186,7 +186,7 @@ export function createReactQueryHooks<
     return (
       <Context.Provider
         value={{
-          abortOnUnmount: abortOnUnmount,
+          abortOnUnmount,
           queryClient,
           client,
           ssrContext: ssrContext || null,
