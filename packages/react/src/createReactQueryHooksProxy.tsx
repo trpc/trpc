@@ -13,6 +13,7 @@ import {
   inferProcedureOutput,
 } from '@trpc/server';
 import { inferObservableValue } from '@trpc/server/observable';
+import { LegacyV9ProcedureTag } from '@trpc/server/shared';
 import { ReactNode, useMemo } from 'react';
 import {
   CreateReactQueryHooks,
@@ -109,7 +110,7 @@ export type DecoratedProcedureRecord<
         TProcedures[TKey]['_def']['record'],
         `${TPath}${TKey & string}.`
       >
-    : TProcedures[TKey] extends { _old: true }
+    : TProcedures[TKey] extends LegacyV9ProcedureTag
     ? never
     : DecorateProcedure<
         assertProcedure<TProcedures[TKey]>,

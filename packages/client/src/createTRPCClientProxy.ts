@@ -14,7 +14,7 @@ import type {
   Unsubscribable,
   inferObservableValue,
 } from '@trpc/server/observable';
-import { createProxy } from '@trpc/server/shared';
+import { LegacyV9ProcedureTag, createProxy } from '@trpc/server/shared';
 import { TRPCClientError } from './TRPCClientError';
 import { CreateTRPCClientOptions, createTRPCClient } from './createTRPCClient';
 import {
@@ -72,7 +72,7 @@ type DecoratedProcedureRecord<
         TProcedures[TKey]['_def']['record'],
         TProcedures[TKey]
       >
-    : TProcedures[TKey] extends { _old: true }
+    : TProcedures[TKey] extends LegacyV9ProcedureTag
     ? never
     : DecorateProcedure<assertProcedure<TProcedures[TKey]>, TRouter>;
 }>;
