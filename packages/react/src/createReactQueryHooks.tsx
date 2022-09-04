@@ -57,7 +57,7 @@ export interface TRPCReactRequestOptions
   /**
    * Opt out or into aborting request on unmount
    */
-  cancellable?: boolean;
+  abortOnUnmount?: boolean;
 }
 
 export interface TRPCUseQueryBaseOptions {
@@ -334,15 +334,19 @@ export function createReactQueryHooks<
     }
     const ssrOpts = useSSRQueryOptionsIfNeeded(pathAndInput, opts);
     // request option should take priority over global
-    const shouldAbortOnUnmount = opts?.trpc?.cancellable ?? abortOnUnmount;
+    const shouldAbortOnUnmount = opts?.trpc?.abortOnUnmount ?? abortOnUnmount;
 
     return __useQuery(
       pathAndInput as any,
-      ({ signal }) => {
+      (queryFunctionContext) => {
         const actualOpts = {
           ...ssrOpts,
-          trpc: { ...ssrOpts?.trpc },
-          ...(shouldAbortOnUnmount ? { signal } : {}),
+          trpc: {
+            ...ssrOpts?.trpc,
+            ...(shouldAbortOnUnmount
+              ? { signal: queryFunctionContext.signal }
+              : {}),
+          },
         };
 
         return (client as any).query(

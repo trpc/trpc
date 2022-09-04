@@ -95,21 +95,7 @@ export function withTRPC<
         trpc?: TRPCPrepassProps;
       },
     ) => {
-      const [
-        /**
-         * this shouldn't need to be part of prepass props? below fails though
-         *  TRPCPressProps |  {
-         *    abortOnUnmount: boolean;
-         *    queryClient: QueryClient;
-         *    trpcClient: TRPCClient<TRouter>;
-         *    ssrState: false | "mounting";
-         *    ssrContext: null;
-         *  }
-         *  */
-        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-        // @ts-ignore
-        { abortOnUnmount, queryClient, trpcClient, ssrState, ssrContext },
-      ] = useState(() => {
+      const [prepassProps] = useState(() => {
         if (props.trpc) {
           return props.trpc;
         }
@@ -118,7 +104,7 @@ export function withTRPC<
         const queryClient = new QueryClient(config.queryClientConfig);
         const trpcClient = trpc.createClient(config);
         return {
-          abortOnUnmount: config.abortOnUnmount ?? false,
+          abortOnUnmount: config.abortOnUnmount,
           queryClient,
           trpcClient,
           ssrState: opts.ssr ? ('mounting' as const) : (false as const),
@@ -126,6 +112,7 @@ export function withTRPC<
         };
       });
 
+      const { queryClient, trpcClient, ssrState, ssrContext } = prepassProps;
       const hydratedState = trpc.useDehydratedState(
         trpcClient,
         props.pageProps?.trpcState,
@@ -133,7 +120,7 @@ export function withTRPC<
 
       return (
         <trpc.Provider
-          abortOnUnmount={abortOnUnmount}
+          abortOnUnmount={(prepassProps as any).abortOnUnmount ?? false}
           client={trpcClient}
           queryClient={queryClient}
           ssrState={ssrState}
