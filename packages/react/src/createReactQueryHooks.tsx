@@ -1,7 +1,6 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 import {
   DehydratedState,
-  QueryClient,
   UseInfiniteQueryOptions,
   UseInfiniteQueryResult,
   UseMutationOptions,
@@ -38,7 +37,12 @@ import React, {
   useMemo,
   useState,
 } from 'react';
-import { SSRState, TRPCContext, TRPCContextState } from './internals/context';
+import {
+  SSRState,
+  TRPCContext,
+  TRPCContextProps,
+  TRPCContextState,
+} from './internals/context';
 
 export type AssertType<T, K> = T extends K ? T : never;
 
@@ -54,6 +58,10 @@ export interface TRPCReactRequestOptions
    * Opt out of SSR for this query by passing `ssr: false`
    */
   ssr?: boolean;
+  /**
+   * Opt out or into aborting request on unmount
+   */
+  abortOnUnmount?: boolean;
 }
 
 export interface TRPCUseQueryBaseOptions {
@@ -128,12 +136,9 @@ function createHookProxy(callback: (...args: [string, ...unknown[]]) => any) {
     },
   });
 }
-export interface TRPCProviderProps<TRouter extends AnyRouter, TSSRContext> {
-  queryClient: QueryClient;
-  client: TRPCClient<TRouter>;
+export interface TRPCProviderProps<TRouter extends AnyRouter, TSSRContext>
+  extends TRPCContextProps<TRouter, TSSRContext> {
   children: ReactNode;
-  ssrContext?: TSSRContext | null;
-  ssrState?: SSRState;
 }
 
 /**
@@ -172,7 +177,7 @@ export function createReactQueryHooks<
   }
 
   function TRPCProvider(props: TRPCProviderProps<TRouter, TSSRContext>) {
-    const { client, queryClient, ssrContext } = props;
+    const { abortOnUnmount = false, client, queryClient, ssrContext } = props;
     const [ssrState, setSSRState] = useState<SSRState>(props.ssrState ?? false);
     useEffect(() => {
       // Only updating state to `mounted` if we are using SSR.
@@ -182,6 +187,7 @@ export function createReactQueryHooks<
     return (
       <Context.Provider
         value={{
+          abortOnUnmount,
           queryClient,
           client,
           ssrContext: ssrContext || null,
@@ -315,7 +321,8 @@ export function createReactQueryHooks<
       TError
     >,
   ): UseQueryResult<TData, TError> {
-    const { client, ssrState, queryClient, prefetchQuery } = useContext();
+    const { abortOnUnmount, client, ssrState, queryClient, prefetchQuery } =
+      useContext();
 
     if (
       typeof window === 'undefined' &&
@@ -327,11 +334,22 @@ export function createReactQueryHooks<
       void prefetchQuery(pathAndInput as any, opts as any);
     }
     const ssrOpts = useSSRQueryOptionsIfNeeded(pathAndInput, opts);
+    // request option should take priority over global
+    const shouldAbortOnUnmount = opts?.trpc?.abortOnUnmount ?? abortOnUnmount;
 
     return __useQuery(
       pathAndInput as any,
-      ({ signal }) => {
-        const actualOpts = { ...ssrOpts, trpc: { ...ssrOpts?.trpc, signal } };
+      (queryFunctionContext) => {
+        const actualOpts = {
+          ...ssrOpts,
+          trpc: {
+            ...ssrOpts?.trpc,
+            ...(shouldAbortOnUnmount
+              ? { signal: queryFunctionContext.signal }
+              : {}),
+          },
+        };
+
         return (client as any).query(
           ...getClientArgs(pathAndInput, actualOpts),
         );
@@ -440,8 +458,13 @@ export function createReactQueryHooks<
     >,
   ): UseInfiniteQueryResult<TQueryValues[TPath]['output'], TError> {
     const [path, input] = pathAndInput;
-    const { client, ssrState, prefetchInfiniteQuery, queryClient } =
-      useContext();
+    const {
+      client,
+      ssrState,
+      prefetchInfiniteQuery,
+      queryClient,
+      abortOnUnmount,
+    } = useContext();
 
     if (
       typeof window === 'undefined' &&
@@ -453,17 +476,34 @@ export function createReactQueryHooks<
       void prefetchInfiniteQuery(pathAndInput as any, opts as any);
     }
 
-    const actualOpts = useSSRQueryOptionsIfNeeded(pathAndInput, opts);
+    const ssrOpts = useSSRQueryOptionsIfNeeded(pathAndInput, opts);
+
+    // request option should take priority over global
+    const shouldAbortOnUnmount = opts?.trpc?.abortOnUnmount ?? abortOnUnmount;
 
     return __useInfiniteQuery(
       pathAndInput as any,
-      ({ pageParam }) => {
-        const actualInput = { ...((input as any) ?? {}), cursor: pageParam };
+      (queryFunctionContext) => {
+        const actualOpts = {
+          ...ssrOpts,
+          trpc: {
+            ...ssrOpts?.trpc,
+            ...(shouldAbortOnUnmount
+              ? { signal: queryFunctionContext.signal }
+              : {}),
+          },
+        };
+
+        const actualInput = {
+          ...((input as any) ?? {}),
+          cursor: queryFunctionContext.pageParam,
+        };
+
         return (client as any).query(
           ...getClientArgs([path, actualInput], actualOpts),
         );
       },
-      actualOpts,
+      ssrOpts,
     );
   }
   function useDehydratedState(

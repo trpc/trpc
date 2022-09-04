@@ -33,7 +33,7 @@ interface CreateTRPCClientBaseOptions {
    */
   fetch?: typeof fetch;
   /**
-   * add ponyfill for AbortController
+   * add polyfill for AbortController
    */
   AbortController?: typeof AbortController;
   /**
