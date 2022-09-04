@@ -19,6 +19,7 @@ import {
   inferProcedureOutput,
 } from '@trpc/server';
 import { createProxy } from '@trpc/server/shared';
+import { LegacyV9ProcedureTag } from '@trpc/server/shared';
 import {
   TRPCContextState,
   TRPCFetchInfiniteQueryOptions,
@@ -149,7 +150,9 @@ type DecorateProcedure<
  */
 export type DecoratedProcedureUtilsRecord<TRouter extends AnyRouter> =
   OmitNeverKeys<{
-    [TKey in keyof TRouter['_def']['record']]: TRouter['_def']['record'][TKey] extends AnyRouter
+    [TKey in keyof TRouter['_def']['record']]: TRouter['_def']['record'][TKey] extends LegacyV9ProcedureTag
+      ? never
+      : TRouter['_def']['record'][TKey] extends AnyRouter
       ? DecoratedProcedureUtilsRecord<TRouter['_def']['record'][TKey]>
       : // utils only apply to queries
       TRouter['_def']['record'][TKey] extends QueryProcedure<any>

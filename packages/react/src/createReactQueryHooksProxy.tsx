@@ -14,7 +14,7 @@ import {
 } from '@trpc/server';
 import { inferObservableValue } from '@trpc/server/observable';
 import { LegacyV9ProcedureTag } from '@trpc/server/shared';
-import { ReactNode, useMemo } from 'react';
+import { useMemo } from 'react';
 import {
   CreateReactQueryHooks,
   TRPCProviderProps,
