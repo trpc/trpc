@@ -2,7 +2,7 @@ import { routerToServerAndClientNew } from '../___testHelpers';
 import { createQueryClient } from '../__queryClient';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { render, waitFor } from '@testing-library/react';
-import { createReactQueryHooks, createReactQueryHooksProxy } from '@trpc/react';
+import { createReactQueryHooks } from '@trpc/react';
 import { expectTypeOf } from 'expect-type';
 import { konn } from 'konn';
 import React, { useState } from 'react';
@@ -110,10 +110,10 @@ test('useQuery()', async () => {
 });
 
 test("we can use new router's procedures too", async () => {
-  const { react, client, appRouter } = ctx;
-  const proxy = createReactQueryHooksProxy<typeof appRouter>(react);
+  const { react, client } = ctx;
+
   function MyComponent() {
-    const query1 = proxy.newProcedure.useQuery();
+    const query1 = react.proxy.newProcedure.useQuery();
     if (!query1.data) {
       return <>...</>;
     }
@@ -142,11 +142,11 @@ test("we can use new router's procedures too", async () => {
 });
 
 test("old procedures can't be used in interop", async () => {
-  const { react, client, appRouter } = ctx;
-  const proxy = createReactQueryHooksProxy<typeof appRouter>(react);
+  const { react, client } = ctx;
+
   function MyComponent() {
     // @ts-expect-error we can't call oldProcedure with proxy
-    proxy.oldProcedure.useQuery();
+    react.proxy.oldProcedure.useQuery();
 
     return <>__hello</>;
   }

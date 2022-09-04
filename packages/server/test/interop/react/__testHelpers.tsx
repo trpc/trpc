@@ -5,7 +5,7 @@ import {
   createQueryClient,
   createQueryClientConfig,
 } from '../../__queryClient';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { QueryClientProvider } from '@tanstack/react-query';
 import '@testing-library/jest-dom';
 import { httpBatchLink } from '@trpc/client/src/links/httpBatchLink';
 import { splitLink } from '@trpc/client/src/links/splitLink';
@@ -14,13 +14,11 @@ import {
   createWSClient,
   wsLink,
 } from '@trpc/client/src/links/wsLink';
+import { createReactQueryHooks } from '@trpc/react';
 import hash from 'hash-sum';
-import React, { ReactNode, useState } from 'react';
+import React, { ReactNode } from 'react';
 import { ZodError, z } from 'zod';
-import {
-  OutputWithCursor,
-  createReactQueryHooks,
-} from '../../../../react/src/createReactQueryHooks';
+import { OutputWithCursor } from '../../../../react/src/internals/createHooksInternal';
 import { TRPCError } from '../../../src/error/TRPCError';
 import { observable } from '../../../src/observable';
 import { subscriptionPullFactory } from '../../../src/subscription';

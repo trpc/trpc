@@ -22,8 +22,8 @@ import {
   UseTRPCMutationOptions,
   UseTRPCQueryOptions,
   UseTRPCSubscriptionOptions,
-  createReactQueryHooks,
-} from './createReactQueryHooks';
+  createHooksInternal,
+} from './internals/createHooksInternal';
 import {
   DecoratedProcedureUtilsRecord,
   createReactProxyDecoration,
@@ -105,13 +105,13 @@ export type DecoratedProcedureRecord<
   TProcedures extends ProcedureRouterRecord,
   TPath extends string = '',
 > = {
-  [TKey in keyof TProcedures]: TProcedures[TKey] extends AnyRouter
+  [TKey in keyof TProcedures]: TProcedures[TKey] extends LegacyV9ProcedureTag
+    ? never
+    : TProcedures[TKey] extends AnyRouter
     ? DecoratedProcedureRecord<
         TProcedures[TKey]['_def']['record'],
         `${TPath}${TKey & string}.`
       >
-    : TProcedures[TKey] extends LegacyV9ProcedureTag
-    ? never
     : DecorateProcedure<
         assertProcedure<TProcedures[TKey]>,
         `${TPath}${TKey & string}`
@@ -119,10 +119,9 @@ export type DecoratedProcedureRecord<
 };
 
 /**
- * @deprecated use `createTRPCReact` instead
  * @internal
  */
-export function createReactQueryHooksProxy<
+export function createHooksInternalProxy<
   TRouter extends AnyRouter,
   TSSRContext = unknown,
 >(trpc: CreateReactQueryHooks<TRouter, TSSRContext>) {
@@ -165,8 +164,8 @@ export function createTRPCReact<
   TRouter extends AnyRouter,
   TSSRContext = unknown,
 >() {
-  const hooks = createReactQueryHooks<TRouter, TSSRContext>();
-  const proxy = createReactQueryHooksProxy<TRouter, TSSRContext>(hooks);
+  const hooks = createHooksInternal<TRouter, TSSRContext>();
+  const proxy = createHooksInternalProxy<TRouter, TSSRContext>(hooks);
 
   return proxy;
 }

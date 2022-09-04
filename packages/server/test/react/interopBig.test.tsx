@@ -4,7 +4,7 @@ import { bigRouter as bigV9Router } from '../__generated__/bigLegacyRouter/bigRo
 import { createQueryClient } from '../__queryClient';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { render, waitFor } from '@testing-library/react';
-import { createReactQueryHooks, createReactQueryHooksProxy } from '@trpc/react';
+import { createReactQueryHooks } from '@trpc/react';
 import { expectTypeOf } from 'expect-type';
 import { konn } from 'konn';
 import React, { useState } from 'react';
@@ -45,9 +45,9 @@ test('vanilla', async () => {
 
 test('react', async () => {
   const { react, client, appRouter } = ctx;
-  const proxy = createReactQueryHooksProxy<typeof appRouter>(react);
+
   function MyComponent() {
-    const query1 = proxy.r499.greeting.useQuery({ who: 'KATT' });
+    const query1 = react.proxy.r499.greeting.useQuery({ who: 'KATT' });
 
     if (!query1.data) {
       return <>...</>;

@@ -1,8 +1,8 @@
 import { routerToServerAndClientNew } from '../___testHelpers';
 import { createQueryClient } from '../__queryClient';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { QueryClientProvider } from '@tanstack/react-query';
 import { Operation, httpBatchLink, splitLink, wsLink } from '@trpc/client';
-import React, { ReactNode, useState } from 'react';
+import React, { ReactNode } from 'react';
 import { createTRPCReact } from '../../../react/src';
 import { AnyRouter } from '../../src/core';
 

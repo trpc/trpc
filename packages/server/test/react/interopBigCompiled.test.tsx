@@ -5,7 +5,7 @@ import { appRouter as bigV10Router } from '../__generated__/bigBoi/_app';
 import { t } from '../__generated__/bigBoi/_trpc';
 import { bigRouter as bigV9Router } from '../__generated__/bigLegacyRouter/bigRouter';
 import { createTRPCClient, createTRPCProxyClient } from '@trpc/client';
-import { createReactQueryHooks, createReactQueryHooksProxy } from '@trpc/react';
+import { createReactQueryHooks } from '@trpc/react';
 import { expectTypeOf } from 'expect-type';
 
 const legacyRouterInterop = bigV9Router.interop();
@@ -47,7 +47,6 @@ test('react', () => {
     // whatever
   };
   const trpc = createReactQueryHooks<AppRouter>();
-  const proxy = createReactQueryHooksProxy(trpc);
 
   try {
     const { data } = trpc.useQuery(['oldProc100']);
@@ -60,7 +59,7 @@ test('react', () => {
   }
 
   try {
-    const { data } = proxy.r499.greeting.useQuery({ who: 'KATT' });
+    const { data } = trpc.proxy.r499.greeting.useQuery({ who: 'KATT' });
     if (!data) {
       throw new Error('Whaever');
     }

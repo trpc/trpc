@@ -42,7 +42,7 @@ import {
   TRPCContext,
   TRPCContextProps,
   TRPCContextState,
-} from './internals/context';
+} from './context';
 
 export type AssertType<T, K> = T extends K ? T : never;
 
@@ -71,7 +71,7 @@ export interface TRPCUseQueryBaseOptions {
   trpc?: TRPCReactRequestOptions;
 }
 
-export type { TRPCContext, TRPCContextState } from './internals/context';
+export type { TRPCContext, TRPCContextState } from './context';
 
 export interface UseTRPCQueryOptions<TPath, TInput, TOutput, TData, TError>
   extends UseQueryOptions<TOutput, TError, TData, [TPath, TInput]>,
@@ -125,26 +125,12 @@ type inferProcedures<TObj extends ProcedureRecord> = {
   };
 };
 
-function createHookProxy(callback: (...args: [string, ...unknown[]]) => any) {
-  return new Proxy({} as any, {
-    get(_, path: string) {
-      function myProxy() {
-        throw new Error('Faulty usage');
-      }
-      myProxy.use = (...args: unknown[]) => callback(path, ...args);
-      return myProxy;
-    },
-  });
-}
 export interface TRPCProviderProps<TRouter extends AnyRouter, TSSRContext>
   extends TRPCContextProps<TRouter, TSSRContext> {
   children: ReactNode;
 }
 
-/**
- * @deprecated use `createTRPCReact` instead
- */
-export function createReactQueryHooks<
+export function createHooksInternal<
   TRouter extends AnyRouter,
   TSSRContext = unknown,
 >() {
@@ -520,11 +506,6 @@ export function createReactQueryHooks<
     return transformed;
   }
 
-  // FIXME: delete or fix this
-  const queries = createHookProxy((path, input, opts) =>
-    useQuery([path, input] as any, opts as any),
-  ) as TRouter['_def']['queries'];
-
   return {
     Provider: TRPCProvider,
     createClient,
@@ -534,7 +515,6 @@ export function createReactQueryHooks<
     useSubscription,
     useDehydratedState,
     useInfiniteQuery,
-    queries,
   };
 }
 
@@ -543,8 +523,8 @@ export function createReactQueryHooks<
  * @link https://stackoverflow.com/a/59072991
  */
 class GnClass<TRouter extends AnyRouter, TSSRContext = unknown> {
-  createReactQueryHooks() {
-    return createReactQueryHooks<TRouter, TSSRContext>();
+  fn() {
+    return createHooksInternal<TRouter, TSSRContext>();
   }
 }
 
@@ -554,7 +534,7 @@ type returnTypeInferer<T> = T extends (a: Record<string, string>) => infer U
 type fooType<TRouter extends AnyRouter, TSSRContext = unknown> = GnClass<
   TRouter,
   TSSRContext
->['createReactQueryHooks'];
+>['fn'];
 
 /**
  * Infer the type of a `createReactQueryHooks` function
