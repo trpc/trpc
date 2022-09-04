@@ -125,17 +125,6 @@ type inferProcedures<TObj extends ProcedureRecord> = {
   };
 };
 
-function createHookProxy(callback: (...args: [string, ...unknown[]]) => any) {
-  return new Proxy({} as any, {
-    get(_, path: string) {
-      function myProxy() {
-        throw new Error('Faulty usage');
-      }
-      myProxy.use = (...args: unknown[]) => callback(path, ...args);
-      return myProxy;
-    },
-  });
-}
 export interface TRPCProviderProps<TRouter extends AnyRouter, TSSRContext>
   extends TRPCContextProps<TRouter, TSSRContext> {
   children: ReactNode;
