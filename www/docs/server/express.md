@@ -85,7 +85,7 @@ const createContext = ({
 }: trpcExpress.CreateExpressContextOptions) => ({}); // no context
 type Context = inferAsyncReturnType<typeof createContext>;
 
-const t = initTRPC.context<Context>.create();
+const t = initTRPC.context<Context>().create();
 const appRouter = t.router({
   // [...]
 });
