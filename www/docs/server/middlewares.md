@@ -22,7 +22,7 @@ interface Context {
   };
 }
 
-export const t = initTRPC<{ ctx: Context }>()();
+export const t = initTRPC.context<Context>().create();
 
 const isAdmin = t.middleware(async ({ ctx, next }) => {
   if (!ctx.user?.isAdmin) {
@@ -58,7 +58,7 @@ In the example below timings for queries are logged automatically.
 ```ts
 import { initTRPC } from '@trpc/server';
 
-export const t = initTRPC<{ ctx: Context }>()();
+export const t = initTRPC.context<Context>().create();
 
 const logger = t.middleware(async ({ path, type, next }) => {
   const start = Date.now();
@@ -93,7 +93,7 @@ interface Context {
   };
 }
 
-export const t = initTRPC<{ ctx: Context }>()();
+export const t = initTRPC.context<Context>().create();
 
 const isAuthed = t.middleware(({ ctx, next }) => {
   if (!ctx.user) {
@@ -125,7 +125,7 @@ The `rawInput` passed to a middleware has not yet been validated by a procedure'
 ```ts
 import { initTRPC } from '@trpc/server';
 
-export const t = initTRPC()();
+export const t = initTRPC.create();
 
 const inputSchema = z.object({ userId: z.string() });
 

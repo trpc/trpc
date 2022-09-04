@@ -7,21 +7,21 @@ import { z } from 'zod';
 import { inferProcedureParams, initTRPC } from '../src';
 import { Unsubscribable, observable } from '../src/observable';
 
-const t = initTRPC<{
-  ctx: {
+const t = initTRPC
+  .context<{
     foo?: 'bar';
-  };
-}>()({
-  errorFormatter({ shape }) {
-    return {
-      ...shape,
-      data: {
-        ...shape.data,
-        foo: 'bar' as const,
-      },
-    };
-  },
-});
+  }>()
+  .create({
+    errorFormatter({ shape }) {
+      return {
+        ...shape,
+        data: {
+          ...shape.data,
+          foo: 'bar' as const,
+        },
+      };
+    },
+  });
 const { procedure } = t;
 
 test('old client - happy path w/o input', async () => {

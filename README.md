@@ -202,14 +202,14 @@ Also, if your company using tRPC and want to support long-term maintenance of tR
    <td align="center"><a href="https://github.com/iway1"><img src="https://avatars.githubusercontent.com/u/12774588?u=e664ed8bd364b3e9103d080d72087e25904c6cab&v=4&s=100" width="100" alt="Isaac%20Way"/><br />Isaac Way</a></td>
    <td align="center"><a href="https://github.com/LoriKarikari"><img src="https://avatars.githubusercontent.com/u/7902980?u=d016e5a9c337fbd4c60a7ea61352185f8b88b585&v=4&s=100" width="100" alt="Lori%20Karikari"/><br />Lori Karikari</a></td>
    <td align="center"><a href="https://github.com/zzacong"><img src="https://avatars.githubusercontent.com/u/61817066?u=2b8d6fe70742b39a8bee1475ceea3105716168cf&v=4&s=100" width="100" alt="Zac%20Ong"/><br />Zac Ong</a></td>
-   <td align="center"><a href="https://dyaa.me"><img src="https://avatars.githubusercontent.com/u/4283185?u=c0eefe0bfb37b34dedb7765ba2a061cfac30be55&v=4&s=100" width="100" alt="Dyaa"/><br />Dyaa</a></td>
    <td align="center"><a href="https://francisprovost.com"><img src="https://avatars.githubusercontent.com/u/6840361?v=4&s=100" width="100" alt="Francis%20Provost"/><br />Francis Provost</a></td>
+   <td align="center"><a href="https://github.com/svobik7"><img src="https://avatars.githubusercontent.com/u/761766?u=1771454e0852904ddf71fe74e493e228331dd27a&v=4&s=100" width="100" alt="Jirka%20Svoboda"/><br />Jirka Svoboda</a></td>
   </tr>
   <tr>
-   <td align="center"><a href="https://github.com/svobik7"><img src="https://avatars.githubusercontent.com/u/761766?u=1771454e0852904ddf71fe74e493e228331dd27a&v=4&s=100" width="100" alt="Jirka%20Svoboda"/><br />Jirka Svoboda</a></td>
    <td align="center"><a href="https://github.com/mshd"><img src="https://avatars.githubusercontent.com/u/17379661?u=2dc0effef1464639ae9ff98795cd29bb772bcce3&v=4&s=100" width="100" alt="Martin"/><br />Martin</a></td>
    <td align="center"><a href="https://github.com/fanvue"><img src="https://avatars.githubusercontent.com/u/72873652?v=4&s=100" width="100" alt="Fanvue"/><br />Fanvue</a></td>
    <td align="center"><a href="https://midu.dev"><img src="https://avatars.githubusercontent.com/u/1561955?u=9ebfec769d2505d88ee746b7389353c23312bca1&v=4&s=100" width="100" alt="Miguel%20%C3%81ngel%20Dur%C3%A1n"/><br />Miguel Ángel Durán</a></td>
+   <td align="center"><a href="https://blog.mstill.dev"><img src="https://avatars.githubusercontent.com/u/2567177?u=9d4667a85a4e56457786b9028b3a551574e07120&v=4&s=100" width="100" alt="Malcolm%20Still"/><br />Malcolm Still</a></td>
   </tr>
 </table>
 

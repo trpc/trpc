@@ -399,15 +399,6 @@ export const sponsors = [
     "createdAt": 1659057378000
   },
   {
-    "name": "Dyaa",
-    "imgSrc": "https://avatars.githubusercontent.com/u/4283185?u=c0eefe0bfb37b34dedb7765ba2a061cfac30be55&v=4",
-    "monthlyPriceInDollars": 15,
-    "link": "https://dyaa.me",
-    "privacyLevel": "PUBLIC",
-    "login": "dyaa",
-    "createdAt": 1659447497000
-  },
-  {
     "name": "Francis Provost",
     "imgSrc": "https://avatars.githubusercontent.com/u/6840361?v=4",
     "monthlyPriceInDollars": 10,
@@ -451,5 +442,14 @@ export const sponsors = [
     "privacyLevel": "PUBLIC",
     "login": "midudev",
     "createdAt": 1661889789000
+  },
+  {
+    "name": "Malcolm Still",
+    "imgSrc": "https://avatars.githubusercontent.com/u/2567177?u=9d4667a85a4e56457786b9028b3a551574e07120&v=4",
+    "monthlyPriceInDollars": 10,
+    "link": "https://blog.mstill.dev",
+    "privacyLevel": "PUBLIC",
+    "login": "malcolmstill",
+    "createdAt": 1662115384000
   }
 ] as const

@@ -54,9 +54,9 @@ For example, throwing this error:
 ```ts title='server.ts'
 import { initTRPC } from '@trpc/server';
 
-const t = initTRPC()();
+const t = initTRPC.create();
 
-const appRouter = trpc.router({
+const appRouter = t.router({
   hello: t.procedure.query(() => {
     throw new trpc.TRPCError({
       code: 'INTERNAL_SERVER_ERROR',

@@ -4,7 +4,7 @@ import { konn } from 'konn';
 import { z } from 'zod';
 import { initTRPC } from '../../src';
 
-const t = initTRPC()();
+const t = initTRPC.create();
 const appRouter = t.router({
   q: t.procedure.input(z.enum(['good', 'bad'])).query(({ input }) => {
     if (input === 'bad') {

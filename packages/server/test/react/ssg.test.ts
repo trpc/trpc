@@ -4,7 +4,7 @@ import { z } from 'zod';
 import { createProxySSGHelpers } from '../../../react/src/ssg/ssgProxy';
 import { initTRPC } from '../../src';
 
-const t = initTRPC()();
+const t = initTRPC.create();
 
 const appRouter = t.router({
   post: t.router({

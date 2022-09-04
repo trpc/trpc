@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/no-empty-function */
+import { createQueryClient } from '../../__queryClient';
 import { Post, createLegacyAppRouter } from './__testHelpers';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import '@testing-library/jest-dom';
@@ -26,7 +27,7 @@ describe('useQuery()', () => {
       return <pre>{JSON.stringify(allPostsQuery.data ?? 'n/a', null, 4)}</pre>;
     }
     function App() {
-      const [queryClient] = useState(() => new QueryClient());
+      const [queryClient] = useState(() => createQueryClient());
       return (
         <trpc.Provider {...{ queryClient, client }}>
           <QueryClientProvider client={queryClient}>
@@ -55,7 +56,7 @@ describe('useQuery()', () => {
       return <pre>{JSON.stringify(allPostsQuery.data ?? 'n/a', null, 4)}</pre>;
     }
     function App() {
-      const [queryClient] = useState(() => new QueryClient());
+      const [queryClient] = useState(() => createQueryClient());
       return (
         <trpc.Provider {...{ queryClient, client }}>
           <QueryClientProvider client={queryClient}>
@@ -84,7 +85,7 @@ describe('useQuery()', () => {
       return <pre>{JSON.stringify(allPostsQuery.data ?? 'n/a', null, 4)}</pre>;
     }
     function App() {
-      const [queryClient] = useState(() => new QueryClient());
+      const [queryClient] = useState(() => createQueryClient());
       return (
         <trpc.Provider {...{ queryClient, client }}>
           <QueryClientProvider client={queryClient}>
@@ -114,7 +115,7 @@ describe('useQuery()', () => {
       return <pre>{JSON.stringify(allPostsQuery.data ?? 'n/a', null, 4)}</pre>;
     }
     function App() {
-      const [queryClient] = useState(() => new QueryClient());
+      const [queryClient] = useState(() => createQueryClient());
       return (
         <trpc.Provider {...{ queryClient, client }}>
           <QueryClientProvider client={queryClient}>

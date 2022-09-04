@@ -15,7 +15,8 @@ In a gist, what has changed?
 
 ### The `t` variable
 
-> If you don't like the variable name `t`, you can call it whatever you want
+> - If you don't like the variable name `t`, you can call it whatever you want
+> - You should create your root `t`-variable **exactly once** per application
 
 The way you initialize tRPC on the server has been update, we now create a root `t` variable that contains the root information about your app:
 
@@ -29,8 +30,7 @@ The way the `t` variable is defined is simply like this:
 ```ts title='/src/server/trpc.ts'
 import { initTRPC } from '@trpc/server';
 
-// Beware of the double `()()`
-export const t = initTRPC()();
+export const t = initTRPC.create();
 ```
 
 Here's a full example of how the `t` variable may look like with a data-transformer, openapi metadata and error formatter:
@@ -55,25 +55,24 @@ interface Meta {
   };
 }
 
-export const t = initTRPC<{
-  ctx: Context;
-  meta: Meta;
-}>()({
-  errorFormatter({ shape, error }) {
-    return {
-      ...shape,
-      data: {
-        ...shape.data,
-        zodError:
-          error.code === 'BAD_REQUEST' &&
-          error.cause instanceof ZodError
-            ? error.cause.flatten()
-            : null,
-      },
-    };
-  },
-  transformer: superjson,
-})
+export const t = initTRPC
+  .context<Context>()
+  .meta<Meta>()
+  .create({
+    errorFormatter({ shape, error }) {
+      return {
+        ...shape,
+        data: {
+          ...shape.data,
+          zodError:
+            error.code === 'BAD_REQUEST' && error.cause instanceof ZodError
+              ? error.cause.flatten()
+              : null,
+        },
+      };
+    },
+    transformer: superjson,
+  });
 ```
 
 ### Defining routers & procedures
@@ -194,9 +193,7 @@ When you've done this, you can start migrating to the new way of doing things.
 import superjson from 'superjson';
 import { Context } from './context';
 
-export const t = initTRPC<{
-  ctx: Context;
-}>()({
+export const t = initTRPC.context<Context>().create({
   // Optional:
   transformer: superjson,
   // Optional:

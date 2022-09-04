@@ -1,4 +1,5 @@
 import { routerToServerAndClientNew } from '../___testHelpers';
+import { createQueryClient } from '../__queryClient';
 import { QueryClient } from '@tanstack/react-query';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { render, waitFor } from '@testing-library/react';
@@ -7,13 +8,13 @@ import { expectTypeOf } from 'expect-type';
 import { konn } from 'konn';
 import React, { useState } from 'react';
 import { z } from 'zod';
-import * as trpc from '../../src';
+import * as interop from '../../src';
 import { inferProcedureOutput, initTRPC } from '../../src';
 
 const ctx = konn()
   .beforeEach(() => {
-    const t = initTRPC()();
-    const legacyRouter = trpc.router().query('oldProcedure', {
+    const t = initTRPC.create();
+    const legacyRouter = interop.router().query('oldProcedure', {
       input: z.string().optional(),
       resolve({ input }) {
         return `oldProcedureOutput__input:${input ?? 'n/a'}`;
@@ -27,7 +28,7 @@ const ctx = konn()
 
     const appRouter = t.mergeRouters(legacyRouterInterop, newAppRouter);
     const opts = routerToServerAndClientNew(appRouter, {});
-    const queryClient = new QueryClient();
+    const queryClient = createQueryClient();
     const react = createReactQueryHooks<typeof opts['router']>();
     const client = opts.client;
     type Return = inferProcedureOutput<
@@ -89,7 +90,7 @@ test('useQuery()', async () => {
     );
   }
   function App() {
-    const [queryClient] = useState(() => new QueryClient());
+    const [queryClient] = useState(() => createQueryClient());
     return (
       <react.Provider {...{ queryClient, client }}>
         <QueryClientProvider client={queryClient}>
@@ -121,7 +122,7 @@ test("we can use new router's procedures too", async () => {
     );
   }
   function App() {
-    const [queryClient] = useState(() => new QueryClient());
+    const [queryClient] = useState(() => createQueryClient());
     return (
       <react.Provider {...{ queryClient, client }}>
         <QueryClientProvider client={queryClient}>

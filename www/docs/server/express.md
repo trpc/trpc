@@ -47,7 +47,7 @@ Implement your tRPC router. A sample router is given below:
 import { initTRPC } from '@trpc/server';
 import { z } from 'zod';
 
-export const t = initTRPC()();
+export const t = initTRPC.create();
 
 export const appRouter = t.router({
   getUser: t.procedure.input(z.string()).query((req) => {
@@ -85,7 +85,7 @@ const createContext = ({
 }: trpcExpress.CreateExpressContextOptions) => ({}); // no context
 type Context = inferAsyncReturnType<typeof createContext>;
 
-const t = initTRPC<{ ctx: Context }>()();
+const t = initTRPC.context<Context>().create();
 const appRouter = t.router({
   // [...]
 });
