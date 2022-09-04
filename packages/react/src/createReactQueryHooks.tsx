@@ -458,8 +458,13 @@ export function createReactQueryHooks<
     >,
   ): UseInfiniteQueryResult<TQueryValues[TPath]['output'], TError> {
     const [path, input] = pathAndInput;
-    const { client, ssrState, prefetchInfiniteQuery, queryClient } =
-      useContext();
+    const {
+      client,
+      ssrState,
+      prefetchInfiniteQuery,
+      queryClient,
+      abortOnUnmount,
+    } = useContext();
 
     if (
       typeof window === 'undefined' &&
@@ -471,17 +476,34 @@ export function createReactQueryHooks<
       void prefetchInfiniteQuery(pathAndInput as any, opts as any);
     }
 
-    const actualOpts = useSSRQueryOptionsIfNeeded(pathAndInput, opts);
+    const ssrOpts = useSSRQueryOptionsIfNeeded(pathAndInput, opts);
+
+    // request option should take priority over global
+    const shouldAbortOnUnmount = opts?.trpc?.abortOnUnmount ?? abortOnUnmount;
 
     return __useInfiniteQuery(
       pathAndInput as any,
-      ({ pageParam }) => {
-        const actualInput = { ...((input as any) ?? {}), cursor: pageParam };
+      (queryFunctionContext) => {
+        const actualOpts = {
+          ...ssrOpts,
+          trpc: {
+            ...ssrOpts?.trpc,
+            ...(shouldAbortOnUnmount
+              ? { signal: queryFunctionContext.signal }
+              : {}),
+          },
+        };
+
+        const actualInput = {
+          ...((input as any) ?? {}),
+          cursor: queryFunctionContext.pageParam,
+        };
+
         return (client as any).query(
           ...getClientArgs([path, actualInput], actualOpts),
         );
       },
-      actualOpts,
+      ssrOpts,
     );
   }
   function useDehydratedState(
