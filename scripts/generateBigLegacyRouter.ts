@@ -19,7 +19,7 @@ function getBFR() {
 
 const contents = `
 /* eslint-disable */
-import * as trpc from '../../../src';
+import * as trpc from '@trpc/server';
 
 export const bigRouter = ${getBFR()}
   .flat();
