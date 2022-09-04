@@ -526,7 +526,7 @@ export function createReactQueryHooks<
  * @link https://stackoverflow.com/a/59072991
  */
 class GnClass<TRouter extends AnyRouter, TSSRContext = unknown> {
-  createReactQueryHooks() {
+  fn() {
     return createReactQueryHooks<TRouter, TSSRContext>();
   }
 }
@@ -537,7 +537,7 @@ type returnTypeInferer<T> = T extends (a: Record<string, string>) => infer U
 type fooType<TRouter extends AnyRouter, TSSRContext = unknown> = GnClass<
   TRouter,
   TSSRContext
->['createReactQueryHooks'];
+>['fn'];
 
 /**
  * Infer the type of a `createReactQueryHooks` function
