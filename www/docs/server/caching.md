@@ -86,7 +86,7 @@ export const createContext = async ({
 
 type Context = inferAsyncReturnType<typeof createContext>;
 
-export const t = initTRPC.context<Context>.create();
+export const t = initTRPC.context<Context>().create();
 
 const waitFor = async (ms: number) =>
   new Promise((resolve) => setTimeout(resolve, ms));

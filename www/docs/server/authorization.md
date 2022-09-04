@@ -47,7 +47,7 @@ type Context = inferAsyncReturnType<typeof createContext>;
 import { TRPCError, initTRPC } from '@trpc/server';
 import { Context } from '../context';
 
-export const t = initTRPC.context<Context>.create();
+export const t = initTRPC.context<Context>().create();
 
 const appRouter = t.router({
   // open for anyone
@@ -71,7 +71,7 @@ const appRouter = t.router({
 ```ts title='server/routers/_app.ts'
 import { TRPCError, initTRPC } from '@trpc/server';
 
-export const t = initTRPC.context<Context>.create();
+export const t = initTRPC.context<Context>().create();
 
 
 const isAuthed = t.middleware(({ next, ctx }) => {
