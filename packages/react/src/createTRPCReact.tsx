@@ -118,6 +118,11 @@ export type DecoratedProcedureRecord<
       >;
 };
 
+export type CreateTRPCReact<TRouter extends AnyRouter, TSSRContext> = {
+  useContext(): DecoratedProcedureUtilsRecord<TRouter>;
+  Provider(props: TRPCProviderProps<TRouter, TSSRContext>): JSX.Element;
+} & DecoratedProcedureRecord<TRouter['_def']['record']>;
+
 /**
  * @internal
  */
@@ -154,10 +159,7 @@ export function createHooksInternalProxy<
     },
   );
 
-  return proxy as {
-    useContext(): DecoratedProcedureUtilsRecord<TRouter>;
-    Provider(props: TRPCProviderProps<TRouter, TSSRContext>): JSX.Element;
-  } & DecoratedProcedureRecord<TRouter['_def']['record']>;
+  return proxy as CreateTRPCReact<TRouter, TSSRContext>;
 }
 
 export function createTRPCReact<
