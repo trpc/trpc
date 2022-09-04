@@ -520,11 +520,6 @@ export function createReactQueryHooks<
     return transformed;
   }
 
-  // FIXME: delete or fix this
-  const queries = createHookProxy((path, input, opts) =>
-    useQuery([path, input] as any, opts as any),
-  ) as TRouter['_def']['queries'];
-
   return {
     Provider: TRPCProvider,
     createClient,
@@ -534,7 +529,6 @@ export function createReactQueryHooks<
     useSubscription,
     useDehydratedState,
     useInfiniteQuery,
-    queries,
   };
 }
 
