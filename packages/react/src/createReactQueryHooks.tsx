@@ -128,6 +128,13 @@ function createHookProxy(callback: (...args: [string, ...unknown[]]) => any) {
     },
   });
 }
+export interface TRPCProviderProps<TRouter extends AnyRouter, TSSRContext> {
+  queryClient: QueryClient;
+  client: TRPCClient<TRouter>;
+  children: ReactNode;
+  ssrContext?: TSSRContext | null;
+  ssrState?: SSRState;
+}
 
 /**
  * @deprecated use `createTRPCReact` instead
@@ -164,13 +171,7 @@ export function createReactQueryHooks<
     return createTRPCClient(opts);
   }
 
-  function TRPCProvider(props: {
-    queryClient: QueryClient;
-    client: TRPCClient<TRouter>;
-    children: ReactNode;
-    ssrContext?: TSSRContext | null;
-    ssrState?: SSRState;
-  }) {
+  function TRPCProvider(props: TRPCProviderProps<TRouter, TSSRContext>) {
     const { client, queryClient, ssrContext } = props;
     const [ssrState, setSSRState] = useState<SSRState>(props.ssrState ?? false);
     useEffect(() => {
