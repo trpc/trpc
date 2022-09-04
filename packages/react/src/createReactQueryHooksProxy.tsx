@@ -109,6 +109,8 @@ export type DecoratedProcedureRecord<
         TProcedures[TKey]['_def']['record'],
         `${TPath}${TKey & string}.`
       >
+    : TProcedures[TKey] extends { _old: true }
+    ? never
     : DecorateProcedure<
         assertProcedure<TProcedures[TKey]>,
         `${TPath}${TKey & string}`

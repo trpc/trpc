@@ -72,7 +72,7 @@ type DecoratedProcedureRecord<
         TProcedures[TKey]['_def']['record'],
         TProcedures[TKey]
       >
-    : assertProcedure<TProcedures[TKey]>['_def']['_old'] extends true
+    : TProcedures[TKey] extends { _old: true }
     ? never
     : DecorateProcedure<assertProcedure<TProcedures[TKey]>, TRouter>;
 }>;
