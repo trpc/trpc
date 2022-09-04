@@ -156,7 +156,7 @@ export function createReactQueryHooksProxy<
   );
 
   return proxy as {
-    // useContext(): DecoratedProcedureUtilsRecord<TRouter>;
+    useContext(): DecoratedProcedureUtilsRecord<TRouter>;
     Provider(props: TRPCProviderProps<TRouter, TSSRContext>): JSX.Element;
   } & DecoratedProcedureRecord<TRouter['_def']['record']>;
 }
