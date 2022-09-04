@@ -103,7 +103,7 @@ type assertProcedure<T> = T extends Procedure<any> ? T : never;
  */
 export type DecoratedProcedureRecord<
   TProcedures extends ProcedureRouterRecord,
-  TPath extends string = '',
+  TPath extends string,
 > = {
   [TKey in keyof TProcedures]: TProcedures[TKey] extends LegacyV9ProcedureTag
     ? never
