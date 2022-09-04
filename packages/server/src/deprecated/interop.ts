@@ -56,7 +56,7 @@ type convertProcedureParams<
 /**
  * @deprecated
  */
-export type OldProcedureTag = {
+export type LegacyV9ProcedureTag = {
   _old: true;
 };
 
@@ -66,13 +66,13 @@ type MigrateProcedure<
   TType extends ProcedureType,
 > = TType extends 'query'
   ? QueryProcedure<convertProcedureParams<TConfig, TProcedure>> &
-      OldProcedureTag
+      LegacyV9ProcedureTag
   : TType extends 'mutation'
   ? MutationProcedure<convertProcedureParams<TConfig, TProcedure>> &
-      OldProcedureTag
+      LegacyV9ProcedureTag
   : TType extends 'subscription'
   ? SubscriptionProcedure<convertProcedureParams<TConfig, TProcedure>> &
-      OldProcedureTag
+      LegacyV9ProcedureTag
   : never;
 
 export type MigrateProcedureRecord<
