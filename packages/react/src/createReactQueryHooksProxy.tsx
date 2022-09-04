@@ -105,13 +105,13 @@ export type DecoratedProcedureRecord<
   TProcedures extends ProcedureRouterRecord,
   TPath extends string = '',
 > = {
-  [TKey in keyof TProcedures]: TProcedures[TKey] extends AnyRouter
+  [TKey in keyof TProcedures]: TProcedures[TKey] extends LegacyV9ProcedureTag
+    ? never
+    : TProcedures[TKey] extends AnyRouter
     ? DecoratedProcedureRecord<
         TProcedures[TKey]['_def']['record'],
         `${TPath}${TKey & string}.`
       >
-    : TProcedures[TKey] extends LegacyV9ProcedureTag
-    ? never
     : DecorateProcedure<
         assertProcedure<TProcedures[TKey]>,
         `${TPath}${TKey & string}`

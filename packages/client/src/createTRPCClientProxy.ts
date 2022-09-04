@@ -67,13 +67,13 @@ type DecoratedProcedureRecord<
   TProcedures extends ProcedureRouterRecord,
   TRouter extends AnyRouter,
 > = OmitNeverKeys<{
-  [TKey in keyof TProcedures]: TProcedures[TKey] extends AnyRouter
+  [TKey in keyof TProcedures]: TProcedures[TKey] extends LegacyV9ProcedureTag
+    ? never
+    : TProcedures[TKey] extends AnyRouter
     ? DecoratedProcedureRecord<
         TProcedures[TKey]['_def']['record'],
         TProcedures[TKey]
       >
-    : TProcedures[TKey] extends LegacyV9ProcedureTag
-    ? never
     : DecorateProcedure<assertProcedure<TProcedures[TKey]>, TRouter>;
 }>;
 
