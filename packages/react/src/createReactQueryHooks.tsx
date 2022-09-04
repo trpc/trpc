@@ -1,7 +1,6 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 import {
   DehydratedState,
-  QueryClient,
   UseInfiniteQueryOptions,
   UseInfiniteQueryResult,
   UseMutationOptions,
@@ -38,7 +37,12 @@ import React, {
   useMemo,
   useState,
 } from 'react';
-import { SSRState, TRPCContext, TRPCContextState } from './internals/context';
+import {
+  SSRState,
+  TRPCContext,
+  TRPCContextProps,
+  TRPCContextState,
+} from './internals/context';
 
 export type AssertType<T, K> = T extends K ? T : never;
 
@@ -132,13 +136,9 @@ function createHookProxy(callback: (...args: [string, ...unknown[]]) => any) {
     },
   });
 }
-export interface TRPCProviderProps<TRouter extends AnyRouter, TSSRContext> {
-  queryClient: QueryClient;
-  client: TRPCClient<TRouter>;
+export interface TRPCProviderProps<TRouter extends AnyRouter, TSSRContext>
+  extends TRPCContextProps<TRouter, TSSRContext> {
   children: ReactNode;
-  ssrContext?: TSSRContext | null;
-  ssrState?: SSRState;
-  abortOnUnmount?: boolean;
 }
 
 /**

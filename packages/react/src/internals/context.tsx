@@ -31,24 +31,41 @@ export interface TRPCFetchInfiniteQueryOptions<TInput, TError, TOutput>
 /** @internal */
 export type SSRState = false | 'prepass' | 'mounting' | 'mounted';
 
-/** @internal */
-export interface TRPCContextState<
-  TRouter extends AnyRouter,
-  TSSRContext = undefined,
-> {
-  abortOnUnmount: boolean;
+export interface TRPCContextProps<TRouter extends AnyRouter, TSSRContext> {
+  /**
+   * The react-query `QueryClient`
+   */
   queryClient: QueryClient;
+  /**
+   * The `TRPCClient`
+   */
   client: TRPCClient<TRouter>;
-  ssrContext: TSSRContext | null;
+  /**
+   * The SSR context when server-side rendering
+   * @default null
+   */
+  ssrContext?: TSSRContext | null;
   /**
    * State of SSR hydration.
    * - `false` if not using SSR.
    * - `prepass` when doing a prepass to fetch queries' data
    * - `mounting` before TRPCProvider has been rendered on the client
    * - `mounted` when the TRPCProvider has been rendered on the client
+   * @default false
    */
-  ssrState: SSRState;
+  ssrState?: SSRState;
+  /**
+   * Abort loading query calls when unmounting a component - usually when navigating to a new page
+   * @default false
+   */
+  abortOnUnmount?: boolean;
+}
 
+/** @internal */
+export interface TRPCContextState<
+  TRouter extends AnyRouter,
+  TSSRContext = undefined,
+> extends Required<TRPCContextProps<TRouter, TSSRContext>> {
   /**
    * @link https://react-query.tanstack.com/guides/prefetching
    */
