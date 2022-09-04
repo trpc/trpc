@@ -44,6 +44,7 @@
     "lint": "eslint --ext \".js,.ts,.tsx\" --ignore-path .gitignore .",
     "lint-fix": "yarn lint --fix && manypkg fix",
     "codegen:generateBigBoi": "ts-node scripts/generateBigBoi.ts",
+    "codegen:generateBigLegacyRouter": "ts-node scripts/generateBigLegacyRouter.ts",
     "codegen:entrypoints": "ts-node scripts/entrypoints.ts && prettier --write packages/*/package.json",
     "codegen:generateMergeRouters": "ts-node scripts/generateMergeRouters.ts",
     "codegen": "run-p codegen:*",
