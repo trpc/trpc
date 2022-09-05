@@ -13,7 +13,7 @@ In order to execute queries properly during the server-side render step and cust
 import superjson from 'superjson';
 import type { AppRouter } from './api/trpc/[trpc]';
 
-export const trpc = setupTRPC<AppRouter>({
+export const trpc = createTRPCNext<AppRouter>({
   config({ ctx }) {
     if (typeof window !== 'undefined') {
       // during client requests

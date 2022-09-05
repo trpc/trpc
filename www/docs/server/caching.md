@@ -22,10 +22,10 @@ If you turn on SSR in your app you might discover that your app loads slow on fo
 ### Example code
 
 ```tsx title='utils/trpc.tsx'
-import { setupTRPC } from '@trpc/next';
+import { createTRPCNext } from '@trpc/next';
 import { AppRouter } from '../server/routers/_app';
 
-export const trpc = setupTRPC<AppRouter>({
+export const trpc = createTRPCNext<AppRouter>({
   config({ ctx }) {
     if (typeof window !== 'undefined') {
       return {

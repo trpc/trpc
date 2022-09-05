@@ -42,7 +42,7 @@ import {
   TRPCContext,
   TRPCContextProps,
   TRPCContextState,
-} from './context';
+} from '../../internals/context';
 
 export type AssertType<T, K> = T extends K ? T : never;
 
@@ -71,7 +71,7 @@ export interface TRPCUseQueryBaseOptions {
   trpc?: TRPCReactRequestOptions;
 }
 
-export type { TRPCContext, TRPCContextState } from './context';
+export type { TRPCContext, TRPCContextState } from '../../internals/context';
 
 export interface UseTRPCQueryOptions<TPath, TInput, TOutput, TData, TError>
   extends UseQueryOptions<TOutput, TError, TData, [TPath, TInput]>,
@@ -130,6 +130,10 @@ export interface TRPCProviderProps<TRouter extends AnyRouter, TSSRContext>
   children: ReactNode;
 }
 
+/**
+ * Infer the type of a `createReactQueryHooks` function
+ * @internal
+ */
 export function createHooksInternal<
   TRouter extends AnyRouter,
   TSSRContext = unknown,

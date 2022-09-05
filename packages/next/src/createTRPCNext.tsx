@@ -1,7 +1,7 @@
-import { createReactQueryHooks } from '@trpc/react';
 import {
   DecoratedProcedureRecord,
   DecoratedProcedureUtilsRecord,
+  createHooksInternal,
   createReactProxyDecoration,
   createReactQueryUtilsProxy,
 } from '@trpc/react/shared';
@@ -10,11 +10,11 @@ import { NextPageContext } from 'next/types';
 import { useMemo } from 'react';
 import { WithTRPCNoSSROptions, WithTRPCSSROptions, withTRPC } from './withTRPC';
 
-export function setupTRPC<
+export function createTRPCNext<
   TRouter extends AnyRouter,
   TSSRContext extends NextPageContext = NextPageContext,
 >(opts: WithTRPCNoSSROptions<TRouter> | WithTRPCSSROptions<TRouter>) {
-  const hooks = createReactQueryHooks<TRouter, TSSRContext>();
+  const hooks = createHooksInternal<TRouter, TSSRContext>();
 
   // TODO: maybe set TSSRContext to `never` when using `WithTRPCNoSSROptions`
   const _withTRPC = withTRPC<TRouter, TSSRContext>(opts);

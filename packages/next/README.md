@@ -36,11 +36,11 @@ pnpm add @trpc/next@next @trpc/react@next @tanstack/react-query
 Setup tRPC in `utils/trpc.ts`.
 
 ```ts
-import { setupTRPC } from '@trpc/next';
+import { createTRPCNext } from '@trpc/next';
 // Import the router type from your server file
 import type { AppRouter } from '../pages/api/[trpc].ts';
 
-export const trpc = setupTRPC<AppRouter>({
+export const trpc = createTRPCNext<AppRouter>({
   config() {
     return {
       url: 'http://localhost:3000/api/trpc',
