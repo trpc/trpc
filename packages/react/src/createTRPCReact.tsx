@@ -1,9 +1,14 @@
 import {
+  DehydratedState,
   UseInfiniteQueryResult,
   UseMutationResult,
   UseQueryResult,
 } from '@tanstack/react-query';
-import { TRPCClientErrorLike } from '@trpc/client';
+import {
+  CreateTRPCClientOptions,
+  TRPCClient,
+  TRPCClientErrorLike,
+} from '@trpc/client';
 import {
   AnyRouter,
   OmitNeverKeys,
@@ -21,8 +26,11 @@ import {
   createReactQueryUtilsProxy,
 } from './shared';
 import {
+  CreateClient,
   CreateReactQueryHooks,
+  TRPCProvider,
   TRPCProviderProps,
+  UseDehydratedState,
   UseTRPCInfiniteQueryOptions,
   UseTRPCMutationOptions,
   UseTRPCQueryOptions,
@@ -120,7 +128,9 @@ export type DecoratedProcedureRecord<
 
 export type CreateTRPCReact<TRouter extends AnyRouter, TSSRContext> = {
   useContext(): DecoratedProcedureUtilsRecord<TRouter>;
-  Provider(props: TRPCProviderProps<TRouter, TSSRContext>): JSX.Element;
+  Provider: TRPCProvider<TRouter, TSSRContext>;
+  createClient: CreateClient<TRouter>;
+  useDehydratedState: UseDehydratedState<TRouter>;
 } & DecoratedProcedureRecord<TRouter['_def']['record']>;
 
 /**
