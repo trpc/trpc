@@ -131,7 +131,7 @@ export interface TRPCProviderProps<TRouter extends AnyRouter, TSSRContext>
 }
 
 /**
- * Infer the type of a `createReactQueryHooks` function
+ * Create strongly typed react hooks
  * @internal
  */
 export function createHooksInternal<
