@@ -4,7 +4,7 @@ import { CreateTRPCReact, createHooksInternalProxy } from './createTRPCReact';
 import {
   CreateReactQueryHooks,
   createHooksInternal,
-} from './internals/createHooksInternal';
+} from './shared/hooks/createHooksInternal';
 
 /**
  * @deprecated use `createTRPCReact` instead

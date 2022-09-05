@@ -295,15 +295,15 @@ trpc.post.byId.useQuery('1', {
 
 ### `@trpc/next`
 
-#### `setupNext()` - Optional DX Improvement
+#### `createTRPCNext()` - Optional DX Improvement
 
 Setting up tRPC for Next.js is now easier than ever! Here's all you need to get going:
 
 ```ts title="utils/trpc.ts"
-import { setupTRPC } from '@trpc/next';
+import { createTRPCNext } from '@trpc/next';
 import type { AppRouter } from 'routers/_app';
 
-export const trpc = setupTRPC<AppRouter>({
+export const trpc = createTRPCNext<AppRouter>({
   config() {
     return {
       url: '/api/trpc',

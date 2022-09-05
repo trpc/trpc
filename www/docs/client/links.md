@@ -30,10 +30,10 @@ const somePosts = await Promise.all([
 When sending batch requests, sometimes the URL can become too large causing HTTP errors like [`413 Payload Too Large`](https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/413), [`414 URI Too Long`](https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/414), and [`404 Not Found`](https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/404). The `maxURLLength` option will limit the number of requests that can be sent together in a batch.
 
 ```ts title="utils/trpc.ts"
-import { setupTRPC } from '@trpc/next';
+import { createTRPCNext } from '@trpc/next';
 import type { AppRouter } from "@/server/routers/app";
 
-export const trpc = setupTRPC<AppRouter>({
+export const trpc = createTRPCNext<AppRouter>({
   config() {
     return {
       links: [
@@ -66,11 +66,11 @@ export default trpcNext.createNextApiHandler({
 #### 2. Use batch-free link in your tRPC Client
 
 ```tsx title='utils/trpc.ts'
-import { setupTRPC } from '@trpc/next';
+import { createTRPCNext } from '@trpc/next';
 import type { AppRouter } from "@/server/routers/app";
 import { httpLink } from '@trpc/client';
 
-export const trpc = setupTRPC<AppRouter>({
+export const trpc = createTRPCNext<AppRouter>({
   config() {
     return {
       links: [
@@ -90,10 +90,10 @@ export const trpc = setupTRPC<AppRouter>({
 ##### 1. Configure client / `utils/trpc.ts`
 
 ```tsx title='utils/trpc.ts'
-import { setupTRPC } from '@trpc/next';
+import { createTRPCNext } from '@trpc/next';
 import { httpBatchLink, httpLink, splitLink } from '@trpc/client';
 
-export default setupTRPC<AppRouter>({
+export default createTRPCNext<AppRouter>({
   config() {
     const url = `http://localhost:3000`;
 

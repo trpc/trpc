@@ -16,6 +16,11 @@ import { inferObservableValue } from '@trpc/server/observable';
 import { LegacyV9ProcedureTag } from '@trpc/server/shared';
 import { useMemo } from 'react';
 import {
+  DecoratedProcedureUtilsRecord,
+  createReactProxyDecoration,
+  createReactQueryUtilsProxy,
+} from './shared';
+import {
   CreateReactQueryHooks,
   TRPCProviderProps,
   UseTRPCInfiniteQueryOptions,
@@ -23,12 +28,7 @@ import {
   UseTRPCQueryOptions,
   UseTRPCSubscriptionOptions,
   createHooksInternal,
-} from './internals/createHooksInternal';
-import {
-  DecoratedProcedureUtilsRecord,
-  createReactProxyDecoration,
-  createReactQueryUtilsProxy,
-} from './shared';
+} from './shared/hooks/createHooksInternal';
 
 type DecorateProcedure<
   TProcedure extends Procedure<any>,

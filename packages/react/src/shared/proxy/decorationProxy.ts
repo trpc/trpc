@@ -1,7 +1,7 @@
 import { AnyRouter } from '@trpc/server';
 import { createProxy } from '@trpc/server/shared';
-import { CreateReactQueryHooks } from '../../internals/createHooksInternal';
 import { getQueryKey } from '../../internals/getQueryKey';
+import { CreateReactQueryHooks } from '../hooks/createHooksInternal';
 
 /**
  * Create proxy for decorating procedures

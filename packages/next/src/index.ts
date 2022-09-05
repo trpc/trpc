@@ -1,2 +1,2 @@
 export * from './withTRPC';
-export * from './setupNext';
+export * from './createTRPCNext';

@@ -132,7 +132,7 @@ export default trpcNext.createNextApiHandler({
 Create a set of strongly-typed hooks using your API's type signature.
 
 ```tsx title='utils/trpc.ts'
-import { setupTRPC } from '@trpc/next';
+import { createTRPCNext } from '@trpc/next';
 import type { AppRouter } from '../pages/api/trpc/[trpc]';
 
 function getBaseUrl() {
@@ -149,7 +149,7 @@ function getBaseUrl() {
   return `http://localhost:${process.env.PORT ?? 3000}`;
 }
 
-export const trpc = setupTRPC<AppRouter>({
+export const trpc = createTRPCNext<AppRouter>({
   config({ ctx }) {
     return {
       /**
@@ -202,7 +202,7 @@ export default function IndexPage() {
 }
 ```
 
-## `setupTRPC()` options
+## `createTRPCNext()` options
 
 ### `config`-callback
 
@@ -231,10 +231,10 @@ Ability to set request headers and HTTP status when server-side rendering.
 #### Example
 
 ```tsx title='utils/trpc.ts'
-import { setupTRPC } from '@trpc/next';
+import { createTRPCNext } from '@trpc/next';
 import type { AppRouter } from '../pages/api/trpc/[trpc]';
 
-export const trpc = setupTRPC<AppRouter>({
+export const trpc = createTRPCNext<AppRouter>({
   config({ ctx }) {
     /* [...] */
   },

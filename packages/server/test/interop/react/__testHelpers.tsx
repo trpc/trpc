@@ -18,7 +18,7 @@ import { createReactQueryHooks } from '@trpc/react';
 import hash from 'hash-sum';
 import React, { ReactNode } from 'react';
 import { ZodError, z } from 'zod';
-import { OutputWithCursor } from '../../../../react/src/internals/createHooksInternal';
+import { OutputWithCursor } from '../../../../react/src/shared/hooks/createHooksInternal';
 import { TRPCError } from '../../../src/error/TRPCError';
 import { observable } from '../../../src/observable';
 import { subscriptionPullFactory } from '../../../src/subscription';
