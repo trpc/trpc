@@ -205,18 +205,13 @@ export class TRPCClient<TRouter extends AnyRouter> {
   public query<
     TQueries extends AssertLegacyDef<TRouter>['queries'],
     TPath extends string & keyof TQueries,
-  >(
-    path: TPath,
-    input?: inferProcedureInput<AssertType<TQueries, ProcedureRecord>[TPath]>,
-    opts?: TRPCRequestOptions,
-  ) {
-    return this.requestAsPromise<
-      inferProcedureInput<AssertType<TQueries, ProcedureRecord>[TPath]>,
-      inferProcedureOutput<TQueries[TPath]>
-    >({
+    TInput = inferProcedureInput<AssertType<TQueries, ProcedureRecord>[TPath]>,
+  >(path: TPath, input?: TInput, opts?: TRPCRequestOptions) {
+    type TOutput = inferProcedureOutput<TQueries[TPath]>;
+    return this.requestAsPromise<TInput, TOutput>({
       type: 'query',
       path,
-      input,
+      input: input as TInput,
       context: opts?.context,
       signal: opts?.signal,
     });
@@ -224,18 +219,15 @@ export class TRPCClient<TRouter extends AnyRouter> {
   public mutation<
     TMutations extends AssertLegacyDef<TRouter>['mutations'],
     TPath extends string & keyof TMutations,
-  >(
-    path: TPath,
-    input?: inferProcedureInput<AssertType<TMutations, ProcedureRecord>[TPath]>,
-    opts?: TRPCRequestOptions,
-  ) {
-    return this.requestAsPromise<
-      inferProcedureInput<AssertType<TMutations, ProcedureRecord>[TPath]>,
-      inferProcedureOutput<TMutations[TPath]>
-    >({
+    TInput = inferProcedureInput<
+      AssertType<TMutations, ProcedureRecord>[TPath]
+    >,
+  >(path: TPath, input?: TInput, opts?: TRPCRequestOptions) {
+    type TOutput = inferProcedureOutput<TMutations[TPath]>;
+    return this.requestAsPromise<TInput, TOutput>({
       type: 'mutation',
       path,
-      input,
+      input: input as TInput,
       context: opts?.context,
       signal: opts?.signal,
     });
