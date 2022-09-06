@@ -16,13 +16,15 @@ import { inferObservableValue } from '@trpc/server/observable';
 import { LegacyV9ProcedureTag } from '@trpc/server/shared';
 import { useMemo } from 'react';
 import {
-  DecoratedProcedureUtilsRecord,
+  CreateReactUtilsProxy,
   createReactProxyDecoration,
   createReactQueryUtilsProxy,
 } from './shared';
 import {
+  CreateClient,
   CreateReactQueryHooks,
-  TRPCProviderProps,
+  TRPCProvider,
+  UseDehydratedState,
   UseTRPCInfiniteQueryOptions,
   UseTRPCMutationOptions,
   UseTRPCQueryOptions,
@@ -119,8 +121,10 @@ export type DecoratedProcedureRecord<
 };
 
 export type CreateTRPCReact<TRouter extends AnyRouter, TSSRContext> = {
-  useContext(): DecoratedProcedureUtilsRecord<TRouter>;
-  Provider(props: TRPCProviderProps<TRouter, TSSRContext>): JSX.Element;
+  useContext(): CreateReactUtilsProxy<TRouter, TSSRContext>;
+  Provider: TRPCProvider<TRouter, TSSRContext>;
+  createClient: CreateClient<TRouter>;
+  useDehydratedState: UseDehydratedState<TRouter>;
 } & DecoratedProcedureRecord<TRouter['_def']['record']>;
 
 /**
@@ -141,7 +145,7 @@ export function createHooksInternalProxy<
             const context = trpc.useContext();
             // create a stable reference of the utils context
             return useMemo(() => {
-              return createReactQueryUtilsProxy(context as any);
+              return (createReactQueryUtilsProxy as any)(context as any);
             }, [context]);
           };
         }

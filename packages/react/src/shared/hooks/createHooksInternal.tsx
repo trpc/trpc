@@ -130,6 +130,19 @@ export interface TRPCProviderProps<TRouter extends AnyRouter, TSSRContext>
   children: ReactNode;
 }
 
+export type TRPCProvider<TRouter extends AnyRouter, TSSRContext> = (
+  props: TRPCProviderProps<TRouter, TSSRContext>,
+) => JSX.Element;
+
+export type UseDehydratedState<TRouter extends AnyRouter> = (
+  client: TRPCClient<TRouter>,
+  trpcState: DehydratedState | undefined,
+) => DehydratedState | undefined;
+
+export type CreateClient<TRouter extends AnyRouter> = (
+  opts: CreateTRPCClientOptions<TRouter>,
+) => TRPCClient<TRouter>;
+
 /**
  * Create strongly typed react hooks
  * @internal
@@ -160,13 +173,11 @@ export function createHooksInternal<
   type ProviderContext = TRPCContextState<TRouter, TSSRContext>;
   const Context = TRPCContext as React.Context<ProviderContext>;
 
-  function createClient(
-    opts: CreateTRPCClientOptions<TRouter>,
-  ): TRPCClient<TRouter> {
+  const createClient: CreateClient<TRouter> = (opts) => {
     return createTRPCClient(opts);
-  }
+  };
 
-  function TRPCProvider(props: TRPCProviderProps<TRouter, TSSRContext>) {
+  const TRPCProvider: TRPCProvider<TRouter, TSSRContext> = (props) => {
     const { abortOnUnmount = false, client, queryClient, ssrContext } = props;
     const [ssrState, setSSRState] = useState<SSRState>(props.ssrState ?? false);
     useEffect(() => {
@@ -273,7 +284,7 @@ export function createHooksInternal<
         {props.children}
       </Context.Provider>
     );
-  }
+  };
 
   function useContext() {
     return React.useContext(Context);
@@ -496,10 +507,10 @@ export function createHooksInternal<
       ssrOpts,
     );
   }
-  function useDehydratedState(
-    client: TRPCClient<TRouter>,
-    trpcState: DehydratedState | undefined,
-  ) {
+  const useDehydratedState: UseDehydratedState<TRouter> = (
+    client,
+    trpcState,
+  ) => {
     const transformed: DehydratedState | undefined = useMemo(() => {
       if (!trpcState) {
         return trpcState;
@@ -508,7 +519,7 @@ export function createHooksInternal<
       return client.runtime.transformer.deserialize(trpcState);
     }, [trpcState, client]);
     return transformed;
-  }
+  };
 
   return {
     Provider: TRPCProvider,

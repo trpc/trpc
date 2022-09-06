@@ -30,7 +30,7 @@ export function createTRPCNext<
             const context = hooks.useContext();
             // create a stable reference of the utils context
             return useMemo(() => {
-              return createReactQueryUtilsProxy(context as any);
+              return (createReactQueryUtilsProxy as any)(context);
             }, [context]);
           };
         }

@@ -21,9 +21,11 @@ import {
 import { createProxy } from '@trpc/server/shared';
 import { LegacyV9ProcedureTag } from '@trpc/server/shared';
 import {
+  TRPCContextProps,
   TRPCContextState,
   TRPCFetchInfiniteQueryOptions,
   TRPCFetchQueryOptions,
+  contextProps,
 } from '../../internals/context';
 import { getQueryKey } from '../../internals/getQueryKey';
 
@@ -162,93 +164,124 @@ export type DecoratedProcedureUtilsRecord<TRouter extends AnyRouter> =
 
 type AnyDecoratedProcedure = DecorateProcedure<any, any>;
 
+export type CreateReactUtilsProxy<
+  TRouter extends AnyRouter,
+  TSSRContext,
+> = DecoratedProcedureUtilsRecord<TRouter> &
+  TRPCContextProps<TRouter, TSSRContext>;
+
 /**
  * @internal
  */
-export function createReactQueryUtilsProxy<TRouter extends AnyRouter>(
-  context: TRPCContextState<AnyRouter, unknown>,
-) {
-  const proxy = createProxy(({ path, args }) => {
-    const pathCopy = [...path];
-    const utilName = pathCopy.pop() as keyof AnyDecoratedProcedure;
+export function createReactQueryUtilsProxy<
+  TRouter extends AnyRouter,
+  TSSRContext,
+>(context: TRPCContextState<AnyRouter, unknown>) {
+  const proxy: unknown = new Proxy(
+    () => {
+      // noop
+    },
+    {
+      get(_obj, name) {
+        if (typeof name !== 'string') {
+          throw new Error('Not supported');
+        }
+        const contextName = name as typeof contextProps[number];
+        if (contextProps.includes(contextName)) {
+          return context[contextName];
+        }
 
-    const fullPath = pathCopy.join('.');
+        return createProxy(({ path, args }) => {
+          const pathCopy = [name, ...path];
+          const utilName = pathCopy.pop() as keyof AnyDecoratedProcedure;
 
-    switch (utilName) {
-      case 'fetch': {
-        const [input, ...rest] = args as Parameters<
-          AnyDecoratedProcedure['fetch']
-        >;
-        const queryKey = getQueryKey(fullPath, input);
-        return context.fetchQuery(queryKey, ...rest);
-      }
-      case 'fetchInfinite': {
-        const [input, ...rest] = args as Parameters<
-          AnyDecoratedProcedure['fetchInfinite']
-        >;
-        const queryKey = getQueryKey(fullPath, input);
-        return context.fetchInfiniteQuery(queryKey, ...rest);
-      }
-      case 'prefetch': {
-        const [input, ...rest] = args as Parameters<
-          AnyDecoratedProcedure['prefetch']
-        >;
-        const queryKey = getQueryKey(fullPath, input);
-        return context.prefetchQuery(queryKey, ...rest);
-      }
-      case 'prefetchInfinite': {
-        const [input, ...rest] = args;
-        const queryKey = getQueryKey(fullPath, input);
-        return context.prefetchInfiniteQuery(queryKey, ...(rest as any));
-      }
-      case 'invalidate': {
-        const [input, ...rest] = args as Parameters<
-          AnyDecoratedProcedure['invalidate']
-        >;
-        const queryKey = getQueryKey(fullPath, input);
-        return context.invalidateQueries(queryKey, ...rest);
-      }
-      case 'refetch': {
-        const [input, ...rest] = args as Parameters<
-          AnyDecoratedProcedure['refetch']
-        >;
-        const queryKey = getQueryKey(fullPath, input);
-        return context.refetchQueries(queryKey, ...rest);
-      }
-      case 'cancel': {
-        const [input, ...rest] = args as Parameters<
-          AnyDecoratedProcedure['cancel']
-        >;
-        const queryKey = getQueryKey(fullPath, input);
-        return context.cancelQuery(queryKey, ...rest);
-      }
-      case 'setData': {
-        const [updater, input, ...rest] = args as Parameters<
-          AnyDecoratedProcedure['setData']
-        >;
-        const queryKey = getQueryKey(fullPath, input);
-        return context.setQueryData(queryKey, updater, ...rest);
-      }
-      case 'setInfiniteData': {
-        const [updater, input, ...rest] = args as Parameters<
-          AnyDecoratedProcedure['setInfiniteData']
-        >;
-        const queryKey = getQueryKey(fullPath, input);
-        return context.setInfiniteQueryData(queryKey, updater as any, ...rest);
-      }
-      case 'getData': {
-        const [input] = args as Parameters<AnyDecoratedProcedure['getData']>;
-        const queryKey = getQueryKey(fullPath, input);
-        return context.getQueryData(queryKey);
-      }
-      case 'getInfiniteData': {
-        const [input] = args as Parameters<
-          AnyDecoratedProcedure['getInfiniteData']
-        >;
-        const queryKey = getQueryKey(fullPath, input);
-        return context.getInfiniteQueryData(queryKey);
-      }
-    }
-  });
-  return proxy as DecoratedProcedureUtilsRecord<TRouter>;
+          const fullPath = pathCopy.join('.');
+
+          switch (utilName) {
+            case 'fetch': {
+              const [input, ...rest] = args as Parameters<
+                AnyDecoratedProcedure['fetch']
+              >;
+              const queryKey = getQueryKey(fullPath, input);
+              return context.fetchQuery(queryKey, ...rest);
+            }
+            case 'fetchInfinite': {
+              const [input, ...rest] = args as Parameters<
+                AnyDecoratedProcedure['fetchInfinite']
+              >;
+              const queryKey = getQueryKey(fullPath, input);
+              return context.fetchInfiniteQuery(queryKey, ...rest);
+            }
+            case 'prefetch': {
+              const [input, ...rest] = args as Parameters<
+                AnyDecoratedProcedure['prefetch']
+              >;
+              const queryKey = getQueryKey(fullPath, input);
+              return context.prefetchQuery(queryKey, ...rest);
+            }
+            case 'prefetchInfinite': {
+              const [input, ...rest] = args;
+              const queryKey = getQueryKey(fullPath, input);
+              return context.prefetchInfiniteQuery(queryKey, ...(rest as any));
+            }
+            case 'invalidate': {
+              const [input, ...rest] = args as Parameters<
+                AnyDecoratedProcedure['invalidate']
+              >;
+              const queryKey = getQueryKey(fullPath, input);
+              return context.invalidateQueries(queryKey, ...rest);
+            }
+            case 'refetch': {
+              const [input, ...rest] = args as Parameters<
+                AnyDecoratedProcedure['refetch']
+              >;
+              const queryKey = getQueryKey(fullPath, input);
+              return context.refetchQueries(queryKey, ...rest);
+            }
+            case 'cancel': {
+              const [input, ...rest] = args as Parameters<
+                AnyDecoratedProcedure['cancel']
+              >;
+              const queryKey = getQueryKey(fullPath, input);
+              return context.cancelQuery(queryKey, ...rest);
+            }
+            case 'setData': {
+              const [updater, input, ...rest] = args as Parameters<
+                AnyDecoratedProcedure['setData']
+              >;
+              const queryKey = getQueryKey(fullPath, input);
+              return context.setQueryData(queryKey, updater, ...rest);
+            }
+            case 'setInfiniteData': {
+              const [updater, input, ...rest] = args as Parameters<
+                AnyDecoratedProcedure['setInfiniteData']
+              >;
+              const queryKey = getQueryKey(fullPath, input);
+              return context.setInfiniteQueryData(
+                queryKey,
+                updater as any,
+                ...rest,
+              );
+            }
+            case 'getData': {
+              const [input] = args as Parameters<
+                AnyDecoratedProcedure['getData']
+              >;
+              const queryKey = getQueryKey(fullPath, input);
+              return context.getQueryData(queryKey);
+            }
+            case 'getInfiniteData': {
+              const [input] = args as Parameters<
+                AnyDecoratedProcedure['getInfiniteData']
+              >;
+              const queryKey = getQueryKey(fullPath, input);
+              return context.getInfiniteQueryData(queryKey);
+            }
+          }
+        });
+      },
+    },
+  );
+
+  return proxy as CreateReactUtilsProxy<TRouter, TSSRContext>;
 }
