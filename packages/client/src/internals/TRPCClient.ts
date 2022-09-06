@@ -2,7 +2,6 @@ import {
   AnyRouter,
   ClientDataTransformerOptions,
   DataTransformer,
-  inferHandlerInput,
   inferProcedureInput,
   inferProcedureOutput,
   inferSubscriptionOutput,
@@ -208,16 +207,16 @@ export class TRPCClient<TRouter extends AnyRouter> {
     TPath extends string & keyof TQueries,
   >(
     path: TPath,
-    input?: inferHandlerInput<AssertType<TQueries, ProcedureRecord>[TPath]>[0],
+    input?: inferProcedureInput<AssertType<TQueries, ProcedureRecord>[TPath]>,
     opts?: TRPCRequestOptions,
   ) {
     return this.requestAsPromise<
-      inferHandlerInput<AssertType<TQueries, ProcedureRecord>[TPath]>,
+      inferProcedureInput<AssertType<TQueries, ProcedureRecord>[TPath]>,
       inferProcedureOutput<TQueries[TPath]>
     >({
       type: 'query',
       path,
-      input: input as any,
+      input,
       context: opts?.context,
       signal: opts?.signal,
     });
@@ -227,18 +226,16 @@ export class TRPCClient<TRouter extends AnyRouter> {
     TPath extends string & keyof TMutations,
   >(
     path: TPath,
-    input?: inferHandlerInput<
-      AssertType<TMutations, ProcedureRecord>[TPath]
-    >[0],
+    input?: inferProcedureInput<AssertType<TMutations, ProcedureRecord>[TPath]>,
     opts?: TRPCRequestOptions,
   ) {
     return this.requestAsPromise<
-      inferHandlerInput<AssertType<TMutations, ProcedureRecord>[TPath]>,
+      inferProcedureInput<AssertType<TMutations, ProcedureRecord>[TPath]>,
       inferProcedureOutput<TMutations[TPath]>
     >({
       type: 'mutation',
       path,
-      input: input as any,
+      input,
       context: opts?.context,
       signal: opts?.signal,
     });
