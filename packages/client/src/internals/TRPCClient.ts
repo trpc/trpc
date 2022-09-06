@@ -205,7 +205,9 @@ export class TRPCClient<TRouter extends AnyRouter> {
   public query<
     TQueries extends AssertLegacyDef<TRouter>['queries'],
     TPath extends string & keyof TQueries,
-    TInput = inferProcedureInput<AssertType<TQueries, ProcedureRecord>[TPath]>,
+    TInput extends inferProcedureInput<
+      AssertType<TQueries, ProcedureRecord>[TPath]
+    >,
   >(path: TPath, input?: TInput, opts?: TRPCRequestOptions) {
     type TOutput = inferProcedureOutput<TQueries[TPath]>;
     return this.requestAsPromise<TInput, TOutput>({
@@ -219,7 +221,7 @@ export class TRPCClient<TRouter extends AnyRouter> {
   public mutation<
     TMutations extends AssertLegacyDef<TRouter>['mutations'],
     TPath extends string & keyof TMutations,
-    TInput = inferProcedureInput<
+    TInput extends inferProcedureInput<
       AssertType<TMutations, ProcedureRecord>[TPath]
     >,
   >(path: TPath, input?: TInput, opts?: TRPCRequestOptions) {
