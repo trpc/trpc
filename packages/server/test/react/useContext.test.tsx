@@ -76,7 +76,9 @@ test('fetch', async () => {
     const [posts, setPosts] = useState<Post[]>([]);
 
     useEffect(() => {
-      utils.post.all.fetch().then((allPosts) => setPosts(allPosts));
+      utils.post.all.fetch().then((allPosts) => {
+        setPosts(allPosts);
+      });
     }, [utils]);
 
     return <p>{posts[0]?.text}</p>;

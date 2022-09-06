@@ -65,7 +65,8 @@ test('useDehydratedState()', async () => {
   const { App, proxy, router } = ctx;
 
   const ssg = createProxySSGHelpers({ router, ctx: {} });
-  await ssg.hello.prefetch();
+  const res = await ssg.hello.fetch();
+  expect(res).toBe('world');
   const dehydratedState = ssg.dehydrate();
 
   function MyComponent() {

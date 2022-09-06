@@ -183,106 +183,102 @@ export function createReactQueryUtilsProxy<
     },
     {
       get(_obj, name) {
-        if (typeof name === 'string') {
-          const contextName = name as typeof contextProps[number];
-          if (contextProps.includes(contextName)) {
-            return context[contextName];
-          }
-
-          return createProxy(({ path, args }) => {
-            const pathCopy = [...path];
-            const utilName = pathCopy.pop() as keyof AnyDecoratedProcedure;
-
-            const fullPath = pathCopy.join('.');
-
-            switch (utilName) {
-              case 'fetch': {
-                const [input, ...rest] = args as Parameters<
-                  AnyDecoratedProcedure['fetch']
-                >;
-                const queryKey = getQueryKey(fullPath, input);
-                return context.fetchQuery(queryKey, ...rest);
-              }
-              case 'fetchInfinite': {
-                const [input, ...rest] = args as Parameters<
-                  AnyDecoratedProcedure['fetchInfinite']
-                >;
-                const queryKey = getQueryKey(fullPath, input);
-                return context.fetchInfiniteQuery(queryKey, ...rest);
-              }
-              case 'prefetch': {
-                const [input, ...rest] = args as Parameters<
-                  AnyDecoratedProcedure['prefetch']
-                >;
-                const queryKey = getQueryKey(fullPath, input);
-                return context.prefetchQuery(queryKey, ...rest);
-              }
-              case 'prefetchInfinite': {
-                const [input, ...rest] = args;
-                const queryKey = getQueryKey(fullPath, input);
-                return context.prefetchInfiniteQuery(
-                  queryKey,
-                  ...(rest as any),
-                );
-              }
-              case 'invalidate': {
-                const [input, ...rest] = args as Parameters<
-                  AnyDecoratedProcedure['invalidate']
-                >;
-                const queryKey = getQueryKey(fullPath, input);
-                return context.invalidateQueries(queryKey, ...rest);
-              }
-              case 'refetch': {
-                const [input, ...rest] = args as Parameters<
-                  AnyDecoratedProcedure['refetch']
-                >;
-                const queryKey = getQueryKey(fullPath, input);
-                return context.refetchQueries(queryKey, ...rest);
-              }
-              case 'cancel': {
-                const [input, ...rest] = args as Parameters<
-                  AnyDecoratedProcedure['cancel']
-                >;
-                const queryKey = getQueryKey(fullPath, input);
-                return context.cancelQuery(queryKey, ...rest);
-              }
-              case 'setData': {
-                const [updater, input, ...rest] = args as Parameters<
-                  AnyDecoratedProcedure['setData']
-                >;
-                const queryKey = getQueryKey(fullPath, input);
-                return context.setQueryData(queryKey, updater, ...rest);
-              }
-              case 'setInfiniteData': {
-                const [updater, input, ...rest] = args as Parameters<
-                  AnyDecoratedProcedure['setInfiniteData']
-                >;
-                const queryKey = getQueryKey(fullPath, input);
-                return context.setInfiniteQueryData(
-                  queryKey,
-                  updater as any,
-                  ...rest,
-                );
-              }
-              case 'getData': {
-                const [input] = args as Parameters<
-                  AnyDecoratedProcedure['getData']
-                >;
-                const queryKey = getQueryKey(fullPath, input);
-                return context.getQueryData(queryKey);
-              }
-              case 'getInfiniteData': {
-                const [input] = args as Parameters<
-                  AnyDecoratedProcedure['getInfiniteData']
-                >;
-                const queryKey = getQueryKey(fullPath, input);
-                return context.getInfiniteQueryData(queryKey);
-              }
-            }
-          });
+        if (typeof name !== 'string') {
+          throw new Error('Not supported');
+        }
+        const contextName = name as typeof contextProps[number];
+        if (contextProps.includes(contextName)) {
+          return context[contextName];
         }
 
-        throw new Error('Not supported');
+        return createProxy(({ path, args }) => {
+          const pathCopy = [name, ...path];
+          const utilName = pathCopy.pop() as keyof AnyDecoratedProcedure;
+
+          const fullPath = pathCopy.join('.');
+
+          switch (utilName) {
+            case 'fetch': {
+              const [input, ...rest] = args as Parameters<
+                AnyDecoratedProcedure['fetch']
+              >;
+              const queryKey = getQueryKey(fullPath, input);
+              return context.fetchQuery(queryKey, ...rest);
+            }
+            case 'fetchInfinite': {
+              const [input, ...rest] = args as Parameters<
+                AnyDecoratedProcedure['fetchInfinite']
+              >;
+              const queryKey = getQueryKey(fullPath, input);
+              return context.fetchInfiniteQuery(queryKey, ...rest);
+            }
+            case 'prefetch': {
+              const [input, ...rest] = args as Parameters<
+                AnyDecoratedProcedure['prefetch']
+              >;
+              const queryKey = getQueryKey(fullPath, input);
+              return context.prefetchQuery(queryKey, ...rest);
+            }
+            case 'prefetchInfinite': {
+              const [input, ...rest] = args;
+              const queryKey = getQueryKey(fullPath, input);
+              return context.prefetchInfiniteQuery(queryKey, ...(rest as any));
+            }
+            case 'invalidate': {
+              const [input, ...rest] = args as Parameters<
+                AnyDecoratedProcedure['invalidate']
+              >;
+              const queryKey = getQueryKey(fullPath, input);
+              return context.invalidateQueries(queryKey, ...rest);
+            }
+            case 'refetch': {
+              const [input, ...rest] = args as Parameters<
+                AnyDecoratedProcedure['refetch']
+              >;
+              const queryKey = getQueryKey(fullPath, input);
+              return context.refetchQueries(queryKey, ...rest);
+            }
+            case 'cancel': {
+              const [input, ...rest] = args as Parameters<
+                AnyDecoratedProcedure['cancel']
+              >;
+              const queryKey = getQueryKey(fullPath, input);
+              return context.cancelQuery(queryKey, ...rest);
+            }
+            case 'setData': {
+              const [updater, input, ...rest] = args as Parameters<
+                AnyDecoratedProcedure['setData']
+              >;
+              const queryKey = getQueryKey(fullPath, input);
+              return context.setQueryData(queryKey, updater, ...rest);
+            }
+            case 'setInfiniteData': {
+              const [updater, input, ...rest] = args as Parameters<
+                AnyDecoratedProcedure['setInfiniteData']
+              >;
+              const queryKey = getQueryKey(fullPath, input);
+              return context.setInfiniteQueryData(
+                queryKey,
+                updater as any,
+                ...rest,
+              );
+            }
+            case 'getData': {
+              const [input] = args as Parameters<
+                AnyDecoratedProcedure['getData']
+              >;
+              const queryKey = getQueryKey(fullPath, input);
+              return context.getQueryData(queryKey);
+            }
+            case 'getInfiniteData': {
+              const [input] = args as Parameters<
+                AnyDecoratedProcedure['getInfiniteData']
+              >;
+              const queryKey = getQueryKey(fullPath, input);
+              return context.getInfiniteQueryData(queryKey);
+            }
+          }
+        });
       },
     },
   );
