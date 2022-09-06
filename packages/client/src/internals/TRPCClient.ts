@@ -124,34 +124,35 @@ export class TRPCClient<TRouter extends AnyRouter> {
       return () => ({});
     }
 
-    const transformer: DataTransformer = opts.transformer
-      ? 'input' in opts.transformer
-        ? {
-            serialize: opts.transformer.input.serialize,
-            deserialize: opts.transformer.output.deserialize,
-          }
-        : opts.transformer
-      : {
+    function getTransformer(): DataTransformer {
+      if (!opts.transformer)
+        return {
           serialize: (data) => data,
           deserialize: (data) => data,
         };
+      if ('input' in opts.transformer)
+        return {
+          serialize: opts.transformer.input.serialize,
+          deserialize: opts.transformer.output.deserialize,
+        };
+      return opts.transformer;
+    }
 
     this.runtime = {
       AbortController: AC,
       fetch: _fetch,
       headers: getHeadersFn(),
-      transformer,
+      transformer: getTransformer(),
     };
 
-    if ('links' in opts) {
-      this.links = opts.links.map((link) => link(this.runtime));
-    } else {
-      this.links = [
-        httpBatchLink({
-          url: opts.url,
-        })(this.runtime),
-      ];
-    }
+    const getLinks = (): OperationLink<TRouter>[] => {
+      if ('links' in opts) {
+        return opts.links.map((link) => link(this.runtime));
+      }
+      return [httpBatchLink({ url: opts.url })(this.runtime)];
+    };
+
+    this.links = getLinks();
   }
 
   private $request<TInput = unknown, TOutput = unknown>({
@@ -207,24 +208,18 @@ export class TRPCClient<TRouter extends AnyRouter> {
     TPath extends string & keyof TQueries,
   >(
     path: TPath,
-    ...args: [
-      ...inferHandlerInput<AssertType<TQueries, ProcedureRecord>[TPath]>,
-      TRPCRequestOptions?,
-    ]
+    input: inferHandlerInput<AssertType<TQueries, ProcedureRecord>[TPath]>,
+    opts?: TRPCRequestOptions,
   ) {
-    // FIXME: Should be inferred from `args`
-    const context = (args[1] as TRPCRequestOptions | undefined)?.context;
-    const signal = (args[1] as TRPCRequestOptions | undefined)?.signal;
-
     return this.requestAsPromise<
       inferHandlerInput<AssertType<TQueries, ProcedureRecord>[TPath]>,
       inferProcedureOutput<TQueries[TPath]>
     >({
       type: 'query',
       path,
-      input: args[0] as any,
-      context,
-      signal,
+      input,
+      context: opts?.context,
+      signal: opts?.signal,
     });
   }
   public mutation<
@@ -232,24 +227,18 @@ export class TRPCClient<TRouter extends AnyRouter> {
     TPath extends string & keyof TMutations,
   >(
     path: TPath,
-    ...args: [
-      ...inferHandlerInput<AssertType<TMutations, ProcedureRecord>[TPath]>,
-      TRPCRequestOptions?,
-    ]
+    input: inferHandlerInput<AssertType<TMutations, ProcedureRecord>[TPath]>,
+    opts?: TRPCRequestOptions,
   ) {
-    // FIXME: Should be inferred from `args`
-    const context = (args[1] as TRPCRequestOptions | undefined)?.context;
-    const signal = (args[1] as TRPCRequestOptions | undefined)?.signal;
-
     return this.requestAsPromise<
       inferHandlerInput<AssertType<TMutations, ProcedureRecord>[TPath]>,
       inferProcedureOutput<TMutations[TPath]>
     >({
       type: 'mutation',
       path,
-      input: args[0] as any,
-      context,
-      signal,
+      input,
+      context: opts?.context,
+      signal: opts?.signal,
     });
   }
   public subscription<
