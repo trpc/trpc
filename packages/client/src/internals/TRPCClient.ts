@@ -208,7 +208,7 @@ export class TRPCClient<TRouter extends AnyRouter> {
     TPath extends string & keyof TQueries,
   >(
     path: TPath,
-    input: inferHandlerInput<AssertType<TQueries, ProcedureRecord>[TPath]>,
+    input?: inferHandlerInput<AssertType<TQueries, ProcedureRecord>[TPath]>,
     opts?: TRPCRequestOptions,
   ) {
     return this.requestAsPromise<
@@ -217,7 +217,7 @@ export class TRPCClient<TRouter extends AnyRouter> {
     >({
       type: 'query',
       path,
-      input,
+      input: input as any,
       context: opts?.context,
       signal: opts?.signal,
     });
@@ -227,7 +227,7 @@ export class TRPCClient<TRouter extends AnyRouter> {
     TPath extends string & keyof TMutations,
   >(
     path: TPath,
-    input: inferHandlerInput<AssertType<TMutations, ProcedureRecord>[TPath]>,
+    input?: inferHandlerInput<AssertType<TMutations, ProcedureRecord>[TPath]>,
     opts?: TRPCRequestOptions,
   ) {
     return this.requestAsPromise<
@@ -236,7 +236,7 @@ export class TRPCClient<TRouter extends AnyRouter> {
     >({
       type: 'mutation',
       path,
-      input,
+      input: input as any,
       context: opts?.context,
       signal: opts?.signal,
     });
