@@ -1,14 +1,9 @@
 import {
-  DehydratedState,
   UseInfiniteQueryResult,
   UseMutationResult,
   UseQueryResult,
 } from '@tanstack/react-query';
-import {
-  CreateTRPCClientOptions,
-  TRPCClient,
-  TRPCClientErrorLike,
-} from '@trpc/client';
+import { TRPCClientErrorLike } from '@trpc/client';
 import {
   AnyRouter,
   OmitNeverKeys,
@@ -21,7 +16,7 @@ import { inferObservableValue } from '@trpc/server/observable';
 import { LegacyV9ProcedureTag } from '@trpc/server/shared';
 import { useMemo } from 'react';
 import {
-  DecoratedProcedureUtilsRecord,
+  CreateReactUtilsProxy,
   createReactProxyDecoration,
   createReactQueryUtilsProxy,
 } from './shared';
@@ -29,7 +24,6 @@ import {
   CreateClient,
   CreateReactQueryHooks,
   TRPCProvider,
-  TRPCProviderProps,
   UseDehydratedState,
   UseTRPCInfiniteQueryOptions,
   UseTRPCMutationOptions,
@@ -127,7 +121,7 @@ export type DecoratedProcedureRecord<
 };
 
 export type CreateTRPCReact<TRouter extends AnyRouter, TSSRContext> = {
-  useContext(): DecoratedProcedureUtilsRecord<TRouter>;
+  useContext(): CreateReactUtilsProxy<TRouter, TSSRContext>;
   Provider: TRPCProvider<TRouter, TSSRContext>;
   createClient: CreateClient<TRouter>;
   useDehydratedState: UseDehydratedState<TRouter>;
@@ -151,7 +145,7 @@ export function createHooksInternalProxy<
             const context = trpc.useContext();
             // create a stable reference of the utils context
             return useMemo(() => {
-              return createReactQueryUtilsProxy(context as any);
+              return (createReactQueryUtilsProxy as any)(context as any);
             }, [context]);
           };
         }

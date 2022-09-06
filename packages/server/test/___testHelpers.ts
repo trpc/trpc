@@ -6,7 +6,7 @@ import {
   createTRPCClientProxy,
   createWSClient,
 } from '@trpc/client/src';
-import { CreateTRPCClientOptions, createTRPCClient } from '@trpc/client/src';
+import { createTRPCClient } from '@trpc/client/src';
 import { WithTRPCConfig } from '@trpc/next';
 import AbortController from 'abort-controller';
 import fetch from 'node-fetch';

@@ -61,6 +61,14 @@ export interface TRPCContextProps<TRouter extends AnyRouter, TSSRContext> {
   abortOnUnmount?: boolean;
 }
 
+export const contextProps: (keyof TRPCContextProps<any, any>)[] = [
+  'queryClient',
+  'client',
+  'ssrContext',
+  'ssrState',
+  'abortOnUnmount',
+];
+
 /** @internal */
 export interface TRPCContextState<
   TRouter extends AnyRouter,
