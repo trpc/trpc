@@ -18,8 +18,7 @@ import {
   inferProcedureInput,
   inferProcedureOutput,
 } from '@trpc/server';
-import { createProxy } from '@trpc/server/shared';
-import { LegacyV9ProcedureTag } from '@trpc/server/shared';
+import { LegacyV9ProcedureTag, createProxy } from '@trpc/server/shared';
 import {
   TRPCContextProps,
   TRPCContextState,
@@ -197,87 +196,52 @@ export function createReactQueryUtilsProxy<
 
           const fullPath = pathCopy.join('.');
 
-          switch (utilName) {
-            case 'fetch': {
-              const [input, ...rest] = args as Parameters<
-                AnyDecoratedProcedure['fetch']
-              >;
-              const queryKey = getQueryKey(fullPath, input);
-              return context.fetchQuery(queryKey, ...rest);
-            }
-            case 'fetchInfinite': {
-              const [input, ...rest] = args as Parameters<
-                AnyDecoratedProcedure['fetchInfinite']
-              >;
-              const queryKey = getQueryKey(fullPath, input);
-              return context.fetchInfiniteQuery(queryKey, ...rest);
-            }
-            case 'prefetch': {
-              const [input, ...rest] = args as Parameters<
-                AnyDecoratedProcedure['prefetch']
-              >;
-              const queryKey = getQueryKey(fullPath, input);
-              return context.prefetchQuery(queryKey, ...rest);
-            }
-            case 'prefetchInfinite': {
-              const [input, ...rest] = args;
-              const queryKey = getQueryKey(fullPath, input);
-              return context.prefetchInfiniteQuery(queryKey, ...(rest as any));
-            }
-            case 'invalidate': {
-              const [input, ...rest] = args as Parameters<
-                AnyDecoratedProcedure['invalidate']
-              >;
-              const queryKey = getQueryKey(fullPath, input);
-              return context.invalidateQueries(queryKey, ...rest);
-            }
-            case 'refetch': {
-              const [input, ...rest] = args as Parameters<
-                AnyDecoratedProcedure['refetch']
-              >;
-              const queryKey = getQueryKey(fullPath, input);
-              return context.refetchQueries(queryKey, ...rest);
-            }
-            case 'cancel': {
-              const [input, ...rest] = args as Parameters<
-                AnyDecoratedProcedure['cancel']
-              >;
-              const queryKey = getQueryKey(fullPath, input);
-              return context.cancelQuery(queryKey, ...rest);
-            }
-            case 'setData': {
+          const getOpts = (name: typeof utilName) => {
+            if (['setData', 'setInfiniteData'].includes(name)) {
               const [updater, input, ...rest] = args as Parameters<
-                AnyDecoratedProcedure['setData']
+                AnyDecoratedProcedure[typeof utilName]
               >;
               const queryKey = getQueryKey(fullPath, input);
-              return context.setQueryData(queryKey, updater, ...rest);
-            }
-            case 'setInfiniteData': {
-              const [updater, input, ...rest] = args as Parameters<
-                AnyDecoratedProcedure['setInfiniteData']
-              >;
-              const queryKey = getQueryKey(fullPath, input);
-              return context.setInfiniteQueryData(
+              return {
+                input,
                 queryKey,
-                updater as any,
-                ...rest,
-              );
+                updater,
+                rest,
+              };
             }
-            case 'getData': {
-              const [input] = args as Parameters<
-                AnyDecoratedProcedure['getData']
-              >;
-              const queryKey = getQueryKey(fullPath, input);
-              return context.getQueryData(queryKey);
-            }
-            case 'getInfiniteData': {
-              const [input] = args as Parameters<
-                AnyDecoratedProcedure['getInfiniteData']
-              >;
-              const queryKey = getQueryKey(fullPath, input);
-              return context.getInfiniteQueryData(queryKey);
-            }
-          }
+
+            const [input, ...rest] = args as Parameters<
+              AnyDecoratedProcedure[typeof utilName]
+            >;
+            const queryKey = getQueryKey(fullPath, input);
+            return {
+              input,
+              queryKey,
+              rest,
+            };
+          };
+
+          const { queryKey, rest, updater, input } = getOpts(utilName);
+
+          const contextMap: Record<keyof AnyDecoratedProcedure, () => unknown> =
+            {
+              fetch: () => context.fetchQuery(queryKey, ...rest),
+              fetchInfinite: () =>
+                context.fetchInfiniteQuery(queryKey, ...rest),
+              prefetch: () => context.prefetchQuery(queryKey, ...rest),
+              prefetchInfinite: () =>
+                context.prefetchInfiniteQuery(queryKey, ...rest),
+              invalidate: () => context.invalidateQueries(queryKey, ...rest),
+              refetch: () => context.refetchQueries(queryKey, ...rest),
+              cancel: () => context.cancelQuery(queryKey, ...rest),
+              setData: () => context.setQueryData(queryKey, updater, ...rest),
+              setInfiniteData: () =>
+                context.setInfiniteQueryData(queryKey, input, ...rest),
+              getData: () => context.getQueryData(queryKey),
+              getInfiniteData: () => context.getInfiniteQueryData(queryKey),
+            };
+
+          return contextMap[utilName]();
         });
       },
     },
