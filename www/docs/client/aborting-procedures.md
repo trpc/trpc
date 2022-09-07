@@ -13,16 +13,12 @@ By default, TRPC does not cancel requests on unmount. If you want to opt in to t
 // ---cut---
 // @filename: utils.ts
 // @noErrors
-import { createTRPCNext } from '@trpc/next';
+import { createTRPCReact } from "@trpc/react";
 
-export const trpc = createTRPCNext<AppRouter, SSRContext>({
-  config() {
-    return {
-      // ...
-      abortOnUnMount: true 
-      // ...
-    };
-  },
+export const trpc = createTRPCReact<AppRouter>();
+trpc.createClient({
+  // ...
+  abortOnUnmount: true,
 });
 
 ```
