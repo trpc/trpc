@@ -219,6 +219,7 @@ The `config`-argument is a function that returns an object that configures the t
   - `transformer`: a transformer applied to outgoing payloads. Read more about [Data Transformers](data-transformers)
   - `fetch`: customize the implementation of `fetch` used by tRPC internally
   - `AbortController`: customize the implementation of `AbortController` used by tRPC internally
+  - `abortOnUnmount`: determines if in-flight requests will be cancelled on component unmount. This defaults to `false`.
 
 ### `ssr`-boolean (default: `false`)
 
