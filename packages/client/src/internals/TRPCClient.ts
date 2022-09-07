@@ -71,7 +71,6 @@ export type CreateTRPCClientOptions<TRouter extends AnyRouter> =
   | CreateTRPCClientBaseOptions &
       (
         | {
-            url?: never;
             links: TRPCLink<TRouter>[];
           }
         | {
