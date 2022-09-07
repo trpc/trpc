@@ -20,7 +20,6 @@ trpc.createClient({
   // ...
   abortOnUnmount: true,
 });
-
 ```
 You may also override this behavior at the request level.
 ```ts twoslash title="client.ts"
@@ -37,7 +36,6 @@ const PostViewPage: NextPageWithLayout = () => {
 
   return (...)
 }
-
 ```
 > Note: @tanstack/react-query only allows aborting queries.
 
