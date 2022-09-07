@@ -46,24 +46,6 @@ interface CreateTRPCClientBaseOptions {
   transformer?: ClientDataTransformerOptions;
 }
 
-/** @internal */
-export interface CreateTRPCClientWithURLOptions
-  extends CreateTRPCClientBaseOptions {
-  /**
-   * HTTP URL of API
-   **/
-  url: string;
-}
-
-/** @internal */
-export interface CreateTRPCClientWithLinksOptions<TRouter extends AnyRouter>
-  extends CreateTRPCClientBaseOptions {
-  /**
-   * @link https://trpc.io/docs/links
-   **/
-  links: TRPCLink<TRouter>[];
-}
-
 type TRPCType = 'subscription' | 'query' | 'mutation';
 export interface TRPCRequestOptions {
   /**
@@ -81,10 +63,21 @@ export interface TRPCSubscriptionObserver<TValue, TError> {
   onComplete: () => void;
 }
 
-/** @internal */
+/**
+ * This type prohibits `url` from being provided along with `links`
+ * @internal
+ */
 export type CreateTRPCClientOptions<TRouter extends AnyRouter> =
-  | CreateTRPCClientWithLinksOptions<TRouter>
-  | CreateTRPCClientWithURLOptions;
+  | CreateTRPCClientBaseOptions &
+      (
+        | {
+            links: TRPCLink<TRouter>[];
+          }
+        | {
+            url: string;
+            links?: never;
+          }
+      );
 
 export type AssertType<T, K> = T extends K ? T : never;
 /**
@@ -146,7 +139,8 @@ export class TRPCClient<TRouter extends AnyRouter> {
 
     const getLinks = (): OperationLink<TRouter>[] => {
       if ('links' in opts) {
-        return opts.links.map((link) => link(this.runtime));
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        return opts.links!.map((link) => link(this.runtime));
       }
       return [httpBatchLink({ url: opts.url })(this.runtime)];
     };
