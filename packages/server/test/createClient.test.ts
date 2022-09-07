@@ -23,4 +23,9 @@ describe('typedefs on createClient', () => {
       url: 'foo',
     });
   });
+
+  test('error if neither url and links are passed', () => {
+    // @ts-expect-error - must pass url or links
+    createTRPCProxyClient({});
+  });
 });
