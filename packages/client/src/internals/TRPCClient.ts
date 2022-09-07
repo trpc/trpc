@@ -138,9 +138,8 @@ export class TRPCClient<TRouter extends AnyRouter> {
     };
 
     const getLinks = (): OperationLink<TRouter>[] => {
-      if ('links' in opts) {
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        return opts.links!.map((link) => link(this.runtime));
+      if ('links' in opts && opts.links) {
+        return opts.links.map((link) => link(this.runtime));
       }
       return [httpBatchLink({ url: opts.url })(this.runtime)];
     };
