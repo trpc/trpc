@@ -71,6 +71,7 @@ export type CreateTRPCClientOptions<TRouter extends AnyRouter> =
   | CreateTRPCClientBaseOptions &
       (
         | {
+            url?: never;
             links: TRPCLink<TRouter>[];
           }
         | {
@@ -138,7 +139,7 @@ export class TRPCClient<TRouter extends AnyRouter> {
     };
 
     const getLinks = (): OperationLink<TRouter>[] => {
-      if ('links' in opts && opts.links) {
+      if (opts.links) {
         return opts.links.map((link) => link(this.runtime));
       }
       return [httpBatchLink({ url: opts.url })(this.runtime)];
