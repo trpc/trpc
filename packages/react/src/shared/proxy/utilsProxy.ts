@@ -196,7 +196,7 @@ export function createReactQueryUtilsProxy<
 
           const fullPath = pathCopy.join('.');
 
-          const opts = (name: typeof utilName) => {
+          const getOpts = (name: typeof utilName) => {
             if (['setData', 'setInfiniteData'].includes(name)) {
               const [updater, input, ...rest] = args as Parameters<
                 AnyDecoratedProcedure[typeof utilName]
@@ -221,7 +221,7 @@ export function createReactQueryUtilsProxy<
             };
           };
 
-          const { queryKey, rest, updater, input } = opts(utilName);
+          const { queryKey, rest, updater, input } = getOpts(utilName);
 
           const contextMap: Record<keyof AnyDecoratedProcedure, () => unknown> =
             {
