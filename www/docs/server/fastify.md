@@ -139,7 +139,7 @@ server.register(fastifyTRPCPlugin, {
 
 (async () => {
   try {
-    await server.listen(3000);
+    await server.listen({ port: 3000});
   } catch (err) {
     server.log.error(err);
     process.exit(1);
