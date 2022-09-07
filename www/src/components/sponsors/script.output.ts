@@ -121,7 +121,7 @@ export const sponsors = [
   },
   {
     "name": "Illarion Koperski",
-    "imgSrc": "https://avatars.githubusercontent.com/u/5012724?u=10dd42408f3b4e059987f01232c8ce34854ef5fc&v=4",
+    "imgSrc": "https://avatars.githubusercontent.com/u/5012724?u=f6f510f226382df2ebcea4a1935aaa94eacfcda4&v=4",
     "monthlyPriceInDollars": 5,
     "link": "https://www.illarionvk.com",
     "privacyLevel": "PUBLIC",
@@ -451,5 +451,14 @@ export const sponsors = [
     "privacyLevel": "PUBLIC",
     "login": "malcolmstill",
     "createdAt": 1662115384000
+  },
+  {
+    "name": "Thomas Ballinger",
+    "imgSrc": "https://avatars.githubusercontent.com/u/458879?u=4b045ac75d721b6ac2b42a74d7d37f61f0414031&v=4",
+    "monthlyPriceInDollars": 10,
+    "link": "http://ballingt.com/",
+    "privacyLevel": "PUBLIC",
+    "login": "thomasballinger",
+    "createdAt": 1662563270000
   }
 ] as const
