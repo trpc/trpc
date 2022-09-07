@@ -13,7 +13,7 @@ jest.retryTimes(3);
 describe('custom error formatter', () => {
   const ctx = konn()
     .beforeEach(() => {
-      const t = initTRPC()({
+      const t = initTRPC.create({
         errorFormatter({ shape, error }) {
           return {
             ...shape,
@@ -109,7 +109,7 @@ describe('custom error formatter', () => {
 describe('no custom formatter', () => {
   const ctx = konn()
     .beforeEach(() => {
-      const t = initTRPC()();
+      const t = initTRPC.create();
       const appRouter = t.router({
         post: t.router({
           byId: t.procedure
@@ -189,7 +189,7 @@ describe('no custom formatter', () => {
 });
 
 test('types', async () => {
-  const t = initTRPC()();
+  const t = initTRPC.create();
   const appRouter = t.router({
     post: t.router({
       byId: t.procedure

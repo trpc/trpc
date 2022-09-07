@@ -16,7 +16,7 @@ type Post = {
 const defaultPost = { id: 0, text: 'new post' };
 const ctx = konn()
   .beforeEach(() => {
-    const t = initTRPC()({
+    const t = initTRPC.create({
       errorFormatter({ shape }) {
         return {
           ...shape,
@@ -76,7 +76,9 @@ test('fetch', async () => {
     const [posts, setPosts] = useState<Post[]>([]);
 
     useEffect(() => {
-      utils.post.all.fetch().then((allPosts) => setPosts(allPosts));
+      utils.post.all.fetch().then((allPosts) => {
+        setPosts(allPosts);
+      });
     }, [utils]);
 
     return <p>{posts[0]?.text}</p>;

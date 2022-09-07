@@ -1,19 +1,19 @@
 import { routerToServerAndClientNew } from '../___testHelpers';
-import { QueryClient } from '@tanstack/react-query';
+import { createQueryClient } from '../__queryClient';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { render, waitFor } from '@testing-library/react';
-import { createReactQueryHooks, createReactQueryHooksProxy } from '@trpc/react';
+import { createReactQueryHooks } from '@trpc/react';
 import { expectTypeOf } from 'expect-type';
 import { konn } from 'konn';
 import React, { useState } from 'react';
 import { z } from 'zod';
-import * as trpc from '../../src';
+import * as interop from '../../src';
 import { inferProcedureOutput, initTRPC } from '../../src';
 
 const ctx = konn()
   .beforeEach(() => {
-    const t = initTRPC()();
-    const legacyRouter = trpc.router().query('oldProcedure', {
+    const t = initTRPC.create();
+    const legacyRouter = interop.router().query('oldProcedure', {
       input: z.string().optional(),
       resolve({ input }) {
         return `oldProcedureOutput__input:${input ?? 'n/a'}`;
@@ -21,13 +21,15 @@ const ctx = konn()
     });
 
     const legacyRouterInterop = legacyRouter.interop();
+
     const newAppRouter = t.router({
       newProcedure: t.procedure.query(() => 'newProcedureOutput'),
     });
 
     const appRouter = t.mergeRouters(legacyRouterInterop, newAppRouter);
+
     const opts = routerToServerAndClientNew(appRouter, {});
-    const queryClient = new QueryClient();
+    const queryClient = createQueryClient();
     const react = createReactQueryHooks<typeof opts['router']>();
     const client = opts.client;
     type Return = inferProcedureOutput<
@@ -57,7 +59,7 @@ test('interop inference', async () => {
     'oldProcedureOutput__input:n/a',
   );
 
-  // FIXME // @ts-expect-error we can't call oldProcedure with proxy
+  // @ts-expect-error we can't call oldProcedure with proxy
   expect(await opts.proxy.oldProcedure.query()).toBe(
     'oldProcedureOutput__input:n/a',
   );
@@ -78,6 +80,7 @@ test('useQuery()', async () => {
     }
     expectTypeOf(query1.data).not.toBeAny();
     expectTypeOf(query1.data).toMatchTypeOf<string>();
+
     return (
       <pre>
         {JSON.stringify(
@@ -89,7 +92,7 @@ test('useQuery()', async () => {
     );
   }
   function App() {
-    const [queryClient] = useState(() => new QueryClient());
+    const [queryClient] = useState(() => createQueryClient());
     return (
       <react.Provider {...{ queryClient, client }}>
         <QueryClientProvider client={queryClient}>
@@ -107,21 +110,22 @@ test('useQuery()', async () => {
 });
 
 test("we can use new router's procedures too", async () => {
-  const { react, client, appRouter } = ctx;
-  const proxy = createReactQueryHooksProxy<typeof appRouter>(react);
+  const { react, client } = ctx;
+
   function MyComponent() {
-    const query1 = proxy.newProcedure.useQuery();
+    const query1 = react.proxy.newProcedure.useQuery();
     if (!query1.data) {
       return <>...</>;
     }
     expectTypeOf(query1.data).not.toBeAny();
     expectTypeOf(query1.data).toMatchTypeOf<string>();
+
     return (
       <pre>{JSON.stringify({ query1: query1.data } ?? 'n/a', null, 4)}</pre>
     );
   }
   function App() {
-    const [queryClient] = useState(() => new QueryClient());
+    const [queryClient] = useState(() => createQueryClient());
     return (
       <react.Provider {...{ queryClient, client }}>
         <QueryClientProvider client={queryClient}>
@@ -135,4 +139,27 @@ test("we can use new router's procedures too", async () => {
   await waitFor(() => {
     expect(utils.container).toHaveTextContent(`newProcedureOutput`);
   });
+});
+
+test("old procedures can't be used in interop", async () => {
+  const { react, client } = ctx;
+
+  function MyComponent() {
+    // @ts-expect-error we can't call oldProcedure with proxy
+    react.proxy.oldProcedure.useQuery();
+
+    return <>__hello</>;
+  }
+  function App() {
+    const [queryClient] = useState(() => createQueryClient());
+    return (
+      <react.Provider {...{ queryClient, client }}>
+        <QueryClientProvider client={queryClient}>
+          <MyComponent />
+        </QueryClientProvider>
+      </react.Provider>
+    );
+  }
+
+  render(<App />);
 });

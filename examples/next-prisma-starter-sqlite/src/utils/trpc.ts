@@ -1,6 +1,5 @@
 import { httpBatchLink, loggerLink } from '@trpc/client';
-import { setupTRPC } from '@trpc/next';
-import type { inferProcedureInput, inferProcedureOutput } from '@trpc/server';
+import { createTRPCNext } from '@trpc/next';
 import { NextPageContext } from 'next';
 import superjson from 'superjson';
 // ℹ️ Type-only import:
@@ -44,7 +43,7 @@ export interface SSRContext extends NextPageContext {
  * A set of strongly-typed React hooks from your `AppRouter` type signature with `createReactQueryHooks`.
  * @link https://trpc.io/docs/react#3-create-trpc-hooks
  */
-export const trpc = setupTRPC<AppRouter, SSRContext>({
+export const trpc = createTRPCNext<AppRouter, SSRContext>({
   config() {
     /**
      * If you want to use SSR, you need to use the server's full URL
@@ -106,23 +105,3 @@ export const trpc = setupTRPC<AppRouter, SSRContext>({
     return {};
   },
 });
-
-/**
- * This is a helper method to infer the output of a query resolver
- * @example type HelloOutput = inferQueryOutput<'hello'>
- */
-export type inferQueryOutput<
-  TRouteKey extends keyof AppRouter['_def']['queries'],
-> = inferProcedureOutput<AppRouter['_def']['queries'][TRouteKey]>;
-
-export type inferQueryInput<
-  TRouteKey extends keyof AppRouter['_def']['queries'],
-> = inferProcedureInput<AppRouter['_def']['queries'][TRouteKey]>;
-
-export type inferMutationOutput<
-  TRouteKey extends keyof AppRouter['_def']['mutations'],
-> = inferProcedureOutput<AppRouter['_def']['mutations'][TRouteKey]>;
-
-export type inferMutationInput<
-  TRouteKey extends keyof AppRouter['_def']['mutations'],
-> = inferProcedureInput<AppRouter['_def']['mutations'][TRouteKey]>;

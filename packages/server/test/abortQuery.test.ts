@@ -1,7 +1,7 @@
 import { routerToServerAndClientNew, waitMs } from './___testHelpers';
 import { initTRPC } from '../src/core';
 
-const t = initTRPC()();
+const t = initTRPC.create();
 
 const router = t.router({
   testQuery: t.procedure.query(async () => {
@@ -34,7 +34,7 @@ describe('vanilla client procedure abortion', () => {
     close();
   });
 
-  test.skip('mutation', async () => {
+  test('mutation', async () => {
     const abortController = new AbortController();
     const signal = abortController.signal;
 

@@ -19,7 +19,7 @@ function createContext(
 }
 type Context = inferAsyncReturnType<typeof createContext>;
 
-const t = initTRPC<{ ctx: Context }>()();
+const t = initTRPC.context<Context>().create();
 
 const greetingRouter = t.router({
   greeting: t.procedure

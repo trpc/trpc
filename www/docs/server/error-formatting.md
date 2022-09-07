@@ -14,7 +14,7 @@ The error formatting in your router will be inferred all the way to your client 
 ```ts title='server.ts'
 import { initTRPC } from '@trpc/server';
 
-export const t = initTRPC<{ ctx: Context }>()({
+export const t = initTRPC.context<Context>().create({
   errorFormatter({ shape, error }) {
     return {
       ...shape,
@@ -35,7 +35,7 @@ export const t = initTRPC<{ ctx: Context }>()({
 
 ```tsx title='components/MyComponent.tsx'
 export function MyComponent() {
-  const mutation = trpc.proxy.addPost.useMutation();
+  const mutation = trpc.addPost.useMutation();
 
   useEffect(() => {
     mutation.mutate({ title: 'example' });

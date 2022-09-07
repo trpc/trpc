@@ -22,7 +22,7 @@ tRPC works out-of-the-box with yup/superstruct/zod/myzod/custom validators/[..] 
 ```tsx
 import { initTRPC } from '@trpc/server';
 
-export const t = initTRPC()();
+export const t = initTRPC.create();
 
 export const appRouter = t.router({
   // Create procedure at path 'hello'
@@ -40,7 +40,7 @@ export const appRouter = t.router({
 import { initTRPC } from '@trpc/server';
 import { z } from 'zod';
 
-export const t = initTRPC()();
+export const t = initTRPC.create();
 
 export const appRouter = t.router({
   hello: t.procedure
@@ -71,7 +71,7 @@ export type AppRouter = typeof appRouter;
 import { initTRPC } from '@trpc/server';
 import { z } from 'zod';
 
-export const t = initTRPC()();
+export const t = initTRPC.create();
 
 const roomProcedure = t.procedure.input(
   z.object({
@@ -100,7 +100,7 @@ export type AppRouter = typeof appRouter;
 import { initTRPC } from '@trpc/server';
 import * as yup from 'yup';
 
-export const t = initTRPC()();
+export const t = initTRPC.create();
 
 export const appRouter = t.router({
   hello: t.procedure
@@ -125,7 +125,7 @@ export type AppRouter = typeof appRouter;
 import { initTRPC } from '@trpc/server';
 import { defaulted, object, string } from 'superstruct';
 
-export const t = initTRPC()();
+export const t = initTRPC.create();
 
 export const appRouter = t.router({
   hello: t.procedure
@@ -154,7 +154,7 @@ To add multiple procedures, you can define them as properties on the object pass
 ```tsx
 import { initTRPC } from '@trpc/server';
 
-export const t = initTRPC()();
+export const t = initTRPC.create();
 
 export const appRouter = t.router({
   hello: t.procedure.query(() => {

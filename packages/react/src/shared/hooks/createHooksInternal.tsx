@@ -1,7 +1,6 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 import {
   DehydratedState,
-  QueryClient,
   UseInfiniteQueryOptions,
   UseInfiniteQueryResult,
   UseMutationOptions,
@@ -38,7 +37,12 @@ import React, {
   useMemo,
   useState,
 } from 'react';
-import { SSRState, TRPCContext, TRPCContextState } from './internals/context';
+import {
+  SSRState,
+  TRPCContext,
+  TRPCContextProps,
+  TRPCContextState,
+} from '../../internals/context';
 
 export type AssertType<T, K> = T extends K ? T : never;
 
@@ -54,6 +58,10 @@ export interface TRPCReactRequestOptions
    * Opt out of SSR for this query by passing `ssr: false`
    */
   ssr?: boolean;
+  /**
+   * Opt out or into aborting request on unmount
+   */
+  abortOnUnmount?: boolean;
 }
 
 export interface TRPCUseQueryBaseOptions {
@@ -63,7 +71,7 @@ export interface TRPCUseQueryBaseOptions {
   trpc?: TRPCReactRequestOptions;
 }
 
-export type { TRPCContext, TRPCContextState } from './internals/context';
+export type { TRPCContext, TRPCContextState } from '../../internals/context';
 
 export interface UseTRPCQueryOptions<TPath, TInput, TOutput, TData, TError>
   extends UseQueryOptions<TOutput, TError, TData, [TPath, TInput]>,
@@ -117,22 +125,29 @@ type inferProcedures<TObj extends ProcedureRecord> = {
   };
 };
 
-function createHookProxy(callback: (...args: [string, ...unknown[]]) => any) {
-  return new Proxy({} as any, {
-    get(_, path: string) {
-      function myProxy() {
-        throw new Error('Faulty usage');
-      }
-      myProxy.use = (...args: unknown[]) => callback(path, ...args);
-      return myProxy;
-    },
-  });
+export interface TRPCProviderProps<TRouter extends AnyRouter, TSSRContext>
+  extends TRPCContextProps<TRouter, TSSRContext> {
+  children: ReactNode;
 }
 
+export type TRPCProvider<TRouter extends AnyRouter, TSSRContext> = (
+  props: TRPCProviderProps<TRouter, TSSRContext>,
+) => JSX.Element;
+
+export type UseDehydratedState<TRouter extends AnyRouter> = (
+  client: TRPCClient<TRouter>,
+  trpcState: DehydratedState | undefined,
+) => DehydratedState | undefined;
+
+export type CreateClient<TRouter extends AnyRouter> = (
+  opts: CreateTRPCClientOptions<TRouter>,
+) => TRPCClient<TRouter>;
+
 /**
- * @deprecated use `createTRPCReact` instead
+ * Create strongly typed react hooks
+ * @internal
  */
-export function createReactQueryHooks<
+export function createHooksInternal<
   TRouter extends AnyRouter,
   TSSRContext = unknown,
 >() {
@@ -158,20 +173,12 @@ export function createReactQueryHooks<
   type ProviderContext = TRPCContextState<TRouter, TSSRContext>;
   const Context = TRPCContext as React.Context<ProviderContext>;
 
-  function createClient(
-    opts: CreateTRPCClientOptions<TRouter>,
-  ): TRPCClient<TRouter> {
+  const createClient: CreateClient<TRouter> = (opts) => {
     return createTRPCClient(opts);
-  }
+  };
 
-  function TRPCProvider(props: {
-    queryClient: QueryClient;
-    client: TRPCClient<TRouter>;
-    children: ReactNode;
-    ssrContext?: TSSRContext | null;
-    ssrState?: SSRState;
-  }) {
-    const { client, queryClient, ssrContext } = props;
+  const TRPCProvider: TRPCProvider<TRouter, TSSRContext> = (props) => {
+    const { abortOnUnmount = false, client, queryClient, ssrContext } = props;
     const [ssrState, setSSRState] = useState<SSRState>(props.ssrState ?? false);
     useEffect(() => {
       // Only updating state to `mounted` if we are using SSR.
@@ -181,6 +188,7 @@ export function createReactQueryHooks<
     return (
       <Context.Provider
         value={{
+          abortOnUnmount,
           queryClient,
           client,
           ssrContext: ssrContext || null,
@@ -276,7 +284,7 @@ export function createReactQueryHooks<
         {props.children}
       </Context.Provider>
     );
-  }
+  };
 
   function useContext() {
     return React.useContext(Context);
@@ -314,7 +322,8 @@ export function createReactQueryHooks<
       TError
     >,
   ): UseQueryResult<TData, TError> {
-    const { client, ssrState, queryClient, prefetchQuery } = useContext();
+    const { abortOnUnmount, client, ssrState, queryClient, prefetchQuery } =
+      useContext();
 
     if (
       typeof window === 'undefined' &&
@@ -326,11 +335,22 @@ export function createReactQueryHooks<
       void prefetchQuery(pathAndInput as any, opts as any);
     }
     const ssrOpts = useSSRQueryOptionsIfNeeded(pathAndInput, opts);
+    // request option should take priority over global
+    const shouldAbortOnUnmount = opts?.trpc?.abortOnUnmount ?? abortOnUnmount;
 
     return __useQuery(
       pathAndInput as any,
-      ({ signal }) => {
-        const actualOpts = { ...ssrOpts, trpc: { ...ssrOpts?.trpc, signal } };
+      (queryFunctionContext) => {
+        const actualOpts = {
+          ...ssrOpts,
+          trpc: {
+            ...ssrOpts?.trpc,
+            ...(shouldAbortOnUnmount
+              ? { signal: queryFunctionContext.signal }
+              : {}),
+          },
+        };
+
         return (client as any).query(
           ...getClientArgs(pathAndInput, actualOpts),
         );
@@ -439,8 +459,13 @@ export function createReactQueryHooks<
     >,
   ): UseInfiniteQueryResult<TQueryValues[TPath]['output'], TError> {
     const [path, input] = pathAndInput;
-    const { client, ssrState, prefetchInfiniteQuery, queryClient } =
-      useContext();
+    const {
+      client,
+      ssrState,
+      prefetchInfiniteQuery,
+      queryClient,
+      abortOnUnmount,
+    } = useContext();
 
     if (
       typeof window === 'undefined' &&
@@ -452,23 +477,40 @@ export function createReactQueryHooks<
       void prefetchInfiniteQuery(pathAndInput as any, opts as any);
     }
 
-    const actualOpts = useSSRQueryOptionsIfNeeded(pathAndInput, opts);
+    const ssrOpts = useSSRQueryOptionsIfNeeded(pathAndInput, opts);
+
+    // request option should take priority over global
+    const shouldAbortOnUnmount = opts?.trpc?.abortOnUnmount ?? abortOnUnmount;
 
     return __useInfiniteQuery(
       pathAndInput as any,
-      ({ pageParam }) => {
-        const actualInput = { ...((input as any) ?? {}), cursor: pageParam };
+      (queryFunctionContext) => {
+        const actualOpts = {
+          ...ssrOpts,
+          trpc: {
+            ...ssrOpts?.trpc,
+            ...(shouldAbortOnUnmount
+              ? { signal: queryFunctionContext.signal }
+              : {}),
+          },
+        };
+
+        const actualInput = {
+          ...((input as any) ?? {}),
+          cursor: queryFunctionContext.pageParam,
+        };
+
         return (client as any).query(
           ...getClientArgs([path, actualInput], actualOpts),
         );
       },
-      actualOpts,
+      ssrOpts,
     );
   }
-  function useDehydratedState(
-    client: TRPCClient<TRouter>,
-    trpcState: DehydratedState | undefined,
-  ) {
+  const useDehydratedState: UseDehydratedState<TRouter> = (
+    client,
+    trpcState,
+  ) => {
     const transformed: DehydratedState | undefined = useMemo(() => {
       if (!trpcState) {
         return trpcState;
@@ -477,12 +519,7 @@ export function createReactQueryHooks<
       return client.runtime.transformer.deserialize(trpcState);
     }, [trpcState, client]);
     return transformed;
-  }
-
-  // FIXME: delete or fix this
-  const queries = createHookProxy((path, input, opts) =>
-    useQuery([path, input] as any, opts as any),
-  ) as TRouter['_def']['queries'];
+  };
 
   return {
     Provider: TRPCProvider,
@@ -493,7 +530,6 @@ export function createReactQueryHooks<
     useSubscription,
     useDehydratedState,
     useInfiniteQuery,
-    queries,
   };
 }
 
@@ -502,8 +538,8 @@ export function createReactQueryHooks<
  * @link https://stackoverflow.com/a/59072991
  */
 class GnClass<TRouter extends AnyRouter, TSSRContext = unknown> {
-  createReactQueryHooks() {
-    return createReactQueryHooks<TRouter, TSSRContext>();
+  fn() {
+    return createHooksInternal<TRouter, TSSRContext>();
   }
 }
 
@@ -513,7 +549,7 @@ type returnTypeInferer<T> = T extends (a: Record<string, string>) => infer U
 type fooType<TRouter extends AnyRouter, TSSRContext = unknown> = GnClass<
   TRouter,
   TSSRContext
->['createReactQueryHooks'];
+>['fn'];
 
 /**
  * Infer the type of a `createReactQueryHooks` function

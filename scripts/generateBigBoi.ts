@@ -69,9 +69,9 @@ for (let i = 0; i < NUM_PROCEDURE_OBJECTS; i++) {
 }
 
 const trpcFile = `
-import { initTRPC } from '../../../src';
+import { initTRPC } from '@trpc/server';
 
-export const t = initTRPC()();
+export const t = initTRPC.create();
 `.trim();
 const indexFile = `
 import { t } from './_trpc';

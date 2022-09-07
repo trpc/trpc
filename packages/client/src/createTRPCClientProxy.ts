@@ -14,8 +14,7 @@ import type {
   Unsubscribable,
   inferObservableValue,
 } from '@trpc/server/observable';
-import type { TRPCResultMessage } from '@trpc/server/rpc';
-import { createProxy } from '@trpc/server/shared';
+import { LegacyV9ProcedureTag, createProxy } from '@trpc/server/shared';
 import { TRPCClientError } from './TRPCClientError';
 import { CreateTRPCClientOptions, createTRPCClient } from './createTRPCClient';
 import {
@@ -68,13 +67,13 @@ type DecoratedProcedureRecord<
   TProcedures extends ProcedureRouterRecord,
   TRouter extends AnyRouter,
 > = OmitNeverKeys<{
-  [TKey in keyof TProcedures]: TProcedures[TKey] extends AnyRouter
+  [TKey in keyof TProcedures]: TProcedures[TKey] extends LegacyV9ProcedureTag
+    ? never
+    : TProcedures[TKey] extends AnyRouter
     ? DecoratedProcedureRecord<
         TProcedures[TKey]['_def']['record'],
         TProcedures[TKey]
       >
-    : assertProcedure<TProcedures[TKey]>['_def']['_old'] extends true
-    ? never
     : DecorateProcedure<assertProcedure<TProcedures[TKey]>, TRouter>;
 }>;
 

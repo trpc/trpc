@@ -22,13 +22,13 @@ Full documentation for `@trpc/next` can be found [here](https://trpc.io/docs/nex
 
 ```bash
 # npm
-npm install @trpc/next @trpc/react react-query
+npm install @trpc/next@next @trpc/react@next @tanstack/react-query
 
 # Yarn
-yarn add @trpc/next @trpc/react react-query
+yarn add @trpc/next@next @trpc/react@next @tanstack-react-query
 
 # pnpm
-pnpm add @trpc/next @trpc/react react-query
+pnpm add @trpc/next@next @trpc/react@next @tanstack/react-query
 ```
 
 ## Basic Example
@@ -36,11 +36,11 @@ pnpm add @trpc/next @trpc/react react-query
 Setup tRPC in `utils/trpc.ts`.
 
 ```ts
-import { setupTRPC } from '@trpc/next';
+import { createTRPCNext } from '@trpc/next';
 // Import the router type from your server file
 import type { AppRouter } from '../pages/api/[trpc].ts';
 
-export const trpc = setupTRPC<AppRouter>({
+export const trpc = createTRPCNext<AppRouter>({
   config() {
     return {
       url: 'http://localhost:3000/api/trpc',
@@ -68,7 +68,7 @@ Now you can query your API in any component.
 import { trpc } from '~/utils/trpc';
 
 export function Hello() {
-  const { data, error, status } = trpc.proxy.greeting.useQuery({
+  const { data, error, status } = trpc.greeting.useQuery({
     name: 'tRPC',
   });
 

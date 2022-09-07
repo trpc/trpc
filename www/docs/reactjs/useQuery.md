@@ -26,7 +26,7 @@ You'll notice that you get autocompletion on the `path` and automatic typesafety
 import { initTRPC } from '@trpc/server'
 import { z } from 'zod';
 
-export const t = initTRPC()()
+export const t = initTRPC.create()
 
 export const appRouter = t.router({
   // Create procedure at path 'hello'
@@ -54,8 +54,8 @@ import { trpc } from '../utils/trpc';
 
 export function MyComponent() {
   // input is optional, so we don't have to pass second argument
-  const helloNoArgs = trpc.proxy.hello.useQuery();
-  const helloWithArgs = trpc.proxy.hello.useQuery({ text: 'client' });
+  const helloNoArgs = trpc.hello.useQuery();
+  const helloWithArgs = trpc.hello.useQuery({ text: 'client' });
 
   return (
     <div>

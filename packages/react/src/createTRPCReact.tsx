@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-non-null-assertion */
 import {
   UseInfiniteQueryResult,
   UseMutationResult,
@@ -14,21 +13,24 @@ import {
   inferProcedureOutput,
 } from '@trpc/server';
 import { inferObservableValue } from '@trpc/server/observable';
-import { createProxy } from '@trpc/server/shared';
+import { LegacyV9ProcedureTag } from '@trpc/server/shared';
 import { useMemo } from 'react';
 import {
+  CreateReactUtilsProxy,
+  createReactProxyDecoration,
+  createReactQueryUtilsProxy,
+} from './shared';
+import {
+  CreateClient,
   CreateReactQueryHooks,
+  TRPCProvider,
+  UseDehydratedState,
   UseTRPCInfiniteQueryOptions,
   UseTRPCMutationOptions,
   UseTRPCQueryOptions,
   UseTRPCSubscriptionOptions,
-  createReactQueryHooks,
-} from './createReactQueryHooks';
-import { getQueryKey } from './internals/getQueryKey';
-import {
-  DecoratedProcedureUtilsRecord,
-  createReactQueryUtilsProxy,
-} from './internals/utilsProxy';
+  createHooksInternal,
+} from './shared/hooks/createHooksInternal';
 
 type DecorateProcedure<
   TProcedure extends Procedure<any>,
@@ -105,7 +107,9 @@ export type DecoratedProcedureRecord<
   TProcedures extends ProcedureRouterRecord,
   TPath extends string = '',
 > = {
-  [TKey in keyof TProcedures]: TProcedures[TKey] extends AnyRouter
+  [TKey in keyof TProcedures]: TProcedures[TKey] extends LegacyV9ProcedureTag
+    ? never
+    : TProcedures[TKey] extends AnyRouter
     ? DecoratedProcedureRecord<
         TProcedures[TKey]['_def']['record'],
         `${TPath}${TKey & string}.`
@@ -116,11 +120,17 @@ export type DecoratedProcedureRecord<
       >;
 };
 
+export type CreateTRPCReact<TRouter extends AnyRouter, TSSRContext> = {
+  useContext(): CreateReactUtilsProxy<TRouter, TSSRContext>;
+  Provider: TRPCProvider<TRouter, TSSRContext>;
+  createClient: CreateClient<TRouter>;
+  useDehydratedState: UseDehydratedState<TRouter>;
+} & DecoratedProcedureRecord<TRouter['_def']['record']>;
+
 /**
- * @deprecated use `createTRPCReact` instead
  * @internal
  */
-export function createReactQueryHooksProxy<
+export function createHooksInternalProxy<
   TRouter extends AnyRouter,
   TSSRContext = unknown,
 >(trpc: CreateReactQueryHooks<TRouter, TSSRContext>) {
@@ -135,7 +145,7 @@ export function createReactQueryHooksProxy<
             const context = trpc.useContext();
             // create a stable reference of the utils context
             return useMemo(() => {
-              return createReactQueryUtilsProxy(context as any);
+              return (createReactQueryUtilsProxy as any)(context as any);
             }, [context]);
           };
         }
@@ -145,24 +155,7 @@ export function createReactQueryHooksProxy<
         }
 
         if (typeof name === 'string') {
-          return createProxy((opts) => {
-            const args = opts.args;
-
-            const pathCopy = [name, ...opts.path];
-
-            // The last arg is for instance `.useMutation` or `.useQuery()`
-            const lastArg = pathCopy.pop()!;
-
-            // The `path` ends up being something like `post.byId`
-            const path = pathCopy.join('.');
-            if (lastArg === 'useMutation') {
-              return (trpc as any)[lastArg](path, ...args);
-            }
-            const [input, ...rest] = args;
-
-            const queryKey = getQueryKey(path, input);
-            return (trpc as any)[lastArg](queryKey, ...rest);
-          });
+          return createReactProxyDecoration(name, trpc);
         }
 
         throw new Error('Not supported');
@@ -170,18 +163,15 @@ export function createReactQueryHooksProxy<
     },
   );
 
-  return proxy as {
-    useContext(): DecoratedProcedureUtilsRecord<TRouter>;
-  } & CreateReactQueryHooks<TRouter> &
-    DecoratedProcedureRecord<TRouter['_def']['record']>;
+  return proxy as CreateTRPCReact<TRouter, TSSRContext>;
 }
 
 export function createTRPCReact<
   TRouter extends AnyRouter,
   TSSRContext = unknown,
 >() {
-  const hooks = createReactQueryHooks<TRouter, TSSRContext>();
-  const proxy = createReactQueryHooksProxy(hooks);
+  const hooks = createHooksInternal<TRouter, TSSRContext>();
+  const proxy = createHooksInternalProxy<TRouter, TSSRContext>(hooks);
 
   return proxy;
 }

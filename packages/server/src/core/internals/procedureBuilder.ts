@@ -1,10 +1,12 @@
 import { TRPCError } from '../../error/TRPCError';
-import {
-  getCauseFromUnknown,
-  getTRPCErrorFromUnknown,
-} from '../../error/utils';
+import { getTRPCErrorFromUnknown } from '../../error/utils';
 import { FlatOverwrite, MaybePromise } from '../../types';
-import { MiddlewareFunction, MiddlewareResult } from '../middleware';
+import {
+  MiddlewareFunction,
+  MiddlewareResult,
+  createInputMiddleware,
+  createOutputMiddleware,
+} from '../middleware';
 import { Parser, inferParser } from '../parser';
 import {
   MutationProcedure,
@@ -15,7 +17,7 @@ import {
 } from '../procedure';
 import { ProcedureType } from '../types';
 import { RootConfig } from './config';
-import { ParseFn, getParseFn } from './getParseFn';
+import { getParseFn } from './getParseFn';
 import { mergeWithoutOverrides } from './mergeWithoutOverrides';
 import { ResolveOptions, middlewareMarker } from './utils';
 import { DefaultValue as FallbackValue, Overwrite, UnsetMarker } from './utils';
@@ -162,7 +164,7 @@ export interface ProcedureBuilder<TParams extends ProcedureParams> {
   _def: {
     inputs: Parser[];
     output?: Parser;
-    meta?: Record<string, unknown>;
+    meta?: TParams['_meta'];
     resolver?: ProcedureBuilderResolver;
     middlewares: ProcedureBuilderMiddleware[];
     mutation?: boolean;
@@ -172,7 +174,7 @@ export interface ProcedureBuilder<TParams extends ProcedureParams> {
 }
 
 type AnyProcedureBuilder = ProcedureBuilder<any>;
-export type ProcedureBuilderDef = AnyProcedureBuilder['_def'];
+export type AnyProcedureBuilderDef = AnyProcedureBuilder['_def'];
 
 export type ProcedureBuilderMiddleware = MiddlewareFunction<any, any>;
 
@@ -181,8 +183,8 @@ export type ProcedureBuilderResolver = (
 ) => Promise<unknown>;
 
 function createNewBuilder(
-  def1: ProcedureBuilderDef,
-  def2: Partial<ProcedureBuilderDef>,
+  def1: AnyProcedureBuilderDef,
+  def2: Partial<AnyProcedureBuilderDef>,
 ) {
   const { middlewares = [], inputs, ...rest } = def2;
 
@@ -195,7 +197,7 @@ function createNewBuilder(
 }
 
 export function createBuilder<TConfig extends RootConfig>(
-  initDef?: ProcedureBuilderDef,
+  initDef?: AnyProcedureBuilderDef,
 ): ProcedureBuilder<{
   _config: TConfig;
   _ctx_in: TConfig['ctx'];
@@ -206,7 +208,7 @@ export function createBuilder<TConfig extends RootConfig>(
   _output_out: UnsetMarker;
   _meta: TConfig['meta'];
 }> {
-  const _def: ProcedureBuilderDef = initDef || {
+  const _def: AnyProcedureBuilderDef = initDef || {
     inputs: [],
     middlewares: [],
   };
@@ -261,65 +263,8 @@ export function createBuilder<TConfig extends RootConfig>(
   };
 }
 
-function isPlainObject(obj: unknown) {
-  return obj && typeof obj === 'object' && !Array.isArray(obj);
-}
-
-export function createInputMiddleware<T>(
-  parse: ParseFn<T>,
-): ProcedureBuilderMiddleware {
-  return async function inputMiddleware({ next, rawInput, input }) {
-    let parsedInput: ReturnType<typeof parse>;
-    try {
-      parsedInput = await parse(rawInput);
-    } catch (cause) {
-      throw new TRPCError({
-        code: 'BAD_REQUEST',
-        cause: getCauseFromUnknown(cause),
-      });
-    }
-
-    // Multiple input parsers
-    const combinedInput =
-      isPlainObject(input) && isPlainObject(parsedInput)
-        ? {
-            ...input,
-            ...parsedInput,
-          }
-        : parsedInput;
-
-    // TODO fix this typing?
-    return next({ input: combinedInput } as any);
-  };
-}
-
-export function createOutputMiddleware<T>(
-  parse: ParseFn<T>,
-): ProcedureBuilderMiddleware {
-  return async function outputMiddleware({ next }) {
-    const result = await next();
-    if (!result.ok) {
-      // pass through failures without validating
-      return result;
-    }
-    try {
-      const data = await parse(result.data);
-      return {
-        ...result,
-        data,
-      };
-    } catch (cause) {
-      throw new TRPCError({
-        message: 'Output validation failed',
-        code: 'INTERNAL_SERVER_ERROR',
-        cause: getCauseFromUnknown(cause),
-      });
-    }
-  };
-}
-
 function createResolver(
-  _def: ProcedureBuilderDef,
+  _def: AnyProcedureBuilderDef,
   resolver: (opts: ResolveOptions<any>) => MaybePromise<any>,
 ) {
   const finalBuilder = createNewBuilder(_def, {
@@ -362,7 +307,7 @@ const caller = appRouter.createCaller({
 const result = await caller.call('myProcedure', input);
 `.trim();
 
-function createProcedureCaller(_def: ProcedureBuilderDef): Procedure<any> {
+function createProcedureCaller(_def: AnyProcedureBuilderDef): Procedure<any> {
   const procedure = async function resolve(opts: ProcedureCallOptions) {
     // is direct server-side call
     if (!opts || !('rawInput' in opts)) {

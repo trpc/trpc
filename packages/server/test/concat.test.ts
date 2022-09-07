@@ -16,9 +16,7 @@ const mockUser: User = {
 };
 const ctx = konn()
   .beforeEach(() => {
-    const t = initTRPC<{
-      ctx: Context;
-    }>()();
+    const t = initTRPC.context<Context>().create();
 
     const isAuthed = t.middleware(({ next, ctx }) => {
       if (!ctx.user) {
