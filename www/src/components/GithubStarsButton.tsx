@@ -28,9 +28,10 @@ export const GithubStarsButton = () => {
       <FiStar size={18} strokeWidth={3} />
       <span>Star</span>
       <span
+        style={{ transition: 'max-width 1s, opacity 1s' }}
         className={clsx(
-          'transition-all duration-1000 whitespace-nowrap overflow-hidden',
-          stars ? 'opacity-100 w-[58px]' : 'opacity-0 w-0',
+          'whitespace-nowrap overflow-hidden w-full',
+          stars ? 'opacity-100 max-w-[100px]' : 'opacity-0 max-w-0',
         )}
       >
         {stars}
