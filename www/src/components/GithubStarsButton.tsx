@@ -23,11 +23,18 @@ export const GithubStarsButton = () => {
       secondary
       href="https://github.com/trpc/trpc/stargazers"
       target="_blank"
-      className={clsx('text-lg', stars ? 'opacity-100' : 'opacity-0')}
+      className="text-lg"
     >
       <FiStar size={18} strokeWidth={3} />
       <span>Star</span>
-      <span>{stars}</span>
+      <span
+        className={clsx(
+          'transition-all duration-1000 whitespace-nowrap overflow-hidden',
+          stars ? 'opacity-100 w-[58px]' : 'opacity-0 w-0',
+        )}
+      >
+        {stars}
+      </span>
     </Button>
   );
 };
