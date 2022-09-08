@@ -74,8 +74,8 @@ function Home() {
             <span className="underline text-slate-900 dark:text-slate-100 decoration-rose-500 underline-offset-2 decoration-wavy decoration-from-font">
               TypeScript
             </span>{' '}
-            inference and boost your productivity while building your next
-            full-stack application.
+            inference and boost productivity while building your next full-stack
+            application.
           </p>
           <div className="flex items-center justify-center gap-4 mt-6">
             <GithubStarsButton />
