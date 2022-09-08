@@ -27,7 +27,7 @@ export interface WebSocketClientOptions {
   WebSocket?: typeof WebSocket;
   retryDelayMs?: typeof retryDelay;
   onOpen?: () => void;
-  onClose?: (code?: number) => void;
+  onClose?: (cause?: { code?: number }) => void;
 }
 
 export function createWSClient(opts: WebSocketClientOptions) {
@@ -200,7 +200,7 @@ export function createWSClient(opts: WebSocketClientOptions) {
 
     conn.addEventListener('close', ({ code }) => {
       if (state === 'open') {
-        onClose?.(code);
+        onClose?.({ code });
       }
 
       if (activeConnection === conn) {
