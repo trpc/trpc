@@ -15,7 +15,7 @@ export const TopSponsors = () => {
       <h2 className="text-lg font-extrabold tracking-wider uppercase opacity-50">
         Supported by
       </h2>
-      <div className="grid grid-flow-col gap-4">
+      <div className="grid grid-cols-3 gap-4 sm:grid-flow-col sm:grid-cols-none">
         {topSponsors.map((sponsor) => {
           return (
             <Link
