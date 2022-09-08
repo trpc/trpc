@@ -10,5 +10,8 @@
     "titleBar.activeBackground": "#2596be",
     "titleBar.inactiveBackground": "#004a72"
   },
-  "editor.stickyScroll.enabled": true
+  "editor.stickyScroll.enabled": true,
+  "tailwindCSS.experimental.classRegex": [
+    ["clsx\\(([^)]*)\\)", "[\"'`]([^\"'`]*).*?[\"'`]"]
+  ]
 }

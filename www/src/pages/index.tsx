@@ -1,13 +1,15 @@
 import Head from '@docusaurus/Head';
-import Link from '@docusaurus/Link';
 import { useLocation } from '@docusaurus/router';
 import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
 import Layout from '@theme/Layout';
 import React, { useEffect, useState } from 'react';
+import { FiArrowRight } from 'react-icons/fi';
+import { Button } from '../components/Button';
 import { Features } from '../components/Features';
-import { GithubStarCountButton } from '../components/GithubStarCountButton';
+import { GithubStarsButton } from '../components/GithubStarsButton';
 import { Preview } from '../components/Preview';
 import { SectionTitle } from '../components/SectionTitle';
+import { TopSponsors } from '../components/TopSponsors';
 import { TwitterWall } from '../components/TwitterWall';
 import { Sponsors } from '../components/sponsors';
 
@@ -63,26 +65,27 @@ function Home() {
         />
       </Head>
       <main className="container px-6 mx-auto space-y-28">
-        <header className="pt-12 lg:pt-16 xl:pt-24">
-          <div>
-            <h1 className="text-2xl font-extrabold leading-tight text-center whitespace-pre-wrap md:text-3xl lg:text-4xl xl:text-5xl">
-              {siteConfig.tagline}
-            </h1>
-            <p className="pt-3 text-sm text-center text-gray-600 md:text-base dark:text-gray-400">
-              Leverage the full power of TypeScript whilst allowing your code to
-              be simpler.
-            </p>
-            <div className="flex items-center justify-center gap-4 mt-6">
-              <Link
-                href="/docs/v9/quickstart"
-                className="inline-block px-4 py-2 text-sm font-bold text-white transition-colors rounded-lg shadow-xl md:text-base hover:bg-primary-darker hover:no-underline hover:text-white bg-primary"
-              >
-                Quickstart
-              </Link>
-              <GithubStarCountButton />
-            </div>
-            <Preview />
+        <header className="pt-12 lg:pt-16 xl:pt-24 max-w-[66ch] mx-auto text-center">
+          <h1 className="text-2xl font-extrabold leading-tight tracking-tight text-center whitespace-pre-wrap md:text-3xl lg:text-4xl xl:text-5xl">
+            {siteConfig.tagline}
+          </h1>
+          <p className="pt-3 text-sm font-medium text-center text-gray-600 md:text-lg dark:text-gray-400">
+            Experience the full power of{' '}
+            <span className="underline text-slate-900 dark:text-slate-100 decoration-rose-500 underline-offset-2 decoration-wavy decoration-from-font">
+              TypeScript
+            </span>{' '}
+            inference and boost your productivity while building your next
+            full-stack application.
+          </p>
+          <div className="flex items-center justify-center gap-4 mt-6">
+            <GithubStarsButton />
+            <Button primary href="/docs/v9/quickstart" className="text-lg">
+              Quickstart
+              <FiArrowRight size={20} strokeWidth={3} />
+            </Button>
           </div>
+          <Preview />
+          <TopSponsors />
         </header>
 
         <section>
@@ -124,29 +127,6 @@ function Home() {
         <section>
           <SectionTitle title="Don't take our word for it!" />
           <TwitterWall />
-        </section>
-        <section className="pb-12">
-          <SectionTitle
-            title="Sponsors"
-            description={
-              <>
-                We really love all of our amazing{' '}
-                <a
-                  href="https://github.com/sponsors/KATT"
-                  target="_blank"
-                  rel="noreferrer noopener"
-                >
-                  sponsors
-                </a>
-                , who help make sure tRPC is here to stay.
-              </>
-            }
-          />
-          <div className="max-w-screen-md mx-auto">
-            <div className="mt-3 aspect-square">
-              <Sponsors />
-            </div>
-          </div>
         </section>
       </main>
     </Layout>

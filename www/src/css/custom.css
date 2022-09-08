@@ -23,13 +23,29 @@
   --ifm-container-width-xl: 1320px;
 }
 :root[data-theme='dark'] {
-  --ifm-footer-background-color: #242526;
-  --ifm-navbar-background-color: #18181b;
-  --ifm-background-color: #18181b;
+  --ifm-footer-background-color: #171717;
+  --ifm-navbar-background-color: #111111;
+  --ifm-background-color: #111111;
+}
+
+html {
+  @apply selection:text-white selection:bg-sky-500/75;
 }
 
 .homepage .navbar {
   @apply container h-20 mx-auto shadow-none;
+}
+
+.homepage main {
+  background: linear-gradient(180deg, hsla(0, 0%, 100%, 0) 0, #fff 300px),
+    fixed 0 0 /20px 20px radial-gradient(#d1d1d1 1px, transparent 0),
+    fixed 10px 10px /20px 20px radial-gradient(#d1d1d1 1px, transparent 0);
+}
+
+[data-theme='dark'] .homepage main {
+  background: linear-gradient(180deg, transparent 0, #111 300px),
+    fixed 0 0 /20px 20px radial-gradient(#313131 1px, transparent 0),
+    fixed 10px 10px /20px 20px radial-gradient(#313131 1px, transparent 0);
 }
 
 .navbar-external-link svg {

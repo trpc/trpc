@@ -3,7 +3,7 @@ import { tweets } from './tweets';
 
 export const TwitterWall = () => {
   return (
-    <div className="grid grid-cols-1 gap-4 mt-6 overflow-y-scroll lg:grid-cols-3 max-h-[80vh]">
+    <div className="grid grid-cols-1 gap-4 my-6 overflow-y-scroll lg:grid-cols-3">
       {tweets.map((column, index) => (
         <div key={`column-${index}`} className="flex flex-col gap-4">
           {column.map((tweet) => (
