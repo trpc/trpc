@@ -93,16 +93,28 @@ npx create-next-app --example https://github.com/trpc/trpc --example-path exampl
   </tr>
 </table>
 
+### Level 3
 
-### Level 2 Maintainers
+> tRPC who leads the API-design
+
+<table>
+  <tbody>
+      <td align="center"><a href="https://github.com/sachinraja"><img src="https://avatars.githubusercontent.com/u/58836760?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Sachin Raja</b></sub></a></td>
+      <td align="center"><a href="https://twitter.com/alexdotjs"><img src="https://avatars.githubusercontent.com/u/459267?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Alex / KATT</b></sub></a></td>
+    </tr>
+  </tbody>
+</table>
+
+### Level 2
 
 > Volunteers who actively help out improving the codebase by making PRs and reviewing code
 
 <table>
   <tbody>
     <tr>
-      <td align="center"><a href="https://github.com/sachinraja"><img src="https://avatars.githubusercontent.com/u/58836760?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Sachin Raja</b></sub></a></td>
       <td align="center"><a href="https://twitter.com/jlalmes"><img src="https://avatars.githubusercontent.com/u/69924001?v=4?s=100" width="100px;" alt=""/><br /><sub><b>James Berry</b></sub></a></td>
+      <td align="center"><a href="http://www.jumr.dev"><img src="https://avatars.githubusercontent.com/u/51714798?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Julius Marminge</b></sub></a></td>
+      <td align="center"><a href="https://elsakaan.dev"><img src="https://avatars.githubusercontent.com/u/20271968?u=ab95f47bb661569e9b4ab1dadfdb802b77f9d1c6&v=4&s=100" width="100" alt="Ahmed%20Elsakaan"/><br /><sub><b>Ahmed Elsakaan</b></sub></a></td>
     </tr>
   </tbody>
 </table>
