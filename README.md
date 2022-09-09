@@ -95,7 +95,7 @@ npx create-next-app --example https://github.com/trpc/trpc --example-path exampl
   </tr>
 </table>
 
-### Level 3
+### Project leads
 
 > The people who lead the API-design decisions and has the most active role in the development
 
@@ -107,7 +107,7 @@ npx create-next-app --example https://github.com/trpc/trpc --example-path exampl
   </tbody>
 </table>
 
-### Level 2
+### Recurring contributors
 
 > People who actively help out improving the codebase by making PRs and reviewing code
 
@@ -122,16 +122,15 @@ npx create-next-app --example https://github.com/trpc/trpc --example-path exampl
 </table>
 
 
-### Level 1
+### Special shout-outs
 
-
-> Special shout-outs
 
 <table>
   <tbody>
     <tr>
       <td align="center"><a href="http://www.big-sir.com"><img src="https://avatars.githubusercontent.com/u/3660667?v=4?s=60" width="60px;" alt=""/><br /><sub><b>bautistaaa</b></sub></a></td>
       <td align="center"><a href="http://t3.gg"><img src="https://avatars.githubusercontent.com/u/6751787?v=4?s=60" width="60px;" alt=""/><br /><sub><b>Theo Browne</b></sub></a></td>
+      <td align="center"><a href="https://github.com/mmkal"><img src="https://avatars.githubusercontent.com/u/15040698?v=4?s=60" width="60px;" alt=""/><br /><sub><b>Misha Kaletsky</b></sub></a></td>
     </tr>
   </tbody>
 </table>
