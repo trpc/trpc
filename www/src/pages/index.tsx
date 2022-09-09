@@ -154,7 +154,7 @@ function Home() {
           <iframe
             className="h-[648px] w-full py-4"
             //src={`https://stackblitz.com/github/trpc/next-minimal-starter?embed=1&file=src/pages/index.tsx&hideExplorer=1&hideNavigation=1&theme=${initialTheme}`}
-            src="https://stackblitz.com/github/trpc/next-minimal-starter?embed=1&file=src/pages/index.tsx&hideExplorer=1&hideNavigation=1"
+            src="https://stackblitz.com/github/trpc/next-minimal-starter?embed=1&file=src/pages/index.tsx&hideExplorer=1"
             frameBorder="0"
           />
           <Button
