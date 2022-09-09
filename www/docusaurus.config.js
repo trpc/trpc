@@ -12,7 +12,6 @@ module.exports = {
   organizationName: 'trpc', // Usually your GitHub org/user name.
   projectName: 'trpc', // Usually your repo name.
   themeConfig: {
-    defaultMode: 'darkMode',
     disableSwitch: false,
     respectPrefersColorScheme: true,
     image: 'https://assets.trpc.io/www/trpc-open-graph.png',
@@ -216,5 +215,8 @@ module.exports = {
       charSet: 'utf-8',
     },
   ],
-  clientModules: [require.resolve('./docusaurus.twitterReload.js')],
+  clientModules: [
+    require.resolve('./docusaurus.twitterReload.js'),
+    require.resolve('./docusaurus.preferredTheme.js'),
+  ],
 };
