@@ -128,6 +128,29 @@ function Home() {
           <SectionTitle title="Don't take our word for it!" />
           <TwitterWall />
         </section>
+        <section className="pb-12">
+          <SectionTitle
+            title="All Sponsors"
+            description={
+              <>
+                We really love all of our amazing{' '}
+                <a
+                  href="https://github.com/sponsors/KATT"
+                  target="_blank"
+                  rel="noreferrer noopener"
+                >
+                  sponsors
+                </a>
+                , who help make sure tRPC is here to stay.
+              </>
+            }
+          />
+          <div className="max-w-screen-md mx-auto">
+            <div className="mt-3 aspect-square">
+              <Sponsors />
+            </div>
+          </div>
+        </section>
       </main>
     </Layout>
   );
