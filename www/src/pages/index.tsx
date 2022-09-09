@@ -40,16 +40,16 @@ function Home() {
   const context = useDocusaurusContext();
 
   /** initial theme used for stackblitz embed. dont want to reload the embed on theme-toggle so we just load it once */
-  const [initialTheme] = React.useState<'dark' | 'light'>(() => {
-    // const localStorageTheme = window.localStorage.getItem('theme');
-    // if (localStorageTheme) {
-    //   return localStorageTheme;
-    // }
-    const prefersDark = window.matchMedia(
-      '(prefers-color-scheme: dark)',
-    ).matches;
-    return prefersDark ? 'dark' : 'light';
-  });
+  // const [initialTheme] = React.useState<'dark' | 'light'>(() => {
+  //   // const localStorageTheme = window.localStorage.getItem('theme');
+  //   // if (localStorageTheme) {
+  //   //   return localStorageTheme;
+  //   // }
+  //   const prefersDark = window.matchMedia(
+  //     '(prefers-color-scheme: dark)',
+  //   ).matches;
+  //   return prefersDark ? 'dark' : 'light';
+  // });
 
   const { siteConfig } = context;
 
@@ -153,7 +153,8 @@ function Home() {
           <SectionTitle title={<>Try it out for yourself!</>} />
           <iframe
             className="h-[648px] w-full py-4"
-            src={`https://stackblitz.com/github/trpc/next-minimal-starter?embed=1&file=src/pages/index.tsx&hideExplorer=1&hideNavigation=1&theme=${initialTheme}`}
+            //src={`https://stackblitz.com/github/trpc/next-minimal-starter?embed=1&file=src/pages/index.tsx&hideExplorer=1&hideNavigation=1&theme=${initialTheme}`}
+            src="https://stackblitz.com/github/trpc/next-minimal-starter?embed=1&file=src/pages/index.tsx&hideExplorer=1&hideNavigation=1"
             frameBorder="0"
           />
           <Button
