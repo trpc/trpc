@@ -1,29 +1,52 @@
 import React, { FC } from 'react';
-import { FiBriefcase, FiLock, FiZap } from 'react-icons/fi';
+import { FaBatteryFull, FaSeedling } from 'react-icons/fa';
+import { FiBriefcase, FiLock, FiTerminal, FiZap } from 'react-icons/fi';
 
 const features = [
   {
     title: 'Automatic typesafety',
     description:
-      'Automatic typesafety & autocompletion inferred from your API-paths, their input data, & outputs.',
+      'Made a server side change? Typescript will warn you client side! This is inferred from your API-paths, their inputs & outputs.',
     icon: <FiLock size={20} />,
     color:
       'dark:bg-indigo-900/50 bg-indigo-200 dark:text-indigo-300 text-indigo-600',
   },
   {
-    title: 'Light & Snappy DX',
+    title: 'Snappy DX',
     description:
-      'No code generation, run-time bloat, or build pipeline. Zero dependencies & a tiny client-side footprint.',
+      'tRPC has no build or compile steps, meaning no code generation, runtime bloat, or build pipeline.',
     icon: <FiZap size={20} />,
     color:
       'dark:bg-amber-900/50 bg-amber-200 dark:text-amber-300 text-amber-600',
   },
   {
-    title: 'Add to existing brownfield project',
+    title: 'Add easily to any web framework',
     description:
-      'Easy to add to your existing brownfield project with adapters for Connect/Express/Next.js.',
+      "Compatible with any JavaScript framework, such as React, Vue, or Svelte. It's easy to add to your existing brownfield project. ",
     icon: <FiBriefcase size={20} />,
     color: 'dark:bg-pink-900/50 bg-pink-200 dark:text-pink-300 text-pink-600',
+  },
+  {
+    title: 'Autocompletion',
+    description:
+      'Using tRPC is like using a SDK for your server code. This means the end of figuring out what endpoints the server accepts. ',
+    icon: <FiTerminal size={20} />,
+    color:
+      'dark:bg-orange-900/50 bg-orange-200 dark:text-orange-300 text-orange-600',
+  },
+  {
+    title: 'Light bundle size',
+    description:
+      'tRPC has zero dependencies and a tiny client-side footprint. ',
+    icon: <FaSeedling size={20} />,
+    color: 'dark:bg-lime-900/50 bg-lime-200 dark:lime-orange-300 text-lime-600',
+  },
+  {
+    title: 'Batteries included',
+    description:
+      'We provide adapters for React, Next.js, Express.js, and more. There are also community-maintained adapters available for frameworks such as Nuxt and Sveltekit.',
+    icon: <FaBatteryFull size={20} />,
+    color: 'dark:bg-sky-900/50 bg-sky-200 dark:lime-sky-300 text-sky-600',
   },
 ];
 
