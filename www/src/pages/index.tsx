@@ -155,7 +155,7 @@ function Home() {
             <iframe
               className="h-full w-full absolute"
               //src={`https://stackblitz.com/github/trpc/next-minimal-starter?embed=1&file=src/pages/index.tsx&hideExplorer=1&hideNavigation=1&theme=${initialTheme}`}
-              src="https://stackblitz.com/github/trpc/next-minimal-starter?embed=1&file=src/pages/index.tsx&hideNavigation=1&terminalHeight=0&terminal='yarn start'"
+              src="https://stackblitz.com/github/trpc/next-minimal-starter?embed=1&file=src/pages/index.tsx&hideNavigation=1&terminalHeight=0"
               frameBorder="0"
             />
           </div>
