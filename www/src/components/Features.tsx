@@ -14,7 +14,7 @@ const features = [
   {
     title: 'Snappy DX',
     description:
-      'tRPC has no building or compiling steps, meaning no code generation, run-time bloat, or build pipeline. ',
+      'tRPC has no build or compile steps, meaning no code generation, runtime bloat, or build pipeline.',
     icon: <FiZap size={20} />,
     color:
       'dark:bg-amber-900/50 bg-amber-200 dark:text-amber-300 text-amber-600',
