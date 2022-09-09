@@ -86,6 +86,8 @@ npx create-next-app --example https://github.com/trpc/trpc --example-path exampl
 
 ## Core Team
 
+> Do you want to contribute? Feel free to write to us on <a href="https://trpc.io/discord">Discord</a>.
+
 <table>
   <tr>
     <td align="center"><a href="https://twitter.com/alexdotjs"><img src="https://avatars.githubusercontent.com/u/459267?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Alex / KATT</b></sub></a></td>
@@ -93,9 +95,9 @@ npx create-next-app --example https://github.com/trpc/trpc --example-path exampl
   </tr>
 </table>
 
-### Level 3
+### Level 2
 
-> tRPC who leads the API-design
+> The people who lead the API-design decisions and has the most active role in the development
 
 <table>
   <tbody>
@@ -105,25 +107,20 @@ npx create-next-app --example https://github.com/trpc/trpc --example-path exampl
   </tbody>
 </table>
 
-### Level 2
+### Level 1
 
-> Volunteers who actively help out improving the codebase by making PRs and reviewing code
+> People who actively help out improving the codebase by making PRs and reviewing code
 
 <table>
   <tbody>
     <tr>
       <td align="center"><a href="https://twitter.com/jlalmes"><img src="https://avatars.githubusercontent.com/u/69924001?v=4?s=100" width="100px;" alt=""/><br /><sub><b>James Berry</b></sub></a></td>
       <td align="center"><a href="http://www.jumr.dev"><img src="https://avatars.githubusercontent.com/u/51714798?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Julius Marminge</b></sub></a></td>
-      <td align="center"><a href="https://elsakaan.dev"><img src="https://avatars.githubusercontent.com/u/20271968?u=ab95f47bb661569e9b4ab1dadfdb802b77f9d1c6&v=4&s=100" width="100" alt="Ahmed%20Elsakaan"/><br /><sub><b>Ahmed Elsakaan</b></sub></a></td>
+      <td align="center"><a href="https://elsakaan.dev"><img src="https://avatars.githubusercontent.com/u/20271968?v=4&s=100" width="100" alt="Ahmed%20Elsakaan"/><br /><sub><b>Ahmed Elsakaan</b></sub></a></td>
     </tr>
   </tbody>
 </table>
 
-### Level 1 Maintainers
-
-> Volunteers that actively help out answering questions in Discord, GitHub Discussions, etc
-
-*n/a* - do you want to contribute? Feel free to write to us on <a href="https://trpc.io/discord">Discord</a>.
 
 ## Sponsors
 
