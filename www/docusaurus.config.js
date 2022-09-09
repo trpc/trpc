@@ -15,7 +15,7 @@ module.exports = {
     defaultMode: 'darkMode',
     disableSwitch: false,
     respectPrefersColorScheme: true,
-    image: 'img/facebook_cover_photo_2.png',
+    image: 'img/trpc-open-graph.png',
     prism: {
       theme: require('prism-react-renderer/themes/vsDark'),
     },
@@ -144,11 +144,15 @@ module.exports = {
       return {
         name: 'docusaurus-tailwindcss',
         configurePostCss(postcssOptions) {
-          // Appends TailwindCSS and AutoPrefixer.
-          //eslint-disable-next-line
+          // Appends TailwindCSS, AutoPrefixer & CSSNano.
+          /* eslint-disable @typescript-eslint/no-var-requires */
           postcssOptions.plugins.push(require('tailwindcss'));
-          //eslint-disable-next-line
           postcssOptions.plugins.push(require('autoprefixer'));
+          if (process.env.NODE_ENV === 'production') {
+            console.log('NODE_ENV is production - PUSHING CSSNANO');
+            postcssOptions.plugins.push(require('cssnano'));
+          }
+          /* eslint-enable @typescript-eslint/no-var-requires */
           return postcssOptions;
         },
       };
