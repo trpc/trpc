@@ -263,8 +263,6 @@ client.proxy.greeting.query();
 trpc.proxy.greeting.useQuery();
 ```
 
-See the [Links documentation](links).
-
 ## Limitations of interop
 
 Any procedures defined using `t.procedure` must be called on the client using the [new way of calling procedures](#calling-procedures). What this means is that when you migrate the `legacyRouter` over to be a "v10-`t.router`", you'll have to update the frontend-usage of this router to use the new way of calling procedures.
@@ -278,6 +276,8 @@ We have changed the API of Subscriptions where subscriptions need to return an `
 ### Custom Links
 
 > 🚧 Feel free to contribute to improve this section
+
+See the [Links documentation](links).
 
 ## Client Package Changes
 
