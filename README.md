@@ -7,7 +7,7 @@
 
 ---
 
-![tRPC](https://assets.trpc.io/www/trpc-readme.png)
+[![tRPC](https://assets.trpc.io/www/trpc-readme.png)](https://trpc.io/)
 
 <div align="center">
   <h1>tRPC</h1>
