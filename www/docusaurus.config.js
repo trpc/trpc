@@ -15,7 +15,7 @@ module.exports = {
     defaultMode: 'darkMode',
     disableSwitch: false,
     respectPrefersColorScheme: true,
-    image: 'img/trpc-open-graph.png',
+    image: 'https://assets.trpc.io/www/trpc-open-graph.png',
     prism: {
       theme: require('prism-react-renderer/themes/vsDark'),
     },
