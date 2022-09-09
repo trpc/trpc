@@ -40,7 +40,6 @@ const flattenTweets = (tweets: any, users: any) => {
     const date = new Date(tweetData.created_at);
     const userId = tweetData.user.id_str;
 
-    console.log(tweetData);
     /**
      * Twitter API returns the text with HTML escaped characters
      * so we un-escape these so that they can be rendered properly
@@ -98,11 +97,12 @@ oauth.get(
     const columnifiedTweets = columnify(flattenedTweets);
 
     const json = JSON.stringify(columnifiedTweets, null, 2);
-    const text = `
-// prettier-ignore
-// eslint-disable
-
-export const tweets = ${json}`.trim();
+    const text = [
+      `// prettier-ignore`,
+      `// eslint-disable`,
+      `export const tweets = ${json}`,
+      ``,
+    ].join('\n');
 
     fs.writeFileSync(__dirname + '/script.output.ts', text);
   },

@@ -82,7 +82,13 @@ function Home() {
               <GithubStarsButton />
             </div>
             <div className="flex-1 flex justify-start">
-              <Button primary href="/docs/v9/quickstart" className="text-lg">
+              <Button
+                primary
+                href={`/docs/${
+                  version.active === '9.x' ? 'v9' : 'v10'
+                }/quickstart`}
+                className="text-lg"
+              >
                 Quickstart
                 <FiArrowRight size={20} strokeWidth={3} />
               </Button>
