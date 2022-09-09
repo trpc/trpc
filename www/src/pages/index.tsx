@@ -152,9 +152,9 @@ function Home() {
         <section>
           <SectionTitle title={<>Try it out for yourself!</>} />
           <iframe
-            className="h-[648px] w-full py-4"
+            className="h-[600px] w-full py-4"
             //src={`https://stackblitz.com/github/trpc/next-minimal-starter?embed=1&file=src/pages/index.tsx&hideExplorer=1&hideNavigation=1&theme=${initialTheme}`}
-            src="https://stackblitz.com/github/trpc/next-minimal-starter?embed=1&file=src/pages/index.tsx&hideExplorer=1"
+            src="https://stackblitz.com/github/trpc/next-minimal-starter?embed=1&file=src/pages/index.tsx&hideNavigation=1&terminalHeight=0"
             frameBorder="0"
           />
           <Button
