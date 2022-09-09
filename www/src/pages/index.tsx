@@ -74,7 +74,9 @@ function Home() {
             </p>
             <div className="flex items-center justify-center gap-4 mt-6">
               <Link
-                href="/docs/v9/quickstart"
+                href={`/docs/${
+                  version.active === '9.x' ? 'v9' : 'v10'
+                }/quickstart`}
                 className="inline-block px-4 py-2 text-sm font-bold text-white transition-colors rounded-lg shadow-xl md:text-base hover:bg-primary-darker hover:no-underline hover:text-white bg-primary"
               >
                 Quickstart
