@@ -1,22 +1,17 @@
 > **🚀 You are looking at a pre-release of tRPC v10!**
-> 
-> You might be looking for the [`main`](https://github.com/trpc/trpc/tree/main)-branch which is the stable v9-version. 
+>
+> You might be looking for the [`main`](https://github.com/trpc/trpc/tree/main)-branch which is the stable v9-version.
 >
 > See our [migration guide](https://trpc.io/docs/v10/migrate-from-v9-to-v10) for a summary of what is changing or take a look at [the **v10 docs website**](https://alpha.trpc.io/).
 > There is also [the `examples-v10-next-prisma-starter-sqlite` project](https://github.com/trpc/examples-v10-next-prisma-starter-sqlite) to try out a real project using this version.
 
-
 ---
 
-<p align="center">
-  <a href="https://trpc.io/"><img src="./www/static/img/logo-text.svg" alt="tRPC" height="130"/></a>
-</p>
+![trpc](https://assets.trpc.io/www/trpc-readme.png)
 
-<p align="center">
-  <strong>End-to-end typesafe APIs made easy</strong>
-</p>
-
-<p align="center">
+<div align="center">
+  <h1>tRPC</h1>
+  <p><strong>End-to-end typesafe APIs made easy</strong></p>
   <a href="https://codecov.io/gh/trpc/trpc">
     <img alt="codecov" src="https://codecov.io/gh/trpc/trpc/branch/main/graph/badge.svg?token=KPPS918B0G">
   </a>
@@ -29,11 +24,10 @@
   <a href="https://twitter.com/alexdotjs">
     <img alt="Twitter" src="https://img.shields.io/twitter/url.svg?label=Follow%20%40alexdotjs&style=social&url=https%3A%2F%2Ftwitter.com%2Falexdotjs" />
   </a>
-</p>
+  <br />
+  <hr />
+</div>
 
-<p></p>
-
- 
 <p align="center">
   <figure>
     <img src="https://github.com/trpc/trpc-assets/blob/main/www/v10/preview-dark.gif" alt="Demo" />
@@ -121,9 +115,7 @@ npx create-next-app --example https://github.com/trpc/trpc --example-path exampl
   </tbody>
 </table>
 
-
 ### Special shout-outs
-
 
 <table>
   <tbody>
@@ -133,7 +125,6 @@ npx create-next-app --example https://github.com/trpc/trpc --example-path exampl
     </tr>
   </tbody>
 </table>
-
 
 ## Sponsors
 
@@ -239,8 +230,8 @@ Also, if your company using tRPC and want to support long-term maintenance of tR
 
 <!-- markdownlint-restore -->
 <!-- prettier-ignore-end -->
-<!-- SPONSORS:LIST:END -->
 
+<!-- SPONSORS:LIST:END -->
 
 ## All contributors ✨
 
