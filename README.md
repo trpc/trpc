@@ -7,11 +7,11 @@
 
 ---
 
-![trpc](https://assets.trpc.io/www/trpc-readme.png)
+![tRPC](https://assets.trpc.io/www/trpc-readme.png)
 
 <div align="center">
   <h1>tRPC</h1>
-  <p><strong>End-to-end typesafe APIs made easy</strong></p>
+  <h3>Move fast and break nothing.<br />End-to-end typesafe APIs made easy.</h3>
   <a href="https://codecov.io/gh/trpc/trpc">
     <img alt="codecov" src="https://codecov.io/gh/trpc/trpc/branch/main/graph/badge.svg?token=KPPS918B0G">
   </a>
@@ -25,10 +25,7 @@
     <img alt="Twitter" src="https://img.shields.io/twitter/url.svg?label=Follow%20%40alexdotjs&style=social&url=https%3A%2F%2Ftwitter.com%2Falexdotjs" />
   </a>
   <br />
-  <hr />
-</div>
-
-<p align="center">
+  <br />
   <figure>
     <img src="https://github.com/trpc/trpc-assets/blob/main/www/v10/preview-dark.gif" alt="Demo" />
     <figcaption>
@@ -37,9 +34,9 @@
       </p>
     </figcaption>
   </figure>
-</p>
+</div>
 
-<br/>
+<br />
 
 ## Intro
 
