@@ -12,7 +12,6 @@ module.exports = {
   organizationName: 'trpc', // Usually your GitHub org/user name.
   projectName: 'trpc', // Usually your repo name.
   themeConfig: {
-    defaultMode: 'darkMode',
     disableSwitch: false,
     respectPrefersColorScheme: true,
     image: 'img/facebook_cover_photo_2.png',

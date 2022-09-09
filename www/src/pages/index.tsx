@@ -36,11 +36,34 @@ function useLocalStorageVersion() {
   };
 }
 
+const usePrefferedTheme = () => {
+  const darkTheme = 'dark';
+  const lightTheme = 'light';
+
+  React.useEffect(() => {
+    const mediaMatch = window.matchMedia('(prefers-color-scheme: dark)');
+    const htmlElement = document.querySelector('html');
+
+    const colorSchemeChangeListener = (e: MediaQueryListEvent) => {
+      const newTheme = e.matches ? darkTheme : lightTheme;
+      htmlElement?.setAttribute('data-theme', newTheme);
+      console.log('setting theme to', newTheme);
+    };
+
+    mediaMatch.addEventListener('change', colorSchemeChangeListener);
+
+    return () => {
+      mediaMatch.removeEventListener('change', colorSchemeChangeListener);
+    };
+  }, []);
+};
+
 function Home() {
   const context = useDocusaurusContext();
   const { siteConfig } = context;
 
   const version = useLocalStorageVersion();
+  usePrefferedTheme();
 
   const location = useLocation();
   useEffect(() => {
