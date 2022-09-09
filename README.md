@@ -107,7 +107,7 @@ npx create-next-app --example https://github.com/trpc/trpc --example-path exampl
   </tbody>
 </table>
 
-### Recurring contributors
+### Active contributors
 
 > People who actively help out improving the codebase by making PRs and reviewing code
 
