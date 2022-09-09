@@ -218,6 +218,12 @@ export const t = initTRPC.context<Context>().create({
 
 ### 3. Create a new `appRouter`
 
+:::tip
+Be careful of using procedures that will end up having the same caller name! You will run into issues if a path in your legacy router matches a path in your new router.
+:::tip
+
+Both sets of procedures will now be available for your client. You will now need to [visit your client code to update your callers to the v10 syntax](#client-package-changes).
+
 1. Rename your old `appRouter` to `legacyRouter`
 2. Create a new app router:
 
@@ -273,7 +279,12 @@ We have changed the API of Subscriptions where subscriptions need to return an `
 
 > 🚧 Feel free to contribute to improve this section
 
-## Package Specific Changes
+## Client Package Changes
+
+v10 also brings changes to the client side of your application. After making a few key changes, you'll unlock a few key quality of life changes:
+
+- Jump to server definitions straight from your client
+- Rename routers or procedures straight from the client
 
 ### `@trpc/react`
 
