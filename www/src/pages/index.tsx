@@ -78,11 +78,15 @@ function Home() {
             application.
           </p>
           <div className="flex items-center justify-center gap-4 mt-6">
-            <GithubStarsButton />
-            <Button primary href="/docs/v9/quickstart" className="text-lg">
-              Quickstart
-              <FiArrowRight size={20} strokeWidth={3} />
-            </Button>
+            <div className="flex-1 flex justify-end">
+              <GithubStarsButton />
+            </div>
+            <div className="flex-1 flex justify-start">
+              <Button primary href="/docs/v9/quickstart" className="text-lg">
+                Quickstart
+                <FiArrowRight size={20} strokeWidth={3} />
+              </Button>
+            </div>
           </div>
           <Preview />
           <TopSponsors />
@@ -146,8 +150,13 @@ function Home() {
             }
           />
           <div className="max-w-screen-md mx-auto">
-            <div className="mt-3 aspect-square">
+            <div className="my-3 aspect-square">
               <Sponsors />
+            </div>
+            <div className="flex justify-center">
+              <Button primary href="https://github.com/sponsors/KATT">
+                Become a sponsor!
+              </Button>
             </div>
           </div>
         </section>
