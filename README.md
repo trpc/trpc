@@ -128,8 +128,8 @@ npx create-next-app --example https://github.com/trpc/trpc --example-path exampl
 <table>
   <tbody>
     <tr>
-      <td align="center"><a href="http://www.big-sir.com"><img src="https://avatars.githubusercontent.com/u/3660667?v=4?s=60" width="60px;" alt=""/><br /><sub><b>bautistaaa</b></sub></a></td>
-      <td align="center"><a href="http://t3.gg"><img src="https://avatars.githubusercontent.com/u/6751787?v=4?s=60" width="60px;" alt=""/><br /><sub><b>Theo Browne</b></sub></a></td>
+      <td align="center"><a href="http://www.big-sir.com"><img src="https://avatars.githubusercontent.com/u/3660667?v=4?s=100" width="100px;" alt=""/><br /><sub><b>bautistaaa</b></sub></a></td>
+      <td align="center"><a href="http://t3.gg"><img src="https://avatars.githubusercontent.com/u/6751787?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Theo Browne</b></sub></a></td>
     </tr>
   </tbody>
 </table>
