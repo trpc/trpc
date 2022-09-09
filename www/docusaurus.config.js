@@ -149,7 +149,6 @@ module.exports = {
           postcssOptions.plugins.push(require('tailwindcss'));
           postcssOptions.plugins.push(require('autoprefixer'));
           if (process.env.NODE_ENV === 'production') {
-            console.log('NODE_ENV is production - PUSHING CSSNANO');
             postcssOptions.plugins.push(require('cssnano'));
           }
           /* eslint-enable @typescript-eslint/no-var-requires */
