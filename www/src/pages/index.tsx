@@ -36,38 +36,11 @@ function useLocalStorageVersion() {
   };
 }
 
-const usePreferredTheme = () => {
-  const darkTheme = 'dark';
-  const lightTheme = 'light';
-
-  React.useEffect(() => {
-    const mediaMatch = window.matchMedia('(prefers-color-scheme: dark)');
-    const htmlElement = document.querySelector('html');
-
-    const setInitialTheme = () => {
-      const newTheme = mediaMatch.matches ? darkTheme : lightTheme;
-      htmlElement?.setAttribute('data-theme', newTheme);
-    };
-    setInitialTheme();
-
-    const colorSchemeChangeListener = (e: MediaQueryListEvent) => {
-      const newTheme = e.matches ? darkTheme : lightTheme;
-      htmlElement?.setAttribute('data-theme', newTheme);
-    };
-    mediaMatch.addEventListener('change', colorSchemeChangeListener);
-
-    return () => {
-      mediaMatch.removeEventListener('change', colorSchemeChangeListener);
-    };
-  }, []);
-};
-
 function Home() {
   const context = useDocusaurusContext();
   const { siteConfig } = context;
 
   const version = useLocalStorageVersion();
-  usePreferredTheme();
 
   const location = useLocation();
   useEffect(() => {

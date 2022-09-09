@@ -212,5 +212,8 @@ module.exports = {
       charSet: 'utf-8',
     },
   ],
-  clientModules: [require.resolve('./docusaurus.twitterReload.js')],
+  clientModules: [
+    require.resolve('./docusaurus.twitterReload.js'),
+    require.resolve('./docusaurus.preferredTheme.js'),
+  ],
 };
