@@ -1,9 +1,9 @@
 import React from 'react';
-import { tweets } from './tweets';
+import { tweets } from './script.output';
 
 export const TwitterWall = () => {
   return (
-    <div className="grid grid-cols-1 gap-4 mt-6 overflow-y-scroll lg:grid-cols-3 max-h-[80vh]">
+    <div className="grid grid-cols-1 gap-4 my-6 overflow-y-scroll lg:grid-cols-3 max-h-[80vh] bg-zinc-50 rounded-xl p-4">
       {tweets.map((column, index) => (
         <div key={`column-${index}`} className="flex flex-col gap-4">
           {column.map((tweet) => (

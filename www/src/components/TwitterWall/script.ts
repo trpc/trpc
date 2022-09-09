@@ -7,20 +7,23 @@
 import 'dotenv/config';
 import fs from 'fs';
 import OAuth from 'oauth';
+import { z } from 'zod';
 
 // Get these keys from dev.twitter.com, create an application and go to 'Keys and tokens'
-const {
-  TWITTER_API_KEY,
-  TWITTER_API_KEY_SECRET,
-  TWITTER_ACCESS_TOKEN,
-  TWITTER_ACCESS_TOKEN_SECRET,
-} = process.env;
+const env = z
+  .object({
+    TWITTER_API_KEY: z.string().min(1),
+    TWITTER_API_KEY_SECRET: z.string().min(1),
+    TWITTER_ACCESS_TOKEN: z.string().min(1),
+    TWITTER_ACCESS_TOKEN_SECRET: z.string().min(1),
+  })
+  .parse(process.env);
 
 const oauth = new OAuth.OAuth(
   'https://api.twitter.com/oauth/request_token',
   'https://api.twitter.com/oauth/access_token',
-  TWITTER_API_KEY,
-  TWITTER_API_KEY_SECRET,
+  env.TWITTER_API_KEY,
+  env.TWITTER_API_KEY_SECRET,
   '1.0A',
   null,
   'HMAC-SHA1',
@@ -37,6 +40,7 @@ const flattenTweets = (tweets: any, users: any) => {
     const date = new Date(tweetData.created_at);
     const userId = tweetData.user.id_str;
 
+    console.log(tweetData);
     /**
      * Twitter API returns the text with HTML escaped characters
      * so we un-escape these so that they can be rendered properly
@@ -75,8 +79,8 @@ const columnify = (tweets: Tweets, columns = 3) => {
 
 oauth.get(
   'https://api.twitter.com/1.1/collections/entries.json?id=custom-1441435105910796291',
-  TWITTER_ACCESS_TOKEN,
-  TWITTER_ACCESS_TOKEN_SECRET,
+  env.TWITTER_ACCESS_TOKEN,
+  env.TWITTER_ACCESS_TOKEN_SECRET,
   (err: any, data: any) => {
     const jsonParsed = JSON.parse(data);
     const tweets = jsonParsed?.objects?.tweets;
@@ -94,7 +98,11 @@ oauth.get(
     const columnifiedTweets = columnify(flattenedTweets);
 
     const json = JSON.stringify(columnifiedTweets, null, 2);
-    const text = `export const tweets = ${json}`;
+    const text = `
+// prettier-ignore
+// eslint-disable
+
+export const tweets = ${json}`.trim();
 
     fs.writeFileSync(__dirname + '/script.output.ts', text);
   },

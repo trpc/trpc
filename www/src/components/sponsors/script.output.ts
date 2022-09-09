@@ -460,5 +460,14 @@ export const sponsors = [
     "privacyLevel": "PUBLIC",
     "login": "thomasballinger",
     "createdAt": 1662563270000
+  },
+  {
+    "name": "Oliver Dixon",
+    "imgSrc": "https://avatars.githubusercontent.com/u/6940726?u=8a48c9f7acb576505efbb87a8093552ce3f0d1e5&v=4",
+    "monthlyPriceInDollars": 10,
+    "link": "https://polydelic.com",
+    "privacyLevel": "PUBLIC",
+    "login": "ollydixon",
+    "createdAt": 1662645977000
   }
 ] as const
