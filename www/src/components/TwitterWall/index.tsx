@@ -1,5 +1,5 @@
 import React from 'react';
-import { tweets } from './tweets';
+import { tweets } from './script.output';
 
 export const TwitterWall = () => {
   return (
