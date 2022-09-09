@@ -22,7 +22,7 @@ const features = [
   {
     title: 'Add easily to any web framework',
     description:
-      "Compatible with every javascript framework, such as React, Vue or Svelte. It's easy to add to your existing brownfield project. ",
+      "Compatible with any JavaScript framework, such as React, Vue, or Svelte. It's easy to add to your existing brownfield project. ",
     icon: <FiBriefcase size={20} />,
     color: 'dark:bg-pink-900/50 bg-pink-200 dark:text-pink-300 text-pink-600',
   },
