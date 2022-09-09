@@ -33,7 +33,6 @@ export type AppRouter = typeof router;
 export default trpcNext.createNextApiHandler({
   router,
   createContext,
-  teardown: () => prisma.$disconnect(),
   onError({ error }) {
     if (error.code === 'INTERNAL_SERVER_ERROR') {
       // send to bug reporting

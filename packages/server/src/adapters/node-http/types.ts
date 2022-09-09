@@ -1,6 +1,5 @@
 import { IncomingMessage, ServerResponse } from 'http';
-import { AnyRouter, inferRouterContext } from '../../core';
-import { inferRouterDef } from '../../core';
+import { AnyRouter, inferRouterContext, inferRouterDef } from '../../core';
 import { HTTPBaseHandlerOptions } from '../../http/internals/types';
 
 interface ParsedQs {
@@ -36,7 +35,6 @@ export type NodeHTTPHandlerOptions<
   TRequest extends NodeHTTPRequest,
   TResponse extends NodeHTTPResponse,
 > = HTTPBaseHandlerOptions<TRouter, TRequest> & {
-  teardown?: () => Promise<void>;
   maxBodySize?: number;
 } & NodeHTTPCreateContextOption<TRouter, TRequest, TResponse>;
 
