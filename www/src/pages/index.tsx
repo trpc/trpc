@@ -101,6 +101,13 @@ function Home() {
         <section>
           <Features />
         </section>
+        <section>
+          <iframe
+            className="h-[500px] w-full"
+            src="https://stackblitz.com/github/trpc/next-minimal-starter?embed=1&file=src/pages/index.tsx&hideExplorer=1&hideNavigation=1"
+            frameBorder="0"
+          ></iframe>
+        </section>
         <section className="max-w-[80ch] px-6 mx-auto md:px-0">
           <SectionTitle title={<>You may not need a traditional API</>} />
           <blockquote
