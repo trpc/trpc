@@ -40,7 +40,7 @@ function Home() {
   const context = useDocusaurusContext();
 
   /** initial theme used for stackblitz embed. dont want to reload the embed on theme-toggle so we just load it once */
-  const [initialTheme] = React.useState(() => {
+  const [initialTheme] = React.useState<'dark' | 'light'>(() => {
     // const localStorageTheme = window.localStorage.getItem('theme');
     // if (localStorageTheme) {
     //   return localStorageTheme;
@@ -176,7 +176,7 @@ function Home() {
         </section>
 
         <section>
-          <SectionTitle title="Don't take our word for it!" />
+          {/*<SectionTitle title="Don't take our word for it!" />*/}
           <TwitterWall />
         </section>
         <section className="pb-12">
