@@ -44,7 +44,7 @@ const features = [
   {
     title: 'Batteries included',
     description:
-      'We provide adapters for React / Next.js / Express.js. Community maintained adapters are available for frameworks as Nuxt and Sveltekit.   ',
+      'We provide adapters for React, Next.js, Express.js, and more. There are also community-maintained adapters available for frameworks such as Nuxt and Sveltekit.',
     icon: <FaBatteryFull size={20} />,
     color: 'dark:bg-sky-900/50 bg-sky-200 dark:lime-sky-300 text-sky-600',
   },
