@@ -12,7 +12,7 @@ export default function IndexPage() {
   }
   return (
     <div style={styles}>
-      {/* the type is defined, it can be autocompleted */}
+      {/* the type is defined and can be autocompleted */}
       <h1>{hello.data.greeting}</h1>
     </div>
   );

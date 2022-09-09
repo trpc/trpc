@@ -6,6 +6,7 @@ const t = initTRPC.create();
 
 export const appRouter = t.router({
   hello: t.procedure
+    // Try changing the input type and see the typeerrors on the client
     .input(z.object({ text: z.string().nullish() }).nullish())
     .query(({ input }) => {
       return {
