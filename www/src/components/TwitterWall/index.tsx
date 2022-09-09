@@ -3,7 +3,7 @@ import { tweets } from './script.output';
 
 export const TwitterWall = () => {
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4 my-6 overflow-y-scroll max-h-[80vh] bg-zinc-50 rounded-xl p-4">
+    <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4 my-6 overflow-y-scroll max-h-[80vh] bg-zinc-50 dark:bg-zinc-800/50 rounded-xl p-4">
       {tweets.map((tweet) => (
         <a
           id="tweet"
