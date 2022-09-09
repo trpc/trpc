@@ -179,7 +179,7 @@ function Home() {
         </section>
 
         <section>
-          {/*<SectionTitle title="Don't take our word for it!" />*/}
+          <SectionTitle title="Don't take our word for it!" />
           <TwitterWall />
         </section>
         <section className="pb-12">
