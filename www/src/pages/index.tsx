@@ -36,7 +36,7 @@ function useLocalStorageVersion() {
   };
 }
 
-const usePrefferedTheme = () => {
+const usePreferredTheme = () => {
   const darkTheme = 'dark';
   const lightTheme = 'light';
 
@@ -44,12 +44,16 @@ const usePrefferedTheme = () => {
     const mediaMatch = window.matchMedia('(prefers-color-scheme: dark)');
     const htmlElement = document.querySelector('html');
 
+    const setInitialTheme = () => {
+      const newTheme = mediaMatch.matches ? darkTheme : lightTheme;
+      htmlElement?.setAttribute('data-theme', newTheme);
+    };
+    setInitialTheme();
+
     const colorSchemeChangeListener = (e: MediaQueryListEvent) => {
       const newTheme = e.matches ? darkTheme : lightTheme;
       htmlElement?.setAttribute('data-theme', newTheme);
-      console.log('setting theme to', newTheme);
     };
-
     mediaMatch.addEventListener('change', colorSchemeChangeListener);
 
     return () => {
@@ -63,7 +67,7 @@ function Home() {
   const { siteConfig } = context;
 
   const version = useLocalStorageVersion();
-  usePrefferedTheme();
+  usePreferredTheme();
 
   const location = useLocation();
   useEffect(() => {
