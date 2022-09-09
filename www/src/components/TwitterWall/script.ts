@@ -65,17 +65,6 @@ const flattenTweets = (tweets: any, users: any) => {
   });
 };
 
-type Tweets = ReturnType<typeof flattenTweets>;
-
-/** Take the flattened array and group into subarrays */
-const columnify = (tweets: Tweets, columns = 3) => {
-  const cols = [];
-  for (let i = 0; i < tweets.length; i += columns) {
-    cols.push(tweets.slice(i, i + columns));
-  }
-  return cols;
-};
-
 oauth.get(
   'https://api.twitter.com/1.1/collections/entries.json?id=custom-1441435105910796291',
   env.TWITTER_ACCESS_TOKEN,
@@ -94,9 +83,7 @@ oauth.get(
 
     const flattenedTweets = flattenTweets(tweets, users);
 
-    const columnifiedTweets = columnify(flattenedTweets);
-
-    const json = JSON.stringify(columnifiedTweets, null, 2);
+    const json = JSON.stringify(flattenedTweets, null, 2);
     const text = [
       `// prettier-ignore`,
       `// eslint-disable`,
