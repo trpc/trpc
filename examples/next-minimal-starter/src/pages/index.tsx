@@ -2,7 +2,7 @@ import { trpc } from '../utils/trpc';
 
 export default function IndexPage() {
   const hello = trpc.hello.useQuery({ text: 'client' });
-
+  // CMD+Click (or CTRL+Click) on `hello` to go to the server definition
   if (!hello.data) {
     return (
       <div style={styles}>
@@ -12,7 +12,7 @@ export default function IndexPage() {
   }
   return (
     <div style={styles}>
-      {/* the type is define, it can be autocompleted */}
+      {/* the type is defined, it can be autocompleted */}
       <h1>{hello.data.greeting}</h1>
     </div>
   );
