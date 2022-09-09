@@ -9,11 +9,13 @@ type ButtonProps = React.ButtonHTMLAttributes<HTMLButtonElement> &
 type Props = (AnchorProps | ButtonProps) & {
   primary?: boolean;
   secondary?: boolean;
+  neutral?: boolean;
 };
 
 export const Button = ({
   primary,
   secondary,
+  neutral,
   className: _className,
   children,
   ...props
@@ -24,6 +26,8 @@ export const Button = ({
       ['bg-primary text-white hover:text-white hover:bg-sky-700']: primary,
       ['bg-gradient-to-r from-sky-50 to-sky-200 text-slate-800 hover:text-primary-darker']:
         secondary,
+      ['bg-gradient-to-r dark:from-neutral-900 dark:to-neutral-800 text-white from-neutral-200 to-neutral-300']:
+        neutral,
     },
     _className,
   );

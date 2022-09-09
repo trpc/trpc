@@ -156,10 +156,9 @@ function Home() {
             src={`https://stackblitz.com/github/trpc/next-minimal-starter?embed=1&file=src/pages/index.tsx&hideExplorer=1&hideNavigation=1&theme=${initialTheme}`}
             frameBorder="0"
           />
-          <a
-            id="sponsor-button"
+          <Button
+            neutral
             href="https://github.com/trpc/next-minimal-starter/generate"
-            className="h-12 flex items-center gap-4 dark:bg-zinc-800 px-8 py-4 w-max rounded-lg group hover:dark:bg-zinc-900 border-2 dark:border-zinc-900 hover:dark:border-zinc-700 bg-zinc-200 hover:bg-zinc-100"
           >
             <svg
               role="img"
@@ -173,7 +172,7 @@ function Home() {
             <span className="dark:text-zinc-300 text-zinc-900 no-underline font-semibold mx-auto">
               Use this template
             </span>
-          </a>
+          </Button>
         </section>
 
         <section>
