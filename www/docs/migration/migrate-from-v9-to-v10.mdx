@@ -177,7 +177,7 @@ const appRouter = t.router({
 There are [a few features that are not supported by `.interop()`](#limitations-of-interop). We expect nearly all of our users to be able to use `.interop()` to migrate their server side code in only a few minutes. If you are discovering that `.interop()` is not working correctly for you, be sure to [check here](#limitations-of-interop).
 :::
 
-You may also choose to start writing new procedures using the v10 syntax - but keep your v9 procedures in place for now. Incremental adoption is only a matter of merging the two routers together.
+You may choose to start writing new procedures using the v10 syntax - but keep your v9 procedures in place for now. Incremental adoption is only a matter of merging the two routers together.
 
 Turning your v9 router into a v10 router only takes 10 characters. Add `.interop()` to the end of your v9 router...and you're done with your server code!
 
@@ -259,7 +259,7 @@ trpc.proxy.greeting.useQuery();
 
 See the [Links documentation](links).
 
-## Limitations of interopability mode
+## Limitations of interop
 
 Any procedures defined using `t.procedure` must be called on the client using the [new way of calling procedures](#calling-procedures). What this means is that when you migrate the `legacyRouter` over to be a "v10-`t.router`", you'll have to update the frontend-usage of this router to use the new way of calling procedures.
 
