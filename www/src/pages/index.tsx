@@ -32,6 +32,14 @@ function useLocalStorageVersion() {
 
   useEffect(() => {
     setVersion(getLocalStorageVersion());
+
+    const timeout = setTimeout(() => {
+      setVersion(getLocalStorageVersion());
+    }, 1);
+
+    return () => {
+      clearTimeout(timeout);
+    };
   }, []);
 
   return {
