@@ -38,7 +38,6 @@ function useLocalStorageVersion() {
     },
   };
 }
-
 function useInitialWindowSize() {
   const [windowSize] = useState<null | {
     width: number;
@@ -89,15 +88,10 @@ function Home() {
   const location = useLocation();
 
   const isV10 = version.active === 'current';
+  const [isMounted, setMounted] = useState(false);
   useEffect(() => {
-    const params = new URLSearchParams(location.search);
-    if (params.get('v') === '10' && !isV10) {
-      version.set('current');
-    } else if (params.get('v') === '9' && isV10) {
-      version.set('9.x');
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [location.search, isV10]);
+    setMounted(true);
+  }, []);
 
   return (
     <Layout
@@ -149,7 +143,7 @@ function Home() {
           <Features />
         </section>
 
-        <section className="mx-auto max-w-[1600px]">
+        <section className="mx-auto max-w-[1600px] hidden md:block">
           <SectionTitle
             id="try-it-out"
             title={<>Try it out for yourself!</>}
@@ -161,33 +155,30 @@ function Home() {
             }
           />
           <div className="h-[600px] w-full rounded-xl overflow-hidden z-10 relative my-4">
-            <iframe
-              className="h-full w-full absolute"
-              src={
-                `https://stackblitz.com/github/trpc/trpc/tree/${
-                  isV10 ? 'next' : 'main'
-                }/examples/next-minimal-starter?` +
-                searchParams({
-                  embed: '1',
-                  file:
-                    !windowSize || windowSize.width > 640
-                      ? [
-                          // Opens these side-by-side
-                          'src/pages/index.tsx',
-                          'src/pages/api/trpc/[trpc].ts',
-                        ]
-                      : [
-                          // On small screens, only open 1 file
-                          'src/pages/index.tsx',
-                        ],
-                  hideNavigation: '1',
-                  terminalHeight: '1',
-                  showSidebar: '0',
-                  view: 'editor',
-                })
-              }
-              frameBorder="0"
-            />
+            {isMounted && (
+              // If we change `src` of the iframe, it'll steal focus and scroll down, so we wait until first mount to render it
+              <iframe
+                className="h-full w-full absolute"
+                src={
+                  `https://stackblitz.com/github/trpc/trpc/tree/${
+                    isV10 ? 'next' : 'main'
+                  }/examples/next-minimal-starter?` +
+                  searchParams({
+                    embed: '1',
+                    file: [
+                      // Opens these side-by-side
+                      'src/pages/index.tsx',
+                      'src/pages/api/trpc/[trpc].ts',
+                    ],
+                    hideNavigation: '1',
+                    terminalHeight: '1',
+                    showSidebar: '0',
+                    view: 'editor',
+                  })
+                }
+                frameBorder="0"
+              />
+            )}
           </div>
           <div className="flex justify-center">
             <Button
