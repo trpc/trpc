@@ -125,7 +125,7 @@ function Home() {
           <Features />
         </section>
 
-        <section className={'mx-auto max-w-[1600px] hidden'}>
+        <section className={'mx-auto max-w-[1600px] hidden md:block'}>
           <SectionTitle
             id="try-it-out"
             title={<>Try it out for yourself!</>}
