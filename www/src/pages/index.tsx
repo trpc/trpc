@@ -18,10 +18,10 @@ type Version = 'current' | '9.x';
 
 const getLocalStorageVersion = () => {
   if (typeof window === 'undefined') {
-    return '9.x';
+    return null;
   }
   return (window.localStorage.getItem('docs-preferred-version-default') ||
-    null) as Version | null;
+    '9.x') as Version;
 };
 /**
  * Hack to get the selected version of the page from local storage
@@ -68,12 +68,6 @@ function Home() {
   const version = useLocalStorageVersion();
 
   const isV10 = version.active === 'current';
-  const [isMounted, setMounted] = useState(false);
-  useLayoutEffect(() => {
-    if (version.active !== null) {
-      setMounted(true);
-    }
-  }, [version.active]);
 
   return (
     <Layout
