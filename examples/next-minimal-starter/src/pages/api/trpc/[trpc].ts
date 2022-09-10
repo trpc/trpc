@@ -15,14 +15,14 @@ const appRouter = t.router({
     .input(
       z
         .object({
-          text: z.string().nullish(),
+          name: z.string().nullish(),
         })
         .nullish(),
     )
     .query(({ input }) => {
       // This is what you're returning to your client
       return {
-        text: `hello ${input?.text ?? 'world'}`,
+        text: `hello ${input?.name ?? 'world'}`,
         // 💡 Tip: Try adding a new property here and see it propagate to the client straight-away
       };
     }),

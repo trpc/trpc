@@ -4,7 +4,7 @@
 import { trpc } from '../utils/trpc';
 
 export default function IndexPage() {
-  const helloResult = trpc.greeting.useQuery({ text: 'client' });
+  const helloResult = trpc.greeting.useQuery({ name: 'client' });
 
   // 💡 Tip: CMD+Click (or CTRL+Click) on `hello` to go to the server definition
   if (!helloResult.data) {
