@@ -13,7 +13,7 @@ export const SectionTitle: FC<SectionTitleProps> = ({
 }) => {
   return (
     <div className="text-center">
-      <h2 id={id} className="text-2xl font-bold lg:text-3xl">
+      <h2 id={id} className="text-2xl font-bold lg:text-3xl scroll-mt-20">
         {title} <a className="hash-link" href={`#${id}`}></a>
       </h2>
       {description && (

@@ -33,7 +33,10 @@ html {
 }
 
 .homepage .navbar {
-  @apply container h-20 mx-auto shadow-none;
+  @apply shadow-none;
+}
+.homepage .navbar__inner {
+  @apply container;
 }
 
 .homepage .main-wrapper {
