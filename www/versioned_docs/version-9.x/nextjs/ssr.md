@@ -80,7 +80,7 @@ export default withTRPC<AppRouter>({
 
 ## FAQ
 
-### Q: Why do I need to forward the client's headers to the server manually? Why doesn't tRPC automatically does that for me?
+### Q: Why do I need to forward the client's headers to the server manually? Why doesn't tRPC automatically do that for me?
 
 While it's rare that you wouldn't want to forward the client's headers to the server when doing SSR, you might want to add things dynamically in the headers. Therefore, tRPC doesn't want to take responsibility for header keys colliding, etc.
 
