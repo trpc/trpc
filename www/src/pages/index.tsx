@@ -1,8 +1,8 @@
 import Head from '@docusaurus/Head';
-import { useLocation } from '@docusaurus/router';
 import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
 import Layout from '@theme/Layout';
-import React, { useEffect, useState } from 'react';
+import clsx from 'clsx';
+import React, { useState } from 'react';
 import { FiArrowRight } from 'react-icons/fi';
 import { Button } from '../components/Button';
 import { Features } from '../components/Features';
@@ -26,9 +26,7 @@ const getLocalStorageVersion = (): Version => {
  * Hack to get the selected version of the page from local storage
  */
 function useLocalStorageVersion() {
-  const [version, setVersion] = useState<Version>(() =>
-    getLocalStorageVersion(),
-  );
+  const [version, setVersion] = useState(() => getLocalStorageVersion());
 
   return {
     active: version,
@@ -37,22 +35,6 @@ function useLocalStorageVersion() {
       window.localStorage.setItem('docs-preferred-version-default', value);
     },
   };
-}
-function useInitialWindowSize() {
-  const [windowSize] = useState<null | {
-    width: number;
-    height: number;
-  }>(() => {
-    if (typeof window === 'undefined') {
-      return null;
-    }
-    return {
-      width: window.innerWidth,
-      height: window.innerHeight,
-    };
-  });
-
-  return windowSize;
 }
 
 function searchParams(obj: Record<string, string | string[]>): string {
@@ -83,15 +65,8 @@ function Home() {
   const { siteConfig } = context;
 
   const version = useLocalStorageVersion();
-  const windowSize = useInitialWindowSize();
-
-  const location = useLocation();
 
   const isV10 = version.active === 'current';
-  const [isMounted, setMounted] = useState(false);
-  useEffect(() => {
-    setMounted(true);
-  }, []);
 
   return (
     <Layout
@@ -143,7 +118,7 @@ function Home() {
           <Features />
         </section>
 
-        <section className="mx-auto max-w-[1600px] hidden md:block">
+        <section className={'mx-auto max-w-[1600px] hidden md:block'}>
           <SectionTitle
             id="try-it-out"
             title={<>Try it out for yourself!</>}
@@ -154,31 +129,32 @@ function Home() {
               </>
             }
           />
-          <div className="h-[600px] w-full rounded-xl overflow-hidden z-10 relative my-4">
-            {isMounted && (
-              // If we change `src` of the iframe, it'll steal focus and scroll down, so we wait until first mount to render it
-              <iframe
-                className="h-full w-full absolute"
-                src={
-                  `https://stackblitz.com/github/trpc/trpc/tree/${
-                    isV10 ? 'next' : 'main'
-                  }/examples/next-minimal-starter?` +
-                  searchParams({
-                    embed: '1',
-                    file: [
-                      // Opens these side-by-side
-                      'src/pages/index.tsx',
-                      'src/pages/api/trpc/[trpc].ts',
-                    ],
-                    hideNavigation: '1',
-                    terminalHeight: '1',
-                    showSidebar: '0',
-                    view: 'editor',
-                  })
-                }
-                frameBorder="0"
-              />
+          <div
+            className={clsx(
+              'h-[600px] w-full rounded-xl overflow-hidden z-10 relative my-4',
             )}
+          >
+            <iframe
+              className={clsx('h-full w-full absolute')}
+              src={
+                `https://stackblitz.com/github/trpc/trpc/tree/${
+                  isV10 ? 'next' : 'main'
+                }/examples/next-minimal-starter?` +
+                searchParams({
+                  embed: '1',
+                  file: [
+                    // Opens these side-by-side
+                    'src/pages/index.tsx',
+                    'src/pages/api/trpc/[trpc].ts',
+                  ],
+                  hideNavigation: '1',
+                  terminalHeight: '1',
+                  showSidebar: '0',
+                  view: 'editor',
+                })
+              }
+              frameBorder="0"
+            />
           </div>
           <div className="flex justify-center">
             <Button
