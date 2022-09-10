@@ -154,9 +154,6 @@ function Home() {
                 })
               }
               frameBorder="0"
-              onLoad={() => {
-                document.body.focus();
-              }}
             />
           </div>
           <div className="flex justify-center">
