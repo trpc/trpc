@@ -136,10 +136,7 @@ function Home() {
             )}
           >
             <iframe
-              className={clsx(
-                'h-full w-full absolute',
-                isV10 ? 'block' : 'hidden',
-              )}
+              className={clsx('h-full w-full absolute')}
               src={
                 `https://stackblitz.com/github/trpc/trpc/tree/${
                   isV10 ? 'next' : 'main'
