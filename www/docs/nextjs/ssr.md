@@ -85,13 +85,13 @@ export default trpc.withTRPC(MyApp);
 
 ### Q: Why do I need to forward the client's headers to the server manually? Why doesn't tRPC automatically does that for me?
 
-R: While it's rare that you wouldn't want to forward the client's headers to the server when doing SSR, you might want to add things dynamically in the headers. Therefore, tRPC doesn't want to take responsibility for header keys colliding, etc.
+While it's rare that you wouldn't want to forward the client's headers to the server when doing SSR, you might want to add things dynamically in the headers. Therefore, tRPC doesn't want to take responsibility for header keys colliding, etc.
 
 ### Q: Why do I need to delete the `connection` header when using SSR on Node 18?
 
-R: If you don't remove the `connection` header, the data fetching will fail with `TRPCClientError: fetch failed`.
+If you don't remove the `connection` header, the data fetching will fail with `TRPCClientError: fetch failed` because `connection` is a [forbidden header name](https://developer.mozilla.org/en-US/docs/Glossary/Forbidden_header_name).
 
 ### Q: Can I use `getServerSideProps` and/or `getStaticProps` while using SSR?
 
-R: When you enable SSR, tRPC will use `getInitialProps` to prefetch all queries on the server. That causes problems [like this](https://github.com/trpc/trpc/issues/596) when you use `getServerSideProps` in a page and solving it is out of our hands. Though, you can use [SSG Helpers](ssg-helpers) to prefetch queries in `getStaticProps` or `getServerSideProps`.
+When you enable SSR, tRPC will use `getInitialProps` to prefetch all queries on the server. That causes problems [like this](https://github.com/trpc/trpc/issues/596) when you use `getServerSideProps` in a page and solving it is out of our hands. Though, you can use [SSG Helpers](ssg-helpers) to prefetch queries in `getStaticProps` or `getServerSideProps`.
 
