@@ -2,7 +2,8 @@ import Head from '@docusaurus/Head';
 import { useLocation } from '@docusaurus/router';
 import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
 import Layout from '@theme/Layout';
-import React, { useEffect, useState } from 'react';
+import clsx from 'clsx';
+import React, { useEffect, useLayoutEffect, useState } from 'react';
 import { FiArrowRight } from 'react-icons/fi';
 import { Button } from '../components/Button';
 import { Features } from '../components/Features';
@@ -15,20 +16,18 @@ import { Sponsors } from '../components/sponsors';
 
 type Version = 'current' | '9.x';
 
-const getLocalStorageVersion = (): Version => {
+const getLocalStorageVersion = () => {
   if (typeof window === 'undefined') {
     return '9.x';
   }
   return (window.localStorage.getItem('docs-preferred-version-default') ||
-    '9.x') as Version;
+    null) as Version | null;
 };
 /**
  * Hack to get the selected version of the page from local storage
  */
 function useLocalStorageVersion() {
-  const [version, setVersion] = useState<Version>(() =>
-    getLocalStorageVersion(),
-  );
+  const [version, setVersion] = useState(() => getLocalStorageVersion());
 
   return {
     active: version,
@@ -37,22 +36,6 @@ function useLocalStorageVersion() {
       window.localStorage.setItem('docs-preferred-version-default', value);
     },
   };
-}
-function useInitialWindowSize() {
-  const [windowSize] = useState<null | {
-    width: number;
-    height: number;
-  }>(() => {
-    if (typeof window === 'undefined') {
-      return null;
-    }
-    return {
-      width: window.innerWidth,
-      height: window.innerHeight,
-    };
-  });
-
-  return windowSize;
 }
 
 function searchParams(obj: Record<string, string | string[]>): string {
@@ -64,6 +47,27 @@ function searchParams(obj: Record<string, string | string[]>): string {
     })
     .join('&');
 }
+
+function getSandboxURL(branch: string) {
+  return (
+    `https://stackblitz.com/github/trpc/trpc/tree/${branch}/examples/next-minimal-starter?` +
+    searchParams({
+      embed: '1',
+      file: [
+        // Opens these side-by-side
+        'src/pages/index.tsx',
+        'src/pages/api/trpc/[trpc].ts',
+      ],
+      hideNavigation: '1',
+      terminalHeight: '1',
+      showSidebar: '0',
+      view: 'editor',
+    })
+  );
+}
+
+const v10Url = getSandboxURL('next');
+const v9Url = getSandboxURL('main');
 
 function Home() {
   const context = useDocusaurusContext();
@@ -83,15 +87,8 @@ function Home() {
   const { siteConfig } = context;
 
   const version = useLocalStorageVersion();
-  const windowSize = useInitialWindowSize();
-
-  const location = useLocation();
 
   const isV10 = version.active === 'current';
-  const [isMounted, setMounted] = useState(false);
-  useEffect(() => {
-    setMounted(true);
-  }, []);
 
   return (
     <Layout
@@ -154,31 +151,28 @@ function Home() {
               </>
             }
           />
-          <div className="h-[600px] w-full rounded-xl overflow-hidden z-10 relative my-4">
-            {isMounted && (
-              // If we change `src` of the iframe, it'll steal focus and scroll down, so we wait until first mount to render it
-              <iframe
-                className="h-full w-full absolute"
-                src={
-                  `https://stackblitz.com/github/trpc/trpc/tree/${
-                    isV10 ? 'next' : 'main'
-                  }/examples/next-minimal-starter?` +
-                  searchParams({
-                    embed: '1',
-                    file: [
-                      // Opens these side-by-side
-                      'src/pages/index.tsx',
-                      'src/pages/api/trpc/[trpc].ts',
-                    ],
-                    hideNavigation: '1',
-                    terminalHeight: '1',
-                    showSidebar: '0',
-                    view: 'editor',
-                  })
-                }
-                frameBorder="0"
-              />
+          <div
+            className={clsx(
+              'h-[600px] w-full rounded-xl overflow-hidden z-10 relative my-4',
             )}
+          >
+            <iframe
+              className={clsx(
+                'h-full w-full absolute',
+                isV10 ? 'block' : 'hidden',
+              )}
+              src={v10Url}
+              frameBorder="0"
+            />
+
+            <iframe
+              className={clsx(
+                'h-full w-full absolute',
+                isV10 ? 'hidden' : 'block',
+              )}
+              src={v9Url}
+              frameBorder="0"
+            />
           </div>
           <div className="flex justify-center">
             <Button
