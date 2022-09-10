@@ -29,7 +29,7 @@
 }
 
 html {
-  @apply selection:text-white selection:bg-sky-500/75;
+  @apply selection:text-white selection:bg-sky-500/75 scroll-smooth;
 }
 
 .homepage .navbar {
