@@ -83,7 +83,8 @@ export const trpc = createTRPCNext<AppRouter, SSRContext>({
       headers() {
         if (ctx?.req) {
           // To use SSR properly, you need to forward the client's headers to the server
-          // In order to pass things like cookies when we're server-side rendering
+          // This is so you can pass through things like cookies when we're server-side rendering
+
           // If you're using Node 18, omit the "connection" header
           const {
             // eslint-disable-next-line @typescript-eslint/no-unused-vars
