@@ -48,27 +48,6 @@ function searchParams(obj: Record<string, string | string[]>): string {
     .join('&');
 }
 
-function getSandboxURL(branch: string) {
-  return (
-    `https://stackblitz.com/github/trpc/trpc/tree/${branch}/examples/next-minimal-starter?` +
-    searchParams({
-      embed: '1',
-      file: [
-        // Opens these side-by-side
-        'src/pages/index.tsx',
-        'src/pages/api/trpc/[trpc].ts',
-      ],
-      hideNavigation: '1',
-      terminalHeight: '1',
-      showSidebar: '0',
-      view: 'editor',
-    })
-  );
-}
-
-const v10Url = getSandboxURL('next');
-const v9Url = getSandboxURL('main');
-
 function Home() {
   const context = useDocusaurusContext();
 
@@ -89,6 +68,12 @@ function Home() {
   const version = useLocalStorageVersion();
 
   const isV10 = version.active === 'current';
+  const [isMounted, setMounted] = useState(false);
+  useLayoutEffect(() => {
+    if (version.active !== null) {
+      setMounted(true);
+    }
+  }, [version.active]);
 
   return (
     <Layout
@@ -140,7 +125,7 @@ function Home() {
           <Features />
         </section>
 
-        <section className="mx-auto max-w-[1600px] hidden md:block">
+        <section className={'mx-auto max-w-[1600px] hidden'}>
           <SectionTitle
             id="try-it-out"
             title={<>Try it out for yourself!</>}
@@ -161,17 +146,27 @@ function Home() {
                 'h-full w-full absolute',
                 isV10 ? 'block' : 'hidden',
               )}
-              src={v10Url}
+              src={
+                `https://stackblitz.com/github/trpc/trpc/tree/${
+                  isV10 ? 'next' : 'main'
+                }/examples/next-minimal-starter?` +
+                searchParams({
+                  embed: '1',
+                  file: [
+                    // Opens these side-by-side
+                    'src/pages/index.tsx',
+                    'src/pages/api/trpc/[trpc].ts',
+                  ],
+                  hideNavigation: '1',
+                  terminalHeight: '1',
+                  showSidebar: '0',
+                  view: 'editor',
+                })
+              }
               frameBorder="0"
-            />
-
-            <iframe
-              className={clsx(
-                'h-full w-full absolute',
-                isV10 ? 'hidden' : 'block',
-              )}
-              src={v9Url}
-              frameBorder="0"
+              onLoad={() => {
+                document.body.focus();
+              }}
             />
           </div>
           <div className="flex justify-center">
