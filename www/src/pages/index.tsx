@@ -36,6 +36,23 @@ function useLocalStorageVersion() {
   };
 }
 
+function useInitialWindowSize() {
+  const [windowSize] = useState<null | {
+    width: number;
+    height: number;
+  }>(() => {
+    if (typeof window === 'undefined') {
+      return null;
+    }
+    return {
+      width: window.innerWidth,
+      height: window.innerHeight,
+    };
+  });
+
+  return windowSize;
+}
+
 function searchParams(obj: Record<string, string | string[]>): string {
   return Object.entries(obj)
     .map(([key, value]) => {
@@ -64,6 +81,7 @@ function Home() {
   const { siteConfig } = context;
 
   const version = useLocalStorageVersion();
+  const windowSize = useInitialWindowSize();
 
   const location = useLocation();
   useEffect(() => {
@@ -165,14 +183,22 @@ function Home() {
             <iframe
               className="h-full w-full absolute"
               src={
-                'https://stackblitz.com/github/trpc/next-minimal-starter?' +
+                `https://stackblitz.com/github/trpc/trpc/tree/${
+                  version.active === '9.x' ? 'main' : 'julius/stackblitz-embed'
+                }/examples/next-minimal-starter?` +
                 searchParams({
                   embed: '1',
-                  file: [
-                    // Opens these side-by-side
-                    'src/pages/index.tsx',
-                    'src/pages/api/trpc/[trpc].ts',
-                  ],
+                  file:
+                    !windowSize || windowSize.width > 640
+                      ? [
+                          // Opens these side-by-side
+                          'src/pages/index.tsx',
+                          'src/pages/api/trpc/[trpc].ts',
+                        ]
+                      : [
+                          // On small screens, only open 1 file
+                          'src/pages/index.tsx',
+                        ],
                   hideNavigation: '1',
                   terminalHeight: '0',
                 })
