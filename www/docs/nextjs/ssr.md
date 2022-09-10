@@ -40,15 +40,24 @@ export const trpc = createTRPCNext<AppRouter>({
     return {
       transformer: superjson, // optional - adds superjson serialization
       url,
-      headers: () => {
+      /**
+       * Set custom request headers on every request from tRPC
+       * @link http://localhost:3000/docs/v10/header
+       * @link http://localhost:3000/docs/v10/ssr
+       */
+      headers() {
         if (ctx?.req) {
           // To use SSR properly, you need to forward the client's headers to the server
-          const headers = ctx?.req?.headers;
-          // If you're using Node 18, delete the "connection" header
-          delete headers?.connection;
+          // In order to pass things like cookies when we're server-side rendering
+          // If you're using Node 18, omit the "connection" header
+          const {
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
+            connection: _connection,
+            ...headers
+          } = ctx.req;
           return {
             ...headers,
-            // optional - inform server that it's an ssr request
+            // Optional: inform server that it's an SSR request
             'x-ssr': '1',
           };
         }

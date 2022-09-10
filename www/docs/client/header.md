@@ -24,7 +24,7 @@ export const trpc = createTRPCNext<AppRouter>({
     */
     headers() {
       return {
-        Authorization: token
+        Authorization: token,
       }
     }
   }

@@ -32,11 +32,12 @@ interface CreateTRPCClientBaseOptions {
    */
   fetch?: typeof fetch;
   /**
-   * add polyfill for AbortController
+   * Add ponyfill for AbortController
    */
   AbortController?: typeof AbortController;
   /**
-   * headers to be set on outgoing requests / callback that of said headers
+   * Headers to be set on outgoing requests or a callback that of said headers
+   * @link http://localhost:3000/docs/v10/header
    */
   headers?: HTTPHeaders | (() => HTTPHeaders | Promise<HTTPHeaders>);
   /**
