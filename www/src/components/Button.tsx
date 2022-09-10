@@ -17,7 +17,7 @@ export const Button = ({
   ...props
 }: Props) => {
   const className = clsx(
-    'inline-grid appearance-none cursor-pointer text-sm sm:text-base font-bold tracking-normal px-4 py-2 gap-1.5 sm:gap-1.5 grid-flow-col rounded-lg shadow-xl shadow-sky-500/20 no-underline hover:no-underline justify-center items-center transition-all duration-300 ',
+    'inline-grid appearance-none cursor-pointer text-sm sm:text-base font-bold tracking-normal px-2 sm:px-4 py-1.5 sm:py-2 gap-1.5 sm:gap-1.5 grid-flow-col rounded-lg shadow-xl shadow-sky-500/20 no-underline hover:no-underline justify-center items-center transition-all duration-300 ',
     {
       ['bg-primary text-white hover:text-white hover:bg-sky-700']:
         variant === 'primary',
