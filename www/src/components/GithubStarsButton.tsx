@@ -20,7 +20,7 @@ export const GithubStarsButton = () => {
 
   return (
     <Button
-      secondary
+      variant="secondary"
       href="https://github.com/trpc/trpc/stargazers"
       target="_blank"
       className="text-lg"

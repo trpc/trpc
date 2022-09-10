@@ -36,11 +36,52 @@ function useLocalStorageVersion() {
   };
 }
 
+function useInitialWindowSize() {
+  const [windowSize] = useState<null | {
+    width: number;
+    height: number;
+  }>(() => {
+    if (typeof window === 'undefined') {
+      return null;
+    }
+    return {
+      width: window.innerWidth,
+      height: window.innerHeight,
+    };
+  });
+
+  return windowSize;
+}
+
+function searchParams(obj: Record<string, string | string[]>): string {
+  return Object.entries(obj)
+    .map(([key, value]) => {
+      const values: string[] = Array.isArray(value) ? value : [value];
+
+      return values.map((v) => `${key}=${encodeURIComponent(v)}`).join('&');
+    })
+    .join('&');
+}
+
 function Home() {
   const context = useDocusaurusContext();
+
+  /** initial theme used for stackblitz embed. dont want to reload the embed on theme-toggle so we just load it once */
+  // const [initialTheme] = React.useState<'dark' | 'light'>(() => {
+  //   // const localStorageTheme = window.localStorage.getItem('theme');
+  //   // if (localStorageTheme) {
+  //   //   return localStorageTheme;
+  //   // }
+  //   const prefersDark = window.matchMedia(
+  //     '(prefers-color-scheme: dark)',
+  //   ).matches;
+  //   return prefersDark ? 'dark' : 'light';
+  // });
+
   const { siteConfig } = context;
 
   const version = useLocalStorageVersion();
+  const windowSize = useInitialWindowSize();
 
   const location = useLocation();
   useEffect(() => {
@@ -64,7 +105,7 @@ function Home() {
           charSet="utf-8"
         />
       </Head>
-      <main className="container px-6 mx-auto space-y-28">
+      <main className="px-6 mx-auto space-y-28">
         <header className="pt-12 lg:pt-16 xl:pt-24 max-w-[66ch] mx-auto text-center">
           <h1 className="text-2xl font-extrabold leading-tight tracking-tight text-center whitespace-pre-wrap md:text-3xl lg:text-4xl xl:text-5xl">
             {siteConfig.tagline}
@@ -83,7 +124,7 @@ function Home() {
             </div>
             <div className="flex-1 flex justify-start">
               <Button
-                primary
+                variant="primary"
                 href={`/docs/${
                   version.active === '9.x' ? 'v9' : 'v10'
                 }/quickstart`}
@@ -98,19 +139,23 @@ function Home() {
           <TopSponsors />
         </header>
 
-        <section>
+        <section className="container">
           <Features />
         </section>
+
         <section className="max-w-[80ch] px-6 mx-auto md:px-0">
-          <SectionTitle title={<>You may not need a traditional API</>} />
+          <SectionTitle
+            id="quote"
+            title={<>You may not need a traditional API</>}
+          />
           <blockquote
             cite="https://twitter.com/alexdotjs"
             className="py-2 mt-6 space-y-2"
           >
             <p className="text-sm text-gray-600 md:text-base dark:text-gray-400">
-              I built tRPC to allow me to <strong>move faster</strong> by
+              I built tRPC to allow people to <strong>move faster</strong> by
               removing the need of a traditional API-layer, while still having
-              confidence that my apps won&apos;t break as I rapidly iterate.
+              confidence that our apps won&apos;t break as we rapidly iterate.
             </p>
             <p className="text-sm text-gray-600 md:text-base dark:text-gray-400">
               Try it out for yourself and let us know what you think!
@@ -134,12 +179,73 @@ function Home() {
             </div>
           </a>
         </section>
-        <section>
-          <SectionTitle title="Don't take our word for it!" />
+
+        <section className="mx-auto max-w-[1600px]">
+          <SectionTitle
+            id="try-it-out"
+            title={<>Try it out for yourself!</>}
+            description={
+              <>
+                This is a minimal full-stack React-application using tRPC &amp;
+                Next.js
+              </>
+            }
+          />
+          <div className="h-[600px] w-full rounded-xl overflow-hidden z-10 relative my-4">
+            <iframe
+              className="h-full w-full absolute"
+              src={
+                `https://stackblitz.com/github/trpc/trpc/tree/${
+                  version.active === '9.x' ? 'main' : 'next'
+                }/examples/next-minimal-starter?` +
+                searchParams({
+                  embed: '1',
+                  file:
+                    !windowSize || windowSize.width > 640
+                      ? [
+                          // Opens these side-by-side
+                          'src/pages/index.tsx',
+                          'src/pages/api/trpc/[trpc].ts',
+                        ]
+                      : [
+                          // On small screens, only open 1 file
+                          'src/pages/index.tsx',
+                        ],
+                  hideNavigation: '1',
+                  terminalHeight: '0',
+                })
+              }
+              frameBorder="0"
+            />
+          </div>
+          <div className="flex justify-center">
+            <Button
+              variant="tertiary"
+              href="https://github.com/trpc/next-minimal-starter/generate"
+            >
+              <svg
+                role="img"
+                viewBox="0 0 24 24"
+                xmlns="http://www.w3.org/2000/svg"
+                className="fill-[#181717] dark:fill-white h-5 pr-1"
+              >
+                <title>GitHub</title>
+                <path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12" />
+              </svg>
+              <span className="dark:text-zinc-300 text-zinc-900 no-underline font-semibold mx-auto">
+                Use this template
+              </span>
+            </Button>
+          </div>
+        </section>
+
+        <section className="container">
+          <SectionTitle id="twitter-wall" title="Don't take our word for it!" />
           <TwitterWall />
         </section>
         <section className="pb-12">
           <SectionTitle
+            id="all-sponsors"
             title="All Sponsors"
             description={
               <>
@@ -160,7 +266,7 @@ function Home() {
               <Sponsors />
             </div>
             <div className="flex justify-center">
-              <Button primary href="https://github.com/sponsors/KATT">
+              <Button variant="primary" href="https://github.com/sponsors/KATT">
                 Become a sponsor!
               </Button>
             </div>
