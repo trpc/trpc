@@ -15,9 +15,9 @@ import { Sponsors } from '../components/sponsors';
 
 type Version = 'current' | '9.x';
 
-const getLocalStorageVersion = () => {
+const getLocalStorageVersion = (): Version => {
   if (typeof window === 'undefined') {
-    return null;
+    return '9.x';
   }
   return (window.localStorage.getItem('docs-preferred-version-default') ||
     '9.x') as Version;
