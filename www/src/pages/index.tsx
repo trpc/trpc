@@ -143,43 +143,6 @@ function Home() {
           <Features />
         </section>
 
-        <section className="max-w-[80ch] px-6 mx-auto md:px-0">
-          <SectionTitle
-            id="quote"
-            title={<>You may not need a traditional API</>}
-          />
-          <blockquote
-            cite="https://twitter.com/alexdotjs"
-            className="py-2 mt-6 space-y-2"
-          >
-            <p className="text-sm text-gray-600 md:text-base dark:text-gray-400">
-              I built tRPC to allow people to <strong>move faster</strong> by
-              removing the need of a traditional API-layer, while still having
-              confidence that our apps won&apos;t break as we rapidly iterate.
-            </p>
-            <p className="text-sm text-gray-600 md:text-base dark:text-gray-400">
-              Try it out for yourself and let us know what you think!
-            </p>
-          </blockquote>
-          <a
-            className="flex items-center gap-3 pt-6 group hover:no-underline"
-            href="http://twitter.com/alexdotjs"
-          >
-            <img
-              src="https://avatars.githubusercontent.com/u/459267?v=4"
-              alt="Alex/KATT"
-              loading="lazy"
-              className="w-12 h-12 mr-2 rounded-full md:w-14 md:h-14"
-            />
-            <div>
-              <h3 className="mb-0 text-base font-bold md:text-lg">Alex/KATT</h3>
-              <p className="text-xs text-gray-600 md:text-sm dark:text-gray-400">
-                Creator of tRPC
-              </p>
-            </div>
-          </a>
-        </section>
-
         <section className="mx-auto max-w-[1600px]">
           <SectionTitle
             id="try-it-out"
@@ -241,6 +204,42 @@ function Home() {
           </div>
         </section>
 
+        <section className="max-w-[80ch] px-6 mx-auto md:px-0">
+          <SectionTitle
+            id="quote"
+            title={<>You may not need a traditional API</>}
+          />
+          <blockquote
+            cite="https://twitter.com/alexdotjs"
+            className="py-2 mt-6 space-y-2"
+          >
+            <p className="text-sm text-gray-600 md:text-base dark:text-gray-400">
+              I built tRPC to allow people to <strong>move faster</strong> by
+              removing the need of a traditional API-layer, while still having
+              confidence that our apps won&apos;t break as we rapidly iterate.
+            </p>
+            <p className="text-sm text-gray-600 md:text-base dark:text-gray-400">
+              Try it out for yourself and let us know what you think!
+            </p>
+          </blockquote>
+          <a
+            className="flex items-center gap-3 pt-6 group hover:no-underline"
+            href="http://twitter.com/alexdotjs"
+          >
+            <img
+              src="https://avatars.githubusercontent.com/u/459267?v=4"
+              alt="Alex/KATT"
+              loading="lazy"
+              className="w-12 h-12 mr-2 rounded-full md:w-14 md:h-14"
+            />
+            <div>
+              <h3 className="mb-0 text-base font-bold md:text-lg">Alex/KATT</h3>
+              <p className="text-xs text-gray-600 md:text-sm dark:text-gray-400">
+                Creator of tRPC
+              </p>
+            </div>
+          </a>
+        </section>
         <section className="container">
           <SectionTitle id="twitter-wall" title="Don't take our word for it!" />
           <TwitterWall />
