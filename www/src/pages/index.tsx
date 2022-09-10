@@ -30,18 +30,6 @@ function useLocalStorageVersion() {
     getLocalStorageVersion(),
   );
 
-  useEffect(() => {
-    setVersion(getLocalStorageVersion());
-
-    const timeout = setTimeout(() => {
-      setVersion(getLocalStorageVersion());
-    }, 1);
-
-    return () => {
-      clearTimeout(timeout);
-    };
-  }, []);
-
   return {
     active: version,
     set(value: Version) {
@@ -100,11 +88,16 @@ function Home() {
 
   const location = useLocation();
   useEffect(() => {
-    if (location.search.includes('v10') && version.active !== 'current') {
+    const params = new URLSearchParams(location.search);
+    if (params.get('v') === '10' && version.active !== 'current') {
       version.set('current');
+    } else if (params.get('v') === '9' && version.active === 'current') {
+      version.set('9.x');
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [location.search, version.active]);
+
+  const isV10 = version.active === 'current';
 
   return (
     <Layout
@@ -113,7 +106,7 @@ function Home() {
     >
       <Head>
         <body className="homepage" />
-        <html className={version.active === 'current' ? 'v10' : 'v9'} />
+        <html className={isV10 ? 'v10' : 'v9'} />
         <script
           async
           src="https://platform.twitter.com/widgets.js"
@@ -140,9 +133,7 @@ function Home() {
             <div className="flex-1 flex justify-start">
               <Button
                 variant="primary"
-                href={`/docs/${
-                  version.active === '9.x' ? 'v9' : 'v10'
-                }/quickstart`}
+                href={`/docs/${isV10 ? 'v10' : 'v9'}/quickstart`}
                 className="text-lg"
               >
                 Quickstart
@@ -174,7 +165,7 @@ function Home() {
               className="h-full w-full absolute"
               src={
                 `https://stackblitz.com/github/trpc/trpc/tree/${
-                  version.active === '9.x' ? 'main' : 'next'
+                  isV10 ? 'next' : 'main'
                 }/examples/next-minimal-starter?` +
                 searchParams({
                   embed: '1',
