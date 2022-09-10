@@ -10,16 +10,16 @@ The only thing you need to do to get SSR on your application is to set `ssr: tru
 In order to execute queries properly during the server-side render step and customize caching behavior, we might want to add some extra logic inside our `_app.tsx`:
 
 ```tsx title='utils/trpc.ts'
-import superjson from "superjson";
-import type { AppRouter } from "./api/trpc/[trpc]";
+import superjson from 'superjson';
+import type { AppRouter } from './api/trpc/[trpc]';
 
 export const trpc = createTRPCNext<AppRouter>({
   config({ ctx }) {
-    if (typeof window !== "undefined") {
+    if (typeof window !== 'undefined') {
       // during client requests
       return {
         transformer: superjson, // optional - adds superjson serialization
-        url: "/api/trpc",
+        url: '/api/trpc',
       };
     }
     // during SSR below
@@ -27,7 +27,7 @@ export const trpc = createTRPCNext<AppRouter>({
     // optional: use SSG-caching for each rendered page (see caching section for more details)
     const ONE_DAY_SECONDS = 60 * 60 * 24;
     ctx?.res?.setHeader(
-      "Cache-Control",
+      'Cache-Control',
       `s-maxage=1, stale-while-revalidate=${ONE_DAY_SECONDS}`
     );
 
@@ -35,7 +35,7 @@ export const trpc = createTRPCNext<AppRouter>({
     // On render.com you can use `http://${process.env.RENDER_INTERNAL_HOSTNAME}:${process.env.PORT}/api/trpc`
     const url = process.env.VERCEL_URL
       ? `https://${process.env.VERCEL_URL}/api/trpc`
-      : "http://localhost:3000/api/trpc";
+      : 'http://localhost:3000/api/trpc';
 
     return {
       transformer: superjson, // optional - adds superjson serialization
@@ -49,7 +49,7 @@ export const trpc = createTRPCNext<AppRouter>({
           return {
             ...headers,
             // optional - inform server that it's an ssr request
-            "x-ssr": "1",
+            'x-ssr': '1',
           };
         }
         return {};
@@ -61,9 +61,9 @@ export const trpc = createTRPCNext<AppRouter>({
 ```
 
 ```tsx title='pages/_app.tsx'
-import type { AppProps } from "next/app";
-import React from "react";
-import { trpc } from "~/utils/trpc";
+import type { AppProps } from 'next/app';
+import React from 'react';
+import { trpc } from '~/utils/trpc';
 
 const MyApp: AppType = ({ Component, pageProps }: AppProps) => {
   return <Component {...pageProps} />;
