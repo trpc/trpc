@@ -196,7 +196,7 @@ function Home() {
               className="h-full w-full absolute"
               src={
                 `https://stackblitz.com/github/trpc/trpc/tree/${
-                  version.active === '9.x' ? 'main' : 'julius/stackblitz-embed'
+                  version.active === '9.x' ? 'main' : 'next'
                 }/examples/next-minimal-starter?` +
                 searchParams({
                   embed: '1',
