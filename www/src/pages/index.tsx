@@ -162,7 +162,7 @@ function Home() {
           />
           <div className="h-[600px] w-full rounded-xl overflow-hidden z-10 relative my-4">
             <iframe
-              sandbox={''}
+              sandbox={true}
               className="h-full w-full absolute"
               src={
                 `https://stackblitz.com/github/trpc/trpc/tree/${
