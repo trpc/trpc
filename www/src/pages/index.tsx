@@ -36,6 +36,16 @@ function useLocalStorageVersion() {
   };
 }
 
+function searchParams(obj: Record<string, string | string[]>): string {
+  return Object.entries(obj)
+    .map(([key, value]) => {
+      const values: string[] = Array.isArray(value) ? value : [value];
+
+      return values.map((v) => `${key}=${encodeURIComponent(v)}`).join('&');
+    })
+    .join('&');
+}
+
 function Home() {
   const context = useDocusaurusContext();
 
@@ -154,8 +164,19 @@ function Home() {
           <div className="h-[600px] w-full rounded-xl overflow-hidden z-10 relative my-4">
             <iframe
               className="h-full w-full absolute"
-              //src={`https://stackblitz.com/github/trpc/next-minimal-starter?embed=1&file=src/pages/index.tsx&hideExplorer=1&hideNavigation=1&theme=${initialTheme}`}
-              src="https://stackblitz.com/github/trpc/next-minimal-starter?embed=1&file=src/pages/index.tsx&hideNavigation=1&terminalHeight=0"
+              src={
+                'https://stackblitz.com/github/trpc/next-minimal-starter?' +
+                searchParams({
+                  embed: '1',
+                  file: [
+                    // Opens these side-by-side
+                    'src/pages/index.tsx',
+                    'src/pages/api/trpc/[trpc].ts',
+                  ],
+                  hideNavigation: '1',
+                  terminalHeight: '0',
+                })
+              }
               frameBorder="0"
             />
           </div>
