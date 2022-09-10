@@ -56,7 +56,7 @@ function useInitialWindowSize() {
 function searchParams(obj: Record<string, string | string[]>): string {
   return Object.entries(obj)
     .map(([key, value]) => {
-      const values: string[] = Array.isArray(value) ? value : [value];
+      const values = Array.isArray(value) ? value : [value];
 
       return values.map((v) => `${key}=${encodeURIComponent(v)}`).join('&');
     })
@@ -212,7 +212,9 @@ function Home() {
                           'src/pages/index.tsx',
                         ],
                   hideNavigation: '1',
-                  terminalHeight: '0',
+                  terminalHeight: '1',
+                  showSidebar: '0',
+                  view: 'editor',
                 })
               }
               frameBorder="0"
