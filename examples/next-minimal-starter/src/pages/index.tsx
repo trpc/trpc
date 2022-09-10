@@ -1,9 +1,10 @@
 import { trpc } from '../utils/trpc';
 
 export default function IndexPage() {
-  const hello = trpc.hello.useQuery({ text: 'client' });
-  // CMD+Click (or CTRL+Click) on `hello` to go to the server definition
-  if (!hello.data) {
+  const helloResult = trpc.greeting.useQuery({ text: 'client' });
+
+  // 💡 Tip: CMD+Click (or CTRL+Click) on `hello` to go to the server definition
+  if (!helloResult.data) {
     return (
       <div style={styles}>
         <h1>Loading...</h1>
@@ -12,8 +13,12 @@ export default function IndexPage() {
   }
   return (
     <div style={styles}>
-      {/* the type is defined and can be autocompleted */}
-      <h1>{hello.data.greeting}</h1>
+      {/**
+       * The type is defined and can be autocompleted
+       * 💡 Tip: CMD+Click (or CTRL+Click) on `text` to go to the server definition
+       * 💡 Tip: Secondary click on `text` and "Rename Symbol" to rename it both on the client & server
+       */}
+      <h1>{helloResult.data.text}</h1>
     </div>
   );
 }
