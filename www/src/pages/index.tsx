@@ -15,17 +15,24 @@ import { Sponsors } from '../components/sponsors';
 
 type Version = 'current' | '9.x';
 
+const getLocalStorageVersion = (): Version => {
+  if (typeof window === 'undefined') {
+    return '9.x';
+  }
+  return (window.localStorage.getItem('docs-preferred-version-default') ||
+    '9.x') as Version;
+};
 /**
  * Hack to get the selected version of the page from local storage
  */
 function useLocalStorageVersion() {
-  const [version, setVersion] = useState<Version>(() => {
-    if (typeof window === 'undefined') {
-      return '9.x';
-    }
-    return (window.localStorage.getItem('docs-preferred-version-default') ||
-      '9.x') as Version;
-  });
+  const [version, setVersion] = useState<Version>(() =>
+    getLocalStorageVersion(),
+  );
+
+  useEffect(() => {
+    setVersion(getLocalStorageVersion());
+  }, []);
 
   return {
     active: version,
