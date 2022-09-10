@@ -87,17 +87,17 @@ function Home() {
   const windowSize = useInitialWindowSize();
 
   const location = useLocation();
+
+  const isV10 = version.active === 'current';
   useEffect(() => {
     const params = new URLSearchParams(location.search);
-    if (params.get('v') === '10' && version.active !== 'current') {
+    if (params.get('v') === '10' && !isV10) {
       version.set('current');
-    } else if (params.get('v') === '9' && version.active === 'current') {
+    } else if (params.get('v') === '9' && isV10) {
       version.set('9.x');
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [location.search, version.active]);
-
-  const isV10 = version.active === 'current';
+  }, [location.search, isV10]);
 
   return (
     <Layout
