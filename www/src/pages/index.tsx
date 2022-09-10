@@ -124,7 +124,7 @@ function Home() {
             </div>
             <div className="flex-1 flex justify-start">
               <Button
-                primary
+                variant="primary"
                 href={`/docs/${
                   version.active === '9.x' ? 'v9' : 'v10'
                 }/quickstart`}
@@ -220,7 +220,7 @@ function Home() {
           </div>
           <div className="flex justify-center">
             <Button
-              neutral
+              variant="tertiary"
               href="https://github.com/trpc/next-minimal-starter/generate"
             >
               <svg
@@ -266,7 +266,7 @@ function Home() {
               <Sponsors />
             </div>
             <div className="flex justify-center">
-              <Button primary href="https://github.com/sponsors/KATT">
+              <Button variant="primary" href="https://github.com/sponsors/KATT">
                 Become a sponsor!
               </Button>
             </div>

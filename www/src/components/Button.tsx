@@ -7,15 +7,11 @@ type ButtonProps = React.ButtonHTMLAttributes<HTMLButtonElement> &
   ({ type: 'submit' } | { onClick: React.MouseEvent<HTMLButtonElement> });
 
 type Props = (AnchorProps | ButtonProps) & {
-  primary?: boolean;
-  secondary?: boolean;
-  neutral?: boolean;
+  variant: 'primary' | 'secondary' | 'tertiary';
 };
 
 export const Button = ({
-  primary,
-  secondary,
-  neutral,
+  variant,
   className: _className,
   children,
   ...props
@@ -23,11 +19,12 @@ export const Button = ({
   const className = clsx(
     'inline-grid appearance-none cursor-pointer font-bold tracking-normal px-4 py-2 gap-1.5 grid-flow-col rounded-lg shadow-xl shadow-sky-500/20 no-underline hover:no-underline justify-center items-center transition-all duration-300 ',
     {
-      ['bg-primary text-white hover:text-white hover:bg-sky-700']: primary,
+      ['bg-primary text-white hover:text-white hover:bg-sky-700']:
+        variant === 'primary',
       ['bg-gradient-to-r from-sky-50 to-sky-200 text-slate-800 hover:text-primary-darker']:
-        secondary,
+        variant === 'secondary',
       ['bg-gradient-to-r dark:from-neutral-800 dark:to-neutral-800 text-white from-neutral-200 to-neutral-300 shadow-none']:
-        neutral,
+        variant === 'tertiary',
     },
     _className,
   );
