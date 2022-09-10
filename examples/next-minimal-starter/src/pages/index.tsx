@@ -1,3 +1,6 @@
+/**
+ * This is a Next.js page that queries your backend.
+ */
 import { trpc } from '../utils/trpc';
 
 export default function IndexPage() {
