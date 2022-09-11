@@ -28,7 +28,7 @@ export const trpc = createTRPCNext<AppRouter>({
     const ONE_DAY_SECONDS = 60 * 60 * 24;
     ctx?.res?.setHeader(
       'Cache-Control',
-      `s-maxage=1, stale-while-revalidate=${ONE_DAY_SECONDS}`
+      `s-maxage=1, stale-while-revalidate=${ONE_DAY_SECONDS}`,
     );
 
     // The server needs to know your app's full url
@@ -55,7 +55,7 @@ export const trpc = createTRPCNext<AppRouter>({
             // eslint-disable-next-line @typescript-eslint/no-unused-vars
             connection: _connection,
             ...headers
-          } = ctx.req;
+          } = ctx.req.headers;
 
           return {
             ...headers,
@@ -96,4 +96,3 @@ If you don't remove the `connection` header, the data fetching will fail with `T
 ### Q: Can I use `getServerSideProps` and/or `getStaticProps` while using SSR?
 
 When you enable SSR, tRPC will use `getInitialProps` to prefetch all queries on the server. That causes problems [like this](https://github.com/trpc/trpc/issues/596) when you use `getServerSideProps` in a page and solving it is out of our hands. Though, you can use [SSG Helpers](ssg-helpers) to prefetch queries in `getStaticProps` or `getServerSideProps`.
-
