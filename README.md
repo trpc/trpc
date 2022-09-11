@@ -223,11 +223,13 @@ Also, if your company using tRPC and want to support long-term maintenance of tR
    <td align="center"><a href="http://ballingt.com/"><img src="https://avatars.githubusercontent.com/u/458879?u=4b045ac75d721b6ac2b42a74d7d37f61f0414031&v=4&s=100" width="100" alt="Thomas%20Ballinger"/><br />Thomas Ballinger</a></td>
    <td align="center"><a href="https://polydelic.com"><img src="https://avatars.githubusercontent.com/u/6940726?u=8a48c9f7acb576505efbb87a8093552ce3f0d1e5&v=4&s=100" width="100" alt="Oliver%20Dixon"/><br />Oliver Dixon</a></td>
   </tr>
+  <tr>
+   <td align="center"><a href="https://larskarbo.no"><img src="https://avatars.githubusercontent.com/u/10865165?v=4&s=100" width="100" alt="Lars%20Karbo"/><br />Lars Karbo</a></td>
+  </tr>
 </table>
 
 <!-- markdownlint-restore -->
 <!-- prettier-ignore-end -->
-
 <!-- SPONSORS:LIST:END -->
 
 ## All contributors ✨

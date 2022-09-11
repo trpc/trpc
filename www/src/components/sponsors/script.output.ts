@@ -469,5 +469,14 @@ export const sponsors = [
     "privacyLevel": "PUBLIC",
     "login": "ollydixon",
     "createdAt": 1662645977000
+  },
+  {
+    "name": "Lars Karbo",
+    "imgSrc": "https://avatars.githubusercontent.com/u/10865165?v=4",
+    "monthlyPriceInDollars": 10,
+    "link": "https://larskarbo.no",
+    "privacyLevel": "PUBLIC",
+    "login": "larskarbo",
+    "createdAt": 1662896773000
   }
 ] as const
