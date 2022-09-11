@@ -10,9 +10,9 @@ The only thing you need to do to get SSR on your application is to set `ssr: tru
 In order to execute queries properly during the server-side render step and customize caching behavior, we might want to add some extra logic inside our `_app.tsx`:
 
 ```tsx title='pages/_app.tsx'
-import React from 'react';
 import { withTRPC } from '@trpc/next';
 import { AppType } from 'next/dist/shared/lib/utils';
+import React from 'react';
 import superjson from 'superjson';
 import type { AppRouter } from './api/trpc/[trpc]';
 
@@ -62,7 +62,7 @@ export default withTRPC<AppRouter>({
             // eslint-disable-next-line @typescript-eslint/no-unused-vars
             connection: _connection,
             ...headers
-          } = ctx.req;
+          } = ctx.req.headers;
           return {
             ...headers,
             // Optional: inform server that it's an SSR request
@@ -77,7 +77,6 @@ export default withTRPC<AppRouter>({
 })(MyApp);
 ```
 
-
 ## FAQ
 
 ### Q: Why do I need to forward the client's headers to the server manually? Why doesn't tRPC automatically do that for me?
@@ -91,4 +90,3 @@ If you don't remove the `connection` header, the data fetching will fail with `T
 ### Q: Can I use `getServerSideProps` and/or `getStaticProps` while using SSR?
 
 When you enable SSR, tRPC will use `getInitialProps` to prefetch all queries on the server. That causes problems [like this](https://github.com/trpc/trpc/issues/596) when you use `getServerSideProps` in a page and solving it is out of our hands. Though, you can use [SSG Helpers](ssg-helpers) to prefetch queries in `getStaticProps` or `getServerSideProps`.
-

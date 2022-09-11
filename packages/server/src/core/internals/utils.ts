@@ -7,6 +7,12 @@ export type Overwrite<T, U> = Omit<T, keyof U> & U;
 /**
  * @internal
  */
+export type OverwriteKnown<T, U> = {
+  [K in keyof T]: K extends keyof U ? U[K] : T[K];
+};
+/**
+ * @internal
+ */
 export type DefaultValue<TValue, TFallback> = UnsetMarker extends TValue
   ? TFallback
   : TValue;

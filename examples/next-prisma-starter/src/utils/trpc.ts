@@ -90,7 +90,7 @@ export const trpc = createTRPCNext<AppRouter, SSRContext>({
             // eslint-disable-next-line @typescript-eslint/no-unused-vars
             connection: _connection,
             ...headers
-          } = ctx.req;
+          } = ctx.req.headers;
           return {
             ...headers,
             // Optional: inform server that it's an SSR request

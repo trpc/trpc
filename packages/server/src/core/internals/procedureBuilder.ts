@@ -20,7 +20,12 @@ import { RootConfig } from './config';
 import { getParseFn } from './getParseFn';
 import { mergeWithoutOverrides } from './mergeWithoutOverrides';
 import { ResolveOptions, middlewareMarker } from './utils';
-import { DefaultValue as FallbackValue, Overwrite, UnsetMarker } from './utils';
+import {
+  DefaultValue as FallbackValue,
+  Overwrite,
+  OverwriteKnown,
+  UnsetMarker,
+} from './utils';
 
 type CreateProcedureReturnInput<
   TPrev extends ProcedureParams,
@@ -111,7 +116,7 @@ export interface ProcedureBuilder<TParams extends ProcedureParams> {
     ) => MaybePromise<FallbackValue<TParams['_output_in'], $TOutput>>,
   ): UnsetMarker extends TParams['_output_out']
     ? QueryProcedure<
-        Overwrite<
+        OverwriteKnown<
           TParams,
           {
             _output_in: $TOutput;
@@ -130,7 +135,7 @@ export interface ProcedureBuilder<TParams extends ProcedureParams> {
     ) => MaybePromise<FallbackValue<TParams['_output_in'], $TOutput>>,
   ): UnsetMarker extends TParams['_output_out']
     ? MutationProcedure<
-        Overwrite<
+        OverwriteKnown<
           TParams,
           {
             _output_in: $TOutput;
@@ -149,7 +154,7 @@ export interface ProcedureBuilder<TParams extends ProcedureParams> {
     ) => MaybePromise<FallbackValue<TParams['_output_in'], $TOutput>>,
   ): UnsetMarker extends TParams['_output_out']
     ? SubscriptionProcedure<
-        Overwrite<
+        OverwriteKnown<
           TParams,
           {
             _output_in: $TOutput;

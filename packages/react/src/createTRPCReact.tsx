@@ -6,7 +6,6 @@ import {
 import { TRPCClientErrorLike } from '@trpc/client';
 import {
   AnyRouter,
-  OmitNeverKeys,
   Procedure,
   ProcedureRouterRecord,
   inferProcedureInput,
@@ -35,9 +34,9 @@ import {
 type DecorateProcedure<
   TProcedure extends Procedure<any>,
   TPath extends string,
-> = OmitNeverKeys<{
-  useQuery: TProcedure extends { _query: true }
-    ? <
+> = TProcedure extends { _type: 'query' }
+  ? {
+      useQuery: <
         TQueryFnData = inferProcedureOutput<TProcedure>,
         TData = inferProcedureOutput<TProcedure>,
       >(
@@ -49,30 +48,26 @@ type DecorateProcedure<
           TData,
           TRPCClientErrorLike<TProcedure>
         >,
-      ) => UseQueryResult<TData, TRPCClientErrorLike<TProcedure>>
-    : never;
-
-  useInfiniteQuery: TProcedure extends { _query: true }
-    ? inferProcedureInput<TProcedure> extends {
-        cursor?: any;
-      }
-      ? <
-          _TQueryFnData = inferProcedureOutput<TProcedure>,
-          TData = inferProcedureOutput<TProcedure>,
-        >(
-          input: Omit<inferProcedureInput<TProcedure>, 'cursor'>,
-          opts?: UseTRPCInfiniteQueryOptions<
-            TPath,
-            inferProcedureInput<TProcedure>,
-            TData,
-            TRPCClientErrorLike<TProcedure>
-          >,
-        ) => UseInfiniteQueryResult<TData, TRPCClientErrorLike<TProcedure>>
-      : never
-    : never;
-
-  useMutation: TProcedure extends { _mutation: true }
-    ? <TContext = unknown>(
+      ) => UseQueryResult<TData, TRPCClientErrorLike<TProcedure>>;
+    } & (inferProcedureInput<TProcedure> extends { cursor?: any }
+      ? {
+          useInfiniteQuery: <
+            _TQueryFnData = inferProcedureOutput<TProcedure>,
+            TData = inferProcedureOutput<TProcedure>,
+          >(
+            input: Omit<inferProcedureInput<TProcedure>, 'cursor'>,
+            opts?: UseTRPCInfiniteQueryOptions<
+              TPath,
+              inferProcedureInput<TProcedure>,
+              TData,
+              TRPCClientErrorLike<TProcedure>
+            >,
+          ) => UseInfiniteQueryResult<TData, TRPCClientErrorLike<TProcedure>>;
+        }
+      : {})
+  : TProcedure extends { _type: 'mutation' }
+  ? {
+      useMutation: <TContext = unknown>(
         opts?: UseTRPCMutationOptions<
           inferProcedureInput<TProcedure>,
           TRPCClientErrorLike<TProcedure>,
@@ -84,19 +79,19 @@ type DecorateProcedure<
         TRPCClientErrorLike<TProcedure>,
         inferProcedureInput<TProcedure>,
         TContext
-      >
-    : never;
-
-  useSubscription: TProcedure extends { _subscription: true }
-    ? (
+      >;
+    }
+  : TProcedure extends { _type: 'subscription' }
+  ? {
+      useSubscription: (
         input: inferProcedureInput<TProcedure>,
         opts?: UseTRPCSubscriptionOptions<
           inferObservableValue<inferProcedureOutput<TProcedure>>,
           TRPCClientErrorLike<TProcedure>
         >,
-      ) => void
-    : never;
-}>;
+      ) => void;
+    }
+  : never;
 
 type assertProcedure<T> = T extends Procedure<any> ? T : never;
 
