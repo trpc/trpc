@@ -3,7 +3,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import type {
   AnyRouter,
-  OmitNeverKeys,
   Procedure,
   ProcedureArgs,
   ProcedureRouterRecord,
@@ -48,15 +47,19 @@ type SubscriptionResolver<
 type DecorateProcedure<
   TProcedure extends Procedure<any>,
   TRouter extends AnyRouter,
-> = OmitNeverKeys<{
-  query: TProcedure extends { _query: true } ? Resolver<TProcedure> : never;
-
-  mutate: TProcedure extends { _mutation: true } ? Resolver<TProcedure> : never;
-
-  subscribe: TProcedure extends { _subscription: true }
-    ? SubscriptionResolver<TProcedure, TRouter>
-    : never;
-}>;
+> = TProcedure extends { _type: 'query' }
+  ? {
+      query: Resolver<TProcedure>;
+    }
+  : TProcedure extends { _type: 'mutation' }
+  ? {
+      mutate: Resolver<TProcedure>;
+    }
+  : TProcedure extends { _type: 'subscription' }
+  ? {
+      subscribe: SubscriptionResolver<TProcedure, TRouter>;
+    }
+  : never;
 
 type assertProcedure<T> = T extends Procedure<any> ? T : never;
 
@@ -66,7 +69,7 @@ type assertProcedure<T> = T extends Procedure<any> ? T : never;
 type DecoratedProcedureRecord<
   TProcedures extends ProcedureRouterRecord,
   TRouter extends AnyRouter,
-> = OmitNeverKeys<{
+> = {
   [TKey in keyof TProcedures]: TProcedures[TKey] extends LegacyV9ProcedureTag
     ? never
     : TProcedures[TKey] extends AnyRouter
@@ -75,7 +78,7 @@ type DecoratedProcedureRecord<
         TProcedures[TKey]
       >
     : DecorateProcedure<assertProcedure<TProcedures[TKey]>, TRouter>;
-}>;
+};
 
 const clientCallTypeMap: Record<
   keyof DecorateProcedure<any, any>,
