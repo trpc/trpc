@@ -91,7 +91,6 @@ export const trpc = createTRPCNext<AppRouter, SSRContext>({
             connection: _connection,
             ...headers
           } = ctx.req.headers;
-          console.log(headers);
           return {
             ...headers,
             // Optional: inform server that it's an SSR request
