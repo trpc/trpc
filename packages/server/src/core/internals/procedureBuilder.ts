@@ -22,10 +22,10 @@ import { mergeWithoutOverrides } from './mergeWithoutOverrides';
 import { ResolveOptions, middlewareMarker } from './utils';
 import { DefaultValue as FallbackValue, Overwrite, UnsetMarker } from './utils';
 
-type CreateProcedureReturnInput<
+interface ProcedureBuilderCreateParamExtension<
   TPrev extends ProcedureParams,
   TNext extends ProcedureParams,
-> = ProcedureBuilder<{
+> {
   _config: TPrev['_config'];
   _meta: TPrev['_meta'];
   _ctx_in: TPrev['_ctx_in'];
@@ -34,11 +34,55 @@ type CreateProcedureReturnInput<
   _input_out: FallbackValue<TNext['_input_out'], TPrev['_input_out']>;
   _output_in: FallbackValue<TNext['_output_in'], TPrev['_output_in']>;
   _output_out: FallbackValue<TNext['_output_out'], TPrev['_output_out']>;
-}>;
+}
 
 type OverwriteIfDefined<T, K> = UnsetMarker extends T ? K : FlatOverwrite<T, K>;
 
 type ErrorMessage<T extends string> = T;
+
+// perf: Pull this out into an interface so it can be memoized based on the generics passed in
+interface ProcedureBuilderOutputParserParamExtension<
+  TParams extends ProcedureParams,
+  $TParser extends { in: any; out: any },
+> {
+  _config: TParams['_config'];
+  _meta: TParams['_meta'];
+  _ctx_in: TParams['_ctx_in'];
+  _ctx_out: TParams['_ctx_out'];
+  _input_in: TParams['_input_in'];
+  _input_out: TParams['_input_out'];
+  _output_in: $TParser['in'];
+  _output_out: $TParser['out'];
+}
+// perf: Pull this out into an interface so it can be memoized based on the generics passed in
+interface ProcedureBuilderOutputParamExtension<
+  TParams extends ProcedureParams,
+  $TOutput,
+> {
+  _config: TParams['_config'];
+  _meta: TParams['_meta'];
+  _ctx_in: TParams['_ctx_in'];
+  _ctx_out: TParams['_ctx_out'];
+  _input_in: TParams['_input_in'];
+  _input_out: TParams['_input_out'];
+  _output_in: $TOutput;
+  _output_out: $TOutput;
+}
+
+// perf: Pull this out into an interface so it can be memoized based on the generics passed in
+interface ProcedureBuilderInputParamExtension<
+  TParams extends ProcedureParams,
+  $TParser extends { in: any; out: any },
+> {
+  _config: TParams['_config'];
+  _meta: TParams['_meta'];
+  _ctx_in: TParams['_ctx_in'];
+  _ctx_out: TParams['_ctx_out'];
+  _input_in: OverwriteIfDefined<TParams['_input_in'], $TParser['in']>;
+  _input_out: OverwriteIfDefined<TParams['_input_out'], $TParser['out']>;
+  _output_in: TParams['_output_in'];
+  _output_out: TParams['_output_out'];
+}
 
 export interface ProcedureBuilder<TParams extends ProcedureParams> {
   /**
@@ -52,37 +96,17 @@ export interface ProcedureBuilder<TParams extends ProcedureParams> {
         ? $TParser
         : ErrorMessage<'All input parsers did not resolve to an object'>
       : ErrorMessage<'All input parsers did not resolve to an object'>,
-  ): ProcedureBuilder<{
-    _config: TParams['_config'];
-    _meta: TParams['_meta'];
-    _ctx_in: TParams['_ctx_in'];
-    _ctx_out: TParams['_ctx_out'];
-    _input_in: OverwriteIfDefined<
-      TParams['_input_in'],
-      inferParser<$TParser>['in']
-    >;
-    _input_out: OverwriteIfDefined<
-      TParams['_input_out'],
-      inferParser<$TParser>['out']
-    >;
-    _output_in: TParams['_output_in'];
-    _output_out: TParams['_output_out'];
-  }>;
+  ): ProcedureBuilder<
+    ProcedureBuilderInputParamExtension<TParams, inferParser<$TParser>>
+  >;
   /**
    * Add an output parser to the procedure.
    */
   output<$TParser extends Parser>(
     schema: $TParser,
-  ): ProcedureBuilder<{
-    _config: TParams['_config'];
-    _meta: TParams['_meta'];
-    _ctx_in: TParams['_ctx_in'];
-    _ctx_out: TParams['_ctx_out'];
-    _input_in: TParams['_input_in'];
-    _input_out: TParams['_input_out'];
-    _output_in: inferParser<$TParser>['in'];
-    _output_out: inferParser<$TParser>['out'];
-  }>;
+  ): ProcedureBuilder<
+    ProcedureBuilderOutputParserParamExtension<TParams, inferParser<$TParser>>
+  >;
   /**
    * Add a meta data to the procedure.
    */
@@ -92,7 +116,7 @@ export interface ProcedureBuilder<TParams extends ProcedureParams> {
    */
   use<$TParams extends ProcedureParams>(
     fn: MiddlewareFunction<TParams, $TParams>,
-  ): CreateProcedureReturnInput<TParams, $TParams>;
+  ): ProcedureBuilder<ProcedureBuilderCreateParamExtension<TParams, $TParams>>;
   /**
    * Extend the procedure with another procedure.
    * @warning The TypeScript inference fails when chaining concatenated procedures.
@@ -100,7 +124,7 @@ export interface ProcedureBuilder<TParams extends ProcedureParams> {
   unstable_concat<$ProcedureReturnInput extends AnyProcedureBuilder>(
     proc: $ProcedureReturnInput,
   ): $ProcedureReturnInput extends ProcedureBuilder<infer $TParams>
-    ? CreateProcedureReturnInput<TParams, $TParams>
+    ? ProcedureBuilderCreateParamExtension<TParams, $TParams>
     : never;
   /**
    * Query procedure
@@ -110,15 +134,7 @@ export interface ProcedureBuilder<TParams extends ProcedureParams> {
       opts: ResolveOptions<TParams>,
     ) => MaybePromise<FallbackValue<TParams['_output_in'], $TOutput>>,
   ): UnsetMarker extends TParams['_output_out']
-    ? QueryProcedure<
-        Overwrite<
-          TParams,
-          {
-            _output_in: $TOutput;
-            _output_out: $TOutput;
-          }
-        >
-      >
+    ? QueryProcedure<ProcedureBuilderOutputParamExtension<TParams, $TOutput>>
     : QueryProcedure<TParams>;
 
   /**
@@ -129,15 +145,7 @@ export interface ProcedureBuilder<TParams extends ProcedureParams> {
       opts: ResolveOptions<TParams>,
     ) => MaybePromise<FallbackValue<TParams['_output_in'], $TOutput>>,
   ): UnsetMarker extends TParams['_output_out']
-    ? MutationProcedure<
-        Overwrite<
-          TParams,
-          {
-            _output_in: $TOutput;
-            _output_out: $TOutput;
-          }
-        >
-      >
+    ? MutationProcedure<ProcedureBuilderOutputParamExtension<TParams, $TOutput>>
     : MutationProcedure<TParams>;
 
   /**
@@ -149,13 +157,7 @@ export interface ProcedureBuilder<TParams extends ProcedureParams> {
     ) => MaybePromise<FallbackValue<TParams['_output_in'], $TOutput>>,
   ): UnsetMarker extends TParams['_output_out']
     ? SubscriptionProcedure<
-        Overwrite<
-          TParams,
-          {
-            _output_in: $TOutput;
-            _output_out: $TOutput;
-          }
-        >
+        ProcedureBuilderOutputParamExtension<TParams, $TOutput>
       >
     : SubscriptionProcedure<TParams>;
   /**
@@ -196,9 +198,7 @@ function createNewBuilder(
   } as any);
 }
 
-export function createBuilder<TConfig extends RootConfig>(
-  initDef?: AnyProcedureBuilderDef,
-): ProcedureBuilder<{
+export interface InitBuilderParamsFromConfig<TConfig extends RootConfig> {
   _config: TConfig;
   _ctx_in: TConfig['ctx'];
   _ctx_out: TConfig['ctx'];
@@ -207,7 +207,11 @@ export function createBuilder<TConfig extends RootConfig>(
   _output_in: UnsetMarker;
   _output_out: UnsetMarker;
   _meta: TConfig['meta'];
-}> {
+}
+
+export function createBuilder<TConfig extends RootConfig>(
+  initDef?: AnyProcedureBuilderDef,
+): ProcedureBuilder<InitBuilderParamsFromConfig<TConfig>> {
   const _def: AnyProcedureBuilderDef = initDef || {
     inputs: [],
     middlewares: [],
