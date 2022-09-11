@@ -385,8 +385,9 @@ Also, if your company using tRPC and want to support long-term maintenance of tR
       <td align="center"><a href="https://colelawrence.com"><img src="https://avatars.githubusercontent.com/u/2925395?v=4?s=60" width="60px;" alt=""/><br /><sub><b>Cole Lawrence</b></sub></a><br /><a href="https://github.com/trpc/trpc/issues?q=author%3Acolelawrence" title="Bug reports">🐛</a></td>
       <td align="center"><a href="https://grubba.vercel.app/"><img src="https://avatars.githubusercontent.com/u/70247653?v=4?s=60" width="60px;" alt=""/><br /><sub><b>Gabriel Grubba</b></sub></a><br /><a href="https://github.com/trpc/trpc/commits?author=Grubba27" title="Code">💻</a></td>
       <td align="center"><a href="https://otbeaumont.me"><img src="https://avatars.githubusercontent.com/u/21004798?v=4?s=60" width="60px;" alt=""/><br /><sub><b>Oscar Beaumont</b></sub></a><br /><a href="#question-oscartbeaumont" title="Answering Questions">💬</a></td>
+      <td align="center"><a href="https://inthezone.dev"><img src="https://avatars.githubusercontent.com/u/35677084?v=4?s=60" width="60px;" alt=""/><br /><sub><b>Anthony Shew</b></sub></a><br /><a href="https://github.com/trpc/trpc/commits?author=anthonyshew" title="Documentation">📖</a></td>
     </tr>
-  </tobdy>
+  </tbody>
 </table>
 
 <!-- markdownlint-restore -->
