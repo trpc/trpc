@@ -133,8 +133,9 @@ function Home() {
           />
           <div
             className={clsx(
-              'h-[600px] w-full rounded-xl overflow-hidden z-10 relative my-4',
+              'w-full rounded-xl overflow-hidden z-10 relative my-4',
               { 'h-80': isSafari },
+              { 'h-[600px]': !isSafari },
             )}
           >
             <iframe
