@@ -49,6 +49,7 @@ function searchParams(obj: Record<string, string | string[]>): string {
 
 function Home() {
   const context = useDocusaurusContext();
+  const { siteConfig } = context;
 
   /** initial theme used for stackblitz embed. dont want to reload the embed on theme-toggle so we just load it once */
   // const [initialTheme] = React.useState<'dark' | 'light'>(() => {
@@ -62,11 +63,12 @@ function Home() {
   //   return prefersDark ? 'dark' : 'light';
   // });
 
-  const { siteConfig } = context;
-
   const version = useLocalStorageVersion();
-
   const isV10 = version.active === 'current';
+
+  // Maybe there are more browsers incompatible with WebContainers?
+  const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+  const embedView = isSafari ? 'preview' : 'editor';
 
   return (
     <Layout
@@ -132,6 +134,7 @@ function Home() {
           <div
             className={clsx(
               'h-[600px] w-full rounded-xl overflow-hidden z-10 relative my-4',
+              { 'h-80': isSafari },
             )}
           >
             <iframe
@@ -150,7 +153,7 @@ function Home() {
                   hideNavigation: '1',
                   terminalHeight: '1',
                   showSidebar: '0',
-                  view: 'editor',
+                  view: embedView,
                 })
               }
               frameBorder="0"
