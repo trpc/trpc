@@ -3,11 +3,6 @@
 /**
  * @internal
  */
-export type Prefix<K extends string, T extends string> = `${K}${T}`;
-
-/**
- * @internal
- */
 export type identity<T> = T;
 
 /**
@@ -20,16 +15,6 @@ export type FlatOverwrite<T, K> = identity<{
     ? T[TKey]
     : never;
 }>;
-
-/**
- * @internal
- */
-export type Prefixer<
-  TObj extends Record<string, any>,
-  TPrefix extends string,
-> = {
-  [P in keyof TObj as Prefix<TPrefix, string & P>]: TObj[P];
-};
 
 /**
  * @public

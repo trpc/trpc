@@ -15,7 +15,7 @@ import {
   DataTransformerOptions,
   defaultTransformer,
 } from '../transformer';
-import { FlatOverwrite, Prefixer, ThenArg } from '../types';
+import { FlatOverwrite, ThenArg } from '../types';
 import { MiddlewareFunction } from './internals/middlewares';
 import {
   CreateProcedureOptions,
@@ -32,6 +32,18 @@ import { MigrateRouter, migrateRouter } from './interop';
 assertNotBrowser();
 
 export type { Procedure } from './internals/procedure';
+
+/**
+ * @internal
+ */
+type Prefix<K extends string, T extends string> = `${K}${T}`;
+
+/**
+ * @internal
+ */
+type Prefixer<TObj extends Record<string, any>, TPrefix extends string> = {
+  [P in keyof TObj as Prefix<TPrefix, string & P>]: TObj[P];
+};
 
 /**
  * @public
