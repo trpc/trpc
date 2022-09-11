@@ -3,12 +3,12 @@
  * This is an example router, you can delete this file and then update `../pages/api/trpc/[trpc].tsx`
  */
 import { Context } from '../context';
+import { t } from '../trpc';
 import { Post } from '@prisma/client';
 import { TRPCError } from '@trpc/server';
 import { observable } from '@trpc/server/observable';
 import { EventEmitter } from 'events';
 import { z } from 'zod';
-import { t } from '../trpc';
 
 interface MyEvents {
   add: (data: Post) => void;
