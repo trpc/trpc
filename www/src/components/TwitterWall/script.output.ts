@@ -26,20 +26,20 @@ export const tweets = [
     "content": "The speed in which you get feedback from tRPC is incredible. It uses the power of TypeScript so if you change somet… "
   },
   {
+    "id": "1569033706131562496",
+    "name": "Christian Legge",
+    "handle": "christian_legge",
+    "date": "Sep 11",
+    "avatar": "https://pbs.twimg.com/profile_images/1569016481286864897/G7rAUufS_normal.jpg",
+    "content": "Spent all of yesterday learning and implementing @trpcio and wow, what a great investment. I can't believe how much… "
+  },
+  {
     "id": "1558827229424979973",
     "name": "Rey Mooy",
     "handle": "itzyaboirey",
     "date": "Aug 14",
     "avatar": "https://pbs.twimg.com/profile_images/1564202144109977600/t4D80P02_normal.jpg",
     "content": "Yo, first time trying @trpcio and it's mind blowing 🤯"
-  },
-  {
-    "id": "1556834680682426369",
-    "name": "Jess",
-    "handle": "toxocious",
-    "date": "Aug 08",
-    "avatar": "https://pbs.twimg.com/profile_images/1514744232447160322/d898QZrD_normal.png",
-    "content": "@ralex1993 @trpcio Similar to you, I've only been using tRPC for a brief time, but yet I've come to absolutely love… "
   },
   {
     "id": "1567560240882716677",
@@ -56,6 +56,14 @@ export const tweets = [
     "date": "Sep 06",
     "avatar": "https://pbs.twimg.com/profile_images/628603529465212928/JjZxF1L8_normal.jpg",
     "content": "@kviglucci Recently did a project with @trpcio for the API transport (spun up with the "
+  },
+  {
+    "id": "1568983102931832835",
+    "name": "Cory House",
+    "handle": "housecor",
+    "date": "Sep 11",
+    "avatar": "https://pbs.twimg.com/profile_images/1525874017630035970/veQQouGw_normal.jpg",
+    "content": "@trpcio Love it. \n\nSimple, strong types. \n\nFeels like a more elegant choice than plain REST or GraphQL when using TS in a monorepo."
   },
   {
     "id": "1564929802368425984",
@@ -90,14 +98,6 @@ export const tweets = [
     "content": "I'm just gonna say it... @trpcio is honestly the coolest thing since sliced bread... 😌"
   },
   {
-    "id": "1557716164318461959",
-    "name": "Behrouz",
-    "handle": "iflashlord",
-    "date": "Aug 11",
-    "avatar": "https://pbs.twimg.com/profile_images/1422956105097953284/C7TBGr4-_normal.jpg",
-    "content": "If you're developing your client and server with TypeScript, \"tRPC\" allows static verification of your communicatio… "
-  },
-  {
     "id": "1567475304255619074",
     "name": "bachitter",
     "handle": "bachitterch",
@@ -112,14 +112,6 @@ export const tweets = [
     "date": "Aug 22",
     "avatar": "https://pbs.twimg.com/profile_images/1448195635723788288/_T_9D4gC_normal.jpg",
     "content": "@trpcio just feels right. Playing around with this is just magical. Big shoutout to @alexdotjs for this. Absolutely… "
-  },
-  {
-    "id": "1557045167697190912",
-    "name": "CuriouslyCory.eth",
-    "handle": "CuriouslyCory",
-    "date": "Aug 09",
-    "avatar": "https://pbs.twimg.com/profile_images/1545131982467653632/9dNQ1TUJ_normal.jpg",
-    "content": "My current favorite dev stack is based on https://t.co/9s48pQbCG8\nThe 3 t's: \ntypescript - obviously\ntrpc - structu… "
   },
   {
     "id": "1558878448403333120",
@@ -144,6 +136,14 @@ export const tweets = [
     "date": "Sep 08",
     "avatar": "https://pbs.twimg.com/profile_images/1389495075248484354/pmii-f0T_normal.jpg",
     "content": "OMFG @planetscaledata, @prisma and tRPC - insanely productive"
+  },
+  {
+    "id": "1568403847743442944",
+    "name": "Osama Qarem",
+    "handle": "osamaqarem",
+    "date": "Sep 10",
+    "avatar": "https://pbs.twimg.com/profile_images/1487323235398082564/H0Xc6QsN_normal.jpg",
+    "content": "I’ve been playing with @trpcio and Solito together and this is without a doubt the fastest way to iterate on an api… "
   },
   {
     "id": "1562081793863475201",
