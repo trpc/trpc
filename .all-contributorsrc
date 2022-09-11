@@ -1113,6 +1113,15 @@
       "contributions": [
         "question"
       ]
+    },
+    {
+      "login": "anthonyshew",
+      "name": "Anthony Shew",
+      "avatar_url": "https://avatars.githubusercontent.com/u/35677084?v=4",
+      "profile": "https://inthezone.dev",
+      "contributions": [
+        "doc"
+      ]
     }
   ],
   "skipCi": true
