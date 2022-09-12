@@ -62,8 +62,8 @@ const Step: FC<StepProps> = ({ num, title, description, code, rightSide }) => {
       </div>
       <div className="flex-1">
         <div className="flex flex-col justify-center gap-3 lg:flex-row lg:items-center lg:justify-start">
-          <div className="grid w-6 h-6 rounded-full bg-zinc-200 dark:bg-zinc-600 place-items-center">
-            <p className="font-bold text-black">{num}</p>
+          <div className="grid w-6 h-6 rounded-full dark:bg-zinc-200 bg-[#313131] place-items-center">
+            <p className="font-bold dark:text-[#313131] text-white">{num}</p>
           </div>
           <h2 className="text-xl font-bold lg:text-2xl">{title}</h2>
         </div>
