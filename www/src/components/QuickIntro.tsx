@@ -1,8 +1,8 @@
-import Highlight, { defaultProps } from 'prism-react-renderer';
-import theme from 'prism-react-renderer/themes/vsDark';
 import React, { ComponentProps, FC, ReactNode } from 'react';
 import { twMerge } from 'tailwind-merge';
+import '../css/custom.css';
 import { SectionTitle } from './SectionTitle';
+import { ShikiCodeBlock } from './ShikiCodeBlock';
 
 const exampleCode = `const t = initTRPC.create();
 
@@ -58,30 +58,7 @@ const Step: FC<StepProps> = ({ num, title, description, code, rightSide }) => {
           rightSide && 'lg:order-1',
         )}
       >
-        <Highlight
-          {...defaultProps}
-          code={code}
-          language="typescript"
-          theme={theme}
-        >
-          {({ className, style, tokens, getLineProps, getTokenProps }) => (
-            <pre
-              className={twMerge(className, 'text-sm md:text-base')}
-              style={style}
-            >
-              {tokens.map((line, i) => (
-                <div key={`line-${i}`} {...getLineProps({ line, key: i })}>
-                  {line.map((token, key) => (
-                    <span
-                      key={`token-${key}`}
-                      {...getTokenProps({ token, key })}
-                    />
-                  ))}
-                </div>
-              ))}
-            </pre>
-          )}
-        </Highlight>
+        <ShikiCodeBlock code={code} lang="ts" />
       </div>
       <div className="flex-1">
         <div className="flex flex-col justify-center gap-3 lg:flex-row lg:items-center lg:justify-start">

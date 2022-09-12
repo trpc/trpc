@@ -227,8 +227,13 @@ h5 {
   display: none;
 }
 
-[data-theme='dark'] .shiki.min-light-with-diff {
+[data-theme='dark'] .shiki.min-light-with-diff,
+[data-theme='dark'] .shiki.min-light {
   display: none;
+}
+
+.shiki-code-block .shiki {
+  @apply p-4
 }
 
 .markdown ul {
