@@ -119,7 +119,7 @@ function Home() {
           <Features />
         </section>
 
-        <QuickIntro />
+        {isV10 && <QuickIntro />}
 
         <section className={'mx-auto max-w-[1600px] hidden md:block'}>
           <SectionTitle

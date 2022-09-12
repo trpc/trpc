@@ -84,12 +84,12 @@ const Step: FC<StepProps> = ({ num, title, description, code, rightSide }) => {
         </Highlight>
       </div>
       <div className="flex-1">
-        <h2 className="flex items-center gap-6 text-xl font-bold lg:text-2xl">
-          <span className="flex items-center justify-center w-6 h-6 text-base text-black rounded-full bg-zinc-400">
-            {num}
-          </span>{' '}
-          {title}
-        </h2>
+        <div className="flex flex-col justify-center gap-3 lg:flex-row lg:items-center lg:justify-start">
+          <div className="grid w-6 h-6 rounded-full bg-zinc-500 place-items-center">
+            <p className="font-bold text-black">{num}</p>
+          </div>
+          <h2 className="text-xl font-bold lg:text-2xl">{title}</h2>
+        </div>
         <p className="mt-3 text-sm text-gray-600 dark:text-gray-400 md:text-base">
           {description}
         </p>
@@ -156,7 +156,7 @@ export const QuickIntro: FC = () => {
         id="quick-intro"
         title={
           <>
-            Simple to use with <br /> unmatched DX experience.
+            Simple to use with <br /> unmatched developer experience.
           </>
         }
       />
