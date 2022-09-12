@@ -3,7 +3,11 @@ import React, { useEffect, useState } from 'react';
 import { FiStar } from 'react-icons/fi';
 import { Button } from './Button';
 
-export const GithubStarsButton = () => {
+type Props = {
+  className?: string;
+};
+
+export const GithubStarsButton = ({ className }: Props) => {
   const [stars, setStars] = useState<string>();
 
   const fetchStars = async () => {
@@ -23,7 +27,7 @@ export const GithubStarsButton = () => {
       variant="secondary"
       href="https://github.com/trpc/trpc/stargazers"
       target="_blank"
-      className="text-lg"
+      className={className}
     >
       <FiStar size={18} strokeWidth={3} />
       <span>Star</span>
