@@ -291,3 +291,10 @@ html.v9 .trpcgif--v9 {
 .breadcrumbs__item {
   @apply flex items-center;
 }
+
+pre .arrow {
+  background-color: transparent !important;
+  border-left: 0px !important;
+  border-top: 0px !important;
+  top: 0px !important;
+}

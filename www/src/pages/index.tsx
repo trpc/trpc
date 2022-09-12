@@ -8,6 +8,7 @@ import { Button } from '../components/Button';
 import { Features } from '../components/Features';
 import { GithubStarsButton } from '../components/GithubStarsButton';
 import { Preview } from '../components/Preview';
+import { QuickIntro } from '../components/QuickIntro';
 import { SectionTitle } from '../components/SectionTitle';
 import { TopSponsors } from '../components/TopSponsors';
 import { TwitterWall } from '../components/TwitterWall';
@@ -117,6 +118,8 @@ function Home() {
         <section className="container">
           <Features />
         </section>
+
+        <QuickIntro />
 
         <section className={'mx-auto max-w-[1600px] hidden md:block'}>
           <SectionTitle
