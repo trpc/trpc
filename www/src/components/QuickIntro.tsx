@@ -42,11 +42,11 @@ const clientCodeExample = `async function main() {
 }`;
 
 type StepProps = {
-  readonly num: number;
-  readonly title: ReactNode;
-  readonly description: ReactNode;
-  readonly code: string;
-  readonly rightSide?: boolean;
+  num: number;
+  title: ReactNode;
+  description: ReactNode;
+  code: string;
+  rightSide?: boolean;
 };
 
 const Step: FC<StepProps> = ({ num, title, description, code, rightSide }) => {
@@ -62,7 +62,7 @@ const Step: FC<StepProps> = ({ num, title, description, code, rightSide }) => {
       </div>
       <div className="flex-1">
         <div className="flex flex-col justify-center gap-3 lg:flex-row lg:items-center lg:justify-start">
-          <div className="grid w-6 h-6 rounded-full bg-zinc-500 place-items-center">
+          <div className="grid w-6 h-6 rounded-full bg-zinc-200 dark:bg-zinc-600 place-items-center">
             <p className="font-bold text-black">{num}</p>
           </div>
           <h2 className="text-xl font-bold lg:text-2xl">{title}</h2>
