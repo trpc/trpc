@@ -65,7 +65,10 @@ const Step: FC<StepProps> = ({ num, title, description, code, rightSide }) => {
           theme={theme}
         >
           {({ className, style, tokens, getLineProps, getTokenProps }) => (
-            <pre className={className} style={style}>
+            <pre
+              className={twMerge(className, 'text-sm md:text-base')}
+              style={style}
+            >
               {tokens.map((line, i) => (
                 <div key={`line-${i}`} {...getLineProps({ line, key: i })}>
                   {line.map((token, key) => (
