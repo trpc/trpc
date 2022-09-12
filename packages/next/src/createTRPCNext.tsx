@@ -8,12 +8,22 @@ import {
 import { AnyRouter } from '@trpc/server';
 import { NextPageContext } from 'next/types';
 import { useMemo } from 'react';
-import { WithTRPCNoSSROptions, WithTRPCSSROptions, withTRPC } from './withTRPC';
+import {
+  WithTRPCConfig,
+  WithTRPCNoSSROptions,
+  WithTRPCSSROptions,
+  withTRPC,
+} from './withTRPC';
 
 export function createTRPCNext<
   TRouter extends AnyRouter,
   TSSRContext extends NextPageContext = NextPageContext,
->(opts: WithTRPCNoSSROptions<TRouter> | WithTRPCSSROptions<TRouter>) {
+  TResult extends WithTRPCConfig<TRouter> = WithTRPCConfig<TRouter>,
+>(
+  opts:
+    | WithTRPCNoSSROptions<TRouter, TResult>
+    | WithTRPCSSROptions<TRouter, TResult>,
+) {
   const hooks = createHooksInternal<TRouter, TSSRContext>();
 
   // TODO: maybe set TSSRContext to `never` when using `WithTRPCNoSSROptions`

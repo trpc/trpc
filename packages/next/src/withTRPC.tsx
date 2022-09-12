@@ -57,27 +57,39 @@ export type WithTRPCConfig<TRouter extends AnyRouter> =
     abortOnUnmount?: boolean;
   };
 
-interface WithTRPCOptions<TRouter extends AnyRouter> {
-  config: (info: { ctx?: NextPageContext }) => WithTRPCConfig<TRouter>;
+interface WithTRPCOptions<
+  TRouter extends AnyRouter,
+  TResult extends WithTRPCConfig<TRouter>,
+> {
+  config: (info: { ctx?: NextPageContext }) => TResult;
 }
 
-export interface WithTRPCSSROptions<TRouter extends AnyRouter>
-  extends WithTRPCOptions<TRouter> {
+export interface WithTRPCSSROptions<
+  TRouter extends AnyRouter,
+  TResult extends WithTRPCConfig<TRouter>,
+> extends WithTRPCOptions<TRouter, TResult> {
   ssr: true;
   responseMeta?: (opts: {
     ctx: NextPageContext;
     clientErrors: TRPCClientError<TRouter>[];
   }) => ResponseMeta;
 }
-export interface WithTRPCNoSSROptions<TRouter extends AnyRouter>
-  extends WithTRPCOptions<TRouter> {
+export interface WithTRPCNoSSROptions<
+  TRouter extends AnyRouter,
+  TResult extends WithTRPCConfig<TRouter>,
+> extends WithTRPCOptions<TRouter, TResult> {
   ssr?: false;
 }
 
 export function withTRPC<
   TRouter extends AnyRouter,
   TSSRContext extends NextPageContext = NextPageContext,
->(opts: WithTRPCNoSSROptions<TRouter> | WithTRPCSSROptions<TRouter>) {
+  TResult extends WithTRPCConfig<TRouter> = WithTRPCConfig<TRouter>,
+>(
+  opts:
+    | WithTRPCNoSSROptions<TRouter, TResult>
+    | WithTRPCSSROptions<TRouter, TResult>,
+) {
   const { config: getClientConfig } = opts;
 
   type TRPCPrepassProps = {
