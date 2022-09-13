@@ -27,7 +27,7 @@ function searchParams(obj: Record<string, string | string[]>): string {
     .join('&');
 }
 
-const HomeContent = () => {
+const HomeContent: React.FC = () => {
   const { siteConfig } = useDocusaurusContext();
 
   const { preferredVersion } = useDocsPreferredVersion();
@@ -211,7 +211,7 @@ const HomeContent = () => {
   );
 };
 
-const HomeHead = () => {
+const HomeHead: React.FC = () => {
   const { preferredVersion } = useDocsPreferredVersion();
   const isV10 = (preferredVersion?.name as Version) === 'current';
   return (
@@ -227,7 +227,7 @@ const HomeHead = () => {
   );
 };
 
-const HomePage = () => {
+const HomePage: React.FC = () => {
   const { siteConfig } = useDocusaurusContext();
   return (
     <Layout
