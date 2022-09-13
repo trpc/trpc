@@ -31,7 +31,7 @@ const HomeContent = () => {
   const { siteConfig } = useDocusaurusContext();
 
   const { preferredVersion } = useDocsPreferredVersion();
-  const isV10 = preferredVersion?.name === 'current';
+  const isV10 = (preferredVersion?.name as Version) === 'current';
 
   return (
     <main className="container px-6 mx-auto space-y-28">
@@ -213,7 +213,7 @@ const HomeContent = () => {
 
 const HomeHead = () => {
   const { preferredVersion } = useDocsPreferredVersion();
-  const isV10 = preferredVersion?.name === 'current';
+  const isV10 = (preferredVersion?.name as Version) === 'current';
   return (
     <Head>
       <body className="homepage" />
