@@ -1,4 +1,5 @@
-import React, { ComponentProps, FC, ReactNode } from 'react';
+import Link from '@docusaurus/Link';
+import React, { FC, ReactNode } from 'react';
 import { twMerge } from 'tailwind-merge';
 import Step1 from '../../docs/landing-intro/Step1.md';
 import Step2 from '../../docs/landing-intro/Step2.md';
@@ -39,51 +40,58 @@ const Step: FC<StepProps> = ({ num, title, description, code, rightSide }) => {
   );
 };
 
-const steps: ComponentProps<typeof Step>[] = [
+const steps: Omit<StepProps, 'num'>[] = [
   {
-    num: 1,
-    title: 'Define your routers and procedures.',
+    title: 'Define your procedures',
     description: (
       <>
-        The first step into creating a tRPC API is to define your routers and
-        procedures. Routers can have multiple procedures of type query, mutation
-        or subscription and they can have an input typed with zod.
+        The first step to creating a tRPC API is to define your procedures.
+        Procedures are queries, mutations, or subscriptions. They are{' '}
+        <i>composable</i> and you can chain different methods together to create
+        a procedure. Routers contain multiple procedures.
         <br /> <br />
-        Routers can also merge together into one appRouter so you can separate
-        your routers easily.
+        Here, we use <code>t.procedure</code>, the base unit of a tRPC API. Then
+        we chain <code>.input</code> to add a{' '}
+        <Link href="https://github.com/colinhacks/zod">Zod</Link> validator to
+        ensure the input from the client is exactly what our procedure expects
+        it to be.
         <br /> <br />
-        Your appRouter is exported with it&apos;s type and that is what is used
-        to create your API endpoint and connect to the client!
+        Finally, we declare it as a <code>query</code>, meaning it only reads
+        data and is safe to be cached.
+        <br /> <br />
+        At the end, we export the type of our router so that we can use it to
+        provide a fully-typed experience on the client without importing any
+        server code.
       </>
     ),
     code: <Step1 />,
   },
   {
-    num: 2,
-    title: 'Create your HTTP server.',
+    title: 'Create your HTTP server',
     description: (
       <>
-        Next up, we plug in the appRouter into our HTTPServer method to create a
-        server and we listen on port 3000, that&apos;s it! You now have a tRPC
-        server running! <br /> <br />
-        tRPC comes with many adapters to let you create an API server using your
-        favorite framework like Express, Fastify, Next.js, AWS Lambda or you can
-        create one using the standalone adapter!.
+        Next, we create our HTTP server using our <code>appRouter</code> and
+        listen on port 3000. We now have a tRPC server running!
+        <br /> <br />
+        tRPC comes with many adapters, allowing you to create a server using
+        your favorite framework like Next.js, the Fetch API (Astro, Remix,
+        SvelteKit, Cloudflare Workers, etc.), Express, Fastify, AWS Lambda, or a
+        vanilla Node HTTP server!
       </>
     ),
     code: <Step2 />,
     rightSide: true,
   },
   {
-    num: 3,
     title: 'Connect your client and start querying!',
     description: (
       <>
-        Now that we have the server running and exported the AppRouter type, we
-        can use those to connect our client to the server and start querying
-        data! <br /> <br /> We pass the AppRouter when creating the client to
-        give us typescript autocompletion and intellisense that matches the
-        backend API without needing any code generation!
+        Now that we have the server running, we can create a client and start
+        querying data!
+        <br /> <br />
+        We pass the <code>AppRouter</code> type when creating the client to give
+        us TypeScript autocompletion and intellisense that matches the backend
+        API without requiring any code generation!
       </>
     ),
     code: <Step3 />,
@@ -102,8 +110,8 @@ export const QuickIntro: FC = () => {
         }
       />
       <div className="flex flex-col gap-12 mt-6">
-        {steps.map((step) => (
-          <Step key={step.num} {...step} />
+        {steps.map((step, index) => (
+          <Step key={index} num={index + 1} {...step} />
         ))}
       </div>
     </section>
