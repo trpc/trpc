@@ -1,51 +1,16 @@
 import React, { ComponentProps, FC, ReactNode } from 'react';
 import { twMerge } from 'tailwind-merge';
+import First from '../../docs/landing-intro/First.md';
+import Second from '../../docs/landing-intro/Second.md';
+import Third from '../../docs/landing-intro/Third.md';
 import '../css/custom.css';
 import { SectionTitle } from './SectionTitle';
-import { ShikiCodeBlock } from './ShikiCodeBlock';
-
-const exampleCode = `const t = initTRPC.create();
-
-const appRouter = t.router({
-  greeting: t.procedure
-    .input(
-      z.object({
-        name: z.string().nullish(),
-      })
-      .nullish(),
-    )
-    .query(({ input }) => {
-      return {
-        text: "Hello " + input?.name ?? "World",
-      };
-    }),
-});
-
-export type AppRouter = typeof appRouter;`;
-
-const httpSeverCodeExample = `const { listen } = createHTTPServer({
-  router: appRouter,
-});
-
-// The API will now be listening on port 3000!
-listen(3000);
-`;
-
-const clientCodeExample = `async function main() {
-  const client = createTRPCProxyClient<AppRouter>({
-    url: "http://localhost:3000"
-  });
-
-  const res = await client.greeting.query({ name: "John" });
-
-  console.log(res.text);
-}`;
 
 type StepProps = {
   num: number;
   title: ReactNode;
   description: ReactNode;
-  code: string;
+  code: ReactNode;
   rightSide?: boolean;
 };
 
@@ -58,7 +23,7 @@ const Step: FC<StepProps> = ({ num, title, description, code, rightSide }) => {
           rightSide && 'lg:order-1',
         )}
       >
-        <ShikiCodeBlock code={code} lang="ts" />
+        {code}
       </div>
       <div className="flex-1">
         <div className="flex flex-col justify-center gap-3 lg:flex-row lg:items-center lg:justify-start">
@@ -92,7 +57,7 @@ const steps: ComponentProps<typeof Step>[] = [
         to create your API endpoint and connect to the client!
       </>
     ),
-    code: exampleCode,
+    code: <First />,
   },
   {
     num: 2,
@@ -107,7 +72,7 @@ const steps: ComponentProps<typeof Step>[] = [
         create one using the standalone adapter!.
       </>
     ),
-    code: httpSeverCodeExample,
+    code: <Second />,
     rightSide: true,
   },
   {
@@ -122,7 +87,7 @@ const steps: ComponentProps<typeof Step>[] = [
         backend API without needing any code generation!
       </>
     ),
-    code: clientCodeExample,
+    code: <Third />,
   },
 ];
 
