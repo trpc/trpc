@@ -227,13 +227,8 @@ h5 {
   display: none;
 }
 
-[data-theme='dark'] .shiki.min-light-with-diff,
-[data-theme='dark'] .shiki.min-light {
+[data-theme='dark'] .shiki.min-light-with-diff {
   display: none;
-}
-
-.shiki-code-block .shiki {
-  @apply p-4
 }
 
 .markdown ul {
@@ -295,11 +290,4 @@ html.v9 .trpcgif--v9 {
 
 .breadcrumbs__item {
   @apply flex items-center;
-}
-
-pre .arrow {
-  background-color: transparent !important;
-  border-left: 0px !important;
-  border-top: 0px !important;
-  top: 0px !important;
 }
