@@ -119,8 +119,13 @@ function Home() {
           <Features />
         </section>
 
-        <section className="border border-gray-100 rounded-xl p-4 md:p-8 shadow-lg dark:shadow-lg dark:shadow-gray-900 dark:border-gray-900">
-          {isV10 && <QuickIntro />}
+        <section
+          className={clsx(
+            'border border-gray-100 rounded-xl p-4 md:p-8 shadow-lg dark:shadow-lg dark:shadow-gray-900 dark:border-gray-900',
+            { hidden: !isV10 },
+          )}
+        >
+          <QuickIntro />
         </section>
 
         <section className={'mx-auto max-w-[1600px] hidden md:block'}>
