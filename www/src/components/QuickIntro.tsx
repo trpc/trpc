@@ -1,9 +1,8 @@
 import React, { ComponentProps, FC, ReactNode } from 'react';
 import { twMerge } from 'tailwind-merge';
-import First from '../../docs/landing-intro/First.md';
-import Second from '../../docs/landing-intro/Second.md';
-import Third from '../../docs/landing-intro/Third.md';
-import '../css/custom.css';
+import Step1 from '../../docs/landing-intro/Step1.md';
+import Step2 from '../../docs/landing-intro/Step2.md';
+import Step3 from '../../docs/landing-intro/Step3.md';
 import { SectionTitle } from './SectionTitle';
 
 type StepProps = {
@@ -57,7 +56,7 @@ const steps: ComponentProps<typeof Step>[] = [
         to create your API endpoint and connect to the client!
       </>
     ),
-    code: <First />,
+    code: <Step1 />,
   },
   {
     num: 2,
@@ -72,7 +71,7 @@ const steps: ComponentProps<typeof Step>[] = [
         create one using the standalone adapter!.
       </>
     ),
-    code: <Second />,
+    code: <Step2 />,
     rightSide: true,
   },
   {
@@ -87,7 +86,7 @@ const steps: ComponentProps<typeof Step>[] = [
         backend API without needing any code generation!
       </>
     ),
-    code: <Third />,
+    code: <Step3 />,
   },
 ];
 
