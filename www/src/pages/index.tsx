@@ -32,7 +32,6 @@ const HomeContent = () => {
 
   const { preferredVersion } = useDocsPreferredVersion();
   const isV10 = preferredVersion?.name === 'current';
-  console.log(preferredVersion);
 
   return (
     <main className="container px-6 mx-auto space-y-28">
