@@ -45,6 +45,11 @@ const HomeContent: React.FC = () => {
     }
   }, [isV10, savePreferredVersionName]);
 
+  const [isMounted, setIsMounted] = React.useState(false);
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
   return (
     <main className="container px-6 mx-auto space-y-28">
       <header className="pt-12 mx-auto text-center lg:pt-16 xl:pt-24">
@@ -107,27 +112,29 @@ const HomeContent: React.FC = () => {
             'h-[600px] w-full rounded-xl overflow-hidden z-10 relative my-4',
           )}
         >
-          <iframe
-            className={clsx('h-full w-full absolute')}
-            src={
-              `https://stackblitz.com/github/trpc/trpc/tree/${
-                isV10 ? 'next' : 'main'
-              }/examples/next-minimal-starter?` +
-              searchParams({
-                embed: '1',
-                file: [
-                  // Opens these side-by-side
-                  'src/pages/index.tsx',
-                  'src/pages/api/trpc/[trpc].ts',
-                ],
-                hideNavigation: '1',
-                terminalHeight: '1',
-                showSidebar: '0',
-                view: 'editor',
-              })
-            }
-            frameBorder="0"
-          />
+          {isMounted && (
+            <iframe
+              className={clsx('h-full w-full absolute')}
+              src={
+                `https://stackblitz.com/github/trpc/trpc/tree/${
+                  isV10 ? 'next' : 'main'
+                }/examples/next-minimal-starter?` +
+                searchParams({
+                  embed: '1',
+                  file: [
+                    // Opens these side-by-side
+                    'src/pages/index.tsx',
+                    'src/pages/api/trpc/[trpc].ts',
+                  ],
+                  hideNavigation: '1',
+                  terminalHeight: '1',
+                  showSidebar: '0',
+                  view: 'editor',
+                })
+              }
+              frameBorder="0"
+            />
+          )}
         </div>
         <div className="flex justify-center">
           <Button
