@@ -96,7 +96,7 @@ const steps: Omit<StepProps, 'num'>[] = [
 
 export const QuickIntro: FC = () => {
   return (
-    <section id="#quick-intro">
+    <section className="border border-gray-100 rounded-xl p-4 md:p-8 shadow-lg dark:shadow-lg dark:shadow-gray-900 dark:border-gray-900">
       <SectionTitle
         id="quick-intro"
         title={
