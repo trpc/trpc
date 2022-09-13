@@ -46,18 +46,14 @@ const steps: Omit<StepProps, 'num'>[] = [
     description: (
       <>
         The first step to creating a tRPC API is to define your procedures.
-        Procedures are queries, mutations, or subscriptions. They are{' '}
-        <i>composable</i> and you can chain different methods together to create
-        a procedure. Routers contain multiple procedures.
+        Procedures <i>composable</i> and can be queries, mutations, or
+        subscriptions. Routers contain multiple procedures.
         <br /> <br />
-        Here, we use <code>t.procedure</code>, the base unit of a tRPC API. Then
-        we chain <code>.input</code> to add a{' '}
-        <Link href="https://github.com/colinhacks/zod">Zod</Link> validator to
-        ensure the input from the client is exactly what our procedure expects
+        Here, we add a <Link href="https://github.com/colinhacks/zod">
+          Zod
+        </Link>{' '}
+        validator to ensure the input from the client is exactly what we expect
         it to be.
-        <br /> <br />
-        Finally, we declare it as a <code>query</code>, meaning it only reads
-        data and is safe to be cached.
         <br /> <br />
         At the end, we export the type of our router so that we can use it to
         provide a fully-typed experience on the client without importing any
@@ -70,13 +66,13 @@ const steps: Omit<StepProps, 'num'>[] = [
     title: 'Create your HTTP server',
     description: (
       <>
-        Next, we create our HTTP server using our <code>appRouter</code> and
-        listen on port 3000. We now have a tRPC server running!
+        Next, we create our HTTP server using our <code>appRouter</code> . We
+        now have a tRPC server running!
         <br /> <br />
         tRPC comes with many adapters, allowing you to create a server using
         your favorite framework like Next.js, the Fetch API (Astro, Remix,
         SvelteKit, Cloudflare Workers, etc.), Express, Fastify, AWS Lambda, or a
-        vanilla Node HTTP server!
+        vanilla Node HTTP server.
       </>
     ),
     code: <Step2 />,
@@ -87,7 +83,7 @@ const steps: Omit<StepProps, 'num'>[] = [
     description: (
       <>
         Now that we have the server running, we can create a client and start
-        querying data!
+        querying data.
         <br /> <br />
         We pass the <code>AppRouter</code> type when creating the client to give
         us TypeScript autocompletion and intellisense that matches the backend
