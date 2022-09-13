@@ -24,9 +24,10 @@ export type AppRouter = typeof appRouter;
 // @module: esnext
 // @include: server
 // @filename: client.ts
-// ---cut---
 import { createTRPCProxyClient } from '@trpc/client';
 import { AppRouter } from './server';
+
+// ---cut---
 
 async function main() {
   const client = createTRPCProxyClient<AppRouter>({
