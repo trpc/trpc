@@ -27,7 +27,7 @@ const Step: FC<StepProps> = ({ num, title, description, code, rightSide }) => {
       </div>
       <div className="flex-1">
         <div className="flex flex-col justify-center gap-3 lg:flex-row lg:items-center lg:justify-start">
-          <div className="grid w-6 h-6 rounded-full dark:bg-zinc-200 bg-[#313131] place-items-center">
+          <div className="grid w-6 h-6 rounded-full dark:bg-primary-200 bg-primary place-items-center">
             <p className="font-bold dark:text-[#313131] text-white">{num}</p>
           </div>
           <h2 className="text-xl font-bold lg:text-2xl">{title}</h2>
@@ -96,7 +96,7 @@ const steps: Omit<StepProps, 'num'>[] = [
 
 export const QuickIntro: FC = () => {
   return (
-    <section id="#quick-intro">
+    <section className="border border-gray-100 rounded-xl p-4 md:p-8 shadow-lg dark:shadow-lg dark:shadow-gray-900 dark:border-gray-900">
       <SectionTitle
         id="quick-intro"
         title={

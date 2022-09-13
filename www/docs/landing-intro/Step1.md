@@ -7,7 +7,7 @@ import z from 'zod';
 
 const t = initTRPC.create();
 
-export const appRouter = t.router({
+const appRouter = t.router({
   greeting: t.procedure
     .input(z.object({ name: z.string() }))
     .query((req) => {
