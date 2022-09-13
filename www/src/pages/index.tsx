@@ -46,11 +46,7 @@ const HomeContent: React.FC = () => {
     } else if (requestedVersion === '10' && !isV10) {
       savePreferredVersionName('current');
     }
-
-    // Reload page to apply changes
-    window.location.href = '/' + window.location.hash;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isV10]);
+  }, [isV10, savePreferredVersionName]);
 
   return (
     <main className="container px-6 mx-auto space-y-28">
