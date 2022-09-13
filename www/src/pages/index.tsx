@@ -3,7 +3,7 @@ import { useDocsPreferredVersion } from '@docusaurus/theme-common';
 import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
 import Layout from '@theme/Layout';
 import clsx from 'clsx';
-import React from 'react';
+import React, { useEffect } from 'react';
 import { FiArrowRight } from 'react-icons/fi';
 import { Button } from '../components/Button';
 import { Features } from '../components/Features';
@@ -30,8 +30,25 @@ function searchParams(obj: Record<string, string | string[]>): string {
 const HomeContent: React.FC = () => {
   const { siteConfig } = useDocusaurusContext();
 
-  const { preferredVersion } = useDocsPreferredVersion();
+  const { preferredVersion, savePreferredVersionName } =
+    useDocsPreferredVersion();
   const isV10 = (preferredVersion?.name as Version) === 'current';
+
+  useEffect(() => {
+    const searchParams = new URLSearchParams(location.search);
+    const requestedVersion = searchParams.get('v');
+
+    if (requestedVersion === '9' && isV10) {
+      savePreferredVersionName('9.x');
+      window.location.href = '/' + window.location.hash;
+    } else if (requestedVersion === '10' && !isV10) {
+      savePreferredVersionName('current');
+      window.location.href = '/' + window.location.hash;
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isV10]);
+
+  console.log({ preferredVersion });
 
   return (
     <main className="container px-6 mx-auto space-y-28">
