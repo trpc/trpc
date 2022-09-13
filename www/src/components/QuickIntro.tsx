@@ -1,6 +1,6 @@
 import Link from '@docusaurus/Link';
+import clsx from 'clsx';
 import React, { FC, ReactNode } from 'react';
-import { twMerge } from 'tailwind-merge';
 import Step1 from '../../docs/landing-intro/Step1.md';
 import Step2 from '../../docs/landing-intro/Step2.md';
 import Step3 from '../../docs/landing-intro/Step3.md';
@@ -18,10 +18,9 @@ const Step: FC<StepProps> = ({ num, title, description, code, rightSide }) => {
   return (
     <div className="flex flex-col justify-between gap-12 lg:flex-row">
       <div
-        className={twMerge(
-          'flex-1 order-1 lg:order-[0]',
-          rightSide && 'lg:order-1',
-        )}
+        className={clsx('flex-1 order-1 lg:order-[0]', {
+          'lg:order-1': rightSide,
+        })}
       >
         {code}
       </div>
@@ -96,7 +95,7 @@ const steps: Omit<StepProps, 'num'>[] = [
 
 export const QuickIntro: FC = () => {
   return (
-    <section className="border border-gray-100 rounded-xl p-4 md:p-8 shadow-lg dark:shadow-lg dark:shadow-gray-900 dark:border-gray-900">
+    <>
       <SectionTitle
         id="quick-intro"
         title={
@@ -110,6 +109,6 @@ export const QuickIntro: FC = () => {
           <Step key={index} num={index + 1} {...step} />
         ))}
       </div>
-    </section>
+    </>
   );
 };
