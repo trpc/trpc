@@ -47,6 +47,7 @@ const HomeContent: React.FC = () => {
       savePreferredVersionName('current');
     }
 
+    // Reload page to apply changes
     window.location.href = '/' + window.location.hash;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isV10]);
