@@ -52,8 +52,6 @@ const HomeContent: React.FC = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isV10]);
 
-  console.log({ preferredVersion });
-
   return (
     <main className="container px-6 mx-auto space-y-28">
       <header className="pt-12 mx-auto text-center lg:pt-16 xl:pt-24">
