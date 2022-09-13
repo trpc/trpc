@@ -37,14 +37,17 @@ const HomeContent: React.FC = () => {
   useEffect(() => {
     const searchParams = new URLSearchParams(location.search);
     const requestedVersion = searchParams.get('v');
+    if (!requestedVersion) {
+      return;
+    }
 
     if (requestedVersion === '9' && isV10) {
       savePreferredVersionName('9.x');
-      window.location.href = '/' + window.location.hash;
     } else if (requestedVersion === '10' && !isV10) {
       savePreferredVersionName('current');
-      window.location.href = '/' + window.location.hash;
     }
+
+    window.location.href = '/' + window.location.hash;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isV10]);
 
