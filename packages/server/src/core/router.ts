@@ -1,5 +1,3 @@
-import { inferProcedureOutput } from '.';
-import { Filter } from '..';
 import { TRPCError } from '../error/TRPCError';
 import {
   DefaultErrorShape,
@@ -22,12 +20,12 @@ import {
   QueryProcedure,
   SubscriptionProcedure,
 } from './procedure';
-import { ProcedureType, procedureTypes } from './types';
+import { ProcedureType, inferProcedureOutput, procedureTypes } from './types';
 
 /** @internal **/
-export type ProcedureRecord = Record<string, Procedure<any>>;
+export type ProcedureRecord = Record<string, AnyProcedure>;
 
-export type ProcedureRouterRecord = Record<string, Procedure<any> | AnyRouter>;
+export type ProcedureRouterRecord = Record<string, AnyProcedure | AnyRouter>;
 
 export interface ProcedureStructure {
   queries: Record<string, QueryProcedure<any>>;
@@ -58,33 +56,28 @@ export interface RouterDef<
   _meta: TMeta;
   errorFormatter: ErrorFormatter<TContext, TErrorShape>;
   transformer: CombinedDataTransformer;
-  // FIXME this is slow:
-  // - I think this has to go & be replaced by something by only using `TRecord` without `& SimpleFlatten...`
-  // - Potentially, we have a `legacyProcedures` record where we only register the old things that are available by string path
-  // - I am currently casting this to `ProcedureRecord` in `trpc-openapi`. Would be great to have a less hacky solution though.
   procedures: TRecord;
   /**
    * V9 procedures
    * @deprecated
    */
   legacy: {};
-  routers: Filter<TRecord, Router<any>>;
   record: TRecord;
   /**
-   * FIXME remove?
+   * V9 queries
    * @deprecated
    */
-  subscriptions: Filter<TRecord, SubscriptionProcedure<any> & { _old: true }>;
+  queries: {};
   /**
-   * FIXME remove?
+   * V9 mutations
    * @deprecated
    */
-  queries: Filter<TRecord, QueryProcedure<any> & { _old: true }>;
+  mutations: {};
   /**
-   * FIXME remove?
+   * V9 subscriptions
    * @deprecated
    */
-  mutations: Filter<TRecord, MutationProcedure<any> & { _old: true }>;
+  subscriptions: {};
 }
 
 export type AnyRouterDef<TContext = any> = RouterDef<TContext, any, any, any>;
@@ -257,9 +250,6 @@ export function createRouterFactory<TConfig extends RootConfig>(
         .reduce((acc, [key, val]) => ({ ...acc, [key]: val }), {}),
       subscriptions: Object.entries(result.procedures || {})
         .filter((pair) => (pair[1] as any)._def.subscription)
-        .reduce((acc, [key, val]) => ({ ...acc, [key]: val }), {}),
-      routers: Object.entries(result.procedures || {})
-        .filter((pair) => (pair[1] as any)._def._router)
         .reduce((acc, [key, val]) => ({ ...acc, [key]: val }), {}),
     };
 

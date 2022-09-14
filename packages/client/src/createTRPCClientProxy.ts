@@ -70,14 +70,12 @@ type DecoratedProcedureRecord<
   TProcedures extends ProcedureRouterRecord,
   TRouter extends AnyRouter,
 > = {
-  [TKey in keyof TProcedures]: TProcedures[TKey] extends LegacyV9ProcedureTag
-    ? never
-    : TProcedures[TKey] extends AnyRouter
+  [TKey in keyof TProcedures]: TProcedures[TKey] extends AnyRouter
     ? DecoratedProcedureRecord<
         TProcedures[TKey]['_def']['record'],
         TProcedures[TKey]
       >
-    : DecorateProcedure<assertProcedure<TProcedures[TKey]>, TRouter>;
+    : DecorateProcedure<TProcedures[TKey], TRouter>;
 };
 
 const clientCallTypeMap: Record<

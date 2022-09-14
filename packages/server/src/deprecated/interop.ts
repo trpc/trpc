@@ -149,11 +149,7 @@ export type MigrateRouter<
         'subscription'
       >;
     };
-  } & RouterDef<
-    TInputContext,
-    TErrorShape,
-    TMeta,
-    MigrateProcedureRecord<
+    queries: MigrateProcedureRecord<
       CreateRootConfig<{
         ctx: TInputContext;
         errorShape: TErrorShape;
@@ -162,28 +158,28 @@ export type MigrateRouter<
       }>,
       TQueries,
       'query'
-    > &
-      MigrateProcedureRecord<
-        CreateRootConfig<{
-          ctx: TInputContext;
-          errorShape: TErrorShape;
-          meta: TMeta;
-          transformer: CombinedDataTransformer;
-        }>,
-        TMutations,
-        'mutation'
-      > &
-      MigrateProcedureRecord<
-        CreateRootConfig<{
-          ctx: TInputContext;
-          errorShape: TErrorShape;
-          meta: TMeta;
-          transformer: CombinedDataTransformer;
-        }>,
-        TSubscriptions,
-        'subscription'
-      >
-  >
+    >;
+    mutations: MigrateProcedureRecord<
+      CreateRootConfig<{
+        ctx: TInputContext;
+        errorShape: TErrorShape;
+        meta: TMeta;
+        transformer: CombinedDataTransformer;
+      }>,
+      TMutations,
+      'mutation'
+    >;
+    subscriptions: MigrateProcedureRecord<
+      CreateRootConfig<{
+        ctx: TInputContext;
+        errorShape: TErrorShape;
+        meta: TMeta;
+        transformer: CombinedDataTransformer;
+      }>,
+      TSubscriptions,
+      'subscription'
+    >;
+  } & RouterDef<TInputContext, TErrorShape, TMeta, {}>
 >;
 
 export type MigrateOldRouter<TRouter extends AnyOldRouter> =
