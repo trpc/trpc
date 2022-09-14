@@ -147,6 +147,25 @@ type DecorateProcedure<
 };
 
 /**
+ * this is the type that is used to add in procedures that can be used on
+ * partial paths.
+ *
+ * NOTE: All generics have been removed from this type at the moment ... But we
+ * may want to add these back in if we can be smarter about inferring input
+ * type...
+ */
+type DecoratePartialPathProcedure = {
+  /**
+   * @link https://react-query.tanstack.com/guides/query-invalidation
+   */
+  invalidate(
+    input?: unknown, // We can't infer the input type as it may be multiple queries!?
+    filters?: InvalidateQueryFilters,
+    options?: InvalidateOptions,
+  ): Promise<void>;
+};
+
+/**
  * @internal
  */
 export type DecoratedProcedureUtilsRecord<TRouter extends AnyRouter> =
@@ -154,7 +173,8 @@ export type DecoratedProcedureUtilsRecord<TRouter extends AnyRouter> =
     [TKey in keyof TRouter['_def']['record']]: TRouter['_def']['record'][TKey] extends LegacyV9ProcedureTag
       ? never
       : TRouter['_def']['record'][TKey] extends AnyRouter
-      ? DecoratedProcedureUtilsRecord<TRouter['_def']['record'][TKey]>
+      ? DecoratedProcedureUtilsRecord<TRouter['_def']['record'][TKey]> &
+          DecoratePartialPathProcedure
       : // utils only apply to queries
       TRouter['_def']['record'][TKey] extends QueryProcedure<any>
       ? DecorateProcedure<TRouter, TRouter['_def']['record'][TKey]>
