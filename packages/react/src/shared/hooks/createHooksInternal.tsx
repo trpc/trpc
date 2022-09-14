@@ -185,14 +185,21 @@ export function createHooksInternal<
    * https://github.com/trpc/trpc/issues/2611
    */
   const getArrayQueryKey = (
-    queryKey: [string] | [string, ...unknown[]],
-  ): [string[]] | [string[], ...unknown[]] => {
-    const [path, ...input] = queryKey;
-    const arrayPath = path.split('.');
-    if (input === undefined) {
-      return [arrayPath];
+    queryKey: string | [string] | [string, ...unknown[]],
+  ): [string[]] | [string[], ...unknown[]] | [] => {
+    const queryKeyArrayed = Array.isArray(queryKey) ? queryKey : [queryKey];
+    const [path, ...input] = queryKeyArrayed;
+
+    // Handle the case of acting on all queries ... path will not be passed
+    if (typeof path !== 'string') {
+      return [];
     } else {
-      return [arrayPath, ...input];
+      const arrayPath = path.split('.');
+      if (input === undefined) {
+        return [arrayPath];
+      } else {
+        return [arrayPath, ...input];
+      }
     }
   };
 
@@ -529,7 +536,7 @@ export function createHooksInternal<
       ssrState === 'prepass' &&
       opts?.trpc?.ssr !== false &&
       opts?.enabled !== false &&
-      !queryClient.getQueryCache().find(pathAndInput)
+      !queryClient.getQueryCache().find(getArrayQueryKey(pathAndInput))
     ) {
       void prefetchInfiniteQuery(pathAndInput as any, opts as any);
     }
@@ -540,7 +547,7 @@ export function createHooksInternal<
     const shouldAbortOnUnmount = opts?.trpc?.abortOnUnmount ?? abortOnUnmount;
 
     return __useInfiniteQuery(
-      pathAndInput as any,
+      getArrayQueryKey(pathAndInput) as any,
       (queryFunctionContext) => {
         const actualOpts = {
           ...ssrOpts,
