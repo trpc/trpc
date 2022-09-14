@@ -5,7 +5,9 @@ sidebar_label: useMutation()
 slug: /react-mutations
 ---
 
-> The hooks provided by `@trpc/react` are a thin wrapper around React Query. For in-depth information about options and usage patterns, refer to their docs on [Mutations](https://react-query.tanstack.com/guides/mutations).
+:::note
+The hooks provided by `@trpc/react` are a thin wrapper around @tanstack/react-query. For in-depth information about options and usage patterns, refer to their docs on [mutations](https://react-query.tanstack.com/guides/mutations).
+:::
 
 Works like react-query's mutations - [see their docs](https://react-query.tanstack.com/guides/mutations).
 
