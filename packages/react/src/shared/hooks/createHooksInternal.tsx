@@ -185,7 +185,7 @@ export function createHooksInternal<
    * https://github.com/trpc/trpc/issues/2611
    */
   const getArrayQueryKey = (
-    queryKey: string | [string] | [string, ...unknown[]],
+    queryKey: string | [string] | [string, ...unknown[]] | unknown[],
   ): [string[]] | [string[], ...unknown[]] | [] => {
     const queryKeyArrayed = Array.isArray(queryKey) ? queryKey : [queryKey];
     const [path, ...input] = queryKeyArrayed;
@@ -364,7 +364,8 @@ export function createHooksInternal<
     const { queryClient, ssrState } = useContext();
     return ssrState &&
       ssrState !== 'mounted' &&
-      queryClient.getQueryCache().find(pathAndInput)?.state.status === 'error'
+      queryClient.getQueryCache().find(getArrayQueryKey(pathAndInput))?.state
+        .status === 'error'
       ? {
           retryOnMount: false,
           ...opts,
