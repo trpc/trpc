@@ -1,13 +1,13 @@
 import fs from 'fs';
 
-const NUM_PROCEDURE_OBJECTS = 500;
+const NUM_ROUTERS = 50;
 
-function createProcedureObject(procedureObjectName: string) {
+function createRouter(routerName: string) {
   return `
   import { z } from 'zod';
   import { t } from './_trpc';
   
-  export const ${procedureObjectName} = t.router({
+  export const ${routerName} = t.router({
     greeting: t
       .procedure
       .input(
@@ -59,13 +59,10 @@ const SERVER_DIR = __dirname + '/../packages/server/test/__generated__/bigBoi';
 fs.mkdirSync(SERVER_DIR, { recursive: true });
 
 const indexBuf: string[] = [];
-for (let i = 0; i < NUM_PROCEDURE_OBJECTS; i++) {
-  const procedureObjectName = `r${i}`;
-  indexBuf.push(procedureObjectName);
-  fs.writeFileSync(
-    `${SERVER_DIR}/${procedureObjectName}.ts`,
-    createProcedureObject(procedureObjectName),
-  );
+for (let i = 0; i < NUM_ROUTERS; i++) {
+  const routerName = `r${i}`;
+  indexBuf.push(routerName);
+  fs.writeFileSync(`${SERVER_DIR}/${routerName}.ts`, createRouter(routerName));
 }
 
 const trpcFile = `
