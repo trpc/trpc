@@ -5,14 +5,16 @@ import {
 } from '@tanstack/react-query';
 import { TRPCClientErrorLike } from '@trpc/client';
 import {
+  AnyMutationProcedure,
+  AnyProcedure,
+  AnyQueryProcedure,
   AnyRouter,
-  Procedure,
+  AnySubscriptionProcedure,
   ProcedureRouterRecord,
   inferProcedureInput,
   inferProcedureOutput,
 } from '@trpc/server';
 import { inferObservableValue } from '@trpc/server/observable';
-import { LegacyV9ProcedureTag } from '@trpc/server/shared';
 import { useMemo } from 'react';
 import {
   CreateReactUtilsProxy,
@@ -32,9 +34,9 @@ import {
 } from './shared/hooks/createHooksInternal';
 
 type DecorateProcedure<
-  TProcedure extends Procedure<any>,
+  TProcedure extends AnyProcedure,
   TPath extends string,
-> = TProcedure extends { _type: 'query' }
+> = TProcedure extends AnyQueryProcedure
   ? {
       useQuery: <
         TQueryFnData = inferProcedureOutput<TProcedure>,
@@ -65,7 +67,7 @@ type DecorateProcedure<
           ) => UseInfiniteQueryResult<TData, TRPCClientErrorLike<TProcedure>>;
         }
       : {})
-  : TProcedure extends { _type: 'mutation' }
+  : TProcedure extends AnyMutationProcedure
   ? {
       useMutation: <TContext = unknown>(
         opts?: UseTRPCMutationOptions<
@@ -81,7 +83,7 @@ type DecorateProcedure<
         TContext
       >;
     }
-  : TProcedure extends { _type: 'subscription' }
+  : TProcedure extends AnySubscriptionProcedure
   ? {
       useSubscription: (
         input: inferProcedureInput<TProcedure>,
@@ -93,8 +95,6 @@ type DecorateProcedure<
     }
   : never;
 
-type assertProcedure<T> = T extends Procedure<any> ? T : never;
-
 /**
  * @internal
  */
@@ -102,17 +102,14 @@ export type DecoratedProcedureRecord<
   TProcedures extends ProcedureRouterRecord,
   TPath extends string = '',
 > = {
-  [TKey in keyof TProcedures]: TProcedures[TKey] extends LegacyV9ProcedureTag
-    ? never
-    : TProcedures[TKey] extends AnyRouter
+  [TKey in keyof TProcedures]: TProcedures[TKey] extends AnyRouter
     ? DecoratedProcedureRecord<
         TProcedures[TKey]['_def']['record'],
         `${TPath}${TKey & string}.`
       >
-    : DecorateProcedure<
-        assertProcedure<TProcedures[TKey]>,
-        `${TPath}${TKey & string}`
-      >;
+    : TProcedures[TKey] extends AnyProcedure
+    ? DecorateProcedure<TProcedures[TKey], `${TPath}${TKey & string}`>
+    : never;
 };
 
 export type CreateTRPCReact<TRouter extends AnyRouter, TSSRContext> = {
