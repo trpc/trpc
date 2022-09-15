@@ -1,11 +1,11 @@
 import {
+  AnyProcedure,
   AnyRouter,
   DefaultErrorShape,
   Maybe,
   inferRouterError,
 } from '@trpc/server';
 import { TRPCErrorResponse } from '@trpc/server/rpc';
-import { AnyProcedure } from 'packages/server/dist';
 
 type RouterOrProcedure = AnyRouter | AnyProcedure;
 
