@@ -5,8 +5,10 @@ import type { AnyRouter } from '@trpc/server';
 import {
   TRPCClient as Client,
   CreateTRPCClientOptions,
+  TRPCRequestOptions,
 } from './internals/TRPCClient';
 import { httpBatchLink } from './links';
+import { HTTPLinkOptions } from './links/internals/httpUtils';
 
 /**
  * @deprecated use `createTRPCProxyClient` instead
@@ -19,13 +21,25 @@ export function createTRPCClient<TRouter extends AnyRouter>(
          * @deprecated use `links` instead
          */
         url: string;
+        /**
+         * @deprecated use `links` instead
+         */
+        headers?: HTTPLinkOptions['headers'];
+        /**
+         * @deprecated use `links` instead
+         */
+        fetch?: HTTPLinkOptions['fetch'];
+        /**
+         * @deprecated use `links` instead
+         */
+        AbortController?: HTTPLinkOptions['AbortController'];
       },
 ) {
   const getLinks = () => {
     if ('links' in opts) {
       return opts.links;
     }
-    return [httpBatchLink({ url: opts.url })];
+    return [httpBatchLink(opts)];
   };
   const client = new Client<TRouter>({
     links: getLinks(),
@@ -36,7 +50,7 @@ export function createTRPCClient<TRouter extends AnyRouter>(
 // Also the client created above needs to somehow be like `TRPCClient<Router> & Omit<Router, 'createCaller' | 'createProcedure' | '_def' | 'transformer' | 'errorFormatter' | 'getErrorShape>`
 
 export type {
-  AssertLegacyDef,
   CreateTRPCClientOptions,
   TRPCClient,
+  TRPCRequestOptions,
 } from './internals/TRPCClient';
