@@ -48,12 +48,16 @@ tRPC adheres to the industry standard when it comes to aborting procedures. All 
 
 // ---cut---
 // @filename: server.ts
-import { createTRPCProxyClient } from "@trpc/client";
+import { createTRPCProxyClient, httpBatchLink } from "@trpc/client";
 // @noErrors
 import type { AppRouter } from "server.ts";
 
 const proxy = createTRPCProxyClient<AppRouter>({
-  url: "http://localhost:3000/trpc",
+  links: [
+    httpBatchLink({
+      url: 'http://localhost:3000/trpc',
+    }),
+  ],
 });
 
 const ac = new AbortController();
