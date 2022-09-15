@@ -31,7 +31,7 @@ Since `UseTRPCQueryOptions` extends @tanstack/react-query's `UseQueryOptions`, y
 - **`trpc.abortOnUnmount`:** Override the [global config](nextjs#config-callback) and opt in or out of aborting queries on unmount.
 
 :::tip
-If you need to set any options but don't want to pass any input, you can `undefined` instead.
+If you need to set any options but don't want to pass any input, you can pass `undefined` instead.
 :::
 
 You'll notice that you get autocompletion on the `input` based on what you have set in your `input` schema on your backend.
