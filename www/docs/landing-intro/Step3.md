@@ -22,7 +22,7 @@ export type AppRouter = typeof appRouter;
 
 ```ts twoslash title='client.ts'
 // @module: esnext
-// @target: es2017
+// @target: esnext
 // @include: server
 // @filename: client.ts
 import { createTRPCProxyClient, httpBatchLink } from '@trpc/client';
