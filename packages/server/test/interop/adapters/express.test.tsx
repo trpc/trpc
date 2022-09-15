@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { Context, router } from './__router';
-import { createTRPCClient } from '@trpc/client/src';
+import { createTRPCClient, httpBatchLink } from '@trpc/client';
 import AbortController from 'abort-controller';
 import express from 'express';
 import http from 'http';
@@ -49,10 +49,13 @@ async function startServer() {
   });
 
   const client = createTRPCClient<typeof router>({
-    url: `http://localhost:${port}/trpc`,
-
-    AbortController: AbortController as any,
-    fetch: fetch as any,
+    links: [
+      httpBatchLink({
+        url: `http://localhost:${port}/trpc`,
+        AbortController: AbortController as any,
+        fetch: fetch as any,
+      }),
+    ],
   });
 
   return {

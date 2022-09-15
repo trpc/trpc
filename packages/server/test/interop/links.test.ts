@@ -20,9 +20,6 @@ import { AnyRouter } from '../../src';
 import { observable, observableToPromise } from '../../src/observable';
 
 const mockRuntime: TRPCClientRuntime = {
-  fetch: fetch as any,
-  AbortController: AbortController as any,
-  headers: () => ({}),
   transformer: {
     serialize: (v) => v,
     deserialize: (v) => v,
@@ -285,9 +282,9 @@ describe('batching', () => {
       links: [
         httpBatchLink({
           url: `http://localhost:${httpPort}`,
+          headers: {},
         }),
       ],
-      headers: {},
     });
 
     await expect(client.query('hello')).rejects.toMatchInlineSnapshot(
@@ -319,9 +316,9 @@ test('create client with links', async () => {
       retryLink({ attempts: 3 }),
       httpLink({
         url: `http://localhost:${httpPort}`,
+        headers: {},
       }),
     ],
-    headers: {},
   });
 
   const result = await client.query('hello');

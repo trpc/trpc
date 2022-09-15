@@ -5,6 +5,7 @@ import {
   WebSocketClientOptions,
   createTRPCClientProxy,
   createWSClient,
+  httpBatchLink,
 } from '@trpc/client/src';
 import { createTRPCClient } from '@trpc/client/src';
 import { WithTRPCConfig } from '@trpc/next';
@@ -67,7 +68,7 @@ export function routerToServerAndClientNew<TRouter extends AnyNewRouter>(
     ...opts?.wsClient,
   });
   const trpcClientOptions: WithTRPCConfig<typeof router> = {
-    url: httpUrl,
+    links: [httpBatchLink({ url: httpUrl })],
     ...(opts?.client
       ? typeof opts.client === 'function'
         ? opts.client({ httpUrl, wssUrl, wsClient })
