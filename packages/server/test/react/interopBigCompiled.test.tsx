@@ -30,7 +30,11 @@ test('raw client', async () => {
 
   try {
     const proxy = createTRPCProxyClient<AppRouter>({
-      url: 'http://localhost:-1',
+      links: [
+        httpBatchLink({
+          url: 'http://localhost:-1',
+        }),
+      ],
     });
     const result = await proxy.r0.greeting.query({ who: 'KATT' });
 

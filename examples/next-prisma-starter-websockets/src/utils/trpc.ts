@@ -3,6 +3,7 @@ import { loggerLink } from '@trpc/client/links/loggerLink';
 import { wsLink, createWSClient } from '@trpc/client/links/wsLink';
 import { createTRPCNext } from '@trpc/next';
 import type { inferProcedureOutput } from '@trpc/server';
+import { NextPageContext } from 'next';
 import getConfig from 'next/config';
 import { AppRouter } from 'server/routers/_app';
 import superjson from 'superjson';
@@ -14,10 +15,20 @@ const { publicRuntimeConfig } = getConfig();
 
 const { APP_URL, WS_URL } = publicRuntimeConfig;
 
-function getEndingLink() {
+function getEndingLink(ctx: NextPageContext | undefined) {
   if (typeof window === 'undefined') {
     return httpBatchLink({
       url: `${APP_URL}/api/trpc`,
+      headers() {
+        if (ctx?.req) {
+          // on ssr, forward client's headers to the server
+          return {
+            ...ctx.req.headers,
+            'x-ssr': '1',
+          };
+        }
+        return {};
+      },
     });
   }
   const client = createWSClient({
@@ -51,7 +62,7 @@ export const trpc = createTRPCNext<AppRouter>({
               typeof window !== 'undefined') ||
             (opts.direction === 'down' && opts.result instanceof Error),
         }),
-        getEndingLink(),
+        getEndingLink(ctx),
       ],
       /**
        * @link https://trpc.io/docs/data-transformers
@@ -61,16 +72,6 @@ export const trpc = createTRPCNext<AppRouter>({
        * @link https://react-query.tanstack.com/reference/QueryClient
        */
       queryClientConfig: { defaultOptions: { queries: { staleTime: 60 } } },
-      headers: () => {
-        if (ctx?.req) {
-          // on ssr, forward client's headers to the server
-          return {
-            ...ctx.req.headers,
-            'x-ssr': '1',
-          };
-        }
-        return {};
-      },
     };
   },
   /**
