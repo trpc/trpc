@@ -26,20 +26,20 @@ export const tweets = [
     "content": "The speed in which you get feedback from tRPC is incredible. It uses the power of TypeScript so if you change somet… "
   },
   {
+    "id": "1569341560646402051",
+    "name": "Anders Bech Mellson",
+    "handle": "andersmellson",
+    "date": "Sep 12",
+    "avatar": "https://pbs.twimg.com/profile_images/1548373336287113216/6oOIlYgP_normal.jpg",
+    "content": "Spent today playing with @trpcio v10 and I'm officially in love 😍 ps. Don't tell my wife 🙊"
+  },
+  {
     "id": "1569033706131562496",
     "name": "Christian Legge",
     "handle": "christian_legge",
     "date": "Sep 11",
     "avatar": "https://pbs.twimg.com/profile_images/1569016481286864897/G7rAUufS_normal.jpg",
     "content": "Spent all of yesterday learning and implementing @trpcio and wow, what a great investment. I can't believe how much… "
-  },
-  {
-    "id": "1558827229424979973",
-    "name": "Rey Mooy",
-    "handle": "itzyaboirey",
-    "date": "Aug 14",
-    "avatar": "https://pbs.twimg.com/profile_images/1564202144109977600/t4D80P02_normal.jpg",
-    "content": "Yo, first time trying @trpcio and it's mind blowing 🤯"
   },
   {
     "id": "1567560240882716677",
@@ -146,19 +146,19 @@ export const tweets = [
     "content": "I’ve been playing with @trpcio and Solito together and this is without a doubt the fastest way to iterate on an api… "
   },
   {
+    "id": "1569588272392990720",
+    "name": "Sock, the dev",
+    "handle": "sockthedev",
+    "date": "Sep 13",
+    "avatar": "https://pbs.twimg.com/profile_images/1569584517161324544/po3hKnjN_normal.jpg",
+    "content": "If you are all in on TypeScript you MUST use tRPC for your API. No ifs, no buts. \n\ntRPC destroys the boundary betwe… "
+  },
+  {
     "id": "1562081793863475201",
     "name": "Jökull Solberg",
     "handle": "jokull",
     "date": "Aug 23",
     "avatar": "https://pbs.twimg.com/profile_images/1389495075248484354/pmii-f0T_normal.jpg",
     "content": "tRPC is insane. I’m building a Stripe integration – I return Stripe API payloads from the server I get the response… "
-  },
-  {
-    "id": "1556633654679445506",
-    "name": "Doot | ddot",
-    "handle": "ddotgg",
-    "date": "Aug 08",
-    "avatar": "https://pbs.twimg.com/profile_images/1561737413583638535/t37pLCLY_normal.png",
-    "content": "@alexdotjs Woah! Hey alex! Thanks for all your hard work on trpc. it’s been a joy to learn."
   }
 ]
