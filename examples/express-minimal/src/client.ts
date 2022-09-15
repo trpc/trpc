@@ -1,4 +1,4 @@
-import { createTRPCProxyClient } from '@trpc/client';
+import { createTRPCProxyClient, httpBatchLink } from '@trpc/client';
 import fetch from 'node-fetch';
 import type { AppRouter } from './router';
 
@@ -7,7 +7,11 @@ global.fetch = fetch as any;
 
 async function main() {
   const client = createTRPCProxyClient<AppRouter>({
-    url: 'http://localhost:3000/trpc',
+    links: [
+      httpBatchLink({
+        url: 'http://localhost:3000/trpc',
+      }),
+    ],
   });
 
   const withoutInputQuery = await client.hello.greeting.query();
