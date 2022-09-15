@@ -30,7 +30,7 @@ import { getQueryKey } from '../../internals/getQueryKey';
 
 type DecorateProcedure<
   TRouter extends AnyRouter,
-  TProcedure extends AnyProcedure,
+  TProcedure extends AnyQueryProcedure,
 > = {
   /**
    * @link https://react-query.tanstack.com/guides/prefetching
