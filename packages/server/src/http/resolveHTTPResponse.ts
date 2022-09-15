@@ -2,6 +2,7 @@
 import {
   AnyRouter,
   ProcedureType,
+  callProcedure,
   inferRouterContext,
   inferRouterError,
 } from '../core';
@@ -180,8 +181,13 @@ export async function resolveHTTPResponse<
         const input = inputs[index];
 
         try {
-          const caller = router.createCaller(ctx);
-          const output = await caller[type](path, input as any);
+          const output = await callProcedure({
+            procedures: router._def.procedures,
+            path,
+            rawInput: input,
+            ctx,
+            type,
+          });
           return {
             input,
             path,

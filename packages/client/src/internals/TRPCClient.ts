@@ -56,22 +56,6 @@ export type CreateTRPCClientOptions<TRouter extends AnyRouter> =
       links: TRPCLink<TRouter>[];
     };
 
-export type AssertType<T, K> = T extends K ? T : never;
-/**
- * @deprecated
- */
-export type AssertLegacyDef<TRouter extends AnyRouter> =
-  TRouter['_def']['legacy'] extends Record<
-    'subscriptions' | 'queries' | 'mutations',
-    ProcedureRecord
-  >
-    ? TRouter['_def']['legacy']
-    : {
-        subscriptions: {};
-        queries: {};
-        mutations: {};
-      };
-
 export class TRPCClient<TRouter extends AnyRouter> {
   private readonly links: OperationLink<TRouter>[];
   public readonly runtime: TRPCClientRuntime;
@@ -153,11 +137,9 @@ export class TRPCClient<TRouter extends AnyRouter> {
     return abortablePromise;
   }
   public query<
-    TQueries extends AssertLegacyDef<TRouter>['queries'],
+    TQueries extends TRouter['_def']['queries'],
     TPath extends string & keyof TQueries,
-    TInput extends inferProcedureInput<
-      AssertType<TQueries, ProcedureRecord>[TPath]
-    >,
+    TInput extends inferProcedureInput<TQueries[TPath]>,
   >(path: TPath, input?: TInput, opts?: TRPCRequestOptions) {
     type TOutput = inferProcedureOutput<TQueries[TPath]>;
     return this.requestAsPromise<TInput, TOutput>({
@@ -169,11 +151,9 @@ export class TRPCClient<TRouter extends AnyRouter> {
     });
   }
   public mutation<
-    TMutations extends AssertLegacyDef<TRouter>['mutations'],
+    TMutations extends TRouter['_def']['mutations'],
     TPath extends string & keyof TMutations,
-    TInput extends inferProcedureInput<
-      AssertType<TMutations, ProcedureRecord>[TPath]
-    >,
+    TInput extends inferProcedureInput<TMutations[TPath]>,
   >(path: TPath, input?: TInput, opts?: TRPCRequestOptions) {
     type TOutput = inferProcedureOutput<TMutations[TPath]>;
     return this.requestAsPromise<TInput, TOutput>({
@@ -185,12 +165,10 @@ export class TRPCClient<TRouter extends AnyRouter> {
     });
   }
   public subscription<
-    TSubscriptions extends AssertLegacyDef<TRouter>['subscriptions'],
+    TSubscriptions extends TRouter['_def']['subscriptions'],
     TPath extends string & keyof TSubscriptions,
     TOutput extends inferSubscriptionOutput<TRouter, TPath>,
-    TInput extends inferProcedureInput<
-      AssertType<TSubscriptions, ProcedureRecord>[TPath]
-    >,
+    TInput extends inferProcedureInput<TSubscriptions[TPath]>,
   >(
     path: TPath,
     input: TInput,

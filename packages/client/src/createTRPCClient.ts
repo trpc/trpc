@@ -39,5 +39,4 @@ export type {
   AssertLegacyDef,
   CreateTRPCClientOptions,
   TRPCClient,
-  TRPCRequestOptions,
 } from './internals/TRPCClient';

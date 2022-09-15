@@ -6,6 +6,10 @@ export type {
 export { callProcedure } from './router';
 export type {
   Procedure,
+  AnyProcedure,
+  AnyQueryProcedure,
+  AnyMutationProcedure,
+  AnySubscriptionProcedure,
   ProcedureParams,
   ProcedureArgs,
   ProcedureOptions,

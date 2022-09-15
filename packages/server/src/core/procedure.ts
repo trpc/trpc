@@ -105,14 +105,16 @@ export interface ProcedureBase<
 
 export interface QueryProcedure<TParams extends ProcedureParams>
   extends ProcedureBase<'query', TParams> {}
+export type AnyQueryProcedure = QueryProcedure<any>;
 
 export interface MutationProcedure<TParams extends ProcedureParams>
   extends ProcedureBase<'mutation', TParams> {}
+export type AnyMutationProcedure = MutationProcedure<any>;
 
 export interface SubscriptionProcedure<TParams extends ProcedureParams>
   extends ProcedureBase<'subscription', TParams> {}
+export type AnySubscriptionProcedure = SubscriptionProcedure<any>;
 
 export interface Procedure<TParams extends ProcedureParams>
   extends ProcedureBase<ProcedureType, TParams> {}
-
 export type AnyProcedure = Procedure<any>;

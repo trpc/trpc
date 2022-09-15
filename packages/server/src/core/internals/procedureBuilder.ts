@@ -9,8 +9,11 @@ import {
 } from '../middleware';
 import { Parser, inferParser } from '../parser';
 import {
+  AnyMutationProcedure,
+  AnyProcedure,
+  AnyQueryProcedure,
+  AnySubscriptionProcedure,
   MutationProcedure,
-  Procedure,
   ProcedureParams,
   QueryProcedure,
   SubscriptionProcedure,
@@ -251,19 +254,19 @@ export function createBuilder<TConfig extends RootConfig>(
       return createResolver(
         { ..._def, query: true },
         resolver,
-      ) as QueryProcedure<any>;
+      ) as AnyQueryProcedure;
     },
     mutation(resolver) {
       return createResolver(
         { ..._def, mutation: true },
         resolver,
-      ) as MutationProcedure<any>;
+      ) as AnyMutationProcedure;
     },
     subscription(resolver) {
       return createResolver(
         { ..._def, subscription: true },
         resolver,
-      ) as SubscriptionProcedure<any>;
+      ) as AnySubscriptionProcedure;
     },
   };
 }
@@ -312,7 +315,7 @@ const caller = appRouter.createCaller({
 const result = await caller.call('myProcedure', input);
 `.trim();
 
-function createProcedureCaller(_def: AnyProcedureBuilderDef): Procedure<any> {
+function createProcedureCaller(_def: AnyProcedureBuilderDef): AnyProcedure {
   const procedure = async function resolve(opts: ProcedureCallOptions) {
     // is direct server-side call
     if (!opts || !('rawInput' in opts)) {
@@ -379,5 +382,5 @@ function createProcedureCaller(_def: AnyProcedureBuilderDef): Procedure<any> {
   procedure._def = _def;
   procedure.meta = _def.meta;
 
-  return procedure as Procedure<any>;
+  return procedure as AnyProcedure;
 }
