@@ -1,11 +1,10 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import type { AnyRouter } from '@trpc/server';
+import type { AnyRouter, ClientDataTransformerOptions } from '@trpc/server';
 import {
   TRPCClient as Client,
   CreateTRPCClientOptions,
-  TRPCRequestOptions,
 } from './internals/TRPCClient';
 import { httpBatchLink } from './links';
 import { HTTPLinkOptions } from './links/internals/httpUtils';
@@ -17,6 +16,7 @@ export function createTRPCClient<TRouter extends AnyRouter>(
   opts:
     | CreateTRPCClientOptions<TRouter>
     | {
+        transformer?: ClientDataTransformerOptions;
         /**
          * @deprecated use `links` instead
          */
@@ -42,6 +42,7 @@ export function createTRPCClient<TRouter extends AnyRouter>(
     return [httpBatchLink(opts)];
   };
   const client = new Client<TRouter>({
+    transformer: opts.transformer,
     links: getLinks(),
   });
   return client;
