@@ -214,6 +214,10 @@ h5 {
   @apply flex items-center text-lg;
 }
 
+.theme-admonition a {
+  @apply font-semibold;
+}
+
 /**
  * Disable underline for some links
  **/
