@@ -10,15 +10,15 @@ import {
 import { Updater } from '@tanstack/react-query/build/types/packages/query-core/src/utils';
 import { TRPCClientError } from '@trpc/client';
 import {
+  AnyProcedure,
+  AnyQueryProcedure,
   AnyRouter,
-  OmitNeverKeys,
-  Procedure,
+  Filter,
   ProcedureOptions,
-  QueryProcedure,
   inferProcedureInput,
   inferProcedureOutput,
 } from '@trpc/server';
-import { LegacyV9ProcedureTag, createProxy } from '@trpc/server/shared';
+import { createProxy } from '@trpc/server/shared';
 import {
   TRPCContextProps,
   TRPCContextState,
@@ -30,7 +30,7 @@ import { getQueryKey } from '../../internals/getQueryKey';
 
 type DecorateProcedure<
   TRouter extends AnyRouter,
-  TProcedure extends Procedure<any>,
+  TProcedure extends AnyProcedure,
 > = {
   /**
    * @link https://react-query.tanstack.com/guides/prefetching
@@ -149,17 +149,15 @@ type DecorateProcedure<
 /**
  * @internal
  */
-export type DecoratedProcedureUtilsRecord<TRouter extends AnyRouter> =
-  OmitNeverKeys<{
-    [TKey in keyof TRouter['_def']['record']]: TRouter['_def']['record'][TKey] extends LegacyV9ProcedureTag
-      ? never
-      : TRouter['_def']['record'][TKey] extends AnyRouter
-      ? DecoratedProcedureUtilsRecord<TRouter['_def']['record'][TKey]>
-      : // utils only apply to queries
-      TRouter['_def']['record'][TKey] extends QueryProcedure<any>
-      ? DecorateProcedure<TRouter, TRouter['_def']['record'][TKey]>
-      : never;
-  }>;
+export type DecoratedProcedureUtilsRecord<TRouter extends AnyRouter> = {
+  [TKey in keyof Filter<
+    TRouter['_def']['record'],
+    AnyRouter | AnyQueryProcedure
+  >]: TRouter['_def']['record'][TKey] extends AnyRouter
+    ? DecoratedProcedureUtilsRecord<TRouter['_def']['record'][TKey]>
+    : // utils only apply to queries
+      DecorateProcedure<TRouter, TRouter['_def']['record'][TKey]>;
+};
 
 type AnyDecoratedProcedure = DecorateProcedure<any, any>;
 

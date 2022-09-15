@@ -181,7 +181,7 @@ export async function resolveHTTPResponse<
         const input = inputs[index];
 
         try {
-          const output = callProcedure({
+          const output = await callProcedure({
             procedures: router._def.procedures,
             path,
             rawInput: input,

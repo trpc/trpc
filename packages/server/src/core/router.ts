@@ -13,12 +13,12 @@ import { mergeWithoutOverrides } from './internals/mergeWithoutOverrides';
 import { omitPrototype } from './internals/omitPrototype';
 import { ProcedureCallOptions } from './internals/procedureBuilder';
 import {
+  AnyMutationProcedure,
   AnyProcedure,
-  MutationProcedure,
+  AnyQueryProcedure,
+  AnySubscriptionProcedure,
   Procedure,
   ProcedureArgs,
-  QueryProcedure,
-  SubscriptionProcedure,
 } from './procedure';
 import { ProcedureType, inferProcedureOutput, procedureTypes } from './types';
 
@@ -28,9 +28,9 @@ export type ProcedureRecord = Record<string, AnyProcedure>;
 export type ProcedureRouterRecord = Record<string, AnyProcedure | AnyRouter>;
 
 export interface ProcedureStructure {
-  queries: Record<string, QueryProcedure<any>>;
-  mutations: Record<string, MutationProcedure<any>>;
-  subscriptions: Record<string, SubscriptionProcedure<any>>;
+  queries: Record<string, AnyQueryProcedure>;
+  mutations: Record<string, AnyMutationProcedure>;
+  subscriptions: Record<string, AnySubscriptionProcedure>;
   procedures: ProcedureRecord;
 }
 
@@ -57,11 +57,6 @@ export interface RouterDef<
   errorFormatter: ErrorFormatter<TContext, TErrorShape>;
   transformer: CombinedDataTransformer;
   procedures: TRecord;
-  /**
-   * V9 procedures
-   * @deprecated
-   */
-  legacy: {};
   record: TRecord;
   /**
    * V9 queries
@@ -85,7 +80,7 @@ export type AnyRouterDef<TContext = any> = RouterDef<TContext, any, any, any>;
 /**
  * @internal
  */
-export type inferHandlerInput<TProcedure extends Procedure<any>> =
+export type inferHandlerInput<TProcedure extends AnyProcedure> =
   TProcedure extends Procedure<infer TDef>
     ? undefined extends TDef['_input_in'] // ? is input optional
       ? unknown extends TDef['_input_in'] // ? is input unset
@@ -97,7 +92,7 @@ export type inferHandlerInput<TProcedure extends Procedure<any>> =
 /**
  * @internal
  */
-type inferHandlerFn<TProcedures extends Record<string, Procedure<any>>> = <
+type inferHandlerFn<TProcedures extends ProcedureRecord> = <
   TProcedure extends TProcedures[TPath],
   TPath extends keyof TProcedures & string,
 >(
@@ -105,11 +100,9 @@ type inferHandlerFn<TProcedures extends Record<string, Procedure<any>>> = <
   ...args: inferHandlerInput<TProcedure>
 ) => Promise<inferProcedureOutput<TProcedure>>;
 
-type DecorateProcedure<TProcedure extends Procedure<any>> = (
+type DecorateProcedure<TProcedure extends AnyProcedure> = (
   input: ProcedureArgs<TProcedure['_def']>[0],
 ) => Promise<TProcedure['_def']['_output_out']>;
-
-type assertProcedure<T> = T extends Procedure<any> ? T : never;
 
 /**
  * @internal
@@ -117,7 +110,9 @@ type assertProcedure<T> = T extends Procedure<any> ? T : never;
 type DecoratedProcedureRecord<TProcedures extends ProcedureRouterRecord> = {
   [TKey in keyof TProcedures]: TProcedures[TKey] extends AnyRouter
     ? DecoratedProcedureRecord<TProcedures[TKey]['_def']['record']>
-    : DecorateProcedure<assertProcedure<TProcedures[TKey]>>;
+    : TProcedures[TKey] extends AnyProcedure
+    ? DecorateProcedure<TProcedures[TKey]>
+    : never;
 };
 
 /**
@@ -209,7 +204,7 @@ export function createRouterFactory<TConfig extends RootConfig>(
     >
   > &
     TProcRouterRecord {
-    const routerProcedures: Record<string, Procedure<any>> = omitPrototype({});
+    const routerProcedures: ProcedureRecord = omitPrototype({});
     function recursiveGetPaths(procedures: ProcedureRouterRecord, path = '') {
       for (const [key, procedureOrRouter] of Object.entries(procedures ?? {})) {
         const newPath = `${path}${key}`;
@@ -237,7 +232,6 @@ export function createRouterFactory<TConfig extends RootConfig>(
 
     const _def: AnyRouterDef<TConfig['ctx']> = {
       router: true,
-      legacy: {},
       procedures: {},
       ...emptyRouter,
       ...result,

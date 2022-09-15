@@ -13,7 +13,6 @@ import {
   hashQueryKey,
 } from '@tanstack/react-query';
 import {
-  AssertLegacyDef,
   CreateTRPCClientOptions,
   TRPCClient,
   TRPCClientErrorLike,
@@ -43,8 +42,6 @@ import {
   TRPCContextProps,
   TRPCContextState,
 } from '../../internals/context';
-
-export type AssertType<T, K> = T extends K ? T : never;
 
 export type OutputWithCursor<TData, TCursor extends any = any> = {
   cursor: TCursor | null;
@@ -151,18 +148,9 @@ export function createHooksInternal<
   TRouter extends AnyRouter,
   TSSRContext = unknown,
 >() {
-  type TQueries = AssertType<
-    AssertLegacyDef<TRouter>['queries'],
-    ProcedureRecord
-  >;
-  type TSubscriptions = AssertType<
-    AssertLegacyDef<TRouter>['subscriptions'],
-    ProcedureRecord
-  >;
-  type TMutations = AssertType<
-    AssertLegacyDef<TRouter>['mutations'],
-    ProcedureRecord
-  >;
+  type TQueries = TRouter['_def']['queries'];
+  type TSubscriptions = TRouter['_def']['subscriptions'];
+  type TMutations = TRouter['_def']['mutations'];
 
   type TError = TRPCClientErrorLike<TRouter>;
   type TInfiniteQueryNames = inferInfiniteQueryNames<TQueries>;

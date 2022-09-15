@@ -2,14 +2,14 @@ import {
   AnyRouter,
   DefaultErrorShape,
   Maybe,
-  Procedure,
   inferRouterError,
 } from '@trpc/server';
 import { TRPCErrorResponse } from '@trpc/server/rpc';
+import { AnyProcedure } from 'packages/server/dist';
 
-type RouterOrProcedure = AnyRouter | Procedure<any>;
+type RouterOrProcedure = AnyRouter | AnyProcedure;
 
-type inferErrorShape<TRouterOrProcedure extends AnyRouter | Procedure<any>> =
+type inferErrorShape<TRouterOrProcedure extends RouterOrProcedure> =
   TRouterOrProcedure extends AnyRouter
     ? inferRouterError<TRouterOrProcedure>
     : TRouterOrProcedure['_def']['_config']['errorShape'];

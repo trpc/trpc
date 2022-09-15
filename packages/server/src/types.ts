@@ -63,15 +63,3 @@ type FilterKeys<T extends object, K> = {
  * @internal
  */
 export type Filter<T extends object, K> = Pick<T, FilterKeys<T, K>>;
-
-/**
- * @internal
- */
-export type NeverKeys<T> = {
-  [TKey in keyof T]: T[TKey] extends never ? TKey : never;
-}[keyof T];
-
-/**
- * @internal
- */
-export type OmitNeverKeys<T> = Omit<T, NeverKeys<T>>;
