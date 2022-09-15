@@ -30,18 +30,6 @@ export type inferHandlerInput<TProcedure extends AnyProcedure> = ProcedureArgs<
 export type inferProcedureInput<TProcedure extends AnyProcedure> =
   inferHandlerInput<TProcedure>[0];
 
-// /**
-//  * @internal
-//  */
-// type inferProcedureFn<TProcedure extends AnyProcedure> =
-//   TProcedure extends AnyQueryProcedure
-//     ? TProcedure['query']
-//     : TProcedure extends AnySubscriptionProcedure
-//     ? TProcedure['subscription']
-//     : TProcedure extends AnyMutationProcedure
-//     ? TProcedure['mutate']
-//     : never;
-
 export type inferProcedureParams<TProcedure> = TProcedure extends AnyProcedure
   ? TProcedure['_def']
   : never;
