@@ -4,7 +4,11 @@
 import { appRouter as bigV10Router } from '../__generated__/bigBoi/_app';
 import { t } from '../__generated__/bigBoi/_trpc';
 import { bigRouter as bigV9Router } from '../__generated__/bigLegacyRouter/bigRouter';
-import { createTRPCClient, createTRPCProxyClient } from '@trpc/client';
+import {
+  createTRPCClient,
+  createTRPCProxyClient,
+  httpBatchLink,
+} from '@trpc/client';
 import { createReactQueryHooks } from '@trpc/react';
 import { expectTypeOf } from 'expect-type';
 
