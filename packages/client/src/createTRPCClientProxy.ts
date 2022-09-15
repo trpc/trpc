@@ -7,7 +7,6 @@ import type {
   AnyQueryProcedure,
   AnyRouter,
   AnySubscriptionProcedure,
-  Procedure,
   ProcedureArgs,
   ProcedureRouterRecord,
   ProcedureType,
