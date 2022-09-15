@@ -1,10 +1,4 @@
-import {
-  createTRPCClient,
-  createTRPCClientProxy,
-  createTRPCProxyClient,
-  httpBatchLink,
-  loggerLink,
-} from '@trpc/client';
+import { createTRPCProxyClient, httpBatchLink, loggerLink } from '@trpc/client';
 import { tap } from '@trpc/server/observable';
 import AbortController from 'abort-controller';
 import fetch from 'node-fetch';
