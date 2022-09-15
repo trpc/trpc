@@ -1,6 +1,6 @@
 import fs from 'fs';
 
-const NUM_ROUTERS = 50;
+const NUM_ROUTERS = 500;
 
 function createRouter(routerName: string) {
   return `
