@@ -190,8 +190,9 @@ export function createHooksInternal<
     const queryKeyArrayed = Array.isArray(queryKey) ? queryKey : [queryKey];
     const [path, ...input] = queryKeyArrayed;
 
-    // Handle the case of acting on all queries ... path will not be passed
-    if (typeof path !== 'string') {
+    // Handle the case of acting on all queries ... path will not be passed or
+    // it will be an empty string
+    if (typeof path !== 'string' || path === '') {
       return [];
     } else {
       const arrayPath = path.split('.');

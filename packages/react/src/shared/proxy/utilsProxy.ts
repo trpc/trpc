@@ -179,7 +179,9 @@ export type DecoratedProcedureUtilsRecord<TRouter extends AnyRouter> =
       TRouter['_def']['record'][TKey] extends QueryProcedure<any>
       ? DecorateProcedure<TRouter, TRouter['_def']['record'][TKey]>
       : never;
-  }>;
+  }> &
+    // Add functions that should be available at utils root
+    DecoratePartialPathProcedure;
 
 type AnyDecoratedProcedure = DecorateProcedure<any, any>;
 
