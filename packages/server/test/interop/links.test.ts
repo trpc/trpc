@@ -4,8 +4,6 @@
 import { legacyRouterToServerAndClient } from './__legacyRouterToServerAndClient';
 import { OperationLink, TRPCClientRuntime } from '@trpc/client/src';
 import { createChain } from '@trpc/client/src/links/internals/createChain';
-import AbortController from 'abort-controller';
-import fetch from 'node-fetch';
 import { z } from 'zod';
 import {
   TRPCClientError,
@@ -327,7 +325,7 @@ test('create client with links', async () => {
   close();
 });
 
-test('loggerLink', () => {
+describe('loggerLink', () => {
   const logger = {
     error: jest.fn(),
     log: jest.fn(),
@@ -348,7 +346,13 @@ test('loggerLink', () => {
     observable((o) => {
       o.error(new TRPCClientError('..'));
     });
-  {
+
+  beforeEach(() => {
+    logger.error.mockReset();
+    logger.log.mockReset();
+  });
+
+  test('query', () => {
     createChain({
       links: [logLink, okLink],
       op: {
@@ -373,11 +377,9 @@ test('loggerLink', () => {
           padding: 2px;
         "
     `);
-    logger.error.mockReset();
-    logger.log.mockReset();
-  }
+  });
 
-  {
+  test('subscription', () => {
     createChain({
       links: [logLink, okLink],
       op: {
@@ -396,11 +398,9 @@ test('loggerLink', () => {
     expect(logger.log.mock.calls[1]![0]!).toMatchInlineSnapshot(
       `"%c << subscription #1 %cn/a%c %O"`,
     );
-    logger.error.mockReset();
-    logger.log.mockReset();
-  }
+  });
 
-  {
+  test('mutation', () => {
     createChain({
       links: [logLink, okLink],
       op: {
@@ -420,11 +420,9 @@ test('loggerLink', () => {
     expect(logger.log.mock.calls[1]![0]!).toMatchInlineSnapshot(
       `"%c << mutation #1 %cn/a%c %O"`,
     );
-    logger.error.mockReset();
-    logger.log.mockReset();
-  }
+  });
 
-  {
+  test('query 2', () => {
     createChain({
       links: [logLink, errorLink],
       op: {
@@ -444,12 +442,9 @@ test('loggerLink', () => {
     expect(logger.error.mock.calls[0]![0]!).toMatchInlineSnapshot(
       `"%c << query #1 %cn/a%c %O"`,
     );
-    logger.error.mockReset();
-    logger.log.mockReset();
-  }
+  });
 
-  // custom logger
-  {
+  test('custom logger', () => {
     const logFn = jest.fn();
     createChain({
       links: [loggerLink({ logger: logFn })(mockRuntime), errorLink],
@@ -488,7 +483,7 @@ test('loggerLink', () => {
         "type": "query",
       }
     `);
-  }
+  });
 });
 
 test('chain makes unsub', async () => {
