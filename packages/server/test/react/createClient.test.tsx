@@ -4,7 +4,7 @@ import { QueryClientProvider } from '@tanstack/react-query';
 import { render, waitFor } from '@testing-library/react';
 import { konn } from 'konn';
 import React, { ReactNode, useState } from 'react';
-import { createTRPCReact } from '../../../react/src';
+import { createTRPCReact, httpBatchLink } from '../../../react/src';
 import { createProxySSGHelpers } from '../../../react/src/ssg';
 import { initTRPC } from '../../src';
 
@@ -21,7 +21,13 @@ const ctx = konn()
 
     function App(props: { children: ReactNode }) {
       const [client] = useState(() =>
-        proxy.createClient({ url: opts.httpUrl }),
+        proxy.createClient({
+          links: [
+            httpBatchLink({
+              url: opts.httpUrl,
+            }),
+          ],
+        }),
       );
       return (
         <proxy.Provider {...{ queryClient, client }}>

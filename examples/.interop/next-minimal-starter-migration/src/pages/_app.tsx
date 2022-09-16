@@ -1,3 +1,4 @@
+import { httpBatchLink } from '@trpc/client';
 import { withTRPC } from '@trpc/next';
 import { AppType } from 'next/dist/shared/lib/utils';
 import { AppRouter } from './api/trpc/[trpc]';
@@ -10,7 +11,7 @@ export default withTRPC<AppRouter>({
   config({ ctx }) {
     const url = 'http://localhost:3000/api/trpc';
     return {
-      url,
+      links: [httpBatchLink({ url })],
     };
   },
 })(MyApp);

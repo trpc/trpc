@@ -284,8 +284,15 @@ describe('integration tests', () => {
           server: {
             createContext,
           },
-          client: {
-            headers: () => headers,
+          client({ httpUrl }) {
+            return {
+              links: [
+                httpBatchLink({
+                  headers,
+                  url: httpUrl,
+                }),
+              ],
+            };
           },
         },
       );

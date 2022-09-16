@@ -21,6 +21,7 @@ import { TRPCClientError } from './TRPCClientError';
 import { CreateTRPCClientOptions, createTRPCClient } from './createTRPCClient';
 import {
   TRPCClient as Client,
+  TRPCClient,
   TRPCSubscriptionObserver,
 } from './internals/TRPCClient';
 
@@ -111,7 +112,7 @@ export function createTRPCClientProxy<TRouter extends AnyRouter>(
 export function createTRPCProxyClient<TRouter extends AnyRouter>(
   opts: CreateTRPCClientOptions<TRouter>,
 ) {
-  const client = createTRPCClient<TRouter>(opts);
+  const client = new TRPCClient<TRouter>(opts);
   const proxy = createTRPCClientProxy(client);
   return proxy;
 }

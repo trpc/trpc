@@ -1,3 +1,5 @@
+import { Maybe } from '@trpc/server';
+
 export function getWindow() {
   if (typeof window !== 'undefined') {
     return window;
@@ -5,7 +7,7 @@ export function getWindow() {
   return globalThis;
 }
 export function getAbortController(
-  ac?: typeof AbortController,
-): typeof AbortController | undefined {
-  return ac ?? getWindow().AbortController ?? undefined;
+  ac: Maybe<typeof AbortController>,
+): typeof AbortController | null {
+  return ac ?? getWindow().AbortController ?? null;
 }

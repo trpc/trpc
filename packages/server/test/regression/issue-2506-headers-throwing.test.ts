@@ -23,11 +23,11 @@ describe('httpLink', () => {
             links: [
               httpLink({
                 url: httpUrl,
+                headers() {
+                  throw new Error('Bad headers fn');
+                },
               }),
             ],
-            headers() {
-              throw new Error('Bad headers fn');
-            },
           };
         },
       });
@@ -58,11 +58,11 @@ describe('httpBatchLink', () => {
             links: [
               httpBatchLink({
                 url: httpUrl,
+                headers() {
+                  throw new Error('Bad headers fn');
+                },
               }),
             ],
-            headers() {
-              throw new Error('Bad headers fn');
-            },
           };
         },
       });

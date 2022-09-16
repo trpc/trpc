@@ -1,5 +1,5 @@
 import { legacyRouterToServerAndClient } from './__legacyRouterToServerAndClient';
-import { HTTPHeaders } from '@trpc/client';
+import { HTTPHeaders, httpBatchLink } from '@trpc/client';
 import { AsyncLocalStorage } from 'async_hooks';
 import { expectTypeOf } from 'expect-type';
 import { z } from 'zod';
@@ -150,8 +150,10 @@ test('allows you to throw an error (e.g. auth)', async () => {
           return {};
         },
       },
-      client: {
-        headers,
+      client({ httpUrl }) {
+        return {
+          links: [httpBatchLink({ url: httpUrl, headers })],
+        };
       },
     },
   );

@@ -2,6 +2,7 @@ import {
   AnyRouter,
   ClientDataTransformerOptions,
   DataTransformer,
+  ProcedureRecord,
   inferProcedureInput,
   inferProcedureOutput,
   inferSubscriptionOutput,
@@ -13,32 +14,15 @@ import {
   share,
 } from '@trpc/server/observable';
 import { TRPCClientError } from '../TRPCClientError';
-import { getFetch } from '../getFetch';
-import { httpBatchLink } from '../links';
 import { createChain } from '../links/internals/createChain';
 import {
-  HTTPHeaders,
   OperationContext,
   OperationLink,
   TRPCClientRuntime,
   TRPCLink,
 } from '../links/types';
-import { getAbortController } from './fetchHelpers';
 
 interface CreateTRPCClientBaseOptions {
-  /**
-   * Add ponyfill for fetch
-   */
-  fetch?: typeof fetch;
-  /**
-   * Add ponyfill for AbortController
-   */
-  AbortController?: typeof AbortController;
-  /**
-   * Headers to be set on outgoing requests or a callback that of said headers
-   * @link http://localhost:3000/docs/v10/header
-   */
-  headers?: HTTPHeaders | (() => HTTPHeaders | Promise<HTTPHeaders>);
   /**
    * Data transformer
    * @link https://trpc.io/docs/data-transformers
@@ -68,16 +52,9 @@ export interface TRPCSubscriptionObserver<TValue, TError> {
  * @internal
  */
 export type CreateTRPCClientOptions<TRouter extends AnyRouter> =
-  | CreateTRPCClientBaseOptions &
-      (
-        | {
-            links: TRPCLink<TRouter>[];
-          }
-        | {
-            url: string;
-            links?: never;
-          }
-      );
+  | CreateTRPCClientBaseOptions & {
+      links: TRPCLink<TRouter>[];
+    };
 
 export class TRPCClient<TRouter extends AnyRouter> {
   private readonly links: OperationLink<TRouter>[];
@@ -88,17 +65,7 @@ export class TRPCClient<TRouter extends AnyRouter> {
   }
 
   constructor(opts: CreateTRPCClientOptions<TRouter>) {
-    const _fetch = getFetch(opts?.fetch);
-    const AC = getAbortController(opts?.AbortController);
     this.requestId = 0;
-
-    function getHeadersFn(): TRPCClientRuntime['headers'] {
-      if (opts.headers) {
-        const headers = opts.headers;
-        return typeof headers === 'function' ? headers : () => headers;
-      }
-      return () => ({});
-    }
 
     function getTransformer(): DataTransformer {
       if (!opts.transformer)
@@ -115,20 +82,10 @@ export class TRPCClient<TRouter extends AnyRouter> {
     }
 
     this.runtime = {
-      AbortController: AC,
-      fetch: _fetch,
-      headers: getHeadersFn(),
       transformer: getTransformer(),
     };
-
-    const getLinks = (): OperationLink<TRouter>[] => {
-      if (opts.links) {
-        return opts.links.map((link) => link(this.runtime));
-      }
-      return [httpBatchLink({ url: opts.url })(this.runtime)];
-    };
-
-    this.links = getLinks();
+    // Initialize the links
+    this.links = opts.links.map((link) => link(this.runtime));
   }
 
   private $request<TInput = unknown, TOutput = unknown>({

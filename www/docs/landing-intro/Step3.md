@@ -12,7 +12,7 @@ const appRouter = t.router({
     .query((req) => {
       const { input } = req;
       return {
-        text: `Hello ${input.name}`,
+        text: `Hello ${input.name}` as const,
       };
   }),
 });
@@ -22,19 +22,21 @@ export type AppRouter = typeof appRouter;
 
 ```ts twoslash title='client.ts'
 // @module: esnext
+// @target: esnext
 // @include: server
 // @filename: client.ts
-import { createTRPCProxyClient } from '@trpc/client';
+import { createTRPCProxyClient, httpBatchLink } from '@trpc/client';
 import { AppRouter } from './server';
 
 // ---cut---
+const trpc = createTRPCProxyClient<AppRouter>({
+  links: [
+    httpBatchLink({
+      url: 'http://localhost:3000/trpc',
+    }),
+  ],
+});
 
-async function main() {
-  const client = createTRPCProxyClient<AppRouter>({
-    url: 'http://localhost:3000',
-  });
-
-  const res = await client.greeting.query({ name: 'John' });
-  //    ^?
-}
+const res = await trpc.greeting.query({ name: 'John' });
+//    ^?
 ```
