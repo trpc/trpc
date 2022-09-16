@@ -4,7 +4,7 @@
 /// <reference types="@cloudflare/workers-types" />
 import { Context, router } from './__router';
 import { Response as MiniflareResponse } from '@miniflare/core';
-import { createTRPCClient } from '@trpc/client/src';
+import { createTRPCClient, httpBatchLink } from '@trpc/client';
 import { Miniflare } from 'miniflare';
 import fetch from 'node-fetch';
 import * as trpc from '../../../src';
@@ -54,8 +54,7 @@ async function startServer() {
   const server = await mf.startServer();
 
   const client = createTRPCClient<typeof router>({
-    url,
-    fetch: fetch as any,
+    links: [httpBatchLink({ url, fetch: fetch as any })],
   });
 
   return {
@@ -98,11 +97,13 @@ test('simple query', async () => {
 
 test('query with headers', async () => {
   const client = createTRPCClient<typeof router>({
-    url,
-    fetch: fetch as any,
-    headers: {
-      authorization: 'meow',
-    },
+    links: [
+      httpBatchLink({
+        url,
+        fetch: fetch as any,
+        headers: { authorization: 'meow' },
+      }),
+    ],
   });
 
   expect(await client.query('hello')).toMatchInlineSnapshot(`

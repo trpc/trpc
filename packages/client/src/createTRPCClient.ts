@@ -1,39 +1,15 @@
-/* eslint-disable @typescript-eslint/no-non-null-assertion */
-
-/* eslint-disable @typescript-eslint/no-explicit-any */
-import type { AnyRouter, ClientDataTransformerOptions } from '@trpc/server';
+import type { AnyRouter } from '@trpc/server';
 import {
   TRPCClient as Client,
   CreateTRPCClientOptions,
 } from './internals/TRPCClient';
 import { httpBatchLink } from './links';
-import { HTTPLinkOptions } from './links/internals/httpUtils';
 
 /**
  * @deprecated use `createTRPCProxyClient` instead
  */
 export function createTRPCClient<TRouter extends AnyRouter>(
-  opts:
-    | CreateTRPCClientOptions<TRouter>
-    | {
-        transformer?: ClientDataTransformerOptions;
-        /**
-         * @deprecated use `links` instead
-         */
-        url: string;
-        /**
-         * @deprecated use `links` instead
-         */
-        headers?: HTTPLinkOptions['headers'];
-        /**
-         * @deprecated use `links` instead
-         */
-        fetch?: HTTPLinkOptions['fetch'];
-        /**
-         * @deprecated use `links` instead
-         */
-        AbortController?: HTTPLinkOptions['AbortController'];
-      },
+  opts: CreateTRPCClientOptions<TRouter>,
 ) {
   const getLinks = () => {
     if ('links' in opts) {

@@ -2,7 +2,6 @@ import {
   AnyRouter,
   ClientDataTransformerOptions,
   DataTransformer,
-  ProcedureRecord,
   inferProcedureInput,
   inferProcedureOutput,
   inferSubscriptionOutput,
@@ -47,10 +46,7 @@ export interface TRPCSubscriptionObserver<TValue, TError> {
   onComplete: () => void;
 }
 
-/**
- * This type prohibits `url` from being provided along with `links`
- * @internal
- */
+/** @internal */
 export type CreateTRPCClientOptions<TRouter extends AnyRouter> =
   | CreateTRPCClientBaseOptions & {
       links: TRPCLink<TRouter>[];
@@ -60,9 +56,6 @@ export class TRPCClient<TRouter extends AnyRouter> {
   private readonly links: OperationLink<TRouter>[];
   public readonly runtime: TRPCClientRuntime;
   private requestId: number;
-  private getRequestId() {
-    return ++this.requestId;
-  }
 
   constructor(opts: CreateTRPCClientOptions<TRouter>) {
     this.requestId = 0;
@@ -102,7 +95,7 @@ export class TRPCClient<TRouter extends AnyRouter> {
     const chain$ = createChain<TRouter, TInput, TOutput>({
       links: this.links as OperationLink<any, any, any>[],
       op: {
-        id: this.getRequestId(),
+        id: ++this.requestId,
         type,
         path,
         input,

@@ -21,7 +21,7 @@ type AppRouter = typeof appRouter;
 test('raw client', async () => {
   try {
     const client = createTRPCClient<AppRouter>({
-      url: 'http://localhost:-1',
+      links: [httpBatchLink({ url: 'http://localhost:-1' })],
     });
 
     const result = await client.query('oldProc100');

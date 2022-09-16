@@ -18,7 +18,7 @@ import type {
 } from '@trpc/server/observable';
 import { createProxy } from '@trpc/server/shared';
 import { TRPCClientError } from './TRPCClientError';
-import { CreateTRPCClientOptions, createTRPCClient } from './createTRPCClient';
+import { CreateTRPCClientOptions } from './createTRPCClient';
 import {
   TRPCClient as Client,
   TRPCClient,
