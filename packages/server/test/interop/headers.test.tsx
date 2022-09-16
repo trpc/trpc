@@ -2,7 +2,7 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { legacyRouterToServerAndClient } from './__legacyRouterToServerAndClient';
-import { createTRPCClient } from '@trpc/client';
+import { createTRPCClient, httpBatchLink } from '@trpc/client';
 import * as trpc from '../../src';
 import { Dict } from '../../src';
 
@@ -29,7 +29,7 @@ test('pass headers', async () => {
   {
     // no headers sent
     const client = createTRPCClient({
-      url: httpUrl,
+      links: [httpBatchLink({ url: httpUrl })],
     });
     expect(await client.query('hello')).toMatchInlineSnapshot(`Object {}`);
   }
@@ -37,12 +37,16 @@ test('pass headers', async () => {
   {
     // custom headers sent
     const client = createTRPCClient({
-      url: httpUrl,
-      headers() {
-        return {
-          'X-Special': 'special header',
-        };
-      },
+      links: [
+        httpBatchLink({
+          url: httpUrl,
+          headers() {
+            return {
+              'X-Special': 'special header',
+            };
+          },
+        }),
+      ],
     });
     expect(await client.query('hello')).toMatchInlineSnapshot(`
 Object {
@@ -53,12 +57,16 @@ Object {
   {
     // async headers
     const client = createTRPCClient({
-      url: httpUrl,
-      async headers() {
-        return {
-          'X-Special': 'async special header',
-        };
-      },
+      links: [
+        httpBatchLink({
+          url: httpUrl,
+          async headers() {
+            return {
+              'X-Special': 'async special header',
+            };
+          },
+        }),
+      ],
     });
     expect(await client.query('hello')).toMatchInlineSnapshot(`
 Object {
