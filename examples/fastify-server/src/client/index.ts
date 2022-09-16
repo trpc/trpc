@@ -9,9 +9,9 @@ import { serverConfig } from '../config';
 import { AppRouter } from '../server/router';
 
 async function start() {
-  const { port } = serverConfig;
-  const hostname = `localhost:${port}/prefix`;
-  const wsClient = createWSClient({ url: `ws://${hostname}` });
+  const { port, prefix } = serverConfig;
+  const urlSuffix = `localhost:${port}/${prefix}`;
+  const wsClient = createWSClient({ url: `ws://${urlSuffix}` });
   const trpc = createTRPCProxyClient<AppRouter>({
     links: [
       splitLink({
@@ -19,7 +19,7 @@ async function start() {
           return op.type === 'subscription';
         },
         true: wsLink({ client: wsClient }),
-        false: httpBatchLink({ url: `http://${hostname}` }),
+        false: httpBatchLink({ url: `http://${urlSuffix}` }),
       }),
     ],
   });
