@@ -6,7 +6,7 @@ import { createTRPCClient, httpBatchLink } from '@trpc/client';
 import * as trpc from '../../src';
 import { Dict } from '../../src';
 
-test('pass headers', async () => {
+describe('pass headers', () => {
   type Context = {
     headers: Dict<string | string[]>;
   };
@@ -26,16 +26,19 @@ test('pass headers', async () => {
       },
     },
   );
-  {
-    // no headers sent
+
+  afterAll(() => {
+    close();
+  });
+
+  test('no headers', async () => {
     const client = createTRPCClient({
       links: [httpBatchLink({ url: httpUrl })],
     });
     expect(await client.query('hello')).toMatchInlineSnapshot(`Object {}`);
-  }
+  });
 
-  {
-    // custom headers sent
+  test('custom headers', async () => {
     const client = createTRPCClient({
       links: [
         httpBatchLink({
@@ -53,9 +56,9 @@ Object {
   "x-special": "special header",
 }
 `);
-  }
-  {
-    // async headers
+  });
+
+  test('async headers', async () => {
     const client = createTRPCClient({
       links: [
         httpBatchLink({
@@ -73,6 +76,5 @@ Object {
   "x-special": "async special header",
 }
 `);
-  }
-  close();
+  });
 });
