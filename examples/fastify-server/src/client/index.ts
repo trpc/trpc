@@ -1,76 +1,44 @@
+import {
+  createTRPCProxyClient,
+  createWSClient,
+  httpBatchLink,
+  splitLink,
+  wsLink,
+} from '@trpc/client';
 import { serverConfig } from '../config';
-import { createClient } from './client';
+import { AppRouter } from '../server/router';
 
 async function start() {
-  const { port, prefix } = serverConfig;
-  const anon = createClient({ port, prefix });
-  const auth = createClient({
-    port,
-    prefix,
-    headers: { username: 'nyan' },
+  const { port } = serverConfig;
+  const hostname = `localhost:${port}/prefix`;
+  const wsClient = createWSClient({ url: `ws://${hostname}` });
+  const trpc = createTRPCProxyClient<AppRouter>({
+    links: [
+      splitLink({
+        condition(op) {
+          return op.type === 'subscription';
+        },
+        true: wsLink({ client: wsClient }),
+        false: httpBatchLink({ url: `http://${hostname}` }),
+      }),
+    ],
   });
 
-  const getHello = await fetch(`http://localhost:${port}/hello`);
-  const getHelloJSON = await getHello.json();
-
-  console.log('>>> fetch:get:hello:', getHelloJSON);
-
-  const postHello = await fetch(`http://localhost:${port}/hello`, {
-    method: 'POST',
-    headers: {
-      Accept: 'application/json',
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({ text: 'life', life: 42 }),
-  });
-
-  const postHelloJSON = await postHello.json();
-  console.log('>>> fetch:post:hello:', postHelloJSON);
-
-  const anonProxy = anon.proxy;
-
-  const response = await anonProxy.api.hello.query();
-  console.log('\n>>> anon:hello:', response, '\n');
-
-  const version = await anon.proxy.api.version.query();
+  const version = await trpc.api.version.query();
   console.log('>>> anon:version:', version);
 
-  const anonHello = await anon.proxy.api.hello.query();
+  const anonHello = await trpc.api.hello.query();
   console.log('>>> anon:hello:', anonHello);
 
-  const authHello = await auth.proxy.api.hello.query();
-  console.log('>>> auth:hello:', authHello);
-
-  const helloWithInput = await anon.proxy.api.hello.query({ username: 'you' });
-  console.log('>>> anon:hello(with input):', helloWithInput);
-
-  try {
-    // Should fail
-    const anonPost = await anon.proxy.posts.create.mutate({ title: '1337' });
-    console.log('>>> anon:posts:create:success:', anonPost);
-  } catch (error) {
-    console.log('>>> anon:posts:create:error:', (error as Error).message);
-  }
-
-  try {
-    // Should work
-    const authPost = await auth.proxy.posts.create.mutate({
-      title: 'My first post',
-    });
-    console.log('>>> auth:posts:create:success:', authPost);
-  } catch (error) {
-    console.log('>>> auth:posts:create:error:', (error as Error).message);
-  }
-
-  const anonPostsList = await anon.proxy.posts.list.query();
+  const anonPostsList = await trpc.posts.list.query();
   console.log('>>> anon:posts:list:', anonPostsList);
 
-  await anon.proxy.posts.reset.query();
+  await trpc.posts.reset.query();
 
   let randomNumberCount = 0;
 
   await new Promise<void>((resolve) => {
-    const sub = anon.proxy.sub.randomNumber.subscribe(undefined, {
+    const sub = trpc.sub.randomNumber.subscribe(undefined, {
       onData(data) {
         console.log('>>> anon:sub:randomNumber:received:', data);
         randomNumberCount++;
@@ -90,8 +58,7 @@ async function start() {
   });
 
   // we're done - make sure app closes with a clean exit
-  anon.wsClient.close();
-  auth.wsClient.close();
+  wsClient.close();
 }
 
 start();
