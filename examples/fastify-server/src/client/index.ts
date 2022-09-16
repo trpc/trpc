@@ -7,6 +7,7 @@ import {
 } from '@trpc/client';
 import { serverConfig } from '../config';
 import { AppRouter } from '../server/router';
+import './polyfill';
 
 async function start() {
   const { port, prefix } = serverConfig;
