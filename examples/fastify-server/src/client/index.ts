@@ -6,7 +6,7 @@ import {
   wsLink,
 } from '@trpc/client';
 import { serverConfig } from '../config';
-import { AppRouter } from '../server/router';
+import type { AppRouter } from '../server/router';
 import './polyfill';
 
 async function start() {
