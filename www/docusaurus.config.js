@@ -132,6 +132,10 @@ module.exports = {
             //   to: 'blog',
             // },
             {
+              label: 'FAQ',
+              to: 'faq',
+            },
+            {
               label: 'GitHub',
               href: 'https://github.com/trpc/trpc/tree/next',
               className: 'flex items-center',
