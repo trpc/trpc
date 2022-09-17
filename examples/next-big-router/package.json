@@ -6,7 +6,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "postinstall": "npm run ts-node --compiler-options \"{\\\"module\\\":\\\"commonjs\\\"}\" ./scripts/codegen"
+    "postinstall": "ts-node -O '{\"module\":\"commonjs\"}' scripts/codegen"
   },
   "dependencies": {
     "@tanstack/react-query": "^4.0.10",
