@@ -7,7 +7,7 @@ import { AppType } from 'next/dist/shared/lib/utils';
 import { ReactElement, ReactNode } from 'react';
 import superjson from 'superjson';
 import { DefaultLayout } from '~/components/DefaultLayout';
-import { AppRouter } from '~/server/routers/_app';
+import type { AppRouter } from '~/server/routers/_app';
 import { SSRContext } from '~/utils/trpc';
 
 export type NextPageWithLayout = NextPage & {
