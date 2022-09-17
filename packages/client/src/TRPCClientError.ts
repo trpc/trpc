@@ -61,7 +61,7 @@ export class TRPCClientError<TRouterOrProcedure extends RouterOrProcedure>
   ): TRPCClientError<TRouterOrProcedure> {
     if (!(cause instanceof Error)) {
       return new TRPCClientError<TRouterOrProcedure>(
-        (cause.error as any).message ?? '',
+        (cause as any).message ?? '',
         {
           ...opts,
           cause: undefined,

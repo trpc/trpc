@@ -15,20 +15,23 @@ export interface ClientOptions {
   headers?: HTTPHeaders;
 }
 
-export function createClient(opts: ClientOptions = {}) {
+export function createClient(
+  opts: ClientOptions & {
+    headers?: HTTPHeaders;
+  } = {},
+) {
   const port = opts.port ?? 3000;
   const prefix = opts.prefix ?? '/trpc';
   const host = `127.0.0.1:${port}${prefix}`;
   const wsClient = createWSClient({ url: `ws://${host}` });
   const client = createTRPCClient<AppRouter>({
-    headers: opts.headers,
     links: [
       splitLink({
         condition(op) {
           return op.type === 'subscription';
         },
         true: wsLink({ client: wsClient }),
-        false: httpLink({ url: `http://${host}` }),
+        false: httpLink({ url: `http://${host}`, headers: opts.headers }),
       }),
     ],
   });
