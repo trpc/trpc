@@ -68,7 +68,7 @@ const Faq = () => {
                 <>
                   <Disclosure.Button
                     as="button"
-                    className="flex justify-between items-center w-full text-lg bg-zinc-800/50 transition-colors ring-1 ring-zinc-800 py-3 px-6 rounded-xl"
+                    className="flex justify-between items-center w-full text-lg bg-zinc-100 dark:bg-zinc-800/50 transition-colors ring-1 ring-zinc-200 dark:ring-zinc-800 py-3 px-6 rounded-xl"
                   >
                     {item.question}
                     {open ? <FiMinus /> : <FiPlus />}
