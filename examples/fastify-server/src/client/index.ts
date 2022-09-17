@@ -11,7 +11,8 @@ import './polyfill';
 
 async function start() {
   const { port, prefix } = serverConfig;
-  const urlSuffix = `localhost:${port}/${prefix}`;
+  const urlSuffix = `localhost:${port}${prefix}`;
+  console.log({ urlSuffix });
   const wsClient = createWSClient({ url: `ws://${urlSuffix}` });
   const trpc = createTRPCProxyClient<AppRouter>({
     links: [
@@ -28,11 +29,11 @@ async function start() {
   const version = await trpc.api.version.query();
   console.log('>>> anon:version:', version);
 
-  const anonHello = await trpc.api.hello.query();
-  console.log('>>> anon:hello:', anonHello);
+  const hello = await trpc.api.hello.query();
+  console.log('>>> anon:hello:', hello);
 
-  const anonPostsList = await trpc.posts.list.query();
-  console.log('>>> anon:posts:list:', anonPostsList);
+  const postList = await trpc.posts.list.query();
+  console.log('>>> anon:posts:list:', postList);
 
   await trpc.posts.reset.query();
 
@@ -63,17 +64,3 @@ async function start() {
 }
 
 start();
-
-// Should outputs something like:
-// >>> anon:version: { version: '0.42.0' }
-// >>> anon:hello: { text: 'hello anonymous' }
-// >>> auth:hello: { text: 'hello nyan' }
-// >>> anon:hello(with input): { text: 'hello you' }
-// >>> anon:posts:create:error: UNAUTHORIZED
-// >>> auth:posts:create:success: { id: 1, title: 'My first post' }
-// >>> anon:posts:list: [ { id: 1, title: 'My first post' } ]
-// >>> anon:sub:randomNumber:received: { type: 'started' }
-// >>> anon:sub:randomNumber:received: { type: 'data', data: { randomNumber: 0.4002197581455267 } }
-// >>> anon:sub:randomNumber:received: { type: 'data', data: { randomNumber: 0.7066840380142223 } }
-// >>> anon:sub:randomNumber:received: { type: 'data', data: { randomNumber: 0.20896433661111224 } }
-// >>> anon:sub:randomNumber: unsub() called
