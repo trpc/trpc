@@ -22,7 +22,6 @@ export const trpc = createTRPCNext<AppRouter>({
       return {
         transformer: superjson, // optional - adds superjson serialization
         links: [
-          // optional - adds batching
           httpBatchLink({
             url: '/api/trpc',
           }),
