@@ -9,7 +9,7 @@
     "ts-node": "ts-node --compiler-options \"{\\\"module\\\":\\\"commonjs\\\"}\"",
     "postinstall": "yarn ts-node scripts/codegen.ts"
   },
-  "packageManager": "yarn@^1.0.0",
+  "packageManager": "^yarn@1.0.0",
   "dependencies": {
     "@tanstack/react-query": "^4.0.10",
     "@trpc/client": "^10.0.0-proxy-alpha.81",
