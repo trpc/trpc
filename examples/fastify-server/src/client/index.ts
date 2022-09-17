@@ -12,8 +12,8 @@ import './polyfill';
 
 async function start() {
   const { port, prefix } = serverConfig;
-  const urlSuffix = `localhost:${port}${prefix}`;
-  const wsClient = createWSClient({ url: `ws://localhost:${port}${prefix}` });
+  const urlEnd = `localhost:${port}${prefix}`;
+  const wsClient = createWSClient({ url: `ws://${urlEnd}` });
   const trpc = createTRPCProxyClient<AppRouter>({
     transformer: superjson,
     links: [
@@ -22,7 +22,7 @@ async function start() {
           return op.type === 'subscription';
         },
         true: wsLink({ client: wsClient }),
-        false: httpBatchLink({ url: `http://${urlSuffix}` }),
+        false: httpBatchLink({ url: `http://${urlEnd}` }),
       }),
     ],
   });
