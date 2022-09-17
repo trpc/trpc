@@ -49,8 +49,8 @@ const list = [
 const Faq = () => {
   return (
     <Layout>
-      <main className="container mx-auto pt-28">
-        <h1 className="text-center text-3xl font-bold">
+      <main className="container mx-auto py-12 lg:py-28">
+        <h1 className="text-center text-2xl lg:text-3xl font-bold">
           Most frequently asked questions
         </h1>
         <p className="text-center text-zinc-700 pt-2 dark:text-zinc-300">
@@ -68,7 +68,7 @@ const Faq = () => {
                 <>
                   <Disclosure.Button
                     as="button"
-                    className="flex justify-between items-center w-full text-lg bg-zinc-100 dark:bg-zinc-800/50 transition-colors ring-1 ring-zinc-200 dark:ring-zinc-800 py-3 px-6 rounded-xl"
+                    className="flex justify-between items-center w-full text-base lg:text-lg bg-zinc-100 dark:bg-zinc-800/50 transition-colors ring-1 ring-zinc-200 dark:ring-zinc-800 py-3 px-6 rounded-xl"
                   >
                     {item.question}
                     {open ? <FiMinus /> : <FiPlus />}
