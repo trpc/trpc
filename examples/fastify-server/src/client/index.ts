@@ -51,12 +51,6 @@ async function start() {
           resolve();
         }
       },
-      onStarted() {
-        console.log('started');
-      },
-      onStopped() {
-        console.log('stopped');
-      },
       onError(error) {
         console.error('>>> anon:sub:randomNumber:error:', error);
       },
