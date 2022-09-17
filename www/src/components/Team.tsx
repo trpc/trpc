@@ -36,7 +36,7 @@ const team = [
 export const Team: FC = () => {
   return (
     <div className="mt-12">
-      <div className="flex justify-center gap-12">
+      <div className="flex flex-wrap justify-center gap-12">
         {team.map((member) => (
           <a
             href={member.link}
@@ -47,9 +47,7 @@ export const Team: FC = () => {
               loading="lazy"
               src={member.avatar}
               alt={member.name}
-              width={100}
-              height={100}
-              className="rounded-full"
+              className="rounded-full w-16 h-16 lg:w-24 lg:h-24"
             />
             <p className="dark:text-zinc-300 text-zinc-700">{member.name}</p>
           </a>
