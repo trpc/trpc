@@ -5,6 +5,7 @@ import {
   splitLink,
   wsLink,
 } from '@trpc/client';
+import superjson from 'superjson';
 import { serverConfig } from '../config';
 import { AppRouter } from '../server/router';
 import './polyfill';
@@ -12,8 +13,9 @@ import './polyfill';
 async function start() {
   const { port, prefix } = serverConfig;
   const urlSuffix = `localhost:${port}${prefix}`;
-  const wsClient = createWSClient({ url: `ws://${urlSuffix}` });
+  const wsClient = createWSClient({ url: `ws://localhost:${port}${prefix}` });
   const trpc = createTRPCProxyClient<AppRouter>({
+    transformer: superjson,
     links: [
       splitLink({
         condition(op) {
@@ -34,7 +36,7 @@ async function start() {
   const postList = await trpc.posts.list.query();
   console.log('>>> anon:posts:list:', postList);
 
-  await trpc.posts.reset.query();
+  await trpc.posts.reset.mutate();
 
   let randomNumberCount = 0;
 
@@ -48,6 +50,12 @@ async function start() {
           sub.unsubscribe();
           resolve();
         }
+      },
+      onStarted() {
+        console.log('started');
+      },
+      onStopped() {
+        console.log('stopped');
       },
       onError(error) {
         console.error('>>> anon:sub:randomNumber:error:', error);

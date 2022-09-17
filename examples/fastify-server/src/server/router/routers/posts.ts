@@ -28,7 +28,7 @@ export const postsRouter = t.router({
       return post;
     }),
   list: t.procedure.query(() => db.posts),
-  reset: t.procedure.query(() => {
+  reset: t.procedure.mutation(() => {
     db.posts = [];
   }),
 });
