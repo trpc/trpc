@@ -6,10 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "ts-node": "ts-node --compiler-options \"{\\\"module\\\":\\\"commonjs\\\"}\"",
-    "postinstall": "yarn ts-node ./scripts/codegen"
+    "postinstall": "npm run ts-node --compiler-options \"{\\\"module\\\":\\\"commonjs\\\"}\" ./scripts/codegen"
   },
-  "packageManager": "^yarn@1.0.0",
   "dependencies": {
     "@tanstack/react-query": "^4.0.10",
     "@trpc/client": "^10.0.0-proxy-alpha.81",
