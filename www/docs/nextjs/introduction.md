@@ -212,11 +212,8 @@ export default function IndexPage() {
 
 The `config`-argument is a function that returns an object that configures the tRPC and React Query clients. This function has a `ctx` input that gives you access to the Next.js `req` object, among other things. The returned value can contain the following properties:
 
-- Exactly **one of** these are **required**:
-
-  - `url` your API URL.
+- **Required**:
   - `links` to customize the flow of data between tRPC Client and the tRPC-server. [Read more](../client/links.md).
-
 - Optional:
   - `queryClientConfig`: a configuration object for the React Query `QueryClient` used internally by the tRPC React hooks: [QueryClient docs](https://tanstack.com/query/v4/docs/reference/QueryClient)
   - `headers`: an object or a function that returns an object of outgoing tRPC requests
