@@ -45,7 +45,6 @@ export const trpc = createTRPCNext<AppRouter>({
 
     return {
       links: {
-        // optional - adds batching
         http: httpBatchLink({
           url,
         }),
