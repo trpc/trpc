@@ -12,7 +12,6 @@ import './polyfill';
 async function start() {
   const { port, prefix } = serverConfig;
   const urlSuffix = `localhost:${port}${prefix}`;
-  console.log({ urlSuffix });
   const wsClient = createWSClient({ url: `ws://${urlSuffix}` });
   const trpc = createTRPCProxyClient<AppRouter>({
     links: [
