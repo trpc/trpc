@@ -16,7 +16,6 @@
     "@trpc/next": "^10.0.0-proxy-alpha.81",
     "@trpc/react": "^10.0.0-proxy-alpha.81",
     "@trpc/server": "^10.0.0-proxy-alpha.81",
-    "@types/node": "^18.7.11",
     "next": "latest",
     "react": "^18.1.0",
     "react-dom": "^18.1.0",
