@@ -12,7 +12,7 @@ The headers option can be customize in config when using `withTRPC` in nextjs or
 ```ts title='_app.tsx'
 import { AppType } from "next/dist/shared/lib/utils";
 import { withTRPC } from "@trpc/next";
-import { AppRouter } from "@/server/routers/app";
+import type { AppRouter } from "@/server/routers/app";
 
 export let token: string;
 
