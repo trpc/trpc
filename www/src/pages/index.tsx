@@ -11,6 +11,7 @@ import { GithubStarsButton } from '../components/GithubStarsButton';
 import { Preview } from '../components/Preview';
 import { QuickIntro } from '../components/QuickIntro';
 import { SectionTitle } from '../components/SectionTitle';
+import { Team } from '../components/Team';
 import { TopSponsors } from '../components/TopSponsors';
 import { TwitterWall } from '../components/TwitterWall';
 import { Sponsors } from '../components/sponsors';
@@ -189,6 +190,10 @@ const HomeContent: React.FC = () => {
       <section className="container">
         <SectionTitle id="twitter-wall" title="Don't take our word for it!" />
         <TwitterWall />
+      </section>
+      <section className="container mx-auto">
+        <SectionTitle id="team" title="Meet our team" />
+        <Team />
       </section>
       <section className="pb-12">
         <SectionTitle
