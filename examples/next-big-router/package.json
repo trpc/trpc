@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "ts-node": "ts-node --compiler-options \"{\\\"module\\\":\\\"commonjs\\\"}\"",
-    "postinstall": "yarn ts-node scripts/codegen.ts"
+    "postinstall": "yarn ts-node ./scripts/codegen.ts"
   },
   "packageManager": "^yarn@1.0.0",
   "dependencies": {
