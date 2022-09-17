@@ -1,4 +1,5 @@
 import fs from 'fs';
+import path from 'path';
 
 const NUM_ROUTERS = 500;
 
@@ -83,3 +84,25 @@ export const appRouter = t.router({
 
 fs.writeFileSync(`${SERVER_DIR}/_app.ts`, indexFile);
 fs.writeFileSync(`${SERVER_DIR}/_trpc.ts`, trpcFile);
+
+// cleanup
+const EXAMPLE_PERF_DIR =
+  __dirname + '/../examples/.perf/next-big/src/__generated__';
+
+function copyFolderSync(from: string, to: string) {
+  fs.mkdirSync(to, { recursive: true });
+  fs.readdirSync(from).forEach((element) => {
+    if (fs.lstatSync(path.join(from, element)).isFile()) {
+      fs.copyFileSync(path.join(from, element), path.join(to, element));
+    } else {
+      copyFolderSync(path.join(from, element), path.join(to, element));
+    }
+  });
+}
+
+if (fs.existsSync(EXAMPLE_PERF_DIR)) {
+  fs.rmdirSync(EXAMPLE_PERF_DIR, { recursive: true });
+}
+
+fs.mkdirSync(EXAMPLE_PERF_DIR, { recursive: true });
+copyFolderSync(SERVER_DIR, EXAMPLE_PERF_DIR);
