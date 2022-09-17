@@ -1,5 +1,3 @@
+This is an example to preview how the DX is when making a big router with tRPC v10.
 
-- Example of a big router with tRPC
-- Feel free to modify `scripts/codegen.ts` with more/less routers to feel the perf diff, then run `yarn postinstall`
-
-- Go to `src/pages/index.tsx` and try using the API
+It has a `postinstall`-script that generates 700 procedures (which you can modify in `scripts/codegen.ts`).

@@ -1,7 +1,7 @@
 import fs from 'fs';
 
 // Modify this is if you want to try bigger routers
-// Each router will have 5 procedures + a small sub-router
+// Each router will have 5 procedures + a small sub-router with 2 procedures
 const NUM_ROUTERS = 100;
 
 const ROUTERS_DIR = __dirname + '/../src/server/routers';
