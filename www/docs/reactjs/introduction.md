@@ -106,6 +106,7 @@ export const trpc = createTRPCReact<AppRouter>();
 
 ```tsx title='App.tsx'
 import React, { useState } from 'react';
+import { httpBatchLink } from '@trpc/client';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { trpc } from './utils/trpc';
 
@@ -113,14 +114,17 @@ export function App() {
   const [queryClient] = useState(() => new QueryClient());
   const [trpcClient] = useState(() =>
     trpc.createClient({
-      url: 'http://localhost:5000/trpc',
-
-      // optional
-      headers() {
-        return {
-          authorization: getAuthCookie(),
-        };
-      },
+      links: [
+        httpBatchLink({
+          url: 'http://localhost:5000/trpc',
+          // optional
+          headers() {
+            return {
+              authorization: getAuthCookie(),
+            };
+          },
+        }),
+      ],
     }),
   );
   return (
