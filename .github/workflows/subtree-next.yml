@@ -13,7 +13,11 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        path: [next-prisma-starter-sqlite]
+        path: [
+            #
+            next-prisma-starter-sqlite,
+            next-big-router,
+          ]
 
     name: Update downstream ${{ matrix.path }} package
 
