@@ -22,6 +22,7 @@ If you turn on SSR in your app you might discover that your app loads slow on fo
 ### Example code
 
 ```tsx title='utils/trpc.tsx'
+import { httpBatchLink } from '@trpc/client';
 import { createTRPCNext } from '@trpc/next';
 import { AppRouter } from '../server/routers/_app';
 
@@ -29,7 +30,12 @@ export const trpc = createTRPCNext<AppRouter>({
   config({ ctx }) {
     if (typeof window !== 'undefined') {
       return {
-        url: '/api/trpc',
+        links: [
+          // optional - adds batching
+          httpBatchLink({
+            url: '/api/trpc',
+          }),
+        ],
       };
     }
 
@@ -38,7 +44,12 @@ export const trpc = createTRPCNext<AppRouter>({
       : 'http://localhost:3000/api/trpc';
 
     return {
-      url,
+      links: {
+        // optional - adds batching
+        http: httpBatchLink({
+          url,
+        }),
+      },
     };
   },
   ssr: true,

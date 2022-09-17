@@ -10,6 +10,8 @@ The only thing you need to do to get SSR on your application is to set `ssr: tru
 In order to execute queries properly during the server-side render step and customize caching behavior, we might want to add some extra logic inside our `_app.tsx`:
 
 ```tsx title='utils/trpc.ts'
+import { httpBatchLink } from '@trpc/client';
+import { createTRPCNext } from '@trpc/next';
 import superjson from 'superjson';
 import type { AppRouter } from './api/trpc/[trpc]';
 
@@ -19,7 +21,12 @@ export const trpc = createTRPCNext<AppRouter>({
       // during client requests
       return {
         transformer: superjson, // optional - adds superjson serialization
-        url: '/api/trpc',
+        links: [
+          // optional - adds batching
+          httpBatchLink({
+            url: '/api/trpc',
+          }),
+        ]
       };
     }
     // during SSR below

@@ -357,7 +357,7 @@ const client = createTRPCClient({
 });
 
 // after:
-import { createTRPCProxyClient, httpLink } from '@trpc/client';
+import { createTRPCProxyClient, httpBatchLink } from '@trpc/client';
 
 const client = createTRPCProxyClient({
   links: [
