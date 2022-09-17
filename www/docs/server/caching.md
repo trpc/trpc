@@ -31,7 +31,6 @@ export const trpc = createTRPCNext<AppRouter>({
     if (typeof window !== 'undefined') {
       return {
         links: [
-          // optional - adds batching
           httpBatchLink({
             url: '/api/trpc',
           }),
