@@ -1,12 +1,20 @@
 import fs from 'fs';
-import path from 'path';
 
+// Modify this is if you want to try bigger routers
+// Each router will have 5 procedures + a small sub-router
 const NUM_ROUTERS = 100;
+
+const ROUTERS_DIR = __dirname + '/../src/server/routers';
+if (fs.existsSync(ROUTERS_DIR)) {
+  fs.rmSync(ROUTERS_DIR, { recursive: true });
+}
+
+fs.mkdirSync(ROUTERS_DIR, { recursive: true });
 
 function createRouter(routerName: string) {
   return `
   import { z } from 'zod';
-  import { t } from './_trpc';
+  import { t } from '~/server/trpc';
   
   export const ${routerName} = t.router({
     greeting: t
@@ -49,21 +57,18 @@ function createRouter(routerName: string) {
           })
         )
         .query(({input}) => \`hello \${input.who}\`),
-      grandchild: t.router({
-        grandChildQuery: t.procedure.query(() => 'grandChildQuery'),
-        grandChildMutation: t.procedure.mutation(() => 'grandChildMutation'),
+      childRouter: t.router({
+        hello: t.procedure.query(() => 'there'),
+        doSomething: t.procedure.mutation(() => 'okay'),
       })
   })`.trim();
 }
 
-const SERVER_DIR = __dirname + '/../packages/server/test/__generated__/bigBoi';
-fs.mkdirSync(SERVER_DIR, { recursive: true });
-
 const indexBuf: string[] = [];
 for (let i = 0; i < NUM_ROUTERS; i++) {
-  const routerName = `r${i}`;
+  const routerName = `router${i}`;
   indexBuf.push(routerName);
-  fs.writeFileSync(`${SERVER_DIR}/${routerName}.ts`, createRouter(routerName));
+  fs.writeFileSync(`${ROUTERS_DIR}/${routerName}.ts`, createRouter(routerName));
 }
 
 const trpcFile = `
@@ -72,7 +77,7 @@ import { initTRPC } from '@trpc/server';
 export const t = initTRPC.create();
 `.trim();
 const indexFile = `
-import { t } from './_trpc';
+import { t } from '~/server/trpc';
 
 ${indexBuf.map((name) => `import { ${name} } from './${name}';`).join('\n')}
 
@@ -82,27 +87,4 @@ export const appRouter = t.router({
 
 `.trim();
 
-fs.writeFileSync(`${SERVER_DIR}/_app.ts`, indexFile);
-fs.writeFileSync(`${SERVER_DIR}/_trpc.ts`, trpcFile);
-
-// cleanup
-const EXAMPLE_PERF_DIR =
-  __dirname + '/../examples/.perf/next-big/src/__generated__';
-
-function copyFolderSync(from: string, to: string) {
-  fs.mkdirSync(to, { recursive: true });
-  fs.readdirSync(from).forEach((element) => {
-    if (fs.lstatSync(path.join(from, element)).isFile()) {
-      fs.copyFileSync(path.join(from, element), path.join(to, element));
-    } else {
-      copyFolderSync(path.join(from, element), path.join(to, element));
-    }
-  });
-}
-
-if (fs.existsSync(EXAMPLE_PERF_DIR)) {
-  fs.rmdirSync(EXAMPLE_PERF_DIR, { recursive: true });
-}
-
-fs.mkdirSync(EXAMPLE_PERF_DIR, { recursive: true });
-copyFolderSync(SERVER_DIR, EXAMPLE_PERF_DIR);
+fs.writeFileSync(`${ROUTERS_DIR}/_app.ts`, indexFile);

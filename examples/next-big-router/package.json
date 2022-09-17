@@ -1,12 +1,15 @@
 {
-  "name": "@examples/big-next-minimal",
+  "name": "@examples/next-big-router",
   "version": "10.0.0-proxy-alpha.81",
   "private": true,
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "next start"
+    "start": "next start",
+    "ts-node": "ts-node --compiler-options \"{\\\"module\\\":\\\"commonjs\\\"}\"",
+    "postinstall": "yarn ts-node scripts/codegen.ts"
   },
+  "packageManager": "yarn@^1.0.0",
   "dependencies": {
     "@tanstack/react-query": "^4.0.10",
     "@trpc/client": "^10.0.0-proxy-alpha.81",
@@ -22,6 +25,7 @@
     "@types/node": "^18.7.11",
     "@types/react": "^18.0.9",
     "@types/react-dom": "^18.0.5",
+    "ts-node": "^10.3.0",
     "typescript": "4.7.4"
   }
 }
