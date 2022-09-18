@@ -2,11 +2,21 @@ import { trpc } from '../utils/trpc';
 import { NextPageWithLayout } from './_app';
 import { inferProcedureInput } from '@trpc/server';
 import Link from 'next/link';
+import { Fragment } from 'react';
 import { AppRouter } from '~/server/routers/_app';
 
 const IndexPage: NextPageWithLayout = () => {
   const utils = trpc.useContext();
-  const postsQuery = trpc.post.list.useQuery();
+  const postsQuery = trpc.post.list.useInfiniteQuery(
+    {
+      limit: 5,
+    },
+    {
+      getNextPageParam(lastPage) {
+        return lastPage.nextCursor;
+      },
+    },
+  );
 
   const addPost = trpc.post.add.useMutation({
     async onSuccess() {
@@ -32,19 +42,36 @@ const IndexPage: NextPageWithLayout = () => {
       </p>
 
       <h2>
-        Posts
+        Latest Posts
         {postsQuery.status === 'loading' && '(loading)'}
       </h2>
-      {postsQuery.data?.map((item) => (
-        <article key={item.id}>
-          <h3>{item.title}</h3>
-          <Link href={`/post/${item.id}`}>
-            <a>View more</a>
-          </Link>
-        </article>
+
+      <button
+        onClick={() => postsQuery.fetchNextPage()}
+        disabled={!postsQuery.hasNextPage || postsQuery.isFetchingNextPage}
+      >
+        {postsQuery.isFetchingPreviousPage
+          ? 'Loading more...'
+          : postsQuery.hasNextPage
+          ? 'Load More'
+          : 'Nothing more to load'}
+      </button>
+      {postsQuery.data?.pages.map((page, index) => (
+        <Fragment key={index}>
+          {page.items.map((item) => (
+            <article key={item.id}>
+              <h3>{item.title}</h3>
+              <Link href={`/post/${item.id}`}>
+                <a>View more</a>
+              </Link>
+            </article>
+          ))}
+        </Fragment>
       ))}
 
       <hr />
+
+      <h3>Add a Post</h3>
 
       <form
         onSubmit={async (e) => {
@@ -55,7 +82,8 @@ const IndexPage: NextPageWithLayout = () => {
            * @see https://kitchen-sink.trpc.io/react-hook-form
            */
           e.preventDefault();
-          const values = Object.fromEntries(new FormData(e.currentTarget));
+          const $form = e.currentTarget;
+          const values = Object.fromEntries(new FormData($form));
           type Input = inferProcedureInput<AppRouter['post']['add']>;
           //    ^?
           const input: Input = {
@@ -65,7 +93,7 @@ const IndexPage: NextPageWithLayout = () => {
           try {
             await addPost.mutateAsync(input);
 
-            e.currentTarget.reset();
+            $form.reset();
           } catch (cause) {
             console.error({ cause }, 'Failed to add post');
           }
