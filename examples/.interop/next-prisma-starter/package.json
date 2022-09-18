@@ -8,13 +8,13 @@
     "build": "run-s build:*",
     "db-up": "docker-compose up -d",
     "db-seed": "prisma db seed",
-    "db-migrate-dev": "yarn prisma migrate dev",
+    "db-migrate-dev": "prisma migrate dev",
     "db-nuke": "docker-compose down --volumes --remove-orphans",
     "dev": "next dev",
     "dx": "run-s db-up db-migrate-dev db-seed dev",
     "start": "next start",
     "lint": "eslint src",
-    "lint-fix": "yarn lint --fix",
+    "lint-fix": "pnpm lint --fix",
     "test-dev": "start-server-and-test dev 3000 test",
     "test-start": "start-server-and-test start 3000 test",
     "test": "run-s test:*",
@@ -24,7 +24,7 @@
     "postinstall": "prisma generate"
   },
   "prisma": {
-    "seed": "yarn ts-node prisma/seed.ts"
+    "seed": "pnpm ts-node prisma/seed.ts"
   },
   "prettier": {
     "printWidth": 80,
@@ -32,7 +32,7 @@
     "singleQuote": true
   },
   "dependencies": {
-    "@prisma/client": "^3.0.1",
+    "@prisma/client": "^4.3.1",
     "@tanstack/react-query": "^4.0.10",
     "@trpc/client": "^10.0.0-proxy-alpha.81",
     "@trpc/next": "^10.0.0-proxy-alpha.81",
@@ -64,7 +64,7 @@
     "npm-run-all": "^4.1.5",
     "playwright": "^1.19.1",
     "prettier": "^2.5.1",
-    "prisma": "^4.2.1",
+    "prisma": "^4.3.1",
     "ts-jest": "^27.0.5",
     "ts-node": "^10.3.0",
     "typescript": "4.7.4"

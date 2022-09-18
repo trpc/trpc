@@ -13,7 +13,7 @@
     "dx": "run-s db-migrate-dev db-seed dev",
     "start": "next start",
     "lint": "eslint src",
-    "lint-fix": "yarn lint --fix",
+    "lint-fix": "pnpm lint --fix",
     "test-dev": "start-server-and-test dev 3000 test",
     "test-start": "start-server-and-test start 3000 test",
     "test": "run-s test:*",
