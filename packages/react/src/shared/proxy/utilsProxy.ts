@@ -147,46 +147,18 @@ type DecorateProcedure<
 };
 
 /**
- * This function will traverse a type that has been constructed with a
- * { __Router:{ [procedureOrRouterName]:({Type We Want}) | {__Router:{...}} }
- * structure and extract all wanted types as a flat type union
- *
- * This is the only way I have found of bringing all types across a router to
- * top level for us to merge them together for users to use!
+ * A type that will traverse all procedures and sub routers of a given router to create a union of
+ * their possible input types
  */
-type ExtractUnionTypesFromRouterNest<RouterNest> = RouterNest extends {
-  __Router: infer ProceduresOrRouters;
-}
-  ? {
-      [Key in keyof ProceduresOrRouters]:
-        | (ProceduresOrRouters[Key] extends {
-            __Router: any;
-          }
-            ? never
-            : ProceduresOrRouters[Key]) // If it is not a router, extract the type we wanted and add to the union
-        | ExtractUnionTypesFromRouterNest<ProceduresOrRouters[Key]>; // Pass it to recursion regardless incase it is a router
-    }[keyof ProceduresOrRouters] // This also omits never keys 👍
-  : never;
-
-type RecursivelyInferAllQueryInputTypesUnderRouter<TRouter extends AnyRouter> =
-  {
-    __Router: /** Decorate as a router so we can safely recurse to flatten later */ {
-      [TKey in keyof TRouter['_def']['record']]: TRouter['_def']['record'][TKey] extends infer SubProcedureOrRouter
-        ? SubProcedureOrRouter extends QueryProcedure<any>
-          ? inferProcedureInput<SubProcedureOrRouter> extends void
-            ? never
-            : inferProcedureInput<SubProcedureOrRouter>
-          : SubProcedureOrRouter extends AnyRouter
-          ? RecursivelyInferAllQueryInputTypesUnderRouter<SubProcedureOrRouter>
-          : never
-        : never;
-    };
-  };
-
-type InferAllRouterQueryInputTypes<TRouter extends AnyRouter> =
-  ExtractUnionTypesFromRouterNest<
-    RecursivelyInferAllQueryInputTypesUnderRouter<TRouter>
-  >;
+type InferAllRouterQueryInputTypes<TRouter extends AnyRouter> = {
+  [TKey in keyof TRouter['_def']['record']]: TRouter['_def']['record'][TKey] extends infer ProcedureOrRouter
+    ? ProcedureOrRouter extends QueryProcedure<any>
+      ? inferProcedureInput<ProcedureOrRouter>
+      : ProcedureOrRouter extends AnyRouter
+      ? InferAllRouterQueryInputTypes<ProcedureOrRouter> // Recurse as we have a sub router!
+      : never
+    : never;
+}[keyof TRouter['_def']['record']]; // This flattens results into a big union and ignores never keys
 
 /**
  * this is the type that is used to add in procedures that can be used on
