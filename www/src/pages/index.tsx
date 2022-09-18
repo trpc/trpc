@@ -32,7 +32,7 @@ const HomeContent: React.FC = () => {
 
   const { preferredVersion, savePreferredVersionName } =
     useDocsPreferredVersion();
-  const isV10 = (preferredVersion?.name as Version) === 'current';
+  const isV10 = (preferredVersion?.name as Version) !== '9.x';
 
   useEffect(() => {
     const searchParams = new URLSearchParams(location.search);

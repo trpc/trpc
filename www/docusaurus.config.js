@@ -161,7 +161,7 @@ module.exports = {
       '@docusaurus/preset-classic',
       {
         docs: {
-          lastVersion: '9.x',
+          lastVersion: 'current',
           // disableVersioning: true,
           // onlyIncludeVersions: ['9.x'],
           versions: {
