@@ -1,5 +1,5 @@
 ---
-slug: announcing-trpc-version-10-beta
+slug: announcing-trpc-10-beta
 title: Announcing tRPC 10.0 Beta
 author: Alex / KATT 🐱
 author_title: Creator of tRPC
@@ -15,7 +15,13 @@ The developer experience in version 10 of tRPC is unparalleled; the boundaries b
 
 TypeScript enables us to do very cool things, but it comes at a cost. Many of the things that we (ab)use in tRPC, are very heavy on the compiler, and as a result, you might have experienced your IDE slowing down as your application grows. In v10, we've improved this massively.
 
-We've done this through changing our API that allows TypeScript to be a lot faster on incremental.
+We've done this through changing our API that allows TypeScript to be a lot faster, especially during incremental compilation, allowing your IDE to remain snappy.
+
+## Improved DX
+
+There was still a drift.
+
+## And so much more
 
 When working with tRPC v9, you might have experienced that your IDE started getting sluggish when getting big  when working with tRPC
 
