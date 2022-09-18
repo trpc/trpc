@@ -3,7 +3,7 @@ import { NextPageWithLayout } from './_app';
 import { inferProcedureInput } from '@trpc/server';
 import Link from 'next/link';
 import { Fragment } from 'react';
-import { AppRouter } from '~/server/routers/_app';
+import type { AppRouter } from '~/server/routers/_app';
 
 const IndexPage: NextPageWithLayout = () => {
   const utils = trpc.useContext();
