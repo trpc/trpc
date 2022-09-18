@@ -15,7 +15,7 @@ model Post {
   title String
   text  String
 
-  // To return `Date`s intact through the API we we use transformers
+  // To return `Date`s intact through the API we use transformers
   // https://trpc.io/docs/data-transformers
   // This is unique so it can be used for cursor-based pagination
   createdAt DateTime @unique @default(now())
