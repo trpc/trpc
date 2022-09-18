@@ -31,7 +31,7 @@ Things to bring up:
 - Reusable base procedures
 - Easier to infer types
 - Subscriptions rewritten
-- Upgrade to react-query 10
+- Upgrade to react-query 4
 - Incremental migration path - (maybe codemod soon)
 
 
