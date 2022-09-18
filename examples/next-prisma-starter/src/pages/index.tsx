@@ -51,7 +51,7 @@ const IndexPage: NextPageWithLayout = () => {
         onClick={() => postsQuery.fetchNextPage()}
         disabled={!postsQuery.hasNextPage || postsQuery.isFetchingNextPage}
       >
-        {postsQuery.isFetchingPreviousPage
+        {postsQuery.isFetchingNextPage
           ? 'Loading more...'
           : postsQuery.hasNextPage
           ? 'Load More'
