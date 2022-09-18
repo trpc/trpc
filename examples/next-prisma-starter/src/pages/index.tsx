@@ -1,6 +1,8 @@
 import { trpc } from '../utils/trpc';
 import { NextPageWithLayout } from './_app';
+import { inferProcedureInput } from '@trpc/server';
 import Link from 'next/link';
+import { AppRouter } from '~/server/routers/_app';
 
 const IndexPage: NextPageWithLayout = () => {
   const utils = trpc.useContext();
@@ -46,25 +48,27 @@ const IndexPage: NextPageWithLayout = () => {
 
       <form
         onSubmit={async (e) => {
-          e.preventDefault();
           /**
            * In a real app you probably don't want to use this manually
            * Checkout React Hook Form - it works great with tRPC
-           * @link https://react-hook-form.com/
+           * @see https://react-hook-form.com/
+           * @see https://kitchen-sink.trpc.io/react-hook-form
            */
-
-          const $text: HTMLInputElement = (e as any).target.elements.text;
-          const $title: HTMLInputElement = (e as any).target.elements.title;
-          const input = {
-            title: $title.value,
-            text: $text.value,
+          e.preventDefault();
+          const values = Object.fromEntries(new FormData(e.currentTarget));
+          type Input = inferProcedureInput<AppRouter['post']['add']>;
+          //    ^?
+          const input: Input = {
+            title: values.title as string,
+            text: values.text as string,
           };
           try {
             await addPost.mutateAsync(input);
 
-            $title.value = '';
-            $text.value = '';
-          } catch {}
+            e.currentTarget.reset();
+          } catch (cause) {
+            console.error({ cause }, 'Failed to add post');
+          }
         }}
       >
         <label htmlFor="title">Title:</label>
