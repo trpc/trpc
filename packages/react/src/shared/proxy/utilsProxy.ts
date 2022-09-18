@@ -151,14 +151,13 @@ type DecorateProcedure<
  * their possible input types
  */
 type InferAllRouterQueryInputTypes<TRouter extends AnyRouter> = {
-  [TKey in keyof TRouter['_def']['record']]: TRouter['_def']['record'][TKey] extends infer ProcedureOrRouter
-    ? ProcedureOrRouter extends AnyQueryProcedure
-      ? inferProcedureInput<ProcedureOrRouter>
-      : ProcedureOrRouter extends AnyRouter
-      ? InferAllRouterQueryInputTypes<ProcedureOrRouter> // Recurse as we have a sub router!
-      : never
-    : never;
-}[keyof TRouter['_def']['record']]; // This flattens results into a big union and ignores never keys
+  [TKey in keyof Filter<
+    TRouter['_def']['record'],
+    AnyRouter | AnyQueryProcedure
+  >]: TRouter['_def']['record'][TKey] extends AnyQueryProcedure
+    ? inferProcedureInput<TRouter['_def']['record'][TKey]>
+    : InferAllRouterQueryInputTypes<TRouter['_def']['record'][TKey]>; // Recurse as we have a sub router!
+}[keyof Filter<TRouter['_def']['record'], AnyRouter | AnyQueryProcedure>]; // This flattens results into a big union
 
 /**
  * this is the type that is used to add in procedures that can be used on
