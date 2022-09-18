@@ -26,7 +26,7 @@ jobs:
         run: pnpm install
 
       - name: Test
-        run: pnpm test --ci --coverage --maxWorkers=2
+        run: pnpm test -- --ci --coverage --maxWorkers=2
 
       - uses: codecov/codecov-action@v1
         with:
