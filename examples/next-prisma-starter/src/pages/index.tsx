@@ -26,12 +26,12 @@ const IndexPage: NextPageWithLayout = () => {
   });
 
   // prefetch all posts for instant navigation
-  useEffect(() => {
-    const allPosts = postsQuery.data?.pages.flatMap((page) => page.items) ?? [];
-    for (const { id } of allPosts) {
-      void utils.post.byId.prefetch({ id });
-    }
-  }, [postsQuery.data, utils]);
+  // useEffect(() => {
+  //   const allPosts = postsQuery.data?.pages.flatMap((page) => page.items) ?? [];
+  //   for (const { id } of allPosts) {
+  //     void utils.post.byId.prefetch({ id });
+  //   }
+  // }, [postsQuery.data, utils]);
 
   return (
     <>
