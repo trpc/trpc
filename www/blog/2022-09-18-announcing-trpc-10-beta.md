@@ -7,14 +7,17 @@ author_url: https://twitter.com/alexdotjs
 author_image_url: https://avatars1.githubusercontent.com/u/459267?s=460&v=4
 ---
 
-Today we are excited to announce the beta release of tRPC 10.0! 
+tRPC has already changed how many people think about APIs and about the boundaries between frontend and backend. Since we released our last major about a year ago, we've gotten 11,000+ more stars on GitHub, thousands more applications using tRPC, and countless members of our community giving us feedback & from this, we've learned a lot.
 
-Going from version 9 to version 10 might not look like such a big deal but this is the biggest release yet of tRPC & the new version of tRPC is a complete overhaul of the API, front to back, and is packed with a bunch of new features, improved DX, and **a lot of** TypeScript performance improvements.
+The developer experience in version 10 of tRPC is unparalleled; the boundaries between backend and frontend are truly blurred, we've worked very hard at addressing the TypeScript performance issues many of you have faced and we are convinced we have created something we are convinced you will love to work with.
 
+## Massively improved performance
 
+TypeScript enables us to do very cool things, but it comes at a cost. Many of the things that we (ab)use in tRPC, are very heavy on the compiler, and as a result, you might have experienced your IDE slowing down as your application grows. In v10, we've improved this massively.
 
+We've done this through changing our API that allows TypeScript to be a lot faster on incremental.
 
-Things to bring up:
+When working with tRPC v9, you might have experienced that your IDE started getting sluggish when getting big  when working with tRPC
 
 - Massively improved performance
 - How to define a v10 router & procedure
