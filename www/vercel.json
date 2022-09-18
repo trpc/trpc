@@ -32,7 +32,7 @@
     },
     {
       "source": "/docs",
-      "destination": "/docs/v9",
+      "destination": "/docs/v10",
       "permanent": false
     },
     {
