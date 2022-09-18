@@ -65,7 +65,7 @@ const IndexPage: NextPageWithLayout = () => {
       </button>
 
       {postsQuery.data?.pages.map((page, index) => (
-        <Fragment key={index}>
+        <Fragment key={page.items[0]?.id || index}>
           {page.items.map((item) => (
             <article key={item.id}>
               <h3>{item.title}</h3>
