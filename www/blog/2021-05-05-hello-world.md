@@ -1,6 +1,6 @@
 ---
-slug: hello-trpc
-title: Hello tRPC
+slug: introducing-trpc
+title: Introducing tRPC
 author: Alex / KATT 🐱
 author_title: Creator of tRPC
 author_url: https://twitter.com/alexdotjs
@@ -13,7 +13,7 @@ I'm Alex, or "KATT" on GitHub, and I want to tell you about a library called [tR
 In short - tRPC gives you end-to-end type safety from your (node-)server to your client, _without even declaring types_. All you do on the backend is that you return data in a function and on the frontend you use said data based on the endpoint name. 
 
 **This is how it can look like when doing a tRPC endpoint & client call:**
-![Alt Text](https://dev-to-uploads.s3.amazonaws.com/uploads/articles/05jxbzj5xe769uza8h1z.gif)
+![Alt Text](https://assets.trpc.io/www/v9/trpcgif.gif)
 
 I have made a library for React (`@trpc/react`) that sits on top of the great react-query, but the client library (`@trpc/client`) works without React (if you want to build a specific Svelte/Vue/Angular/[..] lib, please reach out!)
 
@@ -128,14 +128,14 @@ return (
 
 Anyway, as I said, I just wanted to get the ball rolling. There's a lot more things:
 
-- Creating context for incoming requests for user-specific data that are dependency injected into the resolvers  - [link](https://trpc.io/docs/v9/context)
-- Middleware support for routers - [link](https://trpc.io/docs/v9/middlewares)
-- Merging routers (you probably don't want all your backend data in one file) - [link](https://trpc.io/docs/v9/merging-routers)
-- Simplest server-side rendering you've ever seen in React-land using our `@trpc/next` adapter - [link](https://trpc.io/docs/v9/)
-- Type-safe error formatting - [link](https://trpc.io/docs/v9/error-formatting)
-- Data transformers (use Date/Map/Set objects across the wire) - [link](https://trpc.io/docs/v9/data-transformers)
+- Creating context for incoming requests for user-specific data that are dependency injected into the resolvers  - [link](/docs/v9/context)
+- Middleware support for routers - [link](/docs/v9/middlewares)
+- Merging routers (you probably don't want all your backend data in one file) - [link](/docs/v9/merging-routers)
+- Simplest server-side rendering you've ever seen in React-land using our `@trpc/next` adapter - [link](/docs/v9/)
+- Type-safe error formatting - [link](/docs/v9/error-formatting)
+- Data transformers (use Date/Map/Set objects across the wire) - [link](/docs/v9/data-transformers)
 - Helpers for React Query
 
-If you want to get started there's a few examples in the [Getting Started for Next.js](https://trpc.io/docs/v9/nextjs).
+If you want to get started there's a few examples in the [Getting Started for Next.js](/docs/v9/nextjs).
 
 [Follow me on Twitter for updates!](https://twitter.com/alexdotjs)
