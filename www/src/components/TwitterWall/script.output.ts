@@ -30,7 +30,7 @@ export const tweets = [
     "name": "Anders Bech Mellson",
     "handle": "andersmellson",
     "date": "Sep 12",
-    "avatar": "https://pbs.twimg.com/profile_images/1548373336287113216/6oOIlYgP_normal.jpg",
+    "avatar": "https://pbs.twimg.com/profile_images/1571199740741648386/MHgs4RqH_normal.jpg",
     "content": "Spent today playing with @trpcio v10 and I'm officially in love 😍 ps. Don't tell my wife 🙊"
   },
   {
@@ -98,6 +98,14 @@ export const tweets = [
     "content": "I'm just gonna say it... @trpcio is honestly the coolest thing since sliced bread... 😌"
   },
   {
+    "id": "1569902022769446913",
+    "name": "Juan Salvatore",
+    "handle": "jnsalvatore",
+    "date": "Sep 14",
+    "avatar": "https://pbs.twimg.com/profile_images/1515130222240157698/B23hnJu-_normal.jpg",
+    "content": "@trpcio is awesome"
+  },
+  {
     "id": "1567475304255619074",
     "name": "bachitter",
     "handle": "bachitterch",
@@ -112,14 +120,6 @@ export const tweets = [
     "date": "Aug 22",
     "avatar": "https://pbs.twimg.com/profile_images/1448195635723788288/_T_9D4gC_normal.jpg",
     "content": "@trpcio just feels right. Playing around with this is just magical. Big shoutout to @alexdotjs for this. Absolutely… "
-  },
-  {
-    "id": "1558878448403333120",
-    "name": "Emir 🌐",
-    "handle": "OneKnowd",
-    "date": "Aug 14",
-    "avatar": "https://pbs.twimg.com/profile_images/1008707270488838144/5AkI0cHJ_normal.jpg",
-    "content": "I don't think I ever had shorted pagination implementation...\n\n#trpc #javascript "
   },
   {
     "id": "1564249370085957632",

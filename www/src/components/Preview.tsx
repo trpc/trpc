@@ -9,25 +9,11 @@ export const Preview = () => {
           loop
           muted
           playsInline
-          width="550px"
-          className="rounded-md shadow-xl trpcgif trpcgif--v10-dark"
+          width="1200px"
+          className="border-[20px] shadow-xl rounded-3xl border-[#111111] trpcgif trpcgif--v10"
         >
           <source
-            src="https://assets.trpc.io/www/v10/preview-dark.mp4"
-            type="video/mp4"
-          />
-          You need a browser that supports HTML5 video to view this video.
-        </video>
-        <video
-          autoPlay
-          loop
-          muted
-          playsInline
-          width="550px"
-          className="rounded-md shadow-xl trpcgif trpcgif--v10-light"
-        >
-          <source
-            src="https://assets.trpc.io/www/v10/preview-light.mp4"
+            src="https://assets.trpc.io/www/v10/v10-dark-landscape.mp4"
             type="video/mp4"
           />
           You need a browser that supports HTML5 video to view this video.

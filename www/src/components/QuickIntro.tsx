@@ -103,6 +103,7 @@ export const QuickIntro: FC = () => {
             Simple to use with <br /> unmatched developer experience.
           </>
         }
+        description="It's quick and easy to get started using tRPC and build a type safe API."
       />
       <div className="flex flex-col gap-12 mt-6">
         {steps.map((step, index) => (
