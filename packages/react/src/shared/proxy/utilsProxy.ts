@@ -147,19 +147,57 @@ type DecorateProcedure<
 };
 
 /**
- * this is the type that is used to add in procedures that can be used on
- * partial paths.
+ * This function will traverse a type that has been constructed with a
+ * { __Router:{ [procedureOrRouterName]:({Type We Want}) | {__Router:{...}} }
+ * structure and extract all wanted types as a flat type union
  *
- * NOTE: All generics have been removed from this type at the moment ... But we
- * may want to add these back in if we can be smarter about inferring input
- * type...
+ * This is the only way I have found of bringing all types across a router to
+ * top level for us to merge them together for users to use!
  */
-type DecoratePartialPathProcedure = {
+type ExtractUnionTypesFromRouterNest<RouterNest> = RouterNest extends {
+  __Router: infer ProceduresOrRouters;
+}
+  ? {
+      [Key in keyof ProceduresOrRouters]:
+        | (ProceduresOrRouters[Key] extends {
+            __Router: any;
+          }
+            ? never
+            : ProceduresOrRouters[Key]) // If it is not a router, extract the type we wanted and add to the union
+        | ExtractUnionTypesFromRouterNest<ProceduresOrRouters[Key]>; // Pass it to recursion regardless incase it is a router
+    }[keyof ProceduresOrRouters] // This also omits never keys 👍
+  : never;
+
+type RecursivelyInferAllQueryInputTypesUnderRouter<TRouter extends AnyRouter> =
+  {
+    __Router: /** Decorate as a router so we can safely recurse to flatten later */ {
+      [TKey in keyof TRouter['_def']['record']]: TRouter['_def']['record'][TKey] extends infer SubProcedureOrRouter
+        ? SubProcedureOrRouter extends QueryProcedure<any>
+          ? inferProcedureInput<SubProcedureOrRouter> extends void
+            ? never
+            : inferProcedureInput<SubProcedureOrRouter>
+          : SubProcedureOrRouter extends AnyRouter
+          ? RecursivelyInferAllQueryInputTypesUnderRouter<SubProcedureOrRouter>
+          : never
+        : never;
+    };
+  };
+
+type InferAllRouterQueryInputTypes<TRouter extends AnyRouter> =
+  ExtractUnionTypesFromRouterNest<
+    RecursivelyInferAllQueryInputTypesUnderRouter<TRouter>
+  >;
+
+/**
+ * this is the type that is used to add in procedures that can be used on
+ * an entire router
+ */
+type DecorateRouterProcedure<TRouter extends AnyRouter> = {
   /**
    * @link https://react-query.tanstack.com/guides/query-invalidation
    */
   invalidate(
-    input?: unknown, // We can't infer the input type as it may be multiple queries!?
+    input?: Partial<InferAllRouterQueryInputTypes<TRouter>>,
     filters?: InvalidateQueryFilters,
     options?: InvalidateOptions,
   ): Promise<void>;
@@ -174,14 +212,14 @@ export type DecoratedProcedureUtilsRecord<TRouter extends AnyRouter> =
       ? never
       : TRouter['_def']['record'][TKey] extends AnyRouter
       ? DecoratedProcedureUtilsRecord<TRouter['_def']['record'][TKey]> &
-          DecoratePartialPathProcedure
+          DecorateRouterProcedure<TRouter['_def']['record'][TKey]>
       : // utils only apply to queries
       TRouter['_def']['record'][TKey] extends QueryProcedure<any>
       ? DecorateProcedure<TRouter, TRouter['_def']['record'][TKey]>
       : never;
   }> &
     // Add functions that should be available at utils root
-    DecoratePartialPathProcedure;
+    DecorateRouterProcedure<TRouter>;
 
 type AnyDecoratedProcedure = DecorateProcedure<any, any>;
 
