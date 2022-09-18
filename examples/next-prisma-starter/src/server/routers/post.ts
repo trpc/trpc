@@ -26,7 +26,7 @@ export const postRouter = t.router({
     .input(
       z.object({
         limit: z.number().min(1).max(100).nullish(),
-        cursor: z.date().nullish(),
+        cursor: z.string().nullish(),
       }),
     )
     .query(async ({ input }) => {
@@ -46,7 +46,7 @@ export const postRouter = t.router({
         where: {},
         cursor: cursor
           ? {
-              createdAt: cursor,
+              id: cursor,
             }
           : undefined,
         orderBy: {
@@ -59,11 +59,11 @@ export const postRouter = t.router({
 
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         const nextItem = items.pop()!;
-        nextCursor = nextItem.createdAt;
+        nextCursor = nextItem.id;
       }
 
       return {
-        items,
+        items: items.reverse(),
         nextCursor,
       };
     }),

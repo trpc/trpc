@@ -12,7 +12,7 @@ const IndexPage: NextPageWithLayout = () => {
       limit: 5,
     },
     {
-      getNextPageParam(lastPage) {
+      getPreviousPageParam(lastPage) {
         return lastPage.nextCursor;
       },
     },
@@ -48,15 +48,18 @@ const IndexPage: NextPageWithLayout = () => {
       </h2>
 
       <button
-        onClick={() => postsQuery.fetchNextPage()}
-        disabled={!postsQuery.hasNextPage || postsQuery.isFetchingNextPage}
+        onClick={() => postsQuery.fetchPreviousPage()}
+        disabled={
+          !postsQuery.hasPreviousPage || postsQuery.isFetchingPreviousPage
+        }
       >
-        {postsQuery.isFetchingNextPage
+        {postsQuery.isFetchingPreviousPage
           ? 'Loading more...'
-          : postsQuery.hasNextPage
+          : postsQuery.hasPreviousPage
           ? 'Load More'
           : 'Nothing more to load'}
       </button>
+
       {postsQuery.data?.pages.map((page, index) => (
         <Fragment key={index}>
           {page.items.map((item) => (
