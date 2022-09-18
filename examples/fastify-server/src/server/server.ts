@@ -27,18 +27,6 @@ export function createServer(opts: ServerOptions) {
     return { hello: 'wait-on 💨' };
   });
 
-  server.get('/hello', async () => {
-    return { hello: 'GET' };
-  });
-
-  server.post<{ Body: { text: string; life: number } }>(
-    '/hello',
-    async ({ body }) => {
-      console.log('BODY:', typeof body, body);
-      return { hello: 'POST', body };
-    },
-  );
-
   const stop = () => server.close();
   const start = async () => {
     try {
