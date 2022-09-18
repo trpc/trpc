@@ -7,7 +7,8 @@ module.exports = {
   url: 'https://trpc.io',
   baseUrl: '/',
   onBrokenLinks: 'throw',
-  onBrokenMarkdownLinks: 'warn',
+  onBrokenMarkdownLinks: 'throw',
+  onDuplicateRoutes: 'throw',
   favicon: 'img/favicon.ico',
   organizationName: 'trpc', // Usually your GitHub org/user name.
   projectName: 'trpc', // Usually your repo name.
