@@ -37,7 +37,7 @@
     },
     {
       "source": "/docs/:path((?!v[0-9]).*)",
-      "destination": "/docs/v9/:path*"
+      "destination": "/docs/v10/:path*"
     }
   ]
 }
