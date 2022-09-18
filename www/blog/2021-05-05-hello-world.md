@@ -21,7 +21,7 @@ There's no code generation involved & you can pretty easily add it to your exist
 
 ## Example
 
-Here's an example of a tRPC procedure (aka endpoint) called `hello` that takes a `string` argument. (using zod for data validation, created by [Colin](https://colinhacks.com/) who also developed the initial proof-of-concept of tRPC)
+Here's an example of a tRPC procedure (aka endpoint) called `hello` that takes a `string` argument.
 
 ```tsx
 const appRouter = trpc.router().query('hello', {

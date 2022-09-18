@@ -12,6 +12,8 @@ Today we are excited to announce the beta release of tRPC 10.0!
 Going from version 9 to version 10 might not look like such a big deal but this is the biggest release yet of tRPC & the new version of tRPC is a complete overhaul of the API, front to back, and is packed with a bunch of new features, improved DX, and **a lot of** TypeScript performance improvements.
 
 
+
+
 Things to bring up:
 
 - Massively improved performance
