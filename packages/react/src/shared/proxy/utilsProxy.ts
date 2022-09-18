@@ -10,15 +10,15 @@ import {
 import { Updater } from '@tanstack/react-query/build/types/packages/query-core/src/utils';
 import { TRPCClientError } from '@trpc/client';
 import {
+  AnyProcedure,
+  AnyQueryProcedure,
   AnyRouter,
-  OmitNeverKeys,
-  Procedure,
+  Filter,
   ProcedureOptions,
-  QueryProcedure,
   inferProcedureInput,
   inferProcedureOutput,
 } from '@trpc/server';
-import { LegacyV9ProcedureTag, createProxy } from '@trpc/server/shared';
+import { createProxy } from '@trpc/server/shared';
 import {
   TRPCContextProps,
   TRPCContextState,
@@ -30,7 +30,7 @@ import { getQueryKey } from '../../internals/getQueryKey';
 
 type DecorateProcedure<
   TRouter extends AnyRouter,
-  TProcedure extends Procedure<any>,
+  TProcedure extends AnyQueryProcedure,
 > = {
   /**
    * @link https://react-query.tanstack.com/guides/prefetching
@@ -152,7 +152,7 @@ type DecorateProcedure<
  */
 type InferAllRouterQueryInputTypes<TRouter extends AnyRouter> = {
   [TKey in keyof TRouter['_def']['record']]: TRouter['_def']['record'][TKey] extends infer ProcedureOrRouter
-    ? ProcedureOrRouter extends QueryProcedure<any>
+    ? ProcedureOrRouter extends AnyQueryProcedure
       ? inferProcedureInput<ProcedureOrRouter>
       : ProcedureOrRouter extends AnyRouter
       ? InferAllRouterQueryInputTypes<ProcedureOrRouter> // Recurse as we have a sub router!
@@ -178,20 +178,16 @@ type DecorateRouterProcedure<TRouter extends AnyRouter> = {
 /**
  * @internal
  */
-export type DecoratedProcedureUtilsRecord<TRouter extends AnyRouter> =
-  OmitNeverKeys<{
-    [TKey in keyof TRouter['_def']['record']]: TRouter['_def']['record'][TKey] extends LegacyV9ProcedureTag
-      ? never
-      : TRouter['_def']['record'][TKey] extends AnyRouter
-      ? DecoratedProcedureUtilsRecord<TRouter['_def']['record'][TKey]> &
-          DecorateRouterProcedure<TRouter['_def']['record'][TKey]>
-      : // utils only apply to queries
-      TRouter['_def']['record'][TKey] extends QueryProcedure<any>
-      ? DecorateProcedure<TRouter, TRouter['_def']['record'][TKey]>
-      : never;
-  }> &
-    // Add functions that should be available at utils root
-    DecorateRouterProcedure<TRouter>;
+export type DecoratedProcedureUtilsRecord<TRouter extends AnyRouter> = {
+  [TKey in keyof Filter<
+    TRouter['_def']['record'],
+    AnyRouter | AnyQueryProcedure
+  >]: TRouter['_def']['record'][TKey] extends AnyRouter
+    ? DecoratedProcedureUtilsRecord<TRouter['_def']['record'][TKey]> &
+        DecorateRouterProcedure<TRouter['_def']['record'][TKey]>
+    : // utils only apply to queries
+      DecorateProcedure<TRouter, TRouter['_def']['record'][TKey]>;
+} & DecorateRouterProcedure<TRouter>; // Add functions that should be available at utils root
 
 type AnyDecoratedProcedure = DecorateProcedure<any, any>;
 

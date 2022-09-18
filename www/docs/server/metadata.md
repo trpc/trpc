@@ -40,7 +40,7 @@ interface Meta {
   hasAuth: boolean;
 }
 
-export const t = initTRPC.context<Context>().meta<Meta>).create();
+export const t = initTRPC.context<Context>().meta<Meta>().create();
 
 const isAuthed = t.middleware(async ({ meta, next, ctx }) => {
   // only check authorization if enabled

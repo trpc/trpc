@@ -23,3 +23,5 @@ packages/*/*
 ## Dont ignore src or test
 !packages/*/src
 !packages/*/test
+
+examples/next-big-router/src/server/routers

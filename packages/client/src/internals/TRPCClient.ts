@@ -6,7 +6,6 @@ import {
   inferProcedureOutput,
   inferSubscriptionOutput,
 } from '@trpc/server';
-import { ProcedureRecord } from '@trpc/server';
 import {
   Unsubscribable,
   inferObservableValue,
@@ -14,32 +13,15 @@ import {
   share,
 } from '@trpc/server/observable';
 import { TRPCClientError } from '../TRPCClientError';
-import { getFetch } from '../getFetch';
-import { httpBatchLink } from '../links';
 import { createChain } from '../links/internals/createChain';
 import {
-  HTTPHeaders,
   OperationContext,
   OperationLink,
   TRPCClientRuntime,
   TRPCLink,
 } from '../links/types';
-import { getAbortController } from './fetchHelpers';
 
 interface CreateTRPCClientBaseOptions {
-  /**
-   * Add ponyfill for fetch
-   */
-  fetch?: typeof fetch;
-  /**
-   * Add ponyfill for AbortController
-   */
-  AbortController?: typeof AbortController;
-  /**
-   * Headers to be set on outgoing requests or a callback that of said headers
-   * @link http://localhost:3000/docs/v10/header
-   */
-  headers?: HTTPHeaders | (() => HTTPHeaders | Promise<HTTPHeaders>);
   /**
    * Data transformer
    * @link https://trpc.io/docs/data-transformers
@@ -64,58 +46,19 @@ export interface TRPCSubscriptionObserver<TValue, TError> {
   onComplete: () => void;
 }
 
-/**
- * This type prohibits `url` from being provided along with `links`
- * @internal
- */
+/** @internal */
 export type CreateTRPCClientOptions<TRouter extends AnyRouter> =
-  | CreateTRPCClientBaseOptions &
-      (
-        | {
-            links: TRPCLink<TRouter>[];
-          }
-        | {
-            url: string;
-            links?: never;
-          }
-      );
-
-export type AssertType<T, K> = T extends K ? T : never;
-/**
- * @deprecated
- */
-export type AssertLegacyDef<TRouter extends AnyRouter> =
-  TRouter['_def']['legacy'] extends Record<
-    'subscriptions' | 'queries' | 'mutations',
-    ProcedureRecord
-  >
-    ? TRouter['_def']['legacy']
-    : {
-        subscriptions: {};
-        queries: {};
-        mutations: {};
-      };
+  | CreateTRPCClientBaseOptions & {
+      links: TRPCLink<TRouter>[];
+    };
 
 export class TRPCClient<TRouter extends AnyRouter> {
   private readonly links: OperationLink<TRouter>[];
   public readonly runtime: TRPCClientRuntime;
   private requestId: number;
-  private getRequestId() {
-    return ++this.requestId;
-  }
 
   constructor(opts: CreateTRPCClientOptions<TRouter>) {
-    const _fetch = getFetch(opts?.fetch);
-    const AC = getAbortController(opts?.AbortController);
     this.requestId = 0;
-
-    function getHeadersFn(): TRPCClientRuntime['headers'] {
-      if (opts.headers) {
-        const headers = opts.headers;
-        return typeof headers === 'function' ? headers : () => headers;
-      }
-      return () => ({});
-    }
 
     function getTransformer(): DataTransformer {
       if (!opts.transformer)
@@ -132,20 +75,10 @@ export class TRPCClient<TRouter extends AnyRouter> {
     }
 
     this.runtime = {
-      AbortController: AC,
-      fetch: _fetch,
-      headers: getHeadersFn(),
       transformer: getTransformer(),
     };
-
-    const getLinks = (): OperationLink<TRouter>[] => {
-      if (opts.links) {
-        return opts.links.map((link) => link(this.runtime));
-      }
-      return [httpBatchLink({ url: opts.url })(this.runtime)];
-    };
-
-    this.links = getLinks();
+    // Initialize the links
+    this.links = opts.links.map((link) => link(this.runtime));
   }
 
   private $request<TInput = unknown, TOutput = unknown>({
@@ -162,7 +95,7 @@ export class TRPCClient<TRouter extends AnyRouter> {
     const chain$ = createChain<TRouter, TInput, TOutput>({
       links: this.links as OperationLink<any, any, any>[],
       op: {
-        id: this.getRequestId(),
+        id: ++this.requestId,
         type,
         path,
         input,
@@ -197,11 +130,9 @@ export class TRPCClient<TRouter extends AnyRouter> {
     return abortablePromise;
   }
   public query<
-    TQueries extends AssertLegacyDef<TRouter>['queries'],
+    TQueries extends TRouter['_def']['queries'],
     TPath extends string & keyof TQueries,
-    TInput extends inferProcedureInput<
-      AssertType<TQueries, ProcedureRecord>[TPath]
-    >,
+    TInput extends inferProcedureInput<TQueries[TPath]>,
   >(path: TPath, input?: TInput, opts?: TRPCRequestOptions) {
     type TOutput = inferProcedureOutput<TQueries[TPath]>;
     return this.requestAsPromise<TInput, TOutput>({
@@ -213,11 +144,9 @@ export class TRPCClient<TRouter extends AnyRouter> {
     });
   }
   public mutation<
-    TMutations extends AssertLegacyDef<TRouter>['mutations'],
+    TMutations extends TRouter['_def']['mutations'],
     TPath extends string & keyof TMutations,
-    TInput extends inferProcedureInput<
-      AssertType<TMutations, ProcedureRecord>[TPath]
-    >,
+    TInput extends inferProcedureInput<TMutations[TPath]>,
   >(path: TPath, input?: TInput, opts?: TRPCRequestOptions) {
     type TOutput = inferProcedureOutput<TMutations[TPath]>;
     return this.requestAsPromise<TInput, TOutput>({
@@ -229,12 +158,10 @@ export class TRPCClient<TRouter extends AnyRouter> {
     });
   }
   public subscription<
-    TSubscriptions extends AssertLegacyDef<TRouter>['subscriptions'],
+    TSubscriptions extends TRouter['_def']['subscriptions'],
     TPath extends string & keyof TSubscriptions,
     TOutput extends inferSubscriptionOutput<TRouter, TPath>,
-    TInput extends inferProcedureInput<
-      AssertType<TSubscriptions, ProcedureRecord>[TPath]
-    >,
+    TInput extends inferProcedureInput<TSubscriptions[TPath]>,
   >(
     path: TPath,
     input: TInput,

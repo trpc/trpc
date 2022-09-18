@@ -149,16 +149,18 @@ function createClient(opts: ClientOptions = {}) {
   const host = `localhost:${config.port}${config.prefix}`;
   const wsClient = createWSClient({ url: `ws://${host}` });
   const client = createTRPCClient<AppRouter>({
-    headers: opts.headers,
-    AbortController: AbortController as any,
-    fetch: fetch as any,
     links: [
       splitLink({
         condition(op) {
           return op.type === 'subscription';
         },
         true: wsLink({ client: wsClient }),
-        false: httpLink({ url: `http://${host}` }),
+        false: httpLink({
+          url: `http://${host}`,
+          headers: opts.headers,
+          AbortController: AbortController as any,
+          fetch: fetch as any,
+        }),
       }),
     ],
   });

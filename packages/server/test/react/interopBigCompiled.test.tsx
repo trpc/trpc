@@ -4,7 +4,11 @@
 import { appRouter as bigV10Router } from '../__generated__/bigBoi/_app';
 import { t } from '../__generated__/bigBoi/_trpc';
 import { bigRouter as bigV9Router } from '../__generated__/bigLegacyRouter/bigRouter';
-import { createTRPCClient, createTRPCProxyClient } from '@trpc/client';
+import {
+  createTRPCClient,
+  createTRPCProxyClient,
+  httpBatchLink,
+} from '@trpc/client';
 import { createReactQueryHooks } from '@trpc/react';
 import { expectTypeOf } from 'expect-type';
 
@@ -17,7 +21,7 @@ type AppRouter = typeof appRouter;
 test('raw client', async () => {
   try {
     const client = createTRPCClient<AppRouter>({
-      url: 'http://localhost:-1',
+      links: [httpBatchLink({ url: 'http://localhost:-1' })],
     });
 
     const result = await client.query('oldProc100');
@@ -30,7 +34,11 @@ test('raw client', async () => {
 
   try {
     const proxy = createTRPCProxyClient<AppRouter>({
-      url: 'http://localhost:-1',
+      links: [
+        httpBatchLink({
+          url: 'http://localhost:-1',
+        }),
+      ],
     });
     const result = await proxy.r0.greeting.query({ who: 'KATT' });
 

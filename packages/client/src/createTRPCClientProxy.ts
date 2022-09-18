@@ -2,8 +2,11 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import type {
+  AnyMutationProcedure,
+  AnyProcedure,
+  AnyQueryProcedure,
   AnyRouter,
-  Procedure,
+  AnySubscriptionProcedure,
   ProcedureArgs,
   ProcedureRouterRecord,
   ProcedureType,
@@ -13,23 +16,24 @@ import type {
   Unsubscribable,
   inferObservableValue,
 } from '@trpc/server/observable';
-import { LegacyV9ProcedureTag, createProxy } from '@trpc/server/shared';
+import { createProxy } from '@trpc/server/shared';
 import { TRPCClientError } from './TRPCClientError';
-import { CreateTRPCClientOptions, createTRPCClient } from './createTRPCClient';
+import { CreateTRPCClientOptions } from './createTRPCClient';
 import {
   TRPCClient as Client,
+  TRPCClient,
   TRPCSubscriptionObserver,
 } from './internals/TRPCClient';
 
 export type inferRouterProxyClient<TRouter extends AnyRouter> =
   DecoratedProcedureRecord<TRouter['_def']['record'], TRouter>;
 
-type Resolver<TProcedure extends Procedure<any>> = (
+type Resolver<TProcedure extends AnyProcedure> = (
   ...args: ProcedureArgs<TProcedure['_def']>
 ) => Promise<inferProcedureOutput<TProcedure>>;
 
 type SubscriptionResolver<
-  TProcedure extends Procedure<any>,
+  TProcedure extends AnyProcedure,
   TRouter extends AnyRouter,
 > = (
   ...args: [
@@ -45,23 +49,21 @@ type SubscriptionResolver<
 ) => Unsubscribable;
 
 type DecorateProcedure<
-  TProcedure extends Procedure<any>,
+  TProcedure extends AnyProcedure,
   TRouter extends AnyRouter,
-> = TProcedure extends { _type: 'query' }
+> = TProcedure extends AnyQueryProcedure
   ? {
       query: Resolver<TProcedure>;
     }
-  : TProcedure extends { _type: 'mutation' }
+  : TProcedure extends AnyMutationProcedure
   ? {
       mutate: Resolver<TProcedure>;
     }
-  : TProcedure extends { _type: 'subscription' }
+  : TProcedure extends AnySubscriptionProcedure
   ? {
       subscribe: SubscriptionResolver<TProcedure, TRouter>;
     }
   : never;
-
-type assertProcedure<T> = T extends Procedure<any> ? T : never;
 
 /**
  * @internal
@@ -70,14 +72,14 @@ type DecoratedProcedureRecord<
   TProcedures extends ProcedureRouterRecord,
   TRouter extends AnyRouter,
 > = {
-  [TKey in keyof TProcedures]: TProcedures[TKey] extends LegacyV9ProcedureTag
-    ? never
-    : TProcedures[TKey] extends AnyRouter
+  [TKey in keyof TProcedures]: TProcedures[TKey] extends AnyRouter
     ? DecoratedProcedureRecord<
         TProcedures[TKey]['_def']['record'],
         TProcedures[TKey]
       >
-    : DecorateProcedure<assertProcedure<TProcedures[TKey]>, TRouter>;
+    : TProcedures[TKey] extends AnyProcedure
+    ? DecorateProcedure<TProcedures[TKey], TRouter>
+    : never;
 };
 
 const clientCallTypeMap: Record<
@@ -110,7 +112,7 @@ export function createTRPCClientProxy<TRouter extends AnyRouter>(
 export function createTRPCProxyClient<TRouter extends AnyRouter>(
   opts: CreateTRPCClientOptions<TRouter>,
 ) {
-  const client = createTRPCClient<TRouter>(opts);
+  const client = new TRPCClient<TRouter>(opts);
   const proxy = createTRPCClientProxy(client);
   return proxy;
 }

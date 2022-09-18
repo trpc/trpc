@@ -201,11 +201,15 @@ userCreate(payload: {name: string}) => {id: string; name: string};
 // @include: server
 // ---cut---
 // @filename: client.ts
-import { createTRPCProxyClient } from '@trpc/client';
+import { createTRPCProxyClient, httpBatchLink } from '@trpc/client';
 import type { AppRouter } from './server';
 
 const trpc = createTRPCProxyClient<AppRouter>({
-  url: 'http://localhost:3000/api/trpc',
+  links: [
+    httpBatchLink({
+      url: 'http://localhost:3000/trpc',
+    }),
+  ],
 });
 ```
 
@@ -215,11 +219,15 @@ const trpc = createTRPCProxyClient<AppRouter>({
 // @module: esnext
 // @include: server
 // @filename: client.ts
-import { createTRPCProxyClient } from '@trpc/client';
+import { createTRPCProxyClient, httpBatchLink } from '@trpc/client';
 import type { AppRouter } from './server';
 
 const trpc = createTRPCProxyClient<AppRouter>({
-  url: 'http://localhost:3000/api/trpc',
+  links: [
+    httpBatchLink({
+      url: 'http://localhost:3000/trpc',
+    }),
+  ],
 });
 
 // ---cut---
@@ -238,11 +246,15 @@ const createdUser = await trpc.userCreate.mutate({ name: 'sachinraja' });
 // @module: esnext
 // @include: server
 // @filename: client.ts
-import { createTRPCProxyClient } from '@trpc/client';
+import { createTRPCProxyClient, httpBatchLink } from '@trpc/client';
 import type { AppRouter } from './server';
 
 const trpc = createTRPCProxyClient<AppRouter>({
-  url: 'http://localhost:3000/api/trpc',
+  links: [
+    httpBatchLink({
+      url: 'http://localhost:3000/trpc',
+    }),
+  ],
 });
 
 // ---cut---

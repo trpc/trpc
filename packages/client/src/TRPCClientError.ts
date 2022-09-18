@@ -1,15 +1,15 @@
 import {
+  AnyProcedure,
   AnyRouter,
   DefaultErrorShape,
   Maybe,
-  Procedure,
   inferRouterError,
 } from '@trpc/server';
 import { TRPCErrorResponse } from '@trpc/server/rpc';
 
-type RouterOrProcedure = AnyRouter | Procedure<any>;
+type RouterOrProcedure = AnyRouter | AnyProcedure;
 
-type inferErrorShape<TRouterOrProcedure extends AnyRouter | Procedure<any>> =
+type inferErrorShape<TRouterOrProcedure extends RouterOrProcedure> =
   TRouterOrProcedure extends AnyRouter
     ? inferRouterError<TRouterOrProcedure>
     : TRouterOrProcedure['_def']['_config']['errorShape'];
@@ -61,7 +61,7 @@ export class TRPCClientError<TRouterOrProcedure extends RouterOrProcedure>
   ): TRPCClientError<TRouterOrProcedure> {
     if (!(cause instanceof Error)) {
       return new TRPCClientError<TRouterOrProcedure>(
-        (cause.error as any).message ?? '',
+        cause.error.message ?? '',
         {
           ...opts,
           cause: undefined,

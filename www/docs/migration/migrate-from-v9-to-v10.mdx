@@ -20,7 +20,7 @@ tRPC v10 features a compatibility layer for users coming from v9. `.interop()` a
 > - If you don't like the variable name `t`, you can call it whatever you want
 > - You should create your root `t`-variable **exactly once** per application
 
-The way you initialize tRPC on the server has been update, we now create a root `t` variable that contains the root information about your app:
+The way you initialize tRPC on the server has been updated, we now create a root `t` variable that contains the root information about your app:
 
 - [Context](context)
 - [Meta data](metadata)
@@ -273,6 +273,10 @@ We have changed the API of Subscriptions where subscriptions need to return an `
 
 > 🚧 Feel free to contribute to improve this section
 
+### Custom HTTP options
+
+See [HTTP-specific options moved from `TRPCClient` to links](#http-specific-options-moved-from-trpcclient-to-links).
+
 ### Custom Links
 
 See the [Links documentation](links).
@@ -331,6 +335,44 @@ const helloQuery = client.greeting.query('KATT', { signal: ac.signal });
 
 // Aborting
 ac.abort();
+```
+
+#### HTTP-specific options moved from `TRPCClient` to links
+
+Previously, you passed the stuff like HTTP-headers straight onto your `createTRPCClient()`-request, but since tRPC is technically not tied to HTTP itself, we've moved these from the `TRPCClient` to the `httpLink`/`httpBatchLink`.
+
+```ts
+// before:
+import { createTRPCClient } from '@trpc/client';
+
+const client = createTRPCClient({
+  url: '...',
+  fetch: myFetchPonyfill,
+  AbortController: myAbortControllerPonyfill,
+  headers() {
+    return {
+      'x-foo': 'bar',
+    };
+  },
+});
+
+// after:
+import { createTRPCProxyClient, httpBatchLink } from '@trpc/client';
+
+const client = createTRPCProxyClient({
+  links: [
+    httpBatchLink({
+      url: '...',
+      fetch: myFetchPonyfill,
+      AbortController: myAbortControllerPonyfill,
+      headers() {
+        return {
+          'x-foo': 'bar',
+        };
+      },
+    })
+  ]
+});
 ```
 
 ## Extras
