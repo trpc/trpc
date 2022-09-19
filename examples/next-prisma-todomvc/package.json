@@ -24,7 +24,7 @@
   },
   "dependencies": {
     "@prisma/client": "^4.3.1",
-    "@tanstack/react-query": "^4.0.10",
+    "@tanstack/react-query": "^4.3.8",
     "@trpc/client": "^10.0.0-proxy-alpha.81",
     "@trpc/next": "^10.0.0-proxy-alpha.81",
     "@trpc/react": "^10.0.0-proxy-alpha.81",
@@ -36,8 +36,8 @@
     "next": "^12.1.6",
     "playwright": "^1.19.1",
     "prisma": "^4.3.1",
-    "react": "^18.1.0",
-    "react-dom": "^18.1.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
     "start-server-and-test": "^1.12.0",
     "superjson": "^1.7.4",
     "todomvc-app-css": "^2.3.0",
@@ -45,7 +45,7 @@
     "zod": "^3.0.0"
   },
   "devDependencies": {
-    "@tanstack/react-query-devtools": "^4.0.10",
+    "@tanstack/react-query-devtools": "^4.3.8",
     "@types/jest": "^27.0.1",
     "@types/node": "^18.7.11",
     "@types/react": "^18.0.9",

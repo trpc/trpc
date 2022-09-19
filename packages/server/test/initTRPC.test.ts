@@ -1,4 +1,3 @@
-import './___packages';
 import { expectTypeOf } from 'expect-type';
 import { DefaultErrorShape, initTRPC } from '../src';
 import {

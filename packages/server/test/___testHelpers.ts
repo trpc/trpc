@@ -1,17 +1,16 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import './___packages';
-import {
-  TRPCWebSocketClient,
-  WebSocketClientOptions,
-  createTRPCClientProxy,
-  createWSClient,
-  httpBatchLink,
-} from '@trpc/client/src';
-import { createTRPCClient } from '@trpc/client/src';
-import { WithTRPCConfig } from '@trpc/next';
 import AbortController from 'abort-controller';
 import fetch from 'node-fetch';
 import ws from 'ws';
+import {
+  TRPCWebSocketClient,
+  WebSocketClientOptions,
+  createTRPCClient,
+  createTRPCClientProxy,
+  createWSClient,
+  httpBatchLink,
+} from '../../client/src';
+import { WithTRPCConfig } from '../../next/src';
 import { AnyRouter as AnyNewRouter } from '../src';
 import {
   CreateHTTPHandlerOptions,

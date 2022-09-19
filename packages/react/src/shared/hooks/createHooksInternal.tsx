@@ -43,7 +43,7 @@ import {
   TRPCContextState,
 } from '../../internals/context';
 
-export type OutputWithCursor<TData, TCursor extends any = any> = {
+export type OutputWithCursor<TData, TCursor = any> = {
   cursor: TCursor | null;
   data: TData;
 };

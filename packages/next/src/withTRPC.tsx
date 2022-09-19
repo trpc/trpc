@@ -9,21 +9,22 @@ import {
   QueryClientProvider,
   dehydrate,
 } from '@tanstack/react-query';
-import type { CreateTRPCClientOptions } from '@trpc/client';
+import type { CreateTRPCClientOptions } from '@trpc/client/src';
 import {
   TRPCClient,
   TRPCClientError,
   TRPCClientErrorLike,
   createReactQueryHooks,
   createTRPCClient,
-} from '@trpc/react';
-import type { AnyRouter, Dict, Maybe, ResponseMeta } from '@trpc/server';
+} from '@trpc/react/src';
+import type { AnyRouter, Dict, Maybe, ResponseMeta } from '@trpc/server/src';
 import {
   AppContextType,
   AppPropsType,
   NextComponentType,
   NextPageContext,
 } from 'next/dist/shared/lib/utils';
+import { NextRouter } from 'next/router';
 import React, { createElement, useState } from 'react';
 import ssrPrepass from 'react-ssr-prepass';
 
@@ -91,7 +92,7 @@ export function withTRPC<
     const trpc = createReactQueryHooks<TRouter, TSSRContext>();
 
     const WithTRPC = (
-      props: AppPropsType & {
+      props: AppPropsType<NextRouter, any> & {
         trpc?: TRPCPrepassProps;
       },
     ) => {
