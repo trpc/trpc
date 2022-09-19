@@ -34,6 +34,14 @@ export const tweets = [
     "content": "Spent all of yesterday learning and implementing @trpcio and wow, what a great investment. I can't believe how much… "
   },
   {
+    "id": "1571922456239284224",
+    "name": "Theo - ping.gg",
+    "handle": "t3dotgg",
+    "date": "Sep 19",
+    "avatar": "https://pbs.twimg.com/profile_images/1570205891001192448/wtV7Iek2_normal.jpg",
+    "content": "The amount that tRPC has improved the quality of our code, the speed of our delivery, and the happiness of our devs… "
+  },
+  {
     "id": "1567560240882716677",
     "name": "Søren Bramer Schmidt",
     "handle": "sorenbs",
@@ -104,14 +112,6 @@ export const tweets = [
     "date": "Sep 19",
     "avatar": "https://pbs.twimg.com/profile_images/1531233261837381632/oZ5ZQRIe_normal.jpg",
     "content": "@alexdotjs tRPC is pure magic - Gandalf"
-  },
-  {
-    "id": "1567475304255619074",
-    "name": "bachitter",
-    "handle": "bachitterch",
-    "date": "Sep 07",
-    "avatar": "https://pbs.twimg.com/profile_images/1557127747498962945/1STAUBSw_normal.jpg",
-    "content": "@trpcio and t3-stack is🔥\nLearned trpc and created a full stack app in 2 hours."
   },
   {
     "id": "1561712868348796928",

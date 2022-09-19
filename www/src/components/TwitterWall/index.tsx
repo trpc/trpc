@@ -1,10 +1,14 @@
 import React from 'react';
 import { tweets } from './script.output';
 
+const latestTweets = tweets
+  .sort((a, b) => Date.parse(b.date) - Date.parse(a.date))
+  .slice(0, 15);
+
 export const TwitterWall = () => {
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4 my-6 rounded-xl p-4">
-      {tweets.slice(0, 15).map((tweet) => (
+      {latestTweets.map((tweet) => (
         <a
           id="tweet"
           href={`https://twitter.com/${tweet.handle}/status/${tweet.id}`}
