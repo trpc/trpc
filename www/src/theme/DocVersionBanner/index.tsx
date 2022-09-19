@@ -50,12 +50,17 @@ export default function DocVersionBannerWrapper(
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   props: React.ComponentProps<typeof DocVersionBanner>,
 ) {
-  const { pluginId } = useActivePlugin({ failfast: true });
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const data: DocsData = useDocsData(pluginId);
+  const plugin = useActivePlugin({ failfast: true });
+  const data: DocsData = useDocsData(plugin.pluginId);
   const { pathname } = useLocation();
 
   const { isV10 } = useVersion();
+
+  // This is a hack -- there's probably a nicer way to do this
+  const v9Pathname = pathname.replace('/v10/', '/v9/');
+  const hasV9Version = !!data.versions
+    .find((v) => v.name === '9.x')
+    ?.docs.find((doc) => doc.path === v9Pathname);
 
   if (!isV10) {
     return null;
@@ -79,7 +84,6 @@ export default function DocVersionBannerWrapper(
     // );
   }
 
-  // TODO - make sure that a v9 version exists of this doc before linking
   return (
     <>
       <div
@@ -94,7 +98,10 @@ export default function DocVersionBannerWrapper(
         </p>
         <p>
           For documentation about version 9,{' '}
-          <Link href={pathname.replace('/v10/', '/v9/')} className="font-bold">
+          <Link
+            href={hasV9Version ? v9Pathname : '/docs/v9'}
+            className="font-bold"
+          >
             click here
           </Link>
         </p>
