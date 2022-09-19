@@ -1,4 +1,3 @@
-import { routerToServerAndClientNew } from '../___testHelpers';
 import { createQueryClient } from '../__queryClient';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { render, waitFor } from '@testing-library/react';
@@ -6,7 +5,7 @@ import { expectTypeOf } from 'expect-type';
 import { konn } from 'konn';
 import React, { ReactNode, useEffect, useState } from 'react';
 import { createTRPCReact, httpBatchLink } from '../../../react/dist';
-import { initTRPC } from '../../dist';
+import { initTRPC } from '../../src';
 
 const ctx = konn()
   .beforeEach(() => {
@@ -17,14 +16,13 @@ const ctx = konn()
 
     const queryClient = createQueryClient();
     const trpc = createTRPCReact<typeof appRouter>();
-    const opts = routerToServerAndClientNew(appRouter);
 
     function App(props: { children: ReactNode }) {
       const [client] = useState(() =>
         trpc.createClient({
           links: [
             httpBatchLink({
-              url: opts.httpUrl,
+              url: 'http://localhost:-1',
             }),
           ],
         }),
@@ -37,10 +35,7 @@ const ctx = konn()
         </trpc.Provider>
       );
     }
-    return { ...opts, trpc, App };
-  })
-  .afterEach(async (ctx) => {
-    await ctx?.close?.();
+    return { trpc, App };
   })
   .done();
 
