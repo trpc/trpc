@@ -3,7 +3,12 @@ import { useDocsPreferredVersion } from '@docusaurus/theme-common';
 import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
 import Layout from '@theme/Layout';
 import clsx from 'clsx';
-import React, { useCallback, useEffect } from 'react';
+import React, {
+  ComponentPropsWithoutRef,
+  useCallback,
+  useEffect,
+  useState,
+} from 'react';
 import { FiArrowRight } from 'react-icons/fi';
 import { Button } from '../components/Button';
 import { Features } from '../components/Features';
@@ -42,6 +47,24 @@ function searchParams(obj: Record<string, string | string[]>): string {
     })
     .join('&');
 }
+
+const Iframe = (
+  props: Omit<ComponentPropsWithoutRef<'iframe'>, 'className'>,
+) => {
+  const [loaded, setLoaded] = useState(false);
+  return (
+    <iframe
+      {...props}
+      onLoad={() => {
+        setLoaded(true);
+      }}
+      className={clsx(
+        'w-full h-full absolute',
+        loaded ? 'transition-opacity opacity-100' : 'opacity-0',
+      )}
+    />
+  );
+};
 
 const HomeContent: React.FC = () => {
   const { siteConfig } = useDocusaurusContext();
@@ -118,11 +141,10 @@ const HomeContent: React.FC = () => {
         />
         <div
           className={clsx(
-            'h-[600px] w-full rounded-xl overflow-hidden z-10 relative my-4',
+            'h-[600px] w-full rounded-xl overflow-hidden z-10 relative my-4 bg-gray-900',
           )}
         >
-          <iframe
-            className={clsx('h-full w-full absolute')}
+          <Iframe
             src={
               `https://stackblitz.com/github/trpc/trpc/tree/${
                 isV10 ? 'next' : 'main'
@@ -141,6 +163,7 @@ const HomeContent: React.FC = () => {
               })
             }
             frameBorder="0"
+            key={isV10 ? 'v10' : 'v9'}
           />
         </div>
         <div className="flex justify-center">
