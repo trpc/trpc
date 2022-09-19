@@ -28,7 +28,7 @@ const utils = trpc.useContext();
 const mutation = trpc.post.edit.useMutation({
   onSuccess(input) {
     utils.post.all.invalidate();
-    utils.post.byId.invalidate({id: input.id}); // Will not invalidate queries for other id's 👍
+    utils.post.byId.invalidate({ id: input.id }); // Will not invalidate queries for other id's 👍
   },
 });
 ```
@@ -97,22 +97,22 @@ import { trpc } from '../utils/trpc';
 // In component‼️:
 const utils = trpc.useContext();
 
-const invalidateAllQueriesAcrossAllRouters = () => { // #1
+const invalidateAllQueriesAcrossAllRouters = () => { // 1️⃣
   utils.invalidate() // All queries on all routers will be invalidated 🔥
 }
 
-const invalidateAllPostQueries = () => { // #2
+const invalidateAllPostQueries = () => { // 2️⃣
   utils.post.invalidate() // All post queries will be invalidated 📭
 }
 
-const invalidateAllPostQueriesWithMatchingInputs = () => { // #3
-  utils.post.invalidate({id:1}) // all queries in the post router with an input of {id:1} will be invalidated 📭
+const invalidateAllPostQueriesWithMatchingInputs = () => { // 3️⃣
+  utils.post.invalidate({id:1}) // All queries in the post router with input {id:1} invalidated 📭
 }
 
 // Example queries
-trpc.user.all.useQuery() // Would only be validated by #1 only. 
-trpc.post.all.useQuery() // Would be invalidated by #1 & #2
-trpc.post.byId.useQuery({ id:1 }) // Would be invalidated by #1, #2 and #3
-trpc.post.byId.useQuery({ id:2 }) // would be invalidated by #1 and #2 but NOT #3!
+trpc.user.all.useQuery() // Would only be validated by 1️⃣ only. 
+trpc.post.all.useQuery() // Would be invalidated by 1️⃣ & 2️⃣
+trpc.post.byId.useQuery({ id:1 }) // Would be invalidated by 1️⃣, 2️⃣ and 3️⃣
+trpc.post.byId.useQuery({ id:2 }) // would be invalidated by 1️⃣ and 2️⃣ but NOT 3️⃣!
 
 ```
