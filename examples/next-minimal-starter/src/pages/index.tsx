@@ -7,6 +7,14 @@ export default function IndexPage() {
   // 💡 Tip: CMD+Click (or CTRL+Click) on `greeting` to go to the server definition
   const result = trpc.greeting.useQuery({ name: 'client' });
 
+  const utils = trpc.useContext();
+  utils.greeting.setData((old) => {
+    if (!old) return { text: 'loading' };
+    old;
+    //^?
+    return { text: 'new' };
+  });
+
   if (!result.data) {
     return (
       <div style={styles}>
