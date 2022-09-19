@@ -85,7 +85,7 @@ export default function DocVersionBannerWrapper(
       <div
         className={clsx(
           ThemeClassNames.docs.docVersionBanner,
-          'alert alert--info margin-bottom--md space-y-2',
+          'alert alert--warning margin-bottom--md space-y-2',
         )}
         role="alert"
       >
