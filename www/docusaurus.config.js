@@ -171,7 +171,7 @@ module.exports = {
               path: 'v10',
               badge: true,
               className: 'v10',
-              // banner: 'unreleased',
+              banner: 'unreleased',
             },
             '9.x': {
               label: '9.x',
