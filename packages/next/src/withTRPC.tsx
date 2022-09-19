@@ -9,7 +9,7 @@ import {
   QueryClientProvider,
   dehydrate,
 } from '@tanstack/react-query';
-import type { CreateTRPCClientOptions } from '@trpc/client/src';
+import type { CreateTRPCClientOptions } from '@trpc/client';
 import {
   TRPCClient,
   TRPCClientError,
@@ -17,7 +17,7 @@ import {
   createReactQueryHooks,
   createTRPCClient,
 } from '@trpc/react/src';
-import type { AnyRouter, Dict, Maybe, ResponseMeta } from '@trpc/server/src';
+import type { AnyRouter, Dict, Maybe, ResponseMeta } from '@trpc/server';
 import {
   AppContextType,
   AppPropsType,

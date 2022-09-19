@@ -31,6 +31,7 @@
     "singleQuote": true
   },
   "dependencies": {
+    "@jest/types": "^27.1.0",
     "@prisma/client": "^4.3.1",
     "@tanstack/react-query": "^4.3.8",
     "@trpc/client": "^10.0.0-proxy-alpha.81",
