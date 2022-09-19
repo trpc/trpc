@@ -1141,39 +1141,51 @@ importers:
 
   packages/next:
     specifiers:
+      '@tanstack/react-query': ^4.3.8
       '@trpc/client': ^10.0.0-proxy-alpha.81
       '@trpc/react': ^10.0.0-proxy-alpha.81
       '@trpc/server': ^10.0.0-proxy-alpha.81
       '@types/express': ^4.17.12
       express: ^4.17.1
       next: ^12.1.6
+      react: ^18.2.0
+      react-dom: ^18.2.0
       react-ssr-prepass: ^1.5.0
       zod: ^3.0.0
     dependencies:
-      react-ssr-prepass: 1.5.0
+      react-ssr-prepass: 1.5.0_react@18.2.0
     devDependencies:
+      '@tanstack/react-query': 4.3.8_biqbaboplfbrettd7655fr4n2y
       '@trpc/client': link:../client
       '@trpc/react': link:../react
       '@trpc/server': link:../server
       '@types/express': 4.17.14
       express: 4.18.1
-      next: 12.3.0
+      next: 12.3.0_biqbaboplfbrettd7655fr4n2y
+      react: 18.2.0
+      react-dom: 18.2.0_react@18.2.0
       zod: 3.19.1
 
   packages/react:
     specifiers:
+      '@tanstack/react-query': ^4.3.8
       '@trpc/client': ^10.0.0-proxy-alpha.81
       '@trpc/server': ^10.0.0-proxy-alpha.81
       '@types/express': ^4.17.12
       express: ^4.17.1
       next: ^12.1.6
+      react: ^18.2.0
+      react-dom: ^18.2.0
       zod: ^3.0.0
     devDependencies:
+      '@tanstack/react-query': 4.3.8_biqbaboplfbrettd7655fr4n2y
       '@trpc/client': link:../client
       '@trpc/server': link:../server
       '@types/express': 4.17.14
       express: 4.18.1
-      next: 12.3.0
+      next: 12.3.0_biqbaboplfbrettd7655fr4n2y
+      react: 18.2.0
+      react-dom: 18.2.0_react@18.2.0
       zod: 3.19.1
 
   packages/server:
@@ -1181,10 +1193,10 @@ importers:
       '@cloudflare/workers-types': ^3.14.1
       '@fastify/websocket': ^5.0.0
       '@miniflare/core': ^2.9.0
-      '@trpc/client': workspace:*
-      '@trpc/next': workspace:*
-      '@trpc/react': workspace:*
-      '@trpc/server': workspace:*
+      '@trpc/client': ^10.0.0-proxy-alpha.81
+      '@trpc/next': ^10.0.0-proxy-alpha.81
+      '@trpc/react': ^10.0.0-proxy-alpha.81
+      '@trpc/server': ^10.0.0-proxy-alpha.81
       '@types/aws-lambda': ^8.10.97
       '@types/express': ^4.17.12
       '@types/hash-sum': ^1.0.0
@@ -15308,7 +15320,6 @@ packages:
     transitivePeerDependencies:
       - '@babel/core'
       - babel-plugin-macros
-    dev: false
 
   /nice-try/1.0.5:
     resolution: {integrity: sha512-1nh45deeb5olNY7eX82BkPO7SSxR5SSYJiPTrTdFUVYwAl8CKMA5N9PjTYkHiRjisVcxcQ1HXdLhx2qxxJzLNQ==}
@@ -17448,10 +17459,12 @@ packages:
       tiny-warning: 1.0.3
     dev: false
 
-  /react-ssr-prepass/1.5.0:
+  /react-ssr-prepass/1.5.0_react@18.2.0:
     resolution: {integrity: sha512-yFNHrlVEReVYKsLI5lF05tZoHveA5pGzjFbFJY/3pOqqjGOmMmqx83N4hIjN2n6E1AOa+eQEUxs3CgRnPmT0RQ==}
     peerDependencies:
       react: ^16.8.0 || ^17.0.0 || ^18.0.0
+    dependencies:
+      react: 18.2.0
     dev: false
 
   /react-textarea-autosize/8.3.4_react@18.2.0:
@@ -19132,7 +19145,6 @@ packages:
         optional: true
     dependencies:
       react: 18.2.0
-    dev: false
 
   /stylehacks/5.1.0_postcss@8.4.16:
     resolution: {integrity: sha512-SzLmvHQTrIWfSgljkQCw2++C9+Ne91d/6Sp92I8c5uHTcy/PgeHamwITIbBW9wnFTY/3ZfSXR9HIL6Ikqmcu6Q==}
