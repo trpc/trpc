@@ -1,9 +1,9 @@
 import { createQueryClient } from '../__queryClient';
 import { QueryClientProvider } from '@tanstack/react-query';
-import { render, waitFor } from '@testing-library/react';
+import { render } from '@testing-library/react';
 import { expectTypeOf } from 'expect-type';
 import { konn } from 'konn';
-import React, { ReactNode, useEffect, useState } from 'react';
+import React, { ReactNode, useState } from 'react';
 import { createTRPCReact, httpBatchLink } from '../../../react/dist';
 import { initTRPC } from '../../src';
 
@@ -40,31 +40,22 @@ const ctx = konn()
   .done();
 
 test('setData with updater', async () => {
+  globalThis.fetch = jest.fn();
+
   const { trpc, App } = ctx;
   function MyComponent() {
-    const allPosts = trpc.hello.useQuery(undefined, { enabled: false });
-
     const utils = trpc.useContext();
 
-    useEffect(() => {
-      utils.hello.setData((prevData) => {
-        expectTypeOf<string | undefined>(prevData);
-        return 'Hello world';
-      });
-    }, [utils]);
+    utils.hello.setData((prevData) => {
+      expectTypeOf<string | undefined>(prevData);
+      return 'Hello world';
+    });
 
-    if (!allPosts.data) {
-      return <div>...</div>;
-    }
-    return <p>{allPosts.data[0]}</p>;
+    return <div>Hi</div>;
   }
-
-  const utils = render(
+  render(
     <App>
       <MyComponent />
     </App>,
   );
-  await waitFor(() => {
-    expect(utils.container).toHaveTextContent('Hello world');
-  });
 });
