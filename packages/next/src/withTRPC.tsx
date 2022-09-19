@@ -16,7 +16,7 @@ import {
   TRPCClientErrorLike,
   createReactQueryHooks,
   createTRPCClient,
-} from '@trpc/react/src';
+} from '@trpc/react';
 import type { AnyRouter, Dict, Maybe, ResponseMeta } from '@trpc/server';
 import {
   AppContextType,
