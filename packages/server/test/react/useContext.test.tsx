@@ -1,6 +1,7 @@
 import { getServerAndReactClient } from './__reactHelpers';
 import { render, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { expectTypeOf } from 'expect-type';
 import { konn } from 'konn';
 import React, { useEffect, useState } from 'react';
 import { z } from 'zod';
@@ -246,6 +247,37 @@ test('setData', async () => {
   );
   await waitFor(() => {
     expect(utils.container).toHaveTextContent('setData');
+  });
+});
+
+test('setData with updater', async () => {
+  const { proxy, App } = ctx;
+  function MyComponent() {
+    const allPosts = proxy.post.all.useQuery(undefined, { enabled: false });
+
+    const utils = proxy.useContext();
+
+    useEffect(() => {
+      utils.post.all.setData((prevData) => {
+        expectTypeOf<Post[] | undefined>(prevData);
+        return [{ id: 1, text: 'setData updater' }, ...prevData!];
+      });
+    }, [utils]);
+
+    if (!allPosts.data) {
+      return <>...</>;
+    }
+
+    return <p>{allPosts.data[0]!.text}</p>;
+  }
+
+  const utils = render(
+    <App>
+      <MyComponent />
+    </App>,
+  );
+  await waitFor(() => {
+    expect(utils.container).toHaveTextContent('setData updater');
   });
 });
 
