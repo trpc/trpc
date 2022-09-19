@@ -9,8 +9,8 @@ export const Preview = () => {
           loop
           muted
           playsInline
-          width="550px"
-          className="rounded-md shadow-xl trpcgif trpcgif--v10-dark"
+          width="1200px"
+          className="border-6 shadow-xl rounded-lg bg-[#111111] border-[#111111] trpcgif trpcgif--v10 trpcgif--portrait"
         >
           <source
             src="https://assets.trpc.io/www/v10/preview-dark.mp4"
@@ -23,11 +23,11 @@ export const Preview = () => {
           loop
           muted
           playsInline
-          width="550px"
-          className="rounded-md shadow-xl trpcgif trpcgif--v10-light"
+          width="1200px"
+          className="border-[20px] shadow-xl rounded-3xl bg-[#111111] border-[#111111] trpcgif trpcgif--v10 trpcgif--landscape"
         >
           <source
-            src="https://assets.trpc.io/www/v10/preview-light.mp4"
+            src="https://assets.trpc.io/www/v10/v10-dark-landscape.mp4"
             type="video/mp4"
           />
           You need a browser that supports HTML5 video to view this video.

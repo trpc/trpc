@@ -157,12 +157,13 @@ const HomeContent: React.FC = () => {
         />
         <blockquote
           cite="https://twitter.com/alexdotjs"
-          className="py-2 mt-6 space-y-2"
+          className="py-2 mt-3 space-y-2 border-none italic"
         >
           <p className="text-sm text-gray-600 md:text-base dark:text-gray-400">
-            I built tRPC to allow people to <strong>move faster</strong> by
-            removing the need of a traditional API-layer, while still having
-            confidence that our apps won&apos;t break as we rapidly iterate.
+            &quot;I built tRPC to allow people to <strong>move faster</strong>{' '}
+            by removing the need of a traditional API-layer, while still having
+            confidence that our apps won&apos;t break as we rapidly
+            iterate.&quot;
           </p>
           <p className="text-sm text-gray-600 md:text-base dark:text-gray-400">
             Try it out for yourself and let us know what you think!
@@ -187,7 +188,11 @@ const HomeContent: React.FC = () => {
         </a>
       </section>
       <section className="container">
-        <SectionTitle id="twitter-wall" title="Don't take our word for it!" />
+        <SectionTitle
+          id="twitter-wall"
+          title="Don't take our word for it!"
+          description="Many developers are loving tRPC and what it brings to them."
+        />
         <TwitterWall />
       </section>
       <section className="pb-12">
