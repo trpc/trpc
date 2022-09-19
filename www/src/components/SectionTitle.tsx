@@ -1,3 +1,4 @@
+import clsx from 'clsx';
 import React, { FC, ReactNode } from 'react';
 
 type SectionTitleProps = {
@@ -6,23 +7,21 @@ type SectionTitleProps = {
   description?: ReactNode;
 };
 
-export const SectionTitle: FC<SectionTitleProps> = ({
-  title,
-  description,
-  id,
-}) => {
+export const SectionTitle: FC<SectionTitleProps> = (props) => {
   return (
     <div className="text-center">
       <h2
-        id={id}
-        className="text-2xl font-bold text-black hover:no-underline lg:text-3xl scroll-mt-20 dark:text-white"
+        id={props.id}
+        className={clsx(
+          'text-2xl font-bold text-black hover:no-underline lg:text-3xl scroll-mt-20 dark:text-white',
+        )}
       >
-        {title}
-        <a className="hash-link" href={`#${id}`}></a>
+        {props.title}
+        <a className="hash-link" href={`#${props.id}`}></a>
       </h2>
-      {description && (
+      {props.description && (
         <p className="text-gray-600 dark:text-gray-400 max-w-[60ch] pt-2 mx-auto text-sm md:text-base">
-          {description}
+          {props.description}
         </p>
       )}
     </div>
