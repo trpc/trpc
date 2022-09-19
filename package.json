@@ -1,11 +1,6 @@
 {
   "name": "root",
   "private": true,
-  "pnpm": {
-    "neverBuiltDependencies": [
-      "zod"
-    ]
-  },
   "engines": {
     "node": "^16.0.0"
   },

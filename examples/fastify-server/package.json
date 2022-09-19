@@ -22,6 +22,7 @@
     "fastify": "^3.27.1",
     "fastify-websocket": "^4.0.0",
     "node-fetch": "^2.6.1",
+    "superjson": "^1.7.4",
     "tslib": "^2.1.0",
     "ws": "^8.0.0",
     "zod": "^3.0.0"

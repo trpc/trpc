@@ -1,8 +1,5 @@
 lockfileVersion: 5.4
 
-neverBuiltDependencies:
-  - zod
-
 importers:
 
   .:
@@ -658,6 +655,7 @@ importers:
       nodemon: ^2.0.12
       npm-run-all: ^4.1.5
       start-server-and-test: ^1.12.0
+      superjson: ^1.7.4
       ts-node: ^10.3.0
       tslib: ^2.1.0
       typescript: 4.7.4
@@ -672,6 +670,7 @@ importers:
       fastify: 3.29.2
       fastify-websocket: 4.3.0
       node-fetch: 2.6.7
+      superjson: 1.10.0
       tslib: 2.4.0
       ws: 8.8.1
       zod: 3.19.1
@@ -7845,7 +7844,7 @@ packages:
   /axios/0.21.4_debug@4.3.2:
     resolution: {integrity: sha512-ut5vewkiu8jjGBdqpM44XxjuCjq9LAKeHVmoVfHVzy8eHgxxq8SbAVQNovDA8mVi05kP0Ea/n/UzcSHcTJQfNg==}
     dependencies:
-      follow-redirects: 1.15.2_debug@4.3.2
+      follow-redirects: 1.15.2
     transitivePeerDependencies:
       - debug
 
@@ -11457,17 +11456,6 @@ packages:
     peerDependenciesMeta:
       debug:
         optional: true
-
-  /follow-redirects/1.15.2_debug@4.3.2:
-    resolution: {integrity: sha512-VQLG33o04KaQ8uYi2tVNbdrWp1QWxNNea+nmIB4EVM28v0hmP17z7aG1+wAkNzVq4KeXTq3221ye5qTJP91JwA==}
-    engines: {node: '>=4.0'}
-    peerDependencies:
-      debug: '*'
-    peerDependenciesMeta:
-      debug:
-        optional: true
-    dependencies:
-      debug: 4.3.2
 
   /for-each/0.3.3:
     resolution: {integrity: sha512-jqYfLp7mo9vIyQf8ykW2v7A+2N4QjeCeI5+Dz9XraiO1ign81wjiH7Fb9vSOWvQfNtmSa4H2RoQTrrXivdUZmw==}

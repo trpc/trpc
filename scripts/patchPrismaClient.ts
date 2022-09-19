@@ -24,19 +24,13 @@ async function main() {
           recursive: true,
         });
         if ((await fs.lstat(pkgPrismaClientPath)).isSymbolicLink()) {
-          await fs.unlink(
-            path.join(pkg.dir, 'node_modules', '@prisma', 'client'),
-          );
+          await fs.unlink(pkgPrismaClientPath);
         }
-        await fs.mkdir(
-          path.join(pkg.dir, 'node_modules', '@prisma', 'client'),
-          { recursive: true },
-        );
-        await fs.cp(
-          prismaClientPath,
-          path.join(pkg.dir, 'node_modules', '@prisma', 'client'),
-          { force: true, recursive: true },
-        );
+        await fs.mkdir(pkgPrismaClientPath, { recursive: true });
+        await fs.cp(prismaClientPath, pkgPrismaClientPath, {
+          force: true,
+          recursive: true,
+        });
       }),
   );
 }
