@@ -56,7 +56,6 @@ export default function DocVersionBannerWrapper(
   const { pathname } = useLocation();
 
   const { isV10 } = useVersion();
-  console.log({ isV10 });
 
   if (!isV10) {
     return null;
