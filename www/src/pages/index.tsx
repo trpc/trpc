@@ -3,7 +3,7 @@ import { useDocsPreferredVersion } from '@docusaurus/theme-common';
 import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
 import Layout from '@theme/Layout';
 import clsx from 'clsx';
-import React, { useEffect } from 'react';
+import React, { useCallback, useEffect } from 'react';
 import { FiArrowRight } from 'react-icons/fi';
 import { Button } from '../components/Button';
 import { Features } from '../components/Features';
@@ -16,6 +16,22 @@ import { TwitterWall } from '../components/TwitterWall';
 import { Sponsors } from '../components/sponsors';
 
 type Version = 'current' | '9.x';
+
+function useVersion() {
+  const { preferredVersion, savePreferredVersionName } =
+    useDocsPreferredVersion();
+  const isV10 = (preferredVersion?.name as Version) !== '9.x';
+
+  return {
+    savePreferredVersionName: useCallback(
+      (version: Version) => {
+        savePreferredVersionName(version);
+      },
+      [savePreferredVersionName],
+    ),
+    isV10,
+  };
+}
 
 function searchParams(obj: Record<string, string | string[]>): string {
   return Object.entries(obj)
@@ -30,9 +46,7 @@ function searchParams(obj: Record<string, string | string[]>): string {
 const HomeContent: React.FC = () => {
   const { siteConfig } = useDocusaurusContext();
 
-  const { preferredVersion, savePreferredVersionName } =
-    useDocsPreferredVersion();
-  const isV10 = (preferredVersion?.name as Version) !== '9.x';
+  const { isV10, savePreferredVersionName } = useVersion();
 
   useEffect(() => {
     const searchParams = new URLSearchParams(location.search);
@@ -229,8 +243,8 @@ const HomeContent: React.FC = () => {
 };
 
 const HomeHead: React.FC = () => {
-  const { preferredVersion } = useDocsPreferredVersion();
-  const isV10 = (preferredVersion?.name as Version) === 'current';
+  const { isV10 } = useVersion();
+
   return (
     <Head>
       <body className="homepage" />
