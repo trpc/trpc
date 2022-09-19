@@ -267,8 +267,12 @@ html:not(.v10) [role='banner'] {
   display: none;
 }
 
-html.v10 .trpcgif--v10 {
-  display: block;
+html.v10 .trpcgif--v10.trpcgif--portrait {
+  @apply block md:hidden;
+}
+
+html.v10 .trpcgif--v10.trpcgif--landscape {
+  @apply hidden md:block;
 }
 
 html.v9 .trpcgif--v9 {
