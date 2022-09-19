@@ -1,4 +1,4 @@
-name: subtree-matrix
+name: subtree-matrix-v10
 on:
   push:
     branches:
