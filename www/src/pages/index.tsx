@@ -171,13 +171,12 @@ const HomeContent: React.FC = () => {
         />
         <blockquote
           cite="https://twitter.com/alexdotjs"
-          className="py-2 mt-3 space-y-2 border-none italic"
+          className="py-2 mt-3 space-y-2 italic"
         >
           <p className="text-sm text-gray-600 md:text-base dark:text-gray-400">
-            &quot;I built tRPC to allow people to <strong>move faster</strong>{' '}
-            by removing the need of a traditional API-layer, while still having
-            confidence that our apps won&apos;t break as we rapidly
-            iterate.&quot;
+            I built tRPC to allow people to <strong>move faster</strong> by
+            removing the need of a traditional API-layer, while still having
+            confidence that our apps won&apos;t break as we rapidly iterate.
           </p>
           <p className="text-sm text-gray-600 md:text-base dark:text-gray-400">
             Try it out for yourself and let us know what you think!
