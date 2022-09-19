@@ -417,7 +417,7 @@ test('test TS types of the input variable', async () => {
       //['user.current.email.getMain'] would be invalidated as it will have a
       //key of `[['user','current','email','getMain'], {getExtraDetails:true}] but it's input
       //`getExtraDetails:boolean` is not available in the types for input
-      // See: !!ADD GITHUB ISSUE!!
+      // See: https://github.com/trpc/trpc/issues/2759
       // @ts-expect-error REMOVE AND FIX TYPE INFERENCE EDGE CASE ... 🤯
       utils.user.invalidate({ getExtraDetails: true });
 
