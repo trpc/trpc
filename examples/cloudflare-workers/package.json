@@ -14,6 +14,7 @@
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^3.14.1",
+    "@types/node-fetch": "^2.5.11",
     "node-fetch": "^2.6.1",
     "start-server-and-test": "^1.12.0",
     "ts-node": "^10.3.0",
