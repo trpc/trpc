@@ -805,7 +805,6 @@ importers:
       '@playwright/test': ^1.19.2
       '@prisma/client': ^4.3.1
       '@tanstack/react-query': ^4.3.8
-      '@tanstack/react-query-devtools': ^4.3.8
       '@trpc/client': ^10.0.0-proxy-alpha.81
       '@trpc/next': ^10.0.0-proxy-alpha.81
       '@trpc/react': ^10.0.0-proxy-alpha.81
@@ -853,7 +852,6 @@ importers:
       zod: 3.19.1
     devDependencies:
       '@playwright/test': 1.25.2
-      '@tanstack/react-query-devtools': 4.3.8_rubwaa3tqnxocqcexr7mccpbye
       '@types/jest': 27.5.2
       '@types/node': 18.7.18
       '@types/react': 18.0.20
