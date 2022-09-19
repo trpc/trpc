@@ -181,7 +181,11 @@ export function createHooksInternal<
     // Handle the case of acting on all queries ... path will not be passed or
     // it will be an empty string
     if (typeof path !== 'string' || path === '') {
-      return [];
+      if (input === undefined) {
+        return [[]];
+      } else {
+        return [[], ...input];
+      }
     } else {
       const arrayPath = path.split('.');
       if (input === undefined) {
