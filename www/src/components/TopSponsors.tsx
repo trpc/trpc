@@ -1,6 +1,6 @@
 import Link from '@docusaurus/Link';
 import React from 'react';
-import { FiArrowRightCircle, FiPlus, FiPlusCircle } from 'react-icons/fi';
+import { FiArrowRightCircle } from 'react-icons/fi';
 import { sponsors } from './sponsors/script.output';
 
 const topSponsors = sponsors

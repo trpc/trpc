@@ -206,6 +206,10 @@ h5 {
   @apply pl-8 list-disc;
 }
 
+.markdown blockquote {
+  margin: 0 0 var(--ifm-spacing-vertical);
+}
+
 .pagination-nav__label {
   @apply text-primary;
 }

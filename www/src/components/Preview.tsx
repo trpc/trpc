@@ -24,7 +24,7 @@ export const Preview = () => {
           muted
           playsInline
           width="1200px"
-          className="border-[20px] shadow-xl rounded-3xl bg-[#111111] border-[#111111] trpcgif trpcgif--v10 trpcgif--landscape"
+          className="border-[20px] shadow-xl rounded-lg bg-[#111111] border-[#111111] trpcgif trpcgif--v10 trpcgif--landscape"
         >
           <source
             src="https://assets.trpc.io/www/v10/v10-dark-landscape.mp4"
