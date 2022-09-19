@@ -1,11 +1,9 @@
 import { getServerAndReactClient } from './__reactHelpers';
 import { useIsFetching } from '@tanstack/react-query';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { expectTypeOf } from 'expect-type';
 import { konn } from 'konn';
-import React, { useEffect } from 'react';
-import { act } from 'react-dom/test-utils';
+import React from 'react';
 import { z } from 'zod';
 import { initTRPC } from '../../src';
 
