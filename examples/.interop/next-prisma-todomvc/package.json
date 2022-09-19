@@ -1,6 +1,6 @@
 {
   "name": "@examples/interop-todo-web",
-  "version": "10.0.0-proxy-alpha.81",
+  "version": "10.0.0-proxy-beta.0",
   "private": true,
   "scripts": {
     "migrate-sqlite": "npx prisma migrate dev --name init --schema=./prisma/_sqlite/schema.prisma",
@@ -25,10 +25,10 @@
   "dependencies": {
     "@prisma/client": "^3.0.1",
     "@tanstack/react-query": "^4.0.10",
-    "@trpc/client": "^10.0.0-proxy-alpha.81",
-    "@trpc/next": "^10.0.0-proxy-alpha.81",
-    "@trpc/react": "^10.0.0-proxy-alpha.81",
-    "@trpc/server": "^10.0.0-proxy-alpha.81",
+    "@trpc/client": "^10.0.0-proxy-beta.0",
+    "@trpc/next": "^10.0.0-proxy-beta.0",
+    "@trpc/react": "^10.0.0-proxy-beta.0",
+    "@trpc/server": "^10.0.0-proxy-beta.0",
     "clsx": "^1.1.1",
     "jest": "^27.1.0",
     "jest-playwright": "^0.0.1",

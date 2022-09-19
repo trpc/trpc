@@ -24,7 +24,7 @@ If you turn on SSR in your app you might discover that your app loads slow on fo
 ```tsx title='utils/trpc.tsx'
 import { httpBatchLink } from '@trpc/client';
 import { createTRPCNext } from '@trpc/next';
-import { AppRouter } from '../server/routers/_app';
+import type { AppRouter } from '../server/routers/_app';
 
 export const trpc = createTRPCNext<AppRouter>({
   config({ ctx }) {

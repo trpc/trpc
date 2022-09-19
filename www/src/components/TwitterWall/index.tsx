@@ -3,8 +3,8 @@ import { tweets } from './script.output';
 
 export const TwitterWall = () => {
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4 my-6 overflow-y-scroll max-h-[80vh] bg-zinc-50 dark:bg-zinc-800/50 rounded-xl p-4">
-      {tweets.map((tweet) => (
+    <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4 my-6 rounded-xl p-4">
+      {tweets.slice(0, 15).map((tweet) => (
         <a
           id="tweet"
           href={`https://twitter.com/${tweet.handle}/status/${tweet.id}`}
@@ -12,7 +12,7 @@ export const TwitterWall = () => {
         >
           <div
             key={tweet.id}
-            className="h-40 p-6 overflow-hidden transition-colors rounded-lg dark:bg-zinc-800 bg-zinc-100 hover:bg-zinc-200 hover:dark:bg-zinc-800/50"
+            className="h-40 p-6 overflow-hidden transition-colors rounded-lg dark:bg-zinc-800/50 bg-zinc-100 hover:bg-zinc-200 hover:dark:bg-zinc-800/50"
           >
             <div className="flex items-center justify-between">
               <a

@@ -7,7 +7,7 @@ import {
 } from '@trpc/client';
 import superjson from 'superjson';
 import { serverConfig } from '../config';
-import { AppRouter } from '../server/router';
+import type { AppRouter } from '../server/router';
 import './polyfill';
 
 async function start() {

@@ -4,7 +4,7 @@ import type { inferProcedureInput, inferProcedureOutput } from '@trpc/server';
 // ℹ️ Type-only import:
 // https://www.typescriptlang.org/docs/handbook/release-notes/typescript-3-8.html#type-only-imports-and-export
 import superjson from 'superjson';
-import { AppRouter } from '../server/routers/_app';
+import type { AppRouter } from '../server/routers/_app';
 
 function getBaseUrl() {
   if (typeof window !== 'undefined') {

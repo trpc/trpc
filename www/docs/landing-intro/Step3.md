@@ -20,13 +20,13 @@ const appRouter = t.router({
 export type AppRouter = typeof appRouter;
 ```
 
-```ts twoslash title='client.ts'
+```ts twoslash
 // @module: esnext
 // @target: esnext
 // @include: server
 // @filename: client.ts
 import { createTRPCProxyClient, httpBatchLink } from '@trpc/client';
-import { AppRouter } from './server';
+import type { AppRouter } from './server';
 
 // ---cut---
 const trpc = createTRPCProxyClient<AppRouter>({

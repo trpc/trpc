@@ -154,7 +154,7 @@ export function MyComponent() {
 
 ```tsx title='utils/customLink.ts'
 import { TRPCLink } from '@trpc/client';
-import { AppRouter } from 'server/routers/_app';
+import type { AppRouter } from 'server/routers/_app';
 import { observable } from '@trpc/server/observable';
 
 export const customLink: TRPCLink<AppRouter> = () => {
