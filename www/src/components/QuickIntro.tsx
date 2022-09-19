@@ -45,7 +45,7 @@ const steps: Omit<StepProps, 'num'>[] = [
     description: (
       <>
         The first step to creating a tRPC API is to define your procedures.
-        Procedures <i>composable</i> and can be queries, mutations, or
+        Procedures are <i>composable</i> and can be queries, mutations, or
         subscriptions. Routers contain multiple procedures.
         <br /> <br />
         Here, we add a <Link href="https://github.com/colinhacks/zod">
