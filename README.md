@@ -225,6 +225,7 @@ Also, if your company using tRPC and want to support long-term maintenance of tR
   </tr>
   <tr>
    <td align="center"><a href="https://larskarbo.no"><img src="https://avatars.githubusercontent.com/u/10865165?v=4&s=100" width="100" alt="Lars%20Karbo"/><br />Lars Karbo</a></td>
+   <td align="center"><a href="https://github.com/changwo"><img src="https://avatars.githubusercontent.com/u/60525087?u=272c35c9792f781e536fd14c7e48c1052d54ddb5&v=4&s=100" width="100" alt="Habib%20Kadiri"/><br />Habib Kadiri</a></td>
   </tr>
 </table>
 
