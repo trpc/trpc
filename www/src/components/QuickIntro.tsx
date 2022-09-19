@@ -26,7 +26,7 @@ const Step: FC<StepProps> = ({ num, title, description, code, rightSide }) => {
       </div>
       <div className="flex-1">
         <div className="flex flex-col justify-center gap-3 lg:flex-row lg:items-center lg:justify-start">
-          <div className="grid w-6 h-6 rounded-full dark:bg-primary-200 bg-primary place-items-center">
+          <div className="grid w-6 h-6 rounded-full dark:bg-primary-200 bg-primary place-items-center shrink-0">
             <p className="font-bold dark:text-[#313131] text-white">{num}</p>
           </div>
           <h2 className="text-xl font-bold lg:text-2xl">{title}</h2>
@@ -45,7 +45,7 @@ const steps: Omit<StepProps, 'num'>[] = [
     description: (
       <>
         The first step to creating a tRPC API is to define your procedures.
-        Procedures <i>composable</i> and can be queries, mutations, or
+        Procedures are <i>composable</i> and can be queries, mutations, or
         subscriptions. Routers contain multiple procedures.
         <br /> <br />
         Here, we add a <Link href="https://github.com/colinhacks/zod">
@@ -100,9 +100,10 @@ export const QuickIntro: FC = () => {
         id="quick-intro"
         title={
           <>
-            Simple to use with <br /> unmatched developer experience.
+            Simple to use with <br /> unmatched developer experience
           </>
         }
+        description="It's quick and easy to get started using tRPC and build a type safe API."
       />
       <div className="flex flex-col gap-12 mt-6">
         {steps.map((step, index) => (
