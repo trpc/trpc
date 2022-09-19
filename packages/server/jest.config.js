@@ -1,5 +1,5 @@
-/** @type {import('ts-jest').JestConfigWithTsJest} */
 module.exports = {
+  preset: 'ts-jest',
   testEnvironment: 'jest-environment-jsdom',
   rootDir: '../',
   moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json'],
@@ -12,18 +12,15 @@ module.exports = {
     // './server/jest.setup.js',
     '@testing-library/jest-dom/extend-expect',
   ],
-  transform: {
-    '^.+.tsx?$': [
-      'ts-jest',
-      {
-        tsconfig: {
-          jsx: 'react',
-          target: 'ES2020',
-          noUnusedLocals: false,
-          noUnusedParameters: false,
-        },
+  globals: {
+    'ts-jest': {
+      tsconfig: {
+        jsx: 'react',
+        target: 'ES2020',
+        noUnusedLocals: false,
+        noUnusedParameters: false,
       },
-    ],
+    },
   },
   // setupFiles: ['core-js', 'regenerator-runtime/runtime'],
 };
