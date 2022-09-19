@@ -82,7 +82,12 @@ const HomeContent: React.FC = () => {
         <Features />
       </section>
 
-      <section className={clsx('p-4 md:p-8', { hidden: !isV10 })}>
+      <section
+        className={clsx(
+          'border border-gray-100 rounded-xl p-4 md:p-8 shadow-lg dark:shadow-lg dark:shadow-gray-900 dark:border-gray-900',
+          { hidden: !isV10 },
+        )}
+      >
         <QuickIntro />
       </section>
 
