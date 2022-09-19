@@ -250,36 +250,6 @@ test('setData', async () => {
   });
 });
 
-test('setData with updater', async () => {
-  const { proxy, App } = ctx;
-  function MyComponent() {
-    const allPosts = proxy.post.all.useQuery(undefined, { enabled: false });
-
-    const utils = proxy.useContext();
-
-    useEffect(() => {
-      utils.post.all.setData((prevData) => {
-        expectTypeOf<Post[] | undefined>(prevData);
-        return [{ id: 1, text: 'setData updater' }];
-      });
-    }, [utils]);
-
-    if (!allPosts.data) {
-      return <div>...</div>;
-    }
-    return <p>{allPosts.data[0]!.text}</p>;
-  }
-
-  const utils = render(
-    <App>
-      <MyComponent />
-    </App>,
-  );
-  await waitFor(() => {
-    expect(utils.container).toHaveTextContent('setData updater');
-  });
-});
-
 test('getData', async () => {
   const { proxy, App } = ctx;
   function MyComponent() {
