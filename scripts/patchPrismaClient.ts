@@ -24,7 +24,9 @@ async function main() {
           recursive: true,
         });
         if ((await fs.lstat(pkgPrismaClientPath)).isSymbolicLink()) {
-          fs.unlink(path.join(pkg.dir, 'node_modules', '@prisma', 'client'));
+          await fs.unlink(
+            path.join(pkg.dir, 'node_modules', '@prisma', 'client'),
+          );
         }
         await fs.mkdir(
           path.join(pkg.dir, 'node_modules', '@prisma', 'client'),
