@@ -260,14 +260,13 @@ test('setData with updater', async () => {
     useEffect(() => {
       utils.post.all.setData((prevData) => {
         expectTypeOf<Post[] | undefined>(prevData);
-        return [{ id: 1, text: 'setData updater' }, ...prevData!];
+        return [{ id: 1, text: 'setData updater' }];
       });
     }, [utils]);
 
     if (!allPosts.data) {
-      return <>...</>;
+      return <div>...</div>;
     }
-
     return <p>{allPosts.data[0]!.text}</p>;
   }
 
