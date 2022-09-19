@@ -5,8 +5,8 @@ import { render, waitFor } from '@testing-library/react';
 import { expectTypeOf } from 'expect-type';
 import { konn } from 'konn';
 import React, { ReactNode, useEffect, useState } from 'react';
-import { createTRPCReact, httpBatchLink } from '../../../react/src';
-import { initTRPC } from '../../src';
+import { createTRPCReact, httpBatchLink } from '../../../react/dist';
+import { initTRPC } from '../../dist';
 
 const ctx = konn()
   .beforeEach(() => {
@@ -16,12 +16,12 @@ const ctx = konn()
     });
 
     const queryClient = createQueryClient();
-    const proxy = createTRPCReact<typeof appRouter>();
+    const trpc = createTRPCReact<typeof appRouter>();
     const opts = routerToServerAndClientNew(appRouter);
 
     function App(props: { children: ReactNode }) {
       const [client] = useState(() =>
-        proxy.createClient({
+        trpc.createClient({
           links: [
             httpBatchLink({
               url: opts.httpUrl,
@@ -30,14 +30,14 @@ const ctx = konn()
         }),
       );
       return (
-        <proxy.Provider {...{ queryClient, client }}>
+        <trpc.Provider {...{ queryClient, client }}>
           <QueryClientProvider client={queryClient}>
             {props.children}
           </QueryClientProvider>
-        </proxy.Provider>
+        </trpc.Provider>
       );
     }
-    return { ...opts, proxy, App };
+    return { ...opts, trpc, App };
   })
   .afterEach(async (ctx) => {
     await ctx?.close?.();
@@ -45,11 +45,11 @@ const ctx = konn()
   .done();
 
 test('setData with updater', async () => {
-  const { proxy, App } = ctx;
+  const { trpc, App } = ctx;
   function MyComponent() {
-    const allPosts = proxy.hello.useQuery(undefined, { enabled: false });
+    const allPosts = trpc.hello.useQuery(undefined, { enabled: false });
 
-    const utils = proxy.useContext();
+    const utils = trpc.useContext();
 
     useEffect(() => {
       utils.hello.setData((prevData) => {
