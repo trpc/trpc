@@ -6,6 +6,7 @@ import React, { ComponentPropsWithoutRef, useEffect, useState } from 'react';
 import { FiArrowRight } from 'react-icons/fi';
 import { Button } from '../components/Button';
 import { Features } from '../components/Features';
+import { GithubSponsorButton } from '../components/GithubSponsorButton';
 import { GithubStarsButton } from '../components/GithubStarsButton';
 import { Preview } from '../components/Preview';
 import { QuickIntro } from '../components/QuickIntro';
@@ -231,9 +232,7 @@ const HomeContent: React.FC = () => {
             <Sponsors />
           </div>
           <div className="flex justify-center">
-            <Button variant="primary" href="https://github.com/sponsors/KATT">
-              Become a sponsor!
-            </Button>
+            <GithubSponsorButton />
           </div>
         </div>
       </section>
