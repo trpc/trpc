@@ -21,6 +21,7 @@ const IndexPage: NextPageWithLayout = () => {
   utils.post.list.setData((old) => {
     old;
     //^?
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     return old!;
   });
 
