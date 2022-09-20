@@ -329,11 +329,11 @@ trpc.post.byId.useQuery('1', {
 If you only use the tRPC provided API's in your app you will have no problems in
 migrating 👍 However if you have been useing the tanstack query client directly
 to do things like update query data for multiple tRPC generated queries using
-[`queryC1ient.setQueriesData](https://tanstack.com/query/v4/docs/reference/QueryClient#queryclientsetqueriesdata)
+[`queryClient.setQueriesData](https://tanstack.com/query/v4/docs/reference/QueryClient#queryclientsetqueriesdata)
 you may need to take note!
 :::
 
-To allow us to make room for some more advanced features like [invalidating across
+To allow us to make room for some more advanced features like [invalidation across
 whole routers](invalidateQueries) we needed to change how we use tanstack query keys under the
 hood.
 
@@ -355,11 +355,11 @@ export const appRouter = t.router({
 The query key used for `trpc.user.byId.useQuery({ id: 10 })` would change:
 
 - Key in V9: `["user.byId", { id: 10 }]`
-- Key in v10:`[["user","byId"],{ id:10 }]`
+- Key in v10:`[["user", "byId"],{ id:10 }]`
 
 The majority of developers won't even notice this change, but for the small
 minority that are using the tanstack `queryClient` directly to manipulate tRPC
-generated queries they will have to change the key they are filtering on!
+generated queries, they will have to change the key they are filtering on!
 
 ### `@trpc/client`
 
