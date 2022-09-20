@@ -6,11 +6,10 @@ import {
   RefetchOptions,
   RefetchQueryFilters,
   SetDataOptions,
+  Updater,
 } from '@tanstack/react-query';
-import { Updater } from '@tanstack/react-query/build/types/packages/query-core/src/utils';
 import { TRPCClientError } from '@trpc/client';
 import {
-  AnyProcedure,
   AnyQueryProcedure,
   AnyRouter,
   Filter,
