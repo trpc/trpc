@@ -28,6 +28,8 @@ export interface WebSocketClientOptions {
   retryDelayMs?: typeof retryDelay;
   onOpen?: () => void;
   onClose?: (cause?: { code?: number }) => void;
+  lazy?: boolean;
+  disconnectDelayMs?:number;
 }
 
 export function createWSClient(opts: WebSocketClientOptions) {
@@ -37,6 +39,8 @@ export function createWSClient(opts: WebSocketClientOptions) {
     retryDelayMs: retryDelayFn = retryDelay,
     onOpen,
     onClose,
+    lazy=false,
+    disconnectDelayMs=60000
   } = opts;
   /* istanbul ignore next */
   if (!WebSocketImpl) {
@@ -66,8 +70,10 @@ export function createWSClient(opts: WebSocketClientOptions) {
   let connectAttempt = 0;
   let dispatchTimer: NodeJS.Timer | number | null = null;
   let connectTimer: NodeJS.Timer | number | null = null;
-  let activeConnection = createWS();
-  let state: 'open' | 'connecting' | 'closed' = 'connecting';
+  let activeConnection:WebSocket;
+  if(!lazy)
+    activeConnection=createWS();
+  let state: 'open' | 'connecting' | 'closed' = lazy? 'closed':'connecting';
   /**
    * tries to send the list of messages
    */
@@ -230,6 +236,10 @@ export function createWSClient(opts: WebSocketClientOptions) {
   }
 
   function request(op: Operation, callbacks: TCallbacks): UnsubscribeFn {
+    if (lazy && state=="closed") {
+      state= 'connecting';
+      activeConnection = createWS();
+    }
     const { type, input, path, id } = op;
     const envelope: TRPCRequestMessage = {
       id,
@@ -262,6 +272,20 @@ export function createWSClient(opts: WebSocketClientOptions) {
           method: 'subscription.stop',
         });
         dispatch();
+        if(lazy){
+        setTimeout(()=>{
+          const hasPendingRequests = Object.values(pendingRequests).some(
+            (p) => p.ws === activeConnection,
+          );
+          if(!hasPendingRequests){
+            state = 'closed';
+            onClose?.();
+            closeIfNoPending(activeConnection);
+            clearTimeout(connectTimer as any);
+            connectTimer = null;
+          }
+
+        },disconnectDelayMs)}
       }
     };
   }
