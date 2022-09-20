@@ -37,6 +37,25 @@
           "\\.(t|j)sx$"
         ]
       }
+    ],
+    "@typescript-eslint/no-unused-vars": [
+      "error",
+      {
+        "argsIgnorePattern": "^_",
+        "varsIgnorePattern": "^_",
+        "caughtErrorsIgnorePattern": "^_"
+      }
+    ],
+    "@typescript-eslint/naming-convention": [
+      "error",
+      {
+        "selector": "typeParameter",
+        "format": ["PascalCase"],
+        "custom": {
+          "regex": "^T[A-Z][a-zA-Z]+$",
+          "match": true
+        }
+      }
     ]
   },
   "overrides": [
