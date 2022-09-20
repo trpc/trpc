@@ -142,7 +142,7 @@ export type MigrateRouter<
 
 export type MigrateOldRouter<TRouter extends AnyOldRouter> =
   TRouter extends OldRouter<
-    infer TInputContext,
+    infer TInputContext extends Record<string, any>,
     infer TContext,
     infer TMeta,
     infer TQueries,

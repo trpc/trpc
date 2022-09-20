@@ -172,7 +172,7 @@ export type inferRouterMeta<TRouter extends AnyRouter> = TRouter extends Router<
  * @public
  * @deprecated
  */
-export type AnyRouter<TContext = any> = Router<
+export type AnyRouter<TContext extends Record<string, any> = any> = Router<
   any,
   TContext,
   any,
@@ -283,8 +283,8 @@ type SwapContext<
  * @deprecated
  */
 export class Router<
-  TInputContext,
-  TContext,
+  TInputContext extends Record<string, any>,
+  TContext extends Record<string, any>,
   TMeta extends Record<string, any>,
   TQueries extends ProcedureRecord<
     TInputContext,
@@ -755,7 +755,7 @@ export class Router<
    * Function to be called before any procedure is invoked
    * @link https://trpc.io/docs/middlewares
    */
-  public middleware<TNewContext>(
+  public middleware<TNewContext extends Record<string, any>>(
     middleware: MiddlewareFunction<TContext, TNewContext, TMeta>,
   ): Router<
     TInputContext,
@@ -890,6 +890,6 @@ export class Router<
 /**
  * @deprecated
  */
-export function router<TContext, TMeta extends Record<string, any> = {}>() {
+export function router<TContext extends Record<string, any>, TMeta extends Record<string, any> = {}>() {
   return new Router<TContext, TContext, TMeta, {}, {}, {}, DefaultErrorShape>();
 }
