@@ -5,7 +5,7 @@ import { trpc } from 'utils/trpc';
 
 const MyApp: AppType = ({ Component, pageProps }) => {
   return (
-    <SessionProvider session={pageProps.session}>
+    <SessionProvider session={(pageProps as any).session}>
       <Component {...pageProps} />
     </SessionProvider>
   );
