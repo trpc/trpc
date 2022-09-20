@@ -1,6 +1,6 @@
 {
   "name": "@trpc/next",
-  "version": "10.0.0-proxy-alpha.81",
+  "version": "10.0.0-proxy-beta.0",
   "description": "tRPC Next lib",
   "author": "KATT",
   "license": "MIT",
@@ -48,9 +48,9 @@
   },
   "devDependencies": {
     "@tanstack/react-query": "^4.0.10",
-    "@trpc/client": "^10.0.0-proxy-alpha.81",
-    "@trpc/react": "^10.0.0-proxy-alpha.81",
-    "@trpc/server": "^10.0.0-proxy-alpha.81",
+    "@trpc/client": "^10.0.0-proxy-beta.0",
+    "@trpc/react": "^10.0.0-proxy-beta.0",
+    "@trpc/server": "^10.0.0-proxy-beta.0",
     "@types/express": "^4.17.12",
     "express": "^4.17.1",
     "next": "^12.1.6",

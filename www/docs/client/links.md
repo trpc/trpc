@@ -15,9 +15,9 @@ Request batching is automatically enabled which batches your requests to the ser
 ```ts
 // below will be done in the same request when batching is enabled
 const somePosts = await Promise.all([
-  proxy.post.byId.query(1);
-  proxy.post.byId.query(2);
-  proxy.post.byId.query(3);
+  trpc.post.byId.query(1);
+  trpc.post.byId.query(2);
+  trpc.post.byId.query(3);
 ])
 ```
 
