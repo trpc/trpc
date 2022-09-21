@@ -4,10 +4,11 @@ import { loggerLink } from '@trpc/client/links/loggerLink';
 import { wsLink, createWSClient } from '@trpc/client/links/wsLink';
 import { withTRPC } from '@trpc/next';
 import { getSession, SessionProvider } from 'next-auth/react';
+import type { AppType } from 'next/app';
 import getConfig from 'next/config';
-import { AppType } from 'next/dist/shared/lib/utils';
 import type { AppRouter } from 'server/routers/_app';
 import superjson from 'superjson';
+
 
 const { publicRuntimeConfig } = getConfig();
 
