@@ -18,12 +18,6 @@ const IndexPage: NextPageWithLayout = () => {
     },
   );
 
-  utils.post.list.setData((old) => {
-    old;
-    //^?
-    return old;
-  });
-
   const addPost = trpc.post.add.useMutation({
     async onSuccess() {
       // refetches posts after a post is added
