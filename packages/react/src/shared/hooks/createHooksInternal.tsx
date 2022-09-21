@@ -531,7 +531,9 @@ class GnClass<TRouter extends AnyRouter, TSSRContext = unknown> {
   }
 }
 
-type returnTypeInferer<T> = T extends (a: Record<string, string>) => infer U
+type returnTypeInferer<TType> = TType extends (
+  a: Record<string, string>,
+) => infer U
   ? U
   : never;
 type fooType<TRouter extends AnyRouter, TSSRContext = unknown> = GnClass<

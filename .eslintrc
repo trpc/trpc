@@ -51,6 +51,7 @@
       {
         "selector": "typeParameter",
         "format": ["PascalCase"],
+        "leadingUnderscore": "allow",
         "custom": {
           "regex": "^T[A-Z][a-zA-Z]+$",
           "match": true
@@ -67,11 +68,12 @@
       }
     },
     {
-      "files": ["**/test/**/*"],
+      "files": ["**/test/**/*", "**/*.test.tsx", "**/*.test.ts"],
       "rules": {
         "@typescript-eslint/no-floating-promises": "off",
         "@typescript-eslint/no-non-null-assertion": "off",
-        "@typescript-eslint/no-unused-vars": "off"
+        "@typescript-eslint/no-unused-vars": "off",
+        "@typescript-eslint/naming-convention": "off"
       }
     },
     {

@@ -49,7 +49,7 @@ export type TeardownLogic =
   // | SubscriptionLike
   Unsubscribable | UnsubscribeFn | void;
 
-export type UnaryFunction<T, R> = (source: T) => R;
+export type UnaryFunction<TSource, TReturn> = (source: TSource) => TReturn;
 
 export type OperatorFunction<
   TValueBefore,
