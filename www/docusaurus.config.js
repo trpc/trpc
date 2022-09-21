@@ -62,13 +62,13 @@ module.exports = {
           label: 'Usage with Next.js',
         },
         {
-          href: 'https://github.com/trpc/trpc/tree/next',
+          href: 'https://github.com/trpc/trpc',
           label: 'GitHub',
           position: 'right',
           className: 'navbar-external-link',
         },
         {
-          href: 'https://twitter.com/alexdotjs',
+          href: 'https://twitter.com/trpcio',
           label: 'Twitter',
           position: 'right',
           className: 'navbar-external-link',
