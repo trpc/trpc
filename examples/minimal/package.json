@@ -1,7 +1,7 @@
 {
   "name": "@examples/minimal",
   "private": true,
-  "version": "10.0.0-proxy-beta.0",
+  "version": "10.0.0-proxy-beta.1",
   "scripts": {
     "dev:server": "nodemon -e ts -w . -x ts-node server",
     "dev:client": "nodemon -e ts -w . -x 'wait-port 2022 && ts-node client'",
