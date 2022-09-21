@@ -8,31 +8,42 @@ export interface Subscribable<TValue, TError> {
 export interface Observable<TValue, TError>
   extends Subscribable<TValue, TError> {
   pipe(): Observable<TValue, TError>;
-  pipe<V1, E1>(
-    op1: OperatorFunction<TValue, TError, V1, E1>,
-  ): Observable<V1, E1>;
-  pipe<V1, E1, V2, E2>(
-    op1: OperatorFunction<TValue, TError, V1, E1>,
-    op2: OperatorFunction<V1, E1, V2, E2>,
-  ): Observable<V2, E2>;
-  pipe<V1, E1, V2, E2, V3, E3>(
-    op1: OperatorFunction<TValue, TError, V1, E1>,
-    op2: OperatorFunction<V1, E1, V2, E2>,
-    op3: OperatorFunction<V2, E2, V3, E3>,
-  ): Observable<V2, E2>;
-  pipe<V1, E1, V2, E2, V3, E3, V4, E4>(
-    op1: OperatorFunction<TValue, TError, V1, E1>,
-    op2: OperatorFunction<V1, E1, V2, E2>,
-    op3: OperatorFunction<V2, E2, V3, E3>,
-    op4: OperatorFunction<V3, E3, V4, E4>,
-  ): Observable<V2, E2>;
-  pipe<V1, E1, V2, E2, V3, E3, V4, E4, V5, E5>(
-    op1: OperatorFunction<TValue, TError, V1, E1>,
-    op2: OperatorFunction<V1, E1, V2, E2>,
-    op3: OperatorFunction<V2, E2, V3, E3>,
-    op4: OperatorFunction<V3, E3, V4, E4>,
-    op5: OperatorFunction<V4, E4, V5, E5>,
-  ): Observable<V2, E2>;
+  pipe<TValue1, TError1>(
+    op1: OperatorFunction<TValue, TError, TValue1, TError1>,
+  ): Observable<TValue1, TError1>;
+  pipe<TValue1, TError1, TValue2, TError2>(
+    op1: OperatorFunction<TValue, TError, TValue1, TError1>,
+    op2: OperatorFunction<TValue1, TError1, TValue2, TError2>,
+  ): Observable<TValue2, TError2>;
+  pipe<TValue1, TError1, TValue2, TError2, TValue3, TError3>(
+    op1: OperatorFunction<TValue, TError, TValue1, TError1>,
+    op2: OperatorFunction<TValue1, TError1, TValue2, TError2>,
+    op3: OperatorFunction<TValue2, TError2, TValue3, TError3>,
+  ): Observable<TValue2, TError2>;
+  pipe<TValue1, TError1, TValue2, TError2, TValue3, TError3, TValue4, TError4>(
+    op1: OperatorFunction<TValue, TError, TValue1, TError1>,
+    op2: OperatorFunction<TValue1, TError1, TValue2, TError2>,
+    op3: OperatorFunction<TValue2, TError2, TValue3, TError3>,
+    op4: OperatorFunction<TValue3, TError3, TValue4, TError4>,
+  ): Observable<TValue2, TError2>;
+  pipe<
+    TValue1,
+    TError1,
+    TValue2,
+    TError2,
+    TValue3,
+    TError3,
+    TValue4,
+    TError4,
+    TValue5,
+    TError5,
+  >(
+    op1: OperatorFunction<TValue, TError, TValue1, TError1>,
+    op2: OperatorFunction<TValue1, TError1, TValue2, TError2>,
+    op3: OperatorFunction<TValue2, TError2, TValue3, TError3>,
+    op4: OperatorFunction<TValue3, TError3, TValue4, TError4>,
+    op5: OperatorFunction<TValue4, TError4, TValue5, TError5>,
+  ): Observable<TValue2, TError2>;
 }
 export interface SubscriptionLike extends Unsubscribable {
   unsubscribe(): void;
