@@ -4,6 +4,7 @@ import { getSession, SessionProvider } from 'next-auth/react';
 import type { AppType } from 'next/app';
 import { trpc } from 'utils/trpc';
 
+// @ts-expect-error AppType['getInitialProps'] does not contain pageProps
 const MyApp: AppType<{ session: Session | null }> = ({
   Component,
   pageProps,
@@ -15,6 +16,7 @@ const MyApp: AppType<{ session: Session | null }> = ({
   );
 };
 
+// @ts-expect-error AppType['getInitialProps'] does not contain pageProps
 MyApp.getInitialProps = async ({ ctx }) => {
   return {
     pageProps: {
