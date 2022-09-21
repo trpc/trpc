@@ -1,6 +1,5 @@
 import { NextPage } from 'next';
-import { AppProps } from 'next/app';
-import { AppType } from 'next/dist/shared/lib/utils';
+import type { AppProps, AppType } from 'next/app';
 import { ReactElement, ReactNode } from 'react';
 import { DefaultLayout } from '~/components/DefaultLayout';
 import { trpc } from '~/utils/trpc';
