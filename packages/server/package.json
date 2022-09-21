@@ -128,7 +128,7 @@
     "konn": "^0.7.0",
     "miniflare": "^2.4.0",
     "myzod": "^1.3.1",
-    "next": "^12.1.6",
+    "next": "^12.3.1",
     "node-fetch": "^2.6.1",
     "superstruct": "^0.15.2",
     "typescript": "4.7.4",
