@@ -3,6 +3,7 @@ import { httpBatchLink } from '@trpc/client/links/httpBatchLink';
 import { loggerLink } from '@trpc/client/links/loggerLink';
 import { wsLink, createWSClient } from '@trpc/client/links/wsLink';
 import { withTRPC } from '@trpc/next';
+import { Session } from 'next-auth';
 import { getSession, SessionProvider } from 'next-auth/react';
 import type { AppType } from 'next/app';
 import getConfig from 'next/config';
@@ -13,10 +14,12 @@ const { publicRuntimeConfig } = getConfig();
 
 const { APP_URL, WS_URL } = publicRuntimeConfig;
 
-const MyApp: AppType = ({ Component, pageProps }) => {
+const MyApp: AppType<{ session: Session | null }> = ({
+  Component,
+  pageProps,
+}) => {
   return (
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    <SessionProvider session={(pageProps as any).session}>
+    <SessionProvider session={pageProps.session}>
       <Component {...pageProps} />
     </SessionProvider>
   );
@@ -24,9 +27,7 @@ const MyApp: AppType = ({ Component, pageProps }) => {
 
 MyApp.getInitialProps = async ({ ctx }) => {
   return {
-    pageProps: {
-      session: await getSession(ctx),
-    },
+    session: await getSession(ctx),
   };
 };
 
