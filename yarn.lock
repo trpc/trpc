@@ -5781,9 +5781,9 @@ aws-lambda@^1.0.7:
     watchpack "^2.0.0-beta.10"
 
 aws-sdk@^2.1136.0, aws-sdk@^2.1195.0, aws-sdk@^2.814.0:
-  version "2.1220.0"
-  resolved "https://registry.yarnpkg.com/aws-sdk/-/aws-sdk-2.1220.0.tgz#5cec163ee7799875e484afcdde93c4b1e713c64c"
-  integrity sha512-l8KEOo2Cb066lLPhVDucx6JuNUrMVmZW937htKagf8rcADCbM0ySIGGKWbi2E8l44ptX3/tDOFnyiSislolATQ==
+  version "2.1221.0"
+  resolved "https://registry.yarnpkg.com/aws-sdk/-/aws-sdk-2.1221.0.tgz#36dd12d7af4b46495a92d77a0fc3be2f8903f252"
+  integrity sha512-RKFnhC5RW70xRFixzdvZ50YnNT2DdNh1CoXWBEmPOVEXDEv5ztTmAsgju2vfPQZLkKuMzL8LCBdT3xrr8JdoDg==
   dependencies:
     buffer "4.9.2"
     events "1.1.1"
@@ -9169,9 +9169,9 @@ faye-websocket@^0.11.3:
     websocket-driver ">=0.5.1"
 
 fb-watchman@^2.0.0:
-  version "2.0.1"
-  resolved "https://registry.yarnpkg.com/fb-watchman/-/fb-watchman-2.0.1.tgz#fc84fb39d2709cf3ff6d743706157bb5708a8a85"
-  integrity sha512-DkPJKQeY6kKwmuMretBhr7G6Vodr7bFwDYTXIkfG1gjvNpaxBTQV3PbXg6bR1c1UP4jPOX0jHUbbHANL9vRjVg==
+  version "2.0.2"
+  resolved "https://registry.yarnpkg.com/fb-watchman/-/fb-watchman-2.0.2.tgz#e9524ee6b5c77e9e5001af0f85f3adbb8623255c"
+  integrity sha512-p5161BqbuCaSnB8jIbzQHOlpgsPmK5rJVDfDKO91Axs5NC1uu3HRQm6wt9cd9/+GtQQIO53JdGXXoyDpTAsgYA==
   dependencies:
     bser "2.1.1"
 
