@@ -21,13 +21,17 @@
   <a href="https://trpc.io/discord">
     <img alt="Discord" src="https://img.shields.io/discord/867764511159091230?color=7389D8&label&logo=discord&logoColor=ffffff" />
   </a>
+  <br />
   <a href="https://twitter.com/alexdotjs">
-    <img alt="Twitter" src="https://img.shields.io/twitter/url.svg?label=Follow%20%40alexdotjs&style=social&url=https%3A%2F%2Ftwitter.com%2Falexdotjs" />
+    <img alt="Twitter" src="https://img.shields.io/twitter/url.svg?label=%40alexdotjs&style=social&url=https%3A%2F%2Ftwitter.com%2Falexdotjs" />
+  </a>
+  <a href="https://twitter.com/trpcio">
+    <img alt="Twitter" src="https://img.shields.io/twitter/url.svg?label=%40trpcio&style=social&url=https%3A%2F%2Ftwitter.com%2Falexdotjs" />
   </a>
   <br />
   <br />
   <figure>
-    <img src="https://github.com/trpc/trpc-assets/blob/main/www/v10/v10-dark-landscape.gif" alt="Demo" />
+    <img src="https://assets.trpc.io/www/v10/v10-dark-landscape.gif" alt="Demo" />
     <figcaption>
       <p align="center">
         The client above is <strong>not</strong> importing any code from the server, only its type declarations.
@@ -92,7 +96,7 @@ npx create-next-app --example https://github.com/trpc/trpc --example-path exampl
 
 <table>
   <tbody>
-      <td align="center"><a href="https://github.com/sachinraja"><img src="https://avatars.githubusercontent.com/u/58836760?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Sachin Raja</b></sub></a></td>
+      <td align="center"><a href="https://twitter.com/s4chinraja"><img src="https://avatars.githubusercontent.com/u/58836760?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Sachin Raja</b></sub></a></td>
       <td align="center"><a href="https://twitter.com/alexdotjs"><img src="https://avatars.githubusercontent.com/u/459267?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Alex / KATT</b></sub></a></td>
     </tr>
   </tbody>
