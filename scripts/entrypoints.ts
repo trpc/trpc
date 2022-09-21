@@ -1,6 +1,5 @@
 import fs from 'fs-extra';
 import path from 'path';
-import prettier from 'prettier';
 import { INPUTS, PACKAGES } from '../rollup.config';
 
 const packagesDir = path.resolve(__dirname, '..', 'packages');
@@ -99,14 +98,14 @@ for (const pkg of PACKAGES) {
   });
 
   // write package.json
-  const formattedPkgJson = prettier.format(JSON.stringify(pkgJson), {
+  /*const formattedPkgJson = prettier.format(JSON.stringify(pkgJson), {
     parser: 'json-stringify',
     printWidth: 80,
     endOfLine: 'auto',
-  });
+  });*/
   fs.writeFileSync(
     path.resolve(pkgRoot, 'package.json'),
-    formattedPkgJson,
+    JSON.stringify(pkgJson, null, 2) + '\n',
     'utf-8',
   );
 }
