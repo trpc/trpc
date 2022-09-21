@@ -7,7 +7,7 @@ const latestTweets = tweets
 
 export const TwitterWall = () => {
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4 my-6 rounded-xl p-4">
+    <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4 my-6 rounded-xl">
       {latestTweets.map((tweet) => (
         <a
           id="tweet"

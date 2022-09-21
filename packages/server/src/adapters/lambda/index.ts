@@ -9,8 +9,8 @@ export * from '../aws-lambda';
 /**
  * @deprecated use `aws-lambda` instead
  */
-export type CreateLambdaContextOptions<T extends APIGatewayEvent> =
-  CreateAWSLambdaContextOptions<T>;
+export type CreateLambdaContextOptions<TEvent extends APIGatewayEvent> =
+  CreateAWSLambdaContextOptions<TEvent>;
 
 /**
  * @deprecated use `aws-lambda` instead
