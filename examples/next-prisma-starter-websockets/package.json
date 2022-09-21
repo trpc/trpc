@@ -15,7 +15,7 @@
     "db-seed": "prisma db seed",
     "db-migrate-dev": "yarn prisma migrate dev",
     "db-nuke": "docker-compose down --volumes --remove-orphans",
-    "dx": "run-s db-up db-migrate-dev dev",
+    "dx": "run-s db-up db-migrate-dev db-seed dev",
     "dev-nuke": "rm -rf prisma/*.db**",
     "generate": "prisma generate",
     "migrate-dev": "prisma migrate dev",
