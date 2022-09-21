@@ -32,7 +32,7 @@
   },
   "dependencies": {
     "@prisma/client": "^3.0.1",
-    "@tanstack/react-query": "^4.0.10",
+    "@tanstack/react-query": "^4.3.0",
     "@trpc/client": "^10.0.0-proxy-beta.1",
     "@trpc/next": "^10.0.0-proxy-beta.1",
     "@trpc/react": "^10.0.0-proxy-beta.1",

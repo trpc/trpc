@@ -35,7 +35,7 @@
     }
   },
   "peerDependencies": {
-    "@tanstack/react-query": "^4.0.10",
+    "@tanstack/react-query": "^4.3.0",
     "@trpc/client": "^10.0.0-alpha.48",
     "@trpc/react": "^10.0.0-alpha.48",
     "@trpc/server": "^10.0.0-alpha.48",
@@ -47,7 +47,7 @@
     "react-ssr-prepass": "^1.5.0"
   },
   "devDependencies": {
-    "@tanstack/react-query": "^4.0.10",
+    "@tanstack/react-query": "^4.3.0",
     "@trpc/client": "^10.0.0-proxy-beta.1",
     "@trpc/react": "^10.0.0-proxy-beta.1",
     "@trpc/server": "^10.0.0-proxy-beta.1",
