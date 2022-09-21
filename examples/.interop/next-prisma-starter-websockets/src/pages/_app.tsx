@@ -15,7 +15,8 @@ const { APP_URL, WS_URL } = publicRuntimeConfig;
 
 const MyApp: AppType = ({ Component, pageProps }) => {
   return (
-    <SessionProvider session={pageProps.session}>
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    <SessionProvider session={(pageProps as any).session}>
       <Component {...pageProps} />
     </SessionProvider>
   );
