@@ -6,7 +6,8 @@ module.exports = {
   url: 'https://trpc.io',
   baseUrl: '/',
   onBrokenLinks: 'throw',
-  onBrokenMarkdownLinks: 'warn',
+  onBrokenMarkdownLinks: 'throw',
+  onDuplicateRoutes: 'throw',
   favicon: 'img/favicon.ico',
   organizationName: 'trpc', // Usually your GitHub org/user name.
   projectName: 'trpc', // Usually your repo name.
@@ -27,7 +28,7 @@ module.exports = {
     announcementBar: {
       id: 'v10',
       content:
-        "🚀 You are looking at a pre-release of tRPC v10! See <a href='https://trpc.io/docs/v10/migrate-from-v9-to-v10'>the migration guide</a> for a summary of what is changing &amp; <a href='https://github.com/trpc/examples-v10-next-prisma-starter-sqlite'>go here</a> to try out a real project using this version.",
+        "🚀 You are looking at a pre-release of tRPC v10! See <a href='https://trpc.io/docs/v10/migrate-from-v9-to-v10'>the migration guide</a> for a summary of what is changing &amp; <a href='https://github.com/trpc/examples-next-prisma-starter'>go here</a> to try out a real project using this version.",
       backgroundColor: 'var(--ifm-color-primary-dark)',
       textColor: '#ffffff',
       isCloseable: false,
@@ -160,7 +161,7 @@ module.exports = {
       '@docusaurus/preset-classic',
       {
         docs: {
-          lastVersion: '9.x',
+          lastVersion: 'current',
           // disableVersioning: true,
           // onlyIncludeVersions: ['9.x'],
           versions: {
@@ -174,6 +175,7 @@ module.exports = {
             '9.x': {
               label: '9.x',
               path: 'v9',
+              badge: true,
               className: 'v9',
               banner: 'none',
             },

@@ -62,14 +62,18 @@ module.exports = {
         'reactjs/mutations',
         'reactjs/useInfiniteQuery',
         'reactjs/invalidateQueries',
-        'reactjs/ssg-helpers',
       ],
     },
     {
       type: 'category',
       label: '@trpc/next',
       collapsed: false,
-      items: ['nextjs/ssr', 'nextjs/ssg', 'nextjs/starter-projects'],
+      items: [
+        'nextjs/ssr',
+        'nextjs/ssg',
+        'nextjs/ssg-helpers',
+        'nextjs/starter-projects',
+      ],
     },
     {
       type: 'category',
