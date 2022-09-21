@@ -9,7 +9,10 @@ import { DefaultLayout } from '~/components/DefaultLayout';
 import type { AppRouter } from '~/server/routers/_app';
 import type { SSRContext } from '~/utils/trpc';
 
-export type NextPageWithLayout = NextPage & {
+export type NextPageWithLayout<
+  TProps = Record<string, unknown>,
+  TInitialProps = TProps,
+> = NextPage<TProps, TInitialProps> & {
   getLayout?: (page: ReactElement) => ReactNode;
 };
 
