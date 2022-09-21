@@ -6,8 +6,8 @@ import {
   RefetchOptions,
   RefetchQueryFilters,
   SetDataOptions,
+  Updater,
 } from '@tanstack/react-query';
-import { Updater } from '@tanstack/react-query/build/types/packages/query-core/src/utils';
 import { TRPCClientError } from '@trpc/client';
 import {
   AnyQueryProcedure,
@@ -112,7 +112,7 @@ type DecorateProcedure<
   setData(
     updater: Updater<
       inferProcedureOutput<TProcedure> | undefined,
-      inferProcedureOutput<TProcedure>
+      inferProcedureOutput<TProcedure> | undefined
     >,
     input?: inferProcedureInput<TProcedure>,
     options?: SetDataOptions,
@@ -124,7 +124,7 @@ type DecorateProcedure<
   setInfiniteData(
     updater: Updater<
       InfiniteData<inferProcedureOutput<TProcedure>> | undefined,
-      InfiniteData<inferProcedureOutput<TProcedure>>
+      InfiniteData<inferProcedureOutput<TProcedure>> | undefined
     >,
     input?: inferProcedureInput<TProcedure>,
     options?: SetDataOptions,

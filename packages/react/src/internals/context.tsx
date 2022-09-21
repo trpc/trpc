@@ -9,8 +9,8 @@ import {
   RefetchOptions,
   RefetchQueryFilters,
   SetDataOptions,
+  Updater,
 } from '@tanstack/react-query';
-import { Updater } from '@tanstack/react-query/build/types/packages/query-core/src/utils';
 import { TRPCClient, TRPCClientError, TRPCRequestOptions } from '@trpc/client';
 import type {
   AnyRouter,
@@ -189,7 +189,7 @@ export interface TRPCContextState<
     TOutput extends inferProcedureOutput<TRouter['_def']['queries'][TPath]>,
   >(
     pathAndInput: [TPath, TInput?],
-    updater: Updater<TOutput | undefined, TOutput>,
+    updater: Updater<TOutput | undefined, TOutput | undefined>,
     options?: SetDataOptions,
   ): void;
   /**
@@ -211,7 +211,10 @@ export interface TRPCContextState<
     TOutput extends inferProcedureOutput<TRouter['_def']['queries'][TPath]>,
   >(
     pathAndInput: [TPath, TInput?],
-    updater: Updater<InfiniteData<TOutput> | undefined, InfiniteData<TOutput>>,
+    updater: Updater<
+      InfiniteData<TOutput> | undefined,
+      InfiniteData<TOutput> | undefined
+    >,
     options?: SetDataOptions,
   ): void;
   /**
