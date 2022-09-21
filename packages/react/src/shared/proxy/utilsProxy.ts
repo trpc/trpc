@@ -10,7 +10,6 @@ import {
 import { Updater } from '@tanstack/react-query/build/types/packages/query-core/src/utils';
 import { TRPCClientError } from '@trpc/client';
 import {
-  AnyProcedure,
   AnyQueryProcedure,
   AnyRouter,
   Filter,

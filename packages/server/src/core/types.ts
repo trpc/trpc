@@ -43,5 +43,5 @@ export type inferSubscriptionOutput<
   inferProcedureOutput<TRouter['_def']['subscriptions'][TPath]>
 >;
 
-export type inferProcedureClientError<T extends AnyProcedure> =
-  inferProcedureParams<T>['_config']['errorShape'];
+export type inferProcedureClientError<TProcedure extends AnyProcedure> =
+  inferProcedureParams<TProcedure>['_config']['errorShape'];

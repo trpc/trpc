@@ -2,9 +2,9 @@ import { UnaryFunction } from '../types';
 import { identity } from './identity';
 
 /** @internal */
-export function pipeFromArray<T, R>(
-  fns: Array<UnaryFunction<T, R>>,
-): UnaryFunction<T, R> {
+export function pipeFromArray<TSource, TReturn>(
+  fns: Array<UnaryFunction<TSource, TReturn>>,
+): UnaryFunction<TSource, TReturn> {
   if (fns.length === 0) {
     return identity as UnaryFunction<any, any>;
   }
@@ -14,9 +14,9 @@ export function pipeFromArray<T, R>(
     return fns[0]!;
   }
 
-  return function piped(input: T): R {
+  return function piped(input: TSource): TReturn {
     return fns.reduce(
-      (prev: any, fn: UnaryFunction<T, R>) => fn(prev),
+      (prev: any, fn: UnaryFunction<TSource, TReturn>) => fn(prev),
       input as any,
     );
   };

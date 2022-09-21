@@ -67,10 +67,14 @@ type MigrateProcedure<
 
 export type MigrateProcedureRecord<
   TConfig extends RootConfig,
-  T extends ProcedureRecord<any>,
+  TProcedureRecord extends ProcedureRecord<any>,
   TType extends ProcedureType,
 > = {
-  [K in keyof T]: MigrateProcedure<TConfig, T[K], TType>;
+  [K in keyof TProcedureRecord]: MigrateProcedure<
+    TConfig,
+    TProcedureRecord[K],
+    TType
+  >;
 };
 
 export type MigrateRouter<
