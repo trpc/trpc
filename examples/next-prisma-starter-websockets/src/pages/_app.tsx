@@ -1,12 +1,15 @@
 import '../styles/global.css';
+import type { Session } from 'next-auth';
 import { getSession, SessionProvider } from 'next-auth/react';
 import type { AppType } from 'next/app';
 import { trpc } from 'utils/trpc';
 
-const MyApp: AppType = ({ Component, pageProps }) => {
+const MyApp: AppType<{ session: Session | null }> = ({
+  Component,
+  pageProps,
+}) => {
   return (
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    <SessionProvider session={(pageProps as any).session}>
+    <SessionProvider session={pageProps.session}>
       <Component {...pageProps} />
     </SessionProvider>
   );
@@ -14,9 +17,7 @@ const MyApp: AppType = ({ Component, pageProps }) => {
 
 MyApp.getInitialProps = async ({ ctx }) => {
   return {
-    pageProps: {
-      session: await getSession(ctx),
-    },
+    session: await getSession(ctx),
   };
 };
 
