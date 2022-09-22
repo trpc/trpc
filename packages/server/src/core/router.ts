@@ -185,6 +185,17 @@ const emptyRouter = {
 };
 
 /**
+ * Reserved words that can't be used as router or procedure names
+ */
+const reservedWords = [
+  /**
+   * Then is a reserved word because otherwise we can't return a promise that returns a Proxy
+   * since JS will think that `.then` is something that exists
+   */
+  'then',
+];
+
+/**
  *
  * @internal
  */
@@ -204,6 +215,16 @@ export function createRouterFactory<TConfig extends RootConfig>(
     >
   > &
     TProcRouterRecord {
+    const reservedWordsUsed = new Set(
+      Object.keys(opts).filter((v) => reservedWords.includes(v)),
+    );
+    if (reservedWordsUsed.size > 0) {
+      throw new Error(
+        'Reserved words used in `router({})` call: ' +
+          Array.from(reservedWordsUsed).join(', '),
+      );
+    }
+
     const routerProcedures: ProcedureRecord = omitPrototype({});
     function recursiveGetPaths(procedures: ProcedureRouterRecord, path = '') {
       for (const [key, procedureOrRouter] of Object.entries(procedures ?? {})) {
