@@ -6,7 +6,7 @@ import {
 } from '../error/formatter';
 import { getHTTPStatusCodeFromError } from '../http/internals/getHTTPStatusCode';
 import { TRPCErrorShape, TRPC_ERROR_CODES_BY_KEY } from '../rpc';
-import { createProxy } from '../shared';
+import { ProxyPromiseGuard, createProxy } from '../shared';
 import { CombinedDataTransformer, defaultTransformer } from '../transformer';
 import { RootConfig } from './internals/config';
 import { mergeWithoutOverrides } from './internals/mergeWithoutOverrides';
@@ -113,7 +113,7 @@ type DecoratedProcedureRecord<TProcedures extends ProcedureRouterRecord> = {
     : TProcedures[TKey] extends AnyProcedure
     ? DecorateProcedure<TProcedures[TKey]>
     : never;
-};
+} & ProxyPromiseGuard;
 
 /**
  * @internal
