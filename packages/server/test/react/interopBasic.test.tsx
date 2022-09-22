@@ -208,4 +208,14 @@ test('createCaller', async () => {
       'oldProcedureOutput__input:n/a',
     );
   }
+  {
+    const asyncFnThatReturnsCaller = async () =>
+      ctx.legacyRouterInterop.createCaller({
+        foo: 'bar',
+      });
+    const caller = await asyncFnThatReturnsCaller();
+    expect(await caller.query('oldProcedure')).toBe(
+      'oldProcedureOutput__input:n/a',
+    );
+  }
 });
