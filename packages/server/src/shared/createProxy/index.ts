@@ -12,6 +12,11 @@ function createProxyInner(callback: ProxyCallback, ...path: string[]) {
     {
       get(_obj, name) {
         if (typeof name === 'string') {
+          if (name === 'then') {
+            // special case for if the proxy is accidentally treated
+            // like a PromiseLike (like in `Promise.resolve(proxy)`)
+            return undefined;
+          }
           return createProxyInner(callback, ...path, name);
         }
 
@@ -32,6 +37,11 @@ function createProxyInner(callback: ProxyCallback, ...path: string[]) {
 
 /**
  * Creates a proxy that calls the callback with the path and arguments
+ *
+ * @remarks
+ * This has a special handling to manage if it's accidentally treated like
+ * a PromiseLike.
+ *
  * @internal
  */
 export const createProxy = (callback: ProxyCallback) =>

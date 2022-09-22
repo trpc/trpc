@@ -54,6 +54,8 @@ export type MiddlewareFunction<TInputContext, TContext, TMeta> = (opts: {
   meta?: TMeta;
   next: {
     (): Promise<MiddlewareResult<TInputContext>>;
-    <T>(opts: { ctx: T }): Promise<MiddlewareResult<T>>;
+    <TNewContext>(opts: { ctx: TNewContext }): Promise<
+      MiddlewareResult<TNewContext>
+    >;
   };
 }) => Promise<MiddlewareResult<TContext>>;

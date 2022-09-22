@@ -36,7 +36,10 @@ export type { Procedure } from './internals/procedure';
 /**
  * @internal
  */
-type Prefix<K extends string, T extends string> = `${K}${T}`;
+type Prefix<
+  TPrefix extends string,
+  TSuffix extends string,
+> = `${TPrefix}${TSuffix}`;
 
 /**
  * @internal
@@ -239,7 +242,7 @@ function safeObject(): {};
 /**
  * Create an object without inheriting anything from `Object.prototype`
  */
-function safeObject<TObj1>(obj: TObj1): TObj1;
+function safeObject<TObj>(obj: TObj): TObj;
 /**
  * Merge two objects without inheritance from `Object.prototype`
  */
