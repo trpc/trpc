@@ -260,7 +260,10 @@ export function createWSClient(opts: WebSocketClientOptions) {
       outgoing = outgoing.filter((msg) => msg.id !== id);
 
       callbacks?.complete?.();
-      if (activeConnection.readyState === WebSocket.OPEN && op.type === 'subscription') {
+      if (
+        activeConnection.readyState === WebSocket.OPEN &&
+        op.type === 'subscription'
+      ) {
         outgoing.push({
           id,
           method: 'subscription.stop',

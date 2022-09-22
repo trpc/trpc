@@ -44,7 +44,7 @@ const palette = {
   mutation: ['c5a3fc', '904dfc'],
   subscription: ['ff49e1', 'd83fbe'],
 };
-type LoggerLinkOptions<TRouter extends AnyRouter> = {
+export type LoggerLinkOptions<TRouter extends AnyRouter> = {
   logger?: LogFn<TRouter>;
   enabled?: EnabledFn<TRouter>;
   /**
