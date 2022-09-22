@@ -14,8 +14,8 @@ export type APIGatewayResult =
   | APIGatewayProxyResult
   | APIGatewayProxyStructuredResultV2;
 
-export type CreateAWSLambdaContextOptions<T extends APIGatewayEvent> = {
-  event: T;
+export type CreateAWSLambdaContextOptions<TEvent extends APIGatewayEvent> = {
+  event: TEvent;
   context: APIGWContext;
 };
 export type AWSLambdaCreateContextFn<

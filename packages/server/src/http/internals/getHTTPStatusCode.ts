@@ -3,7 +3,7 @@ import { invert } from '../../internals/invert';
 import { TRPCResponse, TRPC_ERROR_CODES_BY_KEY } from '../../rpc';
 
 export const TRPC_ERROR_CODES_BY_NUMBER = invert(TRPC_ERROR_CODES_BY_KEY);
-type ValueOf<T> = T[keyof T];
+type ValueOf<TType> = TType[keyof TType];
 
 export type TRPC_ERROR_CODE_NUMBER = ValueOf<typeof TRPC_ERROR_CODES_BY_KEY>;
 const JSONRPC2_TO_HTTP_CODE: Record<

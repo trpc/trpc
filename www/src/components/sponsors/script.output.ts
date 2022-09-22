@@ -478,5 +478,14 @@ export const sponsors = [
     "privacyLevel": "PUBLIC",
     "login": "larskarbo",
     "createdAt": 1662896773000
+  },
+  {
+    "name": "Habib Kadiri",
+    "imgSrc": "https://avatars.githubusercontent.com/u/60525087?u=272c35c9792f781e536fd14c7e48c1052d54ddb5&v=4",
+    "monthlyPriceInDollars": 10,
+    "link": "https://github.com/changwo",
+    "privacyLevel": "PUBLIC",
+    "login": "changwo",
+    "createdAt": 1663581418000
   }
 ] as const

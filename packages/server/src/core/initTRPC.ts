@@ -26,10 +26,10 @@ import { createRouterFactory } from './router';
 
 type PartialInitGenerics = Partial<InitGenerics>;
 
-type CreateInitGenericsFromPartial<T extends PartialInitGenerics> =
+type CreateInitGenericsFromPartial<TType extends PartialInitGenerics> =
   CreateInitGenerics<{
-    ctx: T['ctx'] extends InitGenerics['ctx'] ? T['ctx'] : {};
-    meta: T['meta'] extends InitGenerics['meta'] ? T['meta'] : {};
+    ctx: TType['ctx'] extends InitGenerics['ctx'] ? TType['ctx'] : {};
+    meta: TType['meta'] extends InitGenerics['meta'] ? TType['meta'] : {};
   }>;
 
 /**

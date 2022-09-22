@@ -1,6 +1,6 @@
 {
   "name": "www",
-  "version": "10.0.0-proxy-alpha.81",
+  "version": "10.0.0-proxy-beta.2",
   "private": true,
   "scripts": {
     "docusaurus": "docusaurus",
@@ -24,10 +24,10 @@
     "@headlessui/react": "^1.7.2",
     "@mdx-js/react": "^1.6.22",
     "@tailwindcss/line-clamp": "^0.4.2",
-    "@trpc/client": "^10.0.0-proxy-alpha.81",
-    "@trpc/next": "^10.0.0-proxy-alpha.81",
-    "@trpc/react": "^10.0.0-proxy-alpha.81",
-    "@trpc/server": "^10.0.0-proxy-alpha.81",
+    "@trpc/client": "^10.0.0-proxy-beta.2",
+    "@trpc/next": "^10.0.0-proxy-beta.2",
+    "@trpc/react": "^10.0.0-proxy-beta.2",
+    "@trpc/server": "^10.0.0-proxy-beta.2",
     "@visx/hierarchy": "^2.10.0",
     "@visx/responsive": "^2.10.0",
     "clsx": "^1.1.1",

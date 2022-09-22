@@ -1,5 +1,5 @@
 import React, { FC } from 'react';
-import { FaBatteryFull, FaRegThumbsDown, FaSeedling } from 'react-icons/fa';
+import { FaBatteryFull, FaSeedling } from 'react-icons/fa';
 import { FiBriefcase, FiLock, FiTerminal, FiZap } from 'react-icons/fi';
 
 const features = [
@@ -22,28 +22,29 @@ const features = [
   {
     title: 'Framework agnostic',
     description:
-      "Compatible with all JavaScript frameworks and runtimes. It's easy to add to your existing brownfield project.",
+      "Compatible with all JavaScript frameworks and runtimes. It's easy to add to your existing projects.",
     icon: <FiBriefcase size={20} />,
     color: 'dark:bg-pink-900/50 bg-pink-200 dark:text-pink-300 text-pink-600',
   },
   {
     title: 'Autocompletion',
     description:
-      "Using tRPC is like using a SDK for your API's server code. Build and refactor your endpoints with confidence.",
+      "Using tRPC is like using a SDK for your API's server code giving you confidence in your endpoints.",
     icon: <FiTerminal size={20} />,
     color:
       'dark:bg-orange-900/50 bg-orange-200 dark:text-orange-300 text-orange-600',
   },
   {
     title: 'Light bundle size',
-    description: 'tRPC has zero dependencies and a tiny client-side footprint.',
+    description:
+      'tRPC has zero dependencies and a tiny client-side footprint making it lightweight.',
     icon: <FaSeedling size={20} />,
     color: 'dark:bg-lime-900/50 bg-lime-200 dark:lime-orange-300 text-lime-600',
   },
   {
     title: 'Batteries included',
     description:
-      'We provide adapters for React, Next.js, Express.js, Fastify & Lambda. There are also community-maintained adapters for many more frameworks.',
+      'We provide adapters for React, Next.js, Express, Fastify, Lambda.',
     icon: <FaBatteryFull size={20} />,
     color: 'dark:bg-sky-900/50 bg-sky-200 dark:lime-sky-300 text-sky-600',
   },
@@ -51,7 +52,7 @@ const features = [
 
 export const Features: FC = () => {
   return (
-    <div className="container grid grid-cols-1 gap-6 mx-auto lg:grid-cols-3">
+    <div className="grid grid-cols-1 gap-6 mx-auto lg:grid-cols-3">
       {features.map((feature) => {
         return (
           <div key={feature.title}>

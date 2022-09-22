@@ -1,12 +1,12 @@
 import Head from '@docusaurus/Head';
-import { useDocsPreferredVersion } from '@docusaurus/theme-common';
 import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
 import Layout from '@theme/Layout';
 import clsx from 'clsx';
-import React, { useEffect } from 'react';
+import React, { ComponentPropsWithoutRef, useEffect, useState } from 'react';
 import { FiArrowRight } from 'react-icons/fi';
 import { Button } from '../components/Button';
 import { Features } from '../components/Features';
+import { GithubSponsorButton } from '../components/GithubSponsorButton';
 import { GithubStarsButton } from '../components/GithubStarsButton';
 import { Preview } from '../components/Preview';
 import { QuickIntro } from '../components/QuickIntro';
@@ -14,8 +14,7 @@ import { SectionTitle } from '../components/SectionTitle';
 import { TopSponsors } from '../components/TopSponsors';
 import { TwitterWall } from '../components/TwitterWall';
 import { Sponsors } from '../components/sponsors';
-
-type Version = 'current' | '9.x';
+import { useVersion } from '../components/useVersion';
 
 function searchParams(obj: Record<string, string | string[]>): string {
   return Object.entries(obj)
@@ -27,12 +26,28 @@ function searchParams(obj: Record<string, string | string[]>): string {
     .join('&');
 }
 
+const Iframe = (
+  props: Omit<ComponentPropsWithoutRef<'iframe'>, 'className'>,
+) => {
+  const [loaded, setLoaded] = useState(false);
+  return (
+    <iframe
+      {...props}
+      onLoad={() => {
+        setLoaded(true);
+      }}
+      className={clsx(
+        'w-full h-full absolute',
+        loaded ? 'transition-opacity opacity-100' : 'opacity-0',
+      )}
+    />
+  );
+};
+
 const HomeContent: React.FC = () => {
   const { siteConfig } = useDocusaurusContext();
 
-  const { preferredVersion, savePreferredVersionName } =
-    useDocsPreferredVersion();
-  const isV10 = (preferredVersion?.name as Version) === 'current';
+  const { isV10, savePreferredVersionName } = useVersion();
 
   useEffect(() => {
     const searchParams = new URLSearchParams(location.search);
@@ -78,7 +93,7 @@ const HomeContent: React.FC = () => {
         <TopSponsors />
       </header>
 
-      <section className="container">
+      <section>
         <Features />
       </section>
 
@@ -104,11 +119,10 @@ const HomeContent: React.FC = () => {
         />
         <div
           className={clsx(
-            'h-[600px] w-full rounded-xl overflow-hidden z-10 relative my-4',
+            'h-[600px] w-full rounded-xl overflow-hidden z-10 relative my-4 bg-gray-900',
           )}
         >
-          <iframe
-            className={clsx('h-full w-full absolute')}
+          <Iframe
             src={
               `https://stackblitz.com/github/trpc/trpc/tree/${
                 isV10 ? 'next' : 'main'
@@ -127,6 +141,7 @@ const HomeContent: React.FC = () => {
               })
             }
             frameBorder="0"
+            key={isV10 ? 'v10' : 'v9'}
           />
         </div>
         <div className="flex justify-center">
@@ -157,7 +172,7 @@ const HomeContent: React.FC = () => {
         />
         <blockquote
           cite="https://twitter.com/alexdotjs"
-          className="py-2 mt-6 space-y-2"
+          className="py-2 mt-3 space-y-2 italic"
         >
           <p className="text-sm text-gray-600 md:text-base dark:text-gray-400">
             I built tRPC to allow people to <strong>move faster</strong> by
@@ -186,8 +201,12 @@ const HomeContent: React.FC = () => {
           </div>
         </a>
       </section>
-      <section className="container">
-        <SectionTitle id="twitter-wall" title="Don't take our word for it!" />
+      <section>
+        <SectionTitle
+          id="twitter-wall"
+          title="Don't take our word for it!"
+          description="Many developers are loving tRPC and what it brings to them."
+        />
         <TwitterWall />
       </section>
       <section className="pb-12">
@@ -213,9 +232,7 @@ const HomeContent: React.FC = () => {
             <Sponsors />
           </div>
           <div className="flex justify-center">
-            <Button variant="primary" href="https://github.com/sponsors/KATT">
-              Become a sponsor!
-            </Button>
+            <GithubSponsorButton />
           </div>
         </div>
       </section>
@@ -224,8 +241,8 @@ const HomeContent: React.FC = () => {
 };
 
 const HomeHead: React.FC = () => {
-  const { preferredVersion } = useDocsPreferredVersion();
-  const isV10 = (preferredVersion?.name as Version) === 'current';
+  const { isV10 } = useVersion();
+
   return (
     <Head>
       <body className="homepage" />

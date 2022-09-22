@@ -61,11 +61,11 @@ export type MiddlewareFunction<
     meta: TParams['_meta'];
     next: {
       (): Promise<MiddlewareResult<TParams>>;
-      <$TContext>(opts: { ctx: $TContext }): Promise<
+      <TContext>(opts: { ctx: TContext }): Promise<
         MiddlewareResult<{
           _config: any;
           _ctx_in: TParams['_ctx_in'];
-          _ctx_out: $TContext;
+          _ctx_out: TContext;
           _input_in: TParams['_input_in'];
           _input_out: TParams['_input_out'];
           _output_in: TParams['_output_in'];
@@ -83,7 +83,7 @@ export type MiddlewareFunction<
  */
 // FIXME this should use RootConfig
 export function createMiddlewareFactory<TConfig extends RootConfig>() {
-  return function createMiddleware<$TNewParams extends ProcedureParams>(
+  return function createMiddleware<TNewParams extends ProcedureParams>(
     fn: MiddlewareFunction<
       {
         _config: TConfig;
@@ -95,7 +95,7 @@ export function createMiddlewareFactory<TConfig extends RootConfig>() {
         _output_out: unknown;
         _meta: TConfig['meta'];
       },
-      $TNewParams
+      TNewParams
     >,
   ) {
     return fn;
@@ -110,7 +110,7 @@ function isPlainObject(obj: unknown) {
  * @internal
  * Please note, `trpc-openapi` uses this function.
  */
-export function createInputMiddleware<T>(parse: ParseFn<T>) {
+export function createInputMiddleware<TInput>(parse: ParseFn<TInput>) {
   const inputMiddleware: ProcedureBuilderMiddleware = async ({
     next,
     rawInput,
@@ -145,7 +145,7 @@ export function createInputMiddleware<T>(parse: ParseFn<T>) {
 /**
  * @internal
  */
-export function createOutputMiddleware<T>(parse: ParseFn<T>) {
+export function createOutputMiddleware<TOutput>(parse: ParseFn<TOutput>) {
   const outputMiddleware: ProcedureBuilderMiddleware = async ({ next }) => {
     const result = await next();
     if (!result.ok) {
