@@ -44,6 +44,7 @@ tRPC defines a list of error codes that each represent a different type of error
 | METHOD_NOT_SUPPORTED  | The server knows the request method, but the target resource doesn't support this method.                               | 405       |
 | CLIENT_CLOSED_REQUEST | Access to the resource has been denied.                                                                                 | 499       |
 | INTERNAL_SERVER_ERROR | An unspecified error occurred.                                                                                          | 500       |
+| TOO_MANY_REQUESTS     | The rate limit has been exceeded or too many requests are being sent to the server.                                     | 429       |
 
 ## Throwing errors
 
@@ -64,8 +65,8 @@ const appRouter = t.router({
       // optional: pass the original error to retain stack trace
       cause: theError,
     });
-  })
-})
+  }),
+});
 
 // [...]
 ```
