@@ -1,6 +1,6 @@
 {
   "name": "@trpc/server",
-  "version": "10.0.0-proxy-beta.4",
+  "version": "10.0.0-proxy-beta.5",
   "description": "tRPC Server",
   "author": "KATT",
   "license": "MIT",
