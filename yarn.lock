@@ -18591,10 +18591,10 @@ superjson@^1.7.4:
   dependencies:
     copy-anything "^3.0.2"
 
-superstruct@^0.15.2:
-  version "0.15.4"
-  resolved "https://registry.yarnpkg.com/superstruct/-/superstruct-0.15.4.tgz#e3381dd84ca07e704e19f69eda74eee1a5efb1f9"
-  integrity sha512-eOoMeSbP9ZJChNOm/9RYjE+F36rYR966AAqeG3xhQB02j2sfAUXDp4EQ/7bAOqnlJnuFDB8yvOu50SocvKpUEw==
+superstruct@^0.16.4:
+  version "0.16.4"
+  resolved "https://registry.yarnpkg.com/superstruct/-/superstruct-0.16.4.tgz#84c80753a3376e16ef5a4f8dafa1e06767ba8e81"
+  integrity sha512-PGf1ZSWwbOb33efMX5Jq/JUM5UpCOk1p3/6jPS6o8mcPy9vd2XXOiEXDKwWOETpnzAvjkXcryL+l+jhvkDaizQ==
 
 supports-color@^5.3.0, supports-color@^5.5.0:
   version "5.5.0"
