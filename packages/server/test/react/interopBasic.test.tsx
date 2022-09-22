@@ -10,10 +10,13 @@ import { z } from 'zod';
 import * as interop from '../../src';
 import { inferProcedureOutput, initTRPC } from '../../src';
 
+type Context = {
+  foo: 'bar';
+};
 const ctx = konn()
   .beforeEach(() => {
-    const t = initTRPC.create();
-    const legacyRouter = interop.router().query('oldProcedure', {
+    const t = initTRPC.context<Context>().create();
+    const legacyRouter = interop.router<Context>().query('oldProcedure', {
       input: z.string().optional(),
       resolve({ input }) {
         return `oldProcedureOutput__input:${input ?? 'n/a'}`;
@@ -28,7 +31,15 @@ const ctx = konn()
 
     const appRouter = t.mergeRouters(legacyRouterInterop, newAppRouter);
 
-    const opts = routerToServerAndClientNew(appRouter, {});
+    const opts = routerToServerAndClientNew(appRouter, {
+      server: {
+        createContext() {
+          return {
+            foo: 'bar',
+          };
+        },
+      },
+    });
     const queryClient = createQueryClient();
     const react = createReactQueryHooks<typeof opts['router']>();
     const client = opts.client;
@@ -45,6 +56,7 @@ const ctx = konn()
       queryClient,
       react,
       appRouter,
+      legacyRouterInterop,
     };
   })
   .afterEach(async (ctx) => {
@@ -162,4 +174,24 @@ test("old procedures can't be used in interop", async () => {
   }
 
   render(<App />);
+});
+
+test('createCaller', async () => {
+  {
+    const caller = ctx.appRouter.createCaller({
+      foo: 'bar',
+    });
+    expect(await caller.newProcedure()).toBe('newProcedureOutput');
+    expect(await caller.query('oldProcedure')).toBe(
+      'oldProcedureOutput__input:n/a',
+    );
+  }
+  {
+    const caller = ctx.legacyRouterInterop.createCaller({
+      foo: 'bar',
+    });
+    expect(await caller.query('oldProcedure')).toBe(
+      'oldProcedureOutput__input:n/a',
+    );
+  }
 });
