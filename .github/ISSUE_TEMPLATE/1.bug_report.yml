@@ -15,7 +15,7 @@ body:
         Run this command in your project root and paste the results:
 
         ```terminal
-        npx envinfo --system --binaries --browsers --npmPackages "typescript,next,react,@trpc/server,@trpc/client,@trpc/react,@trpc/client,@trpc/next,react-query"
+        npx envinfo --system --binaries --browsers --npmPackages "typescript,next,react,@trpc/server,@trpc/client,@trpc/react,@trpc/client,@trpc/next,@tanstack/react-query"
         ```
       placeholder: |
         ``` 
