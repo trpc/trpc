@@ -212,11 +212,15 @@ export function createWSClient(opts: WebSocketClientOptions) {
         if (req.ws !== conn) {
           continue;
         }
-        req.callbacks.error?.(
-          TRPCClientError.from(
-            new TRPCWebSocketClosedError('WebSocket closed prematurely'),
-          ),
-        );
+
+        if (state === 'closed') {
+          req.callbacks.error?.(
+            TRPCClientError.from(
+              new TRPCWebSocketClosedError('WebSocket closed prematurely'),
+            ),
+          );
+        }
+
         if (req.type !== 'subscription') {
           delete pendingRequests[key];
           req.callbacks.complete?.();
@@ -256,7 +260,7 @@ export function createWSClient(opts: WebSocketClientOptions) {
       outgoing = outgoing.filter((msg) => msg.id !== id);
 
       callbacks?.complete?.();
-      if (op.type === 'subscription') {
+      if (activeConnection.readyState === WebSocket.OPEN && op.type === 'subscription') {
         outgoing.push({
           id,
           method: 'subscription.stop',
