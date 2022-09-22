@@ -62,10 +62,6 @@ module.exports = {
           label: 'Usage with Next.js',
         },
         {
-          to: '/faq',
-          label: 'FAQ',
-        },
-        {
           href: 'https://github.com/trpc/trpc/tree/next',
           label: 'GitHub',
           position: 'right',
@@ -132,10 +128,6 @@ module.exports = {
             //   label: 'Blog',
             //   to: 'blog',
             // },
-            {
-              label: 'FAQ',
-              to: 'faq',
-            },
             {
               label: 'GitHub',
               href: 'https://github.com/trpc/trpc/tree/next',

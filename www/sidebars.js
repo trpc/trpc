@@ -8,6 +8,7 @@ module.exports = {
         'main/introduction',
         'main/quickstart',
         'main/example-apps',
+        'main/faq',
         'nextjs/introduction',
         'reactjs/introduction',
         'main/contributing',
