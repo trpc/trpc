@@ -262,7 +262,7 @@ test('async hooks', async () => {
     trpc
       .router()
       .middleware((opts) => {
-        return new Promise<MiddlewareResult<unknown>>((resolve, reject) => {
+        return new Promise<MiddlewareResult<any>>((resolve, reject) => {
           storage.run({ requestId: ++requestCount }, async () => {
             opts.next().then(resolve, reject);
           });

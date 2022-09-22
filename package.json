@@ -109,6 +109,6 @@
     "rollup-plugin-swc3": "^0.3.0",
     "rollup-plugin-typescript2": "^0.32.1",
     "ts-jest": "^27.0.5",
-    "typescript": "4.7.4"
+    "typescript": "^4.8.3"
   }
 }
