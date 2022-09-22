@@ -102,12 +102,7 @@ export function createTRPCClientProxy<TRouter extends AnyRouter>(
     const pathCopy = [...path];
     const clientCallType = pathCopy.pop()! as keyof DecorateProcedure<any, any>;
     const procedureType = clientCallTypeMap[clientCallType];
-    if (!procedureType) {
-      // pass it on if we're being treated like a promise or something else
-      throw new TypeError(
-        `Unexpected call to "${path.join('.')}()" on TRPCProxyClient.`,
-      );
-    }
+
     const fullPath = pathCopy.join('.');
     return (client as any)[procedureType](fullPath, ...args);
   });
