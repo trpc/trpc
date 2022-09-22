@@ -4,20 +4,6 @@ interface ProxyCallbackOptions {
 }
 type ProxyCallback = (opts: ProxyCallbackOptions) => unknown;
 
-export type ProxyPromiseGuard = {
-  /**
-   * We prevent our procedures from accidentally being treated as a PromiseLike
-   * by always ensuring that "then" resolves to `undefined`.
-   *
-   * This prevents errors where a proxy client is used in a promise callback or
-   * in a `Promise.resolve(proxy)`.
-   *
-   * This does mean that `then` is a reserved word and cannot be used to
-   * name any of your procedures.
-   */
-  then: undefined;
-};
-
 function createProxyInner(callback: ProxyCallback, ...path: string[]) {
   const proxy: unknown = new Proxy(
     () => {
@@ -55,9 +41,6 @@ function createProxyInner(callback: ProxyCallback, ...path: string[]) {
  * @remarks
  * This has a special handling to manage if it's accidentally treated like
  * a PromiseLike.
- *
- * Where used, you should probably also use the {@link ProxyPromiseGuard}
- * as an intersection of your resulting proxy to help TypeScript users.
  *
  * @internal
  */
