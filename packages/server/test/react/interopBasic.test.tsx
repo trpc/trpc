@@ -2,10 +2,11 @@ import { routerToServerAndClientNew } from '../___testHelpers';
 import { createQueryClient } from '../__queryClient';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { render, waitFor } from '@testing-library/react';
-import { createReactQueryHooks } from '@trpc/react';
+import { createReactQueryHooks, httpBatchLink } from '@trpc/react';
 import { expectTypeOf } from 'expect-type';
 import { konn } from 'konn';
 import React, { useState } from 'react';
+import superjson from 'superjson';
 import { z } from 'zod';
 import * as interop from '../../src';
 import { inferProcedureOutput, initTRPC } from '../../src';
@@ -16,12 +17,15 @@ type Context = {
 const ctx = konn()
   .beforeEach(() => {
     const t = initTRPC.context<Context>().create();
-    const legacyRouter = interop.router<Context>().query('oldProcedure', {
-      input: z.string().optional(),
-      resolve({ input }) {
-        return `oldProcedureOutput__input:${input ?? 'n/a'}`;
-      },
-    });
+    const legacyRouter = interop
+      .router<Context>()
+      .transformer(superjson)
+      .query('oldProcedure', {
+        input: z.string().optional(),
+        resolve({ input }) {
+          return `oldProcedureOutput__input:${input ?? 'n/a'}`;
+        },
+      });
 
     const legacyRouterInterop = legacyRouter.interop();
 
@@ -38,6 +42,16 @@ const ctx = konn()
             foo: 'bar',
           };
         },
+      },
+      client({ httpUrl }) {
+        return {
+          transformer: superjson,
+          links: [
+            httpBatchLink({
+              url: httpUrl,
+            }),
+          ],
+        };
       },
     });
     const queryClient = createQueryClient();
