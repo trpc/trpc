@@ -2,7 +2,7 @@ import { Disclosure, Transition } from '@headlessui/react';
 import React from 'react';
 import { FiMinus, FiPlus } from 'react-icons/fi';
 
-const data = [
+export const data = [
   {
     '@content': 'https://schema.org',
     '@type': 'FAQPage',
