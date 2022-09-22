@@ -1,8 +1,8 @@
 {
   "name": "@examples/minimal-server",
-  "version": "10.0.0-proxy-beta.2",
+  "version": "10.0.0-proxy-beta.3",
   "private": true,
   "dependencies": {
-    "@trpc/server": "^10.0.0-proxy-beta.2"
+    "@trpc/server": "^10.0.0-proxy-beta.3"
   }
 }
