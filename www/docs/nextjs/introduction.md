@@ -134,6 +134,7 @@ Create a set of strongly-typed hooks using your API's type signature.
 ```tsx title='utils/trpc.ts'
 import { createTRPCNext } from '@trpc/next';
 import type { AppRouter } from '../pages/api/trpc/[trpc]';
+import { httpBatchLink } from "@trpc/client";
 
 function getBaseUrl() {
   if (typeof window !== 'undefined') // browser should use relative path
