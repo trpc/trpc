@@ -6,8 +6,10 @@ slug: /migrate-from-v9-to-v10
 ---
 
 :::info Is v10 ready for production?
-tRPC v10 is **ready for production** & can safely be used today. However, we will do changes to the API before we do a final release where you'll have to figure out the migration path between the releases on your own.
+tRPC v10 is **ready for production** & can safely be used today. There will be minor changes to the API comparing v10-beta to v10. You will need to figure out the migration path between the beta and general availability releases on your own.
 :::
+
+Welcome to tRPC v10! We're excited to bring you a new major version to continue the journey towards perfect end-to-end type safety with excellent DX.
 
 Under the hood of version 10, we are unlocking performance improvements, bringing you quality of life enhancements, and creating room for us to build new features in the future.
 
@@ -15,33 +17,137 @@ tRPC v10 features a compatibility layer for users coming from v9. `.interop()` a
 
 ## Summary of changes
 
-### The `t` variable
-
-> - If you don't like the variable name `t`, you can call it whatever you want
-> - You should create your root `t`-variable **exactly once** per application
-
-The way you initialize tRPC on the server has been updated, we now create a root `t` variable that contains the root information about your app:
-
-- [Context](context)
-- [Meta data](metadata)
-- [Error formatter](error-formatting)
-- [Data Transformer](error-formatting)
-
-The way the `t` variable is defined is simply like this:
+<details>
+  <summary>Initializing your server</summary>
 
 ```ts title='/src/server/trpc.ts'
 import { initTRPC } from '@trpc/server';
 
+// You may rename the `t` variable to whatever you prefer.
+// Just make sure you initialize your root variable once per application.
 export const t = initTRPC.create();
 ```
 
-Here's a full example of how the `t` variable may look like with a data-transformer, openapi metadata and error formatter:
+</details>
+
+<details>
+  <summary>Defining routers & procedures</summary>
+
+```ts
+// v9:
+const appRouter = trpc.router()
+  .query('greeting', {
+    input: z.string(),
+    resolve({ input }) {
+      return `hello ${input}!`;
+    },
+  });
+
+// v10:
+const appRouter = t.router({
+  greeting: t.procedure
+    .input(z.string())
+    .query(({ input }) => `hello ${input}!`),
+});
+```
+
+</details>
+
+<details>
+  <summary>Calling procedures</summary>
+
+```ts
+// v9
+client.query('greeting', 'KATT');
+trpc.useQuery(['greeting', 'KATT']);
+
+// v10
+// You can now CMD+click `greeting` to jump straight to your server code.
+client.greeting.query('KATT');
+trpc.greeting.useQuery('KATT');
+```
+
+</details>
+
+<details>
+  <summary>Inferring types</summary>
+
+```ts
+// v9
+// Building multiple complex helper types yourself. Yuck!
+export type TQuery = keyof AppRouter['_def']['queries']
+export type InferQueryInput<TRouteKey extends TQuery> = inferProcedureInput<AppRouter['_def']['queries'][TRouteKey]>
+type GreetingInput = InferQueryInput<'greeting'>;
+
+// v10
+// The same helper is shipped out of the box.
+type GreetingInput = inferProcedureInput<AppRouter['greeting']>;
+```
+
+</details>
+
+<details>
+  <summary>Middlewares</summary>
+
+Middlewares are now reusable and can be chained, see the [middleware](middlewares) docs for more.
+
+```ts
+// v9
+const appRouter = trpc
+  .router()
+  .middleware(({ next, ctx }) => {
+    if (!ctx.user) {
+      throw new TRPCError({ code: 'UNAUTHORIZED' });
+    }
+
+    return next({
+      ctx: {
+        ...ctx,
+        user: ctx.user,
+      },
+    });
+  })
+  .query('greeting', {
+    resolve({ input }) {
+      return `hello ${ctx.user.name}!`;
+    },
+  });
+
+// v10
+const isAuthed = t.middleware(({ next, ctx }) => {
+  if (!ctx.user) {
+    throw new TRPCError({ code: 'UNAUTHORIZED' });
+  }
+
+  return next({
+    ctx: {
+      // Old context will automatically be spread.
+      // Only modify what's changed.
+      user: ctx.user,
+    },
+  });
+});
+
+// Reusable:
+const authedProcedure = t.procedure.use(isAuthed);
+
+const appRouter = t.router({
+  greeting: authedProcedure.query(({ ctx }) => {
+    return `Hello ${ctx.user.name}!`
+  }),
+});
+```
+
+</details>
+
+Here's a full example of how the `t` variable may look like in v10, including a data transformer, OpenAPI metadata, and an error formatter:
 
 ```ts title='/src/server/trpc.ts'
 import { initTRPC } from '@trpc/server';
 import superjson from 'superjson';
 
-// This is usually inferred
+// Context is usually inferred,
+// but we will need it here for this example.
 interface Context {
   user?: {
     id: string;
@@ -77,115 +183,13 @@ export const t = initTRPC
   });
 ```
 
-### Defining routers & procedures
-
-```ts
-// v9:
-const appRouter = trpc.router()
-  .query('greeting', {
-    input: z.string(),
-    resolve({ input }) {
-      return `hello ${input}!`;
-    },
-  });
-
-// v10:
-const appRouter = t.router({
-  greeting: t.procedure
-    .input(z.string())
-    .query(({ input }) => `hello ${input}!`),
-});
-```
-
-### Calling procedures
-
-```ts
-// OLD
-client.query('greeting', 'KATT');
-trpc.useQuery(['greeting', 'KATT']);
-
-// NEW - you'll be able to CMD+click `greeting` below and jump straight to your backend code
-client.greeting.query('KATT');
-trpc.greeting.useQuery('KATT');
-```
-
-### Inferring types
-
-```ts
-// OLD - you had to make multiple complex helper types yourself
-type GreetingInput = InferQueryInput<'greeting'>;
-type GreetingOutput = InferQueryOutput<'greeting'>;
-
-// NEW - same helper for all procedure types which are shipped out of the box
-type GreetingInput = inferProcedureInput<AppRouter['greeting']>;
-type GreetingOutput = inferProcedureOutput<AppRouter['greeting']>;
-```
-
-### Middlewares
-
-Middlewares are now reusable and can be chained, see [middleware](middlewares) docs.
-
-```ts
-// OLD
-const appRouter = trpc
-  .router()
-  .middleware(({ next, ctx }) => {
-    if (!ctx.user) {
-      throw new TRPCError({ code: 'UNAUTHORIZED' });
-    }
-
-    return next({
-      ctx: {
-        ...ctx,
-        user: ctx.user,
-      },
-    });
-  })
-  .query('greeting', {
-    resolve({ input }) {
-      return `hello ${ctx.user.name}!`;
-    },
-  });
-
-// NEW
-const isAuthed = t.middleware(({ next, ctx }) => {
-  if (!ctx.user) {
-    throw new TRPCError({ code: 'UNAUTHORIZED' });
-  }
-
-  return next({
-    ctx: {
-      // <-- auto-spreading old context, modify only what's changed
-      user: ctx.user,
-    },
-  });
-});
-
-// Reusable:
-const authedProcedure = t.procedure.use(isAuthed);
-
-const appRouter = t.router({
-  greeting: authedProcedure.query(({ ctx }) => {
-    return `Hello ${ctx.user.name}!`
-  }),
-});
-```
-
 ## Migrating from v9
 
-:::info
-There are [a few features that are not supported by `.interop()`](#limitations-of-interop). We expect nearly all of our users to be able to use `.interop()` to migrate their server side code in only a few minutes. If you are discovering that `.interop()` is not working correctly for you, be sure to [check here](#limitations-of-interop).
-:::
+Rewriting all of your existing v9 routes today may be too heavy of a lift for you and your team. Instead, let's keep those v9 procedures in place and incrementally adopt v10 by leveraging v10's `interop()` method.
 
-You may choose to start writing new procedures using the v10 syntax - but keep your v9 procedures in place for now. Incremental adoption is only a matter of merging the two routers together.
+### 1. Enable `interop()` on your v9 router
 
 Turning your v9 router into a v10 router only takes 10 characters. Add `.interop()` to the end of your v9 router...and you're done with your server code!
-
-We will create a simple hello world v10 router to demonstrate interoperability mode. If you have not learned how to create a more complex tRPC v10 router yet, we encourage you to check out the rest of the documentation.
-
-### 1. Enable `interop()` on a v9 router
-
-All you'll need to do is to add an `.interop()` at the end of your `appRouter`. [Example](https://github.com/trpc/trpc/blob/ad25239cefd972494bfff49a869b9432fd2f403f/examples/.interop/next-prisma-starter/src/server/routers/_app.ts#L37).
 
 ```diff title='src/server/routers/_app.ts'
   const appRouter = trpc
@@ -195,7 +199,13 @@ All you'll need to do is to add an `.interop()` at the end of your `appRouter`. 
   export type AppRouter = typeof appRouter;
 ```
 
+:::info
+There are [a few features that are not supported by `.interop()`](#limitations-of-interop). We expect nearly all of our users to be able to use `.interop()` to migrate their server side code in only a few minutes. If you are discovering that `.interop()` is not working correctly for you, be sure to [check here](#limitations-of-interop).
+:::
+
 ### 2. Create the `t`-object
+
+Now, let's initialize a v10 router so we can start using v10 for any new routes we will write.
 
 ```ts title='src/server/trpc.ts'
 import superjson from 'superjson';
@@ -218,12 +228,6 @@ export const t = initTRPC.context<Context>().create({
 
 ### 3. Create a new `appRouter`
 
-:::tip
-Be careful of using procedures that will end up having the same caller name! You will run into issues if a path in your legacy router matches a path in your new router.
-:::tip
-
-Both sets of procedures will now be available for your client. You will now need to [visit your client code to update your callers to the v10 syntax](#client-package-changes).
-
 1. Rename your old `appRouter` to `legacyRouter`
 2. Create a new app router:
 
@@ -240,32 +244,36 @@ import { t } from './trpc';
 // Renamed from `appRouter`
 const legacyRouter = trpc
   .router()
-  /* [...] */
+  /* ... */
   .interop();
 
 const mainRouter = t.router({
-  greeting: t.procedure.query(() => 'hello tRPC v10!'),
+  greeting: t.procedure.query(() => 'hello from tRPC v10!'),
 });
 
-// Merges the v9 router with v10 router
+// Merge v9 router with v10 router
 export const appRouter = t.mergeRouters(legacyRouter, mainRouter);
 
 export type AppRouter = typeof appRouter;
 ```
 
+:::tip
+Be careful of using procedures that will end up having the same caller name! You will run into issues if a path in your legacy router matches a path in your new router.
+:::tip
+
 ### 4. Use it in your client
 
+Both sets of procedures will now be available for your client as v10 callers. You will now need to [visit your client code to update your callers to the v10 syntax](#client-package-changes).
+
 ```ts
-// Raw client:
+// Vanilla JS v10 client caller:
 client.proxy.greeting.query();
 
-// React:
+// React v10 client caller:
 trpc.proxy.greeting.useQuery();
 ```
 
 ## Limitations of interop
-
-Any procedures defined using `t.procedure` must be called on the client using the [new way of calling procedures](#calling-procedures). What this means is that when you migrate the `legacyRouter` over to be a "v10-`t.router`", you'll have to update the frontend-usage of this router to use the new way of calling procedures.
 
 ### Subscriptions
 
@@ -292,13 +300,13 @@ v10 also brings changes to the client side of your application. After making a f
 
 ### `@trpc/react`
 
-#### Upgrade of `react-query`
+#### Major version upgrade of `react-query`
 
-We've upgraded `peerDependencies` from `react-query@^3` to `@tanstack/react-query@^4`. Because our client hooks are only a thin wrapper around react-query, we encourage you to [visit their migration guide](https://tanstack.com/query/v4/docs/guides/migrating-to-react-query-4) for more details around our React hooks implementation.
+We've upgraded `peerDependencies` from `react-query@^3` to `@tanstack/react-query@^4`. Because our client hooks are only a thin wrapper around react-query, we encourage you to [visit their migration guide](https://tanstack.com/query/v4/docs/guides/migrating-to-react-query-4) for more details around your new React hooks implementation.
 
 #### tRPC-specific options on hooks moved to `trpc`
 
-To avoid collisions and confusion with any built-in `react-query` properties, we have moved all of the tRPC options to a property called `trpc`. This namespace brings clarity to options that are tRPC specific and ensures that we won't collide with `react-query` in the future.
+To avoid collisions and confusion with any built-in `react-query` properties, we have moved all of the tRPC options to a property called `trpc`. This namespace brings clarity to options that are specific to tRPC and ensures that we won't collide with `react-query` in the future.
 
 ```tsx
 // Before
@@ -307,6 +315,7 @@ useQuery(['post.byId', '1'], {
     batching: false,
   },
 });
+
 // After:
 useQuery(['post.byId', '1'], {
   trpc: {
@@ -327,7 +336,9 @@ trpc.post.byId.useQuery('1', {
 
 #### Aborting procedures
 
-We've moved to the industry standards when it comes to aborting procedures. Instead of calling a `.cancel()`, you now give the query an `AbortSignal` and call `.abort()` on its parent `AbortController`.
+In v9, the `.cancel()` method was used to abort procedures.
+
+For v10, we have moved to [the AbortController Web API](https://developer.mozilla.org/en-US/docs/Web/API/AbortController) to align better with web standards. Instead of calling `.cancel()`, you'll give the query an `AbortSignal` and call `.abort()` on its parent `AbortController`.
 
 ```tsx
 const ac = new AbortController();
@@ -339,10 +350,10 @@ ac.abort();
 
 #### HTTP-specific options moved from `TRPCClient` to links
 
-Previously, you passed the stuff like HTTP-headers straight onto your `createTRPCClient()`-request, but since tRPC is technically not tied to HTTP itself, we've moved these from the `TRPCClient` to the `httpLink`/`httpBatchLink`.
+Previously, HTTP options (like headers) were placed straight onto your `createTRPCClient()`. However, since tRPC is technically not tied to HTTP itself, we've moved these from the `TRPCClient` to `httpLink` and `httpBatchLink`.
 
 ```ts
-// before:
+// Before:
 import { createTRPCClient } from '@trpc/client';
 
 const client = createTRPCClient({
@@ -356,7 +367,7 @@ const client = createTRPCClient({
   },
 });
 
-// after:
+// After:
 import { createTRPCProxyClient, httpBatchLink } from '@trpc/client';
 
 const client = createTRPCProxyClient({
@@ -392,4 +403,4 @@ The `createContext` function can no longer return either `null` or `undefined`. 
 
 ### Migrate custom error formatters
 
-You will need to move the contents of your `formatError()` into the `t`-object, see the [Error Formatting docs](error-formatting).
+You will need to move the contents of your `formatError()` into your root `t` router. See the [Error Formatting docs](error-formatting) for more.
