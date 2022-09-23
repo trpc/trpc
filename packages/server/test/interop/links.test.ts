@@ -116,6 +116,7 @@ describe('batching', () => {
         server: {
           createContext() {
             metaCall();
+            return {};
           },
           batching: {
             enabled: true,
@@ -199,6 +200,7 @@ describe('batching', () => {
         server: {
           createContext() {
             createContextFn();
+            return {};
           },
           batching: {
             enabled: true,

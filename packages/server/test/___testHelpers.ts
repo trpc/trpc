@@ -108,7 +108,7 @@ export async function waitMs(ms: number) {
 
 type Constructor<T extends {} = {}> = new (...args: any[]) => T;
 
-export async function waitError<TError = Error>(
+export async function waitError<TError extends Error = Error>(
   /**
    * Function callback or promise that you expect will throw
    */

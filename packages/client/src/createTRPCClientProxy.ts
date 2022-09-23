@@ -101,9 +101,11 @@ export function createTRPCClientProxy<TRouter extends AnyRouter>(
   const proxy = createProxy(({ path, args }) => {
     const pathCopy = [...path];
     const clientCallType = pathCopy.pop()! as keyof DecorateProcedure<any, any>;
+
     const procedureType = clientCallTypeMap[clientCallType];
 
     const fullPath = pathCopy.join('.');
+
     return (client as any)[procedureType](fullPath, ...args);
   });
   return proxy as inferRouterProxyClient<TRouter>;

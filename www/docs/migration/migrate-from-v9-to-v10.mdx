@@ -381,6 +381,15 @@ const client = createTRPCProxyClient({
 
 The teardown option has been removed and is no longer available.
 
+### `createContext` return type
+
+The `createContext` function can no longer return either `null` or `undefined`. If you weren't using a custom context, you'll have to return an empty object:
+
+```diff
+- createContext: () => null,
++ createContext: () => ({}),
+```
+
 ### Migrate custom error formatters
 
 You will need to move the contents of your `formatError()` into the `t`-object, see the [Error Formatting docs](error-formatting).

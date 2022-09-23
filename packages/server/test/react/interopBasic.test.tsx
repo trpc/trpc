@@ -2,23 +2,30 @@ import { routerToServerAndClientNew } from '../___testHelpers';
 import { createQueryClient } from '../__queryClient';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { render, waitFor } from '@testing-library/react';
-import { createReactQueryHooks } from '@trpc/react/src';
+import { createReactQueryHooks, httpBatchLink } from '@trpc/react/src';
 import * as interop from '@trpc/server/src';
 import { inferProcedureOutput, initTRPC } from '@trpc/server/src';
 import { expectTypeOf } from 'expect-type';
 import { konn } from 'konn';
 import React, { useState } from 'react';
+import superjson from 'superjson';
 import { z } from 'zod';
 
+type Context = {
+  foo: 'bar';
+};
 const ctx = konn()
   .beforeEach(() => {
-    const t = initTRPC.create();
-    const legacyRouter = interop.router().query('oldProcedure', {
-      input: z.string().optional(),
-      resolve({ input }) {
-        return `oldProcedureOutput__input:${input ?? 'n/a'}`;
-      },
-    });
+    const t = initTRPC.context<Context>().create();
+    const legacyRouter = interop
+      .router<Context>()
+      .transformer(superjson)
+      .query('oldProcedure', {
+        input: z.string().optional(),
+        resolve({ input }) {
+          return `oldProcedureOutput__input:${input ?? 'n/a'}`;
+        },
+      });
 
     const legacyRouterInterop = legacyRouter.interop();
 
@@ -28,7 +35,25 @@ const ctx = konn()
 
     const appRouter = t.mergeRouters(legacyRouterInterop, newAppRouter);
 
-    const opts = routerToServerAndClientNew(appRouter, {});
+    const opts = routerToServerAndClientNew(appRouter, {
+      server: {
+        createContext() {
+          return {
+            foo: 'bar',
+          };
+        },
+      },
+      client({ httpUrl }) {
+        return {
+          transformer: superjson,
+          links: [
+            httpBatchLink({
+              url: httpUrl,
+            }),
+          ],
+        };
+      },
+    });
     const queryClient = createQueryClient();
     const react = createReactQueryHooks<typeof opts['router']>();
     const client = opts.client;
@@ -45,6 +70,7 @@ const ctx = konn()
       queryClient,
       react,
       appRouter,
+      legacyRouterInterop,
     };
   })
   .afterEach(async (ctx) => {
@@ -162,4 +188,34 @@ test("old procedures can't be used in interop", async () => {
   }
 
   render(<App />);
+});
+
+test('createCaller', async () => {
+  {
+    const caller = ctx.appRouter.createCaller({
+      foo: 'bar',
+    });
+    expect(await caller.newProcedure()).toBe('newProcedureOutput');
+    expect(await caller.query('oldProcedure')).toBe(
+      'oldProcedureOutput__input:n/a',
+    );
+  }
+  {
+    const caller = ctx.legacyRouterInterop.createCaller({
+      foo: 'bar',
+    });
+    expect(await caller.query('oldProcedure')).toBe(
+      'oldProcedureOutput__input:n/a',
+    );
+  }
+  {
+    const asyncFnThatReturnsCaller = async () =>
+      ctx.legacyRouterInterop.createCaller({
+        foo: 'bar',
+      });
+    const caller = await asyncFnThatReturnsCaller();
+    expect(await caller.query('oldProcedure')).toBe(
+      'oldProcedureOutput__input:n/a',
+    );
+  }
 });

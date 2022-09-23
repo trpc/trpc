@@ -3,43 +3,45 @@
 /**
  * @internal
  */
-export type identity<T> = T;
+export type identity<TType> = TType;
 
 /**
  * @internal
  */
-export type FlatOverwrite<T, K> = identity<{
-  [TKey in keyof K | keyof T]: TKey extends keyof K
-    ? K[TKey]
-    : TKey extends keyof T
-    ? T[TKey]
+export type FlatOverwrite<TType, TWith> = identity<{
+  [TKey in keyof TWith | keyof TType]: TKey extends keyof TWith
+    ? TWith[TKey]
+    : TKey extends keyof TType
+    ? TType[TKey]
     : never;
 }>;
 
 /**
  * @public
  */
-export type Maybe<T> = T | undefined | null;
+export type Maybe<TType> = TType | undefined | null;
 
 /**
  * @internal
  */
-export type ThenArg<T> = T extends PromiseLike<infer U> ? ThenArg<U> : T;
+export type ThenArg<TType> = TType extends PromiseLike<infer U>
+  ? ThenArg<U>
+  : TType;
 
 /**
  * @internal
  */
-export type Simplify<T> = { [KeyType in keyof T]: T[KeyType] };
+export type Simplify<TType> = { [KeyType in keyof TType]: TType[KeyType] };
 
 /**
  * @public
  */
-export type Dict<T> = Record<string, T | undefined>;
+export type Dict<TType> = Record<string, TType | undefined>;
 
 /**
  * @public
  */
-export type MaybePromise<T> = T | Promise<T>;
+export type MaybePromise<TType> = TType | Promise<TType>;
 
 /**
  * @internal
@@ -47,7 +49,9 @@ export type MaybePromise<T> = T | Promise<T>;
  * Creates a "lower-priority" type inference.
  * https://github.com/microsoft/TypeScript/issues/14829#issuecomment-322267089
  */
-export type InferLast<T> = T & { [K in keyof T]: T[K] };
+export type InferLast<TType> = TType & {
+  [KeyType in keyof TType]: TType[KeyType];
+};
 
 /**
  * @public
@@ -55,11 +59,14 @@ export type InferLast<T> = T & { [K in keyof T]: T[K] };
 export type inferAsyncReturnType<TFunction extends (...args: any) => any> =
   ThenArg<ReturnType<TFunction>>;
 
-type FilterKeys<T extends object, K> = {
-  [TKey in keyof T]: T[TKey] extends K ? TKey : never;
-}[keyof T];
+type FilterKeys<TObj extends object, TFilter> = {
+  [TKey in keyof TObj]: TObj[TKey] extends TFilter ? TKey : never;
+}[keyof TObj];
 
 /**
  * @internal
  */
-export type Filter<T extends object, K> = Pick<T, FilterKeys<T, K>>;
+export type Filter<TObj extends object, TFilter> = Pick<
+  TObj,
+  FilterKeys<TObj, TFilter>
+>;

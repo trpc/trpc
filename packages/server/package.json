@@ -1,6 +1,6 @@
 {
   "name": "@trpc/server",
-  "version": "10.0.0-proxy-beta.0",
+  "version": "10.0.0-proxy-beta.5",
   "description": "tRPC Server",
   "author": "KATT",
   "license": "MIT",
@@ -139,11 +139,11 @@
     "konn": "^0.7.0",
     "miniflare": "^2.4.0",
     "myzod": "^1.3.1",
-    "next": "^12.1.6",
+    "next": "^12.3.1",
     "node-fetch": "^2.6.1",
     "superjson": "^1.7.4",
     "superstruct": "^0.15.2",
-    "typescript": "4.7.4",
+    "typescript": "^4.8.3",
     "ws": "^8.0.0",
     "yup": "^0.32.8",
     "zod": "^3.0.0"
