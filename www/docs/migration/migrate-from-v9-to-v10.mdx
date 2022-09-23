@@ -25,9 +25,11 @@ const appRouter = t.router({
 });
 ```
 
-Under the hood, we are unlocking performance improvements, bringing you quality of life enhancements, and creating room for us to build new features in the future.
+Welcome to tRPC v10! We're excited to bring you a new major version to continue the journey towards perfect end-to-end type safety with excellent DX.
 
-tRPC v10 features a compatibility layer for users coming from v9. `.interop()` allows you to incrementally adopt v10 so that you can continue building the rest of your project while still enjoying v10's new features.
+Under the hood, we are unlocking performance improvements, bringing quality of life enhancements, and creating room for us to build new features in the future.
+
+tRPC v10 features a compatibility layer for users coming from v9. The `.interop()` method allows you to incrementally adopt v10 so that you can continue building the rest of your project while still enjoying v10's new features.
 
 :::caution
 There are [a few features that are not supported by `.interop()`](#limitations-of-interop). We expect nearly all of our users to be able to use `.interop()` to migrate their server side code in only a few minutes. If you are discovering that `.interop()` is not working correctly for you, be sure to [check here](#limitations-of-interop).
@@ -70,9 +72,9 @@ const v10Router = t.router({
 export const appRouter = t.mergeRouters(v10Router, legacyRouter);
 ```
 
-:::tip
+:::warning
 Be careful of using procedures that will end up having the same caller name! You will run into issues if a path in your legacy router matches a path in your new router.
-:::tip
+:::warning
 
 Both sets of procedures will now be available for your client. You will now need to [visit your client code to update your callers to the v10 syntax](#client-package-changes).
 
@@ -96,9 +98,9 @@ v10 also brings changes to the client side of your application. After making a f
 
 ### `@trpc/react`
 
-#### Upgrade of `react-query`
+#### Major version upgrade of `react-query`
 
-We've upgraded `peerDependencies` from `react-query@^3` to `@tanstack/react-query@^4`. Because our client hooks are only a thin wrapper around `react-query`, we encourage you to [visit their migration guide](https://tanstack.com/query/v4/docs/guides/migrating-to-react-query-4) for more details around our React hooks implementation.
+We've upgraded `peerDependencies` from `react-query@^3` to `@tanstack/react-query@^4`. Because our client hooks are only a thin wrapper around `react-query`, we encourage you to [visit their migration guide](https://tanstack.com/query/v4/docs/guides/migrating-to-react-query-4) for more details around your new React hooks implementation.
 
 #### tRPC-specific options on hooks moved to `trpc` property
 
@@ -112,7 +114,7 @@ useQuery(['post.byId', '1'], {
   },
 });
 
-// After:
+// After
 useQuery(['post.byId', '1'], {
   trpc: {
     context: {
@@ -126,9 +128,12 @@ useQuery(['post.byId', '1'], {
 
 #### `setupNext()` - Optional DX Improvement
 
-Setting up tRPC for Next.js is now much easier. `@trpc/next` now includes a `setupTRPC` export that scaffolds trpc in your Next.js application with sensible defaults including built-in server-side rendering.
+Setting up tRPC for Next.js is now much easier. `@trpc/next` now includes a `setupTRPC` export that scaffolds tRPC for your Next.js application. We've seen how our v9 + Next.js users most commonly use tRPC and used those for sensible defaults (including server-side rendering).
+
+In tRPC v9, setting up a Next.js application took [a good bit of configuring](/docs/v9/nextjs). But now, v10 allows us to set up our `_app.tsx` wrapper and data fetching hooks from just one export.
 
 ```ts title="utils/trpc.ts"
+// Import the types for your backend router
 import { setupTRPC } from '@trpc/next';
 import type { AppRouter } from 'routers/_app';
 
@@ -142,6 +147,7 @@ export const trpc = setupTRPC<AppRouter>({
 ```
 
 ```tsx title="pages/_app.tsx"
+// Same import as component file below!
 import { trpc } from '../utils/trpc';
 
 const MyApp = ({ Component, pageProps }) => {
@@ -151,9 +157,19 @@ const MyApp = ({ Component, pageProps }) => {
 export default trpc.withTRPC(MyApp);
 ```
 
-We no longer have to setup the `react-query` hooks and tRPC context provider separately.
+```tsx title="components/avatar.tsx"
+// Same import as app file above!
+import { trpc } from '../utils/trpc';
 
-In v9, we set up the tPRC provider in `_app.tsx` and the React-Query hooks in `utils/trpc.ts` separately. In v10, we define the `trpc` object once and it will contain all you need for your Next.js application.
+const JsonPrettyPrinter = () => {
+  const { isError, isLoading, data } = trpc.proxy.getSomeJson.useQuery();
+
+  if (isError) return <p>Uh oh.</p>
+  if (isLoading) return <p>Loading...</p>
+
+  return <pre>{ JSON.stringify(data, null, 2) }<pre>
+};
+```
 
 ### `@trpc/client`
 
@@ -161,11 +177,11 @@ In v9, we set up the tPRC provider in `_app.tsx` and the React-Query hooks in `u
 
 [The `AbortController` Web API](https://developer.mozilla.org/en-US/docs/Web/API/AbortController) allows clients to cancel their web requests using the `.abort()` method.
 
-Previously, we had a `.cancel()` method that was a part of the tRPC implementation. We have deprecated this method in favor of `AbortController` and its `.abort()` method.
+Previously, we had a `.cancel()` method that was a part of the tRPC implementation. We have deprecated this method in favor of `AbortController` and its `.abort()` method. The goal here is to use native Web API implementations where possible.
 
 ```tsx
 const ac = new AbortController();
-const helloQuery = client.greeting.query('posts', { signal: ac.signal });
+const postQuery = proxy.postById.query('postId123', { signal: ac.signal });
 
 // Aborting
 ac.abort();
