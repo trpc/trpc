@@ -1,6 +1,6 @@
 {
   "name": "@examples/next-starter-websockets",
-  "version": "10.0.0-proxy-beta.3",
+  "version": "10.0.0-proxy-beta.5",
   "private": true,
   "scripts": {
     "build:1-generate": "prisma generate",
@@ -40,10 +40,10 @@
   "dependencies": {
     "@prisma/client": "^3.0.1",
     "@tanstack/react-query": "^4.3.0",
-    "@trpc/client": "^10.0.0-proxy-beta.3",
-    "@trpc/next": "^10.0.0-proxy-beta.3",
-    "@trpc/react": "^10.0.0-proxy-beta.3",
-    "@trpc/server": "^10.0.0-proxy-beta.3",
+    "@trpc/client": "^10.0.0-proxy-beta.5",
+    "@trpc/next": "^10.0.0-proxy-beta.5",
+    "@trpc/react": "^10.0.0-proxy-beta.5",
+    "@trpc/server": "^10.0.0-proxy-beta.5",
     "clsx": "^1.1.1",
     "next": "^12.3.1",
     "next-auth": "^4.10.3",
@@ -84,7 +84,7 @@
     "prisma": "^4.2.1",
     "tailwindcss": "^3.1.6",
     "ts-jest": "^27.0.5",
-    "typescript": "4.7.4"
+    "typescript": "^4.8.3"
   },
   "publishConfig": {
     "access": "restricted"
