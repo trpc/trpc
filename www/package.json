@@ -60,6 +60,7 @@
     "@octokit/graphql": "^5.0.0",
     "@octokit/graphql-schema": "^10.74.2",
     "@tsconfig/docusaurus": "^1.0.6",
+    "@types/node": "^18.7.20",
     "@types/oauth": "^0.9.1",
     "autoprefixer": "^10.4.7",
     "dotenv": "^16.0.1",

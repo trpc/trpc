@@ -124,6 +124,7 @@
     "@types/aws-lambda": "^8.10.97",
     "@types/express": "^4.17.12",
     "@types/hash-sum": "^1.0.0",
+    "@types/node": "^18.7.20",
     "@types/node-fetch": "^2.5.11",
     "@types/ws": "^8.2.0",
     "abort-controller": "^3.0.0",

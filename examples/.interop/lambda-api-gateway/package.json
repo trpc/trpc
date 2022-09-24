@@ -11,6 +11,7 @@
     "ts-node": "^10.3.0"
   },
   "devDependencies": {
+    "@types/node": "^18.7.20",
     "serverless": "^3.18.1",
     "serverless-offline": "^8.8.0",
     "serverless-plugin-typescript": "^2.1.2",

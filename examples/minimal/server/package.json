@@ -4,5 +4,8 @@
   "private": true,
   "dependencies": {
     "@trpc/server": "^10.0.0-proxy-beta.5"
+  },
+  "devDependencies": {
+    "@types/node": "^18.7.20"
   }
 }
