@@ -16,7 +16,7 @@ jobs:
         dir: [.interop/next-prisma-starter]
         # start example with:
         node-start: [14]
-        os: [ubuntu-22.04]
+        os: [ubuntu-latest]
     services:
       postgres:
         image: postgres:12.1

@@ -31,7 +31,7 @@ importers:
       eslint-plugin-react-hooks: ^4.2.0
       eslint-plugin-unicorn: 40.1.0
       expect-type: ^0.13.0
-      find-packages: ^9.0.9
+      find-packages: ^9.0.10
       jest: ^27.1.0
       jsdom: ^20.0.0
       lerna: ^5.5.1
@@ -77,7 +77,7 @@ importers:
       eslint-plugin-react-hooks: 4.6.0_eslint@7.32.0
       eslint-plugin-unicorn: 40.1.0_eslint@7.32.0
       expect-type: 0.13.0
-      find-packages: 9.0.9
+      find-packages: 9.0.10
       jest: 27.5.1_ts-node@10.9.1
       jsdom: 20.0.0
       lerna: 5.5.1_@swc+core@1.3.3
@@ -5915,14 +5915,14 @@ packages:
       graceful-fs: 4.2.10
     dev: false
 
-  /@pnpm/read-project-manifest/3.0.9:
-    resolution: {integrity: sha512-27j40C48hA/tqsCiqk9ApJxp2g6WGrrj2RSs0NKhsSHynxAuA1tIvwatNISQbAiMjZiu1lfhzhq8m1QdblyNmA==}
+  /@pnpm/read-project-manifest/3.0.10:
+    resolution: {integrity: sha512-X82BxsATn4uNnx8WfoO2T8M4wWXsxnzCOvCTDYPLHUQTaimvOMrdcHTFLyXKhSXS0Rc14tzBsUrIwpvJjQgxaw==}
     engines: {node: '>=14.6'}
     dependencies:
       '@pnpm/error': 3.0.1
       '@pnpm/graceful-fs': 2.0.0
-      '@pnpm/types': 8.5.0
-      '@pnpm/write-project-manifest': 3.0.7
+      '@pnpm/types': 8.6.0
+      '@pnpm/write-project-manifest': 3.0.8
       detect-indent: 6.1.0
       fast-deep-equal: 3.1.3
       is-windows: 1.0.2
@@ -5933,16 +5933,16 @@ packages:
       strip-bom: 4.0.0
     dev: false
 
-  /@pnpm/types/8.5.0:
-    resolution: {integrity: sha512-PSKnhkwgiZtp9dcWZR9mPz2W9UopmADr9o8FTqazo5kjUSh2xQmDUSJOJ/ZWcfNziO64Ix/VbcxKIZeplhog1Q==}
+  /@pnpm/types/8.6.0:
+    resolution: {integrity: sha512-sWty87Az5cjnOEA2qss+sReSFSi2FFMf/KJz7dDX+4txRg0QddPTKbR5Q5Gf6QS6kKYAl8OEgxzctuEXAquzYw==}
     engines: {node: '>=14.6'}
     dev: false
 
-  /@pnpm/write-project-manifest/3.0.7:
-    resolution: {integrity: sha512-rMgIWR52asESg1D7Cp/vBi3dBsv18iUWPvvtYNynrcOjRdE3NsH5CAdfZP/XN6HJF6CSY8rS9W4YC5Q3JGtxiw==}
+  /@pnpm/write-project-manifest/3.0.8:
+    resolution: {integrity: sha512-uz+ZvwSwphm9Z1c8bZh7ZefuSfrFh3jcFsUBLm6x1l5vzZnKOmxQvv4ycuqldmPv53RU4LzHZB05WyiG7ZAwIA==}
     engines: {node: '>=14.6'}
     dependencies:
-      '@pnpm/types': 8.5.0
+      '@pnpm/types': 8.6.0
       json5: 2.2.1
       write-file-atomic: 3.0.3
       write-yaml-file: 4.2.0
@@ -11353,12 +11353,12 @@ packages:
       safe-regex2: 2.0.0
       semver-store: 0.3.0
 
-  /find-packages/9.0.9:
-    resolution: {integrity: sha512-XkzVZSz5YTBYdDvUEQrTTRa5PSrYde7AU/ax0ic/USy+IEoHI6RqQQQxZxq6KFfsJngbDfIf5MM2gyrQ9Ztzjg==}
+  /find-packages/9.0.10:
+    resolution: {integrity: sha512-RFYqCcsfukrW08xqkfknPLpJ2Oev/swhEwAtYNWRv0+lnjhfIzSGiD2HPheH99i3SKROJg6AvtZaEbIiPjsdsA==}
     engines: {node: '>=14.6'}
     dependencies:
-      '@pnpm/read-project-manifest': 3.0.9
-      '@pnpm/types': 8.5.0
+      '@pnpm/read-project-manifest': 3.0.10
+      '@pnpm/types': 8.6.0
       fast-glob: 3.2.12
       p-filter: 2.1.0
     dev: false

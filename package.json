@@ -61,7 +61,7 @@
     "eslint-plugin-react-hooks": "^4.2.0",
     "eslint-plugin-unicorn": "40.1.0",
     "expect-type": "^0.13.0",
-    "find-packages": "^9.0.9",
+    "find-packages": "^9.0.10",
     "jest": "^27.1.0",
     "jsdom": "^20.0.0",
     "lerna": "^5.5.1",
