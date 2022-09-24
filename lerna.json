@@ -4,10 +4,7 @@
   "publishConfig": {
     "access": "public"
   },
-  "npmClient": "yarn",
+  "npmClient": "pnpm",
   "useWorkspaces": true,
-  "packages": [
-    "packages/*",
-    "www"
-  ]
+  "packages": ["packages/*", "www"]
 }
