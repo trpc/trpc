@@ -16,10 +16,6 @@ importers:
       '@testing-library/react': ^13.4.0
       '@testing-library/user-event': ^14.4.3
       '@trivago/prettier-plugin-sort-imports': ^3.2.0
-      '@trpc/client': ^10.0.0-proxy-beta.6
-      '@trpc/next': ^10.0.0-proxy-beta.6
-      '@trpc/react': ^10.0.0-proxy-beta.6
-      '@trpc/server': ^10.0.0-proxy-beta.6
       '@types/jest': ^27.0.1
       '@types/node': ^18.7.20
       '@types/react': ^18.0.9
@@ -66,10 +62,6 @@ importers:
       '@testing-library/react': 13.4.0_biqbaboplfbrettd7655fr4n2y
       '@testing-library/user-event': 14.4.3_svkptcfudnvlwtcvoqpeiqk33i
       '@trivago/prettier-plugin-sort-imports': 3.3.0_prettier@2.7.1
-      '@trpc/client': link:packages/client
-      '@trpc/next': link:packages/next
-      '@trpc/react': link:packages/react
-      '@trpc/server': link:packages/server
       '@types/jest': 27.5.2
       '@types/node': 18.7.20
       '@types/react': 18.0.20
