@@ -12,6 +12,7 @@ module.exports = {
     // './server/jest.setup.js',
     '@testing-library/jest-dom/extend-expect',
   ],
+  testMatch: ['**/*.test.ts?(x)', '!**/client/test/**'],
   globals: {
     'ts-jest': {
       tsconfig: {
