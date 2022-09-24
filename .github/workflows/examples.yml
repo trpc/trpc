@@ -75,7 +75,7 @@ jobs:
           path: ${{ env.PLAYWRIGHT_BROWSERS_PATH }}
 
       - name: Install Playwright
-        run: pnpm playwright install
+        run: pnpm dlx playwright install-deps
 
       - name: Next.js cache
         uses: actions/cache@v2
