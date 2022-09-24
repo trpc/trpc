@@ -51,7 +51,7 @@
     "@playwright/test": "^1.19.2",
     "@tanstack/react-query-devtools": "^4.3.8",
     "@types/jest": "^27.0.1",
-    "@types/node": "^18.7.18",
+    "@types/node": "^18.7.20",
     "@types/react": "^18.0.9",
     "@typescript-eslint/eslint-plugin": "^5.37.0",
     "@typescript-eslint/parser": "^5.37.0",
