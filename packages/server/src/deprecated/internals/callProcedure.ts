@@ -6,7 +6,7 @@ import { AnyRouter, ProcedureType } from '../router';
  */
 export async function callProcedure<
   TRouter extends AnyRouter<TContext>,
-  TContext,
+  TContext extends Record<string, any>,
 >(opts: {
   path: string;
   input: unknown;

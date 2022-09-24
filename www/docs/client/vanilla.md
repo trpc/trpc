@@ -21,11 +21,15 @@ Create a typesafe client with the `createTRPCClient` method from `@trpc/client`:
 
 ```ts title='client.ts'
 // pages/index.tsx
-import { createTRPCProxyClient } from '@trpc/client';
+import { createTRPCProxyClient, httpBatchLink } from '@trpc/client';
 import type { AppRouter } from '../path/to/server/trpc';
 
 const client = createTRPCProxyClient<AppRouter>({
-  url: 'http://localhost:5000/trpc',
+  links: [
+    httpBatchLink({
+      url: 'http://localhost:3000/trpc',
+    }),
+  ],
 });
 ```
 

@@ -1,8 +1,8 @@
 /* eslint-disable @typescript-eslint/no-empty-function */
-import { waitError } from '../___testHelpers';
+import { waitError, waitMs } from '../___testHelpers';
 import { dataLoader } from '../../../client/src/internals/dataLoader';
 
-test('basic', async () => {
+describe('basic', () => {
   const fetchFn = jest.fn();
   const validateFn = jest.fn();
   const loader = dataLoader<number, number>({
@@ -18,7 +18,13 @@ test('basic', async () => {
       return { promise, cancel: () => {} };
     },
   });
-  {
+
+  beforeEach(() => {
+    fetchFn.mockClear();
+    validateFn.mockClear();
+  });
+
+  test('no time between calls', async () => {
     const $result = await Promise.all([
       loader.load(1).promise,
       loader.load(2).promise,
@@ -27,13 +33,11 @@ test('basic', async () => {
     expect(validateFn.mock.calls.length).toMatchInlineSnapshot(`2`);
     expect(fetchFn).toHaveBeenCalledTimes(1);
     expect(fetchFn).toHaveBeenNthCalledWith(1, [1, 2]);
-    validateFn.mockClear();
-    fetchFn.mockClear();
-  }
-  {
-    // some time between calls
+  });
+
+  test('time between calls', async () => {
     const res1 = loader.load(3);
-    await new Promise((resolve) => setTimeout(resolve, 1));
+    await waitMs(1);
     const res2 = loader.load(4);
 
     const $result = await Promise.all([res1.promise, res2.promise]);
@@ -43,10 +47,10 @@ test('basic', async () => {
     expect(fetchFn).toHaveBeenCalledTimes(2);
     expect(fetchFn).toHaveBeenNthCalledWith(1, [3]);
     expect(fetchFn).toHaveBeenNthCalledWith(2, [4]);
-  }
+  });
 });
 
-test('cancellation', async () => {
+describe('cancellation', () => {
   const fetchFn = jest.fn();
   const validateFn = jest.fn();
   const cancelFn = jest.fn();
@@ -65,8 +69,13 @@ test('cancellation', async () => {
     },
   });
 
-  {
-    // immediate, before it's actually executed
+  beforeEach(() => {
+    fetchFn.mockClear();
+    validateFn.mockClear();
+    cancelFn.mockClear();
+  });
+
+  test('cancel immediately before it is executed', async () => {
     const res1 = loader.load(1);
     const res2 = loader.load(2);
 
@@ -76,9 +85,6 @@ test('cancellation', async () => {
     expect(fetchFn).toHaveBeenCalledTimes(0);
     expect(validateFn).toHaveBeenCalledTimes(0);
     expect(cancelFn).toHaveBeenCalledTimes(0);
-    fetchFn.mockClear();
-    validateFn.mockClear();
-    cancelFn.mockClear();
     expect(await Promise.allSettled([res1.promise, res2.promise]))
       .toMatchInlineSnapshot(`
       Array [
@@ -92,21 +98,16 @@ test('cancellation', async () => {
         },
       ]
     `);
-  }
+  });
 
-  {
-    // after some time
+  test('cancel after some time', async () => {
     const res1 = loader.load(2);
     const res2 = loader.load(3);
 
-    await new Promise((resolve) => setTimeout(resolve, 1));
+    await waitMs(1);
 
     res1.cancel();
     res2.cancel();
-
-    fetchFn.mockClear();
-    validateFn.mockClear();
-    cancelFn.mockClear();
 
     expect(await Promise.allSettled([res1.promise, res2.promise]))
       .toMatchInlineSnapshot(`
@@ -121,20 +122,15 @@ test('cancellation', async () => {
         },
       ]
     `);
-  }
+  });
 
-  {
-    // only cancel one
+  test('cancel only a single request', async () => {
     const res1 = loader.load(2);
     const res2 = loader.load(3);
 
     res2.cancel();
 
     expect(cancelFn).toHaveBeenCalledTimes(0);
-
-    fetchFn.mockClear();
-    validateFn.mockClear();
-    cancelFn.mockClear();
 
     expect(await Promise.allSettled([res1.promise, res2.promise]))
       .toMatchInlineSnapshot(`
@@ -149,7 +145,7 @@ test('cancellation', async () => {
         },
       ]
     `);
-  }
+  });
 });
 
 test('errors', async () => {
@@ -174,7 +170,7 @@ test('errors', async () => {
   );
 });
 
-test('validation', async () => {
+describe('validation', () => {
   const validateFn = jest.fn();
   const fetchFn = jest.fn();
   const loader = dataLoader<number, number>({
@@ -191,7 +187,13 @@ test('validation', async () => {
       return { promise, cancel: () => {} };
     },
   });
-  {
+
+  beforeEach(() => {
+    fetchFn.mockClear();
+    validateFn.mockClear();
+  });
+
+  test('1', async () => {
     const $result = await Promise.all([
       loader.load(1).promise,
       loader.load(9).promise,
@@ -199,10 +201,9 @@ test('validation', async () => {
     ]);
     expect($result).toEqual([2, 10, 1]);
     expect(validateFn.mock.calls.length).toMatchInlineSnapshot(`4`);
-    validateFn.mockClear();
-    fetchFn.mockClear();
-  }
-  {
+  });
+
+  test('2', async () => {
     const $result = await Promise.all([
       loader.load(2).promise,
       loader.load(9).promise,
@@ -223,14 +224,12 @@ test('validation', async () => {
     `);
     expect(validateFn.mock.calls.length).toMatchInlineSnapshot(`9`);
     expect(fetchFn.mock.calls.length).toMatchInlineSnapshot(`4`);
-    validateFn.mockClear();
-    fetchFn.mockClear();
-  }
-  {
-    // too large
+  });
+
+  test('too large', async () => {
     const $result = await waitError(loader.load(13).promise);
     expect($result).toMatchInlineSnapshot(
       `[Error: Input is too big for a single dispatch]`,
     );
-  }
+  });
 });

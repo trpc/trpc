@@ -1,9 +1,47 @@
 import { ProcedureType } from '@trpc/server';
 import { TRPCResponse } from '@trpc/server/rpc';
-import { PromiseAndCancel, TRPCClientRuntime } from '../types';
+import { getFetch } from '../../getFetch';
+import { getAbortController } from '../../internals/fetchHelpers';
+import { HTTPHeaders, PromiseAndCancel, TRPCClientRuntime } from '../types';
 
 export interface HTTPLinkOptions {
   url: string;
+  /**
+   * Add ponyfill for fetch
+   */
+  fetch?: typeof fetch;
+  /**
+   * Add ponyfill for AbortController
+   */
+  AbortController?: typeof AbortController | null;
+  /**
+   * Headers to be set on outgoing requests or a callback that of said headers
+   * @link http://trpc.io/docs/v10/header
+   */
+  headers?: HTTPHeaders | (() => HTTPHeaders | Promise<HTTPHeaders>);
+}
+
+export interface ResolvedHTTPLinkOptions {
+  url: string;
+  fetch: typeof fetch;
+  AbortController: typeof AbortController | null;
+  /**
+   * Headers to be set on outgoing request
+   * @link http://trpc.io/docs/v10/header
+   */
+  headers: () => HTTPHeaders | Promise<HTTPHeaders>;
+}
+
+export function resolveHTTPLinkOptions(
+  opts: HTTPLinkOptions,
+): ResolvedHTTPLinkOptions {
+  const headers = opts.headers || (() => ({}));
+  return {
+    url: opts.url,
+    fetch: getFetch(opts.fetch),
+    AbortController: getAbortController(opts.AbortController),
+    headers: typeof headers === 'function' ? headers : () => headers,
+  };
 }
 
 // https://github.com/trpc/trpc/pull/669
@@ -40,7 +78,7 @@ function getInput(opts: GetInputOptions) {
       );
 }
 
-export type HTTPRequestOptions = HTTPLinkOptions &
+export type HTTPRequestOptions = ResolvedHTTPLinkOptions &
   GetInputOptions & {
     type: ProcedureType;
     path: string;
@@ -77,20 +115,20 @@ export function getBody(opts: GetBodyOptions) {
 export function httpRequest(
   opts: HTTPRequestOptions,
 ): PromiseAndCancel<HTTPResult> {
-  const { type, runtime } = opts;
-  const ac = runtime.AbortController ? new runtime.AbortController() : null;
+  const { type } = opts;
+  const ac = opts.AbortController ? new opts.AbortController() : null;
 
   const promise = new Promise<HTTPResult>((resolve, reject) => {
     const url = getUrl(opts);
     const body = getBody(opts);
 
     const meta = {} as HTTPResult['meta'];
-    Promise.resolve(runtime.headers())
+    Promise.resolve(opts.headers())
       .then((headers) => {
         if (type === 'subscription') {
           throw new Error('Subscriptions should use wsLink');
         }
-        return runtime.fetch(url, {
+        return opts.fetch(url, {
           method: METHOD[type],
           signal: ac?.signal,
           body: body,

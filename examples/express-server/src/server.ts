@@ -25,7 +25,7 @@ const createContext = ({
 };
 type Context = inferAsyncReturnType<typeof createContext>;
 
-const t = initTRPC<{ ctx: Context }>()();
+const t = initTRPC.context<Context>().create();
 
 // --------- create procedures etc
 

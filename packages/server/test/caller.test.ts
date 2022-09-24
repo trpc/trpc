@@ -3,11 +3,11 @@ import { expectTypeOf } from 'expect-type';
 import { z } from 'zod';
 import { TRPCError, initTRPC } from '../src';
 
-const t = initTRPC<{
-  ctx: {
+const t = initTRPC
+  .context<{
     foo?: 'bar';
-  };
-}>()();
+  }>()
+  .create();
 
 const { procedure } = t;
 

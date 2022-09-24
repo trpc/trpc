@@ -5,18 +5,36 @@ sidebar_label: useQuery()
 slug: /react-queries
 ---
 
-> The hooks provided by `@trpc/react` are a thin wrapper around React Query. For in-depth information about options and usage patterns, refer to their docs on [Queries](https://react-query.tanstack.com/guides/queries).
+
+:::note
+The hooks provided by `@trpc/react` are a thin wrapper around @tanstack/react-query. For in-depth information about options and usage patterns, refer to their docs on [queries](https://react-query.tanstack.com/guides/queries).
+:::
 
 ```tsx
 function useQuery(
-  pathAndInput: [string, TInput?],
+  input: TInput,
   opts?: UseTRPCQueryOptions;
 )
+
+interface UseTRPCQueryOptions
+  extends UseQueryOptions {
+  trpc: {
+    ssr: boolean;
+    abortOnUnmount: boolean;
+  }
+}
 ```
 
-The first argument is a `[path, input]`-tuple - if the `input` is optional, you can omit the `, input`-part.
+Since `UseTRPCQueryOptions` extends @tanstack/react-query's `UseQueryOptions`, you can use any of their option in here such as `enabled`, `refetchOnWindowFocus` etc. We also have some `trpc` specific options that lets you opt in or out of certain behaviors on a per-procedure level:
 
-You'll notice that you get autocompletion on the `path` and automatic typesafety on the `input`.
+- **`trpc.ssr`:** If you have `ssr: true` in your [global config](nextjs#ssr-boolean-default-false), you can set this to false to disable ssr for this particular query. _Note that this does not work the other way around, i.e. you can not enable ssr on a procedure if your global config is set to false._
+- **`trpc.abortOnUnmount`:** Override the [global config](nextjs#config-callback) and opt in or out of aborting queries on unmount.
+
+:::tip
+If you need to set any options but don't want to pass any input, you can pass `undefined` instead.
+:::
+
+You'll notice that you get autocompletion on the `input` based on what you have set in your `input` schema on your backend.
 
 ### Example
 
@@ -26,7 +44,7 @@ You'll notice that you get autocompletion on the `path` and automatic typesafety
 import { initTRPC } from '@trpc/server'
 import { z } from 'zod';
 
-export const t = initTRPC()()
+export const t = initTRPC.create()
 
 export const appRouter = t.router({
   // Create procedure at path 'hello'
@@ -54,8 +72,8 @@ import { trpc } from '../utils/trpc';
 
 export function MyComponent() {
   // input is optional, so we don't have to pass second argument
-  const helloNoArgs = trpc.proxy.hello.useQuery();
-  const helloWithArgs = trpc.proxy.hello.useQuery({ text: 'client' });
+  const helloNoArgs = trpc.hello.useQuery();
+  const helloWithArgs = trpc.hello.useQuery({ text: 'client' });
 
   return (
     <div>
@@ -63,11 +81,15 @@ export function MyComponent() {
       <ul>
         <li>
           helloNoArgs ({helloNoArgs.status}):{' '}
-          <pre>{JSON.stringify(helloNoArgs.data, null, 2)}</pre>
+          <pre>
+            {JSON.stringify(helloNoArgs.data, null, 2)}
+          </pre>
         </li>
         <li>
           helloWithArgs ({helloWithArgs.status}):{' '}
-          <pre>{JSON.stringify(helloWithArgs.data, null, 2)}</pre>
+          <pre>
+            {JSON.stringify(helloWithArgs.data, null, 2)}
+          </pre>
         </li>
       </ul>
     </div>

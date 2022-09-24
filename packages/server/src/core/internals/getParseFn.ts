@@ -1,8 +1,8 @@
 import { Parser } from '../parser';
 
-export type ParseFn<T> = (value: unknown) => T | Promise<T>;
+export type ParseFn<TType> = (value: unknown) => TType | Promise<TType>;
 
-export function getParseFn<T>(procedureParser: Parser): ParseFn<T> {
+export function getParseFn<TType>(procedureParser: Parser): ParseFn<TType> {
   const parser = procedureParser as any;
 
   if (typeof parser === 'function') {
@@ -37,11 +37,11 @@ export function getParseFn<T>(procedureParser: Parser): ParseFn<T> {
  * @deprecated only for backwards compat
  * @internal
  */
-export function getParseFnOrPassThrough<T>(
+export function getParseFnOrPassThrough<TType>(
   procedureParser: Parser | undefined,
-): ParseFn<T> {
+): ParseFn<TType> {
   if (!procedureParser) {
-    return (v) => v as T;
+    return (v) => v as TType;
   }
   return getParseFn(procedureParser);
 }

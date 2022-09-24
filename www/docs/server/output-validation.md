@@ -28,7 +28,7 @@ tRPC works out-of-the-box with yup/superstruct/zod/myzod/custom validators/[..] 
 import { initTRPC } from '@trpc/server';
 import { z } from 'zod';
 
-export const t = initTRPC()();
+export const t = initTRPC.create();
 
 export const appRouter = t.router({
   hello: t.procedure
@@ -54,7 +54,7 @@ export type AppRouter = typeof appRouter;
 import { initTRPC } from '@trpc/server';
 import * as yup from 'yup';
 
-export const t = initTRPC()();
+export const t = initTRPC.create();
 
 export const appRouter = t.router({
   hello: t.procedure
@@ -79,7 +79,7 @@ export type AppRouter = typeof appRouter;
 import { initTRPC } from '@trpc/server';
 import { object, string } from 'superstruct';
 
-export const t = initTRPC()();
+export const t = initTRPC.create();
 
 export const appRouter = t.router({
   hello: t.procedure
@@ -100,7 +100,7 @@ export type AppRouter = typeof appRouter;
 ```tsx
 import { initTRPC } from '@trpc/server';
 
-export const t = initTRPC()();
+export const t = initTRPC.create();
 
 export const appRouter = t.router({
   hello: t.procedure

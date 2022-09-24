@@ -7,6 +7,7 @@ import {
   HTTPResult,
   getUrl,
   httpRequest,
+  resolveHTTPLinkOptions,
 } from './internals/httpUtils';
 import { transformResult } from './internals/transformResult';
 import { TRPCLink } from './types';
@@ -18,6 +19,7 @@ export interface HttpBatchLinkOptions extends HTTPLinkOptions {
 export function httpBatchLink<TRouter extends AnyRouter>(
   opts: HttpBatchLinkOptions,
 ): TRPCLink<TRouter> {
+  const resolvedOpts = resolveHTTPLinkOptions(opts);
   // initialized config
   return (runtime) => {
     type BatchOperation = { id: number; path: string; input: unknown };
@@ -33,7 +35,13 @@ export function httpBatchLink<TRouter extends AnyRouter>(
         const path = batchOps.map((op) => op.path).join(',');
         const inputs = batchOps.map((op) => op.input);
 
-        const url = getUrl({ url: opts.url, runtime, type, path, inputs });
+        const url = getUrl({
+          ...resolvedOpts,
+          runtime,
+          type,
+          path,
+          inputs,
+        });
         return url.length <= maxURLLength;
       };
 
@@ -42,7 +50,7 @@ export function httpBatchLink<TRouter extends AnyRouter>(
         const inputs = batchOps.map((op) => op.input);
 
         const { promise, cancel } = httpRequest({
-          url: opts.url,
+          ...resolvedOpts,
           runtime,
           type,
           path,

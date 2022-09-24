@@ -164,13 +164,13 @@ type Context = {
   };
 };
 
-export const t = initTRPC<{
-  ctx: Context;
-}>()({
-  /* optional */
-  transformer: superjson,
-  // errorFormatter: [...]
-});
+export const t = initTRPC
+  .context<Context>()
+  .create({
+    /* optional */
+    transformer: superjson,
+    // errorFormatter: [...]
+  });
 
 const {
   /**
@@ -189,7 +189,7 @@ const {
    * Merge Routers
    */
   mergeRouters,
-} = trpc;
+} = t;
 ```
 
 #### §1.1 Creating a router
@@ -539,7 +539,7 @@ import { trpc } from '~/utils/trpc';
 
 function MyComponent() {
   // You'll be able to CMD+Click `postById` below
-  const query = trpc.proxy.postById.useQuery(
+  const query = trpc.postById.useQuery(
     { id: 1 },
     {
       /* [...] trpc specific options */
@@ -575,7 +575,7 @@ Simpler setup:
  * A set of strongly-typed React hooks from your `AppRouter` type signature with `createReactQueryHooks`.
  * @link https://trpc.io/docs/react#3-create-trpc-hooks
  */
-export const trpc = setupTRPC<AppRouter>({
+export const trpc = createTRPCNext<AppRouter>({
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   config() {
     /**

@@ -73,5 +73,4 @@ export async function nodeHTTPRequestHandler<
     res.setHeader(key, value);
   }
   res.end(result.body);
-  await opts.teardown?.();
 }

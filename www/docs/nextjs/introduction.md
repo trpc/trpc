@@ -47,19 +47,19 @@ Recommended but not enforced file structure. This is what you get when starting 
 **npm**
 
 ```bash
-npm install @trpc/server @trpc/client @trpc/react @trpc/next @tanstack/react-query
+npm install @trpc/server@next @trpc/client@next @trpc/react@next @trpc/next@next @tanstack/react-query
 ```
 
 **yarn**
 
 ```bash
-yarn add @trpc/server @trpc/client @trpc/react @trpc/next @tanstack/react-query
+yarn add @trpc/server@next @trpc/client@next @trpc/react@next @trpc/next@next @tanstack/react-query
 ```
 
 **pnpm**
 
 ```bash
-pnpm add @trpc/server @trpc/client @trpc/react @trpc/next @tanstack/react-query
+pnpm add @trpc/server@next @trpc/client@next @trpc/react@next @trpc/next@next @tanstack/react-query
 ```
 
 #### Why @tanstack/react-query?
@@ -97,7 +97,7 @@ import { initTRPC } from '@trpc/server';
 import * as trpcNext from '@trpc/server/adapters/next';
 import { z } from 'zod';
 
-export const t = initTRPC()();
+export const t = initTRPC.create();
 
 export const appRouter = t.router({
   hello: t.procedure
@@ -132,7 +132,8 @@ export default trpcNext.createNextApiHandler({
 Create a set of strongly-typed hooks using your API's type signature.
 
 ```tsx title='utils/trpc.ts'
-import { setupTRPC } from '@trpc/next';
+import { httpBatchLink } from '@trpc/client';
+import { createTRPCNext } from '@trpc/next';
 import type { AppRouter } from '../pages/api/trpc/[trpc]';
 
 function getBaseUrl() {
@@ -149,14 +150,18 @@ function getBaseUrl() {
   return `http://localhost:${process.env.PORT ?? 3000}`;
 }
 
-export const trpc = setupTRPC<AppRouter>({
+export const trpc = createTRPCNext<AppRouter>({
   config({ ctx }) {
     return {
-      /**
-       * If you want to use SSR, you need to use the server's full URL
-       * @link https://trpc.io/docs/ssr
-       **/
-      url: `${getBaseUrl()}/api/trpc`,
+      links: [
+        httpBatchLink({
+          /**
+           * If you want to use SSR, you need to use the server's full URL
+           * @link https://trpc.io/docs/ssr
+           **/
+          url: `${getBaseUrl()}/api/trpc`,
+        }),
+      ],
       /**
        * @link https://react-query-v3.tanstack.com/reference/QueryClient
        **/
@@ -190,7 +195,7 @@ export default trpc.withTRPC(MyApp);
 import { trpc } from '../utils/trpc';
 
 export default function IndexPage() {
-  const hello = trpc.proxy.hello.useQuery({ text: 'client' });
+  const hello = trpc.hello.useQuery({ text: 'client' });
   if (!hello.data) {
     return <div>Loading...</div>;
   }
@@ -202,7 +207,7 @@ export default function IndexPage() {
 }
 ```
 
-## `setupTRPC()` options
+## `createTRPCNext()` options
 
 ### `config`-callback
 
@@ -219,6 +224,7 @@ The `config`-argument is a function that returns an object that configures the t
   - `transformer`: a transformer applied to outgoing payloads. Read more about [Data Transformers](data-transformers)
   - `fetch`: customize the implementation of `fetch` used by tRPC internally
   - `AbortController`: customize the implementation of `AbortController` used by tRPC internally
+  - `abortOnUnmount`: determines if in-flight requests will be cancelled on component unmount. This defaults to `false`.
 
 ### `ssr`-boolean (default: `false`)
 
@@ -231,10 +237,10 @@ Ability to set request headers and HTTP status when server-side rendering.
 #### Example
 
 ```tsx title='utils/trpc.ts'
-import { setupTRPC } from '@trpc/next';
+import { createTRPCNext } from '@trpc/next';
 import type { AppRouter } from '../pages/api/trpc/[trpc]';
 
-export const trpc = setupTRPC({
+export const trpc = createTRPCNext<AppRouter>({
   config({ ctx }) {
     /* [...] */
   },

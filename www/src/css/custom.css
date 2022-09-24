@@ -21,15 +21,35 @@
   --ifm-code-font-size: 95%;
   --ifm-container-width: 1140px;
   --ifm-container-width-xl: 1320px;
+  --ifm-navbar-shadow: none;
 }
 :root[data-theme='dark'] {
-  --ifm-footer-background-color: #242526;
-  --ifm-navbar-background-color: #18181b;
-  --ifm-background-color: #18181b;
+  --ifm-footer-background-color: #171717;
+  --ifm-navbar-background-color: #111111;
+  --ifm-background-color: #111111;
 }
 
-.homepage .navbar {
-  @apply container h-20 mx-auto shadow-none;
+html {
+  @apply selection:text-white selection:bg-sky-500/75 scroll-smooth;
+}
+
+.navbar {
+  border-bottom: 1px solid var(--ifm-toc-border-color);
+}
+.homepage .navbar__inner {
+  @apply container;
+}
+
+.homepage .main-wrapper {
+  background: linear-gradient(180deg, hsla(0, 0%, 100%, 0) 0, #fff 300px),
+    fixed 0 0 /20px 20px radial-gradient(#d1d1d1 1px, transparent 0),
+    fixed 10px 10px /20px 20px radial-gradient(#d1d1d1 1px, transparent 0);
+}
+
+[data-theme='dark'] .homepage .main-wrapper {
+  background: linear-gradient(180deg, transparent 0, #111 300px),
+    fixed 0 0 /20px 20px radial-gradient(#313131 1px, transparent 0),
+    fixed 10px 10px /20px 20px radial-gradient(#313131 1px, transparent 0);
 }
 
 .navbar-external-link svg {
@@ -186,6 +206,10 @@ h5 {
   @apply pl-8 list-disc;
 }
 
+.markdown blockquote {
+  margin: 0 0 var(--ifm-spacing-vertical);
+}
+
 .pagination-nav__label {
   @apply text-primary;
 }
@@ -194,10 +218,15 @@ h5 {
   @apply flex items-center text-lg;
 }
 
+.theme-admonition a {
+  @apply font-semibold;
+}
+
 /**
- * Tweet Wall
+ * Disable underline for some links
  **/
-#tweet {
+#tweet,
+#sponsor-button {
   --ifm-link-hover-decoration: none;
 }
 
@@ -242,22 +271,23 @@ html:not(.v10) [role='banner'] {
   display: none;
 }
 
-html.v10[data-theme='light'] .trpcgif--v10-light {
-  display: block;
+html.v10 .trpcgif--v10.trpcgif--portrait {
+  @apply block md:hidden;
 }
 
-html.v10[data-theme='dark'] .trpcgif--v10-light {
-  display: none;
-}
-
-html.v10[data-theme='light'] .trpcgif--v10-dark {
-  display: none;
-}
-
-html.v10[data-theme='dark'] .trpcgif--v10-dark {
-  display: block;
+html.v10 .trpcgif--v10.trpcgif--landscape {
+  @apply hidden md:block;
 }
 
 html.v9 .trpcgif--v9 {
   display: block;
+}
+
+/* Breadcrumbs */
+.breadcrumbs {
+  @apply flex items-center;
+}
+
+.breadcrumbs__item {
+  @apply flex items-center;
 }

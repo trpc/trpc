@@ -131,9 +131,9 @@ type inferAPIGWEvent<
 /** 1:1 mapping of v1 or v2 input events, deduces which is which.
  * @internal
  **/
-type inferAPIGWReturn<T> = T extends APIGatewayProxyEvent
+type inferAPIGWReturn<TType> = TType extends APIGatewayProxyEvent
   ? APIGatewayProxyResult
-  : T extends APIGatewayProxyEventV2
+  : TType extends APIGatewayProxyEventV2
   ? APIGatewayProxyStructuredResultV2
   : never;
 export function awsLambdaRequestHandler<

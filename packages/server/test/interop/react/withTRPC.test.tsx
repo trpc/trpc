@@ -1,12 +1,12 @@
 /* eslint-disable @typescript-eslint/no-empty-function */
 
 /* eslint-disable @typescript-eslint/ban-ts-comment */
+import '../../___packages';
 import { createLegacyAppRouter } from './__testHelpers';
-import '@testing-library/jest-dom';
 import { render, waitFor } from '@testing-library/react';
+import { withTRPC } from '@trpc/next/src';
 import { AppType } from 'next/dist/shared/lib/utils';
 import React from 'react';
-import { withTRPC } from '../../../../next/src';
 
 let factory: ReturnType<typeof createLegacyAppRouter>;
 beforeEach(() => {

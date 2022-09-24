@@ -56,10 +56,15 @@ async function main() {
   }
   await sleep();
   const authedClient = createTRPCClient<AppRouter>({
-    links: [loggerLink(), httpBatchLink({ url })],
-    headers: () => ({
-      authorization: 'secret',
-    }),
+    links: [
+      loggerLink(),
+      httpBatchLink({
+        url,
+        headers: () => ({
+          authorization: 'secret',
+        }),
+      }),
+    ],
   });
 
   await authedClient.query('admin.secret');

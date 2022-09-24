@@ -1,6 +1,6 @@
 {
   "name": "@trpc/react",
-  "version": "10.0.0-proxy-alpha.59",
+  "version": "10.0.0-proxy-beta.5",
   "description": "tRPC React lib",
   "author": "KATT",
   "license": "MIT",
@@ -26,13 +26,19 @@
       "import": "./dist/ssg/index.mjs",
       "require": "./dist/ssg/index.js",
       "default": "./dist/ssg/index.js"
+    },
+    "./shared": {
+      "import": "./dist/shared/index.mjs",
+      "require": "./dist/shared/index.js",
+      "default": "./dist/shared/index.js"
     }
   },
   "files": [
     "dist",
     "src",
     "README.md",
-    "ssg"
+    "ssg",
+    "shared"
   ],
   "eslintConfig": {
     "rules": {
@@ -44,21 +50,21 @@
     }
   },
   "peerDependencies": {
-    "@tanstack/react-query": "^4.0.10",
+    "@tanstack/react-query": "^4.3.8",
     "@trpc/client": "^10.0.0-alpha.48",
     "@trpc/server": "^10.0.0-alpha.48",
     "react": ">=16.8.0",
     "react-dom": ">=16.8.0"
   },
   "devDependencies": {
-    "@tanstack/react-query": "^4.0.10",
-    "@trpc/client": "^10.0.0-proxy-alpha.59",
-    "@trpc/server": "^10.0.0-proxy-alpha.59",
+    "@tanstack/react-query": "^4.3.8",
+    "@trpc/client": "^10.0.0-proxy-beta.5",
+    "@trpc/server": "^10.0.0-proxy-beta.5",
     "@types/express": "^4.17.12",
     "express": "^4.17.1",
-    "next": "^12.1.6",
-    "react": "^18.1.0",
-    "react-dom": "^18.1.0",
+    "next": "^12.3.1",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
     "zod": "^3.0.0"
   },
   "publishConfig": {

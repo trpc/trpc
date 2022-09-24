@@ -13,9 +13,9 @@ A typesafe wrapper around calling `queryClient.invalidateQueries()`, all it does
 import { trpc } from '../utils/trpc';
 
 // In component:
-const utils = trpc.proxy.useContext();
+const utils = trpc.useContext();
 
-const mutation = trpc.proxy.post.edit.useMutation({
+const mutation = trpc.post.edit.useMutation({
   onSuccess(input) {
     utils.post.all.invalidate();
     utils.post.byId.invalidate(input.id);

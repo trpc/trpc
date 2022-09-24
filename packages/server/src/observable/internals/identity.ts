@@ -1,3 +1,3 @@
-export function identity<T>(x: T): T {
+export function identity<TType>(x: TType): TType {
   return x;
 }

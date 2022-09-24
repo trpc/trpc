@@ -19,7 +19,7 @@ slug: /useInfiniteQuery
 import { initTRPC } from '@trpc/server'
 import { Context } from './[trpc]';
 
-export const t = initTRPC()()
+export const t = initTRPC.create()
 
 export const appRouter = t.router({
   infinitePosts: t
@@ -63,7 +63,7 @@ export const appRouter = t.router({
 import { trpc } from '../utils/trpc';
 
 export function MyComponent() {
-  const myQuery = trpc.proxy.infinitePosts.useInfiniteQuery(
+  const myQuery = trpc.infinitePosts.useInfiniteQuery(
     {
       limit: 10,
     },
@@ -85,9 +85,9 @@ This helper gets the currently cached data from an existing infinite query
 import { trpc } from '../utils/trpc';
 
 export function MyComponent() {
-  const utils = trpc.proxy.useContext();
+  const utils = trpc.useContext();
 
-  const myMutation = trpc.proxy.infinitePosts.add.useMutation({
+  const myMutation = trpc.infinitePosts.add.useMutation({
     async onMutate({ post }) {
       await utils.infinitePosts.cancel();
       const allPosts = utils.infinitePosts.getInfiniteData({ limit: 10 });
@@ -105,9 +105,9 @@ This helper allows you to update a query's cached data
 import { trpc } from '../utils/trpc';
 
 export function MyComponent() {
-  const utils = trpc.proxy.useContext();
+  const utils = trpc.useContext();
 
-  const myMutation = trpc.proxy.infinitePosts.delete.useMutation({
+  const myMutation = trpc.infinitePosts.delete.useMutation({
     async onMutate({ post }) {
       await utils.infinitePosts.cancel();
 

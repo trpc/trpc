@@ -12,6 +12,7 @@ import {
   defaultTransformer,
   getDataTransformer,
 } from '../transformer';
+import { FlatOverwrite } from '../types';
 import {
   CreateInitGenerics,
   CreateRootConfig,
@@ -23,14 +24,54 @@ import { PickFirstDefined, ValidateShape } from './internals/utils';
 import { createMiddlewareFactory } from './middleware';
 import { createRouterFactory } from './router';
 
-export function initTRPC<TParams extends Partial<InitGenerics> = {}>() {
-  type $Generics = CreateInitGenerics<{
-    ctx: TParams['ctx'] extends undefined ? {} : NonNullable<TParams['ctx']>;
-    meta: TParams['meta'] extends undefined ? {} : NonNullable<TParams['meta']>;
+type PartialInitGenerics = Partial<InitGenerics>;
+
+type CreateInitGenericsFromPartial<TType extends PartialInitGenerics> =
+  CreateInitGenerics<{
+    ctx: TType['ctx'] extends InitGenerics['ctx'] ? TType['ctx'] : {};
+    meta: TType['meta'] extends InitGenerics['meta'] ? TType['meta'] : {};
   }>;
 
+/**
+ * TODO: This can be improved:
+ * - We should be able to chain `.meta()`/`.context()` only once
+ * - Simplify typings
+ * - Doesn't need to be a class but it doesn't really hurt either
+ */
+
+class TRPCBuilder<TParams extends Partial<InitGenerics> = {}> {
+  context<TNewContext extends InitGenerics['ctx']>() {
+    return new TRPCBuilder<FlatOverwrite<TParams, { ctx: TNewContext }>>();
+  }
+  meta<TNewMeta extends InitGenerics['meta']>() {
+    return new TRPCBuilder<FlatOverwrite<TParams, { meta: TNewMeta }>>();
+  }
+  create<
+    TOptions extends Partial<
+      InitOptions<CreateInitGenericsFromPartial<TParams>>
+    >,
+  >(
+    options?:
+      | ValidateShape<
+          TOptions,
+          Partial<InitOptions<CreateInitGenericsFromPartial<TParams>>>
+        >
+      | undefined,
+  ) {
+    return createTRPCInner<TParams>()<TOptions>(options);
+  }
+}
+
+/**
+ * Initialize tRPC - be done exactly once per backend
+ */
+export const initTRPC = new TRPCBuilder();
+
+function createTRPCInner<TParams extends Partial<InitGenerics>>() {
+  type $Generics = CreateInitGenericsFromPartial<TParams>;
+
   type $Context = $Generics['ctx'];
-  type $Meta = PickFirstDefined<$Generics['meta'], undefined>;
+  type $Meta = $Generics['meta'];
   type $Options = Partial<InitOptions<$Generics>>;
 
   return function initTRPCInner<TOptions extends $Options>(

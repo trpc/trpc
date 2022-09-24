@@ -25,12 +25,12 @@ yarn add superjson
 import { initTRPC } from '@trpc/server';
 import superjson from 'superjson';
 
-export const t = initTRPC()({
+export const t = initTRPC.create({
   transformer: superjson,
 });
 ```
 
-#### 3. Add to `createTRPCProxyClient()` or `setupTRPC()`
+#### 3. Add to `createTRPCProxyClient()` or `createTRPCNext()`
 
 ```ts
 import { createTRPCProxyClient } from '@trpc/client';
@@ -44,13 +44,13 @@ export const client = createTRPCProxyClient<AppRouter>({
 ```
 
 ```ts title='utils/trpc.ts'
-import { setupTRPC } from '@trpc/next';
+import { createTRPCNext } from '@trpc/next';
 import superjson from 'superjson';
 import type { AppRouter } from '~/server/routers/_app';
 
 // [...]
 
-export const trpc = setupTRPC<AppRouter>({
+export const trpc = createTRPCNext<AppRouter>({
   config({ ctx }) {
     return {
       transformer: superjson, // <--
@@ -97,7 +97,7 @@ export const transformer = {
 import { initTRPC } from '@trpc/server';
 import { transformer } from '../../utils/trpc';
 
-export const t = initTRPC()({
+export const t = initTRPC.create({
   transformer,
 });
 

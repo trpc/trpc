@@ -36,7 +36,7 @@ slug: /fetch
 ### Install dependencies
 
 ```bash
-yarn add @trpc/server wrangler@beta zod
+yarn add @trpc/server@next wrangler@beta zod
 ```
 
 > [Zod](https://github.com/colinhacks/zod) isn't a required dependency, but it's used in the sample router below.
@@ -63,7 +63,7 @@ type User = {
 
 const users: Record<string, User> = {};
 
-export const t = initTRPC<{ ctx: Context }>()();
+export const t = initTRPC.context<Context>.create();
 
 export const appRouter = t.router({
   getUserById: t.procedure.input(z.string()).query(({ input }) => {

@@ -1,10 +1,10 @@
 import { httpBatchLink, loggerLink } from '@trpc/client';
-import { setupTRPC } from '@trpc/next';
+import { createTRPCNext } from '@trpc/next';
 import type { inferProcedureInput, inferProcedureOutput } from '@trpc/server';
 // ℹ️ Type-only import:
 // https://www.typescriptlang.org/docs/handbook/release-notes/typescript-3-8.html#type-only-imports-and-export
 import superjson from 'superjson';
-import { AppRouter } from '../server/routers/_app';
+import type { AppRouter } from '../server/routers/_app';
 
 function getBaseUrl() {
   if (typeof window !== 'undefined') {
@@ -28,7 +28,7 @@ function getBaseUrl() {
  * A set of strongly-typed React hooks from your `AppRouter` type signature with `createReactQueryHooks`.
  * @link https://trpc.io/docs/react#3-create-trpc-hooks
  */
-export const trpc = setupTRPC<AppRouter>({
+export const trpc = createTRPCNext<AppRouter>({
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   config() {
     /**

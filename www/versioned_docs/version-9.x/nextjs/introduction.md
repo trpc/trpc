@@ -45,7 +45,7 @@ Recommended but not enforced file structure. This is what you get when starting 
 ### 1. Install deps
 
 ```bash
-yarn add @trpc/client @trpc/server @trpc/react @trpc/next zod react-query
+yarn add @trpc/client @trpc/server @trpc/react @trpc/next zod react-query@3
 ```
 
 - React Query: `@trpc/react` provides a thin wrapper over [@tanstack/react-query](https://react-query.tanstack.com/overview). It is required as a peer dependency.
@@ -136,7 +136,7 @@ The `createReactQueryHooks` function expects certain parameters to be passed via
 ```tsx title='pages/_app.tsx'
 import { withTRPC } from '@trpc/next';
 import { AppType } from 'next/dist/shared/lib/utils';
-import { AppRouter } from './api/trpc/[trpc]';
+import type { AppRouter } from './api/trpc/[trpc]';
 
 const MyApp: AppType = ({ Component, pageProps }) => {
   return <Component {...pageProps} />;

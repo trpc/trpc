@@ -5,17 +5,17 @@ import {
   QueryClient,
 } from '@tanstack/react-query';
 import {
+  AnyProcedure,
+  AnyQueryProcedure,
   AnyRouter,
-  OmitNeverKeys,
-  Procedure,
-  QueryProcedure,
+  Filter,
   inferHandlerInput,
   inferProcedureOutput,
 } from '@trpc/server';
 import { createProxy } from '@trpc/server/shared';
 import { CreateSSGHelpersOptions, createSSGHelpers } from './ssg';
 
-type DecorateProcedure<TProcedure extends Procedure<any>> = {
+type DecorateProcedure<TProcedure extends AnyProcedure> = {
   /**
    * @link https://react-query.tanstack.com/guides/prefetching
    */
@@ -44,15 +44,15 @@ type DecorateProcedure<TProcedure extends Procedure<any>> = {
 /**
  * @internal
  */
-export type DecoratedProcedureSSGRecord<TRouter extends AnyRouter> =
-  OmitNeverKeys<{
-    [TKey in keyof TRouter['_def']['record']]: TRouter['_def']['record'][TKey] extends AnyRouter
-      ? DecoratedProcedureSSGRecord<TRouter['_def']['record'][TKey]>
-      : // utils only apply to queries
-      TRouter['_def']['record'][TKey] extends QueryProcedure<any>
-      ? DecorateProcedure<TRouter['_def']['record'][TKey]>
-      : never;
-  }>;
+export type DecoratedProcedureSSGRecord<TRouter extends AnyRouter> = {
+  [TKey in keyof Filter<
+    TRouter['_def']['record'],
+    AnyRouter | AnyQueryProcedure
+  >]: TRouter['_def']['record'][TKey] extends AnyRouter
+    ? DecoratedProcedureSSGRecord<TRouter['_def']['record'][TKey]>
+    : // utils only apply to queries
+      DecorateProcedure<TRouter['_def']['record'][TKey]>;
+};
 
 type AnyDecoratedProcedure = DecorateProcedure<any>;
 

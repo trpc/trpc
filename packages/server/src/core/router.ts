@@ -1,5 +1,3 @@
-import { inferProcedureOutput } from '.';
-import { Filter } from '..';
 import { TRPCError } from '../error/TRPCError';
 import {
   DefaultErrorShape,
@@ -15,24 +13,24 @@ import { mergeWithoutOverrides } from './internals/mergeWithoutOverrides';
 import { omitPrototype } from './internals/omitPrototype';
 import { ProcedureCallOptions } from './internals/procedureBuilder';
 import {
+  AnyMutationProcedure,
   AnyProcedure,
-  MutationProcedure,
+  AnyQueryProcedure,
+  AnySubscriptionProcedure,
   Procedure,
   ProcedureArgs,
-  QueryProcedure,
-  SubscriptionProcedure,
 } from './procedure';
-import { ProcedureType, procedureTypes } from './types';
+import { ProcedureType, inferProcedureOutput, procedureTypes } from './types';
 
 /** @internal **/
-export type ProcedureRecord = Record<string, Procedure<any>>;
+export type ProcedureRecord = Record<string, AnyProcedure>;
 
-export type ProcedureRouterRecord = Record<string, Procedure<any> | AnyRouter>;
+export type ProcedureRouterRecord = Record<string, AnyProcedure | AnyRouter>;
 
 export interface ProcedureStructure {
-  queries: Record<string, QueryProcedure<any>>;
-  mutations: Record<string, MutationProcedure<any>>;
-  subscriptions: Record<string, SubscriptionProcedure<any>>;
+  queries: Record<string, AnyQueryProcedure>;
+  mutations: Record<string, AnyMutationProcedure>;
+  subscriptions: Record<string, AnySubscriptionProcedure>;
   procedures: ProcedureRecord;
 }
 
@@ -58,32 +56,23 @@ export interface RouterDef<
   _meta: TMeta;
   errorFormatter: ErrorFormatter<TContext, TErrorShape>;
   transformer: CombinedDataTransformer;
-  // FIXME this is slow:
-  // - I think this has to go & be replaced by something by only using `TRecord` without `& SimpleFlatten...`
-  // - Potentially, we have a `legacyProcedures` record where we only register the old things that are available by string path
   procedures: TRecord;
-  /**
-   * V9 procedures
-   * @deprecated
-   */
-  legacy: {};
-  routers: Filter<TRecord, Router<any>>;
   record: TRecord;
   /**
-   * FIXME remove?
+   * V9 queries
    * @deprecated
    */
-  subscriptions: Filter<TRecord, SubscriptionProcedure<any> & { _old: true }>;
+  queries: {};
   /**
-   * FIXME remove?
+   * V9 mutations
    * @deprecated
    */
-  queries: Filter<TRecord, QueryProcedure<any> & { _old: true }>;
+  mutations: {};
   /**
-   * FIXME remove?
+   * V9 subscriptions
    * @deprecated
    */
-  mutations: Filter<TRecord, MutationProcedure<any> & { _old: true }>;
+  subscriptions: {};
 }
 
 export type AnyRouterDef<TContext = any> = RouterDef<TContext, any, any, any>;
@@ -91,7 +80,7 @@ export type AnyRouterDef<TContext = any> = RouterDef<TContext, any, any, any>;
 /**
  * @internal
  */
-export type inferHandlerInput<TProcedure extends Procedure<any>> =
+export type inferHandlerInput<TProcedure extends AnyProcedure> =
   TProcedure extends Procedure<infer TDef>
     ? undefined extends TDef['_input_in'] // ? is input optional
       ? unknown extends TDef['_input_in'] // ? is input unset
@@ -103,7 +92,7 @@ export type inferHandlerInput<TProcedure extends Procedure<any>> =
 /**
  * @internal
  */
-type inferHandlerFn<TProcedures extends Record<string, Procedure<any>>> = <
+type inferHandlerFn<TProcedures extends ProcedureRecord> = <
   TProcedure extends TProcedures[TPath],
   TPath extends keyof TProcedures & string,
 >(
@@ -111,11 +100,9 @@ type inferHandlerFn<TProcedures extends Record<string, Procedure<any>>> = <
   ...args: inferHandlerInput<TProcedure>
 ) => Promise<inferProcedureOutput<TProcedure>>;
 
-type DecorateProcedure<TProcedure extends Procedure<any>> = (
+type DecorateProcedure<TProcedure extends AnyProcedure> = (
   input: ProcedureArgs<TProcedure['_def']>[0],
 ) => Promise<TProcedure['_def']['_output_out']>;
-
-type assertProcedure<T> = T extends Procedure<any> ? T : never;
 
 /**
  * @internal
@@ -123,7 +110,9 @@ type assertProcedure<T> = T extends Procedure<any> ? T : never;
 type DecoratedProcedureRecord<TProcedures extends ProcedureRouterRecord> = {
   [TKey in keyof TProcedures]: TProcedures[TKey] extends AnyRouter
     ? DecoratedProcedureRecord<TProcedures[TKey]['_def']['record']>
-    : DecorateProcedure<assertProcedure<TProcedures[TKey]>>;
+    : TProcedures[TKey] extends AnyProcedure
+    ? DecorateProcedure<TProcedures[TKey]>
+    : never;
 };
 
 /**
@@ -196,6 +185,17 @@ const emptyRouter = {
 };
 
 /**
+ * Reserved words that can't be used as router or procedure names
+ */
+const reservedWords = [
+  /**
+   * Then is a reserved word because otherwise we can't return a promise that returns a Proxy
+   * since JS will think that `.then` is something that exists
+   */
+  'then',
+];
+
+/**
  *
  * @internal
  */
@@ -215,7 +215,17 @@ export function createRouterFactory<TConfig extends RootConfig>(
     >
   > &
     TProcRouterRecord {
-    const routerProcedures: Record<string, Procedure<any>> = omitPrototype({});
+    const reservedWordsUsed = new Set(
+      Object.keys(opts).filter((v) => reservedWords.includes(v)),
+    );
+    if (reservedWordsUsed.size > 0) {
+      throw new Error(
+        'Reserved words used in `router({})` call: ' +
+          Array.from(reservedWordsUsed).join(', '),
+      );
+    }
+
+    const routerProcedures: ProcedureRecord = omitPrototype({});
     function recursiveGetPaths(procedures: ProcedureRouterRecord, path = '') {
       for (const [key, procedureOrRouter] of Object.entries(procedures ?? {})) {
         const newPath = `${path}${key}`;
@@ -243,7 +253,6 @@ export function createRouterFactory<TConfig extends RootConfig>(
 
     const _def: AnyRouterDef<TConfig['ctx']> = {
       router: true,
-      legacy: {},
       procedures: {},
       ...emptyRouter,
       ...result,
@@ -256,9 +265,6 @@ export function createRouterFactory<TConfig extends RootConfig>(
         .reduce((acc, [key, val]) => ({ ...acc, [key]: val }), {}),
       subscriptions: Object.entries(result.procedures || {})
         .filter((pair) => (pair[1] as any)._def.subscription)
-        .reduce((acc, [key, val]) => ({ ...acc, [key]: val }), {}),
-      routers: Object.entries(result.procedures || {})
-        .filter((pair) => (pair[1] as any)._def._router)
         .reduce((acc, [key, val]) => ({ ...acc, [key]: val }), {}),
     };
 

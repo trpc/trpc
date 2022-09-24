@@ -1,7 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import {
-  createTRPCClient,
-  createTRPCClientProxy,
+  createTRPCProxyClient,
   createWSClient,
   httpLink,
   splitLink,
@@ -21,7 +20,7 @@ globalAny.WebSocket = ws;
 const wsClient = createWSClient({
   url: `ws://localhost:2022`,
 });
-const client = createTRPCClient<AppRouter>({
+const trpc = createTRPCProxyClient<AppRouter>({
   links: [
     // call subscriptions through websockets and the rest over http
     splitLink({
@@ -37,16 +36,15 @@ const client = createTRPCClient<AppRouter>({
     }),
   ],
 });
-const proxy = createTRPCClientProxy(client);
 
 async function main() {
-  const helloResponse = await proxy.greeting.greeting.query({
+  const helloResponse = await trpc.greeting.hello.query({
     name: 'world',
   });
 
   console.log('helloResponse', helloResponse);
 
-  const createPostRes = await proxy.post.createPost.mutate({
+  const createPostRes = await trpc.post.createPost.mutate({
     title: 'hello world',
     text: 'check out https://tRPC.io',
   });
@@ -54,7 +52,7 @@ async function main() {
 
   let count = 0;
   await new Promise<void>((resolve) => {
-    const subscription = proxy.post.randomNumber.subscribe(undefined, {
+    const subscription = trpc.post.randomNumber.subscribe(undefined, {
       onData(data) {
         // ^ note that `data` here is inferred
         console.log('received', data);

@@ -12,7 +12,7 @@ const db = {
   ],
 };
 
-const t = initTRPC()();
+const t = initTRPC.create();
 
 const postRouter = t.router({
   createPost: t.procedure

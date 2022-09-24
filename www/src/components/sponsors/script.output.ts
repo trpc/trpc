@@ -121,7 +121,7 @@ export const sponsors = [
   },
   {
     "name": "Illarion Koperski",
-    "imgSrc": "https://avatars.githubusercontent.com/u/5012724?u=10dd42408f3b4e059987f01232c8ce34854ef5fc&v=4",
+    "imgSrc": "https://avatars.githubusercontent.com/u/5012724?u=f6f510f226382df2ebcea4a1935aaa94eacfcda4&v=4",
     "monthlyPriceInDollars": 5,
     "link": "https://www.illarionvk.com",
     "privacyLevel": "PUBLIC",
@@ -399,15 +399,6 @@ export const sponsors = [
     "createdAt": 1659057378000
   },
   {
-    "name": "Dyaa",
-    "imgSrc": "https://avatars.githubusercontent.com/u/4283185?u=c0eefe0bfb37b34dedb7765ba2a061cfac30be55&v=4",
-    "monthlyPriceInDollars": 15,
-    "link": "https://dyaa.me",
-    "privacyLevel": "PUBLIC",
-    "login": "dyaa",
-    "createdAt": 1659447497000
-  },
-  {
     "name": "Francis Provost",
     "imgSrc": "https://avatars.githubusercontent.com/u/6840361?v=4",
     "monthlyPriceInDollars": 10,
@@ -442,5 +433,59 @@ export const sponsors = [
     "privacyLevel": "PUBLIC",
     "login": "fanvue",
     "createdAt": 1661242015000
+  },
+  {
+    "name": "Miguel Ángel Durán",
+    "imgSrc": "https://avatars.githubusercontent.com/u/1561955?u=9ebfec769d2505d88ee746b7389353c23312bca1&v=4",
+    "monthlyPriceInDollars": 50,
+    "link": "https://midu.dev",
+    "privacyLevel": "PUBLIC",
+    "login": "midudev",
+    "createdAt": 1661889789000
+  },
+  {
+    "name": "Malcolm Still",
+    "imgSrc": "https://avatars.githubusercontent.com/u/2567177?u=9d4667a85a4e56457786b9028b3a551574e07120&v=4",
+    "monthlyPriceInDollars": 10,
+    "link": "https://blog.mstill.dev",
+    "privacyLevel": "PUBLIC",
+    "login": "malcolmstill",
+    "createdAt": 1662115384000
+  },
+  {
+    "name": "Thomas Ballinger",
+    "imgSrc": "https://avatars.githubusercontent.com/u/458879?u=4b045ac75d721b6ac2b42a74d7d37f61f0414031&v=4",
+    "monthlyPriceInDollars": 10,
+    "link": "http://ballingt.com/",
+    "privacyLevel": "PUBLIC",
+    "login": "thomasballinger",
+    "createdAt": 1662563270000
+  },
+  {
+    "name": "Oliver Dixon",
+    "imgSrc": "https://avatars.githubusercontent.com/u/6940726?u=8a48c9f7acb576505efbb87a8093552ce3f0d1e5&v=4",
+    "monthlyPriceInDollars": 10,
+    "link": "https://polydelic.com",
+    "privacyLevel": "PUBLIC",
+    "login": "ollydixon",
+    "createdAt": 1662645977000
+  },
+  {
+    "name": "Lars Karbo",
+    "imgSrc": "https://avatars.githubusercontent.com/u/10865165?v=4",
+    "monthlyPriceInDollars": 10,
+    "link": "https://larskarbo.no",
+    "privacyLevel": "PUBLIC",
+    "login": "larskarbo",
+    "createdAt": 1662896773000
+  },
+  {
+    "name": "Habib Kadiri",
+    "imgSrc": "https://avatars.githubusercontent.com/u/60525087?u=272c35c9792f781e536fd14c7e48c1052d54ddb5&v=4",
+    "monthlyPriceInDollars": 10,
+    "link": "https://github.com/changwo",
+    "privacyLevel": "PUBLIC",
+    "login": "changwo",
+    "createdAt": 1663581418000
   }
 ] as const

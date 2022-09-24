@@ -1,15 +1,16 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import './___packages';
-import {
-  TRPCWebSocketClient,
-  WebSocketClientOptions,
-  createTRPCClientProxy,
-  createWSClient,
-} from '@trpc/client/src';
-import { CreateTRPCClientOptions, createTRPCClient } from '@trpc/client/src';
 import AbortController from 'abort-controller';
 import fetch from 'node-fetch';
 import ws from 'ws';
+import {
+  TRPCWebSocketClient,
+  WebSocketClientOptions,
+  createTRPCClient,
+  createTRPCClientProxy,
+  createWSClient,
+  httpBatchLink,
+} from '../../client/src';
+import { WithTRPCConfig } from '../../next/src';
 import { AnyRouter as AnyNewRouter } from '../src';
 import {
   CreateHTTPHandlerOptions,
@@ -27,12 +28,12 @@ export function routerToServerAndClientNew<TRouter extends AnyNewRouter>(
     wssServer?: Partial<WSSHandlerOptions<TRouter>>;
     wsClient?: Partial<WebSocketClientOptions>;
     client?:
-      | Partial<CreateTRPCClientOptions<TRouter>>
+      | Partial<WithTRPCConfig<TRouter>>
       | ((opts: {
           httpUrl: string;
           wssUrl: string;
           wsClient: TRPCWebSocketClient;
-        }) => Partial<CreateTRPCClientOptions<AnyNewRouter>>);
+        }) => Partial<WithTRPCConfig<AnyNewRouter>>);
   },
 ) {
   // http
@@ -65,8 +66,8 @@ export function routerToServerAndClientNew<TRouter extends AnyNewRouter>(
     url: wssUrl,
     ...opts?.wsClient,
   });
-  const trpcClientOptions: CreateTRPCClientOptions<typeof router> = {
-    url: httpUrl,
+  const trpcClientOptions: WithTRPCConfig<typeof router> = {
+    links: [httpBatchLink({ url: httpUrl })],
     ...(opts?.client
       ? typeof opts.client === 'function'
         ? opts.client({ httpUrl, wssUrl, wsClient })
@@ -107,7 +108,7 @@ export async function waitMs(ms: number) {
 
 type Constructor<T extends {} = {}> = new (...args: any[]) => T;
 
-export async function waitError<TError = Error>(
+export async function waitError<TError extends Error = Error>(
   /**
    * Function callback or promise that you expect will throw
    */

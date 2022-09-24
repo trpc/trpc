@@ -12,7 +12,7 @@ const ee = new EventEmitter();
 
 const ctx = konn()
   .beforeEach(() => {
-    const t = initTRPC()({
+    const t = initTRPC.create({
       errorFormatter({ shape }) {
         return {
           ...shape,

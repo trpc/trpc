@@ -42,8 +42,10 @@ tRPC defines a list of error codes that each represent a different type of error
 | PRECONDITION_FAILED   | Access to the target resource has been denied.                                                                          | 412       |
 | PAYLOAD_TOO_LARGE     | Request entity is larger than limits defined by server.                                                                 | 413       |
 | METHOD_NOT_SUPPORTED  | The server knows the request method, but the target resource doesn't support this method.                               | 405       |
+| TOO_MANY_REQUESTS     | The rate limit has been exceeded or too many requests are being sent to the server.                                     | 429       |
 | CLIENT_CLOSED_REQUEST | Access to the resource has been denied.                                                                                 | 499       |
 | INTERNAL_SERVER_ERROR | An unspecified error occurred.                                                                                          | 500       |
+
 
 ## Throwing errors
 
@@ -54,9 +56,9 @@ For example, throwing this error:
 ```ts title='server.ts'
 import { initTRPC } from '@trpc/server';
 
-const t = initTRPC()();
+const t = initTRPC.create();
 
-const appRouter = trpc.router({
+const appRouter = t.router({
   hello: t.procedure.query(() => {
     throw new trpc.TRPCError({
       code: 'INTERNAL_SERVER_ERROR',
@@ -64,8 +66,8 @@ const appRouter = trpc.router({
       // optional: pass the original error to retain stack trace
       cause: theError,
     });
-  })
-})
+  }),
+});
 
 // [...]
 ```

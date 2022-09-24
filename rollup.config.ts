@@ -38,7 +38,7 @@ export const INPUTS: Record<typeof PACKAGES[number], string[]> = {
     'src/links/loggerLink.ts',
     'src/links/wsLink.ts',
   ],
-  react: ['src/index.ts', 'src/ssg/index.ts'],
+  react: ['src/index.ts', 'src/ssg/index.ts', 'src/shared/index.ts'],
   next: ['src/index.ts'],
 };
 
@@ -92,6 +92,9 @@ function types({ input, packageDir }: Options): RollupOptions {
       multiInput({ relative: path.resolve(packageDir, 'src/') }),
       externals({
         packagePath: path.resolve(packageDir, 'package.json'),
+        deps: true,
+        devDeps: true,
+        peerDeps: true,
       }),
       typescript({
         tsconfig: path.resolve(packageDir, 'tsconfig.build.json'),
@@ -128,6 +131,7 @@ function lib({ input, packageDir }: Options): RollupOptions {
         extensions,
       }),
       swc({
+        tsconfig: false,
         jsc: {
           target: 'es2020',
           externalHelpers: true,

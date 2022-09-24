@@ -1093,7 +1093,9 @@
       "avatar_url": "https://avatars.githubusercontent.com/u/2925395?v=4",
       "profile": "https://colelawrence.com",
       "contributions": [
-        "bug"
+        "bug",
+        "code",
+        "test"
       ]
     },
     {
@@ -1103,6 +1105,24 @@
       "profile": "https://grubba.vercel.app/",
       "contributions": [
         "code"
+      ]
+    },
+    {
+      "login": "oscartbeaumont",
+      "name": "Oscar Beaumont",
+      "avatar_url": "https://avatars.githubusercontent.com/u/21004798?v=4",
+      "profile": "https://otbeaumont.me",
+      "contributions": [
+        "question"
+      ]
+    },
+    {
+      "login": "anthonyshew",
+      "name": "Anthony Shew",
+      "avatar_url": "https://avatars.githubusercontent.com/u/35677084?v=4",
+      "profile": "https://inthezone.dev",
+      "contributions": [
+        "doc"
       ]
     }
   ],

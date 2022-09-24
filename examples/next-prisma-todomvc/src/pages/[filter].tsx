@@ -59,7 +59,7 @@ function ListItem({ task }: { task: Task }) {
   const wrapperRef = useRef(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const utils = trpc.proxy.useContext();
+  const utils = trpc.useContext();
   const [text, setText] = useState(task.text);
   const [completed, setCompleted] = useState(task.completed);
   useEffect(() => {
@@ -69,7 +69,7 @@ function ListItem({ task }: { task: Task }) {
     setCompleted(task.completed);
   }, [task.completed]);
 
-  const editTask = trpc.proxy.todo.edit.useMutation({
+  const editTask = trpc.todo.edit.useMutation({
     async onMutate({ id, data }) {
       await utils.todo.all.cancel();
       const allTasks = utils.todo.all.getData();
@@ -88,7 +88,7 @@ function ListItem({ task }: { task: Task }) {
       );
     },
   });
-  const deleteTask = trpc.proxy.todo.delete.useMutation({
+  const deleteTask = trpc.todo.delete.useMutation({
     async onMutate() {
       await utils.todo.all.cancel();
       const allTasks = utils.todo.all.getData();
@@ -171,11 +171,11 @@ function ListItem({ task }: { task: Task }) {
 export default function TodosPage({
   filter,
 }: InferGetStaticPropsType<typeof getStaticProps>) {
-  const allTasks = trpc.proxy.todo.all.useQuery(undefined, {
+  const allTasks = trpc.todo.all.useQuery(undefined, {
     staleTime: 3000,
   });
-  const utils = trpc.proxy.useContext();
-  const addTask = trpc.proxy.todo.add.useMutation({
+  const utils = trpc.useContext();
+  const addTask = trpc.todo.add.useMutation({
     async onMutate({ text }) {
       await utils.todo.all.cancel();
       const tasks = allTasks.data ?? [];
@@ -191,7 +191,7 @@ export default function TodosPage({
     },
   });
 
-  const clearCompleted = trpc.proxy.todo.clearCompleted.useMutation({
+  const clearCompleted = trpc.todo.clearCompleted.useMutation({
     async onMutate() {
       await utils.todo.all.cancel();
       const tasks = allTasks.data ?? [];

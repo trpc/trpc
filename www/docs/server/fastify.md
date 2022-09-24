@@ -39,7 +39,7 @@ The best way to start with the Fastify adapter is to take a look at the example 
 ### Install dependencies
 
 ```bash
-yarn add @trpc/server fastify zod
+yarn add @trpc/server@next fastify zod
 ```
 
 > [Zod](https://github.com/colinhacks/zod) isn't a required dependency, but it's used in the sample router below.
@@ -65,7 +65,7 @@ type User = {
 
 const users: Record<string, User> = {};
 
-export const t = initTRPC()();
+export const t = initTRPC.create();
 
 export const appRouter = t.router({
   getUserById: t.procedure.input(z.string()).query(({ input }) => {
@@ -139,7 +139,7 @@ server.register(fastifyTRPCPlugin, {
 
 (async () => {
   try {
-    await server.listen(3000);
+    await server.listen({ port: 3000 });
   } catch (err) {
     server.log.error(err);
     process.exit(1);
@@ -184,7 +184,7 @@ Edit the `router.ts` file created in the previous steps and add the following co
 import { initTRPC } from '@trpc/server';
 import { observable } from '@trpc/server/observable';
 
-const t = initTRPC()();
+const t = initTRPC.create();
 
 export const appRouter = t.router({
   randomNumber: t.procedure.subscription(() => {

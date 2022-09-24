@@ -1,23 +1,26 @@
 ---
 id: migrate-from-v9-to-v10
-title: Migrate from V9 to V10
-sidebar_label: Migrate from V9 to V10
+title: Migrate from v9 to v10
+sidebar_label: Migrate from v9 to v10
 slug: /migrate-from-v9-to-v10
 ---
 
-> Are you on V9 and are worried about the migration path and massive breaking changes? Don't worry, we got your back!
->
-> We have an **interopability mode** for old routers which allows you to easily incrementally adopt V10.
+:::info Is v10 ready for production?
+tRPC v10 is **ready for production** & can safely be used today. However, we will do changes to the API before we do a final release where you'll have to figure out the migration path between the releases on your own.
+:::
+
+Under the hood of version 10, we are unlocking performance improvements, bringing you quality of life enhancements, and creating room for us to build new features in the future.
+
+tRPC v10 features a compatibility layer for users coming from v9. `.interop()` allows you to incrementally adopt v10 so that you can continue building the rest of your project while still enjoying v10's new features.
 
 ## Summary of changes
 
-In a gist, what has changed?
-
 ### The `t` variable
 
-> If you don't like the variable name `t`, you can call it whatever you want
+> - If you don't like the variable name `t`, you can call it whatever you want
+> - You should create your root `t`-variable **exactly once** per application
 
-The way you initialize tRPC on the server has been update, we now create a root `t` variable that contains the root information about your app:
+The way you initialize tRPC on the server has been updated, we now create a root `t` variable that contains the root information about your app:
 
 - [Context](context)
 - [Meta data](metadata)
@@ -29,8 +32,7 @@ The way the `t` variable is defined is simply like this:
 ```ts title='/src/server/trpc.ts'
 import { initTRPC } from '@trpc/server';
 
-// Beware of the double `()()`
-export const t = initTRPC()();
+export const t = initTRPC.create();
 ```
 
 Here's a full example of how the `t` variable may look like with a data-transformer, openapi metadata and error formatter:
@@ -55,31 +57,30 @@ interface Meta {
   };
 }
 
-export const t = initTRPC<{
-  ctx: Context;
-  meta: Meta;
-}>()({
-  errorFormatter({ shape, error }) {
-    return {
-      ...shape,
-      data: {
-        ...shape.data,
-        zodError:
-          error.code === 'BAD_REQUEST' &&
-          error.cause instanceof ZodError
-            ? error.cause.flatten()
-            : null,
-      },
-    };
-  },
-  transformer: superjson,
-})
+export const t = initTRPC
+  .context<Context>()
+  .meta<Meta>()
+  .create({
+    errorFormatter({ shape, error }) {
+      return {
+        ...shape,
+        data: {
+          ...shape.data,
+          zodError:
+            error.code === 'BAD_REQUEST' && error.cause instanceof ZodError
+              ? error.cause.flatten()
+              : null,
+        },
+      };
+    },
+    transformer: superjson,
+  });
 ```
 
 ### Defining routers & procedures
 
 ```ts
-// OLD:
+// v9:
 const appRouter = trpc.router()
   .query('greeting', {
     input: z.string(),
@@ -88,7 +89,7 @@ const appRouter = trpc.router()
     },
   });
 
-// NEW:
+// v10:
 const appRouter = t.router({
   greeting: t.procedure
     .input(z.string())
@@ -170,13 +171,21 @@ const appRouter = t.router({
 });
 ```
 
-## Migration path for the 95%
+## Migrating from v9
 
-If you are migrating from V9->V10, the transition is pretty simple for the 95% use-cases.
+:::info
+There are [a few features that are not supported by `.interop()`](#limitations-of-interop). We expect nearly all of our users to be able to use `.interop()` to migrate their server side code in only a few minutes. If you are discovering that `.interop()` is not working correctly for you, be sure to [check here](#limitations-of-interop).
+:::
 
-**1. Add `.interop()`**
+You may choose to start writing new procedures using the v10 syntax - but keep your v9 procedures in place for now. Incremental adoption is only a matter of merging the two routers together.
 
-All you'll need to do is to add an `.interop()` at the end of your `appRouter`. Example: https://github.com/trpc/trpc/blob/ad25239cefd972494bfff49a869b9432fd2f403f/examples/.interop/next-prisma-starter/src/server/routers/_app.ts#L37
+Turning your v9 router into a v10 router only takes 10 characters. Add `.interop()` to the end of your v9 router...and you're done with your server code!
+
+We will create a simple hello world v10 router to demonstrate interoperability mode. If you have not learned how to create a more complex tRPC v10 router yet, we encourage you to check out the rest of the documentation.
+
+### 1. Enable `interop()` on a v9 router
+
+All you'll need to do is to add an `.interop()` at the end of your `appRouter`. [Example](https://github.com/trpc/trpc/blob/ad25239cefd972494bfff49a869b9432fd2f403f/examples/.interop/next-prisma-starter/src/server/routers/_app.ts#L37).
 
 ```diff title='src/server/routers/_app.ts'
   const appRouter = trpc
@@ -186,17 +195,13 @@ All you'll need to do is to add an `.interop()` at the end of your `appRouter`. 
   export type AppRouter = typeof appRouter;
 ```
 
-When you've done this, you can start migrating to the new way of doing things.
-
-**2. Create the `t`-object**
+### 2. Create the `t`-object
 
 ```ts title='src/server/trpc.ts'
 import superjson from 'superjson';
 import { Context } from './context';
 
-export const t = initTRPC<{
-  ctx: Context;
-}>()({
+export const t = initTRPC.context<Context>().create({
   // Optional:
   transformer: superjson,
   // Optional:
@@ -211,67 +216,89 @@ export const t = initTRPC<{
 });
 ```
 
-**3. Create a new `appRouter`**
+### 3. Create a new `appRouter`
+
+:::tip
+Be careful of using procedures that will end up having the same caller name! You will run into issues if a path in your legacy router matches a path in your new router.
+:::tip
+
+Both sets of procedures will now be available for your client. You will now need to [visit your client code to update your callers to the v10 syntax](#client-package-changes).
 
 1. Rename your old `appRouter` to `legacyRouter`
 2. Create a new app router:
 
-```diff title="src/server/routers/_app.ts"
-  import * as trpc from "@trpc/server";
-+ import { t } from "./trpc";
+```ts twoslash title="src/server/routers/_app.ts"
+// @filename: trpc.ts
+import { initTRPC } from '@trpc/server';
+export const t = initTRPC.create();
 
-- const appRouter = trpc
-+ const legacyRouter = trpc
-    .router()
-    /* [...] */
-    .interop();
+// @filename: _app.ts
+// ---cut---
+import * as trpc from '@trpc/server';
+import { t } from './trpc';
 
-+ export const appRouter = t.mergeRouters(legacyRouter);
-  export type AppRouter = typeof appRouter;
-```
+// Renamed from `appRouter`
+const legacyRouter = trpc
+  .router()
+  /* [...] */
+  .interop();
 
-3. See if your app still builds
-4. Create a test router and merge it in:
-
-```ts title="/src/routers/greeting.ts"
-const greetingRouter = t.router({
-  greeting: t.procedure.query(() => 'world'),
+const mainRouter = t.router({
+  greeting: t.procedure.query(() => 'hello tRPC v10!'),
 });
+
+// Merges the v9 router with v10 router
+export const appRouter = t.mergeRouters(legacyRouter, mainRouter);
+
+export type AppRouter = typeof appRouter;
 ```
 
-```ts title="src/server/routers/_app.ts"
-import { greetingRouter } from './greeting';
+### 4. Use it in your client
 
-/* [...] */
+```ts
+// Raw client:
+client.proxy.greeting.query();
 
-export const appRouter = t.mergeRouters(legacyRouter, greetingRouter);
+// React:
+trpc.proxy.greeting.useQuery();
 ```
 
-### Limitations of interopability mode
+## Limitations of interop
 
 Any procedures defined using `t.procedure` must be called on the client using the [new way of calling procedures](#calling-procedures). What this means is that when you migrate the `legacyRouter` over to be a "v10-`t.router`", you'll have to update the frontend-usage of this router to use the new way of calling procedures.
 
-## For the remaining 5%
-
 ### Subscriptions
 
-🚧
+We have changed the API of Subscriptions where subscriptions need to return an `observable`-instance. See [subscriptions docs](subscriptions).
 
-### Custom [Links](links)
+> 🚧 Feel free to contribute to improve this section
 
-🚧
+### Custom HTTP options
 
-## Package Specific Changes
+See [HTTP-specific options moved from `TRPCClient` to links](#http-specific-options-moved-from-trpcclient-to-links).
+
+### Custom Links
+
+See the [Links documentation](links).
+
+> 🚧 Feel free to contribute to improve this section
+
+## Client Package Changes
+
+v10 also brings changes to the client side of your application. After making a few key changes, you'll unlock a few key quality of life changes:
+
+- Jump to server definitions straight from your client
+- Rename routers or procedures straight from the client
 
 ### `@trpc/react`
 
 #### Upgrade of `react-query`
 
-We've upgraded `peerDependencies` from `react-query@^3` to `@tanstack/react-query@^4`, [see their migration guide](https://tanstack.com/query/v4/docs/guides/migrating-to-react-query-4).
+We've upgraded `peerDependencies` from `react-query@^3` to `@tanstack/react-query@^4`. Because our client hooks are only a thin wrapper around react-query, we encourage you to [visit their migration guide](https://tanstack.com/query/v4/docs/guides/migrating-to-react-query-4) for more details around our React hooks implementation.
 
 #### tRPC-specific options on hooks moved to `trpc`
 
-In order to avoid mix-up with the built-in react-query properties, we have moved all of the tRPC-specific options to under a property called `trpc`.
+To avoid collisions and confusion with any built-in `react-query` properties, we have moved all of the tRPC options to a property called `trpc`. This namespace brings clarity to options that are tRPC specific and ensures that we won't collide with `react-query` in the future.
 
 ```tsx
 // Before
@@ -296,37 +323,6 @@ trpc.post.byId.useQuery('1', {
 });
 ```
 
-### `@trpc/next`
-
-#### `setupNext()` - Optional DX Improvement
-
-Setting up tRPC for Next.js is now easier than ever! Here's all you need to get going:
-
-```ts title="utils/trpc.ts"
-import { setupTRPC } from '@trpc/next';
-import type { AppRouter } from 'routers/_app';
-
-export const trpc = setupTRPC<AppRouter>({
-  config() {
-    return {
-      url: '/api/trpc',
-    };
-  },
-});
-```
-
-```tsx title="pages/_app.tsx"
-import { trpc } from '../utils/trpc';
-
-const MyApp = ({ Component, pageProps }) => {
-  return <Component {...pageProps} />;
-};
-
-export default trpc.withTRPC(MyApp);
-```
-
-As you can see, we no longer have to setup the React-Query hooks and tRPC context provider separately. Previously we setup the tPRC provider in `_app.tsx` and the React-Query hooks in `utils/trpc.ts` separately. Now, define the `trpc` object once and it will contain all you need for your frontend application.
-
 ### `@trpc/client`
 
 #### Aborting procedures
@@ -341,12 +337,59 @@ const helloQuery = client.greeting.query('KATT', { signal: ac.signal });
 ac.abort();
 ```
 
-### [...]
+#### HTTP-specific options moved from `TRPCClient` to links
+
+Previously, you passed the stuff like HTTP-headers straight onto your `createTRPCClient()`-request, but since tRPC is technically not tied to HTTP itself, we've moved these from the `TRPCClient` to the `httpLink`/`httpBatchLink`.
+
+```ts
+// before:
+import { createTRPCClient } from '@trpc/client';
+
+const client = createTRPCClient({
+  url: '...',
+  fetch: myFetchPonyfill,
+  AbortController: myAbortControllerPonyfill,
+  headers() {
+    return {
+      'x-foo': 'bar',
+    };
+  },
+});
+
+// after:
+import { createTRPCProxyClient, httpBatchLink } from '@trpc/client';
+
+const client = createTRPCProxyClient({
+  links: [
+    httpBatchLink({
+      url: '...',
+      fetch: myFetchPonyfill,
+      AbortController: myAbortControllerPonyfill,
+      headers() {
+        return {
+          'x-foo': 'bar',
+        };
+      },
+    })
+  ]
+});
+```
 
 ## Extras
 
+### Removal of the teardown option
+
+The teardown option has been removed and is no longer available.
+
+### `createContext` return type
+
+The `createContext` function can no longer return either `null` or `undefined`. If you weren't using a custom context, you'll have to return an empty object:
+
+```diff
+- createContext: () => null,
++ createContext: () => ({}),
+```
+
 ### Migrate custom error formatters
 
-🚧
-
-### [...]
+You will need to move the contents of your `formatError()` into the `t`-object, see the [Error Formatting docs](error-formatting).

@@ -9,8 +9,8 @@ import {
   RefetchOptions,
   RefetchQueryFilters,
   SetDataOptions,
+  Updater,
 } from '@tanstack/react-query';
-import { Updater } from '@tanstack/react-query/build/types/packages/query-core/src/utils';
 import { TRPCClient, TRPCClientError, TRPCRequestOptions } from '@trpc/client';
 import type {
   AnyRouter,
@@ -31,23 +31,49 @@ export interface TRPCFetchInfiniteQueryOptions<TInput, TError, TOutput>
 /** @internal */
 export type SSRState = false | 'prepass' | 'mounting' | 'mounted';
 
-/** @internal */
-export interface TRPCContextState<
-  TRouter extends AnyRouter,
-  TSSRContext = undefined,
-> {
+export interface TRPCContextProps<TRouter extends AnyRouter, TSSRContext> {
+  /**
+   * The react-query `QueryClient`
+   */
   queryClient: QueryClient;
+  /**
+   * The `TRPCClient`
+   */
   client: TRPCClient<TRouter>;
-  ssrContext: TSSRContext | null;
+  /**
+   * The SSR context when server-side rendering
+   * @default null
+   */
+  ssrContext?: TSSRContext | null;
   /**
    * State of SSR hydration.
    * - `false` if not using SSR.
    * - `prepass` when doing a prepass to fetch queries' data
    * - `mounting` before TRPCProvider has been rendered on the client
    * - `mounted` when the TRPCProvider has been rendered on the client
+   * @default false
    */
-  ssrState: SSRState;
+  ssrState?: SSRState;
+  /**
+   * Abort loading query calls when unmounting a component - usually when navigating to a new page
+   * @default false
+   */
+  abortOnUnmount?: boolean;
+}
 
+export const contextProps: (keyof TRPCContextProps<any, any>)[] = [
+  'queryClient',
+  'client',
+  'ssrContext',
+  'ssrState',
+  'abortOnUnmount',
+];
+
+/** @internal */
+export interface TRPCContextState<
+  TRouter extends AnyRouter,
+  TSSRContext = undefined,
+> extends Required<TRPCContextProps<TRouter, TSSRContext>> {
   /**
    * @link https://react-query.tanstack.com/guides/prefetching
    */
@@ -163,7 +189,7 @@ export interface TRPCContextState<
     TOutput extends inferProcedureOutput<TRouter['_def']['queries'][TPath]>,
   >(
     pathAndInput: [TPath, TInput?],
-    updater: Updater<TOutput | undefined, TOutput>,
+    updater: Updater<TOutput | undefined, TOutput | undefined>,
     options?: SetDataOptions,
   ): void;
   /**
@@ -185,7 +211,10 @@ export interface TRPCContextState<
     TOutput extends inferProcedureOutput<TRouter['_def']['queries'][TPath]>,
   >(
     pathAndInput: [TPath, TInput?],
-    updater: Updater<InfiniteData<TOutput> | undefined, InfiniteData<TOutput>>,
+    updater: Updater<
+      InfiniteData<TOutput> | undefined,
+      InfiniteData<TOutput> | undefined
+    >,
     options?: SetDataOptions,
   ): void;
   /**

@@ -37,8 +37,7 @@ The AWS Lambda adapter is supported for API Gateway Rest API(v1) and HTTP API(v2
 ### 1. Install deps
 
 ```bash
-yarn add @trpc/server
-
+yarn add @trpc/server@next
 ```
 
 ### 2. Create a tRPC router
@@ -49,7 +48,7 @@ Implement your tRPC router. A sample router is given below:
 import { initTRPC } from '@trpc/server';
 import { z } from 'zod';
 
-export const t = initTRPC()();
+export const t = initTRPC.create();
 
 const appRouter = t.router({
   getUser: t.procedure.input(z.string()).query((req) => {

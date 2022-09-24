@@ -1,173 +1,42 @@
 ---
 id: router
-title: Define Router & Procedures
-sidebar_label: Define Router & Procedures
+title: Define Routers
+sidebar_label: Define Routers
 slug: /router
 ---
 
-:::info
+## Initialize tRPC
 
-- A procedure can be viewed as the equivalent of a REST-endpoint.
-- There's no internal difference between queries and mutations apart from semantics.
-- Defining router is the same for queries, mutations, and subscription with the exception that subscriptions need to return an `observable` instance.
 
-:::
+- If you don't like the variable name `t`, you can call it whatever you want
+- You should create your root `t`-variable **exactly once** per application
+- You can also create the `t`-variable with a [context](context), [metadata](metadata), a [error formatter](error-formatting), or a [data transformer](data-transformers).
 
-## Input validation
 
-tRPC works out-of-the-box with yup/superstruct/zod/myzod/custom validators/[..] - [see test suite](https://github.com/trpc/trpc/blob/main/packages/server/test/validators.test.ts)
-
-### Example without input
-
-```tsx
+```ts twoslash title='server/trpc.ts'
+// @filename: trpc.ts
+// ---cut---
 import { initTRPC } from '@trpc/server';
 
-export const t = initTRPC()();
-
-export const appRouter = t.router({
-  // Create procedure at path 'hello'
-  hello: t.query(() => {
-    return {
-      greeting: 'hello world',
-    };
-  }),
-});
+export const t = initTRPC.create();
 ```
 
-### With [Zod](https://github.com/colinhacks/zod)
+## Defining a router
 
-```ts twoslash
+```ts twoslash title="server/_app.ts"
+// @filename: trpc.ts
 import { initTRPC } from '@trpc/server';
-import { z } from 'zod';
+export const t = initTRPC.create();
 
-export const t = initTRPC()();
-
-export const appRouter = t.router({
-  hello: t.procedure
-    .input(
-      z
-        .object({
-          text: z.string(),
-        })
-        .optional(),
-    )
-    .query(({ input }) => {
-      //      ^?
-      return {
-        greeting: `hello ${input?.text ?? 'world'}`,
-      };
-    }),
-});
-
-export type AppRouter = typeof appRouter;
-```
-
-### Multiple input parsers
-
-> You're able to chain multiple parsers
-
-
-```ts twoslash title='server.ts'
-import { initTRPC } from '@trpc/server';
-import { z } from 'zod';
-
-export const t = initTRPC()();
-
-const roomProcedure = t.procedure.input(
-  z.object({
-    roomId: z.string(),
-  }),
-);
+// @filename: _app.ts
+// ---cut---
+import * as trpc from '@trpc/server';
+import { t } from './trpc';
 
 const appRouter = t.router({
-  sendMessage: roomProcedure
-    .input(
-      z.object({
-        text: z.string(),
-      }),
-    )
-    .mutation(({ input }) => {
-      //         ^?
-      return input;
-    }),
+  greeting: t.procedure.query(() => 'hello tRPC v10!'),
 });
 
-export type AppRouter = typeof appRouter;
-```
-### With [Yup](https://github.com/jquense/yup)
-
-```tsx
-import { initTRPC } from '@trpc/server';
-import * as yup from 'yup';
-
-export const t = initTRPC()();
-
-export const appRouter = t.router({
-  hello: t.procedure
-    .input(
-      yup.object({
-        text: yup.string().required(),
-      }),
-    )
-    .query(({ input }) => {
-      return {
-        greeting: `hello ${input?.text ?? 'world'}`,
-      };
-    }),
-});
-
-export type AppRouter = typeof appRouter;
-```
-
-### With [Superstruct](https://github.com/ianstormtaylor/superstruct)
-
-```tsx
-import { initTRPC } from '@trpc/server';
-import { defaulted, object, string } from 'superstruct';
-
-export const t = initTRPC()();
-
-export const appRouter = t.router({
-  hello: t.procedure
-    .input(
-      object({
-        /**
-         * Also supports inline doc strings when referencing the type.
-         */
-        text: defaulted(string(), 'world'),
-      }),
-    )
-    .query(({ input }) => {
-      return {
-        greeting: `hello ${input.text}`,
-      };
-    }),
-});
-
-export type AppRouter = typeof appRouter;
-```
-
-## Multiple Procedures
-
-To add multiple procedures, you can define them as properties on the object passed to `t.router()`.
-
-```tsx
-import { initTRPC } from '@trpc/server';
-
-export const t = initTRPC()();
-
-export const appRouter = t.router({
-  hello: t.procedure.query(() => {
-    return {
-      text: 'hello world',
-    };
-  }),
-  bye: t.procedure.query(() => {
-    return {
-      text: 'goodbye',
-    };
-  }),
-});
-
+// Export only the **type** of a router to avoid importing server code on the client
 export type AppRouter = typeof appRouter;
 ```
