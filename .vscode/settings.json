@@ -9,5 +9,5 @@
     "titleBar.activeBackground": "#2596be",
     "titleBar.inactiveBackground": "#004a72"
   },
-  "editor.experimental.stickyScroll.enabled": true
+  "editor.stickyScroll.enabled": true
 }

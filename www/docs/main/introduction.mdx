@@ -61,28 +61,16 @@ Currently GraphQL is the dominant way to implement typesafe APIs in TypeScript (
 
 If your project is built with full-stack TypeScript, you can share types **directly** between your client and server, without relying on code generation.
 
-### tRPC explained from a REST API background (Express.js)
+### tRPC explained from a REST API background (Express)
 
-tRPC can co-exist with a REST API, as it uses a single endpoint, which is most of the time `/trpc`. On this specific endpoint tRPC will function as a router, meaning
-every incoming request will tRPC redirect internally to the right handler. From this point of view, `@trpc/server` can be seen as router module you could use on top of the framework.
+tRPC can co-exist with a REST API, as it uses a single endpoint. On this specific endpoint tRPC will itself function as a router, meaning tRPC will redirect internally to the right handler on every incoming request. From this point of view, `@trpc/server` can be seen as router module you could use on top of the framework.
 
-like an Express router, tRPC also supports midlleware and registering handlers. On top of that, tRPC has built-in support for input and output validation. The real benefits of using tRPC is in the way it embraces typescript.
-In the frontend `@trpc/client` makes it possible to autocomplete all your endpoints. It guides you and your team which enpoints are available, including which input is needed and what output it returns.
-Other benefit is the typesafety tRPC provides. In the case, you make breaking changes to one of the endpoints on the server, typescript will warn you in the frontend!
-
-:::info adapters & examples
-`@trpc/server` provides adapters for frameworks as Express.js and Fastify. We also provide example apps for how to use tRPC in combination with Express.js or Fastify.
-:::
+Like an Express router, tRPC also supports middleware and registering handlers. Unlike Express, tRPC embraces TypeScript to its fullest, providing built-in input and output validation.
+On the frontend, `@trpc/client` provides developers typesafety and autocompletion for the available endpoints. It shows what input is required and infers the output type of the endpoint. This ensures that in the case you make breaking changes to an endpoint on the server, TypeScript will warn you in the frontend!
 
 ### Who is this for?
 
-- tRPC is for full-stack javascripters. It makes it dead easy to write "endpoints" which you safely use in your app.
-- It's designed for monorepos as you need to export/import the type definitions from/to your server.
-
-:::note
-If you're already in a team where you're mixing languages or have third party consumers that you have no control of,
-you're better off with making a GraphQL-API which is language-agnostic.
-:::
+tRPC is for full-stack TypeScript developers. It makes it easy to write endpoints which you safely use in your app.
 
 ## Features
 
