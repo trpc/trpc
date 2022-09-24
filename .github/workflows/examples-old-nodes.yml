@@ -6,7 +6,9 @@ jobs:
       image: mcr.microsoft.com/playwright:v1.20.0-focal
       options: --user 1001
     env:
+      PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: '1'
       PLAYWRIGHT_BROWSERS_PATH: ${{ github.workspace }}/playwright
+      PRISMA_SKIP_POSTINSTALL_GENERATE: true
       DATABASE_URL: postgresql://postgres:@postgres:5432/trpcdb
     runs-on: ${{ matrix.os }}
     timeout-minutes: 10
@@ -37,6 +39,15 @@ jobs:
       - run: node -v
       - name: Install deps and build (with cache)
         run: pnpm install
+
+      - name: Cache Playwright's binary
+        uses: actions/cache@v3
+        with:
+          key: ${{ runner.os }}-playwright-bin-v1
+          path: ${{ env.PLAYWRIGHT_BROWSERS_PATH }}
+
+      - name: Install Playwright
+        run: pnpm playwright install
 
       - name: Next.js cache
         uses: actions/cache@v2
