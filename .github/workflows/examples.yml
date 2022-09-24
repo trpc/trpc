@@ -11,7 +11,6 @@ jobs:
     env:
       PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: '1'
       PLAYWRIGHT_BROWSERS_PATH: ${{ github.workspace }}/playwright
-      PRISMA_SKIP_POSTINSTALL_GENERATE: true
       DATABASE_URL: postgresql://postgres:@postgres:5432/trpcdb
       NEXTAUTH_SECRET: supersecret
     runs-on: ${{ matrix.os }}
@@ -41,7 +40,7 @@ jobs:
             standalone-server,
           ]
         node-start: [16]
-        os: [ubuntu-latest]
+        os: [ubuntu-22.04]
     services:
       postgres:
         image: postgres:12.1

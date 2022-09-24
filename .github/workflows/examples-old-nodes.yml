@@ -8,7 +8,6 @@ jobs:
     env:
       PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: '1'
       PLAYWRIGHT_BROWSERS_PATH: ${{ github.workspace }}/playwright
-      PRISMA_SKIP_POSTINSTALL_GENERATE: true
       DATABASE_URL: postgresql://postgres:@postgres:5432/trpcdb
     runs-on: ${{ matrix.os }}
     timeout-minutes: 10
@@ -17,7 +16,7 @@ jobs:
         dir: [.interop/next-prisma-starter]
         # start example with:
         node-start: [14]
-        os: [ubuntu-latest]
+        os: [ubuntu-22.04]
     services:
       postgres:
         image: postgres:12.1
