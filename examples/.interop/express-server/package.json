@@ -7,7 +7,7 @@
     "dev:client": "nodemon -e ts -w . -x npm run start-client-dev",
     "dev": "run-p dev:* --print-label",
     "build": "tsc",
-    "start": "yarn dev",
+    "start": "pnpm dev",
     "start-client-dev": "wait-on tcp:2021 && ts-node ./src/client",
     "test-dev": "start-server-and-test 'ts-node src/server' 2021 'ts-node src/client'",
     "test-start": "start-server-and-test 'node dist/server' 2021 'node dist/client'"
