@@ -50,30 +50,50 @@ jobs:
           - 5432:5432
     steps:
       - uses: actions/checkout@v2
-      - uses: actions/setup-node@v2
+
+      - uses: pnpm/action-setup@v2.2.2
+
+      - uses: actions/setup-node@v3
         with:
           node-version: 16.x
+          cache: 'pnpm'
+
+      - name: Cache Playwright's binary
+        uses: actions/cache@v3
+        with:
+          key: ${{ runner.os }}-playwright-bin-v1
+          path: ${{ env.PLAYWRIGHT_BROWSERS_PATH }}
 
       - run: node -v
-      - uses: bahmutov/npm-install@v1
+      - name: Install deps and build (with cache)
+        run: pnpm install
+
+      - name: Cache Playwright's binary
+        uses: actions/cache@v3
+        with:
+          key: ${{ runner.os }}-playwright-bin-v1
+          path: ${{ env.PLAYWRIGHT_BROWSERS_PATH }}
+
+      - name: Install Playwright
+        run: pnpm playwright install
 
       - name: Next.js cache
         uses: actions/cache@v2
         with:
           path: ${{ github.workspace }}${{ matrix.dir }}/.next/cache
-          key: ${{ matrix.dir }}-${{ runner.os }}-${{ matrix.node-start }}-${{ hashFiles('**/yarn.lock') }}-nextjs
+          key: ${{ matrix.dir }}-${{ runner.os }}-${{ matrix.node-start }}-${{ hashFiles('**/pnpm-lock.yaml') }}-nextjs
 
-      - uses: actions/setup-node@v2
+      - uses: actions/setup-node@v3
         with:
           node-version: ${{ matrix.node-start }}
 
       - run: node -v
 
-      - name: if exists, run yarn lint
-        run: cd examples/${{ matrix.dir }} && cat package.json | if grep --silent '"lint"'; then yarn lint; fi
-      - name: if exists, run yarn build
-        run: cd examples/${{ matrix.dir }} && cat package.json | if grep --silent '"build"'; then yarn build; fi
-      - name: if exists, run yarn test-start
-        run: cd examples/${{ matrix.dir }} && cat package.json | if grep --silent '"test-start"'; then yarn test-start; fi
-      - name: if exists, run yarn test-dev
-        run: cd examples/${{ matrix.dir }} && cat package.json | if grep --silent '"test-dev"'; then yarn test-dev; fi
+      - name: if exists, run lint
+        run: cd examples/${{ matrix.dir }} && cat package.json | if grep --silent '"lint"'; then pnpm lint; fi
+      - name: if exists, run build
+        run: cd examples/${{ matrix.dir }} && cat package.json | if grep --silent '"build"'; then pnpm build; fi
+      - name: if exists, run test-start
+        run: cd examples/${{ matrix.dir }} && cat package.json | if grep --silent '"test-start"'; then pnpm test-start; fi
+      - name: if exists, run test-dev
+        run: cd examples/${{ matrix.dir }} && cat package.json | if grep --silent '"test-dev"'; then pnpm test-dev; fi
