@@ -11,7 +11,7 @@ jobs:
     strategy:
       matrix:
         node: ['16.x']
-        os: [ubuntu-latest]
+        os: [ubuntu-22.04]
 
     steps:
       - name: Checkout repo

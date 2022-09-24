@@ -39,7 +39,7 @@ jobs:
             standalone-server,
           ]
         node-start: ['16.x']
-        os: [ubuntu-latest]
+        os: [ubuntu-22.04]
     services:
       postgres:
         image: postgres:12.1
