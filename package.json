@@ -82,7 +82,8 @@
   },
   "pnpm": {
     "onlyBuiltDependencies": [
-      "@prisma/engines"
+      "@prisma/engines",
+      "prisma"
     ]
   }
 }

@@ -2,6 +2,7 @@ lockfileVersion: 5.4
 
 onlyBuiltDependencies:
   - '@prisma/engines'
+  - prisma
 
 importers:
 
@@ -16978,6 +16979,7 @@ packages:
     resolution: {integrity: sha512-90xo06wtqil76Xsi3mNpc4Js3SdDRR5g4qb9h+4VWY4Y8iImJY6xc3PX+C9xxTSt1lr0Q89A0MLkJjd8ax6KiQ==}
     engines: {node: '>=14.17'}
     hasBin: true
+    requiresBuild: true
     dependencies:
       '@prisma/engines': 4.3.1
 
