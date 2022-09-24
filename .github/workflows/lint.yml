@@ -24,7 +24,7 @@ jobs:
       - name: Cache Playwright's binary
         uses: actions/cache@v3
         with:
-          key: ${{ runner.os }}-playwright-bin-v1
+          key: ${{ runner.os }}-playwright-bin-v1.26.0
           path: ${{ env.PLAYWRIGHT_BROWSERS_PATH }}
 
       - name: Install deps and build (with cache)
