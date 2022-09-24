@@ -12,6 +12,7 @@ module.exports = {
     // './server/jest.setup.js',
     '@testing-library/jest-dom/extend-expect',
   ],
+  // experimenting with Vitest on client and don't want to run those tests with Jest
   testMatch: ['**/*.test.ts?(x)', '!**/client/test/**'],
   globals: {
     'ts-jest': {
