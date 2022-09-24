@@ -35,18 +35,15 @@ jobs:
           node-version: 16
           cache: 'pnpm'
 
-      - run: node -v
-      - name: Install deps and build (with cache)
-        run: pnpm install
-
       - name: Cache Playwright's binary
         uses: actions/cache@v3
         with:
           key: ${{ runner.os }}-playwright-bin-v1
           path: ${{ env.PLAYWRIGHT_BROWSERS_PATH }}
 
-      - name: Install Playwright
-        run: pnpm playwright install
+      - run: node -v
+      - name: Install deps and build (with cache)
+        run: pnpm install
 
       - name: Next.js cache
         uses: actions/cache@v2
