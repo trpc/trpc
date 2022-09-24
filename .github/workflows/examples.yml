@@ -9,7 +9,6 @@ jobs:
       image: mcr.microsoft.com/playwright:v1.20.0-focal
       options: --user 1001
     env:
-      PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: '1'
       PLAYWRIGHT_BROWSERS_PATH: ${{ github.workspace }}/playwright
       DATABASE_URL: postgresql://postgres:@postgres:5432/trpcdb
       NEXTAUTH_SECRET: supersecret

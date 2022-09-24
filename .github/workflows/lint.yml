@@ -6,6 +6,8 @@ concurrency:
 jobs:
   lint:
     runs-on: ubuntu-latest
+    env:
+      PLAYWRIGHT_BROWSERS_PATH: ${{ github.workspace }}/playwright
 
     steps:
       - uses: actions/checkout@v2

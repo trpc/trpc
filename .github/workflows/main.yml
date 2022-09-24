@@ -5,6 +5,9 @@ jobs:
     name: Build and test on Node ${{ matrix.node }} and ${{ matrix.os }}
 
     runs-on: ${{ matrix.os }}
+    env:
+      PLAYWRIGHT_BROWSERS_PATH: ${{ github.workspace }}/playwright
+
     strategy:
       matrix:
         node: ['16.x']
