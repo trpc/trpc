@@ -64,7 +64,7 @@ module.exports = {
         {
           href: 'https://github.com/trpc/trpc',
           position: 'right',
-          className: 'header-social-link header-github-link test',
+          className: 'header-social-link header-github-link',
           'aria-label': 'GitHub',
         },
         {
