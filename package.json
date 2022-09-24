@@ -47,7 +47,7 @@
     "@testing-library/user-event": "^14.4.3",
     "@trivago/prettier-plugin-sort-imports": "^3.2.0",
     "@types/jest": "^27.0.1",
-    "@types/node": "^18.7.11",
+    "@types/node": "^18.7.20",
     "@types/react": "^18.0.9",
     "@types/react-dom": "^18.0.5",
     "@types/testing-library__jest-dom": "^5.14.5",
