@@ -18,6 +18,7 @@
     "ts-node": "ts-node --compiler-options '{\"module\":\"commonjs\"}'"
   },
   "dependencies": {
+    "@algolia/client-search": "^4.9.1",
     "@docusaurus/core": "^2.1.0",
     "@docusaurus/plugin-content-docs": "^2.1.0",
     "@docusaurus/preset-classic": "^2.1.0",
