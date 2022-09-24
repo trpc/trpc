@@ -68,15 +68,6 @@ jobs:
       - name: Install deps and build (with cache)
         run: pnpm install
 
-      - name: Cache Playwright's binary
-        uses: actions/cache@v3
-        with:
-          key: ${{ runner.os }}-playwright-bin-v1
-          path: ${{ env.PLAYWRIGHT_BROWSERS_PATH }}
-
-      - name: Install Playwright
-        run: sudo pnpm dlx playwright install-deps
-
       - name: Next.js cache
         uses: actions/cache@v2
         with:
