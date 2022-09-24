@@ -25,3 +25,5 @@ packages/*/*
 !packages/*/test
 
 examples/next-big-router/src/server/routers
+
+playwright
