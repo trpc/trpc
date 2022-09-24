@@ -34,8 +34,11 @@ jobs:
       - name: Install deps and build (with cache)
         run: pnpm install
 
-      - name: Test
-        run: pnpm test -- --ci --coverage --maxWorkers=2
+      - name: Test client
+        run: pnpm test:client -- run --coverage
+
+      - name: Test rest
+        run: pnpm test:rest -- --ci --coverage --maxWorkers=2
 
       - uses: codecov/codecov-action@v1
         with:

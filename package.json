@@ -9,7 +9,7 @@
     "lerna": "lerna",
     "start": "pnpm watch",
     "dev": "pnpm start",
-    "test:client": "pnpm --filter \"@trpc/client\" test -- run",
+    "test:client": "pnpm --filter \"@trpc/client\" test",
     "test:rest": "pnpm --filter \"@trpc/server\" test",
     "test": "run-s test:*",
     "lint": "eslint --ext \".js,.ts,.tsx\" --ignore-path .gitignore .",
