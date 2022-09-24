@@ -1,6 +1,6 @@
 {
   "name": "@examples/standalone-server",
-  "version": "10.0.0-proxy-beta.5",
+  "version": "10.0.0-proxy-beta.7",
   "private": true,
   "scripts": {
     "dev:server": "nodemon -e ts -w . -x ts-node ./src/server",
@@ -12,9 +12,9 @@
     "test-start": "start-server-and-test 'node dist/server' 2022 'node dist/client'"
   },
   "dependencies": {
-    "@trpc/client": "^10.0.0-proxy-beta.5",
-    "@trpc/react": "^10.0.0-proxy-beta.5",
-    "@trpc/server": "^10.0.0-proxy-beta.5",
+    "@trpc/client": "^10.0.0-proxy-beta.7",
+    "@trpc/react": "^10.0.0-proxy-beta.7",
+    "@trpc/server": "^10.0.0-proxy-beta.7",
     "@types/node-fetch": "^2.5.11",
     "abort-controller": "^3.0.0",
     "node-fetch": "^2.6.1",
@@ -25,6 +25,7 @@
     "scheduler/tracing": "../../node_modules/scheduler/tracing-profiling"
   },
   "devDependencies": {
+    "@types/node": "^18.7.20",
     "@types/ws": "^8.2.0",
     "nodemon": "^2.0.12",
     "npm-run-all": "^4.1.5",
