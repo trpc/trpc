@@ -36,7 +36,7 @@ slug: /fetch
 ### Install dependencies
 
 ```bash
-yarn add @trpc/server wrangler@beta zod
+yarn add @trpc/server@next wrangler@beta zod
 ```
 
 > [Zod](https://github.com/colinhacks/zod) isn't a required dependency, but it's used in the sample router below.
@@ -63,7 +63,7 @@ type User = {
 
 const users: Record<string, User> = {};
 
-export const t = initTRPC<{ ctx: Context }>()();
+export const t = initTRPC.context<Context>.create();
 
 export const appRouter = t.router({
   getUserById: t.procedure.input(z.string()).query(({ input }) => {
@@ -91,7 +91,7 @@ export type AppRouter = typeof appRouter;
 
 </details>
 
-If your router file starts getting too big, split your router into several subrouters each implemented in its own file. Then [merge them](/docs/merging-routers) into a single root `appRouter`.
+If your router file starts getting too big, split your router into several subrouters each implemented in its own file. Then [merge them](merging-routers) into a single root `appRouter`.
 
 ### Create the context
 

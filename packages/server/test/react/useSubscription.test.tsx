@@ -1,6 +1,7 @@
 import { getServerAndReactClient } from './__reactHelpers';
 import { render, waitFor } from '@testing-library/react';
 import { EventEmitter } from 'events';
+import { expectTypeOf } from 'expect-type';
 import { konn } from 'konn';
 import React, { useState } from 'react';
 import { z } from 'zod';
@@ -11,7 +12,7 @@ const ee = new EventEmitter();
 
 const ctx = konn()
   .beforeEach(() => {
-    const t = initTRPC()({
+    const t = initTRPC.create({
       errorFormatter({ shape }) {
         return {
           ...shape,
@@ -55,6 +56,7 @@ test('useSubscription', async () => {
       enabled: true,
       onStarted: () => setIsStarted(true),
       onData: (data) => {
+        expectTypeOf(data).toMatchTypeOf<number>();
         onDataMock(data);
         setData(data);
       },

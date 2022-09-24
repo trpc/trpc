@@ -50,7 +50,7 @@ Let's assume we have this example router:
 // @include: server
 ```
 
-By traversing the router object, you can infer the types of the procedures. The following example shows how to infer the types of the procedures of the example `appRouter`:
+By traversing the router object, you can infer the types of the procedures. The following example shows how to infer the types of the procedures using the example `appRouter`:
 
 ```ts twoslash title="client.ts"
 // @module: esnext
@@ -69,7 +69,7 @@ type PostInput = inferProcedureInput<AppRouter['post']['create']>;
 
 ### Additional DX Helper Type
 
-If you don't like the double-import from the above snippet, `@trpc/server` also exports a type `GetInferenceHelpers<TRouter, 'input' | 'output'>`. This lets you pass your router once at initialization, then import a single helper type when inferring types:
+If you don't like the double-import from the above snippet, `@trpc/server` also exports a type `GetInferenceHelpers<TRouter>`. This lets you pass your router once at initialization, then import a single helper type when inferring types:
 
 ```ts twoslash title='utils/trpc.ts'
 // @include: server
@@ -78,11 +78,11 @@ import type { GetInferenceHelpers } from '@trpc/server';
 import type { AppRouter } from './server';
 
 // @noErrors
-export type InferProcedureInput = GetInferenceHelpers<AppRouter, 'input'>;
-export type InferProcedureOutput = GetInferenceHelpers<AppRouter, 'output'>;
+export type InferProcedure = GetInferenceHelpers<AppRouter>;
 ```
 
 <!-- FIXME: reuse above snippet -->
+
 ```ts twoslash
 // @module: esnext
 // @include: server
@@ -90,19 +90,15 @@ export type InferProcedureOutput = GetInferenceHelpers<AppRouter, 'output'>;
 import type { GetInferenceHelpers } from '@trpc/server';
 import type { AppRouter } from './server';
 
-export type InferProcedureInput = GetInferenceHelpers<AppRouter, 'input'>;
-export type InferProcedureOutput = GetInferenceHelpers<AppRouter, 'output'>;
 // @filename: index.ts
 // ---cut---
-import { InferProcedureInput, InferProcedureOutput } from './utils';
+export type InferProcedure = GetInferenceHelpers<AppRouter>;
 
-type Post = InferProcedureOutput['post']['byId'];
+type Post = InferProcedure['post']['byId']['output'];
 //   ^?
-type PostInput = InferProcedureInput['post']['create'];
+type PostInput = InferProcedure['post']['create']['input'];
 //   ^?
 ```
-
-
 
 ## Infer `TRPClientError`s based on your router
 

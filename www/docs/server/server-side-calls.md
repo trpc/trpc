@@ -19,7 +19,7 @@ We create the router with a input query and then we call the asynchronous `greet
 ```ts
 import { initTRPC } from '@trpc/server';
 
-const t = initTRPC()();
+const t = initTRPC.create();
 const router = t.router({
   // Create procedure at path 'greeting'
   greeting: t.procedure
@@ -41,7 +41,7 @@ import { initTRPC } from '@trpc/server';
 
 const posts = ['One', 'Two', 'Three'];
 
-const t = initTRPC()();
+const t = initTRPC.create();
 const router = t.router({
   post: t.router({
     delete: t.procedure.input(z.number()).mutation(({ input }) => {
@@ -72,7 +72,7 @@ Below two examples, the former fails because the context doesn't fit the middlew
 ```ts
 import { TRPCError, initTRPC } from '@trpc/server';
 
-const t = initTRPC()();
+const t = initTRPC.create();
 
 const isAuthed = t.middleware(({ next, ctx }) => {
   if (!ctx.foo) {

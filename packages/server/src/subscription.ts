@@ -1,4 +1,4 @@
-import { getErrorFromUnknown } from './error/utils';
+import { getTRPCErrorFromUnknown } from './error/utils';
 import { Observable, Observer, observable } from './observable';
 
 export function subscriptionPullFactory<TOutput>(opts: {
@@ -19,7 +19,7 @@ export function subscriptionPullFactory<TOutput>(opts: {
     try {
       await opts.pull(emit);
     } catch (err /* istanbul ignore next */) {
-      emit.error(getErrorFromUnknown(err));
+      emit.error(getTRPCErrorFromUnknown(err));
     }
 
     /* istanbul ignore else */
@@ -29,7 +29,7 @@ export function subscriptionPullFactory<TOutput>(opts: {
   }
 
   return observable<TOutput>((emit) => {
-    _pull(emit).catch((err) => emit.error(getErrorFromUnknown(err)));
+    _pull(emit).catch((err) => emit.error(getTRPCErrorFromUnknown(err)));
     return () => {
       clearTimeout(timer);
       stopped = true;

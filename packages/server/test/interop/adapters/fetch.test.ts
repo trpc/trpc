@@ -4,14 +4,13 @@
 /// <reference types="@cloudflare/workers-types" />
 import { Context, router } from './__router';
 import { Response as MiniflareResponse } from '@miniflare/core';
-import { createTRPCClient } from '@trpc/client/src';
+import { createTRPCClient, httpBatchLink } from '@trpc/client/src';
+import * as trpc from '@trpc/server/src';
+import * as trpcFetch from '@trpc/server/src/adapters/fetch';
 import { Miniflare } from 'miniflare';
-import fetch from 'node-fetch';
-import * as trpc from '../../../src';
-import * as trpcFetch from '../../../src/adapters/fetch';
 
 // miniflare does an instanceof check
-global.Response = MiniflareResponse as any;
+globalThis.Response = MiniflareResponse as any;
 
 const port = 8787;
 const url = `http://localhost:${port}`;
@@ -54,8 +53,7 @@ async function startServer() {
   const server = await mf.startServer();
 
   const client = createTRPCClient<typeof router>({
-    url,
-    fetch: fetch as any,
+    links: [httpBatchLink({ url, fetch: fetch as any })],
   });
 
   return {
@@ -98,11 +96,13 @@ test('simple query', async () => {
 
 test('query with headers', async () => {
   const client = createTRPCClient<typeof router>({
-    url,
-    fetch: fetch as any,
-    headers: {
-      authorization: 'meow',
-    },
+    links: [
+      httpBatchLink({
+        url,
+        fetch: fetch as any,
+        headers: { authorization: 'meow' },
+      }),
+    ],
   });
 
   expect(await client.query('hello')).toMatchInlineSnapshot(`

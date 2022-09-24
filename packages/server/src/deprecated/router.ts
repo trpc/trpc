@@ -15,7 +15,7 @@ import {
   DataTransformerOptions,
   defaultTransformer,
 } from '../transformer';
-import { FlatOverwrite, Prefixer, ThenArg } from '../types';
+import { FlatOverwrite, ThenArg } from '../types';
 import { MiddlewareFunction } from './internals/middlewares';
 import {
   CreateProcedureOptions,
@@ -32,6 +32,21 @@ import { MigrateRouter, migrateRouter } from './interop';
 assertNotBrowser();
 
 export type { Procedure } from './internals/procedure';
+
+/**
+ * @internal
+ */
+type Prefix<
+  TPrefix extends string,
+  TSuffix extends string,
+> = `${TPrefix}${TSuffix}`;
+
+/**
+ * @internal
+ */
+type Prefixer<TObj extends Record<string, any>, TPrefix extends string> = {
+  [P in keyof TObj as Prefix<TPrefix, string & P>]: TObj[P];
+};
 
 /**
  * @public
@@ -160,7 +175,7 @@ export type inferRouterMeta<TRouter extends AnyRouter> = TRouter extends Router<
  * @public
  * @deprecated
  */
-export type AnyRouter<TContext = any> = Router<
+export type AnyRouter<TContext extends Record<string, any> = any> = Router<
   any,
   TContext,
   any,
@@ -227,7 +242,7 @@ function safeObject(): {};
 /**
  * Create an object without inheriting anything from `Object.prototype`
  */
-function safeObject<TObj1>(obj: TObj1): TObj1;
+function safeObject<TObj>(obj: TObj): TObj;
 /**
  * Merge two objects without inheritance from `Object.prototype`
  */
@@ -271,8 +286,8 @@ type SwapContext<
  * @deprecated
  */
 export class Router<
-  TInputContext,
-  TContext,
+  TInputContext extends Record<string, any>,
+  TContext extends Record<string, any>,
   TMeta extends Record<string, any>,
   TQueries extends ProcedureRecord<
     TInputContext,
@@ -743,7 +758,7 @@ export class Router<
    * Function to be called before any procedure is invoked
    * @link https://trpc.io/docs/middlewares
    */
-  public middleware<TNewContext>(
+  public middleware<TNewContext extends Record<string, any>>(
     middleware: MiddlewareFunction<TContext, TNewContext, TMeta>,
   ): Router<
     TInputContext,
@@ -878,6 +893,9 @@ export class Router<
 /**
  * @deprecated
  */
-export function router<TContext, TMeta extends Record<string, any> = {}>() {
+export function router<
+  TContext extends Record<string, any> = {},
+  TMeta extends Record<string, any> = {},
+>() {
   return new Router<TContext, TContext, TMeta, {}, {}, {}, DefaultErrorShape>();
 }

@@ -1,4 +1,4 @@
-import { invert } from './internals/invert';
+import { invert } from '../internals/invert';
 
 // reference: https://www.jsonrpc.org/specification
 
@@ -31,11 +31,12 @@ export const TRPC_ERROR_CODES_BY_KEY = {
   CONFLICT: -32009, // 409
   PRECONDITION_FAILED: -32012, // 412
   PAYLOAD_TOO_LARGE: -32013, // 413
+  TOO_MANY_REQUESTS: -32029, // 429
   CLIENT_CLOSED_REQUEST: -32099, // 499
 } as const;
 
 export const TRPC_ERROR_CODES_BY_NUMBER = invert(TRPC_ERROR_CODES_BY_KEY);
-type ValueOf<T> = T[keyof T];
+type ValueOf<TObj> = TObj[keyof TObj];
 
 export type TRPC_ERROR_CODE_NUMBER = ValueOf<typeof TRPC_ERROR_CODES_BY_KEY>;
 export type TRPC_ERROR_CODE_KEY = keyof typeof TRPC_ERROR_CODES_BY_KEY;

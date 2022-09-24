@@ -4,7 +4,7 @@ import * as trpc from '../../src';
 import { inferProcedureInput, inferProcedureOutput } from '../../src';
 import { Observable, observable } from '../../src/observable';
 
-test('infer query input & output', async () => {
+describe('infer query input & output', () => {
   const router = trpc
     .router()
     .query('noInput', {
@@ -50,42 +50,43 @@ test('infer query input & output', async () => {
     })
     .interop();
   type TQueries = typeof router['_def']['queries'];
-  {
+
+  test('no input', () => {
     const input: inferProcedureInput<TQueries['noInput']> = null as any;
     const output: inferProcedureOutput<TQueries['noInput']> = null as any;
     expectTypeOf(input).toMatchTypeOf<undefined | null | void>();
     expectTypeOf(output).toMatchTypeOf<{ input: undefined }>();
-  }
-  {
+  });
+  test('with input', () => {
     const input: inferProcedureInput<TQueries['withInput']> = null as any;
     const output: inferProcedureOutput<TQueries['withInput']> = null as any;
     expectTypeOf(input).toMatchTypeOf<string>();
     expectTypeOf(output).toMatchTypeOf<{ input: string }>();
-  }
-  {
+  });
+  test('with output', () => {
     const input: inferProcedureInput<TQueries['withOutput']> = null as any;
     const output: inferProcedureOutput<TQueries['withOutput']> = null as any;
     expectTypeOf(input).toMatchTypeOf<undefined | null | void>();
     expectTypeOf(output).toMatchTypeOf<{ input: string }>();
-  }
-  {
+  });
+  test('with output empty object', () => {
     const input: inferProcedureInput<TQueries['withOutputEmptyObject']> =
       null as any;
     const output: inferProcedureOutput<TQueries['withOutputEmptyObject']> =
       null as any;
     expectTypeOf(input).toMatchTypeOf<undefined | null | void>();
     expectTypeOf(output).toMatchTypeOf<{ input: string }>();
-  }
-  {
+  });
+  test('with input and output', () => {
     const input: inferProcedureInput<TQueries['withInputOutput']> = null as any;
     const output: inferProcedureOutput<TQueries['withInputOutput']> =
       null as any;
     expectTypeOf(input).toMatchTypeOf<string>();
     expectTypeOf(output).toMatchTypeOf<{ input: string }>();
-  }
+  });
 });
 
-test('infer mutation input & output', async () => {
+describe('infer mutation input & output', () => {
   const router = trpc
     .router()
     .mutation('noInput', {
@@ -131,43 +132,44 @@ test('infer mutation input & output', async () => {
     })
     .interop();
   type TMutations = typeof router['_def']['mutations'];
-  {
+
+  test('no input', () => {
     const input: inferProcedureInput<TMutations['noInput']> = null as any;
     const output: inferProcedureOutput<TMutations['noInput']> = null as any;
     expectTypeOf(input).toMatchTypeOf<undefined | null | void>();
     expectTypeOf(output).toMatchTypeOf<{ input: undefined }>();
-  }
-  {
+  });
+  test('with input', () => {
     const input: inferProcedureInput<TMutations['withInput']> = null as any;
     const output: inferProcedureOutput<TMutations['withInput']> = null as any;
     expectTypeOf(input).toMatchTypeOf<string>();
     expectTypeOf(output).toMatchTypeOf<{ input: string }>();
-  }
-  {
+  });
+  test('with output', () => {
     const input: inferProcedureInput<TMutations['withOutput']> = null as any;
     const output: inferProcedureOutput<TMutations['withOutput']> = null as any;
     expectTypeOf(input).toMatchTypeOf<undefined | null | void>();
     expectTypeOf(output).toMatchTypeOf<{ input: string }>();
-  }
-  {
+  });
+  test('with output empty object', () => {
     const input: inferProcedureInput<TMutations['withOutputEmptyObject']> =
       null as any;
     const output: inferProcedureOutput<TMutations['withOutputEmptyObject']> =
       null as any;
     expectTypeOf(input).toMatchTypeOf<undefined | null | void>();
     expectTypeOf(output).toMatchTypeOf<{ input: string }>();
-  }
-  {
+  });
+  test('with input and output', () => {
     const input: inferProcedureInput<TMutations['withInputOutput']> =
       null as any;
     const output: inferProcedureOutput<TMutations['withInputOutput']> =
       null as any;
     expectTypeOf(input).toMatchTypeOf<string>();
     expectTypeOf(output).toMatchTypeOf<{ input: string }>();
-  }
+  });
 });
 
-test('infer subscription input & output', async () => {
+describe('infer subscription input & output', () => {
   // @ts-expect-error - ensure "output" is omitted in subscription procedure
   const router = trpc
     .router()
@@ -203,17 +205,18 @@ test('infer subscription input & output', async () => {
     })
     .interop();
   type TSubscriptions = typeof router['_def']['subscriptions'];
-  {
+
+  test('no input', () => {
     const input: inferProcedureInput<TSubscriptions['noInput']> = null as any;
     const output: inferProcedureOutput<TSubscriptions['noInput']> = null as any;
     expectTypeOf(input).toMatchTypeOf<undefined | null | void>();
     expectTypeOf(output).toMatchTypeOf<Observable<unknown, unknown>>();
-  }
-  {
+  });
+  test('with input', () => {
     const input: inferProcedureInput<TSubscriptions['withInput']> = null as any;
     const output: inferProcedureOutput<TSubscriptions['withInput']> =
       null as any;
     expectTypeOf(input).toMatchTypeOf<string>();
     expectTypeOf(output).toMatchTypeOf<Observable<string, unknown>>();
-  }
+  });
 });

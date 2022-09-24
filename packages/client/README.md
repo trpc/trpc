@@ -7,8 +7,7 @@
 </p>
 
 <p align="center">
-  <!-- TODO: replace with new version GIF -->
-  <img src="https://storage.googleapis.com/trpc/trpcgif.gif" alt="Demo" />
+  <img src="https://assets.trpc.io/www/v10/preview-dark.gif" alt="Demo" />
 </p>
 
 # `@trpc/client`
@@ -23,13 +22,13 @@ Full documentation for `@trpc/client` can be found [here](https://trpc.io/docs/v
 
 ```bash
 # npm
-npm install @trpc/client
+npm install @trpc/client@next
 
 # Yarn
-yarn add @trpc/client
+yarn add @trpc/client@next
 
 # pnpm
-pnpm add @trpc/client
+pnpm add @trpc/client@next
 ```
 
 ## Basic Example

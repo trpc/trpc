@@ -2,7 +2,7 @@ import { IncomingMessage } from 'http';
 import ws from 'ws';
 import { AnyRouter, ProcedureType, inferRouterContext } from '../core';
 import { TRPCError } from '../error/TRPCError';
-import { getCauseFromUnknown, getErrorFromUnknown } from '../error/utils';
+import { getCauseFromUnknown, getTRPCErrorFromUnknown } from '../error/utils';
 import { transformTRPCResponse } from '../internals/transformTRPCResponse';
 import { BaseHandlerOptions } from '../internals/types';
 import { Unsubscribable, isObservable } from '../observable';
@@ -196,7 +196,7 @@ export function applyWSSHandler<TRouter extends AnyRouter>(
             });
           },
           error(err) {
-            const error = getErrorFromUnknown(err);
+            const error = getTRPCErrorFromUnknown(err);
             opts.onError?.({ error, path, type, ctx, req, input });
             respond({
               id,
@@ -248,7 +248,7 @@ export function applyWSSHandler<TRouter extends AnyRouter>(
         });
       } catch (cause) /* istanbul ignore next */ {
         // procedure threw an error
-        const error = getErrorFromUnknown(cause);
+        const error = getTRPCErrorFromUnknown(cause);
         opts.onError?.({ error, path, type, ctx, req, input });
         respond({
           id,
@@ -297,7 +297,7 @@ export function applyWSSHandler<TRouter extends AnyRouter>(
     client.on('error', (cause) => {
       opts.onError?.({
         ctx,
-        error: getErrorFromUnknown(cause),
+        error: getTRPCErrorFromUnknown(cause),
         input: undefined,
         path: undefined,
         type: 'unknown',
@@ -315,7 +315,7 @@ export function applyWSSHandler<TRouter extends AnyRouter>(
       try {
         ctx = await ctxPromise;
       } catch (cause) {
-        const error = getErrorFromUnknown(cause);
+        const error = getTRPCErrorFromUnknown(cause);
         opts.onError?.({
           error,
           path: undefined,

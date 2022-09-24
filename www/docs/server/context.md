@@ -32,12 +32,12 @@ export async function createContext(opts?: trpcNext.CreateNextContextOptions) {
     user,
   };
 }
-type Context = trpc.inferAsyncReturnType<typeof createContext>;
+export type Context = trpc.inferAsyncReturnType<typeof createContext>;
 ```
 
 ```ts title='server/routers/_app.ts'
 import { TRPCError, initTRPC } from '@trpc/server';
 import { Context } from '../context';
 
-export const t = initTRPC<{ ctx: Context }>()();
+export const t = initTRPC.context<Context>().create();
 ```

@@ -25,7 +25,7 @@ const router = trpc.router<Context>()
           error.cause instanceof ZodError
             ? error.cause.flatten()
             : null,
-      };
+      },
     };
   })
 ```

@@ -93,7 +93,7 @@ export type AppRouter = typeof appRouter;
 
 </details>
 
-If your router file starts getting too big, split your router into several subrouters each implemented in its own file. Then [merge them](/docs/merging-routers) into a single root `appRouter`.
+If your router file starts getting too big, split your router into several subrouters each implemented in its own file. Then [merge them](merging-routers) into a single root `appRouter`.
 
 ### Create the context
 
@@ -140,7 +140,7 @@ server.register(fastifyTRPCPlugin, {
 
 (async () => {
   try {
-    await server.listen(3000);
+    await server.listen({ port: 3000 });
   } catch (err) {
     server.log.error(err);
     process.exit(1);

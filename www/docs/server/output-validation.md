@@ -7,7 +7,7 @@ slug: /output-validation
 
 tRPC gives you automatic type-safety of outputs without the need of adding a validator; however, it can be useful at times to strictly define the output type in order to prevent sensitive data of being leaked.
 
-Similarily to [`input`](/docs/router), an `output` validator can be added. The output validator is invoked with your payload.
+Similarily to [`input`](router), an `output` validator can be added. The output validator is invoked with your payload.
 
 When an `output` validator is defined, its inferred type is expected as the return type of your resolver (like `t.procedure.query()`).
 
@@ -28,7 +28,7 @@ tRPC works out-of-the-box with yup/superstruct/zod/myzod/custom validators/[..] 
 import { initTRPC } from '@trpc/server';
 import { z } from 'zod';
 
-export const t = initTRPC()();
+export const t = initTRPC.create();
 
 export const appRouter = t.router({
   hello: t.procedure
@@ -54,7 +54,7 @@ export type AppRouter = typeof appRouter;
 import { initTRPC } from '@trpc/server';
 import * as yup from 'yup';
 
-export const t = initTRPC()();
+export const t = initTRPC.create();
 
 export const appRouter = t.router({
   hello: t.procedure
@@ -79,7 +79,7 @@ export type AppRouter = typeof appRouter;
 import { initTRPC } from '@trpc/server';
 import { object, string } from 'superstruct';
 
-export const t = initTRPC()();
+export const t = initTRPC.create();
 
 export const appRouter = t.router({
   hello: t.procedure
@@ -100,7 +100,7 @@ export type AppRouter = typeof appRouter;
 ```tsx
 import { initTRPC } from '@trpc/server';
 
-export const t = initTRPC()();
+export const t = initTRPC.create();
 
 export const appRouter = t.router({
   hello: t.procedure

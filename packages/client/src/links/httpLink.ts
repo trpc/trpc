@@ -1,20 +1,24 @@
 import { AnyRouter } from '@trpc/server';
 import { observable } from '@trpc/server/observable';
 import { TRPCClientError } from '../TRPCClientError';
-import { HTTPLinkOptions, httpRequest } from './internals/httpUtils';
+import {
+  HTTPLinkOptions,
+  httpRequest,
+  resolveHTTPLinkOptions,
+} from './internals/httpUtils';
 import { transformResult } from './internals/transformResult';
 import { TRPCLink } from './types';
 
 export function httpLink<TRouter extends AnyRouter>(
   opts: HTTPLinkOptions,
 ): TRPCLink<TRouter> {
-  const { url } = opts;
+  const resolvedOpts = resolveHTTPLinkOptions(opts);
   return (runtime) =>
     ({ op }) =>
       observable((observer) => {
         const { path, input, type } = op;
         const { promise, cancel } = httpRequest({
-          url,
+          ...resolvedOpts,
           runtime,
           type,
           path,

@@ -1,39 +1,23 @@
 import { trpc } from '../utils/trpc';
 import { NextPageWithLayout } from './_app';
 import Link from 'next/link';
+import React from 'react';
 
 const IndexPage: NextPageWithLayout = () => {
-  const utils = trpc.proxy.useContext();
-  const postsQuery = trpc.proxy.post.list.useQuery();
+  const utils = trpc.useContext();
+  const postsQuery = trpc.post.list.useQuery();
 
-  const addPost = trpc.proxy.post.add.useMutation({
+  const addPost = trpc.post.add.useMutation({
     async onSuccess() {
       // refetches posts after a post is added
       await utils.post.list.invalidate();
-
-      /**
-       * ❓ QUESTION: How should query invalidations look like?
-       * Some alternatives:
-       * ```ts
-       * // 1. Strings
-       * const utils = trpc.useContext();
-       * utils.invalidateQueries(['post.list', input]);
-       *
-       * // 2. Tuple of strings, each part of tuple is optional
-       * const utils = trpc.useContext();
-       * utils.invalidateQueries(['post', 'list', input]);
-       *
-       *
-       * // 3. Use context for specific query
-       * const postListContext = trpc.proxy.post.list.useContext();
-       */
     },
   });
 
   // prefetch all posts for instant navigation
-  // useEffect(() => {
+  // React.useEffect(() => {
   //   for (const { id } of postsQuery.data ?? []) {
-  //     utils.prefetchQuery(['postbyId', { id }]);
+  //     utils.post.byId.prefetch({ id });
   //   }
   // }, [postsQuery.data, utils]);
 

@@ -22,7 +22,6 @@ const TEMPLATE = `
  ): Router<{
   router: true;
   _ctx: RP0['_ctx'];
-  legacy: __legacy__;
   _errorShape: RP0['_errorShape'];
   _meta: RP0['_meta'];
   transformer: RP0['transformer'];
@@ -31,7 +30,6 @@ const TEMPLATE = `
   mutations: __mutations__;
   subscriptions: __subscriptions__;
   procedures: __procedures__;
-  routers: __routers__;
   record: __records__;
  }> & __records__;
  `.trim();
@@ -49,14 +47,12 @@ const TARGET_DIR =
 
 const partList: string[] = [];
 for (let index = 0; index < NUM_ARGS; index++) {
-  const legacy: string[] = [];
   const generics: string[] = [];
   const args: string[] = [];
   const queries: string[] = [];
   const mutations: string[] = [];
   const subscriptions: string[] = [];
   const procedures: string[] = [];
-  const routers: string[] = [];
   const records: string[] = [];
 
   for (let j = 0; j < index + 1; j++) {
@@ -66,9 +62,7 @@ for (let index = 0; index < NUM_ARGS; index++) {
     mutations.push(`RP${j}['mutations']`);
     subscriptions.push(`RP${j}['subscriptions']`);
     procedures.push(`RP${j}['procedures']`);
-    routers.push(`RP${j}['routers']`);
     records.push(`RP${j}['record']`);
-    legacy.push(`RP${j}['legacy']`);
   }
 
   const part = TEMPLATE.replace('', '')
@@ -78,9 +72,7 @@ for (let index = 0; index < NUM_ARGS; index++) {
     .replace(/__mutations__/g, mutations.join(' & '))
     .replace(/__subscriptions__/g, subscriptions.join(' & '))
     .replace(/__procedures__/g, procedures.join(' & '))
-    .replace(/__routers__/g, routers.join(' & '))
-    .replace(/__records__/g, records.join(' & '))
-    .replace(/__legacy__/g, legacy.join(' & '));
+    .replace(/__records__/g, records.join(' & '));
 
   partList.push(part);
 }

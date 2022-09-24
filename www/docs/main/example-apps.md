@@ -6,8 +6,8 @@ slug: /example-apps
 ---
 
 
-:::caution
-Most of the examples on this page are out-of-date since V10. We'll update this soon.
+:::info
+Some of the examples on this page are out-of-date since V10. We'll update this soon.
 :::
 
 You can clone trpc and play with local examples, or play with them in the CodeSandbox link below.
@@ -88,6 +88,15 @@ Here's some example apps:
         <ul>
           <li><a href="https://codesandbox.io/s/github/trpc/trpc/tree/main/examples/next-prisma-todomvc?file=/pages/%5Bfilter%5D.tsx">CodeSandbox</a></li>
           <li><a href="https://github.com/trpc/examples-next-prisma-todomvc">Source</a></li>
+        </ul>
+      </td>
+    </tr>
+    <tr>
+      <td>Minimal (Hello world) server and client in node.js</td>
+      <td><em>n/a</em></td>
+      <td>
+        <ul>
+          <li><a href="https://github.com/trpc/trpc/tree/main/examples/minimal">Source</a></li>
         </ul>
       </td>
     </tr>

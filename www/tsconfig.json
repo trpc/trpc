@@ -1,3 +1,6 @@
 {
-  "extends": "@tsconfig/docusaurus/tsconfig.json"
+  "extends": "@tsconfig/docusaurus/tsconfig.json",
+  "compilerOptions": {
+    "strict": true
+  }
 }

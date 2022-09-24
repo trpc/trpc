@@ -1,16 +1,10 @@
 import { routerToServerAndClientNew } from '../___testHelpers';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import {
-  Operation,
-  TRPCLink,
-  httpBatchLink,
-  splitLink,
-  wsLink,
-} from '@trpc/client';
-import React, { ReactNode, useState } from 'react';
-import { createTRPCReact } from '../../../react/src';
-import { AnyRouter } from '../../src/core';
-import { observable } from '../../src/observable';
+import { createQueryClient } from '../__queryClient';
+import { QueryClientProvider } from '@tanstack/react-query';
+import { Operation, httpBatchLink, splitLink, wsLink } from '@trpc/client/src';
+import { createTRPCReact } from '@trpc/react/src';
+import { AnyRouter } from '@trpc/server/src';
+import React, { ReactNode } from 'react';
 
 export function getServerAndReactClient<TRouter extends AnyRouter>(
   appRouter: TRouter,
@@ -41,23 +35,11 @@ export function getServerAndReactClient<TRouter extends AnyRouter>(
     }),
   });
 
-  const queryClient = new QueryClient();
+  const queryClient = createQueryClient();
   const proxy = createTRPCReact<typeof appRouter>();
   const client = opts.client;
 
   function App(props: { children: ReactNode }) {
-    const [queryClient] = useState(
-      () =>
-        new QueryClient({
-          defaultOptions: {
-            queries: {
-              retryDelay() {
-                return 1;
-              },
-            },
-          },
-        }),
-    );
     return (
       <proxy.Provider {...{ queryClient, client }}>
         <QueryClientProvider client={queryClient}>

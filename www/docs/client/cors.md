@@ -10,15 +10,19 @@ If your API reside on a different origin than your front-end and wish to send co
 The arguments provided to the fetch function used by tRPC can be modified as follow.
 
 ```ts title='app.ts'
-import { createTRPCClient } from '@trpc/client';
+import { createTRPCProxyClient, httpBatchLink } from '@trpc/client';
 
-const client = createTRPCClient<AppRouter>({
-  url: 'YOUR_SERVER_URL',
-  fetch(url, options) {
-    return fetch(url, {
-      ...options,
-      credentials: 'include',
-    });
-  },
+const client = createTRPCProxyClient<AppRouter>({
+  links: [
+    httpBatchLink({
+      url: 'YOUR_SERVER_URL',
+      fetch(url, options) {
+        return fetch(url, {
+          ...options,
+          credentials: 'include',
+        });
+      },
+    }),
+  ],
 });
 ```

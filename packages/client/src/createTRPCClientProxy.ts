@@ -2,9 +2,11 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import type {
+  AnyMutationProcedure,
+  AnyProcedure,
+  AnyQueryProcedure,
   AnyRouter,
-  OmitNeverKeys,
-  Procedure,
+  AnySubscriptionProcedure,
   ProcedureArgs,
   ProcedureRouterRecord,
   ProcedureType,
@@ -14,21 +16,24 @@ import type {
   Unsubscribable,
   inferObservableValue,
 } from '@trpc/server/observable';
-import type { TRPCResultMessage } from '@trpc/server/rpc';
 import { createProxy } from '@trpc/server/shared';
 import { TRPCClientError } from './TRPCClientError';
-import { CreateTRPCClientOptions, createTRPCClient } from './createTRPCClient';
+import { CreateTRPCClientOptions } from './createTRPCClient';
 import {
   TRPCClient as Client,
+  TRPCClient,
   TRPCSubscriptionObserver,
 } from './internals/TRPCClient';
 
-type Resolver<TProcedure extends Procedure<any>> = (
+export type inferRouterProxyClient<TRouter extends AnyRouter> =
+  DecoratedProcedureRecord<TRouter['_def']['record'], TRouter>;
+
+type Resolver<TProcedure extends AnyProcedure> = (
   ...args: ProcedureArgs<TProcedure['_def']>
 ) => Promise<inferProcedureOutput<TProcedure>>;
 
 type SubscriptionResolver<
-  TProcedure extends Procedure<any>,
+  TProcedure extends AnyProcedure,
   TRouter extends AnyRouter,
 > = (
   ...args: [
@@ -36,9 +41,7 @@ type SubscriptionResolver<
     opts: ProcedureArgs<TProcedure['_def']>[1] &
       Partial<
         TRPCSubscriptionObserver<
-          TRPCResultMessage<
-            inferObservableValue<inferProcedureOutput<TProcedure>>
-          >,
+          inferObservableValue<inferProcedureOutput<TProcedure>>,
           TRPCClientError<TRouter>
         >
       >,
@@ -46,19 +49,21 @@ type SubscriptionResolver<
 ) => Unsubscribable;
 
 type DecorateProcedure<
-  TProcedure extends Procedure<any>,
+  TProcedure extends AnyProcedure,
   TRouter extends AnyRouter,
-> = OmitNeverKeys<{
-  query: TProcedure extends { _query: true } ? Resolver<TProcedure> : never;
-
-  mutate: TProcedure extends { _mutation: true } ? Resolver<TProcedure> : never;
-
-  subscribe: TProcedure extends { _subscription: true }
-    ? SubscriptionResolver<TProcedure, TRouter>
-    : never;
-}>;
-
-type assertProcedure<T> = T extends Procedure<any> ? T : never;
+> = TProcedure extends AnyQueryProcedure
+  ? {
+      query: Resolver<TProcedure>;
+    }
+  : TProcedure extends AnyMutationProcedure
+  ? {
+      mutate: Resolver<TProcedure>;
+    }
+  : TProcedure extends AnySubscriptionProcedure
+  ? {
+      subscribe: SubscriptionResolver<TProcedure, TRouter>;
+    }
+  : never;
 
 /**
  * @internal
@@ -66,16 +71,16 @@ type assertProcedure<T> = T extends Procedure<any> ? T : never;
 type DecoratedProcedureRecord<
   TProcedures extends ProcedureRouterRecord,
   TRouter extends AnyRouter,
-> = OmitNeverKeys<{
+> = {
   [TKey in keyof TProcedures]: TProcedures[TKey] extends AnyRouter
     ? DecoratedProcedureRecord<
         TProcedures[TKey]['_def']['record'],
         TProcedures[TKey]
       >
-    : assertProcedure<TProcedures[TKey]>['_def']['_old'] extends true
-    ? never
-    : DecorateProcedure<assertProcedure<TProcedures[TKey]>, TRouter>;
-}>;
+    : TProcedures[TKey] extends AnyProcedure
+    ? DecorateProcedure<TProcedures[TKey], TRouter>
+    : never;
+};
 
 const clientCallTypeMap: Record<
   keyof DecorateProcedure<any, any>,
@@ -87,7 +92,7 @@ const clientCallTypeMap: Record<
 };
 
 /**
- * @deprecated use createTRPCProxyClient instead
+ * @deprecated use `createTRPCProxyClient` instead
  * @internal
  */
 export function createTRPCClientProxy<TRouter extends AnyRouter>(
@@ -96,18 +101,20 @@ export function createTRPCClientProxy<TRouter extends AnyRouter>(
   const proxy = createProxy(({ path, args }) => {
     const pathCopy = [...path];
     const clientCallType = pathCopy.pop()! as keyof DecorateProcedure<any, any>;
+
     const procedureType = clientCallTypeMap[clientCallType];
 
     const fullPath = pathCopy.join('.');
+
     return (client as any)[procedureType](fullPath, ...args);
   });
-  return proxy as DecoratedProcedureRecord<TRouter['_def']['record'], TRouter>;
+  return proxy as inferRouterProxyClient<TRouter>;
 }
 
 export function createTRPCProxyClient<TRouter extends AnyRouter>(
   opts: CreateTRPCClientOptions<TRouter>,
 ) {
-  const client = createTRPCClient<TRouter>(opts);
+  const client = new TRPCClient<TRouter>(opts);
   const proxy = createTRPCClientProxy(client);
   return proxy;
 }

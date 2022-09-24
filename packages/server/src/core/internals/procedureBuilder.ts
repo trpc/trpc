@@ -1,21 +1,34 @@
 import { TRPCError } from '../../error/TRPCError';
-import { getCauseFromUnknown, getErrorFromUnknown } from '../../error/utils';
+import { getTRPCErrorFromUnknown } from '../../error/utils';
 import { FlatOverwrite, MaybePromise } from '../../types';
-import { MiddlewareFunction, MiddlewareResult } from '../middleware';
+import {
+  MiddlewareFunction,
+  MiddlewareResult,
+  createInputMiddleware,
+  createOutputMiddleware,
+} from '../middleware';
 import { Parser, inferParser } from '../parser';
 import {
+  AnyMutationProcedure,
+  AnyProcedure,
+  AnyQueryProcedure,
+  AnySubscriptionProcedure,
   MutationProcedure,
-  Procedure,
   ProcedureParams,
   QueryProcedure,
   SubscriptionProcedure,
 } from '../procedure';
 import { ProcedureType } from '../types';
 import { RootConfig } from './config';
-import { ParseFn, getParseFn } from './getParseFn';
+import { getParseFn } from './getParseFn';
 import { mergeWithoutOverrides } from './mergeWithoutOverrides';
 import { ResolveOptions, middlewareMarker } from './utils';
-import { DefaultValue as FallbackValue, Overwrite, UnsetMarker } from './utils';
+import {
+  DefaultValue as FallbackValue,
+  Overwrite,
+  OverwriteKnown,
+  UnsetMarker,
+} from './utils';
 
 type CreateProcedureReturnInput<
   TPrev extends ProcedureParams,
@@ -31,20 +44,22 @@ type CreateProcedureReturnInput<
   _output_out: FallbackValue<TNext['_output_out'], TPrev['_output_out']>;
 }>;
 
-type OverwriteIfDefined<T, K> = UnsetMarker extends T ? K : FlatOverwrite<T, K>;
+type OverwriteIfDefined<TType, TWith> = UnsetMarker extends TType
+  ? TWith
+  : FlatOverwrite<TType, TWith>;
 
-type ErrorMessage<T extends string> = T;
+type ErrorMessage<TMessage extends string> = TMessage;
 
 export interface ProcedureBuilder<TParams extends ProcedureParams> {
   /**
    * Add an input parser to the procedure.
    */
-  input<$TParser extends Parser>(
+  input<TParser extends Parser>(
     schema: TParams['_input_out'] extends UnsetMarker
-      ? $TParser
-      : inferParser<$TParser>['out'] extends Record<string, unknown>
+      ? TParser
+      : inferParser<TParser>['out'] extends Record<string, unknown>
       ? TParams['_input_out'] extends Record<string, unknown>
-        ? $TParser
+        ? TParser
         : ErrorMessage<'All input parsers did not resolve to an object'>
       : ErrorMessage<'All input parsers did not resolve to an object'>,
   ): ProcedureBuilder<{
@@ -54,11 +69,11 @@ export interface ProcedureBuilder<TParams extends ProcedureParams> {
     _ctx_out: TParams['_ctx_out'];
     _input_in: OverwriteIfDefined<
       TParams['_input_in'],
-      inferParser<$TParser>['in']
+      inferParser<TParser>['in']
     >;
     _input_out: OverwriteIfDefined<
       TParams['_input_out'],
-      inferParser<$TParser>['out']
+      inferParser<TParser>['out']
     >;
     _output_in: TParams['_output_in'];
     _output_out: TParams['_output_out'];
@@ -66,8 +81,8 @@ export interface ProcedureBuilder<TParams extends ProcedureParams> {
   /**
    * Add an output parser to the procedure.
    */
-  output<$TParser extends Parser>(
-    schema: $TParser,
+  output<TParser extends Parser>(
+    schema: TParser,
   ): ProcedureBuilder<{
     _config: TParams['_config'];
     _meta: TParams['_meta'];
@@ -75,8 +90,8 @@ export interface ProcedureBuilder<TParams extends ProcedureParams> {
     _ctx_out: TParams['_ctx_out'];
     _input_in: TParams['_input_in'];
     _input_out: TParams['_input_out'];
-    _output_in: inferParser<$TParser>['in'];
-    _output_out: inferParser<$TParser>['out'];
+    _output_in: inferParser<TParser>['in'];
+    _output_out: inferParser<TParser>['out'];
   }>;
   /**
    * Add a meta data to the procedure.
@@ -85,32 +100,32 @@ export interface ProcedureBuilder<TParams extends ProcedureParams> {
   /**
    * Add a middleware to the procedure.
    */
-  use<$TParams extends ProcedureParams>(
-    fn: MiddlewareFunction<TParams, $TParams>,
-  ): CreateProcedureReturnInput<TParams, $TParams>;
+  use<TNewParams extends ProcedureParams>(
+    fn: MiddlewareFunction<TParams, TNewParams>,
+  ): CreateProcedureReturnInput<TParams, TNewParams>;
   /**
    * Extend the procedure with another procedure.
    * @warning The TypeScript inference fails when chaining concatenated procedures.
    */
-  unstable_concat<$ProcedureReturnInput extends AnyProcedureBuilder>(
-    proc: $ProcedureReturnInput,
-  ): $ProcedureReturnInput extends ProcedureBuilder<infer $TParams>
+  unstable_concat<TProcedureReturnType extends AnyProcedureBuilder>(
+    proc: TProcedureReturnType,
+  ): TProcedureReturnType extends ProcedureBuilder<infer $TParams>
     ? CreateProcedureReturnInput<TParams, $TParams>
     : never;
   /**
    * Query procedure
    */
-  query<$TOutput>(
+  query<TOutput>(
     resolver: (
       opts: ResolveOptions<TParams>,
-    ) => MaybePromise<FallbackValue<TParams['_output_in'], $TOutput>>,
+    ) => MaybePromise<FallbackValue<TParams['_output_in'], TOutput>>,
   ): UnsetMarker extends TParams['_output_out']
     ? QueryProcedure<
-        Overwrite<
+        OverwriteKnown<
           TParams,
           {
-            _output_in: $TOutput;
-            _output_out: $TOutput;
+            _output_in: TOutput;
+            _output_out: TOutput;
           }
         >
       >
@@ -119,17 +134,17 @@ export interface ProcedureBuilder<TParams extends ProcedureParams> {
   /**
    * Mutation procedure
    */
-  mutation<$TOutput>(
+  mutation<TOutput>(
     resolver: (
       opts: ResolveOptions<TParams>,
-    ) => MaybePromise<FallbackValue<TParams['_output_in'], $TOutput>>,
+    ) => MaybePromise<FallbackValue<TParams['_output_in'], TOutput>>,
   ): UnsetMarker extends TParams['_output_out']
     ? MutationProcedure<
-        Overwrite<
+        OverwriteKnown<
           TParams,
           {
-            _output_in: $TOutput;
-            _output_out: $TOutput;
+            _output_in: TOutput;
+            _output_out: TOutput;
           }
         >
       >
@@ -138,17 +153,17 @@ export interface ProcedureBuilder<TParams extends ProcedureParams> {
   /**
    * Mutation procedure
    */
-  subscription<$TOutput>(
+  subscription<TOutput>(
     resolver: (
       opts: ResolveOptions<TParams>,
-    ) => MaybePromise<FallbackValue<TParams['_output_in'], $TOutput>>,
+    ) => MaybePromise<FallbackValue<TParams['_output_in'], TOutput>>,
   ): UnsetMarker extends TParams['_output_out']
     ? SubscriptionProcedure<
-        Overwrite<
+        OverwriteKnown<
           TParams,
           {
-            _output_in: $TOutput;
-            _output_out: $TOutput;
+            _output_in: TOutput;
+            _output_out: TOutput;
           }
         >
       >
@@ -159,7 +174,7 @@ export interface ProcedureBuilder<TParams extends ProcedureParams> {
   _def: {
     inputs: Parser[];
     output?: Parser;
-    meta?: Record<string, unknown>;
+    meta?: TParams['_meta'];
     resolver?: ProcedureBuilderResolver;
     middlewares: ProcedureBuilderMiddleware[];
     mutation?: boolean;
@@ -169,7 +184,7 @@ export interface ProcedureBuilder<TParams extends ProcedureParams> {
 }
 
 type AnyProcedureBuilder = ProcedureBuilder<any>;
-export type ProcedureBuilderDef = AnyProcedureBuilder['_def'];
+export type AnyProcedureBuilderDef = AnyProcedureBuilder['_def'];
 
 export type ProcedureBuilderMiddleware = MiddlewareFunction<any, any>;
 
@@ -178,8 +193,8 @@ export type ProcedureBuilderResolver = (
 ) => Promise<unknown>;
 
 function createNewBuilder(
-  def1: ProcedureBuilderDef,
-  def2: Partial<ProcedureBuilderDef>,
+  def1: AnyProcedureBuilderDef,
+  def2: Partial<AnyProcedureBuilderDef>,
 ) {
   const { middlewares = [], inputs, ...rest } = def2;
 
@@ -192,7 +207,7 @@ function createNewBuilder(
 }
 
 export function createBuilder<TConfig extends RootConfig>(
-  initDef?: ProcedureBuilderDef,
+  initDef?: AnyProcedureBuilderDef,
 ): ProcedureBuilder<{
   _config: TConfig;
   _ctx_in: TConfig['ctx'];
@@ -203,7 +218,7 @@ export function createBuilder<TConfig extends RootConfig>(
   _output_out: UnsetMarker;
   _meta: TConfig['meta'];
 }> {
-  const _def: ProcedureBuilderDef = initDef || {
+  const _def: AnyProcedureBuilderDef = initDef || {
     inputs: [],
     middlewares: [],
   };
@@ -241,82 +256,25 @@ export function createBuilder<TConfig extends RootConfig>(
       return createResolver(
         { ..._def, query: true },
         resolver,
-      ) as QueryProcedure<any>;
+      ) as AnyQueryProcedure;
     },
     mutation(resolver) {
       return createResolver(
         { ..._def, mutation: true },
         resolver,
-      ) as MutationProcedure<any>;
+      ) as AnyMutationProcedure;
     },
     subscription(resolver) {
       return createResolver(
         { ..._def, subscription: true },
         resolver,
-      ) as SubscriptionProcedure<any>;
+      ) as AnySubscriptionProcedure;
     },
   };
 }
 
-function isPlainObject(obj: unknown) {
-  return obj && typeof obj === 'object' && !Array.isArray(obj);
-}
-
-export function createInputMiddleware<T>(
-  parse: ParseFn<T>,
-): ProcedureBuilderMiddleware {
-  return async function inputMiddleware({ next, rawInput, input }) {
-    let parsedInput: ReturnType<typeof parse>;
-    try {
-      parsedInput = await parse(rawInput);
-    } catch (cause) {
-      throw new TRPCError({
-        code: 'BAD_REQUEST',
-        cause: getCauseFromUnknown(cause),
-      });
-    }
-
-    // Multiple input parsers
-    const combinedInput =
-      isPlainObject(input) && isPlainObject(parsedInput)
-        ? {
-            ...input,
-            ...parsedInput,
-          }
-        : parsedInput;
-
-    // TODO fix this typing?
-    return next({ input: combinedInput } as any);
-  };
-}
-
-export function createOutputMiddleware<T>(
-  parse: ParseFn<T>,
-): ProcedureBuilderMiddleware {
-  return async function outputMiddleware({ next }) {
-    const result = await next();
-    if (!result.ok) {
-      // pass through failures without validating
-      return result;
-    }
-    try {
-      const data = await parse(result.data);
-      return {
-        ...result,
-        data,
-      };
-    } catch (cause) {
-      throw new TRPCError({
-        message: 'Output validation failed',
-        code: 'INTERNAL_SERVER_ERROR',
-        cause: getCauseFromUnknown(cause),
-      });
-    }
-  };
-}
-
 function createResolver(
-  _def: ProcedureBuilderDef,
+  _def: AnyProcedureBuilderDef,
   resolver: (opts: ResolveOptions<any>) => MaybePromise<any>,
 ) {
   const finalBuilder = createNewBuilder(_def, {
@@ -359,7 +317,7 @@ const caller = appRouter.createCaller({
 const result = await caller.call('myProcedure', input);
 `.trim();
 
-function createProcedureCaller(_def: ProcedureBuilderDef): Procedure<any> {
+function createProcedureCaller(_def: AnyProcedureBuilderDef): AnyProcedure {
   const procedure = async function resolve(opts: ProcedureCallOptions) {
     // is direct server-side call
     if (!opts || !('rawInput' in opts)) {
@@ -401,7 +359,7 @@ function createProcedureCaller(_def: ProcedureBuilderDef): Procedure<any> {
       } catch (cause) {
         return {
           ok: false,
-          error: getErrorFromUnknown(cause),
+          error: getTRPCErrorFromUnknown(cause),
           marker: middlewareMarker,
         };
       }
@@ -426,5 +384,5 @@ function createProcedureCaller(_def: ProcedureBuilderDef): Procedure<any> {
   procedure._def = _def;
   procedure.meta = _def.meta;
 
-  return procedure as Procedure<any>;
+  return procedure as AnyProcedure;
 }

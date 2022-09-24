@@ -34,7 +34,7 @@ slug: /express
 ### 1. Install deps
 
 ```bash
-yarn add @trpc/server zod
+yarn add @trpc/server@next zod
 ```
 
 > [Zod](https://github.com/colinhacks/zod) isn't a required dependency, but it's used in the sample router below.
@@ -47,7 +47,7 @@ Implement your tRPC router. A sample router is given below:
 import { initTRPC } from '@trpc/server';
 import { z } from 'zod';
 
-export const t = initTRPC()();
+export const t = initTRPC.create();
 
 export const appRouter = t.router({
   getUser: t.procedure.input(z.string()).query((req) => {
@@ -68,7 +68,7 @@ export const appRouter = t.router({
 export type AppRouter = typeof appRouter;
 ```
 
-If your router file starts getting too big, split your router into several subrouters each implemented in its own file. Then [merge them](/docs/merging-routers) into a single root `appRouter`.
+If your router file starts getting too big, split your router into several subrouters each implemented in its own file. Then [merge them](merging-routers) into a single root `appRouter`.
 
 ### 3. Use the Express adapter
 
@@ -85,7 +85,7 @@ const createContext = ({
 }: trpcExpress.CreateExpressContextOptions) => ({}); // no context
 type Context = inferAsyncReturnType<typeof createContext>;
 
-const t = initTRPC<{ ctx: Context }>()();
+const t = initTRPC.context<Context>().create();
 const appRouter = t.router({
   // [...]
 });

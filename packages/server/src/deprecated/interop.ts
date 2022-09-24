@@ -2,18 +2,18 @@ import { CombinedDataTransformer, ProcedureParams, ProcedureType } from '..';
 import { CreateRootConfig, RootConfig } from '../core/internals/config';
 import { getParseFnOrPassThrough } from '../core/internals/getParseFn';
 import { mergeWithoutOverrides } from '../core/internals/mergeWithoutOverrides';
+import { createBuilder } from '../core/internals/procedureBuilder';
 import {
-  createBuilder,
   createInputMiddleware,
   createOutputMiddleware,
-} from '../core/internals/procedureBuilder';
+} from '../core/middleware';
 import {
   MutationProcedure,
-  Procedure as NewProcedure,
   QueryProcedure,
   SubscriptionProcedure,
 } from '../core/procedure';
 import {
+  ProcedureRecord as NewProcedureRecord,
   Router as NewRouter,
   RouterDef,
   createRouterFactory,
@@ -53,34 +53,28 @@ type convertProcedureParams<
     >
   : never;
 
-/**
- * @deprecated
- */
-export type OldProcedureTag = {
-  _old: true;
-};
-
 type MigrateProcedure<
   TConfig extends RootConfig,
   TProcedure extends AnyOldProcedure,
   TType extends ProcedureType,
 > = TType extends 'query'
-  ? QueryProcedure<convertProcedureParams<TConfig, TProcedure>> &
-      OldProcedureTag
+  ? QueryProcedure<convertProcedureParams<TConfig, TProcedure>>
   : TType extends 'mutation'
-  ? MutationProcedure<convertProcedureParams<TConfig, TProcedure>> &
-      OldProcedureTag
+  ? MutationProcedure<convertProcedureParams<TConfig, TProcedure>>
   : TType extends 'subscription'
-  ? SubscriptionProcedure<convertProcedureParams<TConfig, TProcedure>> &
-      OldProcedureTag
+  ? SubscriptionProcedure<convertProcedureParams<TConfig, TProcedure>>
   : never;
 
 export type MigrateProcedureRecord<
   TConfig extends RootConfig,
-  T extends ProcedureRecord<any>,
+  TProcedureRecord extends ProcedureRecord<any>,
   TType extends ProcedureType,
 > = {
-  [K in keyof T]: MigrateProcedure<TConfig, T[K], TType>;
+  [K in keyof TProcedureRecord]: MigrateProcedure<
+    TConfig,
+    TProcedureRecord[K],
+    TType
+  >;
 };
 
 export type MigrateRouter<
@@ -117,43 +111,7 @@ export type MigrateRouter<
   TErrorShape extends TRPCErrorShape<any>,
 > = NewRouter<
   {
-    legacy: {
-      queries: MigrateProcedureRecord<
-        CreateRootConfig<{
-          ctx: TInputContext;
-          errorShape: TErrorShape;
-          meta: TMeta;
-          transformer: CombinedDataTransformer;
-        }>,
-        TQueries,
-        'query'
-      >;
-      mutations: MigrateProcedureRecord<
-        CreateRootConfig<{
-          ctx: TInputContext;
-          errorShape: TErrorShape;
-          meta: TMeta;
-          transformer: CombinedDataTransformer;
-        }>,
-        TMutations,
-        'mutation'
-      >;
-      subscriptions: MigrateProcedureRecord<
-        CreateRootConfig<{
-          ctx: TInputContext;
-          errorShape: TErrorShape;
-          meta: TMeta;
-          transformer: CombinedDataTransformer;
-        }>,
-        TSubscriptions,
-        'subscription'
-      >;
-    };
-  } & RouterDef<
-    TInputContext,
-    TErrorShape,
-    TMeta,
-    MigrateProcedureRecord<
+    queries: MigrateProcedureRecord<
       CreateRootConfig<{
         ctx: TInputContext;
         errorShape: TErrorShape;
@@ -162,28 +120,28 @@ export type MigrateRouter<
       }>,
       TQueries,
       'query'
-    > &
-      MigrateProcedureRecord<
-        CreateRootConfig<{
-          ctx: TInputContext;
-          errorShape: TErrorShape;
-          meta: TMeta;
-          transformer: CombinedDataTransformer;
-        }>,
-        TMutations,
-        'mutation'
-      > &
-      MigrateProcedureRecord<
-        CreateRootConfig<{
-          ctx: TInputContext;
-          errorShape: TErrorShape;
-          meta: TMeta;
-          transformer: CombinedDataTransformer;
-        }>,
-        TSubscriptions,
-        'subscription'
-      >
-  >
+    >;
+    mutations: MigrateProcedureRecord<
+      CreateRootConfig<{
+        ctx: TInputContext;
+        errorShape: TErrorShape;
+        meta: TMeta;
+        transformer: CombinedDataTransformer;
+      }>,
+      TMutations,
+      'mutation'
+    >;
+    subscriptions: MigrateProcedureRecord<
+      CreateRootConfig<{
+        ctx: TInputContext;
+        errorShape: TErrorShape;
+        meta: TMeta;
+        transformer: CombinedDataTransformer;
+      }>,
+      TSubscriptions,
+      'subscription'
+    >;
+  } & RouterDef<TInputContext, TErrorShape, TMeta, {}>
 >;
 
 export type MigrateOldRouter<TRouter extends AnyOldRouter> =
@@ -242,11 +200,9 @@ export function migrateRouter<TOldRouter extends AnyOldRouter>(
   const errorFormatter = oldRouter._def.errorFormatter;
   const transformer = oldRouter._def.transformer;
 
-  type ProcRecord = Record<string, NewProcedure<any>>;
-
-  const queries: ProcRecord = {};
-  const mutations: ProcRecord = {};
-  const subscriptions: ProcRecord = {};
+  const queries: NewProcedureRecord = {};
+  const mutations: NewProcedureRecord = {};
+  const subscriptions: NewProcedureRecord = {};
   for (const [name, procedure] of Object.entries(oldRouter._def.queries)) {
     queries[name] = migrateProcedure(procedure as any, 'query');
   }

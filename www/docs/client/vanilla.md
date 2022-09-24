@@ -21,24 +21,24 @@ Create a typesafe client with the `createTRPCClient` method from `@trpc/client`:
 
 ```ts title='client.ts'
 // pages/index.tsx
+import { createTRPCProxyClient, httpBatchLink } from '@trpc/client';
 import type { AppRouter } from '../path/to/server/trpc';
-import { createTRPCClient, createTRPCClientProxy } from '@trpc/client';
 
-const client = createTRPCClient<AppRouter>({
-  url: 'http://localhost:5000/trpc'
+const client = createTRPCProxyClient<AppRouter>({
+  links: [
+    httpBatchLink({
+      url: 'http://localhost:3000/trpc',
+    }),
+  ],
 });
-
-const proxy = createTRPCClientProxy(client);
 ```
 
-As you can see, we passed `AppRouter` as a **type argument** of `createTRPCClient`. This returns a strongly typed `client` instance, we also create a client `proxy` which mirrors the structure of your `AppRouter` on the client:
+As you can see, we passed `AppRouter` as a **type argument** of `createTRPCProxyClient`. This returns a strongly typed `client` instance, a proxy which mirrors the structure of your `AppRouter` on the client:
 
 ```ts title='client.ts'
-const bilbo = await proxy.getUser.query('id_bilbo');
+const bilbo = await client.getUser.query('id_bilbo');
 // => { id: 'id_bilbo', name: 'Bilbo' };
 
-const frodo = await proxy.createUser.mutate({ name: 'Frodo' });
+const frodo = await client.createUser.mutate({ name: 'Frodo' });
 // => { id: 'id_frodo', name: 'Frodo' };
 ```
-
-

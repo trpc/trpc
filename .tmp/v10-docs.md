@@ -1,8 +1,15 @@
+# ⚠️ Potentially outdated doc
+
+See https://trpc.io/docs/v10/migrate-from-v9-to-v10
+
+
+
 # [tRPC](https://trpc.io) V10
 
 > How the the future [tRPC V10](https://trpc.io) will look like.
 
 
+- [⚠️ Potentially outdated doc](#️-potentially-outdated-doc)
 - [tRPC V10](#trpc-v10)
   - [Play with it!](#play-with-it)
   - [Goals & features](#goals--features)
@@ -157,13 +164,13 @@ type Context = {
   };
 };
 
-export const t = initTRPC<{
-  ctx: Context;
-}>()({
-  /* optional */
-  transformer: superjson,
-  // errorFormatter: [...]
-});
+export const t = initTRPC
+  .context<Context>()
+  .create({
+    /* optional */
+    transformer: superjson,
+    // errorFormatter: [...]
+  });
 
 const {
   /**
@@ -182,7 +189,7 @@ const {
    * Merge Routers
    */
   mergeRouters,
-} = trpc;
+} = t;
 ```
 
 #### §1.1 Creating a router
@@ -532,7 +539,7 @@ import { trpc } from '~/utils/trpc';
 
 function MyComponent() {
   // You'll be able to CMD+Click `postById` below
-  const query = trpc.proxy.postById.useQuery(
+  const query = trpc.postById.useQuery(
     { id: 1 },
     {
       /* [...] trpc specific options */
@@ -568,7 +575,7 @@ Simpler setup:
  * A set of strongly-typed React hooks from your `AppRouter` type signature with `createReactQueryHooks`.
  * @link https://trpc.io/docs/react#3-create-trpc-hooks
  */
-export const trpc = setupTRPC<AppRouter>({
+export const trpc = createTRPCNext<AppRouter>({
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   config() {
     /**
@@ -638,4 +645,4 @@ https://alpha.trpc.io/docs/links#creating-a-custom-link
 
 ## Migration path & Interopability mode
 
-👉 Moved to [alpha.trpc.io/docs/migrate-from-v9-to-v10](https://alpha.trpc.io/docs/migrate-from-v9-to-v10)
+👉 Moved to [alpha.trpc.io/docs/migrate-from-v9-to-v10](https://trpc.io/docs/v10/migrate-from-v9-to-v10)

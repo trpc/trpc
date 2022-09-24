@@ -3,7 +3,13 @@ import { ProcedureParams } from '../procedure';
 /**
  * @internal
  */
-export type Overwrite<T, U> = Omit<T, keyof U> & U;
+export type Overwrite<TType, TWith> = Omit<TType, keyof TWith> & TWith;
+/**
+ * @internal
+ */
+export type OverwriteKnown<TType, TWith> = {
+  [K in keyof TType]: K extends keyof TWith ? TWith[K] : TType[K];
+};
 /**
  * @internal
  */
@@ -53,12 +59,12 @@ export type ValidateShape<TActualShape, TExpectedShape> =
 /**
  * @internal
  */
-export type PickFirstDefined<T, K> = undefined extends T
-  ? undefined extends K
+export type PickFirstDefined<TType, TPick> = undefined extends TType
+  ? undefined extends TPick
     ? never
-    : K
-  : T;
+    : TPick
+  : TType;
 
-export type EnsureRecord<T> = T extends Record<string, any>
-  ? T
+export type EnsureRecord<TRecord> = TRecord extends Record<string, any>
+  ? TRecord
   : Record<string, never>;

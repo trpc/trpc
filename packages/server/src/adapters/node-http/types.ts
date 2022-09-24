@@ -1,6 +1,5 @@
 import { IncomingMessage, ServerResponse } from 'http';
-import { AnyRouter, inferRouterContext } from '../../core';
-import { inferRouterDef } from '../../core';
+import { AnyRouter, inferRouterContext, inferRouterDef } from '../../core';
 import { HTTPBaseHandlerOptions } from '../../http/internals/types';
 
 interface ParsedQs {
@@ -17,7 +16,7 @@ export type NodeHTTPCreateContextOption<
   TRouter extends AnyRouter,
   TRequest,
   TResponse,
-> = unknown extends inferRouterContext<TRouter>
+> = {} extends inferRouterContext<TRouter>
   ? {
       /**
        * @link https://trpc.io/docs/context
@@ -36,7 +35,6 @@ export type NodeHTTPHandlerOptions<
   TRequest extends NodeHTTPRequest,
   TResponse extends NodeHTTPResponse,
 > = HTTPBaseHandlerOptions<TRouter, TRequest> & {
-  teardown?: () => Promise<void>;
   maxBodySize?: number;
 } & NodeHTTPCreateContextOption<TRouter, TRequest, TResponse>;
 

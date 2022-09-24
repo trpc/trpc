@@ -1,10 +1,10 @@
 import { routerToServerAndClientNew, waitError } from '../___testHelpers';
-import { TRPCClientError, httpBatchLink, httpLink } from '@trpc/client';
+import { TRPCClientError, httpBatchLink, httpLink } from '@trpc/client/src';
 import { konn } from 'konn';
 import { z } from 'zod';
 import { initTRPC } from '../../src';
 
-const t = initTRPC()();
+const t = initTRPC.create();
 const appRouter = t.router({
   q: t.procedure.input(z.enum(['good', 'bad'])).query(({ input }) => {
     if (input === 'bad') {
@@ -23,11 +23,11 @@ describe('httpLink', () => {
             links: [
               httpLink({
                 url: httpUrl,
+                headers() {
+                  throw new Error('Bad headers fn');
+                },
               }),
             ],
-            headers() {
-              throw new Error('Bad headers fn');
-            },
           };
         },
       });
@@ -58,11 +58,11 @@ describe('httpBatchLink', () => {
             links: [
               httpBatchLink({
                 url: httpUrl,
+                headers() {
+                  throw new Error('Bad headers fn');
+                },
               }),
             ],
-            headers() {
-              throw new Error('Bad headers fn');
-            },
           };
         },
       });

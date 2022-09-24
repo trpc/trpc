@@ -20,7 +20,10 @@ export type ErrorFormatter<TContext, TShape extends TRPCErrorShape<number>> = ({
   shape: DefaultErrorShape;
 }) => TShape;
 
-export type ErrorFormatterShape<T> = T extends ErrorFormatter<any, infer TShape>
+export type ErrorFormatterShape<TType> = TType extends ErrorFormatter<
+  any,
+  infer TShape
+>
   ? TShape
   : DefaultErrorShape;
 /**

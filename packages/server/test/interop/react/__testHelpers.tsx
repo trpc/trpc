@@ -1,25 +1,27 @@
 /* eslint-disable @typescript-eslint/no-empty-function */
-import { trpcServer } from '../../___packages';
+import '../../___packages';
 import { routerToServerAndClientNew } from '../../___testHelpers';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import '@testing-library/jest-dom';
-import { httpBatchLink } from '@trpc/client/src/links/httpBatchLink';
-import { splitLink } from '@trpc/client/src/links/splitLink';
+import {
+  createQueryClient,
+  createQueryClientConfig,
+} from '../../__queryClient';
+import { QueryClientProvider } from '@tanstack/react-query';
 import {
   TRPCWebSocketClient,
   createWSClient,
+  httpBatchLink,
+  splitLink,
   wsLink,
-} from '@trpc/client/src/links/wsLink';
+} from '@trpc/client/src';
+import { createReactQueryHooks } from '@trpc/react/src';
+import { OutputWithCursor } from '@trpc/react/src/shared/hooks/createHooksInternal';
+import { TRPCError } from '@trpc/server/src';
+import * as trpcServer from '@trpc/server/src';
+import { observable } from '@trpc/server/src/observable';
+import { subscriptionPullFactory } from '@trpc/server/src/subscription';
 import hash from 'hash-sum';
-import React, { ReactNode, useState } from 'react';
+import React, { ReactNode } from 'react';
 import { ZodError, z } from 'zod';
-import {
-  OutputWithCursor,
-  createReactQueryHooks,
-} from '../../../../react/src/createReactQueryHooks';
-import { TRPCError } from '../../../src/error/TRPCError';
-import { observable } from '../../../src/observable';
-import { subscriptionPullFactory } from '../../../src/subscription';
 
 type Context = {};
 export type Post = {
@@ -224,12 +226,15 @@ export function createLegacyAppRouter() {
       },
     },
   );
-  const queryClient = new QueryClient();
+
+  trpcClientOptions.queryClientConfig = createQueryClientConfig(
+    trpcClientOptions.queryClientConfig,
+  );
+  const queryClient = createQueryClient(trpcClientOptions.queryClientConfig);
 
   const trpc = createReactQueryHooks<typeof appRouter>();
 
   function App(props: { children: ReactNode }) {
-    const [queryClient] = useState(() => new QueryClient());
     return (
       <trpc.Provider {...{ queryClient, client }}>
         <QueryClientProvider client={queryClient}>

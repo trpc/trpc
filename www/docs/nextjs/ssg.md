@@ -69,7 +69,7 @@ export default function PostViewPage(
   props: InferGetStaticPropsType<typeof getStaticProps>,
 ) {
   const { id } = props;
-  const postQuery = trpc.proxy.post.byId.useQuery({ id });
+  const postQuery = trpc.post.byId.useQuery({ id });
 
   if (postQuery.status !== 'success') {
     // won't happen since we're using `fallback: "blocking"`
@@ -90,4 +90,4 @@ export default function PostViewPage(
 }
 ```
 
-Check out [here](/docs/ssg-helpers) to learn more about `createSSGHelpers`.
+Check out [here](ssg-helpers) to learn more about `createSSGHelpers`.

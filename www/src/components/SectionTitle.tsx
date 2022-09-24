@@ -1,17 +1,27 @@
+import clsx from 'clsx';
 import React, { FC, ReactNode } from 'react';
 
 type SectionTitleProps = {
-  readonly title: ReactNode;
-  readonly description?: ReactNode;
+  id: string;
+  title: ReactNode;
+  description?: ReactNode;
 };
 
-export const SectionTitle: FC<SectionTitleProps> = ({ title, description }) => {
+export const SectionTitle: FC<SectionTitleProps> = (props) => {
   return (
     <div className="text-center">
-      <h2 className="text-2xl font-bold lg:text-3xl">{title}</h2>
-      {description && (
-        <p className="text-gray-600 dark:text-gray-400 max-w-[50ch] mx-auto text-sm md:text-base">
-          {description}
+      <h2
+        id={props.id}
+        className={clsx(
+          'text-2xl font-bold text-black hover:no-underline lg:text-3xl scroll-mt-20 dark:text-white',
+        )}
+      >
+        {props.title}
+        <a className="hash-link" href={`#${props.id}`}></a>
+      </h2>
+      {props.description && (
+        <p className="text-gray-600 dark:text-gray-400 max-w-[60ch] pt-2 mx-auto text-sm md:text-base">
+          {props.description}
         </p>
       )}
     </div>

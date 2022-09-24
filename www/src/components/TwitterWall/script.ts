@@ -7,20 +7,23 @@
 import 'dotenv/config';
 import fs from 'fs';
 import OAuth from 'oauth';
+import { z } from 'zod';
 
 // Get these keys from dev.twitter.com, create an application and go to 'Keys and tokens'
-const {
-  TWITTER_API_KEY,
-  TWITTER_API_KEY_SECRET,
-  TWITTER_ACCESS_TOKEN,
-  TWITTER_ACCESS_TOKEN_SECRET,
-} = process.env;
+const env = z
+  .object({
+    TWITTER_API_KEY: z.string().min(1),
+    TWITTER_API_KEY_SECRET: z.string().min(1),
+    TWITTER_ACCESS_TOKEN: z.string().min(1),
+    TWITTER_ACCESS_TOKEN_SECRET: z.string().min(1),
+  })
+  .parse(process.env);
 
 const oauth = new OAuth.OAuth(
   'https://api.twitter.com/oauth/request_token',
   'https://api.twitter.com/oauth/access_token',
-  TWITTER_API_KEY,
-  TWITTER_API_KEY_SECRET,
+  env.TWITTER_API_KEY,
+  env.TWITTER_API_KEY_SECRET,
   '1.0A',
   null,
   'HMAC-SHA1',
@@ -62,21 +65,10 @@ const flattenTweets = (tweets: any, users: any) => {
   });
 };
 
-type Tweets = ReturnType<typeof flattenTweets>;
-
-/** Take the flattened array and group into subarrays */
-const columnify = (tweets: Tweets, columns = 3) => {
-  const cols = [];
-  for (let i = 0; i < tweets.length; i += columns) {
-    cols.push(tweets.slice(i, i + columns));
-  }
-  return cols;
-};
-
 oauth.get(
   'https://api.twitter.com/1.1/collections/entries.json?id=custom-1441435105910796291',
-  TWITTER_ACCESS_TOKEN,
-  TWITTER_ACCESS_TOKEN_SECRET,
+  env.TWITTER_ACCESS_TOKEN,
+  env.TWITTER_ACCESS_TOKEN_SECRET,
   (err: any, data: any) => {
     const jsonParsed = JSON.parse(data);
     const tweets = jsonParsed?.objects?.tweets;
@@ -91,10 +83,13 @@ oauth.get(
 
     const flattenedTweets = flattenTweets(tweets, users);
 
-    const columnifiedTweets = columnify(flattenedTweets);
-
-    const json = JSON.stringify(columnifiedTweets, null, 2);
-    const text = `export const tweets = ${json}`;
+    const json = JSON.stringify(flattenedTweets, null, 2);
+    const text = [
+      `// prettier-ignore`,
+      `// eslint-disable`,
+      `export const tweets = ${json}`,
+      ``,
+    ].join('\n');
 
     fs.writeFileSync(__dirname + '/script.output.ts', text);
   },

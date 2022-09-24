@@ -1,5 +1,4 @@
 // @ts-check
-
 /** @type {import('@docusaurus/types').Config} */
 module.exports = {
   title: 'tRPC',
@@ -7,12 +6,15 @@ module.exports = {
   url: 'https://trpc.io',
   baseUrl: '/',
   onBrokenLinks: 'throw',
-  onBrokenMarkdownLinks: 'warn',
+  onBrokenMarkdownLinks: 'throw',
+  onDuplicateRoutes: 'throw',
   favicon: 'img/favicon.ico',
   organizationName: 'trpc', // Usually your GitHub org/user name.
   projectName: 'trpc', // Usually your repo name.
   themeConfig: {
-    image: 'img/facebook_cover_photo_2.png',
+    disableSwitch: false,
+    respectPrefersColorScheme: true,
+    image: 'https://assets.trpc.io/www/trpc-open-graph.png',
     prism: {
       theme: require('prism-react-renderer/themes/vsDark'),
     },
@@ -24,10 +26,12 @@ module.exports = {
       // searchParameters: {},
     },
     announcementBar: {
+      id: 'v10',
       content:
-        "🚀 You are looking at a pre-prelease of tRPC v10! See <a href='https://github.com/trpc/trpc/blob/next/.tmp/v10-docs.md'>this document</a> for a summary of what is changing &amp; <a href='https://github.com/trpc/examples-v10-next-prisma-starter-sqlite'>go here</a> to try out a real project using this version.",
+        "🚀 You are looking at a pre-release of tRPC v10! See <a href='https://trpc.io/docs/v10/migrate-from-v9-to-v10'>the migration guide</a> for a summary of what is changing &amp; <a href='https://github.com/trpc/examples-next-prisma-starter'>go here</a> to try out a real project using this version.",
       backgroundColor: 'var(--ifm-color-primary-dark)',
       textColor: '#ffffff',
+      isCloseable: false,
     },
     navbar: {
       title: 'tRPC',
@@ -37,30 +41,33 @@ module.exports = {
       },
       items: [
         {
-          to: 'docs',
+          type: 'doc',
+          docId: 'main/introduction',
           label: 'Docs',
-          activeBaseRegex: 'docs(/?)$',
         },
         {
-          to: 'docs/quickstart',
+          type: 'doc',
+          docId: 'main/quickstart',
           label: 'Quickstart',
         },
         {
-          to: 'docs/awesome-trpc',
+          type: 'doc',
+          docId: 'main/awesome-trpc',
           label: 'Awesome tRPC Collection',
         },
         {
-          to: 'docs/nextjs',
+          type: 'doc',
+          docId: 'nextjs/introduction',
           label: 'Usage with Next.js',
         },
         {
-          href: 'https://github.com/trpc/trpc/tree/next',
+          href: 'https://github.com/trpc/trpc',
           label: 'GitHub',
           position: 'right',
           className: 'navbar-external-link',
         },
         {
-          href: 'https://twitter.com/alexdotjs',
+          href: 'https://twitter.com/trpcio',
           label: 'Twitter',
           position: 'right',
           className: 'navbar-external-link',
@@ -85,11 +92,11 @@ module.exports = {
           items: [
             {
               label: 'Docs',
-              to: 'docs',
+              to: 'docs/v9',
             },
             {
               label: 'Usage with Next.js',
-              to: 'docs/nextjs',
+              to: 'docs/v9/nextjs',
             },
           ],
         },
@@ -136,11 +143,14 @@ module.exports = {
       return {
         name: 'docusaurus-tailwindcss',
         configurePostCss(postcssOptions) {
-          // Appends TailwindCSS and AutoPrefixer.
-          //eslint-disable-next-line
+          // Appends TailwindCSS, AutoPrefixer & CSSNano.
+          /* eslint-disable @typescript-eslint/no-var-requires */
           postcssOptions.plugins.push(require('tailwindcss'));
-          //eslint-disable-next-line
           postcssOptions.plugins.push(require('autoprefixer'));
+          if (process.env.NODE_ENV === 'production') {
+            postcssOptions.plugins.push(require('cssnano'));
+          }
+          /* eslint-enable @typescript-eslint/no-var-requires */
           return postcssOptions;
         },
       };
@@ -152,13 +162,25 @@ module.exports = {
       {
         docs: {
           lastVersion: 'current',
+          // disableVersioning: true,
+          // onlyIncludeVersions: ['9.x'],
           versions: {
             current: {
               label: '10.x',
-              // path: '1.0.0',
+              path: 'v10',
+              badge: true,
+              className: 'v10',
+              banner: 'unreleased',
+            },
+            '9.x': {
+              label: '9.x',
+              path: 'v9',
+              badge: true,
+              className: 'v9',
+              banner: 'none',
             },
           },
-          includeCurrentVersion: false,
+          // includeCurrentVersion: false,
           sidebarPath: require.resolve('./sidebars.js'),
           // Please change this to your repo.
           editUrl: 'https://github.com/trpc/trpc/tree/next/www/',
@@ -183,7 +205,7 @@ module.exports = {
       {
         // Not sure how reliable this path is (it's relative from the preset package)?
         // None of the light themes had good support for `diff` mode, so had to patch my own theme
-        themes: ['../../../www/min-light-with-diff', 'nord'],
+        themes: ['../../../../../../www/min-light-with-diff', 'nord'],
       },
     ],
   ],
@@ -194,5 +216,8 @@ module.exports = {
       charSet: 'utf-8',
     },
   ],
-  clientModules: [require.resolve('./docusaurus.twitterReload.js')],
+  clientModules: [
+    require.resolve('./docusaurus.twitterReload.js'),
+    require.resolve('./docusaurus.preferredTheme.js'),
+  ],
 };

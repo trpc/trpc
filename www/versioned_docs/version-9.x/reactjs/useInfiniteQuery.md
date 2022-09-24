@@ -42,7 +42,7 @@ export const appRouter = trpc.router<Context>()
           myCursor: 'asc',
         },
       })
-      let nextCursor: typeof cursor | null = null;
+      let nextCursor: typeof cursor | undefined = undefined;
       if (items.length > limit) {
         const nextItem = items.pop()
         nextCursor = nextItem!.myCursor;

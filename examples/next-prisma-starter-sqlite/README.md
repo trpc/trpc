@@ -3,7 +3,7 @@
 
 > V10 Preview of tRPC!
 
-- 📚 See docs here: https://github.com/trpc/trpc/blob/next/.tmp/v10-docs.md
+- 📚 See docs here: https://alpha.trpc.io/docs
 - 🙏 Feel free to open issues in this repo to give feedback!
 - ❓ Search the project for `QUESTION` for open API discussions, but don't feel limited to *only* give feedback on those!
 - ⚡ ~~Open in CodeSandbox: [https://codesandbox.io/s/github/trpc/examples-v10-next-prisma-starter-sqlite](https://codesandbox.io/s/github/trpc/examples-v10-next-prisma-starter-sqlite?file=/src/pages/post/%5Bid%5D.tsx)~~ Inference on CodeSandbox currently doesn't work, so you'll have to open the project locally

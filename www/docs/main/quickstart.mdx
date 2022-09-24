@@ -3,10 +3,11 @@ id: quickstart
 title: Quickstart
 sidebar_label: Quickstart
 slug: /quickstart
-author: colinhacks
-author_url: https://twitter.com/colinhacks
-author_image_url: https://avatars.githubusercontent.com/u/3084745?v=4
 ---
+
+import CodeBlock from '@theme/CodeBlock';
+import TabItem from '@theme/TabItem';
+import Tabs from '@theme/Tabs';
 
 :::tip
 We highly encourage you to check out [the Example Apps](example-apps.md) to get a feel of tRPC and getting up & running as seamless as possible.
@@ -21,7 +22,7 @@ We highly encourage you to check out [the Example Apps](example-apps.md) to get 
 import { initTRPC } from '@trpc/server';
 import { z } from 'zod';
 
-const t = initTRPC()();
+const t = initTRPC.create();
 
 interface User {
   id: string;
@@ -69,34 +70,42 @@ export type AppRouter = typeof appRouter;
 
 **⚠️ Requirements**: tRPC requires TypeScript > 4.1 as it relies on [Template Literal Types](https://www.typescriptlang.org/docs/handbook/2/template-literal-types.html).
 
-`npm install @trpc/server`
+`npm install @trpc/server@next`
 
 For implementing tRPC endpoints and routers. Install in your server codebase.
 
-`npm install @trpc/client @trpc/server`
+`npm install @trpc/client@next @trpc/server@next`
 
 For making typesafe API calls from your client. Install in your client codebase (`@trpc/server` is a peer dependency of `@trpc/client`).
 
-`npm install @trpc/react react-query@3`
+`npm install @trpc/react@next @tanstack/react-query`
 
-For generating a powerful set of React hooks for querying your tRPC API. Powered by [react-query](https://react-query.tanstack.com/).
+For generating a powerful set of React hooks for querying your tRPC API. Powered by [@tanstack/react-query](https://tanstack.com/query/v4/docs/adapters/react-query).
 
-`npm install @trpc/next`
+`npm install @trpc/next@next`
 
 A set of utilies for integrating tRPC with [Next.js](https://nextjs.org/).
 
 ### Installation Snippets
 
-**npm:**
+<!-- remark-plugin-npm2yarn doesn't play nice with shiki so have to do these tabs manually -->
+
+**npm**
 
 ```bash
-npm install @trpc/server @trpc/client @trpc/react react-query@3 @trpc/next
+npm install @trpc/server@next @trpc/client@next @trpc/react@next @trpc/next@next @tanstack/react-query
 ```
 
-**yarn:**
+**yarn**
 
 ```bash
-yarn add @trpc/server @trpc/client @trpc/react react-query@3 @trpc/next
+yarn add @trpc/server@next @trpc/client@next @trpc/react@next @trpc/next@next @tanstack/react-query
+```
+
+**pnpm**
+
+```bash
+pnpm add @trpc/server@next @trpc/client@next @trpc/react@next @trpc/next@next @tanstack/react-query
 ```
 
 ## Defining a router
@@ -115,7 +124,7 @@ First we define a router somewhere in our server codebase:
 ```ts twoslash title='server.ts'
 import { initTRPC } from '@trpc/server';
 
-const t = initTRPC()();
+const t = initTRPC.create();
 
 const appRouter = t.router({});
 
@@ -139,7 +148,7 @@ The following would create a query procedure called `userById` that takes a sing
 import { initTRPC } from '@trpc/server';
 import { z } from 'zod';
 
-const t = initTRPC()();
+const t = initTRPC.create();
 
 interface User {
   id: string;
@@ -189,16 +198,18 @@ userCreate(payload: {name: string}) => {id: string; name: string};
 
 ```ts twoslash title="client.ts"
 // @module: esnext
-
 // @include: server
-
 // ---cut---
 // @filename: client.ts
+import { createTRPCProxyClient, httpBatchLink } from '@trpc/client';
 import type { AppRouter } from './server';
-import { createTRPCProxyClient } from '@trpc/client';
 
 const trpc = createTRPCProxyClient<AppRouter>({
-  url: 'http://localhost:3000/api/trpc',
+  links: [
+    httpBatchLink({
+      url: 'http://localhost:3000/trpc',
+    }),
+  ],
 });
 ```
 
@@ -206,21 +217,21 @@ const trpc = createTRPCProxyClient<AppRouter>({
 
 ```ts twoslash title="client.ts"
 // @module: esnext
-
 // @include: server
-
 // @filename: client.ts
+import { createTRPCProxyClient, httpBatchLink } from '@trpc/client';
 import type { AppRouter } from './server';
-import { createTRPCProxyClient } from '@trpc/client';
 
 const trpc = createTRPCProxyClient<AppRouter>({
-  url: 'http://localhost:3000/api/trpc',
+  links: [
+    httpBatchLink({
+      url: 'http://localhost:3000/trpc',
+    }),
+  ],
 });
 
 // ---cut---
-
 // @noErrors
-
 // Inferred types
 const user = await trpc.userById.query('1');
 //    ^?
@@ -233,19 +244,20 @@ const createdUser = await trpc.userCreate.mutate({ name: 'sachinraja' });
 
 ```ts twoslash title="client.ts"
 // @module: esnext
-
 // @include: server
-
 // @filename: client.ts
+import { createTRPCProxyClient, httpBatchLink } from '@trpc/client';
 import type { AppRouter } from './server';
-import { createTRPCProxyClient } from '@trpc/client';
 
 const trpc = createTRPCProxyClient<AppRouter>({
-  url: 'http://localhost:3000/api/trpc',
+  links: [
+    httpBatchLink({
+      url: 'http://localhost:3000/trpc',
+    }),
+  ],
 });
 
 // ---cut---
-
 // @noErrors
 // Full autocompletion on your routes
 trpc.u;
@@ -256,6 +268,6 @@ trpc.u;
 
 tRPC includes more sophisticated client-side tooling designed for React projects generally and Next.js specifically. Read the appropriate guide next:
 
-- [Usage with Next.js](/docs/nextjs)
-- [Usage with Express (server-side)](/docs/express)
-- [Usage with React (client-side)](/docs/react)
+- [Usage with Next.js](nextjs)
+- [Usage with Express (server-side)](express)
+- [Usage with React (client-side)](react)

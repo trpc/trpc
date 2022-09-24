@@ -1,10 +1,10 @@
 import { legacyRouterToServerAndClient } from './__legacyRouterToServerAndClient';
-import { HTTPHeaders } from '@trpc/client';
+import { HTTPHeaders, httpBatchLink } from '@trpc/client/src';
+import { TRPCError, inferProcedureOutput } from '@trpc/server/src';
 import { AsyncLocalStorage } from 'async_hooks';
 import { expectTypeOf } from 'expect-type';
 import { z } from 'zod';
 import * as trpc from '../../src';
-import { TRPCError, inferProcedureOutput } from '../../src';
 import { MiddlewareResult } from '../../src/deprecated/internals/middlewares';
 
 test('is called if def first', async () => {
@@ -150,8 +150,10 @@ test('allows you to throw an error (e.g. auth)', async () => {
           return {};
         },
       },
-      client: {
-        headers,
+      client({ httpUrl }) {
+        return {
+          links: [httpBatchLink({ url: httpUrl, headers })],
+        };
       },
     },
   );
@@ -260,7 +262,7 @@ test('async hooks', async () => {
     trpc
       .router()
       .middleware((opts) => {
-        return new Promise<MiddlewareResult<unknown>>((resolve, reject) => {
+        return new Promise<MiddlewareResult<any>>((resolve, reject) => {
           storage.run({ requestId: ++requestCount }, async () => {
             opts.next().then(resolve, reject);
           });

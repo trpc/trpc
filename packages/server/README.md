@@ -7,8 +7,7 @@
 </p>
 
 <p align="center">
-  <!-- TODO: replace with new version GIF -->
-  <img src="https://storage.googleapis.com/trpc/trpcgif.gif" alt="Demo" />
+  <img src="https://assets.trpc.io/www/v10/preview-dark.gif" alt="Demo" />
 </p>
 
 # `@trpc/server`
@@ -23,13 +22,13 @@ Full documentation for `@trpc/server` can be found [here](https://trpc.io/docs/r
 
 ```bash
 # npm
-npm install @trpc/server
+npm install @trpc/server@next
 
 # Yarn
-yarn add @trpc/server
+yarn add @trpc/server@next
 
 # pnpm
-pnpm add @trpc/server
+pnpm add @trpc/server@next
 ```
 
 We also recommend installing `zod` to validate procedure inputs.
@@ -53,7 +52,7 @@ function createContext(opts: CreateHTTPContextOptions) {
 type Context = inferAsyncReturnType<typeof createContext>;
 
 // Initialize tRPC
-const t = initTRPC<{ ctx: Context }>()();
+const t = initTRPC.context<Context>.create();
 
 // Create main router
 const appRouter = t.router({

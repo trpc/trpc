@@ -1,6 +1,7 @@
 import { useIsMutating } from '@tanstack/react-query';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
-import { createSSGHelpers } from '@trpc/react/ssg';
+import { createProxySSGHelpers } from '@trpc/react/ssg';
+import { inferProcedureOutput } from '@trpc/server';
 import clsx from 'clsx';
 import {
   GetStaticPaths,
@@ -14,10 +15,10 @@ import superjson from 'superjson';
 import 'todomvc-app-css/index.css';
 import 'todomvc-common/base.css';
 import { createContext } from '../server/context';
-import { appRouter } from '../server/routers/_app';
-import { inferQueryOutput, trpc } from '../utils/trpc';
+import { AppRouter, appRouter } from '../server/routers/_app';
+import { trpc } from '../utils/trpc';
 
-type Task = inferQueryOutput<'todo.all'>[number];
+type Task = inferProcedureOutput<AppRouter['todo']['all']>[number];
 
 /**
  * Hook for checking when the user clicks outside the passed ref
@@ -68,15 +69,14 @@ function ListItem({ task }: { task: Task }) {
     setCompleted(task.completed);
   }, [task.completed]);
 
-  const editTask = trpc.useMutation('todo.edit', {
+  const editTask = trpc.todo.edit.useMutation({
     async onMutate({ id, data }) {
-      await utils.cancelQuery(['todo.all']);
-      const allTasks = utils.getQueryData(['todo.all']);
+      await utils.todo.all.cancel();
+      const allTasks = utils.todo.all.getData();
       if (!allTasks) {
         return;
       }
-      utils.setQueryData(
-        ['todo.all'],
+      utils.todo.all.setData(
         allTasks.map((t) =>
           t.id === id
             ? {
@@ -88,17 +88,14 @@ function ListItem({ task }: { task: Task }) {
       );
     },
   });
-  const deleteTask = trpc.useMutation('todo.delete', {
+  const deleteTask = trpc.todo.delete.useMutation({
     async onMutate() {
-      await utils.cancelQuery(['todo.all']);
-      const allTasks = utils.getQueryData(['todo.all']);
+      await utils.todo.all.cancel();
+      const allTasks = utils.todo.all.getData();
       if (!allTasks) {
         return;
       }
-      utils.setQueryData(
-        ['todo.all'],
-        allTasks.filter((t) => t.id != task.id),
-      );
+      utils.todo.all.setData(allTasks.filter((t) => t.id != task.id));
     },
   });
 
@@ -174,37 +171,31 @@ function ListItem({ task }: { task: Task }) {
 export default function TodosPage({
   filter,
 }: InferGetStaticPropsType<typeof getStaticProps>) {
-  const allTasks = trpc.useQuery(['todo.all'], {
+  const allTasks = trpc.todo.all.useQuery(undefined, {
     staleTime: 3000,
   });
   const utils = trpc.useContext();
-  const addTask = trpc.useMutation('todo.add', {
+  const addTask = trpc.todo.add.useMutation({
     async onMutate({ text }) {
-      await utils.cancelQuery(['todo.all']);
+      await utils.todo.all.cancel();
       const tasks = allTasks.data ?? [];
-      utils.setQueryData(
-        ['todo.all'],
-        [
-          ...tasks,
-          {
-            id: `${Math.random()}`,
-            completed: false,
-            text,
-            createdAt: new Date(),
-          },
-        ],
-      );
+      utils.todo.all.setData([
+        ...tasks,
+        {
+          id: `${Math.random()}`,
+          completed: false,
+          text,
+          createdAt: new Date(),
+        },
+      ]);
     },
   });
 
-  const clearCompleted = trpc.useMutation('todo.clearCompleted', {
+  const clearCompleted = trpc.todo.clearCompleted.useMutation({
     async onMutate() {
-      await utils.cancelQuery(['todo.all']);
+      await utils.todo.all.cancel();
       const tasks = allTasks.data ?? [];
-      utils.setQueryData(
-        ['todo.all'],
-        tasks.filter((t) => !t.completed),
-      );
+      utils.todo.all.setData(tasks.filter((t) => !t.completed));
     },
   });
 
@@ -214,7 +205,7 @@ export default function TodosPage({
     // doing this here rather than in `onSettled()`
     // to avoid race conditions if you're clicking fast
     if (number === 0) {
-      utils.invalidateQueries('todo.all');
+      utils.todo.all.invalidate();
     }
   }, [number, utils]);
   return (
@@ -371,15 +362,15 @@ export const getStaticPaths: GetStaticPaths = async () => {
 export const getStaticProps = async (
   context: GetStaticPropsContext<{ filter: string }>,
 ) => {
-  const ssg = createSSGHelpers({
+  const ssg = createProxySSGHelpers({
     router: appRouter,
     transformer: superjson,
     ctx: await createContext(),
   });
 
-  await ssg.fetchQuery('todo.all');
+  await ssg.todo.all.fetch();
 
-  // console.log('state', ssr.dehydrate());
+  // console.log('state', ssg.dehydrate());
   return {
     props: {
       trpcState: ssg.dehydrate(),

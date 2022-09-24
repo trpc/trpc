@@ -1,7 +1,10 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { assertNotBrowser } from '../../assertNotBrowser';
 import { TRPCError } from '../../error/TRPCError';
-import { getCauseFromUnknown, getErrorFromUnknown } from '../../error/utils';
+import {
+  getCauseFromUnknown,
+  getTRPCErrorFromUnknown,
+} from '../../error/utils';
 import { InferLast } from '../../types';
 import { ProcedureType } from '../router';
 import {
@@ -17,30 +20,30 @@ export type ProcedureParserZodEsque<TInput, TOutput> = {
   _output: TOutput;
 };
 
-export type ProcedureParserMyZodEsque<T> = {
-  parse: (input: any) => T;
+export type ProcedureParserMyZodEsque<TType> = {
+  parse: (input: any) => TType;
 };
 
-export type ProcedureParserSuperstructEsque<T> = {
-  create: (input: unknown) => T;
+export type ProcedureParserSuperstructEsque<TType> = {
+  create: (input: unknown) => TType;
 };
 
-export type ProcedureParserCustomValidatorEsque<T> = (
+export type ProcedureParserCustomValidatorEsque<TType> = (
   input: unknown,
-) => T | Promise<T>;
+) => TType | Promise<TType>;
 
-export type ProcedureParserYupEsque<T> = {
-  validateSync: (input: unknown) => T;
+export type ProcedureParserYupEsque<TType> = {
+  validateSync: (input: unknown) => TType;
 };
 
 export type ProcedureParserWithInputOutput<TInput, TOutput> =
   ProcedureParserZodEsque<TInput, TOutput>;
 
-export type ProcedureParser<T> =
-  | ProcedureParserYupEsque<T>
-  | ProcedureParserSuperstructEsque<T>
-  | ProcedureParserCustomValidatorEsque<T>
-  | ProcedureParserMyZodEsque<T>;
+export type ProcedureParser<TType> =
+  | ProcedureParserYupEsque<TType>
+  | ProcedureParserSuperstructEsque<TType>
+  | ProcedureParserCustomValidatorEsque<TType>
+  | ProcedureParserMyZodEsque<TType>;
 
 export type ProcedureResolver<TContext, TInput, TOutput> = (opts: {
   ctx: TContext;
@@ -67,9 +70,11 @@ export interface ProcedureCallOptions<TContext> {
   type: ProcedureType;
 }
 
-type ParseFn<T> = (value: unknown) => T | Promise<T>;
+type ParseFn<TType> = (value: unknown) => TType | Promise<TType>;
 
-function getParseFn<T>(procedureParser: ProcedureParser<T>): ParseFn<T> {
+function getParseFn<TType>(
+  procedureParser: ProcedureParser<TType>,
+): ParseFn<TType> {
   const parser = procedureParser as any;
 
   if (typeof parser === 'function') {
@@ -207,6 +212,7 @@ export class Procedure<
       },
     ): Promise<MiddlewareResult<any>> => {
       try {
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         const result = await middlewaresWithResolver[callOpts.index]!({
           ctx: callOpts.ctx,
           type: opts.type,
@@ -225,7 +231,7 @@ export class Procedure<
         return {
           ctx: callOpts.ctx,
           ok: false,
-          error: getErrorFromUnknown(cause),
+          error: getTRPCErrorFromUnknown(cause),
           marker: middlewareMarker,
         };
       }

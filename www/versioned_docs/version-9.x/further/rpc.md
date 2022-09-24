@@ -18,7 +18,7 @@ slug: /rpc
 When batching, we combine all parallel procedure calls of the same type in one request using a data loader.
 
 - The called procedures' names are combined by a comma (`,`) in the `pathname`
-- Input parameters are sent as a a query parameter called `input` which has the shape `Record<number, unknown>`.
+- Input parameters are sent as a query parameter called `input` which has the shape `Record<number, unknown>`.
 - We also need to pass `batch=1` as a query parameter.
 - If the response has different statuses we send back `207 Multi-Status` _(e.g. if one call errored and one succeeded) _
 

@@ -2,10 +2,11 @@ import { DefaultErrorShape } from '../error/formatter';
 import { CombinedDataTransformer } from '../transformer';
 import { RootConfig } from './internals/config';
 import {
-  ProcedureBuilderDef,
+  ProcedureBuilder,
   ProcedureCallOptions,
 } from './internals/procedureBuilder';
 import { UnsetMarker } from './internals/utils';
+import { ProcedureType } from './types';
 
 type ClientContext = Record<string, unknown>;
 
@@ -85,8 +86,12 @@ export type ProcedureArgs<TParams extends ProcedureParams> =
  *
  * @internal
  */
-export interface ProcedureBase<TParams extends ProcedureParams> {
-  _def: TParams & ProcedureBuilderDef;
+export interface ProcedureBase<
+  TType extends ProcedureType,
+  TParams extends ProcedureParams,
+> {
+  _type: TType;
+  _def: TParams & ProcedureBuilder<TParams>['_def'];
   /**
    * @deprecated use `._def.meta` instead
    */
@@ -99,23 +104,17 @@ export interface ProcedureBase<TParams extends ProcedureParams> {
 }
 
 export interface QueryProcedure<TParams extends ProcedureParams>
-  extends ProcedureBase<TParams> {
-  _query: true;
-}
+  extends ProcedureBase<'query', TParams> {}
+export type AnyQueryProcedure = QueryProcedure<any>;
 
 export interface MutationProcedure<TParams extends ProcedureParams>
-  extends ProcedureBase<TParams> {
-  _mutation: true;
-}
+  extends ProcedureBase<'mutation', TParams> {}
+export type AnyMutationProcedure = MutationProcedure<any>;
 
 export interface SubscriptionProcedure<TParams extends ProcedureParams>
-  extends ProcedureBase<TParams> {
-  _subscription: true;
-}
+  extends ProcedureBase<'subscription', TParams> {}
+export type AnySubscriptionProcedure = SubscriptionProcedure<any>;
 
-export type Procedure<TParams extends ProcedureParams> =
-  | QueryProcedure<TParams>
-  | MutationProcedure<TParams>
-  | SubscriptionProcedure<TParams>;
-
+export interface Procedure<TParams extends ProcedureParams>
+  extends ProcedureBase<ProcedureType, TParams> {}
 export type AnyProcedure = Procedure<any>;
