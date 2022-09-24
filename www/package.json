@@ -19,6 +19,7 @@
   },
   "dependencies": {
     "@docusaurus/core": "^2.1.0",
+    "@docusaurus/plugin-content-docs": "^2.1.0",
     "@docusaurus/preset-classic": "^2.1.0",
     "@docusaurus/theme-common": "^2.1.0",
     "@docusaurus/types": "^2.1.0",
