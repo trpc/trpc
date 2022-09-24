@@ -1,6 +1,6 @@
 import { observable } from '@trpc/server/observable';
 import { AnyRouter } from '@trpc/server/src';
-import { createChain } from './createChain';
+import { createChain } from '../../src/links/internals/createChain';
 
 describe('chain', () => {
   test('trivial', () => {
@@ -38,7 +38,7 @@ describe('chain', () => {
       },
     });
 
-    const next = jest.fn();
+    const next = vi.fn();
 
     result$.subscribe({ next });
     // console.log(next.mock.calls);
@@ -85,16 +85,16 @@ describe('chain', () => {
       },
     });
 
-    const next = jest.fn();
+    const next = vi.fn();
 
     result$.subscribe({ next });
 
     expect(next).toHaveBeenCalledTimes(2);
     expect(next.mock.calls[0]).toMatchInlineSnapshot(`
-      Array [
-        Object {
-          "context": Object {},
-          "result": Object {
+      [
+        {
+          "context": {},
+          "result": {
             "data": "from cache",
             "type": "data",
           },
@@ -102,10 +102,10 @@ describe('chain', () => {
       ]
     `);
     expect(next.mock.calls[1]).toMatchInlineSnapshot(`
-      Array [
-        Object {
-          "result": Object {
-            "data": Object {
+      [
+        {
+          "result": {
+            "data": {
               "input": "world",
             },
             "type": "data",

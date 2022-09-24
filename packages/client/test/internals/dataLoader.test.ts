@@ -1,10 +1,10 @@
 /* eslint-disable @typescript-eslint/no-empty-function */
-import { waitError, waitMs } from '../___testHelpers';
-import { dataLoader } from '../../../client/src/internals/dataLoader';
+import { waitError, waitMs } from '../../../server/test/___testHelpers';
+import { dataLoader } from '../../src/internals/dataLoader';
 
 describe('basic', () => {
-  const fetchFn = jest.fn();
-  const validateFn = jest.fn();
+  const fetchFn = vi.fn();
+  const validateFn = vi.fn();
   const loader = dataLoader<number, number>({
     validate: () => {
       validateFn();
@@ -51,9 +51,9 @@ describe('basic', () => {
 });
 
 describe('cancellation', () => {
-  const fetchFn = jest.fn();
-  const validateFn = jest.fn();
-  const cancelFn = jest.fn();
+  const fetchFn = vi.fn();
+  const validateFn = vi.fn();
+  const cancelFn = vi.fn();
   const loader = dataLoader<number, number>({
     validate: () => {
       return true;
@@ -87,12 +87,12 @@ describe('cancellation', () => {
     expect(cancelFn).toHaveBeenCalledTimes(0);
     expect(await Promise.allSettled([res1.promise, res2.promise]))
       .toMatchInlineSnapshot(`
-      Array [
-        Object {
+      [
+        {
           "reason": [Error: Aborted],
           "status": "rejected",
         },
-        Object {
+        {
           "reason": [Error: Aborted],
           "status": "rejected",
         },
@@ -111,12 +111,12 @@ describe('cancellation', () => {
 
     expect(await Promise.allSettled([res1.promise, res2.promise]))
       .toMatchInlineSnapshot(`
-      Array [
-        Object {
+      [
+        {
           "status": "fulfilled",
           "value": 3,
         },
-        Object {
+        {
           "status": "fulfilled",
           "value": 4,
         },
@@ -134,12 +134,12 @@ describe('cancellation', () => {
 
     expect(await Promise.allSettled([res1.promise, res2.promise]))
       .toMatchInlineSnapshot(`
-      Array [
-        Object {
+      [
+        {
           "status": "fulfilled",
           "value": 3,
         },
-        Object {
+        {
           "reason": [Error: Aborted],
           "status": "rejected",
         },
@@ -171,8 +171,8 @@ test('errors', async () => {
 });
 
 describe('validation', () => {
-  const validateFn = jest.fn();
-  const fetchFn = jest.fn();
+  const validateFn = vi.fn();
+  const fetchFn = vi.fn();
   const loader = dataLoader<number, number>({
     validate: (keys) => {
       validateFn(keys);
@@ -213,7 +213,7 @@ describe('validation', () => {
       loader.load(1).promise,
     ]);
     expect($result).toMatchInlineSnapshot(`
-      Array [
+      [
         3,
         10,
         4,

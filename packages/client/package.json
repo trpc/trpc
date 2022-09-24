@@ -60,14 +60,18 @@
     "links"
   ],
   "scripts": {
-    "ts-watch": "tsc --project tsconfig.watch.json"
+    "ts-watch": "tsc --project tsconfig.watch.json",
+    "test": "vitest"
   },
   "peerDependencies": {
     "@trpc/server": "^10.0.0-alpha.48"
   },
   "devDependencies": {
     "@trpc/server": "^10.0.0-proxy-beta.7",
-    "@types/node": "^18.7.20"
+    "@types/node": "^18.7.20",
+    "vite": "^3.1.3",
+    "vitest": "^0.23.4",
+    "zod": "^3.0.0"
   },
   "publishConfig": {
     "access": "public"

@@ -1,7 +1,7 @@
-import { createTRPCProxyClient } from '../../client';
-import { httpBatchLink } from '../../client/src';
+import { createTRPCProxyClient } from '../dist';
+import { httpBatchLink } from '../src';
 
-global.fetch = jest.fn();
+global.fetch = vi.fn();
 
 describe('typedefs on createClient', () => {
   test('ok to pass only links', () => {
