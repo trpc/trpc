@@ -380,6 +380,7 @@ importers:
       eslint-plugin-prettier: ^4.0.0
       eslint-plugin-react: ^7.25.1
       eslint-plugin-react-hooks: ^4.2.0
+      expect-playwright: ^0.8.0
       jest: ^27.1.0
       jest-playwright: ^0.0.1
       jest-playwright-preset: ^1.4.5
@@ -437,6 +438,7 @@ importers:
       eslint-plugin-prettier: 4.2.1_7gsvg5lgwpfdww3i7smtqxamuy
       eslint-plugin-react: 7.31.8_eslint@7.32.0
       eslint-plugin-react-hooks: 4.6.0_eslint@7.32.0
+      expect-playwright: 0.8.0
       jest: 27.5.1_ts-node@10.9.1
       jest-playwright: 0.0.1
       jest-playwright-preset: 1.7.2_jest@27.5.1
@@ -463,6 +465,7 @@ importers:
       '@types/node': ^18.7.11
       '@types/react': ^18.0.9
       clsx: ^1.1.1
+      expect-playwright: ^0.8.0
       jest: ^27.1.0
       jest-playwright: ^0.0.1
       jest-playwright-preset: ^1.4.5
@@ -487,6 +490,7 @@ importers:
       '@trpc/react': link:../../../packages/react
       '@trpc/server': link:../../../packages/server
       clsx: 1.2.1
+      expect-playwright: 0.8.0
       jest: 27.5.1
       jest-playwright: 0.0.1
       jest-playwright-preset: 1.7.2_jest@27.5.1
@@ -1055,6 +1059,7 @@ importers:
       '@types/node': ^18.7.11
       '@types/react': ^18.0.9
       clsx: ^1.1.1
+      expect-playwright: ^0.8.0
       jest: ^27.1.0
       jest-playwright: ^0.0.1
       jest-playwright-preset: ^1.4.5
@@ -1079,6 +1084,7 @@ importers:
       '@trpc/react': link:../../packages/react
       '@trpc/server': link:../../packages/server
       clsx: 1.2.1
+      expect-playwright: 0.8.0
       jest: 27.5.1
       jest-playwright: 0.0.1
       jest-playwright-preset: 1.7.2_jest@27.5.1
@@ -7844,7 +7850,7 @@ packages:
   /axios/0.21.4_debug@4.3.2:
     resolution: {integrity: sha512-ut5vewkiu8jjGBdqpM44XxjuCjq9LAKeHVmoVfHVzy8eHgxxq8SbAVQNovDA8mVi05kP0Ea/n/UzcSHcTJQfNg==}
     dependencies:
-      follow-redirects: 1.15.2
+      follow-redirects: 1.15.2_debug@4.3.2
     transitivePeerDependencies:
       - debug
 
@@ -11460,6 +11466,17 @@ packages:
       debug:
         optional: true
 
+  /follow-redirects/1.15.2_debug@4.3.2:
+    resolution: {integrity: sha512-VQLG33o04KaQ8uYi2tVNbdrWp1QWxNNea+nmIB4EVM28v0hmP17z7aG1+wAkNzVq4KeXTq3221ye5qTJP91JwA==}
+    engines: {node: '>=4.0'}
+    peerDependencies:
+      debug: '*'
+    peerDependenciesMeta:
+      debug:
+        optional: true
+    dependencies:
+      debug: 4.3.2
+
   /for-each/0.3.3:
     resolution: {integrity: sha512-jqYfLp7mo9vIyQf8ykW2v7A+2N4QjeCeI5+Dz9XraiO1ign81wjiH7Fb9vSOWvQfNtmSa4H2RoQTrrXivdUZmw==}
     dependencies:
@@ -13614,7 +13631,7 @@ packages:
       jest-runner: ^26.6.3 || ^27.0.0
     dependencies:
       expect-playwright: 0.8.0
-      jest: 27.5.1_ts-node@10.9.1
+      jest: 27.5.1
       jest-process-manager: 0.3.1
       nyc: 15.1.0
       playwright-core: 1.25.2
@@ -19649,7 +19666,7 @@ packages:
       '@types/jest': 27.5.2
       bs-logger: 0.2.6
       fast-json-stable-stringify: 2.1.0
-      jest: 27.5.1_ts-node@10.9.1
+      jest: 27.5.1
       jest-util: 27.5.1
       json5: 2.2.1
       lodash.memoize: 4.1.2
