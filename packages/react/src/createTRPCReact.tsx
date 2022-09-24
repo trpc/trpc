@@ -33,7 +33,10 @@ import {
   createHooksInternal,
 } from './shared/hooks/createHooksInternal';
 
-type DecorateProcedure<
+/**
+ * @internal
+ */
+export type DecorateProcedure<
   TProcedure extends AnyProcedure,
   TPath extends string,
 > = TProcedure extends AnyQueryProcedure
