@@ -48,7 +48,7 @@ importers:
       rollup-plugin-typescript2: ^0.32.1
       ts-jest: ^27.0.5
       ts-node: ^10.3.0
-      typescript: 4.8.3
+      typescript: ^4.8.3
     dependencies:
       '@changesets/changelog-github': 0.4.6
       '@changesets/cli': 2.24.4
@@ -874,6 +874,7 @@ importers:
 
   examples/next-prisma-starter-sqlite:
     specifiers:
+      '@jest/types': ^27.1.0
       '@playwright/test': ^1.19.2
       '@prisma/client': ^4.3.1
       '@tanstack/react-query': ^4.3.8
@@ -909,6 +910,7 @@ importers:
       typescript: ^4.8.3
       zod: ^3.0.0
     dependencies:
+      '@jest/types': 27.5.1
       '@prisma/client': 4.3.1_prisma@4.3.1
       '@tanstack/react-query': 4.3.8_biqbaboplfbrettd7655fr4n2y
       '@trpc/client': link:../../packages/client
