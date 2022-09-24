@@ -13,7 +13,7 @@ slug: /infer-types
 import { initTRPC } from '@trpc/server';
 import { z } from "zod";
 
-const t = initTRPC()();
+const t = initTRPC.create();
 
 const appRouter = t.router({
   post: t.router({
@@ -72,13 +72,14 @@ type PostInput = inferProcedureInput<AppRouter['post']['create']>;
 If you don't like the double-import from the above snippet, `@trpc/server` also exports a type `GetInferenceHelpers<TRouter>`. This lets you pass your router once at initialization, then import a single helper type when inferring types:
 
 ```ts twoslash title='utils/trpc.ts'
+// @module: esnext
 // @include: server
+// @filename: index.ts
 // ---cut---
 import type { GetInferenceHelpers } from '@trpc/server';
 import type { AppRouter } from './server';
 
-// @noErrors
-export type InferProcedure = GetInferenceHelpers<AppRouter>;
+export type InferProcedures = GetInferenceHelpers<AppRouter>;
 ```
 
 <!-- FIXME: reuse above snippet -->
@@ -86,17 +87,16 @@ export type InferProcedure = GetInferenceHelpers<AppRouter>;
 ```ts twoslash
 // @module: esnext
 // @include: server
-// @filename: utils.ts
+// @filename: index.ts
 import type { GetInferenceHelpers } from '@trpc/server';
 import type { AppRouter } from './server';
 
-// @filename: index.ts
-// ---cut---
-export type InferProcedure = GetInferenceHelpers<AppRouter>;
+export type InferProcedures = GetInferenceHelpers<AppRouter>;
 
-type Post = InferProcedure['post']['byId']['output'];
+// ---cut---
+type Post = InferProcedures['post']['byId']['output'];
 //   ^?
-type PostInput = InferProcedure['post']['create']['input'];
+type PostInput = InferProcedures['post']['create']['input'];
 //   ^?
 ```
 
@@ -107,10 +107,17 @@ type PostInput = InferProcedure['post']['create']['input'];
 // @include: server
 
 // @filename: trpc.ts
-import { createTRPCProxyClient } from "@trpc/client";
+import { createTRPCProxyClient, httpBatchLink } from "@trpc/client";
 import type { AppRouter } from "./server";
 
-export const trpc = createTRPCProxyClient<AppRouter>({ url: 'http://localhost:3000/api/trpc' });
+export const trpc = createTRPCProxyClient<AppRouter>({
+  links: [
+    httpBatchLink({
+      url: "http://localhost:3000/api/trpc",
+    }),
+  ],
+});
+
 // ---cut---
 // @filename: client.ts
 import { TRPCClientError } from '@trpc/client';
@@ -130,7 +137,7 @@ async function main() {
     if (isTRPCClientError(cause)) {
       // `cause` is now typed as your router's `TRPCClientError`
       console.log('data', cause.data);
-      //                   ^?
+      //                        ^?
     } else {
       // [...]
     }
