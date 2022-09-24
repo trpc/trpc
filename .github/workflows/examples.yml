@@ -38,7 +38,7 @@ jobs:
             # next-prisma-todomvc,
             standalone-server,
           ]
-        node-start: [16]
+        node-start: ['16.x']
         os: [ubuntu-latest]
     services:
       postgres:

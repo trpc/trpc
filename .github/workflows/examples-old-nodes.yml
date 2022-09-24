@@ -14,7 +14,7 @@ jobs:
       matrix:
         dir: [.interop/next-prisma-starter]
         # start example with:
-        node-start: [14]
+        node-start: ['14.x']
         os: [ubuntu-latest]
     services:
       postgres:
