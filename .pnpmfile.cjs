@@ -1,5 +1,4 @@
 // prisma clients must all be different instances
-let id = 0;
 function readPackage(pkg) {
   const prismaClientVersion = pkg.dependencies['@prisma/client'];
   if (prismaClientVersion) {
@@ -12,7 +11,6 @@ function readPackage(pkg) {
         pkg.name,
       )}`,
     };
-    id += 1;
   }
 
   return pkg;
