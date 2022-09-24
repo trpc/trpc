@@ -55,10 +55,7 @@ importers:
       '@manypkg/cli': 0.19.1
       '@rollup/plugin-node-resolve': 13.3.0_rollup@2.79.1
       '@swc/core': 1.3.3
-<<<<<<< HEAD
       '@swc/jest': 0.2.22_@swc+core@1.3.3
-=======
->>>>>>> next
       '@tanstack/react-query': 4.6.0_biqbaboplfbrettd7655fr4n2y
       '@testing-library/dom': 8.18.1
       '@testing-library/jest-dom': 5.16.5
@@ -15566,52 +15563,6 @@ packages:
     resolution: {integrity: sha512-CXdUiJembsNjuToQvxayPZF9Vqht7hewsvy2sOWafLvi2awflj9mOC6bHIg50orX8IJvWKY9wYQ/zB2kogPslQ==}
     dev: true
 
-<<<<<<< HEAD
-=======
-  /next/12.3.1:
-    resolution: {integrity: sha512-l7bvmSeIwX5lp07WtIiP9u2ytZMv7jIeB8iacR28PuUEFG5j0HGAPnMqyG5kbZNBG2H7tRsrQ4HCjuMOPnANZw==}
-    engines: {node: '>=12.22.0'}
-    hasBin: true
-    peerDependencies:
-      fibers: '>= 3.1.0'
-      node-sass: ^6.0.0 || ^7.0.0
-      react: ^17.0.2 || ^18.0.0-0
-      react-dom: ^17.0.2 || ^18.0.0-0
-      sass: ^1.3.0
-    peerDependenciesMeta:
-      fibers:
-        optional: true
-      node-sass:
-        optional: true
-      sass:
-        optional: true
-    dependencies:
-      '@next/env': 12.3.1
-      '@swc/helpers': 0.4.11
-      caniuse-lite: 1.0.30001411
-      postcss: 8.4.14
-      styled-jsx: 5.0.7
-      use-sync-external-store: 1.2.0
-    optionalDependencies:
-      '@next/swc-android-arm-eabi': 12.3.1
-      '@next/swc-android-arm64': 12.3.1
-      '@next/swc-darwin-arm64': 12.3.1
-      '@next/swc-darwin-x64': 12.3.1
-      '@next/swc-freebsd-x64': 12.3.1
-      '@next/swc-linux-arm-gnueabihf': 12.3.1
-      '@next/swc-linux-arm64-gnu': 12.3.1
-      '@next/swc-linux-arm64-musl': 12.3.1
-      '@next/swc-linux-x64-gnu': 12.3.1
-      '@next/swc-linux-x64-musl': 12.3.1
-      '@next/swc-win32-arm64-msvc': 12.3.1
-      '@next/swc-win32-ia32-msvc': 12.3.1
-      '@next/swc-win32-x64-msvc': 12.3.1
-    transitivePeerDependencies:
-      - '@babel/core'
-      - babel-plugin-macros
-    dev: true
-
->>>>>>> next
   /next/12.3.1_biqbaboplfbrettd7655fr4n2y:
     resolution: {integrity: sha512-l7bvmSeIwX5lp07WtIiP9u2ytZMv7jIeB8iacR28PuUEFG5j0HGAPnMqyG5kbZNBG2H7tRsrQ4HCjuMOPnANZw==}
     engines: {node: '>=12.22.0'}
@@ -21561,20 +21512,12 @@ packages:
     name: '@prisma/engines'
     version: 4.3.1
     requiresBuild: true
-<<<<<<< HEAD
-=======
-    dev: false
->>>>>>> next
 
   '@registry.npmjs.com/@prisma/engines/-/engines-4.3.1.tgz?id=3':
     resolution: {tarball: https://registry.npmjs.com/@prisma/engines/-/engines-4.3.1.tgz?id=3}
     name: '@prisma/engines'
     version: 4.3.1
     requiresBuild: true
-<<<<<<< HEAD
-    dev: false
-=======
->>>>>>> next
 
   '@registry.npmjs.com/@prisma/engines/-/engines-4.3.1.tgz?id=4':
     resolution: {tarball: https://registry.npmjs.com/@prisma/engines/-/engines-4.3.1.tgz?id=4}
@@ -21587,6 +21530,7 @@ packages:
     name: '@prisma/engines'
     version: 4.3.1
     requiresBuild: true
+    dev: false
 
   '@registry.npmjs.com/@prisma/engines/-/engines-4.3.1.tgz?id=6':
     resolution: {tarball: https://registry.npmjs.com/@prisma/engines/-/engines-4.3.1.tgz?id=6}
@@ -21603,11 +21547,7 @@ packages:
     hasBin: true
     requiresBuild: true
     dependencies:
-<<<<<<< HEAD
-      '@prisma/engines': '@registry.npmjs.com/@prisma/engines/-/engines-4.3.1.tgz?id=0'
-=======
       '@prisma/engines': '@registry.npmjs.com/@prisma/engines/-/engines-4.3.1.tgz?id=1'
->>>>>>> next
 
   '@registry.npmjs.com/prisma/-/prisma-4.3.1.tgz?id=%2540examples%252Finterop-todo-web':
     resolution: {tarball: https://registry.npmjs.com/prisma/-/prisma-4.3.1.tgz?id=%40examples%2Finterop-todo-web}
@@ -21617,11 +21557,7 @@ packages:
     hasBin: true
     requiresBuild: true
     dependencies:
-<<<<<<< HEAD
       '@prisma/engines': '@registry.npmjs.com/@prisma/engines/-/engines-4.3.1.tgz?id=6'
-=======
-      '@prisma/engines': '@registry.npmjs.com/@prisma/engines/-/engines-4.3.1.tgz?id=2'
->>>>>>> next
     dev: false
 
   '@registry.npmjs.com/prisma/-/prisma-4.3.1.tgz?id=%2540examples%252Flegacy-next-starter':
@@ -21632,11 +21568,7 @@ packages:
     hasBin: true
     requiresBuild: true
     dependencies:
-<<<<<<< HEAD
-      '@prisma/engines': '@registry.npmjs.com/@prisma/engines/-/engines-4.3.1.tgz?id=1'
-=======
       '@prisma/engines': '@registry.npmjs.com/@prisma/engines/-/engines-4.3.1.tgz?id=0'
->>>>>>> next
 
   '@registry.npmjs.com/prisma/-/prisma-4.3.1.tgz?id=%2540examples%252Fnext-starter-sqlite':
     resolution: {tarball: https://registry.npmjs.com/prisma/-/prisma-4.3.1.tgz?id=%40examples%2Fnext-starter-sqlite}
@@ -21646,11 +21578,7 @@ packages:
     hasBin: true
     requiresBuild: true
     dependencies:
-<<<<<<< HEAD
       '@prisma/engines': '@registry.npmjs.com/@prisma/engines/-/engines-4.3.1.tgz?id=2'
-=======
-      '@prisma/engines': '@registry.npmjs.com/@prisma/engines/-/engines-4.3.1.tgz?id=4'
->>>>>>> next
 
   '@registry.npmjs.com/prisma/-/prisma-4.3.1.tgz?id=%2540examples%252Fnext-starter-websockets':
     resolution: {tarball: https://registry.npmjs.com/prisma/-/prisma-4.3.1.tgz?id=%40examples%2Fnext-starter-websockets}
@@ -21660,11 +21588,7 @@ packages:
     hasBin: true
     requiresBuild: true
     dependencies:
-<<<<<<< HEAD
       '@prisma/engines': '@registry.npmjs.com/@prisma/engines/-/engines-4.3.1.tgz?id=4'
-=======
-      '@prisma/engines': '@registry.npmjs.com/@prisma/engines/-/engines-4.3.1.tgz?id=5'
->>>>>>> next
 
   '@registry.npmjs.com/prisma/-/prisma-4.3.1.tgz?id=%2540examples%252Ftrpc-next-prisma-starter':
     resolution: {tarball: https://registry.npmjs.com/prisma/-/prisma-4.3.1.tgz?id=%40examples%2Ftrpc-next-prisma-starter}
@@ -21674,11 +21598,7 @@ packages:
     hasBin: true
     requiresBuild: true
     dependencies:
-<<<<<<< HEAD
-      '@prisma/engines': '@registry.npmjs.com/@prisma/engines/-/engines-4.3.1.tgz?id=5'
-=======
       '@prisma/engines': '@registry.npmjs.com/@prisma/engines/-/engines-4.3.1.tgz?id=3'
->>>>>>> next
 
   '@registry.npmjs.com/prisma/-/prisma-4.3.1.tgz?id=%2540examples%252Ftrpc-next-prisma-todomvc':
     resolution: {tarball: https://registry.npmjs.com/prisma/-/prisma-4.3.1.tgz?id=%40examples%2Ftrpc-next-prisma-todomvc}
@@ -21688,9 +21608,5 @@ packages:
     hasBin: true
     requiresBuild: true
     dependencies:
-<<<<<<< HEAD
-      '@prisma/engines': '@registry.npmjs.com/@prisma/engines/-/engines-4.3.1.tgz?id=3'
-=======
-      '@prisma/engines': '@registry.npmjs.com/@prisma/engines/-/engines-4.3.1.tgz?id=6'
->>>>>>> next
+      '@prisma/engines': '@registry.npmjs.com/@prisma/engines/-/engines-4.3.1.tgz?id=5'
     dev: false
