@@ -290,7 +290,7 @@ importers:
     specifiers:
       '@jest/types': ^27.1.0
       '@playwright/test': ^1.19.2
-      '@prisma/client': ^4.3.1
+      '@prisma/client': ^3.0.1
       '@tanstack/react-query': ^4.3.8
       '@tanstack/react-query-devtools': ^4.3.8
       '@trpc/client': ^10.0.0-proxy-beta.7
@@ -314,7 +314,7 @@ importers:
       npm-run-all: ^4.1.5
       playwright: ^1.19.1
       prettier: ^2.7.1
-      prisma: ^4.3.1
+      prisma: ^4.2.1
       react: ^18.2.0
       react-dom: ^18.2.0
       start-server-and-test: ^1.12.0
@@ -324,7 +324,7 @@ importers:
       typescript: ^4.8.3
       zod: ^3.0.0
     dependencies:
-      '@prisma/client': 4.3.1_prisma@4.3.1
+      '@prisma/client': 3.14.0_prisma@4.2.1
       '@tanstack/react-query': 4.6.0_biqbaboplfbrettd7655fr4n2y
       '@trpc/client': link:../../../packages/client
       '@trpc/next': link:../../../packages/next
@@ -356,14 +356,14 @@ importers:
       npm-run-all: 4.1.5
       playwright: 1.26.0
       prettier: 2.7.1
-      prisma: 4.3.1
+      prisma: 4.2.1
       ts-jest: 27.1.5_qqheuyrmnawe7ws7n63adpwbnu
       ts-node: 10.9.1_xncqeq3xkoqhng77wx5a5ihsty
       typescript: 4.8.3
 
   examples/.interop/next-prisma-starter-websockets:
     specifiers:
-      '@prisma/client': ^4.3.1
+      '@prisma/client': ^3.0.1
       '@tanstack/react-query': ^4.3.8
       '@tanstack/react-query-devtools': ^4.3.8
       '@trpc/client': ^10.0.0-proxy-beta.7
@@ -398,7 +398,7 @@ importers:
       playwright: ^1.19.1
       postcss: ^8.4.14
       prettier: ^2.7.1
-      prisma: ^4.3.1
+      prisma: ^4.2.1
       react: ^18.2.0
       react-dom: ^18.2.0
       start-server-and-test: ^1.12.0
@@ -410,7 +410,7 @@ importers:
       ws: ^8.0.0
       zod: ^3.0.0
     dependencies:
-      '@prisma/client': 4.3.1_prisma@4.3.1
+      '@prisma/client': 3.14.0_prisma@4.2.1
       '@tanstack/react-query': 4.6.0_biqbaboplfbrettd7655fr4n2y
       '@trpc/client': link:../../../packages/client
       '@trpc/next': link:../../../packages/next
@@ -453,14 +453,14 @@ importers:
       playwright: 1.26.0
       postcss: 8.4.16
       prettier: 2.7.1
-      prisma: 4.3.1
+      prisma: 4.2.1
       tailwindcss: 3.1.8_57znarxsqwmnneadci5z5fd5gu
       ts-jest: 27.1.5_qqheuyrmnawe7ws7n63adpwbnu
       typescript: 4.8.3
 
   examples/.interop/next-prisma-todomvc:
     specifiers:
-      '@prisma/client': ^4.3.1
+      '@prisma/client': ^3.0.1
       '@tanstack/react-query': ^4.3.8
       '@tanstack/react-query-devtools': ^4.3.8
       '@trpc/client': ^10.0.0-proxy-beta.7
@@ -478,7 +478,7 @@ importers:
       next: ^12.3.1
       npm-run-all: ^4.1.5
       playwright: ^1.19.1
-      prisma: ^4.3.1
+      prisma: ^4.2.1
       react: ^18.2.0
       react-dom: ^18.2.0
       start-server-and-test: ^1.12.0
@@ -489,7 +489,7 @@ importers:
       typescript: ^4.8.3
       zod: ^3.0.0
     dependencies:
-      '@prisma/client': 4.3.1_prisma@4.3.1
+      '@prisma/client': 3.14.0_prisma@4.2.1
       '@tanstack/react-query': 4.6.0_biqbaboplfbrettd7655fr4n2y
       '@trpc/client': link:../../../packages/client
       '@trpc/next': link:../../../packages/next
@@ -502,7 +502,7 @@ importers:
       jest-playwright-preset: 1.7.2_jest@27.5.1
       next: 12.3.1_biqbaboplfbrettd7655fr4n2y
       playwright: 1.26.0
-      prisma: 4.3.1
+      prisma: 4.2.1
       react: 18.2.0
       react-dom: 18.2.0_react@18.2.0
       start-server-and-test: 1.14.0
@@ -831,7 +831,7 @@ importers:
     specifiers:
       '@jest/types': ^27.1.0
       '@playwright/test': ^1.19.2
-      '@prisma/client': ^4.3.1
+      '@prisma/client': ^3.0.1
       '@tanstack/react-query': ^4.3.8
       '@trpc/client': ^10.0.0-proxy-beta.7
       '@trpc/next': ^10.0.0-proxy-beta.7
@@ -854,7 +854,7 @@ importers:
       npm-run-all: ^4.1.5
       playwright: ^1.19.1
       prettier: ^2.7.1
-      prisma: ^4.3.1
+      prisma: ^4.2.1
       react: ^18.2.0
       react-dom: ^18.2.0
       start-server-and-test: ^1.12.0
@@ -865,7 +865,7 @@ importers:
       zod: ^3.0.0
     dependencies:
       '@jest/types': 27.5.1
-      '@prisma/client': 4.3.1_prisma@4.3.1
+      '@prisma/client': 3.14.0_prisma@4.2.1
       '@tanstack/react-query': 4.6.0_biqbaboplfbrettd7655fr4n2y
       '@trpc/client': link:../../packages/client
       '@trpc/next': link:../../packages/next
@@ -895,7 +895,7 @@ importers:
       npm-run-all: 4.1.5
       playwright: 1.26.0
       prettier: 2.7.1
-      prisma: 4.3.1
+      prisma: 4.2.1
       ts-jest: 27.1.5_qqheuyrmnawe7ws7n63adpwbnu
       ts-node: 10.9.1_xncqeq3xkoqhng77wx5a5ihsty
       typescript: 4.8.3
@@ -904,7 +904,7 @@ importers:
     specifiers:
       '@jest/types': ^27.1.0
       '@playwright/test': ^1.19.2
-      '@prisma/client': ^4.3.1
+      '@prisma/client': ^3.0.1
       '@tanstack/react-query': ^4.3.8
       '@tanstack/react-query-devtools': ^4.3.8
       '@trpc/client': ^10.0.0-proxy-beta.7
@@ -928,7 +928,7 @@ importers:
       npm-run-all: ^4.1.5
       playwright: ^1.19.1
       prettier: ^2.7.1
-      prisma: ^4.3.1
+      prisma: ^4.2.1
       react: ^18.2.0
       react-dom: ^18.2.0
       start-server-and-test: ^1.12.0
@@ -939,7 +939,7 @@ importers:
       zod: ^3.0.0
     dependencies:
       '@jest/types': 27.5.1
-      '@prisma/client': 4.3.1_prisma@4.3.1
+      '@prisma/client': 3.14.0_prisma@4.2.1
       '@tanstack/react-query': 4.6.0_biqbaboplfbrettd7655fr4n2y
       '@trpc/client': link:../../packages/client
       '@trpc/next': link:../../packages/next
@@ -970,14 +970,14 @@ importers:
       npm-run-all: 4.1.5
       playwright: 1.26.0
       prettier: 2.7.1
-      prisma: 4.3.1
+      prisma: 4.2.1
       ts-jest: 27.1.5_qqheuyrmnawe7ws7n63adpwbnu
       ts-node: 10.9.1_xncqeq3xkoqhng77wx5a5ihsty
       typescript: 4.8.3
 
   examples/next-prisma-starter-websockets:
     specifiers:
-      '@prisma/client': ^4.3.1
+      '@prisma/client': ^3.0.1
       '@tanstack/react-query': ^4.3.8
       '@tanstack/react-query-devtools': ^4.3.8
       '@trpc/client': ^10.0.0-proxy-beta.7
@@ -1011,7 +1011,7 @@ importers:
       playwright: ^1.19.1
       postcss: ^8.4.14
       prettier: ^2.7.1
-      prisma: ^4.3.1
+      prisma: ^4.2.1
       react: ^18.2.0
       react-dom: ^18.2.0
       start-server-and-test: ^1.12.0
@@ -1023,7 +1023,7 @@ importers:
       ws: ^8.0.0
       zod: ^3.0.0
     dependencies:
-      '@prisma/client': 4.3.1_prisma@4.3.1
+      '@prisma/client': 3.14.0_prisma@4.2.1
       '@tanstack/react-query': 4.6.0_biqbaboplfbrettd7655fr4n2y
       '@trpc/client': link:../../packages/client
       '@trpc/next': link:../../packages/next
@@ -1065,14 +1065,14 @@ importers:
       playwright: 1.26.0
       postcss: 8.4.16
       prettier: 2.7.1
-      prisma: 4.3.1
+      prisma: 4.2.1
       tailwindcss: 3.1.8_57znarxsqwmnneadci5z5fd5gu
       ts-jest: 27.1.5_qqheuyrmnawe7ws7n63adpwbnu
       typescript: 4.8.3
 
   examples/next-prisma-todomvc:
     specifiers:
-      '@prisma/client': ^4.3.1
+      '@prisma/client': ^3.0.1
       '@tanstack/react-query': ^4.3.8
       '@tanstack/react-query-devtools': ^4.3.8
       '@trpc/client': ^10.0.0-proxy-beta.7
@@ -1090,7 +1090,7 @@ importers:
       next: ^12.3.1
       npm-run-all: ^4.1.5
       playwright: ^1.19.1
-      prisma: ^4.3.1
+      prisma: ^4.2.1
       react: ^18.2.0
       react-dom: ^18.2.0
       start-server-and-test: ^1.12.0
@@ -1101,7 +1101,7 @@ importers:
       typescript: ^4.8.3
       zod: ^3.0.0
     dependencies:
-      '@prisma/client': 4.3.1_prisma@4.3.1
+      '@prisma/client': 3.14.0_prisma@4.2.1
       '@tanstack/react-query': 4.6.0_biqbaboplfbrettd7655fr4n2y
       '@trpc/client': link:../../packages/client
       '@trpc/next': link:../../packages/next
@@ -1114,7 +1114,7 @@ importers:
       jest-playwright-preset: 1.7.2_jest@27.5.1
       next: 12.3.1_biqbaboplfbrettd7655fr4n2y
       playwright: 1.26.0
-      prisma: 4.3.1
+      prisma: 4.2.1
       react: 18.2.0
       react-dom: 18.2.0_react@18.2.0
       start-server-and-test: 1.14.0
@@ -5984,9 +5984,9 @@ packages:
     resolution: {integrity: sha512-a5Sab1C4/icpTZVzZc5Ghpz88yQtGOyNqYXcZgOssB2uuAr+wF/MvN6bgtW32q7HHrvBki+BsZ0OuNv6EV3K9g==}
     dev: false
 
-  /@prisma/client/4.3.1_prisma@4.3.1:
-    resolution: {integrity: sha512-FA0/d1VMJNWqzU7WVWTNWJ+lGOLR9JUBnF73GdIPAEVo/6dWk4gHx0EmgeU+SMv4MZoxgOeTBJF2azhg7x0hMw==}
-    engines: {node: '>=14.17'}
+  /@prisma/client/3.14.0_prisma@4.2.1:
+    resolution: {integrity: sha512-atb41UpgTR1MCst0VIbiHTMw8lmXnwUvE1KyUCAkq08+wJyjRE78Due+nSf+7uwqQn+fBFYVmoojtinhlLOSaA==}
+    engines: {node: '>=12.6'}
     requiresBuild: true
     peerDependencies:
       prisma: '*'
@@ -5994,16 +5994,16 @@ packages:
       prisma:
         optional: true
     dependencies:
-      '@prisma/engines-version': 4.3.0-32.c875e43600dfe042452e0b868f7a48b817b9640b
-      prisma: 4.3.1
+      '@prisma/engines-version': 3.14.0-36.2b0c12756921c891fec4f68d9444e18c7d5d4a6a
+      prisma: 4.2.1
     dev: false
 
-  /@prisma/engines-version/4.3.0-32.c875e43600dfe042452e0b868f7a48b817b9640b:
-    resolution: {integrity: sha512-8yWpXkQRmiSfsi2Wb/ZS5D3RFbeu/btL9Pm/gdF4phB0Lo5KGsDFMxFMgaD64mwED2nHc8ZaEJg/+4Jymb9Znw==}
+  /@prisma/engines-version/3.14.0-36.2b0c12756921c891fec4f68d9444e18c7d5d4a6a:
+    resolution: {integrity: sha512-D+yHzq4a2r2Rrd0ZOW/mTZbgDIkUkD8ofKgusEI1xPiZz60Daks+UM7Me2ty5FzH3p/TgyhBpRrfIHx+ha20RQ==}
     dev: false
 
-  /@prisma/engines/4.3.1:
-    resolution: {integrity: sha512-4JF/uMaEDAPdcdZNOrnzE3BvrbGpjgV0FcPT3EVoi6I86fWkloqqxBt+KcK/+fIRR0Pxj66uGR9wVH8U1Y13JA==}
+  /@prisma/engines/4.2.1:
+    resolution: {integrity: sha512-0KqBwREUOjBiHwITsQzw2DWfLHjntvbqzGRawj4sBMnIiL5CXwyDUKeHOwXzKMtNr1rEjxEsypM14g0CzLRK3g==}
     requiresBuild: true
 
   /@rollup/plugin-node-resolve/13.3.0_rollup@2.79.1:
@@ -17020,13 +17020,13 @@ packages:
       react: 18.2.0
     dev: false
 
-  /prisma/4.3.1:
-    resolution: {integrity: sha512-90xo06wtqil76Xsi3mNpc4Js3SdDRR5g4qb9h+4VWY4Y8iImJY6xc3PX+C9xxTSt1lr0Q89A0MLkJjd8ax6KiQ==}
+  /prisma/4.2.1:
+    resolution: {integrity: sha512-HuYqnTDgH8atjPGtYmY0Ql9XrrJnfW7daG1PtAJRW0E6gJxc50lY3vrIDn0yjMR3TvRlypjTcspQX8DT+xD4Sg==}
     engines: {node: '>=14.17'}
     hasBin: true
     requiresBuild: true
     dependencies:
-      '@prisma/engines': 4.3.1
+      '@prisma/engines': 4.2.1
 
   /prismjs/1.29.0:
     resolution: {integrity: sha512-Kx/1w86q/epKcmte75LNrEoT+lX8pBpavuAbvJWRXar7Hz8jrtF+e3vY751p0R8H9HdArwaCTNDDzHg/ScJK1Q==}
