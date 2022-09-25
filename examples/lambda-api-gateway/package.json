@@ -8,7 +8,7 @@
     "@trpc/client": "^10.0.0-proxy-beta.7",
     "@trpc/server": "^10.0.0-proxy-beta.7",
     "node-fetch": "^2.6.1",
-    "ts-node": "^10.3.0"
+    "ts-node": "^10.9.1"
   },
   "devDependencies": {
     "@types/node": "^18.7.20",

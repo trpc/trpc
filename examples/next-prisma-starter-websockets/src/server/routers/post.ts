@@ -4,7 +4,7 @@
  */
 import { Context } from '../context';
 import { t } from '../trpc';
-import { Post } from '@prisma/client';
+import { Post } from '.prisma/client';
 import { TRPCError } from '@trpc/server';
 import { observable } from '@trpc/server/observable';
 import { EventEmitter } from 'events';

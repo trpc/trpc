@@ -1,7 +1,7 @@
 /**
  * @link https://prisma.io/docs/support/help-articles/nextjs-prisma-client-dev-practices
  */
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient } from '.prisma/client';
 
 export const prisma: PrismaClient =
   (global as any).prisma || new PrismaClient();

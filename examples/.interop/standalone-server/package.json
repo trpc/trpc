@@ -31,7 +31,7 @@
     "nodemon": "^2.0.12",
     "npm-run-all": "^4.1.5",
     "start-server-and-test": "^1.12.0",
-    "ts-node": "^10.3.0",
+    "ts-node": "^10.9.1",
     "wait-port": "^0.3.0"
   },
   "publishConfig": {
