@@ -4,7 +4,7 @@ jobs:
   e2e-old-nodes:
     env:
       PLAYWRIGHT_BROWSERS_PATH: ${{ github.workspace }}/playwright
-      DATABASE_URL: postgresql://postgres:@postgres:5432/trpcdb
+      # DATABASE_URL: postgresql://postgres:@postgres:5432/trpcdb
     runs-on: ${{ matrix.os }}
     timeout-minutes: 10
     strategy:
@@ -13,14 +13,14 @@ jobs:
         # start example with:
         node-start: ['14.x']
         os: [ubuntu-latest]
-    services:
-      postgres:
-        image: postgres:12.1
-        env:
-          POSTGRES_USER: postgres
-          POSTGRES_DB: trpcdb
-        ports:
-          - 5432:5432
+    # services:
+    #   postgres:
+    #     image: postgres:12.1
+    #     env:
+    #       POSTGRES_USER: postgres
+    #       POSTGRES_DB: trpcdb
+    #     ports:
+    #       - 5432:5432
     steps:
       - uses: actions/checkout@v3
 
@@ -74,8 +74,8 @@ jobs:
       - name: if exists, run lint
         run: pnpm --filter ./examples/${{ matrix.dir }} --if-present lint
 
-      - name: Wait for postgres
-        run: sleep 100
+      # - name: Wait for postgres
+      #   run: sleep 100
 
       - name: if exists, run build
         run: pnpm --filter ./examples/${{ matrix.dir }} --if-present build

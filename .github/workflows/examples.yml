@@ -7,7 +7,7 @@ jobs:
   e2e:
     env:
       PLAYWRIGHT_BROWSERS_PATH: ${{ github.workspace }}/playwright
-      DATABASE_URL: postgresql://postgres:@postgres:5432/trpcdb
+      # DATABASE_URL: postgresql://postgres:@postgres:5432/trpcdb
       NEXTAUTH_SECRET: supersecret
     runs-on: ${{ matrix.os }}
     timeout-minutes: 10
@@ -20,7 +20,7 @@ jobs:
             express-minimal,
             .interop/next-prisma-starter,
             .interop/next-minimal-starter-migration,
-            .interop/next-prisma-starter-websockets,
+            # .interop/next-prisma-starter-websockets,
             .interop/next-prisma-todomvc,
             next-minimal-starter,
             .interop/next-minimal-starter,
@@ -31,20 +31,20 @@ jobs:
             .interop/cloudflare-workers,
             next-prisma-starter,
             next-prisma-starter-sqlite,
-            next-prisma-starter-websockets,
+            # next-prisma-starter-websockets,
             # next-prisma-todomvc,
             standalone-server,
           ]
         node-start: ['16.x']
         os: [ubuntu-latest]
-    services:
-      postgres:
-        image: postgres:12.1
-        env:
-          POSTGRES_USER: postgres
-          POSTGRES_DB: trpcdb
-        ports:
-          - 5432:5432
+    # services:
+    #   postgres:
+    #     image: postgres:12.1
+    #     env:
+    #       POSTGRES_USER: postgres
+    #       POSTGRES_DB: trpcdb
+    #     ports:
+    #       - 5432:5432
     steps:
       - uses: actions/checkout@v3
         with:
@@ -101,8 +101,8 @@ jobs:
       - name: if exists, run lint
         run: pnpm --filter ./examples/${{ matrix.dir }} --if-present lint
 
-      - name: Wait for postgres
-        run: sleep 100
+      # - name: Wait for postgres
+      #   run: sleep 100
 
       - name: if exists, run build
         run: pnpm --filter ./examples/${{ matrix.dir }} --if-present build
