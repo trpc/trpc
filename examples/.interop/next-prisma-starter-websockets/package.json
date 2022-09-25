@@ -27,8 +27,7 @@
     "test-dev": "cross-env APP_ENV=test start-server-and-test dev 3000 test",
     "test-start": "cross-env APP_ENV=test WS_URL=ws://localhost:3000 start-server-and-test start 3000 test",
     "ts-node": "ts-node --compiler-options \"{\\\"module\\\":\\\"commonjs\\\"}\"",
-    "test": "jest",
-    "postinstall": "prisma generate"
+    "test": "jest"
   },
   "prisma": {
     "seed": "pnpm ts-node prisma/seed.ts"

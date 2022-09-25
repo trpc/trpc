@@ -3,7 +3,7 @@ on: [push]
 jobs:
   e2e-old-nodes:
     container:
-      image: mcr.microsoft.com/playwright:v1.26.0-focal
+      image: mcr.microsoft.com/playwright:v1.20.0-focal
       options: --user 1001
     env:
       PLAYWRIGHT_BROWSERS_PATH: ${{ github.workspace }}/playwright
@@ -25,7 +25,7 @@ jobs:
         ports:
           - 5432:5432
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v2
 
       - uses: pnpm/action-setup@v2.2.2
 
@@ -37,7 +37,7 @@ jobs:
       - name: Cache Playwright's binary
         uses: actions/cache@v3
         with:
-          key: ${{ runner.os }}-playwright-bin-v1.26.0
+          key: ${{ runner.os }}-playwright-bin-v1
           path: ${{ env.PLAYWRIGHT_BROWSERS_PATH }}
 
       - run: node -v
@@ -45,7 +45,7 @@ jobs:
         run: pnpm install
 
       - name: Next.js cache
-        uses: actions/cache@v3
+        uses: actions/cache@v2
         with:
           path: ${{ github.workspace }}${{ matrix.dir }}/.next/cache
           key: ${{ matrix.dir }}-${{ runner.os }}-${{ matrix.node-start }}-${{ hashFiles('**/pnpm-lock.yaml') }}-nextjs
