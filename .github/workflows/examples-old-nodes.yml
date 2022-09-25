@@ -65,11 +65,14 @@ jobs:
 
       - run: node -v
 
+      # - name: Wait for postgres
+      #   run: |
+      #     until pg_isready -h postgres -p 5432 -U postgres; do
+      #       sleep 1
+      #     done
+
       - name: Wait for postgres
-        run: |
-          until pg_isready -h postgres -p 5432 -U postgres; do
-            sleep 1
-          done
+        run: sleep 10
 
       - name: if exists, run lint
         run: pnpm --filter ./examples/${{ matrix.dir }} --if-present lint
