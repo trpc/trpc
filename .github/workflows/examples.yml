@@ -98,8 +98,9 @@ jobs:
       #       sleep 1
       #     done
 
-      - name: if exists, run lint
-        run: pnpm --filter ./examples/${{ matrix.dir }} --if-present lint
+      # We currently don't have any examples that has `lint`, except for Next.js ones and they are linted at build
+      # - name: if exists, run lint
+      #   run: pnpm --filter ./examples/${{ matrix.dir }} --if-present lint
 
       # - name: Wait for postgres
       #   run: sleep 100
