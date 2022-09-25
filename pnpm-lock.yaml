@@ -426,6 +426,7 @@ importers:
 
   examples/.interop/next-prisma-todomvc:
     specifiers:
+      '@playwright/test': ^1.19.2
       '@prisma/client': https://registry.npmjs.com/@prisma/client/-/client-4.3.1.tgz?id=%40examples%2Finterop-todo-web
       '@tanstack/react-query': ^4.3.8
       '@tanstack/react-query-devtools': ^4.3.8
@@ -477,6 +478,7 @@ importers:
       todomvc-common: 1.0.5
       zod: 3.19.1
     devDependencies:
+      '@playwright/test': 1.26.0
       '@tanstack/react-query-devtools': 4.6.0_35w334xqtbzboqulr5pz522esm
       '@types/jest': 27.5.2
       '@types/node': 18.7.20

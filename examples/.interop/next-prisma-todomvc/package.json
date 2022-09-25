@@ -47,6 +47,7 @@
     "zod": "^3.0.0"
   },
   "devDependencies": {
+    "@playwright/test": "^1.19.2",
     "@tanstack/react-query-devtools": "^4.3.8",
     "@types/jest": "^27.0.1",
     "@types/node": "^18.7.20",
