@@ -2,9 +2,6 @@ name: Examples E2E (old nodes)
 on: [push]
 jobs:
   e2e-old-nodes:
-    container:
-      image: mcr.microsoft.com/playwright:v1.26.0-focal
-      options: --user 1001
     env:
       PLAYWRIGHT_BROWSERS_PATH: ${{ github.workspace }}/playwright
       DATABASE_URL: postgresql://postgres:@postgres:5432/trpcdb
