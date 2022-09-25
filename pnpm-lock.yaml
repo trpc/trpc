@@ -517,7 +517,7 @@ importers:
       '@types/node-fetch': ^2.5.11
       node-fetch: ^2.6.1
       start-server-and-test: ^1.12.0
-      ts-node: ^10.3.0
+      tsx: ^3.9.0
       typescript: ^4.8.3
       wrangler: ^2.0.17
       zod: ^3.0.0
@@ -531,7 +531,7 @@ importers:
       '@types/node-fetch': 2.6.2
       node-fetch: 2.6.7
       start-server-and-test: 1.14.0
-      ts-node: 10.9.1_xncqeq3xkoqhng77wx5a5ihsty
+      tsx: 3.9.0
       typescript: 4.8.3
       wrangler: 2.1.6
 
@@ -549,7 +549,7 @@ importers:
       nodemon: ^2.0.12
       npm-run-all: ^4.1.5
       start-server-and-test: ^1.12.0
-      ts-node: ^10.3.0
+      tsx: ^3.9.0
       typescript: ^4.8.3
       wait-on: ^6.0.0
       zod: ^3.0.0
@@ -568,7 +568,7 @@ importers:
       nodemon: 2.0.20
       npm-run-all: 4.1.5
       start-server-and-test: 1.14.0
-      ts-node: 10.9.1_xncqeq3xkoqhng77wx5a5ihsty
+      tsx: 3.9.0
       typescript: 4.8.3
       wait-on: 6.0.1
 
@@ -587,7 +587,7 @@ importers:
       nodemon: ^2.0.12
       npm-run-all: ^4.1.5
       start-server-and-test: ^1.12.0
-      ts-node: ^10.3.0
+      tsx: ^3.9.0
       typescript: ^4.8.3
       wait-on: ^6.0.0
       zod: ^3.0.0
@@ -607,7 +607,7 @@ importers:
       nodemon: 2.0.20
       npm-run-all: 4.1.5
       start-server-and-test: 1.14.0
-      ts-node: 10.9.1_xncqeq3xkoqhng77wx5a5ihsty
+      tsx: 3.9.0
       typescript: 4.8.3
       wait-on: 6.0.1
 
@@ -627,8 +627,8 @@ importers:
       npm-run-all: ^4.1.5
       start-server-and-test: ^1.12.0
       superjson: ^1.7.4
-      ts-node: ^10.3.0
       tslib: ^2.1.0
+      tsx: ^3.9.0
       typescript: ^4.8.3
       wait-on: ^6.0.0
       ws: ^8.0.0
@@ -652,7 +652,7 @@ importers:
       nodemon: 2.0.20
       npm-run-all: 4.1.5
       start-server-and-test: 1.14.0
-      ts-node: 10.9.1_xncqeq3xkoqhng77wx5a5ihsty
+      tsx: 3.9.0
       typescript: 4.8.3
       wait-on: 6.0.1
 
@@ -665,13 +665,13 @@ importers:
       serverless: ^3.18.1
       serverless-offline: ^8.8.0
       serverless-plugin-typescript: ^2.1.2
-      ts-node: ^10.3.0
+      tsx: ^3.9.0
       typescript: ^4.8.3
     dependencies:
       '@trpc/client': link:../../packages/client
       '@trpc/server': link:../../packages/server
       node-fetch: 2.6.7
-      ts-node: 10.9.1_xncqeq3xkoqhng77wx5a5ihsty
+      tsx: 3.9.0
     devDependencies:
       '@types/node': 18.7.20
       serverless: 3.22.0
@@ -685,7 +685,7 @@ importers:
       nodemon: ^2.0.12
       npm-run-all: ^4.1.5
       start-server-and-test: ^1.12.0
-      ts-node: ^10.3.0
+      tsx: ^3.9.0
       typescript: ^4.8.3
       wait-port: ^0.3.0
     devDependencies:
@@ -693,7 +693,7 @@ importers:
       nodemon: 2.0.20
       npm-run-all: 4.1.5
       start-server-and-test: 1.14.0
-      ts-node: 10.9.1_xncqeq3xkoqhng77wx5a5ihsty
+      tsx: 3.9.0
       typescript: 4.8.3
       wait-port: 0.3.1
 
@@ -728,7 +728,7 @@ importers:
       next: ^12.3.1
       react: ^18.2.0
       react-dom: ^18.2.0
-      ts-node: ^10.3.0
+      tsx: ^3.9.0
       typescript: ^4.8.3
       zod: ^3.0.0
     dependencies:
@@ -745,7 +745,7 @@ importers:
       '@types/node': 18.7.20
       '@types/react': 18.0.21
       '@types/react-dom': 18.0.6
-      ts-node: 10.9.1_xncqeq3xkoqhng77wx5a5ihsty
+      tsx: 3.9.0
       typescript: 4.8.3
 
   examples/next-minimal-starter:
@@ -1078,7 +1078,7 @@ importers:
       nodemon: ^2.0.12
       npm-run-all: ^4.1.5
       start-server-and-test: ^1.12.0
-      ts-node: ^10.3.0
+      tsx: ^3.9.0
       typescript: ^4.8.3
       wait-port: ^0.3.0
       ws: ^8.0.0
@@ -1098,7 +1098,7 @@ importers:
       nodemon: 2.0.20
       npm-run-all: 4.1.5
       start-server-and-test: 1.14.0
-      ts-node: 10.9.1_xncqeq3xkoqhng77wx5a5ihsty
+      tsx: 3.9.0
       typescript: 4.8.3
       wait-port: 0.3.1
 

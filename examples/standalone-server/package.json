@@ -3,12 +3,12 @@
   "version": "10.0.0-proxy-beta.7",
   "private": true,
   "scripts": {
-    "dev:server": "nodemon -e ts -w . -x ts-node ./src/server",
-    "dev:client": "nodemon -e ts -w . -x 'wait-port 2022 && ts-node ./src/client'",
+    "dev:server": "nodemon -e ts -w . -x tsx ./src/server",
+    "dev:client": "nodemon -e ts -w . -x 'wait-port 2022 && tsx ./src/client'",
     "dev": "run-p dev:* --print-label",
     "start": "pnpm dev",
     "build": "tsc",
-    "test-dev": "start-server-and-test 'ts-node src/server' 2022 'ts-node src/client'",
+    "test-dev": "start-server-and-test 'tsx src/server' 2022 'tsx src/client'",
     "test-start": "start-server-and-test 'node dist/server' 2022 'node dist/client'"
   },
   "dependencies": {
@@ -30,7 +30,7 @@
     "nodemon": "^2.0.12",
     "npm-run-all": "^4.1.5",
     "start-server-and-test": "^1.12.0",
-    "ts-node": "^10.3.0",
+    "tsx": "^3.9.0",
     "typescript": "^4.8.3",
     "wait-port": "^0.3.0"
   },
