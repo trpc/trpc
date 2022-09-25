@@ -1,7 +1,9 @@
-jest.setTimeout(35e3);
+import { expect, test } from '@playwright/test';
 
-test('add todo', async () => {
-  await page.goto('http://localhost:3000');
+test.setTimeout(35e3);
+
+test('add todo', async ({ page }) => {
+  await page.goto('/');
 
   const nonce = Math.random()
     .toString(36)

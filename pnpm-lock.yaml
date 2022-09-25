@@ -1040,25 +1040,19 @@ importers:
       '@trpc/next': ^10.0.0-proxy-beta.7
       '@trpc/react': ^10.0.0-proxy-beta.7
       '@trpc/server': ^10.0.0-proxy-beta.7
-      '@types/jest': ^27.0.1
       '@types/node': ^18.7.20
       '@types/react': ^18.0.9
       clsx: ^1.1.1
-      expect-playwright: ^0.8.0
-      jest: ^27.1.0
-      jest-playwright: ^0.0.1
-      jest-playwright-preset: ^1.4.5
       next: ^12.3.1
       npm-run-all: ^4.1.5
       playwright: ^1.19.1
       prisma: ^4.3.1
       react: ^18.2.0
       react-dom: ^18.2.0
-      start-server-and-test: ^1.12.0
+      start-server-and-test: ^1.14.0
       superjson: ^1.7.4
       todomvc-app-css: ^2.3.0
       todomvc-common: ^1.0.5
-      ts-jest: ^27.0.5
       typescript: ^4.8.3
       zod: ^3.0.0
     dependencies:
@@ -1069,16 +1063,10 @@ importers:
       '@trpc/react': link:../../packages/react
       '@trpc/server': link:../../packages/server
       clsx: 1.2.1
-      expect-playwright: 0.8.0
-      jest: 27.5.1
-      jest-playwright: 0.0.1
-      jest-playwright-preset: 1.7.2_jest@27.5.1
       next: 12.3.1_biqbaboplfbrettd7655fr4n2y
-      playwright: 1.26.0
       prisma: 4.3.1
       react: 18.2.0
       react-dom: 18.2.0_react@18.2.0
-      start-server-and-test: 1.14.0
       superjson: 1.10.0
       todomvc-app-css: 2.4.2
       todomvc-common: 1.0.5
@@ -1086,11 +1074,11 @@ importers:
     devDependencies:
       '@playwright/test': 1.26.0
       '@tanstack/react-query-devtools': 4.6.0_35w334xqtbzboqulr5pz522esm
-      '@types/jest': 27.5.2
       '@types/node': 18.7.20
       '@types/react': 18.0.21
       npm-run-all: 4.1.5
-      ts-jest: 27.1.5_qqheuyrmnawe7ws7n63adpwbnu
+      playwright: 1.26.0
+      start-server-and-test: 1.14.0
       typescript: 4.8.3
 
   examples/standalone-server:
