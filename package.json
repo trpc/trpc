@@ -16,7 +16,7 @@
     "codegen:generateBigLegacyRouter": "ts-node scripts/generateBigLegacyRouter.ts",
     "codegen:entrypoints": "ts-node scripts/entrypoints.ts",
     "codegen:generateMergeRouters": "ts-node scripts/generateMergeRouters.ts",
-    "codegen": "run-p \"codegen:*\"",
+    "codegen": "pnpm run-p codegen:*",
     "postinstall": "pnpm codegen && pnpm build",
     "build": "pnpm codegen:entrypoints && rollup --config rollup.config.ts --configPlugin rollup-plugin-swc3",
     "watch": "pnpm build --watch",
