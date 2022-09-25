@@ -1,23 +1,20 @@
 import { PlaywrightTestConfig, devices } from '@playwright/test';
 
-const baseURL = process.env.PLAYWRIGHT_TEST_BASE_URL || 'http://localhost:3000';
-console.log(`ℹ️ Using base URL "${baseURL}"`);
+const baseUrl = process.env.PLAYWRIGHT_TEST_BASE_URL || 'http://localhost:3000';
+console.log(`ℹ️ Using base URL "${baseUrl}"`);
 
+const opts = {
+  // launch headless on CI, in browser locally
+  headless: !!process.env.CI || !!process.env.PLAYWRIGHT_HEADLESS,
+  // collectCoverage: !!process.env.PLAYWRIGHT_HEADLESS
+};
 const config: PlaywrightTestConfig = {
-  projects: [
-    {
-      name: 'chromium',
-      use: { ...devices['Desktop Chrome'], headless: true, baseURL },
-    },
-    {
-      name: 'firefox',
-      use: { ...devices['Desktop Firefox'], headless: true, baseURL },
-    },
-    {
-      name: 'webkit',
-      use: { ...devices['Desktop Safari'], headless: true, baseURL },
-    },
-  ],
+  testDir: './playwright',
+  use: {
+    ...devices['Desktop Chrome'],
+    baseURL: baseUrl,
+    headless: opts.headless,
+  },
 };
 
 export default config;
