@@ -94,7 +94,7 @@ export default function DocVersionBannerWrapper(
         role="alert"
       >
         <p className="mb-2">
-          You are looking at the tRPC version 10 <strong>beta</strong>.
+          Welcome to the tRPC version 10 <strong>beta</strong>.
         </p>
         <p>
           For documentation about version 9,{' '}
