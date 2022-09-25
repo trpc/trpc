@@ -66,13 +66,11 @@
     "@trpc/server": "^10.0.0-alpha.48"
   },
   "devDependencies": {
+    "@testing-library/dom": "^8.18.1",
     "@trpc/server": "^10.0.0-proxy-beta.7",
     "@types/node": "^18.7.20"
   },
   "publishConfig": {
     "access": "public"
-  },
-  "dependencies": {
-    "@testing-library/dom": "^8.18.0"
   }
 }
