@@ -9,7 +9,7 @@ importers:
       '@manypkg/cli': ^0.19.0
       '@rollup/plugin-node-resolve': ^13.1.3
       '@swc/core': ^1.3.3
-      '@trivago/prettier-plugin-sort-imports': ^3.2.0
+      '@trivago/prettier-plugin-sort-imports': ^3.3.0
       '@types/node': ^18.7.20
       '@typescript-eslint/eslint-plugin': ^5.37.0
       '@typescript-eslint/parser': ^5.37.0
@@ -1556,14 +1556,14 @@ packages:
     dependencies:
       '@ampproject/remapping': 2.2.0
       '@babel/code-frame': 7.18.6
-      '@babel/generator': 7.17.7
+      '@babel/generator': 7.19.0
       '@babel/helper-compilation-targets': 7.19.1_@babel+core@7.17.8
       '@babel/helper-module-transforms': 7.19.0
       '@babel/helpers': 7.19.0
-      '@babel/parser': 7.17.8
+      '@babel/parser': 7.19.1
       '@babel/template': 7.18.10
-      '@babel/traverse': 7.17.3
-      '@babel/types': 7.17.0
+      '@babel/traverse': 7.19.1
+      '@babel/types': 7.19.0
       convert-source-map: 1.8.0
       debug: 4.3.4
       gensync: 1.0.0-beta.2
@@ -1599,7 +1599,7 @@ packages:
     resolution: {integrity: sha512-oLcVCTeIFadUoArDTwpluncplrYBmTCCZZgXCbgNGvOBBiSDDK3eWO4b/+eOTli5tKv1lg+a5/NAXg+nTcei1w==}
     engines: {node: '>=6.9.0'}
     dependencies:
-      '@babel/types': 7.17.0
+      '@babel/types': 7.19.0
       jsesc: 2.5.2
       source-map: 0.5.7
     dev: false
@@ -1846,7 +1846,7 @@ packages:
     engines: {node: '>=6.0.0'}
     hasBin: true
     dependencies:
-      '@babel/types': 7.17.0
+      '@babel/types': 7.19.0
     dev: false
 
   /@babel/parser/7.19.1:
@@ -2812,13 +2812,13 @@ packages:
     engines: {node: '>=6.9.0'}
     dependencies:
       '@babel/code-frame': 7.18.6
-      '@babel/generator': 7.17.7
+      '@babel/generator': 7.19.0
       '@babel/helper-environment-visitor': 7.18.9
       '@babel/helper-function-name': 7.19.0
       '@babel/helper-hoist-variables': 7.18.6
       '@babel/helper-split-export-declaration': 7.18.6
-      '@babel/parser': 7.17.8
-      '@babel/types': 7.17.0
+      '@babel/parser': 7.19.1
+      '@babel/types': 7.19.0
       debug: 4.3.4
       globals: 11.12.0
     transitivePeerDependencies:
