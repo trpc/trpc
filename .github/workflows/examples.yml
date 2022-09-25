@@ -50,6 +50,8 @@ jobs:
           - 5432:5432
     steps:
       - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
 
       - uses: pnpm/action-setup@v2.2.2
 
@@ -77,6 +79,7 @@ jobs:
       - uses: actions/setup-node@v3
         with:
           node-version: ${{ matrix.node-start }}
+          cache: 'pnpm'
 
       - run: node -v
 
