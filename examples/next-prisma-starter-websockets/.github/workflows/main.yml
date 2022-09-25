@@ -6,10 +6,11 @@ jobs:
       DATABASE_URL: postgresql://postgres:@localhost:5432/trpcdb
       NODE_ENV: test
       NEXTAUTH_SECRET: supersecret
+      PLAYWRIGHT_BROWSERS_PATH: ${{ github.workspace }}/playwright
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        node: ['14.x']
+        node: ['16.x']
         os: [ubuntu-latest]
     services:
       postgres:
@@ -21,20 +22,36 @@ jobs:
           - 5432:5432
     steps:
       - name: Checkout repo
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
 
-      # - name: Install deps and build (with cache)
-      #   uses: bahmutov/npm-install@v1
-      - run: yarn install
+      - uses: pnpm/action-setup@v2.2.2
+        with:
+          version: 7.12.0
+
+      - name: Use Node ${{ matrix.node }}
+        uses: actions/setup-node@v3
+        with:
+          node-version: ${{ matrix.node }}
+          cache: 'pnpm'
+
+      - name: Install deps (with cache)
+        run: pnpm install
 
       - name: Next.js cache
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: ${{ github.workspace }}/.next/cache
-          key: ${{ runner.os }}-${{ runner.node }}--nextjs
+          key: ${{ runner.os }}-${{ runner.node }}-${{ hashFiles('**/pnpm-lock.yaml') }}-nextjs
 
-      - run: yarn playwright install-deps
-      - run: yarn lint
-      - run: yarn build
-      - run: yarn test-start
-      - run: yarn test-dev
+      - name: Build and test
+        run: pnpm lint && pnpm build && pnpm test-start && pnpm test-dev
+
+      - name: Upload test results
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v2
+        with:
+          name: test results
+          path: |
+            playwright/test-results
