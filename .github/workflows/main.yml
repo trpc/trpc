@@ -32,7 +32,7 @@ jobs:
           path: ${{ env.PLAYWRIGHT_BROWSERS_PATH }}
 
       - name: Install deps and build (with cache)
-        run: pnpm install
+        run: pnpm install --child-concurrency 3
 
       - name: Test
         run: pnpm test -- --ci --coverage --maxWorkers=2
