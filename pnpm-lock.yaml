@@ -280,7 +280,7 @@ importers:
       prisma: ^4.3.1
       react: ^18.2.0
       react-dom: ^18.2.0
-      start-server-and-test: ^1.14.0
+      start-server-and-test: ^1.12.0
       superjson: ^1.7.4
       tsx: ^3.9.0
       typescript: ^4.8.3
@@ -810,7 +810,7 @@ importers:
       prisma: ^4.3.1
       react: ^18.2.0
       react-dom: ^18.2.0
-      start-server-and-test: ^1.14.0
+      start-server-and-test: ^1.12.0
       superjson: ^1.7.4
       tsx: ^3.9.0
       typescript: ^4.8.3
@@ -880,7 +880,7 @@ importers:
       prisma: ^4.3.1
       react: ^18.2.0
       react-dom: ^18.2.0
-      start-server-and-test: ^1.14.0
+      start-server-and-test: ^1.12.0
       superjson: ^1.7.4
       tsx: ^3.9.0
       typescript: ^4.8.3
@@ -1037,7 +1037,7 @@ importers:
       prisma: ^4.3.1
       react: ^18.2.0
       react-dom: ^18.2.0
-      start-server-and-test: ^1.14.0
+      start-server-and-test: ^1.12.0
       superjson: ^1.7.4
       todomvc-app-css: ^2.3.0
       todomvc-common: ^1.0.5
