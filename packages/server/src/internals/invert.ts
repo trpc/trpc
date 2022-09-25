@@ -1,14 +1,14 @@
-type KeyFromValue<V, T extends Record<PropertyKey, PropertyKey>> = {
-  [K in keyof T]: V extends T[K] ? K : never;
-}[keyof T];
+type KeyFromValue<TValue, TType extends Record<PropertyKey, PropertyKey>> = {
+  [K in keyof TType]: TValue extends TType[K] ? K : never;
+}[keyof TType];
 
-type Invert<T extends Record<PropertyKey, PropertyKey>> = {
-  [V in T[keyof T]]: KeyFromValue<V, T>;
+type Invert<TType extends Record<PropertyKey, PropertyKey>> = {
+  [TValue in TType[keyof TType]]: KeyFromValue<TValue, TType>;
 };
 
-export function invert<T extends Record<PropertyKey, PropertyKey>>(
-  obj: T,
-): Invert<T> {
+export function invert<TRecord extends Record<PropertyKey, PropertyKey>>(
+  obj: TRecord,
+): Invert<TRecord> {
   const newObj = Object.create(null) as any;
   for (const key in obj) {
     const v = obj[key];

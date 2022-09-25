@@ -52,7 +52,7 @@ const features = [
 
 export const Features: FC = () => {
   return (
-    <div className="container grid grid-cols-1 gap-6 mx-auto lg:grid-cols-3">
+    <div className="grid grid-cols-1 gap-6 mx-auto lg:grid-cols-3">
       {features.map((feature) => {
         return (
           <div key={feature.title}>

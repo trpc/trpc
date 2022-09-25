@@ -37,6 +37,7 @@ The project contains a [`render.yaml`](./render.yaml) [*"Blueprint"*](https://re
 
 Go to [dashboard.render.com/blueprints](https://dashboard.render.com/blueprints) and connect to this Blueprint and see how the app and database automatically gets deployed.
 
+You will either need to create an environment group called `trpc-websockets` with environment variables or remove that from `render.yaml` in favor of manual environment variables that overrides the ones in `/.env`.
 
 ## Files of note
 

@@ -68,8 +68,7 @@ export const trpc = createTRPCNext<AppRouter, SSRContext>({
           url: `${getBaseUrl()}/api/trpc`,
           /**
            * Set custom request headers on every request from tRPC
-           * @link http://localhost:3000/docs/v10/header
-           * @link http://localhost:3000/docs/v10/ssr
+           * @link https://trpc.io/docs/ssr
            */
           headers() {
             if (ctx?.req) {

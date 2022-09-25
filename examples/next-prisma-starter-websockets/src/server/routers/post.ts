@@ -15,12 +15,12 @@ interface MyEvents {
   isTypingUpdate: () => void;
 }
 declare interface MyEventEmitter {
-  on<U extends keyof MyEvents>(event: U, listener: MyEvents[U]): this;
-  off<U extends keyof MyEvents>(event: U, listener: MyEvents[U]): this;
-  once<U extends keyof MyEvents>(event: U, listener: MyEvents[U]): this;
-  emit<U extends keyof MyEvents>(
-    event: U,
-    ...args: Parameters<MyEvents[U]>
+  on<TEv extends keyof MyEvents>(event: TEv, listener: MyEvents[TEv]): this;
+  off<TEv extends keyof MyEvents>(event: TEv, listener: MyEvents[TEv]): this;
+  once<TEv extends keyof MyEvents>(event: TEv, listener: MyEvents[TEv]): this;
+  emit<TEv extends keyof MyEvents>(
+    event: TEv,
+    ...args: Parameters<MyEvents[TEv]>
   ): boolean;
 }
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
