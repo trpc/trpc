@@ -359,7 +359,7 @@ importers:
       prisma: ^4.3.1
       react: ^18.2.0
       react-dom: ^18.2.0
-      start-server-and-test: ^1.14.0
+      start-server-and-test: ^1.12.0
       superjson: ^1.7.4
       tailwindcss: ^3.1.6
       tsx: ^3.9.0
@@ -945,7 +945,7 @@ importers:
       prisma: ^4.3.1
       react: ^18.2.0
       react-dom: ^18.2.0
-      start-server-and-test: ^1.14.0
+      start-server-and-test: ^1.12.0
       superjson: ^1.7.4
       tailwindcss: ^3.1.6
       tsx: ^3.9.0
