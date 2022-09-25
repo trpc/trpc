@@ -291,3 +291,7 @@ html.v9 .trpcgif--v9 {
 .breadcrumbs__item {
   @apply flex items-center;
 }
+
+details p {
+  margin-bottom: var(--ifm-leading);
+}

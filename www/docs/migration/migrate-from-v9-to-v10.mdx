@@ -6,7 +6,11 @@ slug: /migrate-from-v9-to-v10
 ---
 
 :::info Is v10 ready for production?
-tRPC v10 is **ready for production** & can safely be used today. There will be minor changes to the API comparing v10-beta to v10. You will need to figure out the migration path between the beta and general availability releases on your own.
+tRPC v10 is **ready for production** and can safely be used today.
+
+v10 is still a beta and will be rapidly changing as we continue to work through community feedback.
+
+v10-beta will be different from v10 itself. This doc is written for migrating from v9 to v10. You will need to find your own path for migrating from v10-beta to v10.
 :::
 
 Welcome to tRPC v10! We're excited to bring you a new major version to continue the journey towards perfect end-to-end type safety with excellent DX.
@@ -140,7 +144,8 @@ const appRouter = t.router({
 
 </details>
 
-Here's a full example of how the `t` variable may look like in v10, including a data transformer, OpenAPI metadata, and an error formatter:
+<details>
+  <summary>Full example with data transformer, OpenAPI metadata, and error formatter</summary>
 
 ```ts title='/src/server/trpc.ts'
 import { initTRPC } from '@trpc/server';
@@ -182,6 +187,8 @@ export const t = initTRPC
     transformer: superjson,
   });
 ```
+
+</details>
 
 ## Migrating from v9
 
