@@ -1,17 +1,16 @@
 {
   "name": "@examples/interop-lambda-api-gateway",
   "private": true,
-  "version": "10.0.0-proxy-beta.7",
+  "version": "10.0.0-proxy-beta.5",
   "main": "index.js",
   "license": "MIT",
   "dependencies": {
-    "@trpc/client": "^10.0.0-proxy-beta.7",
-    "@trpc/server": "^10.0.0-proxy-beta.7",
+    "@trpc/client": "^10.0.0-proxy-beta.5",
+    "@trpc/server": "^10.0.0-proxy-beta.5",
     "node-fetch": "^2.6.1",
     "ts-node": "^10.3.0"
   },
   "devDependencies": {
-    "@types/node": "^18.7.20",
     "serverless": "^3.18.1",
     "serverless-offline": "^8.8.0",
     "serverless-plugin-typescript": "^2.1.2",
