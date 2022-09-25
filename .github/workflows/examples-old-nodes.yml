@@ -72,7 +72,7 @@ jobs:
       #     done
 
       - name: Wait for postgres
-        run: sleep 20
+        run: sleep 30
 
       - name: if exists, run lint
         run: pnpm --filter ./examples/${{ matrix.dir }} --if-present lint
