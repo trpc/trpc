@@ -98,11 +98,12 @@ jobs:
       #       sleep 1
       #     done
 
+      - name: if exists, run lint
+        run: pnpm --filter ./examples/${{ matrix.dir }} --if-present lint
+
       - name: Wait for postgres
         run: sleep 30
 
-      - name: if exists, run lint
-        run: pnpm --filter ./examples/${{ matrix.dir }} --if-present lint
       - name: if exists, run build
         run: pnpm --filter ./examples/${{ matrix.dir }} --if-present build
       - name: if exists, run test-start
