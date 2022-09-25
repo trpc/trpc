@@ -8,7 +8,7 @@
     "build:3-next": "cross-env NODE_ENV=production next build",
     "build:4-server": "tsc --project tsconfig.server.json",
     "build": "run-s build:*",
-    "dev:wss": "cross-env PORT=3001 nodemon --watch src --ext .ts,.tsx,js,jsx --signal SIGTERM --exec \"ts-node --project tsconfig.server.json src/server/wssDevServer.ts\"",
+    "dev:wss": "cross-env PORT=3001 nodemon --watch src --ext .ts,.tsx,js,jsx --signal SIGTERM --exec \"tsx --tsconfig tsconfig.server.json src/server/wssDevServer.ts\"",
     "dev:next": "next dev",
     "dev": "run-p dev:*",
     "db-up": "docker-compose up -d",
@@ -26,12 +26,11 @@
     "lint-fix": "pnpm lint --fix",
     "test-dev": "cross-env APP_ENV=test start-server-and-test dev 3000 test",
     "test-start": "cross-env APP_ENV=test WS_URL=ws://localhost:3000 start-server-and-test start 3000 test",
-    "ts-node": "ts-node --compiler-options \"{\\\"module\\\":\\\"commonjs\\\"}\"",
-    "test": "jest",
+    "test": "playwright test",
     "postinstall": "prisma generate"
   },
   "prisma": {
-    "seed": "pnpm ts-node prisma/seed.ts"
+    "seed": "tsx prisma/seed.ts"
   },
   "prettier": {
     "printWidth": 80,
@@ -51,15 +50,14 @@
     "node-fetch": "^2.6.1",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "start-server-and-test": "^1.12.0",
     "superjson": "^1.7.4",
-    "ts-node": "^10.3.0",
     "ws": "^8.0.0",
+    "tsx": "^3.9.0",
     "zod": "^3.0.0"
   },
   "devDependencies": {
+    "@playwright/test": "^1.19.2",
     "@tanstack/react-query-devtools": "^4.3.8",
-    "@types/jest": "^27.0.1",
     "@types/node": "^18.7.20",
     "@types/node-fetch": "^2.5.11",
     "@types/react": "^18.0.9",
@@ -74,18 +72,14 @@
     "eslint-plugin-prettier": "^4.0.0",
     "eslint-plugin-react": "^7.25.1",
     "eslint-plugin-react-hooks": "^4.2.0",
-    "expect-playwright": "^0.8.0",
-    "jest": "^27.1.0",
-    "jest-playwright": "^0.0.1",
-    "jest-playwright-preset": "^1.4.5",
     "nodemon": "^2.0.12",
     "npm-run-all": "^4.1.5",
     "playwright": "^1.19.1",
     "postcss": "^8.4.14",
     "prettier": "^2.7.1",
     "prisma": "^4.3.1",
+    "start-server-and-test": "^1.14.0",
     "tailwindcss": "^3.1.6",
-    "ts-jest": "^27.0.5",
     "typescript": "^4.8.3"
   },
   "publishConfig": {

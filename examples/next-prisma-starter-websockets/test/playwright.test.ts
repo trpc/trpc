@@ -1,6 +1,8 @@
-jest.setTimeout(35e3);
+import { test } from '@playwright/test';
 
-test('send message', async () => {
+test.setTimeout(35e3);
+
+test('send message', async ({ browser, page }) => {
   const viewer = await browser.newPage();
   await viewer.goto('http://localhost:3000');
 
