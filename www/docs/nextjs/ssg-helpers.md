@@ -9,10 +9,11 @@ slug: /ssg-helpers
 
 ```ts
 import { createProxySSGHelpers } from '@trpc/react/ssg';
+import { createContext } from 'server/context';
 
 const ssg = createProxySSGHelpers({
   router: appRouter,
-  ctx: createContext,
+  ctx: await createContext(),
   transformer: superjson, // optional - adds superjson serialization
 });
 ```
