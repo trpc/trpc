@@ -6,15 +6,15 @@ console.log(`ℹ️ Using base URL "${baseURL}"`);
 const config: PlaywrightTestConfig = {
   projects: [
     {
-      name: 'Chromium',
+      name: 'chromium',
       use: { ...devices['Desktop Chrome'], headless: true, baseURL },
     },
     {
-      name: 'Firefox',
+      name: 'firefox',
       use: { ...devices['Desktop Firefox'], headless: true, baseURL },
     },
     {
-      name: 'WebKit',
+      name: 'webkit',
       use: { ...devices['Desktop Safari'], headless: true, baseURL },
     },
   ],
