@@ -15,7 +15,7 @@ jobs:
 
     steps:
       - name: Checkout repo
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - uses: pnpm/action-setup@v2.2.2
 
@@ -28,7 +28,7 @@ jobs:
       - name: Cache Playwright's binary
         uses: actions/cache@v3
         with:
-          key: ${{ runner.os }}-playwright-bin-v1
+          key: ${{ runner.os }}-playwright-bin-v1.26.0
           path: ${{ env.PLAYWRIGHT_BROWSERS_PATH }}
 
       - name: Install deps and build (with cache)
