@@ -43,6 +43,12 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-pnpm-store-${{ matrix.dir }}-
 
+      - name: Cache Playwright's binary
+        uses: actions/cache@v3
+        with:
+          key: ${{ runner.os }}-playwright-bin-v1.26.0
+          path: ${{ env.PLAYWRIGHT_BROWSERS_PATH }}
+
       - run: node -v
       - name: Install deps and build (with cache)
         run: pnpm --filter ./examples/${{ matrix.dir }}  --filter "@trpc/*" --filter root install
