@@ -75,7 +75,7 @@ jobs:
         run: pnpm --filter ./examples/${{ matrix.dir }} --if-present lint
 
       - name: Wait for postgres
-        run: sleep 40
+        run: sleep 100
 
       - name: if exists, run build
         run: pnpm --filter ./examples/${{ matrix.dir }} --if-present build
