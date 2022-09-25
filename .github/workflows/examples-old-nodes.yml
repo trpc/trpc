@@ -32,7 +32,19 @@ jobs:
       - uses: actions/setup-node@v3
         with:
           node-version: 16.x
-          cache: 'pnpm'
+
+      - name: Get pnpm store directory
+        id: pnpm-cache
+        run: |
+          echo "::set-output name=pnpm_cache_dir::$(pnpm store path)"
+
+      - uses: actions/cache@v3
+        name: Setup pnpm cache
+        with:
+          path: ${{ steps.pnpm-cache.outputs.pnpm_cache_dir }}
+          key: ${{ runner.os }}-pnpm-store-${{ matrix.dir }}-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
 
       - name: Cache Playwright's binary
         uses: actions/cache@v3
@@ -42,7 +54,7 @@ jobs:
 
       - run: node -v
       - name: Install deps and build (with cache)
-        run: pnpm install --child-concurrency 3
+        run: pnpm --filter ./examples/${{ matrix.dir }} install --child-concurrency 3
 
       - name: Next.js cache
         uses: actions/cache@v3
@@ -56,8 +68,11 @@ jobs:
 
       - run: node -v
 
-      - name: if exists, run pnpm lint
-        run: cd examples/${{ matrix.dir }} && cat package.json | if grep --silent '"lint"'; then pnpm lint; fi
-      - run: pnpm --filter ./examples/${{ matrix.dir }} build
-      - run: pnpm --filter ./examples/${{ matrix.dir }} test-start
-      - run: pnpm --filter ./examples/${{ matrix.dir }} test-dev
+      - name: if exists, run lint
+        run: pnpm --filter ./examples/${{ matrix.dir }} --if-present lint
+      - name: if exists, run build
+        run: pnpm --filter ./examples/${{ matrix.dir }} --if-present build
+      - name: if exists, run test-start
+        run: pnpm --filter ./examples/${{ matrix.dir }} --if-present test-start
+      - name: if exists, run test-dev
+        run: pnpm --filter ./examples/${{ matrix.dir }} --if-present test-dev
