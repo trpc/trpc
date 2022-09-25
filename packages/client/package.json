@@ -71,5 +71,8 @@
   },
   "publishConfig": {
     "access": "public"
+  },
+  "dependencies": {
+    "@testing-library/dom": "^8.18.0"
   }
 }

@@ -46,7 +46,7 @@ jobs:
           path: ${{ env.PLAYWRIGHT_BROWSERS_PATH }}
 
       - name: Install deps and build (with cache)
-        run: pnpm --filter "@trpc/*" install
+        run: pnpm --filter "@trpc/*" --filter root install
 
       - name: Test
         run: pnpm test -- --ci --coverage --maxWorkers=2
