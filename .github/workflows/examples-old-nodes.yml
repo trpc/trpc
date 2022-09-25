@@ -26,38 +26,26 @@ jobs:
           - 5432:5432
     steps:
       - uses: actions/checkout@v2
-
-      - uses: pnpm/action-setup@v2.2.2
-
-      - uses: actions/setup-node@v3
+      - uses: actions/setup-node@v2
         with:
           node-version: 16.x
-          cache: 'pnpm'
-
-      - name: Cache Playwright's binary
-        uses: actions/cache@v3
-        with:
-          key: ${{ runner.os }}-playwright-bin-v1
-          path: ${{ env.PLAYWRIGHT_BROWSERS_PATH }}
-
       - run: node -v
-      - name: Install deps and build (with cache)
-        run: pnpm install
+      - uses: bahmutov/npm-install@v1
 
       - name: Next.js cache
         uses: actions/cache@v2
         with:
           path: ${{ github.workspace }}${{ matrix.dir }}/.next/cache
-          key: ${{ matrix.dir }}-${{ runner.os }}-${{ matrix.node-start }}-${{ hashFiles('**/pnpm-lock.yaml') }}-nextjs
+          key: ${{ matrix.dir }}-${{ runner.os }}-${{ matrix.node-start }}-${{ hashFiles('**/yarn.lock') }}-nextjs
 
-      - uses: actions/setup-node@v3
+      - uses: actions/setup-node@v2
         with:
           node-version: ${{ matrix.node-start }}
 
       - run: node -v
 
-      - name: if exists, run pnpm lint
-        run: cd examples/${{ matrix.dir }} && cat package.json | if grep --silent '"lint"'; then pnpm lint; fi
-      - run: pnpm --filter ./examples/${{ matrix.dir }} build
-      - run: pnpm --filter ./examples/${{ matrix.dir }} test-start
-      - run: pnpm --filter ./examples/${{ matrix.dir }} test-dev
+      - name: if exists, run yarn lint
+        run: cd examples/${{ matrix.dir }} && cat package.json | if grep --silent '"lint"'; then yarn lint; fi
+      - run: yarn --cwd examples/${{ matrix.dir }} build
+      - run: yarn --cwd examples/${{ matrix.dir }} test-start
+      - run: yarn --cwd examples/${{ matrix.dir }} test-dev

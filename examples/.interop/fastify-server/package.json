@@ -6,10 +6,10 @@
     "build": "tsc",
     "wait-server": "wait-on tcp:2022",
     "dev:server": "nodemon --watch src/server src/server/index.ts",
-    "dev:client": "pnpm wait-server && nodemon --watch src/client src/client/index.ts",
+    "dev:client": "yarn wait-server && nodemon --watch src/client src/client/index.ts",
     "dev": "run-p dev:* --print-label",
     "start:server": "node dist/server/index.js",
-    "start:client": "pnpm wait-server && node dist/client/index.js",
+    "start:client": "yarn wait-server && node dist/client/index.js",
     "start": "run-p start:* --print-label",
     "test-dev": "start-server-and-test 'ts-node src/server' http-get://localhost:2022 'ts-node src/client'",
     "test-start": "start-server-and-test 'node dist/server' http-get://localhost:2022 'node dist/client'"

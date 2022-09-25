@@ -1,11 +1,11 @@
+import './___packages';
+import { expectTypeOf } from 'expect-type';
+import { DefaultErrorShape, initTRPC } from '../src';
 import {
   CombinedDataTransformer,
   DataTransformerOptions,
   DefaultDataTransformer,
-  DefaultErrorShape,
-  initTRPC,
-} from '@trpc/server/src';
-import { expectTypeOf } from 'expect-type';
+} from '../src/transformer';
 
 test('default transformer', () => {
   const t = initTRPC

@@ -1,10 +1,10 @@
 import { legacyRouterToServerAndClient } from './__legacyRouterToServerAndClient';
-import { HTTPHeaders, httpBatchLink } from '@trpc/client/src';
-import { TRPCError, inferProcedureOutput } from '@trpc/server/src';
+import { HTTPHeaders, httpBatchLink } from '@trpc/client';
 import { AsyncLocalStorage } from 'async_hooks';
 import { expectTypeOf } from 'expect-type';
 import { z } from 'zod';
 import * as trpc from '../../src';
+import { TRPCError, inferProcedureOutput } from '../../src';
 import { MiddlewareResult } from '../../src/deprecated/internals/middlewares';
 
 test('is called if def first', async () => {

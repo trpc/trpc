@@ -1,19 +1,9 @@
 import ws from '@fastify/websocket';
 import { waitFor } from '@testing-library/react';
-import {
-  HTTPHeaders,
-  createTRPCClient,
-  createWSClient,
-  httpLink,
-  splitLink,
-  wsLink,
-} from '@trpc/client/src';
-import { inferAsyncReturnType, router } from '@trpc/server/src';
-import {
-  CreateFastifyContextOptions,
-  fastifyTRPCPlugin,
-} from '@trpc/server/src/adapters/fastify';
-import { observable } from '@trpc/server/src/observable';
+import { HTTPHeaders, createTRPCClient } from '@trpc/client/src';
+import { httpLink } from '@trpc/client/src/links/httpLink';
+import { splitLink } from '@trpc/client/src/links/splitLink';
+import { createWSClient, wsLink } from '@trpc/client/src/links/wsLink';
 import AbortController from 'abort-controller';
 import { EventEmitter } from 'events';
 import { expectTypeOf } from 'expect-type';
@@ -21,6 +11,12 @@ import fastify from 'fastify';
 import fp from 'fastify-plugin';
 import fetch from 'node-fetch';
 import { z } from 'zod';
+import { inferAsyncReturnType, router } from '../../../src';
+import {
+  CreateFastifyContextOptions,
+  fastifyTRPCPlugin,
+} from '../../../src/adapters/fastify';
+import { observable } from '../../../src/observable';
 
 const config = {
   port: 2022,

@@ -4,13 +4,14 @@
 /// <reference types="@cloudflare/workers-types" />
 import { Context, router } from './__router';
 import { Response as MiniflareResponse } from '@miniflare/core';
-import { createTRPCClient, httpBatchLink } from '@trpc/client/src';
-import * as trpc from '@trpc/server/src';
-import * as trpcFetch from '@trpc/server/src/adapters/fetch';
+import { createTRPCClient, httpBatchLink } from '@trpc/client';
 import { Miniflare } from 'miniflare';
+import fetch from 'node-fetch';
+import * as trpc from '../../../src';
+import * as trpcFetch from '../../../src/adapters/fetch';
 
 // miniflare does an instanceof check
-globalThis.Response = MiniflareResponse as any;
+global.Response = MiniflareResponse as any;
 
 const port = 8787;
 const url = `http://localhost:${port}`;

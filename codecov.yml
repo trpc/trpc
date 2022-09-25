@@ -1,5 +1,5 @@
 # configuration related to pull request comments
-comment: false # do not comment PR with the result
+comment: no # do not comment PR with the result
 
 ignore:
   - '**/deprecated/**'
@@ -13,4 +13,4 @@ coverage:
         threshold: 1% # allow for 1% reduction of coverage without failing
 
     # do not run coverage on patch nor changes
-    patch: off
+    patch: false

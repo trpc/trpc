@@ -6,31 +6,20 @@ concurrency:
 jobs:
   lint:
     runs-on: ubuntu-latest
-    env:
-      PLAYWRIGHT_BROWSERS_PATH: ${{ github.workspace }}/playwright
 
     steps:
       - uses: actions/checkout@v2
         with:
           fetch-depth: 0
 
-      - uses: pnpm/action-setup@v2.2.2
-
-      - uses: actions/setup-node@v3
+      - uses: actions/setup-node@v1
         with:
-          version: '16.x'
-          cache: 'pnpm'
-
-      - name: Cache Playwright's binary
-        uses: actions/cache@v3
-        with:
-          key: ${{ runner.os }}-playwright-bin-v1
-          path: ${{ env.PLAYWRIGHT_BROWSERS_PATH }}
+          version: 16.x
 
       - name: Install deps and build (with cache)
-        run: pnpm install
+        uses: bahmutov/npm-install@v1
 
       - name: Lint
-        run: pnpm lint
+        run: yarn lint
 
-      - run: pnpm manypkg check
+      - run: yarn manypkg check

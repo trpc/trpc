@@ -1,9 +1,9 @@
 // https://github.com/trpc/trpc/issues/2540
 import { routerToServerAndClientNew } from '../___testHelpers';
-import { httpBatchLink, httpLink } from '@trpc/client/src';
-import { initTRPC } from '@trpc/server/src';
+import { httpBatchLink, httpLink } from '@trpc/client';
 import { konn } from 'konn';
 import superjson from 'superjson';
+import { initTRPC } from '../../src';
 
 describe('no transformer', () => {
   const t = initTRPC.create();

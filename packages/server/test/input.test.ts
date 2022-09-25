@@ -1,9 +1,9 @@
 import { routerToServerAndClientNew, waitError } from './___testHelpers';
-import { TRPCClientError } from '@trpc/client/src';
-import { inferProcedureInput, initTRPC } from '@trpc/server/src';
+import { TRPCClientError } from '@trpc/client';
 import { expectTypeOf } from 'expect-type';
 import { konn } from 'konn';
 import { ZodError, z } from 'zod';
+import { inferProcedureInput, initTRPC } from '../src/core';
 
 describe('double input validator', () => {
   const t = initTRPC.create({

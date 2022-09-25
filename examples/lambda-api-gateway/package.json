@@ -17,9 +17,9 @@
     "typescript": "^4.8.3"
   },
   "scripts": {
-    "build": "tsc",
-    "start-server": "serverless offline --httpPort 4050",
-    "start-client": "ts-node src/client.ts",
-    "http-rest-client": "ts-node src/payloadFormatVersionClient.ts"
+    "build": "yarn tsc",
+    "start-server": "npx serverless offline --httpPort 4050",
+    "start-client": "yarn ts-node src/client.ts",
+    "http-rest-client": "yarn ts-node src/payloadFormatVersionClient.ts"
   }
 }

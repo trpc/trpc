@@ -5,9 +5,6 @@ jobs:
     name: Build and test on Node ${{ matrix.node }} and ${{ matrix.os }}
 
     runs-on: ${{ matrix.os }}
-    env:
-      PLAYWRIGHT_BROWSERS_PATH: ${{ github.workspace }}/playwright
-
     strategy:
       matrix:
         node: ['16.x']
@@ -17,25 +14,16 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v2
 
-      - uses: pnpm/action-setup@v2.2.2
-
       - name: Use Node ${{ matrix.node }}
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v1
         with:
           node-version: ${{ matrix.node }}
-          cache: 'pnpm'
-
-      - name: Cache Playwright's binary
-        uses: actions/cache@v3
-        with:
-          key: ${{ runner.os }}-playwright-bin-v1
-          path: ${{ env.PLAYWRIGHT_BROWSERS_PATH }}
 
       - name: Install deps and build (with cache)
-        run: pnpm install
+        uses: bahmutov/npm-install@v1
 
       - name: Test
-        run: pnpm test -- --ci --coverage --maxWorkers=2
+        run: yarn test --ci --coverage --maxWorkers=2
 
       - uses: codecov/codecov-action@v1
         with:

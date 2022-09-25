@@ -15,6 +15,7 @@
     "noUncheckedIndexedAccess": true,
     "isolatedModules": true,
     "jsx": "preserve",
+    "types": ["@types/jest"],
     "incremental": true,
     "baseUrl": ".",
     "paths": {

@@ -1,11 +1,11 @@
 *.log
 .DS_Store
+node_modules
 dist
 .next
 
 node_modules
 package-lock.json
-yarn.lock
 
 .yalc
 yalc.lock
@@ -25,5 +25,3 @@ packages/*/*
 !packages/*/test
 
 examples/next-big-router/src/server/routers
-
-playwright

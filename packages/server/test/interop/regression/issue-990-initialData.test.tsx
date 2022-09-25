@@ -5,13 +5,12 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 /* eslint-disable @typescript-eslint/ban-ts-comment */
+import { trpcReact, trpcServer } from '../../___packages';
 import { createQueryClient } from '../../__queryClient';
 import { legacyRouterToServerAndClient } from '../__legacyRouterToServerAndClient';
-import { QueryClientProvider } from '@tanstack/react-query';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import '@testing-library/jest-dom';
 import { render, waitFor } from '@testing-library/react';
-import * as trpcReact from '@trpc/react/src';
-import * as trpcServer from '@trpc/server/src';
 import React, { useState } from 'react';
 
 test('initialData type', async () => {

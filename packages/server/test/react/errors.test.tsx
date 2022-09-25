@@ -1,11 +1,12 @@
 import { getServerAndReactClient } from './__reactHelpers';
 import { render, waitFor } from '@testing-library/react';
-import { TRPCClientError, TRPCClientErrorLike } from '@trpc/client/src';
-import { initTRPC } from '@trpc/server/src';
+import { TRPCClientError } from '@trpc/client';
+import { TRPCClientErrorLike } from '@trpc/client';
 import { expectTypeOf } from 'expect-type';
 import { konn } from 'konn';
 import React from 'react';
 import { ZodError, z } from 'zod';
+import { initTRPC } from '../../src';
 
 jest.retryTimes(3);
 

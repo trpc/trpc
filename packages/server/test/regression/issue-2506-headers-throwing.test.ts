@@ -1,5 +1,5 @@
 import { routerToServerAndClientNew, waitError } from '../___testHelpers';
-import { TRPCClientError, httpBatchLink, httpLink } from '@trpc/client/src';
+import { TRPCClientError, httpBatchLink, httpLink } from '@trpc/client';
 import { konn } from 'konn';
 import { z } from 'zod';
 import { initTRPC } from '../../src';

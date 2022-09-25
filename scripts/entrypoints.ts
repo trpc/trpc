@@ -1,6 +1,5 @@
-import fs from 'fs';
+import fs from 'fs-extra';
 import path from 'path';
-import prettier from 'prettier';
 import { INPUTS, PACKAGES } from '../rollup.config';
 
 const packagesDir = path.resolve(__dirname, '..', 'packages');
@@ -17,7 +16,7 @@ function writeFileSyncRecursive(filePath: string, content: string) {
   if (!fs.existsSync(dir)) {
     fs.mkdirSync(dir, { recursive: true });
   }
-  fs.writeFileSync(filePath, content, 'utf8');
+  fs.writeFileSync(filePath, content);
 }
 
 // ACTUAL SCRIPT
@@ -27,10 +26,9 @@ for (const pkg of PACKAGES) {
   const inputs = INPUTS[pkg];
 
   // set some defaults for the package.json
-  const pkgJson: PackageJson = JSON.parse(
-    fs.readFileSync(path.resolve(pkgRoot, 'package.json'), 'utf8'),
-  );
-
+  const pkgJson = fs.readJsonSync(
+    path.resolve(pkgRoot, 'package.json'),
+  ) as PackageJson;
   pkgJson.files = ['dist', 'src', 'README.md'];
   pkgJson.exports = {
     '.': {
@@ -100,14 +98,5 @@ for (const pkg of PACKAGES) {
   });
 
   // write package.json
-  const formattedPkgJson = prettier.format(JSON.stringify(pkgJson), {
-    parser: 'json-stringify',
-    printWidth: 80,
-    endOfLine: 'auto',
-  });
-  fs.writeFileSync(
-    path.resolve(pkgRoot, 'package.json'),
-    formattedPkgJson,
-    'utf8',
-  );
+  fs.writeJsonSync(path.resolve(pkgRoot, 'package.json'), pkgJson);
 }

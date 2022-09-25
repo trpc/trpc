@@ -1,7 +1,0 @@
-packages:
-  - 'packages/*'
-  - 'examples/*'
-  - 'examples/.wip/*'
-  - 'examples/.interop/*'
-  - 'examples/minimal/*'
-  - 'www'

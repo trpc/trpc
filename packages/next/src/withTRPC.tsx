@@ -24,7 +24,6 @@ import {
   NextComponentType,
   NextPageContext,
 } from 'next/dist/shared/lib/utils';
-import { NextRouter } from 'next/router';
 import React, { createElement, useState } from 'react';
 import ssrPrepass from 'react-ssr-prepass';
 
@@ -92,7 +91,7 @@ export function withTRPC<
     const trpc = createReactQueryHooks<TRouter, TSSRContext>();
 
     const WithTRPC = (
-      props: AppPropsType<NextRouter, any> & {
+      props: AppPropsType & {
         trpc?: TRPCPrepassProps;
       },
     ) => {

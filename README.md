@@ -235,7 +235,6 @@ Also, if your company using tRPC and want to support long-term maintenance of tR
 
 <!-- markdownlint-restore -->
 <!-- prettier-ignore-end -->
-
 <!-- SPONSORS:LIST:END -->
 
 ## All contributors ✨
