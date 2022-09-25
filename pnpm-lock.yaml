@@ -866,7 +866,6 @@ importers:
 
   examples/next-prisma-starter-sqlite:
     specifiers:
-      '@jest/types': ^27.1.0
       '@playwright/test': ^1.19.2
       '@prisma/client': https://registry.npmjs.com/@prisma/client/-/client-4.3.1.tgz?id=%40examples%2Fnext-starter-sqlite
       '@tanstack/react-query': ^4.3.8
@@ -875,7 +874,6 @@ importers:
       '@trpc/next': ^10.0.0-proxy-beta.7
       '@trpc/react': ^10.0.0-proxy-beta.7
       '@trpc/server': ^10.0.0-proxy-beta.7
-      '@types/jest': ^27.0.1
       '@types/node': ^18.7.20
       '@types/react': ^18.0.9
       '@typescript-eslint/eslint-plugin': ^5.37.0
@@ -887,7 +885,6 @@ importers:
       eslint-plugin-prettier: ^4.0.0
       eslint-plugin-react: ^7.25.1
       eslint-plugin-react-hooks: ^4.2.0
-      jest: ^27.1.0
       next: ^12.3.1
       npm-run-all: ^4.1.5
       playwright: ^1.19.1
@@ -895,14 +892,14 @@ importers:
       prisma: ^4.3.1
       react: ^18.2.0
       react-dom: ^18.2.0
-      start-server-and-test: ^1.12.0
+      start-server-and-test: ^1.14.0
       superjson: ^1.7.4
-      ts-jest: ^27.0.5
-      ts-node: ^10.3.0
+      tsx: ^3.9.0
       typescript: ^4.8.3
+      vite: ^3.1.3
+      vitest: ^0.23.4
       zod: ^3.0.0
     dependencies:
-      '@jest/types': 27.5.1
       '@prisma/client': '@registry.npmjs.com/@prisma/client/-/client-4.3.1.tgz?id=%2540examples%252Fnext-starter-sqlite_prisma@4.3.1'
       '@tanstack/react-query': 4.6.0_biqbaboplfbrettd7655fr4n2y
       '@trpc/client': link:../../packages/client
@@ -913,13 +910,11 @@ importers:
       next: 12.3.1_biqbaboplfbrettd7655fr4n2y
       react: 18.2.0
       react-dom: 18.2.0_react@18.2.0
-      start-server-and-test: 1.14.0
       superjson: 1.10.0
       zod: 3.19.1
     devDependencies:
       '@playwright/test': 1.26.0
       '@tanstack/react-query-devtools': 4.6.0_35w334xqtbzboqulr5pz522esm
-      '@types/jest': 27.5.2
       '@types/node': 18.7.20
       '@types/react': 18.0.21
       '@typescript-eslint/eslint-plugin': 5.38.0_5dm4t5r4qe2xupwlo3y6omrvba
@@ -930,14 +925,15 @@ importers:
       eslint-plugin-prettier: 4.2.1_7gsvg5lgwpfdww3i7smtqxamuy
       eslint-plugin-react: 7.31.8_eslint@7.32.0
       eslint-plugin-react-hooks: 4.6.0_eslint@7.32.0
-      jest: 27.5.1_ts-node@10.9.1
       npm-run-all: 4.1.5
       playwright: 1.26.0
       prettier: 2.7.1
       prisma: 4.3.1
-      ts-jest: 27.1.5_qqheuyrmnawe7ws7n63adpwbnu
-      ts-node: 10.9.1_xncqeq3xkoqhng77wx5a5ihsty
+      start-server-and-test: 1.14.0
+      tsx: 3.9.0
       typescript: 4.8.3
+      vite: 3.1.3
+      vitest: 0.23.4
 
   examples/next-prisma-starter-websockets:
     specifiers:
@@ -11052,7 +11048,7 @@ packages:
     dev: true
 
   /event-stream/3.3.4:
-    resolution: {integrity: sha512-QHpkERcGsR0T7Qm3HNJSyXKEEj8AHNxkY3PK8TS2KJvQ7NiSHe3DDpwVKKtoYprL/AreyzFBeIkBIWChAqn60g==}
+    resolution: {integrity: sha1-SrTJoPWlTbkzi0w02Gv86PSzVXE=}
     dependencies:
       duplexer: 0.1.2
       from: 0.1.7
@@ -14387,7 +14383,7 @@ packages:
     dev: false
 
   /lazy-ass/1.6.0:
-    resolution: {integrity: sha512-cc8oEVoctTvsFZ/Oje/kGnHbpWHYBe8IAJe4C0QNc3t8uM/0Y8+erSz/7Y1ALuXTEZTMvxXwO6YbX1ey3ujiZw==}
+    resolution: {integrity: sha1-eZllXoZGwX8In90YfRUNMyTVRRM=}
     engines: {node: '> 0.8'}
 
   /lazystream/1.0.1:
@@ -16475,7 +16471,7 @@ packages:
     dev: true
 
   /pause-stream/0.0.11:
-    resolution: {integrity: sha512-e3FBlXLmN/D1S+zHzanP4E/4Z60oFAa3O051qt1pxa7DEJWKAyil6upYVXCWadEnuoqa4Pkc9oUx9zsxYeRv8A==}
+    resolution: {integrity: sha1-/lo0sMvOErWqaitAPuLnO2AvFEU=}
     dependencies:
       through: 2.3.8
 
