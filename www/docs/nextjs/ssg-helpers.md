@@ -42,7 +42,7 @@ export async function getServerSideProps(
 
   /*
    * Prefetching the `post.byId` query here.
-   * `prefetch` does not return the result - if you need that, use `fetch` instead.
+   * `prefetch` does not return the result and never throws - if you need that behavior, use `fetch` instead.
    */
   await ssg.post.byId.prefetch({ id });
 
