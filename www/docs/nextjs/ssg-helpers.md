@@ -40,8 +40,11 @@ export async function getServerSideProps(
   });
   const id = context.params?.id as string;
 
-  // Prefetch `post.byId`
-  await ssg.post.byId.fetch({ id });
+  /*
+   * Prefetching the `post.byId` query here.
+   * `prefetch` does not return the result - if you need that, use `fetch` instead.
+   */
+  await ssg.post.byId.prefetch({ id });
 
   // Make sure to return { props: { trpcState: ssg.dehydrate() } }
   return {
