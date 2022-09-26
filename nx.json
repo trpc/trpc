@@ -1,0 +1,71 @@
+{
+  "extends": "nx/presets/npm.json",
+  "tasksRunnerOptions": {
+    "default": {
+      "runner": "@nrwl/nx-cloud",
+      "options": {
+        "cacheableOperations": [
+          "dev",
+          "test-dev",
+          "dev:client",
+          "build",
+          "http-rest-client",
+          "build:1-migrate",
+          "build:2-build",
+          "db-up",
+          "db-seed",
+          "db-migrate-dev",
+          "db-nuke",
+          "dx",
+          "lint",
+          "lint-fix",
+          "test",
+          "test:unit",
+          "test:e2e",
+          "ts-node",
+          "postinstall",
+          "build:1-generate",
+          "build:2-migrate",
+          "build:3-next",
+          "dev:wss",
+          "dev:next",
+          "dev-nuke",
+          "generate",
+          "migrate-dev",
+          "migrate",
+          "studio",
+          "migrate-sqlite",
+          "migrate-postgres",
+          "generate-sqlite",
+          "generate-postgres",
+          "prisma-studio-postgres",
+          "prisma-studio-sqlite",
+          "dx:next",
+          "dx:prisma-studio",
+          "db-reset",
+          "ts-watch",
+          "benchmark",
+          "docusaurus",
+          "swizzle",
+          "deploy",
+          "clear",
+          "sponsors-sync:pull",
+          "sponsors-sync:push",
+          "sponsors-sync",
+          "tweetwall-pull"
+        ],
+        "accessToken": "NjA0ZmYyNTYtNGViNi00MTYxLTg5ZTQtNTVhZTY1MmQ0ZDI4fHJlYWQtd3JpdGU="
+      }
+    }
+  },
+  "targetDefaults": {
+    "build": {
+      "dependsOn": [
+        "^build"
+      ]
+    }
+  },
+  "affected": {
+    "defaultBase": "next"
+  }
+}
