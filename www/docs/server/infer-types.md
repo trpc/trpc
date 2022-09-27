@@ -98,9 +98,9 @@ export type AppRouterTypes = GetInferenceHelpers<AppRouter>;
 
 type PostCreate = AppRouterTypes['post']['create'];
 
-type PostInput = PostCreate['input'];
+type PostCreateInput = PostCreate['input'];
 //   ^?
-type PostOutput = PostCreate['output'];
+type PostCreateOutput = PostCreate['output'];
 //   ^?
 ```
 
