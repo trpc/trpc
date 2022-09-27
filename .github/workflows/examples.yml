@@ -70,11 +70,6 @@ jobs:
       - name: Install deps and build (with cache)
         run: pnpm --filter ./examples/${{ matrix.dir }}  --filter "@trpc/*" --filter root install
 
-      - name: if exists, migrate and generate sqlite
-        run: |
-          pnpm --filter ./examples/${{ matrix.dir }} --if-present migrate-sqlite && 
-          pnpm --filter ./examples/${{ matrix.dir }} --if-present generate-sqlite
-
       - name: Next.js cache
         uses: actions/cache@v3
         with:
@@ -88,8 +83,14 @@ jobs:
 
       - run: node -v
 
-      - name: if exists, run build
-        run: pnpm --filter ./examples/${{ matrix.dir }} --if-present build
+      - name: if exists, run build-sqlite, else run build
+        run: |
+          cat ./examples/${{ matrix.dir }}/package.json | 
+          if grep --silent '"build-sqlite"'; 
+            then pnpm --filter ./examples/${{ matrix.dir }} build-sqlite; 
+            else pnpm --filter ./examples/${{ matrix.dir }} build;
+          fi
+
       - name: if exists, run test-start
         run: pnpm --filter ./examples/${{ matrix.dir }} --if-present test-start
       - name: if exists, run test-dev
