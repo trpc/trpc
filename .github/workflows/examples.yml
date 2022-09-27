@@ -13,13 +13,14 @@ jobs:
     continue-on-error: true
     strategy:
       matrix:
-        dir: [
+        dir:
+          [
             express-server,
             .interop/express-server,
             express-minimal,
             .interop/next-prisma-starter,
             .interop/next-minimal-starter-migration,
-            # .interop/next-prisma-starter-websockets,
+            .interop/next-prisma-starter-websockets,
             .interop/next-prisma-todomvc,
             next-minimal-starter,
             .interop/next-minimal-starter,
@@ -30,7 +31,7 @@ jobs:
             .interop/cloudflare-workers,
             next-prisma-starter,
             next-prisma-starter-sqlite,
-            # next-prisma-starter-websockets,
+            next-prisma-starter-websockets,
             next-prisma-todomvc,
             standalone-server,
           ]
