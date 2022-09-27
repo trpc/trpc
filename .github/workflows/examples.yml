@@ -65,8 +65,6 @@ jobs:
       - name: Install deps and build (with cache)
         run: pnpm --filter ./examples/${{ matrix.dir }}  --filter "@trpc/*" --filter root install
 
-      - run: echo ${{ github.workspace }}/${{ matrix.dir }}/.next/cache
-
       - name: Next.js cache
         uses: actions/cache@v3
         with:
