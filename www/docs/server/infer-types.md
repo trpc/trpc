@@ -24,10 +24,10 @@ const appRouter = t.router({
         return { id: 1, title: 'tRPC is the best!' };
     }),
     create: t.procedure
-      .input(z.object({ content: z.string() }))
+      .input(z.object({ title: z.string(), text: z.string(), }))
       .mutation(({ input }) => {
         // imaginary db call
-        return { id: 1, title: input.content };
+        return { id: 1, ...input };
     }),
   }),
 });
@@ -61,9 +61,9 @@ import type { inferProcedureInput, inferProcedureOutput } from '@trpc/server';
 import type { AppRouter } from './server';
 
 // @noErrors
-type Post = inferProcedureOutput<AppRouter['post']['byId']>;
+type PostCreateInput = inferProcedureOutput<AppRouter['post']['create']>;
 //   ^?
-type PostInput = inferProcedureInput<AppRouter['post']['create']>;
+type PostCreateOutput = inferProcedureInput<AppRouter['post']['create']>;
 //   ^?
 ```
 
@@ -94,9 +94,13 @@ import type { AppRouter } from './server';
 export type InferProcedures = GetInferenceHelpers<AppRouter>;
 
 // ---cut---
-type Post = InferProcedures['post']['byId']['output'];
+export type AppRouterTypes = GetInferenceHelpers<AppRouter>;
+
+type PostCreate = AppRouterTypes['post']['create'];
+
+type PostInput = PostCreate['input'];
 //   ^?
-type PostInput = InferProcedures['post']['create']['input'];
+type PostOutput = PostCreate['output'];
 //   ^?
 ```
 

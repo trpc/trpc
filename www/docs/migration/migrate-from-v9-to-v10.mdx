@@ -5,6 +5,36 @@ sidebar_label: Migrate from v9 to v10
 slug: /migrate-from-v9-to-v10
 ---
 
+<!-- Reusable snippet -->
+
+```twoslash include server
+// @module: esnext
+// @filename: server.ts
+import { initTRPC } from '@trpc/server';
+import { z } from "zod";
+
+const t = initTRPC.create();
+
+const appRouter = t.router({
+  post: t.router({
+    byId: t.procedure
+      .input(z.string())
+      .query(({ input }) => {
+        // imaginary db call
+        return { id: 1, title: 'tRPC is the best!' };
+    }),
+    create: t.procedure
+      .input(z.object({ title: z.string(), text: z.string() }))
+      .mutation(({ input }) => {
+        // imaginary db call
+        return { id: "123", ...input, };
+    }),
+  }),
+});
+
+export type AppRouter = typeof appRouter;
+```
+
 :::info Is v10 ready for production?
 tRPC v10 is **ready for production** and can safely be used today.
 
@@ -76,17 +106,45 @@ trpc.greeting.useQuery('KATT');
 <details>
   <summary>Inferring types</summary>
 
-```ts
-// v9
-// Building multiple complex helper types yourself. Yuck!
-export type TQuery = keyof AppRouter['_def']['queries']
-export type InferQueryInput<TRouteKey extends TQuery> = inferProcedureInput<AppRouter['_def']['queries'][TRouteKey]>
-type GreetingInput = InferQueryInput<'greeting'>;
+#### v9
 
-// v10
+```ts
+// Building multiple complex helper types yourself. Yuck!
+export type TQuery = keyof AppRouter['_def']['queries'];
+export type InferQueryInput<TRouteKey extends TQuery> = inferProcedureInput<
+  AppRouter['_def']['queries'][TRouteKey]
+>;
+type GreetingInput = InferQueryInput<'greeting'>;
+```
+
+#### v10
+
+```ts
 // The same helper is shipped out of the box.
 type GreetingInput = inferProcedureInput<AppRouter['greeting']>;
 ```
+
+#### v10 inference helper
+
+```ts twoslash
+// @module: esnext
+// @include: server
+// @filename: index.ts
+// ---cut---
+import type { GetInferenceHelpers } from '@trpc/server';
+import type { AppRouter } from './server';
+
+export type AppRouterTypes = GetInferenceHelpers<AppRouter>;
+
+type PostCreate = AppRouterTypes['post']['create'];
+
+type PostInput = PostCreate['input'];
+//   ^?
+type PostOutput = PostCreate['output'];
+//   ^?
+```
+
+See [Inferring types](infer-types) for more.
 
 </details>
 
