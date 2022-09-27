@@ -12,6 +12,7 @@
     "test": "pnpm --filter \"@trpc/server\" exec jest",
     "lint": "eslint --ext \".js,.ts,.tsx\" --ignore-path .gitignore .",
     "lint-fix": "pnpm lint --fix && manypkg fix",
+    "clean": "find . -name node_modules -o -name .turbo -o -name .next -o -name dist -type d -prune | xargs rm -rf",
     "codegen:generateBigBoi": "tsx scripts/generateBigBoi.ts",
     "codegen:generateBigLegacyRouter": "tsx scripts/generateBigLegacyRouter.ts",
     "codegen:entrypoints": "tsx scripts/entrypoints.ts",

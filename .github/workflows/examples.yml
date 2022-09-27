@@ -7,7 +7,6 @@ jobs:
   e2e:
     env:
       PLAYWRIGHT_BROWSERS_PATH: ${{ github.workspace }}/playwright
-      # DATABASE_URL: postgresql://postgres:@postgres:5432/trpcdb
       NEXTAUTH_SECRET: supersecret
     runs-on: ${{ matrix.os }}
     timeout-minutes: 10
@@ -15,36 +14,28 @@ jobs:
     strategy:
       matrix:
         dir: [
-            express-server,
-            .interop/express-server,
-            express-minimal,
-            .interop/next-prisma-starter,
-            .interop/next-minimal-starter-migration,
+            # express-server,
+            # .interop/express-server,
+            # express-minimal,
+            # .interop/next-prisma-starter,
+            # .interop/next-minimal-starter-migration,
             # .interop/next-prisma-starter-websockets,
-            .interop/next-prisma-todomvc,
-            next-minimal-starter,
-            .interop/next-minimal-starter,
-            .interop/standalone-server,
-            fastify-server,
-            .interop/fastify-server,
-            cloudflare-workers,
-            .interop/cloudflare-workers,
-            next-prisma-starter,
-            next-prisma-starter-sqlite,
+            # .interop/next-prisma-todomvc,
+            # next-minimal-starter,
+            # .interop/next-minimal-starter,
+            # .interop/standalone-server,
+            # fastify-server,
+            # .interop/fastify-server,
+            # cloudflare-workers,
+            # .interop/cloudflare-workers,
+            # next-prisma-starter,
+            # next-prisma-starter-sqlite,
             # next-prisma-starter-websockets,
-            # next-prisma-todomvc,
-            standalone-server,
+            next-prisma-todomvc,
+            # standalone-server,
           ]
         node-start: ['16.x']
         os: [ubuntu-latest]
-    # services:
-    #   postgres:
-    #     image: postgres:12.1
-    #     env:
-    #       POSTGRES_USER: postgres
-    #       POSTGRES_DB: trpcdb
-    #     ports:
-    #       - 5432:5432
     steps:
       - uses: actions/checkout@v3
         with:
@@ -79,6 +70,9 @@ jobs:
       - name: Install deps and build (with cache)
         run: pnpm --filter ./examples/${{ matrix.dir }}  --filter "@trpc/*" --filter root install
 
+      - run: if exists, migrate to sqlite
+        run: pnpm --filter ./examples/${{ matrix.dir }}  --filter "@trpc/*" --filter root migrate:sqlite
+
       - name: Next.js cache
         uses: actions/cache@v3
         with:
@@ -91,19 +85,6 @@ jobs:
           cache: 'pnpm'
 
       - run: node -v
-
-      # - name: Wait for postgres
-      #   run: |
-      #     until pg_isready -h postgres -p 5432 -U postgres; do
-      #       sleep 1
-      #     done
-
-      # We currently don't have any examples that has `lint`, except for Next.js ones and they are linted at build
-      # - name: if exists, run lint
-      #   run: pnpm --filter ./examples/${{ matrix.dir }} --if-present lint
-
-      # - name: Wait for postgres
-      #   run: sleep 100
 
       - name: if exists, run build
         run: pnpm --filter ./examples/${{ matrix.dir }} --if-present build
