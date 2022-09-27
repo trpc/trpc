@@ -10,7 +10,7 @@
     "build": "run-s build:*",
     "generate-sqlite": "prisma generate --schema=./prisma/_sqlite/schema.prisma",
     "migrate-sqlite": "prisma migrate dev --name init --schema=./prisma/_sqlite/schema.prisma",
-    "build-sqlite": "run-s generate-sqlite migrate-sqlite && next build",
+    "build-sqlite": "run-s generate-sqlite migrate-sqlite build:4-server && next build",
     "dev:wss": "cross-env PORT=3001 nodemon --watch src --ext .ts,.tsx,js,jsx --signal SIGTERM --exec \"tsx --tsconfig tsconfig.server.json src/server/wssDevServer.ts\"",
     "dev:next": "next dev",
     "dev": "run-p dev:*",
