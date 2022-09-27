@@ -1,5 +1,4 @@
 // @ts-check
-
 /** @type {import('@docusaurus/types').Config} */
 module.exports = {
   title: 'tRPC',
@@ -63,21 +62,21 @@ module.exports = {
         },
         {
           href: 'https://github.com/trpc/trpc',
-          label: 'GitHub',
           position: 'right',
-          className: 'navbar-external-link',
+          className: 'header-social-link header-github-link',
+          'aria-label': 'GitHub',
         },
         {
           href: 'https://twitter.com/trpcio',
-          label: 'Twitter',
           position: 'right',
-          className: 'navbar-external-link',
+          className: 'header-social-link header-twitter-link',
+          'aria-label': 'Twitter',
         },
         {
           href: 'https://trpc.io/discord',
-          label: 'Discord',
           position: 'right',
-          className: 'navbar-external-link',
+          className: 'header-social-link header-discord-link',
+          'aria-label': 'Discord',
         },
         {
           type: 'docsVersionDropdown',
@@ -206,7 +205,7 @@ module.exports = {
       {
         // Not sure how reliable this path is (it's relative from the preset package)?
         // None of the light themes had good support for `diff` mode, so had to patch my own theme
-        themes: ['../../../www/min-light-with-diff', 'nord'],
+        themes: ['../../../../../../www/min-light-with-diff', 'nord'],
       },
     ],
   ],

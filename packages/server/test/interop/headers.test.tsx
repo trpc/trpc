@@ -2,9 +2,9 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { legacyRouterToServerAndClient } from './__legacyRouterToServerAndClient';
-import { createTRPCClient, httpBatchLink } from '@trpc/client';
-import * as trpc from '../../src';
-import { Dict } from '../../src';
+import { createTRPCClient, httpBatchLink } from '@trpc/client/src';
+import * as trpc from '@trpc/server/src';
+import { Dict } from '@trpc/server/src';
 
 describe('pass headers', () => {
   type Context = {

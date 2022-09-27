@@ -1,25 +1,26 @@
 {
   "name": "@examples/lambda-api-gateway",
   "private": true,
-  "version": "10.0.0-proxy-beta.5",
+  "version": "10.0.0-proxy-beta.7",
   "main": "index.js",
   "license": "MIT",
   "dependencies": {
-    "@trpc/client": "^10.0.0-proxy-beta.5",
-    "@trpc/server": "^10.0.0-proxy-beta.5",
+    "@trpc/client": "^10.0.0-proxy-beta.7",
+    "@trpc/server": "^10.0.0-proxy-beta.7",
     "node-fetch": "^2.6.1",
     "ts-node": "^10.3.0"
   },
   "devDependencies": {
+    "@types/node": "^18.7.20",
     "serverless": "^3.18.1",
     "serverless-offline": "^8.8.0",
     "serverless-plugin-typescript": "^2.1.2",
     "typescript": "^4.8.3"
   },
   "scripts": {
-    "build": "yarn tsc",
-    "start-server": "npx serverless offline --httpPort 4050",
-    "start-client": "yarn ts-node src/client.ts",
-    "http-rest-client": "yarn ts-node src/payloadFormatVersionClient.ts"
+    "build": "tsc",
+    "start-server": "serverless offline --httpPort 4050",
+    "start-client": "ts-node src/client.ts",
+    "http-rest-client": "ts-node src/payloadFormatVersionClient.ts"
   }
 }
