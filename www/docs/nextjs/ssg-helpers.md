@@ -9,10 +9,11 @@ slug: /ssg-helpers
 
 ```ts
 import { createProxySSGHelpers } from '@trpc/react/ssg';
+import { createContext } from 'server/context';
 
 const ssg = createProxySSGHelpers({
   router: appRouter,
-  ctx: createContext,
+  ctx: await createContext(),
   transformer: superjson, // optional - adds superjson serialization
 });
 ```
@@ -39,8 +40,11 @@ export async function getServerSideProps(
   });
   const id = context.params?.id as string;
 
-  // Prefetch `post.byId`
-  await ssg.post.byId.fetch({ id });
+  /*
+   * Prefetching the `post.byId` query here.
+   * `prefetch` does not return the result and never throws - if you need that behavior, use `fetch` instead.
+   */
+  await ssg.post.byId.prefetch({ id });
 
   // Make sure to return { props: { trpcState: ssg.dehydrate() } }
   return {
