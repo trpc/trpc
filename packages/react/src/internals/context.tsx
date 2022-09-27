@@ -62,7 +62,6 @@ export interface TRPCContextProps<TRouter extends AnyRouter, TSSRContext> {
 }
 
 export const contextProps: (keyof TRPCContextProps<any, any>)[] = [
-  'queryClient',
   'client',
   'ssrContext',
   'ssrState',

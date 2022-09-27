@@ -1,9 +1,9 @@
 import {
   DecoratedProcedureRecord,
-  DecoratedProcedureUtilsRecord,
   createHooksInternal,
   createReactProxyDecoration,
   createReactQueryUtilsProxy,
+  CreateReactUtilsProxy,
 } from '@trpc/react/shared';
 import { AnyRouter } from '@trpc/server';
 import { NextPageContext } from 'next/types';
@@ -49,7 +49,7 @@ export function createTRPCNext<
   );
 
   return proxy as {
-    useContext(): DecoratedProcedureUtilsRecord<TRouter>;
+    useContext(): CreateReactUtilsProxy<TRouter, TSSRContext>;
     withTRPC: typeof _withTRPC;
   } & DecoratedProcedureRecord<TRouter['_def']['record']>;
 }

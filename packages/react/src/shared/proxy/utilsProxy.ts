@@ -164,7 +164,7 @@ export type CreateReactUtilsProxy<
   TRouter extends AnyRouter,
   TSSRContext,
 > = DecoratedProcedureUtilsRecord<TRouter> &
-  TRPCContextProps<TRouter, TSSRContext>;
+  Omit<TRPCContextProps<TRouter, TSSRContext>, 'queryClient'>
 
 /**
  * @internal
