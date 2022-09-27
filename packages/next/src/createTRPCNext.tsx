@@ -1,9 +1,9 @@
 import {
+  CreateReactUtilsProxy,
   DecoratedProcedureRecord,
   createHooksInternal,
   createReactProxyDecoration,
   createReactQueryUtilsProxy,
-  CreateReactUtilsProxy,
 } from '@trpc/react/shared';
 import { AnyRouter } from '@trpc/server';
 import { NextPageContext } from 'next/types';
