@@ -14,6 +14,7 @@
     "dev:wss": "cross-env PORT=3001 nodemon --watch src --ext .ts,.tsx,js,jsx --signal SIGTERM --exec \"tsx --tsconfig tsconfig.server.json src/server/wssDevServer.ts\"",
     "dev:next": "next dev",
     "dev": "run-p dev:*",
+    "dev-sqlite": "run-s generate-sqlite migrate-sqlite && run-p dev:*",
     "db-up": "docker-compose up -d",
     "db-seed": "prisma db seed",
     "db-migrate-dev": "prisma migrate dev",
@@ -27,7 +28,7 @@
     "studio": "prisma studio",
     "lint": "eslint src",
     "lint-fix": "pnpm lint --fix",
-    "test-dev": "cross-env APP_ENV=test start-server-and-test dev 3000 test",
+    "test-dev": "cross-env APP_ENV=test start-server-and-test dev-sqlite 3000 test",
     "test-start": "cross-env APP_ENV=test WS_URL=ws://localhost:3000 start-server-and-test start 3000 test",
     "test": "playwright test",
     "postinstall": "prisma generate"
