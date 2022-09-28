@@ -9,18 +9,6 @@ import {
 import { z } from 'zod';
 import { inferHandlerFn } from '../../src/core/router';
 
-// For some reason this works
-/**
- * @internal
- */
-export type inferHandlerFn2<TProcedures extends ProcedureRecord> = <
-  TPath extends keyof TProcedures & string,
-  TProcedure extends TProcedures[TPath],
->(
-  path: TPath,
-  ...args: inferHandlerInput<TProcedure>
-) => Promise<inferProcedureOutput<TProcedure>>;
-
 test('createCaller', async () => {
   interface Context {
     userId: string;
@@ -41,23 +29,9 @@ test('createCaller', async () => {
 
   const caller = opts.router.createCaller({ userId: 'user1' });
 
-  try {
-    const fn: inferHandlerFn<typeof router._def.mutations> = null as any;
-    // @ts-expect-error this should fail
-    fn('test');
-  } catch {
-    // do nothing
-  }
-
-  try {
-    // This should be the same thing but fails for some reason
-    const fn: inferHandlerFn2<typeof router._def.mutations> = null as any;
-    // @ts-expect-error this should fail
-    fn('test');
-  } catch {
-    // do nothing
-  }
-  expect(await caller.mutation('test', 'hello world')).toMatchInlineSnapshot();
+  expect(await caller.mutation('test', 'hello world')).toMatchInlineSnapshot(
+    `"this is a test"`,
+  );
 
   expect(await opts.client.mutation('test', 'foo')).toMatchInlineSnapshot(
     `"this is a test"`,
