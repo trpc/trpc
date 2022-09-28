@@ -258,18 +258,10 @@ importers:
       '@prisma/client': https://registry.npmjs.com/@prisma/client/-/client-4.3.1.tgz?id=%40examples%2Flegacy-next-starter
       '@tanstack/react-query': ^4.3.8
       '@tanstack/react-query-devtools': ^4.3.8
-<<<<<<< HEAD
-      '@trpc/client': ^10.0.0-proxy-beta.8
-      '@trpc/next': ^10.0.0-proxy-beta.8
-      '@trpc/react': ^10.0.0-proxy-beta.8
-      '@trpc/server': ^10.0.0-proxy-beta.8
-=======
       '@trpc/client': ^10.0.0-proxy-beta.9
       '@trpc/next': ^10.0.0-proxy-beta.9
       '@trpc/react': ^10.0.0-proxy-beta.9
       '@trpc/server': ^10.0.0-proxy-beta.9
-      '@types/jest': ^27.0.1
->>>>>>> next
       '@types/node': ^18.7.20
       '@types/react': ^18.0.9
       '@typescript-eslint/eslint-plugin': ^5.37.0
@@ -337,18 +329,10 @@ importers:
       '@prisma/client': https://registry.npmjs.com/@prisma/client/-/client-4.3.1.tgz?id=%40examples%2Finterop-next-starter-websockets
       '@tanstack/react-query': ^4.3.8
       '@tanstack/react-query-devtools': ^4.3.8
-<<<<<<< HEAD
-      '@trpc/client': ^10.0.0-proxy-beta.8
-      '@trpc/next': ^10.0.0-proxy-beta.8
-      '@trpc/react': ^10.0.0-proxy-beta.8
-      '@trpc/server': ^10.0.0-proxy-beta.8
-=======
       '@trpc/client': ^10.0.0-proxy-beta.9
       '@trpc/next': ^10.0.0-proxy-beta.9
       '@trpc/react': ^10.0.0-proxy-beta.9
       '@trpc/server': ^10.0.0-proxy-beta.9
-      '@types/jest': ^27.0.1
->>>>>>> next
       '@types/node': ^18.7.20
       '@types/node-fetch': ^2.5.11
       '@types/react': ^18.0.9
@@ -432,18 +416,10 @@ importers:
       '@prisma/client': https://registry.npmjs.com/@prisma/client/-/client-4.3.1.tgz?id=%40examples%2Finterop-todo-web
       '@tanstack/react-query': ^4.3.8
       '@tanstack/react-query-devtools': ^4.3.8
-<<<<<<< HEAD
-      '@trpc/client': ^10.0.0-proxy-beta.8
-      '@trpc/next': ^10.0.0-proxy-beta.8
-      '@trpc/react': ^10.0.0-proxy-beta.8
-      '@trpc/server': ^10.0.0-proxy-beta.8
-=======
       '@trpc/client': ^10.0.0-proxy-beta.9
       '@trpc/next': ^10.0.0-proxy-beta.9
       '@trpc/react': ^10.0.0-proxy-beta.9
       '@trpc/server': ^10.0.0-proxy-beta.9
-      '@types/jest': ^27.0.1
->>>>>>> next
       '@types/node': ^18.7.20
       '@types/react': ^18.0.9
       clsx: ^1.1.1
@@ -798,18 +774,10 @@ importers:
       '@playwright/test': ^1.19.2
       '@prisma/client': https://registry.npmjs.com/@prisma/client/-/client-4.3.1.tgz?id=%40examples%2Ftrpc-next-prisma-starter
       '@tanstack/react-query': ^4.3.8
-<<<<<<< HEAD
-      '@trpc/client': ^10.0.0-proxy-beta.8
-      '@trpc/next': ^10.0.0-proxy-beta.8
-      '@trpc/react': ^10.0.0-proxy-beta.8
-      '@trpc/server': ^10.0.0-proxy-beta.8
-=======
       '@trpc/client': ^10.0.0-proxy-beta.9
       '@trpc/next': ^10.0.0-proxy-beta.9
       '@trpc/react': ^10.0.0-proxy-beta.9
       '@trpc/server': ^10.0.0-proxy-beta.9
-      '@types/jest': ^27.0.1
->>>>>>> next
       '@types/node': ^18.7.20
       '@types/react': ^18.0.9
       '@typescript-eslint/eslint-plugin': ^5.37.0
@@ -876,18 +844,10 @@ importers:
       '@prisma/client': https://registry.npmjs.com/@prisma/client/-/client-4.3.1.tgz?id=%40examples%2Fnext-starter-sqlite
       '@tanstack/react-query': ^4.3.8
       '@tanstack/react-query-devtools': ^4.3.8
-<<<<<<< HEAD
-      '@trpc/client': ^10.0.0-proxy-beta.8
-      '@trpc/next': ^10.0.0-proxy-beta.8
-      '@trpc/react': ^10.0.0-proxy-beta.8
-      '@trpc/server': ^10.0.0-proxy-beta.8
-=======
       '@trpc/client': ^10.0.0-proxy-beta.9
       '@trpc/next': ^10.0.0-proxy-beta.9
       '@trpc/react': ^10.0.0-proxy-beta.9
       '@trpc/server': ^10.0.0-proxy-beta.9
-      '@types/jest': ^27.0.1
->>>>>>> next
       '@types/node': ^18.7.20
       '@types/react': ^18.0.9
       '@typescript-eslint/eslint-plugin': ^5.37.0
@@ -955,18 +915,10 @@ importers:
       '@prisma/client': https://registry.npmjs.com/@prisma/client/-/client-4.3.1.tgz?id=%40examples%2Fnext-starter-websockets
       '@tanstack/react-query': ^4.3.8
       '@tanstack/react-query-devtools': ^4.3.8
-<<<<<<< HEAD
-      '@trpc/client': ^10.0.0-proxy-beta.8
-      '@trpc/next': ^10.0.0-proxy-beta.8
-      '@trpc/react': ^10.0.0-proxy-beta.8
-      '@trpc/server': ^10.0.0-proxy-beta.8
-=======
       '@trpc/client': ^10.0.0-proxy-beta.9
       '@trpc/next': ^10.0.0-proxy-beta.9
       '@trpc/react': ^10.0.0-proxy-beta.9
       '@trpc/server': ^10.0.0-proxy-beta.9
-      '@types/jest': ^27.0.1
->>>>>>> next
       '@types/node': ^18.7.20
       '@types/node-fetch': ^2.5.11
       '@types/react': ^18.0.9
@@ -1050,18 +1002,10 @@ importers:
       '@prisma/client': https://registry.npmjs.com/@prisma/client/-/client-4.3.1.tgz?id=%40examples%2Ftrpc-next-prisma-todomvc
       '@tanstack/react-query': ^4.3.8
       '@tanstack/react-query-devtools': ^4.3.8
-<<<<<<< HEAD
-      '@trpc/client': ^10.0.0-proxy-beta.8
-      '@trpc/next': ^10.0.0-proxy-beta.8
-      '@trpc/react': ^10.0.0-proxy-beta.8
-      '@trpc/server': ^10.0.0-proxy-beta.8
-=======
       '@trpc/client': ^10.0.0-proxy-beta.9
       '@trpc/next': ^10.0.0-proxy-beta.9
       '@trpc/react': ^10.0.0-proxy-beta.9
       '@trpc/server': ^10.0.0-proxy-beta.9
-      '@types/jest': ^27.0.1
->>>>>>> next
       '@types/node': ^18.7.20
       '@types/react': ^18.0.9
       clsx: ^1.1.1
