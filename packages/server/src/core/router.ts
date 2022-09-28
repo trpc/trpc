@@ -92,9 +92,9 @@ export type inferHandlerInput<TProcedure extends AnyProcedure> =
 /**
  * @internal
  */
-type inferHandlerFn<TProcedures extends ProcedureRecord> = <
-  TProcedure extends TProcedures[TPath],
+export type inferHandlerFn<TProcedures extends ProcedureRecord> = <
   TPath extends keyof TProcedures & string,
+  TProcedure extends TProcedures[TPath],
 >(
   path: TPath,
   ...args: inferHandlerInput<TProcedure>
