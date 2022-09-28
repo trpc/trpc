@@ -84,9 +84,9 @@ export type AnyRouterDef<TContext = any> = RouterDef<TContext, any, any, any>;
 /**
  * @internal
  */
-export type inferHandlerFn<TProcedures extends ProcedureRecord> = <
-  TPath extends keyof TProcedures & string,
+type inferHandlerFn<TProcedures extends ProcedureRecord> = <
   TProcedure extends TProcedures[TPath],
+  TPath extends keyof TProcedures & string,
 >(
   path: TPath,
   ...args: inferHandlerInput<TProcedure>
