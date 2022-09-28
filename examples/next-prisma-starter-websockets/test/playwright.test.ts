@@ -4,9 +4,9 @@ test.setTimeout(35e3);
 
 test('send message', async ({ browser, page }) => {
   const viewer = await browser.newPage();
-  await viewer.goto('http://localhost:3000');
+  await viewer.goto('/');
 
-  await page.goto('http://localhost:3000/api/auth/signin');
+  await page.goto('/api/auth/signin');
   await page.type('[name="name"]', 'test');
   await page.click('[type="submit"]');
 
