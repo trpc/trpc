@@ -1,13 +1,6 @@
 import { routerToServerAndClientNew } from '../___testHelpers';
-import { createTRPCClient } from '@trpc/client';
 import * as trpc from '@trpc/server';
-import {
-  ProcedureRecord,
-  inferHandlerInput,
-  inferProcedureOutput,
-} from '@trpc/server';
 import { z } from 'zod';
-import { inferHandlerFn } from '../../src/core/router';
 
 test('createCaller', async () => {
   interface Context {
