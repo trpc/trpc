@@ -201,14 +201,6 @@ test('createCaller', async () => {
     );
   }
   {
-    const caller = ctx.appRouter.createCaller({
-      foo: 'bar',
-    });
-    expect(await caller.query('oldProcedure', 'hello')).toBe(
-      'oldProcedureOutput__input:hello',
-    );
-  }
-  {
     const caller = ctx.legacyRouterInterop.createCaller({
       foo: 'bar',
     });
