@@ -2,8 +2,6 @@ name: Examples E2E (old nodes)
 on: [push]
 jobs:
   e2e-old-nodes:
-    env:
-      PLAYWRIGHT_BROWSERS_PATH: ${{ github.workspace }}/playwright
     runs-on: ${{ matrix.os }}
     timeout-minutes: 10
     strategy:

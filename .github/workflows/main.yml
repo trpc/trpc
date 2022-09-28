@@ -5,8 +5,6 @@ jobs:
     name: Build and test on Node ${{ matrix.node }} and ${{ matrix.os }}
 
     runs-on: ${{ matrix.os }}
-    env:
-      PLAYWRIGHT_BROWSERS_PATH: ${{ github.workspace }}/playwright
 
     strategy:
       matrix:
@@ -38,12 +36,6 @@ jobs:
           key: ${{ runner.os }}-pnpm-store-trpc-main-${{ hashFiles('**/pnpm-lock.yaml') }}
           restore-keys: |
             ${{ runner.os }}-pnpm-store-trpc-main-
-
-      - name: Cache Playwright's binary
-        uses: actions/cache@v3
-        with:
-          key: ${{ runner.os }}-playwright-bin-v1.26.0
-          path: ${{ env.PLAYWRIGHT_BROWSERS_PATH }}
 
       - name: Install deps and build (with cache)
         run: pnpm --filter "@trpc/*" --filter root install

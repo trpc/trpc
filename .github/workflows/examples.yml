@@ -6,7 +6,6 @@ concurrency:
 jobs:
   e2e:
     env:
-      PLAYWRIGHT_BROWSERS_PATH: ${{ github.workspace }}/playwright
       NEXTAUTH_SECRET: supersecret
     runs-on: ${{ matrix.os }}
     timeout-minutes: 10

@@ -6,8 +6,6 @@ concurrency:
 jobs:
   lint:
     runs-on: ubuntu-latest
-    env:
-      PLAYWRIGHT_BROWSERS_PATH: ${{ github.workspace }}/playwright
 
     steps:
       - uses: actions/checkout@v3
@@ -32,12 +30,6 @@ jobs:
           key: ${{ runner.os }}-pnpm-store-all-${{ hashFiles('**/pnpm-lock.yaml') }}
           restore-keys: |
             ${{ runner.os }}-pnpm-store-all-
-
-      - name: Cache Playwright's binary
-        uses: actions/cache@v3
-        with:
-          key: ${{ runner.os }}-playwright-bin-v1.26.0
-          path: ${{ env.PLAYWRIGHT_BROWSERS_PATH }}
 
       - name: Install deps and build (with cache)
         run: pnpm install --child-concurrency 3
