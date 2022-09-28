@@ -53,4 +53,6 @@ test('createCaller', async () => {
     // @ts-expect-error this should complain
     await caller.mutation('noInput', 'this has no input');
   });
+
+  await opts.close();
 });
