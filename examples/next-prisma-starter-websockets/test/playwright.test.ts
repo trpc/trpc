@@ -15,7 +15,7 @@ test('send message', async ({ browser, page }) => {
       .toString(36)
       .replace(/[^a-z]+/g, '')
       .slice(0, 6) || 'nonce';
-  await page.click('[type=submit]');
+  // await page.click('[type=submit]');
   await page.type('[name=text]', nonce);
   await page.click('[type=submit]');
 
