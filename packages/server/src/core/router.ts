@@ -17,10 +17,14 @@ import {
   AnyProcedure,
   AnyQueryProcedure,
   AnySubscriptionProcedure,
-  Procedure,
   ProcedureArgs,
 } from './procedure';
-import { ProcedureType, inferProcedureOutput, procedureTypes } from './types';
+import {
+  ProcedureType,
+  inferHandlerInput,
+  inferProcedureOutput,
+  procedureTypes,
+} from './types';
 
 /** @internal **/
 export type ProcedureRecord = Record<string, AnyProcedure>;
@@ -76,18 +80,6 @@ export interface RouterDef<
 }
 
 export type AnyRouterDef<TContext = any> = RouterDef<TContext, any, any, any>;
-
-/**
- * @internal
- */
-export type inferHandlerInput<TProcedure extends AnyProcedure> =
-  TProcedure extends Procedure<infer TDef>
-    ? undefined extends TDef['_input_in'] // ? is input optional
-      ? unknown extends TDef['_input_in'] // ? is input unset
-        ? [(null | undefined)?] // -> there is no input
-        : [(TDef['_input_in'] | null | undefined)?] // -> there is optional input
-      : [TDef['_input_in']] // -> input is required
-    : [(undefined | null)?]; // -> there is no input
 
 /**
  * @internal
