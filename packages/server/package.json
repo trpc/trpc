@@ -140,7 +140,7 @@
     "devalue": "^2.0.1",
     "expect-type": "^0.13.0",
     "express": "^4.17.1",
-    "fastify": "^3.27.1",
+    "fastify": "^4.6.0",
     "fastify-plugin": "^3.0.1",
     "fastify-websocket": "^4.0.0",
     "hash-sum": "^2.0.0",
