@@ -1,6 +1,6 @@
 {
   "name": "@examples/express-minimal",
-  "version": "10.0.0-proxy-beta.8",
+  "version": "10.0.0-proxy-beta.9",
   "private": true,
   "scripts": {
     "dev:server": "nodemon -e ts -w . -x tsx ./src/server",
@@ -13,9 +13,9 @@
     "test-start": "start-server-and-test 'node dist/server' 3000 'node dist/client'"
   },
   "dependencies": {
-    "@trpc/client": "^10.0.0-proxy-beta.8",
-    "@trpc/react": "^10.0.0-proxy-beta.8",
-    "@trpc/server": "^10.0.0-proxy-beta.8",
+    "@trpc/client": "^10.0.0-proxy-beta.9",
+    "@trpc/react": "^10.0.0-proxy-beta.9",
+    "@trpc/server": "^10.0.0-proxy-beta.9",
     "@types/node-fetch": "^2.5.11",
     "express": "^4.17.1",
     "node-fetch": "^2.6.1",
