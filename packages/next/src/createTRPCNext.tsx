@@ -25,6 +25,9 @@ export function createTRPCNext<
     },
     {
       get(_obj, name) {
+        if (name === 'then') {
+          return undefined;
+        }
         if (name === 'useContext') {
           return () => {
             const context = hooks.useContext();

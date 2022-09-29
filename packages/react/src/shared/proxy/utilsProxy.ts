@@ -179,6 +179,9 @@ export function createReactQueryUtilsProxy<
     },
     {
       get(_obj, name) {
+        if (name === 'then') {
+          return undefined;
+        }
         if (typeof name !== 'string') {
           throw new Error('Not supported');
         }

@@ -135,6 +135,9 @@ export function createHooksInternalProxy<
     },
     {
       get(_obj, name) {
+        if (name === 'then') {
+          return undefined;
+        }
         if (name === 'useContext') {
           return () => {
             const context = trpc.useContext();
