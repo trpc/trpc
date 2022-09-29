@@ -12,7 +12,7 @@ import {
   inferHandlerInput,
   inferProcedureOutput,
 } from '@trpc/server';
-import { createProxy } from '@trpc/server/shared';
+import { createFlatProxy, createProxy } from '@trpc/server/shared';
 import { CreateSSGHelpersOptions, createSSGHelpers } from './ssg';
 
 type DecorateProcedure<TProcedure extends AnyProcedure> = {
@@ -64,60 +64,42 @@ export function createProxySSGHelpers<TRouter extends AnyRouter>(
 ) {
   const helpers = createSSGHelpers(opts);
 
-  const proxy: unknown = new Proxy(
-    () => {
-      // noop
-    },
-    {
-      get(_obj, name) {
-        if (name === 'then') {
-          return undefined;
-        }
-        if (name === 'queryClient') {
-          return helpers.queryClient;
-        }
-
-        if (name === 'dehydrate') {
-          return helpers.dehydrate;
-        }
-
-        if (typeof name === 'string') {
-          return createProxy((opts) => {
-            const args = opts.args;
-
-            const pathCopy = [name, ...opts.path];
-
-            const utilName = pathCopy.pop() as keyof AnyDecoratedProcedure;
-
-            const fullPath = pathCopy.join('.');
-
-            switch (utilName) {
-              case 'fetch': {
-                return helpers.fetchQuery(fullPath, ...(args as any));
-              }
-              case 'fetchInfinite': {
-                return helpers.fetchInfiniteQuery(fullPath, ...(args as any));
-              }
-              case 'prefetch': {
-                return helpers.prefetchQuery(fullPath, ...(args as any));
-              }
-              case 'prefetchInfinite': {
-                return helpers.prefetchInfiniteQuery(
-                  fullPath,
-                  ...(args as any),
-                );
-              }
-            }
-          });
-        }
-
-        throw new Error('Not supported');
-      },
-    },
-  );
-
-  return proxy as {
+  type CreateProxySSGHelpers = {
     queryClient: QueryClient;
     dehydrate: (opts?: DehydrateOptions) => DehydratedState;
   } & DecoratedProcedureSSGRecord<TRouter>;
+
+  return createFlatProxy<CreateProxySSGHelpers>((key) => {
+    if (key === 'queryClient') {
+      return helpers.queryClient;
+    }
+
+    if (key === 'dehydrate') {
+      return helpers.dehydrate;
+    }
+    return createProxy((opts) => {
+      const args = opts.args;
+
+      const pathCopy = [key, ...opts.path];
+
+      const utilName = pathCopy.pop() as keyof AnyDecoratedProcedure;
+
+      const fullPath = pathCopy.join('.');
+
+      switch (utilName) {
+        case 'fetch': {
+          return helpers.fetchQuery(fullPath, ...(args as any));
+        }
+        case 'fetchInfinite': {
+          return helpers.fetchInfiniteQuery(fullPath, ...(args as any));
+        }
+        case 'prefetch': {
+          return helpers.prefetchQuery(fullPath, ...(args as any));
+        }
+        case 'prefetchInfinite': {
+          return helpers.prefetchInfiniteQuery(fullPath, ...(args as any));
+        }
+      }
+    });
+  });
 }
