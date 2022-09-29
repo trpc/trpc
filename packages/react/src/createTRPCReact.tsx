@@ -15,6 +15,7 @@ import {
   inferProcedureOutput,
 } from '@trpc/server';
 import { inferObservableValue } from '@trpc/server/observable';
+import { createFlatProxy } from '@trpc/server/shared';
 import { useMemo } from 'react';
 import {
   CreateReactUtilsProxy,
@@ -129,36 +130,25 @@ export function createHooksInternalProxy<
   TRouter extends AnyRouter,
   TSSRContext = unknown,
 >(trpc: CreateReactQueryHooks<TRouter, TSSRContext>) {
-  const proxy: unknown = new Proxy(
-    () => {
-      // noop
-    },
-    {
-      get(_obj, name) {
-        if (name === 'useContext') {
-          return () => {
-            const context = trpc.useContext();
-            // create a stable reference of the utils context
-            return useMemo(() => {
-              return (createReactQueryUtilsProxy as any)(context as any);
-            }, [context]);
-          };
-        }
+  type CreateHooksInternalProxy = CreateTRPCReact<TRouter, TSSRContext>;
 
-        if (name in trpc) {
-          return (trpc as any)[name];
-        }
+  return createFlatProxy<CreateHooksInternalProxy>((key) => {
+    if (key === 'useContext') {
+      return () => {
+        const context = trpc.useContext();
+        // create a stable reference of the utils context
+        return useMemo(() => {
+          return (createReactQueryUtilsProxy as any)(context as any);
+        }, [context]);
+      };
+    }
 
-        if (typeof name === 'string') {
-          return createReactProxyDecoration(name, trpc);
-        }
+    if ((key as string) in trpc) {
+      return (trpc as any)[key];
+    }
 
-        throw new Error('Not supported');
-      },
-    },
-  );
-
-  return proxy as CreateTRPCReact<TRouter, TSSRContext>;
+    return createReactProxyDecoration(key as string, trpc);
+  });
 }
 
 export function createTRPCReact<

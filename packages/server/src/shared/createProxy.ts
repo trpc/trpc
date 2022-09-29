@@ -10,17 +10,13 @@ const noop = () => {
 
 function createProxyInner(callback: ProxyCallback, ...path: string[]) {
   const proxy: unknown = new Proxy(noop, {
-    get(_obj, name) {
-      if (typeof name === 'string') {
-        if (name === 'then') {
-          // special case for if the proxy is accidentally treated
-          // like a PromiseLike (like in `Promise.resolve(proxy)`)
-          return undefined;
-        }
-        return createProxyInner(callback, ...path, name);
+    get(_obj, key) {
+      if (typeof key !== 'string' || key === 'then') {
+        // special case for if the proxy is accidentally treated
+        // like a PromiseLike (like in `Promise.resolve(proxy)`)
+        return undefined;
       }
-
-      throw new Error('Not supported');
+      return createProxyInner(callback, ...path, key);
     },
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     apply(_1, _2, args) {
@@ -51,7 +47,7 @@ export const createProxy = (callback: ProxyCallback) =>
  * Handles only
  */
 export const createFlatProxy = <TActor>(
-  callback: (path: keyof TActor) => any,
+  callback: (path: keyof TActor & string) => any,
 ): TActor => {
   return new Proxy(noop, {
     get(_obj, name) {
