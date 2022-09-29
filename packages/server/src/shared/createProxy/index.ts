@@ -8,7 +8,7 @@ const noop = () => {
   // noop
 };
 
-function createProxyInner(callback: ProxyCallback, ...path: string[]) {
+function createProxyInner(callback: ProxyCallback, path: string[]) {
   const proxy: unknown = new Proxy(noop, {
     get(_obj, key) {
       if (typeof key !== 'string' || key === 'then') {
@@ -16,7 +16,7 @@ function createProxyInner(callback: ProxyCallback, ...path: string[]) {
         // like a PromiseLike (like in `Promise.resolve(proxy)`)
         return undefined;
       }
-      return createProxyInner(callback, ...path, key);
+      return createProxyInner(callback, [...path, key]);
     },
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     apply(_1, _2, args) {
@@ -40,7 +40,7 @@ function createProxyInner(callback: ProxyCallback, ...path: string[]) {
  * @internal
  */
 export const createProxy = (callback: ProxyCallback) =>
-  createProxyInner(callback);
+  createProxyInner(callback, []);
 
 /**
  * Used in place of `new Proxy` where each handler will map 1 level deep to another value.
