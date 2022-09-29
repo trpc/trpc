@@ -18,7 +18,6 @@ function createProxyInner(callback: ProxyCallback, path: string[]) {
       }
       return createProxyInner(callback, [...path, key]);
     },
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     apply(_1, _2, args) {
       return callback({
         args,
