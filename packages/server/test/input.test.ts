@@ -129,17 +129,29 @@ test('only allow double input validator for object-like inputs', () => {
   }
 });
 
-test('zod default()', () => {
+test('zod default()', async () => {
   const t = initTRPC.create();
 
   const proc = t.procedure
     .input(z.string().default('bar'))
     .query(({ input }) => {
       expectTypeOf(input).toBeString();
+      return input;
     });
 
   type ProcType = inferProcedureParams<typeof proc>;
 
   expectTypeOf<ProcType['_input_in']>().toEqualTypeOf<string | undefined>();
   expectTypeOf<ProcType['_input_out']>().toEqualTypeOf<string>();
+
+  const router = t.router({
+    proc,
+  });
+
+  const opts = routerToServerAndClientNew(router);
+
+  await expect(opts.proxy.proc.query()).resolves.toBe('bar');
+  await expect(opts.proxy.proc.query('hello')).resolves.toBe('hello');
+
+  await opts.close();
 });
