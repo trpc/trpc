@@ -70,6 +70,9 @@ export function createProxySSGHelpers<TRouter extends AnyRouter>(
     },
     {
       get(_obj, name) {
+        if (name === 'then') {
+          return undefined;
+        }
         if (name === 'queryClient') {
           return helpers.queryClient;
         }
