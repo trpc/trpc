@@ -160,9 +160,11 @@ test('zod default() required object', async () => {
   const t = initTRPC.create();
 
   const proc = t.procedure
-    .input(z.object({
-      foo: z.string().optional().default('foo'),
-    }))
+    .input(
+      z.object({
+        foo: z.string().optional().default('foo'),
+      }),
+    )
     .query(({ input }) => {
       expectTypeOf(input).toBeObject();
       return input;
@@ -179,7 +181,9 @@ test('zod default() required object', async () => {
 
   const opts = routerToServerAndClientNew(router);
 
-  await expect(opts.proxy.proc.query({ foo: 'bar' })).resolves.toEqual({ foo: 'bar' });
+  await expect(opts.proxy.proc.query({ foo: 'bar' })).resolves.toEqual({
+    foo: 'bar',
+  });
   await expect(opts.proxy.proc.query({})).resolves.toEqual({ foo: 'foo' });
 
   await opts.close();
@@ -189,10 +193,15 @@ test('zod default() mixed default object', async () => {
   const t = initTRPC.create();
 
   const proc = t.procedure
-    .input(z.object({
-      foo: z.string(),
-      bar: z.string().optional().default('barFoo'),
-    }).optional().default({ foo: 'fooBar' }))
+    .input(
+      z
+        .object({
+          foo: z.string(),
+          bar: z.string().optional().default('barFoo'),
+        })
+        .optional()
+        .default({ foo: 'fooBar' }),
+    )
     .query(({ input }) => {
       expectTypeOf(input).toBeObject();
       return input;
@@ -200,8 +209,13 @@ test('zod default() mixed default object', async () => {
 
   type ProcType = inferProcedureParams<typeof proc>;
 
-  expectTypeOf<ProcType['_input_in']>().toEqualTypeOf<{ foo: string; bar?: string } | undefined>();
-  expectTypeOf<ProcType['_input_out']>().toEqualTypeOf<{ foo: string; bar: string }>();
+  expectTypeOf<ProcType['_input_in']>().toEqualTypeOf<
+    { foo: string; bar?: string } | undefined
+  >();
+  expectTypeOf<ProcType['_input_out']>().toEqualTypeOf<{
+    foo: string;
+    bar: string;
+  }>();
 
   const router = t.router({
     proc,
@@ -209,10 +223,21 @@ test('zod default() mixed default object', async () => {
 
   const opts = routerToServerAndClientNew(router);
 
-  await expect(opts.proxy.proc.query({ foo: 'bar', bar: 'foo' })).resolves.toEqual({ foo: 'bar', bar: 'foo' });
-  await expect(opts.proxy.proc.query({ foo: 'fooFoo' })).resolves.toEqual({ foo: 'fooFoo', bar: 'barFoo' });
-  await expect(opts.proxy.proc.query({ foo: 'bar' })).resolves.toEqual({ foo: 'bar', bar: 'barFoo' });
-  await expect(opts.proxy.proc.query(undefined)).resolves.toEqual({ foo: 'fooBar', bar: 'barFoo' });
+  await expect(
+    opts.proxy.proc.query({ foo: 'bar', bar: 'foo' }),
+  ).resolves.toEqual({ foo: 'bar', bar: 'foo' });
+  await expect(opts.proxy.proc.query({ foo: 'fooFoo' })).resolves.toEqual({
+    foo: 'fooFoo',
+    bar: 'barFoo',
+  });
+  await expect(opts.proxy.proc.query({ foo: 'bar' })).resolves.toEqual({
+    foo: 'bar',
+    bar: 'barFoo',
+  });
+  await expect(opts.proxy.proc.query(undefined)).resolves.toEqual({
+    foo: 'fooBar',
+    bar: 'barFoo',
+  });
 
   await opts.close();
 });
@@ -221,10 +246,15 @@ test('zod default() defaults within object', async () => {
   const t = initTRPC.create();
 
   const proc = t.procedure
-    .input(z.object({
-      foo: z.string().optional().default('defaultFoo'),
-      bar: z.string().optional().default('defaultBar'),
-    }).optional().default({}))
+    .input(
+      z
+        .object({
+          foo: z.string().optional().default('defaultFoo'),
+          bar: z.string().optional().default('defaultBar'),
+        })
+        .optional()
+        .default({}),
+    )
     .query(({ input }) => {
       expectTypeOf(input).toBeObject();
       return input;
@@ -232,8 +262,13 @@ test('zod default() defaults within object', async () => {
 
   type ProcType = inferProcedureParams<typeof proc>;
 
-  expectTypeOf<ProcType['_input_in']>().toEqualTypeOf<{ foo?: string; bar?: string } | undefined>();
-  expectTypeOf<ProcType['_input_out']>().toEqualTypeOf<{ foo: string; bar: string }>();
+  expectTypeOf<ProcType['_input_in']>().toEqualTypeOf<
+    { foo?: string; bar?: string } | undefined
+  >();
+  expectTypeOf<ProcType['_input_out']>().toEqualTypeOf<{
+    foo: string;
+    bar: string;
+  }>();
 
   const router = t.router({
     proc,
@@ -241,8 +276,13 @@ test('zod default() defaults within object', async () => {
 
   const opts = routerToServerAndClientNew(router);
 
-  await expect(opts.proxy.proc.query({ foo: 'bar', bar: 'foo' })).resolves.toEqual({ foo: 'bar', bar: 'foo' });
-  await expect(opts.proxy.proc.query(undefined)).resolves.toEqual({ foo: 'defaultFoo', bar: 'defaultBar' });
+  await expect(
+    opts.proxy.proc.query({ foo: 'bar', bar: 'foo' }),
+  ).resolves.toEqual({ foo: 'bar', bar: 'foo' });
+  await expect(opts.proxy.proc.query(undefined)).resolves.toEqual({
+    foo: 'defaultFoo',
+    bar: 'defaultBar',
+  });
 
   await opts.close();
 });
