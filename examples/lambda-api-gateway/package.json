@@ -8,7 +8,7 @@
     "@trpc/client": "^10.0.0-proxy-beta.9",
     "@trpc/server": "^10.0.0-proxy-beta.9",
     "node-fetch": "^2.6.1",
-    "ts-node": "^10.3.0"
+    "tsx": "^3.9.0"
   },
   "devDependencies": {
     "@types/node": "^18.7.20",
@@ -20,7 +20,7 @@
   "scripts": {
     "build": "tsc",
     "start-server": "serverless offline --httpPort 4050",
-    "start-client": "ts-node src/client.ts",
-    "http-rest-client": "ts-node src/payloadFormatVersionClient.ts"
+    "start-client": "tsx src/client.ts",
+    "http-rest-client": "tsx src/payloadFormatVersionClient.ts"
   }
 }

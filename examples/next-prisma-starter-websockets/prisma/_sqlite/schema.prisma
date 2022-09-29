@@ -2,24 +2,19 @@
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
 datasource db {
-  provider = "postgres"
-  url      = env("DATABASE_URL")
+  provider = "sqlite"
+  url      = "file:./dev.db"
 }
 
 generator client {
   provider = "prisma-client-js"
 }
 
-enum PosterSource {
-  RAW
-  GITHUB
-}
-
 model Post {
-  id     String       @id @default(uuid())
+  id     String @id @default(uuid())
   name   String
   text   String
-  source PosterSource @default(RAW)
+  source String @default("RAW") // RAW | GITHUB
 
   // To return `Date`s intact through the API we need to add data transformers
   // https://trpc.io/docs/data-transformers

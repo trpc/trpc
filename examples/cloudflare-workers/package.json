@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "wrangler dev",
-    "test-dev": "start-server-and-test 'wrangler dev --local' 8787 'node --loader ts-node/esm src/client.ts'"
+    "test-dev": "start-server-and-test 'wrangler dev --local' 8787 'tsx src/client.ts'"
   },
   "dependencies": {
     "@trpc/client": "^10.0.0-proxy-beta.9",
@@ -18,7 +18,7 @@
     "@types/node-fetch": "^2.5.11",
     "node-fetch": "^2.6.1",
     "start-server-and-test": "^1.12.0",
-    "ts-node": "^10.3.0",
+    "tsx": "^3.9.0",
     "typescript": "^4.8.3",
     "wrangler": "^2.0.17"
   },
