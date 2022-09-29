@@ -1,6 +1,6 @@
 {
   "name": "@examples/interop-cloudflare-workers",
-  "version": "10.0.0-proxy-beta.9",
+  "version": "10.0.0-proxy-beta.10",
   "private": true,
   "type": "module",
   "scripts": {
@@ -8,8 +8,8 @@
     "test-dev": "start-server-and-test 'wrangler dev --local' 8787 'tsx src/client.ts'"
   },
   "dependencies": {
-    "@trpc/client": "^10.0.0-proxy-beta.9",
-    "@trpc/server": "^10.0.0-proxy-beta.9",
+    "@trpc/client": "^10.0.0-proxy-beta.10",
+    "@trpc/server": "^10.0.0-proxy-beta.10",
     "zod": "^3.0.0"
   },
   "devDependencies": {

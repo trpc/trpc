@@ -1,5 +1,5 @@
 {
-  "version": "10.0.0-proxy-beta.9",
+  "version": "10.0.0-proxy-beta.10",
   "registry": "https://registry.npmjs.org/",
   "publishConfig": {
     "access": "public"
