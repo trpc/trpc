@@ -4,6 +4,6 @@
 * @KATT @trpc-bot @sachinraja
 
 www/**/* @trpc/website-docs
-**/*lambda* @Lilja @KATT
+# **/*lambda* @Lilja @KATT
 
 **/package.json @KATT
