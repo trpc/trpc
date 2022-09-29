@@ -3,9 +3,8 @@ services:
     name: trpc-websockets
     env: node
     plan: free
-    buildCommand: yarn --prod=false &&
-      yarn build
-    startCommand: yarn start
+    buildCommand: pnpm install && pnpm build
+    startCommand: pnpm start
     healthCheckPath: /api/trpc/healthz
     envVars:
       - key: NODE_ENV

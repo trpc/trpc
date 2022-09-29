@@ -31,11 +31,7 @@ export interface TRPCFetchInfiniteQueryOptions<TInput, TError, TOutput>
 /** @internal */
 export type SSRState = false | 'prepass' | 'mounting' | 'mounted';
 
-export interface TRPCContextProps<TRouter extends AnyRouter, TSSRContext> {
-  /**
-   * The react-query `QueryClient`
-   */
-  queryClient: QueryClient;
+export interface ProxyTRPCContextProps<TRouter extends AnyRouter, TSSRContext> {
   /**
    * The `TRPCClient`
    */
@@ -61,8 +57,15 @@ export interface TRPCContextProps<TRouter extends AnyRouter, TSSRContext> {
   abortOnUnmount?: boolean;
 }
 
-export const contextProps: (keyof TRPCContextProps<any, any>)[] = [
-  'queryClient',
+export interface TRPCContextProps<TRouter extends AnyRouter, TSSRContext>
+  extends ProxyTRPCContextProps<TRouter, TSSRContext> {
+  /**
+   * The react-query `QueryClient`
+   */
+  queryClient: QueryClient;
+}
+
+export const contextProps: (keyof ProxyTRPCContextProps<any, any>)[] = [
   'client',
   'ssrContext',
   'ssrState',

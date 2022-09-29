@@ -487,5 +487,14 @@ export const sponsors = [
     "privacyLevel": "PUBLIC",
     "login": "changwo",
     "createdAt": 1663581418000
+  },
+  {
+    "name": "Wyatt Schulte",
+    "imgSrc": "https://avatars.githubusercontent.com/u/42128929?u=15dfd6d0ab827079a400ce33f0f78408637cb5ec&v=4",
+    "monthlyPriceInDollars": 5,
+    "link": "https://wyatt.dev",
+    "privacyLevel": "PUBLIC",
+    "login": "Wyatt-SG",
+    "createdAt": 1663779120000
   }
 ] as const
