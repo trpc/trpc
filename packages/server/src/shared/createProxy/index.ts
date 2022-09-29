@@ -44,7 +44,7 @@ export const createProxy = (callback: ProxyCallback) =>
 
 /**
  * Used in place of `new Proxy` where each handler will map 1 level deep to another value.
- * Handles only
+ * Handles `PromiseLike` situations
  */
 export const createFlatProxy = <TActor>(
   callback: (path: keyof TActor & string) => any,
