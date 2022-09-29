@@ -1,6 +1,10 @@
 import { routerToServerAndClientNew, waitError } from './___testHelpers';
 import { TRPCClientError } from '@trpc/client/src';
-import { inferProcedureInput, initTRPC } from '@trpc/server/src';
+import {
+  inferProcedureInput,
+  inferProcedureParams,
+  initTRPC,
+} from '@trpc/server';
 import { expectTypeOf } from 'expect-type';
 import { konn } from 'konn';
 import { ZodError, z } from 'zod';
@@ -123,4 +127,19 @@ test('only allow double input validator for object-like inputs', () => {
   } catch {
     // whatever
   }
+});
+
+test('zod default()', () => {
+  const t = initTRPC.create();
+
+  const proc = t.procedure
+    .input(z.string().default('bar'))
+    .query(({ input }) => {
+      expectTypeOf(input).toBeString();
+    });
+
+  type ProcType = inferProcedureParams<typeof proc>;
+
+  expectTypeOf<ProcType['_input_in']>().toEqualTypeOf<string | undefined>();
+  expectTypeOf<ProcType['_input_out']>().toEqualTypeOf<string>();
 });
