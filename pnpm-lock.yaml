@@ -698,6 +698,20 @@ importers:
       typescript: 4.8.3
       wait-port: 0.3.1
 
+  examples/minimal-react:
+    specifiers:
+      '@playwright/test': ^1.19.2
+      npm-run-all: ^4.1.5
+      playwright: ^1.19.1
+      start-server-and-test: ^1.12.0
+      wait-port: ^0.3.0
+    devDependencies:
+      '@playwright/test': 1.26.1
+      npm-run-all: 4.1.5
+      playwright: 1.26.1
+      start-server-and-test: 1.14.0
+      wait-port: 0.3.1
+
   examples/minimal/client:
     specifiers:
       '@trpc/client': ^10.0.0-proxy-beta.14
@@ -5874,6 +5888,15 @@ packages:
     dependencies:
       '@types/node': 18.7.20
       playwright-core: 1.26.0
+    dev: true
+
+  /@playwright/test/1.26.1:
+    resolution: {integrity: sha512-bNxyZASVt2adSZ9gbD7NCydzcb5JaI0OR9hc7s+nmPeH604gwp0zp17NNpwXY4c8nvuBGQQ9oGDx72LE+cUWvw==}
+    engines: {node: '>=14'}
+    hasBin: true
+    dependencies:
+      '@types/node': 18.7.20
+      playwright-core: 1.26.1
     dev: true
 
   /@polka/url/1.0.0-next.21:
@@ -14068,7 +14091,7 @@ packages:
       fs-jetpack: 4.3.1
       graphql: 15.8.0
       lodash: 4.17.21
-      playwright: 1.26.0
+      playwright: 1.26.1
       tslib: 2.4.0
     dev: true
 
@@ -16221,6 +16244,12 @@ packages:
     hasBin: true
     dev: true
 
+  /playwright-core/1.26.1:
+    resolution: {integrity: sha512-hzFchhhxnEiPc4qVPs9q2ZR+5eKNifY2hQDHtg1HnTTUuphYCBP8ZRb2si+B1TR7BHirgXaPi48LIye5SgrLAA==}
+    engines: {node: '>=14'}
+    hasBin: true
+    dev: true
+
   /playwright/1.26.0:
     resolution: {integrity: sha512-XxTVlvFEYHdatxUkh1KiPq9BclNtFKMi3BgQnl/aactmhN4G9AkZUXwt0ck6NDAOrDFlfibhbM7A1kZwQJKSBw==}
     engines: {node: '>=14'}
@@ -16228,6 +16257,15 @@ packages:
     requiresBuild: true
     dependencies:
       playwright-core: 1.26.0
+    dev: true
+
+  /playwright/1.26.1:
+    resolution: {integrity: sha512-WQmEdCgYYe8jOEkhkW9QLcK0PB+w1RZztBLYIT10MEEsENYg251cU0IzebDINreQsUt+HCwwRhtdz4weH9ICcQ==}
+    engines: {node: '>=14'}
+    hasBin: true
+    requiresBuild: true
+    dependencies:
+      playwright-core: 1.26.1
     dev: true
 
   /pluralize/8.0.0:

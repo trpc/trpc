@@ -1,0 +1,24 @@
+{
+  "name": "@examples/minimal-react",
+  "private": true,
+  "version": "10.0.0-proxy-beta.10",
+  "scripts": {
+    "dev": "run-p dev:*",
+    "dev:client": "npm run dev -w client",
+    "dev:server": "npm run dev -w server",
+    "test:e2e": "playwright test",
+    "test-dev": "start-server-and-test dev 3000 test:e2e",
+    "test-start": "start-server-and-test dev 3000 test:e2e"
+  },
+  "workspaces": [
+    "client",
+    "server"
+  ],
+  "devDependencies": {
+    "@playwright/test": "^1.19.2",
+    "npm-run-all": "^4.1.5",
+    "playwright": "^1.19.1",
+    "start-server-and-test": "^1.12.0",
+    "wait-port": "^0.3.0"
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "name": "@examples/minimal-server",
+  "version": "10.0.0-proxy-beta.10",
+  "private": true,
+  "scripts": {
+    "dev": "nodemon -e ts -w . index"
+  },
+  "dependencies": {
+    "@trpc/server": "^10.0.0-proxy-beta.10",
+    "nodemon": "^2.0.12",
+    "typescript": "^4.8.3",
+    "zod": "^3.19.1"
+  },
+  "devDependencies": {
+    "@types/node": "^18.7.20"
+  }
+}
