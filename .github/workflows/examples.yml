@@ -22,6 +22,7 @@ jobs:
             .interop/next-prisma-starter-websockets,
             .interop/next-prisma-todomvc,
             next-minimal-starter,
+            minimal-react,
             .interop/next-minimal-starter,
             .interop/standalone-server,
             fastify-server,
