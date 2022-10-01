@@ -1,6 +1,6 @@
 import {
+  CreateReactUtilsProxy,
   DecoratedProcedureRecord,
-  DecoratedProcedureUtilsRecord,
   createHooksInternal,
   createReactProxyDecoration,
   createReactQueryUtilsProxy,
@@ -25,6 +25,9 @@ export function createTRPCNext<
     },
     {
       get(_obj, name) {
+        if (name === 'then') {
+          return undefined;
+        }
         if (name === 'useContext') {
           return () => {
             const context = hooks.useContext();
@@ -49,7 +52,7 @@ export function createTRPCNext<
   );
 
   return proxy as {
-    useContext(): DecoratedProcedureUtilsRecord<TRouter>;
+    useContext(): CreateReactUtilsProxy<TRouter, TSSRContext>;
     withTRPC: typeof _withTRPC;
   } & DecoratedProcedureRecord<TRouter['_def']['record']>;
 }

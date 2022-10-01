@@ -19,7 +19,7 @@ import {
 } from '@trpc/server';
 import { createProxy } from '@trpc/server/shared';
 import {
-  TRPCContextProps,
+  ProxyTRPCContextProps,
   TRPCContextState,
   TRPCFetchInfiniteQueryOptions,
   TRPCFetchQueryOptions,
@@ -164,7 +164,7 @@ export type CreateReactUtilsProxy<
   TRouter extends AnyRouter,
   TSSRContext,
 > = DecoratedProcedureUtilsRecord<TRouter> &
-  TRPCContextProps<TRouter, TSSRContext>;
+  ProxyTRPCContextProps<TRouter, TSSRContext>;
 
 /**
  * @internal
@@ -179,6 +179,9 @@ export function createReactQueryUtilsProxy<
     },
     {
       get(_obj, name) {
+        if (name === 'then') {
+          return undefined;
+        }
         if (typeof name !== 'string') {
           throw new Error('Not supported');
         }

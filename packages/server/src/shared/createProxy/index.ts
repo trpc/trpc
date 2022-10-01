@@ -11,6 +11,9 @@ function createProxyInner(callback: ProxyCallback, ...path: string[]) {
     },
     {
       get(_obj, name) {
+        if (name === 'then') {
+          return undefined;
+        }
         if (typeof name === 'string') {
           if (name === 'then') {
             // special case for if the proxy is accidentally treated

@@ -1,21 +1,21 @@
 {
   "name": "@examples/express-server",
-  "version": "10.0.0-proxy-beta.7",
+  "version": "10.0.0-proxy-beta.11",
   "private": true,
   "scripts": {
-    "dev:server": "nodemon -e ts -w . -x ts-node ./src/server",
+    "dev:server": "nodemon -e ts -w . -x tsx ./src/server",
     "dev:client": "nodemon -e ts -w . -x npm run start-client-dev",
     "dev": "run-p dev:* --print-label",
     "build": "tsc",
     "start": "pnpm dev",
-    "start-client-dev": "wait-on tcp:2021 && ts-node ./src/client",
-    "test-dev": "start-server-and-test 'ts-node src/server' 2021 'ts-node src/client'",
+    "start-client-dev": "wait-on tcp:2021 && tsx ./src/client",
+    "test-dev": "start-server-and-test 'tsx src/server' 2021 'tsx src/client'",
     "test-start": "start-server-and-test 'node dist/server' 2021 'node dist/client'"
   },
   "dependencies": {
-    "@trpc/client": "^10.0.0-proxy-beta.7",
-    "@trpc/react": "^10.0.0-proxy-beta.7",
-    "@trpc/server": "^10.0.0-proxy-beta.7",
+    "@trpc/client": "^10.0.0-proxy-beta.11",
+    "@trpc/react": "^10.0.0-proxy-beta.11",
+    "@trpc/server": "^10.0.0-proxy-beta.11",
     "@types/node-fetch": "^2.5.11",
     "abort-controller": "^3.0.0",
     "express": "^4.17.1",
@@ -32,7 +32,7 @@
     "nodemon": "^2.0.12",
     "npm-run-all": "^4.1.5",
     "start-server-and-test": "^1.12.0",
-    "ts-node": "^10.3.0",
+    "tsx": "^3.9.0",
     "typescript": "^4.8.3",
     "wait-on": "^6.0.0"
   },

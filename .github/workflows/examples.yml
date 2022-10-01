@@ -5,19 +5,15 @@ concurrency:
   cancel-in-progress: true
 jobs:
   e2e:
-    container:
-      image: mcr.microsoft.com/playwright:v1.26.0-focal
-      options: --user 1001
     env:
-      PLAYWRIGHT_BROWSERS_PATH: ${{ github.workspace }}/playwright
-      DATABASE_URL: postgresql://postgres:@postgres:5432/trpcdb
       NEXTAUTH_SECRET: supersecret
     runs-on: ${{ matrix.os }}
     timeout-minutes: 10
     continue-on-error: true
     strategy:
       matrix:
-        dir: [
+        dir:
+          [
             express-server,
             .interop/express-server,
             express-minimal,
@@ -35,19 +31,11 @@ jobs:
             next-prisma-starter,
             next-prisma-starter-sqlite,
             next-prisma-starter-websockets,
-            # next-prisma-todomvc,
+            next-prisma-todomvc,
             standalone-server,
           ]
         node-start: ['16.x']
         os: [ubuntu-latest]
-    services:
-      postgres:
-        image: postgres:12.1
-        env:
-          POSTGRES_USER: postgres
-          POSTGRES_DB: trpcdb
-        ports:
-          - 5432:5432
     steps:
       - uses: actions/checkout@v3
         with:
@@ -72,12 +60,6 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-pnpm-store-${{ matrix.dir }}-
 
-      - name: Cache Playwright's binary
-        uses: actions/cache@v3
-        with:
-          key: ${{ runner.os }}-playwright-bin-v1.26.0
-          path: ${{ env.PLAYWRIGHT_BROWSERS_PATH }}
-
       - run: node -v
       - name: Install deps and build (with cache)
         run: pnpm --filter ./examples/${{ matrix.dir }}  --filter "@trpc/*" --filter root install
@@ -85,7 +67,7 @@ jobs:
       - name: Next.js cache
         uses: actions/cache@v3
         with:
-          path: ${{ github.workspace }}${{ matrix.dir }}/.next/cache
+          path: ${{ github.workspace }}/examples/${{ matrix.dir }}/.next/cache
           key: ${{ matrix.dir }}-${{ runner.os }}-${{ matrix.node-start }}-${{ hashFiles('**/pnpm-lock.yaml') }}-nextjs
 
       - uses: actions/setup-node@v3
@@ -95,10 +77,14 @@ jobs:
 
       - run: node -v
 
-      - name: if exists, run lint
-        run: pnpm --filter ./examples/${{ matrix.dir }} --if-present lint
-      - name: if exists, run build
-        run: pnpm --filter ./examples/${{ matrix.dir }} --if-present build
+      - name: if exists, run build-sqlite, else run build
+        run: |
+          cat ./examples/${{ matrix.dir }}/package.json | 
+          if grep --silent '"build-sqlite"'; 
+            then pnpm --filter ./examples/${{ matrix.dir }} build-sqlite; 
+            else pnpm --filter ./examples/${{ matrix.dir }} build;
+          fi
+
       - name: if exists, run test-start
         run: pnpm --filter ./examples/${{ matrix.dir }} --if-present test-start
       - name: if exists, run test-dev
