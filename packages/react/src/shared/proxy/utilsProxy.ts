@@ -17,7 +17,7 @@ import {
   inferProcedureInput,
   inferProcedureOutput,
 } from '@trpc/server';
-import { createFlatProxy, createProxy } from '@trpc/server/shared';
+import { createFlatProxy, createRecursiveProxy } from '@trpc/server/shared';
 import {
   ProxyTRPCContextProps,
   TRPCContextState,
@@ -184,7 +184,7 @@ export function createReactQueryUtilsProxy<
       return context[contextName];
     }
 
-    return createProxy(({ path, args }) => {
+    return createRecursiveProxy(({ path, args }) => {
       const pathCopy = [key, ...path];
       const utilName = pathCopy.pop() as keyof AnyDecoratedProcedure;
 

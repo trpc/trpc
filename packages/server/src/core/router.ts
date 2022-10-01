@@ -6,7 +6,7 @@ import {
 } from '../error/formatter';
 import { getHTTPStatusCodeFromError } from '../http/internals/getHTTPStatusCode';
 import { TRPCErrorShape, TRPC_ERROR_CODES_BY_KEY } from '../rpc';
-import { createProxy } from '../shared';
+import { createRecursiveProxy } from '../shared';
 import { CombinedDataTransformer, defaultTransformer } from '../transformer';
 import { RootConfig } from './internals/config';
 import { mergeWithoutOverrides } from './internals/mergeWithoutOverrides';
@@ -266,7 +266,7 @@ export function createRouterFactory<TConfig extends RootConfig>(
       transformer: _def.transformer,
       errorFormatter: _def.errorFormatter,
       createCaller(ctx) {
-        const proxy = createProxy(({ path, args }) => {
+        const proxy = createRecursiveProxy(({ path, args }) => {
           // interop mode
           if (
             path.length === 1 &&

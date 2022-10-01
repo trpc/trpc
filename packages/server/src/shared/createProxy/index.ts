@@ -8,7 +8,7 @@ const noop = () => {
   // noop
 };
 
-function createProxyInner(callback: ProxyCallback, path: string[]) {
+function createInnerProxy(callback: ProxyCallback, path: string[]) {
   const proxy: unknown = new Proxy(noop, {
     get(_obj, key) {
       if (typeof key !== 'string' || key === 'then') {
@@ -16,7 +16,7 @@ function createProxyInner(callback: ProxyCallback, path: string[]) {
         // like a PromiseLike (like in `Promise.resolve(proxy)`)
         return undefined;
       }
-      return createProxyInner(callback, [...path, key]);
+      return createInnerProxy(callback, [...path, key]);
     },
     apply(_1, _2, args) {
       return callback({
@@ -38,8 +38,8 @@ function createProxyInner(callback: ProxyCallback, path: string[]) {
  *
  * @internal
  */
-export const createProxy = (callback: ProxyCallback) =>
-  createProxyInner(callback, []);
+export const createRecursiveProxy = (callback: ProxyCallback) =>
+  createInnerProxy(callback, []);
 
 /**
  * Used in place of `new Proxy` where each handler will map 1 level deep to another value.

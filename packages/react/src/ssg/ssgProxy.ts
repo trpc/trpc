@@ -12,7 +12,7 @@ import {
   inferHandlerInput,
   inferProcedureOutput,
 } from '@trpc/server';
-import { createFlatProxy, createProxy } from '@trpc/server/shared';
+import { createFlatProxy, createRecursiveProxy } from '@trpc/server/shared';
 import { CreateSSGHelpersOptions, createSSGHelpers } from './ssg';
 
 type DecorateProcedure<TProcedure extends AnyProcedure> = {
@@ -77,7 +77,7 @@ export function createProxySSGHelpers<TRouter extends AnyRouter>(
     if (key === 'dehydrate') {
       return helpers.dehydrate;
     }
-    return createProxy((opts) => {
+    return createRecursiveProxy((opts) => {
       const args = opts.args;
 
       const pathCopy = [key, ...opts.path];
