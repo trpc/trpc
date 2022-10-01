@@ -54,9 +54,17 @@ function transformQueryOrMutationCacheErrors<
 }
 export type WithTRPCConfig<TRouter extends AnyRouter> =
   CreateTRPCClientOptions<TRouter> & {
-    queryClientConfig?: QueryClientConfig;
     abortOnUnmount?: boolean;
-  };
+  } & (
+      | {
+          queryClient?: QueryClient;
+          queryClientConfig?: never;
+        }
+      | {
+          queryClientConfig?: QueryClientConfig;
+          queryClient?: never;
+        }
+    );
 
 interface WithTRPCOptions<TRouter extends AnyRouter> {
   config: (info: { ctx?: NextPageContext }) => WithTRPCConfig<TRouter>;
@@ -102,7 +110,8 @@ export function withTRPC<
         }
 
         const config = getClientConfig({});
-        const queryClient = new QueryClient(config.queryClientConfig);
+        const queryClient =
+          config.queryClient ?? new QueryClient(config.queryClientConfig);
         const trpcClient = trpc.createClient(config);
         return {
           abortOnUnmount: config.abortOnUnmount,
