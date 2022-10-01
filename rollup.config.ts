@@ -46,52 +46,58 @@ export default function rollup(): RollupOptions[] {
   return [
     ...buildConfig({
       input: INPUTS.server,
+      packageDir: 'packages/server',
     }),
     ...buildConfig({
       input: INPUTS.client,
+      packageDir: 'packages/client',
     }),
     ...buildConfig({
       input: INPUTS.react,
+      packageDir: 'packages/react',
     }),
     ...buildConfig({
       input: INPUTS.next,
+      packageDir: 'packages/next',
     }),
   ];
 }
 
 type Options = {
   input: string[];
+  packageDir: string;
 };
 
-export function buildConfig({ input }: Options): RollupOptions[] {
-  const resolvedInput = input.map((file) => path.resolve('./', file));
+export function buildConfig({ input, packageDir }: Options): RollupOptions[] {
+  const resolvedInput = input.map((file) => path.resolve(packageDir, file));
   const options: Options = {
     input: resolvedInput,
+    packageDir,
   };
 
   return [types(options), lib(options)];
 }
 
-function types({ input }: Options): RollupOptions {
+function types({ input, packageDir }: Options): RollupOptions {
   return {
     input,
     output: {
-      dir: `./dist`,
+      dir: `${packageDir}/dist`,
     },
     plugins: [
       !isWatchMode &&
         del({
-          targets: `./dist`,
+          targets: `${packageDir}/dist`,
         }),
-      multiInput({ relative: path.resolve('./', 'src/') }),
+      multiInput({ relative: path.resolve(packageDir, 'src/') }),
       externals({
-        packagePath: path.resolve('./', 'package.json'),
+        packagePath: path.resolve(packageDir, 'package.json'),
         deps: true,
         devDeps: true,
         peerDeps: true,
       }),
       typescript({
-        tsconfig: path.resolve('./', 'tsconfig.build.json'),
+        tsconfig: path.resolve(packageDir, 'tsconfig.build.json'),
         tsconfigOverride: { emitDeclarationOnly: true },
         abortOnError: !isWatchMode,
       }),
@@ -99,27 +105,27 @@ function types({ input }: Options): RollupOptions {
   };
 }
 
-function lib({ input }: Options): RollupOptions {
+function lib({ input, packageDir }: Options): RollupOptions {
   return {
     input,
     output: [
       {
-        dir: `./dist`,
+        dir: `${packageDir}/dist`,
         format: 'cjs',
         entryFileNames: '[name].js',
         chunkFileNames: '[name]-[hash].js',
       },
       {
-        dir: `./dist`,
+        dir: `${packageDir}/dist`,
         format: 'esm',
         entryFileNames: '[name].mjs',
         chunkFileNames: '[name]-[hash].mjs',
       },
     ],
     plugins: [
-      multiInput({ relative: path.resolve('./', 'src/') }),
+      multiInput({ relative: path.resolve(packageDir, 'src/') }),
       externals({
-        packagePath: path.resolve('./', 'package.json'),
+        packagePath: path.resolve(packageDir, 'package.json'),
       }),
       nodeResolve({
         extensions,
