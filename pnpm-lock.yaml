@@ -418,7 +418,7 @@ importers:
       prettier: 2.7.1
       prisma: 4.3.1
       start-server-and-test: 1.14.0
-      tailwindcss: 3.1.8
+      tailwindcss: 3.1.8_postcss@8.4.16
       typescript: 4.8.3
 
   examples/.interop/next-prisma-todomvc:
@@ -1004,7 +1004,7 @@ importers:
       prettier: 2.7.1
       prisma: 4.3.1
       start-server-and-test: 1.14.0
-      tailwindcss: 3.1.8
+      tailwindcss: 3.1.8_postcss@8.4.16
       typescript: 4.8.3
 
   examples/next-prisma-todomvc:
@@ -1186,7 +1186,7 @@ importers:
       abort-controller: ^3.0.0
       aws-lambda: ^1.0.7
       devalue: ^2.0.1
-      expect-type: ^0.13.0
+      expect-type: ^0.14.0
       express: ^4.17.1
       fastify: ^3.27.1
       fastify-plugin: ^3.0.1
@@ -1233,7 +1233,7 @@ importers:
       abort-controller: 3.0.0
       aws-lambda: 1.0.7
       devalue: 2.0.1
-      expect-type: 0.13.0
+      expect-type: 0.14.2
       express: 4.18.1
       fastify: 3.29.2
       fastify-plugin: 3.0.1
@@ -1335,7 +1335,7 @@ importers:
       oauth: 0.10.0
       postcss: 8.4.16
       prettier: 2.7.1
-      tailwindcss: 3.1.8
+      tailwindcss: 3.1.8_postcss@8.4.16
       tsx: 3.9.0
       typescript: 4.8.3
 
@@ -6423,7 +6423,7 @@ packages:
     peerDependencies:
       tailwindcss: '>=2.0.0 || >=3.0.0 || >=3.0.0-alpha.1'
     dependencies:
-      tailwindcss: 3.1.8
+      tailwindcss: 3.1.8_postcss@8.4.16
     dev: false
 
   /@tanstack/match-sorter-utils/8.1.1:
@@ -8923,8 +8923,8 @@ packages:
     engines: {node: '>=10'}
     hasBin: true
     dependencies:
-      is-text-path: 1.0.1
       JSONStream: 1.3.5
+      is-text-path: 1.0.1
       lodash: 4.17.21
       meow: 8.1.2
       split2: 3.2.2
@@ -11020,8 +11020,8 @@ packages:
       - supports-color
     dev: false
 
-  /expect-type/0.13.0:
-    resolution: {integrity: sha512-CclevazQfrqo8EvbLPmP7osnb1SZXkw47XPPvUUpeMz4HuGzDltE7CaIt3RLyT9UQrwVK/LDn+KVcC0hcgjgDg==}
+  /expect-type/0.14.2:
+    resolution: {integrity: sha512-ed3+tr5ujbIYXZ8Pl/VgIphwJQ0q5tBLGGdn7Zvwt1WyPBRX83xjT5pT77P/GkuQbctx0K2ZNSSan7eruJqTCQ==}
     dev: true
 
   /expect/27.5.1:
@@ -17063,6 +17063,12 @@ packages:
   /react-dev-utils/12.0.1_kb3egcnme7w23lfa5xodfjfhge:
     resolution: {integrity: sha512-84Ivxmr17KjUupyqzFode6xKhjwuEJDROWKJy/BthkL7Wn6NJ8h4WE6k/exAv6ImS+0oZLRRW5j/aINMHyeGeQ==}
     engines: {node: '>=14'}
+    peerDependencies:
+      typescript: '>=2.7'
+      webpack: '>=4'
+    peerDependenciesMeta:
+      typescript:
+        optional: true
     dependencies:
       '@babel/code-frame': 7.18.6
       address: 1.2.1
@@ -17093,9 +17099,7 @@ packages:
     transitivePeerDependencies:
       - eslint
       - supports-color
-      - typescript
       - vue-template-compiler
-      - webpack
     dev: false
 
   /react-dom/18.2.0_react@18.2.0:
@@ -18989,10 +18993,12 @@ packages:
     resolution: {integrity: sha512-lfpys05uZMcVGIbgrrM/HlQGYKiPIcUhs76H1VrXo0gerpYkoLk4zjQTppdyAcBcmpzlzXJw7X0JniUKOr2hkg==}
     dev: false
 
-  /tailwindcss/3.1.8:
+  /tailwindcss/3.1.8_postcss@8.4.16:
     resolution: {integrity: sha512-YSneUCZSFDYMwk+TGq8qYFdCA3yfBRdBlS7txSq0LUmzyeqRe3a8fBQzbz9M3WS/iFT4BNf/nmw9mEzrnSaC0g==}
     engines: {node: '>=12.13.0'}
     hasBin: true
+    peerDependencies:
+      postcss: ^8.0.9
     dependencies:
       arg: 5.0.2
       chokidar: 3.5.3
