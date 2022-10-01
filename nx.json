@@ -60,9 +60,7 @@
   },
   "targetDefaults": {
     "build": {
-      "dependsOn": [
-        "^build"
-      ]
+      "dependsOn": []
     }
   },
   "affected": {
