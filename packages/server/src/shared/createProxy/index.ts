@@ -32,10 +32,6 @@ function createInnerProxy(callback: ProxyCallback, path: string[]) {
 /**
  * Creates a proxy that calls the callback with the path and arguments
  *
- * @remarks
- * This has a special handling to manage if it's accidentally treated like
- * a PromiseLike.
- *
  * @internal
  */
 export const createRecursiveProxy = (callback: ProxyCallback) =>
@@ -43,7 +39,8 @@ export const createRecursiveProxy = (callback: ProxyCallback) =>
 
 /**
  * Used in place of `new Proxy` where each handler will map 1 level deep to another value.
- * Handles `PromiseLike` situations
+ *
+ * @internal
  */
 export const createFlatProxy = <TActor>(
   callback: (path: keyof TActor & string) => any,
