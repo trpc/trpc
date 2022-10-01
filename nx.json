@@ -60,7 +60,7 @@
   },
   "targetDefaults": {
     "build": {
-      "dependsOn": []
+      "dependsOn": ["codegen:entrypoints"]
     }
   },
   "affected": {

@@ -13,7 +13,7 @@
   "scripts": {
     "ts-watch": "tsc --project tsconfig.watch.json",
     "codegen:entrypoints": "tsx ../../scripts/entrypoints.ts",
-    "build": "pnpm codegen:entrypoints && rollup --config rollup.config.ts --configPlugin rollup-plugin-swc3"
+    "build": "rollup --config rollup.config.ts --configPlugin rollup-plugin-swc3"
   },
   "main": "dist/index.js",
   "module": "dist/index.mjs",
