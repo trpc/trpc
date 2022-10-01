@@ -11,6 +11,7 @@ import {
   useMutation as __useMutation,
   useQuery as __useQuery,
   hashQueryKey,
+  useQueryClient,
 } from '@tanstack/react-query';
 import {
   CreateTRPCClientOptions,
@@ -42,6 +43,7 @@ import {
   TRPCContextProps,
   TRPCContextState,
 } from '../../internals/context';
+import { CreateTRPCReactOptions, UseMutationOverride } from '../types';
 
 export type OutputWithCursor<TData, TCursor = any> = {
   cursor: TCursor | null;
@@ -147,7 +149,11 @@ export type CreateClient<TRouter extends AnyRouter> = (
 export function createHooksInternal<
   TRouter extends AnyRouter,
   TSSRContext = unknown,
->() {
+>(config?: CreateTRPCReactOptions<TRouter>) {
+  const mutationSuccessOverride: UseMutationOverride['onSuccess'] =
+    config?.unstable_overrides?.useMutation?.onSuccess ??
+    ((options) => options.originalFn());
+
   type TQueries = TRouter['_def']['queries'];
   type TSubscriptions = TRouter['_def']['subscriptions'];
   type TMutations = TRouter['_def']['mutations'];
@@ -365,14 +371,24 @@ export function createHooksInternal<
     TContext
   > {
     const { client } = useContext();
+    const queryClient = useQueryClient();
 
-    return __useMutation((input) => {
-      const actualPath = Array.isArray(path) ? path[0] : path;
+    return __useMutation(
+      (input) => {
+        const actualPath = Array.isArray(path) ? path[0] : path;
 
-      return (client.mutation as any)(
-        ...getClientArgs([actualPath, input], opts),
-      );
-    }, opts);
+        return (client.mutation as any)(
+          ...getClientArgs([actualPath, input], opts),
+        );
+      },
+      {
+        ...opts,
+        onSuccess(...args) {
+          const originalFn = () => opts?.onSuccess?.(...args);
+          return mutationSuccessOverride({ originalFn, queryClient });
+        },
+      },
+    );
   }
 
   /* istanbul ignore next */
