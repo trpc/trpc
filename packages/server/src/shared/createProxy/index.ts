@@ -54,5 +54,5 @@ export const createFlatProxy = <TFaux>(
       }
       return callback(name as any);
     },
-  }) as TActor;
+  }) as TFaux;
 };
