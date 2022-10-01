@@ -1,6 +1,6 @@
 {
   "name": "@trpc/server",
-  "version": "9.27.2",
+  "version": "9.27.3",
   "description": "tRPC Server",
   "author": "KATT",
   "license": "MIT",
