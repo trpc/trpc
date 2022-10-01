@@ -1,6 +1,6 @@
 {
   "name": "@trpc/react",
-  "version": "9.27.3",
+  "version": "9.27.4",
   "description": "tRPC React lib",
   "author": "KATT",
   "license": "MIT",
@@ -42,8 +42,8 @@
     "@babel/runtime": "^7.9.0"
   },
   "devDependencies": {
-    "@trpc/client": "^9.27.3",
-    "@trpc/server": "^9.27.3",
+    "@trpc/client": "^9.27.4",
+    "@trpc/server": "^9.27.4",
     "@types/express": "^4.17.12",
     "express": "^4.17.1",
     "next": "^12.1.6",
