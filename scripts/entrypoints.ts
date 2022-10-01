@@ -6,9 +6,14 @@ import { INPUTS, PACKAGES } from '../rollup.config';
 const packagesDir = path.resolve(__dirname, '..', 'packages');
 
 // minimal version of PackageJson type necessary
-type PackageJson = {
+export type PackageJson = {
+  name: string;
   exports: Record<string, { import: string; require: string; default: string }>;
   files: string[];
+  dependencies: Record<string, string>;
+  pnpm: {
+    overrides: Record<string, string>;
+  };
 };
 
 // create directories on the way if they dont exist
