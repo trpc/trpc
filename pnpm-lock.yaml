@@ -1267,7 +1267,7 @@ importers:
       '@docusaurus/preset-classic': ^2.1.0
       '@docusaurus/theme-common': ^2.1.0
       '@docusaurus/types': ^2.1.0
-      '@mdx-js/react': ^1.6.22
+      '@mdx-js/react': ^2.0.0
       '@octokit/graphql': ^5.0.0
       '@octokit/graphql-schema': ^10.74.2
       '@tailwindcss/line-clamp': ^0.4.2
@@ -1304,7 +1304,7 @@ importers:
       '@docusaurus/preset-classic': 2.1.0_wtsg4ceoeqkkixjeys7mzstuyq
       '@docusaurus/theme-common': 2.1.0_iggxbiray6ldlceceoiqzs6icq
       '@docusaurus/types': 2.1.0_biqbaboplfbrettd7655fr4n2y
-      '@mdx-js/react': 1.6.22_react@18.2.0
+      '@mdx-js/react': 2.1.3_react@18.2.0
       '@tailwindcss/line-clamp': 0.4.2_tailwindcss@3.1.8
       '@trpc/client': link:../packages/client
       '@trpc/next': link:../packages/next
@@ -5231,6 +5231,16 @@ packages:
       react: 18.2.0
     dev: false
 
+  /@mdx-js/react/2.1.3_react@18.2.0:
+    resolution: {integrity: sha512-11n4lTvvRyxq3OYbWJwEYM+7q6PE0GxKbk0AwYIIQmrRkxDeljIsjDQkKOgdr/orgRRbYy5zi+iERdnwe01CHQ==}
+    peerDependencies:
+      react: '>=16'
+    dependencies:
+      '@types/mdx': 2.0.2
+      '@types/react': 18.0.21
+      react: 18.2.0
+    dev: false
+
   /@mdx-js/util/1.6.22:
     resolution: {integrity: sha512-H1rQc1ZOHANWBvPcW+JpGwr+juXSxM8Q8YCkm3GhZd8REu1fHR3z99CErO1p9pkcfcxZnMdIZdIsXkOHY0NilA==}
     dev: false
@@ -6769,6 +6779,10 @@ packages:
     resolution: {integrity: sha512-W864tg/Osz1+9f4lrGTZpCSO5/z4608eUp19tbozkq2HJK6i3z1kT0H9tlADXuYIb1YYOBByU4Jsqkk75q48qA==}
     dependencies:
       '@types/unist': 2.0.6
+    dev: false
+
+  /@types/mdx/2.0.2:
+    resolution: {integrity: sha512-mJGfgj4aWpiKb8C0nnJJchs1sHBHn0HugkVfqqyQi7Wn6mBRksLeQsPOFvih/Pu8L1vlDzfe/LidhVHBeUk3aQ==}
     dev: false
 
   /@types/mime/3.0.1:
