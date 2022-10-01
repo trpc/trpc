@@ -1,6 +1,9 @@
 import { QueryClient } from '@tanstack/react-query';
 import { AnyRouter, MaybePromise } from '@trpc/server';
 
+/**
+ * @internal
+ */
 export interface UseMutationOverride {
   onSuccess: (opts: {
     /**
