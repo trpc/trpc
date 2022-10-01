@@ -16,6 +16,7 @@
     "codegen:generateBigBoi": "tsx scripts/generateBigBoi.ts",
     "codegen:generateBigLegacyRouter": "tsx scripts/generateBigLegacyRouter.ts",
     "codegen:entrypoints": "tsx scripts/entrypoints.ts",
+    "codegen:override-prisma": "tsx scripts/addPrismaOverrides.ts",
     "codegen:generateMergeRouters": "tsx scripts/generateMergeRouters.ts",
     "codegen": "run-p codegen:*",
     "postinstall": "pnpm codegen && pnpm build",
@@ -51,6 +52,7 @@
     "eslint-plugin-react": "^7.25.1",
     "eslint-plugin-react-hooks": "^4.2.0",
     "eslint-plugin-unicorn": "40.1.0",
+    "fast-glob": "^3.2.12",
     "lerna": "^5.5.1",
     "npm-run-all": "^4.1.5",
     "prettier": "^2.7.1",
@@ -62,5 +64,16 @@
     "rollup-plugin-typescript2": "^0.32.1",
     "tsx": "^3.9.0",
     "typescript": "^4.8.3"
+  },
+  "pnpm": {
+    "overrides": {
+      "@examples/trpc-next-prisma-starter>@prisma/client": "https://registry.npmjs.com/@prisma/client/-/client-4.3.1.tgz?id=%40examples%2Ftrpc-next-prisma-starter",
+      "@examples/next-starter-sqlite>@prisma/client": "https://registry.npmjs.com/@prisma/client/-/client-4.3.1.tgz?id=%40examples%2Fnext-starter-sqlite",
+      "@examples/next-starter-websockets>@prisma/client": "https://registry.npmjs.com/@prisma/client/-/client-4.3.1.tgz?id=%40examples%2Fnext-starter-websockets",
+      "@examples/trpc-next-prisma-todomvc>@prisma/client": "https://registry.npmjs.com/@prisma/client/-/client-4.3.1.tgz?id=%40examples%2Ftrpc-next-prisma-todomvc",
+      "@examples/legacy-next-starter>@prisma/client": "https://registry.npmjs.com/@prisma/client/-/client-4.3.1.tgz?id=%40examples%2Flegacy-next-starter",
+      "@examples/interop-next-starter-websockets>@prisma/client": "https://registry.npmjs.com/@prisma/client/-/client-4.3.1.tgz?id=%40examples%2Finterop-next-starter-websockets",
+      "@examples/interop-todo-web>@prisma/client": "https://registry.npmjs.com/@prisma/client/-/client-4.3.1.tgz?id=%40examples%2Finterop-todo-web"
+    }
   }
 }
