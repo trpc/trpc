@@ -60,7 +60,8 @@
     "links"
   ],
   "scripts": {
-    "ts-watch": "tsc --project tsconfig.watch.json"
+    "ts-watch": "tsc --project tsconfig.watch.json",
+    "build": "rollup --config rollup.config.ts --configPlugin rollup-plugin-swc3"
   },
   "peerDependencies": {
     "@trpc/server": "^10.0.0-alpha.48"
