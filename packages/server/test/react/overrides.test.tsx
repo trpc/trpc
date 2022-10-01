@@ -7,83 +7,85 @@ import { konn } from 'konn';
 import React, { ReactNode } from 'react';
 import { z } from 'zod';
 
-const ctx = konn()
-  .beforeEach(() => {
-    const t = initTRPC.create();
-    interface Post {
-      title: string;
-    }
+describe('mutation override', () => {
+  const ctx = konn()
+    .beforeEach(() => {
+      const t = initTRPC.create();
+      interface Post {
+        title: string;
+      }
 
-    const posts: Post[] = [];
+      const posts: Post[] = [];
 
-    const appRouter = t.router({
-      list: t.procedure.query(() => posts),
-      add: t.procedure.input(z.string()).mutation(({ input }) => {
-        posts.push({
-          title: input,
-        });
-      }),
-    });
-    const opts = routerToServerAndClientNew(appRouter);
-    const trpc = createTRPCReact<typeof appRouter>({
-      unstable_overrides: {
-        useMutation: {
-          async onSuccess(opts) {
-            await opts.originalFn();
-            await opts.queryClient.invalidateQueries();
+      const appRouter = t.router({
+        list: t.procedure.query(() => posts),
+        add: t.procedure.input(z.string()).mutation(({ input }) => {
+          posts.push({
+            title: input,
+          });
+        }),
+      });
+      const opts = routerToServerAndClientNew(appRouter);
+      const trpc = createTRPCReact<typeof appRouter>({
+        unstable_overrides: {
+          useMutation: {
+            async onSuccess(opts) {
+              await opts.originalFn();
+              await opts.queryClient.invalidateQueries();
+            },
           },
         },
-      },
-    });
+      });
 
-    const queryClient = new QueryClient();
+      const queryClient = new QueryClient();
 
-    function App(props: { children: ReactNode }) {
+      function App(props: { children: ReactNode }) {
+        return (
+          <trpc.Provider {...{ queryClient, client: opts.client }}>
+            <QueryClientProvider client={queryClient}>
+              {props.children}
+            </QueryClientProvider>
+          </trpc.Provider>
+        );
+      }
+      return {
+        ...opts,
+        App,
+        trpc,
+      };
+    })
+    .afterEach(async (opts) => {
+      await opts?.close?.();
+    })
+    .done();
+
+  test('clear cache on every mutation', async () => {
+    const { trpc } = ctx;
+    const nonce = `nonce-${Math.random()}`;
+    function MyComp() {
+      const listQuery = trpc.list.useQuery();
+      const mutation = trpc.add.useMutation();
+
       return (
-        <trpc.Provider {...{ queryClient, client: opts.client }}>
-          <QueryClientProvider client={queryClient}>
-            {props.children}
-          </QueryClientProvider>
-        </trpc.Provider>
+        <>
+          <button onClick={() => mutation.mutate(nonce)} data-testid="add">
+            add
+          </button>
+          <pre>{JSON.stringify(listQuery.data ?? null, null, 4)}</pre>
+        </>
       );
     }
-    return {
-      ...opts,
-      App,
-      trpc,
-    };
-  })
-  .afterEach(async (opts) => {
-    await opts?.close?.();
-  })
-  .done();
 
-test('can override react query', async () => {
-  const { trpc } = ctx;
-  const nonce = `nonce-${Math.random()}`;
-  function MyComp() {
-    const listQuery = trpc.list.useQuery();
-    const mutation = trpc.add.useMutation();
-
-    return (
-      <>
-        <button onClick={() => mutation.mutate(nonce)} data-testid="add">
-          add
-        </button>
-        <pre>{JSON.stringify(listQuery.data ?? null, null, 4)}</pre>
-      </>
+    const $ = render(
+      <ctx.App>
+        <MyComp />
+      </ctx.App>,
     );
-  }
 
-  const $ = render(
-    <ctx.App>
-      <MyComp />
-    </ctx.App>,
-  );
+    $.getByTestId('add').click();
 
-  $.getByTestId('add').click();
-
-  await waitFor(() => {
-    expect($.container).toHaveTextContent(nonce);
+    await waitFor(() => {
+      expect($.container).toHaveTextContent(nonce);
+    });
   });
 });
