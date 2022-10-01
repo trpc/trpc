@@ -11,7 +11,7 @@
     "directory": "packages/next"
   },
   "scripts": {
-    "codegen:entrypoints": "ts-node ../../scripts/entrypoints.ts",
+    "codegen:entrypoints": "tsx ../../scripts/entrypoints.ts",
     "build": "pnpm codegen:entrypoints && rollup --config rollup.config.ts --configPlugin rollup-plugin-swc3"
   },
   "main": "dist/index.js",
