@@ -33,6 +33,7 @@ import {
   UseTRPCSubscriptionOptions,
   createHooksInternal,
 } from './shared/hooks/createHooksInternal';
+import { CreateTRPCReactOptions } from './shared/types';
 
 /**
  * @internal
@@ -154,8 +155,8 @@ export function createHooksInternalProxy<
 export function createTRPCReact<
   TRouter extends AnyRouter,
   TSSRContext = unknown,
->() {
-  const hooks = createHooksInternal<TRouter, TSSRContext>();
+>(opts?: CreateTRPCReactOptions<TRouter>) {
+  const hooks = createHooksInternal<TRouter, TSSRContext>(opts);
   const proxy = createHooksInternalProxy<TRouter, TSSRContext>(hooks);
 
   return proxy;
