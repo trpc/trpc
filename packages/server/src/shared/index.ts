@@ -1,1 +1,1 @@
-export * from './createRecursiveProxy';
+export * from './createProxy';
