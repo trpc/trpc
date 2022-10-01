@@ -7,7 +7,9 @@ test('middleware next()', async () => {
   t.middleware(async (opts) => {
     const result = await opts.next();
 
-    expectTypeOf(result.error).toEqualTypeOf<TRPCError>();
+    if (!result.ok) {
+      expectTypeOf(result.error).toEqualTypeOf<TRPCError>();
+    }
 
     return result;
   });
