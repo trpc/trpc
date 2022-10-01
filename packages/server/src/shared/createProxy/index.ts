@@ -42,9 +42,9 @@ export const createRecursiveProxy = (callback: ProxyCallback) =>
  *
  * @internal
  */
-export const createFlatProxy = <TActor>(
-  callback: (path: keyof TActor & string) => any,
-): TActor => {
+export const createFlatProxy = <TFaux>(
+  callback: (path: keyof TFaux & string) => any,
+): TFaux => {
   return new Proxy(noop, {
     get(_obj, name) {
       if (typeof name !== 'string' || name === 'then') {
