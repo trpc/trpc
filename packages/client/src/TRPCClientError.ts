@@ -31,8 +31,8 @@ export class TRPCClientError<TRouter extends AnyRouter>
       /**
        * @deprecated use cause
        **/
-      originalError?: Maybe<Error>;
-      cause?: Maybe<Error>;
+      originalError?: Error;
+      cause?: Error;
       isDone?: boolean;
     },
   ) {
@@ -59,7 +59,6 @@ export class TRPCClientError<TRouter extends AnyRouter>
     if (!(result instanceof Error)) {
       return new TRPCClientError<TRouter>((result.error as any).message ?? '', {
         ...opts,
-        cause: null,
         result: result,
       });
     }
