@@ -1,5 +1,4 @@
 {
-  "extends": "../tsconfig.json",
   "compilerOptions": {
     "moduleResolution": "node",
     "esModuleInterop": true,
