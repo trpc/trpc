@@ -13,9 +13,12 @@
     "dev:client": "npm run dev -w client",
     "dev:server": "npm run dev -w server",
     "dev": "run-p dev:*",
+    "start:client": "npm run start -w client",
+    "start:server": "npm run start -w server",
+    "start": "run-p start:*",
     "test:e2e": "playwright test",
     "test-dev": "start-server-and-test dev 3000 test:e2e",
-    "test-start": "start-server-and-test dev 3000 test:e2e"
+    "test-start": "start-server-and-test start 3000 test:e2e"
   },
   "devDependencies": {
     "@playwright/test": "^1.26.1",
