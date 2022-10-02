@@ -1,8 +1,9 @@
 {
-  "name": "@examples/minimal-server",
+  "name": "server",
   "version": "10.0.0-proxy-beta.10",
   "private": true,
   "scripts": {
+    "build": "tsc",
     "dev": "nodemon -e ts -w . index"
   },
   "dependencies": {

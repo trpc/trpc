@@ -3,17 +3,16 @@
   "private": true,
   "version": "10.0.0-proxy-beta.10",
   "scripts": {
+    "build:client": "pnpm --filter ./client build",
+    "build:server": "pnpm --filter ./server build",
+    "build": "run-s build:server build:client",
+    "dev:client": "pnpm --filter client dev",
+    "dev:server": "pnpm --filter server dev",
     "dev": "run-p dev:*",
-    "dev:client": "npm run dev -w client",
-    "dev:server": "npm run dev -w server",
     "test:e2e": "playwright test",
     "test-dev": "start-server-and-test dev 3000 test:e2e",
     "test-start": "start-server-and-test dev 3000 test:e2e"
   },
-  "workspaces": [
-    "client",
-    "server"
-  ],
   "devDependencies": {
     "@playwright/test": "^1.19.2",
     "npm-run-all": "^4.1.5",

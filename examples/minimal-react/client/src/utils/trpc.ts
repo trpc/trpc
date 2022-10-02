@@ -1,4 +1,4 @@
-import type { AppRouter } from '@examples/minimal-server';
 import { createTRPCReact } from '@trpc/react';
+import type { AppRouter } from '~/server/index';
 
 export const trpc = createTRPCReact<AppRouter>();
