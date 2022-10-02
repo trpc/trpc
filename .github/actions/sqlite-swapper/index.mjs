@@ -42,7 +42,7 @@ function commentBlock(lines, start) {
 
 async function run() {
   const cwd = external_path_namespaceObject.join(process.cwd(), EXAMPLE_PATH);
-  console.log(cwd);
+  console.log('CWD: ', cwd);
   const prismaPath = external_path_namespaceObject.join(cwd, PRISMA_PATH);
   const prisma = external_fs_namespaceObject.readFileSync(prismaPath, 'utf8');
 

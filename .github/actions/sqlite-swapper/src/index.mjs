@@ -28,7 +28,7 @@ function commentBlock(lines, start) {
 
 async function run() {
   const cwd = path.join(process.cwd(), EXAMPLE_PATH);
-  console.log(cwd);
+  console.log('CWD: ', cwd);
   const prismaPath = path.join(cwd, PRISMA_PATH);
   const prisma = fs.readFileSync(prismaPath, 'utf8');
 
