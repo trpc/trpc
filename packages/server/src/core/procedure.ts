@@ -2,7 +2,7 @@ import { DefaultErrorShape } from '../error/formatter';
 import { CombinedDataTransformer } from '../transformer';
 import { RootConfig } from './internals/config';
 import {
-  ProcedureBuilder,
+  ProcedureBuilderDef,
   ProcedureCallOptions,
 } from './internals/procedureBuilder';
 import { UnsetMarker } from './internals/utils';
@@ -86,12 +86,12 @@ export type ProcedureArgs<TParams extends ProcedureParams> =
  *
  * @internal
  */
-export interface ProcedureBase<
+export interface Procedure<
   TType extends ProcedureType,
   TParams extends ProcedureParams,
 > {
   _type: TType;
-  _def: TParams & ProcedureBuilder<TParams>['_def'];
+  _def: TParams & ProcedureBuilderDef<TParams>;
   /**
    * @deprecated use `._def.meta` instead
    */
@@ -103,18 +103,7 @@ export interface ProcedureBase<
   (opts: ProcedureCallOptions): Promise<unknown>;
 }
 
-export interface QueryProcedure<TParams extends ProcedureParams>
-  extends ProcedureBase<'query', TParams> {}
-export type AnyQueryProcedure = QueryProcedure<any>;
-
-export interface MutationProcedure<TParams extends ProcedureParams>
-  extends ProcedureBase<'mutation', TParams> {}
-export type AnyMutationProcedure = MutationProcedure<any>;
-
-export interface SubscriptionProcedure<TParams extends ProcedureParams>
-  extends ProcedureBase<'subscription', TParams> {}
-export type AnySubscriptionProcedure = SubscriptionProcedure<any>;
-
-export interface Procedure<TParams extends ProcedureParams>
-  extends ProcedureBase<ProcedureType, TParams> {}
-export type AnyProcedure = Procedure<any>;
+export type AnyQueryProcedure = Procedure<'query', any>;
+export type AnyMutationProcedure = Procedure<'mutation', any>;
+export type AnySubscriptionProcedure = Procedure<'subscription', any>;
+export type AnyProcedure = Procedure<ProcedureType, any>;

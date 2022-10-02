@@ -7,11 +7,7 @@ import {
   createInputMiddleware,
   createOutputMiddleware,
 } from '../core/middleware';
-import {
-  MutationProcedure,
-  QueryProcedure,
-  SubscriptionProcedure,
-} from '../core/procedure';
+import { Procedure } from '../core/procedure';
 import {
   ProcedureRecord as NewProcedureRecord,
   Router as NewRouter,
@@ -57,13 +53,7 @@ type MigrateProcedure<
   TConfig extends RootConfig,
   TProcedure extends AnyOldProcedure,
   TType extends ProcedureType,
-> = TType extends 'query'
-  ? QueryProcedure<convertProcedureParams<TConfig, TProcedure>>
-  : TType extends 'mutation'
-  ? MutationProcedure<convertProcedureParams<TConfig, TProcedure>>
-  : TType extends 'subscription'
-  ? SubscriptionProcedure<convertProcedureParams<TConfig, TProcedure>>
-  : never;
+> = Procedure<TType, convertProcedureParams<TConfig, TProcedure>>;
 
 export type MigrateProcedureRecord<
   TConfig extends RootConfig,
