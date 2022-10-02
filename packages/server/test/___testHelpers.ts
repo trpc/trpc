@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import './___packages';
 import AbortController from 'abort-controller';
 import fetch from 'node-fetch';
 import ws from 'ws';

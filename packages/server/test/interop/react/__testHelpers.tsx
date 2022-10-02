@@ -1,5 +1,4 @@
 /* eslint-disable @typescript-eslint/no-empty-function */
-import '../../___packages';
 import { routerToServerAndClientNew } from '../../___testHelpers';
 import {
   createQueryClient,
