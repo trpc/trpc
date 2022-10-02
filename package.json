@@ -51,7 +51,7 @@
     "eslint-plugin-prettier": "^4.0.0",
     "eslint-plugin-react": "^7.25.1",
     "eslint-plugin-react-hooks": "^4.2.0",
-    "eslint-plugin-unicorn": "40.1.0",
+    "eslint-plugin-unicorn": "44.0.0",
     "fast-glob": "^3.2.12",
     "lerna": "^5.5.1",
     "npm-run-all": "^4.1.5",
