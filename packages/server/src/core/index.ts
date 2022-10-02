@@ -15,7 +15,6 @@ export type {
   ProcedureArgs,
   ProcedureOptions,
 } from './procedure';
-export type { BuildProcedure } from './internals/procedureBuilder';
 export { createInputMiddleware, createOutputMiddleware } from './middleware';
 
 export { initTRPC } from './initTRPC';
