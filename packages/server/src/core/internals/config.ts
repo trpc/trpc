@@ -35,7 +35,7 @@ export interface InitOptions<TType extends InitGenerics> {
    */
   allowOutsideOfServer?: boolean;
   /**
-   * Is this a browser environment?
+   * Is this a server environment?
    */
   isServer?: boolean;
 }
