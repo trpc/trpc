@@ -189,7 +189,10 @@ const reservedWords = [
   'then',
 ];
 
-type CreateRouterInnerType<
+/**
+ * @internal
+ */
+export type CreateRouterInner<
   TConfig extends RootConfig,
   TProcRouterRecord extends ProcedureRouterRecord,
 > = Router<
@@ -201,14 +204,6 @@ type CreateRouterInnerType<
   >
 > &
   TProcRouterRecord;
-
-/**
- * @internal
- */
-export type CreateRouterInner<
-  TConfig extends RootConfig,
-  TProcRouterRecord extends ProcedureRouterRecord,
-> = CreateRouterInnerType<TConfig, TProcRouterRecord>;
 
 /**
  * @internal
