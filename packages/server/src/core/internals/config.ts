@@ -17,10 +17,10 @@ export interface InitGenerics {
  * The default check to see if we're in a server
  */
 export const isServerDefault: boolean =
-  typeof window !== 'undefined' ||
+  typeof window === 'undefined' ||
   !('Deno' in window) ||
-  process.env.NODE_ENV !== 'test' ||
-  process.env.JEST_WORKER_ID === undefined;
+  process.env.NODE_ENV === 'test' ||
+  !!process.env.JEST_WORKER_ID;
 
 /**
  * The initial params that are used and actually represents real values underneath
