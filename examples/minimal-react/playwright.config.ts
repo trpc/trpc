@@ -9,16 +9,11 @@ const opts = {
   // collectCoverage: !!process.env.PLAYWRIGHT_HEADLESS
 };
 const config: PlaywrightTestConfig = {
-  testDir: './playwright',
-  outputDir: './playwright/test-results',
-  // 'github' for GitHub Actions CI to generate annotations, plus a concise 'dot'
-  // default 'list' when running locally
-  reporter: process.env.CI ? 'github' : 'list',
+  testDir: './test',
   use: {
     ...devices['Desktop Chrome'],
     baseURL: baseUrl,
     headless: opts.headless,
-    video: 'on',
   },
 };
 
