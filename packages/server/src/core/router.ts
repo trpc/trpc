@@ -6,7 +6,7 @@ import {
 } from '../error/formatter';
 import { getHTTPStatusCodeFromError } from '../http/internals/getHTTPStatusCode';
 import { TRPCErrorShape, TRPC_ERROR_CODES_BY_KEY } from '../rpc';
-import { createProxy } from '../shared';
+import { createRecursiveProxy } from '../shared';
 import { CombinedDataTransformer, defaultTransformer } from '../transformer';
 import { RootConfig } from './internals/config';
 import { mergeWithoutOverrides } from './internals/mergeWithoutOverrides';
@@ -17,10 +17,14 @@ import {
   AnyProcedure,
   AnyQueryProcedure,
   AnySubscriptionProcedure,
-  Procedure,
   ProcedureArgs,
 } from './procedure';
-import { ProcedureType, inferProcedureOutput, procedureTypes } from './types';
+import {
+  ProcedureType,
+  inferHandlerInput,
+  inferProcedureOutput,
+  procedureTypes,
+} from './types';
 
 /** @internal **/
 export type ProcedureRecord = Record<string, AnyProcedure>;
@@ -76,18 +80,6 @@ export interface RouterDef<
 }
 
 export type AnyRouterDef<TContext = any> = RouterDef<TContext, any, any, any>;
-
-/**
- * @internal
- */
-export type inferHandlerInput<TProcedure extends AnyProcedure> =
-  TProcedure extends Procedure<infer TDef>
-    ? undefined extends TDef['_input_in'] // ? is input optional
-      ? unknown extends TDef['_input_in'] // ? is input unset
-        ? [(null | undefined)?] // -> there is no input
-        : [(TDef['_input_in'] | null | undefined)?] // -> there is optional input
-      : [TDef['_input_in']] // -> input is required
-    : [(undefined | null)?]; // -> there is no input
 
 /**
  * @internal
@@ -185,6 +177,17 @@ const emptyRouter = {
 };
 
 /**
+ * Reserved words that can't be used as router or procedure names
+ */
+const reservedWords = [
+  /**
+   * Then is a reserved word because otherwise we can't return a promise that returns a Proxy
+   * since JS will think that `.then` is something that exists
+   */
+  'then',
+];
+
+/**
  *
  * @internal
  */
@@ -204,6 +207,16 @@ export function createRouterFactory<TConfig extends RootConfig>(
     >
   > &
     TProcRouterRecord {
+    const reservedWordsUsed = new Set(
+      Object.keys(opts).filter((v) => reservedWords.includes(v)),
+    );
+    if (reservedWordsUsed.size > 0) {
+      throw new Error(
+        'Reserved words used in `router({})` call: ' +
+          Array.from(reservedWordsUsed).join(', '),
+      );
+    }
+
     const routerProcedures: ProcedureRecord = omitPrototype({});
     function recursiveGetPaths(procedures: ProcedureRouterRecord, path = '') {
       for (const [key, procedureOrRouter] of Object.entries(procedures ?? {})) {
@@ -253,7 +266,7 @@ export function createRouterFactory<TConfig extends RootConfig>(
       transformer: _def.transformer,
       errorFormatter: _def.errorFormatter,
       createCaller(ctx) {
-        const proxy = createProxy(({ path, args }) => {
+        const proxy = createRecursiveProxy(({ path, args }) => {
           // interop mode
           if (
             path.length === 1 &&

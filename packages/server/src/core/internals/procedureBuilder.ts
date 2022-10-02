@@ -44,20 +44,22 @@ type CreateProcedureReturnInput<
   _output_out: FallbackValue<TNext['_output_out'], TPrev['_output_out']>;
 }>;
 
-type OverwriteIfDefined<T, K> = UnsetMarker extends T ? K : FlatOverwrite<T, K>;
+type OverwriteIfDefined<TType, TWith> = UnsetMarker extends TType
+  ? TWith
+  : FlatOverwrite<TType, TWith>;
 
-type ErrorMessage<T extends string> = T;
+type ErrorMessage<TMessage extends string> = TMessage;
 
 export interface ProcedureBuilder<TParams extends ProcedureParams> {
   /**
    * Add an input parser to the procedure.
    */
-  input<$TParser extends Parser>(
+  input<TParser extends Parser>(
     schema: TParams['_input_out'] extends UnsetMarker
-      ? $TParser
-      : inferParser<$TParser>['out'] extends Record<string, unknown>
+      ? TParser
+      : inferParser<TParser>['out'] extends Record<string, unknown>
       ? TParams['_input_out'] extends Record<string, unknown>
-        ? $TParser
+        ? TParser
         : ErrorMessage<'All input parsers did not resolve to an object'>
       : ErrorMessage<'All input parsers did not resolve to an object'>,
   ): ProcedureBuilder<{
@@ -67,11 +69,11 @@ export interface ProcedureBuilder<TParams extends ProcedureParams> {
     _ctx_out: TParams['_ctx_out'];
     _input_in: OverwriteIfDefined<
       TParams['_input_in'],
-      inferParser<$TParser>['in']
+      inferParser<TParser>['in']
     >;
     _input_out: OverwriteIfDefined<
       TParams['_input_out'],
-      inferParser<$TParser>['out']
+      inferParser<TParser>['out']
     >;
     _output_in: TParams['_output_in'];
     _output_out: TParams['_output_out'];
@@ -79,8 +81,8 @@ export interface ProcedureBuilder<TParams extends ProcedureParams> {
   /**
    * Add an output parser to the procedure.
    */
-  output<$TParser extends Parser>(
-    schema: $TParser,
+  output<TParser extends Parser>(
+    schema: TParser,
   ): ProcedureBuilder<{
     _config: TParams['_config'];
     _meta: TParams['_meta'];
@@ -88,8 +90,8 @@ export interface ProcedureBuilder<TParams extends ProcedureParams> {
     _ctx_out: TParams['_ctx_out'];
     _input_in: TParams['_input_in'];
     _input_out: TParams['_input_out'];
-    _output_in: inferParser<$TParser>['in'];
-    _output_out: inferParser<$TParser>['out'];
+    _output_in: inferParser<TParser>['in'];
+    _output_out: inferParser<TParser>['out'];
   }>;
   /**
    * Add a meta data to the procedure.
@@ -98,32 +100,32 @@ export interface ProcedureBuilder<TParams extends ProcedureParams> {
   /**
    * Add a middleware to the procedure.
    */
-  use<$TParams extends ProcedureParams>(
-    fn: MiddlewareFunction<TParams, $TParams>,
-  ): CreateProcedureReturnInput<TParams, $TParams>;
+  use<TNewParams extends ProcedureParams>(
+    fn: MiddlewareFunction<TParams, TNewParams>,
+  ): CreateProcedureReturnInput<TParams, TNewParams>;
   /**
    * Extend the procedure with another procedure.
    * @warning The TypeScript inference fails when chaining concatenated procedures.
    */
-  unstable_concat<$ProcedureReturnInput extends AnyProcedureBuilder>(
-    proc: $ProcedureReturnInput,
-  ): $ProcedureReturnInput extends ProcedureBuilder<infer $TParams>
+  unstable_concat<TProcedureReturnType extends AnyProcedureBuilder>(
+    proc: TProcedureReturnType,
+  ): TProcedureReturnType extends ProcedureBuilder<infer $TParams>
     ? CreateProcedureReturnInput<TParams, $TParams>
     : never;
   /**
    * Query procedure
    */
-  query<$TOutput>(
+  query<TOutput>(
     resolver: (
       opts: ResolveOptions<TParams>,
-    ) => MaybePromise<FallbackValue<TParams['_output_in'], $TOutput>>,
+    ) => MaybePromise<FallbackValue<TParams['_output_in'], TOutput>>,
   ): UnsetMarker extends TParams['_output_out']
     ? QueryProcedure<
         OverwriteKnown<
           TParams,
           {
-            _output_in: $TOutput;
-            _output_out: $TOutput;
+            _output_in: TOutput;
+            _output_out: TOutput;
           }
         >
       >
@@ -132,17 +134,17 @@ export interface ProcedureBuilder<TParams extends ProcedureParams> {
   /**
    * Mutation procedure
    */
-  mutation<$TOutput>(
+  mutation<TOutput>(
     resolver: (
       opts: ResolveOptions<TParams>,
-    ) => MaybePromise<FallbackValue<TParams['_output_in'], $TOutput>>,
+    ) => MaybePromise<FallbackValue<TParams['_output_in'], TOutput>>,
   ): UnsetMarker extends TParams['_output_out']
     ? MutationProcedure<
         OverwriteKnown<
           TParams,
           {
-            _output_in: $TOutput;
-            _output_out: $TOutput;
+            _output_in: TOutput;
+            _output_out: TOutput;
           }
         >
       >
@@ -151,17 +153,17 @@ export interface ProcedureBuilder<TParams extends ProcedureParams> {
   /**
    * Mutation procedure
    */
-  subscription<$TOutput>(
+  subscription<TOutput>(
     resolver: (
       opts: ResolveOptions<TParams>,
-    ) => MaybePromise<FallbackValue<TParams['_output_in'], $TOutput>>,
+    ) => MaybePromise<FallbackValue<TParams['_output_in'], TOutput>>,
   ): UnsetMarker extends TParams['_output_out']
     ? SubscriptionProcedure<
         OverwriteKnown<
           TParams,
           {
-            _output_in: $TOutput;
-            _output_out: $TOutput;
+            _output_in: TOutput;
+            _output_out: TOutput;
           }
         >
       >

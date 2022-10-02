@@ -9,8 +9,8 @@ import {
   RefetchOptions,
   RefetchQueryFilters,
   SetDataOptions,
+  Updater,
 } from '@tanstack/react-query';
-import { Updater } from '@tanstack/react-query/build/types/packages/query-core/src/utils';
 import { TRPCClient, TRPCClientError, TRPCRequestOptions } from '@trpc/client';
 import type {
   AnyRouter,
@@ -31,11 +31,7 @@ export interface TRPCFetchInfiniteQueryOptions<TInput, TError, TOutput>
 /** @internal */
 export type SSRState = false | 'prepass' | 'mounting' | 'mounted';
 
-export interface TRPCContextProps<TRouter extends AnyRouter, TSSRContext> {
-  /**
-   * The react-query `QueryClient`
-   */
-  queryClient: QueryClient;
+export interface ProxyTRPCContextProps<TRouter extends AnyRouter, TSSRContext> {
   /**
    * The `TRPCClient`
    */
@@ -61,8 +57,15 @@ export interface TRPCContextProps<TRouter extends AnyRouter, TSSRContext> {
   abortOnUnmount?: boolean;
 }
 
-export const contextProps: (keyof TRPCContextProps<any, any>)[] = [
-  'queryClient',
+export interface TRPCContextProps<TRouter extends AnyRouter, TSSRContext>
+  extends ProxyTRPCContextProps<TRouter, TSSRContext> {
+  /**
+   * The react-query `QueryClient`
+   */
+  queryClient: QueryClient;
+}
+
+export const contextProps: (keyof ProxyTRPCContextProps<any, any>)[] = [
   'client',
   'ssrContext',
   'ssrState',
@@ -189,7 +192,7 @@ export interface TRPCContextState<
     TOutput extends inferProcedureOutput<TRouter['_def']['queries'][TPath]>,
   >(
     pathAndInput: [TPath, TInput?],
-    updater: Updater<TOutput | undefined, TOutput>,
+    updater: Updater<TOutput | undefined, TOutput | undefined>,
     options?: SetDataOptions,
   ): void;
   /**
@@ -211,7 +214,10 @@ export interface TRPCContextState<
     TOutput extends inferProcedureOutput<TRouter['_def']['queries'][TPath]>,
   >(
     pathAndInput: [TPath, TInput?],
-    updater: Updater<InfiniteData<TOutput> | undefined, InfiniteData<TOutput>>,
+    updater: Updater<
+      InfiniteData<TOutput> | undefined,
+      InfiniteData<TOutput> | undefined
+    >,
     options?: SetDataOptions,
   ): void;
   /**

@@ -3,7 +3,7 @@ import { observable } from '@trpc/server/observable';
 import { createChain } from './internals/createChain';
 import { Operation, TRPCLink } from './types';
 
-function asArray<T>(value: T | T[]) {
+function asArray<TType>(value: TType | TType[]) {
   return Array.isArray(value) ? value : [value];
 }
 export function splitLink<TRouter extends AnyRouter = AnyRouter>(opts: {

@@ -93,7 +93,7 @@ const HomeContent: React.FC = () => {
         <TopSponsors />
       </header>
 
-      <section className="container">
+      <section>
         <Features />
       </section>
 
@@ -201,7 +201,7 @@ const HomeContent: React.FC = () => {
           </div>
         </a>
       </section>
-      <section className="container">
+      <section>
         <SectionTitle
           id="twitter-wall"
           title="Don't take our word for it!"

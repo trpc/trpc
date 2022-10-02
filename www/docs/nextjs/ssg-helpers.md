@@ -9,10 +9,11 @@ slug: /ssg-helpers
 
 ```ts
 import { createProxySSGHelpers } from '@trpc/react/ssg';
+import { createContext } from 'server/context';
 
 const ssg = createProxySSGHelpers({
   router: appRouter,
-  ctx: createContext,
+  ctx: await createContext(),
   transformer: superjson, // optional - adds superjson serialization
 });
 ```
@@ -24,7 +25,7 @@ The returned functions are all wrappers around react-query functions. Please che
 ```ts title='pages/posts/[id].tsx'
 import { createProxySSGHelpers } from '@trpc/react/ssg';
 import { GetServerSidePropsContext, InferGetServerSidePropsType } from 'next';
-import { prisma } from 'server/context';
+import { createContext } from 'server/context';
 import { appRouter } from 'server/routers/_app';
 import superjson from 'superjson';
 import { trpc } from 'utils/trpc';
@@ -34,13 +35,16 @@ export async function getServerSideProps(
 ) {
   const ssg = createProxySSGHelpers({
     router: appRouter,
-    ctx: {},
+    ctx: await createContext(),
     transformer: superjson,
   });
   const id = context.params?.id as string;
 
-  // Prefetch `post.byId`
-  await ssg.post.byId.fetch({ id });
+  /*
+   * Prefetching the `post.byId` query here.
+   * `prefetch` does not return the result and never throws - if you need that behavior, use `fetch` instead.
+   */
+  await ssg.post.byId.prefetch({ id });
 
   // Make sure to return { props: { trpcState: ssg.dehydrate() } }
   return {

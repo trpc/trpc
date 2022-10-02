@@ -14,7 +14,6 @@
     "resolveJsonModule": true,
     "isolatedModules": true,
     "jsx": "preserve",
-    "types": ["@types/jest", "jest-playwright-preset"],
     "baseUrl": "./src",
     "incremental": true
   },

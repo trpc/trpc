@@ -37,7 +37,13 @@
     },
     {
       "source": "/docs/:path((?!v[0-9]).*)",
-      "destination": "/docs/v10/:path*"
+      "destination": "/docs/v10/:path*",
+      "permanent": false
+    },
+    {
+      "source": "/blog/hello-trpc",
+      "destination": "/blog/introducing-trpc",
+      "permanent": true
     }
   ]
 }

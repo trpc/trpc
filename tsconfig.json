@@ -12,11 +12,5 @@
       "@trpc/next": ["packages/next/src"],
       "$test/*": ["test/*"]
     }
-  },
-  "ts-node": {
-    "swc": true,
-    "compilerOptions": {
-      "module": "commonjs"
-    }
   }
 }

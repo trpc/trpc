@@ -24,6 +24,7 @@ import {
   NextComponentType,
   NextPageContext,
 } from 'next/dist/shared/lib/utils';
+import { NextRouter } from 'next/router';
 import React, { createElement, useState } from 'react';
 import ssrPrepass from 'react-ssr-prepass';
 
@@ -91,7 +92,7 @@ export function withTRPC<
     const trpc = createReactQueryHooks<TRouter, TSSRContext>();
 
     const WithTRPC = (
-      props: AppPropsType & {
+      props: AppPropsType<NextRouter, any> & {
         trpc?: TRPCPrepassProps;
       },
     ) => {
@@ -115,7 +116,8 @@ export function withTRPC<
       const { queryClient, trpcClient, ssrState, ssrContext } = prepassProps;
       const hydratedState = trpc.useDehydratedState(
         trpcClient,
-        props.pageProps?.trpcState,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (props.pageProps as any).trpcState,
       );
 
       return (

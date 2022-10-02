@@ -1,5 +1,5 @@
 import { AnyRouter } from '@trpc/server';
-import { createProxy } from '@trpc/server/shared';
+import { createRecursiveProxy } from '@trpc/server/shared';
 import { getQueryKey } from '../../internals/getQueryKey';
 import { CreateReactQueryHooks } from '../hooks/createHooksInternal';
 
@@ -11,7 +11,7 @@ export function createReactProxyDecoration<
   TRouter extends AnyRouter,
   TSSRContext = unknown,
 >(name: string, hooks: CreateReactQueryHooks<TRouter, TSSRContext>) {
-  return createProxy((opts) => {
+  return createRecursiveProxy((opts) => {
     const args = opts.args;
 
     const pathCopy = [name, ...opts.path];

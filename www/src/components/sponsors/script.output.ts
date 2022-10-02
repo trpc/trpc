@@ -3,15 +3,6 @@
 
 export const sponsors = [
   {
-    "name": "Anthony Short",
-    "imgSrc": "https://avatars.githubusercontent.com/u/36125?u=a3d7f3e18939c0b2d362af8704349d851ee5c325&v=4",
-    "monthlyPriceInDollars": 10,
-    "link": "https://anthonyshort.me",
-    "privacyLevel": "PUBLIC",
-    "login": "anthonyshort",
-    "createdAt": 1623340473000
-  },
-  {
     "name": "Hampus Kraft",
     "imgSrc": "https://avatars.githubusercontent.com/u/24176136?u=ca9876f3b8e32cc2f624a5957d5814ee7ef3fee0&v=4",
     "monthlyPriceInDollars": 3,
@@ -435,15 +426,6 @@ export const sponsors = [
     "createdAt": 1661242015000
   },
   {
-    "name": "Miguel Ángel Durán",
-    "imgSrc": "https://avatars.githubusercontent.com/u/1561955?u=9ebfec769d2505d88ee746b7389353c23312bca1&v=4",
-    "monthlyPriceInDollars": 50,
-    "link": "https://midu.dev",
-    "privacyLevel": "PUBLIC",
-    "login": "midudev",
-    "createdAt": 1661889789000
-  },
-  {
     "name": "Malcolm Still",
     "imgSrc": "https://avatars.githubusercontent.com/u/2567177?u=9d4667a85a4e56457786b9028b3a551574e07120&v=4",
     "monthlyPriceInDollars": 10,
@@ -487,5 +469,23 @@ export const sponsors = [
     "privacyLevel": "PUBLIC",
     "login": "changwo",
     "createdAt": 1663581418000
+  },
+  {
+    "name": "Wyatt Schulte",
+    "imgSrc": "https://avatars.githubusercontent.com/u/42128929?u=15dfd6d0ab827079a400ce33f0f78408637cb5ec&v=4",
+    "monthlyPriceInDollars": 5,
+    "link": "https://wyatt.dev",
+    "privacyLevel": "PUBLIC",
+    "login": "Wyatt-SG",
+    "createdAt": 1663779120000
+  },
+  {
+    "name": "Simon Flack",
+    "imgSrc": "https://avatars.githubusercontent.com/u/4867329?v=4",
+    "monthlyPriceInDollars": 10,
+    "link": "https://github.com/simonflk",
+    "privacyLevel": "PUBLIC",
+    "login": "simonflk",
+    "createdAt": 1664470616000
   }
 ] as const

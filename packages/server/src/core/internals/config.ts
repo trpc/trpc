@@ -16,15 +16,15 @@ export interface InitGenerics {
  * The initial params that are used and actually represents real values underneath
  * @internal
  */
-export interface InitOptions<T extends InitGenerics> {
+export interface InitOptions<TType extends InitGenerics> {
   transformer: DataTransformerOptions;
-  errorFormatter: ErrorFormatter<T['ctx'], any>;
+  errorFormatter: ErrorFormatter<TType['ctx'], any>;
 }
 
 /**
  * @internal
  */
-export type CreateInitGenerics<T extends InitGenerics> = T;
+export type CreateInitGenerics<TType extends InitGenerics> = TType;
 
 /**
  * The config that is resolved after `initTRPC.create()` has been called
@@ -40,4 +40,4 @@ export interface RootConfig extends InitGenerics {
 /**
  * @internal
  */
-export type CreateRootConfig<T extends RootConfig> = T;
+export type CreateRootConfig<TConfig extends RootConfig> = TConfig;
