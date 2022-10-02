@@ -1,8 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 
-const BASE_PATH = process.env.DIR;
-console.log(process.env.DIR);
+const EXAMPLE_PATH = process.env.DIR;
 const PRISMA_PATH = 'prisma/schema.prisma';
 const REPLACE_DBS = ['postgres', 'mysql'];
 const SQLITE_DB_NAME = '"file:./dev.db"';
@@ -28,7 +27,8 @@ function commentBlock(lines, start) {
 }
 
 async function run() {
-  const cwd = BASE_PATH;
+  const cwd = path.join(process.cwd(), EXAMPLE_PATH);
+  console.log(cwd);
   const prismaPath = path.join(cwd, PRISMA_PATH);
   const prisma = fs.readFileSync(prismaPath, 'utf8');
 
