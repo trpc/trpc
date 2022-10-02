@@ -13,7 +13,6 @@ jobs:
     strategy:
       matrix:
         dir: [
-            ,
             # express-server,
             # .interop/express-server,
             # express-minimal,
@@ -79,7 +78,7 @@ jobs:
 
       - name: Swap Prisma to use SQLite
         run: node ./.github/actions/sqlite-swapper/index.mjs
-        env: 
+        env:
           DIR: ${{ matrix.dir }}
       - run: rm -rf ./examples/${{ matrix.dir }}/prisma/migrations
 
