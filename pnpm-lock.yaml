@@ -737,6 +737,7 @@ importers:
       '@trpc/server': ^10.0.0-proxy-beta.13
       '@types/node': ^18.7.20
       nodemon: ^2.0.12
+      tsx: ^3.9.0
       typescript: ^4.8.3
       zod: ^3.0.0
     dependencies:
@@ -745,6 +746,7 @@ importers:
     devDependencies:
       '@types/node': 18.7.20
       nodemon: 2.0.20
+      tsx: 3.9.0
       typescript: 4.8.3
 
   examples/minimal/client:
