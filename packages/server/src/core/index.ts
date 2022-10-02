@@ -2,6 +2,7 @@ export type {
   AnyRouter,
   ProcedureRecord,
   ProcedureRouterRecord,
+  CreateRouterInner,
 } from './router';
 export { callProcedure } from './router';
 export type {
