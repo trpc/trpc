@@ -18,6 +18,7 @@ import {
   CreateRootConfig,
   InitGenerics,
   InitOptions,
+  isServerDefault,
 } from './internals/config';
 import { createBuilder } from './internals/procedureBuilder';
 import { PickFirstDefined, ValidateShape } from './internals/utils';
@@ -94,6 +95,19 @@ function createTRPCInner<TParams extends Partial<InitGenerics>>() {
       errorShape: $ErrorShape;
       transformer: $Transformer;
     }>;
+
+    {
+      // Server check
+      const isServer: boolean = options?.isServer ?? isServerDefault;
+      const allowOutsideOfServer: boolean =
+        options?.allowOutsideOfServer ?? false;
+
+      if (!isServer && allowOutsideOfServer !== true) {
+        throw new Error(
+          `You're trying to use @trpc/server in a non-server environment. This is not supported by default.`,
+        );
+      }
+    }
 
     const errorFormatter = options?.errorFormatter ?? defaultFormatter;
     const transformer = getDataTransformer(
