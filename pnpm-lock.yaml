@@ -266,7 +266,7 @@ importers:
 
   examples/.interop/next-prisma-starter:
     specifiers:
-      '@playwright/test': ^1.19.2
+      '@playwright/test': ^1.26.1
       '@prisma/client': https://registry.npmjs.com/@prisma/client/-/client-4.3.1.tgz?id=%40examples%2Flegacy-next-starter
       '@tanstack/react-query': 4.6.0
       '@tanstack/react-query-devtools': ^4.3.8
@@ -287,7 +287,7 @@ importers:
       eslint-plugin-react-hooks: ^4.2.0
       next: ^12.3.1
       npm-run-all: ^4.1.5
-      playwright: ^1.19.2
+      playwright: ^1.26.1
       prettier: ^2.7.1
       prisma: ^4.3.1
       react: ^18.2.0
@@ -313,7 +313,7 @@ importers:
       superjson: 1.10.0
       zod: 3.19.1
     devDependencies:
-      '@playwright/test': 1.26.0
+      '@playwright/test': 1.26.1
       '@tanstack/react-query-devtools': 4.6.0_35w334xqtbzboqulr5pz522esm
       '@types/node': 18.7.20
       '@types/react': 18.0.21
@@ -337,7 +337,7 @@ importers:
 
   examples/.interop/next-prisma-starter-websockets:
     specifiers:
-      '@playwright/test': ^1.19.2
+      '@playwright/test': ^1.26.1
       '@prisma/client': https://registry.npmjs.com/@prisma/client/-/client-4.3.1.tgz?id=%40examples%2Finterop-next-starter-websockets
       '@tanstack/react-query': 4.6.0
       '@tanstack/react-query-devtools': ^4.3.8
@@ -365,7 +365,7 @@ importers:
       node-fetch: ^2.6.1
       nodemon: ^2.0.12
       npm-run-all: ^4.1.5
-      playwright: ^1.19.2
+      playwright: ^1.26.1
       postcss: ^8.4.14
       prettier: ^2.7.1
       prisma: ^4.3.1
@@ -396,7 +396,7 @@ importers:
       ws: 8.9.0
       zod: 3.19.1
     devDependencies:
-      '@playwright/test': 1.26.0
+      '@playwright/test': 1.26.1
       '@tanstack/react-query-devtools': 4.6.0_35w334xqtbzboqulr5pz522esm
       '@types/node': 18.7.20
       '@types/node-fetch': 2.6.2
@@ -419,12 +419,12 @@ importers:
       prettier: 2.7.1
       prisma: 4.3.1
       start-server-and-test: 1.14.0
-      tailwindcss: 3.1.8
+      tailwindcss: 3.1.8_postcss@8.4.16
       typescript: 4.8.3
 
   examples/.interop/next-prisma-todomvc:
     specifiers:
-      '@playwright/test': ^1.19.2
+      '@playwright/test': ^1.26.1
       '@prisma/client': https://registry.npmjs.com/@prisma/client/-/client-4.3.1.tgz?id=%40examples%2Finterop-todo-web
       '@tanstack/react-query': 4.6.0
       '@tanstack/react-query-devtools': ^4.3.8
@@ -437,7 +437,7 @@ importers:
       clsx: ^1.1.1
       next: ^12.3.1
       npm-run-all: ^4.1.5
-      playwright: ^1.19.2
+      playwright: ^1.26.1
       prisma: ^4.3.1
       react: ^18.2.0
       react-dom: ^18.2.0
@@ -464,7 +464,7 @@ importers:
       todomvc-common: 1.0.5
       zod: 3.19.1
     devDependencies:
-      '@playwright/test': 1.26.0
+      '@playwright/test': 1.26.1
       '@tanstack/react-query-devtools': 4.6.0_35w334xqtbzboqulr5pz522esm
       '@types/node': 18.7.20
       '@types/react': 18.0.21
@@ -839,7 +839,7 @@ importers:
 
   examples/next-prisma-starter:
     specifiers:
-      '@playwright/test': ^1.19.2
+      '@playwright/test': ^1.26.1
       '@prisma/client': https://registry.npmjs.com/@prisma/client/-/client-4.3.1.tgz?id=%40examples%2Ftrpc-next-prisma-starter
       '@tanstack/react-query': 4.6.0
       '@trpc/client': ^10.0.0-proxy-beta.14
@@ -859,7 +859,7 @@ importers:
       eslint-plugin-react-hooks: ^4.2.0
       next: ^12.3.1
       npm-run-all: ^4.1.5
-      playwright: ^1.19.2
+      playwright: ^1.26.1
       prettier: ^2.7.1
       prisma: ^4.3.1
       react: ^18.2.0
@@ -885,7 +885,7 @@ importers:
       superjson: 1.10.0
       zod: 3.19.1
     devDependencies:
-      '@playwright/test': 1.26.0
+      '@playwright/test': 1.26.1
       '@types/node': 18.7.20
       '@types/react': 18.0.21
       '@typescript-eslint/eslint-plugin': 5.38.0_5dm4t5r4qe2xupwlo3y6omrvba
@@ -908,7 +908,7 @@ importers:
 
   examples/next-prisma-starter-sqlite:
     specifiers:
-      '@playwright/test': ^1.19.2
+      '@playwright/test': ^1.26.1
       '@prisma/client': https://registry.npmjs.com/@prisma/client/-/client-4.3.1.tgz?id=%40examples%2Fnext-starter-sqlite
       '@tanstack/react-query': 4.6.0
       '@tanstack/react-query-devtools': ^4.3.8
@@ -929,7 +929,7 @@ importers:
       eslint-plugin-react-hooks: ^4.2.0
       next: ^12.3.1
       npm-run-all: ^4.1.5
-      playwright: ^1.19.2
+      playwright: ^1.26.1
       prettier: ^2.7.1
       prisma: ^4.3.1
       react: ^18.2.0
@@ -955,7 +955,7 @@ importers:
       superjson: 1.10.0
       zod: 3.19.1
     devDependencies:
-      '@playwright/test': 1.26.0
+      '@playwright/test': 1.26.1
       '@tanstack/react-query-devtools': 4.6.0_35w334xqtbzboqulr5pz522esm
       '@types/node': 18.7.20
       '@types/react': 18.0.21
@@ -979,7 +979,7 @@ importers:
 
   examples/next-prisma-starter-websockets:
     specifiers:
-      '@playwright/test': ^1.19.2
+      '@playwright/test': ^1.26.1
       '@prisma/client': https://registry.npmjs.com/@prisma/client/-/client-4.3.1.tgz?id=%40examples%2Fnext-starter-websockets
       '@tanstack/react-query': 4.6.0
       '@tanstack/react-query-devtools': ^4.3.8
@@ -1007,7 +1007,7 @@ importers:
       node-fetch: ^2.6.1
       nodemon: ^2.0.12
       npm-run-all: ^4.1.5
-      playwright: ^1.19.2
+      playwright: ^1.26.1
       postcss: ^8.4.14
       prettier: ^2.7.1
       prisma: ^4.3.1
@@ -1038,7 +1038,7 @@ importers:
       ws: 8.9.0
       zod: 3.19.1
     devDependencies:
-      '@playwright/test': 1.26.0
+      '@playwright/test': 1.26.1
       '@tanstack/react-query-devtools': 4.6.0_35w334xqtbzboqulr5pz522esm
       '@types/node': 18.7.20
       '@types/node-fetch': 2.6.2
@@ -1061,12 +1061,12 @@ importers:
       prettier: 2.7.1
       prisma: 4.3.1
       start-server-and-test: 1.14.0
-      tailwindcss: 3.1.8
+      tailwindcss: 3.1.8_postcss@8.4.16
       typescript: 4.8.3
 
   examples/next-prisma-todomvc:
     specifiers:
-      '@playwright/test': ^1.19.2
+      '@playwright/test': ^1.26.1
       '@prisma/client': https://registry.npmjs.com/@prisma/client/-/client-4.3.1.tgz?id=%40examples%2Ftrpc-next-prisma-todomvc
       '@tanstack/react-query': 4.6.0
       '@tanstack/react-query-devtools': ^4.3.8
@@ -1079,7 +1079,7 @@ importers:
       clsx: ^1.1.1
       next: ^12.3.1
       npm-run-all: ^4.1.5
-      playwright: ^1.19.2
+      playwright: ^1.26.1
       prisma: ^4.3.1
       react: ^18.2.0
       react-dom: ^18.2.0
@@ -1106,7 +1106,7 @@ importers:
       todomvc-common: 1.0.5
       zod: 3.19.1
     devDependencies:
-      '@playwright/test': 1.26.0
+      '@playwright/test': 1.26.1
       '@tanstack/react-query-devtools': 4.6.0_35w334xqtbzboqulr5pz522esm
       '@types/node': 18.7.20
       '@types/react': 18.0.21
@@ -1390,7 +1390,7 @@ importers:
       oauth: 0.10.0
       postcss: 8.4.16
       prettier: 2.7.1
-      tailwindcss: 3.1.8
+      tailwindcss: 3.1.8_postcss@8.4.16
       tsx: 3.9.0
       typescript: 4.8.3
 
@@ -5941,15 +5941,6 @@ packages:
       node-gyp-build: 4.5.0
     dev: false
 
-  /@playwright/test/1.26.0:
-    resolution: {integrity: sha512-D24pu1k/gQw3Lhbpc38G5bXlBjGDrH5A52MsrH12wz6ohGDeQ+aZg/JFSEsT/B3G8zlJe/EU4EkJK74hpqsjEg==}
-    engines: {node: '>=14'}
-    hasBin: true
-    dependencies:
-      '@types/node': 18.7.20
-      playwright-core: 1.26.0
-    dev: true
-
   /@playwright/test/1.26.1:
     resolution: {integrity: sha512-bNxyZASVt2adSZ9gbD7NCydzcb5JaI0OR9hc7s+nmPeH604gwp0zp17NNpwXY4c8nvuBGQQ9oGDx72LE+cUWvw==}
     engines: {node: '>=14'}
@@ -6504,7 +6495,7 @@ packages:
     peerDependencies:
       tailwindcss: '>=2.0.0 || >=3.0.0 || >=3.0.0-alpha.1'
     dependencies:
-      tailwindcss: 3.1.8
+      tailwindcss: 3.1.8_postcss@8.4.16
     dev: false
 
   /@tanstack/match-sorter-utils/8.1.1:
@@ -9022,8 +9013,8 @@ packages:
     engines: {node: '>=10'}
     hasBin: true
     dependencies:
-      is-text-path: 1.0.1
       JSONStream: 1.3.5
+      is-text-path: 1.0.1
       lodash: 4.17.21
       meow: 8.1.2
       split2: 3.2.2
@@ -16323,12 +16314,6 @@ packages:
       find-up: 3.0.0
     dev: false
 
-  /playwright-core/1.26.0:
-    resolution: {integrity: sha512-p8huU8eU4gD3VkJd3DA1nA7R3XA6rFvFL+1RYS96cSljCF2yJE9CWEHTPF4LqX8KN9MoWCrAfVKP5381X3CZqg==}
-    engines: {node: '>=14'}
-    hasBin: true
-    dev: true
-
   /playwright-core/1.26.1:
     resolution: {integrity: sha512-hzFchhhxnEiPc4qVPs9q2ZR+5eKNifY2hQDHtg1HnTTUuphYCBP8ZRb2si+B1TR7BHirgXaPi48LIye5SgrLAA==}
     engines: {node: '>=14'}
@@ -17175,6 +17160,12 @@ packages:
   /react-dev-utils/12.0.1_kb3egcnme7w23lfa5xodfjfhge:
     resolution: {integrity: sha512-84Ivxmr17KjUupyqzFode6xKhjwuEJDROWKJy/BthkL7Wn6NJ8h4WE6k/exAv6ImS+0oZLRRW5j/aINMHyeGeQ==}
     engines: {node: '>=14'}
+    peerDependencies:
+      typescript: '>=2.7'
+      webpack: '>=4'
+    peerDependenciesMeta:
+      typescript:
+        optional: true
     dependencies:
       '@babel/code-frame': 7.18.6
       address: 1.2.1
@@ -17205,9 +17196,7 @@ packages:
     transitivePeerDependencies:
       - eslint
       - supports-color
-      - typescript
       - vue-template-compiler
-      - webpack
     dev: false
 
   /react-dom/18.2.0_react@18.2.0:
@@ -19106,10 +19095,12 @@ packages:
     resolution: {integrity: sha512-lfpys05uZMcVGIbgrrM/HlQGYKiPIcUhs76H1VrXo0gerpYkoLk4zjQTppdyAcBcmpzlzXJw7X0JniUKOr2hkg==}
     dev: false
 
-  /tailwindcss/3.1.8:
+  /tailwindcss/3.1.8_postcss@8.4.16:
     resolution: {integrity: sha512-YSneUCZSFDYMwk+TGq8qYFdCA3yfBRdBlS7txSq0LUmzyeqRe3a8fBQzbz9M3WS/iFT4BNf/nmw9mEzrnSaC0g==}
     engines: {node: '>=12.13.0'}
     hasBin: true
+    peerDependencies:
+      postcss: ^8.0.9
     dependencies:
       arg: 5.0.2
       chokidar: 3.5.3
