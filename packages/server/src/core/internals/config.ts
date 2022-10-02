@@ -33,11 +33,11 @@ export interface InitOptions<TType extends InitGenerics> {
    * Allow `@trpc/server` to run in non-server environments
    * @default false
    */
-  allowOutsideOfServer?: boolean;
+  allowOutsideOfServer: boolean;
   /**
    * Is this a server environment?
    */
-  isServer?: boolean;
+  isServer: boolean;
 }
 
 /**
