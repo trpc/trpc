@@ -714,17 +714,17 @@ importers:
 
   examples/minimal-react/client:
     specifiers:
-      '@tanstack/react-query': ^4.7.2
+      '@tanstack/react-query': ^4.3.8
       '@trpc/client': ^10.0.0-proxy-beta.13
       '@trpc/react': ^10.0.0-proxy-beta.13
       '@trpc/server': ^10.0.0-proxy-beta.13
-      '@types/react': ^18.0.17
-      '@types/react-dom': ^18.0.6
+      '@types/react': ^18.0.9
+      '@types/react-dom': ^18.0.5
       '@vitejs/plugin-react': ^2.1.0
       react: ^18.2.0
       react-dom: ^18.2.0
-      typescript: ^4.6.4
-      vite: ^3.1.0
+      typescript: ^4.8.3
+      vite: ^3.1.3
     dependencies:
       '@tanstack/react-query': 4.8.0_biqbaboplfbrettd7655fr4n2y
       '@trpc/client': link:../../../packages/client
@@ -745,7 +745,7 @@ importers:
       '@types/node': ^18.7.20
       nodemon: ^2.0.12
       typescript: ^4.8.3
-      zod: ^3.19.1
+      zod: ^3.0.0
     dependencies:
       '@trpc/server': link:../../../packages/server
       zod: 3.19.1
