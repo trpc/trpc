@@ -68,16 +68,18 @@ type OverwriteIfDefined<TType, TWith> = UnsetMarker extends TType
 
 type ErrorMessage<TMessage extends string> = TMessage;
 
-export type ProcedureBuilderDef = {
+export type ProcedureBuilderDef<TParams extends ProcedureParams> = {
   inputs: Parser[];
   output?: Parser;
-  meta?: Record<string, unknown>;
+  meta?: TParams['_meta'];
   resolver?: ProcedureBuilderResolver;
   middlewares: ProcedureBuilderMiddleware[];
   mutation?: boolean;
   query?: boolean;
   subscription?: boolean;
 };
+
+export type AnyProcedureBuilderDef = ProcedureBuilderDef<any>;
 
 export interface ProcedureBuilder<TParams extends ProcedureParams> {
   /**
@@ -170,11 +172,10 @@ export interface ProcedureBuilder<TParams extends ProcedureParams> {
   /**
    * @internal
    */
-  _def: ProcedureBuilderDef;
+  _def: ProcedureBuilderDef<TParams>;
 }
 
 type AnyProcedureBuilder = ProcedureBuilder<any>;
-export type AnyProcedureBuilderDef = AnyProcedureBuilder['_def'];
 
 export type ProcedureBuilderMiddleware = MiddlewareFunction<any, any>;
 
