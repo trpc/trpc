@@ -63,7 +63,7 @@ jobs:
 
       - run: node -v
       - name: Install deps and build (with cache)
-        run: pnpm --filter ./examples/${{ matrix.dir }}/**  --filter "@trpc/*" --filter root install
+        run: pnpm --filter "./examples/${{ matrix.dir }}/**"  --filter "@trpc/*" --filter root install
 
       - name: Next.js cache
         uses: actions/cache@v3
