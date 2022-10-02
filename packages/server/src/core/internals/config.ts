@@ -18,7 +18,7 @@ export interface InitGenerics {
  */
 export const isServerDefault: boolean =
   typeof window === 'undefined' ||
-  !('Deno' in window) ||
+  'Deno' in window ||
   process.env.NODE_ENV === 'test' ||
   !!process.env.JEST_WORKER_ID;
 
