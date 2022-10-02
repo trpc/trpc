@@ -286,7 +286,7 @@ importers:
       eslint-plugin-react-hooks: ^4.2.0
       next: ^12.3.1
       npm-run-all: ^4.1.5
-      playwright: ^1.19.1
+      playwright: ^1.19.2
       prettier: ^2.7.1
       prisma: ^4.3.1
       react: ^18.2.0
@@ -325,7 +325,7 @@ importers:
       eslint-plugin-react: 7.31.8_eslint@7.32.0
       eslint-plugin-react-hooks: 4.6.0_eslint@7.32.0
       npm-run-all: 4.1.5
-      playwright: 1.26.0
+      playwright: 1.26.1
       prettier: 2.7.1
       prisma: 4.3.1
       start-server-and-test: 1.14.0
@@ -364,7 +364,7 @@ importers:
       node-fetch: ^2.6.1
       nodemon: ^2.0.12
       npm-run-all: ^4.1.5
-      playwright: ^1.19.1
+      playwright: ^1.19.2
       postcss: ^8.4.14
       prettier: ^2.7.1
       prisma: ^4.3.1
@@ -413,7 +413,7 @@ importers:
       eslint-plugin-react-hooks: 4.6.0_eslint@7.32.0
       nodemon: 2.0.20
       npm-run-all: 4.1.5
-      playwright: 1.26.0
+      playwright: 1.26.1
       postcss: 8.4.16
       prettier: 2.7.1
       prisma: 4.3.1
@@ -436,7 +436,7 @@ importers:
       clsx: ^1.1.1
       next: ^12.3.1
       npm-run-all: ^4.1.5
-      playwright: ^1.19.1
+      playwright: ^1.19.2
       prisma: ^4.3.1
       react: ^18.2.0
       react-dom: ^18.2.0
@@ -468,7 +468,7 @@ importers:
       '@types/node': 18.7.20
       '@types/react': 18.0.21
       npm-run-all: 4.1.5
-      playwright: 1.26.0
+      playwright: 1.26.1
       start-server-and-test: 1.14.0
       typescript: 4.8.3
 
@@ -702,7 +702,7 @@ importers:
     specifiers:
       '@playwright/test': ^1.19.2
       npm-run-all: ^4.1.5
-      playwright: ^1.19.1
+      playwright: ^1.19.2
       start-server-and-test: ^1.12.0
       wait-port: ^0.3.0
     devDependencies:
@@ -858,7 +858,7 @@ importers:
       eslint-plugin-react-hooks: ^4.2.0
       next: ^12.3.1
       npm-run-all: ^4.1.5
-      playwright: ^1.19.1
+      playwright: ^1.19.2
       prettier: ^2.7.1
       prisma: ^4.3.1
       react: ^18.2.0
@@ -896,7 +896,7 @@ importers:
       eslint-plugin-react: 7.31.8_eslint@7.32.0
       eslint-plugin-react-hooks: 4.6.0_eslint@7.32.0
       npm-run-all: 4.1.5
-      playwright: 1.26.0
+      playwright: 1.26.1
       prettier: 2.7.1
       prisma: 4.3.1
       start-server-and-test: 1.14.0
@@ -928,7 +928,7 @@ importers:
       eslint-plugin-react-hooks: ^4.2.0
       next: ^12.3.1
       npm-run-all: ^4.1.5
-      playwright: ^1.19.1
+      playwright: ^1.19.2
       prettier: ^2.7.1
       prisma: ^4.3.1
       react: ^18.2.0
@@ -967,7 +967,7 @@ importers:
       eslint-plugin-react: 7.31.8_eslint@7.32.0
       eslint-plugin-react-hooks: 4.6.0_eslint@7.32.0
       npm-run-all: 4.1.5
-      playwright: 1.26.0
+      playwright: 1.26.1
       prettier: 2.7.1
       prisma: 4.3.1
       start-server-and-test: 1.14.0
@@ -1006,7 +1006,7 @@ importers:
       node-fetch: ^2.6.1
       nodemon: ^2.0.12
       npm-run-all: ^4.1.5
-      playwright: ^1.19.1
+      playwright: ^1.19.2
       postcss: ^8.4.14
       prettier: ^2.7.1
       prisma: ^4.3.1
@@ -1055,7 +1055,7 @@ importers:
       eslint-plugin-react-hooks: 4.6.0_eslint@7.32.0
       nodemon: 2.0.20
       npm-run-all: 4.1.5
-      playwright: 1.26.0
+      playwright: 1.26.1
       postcss: 8.4.16
       prettier: 2.7.1
       prisma: 4.3.1
@@ -1078,7 +1078,7 @@ importers:
       clsx: ^1.1.1
       next: ^12.3.1
       npm-run-all: ^4.1.5
-      playwright: ^1.19.1
+      playwright: ^1.19.2
       prisma: ^4.3.1
       react: ^18.2.0
       react-dom: ^18.2.0
@@ -1110,7 +1110,7 @@ importers:
       '@types/node': 18.7.20
       '@types/react': 18.0.21
       npm-run-all: 4.1.5
-      playwright: 1.26.0
+      playwright: 1.26.1
       start-server-and-test: 1.14.0
       typescript: 4.8.3
 
@@ -16354,15 +16354,6 @@ packages:
     resolution: {integrity: sha512-hzFchhhxnEiPc4qVPs9q2ZR+5eKNifY2hQDHtg1HnTTUuphYCBP8ZRb2si+B1TR7BHirgXaPi48LIye5SgrLAA==}
     engines: {node: '>=14'}
     hasBin: true
-    dev: true
-
-  /playwright/1.26.0:
-    resolution: {integrity: sha512-XxTVlvFEYHdatxUkh1KiPq9BclNtFKMi3BgQnl/aactmhN4G9AkZUXwt0ck6NDAOrDFlfibhbM7A1kZwQJKSBw==}
-    engines: {node: '>=14'}
-    hasBin: true
-    requiresBuild: true
-    dependencies:
-      playwright-core: 1.26.0
     dev: true
 
   /playwright/1.26.1:
