@@ -29,7 +29,9 @@ import {
 /** @internal **/
 export type ProcedureRecord = Record<string, AnyProcedure>;
 
-export type ProcedureRouterRecord = Record<string, AnyProcedure | AnyRouter>;
+export interface ProcedureRouterRecord {
+  [key: string]: AnyProcedure | AnyRouter;
+}
 
 export interface ProcedureStructure {
   queries: Record<string, AnyQueryProcedure>;
@@ -188,7 +190,22 @@ const reservedWords = [
 ];
 
 /**
- *
+ * @internal
+ */
+export type CreateRouterInner<
+  TConfig extends RootConfig,
+  TProcRouterRecord extends ProcedureRouterRecord,
+> = Router<
+  RouterDef<
+    TConfig['ctx'],
+    TConfig['errorShape'],
+    TConfig['meta'],
+    TProcRouterRecord
+  >
+> &
+  TProcRouterRecord;
+
+/**
  * @internal
  */
 export function createRouterFactory<TConfig extends RootConfig>(
@@ -196,17 +213,7 @@ export function createRouterFactory<TConfig extends RootConfig>(
 ) {
   return function createRouterInner<
     TProcRouterRecord extends ProcedureRouterRecord,
-  >(
-    opts: TProcRouterRecord,
-  ): Router<
-    RouterDef<
-      TConfig['ctx'],
-      TConfig['errorShape'],
-      TConfig['meta'],
-      TProcRouterRecord
-    >
-  > &
-    TProcRouterRecord {
+  >(opts: TProcRouterRecord): CreateRouterInner<TConfig, TProcRouterRecord> {
     const reservedWordsUsed = new Set(
       Object.keys(opts).filter((v) => reservedWords.includes(v)),
     );
