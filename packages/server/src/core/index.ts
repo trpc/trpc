@@ -2,6 +2,7 @@ export type {
   AnyRouter,
   ProcedureRecord,
   ProcedureRouterRecord,
+  CreateRouterInner,
 } from './router';
 export { callProcedure } from './router';
 export type {
@@ -14,6 +15,7 @@ export type {
   ProcedureArgs,
   ProcedureOptions,
 } from './procedure';
+export type { BuildProcedure } from './internals/procedureBuilder';
 export { createInputMiddleware, createOutputMiddleware } from './middleware';
 
 export { initTRPC } from './initTRPC';
