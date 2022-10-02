@@ -1,5 +1,4 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { assertNotBrowser } from '../assertNotBrowser';
 import { TRPCError } from '../error/TRPCError';
 import { defaultFormatter } from '../error/formatter';
 import { getHTTPStatusCodeFromError } from '../http/internals/getHTTPStatusCode';
@@ -28,8 +27,6 @@ import {
   inferProcedureFromOptions,
 } from './internals/procedure';
 import { MigrateRouter, migrateRouter } from './interop';
-
-assertNotBrowser();
 
 export type { Procedure } from './internals/procedure';
 
