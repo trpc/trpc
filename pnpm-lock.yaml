@@ -287,7 +287,6 @@ importers:
       eslint-plugin-react-hooks: ^4.2.0
       next: ^12.3.1
       npm-run-all: ^4.1.5
-      playwright: ^1.26.1
       prettier: ^2.7.1
       prisma: ^4.3.1
       react: ^18.2.0
@@ -326,7 +325,6 @@ importers:
       eslint-plugin-react: 7.31.8_eslint@7.32.0
       eslint-plugin-react-hooks: 4.6.0_eslint@7.32.0
       npm-run-all: 4.1.5
-      playwright: 1.26.1
       prettier: 2.7.1
       prisma: 4.3.1
       start-server-and-test: 1.14.0
@@ -365,7 +363,6 @@ importers:
       node-fetch: ^2.6.1
       nodemon: ^2.0.12
       npm-run-all: ^4.1.5
-      playwright: ^1.26.1
       postcss: ^8.4.14
       prettier: ^2.7.1
       prisma: ^4.3.1
@@ -414,7 +411,6 @@ importers:
       eslint-plugin-react-hooks: 4.6.0_eslint@7.32.0
       nodemon: 2.0.20
       npm-run-all: 4.1.5
-      playwright: 1.26.1
       postcss: 8.4.16
       prettier: 2.7.1
       prisma: 4.3.1
@@ -437,7 +433,6 @@ importers:
       clsx: ^1.1.1
       next: ^12.3.1
       npm-run-all: ^4.1.5
-      playwright: ^1.26.1
       prisma: ^4.3.1
       react: ^18.2.0
       react-dom: ^18.2.0
@@ -469,7 +464,6 @@ importers:
       '@types/node': 18.7.20
       '@types/react': 18.0.21
       npm-run-all: 4.1.5
-      playwright: 1.26.1
       start-server-and-test: 1.14.0
       typescript: 4.8.3
 
@@ -859,7 +853,6 @@ importers:
       eslint-plugin-react-hooks: ^4.2.0
       next: ^12.3.1
       npm-run-all: ^4.1.5
-      playwright: ^1.26.1
       prettier: ^2.7.1
       prisma: ^4.3.1
       react: ^18.2.0
@@ -897,7 +890,6 @@ importers:
       eslint-plugin-react: 7.31.8_eslint@7.32.0
       eslint-plugin-react-hooks: 4.6.0_eslint@7.32.0
       npm-run-all: 4.1.5
-      playwright: 1.26.1
       prettier: 2.7.1
       prisma: 4.3.1
       start-server-and-test: 1.14.0
@@ -929,7 +921,6 @@ importers:
       eslint-plugin-react-hooks: ^4.2.0
       next: ^12.3.1
       npm-run-all: ^4.1.5
-      playwright: ^1.26.1
       prettier: ^2.7.1
       prisma: ^4.3.1
       react: ^18.2.0
@@ -968,7 +959,6 @@ importers:
       eslint-plugin-react: 7.31.8_eslint@7.32.0
       eslint-plugin-react-hooks: 4.6.0_eslint@7.32.0
       npm-run-all: 4.1.5
-      playwright: 1.26.1
       prettier: 2.7.1
       prisma: 4.3.1
       start-server-and-test: 1.14.0
@@ -1007,7 +997,6 @@ importers:
       node-fetch: ^2.6.1
       nodemon: ^2.0.12
       npm-run-all: ^4.1.5
-      playwright: ^1.26.1
       postcss: ^8.4.14
       prettier: ^2.7.1
       prisma: ^4.3.1
@@ -1056,7 +1045,6 @@ importers:
       eslint-plugin-react-hooks: 4.6.0_eslint@7.32.0
       nodemon: 2.0.20
       npm-run-all: 4.1.5
-      playwright: 1.26.1
       postcss: 8.4.16
       prettier: 2.7.1
       prisma: 4.3.1
@@ -1079,7 +1067,6 @@ importers:
       clsx: ^1.1.1
       next: ^12.3.1
       npm-run-all: ^4.1.5
-      playwright: ^1.26.1
       prisma: ^4.3.1
       react: ^18.2.0
       react-dom: ^18.2.0
@@ -1111,7 +1098,6 @@ importers:
       '@types/node': 18.7.20
       '@types/react': 18.0.21
       npm-run-all: 4.1.5
-      playwright: 1.26.1
       start-server-and-test: 1.14.0
       typescript: 4.8.3
 
