@@ -1,0 +1,72 @@
+name: nx test run
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+env:
+  NX_CLOUD_DISTRIBUTED_EXECUTION: true
+
+jobs:
+  main:
+    runs-on: ubuntu-latest
+    if: ${{ github.event_name != 'pull_request' }}
+    steps:
+      - uses: actions/checkout@v2
+        name: Checkout [main]
+        with:
+          fetch-depth: 0
+      - uses: pnpm/action-setup@v2.2.2
+        with:
+          version: 7
+      - name: Derive appropriate SHAs for base and head for `nx affected` commands
+        uses: nrwl/nx-set-shas@v2
+      - uses: actions/setup-node@v1
+        with:
+          node-version: '16'
+          cache: 'pnpm'
+      - run: pnpm install
+      - run: pnpm nx-cloud start-ci-run
+      - run: pnpm nx affected --target=build --parallel --max-parallel=5
+      - run: pnpm nx-cloud stop-all-agents
+  pr:
+    runs-on: ubuntu-latest
+    if: ${{ github.event_name == 'pull_request' }}
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+          fetch-depth: 0
+      - uses: pnpm/action-setup@v2.2.2
+        with:
+          version: 7
+      - name: Derive appropriate SHAs for base and head for `nx affected` commands
+        uses: nrwl/nx-set-shas@v2
+      - uses: actions/setup-node@v1
+        with:
+          node-version: '16'
+          cache: 'pnpm'
+      - run: pnpm install
+      - run: pnpm nx-cloud start-ci-run
+      - run: pnpm nx affected --target=build --parallel --max-parallel=5
+      - run: pnpm nx-cloud stop-all-agents
+  agents:
+    runs-on: ubuntu-latest
+    name: Agent 1
+    timeout-minutes: 60
+    strategy:
+      matrix:
+        agent: [1, 2, 3, 4, 5]
+    steps:
+      - uses: actions/checkout@v2
+      - uses: pnpm/action-setup@v2.2.2
+        with:
+          version: 7
+      - uses: actions/setup-node@v1
+        with:
+          node-version: '16'
+          cache: 'pnpm'
+      - run: pnpm install
+      - name: Start Nx Agent ${{ matrix.agent }}
+        run: pnpm nx-cloud start-agent
