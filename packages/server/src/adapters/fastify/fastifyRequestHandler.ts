@@ -1,5 +1,4 @@
 import { FastifyReply, FastifyRequest } from 'fastify';
-import { assertNotBrowser } from '../../assertNotBrowser';
 import { AnyRouter, inferRouterContext } from '../../core';
 import {
   HTTPBaseHandlerOptions,
@@ -7,8 +6,6 @@ import {
 } from '../../http/internals/types';
 import { resolveHTTPResponse } from '../../http/resolveHTTPResponse';
 import { NodeHTTPCreateContextOption } from '../node-http';
-
-assertNotBrowser();
 
 export type FastifyHandlerOptions<
   TRouter extends AnyRouter,

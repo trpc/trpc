@@ -8,7 +8,6 @@ import {
 import {
   AnyRouter,
   ClientDataTransformerOptions,
-  assertNotBrowser,
   callProcedure,
   inferHandlerInput,
   inferProcedureOutput,
@@ -16,8 +15,6 @@ import {
 } from '@trpc/server';
 
 type QueryClientConfig = ConstructorParameters<typeof QueryClient>[0];
-
-assertNotBrowser();
 
 export interface CreateSSGHelpersOptions<TRouter extends AnyRouter> {
   router: TRouter;
