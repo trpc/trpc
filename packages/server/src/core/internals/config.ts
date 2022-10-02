@@ -36,6 +36,7 @@ export interface InitOptions<TType extends InitGenerics> {
   allowOutsideOfServer: boolean;
   /**
    * Is this a server environment?
+   * @default typeof window !== 'undefined'
    */
   isServer: boolean;
 }
