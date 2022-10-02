@@ -77,10 +77,12 @@ jobs:
       - run: node -v
 
       - name: Swap Prisma to use SQLite
-        run: node ./.github/actions/sqlite-swapper/index.mjs
+        run: |
+          node ./.github/actions/sqlite-swapper/index.mjs &&
+          rm -rf ./examples/${{ matrix.dir }}/prisma/migrations &&
+          pnpm --filter ./examples/${{ matrix.dir }} --if-present migrate-dev
         env:
           DIR: 'examples/${{ matrix.dir }}'
-      - run: rm -rf ./examples/${{ matrix.dir }}/prisma/migrations
 
       - name: build
         run: pnpm --filter ./examples/${{ matrix.dir }} build
