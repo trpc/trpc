@@ -93,7 +93,7 @@ type DecoratedProcedureRecord<TProcedures extends ProcedureRouterRecord> = {
  * @internal
  */
 type RouterCaller<TDef extends AnyRouterDef> = (
-  ctx: TDef['_config']['_def']['ctx'],
+  ctx: TDef['_config']['$types']['ctx'],
 ) => {
   /**
    * @deprecated
@@ -118,8 +118,8 @@ export interface Router<TDef extends AnyRouterDef> {
     type: ProcedureType | 'unknown';
     path: string | undefined;
     input: unknown;
-    ctx: undefined | TDef['_config']['_def']['ctx'];
-  }): TDef['_config']['_def']['errorShape'];
+    ctx: undefined | TDef['_config']['$types']['ctx'];
+  }): TDef['_config']['$types']['errorShape'];
 }
 
 /**

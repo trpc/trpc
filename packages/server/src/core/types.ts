@@ -11,11 +11,11 @@ export type inferRouterDef<TRouter extends AnyRouter> = TRouter extends Router<
   : never;
 
 export type inferRouterContext<TRouter extends AnyRouter> =
-  inferRouterDef<TRouter>['_config']['_def']['ctx'];
+  inferRouterDef<TRouter>['_config']['$types']['ctx'];
 export type inferRouterError<TRouter extends AnyRouter> =
-  inferRouterDef<TRouter>['_config']['_def']['errorShape'];
+  inferRouterDef<TRouter>['_config']['$types']['errorShape'];
 export type inferRouterMeta<TRouter extends AnyRouter> =
-  inferRouterDef<TRouter>['_config']['_def']['meta'];
+  inferRouterDef<TRouter>['_config']['$types']['meta'];
 
 export const procedureTypes = ['query', 'mutation', 'subscription'] as const;
 /**

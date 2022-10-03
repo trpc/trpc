@@ -86,13 +86,13 @@ export function createMiddlewareFactory<TConfig extends AnyRootConfig>() {
     fn: MiddlewareFunction<
       {
         _config: TConfig;
-        _ctx_in: TConfig['_def']['ctx'];
-        _ctx_out: TConfig['_def']['ctx'];
+        _ctx_in: TConfig['$types']['ctx'];
+        _ctx_out: TConfig['$types']['ctx'];
         _input_out: unknown;
         _input_in: unknown;
         _output_in: unknown;
         _output_out: unknown;
-        _meta: TConfig['_def']['meta'];
+        _meta: TConfig['$types']['meta'];
       },
       TNewParams
     >,

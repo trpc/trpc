@@ -57,7 +57,7 @@ export type CreateInitGenerics<TType extends InitGenerics> = TType;
  */
 export interface RootConfig<TGenerics extends InitGenerics>
   extends RuntimeConfig<TGenerics> {
-  _def: TGenerics;
+  $types: TGenerics;
 }
 
 /**

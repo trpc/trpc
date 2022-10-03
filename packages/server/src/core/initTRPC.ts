@@ -113,7 +113,7 @@ function createTRPCInner<TParams extends Partial<InitGenerics>>() {
        * @internal
        * TODO - wrap in proxy that shows error if it's accessed
        */
-      _def: null as any,
+      $types: null as any,
     };
 
     {

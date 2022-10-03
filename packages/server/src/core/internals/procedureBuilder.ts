@@ -202,13 +202,13 @@ export function createBuilder<TConfig extends AnyRootConfig>(
   initDef?: AnyProcedureBuilderDef,
 ): ProcedureBuilder<{
   _config: TConfig;
-  _ctx_in: TConfig['_def']['ctx'];
-  _ctx_out: TConfig['_def']['ctx'];
+  _ctx_in: TConfig['$types']['ctx'];
+  _ctx_out: TConfig['$types']['ctx'];
   _input_in: UnsetMarker;
   _input_out: UnsetMarker;
   _output_in: UnsetMarker;
   _output_out: UnsetMarker;
-  _meta: TConfig['_def']['meta'];
+  _meta: TConfig['$types']['meta'];
 }> {
   const _def: AnyProcedureBuilderDef = initDef || {
     inputs: [],
