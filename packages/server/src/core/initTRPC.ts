@@ -100,6 +100,7 @@ function createTRPCInner<TParams extends Partial<InitGenerics>>() {
     const transformer = getDataTransformer(
       runtime?.transformer ?? defaultTransformer,
     ) as $Transformer;
+
     const config: $Config = {
       transformer,
       isDev: runtime?.isDev ?? process.env.NODE_ENV !== 'production',
