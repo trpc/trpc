@@ -47,17 +47,17 @@ export interface RouterDef<
    * V9 queries
    * @deprecated
    */
-  queries: {};
+  queries: any;
   /**
    * V9 mutations
    * @deprecated
    */
-  mutations: {};
+  mutations: any;
   /**
    * V9 subscriptions
    * @deprecated
    */
-  subscriptions: {};
+  subscriptions: any;
 }
 
 export type AnyRouterDef<TConfig extends AnyRootConfig = AnyRootConfig> =

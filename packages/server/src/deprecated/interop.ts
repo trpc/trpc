@@ -106,6 +106,7 @@ export type MigrateRouter<
         ctx: TInputContext;
         errorShape: TErrorShape;
         meta: TMeta;
+
         transformer: DefaultDataTransformer;
       }>,
       TQueries,
@@ -131,14 +132,17 @@ export type MigrateRouter<
       TSubscriptions,
       'subscription'
     >;
-  } & RouterDef<
-    RootConfig<{
-      ctx: TInputContext;
-      errorShape: TErrorShape;
-      meta: TMeta;
-      transformer: DefaultDataTransformer;
-    }>,
-    {}
+  } & Omit<
+    RouterDef<
+      RootConfig<{
+        ctx: TInputContext;
+        errorShape: TErrorShape;
+        meta: TMeta;
+        transformer: DefaultDataTransformer;
+      }>,
+      {}
+    >,
+    'queries' | 'subscriptions' | 'mutations'
   >
 >;
 
