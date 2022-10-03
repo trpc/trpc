@@ -2,9 +2,12 @@ import {
   DehydrateOptions,
   DehydratedState,
   InfiniteData,
-  QueryClient,
   dehydrate,
 } from '@tanstack/react-query';
+import {
+  CreateTRPCReactQueryClientConfig,
+  getQueryClient,
+} from '@trpc/react/shared';
 import {
   AnyRouter,
   ClientDataTransformerOptions,
@@ -15,29 +18,25 @@ import {
   inferRouterContext,
 } from '@trpc/server';
 
-type QueryClientConfig = ConstructorParameters<typeof QueryClient>[0];
-
 assertNotBrowser();
-
-export interface CreateSSGHelpersOptions<TRouter extends AnyRouter> {
+export interface CreateSSGHelpersOptionsBase<TRouter extends AnyRouter> {
   router: TRouter;
   ctx: inferRouterContext<TRouter>;
   transformer?: ClientDataTransformerOptions;
-  queryClientConfig?: QueryClientConfig;
 }
+export type CreateSSGHelpersOptions<TRouter extends AnyRouter> =
+  CreateSSGHelpersOptionsBase<TRouter> & CreateTRPCReactQueryClientConfig;
 
 /**
  * Create functions you can use for server-side rendering / static generation
  * @deprecated use `createProxySSGHelpers` instead
  */
-export function createSSGHelpers<TRouter extends AnyRouter>({
-  router,
-  transformer,
-  ctx,
-  queryClientConfig,
-}: CreateSSGHelpersOptions<TRouter>) {
+export function createSSGHelpers<TRouter extends AnyRouter>(
+  opts: CreateSSGHelpersOptions<TRouter>,
+) {
+  const { router, transformer, ctx } = opts;
   type TQueries = TRouter['_def']['queries'];
-  const queryClient = new QueryClient(queryClientConfig);
+  const queryClient = getQueryClient(opts);
 
   const serialize = transformer
     ? ('input' in transformer ? transformer.input : transformer).serialize
