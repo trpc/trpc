@@ -19,6 +19,7 @@ import {
 } from '@trpc/server';
 
 assertNotBrowser();
+
 interface CreateSSGHelpersOptionsBase<TRouter extends AnyRouter> {
   router: TRouter;
   ctx: inferRouterContext<TRouter>;
