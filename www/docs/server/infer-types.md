@@ -61,9 +61,9 @@ import type { inferProcedureInput, inferProcedureOutput } from '@trpc/server';
 import type { AppRouter } from './server';
 
 // @noErrors
-type PostCreateInput = inferProcedureOutput<AppRouter['post']['create']>;
+type PostCreateInput = inferProcedureInput<AppRouter['post']['create']>;
 //   ^?
-type PostCreateOutput = inferProcedureInput<AppRouter['post']['create']>;
+type PostCreateOutput = inferProcedureOutput<AppRouter['post']['create']>;
 //   ^?
 ```
 
