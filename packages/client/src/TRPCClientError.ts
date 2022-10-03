@@ -12,7 +12,7 @@ type RouterOrProcedure = AnyRouter | AnyProcedure;
 type inferErrorShape<TRouterOrProcedure extends RouterOrProcedure> =
   TRouterOrProcedure extends AnyRouter
     ? inferRouterError<TRouterOrProcedure>
-    : TRouterOrProcedure['_def']['_config']['errorShape'];
+    : TRouterOrProcedure['_def']['_config']['_def']['errorShape'];
 
 export interface TRPCClientErrorBase<TShape extends DefaultErrorShape> {
   readonly message: string;
