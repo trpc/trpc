@@ -180,7 +180,8 @@ export function withTRPC<
 
         const config = getClientConfig({ ctx });
         const trpcClient = createTRPCClient(config);
-        const queryClient = new QueryClient(config.queryClientConfig);
+        const queryClient =
+          config.queryClient ?? new QueryClient(config.queryClientConfig);
 
         const trpcProp: TRPCPrepassProps = {
           config,
