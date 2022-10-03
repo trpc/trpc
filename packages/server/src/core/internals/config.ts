@@ -1,5 +1,4 @@
 import { ErrorFormatter } from '../../error/formatter';
-import { DataTransformerOptions } from '../../transformer';
 
 /**
  * The initial generics that are used in the init function
@@ -64,4 +63,9 @@ export interface RootConfig<TGenerics extends InitGenerics>
 /**
  * @internal
  */
-export type AnyRootConfig = RootConfig<any>;
+export type AnyRootConfig = RootConfig<{
+  ctx: any;
+  meta: any;
+  errorShape: any;
+  transformer: any;
+}>;

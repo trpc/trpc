@@ -53,7 +53,7 @@ export function mergeRouters(...routerList: AnyRouter[]): AnyRouter {
     isServer: routerList.some((r) => r._def._config.isServer),
 
     // TODO wrap
-    _def: null,
+    _def: null as any,
   })(record);
   return router;
 }

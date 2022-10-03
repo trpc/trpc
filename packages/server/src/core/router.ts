@@ -60,10 +60,8 @@ export interface RouterDef<
   subscriptions: {};
 }
 
-export type AnyRouterDef<TConfig extends AnyRootConfig = any> = RouterDef<
-  TConfig,
-  any
->;
+export type AnyRouterDef<TConfig extends AnyRootConfig = AnyRootConfig> =
+  RouterDef<TConfig, any>;
 
 /**
  * @internal
@@ -131,7 +129,7 @@ export type RouterBuildOptions<TConfig extends AnyRootConfig> = Partial<
   Pick<AnyRouterDef<TConfig>, 'procedures'>
 >;
 
-export type AnyRouter = Router<any>;
+export type AnyRouter = Router<AnyRouterDef>;
 
 function isRouter(
   procedureOrRouter: AnyProcedure | AnyRouter,
