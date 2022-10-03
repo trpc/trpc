@@ -90,3 +90,7 @@ function splitLink<TRouter extends AnyRouter = AnyRouter>(opts: {
   false: TRPCLink<TRouter> | TRPCLink<TRouter>[];
 }) => TRPCLink<TRouter>
 ```
+
+## Reference
+
+You can check out the source code for this link on [GitHub.](https://github.com/trpc/trpc/blob/next/packages/client/src/links/splitLink.ts)

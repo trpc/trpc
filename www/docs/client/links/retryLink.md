@@ -36,3 +36,7 @@ function retryLink<TRouter extends AnyRouter = AnyRouter>(opts: {
   attempts: number;
 }) => TRPCLink<TRouter>
 ```
+
+## Reference
+
+You can check out the source code for this link on [GitHub.](https://github.com/trpc/trpc/blob/next/packages/client/src/links/retryLink.ts)

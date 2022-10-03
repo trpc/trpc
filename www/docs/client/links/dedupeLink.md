@@ -24,3 +24,7 @@ const client = createTRPCProxyClient<AppRouter>({
   ],
 });
 ```
+
+## Reference
+
+You can check out the source code for this link on [GitHub.](https://github.com/trpc/trpc/blob/next/packages/client/src/links/dedupeLink.ts)
