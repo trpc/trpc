@@ -5,3 +5,4 @@ export type {
   DecoratedProcedureRecord,
 } from '../createTRPCReact';
 export * from './hooks/createHooksInternal';
+export * from './queryClient';
