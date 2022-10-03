@@ -48,12 +48,11 @@ module.exports = {
       items: [
         'client/vanilla',
         'client/aborting-procedures',
-        'client/links',
         {
           type: 'category',
           label: 'Links',
           link: { type: 'doc', id: 'client/links/overview' },
-          collapsed: true,
+          collapsed: false,
           items: [
             'client/links/http',
             'client/links/http-batch',
