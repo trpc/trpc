@@ -207,13 +207,12 @@ export function createRouterFactory<TConfig extends AnyRootConfig>(
         routerProcedures[newPath] = procedureOrRouter;
       }
     }
-
     recursiveGetPaths(procedures);
 
     const _def: AnyRouterDef<TConfig> = {
       _config: config,
       router: true,
-      procedures: procedures,
+      procedures: routerProcedures,
       ...emptyRouter,
       record: procedures,
       queries: Object.entries(procedures || {})
