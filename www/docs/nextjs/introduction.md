@@ -176,6 +176,10 @@ export const trpc = createTRPCNext<AppRouter>({
 // => { useQuery: ..., useMutation: ...}
 ```
 
+:::note
+createTRPCNext does not work with interop mode. If you are migrating from v9 using interop, keep using [the old way of initializing tRPC](../../versioned_docs/version-9.x/nextjs/introduction.md#4-create-trpc-hooks).
+:::
+
 ### 5. Configure `_app.tsx`
 
 ```tsx title='pages/_app.tsx'

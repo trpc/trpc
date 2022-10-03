@@ -1,4 +1,3 @@
-export * from './assertNotBrowser';
 export * from './http';
 export * from './transformer';
 export * from './error/TRPCError';

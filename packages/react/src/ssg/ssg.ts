@@ -11,14 +11,11 @@ import {
 import {
   AnyRouter,
   ClientDataTransformerOptions,
-  assertNotBrowser,
   callProcedure,
   inferHandlerInput,
   inferProcedureOutput,
   inferRouterContext,
 } from '@trpc/server';
-
-assertNotBrowser();
 
 interface CreateSSGHelpersOptionsBase<TRouter extends AnyRouter> {
   router: TRouter;
