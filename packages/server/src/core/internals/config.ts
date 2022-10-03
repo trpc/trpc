@@ -23,10 +23,10 @@ export const isServerDefault: boolean =
   !!process.env.JEST_WORKER_ID;
 
 /**
- * The initial params that are used and actually represents real values underneath
+ * The runtime config that are used and actually represents real values underneath
  * @internal
  */
-export interface InitOptions<TType extends InitGenerics> {
+export interface RuntimeConfig<TType extends InitGenerics> {
   transformer: DataTransformerOptions;
   errorFormatter: ErrorFormatter<TType['ctx'], any>;
   /**

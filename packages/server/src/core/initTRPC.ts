@@ -17,7 +17,7 @@ import {
   CreateInitGenerics,
   CreateRootConfig,
   InitGenerics,
-  InitOptions,
+  RuntimeConfig,
   isServerDefault,
 } from './internals/config';
 import { createBuilder } from './internals/procedureBuilder';
@@ -49,13 +49,13 @@ class TRPCBuilder<TParams extends Partial<InitGenerics> = {}> {
   }
   create<
     TOptions extends Partial<
-      InitOptions<CreateInitGenericsFromPartial<TParams>>
+      RuntimeConfig<CreateInitGenericsFromPartial<TParams>>
     >,
   >(
     options?:
       | ValidateShape<
           TOptions,
-          Partial<InitOptions<CreateInitGenericsFromPartial<TParams>>>
+          Partial<RuntimeConfig<CreateInitGenericsFromPartial<TParams>>>
         >
       | undefined,
   ) {
@@ -73,7 +73,7 @@ function createTRPCInner<TParams extends Partial<InitGenerics>>() {
 
   type $Context = $Generics['ctx'];
   type $Meta = $Generics['meta'];
-  type $Options = Partial<InitOptions<$Generics>>;
+  type $Options = Partial<RuntimeConfig<$Generics>>;
 
   return function initTRPCInner<TOptions extends $Options>(
     options?: ValidateShape<TOptions, $Options>,
