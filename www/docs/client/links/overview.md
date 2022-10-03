@@ -1,6 +1,7 @@
 ---
 id: overview
 title: Links Overview
+sidebar_label: Overview
 slug: /links/overview
 ---
 

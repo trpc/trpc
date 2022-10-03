@@ -51,9 +51,9 @@ module.exports = {
         {
           type: 'category',
           label: 'Links',
-          link: { type: 'doc', id: 'client/links/overview' },
           collapsed: false,
           items: [
+            'client/links/overview',
             'client/links/http',
             'client/links/http-batch',
             'client/links/ws',
