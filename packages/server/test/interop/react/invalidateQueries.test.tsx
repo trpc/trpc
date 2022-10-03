@@ -1,11 +1,7 @@
 /* eslint-disable @typescript-eslint/no-empty-function */
 import { createQueryClient } from '../../__queryClient';
 import { createLegacyAppRouter } from './__testHelpers';
-import {
-  QueryClient,
-  QueryClientProvider,
-  useQueryClient,
-} from '@tanstack/react-query';
+import { QueryClientProvider, useQueryClient } from '@tanstack/react-query';
 import '@testing-library/jest-dom';
 import { render, waitFor } from '@testing-library/react';
 import React, { useState } from 'react';
