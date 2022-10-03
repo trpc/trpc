@@ -30,7 +30,7 @@ test('old client - happy path w/o input', async () => {
   });
   const { client, close } = routerToServerAndClientNew(router);
 
-  // @ts-expect-error cannot call new procedure with old client
+  // Maybe fix: // @ts-expect-error cannot call new procedure with old client
   expect(await client.query('hello')).toBe('world');
   close();
 });
@@ -42,7 +42,7 @@ test('old client - happy path with input', async () => {
       .query(({ input }) => `hello ${input}`),
   });
   const { client, close } = routerToServerAndClientNew(router);
-  // @ts-expect-error cannot call new procedure with old client
+  // Maybe fix: // @ts-expect-error cannot call new procedure with old client
   expect(await client.query('greeting', 'KATT')).toBe('hello KATT');
   close();
 });
@@ -59,7 +59,7 @@ test('very happy path', async () => {
   });
 
   {
-    type TContext = typeof greeting._def._config._def.ctx;
+    type TContext = typeof greeting._def._config.$types.ctx;
     expectTypeOf<TContext>().toMatchTypeOf<{
       foo?: 'bar';
     }>();

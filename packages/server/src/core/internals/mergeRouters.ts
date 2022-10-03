@@ -51,9 +51,7 @@ export function mergeRouters(...routerList: AnyRouter[]): AnyRouter {
       (r) => r._def._config.allowOutsideOfServer,
     ),
     isServer: routerList.some((r) => r._def._config.isServer),
-
-    // TODO wrap
-    $types: null as any,
+    $types: routerList[0]?._def._config.$types as any,
   })(record);
   return router;
 }

@@ -14,7 +14,7 @@ test('default transformer', () => {
     .create();
   const router = t.router({});
 
-  expectTypeOf<typeof router._def._config._def.ctx>().toMatchTypeOf<{
+  expectTypeOf<typeof router._def._config.$types.ctx>().toMatchTypeOf<{
     foo: 'bar';
   }>();
 
@@ -58,8 +58,8 @@ test('config types', () => {
 
     t._config;
     // ^?
-    expectTypeOf<typeof t._config._def.ctx>().toEqualTypeOf<{}>();
-    expectTypeOf<typeof t._config._def.meta>().toEqualTypeOf<{}>();
+    expectTypeOf<typeof t._config.$types.ctx>().toEqualTypeOf<{}>();
+    expectTypeOf<typeof t._config.$types.meta>().toEqualTypeOf<{}>();
   }
 
   {
@@ -72,7 +72,7 @@ test('config types', () => {
     const t = initTRPC.meta<Meta>().context<Context>().create();
 
     // ^?
-    expectTypeOf<typeof t._config._def.ctx>().toEqualTypeOf<Context>();
-    expectTypeOf<typeof t._config._def.meta>().toEqualTypeOf<Meta>();
+    expectTypeOf<typeof t._config.$types.ctx>().toEqualTypeOf<Context>();
+    expectTypeOf<typeof t._config.$types.meta>().toEqualTypeOf<Meta>();
   }
 });

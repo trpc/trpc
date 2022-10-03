@@ -5,6 +5,7 @@ import {
   ErrorFormatterShape,
   defaultFormatter,
 } from '../error/formatter';
+import { createFlatProxy } from '../shared';
 import {
   CombinedDataTransformer,
   DataTransformerOptions,
@@ -111,9 +112,12 @@ function createTRPCInner<TParams extends Partial<InitGenerics>>() {
       isServer: runtime?.isServer ?? isServerDefault,
       /**
        * @internal
-       * TODO - wrap in proxy that shows error if it's accessed
        */
-      $types: null as any,
+      $types: createFlatProxy((key) => {
+        throw new Error(
+          `Tried to access "$types.${key}" which is not available at runtime`,
+        );
+      }),
     };
 
     {
