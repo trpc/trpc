@@ -215,13 +215,13 @@ export function createRouterFactory<TConfig extends AnyRootConfig>(
       procedures: routerProcedures,
       ...emptyRouter,
       record: procedures,
-      queries: Object.entries(procedures || {})
+      queries: Object.entries(routerProcedures || {})
         .filter((pair) => (pair[1] as any)._def.query)
         .reduce((acc, [key, val]) => ({ ...acc, [key]: val }), {}),
-      mutations: Object.entries(procedures || {})
+      mutations: Object.entries(routerProcedures || {})
         .filter((pair) => (pair[1] as any)._def.mutation)
         .reduce((acc, [key, val]) => ({ ...acc, [key]: val }), {}),
-      subscriptions: Object.entries(procedures || {})
+      subscriptions: Object.entries(routerProcedures || {})
         .filter((pair) => (pair[1] as any)._def.subscription)
         .reduce((acc, [key, val]) => ({ ...acc, [key]: val }), {}),
     };
