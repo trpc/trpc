@@ -82,7 +82,7 @@ Each link is composed of three parts:
 
 The **terminating link** is the last link in a link chain. Instead of calling the `next` function, the terminating link is responsible for sending your composed tRPC operation to the tRPC Server and returning an `OperationResultEnvelope`.
 
-By default, tRPC uses the `httpBatchLink` as its terminating link. This means that request batching is enabled by default when using tRPC. If you want to disable batching, check out the [`httpBatchLink` docs.](./http-batch)
+By default, tRPC uses the `httpBatchLink` as its terminating link. This means that request batching is enabled by default when using tRPC. If you want to disable batching, check out the [`httpBatchLink` docs.](./http-batch#disabling-request-batching)
 
 `httpLink` and `wsLink` are other examples of terminating links.
 

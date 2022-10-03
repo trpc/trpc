@@ -5,13 +5,13 @@ sidebar_label: HTTP Link
 slug: /links/http
 ---
 
-`httpLink` is a terminating link that sends a tRPC operation to a tRPC procedure over HTTP.
+`httpLink` is a [**terminating link**](./overview#the-terminating-link) that sends a tRPC operation to a tRPC procedure over HTTP.
 
 `httpLink` supports both POST and GET requests.
 
 ## Usage
 
-You can import and add the `httpLink` to the links array as such:
+You can import and add the `httpLink` to the `links` array as such:
 
 ```ts title="client/index.ts"
 import { createTRPCProxyClient, httpLink } from '@trpc/client';

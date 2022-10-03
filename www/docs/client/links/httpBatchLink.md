@@ -5,24 +5,11 @@ sidebar_label: HTTP Batch Link
 slug: /links/http-batch
 ---
 
-`httpBatchLink` is a terminating link that batches an array of individual tRPC operations into a single HTTP request that's sent to a single tRPC procedure. tRPC uses `httpBatchLink` by default.
-
-## Request Batching
-
-Request batching is automatically enabled which batches your requests to the server, this can make the below code produce exactly **one** HTTP request and on the server exactly **one** database query:
-
-```ts
-// below will be done in the same request when batching is enabled
-const somePosts = await Promise.all([
-  trpc.post.byId.query(1);
-  trpc.post.byId.query(2);
-  trpc.post.byId.query(3);
-])
-```
+`httpBatchLink` is a [**terminating link**](./overview#the-terminating-link) that batches an array of individual tRPC operations into a single HTTP request that's sent to a single tRPC procedure. tRPC uses `httpBatchLink` by default.
 
 ## Usage
 
-You can import and add the `httpBatchLink` to the links array as such:
+You can import and add the `httpBatchLink` to the `links` array as such:
 
 ```ts title="client/index.ts"
 import { createTRPCProxyClient, httpBatchLink } from '@trpc/client';
@@ -35,6 +22,16 @@ const client = createTRPCProxyClient<AppRouter>({
     }),
   ],
 });
+```
+
+After that, you can make use of batching by setting all your procedures in a `Promise.all`. The code below will produce exactly **one** HTTP request and on the server exactly **one** database query:
+
+```ts
+const somePosts = await Promise.all([
+  trpc.post.byId.query(1);
+  trpc.post.byId.query(2);
+  trpc.post.byId.query(3);
+])
 ```
 
 ## `httpBatchLink` Options
@@ -64,7 +61,7 @@ export interface HTTPLinkOptions {
 }
 ```
 
-### Setting a maximum URL length
+## Setting a maximum URL length
 
 When sending batch requests, sometimes the URL can become too large causing HTTP errors like [`413 Payload Too Large`](https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/413), [`414 URI Too Long`](https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/414), and [`404 Not Found`](https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/404). The `maxURLLength` option will limit the number of requests that can be sent together in a batch.
 
@@ -82,11 +79,23 @@ const client = createTRPCProxyClient<AppRouter>({
 });
 ```
 
-### Disabling request batching
+## Disabling request batching
 
-#### 1. Disable `batching` on your server:
+### 1. Disable `batching` on your server:
 
-In your `[trpc].ts`:
+```ts title="server.ts"
+import { createHTTPServer } from '@trpc/server/adapters/standalone';
+
+createHTTPServer({
+  // [...]
+  // 👇 disable batching
+  batching: {
+    enabled: false,
+  },
+});
+```
+
+or, if you're using Next.js:
 
 ```ts title='pages/api/trpc/[trpc].ts'
 export default trpcNext.createNextApiHandler({
@@ -98,7 +107,22 @@ export default trpcNext.createNextApiHandler({
 });
 ```
 
-#### 2. Use batch-free link in your tRPC Client
+### 2. Use batch-free link in your tRPC Client
+
+```ts title="client/index.ts"
+import { createTRPCProxyClient, httpLink } from '@trpc/client';
+import type { AppRouter } from '../server';
+
+const client = createTRPCProxyClient<AppRouter>({
+  links: [
+    httpLink({
+      url: 'http://localhost:3000',
+    }),
+  ],
+});
+```
+
+or, if you're using Next.js:
 
 ```tsx title='utils/trpc.ts'
 import type { AppRouter } from '@/server/routers/app';
