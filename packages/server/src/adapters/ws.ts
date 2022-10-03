@@ -115,7 +115,7 @@ export function applyWSSHandler<TRouter extends AnyRouter>(
 ) {
   const { wss, createContext, router } = opts;
 
-  const { transformer } = router._def;
+  const { transformer } = router._def._config;
   wss.on('connection', async (client, req) => {
     const clientSubscriptions = new Map<number | string, Unsubscribable>();
 
