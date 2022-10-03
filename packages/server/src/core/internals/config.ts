@@ -38,6 +38,12 @@ export interface InitOptions<TType extends InitGenerics> {
    * Is this a server environment?
    */
   isServer: boolean;
+  /**
+   * Is this development?
+   * Will be used to decide if API should return stack traces
+   * @default process.env.NODE_ENV !== 'production'
+   */
+  isDev: boolean;
 }
 
 /**
@@ -54,6 +60,7 @@ export interface RootConfig extends InitGenerics {
   transformer: CombinedDataTransformer;
   // FIXME this should probably be restricted
   errorShape: any;
+  isDev: boolean;
 }
 
 /**

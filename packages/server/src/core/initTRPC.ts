@@ -94,6 +94,7 @@ function createTRPCInner<TParams extends Partial<InitGenerics>>() {
       meta: $Meta;
       errorShape: $ErrorShape;
       transformer: $Transformer;
+      isDev: boolean;
     }>;
 
     {
@@ -116,6 +117,7 @@ function createTRPCInner<TParams extends Partial<InitGenerics>>() {
       errorShape: null as any,
       ctx: null as any,
       meta: null as any,
+      isDev: options?.isDev ?? process.env.NODE_ENV !== 'production',
     };
     return {
       /**
@@ -137,6 +139,7 @@ function createTRPCInner<TParams extends Partial<InitGenerics>>() {
       router: createRouterFactory<$Config>({
         errorFormatter,
         transformer,
+        isDev: _config.isDev,
       }),
       /**
        * Merge Routers

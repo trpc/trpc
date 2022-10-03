@@ -79,6 +79,7 @@ export interface RouterDef<
    * @deprecated
    */
   subscriptions: {};
+  isDev: boolean;
 }
 
 export type AnyRouterDef<TContext = any> = RouterDef<TContext, any, any, any>;
@@ -150,7 +151,9 @@ export interface Router<TDef extends AnyRouterDef> {
 export type RouterDefaultOptions<TContext> = Pick<
   AnyRouterDef<TContext>,
   'transformer' | 'errorFormatter'
->;
+> & {
+  isDev: boolean;
+};
 
 /**
  * @internal
@@ -209,8 +212,12 @@ export type CreateRouterInner<
  * @internal
  */
 export function createRouterFactory<TConfig extends RootConfig>(
-  defaults?: RouterDefaultOptions<TConfig['ctx']>,
+  defaults: RouterDefaultOptions<TConfig['ctx']>,
 ) {
+  const transformer = defaults?.transformer ?? defaultTransformer;
+  const errorFormatter = defaults?.errorFormatter ?? defaultFormatter;
+  const isDev = defaults.isDev;
+
   return function createRouterInner<
     TProcRouterRecord extends ProcedureRouterRecord,
   >(opts: TProcRouterRecord): CreateRouterInner<TConfig, TProcRouterRecord> {
@@ -244,8 +251,9 @@ export function createRouterFactory<TConfig extends RootConfig>(
       RouterDefaultOptions<TConfig['ctx']> & RouterBuildOptions<TConfig['ctx']>
     >(
       {
-        transformer: defaults?.transformer ?? defaultTransformer,
-        errorFormatter: defaults?.errorFormatter ?? defaultFormatter,
+        transformer,
+        errorFormatter,
+        isDev,
       },
       { procedures: routerProcedures },
     );
@@ -319,10 +327,7 @@ export function createRouterFactory<TConfig extends RootConfig>(
             httpStatus: getHTTPStatusCodeFromError(error),
           },
         };
-        if (
-          process.env.NODE_ENV !== 'production' &&
-          typeof opts.error.stack === 'string'
-        ) {
+        if (isDev && typeof opts.error.stack === 'string') {
           shape.data.stack = opts.error.stack;
         }
         if (typeof path === 'string') {

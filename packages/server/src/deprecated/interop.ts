@@ -107,6 +107,7 @@ export type MigrateRouter<
         errorShape: TErrorShape;
         meta: TMeta;
         transformer: CombinedDataTransformer;
+        isDev: boolean;
       }>,
       TQueries,
       'query'
@@ -117,6 +118,7 @@ export type MigrateRouter<
         errorShape: TErrorShape;
         meta: TMeta;
         transformer: CombinedDataTransformer;
+        isDev: boolean;
       }>,
       TMutations,
       'mutation'
@@ -127,6 +129,7 @@ export type MigrateRouter<
         errorShape: TErrorShape;
         meta: TMeta;
         transformer: CombinedDataTransformer;
+        isDev: boolean;
       }>,
       TSubscriptions,
       'subscription'
@@ -212,6 +215,7 @@ export function migrateRouter<TOldRouter extends AnyOldRouter>(
   const newRouter = createRouterFactory<any>({
     transformer,
     errorFormatter,
+    isDev: process.env.NODE_ENV !== 'production',
   })(procedures);
 
   return newRouter as any;

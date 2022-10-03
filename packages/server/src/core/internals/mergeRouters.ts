@@ -40,6 +40,7 @@ export function mergeRouters(...routerList: AnyRouter[]): AnyRouter {
   const router = createRouterFactory({
     errorFormatter,
     transformer,
+    isDev: routerList.some((r) => r._def.isDev),
   })(record);
   return router;
 }

@@ -31,6 +31,7 @@ const TEMPLATE = `
   subscriptions: __subscriptions__;
   procedures: __procedures__;
   record: __records__;
+  isDev: boolean;
  }> & __records__;
  `.trim();
 
