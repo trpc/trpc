@@ -6,7 +6,7 @@ import {
 } from '../error/formatter';
 import { getHTTPStatusCodeFromError } from '../http/internals/getHTTPStatusCode';
 import { TRPCErrorShape, TRPC_ERROR_CODES_BY_KEY } from '../rpc';
-import { createProxy } from '../shared';
+import { createRecursiveProxy } from '../shared';
 import { CombinedDataTransformer, defaultTransformer } from '../transformer';
 import { RootConfig } from './internals/config';
 import { mergeWithoutOverrides } from './internals/mergeWithoutOverrides';
@@ -29,7 +29,9 @@ import {
 /** @internal **/
 export type ProcedureRecord = Record<string, AnyProcedure>;
 
-export type ProcedureRouterRecord = Record<string, AnyProcedure | AnyRouter>;
+export interface ProcedureRouterRecord {
+  [key: string]: AnyProcedure | AnyRouter;
+}
 
 export interface ProcedureStructure {
   queries: Record<string, AnyQueryProcedure>;
@@ -188,7 +190,22 @@ const reservedWords = [
 ];
 
 /**
- *
+ * @internal
+ */
+export type CreateRouterInner<
+  TConfig extends RootConfig,
+  TProcRouterRecord extends ProcedureRouterRecord,
+> = Router<
+  RouterDef<
+    TConfig['ctx'],
+    TConfig['errorShape'],
+    TConfig['meta'],
+    TProcRouterRecord
+  >
+> &
+  TProcRouterRecord;
+
+/**
  * @internal
  */
 export function createRouterFactory<TConfig extends RootConfig>(
@@ -196,17 +213,7 @@ export function createRouterFactory<TConfig extends RootConfig>(
 ) {
   return function createRouterInner<
     TProcRouterRecord extends ProcedureRouterRecord,
-  >(
-    opts: TProcRouterRecord,
-  ): Router<
-    RouterDef<
-      TConfig['ctx'],
-      TConfig['errorShape'],
-      TConfig['meta'],
-      TProcRouterRecord
-    >
-  > &
-    TProcRouterRecord {
+  >(opts: TProcRouterRecord): CreateRouterInner<TConfig, TProcRouterRecord> {
     const reservedWordsUsed = new Set(
       Object.keys(opts).filter((v) => reservedWords.includes(v)),
     );
@@ -266,7 +273,7 @@ export function createRouterFactory<TConfig extends RootConfig>(
       transformer: _def.transformer,
       errorFormatter: _def.errorFormatter,
       createCaller(ctx) {
-        const proxy = createProxy(({ path, args }) => {
+        const proxy = createRecursiveProxy(({ path, args }) => {
           // interop mode
           if (
             path.length === 1 &&

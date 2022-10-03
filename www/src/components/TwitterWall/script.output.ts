@@ -22,7 +22,7 @@ export const tweets = [
     "name": "Theo - ping.gg",
     "handle": "t3dotgg",
     "date": "Sep 19",
-    "avatar": "https://pbs.twimg.com/profile_images/1570205891001192448/wtV7Iek2_normal.jpg",
+    "avatar": "https://pbs.twimg.com/profile_images/1576014123824840704/-yDbdXwt_normal.jpg",
     "content": "The amount that tRPC has improved the quality of our code, the speed of our delivery, and the happiness of our devs… "
   },
   {
@@ -118,7 +118,7 @@ export const tweets = [
     "name": "Theo - ping.gg",
     "handle": "t3dotgg",
     "date": "Sep 19",
-    "avatar": "https://pbs.twimg.com/profile_images/1570205891001192448/wtV7Iek2_normal.jpg",
+    "avatar": "https://pbs.twimg.com/profile_images/1576014123824840704/-yDbdXwt_normal.jpg",
     "content": "@Swizec @iambenwis Thankfully lots of other articles that showcase the magic of tRPC - I'll let @ajcwebdev share mo… "
   },
   {

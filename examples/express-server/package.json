@@ -1,6 +1,6 @@
 {
   "name": "@examples/express-server",
-  "version": "10.0.0-proxy-beta.10",
+  "version": "10.0.0-proxy-beta.13",
   "private": true,
   "scripts": {
     "dev:server": "nodemon -e ts -w . -x tsx ./src/server",
@@ -13,9 +13,9 @@
     "test-start": "start-server-and-test 'node dist/server' 2021 'node dist/client'"
   },
   "dependencies": {
-    "@trpc/client": "^10.0.0-proxy-beta.10",
-    "@trpc/react": "^10.0.0-proxy-beta.10",
-    "@trpc/server": "^10.0.0-proxy-beta.10",
+    "@trpc/client": "^10.0.0-proxy-beta.13",
+    "@trpc/react": "^10.0.0-proxy-beta.13",
+    "@trpc/server": "^10.0.0-proxy-beta.13",
     "@types/node-fetch": "^2.5.11",
     "abort-controller": "^3.0.0",
     "express": "^4.17.1",

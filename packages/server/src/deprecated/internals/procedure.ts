@@ -1,5 +1,4 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { assertNotBrowser } from '../../assertNotBrowser';
 import { TRPCError } from '../../error/TRPCError';
 import {
   getCauseFromUnknown,
@@ -12,8 +11,6 @@ import {
   MiddlewareResult,
   middlewareMarker,
 } from './middlewares';
-
-assertNotBrowser();
 
 export type ProcedureParserZodEsque<TInput, TOutput> = {
   _input: TInput;
