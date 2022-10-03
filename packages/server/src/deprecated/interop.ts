@@ -1,4 +1,4 @@
-import { ProcedureParams, ProcedureType } from '..';
+import { DefaultDataTransformer, ProcedureParams, ProcedureType } from '..';
 import { AnyRootConfig, RootConfig } from '../core/internals/config';
 import { getParseFnOrPassThrough } from '../core/internals/getParseFn';
 import { mergeWithoutOverrides } from '../core/internals/mergeWithoutOverrides';
@@ -106,6 +106,7 @@ export type MigrateRouter<
         ctx: TInputContext;
         errorShape: TErrorShape;
         meta: TMeta;
+        transformer: DefaultDataTransformer;
       }>,
       TQueries,
       'query'
@@ -115,6 +116,7 @@ export type MigrateRouter<
         ctx: TInputContext;
         errorShape: TErrorShape;
         meta: TMeta;
+        transformer: DefaultDataTransformer;
       }>,
       TMutations,
       'mutation'
@@ -124,6 +126,7 @@ export type MigrateRouter<
         ctx: TInputContext;
         errorShape: TErrorShape;
         meta: TMeta;
+        transformer: DefaultDataTransformer;
       }>,
       TSubscriptions,
       'subscription'
@@ -133,6 +136,7 @@ export type MigrateRouter<
       ctx: TInputContext;
       errorShape: TErrorShape;
       meta: TMeta;
+      transformer: DefaultDataTransformer;
     }>,
     {}
   >

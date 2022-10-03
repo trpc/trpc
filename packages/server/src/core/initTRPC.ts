@@ -32,6 +32,7 @@ type CreateInitGenericsFromPartial<TType extends PartialInitGenerics> =
     ctx: TType['ctx'] extends InitGenerics['ctx'] ? TType['ctx'] : {};
     meta: TType['meta'] extends InitGenerics['meta'] ? TType['meta'] : {};
     errorShape: TType['errorShape'];
+    transformer: DataTransformerOptions;
   }>;
 
 /**
@@ -94,6 +95,7 @@ function createTRPCInner<TParams extends Partial<InitGenerics>>() {
       ctx: $Context;
       meta: $Meta;
       errorShape: $ErrorShape;
+      transformer: $Transformer;
     }>;
 
     const errorFormatter = runtime?.errorFormatter ?? defaultFormatter;

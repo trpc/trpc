@@ -10,6 +10,7 @@ export interface InitGenerics {
   meta: Record<string, unknown>;
   // FIXME this should be typed
   errorShape: any;
+  transformer: any;
 }
 
 /**
@@ -26,7 +27,7 @@ export const isServerDefault: boolean =
  * @internal
  */
 export interface RuntimeConfig<TType extends InitGenerics> {
-  transformer: DataTransformerOptions;
+  transformer: TType['transformer'];
   errorFormatter: ErrorFormatter<TType['ctx'], any>;
   /**
    * Allow `@trpc/server` to run in non-server environments
