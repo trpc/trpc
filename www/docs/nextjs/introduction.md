@@ -63,9 +63,11 @@ pnpm add @trpc/server@next @trpc/client@next @trpc/react@next @trpc/next@next @t
 ```
 
 #### Why @tanstack/react-query?
+
 `@trpc/react` provides a thin wrapper over [@tanstack/react-query](https://tanstack.com/query/v4/docs/adapters/react-query). It is required as a peer dependency.
 
 #### Why Zod?
+
 Most examples use [Zod](https://github.com/colinhacks/zod) for input validation and we highly recommended it, though it isn't required. You can use a validation library of your choice ([Yup](https://github.com/jquense/yup), [Superstruct](https://github.com/ianstormtaylor/superstruct), [io-ts](https://github.com/gcanti/io-ts), etc). In fact, any object containing a `parse`, `create` or `validateSync` method will work.
 
 ### 2. Enable strict mode
@@ -137,13 +139,16 @@ import { createTRPCNext } from '@trpc/next';
 import type { AppRouter } from '../pages/api/trpc/[trpc]';
 
 function getBaseUrl() {
-  if (typeof window !== 'undefined') // browser should use relative path
+  if (typeof window !== 'undefined')
+    // browser should use relative path
     return '';
 
-  if (process.env.VERCEL_URL) // reference for vercel.com
+  if (process.env.VERCEL_URL)
+    // reference for vercel.com
     return `https://${process.env.VERCEL_URL}`;
 
-  if (process.env.RENDER_INTERNAL_HOSTNAME) // reference for render.com
+  if (process.env.RENDER_INTERNAL_HOSTNAME)
+    // reference for render.com
     return `http://${process.env.RENDER_INTERNAL_HOSTNAME}:${process.env.PORT}`;
 
   // assume localhost
@@ -218,7 +223,7 @@ export default function IndexPage() {
 The `config`-argument is a function that returns an object that configures the tRPC and React Query clients. This function has a `ctx` input that gives you access to the Next.js `req` object, among other things. The returned value can contain the following properties:
 
 - **Required**:
-  - `links` to customize the flow of data between tRPC Client and the tRPC-server. [Read more](../client/links.md).
+  - `links` to customize the flow of data between tRPC Client and the tRPC-server. [Read more](../client/links/overview.md).
 - Optional:
   - `queryClientConfig`: a configuration object for the React Query `QueryClient` used internally by the tRPC React hooks: [QueryClient docs](https://tanstack.com/query/v4/docs/reference/QueryClient)
   - `transformer`: a transformer applied to outgoing payloads. Read more about [Data Transformers](data-transformers)
