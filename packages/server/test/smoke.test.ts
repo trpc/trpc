@@ -59,7 +59,7 @@ test('very happy path', async () => {
   });
 
   {
-    type TContext = typeof greeting._def._config.ctx;
+    type TContext = typeof greeting._def._config._def.ctx;
     expectTypeOf<TContext>().toMatchTypeOf<{
       foo?: 'bar';
     }>();
@@ -67,8 +67,8 @@ test('very happy path', async () => {
   {
     type TParams = inferProcedureParams<typeof router['greeting']>;
     type TConfig = TParams['_config'];
-    type TContext = TConfig['ctx'];
-    type TError = TConfig['errorShape'];
+    type TContext = TConfig['_def']['ctx'];
+    type TError = TConfig['_def']['errorShape'];
     expectTypeOf<NonNullable<TContext['foo']>>().toMatchTypeOf<'bar'>();
     expectTypeOf<TError['data']['foo']>().toMatchTypeOf<'bar'>();
   }

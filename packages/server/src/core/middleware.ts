@@ -1,6 +1,6 @@
 import { TRPCError } from '../error/TRPCError';
 import { getCauseFromUnknown } from '../error/utils';
-import { RootConfig } from './internals/config';
+import { AnyRootConfig } from './internals/config';
 import { ParseFn } from './internals/getParseFn';
 import { ProcedureBuilderMiddleware } from './internals/procedureBuilder';
 import { MiddlewareMarker } from './internals/utils';
@@ -81,18 +81,18 @@ export type MiddlewareFunction<
  * @internal
  */
 // FIXME this should use RootConfig
-export function createMiddlewareFactory<TConfig extends RootConfig>() {
+export function createMiddlewareFactory<TConfig extends AnyRootConfig>() {
   return function createMiddleware<TNewParams extends ProcedureParams>(
     fn: MiddlewareFunction<
       {
         _config: TConfig;
-        _ctx_in: TConfig['ctx'];
-        _ctx_out: TConfig['ctx'];
+        _ctx_in: TConfig['_def']['ctx'];
+        _ctx_out: TConfig['_def']['ctx'];
         _input_out: unknown;
         _input_in: unknown;
         _output_in: unknown;
         _output_out: unknown;
-        _meta: TConfig['meta'];
+        _meta: TConfig['_def']['meta'];
       },
       TNewParams
     >,

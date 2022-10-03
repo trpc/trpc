@@ -1,5 +1,5 @@
-import { CombinedDataTransformer, ProcedureParams, ProcedureType } from '..';
-import { CreateRootConfig, RootConfig } from '../core/internals/config';
+import { ProcedureParams, ProcedureType } from '..';
+import { AnyRootConfig, RootConfig } from '../core/internals/config';
 import { getParseFnOrPassThrough } from '../core/internals/getParseFn';
 import { mergeWithoutOverrides } from '../core/internals/mergeWithoutOverrides';
 import { createBuilder } from '../core/internals/procedureBuilder';
@@ -25,7 +25,7 @@ import { ProcedureRecord } from './router';
 type AnyOldProcedure = OldProcedure<any, any, any, any, any, any, any, any>;
 
 type convertProcedureParams<
-  TConfig extends RootConfig,
+  TConfig extends AnyRootConfig,
   TProcedure extends AnyOldProcedure,
 > = TProcedure extends OldProcedure<
   infer TInputContext,
@@ -50,13 +50,13 @@ type convertProcedureParams<
   : never;
 
 type MigrateProcedure<
-  TConfig extends RootConfig,
+  TConfig extends AnyRootConfig,
   TProcedure extends AnyOldProcedure,
   TType extends ProcedureType,
 > = Procedure<TType, convertProcedureParams<TConfig, TProcedure>>;
 
 export type MigrateProcedureRecord<
-  TConfig extends RootConfig,
+  TConfig extends AnyRootConfig,
   TProcedureRecord extends ProcedureRecord<any>,
   TType extends ProcedureType,
 > = {
@@ -102,39 +102,40 @@ export type MigrateRouter<
 > = NewRouter<
   {
     queries: MigrateProcedureRecord<
-      CreateRootConfig<{
+      RootConfig<{
         ctx: TInputContext;
         errorShape: TErrorShape;
         meta: TMeta;
-        transformer: CombinedDataTransformer;
-        isDev: boolean;
       }>,
       TQueries,
       'query'
     >;
     mutations: MigrateProcedureRecord<
-      CreateRootConfig<{
+      RootConfig<{
         ctx: TInputContext;
         errorShape: TErrorShape;
         meta: TMeta;
-        transformer: CombinedDataTransformer;
-        isDev: boolean;
       }>,
       TMutations,
       'mutation'
     >;
     subscriptions: MigrateProcedureRecord<
-      CreateRootConfig<{
+      RootConfig<{
         ctx: TInputContext;
         errorShape: TErrorShape;
         meta: TMeta;
-        transformer: CombinedDataTransformer;
-        isDev: boolean;
       }>,
       TSubscriptions,
       'subscription'
     >;
-  } & RouterDef<TInputContext, TErrorShape, TMeta, {}>
+  } & RouterDef<
+    RootConfig<{
+      ctx: TInputContext;
+      errorShape: TErrorShape;
+      meta: TMeta;
+    }>,
+    {}
+  >
 >;
 
 export type MigrateOldRouter<TRouter extends AnyOldRouter> =

@@ -17,15 +17,16 @@ import {
   ProcedureParams,
 } from '../procedure';
 import { ProcedureType } from '../types';
-import { RootConfig } from './config';
+import { AnyRootConfig } from './config';
 import { getParseFn } from './getParseFn';
 import { mergeWithoutOverrides } from './mergeWithoutOverrides';
-import { ResolveOptions, middlewareMarker } from './utils';
 import {
   DefaultValue as FallbackValue,
   Overwrite,
   OverwriteKnown,
+  ResolveOptions,
   UnsetMarker,
+  middlewareMarker,
 } from './utils';
 
 type CreateProcedureReturnInput<
@@ -197,17 +198,17 @@ function createNewBuilder(
   } as any);
 }
 
-export function createBuilder<TConfig extends RootConfig>(
+export function createBuilder<TConfig extends AnyRootConfig>(
   initDef?: AnyProcedureBuilderDef,
 ): ProcedureBuilder<{
   _config: TConfig;
-  _ctx_in: TConfig['ctx'];
-  _ctx_out: TConfig['ctx'];
+  _ctx_in: TConfig['_def']['ctx'];
+  _ctx_out: TConfig['_def']['ctx'];
   _input_in: UnsetMarker;
   _input_out: UnsetMarker;
   _output_in: UnsetMarker;
   _output_out: UnsetMarker;
-  _meta: TConfig['meta'];
+  _meta: TConfig['_def']['meta'];
 }> {
   const _def: AnyProcedureBuilderDef = initDef || {
     inputs: [],

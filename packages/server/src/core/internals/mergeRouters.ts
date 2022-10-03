@@ -11,16 +11,16 @@ export function mergeRouters(...routerList: AnyRouter[]): AnyRouter {
   const errorFormatter = routerList.reduce(
     (currentErrorFormatter, nextRouter) => {
       if (
-        nextRouter.errorFormatter &&
-        nextRouter.errorFormatter !== defaultFormatter
+        nextRouter._def._config.errorFormatter &&
+        nextRouter._def._config.errorFormatter !== defaultFormatter
       ) {
         if (
           currentErrorFormatter !== defaultFormatter &&
-          currentErrorFormatter !== nextRouter.errorFormatter
+          currentErrorFormatter !== nextRouter._def._config.errorFormatter
         ) {
           throw new Error('You seem to have several error formatters');
         }
-        return nextRouter.errorFormatter;
+        return nextRouter._def._config.errorFormatter;
       }
       return currentErrorFormatter;
     },
@@ -28,11 +28,17 @@ export function mergeRouters(...routerList: AnyRouter[]): AnyRouter {
   );
 
   const transformer = routerList.reduce((prev, current) => {
-    if (current.transformer && current.transformer !== defaultTransformer) {
-      if (prev !== defaultTransformer && prev !== current.transformer) {
+    if (
+      current._def._config.transformer &&
+      current._def._config.transformer !== defaultTransformer
+    ) {
+      if (
+        prev !== defaultTransformer &&
+        prev !== current._def._config.transformer
+      ) {
         throw new Error('You seem to have several transformers');
       }
-      return current.transformer;
+      return current._def._config.transformer;
     }
     return prev;
   }, defaultTransformer as CombinedDataTransformer);
@@ -40,7 +46,14 @@ export function mergeRouters(...routerList: AnyRouter[]): AnyRouter {
   const router = createRouterFactory({
     errorFormatter,
     transformer,
-    isDev: routerList.some((r) => r._def.isDev),
+    isDev: routerList.some((r) => r._def._config.isDev),
+    allowOutsideOfServer: routerList.some(
+      (r) => r._def._config.allowOutsideOfServer,
+    ),
+    isServer: routerList.some((r) => r._def._config.isServer),
+
+    // TODO wrap
+    _def: null,
   })(record);
   return router;
 }

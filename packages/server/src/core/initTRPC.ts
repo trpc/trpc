@@ -15,8 +15,8 @@ import {
 import { FlatOverwrite } from '../types';
 import {
   CreateInitGenerics,
-  CreateRootConfig,
   InitGenerics,
+  RootConfig,
   RuntimeConfig,
   isServerDefault,
 } from './internals/config';
@@ -31,6 +31,7 @@ type CreateInitGenericsFromPartial<TType extends PartialInitGenerics> =
   CreateInitGenerics<{
     ctx: TType['ctx'] extends InitGenerics['ctx'] ? TType['ctx'] : {};
     meta: TType['meta'] extends InitGenerics['meta'] ? TType['meta'] : {};
+    errorShape: TType['errorShape'];
   }>;
 
 /**
@@ -73,10 +74,10 @@ function createTRPCInner<TParams extends Partial<InitGenerics>>() {
 
   type $Context = $Generics['ctx'];
   type $Meta = $Generics['meta'];
-  type $Options = Partial<RuntimeConfig<$Generics>>;
+  type $Runtime = Partial<RuntimeConfig<$Generics>>;
 
-  return function initTRPCInner<TOptions extends $Options>(
-    options?: ValidateShape<TOptions, $Options>,
+  return function initTRPCInner<TOptions extends $Runtime>(
+    runtime?: ValidateShape<TOptions, $Runtime>,
   ) {
     type $Formatter = PickFirstDefined<
       TOptions['errorFormatter'],
@@ -89,42 +90,45 @@ function createTRPCInner<TParams extends Partial<InitGenerics>>() {
       : DefaultDataTransformer;
     type $ErrorShape = ErrorFormatterShape<$Formatter>;
 
-    type $Config = CreateRootConfig<{
+    type $Config = RootConfig<{
       ctx: $Context;
       meta: $Meta;
       errorShape: $ErrorShape;
-      transformer: $Transformer;
-      isDev: boolean;
     }>;
+
+    const errorFormatter = runtime?.errorFormatter ?? defaultFormatter;
+    const transformer = getDataTransformer(
+      runtime?.transformer ?? defaultTransformer,
+    ) as $Transformer;
+    const config: $Config = {
+      transformer,
+      isDev: runtime?.isDev ?? process.env.NODE_ENV !== 'production',
+      allowOutsideOfServer: runtime?.allowOutsideOfServer ?? false,
+      errorFormatter,
+      isServer: runtime?.isServer ?? isServerDefault,
+      /**
+       * @internal
+       * TODO - wrap in proxy that shows error if it's accessed
+       */
+      _def: null as any,
+    };
 
     {
       // Server check
-      const isServer: boolean = options?.isServer ?? isServerDefault;
+      const isServer: boolean = runtime?.isServer ?? isServerDefault;
 
-      if (!isServer && options?.allowOutsideOfServer !== true) {
+      if (!isServer && runtime?.allowOutsideOfServer !== true) {
         throw new Error(
           `You're trying to use @trpc/server in a non-server environment. This is not supported by default.`,
         );
       }
     }
-
-    const errorFormatter = options?.errorFormatter ?? defaultFormatter;
-    const transformer = getDataTransformer(
-      options?.transformer ?? defaultTransformer,
-    ) as $Transformer;
-    const _config: $Config = {
-      transformer,
-      errorShape: null as any,
-      ctx: null as any,
-      meta: null as any,
-      isDev: options?.isDev ?? process.env.NODE_ENV !== 'production',
-    };
     return {
       /**
        * These are just types, they can't be used
        * @internal
        */
-      _config,
+      _config: config,
       /**
        * Builder object for creating procedures
        */
@@ -136,11 +140,7 @@ function createTRPCInner<TParams extends Partial<InitGenerics>>() {
       /**
        * Create a router
        */
-      router: createRouterFactory<$Config>({
-        errorFormatter,
-        transformer,
-        isDev: _config.isDev,
-      }),
+      router: createRouterFactory<$Config>(config),
       /**
        * Merge Routers
        */

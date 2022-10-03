@@ -1,15 +1,10 @@
 import { TRPCError } from '../error/TRPCError';
-import {
-  DefaultErrorShape,
-  ErrorFormatter,
-  defaultFormatter,
-} from '../error/formatter';
+import { DefaultErrorShape, defaultFormatter } from '../error/formatter';
 import { getHTTPStatusCodeFromError } from '../http/internals/getHTTPStatusCode';
-import { TRPCErrorShape, TRPC_ERROR_CODES_BY_KEY } from '../rpc';
+import { TRPC_ERROR_CODES_BY_KEY } from '../rpc';
 import { createRecursiveProxy } from '../shared';
-import { CombinedDataTransformer, defaultTransformer } from '../transformer';
-import { RootConfig } from './internals/config';
-import { mergeWithoutOverrides } from './internals/mergeWithoutOverrides';
+import { defaultTransformer } from '../transformer';
+import { AnyRootConfig } from './internals/config';
 import { omitPrototype } from './internals/omitPrototype';
 import { ProcedureCallOptions } from './internals/procedureBuilder';
 import {
@@ -41,27 +36,11 @@ export interface ProcedureStructure {
 }
 
 export interface RouterDef<
-  // FIXME this should use RootConfig
-  TContext,
-  TErrorShape extends TRPCErrorShape<number>,
-  TMeta extends Record<string, unknown>,
+  TConfig extends AnyRootConfig,
   TRecord extends ProcedureRouterRecord,
 > {
+  _config: TConfig;
   router: true;
-  /**
-   * @internal
-   */
-  _ctx: TContext;
-  /**
-   * @internal
-   */
-  _errorShape: TErrorShape;
-  /**
-   * @internal
-   */
-  _meta: TMeta;
-  errorFormatter: ErrorFormatter<TContext, TErrorShape>;
-  transformer: CombinedDataTransformer;
   procedures: TRecord;
   record: TRecord;
   /**
@@ -79,10 +58,12 @@ export interface RouterDef<
    * @deprecated
    */
   subscriptions: {};
-  isDev: boolean;
 }
 
-export type AnyRouterDef<TContext = any> = RouterDef<TContext, any, any, any>;
+export type AnyRouterDef<TConfig extends AnyRootConfig = any> = RouterDef<
+  TConfig,
+  any
+>;
 
 /**
  * @internal
@@ -113,7 +94,9 @@ type DecoratedProcedureRecord<TProcedures extends ProcedureRouterRecord> = {
 /**
  * @internal
  */
-type RouterCaller<TDef extends AnyRouterDef> = (ctx: TDef['_ctx']) => {
+type RouterCaller<TDef extends AnyRouterDef> = (
+  ctx: TDef['_config']['_def']['ctx'],
+) => {
   /**
    * @deprecated
    */
@@ -130,10 +113,6 @@ type RouterCaller<TDef extends AnyRouterDef> = (ctx: TDef['_ctx']) => {
 
 export interface Router<TDef extends AnyRouterDef> {
   _def: TDef;
-  /** @deprecated **/
-  errorFormatter: TDef['errorFormatter'];
-  /** @deprecated **/
-  transformer: TDef['transformer'];
   createCaller: RouterCaller<TDef>;
   // FIXME rename me and deprecate
   getErrorShape(opts: {
@@ -141,25 +120,15 @@ export interface Router<TDef extends AnyRouterDef> {
     type: ProcedureType | 'unknown';
     path: string | undefined;
     input: unknown;
-    ctx: undefined | TDef['_ctx'];
-  }): TDef['_errorShape'];
+    ctx: undefined | TDef['_config']['_def']['ctx'];
+  }): TDef['_config']['_def']['errorShape'];
 }
 
 /**
  * @internal
  */
-export type RouterDefaultOptions<TContext> = Pick<
-  AnyRouterDef<TContext>,
-  'transformer' | 'errorFormatter'
-> & {
-  isDev: boolean;
-};
-
-/**
- * @internal
- */
-export type RouterBuildOptions<TContext> = Partial<
-  Pick<AnyRouterDef<TContext>, 'procedures'>
+export type RouterBuildOptions<TConfig extends AnyRootConfig> = Partial<
+  Pick<AnyRouterDef<TConfig>, 'procedures'>
 >;
 
 export type AnyRouter = Router<any>;
@@ -196,33 +165,23 @@ const reservedWords = [
  * @internal
  */
 export type CreateRouterInner<
-  TConfig extends RootConfig,
+  TConfig extends AnyRootConfig,
   TProcRouterRecord extends ProcedureRouterRecord,
-> = Router<
-  RouterDef<
-    TConfig['ctx'],
-    TConfig['errorShape'],
-    TConfig['meta'],
-    TProcRouterRecord
-  >
-> &
-  TProcRouterRecord;
+> = Router<RouterDef<TConfig, TProcRouterRecord>> & TProcRouterRecord;
 
 /**
  * @internal
  */
-export function createRouterFactory<TConfig extends RootConfig>(
-  defaults: RouterDefaultOptions<TConfig['ctx']>,
+export function createRouterFactory<TConfig extends AnyRootConfig>(
+  config: TConfig,
 ) {
-  const transformer = defaults?.transformer ?? defaultTransformer;
-  const errorFormatter = defaults?.errorFormatter ?? defaultFormatter;
-  const isDev = defaults.isDev;
-
   return function createRouterInner<
     TProcRouterRecord extends ProcedureRouterRecord,
-  >(opts: TProcRouterRecord): CreateRouterInner<TConfig, TProcRouterRecord> {
+  >(
+    procedures: TProcRouterRecord,
+  ): CreateRouterInner<TConfig, TProcRouterRecord> {
     const reservedWordsUsed = new Set(
-      Object.keys(opts).filter((v) => reservedWords.includes(v)),
+      Object.keys(procedures).filter((v) => reservedWords.includes(v)),
     );
     if (reservedWordsUsed.size > 0) {
       throw new Error(
@@ -241,45 +200,36 @@ export function createRouterFactory<TConfig extends RootConfig>(
           continue;
         }
 
+        if (routerProcedures[newPath]) {
+          throw new Error(`Duplicate key: ${newPath}`);
+        }
+
         routerProcedures[newPath] = procedureOrRouter;
       }
     }
 
-    recursiveGetPaths(opts);
+    recursiveGetPaths(procedures);
 
-    const result = mergeWithoutOverrides<
-      RouterDefaultOptions<TConfig['ctx']> & RouterBuildOptions<TConfig['ctx']>
-    >(
-      {
-        transformer,
-        errorFormatter,
-        isDev,
-      },
-      { procedures: routerProcedures },
-    );
-
-    const _def: AnyRouterDef<TConfig['ctx']> = {
+    const _def: AnyRouterDef<TConfig> = {
+      _config: config,
       router: true,
-      procedures: {},
+      procedures: procedures,
       ...emptyRouter,
-      ...result,
-      record: opts,
-      queries: Object.entries(result.procedures || {})
+      record: procedures,
+      queries: Object.entries(procedures || {})
         .filter((pair) => (pair[1] as any)._def.query)
         .reduce((acc, [key, val]) => ({ ...acc, [key]: val }), {}),
-      mutations: Object.entries(result.procedures || {})
+      mutations: Object.entries(procedures || {})
         .filter((pair) => (pair[1] as any)._def.mutation)
         .reduce((acc, [key, val]) => ({ ...acc, [key]: val }), {}),
-      subscriptions: Object.entries(result.procedures || {})
+      subscriptions: Object.entries(procedures || {})
         .filter((pair) => (pair[1] as any)._def.subscription)
         .reduce((acc, [key, val]) => ({ ...acc, [key]: val }), {}),
     };
 
     const router: AnyRouter = {
-      ...opts,
+      ...procedures,
       _def,
-      transformer: _def.transformer,
-      errorFormatter: _def.errorFormatter,
       createCaller(ctx) {
         const proxy = createRecursiveProxy(({ path, args }) => {
           // interop mode
@@ -327,7 +277,7 @@ export function createRouterFactory<TConfig extends RootConfig>(
             httpStatus: getHTTPStatusCodeFromError(error),
           },
         };
-        if (isDev && typeof opts.error.stack === 'string') {
+        if (config.isDev && typeof opts.error.stack === 'string') {
           shape.data.stack = opts.error.stack;
         }
         if (typeof path === 'string') {

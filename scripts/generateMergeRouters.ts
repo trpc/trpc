@@ -20,12 +20,8 @@ const TEMPLATE = `
  >(
    __args__
  ): Router<{
+  _config: RP0['_config'];
   router: true;
-  _ctx: RP0['_ctx'];
-  _errorShape: RP0['_errorShape'];
-  _meta: RP0['_meta'];
-  transformer: RP0['transformer'];
-  errorFormatter: RP0['errorFormatter'];
   queries: __queries__;
   mutations: __mutations__;
   subscriptions: __subscriptions__;

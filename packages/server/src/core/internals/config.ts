@@ -1,8 +1,5 @@
 import { ErrorFormatter } from '../../error/formatter';
-import {
-  CombinedDataTransformer,
-  DataTransformerOptions,
-} from '../../transformer';
+import { DataTransformerOptions } from '../../transformer';
 
 /**
  * The initial generics that are used in the init function
@@ -11,6 +8,8 @@ import {
 export interface InitGenerics {
   ctx: Record<string, unknown>;
   meta: Record<string, unknown>;
+  // FIXME this should be typed
+  errorShape: any;
 }
 
 /**
@@ -56,14 +55,12 @@ export type CreateInitGenerics<TType extends InitGenerics> = TType;
  * Combination of `InitTOptions` + `InitGenerics`
  * @internal
  */
-export interface RootConfig extends InitGenerics {
-  transformer: CombinedDataTransformer;
-  // FIXME this should probably be restricted
-  errorShape: any;
-  isDev: boolean;
+export interface RootConfig<TGenerics extends InitGenerics>
+  extends RuntimeConfig<TGenerics> {
+  _def: TGenerics;
 }
 
 /**
  * @internal
  */
-export type CreateRootConfig<TConfig extends RootConfig> = TConfig;
+export type AnyRootConfig = RootConfig<any>;

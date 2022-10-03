@@ -1,6 +1,4 @@
-import { DefaultErrorShape } from '../error/formatter';
-import { CombinedDataTransformer } from '../transformer';
-import { RootConfig } from './internals/config';
+import { AnyRootConfig } from './internals/config';
 import {
   ProcedureBuilderDef,
   ProcedureCallOptions,
@@ -26,12 +24,7 @@ export interface ProcedureOptions {
  * @internal
  */
 export interface ProcedureParams<
-  TConfig extends RootConfig = {
-    transformer: CombinedDataTransformer;
-    errorShape: DefaultErrorShape;
-    ctx: Record<string, unknown>;
-    meta: Record<string, unknown>;
-  },
+  TConfig extends AnyRootConfig = AnyRootConfig,
   TContextIn = unknown,
   TContextOut = unknown,
   TInputIn = unknown,
@@ -40,7 +33,6 @@ export interface ProcedureParams<
   TOutputOut = unknown,
   TMeta = unknown,
 > {
-  // FIXME make non-optional
   _config: TConfig;
   /**
    * @internal
