@@ -11,6 +11,7 @@ import {
   useMutation as __useMutation,
   useQuery as __useQuery,
   hashQueryKey,
+  useQueryClient,
 } from '@tanstack/react-query';
 import {
   CreateTRPCClientOptions,
@@ -42,6 +43,7 @@ import {
   TRPCContextProps,
   TRPCContextState,
 } from '../../internals/context';
+import { CreateTRPCReactOptions, UseMutationOverride } from '../types';
 
 export type OutputWithCursor<TData, TCursor = any> = {
   cursor: TCursor | null;
@@ -147,7 +149,11 @@ export type CreateClient<TRouter extends AnyRouter> = (
 export function createHooksInternal<
   TRouter extends AnyRouter,
   TSSRContext = unknown,
->() {
+>(config?: CreateTRPCReactOptions<TRouter>) {
+  const mutationSuccessOverride: UseMutationOverride['onSuccess'] =
+    config?.unstable_overrides?.useMutation?.onSuccess ??
+    ((options) => options.originalFn());
+
   type TQueries = TRouter['_def']['queries'];
   type TSubscriptions = TRouter['_def']['subscriptions'];
   type TMutations = TRouter['_def']['mutations'];
@@ -163,6 +169,37 @@ export function createHooksInternal<
 
   const createClient: CreateClient<TRouter> = (opts) => {
     return createTRPCClient(opts);
+  };
+
+  /**
+   * To allow easy interactions with groups of related queries, such as
+   * invalidating all queries of a router, we use an array as the path when
+   * storing in tanstack query. This function converts from the `.` separated
+   * path passed around internally by both the legacy and proxy implementation.
+   * https://github.com/trpc/trpc/issues/2611
+   */
+  const getArrayQueryKey = (
+    queryKey: string | [string] | [string, ...unknown[]] | unknown[],
+  ): [string[]] | [string[], ...unknown[]] | [] => {
+    const queryKeyArrayed = Array.isArray(queryKey) ? queryKey : [queryKey];
+    const [path, ...input] = queryKeyArrayed;
+
+    // Handle the case of acting on all queries ... path will not be passed or
+    // it will be an empty string
+    if (typeof path !== 'string' || path === '') {
+      if (input === undefined) {
+        return [[]];
+      } else {
+        return [[], ...input];
+      }
+    } else {
+      const arrayPath = path.split('.');
+      if (input === undefined) {
+        return [arrayPath];
+      } else {
+        return [arrayPath, ...input];
+      }
+    }
   };
 
   const TRPCProvider: TRPCProvider<TRouter, TSSRContext> = (props) => {
@@ -184,7 +221,7 @@ export function createHooksInternal<
           fetchQuery: useCallback(
             (pathAndInput, opts) => {
               return queryClient.fetchQuery(
-                pathAndInput,
+                getArrayQueryKey(pathAndInput),
                 () =>
                   (client as any).query(...getClientArgs(pathAndInput, opts)),
                 opts,
@@ -195,7 +232,7 @@ export function createHooksInternal<
           fetchInfiniteQuery: useCallback(
             (pathAndInput, opts) => {
               return queryClient.fetchInfiniteQuery(
-                pathAndInput,
+                getArrayQueryKey(pathAndInput),
                 ({ pageParam }) => {
                   const [path, input] = pathAndInput;
                   const actualInput = { ...(input as any), cursor: pageParam };
@@ -211,7 +248,7 @@ export function createHooksInternal<
           prefetchQuery: useCallback(
             (pathAndInput, opts) => {
               return queryClient.prefetchQuery(
-                pathAndInput,
+                getArrayQueryKey(pathAndInput),
                 () =>
                   (client as any).query(...getClientArgs(pathAndInput, opts)),
                 opts,
@@ -222,7 +259,7 @@ export function createHooksInternal<
           prefetchInfiniteQuery: useCallback(
             (pathAndInput, opts) => {
               return queryClient.prefetchInfiniteQuery(
-                pathAndInput,
+                getArrayQueryKey(pathAndInput),
                 ({ pageParam }) => {
                   const [path, input] = pathAndInput;
                   const actualInput = { ...(input as any), cursor: pageParam };
@@ -236,35 +273,73 @@ export function createHooksInternal<
             [client, queryClient],
           ),
           invalidateQueries: useCallback(
-            (...args: any[]) => queryClient.invalidateQueries(...args),
+            (...args: any[]) => {
+              const [queryKey, ...rest] = args;
+              return queryClient.invalidateQueries(
+                getArrayQueryKey(queryKey),
+                ...rest,
+              );
+            },
             [queryClient],
           ),
           refetchQueries: useCallback(
-            (...args: any[]) => queryClient.refetchQueries(...args),
+            (...args: any[]) => {
+              const [queryKey, ...rest] = args;
+
+              return queryClient.refetchQueries(
+                getArrayQueryKey(queryKey),
+                ...rest,
+              );
+            },
             [queryClient],
           ),
           cancelQuery: useCallback(
             (pathAndInput) => {
-              return queryClient.cancelQueries(pathAndInput);
+              return queryClient.cancelQueries(getArrayQueryKey(pathAndInput));
             },
             [queryClient],
           ),
           setQueryData: useCallback(
-            (...args) => queryClient.setQueryData(...args),
+            (...args) => {
+              const [queryKey, ...rest] = args;
+              return queryClient.setQueryData(
+                getArrayQueryKey(queryKey),
+                ...rest,
+              );
+            },
             [queryClient],
           ),
           getQueryData: useCallback(
-            (...args) => queryClient.getQueryData(...args),
+            (...args) => {
+              const [queryKey, ...rest] = args;
+
+              return queryClient.getQueryData(
+                getArrayQueryKey(queryKey),
+                ...rest,
+              );
+            },
             [queryClient],
           ),
           setInfiniteQueryData: useCallback(
             (...args) => {
-              return queryClient.setQueryData(...args);
+              const [queryKey, ...rest] = args;
+
+              return queryClient.setQueryData(
+                getArrayQueryKey(queryKey),
+                ...rest,
+              );
             },
             [queryClient],
           ),
           getInfiniteQueryData: useCallback(
-            (...args) => queryClient.getQueryData(...args),
+            (...args) => {
+              const [queryKey, ...rest] = args;
+
+              return queryClient.getQueryData(
+                getArrayQueryKey(queryKey),
+                ...rest,
+              );
+            },
             [queryClient],
           ),
         }}
@@ -288,7 +363,8 @@ export function createHooksInternal<
     const { queryClient, ssrState } = useContext();
     return ssrState &&
       ssrState !== 'mounted' &&
-      queryClient.getQueryCache().find(pathAndInput)?.state.status === 'error'
+      queryClient.getQueryCache().find(getArrayQueryKey(pathAndInput))?.state
+        .status === 'error'
       ? {
           retryOnMount: false,
           ...opts,
@@ -318,7 +394,7 @@ export function createHooksInternal<
       ssrState === 'prepass' &&
       opts?.trpc?.ssr !== false &&
       opts?.enabled !== false &&
-      !queryClient.getQueryCache().find(pathAndInput)
+      !queryClient.getQueryCache().find(getArrayQueryKey(pathAndInput))
     ) {
       void prefetchQuery(pathAndInput as any, opts as any);
     }
@@ -327,7 +403,7 @@ export function createHooksInternal<
     const shouldAbortOnUnmount = opts?.trpc?.abortOnUnmount ?? abortOnUnmount;
 
     return __useQuery(
-      pathAndInput as any,
+      getArrayQueryKey(pathAndInput) as any,
       (queryFunctionContext) => {
         const actualOpts = {
           ...ssrOpts,
@@ -365,14 +441,24 @@ export function createHooksInternal<
     TContext
   > {
     const { client } = useContext();
+    const queryClient = useQueryClient();
 
-    return __useMutation((input) => {
-      const actualPath = Array.isArray(path) ? path[0] : path;
+    return __useMutation(
+      (input) => {
+        const actualPath = Array.isArray(path) ? path[0] : path;
 
-      return (client.mutation as any)(
-        ...getClientArgs([actualPath, input], opts),
-      );
-    }, opts);
+        return (client.mutation as any)(
+          ...getClientArgs([actualPath, input], opts),
+        );
+      },
+      {
+        ...opts,
+        onSuccess(...args) {
+          const originalFn = () => opts?.onSuccess?.(...args);
+          return mutationSuccessOverride({ originalFn, queryClient });
+        },
+      },
+    );
   }
 
   /* istanbul ignore next */
@@ -460,7 +546,7 @@ export function createHooksInternal<
       ssrState === 'prepass' &&
       opts?.trpc?.ssr !== false &&
       opts?.enabled !== false &&
-      !queryClient.getQueryCache().find(pathAndInput)
+      !queryClient.getQueryCache().find(getArrayQueryKey(pathAndInput))
     ) {
       void prefetchInfiniteQuery(pathAndInput as any, opts as any);
     }
@@ -471,7 +557,7 @@ export function createHooksInternal<
     const shouldAbortOnUnmount = opts?.trpc?.abortOnUnmount ?? abortOnUnmount;
 
     return __useInfiniteQuery(
-      pathAndInput as any,
+      getArrayQueryKey(pathAndInput) as any,
       (queryFunctionContext) => {
         const actualOpts = {
           ...ssrOpts,

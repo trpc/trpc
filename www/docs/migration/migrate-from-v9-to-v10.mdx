@@ -250,6 +250,19 @@ export const t = initTRPC
 
 ## Migrating from v9
 
+We recommend two strategies to start **(and finish!)** upgrading your codebase today.
+
+### Using a codemod
+
+[@sachinraja](https://twitter.com/s4chinraja) has created [an excellent codemod](https://github.com/sachinraja/trpc-v10-migrate-codemod) for this major upgrade. Run the script to have 95% of the work done for you in a matter of moments.
+
+:::info
+- If you use the codemod, you should still do step 1 to 3 below to make sure that works for you ahead of doing the full migration
+- Please note that this codemod isn't perfect - but will do a lot of the heavy lifting for you.
+:::
+  
+### Using `.interop()`
+
 Rewriting all of your existing v9 routes today may be too heavy of a lift for you and your team. Instead, let's keep those v9 procedures in place and incrementally adopt v10 by leveraging v10's `interop()` method.
 
 ### 1. Enable `interop()` on your v9 router
@@ -397,6 +410,44 @@ trpc.post.byId.useQuery('1', {
 });
 ```
 
+#### Query key changes
+
+:::note
+If you only use the tRPC provided API's in your app you will have no problems in
+migrating 👍 However if you have been useing the tanstack query client directly
+to do things like update query data for multiple tRPC generated queries using
+[`queryClient.setQueriesData](https://tanstack.com/query/v4/docs/reference/QueryClient#queryclientsetqueriesdata)
+you may need to take note!
+:::
+
+To allow us to make room for some more advanced features like [invalidation across
+whole routers](invalidateQueries) we needed to change how we use tanstack query keys under the
+hood.
+
+We have changed the query keys we use from using a `.` joined string for the
+procedure path to a sub array of elements.
+
+given the simple router below:
+
+```tsx
+export const appRouter = t.router({
+  user: t.router({
+    byId: t.procedure
+      .input(z.object({ id: z.number() }))
+      .query(({ input }) => ({ user: { id: input.id } })),
+  }),
+});
+```
+
+The query key used for `trpc.user.byId.useQuery({ id: 10 })` would change:
+
+- Key in V9: `["user.byId", { id: 10 }]`
+- Key in v10:`[["user", "byId"],{ id:10 }]`
+
+The majority of developers won't even notice this change, but for the small
+minority that are using the tanstack `queryClient` directly to manipulate tRPC
+generated queries, they will have to change the key they are filtering on!
+
 ### `@trpc/client`
 
 #### Aborting procedures
@@ -464,6 +515,19 @@ The `createContext` function can no longer return either `null` or `undefined`. 
 ```diff
 - createContext: () => null,
 + createContext: () => ({}),
+```
+
+### `queryClient` is no longer exposed through tRPC context
+
+tRPC is no longer exposing the `queryClient` instance through `trpc.useContext()`. If you need to access it, import it from `@tanstack/react-query`:
+
+```tsx
+import { useQueryClient } from '@tanstack/react-query';
+
+const MyComponent = () => {
+  const queryClient = useQueryClient();
+  // ...
+};
 ```
 
 ### Migrate custom error formatters

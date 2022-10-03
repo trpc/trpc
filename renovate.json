@@ -1,6 +1,5 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-  "extends": [
-    "config:js-lib"
-  ]
+  "extends": ["config:base", ":preserveSemverRanges"],
+  "updateInternalDeps": true
 }

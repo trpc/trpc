@@ -13,10 +13,8 @@ import {
   AnyProcedure,
   AnyQueryProcedure,
   AnySubscriptionProcedure,
-  MutationProcedure,
+  Procedure,
   ProcedureParams,
-  QueryProcedure,
-  SubscriptionProcedure,
 } from '../procedure';
 import { ProcedureType } from '../types';
 import { RootConfig } from './config';
@@ -44,11 +42,44 @@ type CreateProcedureReturnInput<
   _output_out: FallbackValue<TNext['_output_out'], TPrev['_output_out']>;
 }>;
 
+/**
+ * @internal
+ */
+export interface BuildProcedure<
+  TType extends ProcedureType,
+  TParams extends ProcedureParams,
+  TOutput,
+> extends Procedure<
+    TType,
+    UnsetMarker extends TParams['_output_out']
+      ? OverwriteKnown<
+          TParams,
+          {
+            _output_in: TOutput;
+            _output_out: TOutput;
+          }
+        >
+      : TParams
+  > {}
+
 type OverwriteIfDefined<TType, TWith> = UnsetMarker extends TType
   ? TWith
   : FlatOverwrite<TType, TWith>;
 
 type ErrorMessage<TMessage extends string> = TMessage;
+
+export type ProcedureBuilderDef<TParams extends ProcedureParams> = {
+  inputs: Parser[];
+  output?: Parser;
+  meta?: TParams['_meta'];
+  resolver?: ProcedureBuilderResolver;
+  middlewares: ProcedureBuilderMiddleware[];
+  mutation?: boolean;
+  query?: boolean;
+  subscription?: boolean;
+};
+
+export type AnyProcedureBuilderDef = ProcedureBuilderDef<any>;
 
 export interface ProcedureBuilder<TParams extends ProcedureParams> {
   /**
@@ -119,17 +150,7 @@ export interface ProcedureBuilder<TParams extends ProcedureParams> {
     resolver: (
       opts: ResolveOptions<TParams>,
     ) => MaybePromise<FallbackValue<TParams['_output_in'], TOutput>>,
-  ): UnsetMarker extends TParams['_output_out']
-    ? QueryProcedure<
-        OverwriteKnown<
-          TParams,
-          {
-            _output_in: TOutput;
-            _output_out: TOutput;
-          }
-        >
-      >
-    : QueryProcedure<TParams>;
+  ): BuildProcedure<'query', TParams, TOutput>;
 
   /**
    * Mutation procedure
@@ -138,17 +159,7 @@ export interface ProcedureBuilder<TParams extends ProcedureParams> {
     resolver: (
       opts: ResolveOptions<TParams>,
     ) => MaybePromise<FallbackValue<TParams['_output_in'], TOutput>>,
-  ): UnsetMarker extends TParams['_output_out']
-    ? MutationProcedure<
-        OverwriteKnown<
-          TParams,
-          {
-            _output_in: TOutput;
-            _output_out: TOutput;
-          }
-        >
-      >
-    : MutationProcedure<TParams>;
+  ): BuildProcedure<'mutation', TParams, TOutput>;
 
   /**
    * Mutation procedure
@@ -157,34 +168,14 @@ export interface ProcedureBuilder<TParams extends ProcedureParams> {
     resolver: (
       opts: ResolveOptions<TParams>,
     ) => MaybePromise<FallbackValue<TParams['_output_in'], TOutput>>,
-  ): UnsetMarker extends TParams['_output_out']
-    ? SubscriptionProcedure<
-        OverwriteKnown<
-          TParams,
-          {
-            _output_in: TOutput;
-            _output_out: TOutput;
-          }
-        >
-      >
-    : SubscriptionProcedure<TParams>;
+  ): BuildProcedure<'subscription', TParams, TOutput>;
   /**
    * @internal
    */
-  _def: {
-    inputs: Parser[];
-    output?: Parser;
-    meta?: TParams['_meta'];
-    resolver?: ProcedureBuilderResolver;
-    middlewares: ProcedureBuilderMiddleware[];
-    mutation?: boolean;
-    query?: boolean;
-    subscription?: boolean;
-  };
+  _def: ProcedureBuilderDef<TParams>;
 }
 
 type AnyProcedureBuilder = ProcedureBuilder<any>;
-export type AnyProcedureBuilderDef = AnyProcedureBuilder['_def'];
 
 export type ProcedureBuilderMiddleware = MiddlewareFunction<any, any>;
 
