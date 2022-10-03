@@ -283,7 +283,7 @@ export function createRouterFactory<TConfig extends AnyRootConfig>(
         if (typeof path === 'string') {
           shape.data.path = path;
         }
-        return this._def.errorFormatter({ ...opts, shape });
+        return this._def._config.errorFormatter({ ...opts, shape });
       },
     };
     return router as any;
