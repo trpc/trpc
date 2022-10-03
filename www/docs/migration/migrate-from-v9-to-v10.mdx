@@ -517,6 +517,19 @@ The `createContext` function can no longer return either `null` or `undefined`. 
 + createContext: () => ({}),
 ```
 
+### `queryClient` is no longer exposed through tRPC context
+
+tRPC is no longer exposing the `queryClient` instance through `trpc.useContext()`. If you need to access it, import it from `@tanstack/react-query`:
+
+```tsx
+import { useQueryClient } from '@tanstack/react-query';
+
+const MyComponent = () => {
+  const queryClient = useQueryClient();
+  // ...
+};
+```
+
 ### Migrate custom error formatters
 
 You will need to move the contents of your `formatError()` into your root `t` router. See the [Error Formatting docs](error-formatting) for more.
