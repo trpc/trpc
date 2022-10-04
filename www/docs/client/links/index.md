@@ -11,10 +11,12 @@ A link should do only one thing, which can be either a self-contained modificati
 
 You can compose links together into an array that you can provide to the tRPC client configuration via the `links` property, which represents a link chain. This means that the tRPC client will execute the links in the order they are added in the `links` array when doing a request, and will execute them again in reverse when it's handling a response.
 
-> The below examples assuming you use Next.js, but the same as below can be added if you use the vanilla tRPC client
+:::note
+The below examples are assuming you use Next.js, but the same as below can be added if you use the vanilla tRPC client
+:::
 
 ```tsx title='utils/trpc.ts'
-import { httpLink, loggerLink } from '@trpc/client';
+import { httpBatchLink, loggerLink } from '@trpc/client';
 import { createTRPCNext } from '@trpc/next';
 
 export default createTRPCNext<AppRouter>({
@@ -24,7 +26,7 @@ export default createTRPCNext<AppRouter>({
     return {
       links: [
         loggerLink(),
-        httpLink({
+        httpBatchLink({
           url,
         }),
       ],
@@ -79,11 +81,13 @@ export const customLink: TRPCLink<AppRouter> = () => {
 
 ## The terminating link
 
-The **terminating link** is the last link in a link chain. Instead of calling the `next` function, the terminating link is responsible for sending your composed tRPC operation to the tRPC Server and returning an `OperationResultEnvelope`.
+The **terminating link** is the last link in a link chain. Instead of calling the `next` function, the terminating link is responsible for sending your composed tRPC operation to the tRPC server and returning an `OperationResultEnvelope`.
 
-By default, tRPC uses the `httpBatchLink` as its terminating link. This means that request batching is enabled by default when using tRPC. If you want to disable batching, check out the [`httpBatchLink` docs.](./httpBatchLink.md#disabling-request-batching)
+The `links` array that you add to the tRPC client config should have at least one link, and that link should be a terminating link. If `links` doesn't have a terminating link at the end of it, the tRPC operation will not be sent to the tRPC server.
 
-`httpLink` and `wsLink` are other examples of terminating links.
+[`httpBatchLink`](./httpBatchLink.md) is the recommended terminating link by tRPC.
+
+[`httpLink`](./httpLink.md) and [`wsLink`](./wsLink.md) are other examples of terminating links.
 
 ## Managing context
 

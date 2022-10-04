@@ -5,7 +5,7 @@ sidebar_label: HTTP Batch Link
 slug: /links/http-batch
 ---
 
-`httpBatchLink` is a [**terminating link**](./index.md#the-terminating-link) that batches an array of individual tRPC operations into a single HTTP request that's sent to a single tRPC procedure. tRPC uses `httpBatchLink` by default.
+`httpBatchLink` is a [**terminating link**](./index.md#the-terminating-link) that batches an array of individual tRPC operations into a single HTTP request that's sent to a single tRPC procedure.
 
 ## Usage
 
