@@ -102,7 +102,7 @@ process.on('SIGTERM', () => {
 ### Setting `TRPCClient` to use WebSockets
 
 :::tip
-You can [use Links](/docs/v10/links/overview) to route queries and/or mutations to HTTP transport and subscriptions over WebSockets.
+You can [use Links](../client/links/index.md) to route queries and/or mutations to HTTP transport and subscriptions over WebSockets.
 :::
 
 ```tsx title='client.ts'

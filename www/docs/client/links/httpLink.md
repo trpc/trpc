@@ -5,7 +5,7 @@ sidebar_label: HTTP Link
 slug: /links/http
 ---
 
-`httpLink` is a [**terminating link**](./overview#the-terminating-link) that sends a tRPC operation to a tRPC procedure over HTTP.
+`httpLink` is a [**terminating link**](./index.md#the-terminating-link) that sends a tRPC operation to a tRPC procedure over HTTP.
 
 `httpLink` supports both POST and GET requests.
 

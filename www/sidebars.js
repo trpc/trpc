@@ -53,12 +53,11 @@ module.exports = {
           label: 'Links',
           collapsed: false,
           items: [
-            'client/links/overview',
+            'client/links/index',
             'client/links/http',
             'client/links/http-batch',
             'client/links/ws',
             'client/links/split',
-            'client/links/retry',
             'client/links/dedupe',
             'client/links/logger',
           ],

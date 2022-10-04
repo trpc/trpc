@@ -1,8 +1,8 @@
 ---
-id: overview
+id: index
 title: Links Overview
 sidebar_label: Overview
-slug: /links/overview
+slug: /links
 ---
 
 Links enable you to customize the flow of data between the tRPC Client and Server. The way links are implemented in tRPC is very similar to Apollo's links. We will cover the basic concepts here, but if you need to learn about links more in-depth we recommend to check out Apollo's [links docs](https://www.apollographql.com/docs/react/api/link/introduction/).
@@ -81,7 +81,7 @@ export const customLink: TRPCLink<AppRouter> = () => {
 
 The **terminating link** is the last link in a link chain. Instead of calling the `next` function, the terminating link is responsible for sending your composed tRPC operation to the tRPC Server and returning an `OperationResultEnvelope`.
 
-By default, tRPC uses the `httpBatchLink` as its terminating link. This means that request batching is enabled by default when using tRPC. If you want to disable batching, check out the [`httpBatchLink` docs.](./http-batch#disabling-request-batching)
+By default, tRPC uses the `httpBatchLink` as its terminating link. This means that request batching is enabled by default when using tRPC. If you want to disable batching, check out the [`httpBatchLink` docs.](./httpBatchLink.md#disabling-request-batching)
 
 `httpLink` and `wsLink` are other examples of terminating links.
 
