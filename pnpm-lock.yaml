@@ -1107,7 +1107,6 @@ importers:
 
   packages/next:
     specifiers:
-      '@swc/helpers': ^0.4.11
       '@tanstack/react-query': ^4.3.8
       '@trpc/client': ^10.0.0-proxy-beta.13
       '@trpc/react': ^10.0.0-proxy-beta.13
@@ -1121,7 +1120,6 @@ importers:
       react-ssr-prepass: ^1.5.0
       zod: ^3.0.0
     dependencies:
-      '@swc/helpers': 0.4.11
       react-ssr-prepass: 1.5.0_react@18.2.0
     devDependencies:
       '@tanstack/react-query': 4.6.0_biqbaboplfbrettd7655fr4n2y
@@ -8923,8 +8921,8 @@ packages:
     engines: {node: '>=10'}
     hasBin: true
     dependencies:
-      JSONStream: 1.3.5
       is-text-path: 1.0.1
+      JSONStream: 1.3.5
       lodash: 4.17.21
       meow: 8.1.2
       split2: 3.2.2
