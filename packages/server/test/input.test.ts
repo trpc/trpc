@@ -9,9 +9,9 @@ import { expectTypeOf } from 'expect-type';
 import { konn } from 'konn';
 import { ZodError, z } from 'zod';
 
-const ignoreErrors = async (fn: () => Promise<void> | void) => {
+const ignoreErrors = async (fn: () => Promise<unknown> | unknown) => {
   try {
-    await Promise.reject(new Error('foo'));
+    await fn();
   } catch {
     // ignore
   }
