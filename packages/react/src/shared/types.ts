@@ -1,4 +1,9 @@
-import { QueryClient } from '@tanstack/react-query';
+import {
+  QueryClient,
+  UseInfiniteQueryResult,
+  UseMutationResult,
+  UseQueryResult,
+} from '@tanstack/react-query';
 import { AnyRouter, MaybePromise } from '@trpc/server';
 
 /**
@@ -25,3 +30,30 @@ export interface CreateTRPCReactOptions<_TRouter extends AnyRouter> {
     useMutation?: Partial<UseMutationOverride>;
   };
 }
+
+interface TRPCHookResult {
+  trpc: {
+    path: string;
+  };
+}
+
+/**
+ * @internal
+ */
+export type TRPCUseQueryResult<TData, TError> = UseQueryResult<TData, TError> &
+  TRPCHookResult;
+
+/**
+ * @internal
+ */
+export type TRPCUseInfiniteQueryResult<TData, TError> = UseInfiniteQueryResult<
+  TData,
+  TError
+> &
+  TRPCHookResult;
+
+/**
+ * @internal
+ */
+export type TRPCUseMutationResult<TData, TError, TVariables, TContext> =
+  UseMutationResult<TData, TError, TVariables, TContext> & TRPCHookResult;
