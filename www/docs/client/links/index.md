@@ -79,6 +79,10 @@ export const customLink: TRPCLink<AppRouter> = () => {
 };
 ```
 
+### References
+
+If you need a more real reference for creating your custom link, you can checkout some of the built-in links tRPC provides on [GitHub](https://github.com/trpc/trpc/tree/next/packages/client/src/links).
+
 ## The terminating link
 
 The **terminating link** is the last link in a link chain. Instead of calling the `next` function, the terminating link is responsible for sending your composed tRPC operation to the tRPC server and returning an `OperationResultEnvelope`.
@@ -95,4 +99,4 @@ As an operation moves along your link chain, it maintains a context that each li
 
 Obtain the current context object and modify it by accessing `op.context`.
 
-You can set the context object's initial value for a particular operation by providing the context parameter to the `query` or `useQuery` hook (or `mutation`, `useMutation`, `subscription`, `useSubscription`, etc.).
+You can set the context object's initial value for a particular operation by providing the context parameter to the `query` or `useQuery` hook (or `mutation`, `subscription`, etc.).

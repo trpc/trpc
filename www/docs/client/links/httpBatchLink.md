@@ -107,7 +107,7 @@ export default trpcNext.createNextApiHandler({
 });
 ```
 
-### 2. Use batch-free link in your tRPC Client
+### 2. Replace `httpBatchLink` with [`httpLink`](./httpLink.md) in your tRPC Client
 
 ```ts title="client/index.ts"
 import { createTRPCProxyClient, httpLink } from '@trpc/client';
