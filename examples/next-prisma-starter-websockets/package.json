@@ -1,6 +1,6 @@
 {
   "name": "@examples/next-starter-websockets",
-  "version": "10.0.0-proxy-beta.14",
+  "version": "10.0.0-proxy-beta.15",
   "private": true,
   "scripts": {
     "build:1-generate": "prisma generate",
@@ -44,10 +44,10 @@
   "dependencies": {
     "@prisma/client": "^4.3.1",
     "@tanstack/react-query": "^4.3.8",
-    "@trpc/client": "^10.0.0-proxy-beta.14",
-    "@trpc/next": "^10.0.0-proxy-beta.14",
-    "@trpc/react": "^10.0.0-proxy-beta.14",
-    "@trpc/server": "^10.0.0-proxy-beta.14",
+    "@trpc/client": "^10.0.0-proxy-beta.15",
+    "@trpc/next": "^10.0.0-proxy-beta.15",
+    "@trpc/react": "^10.0.0-proxy-beta.15",
+    "@trpc/server": "^10.0.0-proxy-beta.15",
     "clsx": "^1.1.1",
     "next": "^12.3.1",
     "next-auth": "~4.10.3",
@@ -60,7 +60,7 @@
     "zod": "^3.0.0"
   },
   "devDependencies": {
-    "@playwright/test": "^1.19.2",
+    "@playwright/test": "^1.26.1",
     "@tanstack/react-query-devtools": "^4.3.8",
     "@types/node": "^18.7.20",
     "@types/node-fetch": "^2.5.11",
@@ -78,7 +78,6 @@
     "eslint-plugin-react-hooks": "^4.2.0",
     "nodemon": "^2.0.12",
     "npm-run-all": "^4.1.5",
-    "playwright": "^1.19.1",
     "postcss": "^8.4.14",
     "prettier": "^2.7.1",
     "prisma": "^4.3.1",
