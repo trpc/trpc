@@ -17,7 +17,7 @@ The `import type` keywords let you import from _any TypeScript file_ on your fil
 
 ### Initialize a tRPC client
 
-Create a typesafe client with the `createTRPCClient` method from `@trpc/client`:
+Create a typesafe client with the `createTRPCProxyClient` method from `@trpc/client`, and add a `links` array with a [terminating link](./links/index.md#the-terminating-link). If you want to learn more about tRPC links, check out the docs [here](./links/index.md):
 
 ```ts title='client.ts'
 // pages/index.tsx

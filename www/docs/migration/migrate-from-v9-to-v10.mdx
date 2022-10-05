@@ -256,7 +256,11 @@ We recommend two strategies to start **(and finish!)** upgrading your codebase t
 
 [@sachinraja](https://twitter.com/s4chinraja) has created [an excellent codemod](https://github.com/sachinraja/trpc-v10-migrate-codemod) for this major upgrade. Run the script to have 95% of the work done for you in a matter of moments.
 
-_Please note that this codemod isn't perfect - but will do a lot of the heavy lifting for you._
+:::info
+
+- If you use the codemod, you should still do step 1 to 3 below to make sure that works for you ahead of doing the full migration
+- Please note that this codemod isn't perfect - but will do a lot of the heavy lifting for you.
+  :::
 
 ### Using `.interop()`
 
@@ -362,7 +366,7 @@ See [HTTP-specific options moved from `TRPCClient` to links](#http-specific-opti
 
 ### Custom Links
 
-See the [Links documentation](links).
+See the [Links documentation](links#creating-a-custom-link).
 
 > 🚧 Feel free to contribute to improve this section
 
@@ -512,6 +516,19 @@ The `createContext` function can no longer return either `null` or `undefined`. 
 ```diff
 - createContext: () => null,
 + createContext: () => ({}),
+```
+
+### `queryClient` is no longer exposed through tRPC context
+
+tRPC is no longer exposing the `queryClient` instance through `trpc.useContext()`. If you need to access it, import it from `@tanstack/react-query`:
+
+```tsx
+import { useQueryClient } from '@tanstack/react-query';
+
+const MyComponent = () => {
+  const queryClient = useQueryClient();
+  // ...
+};
 ```
 
 ### Migrate custom error formatters
