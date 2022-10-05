@@ -126,7 +126,10 @@ export async function waitError<TError extends Error = Error>(
       await fnOrPromise;
     }
   } catch (cause) {
-    expect(cause).toBeInstanceOf(errorConstructor ?? Error);
+    expect(cause).toBeInstanceOf(Error);
+    if (errorConstructor) {
+      expect((cause as Error).name).toBe(errorConstructor.name);
+    }
     return cause as TError;
   }
   throw new Error('Function did not throw');
