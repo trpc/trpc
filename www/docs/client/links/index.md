@@ -5,11 +5,14 @@ sidebar_label: Overview
 slug: /links
 ---
 
-Links enable you to customize the flow of data between the tRPC Client and Server. The way links are implemented in tRPC is very similar to Apollo's links. We will cover the basic concepts here, but if you need to learn about links more in-depth we recommend to check out Apollo's [links docs](https://www.apollographql.com/docs/react/api/link/introduction/).
+Links enable you to customize the flow of data between the tRPC Client and Server. A link should do only one thing, which can be either a self-contained modification to a tRPC operation (query, mutation, or subscription) or a side-effect based on the operation (such as logging).
 
-A link should do only one thing, which can be either a self-contained modification to a tRPC operation (query, mutation, or subscription) or a side-effect based on the operation (such as logging).
+You can compose links together into an array that you can provide to the tRPC client configuration via the `links` property, which represents a link chain. This means that the tRPC client will execute the links in the order they are added in the `links` array when doing a request, and will execute them again in reverse when it's handling a response. Here's a visual representation of the link chain:
 
-You can compose links together into an array that you can provide to the tRPC client configuration via the `links` property, which represents a link chain. This means that the tRPC client will execute the links in the order they are added in the `links` array when doing a request, and will execute them again in reverse when it's handling a response.
+<div align="center" style={{marginBottom: '12px'}}>
+  <img src="/img/links-diagram.svg" style={{background: 'white'}} alt="tRPC Link Diagram"/>
+  <small>tRPC Link Diagram. Based on <a href="https://www.apollographql.com/docs/react/api/link/introduction/" target="_blank">Apollo's</a>.</small>
+</div>
 
 :::note
 The below examples are assuming you use Next.js, but the same as below can be added if you use the vanilla tRPC client
