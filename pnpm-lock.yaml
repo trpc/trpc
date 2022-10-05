@@ -708,9 +708,9 @@ importers:
   examples/minimal-react/client:
     specifiers:
       '@tanstack/react-query': 4.6.0
-      '@trpc/client': ^10.0.0-proxy-beta.13
-      '@trpc/react': ^10.0.0-proxy-beta.13
-      '@trpc/server': ^10.0.0-proxy-beta.13
+      '@trpc/client': ^10.0.0-proxy-beta.15
+      '@trpc/react': ^10.0.0-proxy-beta.15
+      '@trpc/server': ^10.0.0-proxy-beta.15
       '@types/react': ^18.0.9
       '@types/react-dom': ^18.0.5
       '@vitejs/plugin-react': ^2.1.0
@@ -734,7 +734,7 @@ importers:
 
   examples/minimal-react/server:
     specifiers:
-      '@trpc/server': ^10.0.0-proxy-beta.13
+      '@trpc/server': ^10.0.0-proxy-beta.14
       '@types/node': ^18.7.20
       nodemon: ^2.0.12
       tsx: ^3.9.0
@@ -835,7 +835,6 @@ importers:
     specifiers:
       '@playwright/test': ^1.26.1
       '@prisma/client': https://registry.npmjs.com/@prisma/client/-/client-4.3.1.tgz?id=%40examples%2Ftrpc-next-prisma-starter
-
       '@tanstack/react-query': 4.6.0
       '@trpc/client': ^10.0.0-proxy-beta.15
       '@trpc/next': ^10.0.0-proxy-beta.15

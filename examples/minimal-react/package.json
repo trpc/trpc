@@ -1,7 +1,7 @@
 {
   "name": "@examples/minimal-react",
   "private": true,
-  "version": "10.0.0-proxy-beta.13",
+  "version": "10.0.0-proxy-beta.15",
   "workspaces": [
     "client",
     "server"
