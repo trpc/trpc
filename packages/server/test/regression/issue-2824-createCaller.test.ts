@@ -4,7 +4,7 @@ import { z } from 'zod';
 
 const ignoreErrors = async (fn: () => Promise<void> | void) => {
   try {
-    await Promise.reject(new Error('foo'));
+    await fn();
   } catch {
     // ignore
   }
