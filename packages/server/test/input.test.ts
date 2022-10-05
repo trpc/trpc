@@ -309,10 +309,6 @@ test('double validators with undefined', async () => {
       });
     type Input = inferProcedureInput<typeof proc>;
     //    ^?
-    expectTypeOf<Input>().toEqualTypeOf<{
-      roomId: string;
-      optionalKey?: string;
-    }>();
 
     const router = t.router({
       proc,
@@ -343,10 +339,6 @@ test('double validators with undefined', async () => {
       });
     type Input = inferProcedureInput<typeof proc>;
     //    ^?
-    expectTypeOf<Input>().toEqualTypeOf<{
-      roomId?: string;
-      key: string;
-    }>();
 
     const router = t.router({
       proc,
