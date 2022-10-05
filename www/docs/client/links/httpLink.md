@@ -1,8 +1,8 @@
 ---
-id: http
+id: httpLink
 title: HTTP Link
 sidebar_label: HTTP Link
-slug: /links/http
+slug: /links/httpLink
 ---
 
 `httpLink` is a [**terminating link**](./index.md#the-terminating-link) that sends a tRPC operation to a tRPC procedure over HTTP.

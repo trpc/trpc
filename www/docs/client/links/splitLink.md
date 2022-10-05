@@ -1,8 +1,8 @@
 ---
-id: split
+id: splitLink
 title: Split Link
 sidebar_label: Split Link
-slug: /links/split
+slug: /links/splitLink
 ---
 
 `splitLink` is a link that allows you to branch your link chain's execution depending on a given condition.
