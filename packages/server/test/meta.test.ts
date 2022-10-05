@@ -10,7 +10,7 @@ test('meta is undefined in a middleware', () => {
   const t = initTRPC.meta<Meta>().create();
 
   t.middleware(({ meta, next }) => {
-    expectTypeOf(meta).toMatchTypeOf<Meta | undefined>();
+    expectTypeOf(meta).toEqualTypeOf<Meta | undefined>();
 
     return next();
   });
@@ -37,7 +37,7 @@ describe('meta in avail', () => {
           .meta({
             foo: 'bar',
           })
-          .query((opts) => {
+          .query(() => {
             return null;
           }),
         noMeta: baseProc.query(() => {
