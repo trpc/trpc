@@ -100,7 +100,6 @@ describe('double input validator', () => {
       `);
     }
   });
-
 });
 
 test('only allow double input validator for object-like inputs', () => {
