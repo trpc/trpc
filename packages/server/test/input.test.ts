@@ -31,6 +31,7 @@ describe('double input validator', () => {
       .input(
         z.object({
           text: z.string(),
+          optionalKey: z.string().optional(),
         }),
       )
       .mutation(({ input }) => {
@@ -50,7 +51,8 @@ describe('double input validator', () => {
     .done();
 
   test('happy path', async () => {
-    const data = {
+    type Input = inferProcedureInput<AppRouter['sendMessage']>;
+    const data: Input = {
       roomId: '123',
       text: 'hello',
     };
@@ -98,6 +100,8 @@ describe('double input validator', () => {
       `);
     }
   });
+
+  test('one has optional key', async () => {});
 });
 
 test('only allow double input validator for object-like inputs', () => {
