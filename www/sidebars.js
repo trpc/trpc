@@ -48,7 +48,19 @@ module.exports = {
       items: [
         'client/vanilla',
         'client/aborting-procedures',
-        'client/links',
+        {
+          type: 'category',
+          label: 'Links',
+          collapsed: false,
+          items: [
+            'client/links/index',
+            'client/links/httpLink',
+            'client/links/httpBatchLink',
+            'client/links/wsLink',
+            'client/links/splitLink',
+            'client/links/loggerLink',
+          ],
+        },
         'client/header',
         'client/cors',
       ],
