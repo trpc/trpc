@@ -21,15 +21,17 @@ type UndefinedKeys<TType> = keyof OmitNever<{
   [K in keyof TType]: TType[K] extends undefined ? TType : never;
 }>;
 
-export type FlatOverwrite<TType, TWith> = InferOptional<
-  identity<{
-    [TKey in keyof TWith | keyof TType]: TKey extends keyof TWith
-      ? TWith[TKey]
-      : TKey extends keyof TType
-      ? TType[TKey]
-      : never;
-  }>,
-  UndefinedKeys<TType> | UndefinedKeys<TWith>
+export type FlatOverwrite<TType, TWith> = Simplify<
+  InferOptional<
+    {
+      [TKey in keyof TWith | keyof TType]: TKey extends keyof TWith
+        ? TWith[TKey]
+        : TKey extends keyof TType
+        ? TType[TKey]
+        : never;
+    },
+    UndefinedKeys<TType> | UndefinedKeys<TWith>
+  >
 >;
 
 /**
