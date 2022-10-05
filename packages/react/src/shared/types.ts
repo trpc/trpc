@@ -1,9 +1,4 @@
-import {
-  QueryClient,
-  UseInfiniteQueryResult,
-  UseMutationResult,
-  UseQueryResult,
-} from '@tanstack/react-query';
+import { QueryClient } from '@tanstack/react-query';
 import { AnyRouter, MaybePromise } from '@trpc/server';
 
 /**
