@@ -70,5 +70,8 @@ describe('meta', () => {
     expectTypeOf(ctx.router.withMeta._def.meta).toEqualTypeOf<
       Meta | undefined
     >();
+    expect(ctx.router.withMeta._def.meta).toEqual({
+      foo: 'bar',
+    });
   });
 });
