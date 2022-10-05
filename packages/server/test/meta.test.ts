@@ -16,7 +16,7 @@ test('meta is undefined in a middleware', () => {
   });
 });
 
-describe('meta in available in middlewares', () => {
+describe('meta', () => {
   type Meta = {
     foo: 'bar';
   };
@@ -52,7 +52,7 @@ describe('meta in available in middlewares', () => {
       await ctx?.close?.();
     })
     .done();
-  it('testy', async () => {
+  it('is available in middlewares', async () => {
     await ctx.proxy.noMeta.query();
     await ctx.proxy.withMeta.query();
     await ctx.proxy.noMeta.query();
@@ -64,5 +64,11 @@ describe('meta in available in middlewares', () => {
       undefined,
       { foo: 'bar' },
     ]);
+  });
+
+  it('is queryable in _def', async () => {
+    expectTypeOf(ctx.router.withMeta._def.meta).toEqualTypeOf<
+      Meta | undefined
+    >();
   });
 });
