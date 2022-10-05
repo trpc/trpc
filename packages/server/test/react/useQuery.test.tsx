@@ -62,6 +62,8 @@ test('useQuery()', async () => {
       id: '1',
     });
 
+    expect(query1.trpc.path).toBe('post.byId');
+
     // @ts-expect-error Should not exist
     proxy.post.byId.useInfiniteQuery;
     const utils = proxy.useContext();
@@ -96,6 +98,7 @@ test('useInfiniteQuery()', async () => {
   const { App, proxy } = ctx;
   function MyComponent() {
     const query1 = proxy.post.list.useInfiniteQuery({});
+    expect(query1.trpc.path).toBe('post.list');
 
     if (!query1.data) {
       return <>...</>;

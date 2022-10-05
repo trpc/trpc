@@ -52,6 +52,8 @@ test('useMutation', async () => {
   function MyComponent() {
     const mutation = proxy.post.create.useMutation();
 
+    expect(mutation.trpc.path).toBe('post.create');
+
     useEffect(() => {
       mutation.mutate({
         text: 'hello',
