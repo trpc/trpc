@@ -101,7 +101,6 @@ describe('double input validator', () => {
     }
   });
 
-  test('one has optional key', async () => {});
 });
 
 test('only allow double input validator for object-like inputs', () => {
