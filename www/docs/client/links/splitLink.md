@@ -11,7 +11,7 @@ slug: /links/split
 
 ### Disable batching for certain requests
 
-In tRPC, `httpBatchLink` is used as the terminating link by default, which means request batching is enabled in every request. However, if you need to disable batching only for certain requests, you would need to change the terminating link in you tRPC client config dynamically between `httpLink` and `httpBatchLink`. This is a perfect opportunity for `splitLink` to be used:
+Let's say you're using `httpBatchLink` as the terminating link in your tRPC client config. This means request batching is enabled in every request. However, if you need to disable batching only for certain requests, you would need to change the terminating link in you tRPC client config dynamically between `httpLink` and `httpBatchLink`. This is a perfect opportunity for `splitLink` to be used:
 
 #### 1. Configure client / `utils/trpc.ts`
 
