@@ -75,8 +75,8 @@ importers:
   examples/.interop/cloudflare-workers:
     specifiers:
       '@cloudflare/workers-types': ^3.14.1
-      '@trpc/client': ^10.0.0-proxy-beta.14
-      '@trpc/server': ^10.0.0-proxy-beta.14
+      '@trpc/client': ^10.0.0-proxy-beta.15
+      '@trpc/server': ^10.0.0-proxy-beta.15
       '@types/node': ^18.7.20
       node-fetch: ^2.6.1
       start-server-and-test: ^1.12.0
@@ -99,9 +99,9 @@ importers:
 
   examples/.interop/express-server:
     specifiers:
-      '@trpc/client': ^10.0.0-proxy-beta.14
-      '@trpc/react': ^10.0.0-proxy-beta.14
-      '@trpc/server': ^10.0.0-proxy-beta.14
+      '@trpc/client': ^10.0.0-proxy-beta.15
+      '@trpc/react': ^10.0.0-proxy-beta.15
+      '@trpc/server': ^10.0.0-proxy-beta.15
       '@types/express': ^4.17.12
       '@types/node': ^18.7.20
       '@types/node-fetch': ^2.5.11
@@ -139,8 +139,8 @@ importers:
   examples/.interop/fastify-server:
     specifiers:
       '@fastify/websocket': ^5.0.0
-      '@trpc/client': ^10.0.0-proxy-beta.14
-      '@trpc/server': ^10.0.0-proxy-beta.14
+      '@trpc/client': ^10.0.0-proxy-beta.15
+      '@trpc/server': ^10.0.0-proxy-beta.15
       '@types/node': ^18.7.20
       '@types/node-fetch': ^2.5.11
       '@types/ws': ^8.2.0
@@ -181,8 +181,8 @@ importers:
 
   examples/.interop/lambda-api-gateway:
     specifiers:
-      '@trpc/client': ^10.0.0-proxy-beta.14
-      '@trpc/server': ^10.0.0-proxy-beta.14
+      '@trpc/client': ^10.0.0-proxy-beta.15
+      '@trpc/server': ^10.0.0-proxy-beta.15
       '@types/node': ^18.7.20
       node-fetch: ^2.6.1
       serverless: ^3.18.1
@@ -205,10 +205,10 @@ importers:
   examples/.interop/next-minimal-starter:
     specifiers:
       '@tanstack/react-query': 4.6.0
-      '@trpc/client': ^10.0.0-proxy-beta.14
-      '@trpc/next': ^10.0.0-proxy-beta.14
-      '@trpc/react': ^10.0.0-proxy-beta.14
-      '@trpc/server': ^10.0.0-proxy-beta.14
+      '@trpc/client': ^10.0.0-proxy-beta.15
+      '@trpc/next': ^10.0.0-proxy-beta.15
+      '@trpc/react': ^10.0.0-proxy-beta.15
+      '@trpc/server': ^10.0.0-proxy-beta.15
       '@types/node': ^18.7.20
       '@types/react': ^18.0.9
       '@types/react-dom': ^18.0.5
@@ -236,10 +236,10 @@ importers:
   examples/.interop/next-minimal-starter-migration:
     specifiers:
       '@tanstack/react-query': 4.6.0
-      '@trpc/client': ^10.0.0-proxy-beta.14
-      '@trpc/next': ^10.0.0-proxy-beta.14
-      '@trpc/react': ^10.0.0-proxy-beta.14
-      '@trpc/server': ^10.0.0-proxy-beta.14
+      '@trpc/client': ^10.0.0-proxy-beta.15
+      '@trpc/next': ^10.0.0-proxy-beta.15
+      '@trpc/react': ^10.0.0-proxy-beta.15
+      '@trpc/server': ^10.0.0-proxy-beta.15
       '@types/node': ^18.7.20
       '@types/react': ^18.0.9
       '@types/react-dom': ^18.0.5
@@ -270,10 +270,10 @@ importers:
       '@prisma/client': https://registry.npmjs.com/@prisma/client/-/client-4.3.1.tgz?id=%40examples%2Flegacy-next-starter
       '@tanstack/react-query': 4.6.0
       '@tanstack/react-query-devtools': ^4.3.8
-      '@trpc/client': ^10.0.0-proxy-beta.14
-      '@trpc/next': ^10.0.0-proxy-beta.14
-      '@trpc/react': ^10.0.0-proxy-beta.14
-      '@trpc/server': ^10.0.0-proxy-beta.14
+      '@trpc/client': ^10.0.0-proxy-beta.15
+      '@trpc/next': ^10.0.0-proxy-beta.15
+      '@trpc/react': ^10.0.0-proxy-beta.15
+      '@trpc/server': ^10.0.0-proxy-beta.15
       '@types/node': ^18.7.20
       '@types/react': ^18.0.9
       '@typescript-eslint/eslint-plugin': ^5.37.0
@@ -339,10 +339,10 @@ importers:
       '@prisma/client': https://registry.npmjs.com/@prisma/client/-/client-4.3.1.tgz?id=%40examples%2Finterop-next-starter-websockets
       '@tanstack/react-query': 4.6.0
       '@tanstack/react-query-devtools': ^4.3.8
-      '@trpc/client': ^10.0.0-proxy-beta.14
-      '@trpc/next': ^10.0.0-proxy-beta.14
-      '@trpc/react': ^10.0.0-proxy-beta.14
-      '@trpc/server': ^10.0.0-proxy-beta.14
+      '@trpc/client': ^10.0.0-proxy-beta.15
+      '@trpc/next': ^10.0.0-proxy-beta.15
+      '@trpc/react': ^10.0.0-proxy-beta.15
+      '@trpc/server': ^10.0.0-proxy-beta.15
       '@types/node': ^18.7.20
       '@types/node-fetch': ^2.5.11
       '@types/react': ^18.0.9
@@ -424,10 +424,10 @@ importers:
       '@prisma/client': https://registry.npmjs.com/@prisma/client/-/client-4.3.1.tgz?id=%40examples%2Finterop-todo-web
       '@tanstack/react-query': 4.6.0
       '@tanstack/react-query-devtools': ^4.3.8
-      '@trpc/client': ^10.0.0-proxy-beta.14
-      '@trpc/next': ^10.0.0-proxy-beta.14
-      '@trpc/react': ^10.0.0-proxy-beta.14
-      '@trpc/server': ^10.0.0-proxy-beta.14
+      '@trpc/client': ^10.0.0-proxy-beta.15
+      '@trpc/next': ^10.0.0-proxy-beta.15
+      '@trpc/react': ^10.0.0-proxy-beta.15
+      '@trpc/server': ^10.0.0-proxy-beta.15
       '@types/node': ^18.7.20
       '@types/react': ^18.0.9
       clsx: ^1.1.1
@@ -469,9 +469,9 @@ importers:
 
   examples/.interop/standalone-server:
     specifiers:
-      '@trpc/client': ^10.0.0-proxy-beta.14
-      '@trpc/react': ^10.0.0-proxy-beta.14
-      '@trpc/server': ^10.0.0-proxy-beta.14
+      '@trpc/client': ^10.0.0-proxy-beta.15
+      '@trpc/react': ^10.0.0-proxy-beta.15
+      '@trpc/server': ^10.0.0-proxy-beta.15
       '@types/node': ^18.7.20
       '@types/node-fetch': ^2.5.11
       '@types/ws': ^8.2.0
@@ -507,8 +507,8 @@ importers:
   examples/cloudflare-workers:
     specifiers:
       '@cloudflare/workers-types': ^3.14.1
-      '@trpc/client': ^10.0.0-proxy-beta.14
-      '@trpc/server': ^10.0.0-proxy-beta.14
+      '@trpc/client': ^10.0.0-proxy-beta.15
+      '@trpc/server': ^10.0.0-proxy-beta.15
       '@types/node': ^18.7.20
       '@types/node-fetch': ^2.5.11
       node-fetch: ^2.6.1
@@ -533,9 +533,9 @@ importers:
 
   examples/express-minimal:
     specifiers:
-      '@trpc/client': ^10.0.0-proxy-beta.14
-      '@trpc/react': ^10.0.0-proxy-beta.14
-      '@trpc/server': ^10.0.0-proxy-beta.14
+      '@trpc/client': ^10.0.0-proxy-beta.15
+      '@trpc/react': ^10.0.0-proxy-beta.15
+      '@trpc/server': ^10.0.0-proxy-beta.15
       '@types/express': ^4.17.12
       '@types/node': ^18.7.20
       '@types/node-fetch': ^2.5.11
@@ -570,9 +570,9 @@ importers:
 
   examples/express-server:
     specifiers:
-      '@trpc/client': ^10.0.0-proxy-beta.14
-      '@trpc/react': ^10.0.0-proxy-beta.14
-      '@trpc/server': ^10.0.0-proxy-beta.14
+      '@trpc/client': ^10.0.0-proxy-beta.15
+      '@trpc/react': ^10.0.0-proxy-beta.15
+      '@trpc/server': ^10.0.0-proxy-beta.15
       '@types/express': ^4.17.12
       '@types/node': ^18.7.20
       '@types/node-fetch': ^2.5.11
@@ -610,8 +610,8 @@ importers:
   examples/fastify-server:
     specifiers:
       '@fastify/websocket': ^5.0.0
-      '@trpc/client': ^10.0.0-proxy-beta.14
-      '@trpc/server': ^10.0.0-proxy-beta.14
+      '@trpc/client': ^10.0.0-proxy-beta.15
+      '@trpc/server': ^10.0.0-proxy-beta.15
       '@types/node': ^18.7.20
       '@types/node-fetch': ^2.5.11
       '@types/ws': ^8.2.0
@@ -654,8 +654,8 @@ importers:
 
   examples/lambda-api-gateway:
     specifiers:
-      '@trpc/client': ^10.0.0-proxy-beta.14
-      '@trpc/server': ^10.0.0-proxy-beta.14
+      '@trpc/client': ^10.0.0-proxy-beta.15
+      '@trpc/server': ^10.0.0-proxy-beta.15
       '@types/node': ^18.7.20
       node-fetch: ^2.6.1
       serverless: ^3.18.1
@@ -751,7 +751,7 @@ importers:
 
   examples/minimal/client:
     specifiers:
-      '@trpc/client': ^10.0.0-proxy-beta.14
+      '@trpc/client': ^10.0.0-proxy-beta.15
       '@types/node': ^18.7.20
     dependencies:
       '@trpc/client': link:../../../packages/client
@@ -760,7 +760,7 @@ importers:
 
   examples/minimal/server:
     specifiers:
-      '@trpc/server': ^10.0.0-proxy-beta.14
+      '@trpc/server': ^10.0.0-proxy-beta.15
       '@types/node': ^18.7.20
     dependencies:
       '@trpc/server': link:../../../packages/server
@@ -770,10 +770,10 @@ importers:
   examples/next-big-router:
     specifiers:
       '@tanstack/react-query': 4.6.0
-      '@trpc/client': ^10.0.0-proxy-beta.14
-      '@trpc/next': ^10.0.0-proxy-beta.14
-      '@trpc/react': ^10.0.0-proxy-beta.14
-      '@trpc/server': ^10.0.0-proxy-beta.14
+      '@trpc/client': ^10.0.0-proxy-beta.15
+      '@trpc/next': ^10.0.0-proxy-beta.15
+      '@trpc/react': ^10.0.0-proxy-beta.15
+      '@trpc/server': ^10.0.0-proxy-beta.15
       '@types/node': ^18.7.20
       '@types/react': ^18.0.9
       '@types/react-dom': ^18.0.5
@@ -803,10 +803,10 @@ importers:
   examples/next-minimal-starter:
     specifiers:
       '@tanstack/react-query': 4.6.0
-      '@trpc/client': ^10.0.0-proxy-beta.14
-      '@trpc/next': ^10.0.0-proxy-beta.14
-      '@trpc/react': ^10.0.0-proxy-beta.14
-      '@trpc/server': ^10.0.0-proxy-beta.14
+      '@trpc/client': ^10.0.0-proxy-beta.15
+      '@trpc/next': ^10.0.0-proxy-beta.15
+      '@trpc/react': ^10.0.0-proxy-beta.15
+      '@trpc/server': ^10.0.0-proxy-beta.15
       '@types/node': ^18.7.20
       '@types/react': ^18.0.9
       '@types/react-dom': ^18.0.5
@@ -835,11 +835,12 @@ importers:
     specifiers:
       '@playwright/test': ^1.26.1
       '@prisma/client': https://registry.npmjs.com/@prisma/client/-/client-4.3.1.tgz?id=%40examples%2Ftrpc-next-prisma-starter
+
       '@tanstack/react-query': 4.6.0
-      '@trpc/client': ^10.0.0-proxy-beta.14
-      '@trpc/next': ^10.0.0-proxy-beta.14
-      '@trpc/react': ^10.0.0-proxy-beta.14
-      '@trpc/server': ^10.0.0-proxy-beta.14
+      '@trpc/client': ^10.0.0-proxy-beta.15
+      '@trpc/next': ^10.0.0-proxy-beta.15
+      '@trpc/react': ^10.0.0-proxy-beta.15
+      '@trpc/server': ^10.0.0-proxy-beta.15
       '@types/node': ^18.7.20
       '@types/react': ^18.0.9
       '@typescript-eslint/eslint-plugin': ^5.37.0
@@ -904,10 +905,10 @@ importers:
       '@prisma/client': https://registry.npmjs.com/@prisma/client/-/client-4.3.1.tgz?id=%40examples%2Fnext-starter-sqlite
       '@tanstack/react-query': 4.6.0
       '@tanstack/react-query-devtools': ^4.3.8
-      '@trpc/client': ^10.0.0-proxy-beta.14
-      '@trpc/next': ^10.0.0-proxy-beta.14
-      '@trpc/react': ^10.0.0-proxy-beta.14
-      '@trpc/server': ^10.0.0-proxy-beta.14
+      '@trpc/client': ^10.0.0-proxy-beta.15
+      '@trpc/next': ^10.0.0-proxy-beta.15
+      '@trpc/react': ^10.0.0-proxy-beta.15
+      '@trpc/server': ^10.0.0-proxy-beta.15
       '@types/node': ^18.7.20
       '@types/react': ^18.0.9
       '@typescript-eslint/eslint-plugin': ^5.37.0
@@ -973,10 +974,10 @@ importers:
       '@prisma/client': https://registry.npmjs.com/@prisma/client/-/client-4.3.1.tgz?id=%40examples%2Fnext-starter-websockets
       '@tanstack/react-query': 4.6.0
       '@tanstack/react-query-devtools': ^4.3.8
-      '@trpc/client': ^10.0.0-proxy-beta.14
-      '@trpc/next': ^10.0.0-proxy-beta.14
-      '@trpc/react': ^10.0.0-proxy-beta.14
-      '@trpc/server': ^10.0.0-proxy-beta.14
+      '@trpc/client': ^10.0.0-proxy-beta.15
+      '@trpc/next': ^10.0.0-proxy-beta.15
+      '@trpc/react': ^10.0.0-proxy-beta.15
+      '@trpc/server': ^10.0.0-proxy-beta.15
       '@types/node': ^18.7.20
       '@types/node-fetch': ^2.5.11
       '@types/react': ^18.0.9
@@ -1058,10 +1059,10 @@ importers:
       '@prisma/client': https://registry.npmjs.com/@prisma/client/-/client-4.3.1.tgz?id=%40examples%2Ftrpc-next-prisma-todomvc
       '@tanstack/react-query': 4.6.0
       '@tanstack/react-query-devtools': ^4.3.8
-      '@trpc/client': ^10.0.0-proxy-beta.14
-      '@trpc/next': ^10.0.0-proxy-beta.14
-      '@trpc/react': ^10.0.0-proxy-beta.14
-      '@trpc/server': ^10.0.0-proxy-beta.14
+      '@trpc/client': ^10.0.0-proxy-beta.15
+      '@trpc/next': ^10.0.0-proxy-beta.15
+      '@trpc/react': ^10.0.0-proxy-beta.15
+      '@trpc/server': ^10.0.0-proxy-beta.15
       '@types/node': ^18.7.20
       '@types/react': ^18.0.9
       clsx: ^1.1.1
@@ -1103,9 +1104,9 @@ importers:
 
   examples/standalone-server:
     specifiers:
-      '@trpc/client': ^10.0.0-proxy-beta.14
-      '@trpc/react': ^10.0.0-proxy-beta.14
-      '@trpc/server': ^10.0.0-proxy-beta.14
+      '@trpc/client': ^10.0.0-proxy-beta.15
+      '@trpc/react': ^10.0.0-proxy-beta.15
+      '@trpc/server': ^10.0.0-proxy-beta.15
       '@types/node': ^18.7.20
       '@types/node-fetch': ^2.5.11
       '@types/ws': ^8.2.0
@@ -1141,7 +1142,7 @@ importers:
   packages/client:
     specifiers:
       '@testing-library/dom': ^8.18.1
-      '@trpc/server': ^10.0.0-proxy-beta.14
+      '@trpc/server': ^10.0.0-proxy-beta.15
       '@types/node': ^18.7.20
     devDependencies:
       '@testing-library/dom': 8.18.1
@@ -1151,9 +1152,9 @@ importers:
   packages/next:
     specifiers:
       '@tanstack/react-query': 4.6.0
-      '@trpc/client': ^10.0.0-proxy-beta.14
-      '@trpc/react': ^10.0.0-proxy-beta.14
-      '@trpc/server': ^10.0.0-proxy-beta.14
+      '@trpc/client': ^10.0.0-proxy-beta.15
+      '@trpc/react': ^10.0.0-proxy-beta.15
+      '@trpc/server': ^10.0.0-proxy-beta.15
       '@types/express': ^4.17.12
       '@types/node': ^18.7.20
       express: ^4.17.1
@@ -1180,8 +1181,8 @@ importers:
   packages/react:
     specifiers:
       '@tanstack/react-query': 4.6.0
-      '@trpc/client': ^10.0.0-proxy-beta.14
-      '@trpc/server': ^10.0.0-proxy-beta.14
+      '@trpc/client': ^10.0.0-proxy-beta.15
+      '@trpc/server': ^10.0.0-proxy-beta.15
       '@types/express': ^4.17.12
       '@types/node': ^18.7.20
       express: ^4.17.1
@@ -1211,10 +1212,10 @@ importers:
       '@testing-library/jest-dom': ^5.16.5
       '@testing-library/react': ^13.4.0
       '@testing-library/user-event': ^14.4.3
-      '@trpc/client': ^10.0.0-proxy-beta.14
-      '@trpc/next': ^10.0.0-proxy-beta.14
-      '@trpc/react': ^10.0.0-proxy-beta.14
-      '@trpc/server': ^10.0.0-proxy-beta.14
+      '@trpc/client': ^10.0.0-proxy-beta.15
+      '@trpc/next': ^10.0.0-proxy-beta.15
+      '@trpc/react': ^10.0.0-proxy-beta.15
+      '@trpc/server': ^10.0.0-proxy-beta.15
       '@types/aws-lambda': ^8.10.97
       '@types/express': ^4.17.12
       '@types/hash-sum': ^1.0.0
@@ -1312,10 +1313,10 @@ importers:
       '@octokit/graphql': ^5.0.0
       '@octokit/graphql-schema': ^10.74.2
       '@tailwindcss/line-clamp': ^0.4.2
-      '@trpc/client': ^10.0.0-proxy-beta.14
-      '@trpc/next': ^10.0.0-proxy-beta.14
-      '@trpc/react': ^10.0.0-proxy-beta.14
-      '@trpc/server': ^10.0.0-proxy-beta.14
+      '@trpc/client': ^10.0.0-proxy-beta.15
+      '@trpc/next': ^10.0.0-proxy-beta.15
+      '@trpc/react': ^10.0.0-proxy-beta.15
+      '@trpc/server': ^10.0.0-proxy-beta.15
       '@tsconfig/docusaurus': ^1.0.6
       '@types/node': ^18.7.20
       '@types/oauth': ^0.9.1
