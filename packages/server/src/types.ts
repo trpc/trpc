@@ -5,7 +5,7 @@
  */
 export type identity<TType> = TType;
 
-export type InferOptional<TType, TKeys extends keyof TType> = Partial<
+type InferOptional<TType, TKeys extends keyof TType> = Partial<
   Pick<TType, TKeys>
 > &
   Omit<TType, TKeys>;
