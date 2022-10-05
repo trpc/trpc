@@ -5,16 +5,32 @@
  */
 export type identity<TType> = TType;
 
-/**
- * @internal
- */
-export type FlatOverwrite<TType, TWith> = identity<{
-  [TKey in keyof TWith | keyof TType]: TKey extends keyof TWith
-    ? TWith[TKey]
-    : TKey extends keyof TType
-    ? TType[TKey]
-    : never;
+export type InferOptional<TType, TKeys extends keyof TType> = Partial<
+  Pick<TType, TKeys>
+> &
+  Omit<TType, TKeys>;
+
+type OmitNever<TType> = Pick<
+  TType,
+  {
+    [K in keyof TType]: TType[K] extends never ? never : K;
+  }[keyof TType]
+>;
+
+type UndefinedKeys<TType> = keyof OmitNever<{
+  [K in keyof TType]: TType[K] extends undefined ? TType : never;
 }>;
+
+export type FlatOverwrite<TType, TWith> = InferOptional<
+  identity<{
+    [TKey in keyof TWith | keyof TType]: TKey extends keyof TWith
+      ? TWith[TKey]
+      : TKey extends keyof TType
+      ? TType[TKey]
+      : never;
+  }>,
+  UndefinedKeys<TType> | UndefinedKeys<TWith>
+>;
 
 /**
  * @public
