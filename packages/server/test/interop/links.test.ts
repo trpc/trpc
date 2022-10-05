@@ -10,9 +10,9 @@ import {
   httpBatchLink,
   httpLink,
   loggerLink,
-  retryLink,
 } from '@trpc/client/src';
 import { createChain } from '@trpc/client/src/links/internals/createChain';
+import { retryLink } from '@trpc/client/src/links/retryLink';
 import * as trpc from '@trpc/server/src';
 import { AnyRouter } from '@trpc/server/src';
 import { observable, observableToPromise } from '@trpc/server/src/observable';
