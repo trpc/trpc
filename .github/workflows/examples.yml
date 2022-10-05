@@ -22,6 +22,7 @@ jobs:
             .interop/next-prisma-starter-websockets,
             .interop/next-prisma-todomvc,
             next-minimal-starter,
+            minimal-react,
             .interop/next-minimal-starter,
             .interop/standalone-server,
             fastify-server,
@@ -62,7 +63,7 @@ jobs:
 
       - run: node -v
       - name: Install deps and build (with cache)
-        run: pnpm --filter ./examples/${{ matrix.dir }}  --filter "@trpc/*" --filter root install
+        run: pnpm --filter "./examples/${{ matrix.dir }}/**"  --filter "@trpc/*" --filter root install
 
       - name: Next.js cache
         uses: actions/cache@v3
