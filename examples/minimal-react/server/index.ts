@@ -37,7 +37,7 @@ export type AppRouter = typeof appRouter;
 const handler = createHTTPHandler({
   router: appRouter,
   createContext() {
-    console.log('context');
+    console.log('context 3');
     return {};
   },
 });

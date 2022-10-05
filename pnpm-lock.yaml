@@ -736,7 +736,6 @@ importers:
     specifiers:
       '@trpc/server': ^10.0.0-proxy-beta.14
       '@types/node': ^18.7.20
-      nodemon: ^2.0.12
       tsx: ^3.9.0
       typescript: ^4.8.3
       zod: ^3.0.0
@@ -745,7 +744,6 @@ importers:
       zod: 3.19.1
     devDependencies:
       '@types/node': 18.7.20
-      nodemon: 2.0.20
       tsx: 3.9.0
       typescript: 4.8.3
 
