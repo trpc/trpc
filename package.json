@@ -67,6 +67,7 @@
   },
   "pnpm": {
     "overrides": {
+      "@tanstack/react-query": "4.6.0",
       "@examples/trpc-next-prisma-starter>@prisma/client": "https://registry.npmjs.com/@prisma/client/-/client-4.3.1.tgz?id=%40examples%2Ftrpc-next-prisma-starter",
       "@examples/next-starter-sqlite>@prisma/client": "https://registry.npmjs.com/@prisma/client/-/client-4.3.1.tgz?id=%40examples%2Fnext-starter-sqlite",
       "@examples/next-starter-websockets>@prisma/client": "https://registry.npmjs.com/@prisma/client/-/client-4.3.1.tgz?id=%40examples%2Fnext-starter-websockets",
