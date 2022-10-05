@@ -35,6 +35,7 @@ import React, {
   useCallback,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from 'react';
 import {
@@ -169,10 +170,13 @@ export type UseTRPCInfiniteQueryResult<TData, TError> = UseInfiniteQueryResult<
 export type UseTRPCMutationResult<TData, TError, TVariables, TContext> =
   UseMutationResult<TData, TError, TVariables, TContext> & TRPCHookResult;
 
-function useConstantValue<TValue>(value: TValue): TValue {
-  const [v] = useState(() => value);
-
-  return v;
+/**
+ * Makes a stable reference of the `trpc` prop
+ */
+function useHookResult(value: TRPCHookResult['trpc']): TRPCHookResult['trpc'] {
+  const ref = useRef(value);
+  ref.current.path = value.path;
+  return ref.current;
 }
 /**
  * Create strongly typed react hooks
@@ -453,7 +457,7 @@ export function createHooksInternal<
       },
       ssrOpts,
     ) as UseTRPCQueryResult<TData, TError>;
-    hook.trpc = useConstantValue({
+    hook.trpc = useHookResult({
       path: pathAndInput[0],
     });
 
@@ -502,7 +506,7 @@ export function createHooksInternal<
       TContext
     >;
 
-    hook.trpc = useConstantValue({
+    hook.trpc = useHookResult({
       path: Array.isArray(path) ? path[0] : path,
     });
 
@@ -629,7 +633,7 @@ export function createHooksInternal<
       ssrOpts,
     ) as UseTRPCInfiniteQueryResult<TQueryValues[TPath]['output'], TError>;
 
-    hook.trpc = useConstantValue({
+    hook.trpc = useHookResult({
       path,
     });
     return hook;
