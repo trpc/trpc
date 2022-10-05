@@ -15,7 +15,7 @@ body:
         Run this command in your project root and paste the results:
 
         ```terminal
-        npx envinfo --system --binaries --browsers --npmPackages "next,react,@trpc/server,@trpc/client,@trpc/react,@trpc/client,@trpc/next,react-query"
+        npx envinfo --system --binaries --browsers --npmPackages "typescript,next,react,@trpc/server,@trpc/client,@trpc/react,@trpc/client,@trpc/next,@tanstack/react-query"
         ```
       placeholder: |
         ``` 
@@ -27,6 +27,13 @@ body:
     attributes:
       label: Describe the bug
       description: Please describe the bug as clear and concise as possible, as well as the behavior you were expecting whilst encountering the bug.
+    validations:
+      required: true
+  - type: input
+    attributes:
+      label: Link to reproduction
+      description: Please provide a link to a reproduction of the bug. This can be a link to a repository or a Stackblitz/CodeSandbox etc. Feel free to use our minimal reproduction template https://stackblitz.com/github/trpc/examples-next-minimal-starter
+      placeholder: https://stackblitz.com/github/trpc/examples-next-minimal-starter
     validations:
       required: true
   - type: textarea

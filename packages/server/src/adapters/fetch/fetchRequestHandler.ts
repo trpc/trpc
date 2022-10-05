@@ -1,10 +1,7 @@
-import { assertNotBrowser } from '../../assertNotBrowser';
 import { AnyRouter } from '../../core';
 import { HTTPRequest } from '../../http/internals/types';
 import { resolveHTTPResponse } from '../../http/resolveHTTPResponse';
 import { FetchHandlerOptions } from './types';
-
-assertNotBrowser();
 
 export type FetchHandlerRequestOptions<TRouter extends AnyRouter> = {
   req: Request;

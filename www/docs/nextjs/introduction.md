@@ -132,6 +132,7 @@ export default trpcNext.createNextApiHandler({
 Create a set of strongly-typed hooks using your API's type signature.
 
 ```tsx title='utils/trpc.ts'
+import { httpBatchLink } from '@trpc/client';
 import { createTRPCNext } from '@trpc/next';
 import type { AppRouter } from '../pages/api/trpc/[trpc]';
 
@@ -175,6 +176,10 @@ export const trpc = createTRPCNext<AppRouter>({
 // => { useQuery: ..., useMutation: ...}
 ```
 
+:::note
+createTRPCNext does not work with interop mode. If you are migrating from v9 using interop, keep using [the old way of initializing tRPC](../../versioned_docs/version-9.x/nextjs/introduction.md#4-create-trpc-hooks).
+:::
+
 ### 5. Configure `_app.tsx`
 
 ```tsx title='pages/_app.tsx'
@@ -212,17 +217,11 @@ export default function IndexPage() {
 
 The `config`-argument is a function that returns an object that configures the tRPC and React Query clients. This function has a `ctx` input that gives you access to the Next.js `req` object, among other things. The returned value can contain the following properties:
 
-- Exactly **one of** these are **required**:
-
-  - `url` your API URL.
+- **Required**:
   - `links` to customize the flow of data between tRPC Client and the tRPC-server. [Read more](../client/links.md).
-
 - Optional:
   - `queryClientConfig`: a configuration object for the React Query `QueryClient` used internally by the tRPC React hooks: [QueryClient docs](https://tanstack.com/query/v4/docs/reference/QueryClient)
-  - `headers`: an object or a function that returns an object of outgoing tRPC requests
   - `transformer`: a transformer applied to outgoing payloads. Read more about [Data Transformers](data-transformers)
-  - `fetch`: customize the implementation of `fetch` used by tRPC internally
-  - `AbortController`: customize the implementation of `AbortController` used by tRPC internally
   - `abortOnUnmount`: determines if in-flight requests will be cancelled on component unmount. This defaults to `false`.
 
 ### `ssr`-boolean (default: `false`)

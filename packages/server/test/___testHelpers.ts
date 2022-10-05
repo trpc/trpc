@@ -1,17 +1,16 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import './___packages';
-import {
-  TRPCWebSocketClient,
-  WebSocketClientOptions,
-  createTRPCClientProxy,
-  createWSClient,
-  httpBatchLink,
-} from '@trpc/client/src';
-import { createTRPCClient } from '@trpc/client/src';
-import { WithTRPCConfig } from '@trpc/next';
 import AbortController from 'abort-controller';
 import fetch from 'node-fetch';
 import ws from 'ws';
+import {
+  TRPCWebSocketClient,
+  WebSocketClientOptions,
+  createTRPCClient,
+  createTRPCClientProxy,
+  createWSClient,
+  httpBatchLink,
+} from '../../client/src';
+import { WithTRPCConfig } from '../../next/src';
 import { AnyRouter as AnyNewRouter } from '../src';
 import {
   CreateHTTPHandlerOptions,
@@ -109,7 +108,7 @@ export async function waitMs(ms: number) {
 
 type Constructor<T extends {} = {}> = new (...args: any[]) => T;
 
-export async function waitError<TError = Error>(
+export async function waitError<TError extends Error = Error>(
   /**
    * Function callback or promise that you expect will throw
    */
@@ -127,7 +126,10 @@ export async function waitError<TError = Error>(
       await fnOrPromise;
     }
   } catch (cause) {
-    expect(cause).toBeInstanceOf(errorConstructor ?? Error);
+    expect(cause).toBeInstanceOf(Error);
+    if (errorConstructor) {
+      expect((cause as Error).name).toBe(errorConstructor.name);
+    }
     return cause as TError;
   }
   throw new Error('Function did not throw');

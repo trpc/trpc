@@ -34,8 +34,7 @@ interface MiddlewareOKResult<_TParams extends ProcedureParams>
 interface MiddlewareErrorResult<_TParams extends ProcedureParams>
   extends MiddlewareResultBase {
   ok: false;
-  error: Error;
-  // we could guarantee it's always of this type
+  error: TRPCError;
 }
 
 /**
@@ -58,7 +57,7 @@ export type MiddlewareFunction<
     path: string;
     input: TParams['_input_out'];
     rawInput: unknown;
-    meta: TParams['_meta'];
+    meta: TParams['_meta'] | undefined;
     next: {
       (): Promise<MiddlewareResult<TParams>>;
       <TContext>(opts: { ctx: TContext }): Promise<

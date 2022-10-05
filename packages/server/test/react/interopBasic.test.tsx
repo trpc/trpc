@@ -2,14 +2,14 @@ import { routerToServerAndClientNew } from '../___testHelpers';
 import { createQueryClient } from '../__queryClient';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { render, waitFor } from '@testing-library/react';
-import { createReactQueryHooks, httpBatchLink } from '@trpc/react';
+import { createReactQueryHooks, httpBatchLink } from '@trpc/react/src';
+import * as interop from '@trpc/server/src';
+import { inferProcedureOutput, initTRPC } from '@trpc/server/src';
 import { expectTypeOf } from 'expect-type';
 import { konn } from 'konn';
 import React, { useState } from 'react';
 import superjson from 'superjson';
 import { z } from 'zod';
-import * as interop from '../../src';
-import { inferProcedureOutput, initTRPC } from '../../src';
 
 type Context = {
   foo: 'bar';

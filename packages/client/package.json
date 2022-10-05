@@ -1,6 +1,6 @@
 {
   "name": "@trpc/client",
-  "version": "10.0.0-proxy-beta.3",
+  "version": "10.0.0-proxy-beta.14",
   "description": "tRPC Client lib",
   "author": "KATT",
   "license": "MIT",
@@ -66,7 +66,9 @@
     "@trpc/server": "^10.0.0-alpha.48"
   },
   "devDependencies": {
-    "@trpc/server": "^10.0.0-proxy-beta.3"
+    "@testing-library/dom": "^8.18.1",
+    "@trpc/server": "^10.0.0-proxy-beta.14",
+    "@types/node": "^18.7.20"
   },
   "publishConfig": {
     "access": "public"

@@ -2,20 +2,21 @@
 
 /* eslint-disable @typescript-eslint/no-empty-function */
 import { legacyRouterToServerAndClient } from './__legacyRouterToServerAndClient';
-import { OperationLink, TRPCClientRuntime } from '@trpc/client/src';
-import { createChain } from '@trpc/client/src/links/internals/createChain';
-import { z } from 'zod';
 import {
+  OperationLink,
   TRPCClientError,
+  TRPCClientRuntime,
   createTRPCClient,
   httpBatchLink,
   httpLink,
   loggerLink,
   retryLink,
-} from '../../../client/src';
-import * as trpc from '../../src';
-import { AnyRouter } from '../../src';
-import { observable, observableToPromise } from '../../src/observable';
+} from '@trpc/client/src';
+import { createChain } from '@trpc/client/src/links/internals/createChain';
+import * as trpc from '@trpc/server/src';
+import { AnyRouter } from '@trpc/server/src';
+import { observable, observableToPromise } from '@trpc/server/src/observable';
+import { z } from 'zod';
 
 const mockRuntime: TRPCClientRuntime = {
   transformer: {
@@ -115,6 +116,7 @@ describe('batching', () => {
         server: {
           createContext() {
             metaCall();
+            return {};
           },
           batching: {
             enabled: true,
@@ -198,6 +200,7 @@ describe('batching', () => {
         server: {
           createContext() {
             createContextFn();
+            return {};
           },
           batching: {
             enabled: true,

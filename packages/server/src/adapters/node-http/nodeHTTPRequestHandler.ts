@@ -1,5 +1,4 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
-import { assertNotBrowser } from '../../assertNotBrowser';
 import { AnyRouter } from '../../core';
 import { inferRouterDef } from '../../core/types';
 import { HTTPRequest } from '../../http/internals/types';
@@ -10,8 +9,6 @@ import {
   NodeHTTPRequest,
   NodeHTTPResponse,
 } from './types';
-
-assertNotBrowser();
 
 type NodeHTTPRequestHandlerOptions<
   TRouter extends AnyRouter,

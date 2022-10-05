@@ -16,7 +16,7 @@ import type {
   Unsubscribable,
   inferObservableValue,
 } from '@trpc/server/observable';
-import { createProxy } from '@trpc/server/shared';
+import { createRecursiveProxy } from '@trpc/server/shared';
 import { TRPCClientError } from './TRPCClientError';
 import { CreateTRPCClientOptions } from './createTRPCClient';
 import {
@@ -98,7 +98,7 @@ const clientCallTypeMap: Record<
 export function createTRPCClientProxy<TRouter extends AnyRouter>(
   client: Client<TRouter>,
 ) {
-  const proxy = createProxy(({ path, args }) => {
+  const proxy = createRecursiveProxy(({ path, args }) => {
     const pathCopy = [...path];
     const clientCallType = pathCopy.pop()! as keyof DecorateProcedure<any, any>;
 

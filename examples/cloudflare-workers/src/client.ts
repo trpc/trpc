@@ -8,7 +8,7 @@ import fetch from 'node-fetch';
 import type { AppRouter } from './router';
 
 // polyfill
-global.fetch = fetch as any;
+globalThis.fetch = fetch as any;
 
 const sleep = (ms = 100) => new Promise((resolve) => setTimeout(resolve, ms));
 
