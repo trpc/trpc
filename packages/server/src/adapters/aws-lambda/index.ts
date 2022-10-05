@@ -7,18 +7,21 @@ import type {
 } from 'aws-lambda';
 import { TRPCError, resolveHTTPResponse } from '../..';
 import { AnyRouter, inferRouterContext } from '../../core';
-import { HTTPHeaders, HTTPRequest } from '../../http/internals/types';
+import { HTTPRequest } from '../../http/internals/types';
 import type { HTTPResponse } from '../../http/internals/types';
 import {
   APIGatewayEvent,
   APIGatewayResult,
   AWSLambdaOptions,
   UNKNOWN_PAYLOAD_FORMAT_VERSION_ERROR_MESSAGE,
+  getHTTPMethod,
+  getPath,
   isPayloadV1,
   isPayloadV2,
+  transformHeaders,
 } from './utils';
 
-export type { CreateAWSLambdaContextOptions, AWSLambdaOptions } from './utils';
+export * from './utils';
 
 function lambdaEventToHTTPRequest(event: APIGatewayEvent): HTTPRequest {
   const query = new URLSearchParams();
@@ -38,58 +41,6 @@ function lambdaEventToHTTPRequest(event: APIGatewayEvent): HTTPRequest {
   };
 }
 
-function getHTTPMethod(event: APIGatewayEvent) {
-  if (isPayloadV1(event)) {
-    return event.httpMethod;
-  }
-  if (isPayloadV2(event)) {
-    return event.requestContext.http.method;
-  }
-  throw new TRPCError({
-    code: 'INTERNAL_SERVER_ERROR',
-    message: UNKNOWN_PAYLOAD_FORMAT_VERSION_ERROR_MESSAGE,
-  });
-}
-
-function getPath(event: APIGatewayEvent) {
-  if (isPayloadV1(event)) {
-    const matches = event.resource.matchAll(/\{(.*?)\}/g);
-    for (const match of matches) {
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      const group = match[1]!;
-      if (group.includes('+') && event.pathParameters) {
-        return event.pathParameters[group.replace('+', '')] || '';
-      }
-    }
-    return event.path.slice(1);
-  }
-  if (isPayloadV2(event)) {
-    const matches = event.routeKey.matchAll(/\{(.*?)\}/g);
-    for (const match of matches) {
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      const group = match[1]!;
-      if (group.includes('+') && event.pathParameters) {
-        return event.pathParameters[group.replace('+', '')] || '';
-      }
-    }
-    return event.rawPath.slice(1);
-  }
-  throw new TRPCError({
-    code: 'INTERNAL_SERVER_ERROR',
-    message: UNKNOWN_PAYLOAD_FORMAT_VERSION_ERROR_MESSAGE,
-  });
-}
-function transformHeaders(headers: HTTPHeaders): APIGatewayResult['headers'] {
-  const obj: APIGatewayResult['headers'] = {};
-
-  for (const [key, value] of Object.entries(headers)) {
-    if (typeof value === 'undefined') {
-      continue;
-    }
-    obj[key] = Array.isArray(value) ? value.join(',') : value;
-  }
-  return obj;
-}
 function tRPCOutputToAPIGatewayOutput<
   TEvent extends APIGatewayEvent,
   TResult extends APIGatewayResult,
