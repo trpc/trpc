@@ -19,7 +19,6 @@
     "@trpc/server": "^10.0.0-proxy-beta.15",
     "abort-controller": "^3.0.0",
     "fastify": "^3.27.1",
-    "fastify-websocket": "^4.0.0",
     "node-fetch": "^2.6.1",
     "superjson": "^1.7.4",
     "tslib": "^2.1.0",

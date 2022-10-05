@@ -603,7 +603,6 @@ importers:
       '@types/ws': ^8.2.0
       abort-controller: ^3.0.0
       fastify: ^3.27.1
-      fastify-websocket: ^4.0.0
       node-fetch: ^2.6.1
       npm-run-all: ^4.1.5
       start-server-and-test: ^1.12.0
@@ -620,7 +619,6 @@ importers:
       '@trpc/server': link:../../packages/server
       abort-controller: 3.0.0
       fastify: 3.29.2
-      fastify-websocket: 4.3.0
       node-fetch: 2.6.7
       superjson: 1.10.0
       tslib: 2.4.0
@@ -11274,6 +11272,7 @@ packages:
     transitivePeerDependencies:
       - bufferutil
       - utf-8-validate
+    dev: true
 
   /fastify-websocket/4.3.0:
     resolution: {integrity: sha512-PLoXjlKHaWOEIJ7tHStM2i8aL4kdYVB8d1Umf7TdpQ93kG7OopO7eV4IAyO545kRiE8pyL1AbjlJeZ7irDA1aA==}
@@ -11283,6 +11282,7 @@ packages:
     transitivePeerDependencies:
       - bufferutil
       - utf-8-validate
+    dev: true
 
   /fastify/3.29.2:
     resolution: {integrity: sha512-XFuIF4T9IdkCVtV0amWQZg50w8iPn8MoAV4yK1DP88dU7YEwxDOOpVgKLWZS4YJA8RU001KUfg2b/2L6kEwJWA==}
