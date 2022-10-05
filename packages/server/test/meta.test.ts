@@ -67,10 +67,9 @@ describe('meta', () => {
   });
 
   it('is queryable in _def', async () => {
-    expectTypeOf(ctx.router.withMeta._def.meta).toEqualTypeOf<
-      Meta | undefined
-    >();
-    expect(ctx.router.withMeta._def.meta).toEqual({
+    const meta = ctx.router.withMeta._def.meta;
+    expectTypeOf(meta).toEqualTypeOf<Meta | undefined>();
+    expect(meta).toEqual({
       foo: 'bar',
     });
   });
