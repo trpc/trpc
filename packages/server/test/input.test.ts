@@ -1,5 +1,5 @@
 import { routerToServerAndClientNew, waitError } from './___testHelpers';
-import { TRPCClientError } from '@trpc/client/src';
+import { TRPCClientError, createTRPCProxyClient } from '@trpc/client';
 import {
   inferProcedureInput,
   inferProcedureParams,
@@ -314,6 +314,17 @@ test('double validators with undefined', async () => {
       roomId: string;
       optionalKey?: string;
     }>();
+
+    const router = t.router({
+      proc,
+    });
+    const client = createTRPCProxyClient<typeof router>({
+      links: [],
+    });
+
+    void client.proc.mutate({
+      roomId: 'foo',
+    });
   }
 
   {
@@ -337,5 +348,16 @@ test('double validators with undefined', async () => {
       roomId?: string;
       key: string;
     }>();
+
+    const router = t.router({
+      proc,
+    });
+    const client = createTRPCProxyClient<typeof router>({
+      links: [],
+    });
+
+    void client.proc.mutate({
+      key: 'string',
+    });
   }
 });
