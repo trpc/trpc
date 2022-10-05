@@ -290,3 +290,53 @@ test('zod default() defaults within object', async () => {
 
   await opts.close();
 });
+
+test('double validators with undefined', async () => {
+  const t = initTRPC.create();
+
+  {
+    const roomProcedure = t.procedure.input(
+      z.object({
+        roomId: z.string(),
+      }),
+    );
+    const proc = roomProcedure
+      .input(
+        z.object({
+          optionalKey: z.string().optional(),
+        }),
+      )
+      .mutation(({ input }) => {
+        return input;
+      });
+    type Input = inferProcedureInput<typeof proc>;
+    //    ^?
+    expectTypeOf<Input>().toEqualTypeOf<{
+      roomId: string;
+      optionalKey?: string;
+    }>();
+  }
+
+  {
+    const roomProcedure = t.procedure.input(
+      z.object({
+        roomId: z.string().optional(),
+      }),
+    );
+    const proc = roomProcedure
+      .input(
+        z.object({
+          key: z.string(),
+        }),
+      )
+      .mutation(({ input }) => {
+        return input;
+      });
+    type Input = inferProcedureInput<typeof proc>;
+    //    ^?
+    expectTypeOf<Input>().toEqualTypeOf<{
+      roomId?: string;
+      key: string;
+    }>();
+  }
+});
