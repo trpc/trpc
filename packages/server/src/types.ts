@@ -21,6 +21,9 @@ type UndefinedKeys<TType> = keyof OmitNever<{
   [K in keyof TType]: TType[K] extends undefined ? TType : never;
 }>;
 
+/**
+ * @internal
+ */
 export type FlatOverwrite<TType, TWith> = Simplify<
   InferOptional<
     {
