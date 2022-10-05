@@ -9,10 +9,10 @@ test('meta is undefined in a middleware', () => {
   };
   const t = initTRPC.meta<Meta>().create();
 
-  t.middleware(({ meta, next }) => {
-    expectTypeOf(meta).toEqualTypeOf<Meta | undefined>();
+  t.middleware((opts) => {
+    expectTypeOf(opts.meta).toEqualTypeOf<Meta | undefined>();
 
-    return next();
+    return opts.next();
   });
 });
 
@@ -24,7 +24,7 @@ describe('meta in avail', () => {
 
   const ctx = konn()
     .beforeEach(() => {
-      const middlewareCalls = jest.fn((opts: Meta | undefined) => {
+      const middlewareCalls = jest.fn((_opts: Meta | undefined) => {
         // noop
       });
       const baseProc = t.procedure.use(({ next, meta }) => {
