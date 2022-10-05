@@ -9,6 +9,14 @@ import { expectTypeOf } from 'expect-type';
 import { konn } from 'konn';
 import { ZodError, z } from 'zod';
 
+const ignoreErrors = async (fn: () => Promise<void> | void) => {
+  try {
+    await Promise.reject(new Error('foo'));
+  } catch {
+    // ignore
+  }
+};
+
 describe('double input validator', () => {
   const t = initTRPC.create({
     errorFormatter({ shape, error }) {
@@ -317,9 +325,11 @@ test('double validators with undefined', async () => {
       links: [],
     });
 
-    void client.proc.mutate({
-      roomId: 'foo',
-    });
+    await ignoreErrors(() =>
+      client.proc.mutate({
+        roomId: 'foo',
+      }),
+    );
   }
 
   {
@@ -347,8 +357,10 @@ test('double validators with undefined', async () => {
       links: [],
     });
 
-    void client.proc.mutate({
-      key: 'string',
-    });
+    await ignoreErrors(() =>
+      client.proc.mutate({
+        key: 'string',
+      }),
+    );
   }
 });
