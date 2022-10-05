@@ -23,17 +23,15 @@ import {
   TRPCProvider,
   UseDehydratedState,
   UseTRPCInfiniteQueryOptions,
+  UseTRPCInfiniteQueryResult,
   UseTRPCMutationOptions,
+  UseTRPCMutationResult,
   UseTRPCQueryOptions,
+  UseTRPCQueryResult,
   UseTRPCSubscriptionOptions,
   createHooksInternal,
 } from './shared/hooks/createHooksInternal';
-import {
-  CreateTRPCReactOptions,
-  TRPCUseInfiniteQueryResult,
-  TRPCUseMutationResult,
-  TRPCUseQueryResult,
-} from './shared/types';
+import { CreateTRPCReactOptions } from './shared/types';
 
 /**
  * @internal
@@ -55,7 +53,7 @@ export type DecorateProcedure<
           TData,
           TRPCClientErrorLike<TProcedure>
         >,
-      ) => TRPCUseQueryResult<TData, TRPCClientErrorLike<TProcedure>>;
+      ) => UseTRPCQueryResult<TData, TRPCClientErrorLike<TProcedure>>;
     } & (inferProcedureInput<TProcedure> extends { cursor?: any }
       ? {
           useInfiniteQuery: <
@@ -69,7 +67,7 @@ export type DecorateProcedure<
               TData,
               TRPCClientErrorLike<TProcedure>
             >,
-          ) => TRPCUseInfiniteQueryResult<
+          ) => UseTRPCInfiniteQueryResult<
             TData,
             TRPCClientErrorLike<TProcedure>
           >;
@@ -84,7 +82,7 @@ export type DecorateProcedure<
           inferProcedureOutput<TProcedure>,
           TContext
         >,
-      ) => TRPCUseMutationResult<
+      ) => UseTRPCMutationResult<
         inferProcedureOutput<TProcedure>,
         TRPCClientErrorLike<TProcedure>,
         inferProcedureInput<TProcedure>,

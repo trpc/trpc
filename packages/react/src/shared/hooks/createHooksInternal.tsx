@@ -142,6 +142,38 @@ export type CreateClient<TRouter extends AnyRouter> = (
   opts: CreateTRPCClientOptions<TRouter>,
 ) => TRPCClient<TRouter>;
 
+interface TRPCHookResult {
+  trpc: {
+    path: string;
+  };
+}
+
+/**
+ * @internal
+ */
+export type UseTRPCQueryResult<TData, TError> = UseQueryResult<TData, TError> &
+  TRPCHookResult;
+
+/**
+ * @internal
+ */
+export type UseTRPCInfiniteQueryResult<TData, TError> = UseInfiniteQueryResult<
+  TData,
+  TError
+> &
+  TRPCHookResult;
+
+/**
+ * @internal
+ */
+export type UseTRPCMutationResult<TData, TError, TVariables, TContext> =
+  UseMutationResult<TData, TError, TVariables, TContext> & TRPCHookResult;
+
+function useConstantValue<TValue>(value: TValue): TValue {
+  const [v] = useState(() => value);
+
+  return v;
+}
 /**
  * Create strongly typed react hooks
  * @internal
@@ -385,7 +417,7 @@ export function createHooksInternal<
       TData,
       TError
     >,
-  ): UseQueryResult<TData, TError> {
+  ): UseTRPCQueryResult<TData, TError> {
     const { abortOnUnmount, client, ssrState, queryClient, prefetchQuery } =
       useContext();
 
@@ -402,7 +434,7 @@ export function createHooksInternal<
     // request option should take priority over global
     const shouldAbortOnUnmount = opts?.trpc?.abortOnUnmount ?? abortOnUnmount;
 
-    return __useQuery(
+    const hook = __useQuery(
       getArrayQueryKey(pathAndInput) as any,
       (queryFunctionContext) => {
         const actualOpts = {
@@ -420,7 +452,12 @@ export function createHooksInternal<
         );
       },
       ssrOpts,
-    );
+    ) as UseTRPCQueryResult<TData, TError>;
+    hook.trpc = useConstantValue({
+      path: pathAndInput[0],
+    });
+
+    return hook;
   }
 
   function useMutation<
@@ -434,7 +471,7 @@ export function createHooksInternal<
       TMutationValues[TPath]['output'],
       TContext
     >,
-  ): UseMutationResult<
+  ): UseTRPCMutationResult<
     TMutationValues[TPath]['output'],
     TError,
     TMutationValues[TPath]['input'],
@@ -443,7 +480,7 @@ export function createHooksInternal<
     const { client } = useContext();
     const queryClient = useQueryClient();
 
-    return __useMutation(
+    const hook = __useMutation(
       (input) => {
         const actualPath = Array.isArray(path) ? path[0] : path;
 
@@ -458,7 +495,18 @@ export function createHooksInternal<
           return mutationSuccessOverride({ originalFn, queryClient });
         },
       },
-    );
+    ) as UseTRPCMutationResult<
+      TMutationValues[TPath]['output'],
+      TError,
+      TMutationValues[TPath]['input'],
+      TContext
+    >;
+
+    hook.trpc = useConstantValue({
+      path: Array.isArray(path) ? path[0] : path,
+    });
+
+    return hook;
   }
 
   /* istanbul ignore next */
@@ -531,7 +579,7 @@ export function createHooksInternal<
       TQueryValues[TPath]['output'],
       TError
     >,
-  ): UseInfiniteQueryResult<TQueryValues[TPath]['output'], TError> {
+  ): UseTRPCInfiniteQueryResult<TQueryValues[TPath]['output'], TError> {
     const [path, input] = pathAndInput;
     const {
       client,
@@ -556,7 +604,7 @@ export function createHooksInternal<
     // request option should take priority over global
     const shouldAbortOnUnmount = opts?.trpc?.abortOnUnmount ?? abortOnUnmount;
 
-    return __useInfiniteQuery(
+    const hook = __useInfiniteQuery(
       getArrayQueryKey(pathAndInput) as any,
       (queryFunctionContext) => {
         const actualOpts = {
@@ -579,7 +627,12 @@ export function createHooksInternal<
         );
       },
       ssrOpts,
-    );
+    ) as UseTRPCInfiniteQueryResult<TQueryValues[TPath]['output'], TError>;
+
+    hook.trpc = useConstantValue({
+      path,
+    });
+    return hook;
   }
   const useDehydratedState: UseDehydratedState<TRouter> = (
     client,
