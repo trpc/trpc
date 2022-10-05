@@ -16,7 +16,7 @@ test('meta is undefined in a middleware', () => {
   });
 });
 
-describe('meta in avail', () => {
+describe('meta in available in middlewares', () => {
   type Meta = {
     foo: 'bar';
   };
@@ -52,7 +52,7 @@ describe('meta in avail', () => {
       await ctx?.close?.();
     })
     .done();
-  it('is avail', async () => {
+  it('testy', async () => {
     await ctx.proxy.noMeta.query();
     await ctx.proxy.withMeta.query();
     await ctx.proxy.noMeta.query();
