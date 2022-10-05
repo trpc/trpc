@@ -1,8 +1,3 @@
-import {
-  UseInfiniteQueryResult,
-  UseMutationResult,
-  UseQueryResult,
-} from '@tanstack/react-query';
 import { TRPCClientErrorLike } from '@trpc/client';
 import {
   AnyMutationProcedure,
@@ -28,8 +23,11 @@ import {
   TRPCProvider,
   UseDehydratedState,
   UseTRPCInfiniteQueryOptions,
+  UseTRPCInfiniteQueryResult,
   UseTRPCMutationOptions,
+  UseTRPCMutationResult,
   UseTRPCQueryOptions,
+  UseTRPCQueryResult,
   UseTRPCSubscriptionOptions,
   createHooksInternal,
 } from './shared/hooks/createHooksInternal';
@@ -55,7 +53,7 @@ export type DecorateProcedure<
           TData,
           TRPCClientErrorLike<TProcedure>
         >,
-      ) => UseQueryResult<TData, TRPCClientErrorLike<TProcedure>>;
+      ) => UseTRPCQueryResult<TData, TRPCClientErrorLike<TProcedure>>;
     } & (inferProcedureInput<TProcedure> extends { cursor?: any }
       ? {
           useInfiniteQuery: <
@@ -69,7 +67,10 @@ export type DecorateProcedure<
               TData,
               TRPCClientErrorLike<TProcedure>
             >,
-          ) => UseInfiniteQueryResult<TData, TRPCClientErrorLike<TProcedure>>;
+          ) => UseTRPCInfiniteQueryResult<
+            TData,
+            TRPCClientErrorLike<TProcedure>
+          >;
         }
       : {})
   : TProcedure extends AnyMutationProcedure
@@ -81,7 +82,7 @@ export type DecorateProcedure<
           inferProcedureOutput<TProcedure>,
           TContext
         >,
-      ) => UseMutationResult<
+      ) => UseTRPCMutationResult<
         inferProcedureOutput<TProcedure>,
         TRPCClientErrorLike<TProcedure>,
         inferProcedureInput<TProcedure>,

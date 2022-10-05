@@ -1,5 +1,5 @@
 import { routerToServerAndClientNew, waitError } from './___testHelpers';
-import { TRPCClientError } from '@trpc/client/src';
+import { TRPCClientError, createTRPCProxyClient } from '@trpc/client';
 import {
   inferProcedureInput,
   inferProcedureParams,
@@ -8,6 +8,14 @@ import {
 import { expectTypeOf } from 'expect-type';
 import { konn } from 'konn';
 import { ZodError, z } from 'zod';
+
+const ignoreErrors = async (fn: () => Promise<unknown> | unknown) => {
+  try {
+    await fn();
+  } catch {
+    // ignore
+  }
+};
 
 describe('double input validator', () => {
   const t = initTRPC.create({
@@ -31,6 +39,7 @@ describe('double input validator', () => {
       .input(
         z.object({
           text: z.string(),
+          optionalKey: z.string().optional(),
         }),
       )
       .mutation(({ input }) => {
@@ -50,7 +59,8 @@ describe('double input validator', () => {
     .done();
 
   test('happy path', async () => {
-    const data = {
+    type Input = inferProcedureInput<AppRouter['sendMessage']>;
+    const data: Input = {
       roomId: '123',
       text: 'hello',
     };
@@ -286,4 +296,72 @@ test('zod default() defaults within object', async () => {
   });
 
   await opts.close();
+});
+
+test('double validators with undefined', async () => {
+  const t = initTRPC.create();
+
+  {
+    const roomProcedure = t.procedure.input(
+      z.object({
+        roomId: z.string(),
+      }),
+    );
+    const proc = roomProcedure
+      .input(
+        z.object({
+          optionalKey: z.string().optional(),
+        }),
+      )
+      .mutation(({ input }) => {
+        return input;
+      });
+    type Input = inferProcedureInput<typeof proc>;
+    //    ^?
+
+    const router = t.router({
+      proc,
+    });
+    const client = createTRPCProxyClient<typeof router>({
+      links: [],
+    });
+
+    await ignoreErrors(() =>
+      client.proc.mutate({
+        roomId: 'foo',
+      }),
+    );
+  }
+
+  {
+    const roomProcedure = t.procedure.input(
+      z.object({
+        roomId: z.string().optional(),
+      }),
+    );
+    const proc = roomProcedure
+      .input(
+        z.object({
+          key: z.string(),
+        }),
+      )
+      .mutation(({ input }) => {
+        return input;
+      });
+    type Input = inferProcedureInput<typeof proc>;
+    //    ^?
+
+    const router = t.router({
+      proc,
+    });
+    const client = createTRPCProxyClient<typeof router>({
+      links: [],
+    });
+
+    await ignoreErrors(() =>
+      client.proc.mutate({
+        key: 'string',
+      }),
+    );
+  }
 });

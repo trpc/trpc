@@ -46,3 +46,16 @@ test('decorate independently', () => {
       expectTypeOf(ctx.user).toMatchTypeOf<User>();
     });
 });
+
+test('meta', () => {
+  type Meta = {
+    permissions: string[];
+  };
+  const t = initTRPC.meta<Meta>().create();
+
+  t.middleware(({ meta, next }) => {
+    expectTypeOf(meta).toMatchTypeOf<Meta | undefined>();
+
+    return next();
+  });
+});
