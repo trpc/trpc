@@ -20,7 +20,7 @@ type EnabledFn<TRouter extends AnyRouter> = (
   opts: EnableFnOptions<TRouter>,
 ) => boolean;
 
-type LogFnOptions<TRouter extends AnyRouter> = Operation &
+export type LogFnOptions<TRouter extends AnyRouter> = Operation &
   (
     | {
         /**
@@ -37,7 +37,9 @@ type LogFnOptions<TRouter extends AnyRouter> = Operation &
         elapsedMs: number;
       }
   );
-type LogFn<TRouter extends AnyRouter> = (opts: LogFnOptions<TRouter>) => void;
+export type LogFn<TRouter extends AnyRouter> = (
+  opts: LogFnOptions<TRouter>,
+) => void;
 
 const palette = {
   query: ['72e3ff', '3fb0d8'],
