@@ -3,12 +3,11 @@
   "version": "10.0.0-proxy-beta.15",
   "private": true,
   "scripts": {
-    "dev:server": "nodemon -e ts -w . -x tsx ./src/server",
-    "dev:client": "nodemon -e ts -w . -x npm run start-client-dev",
+    "dev:server": "tsx watch src/server",
+    "dev:client": "wait-port 3000 && tsx watch src/client",
     "dev": "run-p dev:* --print-label",
     "build": "tsc",
     "start": "pnpm dev",
-    "start-client-dev": "wait-on tcp:3000 && tsx ./src/client",
     "test-dev": "start-server-and-test 'tsx src/server' 3000 'tsx src/client'",
     "test-start": "start-server-and-test 'node dist/server' 3000 'node dist/client'"
   },
@@ -28,12 +27,11 @@
     "@types/express": "^4.17.12",
     "@types/node": "^18.7.20",
     "@types/react": "^18.0.9",
-    "nodemon": "^2.0.12",
     "npm-run-all": "^4.1.5",
     "start-server-and-test": "^1.12.0",
     "tsx": "^3.9.0",
     "typescript": "^4.8.3",
-    "wait-on": "^6.0.0"
+    "wait-port": "^1.0.1"
   },
   "publishConfig": {
     "access": "restricted"
