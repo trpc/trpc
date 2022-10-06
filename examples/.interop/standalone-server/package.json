@@ -3,8 +3,8 @@
   "version": "10.0.0-proxy-beta.15",
   "private": true,
   "scripts": {
-    "dev:server": "nodemon -e ts -w . -x tsx ./src/server",
-    "dev:client": "nodemon -e ts -w . -x 'wait-port 2022 && tsx ./src/client'",
+    "dev:server": "tsx watch src/server",
+    "dev:client": "wait-port 2022 && tsx watch src/client",
     "dev": "run-p dev:* --print-label",
     "start": "pnpm dev",
     "build": "tsc",
@@ -28,11 +28,10 @@
   "devDependencies": {
     "@types/node": "^18.7.20",
     "@types/ws": "^8.2.0",
-    "nodemon": "^2.0.12",
     "npm-run-all": "^4.1.5",
     "start-server-and-test": "^1.12.0",
     "tsx": "^3.9.0",
-    "wait-port": "^0.3.0"
+    "wait-port": "^1.0.1"
   },
   "publishConfig": {
     "access": "restricted"
