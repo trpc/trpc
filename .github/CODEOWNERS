@@ -5,5 +5,3 @@
 
 www/**/* @trpc/website-docs
 # **/*lambda* @Lilja @KATT
-
-**/package.json @KATT

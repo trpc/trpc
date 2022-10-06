@@ -1217,7 +1217,7 @@ importers:
       react: ^18.2.0
       react-dom: ^18.2.0
       superjson: ^1.7.4
-      superstruct: ^0.15.2
+      superstruct: ^0.16.0
       ts-jest: ^27.0.5
       typescript: ^4.8.3
       ws: ^8.0.0
@@ -1264,7 +1264,7 @@ importers:
       react: 18.2.0
       react-dom: 18.2.0_react@18.2.0
       superjson: 1.10.0
-      superstruct: 0.15.5
+      superstruct: 0.16.5
       ts-jest: 27.1.5_qqheuyrmnawe7ws7n63adpwbnu
       typescript: 4.8.3
       ws: 8.9.0
@@ -18926,8 +18926,9 @@ packages:
     dependencies:
       copy-anything: 3.0.2
 
-  /superstruct/0.15.5:
-    resolution: {integrity: sha512-4AOeU+P5UuE/4nOUkmcQdW5y7i9ndt1cQd/3iUe+LTz3RxESf/W/5lg4B74HbDMMv8PHnPnGCQFH45kBcrQYoQ==}
+  /superstruct/0.16.5:
+    resolution: {integrity: sha512-GBa1VPdCUDAIrsoMVy2lzE/hKQnieUlc1JVoVzJ2YLx47SoPY4AqF85Ht1bPg5r+8I0v54GbaRdNTnYQ0p+T+Q==}
+    engines: {node: '>=14.0.0'}
     dev: true
 
   /supports-color/5.5.0:
