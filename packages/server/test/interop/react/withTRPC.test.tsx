@@ -1,7 +1,6 @@
 /* eslint-disable @typescript-eslint/no-empty-function */
 
 /* eslint-disable @typescript-eslint/ban-ts-comment */
-import '../../___packages';
 import { createLegacyAppRouter } from './__testHelpers';
 import { render, waitFor } from '@testing-library/react';
 import { withTRPC } from '@trpc/next/src';
