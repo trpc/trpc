@@ -7,9 +7,8 @@ import { ErrorFormatter } from '../../error/formatter';
 export interface InitGenerics {
   ctx: Record<string, unknown>;
   meta: Record<string, unknown>;
-  // FIXME this should be typed
-  errorShape: any;
-  transformer: any;
+  errorShape: unknown;
+  transformer: unknown;
 }
 
 /**
@@ -26,20 +25,31 @@ export const isServerDefault: boolean =
  * @internal
  */
 export interface RuntimeConfig<TType extends InitGenerics> {
+  /**
+   * Use a data transformer
+   * @link https://trpc.io/docs/data-transformers
+   */
   transformer: TType['transformer'];
+  /**
+   * Use custom error formatting
+   * @link https://trpc.io/docs/error-formatting
+   */
   errorFormatter: ErrorFormatter<TType['ctx'], any>;
   /**
    * Allow `@trpc/server` to run in non-server environments
+   * @warning **Use with caution**, this should likely mainly be used within testing.
    * @default false
    */
   allowOutsideOfServer: boolean;
   /**
    * Is this a server environment?
+   * @warning **Use with caution**, this should likely mainly be used within testing.
+   * @default typeof window === 'undefined' || 'Deno' in window || process.env.NODE_ENV === 'test'
    */
   isServer: boolean;
   /**
    * Is this development?
-   * Will be used to decide if API should return stack traces
+   * Will be used to decide if the API should return stack traces
    * @default process.env.NODE_ENV !== 'production'
    */
   isDev: boolean;
