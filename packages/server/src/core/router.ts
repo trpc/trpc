@@ -28,6 +28,9 @@ export interface ProcedureRouterRecord {
   [key: string]: AnyProcedure | AnyRouter;
 }
 
+/**
+ * @deprecated
+ */
 interface DeprecatedProcedureRouterRecord {
   queries: Record<string, AnyQueryProcedure>;
   mutations: Record<string, AnyMutationProcedure>;
@@ -37,6 +40,9 @@ interface DeprecatedProcedureRouterRecord {
 export interface RouterDef<
   TConfig extends AnyRootConfig,
   TRecord extends ProcedureRouterRecord,
+  /**
+   * @deprecated
+   */
   TOld extends DeprecatedProcedureRouterRecord = {
     queries: {};
     mutations: {};
