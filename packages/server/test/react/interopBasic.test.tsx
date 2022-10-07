@@ -29,6 +29,8 @@ const ctx = konn()
 
     const legacyRouterInterop = legacyRouter.interop();
 
+    expectTypeOf(legacyRouterInterop._def.queries.oldProcedure).not.toBeNever();
+
     const newAppRouter = t.router({
       newProcedure: t.procedure.query(() => 'newProcedureOutput'),
     });

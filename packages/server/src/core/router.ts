@@ -28,16 +28,16 @@ export interface ProcedureRouterRecord {
   [key: string]: AnyProcedure | AnyRouter;
 }
 
-export interface ProcedureStructure {
+interface DeprecatedProcedureRouterRecord {
   queries: Record<string, AnyQueryProcedure>;
   mutations: Record<string, AnyMutationProcedure>;
   subscriptions: Record<string, AnySubscriptionProcedure>;
-  procedures: ProcedureRecord;
 }
 
 export interface RouterDef<
   TConfig extends AnyRootConfig,
   TRecord extends ProcedureRouterRecord,
+  TOld extends DeprecatedProcedureRouterRecord = never,
 > {
   _config: TConfig;
   router: true;
@@ -47,21 +47,23 @@ export interface RouterDef<
    * V9 queries
    * @deprecated
    */
-  queries: any;
+  queries: TOld['queries'];
   /**
    * V9 mutations
    * @deprecated
    */
-  mutations: any;
+  mutations: TOld['mutations'];
   /**
    * V9 subscriptions
    * @deprecated
    */
-  subscriptions: any;
+  subscriptions: TOld['subscriptions'];
 }
 
-export type AnyRouterDef<TConfig extends AnyRootConfig = AnyRootConfig> =
-  RouterDef<TConfig, any>;
+export type AnyRouterDef<
+  TConfig extends AnyRootConfig = AnyRootConfig,
+  TOld extends DeprecatedProcedureRouterRecord = any,
+> = RouterDef<TConfig, any, TOld>;
 
 /**
  * @internal

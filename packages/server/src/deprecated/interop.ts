@@ -100,49 +100,47 @@ export type MigrateRouter<
   >,
   TErrorShape extends TRPCErrorShape<any>,
 > = NewRouter<
-  {
-    queries: MigrateProcedureRecord<
-      RootConfig<{
-        ctx: TInputContext;
-        errorShape: TErrorShape;
-        meta: TMeta;
+  RouterDef<
+    RootConfig<{
+      ctx: TInputContext;
+      errorShape: TErrorShape;
+      meta: TMeta;
+      transformer: DefaultDataTransformer;
+    }>,
+    {},
+    {
+      queries: MigrateProcedureRecord<
+        RootConfig<{
+          ctx: TInputContext;
+          errorShape: TErrorShape;
+          meta: TMeta;
 
-        transformer: DefaultDataTransformer;
-      }>,
-      TQueries,
-      'query'
-    >;
-    mutations: MigrateProcedureRecord<
-      RootConfig<{
-        ctx: TInputContext;
-        errorShape: TErrorShape;
-        meta: TMeta;
-        transformer: DefaultDataTransformer;
-      }>,
-      TMutations,
-      'mutation'
-    >;
-    subscriptions: MigrateProcedureRecord<
-      RootConfig<{
-        ctx: TInputContext;
-        errorShape: TErrorShape;
-        meta: TMeta;
-        transformer: DefaultDataTransformer;
-      }>,
-      TSubscriptions,
-      'subscription'
-    >;
-  } & Omit<
-    RouterDef<
-      RootConfig<{
-        ctx: TInputContext;
-        errorShape: TErrorShape;
-        meta: TMeta;
-        transformer: DefaultDataTransformer;
-      }>,
-      {}
-    >,
-    'queries' | 'subscriptions' | 'mutations'
+          transformer: DefaultDataTransformer;
+        }>,
+        TQueries,
+        'query'
+      >;
+      mutations: MigrateProcedureRecord<
+        RootConfig<{
+          ctx: TInputContext;
+          errorShape: TErrorShape;
+          meta: TMeta;
+          transformer: DefaultDataTransformer;
+        }>,
+        TMutations,
+        'mutation'
+      >;
+      subscriptions: MigrateProcedureRecord<
+        RootConfig<{
+          ctx: TInputContext;
+          errorShape: TErrorShape;
+          meta: TMeta;
+          transformer: DefaultDataTransformer;
+        }>,
+        TSubscriptions,
+        'subscription'
+      >;
+    }
   >
 >;
 

@@ -65,9 +65,9 @@ for (let index = 0; index < NUM_ARGS; index++) {
   const part = TEMPLATE.replace('', '')
     .replace(/__generics__/g, generics.join(', '))
     .replace(/__args__/g, args.join(', '))
-    .replace(/__queries__/g, queries.join(' & '))
-    .replace(/__mutations__/g, mutations.join(' & '))
-    .replace(/__subscriptions__/g, subscriptions.join(' & '))
+    .replace(/__queries__/g, queries.join(' | '))
+    .replace(/__mutations__/g, mutations.join(' | '))
+    .replace(/__subscriptions__/g, subscriptions.join(' | '))
     .replace(/__procedures__/g, procedures.join(' & '))
     .replace(/__records__/g, records.join(' & '));
 
