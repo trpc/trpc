@@ -15,9 +15,9 @@ import {
 } from '../transformer';
 import { FlatOverwrite } from '../types';
 import {
-  CreateInitGenerics,
-  InitGenerics,
+  CreateRootConfigTypes,
   RootConfig,
+  RootConfigTypes,
   RuntimeConfig,
   isServerDefault,
 } from './internals/config';
@@ -26,13 +26,13 @@ import { PickFirstDefined, ValidateShape } from './internals/utils';
 import { createMiddlewareFactory } from './middleware';
 import { createRouterFactory } from './router';
 
-type PartialInitGenerics = Partial<InitGenerics>;
+type PartialRootConfigTypes = Partial<RootConfigTypes>;
 
-type CreateInitGenericsFromPartial<TType extends PartialInitGenerics> =
-  CreateInitGenerics<{
-    ctx: TType['ctx'] extends InitGenerics['ctx'] ? TType['ctx'] : {};
-    meta: TType['meta'] extends InitGenerics['meta'] ? TType['meta'] : {};
-    errorShape: TType['errorShape'];
+type CreateRootConfigTypesFromPartial<TTypes extends PartialRootConfigTypes> =
+  CreateRootConfigTypes<{
+    ctx: TTypes['ctx'] extends RootConfigTypes['ctx'] ? TTypes['ctx'] : {};
+    meta: TTypes['meta'] extends RootConfigTypes['meta'] ? TTypes['meta'] : {};
+    errorShape: TTypes['errorShape'];
     transformer: DataTransformerOptions;
   }>;
 
@@ -43,22 +43,22 @@ type CreateInitGenericsFromPartial<TType extends PartialInitGenerics> =
  * - Doesn't need to be a class but it doesn't really hurt either
  */
 
-class TRPCBuilder<TParams extends Partial<InitGenerics> = {}> {
-  context<TNewContext extends InitGenerics['ctx']>() {
+class TRPCBuilder<TParams extends Partial<RootConfigTypes> = {}> {
+  context<TNewContext extends RootConfigTypes['ctx']>() {
     return new TRPCBuilder<FlatOverwrite<TParams, { ctx: TNewContext }>>();
   }
-  meta<TNewMeta extends InitGenerics['meta']>() {
+  meta<TNewMeta extends RootConfigTypes['meta']>() {
     return new TRPCBuilder<FlatOverwrite<TParams, { meta: TNewMeta }>>();
   }
   create<
     TOptions extends Partial<
-      RuntimeConfig<CreateInitGenericsFromPartial<TParams>>
+      RuntimeConfig<CreateRootConfigTypesFromPartial<TParams>>
     >,
   >(
     options?:
       | ValidateShape<
           TOptions,
-          Partial<RuntimeConfig<CreateInitGenericsFromPartial<TParams>>>
+          Partial<RuntimeConfig<CreateRootConfigTypesFromPartial<TParams>>>
         >
       | undefined,
   ) {
@@ -71,8 +71,8 @@ class TRPCBuilder<TParams extends Partial<InitGenerics> = {}> {
  */
 export const initTRPC = new TRPCBuilder();
 
-function createTRPCInner<TParams extends Partial<InitGenerics>>() {
-  type $Generics = CreateInitGenericsFromPartial<TParams>;
+function createTRPCInner<TParams extends Partial<RootConfigTypes>>() {
+  type $Generics = CreateRootConfigTypesFromPartial<TParams>;
 
   type $Context = $Generics['ctx'];
   type $Meta = $Generics['meta'];

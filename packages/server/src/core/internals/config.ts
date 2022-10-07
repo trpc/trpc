@@ -4,7 +4,7 @@ import { ErrorFormatter } from '../../error/formatter';
  * The initial generics that are used in the init function
  * @internal
  */
-export interface InitGenerics {
+export interface RootConfigTypes {
   ctx: Record<string, unknown>;
   meta: Record<string, unknown>;
   errorShape: unknown;
@@ -24,17 +24,17 @@ export const isServerDefault: boolean =
  * The runtime config that are used and actually represents real values underneath
  * @internal
  */
-export interface RuntimeConfig<TType extends InitGenerics> {
+export interface RuntimeConfig<TTypes extends RootConfigTypes> {
   /**
    * Use a data transformer
    * @link https://trpc.io/docs/data-transformers
    */
-  transformer: TType['transformer'];
+  transformer: TTypes['transformer'];
   /**
    * Use custom error formatting
    * @link https://trpc.io/docs/error-formatting
    */
-  errorFormatter: ErrorFormatter<TType['ctx'], any>;
+  errorFormatter: ErrorFormatter<TTypes['ctx'], any>;
   /**
    * Allow `@trpc/server` to run in non-server environments
    * @warning **Use with caution**, this should likely mainly be used within testing.
@@ -58,14 +58,15 @@ export interface RuntimeConfig<TType extends InitGenerics> {
 /**
  * @internal
  */
-export type CreateInitGenerics<TType extends InitGenerics> = TType;
+export type CreateRootConfigTypes<TGenerics extends RootConfigTypes> =
+  TGenerics;
 
 /**
  * The config that is resolved after `initTRPC.create()` has been called
  * Combination of `InitTOptions` + `InitGenerics`
  * @internal
  */
-export interface RootConfig<TGenerics extends InitGenerics>
+export interface RootConfig<TGenerics extends RootConfigTypes>
   extends RuntimeConfig<TGenerics> {
   $types: TGenerics;
 }
