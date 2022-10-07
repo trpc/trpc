@@ -66,17 +66,18 @@ Setup [metadata](metadata) for your procedures.
 `RuntimeConfig` reference:
 
 ```ts
-export interface RuntimeConfig<TType extends InitGenerics> {
+
+export interface RuntimeConfig<TTypes extends RootConfigTypes> {
   /**
    * Use a data transformer
    * @link https://trpc.io/docs/data-transformers
    */
-  transformer: TType['transformer'];
+  transformer: TTypes['transformer'];
   /**
    * Use custom error formatting
    * @link https://trpc.io/docs/error-formatting
    */
-  errorFormatter: ErrorFormatter<TType['ctx'], any>;
+  errorFormatter: ErrorFormatter<TTypes['ctx'], any>;
   /**
    * Allow `@trpc/server` to run in non-server environments
    * @warning **Use with caution**, this should likely mainly be used within testing.
