@@ -35,7 +35,6 @@ type CreateProcedureReturnInput<
 > = ProcedureBuilder<{
   _config: TPrev['_config'];
   _meta: TPrev['_meta'];
-  _ctx_in: TPrev['_ctx_in'];
   _ctx_out: Overwrite<TPrev['_ctx_out'], TNext['_ctx_out']>;
   _input_in: FallbackValue<TNext['_input_in'], TPrev['_input_in']>;
   _input_out: FallbackValue<TNext['_input_out'], TPrev['_input_out']>;
@@ -97,7 +96,6 @@ export interface ProcedureBuilder<TParams extends ProcedureParams> {
   ): ProcedureBuilder<{
     _config: TParams['_config'];
     _meta: TParams['_meta'];
-    _ctx_in: TParams['_ctx_in'];
     _ctx_out: TParams['_ctx_out'];
     _input_in: OverwriteIfDefined<
       TParams['_input_in'],
@@ -118,7 +116,6 @@ export interface ProcedureBuilder<TParams extends ProcedureParams> {
   ): ProcedureBuilder<{
     _config: TParams['_config'];
     _meta: TParams['_meta'];
-    _ctx_in: TParams['_ctx_in'];
     _ctx_out: TParams['_ctx_out'];
     _input_in: TParams['_input_in'];
     _input_out: TParams['_input_out'];

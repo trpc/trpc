@@ -28,7 +28,7 @@ type convertProcedureParams<
   TConfig extends AnyRootConfig,
   TProcedure extends AnyOldProcedure,
 > = TProcedure extends OldProcedure<
-  infer TInputContext,
+  infer _TInputContext,
   infer TContext,
   infer TMeta,
   infer TInput,
@@ -39,7 +39,6 @@ type convertProcedureParams<
 >
   ? ProcedureParams<
       TConfig,
-      TInputContext,
       TContext,
       TInput,
       TParsedInput,

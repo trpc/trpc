@@ -25,7 +25,6 @@ export interface ProcedureOptions {
  */
 export interface ProcedureParams<
   TConfig extends AnyRootConfig = AnyRootConfig,
-  TContextIn = unknown,
   TContextOut = unknown,
   TInputIn = unknown,
   TInputOut = unknown,
@@ -38,10 +37,6 @@ export interface ProcedureParams<
    * @internal
    */
   _meta: TMeta;
-  /**
-   * @internal
-   */
-  _ctx_in: TContextIn;
   /**
    * @internal
    */
