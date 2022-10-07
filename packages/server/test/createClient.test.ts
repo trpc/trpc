@@ -1,5 +1,5 @@
-import { createTRPCProxyClient } from '../../client';
-import { httpBatchLink } from '../../client/src';
+import './___packages';
+import { createTRPCProxyClient, httpBatchLink } from '@trpc/client';
 
 global.fetch = jest.fn();
 
