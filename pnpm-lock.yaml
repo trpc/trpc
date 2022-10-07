@@ -17,7 +17,7 @@ importers:
       '@changesets/changelog-github': ^0.4.1
       '@changesets/cli': ^2.17.0
       '@manypkg/cli': ^0.19.0
-      '@rollup/plugin-node-resolve': ^13.1.3
+      '@rollup/plugin-node-resolve': ^14.0.0
       '@swc/core': ^1.3.3
       '@trivago/prettier-plugin-sort-imports': ^3.3.0
       '@types/node': ^18.7.20
@@ -25,7 +25,7 @@ importers:
       '@typescript-eslint/parser': ^5.37.0
       eslint: ^7.32.0
       eslint-config-prettier: ^8.5.0
-      eslint-plugin-no-only-tests: ^2.6.0
+      eslint-plugin-no-only-tests: ^3.0.0
       eslint-plugin-prettier: ^4.0.0
       eslint-plugin-react: ^7.25.1
       eslint-plugin-react-hooks: ^4.2.0
@@ -46,7 +46,7 @@ importers:
       '@changesets/changelog-github': 0.4.6
       '@changesets/cli': 2.24.4
       '@manypkg/cli': 0.19.1
-      '@rollup/plugin-node-resolve': 13.3.0_rollup@2.79.1
+      '@rollup/plugin-node-resolve': 14.1.0_rollup@2.79.1
       '@swc/core': 1.3.3
       '@trivago/prettier-plugin-sort-imports': 3.3.0_prettier@2.7.1
       '@types/node': 18.7.20
@@ -54,7 +54,7 @@ importers:
       '@typescript-eslint/parser': 5.38.0_dyxdave6dwjbccc5dgiifcmuza
       eslint: 7.32.0
       eslint-config-prettier: 8.5.0_eslint@7.32.0
-      eslint-plugin-no-only-tests: 2.6.0
+      eslint-plugin-no-only-tests: 3.0.0
       eslint-plugin-prettier: 4.2.1_7gsvg5lgwpfdww3i7smtqxamuy
       eslint-plugin-react: 7.31.8_eslint@7.32.0
       eslint-plugin-react-hooks: 4.6.0_eslint@7.32.0
@@ -109,12 +109,11 @@ importers:
       abort-controller: ^3.0.0
       express: ^4.17.1
       node-fetch: ^2.6.1
-      nodemon: ^2.0.12
       npm-run-all: ^4.1.5
       start-server-and-test: ^1.12.0
       tsx: ^3.9.0
       typescript: ^4.8.3
-      wait-on: ^6.0.0
+      wait-port: ^1.0.1
       zod: ^3.0.0
     dependencies:
       '@trpc/client': link:../../../packages/client
@@ -129,12 +128,11 @@ importers:
       '@types/express': 4.17.14
       '@types/node': 18.7.20
       '@types/react': 18.0.21
-      nodemon: 2.0.20
       npm-run-all: 4.1.5
       start-server-and-test: 1.14.0
       tsx: 3.9.0
       typescript: 4.8.3
-      wait-on: 6.0.1
+      wait-port: 1.0.1
 
   examples/.interop/fastify-server:
     specifiers:
@@ -146,15 +144,13 @@ importers:
       '@types/ws': ^8.2.0
       abort-controller: ^3.0.0
       fastify: ^3.27.1
-      fastify-websocket: ^4.0.0
       node-fetch: ^2.6.1
-      nodemon: ^2.0.12
       npm-run-all: ^4.1.5
       start-server-and-test: ^1.12.0
       tslib: ^2.1.0
       tsx: ^3.9.0
       typescript: ^4.8.3
-      wait-on: ^6.0.0
+      wait-port: ^1.0.1
       ws: ^8.0.0
       zod: ^3.0.0
     dependencies:
@@ -163,7 +159,6 @@ importers:
       '@trpc/server': link:../../../packages/server
       abort-controller: 3.0.0
       fastify: 3.29.2
-      fastify-websocket: 4.3.0
       node-fetch: 2.6.7
       tslib: 2.4.0
       ws: 8.9.0
@@ -172,12 +167,11 @@ importers:
       '@types/node': 18.7.20
       '@types/node-fetch': 2.6.2
       '@types/ws': 8.5.3
-      nodemon: 2.0.20
       npm-run-all: 4.1.5
       start-server-and-test: 1.14.0
       tsx: 3.9.0
       typescript: 4.8.3
-      wait-on: 6.0.1
+      wait-port: 1.0.1
 
   examples/.interop/lambda-api-gateway:
     specifiers:
@@ -361,7 +355,6 @@ importers:
       next: ^12.3.1
       next-auth: ~4.10.3
       node-fetch: ^2.6.1
-      nodemon: ^2.0.12
       npm-run-all: ^4.1.5
       postcss: ^8.4.14
       prettier: ^2.7.1
@@ -409,7 +402,6 @@ importers:
       eslint-plugin-prettier: 4.2.1_7gsvg5lgwpfdww3i7smtqxamuy
       eslint-plugin-react: 7.31.8_eslint@7.32.0
       eslint-plugin-react-hooks: 4.6.0_eslint@7.32.0
-      nodemon: 2.0.20
       npm-run-all: 4.1.5
       postcss: 8.4.16
       prettier: 2.7.1
@@ -477,12 +469,11 @@ importers:
       '@types/ws': ^8.2.0
       abort-controller: ^3.0.0
       node-fetch: ^2.6.1
-      nodemon: ^2.0.12
       npm-run-all: ^4.1.5
       start-server-and-test: ^1.12.0
       tsx: ^3.9.0
       typescript: ^4.8.3
-      wait-port: ^0.3.0
+      wait-port: ^1.0.1
       ws: ^8.0.0
       zod: ^3.0.0
     dependencies:
@@ -498,11 +489,10 @@ importers:
     devDependencies:
       '@types/node': 18.7.20
       '@types/ws': 8.5.3
-      nodemon: 2.0.20
       npm-run-all: 4.1.5
       start-server-and-test: 1.14.0
       tsx: 3.9.0
-      wait-port: 0.3.1
+      wait-port: 1.0.1
 
   examples/cloudflare-workers:
     specifiers:
@@ -542,12 +532,11 @@ importers:
       '@types/react': ^18.0.9
       express: ^4.17.1
       node-fetch: ^2.6.1
-      nodemon: ^2.0.12
       npm-run-all: ^4.1.5
       start-server-and-test: ^1.12.0
       tsx: ^3.9.0
       typescript: ^4.8.3
-      wait-on: ^6.0.0
+      wait-port: ^1.0.1
       zod: ^3.0.0
     dependencies:
       '@trpc/client': link:../../packages/client
@@ -561,12 +550,11 @@ importers:
       '@types/express': 4.17.14
       '@types/node': 18.7.20
       '@types/react': 18.0.21
-      nodemon: 2.0.20
       npm-run-all: 4.1.5
       start-server-and-test: 1.14.0
       tsx: 3.9.0
       typescript: 4.8.3
-      wait-on: 6.0.1
+      wait-port: 1.0.1
 
   examples/express-server:
     specifiers:
@@ -580,12 +568,11 @@ importers:
       abort-controller: ^3.0.0
       express: ^4.17.1
       node-fetch: ^2.6.1
-      nodemon: ^2.0.12
       npm-run-all: ^4.1.5
       start-server-and-test: ^1.12.0
       tsx: ^3.9.0
       typescript: ^4.8.3
-      wait-on: ^6.0.0
+      wait-port: ^1.0.1
       zod: ^3.0.0
     dependencies:
       '@trpc/client': link:../../packages/client
@@ -600,12 +587,11 @@ importers:
       '@types/express': 4.17.14
       '@types/node': 18.7.20
       '@types/react': 18.0.21
-      nodemon: 2.0.20
       npm-run-all: 4.1.5
       start-server-and-test: 1.14.0
       tsx: 3.9.0
       typescript: 4.8.3
-      wait-on: 6.0.1
+      wait-port: 1.0.1
 
   examples/fastify-server:
     specifiers:
@@ -617,16 +603,14 @@ importers:
       '@types/ws': ^8.2.0
       abort-controller: ^3.0.0
       fastify: ^3.27.1
-      fastify-websocket: ^4.0.0
       node-fetch: ^2.6.1
-      nodemon: ^2.0.12
       npm-run-all: ^4.1.5
       start-server-and-test: ^1.12.0
       superjson: ^1.7.4
       tslib: ^2.1.0
       tsx: ^3.9.0
       typescript: ^4.8.3
-      wait-on: ^6.0.0
+      wait-port: ^1.0.1
       ws: ^8.0.0
       zod: ^3.0.0
     dependencies:
@@ -635,7 +619,6 @@ importers:
       '@trpc/server': link:../../packages/server
       abort-controller: 3.0.0
       fastify: 3.29.2
-      fastify-websocket: 4.3.0
       node-fetch: 2.6.7
       superjson: 1.10.0
       tslib: 2.4.0
@@ -645,12 +628,11 @@ importers:
       '@types/node': 18.7.20
       '@types/node-fetch': 2.6.2
       '@types/ws': 8.5.3
-      nodemon: 2.0.20
       npm-run-all: 4.1.5
       start-server-and-test: 1.14.0
       tsx: 3.9.0
       typescript: 4.8.3
-      wait-on: 6.0.1
+      wait-port: 1.0.1
 
   examples/lambda-api-gateway:
     specifiers:
@@ -678,32 +660,30 @@ importers:
   examples/minimal:
     specifiers:
       '@types/node': ^18.7.20
-      nodemon: ^2.0.12
       npm-run-all: ^4.1.5
       start-server-and-test: ^1.12.0
       tsx: ^3.9.0
       typescript: ^4.8.3
-      wait-port: ^0.3.0
+      wait-port: ^1.0.1
     devDependencies:
       '@types/node': 18.7.20
-      nodemon: 2.0.20
       npm-run-all: 4.1.5
       start-server-and-test: 1.14.0
       tsx: 3.9.0
       typescript: 4.8.3
-      wait-port: 0.3.1
+      wait-port: 1.0.1
 
   examples/minimal-react:
     specifiers:
       '@playwright/test': ^1.26.1
       npm-run-all: ^4.1.5
       start-server-and-test: ^1.12.0
-      wait-port: ^0.3.0
+      wait-port: ^1.0.1
     devDependencies:
       '@playwright/test': 1.26.1
       npm-run-all: 4.1.5
       start-server-and-test: 1.14.0
-      wait-port: 0.3.1
+      wait-port: 1.0.1
 
   examples/minimal-react/client:
     specifiers:
@@ -993,7 +973,6 @@ importers:
       next: ^12.3.1
       next-auth: ~4.10.3
       node-fetch: ^2.6.1
-      nodemon: ^2.0.12
       npm-run-all: ^4.1.5
       postcss: ^8.4.14
       prettier: ^2.7.1
@@ -1041,7 +1020,6 @@ importers:
       eslint-plugin-prettier: 4.2.1_7gsvg5lgwpfdww3i7smtqxamuy
       eslint-plugin-react: 7.31.8_eslint@7.32.0
       eslint-plugin-react-hooks: 4.6.0_eslint@7.32.0
-      nodemon: 2.0.20
       npm-run-all: 4.1.5
       postcss: 8.4.16
       prettier: 2.7.1
@@ -1109,12 +1087,11 @@ importers:
       '@types/ws': ^8.2.0
       abort-controller: ^3.0.0
       node-fetch: ^2.6.1
-      nodemon: ^2.0.12
       npm-run-all: ^4.1.5
       start-server-and-test: ^1.12.0
       tsx: ^3.9.0
       typescript: ^4.8.3
-      wait-port: ^0.3.0
+      wait-port: ^1.0.1
       ws: ^8.0.0
       zod: ^3.0.0
     dependencies:
@@ -1129,12 +1106,11 @@ importers:
     devDependencies:
       '@types/node': 18.7.20
       '@types/ws': 8.5.3
-      nodemon: 2.0.20
       npm-run-all: 4.1.5
       start-server-and-test: 1.14.0
       tsx: 3.9.0
       typescript: 4.8.3
-      wait-port: 0.3.1
+      wait-port: 1.0.1
 
   packages/client:
     specifiers:
@@ -1241,7 +1217,7 @@ importers:
       react: ^18.2.0
       react-dom: ^18.2.0
       superjson: ^1.7.4
-      superstruct: ^0.15.2
+      superstruct: ^0.16.0
       ts-jest: ^27.0.5
       typescript: ^4.8.3
       ws: ^8.0.0
@@ -1288,7 +1264,7 @@ importers:
       react: 18.2.0
       react-dom: 18.2.0_react@18.2.0
       superjson: 1.10.0
-      superstruct: 0.15.5
+      superstruct: 0.16.5
       ts-jest: 27.1.5_qqheuyrmnawe7ws7n63adpwbnu
       typescript: 4.8.3
       ws: 8.9.0
@@ -5946,11 +5922,11 @@ packages:
     resolution: {integrity: sha512-4JF/uMaEDAPdcdZNOrnzE3BvrbGpjgV0FcPT3EVoi6I86fWkloqqxBt+KcK/+fIRR0Pxj66uGR9wVH8U1Y13JA==}
     requiresBuild: true
 
-  /@rollup/plugin-node-resolve/13.3.0_rollup@2.79.1:
-    resolution: {integrity: sha512-Lus8rbUo1eEcnS4yTFKLZrVumLPY+YayBdWXgFSHYhTT2iJbMhoaaBL3xl5NCdeRytErGr8tZ0L71BMRmnlwSw==}
+  /@rollup/plugin-node-resolve/14.1.0_rollup@2.79.1:
+    resolution: {integrity: sha512-5G2niJroNCz/1zqwXtk0t9+twOSDlG00k1Wfd7bkbbXmwg8H8dvgHdIWAun53Ps/rckfvOC7scDBjuGFg5OaWw==}
     engines: {node: '>= 10.0.0'}
     peerDependencies:
-      rollup: ^2.42.0
+      rollup: ^2.78.0
     dependencies:
       '@rollup/pluginutils': 3.1.0_rollup@2.79.1
       '@types/resolve': 1.17.1
@@ -7336,6 +7312,7 @@ packages:
 
   /abbrev/1.1.1:
     resolution: {integrity: sha512-nne9/IiQ/hzIhY6pdDnbBtz7DjPTKrY00P/zvPSm5pOFkl6xuGrGnXn/VtTNNfNtAfZ9/1RtehkszU9qcTii0Q==}
+    dev: false
 
   /abort-controller/3.0.0:
     resolution: {integrity: sha512-h8lQ8tacZYnR3vNQTgibj+tODHI5/+l06Au2Pcriv/Gmet0eaj4TwWH41sO9wnHDiQsEj19q0drzdWdeAHtweg==}
@@ -7866,6 +7843,7 @@ packages:
       follow-redirects: 1.15.2
     transitivePeerDependencies:
       - debug
+    dev: false
 
   /axobject-query/2.2.0:
     resolution: {integrity: sha512-Td525n+iPOOyUQIeBfcASuG6uJsDOITl7Mds5gFyerkWiX7qhUTdYUBlSgNMyVqtSJqwpt1kXGLdUt6SykLMRA==}
@@ -9470,18 +9448,6 @@ packages:
       ms: 2.1.3
     dev: true
 
-  /debug/3.2.7_supports-color@5.5.0:
-    resolution: {integrity: sha512-CFjzYYAi4ThfiQvizrFQevTTXHtnCqWfe7x1AhgEscTz6ZbLbfoLRLPugTQyBth6f8ZERVUSyWHFD/7Wu4t1XQ==}
-    peerDependencies:
-      supports-color: '*'
-    peerDependenciesMeta:
-      supports-color:
-        optional: true
-    dependencies:
-      ms: 2.1.3
-      supports-color: 5.5.0
-    dev: true
-
   /debug/4.3.2:
     resolution: {integrity: sha512-mOp8wKcvj7XxC78zLgw/ZA+6TSgkoE2C/ienthhRD298T7UNwAg9diBpLRxC0mOezLl4B0xV7M0cCO6P/O0Xhw==}
     engines: {node: '>=6.0'}
@@ -10775,9 +10741,9 @@ packages:
       semver: 6.3.0
     dev: true
 
-  /eslint-plugin-no-only-tests/2.6.0:
-    resolution: {integrity: sha512-T9SmE/g6UV1uZo1oHAqOvL86XWl7Pl2EpRpnLI8g/bkJu+h7XBCB+1LnubRZ2CUQXj805vh4/CYZdnqtVaEo2Q==}
-    engines: {node: '>=4.0.0'}
+  /eslint-plugin-no-only-tests/3.0.0:
+    resolution: {integrity: sha512-I0PeXMs1vu21ap45hey4HQCJRqpcoIvGcNTPJe+UhUm8TwjQ6//mCrDqF8q0WS6LgmRDwQ4ovQej0AQsAHb5yg==}
+    engines: {node: '>=5.0.0'}
     dev: false
 
   /eslint-plugin-prettier/4.2.1_7gsvg5lgwpfdww3i7smtqxamuy:
@@ -11306,6 +11272,7 @@ packages:
     transitivePeerDependencies:
       - bufferutil
       - utf-8-validate
+    dev: true
 
   /fastify-websocket/4.3.0:
     resolution: {integrity: sha512-PLoXjlKHaWOEIJ7tHStM2i8aL4kdYVB8d1Umf7TdpQ93kG7OopO7eV4IAyO545kRiE8pyL1AbjlJeZ7irDA1aA==}
@@ -11315,6 +11282,7 @@ packages:
     transitivePeerDependencies:
       - bufferutil
       - utf-8-validate
+    dev: true
 
   /fastify/3.29.2:
     resolution: {integrity: sha512-XFuIF4T9IdkCVtV0amWQZg50w8iPn8MoAV4yK1DP88dU7YEwxDOOpVgKLWZS4YJA8RU001KUfg2b/2L6kEwJWA==}
@@ -12654,10 +12622,6 @@ packages:
 
   /ieee754/1.2.1:
     resolution: {integrity: sha512-dcyqhDvX1C46lXZcVqCpK+FtMRQVdIMN6/Df5js2zouUsqG7I6sFxitIC+7KYK29KdXOLHdu9zL4sFnoVQnqaA==}
-
-  /ignore-by-default/1.0.1:
-    resolution: {integrity: sha512-Ius2VYcGNk7T90CppJqcIkS5ooHUZyIQK+ClZfMfMNFEF9VSE73Fq+906u/CWu92x4gzZMWOwfFYckPObzdEbA==}
-    dev: true
 
   /ignore-walk/5.0.1:
     resolution: {integrity: sha512-yemi4pMf51WKT7khInJqAvsIGzoqYXblnsz0ql8tM+yi1EKYTY1evX4NAbJrLL/Aanr2HyZeluqU+Oi7MGHokw==}
@@ -15307,30 +15271,6 @@ packages:
       sorted-array-functions: 1.3.0
     dev: true
 
-  /nodemon/2.0.20:
-    resolution: {integrity: sha512-Km2mWHKKY5GzRg6i1j5OxOHQtuvVsgskLfigG25yTtbyfRGn/GNvIbRyOf1PSCKJ2aT/58TiuUsuOU5UToVViw==}
-    engines: {node: '>=8.10.0'}
-    hasBin: true
-    dependencies:
-      chokidar: 3.5.3
-      debug: 3.2.7_supports-color@5.5.0
-      ignore-by-default: 1.0.1
-      minimatch: 3.1.2
-      pstree.remy: 1.1.8
-      semver: 5.7.1
-      simple-update-notifier: 1.0.7
-      supports-color: 5.5.0
-      touch: 3.1.0
-      undefsafe: 2.0.5
-    dev: true
-
-  /nopt/1.0.10:
-    resolution: {integrity: sha512-NWmpvLSqUrgrAC9HCuxEvb+PSloHpqVu+FqcO4eeF2h5qYRhA7ev6KvelyQAKtegUbC6RypJnlEOhd8vloNKYg==}
-    hasBin: true
-    dependencies:
-      abbrev: 1.1.1
-    dev: true
-
   /nopt/5.0.0:
     resolution: {integrity: sha512-Tbj67rffqceeLpcRXrT7vKAN8CwfPeIBgM7E6iBkmKLV7bEMwpGgYLGv0jACUsECaa/vuxP0IjEont6umdMgtQ==}
     engines: {node: '>=6'}
@@ -17006,10 +16946,6 @@ packages:
     resolution: {integrity: sha512-E/ZsdU4HLs/68gYzgGTkMicWTLPdAftJLfJFlLUAAKZGkStNU72sZjT66SnMDVOfOWY/YAoiD7Jxa9iHvngcag==}
     dev: true
 
-  /pstree.remy/1.1.8:
-    resolution: {integrity: sha512-77DZwxQmxKnu3aR542U+X8FypNzbfJ+C5XQDk3uWjWxn6151aIMGthWYRXTqT1E5oJvg+ljaa2OJi+VfvCOQ8w==}
-    dev: true
-
   /pump/3.0.0:
     resolution: {integrity: sha512-LwZy+p3SFs1Pytd/jYct4wpv49HiYCqd9Rlc5ZVdk0V+8Yzv6jR5Blk3TRmPL1ft69TxP0IMZGJ+WPFU2BFhww==}
     dependencies:
@@ -18073,11 +18009,6 @@ packages:
     resolution: {integrity: sha512-b39TBaTSfV6yBrapU89p5fKekE2m/NwnDocOVruQFS1/veMgdzuPcnOM34M6CwxW8jH/lxEa5rBoDeUwu5HHTw==}
     hasBin: true
 
-  /semver/7.0.0:
-    resolution: {integrity: sha512-+GB6zVA9LWh6zovYQLALHwv5rb2PHGlJi3lfiqIHxR0uuwCgefcOJc59v9fv1w8GbStwxuuqqAjI9NMAOOgq1A==}
-    hasBin: true
-    dev: true
-
   /semver/7.3.4:
     resolution: {integrity: sha512-tCfb2WLjqFAtXn4KEdxIhalnRtoKFN7nAwj0B3ZXCbQloV2tq5eDbcTmT68JJD3nRJq24/XgxtQKFIpQdtvmVw==}
     engines: {node: '>=10'}
@@ -18381,13 +18312,6 @@ packages:
       debug: 4.3.4_supports-color@8.1.1
     transitivePeerDependencies:
       - supports-color
-    dev: true
-
-  /simple-update-notifier/1.0.7:
-    resolution: {integrity: sha512-BBKgR84BJQJm6WjWFMHgLVuo61FBDSj1z/xSFUIozqO6wO7ii0JxCqlIud7Enr/+LhlbNI0whErq96P2qHNWew==}
-    engines: {node: '>=8.10.0'}
-    dependencies:
-      semver: 7.0.0
     dev: true
 
   /sirv/1.0.19:
@@ -19002,8 +18926,9 @@ packages:
     dependencies:
       copy-anything: 3.0.2
 
-  /superstruct/0.15.5:
-    resolution: {integrity: sha512-4AOeU+P5UuE/4nOUkmcQdW5y7i9ndt1cQd/3iUe+LTz3RxESf/W/5lg4B74HbDMMv8PHnPnGCQFH45kBcrQYoQ==}
+  /superstruct/0.16.5:
+    resolution: {integrity: sha512-GBa1VPdCUDAIrsoMVy2lzE/hKQnieUlc1JVoVzJ2YLx47SoPY4AqF85Ht1bPg5r+8I0v54GbaRdNTnYQ0p+T+Q==}
+    engines: {node: '>=14.0.0'}
     dev: true
 
   /supports-color/5.5.0:
@@ -19373,13 +19298,6 @@ packages:
     engines: {node: '>=6'}
     dev: false
 
-  /touch/3.1.0:
-    resolution: {integrity: sha512-WBx8Uy5TLtOSRtIq+M03/sKDrXCLHxwDcquSP2c43Le03/9serjQBIztjRz6FkJez9D/hleyAXTBGLwwZUw9lA==}
-    hasBin: true
-    dependencies:
-      nopt: 1.0.10
-    dev: true
-
   /tough-cookie/4.1.2:
     resolution: {integrity: sha512-G9fqXWoYFZgTc2z8Q5zaHy/vJMjm+WV0AkAeHxVCQiEB1b+dGvWzFW6QV07cY5jQ5gRkeid2qIkzkxUnmoQZUQ==}
     engines: {node: '>=6'}
@@ -19628,10 +19546,6 @@ packages:
     dependencies:
       buffer: 5.7.1
       through: 2.3.8
-    dev: true
-
-  /undefsafe/2.0.5:
-    resolution: {integrity: sha512-WxONCrssBM8TSPRqN5EmsjVrsv4A8X12J4ArBiiayv3DyyG3ZlIg6yysuuSYdZsVz3TKcTg2fd//Ujd4CHV1iA==}
     dev: true
 
   /undici/5.9.1:
@@ -20157,9 +20071,10 @@ packages:
       rxjs: 7.5.6
     transitivePeerDependencies:
       - debug
+    dev: false
 
-  /wait-port/0.3.1:
-    resolution: {integrity: sha512-o8kW8xjslQDrbazXgXeDFt53l128J9xBAiG4aBmr9DcQA05jt0VBf2TE2vc9rxctgZjIuWpiXuO0gIYFo3pZSA==}
+  /wait-port/1.0.1:
+    resolution: {integrity: sha512-JkEgxQRZqqBz449/bRVQAvl+e8LJ8fpW8J1W7WkKKo8PypoXX7EXGE47BmkNLTb5Ly/eI15IyTeAxDBwOEQ8DQ==}
     engines: {node: '>=10'}
     hasBin: true
     dependencies:
