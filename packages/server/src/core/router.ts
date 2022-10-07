@@ -37,7 +37,11 @@ interface DeprecatedProcedureRouterRecord {
 export interface RouterDef<
   TConfig extends AnyRootConfig,
   TRecord extends ProcedureRouterRecord,
-  TOld extends DeprecatedProcedureRouterRecord = never,
+  TOld extends DeprecatedProcedureRouterRecord = {
+    queries: {};
+    mutations: {};
+    subscriptions: {};
+  },
 > {
   _config: TConfig;
   router: true;
