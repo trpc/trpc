@@ -60,10 +60,10 @@ export type MiddlewareFunction<
     meta: TParams['_meta'] | undefined;
     next: {
       (): Promise<MiddlewareResult<TParams>>;
-      <TContext>(opts: { ctx: TContext }): Promise<
+      <$Context>(opts: { ctx: $Context }): Promise<
         MiddlewareResult<{
           _config: AnyRootConfig;
-          _ctx_out: TContext;
+          _ctx_out: $Context;
           _input_in: TParams['_input_in'];
           _input_out: TParams['_input_out'];
           _output_in: TParams['_output_in'];
