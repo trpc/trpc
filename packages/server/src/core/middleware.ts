@@ -62,8 +62,7 @@ export type MiddlewareFunction<
       (): Promise<MiddlewareResult<TParams>>;
       <TContext>(opts: { ctx: TContext }): Promise<
         MiddlewareResult<{
-          _config: any;
-          _ctx_in: TParams['_ctx_in'];
+          _config: AnyRootConfig;
           _ctx_out: TContext;
           _input_in: TParams['_input_in'];
           _input_out: TParams['_input_out'];
@@ -86,7 +85,6 @@ export function createMiddlewareFactory<TConfig extends AnyRootConfig>() {
     fn: MiddlewareFunction<
       {
         _config: TConfig;
-        _ctx_in: TConfig['$types']['ctx'];
         _ctx_out: TConfig['$types']['ctx'];
         _input_out: unknown;
         _input_in: unknown;
