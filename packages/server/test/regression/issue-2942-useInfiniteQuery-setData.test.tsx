@@ -41,15 +41,6 @@ const ctx = konn()
             };
           }),
       }),
-      /**
-       * @deprecated
-       */
-      deprecatedRouter: t.router({
-        /**
-         * @deprecated
-         */
-        deprecatedProcedure: t.procedure.query(() => '..'),
-      }),
     });
 
     return getServerAndReactClient(appRouter);
