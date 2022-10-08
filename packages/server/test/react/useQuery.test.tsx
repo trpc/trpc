@@ -7,6 +7,8 @@ import React, { useEffect } from 'react';
 import { z } from 'zod';
 import { initTRPC } from '../../src';
 
+const fixtureData = ['1', '2'];
+
 const ctx = konn()
   .beforeEach(() => {
     const t = initTRPC.create({
@@ -32,10 +34,18 @@ const ctx = konn()
         list: t.procedure
           .input(
             z.object({
-              cursor: z.string().optional(),
+              cursor: z.number().default(0),
             }),
           )
-          .query(() => '__infResult' as const),
+          .query(({ input }) => {
+            return {
+              items: fixtureData.slice(input.cursor, input.cursor + 1),
+              next:
+                input.cursor + 1 > fixtureData.length
+                  ? undefined
+                  : input.cursor + 1,
+            };
+          }),
       }),
       /**
        * @deprecated
@@ -97,7 +107,14 @@ test('useQuery()', async () => {
 test('useInfiniteQuery()', async () => {
   const { App, proxy } = ctx;
   function MyComponent() {
-    const query1 = proxy.post.list.useInfiniteQuery({});
+    const query1 = proxy.post.list.useInfiniteQuery(
+      {},
+      {
+        getNextPageParam(lastPage) {
+          return lastPage.next;
+        },
+      },
+    );
     expect(query1.trpc.path).toBe('post.list');
 
     if (!query1.data) {
@@ -105,9 +122,26 @@ test('useInfiniteQuery()', async () => {
     }
 
     type TData = typeof query1['data'];
-    expectTypeOf<TData>().toMatchTypeOf<InfiniteData<'__infResult'>>();
+    expectTypeOf<TData>().toMatchTypeOf<
+      InfiniteData<{
+        items: typeof fixtureData;
+        next: number | undefined;
+      }>
+    >();
 
-    return <pre>{JSON.stringify(query1.data ?? 'n/a', null, 4)}</pre>;
+    return (
+      <>
+        <button
+          data-testid="fetchMore"
+          onClick={() => {
+            query1.fetchNextPage();
+          }}
+        >
+          Fetch more
+        </button>
+        <pre>{JSON.stringify(query1.data ?? 'n/a', null, 4)}</pre>
+      </>
+    );
   }
 
   const utils = render(
@@ -116,7 +150,13 @@ test('useInfiniteQuery()', async () => {
     </App>,
   );
   await waitFor(() => {
-    expect(utils.container).toHaveTextContent(`__infResult`);
+    expect(utils.container).toHaveTextContent(`[ "1" ]`);
+  });
+  utils.getByTestId('fetchMore').click();
+
+  await waitFor(() => {
+    expect(utils.container).toHaveTextContent(`[ "1" ]`);
+    expect(utils.container).toHaveTextContent(`[ "2" ]`);
   });
 });
 
