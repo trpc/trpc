@@ -92,11 +92,11 @@ module.exports = {
           items: [
             {
               label: 'Docs',
-              to: 'docs/v9',
+              to: 'docs/v10',
             },
             {
               label: 'Usage with Next.js',
-              to: 'docs/v9/nextjs',
+              to: 'docs/v10/nextjs',
             },
           ],
         },
