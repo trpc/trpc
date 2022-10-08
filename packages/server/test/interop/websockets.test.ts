@@ -9,7 +9,7 @@ import { z } from 'zod';
 import { TRPCClientError } from '../../../client/src';
 import { createWSClient, wsLink } from '../../../client/src';
 import * as trpc from '../../src';
-import { TRPCError } from '../../src';
+import { AnyRouter, TRPCError } from '../../src';
 import { applyWSSHandler } from '../../src/adapters/ws';
 import { Observer, observable } from '../../src/observable';
 import { TRPCClientOutgoingMessage, TRPCRequestMessage } from '../../src/rpc';
@@ -28,7 +28,7 @@ function factory(config?: { createContext: () => Promise<any> }) {
   const subscriptionEnded = jest.fn();
   const onNewClient = jest.fn();
   const oldRouter = trpc
-    .router<any>()
+    .router()
     .query('greeting', {
       input: z.string().nullish(),
       resolve({ input }) {
@@ -80,6 +80,9 @@ function factory(config?: { createContext: () => Promise<any> }) {
 
   const onOpenMock = jest.fn();
   const onCloseMock = jest.fn();
+
+  expectTypeOf(oldRouter).toMatchTypeOf<AnyRouter>();
+  expectTypeOf<AnyRouter>().toMatchTypeOf<typeof oldRouter>();
 
   const opts = routerToServerAndClientNew(oldRouter, {
     wsClient: {

@@ -143,7 +143,7 @@ export async function resolveHTTPResponse<
 
     const deserializeInputValue = (rawValue: unknown) => {
       return typeof rawValue !== 'undefined'
-        ? router._def.transformer.input.deserialize(rawValue)
+        ? router._def._config.transformer.input.deserialize(rawValue)
         : rawValue;
     };
     const getInputs = (): Record<number, unknown> => {

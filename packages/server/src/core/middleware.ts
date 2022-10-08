@@ -1,6 +1,6 @@
 import { TRPCError } from '../error/TRPCError';
 import { getCauseFromUnknown } from '../error/utils';
-import { RootConfig } from './internals/config';
+import { AnyRootConfig } from './internals/config';
 import { ParseFn } from './internals/getParseFn';
 import { ProcedureBuilderMiddleware } from './internals/procedureBuilder';
 import { MiddlewareMarker } from './internals/utils';
@@ -60,11 +60,10 @@ export type MiddlewareFunction<
     meta: TParams['_meta'] | undefined;
     next: {
       (): Promise<MiddlewareResult<TParams>>;
-      <TContext>(opts: { ctx: TContext }): Promise<
+      <$Context>(opts: { ctx: $Context }): Promise<
         MiddlewareResult<{
-          _config: any;
-          _ctx_in: TParams['_ctx_in'];
-          _ctx_out: TContext;
+          _config: TParams['_config'];
+          _ctx_out: $Context;
           _input_in: TParams['_input_in'];
           _input_out: TParams['_input_out'];
           _output_in: TParams['_output_in'];
@@ -81,18 +80,17 @@ export type MiddlewareFunction<
  * @internal
  */
 // FIXME this should use RootConfig
-export function createMiddlewareFactory<TConfig extends RootConfig>() {
+export function createMiddlewareFactory<TConfig extends AnyRootConfig>() {
   return function createMiddleware<TNewParams extends ProcedureParams>(
     fn: MiddlewareFunction<
       {
         _config: TConfig;
-        _ctx_in: TConfig['ctx'];
-        _ctx_out: TConfig['ctx'];
+        _ctx_out: TConfig['$types']['ctx'];
         _input_out: unknown;
         _input_in: unknown;
         _output_in: unknown;
         _output_out: unknown;
-        _meta: TConfig['meta'];
+        _meta: TConfig['$types']['meta'];
       },
       TNewParams
     >,

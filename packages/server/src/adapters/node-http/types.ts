@@ -1,6 +1,7 @@
 import { IncomingMessage, ServerResponse } from 'http';
-import { AnyRouter, inferRouterContext, inferRouterDef } from '../../core';
+import { AnyRouter, inferRouterContext } from '../../core';
 import { HTTPBaseHandlerOptions } from '../../http/internals/types';
+import { MaybePromise } from '../../types';
 
 interface ParsedQs {
   [key: string]: undefined | string | string[] | ParsedQs | ParsedQs[];
@@ -48,4 +49,4 @@ export type NodeHTTPCreateContextFn<
   TResponse,
 > = (
   opts: NodeHTTPCreateContextFnOptions<TRequest, TResponse>,
-) => inferRouterDef<TRouter>['_ctx'] | Promise<inferRouterDef<TRouter>['_ctx']>;
+) => MaybePromise<inferRouterContext<TRouter>>;

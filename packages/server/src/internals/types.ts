@@ -1,5 +1,4 @@
-import { inferRouterDef } from '../core';
-import { ProcedureType } from '../core';
+import { ProcedureType, inferRouterContext } from '../core';
 import { AnyRouter } from '../core/router';
 import { TRPCError } from '../error/TRPCError';
 
@@ -20,5 +19,5 @@ export type OnErrorFunction<TRouter extends AnyRouter, TRequest> = (opts: {
   path: string | undefined;
   req: TRequest;
   input: unknown;
-  ctx: undefined | inferRouterDef<TRouter>['_ctx'];
+  ctx: undefined | inferRouterContext<TRouter>;
 }) => void;

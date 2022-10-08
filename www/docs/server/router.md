@@ -40,3 +40,61 @@ const appRouter = t.router({
 // Export only the **type** of a router to avoid importing server code on the client
 export type AppRouter = typeof appRouter;
 ```
+
+## `initTRPC` options
+
+Use chaining to setup your `t`-object, example:
+
+```ts
+initTRPC()
+  .context<Context>()
+  .meta<Meta>()
+  .create({ /* [...] */})
+```
+### `.context<Context>()`
+
+Setup a [request context](context).
+
+### `.meta<Meta>()`
+
+Setup [metadata](metadata) for your procedures.
+
+
+### `.create(opts: Partial<RuntimeConfig>)`
+
+
+`RuntimeConfig` reference:
+
+```ts
+
+export interface RuntimeConfig<TTypes extends RootConfigTypes> {
+  /**
+   * Use a data transformer
+   * @link https://trpc.io/docs/data-transformers
+   */
+  transformer: TTypes['transformer'];
+  /**
+   * Use custom error formatting
+   * @link https://trpc.io/docs/error-formatting
+   */
+  errorFormatter: ErrorFormatter<TTypes['ctx'], any>;
+  /**
+   * Allow `@trpc/server` to run in non-server environments
+   * @warning **Use with caution**, this should likely mainly be used within testing.
+   * @default false
+   */
+  allowOutsideOfServer: boolean;
+  /**
+   * Is this a server environment?
+   * @warning **Use with caution**, this should likely mainly be used within testing.
+   * @default typeof window === 'undefined' || 'Deno' in window || process.env.NODE_ENV === 'test'
+   */
+  isServer: boolean;
+  /**
+   * Is this development?
+   * Will be used to decide if the API should return stack traces
+   * @default process.env.NODE_ENV !== 'production'
+   */
+  isDev: boolean;
+}
+```
