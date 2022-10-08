@@ -47,14 +47,14 @@ const palette = {
   mutation: ['c5a3fc', '904dfc'],
   subscription: ['ff49e1', 'd83fbe'],
 };
-export type LoggerLinkOptions<TRouter extends AnyRouter> = {
+export interface LoggerLinkOptions<TRouter extends AnyRouter> {
   logger?: LoggerLinkFn<TRouter>;
   enabled?: EnabledFn<TRouter>;
   /**
    * Used in the built-in defaultLogger
    */
   console?: ConsoleEsque;
-};
+}
 
 // maybe this should be moved to it's own package
 const defaultLogger =
