@@ -226,7 +226,6 @@ export function createReactQueryUtilsProxy<
           >;
           const queryKey = getQueryKey(fullPath, input);
           return {
-            input,
             queryKey,
             updater,
             rest,
