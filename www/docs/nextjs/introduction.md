@@ -226,6 +226,8 @@ The `config`-argument is a function that returns an object that configures the t
   - `links` to customize the flow of data between tRPC Client and the tRPC-server. [Read more](/docs/v10/links).
 - Optional:
   - `queryClientConfig`: a configuration object for the React Query `QueryClient` used internally by the tRPC React hooks: [QueryClient docs](https://tanstack.com/query/v4/docs/reference/QueryClient)
+  - `queryClient`: a React Query [QueryClient instance]((https://tanstack.com/query/v4/docs/reference/QueryClient)
+    - **Note:**: You can only provide either a `queryClient` or a `queryClientConfig`. 
   - `transformer`: a transformer applied to outgoing payloads. Read more about [Data Transformers](data-transformers)
   - `abortOnUnmount`: determines if in-flight requests will be cancelled on component unmount. This defaults to `false`.
 
