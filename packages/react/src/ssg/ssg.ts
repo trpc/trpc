@@ -5,10 +5,6 @@ import {
   dehydrate,
 } from '@tanstack/react-query';
 import {
-  CreateTRPCReactQueryClientConfig,
-  getQueryClient,
-} from '@trpc/react/shared';
-import {
   AnyRouter,
   ClientDataTransformerOptions,
   callProcedure,
@@ -16,6 +12,7 @@ import {
   inferProcedureOutput,
   inferRouterContext,
 } from '@trpc/server';
+import { CreateTRPCReactQueryClientConfig, getQueryClient } from '../shared';
 
 interface CreateSSGHelpersOptionsBase<TRouter extends AnyRouter> {
   router: TRouter;
