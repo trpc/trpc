@@ -33,6 +33,10 @@ html {
   @apply selection:text-white selection:bg-sky-500/75 scroll-smooth;
 }
 
+div[class^='announcementBar_'] {
+  z-index: var(--ifm-z-index-fixed);
+}
+
 .navbar {
   border-bottom: 1px solid var(--ifm-toc-border-color);
 }
@@ -293,7 +297,7 @@ html.v9 .trpcgif--v9 {
 }
 
 .header-social-link:hover {
-  @apply transition-colors opacity-60
+  @apply transition-colors opacity-60;
 }
 
 .header-github-link::before {
