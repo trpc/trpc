@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import './___packages';
 import AbortController from 'abort-controller';
 import fetch from 'node-fetch';
 import ws from 'ws';
@@ -126,7 +127,10 @@ export async function waitError<TError extends Error = Error>(
       await fnOrPromise;
     }
   } catch (cause) {
-    expect(cause).toBeInstanceOf(errorConstructor ?? Error);
+    expect(cause).toBeInstanceOf(Error);
+    if (errorConstructor) {
+      expect((cause as Error).name).toBe(errorConstructor.name);
+    }
     return cause as TError;
   }
   throw new Error('Function did not throw');

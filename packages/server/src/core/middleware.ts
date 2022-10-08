@@ -57,7 +57,7 @@ export type MiddlewareFunction<
     path: string;
     input: TParams['_input_out'];
     rawInput: unknown;
-    meta: TParams['_meta'];
+    meta: TParams['_meta'] | undefined;
     next: {
       (): Promise<MiddlewareResult<TParams>>;
       <TContext>(opts: { ctx: TContext }): Promise<
