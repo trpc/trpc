@@ -28,7 +28,7 @@ const ctx = konn()
           .input(
             z.object({
               cursor: z.number().default(0),
-              foo: z.literal('bar'),
+              foo: z.literal('bar').optional().default('bar'),
             }),
           )
           .query(({ input }) => {
@@ -59,7 +59,7 @@ const ctx = konn()
   })
   .done();
 
-test('useInfiniteQuery()', async () => {
+test('with input', async () => {
   const { App, proxy } = ctx;
   function MyComponent() {
     const utils = proxy.useContext();
@@ -95,6 +95,64 @@ test('useInfiniteQuery()', async () => {
             utils.post.list.setInfiniteData((data) => data, {
               foo: 'bar',
             });
+          }}
+        >
+          Fetch more
+        </button>
+        <pre>{JSON.stringify(query1.data ?? 'n/a', null, 4)}</pre>
+      </>
+    );
+  }
+
+  const utils = render(
+    <App>
+      <MyComponent />
+    </App>,
+  );
+  await waitFor(() => {
+    expect(utils.container).toHaveTextContent(`[ "1" ]`);
+  });
+  const before = JSON.parse(JSON.stringify(dehydrate(ctx.queryClient)));
+  utils.getByTestId('setInfinite').click();
+  await new Promise((resolve) => setTimeout(resolve, 100));
+
+  const after = JSON.parse(JSON.stringify(dehydrate(ctx.queryClient)));
+
+  expect(before).toEqual(after);
+});
+
+test('w/o input', async () => {
+  const { App, proxy } = ctx;
+  function MyComponent() {
+    const utils = proxy.useContext();
+    const query1 = proxy.post.list.useInfiniteQuery(
+      {},
+      {
+        getNextPageParam(lastPage) {
+          return lastPage.next;
+        },
+      },
+    );
+    expect(query1.trpc.path).toBe('post.list');
+
+    if (!query1.data) {
+      return <>...</>;
+    }
+
+    type TData = typeof query1['data'];
+    expectTypeOf<TData>().toMatchTypeOf<
+      InfiniteData<{
+        items: typeof fixtureData;
+        next: number | undefined;
+      }>
+    >();
+
+    return (
+      <>
+        <button
+          data-testid="setInfinite"
+          onClick={() => {
+            utils.post.list.setInfiniteData((data) => data);
           }}
         >
           Fetch more
