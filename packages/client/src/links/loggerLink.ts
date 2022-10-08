@@ -20,7 +20,7 @@ type EnabledFn<TRouter extends AnyRouter> = (
   opts: EnableFnOptions<TRouter>,
 ) => boolean;
 
-export type LogFnOptions<TRouter extends AnyRouter> = Operation &
+type LoggerLinkFnOptions<TRouter extends AnyRouter> = Operation &
   (
     | {
         /**
@@ -37,8 +37,9 @@ export type LogFnOptions<TRouter extends AnyRouter> = Operation &
         elapsedMs: number;
       }
   );
-export type LogFn<TRouter extends AnyRouter> = (
-  opts: LogFnOptions<TRouter>,
+
+type LoggerLinkFn<TRouter extends AnyRouter> = (
+  opts: LoggerLinkFnOptions<TRouter>,
 ) => void;
 
 const palette = {
@@ -46,8 +47,8 @@ const palette = {
   mutation: ['c5a3fc', '904dfc'],
   subscription: ['ff49e1', 'd83fbe'],
 };
-type LoggerLinkOptions<TRouter extends AnyRouter> = {
-  logger?: LogFn<TRouter>;
+export type LoggerLinkOptions<TRouter extends AnyRouter> = {
+  logger?: LoggerLinkFn<TRouter>;
   enabled?: EnabledFn<TRouter>;
   /**
    * Used in the built-in defaultLogger
@@ -57,7 +58,9 @@ type LoggerLinkOptions<TRouter extends AnyRouter> = {
 
 // maybe this should be moved to it's own package
 const defaultLogger =
-  <TRouter extends AnyRouter>(c: ConsoleEsque = console): LogFn<TRouter> =>
+  <TRouter extends AnyRouter>(
+    c: ConsoleEsque = console,
+  ): LoggerLinkFn<TRouter> =>
   (props) => {
     const { direction, input, type, path, context, id } = props;
     const [light, dark] = palette[type];
