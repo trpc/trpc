@@ -2,7 +2,6 @@ import {
   CombinedDataTransformer,
   DataTransformerOptions,
   DefaultDataTransformer,
-  DefaultErrorShape,
   initTRPC,
 } from '@trpc/server/src';
 import { expectTypeOf } from 'expect-type';
@@ -15,10 +14,14 @@ test('default transformer', () => {
     .create();
   const router = t.router({});
 
-  expectTypeOf(router._def._ctx).toMatchTypeOf<{
+  expectTypeOf<typeof router._def._config.$types.ctx>().toMatchTypeOf<{
     foo: 'bar';
   }>();
+
   expectTypeOf(t._config.transformer).toMatchTypeOf<DefaultDataTransformer>();
+  expectTypeOf(
+    router._def._config.transformer,
+  ).toMatchTypeOf<DefaultDataTransformer>();
 });
 test('custom transformer', () => {
   const transformer: DataTransformerOptions = {
@@ -30,10 +33,10 @@ test('custom transformer', () => {
   });
   const router = t.router({});
   expectTypeOf(
-    router._def.transformer,
+    router._def._config.transformer,
   ).toMatchTypeOf<CombinedDataTransformer>();
   expectTypeOf(
-    router._def.transformer,
+    router._def._config.transformer,
   ).not.toMatchTypeOf<DefaultDataTransformer>();
 });
 
@@ -55,8 +58,8 @@ test('config types', () => {
 
     t._config;
     // ^?
-    expectTypeOf(t._config['ctx']).toEqualTypeOf<{}>();
-    expectTypeOf(t._config['meta']).toEqualTypeOf<{}>();
+    expectTypeOf<typeof t._config.$types.ctx>().toEqualTypeOf<{}>();
+    expectTypeOf<typeof t._config.$types.meta>().toEqualTypeOf<{}>();
   }
 
   {
@@ -68,16 +71,8 @@ test('config types', () => {
     };
     const t = initTRPC.meta<Meta>().context<Context>().create();
 
-    t._config;
     // ^?
-    expectTypeOf(t._config['ctx']).toEqualTypeOf<Context>();
-    expectTypeOf(t._config['meta']).toEqualTypeOf<Meta>();
-
-    expectTypeOf(t._config).toEqualTypeOf<{
-      ctx: Context;
-      meta: Meta;
-      errorShape: DefaultErrorShape;
-      transformer: DefaultDataTransformer;
-    }>();
+    expectTypeOf<typeof t._config.$types.ctx>().toEqualTypeOf<Context>();
+    expectTypeOf<typeof t._config.$types.meta>().toEqualTypeOf<Meta>();
   }
 });

@@ -81,6 +81,7 @@ describe('double input validator', () => {
         ctx.proxy.sendMessage.mutate(input),
         TRPCClientError,
       );
+      expect(error.data).toHaveProperty('zod');
       expect(error.data!.zod!.fieldErrors).toMatchInlineSnapshot(`
         Object {
           "text": Array [
