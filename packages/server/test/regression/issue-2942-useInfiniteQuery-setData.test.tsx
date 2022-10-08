@@ -11,17 +11,8 @@ const fixtureData = ['1', '2'];
 
 const ctx = konn()
   .beforeEach(() => {
-    const t = initTRPC.create({
-      errorFormatter({ shape }) {
-        return {
-          ...shape,
-          data: {
-            ...shape.data,
-            foo: 'bar' as const,
-          },
-        };
-      },
-    });
+    const t = initTRPC.create();
+
     const appRouter = t.router({
       post: t.router({
         list: t.procedure
