@@ -62,7 +62,7 @@ export type MiddlewareFunction<
       (): Promise<MiddlewareResult<TParams>>;
       <$Context>(opts: { ctx: $Context }): Promise<
         MiddlewareResult<{
-          _config: AnyRootConfig;
+          _config: TParams['_config'];
           _ctx_out: $Context;
           _input_in: TParams['_input_in'];
           _input_out: TParams['_input_out'];
