@@ -1,5 +1,9 @@
 import { getServerAndReactClient } from '../react/__reactHelpers';
-import { InfiniteData, dehydrate } from '@tanstack/react-query';
+import {
+  DehydratedState,
+  InfiniteData,
+  dehydrate,
+} from '@tanstack/react-query';
 import { render, waitFor } from '@testing-library/react';
 import { expectTypeOf } from 'expect-type';
 import { konn } from 'konn';
@@ -94,12 +98,28 @@ test('with input', async () => {
   await waitFor(() => {
     expect(utils.container).toHaveTextContent(`[ "1" ]`);
   });
-  const before = JSON.parse(JSON.stringify(dehydrate(ctx.queryClient)));
+
+  const before: DehydratedState['queries'] = JSON.parse(
+    JSON.stringify(dehydrate(ctx.queryClient).queries),
+  );
   utils.getByTestId('setInfinite').click();
   await new Promise((resolve) => setTimeout(resolve, 100));
 
-  const after = JSON.parse(JSON.stringify(dehydrate(ctx.queryClient)));
+  const after: DehydratedState['queries'] = JSON.parse(
+    JSON.stringify(dehydrate(ctx.queryClient).queries),
+  );
 
+  {
+    // Remove update info from diff
+    for (const value of before) {
+      value.state.dataUpdateCount = -1;
+      value.state.dataUpdatedAt = -1;
+    }
+    for (const value of after) {
+      value.state.dataUpdateCount = -1;
+      value.state.dataUpdatedAt = -1;
+    }
+  }
   expect(before).toEqual(after);
 });
 
@@ -152,11 +172,15 @@ test('w/o input', async () => {
   await waitFor(() => {
     expect(utils.container).toHaveTextContent(`[ "1" ]`);
   });
-  const before = JSON.parse(JSON.stringify(dehydrate(ctx.queryClient)));
+  const before: DehydratedState['queries'] = JSON.parse(
+    JSON.stringify(dehydrate(ctx.queryClient).queries),
+  );
   utils.getByTestId('setInfinite').click();
   await new Promise((resolve) => setTimeout(resolve, 100));
 
-  const after = JSON.parse(JSON.stringify(dehydrate(ctx.queryClient)));
+  const after: DehydratedState['queries'] = JSON.parse(
+    JSON.stringify(dehydrate(ctx.queryClient).queries),
+  );
 
   expect(before).toEqual(after);
 });
