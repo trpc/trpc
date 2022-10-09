@@ -1,11 +1,11 @@
 /**
  * This file contains the root router of your tRPC-backend
  */
-import { t } from '../trpc';
+import { createRouter } from '../trpc';
 import { healthRouter } from './health';
 import { postRouter } from './post';
 
-export const appRouter = t.router({
+export const appRouter = createRouter({
   post: postRouter,
   health: healthRouter,
 });
