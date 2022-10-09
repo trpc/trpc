@@ -5,9 +5,17 @@ import prettier from 'prettier';
 import type { PackageJson } from './entrypoints';
 
 async function main() {
-  const examples = await fg(['examples/*', 'examples/.interop/*'], {
-    onlyDirectories: true,
-  });
+  const examples = await fg(
+    [
+      //
+      'examples/*',
+      'examples/.interop/*',
+      'examples/.test/*',
+    ],
+    {
+      onlyDirectories: true,
+    },
+  );
 
   const pkgRoot = path.join(process.cwd(), 'package.json');
   const rootPkgJson: PackageJson = JSON.parse(await readFile(pkgRoot, 'utf8'));
