@@ -122,7 +122,6 @@ test('wsLink: empty superjson up and down', async () => {
 
 test('devalue up and down', async () => {
   const transformer: trpc.DataTransformer = {
-    serialize: (object) => devalue.uneval(object),
     deserialize: (object) => eval(`(${object})`),
   };
 
