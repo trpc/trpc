@@ -226,7 +226,6 @@ export function createReactQueryUtilsProxy<
           >;
           const queryKey = getQueryKey(fullPath, input);
           return {
-            input,
             queryKey,
             updater,
             rest,
@@ -238,13 +237,12 @@ export function createReactQueryUtilsProxy<
         >;
         const queryKey = getQueryKey(fullPath, input);
         return {
-          input,
           queryKey,
           rest,
         };
       };
 
-      const { queryKey, rest, updater, input } = getOpts(utilName);
+      const { queryKey, rest, updater } = getOpts(utilName);
 
       const contextMap: Record<keyof AnyDecoratedProcedure, () => unknown> = {
         fetch: () => context.fetchQuery(queryKey, ...rest),
@@ -257,7 +255,7 @@ export function createReactQueryUtilsProxy<
         cancel: () => context.cancelQuery(queryKey, ...rest),
         setData: () => context.setQueryData(queryKey, updater, ...rest),
         setInfiniteData: () =>
-          context.setInfiniteQueryData(queryKey, input, ...rest),
+          context.setInfiniteQueryData(queryKey, updater, ...rest),
         getData: () => context.getQueryData(queryKey),
         getInfiniteData: () => context.getInfiniteQueryData(queryKey),
       };
