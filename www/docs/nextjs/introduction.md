@@ -117,7 +117,12 @@ export const authedProcedure = t.procedure.use(({ ctx, next}) => {
     throw new TRPCError({ code: 'UNAUTHORIZED' });
   }
   // Express-complient `next` method
-  return next({ ctx });
+  return next({
+    ctx: {
+      // explicitly passing `session` infers the value as non-nullable to the next middleware or resolve function
+      session: ctx.session,
+    },
+  });
 });
 ```
 
