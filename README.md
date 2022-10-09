@@ -3,7 +3,7 @@
 > You might be looking for the [`main`](https://github.com/trpc/trpc/tree/main)-branch which is the stable v9-version.
 >
 > See our [migration guide](https://trpc.io/docs/v10/migrate-from-v9-to-v10) for a summary of what is changing or take a look at [the **v10 docs website**](https://alpha.trpc.io/).
-> There is also [the `examples-v10-next-prisma-starter-sqlite` project](https://github.com/trpc/examples-v10-next-prisma-starter-sqlite) to try out a real project using this version.
+> There is also [the `next-prisma-starter` project](https://github.com/trpc/examples-next-prisma-starter) to try out a real project using this version.
 
 ---
 
