@@ -1200,7 +1200,7 @@ importers:
       '@types/ws': ^8.2.0
       abort-controller: ^3.0.0
       aws-lambda: ^1.0.7
-      devalue: ^2.0.1
+      devalue: ^4.0.0
       expect-type: ^0.13.0
       express: ^4.17.1
       fastify: ^3.27.1
@@ -1247,7 +1247,7 @@ importers:
       '@types/ws': 8.5.3
       abort-controller: 3.0.0
       aws-lambda: 1.0.7
-      devalue: 2.0.1
+      devalue: 4.0.0
       expect-type: 0.13.0
       express: 4.18.1
       fastify: 3.29.2
@@ -9774,8 +9774,8 @@ packages:
       defined: 1.0.0
       minimist: 1.2.6
 
-  /devalue/2.0.1:
-    resolution: {integrity: sha512-I2TiqT5iWBEyB8GRfTDP0hiLZ0YeDJZ+upDxjBfOC2lebO5LezQMv7QvIUTzdb64jQyAKLf1AHADtGN+jw6v8Q==}
+  /devalue/4.0.0:
+    resolution: {integrity: sha512-w25siwXyuMUqMr7jPlEjyNCp1vn0Jzj/fNg3qVt/r/Dpe8HjESh2V92L0jmh3uq4iJt0BvjH+Azk1pQzkcnDWA==}
     dev: true
 
   /dezalgo/1.0.3:
