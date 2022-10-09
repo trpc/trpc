@@ -34,6 +34,7 @@ jobs:
             next-prisma-starter-websockets,
             next-prisma-todomvc,
             standalone-server,
+            .test/big-router-declaration,
           ]
         node-start: ['16.x']
         os: [ubuntu-latest]
