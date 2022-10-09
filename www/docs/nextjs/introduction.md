@@ -30,7 +30,7 @@ Recommended but not enforced file structure. This is what you get when starting 
 │   │   └── [..]
 │   ├── server
 │   │   ├── routers
-│   │   │   ├── _app.ts   # <-- main app router
+│   │   │   ├── _app.ts  # <-- main app router
 │   │   │   ├── post.ts  # <-- sub routers
 │   │   │   └── [..]
 │   │   ├── context.ts   # <-- create app context
