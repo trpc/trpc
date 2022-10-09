@@ -26,5 +26,5 @@ jobs:
           issue-inactive-days: 14
           pr-inactive-days: 30
           log-output: true
-          issue-comment: 'This issue has been locked because it had no new activity for 14 days. If you are running into a similar issue, please create a new issue. Thank you.'
-          pr-comment: 'This pull request has been locked because it had no new activity for 30 days. If you think, this PR is still necessary, create a new one with the same branch. Thank you.'
+          # issue-comment: 'This issue has been locked because it had no new activity for 14 days. If you are running into a similar issue, please create a new issue. Thank you.'
+          # pr-comment: 'This pull request has been locked because it had no new activity for 30 days. If you think, this PR is still necessary, create a new one with the same branch. Thank you.'
