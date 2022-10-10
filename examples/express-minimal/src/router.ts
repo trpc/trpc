@@ -14,7 +14,7 @@ const helloRouter = router({
     }),
 });
 
-export const appRouter = t.router({
+export const appRouter = router({
   hello: helloRouter,
 });
 
