@@ -116,7 +116,7 @@ export const authedProcedure = t.procedure.use(({ ctx, next}) => {
   if (!ctx.session) {
     throw new TRPCError({ code: 'UNAUTHORIZED' });
   }
-  // Express-complient `next` method
+  // Express-compliant `next` method
   return next({
     ctx: {
       // explicitly passing `session` infers the value as non-nullable to the next middleware or resolve function
