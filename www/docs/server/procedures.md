@@ -259,7 +259,9 @@ import { Context } from './context';
 
 const t = initTRPC.context<Context>().create();
 
-
+/**
+ * Reusable middleware that checks if users are authenticated.
+ **/
 const isAuthed = t.middleware(({ next, ctx }) => {
   if (!ctx.session?.user?.email) {
     throw new TRPCError({
