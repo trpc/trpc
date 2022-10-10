@@ -19,22 +19,22 @@ Recommended but not enforced file structure. This is what you get when starting 
 
 ```graphql
 .
-├── prisma # <-- if prisma is added
+├── prisma  # <-- if prisma is added
 │   └── [..]
 ├── src
 │   ├── pages
-│   │   ├── _app.tsx # <-- add `withTRPC()`-HOC here
+│   │   ├── _app.tsx  # <-- add `withTRPC()`-HOC here
 │   │   ├── api
 │   │   │   └── trpc
-│   │   │       └── [trpc].ts # <-- tRPC HTTP handler
+│   │   │       └── [trpc].ts  # <-- tRPC HTTP handler
 │   │   └── [..]
 │   ├── server
 │   │   ├── routers
-│   │   │   ├── app.ts   # <-- main app router
+│   │   │   ├── _app.ts  # <-- main app router
 │   │   │   ├── post.ts  # <-- sub routers
 │   │   │   └── [..]
-│   │   ├── context.ts      # <-- create app context
-│   │   └── trpc.ts         # <-- procedure helpers
+│   │   ├── context.ts   # <-- create app context
+│   │   └── trpc.ts      # <-- procedure helpers
 │   └── utils
 │       └── trpc.ts  # <-- your typesafe tRPC hooks
 └── [..]
@@ -90,25 +90,54 @@ If strict mode is too much, at least enable `strictNullChecks`:
 
 ### 3. Create a tRPC router
 
-Implement your tRPC router in `./pages/api/trpc/[trpc].ts`. If you need to split your router into several subrouters, implement them in a top-level `server` directory in your project root, then import them into `./pages/api/trpc/[trpc].ts` and [merge them](merging-routers) into a single root `appRouter`.
+Initialize your tRPC backend using the `initTRPC` function and create your first router. 
 
-<details><summary>View sample router</summary>
+:::note
+The below showcased backend uses the [recommended file structure](#recommended-file-structure), but you can keep it simple and put everything in the [api-handler directly](https://github.com/trpc/trpc/blob/next/examples/next-minimal-starter/src/pages/api/trpc/%5Btrpc%5D.ts) if you want. 
+:::
 
-```ts title='./pages/api/trpc/[trpc].ts'
-import { initTRPC } from '@trpc/server';
-import * as trpcNext from '@trpc/server/adapters/next';
+<details><summary>View sample backend</summary>
+
+```ts title='server/trpc.ts'
+import { initTRPC, TRPCError } from '@trpc/server';
+
+// Avoid exporting the entire t-object since it's not very
+// descriptive and can be confusing to newcomers used to t
+// meaning translation in i18n libraries.
+const t = initTRPC.create();
+
+// Base router and procedure helpers
+export const createRouter = t.router;
+export const baseProcedure = t.procedure;
+
+// If you have authentication you can create protected procedures
+// NOTE: Below is just an example
+export const authedProcedure = t.procedure.use(({ ctx, next}) => {
+  if (!ctx.session) {
+    throw new TRPCError({ code: 'UNAUTHORIZED' });
+  }
+  // Express-complient `next` method
+  return next({
+    ctx: {
+      // explicitly passing `session` infers the value as non-nullable to the next middleware or resolve function
+      session: ctx.session,
+    },
+  });
+});
+```
+
+<br/>
+
+```ts title='server/routers/_app.ts'
 import { z } from 'zod';
+import { createRouter, baseProcedure } from '../trpc';
 
-export const t = initTRPC.create();
-
-export const appRouter = t.router({
-  hello: t.procedure
+export const appRouter = createRouter({
+  hello: baseProcedure
     .input(
-      z
-        .object({
-          text: z.string().nullish(),
-        })
-        .nullish(),
+      z.object({
+        text: z.string().nullish(),
+      })
     )
     .query(({ input }) => {
       return {
@@ -119,6 +148,19 @@ export const appRouter = t.router({
 
 // export type definition of API
 export type AppRouter = typeof appRouter;
+```
+
+<br/>
+
+:::note
+If you need to split your router into several subrouters, you can implement them in the `server/routers` directory and import and [merge them](../server/merging-routers.md) to a single root `appRouter`. Check out the [next-prisma-starter](https://github.com/trpc/trpc/tree/next/examples/next-prisma-starter/src/server/routers) for an example of this usage.
+:::
+
+<br/>
+
+```ts title='pages/api/trpc/[trpc].ts'
+import * as trpcNext from '@trpc/server/adapters/next';
+import { appRouter } from '../../server/routers/_app';
 
 // export API handler
 export default trpcNext.createNextApiHandler({
@@ -136,7 +178,7 @@ Create a set of strongly-typed hooks using your API's type signature.
 ```tsx title='utils/trpc.ts'
 import { httpBatchLink } from '@trpc/client';
 import { createTRPCNext } from '@trpc/next';
-import type { AppRouter } from '../pages/api/trpc/[trpc]';
+import type { AppRouter } from '../server/routers/_app';
 
 function getBaseUrl() {
   if (typeof window !== 'undefined')
@@ -181,14 +223,14 @@ export const trpc = createTRPCNext<AppRouter>({
 // => { useQuery: ..., useMutation: ...}
 ```
 
-:::note
+:::info
 createTRPCNext does not work with interop mode. If you are migrating from v9 using interop, keep using [the old way of initializing tRPC](../../versioned_docs/version-9.x/nextjs/introduction.md#4-create-trpc-hooks).
 :::
 
 ### 5. Configure `_app.tsx`
 
 ```tsx title='pages/_app.tsx'
-import type { AppType } from 'next/dist/shared/lib/utils';
+import type { AppType } from 'next/app';
 import { trpc } from '../utils/trpc';
 
 const MyApp: AppType = ({ Component, pageProps }) => {

@@ -1,7 +1,7 @@
-import { t } from '../trpc';
+import { createRouter } from '../trpc';
 import { todoRouter } from './todo';
 
-export const appRouter = t.router({
+export const appRouter = createRouter({
   todo: todoRouter,
 });
 
