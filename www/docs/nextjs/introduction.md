@@ -108,7 +108,7 @@ const t = initTRPC.create();
 
 // Base router and procedure helpers
 export const router = t.router;
-export const baseProcedure = t.procedure;
+export const publicProcedure = t.procedure;
 
 // If you have authentication you can create protected procedures
 // NOTE: Below is just an example
@@ -116,7 +116,7 @@ export const authedProcedure = t.procedure.use(({ ctx, next}) => {
   if (!ctx.session) {
     throw new TRPCError({ code: 'UNAUTHORIZED' });
   }
-  // Express-complient `next` method
+  // Express-compliant `next` method
   return next({
     ctx: {
       // explicitly passing `session` infers the value as non-nullable to the next middleware or resolve function
@@ -130,10 +130,10 @@ export const authedProcedure = t.procedure.use(({ ctx, next}) => {
 
 ```ts title='server/routers/_app.ts'
 import { z } from 'zod';
-import { router, baseProcedure } from '../trpc';
+import { router, publicProcedure } from '../trpc';
 
 export const appRouter = router({
-  hello: baseProcedure
+  hello: publicProcedure
     .input(
       z.object({
         text: z.string().nullish(),
