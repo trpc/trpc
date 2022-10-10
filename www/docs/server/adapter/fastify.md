@@ -1,7 +1,7 @@
 ---
 id: fastify
 title: Usage with Fastify
-sidebar_label: 'Adapter: Fastify'
+sidebar_label: Fastify
 slug: /fastify
 ---
 

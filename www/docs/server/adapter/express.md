@@ -1,7 +1,7 @@
 ---
 id: express
 title: Usage with Express
-sidebar_label: 'Adapter: Express'
+sidebar_label: Express
 slug: /express
 ---
 

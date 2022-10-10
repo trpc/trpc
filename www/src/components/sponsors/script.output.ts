@@ -84,7 +84,7 @@ export const sponsors = [
     "createdAt": 1633354466000
   },
   {
-    "name": "Bill",
+    "name": "Beier (Bill)",
     "imgSrc": "https://avatars.githubusercontent.com/u/10513364?u=a129aade5f9a7a92cf06172b47d67ccefc736933&v=4",
     "monthlyPriceInDollars": 10,
     "link": "https://react-hook-form.com",
@@ -442,15 +442,6 @@ export const sponsors = [
     "privacyLevel": "PUBLIC",
     "login": "thomasballinger",
     "createdAt": 1662563270000
-  },
-  {
-    "name": "Oliver Dixon",
-    "imgSrc": "https://avatars.githubusercontent.com/u/6940726?u=8a48c9f7acb576505efbb87a8093552ce3f0d1e5&v=4",
-    "monthlyPriceInDollars": 10,
-    "link": "https://polydelic.com",
-    "privacyLevel": "PUBLIC",
-    "login": "ollydixon",
-    "createdAt": 1662645977000
   },
   {
     "name": "Lars Karbo",
