@@ -80,7 +80,7 @@ module.exports = {
         'reactjs/queries',
         'reactjs/mutations',
         'reactjs/useInfiniteQuery',
-        'reactjs/invalidate-queries',
+        'reactjs/query-invalidation',
       ],
     },
     {

@@ -1,8 +1,7 @@
 ---
-id: invalidate-queries
-title: Invalidate Queries
-# sidebar_label: Invalidate Queries
-slug: /invalidate-queries
+id: query-invalidation
+title: Query Invalidation
+slug: /query-invalidation
 ---
 
 :::note
@@ -97,26 +96,33 @@ export const appRouter = t.router({
 ```tsx
 import { trpc } from '../utils/trpc';
 
-// In component‼️:
-const utils = trpc.useContext();
+function MyComponent() {
+  const utils = trpc.useContext();
 
-const invalidateAllQueriesAcrossAllRouters = () => { // 1️⃣
-  utils.invalidate() // All queries on all routers will be invalidated 🔥
+  const invalidateAllQueriesAcrossAllRouters = () => { // 1️⃣
+    // All queries on all routers will be invalidated 🔥
+    utils.invalidate() 
+  }
+
+  const invalidateAllPostQueries = () => { // 2️⃣
+     // All post queries will be invalidated 📭
+    utils.post.invalidate() 
+  }
+
+  const invalidateAllPostQueriesWithMatchingInputs = () => { // 3️⃣
+    // All queries in the post router with input {id:1} invalidated 📭
+    utils.post.invalidate({id:1}) 
+  }
+
+  // Example queries
+  trpc.user.all.useQuery() // Would only be validated by 1️⃣ only. 
+  trpc.post.all.useQuery() // Would be invalidated by 1️⃣ & 2️⃣
+  trpc.post.byId.useQuery({ id:1 }) // Would be invalidated by 1️⃣, 2️⃣ and 3️⃣
+  trpc.post.byId.useQuery({ id:2 }) // would be invalidated by 1️⃣ and 2️⃣ but NOT 3️⃣!
+
+
+  // [...]
 }
-
-const invalidateAllPostQueries = () => { // 2️⃣
-  utils.post.invalidate() // All post queries will be invalidated 📭
-}
-
-const invalidateAllPostQueriesWithMatchingInputs = () => { // 3️⃣
-  utils.post.invalidate({id:1}) // All queries in the post router with input {id:1} invalidated 📭
-}
-
-// Example queries
-trpc.user.all.useQuery() // Would only be validated by 1️⃣ only. 
-trpc.post.all.useQuery() // Would be invalidated by 1️⃣ & 2️⃣
-trpc.post.byId.useQuery({ id:1 }) // Would be invalidated by 1️⃣, 2️⃣ and 3️⃣
-trpc.post.byId.useQuery({ id:2 }) // would be invalidated by 1️⃣ and 2️⃣ but NOT 3️⃣!
 
 ```
 
@@ -127,7 +133,7 @@ Keeping track of exactly what a queries a mutation should invalidate is hard, th
 
 
 :::caution
-We have marked this API as `unstable_` as the exact API might change without a major version bump on tRPC, keep an eye on the release notes.
+We have marked this API as `unstable_` as the exact API might change without a major version bump on tRPC, keep an eye on the release notes if you want to use this.
 :::
 
 We have added a feature to help with this:
@@ -137,15 +143,21 @@ We have added a feature to help with this:
 export const trpc = createTRPCReact<AppRouter, SSRContext>({
   unstable_overrides: {
     useMutation: {
+      /**
+       * This function is called whenever a `.useMutation` succeeds
+       **/
       async onSuccess(opts) {
-        // Invalidates all queries in `onSuccess`
-        // - Leaves the mutation's in "loading" state whilst cache is refreshed
+        /**
+         * @note
+         * Order here matters:
+         * The order here allows route changes in `onSuccess` without having a flash of content change whilst redirecting.
+         **/
 
-        // Order here matters.
-        // Invalidation is triggered after the user's `onSuccess`.
-        // Enables route changes in `onSuccess` without having a flash of content change whilst redirecting.
-        await opts.originalFn();
-        await opts.queryClient.invalidateQueries();
+        // Calls the `onSuccess` defined in the `useQuery()`-options:
+        await opts.originalFn(); 
+
+        // Invalidate all queries in the react-query cache:
+        await opts.queryClient.invalidateQueries(); 
       },
     },
   },
