@@ -11,9 +11,9 @@ import { GithubStarsButton } from '../components/GithubStarsButton';
 import { Preview } from '../components/Preview';
 import { QuickIntro } from '../components/QuickIntro';
 import { SectionTitle } from '../components/SectionTitle';
-import { TopSponsors } from '../components/TopSponsors';
 import { TwitterWall } from '../components/TwitterWall';
-import { Sponsors } from '../components/sponsors';
+import { SponsorBubbles } from '../components/sponsors/SponsorBubbles';
+import { TopSponsors } from '../components/sponsors/TopSponsors';
 import { useVersion } from '../components/useVersion';
 
 function searchParams(obj: Record<string, string | string[]>): string {
@@ -229,7 +229,7 @@ const HomeContent: React.FC = () => {
         />
         <div className="max-w-screen-md mx-auto">
           <div className="my-3 aspect-square">
-            <Sponsors />
+            <SponsorBubbles />
           </div>
           <div className="flex justify-center">
             <GithubSponsorButton />
