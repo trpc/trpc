@@ -9,8 +9,7 @@ You may need to call your procedure(s) directly from the server, `createCaller()
 
 ## Create caller
 
-In every examples, after tRPC initialization, we generate the router.<br/>
-Then with `router.createCaller({})` function (param of this Context) we retrieve an instance of `RouterCaller`.
+With the `router.createCaller({})` function (first argument is `Context`) we retrieve an instance of `RouterCaller`.
 
 ### Input query example
 
@@ -35,7 +34,9 @@ const result = await caller.greeting({ name: 'tRPC' });
 
 We create the router with a mutation and then we call the asynchronous `post` procedure to get the result.
 
-```ts
+```ts twoslash
+// @target: esnext
+
 import { z } from 'zod';
 import { initTRPC } from '@trpc/server';
 
@@ -44,14 +45,16 @@ const posts = ['One', 'Two', 'Three'];
 const t = initTRPC.create();
 const router = t.router({
   post: t.router({
-    delete: t.procedure.input(z.number()).mutation(({ input }) => {
-      posts.splice(input, 1);
+    add: t.procedure.input(z.string()).mutation(({ input }) => {
+      posts.push(input)
+      return posts;
     }),
   }),
 });
 
 const caller = router.createCaller({});
-await caller.post.delete(0);
+const result = await caller.post.add("Four");
+//     ^?
 ```
 
 ### Context with middleware example
@@ -69,33 +72,53 @@ Below two examples, the former fails because the context doesn't fit the middlew
 
 <br/>
 
-```ts
+```ts twoslash
+// @target: esnext
 import { TRPCError, initTRPC } from '@trpc/server';
 
-const t = initTRPC.create();
+type Context = {
+  user?: {
+    id: string;
+  }
+}
+const t = initTRPC.context<Context>().create();
 
 const isAuthed = t.middleware(({ next, ctx }) => {
-  if (!ctx.foo) {
+  if (!ctx.user) {
     throw new TRPCError({
       code: 'UNAUTHORIZED',
       message: 'You are not authorized',
     });
   }
 
-  return next();
+  return next({
+    ctx: {
+      user: ctx.user,
+    }
+  });
 });
 
 const protectedProcedure = t.procedure.use(isAuthed);
 
 const router = t.router({
-  secret: protectedProcedure.query(({ ctx }) => ctx.foo),
+  secret: protectedProcedure.query(({ ctx }) => ctx.user),
 });
 
-// it returns an error because there isn't the right context param
-const caller = router.createCaller({});
-const result = await caller.secret();
 
-// it works because foo property is present inside context param
-const authorizedCaller = router.createCaller({ foo: 'bar' });
-result = await authorizedCaller.secret();
+{
+  // this will return an error because there isn't the right context param
+  const caller = router.createCaller({});
+  const result = await caller.secret();
+}
+
+{
+  // it works because foo property is present inside context param
+  const authorizedCaller = router.createCaller({
+    user: {
+      id: "KATT",
+    }
+  });
+  const result = await authorizedCaller.secret();
+  //     ^?
+}
 ```
