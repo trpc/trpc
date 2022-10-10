@@ -1,16 +1,16 @@
 ---
-id: procedures
+id: publicProcedures
 title: Define Procedures
 sidebar_label: Define Procedures
-slug: /procedures
+slug: /publicProcedures
 ---
 
 
 :::tip
 
-- A procedure can be viewed as the equivalent of a REST-endpoint or a function.
+- A publicProcedure can be viewed as the equivalent of a REST-endpoint or a function.
 - There's no internal difference between queries and mutations apart from semantics.
-- Defining procedure is the same for queries, mutations, and subscription with the exception that subscriptions need to return an `observable` instance.
+- Defining publicProcedure is the same for queries, mutations, and subscription with the exception that subscriptions need to return an `observable` instance.
 
 :::
 
@@ -27,17 +27,17 @@ const t = initTRPC.create();
 
 export const middleware = t.middleware;
 export const router = t.router;
-export const procedure = t.procedure;
+export const publicProcedure = t.procedure;
 
 // @filename: _app.ts
 // @noErrors
 // ---cut---
-import { router, procedure } from './trpc';
+import { router, publicProcedure } from './trpc';
 import { z } from 'zod';
 
 const appRouter = router({
-  // Create procedure at path 'hello'
-  hello: procedure.query(() => {
+  // Create publicProcedure at path 'hello'
+  hello: publicProcedure.query(() => {
     return {
       greeting: 'hello world',
     };
@@ -62,15 +62,15 @@ const t = initTRPC.create();
 
 export const middleware = t.middleware;
 export const router = t.router;
-export const procedure = t.procedure;
+export const publicProcedure = t.procedure;
 
 // @filename: _app.ts
 // ---cut---
-import { procedure, router } from './trpc';
+import { publicProcedure, router } from './trpc';
 import { z } from 'zod';
 
 export const appRouter = router({
-  hello: procedure
+  hello: publicProcedure
     .input(
       z
         .object({
@@ -98,7 +98,7 @@ import * as yup from 'yup';
 export const t = initTRPC.create();
 
 export const appRouter = router({
-  hello: procedure
+  hello: publicProcedure
     .input(
       yup.object({
         text: yup.string().required(),
@@ -123,7 +123,7 @@ import { defaulted, object, string } from 'superstruct';
 export const t = initTRPC.create();
 
 export const appRouter = router({
-  hello: procedure
+  hello: publicProcedure
     .input(
       object({
         /**
@@ -145,7 +145,7 @@ export type AppRouter = typeof appRouter;
 
 ## Multiple input parsers
 
-You're able to chain multiple parsers in order to make reusable procedures for different parts of your application.
+You're able to chain multiple parsers in order to make reusable publicProcedures for different parts of your application.
 
 
 ```ts twoslash title='server.ts'
@@ -159,13 +159,13 @@ export const middleware = t.middleware;
 export const router = t.router;
 
 /**
- * Public, unprotected procedure
+ * Public, unprotected publicProcedure
  **/
 export const publicProcedure = t.procedure;
 
 
 /**
- * Create reusable procedure for a chat room
+ * Create reusable publicProcedure for a chat room
  */
 export const roomProcedure = t.procedure.input(
   z.object({
@@ -197,7 +197,7 @@ export type AppRouter = typeof appRouter;
 
 ## Multiple Procedures
 
-To add multiple procedures, you define them as properties on the object passed to `t.router()`.
+To add multiple publicProcedures, you define them as properties on the object passed to `t.router()`.
 
 ```tsx
 import { initTRPC } from '@trpc/server';
@@ -205,12 +205,12 @@ import { initTRPC } from '@trpc/server';
 export const t = initTRPC.create();
 
 export const appRouter = router({
-  hello: procedure.query(() => {
+  hello: publicProcedure.query(() => {
     return {
       text: 'hello world',
     };
   }),
-  bye: procedure.query(() => {
+  bye: publicProcedure.query(() => {
     return {
       text: 'goodbye',
     };
@@ -220,7 +220,7 @@ export const appRouter = router({
 export type AppRouter = typeof appRouter;
 ```
 
-## Reusable base procedures
+## Reusable base publicProcedures
 
 You can create reusable base procedures to have a set of procedures that are i.e. login protected.
 

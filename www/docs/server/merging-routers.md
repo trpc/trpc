@@ -17,7 +17,7 @@ const t = initTRPC.create();
 
 export const middleware = t.middleware;
 export const router = t.router;
-export const procedure = t.procedure;
+export const publicProcedure = t.procedure;
 
 // @filename: routers/_app.ts
 import { router } from '../trpc';
@@ -35,10 +35,10 @@ export type AppRouter = typeof appRouter;
 
 
 // @filename: routers/post.ts
-import { router, procedure } from '../trpc';
+import { router, publicProcedure } from '../trpc';
 import { z } from 'zod';
 export const postRouter = router({
-  create: procedure
+  create: publicProcedure
     .input(
       z.object({
         title: z.string(),
@@ -48,17 +48,17 @@ export const postRouter = router({
       //          ^?
       // [...]
     }),
-  list: procedure.query(() => {
+  list: publicProcedure.query(() => {
     // ...
     return [];
   }),
 });
 
 // @filename: routers/user.ts
-import { router, procedure } from '../trpc';
+import { router, publicProcedure } from '../trpc';
 import { z } from 'zod';
 export const userRouter = router({
-  list: procedure.query(() => {
+  list: publicProcedure.query(() => {
     // [..]
     return [];
   }),
@@ -80,7 +80,7 @@ const t = initTRPC.create();
 
 export const middleware = t.middleware;
 export const router = t.router;
-export const procedure = t.procedure;
+export const publicProcedure = t.procedure;
 export const mergeRouters = t.mergeRouters;
 
 
@@ -88,7 +88,7 @@ export const mergeRouters = t.mergeRouters;
 // ---cut---
 
 // @filename: routers/_app.ts
-import { router, procedure, mergeRouters } from '../trpc';
+import { router, publicProcedure, mergeRouters } from '../trpc';
 import { z } from 'zod';
 
 import { userRouter } from './user';
@@ -99,10 +99,10 @@ const appRouter = mergeRouters(userRouter, postRouter)
 export type AppRouter = typeof appRouter;
 
 // @filename: routers/post.ts
-import { router, procedure } from '../trpc';
+import { router, publicProcedure } from '../trpc';
 import { z } from 'zod';
 export const postRouter = router({
-  postCreate: procedure
+  postCreate: publicProcedure
     .input(
       z.object({
         title: z.string(),
@@ -112,7 +112,7 @@ export const postRouter = router({
       //          ^?
       // [...]
     }),
-  postList: procedure.query(() => {
+  postList: publicProcedure.query(() => {
     // ...
     return [];
   }),
@@ -120,10 +120,10 @@ export const postRouter = router({
 
 
 // @filename: routers/user.ts
-import { router, procedure } from '../trpc';
+import { router, publicProcedure } from '../trpc';
 import { z } from 'zod';
 export const userRouter = router({
-  userList: procedure.query(() => {
+  userList: publicProcedure.query(() => {
     // [..]
     return [];
   }),

@@ -23,12 +23,11 @@ import { initTRPC } from '@trpc/server';
 
 const t = initTRPC.create();
 
-export const middleware = t.middleware;
-export const router = t.router;
-
 // We explicitly export the methods we use here
 // This allows us to create reusable & protected base procedure
-export const procedure = t.procedure;
+export const middleware = t.middleware;
+export const router = t.router;
+export const publicProcedure = t.procedure;
 ```
 
 ## Defining a router
@@ -40,16 +39,16 @@ const t = initTRPC.create();
 
  
 export const middleware = t.middleware;
-export const procedure = t.procedure;
+export const publicProcedure = t.procedure;
 export const router = t.router;
 
 // @filename: _app.ts
 // ---cut---
 import * as trpc from '@trpc/server';
-import { procedure, router } from './trpc';
+import { publicProcedure, router } from './trpc';
 
 const appRouter = router({
-  greeting: procedure.query(() => 'hello tRPC v10!'),
+  greeting: publicProcedure.query(() => 'hello tRPC v10!'),
 });
 
 // Export only the **type** of a router to avoid importing server code on the client
