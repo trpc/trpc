@@ -3,8 +3,11 @@ import { z } from 'zod';
 
 const t = initTRPC.create();
 
-const helloRouter = t.router({
-  greeting: t.procedure
+const publicProcedure = t.procedure;
+const router = t.router;
+
+const helloRouter = router({
+  greeting: publicProcedure
     .input(z.object({ name: z.string() }).nullish())
     .query(({ input }) => {
       return `Hello ${input?.name ?? 'World'}`;
