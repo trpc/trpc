@@ -43,6 +43,10 @@ describe('double input validator', () => {
         }),
       )
       .mutation(({ input }) => {
+        //         ^?
+        input.roomId;
+        input.optionalKey;
+        input.text;
         return input;
       }),
   });

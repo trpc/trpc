@@ -5,27 +5,22 @@
  */
 export type identity<TType> = TType;
 
-type InferOptional<TType, TKeys extends keyof TType> = Partial<
+type MakeOptional<TType, TKeys extends keyof TType> = Partial<
   Pick<TType, TKeys>
 > &
   Omit<TType, TKeys>;
 
-type OmitNever<TType> = Pick<
-  TType,
-  {
-    [K in keyof TType]: TType[K] extends never ? never : K;
-  }[keyof TType]
->;
+type MappedC<TFirst, TSecond> = {
+  [K in keyof TFirst & keyof TSecond]: TFirst[K] extends TSecond[K] ? never : K;
+};
 
-type UndefinedKeys<TType> = keyof OmitNever<{
-  [K in keyof TType]: TType[K] extends undefined ? TType : never;
-}>;
+type OptionalKeys<TObj> = MappedC<TObj, Required<TObj>>[keyof TObj];
 
 /**
  * @internal
  */
 export type FlatOverwrite<TType, TWith> = Simplify<
-  InferOptional<
+  MakeOptional<
     {
       [TKey in keyof TWith | keyof TType]: TKey extends keyof TWith
         ? TWith[TKey]
@@ -33,7 +28,7 @@ export type FlatOverwrite<TType, TWith> = Simplify<
         ? TType[TKey]
         : never;
     },
-    UndefinedKeys<TType> | UndefinedKeys<TWith>
+    OptionalKeys<TWith> | Exclude<OptionalKeys<TType>, OptionalKeys<TWith>>
   >
 >;
 
@@ -52,7 +47,15 @@ export type ThenArg<TType> = TType extends PromiseLike<infer U>
 /**
  * @internal
  */
-export type Simplify<TType> = { [KeyType in keyof TType]: TType[KeyType] };
+export type Simplify<
+  TType,
+  TExcludeType = never,
+  TIncludeType = unknown,
+> = TType extends TExcludeType
+  ? TType
+  : TType extends TIncludeType
+  ? { [TypeKey in keyof TType]: TType[TypeKey] }
+  : TType;
 
 /**
  * @public
