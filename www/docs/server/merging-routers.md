@@ -14,19 +14,21 @@ Thanks to TypeScript 4.1 template literal types we can also prefix the procedure
 ```ts twoslash title='server.ts'
 // @filename: trpc.ts
 import { initTRPC } from '@trpc/server';
-export const t = initTRPC.create();
+const t = initTRPC.create();
 
 
-// ---cut---
+export const middleware = t.middleware;
+export const router = t.router;
+export const procedure = t.procedure;
 
 // @filename: routers/_app.ts
-import { t } from '../trpc';
+import { router } from '../trpc';
 import { z } from 'zod';
 
 import { userRouter } from './user';
 import { postRouter } from './post';
 
-const appRouter = t.router({
+const appRouter = router({
   user: userRouter, // put procedures under "user" namespace
   post: postRouter, // put procedures under "post" namespace
 });
@@ -35,10 +37,10 @@ export type AppRouter = typeof appRouter;
 
 
 // @filename: routers/post.ts
-import { t } from '../trpc';
+import { router, procedure } from '../trpc';
 import { z } from 'zod';
-export const postRouter = t.router({
-  create: t.procedure
+export const postRouter = router({
+  create: procedure
     .input(
       z.object({
         title: z.string(),
@@ -48,17 +50,17 @@ export const postRouter = t.router({
       //          ^?
       // [...]
     }),
-  list: t.procedure.query(() => {
+  list: procedure.query(() => {
     // ...
     return [];
   }),
 });
 
 // @filename: routers/user.ts
-import { t } from '../trpc';
+import { router, procedure } from '../trpc';
 import { z } from 'zod';
-export const userRouter = t.router({
-  list: t.procedure.query(() => {
+export const userRouter = router({
+  list: procedure.query(() => {
     // [..]
     return [];
   }),
@@ -75,27 +77,34 @@ If you prefer having all procedures flat in your router, you can instead use `t.
 ```ts twoslash title='server.ts'
 // @filename: trpc.ts
 import { initTRPC } from '@trpc/server';
-export const t = initTRPC.create();
+const t = initTRPC.create();
+
+
+export const middleware = t.middleware;
+export const router = t.router;
+export const procedure = t.procedure;
+export const mergeRouters = t.mergeRouters;
+
 
 
 // ---cut---
 
 // @filename: routers/_app.ts
-import { t } from '../trpc';
+import { router, procedure, mergeRouters } from '../trpc';
 import { z } from 'zod';
 
 import { userRouter } from './user';
 import { postRouter } from './post';
 
-const appRouter = t.mergeRouters(userRouter, postRouter)
+const appRouter = mergeRouters(userRouter, postRouter)
 
 export type AppRouter = typeof appRouter;
 
 // @filename: routers/post.ts
-import { t } from '../trpc';
+import { router, procedure } from '../trpc';
 import { z } from 'zod';
-export const postRouter = t.router({
-  postCreate: t.procedure
+export const postRouter = router({
+  postCreate: procedure
     .input(
       z.object({
         title: z.string(),
@@ -105,7 +114,7 @@ export const postRouter = t.router({
       //          ^?
       // [...]
     }),
-  postList: t.procedure.query(() => {
+  postList: procedure.query(() => {
     // ...
     return [];
   }),
@@ -113,10 +122,10 @@ export const postRouter = t.router({
 
 
 // @filename: routers/user.ts
-import { t } from '../trpc';
+import { router, procedure } from '../trpc';
 import { z } from 'zod';
-export const userRouter = t.router({
-  userList: t.procedure.query(() => {
+export const userRouter = router({
+  userList: procedure.query(() => {
     // [..]
     return [];
   }),

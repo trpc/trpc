@@ -11,6 +11,7 @@ slug: /router
 - If you don't like the variable name `t`, you can call it whatever you want
 - You should create your root `t`-variable **exactly once** per application
 - You can also create the `t`-variable with a [context](context), [metadata](metadata), a [error formatter](error-formatting), or a [data transformer](data-transformers).
+- It's good to expose only the methods you use from the `t` object in order to constrain yourself to use only a few protected base procedures
 
 
 ```ts twoslash title='server/trpc.ts'
@@ -18,11 +19,14 @@ slug: /router
 // ---cut---
 import { initTRPC } from '@trpc/server';
 
-const trpc = initTRPC.create();
+const t = initTRPC.create();
 
-export const middleware = trpc.middleware;
-export const procedure = trpc.procedure;
-export const router = trpc.router;
+export const middleware = t.middleware;
+export const router = t.router;
+
+// We explicitly export the methods we use here
+// This allows us to create reusable & protected base procedure
+export const procedure = t.procedure;
 ```
 
 ## Defining a router
@@ -30,7 +34,12 @@ export const router = trpc.router;
 ```ts twoslash title="server/_app.ts"
 // @filename: trpc.ts
 import { initTRPC } from '@trpc/server';
-export const t = initTRPC.create();
+const t = initTRPC.create();
+
+ 
+export const middleware = t.middleware;
+export const procedure = t.procedure;
+export const router = t.router;
 
 // @filename: _app.ts
 // ---cut---

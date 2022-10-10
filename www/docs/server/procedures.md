@@ -21,17 +21,23 @@ slug: /procedures
 ```ts twoslash
 // @filename: trpc.ts
 import { initTRPC } from '@trpc/server';
-export const t = initTRPC.create();
+
+const t = initTRPC.create();
+
+
+export const middleware = t.middleware;
+export const router = t.router;
+export const procedure = t.procedure;
 
 // @filename: _app.ts
 // @noErrors
 // ---cut---
-import { t } from './trpc';
+import { router, procedure } from './trpc';
 import { z } from 'zod';
 
-const appRouter = t.router({
+const appRouter = router({
   // Create procedure at path 'hello'
-  hello: t.procedure.query(() => {
+  hello: procedure.query(() => {
     return {
       greeting: 'hello world',
     };
@@ -51,15 +57,20 @@ tRPC works out-of-the-box with yup/superstruct/zod/myzod/custom validators/[..] 
 
 // @filename: trpc.ts
 import { initTRPC } from '@trpc/server';
-export const t = initTRPC.create();
+
+const t = initTRPC.create();
+
+export const middleware = t.middleware;
+export const router = t.router;
+export const procedure = t.procedure;
 
 // @filename: _app.ts
 // ---cut---
-import { t } from './trpc';
+import { procedure, router } from './trpc';
 import { z } from 'zod';
 
-export const appRouter = t.router({
-  hello: t.procedure
+export const appRouter = router({
+  hello: procedure
     .input(
       z
         .object({
@@ -86,8 +97,8 @@ import * as yup from 'yup';
 
 export const t = initTRPC.create();
 
-export const appRouter = t.router({
-  hello: t.procedure
+export const appRouter = router({
+  hello: procedure
     .input(
       yup.object({
         text: yup.string().required(),
@@ -111,8 +122,8 @@ import { defaulted, object, string } from 'superstruct';
 
 export const t = initTRPC.create();
 
-export const appRouter = t.router({
-  hello: t.procedure
+export const appRouter = router({
+  hello: procedure
     .input(
       object({
         /**
@@ -140,21 +151,34 @@ You're able to chain multiple parsers in order to make reusable procedures for d
 ```ts twoslash title='server.ts'
 // @filename: trpc.ts
 import { initTRPC } from '@trpc/server';
-export const t = initTRPC.create();
-
-// @filename: _app.ts
-// ---cut---
-import { t } from './trpc';
 import { z } from 'zod';
 
-// Create reusable procedure for a chat room
-const roomProcedure = t.procedure.input(
+const t = initTRPC.create();
+
+export const middleware = t.middleware;
+export const router = t.router;
+
+/**
+ * Public, unprotected procedure
+ **/
+export const publicProcedure = t.procedure;
+
+
+/**
+ * Create reusable procedure for a chat room
+ */
+export const roomProcedure = t.procedure.input(
   z.object({
     roomId: z.string(),
   }),
 );
 
-const appRouter = t.router({
+// @filename: _app.ts
+import { roomProcedure, router } from './trpc';
+import { z } from 'zod';
+
+
+const appRouter = router({
   sendMessage: roomProcedure
     // Add extra input validation for the `sendMessage`-procedure
     .input(
@@ -180,13 +204,13 @@ import { initTRPC } from '@trpc/server';
 
 export const t = initTRPC.create();
 
-export const appRouter = t.router({
-  hello: t.procedure.query(() => {
+export const appRouter = router({
+  hello: procedure.query(() => {
     return {
       text: 'hello world',
     };
   }),
-  bye: t.procedure.query(() => {
+  bye: procedure.query(() => {
     return {
       text: 'goodbye',
     };
@@ -194,4 +218,85 @@ export const appRouter = t.router({
 });
 
 export type AppRouter = typeof appRouter;
+```
+
+## Reusable base procedures
+
+
+```tsx twoslash
+// @filename: context.ts
+import { inferAsyncReturnType } from '@trpc/server';
+import * as trpcNext from '@trpc/server/adapters/next';
+import { getSession } from 'next-auth/react';
+
+/**
+ * Creates context for an incoming request
+ * @link https://trpc.io/docs/context
+ */
+export async function createContext(opts: trpcNext.CreateNextContextOptions) {
+  const session = await getSession({ req: opts.req });
+  
+  return {
+    session,
+  };
+};
+
+export type Context = inferAsyncReturnType<typeof createContext>;
+
+// -------------------------------------------------
+// @filename: trpc.ts
+// -------------------------------------------------
+import { initTRPC, TRPCError } from '@trpc/server';
+import { Context } from './context';
+
+const t = initTRPC.context<Context>().create();
+
+
+const isAuthed = t.middleware(({ next, ctx }) => {
+  if (!ctx.session?.user?.email) {
+    throw new TRPCError({
+      code: 'UNAUTHORIZED',
+    });
+  }
+  return next({
+    ctx: {
+      // Infers the `session` as non-nullable
+      session: ctx.session,
+    },
+  });
+});
+
+export const middleware = t.middleware;
+export const router = t.router;
+
+/**
+ * Unprotected procedure
+ **/
+export const publicProcedure = t.procedure;
+
+/**
+ * Protected procedure
+ **/
+export const protectedProcedure = t.procedure.use(isAuthed);
+
+// -------------------------------------------------
+// @filename: _app.ts
+// -------------------------------------------------
+import { protectedProcedure, publicProcedure, router } from './trpc';
+import { z } from 'zod';
+
+export const appRouter = router({
+  createPost: protectedProcedure
+    .mutation(({ ctx }) => {
+      const session = ctx.session;
+      //      ^?
+      // [...]
+    }),
+  whoami: publicProcedure
+    .query(({ ctx }) => {
+      const session = ctx.session;
+      //      ^?
+      // [...]
+    }),
+});
 ```
