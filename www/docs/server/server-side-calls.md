@@ -66,7 +66,7 @@ Below two examples, the former fails because the context doesn't fit the middlew
 
 :::info
 
-- Middleware(s) are performed before any procedure(s).
+Middlewares are performed before any procedure(s) are called.
 
 :::
 
