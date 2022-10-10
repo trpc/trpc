@@ -5,7 +5,7 @@
  */
 export type identity<TType> = TType;
 
-type MakeOptional<TType, TKeys extends keyof TType> = Partial<
+type OptionalRecord<TType, TKeys extends keyof TType> = Partial<
   Pick<TType, TKeys>
 > &
   Omit<TType, TKeys>;
@@ -19,18 +19,28 @@ type OptionalKeys<TObj> = MappedC<TObj, Required<TObj>>[keyof TObj];
 /**
  * @internal
  */
-export type FlatOverwrite<TType, TWith> = Simplify<
-  MakeOptional<
-    {
+export type FlatOverwrite<TType, TWith> =
+  | OptionalKeys<TWith>
+  | Exclude<OptionalKeys<TType>, OptionalKeys<TWith>> extends never
+  ? {
       [TKey in keyof TWith | keyof TType]: TKey extends keyof TWith
         ? TWith[TKey]
         : TKey extends keyof TType
         ? TType[TKey]
         : never;
-    },
-    OptionalKeys<TWith> | Exclude<OptionalKeys<TType>, OptionalKeys<TWith>>
-  >
->;
+    }
+  : Simplify<
+      OptionalRecord<
+        {
+          [TKey in keyof TWith | keyof TType]: TKey extends keyof TWith
+            ? TWith[TKey]
+            : TKey extends keyof TType
+            ? TType[TKey]
+            : never;
+        },
+        OptionalKeys<TWith> | Exclude<OptionalKeys<TType>, OptionalKeys<TWith>>
+      >
+    >;
 
 /**
  * @public

@@ -49,6 +49,19 @@ describe('double input validator', () => {
         input.text;
         return input;
       }),
+
+    sendMessage2: roomProcedure
+      .input(
+        z.object({
+          text: z.string(),
+        }),
+      )
+      .mutation(({ input }) => {
+        //         ^?
+        input.roomId;
+        input.text;
+        return input;
+      }),
   });
   type AppRouter = typeof appRouter;
   const ctx = konn()
