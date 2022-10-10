@@ -12,7 +12,7 @@ slug: /router
 - If you don't like the variable name `t`, you can call it whatever you want
 - You should create your root `t`-variable **exactly once** per application
 - You can also create the `t`-variable with a [context](context), [metadata](metadata), a [error formatter](error-formatting), or a [data transformer](data-transformers).
-- It's good to constrain the methods you use from the `t` object in order to constrain your team to use only a few base procedures
+- It's good to limit the methods you export from the `t` object in order to constrain your team to use only a few base procedures
 
 :::
 
@@ -24,7 +24,7 @@ import { initTRPC } from '@trpc/server';
 const t = initTRPC.create();
 
 // We explicitly export the methods we use here
-// This allows us to create reusable & protected base procedure
+// This allows us to create reusable & protected base procedures
 export const middleware = t.middleware;
 export const router = t.router;
 export const publicProcedure = t.procedure;
