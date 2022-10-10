@@ -148,9 +148,9 @@ export const trpc = createTRPCReact<AppRouter, SSRContext>({
        **/
       async onSuccess(opts) {
         /**
-         * @note
-         * Order here matters:
-         * The order here allows route changes in `onSuccess` without having a flash of content change whilst redirecting.
+         * @note that order here matters:
+         * The order here allows route changes in `onSuccess` without 
+         * having a flash of content change whilst redirecting.
          **/
 
         // Calls the `onSuccess` defined in the `useQuery()`-options:
