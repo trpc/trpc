@@ -48,7 +48,7 @@
     {
       "source": "/docs/v10/invalidateQueries",
       "destination": "/docs/v10/invalidate-queries",
-      "permanent": false
+      "permanent": true
     }
   ]
 }
