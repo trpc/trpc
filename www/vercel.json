@@ -44,6 +44,11 @@
       "source": "/blog/hello-trpc",
       "destination": "/blog/introducing-trpc",
       "permanent": true
+    },
+    {
+      "source": "/docs/v10/invalidateQueries",
+      "destination": "/docs/v10/invalidate-queries",
+      "permanent": false
     }
   ]
 }

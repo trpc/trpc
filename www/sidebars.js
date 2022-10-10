@@ -51,7 +51,7 @@ module.exports = {
         {
           type: 'category',
           label: 'Links',
-          collapsed: false,
+          collapsed: true,
           items: [
             'client/links/index',
             'client/links/httpLink',
@@ -73,7 +73,7 @@ module.exports = {
         'reactjs/queries',
         'reactjs/mutations',
         'reactjs/useInfiniteQuery',
-        'reactjs/invalidateQueries',
+        'reactjs/invalidate-queries',
       ],
     },
     {

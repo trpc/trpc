@@ -1,8 +1,8 @@
 ---
-id: invalidateQueries
-title: invalidateQueries
-sidebar_label: invalidateQueries()
-slug: /invalidateQueries
+id: invalidate-queries
+title: Invalidate Queries
+# sidebar_label: Invalidate Queries
+slug: /invalidate-queries
 ---
 
 :::note
@@ -22,15 +22,18 @@ on the input passed to it to prevent unnecessary calls to the back end.
 ```tsx
 import { trpc } from '../utils/trpc';
 
-// In component‼️:
-const utils = trpc.useContext();
+function MyComponent() {
+  const utils = trpc.useContext();
 
-const mutation = trpc.post.edit.useMutation({
-  onSuccess(input) {
-    utils.post.all.invalidate();
-    utils.post.byId.invalidate({ id: input.id }); // Will not invalidate queries for other id's 👍
-  },
-});
+  const mutation = trpc.post.edit.useMutation({
+    onSuccess(input) {
+      utils.post.all.invalidate();
+      utils.post.byId.invalidate({ id: input.id }); // Will not invalidate queries for other id's 👍
+    },
+  });
+
+  // [...]
+}
 ```
 
 ## Invalidating across whole routers
@@ -115,4 +118,36 @@ trpc.post.all.useQuery() // Would be invalidated by 1️⃣ & 2️⃣
 trpc.post.byId.useQuery({ id:1 }) // Would be invalidated by 1️⃣, 2️⃣ and 3️⃣
 trpc.post.byId.useQuery({ id:2 }) // would be invalidated by 1️⃣ and 2️⃣ but NOT 3️⃣!
 
+```
+
+
+## Invalidate full cache on every mutation
+
+Keeping track of exactly what a queries a mutation should invalidate is hard, therefore, it can be a pragmatic solution to invalidate the *full cache* as a side-effect on any mutation. Since we have request batching, this invalidation will simply refetch all queries on the page you're looking at in one single request.
+
+
+:::caution
+We have marked this API as `unstable_` as the exact API might change without a major version bump on tRPC, keep an eye on the release notes.
+:::
+
+We have added a feature to help with this:
+
+
+```ts 
+export const trpc = createTRPCReact<AppRouter, SSRContext>({
+  unstable_overrides: {
+    useMutation: {
+      async onSuccess(opts) {
+        // Invalidates all queries in `onSuccess`
+        // - Leaves the mutation's in "loading" state whilst cache is refreshed
+
+        // Order here matters.
+        // Invalidation is triggered after the user's `onSuccess`.
+        // Enables route changes in `onSuccess` without having a flash of content change whilst redirecting.
+        await opts.originalFn();
+        await opts.queryClient.invalidateQueries();
+      },
+    },
+  },
+});
 ```
