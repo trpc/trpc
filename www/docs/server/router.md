@@ -8,11 +8,13 @@ slug: /router
 ## Initialize tRPC
 
 
+:::tip
 - If you don't like the variable name `t`, you can call it whatever you want
 - You should create your root `t`-variable **exactly once** per application
 - You can also create the `t`-variable with a [context](context), [metadata](metadata), a [error formatter](error-formatting), or a [data transformer](data-transformers).
-- It's good to expose only the methods you use from the `t` object in order to constrain yourself to use only a few protected base procedures
+- It's good to constrain the methods you use from the `t` object in order to constrain your team to use only a few base procedures
 
+:::
 
 ```ts twoslash title='server/trpc.ts'
 // @filename: trpc.ts

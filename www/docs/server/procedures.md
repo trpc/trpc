@@ -224,7 +224,10 @@ export type AppRouter = typeof appRouter;
 
 
 ```tsx twoslash
+// -------------------------------------------------
 // @filename: context.ts
+// -------------------------------------------------
+
 import { inferAsyncReturnType } from '@trpc/server';
 import * as trpcNext from '@trpc/server/adapters/next';
 import { getSession } from 'next-auth/react';
