@@ -18,7 +18,11 @@ slug: /router
 // ---cut---
 import { initTRPC } from '@trpc/server';
 
-export const t = initTRPC.create();
+const trpc = initTRPC.create();
+
+export const middleware = trpc.middleware;
+export const procedure = trpc.procedure;
+export const router = trpc.router;
 ```
 
 ## Defining a router
@@ -31,10 +35,10 @@ export const t = initTRPC.create();
 // @filename: _app.ts
 // ---cut---
 import * as trpc from '@trpc/server';
-import { t } from './trpc';
+import { procedure, router } from './trpc';
 
-const appRouter = t.router({
-  greeting: t.procedure.query(() => 'hello tRPC v10!'),
+const appRouter = router({
+  greeting: procedure.query(() => 'hello tRPC v10!'),
 });
 
 // Export only the **type** of a router to avoid importing server code on the client

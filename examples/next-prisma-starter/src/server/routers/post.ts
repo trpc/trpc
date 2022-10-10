@@ -2,7 +2,7 @@
  *
  * This is an example router, you can delete this file and then update `../pages/api/trpc/[trpc].tsx`
  */
-import { createRouter, baseProcedure } from '../trpc';
+import { router, baseProcedure } from '../trpc';
 import { Prisma } from '@prisma/client';
 import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
@@ -21,7 +21,7 @@ const defaultPostSelect = Prisma.validator<Prisma.PostSelect>()({
   updatedAt: true,
 });
 
-export const postRouter = createRouter({
+export const postRouter = router({
   list: baseProcedure
     .input(
       z.object({
