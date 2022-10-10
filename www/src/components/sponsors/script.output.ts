@@ -478,5 +478,14 @@ export const sponsors = [
     "privacyLevel": "PUBLIC",
     "login": "simonflk",
     "createdAt": 1664470616000
+  },
+  {
+    "name": "Echobind",
+    "imgSrc": "https://avatars.githubusercontent.com/u/570840?v=4",
+    "monthlyPriceInDollars": 250,
+    "link": "http://echobind.com",
+    "privacyLevel": "PUBLIC",
+    "login": "echobind",
+    "createdAt": 1665438965000
   }
 ] as const
