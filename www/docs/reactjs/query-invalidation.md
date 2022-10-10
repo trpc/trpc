@@ -167,7 +167,7 @@ export const trpc = createTRPCReact<AppRouter, SSRContext>({
 An example usage of this pattern would look something like this. The following would trigger all queries to invalidate upon a successful mutation:
 
 ```ts
-export const test = createTRPCReact({
+export const trpc = createTRPCReact({
   overrides: {
     useMutation: {
       async onSuccess(opts) {
