@@ -35,10 +35,17 @@ module.exports = {
         'server/data-transformers',
         'server/metadata',
         'server/caching',
-        'server/express',
-        'server/fastify',
-        'server/fetch',
-        'server/aws-lambda',
+        {
+          type: 'category',
+          label: 'Adapters',
+          collapsed: true,
+          items: [
+            'server/adapter/aws-lambda',
+            'server/adapter/express',
+            'server/adapter/fastify',
+            'server/adapter/fetch',
+          ],
+        },
       ],
     },
     {

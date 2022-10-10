@@ -1,7 +1,7 @@
 ---
 id: fetch
 title: Usage with the Fetch API
-sidebar_label: 'Adapter: Fetch'
+sidebar_label: Fetch
 slug: /fetch
 ---
 
