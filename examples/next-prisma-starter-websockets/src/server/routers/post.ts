@@ -3,7 +3,7 @@
  * This is an example router, you can delete this file and then update `../pages/api/trpc/[trpc].tsx`
  */
 import { Context } from '../context';
-import { createRouter, baseProcedure } from '../trpc';
+import { router, baseProcedure } from '../trpc';
 import { Post } from '@prisma/client';
 import { TRPCError } from '@trpc/server';
 import { observable } from '@trpc/server/observable';
@@ -56,7 +56,7 @@ const getNameOrThrow = (ctx: Context) => {
   return name;
 };
 
-export const postRouter = createRouter({
+export const postRouter = router({
   add: baseProcedure
     .input(
       z.object({
@@ -154,7 +154,7 @@ export const postRouter = createRouter({
   }),
 });
 
-// export const postRouter = createRouter()
+// export const postRouter = router()
 //   // create
 //   .mutation('add', {
 //     input: z.object({

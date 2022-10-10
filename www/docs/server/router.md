@@ -8,17 +8,26 @@ slug: /router
 ## Initialize tRPC
 
 
+:::tip
 - If you don't like the variable name `t`, you can call it whatever you want
 - You should create your root `t`-variable **exactly once** per application
 - You can also create the `t`-variable with a [context](context), [metadata](metadata), a [error formatter](error-formatting), or a [data transformer](data-transformers).
+- It's good to limit the methods you export from the `t` object in order to constrain your team to use only a few base procedures
 
+:::
 
 ```ts twoslash title='server/trpc.ts'
 // @filename: trpc.ts
 // ---cut---
 import { initTRPC } from '@trpc/server';
 
-export const t = initTRPC.create();
+const t = initTRPC.create();
+
+// We explicitly export the methods we use here
+// This allows us to create reusable & protected base procedures
+export const middleware = t.middleware;
+export const router = t.router;
+export const publicProcedure = t.procedure;
 ```
 
 ## Defining a router
@@ -26,15 +35,20 @@ export const t = initTRPC.create();
 ```ts twoslash title="server/_app.ts"
 // @filename: trpc.ts
 import { initTRPC } from '@trpc/server';
-export const t = initTRPC.create();
+const t = initTRPC.create();
+
+ 
+export const middleware = t.middleware;
+export const publicProcedure = t.procedure;
+export const router = t.router;
 
 // @filename: _app.ts
 // ---cut---
 import * as trpc from '@trpc/server';
-import { t } from './trpc';
+import { publicProcedure, router } from './trpc';
 
-const appRouter = t.router({
-  greeting: t.procedure.query(() => 'hello tRPC v10!'),
+const appRouter = router({
+  greeting: publicProcedure.query(() => 'hello tRPC v10!'),
 });
 
 // Export only the **type** of a router to avoid importing server code on the client

@@ -1,7 +1,7 @@
 import { z } from 'zod';
-import { baseProcedure, createRouter } from '../trpc';
+import { baseProcedure, router } from '../trpc';
 
-export const todoRouter = createRouter({
+export const todoRouter = router({
   all: baseProcedure.query(({ ctx }) => {
     return ctx.task.findMany({
       orderBy: {

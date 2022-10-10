@@ -9,8 +9,11 @@ import { z } from 'zod';
 
 const t = initTRPC.create();
 
-const appRouter = t.router({
-  greeting: t.procedure
+const publicProcedure = t.procedure;
+const router = t.router;
+
+const appRouter = router({
+  greeting: publicProcedure
     // This is the input schema of your procedure
     // 💡 Tip: Try changing this and see type errors on the client straight away
     .input(

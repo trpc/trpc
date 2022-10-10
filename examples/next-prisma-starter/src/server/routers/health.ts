@@ -1,5 +1,5 @@
-import { createRouter, baseProcedure } from '../trpc';
+import { router, baseProcedure } from '../trpc';
 
-export const healthRouter = createRouter({
+export const healthRouter = router({
   healthz: baseProcedure.query(() => 'yay!'),
 });

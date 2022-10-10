@@ -107,7 +107,7 @@ import { initTRPC, TRPCError } from '@trpc/server';
 const t = initTRPC.create();
 
 // Base router and procedure helpers
-export const createRouter = t.router;
+export const router = t.router;
 export const baseProcedure = t.procedure;
 
 // If you have authentication you can create protected procedures
@@ -130,9 +130,9 @@ export const authedProcedure = t.procedure.use(({ ctx, next}) => {
 
 ```ts title='server/routers/_app.ts'
 import { z } from 'zod';
-import { createRouter, baseProcedure } from '../trpc';
+import { router, baseProcedure } from '../trpc';
 
-export const appRouter = createRouter({
+export const appRouter = router({
   hello: baseProcedure
     .input(
       z.object({

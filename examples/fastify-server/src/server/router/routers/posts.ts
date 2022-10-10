@@ -1,6 +1,6 @@
 import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
-import { t } from '../trpc';
+import { publicProcedure, router } from '../trpc';
 
 interface Post {
   id: number;
@@ -15,8 +15,8 @@ const db: Db = {
   posts: [],
 };
 
-export const postsRouter = t.router({
-  create: t.procedure
+export const postsRouter = router({
+  create: publicProcedure
     .input(z.object({ title: z.string() }))
     .mutation(({ input, ctx }) => {
       if (ctx.user.name !== 'nyan') {
@@ -27,8 +27,8 @@ export const postsRouter = t.router({
       db.posts.push(post);
       return post;
     }),
-  list: t.procedure.query(() => db.posts),
-  reset: t.procedure.mutation(() => {
+  list: publicProcedure.query(() => db.posts),
+  reset: publicProcedure.mutation(() => {
     db.posts = [];
   }),
 });

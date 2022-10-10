@@ -14,8 +14,11 @@ const db = {
 
 const t = initTRPC.create();
 
-const postRouter = t.router({
-  createPost: t.procedure
+const publicProcedure = t.procedure;
+const router = t.router;
+
+const postRouter = router({
+  createPost: publicProcedure
     .input(z.object({ title: z.string() }))
     .mutation(({ input }) => {
       const post = {
@@ -25,12 +28,12 @@ const postRouter = t.router({
       db.posts.push(post);
       return post;
     }),
-  listPosts: t.procedure.query(() => db.posts),
+  listPosts: publicProcedure.query(() => db.posts),
 });
 
-export const appRouter = t.router({
+export const appRouter = router({
   post: postRouter,
-  hello: t.procedure.input(z.string().nullish()).query(({ input }) => {
+  hello: publicProcedure.input(z.string().nullish()).query(({ input }) => {
     return `hello ${input ?? 'world'}`;
   }),
 });

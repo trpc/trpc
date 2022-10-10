@@ -59,7 +59,14 @@ import { initTRPC } from '@trpc/server';
 
 // You may rename the `t` variable to whatever you prefer.
 // Just make sure you initialize your root variable once per application.
-export const t = initTRPC.create();
+const t = initTRPC.create();
+
+// We explicitly export the methods we use here
+// This allows us to create reusable & protected base procedure
+
+export const middleware = t.middleware;
+export const router = t.router;
+export const publicProcedure = t.procedure;
 ```
 
 </details>
@@ -78,8 +85,8 @@ const appRouter = trpc.router()
   });
 
 // v10:
-const appRouter = t.router({
-  greeting: t.procedure
+const appRouter = router({
+  greeting: publicProcedure
     .input(z.string())
     .query(({ input }) => `hello ${input}!`),
 });
@@ -176,7 +183,7 @@ const appRouter = trpc
   });
 
 // v10
-const isAuthed = t.middleware(({ next, ctx }) => {
+export const isAuthed = t.middleware(({ next, ctx }) => {
   if (!ctx.user) {
     throw new TRPCError({ code: 'UNAUTHORIZED' });
   }
@@ -260,7 +267,8 @@ We recommend two strategies to start **(and finish!)** upgrading your codebase t
 
 - If you use the codemod, you should still do step 1 to 3 below to make sure that works for you ahead of doing the full migration
 - Please note that this codemod isn't perfect - but will do a lot of the heavy lifting for you.
-  :::
+
+:::
 
 ### Using `.interop()`
 
@@ -431,9 +439,9 @@ procedure path to a sub array of elements.
 given the simple router below:
 
 ```tsx
-export const appRouter = t.router({
-  user: t.router({
-    byId: t.procedure
+export const appRouter = router({
+  user: router({
+    byId: publicProcedure
       .input(z.object({ id: z.number() }))
       .query(({ input }) => ({ user: { id: input.id } })),
   }),

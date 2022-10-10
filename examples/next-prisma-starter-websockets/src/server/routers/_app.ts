@@ -1,12 +1,12 @@
 /**
  * This file contains the root router of your tRPC-backend
  */
-import { createRouter, baseProcedure } from '../trpc';
+import { router, baseProcedure } from '../trpc';
 import { postRouter } from './post';
 import { observable } from '@trpc/server/observable';
 import { clearInterval } from 'timers';
 
-export const appRouter = createRouter({
+export const appRouter = router({
   healthcheck: baseProcedure.query(() => {
     return 'yay';
   }),

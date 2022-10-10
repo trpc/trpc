@@ -87,7 +87,7 @@ const isAuthed = t.middleware(({ next, ctx }) => {
 
 
 // you can reuse this for any procedure
-const protectedProcedure = t.procedure.use(isAuthed);
+export const protectedProcedure = t.procedure.use(isAuthed);
 
 t.router({
   // this is accessible for everyone
