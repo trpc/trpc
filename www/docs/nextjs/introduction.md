@@ -104,11 +104,11 @@ import { initTRPC, TRPCError } from '@trpc/server';
 // Avoid exporting the entire t-object since it's not very
 // descriptive and can be confusing to newcomers used to t
 // meaning translation in i18n libraries.
-const t = initTRPC.create();
+const t = initTRPC.create()****;
 
 // Base router and procedure helpers
 export const router = t.router;
-export const baseProcedure = t.procedure;
+export const publicProcedure = t.procedure;
 
 // If you have authentication you can create protected procedures
 // NOTE: Below is just an example
@@ -130,10 +130,10 @@ export const authedProcedure = t.procedure.use(({ ctx, next}) => {
 
 ```ts title='server/routers/_app.ts'
 import { z } from 'zod';
-import { router, baseProcedure } from '../trpc';
+import { router, publicProcedure } from '../trpc';
 
 export const appRouter = router({
-  hello: baseProcedure
+  hello: publicProcedure
     .input(
       z.object({
         text: z.string().nullish(),
