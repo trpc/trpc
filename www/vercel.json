@@ -49,6 +49,11 @@
       "source": "/docs/v10/invalidateQueries",
       "destination": "/docs/v10/query-invalidation",
       "permanent": true
+    },
+    {
+      "source": "/docs/v10/publicProcedures",
+      "destination": "/docs/v10/procedures",
+      "permanent": true
     }
   ]
 }

@@ -2,7 +2,7 @@
 id: procedures
 title: Define Procedures
 sidebar_label: Define Procedures
-slug: /publicProcedures
+slug: /procedures
 ---
 
 
