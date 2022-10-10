@@ -5,7 +5,11 @@ sidebar_label: Split Link
 slug: /links/splitLink
 ---
 
-`splitLink` is a link that allows you to branch your link chain's execution depending on a given condition.
+`splitLink` is a link that allows you to branch your link chain's execution depending on a given condition. Only the `true` branch is required. If you don't provide a `false` branch and the condition isn't met, the link below `splitLink` will execute. You can provide just one link, or multiple links per branch via an array.
+
+:::note
+It's important to note that when you provide links for `splitLink` to execute, `splitLink` will create an entirely new link chain based on the links you passed. Therefore, you need to use a [**terminating link**](./index.md#the-terminating-link) if you only provide one link, or add the terminating link at the end of the array if you provide multiple links to be executed on a branch.
+:::
 
 ## Usage Example
 
@@ -86,8 +90,9 @@ function splitLink<TRouter extends AnyRouter = AnyRouter>(opts: {
   true: TRPCLink<TRouter> | TRPCLink<TRouter>[];
   /**
    * The link to execute next if the test function returns `false`.
+   * If it is not provided, the `next` function is used to call the link after `splitLink`
    */
-  false: TRPCLink<TRouter> | TRPCLink<TRouter>[];
+  false?: TRPCLink<TRouter> | TRPCLink<TRouter>[];
 }) => TRPCLink<TRouter>
 ```
 
