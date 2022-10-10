@@ -8,7 +8,7 @@ slug: /aborting-procedures
 ## @trpc/react
 By default, TRPC does not cancel requests on unmount. If you want to opt in to this behavior you can provide `abortOnUnmount` in your configuration.
 ```ts twoslash title="client.ts"
-// @module: esnext
+// @target: esnext
 
 // ---cut---
 // @filename: utils.ts
@@ -23,7 +23,7 @@ trpc.createClient({
 ```
 You may also override this behavior at the request level.
 ```ts twoslash title="client.ts"
-// @module: esnext
+// @target: esnext
 
 // ---cut---
 // @filename: pages/posts/[id].tsx
@@ -44,7 +44,7 @@ const PostViewPage: NextPageWithLayout = () => {
 tRPC adheres to the industry standard when it comes to aborting procedures. All you have to do is pass an `AbortSignal` to the query-options and then call its parent `AbortController`'s `abort` method.
 
 ```ts twoslash title="utils.ts"
-// @module: esnext
+// @target: esnext
 
 // ---cut---
 // @filename: server.ts

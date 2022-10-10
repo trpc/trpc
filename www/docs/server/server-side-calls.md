@@ -15,10 +15,14 @@ With the `router.createCaller({})` function (first argument is `Context`) we ret
 
 We create the router with a input query and then we call the asynchronous `greeting` procedure to get the result.
 
-```ts
+```ts twoslash
+// @target: esnext
 import { initTRPC } from '@trpc/server';
+import { z } from 'zod';
 
 const t = initTRPC.create();
+
+
 const router = t.router({
   // Create procedure at path 'greeting'
   greeting: t.procedure
@@ -28,6 +32,7 @@ const router = t.router({
 
 const caller = router.createCaller({});
 const result = await caller.greeting({ name: 'tRPC' });
+//     ^?
 ```
 
 ### Mutation example
@@ -93,6 +98,7 @@ const isAuthed = t.middleware(({ next, ctx }) => {
 
   return next({
     ctx: {
+      // Infers that the `user` is non-nullable
       user: ctx.user,
     }
   });
@@ -106,13 +112,14 @@ const router = t.router({
 
 
 {
-  // this will return an error because there isn't the right context param
+  // ❌ this will return an error because there isn't the right context param
   const caller = router.createCaller({});
+
   const result = await caller.secret();
 }
 
 {
-  // it works because foo property is present inside context param
+  // ✅ this will work because user property is present inside context param
   const authorizedCaller = router.createCaller({
     user: {
       id: "KATT",
