@@ -11,7 +11,7 @@ if (fs.existsSync(ROUTERS_DIR)) {
 
 fs.mkdirSync(ROUTERS_DIR, { recursive: true });
 
-function router(routerName: string) {
+function createRouter(routerName: string) {
   return `
   import { z } from 'zod';
   import { t } from '~/server/trpc';
@@ -68,7 +68,7 @@ const indexBuf: string[] = [];
 for (let i = 0; i < NUM_ROUTERS; i++) {
   const routerName = `router${i}`;
   indexBuf.push(routerName);
-  fs.writeFileSync(`${ROUTERS_DIR}/${routerName}.ts`, router(routerName));
+  fs.writeFileSync(`${ROUTERS_DIR}/${routerName}.ts`, createRouter(routerName));
 }
 
 const trpcFile = `
