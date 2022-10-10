@@ -7,8 +7,6 @@ slug: /merging-routers
 
 Writing all API-code in your code in the same file is not a great idea. It's easy to merge routers with other routers.
 
-Thanks to TypeScript 4.1 template literal types we can also prefix the procedures without breaking typesafety.
-
 ## Merging with child routers
 
 ```ts twoslash title='server.ts'
@@ -70,7 +68,7 @@ export const userRouter = router({
 
 ## Merging with `t.mergeRouters`
 
-If you prefer having all procedures flat in your router, you can instead use `t.mergeRouters`
+If you prefer having all procedures flat in one single namespace, you can instead use `t.mergeRouters`
 
 
 
