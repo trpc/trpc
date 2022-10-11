@@ -6,12 +6,6 @@ import { IncomingMessage } from 'http';
 import { getSession } from 'next-auth/react';
 import ws from 'ws';
 
-const prisma = new PrismaClient({
-  log:
-    process.env.NODE_ENV === 'development'
-      ? ['query', 'error', 'warn']
-      : ['error'],
-});
 /**
  * Creates context for an incoming request
  * @link https://trpc.io/docs/context
@@ -26,7 +20,6 @@ export const createContext = async (
   console.log('createContext for', session?.user?.name ?? 'unknown user');
 
   return {
-    prisma,
     session,
   };
 };

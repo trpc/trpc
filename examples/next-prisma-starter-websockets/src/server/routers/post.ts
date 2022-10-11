@@ -2,13 +2,12 @@
  *
  * This is an example router, you can delete this file and then update `../pages/api/trpc/[trpc].tsx`
  */
-import { Context } from '../context';
-import { router, publicProcedure, authedProcedure } from '../trpc';
 import { Post } from '@prisma/client';
-import { TRPCError } from '@trpc/server';
 import { observable } from '@trpc/server/observable';
 import { EventEmitter } from 'events';
+import { prisma } from 'server/prisma';
 import { z } from 'zod';
+import { authedProcedure, publicProcedure, router } from '../trpc';
 
 interface MyEvents {
   add: (data: Post) => void;
@@ -58,7 +57,7 @@ export const postRouter = router({
     )
     .mutation(async ({ input, ctx }) => {
       const { name } = ctx.user;
-      const post = await ctx.prisma.post.create({
+      const post = await prisma.post.create({
         data: {
           ...input,
           name,
@@ -92,11 +91,11 @@ export const postRouter = router({
         take: z.number().min(1).max(50).nullish(),
       }),
     )
-    .query(async ({ input, ctx }) => {
+    .query(async ({ input }) => {
       const take = input.take ?? 10;
       const cursor = input.cursor;
 
-      const page = await ctx.prisma.post.findMany({
+      const page = await prisma.post.findMany({
         orderBy: {
           createdAt: 'desc',
         },
