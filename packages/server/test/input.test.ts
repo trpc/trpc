@@ -124,6 +124,33 @@ describe('double input validator', () => {
   });
 });
 
+test('happy-ish', async () => {
+  const t = initTRPC.create();
+
+  const weirdProc = t.procedure.input(
+    z.object({
+      id: z.string(),
+    }),
+  );
+
+  const appRouter = t.router({
+    get: weirdProc
+      .input(
+        z.object({
+          id: z.string().optional(),
+        }),
+      )
+      .query(({ input }) => {
+        return input.id ?? 'no id';
+      }),
+  });
+
+  const opts = routerToServerAndClientNew(appRouter);
+
+  const result = await opts.proxy.get.query({});
+  expect(result).toEqual(undefined);
+});
+
 test('only allow double input validator for object-like inputs', () => {
   const t = initTRPC.create();
 
