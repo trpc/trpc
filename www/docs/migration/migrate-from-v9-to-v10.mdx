@@ -330,6 +330,7 @@ There are [a few features that are not supported by `.interop()`](#limitations-o
 Now, let's initialize a v10 router so we can start using v10 for any new routes we will write.
 
 ```ts title='src/server/trpc.ts'
+import { initTRPC } from '@trpc/server';
 import superjson from 'superjson';
 import { Context } from './context';
 
@@ -347,6 +348,10 @@ const t = initTRPC.context<Context>().create({
   },
 });
 
+/**
+ * We recommend only exporting the functionality that we
+ * use so we can enforce which base procedures should be used
+ **/
 export const router = t.router;
 export const mergeRouters = t.router;
 export const publicProcedure = t.procedure;
@@ -360,12 +365,14 @@ export const publicProcedure = t.procedure;
 ```ts twoslash title="src/server/routers/_app.ts"
 // @filename: trpc.ts
 import { initTRPC } from '@trpc/server';
+const t = initTRPC.create();
+export const router = t.router;
+export const mergeRouters = t.mergeRouters;
+export const publicProcedure = t.procedure;
 // @filename: _app.ts
 // ---cut---
 import * as trpc from '@trpc/server';
 import { mergeRouters, publicProcedure, router } from './trpc';
-
-export const t = initTRPC.create();
 
 // Renamed from `appRouter`
 const legacyRouter = trpc

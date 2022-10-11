@@ -112,7 +112,7 @@ export const publicProcedure = t.procedure;
 
 /**
  * Reusable middleware that checks if users are authenticated.
- * NOTE: Example only, yours may vary depending on how your auth is setup
+ * @note Example only, yours may vary depending on how your auth is setup
  **/
 const isAuthed = t.middleware(({ next, ctx }) => {
   if (!ctx.session?.user?.email) {
