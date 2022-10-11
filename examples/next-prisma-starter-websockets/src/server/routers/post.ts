@@ -3,7 +3,7 @@
  * This is an example router, you can delete this file and then update `../pages/api/trpc/[trpc].tsx`
  */
 import { Context } from '../context';
-import { router, publicProcedure } from '../trpc';
+import { router, publicProcedure, authedProcedure } from '../trpc';
 import { Post } from '@prisma/client';
 import { TRPCError } from '@trpc/server';
 import { observable } from '@trpc/server/observable';
@@ -48,16 +48,8 @@ const interval = setInterval(() => {
 }, 3e3);
 process.on('SIGTERM', () => clearInterval(interval));
 
-const getNameOrThrow = (ctx: Context) => {
-  const name = ctx.session?.user?.name;
-  if (!name) {
-    throw new TRPCError({ code: 'FORBIDDEN' });
-  }
-  return name;
-};
-
 export const postRouter = router({
-  add: publicProcedure
+  add: authedProcedure
     .input(
       z.object({
         id: z.string().uuid().optional(),
@@ -65,7 +57,7 @@ export const postRouter = router({
       }),
     )
     .mutation(async ({ input, ctx }) => {
-      const name = getNameOrThrow(ctx);
+      const { name } = ctx.user;
       const post = await ctx.prisma.post.create({
         data: {
           ...input,
@@ -79,10 +71,10 @@ export const postRouter = router({
       return post;
     }),
 
-  isTyping: publicProcedure
+  isTyping: authedProcedure
     .input(z.object({ typing: z.boolean() }))
     .mutation(({ input, ctx }) => {
-      const name = getNameOrThrow(ctx);
+      const { name } = ctx.user;
       if (!input.typing) {
         delete currentlyTyping[name];
       } else {
@@ -153,108 +145,3 @@ export const postRouter = router({
     });
   }),
 });
-
-// export const postRouter = router()
-//   // create
-//   .mutation('add', {
-//     input: z.object({
-//       id: z.string().uuid().optional(),
-//       text: z.string().min(1),
-//     }),
-//     async resolve({ ctx, input }) {
-//       const name = getNameOrThrow(ctx);
-//       const post = await ctx.prisma.post.create({
-//         data: {
-//           ...input,
-//           name,
-//           source: 'GITHUB',
-//         },
-//       });
-//       ee.emit('add', post);
-//       delete currentlyTyping[name];
-//       ee.emit('isTypingUpdate');
-//       return post;
-//     },
-//   })
-//   .mutation('isTyping', {
-//     input: z.object({
-//       typing: z.boolean(),
-//     }),
-//     resolve({ input, ctx }) {
-//       const name = getNameOrThrow(ctx);
-//       if (!input.typing) {
-//         delete currentlyTyping[name];
-//       } else {
-//         currentlyTyping[name] = {
-//           lastTyped: new Date(),
-//         };
-//       }
-//       ee.emit('isTypingUpdate');
-//     },
-//   })
-//   .query('infinite', {
-//     input: z.object({
-//       cursor: z.date().nullish(),
-//       take: z.number().min(1).max(50).nullish(),
-//     }),
-//     async resolve({ input, ctx }) {
-//       const take = input.take ?? 10;
-//       const cursor = input.cursor;
-//       // `cursor` is of type `Date | undefined`
-//       // `take` is of type `number | undefined`
-//       const page = await ctx.prisma.post.findMany({
-//         orderBy: {
-//           createdAt: 'desc',
-//         },
-//         cursor: cursor
-//           ? {
-//               createdAt: cursor,
-//             }
-//           : undefined,
-//         take: take + 1,
-//         skip: 0,
-//       });
-//       const items = page.reverse();
-//       let prevCursor: null | typeof cursor = null;
-//       if (items.length > take) {
-//         const prev = items.shift();
-//         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-//         prevCursor = prev!.createdAt;
-//       }
-//       return {
-//         items,
-//         prevCursor,
-//       };
-//     },
-//   })
-//   .subscription('onAdd', {
-//     resolve() {
-//       return observable<Post>((emit) => {
-//         const onAdd = (data: Post) => emit.next(data);
-//         ee.on('add', onAdd);
-//         return () => {
-//           ee.off('add', onAdd);
-//         };
-//       });
-//     },
-//   })
-//   .subscription('whoIsTyping', {
-//     resolve() {
-//       let prev: string[] | null = null;
-//       return observable<string[]>((emit) => {
-//         const onIsTypingUpdate = () => {
-//           const newData = Object.keys(currentlyTyping);
-
-//           if (!prev || prev.toString() !== newData.toString()) {
-//             emit.next(newData);
-//           }
-//           prev = newData;
-//         };
-//         ee.on('isTypingUpdate', onIsTypingUpdate);
-//         return () => {
-//           ee.off('isTypingUpdate', onIsTypingUpdate);
-//         };
-//       });
-//     },
-//   })
-//   .interop();
