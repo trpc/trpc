@@ -20,9 +20,6 @@ export function getArrayQueryKey(
     return [[], ...input];
   }
   const arrayPath = path.split('.');
-  if (input === undefined) {
-    return [arrayPath];
-  }
 
   return [arrayPath, ...input];
 }
