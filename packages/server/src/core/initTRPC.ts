@@ -43,7 +43,7 @@ type CreateRootConfigTypesFromPartial<TTypes extends PartialRootConfigTypes> =
  * - Doesn't need to be a class but it doesn't really hurt either
  */
 
-class TRPCBuilder<TParams extends Partial<RootConfigTypes> = {}> {
+class TRPCBuilder<TParams extends PartialRootConfigTypes = {}> {
   context<TNewContext extends RootConfigTypes['ctx']>() {
     return new TRPCBuilder<FlatOverwrite<TParams, { ctx: TNewContext }>>();
   }
@@ -71,7 +71,7 @@ class TRPCBuilder<TParams extends Partial<RootConfigTypes> = {}> {
  */
 export const initTRPC = new TRPCBuilder();
 
-function createTRPCInner<TParams extends Partial<RootConfigTypes>>() {
+function createTRPCInner<TParams extends PartialRootConfigTypes>() {
   type $Generics = CreateRootConfigTypesFromPartial<TParams>;
 
   type $Context = $Generics['ctx'];
