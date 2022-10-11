@@ -5,7 +5,7 @@ This example shows how you can prefetch queries. This page works without JavaScr
 ## Start the server
 
 ```bash
-npm run dev
+pnpm dev
 ```
 
 ## In your Chrome DevTools
