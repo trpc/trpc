@@ -141,7 +141,7 @@ test('happy-ish', async () => {
         }),
       )
       .query(({ input }) => {
-        return input.id ?? 'no id';
+        return input.id;
       }),
   });
 
@@ -149,6 +149,8 @@ test('happy-ish', async () => {
 
   const result = await opts.proxy.get.query({});
   expect(result).toEqual(undefined);
+
+  await opts.close();
 });
 
 test('only allow double input validator for object-like inputs', () => {
