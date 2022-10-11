@@ -1,6 +1,13 @@
 import { test } from '@playwright/test';
 
-test('add todo', async ({ page }) => {
+test('query should be prefetched', async ({ page }) => {
   await page.goto('/');
-  expect(await page.content()).toContain('hello world');
+
+  await page.waitForSelector('text=2022');
+});
+
+test('dates should be serialized', async ({ page }) => {
+  await page.goto('/');
+
+  await page.waitForSelector('text=2022');
 });

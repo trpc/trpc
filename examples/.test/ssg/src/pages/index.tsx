@@ -10,13 +10,13 @@ export const getStaticProps = async () => {
     transformer: superjson,
   });
 
-  await ssg.greeting.fetch({ name: 'world' });
+  await ssg.greeting.prefetch({ name: 'world' });
 
   return { props: { trpcState: ssg.dehydrate() }, revalidate: 3600 };
 };
 
 export default function IndexPage() {
-  const result = trpc.greeting.useQuery({ name: 'client' });
+  const result = trpc.greeting.useQuery({ name: 'world' });
 
   if (!result.data) {
     /** Unreachable state */
@@ -29,6 +29,7 @@ export default function IndexPage() {
   return (
     <div style={styles}>
       <h1>{result.data.text}</h1>
+      <p>{result.data.date.toDateString()}</p>
     </div>
   );
 }

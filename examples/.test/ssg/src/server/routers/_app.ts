@@ -11,6 +11,7 @@ export const appRouter = router({
     .query(({ input }) => {
       return {
         text: `hello ${input?.name ?? 'world'}`,
+        date: new Date('2022Z'),
       };
     }),
 });
