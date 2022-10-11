@@ -1,20 +1,15 @@
-# Next.js + TRPC
+# SSG E2E Test
 
-This example shows how you can make a typed query using a minimal implementation of TRPC following [`this as a reference`](https://trpc.io/docs/nextjs). 
+This example shows how you can prefetch queries. This page works without JavaScript enabled.
 
-## Setup
+## Start the server
 
 ```bash
-npx create-next-app --example https://github.com/trpc/trpc --example-path examples/next-minimal-starter trpc-minimal-starter
-cd trpc-minimal-starter
-npm i
 npm run dev
 ```
 
-## Development
+## In your Chrome DevTools
 
-### Start project
-
-```bash
-npm run dev        # starts next.js
-```
+1. Press `CMD + SHIFT + P` to open the command palette.
+2. Search for `Disable JavaScript` and press enter.
+3. Reload page and see the data is still fetched.

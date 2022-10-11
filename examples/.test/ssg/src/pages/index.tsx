@@ -19,7 +19,6 @@ export default function IndexPage() {
   const result = trpc.greeting.useQuery({ name: 'client' });
 
   if (!result.data) {
-    /** Unreachable state */
     return (
       <div style={styles}>
         <h1>Loading...</h1>
