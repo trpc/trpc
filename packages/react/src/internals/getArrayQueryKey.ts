@@ -11,15 +11,8 @@ export function getArrayQueryKey(
   const queryKeyArrayed = Array.isArray(queryKey) ? queryKey : [queryKey];
   const [path, ...input] = queryKeyArrayed;
 
-  // Handle the case of acting on all queries ... path will not be passed or
-  // it will be an empty string
-  if (typeof path !== 'string' || path === '') {
-    if (input === undefined) {
-      return [[]];
-    }
-    return [[], ...input];
-  }
-  const arrayPath = path.split('.');
+  const arrayPath =
+    typeof path !== 'string' || path === '' ? [] : path.split('.');
 
   return [arrayPath, ...input];
 }
