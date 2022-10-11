@@ -124,33 +124,25 @@ describe('double input validator', () => {
   });
 });
 
-test('happy-ish', async () => {
+test('impossible to merge optional with required property', async () => {
   const t = initTRPC.create();
 
-  const weirdProc = t.procedure.input(
-    z.object({
-      id: z.string(),
-    }),
-  );
-
-  const appRouter = t.router({
-    get: weirdProc
+  try {
+    t.procedure
       .input(
         z.object({
-          id: z.string().optional(),
+          id: z.string(),
         }),
       )
-      .query(({ input }) => {
-        return input.id;
-      }),
-  });
-
-  const opts = routerToServerAndClientNew(appRouter);
-
-  const result = await opts.proxy.get.query({});
-  expect(result).toEqual(undefined);
-
-  await opts.close();
+      .input(
+        z.object({
+          // @ts-expect-error - impossible merge
+          id: z.string().optional(),
+        }),
+      );
+  } catch {
+    // whatever
+  }
 });
 
 test('only allow double input validator for object-like inputs', () => {
