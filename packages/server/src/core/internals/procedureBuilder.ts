@@ -64,7 +64,7 @@ export interface BuildProcedure<
 
 type OverwriteIfDefined<TType, TWith> = UnsetMarker extends TType
   ? TWith
-  : FlatOverwrite<TType, TWith>;
+  : Simplify<FlatOverwrite<TType, TWith>>;
 
 type ErrorMessage<TMessage extends string> = TMessage;
 
@@ -101,9 +101,11 @@ export interface ProcedureBuilder<TParams extends ProcedureParams> {
       TParams['_input_in'],
       inferParser<$Parser>['in']
     >;
-    _input_out: Simplify<
-      OverwriteIfDefined<TParams['_input_out'], inferParser<$Parser>['out']>
+    _input_out: OverwriteIfDefined<
+      TParams['_input_out'],
+      inferParser<$Parser>['out']
     >;
+
     _output_in: TParams['_output_in'];
     _output_out: TParams['_output_out'];
   }>;
