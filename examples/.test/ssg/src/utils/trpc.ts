@@ -16,11 +16,17 @@ function getBaseUrl() {
 export const trpc = createTRPCNext<AppRouter>({
   config() {
     return {
+      /**
+       * @link https://trpc.io/docs/links
+       */
       links: [
         httpBatchLink({
           url: getBaseUrl() + '/api/trpc',
         }),
       ],
+      /**
+       * @link https://trpc.io/docs/data-transformers
+       */
       transformer: superjson,
     };
   },

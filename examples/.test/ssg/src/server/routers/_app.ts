@@ -1,3 +1,6 @@
+/**
+ * This file contains the root router of your tRPC-backend
+ */
 import { z } from 'zod';
 import { publicProcedure, router } from '../trpc';
 
