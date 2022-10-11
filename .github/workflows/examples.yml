@@ -30,7 +30,6 @@ jobs:
             cloudflare-workers,
             .interop/cloudflare-workers,
             next-prisma-starter,
-            next-prisma-starter-sqlite,
             next-prisma-starter-websockets,
             next-prisma-todomvc,
             standalone-server,
@@ -42,7 +41,7 @@ jobs:
         with:
           fetch-depth: 0
 
-      - uses: pnpm/action-setup@v2.2.2
+      - uses: pnpm/action-setup@v2.2.3
 
       - uses: actions/setup-node@v3
         with:

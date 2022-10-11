@@ -29,6 +29,7 @@ const sections: Def = {
     'chimon2000',
     'snaplet',
     'flylance-apps',
+    'echobind',
   ],
 };
 

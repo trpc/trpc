@@ -24,17 +24,15 @@ type UndefinedKeys<TType> = keyof OmitNever<{
 /**
  * @internal
  */
-export type FlatOverwrite<TType, TWith> = Simplify<
-  InferOptional<
-    {
-      [TKey in keyof TWith | keyof TType]: TKey extends keyof TWith
-        ? TWith[TKey]
-        : TKey extends keyof TType
-        ? TType[TKey]
-        : never;
-    },
-    UndefinedKeys<TType> | UndefinedKeys<TWith>
-  >
+export type FlatOverwrite<TType, TWith> = InferOptional<
+  {
+    [TKey in keyof TWith | keyof TType]: TKey extends keyof TWith
+      ? TWith[TKey]
+      : TKey extends keyof TType
+      ? TType[TKey]
+      : never;
+  },
+  UndefinedKeys<TType> | UndefinedKeys<TWith>
 >;
 
 /**
@@ -51,9 +49,11 @@ export type ThenArg<TType> = TType extends PromiseLike<infer U>
 
 /**
  * @internal
+ * @see https://github.com/ianstormtaylor/superstruct/blob/7973400cd04d8ad92bbdc2b6f35acbfb3c934079/src/utils.ts#L323-L325
  */
-export type Simplify<TType> = { [KeyType in keyof TType]: TType[KeyType] };
-
+export type Simplify<TType> = TType extends any[] | Date
+  ? TType
+  : { [K in keyof TType]: TType[K] } & {};
 /**
  * @public
  */

@@ -3,32 +3,24 @@ import { ParentSize } from '@visx/responsive';
 import React from 'react';
 import { twMerge } from 'tailwind-merge';
 import { sponsors } from './script.output';
-
-const MONTH_AS_SECONDS = 30 * 24 * 60 * 60;
-function getMultiplier(since) {
-  return (Date.now() - since) / 1000 / MONTH_AS_SECONDS;
-}
+import { getMultiplier } from './utils';
 
 const pack = {
   children: sponsors.map((sponsor) => ({
     ...sponsor,
-    multiplier: Math.max(getMultiplier(sponsor.createdAt), 1),
+    value: getMultiplier(sponsor.createdAt) * sponsor.monthlyPriceInDollars,
   })),
   name: 'root',
   radius: 0,
   distance: 0,
 };
 
-export function Sponsors() {
+export function SponsorBubbles() {
   const root = React.useMemo(
     () =>
       hierarchy(pack)
-        .sum((d) => d?.monthlyPriceInDollars * d?.multiplier, 1)
-        .sort(
-          (a, b) =>
-            (b.data.monthlyPriceInDollars * b.data.multiplier ?? 0) -
-            (a.data.monthlyPriceInDollars * a.data.multiplier ?? 0),
-        ),
+        .sum((d) => d?.value, 1)
+        .sort((a, b) => (b.data.value ?? 0) - (a.data.value ?? 0)),
     [],
   );
 
