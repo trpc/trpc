@@ -10,13 +10,13 @@ export const getStaticProps = async () => {
     transformer: superjson,
   });
 
-  await ssg.greeting.prefetch({ name: 'world' });
+  await ssg.greeting.prefetch({ name: 'client' });
 
   return { props: { trpcState: ssg.dehydrate() }, revalidate: 3600 };
 };
 
 export default function IndexPage() {
-  const result = trpc.greeting.useQuery({ name: 'world' });
+  const result = trpc.greeting.useQuery({ name: 'client' });
 
   if (!result.data) {
     /** Unreachable state */
