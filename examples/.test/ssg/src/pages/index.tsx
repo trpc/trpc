@@ -1,9 +1,12 @@
 import { createProxySSGHelpers } from '@trpc/react/ssg';
-import { useEffect } from 'react';
 import superjson from 'superjson';
 import { appRouter } from '~/server/routers/_app';
 import { trpc } from '~/utils/trpc';
 
+/**
+ * This page will be served statically
+ * @link https://trpc.io/docs/ssg
+ */
 export const getStaticProps = async () => {
   const ssg = createProxySSGHelpers({
     router: appRouter,

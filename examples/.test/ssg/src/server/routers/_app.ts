@@ -8,12 +8,12 @@ export const appRouter = router({
   greeting: publicProcedure
     .input(
       z.object({
-        name: z.string().nullish(),
+        name: z.string(),
       }),
     )
     .query(({ input }) => {
       return {
-        text: `hello ${input?.name ?? 'world'}`,
+        text: `hello ${input.name}`,
         date: new Date('2022Z'),
       };
     }),
