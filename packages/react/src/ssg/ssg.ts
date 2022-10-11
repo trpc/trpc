@@ -12,6 +12,7 @@ import {
   inferProcedureOutput,
   inferRouterContext,
 } from '@trpc/server';
+import { getArrayQueryKey } from '../internals/getArrayQueryKey';
 import { CreateTRPCReactQueryClientConfig, getQueryClient } from '../shared';
 
 interface CreateSSGHelpersOptionsBase<TRouter extends AnyRouter> {
@@ -43,7 +44,7 @@ export function createSSGHelpers<TRouter extends AnyRouter>(
   >(
     ...pathAndInput: [path: TPath, ...args: inferHandlerInput<TProcedure>]
   ) => {
-    return queryClient.prefetchQuery(pathAndInput, () => {
+    return queryClient.prefetchQuery(getArrayQueryKey(pathAndInput), () => {
       return callProcedure({
         procedures: router._def.procedures,
         path: pathAndInput[0],
@@ -60,15 +61,18 @@ export function createSSGHelpers<TRouter extends AnyRouter>(
   >(
     ...pathAndInput: [path: TPath, ...args: inferHandlerInput<TProcedure>]
   ) => {
-    return queryClient.prefetchInfiniteQuery(pathAndInput, () => {
-      return callProcedure({
-        procedures: router._def.procedures,
-        path: pathAndInput[0],
-        rawInput: pathAndInput[1],
-        ctx,
-        type: 'query',
-      });
-    });
+    return queryClient.prefetchInfiniteQuery(
+      getArrayQueryKey(pathAndInput),
+      () => {
+        return callProcedure({
+          procedures: router._def.procedures,
+          path: pathAndInput[0],
+          rawInput: pathAndInput[1],
+          ctx,
+          type: 'query',
+        });
+      },
+    );
   };
 
   const fetchQuery = async <
@@ -78,7 +82,7 @@ export function createSSGHelpers<TRouter extends AnyRouter>(
   >(
     ...pathAndInput: [path: TPath, ...args: inferHandlerInput<TProcedure>]
   ): Promise<TOutput> => {
-    return queryClient.fetchQuery(pathAndInput, () => {
+    return queryClient.fetchQuery(getArrayQueryKey(pathAndInput), () => {
       return callProcedure({
         procedures: router._def.procedures,
         path: pathAndInput[0],
@@ -96,15 +100,18 @@ export function createSSGHelpers<TRouter extends AnyRouter>(
   >(
     ...pathAndInput: [path: TPath, ...args: inferHandlerInput<TProcedure>]
   ): Promise<InfiniteData<TOutput>> => {
-    return queryClient.fetchInfiniteQuery(pathAndInput, () => {
-      return callProcedure({
-        procedures: router._def.procedures,
-        path: pathAndInput[0],
-        rawInput: pathAndInput[1],
-        ctx,
-        type: 'query',
-      });
-    });
+    return queryClient.fetchInfiniteQuery(
+      getArrayQueryKey(pathAndInput),
+      () => {
+        return callProcedure({
+          procedures: router._def.procedures,
+          path: pathAndInput[0],
+          rawInput: pathAndInput[1],
+          ctx,
+          type: 'query',
+        });
+      },
+    );
   };
 
   function _dehydrate(
