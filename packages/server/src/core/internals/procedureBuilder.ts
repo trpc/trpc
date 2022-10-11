@@ -1,6 +1,6 @@
 import { TRPCError } from '../../error/TRPCError';
 import { getTRPCErrorFromUnknown } from '../../error/utils';
-import { FlatOverwrite, MaybePromise } from '../../types';
+import { FlatOverwrite, MaybePromise, Simplify } from '../../types';
 import {
   MiddlewareFunction,
   MiddlewareResult,
@@ -101,9 +101,8 @@ export interface ProcedureBuilder<TParams extends ProcedureParams> {
       TParams['_input_in'],
       inferParser<$Parser>['in']
     >;
-    _input_out: OverwriteIfDefined<
-      TParams['_input_out'],
-      inferParser<$Parser>['out']
+    _input_out: Simplify<
+      OverwriteIfDefined<TParams['_input_out'], inferParser<$Parser>['out']>
     >;
     _output_in: TParams['_output_in'];
     _output_out: TParams['_output_out'];
