@@ -20,6 +20,7 @@ jobs:
             next-prisma-starter-websockets,
             next-prisma-todomvc,
             next-minimal-starter,
+            next-big-router,
           ]
 
     name: Update downstream ${{ matrix.path }} package

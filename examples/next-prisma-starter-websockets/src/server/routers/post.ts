@@ -3,7 +3,7 @@
  * This is an example router, you can delete this file and then update `../pages/api/trpc/[trpc].tsx`
  */
 import { Context } from '../context';
-import { router, baseProcedure } from '../trpc';
+import { router, publicProcedure } from '../trpc';
 import { Post } from '@prisma/client';
 import { TRPCError } from '@trpc/server';
 import { observable } from '@trpc/server/observable';
@@ -57,7 +57,7 @@ const getNameOrThrow = (ctx: Context) => {
 };
 
 export const postRouter = router({
-  add: baseProcedure
+  add: publicProcedure
     .input(
       z.object({
         id: z.string().uuid().optional(),
@@ -79,7 +79,7 @@ export const postRouter = router({
       return post;
     }),
 
-  isTyping: baseProcedure
+  isTyping: publicProcedure
     .input(z.object({ typing: z.boolean() }))
     .mutation(({ input, ctx }) => {
       const name = getNameOrThrow(ctx);
@@ -93,7 +93,7 @@ export const postRouter = router({
       ee.emit('isTypingUpdate');
     }),
 
-  infinite: baseProcedure
+  infinite: publicProcedure
     .input(
       z.object({
         cursor: z.date().nullish(),
@@ -125,7 +125,7 @@ export const postRouter = router({
       };
     }),
 
-  onAdd: baseProcedure.subscription(() => {
+  onAdd: publicProcedure.subscription(() => {
     return observable<Post>((emit) => {
       const onAdd = (data: Post) => emit.next(data);
       ee.on('add', onAdd);
@@ -135,7 +135,7 @@ export const postRouter = router({
     });
   }),
 
-  whoIsTyping: baseProcedure.subscription(() => {
+  whoIsTyping: publicProcedure.subscription(() => {
     let prev: string[] | null = null;
     return observable<string[]>((emit) => {
       const onIsTypingUpdate = () => {

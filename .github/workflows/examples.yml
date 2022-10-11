@@ -30,7 +30,6 @@ jobs:
             cloudflare-workers,
             .interop/cloudflare-workers,
             next-prisma-starter,
-            next-prisma-starter-sqlite,
             next-prisma-starter-websockets,
             next-prisma-todomvc,
             standalone-server,
