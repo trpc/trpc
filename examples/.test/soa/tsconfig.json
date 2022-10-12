@@ -5,5 +5,12 @@
     "strict": true,
     "outDir": "dist"
   },
-  "include": ["server", "client"]
+  "include": [
+    //
+    "server-a",
+    "server-b",
+    "server-lib",
+    "server-gateway",
+    "client"
+  ]
 }
