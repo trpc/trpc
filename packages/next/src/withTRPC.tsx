@@ -115,6 +115,7 @@ export function withTRPC<
       });
 
       const { queryClient, trpcClient, ssrState, ssrContext } = prepassProps;
+      console.log('dehydrated', (props.pageProps as any).trpcState);
       const hydratedState = trpc.useDehydratedState(
         trpcClient,
         // eslint-disable-next-line @typescript-eslint/no-explicit-any

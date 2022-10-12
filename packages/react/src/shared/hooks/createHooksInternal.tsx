@@ -612,12 +612,15 @@ export function createHooksInternal<
     client,
     trpcState,
   ) => {
+    console.log('transformer', client.runtime.transformer);
     const transformed: DehydratedState | undefined = useMemo(() => {
       if (!trpcState) {
         return trpcState;
       }
 
-      return client.runtime.transformer.deserialize(trpcState);
+      const transformed = client.runtime.transformer.deserialize(trpcState);
+      console.log('transformed', transformed);
+      return transformed;
     }, [trpcState, client]);
     return transformed;
   };
