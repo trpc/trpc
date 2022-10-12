@@ -3,6 +3,7 @@
  */
 export type { DefaultErrorShape } from './error/formatter';
 export type { mergeRoutersGeneric } from './core/internals/__generated__/mergeRoutersGeneric';
+export type { RootConfig } from './core/internals/config';
 export type {
   ProcedureBuilder,
   BuildProcedure,
