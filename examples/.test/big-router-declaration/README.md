@@ -1,6 +1,6 @@
-This is an example to preview how the DX is when making a big router with tRPC v10.
+This is an example to test that declaration files work with a big router in tRPC.
 
-It has a `postinstall`-script that generates 700 procedures (which you can modify in `scripts/codegen.ts`).
+It has a `postinstall`-script that generates 1400 procedures (which you can modify in `scripts/codegen.ts`).
 
 
 ```bash
