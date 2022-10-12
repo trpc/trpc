@@ -1,4 +1,3 @@
-import { initTRPC } from '@trpc/server';
 import { publicProcedure, router } from '../server-lib';
 
 export const serverA_appRouter = router({
