@@ -14,6 +14,7 @@ jobs:
       matrix:
         dir:
           [
+            .test/ssg,
             express-server,
             .interop/express-server,
             express-minimal,
