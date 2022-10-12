@@ -17,7 +17,7 @@ importers:
       '@changesets/changelog-github': ^0.4.1
       '@changesets/cli': ^2.17.0
       '@manypkg/cli': ^0.19.0
-      '@rollup/plugin-node-resolve': ^14.0.0
+      '@rollup/plugin-node-resolve': ^15.0.0
       '@swc/core': ^1.3.3
       '@trivago/prettier-plugin-sort-imports': ^3.3.0
       '@types/node': ^18.7.20
@@ -46,7 +46,7 @@ importers:
       '@changesets/changelog-github': 0.4.6
       '@changesets/cli': 2.24.4
       '@manypkg/cli': 0.19.1
-      '@rollup/plugin-node-resolve': 14.1.0_rollup@2.79.1
+      '@rollup/plugin-node-resolve': 15.0.0_rollup@2.79.1
       '@swc/core': 1.3.3
       '@trivago/prettier-plugin-sort-imports': 3.3.0_prettier@2.7.1
       '@types/node': 18.7.20
@@ -75,8 +75,8 @@ importers:
   examples/.interop/cloudflare-workers:
     specifiers:
       '@cloudflare/workers-types': ^3.14.1
-      '@trpc/client': ^10.0.0-proxy-beta.17
-      '@trpc/server': ^10.0.0-proxy-beta.17
+      '@trpc/client': ^10.0.0-proxy-beta.18
+      '@trpc/server': ^10.0.0-proxy-beta.18
       '@types/node': ^18.7.20
       node-fetch: ^2.6.1
       start-server-and-test: ^1.12.0
@@ -99,9 +99,9 @@ importers:
 
   examples/.interop/express-server:
     specifiers:
-      '@trpc/client': ^10.0.0-proxy-beta.17
-      '@trpc/react': ^10.0.0-proxy-beta.17
-      '@trpc/server': ^10.0.0-proxy-beta.17
+      '@trpc/client': ^10.0.0-proxy-beta.18
+      '@trpc/react': ^10.0.0-proxy-beta.18
+      '@trpc/server': ^10.0.0-proxy-beta.18
       '@types/express': ^4.17.12
       '@types/node': ^18.7.20
       '@types/node-fetch': ^2.5.11
@@ -137,8 +137,8 @@ importers:
   examples/.interop/fastify-server:
     specifiers:
       '@fastify/websocket': ^5.0.0
-      '@trpc/client': ^10.0.0-proxy-beta.17
-      '@trpc/server': ^10.0.0-proxy-beta.17
+      '@trpc/client': ^10.0.0-proxy-beta.18
+      '@trpc/server': ^10.0.0-proxy-beta.18
       '@types/node': ^18.7.20
       '@types/node-fetch': ^2.5.11
       '@types/ws': ^8.2.0
@@ -175,8 +175,8 @@ importers:
 
   examples/.interop/lambda-api-gateway:
     specifiers:
-      '@trpc/client': ^10.0.0-proxy-beta.17
-      '@trpc/server': ^10.0.0-proxy-beta.17
+      '@trpc/client': ^10.0.0-proxy-beta.18
+      '@trpc/server': ^10.0.0-proxy-beta.18
       '@types/node': ^18.7.20
       node-fetch: ^2.6.1
       serverless: ^3.18.1
@@ -199,10 +199,10 @@ importers:
   examples/.interop/next-minimal-starter:
     specifiers:
       '@tanstack/react-query': 4.6.0
-      '@trpc/client': ^10.0.0-proxy-beta.17
-      '@trpc/next': ^10.0.0-proxy-beta.17
-      '@trpc/react': ^10.0.0-proxy-beta.17
-      '@trpc/server': ^10.0.0-proxy-beta.17
+      '@trpc/client': ^10.0.0-proxy-beta.18
+      '@trpc/next': ^10.0.0-proxy-beta.18
+      '@trpc/react': ^10.0.0-proxy-beta.18
+      '@trpc/server': ^10.0.0-proxy-beta.18
       '@types/node': ^18.7.20
       '@types/react': ^18.0.9
       '@types/react-dom': ^18.0.5
@@ -230,10 +230,10 @@ importers:
   examples/.interop/next-minimal-starter-migration:
     specifiers:
       '@tanstack/react-query': 4.6.0
-      '@trpc/client': ^10.0.0-proxy-beta.17
-      '@trpc/next': ^10.0.0-proxy-beta.17
-      '@trpc/react': ^10.0.0-proxy-beta.17
-      '@trpc/server': ^10.0.0-proxy-beta.17
+      '@trpc/client': ^10.0.0-proxy-beta.18
+      '@trpc/next': ^10.0.0-proxy-beta.18
+      '@trpc/react': ^10.0.0-proxy-beta.18
+      '@trpc/server': ^10.0.0-proxy-beta.18
       '@types/node': ^18.7.20
       '@types/react': ^18.0.9
       '@types/react-dom': ^18.0.5
@@ -264,10 +264,10 @@ importers:
       '@prisma/client': https://registry.npmjs.com/@prisma/client/-/client-4.3.1.tgz?id=%40examples%2Flegacy-next-starter
       '@tanstack/react-query': 4.6.0
       '@tanstack/react-query-devtools': ^4.3.8
-      '@trpc/client': ^10.0.0-proxy-beta.17
-      '@trpc/next': ^10.0.0-proxy-beta.17
-      '@trpc/react': ^10.0.0-proxy-beta.17
-      '@trpc/server': ^10.0.0-proxy-beta.17
+      '@trpc/client': ^10.0.0-proxy-beta.18
+      '@trpc/next': ^10.0.0-proxy-beta.18
+      '@trpc/react': ^10.0.0-proxy-beta.18
+      '@trpc/server': ^10.0.0-proxy-beta.18
       '@types/node': ^18.7.20
       '@types/react': ^18.0.9
       '@typescript-eslint/eslint-plugin': ^5.37.0
@@ -333,10 +333,10 @@ importers:
       '@prisma/client': https://registry.npmjs.com/@prisma/client/-/client-4.3.1.tgz?id=%40examples%2Finterop-next-starter-websockets
       '@tanstack/react-query': 4.6.0
       '@tanstack/react-query-devtools': ^4.3.8
-      '@trpc/client': ^10.0.0-proxy-beta.17
-      '@trpc/next': ^10.0.0-proxy-beta.17
-      '@trpc/react': ^10.0.0-proxy-beta.17
-      '@trpc/server': ^10.0.0-proxy-beta.17
+      '@trpc/client': ^10.0.0-proxy-beta.18
+      '@trpc/next': ^10.0.0-proxy-beta.18
+      '@trpc/react': ^10.0.0-proxy-beta.18
+      '@trpc/server': ^10.0.0-proxy-beta.18
       '@types/node': ^18.7.20
       '@types/node-fetch': ^2.5.11
       '@types/react': ^18.0.9
@@ -416,10 +416,10 @@ importers:
       '@prisma/client': https://registry.npmjs.com/@prisma/client/-/client-4.3.1.tgz?id=%40examples%2Finterop-todo-web
       '@tanstack/react-query': 4.6.0
       '@tanstack/react-query-devtools': ^4.3.8
-      '@trpc/client': ^10.0.0-proxy-beta.17
-      '@trpc/next': ^10.0.0-proxy-beta.17
-      '@trpc/react': ^10.0.0-proxy-beta.17
-      '@trpc/server': ^10.0.0-proxy-beta.17
+      '@trpc/client': ^10.0.0-proxy-beta.18
+      '@trpc/next': ^10.0.0-proxy-beta.18
+      '@trpc/react': ^10.0.0-proxy-beta.18
+      '@trpc/server': ^10.0.0-proxy-beta.18
       '@types/node': ^18.7.20
       '@types/react': ^18.0.9
       clsx: ^1.1.1
@@ -461,9 +461,9 @@ importers:
 
   examples/.interop/standalone-server:
     specifiers:
-      '@trpc/client': ^10.0.0-proxy-beta.17
-      '@trpc/react': ^10.0.0-proxy-beta.17
-      '@trpc/server': ^10.0.0-proxy-beta.17
+      '@trpc/client': ^10.0.0-proxy-beta.18
+      '@trpc/react': ^10.0.0-proxy-beta.18
+      '@trpc/server': ^10.0.0-proxy-beta.18
       '@types/node': ^18.7.20
       '@types/node-fetch': ^2.5.11
       '@types/ws': ^8.2.0
@@ -530,8 +530,8 @@ importers:
   examples/cloudflare-workers:
     specifiers:
       '@cloudflare/workers-types': ^3.14.1
-      '@trpc/client': ^10.0.0-proxy-beta.17
-      '@trpc/server': ^10.0.0-proxy-beta.17
+      '@trpc/client': ^10.0.0-proxy-beta.18
+      '@trpc/server': ^10.0.0-proxy-beta.18
       '@types/node': ^18.7.20
       '@types/node-fetch': ^2.5.11
       node-fetch: ^2.6.1
@@ -556,9 +556,9 @@ importers:
 
   examples/express-minimal:
     specifiers:
-      '@trpc/client': ^10.0.0-proxy-beta.17
-      '@trpc/react': ^10.0.0-proxy-beta.17
-      '@trpc/server': ^10.0.0-proxy-beta.17
+      '@trpc/client': ^10.0.0-proxy-beta.18
+      '@trpc/react': ^10.0.0-proxy-beta.18
+      '@trpc/server': ^10.0.0-proxy-beta.18
       '@types/express': ^4.17.12
       '@types/node': ^18.7.20
       '@types/node-fetch': ^2.5.11
@@ -591,9 +591,9 @@ importers:
 
   examples/express-server:
     specifiers:
-      '@trpc/client': ^10.0.0-proxy-beta.17
-      '@trpc/react': ^10.0.0-proxy-beta.17
-      '@trpc/server': ^10.0.0-proxy-beta.17
+      '@trpc/client': ^10.0.0-proxy-beta.18
+      '@trpc/react': ^10.0.0-proxy-beta.18
+      '@trpc/server': ^10.0.0-proxy-beta.18
       '@types/express': ^4.17.12
       '@types/node': ^18.7.20
       '@types/node-fetch': ^2.5.11
@@ -629,8 +629,8 @@ importers:
   examples/fastify-server:
     specifiers:
       '@fastify/websocket': ^5.0.0
-      '@trpc/client': ^10.0.0-proxy-beta.17
-      '@trpc/server': ^10.0.0-proxy-beta.17
+      '@trpc/client': ^10.0.0-proxy-beta.18
+      '@trpc/server': ^10.0.0-proxy-beta.18
       '@types/node': ^18.7.20
       '@types/node-fetch': ^2.5.11
       '@types/ws': ^8.2.0
@@ -669,8 +669,8 @@ importers:
 
   examples/lambda-api-gateway:
     specifiers:
-      '@trpc/client': ^10.0.0-proxy-beta.17
-      '@trpc/server': ^10.0.0-proxy-beta.17
+      '@trpc/client': ^10.0.0-proxy-beta.18
+      '@trpc/server': ^10.0.0-proxy-beta.18
       '@types/node': ^18.7.20
       node-fetch: ^2.6.1
       serverless: ^3.18.1
@@ -721,9 +721,9 @@ importers:
   examples/minimal-react/client:
     specifiers:
       '@tanstack/react-query': 4.6.0
-      '@trpc/client': ^10.0.0-proxy-beta.17
-      '@trpc/react': ^10.0.0-proxy-beta.17
-      '@trpc/server': ^10.0.0-proxy-beta.17
+      '@trpc/client': ^10.0.0-proxy-beta.18
+      '@trpc/react': ^10.0.0-proxy-beta.18
+      '@trpc/server': ^10.0.0-proxy-beta.18
       '@types/react': ^18.0.9
       '@types/react-dom': ^18.0.5
       '@vitejs/plugin-react': ^2.1.0
@@ -747,7 +747,7 @@ importers:
 
   examples/minimal-react/server:
     specifiers:
-      '@trpc/server': ^10.0.0-proxy-beta.17
+      '@trpc/server': ^10.0.0-proxy-beta.18
       '@types/node': ^18.7.20
       tsx: ^3.9.0
       typescript: ^4.8.3
@@ -762,7 +762,7 @@ importers:
 
   examples/minimal/client:
     specifiers:
-      '@trpc/client': ^10.0.0-proxy-beta.17
+      '@trpc/client': ^10.0.0-proxy-beta.18
       '@types/node': ^18.7.20
     dependencies:
       '@trpc/client': link:../../../packages/client
@@ -771,7 +771,7 @@ importers:
 
   examples/minimal/server:
     specifiers:
-      '@trpc/server': ^10.0.0-proxy-beta.17
+      '@trpc/server': ^10.0.0-proxy-beta.18
       '@types/node': ^18.7.20
     dependencies:
       '@trpc/server': link:../../../packages/server
@@ -781,10 +781,10 @@ importers:
   examples/next-big-router:
     specifiers:
       '@tanstack/react-query': 4.6.0
-      '@trpc/client': ^10.0.0-proxy-beta.17
-      '@trpc/next': ^10.0.0-proxy-beta.17
-      '@trpc/react': ^10.0.0-proxy-beta.17
-      '@trpc/server': ^10.0.0-proxy-beta.17
+      '@trpc/client': ^10.0.0-proxy-beta.18
+      '@trpc/next': ^10.0.0-proxy-beta.18
+      '@trpc/react': ^10.0.0-proxy-beta.18
+      '@trpc/server': ^10.0.0-proxy-beta.18
       '@types/node': ^18.7.20
       '@types/react': ^18.0.9
       '@types/react-dom': ^18.0.5
@@ -814,10 +814,10 @@ importers:
   examples/next-minimal-starter:
     specifiers:
       '@tanstack/react-query': 4.6.0
-      '@trpc/client': ^10.0.0-proxy-beta.17
-      '@trpc/next': ^10.0.0-proxy-beta.17
-      '@trpc/react': ^10.0.0-proxy-beta.17
-      '@trpc/server': ^10.0.0-proxy-beta.17
+      '@trpc/client': ^10.0.0-proxy-beta.18
+      '@trpc/next': ^10.0.0-proxy-beta.18
+      '@trpc/react': ^10.0.0-proxy-beta.18
+      '@trpc/server': ^10.0.0-proxy-beta.18
       '@types/node': ^18.7.20
       '@types/react': ^18.0.9
       '@types/react-dom': ^18.0.5
@@ -847,10 +847,10 @@ importers:
       '@playwright/test': ^1.26.1
       '@prisma/client': https://registry.npmjs.com/@prisma/client/-/client-4.3.1.tgz?id=%40examples%2Ftrpc-next-prisma-starter
       '@tanstack/react-query': 4.6.0
-      '@trpc/client': ^10.0.0-proxy-beta.17
-      '@trpc/next': ^10.0.0-proxy-beta.17
-      '@trpc/react': ^10.0.0-proxy-beta.17
-      '@trpc/server': ^10.0.0-proxy-beta.17
+      '@trpc/client': ^10.0.0-proxy-beta.18
+      '@trpc/next': ^10.0.0-proxy-beta.18
+      '@trpc/react': ^10.0.0-proxy-beta.18
+      '@trpc/server': ^10.0.0-proxy-beta.18
       '@types/node': ^18.7.20
       '@types/react': ^18.0.9
       '@typescript-eslint/eslint-plugin': ^5.37.0
@@ -909,85 +909,16 @@ importers:
       vite: 3.1.3
       vitest: 0.23.4
 
-  examples/next-prisma-starter-sqlite:
-    specifiers:
-      '@playwright/test': ^1.26.1
-      '@prisma/client': https://registry.npmjs.com/@prisma/client/-/client-4.3.1.tgz?id=%40examples%2Fnext-starter-sqlite
-      '@tanstack/react-query': 4.6.0
-      '@tanstack/react-query-devtools': ^4.3.8
-      '@trpc/client': ^10.0.0-proxy-beta.17
-      '@trpc/next': ^10.0.0-proxy-beta.17
-      '@trpc/react': ^10.0.0-proxy-beta.17
-      '@trpc/server': ^10.0.0-proxy-beta.17
-      '@types/node': ^18.7.20
-      '@types/react': ^18.0.9
-      '@typescript-eslint/eslint-plugin': ^5.37.0
-      '@typescript-eslint/parser': ^5.37.0
-      clsx: ^1.1.1
-      eslint: ^7.32.0
-      eslint-config-next: ^12.3.1
-      eslint-config-prettier: ^8.5.0
-      eslint-plugin-prettier: ^4.0.0
-      eslint-plugin-react: ^7.25.1
-      eslint-plugin-react-hooks: ^4.2.0
-      next: ^12.3.1
-      npm-run-all: ^4.1.5
-      prettier: ^2.7.1
-      prisma: ^4.3.1
-      react: ^18.2.0
-      react-dom: ^18.2.0
-      start-server-and-test: ^1.12.0
-      superjson: ^1.7.4
-      tsx: ^3.9.0
-      typescript: ^4.8.3
-      vite: ^3.1.3
-      vitest: ^0.23.4
-      zod: ^3.0.0
-    dependencies:
-      '@prisma/client': '@registry.npmjs.com/@prisma/client/-/client-4.3.1.tgz?id=%2540examples%252Fnext-starter-sqlite_prisma@4.3.1'
-      '@tanstack/react-query': 4.6.0_biqbaboplfbrettd7655fr4n2y
-      '@trpc/client': link:../../packages/client
-      '@trpc/next': link:../../packages/next
-      '@trpc/react': link:../../packages/react
-      '@trpc/server': link:../../packages/server
-      clsx: 1.2.1
-      next: 12.3.1_biqbaboplfbrettd7655fr4n2y
-      react: 18.2.0
-      react-dom: 18.2.0_react@18.2.0
-      superjson: 1.10.0
-      zod: 3.19.1
-    devDependencies:
-      '@playwright/test': 1.26.1
-      '@tanstack/react-query-devtools': 4.6.0_35w334xqtbzboqulr5pz522esm
-      '@types/node': 18.7.20
-      '@types/react': 18.0.21
-      '@typescript-eslint/eslint-plugin': 5.38.0_5dm4t5r4qe2xupwlo3y6omrvba
-      '@typescript-eslint/parser': 5.38.0_dyxdave6dwjbccc5dgiifcmuza
-      eslint: 7.32.0
-      eslint-config-next: 12.3.1_dyxdave6dwjbccc5dgiifcmuza
-      eslint-config-prettier: 8.5.0_eslint@7.32.0
-      eslint-plugin-prettier: 4.2.1_7gsvg5lgwpfdww3i7smtqxamuy
-      eslint-plugin-react: 7.31.8_eslint@7.32.0
-      eslint-plugin-react-hooks: 4.6.0_eslint@7.32.0
-      npm-run-all: 4.1.5
-      prettier: 2.7.1
-      prisma: 4.3.1
-      start-server-and-test: 1.14.0
-      tsx: 3.9.0
-      typescript: 4.8.3
-      vite: 3.1.3
-      vitest: 0.23.4
-
   examples/next-prisma-starter-websockets:
     specifiers:
       '@playwright/test': ^1.26.1
       '@prisma/client': https://registry.npmjs.com/@prisma/client/-/client-4.3.1.tgz?id=%40examples%2Fnext-starter-websockets
       '@tanstack/react-query': 4.6.0
       '@tanstack/react-query-devtools': ^4.3.8
-      '@trpc/client': ^10.0.0-proxy-beta.17
-      '@trpc/next': ^10.0.0-proxy-beta.17
-      '@trpc/react': ^10.0.0-proxy-beta.17
-      '@trpc/server': ^10.0.0-proxy-beta.17
+      '@trpc/client': ^10.0.0-proxy-beta.18
+      '@trpc/next': ^10.0.0-proxy-beta.18
+      '@trpc/react': ^10.0.0-proxy-beta.18
+      '@trpc/server': ^10.0.0-proxy-beta.18
       '@types/node': ^18.7.20
       '@types/node-fetch': ^2.5.11
       '@types/react': ^18.0.9
@@ -1067,10 +998,10 @@ importers:
       '@prisma/client': https://registry.npmjs.com/@prisma/client/-/client-4.3.1.tgz?id=%40examples%2Ftrpc-next-prisma-todomvc
       '@tanstack/react-query': 4.6.0
       '@tanstack/react-query-devtools': ^4.3.8
-      '@trpc/client': ^10.0.0-proxy-beta.17
-      '@trpc/next': ^10.0.0-proxy-beta.17
-      '@trpc/react': ^10.0.0-proxy-beta.17
-      '@trpc/server': ^10.0.0-proxy-beta.17
+      '@trpc/client': ^10.0.0-proxy-beta.18
+      '@trpc/next': ^10.0.0-proxy-beta.18
+      '@trpc/react': ^10.0.0-proxy-beta.18
+      '@trpc/server': ^10.0.0-proxy-beta.18
       '@types/node': ^18.7.20
       '@types/react': ^18.0.9
       clsx: ^1.1.1
@@ -1112,9 +1043,9 @@ importers:
 
   examples/standalone-server:
     specifiers:
-      '@trpc/client': ^10.0.0-proxy-beta.17
-      '@trpc/react': ^10.0.0-proxy-beta.17
-      '@trpc/server': ^10.0.0-proxy-beta.17
+      '@trpc/client': ^10.0.0-proxy-beta.18
+      '@trpc/react': ^10.0.0-proxy-beta.18
+      '@trpc/server': ^10.0.0-proxy-beta.18
       '@types/node': ^18.7.20
       '@types/node-fetch': ^2.5.11
       '@types/ws': ^8.2.0
@@ -1148,7 +1079,7 @@ importers:
   packages/client:
     specifiers:
       '@testing-library/dom': ^8.18.1
-      '@trpc/server': ^10.0.0-proxy-beta.17
+      '@trpc/server': ^10.0.0-proxy-beta.18
       '@types/node': ^18.7.20
     devDependencies:
       '@testing-library/dom': 8.18.1
@@ -1158,9 +1089,9 @@ importers:
   packages/next:
     specifiers:
       '@tanstack/react-query': 4.6.0
-      '@trpc/client': ^10.0.0-proxy-beta.17
-      '@trpc/react': ^10.0.0-proxy-beta.17
-      '@trpc/server': ^10.0.0-proxy-beta.17
+      '@trpc/client': ^10.0.0-proxy-beta.18
+      '@trpc/react': ^10.0.0-proxy-beta.18
+      '@trpc/server': ^10.0.0-proxy-beta.18
       '@types/express': ^4.17.12
       '@types/node': ^18.7.20
       express: ^4.17.1
@@ -1187,8 +1118,8 @@ importers:
   packages/react:
     specifiers:
       '@tanstack/react-query': 4.6.0
-      '@trpc/client': ^10.0.0-proxy-beta.17
-      '@trpc/server': ^10.0.0-proxy-beta.17
+      '@trpc/client': ^10.0.0-proxy-beta.18
+      '@trpc/server': ^10.0.0-proxy-beta.18
       '@types/express': ^4.17.12
       '@types/node': ^18.7.20
       express: ^4.17.1
@@ -1218,10 +1149,10 @@ importers:
       '@testing-library/jest-dom': ^5.16.5
       '@testing-library/react': ^13.4.0
       '@testing-library/user-event': ^14.4.3
-      '@trpc/client': ^10.0.0-proxy-beta.17
-      '@trpc/next': ^10.0.0-proxy-beta.17
-      '@trpc/react': ^10.0.0-proxy-beta.17
-      '@trpc/server': ^10.0.0-proxy-beta.17
+      '@trpc/client': ^10.0.0-proxy-beta.18
+      '@trpc/next': ^10.0.0-proxy-beta.18
+      '@trpc/react': ^10.0.0-proxy-beta.18
+      '@trpc/server': ^10.0.0-proxy-beta.18
       '@types/aws-lambda': ^8.10.97
       '@types/express': ^4.17.12
       '@types/hash-sum': ^1.0.0
@@ -1319,10 +1250,10 @@ importers:
       '@octokit/graphql': ^5.0.0
       '@octokit/graphql-schema': ^10.74.2
       '@tailwindcss/line-clamp': ^0.4.2
-      '@trpc/client': ^10.0.0-proxy-beta.17
-      '@trpc/next': ^10.0.0-proxy-beta.17
-      '@trpc/react': ^10.0.0-proxy-beta.17
-      '@trpc/server': ^10.0.0-proxy-beta.17
+      '@trpc/client': ^10.0.0-proxy-beta.18
+      '@trpc/next': ^10.0.0-proxy-beta.18
+      '@trpc/react': ^10.0.0-proxy-beta.18
+      '@trpc/server': ^10.0.0-proxy-beta.18
       '@tsconfig/docusaurus': ^1.0.6
       '@types/node': ^18.7.20
       '@types/oauth': ^0.9.1
@@ -1333,6 +1264,7 @@ importers:
       cssnano: ^5.1.13
       docusaurus-preset-shiki-twoslash: ^1.1.38
       dotenv: ^16.0.1
+      next-auth: ~4.10.3
       oauth: ^0.10.0
       postcss: ^8.4.14
       prettier: ^2.7.1
@@ -1380,6 +1312,7 @@ importers:
       '@types/oauth': 0.9.1
       autoprefixer: 10.4.12_postcss@8.4.16
       dotenv: 16.0.2
+      next-auth: 4.10.3_biqbaboplfbrettd7655fr4n2y
       oauth: 0.10.0
       postcss: 8.4.16
       prettier: 2.7.1
@@ -5923,7 +5856,6 @@ packages:
 
   /@panva/hkdf/1.0.2:
     resolution: {integrity: sha512-MSAs9t3Go7GUkMhpKC44T58DJ5KGk2vBo+h1cqQeqlMfdGkxaVB78ZWpv9gYi/g2fa4sopag9gJsNvS8XGgWJA==}
-    dev: false
 
   /@parcel/watcher/2.0.4:
     resolution: {integrity: sha512-cTDi+FUDBIUOBKEtj+nhiJ71AZVlkAsQFuGQTun5tV9mwQBQgZvhCzG+URPQc8myeN32yRVZEfVAPCs1RW+Jvg==}
@@ -5955,30 +5887,21 @@ packages:
     resolution: {integrity: sha512-4JF/uMaEDAPdcdZNOrnzE3BvrbGpjgV0FcPT3EVoi6I86fWkloqqxBt+KcK/+fIRR0Pxj66uGR9wVH8U1Y13JA==}
     requiresBuild: true
 
-  /@rollup/plugin-node-resolve/14.1.0_rollup@2.79.1:
-    resolution: {integrity: sha512-5G2niJroNCz/1zqwXtk0t9+twOSDlG00k1Wfd7bkbbXmwg8H8dvgHdIWAun53Ps/rckfvOC7scDBjuGFg5OaWw==}
-    engines: {node: '>= 10.0.0'}
+  /@rollup/plugin-node-resolve/15.0.0_rollup@2.79.1:
+    resolution: {integrity: sha512-iwJbzfTzlzDDQcGmkS7EkCKwe2kSkdBrjX87Fy/KrNjr6UNnLpod0t6X66e502LRe5JJCA4FFqrEscWPnZAkig==}
+    engines: {node: '>=14.0.0'}
     peerDependencies:
-      rollup: ^2.78.0
+      rollup: ^2.78.0||^3.0.0
+    peerDependenciesMeta:
+      rollup:
+        optional: true
     dependencies:
-      '@rollup/pluginutils': 3.1.0_rollup@2.79.1
-      '@types/resolve': 1.17.1
+      '@rollup/pluginutils': 4.2.1
+      '@types/resolve': 1.20.2
       deepmerge: 4.2.2
       is-builtin-module: 3.2.0
       is-module: 1.0.0
       resolve: 1.22.1
-      rollup: 2.79.1
-    dev: false
-
-  /@rollup/pluginutils/3.1.0_rollup@2.79.1:
-    resolution: {integrity: sha512-GksZ6pr6TpIjHm8h9lSQ8pi8BE9VeubNT0OMJ3B5uZJ8pz73NPiqOtCog/x2/QzM1ENChPKxMDhiQuRHsqc+lg==}
-    engines: {node: '>= 8.0.0'}
-    peerDependencies:
-      rollup: ^1.20.0||^2.0.0
-    dependencies:
-      '@types/estree': 0.0.39
-      estree-walker: 1.0.1
-      picomatch: 2.3.1
       rollup: 2.79.1
     dev: false
 
@@ -6726,10 +6649,6 @@ packages:
       '@types/estree': 0.0.51
       '@types/json-schema': 7.0.11
 
-  /@types/estree/0.0.39:
-    resolution: {integrity: sha512-EYNwp3bU+98cpU4lAWYYL7Zz+2gryWH1qbdDTidVd6hkiR6weksdbMadyXKXNPEkQFhXM+hVO9ZygomHXp+AIw==}
-    dev: false
-
   /@types/estree/0.0.51:
     resolution: {integrity: sha512-CuPgU6f3eT/XgKKPqKd/gLZV1Xmvf1a2R5POBOGQa6uv82xpls89HU5zKeVoyR8XzHd1RGNOlQlvUe3CFkjWNQ==}
 
@@ -6931,10 +6850,8 @@ packages:
       '@types/scheduler': 0.16.2
       csstype: 3.1.1
 
-  /@types/resolve/1.17.1:
-    resolution: {integrity: sha512-yy7HuzQhj0dhGpD8RLXSZWEkLsV9ibvxvi6EiJ3bkqLAO1RGo0WbkWQiwpRlSFymTJRz0d3k5LM3kkx8ArDbLw==}
-    dependencies:
-      '@types/node': 18.7.20
+  /@types/resolve/1.20.2:
+    resolution: {integrity: sha512-60BCwRFOZCQhDncwQdxxeOEEkbc5dIMccYLwbxsS4TUNeVECQ/pBJ0j09mrHOl/JJvpRPGwO9SvE4nR2Nb/a4Q==}
     dev: false
 
   /@types/responselike/1.0.0:
@@ -10980,10 +10897,6 @@ packages:
     resolution: {integrity: sha512-SqmZANLWS0mnatqbSfRP5g8OXZC12Fgg1IwNtLsyHDzJizORW4khDfjPqJZsemPWBB2uqykUah5YpQ6epsqC/w==}
     dev: true
 
-  /estree-walker/1.0.1:
-    resolution: {integrity: sha512-1fMXF3YP4pZZVozF8j/ZLfvnR8NSIljt56UhbZ5PeeDmmGHpgpdwQt7ITlGvYaQukCvuBRMLEiKiYC+oeIg4cg==}
-    dev: false
-
   /estree-walker/2.0.2:
     resolution: {integrity: sha512-Rfkk/Mp/DL7JVje3u18FxFujQlTNR2q6QfMSMB7AvCBx91NGj/ba3kCfza0f6dVDbw7YlRf/nDrn7pQrCCyQ/w==}
     dev: false
@@ -13852,7 +13765,6 @@ packages:
 
   /jose/4.9.3:
     resolution: {integrity: sha512-f8E/z+T3Q0kA9txzH2DKvH/ds2uggcw0m3vVPSB9HrSkrQ7mojjifvS7aR8cw+lQl2Fcmx9npwaHpM/M3GD8UQ==}
-    dev: false
 
   /js-string-escape/1.0.1:
     resolution: {integrity: sha512-Smw4xcfIQ5LVjAOuJCvN/zIodzA/BBSsluuoSykP+lUvScIi4U6RJLfwHet5cxFnCswUjISV8oAXaqaJDY3chg==}
@@ -15171,7 +15083,6 @@ packages:
       react: 18.2.0
       react-dom: 18.2.0_react@18.2.0
       uuid: 8.3.2
-    dev: false
 
   /next-tick/1.1.0:
     resolution: {integrity: sha512-CXdUiJembsNjuToQvxayPZF9Vqht7hewsvy2sOWafLvi2awflj9mOC6bHIg50orX8IJvWKY9wYQ/zB2kogPslQ==}
@@ -15574,7 +15485,6 @@ packages:
 
   /oauth/0.9.15:
     resolution: {integrity: sha512-a5ERWK1kh38ExDEfoO6qUHJb32rd7aYmPHuyCu3Fta/cnICvYmgd2uhuKXvPD+PXB+gCEYYEaQdIRAjCOwAKNA==}
-    dev: false
 
   /object-assign/4.1.1:
     resolution: {integrity: sha512-rJgTQnkUnH1sFw8yT6VSU3zD3sWmu6sZhIseY8VX+GRu3P6F7Fu+JNDoXfklElbLJSnc3FUQHVe4cU5hj+BcUg==}
@@ -15668,7 +15578,6 @@ packages:
   /oidc-token-hash/5.0.1:
     resolution: {integrity: sha512-EvoOtz6FIEBzE+9q253HsLCVRiK/0doEJ2HCvvqMQb3dHZrP3WlJKYtJ55CRTw4jmYomzH4wkPuCj/I3ZvpKxQ==}
     engines: {node: ^10.13.0 || >=12.0.0}
-    dev: false
 
   /on-finished/2.4.1:
     resolution: {integrity: sha512-oVlzkg3ENAhCk2zdv7IJwd/QUD4z2RxRwpkcGY8psCVcCYZNq4wYnVWALHM+brtuJjePWiYF/ClmuDr8Ch5+kg==}
@@ -15729,7 +15638,6 @@ packages:
       lru-cache: 6.0.0
       object-hash: 2.2.0
       oidc-token-hash: 5.0.1
-    dev: false
 
   /optionator/0.8.3:
     resolution: {integrity: sha512-+IW9pACdk3XWmmTXG8m3upGUJst5XRGzxMRjXzAuJ1XnIFNvfhjjIuYkDvysnPQ7qzqVzLt78BCruntqRhWQbA==}
@@ -16761,11 +16669,9 @@ packages:
     dependencies:
       preact: 10.11.0
       pretty-format: 3.8.0
-    dev: false
 
   /preact/10.11.0:
     resolution: {integrity: sha512-Fk6+vB2kb6mSJfDgODq0YDhMfl0HNtK5+Uc9QqECO4nlyPAQwCI+BKyWO//idA7ikV7o+0Fm6LQmNuQi1wXI1w==}
-    dev: false
 
   /preferred-pm/3.0.3:
     resolution: {integrity: sha512-+wZgbxNES/KlJs9q40F/1sfOd/j7f1O9JaHcW5Dsn3aUUOZg3L2bjpVUcKV2jvtElYfoTuQiNeMfQJ4kwUAhCQ==}
@@ -16829,7 +16735,6 @@ packages:
 
   /pretty-format/3.8.0:
     resolution: {integrity: sha512-WuxUnVtlWL1OfZFQFuqvnvs6MiAGk9UNsBostyBOB0Is9wb5uRESevA6rnl/rkksXaGX3GzZhPup5d6Vp1nFew==}
-    dev: false
 
   /pretty-time/1.1.0:
     resolution: {integrity: sha512-28iF6xPQrP8Oa6uxE6a1biz+lWeTOAPKggvjB8HAs6nVMKZwf5bG++632Dx614hIWgUPkgivRfG+a8uAXGTIbA==}
@@ -20785,23 +20690,6 @@ packages:
   '@registry.npmjs.com/@prisma/client/-/client-4.3.1.tgz?id=%2540examples%252Flegacy-next-starter_prisma@4.3.1':
     resolution: {tarball: https://registry.npmjs.com/@prisma/client/-/client-4.3.1.tgz?id=%40examples%2Flegacy-next-starter}
     id: '@registry.npmjs.com/@prisma/client/-/client-4.3.1.tgz?id=%2540examples%252Flegacy-next-starter'
-    name: '@prisma/client'
-    version: 4.3.1
-    engines: {node: '>=14.17'}
-    requiresBuild: true
-    peerDependencies:
-      prisma: '*'
-    peerDependenciesMeta:
-      prisma:
-        optional: true
-    dependencies:
-      '@prisma/engines-version': 4.3.0-32.c875e43600dfe042452e0b868f7a48b817b9640b
-      prisma: 4.3.1
-    dev: false
-
-  '@registry.npmjs.com/@prisma/client/-/client-4.3.1.tgz?id=%2540examples%252Fnext-starter-sqlite_prisma@4.3.1':
-    resolution: {tarball: https://registry.npmjs.com/@prisma/client/-/client-4.3.1.tgz?id=%40examples%2Fnext-starter-sqlite}
-    id: '@registry.npmjs.com/@prisma/client/-/client-4.3.1.tgz?id=%2540examples%252Fnext-starter-sqlite'
     name: '@prisma/client'
     version: 4.3.1
     engines: {node: '>=14.17'}

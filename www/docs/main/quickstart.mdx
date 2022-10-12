@@ -16,7 +16,7 @@ We highly encourage you to check out [the Example Apps](example-apps.md) to get 
 <!-- Reusable snippet for a full backend -->
 
 ```twoslash include server
-// @module: esnext
+// @target: esnext
 
 // @filename: server.ts
 import { initTRPC } from '@trpc/server';
@@ -197,7 +197,7 @@ userCreate(payload: {name: string}) => {id: string; name: string};
 ### Setup the tRPC Client
 
 ```ts twoslash title="client.ts"
-// @module: esnext
+// @target: esnext
 // @include: server
 // ---cut---
 // @filename: client.ts
@@ -216,7 +216,7 @@ const trpc = createTRPCProxyClient<AppRouter>({
 ### Querying & mutating
 
 ```ts twoslash title="client.ts"
-// @module: esnext
+// @target: esnext
 // @include: server
 // @filename: client.ts
 import { createTRPCProxyClient, httpBatchLink } from '@trpc/client';
@@ -243,7 +243,7 @@ const createdUser = await trpc.userCreate.mutate({ name: 'sachinraja' });
 ### Full autocompletion
 
 ```ts twoslash title="client.ts"
-// @module: esnext
+// @target: esnext
 // @include: server
 // @filename: client.ts
 import { createTRPCProxyClient, httpBatchLink } from '@trpc/client';

@@ -1,9 +1,9 @@
 import { apiRouter } from './routers/api';
 import { postsRouter } from './routers/posts';
 import { subRouter } from './routers/sub';
-import { t } from './trpc';
+import { router } from './trpc';
 
-export const appRouter = t.router({
+export const appRouter = router({
   posts: postsRouter,
   sub: subRouter,
   api: apiRouter,

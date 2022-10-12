@@ -1,13 +1,19 @@
 import Link from '@docusaurus/Link';
 import React from 'react';
 import { FiArrowRightCircle } from 'react-icons/fi';
-import { sponsors } from './sponsors/script.output';
+import { sponsors } from './script.output';
+import { getMultiplier } from './utils';
 
 const topSponsors = sponsors
-  .filter((sponsor) => {
-    return sponsor.monthlyPriceInDollars >= 100;
+  .map((sponsor) => {
+    return {
+      ...sponsor,
+      value: getMultiplier(sponsor.createdAt) * sponsor.monthlyPriceInDollars,
+    };
   })
-  .sort((a, b) => b.monthlyPriceInDollars - a.monthlyPriceInDollars);
+  .sort((a, b) => b.value - a.value)
+  .filter((a) => a.monthlyPriceInDollars >= 100)
+  .slice(0, 5);
 
 export const TopSponsors = () => {
   return (

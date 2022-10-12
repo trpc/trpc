@@ -2,7 +2,7 @@
  *
  * This is an example router, you can delete this file and then update `../pages/api/trpc/[trpc].tsx`
  */
-import { t } from '../trpc';
+import { router, publicProcedure } from '../trpc';
 import { Prisma } from '@prisma/client';
 import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
@@ -21,8 +21,8 @@ const defaultPostSelect = Prisma.validator<Prisma.PostSelect>()({
   updatedAt: true,
 });
 
-export const postRouter = t.router({
-  list: t.procedure
+export const postRouter = router({
+  list: publicProcedure
     .input(
       z.object({
         limit: z.number().min(1).max(100).nullish(),
@@ -67,7 +67,7 @@ export const postRouter = t.router({
         nextCursor,
       };
     }),
-  byId: t.procedure
+  byId: publicProcedure
     .input(
       z.object({
         id: z.string(),
@@ -87,7 +87,7 @@ export const postRouter = t.router({
       }
       return post;
     }),
-  add: t.procedure
+  add: publicProcedure
     .input(
       z.object({
         id: z.string().uuid().optional(),

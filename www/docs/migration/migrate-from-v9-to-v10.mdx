@@ -36,11 +36,11 @@ export type AppRouter = typeof appRouter;
 ```
 
 :::info Is v10 ready for production?
-tRPC v10 is **ready for production** and can safely be used today.
 
-v10 is still a beta and will be rapidly changing as we continue to work through community feedback.
+- tRPC v10 is **ready for production** and can safely be used today.
+- v10 is still a beta and might be changing as we continue to work through community feedback.
+- This doc is written for migrating from v9 to v10. If you start using v10 now, you will need to find your own path for migrating from v10-beta to v10.
 
-v10-beta will be different from v10 itself. This doc is written for migrating from v9 to v10. You will need to find your own path for migrating from v10-beta to v10.
 :::
 
 Welcome to tRPC v10! We're excited to bring you a new major version to continue the journey towards perfect end-to-end type safety with excellent DX.
@@ -55,11 +55,53 @@ tRPC v10 features a compatibility layer for users coming from v9. `.interop()` a
   <summary>Initializing your server</summary>
 
 ```ts title='/src/server/trpc.ts'
+/**
+ * This is your entry point to setup the root configuration for tRPC on the server.
+ * - `initTRPC` should only be used once per app.
+ * - We export only the functionality that we use so we can enforce which base procedures should be used
+ *
+ * Learn how to create protected base procedures and other things below:
+ * @see https://trpc.io/docs/v10/router
+ * @see https://trpc.io/docs/v10/procedures
+ */
 import { initTRPC } from '@trpc/server';
+import superjson from 'superjson';
+import { Context } from './context';
 
-// You may rename the `t` variable to whatever you prefer.
-// Just make sure you initialize your root variable once per application.
-export const t = initTRPC.create();
+const t = initTRPC.context<Context>().create({
+  /**
+   * @see https://trpc.io/docs/v10/data-transformers
+   */
+  transformer: superjson,
+  /**
+   * @see https://trpc.io/docs/v10/error-formatting
+   */
+  errorFormatter({ shape }) {
+    return shape;
+  },
+});
+
+/**
+ * Create a router
+ * @see https://trpc.io/docs/v10/router
+ */
+export const router = t.router;
+
+/**
+ * Create an unprotected procedure
+ * @see https://trpc.io/docs/v10/procedures
+ **/
+export const publicProcedure = t.procedure;
+
+/**
+ * @see https://trpc.io/docs/v10/middlewares
+ */
+export const middleware = t.middleware;
+
+/**
+ * @see https://trpc.io/docs/v10/merging-routers
+ */
+export const mergeRouters = t.mergeRouters;
 ```
 
 </details>
@@ -78,8 +120,8 @@ const appRouter = trpc.router()
   });
 
 // v10:
-const appRouter = t.router({
-  greeting: t.procedure
+const appRouter = router({
+  greeting: publicProcedure
     .input(z.string())
     .query(({ input }) => `hello ${input}!`),
 });
@@ -176,7 +218,7 @@ const appRouter = trpc
   });
 
 // v10
-const isAuthed = t.middleware(({ next, ctx }) => {
+export const isAuthed = t.middleware(({ next, ctx }) => {
   if (!ctx.user) {
     throw new TRPCError({ code: 'UNAUTHORIZED' });
   }
@@ -260,7 +302,8 @@ We recommend two strategies to start **(and finish!)** upgrading your codebase t
 
 - If you use the codemod, you should still do step 1 to 3 below to make sure that works for you ahead of doing the full migration
 - Please note that this codemod isn't perfect - but will do a lot of the heavy lifting for you.
-  :::
+
+:::
 
 ### Using `.interop()`
 
@@ -422,7 +465,7 @@ you may need to take note!
 :::
 
 To allow us to make room for some more advanced features like [invalidation across
-whole routers](invalidateQueries) we needed to change how we use tanstack query keys under the
+whole routers](query-invalidation) we needed to change how we use tanstack query keys under the
 hood.
 
 We have changed the query keys we use from using a `.` joined string for the
@@ -431,9 +474,9 @@ procedure path to a sub array of elements.
 given the simple router below:
 
 ```tsx
-export const appRouter = t.router({
-  user: t.router({
-    byId: t.procedure
+export const appRouter = router({
+  user: router({
+    byId: publicProcedure
       .input(z.object({ id: z.number() }))
       .query(({ input }) => ({ user: { id: input.id } })),
   }),

@@ -5,8 +5,11 @@ export type AppRouter = typeof appRouter;
 
 const t = initTRPC.create();
 
-const appRouter = t.router({
-  greet: t.procedure
+const publicProcedure = t.procedure;
+const router = t.router;
+
+const appRouter = router({
+  greet: publicProcedure
     .input((val: unknown) => {
       if (typeof val === 'string') return val;
       throw new Error(`Invalid input: ${typeof val}`);
