@@ -22,6 +22,7 @@
     "@types/node": "^18.7.20",
     "@types/react": "^18.0.9",
     "@types/react-dom": "^18.0.5",
+    "node-fetch": "^2.6.1",
     "tsx": "^3.9.0",
     "typescript": "^4.8.3"
   }
