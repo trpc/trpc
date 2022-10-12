@@ -233,10 +233,10 @@ export const isAuthed = t.middleware(({ next, ctx }) => {
 });
 
 // Reusable:
-const authedProcedure = t.procedure.use(isAuthed);
+const protectedProcedure = t.procedure.use(isAuthed);
 
 const appRouter = t.router({
-  greeting: authedProcedure.query(({ ctx }) => {
+  greeting: protectedProcedure.query(({ ctx }) => {
     return `Hello ${ctx.user.name}!`
   }),
 });
@@ -330,10 +330,11 @@ There are [a few features that are not supported by `.interop()`](#limitations-o
 Now, let's initialize a v10 router so we can start using v10 for any new routes we will write.
 
 ```ts title='src/server/trpc.ts'
+import { initTRPC } from '@trpc/server';
 import superjson from 'superjson';
 import { Context } from './context';
 
-export const t = initTRPC.context<Context>().create({
+const t = initTRPC.context<Context>().create({
   // Optional:
   transformer: superjson,
   // Optional:
@@ -346,6 +347,14 @@ export const t = initTRPC.context<Context>().create({
     };
   },
 });
+
+/**
+ * We recommend only exporting the functionality that we
+ * use so we can enforce which base procedures should be used
+ **/
+export const router = t.router;
+export const mergeRouters = t.router;
+export const publicProcedure = t.procedure;
 ```
 
 ### 3. Create a new `appRouter`
@@ -356,12 +365,14 @@ export const t = initTRPC.context<Context>().create({
 ```ts twoslash title="src/server/routers/_app.ts"
 // @filename: trpc.ts
 import { initTRPC } from '@trpc/server';
-export const t = initTRPC.create();
-
+const t = initTRPC.create();
+export const router = t.router;
+export const mergeRouters = t.mergeRouters;
+export const publicProcedure = t.procedure;
 // @filename: _app.ts
 // ---cut---
 import * as trpc from '@trpc/server';
-import { t } from './trpc';
+import { mergeRouters, publicProcedure, router } from './trpc';
 
 // Renamed from `appRouter`
 const legacyRouter = trpc
@@ -369,12 +380,12 @@ const legacyRouter = trpc
   /* ... */
   .interop();
 
-const mainRouter = t.router({
-  greeting: t.procedure.query(() => 'hello from tRPC v10!'),
+const mainRouter = router({
+  greeting: publicProcedure.query(() => 'hello from tRPC v10!'),
 });
 
 // Merge v9 router with v10 router
-export const appRouter = t.mergeRouters(legacyRouter, mainRouter);
+export const appRouter = mergeRouters(legacyRouter, mainRouter);
 
 export type AppRouter = typeof appRouter;
 ```

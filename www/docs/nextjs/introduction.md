@@ -110,20 +110,26 @@ const t = initTRPC.create();
 export const router = t.router;
 export const publicProcedure = t.procedure;
 
-// If you have authentication you can create protected procedures
-// NOTE: Below is just an example
-export const authedProcedure = t.procedure.use(({ ctx, next}) => {
-  if (!ctx.session) {
-    throw new TRPCError({ code: 'UNAUTHORIZED' });
+/**
+ * Reusable middleware that checks if users are authenticated.
+ * @note Example only, yours may vary depending on how your auth is setup
+ **/
+const isAuthed = t.middleware(({ next, ctx }) => {
+  if (!ctx.session?.user?.email) {
+    throw new TRPCError({
+      code: 'UNAUTHORIZED',
+    });
   }
-  // Express-compliant `next` method
   return next({
     ctx: {
-      // explicitly passing `session` infers the value as non-nullable to the next middleware or resolve function
+      // Infers the `session` as non-nullable
       session: ctx.session,
     },
   });
 });
+
+// Protected procedures for logged in users only
+export const protectedProcedure = t.procedure.use(isAuthed);
 ```
 
 <br/>
