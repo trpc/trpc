@@ -5,7 +5,15 @@ sidebar_label: Split Link
 slug: /links/splitLink
 ---
 
-`splitLink` is a link that allows you to branch your link chain's execution depending on a given condition.
+import SplitLinkDiagram from '../../../static/img/split-link-diagram.svg';
+
+`splitLink` is a link that allows you to branch your link chain's execution depending on a given condition. Both the `true` and `false` branch are required. You can provide just one link, or multiple links per branch via an array.
+
+It's important to note that when you provide links for `splitLink` to execute, `splitLink` will create an entirely new link chain based on the links you passed. Therefore, you need to use a [**terminating link**](./index.md#the-terminating-link) if you only provide one link, or add the terminating link at the end of the array if you provide multiple links to be executed on a branch. Here's a visual representation of how `splitLink` works:
+
+<div align="center" style={{ marginBottom: '12px' }}>
+  <SplitLinkDiagram style={{ width: '100%', height: '100%' }} />
+</div>
 
 ## Usage Example
 
