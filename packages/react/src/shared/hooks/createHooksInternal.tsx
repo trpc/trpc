@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 import {
+  DefinedUseQueryResult,
   DehydratedState,
   UseInfiniteQueryOptions,
   UseInfiniteQueryResult,
@@ -149,6 +150,15 @@ interface TRPCHookResult {
     path: string;
   };
 }
+
+/**
+ * @internal
+ */
+export type DefinedUseTRPCQueryResult<TData, TError> = DefinedUseQueryResult<
+  TData,
+  TError
+> &
+  TRPCHookResult;
 
 /**
  * @internal

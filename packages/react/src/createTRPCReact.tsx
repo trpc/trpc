@@ -20,6 +20,7 @@ import {
 import {
   CreateClient,
   CreateReactQueryHooks,
+  DefinedUseTRPCQueryResult,
   TRPCProvider,
   UseDehydratedState,
   UseTRPCInfiniteQueryOptions,
@@ -41,19 +42,42 @@ export type DecorateProcedure<
   TPath extends string,
 > = TProcedure extends AnyQueryProcedure
   ? {
-      useQuery: <
-        TQueryFnData = inferProcedureOutput<TProcedure>,
-        TData = inferProcedureOutput<TProcedure>,
-      >(
-        input: inferProcedureInput<TProcedure>,
-        opts?: UseTRPCQueryOptions<
-          TPath,
-          inferProcedureInput<TProcedure>,
-          TQueryFnData,
-          TData,
-          TRPCClientErrorLike<TProcedure>
-        >,
-      ) => UseTRPCQueryResult<TData, TRPCClientErrorLike<TProcedure>>;
+      useQuery:
+        | (<
+            TQueryFnData = inferProcedureOutput<TProcedure>,
+            TData = inferProcedureOutput<TProcedure>,
+          >(
+            input: inferProcedureInput<TProcedure>,
+            opts?: Omit<
+              UseTRPCQueryOptions<
+                TPath,
+                inferProcedureInput<TProcedure>,
+                TQueryFnData,
+                TData,
+                TRPCClientErrorLike<TProcedure>
+              >,
+              'initialData'
+            > & { initialData?: () => undefined },
+          ) => UseTRPCQueryResult<TData, TRPCClientErrorLike<TProcedure>>)
+        | (<
+            TQueryFnData = inferProcedureOutput<TProcedure>,
+            TData = inferProcedureOutput<TProcedure>,
+          >(
+            input: inferProcedureInput<TProcedure>,
+            opts?: Omit<
+              UseTRPCQueryOptions<
+                TPath,
+                inferProcedureInput<TProcedure>,
+                TQueryFnData,
+                TData,
+                TRPCClientErrorLike<TProcedure>
+              >,
+              'initialData'
+            > & { initialData: TQueryFnData | (() => TQueryFnData) },
+          ) => DefinedUseTRPCQueryResult<
+            TData,
+            TRPCClientErrorLike<TProcedure>
+          >);
     } & (inferProcedureInput<TProcedure> extends { cursor?: any }
       ? {
           useInfiniteQuery: <
