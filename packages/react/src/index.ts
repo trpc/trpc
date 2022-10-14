@@ -1,4 +1,4 @@
 export * from '@trpc/client';
 
-export { createTRPCReact } from './createTRPCReact';
+export { createTRPCReact, type CreateTRPCReact } from './createTRPCReact';
 export { createReactQueryHooks } from './interop';
