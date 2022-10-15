@@ -588,3 +588,12 @@ const MyComponent = () => {
 ### Migrate custom error formatters
 
 You will need to move the contents of your `formatError()` into your root `t` router. See the [Error Formatting docs](error-formatting) for more.
+
+### Renaming of @trpc/react to @trpc/react-query
+
+The `@trpc/react` package has been renamed to `@trpc/react-query` to better reflect the fact that it's a thin wrapper around `react-query` and to better suite the upcoming RSC as that it won't be as needed as before. If you're using `@trpc/react` you'll need to update your imports:
+
+```diff
+- import { createReactQueryHooks } from '@trpc/react';
++ import { createReactQueryHooks } from '@trpc/react-query';
+```
