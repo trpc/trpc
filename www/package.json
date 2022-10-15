@@ -27,7 +27,7 @@
     "@tailwindcss/line-clamp": "^0.4.2",
     "@trpc/client": "^10.0.0-proxy-beta.20",
     "@trpc/next": "^10.0.0-proxy-beta.20",
-    "@trpc/react": "^10.0.0-proxy-beta.20",
+    "@trpc/react-query": "^10.0.0-proxy-beta.20",
     "@trpc/server": "^10.0.0-proxy-beta.20",
     "@visx/hierarchy": "^2.10.0",
     "@visx/responsive": "^2.10.0",

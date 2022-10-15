@@ -14,7 +14,7 @@ Static site generation requires executing tRPC queries inside `getStaticProps` o
 ## Fetch data in `getStaticProps`
 
 ```tsx title='pages/posts/[id].tsx'
-import { createSSGHelpers } from '@trpc/react/ssg';
+import { createSSGHelpers } from '@trpc/react-query/ssg';
 import {
   GetStaticPaths,
   GetStaticPropsContext,

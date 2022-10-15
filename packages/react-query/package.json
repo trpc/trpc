@@ -1,5 +1,5 @@
 {
-  "name": "@trpc/react",
+  "name": "@trpc/react-query",
   "version": "10.0.0-proxy-beta.20",
   "description": "tRPC React lib",
   "author": "KATT",
@@ -45,7 +45,7 @@
       "react-hooks/exhaustive-deps": "error",
       "no-restricted-imports": [
         "error",
-        "@trpc/react"
+        "@trpc/react-query"
       ]
     }
   },

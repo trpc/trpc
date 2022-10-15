@@ -13,7 +13,7 @@
   },
   "dependencies": {
     "@trpc/client": "^10.0.0-proxy-beta.20",
-    "@trpc/react": "^10.0.0-proxy-beta.20",
+    "@trpc/react-query": "^10.0.0-proxy-beta.20",
     "@trpc/server": "^10.0.0-proxy-beta.20",
     "@types/node-fetch": "^2.5.11",
     "abort-controller": "^3.0.0",

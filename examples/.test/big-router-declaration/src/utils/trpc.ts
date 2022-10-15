@@ -1,7 +1,6 @@
 import { httpBatchLink } from '@trpc/client';
 import { createTRPCNext } from '@trpc/next';
 // https://github.com/microsoft/TypeScript/issues/42873
-import TRPCReact from '@trpc/react';
 import type { AppRouter } from '~/server/routers/_app';
 
 function getBaseUrl() {

@@ -4,7 +4,7 @@ import {
   createHooksInternal,
   createReactProxyDecoration,
   createReactQueryUtilsProxy,
-} from '@trpc/react/shared';
+} from '@trpc/react-query/shared';
 import { AnyRouter } from '@trpc/server';
 import { createFlatProxy } from '@trpc/server/shared';
 import { NextPageContext } from 'next/types';

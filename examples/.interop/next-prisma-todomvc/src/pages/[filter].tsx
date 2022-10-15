@@ -1,6 +1,6 @@
 import { useIsMutating } from '@tanstack/react-query';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
-import { createSSGHelpers } from '@trpc/react/ssg';
+import { createSSGHelpers } from '@trpc/react-query/ssg';
 import clsx from 'clsx';
 import {
   GetStaticPaths,
