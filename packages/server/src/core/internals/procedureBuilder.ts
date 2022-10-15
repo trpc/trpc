@@ -1,9 +1,6 @@
-import { TRPCError } from '../../error/TRPCError';
-import { getTRPCErrorFromUnknown } from '../../error/utils';
 import { FlatOverwrite, MaybePromise, Simplify } from '../../types';
 import {
   MiddlewareFunction,
-  MiddlewareResult,
   createInputMiddleware,
   createOutputMiddleware,
 } from '../middleware';
@@ -15,6 +12,7 @@ import {
   AnySubscriptionProcedure,
   Procedure,
   ProcedureParams,
+  callProcedureInner,
 } from '../procedure';
 import { ProcedureType } from '../types';
 import { AnyRootConfig } from './config';
@@ -295,83 +293,25 @@ export interface ProcedureCallOptions {
   type: ProcedureType;
 }
 
-const codeblock = `
-If you want to call this function on the server, you do the following:
-This is a client-only function.
-
-const caller = appRouter.createCaller({
-  /* ... your context */
-});
-
-const result = await caller.call('myProcedure', input);
-`.trim();
-
 function createProcedureCaller(_def: AnyProcedureBuilderDef): AnyProcedure {
-  const procedure = async function resolve(opts: ProcedureCallOptions) {
-    // is direct server-side call
-    if (!opts || !('rawInput' in opts)) {
-      throw new Error(codeblock);
-    }
+  let type: ProcedureType = 'query';
+  if (_def.mutation) {
+    type = 'mutation';
+  } else if (_def.subscription) {
+    type = 'subscription';
+  }
 
-    // run the middlewares recursively with the resolver as the last one
-    const callRecursive = async (
-      callOpts: { ctx: any; index: number; input?: unknown } = {
-        index: 0,
-        ctx: opts.ctx,
-      },
-    ): Promise<MiddlewareResult<any>> => {
-      try {
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        const middleware = _def.middlewares[callOpts.index]!;
-        const result = await middleware({
-          ctx: callOpts.ctx,
-          type: opts.type,
-          path: opts.path,
-          rawInput: opts.rawInput,
-          meta: _def.meta,
-          input: callOpts.input,
-          next: async (nextOpts?: { ctx: any; input?: any }) => {
-            return await callRecursive({
-              index: callOpts.index + 1,
-              ctx:
-                nextOpts && 'ctx' in nextOpts
-                  ? { ...callOpts.ctx, ...nextOpts.ctx }
-                  : callOpts.ctx,
-              input:
-                nextOpts && 'input' in nextOpts
-                  ? nextOpts.input
-                  : callOpts.input,
-            });
-          },
-        });
-        return result;
-      } catch (cause) {
-        return {
-          ok: false,
-          error: getTRPCErrorFromUnknown(cause),
-          marker: middlewareMarker,
-        };
-      }
-    };
+  const procedure = ((input: any, ctx: any) => {
+    return callProcedureInner(procedure, {
+      ctx,
+      rawInput: input,
+      path: '',
+      type,
+    });
+  }) as AnyProcedure;
 
-    // there's always at least one "next" since we wrap this.resolver in a middleware
-    const result = await callRecursive();
-
-    if (!result) {
-      throw new TRPCError({
-        code: 'INTERNAL_SERVER_ERROR',
-        message:
-          'No result from middlewares - did you forget to `return next()`?',
-      });
-    }
-    if (!result.ok) {
-      // re-throw original error
-      throw result.error;
-    }
-    return result.data;
-  };
   procedure._def = _def;
   procedure.meta = _def.meta;
 
-  return procedure as AnyProcedure;
+  return procedure;
 }

@@ -4,7 +4,7 @@ import { AnyRootConfig } from './internals/config';
 import { ParseFn } from './internals/getParseFn';
 import { ProcedureBuilderMiddleware } from './internals/procedureBuilder';
 import { MiddlewareMarker } from './internals/utils';
-import { ProcedureParams } from './procedure';
+import { AnyProcedure, ProcedureParams } from './procedure';
 import { ProcedureType } from './types';
 
 /**
@@ -53,10 +53,17 @@ export type MiddlewareFunction<
 > = {
   (opts: {
     ctx: TParams['_ctx_out'];
+    /**
+     * @deprecated - use procedure.type instead
+     */
     type: ProcedureType;
     path: string;
+    procedure: AnyProcedure;
     input: TParams['_input_out'];
     rawInput: unknown;
+    /**
+     * @deprecated - use procedure._def.meta instead
+     */
     meta: TParams['_meta'] | undefined;
     next: {
       (): Promise<MiddlewareResult<TParams>>;

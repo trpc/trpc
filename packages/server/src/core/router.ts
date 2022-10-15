@@ -6,13 +6,13 @@ import { createRecursiveProxy } from '../shared';
 import { defaultTransformer } from '../transformer';
 import { AnyRootConfig } from './internals/config';
 import { omitPrototype } from './internals/omitPrototype';
-import { ProcedureCallOptions } from './internals/procedureBuilder';
 import {
   AnyMutationProcedure,
   AnyProcedure,
   AnyQueryProcedure,
   AnySubscriptionProcedure,
   ProcedureArgs,
+  callProcedure,
 } from './procedure';
 import {
   ProcedureType,
@@ -51,7 +51,7 @@ export interface RouterDef<
 > {
   _config: TConfig;
   router: true;
-  procedures: TRecord;
+  procedures: ProcedureRecord;
   record: TRecord;
   /**
    * V9 queries
@@ -258,19 +258,7 @@ export function createRouterFactory<TConfig extends AnyRootConfig>(
           const fullPath = path.join('.');
           const procedure = _def.procedures[fullPath] as AnyProcedure;
 
-          let type: ProcedureType = 'query';
-          if (procedure._def.mutation) {
-            type = 'mutation';
-          } else if (procedure._def.subscription) {
-            type = 'subscription';
-          }
-
-          return procedure({
-            path: fullPath,
-            rawInput: args[0],
-            ctx,
-            type,
-          });
+          return procedure(args[0], ctx);
         });
 
         return proxy as ReturnType<RouterCaller<any>>;
@@ -297,24 +285,4 @@ export function createRouterFactory<TConfig extends AnyRootConfig>(
     };
     return router as any;
   };
-}
-
-/**
- * @internal
- */
-export function callProcedure(
-  opts: ProcedureCallOptions & { procedures: ProcedureRouterRecord },
-) {
-  const { type, path } = opts;
-
-  if (!(path in opts.procedures) || !opts.procedures[path]?._def[type]) {
-    throw new TRPCError({
-      code: 'NOT_FOUND',
-      message: `No "${type}"-procedure on path "${path}"`,
-    });
-  }
-
-  const procedure = opts.procedures[path] as AnyProcedure;
-
-  return procedure(opts);
 }

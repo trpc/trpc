@@ -31,7 +31,7 @@ const isAdmin = t.middleware(async ({ ctx, next }) => {
   return next({
     ctx: {
       user: ctx.user,
-    }
+    },
   });
 });
 
@@ -114,8 +114,6 @@ export const appRouter = t.router({
 });
 ```
 
-
-
 <!-- Commented out this section as I don't think it's needed anymore now that we can have multiple input parsers -->
 <!--
 
@@ -143,7 +141,7 @@ const isUserIdChecked = t.middleware(async ({ next, rawInput, ctx }) => {
   const { userId } = result.data;
   // Check user id auth
   return next({
-    ctx: { 
+    ctx: {
       userId,
     },
   });
