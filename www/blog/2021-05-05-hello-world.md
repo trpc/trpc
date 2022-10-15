@@ -15,7 +15,7 @@ In short - tRPC gives you end-to-end type safety from your (node-)server to your
 **This is how it can look like when doing a tRPC endpoint & client call:**
 ![Alt Text](https://assets.trpc.io/www/v9/trpcgif.gif)
 
-I have made a library for React (`@trpc/react-query`) that sits on top of the great react-query, but the client library (`@trpc/client`) works without React (if you want to build a specific Svelte/Vue/Angular/[..] lib, please reach out!)
+I have made a library for React (`@trpc/react`) that sits on top of the great react-query, but the client library (`@trpc/client`) works without React (if you want to build a specific Svelte/Vue/Angular/[..] lib, please reach out!)
 
 There's no code generation involved & you can pretty easily add it to your existing Next.js/CRA/Express project.
 
