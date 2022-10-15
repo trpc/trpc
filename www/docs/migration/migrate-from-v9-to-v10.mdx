@@ -591,7 +591,7 @@ You will need to move the contents of your `formatError()` into your root `t` ro
 
 ### Renaming of @trpc/react to @trpc/react-query
 
-The `@trpc/react` package has been renamed to `@trpc/react-query` to better reflect the fact that it's a thin wrapper around `react-query` and to better suite the upcoming RSC as that it won't be as needed as before. If you're using `@trpc/react` you'll need to update your imports:
+The `@trpc/react` package has been renamed to `@trpc/react-query` to better reflect the fact that it's a thin wrapper around `react-query` and to better suit the upcoming RSC as that it won't be as needed as before. If you're using `@trpc/react` you'll need to remove it and install `@trpc/react-query` instead and also update your imports:
 
 ```diff
 - import { createReactQueryHooks } from '@trpc/react';
