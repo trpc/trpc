@@ -100,7 +100,7 @@ importers:
   examples/.interop/express-server:
     specifiers:
       '@trpc/client': ^10.0.0-proxy-beta.20
-      '@trpc/react': ^10.0.0-proxy-beta.20
+      '@trpc/react-query': ^10.0.0-proxy-beta.20
       '@trpc/server': ^10.0.0-proxy-beta.20
       '@types/express': ^4.17.12
       '@types/node': ^18.7.20
@@ -117,7 +117,7 @@ importers:
       zod: ^3.0.0
     dependencies:
       '@trpc/client': link:../../../packages/client
-      '@trpc/react': link:../../../packages/react
+      '@trpc/react-query': link:../../../packages/react-query
       '@trpc/server': link:../../../packages/server
       '@types/node-fetch': 2.6.2
       abort-controller: 3.0.0
@@ -201,7 +201,7 @@ importers:
       '@tanstack/react-query': 4.6.0
       '@trpc/client': ^10.0.0-proxy-beta.20
       '@trpc/next': ^10.0.0-proxy-beta.20
-      '@trpc/react': ^10.0.0-proxy-beta.20
+      '@trpc/react-query': ^10.0.0-proxy-beta.20
       '@trpc/server': ^10.0.0-proxy-beta.20
       '@types/node': ^18.7.20
       '@types/react': ^18.0.9
@@ -215,7 +215,7 @@ importers:
       '@tanstack/react-query': 4.6.0_biqbaboplfbrettd7655fr4n2y
       '@trpc/client': link:../../../packages/client
       '@trpc/next': link:../../../packages/next
-      '@trpc/react': link:../../../packages/react
+      '@trpc/react-query': link:../../../packages/react-query
       '@trpc/server': link:../../../packages/server
       next: 12.3.1_biqbaboplfbrettd7655fr4n2y
       react: 18.2.0
@@ -232,7 +232,7 @@ importers:
       '@tanstack/react-query': 4.6.0
       '@trpc/client': ^10.0.0-proxy-beta.20
       '@trpc/next': ^10.0.0-proxy-beta.20
-      '@trpc/react': ^10.0.0-proxy-beta.20
+      '@trpc/react-query': ^10.0.0-proxy-beta.20
       '@trpc/server': ^10.0.0-proxy-beta.20
       '@types/node': ^18.7.20
       '@types/react': ^18.0.9
@@ -246,7 +246,7 @@ importers:
       '@tanstack/react-query': 4.6.0_biqbaboplfbrettd7655fr4n2y
       '@trpc/client': link:../../../packages/client
       '@trpc/next': link:../../../packages/next
-      '@trpc/react': link:../../../packages/react
+      '@trpc/react-query': link:../../../packages/react-query
       '@trpc/server': link:../../../packages/server
       next: 12.3.1_biqbaboplfbrettd7655fr4n2y
       react: 18.2.0
@@ -266,7 +266,7 @@ importers:
       '@tanstack/react-query-devtools': ^4.3.8
       '@trpc/client': ^10.0.0-proxy-beta.20
       '@trpc/next': ^10.0.0-proxy-beta.20
-      '@trpc/react': ^10.0.0-proxy-beta.20
+      '@trpc/react-query': ^10.0.0-proxy-beta.20
       '@trpc/server': ^10.0.0-proxy-beta.20
       '@types/node': ^18.7.20
       '@types/react': ^18.0.9
@@ -297,7 +297,7 @@ importers:
       '@tanstack/react-query': 4.6.0_biqbaboplfbrettd7655fr4n2y
       '@trpc/client': link:../../../packages/client
       '@trpc/next': link:../../../packages/next
-      '@trpc/react': link:../../../packages/react
+      '@trpc/react-query': link:../../../packages/react-query
       '@trpc/server': link:../../../packages/server
       clsx: 1.2.1
       next: 12.3.1_biqbaboplfbrettd7655fr4n2y
@@ -335,7 +335,7 @@ importers:
       '@tanstack/react-query-devtools': ^4.3.8
       '@trpc/client': ^10.0.0-proxy-beta.20
       '@trpc/next': ^10.0.0-proxy-beta.20
-      '@trpc/react': ^10.0.0-proxy-beta.20
+      '@trpc/react-query': ^10.0.0-proxy-beta.20
       '@trpc/server': ^10.0.0-proxy-beta.20
       '@types/node': ^18.7.20
       '@types/node-fetch': ^2.5.11
@@ -373,7 +373,7 @@ importers:
       '@tanstack/react-query': 4.6.0_biqbaboplfbrettd7655fr4n2y
       '@trpc/client': link:../../../packages/client
       '@trpc/next': link:../../../packages/next
-      '@trpc/react': link:../../../packages/react
+      '@trpc/react-query': link:../../../packages/react-query
       '@trpc/server': link:../../../packages/server
       clsx: 1.2.1
       next: 12.3.1_biqbaboplfbrettd7655fr4n2y
@@ -418,7 +418,7 @@ importers:
       '@tanstack/react-query-devtools': ^4.3.8
       '@trpc/client': ^10.0.0-proxy-beta.20
       '@trpc/next': ^10.0.0-proxy-beta.20
-      '@trpc/react': ^10.0.0-proxy-beta.20
+      '@trpc/react-query': ^10.0.0-proxy-beta.20
       '@trpc/server': ^10.0.0-proxy-beta.20
       '@types/node': ^18.7.20
       '@types/react': ^18.0.9
@@ -439,7 +439,7 @@ importers:
       '@tanstack/react-query': 4.6.0_biqbaboplfbrettd7655fr4n2y
       '@trpc/client': link:../../../packages/client
       '@trpc/next': link:../../../packages/next
-      '@trpc/react': link:../../../packages/react
+      '@trpc/react-query': link:../../../packages/react-query
       '@trpc/server': link:../../../packages/server
       clsx: 1.2.1
       next: 12.3.1_biqbaboplfbrettd7655fr4n2y
@@ -462,7 +462,7 @@ importers:
   examples/.interop/standalone-server:
     specifiers:
       '@trpc/client': ^10.0.0-proxy-beta.20
-      '@trpc/react': ^10.0.0-proxy-beta.20
+      '@trpc/react-query': ^10.0.0-proxy-beta.20
       '@trpc/server': ^10.0.0-proxy-beta.20
       '@types/node': ^18.7.20
       '@types/node-fetch': ^2.5.11
@@ -478,7 +478,7 @@ importers:
       zod: ^3.0.0
     dependencies:
       '@trpc/client': link:../../../packages/client
-      '@trpc/react': link:../../../packages/react
+      '@trpc/react-query': link:../../../packages/react-query
       '@trpc/server': link:../../../packages/server
       '@types/node-fetch': 2.6.2
       abort-controller: 3.0.0
@@ -499,7 +499,7 @@ importers:
       '@tanstack/react-query': 4.6.0
       '@trpc/client': ^10.0.0-proxy-beta.20
       '@trpc/next': ^10.0.0-proxy-beta.20
-      '@trpc/react': ^10.0.0-proxy-beta.20
+      '@trpc/react-query': ^10.0.0-proxy-beta.20
       '@trpc/server': ^10.0.0-proxy-beta.20
       '@types/node': ^18.7.20
       '@types/react': ^18.0.9
@@ -514,7 +514,7 @@ importers:
       '@tanstack/react-query': 4.6.0_biqbaboplfbrettd7655fr4n2y
       '@trpc/client': link:../../../packages/client
       '@trpc/next': link:../../../packages/next
-      '@trpc/react': link:../../../packages/react
+      '@trpc/react-query': link:../../../packages/react-query
       '@trpc/server': link:../../../packages/server
       next: 12.3.1_biqbaboplfbrettd7655fr4n2y
       react: 18.2.0
@@ -533,7 +533,7 @@ importers:
       '@tanstack/react-query': 4.6.0
       '@trpc/client': ^10.0.0-proxy-beta.20
       '@trpc/next': ^10.0.0-proxy-beta.20
-      '@trpc/react': ^10.0.0-proxy-beta.20
+      '@trpc/react-query': ^10.0.0-proxy-beta.20
       '@trpc/server': ^10.0.0-proxy-beta.20
       '@types/node': ^18.7.20
       '@types/react': ^18.0.9
@@ -549,7 +549,7 @@ importers:
       '@tanstack/react-query': 4.6.0_biqbaboplfbrettd7655fr4n2y
       '@trpc/client': link:../../../packages/client
       '@trpc/next': link:../../../packages/next
-      '@trpc/react': link:../../../packages/react
+      '@trpc/react-query': link:../../../packages/react-query
       '@trpc/server': link:../../../packages/server
       next: 12.3.1_biqbaboplfbrettd7655fr4n2y
       react: 18.2.0
@@ -594,7 +594,7 @@ importers:
   examples/express-minimal:
     specifiers:
       '@trpc/client': ^10.0.0-proxy-beta.20
-      '@trpc/react': ^10.0.0-proxy-beta.20
+      '@trpc/react-query': ^10.0.0-proxy-beta.20
       '@trpc/server': ^10.0.0-proxy-beta.20
       '@types/express': ^4.17.12
       '@types/node': ^18.7.20
@@ -610,7 +610,7 @@ importers:
       zod: ^3.0.0
     dependencies:
       '@trpc/client': link:../../packages/client
-      '@trpc/react': link:../../packages/react
+      '@trpc/react-query': link:../../packages/react-query
       '@trpc/server': link:../../packages/server
       '@types/node-fetch': 2.6.2
       express: 4.18.1
@@ -629,7 +629,7 @@ importers:
   examples/express-server:
     specifiers:
       '@trpc/client': ^10.0.0-proxy-beta.20
-      '@trpc/react': ^10.0.0-proxy-beta.20
+      '@trpc/react-query': ^10.0.0-proxy-beta.20
       '@trpc/server': ^10.0.0-proxy-beta.20
       '@types/express': ^4.17.12
       '@types/node': ^18.7.20
@@ -646,7 +646,7 @@ importers:
       zod: ^3.0.0
     dependencies:
       '@trpc/client': link:../../packages/client
-      '@trpc/react': link:../../packages/react
+      '@trpc/react-query': link:../../packages/react-query
       '@trpc/server': link:../../packages/server
       '@types/node-fetch': 2.6.2
       abort-controller: 3.0.0
@@ -759,7 +759,7 @@ importers:
     specifiers:
       '@tanstack/react-query': 4.6.0
       '@trpc/client': ^10.0.0-proxy-beta.20
-      '@trpc/react': ^10.0.0-proxy-beta.20
+      '@trpc/react-query': ^10.0.0-proxy-beta.20
       '@trpc/server': ^10.0.0-proxy-beta.20
       '@types/react': ^18.0.9
       '@types/react-dom': ^18.0.5
@@ -771,7 +771,7 @@ importers:
     dependencies:
       '@tanstack/react-query': 4.6.0_biqbaboplfbrettd7655fr4n2y
       '@trpc/client': link:../../../packages/client
-      '@trpc/react': link:../../../packages/react
+      '@trpc/react-query': link:../../../packages/react-query
       '@trpc/server': link:../../../packages/server
       react: 18.2.0
       react-dom: 18.2.0_react@18.2.0
@@ -820,7 +820,7 @@ importers:
       '@tanstack/react-query': 4.6.0
       '@trpc/client': ^10.0.0-proxy-beta.20
       '@trpc/next': ^10.0.0-proxy-beta.20
-      '@trpc/react': ^10.0.0-proxy-beta.20
+      '@trpc/react-query': ^10.0.0-proxy-beta.20
       '@trpc/server': ^10.0.0-proxy-beta.20
       '@types/node': ^18.7.20
       '@types/react': ^18.0.9
@@ -835,7 +835,7 @@ importers:
       '@tanstack/react-query': 4.6.0_biqbaboplfbrettd7655fr4n2y
       '@trpc/client': link:../../packages/client
       '@trpc/next': link:../../packages/next
-      '@trpc/react': link:../../packages/react
+      '@trpc/react-query': link:../../packages/react-query
       '@trpc/server': link:../../packages/server
       next: 12.3.1_biqbaboplfbrettd7655fr4n2y
       react: 18.2.0
@@ -853,7 +853,7 @@ importers:
       '@tanstack/react-query': 4.6.0
       '@trpc/client': ^10.0.0-proxy-beta.20
       '@trpc/next': ^10.0.0-proxy-beta.20
-      '@trpc/react': ^10.0.0-proxy-beta.20
+      '@trpc/react-query': ^10.0.0-proxy-beta.20
       '@trpc/server': ^10.0.0-proxy-beta.20
       '@types/node': ^18.7.20
       '@types/react': ^18.0.9
@@ -867,7 +867,7 @@ importers:
       '@tanstack/react-query': 4.6.0_biqbaboplfbrettd7655fr4n2y
       '@trpc/client': link:../../packages/client
       '@trpc/next': link:../../packages/next
-      '@trpc/react': link:../../packages/react
+      '@trpc/react-query': link:../../packages/react-query
       '@trpc/server': link:../../packages/server
       next: 12.3.1_biqbaboplfbrettd7655fr4n2y
       react: 18.2.0
@@ -886,7 +886,7 @@ importers:
       '@tanstack/react-query': 4.6.0
       '@trpc/client': ^10.0.0-proxy-beta.20
       '@trpc/next': ^10.0.0-proxy-beta.20
-      '@trpc/react': ^10.0.0-proxy-beta.20
+      '@trpc/react-query': ^10.0.0-proxy-beta.20
       '@trpc/server': ^10.0.0-proxy-beta.20
       '@types/node': ^18.7.20
       '@types/react': ^18.0.9
@@ -917,7 +917,7 @@ importers:
       '@tanstack/react-query': 4.6.0_biqbaboplfbrettd7655fr4n2y
       '@trpc/client': link:../../packages/client
       '@trpc/next': link:../../packages/next
-      '@trpc/react': link:../../packages/react
+      '@trpc/react-query': link:../../packages/react-query
       '@trpc/server': link:../../packages/server
       clsx: 1.2.1
       next: 12.3.1_biqbaboplfbrettd7655fr4n2y
@@ -954,7 +954,7 @@ importers:
       '@tanstack/react-query-devtools': ^4.3.8
       '@trpc/client': ^10.0.0-proxy-beta.20
       '@trpc/next': ^10.0.0-proxy-beta.20
-      '@trpc/react': ^10.0.0-proxy-beta.20
+      '@trpc/react-query': ^10.0.0-proxy-beta.20
       '@trpc/server': ^10.0.0-proxy-beta.20
       '@types/node': ^18.7.20
       '@types/node-fetch': ^2.5.11
@@ -992,7 +992,7 @@ importers:
       '@tanstack/react-query': 4.6.0_biqbaboplfbrettd7655fr4n2y
       '@trpc/client': link:../../packages/client
       '@trpc/next': link:../../packages/next
-      '@trpc/react': link:../../packages/react
+      '@trpc/react-query': link:../../packages/react-query
       '@trpc/server': link:../../packages/server
       clsx: 1.2.1
       next: 12.3.1_biqbaboplfbrettd7655fr4n2y
@@ -1037,7 +1037,7 @@ importers:
       '@tanstack/react-query-devtools': ^4.3.8
       '@trpc/client': ^10.0.0-proxy-beta.20
       '@trpc/next': ^10.0.0-proxy-beta.20
-      '@trpc/react': ^10.0.0-proxy-beta.20
+      '@trpc/react-query': ^10.0.0-proxy-beta.20
       '@trpc/server': ^10.0.0-proxy-beta.20
       '@types/node': ^18.7.20
       '@types/react': ^18.0.9
@@ -1058,7 +1058,7 @@ importers:
       '@tanstack/react-query': 4.6.0_biqbaboplfbrettd7655fr4n2y
       '@trpc/client': link:../../packages/client
       '@trpc/next': link:../../packages/next
-      '@trpc/react': link:../../packages/react
+      '@trpc/react-query': link:../../packages/react-query
       '@trpc/server': link:../../packages/server
       clsx: 1.2.1
       next: 12.3.1_biqbaboplfbrettd7655fr4n2y
@@ -1081,7 +1081,7 @@ importers:
   examples/standalone-server:
     specifiers:
       '@trpc/client': ^10.0.0-proxy-beta.20
-      '@trpc/react': ^10.0.0-proxy-beta.20
+      '@trpc/react-query': ^10.0.0-proxy-beta.20
       '@trpc/server': ^10.0.0-proxy-beta.20
       '@types/node': ^18.7.20
       '@types/node-fetch': ^2.5.11
@@ -1097,7 +1097,7 @@ importers:
       zod: ^3.0.0
     dependencies:
       '@trpc/client': link:../../packages/client
-      '@trpc/react': link:../../packages/react
+      '@trpc/react-query': link:../../packages/react-query
       '@trpc/server': link:../../packages/server
       '@types/node-fetch': 2.6.2
       abort-controller: 3.0.0
@@ -1127,7 +1127,7 @@ importers:
     specifiers:
       '@tanstack/react-query': 4.6.0
       '@trpc/client': ^10.0.0-proxy-beta.20
-      '@trpc/react': ^10.0.0-proxy-beta.20
+      '@trpc/react-query': ^10.0.0-proxy-beta.20
       '@trpc/server': ^10.0.0-proxy-beta.20
       '@types/express': ^4.17.12
       '@types/node': ^18.7.20
@@ -1142,7 +1142,7 @@ importers:
     devDependencies:
       '@tanstack/react-query': 4.6.0_biqbaboplfbrettd7655fr4n2y
       '@trpc/client': link:../client
-      '@trpc/react': link:../react
+      '@trpc/react-query': link:../react-query
       '@trpc/server': link:../server
       '@types/express': 4.17.14
       '@types/node': 18.7.20
@@ -1152,7 +1152,7 @@ importers:
       react-dom: 18.2.0_react@18.2.0
       zod: 3.19.1
 
-  packages/react:
+  packages/react-query:
     specifiers:
       '@tanstack/react-query': 4.6.0
       '@trpc/client': ^10.0.0-proxy-beta.20
@@ -1188,7 +1188,7 @@ importers:
       '@testing-library/user-event': ^14.4.3
       '@trpc/client': ^10.0.0-proxy-beta.20
       '@trpc/next': ^10.0.0-proxy-beta.20
-      '@trpc/react': ^10.0.0-proxy-beta.20
+      '@trpc/react-query': ^10.0.0-proxy-beta.20
       '@trpc/server': ^10.0.0-proxy-beta.20
       '@types/aws-lambda': ^8.10.97
       '@types/express': ^4.17.12
@@ -1235,7 +1235,7 @@ importers:
       '@testing-library/user-event': 14.4.3_znccgeejomvff3jrsk3ljovfpu
       '@trpc/client': link:../client
       '@trpc/next': link:../next
-      '@trpc/react': link:../react
+      '@trpc/react-query': link:../react-query
       '@trpc/server': 'link:'
       '@types/aws-lambda': 8.10.106
       '@types/express': 4.17.14
@@ -1260,13 +1260,13 @@ importers:
       konn: 0.7.0
       miniflare: 2.9.0
       myzod: 1.8.8
-      next: 12.3.1_biqbaboplfbrettd7655fr4n2y
+      next: 12.3.1_ir3quccc6i62x6qn6jjhyjjiey
       node-fetch: 2.6.7
       react: 18.2.0
       react-dom: 18.2.0_react@18.2.0
       superjson: 1.10.0
       superstruct: 0.16.5
-      ts-jest: 27.1.5_qqheuyrmnawe7ws7n63adpwbnu
+      ts-jest: 27.1.5_i5bqpauvbfaw4wmbeng7kq5cci
       typescript: 4.8.3
       ws: 8.9.0
       yup: 0.32.11
@@ -1289,7 +1289,7 @@ importers:
       '@tailwindcss/line-clamp': ^0.4.2
       '@trpc/client': ^10.0.0-proxy-beta.20
       '@trpc/next': ^10.0.0-proxy-beta.20
-      '@trpc/react': ^10.0.0-proxy-beta.20
+      '@trpc/react-query': ^10.0.0-proxy-beta.20
       '@trpc/server': ^10.0.0-proxy-beta.20
       '@tsconfig/docusaurus': ^1.0.6
       '@types/node': ^18.7.20
@@ -1325,7 +1325,7 @@ importers:
       '@tailwindcss/line-clamp': 0.4.2_tailwindcss@3.1.8
       '@trpc/client': link:../packages/client
       '@trpc/next': link:../packages/next
-      '@trpc/react': link:../packages/react
+      '@trpc/react-query': link:../packages/react-query
       '@trpc/server': link:../packages/server
       '@visx/hierarchy': 2.10.0_react@18.2.0
       '@visx/responsive': 2.10.0_react@18.2.0
@@ -7414,8 +7414,10 @@ packages:
       indent-string: 4.0.0
     dev: false
 
-  /ajv-formats/2.1.1:
+  /ajv-formats/2.1.1_ajv@8.11.0:
     resolution: {integrity: sha512-Wx0Kx52hxE7C18hkMEggYlEifqWZtYaRgouJor+WMdPnQyEK13vgEWyVNup7SoeeoLMsr4kf5h6dOW11I15MUA==}
+    peerDependencies:
+      ajv: ^8.0.0
     peerDependenciesMeta:
       ajv:
         optional: true
@@ -10600,7 +10602,7 @@ packages:
       eslint: 7.32.0
       eslint-import-resolver-node: 0.3.6
       eslint-import-resolver-typescript: 2.7.1_hpmu7kn6tcn2vnxpfzvv33bxmy
-      eslint-plugin-import: 2.26.0_llenlh55kffvx5shvafgvngljy
+      eslint-plugin-import: 2.26.0_etcbtcqvpkkqobgpez3iamhdsu
       eslint-plugin-jsx-a11y: 6.6.1_eslint@7.32.0
       eslint-plugin-react: 7.31.8_eslint@7.32.0
       eslint-plugin-react-hooks: 4.6.0_eslint@7.32.0
@@ -10636,7 +10638,7 @@ packages:
     dependencies:
       debug: 4.3.4
       eslint: 7.32.0
-      eslint-plugin-import: 2.26.0_llenlh55kffvx5shvafgvngljy
+      eslint-plugin-import: 2.26.0_etcbtcqvpkkqobgpez3iamhdsu
       glob: 7.2.3
       is-glob: 4.0.3
       resolve: 1.22.1
@@ -10645,7 +10647,7 @@ packages:
       - supports-color
     dev: true
 
-  /eslint-module-utils/2.7.4_7qyu25wun3nsw5oqn4xapjthva:
+  /eslint-module-utils/2.7.4_wpsxuqpb27n6fokygpd4dlo5zu:
     resolution: {integrity: sha512-j4GT+rqzCoRKHwURX7pddtIPGySnX9Si/cgMI5ztrcqOPtk5dDEeZ34CQVPphnqkJytlc97Vuk05Um2mJ3gEQA==}
     engines: {node: '>=4'}
     peerDependencies:
@@ -10670,12 +10672,11 @@ packages:
       debug: 3.2.7
       eslint: 7.32.0
       eslint-import-resolver-node: 0.3.6
-      eslint-import-resolver-typescript: 2.7.1_hpmu7kn6tcn2vnxpfzvv33bxmy
     transitivePeerDependencies:
       - supports-color
     dev: true
 
-  /eslint-plugin-import/2.26.0_llenlh55kffvx5shvafgvngljy:
+  /eslint-plugin-import/2.26.0_etcbtcqvpkkqobgpez3iamhdsu:
     resolution: {integrity: sha512-hYfi3FXaM8WPLf4S1cikh/r4IxnO6zrhZbEGz2b660EJRbuxgpDS5gkCuYgGWg2xxh2rBuIr4Pvhve/7c31koA==}
     engines: {node: '>=4'}
     peerDependencies:
@@ -10692,7 +10693,7 @@ packages:
       doctrine: 2.1.0
       eslint: 7.32.0
       eslint-import-resolver-node: 0.3.6
-      eslint-module-utils: 2.7.4_7qyu25wun3nsw5oqn4xapjthva
+      eslint-module-utils: 2.7.4_wpsxuqpb27n6fokygpd4dlo5zu
       has: 1.0.3
       is-core-module: 2.10.0
       is-glob: 4.0.3
@@ -15169,6 +15170,51 @@ packages:
       - '@babel/core'
       - babel-plugin-macros
 
+  /next/12.3.1_ir3quccc6i62x6qn6jjhyjjiey:
+    resolution: {integrity: sha512-l7bvmSeIwX5lp07WtIiP9u2ytZMv7jIeB8iacR28PuUEFG5j0HGAPnMqyG5kbZNBG2H7tRsrQ4HCjuMOPnANZw==}
+    engines: {node: '>=12.22.0'}
+    hasBin: true
+    peerDependencies:
+      fibers: '>= 3.1.0'
+      node-sass: ^6.0.0 || ^7.0.0
+      react: ^17.0.2 || ^18.0.0-0
+      react-dom: ^17.0.2 || ^18.0.0-0
+      sass: ^1.3.0
+    peerDependenciesMeta:
+      fibers:
+        optional: true
+      node-sass:
+        optional: true
+      sass:
+        optional: true
+    dependencies:
+      '@next/env': 12.3.1
+      '@swc/helpers': 0.4.11
+      caniuse-lite: 1.0.30001411
+      postcss: 8.4.14
+      react: 18.2.0
+      react-dom: 18.2.0_react@18.2.0
+      styled-jsx: 5.0.7_3toe27fv7etiytxb5kxc7fxaw4
+      use-sync-external-store: 1.2.0_react@18.2.0
+    optionalDependencies:
+      '@next/swc-android-arm-eabi': 12.3.1
+      '@next/swc-android-arm64': 12.3.1
+      '@next/swc-darwin-arm64': 12.3.1
+      '@next/swc-darwin-x64': 12.3.1
+      '@next/swc-freebsd-x64': 12.3.1
+      '@next/swc-linux-arm-gnueabihf': 12.3.1
+      '@next/swc-linux-arm64-gnu': 12.3.1
+      '@next/swc-linux-arm64-musl': 12.3.1
+      '@next/swc-linux-x64-gnu': 12.3.1
+      '@next/swc-linux-x64-musl': 12.3.1
+      '@next/swc-win32-arm64-msvc': 12.3.1
+      '@next/swc-win32-ia32-msvc': 12.3.1
+      '@next/swc-win32-x64-msvc': 12.3.1
+    transitivePeerDependencies:
+      - '@babel/core'
+      - babel-plugin-macros
+    dev: true
+
   /nice-try/1.0.5:
     resolution: {integrity: sha512-1nh45deeb5olNY7eX82BkPO7SSxR5SSYJiPTrTdFUVYwAl8CKMA5N9PjTYkHiRjisVcxcQ1HXdLhx2qxxJzLNQ==}
 
@@ -17922,7 +17968,7 @@ packages:
     dependencies:
       '@types/json-schema': 7.0.11
       ajv: 8.11.0
-      ajv-formats: 2.1.1
+      ajv-formats: 2.1.1_ajv@8.11.0
       ajv-keywords: 5.1.0_ajv@8.11.0
     dev: false
 
@@ -18125,7 +18171,7 @@ packages:
       '@serverless/platform-client': 4.3.2_supports-color@8.1.1
       '@serverless/utils': 6.7.0
       ajv: 8.11.0
-      ajv-formats: 2.1.1
+      ajv-formats: 2.1.1_ajv@8.11.0
       archiver: 5.3.1
       aws-sdk: 2.1223.0
       bluebird: 3.7.2
@@ -18849,6 +18895,23 @@ packages:
       inline-style-parser: 0.1.1
     dev: false
 
+  /styled-jsx/5.0.7_3toe27fv7etiytxb5kxc7fxaw4:
+    resolution: {integrity: sha512-b3sUzamS086YLRuvnaDigdAewz1/EFYlHpYBP5mZovKEdQQOIIYq8lApylub3HHZ6xFjV051kkGU7cudJmrXEA==}
+    engines: {node: '>= 12.0.0'}
+    peerDependencies:
+      '@babel/core': '*'
+      babel-plugin-macros: '*'
+      react: '>= 16.8.0 || 17.x.x || ^18.0.0-0'
+    peerDependenciesMeta:
+      '@babel/core':
+        optional: true
+      babel-plugin-macros:
+        optional: true
+    dependencies:
+      '@babel/core': 7.19.1
+      react: 18.2.0
+    dev: true
+
   /styled-jsx/5.0.7_react@18.2.0:
     resolution: {integrity: sha512-b3sUzamS086YLRuvnaDigdAewz1/EFYlHpYBP5mZovKEdQQOIIYq8lApylub3HHZ6xFjV051kkGU7cudJmrXEA==}
     engines: {node: '>= 12.0.0'}
@@ -19326,7 +19389,7 @@ packages:
     resolution: {integrity: sha512-rvuRbTarPXmMb79SmzEp8aqXNKcK+y0XaB298IXueQ8I2PsrATcPBCSPyK/dDNa2iWOhKlfNnOjdAOTBU/nkFA==}
     dev: false
 
-  /ts-jest/27.1.5_qqheuyrmnawe7ws7n63adpwbnu:
+  /ts-jest/27.1.5_i5bqpauvbfaw4wmbeng7kq5cci:
     resolution: {integrity: sha512-Xv6jBQPoBEvBq/5i2TeSG9tt/nqkbpcurrEG1b+2yfBrcJelOZF9Ml6dmyMh7bcW9JyFbRYpR5rxROSlBLTZHA==}
     engines: {node: ^10.13.0 || ^12.13.0 || ^14.15.0 || >=15.0.0}
     hasBin: true
@@ -19347,6 +19410,7 @@ packages:
       esbuild:
         optional: true
     dependencies:
+      '@babel/core': 7.19.1
       '@types/jest': 27.5.2
       bs-logger: 0.2.6
       fast-json-stable-stringify: 2.1.0

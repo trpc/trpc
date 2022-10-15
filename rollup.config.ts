@@ -54,7 +54,7 @@ export default function rollup(): RollupOptions[] {
     }),
     ...buildConfig({
       input: INPUTS['react-query'],
-      packageDir: 'packages/react',
+      packageDir: 'packages/react-query',
     }),
     ...buildConfig({
       input: INPUTS.next,
