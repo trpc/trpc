@@ -4,8 +4,8 @@ import { QueryClientProvider } from '@tanstack/react-query';
 import { render, waitFor } from '@testing-library/react';
 import { konn } from 'konn';
 import React, { ReactNode, useState } from 'react';
-import { createTRPCReact, httpBatchLink } from '../../../react/src';
-import { createProxySSGHelpers } from '../../../react/src/ssg';
+import { createTRPCReact, httpBatchLink } from '../../../react-query/src';
+import { createProxySSGHelpers } from '../../../react-query/src/ssg';
 import { initTRPC } from '../../src';
 
 const ctx = konn()
