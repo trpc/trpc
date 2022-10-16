@@ -5,7 +5,7 @@ slug: /query-invalidation
 ---
 
 :::note
-`@trpc/react`'s invalidate is a thin wrapper around
+`@trpc/react-query`'s invalidate is a thin wrapper around
 @tanstack/react-query's `queryClient.invalidateQueries()`. For in-depth
 information about options and usage patterns, refer to their docs on [query
 invalidation](https://tanstack.com/query/v4/docs/guides/query-invalidation).
@@ -14,7 +14,7 @@ invalidation](https://tanstack.com/query/v4/docs/guides/query-invalidation).
 ## Invalidating a single query
 
 You can invalidate a query relating to a single procedure and even filter based
-on the input passed to it to prevent unnecessary calls to the back end.  
+on the input passed to it to prevent unnecessary calls to the back end.
 
 ### Example code
 
@@ -99,38 +99,37 @@ import { trpc } from '../utils/trpc';
 function MyComponent() {
   const utils = trpc.useContext();
 
-  const invalidateAllQueriesAcrossAllRouters = () => { // 1️⃣
+  const invalidateAllQueriesAcrossAllRouters = () => {
+    // 1️⃣
     // All queries on all routers will be invalidated 🔥
-    utils.invalidate() 
-  }
+    utils.invalidate();
+  };
 
-  const invalidateAllPostQueries = () => { // 2️⃣
-     // All post queries will be invalidated 📭
-    utils.post.invalidate() 
-  }
+  const invalidateAllPostQueries = () => {
+    // 2️⃣
+    // All post queries will be invalidated 📭
+    utils.post.invalidate();
+  };
 
-  const invalidateAllPostQueriesWithMatchingInputs = () => { // 3️⃣
+  const invalidateAllPostQueriesWithMatchingInputs = () => {
+    // 3️⃣
     // All queries in the post router with input {id:1} invalidated 📭
-    utils.post.invalidate({id:1}) 
-  }
+    utils.post.invalidate({ id: 1 });
+  };
 
   // Example queries
-  trpc.user.all.useQuery() // Would only be validated by 1️⃣ only. 
-  trpc.post.all.useQuery() // Would be invalidated by 1️⃣ & 2️⃣
-  trpc.post.byId.useQuery({ id:1 }) // Would be invalidated by 1️⃣, 2️⃣ and 3️⃣
-  trpc.post.byId.useQuery({ id:2 }) // would be invalidated by 1️⃣ and 2️⃣ but NOT 3️⃣!
-
+  trpc.user.all.useQuery(); // Would only be validated by 1️⃣ only.
+  trpc.post.all.useQuery(); // Would be invalidated by 1️⃣ & 2️⃣
+  trpc.post.byId.useQuery({ id: 1 }); // Would be invalidated by 1️⃣, 2️⃣ and 3️⃣
+  trpc.post.byId.useQuery({ id: 2 }); // would be invalidated by 1️⃣ and 2️⃣ but NOT 3️⃣!
 
   // [...]
 }
-
 ```
-
 
 ## Invalidate full cache on every mutation
 
-Keeping track of exactly what a queries a mutation should invalidate is hard, therefore, it can be a pragmatic solution to invalidate the *full cache* as a side-effect on any mutation. Since we have request batching, this invalidation will simply refetch all queries on the page you're looking at in one single request.
-
+Keeping track of exactly what a queries a mutation should invalidate is hard, therefore, it can be a pragmatic solution to invalidate the _full cache_ as a side-effect on any mutation. Since we have request batching, this invalidation will simply refetch all queries on the page you're looking at in one single request.
 
 :::caution
 We have marked this API as `unstable_` as the exact API might change without a major version bump on tRPC, keep an eye on the release notes if you want to use this.
@@ -138,8 +137,7 @@ We have marked this API as `unstable_` as the exact API might change without a m
 
 We have added a feature to help with this:
 
-
-```ts 
+```ts
 export const trpc = createTRPCReact<AppRouter, SSRContext>({
   unstable_overrides: {
     useMutation: {
@@ -149,15 +147,15 @@ export const trpc = createTRPCReact<AppRouter, SSRContext>({
       async onSuccess(opts) {
         /**
          * @note that order here matters:
-         * The order here allows route changes in `onSuccess` without 
+         * The order here allows route changes in `onSuccess` without
          * having a flash of content change whilst redirecting.
          **/
 
         // Calls the `onSuccess` defined in the `useQuery()`-options:
-        await opts.originalFn(); 
+        await opts.originalFn();
 
         // Invalidate all queries in the react-query cache:
-        await opts.queryClient.invalidateQueries(); 
+        await opts.queryClient.invalidateQueries();
       },
     },
   },

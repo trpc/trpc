@@ -8,7 +8,7 @@ slug: /ssg-helpers
 `createProxySSGHelpers` provides you a set of helper functions that you can use to prefetch queries on the server.
 
 ```ts
-import { createProxySSGHelpers } from '@trpc/react/ssg';
+import { createProxySSGHelpers } from '@trpc/react-query/ssg';
 import { createContext } from 'server/context';
 
 const ssg = createProxySSGHelpers({
@@ -27,7 +27,7 @@ The returned functions are all wrappers around react-query functions. Please che
 ## Next.js Example
 
 ```ts title='pages/posts/[id].tsx'
-import { createProxySSGHelpers } from '@trpc/react/ssg';
+import { createProxySSGHelpers } from '@trpc/react-query/ssg';
 import { GetServerSidePropsContext, InferGetServerSidePropsType } from 'next';
 import { createContext } from 'server/context';
 import { appRouter } from 'server/routers/_app';

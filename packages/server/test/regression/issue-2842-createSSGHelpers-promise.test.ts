@@ -1,5 +1,5 @@
 import '../___packages';
-import { createProxySSGHelpers } from '@trpc/react/ssg';
+import { createProxySSGHelpers } from '@trpc/react-query/ssg';
 import { initTRPC } from '@trpc/server';
 
 test('createSSGPromise', async () => {
