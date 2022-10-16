@@ -5,7 +5,7 @@ sidebar_label: useContext()
 slug: /useContext
 ---
 
-`useContext` is a hook that gives you access to helpers that let you interact with the cache of the queries that you execute via `@trpc/react`. These helpers are actually thin wrappers around `@tanstack/react-query`'s [`QueryClient`](https://tanstack.com/query/v4/docs/reference/QueryClient) methods. If you want more in-depth information about options and usage patterns for `useContext` helpers than what we provide here, we will link to their respective `@tanstack/react-query` docs so you can refer to them accordingly.
+`useContext` is a hook that gives you access to helpers that let you manage the cached data of the queries you execute via `@trpc/react`. These helpers are actually thin wrappers around `@tanstack/react-query`'s [`QueryClient`](https://tanstack.com/query/v4/docs/reference/QueryClient) methods. If you want more in-depth information about options and usage patterns for `useContext` helpers than what we provide here, we will link to their respective `@tanstack/react-query` docs so you can refer to them accordingly.
 
 ## Usage
 
@@ -80,6 +80,8 @@ These are the helpers you'll get access to via `useContext`. The table below wil
 | `getInfiniteData`   | [`queryClient.getInfiniteData`](https://tanstack.com/query/v4/docs/reference/QueryClient#queryclientgetquerydata)                |
 
 ## Query Invalidation
+
+You invalidate queries via the `invalidate` helper. `ìnvalidate` is actually a special helper given that, unlike the other helpers, it's available at every level of the router map. This means you can either run `ìnvalidate` on a single query, a whole router, or every router if you want. We get more in detail in the sections below.
 
 ### Invalidating a single query
 
