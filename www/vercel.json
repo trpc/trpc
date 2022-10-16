@@ -54,6 +54,11 @@
       "source": "/docs/v10/publicProcedures",
       "destination": "/docs/v10/procedures",
       "permanent": true
+    },
+    {
+      "source": "/docs/v10/query-invalidation",
+      "destination": "/docs/v10/useContext#query-invalidation",
+      "permanent": true
     }
   ]
 }
