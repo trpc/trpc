@@ -16,11 +16,11 @@ import {
   TRPCClientErrorLike,
   createReactQueryHooks,
   createTRPCClient,
-} from '@trpc/react';
+} from '@trpc/react-query';
 import {
   CreateTRPCReactQueryClientConfig,
   getQueryClient,
-} from '@trpc/react/shared';
+} from '@trpc/react-query/shared';
 import type { AnyRouter, Dict, Maybe, ResponseMeta } from '@trpc/server';
 import {
   AppContextType,

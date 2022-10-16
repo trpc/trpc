@@ -337,7 +337,7 @@ describe('cancel', () => {
         trpc: { signal: ac.signal },
       });
 
-      // this is not how you cancel a query in @trpc/react, so query should still be valid
+      // this is not how you cancel a query in @trpc/react-query, so query should still be valid
       ac.abort();
 
       if (!allPosts.data) {

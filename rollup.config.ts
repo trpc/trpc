@@ -12,7 +12,7 @@ const isWatchMode = process.argv.includes('--watch');
 const extensions = ['.ts', '.tsx'];
 
 // Exporting this for generating barrel-files in scripts/entrypoints.ts
-export const PACKAGES = ['server', 'client', 'react', 'next'] as const;
+export const PACKAGES = ['server', 'client', 'react-query', 'next'] as const;
 export const INPUTS: Record<typeof PACKAGES[number], string[]> = {
   server: [
     'src/index.ts',
@@ -38,7 +38,7 @@ export const INPUTS: Record<typeof PACKAGES[number], string[]> = {
     'src/links/loggerLink.ts',
     'src/links/wsLink.ts',
   ],
-  react: ['src/index.ts', 'src/ssg/index.ts', 'src/shared/index.ts'],
+  'react-query': ['src/index.ts', 'src/ssg/index.ts', 'src/shared/index.ts'],
   next: ['src/index.ts'],
 };
 
@@ -53,8 +53,8 @@ export default function rollup(): RollupOptions[] {
       packageDir: 'packages/client',
     }),
     ...buildConfig({
-      input: INPUTS.react,
-      packageDir: 'packages/react',
+      input: INPUTS['react-query'],
+      packageDir: 'packages/react-query',
     }),
     ...buildConfig({
       input: INPUTS.next,
