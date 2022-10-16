@@ -47,24 +47,24 @@ Recommended but not enforced file structure. This is what you get when starting 
 **npm**
 
 ```bash
-npm install @trpc/server@next @trpc/client@next @trpc/react@next @trpc/next@next @tanstack/react-query
+npm install @trpc/server@next @trpc/client@next @trpc/react-query@next @trpc/next@next @tanstack/react-query
 ```
 
 **yarn**
 
 ```bash
-yarn add @trpc/server@next @trpc/client@next @trpc/react@next @trpc/next@next @tanstack/react-query
+yarn add @trpc/server@next @trpc/client@next @trpc/react-query@next @trpc/next@next @tanstack/react-query
 ```
 
 **pnpm**
 
 ```bash
-pnpm add @trpc/server@next @trpc/client@next @trpc/react@next @trpc/next@next @tanstack/react-query
+pnpm add @trpc/server@next @trpc/client@next @trpc/react-query@next @trpc/next@next @tanstack/react-query
 ```
 
 #### Why @tanstack/react-query?
 
-`@trpc/react` provides a thin wrapper over [@tanstack/react-query](https://tanstack.com/query/v4/docs/adapters/react-query). It is required as a peer dependency.
+`@trpc/react-query` provides a thin wrapper over [@tanstack/react-query](https://tanstack.com/query/v4/docs/adapters/react-query). It is required as a peer dependency.
 
 #### Why Zod?
 
@@ -90,16 +90,16 @@ If strict mode is too much, at least enable `strictNullChecks`:
 
 ### 3. Create a tRPC router
 
-Initialize your tRPC backend using the `initTRPC` function and create your first router. 
+Initialize your tRPC backend using the `initTRPC` function and create your first router.
 
 :::note
-The below showcased backend uses the [recommended file structure](#recommended-file-structure), but you can keep it simple and put everything in the [api-handler directly](https://github.com/trpc/trpc/blob/next/examples/next-minimal-starter/src/pages/api/trpc/%5Btrpc%5D.ts) if you want. 
+The below showcased backend uses the [recommended file structure](#recommended-file-structure), but you can keep it simple and put everything in the [api-handler directly](https://github.com/trpc/trpc/blob/next/examples/next-minimal-starter/src/pages/api/trpc/%5Btrpc%5D.ts) if you want.
 :::
 
 <details><summary>View sample backend</summary>
 
 ```ts title='server/trpc.ts'
-import { initTRPC, TRPCError } from '@trpc/server';
+import { TRPCError, initTRPC } from '@trpc/server';
 
 // Avoid exporting the entire t-object since it's not very
 // descriptive and can be confusing to newcomers used to t
@@ -136,14 +136,14 @@ export const protectedProcedure = t.procedure.use(isAuthed);
 
 ```ts title='server/routers/_app.ts'
 import { z } from 'zod';
-import { router, publicProcedure } from '../trpc';
+import { publicProcedure, router } from '../trpc';
 
 export const appRouter = router({
   hello: publicProcedure
     .input(
       z.object({
         text: z.string().nullish(),
-      })
+      }),
     )
     .query(({ input }) => {
       return {
@@ -275,7 +275,7 @@ The `config`-argument is a function that returns an object that configures the t
 - Optional:
   - `queryClientConfig`: a configuration object for the React Query `QueryClient` used internally by the tRPC React hooks: [QueryClient docs](https://tanstack.com/query/v4/docs/reference/QueryClient)
   - `queryClient`: a React Query [QueryClient instance]((https://tanstack.com/query/v4/docs/reference/QueryClient)
-    - **Note:**: You can only provide either a `queryClient` or a `queryClientConfig`. 
+    - **Note:**: You can only provide either a `queryClient` or a `queryClientConfig`.
   - `transformer`: a transformer applied to outgoing payloads. Read more about [Data Transformers](data-transformers)
   - `abortOnUnmount`: determines if in-flight requests will be cancelled on component unmount. This defaults to `false`.
 
@@ -316,4 +316,4 @@ export const trpc = createTRPCNext<AppRouter>({
 
 ## Next steps
 
-Refer to the `@trpc/react` docs for additional information on executing [Queries](react-queries) and [Mutations](react-mutations) inside your components.
+Refer to the `@trpc/react-query` docs for additional information on executing [Queries](react-queries) and [Mutations](react-mutations) inside your components.

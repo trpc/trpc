@@ -77,7 +77,7 @@ Adapters are what connect our framework-agnostic HTTP handling into a server res
 
 ### `@trpc/client`
 
-This is where we use the router types to build a typesafe _vanilla_ client that makes requests to a tRPC API. Client packages (`@trpc/client`, `@trpc/react`) infer types from the server using the `Router` generic. In this package, users pass it to `createTRPCClient`.
+This is where we use the router types to build a typesafe _vanilla_ client that makes requests to a tRPC API. Client packages (`@trpc/client`, `@trpc/react-query`) infer types from the server using the `Router` generic. In this package, users pass it to `createTRPCClient`.
 
 #### Proxy API
 
@@ -87,7 +87,7 @@ In our client packages, we use [proxies](https://developer.mozilla.org/docs/Web/
 
 The client is extensible via a "link" architecture. Links handle the parts of a request's lifecycle and hook into them using our observable implementation. By default, we make fetch requests using `httpBatchLink`, but we offer other useful official links, such as one for WebSockets, and links can also be third-party.
 
-### `@trpc/react`
+### `@trpc/react-query`
 
 Here we build on top of React Query, using `@trpc/client` to create fetchers. Working similarly to `@trpc/client`, we wrap all React Query functions to make them typesafe, inferring them from the `Router` generic that users pass to `createReactQueryHooks`. Additionally, it includes some functionality needed for SSR.
 
@@ -99,4 +99,4 @@ Sometimes it can be confusing to determine if an issue or feature is React Query
 
 ### `@trpc/next`
 
-This is where SSR magic for Next.js happens. If SSR is enabled in the config, all `@trpc/react` queries are fetched on the server using a [prepass render](https://github.com/FormidableLabs/react-ssr-prepass) of the component tree. We wrap [`getInitialProps`](https://nextjs.org/docs/api-reference/data-fetching/get-initial-props) to hook into the response process and perform a prepass render of the app. This package is subject to change in the future as Next.js improves their page and routing system.
+This is where SSR magic for Next.js happens. If SSR is enabled in the config, all `@trpc/react-query` queries are fetched on the server using a [prepass render](https://github.com/FormidableLabs/react-ssr-prepass) of the component tree. We wrap [`getInitialProps`](https://nextjs.org/docs/api-reference/data-fetching/get-initial-props) to hook into the response process and perform a prepass render of the app. This package is subject to change in the future as Next.js improves their page and routing system.
