@@ -7,6 +7,22 @@ slug: /useContext
 
 `useContext` is a hook that gives you access to helpers that let you manage the cached data of the queries you execute via `@trpc/react-query`. These helpers are actually thin wrappers around `@tanstack/react-query`'s [`QueryClient`](https://tanstack.com/query/v4/docs/reference/QueryClient) methods. If you want more in-depth information about options and usage patterns for `useContext` helpers than what we provide here, we will link to their respective `@tanstack/react-query` docs so you can refer to them accordingly.
 
+:::note
+
+In v10, `useContext` no longer exposes the raw `queryClient`. If you need to access it, import and use it directly from `@tanstack/react-query`:
+
+<br />
+
+```tsx
+import { useQueryClient } from '@tanstack/react-query';
+
+function MyComponent() {
+  const queryClient = useQueryClient();
+}
+```
+
+:::
+
 ## Usage
 
 `useContext` returns an object with all the available queries you have in your routers. You use it the same way as your `trpc` client object. Once you reach a query, you'll have access to the query helpers. For example, let's say you have a `post` router with an `all` query:
