@@ -57,7 +57,7 @@
     },
     {
       "source": "/docs/v10/query-invalidation",
-      "destination": "/docs/v10/useContext#query-invalidation",
+      "destination": "/docs/v10/useContext%23query-invalidation",
       "permanent": true
     }
   ]
