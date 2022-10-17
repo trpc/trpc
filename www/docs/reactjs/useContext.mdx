@@ -46,7 +46,7 @@ Now in our component, when we navigate the object `useContext` gives us and reac
 // @target: esnext
 // @include: server
 // @filename: MyComponent.tsx
-import { createTRPCReact } from '@trpc/react';
+import { createTRPCReact } from '@trpc/react-query';
 import type { AppRouter } from './server';
 
 const trpc = createTRPCReact<AppRouter>();
