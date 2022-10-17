@@ -22,7 +22,7 @@ export const sponsors = [
   },
   {
     "name": "Sam Holmes",
-    "imgSrc": "https://avatars.githubusercontent.com/u/8385528?u=fd301b43d02a6892be0ae749c14dd485d7a34835&v=4",
+    "imgSrc": "https://avatars.githubusercontent.com/u/8385528?u=8df307ee90b848585585b07209b8a51253e55fa2&v=4",
     "monthlyPriceInDollars": 10,
     "link": "https://samholmes.net",
     "privacyLevel": "PUBLIC",
@@ -456,9 +456,9 @@ export const sponsors = [
     "name": "Habib Kadiri",
     "imgSrc": "https://avatars.githubusercontent.com/u/60525087?u=272c35c9792f781e536fd14c7e48c1052d54ddb5&v=4",
     "monthlyPriceInDollars": 10,
-    "link": "https://github.com/changwo",
+    "link": "https://github.com/habibKadiri",
     "privacyLevel": "PUBLIC",
-    "login": "changwo",
+    "login": "habibKadiri",
     "createdAt": 1663581418000
   },
   {
@@ -487,5 +487,14 @@ export const sponsors = [
     "privacyLevel": "PUBLIC",
     "login": "echobind",
     "createdAt": 1665438965000
+  },
+  {
+    "name": "Ron Mizrahi",
+    "imgSrc": "https://avatars.githubusercontent.com/u/50079487?u=a5c77b3b68319a8447e6a5a3d4d0f944d2b66c05&v=4",
+    "monthlyPriceInDollars": 50,
+    "link": "https://github.com/sronmiz",
+    "privacyLevel": "PUBLIC",
+    "login": "sronmiz",
+    "createdAt": 1666029744000
   }
 ] as const
