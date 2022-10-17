@@ -166,7 +166,7 @@ If you need to split your router into several subrouters, you can implement them
 
 ```ts title='pages/api/trpc/[trpc].ts'
 import * as trpcNext from '@trpc/server/adapters/next';
-import { appRouter } from '../../server/routers/_app';
+import { appRouter } from '../../../server/routers/_app';
 
 // export API handler
 export default trpcNext.createNextApiHandler({
