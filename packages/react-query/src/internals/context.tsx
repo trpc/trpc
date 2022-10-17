@@ -78,7 +78,7 @@ export interface TRPCContextState<
   TSSRContext = undefined,
 > extends Required<TRPCContextProps<TRouter, TSSRContext>> {
   /**
-   * @link https://react-query.tanstack.com/guides/prefetching
+   * @link https://tanstack.com/query/v4/docs/reference/QueryClient#queryclientfetchquery
    */
   fetchQuery<
     TPath extends keyof TRouter['_def']['queries'] & string,
@@ -90,7 +90,7 @@ export interface TRPCContextState<
     opts?: TRPCFetchQueryOptions<TInput, TRPCClientError<TRouter>, TOutput>,
   ): Promise<TOutput>;
   /**
-   * @link https://react-query.tanstack.com/guides/prefetching
+   * @link https://tanstack.com/query/v4/docs/reference/QueryClient#queryclientfetchinfinitequery
    */
   fetchInfiniteQuery<
     TPath extends keyof TRouter['_def']['queries'] & string,
@@ -119,7 +119,7 @@ export interface TRPCContextState<
   ): Promise<void>;
 
   /**
-   * @link https://react-query.tanstack.com/guides/prefetching
+   * @link https://tanstack.com/query/v4/docs/reference/QueryClient#queryclientprefetchinfinitequery
    */
   prefetchInfiniteQuery<
     TPath extends keyof TRouter['_def']['queries'] & string,
@@ -206,7 +206,7 @@ export interface TRPCContextState<
     pathAndInput: [TPath, TInput?],
   ): TOutput | undefined;
   /**
-   * @link https://react-query.tanstack.com/reference/QueryClient#queryclientgetquerydata
+   * @link https://react-query.tanstack.com/reference/QueryClient#queryclientsetquerydata
    */
   setInfiniteQueryData<
     TPath extends keyof TRouter['_def']['queries'] & string,
