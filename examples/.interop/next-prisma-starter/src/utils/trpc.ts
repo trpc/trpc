@@ -1,4 +1,4 @@
-import { createReactQueryHooks } from '@trpc/react';
+import { createReactQueryHooks } from '@trpc/react-query';
 import type { inferProcedureInput, inferProcedureOutput } from '@trpc/server';
 import { NextPageContext } from 'next';
 // ℹ️ Type-only import:

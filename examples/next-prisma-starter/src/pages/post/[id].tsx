@@ -1,7 +1,24 @@
 import NextError from 'next/error';
 import { useRouter } from 'next/router';
 import { NextPageWithLayout } from '~/pages/_app';
-import { trpc } from '~/utils/trpc';
+import { AppRouterTypes, trpc } from '~/utils/trpc';
+
+type PostByIdOutput = AppRouterTypes['post']['byId']['output'];
+
+function PostItem(props: { post: PostByIdOutput }) {
+  const { post } = props;
+  return (
+    <>
+      <h1>{post.title}</h1>
+      <em>Created {post.createdAt.toLocaleDateString('en-us')}</em>
+
+      <p>{post.text}</p>
+
+      <h2>Raw data:</h2>
+      <pre>{JSON.stringify(post, null, 4)}</pre>
+    </>
+  );
+}
 
 const PostViewPage: NextPageWithLayout = () => {
   const id = useRouter().query.id as string;
@@ -20,17 +37,7 @@ const PostViewPage: NextPageWithLayout = () => {
     return <>Loading...</>;
   }
   const { data } = postQuery;
-  return (
-    <>
-      <h1>{data.title}</h1>
-      <em>Created {data.createdAt.toLocaleDateString('en-us')}</em>
-
-      <p>{data.text}</p>
-
-      <h2>Raw data:</h2>
-      <pre>{JSON.stringify(data, null, 4)}</pre>
-    </>
-  );
+  return <PostItem post={data} />;
 };
 
 export default PostViewPage;

@@ -9,7 +9,7 @@ import {
   createTRPCProxyClient,
   httpBatchLink,
 } from '@trpc/client/src';
-import { createReactQueryHooks } from '@trpc/react/src';
+import { createReactQueryHooks } from '@trpc/react-query/src';
 import { expectTypeOf } from 'expect-type';
 
 const legacyRouterInterop = bigV9Router.interop();

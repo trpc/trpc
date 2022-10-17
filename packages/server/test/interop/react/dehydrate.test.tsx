@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-empty-function */
 import { createLegacyAppRouter } from './__testHelpers';
 import '@testing-library/jest-dom';
-import { createSSGHelpers } from '../../../../react/src/ssg';
+import { createSSGHelpers } from '../../../../react-query/src/ssg';
 
 let factory: ReturnType<typeof createLegacyAppRouter>;
 beforeEach(() => {

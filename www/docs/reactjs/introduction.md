@@ -6,8 +6,10 @@ slug: /react
 ---
 
 :::info
+
 - If you're using Next.js, read the [Usage with Next.js](nextjs) guide instead.
 - In order to infer types from your Node.js backend you should have the frontend & backend in the same monorepo.
+
 :::
 
 ## Add tRPC to existing React project
@@ -69,26 +71,28 @@ Follow the [Quickstart](quickstart) and read the [`@trpc/server` docs](router) f
 **npm**
 
 ```bash
-npm install @trpc/client@next @trpc/server@next @trpc/react@next @tanstack/react-query
+npm install @trpc/client@next @trpc/server@next @trpc/react-query@next @tanstack/react-query
 ```
 
 **yarn**
 
 ```bash
-yarn add @trpc/client@next @trpc/server@next @trpc/react@next @tanstack/react-query
+yarn add @trpc/client@next @trpc/server@next @trpc/react-query@next @tanstack/react-query
 ```
 
 **pnpm**
 
 ```bash
-pnpm add @trpc/client@next @trpc/server@next @trpc/react@next @tanstack/react-query
+pnpm add @trpc/client@next @trpc/server@next @trpc/react-query@next @tanstack/react-query
 ```
 
 ##### Why `@trpc/server`?
+
 This is a peer dependency of `@trpc/client` so you have to install it again!
 
 ##### Why `@tanstack/react-query`?
-`@trpc/react` provides a thin wrapper over `@tanstack/react-query`. It is required as a peer dependency.
+
+`@trpc/react-query` provides a thin wrapper over `@tanstack/react-query`. It is required as a peer dependency.
 
 #### 2. Create tRPC hooks
 
@@ -96,7 +100,7 @@ Create a set of strongly-typed React hooks from your `AppRouter` type signature 
 
 ```tsx title='utils/trpc.ts'
 // utils/trpc.ts
-import { createTRPCReact } from '@trpc/react';
+import { createTRPCReact } from '@trpc/react-query';
 import type { AppRouter } from '../path/to/router.ts';
 
 export const trpc = createTRPCReact<AppRouter>();
@@ -105,9 +109,9 @@ export const trpc = createTRPCReact<AppRouter>();
 #### 3. Add tRPC providers
 
 ```tsx title='App.tsx'
-import React, { useState } from 'react';
-import { httpBatchLink } from '@trpc/client';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { httpBatchLink } from '@trpc/client';
+import React, { useState } from 'react';
 import { trpc } from './utils/trpc';
 
 export function App() {

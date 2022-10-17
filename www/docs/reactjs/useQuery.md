@@ -5,9 +5,8 @@ sidebar_label: useQuery()
 slug: /react-queries
 ---
 
-
 :::note
-The hooks provided by `@trpc/react` are a thin wrapper around @tanstack/react-query. For in-depth information about options and usage patterns, refer to their docs on [queries](https://react-query.tanstack.com/guides/queries).
+The hooks provided by `@trpc/react-query` are a thin wrapper around @tanstack/react-query. For in-depth information about options and usage patterns, refer to their docs on [queries](https://react-query.tanstack.com/guides/queries).
 :::
 
 ```tsx
@@ -41,33 +40,33 @@ You'll notice that you get autocompletion on the `input` based on what you have 
 <details><summary>Backend code</summary>
 
 ```tsx title='server/routers/_app.ts'
-import { initTRPC } from '@trpc/server'
+import { initTRPC } from '@trpc/server';
 import { z } from 'zod';
 
-export const t = initTRPC.create()
+export const t = initTRPC.create();
 
 export const appRouter = t.router({
   // Create procedure at path 'hello'
-  hello: t
-    .procedure
+  hello: t.procedure
     // using zod schema to validate and infer input values
     .input(
-      z.object({
-        text: z.string().nullish(),
-      })
-      .nullish() 
+      z
+        .object({
+          text: z.string().nullish(),
+        })
+        .nullish(),
     )
     .query(({ input }) => {
       return {
         greeting: `hello ${input?.text ?? 'world'}`,
       };
-    })
-})
+    }),
+});
 ```
 
 </details>
 
-```tsx  title='components/MyComponent.tsx'
+```tsx title='components/MyComponent.tsx'
 import { trpc } from '../utils/trpc';
 
 export function MyComponent() {
@@ -81,15 +80,11 @@ export function MyComponent() {
       <ul>
         <li>
           helloNoArgs ({helloNoArgs.status}):{' '}
-          <pre>
-            {JSON.stringify(helloNoArgs.data, null, 2)}
-          </pre>
+          <pre>{JSON.stringify(helloNoArgs.data, null, 2)}</pre>
         </li>
         <li>
           helloWithArgs ({helloWithArgs.status}):{' '}
-          <pre>
-            {JSON.stringify(helloWithArgs.data, null, 2)}
-          </pre>
+          <pre>{JSON.stringify(helloWithArgs.data, null, 2)}</pre>
         </li>
       </ul>
     </div>

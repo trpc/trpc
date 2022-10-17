@@ -74,7 +74,7 @@ module.exports = {
     },
     {
       type: 'category',
-      label: '@trpc/react',
+      label: '@trpc/react-query',
       collapsed: false,
       items: [
         'reactjs/queries',

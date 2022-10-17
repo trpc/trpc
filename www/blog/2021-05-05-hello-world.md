@@ -10,7 +10,7 @@ tags: [trpc]
 
 I'm Alex, or "KATT" on GitHub, and I want to tell you about a library called [tRPC](https://trpc.io). I've not published any articles about, so I'm just writing this intro to get the ball rolling (but we have already somehow reached >530 🌟 on GitHub). Expect articles & video intros to come! If you want to stay up-to-date or want to ask questions, you can follow me on Twitter at [@alexdotjs](https://twitter.com/alexdotjs).
 
-In short - tRPC gives you end-to-end type safety from your (node-)server to your client, _without even declaring types_. All you do on the backend is that you return data in a function and on the frontend you use said data based on the endpoint name. 
+In short - tRPC gives you end-to-end type safety from your (node-)server to your client, _without even declaring types_. All you do on the backend is that you return data in a function and on the frontend you use said data based on the endpoint name.
 
 **This is how it can look like when doing a tRPC endpoint & client call:**
 ![Alt Text](https://assets.trpc.io/www/v9/trpcgif.gif)
@@ -59,7 +59,7 @@ Here's a CodeSandbox link where you can play with the example above: https://git
 
 **_Wat? I'm importing code from my backend to my client?_ - No, you're actually not**
 
-Even though it might look like it, no code is shared from the server to the client; TypeScript's `import type` "[..] only imports declarations to be used for type annotations and declarations. It always gets fully erased, so there’s no remnant of it at runtime." - a feature added in TypeScript 3.8 - [see TypeScript docs](https://www.typescriptlang.org/docs/handbook/release-notes/typescript-3-8.html#:~:text=import%20type%20only%20imports%20declarations,also%20erased%20from%20TypeScript's%20output.). 
+Even though it might look like it, no code is shared from the server to the client; TypeScript's `import type` "[..] only imports declarations to be used for type annotations and declarations. It always gets fully erased, so there’s no remnant of it at runtime." - a feature added in TypeScript 3.8 - [see TypeScript docs](https://www.typescriptlang.org/docs/handbook/release-notes/typescript-3-8.html#:~:text=import%20type%20only%20imports%20declarations,also%20erased%20from%20TypeScript's%20output.).
 
 There's no code generation involved, you can this to your app today as long as you have a way to share types from the server to the client (hopefully you're using a monorepo already).
 
@@ -68,10 +68,10 @@ There's no code generation involved, you can this to your app today as long as y
 I mentioned before that there's a React-library, the way to use the data above in React you do:
 
 ```tsx
-const { data } = trpc.useQuery(['hello', '@alexdotjs' ])
+const { data } = trpc.useQuery(['hello', '@alexdotjs']);
 ```
 
-.. and you'll get type safe data on the client. 
+.. and you'll get type safe data on the client.
 
 You can add tRPC today with your existing brownfield project (got adapters for Express/Next.js) & it works fine with CRA and should work with React Native as well. It is not even tied to React, so if you want to do a Svelte or Vue lib, please get in touch with me.
 
@@ -82,26 +82,24 @@ Mutations are as simple to do as queries, they're actually the same underneath, 
 Here's a little more complicated example using a database, taken from our TodoMVC example at todomvc.trpc.io / https://github.com/trpc/trpc/tree/main/examples/next-prisma-todomvc
 
 ```tsx
-const todoRouter = createRouter()
-  .mutation('add', {
-    input: z.object({
-      id: z.string().uuid(),
-      data: z.object({
-        completed: z.boolean().optional(),
-        text: z.string().min(1).optional(),
-      }),
+const todoRouter = createRouter().mutation('add', {
+  input: z.object({
+    id: z.string().uuid(),
+    data: z.object({
+      completed: z.boolean().optional(),
+      text: z.string().min(1).optional(),
     }),
-    async resolve({ ctx, input }) {
-      const { id, data } = input;
-      const todo = await ctx.task.update({
-        where: { id },
-        data,
-      });
-      return todo;
-    },
-  })
+  }),
+  async resolve({ ctx, input }) {
+    const { id, data } = input;
+    const todo = await ctx.task.update({
+      where: { id },
+      data,
+    });
+    return todo;
+  },
+});
 ```
-
 
 And the **React usage** looks like this:
 
@@ -128,7 +126,7 @@ return (
 
 Anyway, as I said, I just wanted to get the ball rolling. There's a lot more things:
 
-- Creating context for incoming requests for user-specific data that are dependency injected into the resolvers  - [link](/docs/v9/context)
+- Creating context for incoming requests for user-specific data that are dependency injected into the resolvers - [link](/docs/v9/context)
 - Middleware support for routers - [link](/docs/v9/middlewares)
 - Merging routers (you probably don't want all your backend data in one file) - [link](/docs/v9/merging-routers)
 - Simplest server-side rendering you've ever seen in React-land using our `@trpc/next` adapter - [link](/docs/v9/)

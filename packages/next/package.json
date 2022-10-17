@@ -1,6 +1,6 @@
 {
   "name": "@trpc/next",
-  "version": "10.0.0-proxy-beta.19",
+  "version": "10.0.0-proxy-beta.21",
   "description": "tRPC Next lib",
   "author": "KATT",
   "license": "MIT",
@@ -36,9 +36,9 @@
   },
   "peerDependencies": {
     "@tanstack/react-query": "^4.3.8",
-    "@trpc/client": "^10.0.0-alpha.48",
-    "@trpc/react": "^10.0.0-alpha.48",
-    "@trpc/server": "^10.0.0-alpha.48",
+    "@trpc/client": "^10.0.0-proxy-beta.21",
+    "@trpc/react-query": "^10.0.0-proxy-beta.21",
+    "@trpc/server": "^10.0.0-proxy-beta.21",
     "next": "*",
     "react": ">=16.8.0",
     "react-dom": ">=16.8.0"
@@ -48,9 +48,9 @@
   },
   "devDependencies": {
     "@tanstack/react-query": "^4.3.8",
-    "@trpc/client": "^10.0.0-proxy-beta.19",
-    "@trpc/react": "^10.0.0-proxy-beta.19",
-    "@trpc/server": "^10.0.0-proxy-beta.19",
+    "@trpc/client": "^10.0.0-proxy-beta.21",
+    "@trpc/react-query": "^10.0.0-proxy-beta.21",
+    "@trpc/server": "^10.0.0-proxy-beta.21",
     "@types/express": "^4.17.12",
     "@types/node": "^18.7.20",
     "express": "^4.17.1",
