@@ -63,7 +63,7 @@ type User = {
 
 const users: Record<string, User> = {};
 
-export const t = initTRPC.context<Context>.create();
+export const t = initTRPC.context<Context>().create();
 
 export const appRouter = t.router({
   getUserById: t.procedure.input(z.string()).query(({ input }) => {
@@ -104,11 +104,10 @@ A sample context is given below, save it in a file named `context.ts`:
 
 ```ts title='context.ts'
 import { inferAsyncReturnType } from '@trpc/server';
-import { FetchCreateContextOption } from '@trpc/server/adapters/fetch';
+import { FetchCreateContextFnOptions } from '@trpc/server/adapters/fetch';
 
-export function createContext({ req }: FetchCreateContextOption) {
-  const user = { name: req.headers.username ?? 'anonymous' };
-
+export function createContext({ req }: FetchCreateContextFnOptions) {
+  const user = { name: req.headers.get('username') ?? 'anonymous' };
   return { req, user };
 }
 
@@ -124,6 +123,7 @@ tRPC includes an adapter for the [Fetch API](https://developer.mozilla.org/en-US
 ```ts title='server.ts'
 import { fetchRequestHandler } from '@trpc/server/adapters/fetch';
 import { appRouter } from './router';
+import { createContext } from './context';
 
 export default {
   async fetch(request: Request): Promise<Response> {
@@ -131,6 +131,7 @@ export default {
       endpoint: '/trpc',
       req: request,
       router: appRouter,
+      createContext,
     });
   },
 };
