@@ -20,4 +20,4 @@
   - any: ['packages/next/**', '!packages/next/package.json']
 
 '@trpc/react-query':
-  - any: ['packages/react/**', '!packages/react/package.json']
+  - any: ['packages/react-query/**', '!packages/react-query/package.json']
