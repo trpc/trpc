@@ -75,12 +75,12 @@ export const t = initTRPC.context<Context>().create();
 
 
 const isAuthed = t.middleware(({ next, ctx }) => {
-  if (!params.ctx.user?.isAdmin) {
+  if (!ctx.user?.isAdmin) {
     throw new TRPCError({ code: 'UNAUTHORIZED' });
   }
   return next({
     ctx: {
-      user: params.ctx.user,
+      user: ctx.user,
     },
   });
 });
