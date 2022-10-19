@@ -1,6 +1,7 @@
 // interop:
 import { AnyRouter } from '@trpc/server';
 import { CreateTRPCReact, createHooksInternalProxy } from './createTRPCReact';
+import { CreateTRPCReactOptions } from './shared';
 import {
   CreateReactQueryHooks,
   createHooksInternal,
@@ -12,10 +13,12 @@ import {
 export function createReactQueryHooks<
   TRouter extends AnyRouter,
   TSSRContext = unknown,
->(): CreateReactQueryHooks<TRouter, TSSRContext> & {
+>(
+  opts?: CreateTRPCReactOptions<TRouter>,
+): CreateReactQueryHooks<TRouter, TSSRContext> & {
   proxy: CreateTRPCReact<TRouter, TSSRContext>;
 } {
-  const trpc = createHooksInternal<TRouter, TSSRContext>();
+  const trpc = createHooksInternal<TRouter, TSSRContext>(opts);
   const proxy = createHooksInternalProxy<TRouter, TSSRContext>(trpc);
 
   return {
