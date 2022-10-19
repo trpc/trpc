@@ -92,7 +92,9 @@ export function withTRPC<
     ssrContext: TSSRContext;
   };
   return (AppOrPage: NextComponentType<any, any, any>): NextComponentType => {
-    const trpc = createReactQueryHooks<TRouter, TSSRContext>();
+    const trpc = createReactQueryHooks<TRouter, TSSRContext>({
+      unstable_overrides: opts.config({}).unstable_overrides,
+    });
 
     const WithTRPC = (
       props: AppPropsType<NextRouter, any> & {
