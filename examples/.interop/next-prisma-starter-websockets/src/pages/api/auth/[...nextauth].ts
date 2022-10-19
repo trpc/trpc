@@ -21,9 +21,9 @@ if (useMockProvider) {
       async authorize(credentials) {
         if (credentials) {
           const user = {
-            id: credentials?.name,
-            name: credentials?.name,
-            email: credentials?.name,
+            id: credentials.name,
+            name: credentials.name,
+            email: credentials.name,
           };
           return user;
         }
