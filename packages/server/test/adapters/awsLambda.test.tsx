@@ -5,6 +5,7 @@ import { inferAsyncReturnType } from '../../src';
 import * as trpcLambda from '../../src/adapters/aws-lambda';
 import {
   mockAPIGatewayContext,
+  mockAPIGatewayProxyEventBase64Encoded,
   mockAPIGatewayProxyEventV1,
   mockAPIGatewayProxyEventV2,
 } from './lambda.utils';
@@ -47,6 +48,14 @@ const router = trpc
       return {
         text: `I've come to talk with you again`,
       };
+    },
+  })
+  .mutation('addOne', {
+    input: z.object({
+      counter: z.number().int().min(0),
+    }),
+    resolve(req) {
+      return { counter: req.input.counter + 1 };
     },
   })
   .interop();
@@ -384,6 +393,40 @@ test('router with no context', async () => {
       "result": Object {
         "data": Object {
           "text": "hello kATT",
+        },
+      },
+    }
+  `);
+});
+
+test('test base64 encoded apigateway proxy integration', async () => {
+  const { body, ...result } = await handler(
+    mockAPIGatewayProxyEventBase64Encoded(
+      mockAPIGatewayProxyEventV1({
+        body: JSON.stringify({ counter: 1 }),
+        headers: { 'Content-Type': 'application/json', 'X-USER': 'Eliot' },
+        method: 'POST',
+        path: 'addOne',
+        queryStringParameters: {},
+        resource: '/addOne',
+      }),
+    ),
+    mockAPIGatewayContext(),
+  );
+  const parsedBody = JSON.parse(body || '');
+  expect(result).toMatchInlineSnapshot(`
+    Object {
+      "headers": Object {
+        "Content-Type": "application/json",
+      },
+      "statusCode": 200,
+    }
+  `);
+  expect(parsedBody).toMatchInlineSnapshot(`
+    Object {
+      "result": Object {
+        "data": Object {
+          "counter": 2,
         },
       },
     }
