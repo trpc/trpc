@@ -1301,7 +1301,7 @@ importers:
       cssnano: ^5.1.13
       docusaurus-preset-shiki-twoslash: ^1.1.38
       dotenv: ^16.0.1
-      next-auth: ~4.10.3
+      next-auth: ~4.14.0
       oauth: ^0.10.0
       postcss: ^8.4.14
       prettier: ^2.7.1
@@ -1349,7 +1349,7 @@ importers:
       '@types/oauth': 0.9.1
       autoprefixer: 10.4.12_postcss@8.4.16
       dotenv: 16.0.2
-      next-auth: 4.10.3_biqbaboplfbrettd7655fr4n2y
+      next-auth: 4.14.0_biqbaboplfbrettd7655fr4n2y
       oauth: 0.10.0
       postcss: 8.4.16
       prettier: 2.7.1
@@ -15124,6 +15124,32 @@ packages:
       react: 18.2.0
       react-dom: 18.2.0_react@18.2.0
       uuid: 8.3.2
+    dev: false
+
+  /next-auth/4.14.0_biqbaboplfbrettd7655fr4n2y:
+    resolution: {integrity: sha512-pD5sin6kq/uIx3Cod2/0JFnViEnngBTTNy4CdfRaYc2QzV2zwpWAbQny2Ezlg0GjEozDhKC53JJxRRE4AmNKEw==}
+    engines: {node: ^12.19.0 || ^14.15.0 || ^16.13.0}
+    peerDependencies:
+      next: ^12.2.5
+      nodemailer: ^6.6.5
+      react: ^17.0.2 || ^18
+      react-dom: ^17.0.2 || ^18
+    peerDependenciesMeta:
+      nodemailer:
+        optional: true
+    dependencies:
+      '@babel/runtime': 7.19.0
+      '@panva/hkdf': 1.0.2
+      cookie: 0.5.0
+      jose: 4.9.3
+      oauth: 0.9.15
+      openid-client: 5.1.9
+      preact: 10.11.0
+      preact-render-to-string: 5.2.4_preact@10.11.0
+      react: 18.2.0
+      react-dom: 18.2.0_react@18.2.0
+      uuid: 8.3.2
+    dev: true
 
   /next-tick/1.1.0:
     resolution: {integrity: sha512-CXdUiJembsNjuToQvxayPZF9Vqht7hewsvy2sOWafLvi2awflj9mOC6bHIg50orX8IJvWKY9wYQ/zB2kogPslQ==}

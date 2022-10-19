@@ -64,7 +64,7 @@
     "@types/oauth": "^0.9.1",
     "autoprefixer": "^10.4.7",
     "dotenv": "^16.0.1",
-    "next-auth": "~4.10.3",
+    "next-auth": "~4.14.0",
     "oauth": "^0.10.0",
     "postcss": "^8.4.14",
     "prettier": "^2.7.1",
