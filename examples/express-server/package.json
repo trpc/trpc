@@ -1,6 +1,6 @@
 {
   "name": "@examples/express-server",
-  "version": "10.0.0-proxy-beta.22",
+  "version": "10.0.0-proxy-beta.23",
   "private": true,
   "scripts": {
     "dev:server": "tsx watch src/server",
@@ -12,9 +12,9 @@
     "test-start": "start-server-and-test 'node dist/server' 2021 'node dist/client'"
   },
   "dependencies": {
-    "@trpc/client": "^10.0.0-proxy-beta.22",
-    "@trpc/react-query": "^10.0.0-proxy-beta.22",
-    "@trpc/server": "^10.0.0-proxy-beta.22",
+    "@trpc/client": "^10.0.0-proxy-beta.23",
+    "@trpc/react-query": "^10.0.0-proxy-beta.23",
+    "@trpc/server": "^10.0.0-proxy-beta.23",
     "@types/node-fetch": "^2.5.11",
     "abort-controller": "^3.0.0",
     "express": "^4.17.1",
