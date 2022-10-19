@@ -38,7 +38,7 @@ importers:
       rollup-plugin-delete: ^2.0.0
       rollup-plugin-multi-input: ^1.3.1
       rollup-plugin-node-externals: ^5.0.0
-      rollup-plugin-swc3: ^0.6.0
+      rollup-plugin-swc3: ^0.7.0
       rollup-plugin-typescript2: ^0.32.1
       tsx: ^3.9.0
       typescript: ^4.8.3
@@ -67,7 +67,7 @@ importers:
       rollup-plugin-delete: 2.0.0
       rollup-plugin-multi-input: 1.3.1
       rollup-plugin-node-externals: 5.0.0_rollup@2.79.1
-      rollup-plugin-swc3: 0.6.0_yzdwamyeo2l56m2tbjw7mygy4a
+      rollup-plugin-swc3: 0.7.0_yzdwamyeo2l56m2tbjw7mygy4a
       rollup-plugin-typescript2: 0.32.1_5q64ijqsuisqe52alrh6v6njki
       tsx: 3.9.0
       typescript: 4.8.3
@@ -3887,6 +3887,10 @@ packages:
     resolution: {integrity: sha512-gvCOUNpXsWrIQ3A4aXCLIdblL0tDq42BG/2Xw7oxbil9h11uow10ztS2GuFazNBfjbrsZ5nl+nPl5jDSjj5TSg==}
     dependencies:
       ajv: 6.12.6
+
+  /@fastify/deepmerge/1.1.0:
+    resolution: {integrity: sha512-E8Hfdvs1bG6u0N4vN5Nty6JONUfTdOciyD5rn8KnEsLKIenvOVcr210BQR9t34PRkNyjqnMLGk3e0BsaxRdL+g==}
+    dev: false
 
   /@fastify/error/2.0.0:
     resolution: {integrity: sha512-wI3fpfDT0t7p8E6dA2eTECzzOd+bZsZCJ2Hcv+Onn2b7ZwK3RwD27uW2QDaMtQhAfWQQP+WNK7nKf0twLsBf9w==}
@@ -17752,16 +17756,16 @@ packages:
       rollup-plugin-inject: 3.0.2
     dev: true
 
-  /rollup-plugin-swc3/0.6.0_yzdwamyeo2l56m2tbjw7mygy4a:
-    resolution: {integrity: sha512-nNG2T3x3wq6e7H+8ZHB0CxJ3H9QeYZUh+DwCjwWEyGCaIwIMyIaq/30ZJlYK8/OWWhCfYMwxKRcZGirPg6nPqA==}
+  /rollup-plugin-swc3/0.7.0_yzdwamyeo2l56m2tbjw7mygy4a:
+    resolution: {integrity: sha512-aWkbRGjmzSLs8BPQEuGo3PQsBAsYyL9Nk5xZ6ruEnBp+5RN9KavSQV1nM13gSmXZNBhz7Wh5mscyo5lCWQ1Bpg==}
     engines: {node: '>=12'}
     peerDependencies:
       '@swc/core': '>=1.2.165'
-      rollup: ^2.0.0
+      rollup: ^2.0.0 || ^3.0.0
     dependencies:
+      '@fastify/deepmerge': 1.1.0
       '@rollup/pluginutils': 4.2.1
       '@swc/core': 1.3.3
-      deepmerge: 4.2.2
       get-tsconfig: 4.2.0
       rollup: 2.79.1
     dev: false
