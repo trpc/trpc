@@ -135,3 +135,17 @@ export const mockAPIGatewayContext = (): Context => {
     succeed: () => {},
   };
 };
+
+export const mockAPIGatewayProxyEventBase64Encoded = (
+  event: APIGatewayProxyEvent,
+) => {
+  if (event.body) {
+    return {
+      ...event,
+      isBase64Encoded: true,
+      body: Buffer.from(event.body, 'utf8').toString('base64'),
+    } as APIGatewayProxyEvent;
+  } else {
+    return event;
+  }
+};
