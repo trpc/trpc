@@ -283,6 +283,7 @@ The `config`-argument is a function that returns an object that configures the t
 ### `unstable_overrides`: (default: `undefined`)
 
 configure [overrides for the react-query hooks](/docs/v10/useContext#invalidate-full-cache-on-every-mutation).
+
 ### `ssr`-boolean (default: `false`)
 
 Whether tRPC should await queries when server-side rendering a page. Defaults to `false`.
