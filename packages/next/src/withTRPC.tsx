@@ -58,10 +58,10 @@ function transformQueryOrMutationCacheErrors<
 export type WithTRPCConfig<TRouter extends AnyRouter> =
   CreateTRPCClientOptions<TRouter> & {
     abortOnUnmount?: boolean;
-  } & CreateTRPCReactQueryClientConfig &
-    CreateTRPCReactOptions<TRouter>;
+  } & CreateTRPCReactQueryClientConfig;
 
-interface WithTRPCOptions<TRouter extends AnyRouter> {
+interface WithTRPCOptions<TRouter extends AnyRouter>
+  extends CreateTRPCReactOptions<TRouter> {
   config: (info: { ctx?: NextPageContext }) => WithTRPCConfig<TRouter>;
 }
 
@@ -93,7 +93,7 @@ export function withTRPC<
   };
   return (AppOrPage: NextComponentType<any, any, any>): NextComponentType => {
     const trpc = createReactQueryHooks<TRouter, TSSRContext>({
-      unstable_overrides: opts.config({}).unstable_overrides,
+      unstable_overrides: opts.unstable_overrides,
     });
 
     const WithTRPC = (
