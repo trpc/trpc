@@ -15,7 +15,9 @@ export function createTRPCNext<
   TRouter extends AnyRouter,
   TSSRContext extends NextPageContext = NextPageContext,
 >(opts: WithTRPCNoSSROptions<TRouter> | WithTRPCSSROptions<TRouter>) {
-  const hooks = createHooksInternal<TRouter, TSSRContext>();
+  const hooks = createHooksInternal<TRouter, TSSRContext>({
+    unstable_overrides: opts.unstable_overrides,
+  });
 
   // TODO: maybe set TSSRContext to `never` when using `WithTRPCNoSSROptions`
   const _withTRPC = withTRPC<TRouter, TSSRContext>(opts);

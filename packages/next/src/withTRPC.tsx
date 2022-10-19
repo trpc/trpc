@@ -18,6 +18,7 @@ import {
   createTRPCClient,
 } from '@trpc/react-query';
 import {
+  CreateTRPCReactOptions,
   CreateTRPCReactQueryClientConfig,
   getQueryClient,
 } from '@trpc/react-query/shared';
@@ -59,7 +60,8 @@ export type WithTRPCConfig<TRouter extends AnyRouter> =
     abortOnUnmount?: boolean;
   } & CreateTRPCReactQueryClientConfig;
 
-interface WithTRPCOptions<TRouter extends AnyRouter> {
+interface WithTRPCOptions<TRouter extends AnyRouter>
+  extends CreateTRPCReactOptions<TRouter> {
   config: (info: { ctx?: NextPageContext }) => WithTRPCConfig<TRouter>;
 }
 
@@ -90,7 +92,9 @@ export function withTRPC<
     ssrContext: TSSRContext;
   };
   return (AppOrPage: NextComponentType<any, any, any>): NextComponentType => {
-    const trpc = createReactQueryHooks<TRouter, TSSRContext>();
+    const trpc = createReactQueryHooks<TRouter, TSSRContext>({
+      unstable_overrides: opts.unstable_overrides,
+    });
 
     const WithTRPC = (
       props: AppPropsType<NextRouter, any> & {
