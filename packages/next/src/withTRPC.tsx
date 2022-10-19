@@ -58,10 +58,10 @@ function transformQueryOrMutationCacheErrors<
 export type WithTRPCConfig<TRouter extends AnyRouter> =
   CreateTRPCClientOptions<TRouter> & {
     abortOnUnmount?: boolean;
-  } & CreateTRPCReactQueryClientConfig &
-    CreateTRPCReactOptions<TRouter>;
+  } & CreateTRPCReactQueryClientConfig;
 
-interface WithTRPCOptions<TRouter extends AnyRouter> {
+interface WithTRPCOptions<TRouter extends AnyRouter>
+  extends CreateTRPCReactOptions<TRouter> {
   config: (info: { ctx?: NextPageContext }) => WithTRPCConfig<TRouter>;
 }
 
