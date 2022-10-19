@@ -18,6 +18,7 @@ import {
   createTRPCClient,
 } from '@trpc/react-query';
 import {
+  CreateTRPCReactOptions,
   CreateTRPCReactQueryClientConfig,
   getQueryClient,
 } from '@trpc/react-query/shared';
@@ -57,7 +58,8 @@ function transformQueryOrMutationCacheErrors<
 export type WithTRPCConfig<TRouter extends AnyRouter> =
   CreateTRPCClientOptions<TRouter> & {
     abortOnUnmount?: boolean;
-  } & CreateTRPCReactQueryClientConfig;
+  } & CreateTRPCReactQueryClientConfig &
+    CreateTRPCReactOptions<TRouter>;
 
 interface WithTRPCOptions<TRouter extends AnyRouter> {
   config: (info: { ctx?: NextPageContext }) => WithTRPCConfig<TRouter>;
