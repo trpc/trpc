@@ -40,6 +40,12 @@ div[class^='announcementBar_'] {
 .navbar {
   border-bottom: 1px solid var(--ifm-toc-border-color);
 }
+
+.navbar__link--active,
+.menu__link--active {
+  color: var(--ifm-navbar-link-color);
+}
+
 .homepage .navbar__inner {
   @apply container;
 }
