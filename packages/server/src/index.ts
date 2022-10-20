@@ -1,4 +1,3 @@
-export * from './http'; // dont export this from main?
 export * from './transformer';
 export * from './error/TRPCError';
 export * from './types';

@@ -566,6 +566,8 @@ const client = createTRPCProxyClient({
 });
 ```
 
+This change is also reflected in the `@trpc/server` package, where `http` was previously exported from the main entrypoint, but has now been moved to their own `@trpc/server/http` entrypoint.
+
 ## Extras
 
 ### Removal of the teardown option
