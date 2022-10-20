@@ -24,6 +24,7 @@ export const INPUTS: Record<typeof PACKAGES[number], string[]> = {
     'src/adapters/standalone.ts',
     'src/adapters/ws.ts',
     'src/adapters/fetch/index.ts',
+    'src/http/index.ts',
     'src/rpc/index.ts',
     'src/observable/index.ts',
     'src/subscription.ts',
