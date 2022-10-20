@@ -1,4 +1,4 @@
-import { CreateTRPCClientOptions, createReactQueryHooks } from '@trpc/react';
+import { createReactQueryHooks } from '@trpc/react-query';
 import type { inferProcedureOutput } from '@trpc/server';
 import superjson from 'superjson';
 // ℹ️ Type-only import:

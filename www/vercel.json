@@ -37,7 +37,28 @@
     },
     {
       "source": "/docs/:path((?!v[0-9]).*)",
-      "destination": "/docs/v10/:path*"
+      "destination": "/docs/v10/:path*",
+      "permanent": false
+    },
+    {
+      "source": "/blog/hello-trpc",
+      "destination": "/blog/introducing-trpc",
+      "permanent": true
+    },
+    {
+      "source": "/docs/v10/invalidateQueries",
+      "destination": "/docs/v10/query-invalidation",
+      "permanent": true
+    },
+    {
+      "source": "/docs/v10/publicProcedures",
+      "destination": "/docs/v10/procedures",
+      "permanent": true
+    },
+    {
+      "source": "/docs/v10/query-invalidation",
+      "destination": "/docs/v10/useContext#query-invalidation",
+      "permanent": true
     }
   ]
 }

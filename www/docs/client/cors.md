@@ -26,3 +26,51 @@ const client = createTRPCProxyClient<AppRouter>({
   ],
 });
 ```
+
+## Enabling on the server
+
+The tRPC handler is essentially just a function that takes a [request](https://developer.mozilla.org/en-US/docs/Web/API/Request) and [response](https://developer.mozilla.org/en-US/docs/Web/API/Response) objects, you can wrap the handler in another handler that modifies the response object to enable CORS, before passing it to the tRPC handler.
+
+```ts twoslash title='server.ts'
+//@filename router.ts
+import { initTRPC } from '@trpc/server';
+const t = initTRPC.create();
+export const appRouter = t.router({
+  foo: t.procedure.query(() => 'bar')
+});
+// @noErrors
+// ---cut---
+import http from 'http';
+import { createHTTPHandler } from '@trpc/server/adapters/standalone';
+import { appRouter } from "./router";
+
+// Create the tRPC handler
+const trpcHandler = createHTTPHandler({
+  router: appRouter,
+  createContext: () => ({}),
+});
+
+// create and listen to the server handler
+http.createServer((req, res) => {
+  // act on the req/res objects
+
+  // enable CORS
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Request-Method', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'OPTIONS, GET');
+  res.setHeader('Access-Control-Allow-Headers', '*');
+
+  // accepts OPTIONS
+  if (req.method === 'OPTIONS') {
+    res.writeHead(200);
+    return res.end();
+  }
+
+  // then we can pass the req/res to the tRPC handler
+  trpcHandler(req, res);
+}).listen(8080);
+```
+
+:::note
+You can do the same thing when using Next.js, Express or any other framework.
+:::

@@ -1,5 +1,5 @@
-import { t } from '../trpc';
+import { router, publicProcedure } from '../trpc';
 
-export const healthRouter = t.router({
-  healthz: t.procedure.query(() => 'yay!'),
+export const healthRouter = router({
+  healthz: publicProcedure.query(() => 'yay!'),
 });

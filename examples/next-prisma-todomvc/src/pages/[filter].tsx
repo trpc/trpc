@@ -1,6 +1,6 @@
 import { useIsMutating } from '@tanstack/react-query';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
-import { createProxySSGHelpers } from '@trpc/react/ssg';
+import { createProxySSGHelpers } from '@trpc/react-query/ssg';
 import { inferProcedureOutput } from '@trpc/server';
 import clsx from 'clsx';
 import {

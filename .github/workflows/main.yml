@@ -5,6 +5,7 @@ jobs:
     name: Build and test on Node ${{ matrix.node }} and ${{ matrix.os }}
 
     runs-on: ${{ matrix.os }}
+
     strategy:
       matrix:
         node: ['16.x']
@@ -12,18 +13,35 @@ jobs:
 
     steps:
       - name: Checkout repo
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - uses: pnpm/action-setup@v2.2.4
 
       - name: Use Node ${{ matrix.node }}
-        uses: actions/setup-node@v1
+        uses: actions/setup-node@v3
         with:
           node-version: ${{ matrix.node }}
 
+      - name: Get pnpm store directory
+        id: pnpm-cache
+        run: |
+          echo "::set-output name=pnpm_cache_dir::$(pnpm store path)"
+
+      - uses: actions/cache@v3
+        name: Setup pnpm cache
+        with:
+          path: ${{ steps.pnpm-cache.outputs.pnpm_cache_dir }}
+          key: ${{ runner.os }}-pnpm-store-trpc-main-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-trpc-main-
+
       - name: Install deps and build (with cache)
-        uses: bahmutov/npm-install@v1
+        run: pnpm --filter "@trpc/*" --filter root install
 
       - name: Test
-        run: yarn test --ci --coverage --maxWorkers=2
+        run: pnpm test -- --ci --coverage --maxWorkers=2
 
       - uses: codecov/codecov-action@v1
         with:

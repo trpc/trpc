@@ -16,7 +16,12 @@ import {
   TRPCClientErrorLike,
   createReactQueryHooks,
   createTRPCClient,
-} from '@trpc/react';
+} from '@trpc/react-query';
+import {
+  CreateTRPCReactOptions,
+  CreateTRPCReactQueryClientConfig,
+  getQueryClient,
+} from '@trpc/react-query/shared';
 import type { AnyRouter, Dict, Maybe, ResponseMeta } from '@trpc/server';
 import {
   AppContextType,
@@ -24,10 +29,9 @@ import {
   NextComponentType,
   NextPageContext,
 } from 'next/dist/shared/lib/utils';
+import { NextRouter } from 'next/router';
 import React, { createElement, useState } from 'react';
 import ssrPrepass from 'react-ssr-prepass';
-
-type QueryClientConfig = ConstructorParameters<typeof QueryClient>[0];
 
 function transformQueryOrMutationCacheErrors<
   TState extends
@@ -53,11 +57,11 @@ function transformQueryOrMutationCacheErrors<
 }
 export type WithTRPCConfig<TRouter extends AnyRouter> =
   CreateTRPCClientOptions<TRouter> & {
-    queryClientConfig?: QueryClientConfig;
     abortOnUnmount?: boolean;
-  };
+  } & CreateTRPCReactQueryClientConfig;
 
-interface WithTRPCOptions<TRouter extends AnyRouter> {
+interface WithTRPCOptions<TRouter extends AnyRouter>
+  extends CreateTRPCReactOptions<TRouter> {
   config: (info: { ctx?: NextPageContext }) => WithTRPCConfig<TRouter>;
 }
 
@@ -88,10 +92,12 @@ export function withTRPC<
     ssrContext: TSSRContext;
   };
   return (AppOrPage: NextComponentType<any, any, any>): NextComponentType => {
-    const trpc = createReactQueryHooks<TRouter, TSSRContext>();
+    const trpc = createReactQueryHooks<TRouter, TSSRContext>({
+      unstable_overrides: opts.unstable_overrides,
+    });
 
     const WithTRPC = (
-      props: AppPropsType & {
+      props: AppPropsType<NextRouter, any> & {
         trpc?: TRPCPrepassProps;
       },
     ) => {
@@ -101,7 +107,7 @@ export function withTRPC<
         }
 
         const config = getClientConfig({});
-        const queryClient = new QueryClient(config.queryClientConfig);
+        const queryClient = getQueryClient(config);
         const trpcClient = trpc.createClient(config);
         return {
           abortOnUnmount: config.abortOnUnmount,
@@ -170,7 +176,7 @@ export function withTRPC<
 
         const config = getClientConfig({ ctx });
         const trpcClient = createTRPCClient(config);
-        const queryClient = new QueryClient(config.queryClientConfig);
+        const queryClient = getQueryClient(config);
 
         const trpcProp: TRPCPrepassProps = {
           config,

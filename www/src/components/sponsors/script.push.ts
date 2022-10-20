@@ -1,6 +1,7 @@
 // Don't judge me on this code
 import fs from 'fs';
 import { sponsors } from './script.output';
+import { getMultiplier } from './utils';
 
 type Sponsor = typeof sponsors[number];
 type ValidLogins = Sponsor['login'];
@@ -29,6 +30,7 @@ const sections: Def = {
     'chimon2000',
     'snaplet',
     'flylance-apps',
+    'echobind',
   ],
 };
 
@@ -46,7 +48,16 @@ const buckets: Buckets = {
   other: [],
 };
 
-for (const sponsor of sponsors) {
+const sortedSponsors = sponsors
+  .map((sponsor) => {
+    return {
+      ...sponsor,
+      value: getMultiplier(sponsor.createdAt) * sponsor.monthlyPriceInDollars,
+    };
+  })
+  .sort((a, b) => b.value - a.value);
+
+for (const sponsor of sortedSponsors) {
   const { login } = sponsor;
   const section = sections.gold.includes(login)
     ? 'gold'

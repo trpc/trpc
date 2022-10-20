@@ -1,0 +1,19 @@
+{
+  "name": "@examples/minimal-react-server",
+  "version": "10.0.0-proxy-beta.23",
+  "private": true,
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsx watch index.ts",
+    "start": "node dist/index.js"
+  },
+  "dependencies": {
+    "@trpc/server": "^10.0.0-proxy-beta.23",
+    "zod": "^3.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^18.7.20",
+    "tsx": "^3.9.0",
+    "typescript": "^4.8.3"
+  }
+}

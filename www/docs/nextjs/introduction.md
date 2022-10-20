@@ -19,22 +19,22 @@ Recommended but not enforced file structure. This is what you get when starting 
 
 ```graphql
 .
-├── prisma # <-- if prisma is added
+├── prisma  # <-- if prisma is added
 │   └── [..]
 ├── src
 │   ├── pages
-│   │   ├── _app.tsx # <-- add `withTRPC()`-HOC here
+│   │   ├── _app.tsx  # <-- add `withTRPC()`-HOC here
 │   │   ├── api
 │   │   │   └── trpc
-│   │   │       └── [trpc].ts # <-- tRPC HTTP handler
+│   │   │       └── [trpc].ts  # <-- tRPC HTTP handler
 │   │   └── [..]
 │   ├── server
 │   │   ├── routers
-│   │   │   ├── app.ts   # <-- main app router
+│   │   │   ├── _app.ts  # <-- main app router
 │   │   │   ├── post.ts  # <-- sub routers
 │   │   │   └── [..]
-│   │   ├── context.ts      # <-- create app context
-│   │   └── trpc.ts         # <-- procedure helpers
+│   │   ├── context.ts   # <-- create app context
+│   │   └── trpc.ts      # <-- procedure helpers
 │   └── utils
 │       └── trpc.ts  # <-- your typesafe tRPC hooks
 └── [..]
@@ -47,25 +47,27 @@ Recommended but not enforced file structure. This is what you get when starting 
 **npm**
 
 ```bash
-npm install @trpc/server@next @trpc/client@next @trpc/react@next @trpc/next@next @tanstack/react-query
+npm install @trpc/server@next @trpc/client@next @trpc/react-query@next @trpc/next@next @tanstack/react-query zod
 ```
 
 **yarn**
 
 ```bash
-yarn add @trpc/server@next @trpc/client@next @trpc/react@next @trpc/next@next @tanstack/react-query
+yarn add @trpc/server@next @trpc/client@next @trpc/react-query@next @trpc/next@next @tanstack/react-query zod
 ```
 
 **pnpm**
 
 ```bash
-pnpm add @trpc/server@next @trpc/client@next @trpc/react@next @trpc/next@next @tanstack/react-query
+pnpm add @trpc/server@next @trpc/client@next @trpc/react-query@next @trpc/next@next @tanstack/react-query zod
 ```
 
 #### Why @tanstack/react-query?
-`@trpc/react` provides a thin wrapper over [@tanstack/react-query](https://tanstack.com/query/v4/docs/adapters/react-query). It is required as a peer dependency.
+
+`@trpc/react-query` provides a thin wrapper over [@tanstack/react-query](https://tanstack.com/query/v4/docs/adapters/react-query). It is required as a peer dependency.
 
 #### Why Zod?
+
 Most examples use [Zod](https://github.com/colinhacks/zod) for input validation and we highly recommended it, though it isn't required. You can use a validation library of your choice ([Yup](https://github.com/jquense/yup), [Superstruct](https://github.com/ianstormtaylor/superstruct), [io-ts](https://github.com/gcanti/io-ts), etc). In fact, any object containing a `parse`, `create` or `validateSync` method will work.
 
 ### 2. Enable strict mode
@@ -88,25 +90,60 @@ If strict mode is too much, at least enable `strictNullChecks`:
 
 ### 3. Create a tRPC router
 
-Implement your tRPC router in `./pages/api/trpc/[trpc].ts`. If you need to split your router into several subrouters, implement them in a top-level `server` directory in your project root, then import them into `./pages/api/trpc/[trpc].ts` and [merge them](merging-routers) into a single root `appRouter`.
+Initialize your tRPC backend using the `initTRPC` function and create your first router.
 
-<details><summary>View sample router</summary>
+:::note
+The below showcased backend uses the [recommended file structure](#recommended-file-structure), but you can keep it simple and put everything in the [api-handler directly](https://github.com/trpc/trpc/blob/next/examples/next-minimal-starter/src/pages/api/trpc/%5Btrpc%5D.ts) if you want.
+:::
 
-```ts title='./pages/api/trpc/[trpc].ts'
-import { initTRPC } from '@trpc/server';
-import * as trpcNext from '@trpc/server/adapters/next';
+<details><summary>View sample backend</summary>
+
+```ts title='server/trpc.ts'
+import { TRPCError, initTRPC } from '@trpc/server';
+
+// Avoid exporting the entire t-object since it's not very
+// descriptive and can be confusing to newcomers used to t
+// meaning translation in i18n libraries.
+const t = initTRPC.create();
+
+// Base router and procedure helpers
+export const router = t.router;
+export const publicProcedure = t.procedure;
+
+/**
+ * Reusable middleware that checks if users are authenticated.
+ * @note Example only, yours may vary depending on how your auth is setup
+ **/
+const isAuthed = t.middleware(({ next, ctx }) => {
+  if (!ctx.session?.user?.email) {
+    throw new TRPCError({
+      code: 'UNAUTHORIZED',
+    });
+  }
+  return next({
+    ctx: {
+      // Infers the `session` as non-nullable
+      session: ctx.session,
+    },
+  });
+});
+
+// Protected procedures for logged in users only
+export const protectedProcedure = t.procedure.use(isAuthed);
+```
+
+<br/>
+
+```ts title='server/routers/_app.ts'
 import { z } from 'zod';
+import { publicProcedure, router } from '../trpc';
 
-export const t = initTRPC.create();
-
-export const appRouter = t.router({
-  hello: t.procedure
+export const appRouter = router({
+  hello: publicProcedure
     .input(
-      z
-        .object({
-          text: z.string().nullish(),
-        })
-        .nullish(),
+      z.object({
+        text: z.string().nullish(),
+      }),
     )
     .query(({ input }) => {
       return {
@@ -117,6 +154,19 @@ export const appRouter = t.router({
 
 // export type definition of API
 export type AppRouter = typeof appRouter;
+```
+
+<br/>
+
+:::note
+If you need to split your router into several subrouters, you can implement them in the `server/routers` directory and import and [merge them](../server/merging-routers.md) to a single root `appRouter`. Check out the [next-prisma-starter](https://github.com/trpc/trpc/tree/next/examples/next-prisma-starter/src/server/routers) for an example of this usage.
+:::
+
+<br/>
+
+```ts title='pages/api/trpc/[trpc].ts'
+import * as trpcNext from '@trpc/server/adapters/next';
+import { appRouter } from '../../../server/routers/_app';
 
 // export API handler
 export default trpcNext.createNextApiHandler({
@@ -132,17 +182,21 @@ export default trpcNext.createNextApiHandler({
 Create a set of strongly-typed hooks using your API's type signature.
 
 ```tsx title='utils/trpc.ts'
+import { httpBatchLink } from '@trpc/client';
 import { createTRPCNext } from '@trpc/next';
-import type { AppRouter } from '../pages/api/trpc/[trpc]';
+import type { AppRouter } from '../server/routers/_app';
 
 function getBaseUrl() {
-  if (typeof window !== 'undefined') // browser should use relative path
+  if (typeof window !== 'undefined')
+    // browser should use relative path
     return '';
 
-  if (process.env.VERCEL_URL) // reference for vercel.com
+  if (process.env.VERCEL_URL)
+    // reference for vercel.com
     return `https://${process.env.VERCEL_URL}`;
 
-  if (process.env.RENDER_INTERNAL_HOSTNAME) // reference for render.com
+  if (process.env.RENDER_INTERNAL_HOSTNAME)
+    // reference for render.com
     return `http://${process.env.RENDER_INTERNAL_HOSTNAME}:${process.env.PORT}`;
 
   // assume localhost
@@ -175,10 +229,14 @@ export const trpc = createTRPCNext<AppRouter>({
 // => { useQuery: ..., useMutation: ...}
 ```
 
+:::info
+createTRPCNext does not work with interop mode. If you are migrating from v9 using interop, keep using [the old way of initializing tRPC](../../versioned_docs/version-9.x/nextjs/introduction.md#4-create-trpc-hooks).
+:::
+
 ### 5. Configure `_app.tsx`
 
 ```tsx title='pages/_app.tsx'
-import type { AppType } from 'next/dist/shared/lib/utils';
+import type { AppType } from 'next/app';
 import { trpc } from '../utils/trpc';
 
 const MyApp: AppType = ({ Component, pageProps }) => {
@@ -212,18 +270,18 @@ export default function IndexPage() {
 
 The `config`-argument is a function that returns an object that configures the tRPC and React Query clients. This function has a `ctx` input that gives you access to the Next.js `req` object, among other things. The returned value can contain the following properties:
 
-- Exactly **one of** these are **required**:
-
-  - `url` your API URL.
-  - `links` to customize the flow of data between tRPC Client and the tRPC-server. [Read more](../client/links.md).
-
+- **Required**:
+  - `links` to customize the flow of data between tRPC Client and the tRPC-server. [Read more](/docs/v10/links).
 - Optional:
   - `queryClientConfig`: a configuration object for the React Query `QueryClient` used internally by the tRPC React hooks: [QueryClient docs](https://tanstack.com/query/v4/docs/reference/QueryClient)
-  - `headers`: an object or a function that returns an object of outgoing tRPC requests
+  - `queryClient`: a React Query [QueryClient instance]((https://tanstack.com/query/v4/docs/reference/QueryClient)
+    - **Note:**: You can only provide either a `queryClient` or a `queryClientConfig`.
   - `transformer`: a transformer applied to outgoing payloads. Read more about [Data Transformers](data-transformers)
-  - `fetch`: customize the implementation of `fetch` used by tRPC internally
-  - `AbortController`: customize the implementation of `AbortController` used by tRPC internally
   - `abortOnUnmount`: determines if in-flight requests will be cancelled on component unmount. This defaults to `false`.
+
+### `unstable_overrides`: (default: `undefined`)
+
+configure [overrides for the react-query hooks](/docs/v10/useContext#invalidate-full-cache-on-every-mutation).
 
 ### `ssr`-boolean (default: `false`)
 
@@ -262,4 +320,4 @@ export const trpc = createTRPCNext<AppRouter>({
 
 ## Next steps
 
-Refer to the `@trpc/react` docs for additional information on executing [Queries](react-queries) and [Mutations](react-mutations) inside your components.
+Refer to the `@trpc/react-query` docs for additional information on executing [Queries](react-queries) and [Mutations](react-mutations) inside your components.

@@ -1,7 +1,7 @@
 import { InfiniteData } from '@tanstack/react-query';
 import { expectTypeOf } from 'expect-type';
 import { z } from 'zod';
-import { createProxySSGHelpers } from '../../../react/src/ssg/ssgProxy';
+import { createProxySSGHelpers } from '../../../react-query/src/ssg/ssgProxy';
 import { initTRPC } from '../../src';
 
 const t = initTRPC.create();

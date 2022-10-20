@@ -9,10 +9,10 @@ jest.mock('@trpc/server/shared', () => mock_trpcServer__shared);
 import * as mock_trpcClient from '../../client/src';
 jest.mock('@trpc/client', () => mock_trpcClient);
 
-import * as mock_trpcReact from '../../react/src';
-jest.mock('@trpc/react', () => mock_trpcReact);
-import * as mock_trpcReact__ssg from '../../react/src/ssg';
-jest.mock('@trpc/react/ssg', () => mock_trpcReact__ssg);
+import * as mock_trpcReact from '../../react-query/src';
+jest.mock('@trpc/react-query', () => mock_trpcReact);
+import * as mock_trpcReact__ssg from '../../react-query/src/ssg';
+jest.mock('@trpc/react-query/ssg', () => mock_trpcReact__ssg);
 
 import * as mock_trpcNext from '../../next/src';
 jest.mock('@trpc/next', () => mock_trpcNext);

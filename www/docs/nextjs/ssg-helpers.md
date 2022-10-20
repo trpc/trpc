@@ -8,21 +8,26 @@ slug: /ssg-helpers
 `createProxySSGHelpers` provides you a set of helper functions that you can use to prefetch queries on the server.
 
 ```ts
-import { createProxySSGHelpers } from '@trpc/react/ssg';
+import { createProxySSGHelpers } from '@trpc/react-query/ssg';
+import { createContext } from 'server/context';
 
 const ssg = createProxySSGHelpers({
   router: appRouter,
-  ctx: createContext,
+  ctx: await createContext(),
   transformer: superjson, // optional - adds superjson serialization
 });
 ```
+
+:::info
+For a full example, see our [E2E SSG test example](https://github.com/trpc/trpc/tree/next/examples/.test/ssg)
+:::
 
 The returned functions are all wrappers around react-query functions. Please check out [their docs](https://react-query.tanstack.com/overview) to learn more about them.
 
 ## Next.js Example
 
 ```ts title='pages/posts/[id].tsx'
-import { createProxySSGHelpers } from '@trpc/react/ssg';
+import { createProxySSGHelpers } from '@trpc/react-query/ssg';
 import { GetServerSidePropsContext, InferGetServerSidePropsType } from 'next';
 import { createContext } from 'server/context';
 import { appRouter } from 'server/routers/_app';
@@ -39,8 +44,11 @@ export async function getServerSideProps(
   });
   const id = context.params?.id as string;
 
-  // Prefetch `post.byId`
-  await ssg.post.byId.fetch({ id });
+  /*
+   * Prefetching the `post.byId` query here.
+   * `prefetch` does not return the result and never throws - if you need that behavior, use `fetch` instead.
+   */
+  await ssg.post.byId.prefetch({ id });
 
   // Make sure to return { props: { trpcState: ssg.dehydrate() } }
   return {

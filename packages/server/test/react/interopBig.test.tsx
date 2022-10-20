@@ -4,11 +4,11 @@ import { bigRouter as bigV9Router } from '../__generated__/bigLegacyRouter/bigRo
 import { createQueryClient } from '../__queryClient';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { render, waitFor } from '@testing-library/react';
-import { createReactQueryHooks } from '@trpc/react';
+import { createReactQueryHooks } from '@trpc/react-query/src';
+import { initTRPC } from '@trpc/server/src';
 import { expectTypeOf } from 'expect-type';
 import { konn } from 'konn';
 import React, { useState } from 'react';
-import { initTRPC } from '../../src';
 
 const ctx = konn()
   .beforeEach(() => {

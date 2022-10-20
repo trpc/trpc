@@ -1,5 +1,5 @@
 ```twoslash include server
-// @module: esnext
+// @target: esnext
 // @filename: server.ts
 import { initTRPC } from '@trpc/server';
 import z from 'zod';
@@ -21,7 +21,6 @@ export type AppRouter = typeof appRouter;
 ```
 
 ```ts twoslash
-// @module: esnext
 // @target: esnext
 // @include: server
 // @filename: client.ts

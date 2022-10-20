@@ -8,7 +8,9 @@
   },
   "workbench.colorCustomizations": {
     "titleBar.activeBackground": "#2596be",
-    "titleBar.inactiveBackground": "#004a72"
+    "titleBar.activeForeground": "#ffffff",
+    "titleBar.inactiveBackground": "#004a72",
+    "titleBar.inactiveForeground": "#639db2"
   },
   "editor.stickyScroll.enabled": true,
   "tailwindCSS.experimental.classRegex": [

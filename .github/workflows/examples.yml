@@ -5,19 +5,16 @@ concurrency:
   cancel-in-progress: true
 jobs:
   e2e:
-    container:
-      image: mcr.microsoft.com/playwright:v1.20.0-focal
-      options: --user 1001
     env:
-      PLAYWRIGHT_BROWSERS_PATH: ${{ github.workspace }}/playwright
-      DATABASE_URL: postgresql://postgres:@postgres:5432/trpcdb
       NEXTAUTH_SECRET: supersecret
     runs-on: ${{ matrix.os }}
     timeout-minutes: 10
     continue-on-error: true
     strategy:
       matrix:
-        dir: [
+        dir:
+          [
+            .test/ssg,
             express-server,
             .interop/express-server,
             express-minimal,
@@ -26,6 +23,7 @@ jobs:
             .interop/next-prisma-starter-websockets,
             .interop/next-prisma-todomvc,
             next-minimal-starter,
+            minimal-react,
             .interop/next-minimal-starter,
             .interop/standalone-server,
             fastify-server,
@@ -33,47 +31,63 @@ jobs:
             cloudflare-workers,
             .interop/cloudflare-workers,
             next-prisma-starter,
-            next-prisma-starter-sqlite,
             next-prisma-starter-websockets,
-            # next-prisma-todomvc,
+            next-prisma-todomvc,
             standalone-server,
+            .test/big-router-declaration,
           ]
         node-start: ['16.x']
         os: [ubuntu-latest]
-    services:
-      postgres:
-        image: postgres:12.1
-        env:
-          POSTGRES_USER: postgres
-          POSTGRES_DB: trpcdb
-        ports:
-          - 5432:5432
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-node@v2
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - uses: pnpm/action-setup@v2.2.4
+
+      - uses: actions/setup-node@v3
         with:
           node-version: 16.x
 
+      - name: Get pnpm store directory
+        id: pnpm-cache
+        run: |
+          echo "::set-output name=pnpm_cache_dir::$(pnpm store path)"
+
+      - uses: actions/cache@v3
+        name: Setup pnpm cache
+        with:
+          path: ${{ steps.pnpm-cache.outputs.pnpm_cache_dir }}
+          key: ${{ runner.os }}-pnpm-store-${{ matrix.dir }}-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-${{ matrix.dir }}-
+
       - run: node -v
-      - uses: bahmutov/npm-install@v1
+      - name: Install deps and build (with cache)
+        run: pnpm --filter "./examples/${{ matrix.dir }}/**"  --filter "@trpc/*" --filter root install
 
       - name: Next.js cache
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
-          path: ${{ github.workspace }}${{ matrix.dir }}/.next/cache
-          key: ${{ matrix.dir }}-${{ runner.os }}-${{ matrix.node-start }}-${{ hashFiles('**/yarn.lock') }}-nextjs
+          path: ${{ github.workspace }}/examples/${{ matrix.dir }}/.next/cache
+          key: ${{ matrix.dir }}-${{ runner.os }}-${{ matrix.node-start }}-${{ hashFiles('**/pnpm-lock.yaml') }}-nextjs
 
-      - uses: actions/setup-node@v2
+      - uses: actions/setup-node@v3
         with:
           node-version: ${{ matrix.node-start }}
+          cache: 'pnpm'
 
       - run: node -v
 
-      - name: if exists, run yarn lint
-        run: cd examples/${{ matrix.dir }} && cat package.json | if grep --silent '"lint"'; then yarn lint; fi
-      - name: if exists, run yarn build
-        run: cd examples/${{ matrix.dir }} && cat package.json | if grep --silent '"build"'; then yarn build; fi
-      - name: if exists, run yarn test-start
-        run: cd examples/${{ matrix.dir }} && cat package.json | if grep --silent '"test-start"'; then yarn test-start; fi
-      - name: if exists, run yarn test-dev
-        run: cd examples/${{ matrix.dir }} && cat package.json | if grep --silent '"test-dev"'; then yarn test-dev; fi
+      - name: if exists, run build-sqlite, else run build
+        run: |
+          cat ./examples/${{ matrix.dir }}/package.json | 
+          if grep --silent '"build-sqlite"'; 
+            then pnpm --filter ./examples/${{ matrix.dir }} build-sqlite; 
+            else pnpm --filter ./examples/${{ matrix.dir }} build;
+          fi
+
+      - name: if exists, run test-start
+        run: pnpm --filter ./examples/${{ matrix.dir }} --if-present test-start
+      - name: if exists, run test-dev
+        run: pnpm --filter ./examples/${{ matrix.dir }} --if-present test-dev

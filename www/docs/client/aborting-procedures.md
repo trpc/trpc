@@ -5,15 +5,16 @@ sidebar_label: Aborting Procedures
 slug: /aborting-procedures
 ---
 
-## @trpc/react
-By default, TRPC does not cancel requests on unmount. If you want to opt in to this behavior you can provide `abortOnUnmount` in your configuration.
-```ts twoslash title="client.ts"
-// @module: esnext
+## @trpc/react-query
 
+By default, TRPC does not cancel requests on unmount. If you want to opt in to this behavior you can provide `abortOnUnmount` in your configuration.
+
+```ts twoslash title="client.ts"
+// @target: esnext
 // ---cut---
 // @filename: utils.ts
 // @noErrors
-import { createTRPCReact } from "@trpc/react";
+import { createTRPCReact } from '@trpc/react-query';
 
 export const trpc = createTRPCReact<AppRouter>();
 trpc.createClient({
@@ -21,9 +22,11 @@ trpc.createClient({
   abortOnUnmount: true,
 });
 ```
+
 You may also override this behavior at the request level.
+
 ```ts twoslash title="client.ts"
-// @module: esnext
+// @target: esnext
 
 // ---cut---
 // @filename: pages/posts/[id].tsx
@@ -37,6 +40,7 @@ const PostViewPage: NextPageWithLayout = () => {
   return (...)
 }
 ```
+
 > Note: @tanstack/react-query only allows aborting queries.
 
 ## @trpc/client
@@ -44,13 +48,12 @@ const PostViewPage: NextPageWithLayout = () => {
 tRPC adheres to the industry standard when it comes to aborting procedures. All you have to do is pass an `AbortSignal` to the query-options and then call its parent `AbortController`'s `abort` method.
 
 ```ts twoslash title="utils.ts"
-// @module: esnext
-
+// @target: esnext
 // ---cut---
 // @filename: server.ts
-import { createTRPCProxyClient, httpBatchLink } from "@trpc/client";
+import { createTRPCProxyClient, httpBatchLink } from '@trpc/client';
 // @noErrors
-import type { AppRouter } from "server.ts";
+import type { AppRouter } from 'server.ts';
 
 const proxy = createTRPCProxyClient<AppRouter>({
   links: [

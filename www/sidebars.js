@@ -35,10 +35,17 @@ module.exports = {
         'server/data-transformers',
         'server/metadata',
         'server/caching',
-        'server/express',
-        'server/fastify',
-        'server/fetch',
-        'server/aws-lambda',
+        {
+          type: 'category',
+          label: 'Adapters',
+          collapsed: true,
+          items: [
+            'server/adapter/aws-lambda',
+            'server/adapter/express',
+            'server/adapter/fastify',
+            'server/adapter/fetch',
+          ],
+        },
       ],
     },
     {
@@ -48,20 +55,32 @@ module.exports = {
       items: [
         'client/vanilla',
         'client/aborting-procedures',
-        'client/links',
+        {
+          type: 'category',
+          label: 'Links',
+          collapsed: true,
+          items: [
+            'client/links/index',
+            'client/links/httpLink',
+            'client/links/httpBatchLink',
+            'client/links/wsLink',
+            'client/links/splitLink',
+            'client/links/loggerLink',
+          ],
+        },
         'client/header',
         'client/cors',
       ],
     },
     {
       type: 'category',
-      label: '@trpc/react',
+      label: '@trpc/react-query',
       collapsed: false,
       items: [
         'reactjs/queries',
         'reactjs/mutations',
         'reactjs/useInfiniteQuery',
-        'reactjs/invalidateQueries',
+        'reactjs/useContext',
       ],
     },
     {

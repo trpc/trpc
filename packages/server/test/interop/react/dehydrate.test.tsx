@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-empty-function */
 import { createLegacyAppRouter } from './__testHelpers';
 import '@testing-library/jest-dom';
-import { createSSGHelpers } from '../../../../react/src/ssg';
+import { createSSGHelpers } from '../../../../react-query/src/ssg';
 
 let factory: ReturnType<typeof createLegacyAppRouter>;
 beforeEach(() => {
@@ -22,10 +22,12 @@ test('dehydrate', async () => {
   expect(dehydrated).toHaveLength(2);
 
   const [cache, cache2] = dehydrated;
-  expect(cache!.queryHash).toMatchInlineSnapshot(`"[\\"allPosts\\"]"`);
+  expect(cache!.queryHash).toMatchInlineSnapshot(`"[[\\"allPosts\\"]]"`);
   expect(cache!.queryKey).toMatchInlineSnapshot(`
     Array [
-      "allPosts",
+      Array [
+        "allPosts",
+      ],
     ]
   `);
   expect(cache!.state.data).toEqual(db.posts);

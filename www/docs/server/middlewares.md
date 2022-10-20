@@ -114,6 +114,12 @@ export const appRouter = t.router({
 });
 ```
 
+
+
+<!-- Commented out this section as I don't think it's needed anymore now that we can have multiple input parsers -->
+<!--
+
+
 ## Raw input
 
 A middleware can access the raw input that will be passed to a procedure. This can be used for authentication / other preprocessing in the middleware that requires access to the procedure input, and can be especially useful when used in conjunction with Context Swapping.
@@ -151,3 +157,5 @@ export const appRouter = t.router({
     .query(({ ctx }) => ctx.userId),
 });
 ```
+
+-->

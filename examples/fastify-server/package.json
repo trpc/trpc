@@ -1,40 +1,39 @@
 {
   "name": "@examples/fastify-server",
-  "version": "10.0.0-proxy-beta.3",
+  "version": "10.0.0-proxy-beta.23",
   "private": true,
   "scripts": {
     "build": "tsc",
-    "wait-server": "wait-on tcp:2022",
-    "dev:server": "nodemon --watch src/server src/server/index.ts",
-    "dev:client": "yarn wait-server && nodemon --watch src/client src/client/index.ts",
+    "dev:server": "tsx watch src/server",
+    "dev:client": "wait-port 2022 && tsx watch src/client",
     "dev": "run-p dev:* --print-label",
     "start:server": "node dist/server/index.js",
-    "start:client": "yarn wait-server && node dist/client/index.js",
+    "start:client": "wait-port 2022 && node dist/client/index.js",
     "start": "run-p start:* --print-label",
-    "test-dev": "start-server-and-test 'ts-node src/server' http-get://localhost:2022 'ts-node src/client'",
+    "test-dev": "start-server-and-test 'tsx src/server' http-get://localhost:2022 'tsx src/client'",
     "test-start": "start-server-and-test 'node dist/server' http-get://localhost:2022 'node dist/client'"
   },
   "dependencies": {
     "@fastify/websocket": "^5.0.0",
-    "@trpc/client": "^10.0.0-proxy-beta.3",
-    "@trpc/server": "^10.0.0-proxy-beta.3",
+    "@trpc/client": "^10.0.0-proxy-beta.23",
+    "@trpc/server": "^10.0.0-proxy-beta.23",
     "abort-controller": "^3.0.0",
     "fastify": "^3.27.1",
-    "fastify-websocket": "^4.0.0",
     "node-fetch": "^2.6.1",
+    "superjson": "^1.7.4",
     "tslib": "^2.1.0",
     "ws": "^8.0.0",
     "zod": "^3.0.0"
   },
   "devDependencies": {
+    "@types/node": "^18.7.20",
     "@types/node-fetch": "^2.5.11",
     "@types/ws": "^8.2.0",
-    "nodemon": "^2.0.12",
     "npm-run-all": "^4.1.5",
     "start-server-and-test": "^1.12.0",
-    "ts-node": "^10.3.0",
-    "typescript": "4.7.4",
-    "wait-on": "^6.0.0"
+    "tsx": "^3.9.0",
+    "typescript": "^4.8.3",
+    "wait-port": "^1.0.1"
   },
   "publishConfig": {
     "access": "restricted"
