@@ -1,6 +1,6 @@
 import { TRPCError } from '../error/TRPCError';
 import { DefaultErrorShape, defaultFormatter } from '../error/formatter';
-import { getHTTPStatusCodeFromError } from '../http/internals/getHTTPStatusCode';
+import { getHTTPStatusCodeFromError } from '../http/getHTTPStatusCode';
 import { TRPC_ERROR_CODES_BY_KEY } from '../rpc';
 import { createRecursiveProxy } from '../shared';
 import { defaultTransformer } from '../transformer';

@@ -79,6 +79,11 @@
       "require": "./dist/adapters/fetch/index.js",
       "default": "./dist/adapters/fetch/index.js"
     },
+    "./http": {
+      "import": "./dist/http/index.mjs",
+      "require": "./dist/http/index.js",
+      "default": "./dist/http/index.js"
+    },
     "./rpc": {
       "import": "./dist/rpc/index.mjs",
       "require": "./dist/rpc/index.js",
@@ -105,6 +110,7 @@
     "src",
     "README.md",
     "adapters",
+    "http",
     "rpc",
     "observable",
     "subscription",

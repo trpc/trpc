@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { TRPCError } from '../error/TRPCError';
 import { defaultFormatter } from '../error/formatter';
-import { getHTTPStatusCodeFromError } from '../http/internals/getHTTPStatusCode';
+import { getHTTPStatusCodeFromError } from '../http/getHTTPStatusCode';
 import { Observable, inferObservableValue } from '../observable';
 import {
   TRPCErrorShape,
