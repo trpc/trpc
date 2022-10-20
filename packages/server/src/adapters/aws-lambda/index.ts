@@ -33,11 +33,18 @@ function lambdaEventToHTTPRequest(event: APIGatewayEvent): HTTPRequest {
     }
   }
 
+  let body: string | null | undefined;
+  if (event.body && event.isBase64Encoded) {
+    body = Buffer.from(event.body, 'base64').toString('utf8');
+  } else {
+    body = event.body;
+  }
+
   return {
     method: getHTTPMethod(event),
     query: query,
     headers: event.headers,
-    body: event.body,
+    body: body,
   };
 }
 
