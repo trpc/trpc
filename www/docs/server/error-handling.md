@@ -46,6 +46,41 @@ tRPC defines a list of error codes that each represent a different type of error
 | CLIENT_CLOSED_REQUEST | Access to the resource has been denied.                                                                                 | 499       |
 | INTERNAL_SERVER_ERROR | An unspecified error occurred.                                                                                          | 500       |
 
+tRPC exposes a helper function to help you extract the HTTP code from the error:
+
+```ts twoslash
+import { TRPCError } from "@trpc/server";
+// ---cut---
+import { getHTTPStatusCodeFromError } from '@trpc/server';
+
+// Example error you might get if your input valdidation fails
+const error: TRPCError = {
+  name: "TRPCError",
+  code: "BAD_REQUEST",
+  message: "You passed something which didn't match the input parser."
+}
+
+if (error instanceof TRPCError) {
+  const httpCode = getHTTPStatusCodeFromError(error);
+  console.log(httpCode); // 400
+}
+```
+
+Alternatively, you can use the `JSONRPC2_TO_HTTP_CODE` map to get the HTTP code from the error code:
+
+```ts twoslash
+import { TRPCError } from "@trpc/server";
+const error: TRPCError = {
+  code: "BAD_REQUEST",
+  name: "BAD_REQUEST",
+  message: "You passed something which didn't match the input parser."
+}
+// ---cut---
+import { JSONRPC2_TO_HTTP_CODE } from '@trpc/server';
+
+const httpCode = JSONRPC2_TO_HTTP_CODE[error.code];
+console.log(httpCode); // 400
+```
 
 ## Throwing errors
 
