@@ -66,20 +66,6 @@ if (error instanceof TRPCError) {
 }
 ```
 
-Alternatively, you can use the `JSONRPC2_TO_HTTP_CODE` map to get the HTTP code from the error code:
-
-```ts twoslash
-import { TRPCError } from "@trpc/server";
-const error: TRPCError = {
-  code: "BAD_REQUEST",
-  name: "BAD_REQUEST",
-  message: "\"password\" must be at least 4 characters"
-}
-// ---cut---
-import { JSONRPC2_TO_HTTP_CODE } from '@trpc/server/http';
-
-const httpCode = JSONRPC2_TO_HTTP_CODE[error.code];
-console.log(httpCode); // 400
 ```
 
 ## Throwing errors
