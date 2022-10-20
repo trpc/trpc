@@ -81,7 +81,7 @@ import { createContext } from "../../../server/context"; // path to your context
 
 // export API handler
 export default trpcNext.createNextApiHandler({
-  ...
+  // ...
   createContext,
 });
 ```
