@@ -1,6 +1,6 @@
-import { TRPCError } from '../../error/TRPCError';
-import { invert } from '../../internals/invert';
-import { TRPCResponse, TRPC_ERROR_CODES_BY_KEY } from '../../rpc';
+import { TRPCError } from '../error/TRPCError';
+import { invert } from '../internals/invert';
+import { TRPCResponse, TRPC_ERROR_CODES_BY_KEY } from '../rpc';
 
 export const TRPC_ERROR_CODES_BY_NUMBER = invert(TRPC_ERROR_CODES_BY_KEY);
 type ValueOf<TType> = TType[keyof TType];
