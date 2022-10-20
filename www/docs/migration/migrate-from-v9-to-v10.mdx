@@ -583,7 +583,7 @@ The `createContext` function can no longer return either `null` or `undefined`. 
 
 ### `queryClient` is no longer exposed through tRPC context
 
-tRPC is no longer exposing the `queryClient` instance through `trpc.useContext()`. If you need to access it, import it from `@tanstack/react-query`:
+tRPC is no longer exposing the `queryClient` instance through `trpc.useContext()`. If you need to use some methods from `queryClient`, check if `trpc.useContext()` wraps them [here](useContext#helpers). If tRPC doesn't wrap the respective method yet, you can import the `queryClient` from `@tanstack/react-query` and use it that way:
 
 ```tsx
 import { useQueryClient } from '@tanstack/react-query';
