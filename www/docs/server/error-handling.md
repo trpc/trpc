@@ -66,8 +66,6 @@ if (error instanceof TRPCError) {
 }
 ```
 
-```
-
 ## Throwing errors
 
 tRPC provides an error subclass, `TRPCError`, which you can use to represent an error that occurred inside a procedure.
