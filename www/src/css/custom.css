@@ -42,7 +42,9 @@ div[class^='announcementBar_'] {
 }
 
 .navbar__link--active,
-.menu__link--active {
+.menu__list:not(.theme-doc-sidebar-menu)
+  li:not(.theme-doc-sidebar-item-link):not(.theme-doc-sidebar-item-category)
+  .menu__link--active {
   color: var(--ifm-navbar-link-color);
 }
 
