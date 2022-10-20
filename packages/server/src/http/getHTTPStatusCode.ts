@@ -6,7 +6,7 @@ export const TRPC_ERROR_CODES_BY_NUMBER = invert(TRPC_ERROR_CODES_BY_KEY);
 type ValueOf<TType> = TType[keyof TType];
 
 export type TRPC_ERROR_CODE_NUMBER = ValueOf<typeof TRPC_ERROR_CODES_BY_KEY>;
-export const JSONRPC2_TO_HTTP_CODE: Record<
+const JSONRPC2_TO_HTTP_CODE: Record<
   keyof typeof TRPC_ERROR_CODES_BY_KEY,
   number
 > = {
