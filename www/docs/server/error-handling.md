@@ -46,7 +46,7 @@ tRPC defines a list of error codes that each represent a different type of error
 | CLIENT_CLOSED_REQUEST | Access to the resource has been denied.                                                                                 | 499       |
 | INTERNAL_SERVER_ERROR | An unspecified error occurred.                                                                                          | 500       |
 
-tRPC exposes a helper function to help you extract the HTTP code from the error:
+tRPC exposes a helper function, `getHTTPStatusCodeFromError`, to help you extract the HTTP code from the error:
 
 ```ts twoslash
 import { TRPCError } from "@trpc/server";
@@ -57,7 +57,7 @@ import { getHTTPStatusCodeFromError } from '@trpc/server';
 const error: TRPCError = {
   name: "TRPCError",
   code: "BAD_REQUEST",
-  message: "You passed something which didn't match the input parser."
+  message: "\"password\" must be at least 4 characters"
 }
 
 if (error instanceof TRPCError) {
@@ -73,7 +73,7 @@ import { TRPCError } from "@trpc/server";
 const error: TRPCError = {
   code: "BAD_REQUEST",
   name: "BAD_REQUEST",
-  message: "You passed something which didn't match the input parser."
+  message: "\"password\" must be at least 4 characters"
 }
 // ---cut---
 import { JSONRPC2_TO_HTTP_CODE } from '@trpc/server';
