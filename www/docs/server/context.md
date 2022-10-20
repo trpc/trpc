@@ -68,3 +68,20 @@ export const publicProcedure = t.procedure;
  **/
 export const protectedProcedure = t.procedure.use(isAuthed);
 ```
+
+## NOTE:
+If using Next.js, you must add the createContext function to your api handler like so
+
+```tsx twoslash
+// -------------------------------------------------
+// @filename: pages/api/trpc/[trpc].ts
+// -------------------------------------------------
+import * as trpcNext from "@trpc/server/adapters/next";
+import { createContext } from "../../../server/context"; // path to your context file shown above
+
+// export API handler
+export default trpcNext.createNextApiHandler({
+  ...
+  createContext,
+});
+```
