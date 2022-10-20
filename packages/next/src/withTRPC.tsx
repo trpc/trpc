@@ -22,7 +22,8 @@ import {
   CreateTRPCReactQueryClientConfig,
   getQueryClient,
 } from '@trpc/react-query/shared';
-import type { AnyRouter, Dict, Maybe, ResponseMeta } from '@trpc/server';
+import type { AnyRouter, Dict, Maybe } from '@trpc/server';
+import type { ResponseMeta } from '@trpc/server/http';
 import {
   AppContextType,
   AppPropsType,
