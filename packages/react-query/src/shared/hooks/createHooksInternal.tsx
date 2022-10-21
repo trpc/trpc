@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 import {
   DehydratedState,
+  QueryClient,
   UseInfiniteQueryOptions,
   UseInfiniteQueryResult,
   UseMutationOptions,
@@ -10,6 +11,7 @@ import {
   useInfiniteQuery as __useInfiniteQuery,
   useMutation as __useMutation,
   useQuery as __useQuery,
+  defaultContext,
   hashQueryKey,
   useQueryClient,
 } from '@tanstack/react-query';
@@ -202,7 +204,15 @@ export function createHooksInternal<
   type TMutationValues = inferProcedures<TMutations>;
 
   type ProviderContext = TRPCContextState<TRouter, TSSRContext>;
-  const Context = TRPCContext as React.Context<ProviderContext>;
+  const contexts = config?.context ?? {
+    trpc: TRPCContext as React.Context<ProviderContext>,
+    reactQuery: undefined,
+  };
+
+  const Context = contexts.trpc as React.Context<ProviderContext>;
+  const ReactQueryContext = contexts.reactQuery as React.Context<
+    QueryClient | undefined
+  >;
 
   const createClient: CreateClient<TRouter> = (opts) => {
     return createTRPCClient(opts);
@@ -425,7 +435,7 @@ export function createHooksInternal<
           ...getClientArgs(pathAndInput, actualOpts),
         );
       },
-      ssrOpts,
+      { context: ReactQueryContext, ...ssrOpts },
     ) as UseTRPCQueryResult<TData, TError>;
     hook.trpc = useHookResult({
       path: pathAndInput[0],
@@ -463,6 +473,7 @@ export function createHooksInternal<
         );
       },
       {
+        context: ReactQueryContext,
         ...opts,
         onSuccess(...args) {
           const originalFn = () => opts?.onSuccess?.(...args);
@@ -600,7 +611,7 @@ export function createHooksInternal<
           ...getClientArgs([path, actualInput], actualOpts),
         );
       },
-      ssrOpts,
+      { context: ReactQueryContext, ...ssrOpts },
     ) as UseTRPCInfiniteQueryResult<TQueryValues[TPath]['output'], TError>;
 
     hook.trpc = useHookResult({
