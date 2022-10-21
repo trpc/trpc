@@ -15,7 +15,7 @@ services:
     buildCommand: yarn --prod=false &&
       yarn build
     startCommand: yarn start
-    healthCheckPath: /api/trpc/healthz
+    healthCheckPath: /api/trpc/health.healthz
     envVars:
       - key: DATABASE_URL
         fromDatabase:
