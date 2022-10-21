@@ -171,13 +171,12 @@ export default async (
 
     res.status(200).json({ data: { postTitle: postResult.title } });
   } catch (cause) {
-
     // If this a tRPC error, we can extract additional information.
     if (cause instanceof TRPCError) {
       // We can get the specific HTTP status code coming from tRPC (e.g. 404 for `NOT_FOUND`).
-      const httpStatusCode = getHTTPStatusCodeFromError(error);
+      const httpStatusCode = getHTTPStatusCodeFromError(cause);
 
-      res.status(httpStatusCode).json({ error: { message: error.message } });
+      res.status(httpStatusCode).json({ error: { message: cause.message } });
       return;
     } 
 
