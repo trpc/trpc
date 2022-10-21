@@ -56,10 +56,8 @@ test('multiple trpcProviders', async () => {
     const reactQueryContext = createContext<QueryClient | undefined>(undefined);
     return {
       trpc: createTRPCReact<typeof ctx['B']['router']>({
-        context: {
-          reactQuery: reactQueryContext,
-          trpc: createContext(undefined),
-        },
+        context: createContext(null),
+        reactQueryContext,
       }),
       reactQueryContext,
       queryClient: createQueryClient(),
@@ -70,10 +68,8 @@ test('multiple trpcProviders', async () => {
     const reactQueryContext = createContext<QueryClient | undefined>(undefined);
     return {
       trpc: createTRPCReact<typeof ctx['C']['router']>({
-        context: {
-          reactQuery: reactQueryContext,
-          trpc: createContext(undefined),
-        },
+        context: createContext(null),
+        reactQueryContext,
       }),
       reactQueryContext,
       queryClient: createQueryClient(),

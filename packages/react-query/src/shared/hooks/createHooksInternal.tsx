@@ -11,7 +11,6 @@ import {
   useInfiniteQuery as __useInfiniteQuery,
   useMutation as __useMutation,
   useQuery as __useQuery,
-  defaultContext,
   hashQueryKey,
   useQueryClient,
 } from '@tanstack/react-query';
@@ -204,13 +203,10 @@ export function createHooksInternal<
   type TMutationValues = inferProcedures<TMutations>;
 
   type ProviderContext = TRPCContextState<TRouter, TSSRContext>;
-  const contexts = config?.context ?? {
-    trpc: TRPCContext as React.Context<ProviderContext>,
-    reactQuery: undefined,
-  };
 
-  const Context = contexts.trpc as React.Context<ProviderContext>;
-  const ReactQueryContext = contexts.reactQuery as React.Context<
+  const Context = (config?.context ??
+    TRPCContext) as React.Context<ProviderContext>;
+  const ReactQueryContext = config?.reactQueryContext as React.Context<
     QueryClient | undefined
   >;
 

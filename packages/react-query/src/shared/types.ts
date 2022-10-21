@@ -26,11 +26,13 @@ export interface CreateTRPCReactOptions<_TRouter extends AnyRouter> {
   };
 
   /**
-   * Override the default context providers in tRPC
+   * Override the default context provider
    * @default undefined
    */
-  context?: {
-    trpc: React.Context<any>;
-    reactQuery: React.Context<any>;
-  };
+  context?: React.Context<any>;
+  /**
+   * Override the default React Query context
+   * @default undefined
+   */
+  reactQueryContext?: React.Context<QueryClient | undefined>;
 }
