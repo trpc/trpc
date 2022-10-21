@@ -129,3 +129,60 @@ const router = t.router({
   //     ^?
 }
 ```
+
+### Example for a Next.js API endpoint
+
+:::tip
+
+This example shows how to use the caller in a Next.js API endpoint. tRPC creates API endpoints for you already, so this file is only meant to show
+how to call a procedure from another, custom endpoint.
+
+:::
+
+```ts twoslash
+import { TRPCError } from '@trpc/server';
+import { getHTTPStatusCodeFromError } from '@trpc/server/http';
+import type { NextApiRequest, NextApiResponse } from 'next';
+import { appRouter } from '~/server/routers/_app';
+
+type ResponseData = {
+  data?: {
+    postTitle: string;
+  };
+  error?: {
+    message: string;
+  };
+};
+
+export default async (
+  req: NextApiRequest,
+  res: NextApiResponse<ResponseData>,
+) => {
+  /** We want to simulate an error, so we pick a post ID that does not exist in the database. */
+  const postId = `this-id-does-not-exist-${Math.random()}`;
+
+  const caller = appRouter.createCaller({});
+
+  try {
+    // the server-side call
+    const postResult = await caller.post.byId({ id: postId });
+
+    res.status(200).json({ data: { postTitle: postResult.title } });
+  } catch (error) {
+    console.error(error);
+
+    // If this a tRPC error, we can extract additional information.
+    if (error instanceof TRPCError) {
+      // We can get the specific HTTP status code coming from tRPC (e.g. 404 for `NOT_FOUND`).
+      const httpStatusCode = getHTTPStatusCodeFromError(error);
+
+      res.status(httpStatusCode).json({ error: { message: error.message } });
+    } else {
+      // This is not a tRPC error, so we don't have specific information.
+      res.status(400).json({
+        error: { message: `Error while accessing post with ID ${postId}` },
+      });
+    }
+  }
+};
+```
