@@ -1,16 +1,18 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import type {
+import {
   AnyMutationProcedure,
   AnyProcedure,
   AnyQueryProcedure,
   AnyRouter,
   AnySubscriptionProcedure,
+  OmitNever,
   ProcedureArgs,
   ProcedureRouterRecord,
   ProcedureType,
   inferProcedureOutput,
+  initTRPC,
 } from '@trpc/server';
 import type {
   Unsubscribable,
@@ -117,4 +119,54 @@ export function createTRPCProxyClient<TRouter extends AnyRouter>(
   const client = new TRPCClient<TRouter>(opts);
   const proxy = createTRPCClientProxy(client);
   return proxy;
+}
+
+/**
+ * @internal
+ */
+type DecorateFilter<
+  TRecord extends ProcedureRouterRecord,
+  TFilter extends AnyProcedure,
+> = OmitNever<{
+  [TKey in keyof TRecord]: TRecord[TKey] extends AnyRouter
+    ? DecorateFilter<TRecord[TKey]['_def']['record'], TFilter>
+    : TRecord[TKey] extends TFilter
+    ? Resolver<TRecord[TKey]>
+    : never;
+}>;
+
+type Decorator<TRouter extends AnyRouter> = {
+  query: DecorateFilter<TRouter['_def']['record'], AnyQueryProcedure>;
+  mutation: DecorateFilter<TRouter['_def']['record'], AnyMutationProcedure>;
+};
+
+export function createTestClient<TRouter extends AnyRouter>(
+  opts: CreateTRPCClientOptions<TRouter>,
+) {
+  const client = new TRPCClient<TRouter>(opts);
+  return client as any as Decorator<TRouter>;
+}
+
+const t = initTRPC.create();
+const router = t.router({
+  top: t.procedure.query(() => 1),
+  foo: t.router({
+    bar: t.procedure.query(() => {
+      return 1;
+    }),
+    moo: t.procedure.mutation(() => {
+      return 1;
+    }),
+  }),
+});
+
+router._def.record.foo._def.record.bar;
+export async function fn() {
+  const { query, mutation } = createTestClient<typeof router>({ links: [] });
+
+  await query.top();
+  await query.foo.bar();
+  await mutation.foo.moo();
+  // @ts-expect-error
+  mutation.foo.bar;
 }

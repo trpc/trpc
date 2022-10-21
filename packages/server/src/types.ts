@@ -10,7 +10,7 @@ type InferOptional<TType, TKeys extends keyof TType> = Partial<
 > &
   Omit<TType, TKeys>;
 
-type OmitNever<TType> = Pick<
+export type OmitNever<TType> = Pick<
   TType,
   {
     [K in keyof TType]: TType[K] extends never ? never : K;
