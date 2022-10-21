@@ -140,6 +140,8 @@ how to call a procedure from another, custom endpoint.
 :::
 
 ```ts twoslash
+// @noErrors
+// ---cut---
 import { TRPCError } from '@trpc/server';
 import { getHTTPStatusCodeFromError } from '@trpc/server/http';
 import type { NextApiRequest, NextApiResponse } from 'next';
