@@ -125,19 +125,20 @@ export function createTRPCProxyClient<TRouter extends AnyRouter>(
  * @internal
  */
 type DecorateFilter<
-  TRecord extends ProcedureRouterRecord,
+  TRouter extends AnyRouter,
   TFilter extends AnyProcedure,
+  TRecord extends ProcedureRouterRecord = TRouter['_def']['record'],
 > = OmitNever<{
   [TKey in keyof TRecord]: TRecord[TKey] extends AnyRouter
-    ? DecorateFilter<TRecord[TKey]['_def']['record'], TFilter>
+    ? DecorateFilter<TRecord[TKey], TFilter>
     : TRecord[TKey] extends TFilter
     ? Resolver<TRecord[TKey]>
     : never;
 }>;
 
 type Decorator<TRouter extends AnyRouter> = {
-  query: DecorateFilter<TRouter['_def']['record'], AnyQueryProcedure>;
-  mutation: DecorateFilter<TRouter['_def']['record'], AnyMutationProcedure>;
+  query: DecorateFilter<TRouter, AnyQueryProcedure>;
+  mutation: DecorateFilter<TRouter, AnyMutationProcedure>;
 };
 
 export function createTestClient<TRouter extends AnyRouter>(
@@ -159,14 +160,14 @@ const router = t.router({
     }),
   }),
 });
-
-router._def.record.foo._def.record.bar;
 export async function fn() {
   const { query, mutation } = createTestClient<typeof router>({ links: [] });
 
   await query.top();
   await query.foo.bar();
-  await mutation.foo.moo();
-  // @ts-expect-error
+  const _res = await mutation.foo.moo();
+  //     ^?
+
+  // @ts-expect-error shouldn't exist
   mutation.foo.bar;
 }
