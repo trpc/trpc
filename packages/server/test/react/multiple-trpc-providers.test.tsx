@@ -41,11 +41,7 @@ test('multiple trpcProviders', async () => {
   const A = (() => {
     return {
       trpc: createTRPCReact<typeof ctx['A']['router']>({
-        // No context
-        // context: {
-        //   reactQuery: createContext(null),
-        //   trpc: createContext(null),
-        // },
+        // No custom context defined -- will use default
       }),
       queryClient: createQueryClient(),
       reactQueryContext: undefined,
