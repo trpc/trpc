@@ -14,7 +14,7 @@ services:
     # initialDeployHook: yarn db-seed
     buildCommand: pnpm install && pnpm build
     startCommand: pnpm start
-    healthCheckPath: /api/trpc/healthz
+    healthCheckPath: /api/trpc/healthcheck
     envVars:
       - key: DATABASE_URL
         fromDatabase:
