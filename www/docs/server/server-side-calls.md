@@ -170,21 +170,21 @@ export default async (
     const postResult = await caller.post.byId({ id: postId });
 
     res.status(200).json({ data: { postTitle: postResult.title } });
-  } catch (error) {
-    console.error(error);
+  } catch (cause) {
 
     // If this a tRPC error, we can extract additional information.
-    if (error instanceof TRPCError) {
+    if (cause instanceof TRPCError) {
       // We can get the specific HTTP status code coming from tRPC (e.g. 404 for `NOT_FOUND`).
       const httpStatusCode = getHTTPStatusCodeFromError(error);
 
       res.status(httpStatusCode).json({ error: { message: error.message } });
-    } else {
-      // This is not a tRPC error, so we don't have specific information.
-      res.status(400).json({
-        error: { message: `Error while accessing post with ID ${postId}` },
-      });
-    }
+      return;
+    } 
+
+    // This is not a tRPC error, so we don't have specific information.
+    res.status(500).json({
+      error: { message: `Error while accessing post with ID ${postId}` },
+    });
   }
 };
 ```
