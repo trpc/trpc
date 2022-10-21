@@ -7,9 +7,7 @@ import { observable } from '@trpc/server/observable';
 import { clearInterval } from 'timers';
 
 export const appRouter = router({
-  healthcheck: publicProcedure.query(() => {
-    return 'yay';
-  }),
+  healthcheck: publicProcedure.query(() => 'yay!'),
 
   post: postRouter,
 
