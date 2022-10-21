@@ -1202,7 +1202,7 @@ importers:
       abort-controller: ^3.0.0
       aws-lambda: ^1.0.7
       devalue: ^2.0.1
-      expect-type: ^0.13.0
+      expect-type: ^0.15.0
       express: ^4.17.1
       fastify: ^3.27.1
       fastify-plugin: ^3.0.1
@@ -1249,7 +1249,7 @@ importers:
       abort-controller: 3.0.0
       aws-lambda: 1.0.7
       devalue: 2.0.1
-      expect-type: 0.13.0
+      expect-type: 0.15.0
       express: 4.18.1
       fastify: 3.29.2
       fastify-plugin: 3.0.1
@@ -11050,8 +11050,8 @@ packages:
       - supports-color
     dev: false
 
-  /expect-type/0.13.0:
-    resolution: {integrity: sha512-CclevazQfrqo8EvbLPmP7osnb1SZXkw47XPPvUUpeMz4HuGzDltE7CaIt3RLyT9UQrwVK/LDn+KVcC0hcgjgDg==}
+  /expect-type/0.15.0:
+    resolution: {integrity: sha512-yWnriYB4e8G54M5/fAFj7rCIBiKs1HAACaY13kCz6Ku0dezjS9aMcfcdVK2X8Tv2tEV1BPz/wKfQ7WA4S/d8aA==}
     dev: true
 
   /expect/27.5.1:
