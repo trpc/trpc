@@ -1,6 +1,10 @@
 import { httpBatchLink, loggerLink } from '@trpc/client';
 import { createTRPCNext } from '@trpc/next';
-import { GetInferenceHelpers } from '@trpc/server';
+import {
+  GetInputInferenceHelpers,
+  inferRouterInput,
+  inferRouterOutput,
+} from '@trpc/server';
 import { NextPageContext } from 'next';
 import superjson from 'superjson';
 // ℹ️ Type-only import:
@@ -129,4 +133,9 @@ export const trpc = createTRPCNext<AppRouter, SSRContext>({
   },
 });
 
-export type AppRouterTypes = GetInferenceHelpers<AppRouter>;
+type AppRouterInputs = GetInputInferenceHelpers<AppRouter>;
+type RouterOutput<TPath extends string> = inferRouterOutput<AppRouter, TPath>;
+type RouterInput<TPath extends string> = inferRouterInput<AppRouter, TPath>;
+
+type Test = RouterOutput<'post.byId'>['id'];
+type Test2 = RouterInput<'post.byId'>['id'];

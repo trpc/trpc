@@ -46,15 +46,51 @@ export type inferSubscriptionOutput<
 export type inferProcedureClientError<TProcedure extends AnyProcedure> =
   inferProcedureParams<TProcedure>['_config']['errorShape'];
 
-export type GetInferenceHelpers<TRouter extends AnyRouter> = {
+export type GetInferenceHelpers<
+  TType extends 'input' | 'output',
+  TRouter extends AnyRouter,
+> = {
   [TKey in keyof TRouter['_def']['record']]: TRouter['_def']['record'][TKey] extends infer TRouterOrProcedure
     ? TRouterOrProcedure extends AnyRouter
-      ? GetInferenceHelpers<TRouterOrProcedure>
+      ? GetInferenceHelpers<TType, TRouterOrProcedure>
       : TRouterOrProcedure extends AnyProcedure
-      ? {
-          input: inferProcedureInput<TRouterOrProcedure>;
-          output: inferProcedureOutput<TRouterOrProcedure>;
-        }
+      ? TType extends 'input'
+        ? inferProcedureInput<TRouterOrProcedure>
+        : inferProcedureOutput<TRouterOrProcedure>
       : never
     : never;
 };
+
+export type GetInputInferenceHelpers<TRouter extends AnyRouter> =
+  GetInferenceHelpers<'input', TRouter>;
+
+export type GetOutputInferenceHelpers<TRouter extends AnyRouter> =
+  GetInferenceHelpers<'output', TRouter>;
+
+type inferRouter<
+  TType extends 'input' | 'output',
+  TRouter extends AnyRouter,
+  TPath extends string,
+> = TPath extends `${infer TKey}.${infer TRest}`
+  ? TRouter['_def']['record'][TKey] extends infer TDeepRouter
+    ? TDeepRouter extends AnyRouter
+      ? inferRouter<TType, TDeepRouter, TRest>
+      : never
+    : never
+  : TRouter['_def']['record'][TPath] extends infer TProcedure
+  ? TProcedure extends AnyProcedure
+    ? TType extends 'input'
+      ? inferProcedureInput<TRouter['_def']['record'][TPath]>
+      : inferProcedureOutput<TRouter['_def']['record'][TPath]>
+    : never
+  : never;
+
+export type inferRouterOutput<
+  TRouter extends AnyRouter,
+  TPath extends string,
+> = inferRouter<'output', TRouter, TPath>;
+
+export type inferRouterInput<
+  TRouter extends AnyRouter,
+  TPath extends string,
+> = inferRouter<'input', TRouter, TPath>;
