@@ -1,13 +1,13 @@
 /**
  * This file contains the root router of your tRPC-backend
  */
-import { router } from '../trpc';
-import { healthRouter } from './health';
+import { publicProcedure, router } from '../trpc';
 import { postRouter } from './post';
 
 export const appRouter = router({
+  healthcheck: publicProcedure.query(() => 'yay!'),
+
   post: postRouter,
-  health: healthRouter,
 });
 
 export type AppRouter = typeof appRouter;

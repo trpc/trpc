@@ -24,7 +24,7 @@ export const appRouter = createRouter()
    * @link https://trpc.io/docs/error-formatting
    */
   // .formatError(({ shape, error }) => { })
-  .query('healthz', {
+  .query('healthcheck', {
     resolve() {
       return 'yay!';
     },
