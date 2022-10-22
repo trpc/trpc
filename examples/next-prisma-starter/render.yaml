@@ -11,7 +11,7 @@ services:
     ## 👇 Specify the plan for the PR deployment:
     # previewPlan: starter
     ## 👇 Preview Environment Initialization script:
-    # initialDeployHook: yarn db-seed
+    # initialDeployHook: pnpm db-seed
     buildCommand: pnpm install && pnpm build
     startCommand: pnpm start
     healthCheckPath: /api/trpc/healthcheck
