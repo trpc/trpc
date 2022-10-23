@@ -105,24 +105,8 @@ export interface ProcedureBuilder<TParams extends ProcedureParams> {
       ? $Parser
       : inferParser<$Parser>['out'] extends Record<string, unknown>
       ? TParams['_input_out'] extends Record<string, unknown>
-        ? // ? Extract<
-          //     {
-          //       [K in Extract<
-          //         Pick<inferParser<$Parser>['out'], keyof TParams['_input_out']>,
-          //         string
-          //       >]: inferParser<$Parser>['out'] extends TParams['_input_out'][K &
-          //         string]
-          //         ? ErrorMessage<'Input schema is not compatible with existing schema'>
-          //         : never;
-          //     }[Extract<
-          //       Pick<inferParser<$Parser>['out'], keyof TParams['_input_out']>,
-          //       string
-          //     >],
-          //     ErrorMessage<'Input schema is not compatible with existing schema'>
-          //   > extends never
-          $Parser
-        : // : ErrorMessage<"Impossible merge - you can't override a defined property with an optional one">
-          ErrorMessage<'All input parsers did not resolve to an object'>
+        ? $Parser
+        : ErrorMessage<'All input parsers did not resolve to an object'>
       : ErrorMessage<'All input parsers did not resolve to an object'>,
   ): ProcedureBuilder<{
     _config: TParams['_config'];

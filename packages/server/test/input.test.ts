@@ -1,10 +1,10 @@
 import { routerToServerAndClientNew, waitError } from './___testHelpers';
-import { TRPCClientError, createTRPCProxyClient } from '@trpc/client/src';
+import { TRPCClientError, createTRPCProxyClient } from '@trpc/client';
 import {
   inferProcedureInput,
   inferProcedureParams,
   initTRPC,
-} from '@trpc/server/src';
+} from '@trpc/server';
 import { expectTypeOf } from 'expect-type';
 import { konn } from 'konn';
 import { ZodError, z } from 'zod';
@@ -401,9 +401,9 @@ test('merges optional with required property', async () => {
     links: [],
   });
 
-  await ignoreErrors(() =>
-    client.proc.query({
-      id: 'foo',
-    }),
-  );
+  await ignoreErrors(() => {
+    // @ts-expect-error id is not optional
+    client.proc.query({});
+    client.proc.query({ id: 'foo' });
+  });
 });
