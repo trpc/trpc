@@ -19,7 +19,7 @@ import {
   RootConfig,
   RootConfigTypes,
   RuntimeConfig,
-  getIsServerDefault,
+  isServerDefault,
 } from './internals/config';
 import { createBuilder } from './internals/procedureBuilder';
 import { PickFirstDefined, ValidateShape } from './internals/utils';
@@ -106,10 +106,10 @@ function createTRPCInner<TParams extends PartialRootConfigTypes>() {
 
     const config: $Config = {
       transformer,
-      isDev: runtime?.isDev ?? process.env.NODE_ENV !== 'production',
+      isDev: runtime?.isDev ?? process?.env?.NODE_ENV !== 'production',
       allowOutsideOfServer: runtime?.allowOutsideOfServer ?? false,
       errorFormatter,
-      isServer: runtime?.isServer ?? getIsServerDefault(),
+      isServer: runtime?.isServer ?? isServerDefault,
       /**
        * @internal
        */
@@ -122,7 +122,7 @@ function createTRPCInner<TParams extends PartialRootConfigTypes>() {
 
     {
       // Server check
-      const isServer: boolean = runtime?.isServer ?? getIsServerDefault();
+      const isServer: boolean = runtime?.isServer ?? isServerDefault;
 
       if (!isServer && runtime?.allowOutsideOfServer !== true) {
         throw new Error(

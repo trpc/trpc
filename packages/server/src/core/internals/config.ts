@@ -14,11 +14,11 @@ export interface RootConfigTypes {
 /**
  * The default check to see if we're in a server
  */
-export const getIsServerDefault = (): boolean =>
+export const isServerDefault: boolean =
   typeof window === 'undefined' ||
   'Deno' in window ||
-  process.env.NODE_ENV === 'test' ||
-  !!process.env.JEST_WORKER_ID;
+  process?.env?.NODE_ENV === 'test' ||
+  !!process?.env?.JEST_WORKER_ID;
 
 /**
  * The runtime config that are used and actually represents real values underneath
