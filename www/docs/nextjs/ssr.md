@@ -6,11 +6,11 @@ slug: /ssr
 ---
 
 To enable SSR just set `ssr: true` in your `createTRPCNext` config callback.
-:::caution 
-When you enable SSR, tRPC will use getInitialProps to prefetch all queries on the server. This results in problems [like this](https://github.com/trpc/trpc/issues/596) when you use getServerSideProps and solving it is out of our hands.
+:::caution
+When you enable SSR, tRPC will use `getInitialProps` to prefetch all queries on the server. This results in problems [like this](https://github.com/trpc/trpc/issues/596) when you use `getServerSideProps` and solving it is out of our hands.
 
 &nbsp;  
-Alternatively, you can leave ssr disabled(the default) and use SSG Helpers to prefetch queries in getStaticProps or getServerSideProps.
+Alternatively, you can leave SSR disabled (the default) and use [SSG Helpers](./ssg-helpers.md) to prefetch queries in `getStaticProps` or `getServerSideProps`.
 :::
 
 In order to execute queries properly during the server-side render step we need to add extra logic inside our `config`:
@@ -33,7 +33,7 @@ export const trpc = createTRPCNext<AppRouter>({
           httpBatchLink({
             url: '/api/trpc',
           }),
-        ]
+        ],
       };
     }
     // The server needs to know your app's full url
@@ -70,7 +70,7 @@ export const trpc = createTRPCNext<AppRouter>({
             return {};
           },
         }),
-      ]
+      ],
     };
   },
   ssr: true,
@@ -98,4 +98,3 @@ While it's rare that you wouldn't want to forward the client's headers to the se
 ### Q: Why do I need to delete the `connection` header when using SSR on Node 18?
 
 If you don't remove the `connection` header, the data fetching will fail with `TRPCClientError: fetch failed` because `connection` is a [forbidden header name](https://developer.mozilla.org/en-US/docs/Glossary/Forbidden_header_name).
-
