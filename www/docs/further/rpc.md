@@ -5,8 +5,8 @@ sidebar_label: HTTP RPC Specification
 slug: /rpc
 ---
 
-
 ## Methods <-> Type mapping
+
 | HTTP Method  | Mapping           | Notes                                                                                                         |
 | ------------ | ----------------- | ------------------------------------------------------------------------------------------------------------- |
 | `GET`        | `.query()`        | Input JSON-stringified in query param.<br/>_e.g._ `myQuery?input=${encodeURIComponent(JSON.stringify(input))` |
@@ -27,64 +27,58 @@ When batching, we combine all parallel procedure calls of the same type in one r
 #### Given a router like this exposed at `/api/trpc`:
 
 ```tsx title='server/router.ts'
-export const appRouter = trpc
-  .router<Context>()
-  .query('postById', {
-    input: String,
-    async resolve({ input, ctx }) {
-      const post = await ctx.post.findUnique({
-        where: { id: input },
-      });
-      return post;
-    },
-  })
-  .query('relatedPosts', {
-    input: String,
-    async resolve({ ctx, input }) {
-      const posts = await ctx.findRelatedPostsById(input)
-      return posts;
-    },
-  })
+export const appRouter = t.router({
+  postById: t.procedure.input(String).query(async ({ input, ctx }) => {
+    const post = await ctx.post.findUnique({
+      where: { id: input },
+    });
+    return post;
+  }),
+  relatedPosts: t.procedure.input(String).query(async ({ input, ctx }) => {
+    const posts = await ctx.findRelatedPostsById(input);
+    return posts;
+  }),
+});
 ```
 
 #### .. And two queries defined like this in a React component:
 
 ```tsx title='MyComponent.tsx'
 export function MyComponent() {
-  const post1 = trpc.useQuery(['postById', '1'])
-  const relatedPosts = trpc.useQuery(['relatedPosts', '1'])
+  const post1 = trpc.postById.useQuery('1');
+  const relatedPosts = trpc.relatedPosts.useQuery('1');
 
   return (
-    <pre>{
-      JSON.stringify(
+    <pre>
+      {JSON.stringify(
         {
           post1: post1.data ?? null,
           relatedPosts: relatedPosts.data ?? null,
         },
         null,
         4,
-      )
-    }</pre>
-  )
+      )}
+    </pre>
+  );
 }
 ```
 
 #### The above would result in exactly 1 HTTP call with this data:
 
-| Location property | Value                                                          |
-| ----------------- | -------------------------------------------------------------- |
-| `pathname`        | `/api/trpc/postById,relatedPosts`                              |
-| `search`          | `?batch=1&input=%7B%220%22%3A%221%22%2C%221%22%3A%221%22%7D` * |
+| Location property | Value                                                           |
+| ----------------- | --------------------------------------------------------------- |
+| `pathname`        | `/api/trpc/postById,relatedPosts`                               |
+| `search`          | `?batch=1&input=%7B%220%22%3A%221%22%2C%221%22%3A%221%22%7D` \* |
 
-***) `input` in the above is the result of:**
+**\*) `input` in the above is the result of:**
 
 ```ts
 encodeURIComponent(
   JSON.stringify({
-    0: '1',  // <-- input for `postById`
-    1: '1',  // <-- input for `relatedPosts`
-  })
-)
+    0: '1', // <-- input for `postById`
+    1: '1', // <-- input for `relatedPosts`
+  }),
+);
 ```
 
 ### Batching Example Response
@@ -92,36 +86,35 @@ encodeURIComponent(
 <details>
   <summary>Example output from server</summary>
 
-  ```json
-  [
-    // result for `postById`
-    {
-      "result": {
-        "data": {
-          "id": "1",
-          "title": "Hello tRPC",
-          "body": "..."
-          // ...
-        }
-      }
-    },
-    // result for `relatedPosts`
-    {
-      "result": {
-        "data": [
-          /* ... */
-        ]
+```json
+[
+  // result for `postById`
+  {
+    "result": {
+      "data": {
+        "id": "1",
+        "title": "Hello tRPC",
+        "body": "..."
+        // ...
       }
     }
-  ]
-  ```
-</details>
+  },
+  // result for `relatedPosts`
+  {
+    "result": {
+      "data": [
+        /* ... */
+      ]
+    }
+  }
+]
+```
 
+</details>
 
 ## HTTP Response Specification
 
 In order to have a specification that works regardless of the transport layer we try to conform to [JSON-RPC 2.0](https://www.jsonrpc.org/specification) where possible.
-
 
 ### Successful Response
 
@@ -145,13 +138,11 @@ In order to have a specification that works regardless of the transport layer we
 {
   result: {
     data: TOutput; // output from procedure
-  };
+  }
 }
 ```
 
-
 ### Error Response
-
 
 <details><summary>Example JSON Response</summary>
 
@@ -162,7 +153,8 @@ In order to have a specification that works regardless of the transport layer we
       "json": {
         "message": "Something went wrong",
         "code": -32600, // JSON-RPC 2.0 code
-        "data": { // Extra, customizable, meta data
+        "data": {
+          // Extra, customizable, meta data
           "code": "INTERNAL_SERVER_ERROR",
           "httpStatus": 500,
           "stack": "...",
@@ -173,6 +165,7 @@ In order to have a specification that works regardless of the transport layer we
   }
 ]
 ```
+
 </details>
 <br/>
 
@@ -180,11 +173,7 @@ In order to have a specification that works regardless of the transport layer we
 - If the response has different statuses we send back `207 Multi-Status` _(e.g. if one call errored and one succeeded) _
 - For more on errors and how customize them see [Error Formatting](../server/error-formatting.md).
 
-
-
-
 ## Error Codes <-> HTTP Status
-
 
 ```ts
 PARSE_ERROR: 400,
@@ -200,7 +189,6 @@ PRECONDITION_FAILED: 412,
 PAYLOAD_TOO_LARGE: 413,
 METHOD_NOT_SUPPORTED: 405,
 ```
-
 
 ## Error Codes <-> JSON-RPC 2.0 Error Codes
 
@@ -239,12 +227,12 @@ export const TRPC_ERROR_CODES_BY_KEY = {
   CLIENT_CLOSED_REQUEST: -32099, // 499
 } as const;
 ```
-</details>
 
+</details>
 
 ## Dig deeper
 
 You can read more details by drilling into the TypeScript definitions in
 
-- [/packages/server/src/rpc/envelopes.ts](https://github.com/trpc/trpc/tree/main/packages/server/src/rpc/envelopes.ts)
-- [/packages/server/src/rpc/codes.ts](https://github.com/trpc/trpc/tree/main/packages/server/src/rpc/codes.ts).
+- [/packages/server/src/rpc/envelopes.ts](https://github.com/trpc/trpc/tree/next/packages/server/src/rpc/envelopes.ts)
+- [/packages/server/src/rpc/codes.ts](https://github.com/trpc/trpc/tree/next/packages/server/src/rpc/codes.ts).

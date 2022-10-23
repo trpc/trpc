@@ -96,7 +96,7 @@ This is a peer dependency of `@trpc/client` so you have to install it again!
 
 #### 2. Create tRPC hooks
 
-Create a set of strongly-typed React hooks from your `AppRouter` type signature with `createReactQueryHooks`.
+Create a set of strongly-typed React hooks from your `AppRouter` type signature with `createTRPCReact`.
 
 ```tsx title='utils/trpc.ts'
 // utils/trpc.ts
