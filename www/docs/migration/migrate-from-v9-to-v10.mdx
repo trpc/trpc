@@ -420,9 +420,7 @@ See [HTTP-specific options moved from `TRPCClient` to links](#http-specific-opti
 
 ### Custom Links
 
-See the [Links documentation](links#creating-a-custom-link).
-
-> 🚧 Feel free to contribute to improve this section
+In v10, the Links architecture has been completely revamped. Therefore, custom links made for v9 will not work for v10 or while on interop. If you want more information about how to create a custom link for v10, checkout [the Links documentation](links#creating-a-custom-link).
 
 ## Client Package Changes
 
@@ -478,7 +476,7 @@ trpc.post.byId.useQuery('1', {
 
 :::note
 If you only use the tRPC provided API's in your app you will have no problems in
-migrating 👍 However if you have been useing the tanstack query client directly
+migrating 👍 However if you have been using the tanstack query client directly
 to do things like update query data for multiple tRPC generated queries using
 [`queryClient.setQueriesData](https://tanstack.com/query/v4/docs/reference/QueryClient#queryclientsetqueriesdata)
 you may need to take note!
@@ -530,7 +528,7 @@ ac.abort();
 
 #### HTTP-specific options moved from `TRPCClient` to links
 
-Previously, HTTP options (like headers) were placed straight onto your `createTRPCClient()`. However, since tRPC is technically not tied to HTTP itself, we've moved these from the `TRPCClient` to `httpLink` and `httpBatchLink`.
+Previously, HTTP options (like headers) were placed straight onto your `createTRPCClient()`. However, since tRPC is technically not tied to HTTP itself, we've moved these from the `TRPCClient` to [`httpLink`](links/httpLink) and [`httpBatchLink`](links/httpBatchLink).
 
 ```ts
 // Before:
