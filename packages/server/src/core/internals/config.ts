@@ -14,7 +14,7 @@ export interface RootConfigTypes {
 /**
  * The default check to see if we're in a server
  */
-export const isServerDefault: boolean =
+export const getIsServerDefault = (): boolean =>
   typeof window === 'undefined' ||
   'Deno' in window ||
   process.env.NODE_ENV === 'test' ||

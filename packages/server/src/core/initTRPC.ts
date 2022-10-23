@@ -19,7 +19,7 @@ import {
   RootConfig,
   RootConfigTypes,
   RuntimeConfig,
-  isServerDefault,
+  getIsServerDefault,
 } from './internals/config';
 import { createBuilder } from './internals/procedureBuilder';
 import { PickFirstDefined, ValidateShape } from './internals/utils';
@@ -109,7 +109,7 @@ function createTRPCInner<TParams extends PartialRootConfigTypes>() {
       isDev: runtime?.isDev ?? process.env.NODE_ENV !== 'production',
       allowOutsideOfServer: runtime?.allowOutsideOfServer ?? false,
       errorFormatter,
-      isServer: runtime?.isServer ?? isServerDefault,
+      isServer: runtime?.isServer ?? getIsServerDefault(),
       /**
        * @internal
        */
@@ -122,7 +122,7 @@ function createTRPCInner<TParams extends PartialRootConfigTypes>() {
 
     {
       // Server check
-      const isServer: boolean = runtime?.isServer ?? isServerDefault;
+      const isServer: boolean = runtime?.isServer ?? getIsServerDefault();
 
       if (!isServer && runtime?.allowOutsideOfServer !== true) {
         throw new Error(
