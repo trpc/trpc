@@ -17,8 +17,8 @@ export interface RootConfigTypes {
 export const isServerDefault: boolean =
   typeof window === 'undefined' ||
   'Deno' in window ||
-  process?.env?.NODE_ENV === 'test' ||
-  !!process?.env?.JEST_WORKER_ID;
+  globalThis.process?.env?.NODE_ENV === 'test' ||
+  !!globalThis.process?.env?.JEST_WORKER_ID;
 
 /**
  * The runtime config that are used and actually represents real values underneath

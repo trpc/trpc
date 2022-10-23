@@ -816,7 +816,7 @@ export class Router<
       },
     };
     if (
-      process?.env?.NODE_ENV !== 'production' &&
+      globalThis.process?.env?.NODE_ENV !== 'production' &&
       typeof opts.error.stack === 'string'
     ) {
       shape.data.stack = opts.error.stack;
