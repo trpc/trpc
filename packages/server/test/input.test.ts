@@ -378,3 +378,32 @@ test('double validators with undefined', async () => {
     );
   }
 });
+
+test('merges optional with required property', async () => {
+  const t = initTRPC.create();
+
+  const router = t.router({
+    proc: t.procedure
+      .input(
+        z.object({
+          id: z.string(),
+        }),
+      )
+      .input(
+        z.object({
+          id: z.string().optional(),
+        }),
+      )
+      .query(() => 'hi'),
+  });
+
+  const client = createTRPCProxyClient<typeof router>({
+    links: [],
+  });
+
+  await ignoreErrors(async () => {
+    // @ts-expect-error id is not optional
+    await client.proc.query({});
+    await client.proc.query({ id: 'foo' });
+  });
+});
