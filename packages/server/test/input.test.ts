@@ -1,10 +1,10 @@
 import { routerToServerAndClientNew, waitError } from './___testHelpers';
-import { TRPCClientError, createTRPCProxyClient } from '@trpc/client';
+import { TRPCClientError, createTRPCProxyClient } from '@trpc/client/src';
 import {
   inferProcedureInput,
   inferProcedureParams,
   initTRPC,
-} from '@trpc/server';
+} from '@trpc/server/src';
 import { expectTypeOf } from 'expect-type';
 import { konn } from 'konn';
 import { ZodError, z } from 'zod';
@@ -377,4 +377,33 @@ test('double validators with undefined', async () => {
       }),
     );
   }
+});
+
+test('merges optional with required property', async () => {
+  const t = initTRPC.create();
+
+  const router = t.router({
+    proc: t.procedure
+      .input(
+        z.object({
+          id: z.string(),
+        }),
+      )
+      .input(
+        z.object({
+          id: z.string().optional(),
+        }),
+      )
+      .query(() => 'hi'),
+  });
+
+  const client = createTRPCProxyClient<typeof router>({
+    links: [],
+  });
+
+  await ignoreErrors(() =>
+    client.proc.query({
+      id: 'foo',
+    }),
+  );
 });

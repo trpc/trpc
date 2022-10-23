@@ -1,6 +1,11 @@
 import { TRPCError } from '../../error/TRPCError';
 import { getTRPCErrorFromUnknown } from '../../error/utils';
-import { FlatOverwrite, MaybePromise, Simplify } from '../../types';
+import {
+  InferOptional,
+  MaybePromise,
+  Simplify,
+  UndefinedKeys,
+} from '../../types';
 import {
   MiddlewareFunction,
   MiddlewareResult,
@@ -62,9 +67,19 @@ export interface BuildProcedure<
       : TParams
   > {}
 
+type Merge<TType, TWith> = {
+  [TKey in keyof TType | keyof TWith]: TKey extends keyof TType
+    ? TKey extends keyof TWith
+      ? TType[TKey] & TWith[TKey]
+      : TType[TKey]
+    : TWith[TKey & keyof TWith];
+};
+
 type OverwriteIfDefined<TType, TWith> = UnsetMarker extends TType
   ? TWith
-  : Simplify<FlatOverwrite<TType, TWith>>;
+  : Simplify<
+      InferOptional<Merge<TType, TWith>, UndefinedKeys<Merge<TType, TWith>>>
+    >;
 
 type ErrorMessage<TMessage extends string> = TMessage;
 
@@ -90,8 +105,24 @@ export interface ProcedureBuilder<TParams extends ProcedureParams> {
       ? $Parser
       : inferParser<$Parser>['out'] extends Record<string, unknown>
       ? TParams['_input_out'] extends Record<string, unknown>
-        ? $Parser
-        : ErrorMessage<'All input parsers did not resolve to an object'>
+        ? // ? Extract<
+          //     {
+          //       [K in Extract<
+          //         Pick<inferParser<$Parser>['out'], keyof TParams['_input_out']>,
+          //         string
+          //       >]: inferParser<$Parser>['out'] extends TParams['_input_out'][K &
+          //         string]
+          //         ? ErrorMessage<'Input schema is not compatible with existing schema'>
+          //         : never;
+          //     }[Extract<
+          //       Pick<inferParser<$Parser>['out'], keyof TParams['_input_out']>,
+          //       string
+          //     >],
+          //     ErrorMessage<'Input schema is not compatible with existing schema'>
+          //   > extends never
+          $Parser
+        : // : ErrorMessage<"Impossible merge - you can't override a defined property with an optional one">
+          ErrorMessage<'All input parsers did not resolve to an object'>
       : ErrorMessage<'All input parsers did not resolve to an object'>,
   ): ProcedureBuilder<{
     _config: TParams['_config'];
