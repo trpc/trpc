@@ -5,7 +5,7 @@ sidebar_label: Authorization
 slug: /authorization
 ---
 
-The `createContext`-function is called for each incoming request so here you can add contextual information about the calling user from the request object.
+The `createContext` function is called for each incoming request so here you can add contextual information about the calling user from the request object.
 
 ## Create context from request headers
 
@@ -73,7 +73,6 @@ import { TRPCError, initTRPC } from '@trpc/server';
 
 export const t = initTRPC.context<Context>().create();
 
-
 const isAuthed = t.middleware(({ next, ctx }) => {
   if (!ctx.user?.isAdmin) {
     throw new TRPCError({ code: 'UNAUTHORIZED' });
@@ -84,7 +83,6 @@ const isAuthed = t.middleware(({ next, ctx }) => {
     },
   });
 });
-
 
 // you can reuse this for any procedure
 export const protectedProcedure = t.procedure.use(isAuthed);
