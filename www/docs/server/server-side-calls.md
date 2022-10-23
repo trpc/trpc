@@ -5,7 +5,7 @@ sidebar_label: Server Side Calls
 slug: /server-side-calls
 ---
 
-You may need to call your procedure(s) directly from the server, `createCaller()` function returns you an instance of `RouterCaller` able to execute query(ies) and mutation(s).
+You may need to call your procedure(s) directly from the server, `createCaller()` function returns you an instance of `RouterCaller` able to execute queries and mutations.
 
 ## Create caller
 
@@ -21,7 +21,6 @@ import { initTRPC } from '@trpc/server';
 import { z } from 'zod';
 
 const t = initTRPC.create();
-
 
 const router = t.router({
   // Create procedure at path 'greeting'
@@ -41,9 +40,8 @@ We create the router with a mutation and then we call the asynchronous `post` pr
 
 ```ts twoslash
 // @target: esnext
-
-import { z } from 'zod';
 import { initTRPC } from '@trpc/server';
+import { z } from 'zod';
 
 const posts = ['One', 'Two', 'Three'];
 
@@ -51,14 +49,14 @@ const t = initTRPC.create();
 const router = t.router({
   post: t.router({
     add: t.procedure.input(z.string()).mutation(({ input }) => {
-      posts.push(input)
+      posts.push(input);
       return posts;
     }),
   }),
 });
 
 const caller = router.createCaller({});
-const result = await caller.post.add("Four");
+const result = await caller.post.add('Four');
 //     ^?
 ```
 
@@ -84,8 +82,8 @@ import { TRPCError, initTRPC } from '@trpc/server';
 type Context = {
   user?: {
     id: string;
-  }
-}
+  };
+};
 const t = initTRPC.context<Context>().create();
 
 const isAuthed = t.middleware(({ next, ctx }) => {
@@ -100,7 +98,7 @@ const isAuthed = t.middleware(({ next, ctx }) => {
     ctx: {
       // Infers that the `user` is non-nullable
       user: ctx.user,
-    }
+    },
   });
 });
 
@@ -109,7 +107,6 @@ const protectedProcedure = t.procedure.use(isAuthed);
 const router = t.router({
   secret: protectedProcedure.query(({ ctx }) => ctx.user),
 });
-
 
 {
   // ❌ this will return an error because there isn't the right context param
@@ -122,8 +119,8 @@ const router = t.router({
   // ✅ this will work because user property is present inside context param
   const authorizedCaller = router.createCaller({
     user: {
-      id: "KATT",
-    }
+      id: 'KATT',
+    },
   });
   const result = await authorizedCaller.secret();
   //     ^?

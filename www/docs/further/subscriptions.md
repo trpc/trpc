@@ -106,8 +106,8 @@ You can [use Links](../client/links/index.md) to route queries and/or mutations 
 :::
 
 ```tsx title='client.ts'
-import { createWSClient, wsLink } from '@trpc/client';
-import { httpBatchLink } from '@trpc/client';
+import { createTRPCProxyClient, createWSClient, wsLink } from '@trpc/client';
+import type { AppRouter } from '../path/to/server/trpc';
 
 // create persistent WebSocket connection
 const wsClient = createWSClient({
@@ -115,16 +115,13 @@ const wsClient = createWSClient({
 });
 
 // configure TRPCClient to use WebSockets transport
-const client = createTRPCClient<AppRouter>({
+const client = createTRPCProxyClient<AppRouter>({
   links: [
     wsLink({
       client: wsClient,
     }),
   ],
 });
-
-// create a proxy function for ease of use
-const proxy = createTRPCClientProxy(client);
 ```
 
 ### Using React
@@ -135,8 +132,8 @@ See [/examples/next-prisma-starter-websockets](https://github.com/trpc/examples-
 
 > You can read more details by drilling into the TypeScript definitions:
 >
-> - [/packages/server/src/rpc/envelopes.ts](https://github.com/trpc/trpc/tree/main/packages/server/src/rpc/envelopes.ts)
-> - [/packages/server/src/rpc/codes.ts](https://github.com/trpc/trpc/tree/main/packages/server/src/rpc/codes.ts).
+> - [/packages/server/src/rpc/envelopes.ts](https://github.com/trpc/trpc/tree/next/packages/server/src/rpc/envelopes.ts)
+> - [/packages/server/src/rpc/codes.ts](https://github.com/trpc/trpc/tree/next/packages/server/src/rpc/codes.ts).
 
 ### `query` / `mutation`
 
