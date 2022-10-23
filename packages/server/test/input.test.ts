@@ -401,9 +401,9 @@ test('merges optional with required property', async () => {
     links: [],
   });
 
-  await ignoreErrors(() => {
+  await ignoreErrors(async () => {
     // @ts-expect-error id is not optional
-    client.proc.query({});
-    client.proc.query({ id: 'foo' });
+    await client.proc.query({});
+    await client.proc.query({ id: 'foo' });
   });
 });
