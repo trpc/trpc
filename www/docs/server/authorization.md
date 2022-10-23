@@ -22,7 +22,7 @@ export async function createContext({
   // Create your context based on the request object
   // Will be available as `ctx` in all your resolvers
 
-  // This is just an example of something you'd might want to do in your ctx fn
+  // This is just an example of something you might want to do in your ctx fn
   async function getUserFromHeader() {
     if (req.headers.authorization) {
       const user = await decodeAndVerifyJwtToken(
