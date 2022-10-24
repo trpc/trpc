@@ -4,6 +4,9 @@
   "description": "tRPC Client lib",
   "author": "KATT",
   "license": "MIT",
+  "main": "dist/index.js",
+  "module": "dist/index.mjs",
+  "typings": "dist/index.d.ts",
   "homepage": "https://trpc.io",
   "repository": {
     "type": "git",
@@ -18,9 +21,14 @@
       ]
     }
   },
-  "main": "dist/index.js",
-  "module": "dist/index.mjs",
-  "typings": "dist/index.d.ts",
+  "scripts": {
+    "build": "rollup --config rollup.config.ts --configPlugin rollup-plugin-swc3",
+    "dev": "pnpm build --watch",
+    "codegen:entrypoints": "tsx entrypoints.script.ts",
+    "test": "jest",
+    "test:ci": "jest --ci --coverage --maxWorkers=2",
+    "ts-watch": "tsc --project tsconfig.watch.json"
+  },
   "exports": {
     ".": {
       "import": "./dist/index.mjs",
@@ -59,11 +67,6 @@
     "README.md",
     "links"
   ],
-  "scripts": {
-    "build": "rollup --config rollup.config.ts --configPlugin rollup-plugin-swc3",
-    "codegen:entrypoints": "tsx entrypoints.script.ts",
-    "ts-watch": "tsc --project tsconfig.watch.json"
-  },
   "peerDependencies": {
     "@trpc/server": "^10.0.0-alpha.48"
   },
