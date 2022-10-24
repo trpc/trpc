@@ -47,7 +47,7 @@ jobs:
         run: pnpm --filter "@trpc/*" --filter root install
 
       - name: Build and test
-        run: pnpm turbo --filter=\"@trpc/*\" build test -- --ci --coverage --maxWorkers=2
+        run: pnpm turbo --filter=\"@trpc/*\" build test
 
       - uses: codecov/codecov-action@v1
         with:
