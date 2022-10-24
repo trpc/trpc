@@ -1,8 +1,15 @@
 name: Lint
+
 on: [push]
+
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
+
+env:
+  TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
+  TURBO_TEAM: ${{ secrets.TURBO_TEAM }}
+
 jobs:
   lint:
     runs-on: ubuntu-latest
@@ -31,10 +38,11 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-pnpm-store-all-
 
-      - name: Install deps and build (with cache)
+      - name: Install deps (with cache)
         run: pnpm install --child-concurrency 3
 
-      - name: Lint
+      - name: Run ESLint
         run: pnpm lint
 
-      - run: pnpm manypkg check
+      - name: Run Manypkg
+        run: pnpm manypkg check
