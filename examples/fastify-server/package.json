@@ -1,6 +1,6 @@
 {
   "name": "@examples/fastify-server",
-  "version": "10.0.0-proxy-beta.25",
+  "version": "10.0.0-proxy-beta.26",
   "private": true,
   "scripts": {
     "build": "tsc",
@@ -15,8 +15,8 @@
   },
   "dependencies": {
     "@fastify/websocket": "^5.0.0",
-    "@trpc/client": "^10.0.0-proxy-beta.25",
-    "@trpc/server": "^10.0.0-proxy-beta.25",
+    "@trpc/client": "^10.0.0-proxy-beta.26",
+    "@trpc/server": "^10.0.0-proxy-beta.26",
     "abort-controller": "^3.0.0",
     "fastify": "^3.27.1",
     "node-fetch": "^2.6.1",

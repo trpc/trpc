@@ -1,6 +1,6 @@
 {
   "name": "@examples/next-minimal",
-  "version": "10.0.0-proxy-beta.25",
+  "version": "10.0.0-proxy-beta.26",
   "private": true,
   "scripts": {
     "dev": "next dev",
@@ -9,10 +9,10 @@
   },
   "dependencies": {
     "@tanstack/react-query": "^4.3.8",
-    "@trpc/client": "^10.0.0-proxy-beta.25",
-    "@trpc/next": "^10.0.0-proxy-beta.25",
-    "@trpc/react-query": "^10.0.0-proxy-beta.25",
-    "@trpc/server": "^10.0.0-proxy-beta.25",
+    "@trpc/client": "^10.0.0-proxy-beta.26",
+    "@trpc/next": "^10.0.0-proxy-beta.26",
+    "@trpc/react-query": "^10.0.0-proxy-beta.26",
+    "@trpc/server": "^10.0.0-proxy-beta.26",
     "next": "^12.3.1",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
