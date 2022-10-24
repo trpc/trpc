@@ -6,7 +6,7 @@
   },
   "packageManager": "pnpm@7.14.0",
   "scripts": {
-    "build": "turbo --filter=\"@trpc/*\" build",
+    "build": "pnpm codegen && turbo --filter=\"@trpc/*\" build",
     "dev": "turbo --filter=\"@trpc/*\" dev",
     "test": "turbo --filter=\"@trpc/*\" test",
     "lint": "eslint --ext \".js,.ts,.tsx\" --ignore-path .gitignore .",
