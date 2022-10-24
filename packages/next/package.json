@@ -56,13 +56,13 @@
     "@trpc/react-query": "^10.0.0-proxy-beta.26",
     "@trpc/server": "^10.0.0-proxy-beta.26",
     "@types/express": "^4.17.12",
-    "tsx": "^3.9.0",
     "@types/node": "^18.7.20",
-    "rollup": "^2.79.1",
     "express": "^4.17.1",
     "next": "^12.3.1",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
+    "rollup": "^2.79.1",
+    "tsx": "^3.9.0",
     "zod": "^3.0.0"
   },
   "publishConfig": {
