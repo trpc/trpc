@@ -10,6 +10,9 @@
     "url": "git+https://github.com/trpc/trpc.git",
     "directory": "packages/server"
   },
+  "main": "dist/index.js",
+  "module": "dist/index.mjs",
+  "typings": "dist/index.d.ts",
   "eslintConfig": {
     "overrides": [
       {
@@ -30,11 +33,10 @@
     "build": "rollup --config rollup.config.ts --configPlugin rollup-plugin-swc3",
     "codegen:entrypoints": "tsx entrypoints.script.ts",
     "benchmark": "tsc --project tsconfig.benchmark.json",
+    "test": "jest",
+    "test:ci": "jest --ci --coverage --maxWorkers=2",
     "ts-watch": "tsc --project tsconfig.watch.json"
   },
-  "main": "dist/index.js",
-  "module": "dist/index.mjs",
-  "typings": "dist/index.d.ts",
   "exports": {
     ".": {
       "import": "./dist/index.mjs",

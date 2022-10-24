@@ -30,6 +30,10 @@
     "test": {
       "dependsOn": ["^build"],
       "cache": false
+    },
+    "test:ci": {
+      "dependsOn": ["^build"],
+      "cache": false
     }
   }
 }
