@@ -29,6 +29,7 @@ importers:
       eslint-plugin-prettier: ^4.0.0
       eslint-plugin-react: ^7.25.1
       eslint-plugin-react-hooks: ^4.2.0
+      eslint-plugin-turbo: ^0.0.4
       eslint-plugin-unicorn: 40.1.0
       fast-glob: ^3.2.12
       lerna: ^5.5.1
@@ -41,6 +42,7 @@ importers:
       rollup-plugin-swc3: ^0.7.0
       rollup-plugin-typescript2: ^0.32.1
       tsx: ^3.9.0
+      turbo: ^1.6.1
       typescript: ^4.8.3
     dependencies:
       '@changesets/changelog-github': 0.4.6
@@ -58,6 +60,7 @@ importers:
       eslint-plugin-prettier: 4.2.1_7gsvg5lgwpfdww3i7smtqxamuy
       eslint-plugin-react: 7.31.8_eslint@7.32.0
       eslint-plugin-react-hooks: 4.6.0_eslint@7.32.0
+      eslint-plugin-turbo: 0.0.4_eslint@7.32.0
       eslint-plugin-unicorn: 40.1.0_eslint@7.32.0
       fast-glob: 3.2.12
       lerna: 5.5.2_@swc+core@1.3.3
@@ -70,6 +73,7 @@ importers:
       rollup-plugin-swc3: 0.7.0_yzdwamyeo2l56m2tbjw7mygy4a
       rollup-plugin-typescript2: 0.32.1_5q64ijqsuisqe52alrh6v6njki
       tsx: 3.9.0
+      turbo: 1.6.1
       typescript: 4.8.3
 
   examples/.interop/cloudflare-workers:
@@ -1118,10 +1122,14 @@ importers:
       '@testing-library/dom': ^8.18.1
       '@trpc/server': ^10.0.0-proxy-beta.26
       '@types/node': ^18.7.20
+      rollup: ^2.79.1
+      tsx: ^3.9.0
     devDependencies:
       '@testing-library/dom': 8.18.1
       '@trpc/server': link:../server
       '@types/node': 18.7.20
+      rollup: 2.79.1
+      tsx: 3.9.0
 
   packages/next:
     specifiers:
@@ -1136,6 +1144,8 @@ importers:
       react: ^18.2.0
       react-dom: ^18.2.0
       react-ssr-prepass: ^1.5.0
+      rollup: ^2.79.1
+      tsx: ^3.9.0
       zod: ^3.0.0
     dependencies:
       react-ssr-prepass: 1.5.0_react@18.2.0
@@ -1150,6 +1160,8 @@ importers:
       next: 12.3.1_biqbaboplfbrettd7655fr4n2y
       react: 18.2.0
       react-dom: 18.2.0_react@18.2.0
+      rollup: 2.79.1
+      tsx: 3.9.0
       zod: 3.19.1
 
   packages/react-query:
@@ -1163,6 +1175,8 @@ importers:
       next: ^12.3.1
       react: ^18.2.0
       react-dom: ^18.2.0
+      rollup: ^2.79.1
+      tsx: ^3.9.0
       zod: ^3.0.0
     devDependencies:
       '@tanstack/react-query': 4.6.0_biqbaboplfbrettd7655fr4n2y
@@ -1174,6 +1188,8 @@ importers:
       next: 12.3.1_biqbaboplfbrettd7655fr4n2y
       react: 18.2.0
       react-dom: 18.2.0_react@18.2.0
+      rollup: 2.79.1
+      tsx: 3.9.0
       zod: 3.19.1
 
   packages/server:
@@ -1186,10 +1202,6 @@ importers:
       '@testing-library/jest-dom': ^5.16.5
       '@testing-library/react': ^13.4.0
       '@testing-library/user-event': ^14.4.3
-      '@trpc/client': ^10.0.0-proxy-beta.26
-      '@trpc/next': ^10.0.0-proxy-beta.26
-      '@trpc/react-query': ^10.0.0-proxy-beta.26
-      '@trpc/server': ^10.0.0-proxy-beta.26
       '@types/aws-lambda': ^8.10.97
       '@types/express': ^4.17.12
       '@types/hash-sum': ^1.0.0
@@ -1217,9 +1229,11 @@ importers:
       node-fetch: ^2.6.1
       react: ^18.2.0
       react-dom: ^18.2.0
+      rollup: ^2.79.1
       superjson: ^1.7.4
       superstruct: ^0.16.0
       ts-jest: ^27.0.5
+      tsx: ^3.9.0
       typescript: ^4.8.3
       ws: ^8.0.0
       yup: ^0.32.8
@@ -1233,10 +1247,6 @@ importers:
       '@testing-library/jest-dom': 5.16.5
       '@testing-library/react': 13.4.0_biqbaboplfbrettd7655fr4n2y
       '@testing-library/user-event': 14.4.3_znccgeejomvff3jrsk3ljovfpu
-      '@trpc/client': link:../client
-      '@trpc/next': link:../next
-      '@trpc/react-query': link:../react-query
-      '@trpc/server': 'link:'
       '@types/aws-lambda': 8.10.106
       '@types/express': 4.17.14
       '@types/hash-sum': 1.0.0
@@ -1264,9 +1274,11 @@ importers:
       node-fetch: 2.6.7
       react: 18.2.0
       react-dom: 18.2.0_react@18.2.0
+      rollup: 2.79.1
       superjson: 1.10.0
       superstruct: 0.16.5
       ts-jest: 27.1.5_qqheuyrmnawe7ws7n63adpwbnu
+      tsx: 3.9.0
       typescript: 4.8.3
       ws: 8.9.0
       yup: 0.32.11
@@ -10786,6 +10798,14 @@ packages:
       semver: 6.3.0
       string.prototype.matchall: 4.0.7
 
+  /eslint-plugin-turbo/0.0.4_eslint@7.32.0:
+    resolution: {integrity: sha512-dfmYE/iPvoJInQq+5E/0mj140y/rYwKtzZkn3uVK8+nvwC5zmWKQ6ehMWrL4bYBkGzSgpOndZM+jOXhPQ2m8Cg==}
+    peerDependencies:
+      eslint: ^7.23.0 || ^8.0.0
+    dependencies:
+      eslint: 7.32.0
+    dev: false
+
   /eslint-plugin-unicorn/40.1.0_eslint@7.32.0:
     resolution: {integrity: sha512-y5doK2DF9Sr5AqKEHbHxjFllJ167nKDRU01HDcWyv4Tnmaoe9iNxMrBnaybZvWZUaE3OC5Unu0lNIevYamloig==}
     engines: {node: '>=12'}
@@ -17855,7 +17875,6 @@ packages:
     hasBin: true
     optionalDependencies:
       fsevents: 2.3.2
-    dev: false
 
   /rtl-detect/1.0.4:
     resolution: {integrity: sha512-EBR4I2VDSSYr7PkBmFy04uhycIpDKp+21p/jARYXlCSjQksTBQcJ0HFUPOO79EPPH5JS6VAhiIQbycf0O3JAxQ==}
@@ -19480,6 +19499,67 @@ packages:
       strip-ansi: 6.0.1
       wcwidth: 1.0.1
       yargs: 17.5.1
+    dev: false
+
+  /turbo-darwin-64/1.6.1:
+    resolution: {integrity: sha512-xsItJ/hmnd6R8V60cCe0RAZQjO+En/LVXVkZhiw0Fyfxoo+iKcAA4sVeWkaL+cg5sQd5UWlWfD1EOKbHDjVb9Q==}
+    cpu: [x64]
+    os: [darwin]
+    requiresBuild: true
+    dev: false
+    optional: true
+
+  /turbo-darwin-arm64/1.6.1:
+    resolution: {integrity: sha512-wRfAJWCLYB29IGTx6sF6QvexK/89AbAgnfYA5yVcuUJT+xz2/zLeGcOODQBCnP4rB+vX5ipXLY0XjkLGl+z6fA==}
+    cpu: [arm64]
+    os: [darwin]
+    requiresBuild: true
+    dev: false
+    optional: true
+
+  /turbo-linux-64/1.6.1:
+    resolution: {integrity: sha512-NZ88muC3hHbWW/cBgl9DFFbyzDcFVvZHQBXKTwVA8l2yLOOvesX+aQ2Knr4Pxu9Kb0F3t6ABsOSf8SbI7CpJsg==}
+    cpu: [x64]
+    os: [linux]
+    requiresBuild: true
+    dev: false
+    optional: true
+
+  /turbo-linux-arm64/1.6.1:
+    resolution: {integrity: sha512-HDgx+0ozqMpoDBOSzWz43nYMDp/+giEz8+vmLOB6mTQU/9IlZQVwachzwkqLRsJyBUhYALBlWGcuRWO3KqXMmg==}
+    cpu: [arm64]
+    os: [linux]
+    requiresBuild: true
+    dev: false
+    optional: true
+
+  /turbo-windows-64/1.6.1:
+    resolution: {integrity: sha512-jnR0V0YBlFJKEoAeq0GQFLmZ1UNl6vh+RHTHX546+o5jKcE6nfp9oTOEwtR0PLutiuxxDDm6roAc+9mSfycffw==}
+    cpu: [x64]
+    os: [win32]
+    requiresBuild: true
+    dev: false
+    optional: true
+
+  /turbo-windows-arm64/1.6.1:
+    resolution: {integrity: sha512-vOqw/iPgLjkwpni2vNFK9YO19lN9QZ8JG8v1unvL09/rnXyKpHygrYECj+efJptEVJKBG2xLIauJYmZ/2LV1Uw==}
+    cpu: [arm64]
+    os: [win32]
+    requiresBuild: true
+    dev: false
+    optional: true
+
+  /turbo/1.6.1:
+    resolution: {integrity: sha512-CkcJo17cbwfTzmxtxJo2AbbeVqaz1yQotBUqVwZDdcrVSNKci2nvw+JHJ3sy/z9YY9xOJmoRaZifbkja3UXUWA==}
+    hasBin: true
+    requiresBuild: true
+    optionalDependencies:
+      turbo-darwin-64: 1.6.1
+      turbo-darwin-arm64: 1.6.1
+      turbo-linux-64: 1.6.1
+      turbo-linux-arm64: 1.6.1
+      turbo-windows-64: 1.6.1
+      turbo-windows-arm64: 1.6.1
     dev: false
 
   /type-check/0.3.2:

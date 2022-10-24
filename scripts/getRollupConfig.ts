@@ -11,65 +11,12 @@ import typescript from 'rollup-plugin-typescript2';
 const isWatchMode = process.argv.includes('--watch');
 const extensions = ['.ts', '.tsx'];
 
-// Exporting this for generating barrel-files in scripts/entrypoints.ts
-export const PACKAGES = ['server', 'client', 'react-query', 'next'] as const;
-export const INPUTS: Record<typeof PACKAGES[number], string[]> = {
-  server: [
-    'src/index.ts',
-    'src/adapters/aws-lambda/index.ts',
-    'src/adapters/express.ts',
-    'src/adapters/fastify/index.ts',
-    'src/adapters/next.ts',
-    'src/adapters/node-http/index.ts',
-    'src/adapters/standalone.ts',
-    'src/adapters/ws.ts',
-    'src/adapters/fetch/index.ts',
-    'src/http/index.ts',
-    'src/rpc/index.ts',
-    'src/observable/index.ts',
-    'src/subscription.ts',
-    // Utils that can be shared with clients
-    'src/shared/index.ts',
-  ],
-  client: [
-    'src/index.ts',
-    'src/links/httpLink.ts',
-    'src/links/httpBatchLink.ts',
-    'src/links/splitLink.ts',
-    'src/links/loggerLink.ts',
-    'src/links/wsLink.ts',
-  ],
-  'react-query': ['src/index.ts', 'src/ssg/index.ts', 'src/shared/index.ts'],
-  next: ['src/index.ts'],
-};
-
-export default function rollup(): RollupOptions[] {
-  return [
-    ...buildConfig({
-      input: INPUTS.server,
-      packageDir: 'packages/server',
-    }),
-    ...buildConfig({
-      input: INPUTS.client,
-      packageDir: 'packages/client',
-    }),
-    ...buildConfig({
-      input: INPUTS['react-query'],
-      packageDir: 'packages/react-query',
-    }),
-    ...buildConfig({
-      input: INPUTS.next,
-      packageDir: 'packages/next',
-    }),
-  ];
-}
-
 type Options = {
   input: string[];
   packageDir: string;
 };
 
-function buildConfig({ input, packageDir }: Options): RollupOptions[] {
+export function buildConfig({ input, packageDir }: Options): RollupOptions[] {
   const resolvedInput = input.map((file) => path.resolve(packageDir, file));
   const options: Options = {
     input: resolvedInput,

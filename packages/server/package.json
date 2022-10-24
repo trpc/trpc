@@ -27,6 +27,8 @@
     ]
   },
   "scripts": {
+    "build": "rollup --config rollup.config.ts --configPlugin rollup-plugin-swc3",
+    "codegen:entrypoints": "tsx entrypoints.script.ts",
     "benchmark": "tsc --project tsconfig.benchmark.json",
     "ts-watch": "tsc --project tsconfig.watch.json"
   },
@@ -128,10 +130,6 @@
     "@testing-library/jest-dom": "^5.16.5",
     "@testing-library/react": "^13.4.0",
     "@testing-library/user-event": "^14.4.3",
-    "@trpc/client": "^10.0.0-proxy-beta.26",
-    "@trpc/next": "^10.0.0-proxy-beta.26",
-    "@trpc/react-query": "^10.0.0-proxy-beta.26",
-    "@trpc/server": "^10.0.0-proxy-beta.26",
     "@types/aws-lambda": "^8.10.97",
     "@types/express": "^4.17.12",
     "@types/hash-sum": "^1.0.0",
@@ -159,6 +157,8 @@
     "node-fetch": "^2.6.1",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
+    "rollup": "^2.79.1",
+    "tsx": "^3.9.0",
     "superjson": "^1.7.4",
     "superstruct": "^0.16.0",
     "ts-jest": "^27.0.5",

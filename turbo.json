@@ -1,0 +1,31 @@
+{
+  "pipeline": {
+    "codegen:entrypoints": {
+      "outputs": [
+        "links",
+        "shared",
+        "ssg",
+        "adapters",
+        "dist",
+        "http",
+        "observable",
+        "rpc",
+        "subscription"
+      ]
+    },
+    "build": {
+      "dependsOn": ["^build", "^codegen:entrypoints"],
+      "outputs": [".next/**", "dist/**"]
+    },
+    "dev": {
+      "cache": false
+    },
+    "lint": {
+      "cache": false
+    },
+    "test": {
+      "dependsOn": ["^build"],
+      "cache": false
+    }
+  }
+}

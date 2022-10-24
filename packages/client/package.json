@@ -60,6 +60,8 @@
     "links"
   ],
   "scripts": {
+    "build": "rollup --config rollup.config.ts --configPlugin rollup-plugin-swc3",
+    "codegen:entrypoints": "tsx entrypoints.script.ts",
     "ts-watch": "tsc --project tsconfig.watch.json"
   },
   "peerDependencies": {
@@ -68,7 +70,9 @@
   "devDependencies": {
     "@testing-library/dom": "^8.18.1",
     "@trpc/server": "^10.0.0-proxy-beta.26",
-    "@types/node": "^18.7.20"
+    "rollup": "^2.79.1",
+    "@types/node": "^18.7.20",
+    "tsx": "^3.9.0"
   },
   "publishConfig": {
     "access": "public"

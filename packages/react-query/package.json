@@ -11,6 +11,8 @@
     "directory": "packages/react"
   },
   "scripts": {
+    "build": "rollup --config rollup.config.ts --configPlugin rollup-plugin-swc3",
+    "codegen:entrypoints": "tsx entrypoints.script.ts",
     "ts-watch": "tsc --project tsconfig.watch.json"
   },
   "main": "dist/index.js",
@@ -66,6 +68,8 @@
     "next": "^12.3.1",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
+    "tsx": "^3.9.0",
+    "rollup": "^2.79.1",
     "zod": "^3.0.0"
   },
   "publishConfig": {
