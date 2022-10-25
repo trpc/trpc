@@ -139,7 +139,7 @@ export const sponsors = [
   },
   {
     "name": "Michał Kowieski",
-    "imgSrc": "https://avatars.githubusercontent.com/u/29740731?u=500ad30b9581936882ffedb62c15f4d98cfccfc7&v=4",
+    "imgSrc": "https://avatars.githubusercontent.com/u/29740731?u=8582d7cf3bee56a610b6db878a7627cbdf32d8de&v=4",
     "monthlyPriceInDollars": 5,
     "link": "https://github.com/utevo",
     "privacyLevel": "PUBLIC",
@@ -453,15 +453,6 @@ export const sponsors = [
     "createdAt": 1662896773000
   },
   {
-    "name": "Habib Kadiri",
-    "imgSrc": "https://avatars.githubusercontent.com/u/60525087?u=272c35c9792f781e536fd14c7e48c1052d54ddb5&v=4",
-    "monthlyPriceInDollars": 10,
-    "link": "https://github.com/habibKadiri",
-    "privacyLevel": "PUBLIC",
-    "login": "habibKadiri",
-    "createdAt": 1663581418000
-  },
-  {
     "name": "Wyatt Schulte",
     "imgSrc": "https://avatars.githubusercontent.com/u/42128929?u=15dfd6d0ab827079a400ce33f0f78408637cb5ec&v=4",
     "monthlyPriceInDollars": 5,
@@ -496,5 +487,14 @@ export const sponsors = [
     "privacyLevel": "PUBLIC",
     "login": "sronmiz",
     "createdAt": 1666029744000
+  },
+  {
+    "name": "Daniel Madrid",
+    "imgSrc": "https://avatars.githubusercontent.com/u/31113489?u=d5101c1da2911205e2b347653af38f35004de5c5&v=4",
+    "monthlyPriceInDollars": 5,
+    "link": "https://www.linkedin.com/in/danimydev",
+    "privacyLevel": "PUBLIC",
+    "login": "danimydev",
+    "createdAt": 1666704624000
   }
 ] as const
