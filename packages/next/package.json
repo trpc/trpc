@@ -25,9 +25,7 @@
   "scripts": {
     "build": "rollup --config rollup.config.ts --configPlugin rollup-plugin-swc3",
     "dev": "pnpm build --watch",
-    "codegen:entrypoints": "tsx entrypoints.script.ts",
-    "test": "jest",
-    "test:ci": "jest --ci --coverage --maxWorkers=2"
+    "codegen:entrypoints": "tsx entrypoints.script.ts"
   },
   "exports": {
     ".": {

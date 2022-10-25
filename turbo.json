@@ -14,7 +14,7 @@
       ]
     },
     "build": {
-      "dependsOn": ["^build", "^codegen:entrypoints"],
+      "dependsOn": ["codegen:entrypoints"],
       "outputs": [".next/**", "dist/**"]
     },
     "build-sqlite": {
