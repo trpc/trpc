@@ -32,15 +32,15 @@ export const appRouter = t.router({
         name: z.string(),
       })
     )
-    .mutation(({ input }) => (
-      // Here some login stuff would happen
-      return {
-        user: {
-          name: input.name,
-          role: 'ADMIN'
-        },
-      };
-     ))
+    .mutation(({ input }) => {
+        // Here some login stuff would happen
+        return {
+          user: {
+            name: input.name,
+            role: 'ADMIN'
+          },
+        };
+       })
 })
 ```
 
