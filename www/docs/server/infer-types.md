@@ -63,7 +63,6 @@ import type {
 } from '@trpc/server';
 import type { AppRouter } from './server';
 
-// @noErrors
 type RouterInput = GetInputInferenceHelpers<AppRouter>;
 type RouterOutput = GetOutputInferenceHelpers<AppRouter>;
 
