@@ -61,8 +61,12 @@ type GetInferenceHelpers<
     : never;
 };
 
-export type GetInputInferenceHelpers<TRouter extends AnyRouter> =
-  GetInferenceHelpers<'input', TRouter>;
+export type inferRouterInputs<TRouter extends AnyRouter> = GetInferenceHelpers<
+  'input',
+  TRouter
+>;
 
-export type GetOutputInferenceHelpers<TRouter extends AnyRouter> =
-  GetInferenceHelpers<'output', TRouter>;
+export type inferRouterOutputs<TRouter extends AnyRouter> = GetInferenceHelpers<
+  'output',
+  TRouter
+>;

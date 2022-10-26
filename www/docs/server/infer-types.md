@@ -41,8 +41,8 @@ It is often useful to wrap functionality of your `@trpc/client` or `@trpc/react-
 
 `@trpc/server` exports the following helper types to assist with inferring these types from the `AppRouter` exported by your `@trpc/server` router:
 
-- `GetInputInferenceHelpers<TRouter>`
-- `GetOutputInferenceHelpers<TRouter>`
+- `inferRouterInputs<TRouter>`
+- `inferRouterOutputs<TRouter>`
 
 Let's assume we have this example router:
 
@@ -57,14 +57,11 @@ By traversing the router object, you can infer the types of the procedures. The 
 // @include: server
 // ---cut---
 // @filename: client.ts
-import type {
-  GetInputInferenceHelpers,
-  GetOutputInferenceHelpers,
-} from '@trpc/server';
+import type { inferRouterInputs, inferRouterOutputs } from '@trpc/server';
 import type { AppRouter } from './server';
 
-type RouterInput = GetInputInferenceHelpers<AppRouter>;
-type RouterOutput = GetOutputInferenceHelpers<AppRouter>;
+type RouterInput = inferRouterInputs<AppRouter>;
+type RouterOutput = inferRouterOutputs<AppRouter>;
 
 type PostCreateInput = RouterInput['post']['create'];
 //   ^?

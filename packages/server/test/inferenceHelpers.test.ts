@@ -1,8 +1,4 @@
-import {
-  GetInputInferenceHelpers,
-  GetOutputInferenceHelpers,
-  initTRPC,
-} from '@trpc/server';
+import { inferRouterInputs, inferRouterOutputs, initTRPC } from '@trpc/server';
 import { expectTypeOf } from 'expect-type';
 import { z } from 'zod';
 
@@ -49,8 +45,8 @@ const appRouter = t.router({
 });
 type AppRouter = typeof appRouter;
 
-describe('GetInputInferenceHelpers', () => {
-  type AppRouterInputs = GetInputInferenceHelpers<AppRouter>;
+describe('inferRouterInputs', () => {
+  type AppRouterInputs = inferRouterInputs<AppRouter>;
 
   test('happy path', async () => {
     type Input = AppRouterInputs['getRoom'];
@@ -68,8 +64,8 @@ describe('GetInputInferenceHelpers', () => {
   });
 });
 
-describe('GetOutputInferenceHelpers', () => {
-  type AppRouterOutputs = GetOutputInferenceHelpers<AppRouter>;
+describe('inferRouterOutputs', () => {
+  type AppRouterOutputs = inferRouterOutputs<AppRouter>;
 
   test('happy path', async () => {
     type Output = AppRouterOutputs['getRoom'];

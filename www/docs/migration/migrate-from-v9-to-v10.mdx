@@ -169,14 +169,11 @@ type GreetingInput = InferQueryInput<'greeting'>;
 // @filename: index.ts
 // ---cut---
 // Inference helpers are now shipped out of the box.
-import type {
-  GetInputInferenceHelpers,
-  GetOutputInferenceHelpers,
-} from '@trpc/server';
+import type { inferRouterInputs, inferRouterOutputs } from '@trpc/server';
 import type { AppRouter } from './server';
 
-type RouterInput = GetInputInferenceHelpers<AppRouter>;
-type RouterOutput = GetOutputInferenceHelpers<AppRouter>;
+type RouterInput = inferRouterInputs<AppRouter>;
+type RouterOutput = inferRouterOutputs<AppRouter>;
 
 type PostCreateInput = RouterInput['post']['create'];
 //   ^?
