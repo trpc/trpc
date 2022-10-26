@@ -41,8 +41,8 @@ It is often useful to wrap functionality of your `@trpc/client` or `@trpc/react-
 
 `@trpc/server` exports the following helper types to assist with inferring these types from the `AppRouter` exported by your `@trpc/server` router:
 
-- `inferProcedureOutput<TProcedure>`
-- `inferProcedureInput<TProcedure>`
+- `inferRouterInputs<TRouter>`
+- `inferRouterOutputs<TRouter>`
 
 Let's assume we have this example router:
 
@@ -57,50 +57,15 @@ By traversing the router object, you can infer the types of the procedures. The 
 // @include: server
 // ---cut---
 // @filename: client.ts
-import type { inferProcedureInput, inferProcedureOutput } from '@trpc/server';
+import type { inferRouterInputs, inferRouterOutputs } from '@trpc/server';
 import type { AppRouter } from './server';
 
-// @noErrors
-type PostCreateInput = inferProcedureInput<AppRouter['post']['create']>;
+type RouterInput = inferRouterInputs<AppRouter>;
+type RouterOutput = inferRouterOutputs<AppRouter>;
+
+type PostCreateInput = RouterInput['post']['create'];
 //   ^?
-type PostCreateOutput = inferProcedureOutput<AppRouter['post']['create']>;
-//   ^?
-```
-
-### Additional DX Helper Type
-
-If you don't like the double-import from the above snippet, `@trpc/server` also exports a type `GetInferenceHelpers<TRouter>`. This lets you pass your router once at initialization, then import a single helper type when inferring types:
-
-```ts twoslash title='utils/trpc.ts'
-// @module: esnext
-// @include: server
-// @filename: index.ts
-// ---cut---
-import type { GetInferenceHelpers } from '@trpc/server';
-import type { AppRouter } from './server';
-
-export type InferProcedures = GetInferenceHelpers<AppRouter>;
-```
-
-<!-- FIXME: reuse above snippet -->
-
-```ts twoslash
-// @module: esnext
-// @include: server
-// @filename: index.ts
-import type { GetInferenceHelpers } from '@trpc/server';
-import type { AppRouter } from './server';
-
-export type InferProcedures = GetInferenceHelpers<AppRouter>;
-
-// ---cut---
-export type AppRouterTypes = GetInferenceHelpers<AppRouter>;
-
-type PostCreate = AppRouterTypes['post']['create'];
-
-type PostCreateInput = PostCreate['input'];
-//   ^?
-type PostCreateOutput = PostCreate['output'];
+type PostCreateOutput = RouterOutput['post']['create'];
 //   ^?
 ```
 
