@@ -161,28 +161,23 @@ type GreetingInput = InferQueryInput<'greeting'>;
 
 #### v10
 
-```ts
-// The same helper is shipped out of the box.
-type GreetingInput = inferProcedureInput<AppRouter['greeting']>;
-```
-
-#### v10 inference helper
+#### Inference helpers
 
 ```ts twoslash
 // @module: esnext
 // @include: server
 // @filename: index.ts
 // ---cut---
-import type { GetInferenceHelpers } from '@trpc/server';
+// Inference helpers are now shipped out of the box.
+import type { inferRouterInputs, inferRouterOutputs } from '@trpc/server';
 import type { AppRouter } from './server';
 
-export type AppRouterTypes = GetInferenceHelpers<AppRouter>;
+type RouterInput = inferRouterInputs<AppRouter>;
+type RouterOutput = inferRouterOutputs<AppRouter>;
 
-type PostCreate = AppRouterTypes['post']['create'];
-
-type PostCreateInput = PostCreate['input'];
+type PostCreateInput = RouterInput['post']['create'];
 //   ^?
-type PostCreateOutput = PostCreate['output'];
+type PostCreateOutput = RouterOutput['post']['create'];
 //   ^?
 ```
 
