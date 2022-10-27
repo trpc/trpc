@@ -34,21 +34,23 @@ pnpm add @trpc/client@next
 ## Basic Example
 
 ```ts
-import { createTRPCClient, createTRPCClientProxy } from '@trpc/client';
+import { createTRPCProxyClient, httpBatchLink } from '@trpc/client';
 // Importing the router type from the server file
 import type { AppRouter } from './server';
 
 // Initializing the tRPC client
-const client = createTRPCClient<AppRouter>({
-  url: 'http://localhost:2022',
+const trpc = createTRPCProxyClient<AppRouter>({
+  links: [
+    httpBatchLink({
+      url: 'http://localhost:3000/trpc',
+    }),
+  ],
 });
 
-// Creating a proxy, this allows for cmd+click to the backend function.
-const proxy = createTRPCClientProxy(client);
 
 async function main() {
   // Querying the greeting
-  const helloResponse = await proxy.greeting.query({
+  const helloResponse = await trpc.greeting.query({
     name: 'world',
   });
 
