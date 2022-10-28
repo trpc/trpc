@@ -66,6 +66,12 @@ if (error instanceof TRPCError) {
 }
 ```
 
+:::tip
+
+There's a full example of how this could be used in a Next.js API endpoint in the [Server Side Calls docs](server-side-calls).
+
+:::
+
 ## Throwing errors
 
 tRPC provides an error subclass, `TRPCError`, which you can use to represent an error that occurred inside a procedure.
