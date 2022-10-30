@@ -1,5 +1,5 @@
 {
-  "name": "@trpc/tests",
+  "name": "tests",
   "private": true,
   "scripts": {
     "test": "jest",
