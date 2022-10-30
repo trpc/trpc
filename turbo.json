@@ -7,7 +7,6 @@
         "shared",
         "ssg",
         "adapters",
-        "dist",
         "http",
         "observable",
         "rpc",
