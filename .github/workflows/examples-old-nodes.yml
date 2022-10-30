@@ -66,6 +66,6 @@ jobs:
           fi
 
       - name: if exists, run test-start
-        run: pnpm --filter ./examples/${{ matrix.dir }} --if-present test-start
+        run: pnpm turbo --filter ./examples/${{ matrix.dir }} test-start
       - name: if exists, run test-dev
-        run: pnpm --filter ./examples/${{ matrix.dir }} --if-present test-dev
+        run: pnpm turbo --filter ./examples/${{ matrix.dir }} test-dev

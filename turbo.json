@@ -33,7 +33,12 @@
       "cache": false
     },
     "test:ci": {
-      "dependsOn": ["^build"],
+      "cache": false
+    },
+    "test-dev": {
+      "cache": false
+    },
+    "test-start": {
       "cache": false
     }
   }
