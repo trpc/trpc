@@ -8,7 +8,7 @@
   "scripts": {
     "build": "pnpm codegen && turbo --filter=\"@trpc/*\" build",
     "dev": "turbo --filter=\"@trpc/*\" dev",
-    "test": "turbo --filter=\"@trpc/*\" test",
+    "test": "turbo --filter=\"@trpc/tests\" test",
     "lint": "eslint --ext \".js,.ts,.tsx\" --ignore-path .gitignore .",
     "lint-fix": "pnpm lint --fix && manypkg fix",
     "clean": "find . -name node_modules -o -name .turbo -o -name .next -o -name dist -type d -prune | xargs rm -rf",
