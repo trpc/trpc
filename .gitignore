@@ -3,6 +3,7 @@
 dist
 .next
 .turbo
+.vercel
 
 node_modules
 package-lock.json
