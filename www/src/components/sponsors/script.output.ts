@@ -22,7 +22,7 @@ export const sponsors = [
   },
   {
     "name": "Sam Holmes",
-    "imgSrc": "https://avatars.githubusercontent.com/u/8385528?u=8df307ee90b848585585b07209b8a51253e55fa2&v=4",
+    "imgSrc": "https://avatars.githubusercontent.com/u/8385528?u=d565eac29d8eaf63fe5df4c19cf46c3824e5cea5&v=4",
     "monthlyPriceInDollars": 10,
     "link": "https://samholmes.net",
     "privacyLevel": "PUBLIC",
@@ -226,15 +226,6 @@ export const sponsors = [
     "privacyLevel": "PUBLIC",
     "login": "FarazPatankar",
     "createdAt": 1647861577000
-  },
-  {
-    "name": "okaforcj",
-    "imgSrc": "https://avatars.githubusercontent.com/u/34102565?v=4",
-    "monthlyPriceInDollars": 5,
-    "link": "https://github.com/okaforcj",
-    "privacyLevel": "PUBLIC",
-    "login": "okaforcj",
-    "createdAt": 1648159482000
   },
   {
     "name": "Flylance",
@@ -496,5 +487,14 @@ export const sponsors = [
     "privacyLevel": "PUBLIC",
     "login": "danimydev",
     "createdAt": 1666704624000
+  },
+  {
+    "name": "Andrew Brown",
+    "imgSrc": "https://avatars.githubusercontent.com/u/8261769?u=ef025d7679533700957db0df9f74bd5d7d8c4a2a&v=4",
+    "monthlyPriceInDollars": 10,
+    "link": "https://github.com/andrew-werdna",
+    "privacyLevel": "PUBLIC",
+    "login": "andrew-werdna",
+    "createdAt": 1666979682000
   }
 ] as const
