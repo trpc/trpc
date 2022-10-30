@@ -13,8 +13,17 @@
         "subscription"
       ]
     },
+    "codegen:bigBoi": {
+      "outputs": ["__generated__"]
+    },
+    "codegen:bigLegacyRouter": {
+      "outputs": ["__generated__"]
+    },
+    "codegen:mergeRouters": {
+      "outputs": ["__generated__"]
+    },
     "build": {
-      "dependsOn": ["^build", "codegen:entrypoints"],
+      "dependsOn": ["^build", "codegen:entrypoints", "codegen:mergeRouters"],
       "outputs": [".next/**", "dist/**", "build/**"]
     },
     "build-sqlite": {
@@ -28,10 +37,11 @@
       "cache": false
     },
     "test": {
-      "dependsOn": ["^build"],
+      "dependsOn": ["^build", "codegen:bigBoi", "codegen:bigLegacyRouter"],
       "cache": false
     },
     "test:ci": {
+      "dependsOn": ["^build", "codegen:bigBoi", "codegen:bigLegacyRouter"],
       "cache": false
     },
     "test-dev": {

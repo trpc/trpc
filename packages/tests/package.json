@@ -2,6 +2,8 @@
   "name": "tests",
   "private": true,
   "scripts": {
+    "codegen:bigBoi": "tsx ../../scripts/generateBigBoi.ts",
+    "codegen:bigLegacyRouter": "tsx ../../scripts/generateBigLegacyRouter.ts",
     "test": "jest",
     "test:watch": "jest --watch",
     "test:ci": "jest --ci --maxWorkers=2 --coverage"
@@ -40,6 +42,7 @@
     "superjson": "^1.7.4",
     "superstruct": "^0.16.0",
     "ts-jest": "^27.0.5",
+    "tsx": "^3.9.0",
     "typescript": "^4.8.3",
     "yup": "^0.32.8",
     "zod": "^3.0.0"

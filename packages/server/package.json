@@ -30,10 +30,10 @@
     ]
   },
   "scripts": {
-    "build": "pnpm codegen:mergeRouters && rollup --config rollup.config.ts --configPlugin rollup-plugin-swc3",
+    "build": "rollup --config rollup.config.ts --configPlugin rollup-plugin-swc3",
     "dev": "pnpm build --watch",
     "codegen:entrypoints": "tsx entrypoints.script.ts",
-    "codegen:mergeRouters": "tsx mergeRouters.script.ts",
+    "codegen:mergeRouters": "tsx ../../scripts/generateMergeRouters.ts",
     "benchmark": "tsc --project tsconfig.benchmark.json",
     "ts-watch": "tsc --project tsconfig.watch.json"
   },
