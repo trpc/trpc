@@ -1,0 +1,17 @@
+{
+  "name": "@trpc/tests",
+  "private": true,
+  "scripts": {
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:ci": "jest --ci --maxWorkers=2 --coverage"
+  },
+  "dependencies": {
+    "@testing-library/dom": "^8.18.1",
+    "@trpc/client": "^10.0.0-rc.0",
+    "@trpc/next": "^10.0.0-rc.0",
+    "@trpc/react-query": "^10.0.0-rc.0",
+    "@trpc/server": "^10.0.0-rc.0",
+    "@types/node": "^18.7.20"
+  }
+}
