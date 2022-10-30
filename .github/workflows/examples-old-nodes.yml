@@ -42,6 +42,13 @@ jobs:
       - name: Install deps (with cache)
         run: pnpm --filter ./examples/${{ matrix.dir }}  --filter "@trpc/*" --filter root install
 
+      - name: Install playwright???
+        run: |
+          cat ./examples/${{ matrix.dir }}/package.json | 
+          if grep --silent '"@playwright/test"';
+            then pnpm playwright install;
+          fi
+
       - name: Build trpc
         run: pnpm build
 
