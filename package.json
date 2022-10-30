@@ -17,6 +17,7 @@
     "codegen:override-prisma": "tsx scripts/addPrismaOverrides.ts",
     "codegen": "run-p codegen:*",
     "prepublish": "pnpm build",
+    "postinstall": "pnpm codegen",
     "prepack": "tsx scripts/postversion.ts",
     "release": "changeset publish",
     "version:canary": "changeset version --snapshot canary",
