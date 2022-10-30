@@ -46,8 +46,11 @@ jobs:
       - name: Install deps (with cache)
         run: pnpm --filter "@trpc/*" --filter root --filter tests install
 
-      - name: Build and test
-        run: pnpm codegen && pnpm turbo --filter "@trpc/*" --filter tests build test:ci
+      - name: Build
+        run: pnpm turbo --filter "@trpc/*" build
+
+      - name: Test
+        run: pnpm codegen && pnpm turbo --filter tests test:ci
 
       - uses: codecov/codecov-action@v1
         with:
