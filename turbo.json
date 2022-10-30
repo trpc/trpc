@@ -14,13 +14,13 @@
       ]
     },
     "codegen:bigBoi": {
-      "outputs": ["**/boiBoi/**"]
+      "outputs": ["server/__generated__/bigBoi/**"]
     },
     "codegen:bigLegacyRouter": {
-      "outputs": ["**/bigLegacyRouter/**"]
+      "outputs": ["server/__generated__/bigLegacyRouter/**"]
     },
     "codegen:mergeRouters": {
-      "outputs": ["**/__generated__/**"]
+      "outputs": ["src/core/internals/__generated__/**"]
     },
     "build": {
       "dependsOn": ["^build", "codegen:entrypoints", "codegen:mergeRouters"],
