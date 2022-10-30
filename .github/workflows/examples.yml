@@ -19,11 +19,12 @@ jobs:
     continue-on-error: true
     strategy:
       matrix:
-        dir: [
+        dir:
+          [
             .test/ssg,
             express-server,
             .interop/express-server,
-            # express-minimal,
+            express-minimal,
             .interop/next-prisma-starter,
             .interop/next-minimal-starter-migration,
             .interop/next-prisma-starter-websockets,
