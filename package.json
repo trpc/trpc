@@ -6,7 +6,7 @@
   },
   "packageManager": "pnpm@7.14.1",
   "scripts": {
-    "build": "pnpm codegen && turbo --filter=\"@trpc/*\" build",
+    "build": "turbo --filter=\"@trpc/*\" build",
     "build:www": "turbo --filter www build",
     "dev": "turbo --filter=\"@trpc/*\" dev",
     "dev:www": "turbo --filter www dev",
