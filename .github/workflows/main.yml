@@ -44,7 +44,7 @@ jobs:
             ${{ runner.os }}-pnpm-store-trpc-main-
 
       - name: Install deps (with cache)
-        run: pnpm --filter "@trpc/*" --filter root install
+        run: pnpm --filter "@trpc/*" --filter root --filter tests install
 
       - name: Build and test
         run: pnpm codegen && pnpm turbo --filter "@trpc/*" --filter tests build test:ci
