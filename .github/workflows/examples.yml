@@ -6,14 +6,13 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
-env:
-  TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
-  TURBO_TEAM: ${{ secrets.TURBO_TEAM }}
-
 jobs:
   e2e:
     env:
       NEXTAUTH_SECRET: supersecret
+      TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
+      TURBO_TEAM: ${{ secrets.TURBO_TEAM }}
+      # TURBO_REMOTE_ONLY: true
     runs-on: ${{ matrix.os }}
     timeout-minutes: 10
     continue-on-error: true
