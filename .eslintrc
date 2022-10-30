@@ -68,7 +68,7 @@
       }
     },
     {
-      "files": ["**/test/**/*", "**/*.test.tsx", "**/*.test.ts"],
+      "files": ["packages/tests/**/*", "**/*.test.tsx", "**/*.test.ts"],
       "rules": {
         "@typescript-eslint/no-floating-promises": "off",
         "@typescript-eslint/no-non-null-assertion": "off",
