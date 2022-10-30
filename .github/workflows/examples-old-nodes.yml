@@ -48,8 +48,8 @@ jobs:
             then pnpm playwright install chromium;
           fi
 
-      # - name: Build trpc
-      #   run: pnpm turbo --filter "@trpc/*" build
+      - name: Build trpc
+        run: pnpm turbo --filter "@trpc/*" build
 
       - name: Next.js cache
         uses: actions/cache@v3
