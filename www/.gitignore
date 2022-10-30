@@ -21,3 +21,5 @@ yarn-error.log*
 
 
 .env
+.turbo
+.vercel

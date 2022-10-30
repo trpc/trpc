@@ -39,8 +39,7 @@ const END = `
  
  `.trim();
 
-const TARGET_DIR =
-  __dirname + '/../packages/server/src/core/internals/__generated__';
+const TARGET_DIR = __dirname + '/src/core/internals/__generated__';
 
 const partList: string[] = [];
 for (let index = 0; index < NUM_ARGS; index++) {

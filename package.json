@@ -15,7 +15,6 @@
     "codegen:generateBigBoi": "tsx scripts/generateBigBoi.ts",
     "codegen:generateBigLegacyRouter": "tsx scripts/generateBigLegacyRouter.ts",
     "codegen:override-prisma": "tsx scripts/addPrismaOverrides.ts",
-    "codegen:generateMergeRouters": "tsx scripts/generateMergeRouters.ts",
     "codegen": "run-p codegen:*",
     "prepublish": "pnpm build",
     "prepack": "tsx scripts/postversion.ts",
