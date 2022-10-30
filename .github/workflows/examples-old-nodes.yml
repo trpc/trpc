@@ -2,12 +2,11 @@ name: Examples E2E (old nodes)
 
 on: [push]
 
-env:
-  TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
-  TURBO_TEAM: ${{ secrets.TURBO_TEAM }}
-
 jobs:
   e2e-old-nodes:
+    env:
+      TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
+      TURBO_TEAM: ${{ secrets.TURBO_TEAM }}
     runs-on: ${{ matrix.os }}
     timeout-minutes: 10
     strategy:
@@ -50,7 +49,7 @@ jobs:
           fi
 
       - name: Build trpc
-        run: pnpm build
+        run: pnpm turbo --filter "@trpc/*" build
 
       - name: Next.js cache
         uses: actions/cache@v3

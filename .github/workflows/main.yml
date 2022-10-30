@@ -2,12 +2,12 @@ name: Build & Test
 
 on: [push]
 
-env:
-  TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
-  TURBO_TEAM: ${{ secrets.TURBO_TEAM }}
-
 jobs:
   test:
+    env:
+      TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
+      TURBO_TEAM: ${{ secrets.TURBO_TEAM }}
+
     name: Build and test on Node ${{ matrix.node }} and ${{ matrix.os }}
 
     runs-on: ${{ matrix.os }}
@@ -47,7 +47,7 @@ jobs:
         run: pnpm --filter "@trpc/*" --filter root install
 
       - name: Build and test
-        run: pnpm codegen && pnpm turbo --filter "@trpc/*" build test:ci
+        run: pnpm codegen && pnpm turbo --filter "@trpc/*" --filter tests build test:ci
 
       - uses: codecov/codecov-action@v1
         with:
