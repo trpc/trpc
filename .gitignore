@@ -23,7 +23,8 @@ packages/*/*
 !packages/*/*.*
 ## Dont ignore src or test
 !packages/*/src
-!packages/*/test
+!packages/tests/*
+packages/tests/node_modules
 
 examples/next-big-router/src/server/routers
 
