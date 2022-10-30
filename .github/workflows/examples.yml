@@ -77,7 +77,7 @@ jobs:
         run: |
           cat ./examples/${{ matrix.dir }}/package.json | 
           if grep --silent '"@playwright/test"';
-            then pnpm playwright install;
+            then pnpm playwright install chromium;
           fi
 
       - name: Build trpc
