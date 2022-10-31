@@ -27,7 +27,7 @@ async function main() {
       let pkgJson: PackageJson;
       try {
         pkgJson = JSON.parse(await readFile(pkgJsonPath, 'utf8'));
-      } catch (_) {
+      } catch (_e) {
         return;
       }
 
