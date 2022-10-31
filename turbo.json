@@ -3,14 +3,14 @@
   "pipeline": {
     "codegen:entrypoints": {
       "outputs": [
-        "links",
-        "shared",
-        "ssg",
-        "adapters",
-        "http",
-        "observable",
-        "rpc",
-        "subscription"
+        "links/**",
+        "shared/**",
+        "ssg/**",
+        "adapters/**",
+        "http/**",
+        "observable/**",
+        "rpc/**",
+        "subscription/**"
       ]
     },
     "codegen:bigBoi": {
