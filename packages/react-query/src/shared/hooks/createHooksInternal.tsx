@@ -77,17 +77,17 @@ export type { TRPCContext, TRPCContextState } from '../../internals/context';
 
 export interface UseTRPCQueryOptions<TPath, TInput, TOutput, TData, TError>
   extends UseQueryOptions<TOutput, TError, TData, [TPath, TInput]>,
-   TRPCUseQueryBaseOptions {}
+    TRPCUseQueryBaseOptions {}
 
 export interface UseTRPCInfiniteQueryOptions<TPath, TInput, TOutput, TError>
   extends UseInfiniteQueryOptions<
-     TOutput,
-     TError,
-     TOutput,
-     TOutput,
-     [TPath, TInput]
-   >,
-   TRPCUseQueryBaseOptions {}
+      TOutput,
+      TError,
+      TOutput,
+      TOutput,
+      [TPath, TInput]
+    >,
+    TRPCUseQueryBaseOptions {}
 
 export interface UseTRPCMutationOptions<
   TInput,
@@ -95,7 +95,7 @@ export interface UseTRPCMutationOptions<
   TOutput,
   TContext = unknown,
 > extends UseMutationOptions<TOutput, TError, TInput, TContext>,
-   TRPCUseQueryBaseOptions {}
+    TRPCUseQueryBaseOptions {}
 
 export interface UseTRPCSubscriptionOptions<TOutput, TError> {
   enabled?: boolean;
@@ -116,8 +116,8 @@ type inferInfiniteQueryNames<TObj extends ProcedureRecord> = {
   [TPath in keyof TObj]: inferProcedureInput<TObj[TPath]> extends {
     cursor?: any;
   }
-   ? TPath
-   : never;
+    ? TPath
+    : never;
 }[keyof TObj];
 
 type inferProcedures<TObj extends ProcedureRecord> = {
@@ -378,9 +378,9 @@ export function createHooksInternal<
       queryClient.getQueryCache().find(getArrayQueryKey(pathAndInput))?.state
         .status === 'error'
       ? {
-        retryOnMount: false,
-        ...opts,
-      }
+          retryOnMount: false,
+          ...opts,
+        }
       : opts;
   }
 
