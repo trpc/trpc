@@ -1,4 +1,7 @@
-import { getErrorFromUnknown, getMessageFromUnknownError } from '../error/utils';
+import {
+  getErrorFromUnknown,
+  getMessageFromUnknownError,
+} from '../error/utils';
 import { TRPC_ERROR_CODE_KEY } from '../rpc/codes';
 
 export class TRPCError extends Error {
@@ -11,7 +14,8 @@ export class TRPCError extends Error {
     cause?: unknown;
   }) {
     const code = opts.code;
-    const message = opts.message ?? getMessageFromUnknownError(opts.cause, code);
+    const message =
+      opts.message ?? getMessageFromUnknownError(opts.cause, code);
     const cause: Error | undefined =
       opts !== undefined ? getErrorFromUnknown(opts.cause) : undefined;
 
