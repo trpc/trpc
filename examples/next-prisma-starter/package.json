@@ -1,6 +1,6 @@
 {
   "name": "@examples/trpc-next-prisma-starter",
-  "version": "10.0.0-rc.2",
+  "version": "10.0.0-rc.3",
   "private": true,
   "scripts": {
     "migrate-sqlite": "prisma migrate dev --name init --schema=./prisma/_sqlite/schema.prisma",
@@ -41,10 +41,10 @@
   "dependencies": {
     "@prisma/client": "^4.3.1",
     "@tanstack/react-query": "^4.3.8",
-    "@trpc/client": "^10.0.0-rc.2",
-    "@trpc/next": "^10.0.0-rc.2",
-    "@trpc/react-query": "^10.0.0-rc.2",
-    "@trpc/server": "^10.0.0-rc.2",
+    "@trpc/client": "^10.0.0-rc.3",
+    "@trpc/next": "^10.0.0-rc.3",
+    "@trpc/react-query": "^10.0.0-rc.3",
+    "@trpc/server": "^10.0.0-rc.3",
     "clsx": "^1.1.1",
     "next": "^12.3.1",
     "react": "^18.2.0",
