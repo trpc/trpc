@@ -23,18 +23,6 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Echo TurboToken
-        run: "echo $TURBOTOKEN"
-        shell: bash
-        env: 
-          TURBOTOKEN: ${{ secrets.TURBO_TOKEN }}
-
-    - name: Echo TurboToken
-        run: "echo $TURBOTEAM"
-        shell: bash
-        env: 
-          TURBOTEAM: ${{ secrets.TURBO_TEAM }}
-
       - uses: pnpm/action-setup@v2.2.4
 
       - name: Use Node ${{ matrix.node }}
