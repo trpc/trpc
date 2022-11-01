@@ -1,6 +1,6 @@
 import { TRPCError } from './TRPCError';
 
-export function getMessageFromUnkownError(
+export function getMessageFromUnknownError(
   err: unknown,
   fallback: string,
 ): string {
@@ -18,7 +18,7 @@ export function getErrorFromUnknown(cause: unknown): Error {
   if (cause instanceof Error) {
     return cause;
   }
-  const message = getMessageFromUnkownError(cause, 'Unknown error');
+  const message = getMessageFromUnknownError(cause, 'Unknown error');
   return new Error(message);
 }
 
