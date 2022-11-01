@@ -7,7 +7,7 @@ slug: /aborting-procedures
 
 ## @trpc/react-query
 
-By default, TRPC does not cancel requests on unmount. If you want to opt in to this behavior you can provide `abortOnUnmount` in your configuration.
+By default, TRPC does not canc requests on unmount. If you want to opt in to this behavior you can provide `abortOnUnmount` in your configuration.
 
 ```ts twoslash title="client.ts"
 // @target: esnext
