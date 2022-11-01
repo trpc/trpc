@@ -9,7 +9,7 @@ import { TRPCClientError } from '@trpc/client/src';
 import * as trpc from '@trpc/server/src';
 import { CreateHTTPContextOptions } from '@trpc/server/src/adapters/standalone';
 import { TRPCError } from '@trpc/server/src/error/TRPCError';
-import { getMessageFromUnkownError } from '@trpc/server/src/error/utils';
+import { getMessageFromUnknownError } from '@trpc/server/src/error/utils';
 import { OnErrorFunction } from '@trpc/server/src/internals/types';
 import fetch from 'node-fetch';
 import { ZodError, z } from 'zod';
@@ -121,9 +121,9 @@ test('unauthorized()', async () => {
 });
 
 test('getMessageFromUnkownError()', () => {
-  expect(getMessageFromUnkownError('test', 'nope')).toBe('test');
-  expect(getMessageFromUnkownError(1, 'test')).toBe('test');
-  expect(getMessageFromUnkownError({}, 'test')).toBe('test');
+  expect(getMessageFromUnknownError('test', 'nope')).toBe('test');
+  expect(getMessageFromUnknownError(1, 'test')).toBe('test');
+  expect(getMessageFromUnknownError({}, 'test')).toBe('test');
 });
 describe('formatError()', () => {
   test('simple', async () => {
