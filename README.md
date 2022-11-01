@@ -241,7 +241,7 @@ Also, if your company using tRPC and want to support long-term maintenance of tR
 
 <!-- SPONSORS:LIST:END -->
 
-## All contributors ✨
+## All contributorsss ✨
 
 > tRPC is developed by [KATT](https://twitter.com/alexdotjs), originally based on a proof-of-concept by [colinhacks](https://github.com/colinhacks).
 
