@@ -11,7 +11,7 @@ import { TRPCClientError } from '../../../client/src';
 import * as trpc from '../../src';
 import { CreateHTTPContextOptions } from '../../src/adapters/standalone';
 import { TRPCError } from '../../src/error/TRPCError';
-import { getMessageFromUnkownError } from '../../src/error/utils';
+import { getMessageFromUnknownError } from '../../src/error/utils';
 import { OnErrorFunction } from '../../src/internals/types';
 
 test('basic', async () => {
@@ -121,9 +121,9 @@ test('unauthorized()', async () => {
 });
 
 test('getMessageFromUnkownError()', () => {
-  expect(getMessageFromUnkownError('test', 'nope')).toBe('test');
-  expect(getMessageFromUnkownError(1, 'test')).toBe('test');
-  expect(getMessageFromUnkownError({}, 'test')).toBe('test');
+  expect(getMessageFromUnknownError('test', 'nope')).toBe('test');
+  expect(getMessageFromUnknownError(1, 'test')).toBe('test');
+  expect(getMessageFromUnknownError({}, 'test')).toBe('test');
 });
 describe('formatError()', () => {
   test('simple', async () => {
