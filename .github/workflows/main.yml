@@ -50,7 +50,7 @@ jobs:
         run: pnpm turbo --filter "@trpc/*" build
 
       - name: Test
-        run: pnpm turbo --filter tests test:ci
+        run: pnpm turbo --filter tests test-ci
 
       - uses: codecov/codecov-action@v1
         with:

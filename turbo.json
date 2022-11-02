@@ -40,7 +40,7 @@
       "dependsOn": ["^build", "codegen:bigBoi", "codegen:bigLegacyRouter"],
       "cache": false
     },
-    "test:ci": {
+    "test-ci": {
       "dependsOn": ["^build", "codegen:bigBoi", "codegen:bigLegacyRouter"],
       "cache": false
     },
@@ -48,6 +48,9 @@
       "cache": false
     },
     "test-start": {
+      "cache": false
+    },
+    "test-watch": {
       "cache": false
     }
   }
