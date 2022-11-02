@@ -75,4 +75,24 @@ test('config types', () => {
     expectTypeOf<typeof t._config.$types.ctx>().toEqualTypeOf<Context>();
     expectTypeOf<typeof t._config.$types.meta>().toEqualTypeOf<Meta>();
   }
+
+  {
+    const {
+      _config: { $types },
+    } = initTRPC.create();
+    // @ts-expect-error mock unknown key
+    expect(() => $types.unknown).toThrow(
+      `Tried to access "$types.unknown" which is not available at runtime`,
+    );
+  }
+});
+
+test('detect server env', () => {
+  expect(() => initTRPC.create({ isServer: false })).toThrow(
+    `You're trying to use @trpc/server in a non-server environment. This is not supported by default.`,
+  );
+
+  expect(() =>
+    initTRPC.create({ isServer: false, allowOutsideOfServer: true }),
+  ).not.toThrowError();
 });
