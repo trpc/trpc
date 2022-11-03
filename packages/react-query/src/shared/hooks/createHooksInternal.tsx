@@ -20,7 +20,6 @@ import {
   TRPCClientErrorLike,
   TRPCRequestOptions,
   createTRPCClient,
-  inferRouterProxyClient,
 } from '@trpc/client';
 import type {
   AnyRouter,
@@ -138,7 +137,7 @@ export type TRPCProvider<TRouter extends AnyRouter, TSSRContext> = (
 ) => JSX.Element;
 
 export type UseDehydratedState<TRouter extends AnyRouter> = (
-  client: inferRouterProxyClient<TRouter>,
+  client: TRPCClient<TRouter>,
   trpcState: DehydratedState | undefined,
 ) => DehydratedState | undefined;
 

@@ -16,7 +16,7 @@ import type {
   Unsubscribable,
   inferObservableValue,
 } from '@trpc/server/observable';
-import { createRecursiveProxy } from '@trpc/server/shared';
+import { createFlatProxy, createRecursiveProxy } from '@trpc/server/shared';
 import { TRPCClientError } from './TRPCClientError';
 import { CreateTRPCClientOptions } from './createTRPCClient';
 import {
@@ -24,6 +24,7 @@ import {
   TRPCClient,
   TRPCSubscriptionObserver,
 } from './internals/TRPCClient';
+import { TRPCClientRuntime } from './links';
 
 export type inferRouterProxyClient<TRouter extends AnyRouter> =
   DecoratedProcedureRecord<TRouter['_def']['record'], TRouter>;
@@ -82,6 +83,11 @@ type DecoratedProcedureRecord<
     : never;
 };
 
+/**
+ * attributes other than the proxy paths
+ */
+const clientAttributes = ['runtime'] as const;
+
 const clientCallTypeMap: Record<
   keyof DecorateProcedure<any, any>,
   ProcedureType
@@ -91,6 +97,14 @@ const clientCallTypeMap: Record<
   subscribe: 'subscription',
 };
 
+export type CreateTRPCProxyClient<TRouter extends AnyRouter> =
+  inferRouterProxyClient<TRouter> & {
+    /**
+     * the TRPC runtime
+     */
+    runtime: TRPCClientRuntime;
+  };
+
 /**
  * @deprecated use `createTRPCProxyClient` instead
  * @internal
@@ -98,17 +112,26 @@ const clientCallTypeMap: Record<
 export function createTRPCClientProxy<TRouter extends AnyRouter>(
   client: Client<TRouter>,
 ) {
-  const proxy = createRecursiveProxy(({ path, args }) => {
-    const pathCopy = [...path];
-    const clientCallType = pathCopy.pop()! as keyof DecorateProcedure<any, any>;
+  return createFlatProxy<CreateTRPCProxyClient<TRouter>>((key) => {
+    const name = key as typeof clientAttributes[number];
+    if (clientAttributes.includes(name)) {
+      return client[name];
+    }
 
-    const procedureType = clientCallTypeMap[clientCallType];
+    return createRecursiveProxy(({ path, args }) => {
+      const pathCopy = [key, ...path];
+      const clientCallType = pathCopy.pop()! as keyof DecorateProcedure<
+        any,
+        any
+      >;
 
-    const fullPath = pathCopy.join('.');
+      const procedureType = clientCallTypeMap[clientCallType];
 
-    return (client as any)[procedureType](fullPath, ...args);
+      const fullPath = pathCopy.join('.');
+
+      return (client as any)[procedureType](fullPath, ...args);
+    });
   });
-  return proxy as inferRouterProxyClient<TRouter>;
 }
 
 export function createTRPCProxyClient<TRouter extends AnyRouter>(
