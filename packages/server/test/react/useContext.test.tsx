@@ -97,6 +97,38 @@ test('client query', async () => {
   });
 });
 
+test('client query sad path', async () => {
+  const { proxy, App } = ctx;
+
+  function MyComponent() {
+    const utils = proxy.useContext();
+    const [isError, setIsError] = useState(false);
+
+    useEffect(() => {
+      (async () => {
+        try {
+          // @ts-expect-error - byUser does not exist on postRouter
+          await utils.client.post.byUser.query({ id: 0 });
+        } catch (e) {
+          setIsError(true);
+        }
+      })();
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
+
+    return <p>{isError ? 'Query errored' : "Query didn't error"}</p>;
+  }
+
+  const utils = render(
+    <App>
+      <MyComponent />
+    </App>,
+  );
+  await waitFor(() => {
+    expect(utils.container).toHaveTextContent('Query errored');
+  });
+});
+
 test('client mutation', async () => {
   const { proxy, App } = ctx;
 
@@ -113,7 +145,7 @@ test('client mutation', async () => {
         expectTypeOf<Post | undefined>(newPost);
         setNewPost(newPost);
       })();
-    }, [utils]);
+    }, []);
 
     return (
       <div>
@@ -145,7 +177,7 @@ test('fetch', async () => {
       utils.post.all.fetch().then((allPosts) => {
         setPosts(allPosts);
       });
-    }, [utils]);
+    }, []);
 
     return <p>{posts[0]?.text}</p>;
   }
