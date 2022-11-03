@@ -68,6 +68,69 @@ const ctx = konn()
   })
   .done();
 
+test('client query', async () => {
+  const { proxy, App } = ctx;
+
+  function MyComponent() {
+    const utils = proxy.useContext();
+    const [post, setPost] = useState<Post>();
+
+    useEffect(() => {
+      (async () => {
+        const res = await utils.client.post.byId.query({ id: 0 });
+        setPost(res);
+      })();
+    }, [utils]);
+
+    return <p>{post?.text}</p>;
+  }
+
+  const utils = render(
+    <App>
+      <MyComponent />
+    </App>,
+  );
+  await waitFor(() => {
+    expect(utils.container).toHaveTextContent('new post');
+  });
+});
+
+test('client mutation', async () => {
+  const { proxy, App } = ctx;
+
+  function MyComponent() {
+    const utils = proxy.useContext();
+    const { data: posts } = proxy.post.all.useQuery();
+    const [newPost, setNewPost] = useState<Post>();
+
+    useEffect(() => {
+      (async () => {
+        const newPost = await utils.client.post.create.mutation({
+          text: 'another post',
+        });
+        setNewPost(newPost);
+      })();
+    }, [utils]);
+
+    return (
+      <div>
+        <p data-testid="initial-post">{posts?.[0]?.text}</p>
+        <p data-testid="newpost">{newPost?.text}</p>
+      </div>
+    );
+  }
+
+  const utils = render(
+    <App>
+      <MyComponent />
+    </App>,
+  );
+  await waitFor(() => {
+    expect(utils.getByTestId('initial-post')).toHaveTextContent('new post');
+    expect(utils.getByTestId('newpost')).toHaveTextContent('another post');
+  });
+});
+
 test('fetch', async () => {
   const { proxy, App } = ctx;
 
