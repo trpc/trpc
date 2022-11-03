@@ -19,7 +19,7 @@ import {
 } from '@trpc/server';
 import { createFlatProxy, createRecursiveProxy } from '@trpc/server/shared';
 import {
-  ProxyTRPCContextProps,
+  DecoratedProxyTRPCContextProps,
   TRPCContextState,
   TRPCFetchInfiniteQueryOptions,
   TRPCFetchQueryOptions,
@@ -193,7 +193,7 @@ export type CreateReactUtilsProxy<
   TRouter extends AnyRouter,
   TSSRContext,
 > = DecoratedProcedureUtilsRecord<TRouter> &
-  ProxyTRPCContextProps<TRouter, TSSRContext>;
+  DecoratedProxyTRPCContextProps<TRouter, TSSRContext>;
 
 /**
  * @internal

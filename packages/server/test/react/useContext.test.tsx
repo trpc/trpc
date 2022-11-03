@@ -1,6 +1,7 @@
 import { getServerAndReactClient } from './__reactHelpers';
 import { render, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { expectTypeOf } from 'expect-type';
 import { konn } from 'konn';
 import React, { useEffect, useState } from 'react';
 import { z } from 'zod';
@@ -78,6 +79,7 @@ test('client query', async () => {
     useEffect(() => {
       (async () => {
         const res = await utils.client.post.byId.query({ id: 0 });
+        expectTypeOf<Post | undefined>(res);
         setPost(res);
       })();
     }, [utils]);
@@ -105,9 +107,10 @@ test('client mutation', async () => {
 
     useEffect(() => {
       (async () => {
-        const newPost = await utils.client.post.create.mutation({
+        const newPost = await utils.client.post.create.mutate({
           text: 'another post',
         });
+        expectTypeOf<Post | undefined>(newPost);
         setNewPost(newPost);
       })();
     }, [utils]);
