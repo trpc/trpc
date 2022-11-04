@@ -4,6 +4,9 @@
   "description": "tRPC React lib",
   "author": "KATT",
   "license": "MIT",
+  "main": "dist/index.js",
+  "module": "dist/index.mjs",
+  "typings": "dist/index.d.ts",
   "homepage": "https://trpc.io",
   "repository": {
     "type": "git",
@@ -11,11 +14,11 @@
     "directory": "packages/react"
   },
   "scripts": {
+    "build": "rollup --config rollup.config.ts --configPlugin rollup-plugin-swc3",
+    "dev": "pnpm build --watch",
+    "codegen:entrypoints": "tsx entrypoints.script.ts",
     "ts-watch": "tsc --project tsconfig.watch.json"
   },
-  "main": "dist/index.js",
-  "module": "dist/index.mjs",
-  "typings": "dist/index.d.ts",
   "exports": {
     ".": {
       "import": "./dist/index.mjs",
@@ -66,6 +69,8 @@
     "next": "^12.3.1",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
+    "rollup": "^2.79.1",
+    "tsx": "^3.9.0",
     "zod": "^3.0.0"
   },
   "publishConfig": {

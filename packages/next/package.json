@@ -4,15 +4,29 @@
   "description": "tRPC Next lib",
   "author": "KATT",
   "license": "MIT",
+  "main": "dist/index.js",
+  "module": "dist/index.mjs",
+  "typings": "dist/index.d.ts",
   "homepage": "https://trpc.io",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/trpc/trpc.git",
     "directory": "packages/next"
   },
-  "main": "dist/index.js",
-  "module": "dist/index.mjs",
-  "typings": "dist/index.d.ts",
+  "eslintConfig": {
+    "rules": {
+      "react-hooks/exhaustive-deps": "error",
+      "no-restricted-imports": [
+        "error",
+        "@trpc/next"
+      ]
+    }
+  },
+  "scripts": {
+    "build": "rollup --config rollup.config.ts --configPlugin rollup-plugin-swc3",
+    "dev": "pnpm build --watch",
+    "codegen:entrypoints": "tsx entrypoints.script.ts"
+  },
   "exports": {
     ".": {
       "import": "./dist/index.mjs",
@@ -25,15 +39,6 @@
     "src",
     "README.md"
   ],
-  "eslintConfig": {
-    "rules": {
-      "react-hooks/exhaustive-deps": "error",
-      "no-restricted-imports": [
-        "error",
-        "@trpc/next"
-      ]
-    }
-  },
   "peerDependencies": {
     "@tanstack/react-query": "^4.3.8",
     "@trpc/client": "^10.0.0-proxy-beta.21",
@@ -57,6 +62,8 @@
     "next": "^12.3.1",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
+    "rollup": "^2.79.1",
+    "tsx": "^3.9.0",
     "zod": "^3.0.0"
   },
   "publishConfig": {

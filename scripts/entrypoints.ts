@@ -1,9 +1,6 @@
 import fs from 'fs';
 import path from 'path';
 import prettier from 'prettier';
-import { INPUTS, PACKAGES } from '../rollup.config';
-
-const packagesDir = path.resolve(__dirname, '..', 'packages');
 
 // minimal version of PackageJson type necessary
 export type PackageJson = {
@@ -25,15 +22,10 @@ function writeFileSyncRecursive(filePath: string, content: string) {
   fs.writeFileSync(filePath, content, 'utf8');
 }
 
-// ACTUAL SCRIPT
-
-for (const pkg of PACKAGES) {
-  const pkgRoot = path.resolve(packagesDir, pkg);
-  const inputs = INPUTS[pkg];
-
+export function generateEntrypoints(inputs: string[]) {
   // set some defaults for the package.json
   const pkgJson: PackageJson = JSON.parse(
-    fs.readFileSync(path.resolve(pkgRoot, 'package.json'), 'utf8'),
+    fs.readFileSync(path.resolve('package.json'), 'utf8'),
   );
 
   pkgJson.files = ['dist', 'src', 'README.md'];
@@ -84,12 +76,12 @@ for (const pkg of PACKAGES) {
         importPath,
       );
       // index.js
-      const indexFile = path.resolve(pkgRoot, importPath, 'index.js');
+      const indexFile = path.resolve(importPath, 'index.js');
       const indexFileContent = `module.exports = require('${resolvedImport}');\n`;
       writeFileSyncRecursive(indexFile, indexFileContent);
 
       // index.d.ts
-      const typeFile = path.resolve(pkgRoot, importPath, 'index.d.ts');
+      const typeFile = path.resolve(importPath, 'index.d.ts');
       const typeFileContent = `export * from '${resolvedImport}';\n`;
       writeFileSyncRecursive(typeFile, typeFileContent);
     });
@@ -110,9 +102,5 @@ for (const pkg of PACKAGES) {
     printWidth: 80,
     endOfLine: 'auto',
   });
-  fs.writeFileSync(
-    path.resolve(pkgRoot, 'package.json'),
-    formattedPkgJson,
-    'utf8',
-  );
+  fs.writeFileSync(path.resolve('package.json'), formattedPkgJson, 'utf8');
 }
