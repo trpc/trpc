@@ -24,7 +24,6 @@ import {
   TRPCClient,
   TRPCSubscriptionObserver,
 } from './internals/TRPCClient';
-import { TRPCClientRuntime } from './links';
 
 export type inferRouterProxyClient<TRouter extends AnyRouter> =
   DecoratedProcedureRecord<TRouter['_def']['record'], TRouter>;
@@ -83,11 +82,6 @@ type DecoratedProcedureRecord<
     : never;
 };
 
-/**
- * attributes other than the proxy paths
- */
-const clientAttributes = ['runtime'] as const;
-
 const clientCallTypeMap: Record<
   keyof DecorateProcedure<any, any>,
   ProcedureType
@@ -98,12 +92,7 @@ const clientCallTypeMap: Record<
 };
 
 export type CreateTRPCProxyClient<TRouter extends AnyRouter> =
-  inferRouterProxyClient<TRouter> & {
-    /**
-     * the TRPC runtime
-     */
-    runtime: TRPCClientRuntime;
-  };
+  inferRouterProxyClient<TRouter>;
 
 /**
  * @deprecated use `createTRPCProxyClient` instead
@@ -113,11 +102,9 @@ export function createTRPCClientProxy<TRouter extends AnyRouter>(
   client: Client<TRouter>,
 ) {
   return createFlatProxy<CreateTRPCProxyClient<TRouter>>((key) => {
-    const name = key as typeof clientAttributes[number];
-    if (clientAttributes.includes(name)) {
-      return client[name];
+    if (key === 'runtime') {
+      return client.runtime;
     }
-
     return createRecursiveProxy(({ path, args }) => {
       const pathCopy = [key, ...path];
       const clientCallType = pathCopy.pop()! as keyof DecorateProcedure<
