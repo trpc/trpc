@@ -8,7 +8,7 @@ import {
   SetDataOptions,
   Updater,
 } from '@tanstack/react-query';
-import { TRPCClientError } from '@trpc/client';
+import { TRPCClientError, createTRPCClientProxy } from '@trpc/client';
 import {
   AnyQueryProcedure,
   AnyRouter,
@@ -19,7 +19,7 @@ import {
 } from '@trpc/server';
 import { createFlatProxy, createRecursiveProxy } from '@trpc/server/shared';
 import {
-  ProxyTRPCContextProps,
+  DecoratedProxyTRPCContextProps,
   TRPCContextState,
   TRPCFetchInfiniteQueryOptions,
   TRPCFetchQueryOptions,
@@ -193,7 +193,7 @@ export type CreateReactUtilsProxy<
   TRouter extends AnyRouter,
   TSSRContext,
 > = DecoratedProcedureUtilsRecord<TRouter> &
-  ProxyTRPCContextProps<TRouter, TSSRContext>;
+  DecoratedProxyTRPCContextProps<TRouter, TSSRContext>;
 
 /**
  * @internal
@@ -209,6 +209,9 @@ export function createReactQueryUtilsProxy<
 
   return createFlatProxy<CreateReactUtilsProxyReturnType>((key) => {
     const contextName = key as typeof contextProps[number];
+    if (contextName === 'client') {
+      return createTRPCClientProxy(context.client);
+    }
     if (contextProps.includes(contextName)) {
       return context[contextName];
     }
