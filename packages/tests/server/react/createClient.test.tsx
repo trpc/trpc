@@ -77,6 +77,7 @@ test('useDehydratedState()', async () => {
 
   function MyComponent() {
     const utils = proxy.useContext();
+
     const state = proxy.useDehydratedState(utils.client, dehydratedState);
     return <h1>{JSON.stringify(state)}</h1>;
   }
