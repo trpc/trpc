@@ -1,12 +1,18 @@
 name: Examples E2E
+
 on: [push]
+
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
+
 jobs:
   e2e:
     env:
       NEXTAUTH_SECRET: supersecret
+      TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
+      TURBO_TEAM: ${{ secrets.TURBO_TEAM }}
+      # TURBO_REMOTE_ONLY: true
     runs-on: ${{ matrix.os }}
     timeout-minutes: 10
     continue-on-error: true
@@ -64,8 +70,19 @@ jobs:
             ${{ runner.os }}-pnpm-store-${{ matrix.dir }}-
 
       - run: node -v
-      - name: Install deps and build (with cache)
+      - name: Install deps (with cache)
         run: pnpm --filter "./examples/${{ matrix.dir }}/**"  --filter "@trpc/*" --filter root install
+
+      - name: Install playwright ???
+        # Seems like some of playwright's system deps aren't being cached, so we're making sure they are installed
+        run: |
+          cat ./examples/${{ matrix.dir }}/package.json | 
+          if grep --silent '"@playwright/test"';
+            then pnpm playwright install chromium;
+          fi
+
+      - name: Build trpc
+        run: pnpm turbo --filter "@trpc/*" build
 
       - name: Next.js cache
         uses: actions/cache@v3
@@ -84,11 +101,11 @@ jobs:
         run: |
           cat ./examples/${{ matrix.dir }}/package.json | 
           if grep --silent '"build-sqlite"'; 
-            then pnpm --filter ./examples/${{ matrix.dir }} build-sqlite; 
-            else pnpm --filter ./examples/${{ matrix.dir }} build;
+            then pnpm turbo --filter ./examples/${{ matrix.dir }} build-sqlite; 
+            else pnpm turbo --filter ./examples/${{ matrix.dir }} build;
           fi
 
       - name: if exists, run test-start
-        run: pnpm --filter ./examples/${{ matrix.dir }} --if-present test-start
+        run: pnpm turbo --filter ./examples/${{ matrix.dir }} test-start
       - name: if exists, run test-dev
-        run: pnpm --filter ./examples/${{ matrix.dir }} --if-present test-dev
+        run: pnpm turbo --filter ./examples/${{ matrix.dir }} test-dev
