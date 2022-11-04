@@ -11,7 +11,7 @@
     "dev": "turbo --filter=\"@trpc/*\" dev",
     "dev-www": "turbo --filter www dev",
     "test": "turbo --filter tests test",
-    "test-watch": "turbo --filter tests test-watch",
+    "test-watch": "cd packages/tests && pnpm test-watch",
     "lint": "eslint --ext \".js,.ts,.tsx\" --ignore-path .gitignore .",
     "lint-fix": "pnpm lint --fix && manypkg fix",
     "clean": "find . -name node_modules -o -name .turbo -o -name .next -o -name dist -type d -prune | xargs rm -rf",
