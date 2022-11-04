@@ -24,4 +24,15 @@ export interface CreateTRPCReactOptions<_TRouter extends AnyRouter> {
   unstable_overrides?: {
     useMutation?: Partial<UseMutationOverride>;
   };
+
+  /**
+   * Override the default context provider
+   * @default undefined
+   */
+  context?: React.Context<any>;
+  /**
+   * Override the default React Query context
+   * @default undefined
+   */
+  reactQueryContext?: React.Context<QueryClient | undefined>;
 }

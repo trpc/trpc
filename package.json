@@ -4,7 +4,7 @@
   "engines": {
     "node": "^18.0.0"
   },
-  "packageManager": "pnpm@7.14.0",
+  "packageManager": "pnpm@7.14.1",
   "scripts": {
     "lerna": "lerna",
     "start": "pnpm watch",
