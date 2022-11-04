@@ -98,7 +98,7 @@ These are the helpers you'll get access to via `useContext`. The table below wil
 In addition to the above react-query helpers, the context also exposes your tRPC proxy client. This lets you call your procedures with `async`/`await` without needing to create an additional vanilla client.
 
 ```tsx
-import { trpc } from '../utils/trpc';
+import { trpcc } from '../utils/trpc';
 
 function MyComponent() {
   const [apiKey, setApiKey] = useState();
