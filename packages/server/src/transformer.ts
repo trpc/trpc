@@ -1,11 +1,12 @@
+/* eslint-disable @typescript-eslint/naming-convention */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 /**
  * @public
  */
 export type DataTransformer = {
-  serialize(object: any): any;
-  deserialize(object: any): any;
+  serialize<R = any>(object: any): Exclude<R, PromiseLike<any>>;
+  deserialize<R = any>(object: any): Exclude<R, PromiseLike<any>>;
 };
 
 /**
