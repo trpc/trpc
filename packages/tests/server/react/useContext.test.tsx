@@ -2,6 +2,7 @@ import { getServerAndReactClient } from './__reactHelpers';
 import { render, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { initTRPC } from '@trpc/server/src/core';
+import { expectTypeOf } from 'expect-type';
 import { konn } from 'konn';
 import React, { useEffect, useState } from 'react';
 import { z } from 'zod';
@@ -68,6 +69,103 @@ const ctx = konn()
   })
   .done();
 
+test('client query', async () => {
+  const { proxy, App } = ctx;
+
+  function MyComponent() {
+    const utils = proxy.useContext();
+    const [post, setPost] = useState<Post>();
+
+    useEffect(() => {
+      (async () => {
+        const res = await utils.client.post.byId.query({ id: 0 });
+        expectTypeOf<Post | undefined>(res);
+        setPost(res);
+      })();
+    }, [utils]);
+
+    return <p>{post?.text}</p>;
+  }
+
+  const utils = render(
+    <App>
+      <MyComponent />
+    </App>,
+  );
+  await waitFor(() => {
+    expect(utils.container).toHaveTextContent('new post');
+  });
+});
+
+test('client query sad path', async () => {
+  const { proxy, App } = ctx;
+
+  function MyComponent() {
+    const utils = proxy.useContext();
+    const [isError, setIsError] = useState(false);
+
+    useEffect(() => {
+      (async () => {
+        try {
+          // @ts-expect-error - byUser does not exist on postRouter
+          await utils.client.post.byUser.query({ id: 0 });
+        } catch (e) {
+          setIsError(true);
+        }
+      })();
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
+
+    return <p>{isError ? 'Query errored' : "Query didn't error"}</p>;
+  }
+
+  const utils = render(
+    <App>
+      <MyComponent />
+    </App>,
+  );
+  await waitFor(() => {
+    expect(utils.container).toHaveTextContent('Query errored');
+  });
+});
+
+test('client mutation', async () => {
+  const { proxy, App } = ctx;
+
+  function MyComponent() {
+    const utils = proxy.useContext();
+    const { data: posts } = proxy.post.all.useQuery();
+    const [newPost, setNewPost] = useState<Post>();
+
+    useEffect(() => {
+      (async () => {
+        const newPost = await utils.client.post.create.mutate({
+          text: 'another post',
+        });
+        expectTypeOf<Post | undefined>(newPost);
+        setNewPost(newPost);
+      })();
+    }, []);
+
+    return (
+      <div>
+        <p data-testid="initial-post">{posts?.[0]?.text}</p>
+        <p data-testid="newpost">{newPost?.text}</p>
+      </div>
+    );
+  }
+
+  const utils = render(
+    <App>
+      <MyComponent />
+    </App>,
+  );
+  await waitFor(() => {
+    expect(utils.getByTestId('initial-post')).toHaveTextContent('new post');
+    expect(utils.getByTestId('newpost')).toHaveTextContent('another post');
+  });
+});
+
 test('fetch', async () => {
   const { proxy, App } = ctx;
 
@@ -79,7 +177,7 @@ test('fetch', async () => {
       utils.post.all.fetch().then((allPosts) => {
         setPosts(allPosts);
       });
-    }, [utils]);
+    }, []);
 
     return <p>{posts[0]?.text}</p>;
   }
