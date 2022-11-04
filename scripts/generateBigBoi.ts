@@ -55,14 +55,14 @@ function createRouter(routerName: string) {
   })`.trim();
 }
 
-const SERVER_DIR = __dirname + '/../packages/server/test/__generated__/bigBoi';
-fs.mkdirSync(SERVER_DIR, { recursive: true });
+const TEST_DIR = __dirname + '/../packages/tests/server/__generated__/bigBoi';
+fs.mkdirSync(TEST_DIR, { recursive: true });
 
 const indexBuf: string[] = [];
 for (let i = 0; i < NUM_ROUTERS; i++) {
   const routerName = `r${i}`;
   indexBuf.push(routerName);
-  fs.writeFileSync(`${SERVER_DIR}/${routerName}.ts`, createRouter(routerName));
+  fs.writeFileSync(`${TEST_DIR}/${routerName}.ts`, createRouter(routerName));
 }
 
 const trpcFile = `
@@ -81,5 +81,5 @@ export const appRouter = t.router({
 
 `.trim();
 
-fs.writeFileSync(`${SERVER_DIR}/_app.ts`, indexFile);
-fs.writeFileSync(`${SERVER_DIR}/_trpc.ts`, trpcFile);
+fs.writeFileSync(`${TEST_DIR}/_app.ts`, indexFile);
+fs.writeFileSync(`${TEST_DIR}/_trpc.ts`, trpcFile);

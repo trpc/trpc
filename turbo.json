@@ -1,0 +1,57 @@
+{
+  "$schema": "https://turborepo.org/schema.json",
+  "pipeline": {
+    "codegen:entrypoints": {
+      "outputs": [
+        "links/**",
+        "shared/**",
+        "ssg/**",
+        "adapters/**",
+        "http/**",
+        "observable/**",
+        "rpc/**",
+        "subscription/**"
+      ]
+    },
+    "codegen:bigBoi": {
+      "outputs": ["server/__generated__/bigBoi/**"]
+    },
+    "codegen:bigLegacyRouter": {
+      "outputs": ["server/__generated__/bigLegacyRouter/**"]
+    },
+    "codegen:mergeRouters": {
+      "outputs": ["src/core/internals/__generated__/**"]
+    },
+    "build": {
+      "dependsOn": ["^build", "codegen:entrypoints", "codegen:mergeRouters"],
+      "outputs": [".next/**", "dist/**", "build/**"]
+    },
+    "build-sqlite": {
+      "dependsOn": ["^build"],
+      "outputs": [".next/**"]
+    },
+    "dev": {
+      "cache": false
+    },
+    "lint": {
+      "cache": false
+    },
+    "test": {
+      "dependsOn": ["^build", "codegen:bigBoi", "codegen:bigLegacyRouter"],
+      "cache": false
+    },
+    "test-ci": {
+      "dependsOn": ["^build", "codegen:bigBoi", "codegen:bigLegacyRouter"],
+      "cache": false
+    },
+    "test-dev": {
+      "cache": false
+    },
+    "test-start": {
+      "cache": false
+    },
+    "test-watch": {
+      "cache": false
+    }
+  }
+}
