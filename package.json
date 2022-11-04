@@ -76,5 +76,17 @@
       "@examples/interop-next-starter-websockets>@prisma/client": "https://registry.npmjs.com/@prisma/client/-/client-4.3.1.tgz?id=%40examples%2Finterop-next-starter-websockets",
       "@examples/interop-todo-web>@prisma/client": "https://registry.npmjs.com/@prisma/client/-/client-4.3.1.tgz?id=%40examples%2Finterop-todo-web"
     }
+  },
+  "devDependencies": {
+    "lint-staged": "^13.0.3",
+    "simple-git-hooks": "^2.8.1"
+  },
+  "simple-git-hooks": {
+    "pre-commit": "npx lint-staged"
+  },
+  "lint-staged": {
+    "*.{js,ts,tsx}": [
+      "eslint --fix"
+    ]
   }
 }
