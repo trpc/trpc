@@ -19,11 +19,7 @@ import type {
 import { createFlatProxy, createRecursiveProxy } from '@trpc/server/shared';
 import { TRPCClientError } from './TRPCClientError';
 import { CreateTRPCClientOptions } from './createTRPCClient';
-import {
-  TRPCClient as Client,
-  TRPCClient,
-  TRPCSubscriptionObserver,
-} from './internals/TRPCClient';
+import { TRPCClient, TRPCSubscriptionObserver } from './internals/TRPCClient';
 
 export type inferRouterProxyClient<TRouter extends AnyRouter> =
   DecoratedProcedureRecord<TRouter['_def']['record'], TRouter>;
@@ -99,11 +95,11 @@ export type CreateTRPCProxyClient<TRouter extends AnyRouter> =
  * @internal
  */
 export function createTRPCClientProxy<TRouter extends AnyRouter>(
-  client: Client<TRouter>,
+  client: TRPCClient<TRouter>,
 ) {
   return createFlatProxy<CreateTRPCProxyClient<TRouter>>((key) => {
-    if (key === 'runtime') {
-      return client.runtime;
+    if (key in client) {
+      return (client as any)[key as any];
     }
     return createRecursiveProxy(({ path, args }) => {
       const pathCopy = [key, ...path];
