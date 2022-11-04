@@ -93,17 +93,20 @@ export default function DocVersionBannerWrapper(
         )}
         role="alert"
       >
-        <p className="mb-2">
-          Welcome to the tRPC version 10 <strong>beta</strong>.
-        </p>
         <p>
-          For documentation about version 9,{' '}
-          <Link
-            href={hasV9Version ? v9Pathname : '/docs/v9'}
-            className="font-bold"
-          >
-            click here
-          </Link>
+          <span>
+            Welcome to the tRPC version 10 <strong>RC</strong>.
+          </span>
+          <span className="ml-2">
+            For documentation about version 9,{' '}
+            <Link
+              href={hasV9Version ? v9Pathname : '/docs/v9'}
+              className="font-bold"
+            >
+              click here
+            </Link>
+            .
+          </span>
         </p>
       </div>
       {/* <DocVersionBanner {...props} /> */}

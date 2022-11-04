@@ -1,35 +1,16 @@
 {
   "extends": "./tsconfig.build.json",
-  "include": [
-    "packages",
-    "types",
-    "scripts",
-    "examples",
-    "rollup.config.ts"
-  ],
+  "include": ["packages", "types", "scripts", "examples", "rollup.config.ts"],
   "compilerOptions": {
     "allowJs": false,
     "baseUrl": ".",
-    "typeRoots": [
-      "./node_modules/@types",
-      "./types"
-    ],
+    "typeRoots": ["./node_modules/@types", "./types"],
     "paths": {
-      "@trpc/server": [
-        "packages/server/src"
-      ],
-      "@trpc/react-query": [
-        "packages/react/src"
-      ],
-      "@trpc/client": [
-        "packages/client/src"
-      ],
-      "@trpc/next": [
-        "packages/next/src"
-      ],
-      "$test/*": [
-        "test/*"
-      ]
+      "@trpc/server": ["packages/server/src"],
+      "@trpc/react-query": ["packages/react-query/src"],
+      "@trpc/client": ["packages/client/src"],
+      "@trpc/next": ["packages/next/src"],
+      "$test/*": ["test/*"]
     }
   }
 }

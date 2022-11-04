@@ -16,14 +16,10 @@ import type {
   Unsubscribable,
   inferObservableValue,
 } from '@trpc/server/observable';
-import { createRecursiveProxy } from '@trpc/server/shared';
+import { createFlatProxy, createRecursiveProxy } from '@trpc/server/shared';
 import { TRPCClientError } from './TRPCClientError';
 import { CreateTRPCClientOptions } from './createTRPCClient';
-import {
-  TRPCClient as Client,
-  TRPCClient,
-  TRPCSubscriptionObserver,
-} from './internals/TRPCClient';
+import { TRPCClient, TRPCSubscriptionObserver } from './internals/TRPCClient';
 
 export type inferRouterProxyClient<TRouter extends AnyRouter> =
   DecoratedProcedureRecord<TRouter['_def']['record'], TRouter>;
@@ -91,24 +87,34 @@ const clientCallTypeMap: Record<
   subscribe: 'subscription',
 };
 
+export type CreateTRPCProxyClient<TRouter extends AnyRouter> =
+  inferRouterProxyClient<TRouter>;
+
 /**
  * @deprecated use `createTRPCProxyClient` instead
  * @internal
  */
 export function createTRPCClientProxy<TRouter extends AnyRouter>(
-  client: Client<TRouter>,
+  client: TRPCClient<TRouter>,
 ) {
-  const proxy = createRecursiveProxy(({ path, args }) => {
-    const pathCopy = [...path];
-    const clientCallType = pathCopy.pop()! as keyof DecorateProcedure<any, any>;
+  return createFlatProxy<CreateTRPCProxyClient<TRouter>>((key) => {
+    if (key in client) {
+      return (client as any)[key as any];
+    }
+    return createRecursiveProxy(({ path, args }) => {
+      const pathCopy = [key, ...path];
+      const clientCallType = pathCopy.pop()! as keyof DecorateProcedure<
+        any,
+        any
+      >;
 
-    const procedureType = clientCallTypeMap[clientCallType];
+      const procedureType = clientCallTypeMap[clientCallType];
 
-    const fullPath = pathCopy.join('.');
+      const fullPath = pathCopy.join('.');
 
-    return (client as any)[procedureType](fullPath, ...args);
+      return (client as any)[procedureType](fullPath, ...args);
+    });
   });
-  return proxy as inferRouterProxyClient<TRouter>;
 }
 
 export function createTRPCProxyClient<TRouter extends AnyRouter>(

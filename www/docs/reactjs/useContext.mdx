@@ -95,6 +95,28 @@ These are the helpers you'll get access to via `useContext`. The table below wil
 | `setInfiniteData`   | [`queryClient.setInfiniteQueryData`](https://tanstack.com/query/v4/docs/reference/QueryClient#queryclientsetquerydata)           |
 | `getInfiniteData`   | [`queryClient.getInfiniteData`](https://tanstack.com/query/v4/docs/reference/QueryClient#queryclientgetquerydata)                |
 
+In addition to the above react-query helpers, the context also exposes your tRPC proxy client. This lets you call your procedures with `async`/`await` without needing to create an additional vanilla client.
+
+```tsx
+import { trpc } from '../utils/trpc';
+
+function MyComponent() {
+  const [apiKey, setApiKey] = useState();
+  const utils = trpc.useContext();
+
+  return (
+    <Form
+      handleSubmit={async (event) => {
+        const apiKey = await utils.client.apiKey.create.mutate(event);
+        setApiKey(apiKey);
+      }}
+    >
+      ...
+    </Form>
+  );
+}
+```
+
 ## Query Invalidation
 
 You invalidate queries via the `invalidate` helper. `invalidate` is actually a special helper given that, unlike the other helpers, it's available at every level of the router map. This means you can either run `invalidate` on a single query, a whole router, or every router if you want. We get more in detail in the sections below.
