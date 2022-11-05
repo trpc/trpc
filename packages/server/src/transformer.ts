@@ -5,8 +5,12 @@
  * @public
  */
 export type DataTransformer = {
-  serialize<R = any>(object: any): Exclude<R, PromiseLike<any>>;
-  deserialize<R = any>(object: any): Exclude<R, PromiseLike<any>>;
+  serialize<R extends any>(
+    object: any
+  ): R extends Promise<infer _U> ? never : R;
+  deserialize<R extends any>(
+    object: any
+  ): R extends Promise<infer _U> ? never : R;
 };
 
 /**
