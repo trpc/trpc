@@ -33,10 +33,10 @@ export function withTransformer<Transformer extends DataTransformer>(
  * @public
  */
 export type CustomDataTransformer = {
-  serialize<R>(
+  serialize<R = any>(
     object: any
   ): R extends Promise<infer _E> ? never : any;
-  deserialize<R>(
+  deserialize<R = any>(
     object: any
   ): (R extends Promise<infer _U> ? never : R);
 }
