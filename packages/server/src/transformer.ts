@@ -5,13 +5,41 @@
  * @public
  */
  export type DataTransformer = {
-  serialize<R extends any>(
-    object: any
-  ): R extends Promise<infer _U> ? never : R;
-  deserialize<R extends any>(
-    object: any
-  ): R extends Promise<infer _U> ? never : R;
+  serialize: (object: any) => any
+  deserialize: (object: any) => any
 };
+
+/**
+ * @public
+ */
+export type WithTransformerResult<T extends DataTransformer> = ReturnType<
+  T["serialize"]
+> extends Promise<infer _O>
+  ? unknown
+  : ReturnType<T["deserialize"]> extends Promise<infer _O>
+  ? unknown
+  : T;
+
+/**
+ * @public
+ */
+export function withTransformer<Transformer extends DataTransformer>(
+  transformer: Transformer
+): WithTransformerResult<Transformer> {
+  return transformer as WithTransformerResult<Transformer>;
+}
+
+/**
+ * @public
+ */
+export type CustomDataTransformer = {
+  serialize<R>(
+    object: any
+  ): R extends Promise<infer _E> ? never : any;
+  deserialize<R>(
+    object: any
+  ): (R extends Promise<infer _U> ? never : R);
+}
 
 /**
  * @public
