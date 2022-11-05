@@ -12,13 +12,13 @@
 /**
  * @public
  */
-export type WithTransformerResult<T extends DataTransformer> = ReturnType<
-  T["serialize"]
+ export type WithTransformerResult<T extends DataTransformer> = ReturnType<
+ T["serialize"]
 > extends Promise<infer _O>
-  ? unknown
-  : ReturnType<T["deserialize"]> extends Promise<infer _O>
-  ? unknown
-  : T;
+ ? unknown
+ : ReturnType<T["deserialize"]> extends Promise<infer _O>
+ ? unknown
+ : DataTransformer & any;
 
 /**
  * @public
@@ -96,3 +96,5 @@ export const defaultTransformer: DefaultDataTransformer = {
   input: { serialize: (obj) => obj, deserialize: (obj) => obj },
   output: { serialize: (obj) => obj, deserialize: (obj) => obj },
 };
+
+

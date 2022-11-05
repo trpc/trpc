@@ -166,5 +166,5 @@ type WithTransformerResult<T extends DataTransformer> = ReturnType<
   ? unknown
   : ReturnType<T["deserialize"]> extends Promise<infer _O>
   ? unknown
-  : T;
+  : DataTransformer & any;
 ```
