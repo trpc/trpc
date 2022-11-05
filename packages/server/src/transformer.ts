@@ -5,10 +5,10 @@
  * @public
  */
 export type DataTransformer = {
-  serialize<R extends any>(
+  serialize<R = any>(
     object: any
   ): R extends Promise<infer _U> ? never : R;
-  deserialize<R extends any>(
+  deserialize<R = any>(
     object: any
   ): R extends Promise<infer _U> ? never : R;
 };
