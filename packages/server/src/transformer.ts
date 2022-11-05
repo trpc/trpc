@@ -4,27 +4,27 @@
 /**
  * @public
  */
- export type DataTransformer = {
-  serialize: (object: any) => any
-  deserialize: (object: any) => any
+export type DataTransformer = {
+  serialize: (object: any) => any;
+  deserialize: (object: any) => any;
 };
 
 /**
  * @public
  */
- export type WithTransformerResult<T extends DataTransformer> = ReturnType<
- T["serialize"]
+export type WithTransformerResult<T extends DataTransformer> = ReturnType<
+  T['serialize']
 > extends Promise<infer _O>
- ? unknown
- : ReturnType<T["deserialize"]> extends Promise<infer _O>
- ? unknown
- : DataTransformer & any;
+  ? unknown
+  : ReturnType<T['deserialize']> extends Promise<infer _O>
+  ? unknown
+  : DataTransformer & any;
 
 /**
  * @public
  */
 export function withTransformer<Transformer extends DataTransformer>(
-  transformer: Transformer
+  transformer: Transformer,
 ): WithTransformerResult<Transformer> {
   return transformer as WithTransformerResult<Transformer>;
 }
@@ -33,13 +33,9 @@ export function withTransformer<Transformer extends DataTransformer>(
  * @public
  */
 export type CustomDataTransformer = {
-  serialize<R = any>(
-    object: any
-  ): R extends Promise<infer _E> ? never : any;
-  deserialize<R = any>(
-    object: any
-  ): (R extends Promise<infer _U> ? never : R);
-}
+  serialize<R = any>(object: any): R extends Promise<infer _E> ? never : any;
+  deserialize<R = any>(object: any): R extends Promise<infer _U> ? never : R;
+};
 
 /**
  * @public
@@ -96,5 +92,3 @@ export const defaultTransformer: DefaultDataTransformer = {
   input: { serialize: (obj) => obj, deserialize: (obj) => obj },
   output: { serialize: (obj) => obj, deserialize: (obj) => obj },
 };
-
-
