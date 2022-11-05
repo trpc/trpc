@@ -77,14 +77,13 @@ yarn add superjson devalue
 import superjson from 'superjson';
 import devalue from 'devalue';
 // [...]
-import { withTransformer } from "@trpc/server"; // type safed transformer
 
 export const transformer = {
   input: superjson,
-  output: withTransformer({
+  output: {
     serialize: (object) => devalue(object),
     deserialize: (object) => eval(`(${object})`),
-  }),
+  },
 };
 ```
 
@@ -111,41 +110,7 @@ export const appRouter = trpc.router()
   .transformer(transformer)
   // .query(...)
 ```
-## WithTranformer function
 
-WithTransformer function was created in order to prevent you from using async/await in your data transformers. 
-
-### This Is Allowed
-
-```ts
-import { withTransformer } from "@trpc/server"
-export const transformer = withTransformer({
-serialize: (object) => {
-   // [...]
-   return object;
-},
-deserialize: (object) => {
-  // [...]
-  return object;
-},
-})
-```
-
-### This Is Not Allowed
-
-```ts
-import { withTransformer } from "@trpc/server"
-export const transformer = withTransformer({
-serialize: async (object) => {
-   // [...]
-   return object;
-},
-deserialize: async (object) => {
-  // [...]
-  return object;
-},
-})
-```
 
 ## `DataTransformer` interface
 
@@ -159,12 +124,4 @@ type CombinedDataTransformer = {
   input: DataTransformer;
   output: DataTransformer;
 };
-
-type WithTransformerResult<T extends DataTransformer> = ReturnType<
-  T["serialize"]
-> extends Promise<infer _O>
-  ? unknown
-  : ReturnType<T["deserialize"]> extends Promise<infer _O>
-  ? unknown
-  : DataTransformer & any;
 ```
