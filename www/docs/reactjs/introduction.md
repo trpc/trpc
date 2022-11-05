@@ -42,7 +42,7 @@ Most examples use [Zod](https://github.com/colinhacks/zod) for input validation 
 
 #### 2. Enable strict mode
 
-If you want to use Zod for input validation, make sure you have enabled strict mode in your `tsconfig.json`:
+If you want to use Zod for input validation, make sure you have enabled strict m ode in your `tsconfig.json`:
 
 ```diff title="tsconfig.json"
   "compilerOptions": {
