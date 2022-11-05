@@ -1,11 +1,16 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/naming-convention */
 
 /**
  * @public
  */
-export type DataTransformer = {
-  serialize(object: any): any;
-  deserialize(object: any): any;
+ export type DataTransformer = {
+  serialize<R extends any>(
+    object: any
+  ): R extends Promise<infer _U> ? never : R;
+  deserialize<R extends any>(
+    object: any
+  ): R extends Promise<infer _U> ? never : R;
 };
 
 /**
