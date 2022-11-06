@@ -138,3 +138,11 @@ export async function waitError<TError extends Error = Error>(
   }
   throw new Error('Function did not throw');
 }
+
+export const ignoreErrors = async (fn: () => Promise<unknown> | unknown) => {
+  try {
+    await fn();
+  } catch {
+    // ignore
+  }
+};

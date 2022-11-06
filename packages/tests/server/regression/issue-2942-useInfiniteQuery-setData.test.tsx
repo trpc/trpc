@@ -78,9 +78,12 @@ test('with input', async () => {
         <button
           data-testid="setInfinite"
           onClick={() => {
-            utils.post.list.setInfiniteData((data) => data, {
-              foo: 'bar',
-            });
+            utils.post.list.setInfiniteData(
+              {
+                foo: 'bar',
+              },
+              (data) => data,
+            );
           }}
         >
           Fetch more
@@ -154,7 +157,7 @@ test('w/o input', async () => {
         <button
           data-testid="setInfinite"
           onClick={() => {
-            utils.post.list.setInfiniteData((data) => data);
+            utils.post.list.setInfiniteData({}, (data) => data);
           }}
         >
           Fetch more
@@ -181,6 +184,14 @@ test('w/o input', async () => {
   const after: DehydratedState['queries'] = JSON.parse(
     JSON.stringify(dehydrate(ctx.queryClient).queries),
   );
+  before.forEach((value) => {
+    value.state.dataUpdateCount = -1;
+    value.state.dataUpdatedAt = -1;
+  });
+  after.forEach((value) => {
+    value.state.dataUpdateCount = -1;
+    value.state.dataUpdatedAt = -1;
+  });
 
   expect(before).toEqual(after);
 });
