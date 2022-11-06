@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/naming-convention */
 import {
   AnyRouter,
   ClientDataTransformerOptions,
@@ -21,12 +22,14 @@ import {
   TRPCLink,
 } from '../links/types';
 
-interface CreateTRPCClientBaseOptions {
+interface CreateTRPCClientBaseOptions<
+  Transformer extends ClientDataTransformerOptions | undefined = undefined,
+> {
   /**
    * Data transformer
    * @link https://trpc.io/docs/data-transformers
    **/
-  transformer?: ClientDataTransformerOptions;
+  transformer?: Transformer;
 }
 
 type TRPCType = 'subscription' | 'query' | 'mutation';
@@ -47,17 +50,23 @@ export interface TRPCSubscriptionObserver<TValue, TError> {
 }
 
 /** @internal */
-export type CreateTRPCClientOptions<TRouter extends AnyRouter> =
-  | CreateTRPCClientBaseOptions & {
+export type CreateTRPCClientOptions<
+  TRouter extends AnyRouter,
+  Transformer extends ClientDataTransformerOptions | undefined = undefined,
+> =
+  | CreateTRPCClientBaseOptions<Transformer> & {
       links: TRPCLink<TRouter>[];
     };
 
-export class TRPCClient<TRouter extends AnyRouter> {
+export class TRPCClient<
+  TRouter extends AnyRouter,
+  Transformer extends ClientDataTransformerOptions | undefined = undefined,
+> {
   private readonly links: OperationLink<TRouter>[];
   public readonly runtime: TRPCClientRuntime;
   private requestId: number;
 
-  constructor(opts: CreateTRPCClientOptions<TRouter>) {
+  constructor(opts: CreateTRPCClientOptions<TRouter, Transformer>) {
     this.requestId = 0;
 
     function getTransformer(): DataTransformer {

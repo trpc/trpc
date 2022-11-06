@@ -12,34 +12,6 @@ export type DataTransformer = {
 /**
  * @public
  */
-export type WithTransformerResult<T extends DataTransformer> = ReturnType<
-  T['serialize']
-> extends Promise<infer _O>
-  ? unknown
-  : ReturnType<T['deserialize']> extends Promise<infer _O>
-  ? unknown
-  : DataTransformer & any;
-
-/**
- * @public
- */
-export function withTransformer<Transformer extends DataTransformer>(
-  transformer: Transformer,
-): WithTransformerResult<Transformer> {
-  return transformer as WithTransformerResult<Transformer>;
-}
-
-/**
- * @public
- */
-export type CustomDataTransformer = {
-  serialize<R = any>(object: any): R extends Promise<infer _E> ? never : any;
-  deserialize<R = any>(object: any): R extends Promise<infer _U> ? never : R;
-};
-
-/**
- * @public
- */
 export type CombinedDataTransformer = {
   input: DataTransformer;
   output: DataTransformer;
@@ -57,6 +29,40 @@ export type CombinedDataTransformerClient = {
  * @public
  */
 export type DataTransformerOptions = DataTransformer | CombinedDataTransformer;
+
+/**
+ * @public
+ */
+export type WithTransformerResult<T extends DataTransformer> = ReturnType<
+  T['serialize']
+> extends Promise<infer _O>
+  ? unknown
+  : ReturnType<T['deserialize']> extends Promise<infer _O>
+  ? unknown
+  : DataTransformer;
+
+/**
+ * @public
+ */
+export type AsTransformer<
+  T extends ClientDataTransformerOptions | undefined = undefined,
+> = T extends DataTransformer
+  ? WithTransformerResult<T>
+  : T extends CombinedDataTransformer
+  ? WithTransformerResult<T['input']> extends unknown
+    ? unknown
+    : WithTransformerResult<T['output']> extends unknown
+    ? unknown
+    : WithTransformerResult<T['input']>
+  : undefined;
+
+/**
+ * @public
+ */
+export type CustomDataTransformer = {
+  serialize<R = any>(object: any): R extends Promise<infer _E> ? never : any;
+  deserialize<R = any>(object: any): R extends Promise<infer _U> ? never : R;
+};
 
 /**
  * @public

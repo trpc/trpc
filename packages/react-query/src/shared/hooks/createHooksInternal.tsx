@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/naming-convention */
+
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 import {
   DehydratedState,
@@ -23,6 +25,8 @@ import {
 } from '@trpc/client';
 import type {
   AnyRouter,
+  ClientDataTransformerOptions,
+  DataTransformerOptions,
   ProcedureRecord,
   inferHandlerInput,
   inferProcedureClientError,
@@ -210,9 +214,11 @@ export function createHooksInternal<
     QueryClient | undefined
   >;
 
-  const createClient: CreateClient<TRouter> = (opts) => {
-    return createTRPCClient(opts);
-  };
+  function createClient<
+    Transformer extends ClientDataTransformerOptions | undefined = undefined,
+  >(opts: CreateTRPCClientOptions<TRouter, Transformer>) {
+    return createTRPCClient<TRouter, Transformer>(opts);
+  }
 
   const TRPCProvider: TRPCProvider<TRouter, TSSRContext> = (props) => {
     const { abortOnUnmount = false, client, queryClient, ssrContext } = props;
