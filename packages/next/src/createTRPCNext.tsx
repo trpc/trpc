@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/naming-convention */
 import {
   CreateReactUtilsProxy,
   DecoratedProcedureRecord,
@@ -5,7 +6,7 @@ import {
   createReactProxyDecoration,
   createReactQueryUtilsProxy,
 } from '@trpc/react-query/shared';
-import { AnyRouter } from '@trpc/server';
+import { AnyRouter, ClientDataTransformerOptions } from '@trpc/server';
 import { createFlatProxy } from '@trpc/server/shared';
 import { NextPageContext } from 'next/types';
 import { useMemo } from 'react';
@@ -14,13 +15,18 @@ import { WithTRPCNoSSROptions, WithTRPCSSROptions, withTRPC } from './withTRPC';
 export function createTRPCNext<
   TRouter extends AnyRouter,
   TSSRContext extends NextPageContext = NextPageContext,
->(opts: WithTRPCNoSSROptions<TRouter> | WithTRPCSSROptions<TRouter>) {
+  Transformer extends ClientDataTransformerOptions | undefined = undefined,
+>(
+  opts:
+    | WithTRPCNoSSROptions<TRouter, Transformer>
+    | WithTRPCSSROptions<TRouter, Transformer>,
+) {
   const hooks = createHooksInternal<TRouter, TSSRContext>({
     unstable_overrides: opts.unstable_overrides,
   });
 
   // TODO: maybe set TSSRContext to `never` when using `WithTRPCNoSSROptions`
-  const _withTRPC = withTRPC<TRouter, TSSRContext>(opts);
+  const _withTRPC = withTRPC<TRouter, TSSRContext, Transformer>(opts);
 
   type CreateTRPCNext = {
     useContext(): CreateReactUtilsProxy<TRouter, TSSRContext>;
