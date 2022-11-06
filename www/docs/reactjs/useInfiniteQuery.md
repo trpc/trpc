@@ -112,6 +112,7 @@ export function MyComponent() {
       await utils.infinitePosts.cancel();
 
       utils.infinitePosts.setInfiniteData(
+        { limit: 10 },
         (data) => {
           if (!data) {
             return {
@@ -128,7 +129,6 @@ export function MyComponent() {
             })),
           };
         },
-        { limit: 10 },
       );
     },
   });
