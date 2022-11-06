@@ -54,7 +54,7 @@ export type AsTransformer<
     : WithTransformerResult<T['output']> extends unknown
     ? unknown
     : WithTransformerResult<T['input']>
-  : any;
+  : undefined;
 
 /**
  * @public

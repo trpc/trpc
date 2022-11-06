@@ -108,9 +108,9 @@ export function withTRPC<
   const { config: getClientConfig } = opts;
 
   type TRPCPrepassProps = {
-    config: WithTRPCConfig<TRouter>;
+    config: WithTRPCConfig<TRouter, Transformer>;
     queryClient: QueryClient;
-    trpcClient: TRPCClient<TRouter>;
+    trpcClient: TRPCClient<TRouter, Transformer>;
     ssrState: 'prepass';
     ssrContext: TSSRContext;
   };
