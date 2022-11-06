@@ -1,0 +1,115 @@
+---
+slug: announcing-trpc-10
+title: Announcing tRPC 10.0
+author: Alex / KATT 🐱
+author_title: Creator of tRPC
+author_url: https://twitter.com/alexdotjs
+author_image_url: https://avatars1.githubusercontent.com/u/459267?s=460&v=4
+---
+
+## Introduction
+
+tRPC's mission from day one has been to provide you with an easy way of building APIs fast and easily
+
+tRPC has already changed how many people think about APIs and about the boundaries between frontend and backend. Since we released our last major over a year ago, we've gotten 13,000+ more stars on GitHub, thousands more applications using tRPC, countless members of our community giving us feedback & from this, and we've learned a lot.
+
+The developer experience in version 10 of tRPC is unparalleled; the boundaries between backend and frontend are truly blurred, we've worked very hard at addressing the TypeScript performance issues many of you have faced and we are we have created something we are convinced you will love to work with.
+
+## Overview of changes
+
+Since we released our last major version in August 2021, we've gotten over 13,500+ more stars on GitHub, thousands more applications using tRPC, a growing ecosystem, and countless community members contributing and providing valuable feedback.
+
+Today, **we're launching tRPC 10**. It is ready for production and can safely be used for in your next our current TypeScript project.
+
+Get up and running with the [example applications](https://trpc.io/docs/v10/awesome-trpc#-starting-points-example-projects-etc) to get a feel of tRPC 10, or see the [guide for migrating from tRPC 9 to tRPC 10](https://trpc.io/docs/v10/migrate-from-v9-to-v10).
+
+tRPC incudes:
+
+- **New Unparalleled Performance:**
+  - High-performance gains for large codebases
+- **Improved API Experience**
+  - Calling functions instead of invoking strings
+  - CMD+clicking and refactoring from the frontend
+  - Easier to infer types
+- **Powerful Backend Framework**
+  - Reusable middlewares
+  - Reusable base procedures
+- **Growing tRPC Ecosystem**
+  - trpc-openapi - https://github.com/jlalmes/trpc-openapi
+  - t3-app - https://github.com/t3-oss/create-t3-app
+  - Vue/Svelte/Solid/etc - TBD
+
+### Massively improved performance
+
+TypeScript enables us to do very cool things, but it comes at a cost. Many of the things that we (ab)use in tRPC are excessive on the compiler, and as a result, you might have experienced your IDE slowing down as your application grows. In v10, we've improved this massively by:
+
+Changing our API allows TypeScript to be much faster, especially during incremental compilation, allowing your IDE to remain snappy.
+
+### Improved DX
+
+tRPC 10 embraces TypeScript to its fullest potential to give you an unparalleled DX across the API.
+
+You will notice the following in tRPC 10:
+
+- Jump to definition
+- Automatic procedure renaming across the server and client
+
+### Powerful Backend Framework
+
+We've doubled down on the core philosophy of making cross-functional teams more effective and enabling more developers to jump into the backend.
+
+tRPC 10 creates an integrated experience between the front and backend. This further blurs the line between the front and the back end.
+
+Other ways tRPC 10 provides a powerful backend framework:
+
+- Calling functions instead of invoking strings
+- CMD+clicking and refactoring from the frontend
+- Easier to infer types
+- Reusable middlewares
+- Reusable base procedures
+
+### Growing tRPC Ecosystem
+
+The ecosystem around tRPC has exploded.
+
+- Use [trpc-openapi](https://github.com/jlalmes/trpc-openapi) to easily create REST-compataible endpoints
+- Use [create-t3-app](https://github.com/t3-oss/create-t3-app) too botstrap a full-stack Next.js application with tRPC
+- Vue/Svelte/Solid/etc - TBD
+
+### Incremental Migration Path
+
+If you want to migrate incrementally, we've also put in a lot of work to make the experience as straightforward as possible for you, with almost full backward compatibility.
+
+See the migration guide for a full breakdown: [https://trpc.io/docs/v10/migrate-from-v9-to-v10](https://trpc.io/docs/v10/migrate-from-v9-to-v10)
+
+[Sachin](https://twitter.com/s4chinraja) from the core team has also made [a codemod](https://github.com/sachinraja/trpc-v10-migrate-codemod) that will do much of the heavy lifting for yo.
+
+### And so much more
+
+When working with tRPC v9, you might have experienced that your IDE started getting sluggish when getting big when working with tRPC
+
+- Massively improved performance
+- How to define a v10 router & procedure
+- The `t` object
+- Calling a procedure
+- Multiple input parsers
+- Magical API / Unparalleled DX
+  - CMD+clicking and refactoring from the frontend
+  - React-library rewritten
+  - Sub-routers
+- Rewritten links
+- Decoupled from Node.js
+- Client decoupled from HTTP-primitives
+- _Still_ zero code generation
+- Reusable middlewares
+- Reusable base procedures
+- Easier to infer types
+- Subscriptions rewritten
+- Upgrade to react-query 4
+- Incremental migration path - (maybe codemod soon)
+
+Random phrases:
+
+- Goodbye chainable routers, hello chainable procedures.
+
+> To read the complete migration guide and how to (incrementally!) update, see the [Migration Guide](https://trpc.io/docs/v10/migrate-from-v9-to-v10).
